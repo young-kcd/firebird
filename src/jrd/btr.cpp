@@ -1202,15 +1202,24 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					(fuzzy ? INTL_KEY_PARTIAL :
 							 ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 
-				const UCHAR* q = temp.key_data;
-				for (USHORT l = temp.key_length; l; --l, --stuff_count)
+				if (temp.key_length)
 				{
-					if (stuff_count == 0)
+					const UCHAR* q = temp.key_data;
+					for (USHORT l = temp.key_length; l; --l, --stuff_count)
 					{
-						*p++ = idx->idx_count - n;
-						stuff_count = STUFF_COUNT;
+						if (stuff_count == 0)
+						{
+							*p++ = idx->idx_count - n;
+							stuff_count = STUFF_COUNT;
+						}
+						*p++ = *q++;
 					}
-					*p++ = *q++;
+				}
+				else
+				{
+					fb_assert(stuff_count == 0);
+					*p++ = idx->idx_count - n;
+					stuff_count = STUFF_COUNT;
 				}
 			}
 			key->key_length = (p - key->key_data);
@@ -1465,23 +1474,35 @@ idx_e BTR_make_key(thread_db* tdbb,
 			for (; stuff_count; --stuff_count) {
 				*p++ = 0;
 			}
+
 			bool isNull;
 			const dsc* desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
 			if (!isNull) {
 				key->key_flags &= ~key_all_nulls;
 			}
+
 			compress(tdbb, desc, &temp, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending),
 				((n == count - 1) ? (fuzzy ? INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)) : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
-			const UCHAR* q = temp.key_data;
-			for (USHORT l = temp.key_length; l; --l, --stuff_count)
+
+			if (temp.key_length)
 			{
-				if (stuff_count == 0)
+				const UCHAR* q = temp.key_data;
+				for (USHORT l = temp.key_length; l; --l, --stuff_count)
 				{
-					*p++ = idx->idx_count - n;
-					stuff_count = STUFF_COUNT;
+					if (stuff_count == 0)
+					{
+						*p++ = idx->idx_count - n;
+						stuff_count = STUFF_COUNT;
+					}
+					*p++ = *q++;
 				}
-				*p++ = *q++;
+			}
+			else
+			{
+				fb_assert(stuff_count == 0);
+				*p++ = idx->idx_count - n;
+				stuff_count = STUFF_COUNT;
 			}
 		}
 
@@ -1570,17 +1591,28 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 			for (; stuff_count; --stuff_count) {
 				*p++ = 0;
 			}
+
 			compress(tdbb, &null_desc, &temp, tail->idx_itype, true,
 				(idx->idx_flags & idx_descending), false);
-			const UCHAR* q = temp.key_data;
-			for (USHORT l = temp.key_length; l; --l, --stuff_count)
+
+			if (temp.key_length)
 			{
-				if (stuff_count == 0)
+				const UCHAR* q = temp.key_data;
+				for (USHORT l = temp.key_length; l; --l, --stuff_count)
 				{
-					*p++ = idx->idx_count - n;
-					stuff_count = STUFF_COUNT;
+					if (stuff_count == 0)
+					{
+						*p++ = idx->idx_count - n;
+						stuff_count = STUFF_COUNT;
+					}
+					*p++ = *q++;
 				}
-				*p++ = *q++;
+			}
+			else
+			{
+				fb_assert(stuff_count == 0);
+				*p++ = idx->idx_count - n;
+				stuff_count = STUFF_COUNT;
 			}
 		}
 		key->key_length = (p - key->key_data);
