@@ -249,11 +249,16 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, St
 			break;
 
 		case '=':
-			key = input.substr(0, n).ToNoCaseString();
-			key.rtrim(" \t\r");
-			if (key.isEmpty())		// not good - no key
+			if (key.isEmpty())
+			{
+				key = input.substr(0, n).ToNoCaseString();
+				key.rtrim(" \t\r");
+				if (key.isEmpty())		// not good - no key
+					return LINE_BAD;
+				valStart = n + 1;
+			}
+			else if (inString >= 2)		// Something after the end of line
 				return LINE_BAD;
-			valStart = n + 1;
 			break;
 
 		case '#':
@@ -373,8 +378,19 @@ bool ConfigFile::translate(const String& from, String& to) const
 			return false;
 		}
 
+		PathName tempPath = configFile;
+
+#ifdef UNIX
+		// If $(this) is a symlink, expand it.
+		TEXT temp[MAXPATHLEN];
+		const int n = readlink(configFile.c_str(), temp, sizeof(temp));
+
+		if (n != -1 && n < sizeof(temp))
+			tempPath = temp;
+#endif
+
 		PathName path, file;
-		PathUtils::splitLastComponent(path, file, configFile.ToPathName());
+		PathUtils::splitLastComponent(path, file, tempPath);
 		to = path.ToString();
 	}
 	/* ToDo - implement this feature
