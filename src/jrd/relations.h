@@ -603,15 +603,3 @@ RELATION(nam_sec_users, rel_sec_users, ODS_12_0, rel_virtual)
 	FIELD(f_sec_middle_name, nam_middle_name, fld_name_part, 1, ODS_12_0)
 	FIELD(f_sec_last_name, nam_last_name, fld_name_part, 1, ODS_12_0)
 END_RELATION
-
-// Relation 44 (MON$TIME_STATS)
-RELATION(nam_mon_time_stats, rel_mon_time_stats, ODS_12_0, rel_virtual)
-	FIELD(f_mon_time_stat_id, nam_mon_stat_id, fld_stat_id, 0, ODS_12_0)
-	FIELD(f_mon_time_stat_group, nam_mon_stat_group, fld_stat_group, 0, ODS_12_0)
-	FIELD(f_mon_time_cpu_user, nam_mon_time_cpu_user, fld_counter, 0, ODS_12_0)
-	FIELD(f_mon_time_cpu_sys, nam_mon_time_cpu_sys, fld_counter, 0, ODS_12_0)
-	FIELD(f_mon_time_sync_user, nam_mon_time_sync_user, fld_counter, 0, ODS_12_0)
-	FIELD(f_mon_time_sync_sys, nam_mon_time_sync_sys, fld_counter, 0, ODS_12_0)
-	FIELD(f_mon_time_io_user, nam_mon_time_io_user, fld_counter, 0, ODS_12_0)
-	FIELD(f_mon_time_io_sys, nam_mon_time_io_sys, fld_counter, 0, ODS_12_0)
-END_RELATION
