@@ -848,7 +848,14 @@ static bool alloc_cstring(XDR* xdrs, CSTRING* cstring)
  **************************************/
 
 	if (!cstring->cstr_length)
+	{
+		if (cstring->cstr_allocated)
+			*cstring->cstr_address = '\0';
+		else
+			cstring->cstr_address = NULL;
+
 		return true;
+	}
 
 	if (cstring->cstr_length > cstring->cstr_allocated && cstring->cstr_allocated)
 	{

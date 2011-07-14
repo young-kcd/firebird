@@ -1496,6 +1496,14 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 	rdb->set_status_vector(user_status);
 
+	if (!length)
+	{
+		size_t sql_length = strlen(string);
+		if (sql_length > MAX_USHORT)
+			sql_length = MAX_USHORT;
+		length = static_cast<USHORT>(sql_length);
+	}
+
 	if (dialect > 10)
 	{
 		// dimitr: adjust dialect received after
@@ -1588,7 +1596,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		P_SQLST* ex_now = &packet->p_sqlst;
 		ex_now->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
 		ex_now->p_sqlst_SQL_dialect = dialect;
-		ex_now->p_sqlst_SQL_str.cstr_length = length ? length : strlen(string);
+		ex_now->p_sqlst_SQL_str.cstr_length = length;
 		ex_now->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(string);
 		ex_now->p_sqlst_items.cstr_length = 0;
 		ex_now->p_sqlst_buffer_length = 0;
@@ -2181,6 +2189,14 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status, Rtr** rtr_handle,
 	}
 	rdb->set_status_vector(user_status);
 
+	if (!length)
+	{
+		size_t sql_length = strlen(string);
+		if (sql_length > MAX_USHORT)
+			sql_length = MAX_USHORT;
+		length = static_cast<USHORT>(sql_length);
+	}
+
 	if (dialect > 10)
 	{
 		// dimitr: adjust dialect received after
@@ -2223,7 +2239,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status, Rtr** rtr_handle,
 		prepare->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
 		prepare->p_sqlst_statement = statement->rsr_id;
 		prepare->p_sqlst_SQL_dialect = dialect;
-		prepare->p_sqlst_SQL_str.cstr_length = length ? length : strlen(string);
+		prepare->p_sqlst_SQL_str.cstr_length = length;
 		prepare->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(string);
 		prepare->p_sqlst_items.cstr_length = item_length;
 		prepare->p_sqlst_items.cstr_address = items;
