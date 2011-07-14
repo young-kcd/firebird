@@ -1,3 +1,9 @@
+ 2011-07-13 13:09  dimitr 
+   M src/dsql/dsql.cpp
+   M src/remote/interface.cpp
+   M src/remote/protocol.cpp
+Fixed CORE-3554: Server crashes during prepare or throws incorrect parsing error if the remotely passed SQL query is empty. The origin of the zero-length SQL string passed is still unknown though, so the ticket remains open for a while.
+
  2011-06-17 12:41  hvlad 
    M src/jrd/cmp.cpp
 Fixed bug CORE-3524 : Compiling stored procedure while in use shutdown database
