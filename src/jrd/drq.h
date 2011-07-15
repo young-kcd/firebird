@@ -162,7 +162,9 @@ enum drq_type_t
 	drq_l_rfld_coll,		// lookup relation field collation
 	drq_l_fld_coll,			// lookup field collation
 	drq_l_prp_src,			// lookup a procedure parameter source
+	drq_l_arg_src,			// lookup a function argument source
 	drq_l_prm_coll,			// lookup procedure parameter collation
+	drq_l_arg_coll,			// lookup function argument collation
 	drq_m_map,				// modify os=>db names mapping
 	drq_l_idx_name,			// lookup index name
 	drq_l_collation,		// DSQL/DdlNodes: lookup collation
@@ -206,6 +208,7 @@ enum drq_type_t
 	drq_s_pkg_usr_prvs,		// store package privileges
 	drq_e_pkg_prv,			// erase package privileges
 	drq_m_pkg_prm_defs,		// modify packaged procedure parameters defaults
+	drq_m_pkg_arg_defs,		// modify packaged function arguments defaults
 	drq_s2_difference,		// Store backup difference file, DYN_mod's change_backup_mode
 	drq_l_relation,			// lookup relation before erase
 	drq_l_fun_name,			// lookup function name

@@ -854,6 +854,8 @@ static const struct {
 	{"dyn_func_param_not_found", 336068886},
 	{"dyn_routine_param_not_found", 336068887},
 	{"dyn_routine_param_ambiguous", 336068888},
+	{"dyn_coll_used_function", 336068889},
+	{"dyn_domain_used_function", 336068890},
 	{"gbak_unknown_switch", 336330753},
 	{"gbak_page_size_missing", 336330754},
 	{"gbak_page_size_toobig", 336330755},

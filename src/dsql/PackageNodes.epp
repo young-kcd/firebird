@@ -960,7 +960,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		}
 	}
 
-	// Lets recreate default of public procedure parameters
+	// Lets recreate default of public procedure/function parameters
 
 	requestHandle.reset(tdbb, drq_m_pkg_prm_defs, DYN_REQUESTS);
 
@@ -987,6 +987,36 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 					PRM.RDB$DEFAULT_VALUE = param.defaultValue;
 					PRM.RDB$DEFAULT_VALUE.NULL = param.defaultValue.isEmpty();
+				END_MODIFY
+			}
+		}
+	}
+	END_FOR
+
+	requestHandle.reset(tdbb, drq_m_pkg_arg_defs, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		ARG IN RDB$FUNCTION_ARGUMENTS
+		WITH ARG.RDB$PACKAGE_NAME EQ name.c_str()
+	{
+		size_t pos;
+		if (existingFuncs.find(Signature(getPool(), MetaName(ARG.RDB$FUNCTION_NAME)), pos))
+		{
+			const Signature& func = existingFuncs[pos];
+
+			ParameterInfo paramKey(getPool());
+			paramKey.number = ARG.RDB$ARGUMENT_POSITION;
+
+			if (func.parameters.find(paramKey, pos))
+			{
+				const ParameterInfo& param = func.parameters[pos];
+
+				MODIFY ARG
+					ARG.RDB$DEFAULT_SOURCE = param.defaultSource;
+					ARG.RDB$DEFAULT_SOURCE.NULL = param.defaultSource.isEmpty();
+
+					ARG.RDB$DEFAULT_VALUE = param.defaultValue;
+					ARG.RDB$DEFAULT_VALUE.NULL = param.defaultValue.isEmpty();
 				END_MODIFY
 			}
 		}

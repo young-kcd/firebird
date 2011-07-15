@@ -841,6 +841,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 8, 278, 'dyn_func_param_not_found', NULL, NULL)
 (-901, '42', '000', 8, 279, 'dyn_routine_param_not_found', NULL, NULL)
 (-901, '42', '000', 8, 280, 'dyn_routine_param_ambiguous', NULL, NULL)
+(-901, 'HY', '000', 8, 281, 'dyn_coll_used_function', NULL, NULL)
+(-901, 'HY', '000', 8, 282, 'dyn_domain_used_function', NULL, NULL)
 --  GBAK
 (-901, '00', '000', 12, 1, 'gbak_unknown_switch', NULL, NULL)
 (-901, '00', '000', 12, 2, 'gbak_page_size_missing', NULL, NULL)

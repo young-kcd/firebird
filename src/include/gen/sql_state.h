@@ -853,6 +853,8 @@ static const struct {
 	{336068886, "42000"}, // 278 dyn_func_param_not_found
 	{336068887, "42000"}, // 279 dyn_routine_param_not_found
 	{336068888, "42000"}, // 280 dyn_routine_param_ambiguous
+	{336068889, "HY000"}, // 281 dyn_coll_used_function
+	{336068890, "HY000"}, // 282 dyn_domain_used_function
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig

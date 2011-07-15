@@ -1716,6 +1716,10 @@ C --
       PARAMETER (GDS__dyn_routine_param_not_found      = 336068887)
       INTEGER*4 GDS__dyn_routine_param_ambiguous     
       PARAMETER (GDS__dyn_routine_param_ambiguous      = 336068888)
+      INTEGER*4 GDS__dyn_coll_used_function          
+      PARAMETER (GDS__dyn_coll_used_function           = 336068889)
+      INTEGER*4 GDS__dyn_domain_used_function        
+      PARAMETER (GDS__dyn_domain_used_function         = 336068890)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

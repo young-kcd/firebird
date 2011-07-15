@@ -3433,6 +3433,25 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		}
 		END_FOR
 
+		request2.reset(tdbb, drq_l_arg_coll, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+			ARG IN RDB$FUNCTION_ARGUMENTS CROSS F IN RDB$FIELDS
+			WITH ARG.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
+				 F.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID AND
+				 ARG.RDB$COLLATION_ID EQ COLL.RDB$COLLATION_ID
+		{
+			fb_utils::exact_name_limit(ARG.RDB$ARGUMENT_NAME, sizeof(ARG.RDB$ARGUMENT_NAME));
+
+			status_exception::raise(
+				Arg::Gds(isc_dyn_coll_used_function) <<
+				COLL.RDB$COLLATION_NAME <<
+				QualifiedName(ARG.RDB$FUNCTION_NAME,
+					(ARG.RDB$PACKAGE_NAME.NULL ? NULL : ARG.RDB$PACKAGE_NAME)).toString().c_str() <<
+				ARG.RDB$ARGUMENT_NAME);
+		}
+		END_FOR
+
 		request2.reset(tdbb, drq_l_fld_coll, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
@@ -4408,7 +4427,24 @@ void DropDomainNode::check(thread_db* tdbb, jrd_tra* transaction)
 	}
 	END_FOR
 
-	//// FIXME: Check domain usage in functions.
+	request.reset(tdbb, drq_l_arg_src, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$FUNCTION_ARGUMENTS
+		WITH X.RDB$FIELD_SOURCE EQ name.c_str()
+	{
+		fb_utils::exact_name_limit(X.RDB$FIELD_SOURCE, sizeof(X.RDB$FIELD_SOURCE));
+		fb_utils::exact_name_limit(X.RDB$FUNCTION_NAME, sizeof(X.RDB$FUNCTION_NAME));
+		fb_utils::exact_name_limit(X.RDB$ARGUMENT_NAME, sizeof(X.RDB$ARGUMENT_NAME));
+
+		// msg 239: "Domain %s is used in function %s (parameter name %s) and cannot be dropped"
+		status_exception::raise(
+			Arg::Gds(isc_dyn_domain_used_function) << X.RDB$FIELD_SOURCE <<
+				QualifiedName(X.RDB$FUNCTION_NAME,
+					(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)).toString().c_str() <<
+				X.RDB$ARGUMENT_NAME);
+	}
+	END_FOR
 }
 
 
@@ -6970,7 +7006,19 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			}
 			END_FOR
 
-			//// FIXME: Check usage in functions.
+			request2.reset();
+
+			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+				ARG IN RDB$FUNCTION_ARGUMENTS
+				WITH ARG.RDB$RELATION_NAME = name.c_str() AND
+					 ARG.RDB$FIELD_NAME = field->fld_name.c_str()
+			{
+				MODIFY ARG USING
+					strcpy(ARG.RDB$FIELD_SOURCE, RFR.RDB$FIELD_SOURCE);
+				END_MODIFY
+			}
+			END_FOR
+
 		}
 		END_FOR
 
@@ -7013,8 +7061,10 @@ void DropRelationNode::deleteGlobalField(thread_db* tdbb, jrd_tra* transaction,
 			 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX AND
 			 (NOT ANY RFR IN RDB$RELATION_FIELDS WITH
 				RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME) AND
-			 (NOT ANY PRC IN RDB$PROCEDURE_PARAMETERS WITH
-				PRC.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME)
+			 (NOT ANY PRM IN RDB$PROCEDURE_PARAMETERS WITH
+				PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME) AND
+			 (NOT ANY ARG IN RDB$FUNCTION_ARGUMENTS WITH
+				ARG.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME)
 	{
 		DropDomainNode::deleteDimensionRecords(tdbb, transaction, globalName);
 		ERASE FLD;

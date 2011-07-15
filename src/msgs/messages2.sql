@@ -1854,6 +1854,8 @@ COMMIT WORK;
 ('dyn_func_param_not_found', 'OnCommentNode::execute', 'DdlNodes.epp', NULL, 8, 278, NULL, 'Parameter @1 in function @2 not found', NULL, NULL);
 ('dyn_routine_param_not_found', 'OnCommentNode::execute', 'DdlNodes.epp', NULL, 8, 279, NULL, 'Parameter @1 of routine @2 not found', NULL, NULL);
 ('dyn_routine_param_ambiguous', 'OnCommentNode::execute', 'DdlNodes.epp', NULL, 8, 280, NULL, 'Parameter @1 of routine @2 is ambiguous (found in both procedures and functions). Use a specifier keyword.', NULL, NULL);
+('dyn_coll_used_function', 'DropCollationNode::execute', 'DdlNodes.epp', NULL, 8, 281, NULL, 'Collation @1 is used in function @2 (parameter name @3) and cannot be dropped', NULL, NULL);
+('dyn_domain_used_function', 'DropDomainNode', 'DdlNodes.epp', NULL, 8, 282, NULL, 'Domain @1 is used in function @2 (parameter name @3) and cannot be dropped', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

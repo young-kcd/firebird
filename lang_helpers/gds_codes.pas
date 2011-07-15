@@ -865,6 +865,8 @@ const
 	gds_dyn_func_param_not_found         = 336068886;
 	gds_dyn_routine_param_not_found      = 336068887;
 	gds_dyn_routine_param_ambiguous      = 336068888;
+	gds_dyn_coll_used_function           = 336068889;
+	gds_dyn_domain_used_function         = 336068890;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;
