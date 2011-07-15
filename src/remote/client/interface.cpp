@@ -1812,6 +1812,14 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
+		if (!length)
+		{
+			size_t sql_length = strlen(string);
+			if (sql_length > MAX_USHORT)
+				sql_length = MAX_USHORT;
+			length = static_cast<USHORT>(sql_length);
+		}
+
 		if (dialect > 10)
 		{
 			// dimitr: adjust dialect received after
@@ -1900,7 +1908,7 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 		P_SQLST* ex_now = &packet->p_sqlst;
 		ex_now->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
 		ex_now->p_sqlst_SQL_dialect = dialect;
-		ex_now->p_sqlst_SQL_str.cstr_length = length ? length : strlen(string);
+		ex_now->p_sqlst_SQL_str.cstr_length = length;
 		ex_now->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(string);
 		ex_now->p_sqlst_items.cstr_length = 0;
 		ex_now->p_sqlst_buffer_length = 0;
@@ -2453,6 +2461,14 @@ void Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
+		if (!stmtLength)
+		{
+			size_t sql_length = strlen(sqlStmt);
+			if (sql_length > MAX_USHORT)
+				sql_length = MAX_USHORT;
+			stmtLength = static_cast<USHORT>(sql_length);
+		}
+
 		if (dialect > 10)
 		{
 			// dimitr: adjust dialect received after
@@ -2494,7 +2510,7 @@ void Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 		prepare->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
 		prepare->p_sqlst_statement = statement->rsr_id;
 		prepare->p_sqlst_SQL_dialect = dialect;
-		prepare->p_sqlst_SQL_str.cstr_length = stmtLength ? stmtLength : strlen(sqlStmt);
+		prepare->p_sqlst_SQL_str.cstr_length = stmtLength;
 		prepare->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(sqlStmt);
 		prepare->p_sqlst_items.cstr_length = items.getCount();
 		prepare->p_sqlst_items.cstr_address = items.begin();

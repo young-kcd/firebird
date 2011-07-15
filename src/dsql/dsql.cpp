@@ -574,19 +574,6 @@ void DSQL_prepare(thread_db* tdbb,
 
 	dsql_req* request = NULL;
 
-	if (string && !length)
-	{
-		length = strlen(string);
-	}
-
-	if (!string || !length)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Unexpected end of command
-				  // CVC: Nothing will be line 1, column 1 for the user.
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
-	}
-
 	try
 	{
 		// Figure out which parser version to use
@@ -975,17 +962,6 @@ static void execute_immediate(thread_db* tdbb,
 							  bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
-
-	if (!string)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Unexpected end of command
-				  // CVC: Nothing will be line 1, column 1 for the user.
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
-	}
-
-	if (length == 0)
-		length = strlen(string);
 
 	dsql_dbb* const database = init(tdbb, attachment);
 	dsql_req* request = NULL;
@@ -1874,16 +1850,20 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 				  Arg::Gds(isc_wish_list));
 	}
 
-	if (!string)
+	if (string && !string_length)
 	{
+		size_t sql_length = strlen(string);
+		if (sql_length > MAX_USHORT)
+			sql_length = MAX_USHORT;
+		string_length = static_cast<USHORT>(sql_length);
+	}
+
+	if (!string || !string_length) {
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
 				  // CVC: Nothing will be line 1, column 1 for the user.
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
-
-	if (string_length == 0)
-		string_length = strlen(string);
 
 	// Get rid of the trailing ";" if there is one.
 
