@@ -2,6 +2,7 @@
 
 @call setenvvar.bat
 @if errorlevel 1 (goto :END)
+@if not defined FB_BIN_DIR (@call set_build_target.bat %*)
 
 @if "%1"=="msg" goto MSG
 
