@@ -1,3 +1,35 @@
+ 2011-07-14 15:56  asfernandes 
+   M src/common/config/config_file.cpp
+   M src/include/gen/ids.h
+Correction and improvement to the config system.
+
+ 2011-07-14 15:34  dimitr 
+   M src/include/gen/ids.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+Removed the accidentally committed lines.
+
+ 2011-07-14 15:27  dimitr 
+   M src/burp/backup.epp
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Nodes.h
+   M src/include/gen/ids.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+Added the missing RDB$SYSTEM_FLAG and RDB$DESCRIPTION columns into RDB$FUNCTION_ARGUMENTS.
+
+ 2011-07-14 12:31  dimitr 
+   M src/jrd/btr.cpp
+Fixed CORE-2709: Many indexed reads in a compound index with NULLs. Note that it's an ODS change, so nullable compound indices may require recreation.
+
+ 2011-07-14 11:54  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/Optimizer.cpp
+Methinks this is a more correct logic than the one committed yesterday. Also, fixed the stream comparison for views.
+
  2011-07-13 15:15  dimitr 
    M src/jrd/btr.cpp
    M src/jrd/sort.cpp
