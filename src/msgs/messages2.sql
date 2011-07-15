@@ -1851,6 +1851,9 @@ COMMIT WORK;
 (NULL, 'DYN_modify_sql_field', 'dyn_mod.epp', NULL, 8, 275, NULL, 'Identity column @1 of table @2 cannot have default value', NULL, NULL);
 (NULL, 'DYN_modify_global_field', 'dyn_mod.epp', NULL, 8, 276, NULL, 'Domain @1 must be of exact number type with zero scale because it''s used in an identity column', NULL, NULL);
 (NULL, 'DYN_UTIL_generate_generator_name', 'dyn_util.epp', NULL, 8, 277, NULL, 'Generation of generator name failed', NULL, NULL);
+('dyn_func_param_not_found', 'OnCommentNode::execute', 'DdlNodes.epp', NULL, 8, 278, NULL, 'Parameter @1 in function @2 not found', NULL, NULL);
+('dyn_routine_param_not_found', 'OnCommentNode::execute', 'DdlNodes.epp', NULL, 8, 279, NULL, 'Parameter @1 of routine @2 not found', NULL, NULL);
+('dyn_routine_param_ambiguous', 'OnCommentNode::execute', 'DdlNodes.epp', NULL, 8, 280, NULL, 'Parameter @1 of routine @2 is ambiguous (found in both procedures and functions). Use a specifier keyword.', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

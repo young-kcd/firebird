@@ -38,6 +38,7 @@
 #include "../common/os/path_utils.h"
 #include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
+#include "../jrd/ResultSet.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../common/dsc_proto.h"
@@ -881,6 +882,54 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 	const char* addWhereClause = NULL;
 	Arg::StatusVector status;
 
+	if (objType == ddl_unknown)
+	{
+		fb_assert(subName.hasData());
+	
+		PreparedStatement::Builder sql;
+		sql << "select 1 from rdb$procedures p join rdb$procedure_parameters pp using (rdb$procedure_name)" <<
+			   "where p.rdb$procedure_name =" << objName <<
+			   "and pp.rdb$parameter_name =" << subName <<
+			   "union all" <<
+			   "select 2 from rdb$functions f join rdb$function_arguments fa using (rdb$function_name)" <<
+			   "where f.rdb$function_name =" << objName <<
+			   "and fa.rdb$argument_name =" << subName;
+
+		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
+		AutoResultSet rs(ps->executeQuery(tdbb, transaction));
+
+		if (!rs->fetch(tdbb))
+		{
+			status_exception::raise(Arg::Gds(isc_dyn_routine_param_not_found) <<
+				Arg::Str(subName) << Arg::Str(objName));
+		}
+
+		fb_assert(!rs->isNull(1));
+		dsc& desc = rs->getDesc(1);
+		fb_assert(desc.dsc_dtype == dtype_long);
+		const SLONG result = *reinterpret_cast<SLONG*>(desc.dsc_address);
+
+		switch (result)
+		{
+			case 1:
+				objType = ddl_procedure;
+				break;
+
+			case 2:
+				objType = ddl_udf;
+				break;
+
+			default:
+				fb_assert(false);
+		}
+
+		if (rs->fetch(tdbb))
+		{
+			status_exception::raise(Arg::Gds(isc_dyn_routine_param_ambiguous) <<
+				Arg::Str(subName) << Arg::Str(objName));
+		}
+	}
+
 	switch (objType)
 	{
 		case ddl_database:
@@ -942,10 +991,21 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 			break;
 
 		case ddl_udf:
-			tableClause = "rdb$functions";
-			columnClause = "rdb$function_name";
+			if (subName.hasData())
+			{
+				tableClause = "rdb$function_arguments";
+				subColumnClause = "rdb$argument_name";
+				status << Arg::Gds(isc_dyn_func_param_not_found) <<
+					Arg::Str(subName) << Arg::Str(objName);
+			}
+			else
+			{
+				tableClause = "rdb$functions";
+				status << Arg::Gds(isc_dyn_func_not_found) << Arg::Str(objName);
+			}
+
 			addWhereClause = "rdb$package_name is null";
-			status << Arg::Gds(isc_dyn_func_not_found) << Arg::Str(objName);
+			columnClause = "rdb$function_name";
 			break;
 
 		case ddl_blob_filter:

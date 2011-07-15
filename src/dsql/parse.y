@@ -867,7 +867,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 // New nodes
 
-%type <intVal> ddl_type0 ddl_type1 ddl_type2
+%type <intVal> ddl_type0 ddl_type1 ddl_type2 ddl_param_opt
 
 %type <boolVal> release_only_opt
 
@@ -4220,7 +4220,13 @@ ddl_type1
 
 ddl_type2
 	: COLUMN		{ $$ = ddl_relation; }
-	| PARAMETER		{ $$ = ddl_procedure; }
+	| ddl_param_opt PARAMETER	{ $$ = $1; }
+	;
+
+ddl_param_opt
+	: { $$ = ddl_unknown; }
+	| PROCEDURE { $$ = ddl_procedure; }
+	| FUNCTION { $$ = ddl_udf; }
 	;
 
 ddl_subname

@@ -854,6 +854,9 @@ Data source : @4"},		/* eds_statement */
 	{336068877, "Package body @1 already exists"},		/* dyn_package_body_exists */
 	{336068878, "Invalid DDL statement for function @1"},		/* dyn_invalid_ddl_func */
 	{336068879, "Cannot alter new style function @1 with ALTER EXTERNAL FUNCTION. Use ALTER FUNCTION instead."},		/* dyn_newfc_oldsyntax */
+	{336068886, "Parameter @1 in function @2 is not found"},		/* dyn_func_param_not_found */
+	{336068887, "Parameter @1 of routine @2 is not found"},		/* dyn_routine_param_not_found */
+	{336068888, "Parameter @1 of routine @2 is ambiguous (found in both procedures and functions). Use a specifier keyword."},		/* dyn_routine_param_ambiguous */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */

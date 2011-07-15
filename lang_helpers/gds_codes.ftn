@@ -1710,6 +1710,12 @@ C --
       PARAMETER (GDS__dyn_invalid_ddl_func             = 336068878)
       INTEGER*4 GDS__dyn_newfc_oldsyntax             
       PARAMETER (GDS__dyn_newfc_oldsyntax              = 336068879)
+      INTEGER*4 GDS__dyn_func_param_not_found        
+      PARAMETER (GDS__dyn_func_param_not_found         = 336068886)
+      INTEGER*4 GDS__dyn_routine_param_not_found     
+      PARAMETER (GDS__dyn_routine_param_not_found      = 336068887)
+      INTEGER*4 GDS__dyn_routine_param_ambiguous     
+      PARAMETER (GDS__dyn_routine_param_ambiguous      = 336068888)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

@@ -787,6 +787,7 @@ public:
 // CVC: Enumeration used for the COMMENT command.
 enum
 {
+	ddl_unknown,
 	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
 	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
 	ddl_charset, ddl_collation, ddl_package, ddl_schema,

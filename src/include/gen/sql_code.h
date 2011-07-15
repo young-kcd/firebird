@@ -850,6 +850,9 @@ static const struct {
 	{336068877, -901}, /* 269 dyn_package_body_exists */
 	{336068878, -607}, /* 270 dyn_invalid_ddl_func */
 	{336068879, -901}, /* 271 dyn_newfc_oldsyntax */
+	{336068886, -901}, /* 278 dyn_func_param_not_found */
+	{336068887, -901}, /* 279 dyn_routine_param_not_found */
+	{336068888, -901}, /* 280 dyn_routine_param_ambiguous */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */
