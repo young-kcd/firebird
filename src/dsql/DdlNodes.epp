@@ -885,14 +885,16 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 	if (objType == ddl_unknown)
 	{
 		fb_assert(subName.hasData());
-	
+
 		PreparedStatement::Builder sql;
 		sql << "select 1 from rdb$procedures p join rdb$procedure_parameters pp using (rdb$procedure_name)" <<
 			   "where p.rdb$procedure_name =" << objName <<
+			   "and p.rdb$package_name is null and pp.rdb$package_name is null" <<
 			   "and pp.rdb$parameter_name =" << subName <<
 			   "union all" <<
 			   "select 2 from rdb$functions f join rdb$function_arguments fa using (rdb$function_name)" <<
 			   "where f.rdb$function_name =" << objName <<
+			   "and f.rdb$package_name is null and fa.rdb$package_name is null" <<
 			   "and fa.rdb$argument_name =" << subName;
 
 		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
@@ -1727,10 +1729,10 @@ void CreateAlterFunctionNode::collectParamComments(thread_db* tdbb, jrd_tra* tra
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		ARG IN RDB$FUNCTION_ARGUMENTS
 		WITH ARG.RDB$FUNCTION_NAME EQ name.c_str() AND
-			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
+			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '') AND
+			 ARG.RDB$DESCRIPTION NOT MISSING
 	{
-		if (!ARG.RDB$DESCRIPTION.NULL)
-			items.put(ARG.RDB$ARGUMENT_NAME, ARG.RDB$DESCRIPTION);
+		items.put(ARG.RDB$ARGUMENT_NAME, ARG.RDB$DESCRIPTION);
 	}
 	END_FOR
 }
@@ -2537,10 +2539,10 @@ void CreateAlterProcedureNode::collectParamComments(thread_db* tdbb, jrd_tra* tr
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRM IN RDB$PROCEDURE_PARAMETERS
 		WITH PRM.RDB$PROCEDURE_NAME EQ name.c_str() AND
-			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
+			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '') AND
+			 PRM.RDB$DESCRIPTION NOT MISSING
 	{
-		if (!PRM.RDB$DESCRIPTION.NULL)
-			items.put(PRM.RDB$PARAMETER_NAME, PRM.RDB$DESCRIPTION);
+		items.put(PRM.RDB$PARAMETER_NAME, PRM.RDB$DESCRIPTION);
 	}
 	END_FOR
 }
@@ -7018,7 +7020,6 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				END_MODIFY
 			}
 			END_FOR
-
 		}
 		END_FOR
 
