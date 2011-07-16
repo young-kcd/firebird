@@ -1231,7 +1231,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					IBERROR(187);	/* msg 187 cannot delete system relations */
 				}
 				DFW_post_work(transaction, dfw_delete_relation, &desc, id);
-				MET_lookup_relation_id(tdbb, id, false);
+				jrd_rel* rel_drop = MET_lookup_relation_id(tdbb, id, false);
+				if (rel_drop)
+					MET_scan_relation(tdbb, rel_drop);
 			}
 			break;
 
