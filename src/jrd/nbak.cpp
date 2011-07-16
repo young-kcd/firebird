@@ -262,7 +262,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		{
 			struct stat st;
 			PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			char* func = NULL;
+			const char* func = NULL;
 
 			while (!func && fstat(pageSpace->file->fil_desc, &st) != 0)
 			{

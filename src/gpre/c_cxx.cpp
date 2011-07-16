@@ -1746,11 +1746,11 @@ static void gen_dyn_immediate( const act* action, int column)
 	printa(column,
 		   statement->dyn_sqlda2 ?
 				"isc_embed_dsql_execute_immed2 (%s, &%s, &%s, 0, %s, %d, %s, %s);" :
-				"isc_embed_dsql_execute_immed (%s, &%s, &%s, 0, %s, %d, %s);",
+				"isc_embed_dsql_execute_immed (%s, &%s, &%s, 0, %s, %d, %s%s);",
 		   global_status_name, database->dbb_name->sym_string, transaction,
 		   statement->dyn_string, gpreGlob.sw_sql_dialect,
 		   statement->dyn_sqlda ? statement->dyn_sqlda : NULL_SQLDA,
-		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : NULL_SQLDA);
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "");
 
 	if (gpreGlob.sw_auto)
 		column -= INDENT;
@@ -1816,13 +1816,13 @@ static void gen_dyn_open( const act* action, int column)
 	printa(column,
 		   statement->dyn_sqlda2 ?
 				"isc_embed_dsql_open2 (%s, &%s, %s, %d, %s, %s);" :
-				"isc_embed_dsql_open (%s, &%s, %s, %d, %s);",
+				"isc_embed_dsql_open (%s, &%s, %s, %d, %s%s);",
 		   global_status_name,
 		   transaction,
 		   s,
 		   gpreGlob.sw_sql_dialect,
 		   statement->dyn_sqlda ? statement->dyn_sqlda : NULL_SQLDA,
-		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : NULL_SQLDA);
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "");
 
 	if (gpreGlob.sw_auto)
 		column -= INDENT;
