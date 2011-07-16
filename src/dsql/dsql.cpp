@@ -1858,7 +1858,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		string_length = static_cast<USHORT>(sql_length);
 	}
 
-	if (!string || !string_length) {
+	if (!string || !string_length)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
 				  // CVC: Nothing will be line 1, column 1 for the user.

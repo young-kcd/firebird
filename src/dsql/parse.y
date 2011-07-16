@@ -4219,14 +4219,14 @@ ddl_type1
 	;
 
 ddl_type2
-	: COLUMN		{ $$ = ddl_relation; }
+	: COLUMN					{ $$ = ddl_relation; }
 	| ddl_param_opt PARAMETER	{ $$ = $1; }
 	;
 
 ddl_param_opt
-	: { $$ = ddl_unknown; }
-	| PROCEDURE { $$ = ddl_procedure; }
-	| FUNCTION { $$ = ddl_udf; }
+	:			{ $$ = ddl_unknown; }
+	| PROCEDURE	{ $$ = ddl_procedure; }
+	| FUNCTION	{ $$ = ddl_udf; }
 	;
 
 ddl_subname

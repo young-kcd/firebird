@@ -90,6 +90,7 @@ bool checkExpressionIndex(thread_db* tdbb, CompilerScratch* csb, const index_des
 			map[0] = (UCHAR) stream;
 		}
 
+		// ASF: AutoPtr will delete only the top node.
 		AutoPtr<ExprNode> expression(NodeCopier::copy(tdbb, csb, idx->idx_expression, map));
 		return expression->sameAs(tdbb, csb, node);
 	}

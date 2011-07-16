@@ -25,6 +25,7 @@
 
 #include "ibase.h"
 #include "firebird/impl/boost/preprocessor/seq/for_each_i.hpp"
+#include <assert.h>
 #include <string.h>
 
 #define FB_MESSAGE(name, fields)	\
@@ -103,7 +104,7 @@ struct FbVarChar
 	void set(const char* s)
 	{
 		length = strlen(s);
-		// check that length <= N ?
+		assert(length <= N);
 		memcpy(str, s, length);
 	}
 };
