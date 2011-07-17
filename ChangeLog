@@ -1,3 +1,11 @@
+ 2011-07-17 02:58  asfernandes 
+   M src/burp/restore.epp
+Backport improvement CORE-3433 - Improve GBAK restore performance (records insertion).
+
+ 2011-07-16 10:08  hvlad 
+   M src/jrd/vio.cpp
+Backport fix for bug CORE-3557 : AV in engine when preparing query against dropping table
+
  2011-07-13 13:09  dimitr 
    M src/dsql/dsql.cpp
    M src/remote/interface.cpp
