@@ -1,3 +1,24 @@
+ 2011-07-16 20:15  asfernandes 
+   M src/gpre/c_cxx.cpp
+   M src/jrd/nbak.cpp
+Warnings.
+
+ 2011-07-16 18:49  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/parse.y
+   M src/include/firebird/Message.h
+   M src/jrd/Optimizer.cpp
+Misc.
+
+ 2011-07-16 18:46  asfernandes 
+   M src/dsql/DdlNodes.epp
+Correct the lookup of unspecified parameters wrt packages.
+
+ 2011-07-16 10:41  hvlad 
+   M src/jrd/vio.cpp
+Port forward fix for bug CORE-3557 : AV in engine when preparing query against dropping table
+
  2011-07-15 11:52  dimitr 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
