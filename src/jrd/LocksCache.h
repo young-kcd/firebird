@@ -55,7 +55,9 @@ class CachedLock : public GlobalRWLock
 public:
 	CachedLock(thread_db* tdbb, Firebird::MemoryPool& p, locktype_t lckType, 
 		size_t lockLen, const UCHAR* lockStr) :
-	  GlobalRWLock(tdbb, p, lckType, lockLen, lockStr)
+	  GlobalRWLock(tdbb, p, lckType, lockLen, lockStr),
+	  m_use_count(0),
+	  m_chgKey(NULL)
 	{
 		QUE_INIT(m_lru);
 	}
@@ -69,11 +71,31 @@ public:
 
 	bool setLockKey(thread_db *tdbb, const UCHAR* key) 
 	{
+		m_chgKey = key;
 		if (!tryReleaseLock(tdbb))
+		{
+			m_chgKey = NULL;
 			return false;
+		}
 
 		memcpy(&cached_lock->lck_key, key, cached_lock->lck_length);
+		m_chgKey = NULL;
 		return true;
+	}
+
+	void addRef()
+	{
+		m_use_count++;
+	}
+
+	void release()
+	{
+		m_use_count--;
+	}
+
+	bool isUsed()
+	{
+		return m_use_count;
 	}
 
 	static const KeyHolder generate(const void*, const CachedLock* lock) { 
@@ -84,7 +106,9 @@ public:
 		return KeyHolder::greaterThan(i1, i2);
 	}
 
+	int m_use_count;
 	que m_lru;
+	const void* m_chgKey;
 };
 
 
@@ -93,17 +117,19 @@ template <class LockClass = CachedLock>
 class LocksCache
 {
 public:
-	LocksCache(Jrd::thread_db *tdbb, Jrd::lck_t lockType, size_t lockLen, size_t maxCapacity);
+	LocksCache(thread_db *tdbb, Jrd::lck_t lockType, size_t lockLen, size_t maxCapacity);
 	~LocksCache();
 
-	GlobalRWLock* get(thread_db *tdbb, const UCHAR* key);
+	CachedLock* get(thread_db *tdbb, const UCHAR* key);
 
 private:
 	Firebird::MemoryPool &m_pool;
 	que		m_lru;
+	que		m_changing;
 	lck_t	m_lockType;
 	size_t	m_lockLen;
 	size_t	m_capacity;
+	size_t	m_allocated;
 
 	Firebird::SortedArray<LockClass*, Firebird::EmptyStorage<LockClass*>, 
 		const KeyHolder, LockClass, LockClass> m_sortedLocks;
@@ -117,9 +143,11 @@ LocksCache<LockClass>::LocksCache(thread_db *tdbb, lck_t lockType, size_t lockLe
 	m_sortedLocks(m_pool, maxCapacity)
 {
 	QUE_INIT(m_lru);
+	QUE_INIT(m_changing);
 	m_lockType = lockType;
 	m_lockLen  = lockLen;
 	m_capacity = maxCapacity;
+	m_allocated = 0;
 }
 
 template <class LockClass>
@@ -135,89 +163,137 @@ LocksCache<LockClass>::~LocksCache()
 }
 
 template <class LockClass>
-GlobalRWLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
+CachedLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 {
-	LockClass* lock = NULL;
-	size_t pos;
-	if (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos))
+	int tries = MIN(m_capacity / 2, 16);
+	while (true)
 	{
-		lock = m_sortedLocks[pos];
-		QUE_DELETE(lock->m_lru);
-	}
-	else
-	{
-		if (m_sortedLocks.getCount() < m_capacity) {
+		LockClass* lock = NULL;
+		size_t pos;
+		if (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos))
+		{
+			lock = m_sortedLocks[pos];
+			if (lock->m_chgKey)
+			{
+				ThreadExit te;
+				THREAD_YIELD();
+				continue;
+			}
+			QUE_DELETE(lock->m_lru);
+			QUE_INSERT(m_lru, lock->m_lru);
+			return lock;
+		}
+
+		bool changing = false;
+		QUE que_inst = m_changing.que_forward;
+		for (; que_inst != &m_changing; que_inst = que_inst->que_forward)
+		{
+			LockClass* chgLock = (LockClass*) ((SCHAR*) que_inst - OFFSET (LockClass*, m_lru));
+			fb_assert(chgLock->m_chgKey);
+			
+			if (memcmp(chgLock->m_chgKey, key, m_lockLen) == 0)
+			{
+				changing = true;
+				{
+					ThreadExit te;
+					THREAD_YIELD();
+				}
+				que_inst = m_changing.que_forward;
+				continue;
+			}
+		}
+		if (changing)
+			continue;
+
+		if (m_allocated < m_capacity || !tries) 
+		{
 			lock = FB_NEW (m_pool) LockClass(tdbb, m_pool, m_lockType, m_lockLen, key);
+
+			m_allocated++;
+			if (!tries) {
+				m_capacity++;
+			}
+
+			QUE_INSERT(m_lru, lock->m_lru);
+			m_sortedLocks.insert(pos, lock);
+			return lock;
+		}
+
+		// We going to change key of the least recently used lock.
+		// To prevent someone from acquire this lock while we not in 
+		// sheduler (inside setLockKey() below) we should remove 
+		// our lock from internal structures first and only then try 
+		// to change its key
+
+		if (QUE_EMPTY(m_lru))
+		{
+			tries--;
+			ThreadExit te;
+			THREAD_YIELD();
+			continue;
+		}
+
+		que_inst = m_lru.que_backward;
+		while (tries && que_inst != &m_lru)
+		{
+			lock = (LockClass*) ((SCHAR*) que_inst - OFFSET (LockClass*, m_lru));
+			if (!lock->isUsed())
+				break;
+
+			lock = NULL;
+			que_inst = que_inst->que_backward;
+			tries--;
+		}
+		if (!lock)
+			continue;
+
+		bool found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
+		if (!found) {
+			DebugBreak();
+		}
+		fb_assert(found);
+
+		QUE_DELETE(lock->m_lru);
+		m_sortedLocks.remove(pos);
+
+		QUE_INSERT(m_changing, lock->m_lru);
+
+		if (lock->setLockKey(tdbb, key)) 
+		{
+			found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
+			if (found) {
+				DebugBreak();
+			}
+			fb_assert(!found);
+
+			// remove from changing que
+			QUE_DELETE(lock->m_lru);
+
+			QUE_INSERT(m_lru, lock->m_lru);
+			m_sortedLocks.insert(pos, lock);
+			return lock;
+		}
+		
+		tries--;
+
+		found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
+		if (found)
+		{
+			DebugBreak();
 		}
 		else
 		{
-			QUE que_inst = m_lru.que_backward;
-			int tries = MIN(m_capacity / 2, 16);
-			while (true)
-			{
-				if (tries == 0)
-				{
-					m_capacity++;
-					lock = FB_NEW (m_pool) LockClass(tdbb, m_pool, m_lockType, m_lockLen, key);
-					break;
-				}
+			// remove from changing que
+			QUE_DELETE(lock->m_lru);
 
-				// We going to change key of the least recently used lock.
-				// To prevent someone from acquire this lock while we not in 
-				// sheduler (inside setLockKey() below) we should remove 
-				// our lock from internal structures first and only then try 
-				// to change its key
+			// move busy lock to the head of LRU queue
+			QUE_INSERT(m_lru, lock->m_lru);
 
-				if (que_inst == &m_lru) {
-					que_inst = que_inst->que_backward;
-				}
-
-				lock = (LockClass*) ((SCHAR*) que_inst - OFFSET (LockClass*, m_lru));
-
-				bool found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
-				fb_assert(found);
-
-				que_inst = que_inst->que_backward;
-				QUE_DELETE(lock->m_lru);
-				m_sortedLocks.remove(pos);
-
-				if (lock->setLockKey(tdbb, key)) 
-					break;
-				
-				tries--;
-
-				// move busy lock to the head of LRU queue
-				QUE_INSERT(m_lru, lock->m_lru);
-
-				// and put it back to the sorted array
-				found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
-				fb_assert(!found);
-				m_sortedLocks.insert(pos, lock);
-			}
-
-			if (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos))
-			{
-				Firebird::HalfStaticArray<UCHAR, 64> zeroBuf;
-				UCHAR* zeroKey = zeroBuf.getBuffer(m_lockLen);
-				memset(zeroKey, 0, m_lockLen);
-
-				bool ok = lock->setLockKey(tdbb, zeroKey);
-				fb_assert(ok);
-
-				m_sortedLocks.insert(0, lock);
-				QUE_APPEND(m_lru, lock->m_lru);
-
-				lock = m_sortedLocks[pos+1];
-				QUE_DELETE(lock->m_lru);
-				QUE_INSERT(m_lru, lock->m_lru);
-				return lock;
-			}
+			// and put it back to the sorted array
+			m_sortedLocks.insert(pos, lock);
 		}
-		m_sortedLocks.insert(pos, lock);
+		fb_assert(!found);
 	}
-	QUE_INSERT(m_lru, lock->m_lru);
-
-	return lock;
 }
 
 }; // namespace Jrd

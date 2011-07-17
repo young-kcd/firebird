@@ -239,13 +239,13 @@ public:
 
 	~BtrPageGCLock();
 
-	static BtrPageLocks* getLocksCache(thread_db* tdbb);
 	void disablePageGC(thread_db* tdbb, const PageNumber &page);
 	void enablePageGC(thread_db* tdbb);
 	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber &page);
 
 private:
-	GlobalRWLock *m_lock;
+	static BtrPageLocks* getLocksCache(thread_db* tdbb);
+	CachedLock *m_lock;
 };
 
 } //namespace Jrd

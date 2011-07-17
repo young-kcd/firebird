@@ -266,6 +266,7 @@ void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber &page)
 
 	BtrPageLocks* locks = getLocksCache(tdbb);
 	m_lock = locks->get(tdbb, key);
+	m_lock->addRef();
 	m_lock->lock(tdbb, LCK_read, LCK_WAIT);
 }
 
@@ -273,6 +274,7 @@ void BtrPageGCLock::enablePageGC(thread_db* tdbb)
 {
 	fb_assert(m_lock);
 	m_lock->unlock(tdbb, LCK_read);
+	m_lock->release();
 	m_lock = NULL;
 }
 
@@ -282,7 +284,8 @@ bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 	page.getLockStr(key);
 
 	BtrPageLocks* locks = getLocksCache(tdbb);
-	GlobalRWLock *lock = locks->get(tdbb, key);
+	CachedLock *lock = locks->get(tdbb, key);
+	lock->addRef();
 
 	ISC_STATUS_ARRAY temp_status;
 	ISC_STATUS* const org_status = tdbb->tdbb_status_vector;
@@ -293,6 +296,7 @@ bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 	if (res) {
 		lock->unlock(tdbb, LCK_write);
 	}
+	lock->release();
 
 	tdbb->tdbb_status_vector = org_status;
 
@@ -1895,7 +1899,15 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 
 		index_root_page* root = 
 			(index_root_page*) CCH_FETCH(tdbb, root_window, LCK_write, pag_root);
-		page = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
+		if (root->irt_rpt[idx->idx_id].irt_root != window.win_page.getPageNum())
+		{
+			gds__log("BTR_remove: root page changed");
+
+			CCH_RELEASE(tdbb, root_window);
+			return;
+		}
+
+ 		page = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 
 		// get the page number of the child, and check to make sure 
 		// the page still has only one node on it
@@ -1906,7 +1918,13 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 
 		const SLONG number = pageNode.pageNumber;
 		pointer = BTreeNode::readNode(&pageNode, pointer, flags, false);
-		if (!(pageNode.isEndBucket || pageNode.isEndLevel)) {
+		if (!(pageNode.isEndBucket || pageNode.isEndLevel) ||
+			!BtrPageGCLock::isPageGCAllowed(tdbb, window.win_page)) 
+		{
+			if (pageNode.isEndBucket || pageNode.isEndLevel) {
+				gds__log("BTR_remove: root page gc not allowed");
+			}
+
 			CCH_RELEASE(tdbb, &window);
 			CCH_RELEASE(tdbb, root_window);
 			return;
