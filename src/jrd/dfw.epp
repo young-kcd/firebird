@@ -2209,13 +2209,14 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	if (is_create)
 	{
 		PreparedStatement::Builder sql;
-		MetaName rdbRelationName;
+		SLONG rdbRelationID;
 		SLONG rdbRelationType;
 		sql << "select"
-			<< sql("rel.rdb$relation_name,", rdbRelationName)
+			<< sql("rel.rdb$relation_id,", rdbRelationID)
 			<< sql("rel.rdb$relation_type", rdbRelationType)
 			<< "from rdb$indices idx join rdb$relations rel using (rdb$relation_name)"
-			<< "where idx.rdb$index_name = " << work->dfw_name;
+			<< "where idx.rdb$index_name = " << work->dfw_name
+			<< "  and rel.rdb$relation_id is not null";
 		AutoPreparedStatement ps(attachment->prepareStatement(tdbb,
 			attachment->getSysTransaction(), sql));
 		AutoResultSet rs(ps->executeQuery(tdbb, attachment->getSysTransaction()));
@@ -2223,10 +2224,10 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		while (rs->fetch(tdbb))
 		{
 			gtt_preserve = (rdbRelationType == rel_global_temp_preserve);
-			relation = MET_lookup_relation(tdbb, rdbRelationName);
+			relation = MET_lookup_relation_id(tdbb, rdbRelationID, false);
 		}
 	}
-	else
+	else if (work->dfw_id > 0)
 	{
 		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 		gtt_preserve = (relation) && (relation->rel_flags & REL_temp_conn);
