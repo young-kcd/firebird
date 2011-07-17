@@ -1975,14 +1975,15 @@ static bool modify_index(thread_db*	tdbb,
 			FOR(REQUEST_HANDLE request)
 				IDX IN RDB$INDICES CROSS
 				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
-					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str() AND
+					REL.RDB$RELATION_ID NOT MISSING
 				gtt_preserve = (REL.RDB$RELATION_TYPE == rel_global_temp_preserve);
-				relation = MET_lookup_relation(tdbb, REL.RDB$RELATION_NAME);
+				relation = MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, false);
 			END_FOR;
 
 			CMP_release(tdbb, request);
 		}
-		else
+		else if (work->dfw_id > 0)
 		{
 			relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 			gtt_preserve = (relation) && (relation->rel_flags & REL_temp_conn);
