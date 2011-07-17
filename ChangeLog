@@ -1,3 +1,7 @@
+ 2011-07-16 10:38  hvlad 
+   M src/jrd/vio.cpp
+Backport fix for bug CORE-3557 : AV in engine when preparing query against dropping table
+
  2011-05-25 07:51  dimitr 
    M src/jrd/vio.cpp
 Fixed the assertion.
