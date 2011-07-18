@@ -1,3 +1,7 @@
+ 2011-07-17 09:38  hvlad 
+   M src/jrd/dfw.epp
+Fixed bug CORE-3549 : Database corruption after end of session : page xxx is of wrong type expected 4 found 7
+
  2011-07-16 10:01  hvlad 
    M src/jrd/vio.cpp
 Fixed bug CORE-3557 : AV in engine when preparing query against dropping table
