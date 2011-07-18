@@ -941,7 +941,7 @@ void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 IConfig* FB_CARG PluginManager::getConfig(const char* filename)
 {
 	IConfig* rc = new ConfigAccess(RefPtr<ConfigFile>(
-		FB_NEW(*getDefaultMemoryPool()) ConfigFile(filename, 0)));
+		FB_NEW(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename)));
 	rc->addRef();
 	return rc;
 }
