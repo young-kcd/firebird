@@ -1955,9 +1955,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		}
 
 		rdb->rdb_iface->detach(&status_vector);
-
-		if (status_vector.isSuccess())
-			rdb->rdb_iface = NULL;
+		rdb->rdb_iface = NULL;
 
 		while (rdb->rdb_events)
 			release_event(rdb->rdb_events);
@@ -1969,9 +1967,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	if (rdb->rdb_svc_iface)
 	{
 		rdb->rdb_svc_iface->detach(&status_vector);
-
-		if (status_vector.isSuccess())
-			rdb->rdb_svc_iface = NULL;
+		rdb->rdb_svc_iface = NULL;
 	}
 
 	REMOTE_free_packet(this, sendL);
