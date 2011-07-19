@@ -1,3 +1,16 @@
+ 2011-07-18 11:50  alexpeshkoff 
+   M src/remote/server/server.cpp
+Simplified code - thanks to Claudio
+
+ 2011-07-18 11:19  alexpeshkoff 
+   M src/yvalve/PluginManager.cpp
+Fixed assertion - thanks to Adriano
+
+ 2011-07-18 10:57  alexpeshkoff 
+   M configure.in
+   M src/common/os/posix/divorce.cpp
+Front-ported Darwin port changes
+
  2011-07-17 09:49  hvlad 
    M src/jrd/dfw.epp
 Port forward fix for bug CORE-3549 : Database corruption after end of session : page xxx is of wrong type expected 4 found 7
