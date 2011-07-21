@@ -1,3 +1,9 @@
+ 2011-07-20 10:35  dimitr 
+   M src/jrd/cvt2.cpp
+   M src/jrd/cvt2_proto.h
+   M src/jrd/opt.cpp
+Attempted to have a [more or less] good solution for CORE-3553 (Nested loop plan is chosen instead of the sort merge for joining independent streams using keys of different types). It doesn't optimize all possible cases, but the most common ones.
+
  2011-07-17 09:38  hvlad 
    M src/jrd/dfw.epp
 Fixed bug CORE-3549 : Database corruption after end of session : page xxx is of wrong type expected 4 found 7
