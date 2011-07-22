@@ -1,3 +1,7 @@
+ 2011-07-21 10:19  dimitr 
+   M src/jrd/btr.cpp
+Relaxed the rules a bit thus moving some checks to runtime. This fixes the regression in CORE-1812.
+
  2011-07-20 10:35  dimitr 
    M src/jrd/cvt2.cpp
    M src/jrd/cvt2_proto.h
