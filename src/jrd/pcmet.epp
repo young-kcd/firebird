@@ -96,8 +96,8 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 			REQUEST(irq_c_exp_index) = request;
 		}
 
-           if (!relation)
-           {
+		if (!relation)
+		{
 			relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
 			if (relation->rel_name.length() == 0) {
 				relation->rel_name = REL.RDB$RELATION_NAME;
@@ -163,7 +163,7 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 			/* fake a description of the index */
 
 			idx.idx_count = 1;
-			idx.idx_flags |= idx_expressn;
+			idx.idx_flags |= idx_expressn | idx_complete_segs;
 			CMP_get_desc(tdbb, csb, idx.idx_expression, &idx.idx_expression_desc);
 			idx.idx_rpt[0].idx_itype =
 				DFW_assign_index_type(tdbb, name,

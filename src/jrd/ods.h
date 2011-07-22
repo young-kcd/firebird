@@ -352,12 +352,13 @@ struct irtd : public irtd_ods10
 };
 
 // irtd_itype
-const USHORT irt_unique		= 1;
-const USHORT irt_descending	= 2;
-const USHORT irt_in_progress= 4;
-const USHORT irt_foreign	= 8;
-const USHORT irt_primary	= 16;
-const USHORT irt_expression	= 32;
+const USHORT irt_unique			= 1;
+const USHORT irt_descending		= 2;
+const USHORT irt_in_progress	= 4;
+const USHORT irt_foreign		= 8;
+const USHORT irt_primary		= 16;
+const USHORT irt_expression		= 32;
+const USHORT irt_complete_segs	= 64;
 
 const int STUFF_COUNT		= 4;
 const SLONG END_LEVEL		= -1;
