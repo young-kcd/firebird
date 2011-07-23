@@ -1,3 +1,8 @@
+ 2011-07-22 07:00  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/btr.cpp
+Front ported recent commits.
+
  2011-07-18 11:50  alexpeshkoff 
    M src/remote/server/server.cpp
 Simplified code - thanks to Claudio
