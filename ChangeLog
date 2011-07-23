@@ -1,3 +1,16 @@
+ 2011-07-22 08:17  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/dfw.epp
+   M src/jrd/ini.epp
+   M src/jrd/ods.h
+   M src/jrd/pcmet.epp
+Backported CORE-2709: Many indexed reads in a compound index with NULLs. Backward compatibility with existing indices is provided.
+
+ 2011-07-22 06:52  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+Correction. The process name is already converted into UTF8 at this point.
+
  2011-07-21 10:19  dimitr 
    M src/jrd/btr.cpp
 Relaxed the rules a bit thus moving some checks to runtime. This fixes the regression in CORE-1812.
