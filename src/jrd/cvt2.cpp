@@ -115,7 +115,8 @@ bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* ar
 		// Any of the arguments is a blob or an array
 		return false;
 	}
-	else if (arg1->dsc_dtype == dtype_dbkey || arg2->dsc_dtype == dtype_dbkey)
+	
+	if (arg1->dsc_dtype == dtype_dbkey || arg2->dsc_dtype == dtype_dbkey)
 	{
 		// Any of the arguments is DBKEY
 		result->makeText(MAX(arg1->getStringLength(), arg2->getStringLength()), ttype_binary);
