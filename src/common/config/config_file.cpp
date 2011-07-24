@@ -381,12 +381,24 @@ bool ConfigFile::translate(const String& from, String& to) const
 		PathName tempPath = configFile;
 
 #ifdef UNIX
-		// If $(this) is a symlink, expand it.
-		TEXT temp[MAXPATHLEN];
-		const int n = readlink(configFile.c_str(), temp, sizeof(temp));
+		if (PathUtils::isSymLink(tempPath))
+		{
+			// If $(this) is a symlink, expand it.
+			TEXT temp[MAXPATHLEN];
+			const int n = readlink(configFile.c_str(), temp, sizeof(temp));
 
-		if (n != -1 && n < sizeof(temp))
-			tempPath = temp;
+			if (n != -1 && n < sizeof(temp))
+			{
+				tempPath = temp;
+
+				if (PathUtils::isRelative(tempPath))
+				{
+					PathName parent;
+					PathUtils::splitLastComponent(parent, tempPath, configFile);
+					PathUtils::concatPath(tempPath, parent, temp);
+				}
+			}
+		}
 #endif
 
 		PathName path, file;
