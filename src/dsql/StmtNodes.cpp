@@ -5497,6 +5497,7 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert)
 {
 	thread_db* tdbb = JRD_get_thread_data();
+	DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
 
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 

@@ -199,6 +199,30 @@ namespace Firebird {
 			Stack<Object, Capacity>& stack;
 		};
 
+		// Restore the stack when we go out of scope.
+		class AutoRestore
+		{
+		public:
+			AutoRestore(Stack<Object, Capacity>& s)
+				: stack(s),
+				  count(s.getCount())
+			{
+			}
+
+			~AutoRestore()
+			{
+				size_t currentCount = stack.getCount();
+				fb_assert(currentCount >= count);
+
+				while (currentCount-- > count)
+					stack.pop();
+			}
+
+		private:
+			Stack<Object, Capacity>& stack;
+			size_t count;
+		};
+
 		class iterator;
 		friend class iterator;
 
