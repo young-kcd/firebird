@@ -1559,7 +1559,7 @@ BoolExprNode* NotBoolNode::process(DsqlCompilerScratch* dsqlScratch, bool invert
 
 	// Do not handle special case: <value> NOT IN <list>
 
-	if (cmpArg)
+	if (cmpArg && cmpArg->dsqlArg2->nod_type != Dsql::nod_list)
 	{
 		// Invert the given boolean.
 		switch (cmpArg->blrOp)
