@@ -5860,6 +5860,10 @@ static void init(IStatus* status,
 				break;
 			}
 		}
+		else
+		{
+			authItr.next();
+		}
 	}
 
 	if (port->port_protocol < PROTOCOL_VERSION12)
