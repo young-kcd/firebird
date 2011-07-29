@@ -1,3 +1,7 @@
+ 2011-07-27 09:06  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Fixed a hang in client when trying to attach to non-existent database with old-version firebird server running on same box
+
  2011-07-25 02:19  asfernandes 
    M src/dsql/BoolNodes.cpp
 Fixed the bug with NOT IN (list) reported by Ivan Prenosil in fb-devel.
