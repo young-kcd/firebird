@@ -203,7 +203,7 @@ namespace Firebird {
 		class AutoRestore
 		{
 		public:
-			AutoRestore(Stack<Object, Capacity>& s)
+			explicit AutoRestore(Stack<Object, Capacity>& s)
 				: stack(s),
 				  count(s.getCount())
 			{

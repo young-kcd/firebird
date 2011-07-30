@@ -871,6 +871,7 @@ void CommentOnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 // select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
 // gives the list of objects that accept descriptions. At FB2 time, the only
 // subobjects with descriptions are relation's fields and procedure's parameters.
+// In FB3 we added function's arguments.
 void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/,
 	jrd_tra* transaction)
 {

@@ -4396,7 +4396,7 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 	const Array<NestConst<Parameter> >& parameters, const BlrMessage& extBlr,
 	UCharBuffer& appendBlr)
 {
-	size_t prevAppendBlrSize = appendBlr.getCount();
+	const size_t prevAppendBlrSize = appendBlr.getCount();
 	bool messageNeeded = false;
 	size_t count = 0;
 	size_t countPos = 0;
@@ -4414,11 +4414,13 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 		reader.checkByte(blr_begin);
 		reader.checkByte(blr_message);
 		reader.getByte();	// message number: ignore it
+		fb_assert(parameters.getCount() * 2 <= MAX_USHORT);
 		count = reader.checkWord(parameters.getCount() * 2);
 
 		appendBlr.add(blr_message);
 		appendBlr.add(message2);
 		countPos = appendBlr.getCount();
+		fb_assert(countPos < MAX_USHORT);
 		appendBlr.add(UCHAR(count));	// parameters (with nulls)
 		appendBlr.add(UCHAR(count >> 8));
 
@@ -4485,6 +4487,7 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 
 		if (pad != 0)
 		{
+			fb_assert(count < MAX_USHORT);
 			++count;
 			appendBlr[countPos] = UCHAR(count);
 			appendBlr[countPos + 1] = UCHAR(count >> 8);
@@ -4504,11 +4507,12 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 
 	// Input message is 0 and output message is 1. Output message need the eof (+1) field.
 	count = parameters.getCount() * 2 + message;
-	fb_assert(count < MAX_USHORT);
+	fb_assert(count <= MAX_USHORT);
 
 	blr.add(blr_message);	// e_extproc_input_message, e_extproc_output_message
 	blr.add(message);
 	countPos = blr.getCount();
+	fb_assert(countPos < MAX_USHORT);
 	blr.add(UCHAR(count));	// parameters (with nulls)
 	blr.add(UCHAR(count >> 8));
 
@@ -4574,6 +4578,7 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 
 		if (pad != 0)
 		{
+			fb_assert(count < MAX_USHORT);
 			++count;
 			blr[countPos] = UCHAR(count);
 			blr[countPos + 1] = UCHAR(count >> 8);
@@ -4611,7 +4616,7 @@ static void parse_procedure_blr(thread_db* tdbb, jrd_prc* procedure, bid* blob_i
 		tmp.add(blr_version5);
 		tmp.add(blr_begin);
 
-		// ASF: Generate nodes even when they could be avoided, because we will use hardoced
+		// ASF: Generate nodes even when they could be avoided, because we will use hardcoced
 		// message and statement numbers. See e_extproc_*.
 
 		UCharBuffer appendBlr;
