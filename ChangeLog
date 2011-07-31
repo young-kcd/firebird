@@ -1,3 +1,9 @@
+ 2011-07-30 07:14  robocop 
+   M src/common/classes/stack.h
+   M src/dsql/DdlNodes.epp
+   M src/jrd/met.epp
+Misc.
+
  2011-07-27 09:06  alexpeshkoff 
    M src/remote/client/interface.cpp
 Fixed a hang in client when trying to attach to non-existent database with old-version firebird server running on same box
