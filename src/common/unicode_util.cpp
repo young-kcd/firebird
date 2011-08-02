@@ -37,44 +37,43 @@
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
+#include "../common/StatusHolder.h"
 
 #include <unicode/ustring.h>
 #include <unicode/utrans.h>
 #include <unicode/uchar.h>
-#include <unicode/ucnv.h>
 #include <unicode/ucol.h>
 
 
 using namespace Firebird;
 
+namespace {
+#if defined(WIN_NT)
+const char* const inTemplate = "icuin%d%d.dll";
+const char* const ucTemplate = "icuuc%d%d.dll";
+#elif defined(DARWIN)
+const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
+const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
+#elif defined(HPUX)
+const char* const inTemplate = "libicui18n.sl.%d%d";
+const char* const ucTemplate = "libicuuc.sl.%d%d";
+#else
+const char* const inTemplate = "libicui18n.so.%d%d";
+const char* const ucTemplate = "libicuuc.so.%d%d";
+#endif
 
-namespace Jrd {
-
-
-const char* const UnicodeUtil::DEFAULT_ICU_VERSION =
-	STRINGIZE(U_ICU_VERSION_MAJOR_NUM)"."STRINGIZE(U_ICU_VERSION_MINOR_NUM);
-
-
-// encapsulate ICU collations libraries
-struct UnicodeUtil::ICU
+// encapsulate ICU library
+struct BaseICU
 {
 private:
-	ICU(const ICU&);				// not implemented
-	ICU& operator =(const ICU&);	// not implemented
+	BaseICU(const BaseICU&);				// not implemented
+	BaseICU& operator =(const BaseICU&);	// not implemented
 
 public:
-	ICU(int aMajorVersion, int aMinorVersion)
+	BaseICU(int aMajorVersion, int aMinorVersion)
 		: majorVersion(aMajorVersion),
-		  minorVersion(aMinorVersion),
-		  inModule(NULL),
-		  ucModule(NULL)
+		  minorVersion(aMinorVersion)
 	{
-	}
-
-	~ICU()
-	{
-		delete ucModule;
-		delete inModule;
 	}
 
 	template <typename T> void getEntryPoint(const char* name, ModuleLoader::Module* module, T& ptr)
@@ -97,11 +96,39 @@ public:
 
 	int majorVersion;
 	int minorVersion;
+
+	void (U_EXPORT2 *uInit)(UErrorCode* status);
+};
+}
+
+namespace Jrd {
+
+
+const char* const UnicodeUtil::DEFAULT_ICU_VERSION =
+	STRINGIZE(U_ICU_VERSION_MAJOR_NUM)"."STRINGIZE(U_ICU_VERSION_MINOR_NUM);
+
+
+// encapsulate ICU collations libraries
+struct UnicodeUtil::ICU : public BaseICU
+{
+public:
+	ICU(int aMajorVersion, int aMinorVersion)
+		: BaseICU(aMajorVersion, aMinorVersion),
+		  inModule(NULL),
+		  ucModule(NULL)
+	{
+	}
+
+	~ICU()
+	{
+		delete ucModule;
+		delete inModule;
+	}
+
 	ModuleLoader::Module* inModule;
 	ModuleLoader::Module* ucModule;
 	UVersionInfo collVersion;
 
-	void (U_EXPORT2 *uInit)(UErrorCode* status);
 	void (U_EXPORT2 *uVersionToString)(UVersionInfo versionArray, char* versionString);
 
 	int32_t (U_EXPORT2 *ulocCountAvailable)();
@@ -141,6 +168,77 @@ public:
 		int32_t* limit,
 		UErrorCode* status);
 };
+
+
+// encapsulate ICU conversion library
+struct ImplementConversionICU : public UnicodeUtil::ConversionICU, BaseICU
+{
+public:
+	ImplementConversionICU(int aMajorVersion, int aMinorVersion)
+		: BaseICU(aMajorVersion, aMinorVersion),
+		  module(NULL)
+	{
+		PathName filename;
+		filename.printf(ucTemplate, aMajorVersion, aMinorVersion);
+
+		module = ModuleLoader::fixAndLoadModule(filename);
+		if (!module)
+		{
+			//(Arg::Gds(isc_random) << "Missing library" <<
+			// Arg::Gds(isc_random) << filename).raise();
+			// Instead raise 'empty' exception in order to ignore "Missing library" later
+			LongJump::raise();
+		}
+
+		try
+		{
+			getEntryPoint("u_init", module, uInit);
+		}
+		catch (const status_exception&)
+		{ }
+
+		getEntryPoint("ucnv_open", module, ucnv_open);
+		getEntryPoint("ucnv_close", module, ucnv_close);
+		getEntryPoint("ucnv_fromUChars", module, ucnv_fromUChars);
+		getEntryPoint("u_tolower", module, u_tolower);
+		getEntryPoint("u_toupper", module, u_toupper);
+		getEntryPoint("u_strCompare", module, u_strCompare);
+		getEntryPoint("u_countChar32", module, u_countChar32);
+		getEntryPoint("utf8_nextCharSafeBody", module, utf8_nextCharSafeBody);
+
+		getEntryPoint("UCNV_FROM_U_CALLBACK_STOP", module, UCNV_FROM_U_CALLBACK_STOP);
+		getEntryPoint("UCNV_TO_U_CALLBACK_STOP", module, UCNV_TO_U_CALLBACK_STOP);
+		getEntryPoint("ucnv_fromUnicode", module, ucnv_fromUnicode);
+		getEntryPoint("ucnv_toUnicode", module, ucnv_toUnicode);
+		getEntryPoint("ucnv_getInvalidChars", module, ucnv_getInvalidChars);
+		getEntryPoint("ucnv_getMaxCharSize", module, ucnv_getMaxCharSize);
+		getEntryPoint("ucnv_getMinCharSize", module, ucnv_getMinCharSize);
+		getEntryPoint("ucnv_setFromUCallBack", module, ucnv_setFromUCallBack);
+		getEntryPoint("ucnv_setToUCallBack", module, ucnv_setToUCallBack);
+
+		if (uInit)
+		{
+			UErrorCode status = U_ZERO_ERROR;
+			uInit(&status);
+			if (status != U_ZERO_ERROR)
+			{
+				string diag;
+				diag.printf("u_init() error %d", status);
+				(Arg::Gds(isc_random) << diag).raise();
+			}
+		}
+	}
+
+	~ImplementConversionICU()
+	{
+		delete module;
+	}
+
+	ModuleLoader::Module* module;
+};
+
+static ImplementConversionICU* convIcu = 0;
+static GlobalPtr<Mutex> convIcuMutex;
 
 
 // cache ICU module instances to not load and unload many times
@@ -224,15 +322,16 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 		return INTL_BAD_KEY_LENGTH;
 
 	UErrorCode status = U_ZERO_ERROR;
-	UConverter* conv = ucnv_open("BOCU-1", &status);
+	ConversionICU& cIcu(getConversionICU());
+	UConverter* conv = cIcu.ucnv_open("BOCU-1", &status);
 	fb_assert(U_SUCCESS(status));
 
-	const int32_t len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen,
+	const int32_t len = cIcu.ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen,
 		// safe cast - alignment not changed
 		reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), &status);
 	fb_assert(U_SUCCESS(status));
 
-	ucnv_close(conv);
+	cIcu.ucnv_close(conv);
 
 	return len;
 }
@@ -278,6 +377,7 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 	dstLen /= sizeof(*dst);
 
 	ULONG n = 0;
+	ConversionICU& cIcu(getConversionICU());
 
 	for (ULONG i = 0; i < srcLen;)
 	{
@@ -285,7 +385,7 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 		U16_NEXT(src, i, srcLen, c);
 
 		if (!exceptions)
-			c = u_tolower(c);
+			c = cIcu.u_tolower(c);
 		else
 		{
 			const ULONG* p = exceptions;
@@ -293,7 +393,7 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 				++p;
 
 			if (*p == 0)
-				c = u_tolower(c);
+				c = cIcu.u_tolower(c);
 		}
 
 		bool error;
@@ -344,6 +444,7 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 	dstLen /= sizeof(*dst);
 
 	ULONG n = 0;
+	ConversionICU& cIcu(getConversionICU());
 
 	for (ULONG i = 0; i < srcLen;)
 	{
@@ -351,7 +452,7 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 		U16_NEXT(src, i, srcLen, c);
 
 		if (!exceptions)
-			c = u_toupper(c);
+			c = cIcu.u_toupper(c);
 		else
 		{
 			const ULONG* p = exceptions;
@@ -359,7 +460,7 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 				++p;
 
 			if (*p == 0)
-				c = u_toupper(c);
+				c = cIcu.u_toupper(c);
 		}
 
 		bool error;
@@ -453,6 +554,7 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 
 	const USHORT* const dstStart = dst;
 	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);
+	ConversionICU& cIcu(getConversionICU());
 
 	for (ULONG i = 0; i < srcLen; )
 	{
@@ -471,7 +573,7 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 		{
 			*err_position = i - 1;
 
-			c = utf8_nextCharSafeBody(src, reinterpret_cast<int32_t*>(&i), srcLen, c, -1);
+			c = cIcu.utf8_nextCharSafeBody(src, reinterpret_cast<int32_t*>(&i), srcLen, c, -1);
 
 			if (c < 0)
 			{
@@ -618,7 +720,7 @@ SSHORT UnicodeUtil::utf16Compare(ULONG len1, const USHORT* str1, ULONG len2, con
 	*error_flag = false;
 
 	// safe casts - alignment not changed
-	int32_t cmp = u_strCompare(reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1),
+	int32_t cmp = getConversionICU().u_strCompare(reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1),
 		reinterpret_cast<const UChar*>(str2), len2 / sizeof(*str2), true);
 
 	return (cmp < 0 ? -1 : (cmp > 0 ? 1 : 0));
@@ -629,7 +731,7 @@ ULONG UnicodeUtil::utf16Length(ULONG len, const USHORT* str)
 {
 	fb_assert(len % sizeof(*str) == 0);
 	// safe cast - alignment not changed
-	return u_countChar32(reinterpret_cast<const UChar*>(str), len / sizeof(*str));
+	return getConversionICU().u_countChar32(reinterpret_cast<const UChar*>(str), len / sizeof(*str));
 }
 
 
@@ -687,6 +789,7 @@ INTL_BOOL UnicodeUtil::utf8WellFormed(ULONG len, const UCHAR* str, ULONG* offend
 {
 	fb_assert(str != NULL);
 
+	ConversionICU& cIcu(getConversionICU());
 	for (ULONG i = 0; i < len; )
 	{
 		UChar32 c = str[i++];
@@ -695,7 +798,7 @@ INTL_BOOL UnicodeUtil::utf8WellFormed(ULONG len, const UCHAR* str, ULONG* offend
 		{
 			const ULONG save_i = i - 1;
 
-			c = utf8_nextCharSafeBody(str, reinterpret_cast<int32_t*>(&i), len, c, -1);
+			c = cIcu.utf8_nextCharSafeBody(str, reinterpret_cast<int32_t*>(&i), len, c, -1);
 
 			if (c < 0)
 			{
@@ -762,20 +865,6 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	const Firebird::string& configInfo)
 {
-#if defined(WIN_NT)
-	const char* const inTemplate = "icuin%d%d.dll";
-	const char* const ucTemplate = "icuuc%d%d.dll";
-#elif defined(DARWIN)
-	const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
-	const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
-#elif defined(HPUX)
-	const char* const inTemplate = "libicui18n.sl.%d%d";
-	const char* const ucTemplate = "libicuuc.sl.%d%d";
-#else
-	const char* const inTemplate = "libicui18n.so.%d%d";
-	const char* const ucTemplate = "libicuuc.so.%d%d";
-#endif
-
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
 
@@ -913,6 +1002,56 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	}
 
 	return NULL;
+}
+
+
+UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
+{
+	if (convIcu)
+	{
+		return *convIcu;
+	}
+
+	MutexLockGuard g(convIcuMutex);
+
+	if (convIcu)
+	{
+		return *convIcu;
+	}
+
+	LocalStatus lastError;
+	string version;
+	int majorArray[] = {4, 3, 5, 6, 0};
+	for (int* major = majorArray; *major; ++major)
+	{
+		for (int minor = 20; --minor; ) /* from 19 down to 0 */
+		{
+			try
+			{
+				convIcu = FB_NEW(*getDefaultMemoryPool()) ImplementConversionICU(*major, minor);
+				return *convIcu;
+			}
+			catch (const LongJump&) { }
+			catch (const Exception& ex)
+			{
+				ex.stuffException(&lastError);
+				version.printf("Error loading ICU library version %d.%d", *major, minor);
+			}
+		}
+	}
+
+	if (!lastError.isSuccess())
+	{
+		(Arg::Gds(isc_random) << "Could not find acceptable ICU library" 
+		 << Arg::StatusVector(lastError.get())).raise();
+	}
+	else
+	{
+		(Arg::Gds(isc_random) << "Could not find acceptable ICU library").raise();
+	}
+
+	// compiler warning silencer
+	return *convIcu;
 }
 
 
@@ -1128,6 +1267,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 
 			// Remove last bytes of key if they are start of a contraction
 			// to correctly find in the index.
+			ConversionICU& cIcu(getConversionICU());
 			for (int i = 0; i < contractionsCount; ++i)
 			{
 				UChar str[10];
@@ -1140,7 +1280,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 					--len;
 
 				// safe cast - alignment not changed
-				if (u_strCompare(str, len, reinterpret_cast<const UChar*>(src) + srcLen - len, len, true) == 0)
+				if (cIcu.u_strCompare(str, len, reinterpret_cast<const UChar*>(src) + srcLen - len, len, true) == 0)
 				{
 					srcLen -= len;
 					break;

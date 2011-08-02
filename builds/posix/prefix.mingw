@@ -66,4 +66,4 @@ LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_
 LINK_UDF_LIBS = 
 
 # Special options for trace plugin link
-LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS) $(ICU_LIBS)
+LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS)

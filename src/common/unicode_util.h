@@ -30,6 +30,7 @@
 #include "intlobj_new.h"
 #include "../common/IntlUtil.h"
 #include "../common/os/mod_loader.h"
+#include <unicode/ucnv.h>
 
 struct UCollator;
 struct USet;
@@ -42,9 +43,85 @@ private:
 	struct ICU;
 
 public:
+	// encapsulate ICU conversion library
+	struct ConversionICU
+	{
+		UConverter* (U_EXPORT2* ucnv_open) (const char* converterName, UErrorCode* err);
+		void (U_EXPORT2* ucnv_close) (UConverter *converter);
+		int32_t (U_EXPORT2* ucnv_fromUChars) (UConverter *cnv,
+											  char *dest, int32_t destCapacity,
+											  const UChar *src, int32_t srcLength,
+											  UErrorCode *pErrorCode);
+
+		UChar32 (U_EXPORT2* u_tolower) (UChar32 c);
+		UChar32 (U_EXPORT2* u_toupper) (UChar32 c);
+		int32_t (U_EXPORT2* u_strCompare) (const UChar* s1, int32_t length1,
+										   const UChar* s2, int32_t length2, UBool codePointOrder);
+		int32_t (U_EXPORT2* u_countChar32) (const UChar* s, int32_t length);
+
+		UChar32 (U_EXPORT2* utf8_nextCharSafeBody) (const uint8_t* s, int32_t* pi, int32_t length, UChar32 c, UBool strict);
+
+		void (U_EXPORT2* UCNV_FROM_U_CALLBACK_STOP) (
+                const void *context,
+                UConverterFromUnicodeArgs *fromUArgs,
+                const UChar* codeUnits,
+                int32_t length,
+                UChar32 codePoint,
+                UConverterCallbackReason reason,
+                UErrorCode * err);
+		void (U_EXPORT2* UCNV_TO_U_CALLBACK_STOP) (
+                const void *context,
+                UConverterToUnicodeArgs *toUArgs,
+                const char* codeUnits,
+                int32_t length,
+                UConverterCallbackReason reason,
+                UErrorCode * err);
+
+		void (U_EXPORT2* ucnv_setToUCallBack) (
+				UConverter * converter,
+                UConverterToUCallback newAction,
+                const void* newContext,
+                UConverterToUCallback *oldAction,
+                const void** oldContext,
+                UErrorCode * err);
+		void (U_EXPORT2* ucnv_setFromUCallBack) (
+				UConverter * converter,
+                UConverterFromUCallback newAction,
+                const void *newContext,
+                UConverterFromUCallback *oldAction,
+                const void **oldContext,
+                UErrorCode * err);
+
+		void (U_EXPORT2* ucnv_fromUnicode) (
+				UConverter * converter,
+                char **target,
+                const char *targetLimit,
+                const UChar ** source,
+                const UChar * sourceLimit,
+                int32_t* offsets,
+                UBool flush,
+                UErrorCode * err);
+		void (U_EXPORT2* ucnv_toUnicode) (
+				UConverter *converter,
+                UChar **target,
+                const UChar *targetLimit,
+                const char **source,
+                const char *sourceLimit,
+                int32_t *offsets,
+                UBool flush,
+                UErrorCode *err);
+
+		void (U_EXPORT2* ucnv_getInvalidChars) (
+				const UConverter *converter,
+                char *errBytes,
+                int8_t *len,
+                UErrorCode *err);
+		int8_t (U_EXPORT2* ucnv_getMaxCharSize) (const UConverter *converter);
+		int8_t (U_EXPORT2* ucnv_getMinCharSize) (const UConverter *converter);
+	};
+
 	static const char* const DEFAULT_ICU_VERSION;
 
-public:
 	class ICUModules;
 	// routines semantically equivalent with intlobj_new.h
 
@@ -72,6 +149,7 @@ public:
 	static INTL_BOOL utf16WellFormed(ULONG len, const USHORT* str, ULONG* offending_position);
 	static INTL_BOOL utf32WellFormed(ULONG len, const ULONG* str, ULONG* offending_position);
 
+	static ConversionICU& getConversionICU();
 	static ICU* loadICU(const Firebird::string& icuVersion, const Firebird::string& configInfo);
 	static bool getCollVersion(const Firebird::string& icuVersion,
 		const Firebird::string& configInfo, Firebird::string& collVersion);

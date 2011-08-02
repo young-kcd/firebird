@@ -51,10 +51,6 @@ export LIBPATH
 # Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
 LIB_PATH_OPTS= -Wl,-blibpath:@FB_LIBDIR@:@FB_INTLDIR@:/usr/local/lib:/usr/lib:/lib:$(GCC_RUNTIME)
 
-ifeq ($(STD_ICU),true)
-   ICU_LIBS= -L/usr/local/lib -licuuc
-endif
-
 # non-firebird libraries have .a extension
 SHRLIB_FOREIGN_EXT=a
 

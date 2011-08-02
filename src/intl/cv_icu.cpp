@@ -29,26 +29,28 @@
 #include "ld_proto.h"
 #include "cv_icu.h"
 #include <unicode/ucnv.h>
+#include "../common/unicode_util.h"
 
 
 static UConverter* create_converter(csconvert* cv, UErrorCode* status)
 {
-	UConverter* conv = ucnv_open(cv->csconvert_impl->cs->charset_name, status);
+	Jrd::UnicodeUtil::ConversionICU& cIcu(Jrd::UnicodeUtil::getConversionICU());
+	UConverter* conv = cIcu.ucnv_open(cv->csconvert_impl->cs->charset_name, status);
 	const void* oldContext;
 
 	UConverterFromUCallback oldFromAction;
-	ucnv_setFromUCallBack(
+	cIcu.ucnv_setFromUCallBack(
 		conv,
-		UCNV_FROM_U_CALLBACK_STOP,
+		cIcu.UCNV_FROM_U_CALLBACK_STOP,
 		NULL,
 		&oldFromAction,
 		&oldContext,
 		status);
 
 	UConverterToUCallback oldToAction;
-	ucnv_setToUCallBack(
+	cIcu.ucnv_setToUCallBack(
 		conv,
-		UCNV_TO_U_CALLBACK_STOP,
+		cIcu.UCNV_TO_U_CALLBACK_STOP,
 		NULL,
 		&oldToAction,
 		&oldContext,
@@ -88,7 +90,8 @@ static ULONG unicode_to_icu(csconvert* cv,
 	Firebird::Aligner<UChar> alignedSource(src, srcLen);
 	const UChar* source = alignedSource;
 	char* target = reinterpret_cast<char*>(dst);
-	ucnv_fromUnicode(conv, &target, target + dstLen, &source,
+	Jrd::UnicodeUtil::ConversionICU& cIcu(Jrd::UnicodeUtil::getConversionICU());
+	cIcu.ucnv_fromUnicode(conv, &target, target + dstLen, &source,
 		source + srcLen / sizeof(UChar), NULL, TRUE, &status);
 
 	*errPosition = (source - alignedSource) * sizeof(UChar);
@@ -115,7 +118,7 @@ static ULONG unicode_to_icu(csconvert* cv,
 		}
 	}
 
-	ucnv_close(conv);
+	cIcu.ucnv_close(conv);
 
 	return target - reinterpret_cast<char*>(dst);
 }
@@ -143,7 +146,8 @@ static ULONG icu_to_unicode(csconvert* cv,
 	const char* source = reinterpret_cast<const char*>(src);
 	Firebird::OutAligner<UChar> alignedTarget(dst, dstLen);
 	UChar* target = alignedTarget;
-	ucnv_toUnicode(conv, &target, target + dstLen / sizeof(UChar), &source,
+	Jrd::UnicodeUtil::ConversionICU& cIcu(Jrd::UnicodeUtil::getConversionICU());
+	cIcu.ucnv_toUnicode(conv, &target, target + dstLen / sizeof(UChar), &source,
 		source + srcLen, NULL, TRUE, &status);
 
 	*errPosition = source - reinterpret_cast<const char*>(src);
@@ -164,7 +168,7 @@ static ULONG icu_to_unicode(csconvert* cv,
 				status = U_ZERO_ERROR;
 				char errBytes[16];
 				int8_t errLen = sizeof(errBytes);
-				ucnv_getInvalidChars(conv, errBytes, &errLen, &status);
+				cIcu.ucnv_getInvalidChars(conv, errBytes, &errLen, &status);
 				if (!U_SUCCESS(status))
 					*errCode = CS_CONVERT_ERROR;
 				else
@@ -184,7 +188,7 @@ static ULONG icu_to_unicode(csconvert* cv,
 		}
 	}
 
-	ucnv_close(conv);
+	cIcu.ucnv_close(conv);
 
 	return (target - alignedTarget) * sizeof(UChar);
 }

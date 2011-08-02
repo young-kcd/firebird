@@ -81,10 +81,7 @@ endif
 
 # link options for HP-UX linker, /usr/bin/ld
 LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA +e -Wl,+concatrpath
-LINK_LIBS+= $(ICU_LIBS)
 LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -b +e -Wl,+concatrpath
-
-LINK_UDF_LIBS+=$(ICU_LIBS)
 
 # From original HPUX prefix file
 LIB_LINK_RPATH= -Wl,+b,$(1)

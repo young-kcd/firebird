@@ -27,7 +27,7 @@ LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
 LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
-FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed $(ICU_LIBS)
+FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
 
 PLATFORM_PATH=os/darwin
 PLATFORM_FALLBACK=os/posix
