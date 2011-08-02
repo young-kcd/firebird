@@ -1466,6 +1466,8 @@ C --
       PARAMETER (GDS__ee_blr_mismatch_null             = 335545026)
       INTEGER*4 GDS__ee_blr_mismatch_length          
       PARAMETER (GDS__ee_blr_mismatch_length           = 335545027)
+      INTEGER*4 GDS__ss_out_of_bounds                
+      PARAMETER (GDS__ss_out_of_bounds                 = 335545028)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -763,6 +763,7 @@ const ISC_STATUS isc_sysf_argscant_both_be_zero       = 335545024L;
 const ISC_STATUS isc_spb_no_id                        = 335545025L;
 const ISC_STATUS isc_ee_blr_mismatch_null             = 335545026L;
 const ISC_STATUS isc_ee_blr_mismatch_length           = 335545027L;
+const ISC_STATUS isc_ss_out_of_bounds                 = 335545028L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1187,7 +1188,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1131;
+const ISC_STATUS isc_err_max                          = 1132;
 
 #else /* c definitions */
 
@@ -1920,6 +1921,7 @@ const ISC_STATUS isc_err_max                          = 1131;
 #define isc_spb_no_id                        335545025L
 #define isc_ee_blr_mismatch_null             335545026L
 #define isc_ee_blr_mismatch_length           335545027L
+#define isc_ss_out_of_bounds                 335545028L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2344,7 +2346,7 @@ const ISC_STATUS isc_err_max                          = 1131;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1131
+#define isc_err_max                          1132
 
 #endif
 

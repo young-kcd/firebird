@@ -729,6 +729,7 @@ static const struct {
 	{"spb_no_id", 335545025},
 	{"ee_blr_mismatch_null", 335545026},
 	{"ee_blr_mismatch_length", 335545027},
+	{"ss_out_of_bounds", 335545028},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

@@ -148,7 +148,8 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 		const SLONG n = *subscripts++;
 		if (n < range->iad_lower || n > range->iad_upper)
 		{
-			error(status_vector, Arg::Gds(isc_out_of_bounds));
+			error(status_vector, Arg::Gds(isc_ss_out_of_bounds) <<
+								 Arg::Num(n) << Arg::Num(range->iad_lower) << Arg::Num(range->iad_upper));
 			return -1;
 		}
 		subscript += (n - range->iad_lower) * range->iad_length;
@@ -666,7 +667,8 @@ static bool execute(sdl_arg* arg)
 					const SLONG n = *stack_ptr++;
 					if (n < range->iad_lower || n > range->iad_upper)
 					{
-						error(arg->sdl_arg_status_vector, Arg::Gds(isc_out_of_bounds));
+						error(arg->sdl_arg_status_vector, Arg::Gds(isc_ss_out_of_bounds) <<
+														  Arg::Num(n) << Arg::Num(range->iad_lower) << Arg::Num(range->iad_upper));
 						return false;
 					}
 					subscript += (n - range->iad_lower) * range->iad_length;
