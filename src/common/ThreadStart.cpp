@@ -54,32 +54,6 @@
 namespace
 {
 
-#ifdef THREAD_PSCHED
-THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
-{
-	fb_assert(arg);
-	Firebird::ThreadSync thread("threadStart");
-	MemoryPool::setContextPool(getDefaultMemoryPool());
-	{
-		ThreadPriorityScheduler* tps = static_cast<ThreadPriorityScheduler*>(arg);
-		try {
-			tps->run();
-		}
-		catch (...) {
-			tps->detach();
-			throw;
-		}
-		tps->detach();
-		return 0;
-	}
-}
-
-#define THREAD_ENTRYPOINT threadStart
-#define THREAD_ARG tps
-
-#else  // THREAD_PSCHED
-
-
 // due to same names of parameters for various ThreadData::start(...),
 // we may use common macro for various platforms
 #define THREAD_ENTRYPOINT threadStart
@@ -116,8 +90,6 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 	localArgs.run();
 	return 0;
 }
-
-#endif //THREAD_PSCHED
 
 } // anonymous namespace
 
@@ -260,13 +232,6 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 		priority = THREAD_PRIORITY_LOWEST;
 		break;
 	}
-
-#ifdef THREAD_PSCHED
-	ThreadPriorityScheduler::Init();
-
-	ThreadPriorityScheduler* tps = FB_NEW(*getDefaultMemoryPool())
-		ThreadPriorityScheduler(routine, arg, ThreadPriorityScheduler::adjustPriority(priority));
-#endif // THREAD_PSCHED
 
 	/* I have changed the CreateThread here to _beginthreadex() as using
 	 * CreateThread() can lead to memory leaks caused by C-runtime library.

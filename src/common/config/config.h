@@ -100,9 +100,6 @@ public:
 		KEY_LOCK_ACQUIRE_SPINS,
 		KEY_EVENT_MEM_SIZE,
 		KEY_DEADLOCK_TIMEOUT,
-		KEY_PRIORITY_SWITCH_DELAY,
-		KEY_USE_PRIORITY_SCHEDULER,
-		KEY_PRIORITY_BOOST,
 		KEY_REMOTE_SERVICE_NAME,
 		KEY_REMOTE_SERVICE_PORT,
 		KEY_REMOTE_PIPE_NAME,
@@ -258,15 +255,6 @@ public:
 
 	// Deadlock timeout
 	int getDeadlockTimeout() const;
-
-	// Priority switch delay
-	static int getPrioritySwitchDelay();
-
-	// Use priority scheduler
-	static bool getUsePriorityScheduler();
-
-	// Priority boost
-	static int getPriorityBoost();
 
 	// Service name for remote protocols
 	static const char* getRemoteServiceName();

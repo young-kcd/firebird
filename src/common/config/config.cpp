@@ -127,9 +127,6 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
-	{TYPE_INTEGER,		"PrioritySwitchDelay",		(ConfigValue) 100},			// milliseconds
-	{TYPE_BOOLEAN,		"UsePriorityScheduler",		(ConfigValue) true},
-	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) 0},
 	{TYPE_STRING,		"RemotePipeName",			(ConfigValue) FB_PIPE_NAME},
@@ -467,29 +464,6 @@ int Config::getEventMemSize() const
 int Config::getDeadlockTimeout() const
 {
 	return get<int>(KEY_DEADLOCK_TIMEOUT);
-}
-
-int Config::getPrioritySwitchDelay()
-{
-	int rc = (int) getDefaultConfig()->values[KEY_PRIORITY_SWITCH_DELAY];
-	if (rc < 1)
-		rc = 1;
-	return rc;
-}
-
-int Config::getPriorityBoost()
-{
-	int rc = (int) getDefaultConfig()->values[KEY_PRIORITY_BOOST];
-	if (rc < 1)
-		rc = 1;
-	if (rc > 1000)
-		rc = 1000;
-	return rc;
-}
-
-bool Config::getUsePriorityScheduler()
-{
-	return (bool) getDefaultConfig()->values[KEY_USE_PRIORITY_SCHEDULER];
 }
 
 const char *Config::getRemoteServiceName()
