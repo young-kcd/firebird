@@ -1,3 +1,30 @@
+ 2011-08-02 11:54  alexpeshkoff 
+   M builds/posix/darwin.defaults
+   M builds/posix/make.defaults
+   M builds/posix/prefix.aix_powerpc
+   M builds/posix/prefix.aix_powerpc_xlc
+   M builds/posix/prefix.hpux_aCC
+   M builds/posix/prefix.mingw
+   M src/common/unicode_util.cpp
+   M src/common/unicode_util.h
+   M src/intl/cs_icu.cpp
+   M src/intl/cv_icu.cpp
+Enabled use of any available on the target system ICU version for non-collation calls
+
+ 2011-08-02 09:26  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/sdl.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Make diagnostics about wrong array subscript a bit better
+
  2011-07-30 07:14  robocop 
    M src/common/classes/stack.h
    M src/dsql/DdlNodes.epp
