@@ -605,8 +605,8 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 	{
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-		CompilerScratch* csb =
-			PAR_parse(tdbb, blr, blr_length, internal_flag, dbginfo_length, dbginfo);
+		AutoPtr<CompilerScratch> csb;
+		PAR_parse(tdbb, csb, blr, blr_length, internal_flag, dbginfo_length, dbginfo);
 
 		request = CMP_make_request(tdbb, csb, internal_flag);
 		new_pool->setStatsGroup(request->req_memory_stats);
@@ -616,8 +616,6 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		}
 
 		CMP_verify_access(tdbb, request);
-
-		delete csb;
 	}
 	catch (const Firebird::Exception& ex)
 	{

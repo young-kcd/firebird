@@ -140,7 +140,7 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 			if (IDX.RDB$INDEX_TYPE == 1)
 				idx.idx_flags |= idx_descending;
 
-			CompilerScratch* csb = 0;
+			AutoPtr<CompilerScratch> csb;
 			/* allocate a new pool to contain the expression tree
 			   for the expression index */
 			new_pool = dbb->createPool();
@@ -154,7 +154,7 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 													  NULL, 0, NULL,
 													  &IDX.RDB$EXPRESSION_BLR,
 													  &idx.idx_expression_request,
-													  &csb, IDX.RDB$INDEX_NAME,
+													  csb, IDX.RDB$INDEX_NAME,
 													  obj_expression_index, 0,
 													  transaction);
 				}
@@ -170,8 +170,6 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 									  idx.idx_expression_desc.dsc_dtype,
 									  idx.idx_expression_desc.dsc_sub_type);
 			idx.idx_rpt[0].idx_selectivity = 0;
-
-			delete csb;
 		}
 
 	END_FOR;
@@ -254,7 +252,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		MET_scan_relation(tdbb, relation);
 	}
 
-	CompilerScratch* csb = NULL;
+	AutoPtr<CompilerScratch> csb;
 	jrd_req* request = CMP_find_request(tdbb, irq_l_exp_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
@@ -280,7 +278,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		{
 			Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 			idx->idx_expression =
-				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
+				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, csb,
 							   &idx->idx_expression_request, false);
 		}
 
@@ -295,7 +293,6 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	{
 		CMP_get_desc(tdbb, csb, idx->idx_expression, &idx->idx_expression_desc);
 	}
-	delete csb;
 
 /* if there is no existing index block for this index, create
    one and link it in with the index blocks for this relation */

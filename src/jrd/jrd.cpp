@@ -333,26 +333,21 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		else
 			par_flags |= csb_post_trigger;
 
-		CompilerScratch* csb = NULL;
 		try {
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+			AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*dbb->dbb_permanent, 5));
 			csb->csb_g_flags |= par_flags;
 
 			if (!dbg_blob_id.isEmpty())
 				DBG_parse_debug_info(tdbb, &dbg_blob_id, csb->csb_dbg_info);
 
-			PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &request,
+			PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, csb, &request,
 				(relation ? true : false), par_flags);
-
-			delete csb;
 		}
 		catch (const Exception&)
 		{
 			compile_in_progress = false;
-			delete csb;
-			csb = NULL;
 
 			if (request)
 			{
@@ -3522,8 +3517,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
-				blr_length, false);
+			AutoPtr<CompilerScratch> csb;
+			PAR_parse(tdbb, csb, reinterpret_cast<const UCHAR*>(blr), blr_length, false);
 
 			request = CMP_make_request(tdbb, csb, false);
 			CMP_verify_access(tdbb, request);

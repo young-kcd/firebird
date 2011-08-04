@@ -112,7 +112,7 @@ static void warning(const Arg::StatusVector& v);
 
 
 jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, jrd_req** request_ptr,
+	CompilerScratch* view_csb, AutoPtr<CompilerScratch>& csb, jrd_req** request_ptr,
 	const bool trigger, USHORT flags)
 {
 /**************************************
@@ -134,12 +134,11 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
 #endif
 
-	CompilerScratch* csb;
-	if (!(csb_ptr && (csb = *csb_ptr))) {
+	if (!csb) {
 		size_t count = 5;
 		if (view_csb)
 			count += view_csb->csb_rpt.getCapacity();
-		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
+		csb.reset(CompilerScratch::newCsb(*tdbb->getDatabase()->dbb_permanent, count));
 		csb->csb_g_flags |= flags;
 	}
 
@@ -208,12 +207,26 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	if (request_ptr)
 		*request_ptr = CMP_make_request(tdbb, csb, true);
 
-	if (csb_ptr)
-		*csb_ptr = csb;
-	else
-		delete csb;
-
 	return node;
+}
+
+
+jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+	CompilerScratch* view_csb, jrd_req** request_ptr, const bool trigger, USHORT flags)
+{
+/**************************************
+ *
+ *	P A R _ b l r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Parse blr.
+ *	Caller must do pool handling.
+ *
+ **************************************/
+	Firebird::AutoPtr<Jrd::CompilerScratch> csb;
+	return PAR_blr(tdbb, relation, blr, blr_length, view_csb, csb, request_ptr, trigger, flags);
 }
 
 
@@ -672,7 +685,7 @@ jrd_nod* PAR_make_node(thread_db* tdbb, int size)
 }
 
 
-CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
+void PAR_parse(thread_db* tdbb, AutoPtr<CompilerScratch>& csb, const UCHAR* blr, ULONG blr_length,
 	bool internal_flag, USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
@@ -687,7 +700,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
  **************************************/
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+	csb.reset(CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5));
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
 
 	if (internal_flag)
@@ -715,8 +728,6 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	{
 		PAR_syntax_error(csb, "end_of_command");
 	}
-
-	return csb;
 }
 
 

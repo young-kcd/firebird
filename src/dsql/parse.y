@@ -551,6 +551,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token OS_NAME
 %token SIMILAR
 %token UUID_TO_CHAR
+
+%token DUMP
+
 // new execute statement
 %token CALLER
 %token COMMON
@@ -618,8 +621,8 @@ statement	: alter
 		| set
 		| update
 		| update_or_insert
+		| dump
 		;
-
 
 /* GRANT statement */
 
@@ -3133,6 +3136,17 @@ optional_savepoint	: SAVEPOINT
 
 commit		: COMMIT optional_work optional_retain
 			{ $$ = make_node (nod_commit, e_commit_count, $3); }
+		;
+
+dump		: DUMP
+			{
+#ifdef POOL_DUMP
+			  Firebird::MemoryPool::printAll();
+			  yyerror("Pseudo-error: DUMP complete");
+#else
+			  yyerror("DUMP not supported");
+#endif
+			  $$ = NULL; }
 		;
 
 rollback	: ROLLBACK optional_work optional_retain
@@ -6241,7 +6255,11 @@ int Parser::yylexAux()
 }
 
 
-void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&, YYPOSN&)
+void Parser::yyerror_detailed(const TEXT*
+#ifdef DEV_BUILD
+										  error_string
+#endif
+													  , int yychar, YYSTYPE&, YYPOSN&)
 {
 /**************************************
  *
@@ -6266,7 +6284,11 @@ void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  /* Unexpected end of command */
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) <<
-													Arg::Num(lex.last_token - line_start + 1));
+													Arg::Num(lex.last_token - line_start + 1)
+#ifdef DEV_BUILD
+				  << Arg::Gds(isc_random) << error_string
+#endif
+				  );
 	}
 	else
 	{
@@ -6280,8 +6302,6 @@ void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&
 }
 
 
-// The argument passed to this function is ignored. Therefore, messages like
-// "syntax error" and "yacc stack overflow" are never seen.
 void Parser::yyerror(const TEXT* error_string)
 {
 	YYSTYPE errt_value =  0;

@@ -158,6 +158,9 @@ static const TOK tokens[] =
 	{DISTINCT, "DISTINCT", 1, false},
 	{DO, "DO", 1, false},
 	{DOMAIN, "DOMAIN", 1, false},
+#ifdef POOL_DUMP
+	{DUMP, "DUMP", 2, true},
+#endif
 	{KW_DOUBLE, "DOUBLE", 1, false},
 	{DROP, "DROP", 1, false},
 	{ELSE, "ELSE", 1, false},

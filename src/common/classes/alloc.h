@@ -294,7 +294,7 @@ private:
 	void free_blk_extent(MemoryBlock* blk);
 
 	// Allocates small block from this pool. Pool must be locked during call
-	void* internal_alloc(size_t size, SSHORT type = 0
+	void* internal_alloc(size_t size, size_t upper_size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
@@ -302,6 +302,9 @@ private:
 
 	// Deallocates small block from this pool. Pool must be locked during this call
 	void internal_deallocate(void* block);
+
+	// variable size extents support
+	void* getExtent(size_t& size);		// pass desired minimum size, return actual extent size
 
 	// Forbid copy constructor and assignment operator
 	MemoryPool(const MemoryPool&);
@@ -352,6 +355,10 @@ public:
 		deletePool(pool);
 	}
 
+#ifdef POOL_DUMP
+	static void printAll();
+#endif
+
 	// Allocate memory block. Result is not zero-initialized.
 	// It case of problems this method throws Firebird::BadAlloc
 	void* allocate(size_t size
@@ -361,7 +368,7 @@ public:
 	);
 
 	// Allocate memory block. In case of problems this method returns NULL
-	void* allocate_nothrow(size_t size
+	void* allocate_nothrow(size_t size, size_t upper_size = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif

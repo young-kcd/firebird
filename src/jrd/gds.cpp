@@ -230,7 +230,7 @@ VoidPtr API_ROUTINE gds__alloc_debug(SLONG size_request, const TEXT* filename, U
 {
 	return getDefaultMemoryPool()->allocate_nothrow(size_request
 #ifdef DEBUG_GDS_ALLOC
-		, filename, lineno
+		, 0, filename, lineno
 #endif
 	);
 }
@@ -3615,7 +3615,7 @@ VoidPtr API_ROUTINE gds__alloc(SLONG size_request)
 {
 	return getDefaultMemoryPool()->allocate_nothrow(size_request
 #ifdef DEBUG_GDS_ALLOC
-		, __FILE__, __LINE__
+		, 0, __FILE__, __LINE__
 #endif
 	);
 }
