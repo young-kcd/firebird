@@ -2,8 +2,44 @@
   * v2.5.1
   **************************
 
+    * Bugfix CORE-3557
+        Server crashes while preparing a query against the table being dropped
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3554
+        Server crashes during prepare or throws incorrect parsing error
+        if the remotely passed SQL query is empty
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3547
+        Floating-point negative zero doesn't match positive zero in the index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3549
+        Database corruption after end of session: "page xxx is of wrong type expected 4 found 7"
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3544
-        Make install fails on linux
+        Make install fails on Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3535
+        Write target of a dirty page could be undefined if error happens when nbackup state is changed
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3533
+        Firebird memory is not released (using SuperServer)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3532
+        Server hangs starting new session when trace is running
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -41,6 +77,11 @@
         Unquoted role names with non-ASCII characters passed in DPB are upper-cased wrongly
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3509
+        ALTER PROCEDURE allows to add the parameter with the same name
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-3508
         MON$DATABASE_NAME and MON$ATTACHMENT_NAME fields contain question marks
@@ -628,6 +669,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2709
+        Many indexed reads in a compound index with NULLs
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-1752
         Results of a join with different collations depend on the execution plan
       Contributor(s):
@@ -638,6 +684,17 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-3537
+        There is no need to undo changes made in GTT created with ON COMMIT DELETE ROWS option
+        when transaction is rolled back
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-3536
+        Garbage collection in GTT was unnecessary delayed by active transactions in another attachments
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Improvement CORE-3467
         Provide a silent install switch
       Contributor(s):
@@ -647,6 +704,11 @@
         Add metadata only restore to the Services API
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3457
+        Optimize the temporary space manager regarding small chunk allocations
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Improvement CORE-3446
         Allow conversion from/to BLOBs and others types in the API functions (XSQLVAR or blr messages)
