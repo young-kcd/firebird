@@ -4616,7 +4616,7 @@ static void parse_procedure_blr(thread_db* tdbb, jrd_prc* procedure, bid* blob_i
 		tmp.add(blr_version5);
 		tmp.add(blr_begin);
 
-		// ASF: Generate nodes even when they could be avoided, because we will use hardcoced
+		// ASF: Generate nodes even when they could be avoided, because we will use hardcoded
 		// message and statement numbers. See e_extproc_*.
 
 		UCharBuffer appendBlr;

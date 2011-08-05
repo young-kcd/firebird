@@ -237,7 +237,7 @@ public:
 	ModuleLoader::Module* module;
 };
 
-static ImplementConversionICU* convIcu = 0;
+static ImplementConversionICU* convIcu = NULL;
 static GlobalPtr<Mutex> convIcuMutex;
 
 
@@ -1042,7 +1042,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 
 	if (!lastError.isSuccess())
 	{
-		(Arg::Gds(isc_random) << "Could not find acceptable ICU library" 
+		(Arg::Gds(isc_random) << "Could not find acceptable ICU library"
 		 << Arg::StatusVector(lastError.get())).raise();
 	}
 	else
