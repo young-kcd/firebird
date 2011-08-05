@@ -1,3 +1,18 @@
+ 2011-08-05 02:21  asfernandes 
+   M src/common/unicode_util.cpp
+Use exception-safe code.
+
+ 2011-08-05 02:10  asfernandes 
+   M src/common/ThreadStart.cpp
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+Fix build.
+
+ 2011-08-05 02:09  asfernandes 
+   M src/common/unicode_util.cpp
+   M src/jrd/met.epp
+Misc.
+
  2011-08-03 12:13  dimitr 
    M src/common/ThreadStart.cpp
    M src/common/config/config.cpp
