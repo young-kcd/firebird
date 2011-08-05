@@ -1019,7 +1019,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 	int majorArray[] = {4, 3, 5, 6, 0};
 	for (int* major = majorArray; *major; ++major)
 	{
-		for (int minor = 20; --minor; ) /* from 19 down to 0 */
+		for (int minor = 20; --minor >= 0; ) /* from 19 down to 0 */
 		{
 			try
 			{
