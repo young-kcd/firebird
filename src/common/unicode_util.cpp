@@ -175,8 +175,7 @@ struct ImplementConversionICU : public UnicodeUtil::ConversionICU, BaseICU
 {
 public:
 	ImplementConversionICU(int aMajorVersion, int aMinorVersion)
-		: BaseICU(aMajorVersion, aMinorVersion),
-		  module(NULL)
+		: BaseICU(aMajorVersion, aMinorVersion)
 	{
 		PathName filename;
 		filename.printf(ucTemplate, aMajorVersion, aMinorVersion);
@@ -229,12 +228,8 @@ public:
 		}
 	}
 
-	~ImplementConversionICU()
-	{
-		delete module;
-	}
-
-	ModuleLoader::Module* module;
+private:
+	AutoPtr<ModuleLoader::Module> module;
 };
 
 static ImplementConversionICU* convIcu = NULL;
