@@ -1,3 +1,23 @@
+ 2011-08-04 13:13  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/dsql/keywords.cpp
+   M src/dsql/parse.y
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/gds.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/pcmet.epp
+Fixed CORE-3560: Firebird 2.5 Classic Server uses more memory than 2.1.5 when caching metadata
+
+ 2011-08-04 05:33  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
  2011-07-24 06:57  robocop 
    M src/jrd/cvt2.cpp
 Misc.
