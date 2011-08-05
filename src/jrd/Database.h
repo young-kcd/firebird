@@ -58,7 +58,6 @@
 #include "../jrd/sbm.h"
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
-#include "../jrd/os/thd_priority.h"
 #include "../jrd/event_proto.h"
 #include "../lock/lock_proto.h"
 #include "../common/config/config.h"

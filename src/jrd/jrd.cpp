@@ -41,7 +41,6 @@
 #include <stdlib.h>
 #include "../common/common.h"
 #include "../common/ThreadStart.h"
-#include "../jrd/os/thd_priority.h"
 #include <stdarg.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

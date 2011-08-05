@@ -32,7 +32,6 @@
 #include <errno.h>
 #include "../common/common.h"
 #include "../common/ThreadStart.h"
-#include "../jrd/os/thd_priority.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_s_proto.h"
 #include "../common/gdsassert.h"
