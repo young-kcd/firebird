@@ -1016,8 +1016,8 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 
 	LocalStatus lastError;
 	string version;
-	int majorArray[] = {4, 3, 5, 6, 0};
-	for (int* major = majorArray; *major; ++major)
+	const int majorArray[] = {4, 3, 5, 6, 0};
+	for (const int* major = majorArray; *major; ++major)
 	{
 		for (int minor = 20; --minor >= 0; ) /* from 19 down to 0 */
 		{

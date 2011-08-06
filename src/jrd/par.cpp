@@ -456,7 +456,6 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 	desc->clear();
 
 	const USHORT dtype = csb->csb_blr_reader.getByte();
-	USHORT textType;
 
 	switch (dtype)
 	{
