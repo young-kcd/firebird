@@ -1,3 +1,7 @@
+ 2011-08-05 08:35  hvlad 
+   M src/common/unicode_util.cpp
+Correction : don't miss minor == 0 when trying ICU versions
+
  2011-08-05 02:21  asfernandes 
    M src/common/unicode_util.cpp
 Use exception-safe code.
