@@ -1,3 +1,8 @@
+ 2011-08-06 05:49  robocop 
+   M src/common/unicode_util.cpp
+   M src/jrd/par.cpp
+Misc.
+
  2011-08-05 08:35  hvlad 
    M src/common/unicode_util.cpp
 Correction : don't miss minor == 0 when trying ICU versions
