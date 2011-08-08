@@ -1965,8 +1965,6 @@ void MemoryPool::deallocate(void* block)
 		{
 			MemoryRedirectList* prev = block_list_small(list->mrl_prev);
 			prev->mrl_next = list->mrl_next;
-			if ((size_t)(prev->mrl_next) == 0xfeedabedfeedabed)
-				abort();
 		}
 		else
 		{
@@ -1998,8 +1996,6 @@ void MemoryPool::deallocate(void* block)
 		{
 			MemoryRedirectList* prev = block_list_large(list->mrl_prev);
 			prev->mrl_next = list->mrl_next;
-			if ((size_t)(prev->mrl_next) == 0xfeedabedfeedabed)
-				abort();
 		}
 		else
 			os_redirected = list->mrl_next;
