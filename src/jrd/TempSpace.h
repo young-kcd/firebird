@@ -181,17 +181,21 @@ private:
 	class Segment
 	{
 	public:
-		Segment(Segment* _next, offset_t _position, offset_t _size) :
-			next(_next), position(_position), size(_size)
+		Segment() : position(0), size(0)
 		{}
 
-		Segment* next;
+		Segment(offset_t _position, offset_t _size) :
+			position(_position), size(_size)
+		{}
+
 		offset_t position;
 		offset_t size;
-	};
 
-	Segment* getSegment(offset_t position, size_t size);
-	void joinSegment(Segment* seg, offset_t position, size_t size);
+		static const offset_t& generate(const void* /*sender*/, const Segment& segment)
+		{
+			return segment.position;
+		}
+	};
 
 	MemoryPool& pool;
 	Firebird::PathName filePrefix;
@@ -204,8 +208,8 @@ private:
 	Firebird::Array<UCHAR> initialBuffer;
 	bool initiallyDynamic;
 
-	Segment* freeSegments;
-	Segment* notUsedSegments;
+	typedef Firebird::BePlusTree<Segment, offset_t, MemoryPool, Segment> FreeSegmentTree;
+	FreeSegmentTree freeSegments;
 
 	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
 	static Firebird::TempDirectoryList* tempDirs;

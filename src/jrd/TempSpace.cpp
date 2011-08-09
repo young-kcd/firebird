@@ -103,7 +103,7 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynam
 		  logicalSize(0), physicalSize(0), localCacheUsage(0),
 		  head(NULL), tail(NULL), tempFiles(p),
 		  initialBuffer(p), initiallyDynamic(dynamic),
-		  freeSegments(NULL), notUsedSegments(NULL)
+		  freeSegments(p)
 {
 	if (!tempDirs)
 	{
@@ -142,20 +142,6 @@ TempSpace::~TempSpace()
 	while (tempFiles.getCount())
 	{
 		delete tempFiles.pop();
-	}
-
-	while (freeSegments)
-	{
-		Segment* temp = freeSegments->next;
-		delete freeSegments;
-		freeSegments = temp;
-	}
-
-	while (notUsedSegments)
-	{
-		Segment* temp = notUsedSegments->next;
-		delete notUsedSegments;
-		notUsedSegments = temp;
 	}
 }
 
@@ -441,14 +427,15 @@ offset_t TempSpace::allocateSpace(size_t size)
 {
 	// Find the best available space. This is defined as the smallest free space
 	// that is big enough. This preserves large blocks.
-	Segment** best = NULL, *space;
+	Segment* best = NULL;
 
 	// Search through the available space in the not used segments list
-	for (Segment** ptr = &freeSegments; (space = *ptr); ptr = &(*ptr)->next)
+	for (bool found = freeSegments.getFirst(); found; found = freeSegments.getNext())
 	{
+		Segment* const space = &freeSegments.current();
 		// If this is smaller than our previous best, use it
-		if (space->size >= size && (!best || (space->size < (*best)->size))) {
-			best = ptr;
+		if (space->size >= size && (!best || (space->size < best->size))) {
+			best = space;
 		}
 	}
 
@@ -460,22 +447,20 @@ offset_t TempSpace::allocateSpace(size_t size)
 	}
 
 	// Set up the return parameters
-	space = *best;
+	const offset_t position = best->position;
+	best->size -= size;
+	best->position += size;
 
-	// If the hunk was an exact fit, remove the segment from the
-	// list and splice it into the not used segments list
-	if (space->size == size)
+	// If the hunk was an exact fit, remove the segment from the list
+	if (!best->size)
 	{
-		*best = space->next;
-		space->next = notUsedSegments;
-		notUsedSegments = space;
-		return space->position;
+		if (!freeSegments.locate(best->position))
+			fb_assert(false);
+
+		freeSegments.fastRemove();
 	}
 
-	// The best segment is too big - chop the needed space off the begin
-	space->size -= size;
-	space->position += size;
-	return (space->position - size);
+	return position;
 }
 
 //
@@ -492,41 +477,39 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 	const offset_t end = position + size;
 	fb_assert(end <= getSize());		// Block ends in file
 
-	Segment* new_seg = NULL;
-	Segment* space = freeSegments;
-	if (!space || end < space->position)
+	if (freeSegments.locate(Firebird::locEqual, end))
 	{
-		new_seg = getSegment(position, size);
-		freeSegments = new_seg;
-		new_seg->next = space;
-		return;
-	}
+		// The next segment is found to be adjucent
+		Segment* const next_seg = &freeSegments.current();
+		next_seg->position -= size;
+		next_seg->size += size;
 
-	if (end == space->position || position == space->position + space->size)
-	{
-		joinSegment(space, position, size);
-		return;
-	}
-
-	while (true)
-	{
-		Segment* next = space->next;
-		if (!next || end < next->position)
+		if (freeSegments.getPrev())
 		{
-			new_seg = getSegment(position, size);
-			space->next = new_seg;
-			new_seg->next = next;
-			return;
+			// Check the prior segment for being adjucent
+			Segment* const prior_seg = &freeSegments.current();
+			if (position == prior_seg->position + prior_seg->size)
+			{
+				next_seg->position -= prior_seg->size;
+				next_seg->size += prior_seg->size;
+				freeSegments.fastRemove();
+			}
 		}
 
-		if (end == next->position || position == next->position + next->size)
+		return;
+	}
+	else if (freeSegments.locate(Firebird::locLess, position))
+	{
+		// Check the prior segment for being adjucent
+		Segment* const prior_seg = &freeSegments.current();
+		if (position == prior_seg->position + prior_seg->size)
 		{
-			joinSegment(next, position, size);
+			prior_seg->size += size;
 			return;
 		}
-
-		space = next;
 	}
+
+	freeSegments.add(Segment(position, size));
 }
 
 //
@@ -581,10 +564,12 @@ UCHAR* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 bool TempSpace::validate(offset_t& free) const
 {
 	free = 0;
-	for (const Segment* space = freeSegments; space; space = space->next)
+	FreeSegmentTree::ConstAccessor accessor(&freeSegments);
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		free += space->size;
-		fb_assert(!(space->next) || (space->next->position > space->position));
+		const offset_t size = accessor.current().size;
+		fb_assert(size != 0);
+		free += size;
 	}
 
 	offset_t disk = 0;
@@ -609,21 +594,22 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 	// adjust passed chunk size to amount of free memory we have and number
 	// of runs still not allocated.
 	offset_t freeMem = 0;
-	Segment* freeSpace = freeSegments;
-	for (; freeSpace; freeSpace = freeSpace->next)
-		freeMem += freeSpace->size;
+
+	for (bool found = freeSegments.getFirst(); found; found = freeSegments.getNext())
+		freeMem += freeSegments.current().size;
 
 	freeMem = MIN(freeMem / count, maxSize);
 	freeMem = MAX(freeMem, minSize);
 	freeMem = MIN(freeMem, minBlockSize);
 	freeMem &= ~(FB_ALIGNMENT - 1);
 
-	Segment** prevSpace = &freeSegments;
-	freeSpace = freeSegments;
-	offset_t freeSeek = freeSpace ? freeSpace->position : 0;
-	offset_t freeEnd = freeSpace ? freeSpace->position + freeSpace->size : 0;
-	while (segments.getCount() < count && freeSpace)
+	bool is_positioned = freeSegments.getFirst();
+	while (segments.getCount() < count && is_positioned)
 	{
+		Segment* freeSpace = &freeSegments.current();
+		offset_t freeSeek = freeSpace->position;
+		const offset_t freeEnd = freeSpace->position + freeSpace->size;
+
 		UCHAR* const mem = findMemory(freeSeek, freeEnd, freeMem);
 
 		if (mem)
@@ -637,15 +623,20 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 #endif
 			if (freeSeek != freeSpace->position)
 			{
-				const ULONG skip_size = freeSeek - freeSpace->position;
-				Segment* const skip_space = getSegment(freeSpace->position, skip_size);
-
-				(*prevSpace) = skip_space;
-				skip_space->next = freeSpace;
-				prevSpace = &skip_space->next;
+				const offset_t skip_size = freeSeek - freeSpace->position;
+				const Segment skip_space(freeSpace->position, skip_size);
 
 				freeSpace->position += skip_size;
 				freeSpace->size -= skip_size;
+				fb_assert(freeSpace->size != 0);
+
+				if (!freeSegments.add(skip_space))
+					fb_assert(false);
+
+				if (!freeSegments.locate(skip_space.position + skip_size))
+					fb_assert(false);
+
+				freeSpace = &freeSegments.current();
 			}
 
 			SegmentInMemory seg;
@@ -654,83 +645,19 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 			seg.size = freeMem;
 			segments.add(seg);
 
-			freeSeek += freeMem;
 			freeSpace->position += freeMem;
 			freeSpace->size -= freeMem;
+
 			if (!freeSpace->size)
 			{
-				(*prevSpace) = freeSpace->next;
-				freeSpace->next = notUsedSegments;
-				notUsedSegments = freeSpace;
-
-				freeSpace = (*prevSpace);
-				freeSeek = freeSpace ? freeSpace->position : 0;
-				freeEnd = freeSpace ? freeSpace->position + freeSpace->size : 0;
+				is_positioned = freeSegments.fastRemove();
 			}
 		}
 		else
 		{
-			prevSpace = &freeSpace->next;
-			freeSpace = freeSpace->next;
-			freeSeek = freeSpace ? freeSpace->position : 0;
-			freeEnd = freeSpace ? freeSpace->position + freeSpace->size : 0;
+			is_positioned = freeSegments.getNext();
 		}
 	}
 
 	return segments.getCount();
-}
-
-
-//
-// TempSpace::getSegment
-//
-// Return not used Segment instance or allocate new one
-//
-
-TempSpace::Segment* TempSpace::getSegment(offset_t position, size_t size)
-{
-	Segment* result = notUsedSegments;
-
-	if (result)
-	{
-		notUsedSegments = result->next;
-
-		result->next = NULL;
-		result->position = position;
-		result->size = size;
-	}
-	else
-	{
-		result = (Segment*) FB_NEW(pool) Segment(NULL, position, size);
-	}
-	return result;
-}
-
-
-//
-// TempSpace::joinSegment
-//
-// Extend existing segment and join it with adjacent segment
-//
-
-void TempSpace::joinSegment(Segment* seg, offset_t position, size_t size)
-{
-	if (position + size == seg->position)
-	{
-		seg->position -= size;
-		seg->size += size;
-	}
-	else
-	{
-		seg->size += size;
-		Segment* next = seg->next;
-		if (next && next->position == seg->position + seg->size)
-		{
-			seg->next = next->next;
-			seg->size += next->size;
-
-			next->next = notUsedSegments;
-			notUsedSegments = next;
-		}
-	}
 }
