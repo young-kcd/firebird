@@ -486,26 +486,7 @@ void ClumpletWriter::insertClumplet(const SingleClumplet& clumplet)
 
 void ClumpletWriter::clear()
 {
-	reset(getBufferTag());
-}
-
-void AuthWriter::putLevel(USHORT num, const char* name, const char* method, const char* details)
-{
-	ClumpletWriter internal(WideUnTagged, MAX_DPB_SIZE);
-	if (name)
-	{
-		internal.insertString(AuthReader::AUTH_NAME, name);
-	}
-	if (method)
-	{
-		internal.insertString(AuthReader::AUTH_METHOD, method);
-	}
-	if (details)
-	{
-		internal.insertString(AuthReader::AUTH_DETAILS, details);
-	}
-
-	insertBytes(num, internal.getBuffer(), internal.getBufferLength());
+	reset(isTagged() ? getBufferTag() : 0);
 }
 
 } // namespace

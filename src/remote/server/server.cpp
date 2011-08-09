@@ -277,6 +277,7 @@ public:
 			}
 
 			fb_assert(first || data);
+			authBlockInterface.setMethod(authItr.name());
 			Auth::Result ar = first ?
 				authServer->startAuthentication(&st, operation == op_service_attach, fileName.c_str(),
 												  wrt.getBuffer(), wrt.getBufferLength(),

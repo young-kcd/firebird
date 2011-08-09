@@ -789,7 +789,7 @@ static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(string&);
 static void		purge_attachment(thread_db*, Jrd::Attachment*, const bool);
-static void		getUserInfo(UserId&, const DatabaseOptions&);
+static void		getUserInfo(UserId&, const DatabaseOptions&, const RefPtr<Config>*);
 static bool		shutdown_dbb(thread_db*, Database*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
@@ -799,7 +799,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 	m_filename(filename),
 	m_options(options)
 {
-	getUserInfo(m_id, *m_options);
+	getUserInfo(m_id, *m_options, NULL);
 }
 
 
@@ -1173,7 +1173,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options);
+			getUserInfo(userId, options, &config);
 		}
 		catch (const Exception&)
 		{
@@ -2322,7 +2322,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options);
+			getUserInfo(userId, options, &config);
 		}
 		catch (const Exception&)
 		{
@@ -6760,9 +6760,10 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 
     @param user
     @param options
+    @param 
 
  **/
-static void getUserInfo(UserId& user, const DatabaseOptions& options)
+static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefPtr<Config>* config)
 {
 	bool wheel = false;
 	int id = -1, group = -1;	// CVC: This var contained trash
@@ -6786,10 +6787,22 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 		{
 			// stub instead mapUser(....);
 			AuthReader auth(options.dpb_auth_block);
-			if (auth.getInfo(&name))
+			string dummy;
+			PathName secureDb;
+			if (auth.getInfo(&name, &dummy, &secureDb))
 			{
-				auth.moveNext();
-				auth.getInfo(&trusted_role);
+				if (secureDb.hasData())
+				{
+					if (config && (secureDb != (*config)->getSecurityDatabase()))
+					{
+						(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "No SecDb match").raise();
+					}
+				}
+				else
+				{
+					auth.moveNext();
+					auth.getInfo(&trusted_role, &dummy, &secureDb);
+				}
 			}
 		}
 		else

@@ -63,12 +63,14 @@ namespace
 		return (ToType)rc;
 	}
 
+/*	appears unused - remove at all?
 	void authName(const char** data, unsigned short* dataSize)
 	{
 		const char* name = "WIN_SSPI";
 		*data = name;
 		*dataSize = strlen(name);
 	}
+ */
 
 	MakeUpgradeInfo<> upInfo;
 }
@@ -383,10 +385,10 @@ Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
 		string login;
 		sspi.getLogin(login, wheel);
 		MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
-		writerInterface->add(login.c_str(), "WIN_SSPI", "");
+		writerInterface->add(login.c_str());
 		if (wheel)
 		{
-			writerInterface->add("RDB$ADMIN", "WIN_SSPI", "");
+			writerInterface->add("RDB$ADMIN");
 		}
 		return AUTH_SUCCESS;
 	}

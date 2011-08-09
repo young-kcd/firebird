@@ -92,7 +92,7 @@ Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, IWrite
 		fprintf(stderr, "DebugServerInstance::contAuthentication: %.*s\n", size, data);
 #endif
 		Firebird::MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
-		writerInterface->add(Firebird::string((const char*) data, size).c_str(), "DEBUG", "");
+		writerInterface->add(Firebird::string((const char*) data, size).c_str());
 		return AUTH_SUCCESS;
 	}
 	catch (const Firebird::Exception& ex)

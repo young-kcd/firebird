@@ -47,15 +47,20 @@ public:
 	WriterImplementation(bool svcFlag);
 
 	void store(Firebird::ClumpletWriter& to);
+	void setMethod(const char* m);
 
 	// IWriter implementation
 	void FB_CARG reset();
-	void FB_CARG add(const char* name, const char* method, const char* details);
+	void FB_CARG add(const char* name);
+	void FB_CARG setAttribute(unsigned char tag, const char* value);
 
 private:
-	Firebird::AuthWriter body;
+	Firebird::ClumpletWriter current, result;
+	Firebird::string method;
 	unsigned int sequence;
 	unsigned char tag;
+
+	void putLevel();
 };
 
 class DpbImplementation : public Firebird::AutoIface<IDpbReader, FB_AUTH_DPB_READER_VERSION>

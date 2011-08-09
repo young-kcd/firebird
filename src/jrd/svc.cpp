@@ -741,7 +741,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					// stub instead mapUser(....);
 					AuthReader auth(svc_auth_block);
 					Firebird::string method;
-					if (auth.getInfo(&svc_username, &method) && method == "WIN_SSPI")
+					PathName secDb;
+					if (auth.getInfo(&svc_username, &method, &secDb) && method == "Win_Sspi")
 					{
 						auth.moveNext();
 						if (!auth.isEof())

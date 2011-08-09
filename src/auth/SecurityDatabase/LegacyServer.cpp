@@ -370,7 +370,8 @@ Result SecurityDatabase::verify(IWriter* authBlock, ClumpletReader& originalDpb)
 		}
 
 		MasterInterfacePtr()->upgradeInterface(authBlock, FB_AUTH_WRITER_VERSION, upInfo);
-		authBlock->add(login.c_str(), "SecDB", secureDbName);
+		authBlock->add(login.c_str());
+		authBlock->setAttribute(AuthReader::AUTH_SECURE_DB, secureDbName);
 		return AUTH_SUCCESS;
 	}
 

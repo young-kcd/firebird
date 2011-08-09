@@ -189,6 +189,20 @@ void ClumpletReader::invalid_structure(const char* what) const
 	fatal_exception::raiseFmt("Invalid clumplet buffer structure: %s", what);
 }
 
+bool ClumpletReader::isTagged() const
+{
+	switch (kind)
+	{
+	case Tpb:
+	case Tagged:
+	case WideTagged:
+	case SpbAttach:
+		return true;
+	}
+
+	return false;
+}
+
 UCHAR ClumpletReader::getBufferTag() const
 {
 	const UCHAR* const buffer_end = getBufferEnd();
@@ -743,7 +757,7 @@ AuthReader::AuthReader(const AuthBlock& authBlock)
 	rewind();
 }
 
-bool AuthReader::getInfo(string* name, string* method, string* details)
+bool AuthReader::getInfo(string* name, string* method, PathName* secureDb)
 {
 	if (isEof())
 	{
@@ -758,9 +772,9 @@ bool AuthReader::getInfo(string* name, string* method, string* details)
 	{
 		*method = "";
 	}
-	if (details)
+	if (secureDb)
 	{
-		*details = "";
+		*secureDb = "";
 	}
 
 	ClumpletReader internal(WideUnTagged, getBytes(), getClumpLength());
@@ -780,10 +794,10 @@ bool AuthReader::getInfo(string* name, string* method, string* details)
 				internal.getString(*method);
 			}
 			break;
-		case AUTH_DETAILS:
-			if (details)
+		case AUTH_SECURE_DB:
+			if (secureDb)
 			{
-				internal.getString(*details);
+				internal.getPath(*secureDb);
 			}
 			break;
 		default:

@@ -31,32 +31,70 @@
 #include "../common/classes/ImplementHelper.h"
 #include "../common/utils_proto.h"
 
+using namespace Firebird;
+
 namespace Auth {
 
 WriterImplementation::WriterImplementation(bool svcFlag)
-	: body(*getDefaultMemoryPool()),
+	: current(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE),
+	  result(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE),
+	  method(*getDefaultMemoryPool()),
 	  sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
 { }
 
-void WriterImplementation::store(Firebird::ClumpletWriter& to)
+void WriterImplementation::store(ClumpletWriter& to)
 {
+	putLevel();
 	to.deleteWithTag(tag);
-	to.insertBytes(tag, body.getBuffer(), body.getBufferLength());
+	to.insertBytes(tag, result.getBuffer(), result.getBufferLength());
 }
 
 void WriterImplementation::reset()
 {
-	body.clear();
+	result.clear();
+	current.clear();
 	sequence = 0;
 }
 
-void WriterImplementation::add(const char* name, const char* method, const char* details)
+void WriterImplementation::add(const char* name)
 {
-	body.putLevel(++sequence, name, method, details);
+	putLevel();
+
+	current.clear();
+	current.insertString(AuthReader::AUTH_NAME, name);
+	fb_assert(method.hasData());
+	if (method.hasData())
+	{
+		current.insertString(AuthReader::AUTH_METHOD, method);
+	}
+}
+
+void WriterImplementation::setMethod(const char* m)
+{
+	method = m;
+}
+
+void WriterImplementation::putLevel()
+{
+	current.rewind();
+	if (current.isEof())
+	{
+		return;
+	}
+
+	result.insertBytes(sequence++, current.getBuffer(), current.getBufferLength());
+}
+
+void WriterImplementation::setAttribute(unsigned char tag, const char* value)
+{
+	if (value)
+	{
+		current.insertString(tag, value);
+	}
 }
 
 
-DpbImplementation::DpbImplementation(Firebird::ClumpletWriter& base)
+DpbImplementation::DpbImplementation(ClumpletWriter& base)
 	: body(&base)
 { }
 

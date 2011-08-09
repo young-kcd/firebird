@@ -91,6 +91,8 @@ public:
 
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
+	// true if buffer has tag
+	bool isTagged() const;
 	size_t getBufferLength() const
 	{
 		size_t rc = getBufferEnd() - getBuffer();
@@ -164,11 +166,19 @@ class AuthReader : public ClumpletReader
 {
 public:
 	typedef Array<UCHAR> AuthBlock;
-	enum Tag {AUTH_NAME, AUTH_METHOD, AUTH_DETAILS};
+
+	// name and method are required attributes for any record
+	// name is set by plugin when it calls add() 
+	static const unsigned char AUTH_NAME = 0;
+	// method is just a name of plugin which created this record
+	static const unsigned char AUTH_METHOD = 1;
+
+	// additional attributes - only security database is used currently
+	static const unsigned char AUTH_SECURE_DB = 100;
 
 	explicit AuthReader(const AuthBlock& authBlock);
 
-	bool getInfo(string* name, string* method = NULL, string* details = NULL);
+	bool getInfo(string* name, string* method, PathName* secDb);
 };
 
 } // namespace Firebird

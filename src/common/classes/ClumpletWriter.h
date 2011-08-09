@@ -105,15 +105,6 @@ private:
 	static void toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value);
 };
 
-class AuthWriter : public ClumpletWriter
-{
-public:
-	explicit AuthWriter(MemoryPool& pool) : ClumpletWriter(pool, ClumpletWriter::WideUnTagged, MAX_DPB_SIZE)
-	{ }
-
-	void putLevel(USHORT num, const char* name, const char* method, const char* details);
-};
-
 } // namespace Firebird
 
 #endif // CLUMPLETWRITER_H

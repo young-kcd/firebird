@@ -43,9 +43,10 @@ class IWriter : public Firebird::IVersioned
 {
 public:
 	virtual void FB_CARG reset() = 0;
-	virtual void FB_CARG add(const char* user, const char* method, const char* details) = 0;
+	virtual void FB_CARG add(const char* name) = 0;
+	virtual void FB_CARG setAttribute(unsigned char tag, const char* value) = 0;
 };
-#define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 2)
+#define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 3)
 
 class IDpbReader : public Firebird::IVersioned
 {
