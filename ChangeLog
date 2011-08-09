@@ -1,3 +1,7 @@
+ 2011-08-08 07:06  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+Removed debugging code, related with CORE-3560 - thanks to Claudio
+
  2011-08-06 07:24  dimitr 
    M doc/WhatsNew
 Updated docs.
