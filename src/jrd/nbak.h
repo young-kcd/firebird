@@ -36,7 +36,6 @@
 #include "../common/classes/fb_string.h"
 #include "GlobalRWLock.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/Attachment.h"
 
 // Uncomment this line if you need to trace backup-related activity
 //#define NBAK_DEBUG
@@ -186,11 +185,10 @@ public:
 	class StateWriteGuard
 	{
 	public:
-		StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd);
+		StateWriteGuard(thread_db* _tdbb, WIN* wnd);
 		~StateWriteGuard();
 
 		void releaseHeader();
-
 		void setSuccess()
 		{
 			success = true;
@@ -202,7 +200,7 @@ public:
 		StateWriteGuard& operator=(const StateWriteGuard&);
 
 		thread_db* tdbb;
-		Jrd::WIN* window;
+		WIN* window;
 		bool success;
 	};
 
@@ -211,10 +209,10 @@ public:
 	public:
 		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
 		{
-			Jrd::Attachment* att = tdbb->getAttachment();
+			Attachment* att = tdbb->getAttachment();
 			Database* dbb = tdbb->getDatabase();
 
-			const bool ok = att ?
+			const bool ok = att ? 
 				att->backupStateReadLock(tdbb, LCK_WAIT) :
 				dbb->dbb_backup_manager->lockStateRead(tdbb, LCK_WAIT);
 
@@ -224,7 +222,7 @@ public:
 
 		~StateReadGuard()
 		{
-			Jrd::Attachment* att = tdbb->getAttachment();
+			Attachment* att = tdbb->getAttachment();
 			Database* dbb = tdbb->getDatabase();
 
 			if (att)
@@ -325,18 +323,12 @@ public:
 	// State Lock member functions
 	bool lockStateWrite(thread_db* tdbb, SSHORT wait)
 	{
-		fb_assert(!(tdbb->tdbb_flags & TDBB_backup_write_locked));
 		tdbb->tdbb_flags |= TDBB_backup_write_locked;
-		if (stateLock->lockWrite(tdbb, wait))
-			return true;
-
-		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
-		return false;
+		return stateLock->lockWrite(tdbb, wait);
 	}
 
 	void unlockStateWrite(thread_db* tdbb)
 	{
-		fb_assert(tdbb->tdbb_flags & TDBB_backup_write_locked);
 		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
 		stateLock->unlockWrite(tdbb);
 	}

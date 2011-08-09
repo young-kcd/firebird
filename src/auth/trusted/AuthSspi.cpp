@@ -1,47 +1,10 @@
-/*
- *	PROGRAM:		Firebird authentication
- *	MODULE:			AuthSspi.cpp
- *	DESCRIPTION:	Windows trusted authentication
- *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
- *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
- *
- *  The Original Code was created by Alex Peshkov
- *  for the Firebird Open Source RDBMS project.
- *
- *  Copyright (c) 2006 Alex Peshkov <peshkoff at mail.ru>
- *  and all contributors signed below.
- *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
- *
- *
- */
 #include "AuthSspi.h"
 
 #ifdef TRUSTED_AUTH
-
-#include "../common/classes/ClumpletReader.h"
-#include "firebird/Interface.h"
-#include "../common/classes/ImplementHelper.h"
-
-using namespace Firebird;
+#include <../common/classes/ClumpletReader.h>
 
 namespace
 {
-	Firebird::SimpleFactory<Auth::WinSspiClient> clientFactory;
-	Firebird::SimpleFactory<Auth::WinSspiServer> serverFactory;
-
-	const char* plugName = "Win_Sspi";
-
 	void makeDesc(SecBufferDesc& d, SecBuffer& b, size_t len, void* p)
 	{
 		b.BufferType = SECBUFFER_TOKEN;
@@ -58,22 +21,11 @@ namespace
 		FARPROC rc = GetProcAddress(lib, entry);
 		if (! rc)
 		{
-			LongJump::raise();
+			Firebird::LongJump::raise();
 		}
 		return (ToType)rc;
 	}
-
-	void authName(const char** data, unsigned short* dataSize)
-	{
-		const char* name = "WIN_SSPI";
-		*data = name;
-		*dataSize = strlen(name);
-	}
-
-	MakeUpgradeInfo<> upInfo;
 }
-
-namespace Auth {
 
 HINSTANCE AuthSspi::library = 0;
 
@@ -105,7 +57,7 @@ bool AuthSspi::initEntries()
 		fAcceptSecurityContext = getProc<ACCEPT_SECURITY_CONTEXT_FN>
 			(library, "AcceptSecurityContext");
 	}
-	catch (const LongJump&)
+	catch (const Firebird::LongJump&)
 	{
 		return false;
 	}
@@ -157,7 +109,7 @@ bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 	GetTokenInformation(spc.AccessToken, TokenGroups, 0, 0, &token_len);
 
 	// Query actual group information
-	Array<char> buffer;
+	Firebird::Array<char> buffer;
 	TOKEN_GROUPS *ptg = (TOKEN_GROUPS *)buffer.getBuffer(token_len);
 	bool ok = GetTokenInformation(spc.AccessToken,
 			TokenGroups, ptg, token_len, &token_len);
@@ -319,7 +271,7 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	return true;
 }
 
-bool AuthSspi::getLogin(string& login, bool& wh)
+bool AuthSspi::getLogin(Firebird::string& login, bool& wh)
 {
 	wh = false;
 	if (ctName.hasData())
@@ -332,156 +284,5 @@ bool AuthSspi::getLogin(string& login, bool& wh)
 	}
 	return false;
 }
-
-
-WinSspiServer::WinSspiServer(Firebird::IPluginConfig*)
-	: sspiData(getPool())
-{ }
-
-WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
-	: sspiData(getPool())
-{ }
-
-Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
-										  bool isService,
-										  const char* /*dbName*/,
-										  const unsigned char* dpb, unsigned int dpbSize,
-										  IWriter* /*writerInterface*/)
-{
-	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
-	ClumpletReader rdr((isService ? ClumpletReader::spbList : ClumpletReader::dpbList),
-		dpb, dpbSize);
-
-	if (rdr.find(tag))
-	{
-		sspiData.clear();
-		sspiData.add(rdr.getBytes(), rdr.getClumpLength());
-		if (!sspi.accept(sspiData))
-		{
-			return AUTH_CONTINUE;
-		}
-	}
-
-	return AUTH_MORE_DATA;
-}
-
-Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
-										 IWriter* writerInterface,
-									     const unsigned char* data, unsigned int size)
-{
-	sspiData.clear();
-	sspiData.add(data, size);
-
-	if (!sspi.accept(sspiData))
-	{
-		return AUTH_FAILED;
-	}
-
-	if (!sspi.isActive())
-	{
-		bool wheel = false;
-		string login;
-		sspi.getLogin(login, wheel);
-		MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
-		writerInterface->add(login.c_str(), "WIN_SSPI", "");
-		if (wheel)
-		{
-			writerInterface->add("RDB$ADMIN", "WIN_SSPI", "");
-		}
-		return AUTH_SUCCESS;
-	}
-
-	return AUTH_MORE_DATA;
-}
-
-void WinSspiServer::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = sspiData.begin();
-	*dataSize = sspiData.getCount();
-}
-
-int WinSspiServer::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
-Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
-										  bool isService,
-										  const char* /*dbName*/,
-										  IDpbReader* dpb)
-{
-	sspi.request(sspiData);
-
-	if (dpb)
-	{
-		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
-
-		UCHAR tag = isService ? isc_spb_trusted_role : isc_dpb_trusted_role;
-		while (dpb->find(tag))
-		{
-			dpb->drop();
-		}
-		tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
-		while (dpb->find(tag))
-		{
-			dpb->drop();
-		}
-
-		if (sspi.isActive())
-		{
-			dpb->add(tag, sspiData.begin(), sspiData.getCount());
-		}
-	}
-
-	return sspi.isActive() ? AUTH_SUCCESS : AUTH_CONTINUE;
-}
-
-Result WinSspiClient::contAuthentication(Firebird::IStatus* status,
-										 const unsigned char* data, unsigned int size)
-{
-	sspiData.clear();
-	sspiData.add(data, size);
-
-	if (!sspi.request(sspiData))
-	{
-		return AUTH_FAILED;
-	}
-	return sspi.isActive() ? AUTH_MORE_DATA : AUTH_CONTINUE;
-}
-
-void WinSspiClient::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = sspiData.begin();
-	*dataSize = sspiData.getCount();
-}
-
-int WinSspiClient::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
-void registerTrustedClient(Firebird::IPluginManager* iPlugin)
-{
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, plugName, &clientFactory);
-}
-
-void registerTrustedServer(Firebird::IPluginManager* iPlugin)
-{
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, plugName, &serverFactory);
-}
-
-} // namespace Auth
 
 #endif // TRUSTED_AUTH

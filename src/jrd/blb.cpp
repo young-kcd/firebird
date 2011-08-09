@@ -38,7 +38,7 @@
 #include "firebird.h"
 #include "memory_routines.h"
 #include <string.h>
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
 
 #include "../jrd/jrd.h"
@@ -51,11 +51,10 @@
 #include "../jrd/lls.h"
 #include "gen/iberror.h"
 #include "../jrd/blob_filter.h"
-#include "../common/sdl.h"
+#include "../jrd/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
-#include "../dsql/ExprNodes.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
 #include "../jrd/cch_proto.h"
@@ -63,19 +62,20 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/filte_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../common/sdl_proto.h"
-#include "../common/dsc_proto.h"
+#include "../jrd/sdl_proto.h"
+#include "../jrd/dsc_proto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/VaryStr.h"
 
 using namespace Jrd;
 using namespace Firebird;
+using Firebird::UCharBuffer;
 
 typedef Ods::blob_page blob_page;
 
@@ -89,13 +89,14 @@ static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*);
 static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*, USHORT);
 static void delete_blob(thread_db*, blb*, ULONG);
-static void delete_blob_id(thread_db*, const bid*, ULONG, jrd_rel*);
+static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
 static void insert_page(thread_db*, blb*);
-static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const ValueExprNode*);
+static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, Jrd::jrd_nod*);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
+static void release_blob(blb*, const bool);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
 
@@ -122,7 +123,7 @@ void BLB_cancel(thread_db* tdbb, blb* blob)
 	if (blob->blb_flags & BLB_temporary)
 		delete_blob(tdbb, blob, 0);
 
-	blb::destroy(blob, true);
+	release_blob(blob, true);
 }
 
 
@@ -204,7 +205,7 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 
 	if (!(blob->blb_flags & BLB_temporary))
 	{
-		blb::destroy(blob, true);
+		release_blob(blob, true);
 		return;
 	}
 
@@ -293,6 +294,8 @@ blb* BLB_create2(thread_db* tdbb,
 		blob->blb_pg_space_id = DB_PAGE_SPACE;
 	}
 
+	//blob->blb_source_interp = from_charset;
+	//blob->blb_target_interp = to_charset;
 	blob->blb_sub_type = to;
 
 	bool filter_required = false;
@@ -300,23 +303,22 @@ blb* BLB_create2(thread_db* tdbb,
 	if (to && from != to)
 	{
 		// ASF: filter_text is not supported for write operations
-		if (!(from == 0 && to == isc_blob_text) &&
-			!(to == isc_blob_text && to_charset == CS_BINARY))
+		if (!(from == 0 && to == 1))
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
 		}
 	}
-	else if (to == isc_blob_text && from_charset != to_charset)
+	else if (to == isc_blob_text && (from_charset != to_charset))
 	{
 		if (from_charset == CS_dynamic)
-			from_charset = tdbb->getCharSet();
+			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
-			to_charset = tdbb->getCharSet();
+			to_charset = tdbb->getAttachment()->att_charset;
 
-		if (to_charset != CS_NONE && from_charset != CS_NONE &&
-			to_charset != CS_BINARY && from_charset != CS_BINARY &&
-			from_charset != to_charset)
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
+			(from_charset != to_charset))
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
@@ -364,7 +366,7 @@ blb* BLB_create2(thread_db* tdbb,
 void BLB_garbage_collect(thread_db* tdbb,
 						 RecordStack& going,
 						 RecordStack& staying,
-						 ULONG prior_page, jrd_rel* relation)
+						 SLONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -596,7 +598,7 @@ ULONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool
 }
 
 
-USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_length)
+USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer_length)
 {
 /**************************************
  *
@@ -680,7 +682,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 	// advance to the next page.  The length is a function of segment
 	// size (or fragment size), buffer size, and amount of data left in the blob.
 
-	UCHAR* to = static_cast<UCHAR*>(segment);
+	BLOB_PTR* to = segment;
 	const BLOB_PTR* from = blob->blb_segment;
 	USHORT length = blob->blb_space_remaining;
 	bool active_page = false;
@@ -784,15 +786,14 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 			CCH_RELEASE(tdbb, &window);
 	}
 
-	blob->blb_segment = const_cast<UCHAR*>(from); // safe cast
+	blob->blb_segment = const_cast<BLOB_PTR*>(from); // safe cast
 	blob->blb_space_remaining = length;
-	length = to - static_cast<UCHAR*>(segment);
+	length = to - segment;
 	blob->blb_seek += length;
 
 	// If this is a stream blob, fake fragment unless we're at the end
 
-	if (!SEGMENTED(blob)) {
-		// stream blob
+	if (!SEGMENTED(blob)) { // stream blob
 		blob->blb_fragment_size = (blob->blb_seek == blob->blb_length) ? 0 : 1;
 	}
 
@@ -931,7 +932,7 @@ SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
 // which in turn calls BLB_create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
-void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode* field)
+void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 {
 /**************************************
  *
@@ -977,19 +978,22 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
 	bool simpleMove = true;
 
 	// If the target node is a field, we need more work to do.
-
-	const FieldNode* fieldNode;
-
 	if (field)
 	{
-		if ((fieldNode = ExprNode::as<FieldNode>(field)))
+		switch (field->nod_type)
 		{
-			// We should not materialize the blob if the destination field
-			// stream (nod_union, for example) doesn't have a relation.
-			simpleMove = tdbb->getRequest()->req_rpb[fieldNode->fieldStream].rpb_relation == NULL;
+			case nod_field:
+				// We should not materialize the blob if the destination field
+				// stream (nod_union, for example) doesn't have a relation.
+				simpleMove =
+					tdbb->getRequest()->req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
+				break;
+			case nod_argument:
+			case nod_variable:
+				break;
+			default:
+				BUGCHECK(199);			// msg 199 expected field node
 		}
-		else if (!(ExprNode::is<ParameterNode>(field) || ExprNode::is<VariableNode>(field)))
-			BUGCHECK(199);	// msg 199 expected field node
 	}
 
 	bid* source = (bid*) from_desc->dsc_address;
@@ -1042,8 +1046,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
 	}
 
 	jrd_req* request = tdbb->getRequest();
-	const USHORT id = fieldNode->fieldId;
-	record_param* rpb = &request->req_rpb[fieldNode->fieldStream];
+	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
+	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
 
 	if (relation->isVirtual()) {
@@ -1210,7 +1214,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
 			array->arr_request = own_request;
 	}
 
-	blb::destroy(blob, !materialized_blob);
+	release_blob(blob, !materialized_blob);
 }
 
 
@@ -1351,7 +1355,7 @@ blb* BLB_open2(thread_db* tdbb,
 		// know about the relation, the blob id has got to be invalid
 		// anyway.
 
-		vec<jrd_rel*>* vector = tdbb->getAttachment()->att_relations;
+		vec<jrd_rel*>* vector = dbb->dbb_relations;
 
 		if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
 			!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )
@@ -1360,7 +1364,7 @@ blb* BLB_open2(thread_db* tdbb,
 		}
 
 		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
-		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, 0);
+		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, (SLONG) 0);
 
 		// If the blob is known to be damaged, ignore it.
 
@@ -1384,7 +1388,7 @@ blb* BLB_open2(thread_db* tdbb,
 
 	UCharBuffer new_bpb;
 
-	if (external_call)
+	if (external_call && ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 	{
 		if (!from_type_specified)
 			from = blob->blb_sub_type;
@@ -1408,22 +1412,19 @@ blb* BLB_open2(thread_db* tdbb,
 	bool filter_required = false;
 	if (to && from != to)
 	{
-		if (!(to == isc_blob_text && to_charset == CS_BINARY))
-		{
-			filter = find_filter(tdbb, from, to);
-			filter_required = true;
-		}
+		filter = find_filter(tdbb, from, to);
+		filter_required = true;
 	}
-	else if (to == isc_blob_text && from_charset != to_charset)
+	else if (to == isc_blob_text && (from_charset != to_charset))
 	{
 		if (from_charset == CS_dynamic)
-			from_charset = tdbb->getCharSet();
+			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
-			to_charset = tdbb->getCharSet();
+			to_charset = tdbb->getAttachment()->att_charset;
 
-		if (to_charset != CS_NONE && from_charset != CS_NONE &&
-			to_charset != CS_BINARY && from_charset != CS_BINARY &&
-			from_charset != to_charset)
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
+			(from_charset != to_charset))
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
@@ -1474,7 +1475,7 @@ void BLB_put_data(thread_db* tdbb, blb* blob, const UCHAR* buffer, SLONG length)
 }
 
 
-void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment_length)
+void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segment_length)
 {
 /**************************************
  *
@@ -1488,7 +1489,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	const UCHAR* segment = static_cast<const UCHAR*>(seg);
+	const BLOB_PTR* segment = seg;
 
 	// Make sure blob is a temporary blob.  If not, complain bitterly.
 
@@ -1924,7 +1925,8 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
+static ISC_STATUS blob_filter(USHORT	action,
+							  BlobControl*	control)
 {
 /**************************************
  *
@@ -2131,8 +2133,8 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 			const PageNumber page1(pageSpaceID, *ptr);
 			PAG_release_page(tdbb, page1, prior);
 			page = (blob_page*) buffer;
-			const ULONG* ptr2 = page->blp_page;
-			for (const ULONG* const end2 = ptr2 + blob->blb_pointers; ptr2 < end2; ptr2++)
+			const SLONG* ptr2 = page->blp_page;
+			for (const SLONG* const end2 = ptr2 + blob->blb_pointers; ptr2 < end2; ptr2++)
 			{
 				if (*ptr2) {
 					PAG_release_page(tdbb, PageNumber(pageSpaceID, *ptr2), page1);
@@ -2143,7 +2145,8 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 }
 
 
-static void delete_blob_id(thread_db* tdbb, const bid* blob_id, ULONG prior_page, jrd_rel* relation)
+static void delete_blob_id(thread_db* tdbb,
+						   const bid* blob_id, SLONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -2156,7 +2159,6 @@ static void delete_blob_id(thread_db* tdbb, const bid* blob_id, ULONG prior_page
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
@@ -2170,7 +2172,7 @@ static void delete_blob_id(thread_db* tdbb, const bid* blob_id, ULONG prior_page
 
 	// Fetch blob
 
-	blb* blob = allocate_blob(tdbb, attachment->getSysTransaction());
+	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
 	blob->blb_relation = relation;
 	blob->blb_pg_space_id = relation->getPages(tdbb)->rel_pg_space_id;
 	prior_page = DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true, prior_page);
@@ -2178,7 +2180,7 @@ static void delete_blob_id(thread_db* tdbb, const bid* blob_id, ULONG prior_page
 	if (!(blob->blb_flags & BLB_damaged))
 		delete_blob(tdbb, blob, prior_page);
 
-	blb::destroy(blob, true);
+	release_blob(blob, true);
 }
 
 
@@ -2267,7 +2269,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	SET_TDBB(tdbb);
 #ifdef SUPERSERVER_V2
 	Database* dbb = tdbb->getDatabase();
-	ULONG pages[PREFETCH_MAX_PAGES];
+	SLONG pages[PREFETCH_MAX_PAGES];
 #endif
 
 	const vcl* vector = blob->blb_pages;
@@ -2321,7 +2323,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 										LCK_read, pag_blob);
 	}
 
-	if (page->blp_sequence != blob->blb_sequence)
+	if (page->blp_sequence != (SLONG) blob->blb_sequence)
 		CORRUPT(201);			// msg 201 cannot find blob page
 
 	blob->blb_sequence++;
@@ -2441,8 +2443,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 }
 
 
-static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc,
-	const ValueExprNode* field)
+static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod* field)
 {
 /**************************************
  *
@@ -2605,10 +2606,20 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 }
 
 
-// Release a blob and associated blocks. Among other things, disconnect it from the transaction.
-// However, if purge_flag is false, then only release the associated blocks.
-void blb::destroy(blb* blob, const bool purge_flag)
+static void release_blob(blb* blob, const bool purge_flag)
 {
+/**************************************
+ *
+ *      r e l e a s e _ b l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *      Release a blob and associated blocks.  Among other things,
+ *      disconnect it from the transaction.  However, if purge_flag
+ *      is false, then only release the associated blocks.
+ *
+ **************************************/
 	jrd_tra* const transaction = blob->blb_transaction;
 
 	// Disconnect blob from transaction block.

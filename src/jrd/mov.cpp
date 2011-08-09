@@ -27,8 +27,8 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
-#include "../common/gdsassert.h"
+#include "../jrd/common.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
@@ -130,13 +130,6 @@ void MOV_double_to_date(double real, SLONG fixed[2])
  **************************************/
 
 	CVT_double_to_date(real, fixed);
-}
-
-
-// Get the value of a boolean descriptor.
-bool MOV_get_boolean(const dsc* desc)
-{
-	return CVT_get_boolean(desc, ERR_post);
 }
 
 
@@ -440,16 +433,6 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 	}
 
 	return CVT2_make_string2(desc, ttype, address, buffer);
-}
-
-
-Firebird::string MOV_make_string2(Jrd::thread_db* tdbb, const dsc* desc, USHORT ttype, bool limit)
-{
-	Jrd::MoveBuffer buffer;
-	UCHAR* ptr;
-	int len = MOV_make_string2(tdbb, desc, ttype, &ptr, buffer, limit);
-
-	return string((const char*) ptr, len);
 }
 
 

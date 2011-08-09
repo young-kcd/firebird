@@ -25,7 +25,7 @@
 # Script to copy install files from the build/transport area
 
 
-# This script builds an image of the installed system into
+# This script builds an image of the installed system into 
 # the gen/buildroot directory.
 
 if [ "`whoami`" != "root" ]; then
@@ -35,9 +35,9 @@ fi
 
 # Making an assumption that this program is being run in the gen directory
 BuildRootDir=..
-BuiltFBDir=Release/firebird  # Where the just build fb exists.
+BuiltFBDir=./firebird  # Where the just build fb exists.
 TargetDir=buildroot    # Where we want to build the install image
-SecurityDatabase=security3.fdb
+SecurityDatabase=security2.fdb
 
 
 #------------------------------------------------------------------------
@@ -51,15 +51,18 @@ addLibs() {
 	libTdir=$3
 	libTarget=$libTdir/$libScript
 
-	rm -f $libTarget
-	touch $libTarget
-	for i in posixLibrary.sh linuxLibrary.sh
-	do
-		echo "# $i" >>$libTarget
-		cat $libSdir/$i >>$libTarget
-		echo "" >>$libTarget	# avoid missing linefeed
-	done
-	cat $libSdir/$libScript >>$libTarget
+	if [ -f $libSdir/$libScript ]
+	then
+		rm -f $libTarget
+		touch $libTarget
+		for i in posixLibrary.sh @FIREBIRD_ARCH_TYPE@Library.sh linuxLibrary.sh
+		do
+			echo "# $i" >>$libTarget
+			cat $libSdir/$i >>$libTarget
+			echo "" >>$libTarget	# avoid missing linefeed
+		done
+		cat $libSdir/$libScript >>$libTarget
+	fi
 }
 
 
@@ -98,7 +101,7 @@ linkFiles() {
 		return 0
 	fi
 
-	for file in $Files; do
+	for file in $Files; do 
 		ln -s $From/$file $To/$file
 	done
 }
@@ -129,9 +132,9 @@ copyFiles() {
 
 #cleanup
     if [ -d $TargetDir ]
-      then
+      then 
         rm -fr $TargetDir
-    fi
+    fi 
 
 	#directories
     makeDirs "@FB_BINDIR@ @FB_SBINDIR@ @FB_CONFDIR@ @FB_LIBDIR@ @FB_INCDIR@ @FB_DOCDIR@/sql.extensions @FB_UDFDIR@ @FB_SAMPLEDIR@ \
@@ -145,30 +148,35 @@ copyFiles() {
     makeDirs /usr/include
 
 	#bin
-    cp $BuiltFBDir/bin/gbak ${TargetDir}@FB_BINDIR@/gbak
-    cp $BuiltFBDir/bin/gfix ${TargetDir}@FB_BINDIR@/gfix
-    cp $BuiltFBDir/bin/gpre ${TargetDir}@FB_BINDIR@/gpre
-    cp $BuiltFBDir/bin/gsec ${TargetDir}@FB_BINDIR@/gsec
-    cp $BuiltFBDir/bin/nbackup ${TargetDir}@FB_BINDIR@/nbackup
+    cp $BuiltFBDir/bin/gbak ${TargetDir}@FB_BINDIR@/gbak 
+    cp $BuiltFBDir/bin/gdef ${TargetDir}@FB_BINDIR@/gdef 
+    cp $BuiltFBDir/bin/gfix ${TargetDir}@FB_BINDIR@/gfix 
+    cp $BuiltFBDir/bin/gpre ${TargetDir}@FB_BINDIR@/gpre 
+    cp $BuiltFBDir/bin/gsec ${TargetDir}@FB_BINDIR@/gsec 
+    cp $BuiltFBDir/bin/nbackup ${TargetDir}@FB_BINDIR@/nbackup 
     copyIfExists $BuiltFBDir/bin/gsplit ${TargetDir}@FB_BINDIR@
-    cp $BuiltFBDir/bin/gstat ${TargetDir}@FB_BINDIR@/gstat
+    cp $BuiltFBDir/bin/gstat ${TargetDir}@FB_BINDIR@/gstat 
     copyIfExists $BuiltFBDir/bin/fbsvcmgr ${TargetDir}@FB_BINDIR@
     copyIfExists $BuiltFBDir/bin/fbtracemgr ${TargetDir}@FB_BINDIR@
-    cp $BuiltFBDir/bin/isql ${TargetDir}@FB_BINDIR@/isql
-    cp $BuiltFBDir/bin/qli ${TargetDir}@FB_BINDIR@/qli
+    cp $BuiltFBDir/bin/isql ${TargetDir}@FB_BINDIR@/isql 
+    cp $BuiltFBDir/bin/qli ${TargetDir}@FB_BINDIR@/qli 
 
 	chown root:root ${TargetDir}@FB_BINDIR@/*
 	chmod 0755 ${TargetDir}@FB_BINDIR@/*
 
 	#sbin
-    cp -f $BuiltFBDir/bin/firebird ${TargetDir}@FB_SBINDIR@/firebird
+    copyIfExists $BuiltFBDir/bin/fb_inet_server ${TargetDir}@FB_SBINDIR@
+    copyIfExists $BuiltFBDir/bin/fb_smp_server ${TargetDir}@FB_SBINDIR@
+    copyIfExists $BuiltFBDir/bin/fbserver ${TargetDir}@FB_SBINDIR@
 	cp -f $BuiltFBDir/bin/fbguard ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fb_lock_print ${TargetDir}@FB_SBINDIR@
+	copyIfExists $BuiltFBDir/bin/fbmgr.bin ${TargetDir}@FB_SBINDIR@
 
-    addLibs $BuiltFBDir/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuiltFBDir/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuiltFBDir/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuiltFBDir/bin changeMultiConnectMode.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuildRootDir/gen/firebird/bin changeMultiConnectMode.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuiltFBDir/bin changeGdsLibraryCompatibleLink.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/createAliasDB.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/fb_config ${TargetDir}@FB_SBINDIR@
 
@@ -177,14 +185,14 @@ copyFiles() {
 	chmod 0700 ${TargetDir}@FB_SBINDIR@/*.sh
 
 	#install scripts
-    addLibs $BuiltFBDir/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuiltFBDir/bin tarinstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuiltFBDir/bin preinstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuiltFBDir/bin postinstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuiltFBDir/bin preuninstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuiltFBDir/bin postuninstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuiltFBDir/bin taruninstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuiltFBDir/bin tarMainUninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin tarinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin preinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin postinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin preuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin postuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin taruninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin tarMainUninstall.sh $BuildRootDir/gen/install/scripts
 
     #examples - copy only if we have them
     exampleFiles=`find $BuiltFBDir/examples/README -type f -print`
@@ -218,7 +226,7 @@ copyFiles() {
 
 	chown root:root ${TargetDir}@FB_HELPDIR@/*.fdb
 	chmod 0444 ${TargetDir}@FB_HELPDIR@/*.fdb
-
+	
 	#message file
     cp $BuiltFBDir/*.msg ${TargetDir}@FB_MSGDIR@
 
@@ -244,16 +252,14 @@ copyFiles() {
 	chmod 0755 ${TargetDir}@FB_LIBDIR@/*.so*
 
 	#plugins
-	(cd $BuiltFBDir/plugins;tar cf - .) | (cd ${TargetDir}@FB_PLUGDIR@; tar xvf -)
+	cp -df $BuiltFBDir/plugins/* ${TargetDir}@FB_PLUGDIR@
 
-	for file in `find ${TargetDir}@FB_PLUGDIR@ -name '*.so*' -print`; do
-		chown root:root ${file}
-		chmod 0755 ${file}
-	done
+	chown root:root ${TargetDir}@FB_PLUGDIR@/*.so*
+	chmod 0755 ${TargetDir}@FB_PLUGDIR@/*.so*
 
 	#intl
     cp $BuiltFBDir/intl/libfbintl.so ${TargetDir}@FB_INTLDIR@/fbintl
-    cp $BuiltFBDir/intl/fbintl.conf ${TargetDir}@FB_INTLDIR@
+    cp $BuildRootDir/gen/install/misc/fbintl.conf ${TargetDir}@FB_INTLDIR@
 
 	chown root:root ${TargetDir}@FB_INTLDIR@/fbintl*
 	chmod 0755 ${TargetDir}@FB_INTLDIR@/fbintl
@@ -263,7 +269,7 @@ copyFiles() {
     cp $BuiltFBDir/UDF/ib_udf.so ${TargetDir}@FB_UDFDIR@
     cp $BuiltFBDir/UDF/fbudf.so ${TargetDir}@FB_UDFDIR@
 #	Note that the following items copy files from outside the build tree.
-#   Copy the sql-declarations into the UDF-directory
+#   Copy the sql-declarations into the UDF-directory  
     cp $BuildRootDir/src/extlib/ib_udf.sql ${TargetDir}@FB_UDFDIR@
     cp $BuildRootDir/src/extlib/ib_udf2.sql ${TargetDir}@FB_UDFDIR@
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql ${TargetDir}@FB_UDFDIR@
@@ -271,14 +277,14 @@ copyFiles() {
 	chown root:root ${TargetDir}@FB_UDFDIR@/*.so ${TargetDir}@FB_UDFDIR@/*.sql
 	chmod 0755 ${TargetDir}@FB_UDFDIR@/*.so
 	chmod 0644 ${TargetDir}@FB_UDFDIR@/*.sql
-
+	    
 	#doc
     cp $BuildRootDir/doc/*.pdf ${TargetDir}@FB_DOCDIR@
     cp $BuildRootDir/doc/README.* ${TargetDir}@FB_DOCDIR@
     cp $BuildRootDir/doc/sql.extensions/README* ${TargetDir}@FB_DOCDIR@/sql.extensions
     cp $BuildRootDir/doc/WhatsNew ${TargetDir}@FB_CONFDIR@/WhatsNew
     cp $BuildRootDir/doc/README.user ${TargetDir}@FB_CONFDIR@/README
-
+    
 	chown -R root:root ${TargetDir}@FB_MISCDIR@
 	for i in `find ${TargetDir}@FB_MISCDIR@ -print`; do
 		chown root:root $i
@@ -302,10 +308,9 @@ copyFiles() {
 	chmod -R go-rwx ${TargetDir}@FB_MISCDIR@
 
 	#conf
-    cp $BuiltFBDir/firebird.conf ${TargetDir}@FB_CONFDIR@
-    cp $BuiltFBDir/aliases.conf ${TargetDir}@FB_CONFDIR@
-    cp $BuiltFBDir/fbtrace.conf ${TargetDir}@FB_CONFDIR@
-    cp $BuiltFBDir/plugins.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuildRootDir/gen/install/misc/firebird.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuildRootDir/gen/install/misc/aliases.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuildRootDir/gen/install/misc/fbtrace.conf ${TargetDir}@FB_CONFDIR@
 
 	chown root:root ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf
@@ -317,7 +322,7 @@ copyFiles() {
     cd $origDir
     linkFiles "@FB_LIBDIR@" "$Libraries" "${TargetDir}@libdir@" "${TargetDir}@FB_LIBDIR@"
 
-# link include files to /usr/include
+# link include files to /usr/include 
 	linkFiles "@FB_INCDIR@" "iberror.h ibase.h ib_util.h" "${TargetDir}/usr/include" "${TargetDir}@FB_INCDIR@"
 
 }

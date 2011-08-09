@@ -128,4 +128,4 @@ buildTarDir: buildImageDir
 	(cd $(GEN_ROOT)/buildroot; cp manifest.txt ../$(TarDir)/manifest.txt )
 
 install: buildTarDir
-	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)
+	(cd $(GEN_ROOT)/$(TarDir); FIREBIRD= FIREBIRD_LOCK= ./install.sh)

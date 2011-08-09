@@ -26,12 +26,8 @@ set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
 ::===============================
 ::Set up the compiler environment
 
-:: To disable VS8/VS9/VS10 build, slightly alter the env var names in "if" conditions below
+:: To disable VS8 or VS9 build, slightly alter the env var names in "if" conditions below
 
-if DEFINED VS100COMNTOOLS (
-@devenv /? >nul 2>nul
-@if errorlevel 9009 (call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
-) else (
 if DEFINED VS90COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
@@ -45,7 +41,6 @@ if DEFINED VS71COMNTOOLS (
 @if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      "%VS71COMNTOOLS%vsvars32.bat" & echo    has already been executed.)
 ) else (
 @goto :HELP
-)
 )
 )
 )
@@ -70,7 +65,6 @@ if DEFINED VS71COMNTOOLS (
   @if not errorlevel 9009 (
     @if DEFINED VS80COMNTOOLS ((set MSVC_VERSION=8) & (set VS_VER=msvc8))
     @if DEFINED VS90COMNTOOLS ((set MSVC_VERSION=9) & (set VS_VER=msvc9))
-    @if DEFINED VS100COMNTOOLS ((set MSVC_VERSION=10) & (set VS_VER=msvc10))
 
     set VS_VER_EXPRESS=1
     goto :SET_FB_TARGET_PLATFORM
@@ -99,9 +93,10 @@ if DEFINED VS71COMNTOOLS (
 @set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%
 @set FB_TEMP_DIR=%FB_ROOT_PATH%\temp\%FB_TARGET_PLATFORM%
 @set FB_INSTALL_SCRIPTS=%FB_ROOT_PATH%\builds\install\arch-specific\win32
-@set FB_GEN_DIR=%FB_ROOT_PATH%\gen
-@set FB_GEN_DB_DIR=%FB_DB_PATH%/gen
+@set FB_GEN_DIR=%FB_ROOT_PATH%\gen\%FB_TARGET_PLATFORM%
+@set FB_GEN_DB_DIR=%FB_DB_PATH%/gen/%FB_TARGET_PLATFORM%
 @set FB_ICU_SOURCE_BIN=%FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM%\release\bin\
+
 
 
 

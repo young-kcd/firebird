@@ -28,17 +28,14 @@
 #include "../common/classes/semaphore.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
-#include "../common/ThreadData.h"
+#include "../jrd/ThreadData.h"
 #include "../jrd/event.h"
-#include "../common/isc_s_proto.h"
-
-class Config;
 
 namespace Jrd {
 
 class Attachment;
 
-class EventManager : private Firebird::RefCounted, public Firebird::GlobalStorage, public SharedMemory<evh>
+class EventManager : private Firebird::RefCounted, public Firebird::GlobalStorage
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, EventManager*> > > DbEventMgrMap;
 
@@ -51,21 +48,19 @@ public:
 	static void init(Attachment*);
 	static void destroy(EventManager*);
 
-	EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf);
+	explicit EventManager(const Firebird::string&);
 	~EventManager();
 
 	void deleteSession(SLONG);
 
-	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*, Firebird::IEventCallback*);
+	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
+				    FPTR_EVENT_CALLBACK, void*);
 	void cancelEvents(SLONG);
 	void postEvent(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
 	void deliverEvents();
 
-	bool initialize(bool);
-	void mutexBug(int osErrorCode, const char* text);
-
 private:
-	void acquire_shmem();
+	evh* acquire_shmem();
 	frb* alloc_global(UCHAR type, ULONG length, bool recurse);
 	void create_process();
 	SLONG create_session();
@@ -79,6 +74,7 @@ private:
 	evnt* find_event(USHORT, const TEXT*, evnt*);
 	void free_global(frb*);
 	req_int* historical_interest(ses*, SLONG);
+	void init_shmem(sh_mem*, bool);
 	void insert_tail(srq*, srq*);
 	evnt* make_event(USHORT, const TEXT*, SLONG);
 	void post_process(prb*);
@@ -98,14 +94,21 @@ private:
 		return 0;
 	}
 
+	static void init_shmem(void* arg, sh_mem* shmem, bool init)
+	{
+		EventManager* const eventMgr = static_cast<EventManager*>(arg);
+		eventMgr->init_shmem(shmem, init);
+	}
+
 	static void mutex_bugcheck(const TEXT*, int);
 	static void punt(const TEXT*);
 
+	evh* m_header;
 	prb* m_process;
 	SLONG m_processOffset;
+	sh_mem m_shmemData;
 
 	Firebird::string m_dbId;
-	Firebird::RefPtr<Config> m_config;
 
 	Firebird::Semaphore m_startupSemaphore;
 	Firebird::Semaphore m_cleanupSemaphore;
@@ -123,3 +126,4 @@ private:
 } // namespace
 
 #endif // JRD_EVENT_PROTO_H
+

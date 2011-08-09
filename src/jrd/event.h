@@ -26,23 +26,23 @@
 #ifndef JRD_EVENT_H
 #define JRD_EVENT_H
 
-#include "../common/isc_s_proto.h"
-#include "../common/file_params.h"
+#include "../jrd/isc.h"
+#include "../jrd/file_params.h"
 #include "../jrd/que.h"
-#include "firebird/Provider.h"
 
 // Global section header
 
 const int EVENT_VERSION = 4;
 
-class evh : public Jrd::MemoryHeader
+struct evh
 {
-public:
 	ULONG evh_length;				// Current length of global section
+	UCHAR evh_version;				// Version number of global section
 	srq evh_events;					// Known events
 	srq evh_processes;				// Known processes
 	SRQ_PTR evh_free;				// Free blocks
 	SRQ_PTR evh_current_process;	// Current process, if any
+	struct mtx evh_mutex;			// Mutex controlling access
 	SLONG evh_request_id;			// Next request id
 };
 
@@ -122,7 +122,8 @@ struct evt_req
 	SRQ_PTR req_process;			// Parent process block
 	SRQ_PTR req_session;			// Parent session block
 	SRQ_PTR req_interests;			// First interest in request
-	Firebird::IEventCallback* req_ast; // Asynchronous callback
+	FPTR_EVENT_CALLBACK req_ast;	// Asynchronous routine
+	void* req_ast_arg;				// Argument for ast
 	SLONG req_request_id;			// Request id, dummy
 };
 

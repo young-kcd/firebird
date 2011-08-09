@@ -26,28 +26,26 @@
  */
 
 #include "firebird.h"
-#include "../../common/common.h"
+#include "../../jrd/common.h"
 #include "../../common/classes/auto.h"
 #include "../../common/utils_proto.h"
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceLog.h"
 #include "../../jrd/trace/TraceObjects.h"
-#include "../../common/isc_proto.h"
-#include "../../common/isc_s_proto.h"
+#include "../../jrd/isc_proto.h"
+#include "../../jrd/isc_s_proto.h"
 #include "../../jrd/jrd.h"
+#include "../../jrd/jrd_pwd.h"
 #include "../../jrd/tra.h"
 #include "../../jrd/DataTypeUtil.h"
-#include "../../dsql/ExprNodes.h"
-#include "../../dsql/StmtNodes.h"
 #include "../../jrd/evl_proto.h"
 #include "../../jrd/intl_proto.h"
 #include "../../jrd/mov_proto.h"
-#include "../../jrd/opt_proto.h"
 #include "../../jrd/pag_proto.h"
-#include "../../common/os/path_utils.h"
-#include "../../common/config/os/config_root.h"
+#include "../../jrd/os/path_utils.h"
+#include "../../jrd/os/config_root.h"
 #include "../../dsql/dsql_proto.h"
-#include "../../common/prett_proto.h"
+#include "../../gpre/prett_proto.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -92,7 +90,7 @@ const char* TraceConnectionImpl::getRoleName()
 
 const char* TraceConnectionImpl::getCharSet()
 {
-	CharSet* cs = INTL_charset_lookup(JRD_get_thread_data(), m_att->att_charset);
+	CharSet *cs = INTL_charset_lookup(JRD_get_thread_data(), m_att->att_charset);
 	return cs ? cs->getName() : NULL;
 }
 
@@ -157,6 +155,26 @@ ntrace_tra_isolation_t TraceTransactionImpl::getIsolation()
 }
 
 
+/// TraceDYNRequestImpl
+
+const char* TraceDYNRequestImpl::getText()
+{
+	if (m_text.empty() && m_length) {
+		PRETTY_print_dyn((UCHAR*) m_ddl, print_dyn, this, 0);
+	}
+	return m_text.c_str();
+}
+
+void TraceDYNRequestImpl::print_dyn(void* arg, SSHORT offset, const char* line)
+{
+	TraceDYNRequestImpl *dyn = (TraceDYNRequestImpl*) arg;
+
+	string temp;
+	temp.printf("%4d %s\n", offset, line);
+	dyn->m_text.append(temp);
+}
+
+
 /// BLRPrinter
 
 const char* BLRPrinter::getText()
@@ -178,6 +196,12 @@ void BLRPrinter::print_blr(void* arg, SSHORT offset, const char* line)
 
 /// TraceSQLStatementImpl
 
+TraceSQLStatementImpl::~TraceSQLStatementImpl()
+{
+	if (m_plan)
+		gds__free(m_plan);
+}
+
 int TraceSQLStatementImpl::getStmtID()
 {
 	if (m_stmt->req_request)
@@ -188,13 +212,13 @@ int TraceSQLStatementImpl::getStmtID()
 
 const char* TraceSQLStatementImpl::getText()
 {
-	return m_stmt->getStatement()->getSqlText()->c_str();
+	return m_stmt->req_sql_text->c_str();
 }
 
-// Returns false if conversion is not needed.
-static bool convertToUTF8(const string& src, string& dst)
+// returns false if conversion not needed
+bool convertToUTF8(const string &src, string &dst)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db *tdbb = JRD_get_thread_data();
 	const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
 
 	if (charset == CS_UTF8 || charset == CS_UNICODE_FSS)
@@ -214,9 +238,9 @@ static bool convertToUTF8(const string& src, string& dst)
 	{
 		DataTypeUtil dtUtil(tdbb);
 		ULONG length = dtUtil.convertLength(src.length(), charset, CS_UTF8);
-
-		length = INTL_convert_bytes(tdbb,
-			CS_UTF8, (UCHAR*) dst.getBuffer(length), length,
+		
+		length = INTL_convert_bytes(tdbb, 
+			CS_UTF8, (UCHAR*) dst.getBuffer(length), length, 
 			charset, (const BYTE*) src.begin(), src.length(),
 			ERR_post);
 
@@ -228,12 +252,10 @@ static bool convertToUTF8(const string& src, string& dst)
 
 const char* TraceSQLStatementImpl::getTextUTF8()
 {
-	const string* stmtText = m_stmt->getStatement()->getSqlText();
-
-	if (m_textUTF8.isEmpty() && !stmtText->isEmpty())
+	if (m_textUTF8.isEmpty() && !m_stmt->req_sql_text->isEmpty())
 	{
-		if (!convertToUTF8(*stmtText, m_textUTF8))
-			return stmtText->c_str();
+		if (!convertToUTF8(*m_stmt->req_sql_text, m_textUTF8))
+			return m_stmt->req_sql_text->c_str();
 	}
 
 	return m_textUTF8.c_str();
@@ -241,12 +263,21 @@ const char* TraceSQLStatementImpl::getTextUTF8()
 
 const char* TraceSQLStatementImpl::getPlan()
 {
-	if (m_plan.isEmpty())
+	if (!m_plan && m_stmt->req_request)
 	{
-		m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request, false);
+		char buff;
+		m_plan = &buff;
+
+		const size_t len = DSQL_get_plan_info(JRD_get_thread_data(),
+			m_stmt, sizeof(buff), &m_plan);
+
+		if (len)
+			m_plan[len] = 0;
+		else
+			m_plan = NULL;
 	}
 
-	return m_plan.c_str();
+	return m_plan;
 }
 
 PerformanceInfo* TraceSQLStatementImpl::getPerf()
@@ -268,10 +299,8 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 		return;
 
 	USHORT first_index = 0;
-	for (size_t i = 0 ; i < m_params->getCount(); ++i)
+	for (const dsql_par* parameter = m_params; parameter; parameter = parameter->par_next)
 	{
-		dsql_par* parameter = (*m_params)[i];
-
 		if (parameter->par_index)
 		{
 			if (!first_index)
@@ -280,7 +309,6 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 			// Use descriptor for nulls signaling
 			USHORT null_flag = 0;
 			if (parameter->par_null &&
-				parameter->par_null->par_desc.dsc_address &&
 				*((SSHORT*) parameter->par_null->par_desc.dsc_address))
 			{
 				null_flag = DSC_null;
@@ -358,51 +386,57 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	const NestConst<ValueExprNode>* ptr = m_params->args.begin();
-	const NestConst<ValueExprNode>* const end = m_params->args.end();
-
-	for (; ptr != end; ++ptr)
+	const jrd_nod* const* ptr = m_params->nod_arg;
+	const jrd_nod* const* end = ptr + m_params->nod_count;
+	for (; ptr < end; ptr++)
 	{
-		const dsc* from_desc = NULL;
+		dsc* from_desc = NULL;
 		dsc desc;
 
-		const NestConst<ValueExprNode> prm = *ptr;
-		const ParameterNode* param;
-		const VariableNode* var;
-		const LiteralNode* literal;
-
-		if ((param = prm->as<ParameterNode>()))
+		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
+		switch (prm->nod_type)
 		{
-			//const impure_value* impure = m_request->getImpure<impure_value>(param->impureOffset)
-			const MessageNode* message = param->message;
-			const Format* format = message->format;
-			const int arg_number = param->argNumber;
-
-			desc = format->fmt_desc[arg_number];
-			from_desc = &desc;
-			desc.dsc_address = m_request->getImpure<UCHAR>(
-				message->impureOffset + (IPTR) desc.dsc_address);
-
-			// handle null flag if present
-			if (param->argFlag)
+			case nod_argument:
 			{
-				const dsc* flag = EVL_expr(tdbb, m_request, param->argFlag);
-				if (MOV_get_long(flag, 0))
-					desc.dsc_flags |= DSC_null;
+				//const impure_value* impure = (impure_value*) ((SCHAR*) m_request + prm->nod_impure);
+				const jrd_nod* message = prm->nod_arg[e_arg_message];
+				const Format* format = (Format*) message->nod_arg[e_msg_format];
+				const int arg_number = (int) (IPTR) prm->nod_arg[e_arg_number];
+
+				desc = format->fmt_desc[arg_number];
+				from_desc = &desc;
+				from_desc->dsc_address = (UCHAR *) m_request + message->nod_impure + (IPTR) desc.dsc_address;
+
+				// handle null flag if present
+				if (prm->nod_arg[e_arg_flag])
+				{
+					const dsc* flag = EVL_expr(tdbb, prm->nod_arg[e_arg_flag]);
+					if (MOV_get_long(flag, 0)) {
+						from_desc->dsc_flags |= DSC_null;
+					}
+				}
+				break;
 			}
-		}
-		else if ((var = prm->as<VariableNode>()))
-		{
-			impure_value* impure = m_request->getImpure<impure_value>(var->impureOffset);
-			from_desc = &impure->vlu_desc;
-		}
-		else if ((literal = prm->as<LiteralNode>()))
-			from_desc = &literal->litDesc;
-		else if (prm->is<NullNode>())
-		{
-			desc.clear();
-			desc.setNull();
-			from_desc = &desc;
+
+			case nod_variable:
+			{
+				impure_value* impure = (impure_value*) ((SCHAR *) m_request + prm->nod_impure);
+				from_desc = &impure->vlu_desc;
+				break;
+			}
+
+			case nod_null:
+				desc = ((Literal*) prm)->lit_desc;
+				from_desc = &desc;
+				from_desc->dsc_flags |= DSC_null;
+				break;
+
+			case nod_literal:
+				from_desc = &((Literal*) prm)->lit_desc;
+				break;
+
+			default:
+				break;
 		}
 
 		if (from_desc)
@@ -415,39 +449,33 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 const char* TraceTriggerImpl::getTriggerName()
 {
-	return m_trig->getStatement()->triggerName.c_str();
+	return m_trig->req_trg_name.c_str();
 }
 
 const char* TraceTriggerImpl::getRelationName()
 {
-	const jrd_rel* rel = m_trig->req_rpb[0].rpb_relation;
+	const jrd_rel* rel = m_trig->req_rpb->rpb_relation;
 	return rel ? rel->rel_name.c_str() : NULL;
 }
 
 
 /// TraceLogWriterImpl
 
-class TraceLogWriterImpl : public RefCntIface<TraceLogWriter, FB_TRACE_LOG_WRITER_VERSION>
+class TraceLogWriterImpl : public TraceLogWriter
 {
 public:
-	TraceLogWriterImpl(const TraceSession& session) :
-		m_log(getPool(), session.ses_logfile, false),
+	TraceLogWriterImpl(MemoryPool& pool, const TraceSession& session) :
+		m_log(pool, session.ses_logfile, false),
 		m_sesId(session.ses_id)
 	{
 		m_maxSize = Config::getMaxUserTraceLogSize();
 	}
 
-	// TraceLogWriter implementation
-	virtual size_t FB_CARG write(const void* buf, size_t size);
+	virtual size_t write(const void* buf, size_t size);
 
-	virtual int FB_CARG release()
+	virtual void release()
 	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-		return 1;
+		delete this;
 	}
 
 private:
@@ -501,9 +529,9 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 {
 	if (!m_logWriter && !m_session.ses_logfile.empty())
 	{
-		m_logWriter = new TraceLogWriterImpl(m_session);
+		MemoryPool &pool = *getDefaultMemoryPool();
+		m_logWriter = FB_NEW(pool) TraceLogWriterImpl(pool, m_session);
 	}
-	m_logWriter->addRef();
 	return m_logWriter;
 }
 
@@ -563,14 +591,14 @@ const char* TraceServiceImpl::getRemoteProcessName()
 
 /// TraceRuntimeStats
 
-TraceRuntimeStats::TraceRuntimeStats(Attachment* att, RuntimeStatistics* baseline, RuntimeStatistics* stats,
+TraceRuntimeStats::TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats,
 	SINT64 clock, SINT64 records_fetched)
 {
 	m_info.pin_time = clock * 1000 / fb_utils::query_performance_frequency();
 	m_info.pin_records_fetched = records_fetched;
 
 	if (baseline)
-		baseline->computeDifference(att, *stats, m_info, m_counts);
+		baseline->computeDifference(dbb, *stats, m_info, m_counts);
 	else
 	{
 		// Report all zero counts for the moment.

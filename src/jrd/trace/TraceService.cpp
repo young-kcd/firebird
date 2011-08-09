@@ -35,7 +35,7 @@
 #include "../../common/StatusArg.h"
 #include "../../common/thd.h"
 #include "../../jrd/svc.h"
-#include "../../common/os/guid.h"
+#include "../../jrd/os/guid.h"
 #include "../../jrd/trace/TraceLog.h"
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceService.h"
@@ -88,7 +88,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 		m_svc.printf(false, "Can not start trace session. There are no trace plugins loaded\n");
 		return;
 	}
-
+	
 	ConfigStorage* storage = TraceManager::getStorage();
 
 	{	// scope
@@ -107,7 +107,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 			GenerateGuid(&guid);
 
 			char* buff = session.ses_logfile.getBuffer(GUID_BUFF_SIZE);
-			GuidToString(buff, &guid, false);
+			GuidToString(buff, &guid, true);
 
 			session.ses_logfile.insert(0, "fb_trace.");
 		}

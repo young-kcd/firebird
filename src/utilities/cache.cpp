@@ -26,11 +26,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/license.h"
-#include "../yvalve/gds_proto.h"
-#include "../yvalve/why_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/why_proto.h"
 
 #ifdef HAVE_IO_H
 #include <io.h>

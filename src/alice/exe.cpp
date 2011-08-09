@@ -37,14 +37,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/ibase.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../alice/alice.h"
 #include "../alice/alice_proto.h"
-#include "../common/classes/Switches.h"
 #include "../alice/aliceswi.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 

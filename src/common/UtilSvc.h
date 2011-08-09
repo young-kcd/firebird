@@ -57,10 +57,10 @@ public:
 	virtual void finish() = 0;
 	virtual void outputVerbose(const char* text) = 0;
 	virtual void outputError(const char* text) = 0;
-	virtual void outputData(const void* text, size_t size) = 0;
-	virtual void printf(bool err, const SCHAR* format, ...) = 0;
-	virtual void putLine(char, const char*) = 0;
-	virtual void putSLong(char, SLONG) = 0;
+	virtual void outputData(const char* text) = 0;
+    virtual void printf(bool err, const SCHAR* format, ...) = 0;
+    virtual void putLine(char, const char*) = 0;
+    virtual void putSLong(char, SLONG) = 0;
 	virtual void putChar(char, char) = 0;
 	virtual void putBytes(const UCHAR*, size_t) = 0;
 	virtual void setServiceStatus(const ISC_STATUS*) = 0;
@@ -71,7 +71,6 @@ public:
 	virtual void hidePasswd(ArgvType&, int) = 0;
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) = 0;
 	virtual bool finished() = 0;
-
 	void setDataMode(bool value)
 	{
 		usvcDataMode = value;
@@ -103,12 +102,11 @@ public:
 
 public:
 	ArgvType argv;
-
-protected:
 	bool usvcDataMode;
 };
 
 
 } // namespace Firebird
+
 
 #endif // FB_UTILFACE

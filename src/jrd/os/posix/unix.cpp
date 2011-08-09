@@ -28,7 +28,7 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -56,10 +56,10 @@
 #include "gen/iberror.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/isc_f_proto.h"
-#include "../common/os/isc_i_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/ods_proto.h"
@@ -315,8 +315,7 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 #ifndef SUPERSERVER_V2
 	MutexLockGuard guard(main_file->fil_mutex);
 
-	///Database::Checkout dcoHolder(dbb);
-
+	Database::Checkout dcoHolder(dbb);
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		if (file->fil_desc != -1)
@@ -538,12 +537,13 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
 	// as we already know file to work with
-	BufferDesc bdb(dbb->dbb_bcb);
+	BufferDesc bdb;
+	bdb.bdb_dbb = dbb;
 	bdb.bdb_page = PageNumber(0, startPage);
 
 	FB_UINT64 offset;
 
-	///Database::Checkout dcoHolder(dbb);
+	Database::Checkout dcoHolder(dbb);
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
@@ -665,9 +665,8 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		return unix_error("read", file, isc_io_read_err, status_vector);
 	}
 
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
-	///Database::Checkout dcoHolder(dbb);
+	Database* dbb = bdb->bdb_dbb;
+	Database::Checkout dcoHolder(dbb);
 
 	const FB_UINT64 size = dbb->dbb_page_size;
 
@@ -747,9 +746,8 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
-	///Database::Checkout dcoHolder(dbb);
+	Database* dbb = bdb->bdb_dbb;
+	Database::Checkout dcoHolder(dbb);
 
 	const SLONG size = dbb->dbb_page_size;
 
@@ -804,8 +802,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
+	Database* const dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next)
@@ -1151,7 +1148,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	if (!Ods::isSupported(hp->hdr_ods_version, hp->hdr_ods_minor))
 		goto quit;
 
-	if (hp->hdr_page_size < MIN_NEW_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
+	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
 		goto quit;
 
 	// At this point we think we have identified a database on the device.

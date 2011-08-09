@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/ibase.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/parse.h"
@@ -35,11 +35,11 @@
 #include "../qli/lex_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../yvalve/utl_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/utl_proto.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 
 static SLONG execute_any(qli_nod*);
@@ -54,7 +54,8 @@ static bool matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
 static bool sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
 static bool sleuth_check(USHORT, const UCHAR*, const UCHAR* const, const UCHAR*, const UCHAR* const);
 static bool sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
-static int sleuth_merge(const UCHAR*, const UCHAR*, const UCHAR* const, UCHAR* const);
+static int sleuth_merge(const UCHAR*, /*const UCHAR* const,*/ const UCHAR*, const UCHAR* const,
+	UCHAR* const);
 static bool string_boolean(qli_nod*);
 static bool string_function(qli_nod*, SSHORT, const TEXT*, SSHORT, const TEXT*);
 
@@ -623,7 +624,7 @@ static dsc* execute_concatenate( qli_nod* node, const dsc* value1, const dsc* va
 	TEXT* p = avary->vary_string;
 	length1 = MIN(length1, desc->dsc_length - 2);
 	length2 = MAX(MIN(length2, desc->dsc_length - 2 - length1), 0);
-	fb_assert(static_cast<ULONG>(length1) + length2 <= MAX_USHORT - 2);
+	fb_assert(static_cast<ULONG>(length1) + length2 <= MAX_USHORT - 2)
 
 	if (length1)
 	{
@@ -963,7 +964,9 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 	// Merge search and control strings
 
 	UCHAR control[256];
-	l2 = sleuth_merge((const UCHAR*) p2, (const UCHAR*) p1, (const UCHAR*) (p1 + l1), control);
+	l2 = sleuth_merge((const UCHAR*) p2, //(const UCHAR*) (p2 + l2),
+					  (const UCHAR*) p1, (const UCHAR*) (p1 + l1),
+					  control);
 
 	// If source is not a blob, do a simple search
 
@@ -1173,7 +1176,7 @@ static bool sleuth_class( const USHORT flags,
 }
 
 
-static int sleuth_merge(const UCHAR* match,
+static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 						const UCHAR* control, const UCHAR* const end_control,
 						UCHAR* const combined)
 {

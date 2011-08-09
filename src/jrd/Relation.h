@@ -25,14 +25,9 @@
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
-#include "../jrd/Attachment.h"
 
 namespace Jrd
 {
-
-class BoolExprNode;
-class RseNode;
-class StmtNode;
 
 // view context block to cache view aliases
 
@@ -41,11 +36,11 @@ class ViewContext
 public:
 	explicit ViewContext(MemoryPool& p, const TEXT* context_name,
 						 const TEXT* relation_name, USHORT context,
-						 ViewContextType type)
-	: vcx_context_name(p, context_name, strlen(context_name)),
-	  vcx_relation_name(relation_name),
-	  vcx_context(context),
-	  vcx_type(type)
+						 bool is_relation) :
+		vcx_context_name(p, context_name, strlen(context_name)),
+		vcx_relation_name(relation_name),
+		vcx_context(context),
+		vcx_is_relation(is_relation)
 	{
 	}
 
@@ -54,15 +49,62 @@ public:
 		return vc->vcx_context;
 	}
 
-	const Firebird::string vcx_context_name;
-	const Firebird::MetaName vcx_relation_name;
-	const USHORT vcx_context;
-	const ViewContextType vcx_type;
+	const Firebird::string	vcx_context_name;
+	const Firebird::MetaName	vcx_relation_name;
+	const USHORT	vcx_context;
+	const bool		vcx_is_relation;
 };
 
 typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>,
 		USHORT, ViewContext> ViewContexts;
 
+#ifdef GARBAGE_THREAD
+
+class RelationGarbage
+{
+private:
+	class TranGarbage
+	{
+	public:
+		SLONG tran;
+		PageBitmap *bm;
+
+		TranGarbage(PageBitmap* aBm, SLONG aTran)
+			: tran(aTran), bm(aBm)
+		{}
+
+		static inline const SLONG generate(void const*, const TranGarbage& Item)
+		{
+			return Item.tran;
+		}
+	};
+
+	typedef	Firebird::SortedArray<
+				TranGarbage,
+				Firebird::EmptyStorage<TranGarbage>,
+				SLONG,
+				TranGarbage> TranGarbageArray;
+
+	TranGarbageArray array;
+
+public:
+	explicit RelationGarbage(MemoryPool& p)
+		: array(p)
+	{}
+	~RelationGarbage() { clear(); }
+
+	void addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid);
+	void clear();
+
+	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
+
+	SLONG minTranID() const
+	{
+		return (array.getCount() > 0) ? array[0].tran : MAX_SLONG;
+	}
+};
+
+#endif //GARBAGE_THREAD
 
 class RelationPages
 {
@@ -133,7 +175,6 @@ struct frgn
 class jrd_rel : public pool_alloc<type_rel>
 {
 public:
-	MemoryPool*		rel_pool;
 	USHORT			rel_id;
 	USHORT			rel_current_fmt;	// Current format number
 	ULONG			rel_flags;
@@ -143,13 +184,17 @@ public:
 	Firebird::MetaName	rel_owner_name;	// ascii owner
 	vec<jrd_fld*>*	rel_fields;			// vector of field blocks
 
-	RseNode*		rel_view_rse;		// view record select expression
+	RecordSelExpr*	rel_view_rse;		// view record select expression
 	ViewContexts	rel_view_contexts;	// sorted array of view contexts
 
 	Firebird::MetaName	rel_security_name;	// security class name for relation
 	ExternalFile* 	rel_file;			// external file name
 
 	vec<Record*>*	rel_gc_rec;			// vector of records for garbage collection
+#ifdef GARBAGE_THREAD
+	PageBitmap*		rel_gc_bitmap;		// garbage collect bitmap of data page sequences
+	RelationGarbage*	rel_garbage;	// deferred gc bitmap's by tran numbers
+#endif
 
 	USHORT		rel_use_count;		// requests compiled with relation
 	USHORT		rel_sweep_count;	// sweep and/or garbage collector threads active
@@ -157,7 +202,6 @@ public:
 
 	Lock*		rel_existence_lock;	// existence lock, if any
 	Lock*		rel_partners_lock;	// partners lock
-	Lock*		rel_rescan_lock;	// lock forcing relation to be scanned
 	IndexLock*	rel_index_locks;	// index existence locks
 	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
 	trig_vec*	rel_pre_erase; 		// Pre-operation erase trigger
@@ -230,7 +274,7 @@ private:
 
 public:
 	explicit jrd_rel(MemoryPool& p)
-		: rel_pool(&p), rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p)
+		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p)
 	{ }
 
 	bool hasTriggers() const;
@@ -290,22 +334,19 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocP
 class jrd_fld : public pool_alloc<type_fld>
 {
 public:
-	BoolExprNode*	fld_validation;		// validation clause, if any
-	StmtNode*		fld_validation_stmt;	// validation clause, if any - StmtExprNode fragment
-	BoolExprNode*	fld_not_null;		// if field cannot be NULL
-	StmtNode*		fld_not_null_stmt;	// if field cannot be NULL - StmtExprNode fragment
-	ValueExprNode*	fld_missing_value;	// missing value, if any
-	ValueExprNode*	fld_computation;	// computation for virtual field
-	ValueExprNode*	fld_source;			// source for view fields
-	ValueExprNode*	fld_default_value;	// default value, if any
+	jrd_nod*	fld_validation;		// validation clause, if any
+	jrd_nod*	fld_not_null;		// if field cannot be NULL
+	jrd_nod*	fld_missing_value;	// missing value, if any
+	jrd_nod*	fld_computation;	// computation for virtual field
+	jrd_nod*	fld_source;			// source for view fields
+	jrd_nod*	fld_default_value;	// default value, if any
 	ArrayField*	fld_array;			// array description, if array
 	Firebird::MetaName	fld_name;	// Field name
 	Firebird::MetaName	fld_security_name;	// security class name for field
-	Firebird::MetaName	fld_generator_name;	// identity generator name
 
 public:
 	explicit jrd_fld(MemoryPool& p)
-		: fld_name(p), fld_security_name(p), fld_generator_name(p)
+		: fld_name(p), fld_security_name(p)
 	{ }
 };
 

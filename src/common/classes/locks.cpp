@@ -26,7 +26,7 @@
  */
 
 #include "../../include/firebird.h"
-#include "../../common/common.h"
+#include "../../jrd/common.h"
 
 #if defined(WIN_NT)
 // minimum win32 version: win98 / winnt4 SP3
@@ -124,8 +124,7 @@ BOOL WINAPI TryEnterCriticalSection_Win9X(CRITICAL_SECTION* cs)
 
 // On Win 98 and Win ME TryEnterCriticalSection is defined, but not implemented
 // So direct linking to it won't hurt and will signal our incompatibility with Win 95
-TryEnterCS::tTryEnterCriticalSection* TryEnterCS::m_funct =
-	reinterpret_cast<TryEnterCS::tTryEnterCriticalSection*>(&TryEnterCriticalSection);
+TryEnterCS::tTryEnterCriticalSection* TryEnterCS::m_funct = &TryEnterCriticalSection;
 
 static TryEnterCS tryEnterCS;
 

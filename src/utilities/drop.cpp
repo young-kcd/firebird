@@ -34,13 +34,13 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#include "../common/common.h"
-#include "../common/isc_s_proto.h"
-#include "../common/isc_s_proto.h"
+#include "../jrd/common.h"
+#include "../jrd/isc.h"
+#include "../jrd/isc_s_proto.h"
 #include "../lock/lock_proto.h"
 #include "../jrd/license.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../common/config/config.h"
 
 #ifdef HAVE_SYS_TYPES_H

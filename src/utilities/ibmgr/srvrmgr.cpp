@@ -36,10 +36,10 @@
 #endif
 
 
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/svc_undoc.h"
 #include "../common/stuff.h"
 #include "../utilities/ibmgr/ibmgr.h"
@@ -273,7 +273,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 		rs = "can not quit now, use shut -ign";
 		break;
 	case MSG_STARTERR:
-		rs = "check "FB_LOGFILENAME" for errors";
+		rs = "check $FIREBIRD/firebird.log file for errors";
 		break;
 	case MSG_STARTFAIL:
 		rs = "can not start server";

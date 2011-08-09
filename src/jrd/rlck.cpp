@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
 #include "../jrd/err_proto.h"
@@ -35,7 +35,10 @@
 using namespace Jrd;
 using namespace Firebird;
 
-Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool write_flag)
+Lock* RLCK_reserve_relation(thread_db* tdbb,
+							jrd_tra* transaction,
+							jrd_rel* relation,
+							bool write_flag)
 {
 /**************************************
  *
@@ -54,16 +57,16 @@ Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rela
 		return NULL;
 
 	// hvlad: virtual relations always writable, all kind of GTT's are writable
-	// at read-only transactions at read-write databases, GTT's with ON COMMIT
+	// at read-only transactions at read-write databases, GTT's with ON COMMIT 
 	// DELETE ROWS clause is writable at read-only databases.
 
-	if (write_flag && (tdbb->getDatabase()->dbb_flags & DBB_read_only) &&
+	if (write_flag && (tdbb->getDatabase()->dbb_flags & DBB_read_only) && 
 		!relation->isVirtual() && !(relation->rel_flags & REL_temp_tran))
 	{
 		ERR_post(Arg::Gds(isc_read_only_database));
 	}
 
-	if (write_flag && (transaction->tra_flags & TRA_readonly) &&
+	if (write_flag && (transaction->tra_flags & TRA_readonly) && 
 		!relation->isVirtual() && !relation->isTemporary())
 	{
 		ERR_post(Arg::Gds(isc_read_only_trans));
@@ -108,7 +111,9 @@ Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rela
 }
 
 
-Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation)
+Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
+									 jrd_tra* transaction,
+									 jrd_rel* relation)
 {
 /**************************************
  *

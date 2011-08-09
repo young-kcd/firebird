@@ -3,7 +3,7 @@
 
 #define INCLUDE_OLD_FB_BLK
 
-#include "../common/common.h"
+#include "../jrd/common.h"
 
 typedef struct blk
 {

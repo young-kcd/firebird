@@ -31,11 +31,10 @@
 #include "firebird.h"
 #include "GlobalRWLock.h"
 #include "../lock/lock_proto.h"
-#include "../common/isc_proto.h"
+#include "isc_proto.h"
 #include "jrd.h"
 #include "lck_proto.h"
 #include "err_proto.h"
-#include "Attachment.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/condition.h"
 
@@ -43,7 +42,6 @@
 #include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cos_trace, "COS")
 #endif
-
 
 namespace Jrd {
 
@@ -58,6 +56,8 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 			return 0;
 
 		Database* dbb = globalRWLock->cachedLock->lck_dbb;
+		Database::SyncGuard dsGuard(dbb, true);
+
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 
@@ -101,7 +101,7 @@ void GlobalRWLock::shutdownLock()
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	Attachment::CheckoutLockGuard counterGuard(tdbb->getAttachment(), counterMutex, true);
+	Database::CheckoutLockGuard counterGuard(tdbb->getDatabase(), counterMutex);
 
 	COS_TRACE(("(%p)->shutdownLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -119,10 +119,11 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* att = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
 
 	{	// scope 1
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 
 		COS_TRACE(("(%p)->lockWrite stage 1 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -130,7 +131,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 		while (readers > 0 )
 		{
-			Attachment::Checkout attCout(att, true);
+			Database::Checkout checkoutDbb(dbb);
 			noReaders.wait(counterMutex);
 		}
 
@@ -139,7 +140,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 		while (currentWriter || pendingLock)
 		{
-			Attachment::Checkout attCout(att, true);
+			Database::Checkout checkoutDbb(dbb);
 			writerFinished.wait(counterMutex);
 		}
 
@@ -163,21 +164,19 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_write, wait))
 	{
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
-
+	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 		--pendingLock;
-
 	    if (--pendingWriters)
 	    {
 	        if (!currentWriter)
 	            writerFinished.notifyAll();
 	    }
-
 	    return false;
 	}
 
 	{	// scope 2
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 
 		--pendingLock;
 		--pendingWriters;
@@ -197,8 +196,9 @@ void GlobalRWLock::unlockWrite(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* att = tdbb->getAttachment();
-	Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+	Database* dbb = tdbb->getDatabase();
+
+	Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 
 	COS_TRACE(("(%p)->unlockWrite readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -225,12 +225,12 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* att = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
 
 	bool needFetch;
 
 	{	// scope 1
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 
 		COS_TRACE(("(%p)->lockRead stage 1 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -246,7 +246,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 			while (pendingWriters > 0 || currentWriter)
 			{
-				Attachment::Checkout attCout(att, true);
+				Database::Checkout checkoutDbb(dbb);
 				writerFinished.wait(counterMutex);
 			}
 
@@ -256,9 +256,9 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 			if (!pendingLock)
 				break;
 
-			Firebird::MutexUnlockGuard cout(counterMutex);
-			Attachment::Checkout attCout(att, true);
-			THD_yield();
+			counterMutex.leave();
+			Database::Checkout checkoutDbb(dbb);
+			counterMutex.enter();
 		}
 
 		needFetch = cachedLock->lck_physical < LCK_read;
@@ -275,13 +275,14 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_read, wait))
 	{
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 		--pendingLock;
 		return false;
 	}
 
 	{	// scope 2
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
+
 		--pendingLock;
 		++readers;
 
@@ -296,8 +297,9 @@ void GlobalRWLock::unlockRead(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* att = tdbb->getAttachment();
-	Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+	Database* dbb = tdbb->getDatabase();
+
+	Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 
 	COS_TRACE(("(%p)->unlockRead readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -319,8 +321,7 @@ void GlobalRWLock::unlockRead(thread_db* tdbb)
 
 bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
 {
-	Attachment* att = tdbb->getAttachment();
-	Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+	Database::CheckoutLockGuard counterGuard(tdbb->getDatabase(), counterMutex);
 
 	COS_TRACE(("(%p)->tryReleaseLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));

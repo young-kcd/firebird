@@ -13,10 +13,10 @@
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start firebird server
+# Short-Description: Start firebird super-server
 # Description:       Start the firebird guardian process (fbguard)
 #                    which starts the actual firebird server process
-#                    (firebird) and makes sure there is always firebird
+#                    (fbserver) and makes sure there is always fbserver
 #                    running
 ### END INIT INFO
 

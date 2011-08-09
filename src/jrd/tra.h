@@ -43,8 +43,6 @@
 
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
-#include "../jrd/obj.h"
-#include "../jrd/EngineInterface.h"
 
 namespace EDS {
 class Transaction;
@@ -98,46 +96,12 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 
 // Transaction block
 
-struct CallerName
-{
-	CallerName(int aType, const Firebird::MetaName& aName)
-		: type(aType),
-		  name(aName)
-	{
-	}
-
-	CallerName()
-		: type(obj_type_MAX)
-	{
-	}
-
-	CallerName(const CallerName& o)
-		: type(o.type),
-		  name(o.name)
-	{
-	}
-
-	void operator =(const CallerName& o)
-	{
-		if (&o != this)
-		{
-			type = o.type;
-			name = o.name;
-		}
-	}
-
-	int type;
-	Firebird::MetaName name;
-};
-
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
 const char* const TRA_UNDO_SPACE = "fb_undo_";
 
 class jrd_tra : public pool_alloc<type_tra>
 {
-	typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, SINT64> > > GenIdCache;
-
 public:
 	enum wait_t {
 		tra_no_wait,
@@ -162,9 +126,6 @@ public:
 		tra_outer(outer),
 		tra_transactions(*p),
 		tra_sorts(*p),
-		tra_public_interface(NULL),
-		tra_gen_ids(NULL),
-		tra_interface(NULL),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
@@ -195,37 +156,25 @@ public:
 		return transaction;
 	}
 
-	static void destroy(Attachment* const attachment, jrd_tra* const transaction)
+	static void destroy(Database* const dbb, jrd_tra* const transaction)
 	{
 		if (transaction)
 		{
-			if (!attachment || transaction->tra_outer)
+			if (transaction->tra_outer)
+			{
 				delete transaction;
+			}
 			else
 			{
 				MemoryPool* const pool = transaction->tra_pool;
 				Firebird::MemoryStats temp_stats;
 				pool->setStatsGroup(temp_stats);
 				delete transaction;
-				attachment->deletePool(pool);
+				dbb->deletePool(pool);
 			}
 		}
 	}
 
-	Attachment* getAttachment()
-	{
-		return tra_attachment;
-	}
-
-	dsql_dbb* getDsqlAttachment()
-	{
-		return tra_attachment->att_dsql_instance;
-	}
-
-	JTransaction* getInterface();
-	void setInterface(JTransaction* jt);
-
-	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
 	SLONG tra_number;					// transaction number
 	SLONG tra_top;						// highest transaction in snapshot
@@ -261,19 +210,15 @@ public:
 	DatabaseSnapshot* tra_db_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
-	bool tra_in_use;					// transaction in use (can't be committed or rolled back)
 	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
-	CallerName tra_caller_name;			// caller object name
+	jrd_req* tra_callback_caller;		// caller request for execute statement
 	Firebird::Array<UCHAR> tra_transactions;
 	SortOwner tra_sorts;
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
-	Firebird::ITransaction* tra_public_interface;
-	GenIdCache* tra_gen_ids;
 
 private:
-	JTransaction* tra_interface;
 	TempSpace* tra_blob_space;	// temp blob storage
 	TempSpace* tra_undo_space;	// undo log storage
 
@@ -292,9 +237,7 @@ public:
 			return tra_outer->getBlobSpace();
 
 		if (!tra_blob_space)
-		{
 			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
-		}
 
 		return tra_blob_space;
 	}
@@ -302,9 +245,7 @@ public:
 	TempSpace* getUndoSpace()
 	{
 		if (!tra_undo_space)
-		{
 			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
-		}
 
 		return tra_undo_space;
 	}
@@ -323,16 +264,6 @@ public:
 	}
 
 	UserManagement* getUserManagement();
-
-	GenIdCache* getGenIdCache()
-	{
-		if (!tra_gen_ids)
-		{
-			tra_gen_ids = FB_NEW(*tra_pool) GenIdCache(*tra_pool);
-		}
-
-		return tra_gen_ids;
-	}
 };
 
 // System transaction is always transaction 0.
@@ -340,28 +271,33 @@ const SLONG TRA_system_transaction = 0;
 
 // Flag definitions for tra_flags.
 
-const ULONG TRA_system				= 0x1L;		// system transaction
-const ULONG TRA_prepared			= 0x2L;		// transaction is in limbo
-const ULONG TRA_reconnected			= 0x4L;		// reconnect in progress
-const ULONG TRA_degree3				= 0x8L;		// serializeable transaction
-const ULONG TRA_write				= 0x10L;	// transaction has written
-const ULONG TRA_readonly			= 0x20L;	// transaction is readonly
-const ULONG TRA_prepare2			= 0x40L;	// transaction has updated RDB$TRANSACTIONS
-const ULONG TRA_ignore_limbo		= 0x80L;	// ignore transactions in limbo
-const ULONG TRA_invalidated 		= 0x100L;	// transaction invalidated by failed write
-const ULONG TRA_deferred_meta 		= 0x200L;	// deferred meta work posted
-const ULONG TRA_read_committed		= 0x400L;	// can see latest committed records
-const ULONG TRA_autocommit			= 0x800L;	// autocommits all updates
-const ULONG TRA_perform_autocommit	= 0x1000L;	// indicates autocommit is necessary
-const ULONG TRA_rec_version			= 0x2000L;	// don't wait for uncommitted versions
-const ULONG TRA_restart_requests	= 0x4000L;	// restart all requests in attachment
-const ULONG TRA_no_auto_undo		= 0x8000L;	// don't start a savepoint in TRA_start
-const ULONG TRA_cancel_request		= 0x10000L;	// cancel active request, if any
-const ULONG TRA_precommitted		= 0x20000L;	// transaction committed at startup
-const ULONG TRA_own_interface		= 0x40000L;	// tra_interface was created for internal needs
+const ULONG TRA_system			= 1L;			// system transaction
+//const ULONG TRA_update		= 2L;			// update is permitted
+const ULONG TRA_prepared		= 4L;			// transaction is in limbo
+const ULONG TRA_reconnected		= 8L;			// reconnect in progress
+//const ULONG TRA_reserving		= 16L;			// relations explicityly locked
+const ULONG TRA_degree3			= 32L;			// serializeable transaction
+//const ULONG TRA_committing	= 64L;			// commit in progress
+const ULONG TRA_write			= 128L;			// transaction has written
+const ULONG TRA_readonly		= 256L;			// transaction is readonly
+//const ULONG TRA_nowait		= 512L;			// don't wait on relations, give up
+const ULONG TRA_prepare2		= 1024L;		// transaction has updated RDB$TRANSACTIONS
+const ULONG TRA_ignore_limbo	= 2048L;		// ignore transactions in limbo
+const ULONG TRA_invalidated 	= 4096L;		// transaction invalidated by failed write
+const ULONG TRA_deferred_meta 	= 8192L;		// deferred meta work posted
+//const ULONG TRA_add_log		= 16384L;		// write ahead log file was added
+//const ULONG TRA_delete_log	= 32768L;		// write ahead log file was deleted
+const ULONG TRA_read_committed	= 65536L;		// can see latest committed records
+const ULONG TRA_autocommit		= 131072L;		// autocommits all updates
+const ULONG TRA_perform_autocommit	= 262144L;	// indicates autocommit is necessary
+const ULONG TRA_rec_version			= 524288L;	// don't wait for uncommitted versions
+const ULONG TRA_restart_requests	= 1048576L;	// restart all requests in attachment
+const ULONG TRA_no_auto_undo		= 2097152L;	// don't start a savepoint in TRA_start
+const ULONG TRA_cancel_request		= 4194304L;	// cancel active request, if any
+const ULONG TRA_precommitted		= 8388608L;	// transaction committed at startup
 
 // flags derived from TPB, see also transaction_options() at tra.cpp
-const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed |
+const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed | 
 	TRA_autocommit | TRA_rec_version | TRA_no_auto_undo | TRA_restart_requests);
 
 const int TRA_MASK				= 3;
@@ -459,18 +395,12 @@ enum dfw_t {
 	//dfw_unlink_file,
 	dfw_delete_generator,
 	dfw_modify_generator,
-	dfw_create_function,
-	dfw_modify_function,
-	dfw_delete_function,
+	dfw_delete_udf,
 	dfw_add_difference,
 	dfw_delete_difference,
 	dfw_begin_backup,
 	dfw_end_backup,
 	dfw_user_management,
-	dfw_drop_package_header,
-	dfw_drop_package_body,
-	dfw_check_not_null,
-	dfw_store_view_context_type,
 	dfw_create_generator,
 
 	// deferred works argument types
@@ -481,8 +411,7 @@ enum dfw_t {
 	dfw_arg_check_blr,		// check if BLR is still compilable
 	dfw_arg_rel_name,		// relation name of a trigger
 	dfw_arg_trg_type,		// trigger type
-	dfw_arg_new_name,		// new name
-	dfw_arg_field_not_null	// set domain to not nullable
+	dfw_arg_new_name		// new name
 };
 
 // Verb actions
@@ -543,11 +472,6 @@ public:
 			length = 0;
 			format = NULL;
 		}
-	}
-
-	const UCHAR getFlags() const
-	{
-		return flags;
 	}
 
 private:

@@ -28,12 +28,9 @@
 #define JRD_BLB_H
 
 #include "../jrd/RecordNumber.h"
-#include "../jrd/EngineInterface.h"
 #include "../common/classes/array.h"
 #include "../common/classes/File.h"
 
-#include "firebird/Provider.h"
-#include "../common/classes/ImplementHelper.h"
 namespace Jrd {
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
@@ -140,46 +137,47 @@ struct bid
 	}
 };
 
-
-// Your basic blob block.
+/* Your basic blob block. */
 
 class blb : public pool_alloc<type_blb>
 {
 public:
 	blb(MemoryPool& pool, USHORT page_size)
 		: blb_buffer(pool, page_size / sizeof(SLONG)),
-		  blb_has_buffer(true),
-		  blb_interface(NULL)
+		  blb_has_buffer(true)
 	{
 	}
 
-	Attachment*	blb_attachment;		// database attachment
-	jrd_rel*	blb_relation;		// Relation, if known
-	jrd_tra*	blb_transaction;	// Parent transaction block
-	UCHAR*		blb_segment;		// Next segment to be addressed
-	BlobControl*	blb_filter;		// Blob filter control block, if any
-	bid			blb_blob_id;		// Id of materialized blob
-	vcl*		blb_pages;			// Vector of pages
-	USHORT blb_pointers;			// Max pointer on a page
-	USHORT blb_level;				// Storage type
-	USHORT blb_max_segment;			// Longest segment
-	USHORT blb_flags;				// Interesting stuff (see below)
-	USHORT blb_clump_size;			// Size of data clump
-	USHORT blb_space_remaining;		// Data space left
-	USHORT blb_max_pages;			// Max pages in vector
-	USHORT blb_fragment_size;		// Residual fragment size
-	SSHORT blb_sub_type;			// Blob's declared sub-type
-	UCHAR blb_charset;				// Blob's charset
-	USHORT blb_pg_space_id;			// page space
-	ULONG blb_sequence;				// Blob page sequence
-	ULONG blb_max_sequence;			// Number of data pages
-	ULONG blb_count;				// Number of segments
-	ULONG blb_length;				// Total length of data sans segments
-	ULONG blb_lead_page;			// First page number
-	ULONG blb_seek;					// Seek location
-	ULONG blb_temp_id;				// ID of newly created blob in transaction
-	size_t blb_temp_size;			// size stored in transaction temp space
-	offset_t blb_temp_offset;		// offset in transaction temp space
+	Attachment*	blb_attachment;	/* database attachment */
+	jrd_rel*	blb_relation;	/* Relation, if known */
+	jrd_tra*	blb_transaction;	/* Parent transaction block */
+	//blb*		blb_next;		/* Next blob in transaction */
+	UCHAR*		blb_segment;	/* Next segment to be addressed */
+	BlobControl*	blb_filter;	/* Blob filter control block, if any */
+	bid			blb_blob_id;	/* Id of materialized blob */
+	vcl*		blb_pages;		/* Vector of pages */
+	USHORT blb_pointers;		/* Max pointer on a page */
+	USHORT blb_level;			/* Storage type */
+	USHORT blb_max_segment;		/* Longest segment */
+	USHORT blb_flags;			/* Interesting stuff (see below) */
+	USHORT blb_clump_size;		/* Size of data clump */
+	USHORT blb_space_remaining;	/* Data space left */
+	USHORT blb_max_pages;		/* Max pages in vector */
+	USHORT blb_fragment_size;	/* Residual fragment size */
+	//USHORT blb_source_interp;	/* source interp (for writing) */
+	//USHORT blb_target_interp;	/* destination interp (for reading) */
+	SSHORT blb_sub_type;		/* Blob's declared sub-type */
+	UCHAR blb_charset;			// Blob's charset
+	USHORT blb_pg_space_id;		// page space
+	ULONG blb_sequence;			/* Blob page sequence */
+	ULONG blb_max_sequence;		/* Number of data pages */
+	ULONG blb_count;			/* Number of segments */
+	ULONG blb_length;			/* Total length of data sans segments */
+	ULONG blb_lead_page;		/* First page number */
+	ULONG blb_seek;				/* Seek location */
+	ULONG blb_temp_id;          // ID of newly created blob in transaction
+	size_t blb_temp_size;		// size stored in transaction temp space
+	offset_t blb_temp_offset;	// offset in transaction temp space
 
 private:
 	Firebird::Array<SLONG> blb_buffer;	// buffer used in opened blobs - must be longword aligned
@@ -203,19 +201,16 @@ public:
 		blb_buffer.free();
 		blb_has_buffer = false;
 	}
-
-	static void destroy(blb* blob, const bool purge_flag);
-
-	JBlob* blb_interface;
 };
 
-const int BLB_temporary		= 1;		// Newly created blob
-const int BLB_eof			= 2;		// This blob is exhausted
-const int BLB_stream		= 4;		// Stream style blob
-const int BLB_closed		= 8;		// Temporary blob has been closed
-const int BLB_damaged		= 16;		// Blob is busted
-const int BLB_seek			= 32;		// Seek is pending
-const int BLB_large_scan	= 64;		// Blob is larger than page buffer cache
+const int BLB_temporary	= 1;			/* Newly created blob */
+const int BLB_eof		= 2;			/* This blob is exhausted */
+const int BLB_stream	= 4;			/* Stream style blob */
+const int BLB_closed	= 8;			/* Temporary blob has been closed */
+const int BLB_damaged	= 16;			/* Blob is busted */
+const int BLB_seek		= 32;			/* Seek is pending */
+const int BLB_user_def	= 64;			/* Blob is user created */
+const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 
 /* Blob levels are:
 
@@ -227,3 +222,4 @@ const int BLB_large_scan	= 64;		// Blob is larger than page buffer cache
 } //namespace Jrd
 
 #endif // JRD_BLB_H
+

@@ -24,12 +24,6 @@
 #ifndef JRD_LCK_H
 #define JRD_LCK_H
 
-//#define DEBUG_LCK
-
-#ifdef DEBUG_LCK
-#include "../common/classes/SyncObject.h"
-#endif
-
 namespace Jrd {
 
 class Database;
@@ -61,9 +55,7 @@ enum lck_t {
 	LCK_tt_exist,				// TextType existence lock
 	LCK_cancel,					// Cancellation lock
 	LCK_btr_dont_gc,			// Prevent removal of b-tree page from index
-	LCK_shared_counter,			// Database-wide shared counter
-	LCK_fun_exist,				// Function existence lock
-	LCK_rel_rescan				// Relation forced rescan lock
+	LCK_shared_counter			// Database-wide shared counter
 };
 
 // Lock owner types
@@ -98,10 +90,6 @@ public:
 		lck_key.lck_long = 0;
 		lck_tail[0] = 0;
 	}
-
-#ifdef DEBUG_LCK
-	Firebird::SyncObject	lck_sync;
-#endif
 
 	Lock* lck_parent;
 

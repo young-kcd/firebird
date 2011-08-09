@@ -29,7 +29,7 @@
 #ifndef CLASSES_SEMAPHORE_H
 #define CLASSES_SEMAPHORE_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class
@@ -115,7 +115,7 @@ public:
 
 	void enter()
 	{
-		dispatch_semaphore_wait(semaphore);
+		dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 	}
 
 	void release(SLONG count = 1)

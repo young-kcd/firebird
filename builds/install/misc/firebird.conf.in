@@ -41,7 +41,7 @@
 # String
 # ------
 # Strings are also what they sound like, strings. Examples:
-#   RemoteServiceName = gds_db
+#   RootDirectory  = /opt/firebird
 #   RemotePipeName = pipe47
 #
 #
@@ -50,16 +50,28 @@
 #
 #######################################
 
+# ==================================
+# Settings for all platforms/engines
+# ==================================
+#
+# ----------------------------
+# Specify the root directory under which Firebird is installed.
+# Can be used to override the OS-specifically determined one.
+#
+# Type: string
+#
+#RootDirectory =
+
 
 # ----------------------------
 # Database Paths/Directories
 #
 # DatabaseAccess may be None, Full or Restrict. If you choose Restrict,
 # provide ';'-separated trees list, where database files are stored.
-# Relative paths are treated relative to the root directory of firebird.
-# Default value 'Full' gives full access to all files on your site.
-# To specify access to specific trees, enum all required paths 
-# (for Win32 this may be something like 'C:\DataBase;D:\Mirror',
+# Relative paths are treated relative to RootDirectory entry
+# (see above). Default value 'Full' gives full access to all files
+# on your site. To specify access to specific trees, enum all required
+# paths (for Win32 this may be something like 'C:\DataBase;D:\Mirror',
 # for unix - '/db;/mnt/mirrordb'). If you choose 'None', then only
 # databases listed in aliases.conf can be attached.
 #
@@ -87,13 +99,11 @@
 #
 # ExternalFileAccess may be None, Full or Restrict. If you choose
 # Restrict, provide ';'-separated trees list, where external files
-# are stored. Relative paths are treated relative to the root directory 
-# of firebird. Default value 'None' disables any use of external files
+# are stored. Relative paths are treated relative to RootDirectory entry
+# (see above). Default value 'None' disables any use of external files
 # on your site. To specify access to specific trees, enum all required
 # paths (for Win32 this may be something like 'C:\ExternalTables',
 # for unix - '/db/extern;/mnt/extern').
-#
-# Per-database configurable.
 #
 # NOTE: THE EXTERNAL TABLE ENGINE FEATURE COULD BE USED TO COMPROMISE
 # THE SERVER/HOST AS WELL AS DATABASE SECURITY!!
@@ -111,8 +121,8 @@
 #
 # UdfAccess may be None, Full or Restrict. If you choose
 # Restrict, provide ';'-separated trees list, where UDF libraries
-# are stored. Relative paths are treated relative to the root directory 
-# of firebird.
+# are stored. Relative paths are treated relative to RootDirectory entry
+# (see above).
 #
 # Default value 'Restrict UDF' provides the same restrictions
 # as in FB 1.0. To specify access to specific trees, enum all required
@@ -134,10 +144,11 @@
 # Temporary directories
 #
 # Provide ';'-separated trees list, where temporary files are stored.
-# Relative paths are treated relative to the root directory of firebird.
-# Default value is determined using FIREBIRD_TMP, TEMP or TMP 
-# environment options. Once the first specified directory has no 
-# available space, the engine will switch to the next one, and so on.
+# Relative paths are treated relative to RootDirectory entry
+# (see above). Default value is determined using FIREBIRD_TMP,
+# TEMP or TMP environment options. Once the first specified
+# directory has no available space, the engine will switch to the
+# next one, and so on.
 #
 # E.g.:
 # TempDirectories = c:\temp
@@ -200,9 +211,7 @@
 # in cache at once. If you increase this value, the engine will
 # allocate more pages to the cache for every database. By default, the
 # SuperServer allocates 2048 pages for each database and the classic
-# allocates 256 pages per client connection per database.
-#
-# Per-database configurable.
+# allocates 75 pages per client connection per database.
 #
 # Type: integer
 #
@@ -218,8 +227,6 @@
 # not less than 128KB and no more than DatabaseGrowthIncrement (128MB by 
 # default). To disable preallocation set DatabaseGrowthIncrement to zero.
 # Shadow database files are not preallocated.
-#
-# Per-database configurable.
 #
 # Type: integer
 #
@@ -238,8 +245,6 @@
 # zero.
 # 
 # Type: integer, measured in database pages
-#
-# Per-database configurable.
 #
 #FileSystemCacheThreshold = 65536
 
@@ -348,41 +353,16 @@
 
 
 # ----------------------------
+# Boolean evaluation method (complete or shortcut)
 #
-# This group of parameters determines what plugins will be used by firebird.
-# Format of string is the list of plugins, separated by space, ',' or ';'.
-# Plugins will be tried in an order, specified here.
-# In many cases correct order is important!
+# If your SQL code depends on side-effects of full evaluation of OR
+# and AND statements (right-hand-side terms), even if the expressions
+# final result could be determined by just examining the value of the
+# first term, you might need to turn this on.
 #
-# Type: string
-
-# AuthServer and AuthClient determine what authentication methods will be used
-# by network server and client redirector. For non-windows systems default
-# for both is Legacy_Auth.
+# Type: boolean
 #
-#AuthServer = Legacy_Auth, Win_Sspi
-#AuthClient = Legacy_Auth, Win_Sspi
-
-# UserManager sets plugin used to work with security database. If more than
-# one plugin is given, first plugin from the list is used.
-#
-#UserManager = Legacy_UserManager
-
-# TracePlugin is used by firebird trace facility to send trace data to the user
-# or log file in audit case.
-#
-#TracePlugin = fbtrace
-
-
-# ----------------------------
-#
-# This parameter determines what providers will be used by firebird.
-# Format is the same as for the list of plugins (see a few lines before).
-# This is not strange because internally provider is just a kind of plugin.
-#
-# Type: string
-#
-#Providers = Remote,Engine12,Loopback
+#CompleteBooleanEvaluation = 0
 
 
 # ----------------------------
@@ -392,8 +372,6 @@
 # and doing extra deadlock scan cycle. Engine detects deadlocks instantly
 # in all normal cases, so this value affects things only if something goes
 # wrong. Setting it too low may degrade system performance.
-#
-# Per-database configurable.
 #
 # Type: integer
 #
@@ -409,8 +387,6 @@
 # flushed, at the next transaction commit.  For non-Win32 ports,
 # the default value is -1 (Disabled)
 #
-# Per-database configurable.
-#
 # Type: integer
 #
 #MaxUnflushedWrites = 100
@@ -419,8 +395,6 @@
 # Number of seconds during which unflushed writes will accumulate
 # before they are flushed, at the next transaction commit. For non-Win32
 # ports, the default value is -1 (Disabled)
-#
-# Per-database configurable.
 #
 # Type: integer
 #
@@ -443,6 +417,24 @@
 # Type: boolean
 #
 #BugcheckAbort = 0
+
+
+# Prior to Firebird 1.5 various SELECT expressions generated unnamed
+# columns. This did not conform to the SQL standard. Fb 1.5 saw the
+# introduction of default aliases for these unnamed columns. In some
+# cases, particularly if string concatenation is used (via the ||
+# operator) this breaks existing scripts.
+#
+# This setting will affect aliases generated via CONCATENATION,
+# CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP and EXTRACT. Setting
+# the value to true will disable the alias generation. It is only
+# recommended to be used where legacy scripts need to be supported.
+# It will be marked deprecated in Firebird 2.0 and removed in
+# Firebird 3.0.
+#
+# Type: boolean
+#
+#OldColumnNaming = 0
 
 
 # Prior to Firebird 2.5 the SET clause of the UPDATE statement assigned
@@ -588,8 +580,6 @@
 # table expands dynamically up to the limit of memory. In SuperServer, the
 # initial size is also the final size.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
 #LockMemSize = 1048576
@@ -607,8 +597,6 @@
 #	  as soon as they are available; can result in lock request
 #       starvation.
 #
-# Per-database configurable.
-#
 # Type: integer/boolean
 #
 #LockGrantOrder = 1
@@ -622,8 +610,6 @@
 # will be made conditionally. Zero value means unconditional mode.
 # Relevant only on SMP machines.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
 #LockAcquireSpins = 0
@@ -632,8 +618,6 @@
 # Tune lock hash list; more hash slots mean shorter hash chains. Only
 # necessary under very high load. Prime number values are recommended.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
 #LockHashSlots = 1009
@@ -641,8 +625,6 @@
 # ----------------------------
 #
 # Bytes of shared memory allocated for event manager.
-#
-# Per-database configurable.
 #
 # Type: integer
 #
@@ -660,11 +642,11 @@
 # The value is taken from a bit map in which each bit represents a CPU.
 # Thus, to use only the first processor, the value is 1. To use both
 # CPU 1 and CPU 2, the value is 3. To use CPU 2 and CPU 3, the value
-# is 6. The default value is 0 - no affinity will be set.
+# is 6. The default value is 1.
 #
 # Type: integer
 #
-#CpuAffinityMask = 0
+#CpuAffinityMask = 1
 
 
 # ----------------------------
@@ -708,8 +690,6 @@
 # Superserver has by default "combined" policy
 # Classic has by default "cooperative" policy.
 #	Other values are ignored by classic server build
-#
-# Per-database configurable.
 #
 # Type: string (special format)
 #
@@ -838,16 +818,3 @@
 #    16    16777216       320    335544320       896    939524096
 #    32    33554432       384    402653184      1024    1073741824
 #
-
-# Type: boolean
-#SharedCache = true
-
-# Type: boolean
-#SharedDatabase = false
-
-
-# SharedCache	SharedDatabase	Mode
-# false			false			Classic with exlusive access	// single attachment only ?
-# false			true			Classic with shared access		// traditional CS/SC
-# true			false			Super with exlusive access		// traditional SS
-# true			true			Super with shared access		// 

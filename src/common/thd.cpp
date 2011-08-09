@@ -29,9 +29,9 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <errno.h>
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../common/thd.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
@@ -157,7 +157,7 @@ void THD_yield()
 
 // Cleanup on thread completion
 
-#ifdef USE_THREAD_DESTRUCTOR
+#ifdef USE_POSIX_THREADS
 namespace {
 
 pthread_key_t key;
@@ -189,18 +189,6 @@ void initThreadCleanup()
 
 ThreadCleanup* chain = NULL;
 Firebird::GlobalPtr<Firebird::Mutex> cleanupMutex;
-
-class RemoveUnneededKey
-{
-public:
-	~RemoveUnneededKey()
-	{
-		pthread_key_delete(key);
-	}
-	explicit RemoveUnneededKey(Firebird::MemoryPool&)
-	{ }
-};
-Firebird::GlobalPtr<RemoveUnneededKey> removeUnneededKey;
 
 } // anonymous namespace
 

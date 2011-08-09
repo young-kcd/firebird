@@ -28,11 +28,11 @@
 #include "../jrd/ibase.h"
 #include "../remote/remote.h"
 #include "../jrd/align.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../remote/parse_proto.h"
 
 #if !defined(DEV_BUILD) || (defined(DEV_BUILD) && defined(WIN_NT))
-#include "../yvalve/gds_proto.h"	// gds__log()
+#include "../jrd/gds_proto.h"	// gds__log()
 #endif
 
 
@@ -254,12 +254,6 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				align = type_alignments[dtype_sql_time];
 				break;
 
-			case blr_bool:
-				desc->dsc_dtype = dtype_boolean;
-				desc->dsc_length = sizeof(UCHAR);
-				align = type_alignments[dtype_boolean];
-				break;
-
 			default:
 				fb_assert(FALSE);
 				return parse_error(format, message);
@@ -355,7 +349,6 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 			case blr_timestamp:
 			case blr_sql_date:
 			case blr_sql_time:
-			case blr_bool:
 				break;
 
 			case blr_d_float:

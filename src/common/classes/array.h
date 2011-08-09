@@ -27,9 +27,8 @@
 #ifndef CLASSES_ARRAY_H
 #define CLASSES_ARRAY_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include <string.h>
-#include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
 
 namespace Firebird {
@@ -99,19 +98,16 @@ public:
 		freeData();
 	}
 
-	void clear() throw()
-	{
-		count = 0;
-	}
+	void clear() { count = 0; }
 
 protected:
-	const T& getElement(size_t index) const throw()
+	const T& getElement(size_t index) const
 	{
   		fb_assert(index < count);
   		return data[index];
 	}
 
-	T& getElement(size_t index) throw()
+	T& getElement(size_t index)
 	{
   		fb_assert(index < count);
   		return data[index];
@@ -140,12 +136,12 @@ public:
 		return *this;
 	}
 
-	const T& operator[](size_t index) const throw()
+	const T& operator[](size_t index) const
 	{
   		return getElement(index);
 	}
 
-	T& operator[](size_t index) throw()
+	T& operator[](size_t index)
 	{
   		return getElement(index);
 	}
@@ -212,7 +208,7 @@ public:
 	{
 		ensureCapacity(count + 1);
 		data[count] = item;
-  		return count++;
+  		return ++count;
 	}
 
 	void add(const T* items, const size_t itemsCount)
@@ -222,14 +218,14 @@ public:
 		count += itemsCount;
 	}
 
-	T* remove(const size_t index) throw()
+	T* remove(const size_t index)
 	{
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
 
-	T* removeRange(const size_t from, const size_t to) throw()
+	T* removeRange(const size_t from, const size_t to)
 	{
   		fb_assert(from <= to);
   		fb_assert(to <= count);
@@ -238,7 +234,7 @@ public:
 		return &data[from];
 	}
 
-	T* removeCount(const size_t index, const size_t n) throw()
+	T* removeCount(const size_t index, const size_t n)
 	{
   		fb_assert(index + n <= count);
   		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
@@ -246,7 +242,7 @@ public:
 		return &data[index];
 	}
 
-	T* remove(T* itr) throw()
+	T* remove(T* itr)
 	{
 		const size_t index = itr - begin();
   		fb_assert(index < count);
@@ -254,12 +250,12 @@ public:
 		return &data[index];
 	}
 
-	T* remove(T* itrFrom, T* itrTo) throw()
+	T* remove(T* itrFrom, T* itrTo)
 	{
 		return removeRange(itrFrom - begin(), itrTo - begin());
 	}
 
-	void shrink(size_t newCount) throw()
+	void shrink(size_t newCount)
 	{
 		fb_assert(newCount <= count);
 		count = newCount;
@@ -277,8 +273,7 @@ public:
 	// Resize array according to STL's vector::resize() rules
 	void resize(const size_t newCount, const T& val)
 	{
-		if (newCount > count)
-		{
+		if (newCount > count) {
 			ensureCapacity(newCount);
 			while (count < newCount) {
 				data[count++] = val;
@@ -362,10 +357,8 @@ public:
 	// Maybe we should modify it to iterate directy with "pos".
 	bool find(const T& item, size_t& pos) const
 	{
-		for (size_t i = 0; i < count; i++)
-		{
-			if (data[i] == item)
-			{
+		for (size_t i = 0; i < count; i++) {
+			if (data[i] == item) {
 				pos = i;
 				return true;
 			}
@@ -397,8 +390,7 @@ protected:
 
 	void ensureCapacity(size_t newcapacity, bool preserve = true)
 	{
-		if (newcapacity > capacity)
-		{
+		if (newcapacity > capacity) {
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
 			}
@@ -436,8 +428,7 @@ public:
 	bool find(const Key& item, size_t& pos) const
 	{
 		size_t highBound = this->count, lowBound = 0;
-		while (highBound > lowBound)
-		{
+		while (highBound > lowBound) {
 			const size_t temp = (highBound + lowBound) >> 1;
 			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;

@@ -276,6 +276,8 @@ static void add_cache( gpre_req* request, const act* action, gpre_dbb* database)
 
 static void alter_database( gpre_req* request, act* action)
 {
+	gpre_file* file;
+
 	gpre_dbb* db = (gpre_dbb*) action->act_object;
 
 	request->add_byte(isc_dyn_mod_database);
@@ -283,15 +285,15 @@ static void alter_database( gpre_req* request, act* action)
 	// Reverse the order of files (parser left them backwards)
 
 	gpre_file* next;
-	gpre_file* files = NULL;
-	for (gpre_file* file = db->dbb_files; file; file = next)
+	gpre_file* files = db->dbb_files;
+	for (file = files, files = NULL; file; file = next)
 	{
 		next = file->fil_next;
 		file->fil_next = files;
 		files = file;
 	}
 
-	for (const gpre_file* file = files; file != NULL; file = file->fil_next)
+	for (file = files; file != NULL; file = file->fil_next)
 	{
 		put_cstring(request, isc_dyn_def_file, file->fil_name);
 		request->add_byte(isc_dyn_file_start);
@@ -788,6 +790,9 @@ static void create_set_default_trg(gpre_req* request,
 								   cnstrt* constraint,
 								   bool on_upd_trg)
 {
+	gpre_rel* rel;
+	gpre_req* req;
+	act* request_action;
 	TEXT s[512];
 	TEXT default_val[BLOB_BUFFER_SIZE];
 
@@ -922,11 +927,8 @@ static void create_set_default_trg(gpre_req* request,
 
 			// If somebody is 'clever' enough to create table and then to alter it
 			// within the same application ...
-			gpre_req* req = gpreGlob.requests;
-			for (; req; req = req->req_next)
+			for (req = gpreGlob.requests; req; req = req->req_next)
 			{
-				act* request_action;
-				gpre_rel* rel;
 				if (req->req_type == REQ_ddl && (request_action = req->req_actions) &&
 					(request_action->act_type == ACT_create_table ||
 						request_action->act_type == ACT_alter_table) &&
@@ -972,9 +974,8 @@ static void create_set_default_trg(gpre_req* request,
 			// search for domain level default
 			fb_assert(search_for_column == false);
 			// search for domain in memory
-			for (gpre_req* req = gpreGlob.requests; req; req = req->req_next)
+			for (req = gpreGlob.requests; req; req = req->req_next)
 			{
-				act* request_action;
 				gpre_fld* domain;
 				if (req->req_type == REQ_ddl &&
 					(request_action = req->req_actions) &&
@@ -1447,11 +1448,12 @@ static void create_database_modify_dyn( gpre_req* request, act* action)
 
 	request->add_byte(isc_dyn_mod_database);
 
+	gpre_file* file;
 	// Reverse the order of files (parser left them backwards)
 
+	gpre_file* files = db->dbb_files;
 	gpre_file* next;
-	gpre_file* files = NULL;
-	for (gpre_file* file = db->dbb_files; file; file = next)
+	for (file = files, files = NULL; file; file = next)
 	{
 		next = file->fil_next;
 		file->fil_next = files;
@@ -1460,7 +1462,7 @@ static void create_database_modify_dyn( gpre_req* request, act* action)
 
 	SLONG start = db->dbb_length;
 
-	for (const gpre_file* file = files; file != NULL; file = file->fil_next)
+	for (file = files; file != NULL; file = file->fil_next)
 	{
 		put_cstring(request, isc_dyn_def_file, file->fil_name);
 		request->add_byte(isc_dyn_file_start);
@@ -1655,8 +1657,9 @@ static void create_table( gpre_req* request, const act* action)
 	put_numeric(request, isc_dyn_rel_sql_protection, 1);
 
 	// add field info
+	const gpre_fld* field;
 	USHORT position = 0;
-	for (const gpre_fld* field = relation->rel_fields; field; field = field->fld_next)
+	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_global)
 		{
@@ -1690,7 +1693,7 @@ static void create_table( gpre_req* request, const act* action)
 
 	// Need to create an index for any fields (columns) declared with the UNIQUE constraint.
 
-	for (const gpre_fld* field = relation->rel_fields; field; field = field->fld_next)
+	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_index)
 			create_index(request, field->fld_index);
@@ -1742,7 +1745,8 @@ static void create_trigger(gpre_req* request,
 //		Generate dynamic DDL for CREATE VIEW action.
 //
 
-static bool create_view(gpre_req* request, act* action)
+static bool create_view(gpre_req* request,
+						act* action)
 {
 	// add relation name
 
@@ -1762,7 +1766,8 @@ static bool create_view(gpre_req* request, act* action)
 
 	// Write out view context info
 	gpre_rel* sub_relation = 0;
-	for (gpre_ctx* context = request->req_contexts; context; context = context->ctx_next)
+	gpre_ctx* context;
+	for (context = request->req_contexts; context; context = context->ctx_next)
 	{
 		sub_relation = context->ctx_relation;
 		if (!sub_relation)
@@ -1771,10 +1776,6 @@ static bool create_view(gpre_req* request, act* action)
 		put_numeric(request, isc_dyn_view_context, context->ctx_internal);
 		if (context->ctx_symbol)
 			put_symbol(request, isc_dyn_view_context_name, context->ctx_symbol);
-		//if (context->ctx_type)
-		//	put_numeric(request, isc_dyn_view_context_type, context->ctx_type);
-		//if (context->ctx_package)
-		//	put_symbol(request, isc_dyn_pkg_name, context->ctx_package);
 		request->add_end();
 	}
 
@@ -1792,7 +1793,6 @@ static bool create_view(gpre_req* request, act* action)
 		 ptr++, (field = field ? field->fld_next : NULL))
 	{
 		const gpre_fld* fld = NULL;
-		const gpre_ctx* context = NULL;
 		gpre_nod* value = *ptr;
 		if (value->nod_type == nod_field)
 		{
@@ -1823,7 +1823,6 @@ static bool create_view(gpre_req* request, act* action)
 			put_symbol(request, isc_dyn_def_local_fld, symbol);
 			put_symbol(request, isc_dyn_fld_base_fld, fld->fld_symbol);
 			put_numeric(request, isc_dyn_view_context, context->ctx_internal);
-			// ??? context_type, package???
 		}
 		else
 		{
@@ -1856,6 +1855,8 @@ static bool create_view(gpre_req* request, act* action)
 			return false;
 		}
 
+		gpre_trg* trigger = (gpre_trg*) MSC_alloc(TRG_LEN);
+
 		// For the triggers, the OLD, NEW contexts are reserved
 
 		request->req_internal = 0;
@@ -1864,7 +1865,6 @@ static bool create_view(gpre_req* request, act* action)
 		gpre_ctx* contexts[3];
 
 		// Make the OLD context for the trigger
-		gpre_ctx* context;
 
 		contexts[0] = request->req_contexts = context = MSC_context(request);
 		context->ctx_relation = relation;
@@ -1947,7 +1947,6 @@ static bool create_view(gpre_req* request, act* action)
 
 		// create the UPDATE trigger
 
-		gpre_trg* trigger = (gpre_trg*) MSC_alloc(TRG_LEN);
 		trigger->trg_type = PRE_MODIFY_TRIGGER;
 
 		// "update violates CHECK constraint on view"

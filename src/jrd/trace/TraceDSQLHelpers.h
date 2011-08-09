@@ -35,7 +35,7 @@ namespace Jrd {
 class TraceDSQLPrepare
 {
 public:
-	TraceDSQLPrepare(Attachment* attachemnt, size_t string_length, const TEXT* string) :
+	TraceDSQLPrepare(Attachment* attachemnt, USHORT string_length, const TEXT* string) :
 		m_attachment(attachemnt),
 		m_request(NULL),
 		m_string_len(string_length),
@@ -146,7 +146,7 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment, m_request->req_fetch_baseline,
+		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
 			&m_request->req_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
@@ -189,7 +189,7 @@ public:
 	~TraceDSQLFetch()
 	{
 		// don't trace fetch after EOS
-		if (m_request && m_request->req_request &&
+		if (m_request && m_request->req_request && 
 			!(m_request->req_request->req_flags & req_active))
 		{
 			return;
@@ -210,7 +210,7 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment, m_request->req_fetch_baseline,
+		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
 			&m_request->req_request->req_stats, m_request->req_fetch_elapsed,
 			m_request->req_fetch_rowcount);
 

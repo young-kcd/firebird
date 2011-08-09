@@ -29,12 +29,12 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
 //#include "../jrd/license.h"
 #include "../alice/alice.h"
 #include "../alice/alice_meta.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
 #include "../alice/alice_proto.h"
@@ -389,11 +389,6 @@ static tdr* get_description(ISC_QUAD* blob_id)
 
 static void parse_fullpath(tdr* trans)
 {
-	if (!trans->tdr_fullpath)
-	{
-		return;
-	}
-
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	// start at the end of the full pathname

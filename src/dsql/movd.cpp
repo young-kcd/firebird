@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../dsql/dsql.h"
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"

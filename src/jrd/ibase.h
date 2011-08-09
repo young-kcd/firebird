@@ -225,7 +225,7 @@ typedef struct paramvary {
 } PARAMVARY;
 #endif /* !defined(JRD_VAL_H) */
 
-#include "../common/dsc_pub.h"
+#include "../jrd/dsc_pub.h"
 
 #endif /* !defined(JRD_DSC_H) */
 
@@ -704,7 +704,6 @@ ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS*,
 										   short,
 										   const ISC_SCHAR*);
 
-// This function always returns error since FB 3.0.
 ISC_STATUS FB_API_DEPRECATED ISC_EXPORT isc_ddl(ISC_STATUS*,
 							  isc_db_handle*,
 							  isc_tr_handle*,
@@ -1139,19 +1138,6 @@ ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
 ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS*,
 										  isc_db_handle*,
 										  ISC_USHORT);
-
-/***********************/
-/* Ping the connection */
-/***********************/
-
-ISC_STATUS ISC_EXPORT fb_ping(ISC_STATUS*, isc_db_handle*);
-
-/********************/
-/* Object interface */
-/********************/
-
-ISC_STATUS ISC_EXPORT fb_get_database_handle(ISC_STATUS*, isc_db_handle*, void*);
-ISC_STATUS ISC_EXPORT fb_get_transaction_handle(ISC_STATUS*, isc_tr_handle*, void*);
 
 /********************************/
 /* Client information functions */

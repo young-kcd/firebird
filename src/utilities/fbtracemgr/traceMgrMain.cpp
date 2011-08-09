@@ -322,6 +322,18 @@ static void ctrl_c_handler(int signal)
 		prevCtrlCHandler(signal);
 }
 
+static int shutdownCallback(const int reason, const int, void*)
+{
+	static bool recursion = false;
+	if (!recursion)
+	{
+		recursion = true;
+		fb_shutdown(0, reason);
+		recursion = false;
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -337,6 +349,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  **************************************/
 
 	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
+	fb_shutdown_callback(NULL, shutdownCallback, fb_shut_confirmation, NULL);
 
 	AutoPtr<UtilSvc> uSvc(UtilSvc::createStandalone(argc, argv));
 	try

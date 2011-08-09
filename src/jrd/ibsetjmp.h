@@ -37,8 +37,7 @@
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
 					sigjmp_buf sigenv; \
 					int sig; \
-					if (!Config::getBugcheckAbort()) \
-					{ \
+					if (!Config::getBugcheckAbort()) { \
 						if (sig = sigsetjmp(sigenv, 1)) \
 					    	ISC_exception_post(sig, err); \
 						ISC_sync_signals_set(&sigenv); \

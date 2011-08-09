@@ -1,5 +1,7 @@
 #include "firebird.h"
-#include "firebird/Provider.h"
+
+//#include "fb_exception.h"
+
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -8,8 +10,152 @@
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
 #include "../common/thd.h"
-#include "../common/utils_proto.h"
-#include "../common/StatusHolder.h"
+
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+
+namespace {
+
+class StringsBuffer
+{
+private:
+	class ThreadBuffer : public Firebird::GlobalStorage
+	{
+	private:
+		const static size_t BUFFER_SIZE = 4096;
+		char buffer[BUFFER_SIZE];
+		char* buffer_ptr;
+		FB_THREAD_ID thread;
+
+	public:
+		explicit ThreadBuffer(FB_THREAD_ID thr) : buffer_ptr(buffer), thread(thr) { }
+
+		const char* alloc(const char* string, size_t& length)
+		{
+			// if string is already in our buffer - return it
+			// it was already saved in our buffer once
+			if (string >= buffer && string < &buffer[BUFFER_SIZE])
+				return string;
+
+			// if string too long, truncate it
+			if (length > BUFFER_SIZE / 4)
+				length = BUFFER_SIZE / 4;
+
+			// If there isn't any more room in the buffer, start at the beginning again
+			if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
+				buffer_ptr = buffer;
+
+			char* new_string = buffer_ptr;
+			memcpy(new_string, string, length);
+			new_string[length] = 0;
+			buffer_ptr += length + 1;
+
+			return new_string;
+		}
+
+		bool thisThread(FB_THREAD_ID currTID)
+		{
+#ifdef WIN_NT
+			if (thread != currTID)
+			{
+				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, false, thread);
+				// commented exit code check - looks like OS does not return handle
+				// for already exited thread
+				//DWORD exitCode = STILL_ACTIVE;
+				if (hThread)
+				{
+					//GetExitCodeThread(hThread, &exitCode);
+					CloseHandle(hThread);
+				}
+
+				//if ((!hThread) || (exitCode != STILL_ACTIVE))
+				if (!hThread)
+				{
+					// Thread does not exist any more
+					thread = currTID;
+				}
+			}
+#endif
+
+			return thread == currTID;
+		}
+	};
+
+	typedef Firebird::Array<ThreadBuffer*> ProcessBuffer;
+
+	ProcessBuffer processBuffer;
+	Firebird::Mutex mutex;
+
+public:
+	explicit StringsBuffer(Firebird::MemoryPool& p) : processBuffer(p) { }
+
+	~StringsBuffer()
+	{
+		ThreadCleanup::remove(cleanupAllStrings, this);
+	}
+
+private:
+	size_t position(FB_THREAD_ID thr)
+	{
+		// mutex should be locked when this function is called
+
+		for (size_t i = 0; i < processBuffer.getCount(); ++i)
+		{
+			if (processBuffer[i]->thisThread(thr))
+			{
+				return i;
+			}
+		}
+
+		return processBuffer.getCount();
+	}
+
+	ThreadBuffer* getThreadBuffer(FB_THREAD_ID thr)
+	{
+		Firebird::MutexLockGuard guard(mutex);
+
+		size_t p = position(thr);
+		if (p < processBuffer.getCount())
+		{
+			return processBuffer[p];
+		}
+
+		ThreadBuffer* b = new ThreadBuffer(thr);
+		processBuffer.add(b);
+		return b;
+	}
+
+	void cleanup()
+	{
+		Firebird::MutexLockGuard guard(mutex);
+
+		size_t p = position(getThreadId());
+		if (p >= processBuffer.getCount())
+		{
+			return;
+		}
+
+		delete processBuffer[p];
+		processBuffer.remove(p);
+	}
+
+	static void cleanupAllStrings(void* toClean)
+	{
+		static_cast<StringsBuffer*>(toClean)->cleanup();
+	}
+
+public:
+	const char* alloc(const char* s, size_t& len, FB_THREAD_ID thr = getThreadId())
+	{
+		ThreadCleanup::add(cleanupAllStrings, this);
+		return getThreadBuffer(thr)->alloc(s, len);
+	}
+};
+
+Firebird::GlobalPtr<StringsBuffer> allStrings;
+
+} // namespace
 
 namespace Firebird {
 
@@ -31,10 +177,10 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 				return;
 			case isc_arg_cstring:
 				{
-					perm [-1] = isc_arg_string;
-					const size_t len = *trans++;
+					size_t len = *perm++ = *trans++;
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, thr));
+					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
+					perm[-2] = len;
 				}
 				break;
 			case isc_arg_string:
@@ -42,8 +188,8 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 			case isc_arg_sql_state:
 				{
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					const size_t len = strlen(temp);
-					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, thr));
+					size_t len = strlen(temp);
+					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
 				}
 				break;
 			default:
@@ -56,11 +202,9 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 	{
 		memcpy(perm, ex.value(), sizeof(ISC_STATUS_ARRAY));
 	}
-	catch (const BadAlloc&)
+	catch (const BadAlloc& ex)
 	{
-		*perm++ = isc_arg_gds;
-		*perm++ = isc_virmemexh;
-		*perm++ = isc_arg_end;
+		ex.stuff_exception(perm);
 	}
 	catch (...)
 	{
@@ -80,16 +224,6 @@ void makePermanentVector(ISC_STATUS* v, FB_THREAD_ID thr) throw()
 // ********************************* Exception *******************************
 
 Exception::~Exception() throw() { }
-
-ISC_STATUS Exception::stuff_exception(ISC_STATUS* const status_vector) const throw()
-{
-	LocalStatus status;
-	stuffException(&status);
-	const ISC_STATUS* s = status.get();
-	fb_utils::copyStatus(status_vector, ISC_STATUS_LENGTH, s, fb_utils::statusLength(s));
-
-	return status_vector[1];
-}
 
 // ********************************* status_exception *******************************
 
@@ -134,14 +268,23 @@ void status_exception::raise(const Arg::StatusVector& statusVector)
 	throw status_exception(statusVector.value());
 }
 
-ISC_STATUS status_exception::stuffException(IStatus* status) const throw()
+ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector) const throw()
 {
-	if (status)
+	const ISC_STATUS *ptr = value();
+	ISC_STATUS *sv = status_vector;
+
+	// Copy status vector
+	while (true)
 	{
-		status->set(value());
+		const ISC_STATUS type = *sv++ = *ptr++;
+		if (type == isc_arg_end)
+			break;
+		if (type == isc_arg_cstring)
+			*sv++ = *ptr++;
+		*sv++ = *ptr++;
 	}
 
-	return value()[1];
+	return status_vector[1];
 }
 
 // ********************************* BadAlloc ****************************
@@ -151,16 +294,15 @@ void BadAlloc::raise()
 	throw BadAlloc();
 }
 
-ISC_STATUS BadAlloc::stuffException(IStatus* status) const throw()
+ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector) const throw()
 {
-	const ISC_STATUS sv[] = {isc_arg_gds, isc_virmemexh};
+	ISC_STATUS *sv = status_vector;
 
-	if (status)
-	{
-		status->set(FB_NELEM(sv), sv);
-	}
+	*sv++ = isc_arg_gds;
+	*sv++ = isc_virmemexh;
+	*sv++ = isc_arg_end;
 
-	return sv[1];
+	return status_vector[1];
 }
 
 const char* BadAlloc::what() const throw()
@@ -175,16 +317,24 @@ void LongJump::raise()
 	throw LongJump();
 }
 
-ISC_STATUS LongJump::stuffException(IStatus* status) const throw()
+ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector) const throw()
 {
-	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS)(IPTR) "Unexpected Firebird::LongJump"};
+   /*
+	* Do nothing for a while - not all utilities are ready,
+	* status_vector is passed in them by other means.
+	* Ideally status_exception should be always used for it,
+	* and we should activate the following code:
 
-	if (status)
-	{
-		status->set(FB_NELEM(sv), sv);
-	}
+	ISC_STATUS *sv = status_vector;
 
-	return sv[1];
+	*sv++ = isc_arg_gds;
+	*sv++ = isc_random;
+	*sv++ = isc_arg_string;
+	*sv++ = (ISC_STATUS)(IPTR) "Unexpected Firebird::LongJump";
+	*sv++ = isc_arg_end;
+	*/
+
+	return status_vector[1];
 }
 
 const char* LongJump::what() const throw()
@@ -228,9 +378,11 @@ int system_error::getSystemError()
 system_call_failed::system_call_failed(const char* syscall, int error_code) :
 	system_error(syscall, error_code)
 {
+#ifndef SUPERCLIENT
 	// NS: something unexpected has happened. Log the error to log file
 	// In the future we may consider terminating the process even in PROD_BUILD
 	gds__log("Operating system call %s failed. Error code %d", syscall, error_code);
+#endif
 #ifdef DEV_BUILD
 	// raised failed system call exception in DEV_BUILD in 99.99% means
 	// problems with the code - let's create memory dump now
@@ -293,11 +445,6 @@ void fatal_exception::raiseFmt(const char* format, ...)
 ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex) throw()
 {
 	return ex.stuff_exception(status_vector);
-}
-
-ISC_STATUS stuff_exception(IStatus* status, const Firebird::Exception& ex) throw()
-{
-	return ex.stuffException(status);
 }
 
 }	// namespace Firebird

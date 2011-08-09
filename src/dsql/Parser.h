@@ -23,22 +23,12 @@
 #ifndef DSQL_PARSER_H
 #define DSQL_PARSER_H
 
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
-#include "../dsql/BoolNodes.h"
-#include "../dsql/ExprNodes.h"
-#include "../dsql/AggNodes.h"
-#include "../dsql/WinNodes.h"
-#include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
-#include "../jrd/RecordSourceNodes.h"
-#include "../common/classes/Nullable.h"
 #include "../common/classes/stack.h"
-
-#define _yacc_defines_keywords
-#include "gen/parse.h"
 
 namespace Jrd {
 
@@ -47,19 +37,9 @@ class dsql_nod;
 class Parser : public Firebird::PermanentStorage
 {
 private:
-	// User-defined text position type.
-	struct Position
-	{
-		USHORT firstLine;
-		USHORT firstColumn;
-		USHORT lastLine;
-		USHORT lastColumn;
-		const char* firstPos;
-		const char* lastPos;
-	};
-
-	typedef Position YYPOSN;
 	typedef int Yshort;
+	typedef dsql_nod* YYSTYPE;
+	typedef int YYPOSN;	// user-defined text position type
 
 	struct yyparsestate
 	{
@@ -84,11 +64,16 @@ private:
 		// This is, in fact, parser state. Not used in lexer itself
 		dsql_fld* g_field;
 		dsql_fil* g_file;
-		dsql_nod* g_field_name;
+		YYSTYPE g_field_name;
 		int dsql_debug;
 
 		// Actual lexer state begins from here
 
+		// hvlad: if at some day 16 levels of nesting would be not enough
+		// then someone must add LexerState constructor and pass memory
+		// pool into Stack's constructor or change Capacity value in template
+		// instantiation below
+		Firebird::Stack<const TEXT*> beginnings;
 		const TEXT* ptr;
 		const TEXT* end;
 		const TEXT* last_token;
@@ -125,11 +110,11 @@ private:
 
 public:
 	Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
-		const TEXT* string, size_t length, SSHORT characterSet);
+		const TEXT* string, USHORT length, SSHORT characterSet);
 	~Parser();
 
 public:
-	dsql_nod* parse();
+	YYSTYPE parse();
 
 	const Firebird::string& getTransformedString() const
 	{
@@ -141,106 +126,8 @@ public:
 		return stmt_ambiguous;
 	}
 
-	// newNode overloads
-
-	template <typename T>
-	T* newNode()
-	{
-		return FB_NEW(getPool()) T(getPool());
-	}
-
-	template <typename T, typename T1>
-	T* newNode(T1 a1)
-	{
-		return FB_NEW(getPool()) T(getPool(), a1);
-	}
-
-	template <typename T, typename T1, typename T2>
-	T* newNode(T1 a1, T2 a2)
-	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2);
-	}
-
-	template <typename T, typename T1, typename T2, typename T3>
-	T* newNode(T1 a1, T2 a2, T3 a3)
-	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2, a3);
-	}
-
-	template <typename T, typename T1, typename T2, typename T3, typename T4>
-	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4)
-	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4);
-	}
-
-	template <typename T, typename T1, typename T2, typename T3, typename T4, typename T5>
-	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4, a5);
-	}
-
 private:
 	void transformString(const char* start, unsigned length, Firebird::string& dest);
-
-	// Set the value of a clause, checking if it was already specified.
-
-	template <typename T>
-	void setClause(T& clause, const char* duplicateMsg, const T& value)
-	{
-		using namespace Firebird;
-		if (isDuplicateClause(clause))
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
-		}
-
-		clause = value;
-	}
-
-	template <typename T, typename Delete>
-	void setClause(Firebird::AutoPtr<T, Delete>& clause, const char* duplicateMsg, T* value)
-	{
-		using namespace Firebird;
-		if (isDuplicateClause(clause))
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
-		}
-
-		clause = value;
-	}
-
-	template <typename T>
-	void setClause(Nullable<T>& clause, const char* duplicateMsg, const T& value)
-	{
-		using namespace Firebird;
-		if (clause.specified)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
-		}
-
-		clause = value;
-	}
-
-	void setClause(bool& clause, const char* duplicateMsg)
-	{
-		setClause(clause, duplicateMsg, true);
-	}
-
-	template <typename T>
-	bool isDuplicateClause(const T& clause)
-	{
-		return clause != 0;
-	}
-
-	bool isDuplicateClause(const Firebird::MetaName& clause)
-	{
-		return clause.hasData();
-	}
 
 // start - defined in btyacc_fb.ske
 private:
@@ -258,27 +145,21 @@ private:
 
 // start - defined in parse.y
 private:
-	void yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* termVals,
-		int termNo, int stkPos, int yychar, YYPOSN& yyposn, void*);
-
 	int yylex();
 	int yylexAux();
 
 	void yyerror(const TEXT* error_string);
 	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
 
-	dsql_str* makeParseStr(const Position& p1, const Position& p2);
-	dsql_nod* make_list (dsql_nod* node);
-	ParameterNode* make_parameter();
-	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
-	dsql_nod* makeClassNode(ExprNode* node);
-	dsql_nod* makeClassNode(DdlNode* node);
-	dsql_nod* makeClassNode(StmtNode* node);
-	dsql_nod* make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
+	const TEXT* lex_position();
+	YYSTYPE make_list (YYSTYPE node);
+	YYSTYPE make_parameter();
+	YYSTYPE make_node(Dsql::nod_t type, int count, ...);
+	YYSTYPE makeClassNode(Node* node);
+	YYSTYPE make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 
 private:
-	Firebird::string compilingText;
 	USHORT client_dialect;
 	USHORT db_dialect;
 	USHORT parser_version;
@@ -286,7 +167,7 @@ private:
 	Firebird::string transformedString;
 	Firebird::GenericMap<Firebird::NonPooled<dsql_str*, StrMark> > strMarks;
 	bool stmt_ambiguous;
-	dsql_nod* DSQL_parse;
+	YYSTYPE DSQL_parse;
 
 	// These value/posn are taken from the lexer
 	YYSTYPE yylval;
@@ -294,7 +175,7 @@ private:
 
 	// These value/posn of the root non-terminal are returned to the caller
 	YYSTYPE yyretlval;
-	Position yyretposn;
+	int yyretposn;
 
 	int yynerrs;
 
@@ -311,13 +192,13 @@ private:
 	// The last allocated position at the lexical value queue
 	YYSTYPE* yylvlim;
 	// Base of the lexical position queue
-	Position* yylpsns;
+	int* yylpsns;
 	// Current posistion at lexical position queue
-	Position* yylpp;
+	int* yylpp;
 	// End position of lexical position queue
-	Position* yylpe;
+	int* yylpe;
 	// The last allocated position at the lexical position queue
-	Position* yylplim;
+	int* yylplim;
 	// Current position at lexical token queue
 	Yshort* yylexp;
 	Yshort* yylexemes;

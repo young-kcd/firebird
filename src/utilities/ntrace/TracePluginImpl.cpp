@@ -30,22 +30,19 @@
 #include <math.h>
 
 #include "TracePluginImpl.h"
+#include "TraceUnicodeUtils.h"
 #include "PluginLogWriter.h"
 #include "os/platform.h"
-#include "../../common/isc_f_proto.h"
+#include "../../jrd/isc_f_proto.h"
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
-#include "../../common/os/path_utils.h"
-#include "../../jrd/inf_pub.h"
-#include "../../dsql/sqlda_pub.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../../jrd/os/path_utils.h"
 
 
 using namespace Firebird;
 using namespace Jrd;
 
-static const char* const DEFAULT_LOG_NAME = "default_trace.log";
-static MakeUpgradeInfo<> upInfo;
+static const char* DEFAULT_LOG_NAME = "default_trace.log";
 
 #ifdef WIN_NT
 #define NEWLINE "\r\n"
@@ -53,20 +50,67 @@ static MakeUpgradeInfo<> upInfo;
 #define NEWLINE "\n"
 #endif
 
-
 /// TracePluginImpl
+
+TracePlugin* TracePluginImpl::createSkeletalPlugin()
+{
+	TracePlugin* plugin_ptr = FB_NEW(*getDefaultMemoryPool()) TracePlugin;
+	memset(plugin_ptr, 0, sizeof(TracePlugin));
+	plugin_ptr->tpl_version = NTRACE_VERSION;
+	plugin_ptr->tpl_shutdown = TracePluginImpl::ntrace_shutdown;
+	plugin_ptr->tpl_get_error = TracePluginImpl::ntrace_get_error;
+	return plugin_ptr;
+}
+
+TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configuration, TraceInitInfo* initInfo)
+{
+	TracePlugin* plugin_ptr = createSkeletalPlugin();
+	try
+	{
+		TracePluginImpl* pluginImpl = FB_NEW(*getDefaultMemoryPool()) TracePluginImpl(configuration, initInfo);
+		plugin_ptr->tpl_object = pluginImpl;
+
+		plugin_ptr->tpl_event_attach = ntrace_event_attach;
+		plugin_ptr->tpl_event_detach = ntrace_event_detach;
+		plugin_ptr->tpl_event_transaction_start = ntrace_event_transaction_start;
+		plugin_ptr->tpl_event_transaction_end = ntrace_event_transaction_end;
+
+		plugin_ptr->tpl_event_set_context = ntrace_event_set_context;
+		plugin_ptr->tpl_event_proc_execute = ntrace_event_proc_execute;
+		plugin_ptr->tpl_event_trigger_execute = ntrace_event_trigger_execute;
+
+		plugin_ptr->tpl_event_dsql_prepare = ntrace_event_dsql_prepare;
+		plugin_ptr->tpl_event_dsql_free = ntrace_event_dsql_free;
+		plugin_ptr->tpl_event_dsql_execute = ntrace_event_dsql_execute;
+
+		plugin_ptr->tpl_event_blr_compile = ntrace_event_blr_compile;
+		plugin_ptr->tpl_event_blr_execute = ntrace_event_blr_execute;
+		plugin_ptr->tpl_event_dyn_execute = ntrace_event_dyn_execute;
+
+		plugin_ptr->tpl_event_service_attach = ntrace_event_service_attach;
+		plugin_ptr->tpl_event_service_start = ntrace_event_service_start;
+		plugin_ptr->tpl_event_service_query = ntrace_event_service_query;
+		plugin_ptr->tpl_event_service_detach = ntrace_event_service_detach;
+	}
+	catch(const Firebird::Exception&)
+	{
+		plugin_ptr->tpl_shutdown(plugin_ptr);
+		throw;
+	}
+
+	return plugin_ptr;
+}
 
 const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 {
 	ISC_STATUS_ARRAY status = {0};
-	ex.stuff_exception(status);
-
+	ex.stuff_exception(&status[0]);
+	
 	char buff[1024];
-	char* p = buff;
-	char* const end = buff + sizeof(buff) - 1;
+	char *p = buff, *const end = buff + sizeof(buff) - 1;
 
-	const ISC_STATUS* s = status;
-	while (end > p && fb_interpret(p, end - p, &s))
+	const ISC_STATUS *s = status;
+	while ((end > p) && fb_interpret(p, end - p, &s))
 	{
 		p += strlen(p);
 		if (p < end)
@@ -91,7 +135,6 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	services(getDefaultMemoryPool()),
 	unicodeCollation(*getDefaultMemoryPool())
 {
-	MasterInterfacePtr()->upgradeInterface(logWriter, FB_TRACE_LOG_WRITER_VERSION, upInfo);
 	const char* ses_name = initInfo->getTraceSessionName();
 	session_name = ses_name && *ses_name ? ses_name : " ";
 
@@ -109,10 +152,11 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			logname.insert(0, root);
 		}
 
-		logWriter = new PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
+		logWriter = FB_NEW (*getDefaultMemoryPool())
+			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 
-	Jrd::TextType* textType = unicodeCollation.getTextType();
+	Jrd::TextType *textType = unicodeCollation.getTextType();
 
 	// Compile filtering regular expressions
 	const char* str = NULL;
@@ -124,7 +168,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			string filter(config.include_filter);
 			ISC_systemToUtf8(filter);
 
-			include_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			include_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
@@ -135,7 +179,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			string filter(config.exclude_filter);
 			ISC_systemToUtf8(filter);
 
-			exclude_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			exclude_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
@@ -372,7 +416,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 		}
 	}
 
-	if (!log)
+	if (!log) 
 	{
 		record = "";
 		return;
@@ -601,9 +645,6 @@ void TracePluginImpl::appendParams(TraceParams* params)
 			case dtype_dbkey:
 				paramtype = "db_key";
 				break;
-			case dtype_boolean:
-				paramtype = "boolean";
-				break;
 
 			default:
 				paramtype.printf("<type%d>", parameters->dsc_dtype);
@@ -707,11 +748,6 @@ void TracePluginImpl::appendParams(TraceParams* params)
 						ts.value().timestamp_time % ISC_TIME_SECONDS_PRECISION);
 					break;
 				}
-
-				case dtype_boolean:
-					paramvalue = *parameters->dsc_address ? "<true>" : "<false>";
-					break;
-
 				default:
 					paramvalue = "<unknown>";
 			}
@@ -1628,7 +1664,7 @@ bool TracePluginImpl::checkServiceFilter(TraceService* service, bool started)
 {
 	ReadLockGuard lock(servicesLock);
 
-	ServiceData* data = NULL;
+	ServiceData *data = NULL;
 	ServicesTree::Accessor accessor(&services);
 	if (accessor.locate(service->getServiceID()))
 		data = &accessor.current();
@@ -1919,30 +1955,33 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 
 //***************************** PLUGIN INTERFACE ********************************
 
-int TracePluginImpl::release()
+ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin)
 {
-	if (--refCounter == 0)
+	if (tpl_plugin)
 	{
-		delete this;
-		return 0;
+		// Kill implementation object
+		delete static_cast<TracePluginImpl*>(tpl_plugin->tpl_object);
 	}
-	return 1;
+
+	// Kill plugin structure
+	delete tpl_plugin;
+	return true;
 }
 
-const char* TracePluginImpl::trace_get_error()
+const char* TracePluginImpl::ntrace_get_error(const TracePlugin* /*tpl_plugin*/)
 {
 	return get_error_string();
 }
 
 // Create/close attachment
-ntrace_boolean_t TracePluginImpl::trace_attach(TraceConnection* connection,
-	ntrace_boolean_t create_db, ntrace_result_t att_result)
+ntrace_boolean_t TracePluginImpl::ntrace_event_attach(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, ntrace_boolean_t create_db,
+	ntrace_result_t att_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-
-		log_event_attach(connection, create_db, att_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_attach(connection,
+			create_db, att_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -1952,13 +1991,12 @@ ntrace_boolean_t TracePluginImpl::trace_attach(TraceConnection* connection,
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_detach(TraceConnection* connection, ntrace_boolean_t drop_db)
+ntrace_boolean_t TracePluginImpl::ntrace_event_detach(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, ntrace_boolean_t drop_db)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-
-		log_event_detach(connection, drop_db);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_detach(connection, drop_db);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -1969,16 +2007,14 @@ ntrace_boolean_t TracePluginImpl::trace_detach(TraceConnection* connection, ntra
 }
 
 // Start/end transaction
-ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceConnection* connection, TraceTransaction* transaction,
+ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_start(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-
-		log_event_transaction_start(connection, transaction, tpb_length, tpb, tra_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_transaction_start(connection,
+			transaction, tpb_length, tpb, tra_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -1988,16 +2024,14 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceConnection* conne
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceConnection* connection, TraceTransaction* transaction,
+ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_end(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-
-		log_event_transaction_end(connection, transaction, commit, retain_context, tra_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_transaction_end(connection,
+			transaction, commit, retain_context, tra_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2008,17 +2042,14 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceConnection* connect
 }
 
 // Assignment to context variables
-ntrace_boolean_t TracePluginImpl::trace_set_context(TraceConnection* connection,
-	TraceTransaction* transaction, TraceContextVariable* variable)
+ntrace_boolean_t TracePluginImpl::ntrace_event_set_context(const struct TracePlugin* tpl_plugin,
+		TraceConnection* connection, TraceTransaction* transaction,
+		TraceContextVariable* variable)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(variable, FB_TRACE_CONTEXT_VARIABLE_VERSION, upInfo);
-
-		log_event_set_context(connection, transaction, variable);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_set_context(connection,
+			transaction, variable);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2029,18 +2060,14 @@ ntrace_boolean_t TracePluginImpl::trace_set_context(TraceConnection* connection,
 }
 
 // Stored procedure executing
-ntrace_boolean_t TracePluginImpl::trace_proc_execute(TraceConnection* connection,
-	TraceTransaction* transaction, TraceProcedure* procedure,
-	bool started, ntrace_result_t proc_result)
+ntrace_boolean_t TracePluginImpl::ntrace_event_proc_execute(const struct TracePlugin* tpl_plugin,
+		TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
+		bool started, ntrace_result_t proc_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(procedure, FB_TRACE_PROCEDURE_VERSION, upInfo);
-
-		log_event_proc_execute(connection, transaction, procedure, started, proc_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_proc_execute(connection,
+			transaction, procedure, started, proc_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2050,18 +2077,14 @@ ntrace_boolean_t TracePluginImpl::trace_proc_execute(TraceConnection* connection
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_trigger_execute(TraceConnection* connection,
-	TraceTransaction* transaction, TraceTrigger* trigger,
+ntrace_boolean_t TracePluginImpl::ntrace_event_trigger_execute(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 	bool started, ntrace_result_t trig_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(trigger, FB_TRACE_TRIGGER_VERSION, upInfo);
-
-		log_event_trigger_execute(connection, transaction, trigger, started, trig_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_trigger_execute(
+			connection, transaction, trigger, started, trig_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2073,17 +2096,14 @@ ntrace_boolean_t TracePluginImpl::trace_trigger_execute(TraceConnection* connect
 
 
 // DSQL statement lifecycle
-ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,
+ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_prepare(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
-
-		log_event_dsql_prepare(connection, transaction, statement, time_millis, req_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dsql_prepare(connection,
+			transaction, statement, time_millis, req_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2093,16 +2113,13 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceConnection* connection
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_dsql_free(TraceConnection* connection,
-	TraceSQLStatement* statement, unsigned short option)
+ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_free(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceSQLStatement* statement, unsigned short option)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
-
-		log_event_dsql_free(connection, statement, option);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dsql_free(connection,
+			statement, option);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2112,18 +2129,14 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_free(TraceConnection* connection,
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_dsql_execute(TraceConnection* connection,
-	TraceTransaction* transaction, TraceSQLStatement* statement,
+ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_execute(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 	bool started, ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
-
-		log_event_dsql_execute(connection, transaction, statement, started, req_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dsql_execute(
+			connection, transaction, statement, started, req_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2135,17 +2148,14 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_execute(TraceConnection* connection
 
 
 // BLR requests
-ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceConnection* connection, TraceTransaction* transaction,
+ntrace_boolean_t TracePluginImpl::ntrace_event_blr_compile(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_BLR_STATEMENT_VERSION, upInfo);
-
-		log_event_blr_compile(connection, transaction, statement, time_millis, req_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_blr_compile(connection,
+			transaction, statement, time_millis, req_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2155,17 +2165,14 @@ ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceConnection* connection,
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceConnection* connection, TraceTransaction* transaction,
+ntrace_boolean_t TracePluginImpl::ntrace_event_blr_execute(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_BLR_STATEMENT_VERSION, upInfo);
-
-		log_event_blr_execute(connection, transaction, statement, req_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_blr_execute(connection,
+			transaction, statement, req_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2176,17 +2183,14 @@ ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceConnection* connection,
 }
 
 // DYN requests
-ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceConnection* connection, TraceTransaction* transaction,
+ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(request, FB_TRACE_DYN_REQUEST_VERSION, upInfo);
-
-		log_event_dyn_execute(connection, transaction, request, time_millis, req_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dyn_execute(connection,
+			transaction, request, time_millis, req_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2197,12 +2201,13 @@ ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceConnection* connection,
 }
 
 // Using the services
-ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceService* service, ntrace_result_t att_result)
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_attach(const TracePlugin* tpl_plugin,
+	TraceService* service, ntrace_result_t att_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
-		log_event_service_attach(service, att_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_service_attach(
+			service, att_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2212,13 +2217,14 @@ ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceService* service, nt
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_start(TraceService* service, size_t switches_length, const char* switches,
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_start(const TracePlugin* tpl_plugin,
+	TraceService* service, size_t switches_length, const char* switches,
 	ntrace_result_t start_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
-		log_event_service_start(service, switches_length, switches, start_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_service_start(
+			service, switches_length, switches, start_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2228,15 +2234,16 @@ ntrace_boolean_t TracePluginImpl::trace_service_start(TraceService* service, siz
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_query(TraceService* service, size_t send_item_length,
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_query(const TracePlugin* tpl_plugin,
+	TraceService* service, size_t send_item_length,
 	const ntrace_byte_t* send_items, size_t recv_item_length,
 	const ntrace_byte_t* recv_items, ntrace_result_t query_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
-		log_event_service_query(service, send_item_length, send_items,
-								recv_item_length, recv_items, query_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_service_query(
+			service, send_item_length, send_items, recv_item_length, recv_items,
+			query_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)
@@ -2247,12 +2254,13 @@ ntrace_boolean_t TracePluginImpl::trace_service_query(TraceService* service, siz
 
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceService* service, ntrace_result_t detach_result)
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_detach(const TracePlugin* tpl_plugin,
+	TraceService* service, ntrace_result_t detach_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
-		log_event_service_detach(service, detach_result);
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_service_detach(
+			service, detach_result);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)

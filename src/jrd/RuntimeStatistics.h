@@ -35,7 +35,6 @@ namespace Jrd {
 // #define REL_COUNTS_TREE
 // #define REL_COUNTS_PTR
 
-class Attachment;
 class Database;
 
 // Performance counters for individual table
@@ -136,7 +135,7 @@ public:
 
 	// Calculate difference between counts stored in this object and current
 	// counts of given request. Counts stored in object are destroyed.
-	PerformanceInfo* computeDifference(Attachment* att, const RuntimeStatistics& new_stat,
+	PerformanceInfo* computeDifference(Database* dbb, const RuntimeStatistics& new_stat,
 		PerformanceInfo& dest, TraceCountsArray& temp);
 
 	// bool operator==(const RuntimeStatistics& other) const;

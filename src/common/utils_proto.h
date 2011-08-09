@@ -31,9 +31,7 @@
 
 #include <string.h>
 #include "../common/classes/fb_string.h"
-#include "../common/classes/array.h"
 #include "gen/iberror.h"
-#include "firebird/Provider.h"
 
 #ifdef SFIO
 #include <stdio.h>
@@ -114,16 +112,6 @@ namespace fb_utils
 		status[2] = isc_arg_end;
 	}
 
-	void inline init_status(Firebird::IStatus* status)
-	{
-		status->init();
-	}
-
-	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
-							const ISC_STATUS* const from, const unsigned int count) throw();
-
-	unsigned int statusLength(const ISC_STATUS* const status) throw();
-
 	enum FetchPassResult {
 		FETCH_PASS_OK,
 		FETCH_PASS_FILE_OPEN_ERROR,
@@ -146,15 +134,8 @@ namespace fb_utils
 		FB_DIR_MSG, FB_DIR_LOG, FB_DIR_GUARD, FB_DIR_PLUGINS,
 		FB_DIR_LAST};
 
-	// Returns true if called from firebird build process (appr. environment is set)
-	bool bootBuild();
-
 	// Add appropriate file prefix.
 	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
-
-	void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
-		unsigned int& bufferLength, unsigned char*& buffer,
-		Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath);
 
 } // namespace fb_utils
 

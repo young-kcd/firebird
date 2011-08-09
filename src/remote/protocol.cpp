@@ -32,15 +32,13 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "gen/iberror.h"
-#include "../common/sdl.h"
-#include "../common/gdsassert.h"
+#include "../jrd/sdl.h"
+#include "../jrd/gdsassert.h"
 #include "../remote/parse_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/sdl_proto.h"
-#include "../common/StatusHolder.h"
-#include "../common/classes/stack.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/sdl_proto.h"
 
 #ifdef DEBUG_XDR_MEMORY
 inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
@@ -106,13 +104,13 @@ static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
 static bool_t xdr_quad(XDR*, struct bid*);
 static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
-static bool_t xdr_status_vector(XDR*, Firebird::DynamicStatusVector*&);
+static bool_t xdr_status_vector(XDR*, ISC_STATUS*);
 static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
 static bool_t xdr_trrq_message(XDR*, USHORT);
 
-#include "../common/xdr_proto.h"
+#include "../remote/xdr_proto.h"
 
 
 #ifdef DEBUG
@@ -206,8 +204,7 @@ void xdr_debug_memory(XDR* xdrs,
 						}
 					}
 					else
-					{
-						// XDR_ENCODE or XDR_DECODE
+					{		// XDR_ENCODE or XDR_DECODE
 
 						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
@@ -279,7 +276,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_reject:
 	case op_disconnect:
 	case op_dummy:
-	case op_ping:
 		return P_TRUE(xdrs, p);
 
 	case op_connect:
@@ -364,6 +360,15 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_transaction));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_messages));
+#ifdef SCROLLABLE_CURSORS
+		port = (rem_port*) xdrs->x_public;
+		if ((p->p_operation == op_receive) && (port->port_protocol > PROTOCOL_VERSION8))
+		{
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_direction));
+			MAP(xdr_long, reinterpret_cast<SLONG&>(data->p_data_offset));
+		}
+
+#endif
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -750,16 +755,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
-	case op_cont_auth:
-		{
-			P_AUTH_CONT* auth = &p->p_auth_cont;
-			MAP(xdr_cstring, auth->p_data);
-			MAP(xdr_cstring, auth->p_name);
-			DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-			return P_TRUE(xdrs, p);
-		}
-
 	case op_cancel:
 		{
 			P_CANCEL_OP* cancel_op = &p->p_cancel_op;
@@ -921,14 +916,13 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
 // The same function is being used to check P_SGMT & P_DDL.
 static inline bool_t xdr_cstring_const(XDR* xdrs, CSTRING_CONST* cstring)
 {
+#ifdef SUPERCLIENT
 #ifdef DEV_BUILD
-	if (xdrs->x_client)
-	{
-		const bool cond =
-			!(xdrs->x_op == XDR_DECODE &&
-				cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
-		fb_assert(cond);
-	}
+	const bool cond =
+		!(xdrs->x_op == XDR_DECODE &&
+			cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
+	fb_assert(cond);
+#endif
 #endif
 	return xdr_cstring(xdrs, reinterpret_cast<CSTRING*>(cstring));
 }
@@ -1014,9 +1008,10 @@ static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
 		// Fall through ...
 
 	case dtype_text:
-	case dtype_boolean:
 		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), desc->dsc_length))
+		{
 			return FALSE;
+		}
 		break;
 
 	case dtype_varying:
@@ -1148,8 +1143,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		}
 	}
 	else
-	{
-		// XDR_ENCODE or XDR_DECODE
+	{						// XDR_ENCODE or XDR_DECODE
 
 		// Allocate an unused slot in the packet tracking vector
 		// to start recording memory allocations for this packet.
@@ -1246,7 +1240,7 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 	const rem_port* port = (rem_port*) xdrs->x_public;
 
 
-	if (!message || !format)
+	if ((!message) || (!format))
 	{
 		return FALSE;
 	}
@@ -1561,6 +1555,9 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+		message->msg_prior = message;
+#endif
 	}
 
 	return TRUE;
@@ -1614,7 +1611,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		// We should not call xdr_message() with NULL
 		return FALSE;
 	}
-
+	
 	statement->rsr_buffer = message->msg_next;
 	if (!message->msg_address)
 		message->msg_address = message->msg_buffer;
@@ -1623,7 +1620,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 }
 
 
-static bool_t xdr_status_vector(XDR* xdrs, Firebird::DynamicStatusVector*& vector)
+static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector)
 {
 /**************************************
  *
@@ -1641,90 +1638,68 @@ static bool_t xdr_status_vector(XDR* xdrs, Firebird::DynamicStatusVector*& vecto
 
 	if (xdrs->x_op == XDR_FREE)
 	{
-		delete vector;
-		vector = NULL;
 		return TRUE;
 	}
 
-	if (!vector)
-		vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
-
-	Firebird::SimpleStatusVector vectorDecode;
-	const ISC_STATUS* vectorEncode = vector->value();
-
-	Firebird::Stack<SCHAR*> space;
-	bool rc = false;
-
 	SLONG vec;
+	SCHAR* sp = NULL;
 
 	while (true)
 	{
 		if (xdrs->x_op == XDR_ENCODE)
-			vec = *vectorEncode++;
+			vec = (SLONG) * vector++;
 		if (!xdr_long(xdrs, &vec))
-			goto brk;
+			return FALSE;
 		if (xdrs->x_op == XDR_DECODE)
-			vectorDecode.push((ISC_STATUS) vec);
+			*vector++ = (ISC_STATUS) vec;
 
 		switch (static_cast<ISC_STATUS>(vec))
 		{
 		case isc_arg_end:
-			rc = true;
-			goto brk;
+			return TRUE;
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
 		case isc_arg_sql_state:
 			if (xdrs->x_op == XDR_ENCODE)
 			{
-				if (!xdr_wrapstring(xdrs, (SCHAR**)(vectorEncode++)))
-					goto brk;
+				if (!xdr_wrapstring(xdrs, reinterpret_cast<SCHAR**>(vector++)))
+					return FALSE;
 			}
 			else
 			{
-				SCHAR* sp = NULL;
-
 				if (!xdr_wrapstring(xdrs, &sp))
-					goto brk;
-				vectorDecode.push((ISC_STATUS)(IPTR) sp);
-				space.push(sp);
+					return FALSE;
+				*vector++ = (ISC_STATUS)(IPTR) sp;
+				*vector = 0;
+
+				// Save string in circular buffer
+				Firebird::makePermanentVector(vector - 2);
+
+				// Free memory allocated by xdr_wrapstring()
+				if (sp)
+				{
+					XDR freeXdrs;
+					freeXdrs.x_public = xdrs->x_public;
+					freeXdrs.x_op = XDR_FREE;
+					if (!xdr_wrapstring(&freeXdrs, &sp))
+						return FALSE;
+					sp = NULL;
+				}
 			}
 			break;
 
 		case isc_arg_number:
 		default:
 			if (xdrs->x_op == XDR_ENCODE)
-				vec = *vectorEncode++;
+				vec = (SLONG) * vector++;
 			if (!xdr_long(xdrs, &vec))
-				goto brk;
+				return FALSE;
 			if (xdrs->x_op == XDR_DECODE)
-				vectorDecode.push((ISC_STATUS) vec);
+				*vector++ = (ISC_STATUS) vec;
 			break;
 		}
 	}
-
-brk:
-	// If everything is OK, copy temp buffer to dynamic storage
-	if (rc && xdrs->x_op == XDR_DECODE)
-	{
-		vector->save(vectorDecode.begin());
-	}
-
-	// Free memory allocated by xdr_wrapstring()
-	while (space.hasData())
-	{
-		SCHAR* sp = space.pop();
-		XDR freeXdrs;
-		freeXdrs.x_public = xdrs->x_public;
-		freeXdrs.x_op = XDR_FREE;
-		if (!xdr_wrapstring(&freeXdrs, &sp))
-		{
-			fb_assert(false);	// Very interesting how could it happen
-			return FALSE;
-		}
-	}
-
-	return rc;
 }
 
 

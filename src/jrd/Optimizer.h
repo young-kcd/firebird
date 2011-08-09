@@ -36,9 +36,10 @@
 #define OPTIMIZER_DEBUG_FILE "opt_debug.out"
 //#endif
 
+
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
-#include "../jrd/RecordSourceNodes.h"
+
 #include "../jrd/rse.h"
 #include "../jrd/exe.h"
 
@@ -53,7 +54,7 @@ const double REDUCE_SELECTIVITY_FACTOR_GREATER = 0.05;
 const double REDUCE_SELECTIVITY_FACTOR_STARTING = 0.01;
 
 const double REDUCE_SELECTIVITY_FACTOR_EQUALITY = 0.1;
-const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.3;
+const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.5;
 
 const double MAXIMUM_SELECTIVITY = 1.0;
 const double DEFAULT_SELECTIVITY = 0.1;
@@ -61,25 +62,42 @@ const double DEFAULT_SELECTIVITY = 0.1;
 const double MINIMUM_CARDINALITY = 1.0;
 const double THRESHOLD_CARDINALITY = 5.0;
 
-// Default depth of an index tree (including one leaf page),
-// also representing the minimal cost of the index scan.
-// We assume that the root page would be always cached,
-// so it's not included here.
-const int DEFAULT_INDEX_COST = 3;
+// Default (Minimum) cost (nr. of pages) for an index.
+const int DEFAULT_INDEX_COST = 1;
 
 
+class jrd_nod;
 struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
-class IndexTableScan;
-class ComparativeBoolNode;
-class InversionNode;
-class PlanNode;
-class River;
-class SortNode;
 
+bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
+void OPT_compute_rse_streams(const RecordSelExpr*, UCHAR*);
+bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
+bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
+void OPT_get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
-Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
+VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
+jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
+USHORT OPT_nav_rsb_size(RecordSource*, USHORT, USHORT);
+
+inline int STREAM_INDEX(const jrd_nod* node)
+{
+	switch (node->nod_type)
+	{
+		case nod_relation:
+			return e_rel_stream;
+		case nod_procedure:
+			return e_prc_stream;
+		case nod_union:
+			return e_uni_stream;
+		case nod_aggregate:
+			return e_agg_stream;
+		default:
+			fb_assert(false);
+			return 0; // silence compiler warning.
+	}
+}
 
 enum segmentScanType {
 	segmentScanNone,
@@ -99,14 +117,14 @@ public:
 	IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment);
 
 
-	ValueExprNode* lowerValue;	// lower bound on index value
-	ValueExprNode* upperValue;	// upper bound on index value
+	jrd_nod* lowerValue;		// lower bound on index value
+	jrd_nod* upperValue;		// upper bound on index value
 	bool excludeLower;			// exclude lower bound value from scan
 	bool excludeUpper;			// exclude upper bound value from scan
 	int scope;					// highest scope level
 	segmentScanType scanType;	// scan type
 
-	Firebird::Array<BoolExprNode*> matches;
+	Firebird::Array<jrd_nod*> matches;
 };
 
 class IndexScratch
@@ -120,7 +138,6 @@ public:
 	double selectivity;				// calculated selectivity for this index
 	bool candidate;					// used when deciding which indices to use
 	bool scopeCandidate;			// used when making inversion based on scope
-	bool utilized;					// index is already utilized by some scan
 	int lowerCount;					//
 	int upperCount;					//
 	int nonFullMatchedSegments;		//
@@ -128,6 +145,8 @@ public:
 
 	Firebird::Array<IndexScratchSegment*> segments;
 };
+
+typedef Firebird::SortedArray<int> SortedStreamList;
 
 class InversionCandidate
 {
@@ -140,14 +159,13 @@ public:
 	USHORT			matchedSegments;
 	int				indexes;
 	int				dependencies;
-	BoolExprNode*	boolean;
-	BoolExprNode*	condition;
-	InversionNode*	inversion;
+	jrd_nod*		boolean;
+	jrd_nod*		inversion;
 	IndexScratch*	scratch;
 	bool			used;
 	bool			unique;
 
-	Firebird::Array<BoolExprNode*> matches;
+	Firebird::Array<jrd_nod*> matches;
 	SortedStreamList dependentFromStreams;
 };
 
@@ -158,28 +176,30 @@ class OptimizerRetrieval
 {
 public:
 	OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, SSHORT streamNumber,
-		bool outer, bool inner, SortNode** sortNode);
+		bool outer, bool inner, jrd_nod** sortNode);
 	~OptimizerRetrieval();
 
-	InversionCandidate* getCost();
-	InversionCandidate* getInversion(IndexTableScan** rsb);
+	InversionCandidate* getInversion(RecordSource** rsb);
+
+	InversionCandidate* getCost()
+	{
+		return getInversion(NULL);
+	}
 
 protected:
-	InversionNode* composeInversion(InversionNode* node1, InversionNode* node2,
-		InversionNode::Type node_type) const;
-	const Firebird::string& getAlias();
-	InversionCandidate* generateInversion(IndexTableScan** rsb);
-	IndexTableScan* generateNavigation();
+	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
+	void findDependentFromStreams(const jrd_nod* node, SortedStreamList* streamList) const;
+	VaryingString* getAlias();
+	InversionCandidate* generateInversion(RecordSource** rsb);
+	RecordSource* generateNavigation();
 	void getInversionCandidates(InversionCandidateList* inversions,
 		IndexScratchList* indexScratches, USHORT scope) const;
-	InversionNode* makeIndexNode(const index_desc* idx) const;
-	InversionNode* makeIndexScanNode(IndexScratch* indexScratch) const;
+	jrd_nod* makeIndexNode(const index_desc* idx) const;
+	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
 	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
-	bool matchBoolean(IndexScratch* indexScratch, BoolExprNode* boolean, USHORT scope) const;
-	InversionCandidate* matchDbKey(BoolExprNode* boolean) const;
+	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
-		BoolExprNode* boolean, USHORT scope) const;
-	ValueExprNode* findDbKey(ValueExprNode*, USHORT, SLONG*) const;
+		jrd_nod* boolean, USHORT scope) const;
 
 #ifdef OPT_DEBUG_RETRIEVAL
 	void printCandidate(const InversionCandidate* candidate) const;
@@ -187,17 +207,13 @@ protected:
 	void printFinalCandidate(const InversionCandidate* candidate) const;
 #endif
 
-	bool validateStarts(IndexScratch* indexScratch, ComparativeBoolNode* cmpNode,
-		USHORT segment) const;
-
+	bool validateStarts(IndexScratch* indexScratch, jrd_nod* boolean, USHORT segment) const;
 private:
 	MemoryPool& pool;
 	thread_db* tdbb;
-
-public:
 	SSHORT stream;
-	Firebird::string alias;
-	SortNode** sort;
+	VaryingString* alias;
+	jrd_nod** sort;
 	jrd_rel* relation;
 	CompilerScratch* csb;
 	Database* database;
@@ -215,10 +231,10 @@ class IndexRelationship
 public:
 	IndexRelationship();
 
-	int stream;
-	bool unique;
-	double cost;
-	double cardinality;
+	int		stream;
+	bool	unique;
+	double	cost;
+	double	cardinality;
 };
 
 typedef Firebird::Array<IndexRelationship*> IndexedRelationships;
@@ -229,12 +245,12 @@ public:
 	explicit InnerJoinStreamInfo(MemoryPool& p);
 	bool independent() const;
 
-	int stream;
-	bool baseUnique;
-	double baseCost;
-	int baseIndexes;
-	int baseConjunctionMatches;
-	bool used;
+	int		stream;
+	bool	baseUnique;
+	double	baseCost;
+	int		baseIndexes;
+	int		baseConjunctionMatches;
+	bool	used;
 
 	IndexedRelationships indexedRelationships;
 	int previousExpectedStreams;
@@ -246,7 +262,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-					   SortNode** sort_clause, PlanNode* plan_clause);
+		/*RiverStack& river_stack,*/ jrd_nod** sort_clause, jrd_nod** project_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();
@@ -272,8 +288,9 @@ protected:
 private:
 	MemoryPool& pool;
 	thread_db* tdbb;
-	SortNode** sort;
-	PlanNode* plan;
+	jrd_nod** sort;
+	jrd_nod** project;
+	jrd_nod* plan;
 	CompilerScratch* csb;
 	Database* database;
 	OptimizerBlk* optimizer;
@@ -281,7 +298,7 @@ private:
 	int remainingStreams;
 };
 
-typedef Firebird::HalfStaticArray<River*, OPT_STATIC_ITEMS> RiverList;
+typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 } // namespace Jrd
 

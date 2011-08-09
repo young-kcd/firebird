@@ -27,7 +27,7 @@
 // Utility functions
 
 #include "firebird.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -39,13 +39,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
-#include "../jrd/inf_pub.h"
-#include "../common/os/path_utils.h"
+#include "../jrd/os/path_utils.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -357,7 +356,7 @@ bool prefix_kernel_object_name(char* name, size_t bufsize)
 
 		// if name and prefix can't fit in name's buffer than we must
 		// not overwrite end of name because it contains object type
-		const size_t move_prefix = (len_name + len_prefix > bufsize) ?
+		const int move_prefix = (len_name + len_prefix > bufsize) ?
 			(bufsize - len_name) : len_prefix;
 
 		memmove(name + move_prefix, name, len_name);
@@ -807,7 +806,7 @@ SINT64 query_performance_counter()
 	return counter.QuadPart;
 #elif defined(HAVE_CLOCK_GETTIME)
 
-	// Use high-resolution clock
+	// Use high-resultion clock
 	struct timespec tp;
 	if (clock_gettime(CLOCK_REALTIME, &tp) != 0)
 		return 0;
@@ -921,28 +920,13 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 }
 
 
-// returns true if environment variable FIREBIRD_BOOT_BUILD is set
-bool bootBuild()
-{
-	static enum {FB_BOOT_UNKNOWN, FB_BOOT_NORMAL, FB_BOOT_SET} state = FB_BOOT_UNKNOWN;
-
-	if (state == FB_BOOT_UNKNOWN)
-	{
-		// not care much about protecting state with mutex - each thread will assign it same value
-		Firebird::string dummy;
-		state = readenv("FIREBIRD_BOOT_BUILD", dummy) ? FB_BOOT_SET : FB_BOOT_NORMAL;
-	}
-
-	return state == FB_BOOT_SET;
-}
-
-
 // Build full file name in specified directory
 Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 {
 	Firebird::PathName s;
 	char tmp[MAXPATHLEN];
 
+#ifndef BOOT_BUILD
 	const char* configDir[] = {
 		FB_BINDIR, FB_SBINDIR, FB_CONFDIR, FB_LIBDIR, FB_INCDIR, FB_DOCDIR, FB_UDFDIR, FB_SAMPLEDIR,
 		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR,
@@ -952,25 +936,19 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 	fb_assert(FB_NELEM(configDir) == FB_DIR_LAST);
 	fb_assert(prefType < FB_DIR_LAST);
 
-	if (! bootBuild())
+	if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
 	{
-		if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
-		{
-			// Value is set explicitly and is not environment overridable
-			PathUtils::concatPath(s, configDir[prefType], name);
-			return s;
-		}
+		// Value is set explicitly and is not environment overridable
+		PathUtils::concatPath(s, configDir[prefType], name);
+		return s;
 	}
+#endif
 
 	switch(prefType)
 	{
 		case FB_DIR_BIN:
 		case FB_DIR_SBIN:
-#ifdef WIN_NT
-			s = "";
-#else
 			s = "bin";
-#endif
 			break;
 
 		case FB_DIR_CONF:
@@ -981,11 +959,7 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 			break;
 
 		case FB_DIR_LIB:
-#ifdef WIN_NT
-			s = "";
-#else
 			s = "lib";
-#endif
 			break;
 
 		case FB_DIR_PLUGINS:
@@ -1040,77 +1014,6 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 	s += name;
 	gds__prefix(tmp, s.c_str());
 	return tmp;
-}
-
-unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
-						const ISC_STATUS* const from, const unsigned int count) throw()
-{
-	unsigned int copied = 0;
-
-	for (unsigned int i = 0; i < count; )
-	{
-		if (from[i] == isc_arg_end)
-		{
-			break;
-		}
-		i += (from[i] == isc_arg_cstring ? 3 : 2);
-		if (i > space - 1)
-		{
-			break;
-		}
-		copied = i;
-	}
-
-	memcpy(to, from, copied * sizeof(to[0]));
-	to[copied] = isc_arg_end;
-
-	return copied;
-}
-
-unsigned int statusLength(const ISC_STATUS* const status) throw()
-{
-	unsigned int l = 0;
-	for(;;)
-	{
-		if (status[l] == isc_arg_end)
-		{
-/*			if (l == 1 && status[2] == isc_arg_warning)
-			{
-				l += 2;
-			} */
-			return l;
-		}
-		l += (status[l] == isc_arg_cstring ? 3 : 2);
-	}
-}
-
-void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
-	unsigned int& bufferLength, unsigned char*& buffer,
-	Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath)
-{
-	if (itemsLength && items)
-	{
-		const unsigned char* ptr = (const unsigned char*) memchr(items, fb_info_tra_dbpath, itemsLength);
-		if (ptr)
-		{
-			newItemsBuffer.add(items, itemsLength);
-			newItemsBuffer.remove(ptr - items);
-			items = newItemsBuffer.begin();
-			--itemsLength;
-
-			unsigned int len = dbpath.length();
-			if (len + 3 > bufferLength)
-			{
-				len = bufferLength - 3;
-			}
-			bufferLength -= (len + 3);
-			*buffer++ = fb_info_tra_dbpath;
-			*buffer++ = len;
-			*buffer++ = len >> 8;
-			memcpy(buffer, dbpath.c_str(), len);
-			buffer += len;
-		}
-	}
 }
 
 } // namespace fb_utils

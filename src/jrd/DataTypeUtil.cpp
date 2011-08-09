@@ -25,16 +25,16 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/align.h"
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
-#include "../common/dsc_proto.h"
+#include "../jrd/dsc_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 using namespace Firebird;
 
@@ -151,18 +151,6 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 				*result = *arg;
 			else if (result->dsc_dtype != arg->dsc_dtype)
 				makeBlobOrText(result, arg, true);
-		}
-		else if (arg->dsc_dtype == dtype_boolean)
-		{
-			if (result->isUnknown())
-				*result = *arg;
-			else if (result->dsc_dtype != arg->dsc_dtype)
-			{
-				// Datatypes @1are not comparable in expression @2
-				status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") <<
-						Arg::Str(expressionName));
-			}
 		}
 		else	// we don't support this datatype here
 		{

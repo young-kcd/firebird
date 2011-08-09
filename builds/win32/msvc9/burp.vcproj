@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="burp"
 	ProjectGUID="{D1507562-A363-4685-96AF-B036F5E5E47F}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -60,7 +61,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -123,7 +123,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -182,7 +181,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -243,7 +241,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -294,10 +291,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\burp\OdsDetection.epp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\src\burp\restore.epp"
 					>
 				</File>
@@ -306,15 +299,11 @@
 				Name="Generated files"
 				>
 				<File
-					RelativePath="..\..\..\gen\burp\backup.cpp"
+					RelativePath="..\..\..\gen\$(PlatformName)\burp\backup.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\burp\OdsDetection.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\burp\restore.cpp"
+					RelativePath="..\..\..\gen\$(PlatformName)\burp\restore.cpp"
 					>
 				</File>
 			</Filter>
@@ -349,10 +338,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\mvol_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\burp\OdsDetection.h"
 				>
 			</File>
 			<File

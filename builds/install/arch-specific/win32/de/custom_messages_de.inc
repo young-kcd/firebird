@@ -15,6 +15,7 @@ de.UseApplicationTaskMsg=Server als &Anwendung starten?
 de.TaskGroupDescription=Firebird Server starten als:
 de.UseServiceTask=Server als &Dienst starten?
 de.AutoStartTask=&Firebird nach jedem Rechnerneustart automatisch starten?
+de.SuperClassicTask="Use SuperClassic?"
 de.CopyFbClientToSysTask=Die Firebird &Client-Bibliothek ins <system>-Verzeichnis kopieren?
 de.CopyFbClientAsGds32Task=Die Client-Bibliothek als &GDS32.DLL ins <system>-Verzeichnis kopieren?
 de.InstallCPLAppletTask="Installieren eines &Symbols im Infobereich der Taskleiste?"
@@ -70,4 +71,8 @@ de.RunISQL=Starten des Kommandozeilen-basierten interaktiven SQL Tools
 
 de.ReadmeFile=liesmich.txt
 de.InstallationReadmeFile=installation_liesmich.txt
+
+de.RunCS=Firebird Classic server starten
+de.RunSC=Firebird SuperClassic server starten
+de.RunSS=Firebird SuperServer starten
 

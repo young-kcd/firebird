@@ -29,7 +29,7 @@
 #include "../include/fb_blk.h"
 
 #include "../jrd/ibase.h"
-#include "../common/common.h"
+#include "../jrd/common.h"
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/Database.h"
@@ -39,12 +39,10 @@
 #include "../jrd/os/pio_proto.h"
 
 // Thread data block
-#include "../common/ThreadData.h"
+#include "../jrd/ThreadData.h"
 
 // recursive mutexes
 #include "../common/thd.h"
-
-using namespace Firebird;
 
 namespace Jrd
 {
@@ -57,14 +55,14 @@ namespace Jrd
 #endif
 	}
 
-	string Database::getUniqueFileId() const
+	Firebird::string Database::getUniqueFileId() const
 	{
 		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 
-		UCharBuffer buffer;
+		Firebird::UCharBuffer buffer;
 		PIO_get_unique_file_id(pageSpace->file, buffer);
 
-		string file_id;
+		Firebird::string file_id;
 		char* s = file_id.getBuffer(2 * buffer.getCount());
 		for (size_t i = 0; i < buffer.getCount(); i++)
 		{
@@ -77,13 +75,14 @@ namespace Jrd
 
 	Database::~Database()
 	{
+		delete dbb_sys_trans;
+
+		destroyIntlObjects();
+
+		fb_assert(dbb_pools[0] == dbb_permanent);
+		for (size_t i = 1; i < dbb_pools.getCount(); ++i)
 		{
-			SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::~Database");
-
-			fb_assert(dbb_pools[0] == dbb_permanent);
-
-			for (size_t i = 1; i < dbb_pools.getCount(); ++i)
-				MemoryPool::deletePool(dbb_pools[i]);
+			MemoryPool::deletePool(dbb_pools[i]);
 		}
 
 		delete dbb_monitoring_data;
@@ -91,8 +90,7 @@ namespace Jrd
 
 		dbb_flags |= DBB_destroying;
 
-		//Checkout dcoHolder(this);
-
+		Checkout dcoHolder(this);
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
 		LockManager::destroy(dbb_lock_mgr);
@@ -103,17 +101,17 @@ namespace Jrd
 	{
 		if (pool)
 		{
+			size_t pos;
+			if (dbb_pools.find(pool, pos))
 			{
-				SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::deletePool");
-				size_t pos;
-
-				if (dbb_pools.find(pool, pos))
-					dbb_pools.remove(pos);
+				dbb_pools.remove(pos);
 			}
 
 			MemoryPool::deletePool(pool);
 		}
 	}
+
+	// Database::SharedCounter implementation
 
 	Database::SharedCounter::SharedCounter()
 	{
@@ -142,8 +140,6 @@ namespace Jrd
 		fb_assert(space < TOTAL_ITEMS);
 		ValueCache* const counter = &m_counters[space];
 		Database* const dbb = tdbb->getDatabase();
-
-		SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::SharedCounter::generate");
 
 		if (!counter->lock)
 		{
@@ -186,23 +182,22 @@ namespace Jrd
 	{
 		ValueCache* const counter = static_cast<ValueCache*>(ast_object);
 		fb_assert(counter && counter->lock);
+
 		Database* const dbb = counter->lock->lck_dbb;
 
 		try
 		{
-			if (dbb->dbb_flags & DBB_not_in_use)
-				return 0;
-
-			SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::blockingAstSharedCounter");
+			Database::SyncGuard dsGuard(dbb, true);
 
 			ThreadContextHolder tdbb;
 			tdbb->setDatabase(dbb);
+			// tdbb->setAttachment(counter->lock->lck_attachment);
 
 			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 			LCK_downgrade(tdbb, counter->lock);
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{} // no-op
 
 		return 0;

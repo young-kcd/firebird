@@ -38,9 +38,9 @@
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/isc_f_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -113,7 +113,11 @@ static xdr_t::xdr_ops wnet_ops =
 };
 
 
-rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_name, bool uv_flag)
+rem_port* WNET_analyze(const Firebird::PathName& file_name,
+					ISC_STATUS*	status_vector,
+					const TEXT*	node_name,
+					//const TEXT*	user_string,
+					bool	uv_flag)
 {
 /**************************************
  *
@@ -140,7 +144,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 	Firebird::string buffer;
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
-	ISC_get_user(&buffer, 0, 0);
+	ISC_get_user(&buffer, 0, 0, 0);
 	buffer.lower();
 	user_id.insertString(CNCT_user, buffer);
 
@@ -162,6 +166,10 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
+	// Note: prior to V3.1E a receivers could not in truth handle more
+	// than 5 protocol descriptions; however, this restriction does not
+	// apply to Windows since it was created in 4.0
+
 	// If we want user verification, we can't speak anything less than version 7
 
 	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
@@ -173,8 +181,11 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, ptype_batch_send, 6)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+#endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
@@ -184,15 +195,11 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
-	rem_port* port = NULL;
-	try
-	{
-		port = WNET_connect(node_name, packet, 0);
-	}
-	catch (const Exception&)
+	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
+	if (!port)
 	{
 		delete rdb;
-		throw;
+		return NULL;
 	}
 
 	// Get response packet from server.
@@ -227,14 +234,11 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 			cnct->p_cnct_versions[i] = protocols_to_try2[i];
 		}
 
-		try
-		{
-			port = WNET_connect(node_name, packet, 0);
-		}
-		catch (const Exception&)
+		port = WNET_connect(node_name, packet, status_vector, 0);
+		if (!port)
 		{
 			delete rdb;
-			throw;
+			return NULL;
 		}
 
 		// Get response packet from server.
@@ -269,14 +273,11 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 			cnct->p_cnct_versions[i] = protocols_to_try3[i];
 		}
 
-		try
-		{
-			port = WNET_connect(node_name, packet, 0);
-		}
-		catch (const Exception&)
+		port = WNET_connect(node_name, packet, status_vector, 0);
+		if (!port)
 		{
 			delete rdb;
-			throw;
+			return NULL;
 		}
 
 		// Get response packet from server.
@@ -288,10 +289,12 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 
 	if (packet->p_operation != op_accept)
 	{
-		disconnect(port);
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_connect_reject;
+		*status_vector++ = 0;
 		delete rdb;
-
-		Arg::Gds(isc_connect_reject).raise();
+		disconnect(port);
+		return NULL;
 	}
 
 	port->port_protocol = packet->p_acpt.p_acpt_version;
@@ -318,7 +321,10 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 }
 
 
-rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
+rem_port* WNET_connect(const TEXT*		name,
+				  PACKET*	packet,
+				  ISC_STATUS*	status_vector,
+				  USHORT	flag)
 {
 /**************************************
  *
@@ -333,6 +339,10 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
  *
  **************************************/
 	rem_port* const port = alloc_port(0);
+	port->port_status_vector = status_vector;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = 0;
+	status_vector[2] = isc_arg_end;
 
 	delete port->port_connection;
 	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
@@ -437,22 +447,22 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
 			CloseHandle(port->port_pipe);
 		}
 
-		if (wnet_shutdown)
+		if (wnet_shutdown) {
 			disconnect(port);
+		}
 	}
 
 	if (wnet_shutdown)
 	{
 		Arg::Gds temp(isc_net_server_shutdown);
 		temp << Arg::Str("WNET");
-		temp.raise();
+		temp.copyTo(status_vector);
 	}
-
 	return NULL;
 }
 
 
-rem_port* WNET_reconnect(HANDLE handle)
+rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -462,11 +472,15 @@ rem_port* WNET_reconnect(HANDLE handle)
  *
  * Functional description
  *	A communications link has been established by another
- *	process.  We have inherited the handle.  Set up
+ *	process.  We have inheritted the handle.  Set up
  *	a port block.
  *
  **************************************/
 	rem_port* const port = alloc_port(0);
+	port->port_status_vector = status_vector;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = 0;
+	status_vector[2] = isc_arg_end;
 
 	delete port->port_connection;
 	port->port_connection = make_pipe_name(NULL, SERVER_PIPE_SUFFIX, 0);
@@ -914,10 +928,6 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
 
@@ -938,10 +948,6 @@ static int send_full( rem_port* port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 
@@ -961,10 +967,6 @@ static int send_partial( rem_port* port, PACKET* packet)
  *	Send a packet across a port to another process.
  *
  **************************************/
-
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
 
 	return xdr_protocol(&port->port_send, packet);
 }
@@ -1092,7 +1094,19 @@ static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 
 	Arg::Gds error(isc_network_error);
 	error << Arg::Str(node_name) << v;
-	error.raise();
+
+	ISC_STATUS* status_vector = NULL;
+	if (port->port_context != NULL) {
+		status_vector = port->port_context->get_status_vector();
+	}
+	if (status_vector == NULL) {
+		status_vector = port->port_status_vector;
+	}
+	if (status_vector != NULL)
+	{
+		error.copyTo(status_vector);
+		REMOTE_save_status_strings(status_vector);
+	}
 }
 
 
