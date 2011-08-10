@@ -1,3 +1,19 @@
+ 2011-08-09 12:11  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ClumpletReader.h
+   M src/common/classes/ClumpletWriter.cpp
+   M src/common/classes/ClumpletWriter.h
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/remote/server/server.cpp
+Getting ready for support of multiple security databases in services
+
  2011-08-08 07:12  alexpeshkoff 
    M src/common/unicode_util.cpp
 Misc
