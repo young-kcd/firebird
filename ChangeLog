@@ -1,3 +1,8 @@
+ 2011-08-09 11:29  dimitr 
+   M src/jrd/TempSpace.cpp
+   M src/jrd/TempSpace.h
+Second part of CORE-3457: Optimize the temporary space manager regarding small chunk allocations.
+
  2011-08-08 07:06  alexpeshkoff 
    M src/common/classes/alloc.cpp
 Removed debugging code, related with CORE-3560 - thanks to Claudio
