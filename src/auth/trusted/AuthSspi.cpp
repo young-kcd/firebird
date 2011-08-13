@@ -63,14 +63,14 @@ namespace
 		return (ToType)rc;
 	}
 
-/*	appears unused - remove at all?
+	/*	appears unused - remove at all?
 	void authName(const char** data, unsigned short* dataSize)
 	{
 		const char* name = "WIN_SSPI";
 		*data = name;
 		*dataSize = strlen(name);
 	}
- */
+	*/
 
 	MakeUpgradeInfo<> upInfo;
 }

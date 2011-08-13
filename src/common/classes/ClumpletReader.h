@@ -168,7 +168,7 @@ public:
 	typedef Array<UCHAR> AuthBlock;
 
 	// name and method are required attributes for any record
-	// name is set by plugin when it calls add() 
+	// name is set by plugin when it calls add()
 	static const unsigned char AUTH_NAME = 0;
 	// method is just a name of plugin which created this record
 	static const unsigned char AUTH_METHOD = 1;

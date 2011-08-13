@@ -6760,7 +6760,7 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 
     @param user
     @param options
-    @param 
+    @param
 
  **/
 static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefPtr<Config>* config)
