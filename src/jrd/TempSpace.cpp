@@ -479,14 +479,14 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 
 	if (freeSegments.locate(Firebird::locEqual, end))
 	{
-		// The next segment is found to be adjucent
+		// The next segment is found to be adjacent
 		Segment* const next_seg = &freeSegments.current();
 		next_seg->position -= size;
 		next_seg->size += size;
 
 		if (freeSegments.getPrev())
 		{
-			// Check the prior segment for being adjucent
+			// Check the prior segment for being adjacent
 			Segment* const prior_seg = &freeSegments.current();
 			if (position == prior_seg->position + prior_seg->size)
 			{
@@ -500,7 +500,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 	}
 	else if (freeSegments.locate(Firebird::locLess, position))
 	{
-		// Check the prior segment for being adjucent
+		// Check the prior segment for being adjacent
 		Segment* const prior_seg = &freeSegments.current();
 		if (position == prior_seg->position + prior_seg->size)
 		{
