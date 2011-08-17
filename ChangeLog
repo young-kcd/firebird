@@ -1,3 +1,11 @@
+ 2011-08-16 09:19  paulbeach 
+   M builds/posix/firebird.darwin.client.vers
+Needed for 2.5.1 build
+
+ 2011-08-16 06:47  dimitr 
+   M src/jrd/TempSpace.cpp
+Better English :-)
+
  2011-08-09 11:29  dimitr 
    M src/jrd/TempSpace.cpp
    M src/jrd/TempSpace.h
