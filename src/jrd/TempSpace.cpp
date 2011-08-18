@@ -498,7 +498,8 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 
 		return;
 	}
-	else if (freeSegments.locate(Firebird::locLess, position))
+	
+	if (freeSegments.locate(Firebird::locLess, position))
 	{
 		// Check the prior segment for being adjacent
 		Segment* const prior_seg = &freeSegments.current();
