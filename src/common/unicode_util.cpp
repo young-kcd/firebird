@@ -1019,7 +1019,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 	const int majorArray[] = {4, 3, 5, 6, 0};
 	for (const int* major = majorArray; *major; ++major)
 	{
-		for (int minor = 20; minor--; ) /* from 19 down to 0 */
+		for (int minor = 20; minor--; ) // from 19 down to 0
 		{
 			try
 			{
