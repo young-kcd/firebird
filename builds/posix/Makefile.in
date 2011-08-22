@@ -239,16 +239,16 @@ security.fdb:	$(SRC_ROOT)/dbs/security.sql
 	-$(RM) $@
 	-$(RM) $(SECURITY_TMP)
 	echo create database \'$(SECURITY_TMP)\'\; | $(ISQL)
-	gfix -write async $(SECURITY_TMP)
+	$(GFIX) -write async $(SECURITY_TMP)
 	$(ISQL) -i $^ $(SECURITY_TMP)
 	$(CHMOD) a=rw $(SECURITY_TMP)
 	$(CP) $(SECURITY_TMP) $@
-	gfix -write sync $@
+	$(GFIX) -write sync $@
 
 msg.timestamp:	$(MSG_FILES)
 	-$(RM) msg.fdb
 	echo create database \'msg.fdb\'\; | $(ISQL)
-	gfix -write async msg.fdb
+	$(GFIX) -write async msg.fdb
 	for sql in $(MSG_FILES); do (echo $$sql; $(ISQL) -i $$sql msg.fdb) || exit; done
 	$(TOUCH) $@
 
