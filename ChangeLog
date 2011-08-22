@@ -1,3 +1,16 @@
+ 2011-08-22 01:07  asfernandes 
+   M builds/posix/Makefile.in
+   M builds/posix/Makefile.in.examples
+Correction for my last commit to make it work without gen's bin directory in the $PATH.
+
+ 2011-08-21 04:11  asfernandes 
+   M builds/posix/Makefile.in
+   M builds/posix/Makefile.in.examples
+   M examples/empbuild/empbuild.e
+Make Linux build faster.
+It seems the usage of databases with FW=ON in ext4 filesystems mounted with barriers=1 (default) is very slow.
+This change decreased build time in my machine from 2m41s to 1m21s.
+
  2011-08-20 13:25  mapopa 
    M src/misc/memtest.cpp
 c file is now cpp 
