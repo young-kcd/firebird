@@ -49,7 +49,7 @@ Physical_IO_Module=os/posix/unix.cpp
 PLATFORM_PATH=os/darwin
 
 LINK_OPTS:=-m32 -arch i386
-LD_FLAGS+= -m32 -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
+LD_FLAGS+= -m32 -arch i386 
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
 LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
 LIB_LINK_SONAME:=-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000
