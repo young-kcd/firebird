@@ -1,3 +1,12 @@
+ 2011-08-25 11:54  paulbeach 
+   M builds/posix/Makefile.in.libfbclient
+   M builds/posix/prefix.darwin_i386
+Minor modifications to the build process to support MacOSX Lion (10.7)
+
+ 2011-08-25 09:42  paulbeach 
+   M src/jrd/divorce.cpp
+SuperServer will not start on Lion
+
  2011-07-21 10:24  dimitr 
    M src/jrd/btr.cpp
 Relaxed the rules a bit thus moving some checks to runtime. This fixes the regression in CORE-1812.
