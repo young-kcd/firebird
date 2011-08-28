@@ -4544,10 +4544,14 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (n > csb->csb_msg_number)
 		csb->csb_msg_number = n;
 
+	USHORT padField;
+	bool shouldPad = csb->csb_message_pad.get(node->messageNumber, padField);
+
 	// Get the number of parameters in the message and prepare to fill out the format block.
 
 	n = csb->csb_blr_reader.getWord();
 	node->format = Format::newFormat(*tdbb->getDefaultPool(), n);
+	USHORT maxAlignment = 0;
 	ULONG offset = 0;
 
 	Format::fmt_desc_iterator desc, end;
@@ -4559,8 +4563,14 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
+
 		desc->dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc->dsc_length;
+
+		maxAlignment = MAX(maxAlignment, alignment);
+
+		if (maxAlignment && shouldPad && index + 1 == padField)
+			offset = FB_ALIGN(offset, maxAlignment);
 
 		// ASF: Odd indexes are the nullable flag.
 		// So we only check even indexes, which is the actual parameter.

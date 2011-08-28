@@ -4392,16 +4392,14 @@ static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const Meta
 
 
 // Generate BLR message for external procedures
-static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UCHAR message2,
-	const Array<NestConst<Parameter> >& parameters, const BlrMessage& extBlr,
+static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& blr, UCHAR message,
+	UCHAR message2, const Array<NestConst<Parameter> >& parameters, const BlrMessage& extBlr,
 	UCharBuffer& appendBlr)
 {
 	const size_t prevAppendBlrSize = appendBlr.getCount();
 	bool messageNeeded = false;
 	size_t count = 0;
-	size_t countPos = 0;
 	ULONG offset = 0;
-	UCHAR maxAlignment = 0;
 
 	dsc shortDesc;
 	shortDesc.makeShort(0);
@@ -4419,8 +4417,6 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 
 		appendBlr.add(blr_message);
 		appendBlr.add(message2);
-		countPos = appendBlr.getCount();
-		fb_assert(countPos < MAX_USHORT);
 		appendBlr.add(UCHAR(count));	// parameters (with nulls)
 		appendBlr.add(UCHAR(count >> 8));
 
@@ -4431,10 +4427,7 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 			PreparedStatement::generateBlr(&desc, appendBlr);
 
 			if (desc.dsc_dtype >= dtype_aligned)
-			{
-				maxAlignment = MAX(maxAlignment, type_alignments[desc.dsc_dtype]);
 				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
-			}
 
 			offset += desc.dsc_length;
 
@@ -4458,10 +4451,7 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 			PreparedStatement::generateBlr(&desc, appendBlr);
 
 			if (desc.dsc_dtype >= dtype_aligned)
-			{
-				maxAlignment = MAX(maxAlignment, type_alignments[desc.dsc_dtype]);
 				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
-			}
 
 			offset += desc.dsc_length;
 
@@ -4481,22 +4471,7 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 	}
 
 	if (messageNeeded)
-	{
-		// Pad the external message.
-		ULONG pad = FB_ALIGN(offset, maxAlignment) - offset;
-
-		if (pad != 0)
-		{
-			fb_assert(count < MAX_USHORT);
-			++count;
-			appendBlr[countPos] = UCHAR(count);
-			appendBlr[countPos + 1] = UCHAR(count >> 8);
-
-			dsc desc;
-			desc.makeText(pad, 0);
-			PreparedStatement::generateBlr(&desc, appendBlr);
-		}
-	}
+		csb->csb_message_pad.put(message2, count);	// Mark the message as possibly needing pad.
 	else
 	{
 		// The external and internal messages are compatible, so there is no need to create a new one.
@@ -4511,13 +4486,10 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 
 	blr.add(blr_message);	// e_extproc_input_message, e_extproc_output_message
 	blr.add(message);
-	countPos = blr.getCount();
-	fb_assert(countPos < MAX_USHORT);
 	blr.add(UCHAR(count));	// parameters (with nulls)
 	blr.add(UCHAR(count >> 8));
 
 	offset = 0;
-	maxAlignment = 0;
 
 	for (const NestConst<Parameter>* i = parameters.begin(); i != parameters.end(); ++i)
 	{
@@ -4558,36 +4530,17 @@ static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UC
 		}
 
 		if (desc->dsc_dtype >= dtype_aligned)
-		{
-			maxAlignment = MAX(maxAlignment, type_alignments[desc->dsc_dtype]);
 			offset = FB_ALIGN(offset, type_alignments[desc->dsc_dtype]);
-		}
 
 		offset += desc->dsc_length;
 
 		PreparedStatement::generateBlr(&shortDesc, blr);	// null flag
 
-		maxAlignment = MAX(maxAlignment, sizeof(SSHORT));
 		offset = FB_ALIGN(offset, sizeof(SSHORT)) + shortDesc.dsc_length;
 	}
 
 	if (!messageNeeded)
-	{
-		// This message will be used by external. Pad it if needed.
-		ULONG pad = FB_ALIGN(offset, maxAlignment) - offset;
-
-		if (pad != 0)
-		{
-			fb_assert(count < MAX_USHORT);
-			++count;
-			blr[countPos] = UCHAR(count);
-			blr[countPos + 1] = UCHAR(count >> 8);
-
-			dsc desc;
-			desc.makeText(pad, 0);
-			PreparedStatement::generateBlr(&desc, blr);
-		}
-	}
+		csb->csb_message_pad.put(message, count);	// Mark the message as possibly needing pad.
 
 	return messageNeeded;
 }
@@ -4621,10 +4574,10 @@ static void parse_procedure_blr(thread_db* tdbb, jrd_prc* procedure, bid* blob_i
 
 		UCharBuffer appendBlr;
 
-		bool genExtIn = gen_ext_message(tdbb, tmp, e_extproc_input_message, e_extproc_input_message2,
-			procedure->prc_input_fields, extInBlr, appendBlr);
-		bool genExtOut = gen_ext_message(tdbb, tmp, e_extproc_output_message, e_extproc_output_message2,
-			procedure->prc_output_fields, extOutBlr, appendBlr);
+		bool genExtIn = gen_ext_message(tdbb, csb, tmp, e_extproc_input_message,
+			e_extproc_input_message2, procedure->prc_input_fields, extInBlr, appendBlr);
+		bool genExtOut = gen_ext_message(tdbb, csb, tmp, e_extproc_output_message,
+			e_extproc_output_message2, procedure->prc_output_fields, extOutBlr, appendBlr);
 
 		dsc shortDesc;
 		shortDesc.makeShort(0);
@@ -4732,29 +4685,17 @@ static void parse_procedure_blr(thread_db* tdbb, jrd_prc* procedure, bid* blob_i
 }
 
 
-static void par_messages(thread_db* tdbb,
-						 const UCHAR* const blr,
-						 USHORT blr_length,
-						 jrd_prc* procedure,
-						 CompilerScratch* csb)
+// Parse the messages of a blr request. For specified message, allocate a format (Format) block.
+static void par_messages(thread_db* tdbb, const UCHAR* const blr, USHORT blrLength,
+	jrd_prc* procedure, CompilerScratch* csb)
 {
-/**************************************
- *
- *      p a r _ m e s s a g e s
- *
- **************************************
- *
- * Functional description
- *      Parse the messages of a blr request.  For specified message, allocate
- *      a format (Format) block.
- *
- **************************************/
+	SET_TDBB(tdbb);
 
- 	if (blr_length < 2)
- 		ERR_post(Arg::Gds(isc_metadata_corrupt));
- 	blr_length -= 2;
+	if (blrLength < 2)
+		ERR_post(Arg::Gds(isc_metadata_corrupt));
+	blrLength -= 2;
 
-	csb->csb_blr_reader = BlrReader(blr, blr_length);
+	csb->csb_blr_reader = BlrReader(blr, blrLength);
 
 	const SSHORT version = csb->csb_blr_reader.getByte();
 	if (version != blr_version4 && version != blr_version5)
@@ -4763,66 +4704,52 @@ static void par_messages(thread_db* tdbb,
 				 Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
-	if (csb->csb_blr_reader.getByte() != blr_begin) {
+	if (csb->csb_blr_reader.getByte() != blr_begin)
 		ERR_post(Arg::Gds(isc_metadata_corrupt));
-	}
-
-	SET_TDBB(tdbb);
 
 	while (csb->csb_blr_reader.getByte() == blr_message)
 	{
-		if (blr_length < 4) // Covers the call above and the next three
-			ERR_post(Arg::Gds(isc_metadata_corrupt));
-		blr_length -= 4;
-		const USHORT msg_number = csb->csb_blr_reader.getByte();
-		USHORT count = csb->csb_blr_reader.getByte();
-		count += (csb->csb_blr_reader.getByte()) << 8;
+		const USHORT msgNumber = csb->csb_blr_reader.getByte();
+		USHORT count = csb->csb_blr_reader.getWord();
 		Format* format = Format::newFormat(*tdbb->getDefaultPool(), count);
 
+		USHORT padField;
+		bool shouldPad = csb->csb_message_pad.get(msgNumber, padField);
+
+		USHORT maxAlignment = 0;
 		ULONG offset = 0;
-		for (Format::fmt_desc_iterator desc = format->fmt_desc.begin(); count; --count, ++desc)
+		USHORT i = 0;
+
+		for (Format::fmt_desc_iterator desc = format->fmt_desc.begin(); i < count; ++i, ++desc)
 		{
-			// CVC: I can't find an elegant way to make PAR_desc aware of the BLR length, so
-			// for now I know that at least should consume one byte. I would have to change the
-			// current 6 calls to it. Maybe a new member in CompilerScratch may be the solution?
-			if (blr_length < 2)
-				ERR_post(Arg::Gds(isc_metadata_corrupt));
-
-			const UCHAR* const savePos = csb->csb_blr_reader.getPos();
-
 			const USHORT align = PAR_desc(tdbb, csb, &*desc);
-			if (align) {
+			if (align)
 				offset = FB_ALIGN(offset, align);
-			}
-			desc->dsc_address = (UCHAR *) (IPTR) offset;
+
+			desc->dsc_address = (UCHAR*)(IPTR) offset;
 			offset += desc->dsc_length;
 
-			// This solution only checks that PAR_desc doesn't run out of bounds, but it
-			// does after the disaster happened.
-			const int diff = csb->csb_blr_reader.getPos() - savePos;
-			if (diff > blr_length)
-				ERR_post(Arg::Gds(isc_metadata_corrupt));
-			blr_length -= diff;
+			maxAlignment = MAX(maxAlignment, align);
+
+			if (maxAlignment && shouldPad && i + 1 == padField)
+				offset = FB_ALIGN(offset, maxAlignment);
 		}
 
 		if (offset > MAX_MESSAGE_SIZE)
-		{
-			ERR_post(Arg::Gds(isc_imp_exc) <<
-					 Arg::Gds(isc_blktoobig));
-		}
+			ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 		format->fmt_length = offset;
 
-		switch (msg_number)
+		switch (msgNumber)
 		{
-		case 0:
-			procedure->prc_input_fmt = format;
-			break;
-		case 1:
-			procedure->prc_output_fmt = format;
-			break;
-		default:
-			delete format;
+			case 0:
+				procedure->prc_input_fmt = format;
+				break;
+			case 1:
+				procedure->prc_output_fmt = format;
+				break;
+			default:
+				delete format;
 		}
 	}
 }

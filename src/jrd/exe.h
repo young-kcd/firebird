@@ -427,6 +427,7 @@ class CompilerScratch : public pool_alloc<type_csb>
 		csb_dbg_info(p),
 		csb_map_field_info(p),
 		csb_map_item_info(p),
+		csb_message_pad(p),
 		csb_domain_validation(domain_validation),
 		csb_rpt(p, len)
 	{}
@@ -506,6 +507,10 @@ public:
 	Firebird::DbgInfo	csb_dbg_info;			// Debug information
 	MapFieldInfo		csb_map_field_info;		// Map field name to field info
 	MapItemInfo			csb_map_item_info;		// Map item to item info
+
+	// Map of message number to field number to pad for external routines.
+	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, USHORT> > > csb_message_pad;
+
 	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
 
 	// used in cmp.cpp/pass1
