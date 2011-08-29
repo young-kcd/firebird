@@ -1,3 +1,9 @@
+ 2011-08-28 18:31  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.h
+   M src/jrd/met.epp
+Fixed the padding of external procedure messages. Also removed obsolete checks in the touched code.
+
  2011-08-22 01:07  asfernandes 
    M builds/posix/Makefile.in
    M builds/posix/Makefile.in.examples
