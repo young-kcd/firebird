@@ -362,7 +362,7 @@ private:
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
 	SRQ_PTR grant_or_que(thread_db*, lrq*, lbl*, SSHORT);
-	void init_owner_block(own*, UCHAR, LOCK_OWNER_T);
+	bool init_owner_block(ISC_STATUS*, own*, UCHAR, LOCK_OWNER_T);
 	void initialize(sh_mem*, bool);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);

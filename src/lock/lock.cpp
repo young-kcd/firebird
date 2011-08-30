@@ -252,7 +252,8 @@ LockManager::~LockManager()
 		m_startupSemaphore.tryEnter(5);
 
 		// Wakeup the AST thread - it might be blocking
-		ISC_event_post(&m_process->prc_blocking);
+		(void)	// Ignore errors in dtor()
+			ISC_event_post(&m_process->prc_blocking);
 
 		// Wait for the AST thread to finish cleanup or for 5 seconds
 		m_cleanupSemaphore.tryEnter(5);
@@ -851,11 +852,11 @@ bool LockManager::cancelWait(SRQ_PTR owner_offset)
 	Firebird::MutexLockGuard guard(m_localMutex);
 
 	acquire_shmem(DUMMY_OWNER);
-	
+
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (owner->own_type == type_own)
 		post_wakeup(owner);
-	
+
 	release_shmem(DUMMY_OWNER);
 	return true;
 }
@@ -1141,7 +1142,10 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			ISC_STATUS_ARRAY local_status;
 
 			// Someone is going to delete shared file? Reattach.
-			ISC_mutex_unlock(MUTEX);
+			if (ISC_mutex_unlock(MUTEX) != 0)
+			{
+				bug(NULL, "ISC_mutex_unlock failed (acquire_shmem)");
+			}
 			detach_shared_file(local_status);
 
 			THD_yield();
@@ -1565,7 +1569,7 @@ void LockManager::blocking_action_thread()
 				}
 			}
 
-			ISC_event_wait(&m_process->prc_blocking, value, 0);
+			(void) ISC_event_wait(&m_process->prc_blocking, value, 0);
 		}
 	}
 	catch (const Firebird::Exception& x)
@@ -1758,7 +1762,11 @@ bool LockManager::create_owner(ISC_STATUS* status_vector,
 		remove_que(&owner->own_lhb_owners);
 	}
 
-	init_owner_block(owner, owner_type, owner_id);
+	if (!init_owner_block(status_vector, owner, owner_type, owner_id))
+	{
+		release_mutex();
+		return false;
+	}
 
 	insert_tail(&m_header->lhb_owners, &owner->own_lhb_owners);
 
@@ -1826,7 +1834,12 @@ bool LockManager::create_process(ISC_STATUS* status_vector)
 
 	insert_tail(&m_header->lhb_processes, &process->prc_lhb_processes);
 
-	ISC_event_init(&process->prc_blocking);
+	if (ISC_event_init(&process->prc_blocking) != FB_SUCCESS)
+	{
+		Firebird::Arg::Gds result(isc_lockmanerr);
+		result.copyTo(status_vector);
+		return false;
+	}
 
 	m_processOffset = SRQ_REL_PTR(process);
 
@@ -2322,7 +2335,7 @@ SRQ_PTR LockManager::grant_or_que(thread_db* tdbb, lrq* request, lbl* lock, SSHO
 }
 
 
-void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id)
+bool LockManager::init_owner_block(ISC_STATUS* status_vector, own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id)
 {
 /**************************************
  *
@@ -2350,7 +2363,14 @@ void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T ow
 	owner->own_acquire_time = 0;
 	owner->own_ast_count = 0;
 
-	ISC_event_init(&owner->own_wakeup);
+	if (ISC_event_init(&owner->own_wakeup) != FB_SUCCESS)
+	{
+		Firebird::Arg::Gds result(isc_lockmanerr);
+		result.copyTo(status_vector);
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -2955,7 +2975,7 @@ void LockManager::post_wakeup(own* owner)
 	{
 		++m_header->lhb_wakeups;
 		owner->own_flags |= OWN_wakeup;
-		ISC_event_post(&owner->own_wakeup);
+		(void) ISC_event_post(&owner->own_wakeup);
 	}
 }
 
@@ -3106,7 +3126,10 @@ void LockManager::remap_local_owners()
 		own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
 		if (owner->own_flags & OWN_waiting)
 		{
-			ISC_event_post(&owner->own_wakeup);
+			if (ISC_event_post(&owner->own_wakeup) != FB_SUCCESS)
+			{
+				bug(NULL, "remap failed: ISC_event_post() failed");
+			}
 		}
 	}
 

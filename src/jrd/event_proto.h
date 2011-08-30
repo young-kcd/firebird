@@ -77,7 +77,7 @@ private:
 	void init_shmem(sh_mem*, bool);
 	void insert_tail(srq*, srq*);
 	evnt* make_event(USHORT, const TEXT*, SLONG);
-	void post_process(prb*);
+	bool post_process(prb*);
 	void probe_processes();
 	void release_shmem();
 	void remove_que(srq*);

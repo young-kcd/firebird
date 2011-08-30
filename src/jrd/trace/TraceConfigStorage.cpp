@@ -114,7 +114,8 @@ ConfigStorage::ConfigStorage() :
 #endif
 
 	ISC_STATUS_ARRAY status;
-	ISC_map_file(status, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
+	(void)	// errors are checked indirectly using m_base
+		ISC_map_file(status, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
 	if (!m_base)
 	{
 		iscLogStatus("ConfigStorage: Cannot initialize the shared memory region", status);

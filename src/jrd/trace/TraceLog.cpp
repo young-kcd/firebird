@@ -60,7 +60,8 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	m_reader = reader;
 
 	ISC_STATUS_ARRAY status;
-	ISC_map_file(status, fileName.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
+	(void)	// errors are checked indirectly using m_base
+		ISC_map_file(status, fileName.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
 	if (!m_base)
 	{
 		iscLogStatus("TraceLog: cannot initialize the shared memory region", status);

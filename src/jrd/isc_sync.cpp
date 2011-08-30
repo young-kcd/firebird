@@ -143,6 +143,7 @@ static size_t getpagesize()
 }
 #endif
 
+//#define DEBUG_IPC
 #ifdef DEBUG_IPC
 #define IPC_TRACE(x)	{ /*time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout);*/ gds__log x; }
 #else
@@ -306,6 +307,9 @@ namespace {
 
 #ifdef USE_SYS5SEMAPHORE
 
+// Uncomment to trace details of event_init/fini calls
+//#define DEB_EVNT
+
 static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 
 namespace {
@@ -447,6 +451,7 @@ namespace {
 
 			if (n >= N_SETS)
 			{
+				fb_assert(false);	// Not supposed to overflow
 				return false;
 			}
 
@@ -525,6 +530,37 @@ namespace {
 			const int n = getByAddress((UCHAR*) s);
 			return n >= 0 ? &sharedFiles[n] : 0;
 		}
+
+#ifdef DEB_EVNT
+		struct AbsPtr
+		{
+			SLONG offset;
+			int fn;
+			bool bad()
+			{
+				return offset < 0 || fn < 0;
+			}
+			AbsPtr()
+				: offset(-1), fn(-1)
+			{ }
+			bool operator==(const AbsPtr& sec) const
+			{
+				return offset == sec.offset && fn == sec.fn;
+			}
+		};
+
+		static AbsPtr absPtr(const void* s)
+		{
+			const int n = getByAddress((UCHAR*) s);
+			AbsPtr rc;
+			if (n >= 0)
+			{
+				rc.offset = (IPTR)s - (IPTR)(sharedFiles[n].from);
+				rc.fn = sharedFiles[n].fileNum;
+			}
+			return rc;
+		}
+#endif // DEB_EVNT
 
 		static void push(const SharedFile& sf)
 		{
@@ -635,6 +671,7 @@ namespace {
 					{
 						semctl(id, 0, IPC_RMID);
 					}
+					set[n].fileNum = -1;
 				}
 				idCache[n] = -1;
 			}
@@ -648,16 +685,26 @@ namespace {
 		// Lock init file.
 		FileLock initLock(status, fd_init, FileLock::OPENED);
 		if (!initLock.exclusive())
+		{
+			iscLogStatus("initLock.exclusive() failed", status);
 			return false;
+		}
 
 		// Find out what file does it belong to.
 		SharedFile* sf = SharedFile::locate(sem);
 		if (!sf)
 		{
+			gds__log("SharedFile::locate(sem) failed");
 			return false;
 		}
 
-		return semTable->get(sf->getNum(), sem);
+		if (!semTable->get(sf->getNum(), sem))
+		{
+			gds__log("semTable->get() failed");
+			return false;
+		}
+
+		return true;
 	}
 
 	void freeSem5(Sys5Semaphore* sem)
@@ -674,6 +721,92 @@ namespace {
 
 		semTable->put(sem);
 	}
+
+#ifdef DEB_EVNT
+
+	struct Dump
+	{
+		SharedFile::AbsPtr e;
+		enum
+		{
+			WORKING, INIT, FINI, INIT_ERR
+		} state;
+		int code;
+	};
+	GlobalPtr<Array<Dump> > dump;
+	GlobalPtr<Mutex> dMutex;
+
+	Dump* dFind(const event_t* ev)
+	{
+		SharedFile::AbsPtr e = SharedFile::absPtr(ev);
+		fb_assert(!e.bad());
+		for (Dump* itr = dump->begin(); itr < dump->end(); ++itr)
+		{
+			if (itr->e == e)
+			{
+				return itr;
+			}
+		}
+		return NULL;
+	}
+
+	void initStart(const event_t* e)
+	{
+		MutexLockGuard g(dMutex);
+		Dump* d = dFind(e);
+		if (d)
+		{
+			fb_assert(d->state == Dump::INIT_ERR);
+			d->state = Dump::INIT;
+		}
+		else
+		{
+			Dump dd;
+			dd.e = SharedFile::absPtr(e);
+			fb_assert(!dd.e.bad());
+			dd.state = Dump::INIT;
+			dd.code = 0;
+			dump->add(dd);
+		}
+	}
+
+	void initStop(const event_t* e, int code)
+	{
+		MutexLockGuard g(dMutex);
+		Dump* d = dFind(e);
+
+		fb_assert(d && (d->state == Dump::INIT));
+		d->state = code ? Dump::INIT_ERR : Dump::WORKING;
+		d->code = code;
+	}
+
+	void finiStart(const event_t* e)
+	{
+		MutexLockGuard g(dMutex);
+		Dump* d = dFind(e);
+
+		fb_assert(d && (d->state == Dump::WORKING));
+		d->state = Dump::FINI;
+	}
+
+	void finiStop(const event_t* e)
+	{
+		MutexLockGuard g(dMutex);
+		Dump* d = dFind(e);
+
+		fb_assert(d && (d->state == Dump::FINI));
+		dump->remove(d);
+	}
+
+#else // DEB_EVNT
+
+	void initStart(const event_t* event) {}
+	void initStop(const event_t* event, int code) {}
+	void finiStart(const event_t* event) {}
+	void finiStop(const event_t* event) {}
+
+#endif // DEB_EVNT
+
 }
 
 int Sys5Semaphore::getId()
@@ -934,7 +1067,9 @@ void ISC_event_fini(event_t* event)
  *
  **************************************/
 	IPC_TRACE(("ISC_event_fini set=%d num=%d\n", event->semSet, event->semNum));
+	finiStart(event);
 	freeSem5(event);
+	finiStop(event);
 }
 
 
@@ -950,12 +1085,14 @@ int ISC_event_init(event_t* event)
  *	Prepare an event object for use.
  *
  **************************************/
+	initStart(event);
 
 	event->event_count = 0;
 
 	if (!getSem5(event))
 	{
 		IPC_TRACE(("ISC_event_init failed get sem %p\n", event));
+		initStop(event, 1);
 		return FB_FAILURE;
 	}
 
@@ -966,9 +1103,11 @@ int ISC_event_init(event_t* event)
 	if (semctl(event->getId(), event->semNum, SETVAL, arg) < 0)
 	{
 		iscLogStatus("event_init()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		initStop(event, 2);
 		return FB_FAILURE;
 	}
 
+	initStop(event, 0);
 	return FB_SUCCESS;
 }
 
