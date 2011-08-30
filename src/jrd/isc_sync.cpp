@@ -635,6 +635,7 @@ namespace {
 					{
 						semctl(id, 0, IPC_RMID);
 					}
+					set[n].fileNum = -1;
 				}
 				idCache[n] = -1;
 			}
