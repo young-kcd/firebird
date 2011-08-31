@@ -1,3 +1,13 @@
+ 2011-08-30 13:46  alexpeshkoff 
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+   M src/jrd/isc_sync.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceLog.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Fixed CORE-3589: Internal shared resource leak
+
  2011-08-18 06:50  robocop 
    M src/jrd/TempSpace.cpp
 Misc.
