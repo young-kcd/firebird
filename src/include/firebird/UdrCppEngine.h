@@ -66,10 +66,10 @@ namespace Firebird
 #define FB_UDR_EXECUTE_MESSAGE_FUNCTION(inputs, output)	\
 	FB_MESSAGE(InMessage,	\
 		inputs	\
-	)	\
+	);	\
 	FB_MESSAGE(OutMessage,	\
 		output	\
-	)	\
+	);	\
 	\
 	FB_UDR_EXECUTE__FUNCTION
 
@@ -122,10 +122,10 @@ namespace Firebird
 #define FB_UDR_EXECUTE_MESSAGE_PROCEDURE(inputs, outputs)	\
 	FB_MESSAGE(InMessage,	\
 		inputs	\
-	)	\
+	);	\
 	FB_MESSAGE(OutMessage,	\
 		outputs	\
-	)	\
+	);	\
 	\
 	FB_UDR_EXECUTE__PROCEDURE
 

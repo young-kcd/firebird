@@ -63,8 +63,13 @@
 				Null) - 0) + sizeof(ISC_SHORT);	\
 		}	\
 		\
+		void clear()	\
+		{	\
+			memset(this, 0, sizeof(*this));	\
+		}	\
+		\
 		FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_FIELD, _, fields)	\
-	};
+	}
 
 #define FB_MESSAGE_FIELD(r, _, i, xy)	\
 	FB_BOOST_PP_CAT(FB_TYPE_, FB_BOOST_PP_TUPLE_ELEM(2, 0, xy)) FB_BOOST_PP_TUPLE_ELEM(2, 1, xy);	\
@@ -90,6 +95,20 @@
 #define FB_TYPE_FB_INTEGER				ISC_LONG
 #define FB_TYPE_FB_BIGINT				ISC_INT64
 #define FB_TYPE_FB_VARCHAR(len)			::Firebird::FbVarChar<(len)>
+
+#define FB_MESSAGE_DESC(name, fields)	\
+	FB_MESSAGE(name, fields);	\
+	struct name##Desc : public name	\
+	{	\
+		::Firebird::FbMessage desc;	\
+		\
+		name##Desc()	\
+		{	\
+			desc.blr = getBlr(&desc.blrLength);	\
+			desc.buffer = (unsigned char*) this;	\
+			desc.bufferLength = getSize();	\
+		}	\
+	}
 
 
 namespace Firebird {
