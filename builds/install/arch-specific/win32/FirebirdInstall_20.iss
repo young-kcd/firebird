@@ -422,7 +422,7 @@ Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebi
 Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
 Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
 Name: {group}\Firebird {#FB15_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB15_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird 2.1 Quick Start Guide; Filename: {app}\doc\Firebird-2.1-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
+Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-2.1-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
@@ -515,7 +515,7 @@ Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: C
 
 #if msvc_version >= 8
 ;If Host O/S has Windows Installer 3.0 installed then we use msiexec to deploy the runtime libraries
-;In fact, even if the runtime libraries did exist locally the system will alway load a shared assembly if it is available.
+;In fact, even if the runtime libraries did exist locally the system will always load a shared assembly if it is available.
 Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
