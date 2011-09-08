@@ -77,20 +77,20 @@ Before you report a bug:
  o Check you know how Firebird works.
    Maybe it is not a bug at all.
 
- o Perhaps some has already reported this? Browse
+ o Perhaps someone has already reported this? Browse
    existing bug reports here:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/browse/CORE
 
  o If in doubt why not discuss the problem on the
    Firebird-devel list? You can subscribe here:
 
-	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+    http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
    and the list is viewable via a newsgroup interface
    here:
 
-	news://news.atkin.com/
+    news://news.atkin.com/
 
 
 
