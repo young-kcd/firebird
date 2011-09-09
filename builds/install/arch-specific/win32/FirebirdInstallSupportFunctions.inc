@@ -58,6 +58,7 @@ InnoSetup Help Extract on Windows version strings:
 4.1.1998      Windows 98
 4.1.2222      Windows 98 Second Edition
 4.9.3000      Windows Me
+
 Windows NT versions:
 4.0.1381      Windows NT 4.0
 5.0.2195      Windows 2000
@@ -324,7 +325,7 @@ var
 begin
 
   if places > 4 then
-    places :=4;
+    places := 4;
 
   SetArrayLength( verint1, 4 );
   DecodeVersion( ver1, verint1 );
@@ -381,6 +382,7 @@ begin
   end;
 
 end;
+
 
 function GetRegistryEntry(RootKey: Integer; RegKey, RegEntry: string): String;
 begin

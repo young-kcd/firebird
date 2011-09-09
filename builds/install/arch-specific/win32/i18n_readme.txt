@@ -26,7 +26,7 @@ simple as all we need are translations of the Firebird specific messages.
 
 Currently the Firebird installer has support for Bosnian, Czech, Spanish, 
 French, German, Hungarian, Italian, Polish, Portuguese (standard), Russian, 
-Slovakian and Slovenain installs. So there are still opportunities for others 
+Slovakian and Slovenian installs. So there are still opportunities for others 
 to provide support for their native language.
 
 
