@@ -1,3 +1,32 @@
+ 2011-09-08 09:56  paul_reeves 
+   A builds/install/arch-specific/win32/cz
+   A builds/install/arch-specific/win32/cz/custom_messages_cz.inc
+Add i18n strings for cz.
+
+ 2011-09-08 09:51  paul_reeves 
+   M builds/install/arch-specific/win32/i18n_readme.txt
+bring i18n instructions up to date
+
+ 2011-09-08 09:50  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/Readme.txt
+misc routine maintenance
+
+ 2011-09-08 09:49  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_20.iss
+remove hard-coded version string.
+misc maintenance
+
+ 2011-09-08 09:48  paul_reeves 
+   M builds/install/arch-specific/win32/custom_messages.inc
+add i18n message
+
+ 2011-09-08 09:46  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+calc md5sum after creating packages.
+misc routine maintenance.
+
  2011-08-25 11:54  paulbeach 
    M builds/posix/Makefile.in.libfbclient
    M builds/posix/prefix.darwin_i386
