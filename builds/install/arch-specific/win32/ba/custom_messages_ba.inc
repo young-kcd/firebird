@@ -71,3 +71,5 @@ ba.RunISQL=Pokreni command-line bazirani Interactive SQL alat
 
 ba.ReadmeFile=ProcitajMe.txt
 ba.InstallationReadmeFile=Instalacija_ProcitajMe.txt
+;ba.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

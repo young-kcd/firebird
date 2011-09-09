@@ -69,3 +69,5 @@ si.RunCSWithGuardian=Zaženi Firebird kot klasièni server (z nadzornikom)
 si.RunISQL=Zaženi ukazno vrstico z orodjem Interactive SQL
 si.ReadmeFile=readme.txt
 si.InstallationReadmeFile=instalacija_precitajMe.txt
+;si.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

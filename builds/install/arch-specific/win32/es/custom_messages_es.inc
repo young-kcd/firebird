@@ -69,3 +69,5 @@ es.RunISQL=Ejecutar la herramienta SQL interactiva por línea de comandos
 
 es.ReadmeFile=leame.txt
 es.InstallationReadmeFile=leame_instalacion.txt
+;es.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

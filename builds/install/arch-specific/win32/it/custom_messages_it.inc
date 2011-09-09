@@ -70,4 +70,5 @@ it.RunISQL=Esegui Interactive SQL (ISQL) da riga di comando
 
 it.ReadmeFile=leggimi.txt
 it.InstallationReadmeFile=leggimi_installazione.txt
+;it.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 

@@ -70,3 +70,5 @@ ru.RunISQL=Запуск утилиты Interactive SQL
 
 ru.ReadmeFile=readme.txt
 ru.InstallationReadmeFile=installation_readme.txt
+;ru.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

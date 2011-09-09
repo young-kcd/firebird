@@ -70,3 +70,5 @@ pl.RunISQL=Uruchom Interactive SQL - narzêdzie wiersza poleceñ
 
 pl.ReadmeFile=czytajto.txt
 pl.InstallationReadmeFile=instalacja_czytajto.txt
+;pl.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

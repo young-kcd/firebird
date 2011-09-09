@@ -70,3 +70,5 @@ pt.RunISQL=Executar a ferramenta de linha-de-comandos SQL Interactivo
 
 pt.ReadmeFile=leia-me.txt
 pt.InstallationReadmeFile=instalação_leia-me.txt
+;pt.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

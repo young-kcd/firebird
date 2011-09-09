@@ -70,4 +70,5 @@ de.RunISQL=Starten des Kommandozeilen-basierten interaktiven SQL Tools
 
 de.ReadmeFile=liesmich.txt
 de.InstallationReadmeFile=installation_liesmich.txt
+;de.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 

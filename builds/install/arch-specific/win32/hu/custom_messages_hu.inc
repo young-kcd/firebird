@@ -70,3 +70,5 @@ hu.RunISQL=A parancssoros Interaktív SQL eszköz futtatása
 
 hu.ReadmeFile=olvass_el.txt
 hu.InstallationReadmeFile=telepitesi_segedlet.txt
+;hu.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

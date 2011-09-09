@@ -71,3 +71,5 @@ fr.RunISQL=Démarrer l'outil en ligne de commande Interactive SQL (ISQL)
 
 fr.ReadmeFile=lisezmoi.txt
 fr.InstallationReadmeFile=installation_lisezmoi.txt
+;fr.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+
