@@ -1,12 +1,8 @@
 
-=========================================
-Firebird 2.5.0  pre alpha (Windows Build)
-=========================================
+===================================
+Firebird $MAJOR.$MINOR.$RELEASE   (Windows Build)
+===================================
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 o Introducción
 o A quién está destinada esta versión
@@ -20,19 +16,35 @@ o Informe de Errores
 Introducción
 ============
 
-Bienvenido a Firebird 2.1.
+Bienvenido a Firebird $MAJOR.$MINOR.
 
 
 A quién está destinada esta versión
 ===================================
 
-Esta versión pre-lanzamiento (release candidate) está
-destinada a usuarios experimentados de Firebird. Ha
-sido razonablemente bien probada y todas las nuevas
-características deberían estar ya convenientemente
-documentadas.
+Firebird $MAJOR.$MINOR.$RELEASE ha sido 
+intensivamente probado y está listo para usarse 
+en ambientes de producción. De todas maneras, 
+se recomienda a los usuarios que sigan los 
+procedimientos habituales antes de instalar 
+esta versión en un servidor de producción, es decir:
 
-No utilice esta versión en un ambiente de producción.
+ o Asegúrese de leer el documento de instalación
+   y las notas de la versión.
+
+ o Realice una copia de seguridad de los datos
+   que considere importantes antes de de instalar
+   esta versión.
+
+ o Se recomienda que desinstale cualquier versión
+   anterior antes de realizar la instalación. El
+   proceso de desinstalación no elimina los
+   archivos de configuración ni los logs.
+
+ o Se recomienda que realice sus propias pruebas
+   en un ambiente de desarrollo antes de
+   implementar esta versión en producción.
+
 
 
 Problemas Conocidos
@@ -76,7 +88,7 @@ Antes de reportar un error:
 o ¿Quizá alguien ya lo haya reportado? Consulte los
   reportes de errores aquí:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/browse/CORE
 
 o Si tiene dudas, ¿por qué no discutir el problema en
   la lista de desarrollo Firebird-devel? Puede
@@ -90,12 +102,3 @@ o Si tiene dudas, ¿por qué no discutir el problema en
 	news://news.atkin.com/
 
 
-Por favor, no utilice la lista Firebird-devel para
-obtener soporte técnico, a menos que la consulta se
-relacione específicamente con una nueva característica
-de Firebird 2.1
-
-
-Felices Pruebas!
-
-El equipo de Firebird.

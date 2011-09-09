@@ -23,6 +23,8 @@
 
 :SET_PARAMS
 @echo off
+:: reset ERRLEV to clear error from last run in same cmd shell
+set ERRLEV=0
 :: Assume we are preparing a production build
 set FBBUILD_BUILDTYPE=release
 :: Don't ship pdb files by default
@@ -43,10 +45,10 @@ set /A FBBUILD_PACKAGE_NUMBER+=1
 )
 @echo   Setting FBBUILD_PACKAGE_NUMBER to %FBBUILD_PACKAGE_NUMBER%
 
-::::If a suffix is defined (usually for an RC) ensure it is prefixed correctly.
-::if defined FBBUILD_FILENAME_SUFFIX (
-::if not %FBBUILD_FILENAME_SUFFIX:~0,1% == _ (set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
-::)
+::If a suffix is defined (usually for an RC) ensure it is prefixed correctly.
+if defined FBBUILD_FILENAME_SUFFIX (
+if not %FBBUILD_FILENAME_SUFFIX:~0,1% == _ (set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
+)
 
 :: See what we have on the command line
 ::for %%v in ( %1 %2 %3 %4 %5 )  do (
@@ -194,7 +196,6 @@ set FBBUILD_FILE_ID=%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TA
 @echo s/FBBUILD_PRODUCT_VER_STRING/%FBBUILD_PRODUCT_VER_STRING%/ >> %temp%.\b$3.txt
 
 sed -f  %temp%.\b$3.txt FirebirdInstall_20.iss > FirebirdInstall_%FBBUILD_FILE_ID%.iss
-del %temp%.\b$?.txt
 
 :: This is a better way of achieving what is done in make_all.bat, but we don't
 :: test for sed in that script.
@@ -208,8 +209,36 @@ set FBBUILD_FB_CUR_VER=%FBBUILD_FB25_CUR_VER%
 :: This helps us copy the correct documentation,
 :: as well as set up the correct shortcuts
 set FBBUILD_FB15_CUR_VER=1.5.6
-set FBBUILD_FB20_CUR_VER=2.0.5
-set FBBUILD_FB21_CUR_VER=2.1.3
+set FBBUILD_FB20_CUR_VER=2.0.6
+set FBBUILD_FB21_CUR_VER=2.1.4
+
+:: Now fix up the major.minor version strings in the readme files.
+:: We place output in %FB_GEN_DIR%\readmes
+@if not exist %FB_GEN_DIR%\readmes (@mkdir %FB_GEN_DIR%\readmes)
+@for %%d in (ba de es fr hu it pl pt ru si ) do (
+  @if not exist %FB_GEN_DIR%\readmes\%%d (@mkdir %FB_GEN_DIR%\readmes\%%d)
+)
+
+@echo s/\$MAJOR/%FB_MAJOR_VER%/g >  %temp%.\b$4.txt
+@echo s/\$MINOR/%FB_MINOR_VER%/g >> %temp%.\b$4.txt
+@echo s/\$RELEASE/%FB_REV_NO%/g  >> %temp%.\b$4.txt
+@for %%f in (Readme.txt installation_readme.txt) do (
+	@echo   Processing version strings in %%f
+	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
+)
+
+@for %%d in (ba de es fr hu it pl pt ru si ) do (
+  @pushd %%d
+  @for /F %%f in ( '@dir /B /A-D *.txt'  ) do (
+	@echo   Processing version strings in %%d\%%f
+	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%d\%%f
+  )
+  @popd
+
+)
+
+del %temp%.\b$?.txt
+
 
 ::End of SED_MAGIC
 ::----------------
@@ -315,7 +344,7 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
 
 
 @echo   Copying other documentation...
-@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
+@copy  %FB_GEN_DIR%\readmes\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
 @copy %FB_OUTPUT_DIR%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt > nul
 @del %FB_OUTPUT_DIR%\doc\WhatsNew
 
@@ -338,7 +367,7 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
 :: if the docs are available then we can include them.
 if defined FB_EXTERNAL_DOCS (
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-2.1-QuickStart.pdf Firebird_v%FBBUILD_FB_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB_CUR_VER%.InstallationGuide.pdf Firebird_v%FBBUILD_FB_CUR_VER%.BugFixes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.InstallationGuide.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.BugFixes.pdf) do (
+@for %%v in ( Firebird-%FB_MAJOR_VER%.%FB_MINOR_VER%-QuickStart.pdf Firebird_v%FBBUILD_FB_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.InstallationGuide.pdf ) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )
@@ -356,7 +385,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 )
 
 :: And readme
-@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FB_OUTPUT_DIR%\ > nul
+@copy  %FB_GEN_DIR%\readmes\readme.txt %FB_OUTPUT_DIR%\ > nul
 
 ::  Walk through all docs and transform any that are not .txt, .pdf or .html to .txt
 echo   Setting .txt filetype to ascii docs.
@@ -615,7 +644,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 )
 
 :: And readme
-@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
+@copy  %FB_GEN_DIR%\readmes\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
 
 
 ::End of GEN_EMBEDDED
@@ -732,6 +761,24 @@ if NOT DEFINED GNU_TOOLCHAIN (
 @echo.
 @echo     FB2_EXAMPLES=0  - Don't include examples in the install kit.
 @echo.
+@echo.
+@echo   Required Files
+@echo.
+@echo     To successfully package Firebird you will need to make sure several
+@echo     packages are installed and correctly configured on your system.
+@echo.
+@echo     o InnoSetup is needed to create the binary installer. See the header
+@echo       of the .iss file to see which minimum version is required.
+@echo.
+@echo     o 7ZIP is required to create the zip and embedded packages
+@echo.
+@echo     o sed is required to package anything. Use the sed provided by
+@echo       gnuwin32. The cygwin one is not guaranteed to work.
+@echo.
+@echo     o WiX v2.0 is required to build installable msi packages of the
+@echo       MS runtime libraries.
+@echo.
+
 ::End of HELP
 ::-----------
 @goto :EOF

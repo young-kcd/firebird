@@ -1,13 +1,7 @@
 
-========================================
-Firebird 2.5.0 pre alpha (Windows Build)
-========================================
-
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+==================================
+Firebird $MAJOR.$MINOR.$RELEASE  (Windows Build)
+==================================
 
 o Introdução
 o Utilizadores Alvo
@@ -21,17 +15,31 @@ o Reportar erros
 Introdução
 ==========
 
-Bem-vindo ao Firebird 2.1.
+Bem-vindo ao Firebird $MAJOR.$MINOR.
 
 
 Utilizadores Alvo
 =================
 
-Esta "Release Candidate" é dirigida a utilizadores experientes
-de Firebird. Foi já muito testada e todas as novas funcionalidades
-devem estar documentadas nesta altura.
+O Firebird $MAJOR.$MINOR.$RELEASE passou por uma extensiva fase de testes
+e o seu objectivo é ser utilizado em produção.
+Porém, recomenda-se a todos os utilizadores que sigam
+algumas práticas padrão antes de o colocar num servidor
+de produção, assim como:
 
-Não use esta "Release Candidate" em ambientes de produção.
+ o Por favor leia primeiro as instruções de instalação
+   e as Notas de Lançamento.
+
+ o Se tem dados que preza lembre-se de fazer backups dos
+   mesmos antes de instalar esta versão.
+
+ o É recomendado que remova todas as versões prévias do
+   Firebird antes desta instalação. Este procedimento
+   preserva os ficheiros de configuração e de logs.
+
+ o É recomendado que faça os seus próprios testes num
+   desenvolvimento de programação antes de passar a um
+   ambiente de produção.
 
 
 Questões Conhecidas
@@ -71,7 +79,7 @@ o Tem a certeza que compreende como o Firebird funciona?
 o Talvez o erro já esteja reportado? Pode procurar os erros
   reportados aqui:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/browse/CORE
 
 o Em caso de dúvida porque não discute o problema na lista
   dos programadores do Firebird ? Pode subscrever a lista aqui:
@@ -82,10 +90,3 @@ o Em caso de dúvida porque não discute o problema na lista
 
 	news://news.atkin.com/
 
-  Por favor não utilize a lista Firebird-devel para questões de suporte,
-  excepto se a sua questão se relacionar especificamente com o Firebird 2.1
-
-
-Divirta-se com os testes !
-
-Equipa do Firebird

@@ -1,6 +1,6 @@
 
-========================================
-Firebird 2.5.0 RC2 (Windows Build)
+==================================
+Firebird $MAJOR.$MINOR.$RELEASE    (Windows Build)
 ==================================
 
 
@@ -15,23 +15,22 @@ o Prijavljivanje Bug-ova
 Uvod
 ============
 
-Dobrodosli u Firebird 2.5.
+Dobrodosli u Firebird $MAJOR.$MINOR.
 
 
 Kome je namjenjen?
 ============================
 
-Firebird 2.5 je prosao kroz opsezno testiranje i
+Firebird $MAJOR.$MINOR je prosao kroz opsezno testiranje i
 namjenjen je za siroku upotrebu u produkciji. Svejedno,
 korisnicima se preporucuje da prate standardne procedure
 prije instalacije ovog release-a na produkcioni server. tj:
 
  o Molimo prvo procitajte dokumente
-   "Instalacija_ProcitajMe.txt" i
-   release notes.
+   "Instalacija_ProcitajMe.txt" i release notes.
 
- o Ako imate vazne podatke, sjetite se da napravite back-up
-   prije instalacije ovog release-a.
+ o Ako imate vazne podatke, sjetite se da napravite 
+   back-up prije instalacije ovog release-a.
 
  o Preporucuje se da uklonite sve prethodne
    verzije prije instalacije. Deinstalacija
@@ -54,14 +53,14 @@ pokrenuti service tim putem.
 
 
 Odlike ovog release-a (sve platforme)
-========================================
+=====================================
 
 Pogledajte Release Notes za vise
 informacija.
 
 
 Instalacija
-============
+===========
 
 Problemi prilikom instalacije su pokriveni u detalje u
 Installation Guide-u koji je dostupan u doc directoriju nakon
@@ -71,7 +70,7 @@ dostupan u doc directoriju nakon instalacije.
 
 
 Prijavljivanje Bug-ova
-==============
+======================
 
 Prije nego prijavite bug:
 
@@ -81,7 +80,7 @@ Prije nego prijavite bug:
  o Mozda je neko vec prijavio bug? Pogledajte
    postojece prijave bugova ovdje:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/browse/CORE
 
  o Ako ste u dilemi zasto ne diskutujete o problemu na
    Firebird-devel listi? Mozete se prijaviti ovdje:
