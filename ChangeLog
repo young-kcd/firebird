@@ -1,3 +1,30 @@
+ 2011-09-09 09:07  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_20.iss
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/ProcitajMe.txt
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/de/installation_liesmich.txt
+   M builds/install/arch-specific/win32/de/liesmich.txt
+   M builds/install/arch-specific/win32/es/leame.txt
+   M builds/install/arch-specific/win32/es/leame_instalacion.txt
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+   M builds/install/arch-specific/win32/hu/olvass_el.txt
+   M builds/install/arch-specific/win32/hu/telepitesi_segedlet.txt
+   M builds/install/arch-specific/win32/i18n_readme.txt
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/it/leggimi.txt
+   M builds/install/arch-specific/win32/it/leggimi_installazione.txt
+   M builds/install/arch-specific/win32/pl/czytajto.txt
+   M builds/install/arch-specific/win32/pl/instalacja_czytajto.txt
+   M builds/install/arch-specific/win32/pt/instalacao_leia-me.txt
+   M builds/install/arch-specific/win32/pt/leia-me.txt
+Bring R2_5_1 tag up to date.
+
  2011-08-30 13:46  alexpeshkoff 
    M src/jrd/event.cpp
    M src/jrd/event_proto.h
