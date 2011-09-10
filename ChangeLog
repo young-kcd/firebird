@@ -1,3 +1,16 @@
+ 2011-09-09 08:55  paul_reeves 
+   M builds/install/arch-specific/win32/ba/custom_messages_ba.inc
+   M builds/install/arch-specific/win32/de/custom_messages_de.inc
+   M builds/install/arch-specific/win32/es/custom_messages_es.inc
+   M builds/install/arch-specific/win32/fr/custom_messages_fr.inc
+   M builds/install/arch-specific/win32/hu/custom_messages_hu.inc
+   M builds/install/arch-specific/win32/it/custom_messages_it.inc
+   M builds/install/arch-specific/win32/pl/custom_messages_pl.inc
+   M builds/install/arch-specific/win32/pt/custom_messages_pt.inc
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+   M builds/install/arch-specific/win32/si/custom_messages_si.inc
+add i18n fallback message for when translation is out of date
+
  2011-09-08 09:56  paul_reeves 
    A builds/install/arch-specific/win32/cz
    A builds/install/arch-specific/win32/cz/custom_messages_cz.inc
