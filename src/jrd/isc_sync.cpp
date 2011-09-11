@@ -536,7 +536,7 @@ namespace {
 		{
 			SLONG offset;
 			int fn;
-			bool bad()
+			bool bad() const
 			{
 				return offset < 0 || fn < 0;
 			}
