@@ -4714,7 +4714,7 @@ static void par_messages(thread_db* tdbb, const UCHAR* const blr, USHORT blrLeng
 		Format* format = Format::newFormat(*tdbb->getDefaultPool(), count);
 
 		USHORT padField;
-		bool shouldPad = csb->csb_message_pad.get(msgNumber, padField);
+		const bool shouldPad = csb->csb_message_pad.get(msgNumber, padField);
 
 		USHORT maxAlignment = 0;
 		ULONG offset = 0;
