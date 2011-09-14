@@ -30,7 +30,7 @@ export DYLD_LIBRARY_PATH
 MACOSX_DEPLOYMENT_TARGET=10.6
 export MACOSX_DEPLOYMENT_TARGET
 
-PROD_FLAGS=-O3 -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch i386 -mmacosx-version-min=10.6
+PROD_FLAGS=-O1 -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch i386 -mmacosx-version-min=10.6
 DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch i386 -mmacosx-version-min=10.6 -Wno-non-virtual-dtor
 CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -fno-weak
 
