@@ -9,6 +9,10 @@
 StartService ()
 {
     ConsoleMessage "Starting Firebird SQL Database server"
+    mkdir /tmp/firebird
+    chown firebird /tmp/firebird
+    chgrp firebird /tmp/firebird
+    chmod 0770 /tmp/firebird
     /Library/Frameworks/Firebird.framework/Resources/bin/fbguard -daemon -forever
 }
 
@@ -18,6 +22,7 @@ StopService ()
     killall fbguard
     killall fbserver
     killall fb_smp_server
+    rm -fr /tmp/firebird
 }
 
 RestartService ()

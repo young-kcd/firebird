@@ -276,16 +276,6 @@ then
 	fi
 fi
 
-# Create /tmp/firebird
-echo "Create /tmp/firebird"
-if [ -f "/tmp/firebird" ]; then 
-rm -fr /tmp/firebird
-fi
-mkdir /tmp/firebird
-chown firebird /tmp/firebird
-chgrp firebird /tmp/firebird
-chmod 0770 /tmp/firebird
-
 # And last but not least, start the server
 echo "Start SuperServer"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
