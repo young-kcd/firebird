@@ -1,3 +1,12 @@
+ 2011-09-14 13:08  paulbeach 
+   M builds/install/arch-specific/darwin/Firebird.startupitem/Firebird
+   M builds/install/arch-specific/darwin/install-script
+fix tmp directory ownership problem on MacOSX reboot
+
+ 2011-09-14 09:00  paulbeach 
+   M builds/posix/prefix.darwin_i386
+There seems to be an optimisation bug in Apple's implementation of gcc 4.2.1 on MacOSX 10.7 (Lion) when compiling in 32bit mode. The function uuid_to_char returns an error "binary UUID argument for UUID_TO_CHAR must use 16 bytes". Reducing the compiler optimisation flag from -O3 to -O1 fixes the problem.  
+
  2011-09-11 05:24  robocop 
    M src/jrd/isc_sync.cpp
 Misc.
