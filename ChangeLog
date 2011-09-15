@@ -1,3 +1,11 @@
+ 2011-09-14 13:15  paulbeach 
+   M builds/install/arch-specific/darwin/Firebird.startupitem/Firebird
+   M builds/install/arch-specific/darwin/install-script
+Fix problem with tmp ownership of reboot of MacOSX
+
+ 2011-09-14 13:01  paulbeach 
+   M builds/posix/prefix.darwin_i386
+
  2011-09-11 05:23  robocop 
    M src/jrd/met.epp
 Misc.
