@@ -1071,7 +1071,23 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
 
 	if (relation->rel_view_rse)
 	{
-		*destination = *source;
+		// But if the sub_type or charset is different, create a new blob.
+		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) &&
+			DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype) &&
+			needFilter)
+		{
+			UCharBuffer bpb;
+			BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
+
+			Database* dbb = tdbb->getDatabase();
+			const USHORT pageSpace = dbb->dbb_flags & DBB_read_only ?
+				dbb->dbb_page_manager.getTempPageSpaceID(tdbb) : DB_PAGE_SPACE;
+
+			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), pageSpace);
+		}
+		else
+			*destination = *source;
+
 		return;
 	}
 
