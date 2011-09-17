@@ -170,4 +170,4 @@
 	FIELD(fld_user_name		, nam_user_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_uid			, nam_uid			, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
 	FIELD(fld_gid			, nam_gid			, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
-	FIELD(fld_name_part		, nam_name_part		, dtype_text	, 32						, dsc_text_type_metadata	, NULL		, true)
+	FIELD(fld_name_part		, nam_name_part		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
