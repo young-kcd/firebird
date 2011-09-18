@@ -1,3 +1,7 @@
+ 2011-09-17 20:29  asfernandes 
+   M src/jrd/fields.h
+Correction for future use of UTF-8 metadata.
+
  2011-09-17 03:02  asfernandes 
    M src/jrd/blb.cpp
 Fixed CORE-3601 - Incorrect TEXT BLOB charset transliteration on VIEW with trigger.
