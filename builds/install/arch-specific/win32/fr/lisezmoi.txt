@@ -82,14 +82,10 @@ o Etes vous certain de comprendre comment Firebird
 
 	mailto:firebird-support-subscribe@yahoogroups.com
 
-  ou par l'interface news :
-
-	  news://news.atkin.com/
-
   Il existe aussi des news et un forum en français à :
 
-	news://server.amis.tv/nzn.fr.interbase
-	http://www.delphinaute.com/forum7/
+	news://server.amis.tv/nzn.fr.firebird
+	http://www.developpez.net/forums/f43/bases-donnees/firebird/
 
 o Vous pensez toujours que c'est un bug?
 

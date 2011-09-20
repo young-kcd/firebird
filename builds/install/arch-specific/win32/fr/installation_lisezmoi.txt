@@ -17,9 +17,9 @@ concernent l'utilitaire d'installation, pas Firebird $MAJOR.$MINOR
 en général.
 
 Ce document s'adresse à des personnes connaissant déjà
-Firebird 2.1. Si vous utilisez Firebird 1.5, nous vous
+Firebird 2.5. Si vous utilisez Firebird 2.1, nous vous
 conseillons de lire d'abord la documentation de
-Firebird 2.0.
+Firebird $MAJOR.$MINOR.
 
 Contenu
 --------
