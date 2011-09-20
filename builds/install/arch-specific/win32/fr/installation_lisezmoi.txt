@@ -1,10 +1,5 @@
-Firebird Serveur Bases de données 2.5 pre alpha
+Firebird Serveur Bases de données $MAJOR.$MINOR.$RELEASE
 ==================================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 
 ** NOTE IMPORTANTE **
@@ -17,14 +12,14 @@ version, seul le texte original en anglais
 **       FIN      **
 
 Ce document est un guide pour l'installation de
-Firebird 2.1 sur une plateforme Windows. Ces notes
-concernent l'utilitaire d'installation, pas Firebird 2.1
+Firebird $MAJOR.$MINOR sur une plateforme Windows. Ces notes
+concernent l'utilitaire d'installation, pas Firebird $MAJOR.$MINOR
 en général.
 
 Ce document s'adresse à des personnes connaissant déjà
-Firebird 2.0. Si vous utilisez Firebird 1.5, nous vous
+Firebird 2.5. Si vous utilisez Firebird 2.1, nous vous
 conseillons de lire d'abord la documentation de
-Firebird 2.0.
+Firebird $MAJOR.$MINOR.
 
 Contenu
 --------
@@ -68,7 +63,7 @@ Problèmes connus d'installation
 -------------------------------
 
 o Vous ne pouvez utiliser l'utilitaire d'installation
-  que pour installer l'instance par défaut de Firebird 2.1.
+  que pour installer l'instance par défaut de Firebird $MAJOR.$MINOR.
   Si vous voulez en installer une deuxième en plus, ou une
   instance nomée, vous devez le faire à partir de l'image
   zip.
@@ -112,11 +107,12 @@ o Si Firebird est exécuté comme application (et non
   Vous devrez alors supprimer les fichiers restant
   manuellement.
 
-o La desinstallation laisse quatre fichiers dans le
+o La desinstallation laisse cinq fichiers dans le
   répertoire d'installation:
 
   - aliases.conf
   - firebird.conf
+  - fbtrace.conf
   - firebird.log
   - security2.fdb
 

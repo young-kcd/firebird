@@ -72,7 +72,7 @@ fr.RunISQL=Démarrer l'outil en ligne de commande Interactive SQL (ISQL)
 
 fr.ReadmeFile=lisezmoi.txt
 fr.InstallationReadmeFile=installation_lisezmoi.txt
-
+fr.IncompleteTranslationNotice=Ce document est une traduction et malgré nos efforts,il peut ne pas correspondre exactement à la dernière version, seul le texte original en anglais est toujours à jour.
 fr.RunCS=Démarrer Firebird Classic server
 fr.RunSC=Démarrer Firebird SuperClassic server
 fr.RunSS=Démarrer Firebird SuperServer
