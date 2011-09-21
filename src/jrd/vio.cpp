@@ -2230,12 +2230,7 @@ void VIO_init(thread_db* tdbb)
 	if (dbb->dbb_flags & DBB_garbage_collector &&
 		!(attachment->att_flags & (ATT_no_cleanup | ATT_gbak_attachment)))
 	{
-		if (dbb->dbb_flags & DBB_suspend_bgio) {
-			attachment->att_flags |= ATT_disable_notify_gc;
-		}
-		else {
-			attachment->att_flags |= ATT_notify_gc;
-		}
+		attachment->att_flags |= ATT_notify_gc;
 	}
 }
 
@@ -4234,13 +4229,11 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
  *	improve query response time and throughput.
  *
  **************************************/
-	Database* dbb = (Database*)arg;
+	Database* const dbb = (Database*) arg;
 	CHECK_DBB(dbb);
 
-	ISC_STATUS_ARRAY status_vector;
-	MOVE_CLEAR(status_vector, sizeof(status_vector));
-
 	// Establish a thread context.
+	ISC_STATUS_ARRAY status_vector;
 	ThreadContextHolder tdbb(status_vector);
 
 	tdbb->setDatabase(dbb);
@@ -4250,9 +4243,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 	// Surrender if resources to start up aren't available.
-	bool found = false, flush = false;
 	record_param rpb;
-	MOVE_CLEAR(&rpb, sizeof(record_param));
 	rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 	rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
 
@@ -4294,27 +4285,15 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		// Notify our creator that we have started
 		dbb->dbb_flags |= DBB_garbage_collector;
 		dbb->dbb_gc_init.release();
-	}	// try
-	catch (const Firebird::Exception&)
-	{
-		goto gc_exit;
-	}
-
-	try
-	{
-		// Initialize status vector after logging error.
-
-		MOVE_CLEAR(status_vector, sizeof(status_vector));
 
 		// The garbage collector flag is cleared to request the thread
 		// to finish up and exit.
 
+		bool flush = false;
+
 		while (dbb->dbb_flags & DBB_garbage_collector)
 		{
-
 			dbb->dbb_flags |= DBB_gc_active;
-			found = false;
-			relation = NULL;
 
 			// If background thread activity has been suspended because
 			// of I/O errors then idle until the condition is cleared.
@@ -4323,43 +4302,23 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 			if (dbb->dbb_flags & DBB_suspend_bgio)
 			{
-				Jrd::Attachment* attachment;
-
-				for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
-				{
-					if (attachment->att_flags & ATT_notify_gc)
-					{
-						attachment->att_flags &= ~ATT_notify_gc;
-						attachment->att_flags |= ATT_disable_notify_gc;
-					}
-				}
-
-				while (dbb->dbb_flags & DBB_suspend_bgio)
-				{
-					Attachment::Checkout cout(jAtt->getHandle());
-					dbb->dbb_gc_sem.tryEnter(10);
-
-					if (!(dbb->dbb_flags & DBB_garbage_collector))
-						goto gc_exit;
-				}
-
-				for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
-				{
-					if (attachment->att_flags & ATT_disable_notify_gc)
-					{
-						attachment->att_flags &= ~ATT_disable_notify_gc;
-						attachment->att_flags |= ATT_notify_gc;
-					}
-				}
+				Attachment::Checkout cout(attachment);
+				dbb->dbb_gc_sem.tryEnter(10);
+				continue;
 			}
 
 			// Scan relation garbage collection bitmaps for candidate data pages.
 			// Express interest in the relation to prevent it from being deleted
 			// out from under us while garbage collection is in-progress.
 
+			bool found = false, gc_exit = false;
+			relation = NULL;
+
 			USHORT relID;
 			PageBitmap* gc_bitmap = NULL;
-			if (gc->getPageBitmap(dbb->dbb_oldest_snapshot, relID, &gc_bitmap))
+
+			if ((dbb->dbb_flags & DBB_gc_pending) &&
+				gc->getPageBitmap(dbb->dbb_oldest_snapshot, relID, &gc_bitmap))
 			{
 				relation = MET_lookup_relation_id(tdbb, relID, false);
 				if (!relation || (relation->rel_flags & (REL_deleted | REL_deleting)))
@@ -4368,9 +4327,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					gc_bitmap = NULL;
 					gc->removeRelation(relID);
 				}
-
-				//jrd_rel::RelPagesSnapshot pagesSnapshot(tdbb, relation);
-				//relation->fillPagesSnapshot(pagesSnapshot);
 
 				if (gc_bitmap)
 				{
@@ -4381,10 +4337,15 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					{
 						const ULONG dp_sequence = gc_bitmap->current();
 
-						if (!(dbb->dbb_flags & DBB_garbage_collector)) {
+						if (!(dbb->dbb_flags & DBB_garbage_collector))
+						{
 							--relation->rel_sweep_count;
-							goto gc_exit;
+							gc_exit = true;
+							break;
 						}
+
+						if (gc_exit)
+							break;
 
 						gc_bitmap->clear(dp_sequence);
 
@@ -4413,6 +4374,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 						// Attempt to garbage collect all records on the data page.
 
+						bool rel_exit = false;
+
 						while (VIO_next_record(tdbb, &rpb, transaction, NULL, true))
 						{
 							CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
@@ -4420,23 +4383,30 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 							if (!(dbb->dbb_flags & DBB_garbage_collector))
 							{
 								--relation->rel_sweep_count;
-								goto gc_exit;
-							}
-							if (relation->rel_flags & REL_deleting) {
-								goto rel_exit;
-							}
-							if (--tdbb->tdbb_quantum < 0) {
-								JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
-							}
-							if (rpb.rpb_number >= last) {
+								gc_exit = true;
 								break;
 							}
+
+							if (relation->rel_flags & REL_deleting)
+							{
+								rel_exit = true;
+								break;
+							}
+
+							if (--tdbb->tdbb_quantum < 0)
+								JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
+
+							if (rpb.rpb_number >= last)
+								break;
 						}
+
+						if (gc_exit || rel_exit)
+							break;
 					}
 
-rel_exit:
-					//if (gc_bitmap->getFirst())
-					//	return bits back to relation->rel_garbage
+					if (gc_exit)
+						break;
+
 					delete gc_bitmap;
 					gc_bitmap = NULL;
 					--relation->rel_sweep_count;
@@ -4454,57 +4424,33 @@ rel_exit:
 			{
 				dbb->dbb_flags &= ~DBB_gc_pending;
 
-				// Make no mistake about it, garbage collection is our first
-				// priority. But if there's no garbage left to collect, assist
-				// the overworked cache writer and reader threads.
-
-				while (dbb->dbb_flags & DBB_garbage_collector && !(dbb->dbb_flags & DBB_gc_pending))
+				if (flush)
 				{
-#ifdef SUPERSERVER_V2
-					if (CCH_free_page(tdbb) || CCH_prefetch_pages(tdbb)) {
-						continue;
-					}
-#else
-					if (CCH_free_page(tdbb)) {
-						continue;
-					}
-#endif
-					if (flush)
-					{
-						// As a last resort, flush garbage collected pages to
-						// disk. This isn't strictly necessary but contributes
-						// to the supply of free pages available for user
-						// transactions. It also reduces the likelihood of
-						// orphaning free space on lower precedence pages that
-						// haven't been written if a crash occurs.
+					// As a last resort, flush garbage collected pages to
+					// disk. This isn't strictly necessary but contributes
+					// to the supply of free pages available for user
+					// transactions. It also reduces the likelihood of
+					// orphaning free space on lower precedence pages that
+					// haven't been written if a crash occurs.
 
-						flush = false;
-						if (transaction) {
-							CCH_flush(tdbb, FLUSH_SWEEP, 0);
-						}
-						continue;
-					}
-					dbb->dbb_flags &= ~DBB_gc_active;
-					Attachment::Checkout cout(jAtt->getHandle());
-					dbb->dbb_gc_sem.tryEnter(10);
-					dbb->dbb_flags |= DBB_gc_active;
+					CCH_flush(tdbb, FLUSH_SWEEP, 0);
+					flush = false;
 				}
+
+				dbb->dbb_flags &= ~DBB_gc_active;
+				Attachment::Checkout cout(attachment);
+				dbb->dbb_gc_sem.tryEnter(10);
 			}
 		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		// Perfunctory error reporting -- got any better ideas ?
-
 		Firebird::stuff_exception(status_vector, ex);
-		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
-		gds__log_status(file->fil_string, status_vector);
-		if (relation && relation->rel_sweep_count) {
-			--relation->rel_sweep_count;
-		}
-	}
+		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 
-gc_exit:
+		if (relation && relation->rel_sweep_count)
+			--relation->rel_sweep_count;
+	}
 
 	try
 	{
@@ -4513,8 +4459,7 @@ gc_exit:
 		if (transaction)
 			TRA_commit(tdbb, transaction, false);
 
-		Jrd::Attachment* const attachment = tdbb->getAttachment();
-		if (attachment)
+		if (tdbb->getAttachment())
 		{
 			delete gc;
 			dbb->dbb_garbage_collector = NULL;
@@ -4533,11 +4478,8 @@ gc_exit:
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		// Perfunctory error reporting -- got any better ideas ?
-
 		Firebird::stuff_exception(status_vector, ex);
-		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
-		gds__log_status(file->fil_string, status_vector);
+		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
 
 	return 0;
@@ -4787,8 +4729,11 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
  *	which are candidates for garbage collection.
  *
  **************************************/
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	jrd_rel* const relation = rpb->rpb_relation;
+
+	if (dbb->dbb_flags & DBB_suspend_bgio)
+		return;
 
 	if (relation->isTemporary())
 		return;
