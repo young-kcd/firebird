@@ -2848,8 +2848,8 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
-		gds__log_status(dbb->dbb_file->fil_string, status_vector);
-		return -1;
+		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		return 0;
 	}
 
 	try {
@@ -2954,8 +2954,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
-		bcb = dbb->dbb_bcb;
-		gds__log_status(dbb->dbb_file->fil_string, status_vector);
+		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
 	return 0;
 }
@@ -2976,68 +2975,48 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *	Write dirty pages to database to maintain an adequate supply of free pages.
  *
  **************************************/
-
-	Database* dbb = (Database*) arg;
-
-	ISC_STATUS_ARRAY status_vector;
-	MOVE_CLEAR(status_vector, sizeof(status_vector));
+	Database* const dbb = (Database*) arg;
 
 	// Establish a thread context.
+	ISC_STATUS_ARRAY status_vector;
 	ThreadContextHolder tdbb(status_vector);
-
-	// Dummy attachment needed for lock owner identification.
 
 	tdbb->setDatabase(dbb);
 
-	RefPtr<JAttachment> jAtt(NULL);
-
-	Jrd::Attachment* attachment = Jrd::Attachment::create(dbb);
-	jAtt = attachment->att_interface = new SysAttachment(attachment);
-	jAtt->getMutex()->enter();
-
-	tdbb->setAttachment(attachment);
-	attachment->att_filename = dbb->dbb_filename;
-
-	UserId user;
-	user.usr_user_name = "Cache Writer";
-	attachment->att_user = &user;
-
-	BufferControl* bcb = dbb->dbb_bcb;
+	BufferControl* const bcb = dbb->dbb_bcb;
 	Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
 
-	// This try block is specifically to protect the LCK_init call: if
-	// LCK_init fails we won't be able to accomplish anything anyway, so
-	// return, unlike the other try blocks further down the page.
-	Semaphore& writer_sem = bcb->bcb_writer_sem;
+	RefPtr<JAttachment> jAtt(NULL);
 
 	try
 	{
+		// Dummy attachment needed for lock owner identification.
+
+		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
+		jAtt = attachment->att_interface = new SysAttachment(attachment);
+		jAtt->getMutex()->enter();
+
+		tdbb->setAttachment(attachment);
+		attachment->att_filename = dbb->dbb_filename;
+
+		UserId user;
+		user.usr_user_name = "Cache Writer";
+		attachment->att_user = &user;
+
 		LCK_init(tdbb, LCK_OWNER_attachment);
 		PAG_header(tdbb, true);
 		PAG_attachment_id(tdbb);
 		TRA_init(attachment);
+
+		attachment->att_next = dbb->dbb_sys_attachments;
+		dbb->dbb_sys_attachments = attachment;
 
 		bcb->bcb_flags |= BCB_cache_writer;
 		bcb->bcb_flags &= ~BCB_writer_start;
 
 		// Notify our creator that we have started
 		bcb->bcb_writer_init.release();
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(status_vector, ex);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 
-		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
-		bcb->bcb_writer_init.release();
-		return (THREAD_ENTRY_RETURN)(-1);
-	}
-
-	attachment->att_next = dbb->dbb_sys_attachments;
-	dbb->dbb_sys_attachments = attachment;
-
-	try
-	{
 		while (bcb->bcb_flags & BCB_cache_writer)
 		{
 			bcb->bcb_flags |= BCB_writer_active;
@@ -3048,7 +3027,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			if (dbb->dbb_flags & DBB_suspend_bgio)
 			{
 				Attachment::Checkout cout(attachment);
-				writer_sem.tryEnter(10);
+				bcb->bcb_writer_sem.tryEnter(10);
 				continue;
 			}
 
@@ -3064,23 +3043,9 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 			if (bcb->bcb_flags & BCB_free_pending)
 			{
-				BufferDesc* bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1);
+				BufferDesc* const bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1);
 				if (bdb) {
 					write_buffer(tdbb, bdb, bdb->bdb_page, true, status_vector, true);
-				}
-
-				// If the cache reader or garbage collector is idle, put
-				// them to work freeing pages.
-#ifdef CACHE_READER
-				if ((bcb->bcb_flags & BCB_cache_reader) && !(bcb->bcb_flags & BCB_reader_active))
-				{
-					dbb->dbb_reader_sem.post();
-				}
-#endif
-
-				if ((dbb->dbb_flags & DBB_garbage_collector) && !(dbb->dbb_flags & DBB_gc_active))
-				{
-					dbb->dbb_gc_sem.release();
 				}
 			}
 
@@ -3108,18 +3073,28 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			{
 				bcb->bcb_flags &= ~BCB_writer_active;
 				Attachment::Checkout cout(attachment);
-				writer_sem.tryEnter(10);
+				bcb->bcb_writer_sem.tryEnter(10);
 			}
 		}
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(status_vector, ex);
+		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+	}
 
-		LCK_fini(tdbb, LCK_OWNER_attachment);
+	try
+	{
+		if (tdbb->getAttachment())
+		{
+			LCK_fini(tdbb, LCK_OWNER_attachment);
 
-		jAtt->getMutex()->leave();
-		jAtt = NULL;
-		tdbb->setAttachment(NULL);
+			jAtt->getMutex()->leave();
+			jAtt = NULL;
+			tdbb->setAttachment(NULL);
+		}
 
-		bcb->bcb_flags &= ~BCB_cache_writer;
-		// Notify the finalization caller that we're finishing.
+		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		bcb->bcb_writer_fini.release();
 	}
 	catch (const Firebird::Exception& ex)
