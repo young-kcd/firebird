@@ -1,3 +1,19 @@
+ 2011-09-20 11:50  makowski 
+   M builds/install/arch-specific/win32/fr/custom_messages_fr.inc
+   D builds/install/arch-specific/win32/fr/documents-en-francais.txt
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+update french docs
+
+ 2011-09-20 08:02  paul_reeves 
+   A builds/install/arch-specific/win32/cz
+   A builds/install/arch-specific/win32/cz/custom_messages_cz.inc
+   A builds/install/arch-specific/win32/ru
+   A builds/install/arch-specific/win32/ru/Readme.txt
+   A builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+   A builds/install/arch-specific/win32/ru/installation_readme.txt
+Add i18n windows installer files for cz and ru.
+
  2011-09-14 13:08  paulbeach 
    M builds/install/arch-specific/darwin/Firebird.startupitem/Firebird
    M builds/install/arch-specific/darwin/install-script
