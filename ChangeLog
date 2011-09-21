@@ -1,3 +1,11 @@
+ 2011-09-20 15:31  dimitr 
+   M src/jrd/jrd.cpp
+Misc.
+
+ 2011-09-19 15:19  dimitr 
+   M src/jrd/tra.cpp
+Let's avoid having tdbb_transaction pointing to the deallocated memory.
+
  2011-09-17 20:29  asfernandes 
    M src/jrd/fields.h
 Correction for future use of UTF-8 metadata.
