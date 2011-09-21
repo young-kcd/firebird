@@ -48,8 +48,8 @@ void GarbageCollector::RelationData::clear()
 void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tranid)
 {
 	// look if given page number is already set at given tx bitmap
-	PageBitmap** bmPtr = m_tranData.get(tranid);
-	PageBitmap* bm = bmPtr ? *bmPtr : NULL;
+	PageBitmap* bm = NULL;
+	const bool bmExists = m_tranData.get(tranid, bm);
 	if (bm && bm->test(pageno))
 		return;
 
@@ -77,7 +77,8 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tra
 
 	// add page to our tx bitmap
 	PBM_SET(&m_pool, &bm, pageno);
-	if (!bm)
+
+	if (!bmExists)
 		m_tranData.put(tranid, bm);
 }
 
