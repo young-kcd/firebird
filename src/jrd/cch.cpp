@@ -2986,6 +2986,9 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	BufferControl* const bcb = dbb->dbb_bcb;
 	Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
 
+	UserId user;
+	user.usr_user_name = "Cache Writer";
+
 	RefPtr<JAttachment> jAtt(NULL);
 
 	try
@@ -2998,9 +3001,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 		tdbb->setAttachment(attachment);
 		attachment->att_filename = dbb->dbb_filename;
-
-		UserId user;
-		user.usr_user_name = "Cache Writer";
 		attachment->att_user = &user;
 
 		LCK_init(tdbb, LCK_OWNER_attachment);

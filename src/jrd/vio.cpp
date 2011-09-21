@@ -4242,6 +4242,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
+	UserId user;
+	user.usr_user_name = "Garbage Collector";
+
 	// Surrender if resources to start up aren't available.
 	record_param rpb;
 	rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
@@ -4264,9 +4267,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		tdbb->setAttachment(attachment);
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_flags = ATT_garbage_collector;
-
-		UserId user;
-		user.usr_user_name = "Garbage Collector";
 		attachment->att_user = &user;
 
 		LCK_init(tdbb, LCK_OWNER_attachment);
