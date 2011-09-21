@@ -346,7 +346,7 @@ public:
 #endif
 	}
 
-	int select(timeval* timeout)
+	void select(timeval* timeout)
 	{
 		bool hasRequest = false;
 
@@ -364,28 +364,28 @@ public:
 		if (!hasRequest)
 		{
 			errno = NOTASOCKET;
-			return -1;
+			slct_count = -1;
+			return;
 		}
 
 		int milliseconds = timeout ? timeout->tv_sec * 1000 + timeout->tv_usec / 1000 : -1;
 		slct_count = ::poll(slct_poll.begin(), slct_poll.getCount(), milliseconds);
 
-		for (pollfd* pf = slct_poll.begin(); pf < end; ++pf)
+		if (slct_count >= 0)	// in case of error return revents may contain something bad
 		{
-			pf->events = pf->revents;
+			for (pollfd* pf = slct_poll.begin(); pf < end; ++pf)
+			{
+				pf->events = pf->revents;
+			}
 		}
 #else
 #ifdef WIN_NT
 		slct_count = ::select(FD_SETSIZE, &slct_fdset, NULL, NULL, timeout);
 #else
-
-
 		slct_count = ::select(slct_width, &slct_fdset, NULL, NULL, timeout);
 #endif // WIN_NT
 #endif // HAVE_POLL
 
-
-		return slct_count;
 	}
 
 	int getCount()
