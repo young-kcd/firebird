@@ -4229,156 +4229,113 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
  *	improve query response time and throughput.
  *
  **************************************/
-	Database* const dbb = (Database*) arg;
-	CHECK_DBB(dbb);
-
-	// Establish a thread context.
 	ISC_STATUS_ARRAY status_vector;
-	ThreadContextHolder tdbb(status_vector);
-
-	tdbb->setDatabase(dbb);
-	tdbb->tdbb_quantum = SWEEP_QUANTUM;
-	tdbb->tdbb_flags = TDBB_sweeper;
-
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
-	UserId user;
-	user.usr_user_name = "Garbage Collector";
-
-	// Surrender if resources to start up aren't available.
-	record_param rpb;
-	rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
-	rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
-
-	jrd_rel* relation = NULL;
-	jrd_tra* transaction = NULL;
-	RefPtr<JAttachment> jAtt(NULL);
-
-	GarbageCollector* gc = NULL;
+	Database* const dbb = (Database*) arg;
 
 	try
 	{
-		// Pseudo attachment needed for lock owner identification.
+		// Establish a thread context.
+		ThreadContextHolder tdbb(status_vector);
 
-		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-		jAtt = attachment->att_interface = new SysAttachment(attachment);
-		jAtt->getMutex()->enter();
+		tdbb->setDatabase(dbb);
+		tdbb->tdbb_quantum = SWEEP_QUANTUM;
+		tdbb->tdbb_flags = TDBB_sweeper;
 
-		tdbb->setAttachment(attachment);
-		attachment->att_filename = dbb->dbb_filename;
-		attachment->att_flags = ATT_garbage_collector;
-		attachment->att_user = &user;
+		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-		LCK_init(tdbb, LCK_OWNER_attachment);
-		INI_init(tdbb);
-		INI_init2(tdbb);
-		PAG_header(tdbb, true);
-		PAG_attachment_id(tdbb);
-		TRA_init(attachment);
+		UserId user;
+		user.usr_user_name = "Garbage Collector";
 
-		gc = FB_NEW(*attachment->att_pool) GarbageCollector(*attachment->att_pool, dbb);
-		dbb->dbb_garbage_collector = gc;
+		record_param rpb;
+		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
+		rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
 
-		attachment->att_next = dbb->dbb_sys_attachments;
-		dbb->dbb_sys_attachments = attachment;
+		jrd_rel* relation = NULL;
+		jrd_tra* transaction = NULL;
+		RefPtr<JAttachment> jAtt(NULL);
 
-		// Notify our creator that we have started
-		dbb->dbb_flags |= DBB_garbage_collector;
-		dbb->dbb_gc_init.release();
+		GarbageCollector* gc = NULL;
 
-		// The garbage collector flag is cleared to request the thread
-		// to finish up and exit.
-
-		bool flush = false;
-
-		while (dbb->dbb_flags & DBB_garbage_collector)
+		try
 		{
-			dbb->dbb_flags |= DBB_gc_active;
+			// Pseudo attachment needed for lock owner identification.
 
-			// If background thread activity has been suspended because
-			// of I/O errors then idle until the condition is cleared.
-			// In particular, make worker threads perform their own
-			// garbage collection so that errors are reported to users.
+			Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
+			jAtt = attachment->att_interface = new SysAttachment(attachment);
+			jAtt->getMutex()->enter();
 
-			if (dbb->dbb_flags & DBB_suspend_bgio)
+			tdbb->setAttachment(attachment);
+			attachment->att_filename = dbb->dbb_filename;
+			attachment->att_flags = ATT_garbage_collector;
+			attachment->att_user = &user;
+
+			LCK_init(tdbb, LCK_OWNER_attachment);
+			INI_init(tdbb);
+			INI_init2(tdbb);
+			PAG_header(tdbb, true);
+			PAG_attachment_id(tdbb);
+			TRA_init(attachment);
+
+			gc = FB_NEW(*attachment->att_pool) GarbageCollector(*attachment->att_pool, dbb);
+			dbb->dbb_garbage_collector = gc;
+
+			attachment->att_next = dbb->dbb_sys_attachments;
+			dbb->dbb_sys_attachments = attachment;
+
+			// Notify our creator that we have started
+			dbb->dbb_flags |= DBB_garbage_collector;
+			dbb->dbb_gc_init.release();
+
+			// The garbage collector flag is cleared to request the thread
+			// to finish up and exit.
+
+			bool flush = false;
+
+			while (dbb->dbb_flags & DBB_garbage_collector)
 			{
-				Attachment::Checkout cout(attachment);
-				dbb->dbb_gc_sem.tryEnter(10);
-				continue;
-			}
+				dbb->dbb_flags |= DBB_gc_active;
 
-			// Scan relation garbage collection bitmaps for candidate data pages.
-			// Express interest in the relation to prevent it from being deleted
-			// out from under us while garbage collection is in-progress.
+				// If background thread activity has been suspended because
+				// of I/O errors then idle until the condition is cleared.
+				// In particular, make worker threads perform their own
+				// garbage collection so that errors are reported to users.
 
-			bool found = false, gc_exit = false;
-			relation = NULL;
-
-			USHORT relID;
-			PageBitmap* gc_bitmap = NULL;
-
-			if ((dbb->dbb_flags & DBB_gc_pending) &&
-				gc->getPageBitmap(dbb->dbb_oldest_snapshot, relID, &gc_bitmap))
-			{
-				relation = MET_lookup_relation_id(tdbb, relID, false);
-				if (!relation || (relation->rel_flags & (REL_deleted | REL_deleting)))
+				if (dbb->dbb_flags & DBB_suspend_bgio)
 				{
-					delete gc_bitmap;
-					gc_bitmap = NULL;
-					gc->removeRelation(relID);
+					Attachment::Checkout cout(attachment);
+					dbb->dbb_gc_sem.tryEnter(10);
+					continue;
 				}
 
-				if (gc_bitmap)
+				// Scan relation garbage collection bitmaps for candidate data pages.
+				// Express interest in the relation to prevent it from being deleted
+				// out from under us while garbage collection is in-progress.
+
+				bool found = false, gc_exit = false;
+				relation = NULL;
+
+				USHORT relID;
+				PageBitmap* gc_bitmap = NULL;
+
+				if ((dbb->dbb_flags & DBB_gc_pending) &&
+					gc->getPageBitmap(dbb->dbb_oldest_snapshot, relID, &gc_bitmap))
 				{
-					++relation->rel_sweep_count;
-					rpb.rpb_relation = relation;
-
-					while (gc_bitmap->getFirst())
+					relation = MET_lookup_relation_id(tdbb, relID, false);
+					if (!relation || (relation->rel_flags & (REL_deleted | REL_deleting)))
 					{
-						const ULONG dp_sequence = gc_bitmap->current();
+						delete gc_bitmap;
+						gc_bitmap = NULL;
+						gc->removeRelation(relID);
+					}
 
-						if (!(dbb->dbb_flags & DBB_garbage_collector))
+					if (gc_bitmap)
+					{
+						++relation->rel_sweep_count;
+						rpb.rpb_relation = relation;
+
+						while (gc_bitmap->getFirst())
 						{
-							--relation->rel_sweep_count;
-							gc_exit = true;
-							break;
-						}
-
-						if (gc_exit)
-							break;
-
-						gc_bitmap->clear(dp_sequence);
-
-						if (!transaction)
-						{
-							// Start a "precommitted" transaction by using read-only,
-							// read committed. Of particular note is the absence of a
-							// transaction lock which means the transaction does not
-							// inhibit garbage collection by its very existence.
-
-							transaction = TRA_start(tdbb, sizeof(gc_tpb), gc_tpb);
-							tdbb->setTransaction(transaction);
-						}
-						else
-						{
-							// Refresh our notion of the oldest transactions for
-							// efficient garbage collection. This is very cheap.
-
-							transaction->tra_oldest = dbb->dbb_oldest_transaction;
-							transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
-						}
-
-						found = flush = true;
-						rpb.rpb_number.setValue(((SINT64) dp_sequence * dbb->dbb_max_records) - 1);
-						const RecordNumber last(rpb.rpb_number.getValue() + dbb->dbb_max_records);
-
-						// Attempt to garbage collect all records on the data page.
-
-						bool rel_exit = false;
-
-						while (VIO_next_record(tdbb, &rpb, transaction, NULL, true))
-						{
-							CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+							const ULONG dp_sequence = gc_bitmap->current();
 
 							if (!(dbb->dbb_flags & DBB_garbage_collector))
 							{
@@ -4387,73 +4344,116 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 								break;
 							}
 
-							if (relation->rel_flags & REL_deleting)
-							{
-								rel_exit = true;
+							if (gc_exit)
 								break;
+
+							gc_bitmap->clear(dp_sequence);
+
+							if (!transaction)
+							{
+								// Start a "precommitted" transaction by using read-only,
+								// read committed. Of particular note is the absence of a
+								// transaction lock which means the transaction does not
+								// inhibit garbage collection by its very existence.
+
+								transaction = TRA_start(tdbb, sizeof(gc_tpb), gc_tpb);
+								tdbb->setTransaction(transaction);
+							}
+							else
+							{
+								// Refresh our notion of the oldest transactions for
+								// efficient garbage collection. This is very cheap.
+
+								transaction->tra_oldest = dbb->dbb_oldest_transaction;
+								transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 							}
 
-							if (--tdbb->tdbb_quantum < 0)
-								JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
+							found = flush = true;
+							rpb.rpb_number.setValue(((SINT64) dp_sequence * dbb->dbb_max_records) - 1);
+							const RecordNumber last(rpb.rpb_number.getValue() + dbb->dbb_max_records);
 
-							if (rpb.rpb_number >= last)
+							// Attempt to garbage collect all records on the data page.
+
+							bool rel_exit = false;
+
+							while (VIO_next_record(tdbb, &rpb, transaction, NULL, true))
+							{
+								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+
+								if (!(dbb->dbb_flags & DBB_garbage_collector))
+								{
+									--relation->rel_sweep_count;
+									gc_exit = true;
+									break;
+								}
+
+								if (relation->rel_flags & REL_deleting)
+								{
+									rel_exit = true;
+									break;
+								}
+
+								if (--tdbb->tdbb_quantum < 0)
+									JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
+
+								if (rpb.rpb_number >= last)
+									break;
+							}
+
+							if (gc_exit || rel_exit)
 								break;
 						}
 
-						if (gc_exit || rel_exit)
+						if (gc_exit)
 							break;
+
+						delete gc_bitmap;
+						gc_bitmap = NULL;
+						--relation->rel_sweep_count;
+					}
+				}
+
+				// If there's more work to do voluntarily ask to be rescheduled.
+				// Otherwise, wait for event notification.
+
+				if (found)
+				{
+					JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
+				}
+				else
+				{
+					dbb->dbb_flags &= ~DBB_gc_pending;
+
+					if (flush)
+					{
+						// As a last resort, flush garbage collected pages to
+						// disk. This isn't strictly necessary but contributes
+						// to the supply of free pages available for user
+						// transactions. It also reduces the likelihood of
+						// orphaning free space on lower precedence pages that
+						// haven't been written if a crash occurs.
+
+						CCH_flush(tdbb, FLUSH_SWEEP, 0);
+						flush = false;
 					}
 
-					if (gc_exit)
-						break;
-
-					delete gc_bitmap;
-					gc_bitmap = NULL;
-					--relation->rel_sweep_count;
+					dbb->dbb_flags &= ~DBB_gc_active;
+					Attachment::Checkout cout(attachment);
+					dbb->dbb_gc_sem.tryEnter(10);
 				}
-			}
-
-			// If there's more work to do voluntarily ask to be rescheduled.
-			// Otherwise, wait for event notification.
-
-			if (found)
-			{
-				JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
-			}
-			else
-			{
-				dbb->dbb_flags &= ~DBB_gc_pending;
-
-				if (flush)
-				{
-					// As a last resort, flush garbage collected pages to
-					// disk. This isn't strictly necessary but contributes
-					// to the supply of free pages available for user
-					// transactions. It also reduces the likelihood of
-					// orphaning free space on lower precedence pages that
-					// haven't been written if a crash occurs.
-
-					CCH_flush(tdbb, FLUSH_SWEEP, 0);
-					flush = false;
-				}
-
-				dbb->dbb_flags &= ~DBB_gc_active;
-				Attachment::Checkout cout(attachment);
-				dbb->dbb_gc_sem.tryEnter(10);
 			}
 		}
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(status_vector, ex);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		catch (const Firebird::Exception& ex)
+		{
+			Firebird::stuff_exception(status_vector, ex);
+			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 
-		if (relation && relation->rel_sweep_count)
-			--relation->rel_sweep_count;
-	}
+			if (relation && relation->rel_sweep_count)
+				--relation->rel_sweep_count;
 
-	try
-	{
+			// continue execution to clean up
+		}
+
 		delete rpb.rpb_record;
 
 		if (transaction)

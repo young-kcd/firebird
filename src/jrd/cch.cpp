@@ -2975,115 +2975,116 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *	Write dirty pages to database to maintain an adequate supply of free pages.
  *
  **************************************/
+	ISC_STATUS_ARRAY status_vector;
 	Database* const dbb = (Database*) arg;
 
-	// Establish a thread context.
-	ISC_STATUS_ARRAY status_vector;
-	ThreadContextHolder tdbb(status_vector);
-
-	tdbb->setDatabase(dbb);
-
-	BufferControl* const bcb = dbb->dbb_bcb;
-	Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
-
-	UserId user;
-	user.usr_user_name = "Cache Writer";
-
-	RefPtr<JAttachment> jAtt(NULL);
-
 	try
 	{
-		// Dummy attachment needed for lock owner identification.
+		// Establish a thread context.
+		ThreadContextHolder tdbb(status_vector);
 
-		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-		jAtt = attachment->att_interface = new SysAttachment(attachment);
-		jAtt->getMutex()->enter();
+		tdbb->setDatabase(dbb);
 
-		tdbb->setAttachment(attachment);
-		attachment->att_filename = dbb->dbb_filename;
-		attachment->att_user = &user;
+		BufferControl* const bcb = dbb->dbb_bcb;
+		Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
 
-		LCK_init(tdbb, LCK_OWNER_attachment);
-		PAG_header(tdbb, true);
-		PAG_attachment_id(tdbb);
-		TRA_init(attachment);
+		UserId user;
+		user.usr_user_name = "Cache Writer";
 
-		attachment->att_next = dbb->dbb_sys_attachments;
-		dbb->dbb_sys_attachments = attachment;
+		RefPtr<JAttachment> jAtt(NULL);
 
-		bcb->bcb_flags |= BCB_cache_writer;
-		bcb->bcb_flags &= ~BCB_writer_start;
-
-		// Notify our creator that we have started
-		bcb->bcb_writer_init.release();
-
-		while (bcb->bcb_flags & BCB_cache_writer)
+		try
 		{
-			bcb->bcb_flags |= BCB_writer_active;
+			// Dummy attachment needed for lock owner identification.
+
+			Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
+			jAtt = attachment->att_interface = new SysAttachment(attachment);
+			jAtt->getMutex()->enter();
+
+			tdbb->setAttachment(attachment);
+			attachment->att_filename = dbb->dbb_filename;
+			attachment->att_user = &user;
+
+			LCK_init(tdbb, LCK_OWNER_attachment);
+			PAG_header(tdbb, true);
+			PAG_attachment_id(tdbb);
+			TRA_init(attachment);
+
+			attachment->att_next = dbb->dbb_sys_attachments;
+			dbb->dbb_sys_attachments = attachment;
+
+			bcb->bcb_flags |= BCB_cache_writer;
+			bcb->bcb_flags &= ~BCB_writer_start;
+
+			// Notify our creator that we have started
+			bcb->bcb_writer_init.release();
+
+			while (bcb->bcb_flags & BCB_cache_writer)
+			{
+				bcb->bcb_flags |= BCB_writer_active;
 #ifdef CACHE_READER
-			SLONG starting_page = -1;
+				SLONG starting_page = -1;
 #endif
 
-			if (dbb->dbb_flags & DBB_suspend_bgio)
-			{
-				Attachment::Checkout cout(attachment);
-				bcb->bcb_writer_sem.tryEnter(10);
-				continue;
-			}
+				if (dbb->dbb_flags & DBB_suspend_bgio)
+				{
+					Attachment::Checkout cout(attachment);
+					bcb->bcb_writer_sem.tryEnter(10);
+					continue;
+				}
 
 #ifdef SUPERSERVER_V2
-			// Flush buffers for lazy commit
-			SLONG commit_mask;
-			if (!(dbb->dbb_flags & DBB_force_write) && (commit_mask = dbb->dbb_flush_cycle))
-			{
-				dbb->dbb_flush_cycle = 0;
-				btc_flush(tdbb, commit_mask, false, status_vector);
-			}
+				// Flush buffers for lazy commit
+				SLONG commit_mask;
+				if (!(dbb->dbb_flags & DBB_force_write) && (commit_mask = dbb->dbb_flush_cycle))
+				{
+					dbb->dbb_flush_cycle = 0;
+					btc_flush(tdbb, commit_mask, false, status_vector);
+				}
 #endif
 
-			if (bcb->bcb_flags & BCB_free_pending)
-			{
-				BufferDesc* const bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1);
-				if (bdb)
-					write_buffer(tdbb, bdb, bdb->bdb_page, true, status_vector, true);
-			}
+				if (bcb->bcb_flags & BCB_free_pending)
+				{
+					BufferDesc* const bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1);
+					if (bdb)
+						write_buffer(tdbb, bdb, bdb->bdb_page, true, status_vector, true);
+				}
 
-			// If there's more work to do voluntarily ask to be rescheduled.
-			// Otherwise, wait for event notification.
+				// If there's more work to do voluntarily ask to be rescheduled.
+				// Otherwise, wait for event notification.
 
-			if ((bcb->bcb_flags & BCB_free_pending) || bcb->bcb_checkpoint || dbb->dbb_flush_cycle)
-			{
-				JRD_reschedule(tdbb, 0, true);
-			}
+				if ((bcb->bcb_flags & BCB_free_pending) || bcb->bcb_checkpoint || dbb->dbb_flush_cycle)
+				{
+					JRD_reschedule(tdbb, 0, true);
+				}
 #ifdef CACHE_READER
-			else if (SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward))
-			{
-				// Prefetch some pages in our spare time and in the process
-				// garbage collect the prefetch bitmap.
-				prf prefetch;
+				else if (SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward))
+				{
+					// Prefetch some pages in our spare time and in the process
+					// garbage collect the prefetch bitmap.
+					prf prefetch;
 
-				prefetch_init(&prefetch, tdbb);
-				prefetch_prologue(&prefetch, &starting_page);
-				prefetch_io(&prefetch, status_vector);
-				prefetch_epilogue(&prefetch, status_vector);
-			}
+					prefetch_init(&prefetch, tdbb);
+					prefetch_prologue(&prefetch, &starting_page);
+					prefetch_io(&prefetch, status_vector);
+					prefetch_epilogue(&prefetch, status_vector);
+				}
 #endif
-			else
-			{
-				bcb->bcb_flags &= ~BCB_writer_active;
-				Attachment::Checkout cout(attachment);
-				bcb->bcb_writer_sem.tryEnter(10);
+				else
+				{
+					bcb->bcb_flags &= ~BCB_writer_active;
+					Attachment::Checkout cout(attachment);
+					bcb->bcb_writer_sem.tryEnter(10);
+				}
 			}
 		}
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(status_vector, ex);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
-	}
+		catch (const Firebird::Exception& ex)
+		{
+			Firebird::stuff_exception(status_vector, ex);
+			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+			// continue execution to clean up
+		}
 
-	try
-	{
 		if (tdbb->getAttachment())
 		{
 			LCK_fini(tdbb, LCK_OWNER_attachment);
@@ -3095,7 +3096,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		bcb->bcb_writer_fini.release();
-	}
+
+	}	// try
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
