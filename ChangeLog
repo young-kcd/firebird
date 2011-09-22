@@ -1,3 +1,33 @@
+ 2011-09-22 01:40  asfernandes 
+   M src/jrd/cch.cpp
+Misc.
+
+ 2011-09-21 17:49  dimitr 
+   M src/jrd/cch.cpp
+   M src/jrd/vio.cpp
+Methinks it's more correct from the scoping POV.
+
+ 2011-09-21 07:59  dimitr 
+   M src/jrd/Attachment.h
+   M src/jrd/vio.cpp
+Reworked the garbage collector thread:
+- a single try-catch block looks better
+- cross-helping between GC and CW/CR threads is agreed to be a bad idea
+- replaced ATT_disable_gc_notify with a check inside notify_garbage_collector()
+- made the logic more straightforward
+Careful review would be appreciated.
+
+ 2011-09-21 07:45  dimitr 
+   M src/jrd/cch.cpp
+Slightly reworked the cache writer thread:
+- it doesn't make sense to return -1, as the result is void* with PTHREADS
+- a single try-catch block looks better
+- cross-helping between GC and CW/CR threads is agreed to be a bad idea
+
+ 2011-09-21 07:22  dimitr 
+   M src/jrd/GarbageCollector.cpp
+Fixed the [not working] background garbage collection.
+
  2011-09-20 15:31  dimitr 
    M src/jrd/jrd.cpp
 Misc.
