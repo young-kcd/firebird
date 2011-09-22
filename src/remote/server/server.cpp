@@ -574,7 +574,7 @@ static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 #endif
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
-static bool		bad_port_context(IStatus*, IRefCounted*, const ISC_LONG);
+static bool		bad_port_context(IStatus*, IRefCounted*, const ISC_STATUS);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(ClumpletWriter&, const ParametersSet&, const rem_port*);
 
@@ -1582,7 +1582,7 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 }
 
 
-static bool bad_port_context(IStatus* status_vector, IRefCounted* iface, const ISC_LONG error)
+static bool bad_port_context(IStatus* status_vector, IRefCounted* iface, const ISC_STATUS error)
 {
 /**************************************
  *

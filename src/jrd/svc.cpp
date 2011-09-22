@@ -824,7 +824,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 			if (trace_manager->needs(TRACE_EVENT_SERVICE_ATTACH))
 			{
-				const ISC_LONG exc = ex.stuff_exception(status_vector);
+				const ISC_STATUS exc = ex.stuff_exception(status_vector);
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
 				TraceServiceImpl service(this);
@@ -1474,7 +1474,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 
 		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
 		{
-			const ISC_LONG exc = ex.stuff_exception(status_vector);
+			const ISC_STATUS exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv ||
 							exc == isc_insufficient_svc_privileges);
 
@@ -1854,7 +1854,7 @@ void Service::query(USHORT			send_item_length,
 
 		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
 		{
-			const ISC_LONG exc = ex.stuff_exception(status_vector);
+			const ISC_STATUS exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
 			// Report to Trace API that query failed
@@ -2050,7 +2050,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_START))
 		{
 			ISC_STATUS_ARRAY status_vector;
-			const ISC_LONG exc = ex.stuff_exception(status_vector);
+			const ISC_STATUS exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
 			TraceServiceImpl service(this);

@@ -1750,7 +1750,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		}	// try
 		catch (const Exception& ex)
 		{
-			const ISC_LONG exc = ex.stuffException(user_status);
+			const ISC_STATUS exc = ex.stuffException(user_status);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 				filename, options, false, no_priv);
@@ -2172,7 +2172,7 @@ JRequest* JAttachment::compileRequest(IStatus* user_status,
 			}
 			catch (const Exception& ex)
 			{
-				const ISC_LONG exc = transliterateException(tdbb, ex, user_status);
+				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status);
 				const bool no_priv = (exc == isc_no_priv);
 				trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
 
@@ -2600,7 +2600,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		}	// try
 		catch (const Exception& ex)
 		{
-			const ISC_LONG exc = ex.stuffException(user_status);
+			const ISC_STATUS exc = ex.stuffException(user_status);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 				filename, options, true, no_priv);
@@ -3815,7 +3815,7 @@ void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, i
 			}
 			catch (const Exception& ex)
 			{
-				const ISC_LONG exc = transliterateException(tdbb, ex, user_status);
+				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status);
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 				trace.finish(no_priv ? res_unauthorized : res_failed);
 
@@ -3876,7 +3876,7 @@ void JRequest::start(IStatus* user_status, Firebird::ITransaction* tra, int leve
 			}
 			catch (const Exception& ex)
 			{
-				const ISC_LONG exc = transliterateException(tdbb, ex, user_status);
+				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status);
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 				trace.finish(no_priv ? res_unauthorized : res_failed);
 
