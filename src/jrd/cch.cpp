@@ -3044,9 +3044,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			if (bcb->bcb_flags & BCB_free_pending)
 			{
 				BufferDesc* const bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1);
-				if (bdb) {
+				if (bdb)
 					write_buffer(tdbb, bdb, bdb->bdb_page, true, status_vector, true);
-				}
 			}
 
 			// If there's more work to do voluntarily ask to be rescheduled.
