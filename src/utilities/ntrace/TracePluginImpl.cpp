@@ -2142,7 +2142,8 @@ ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceConnection* connection,
 	{
 		MasterInterfacePtr master;
 		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		if (transaction)
+			master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
 		master->upgradeInterface(statement, FB_TRACE_BLR_STATEMENT_VERSION, upInfo);
 
 		log_event_blr_compile(connection, transaction, statement, time_millis, req_result);
