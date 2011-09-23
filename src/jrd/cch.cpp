@@ -1069,6 +1069,8 @@ void CCH_fini(thread_db* tdbb)
 			}
 		}
 
+		delete[] bcb->bcb_rpt;
+
 		while (bcb->bcb_memory.hasData())
 			bcb->bcb_bufferpool->deallocate(bcb->bcb_memory.pop());
 
@@ -3528,8 +3530,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	BufferControl* bcb = dbb->dbb_bcb;
+	Database* const dbb = tdbb->getDatabase();
+	BufferControl* const bcb = dbb->dbb_bcb;
 
 	if (number <= bcb->bcb_count || number > MAX_PAGE_BUFFERS) {
 		return;
@@ -3549,7 +3551,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 	const bcb_repeat* const old_end = bcb->bcb_rpt + bcb->bcb_count;
 
-	bcb_repeat* new_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
+	bcb_repeat* const new_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
 	bcb_repeat* const old_rpt = bcb->bcb_rpt;
 	bcb->bcb_rpt = new_rpt;
 
@@ -3608,7 +3610,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 	// Set up new buffer control, release old buffer control, and clean up
 
-	delete old_rpt;
+	delete[] old_rpt;
 }
 
 static BufferDesc* find_buffer(BufferControl* bcb, const PageNumber page, bool findPending)
