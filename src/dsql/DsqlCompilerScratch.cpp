@@ -436,6 +436,58 @@ void DsqlCompilerScratch::genReturn(bool eosFlag)
 	}
 }
 
+void DsqlCompilerScratch::genParameters(Array<ParameterClause>& parameters,
+	Array<ParameterClause>& returns)
+{
+	if (parameters.hasData())
+	{
+		fb_assert(parameters.getCount() < MAX_USHORT / 2);
+		appendUChar(blr_message);
+		appendUChar(0);
+		appendUShort(2 * parameters.getCount());
+
+		for (size_t i = 0; i < parameters.getCount(); ++i)
+		{
+			ParameterClause& parameter = parameters[i];
+			putDebugArgument(fb_dbg_arg_input, i, parameter.name.c_str());
+			putType(parameter, true);
+
+			// Add slot for null flag (parameter2).
+			appendUChar(blr_short);
+			appendUChar(0);
+
+			makeVariable(parameter.legacyField, parameter.name.c_str(),
+				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
+		}
+	}
+
+	fb_assert(returns.getCount() < MAX_USHORT / 2);
+	appendUChar(blr_message);
+	appendUChar(1);
+	appendUShort(2 * returns.getCount() + 1);
+
+	if (returns.hasData())
+	{
+		for (size_t i = 0; i < returns.getCount(); ++i)
+		{
+			ParameterClause& parameter = returns[i];
+			putDebugArgument(fb_dbg_arg_output, i, parameter.name.c_str());
+			putType(parameter, true);
+
+			// Add slot for null flag (parameter2).
+			appendUChar(blr_short);
+			appendUChar(0);
+
+			makeVariable(parameter.legacyField, parameter.name.c_str(),
+				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
+		}
+	}
+
+	// Add slot for EOS.
+	appendUChar(blr_short);
+	appendUChar(0);
+}
+
 void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 {
 	DEV_BLKCHK(with, dsql_type_nod);

@@ -774,7 +774,7 @@ void TypeClause::print(string& text) const
 ParameterClause::ParameterClause(MemoryPool& pool, dsql_fld* field, const MetaName& aCollate,
 			dsql_nod* dflt, dsql_nod* aLegacyParameter)
 	: TypeClause(pool, field, aCollate),
-	  name(field->fld_name),
+	  name(pool, field ? field->fld_name : ""),
 	  legacyDefault(dflt),
 	  legacyParameter(aLegacyParameter)
 {
@@ -1626,41 +1626,9 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 
 		dsqlScratch->appendUChar(blr_begin);
 
-		if (parameters.getCount() != 0)
-		{
-			fb_assert(parameters.getCount() < size_t(MAX_USHORT / 2));
-			dsqlScratch->appendUChar(blr_message);
-			dsqlScratch->appendUChar(0);
-			dsqlScratch->appendUShort(2 * parameters.getCount());
-
-			for (unsigned i = 0; i < parameters.getCount(); ++i)
-			{
-				ParameterClause& parameter = parameters[i];
-				dsqlScratch->putDebugArgument(fb_dbg_arg_input, i,
-					parameter.name.c_str());
-				dsqlScratch->putType(parameter, true);
-
-				// add slot for null flag (parameter2)
-				dsqlScratch->appendUChar(blr_short);
-				dsqlScratch->appendUChar(0);
-
-				dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
-					dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
-			}
-		}
-
-		dsqlScratch->appendUChar(blr_message);
-		dsqlScratch->appendUChar(1);
-		dsqlScratch->appendUShort(2);
-
-		dsqlScratch->putDebugArgument(fb_dbg_arg_output, 0, "");
-		dsqlScratch->putType(returnType, true);
-
-		// add slot for null flag (parameter2)
-		dsqlScratch->appendUChar(blr_short);
-		dsqlScratch->appendUChar(0);
-
-		dsqlScratch->makeVariable(returnType.legacyField, "", dsql_var::TYPE_OUTPUT, 1, 0, 0);
+		Array<ParameterClause> returns;
+		returns.add(returnType);
+		dsqlScratch->genParameters(parameters, returns);
 
 		if (parameters.getCount() != 0)
 		{
@@ -2421,53 +2389,7 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 
 	dsqlScratch->appendUChar(blr_begin);
 
-	if (parameters.getCount() != 0)
-	{
-		fb_assert(parameters.getCount() < MAX_USHORT / 2);
-		dsqlScratch->appendUChar(blr_message);
-		dsqlScratch->appendUChar(0);
-		dsqlScratch->appendUShort(2 * parameters.getCount());
-
-		for (unsigned i = 0; i < parameters.getCount(); ++i)
-		{
-			ParameterClause& parameter = parameters[i];
-			dsqlScratch->putDebugArgument(fb_dbg_arg_input, i, parameter.name.c_str());
-			dsqlScratch->putType(parameter, true);
-
-			// add slot for null flag (parameter2)
-			dsqlScratch->appendUChar(blr_short);
-			dsqlScratch->appendUChar(0);
-
-			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
-				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
-		}
-	}
-
-	fb_assert(returns.getCount() < MAX_USHORT / 2);
-	dsqlScratch->appendUChar(blr_message);
-	dsqlScratch->appendUChar(1);
-	dsqlScratch->appendUShort(2 * returns.getCount() + 1);
-
-	if (returns.getCount() != 0)
-	{
-		for (unsigned i = 0; i < returns.getCount(); ++i)
-		{
-			ParameterClause& parameter = returns[i];
-			dsqlScratch->putDebugArgument(fb_dbg_arg_output, i, parameter.name.c_str());
-			dsqlScratch->putType(parameter, true);
-
-			// add slot for null flag (parameter2)
-			dsqlScratch->appendUChar(blr_short);
-			dsqlScratch->appendUChar(0);
-
-			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
-				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
-		}
-	}
-
-	// add slot for EOS
-	dsqlScratch->appendUChar(blr_short);
-	dsqlScratch->appendUChar(0);
+	dsqlScratch->genParameters(parameters, returns);
 
 	if (parameters.getCount() != 0)
 	{

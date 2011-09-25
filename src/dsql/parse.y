@@ -2081,7 +2081,7 @@ function_clause_start
 		domain_or_non_array_type collate_clause deterministic_opt
 			{
 				$$ = $2;
-				$$->returnType = TypeClause(getPool(), $<legacyField>5, toName($7));
+				$$->returnType = ParameterClause(getPool(), $<legacyField>5, toName($7), NULL, NULL);
 				$$->deterministic = ($8 != NULL);
 			}
 	;

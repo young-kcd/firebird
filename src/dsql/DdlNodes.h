@@ -242,7 +242,7 @@ public:
 		  external(NULL),
 		  deterministic(false),
 		  parameters(pool),
-		  returnType(pool, NULL, NULL),
+		  returnType(pool, NULL, NULL, NULL, NULL),
 		  localDeclList(NULL),
 		  source(pool),
 		  body(NULL),
@@ -286,7 +286,7 @@ public:
 	ExternalClause* external;
 	bool deterministic;
 	Firebird::Array<ParameterClause> parameters;
-	TypeClause returnType;
+	ParameterClause returnType;
 	NestConst<CompoundStmtNode> localDeclList;
 	Firebird::string source;
 	NestConst<StmtNode> body;

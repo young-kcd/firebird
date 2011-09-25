@@ -37,6 +37,7 @@ namespace Jrd
 class CompoundStmtNode;
 class DeclareCursorNode;
 class DeclareVariableNode;
+class ParameterClause;
 class TypeClause;
 class VariableNode;
 
@@ -163,6 +164,9 @@ public:
 	dsql_var* makeVariable(dsql_fld*, const char*, const dsql_var::Type type, USHORT, USHORT, USHORT);
 	dsql_var* resolveVariable(const dsql_str* varName);
 	void genReturn(bool eosFlag = false);
+
+	void genParameters(Firebird::Array<ParameterClause>& parameters,
+		Firebird::Array<ParameterClause>& returns);
 
 	void resetContextStack()
 	{
