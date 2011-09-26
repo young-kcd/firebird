@@ -286,16 +286,21 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 				null_flag = DSC_null;
 			}
 
+			dsc* desc = NULL;
 			if (first_index > parameter->par_index)
 			{
 				m_descs.insert(0, parameter->par_desc);
-				m_descs.front().dsc_flags |= null_flag;
+				desc = &m_descs.front();
 			}
 			else
 			{
 				m_descs.add(parameter->par_desc);
-				m_descs.back().dsc_flags |= null_flag;
+				desc = &m_descs.back();
 			}
+			desc->dsc_flags |= null_flag;
+
+			UCHAR* msgBuffer = m_stmt->req_msg_buffers[parameter->par_message->msg_buffer_number];
+			desc->dsc_address = msgBuffer + (IPTR) desc->dsc_address;
 		}
 	}
 }

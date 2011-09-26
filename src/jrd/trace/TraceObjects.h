@@ -153,8 +153,7 @@ public:
 	TraceSQLStatementImpl(const dsql_req* stmt, PerformanceInfo* perf) :
 		m_stmt(stmt),
 		m_perf(perf),
-		m_inputs(*getDefaultMemoryPool(), m_stmt->getStatement()->getSendMsg() ?
-			&m_stmt->getStatement()->getSendMsg()->msg_parameters : NULL)
+		m_inputs(*getDefaultMemoryPool(), m_stmt)
 	{}
 
 	// TraceSQLStatement implementation
@@ -169,10 +168,15 @@ private:
 	class DSQLParamsImpl : public Firebird::AutoIface<TraceParams, FB_TRACE_PARAMS_VERSION>
 	{
 	public:
-		DSQLParamsImpl(Firebird::MemoryPool& pool, const Firebird::Array<dsql_par*>* params) :
-			m_params(params),
+		DSQLParamsImpl(Firebird::MemoryPool& pool, const dsql_req* const stmt) :
+			m_stmt(stmt),
+			m_params(NULL),
 			m_descs(pool)
-		{}
+		{
+			const dsql_msg* msg = m_stmt->getStatement()->getSendMsg();
+			if (msg)
+				m_params = &msg->msg_parameters;
+		}
 
 		virtual size_t FB_CARG getCount();
 		virtual const dsc* FB_CARG getParam(size_t idx);
@@ -180,6 +184,7 @@ private:
 	private:
 		void fillParams();
 
+		const dsql_req* const m_stmt;
 		const Firebird::Array<dsql_par*>* m_params;
 		Firebird::HalfStaticArray<dsc, 16> m_descs;
 	};
