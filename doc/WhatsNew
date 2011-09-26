@@ -2,6 +2,11 @@
   * v2.5.1
   **************************
 
+    * Bugfix CORE-3589
+        Internal shared resource leak
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-3560
         Firebird 2.5 Classic Server uses more memory than 2.1.5 when caching metadata
       Contributor(s):
