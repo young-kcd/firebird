@@ -15,7 +15,7 @@ ru.UseApplicationTaskMsg=Запускать в качестве &Приложения
 ru.TaskGroupDescription=Способ запуска сервера Firebird:
 ru.UseServiceTask=Запускать в качестве &Службы
 ru.AutoStartTask=&Автоматически запускать Firebird при каждой загрузке
-ru.SuperClassicTask="Use SuperClassic?"
+ru.SuperClassicTask="Использовать SuperClassic?"
 ru.CopyFbClientToSysTask=&Копировать клиентскую библиотеку Firebird в каталог <system>
 ru.CopyFbClientAsGds32Task=&Создать GDS32.DLL для поддержки унаследованных приложений
 ru.InstallCPLAppletTask=&Установить Апплет Панели Управления
@@ -64,14 +64,14 @@ ru.NoWinsock2=Пожалуйста, установите обновление Winsock 2 прежде, чем продолжить
 ru.MSWinsock2Update=http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
 ru.RunCSNoGuardian=Запуск Firebird Classic Server (без Guardian)
-ru.RunSSNoGuardian=Запуск Firebird SuperServer(без Guardian)
+ru.RunSSNoGuardian=Запуск Firebird SuperServer (без Guardian)
 ru.RunSSWithGuardian=Запуск Firebird SuperServer (с Guardian)
 ru.RunCSWithGuardian=Запуск Firebird Classic Server (с Guardian)
 ru.RunISQL=Запуск утилиты Interactive SQL
 
 ru.ReadmeFile=readme.txt
 ru.InstallationReadmeFile=installation_readme.txt
-ru.RunCS=Run Firebird Classic server
-ru.RunSC=Run Firebird SuperClassic server
-ru.RunSS=Run Firebird SuperServer 
+ru.RunCS=Запуск Firebird Classic Server
+ru.RunSC=Запуск Firebird SuperClassic Server
+ru.RunSS=Запуск Firebird SuperServer 
 ;ru.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
