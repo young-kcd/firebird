@@ -72,8 +72,8 @@ cz.RunISQL=Spustit interaktivní SQL nástroj založený na pøíkazové øádce
 cz.ReadmeFile=ctime.txt
 cz.InstallationReadmeFile=instalace_ctime.txt
 ;cz.IncompleteTranslationNotice=Tento dokument není aktuální. Pro poslední informace, prosím, nahlédnìte do originální anglické dokumentace.
-en.RunCS=Spustit Firebird Classic server
-en.RunSC=Spustit Firebird SuperClassic server
-en.RunSS=Spustit Firebird SuperServer
+cz.RunCS=Spustit Firebird Classic server
+cz.RunSC=Spustit Firebird SuperClassic server
+cz.RunSS=Spustit Firebird SuperServer
 
 
