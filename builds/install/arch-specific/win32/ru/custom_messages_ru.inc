@@ -71,7 +71,7 @@ ru.RunISQL=Запуск утилиты Interactive SQL
 
 ru.ReadmeFile=readme.txt
 ru.InstallationReadmeFile=installation_readme.txt
-ru.RunCS=Firebird Classic server starten
-ru.RunSC=Firebird SuperClassic server starten
-ru.RunSS=Firebird SuperServer starten
+ru.RunCS=Run Firebird Classic server
+ru.RunSC=Run Firebird SuperClassic server
+ru.RunSS=Run Firebird SuperServer 
 ;ru.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
