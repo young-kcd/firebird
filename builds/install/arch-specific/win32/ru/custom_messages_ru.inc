@@ -15,6 +15,7 @@ ru.UseApplicationTaskMsg=Запускать в качестве &Приложения
 ru.TaskGroupDescription=Способ запуска сервера Firebird:
 ru.UseServiceTask=Запускать в качестве &Службы
 ru.AutoStartTask=&Автоматически запускать Firebird при каждой загрузке
+ru.SuperClassicTask="Use SuperClassic?"
 ru.CopyFbClientToSysTask=&Копировать клиентскую библиотеку Firebird в каталог <system>
 ru.CopyFbClientAsGds32Task=&Создать GDS32.DLL для поддержки унаследованных приложений
 ru.InstallCPLAppletTask=&Установить Апплет Панели Управления
@@ -70,5 +71,7 @@ ru.RunISQL=Запуск утилиты Interactive SQL
 
 ru.ReadmeFile=readme.txt
 ru.InstallationReadmeFile=installation_readme.txt
+ru.RunCS=Firebird Classic server starten
+ru.RunSC=Firebird SuperClassic server starten
+ru.RunSS=Firebird SuperServer starten
 ;ru.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
-
