@@ -2031,7 +2031,7 @@ bool VIO_get_current(thread_db* tdbb,
 				return !(rpb->rpb_flags & rpb_uk_modified);
 			}
 			
-			return !foreign_key;
+			return true;
 
 		case tra_dead:
 			if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
