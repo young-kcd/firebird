@@ -2162,11 +2162,13 @@ bool VIO_get_current(thread_db* tdbb,
 			if (rpb->rpb_flags & rpb_deleted)
 				return !foreign_key;
 
-			if (rpb->rpb_flags & rpb_uk_modified)
-					return !foreign_key;
+			if (foreign_key)
+			{
+				// clear lock error from status vector
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+				return !(rpb->rpb_flags & rpb_uk_modified);
+			}
 
-			// clear lock error from status vector
-			fb_utils::init_status(tdbb->tdbb_status_vector);
 			return true;
 
 		case tra_dead:
