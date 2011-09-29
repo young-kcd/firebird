@@ -1,3 +1,34 @@
+ 2011-09-28 10:23  dimitr 
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+Russian translation adjustments.
+
+ 2011-09-28 10:05  paul_reeves 
+   M builds/install/arch-specific/win32/cz/custom_messages_cz.inc
+use correct language marker for new entries
+
+ 2011-09-28 09:58  paul_reeves 
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+Use proper english for place holder text.
+
+ 2011-09-28 09:49  paul_reeves 
+   M builds/install/arch-specific/win32/ru/Readme.txt
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+Sync B2_5_Release branch with changes made to R2_5_1
+
+ 2011-09-28 09:17  paul_reeves 
+   M builds/install/arch-specific/win32/pt/custom_messages_pt.inc
+   M builds/install/arch-specific/win32/pt/instalacao_leia-me.txt
+   M builds/install/arch-specific/win32/pt/leia-me.txt
+update pt i18n files for windows installer
+
+ 2011-09-28 09:16  paul_reeves 
+   A builds/install/arch-specific/win32/cz/ctime.txt
+   M builds/install/arch-specific/win32/cz/custom_messages_cz.inc
+   A builds/install/arch-specific/win32/cz/instalace_ctime.txt
+Add/update cz i18n files for windows installer
+
  2011-09-26 07:14  dimitr 
    M doc/WhatsNew
 Updated docs.
