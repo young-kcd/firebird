@@ -1,3 +1,11 @@
+ 2011-09-30 01:15  asfernandes 
+   M src/jrd/cch.cpp
+Misc.
+
+ 2011-09-29 12:34  hvlad 
+   M src/jrd/vio.cpp
+Port forward fix for bug CORE-3610 : Can insert DUPLICATE keys in UNIQUE index
+
  2011-09-27 11:51  alexpeshkoff 
    M src/remote/server/os/posix/inet_server.cpp
 misc
