@@ -3098,7 +3098,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		bcb->bcb_writer_fini.release();
-
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
