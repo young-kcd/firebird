@@ -1166,7 +1166,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 				case id_procedure:
 				case id_trigger:
 				case id_function:
-					if (c == obj_type && check_string(a, obj_name))
+					if (c != obj_type || check_string(a, obj_name))
 					{
 						hit = false;
 					}
