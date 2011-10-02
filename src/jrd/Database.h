@@ -304,8 +304,10 @@ public:
 	}
 
 	Firebird::SyncObject	dbb_sync;
+	Firebird::SyncObject	dbb_sys_attach;		// syncronize operations with dbb_sys_attachments
 	Firebird::SyncObject	dbb_lck_sync;		// syncronize operations with att_long_locks at different attachments
 
+	MemoryPool* dbb_permanent;
 
 	LockManager*	dbb_lock_mgr;
 	EventManager*	dbb_event_mgr;
@@ -356,8 +358,6 @@ public:
 	Firebird::PathName dbb_filename;	// filename string
 	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
 	Firebird::string dbb_encrypt_key;	// encryption key
-
-	MemoryPool* dbb_permanent;
 
 	Firebird::SyncObject			dbb_pools_sync;
 	Firebird::Array<MemoryPool*>	dbb_pools;		// pools
@@ -417,13 +417,13 @@ public:
 
 private:
 	explicit Database(MemoryPool* p)
-	:	dbb_page_manager(this, *p),
+	:	dbb_permanent(p),
+		dbb_page_manager(this, *p),
 		dbb_modules(*p),
 		dbb_extManager(*p),
 		dbb_filename(*p),
 		dbb_database_name(*p),
 		dbb_encrypt_key(*p),
-		dbb_permanent(p),
 		dbb_pools(*p, 4),
 		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),

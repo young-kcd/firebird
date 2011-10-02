@@ -4277,11 +4277,22 @@ JStatement* JAttachment::allocateStatement(IStatus* user_status)
 }
 
 
+void SysAttachment::initDone()
+{
+	Attachment* attachment = getHandle();
+	Database* dbb = attachment->att_database;
+	SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysAttachment::initDone");
+
+	attachment->att_next = dbb->dbb_sys_attachments;
+	dbb->dbb_sys_attachments = attachment;
+}
+
+
 void SysAttachment::destroy(Attachment* attachment)
 {
 	{
 		Database* dbb = attachment->att_database;
-		SyncLockGuard guard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "SysAttachment::destroy");
+		SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysAttachment::destroy");
 
 		for (Jrd::Attachment** ptr = &dbb->dbb_sys_attachments; *ptr; ptr = &(*ptr)->att_next)
 		{

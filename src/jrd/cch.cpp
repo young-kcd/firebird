@@ -2993,14 +2993,14 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		UserId user;
 		user.usr_user_name = "Cache Writer";
 
-		RefPtr<JAttachment> jAtt(NULL);
+		RefPtr<SysAttachment> jAtt(NULL);
 
 		try
 		{
 			// Dummy attachment needed for lock owner identification.
 
 			Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-			jAtt = attachment->att_interface = new SysAttachment(attachment);
+			attachment->att_interface = jAtt = new SysAttachment(attachment);
 			jAtt->getMutex()->enter();
 
 			tdbb->setAttachment(attachment);
@@ -3012,8 +3012,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			PAG_attachment_id(tdbb);
 			TRA_init(attachment);
 
-			attachment->att_next = dbb->dbb_sys_attachments;
-			dbb->dbb_sys_attachments = attachment;
+			jAtt->initDone();
 
 			bcb->bcb_flags |= BCB_cache_writer;
 			bcb->bcb_flags &= ~BCB_writer_start;

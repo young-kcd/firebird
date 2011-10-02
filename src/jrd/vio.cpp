@@ -4254,7 +4254,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 		jrd_rel* relation = NULL;
 		jrd_tra* transaction = NULL;
-		RefPtr<JAttachment> jAtt(NULL);
+		RefPtr<SysAttachment> jAtt(NULL);
 
 		GarbageCollector* gc = NULL;
 
@@ -4263,7 +4263,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			// Pseudo attachment needed for lock owner identification.
 
 			Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-			jAtt = attachment->att_interface = new SysAttachment(attachment);
+			attachment->att_interface = jAtt = new SysAttachment(attachment);
 			jAtt->getMutex()->enter();
 
 			tdbb->setAttachment(attachment);
@@ -4281,8 +4281,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			gc = FB_NEW(*attachment->att_pool) GarbageCollector(*attachment->att_pool, dbb);
 			dbb->dbb_garbage_collector = gc;
 
-			attachment->att_next = dbb->dbb_sys_attachments;
-			dbb->dbb_sys_attachments = attachment;
+			jAtt->initDone();
 
 			// Notify our creator that we have started
 			dbb->dbb_flags |= DBB_garbage_collector;

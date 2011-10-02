@@ -343,6 +343,8 @@ public:
 	{
 	}
 
+	void initDone();
+
 	virtual int FB_CARG release()
 	{
 		if (--refCounter != 0)
