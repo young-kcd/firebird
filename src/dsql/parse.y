@@ -660,6 +660,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ErrorHandlerNode* errorHandlerNode;
 	Jrd::ExecStatementNode* execStatementNode;
 	Jrd::MergeNode* mergeNode;
+	Jrd::DeclareSubProcNode* declareSubProcNode;
 }
 
 %type <legacyNode> access_mode access_type alias_list
@@ -2269,6 +2270,23 @@ local_declaration
 			$$ = $3;
 			$$->line = YYPOSNARG(1).firstLine;
 			$$->column = YYPOSNARG(1).firstColumn;
+		}
+	| DECLARE PROCEDURE symbol_procedure_name
+			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
+			input_parameters(&$<execBlockNode>4->parameters)
+			output_parameters(&$<execBlockNode>4->returns) AS
+			local_declaration_list
+			full_proc_block
+		{
+			DeclareSubProcNode* node = newNode<DeclareSubProcNode>(toName($3));
+			node->dsqlBlock = $<execBlockNode>4;
+			node->dsqlBlock->localDeclList = $8;
+			node->dsqlBlock->body = $9;
+
+			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
+				node->dsqlBlock->parameters[i].legacyParameter = makeClassNode(make_parameter());
+
+			$$ = node;
 		}
 	;
 

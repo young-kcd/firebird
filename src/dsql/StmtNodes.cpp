@@ -1242,6 +1242,272 @@ const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request
 //--------------------
 
 
+static RegisterNode<DeclareSubProcNode> regDeclareSubProcNode(blr_subproc_decl);
+
+DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	MetaName name;
+	PAR_name(csb, name);
+
+	if (csb->csb_g_flags & csb_subroutine)
+		PAR_error(csb, Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub procedure");
+
+	if (csb->subProcedures.exist(name))
+		PAR_error(csb, Arg::Gds(isc_random) << "duplicate sub procedure");
+
+	DeclareSubProcNode* node = FB_NEW(pool) DeclareSubProcNode(pool, name);
+
+	jrd_prc* subProc = node->procedure = FB_NEW(pool) jrd_prc(pool);
+	subProc->setName(QualifiedName(name));
+	subProc->setSubRoutine(true);
+	subProc->setUndefined(false);
+
+	{	// scope
+		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);
+		subCsb->csb_g_flags |= csb_subroutine;
+		subCsb->csb_blr_reader = csb->csb_blr_reader;
+
+		BlrReader& reader = subCsb->csb_blr_reader;
+		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
+
+		UCHAR type = reader.getByte();
+		if (type != SUB_ROUTINE_TYPE_PSQL)
+			PAR_syntax_error(csb, "sub procedure type");
+
+		subProc->prc_type = reader.getByte() == 0 ? prc_executable : prc_selectable;
+
+		parseParameters(tdbb, pool, subCsb, subProc->prc_input_fields, &subProc->prc_defaults);
+		parseParameters(tdbb, pool, subCsb, subProc->prc_output_fields);
+
+		node->blrLength = reader.getLong();
+		node->blrStart = reader.getPos();
+
+		MET_par_messages(tdbb, reader.getPos(), node->blrLength, subProc, subCsb);
+
+		USHORT count = subProc->prc_input_fmt ? subProc->prc_input_fmt->fmt_count : 0;
+		if (subProc->prc_input_fields.getCount() * 2 != count)
+			PAR_error(csb, Arg::Gds(isc_prcmismat) << name);
+
+		for (USHORT i = 0; i < count; i += 2u)
+		{
+			Parameter* parameter = subProc->prc_input_fields[i / 2u];
+			parameter->prm_desc = subProc->prc_input_fmt->fmt_desc[i];
+		}
+
+		Array<NestConst<Parameter> >& paramArray = subProc->prc_output_fields;
+
+		count = subProc->prc_output_fmt ? subProc->prc_output_fmt->fmt_count : 0;
+		if (count == 0 || paramArray.getCount() * 2 != count - 1u)
+			PAR_error(csb, Arg::Gds(isc_prc_out_param_mismatch) << name);
+
+		Format* format = Format::newFormat(pool, paramArray.getCount());
+		subProc->prc_format = format;
+		format->fmt_length = FLAG_BYTES(format->fmt_count);
+
+		for (USHORT i = 0; i < count - 1u; i += 2u)
+		{
+			Parameter* parameter = paramArray[i / 2u];
+			parameter->prm_desc = subProc->prc_output_fmt->fmt_desc[i];
+
+			dsc& fmtDesc = format->fmt_desc[i / 2u];
+			fmtDesc = parameter->prm_desc;
+
+			format->fmt_length = MET_align(&fmtDesc, format->fmt_length);
+			fmtDesc.dsc_address = (UCHAR*)(IPTR) format->fmt_length;
+			format->fmt_length += fmtDesc.dsc_length;
+		}
+
+		DbgInfo* subDbgInfo = NULL;
+		if (csb->csb_dbg_info->subProcs.get(name, subDbgInfo))
+		{
+			subCsb->csb_dbg_info = subDbgInfo;
+			csb->csb_dbg_info->subProcs.remove(name);
+		}
+	}
+
+	csb->subProcedures.put(name, node);
+	csb->csb_blr_reader.setPos(node->blrStart + node->blrLength);
+
+	return node;
+}
+
+void DeclareSubProcNode::parseParameters(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount)
+{
+	BlrReader& reader = csb->csb_blr_reader;
+
+	paramArray.resize(reader.getWord());
+
+	if (defaultCount)
+		*defaultCount = 0;
+
+	for (size_t i = 0; i < paramArray.getCount(); ++i)
+	{
+		Parameter* parameter = FB_NEW(pool) Parameter(pool);
+		parameter->prm_number = USHORT(i);
+		paramArray[parameter->prm_number] = parameter;
+
+		PAR_name(csb, parameter->prm_name);
+
+		UCHAR hasDefault = reader.getByte();
+
+		if (hasDefault == 1)
+		{
+			if (defaultCount && *defaultCount == 0)
+				*defaultCount = paramArray.getCount() - i;
+
+			parameter->prm_default_value = PAR_parse_value(tdbb, csb);
+		}
+		else if (hasDefault != 0)
+			PAR_syntax_error(csb, "0 or 1");
+	}
+}
+
+void DeclareSubProcNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "DeclareSubProcNode";
+}
+
+DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	MemoryPool& pool = getPool();
+
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE)
+		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub procedure");
+
+	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
+
+	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
+		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+	else
+		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+
+	statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
+	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
+	statement->setReceiveMsg(message);
+	message->msg_number = 1;
+
+	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
+
+	blockScratch = FB_NEW(pool) DsqlCompilerScratch(pool,
+		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement);
+	blockScratch->clientDialect = dsqlScratch->clientDialect;
+	blockScratch->flags |= DsqlCompilerScratch::FLAG_SUB_ROUTINE;
+
+	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
+
+	dsqlProcedure = FB_NEW(pool) dsql_prc(pool);
+	dsqlProcedure->prc_flags = PRC_subproc;
+	dsqlProcedure->prc_name.identifier = name;
+	dsqlProcedure->prc_in_count = USHORT(dsqlBlock->parameters.getCount());
+	dsqlProcedure->prc_out_count = USHORT(dsqlBlock->returns.getCount());
+
+	if (dsqlBlock->parameters.hasData())
+	{
+		const Array<ParameterClause>& paramArray = dsqlBlock->parameters;
+
+		dsqlProcedure->prc_inputs = paramArray.begin()->legacyField;
+
+		for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+		{
+			if (param->legacyDefault)
+			{
+				if (dsqlProcedure->prc_def_count == 0)
+					dsqlProcedure->prc_def_count = paramArray.end() - param;
+			}
+			else if (dsqlProcedure->prc_def_count != 0)
+			{
+				// Parameter without default value after parameters with default.
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+						  Arg::Gds(isc_bad_default_value) <<
+						  Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
+			}
+		}
+	}
+
+	if (dsqlBlock->returns.hasData())
+		dsqlProcedure->prc_outputs = dsqlBlock->returns.begin()->legacyField;
+
+	dsqlScratch->putSubProcedure(dsqlProcedure);
+
+	return this;
+}
+
+void DeclareSubProcNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsql_nod* nod = MAKE_node(Dsql::nod_class_stmtnode, 1);
+	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(dsqlBlock);
+	GEN_request(blockScratch, nod);
+
+	dsqlScratch->appendUChar(blr_subproc_decl);
+	dsqlScratch->appendNullString(name.c_str());
+
+	dsqlScratch->appendUChar(SUB_ROUTINE_TYPE_PSQL);
+
+	dsqlScratch->appendUChar(
+		blockScratch->getStatement()->getFlags() & DsqlCompiledStatement::FLAG_SELECTABLE ? 1 : 0);
+
+	genParameters(dsqlScratch, dsqlBlock->parameters);
+	genParameters(dsqlScratch, dsqlBlock->returns);
+
+	BlrWriter::BlrData& blrData = blockScratch->getBlrData();
+	dsqlScratch->appendULong(ULONG(blrData.getCount()));
+	dsqlScratch->appendBytes(blrData.begin(), blrData.getCount());
+
+	dsqlScratch->putDebugSubProcedure(this);
+}
+
+void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
+	const Array<ParameterClause>& paramArray)
+{
+	dsqlScratch->appendUShort(USHORT(paramArray.getCount()));
+
+	for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+	{
+		dsqlScratch->appendNullString(param->name.c_str());
+
+		if (param->legacyDefault)
+		{
+			dsqlScratch->appendUChar(1);
+			GEN_expr(dsqlScratch, param->legacyDefault->nod_arg[Dsql::e_dft_default]);
+		}
+		else
+			dsqlScratch->appendUChar(0);
+	}
+}
+
+DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	return this;
+}
+
+DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	{	// scope
+		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
+		PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
+	}
+
+	fb_assert(subCsb->csb_rpt.getCount() >= 2);
+	procedure->prc_output_msg = subCsb->csb_rpt[1].csb_message;
+
+	return this;
+}
+
+const StmtNode* DeclareSubProcNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+{
+	// Nothing to execute. This is the declaration node.
+
+	if (request->req_operation == jrd_req::req_evaluate)
+		request->req_operation = jrd_req::req_return;
+
+	return parentStmt;
+}
+
+
+//--------------------
+
+
 static RegisterNode<DeclareVariableNode> regDeclareVariableNode(blr_dcl_variable);
 
 DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
@@ -1258,7 +1524,7 @@ DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerS
 
 	if (itemInfo.isSpecial())
 	{
-		csb->csb_dbg_info.varIndexToName.get(node->varId, itemInfo.name);
+		csb->csb_dbg_info->varIndexToName.get(node->varId, itemInfo.name);
 		csb->csb_map_item_info.put(Item(Item::TYPE_VARIABLE, node->varId), itemInfo);
 	}
 
@@ -1904,6 +2170,7 @@ const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request,
 static RegisterNode<ExecProcedureNode> regExecProcedureNodeProc(blr_exec_proc);
 static RegisterNode<ExecProcedureNode> regExecProcedureNodeProc2(blr_exec_proc2);
 static RegisterNode<ExecProcedureNode> regExecProcedureNodePid(blr_exec_pid);
+static RegisterNode<ExecProcedureNode> regExecProcedureNodeSubProc(blr_exec_subproc);
 
 // Parse an execute procedure reference.
 DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
@@ -1924,7 +2191,15 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 		if (blrOp == blr_exec_proc2)
 			PAR_name(csb, name.package);
 		PAR_name(csb, name.identifier);
-		procedure = MET_lookup_procedure(tdbb, name, false);
+
+		if (blrOp == blr_exec_subproc)
+		{
+			DeclareSubProcNode* node;
+			if (csb->subProcedures.get(name.identifier, node))
+				procedure = node->procedure;
+		}
+		else
+			procedure = MET_lookup_procedure(tdbb, name, false);
 	}
 
 	if (!procedure)
@@ -1938,16 +2213,25 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	PAR_procedure_parms(tdbb, csb, procedure, node->outputMessage.getAddress(),
 		node->outputSources.getAddress(), node->outputTargets.getAddress(), false);
 
-	CompilerScratch::Dependency dependency(obj_procedure);
-	dependency.procedure = procedure;
-	csb->csb_dependencies.push(dependency);
+	if (!procedure->isSubRoutine())
+	{
+		CompilerScratch::Dependency dependency(obj_procedure);
+		dependency.procedure = procedure;
+		csb->csb_dependencies.push(dependency);
+	}
 
 	return node;
 }
 
 ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	dsql_prc* procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch, dsqlName);
+	dsql_prc* procedure = NULL;
+
+	if (dsqlName.package.isEmpty())
+		procedure = dsqlScratch->getSubProcedure(dsqlName.identifier);
+
+	if (!procedure)
+		procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch, dsqlName);
 
 	if (!procedure)
 	{
@@ -1964,6 +2248,7 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	ExecProcedureNode* node = FB_NEW(getPool()) ExecProcedureNode(getPool(), dsqlName);
+	node->dsqlProcedure = procedure;
 
 	if (node->dsqlName.package.isEmpty() && procedure->prc_name.package.hasData())
 		node->dsqlName.package = procedure->prc_name.package;
@@ -2079,7 +2364,10 @@ void ExecProcedureNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendMetaString(dsqlName.package.c_str());
 	}
 	else
-		dsqlScratch->appendUChar(blr_exec_proc);
+	{
+		dsqlScratch->appendUChar(
+			(dsqlProcedure->prc_flags & PRC_subproc) ? blr_exec_subproc : blr_exec_proc);
+	}
 
 	dsqlScratch->appendMetaString(dsqlName.identifier.c_str());
 
@@ -2114,9 +2402,12 @@ void ExecProcedureNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ExecProcedureNode* ExecProcedureNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	// Post access to procedure
-	CMP_post_procedure_access(tdbb, csb, procedure);
-	CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
+	if (!procedure->isSubRoutine())
+	{
+		// Post access to procedure.
+		CMP_post_procedure_access(tdbb, csb, procedure);
+		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
+	}
 
 	doPass1(tdbb, csb, inputSources.getAddress());
 	doPass1(tdbb, csb, inputTargets.getAddress());
@@ -3219,24 +3510,34 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->beginDebug();
 
-	// now do the input parameters
-	for (size_t i = 0; i < parameters.getCount(); ++i)
+	// Sub routine needs a different approach than EXECUTE BLOCK.
+	// EXECUTE BLOCK needs "ports", which creates DSQL messages using the client charset.
+	// Sub routine don't need ports and should generate BLR as declared in its metadata.
+	const bool subRoutine = dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE;
+
+	unsigned returnsPos;
+
+	if (!subRoutine)
 	{
-		ParameterClause& parameter = parameters[i];
+		// Now do the input parameters.
+		for (size_t i = 0; i < parameters.getCount(); ++i)
+		{
+			ParameterClause& parameter = parameters[i];
 
-		dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
-			dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
-	}
+			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
+		}
 
-	const unsigned returnsPos = dsqlScratch->variables.getCount();
+		returnsPos = dsqlScratch->variables.getCount();
 
-	// now do the output parameters
-	for (size_t i = 0; i < returns.getCount(); ++i)
-	{
-		ParameterClause& parameter = returns[i];
+		// Now do the output parameters.
+		for (size_t i = 0; i < returns.getCount(); ++i)
+		{
+			ParameterClause& parameter = returns[i];
 
-		dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
-			dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
+			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
+		}
 	}
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
@@ -3246,7 +3547,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (parameters.hasData())
 	{
 		revertParametersOrder(statement->getSendMsg()->msg_parameters);
-		GEN_port(dsqlScratch, statement->getSendMsg());
+		if (!subRoutine)
+			GEN_port(dsqlScratch, statement->getSendMsg());
 	}
 	else
 		statement->setSendMsg(NULL);
@@ -3276,7 +3578,14 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	param->par_desc.dsc_length = sizeof(SSHORT);
 
 	revertParametersOrder(statement->getReceiveMsg()->msg_parameters);
-	GEN_port(dsqlScratch, statement->getReceiveMsg());
+	if (!subRoutine)
+		GEN_port(dsqlScratch, statement->getReceiveMsg());
+
+	if (subRoutine)
+	{
+		dsqlScratch->genParameters(parameters, returns);
+		returnsPos = dsqlScratch->variables.getCount() - dsqlScratch->outputVariables.getCount();
+	}
 
 	if (parameters.hasData())
 	{
@@ -3293,12 +3602,17 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 		if (field->fld_full_domain || field->fld_not_nullable)
 		{
+			dsqlScratch->appendUChar(blr_assignment);
+
 			// ASF: Validation of execute block input parameters is different than procedure
 			// parameters, because we can't generate messages using the domains due to the
 			// connection charset influence. So to validate, we cast them and assign to null.
-			dsqlScratch->appendUChar(blr_assignment);
-			dsqlScratch->appendUChar(blr_cast);
-			dsqlScratch->putDtype(field, true);
+			if (!subRoutine)
+			{
+				dsqlScratch->appendUChar(blr_cast);
+				dsqlScratch->putDtype(field, true);
+			}
+
 			dsqlScratch->appendUChar(blr_parameter2);
 			dsqlScratch->appendUChar(0);
 			dsqlScratch->appendUShort(variable->msgItem);
@@ -4576,8 +4890,8 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		// So we only check even indexes, which is the actual parameter.
 		if (itemInfo.isSpecial() && index % 2 == 0)
 		{
-			csb->csb_dbg_info.argInfoToName.get(
-				Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
+			csb->csb_dbg_info->argInfoToName.get(
+				ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
 
 			csb->csb_map_item_info.put(Item(Item::TYPE_PARAMETER, csb->csb_msg_number, index),
 				itemInfo);

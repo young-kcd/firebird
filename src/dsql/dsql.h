@@ -319,8 +319,9 @@ public:
 // prc_flags bits
 
 enum prc_flags_vals {
-	PRC_new_procedure	= 1, // procedure is newly defined, not committed yet
-	PRC_dropped			= 2  // procedure has been dropped
+	PRC_new_procedure	= 1,	// procedure is newly defined, not committed yet
+	PRC_dropped			= 2,	// procedure has been dropped
+	PRC_subproc			= 4		// Sub procedure
 };
 
 //! User defined function block

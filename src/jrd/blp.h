@@ -239,5 +239,8 @@ static const struct
 	{"bool_as_value", one},
 	{"coalesce", byte_args},
 	{"decode", decode},
+	{"exec_subproc", exec_proc},
+	{"subproc_decl", subproc_decl},
+	{"subproc", procedure2},
 	{0, 0}
 };

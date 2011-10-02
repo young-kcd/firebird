@@ -77,17 +77,20 @@ struct ArgumentInfo
 
 typedef GenericMap<Pair<Right<ArgumentInfo, MetaName> > > MapArgumentInfoToName;
 
-struct DbgInfo
+struct DbgInfo : public PermanentStorage
 {
 	explicit DbgInfo(MemoryPool& p)
-		: blrToSrc(p),
+		: PermanentStorage(p),
+		  blrToSrc(p),
 		  varIndexToName(p),
-		  argInfoToName(p)
+		  argInfoToName(p),
+		  subProcs(p)
 	{
 	}
 
-	DbgInfo()
+	~DbgInfo()
 	{
+		clear();
 	}
 
 	void clear()
@@ -95,11 +98,19 @@ struct DbgInfo
 		blrToSrc.clear();
 		varIndexToName.clear();
 		argInfoToName.clear();
+
+		GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subProcs);
+
+		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+			delete accessor.current()->second;
+
+		subProcs.clear();
 	}
 
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
 	MapVarIndexToName varIndexToName;		// mapping between variable index and name
 	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
+	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subProcs;	// sub procedures
 };
 
 } // namespace Firebird

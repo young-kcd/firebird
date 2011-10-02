@@ -78,6 +78,7 @@ struct index_desc;
 struct IndexDescAlloc;
 class Format;
 class Cursor;
+class DeclareSubProcNode;
 class DeclareVariableNode;
 class MessageNode;
 class PlanNode;
@@ -424,13 +425,15 @@ class CompilerScratch : public pool_alloc<type_csb>
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
-		csb_dbg_info(p),
 		csb_map_field_info(p),
 		csb_map_item_info(p),
 		csb_message_pad(p),
 		csb_domain_validation(domain_validation),
+		subProcedures(p),
 		csb_rpt(p, len)
-	{}
+	{
+		csb_dbg_info = FB_NEW(p) Firebird::DbgInfo(p);
+	}
 
 public:
 	struct Dependency
@@ -504,7 +507,7 @@ public:
 	ULONG			csb_impure;					// Next offset into impure area
 	USHORT			csb_g_flags;
 	MemoryPool&		csb_pool;					// Memory pool to be used by csb
-	Firebird::DbgInfo	csb_dbg_info;			// Debug information
+	Firebird::AutoPtr<Firebird::DbgInfo> csb_dbg_info;	// Debug information
 	MapFieldInfo		csb_map_field_info;		// Map field name to field info
 	MapItemInfo			csb_map_item_info;		// Map item to item info
 
@@ -518,6 +521,8 @@ public:
 	USHORT		csb_view_stream;
 	bool		csb_validate_expr;
 	USHORT		csb_remap_variable;
+
+	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, DeclareSubProcNode*> > subProcedures;
 
 	struct csb_repeat
 	{
@@ -576,6 +581,7 @@ const int csb_pre_trigger		= 16;	// this is a BEFORE trigger
 const int csb_post_trigger		= 32;	// this is an AFTER trigger
 const int csb_validation		= 64;	// we're in a validation expression (RDB hack)
 const int csb_reuse_context		= 128;	// allow context reusage
+const int csb_subroutine		= 256;	// sub routine
 
 const int csb_active		= 1;		// stream is active
 const int csb_used			= 2;		// context has already been defined (BLR parsing only)

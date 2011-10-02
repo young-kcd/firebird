@@ -641,22 +641,34 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 		case blr_procedure2:
 		case blr_procedure3:
 		case blr_procedure4:
-		{
+		case blr_subproc:
 			if (blrOp == blr_procedure3 || blrOp == blr_procedure4)
 				PAR_name(csb, name.package);
 
 			PAR_name(csb, name.identifier);
 
-			if (blrOp == blr_procedure2 || blrOp == blr_procedure4)
+			if (blrOp == blr_procedure2 || blrOp == blr_procedure4 || blrOp == blr_subproc)
 			{
 				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
 				PAR_name(csb, *aliasString);
+
+				if (blrOp == blr_subproc && aliasString->isEmpty())
+				{
+					delete aliasString;
+					aliasString = NULL;
+				}
 			}
 
-			procedure = MET_lookup_procedure(tdbb, name, false);
+			if (blrOp == blr_subproc)
+			{
+				DeclareSubProcNode* node;
+				if (csb->subProcedures.get(name.identifier, node))
+					procedure = node->procedure;
+			}
+			else
+				procedure = MET_lookup_procedure(tdbb, name, false);
 
 			break;
-		}
 
 		default:
 			fb_assert(false);
@@ -678,7 +690,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	ProcedureSourceNode* node = FB_NEW(*tdbb->getDefaultPool()) ProcedureSourceNode(
 		*tdbb->getDefaultPool());
 
-	node->procedure = procedure->getId();
+	node->procedure = procedure;
 	node->stream = PAR_context(csb, &node->context);
 
 	csb->csb_rpt[node->stream].csb_procedure = procedure;
@@ -749,30 +761,39 @@ void ProcedureSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	const dsql_prc* procedure = dsqlContext->ctx_procedure;
 
-	// If this is a trigger or procedure, don't want procedure id used.
-
-	if (DDL_ids(dsqlScratch))
+	if (procedure->prc_flags & PRC_subproc)
 	{
-		dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_pid2 : blr_pid);
-		dsqlScratch->appendUShort(procedure->prc_id);
+		dsqlScratch->appendUChar(blr_subproc);
+		dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+		dsqlScratch->appendMetaString(dsqlContext->ctx_alias.c_str());
 	}
 	else
 	{
-		if (procedure->prc_name.package.hasData())
+		// If this is a trigger or procedure, don't want procedure id used.
+
+		if (DDL_ids(dsqlScratch))
 		{
-			dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_procedure4 : blr_procedure3);
-			dsqlScratch->appendMetaString(procedure->prc_name.package.c_str());
-			dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+			dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_pid2 : blr_pid);
+			dsqlScratch->appendUShort(procedure->prc_id);
 		}
 		else
 		{
-			dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_procedure2 : blr_procedure);
-			dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+			if (procedure->prc_name.package.hasData())
+			{
+				dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_procedure4 : blr_procedure3);
+				dsqlScratch->appendMetaString(procedure->prc_name.package.c_str());
+				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+			}
+			else
+			{
+				dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_procedure2 : blr_procedure);
+				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+			}
 		}
-	}
 
-	if (dsqlContext->ctx_alias.hasData())
-		dsqlScratch->appendMetaString(dsqlContext->ctx_alias.c_str());
+		if (dsqlContext->ctx_alias.hasData())
+			dsqlScratch->appendMetaString(dsqlContext->ctx_alias.c_str());
+	}
 
 	GEN_stuff_context(dsqlScratch, dsqlContext);
 
@@ -816,8 +837,7 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	newSource->procedure = procedure;
 	newSource->view = view;
 	CompilerScratch::csb_repeat* element = CMP_csb_element(copier.csb, newSource->stream);
-	// SKIDDER: Maybe we need to check if we really found a procedure?
-	element->csb_procedure = MET_lookup_procedure_id(tdbb, newSource->procedure, false, false, 0);
+	element->csb_procedure = newSource->procedure;
 	element->csb_view = newSource->view;
 	element->csb_view_stream = copier.remap[0];
 
@@ -841,9 +861,11 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 
 	pass1(tdbb, csb);
 
-	jrd_prc* const proc = MET_lookup_procedure_id(tdbb, procedure, false, false, 0);
-	CMP_post_procedure_access(tdbb, csb, proc);
-	CMP_post_resource(&csb->csb_resources, proc, Resource::rsc_procedure, proc->getId());
+	if (!procedure->isSubRoutine())
+	{
+		CMP_post_procedure_access(tdbb, csb, procedure);
+		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
+	}
 
 	jrd_rel* const parentView = csb->csb_view;
 	const USHORT viewStream = csb->csb_view_stream;
@@ -907,13 +929,11 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 {
 	SET_TDBB(tdbb);
 
-	jrd_prc* const proc = MET_lookup_procedure_id(tdbb, procedure, false, false, 0);
-
 	CompilerScratch* const csb = opt->opt_csb;
 	CompilerScratch::csb_repeat* const csbTail = &csb->csb_rpt[stream];
 	const string alias = OPT_make_alias(tdbb, csb, csbTail);
 
-	return FB_NEW(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, proc,
+	return FB_NEW(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, procedure,
 		sourceList, targetList, in_msg);
 }
 

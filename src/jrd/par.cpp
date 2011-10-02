@@ -718,7 +718,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	}
 
 	if (dbginfo_length > 0)
-		DBG_parse_debug_info(dbginfo_length, dbginfo, csb->csb_dbg_info);
+		DBG_parse_debug_info(dbginfo_length, dbginfo, *csb->csb_dbg_info);
 
 	DmlNode* node = PAR_parse_node(tdbb, csb);
 	csb->csb_node = node;
@@ -927,6 +927,9 @@ void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, SSHORT stream, SSHORT
 	}
 	else if (csb->csb_rpt[stream].csb_procedure)
 	{
+		if (csb->csb_rpt[stream].csb_procedure->isSubRoutine())
+			return;
+
 		dependency.procedure = csb->csb_rpt[stream].csb_procedure;
 		dependency.objType = obj_procedure;
 	}
@@ -1300,6 +1303,7 @@ RecordSourceNode* PAR_parseRecordSource(thread_db* tdbb, CompilerScratch* csb)
 		case blr_procedure2:
 		case blr_procedure3:
 		case blr_procedure4:
+		case blr_subproc:
 			return ProcedureSourceNode::parse(tdbb, csb, blrOp);
 
 		case blr_rse:
@@ -1357,11 +1361,11 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			rse->rse_first = PAR_parse_value(tdbb, csb);
 			break;
 
-        case blr_skip:
-            if (rse_op == blr_rs_stream)
-                PAR_syntax_error(csb, "RecordSelExpr stream clause");
-            rse->rse_skip = PAR_parse_value(tdbb, csb);
-            break;
+		case blr_skip:
+			if (rse_op == blr_rs_stream)
+				PAR_syntax_error(csb, "RecordSelExpr stream clause");
+			rse->rse_skip = PAR_parse_value(tdbb, csb);
+			break;
 
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
@@ -1591,7 +1595,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 	{
         // NS: This error string is correct, please do not mangle it again and again.
 		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
-        PAR_syntax_error(csb, "valid BLR code");
+		PAR_syntax_error(csb, "valid BLR code");
     }
 
 	// Dispatch on operator type.
@@ -1611,6 +1615,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 		case blr_procedure2:
 		case blr_procedure3:
 		case blr_procedure4:
+		case blr_subproc:
 		case blr_relation:
 		case blr_rid:
 		case blr_relation2:
@@ -1624,14 +1629,14 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	if (!blr_parsers[blr_operator])
-        PAR_syntax_error(csb, "valid BLR code");
+		PAR_syntax_error(csb, "valid BLR code");
 
 	DmlNode* node = blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb, blr_operator);
 	size_t pos = 0;
 
-	if (node->kind == DmlNode::KIND_STATEMENT && csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
+	if (node->kind == DmlNode::KIND_STATEMENT && csb->csb_dbg_info->blrToSrc.find(blr_offset, pos))
 	{
-		MapBlrToSrcItem& i = csb->csb_dbg_info.blrToSrc[pos];
+		MapBlrToSrcItem& i = csb->csb_dbg_info->blrToSrc[pos];
 		StmtNode* stmt = static_cast<StmtNode*>(node);
 
 		stmt->hasLineColumn = true;

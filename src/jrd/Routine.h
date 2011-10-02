@@ -38,6 +38,7 @@ namespace Jrd
 			  name(p),
 			  securityName(p),
 			  statement(NULL),
+			  subRoutine(false),
 			  undefined(false),
 			  implemented(true)
 		{
@@ -49,7 +50,12 @@ namespace Jrd
 		}
 
 	public:
-		USHORT getId() const { return id; }
+		USHORT getId() const
+		{
+			fb_assert(!subRoutine);
+			return id;
+		}
+
 		void setId(USHORT value) { id = value; }
 
 		const Firebird::QualifiedName& getName() const { return name; }
@@ -60,6 +66,9 @@ namespace Jrd
 
 		/*const*/ JrdStatement* getStatement() const { return statement; }
 		void setStatement(JrdStatement* value) { statement = value; }
+
+		bool isSubRoutine() const { return subRoutine; }
+		void setSubRoutine(bool value) { subRoutine = value; }
 
 		bool isUndefined() const { return undefined; }
 		void setUndefined(bool value) { undefined = value; }
@@ -76,6 +85,7 @@ namespace Jrd
 		Firebird::QualifiedName name;		// routine name
 		Firebird::MetaName securityName;	// security class name
 		JrdStatement* statement;			// compiled routine statement
+		bool subRoutine;					// Is this a subroutine?
 		bool undefined;						// Is the packaged routine missing the body/entrypoint?
 		bool implemented;					// routine has its implementation available
 	};

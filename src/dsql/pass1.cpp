@@ -410,8 +410,14 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 	}
 	else if (procNode && (procNode->dsqlName.package.hasData() || procNode->dsqlInputs))
 	{
-		procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
-			procNode->dsqlName);
+		if (procNode->dsqlName.package.isEmpty())
+			procedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
+
+		if (!procedure)
+		{
+			procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
+				procNode->dsqlName);
+		}
 
 		if (!procedure)
 		{
@@ -427,9 +433,13 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 		relation_node = cte;
 	else
 	{
-		relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relation_name);
+		if (procNode && procNode->dsqlName.package.isEmpty())
+			procedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
 
-		if (!relation && procNode)
+		if (!procedure)
+			relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relation_name);
+
+		if (!relation && !procedure && procNode)
 		{
 			procedure = METD_get_procedure(dsqlScratch->getTransaction(),
 				dsqlScratch, procNode->dsqlName);
@@ -1152,6 +1162,8 @@ void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fi
 			name = varNode->dsqlDef->name.c_str();
 		else if ((cursorNode = (*ptr)->as<DeclareCursorNode>()))
 			name = cursorNode->dsqlName.c_str();
+		else if ((*ptr)->as<DeclareSubProcNode>())
+			continue;
 
 		fb_assert(name);
 

@@ -158,6 +158,11 @@ enum IdentityType {
 	IDENT_TYPE_BY_DEFAULT
 };
 
+enum SubRoutineType
+{
+	SUB_ROUTINE_TYPE_PSQL
+};
+
 // UDF Arguments are numbered from 0 to MAX_UDF_ARGUMENTS --
 // argument 0 is reserved for the return-type of the UDF
 

@@ -355,7 +355,7 @@ public:
 		  sourceList(NULL),
 		  targetList(NULL),
 		  in_msg(NULL),
-		  procedure(0),
+		  procedure(NULL),
 		  view(NULL),
 		  context(0)
 	{
@@ -417,7 +417,7 @@ public:
 
 private:
 	NestConst<MessageNode> in_msg;
-	USHORT procedure;
+	jrd_prc* procedure;
 	jrd_rel* view;
 	SSHORT context;
 };

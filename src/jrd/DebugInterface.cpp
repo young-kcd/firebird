@@ -30,7 +30,7 @@ using namespace Firebird;
 
 const UCHAR CURRENT_DBG_INFO_VERSION = UCHAR(1);
 
-void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, Firebird::DbgInfo& dbgInfo)
+void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, DbgInfo& dbgInfo)
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
@@ -44,7 +44,7 @@ void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, Firebird::DbgInfo& dbgI
 	DBG_parse_debug_info(length, temp, dbgInfo);
 }
 
-void DBG_parse_debug_info(ULONG length, const UCHAR* data, Firebird::DbgInfo& dbgInfo)
+void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 {
 	const UCHAR* const end = data + length;
 	bool bad_format = false;
@@ -141,6 +141,52 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, Firebird::DbgInfo& db
 				data += length;
 			}
 			break;
+
+		case fb_dbg_subproc:
+			{
+				if (data >= end)
+				{
+					bad_format = true;
+					break;
+				}
+
+				// argument name string length
+				ULONG length = *data++;
+
+				if (data + length >= end)
+				{
+					bad_format = true;
+					break;
+				}
+
+				MetaName name((const TEXT*) data, length);
+				data += length;
+
+				if (data + 2 >= end)
+				{
+					bad_format = true;
+					break;
+				}
+
+				length = *data++;
+				length |= *data++ << 8;
+				length |= *data++ << 16;
+				length |= *data++ << 24;
+
+				if (data + length >= end)
+				{
+					bad_format = true;
+					break;
+				}
+
+				AutoPtr<DbgInfo> sub(FB_NEW(dbgInfo.getPool()) DbgInfo(dbgInfo.getPool()));
+				DBG_parse_debug_info(length, data, *sub);
+				data += length;
+
+				dbgInfo.subProcs.put(name, sub.release());
+
+				break;
+			}
 
 		case fb_dbg_end:
 			if (data != end)

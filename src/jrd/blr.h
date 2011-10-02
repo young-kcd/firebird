@@ -397,5 +397,8 @@
 #define blr_bool_as_value			(unsigned char) 201
 #define blr_coalesce				(unsigned char) 202
 #define blr_decode					(unsigned char) 203
+#define blr_exec_subproc			(unsigned char) 204
+#define blr_subproc_decl			(unsigned char) 205
+#define blr_subproc					(unsigned char) 206
 
 #endif // JRD_BLR_H

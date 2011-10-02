@@ -56,6 +56,7 @@ public:
 	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x080;
 	static const unsigned FLAG_MERGE				= 0x100;
 	static const unsigned FLAG_FUNCTION				= 0x200;
+	static const unsigned FLAG_SUB_ROUTINE			= 0x400;
 
 public:
 	DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
@@ -102,7 +103,8 @@ public:
 		  ctes(p),
 		  cteAliases(p),
 		  currCteAlias(NULL),
-		  psql(false)
+		  psql(false),
+		  subProcedures(p)
 	{
 		domainValue.clear();
 	}
@@ -219,6 +221,25 @@ public:
 	bool isPsql() const { return psql; }
 	void setPsql(bool value) { psql = value; }
 
+	dsql_prc* getSubProcedure(const Firebird::MetaName& name)
+	{
+		dsql_prc* subProc = NULL;
+		subProcedures.get(name, subProc);
+		return subProc;
+	}
+
+	void putSubProcedure(dsql_prc* subProc)
+	{
+		if (subProcedures.exist(subProc->prc_name.identifier))
+		{
+			using namespace Firebird;
+			status_exception::raise(
+				Arg::Gds(isc_dsql_duplicate_spec) << subProc->prc_name.identifier);
+		}
+
+		subProcedures.put(subProc->prc_name.identifier, subProc);
+	}
+
 private:
 	dsql_nod* pass1RecursiveCte(dsql_nod* input);
 	dsql_nod* pass1RseIsRecursive(dsql_nod* input);
@@ -273,6 +294,7 @@ private:
 	Firebird::HalfStaticArray<const Firebird::string*, 4> cteAliases; // CTE aliases in recursive members
 	const Firebird::string* const* currCteAlias;
 	bool psql;
+	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, dsql_prc*> > subProcedures;
 };
 
 class PsqlChanger

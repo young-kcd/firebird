@@ -516,11 +516,14 @@ namespace Firebird
 	// be explicitly passed in all constructors of such object.
 	class PermanentStorage
 	{
-	private:
-		MemoryPool& pool;
 	protected:
 		explicit PermanentStorage(MemoryPool& p) : pool(p) { }
+
+	public:
 		MemoryPool& getPool() const { return pool; }
+
+	private:
+		MemoryPool& pool;
 	};
 
 	// Automatic storage is used as base class for objects,

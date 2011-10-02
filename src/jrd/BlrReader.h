@@ -103,6 +103,16 @@ public:
 		return high * 256 + low;
 	}
 
+	ULONG getLong()
+	{
+		const UCHAR b1 = getByte();
+		const UCHAR b2 = getByte();
+		const UCHAR b3 = getByte();
+		const UCHAR b4 = getByte();
+
+		return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+	}
+
 	UCHAR checkByte(UCHAR expected)
 	{
 		using namespace Firebird;

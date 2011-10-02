@@ -1359,12 +1359,12 @@ static void stuff_stack_trace(const jrd_req* request)
 		}
 		else if (statement->procedure)
 		{
-			name = "At procedure '";
+			name = statement->parentStatement ? "At sub procedure '" : "At procedure '";
 			name += statement->procedure->getName().toString().c_str();
 		}
 		else if (statement->function)
 		{
-			name = "At function '";
+			name = statement->parentStatement ? "At sub function '" : "At function '";
 			name += statement->function->getName().toString().c_str();
 		}
 

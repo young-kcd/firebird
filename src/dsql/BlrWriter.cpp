@@ -22,7 +22,11 @@
 #include "consts_pub.h"
 #include "dyn_consts.h"
 #include "gen/iberror.h"
+#include "../jrd/jrd.h"
+#include "../jrd/exe.h"
 #include "../dsql/BlrWriter.h"
+#include "../dsql/StmtNodes.h"
+#include "../dsql/dsql.h"
 #include "../common/common.h"
 #include "../jrd/blr.h"
 #include "../dsql/errd_proto.h"
@@ -184,6 +188,25 @@ void BlrWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* name)
 	debugData.add(len);
 
 	debugData.add(reinterpret_cast<const UCHAR*>(name), len);
+}
+
+void BlrWriter::putDebugSubProcedure(DeclareSubProcNode* subProcNode)
+{
+	debugData.add(fb_dbg_subproc);
+
+	dsql_prc* subProc = subProcNode->dsqlProcedure;
+	const MetaName& name = subProc->prc_name.identifier;
+	USHORT len = MIN(name.length(), MAX_UCHAR);
+
+	debugData.add(len);
+	debugData.add(reinterpret_cast<const UCHAR*>(name.c_str()), len);
+
+	HalfStaticArray<UCHAR, 128>& subDebugData = subProcNode->blockScratch->debugData;
+	debugData.add(UCHAR(subDebugData.getCount()));
+	debugData.add(UCHAR(subDebugData.getCount() >> 8));
+	debugData.add(UCHAR(subDebugData.getCount() >> 16));
+	debugData.add(UCHAR(subDebugData.getCount() >> 24));
+	debugData.add(subDebugData.begin(), ULONG(subDebugData.getCount()));
 }
 
 void BlrWriter::appendDebugInfo()

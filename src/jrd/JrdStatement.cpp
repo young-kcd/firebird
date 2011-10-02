@@ -29,6 +29,7 @@
 #include "../jrd/val.h"
 #include "../jrd/align.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/Function.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/lck_proto.h"
@@ -49,6 +50,8 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  accessList(*p),
 	  resources(*p),
 	  triggerName(*p),
+	  parentStatement(NULL),
+	  subStatements(*p),
 	  fors(*p),
 	  invariants(*p),
 	  blr(*p),
@@ -56,106 +59,165 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  mapItemInfo(*p),
 	  interface(NULL)
 {
-	topNode = csb->csb_node;
-	accessList = csb->csb_access;
-	externalList = csb->csb_external;
-	mapFieldInfo.takeOwnership(csb->csb_map_field_info);
-	resources = csb->csb_resources; // Assign array contents
-	impureSize = csb->csb_impure;
-
-	if (csb->csb_g_flags & csb_blr_version4)
-		flags |= FLAG_VERSION4;
-
-	// Take out existence locks on resources used in statement. This is
-	// a little complicated since relation locks MUST be taken before
-	// index locks.
-
-	for (Resource* resource = resources.begin(); resource != resources.end(); ++resource)
+	try
 	{
-		switch (resource->rsc_type)
+		GenericMap<Left<MetaName, DeclareSubProcNode*> >::Accessor subProcAccessor(&csb->subProcedures);
+
+		for (bool found = subProcAccessor.getFirst(); found; found = subProcAccessor.getNext())
 		{
-			case Resource::rsc_relation:
+			DeclareSubProcNode* subNode = subProcAccessor.current()->second;
+			jrd_prc* subProc = subNode->procedure;
+			CompilerScratch*& subCsb = subNode->subCsb;
+
+			JrdStatement* subStatement = JrdStatement::makeStatement(tdbb, subCsb, true);
+			subStatement->parentStatement = this;
+			subProc->setStatement(subStatement);
+
+			// Move dependencies and permissions from the sub routine to the parent.
+
+			for (CompilerScratch::Dependency* dependency = subCsb->csb_dependencies.begin();
+				 dependency != subCsb->csb_dependencies.end();
+				 ++dependency)
 			{
-				jrd_rel* relation = resource->rsc_rel;
-				MET_post_existence(tdbb, relation);
-				break;
+				csb->csb_dependencies.push(*dependency);
 			}
 
-			case Resource::rsc_index:
+			for (ExternalAccess* access = subCsb->csb_external.begin();
+				 access != subCsb->csb_external.end();
+				 ++access)
 			{
-				jrd_rel* relation = resource->rsc_rel;
-				IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
-				if (index)
+				size_t i;
+				if (!csb->csb_external.find(*access, i))
+					csb->csb_external.insert(i, *access);
+			}
+
+			for (AccessItem* access = subCsb->csb_access.begin();
+				 access != subCsb->csb_access.end();
+				 ++access)
+			{
+				size_t i;
+				if (!csb->csb_access.find(*access, i))
+					csb->csb_access.insert(i, *access);
+			}
+
+			delete subCsb;
+			subCsb = NULL;
+
+			subStatements.add(subStatement);
+		}
+
+		topNode = csb->csb_node;
+		accessList = csb->csb_access;
+		externalList = csb->csb_external;
+		mapFieldInfo.takeOwnership(csb->csb_map_field_info);
+		resources = csb->csb_resources; // Assign array contents
+		impureSize = csb->csb_impure;
+
+		if (csb->csb_g_flags & csb_blr_version4)
+			flags |= FLAG_VERSION4;
+
+		// Take out existence locks on resources used in statement. This is
+		// a little complicated since relation locks MUST be taken before
+		// index locks.
+
+		for (Resource* resource = resources.begin(); resource != resources.end(); ++resource)
+		{
+			switch (resource->rsc_type)
+			{
+				case Resource::rsc_relation:
 				{
-					++index->idl_count;
-					if (index->idl_count == 1) {
-						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
-					}
+					jrd_rel* relation = resource->rsc_rel;
+					MET_post_existence(tdbb, relation);
+					break;
 				}
-				break;
-			}
 
-			case Resource::rsc_procedure:
-			{
-				jrd_prc* procedure = resource->rsc_prc;
-				procedure->prc_use_count++;
+				case Resource::rsc_index:
+				{
+					jrd_rel* relation = resource->rsc_rel;
+					IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
+					if (index)
+					{
+						++index->idl_count;
+						if (index->idl_count == 1) {
+							LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
+						}
+					}
+					break;
+				}
+
+				case Resource::rsc_procedure:
+				{
+					jrd_prc* procedure = resource->rsc_prc;
+					procedure->prc_use_count++;
 
 #ifdef DEBUG_PROCS
-				{
-					string buffer;
-					buffer.printf(
-						"Called from JrdStatement::makeRequest:\n\t Incrementing use count of %s\n",
-						procedure->getName()->toString().c_str());
-					JRD_print_procedure_info(tdbb, buffer.c_str());
-				}
+					{
+						string buffer;
+						buffer.printf(
+							"Called from JrdStatement::makeRequest:\n\t Incrementing use count of %s\n",
+							procedure->getName()->toString().c_str());
+						JRD_print_procedure_info(tdbb, buffer.c_str());
+					}
 #endif
 
-				break;
+					break;
+				}
+
+				case Resource::rsc_collation:
+				{
+					Collation* coll = resource->rsc_coll;
+					coll->incUseCount(tdbb);
+					break;
+				}
+
+				case Resource::rsc_function:
+					resource->rsc_fun->addRef();
+					break;
+
+				default:
+					BUGCHECK(219);		// msg 219 request of unknown resource
 			}
+		}
 
-			case Resource::rsc_collation:
-			{
-				Collation* coll = resource->rsc_coll;
-				coll->incUseCount(tdbb);
-				break;
-			}
+		// make a vector of all used RSEs
+		fors = csb->csb_fors;
 
-			case Resource::rsc_function:
-				resource->rsc_fun->addRef();
-				break;
+		// make a vector of all invariant-type nodes, so that we will
+		// be able to easily reinitialize them when we restart the request
+		invariants.join(csb->csb_invariants);
 
-			default:
-				BUGCHECK(219);		// msg 219 request of unknown resource
+		rpbsSetup.grow(csb->csb_n_stream);
+
+		CompilerScratch::csb_repeat* tail = csb->csb_rpt.begin();
+		const CompilerScratch::csb_repeat* const streams_end = tail + csb->csb_n_stream;
+
+		for (record_param* rpb = rpbsSetup.begin(); tail < streams_end; ++rpb, ++tail)
+		{
+			// fetch input stream for update if all booleans matched against indices
+			if ((tail->csb_flags & csb_update) && !(tail->csb_flags & csb_unmatched))
+				 rpb->rpb_stream_flags |= RPB_s_update;
+
+			// if no fields are referenced and this stream is not intended for update,
+			// mark the stream as not requiring record's data
+			if (!tail->csb_fields && !(tail->csb_flags & csb_update))
+				 rpb->rpb_stream_flags |= RPB_s_no_data;
+
+			rpb->rpb_relation = tail->csb_relation;
+
+			delete tail->csb_fields;
+			tail->csb_fields = NULL;
 		}
 	}
-
-	// make a vector of all used RSEs
-	fors = csb->csb_fors;
-
-	// make a vector of all invariant-type nodes, so that we will
-	// be able to easily reinitialize them when we restart the request
-	invariants.join(csb->csb_invariants);
-
-	rpbsSetup.grow(csb->csb_n_stream);
-
-	CompilerScratch::csb_repeat* tail = csb->csb_rpt.begin();
-	const CompilerScratch::csb_repeat* const streams_end = tail + csb->csb_n_stream;
-
-	for (record_param* rpb = rpbsSetup.begin(); tail < streams_end; ++rpb, ++tail)
+	catch (Exception&)
 	{
-		// fetch input stream for update if all booleans matched against indices
-		if ((tail->csb_flags & csb_update) && !(tail->csb_flags & csb_unmatched))
-			 rpb->rpb_stream_flags |= RPB_s_update;
+		for (JrdStatement** subStatement = subStatements.begin();
+			 subStatement != subStatements.end();
+			 ++subStatement)
+		{
+			(*subStatement)->release(tdbb);
+		}
 
-		// if no fields are referenced and this stream is not intended for update,
-		// mark the stream as not requiring record's data
-		if (!tail->csb_fields && !(tail->csb_flags & csb_update))
-			 rpb->rpb_stream_flags |= RPB_s_no_data;
-
-		rpb->rpb_relation = tail->csb_relation;
-
-		delete tail->csb_fields;
-		tail->csb_fields = NULL;
+		throw;
 	}
 }
 
@@ -236,6 +298,17 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 	} // try
 	catch (const Exception& ex)
 	{
+		if (statement)
+		{
+			// Release sub statements.
+			for (JrdStatement** subStatement = statement->subStatements.begin();
+				 subStatement != statement->subStatements.end();
+				 ++subStatement)
+			{
+				(*subStatement)->release(tdbb);
+			}
+		}
+
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		tdbb->setRequest(old_request);
 		ERR_punt();
@@ -354,7 +427,7 @@ jrd_req* JrdStatement::getRequest(thread_db* tdbb, USHORT level)
 }
 
 // Check that we have enough rights to access all resources this request touches including
-// resources it used indirectecty via procedures or triggers.
+// resources it used indirectely via procedures or triggers.
 void JrdStatement::verifyAccess(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
@@ -408,6 +481,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			continue;
 		}
 
+		fb_assert(routine);
 		if (!routine->getStatement())
 			continue;
 
@@ -485,7 +559,15 @@ void JrdStatement::release(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	// release existence locks on references
+	// Release sub statements.
+	for (JrdStatement** subStatement = subStatements.begin();
+		 subStatement != subStatements.end();
+		 ++subStatement)
+	{
+		(*subStatement)->release(tdbb);
+	}
+
+	// Release existence locks on references.
 
 	for (Resource* resource = resources.begin(); resource != resources.end(); ++resource)
 	{
@@ -537,8 +619,12 @@ void JrdStatement::release(thread_db* tdbb)
 
 	sqlText = NULL;
 
-	Jrd::Attachment* const att = tdbb->getAttachment();
-	att->deletePool(pool);
+	// Sub statement pool is the same of the main statement, so don't delete it.
+	if (!parentStatement)
+	{
+		Jrd::Attachment* const att = tdbb->getAttachment();
+		att->deletePool(pool);
+	}
 }
 
 // Check that we have enough rights to access all resources this list of triggers touches.

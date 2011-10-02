@@ -381,6 +381,9 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 			CallerName callerName;
 			const Routine* routine;
 
+			if (statement && statement->parentStatement)
+				statement = statement->parentStatement;
+
 			if (statement && statement->triggerName.hasData())
 				tran->getHandle()->tra_caller_name = CallerName(obj_trigger, statement->triggerName);
 			else if (statement && (routine = statement->getRoutine()) &&

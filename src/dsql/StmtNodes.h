@@ -33,6 +33,7 @@
 namespace Jrd {
 
 class CompoundStmtNode;
+class ExecBlockNode;
 class RelationSourceNode;
 
 typedef Firebird::Pair<Firebird::NonPooled<dsql_nod*, Firebird::Array<dsql_nod*>*> > ReturningClause;
@@ -304,6 +305,52 @@ public:
 };
 
 
+class DeclareSubProcNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBPROC>
+{
+public:
+	explicit DeclareSubProcNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBPROC>(pool),
+		  name(pool, aName),
+		  dsqlBlock(NULL),
+		  blockScratch(NULL),
+		  dsqlProcedure(NULL),
+		  blrStart(NULL),
+		  blrLength(0),
+		  subCsb(NULL),
+		  procedure(NULL)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual DeclareSubProcNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+
+	virtual DeclareSubProcNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual DeclareSubProcNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+
+private:
+	static void parseParameters(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+		Firebird::Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount = NULL);
+
+	void genParameters(DsqlCompilerScratch* dsqlScratch,
+		const Firebird::Array<ParameterClause>& paramArray);
+
+public:
+	Firebird::MetaName name;
+	ExecBlockNode* dsqlBlock;
+	DsqlCompilerScratch* blockScratch;
+	dsql_prc* dsqlProcedure;
+	const UCHAR* blrStart;
+	ULONG blrLength;
+	CompilerScratch* subCsb;
+	jrd_prc* procedure;
+};
+
+
 class DeclareVariableNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>
 {
 public:
@@ -419,6 +466,7 @@ public:
 		  dsqlName(pool, aDsqlName),
 		  dsqlInputs(aDsqlInputs),
 		  dsqlOutputs(aDsqlOutputs),
+		  dsqlProcedure(NULL),
 		  inputSources(NULL),
 		  inputTargets(NULL),
 		  inputMessage(NULL),
@@ -447,6 +495,7 @@ public:
 	Firebird::QualifiedName dsqlName;
 	dsql_nod* dsqlInputs;
 	Firebird::Array<dsql_nod*>* dsqlOutputs;
+	dsql_prc* dsqlProcedure;
 	NestConst<ValueListNode> inputSources;
 	NestConst<ValueListNode> inputTargets;
 	NestConst<MessageNode> inputMessage;

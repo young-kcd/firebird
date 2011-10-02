@@ -261,6 +261,7 @@ const int op_byte_opt_verb	= 23;
 const int op_exec_stmt		= 24;
 const int op_derived_expr	= 25;
 const int op_partition_args	= 26;
+const int op_subproc_decl	= 27;
 
 static const UCHAR
 	// generic print formats
@@ -336,7 +337,8 @@ static const UCHAR
 	window[] = {op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
 	partition_by[] = {op_byte, op_line, op_partition_args, op_verb, 0},
 	decode[] = { op_line, op_verb, op_indent, op_byte, op_line, op_args, op_indent, op_byte,
-				 op_line, op_args, 0};
+				 op_line, op_args, 0},
+	subproc_decl[] = { op_subproc_decl, 0};
 
 
 #include "../jrd/blp.h"
@@ -3492,6 +3494,87 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			}
 			blr_print_verb(control, level);
 			break;
+
+		case op_subproc_decl:
+		{
+			n = blr_print_byte(control);
+			while (--n >= 0)
+				blr_print_char(control);
+
+			offset = blr_print_line(control, (SSHORT) offset);
+			blr_indent(control, level);
+			n = blr_print_byte(control);
+
+			if (n != SUB_ROUTINE_TYPE_PSQL)
+				blr_error(control, "*** unknown subroutine type %d ***", (int) n);
+
+			offset = blr_print_line(control, (SSHORT) offset);
+			blr_indent(control, level);
+			n = blr_print_byte(control);
+
+			offset = blr_print_line(control, (SSHORT) offset);
+			blr_indent(control, level);
+
+			for (unsigned i = 0; i < 2; ++i)
+			{
+				USHORT args = blr_print_word(control);
+				offset = blr_print_line(control, (SSHORT) offset);
+				blr_indent(control, level);
+
+				while (args-- > 0)
+				{
+					n = blr_print_byte(control);
+					while (--n >= 0)
+						blr_print_char(control);
+					offset = blr_print_line(control, (SSHORT) offset);
+					blr_indent(control, level);
+
+					n = blr_print_byte(control);
+
+					if (n == 1)
+					{
+						offset = blr_print_line(control, (SSHORT) offset);
+						blr_print_verb(control, level);
+					}
+					else if (n != 0)
+						blr_error(control, "*** unknown parameter default indicator ***");
+
+					offset = blr_print_line(control, (SSHORT) offset);
+					blr_indent(control, level);
+				}
+			}
+
+			blr_print_byte(control);
+			blr_print_byte(control);
+			blr_print_byte(control);
+			blr_print_byte(control);
+
+			offset = blr_print_line(control, (SSHORT) offset);
+			blr_indent(control, level);
+
+			n = control->ctl_blr_reader.getByte();
+
+			if (n != blr_version4 && n != blr_version5)
+				blr_error(control, "*** blr version %d is not supported ***", (int) n);
+
+			blr_format(control, (n == blr_version4) ? "blr_version4," : "blr_version5,");
+
+			offset = blr_print_line(control, (SSHORT) offset);
+
+			blr_print_verb(control, level);
+
+			blr_indent(control, level);
+
+			n = control->ctl_blr_reader.getByte();
+
+			if (n != blr_eoc)
+				blr_error(control, "*** expected end of command, encounted %d ***", (int) n);
+
+			blr_format(control, "blr_eoc");
+
+			offset = blr_print_line(control, (SSHORT) offset);
+			break;
+		}
 
 		default:
 			fb_assert(false);

@@ -563,7 +563,7 @@ void Trigger::compile(thread_db* tdbb)
 				csb->csb_g_flags |= par_flags;
 
 				if (!dbg_blob_id.isEmpty())
-					DBG_parse_debug_info(tdbb, &dbg_blob_id, csb->csb_dbg_info);
+					DBG_parse_debug_info(tdbb, &dbg_blob_id, *csb->csb_dbg_info);
 
 				PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &statement,
 					(relation ? true : false), par_flags);

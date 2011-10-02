@@ -644,6 +644,7 @@
 #define fb_dbg_map_src2blr			2
 #define fb_dbg_map_varname			3
 #define fb_dbg_map_argument			4
+#define fb_dbg_subproc				5
 
 // sub code for fb_dbg_map_argument
 #define fb_dbg_arg_input			0

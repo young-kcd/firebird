@@ -30,6 +30,7 @@
 namespace Jrd {
 
 class dsql_nod;
+class DeclareSubProcNode;
 
 
 // BLR/DYN writer.
@@ -131,6 +132,7 @@ public:
 	void putDebugSrcInfo(USHORT, USHORT);
 	void putDebugVariable(USHORT, const Firebird::MetaName&);
 	void putDebugArgument(UCHAR, USHORT, const TEXT*);
+	void putDebugSubProcedure(DeclareSubProcNode* subProcNode);
 	void appendDebugInfo();
 
 	BlrData& getBlrData() { return blrData; }

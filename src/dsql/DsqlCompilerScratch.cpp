@@ -295,6 +295,13 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 			parameter->dsqlPass(this);
 			parameter->genBlr(this);
 		}
+		else if (StmtNode::is<DeclareSubProcNode>(parameter))
+		{
+			parameter->dsqlPass(this);
+			parameter->genBlr(this);
+		}
+		else
+			fb_assert(false);
 	}
 }
 

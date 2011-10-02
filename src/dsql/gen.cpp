@@ -310,7 +310,13 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 	}
 	else
 	{
-		scratch->appendUChar(blr_begin);
+		bool block = statement->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK ||
+			statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK;
+
+		// To parse sub-routines messages, they must not have that begin...end pair.
+		// And since it appears to be unnecessary for execute block too, do not generate them.
+		if (!block)
+			scratch->appendUChar(blr_begin);
 
 		GEN_hidden_variables(scratch);
 
@@ -343,7 +349,9 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 				GEN_statement(scratch, node);
 			}
 		}
-		scratch->appendUChar(blr_end);
+
+		if (!block)
+			scratch->appendUChar(blr_end);
 	}
 
 	scratch->appendUChar(blr_eoc);
