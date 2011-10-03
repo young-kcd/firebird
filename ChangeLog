@@ -1,3 +1,51 @@
+ 2011-10-02 22:11  asfernandes 
+   M src/common/classes/alloc.h
+   M src/dsql/BlrWriter.cpp
+   M src/dsql/BlrWriter.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/consts_pub.h
+   M src/jrd/BlrReader.h
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/DebugInterface.h
+   M src/jrd/Function.epp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/Routine.h
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/jrd/constants.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+   M src/yvalve/gds.cpp
+Feature CORE-1288 - Sub Procedures.
+They're very simple for now. No access to parent variables nor to call neighbour procedures.
+Tests at http://firebird.cvs.sourceforge.net/viewvc/firebird/fbtcs/GTCS/tests/FB_SQL_SUBPROC_1.output.
+
+ 2011-10-02 10:19  hvlad 
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/vio.cpp
+Protect system attachments list with dedicated sync object. It prevents deadlocks with common sync object on process shutdown.
+
  2011-10-01 21:38  asfernandes 
    M src/jrd/scl.epp
 Fix ACL checking. Alex, please review.
