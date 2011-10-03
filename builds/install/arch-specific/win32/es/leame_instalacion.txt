@@ -14,7 +14,7 @@ encuentran familiarizados con Firebird 2.1. Si Ud. se
 encuentra evaluando Firebird $MAJOR.$MINOR como parte de la
 migración desde Fb 2.1, le recomendamos revisar la
 documentación de Fb $MAJOR.$MINOR para tener una idea de los
-cambios realizados entre 2.1 y 2.1.
+cambios realizados entre 2.1 y $MAJOR.$MINOR.
 
 
 Contenido

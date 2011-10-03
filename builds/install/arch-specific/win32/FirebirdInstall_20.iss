@@ -293,6 +293,7 @@ SetupLogging=yes
 Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#GenDir}\installation_readme.txt; InfoAfterFile: {#GenDir}\readme.txt;
 #ifdef i18n
 Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#GenDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#GenDir}\ba\ProcitajMe.txt;
+Name: cz; MessagesFile: compiler:Languages\Czech.isl; InfoBeforeFile: {#GenDir}\cz\instalace_ctime.txt; InfoAfterFile: {#GenDir}\cz\ctime.txt;
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#GenDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#GenDir}\fr\lisezmoi.txt;
 Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#GenDir}\de\installation_liesmich.txt; InfoAfterFile: {#GenDir}\de\liesmich.txt;
 Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#GenDir}\es\leame_instalacion.txt; InfoAfterFile: {#GenDir}\es\leame.txt;
@@ -308,6 +309,7 @@ Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#GenDir
 en.BeveledLabel=English
 #ifdef i18n
 ba.BeveledLabel=Bosanski
+cz.BeveledLabel=Czech
 fr.BeveledLabel=Français
 de.BeveledLabel=Deutsch
 es.BeveledLabel=Español
@@ -323,6 +325,7 @@ ru.BeveledLabel=Ðóññêèé
 #include "custom_messages.inc"
 #ifdef i18n
 #include "ba\custom_messages_ba.inc"
+#include "cz\custom_messages_cz.inc"
 #include "fr\custom_messages_fr.inc"
 #include "de\custom_messages_de.inc"
 #include "es\custom_messages_es.inc"
@@ -460,6 +463,7 @@ Source: {#GenDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Fla
 #ifdef i18n
 ;Translated files
 Source: {#GenDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+Source: {#GenDir}\cz\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: cz;
 Source: {#GenDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
 Source: {#GenDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
 Source: {#GenDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;

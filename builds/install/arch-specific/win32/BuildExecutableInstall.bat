@@ -47,7 +47,9 @@ set /A FBBUILD_PACKAGE_NUMBER+=1
 
 ::If a suffix is defined (usually for an RC) ensure it is prefixed correctly.
 if defined FBBUILD_FILENAME_SUFFIX (
-if not %FBBUILD_FILENAME_SUFFIX:~0,1% == _ (set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
+if not "%FBBUILD_FILENAME_SUFFIX:~0,1%"=="_" (
+(set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
+)
 )
 
 :: See what we have on the command line
@@ -215,7 +217,7 @@ set FBBUILD_FB21_CUR_VER=2.1.4
 :: Now fix up the major.minor version strings in the readme files.
 :: We place output in %FB_GEN_DIR%\readmes
 @if not exist %FB_GEN_DIR%\readmes (@mkdir %FB_GEN_DIR%\readmes)
-@for %%d in (ba de es fr hu it pl pt ru si ) do (
+@for %%d in (ba cz de es fr hu it pl pt ru si ) do (
   @if not exist %FB_GEN_DIR%\readmes\%%d (@mkdir %FB_GEN_DIR%\readmes\%%d)
 )
 
@@ -227,7 +229,7 @@ set FBBUILD_FB21_CUR_VER=2.1.4
 	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
 )
 
-@for %%d in (ba de es fr hu it pl pt ru si ) do (
+@for %%d in (ba cz de es fr hu it pl pt ru si ) do (
   @pushd %%d
   @for /F %%f in ( '@dir /B /A-D *.txt'  ) do (
 	@echo   Processing version strings in %%d\%%f
