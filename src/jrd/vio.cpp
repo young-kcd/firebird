@@ -1964,7 +1964,7 @@ bool VIO_get_current(thread_db* tdbb,
 					jrd_tra* transaction,
 					MemoryPool* pool,
 					bool foreign_key,
-					bool &has_old_values)
+					bool &rec_tx_active)
 {
 /**************************************
  *
@@ -1996,7 +1996,7 @@ bool VIO_get_current(thread_db* tdbb,
 	}
 #endif
 
-	has_old_values = false;
+	rec_tx_active = false;
 
 	while (true)
 	{
@@ -2149,6 +2149,10 @@ bool VIO_get_current(thread_db* tdbb,
 			return true;
 
 		case tra_active:
+			// clear lock error from status vector
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+			rec_tx_active = true;
+
 			// 1. if record just inserted
 			//	  then FK can't reference it but PK must check it's new value
 			// 2. if record just deleted
@@ -2164,9 +2168,12 @@ bool VIO_get_current(thread_db* tdbb,
 
 			if (foreign_key)
 			{
-				// clear lock error from status vector
-				fb_utils::init_status(tdbb->tdbb_status_vector);
-				return !(rpb->rpb_flags & rpb_uk_modified);
+				if (!(rpb->rpb_flags & rpb_uk_modified))
+				{
+					rec_tx_active = false;
+					return true;
+				}
+				return false;
 			}
 
 			return true;

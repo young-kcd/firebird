@@ -995,13 +995,9 @@ static idx_e check_duplicates(thread_db* tdbb,
 
 	idx_e result = idx_e_ok;
 	index_desc* insertion_idx = insertion->iib_descriptor;
-	record_param rpb, old_rpb;
+	record_param rpb;
 	rpb.rpb_relation = insertion->iib_relation;
 	rpb.rpb_record = NULL;
-	// rpb.getWindow(tdbb).win_flags = 0; redundant.
-
-	old_rpb.rpb_relation = insertion->iib_relation;
-	old_rpb.rpb_record = NULL;
 
 	jrd_rel* const relation_1 = insertion->iib_relation;
 	Firebird::HalfStaticArray<UCHAR, 256> tmp;
@@ -1011,49 +1007,19 @@ static idx_e check_duplicates(thread_db* tdbb,
 
 	if (accessor.getFirst())
 	do {
-		bool has_old_values;
+		bool rec_tx_active;
 		const bool is_fk = (record_idx->idx_flags & idx_foreign) != 0;
 
 		rpb.rpb_number.setValue(accessor.current());
 
 		if (rpb.rpb_number != insertion->iib_number &&
 			VIO_get_current(tdbb, &rpb, insertion->iib_transaction, tdbb->getDefaultPool(),
-							is_fk, has_old_values) )
+							is_fk, rec_tx_active) )
 		{
-			// dimitr: we shouldn't ignore status exceptions which take place
-			//		   inside the lock manager. Namely, they are: isc_deadlock,
-			//		   isc_lock_conflict, isc_lock_timeout. Otherwise we may
-			//		   have logically corrupted database as a result. If any
-			//		   of the mentioned errors appeared, it means that there's
-			//		   an active transaction out there which has modified our
-			//		   record. For "nowait" transaction, it means we have
-			//		   an update conflict.
-			//
-			// was: if (rpb.rpb_flags & rpb_deleted) {
-			//
-			// P.S. I think the check for a status vector should be enough,
-			//      but for sure let's keep the old one as well.
-			//														2003.05.27
+			// hvlad: if record's transaction is still active, we should consider 
+			// it as present and prevent duplicates
 
-			const bool lock_error =
-				(tdbb->tdbb_status_vector[1] == isc_deadlock ||
-				tdbb->tdbb_status_vector[1] == isc_lock_conflict ||
-				tdbb->tdbb_status_vector[1] == isc_lock_timeout);
-			// the above errors are not thrown but returned silently
-
-			if (lock_error)
-			{
-				fb_utils::init_status(tdbb->tdbb_status_vector);
-			}
-
-			if (rpb.rpb_flags & rpb_deleted || lock_error)
-			{
-				result = idx_e_duplicate;
-				break;
-			}
-
-			const bool has_cur_values = !(rpb.rpb_flags & rpb_deleted);
-			if (!has_cur_values && !has_old_values)
+			if (rpb.rpb_flags & rpb_deleted || rec_tx_active)
 			{
 				result = idx_e_duplicate;
 				break;
@@ -1080,41 +1046,12 @@ static idx_e check_duplicates(thread_db* tdbb,
 				memmove(desc1.dsc_address, desc_idx->dsc_address, desc_idx->dsc_length);
 
 				bool flag_rec = false;
-				const dsc* desc_rec = has_cur_values ?
-					BTR_eval_expression(tdbb, insertion_idx, rpb.rpb_record, flag_rec) : NULL;
+				const dsc* desc_rec = BTR_eval_expression(tdbb, insertion_idx, rpb.rpb_record, flag_rec);
 
-				const bool equal_cur = has_cur_values && flag_rec && flag_idx &&
-					(MOV_compare(desc_rec, &desc1) == 0);
-
-				if (!is_fk && equal_cur)
+				if (flag_rec && flag_idx && (MOV_compare(desc_rec, &desc1) == 0))
 				{
 					result = idx_e_duplicate;
 					break;
-				}
-
-				if (has_old_values)
-				{
-					desc_rec = BTR_eval_expression(tdbb, insertion_idx, old_rpb.rpb_record, flag_rec);
-
-					const bool equal_old = flag_rec && flag_idx &&
-						(MOV_compare(desc_rec, &desc1) == 0);
-
-					if (is_fk)
-					{
-						if (equal_cur && equal_old)
-						{
-							result = idx_e_duplicate;
-							break;
-						}
-					}
-					else
-					{
-						if (equal_cur || equal_old)
-						{
-							result = idx_e_duplicate;
-							break;
-						}
-					}
 				}
 			}
 			else
@@ -1123,48 +1060,19 @@ static idx_e check_duplicates(thread_db* tdbb,
 				USHORT i;
 				for (i = 0; i < insertion_idx->idx_count; i++)
 				{
-					bool flag_cur = false;
-					USHORT field_id = record_idx->idx_rpt[i].idx_field;
+					USHORT field_id = insertion_idx->idx_rpt[i].idx_field;
+					// In order to "map a null to a default" value (in EVL_field()),
+					// the relation block is referenced.
+					// Reference: Bug 10116, 10424
+					const bool flag_rec = EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
+
+					field_id = record_idx->idx_rpt[i].idx_field;
 					const bool flag_idx = EVL_field(relation_2, record, field_id, &desc2);
 
-					if (has_cur_values)
-					{
-						field_id = insertion_idx->idx_rpt[i].idx_field;
-						// In order to "map a null to a default" value (in EVL_field()),
-						// the relation block is referenced.
-						// Reference: Bug 10116, 10424
-						flag_cur = EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
-					}
-
-					const bool not_equal_cur = !has_cur_values ||
-						has_cur_values &&
-							( (flag_cur != flag_idx) || (MOV_compare(&desc1, &desc2) != 0) );
-
-					if ((is_fk || !has_old_values) && not_equal_cur)
+					if (flag_rec != flag_idx || (MOV_compare(&desc1, &desc2) != 0))
 						break;
 
-					if (has_old_values)
-					{
-						field_id = insertion_idx->idx_rpt[i].idx_field;
-						const bool flag_old =
-							EVL_field(relation_1, old_rpb.rpb_record, field_id, &desc1);
-
-						const bool not_equal_old =
-							(flag_old != flag_idx || MOV_compare(&desc1, &desc2) != 0);
-
-						if (is_fk)
-						{
-							if (not_equal_cur || not_equal_old)
-								break;
-						}
-						else
-						{
-							if (not_equal_cur && not_equal_old)
-								break;
-						}
-					}
-
-					all_nulls = all_nulls && !flag_cur && !flag_idx;
+					all_nulls = all_nulls && !flag_rec && !flag_idx;
 				}
 
 				if (i >= insertion_idx->idx_count && !all_nulls)
@@ -1177,7 +1085,6 @@ static idx_e check_duplicates(thread_db* tdbb,
 	} while (accessor.getNext());
 
 	delete rpb.rpb_record;
-	delete old_rpb.rpb_record;
 
 	return result;
 }
