@@ -562,27 +562,24 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 			count = context->ctx_proc_inputs->nod_count;
 		}
 
-		if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_PROCEDURE))
+		if (count > procedure->prc_in_count ||
+			count < procedure->prc_in_count - procedure->prc_def_count)
 		{
-			if (count > procedure->prc_in_count ||
-				count < procedure->prc_in_count - procedure->prc_def_count)
-			{
-				ERRD_post(Arg::Gds(isc_prcmismat) << Arg::Str(procNode->dsqlName.toString()));
-			}
+			ERRD_post(Arg::Gds(isc_prcmismat) << Arg::Str(procNode->dsqlName.toString()));
+		}
 
-			if (count)
-			{
-				// Initialize this stack variable, and make it look like a node
-				AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*tdbb->getDefaultPool(), 0) dsql_nod);
-				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
+		if (count)
+		{
+			// Initialize this stack variable, and make it look like a node
+			AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*tdbb->getDefaultPool(), 0) dsql_nod);
+			dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
 
-				for (dsql_fld* field = procedure->prc_inputs; *input; ++input, field = field->fld_next)
-				{
-					DEV_BLKCHK(field, dsql_type_fld);
-					DEV_BLKCHK(*input, dsql_type_nod);
-					MAKE_desc_from_field(&desc_node->nod_desc, field);
-					PASS1_set_parameter_type(dsqlScratch, *input, desc_node, false);
-				}
+			for (dsql_fld* field = procedure->prc_inputs; *input; ++input, field = field->fld_next)
+			{
+				DEV_BLKCHK(field, dsql_type_fld);
+				DEV_BLKCHK(*input, dsql_type_nod);
+				MAKE_desc_from_field(&desc_node->nod_desc, field);
+				PASS1_set_parameter_type(dsqlScratch, *input, desc_node, false);
 			}
 		}
 	}
