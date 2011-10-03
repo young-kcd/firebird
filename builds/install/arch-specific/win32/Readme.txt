@@ -1,7 +1,7 @@
 
-=======================================================
-Firebird 2.5.0 (Windows Build)
-=======================================================
+====================================
+Firebird $MAJOR.$MINOR.$RELEASE    (Windows Build)
+====================================
 
 
 o Introduction
@@ -15,13 +15,13 @@ o Reporting Bugs
 Introduction
 ============
 
-Welcome to Firebird 2.5.
+Welcome to Firebird $MAJOR.$MINOR.
 
 
 Intended Users
 ==============
 
-Firebird 2.5 has undergone extensive testing and is
+Firebird $MAJOR.$MINOR has undergone extensive testing and is
 intended for widespread production use. However, users
 are recommended to follow standard practices before
 deploying this release on a production server. ie:
@@ -95,6 +95,4 @@ Before you report a bug:
 
 
 From the Firebird team.
-
-
 

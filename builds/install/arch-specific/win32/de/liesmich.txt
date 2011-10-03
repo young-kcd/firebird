@@ -1,12 +1,8 @@
 
-========================================
-Firebird 2.5.0 Pre-alpha (Windows Build)
-========================================
+====================================
+Firebird $MAJOR.$MINOR.$RELEASE    (Windows Build)
+====================================
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 o Einführung
 o Verwendungszweck
@@ -19,17 +15,32 @@ o Bugs berichten
 Einführung
 ==========
 
-Willkommen zu Firebird 2.1.
+Willkommen zu Firebird $MAJOR.$MINOR.
 
 
 Verwendungszweck
 ================
 
-Dieser Release Candidate ist für erfahrene Firebird Benutzer
-bestimmt. Dieser wurde angemessen getestet und alle neue
-Features sollten nun entsprechend dokumentiert sein.
+Firebird $MAJOR.$MINOR wurde intensiven Tests unterzogen und ist nun für
+die breite Verwendung in Produktionsumgebungen bestimmt. Dennoch
+wird darauf hingewiesen, dass eine Standardvorgehen eingehalten
+wird, das wie folgt aussehen kann.
 
-Verwenden Sie dieses Release nicht in Produktionsumgebungen.
+ o Lesen Sie die Installation Liesmich und die Release
+   Notes.
+
+ o Wenn Sie wichtige Daten haben, vergessen Sie nicht,
+   vor dem Einsatz dieses Release ein Backup durchzuführen.
+
+ o Es wird empfohlen, dass eine frühere Version vor der
+   Installation entfernt wird. Die Deinstallation entfernt
+   keine Konfigurations- oder Log-Dateien.
+
+ o Es wird empfohlen, dass Sie eigene Tests in einer
+   Entwicklungsumgebung durchführen, bevor es an eine
+   Produktionsumgebung weitergegeben wird.
+
+
 
 
 Bekannte Probleme
@@ -68,7 +79,7 @@ Bevor Sie einen Bug berichten:
 
  o Vielleicht hat jemand bereits das selbe Problem berichtet? Sie
    können existierende Problemberichte hier einsehen:
-   http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+   http://tracker.firebirdsql.org/browse/CORE
 
  o Falls Sie sich nicht sicher sind, diskutieren Sie das
    Problem am besten vorab in der Firebird-devel Liste.
@@ -82,14 +93,5 @@ Bevor Sie einen Bug berichten:
 	news://news.atkin.com/
 
 
-Verwenden Sie bitte die Firebird-devel Liste nicht für
-technische Supportanfragen, solange es sich bei Ihrer
-Anfrage nicht um ein spezifisches Firebird 2.1 Feature
-handelt.
-
-
-Happy Testing!
-
-Ihr Firebird Team.
 
 

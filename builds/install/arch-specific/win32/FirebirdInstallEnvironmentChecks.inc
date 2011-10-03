@@ -692,7 +692,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,36);
+SetArrayLength(SharedFileArray,37);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
@@ -742,6 +742,8 @@ SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
 SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbtrace.conf';
 SharedFileArray[34].Filename := ExpandConstant('{app}')+'\bin\fbsvcmgr.exe';
 SharedFileArray[35].Filename := ExpandConstant('{app}')+'\bin\fbrmclib.dll';
+SharedFileArray[36].Filename := ExpandConstant('{app}')+'\bin\fbtracemgr.exe';
+
 
 end;
 

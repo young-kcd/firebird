@@ -1,24 +1,20 @@
-Firebird Database Server 2.5.0 pre alpha
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 Este documento es una guía para instalar este paquete
-de Firebird 2.1 en la plataforma Windows. Estas notas
+de Firebird $MAJOR.$MINOR en la plataforma Windows. Estas notas
 hacen referencia al paquete de instalación en sí, más
-que a Firebird 2.1 en general. Además, estas notas
+que a Firebird $MAJOR.$MINOR en general. Además, estas notas
 están destinadas principalmente a usuarios del
 programa de instalación.
 
 Se supone que los lectores de este documento se
-encuentran familiarizados con Firebird 2.0. Si Ud. se
-encuentra evaluando Firebird 2.1 como parte de la
-migración desde Fb 1.5, le recomendamos revisar la
-documentación de Fb 2.0 para tener una idea de los
-cambios realizados entre 1.5 y 2.0.
+encuentran familiarizados con Firebird 2.1. Si Ud. se
+encuentra evaluando Firebird $MAJOR.$MINOR como parte de la
+migración desde Fb 2.1, le recomendamos revisar la
+documentación de Fb $MAJOR.$MINOR para tener una idea de los
+cambios realizados entre 2.1 y 2.1.
 
 
 Contenido
@@ -73,7 +69,7 @@ o Desafortunadamente, el instalador no puede detectar
   con certeza si una versión de Firebird Classic server
   se encuentra en ejecución.
 
-o Existen areas conocidas de superposición entre las
+o Existen áreas conocidas de superposición entre las
   instalaciones de de 32 y de 64 bits:
 
   - El instalador de servicios (instsvc) utiliza la
@@ -114,11 +110,12 @@ o Si Firebird se está ejecutando como una aplicación
   correctamente. Deberá eliminar los remanentes
   manualmente.
 
-o El proceso de desinstalación dejará cuatro archivos
+o El proceso de desinstalación dejará cinco archivos
   en la carpeta de instalación:
 
   - aliases.conf
   - firebird.conf
+  - fbtrace.conf
   - firebird.log
   - security2.fdb
 

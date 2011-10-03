@@ -1,12 +1,7 @@
 
-============================================
-Firebird 2.5.0 pre alpha (Windows Felépítés)
 ======================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+Firebird $MAJOR.$MINOR.$RELEASE  (Windows Felépítés)
+======================================
 
 
 o Bevezetés
@@ -23,13 +18,13 @@ o Új képességek igénylése
 Bevezetés
 =========
 
-Üdvözöljük a Firebird 2.1 világában.
+Üdvözöljük a Firebird $MAJOR.$MINOR világában.
 
 
 Felhasználás
 ============
 
-A Firebird 2.1 alapos tesztelések során
+A Firebird $MAJOR.$MINOR alapos tesztelések során
 bizonyította, hogy alkalmas kiterjedt üzemi
 - éles - környezetben történõ felhasználásra. Ennek
 ellenére ajánlatos, a már ismert, általánosan
@@ -57,7 +52,7 @@ Ezen verzió szolgáltatásai (minden platformon)
 ==============================================
 
 További információkért tekintse meg a:
-doc/Firebird_v2.1.0.ReleaseNotes.pdf
+doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf
 dokumentumot.
 
 
@@ -65,7 +60,7 @@ Ebben a verzióban javított hibák (minden platformon)
 ====================================================
 
 További információkért tekintse meg a:
-doc/Firebird_v2.1.0.ReleaseNotes.pdf
+doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf
 dokumentumot.
 
 
@@ -78,8 +73,8 @@ segédletet.  A telepítés befejezése után ezt a
 dokumentumot a:
 .\doc\teklepitesi_segedlet.txt
 helyen találja. További részletes információk a
-"Firebird 2.1.0 - Újdonságok"
-(doc/Firebird_v2.1.0.ReleaseNotes.pdf)
+"Firebird $MAJOR.$MINOR.$RELEASE - Újdonságok"
+(doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf)
 dokumentumban vannak.
 
 Telepítés zip csomagokból
@@ -150,14 +145,14 @@ szerver  számára, amíg az UDF könyvtárak elérési
 állomány megfelelõ  szakaszában. További
 információkért olvassa el a  megjegyzéseket a
 firebird.conf konfigurációs állományban valamint a "
-Firebird 2.1.0 - Újdonságok" dokumentumban.
+Firebird $MAJOR.$MINOR.$RELEASE - Újdonságok" dokumentumban.
 
 
 Az SQL Nyelv dokumentációja
 ===========================
 Új nyelvi szolgáltatások, kulcsszavak, kiterjesztések
 valamint korlátozások kerültek bevezetésre ebben a
-verzióban. A részletekrõl a "Firebird 2.1.0 -
+verzióban. A részletekrõl a "Firebird $MAJOR.$MINOR.$RELEASE -
 Újdonságok" dokumentumból tudhat meg  többet.
 
 
@@ -183,7 +178,7 @@ o Továbbra is úgy gondolja, hogy egy hibát talált?
   Nézze át a még meglévõ hibák listáját. Ezt
   megteheti a Firebird hibakövetõ rendszerében:
 
-	http://sourceforge.net/tracker/?group_id=9028&atid=109028
+	http://tracker.firebirdsql.org/browse/CORE
 
 Egyébként, ha Ön egészen biztos benne, hogy hibát
 talált, próbáljon meg felépíteni egy olyan
@@ -203,4 +198,5 @@ megtekintheti a  már benyújtott igényléseket és új
 kérést nyújthat be,  amennyiben az valóban
 szükségszerû.
 
-  http://sourceforge.net/tracker/?group_id=9028&atid=359028
+  http://tracker.firebirdsql.org/browse/CORE
+

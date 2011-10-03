@@ -1,12 +1,7 @@
 
 ==================================
-Firebird 2.5.0       (Windows Build)
+Firebird $MAJOR.$MINOR.$RELEASE       (Windows Build)
 ==================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 
 o Introduzione
@@ -23,13 +18,13 @@ o Richiesta di nuove funzionalità
 Introduzione
 ============
 
-Benvenuti in Firebird 2.0.
+Benvenuti in Firebird $MAJOR.$MINOR
 
 
 A chi è rivolta questa versione
 ===============================
 
-Firebird 2.0 è stato estensivamente testato ed
+Firebird $MAJOR.$MINOR.$RELEASE è stato estensivamente testato ed
 è considerato pronto per l'uso in produzione.
 Tuttavia, si raccomanda di applicare le cautele
 standard per la messa in produzione di questa
@@ -55,7 +50,7 @@ Caratteristiche di questa versione
 
 Fate riferimento a:
 
-  doc/Firebird_v2.0.0.ReleaseNotes.pdf
+  doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf
 
 per maggiori informazioni.
 
@@ -65,7 +60,7 @@ Errori corretti in questa versione
 
 Fate riferimento a:
 
-  doc/Firebird_v2.0.0.ReleaseNotes.pdf
+  doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf
 
 per maggiori informazioni.
 
@@ -77,14 +72,6 @@ Lanciate il file seguibile e seguite le istruzioni a
 video.
 
 
-Problemi aperti
-===============
-
-o Il database degli utenti ha cambiato nome e
-  formato! Fate riferimento alla cartella doc per
-  maggiori dettagli. Per convertire un database degli
-  utenti dal vecchio al nuovo formato si può usare lo
-  script in misc/upgrade/security.
 
 Segnalazione di errori
 ======================
@@ -105,7 +92,7 @@ o Pensate ancora che si tratti di un errore?
   Per prima cosa, controllate che il problema non sia
   già stato segnalato nel Bug Tracker:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/browse/CORE
 
   Vi raccomandiamo di non usare il Tracker per richieste
   di supporto. Nel dubbio, iscrivetevi alla mailing list
@@ -118,13 +105,3 @@ o Pensate ancora che si tratti di un errore?
   
     http://www.delphiedintorni.it
 
-Richiesta di nuove funzionalità
-===============================
-
-Prima di inoltrare richieste per nuove funzionalità,
-è opportuno consultare l'elenco di richieste già
-ricevute. È probabile che qualcun altro abbia avuto
-la vostra stessa idea. Le richieste di nuove
-funzionalità sono registrate qui:
-
-  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa

@@ -15,6 +15,7 @@ cz.UseApplicationTaskMsg=Spouštìt jako &Aplikaci?
 cz.TaskGroupDescription=Spouštìt Firebird server jako:
 cz.UseServiceTask=Spouštìt jako &Službu?
 cz.AutoStartTask=Spustit &Firebird automaticky pøi startu systému?
+cz.SuperClassicTask="Použít SuperClassic?"
 cz.CopyFbClientToSysTask=Kopírovat &Firebird klientskou knihovnu do složky <system>?
 cz.CopyFbClientAsGds32Task=Vytvoøit klientskou knihovnu GDS32.DLL pro podporu &závislých aplikací?
 cz.InstallCPLAppletTask="Nainstalovat ovladaè do Ocládacích &Panelù?"
@@ -48,8 +49,8 @@ cz.FbRunning1=Stávající Firebird %s server je spuštìný.
 cz.FbRunning2=  Døíve, než budete pokraèovat, musíte
 cz.FbRunning3=       ukonèit program èi službu.
 
-cz.PreviousInstallBroken=   (Instalace je zøejmì vypadá poškozena kvùli chybnému oznaèení verze.)
-cz.PreviousInstallGood=   (Instalace vypadý v poøádku.)
+cz.PreviousInstallBroken=   (Z dùvodu chybného oznaèení verze, se instalace zdá být poškozena.)
+cz.PreviousInstallGood=   (Instalace se zdá být v poøádku.)
 
 cz.IconReadme=Firebird %1 èti mì
 cz.IconUninstall=Odinstalovat Firebird %1
@@ -70,6 +71,9 @@ cz.RunISQL=Spustit interaktivní SQL nástroj založený na pøíkazové øádce
 
 cz.ReadmeFile=ctime.txt
 cz.InstallationReadmeFile=instalace_ctime.txt
-;cz.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+;cz.IncompleteTranslationNotice=Tento dokument není aktuální. Pro poslední informace, prosím, nahlédnìte do originální anglické dokumentace.
+cz.RunCS=Spustit Firebird Classic server
+cz.RunSC=Spustit Firebird SuperClassic server
+cz.RunSS=Spustit Firebird SuperServer
 
 

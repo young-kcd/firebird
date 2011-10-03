@@ -1,28 +1,23 @@
-==================================================
-Serwer Baz Danych Firebird 2.5.0 pre alpha
+Serwer Baz Danych Firebird $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 
 Ten dokument jest przewodnikiem instalacji serwera
-baz danych Firebird 2.1 na systemach Windows.
+baz danych Firebird $MAJOR.$MINOR na systemach Windows.
 Poni¿sze informacje dotycz¹ tego wydania serwera,
-a nie ogólnie serii wydañ Firebird'a 2.1. Informacje s¹
+a nie ogólnie serii wydañ Firebird'a $MAJOR.$MINOR. Informacje s¹
 przeznaczone dla u¿ytkowników uruchamiaj¹cych program
 instalatora.
 
 
 Przyjêto, ¿e czytelnicy orientuj¹ siê w dzia³aniu
-poprzedniej wersji serwera - Firebird 2.0. Jeœli ta
-instalacja Firebird'a 2.1 jest czêœci¹ migracji
-z Firebird'a 1.5, to nale¿y wczeœniej zapoznaæ siê
-z dokumentacj¹ Firebird'a 2.0, aby zrozumieæ wprowadzone
-ró¿nice pomiêdzy wersjami 1.5 oraz 2.0, a tak¿e wykonaæ
+poprzedniej wersji serwera - Firebird 2.1. Jeœli ta
+instalacja Firebird'a $MAJOR.$MINOR jest czêœci¹ migracji
+z Firebird'a 2.1, to nale¿y wczeœniej zapoznaæ siê
+z dokumentacj¹ Firebird'a $MAJOR.$MINOR, aby zrozumieæ wprowadzone
+ró¿nice pomiêdzy wersjami 2.1 oraz $MAJOR.$MINOR, a tak¿e wykonaæ
 dodatkowe, niezbêdne czynnoœci.
 
 
@@ -69,7 +64,7 @@ Inne znane problemy wystêpuj¹ce podczas instalacji
 ---------------------------------
 
 o Program instalatora umo¿liwia instalacjê domyœlnej
-  instancji Firebird 2.1. W celu instalacji dodatkowych
+  instancji Firebird $MAJOR.$MINOR. W celu instalacji dodatkowych
   instancji, nale¿y pobraæ spakowan¹ wersjê obrazu
   Firebird'a w formacie zip i dokonaæ tego rêcznie.
 

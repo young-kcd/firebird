@@ -113,7 +113,7 @@
 ;     uses them.
 #define release
 #define no_pdb
-;#define i18n
+#define i18n
 
 
 ;------If necessary we can turn off i18n by uncommenting this undefine
@@ -256,6 +256,7 @@ OutputDir=builds\install_images
 ;!!! These directories are as seen from SourceDir !!!
 #define ScriptsDir "builds\install\arch-specific\win32"
 #define LicensesDir "builds\install\misc"
+#define GenDir "gen\Win32\readmes"
 LicenseFile={#LicensesDir}\IPLicense.txt
 
 WizardImageFile={#ScriptsDir}\firebird_install_logo1.bmp
@@ -289,18 +290,18 @@ SetupLogging=yes
 #endif
 
 [Languages]
-Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#GenDir}\installation_readme.txt; InfoAfterFile: {#GenDir}\readme.txt;
 #ifdef i18n
-Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#ScriptsDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#ScriptsDir}\ba\ProcitajMe.txt;
-Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#ScriptsDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#ScriptsDir}\fr\lisezmoi.txt;
-Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#ScriptsDir}\de\installation_liesmich.txt; InfoAfterFile: {#ScriptsDir}\de\liesmich.txt;
-Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#ScriptsDir}\es\leame_instalacion.txt; InfoAfterFile: {#ScriptsDir}\es\leame.txt;
-Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: {#ScriptsDir}\hu\telepitesi_segedlet.txt; InfoAfterFile: {#ScriptsDir}\hu\olvass_el.txt;
-Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#ScriptsDir}\it\leggimi_installazione.txt; InfoAfterFile: {#ScriptsDir}\it\leggimi.txt
-Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
-Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
-Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
-;Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#GenDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#GenDir}\ba\ProcitajMe.txt;
+Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#GenDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#GenDir}\fr\lisezmoi.txt;
+Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#GenDir}\de\installation_liesmich.txt; InfoAfterFile: {#GenDir}\de\liesmich.txt;
+Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#GenDir}\es\leame_instalacion.txt; InfoAfterFile: {#GenDir}\es\leame.txt;
+Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: {#GenDir}\hu\telepitesi_segedlet.txt; InfoAfterFile: {#GenDir}\hu\olvass_el.txt;
+Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#GenDir}\it\leggimi_installazione.txt; InfoAfterFile: {#GenDir}\it\leggimi.txt
+Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#GenDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#GenDir}\pl\czytajto.txt;
+Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#GenDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#GenDir}\pt\leia-me.txt
+Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#GenDir}\ru\installation_readme.txt; InfoAfterFile: {#GenDir}\ru\readme.txt;
+;Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#GenDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#GenDir}\readme.txt;
 #endif
 
 [Messages]
@@ -429,13 +430,15 @@ Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird
 Name: {group}\Firebird {#FB_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
 Name: {group}\Firebird {#FB_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
 #endif
+#define DONT_INCLUDE_FB21_DOCS
 #ifndef DONT_INCLUDE_FB21_DOCS
 ; dummy define. for now (beta 1) we include Fb 2.1 docs.
 Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
 Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
 #endif
-Name: {group}\Firebird 2.1 Quick Start Guide; Filename: {app}\doc\Firebird-2.1-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB21_cur_ver}
+;And for the time being we include the 2.1 install guide anyway.
+Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
+Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-2.5-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
@@ -453,19 +456,19 @@ Source: {#LicensesDir}\IDPLicense.txt; DestDir: {app}; Components: ClientCompone
 Source: {#ScriptsDir}\After_Installation.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
 Source: {#ScriptsDir}\firebirdsql.org.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
 ;Always install the original english version
-Source: {#ScriptsDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
+Source: {#GenDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 #ifdef i18n
 ;Translated files
-Source: {#ScriptsDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
-Source: {#ScriptsDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
-Source: {#ScriptsDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
-Source: {#ScriptsDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
-Source: {#ScriptsDir}\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
-Source: {#ScriptsDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
-Source: {#ScriptsDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
-Source: {#ScriptsDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
-Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
-;Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+Source: {#GenDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+Source: {#GenDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
+Source: {#GenDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
+Source: {#GenDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
+Source: {#GenDir}\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
+Source: {#GenDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
+Source: {#GenDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
+Source: {#GenDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
+Source: {#GenDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
+;Source: {#GenDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
@@ -495,6 +498,7 @@ Source: {#FilesDir}\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminCompon
 Source: {#FilesDir}\bin\nbackup.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: {#FilesDir}\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: {#FilesDir}\bin\fbsvcmgr.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: {#FilesDir}\bin\fbtracemgr.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: {#FilesDir}\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 #if PlatformTarget == "x64"
 Source: {#WOW64Dir}\bin\fbclient.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
@@ -675,7 +679,7 @@ Var
                                 // aliases.conf, fbtrace.conf and the security database.
 
 //  UseSuperClassic: Boolean;     // /UseSuperClassic can be passed on the command-line
-                                
+
 
 #ifdef setuplogging
   OkToCopyLog : Boolean;        // Set when installation is complete.
@@ -840,7 +844,7 @@ begin
 
   if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
-    
+
 // To be completed after RC1
 //  if pos('USESUPERCLASSIC', Uppercase(CommandLine)) > 0 then
 //    UseSuperClassic := True;
@@ -854,7 +858,7 @@ begin
   if not CheckWinsock2 then begin
     result := False;
     exit;
-  end
+  end;
 
   //By default we want to install and confugure,
   //unless subsequent analysis suggests otherwise.

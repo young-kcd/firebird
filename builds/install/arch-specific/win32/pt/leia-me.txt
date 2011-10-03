@@ -1,19 +1,13 @@
 
 ========================================
-Firebird 2.5.0 pre alpha (Windows Build)
+Firebird $MAJOR.$MINOR.$RELEASE (Windows Build)
 ========================================
 
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 o Introdução
 o Utilizadores Alvo
 o Questões Conhecidas
 o Funcionalidades desta versão (todas as plataformas)
-o Erros resolvidos nesta versão
 o Instalação
 o Reportar erros
 
@@ -21,30 +15,45 @@ o Reportar erros
 Introdução
 ==========
 
-Bem-vindo ao Firebird 2.1.
+Bem-vindo ao Firebird $MAJOR.$MINOR.
 
 
 Utilizadores Alvo
 =================
 
-Esta "Release Candidate" é dirigida a utilizadores experientes
-de Firebird. Foi já muito testada e todas as novas funcionalidades
-devem estar documentadas nesta altura.
+O Firebird $MAJOR.$MINOR foi sujeito a um intenso 
+programa de testes e está pronto para um uso massivo em 
+produção. Porem é recomendado que se apliquem as 
+práticas usuais antes de instalar esta versão num 
+servidor em produção, ie:
 
-Não use esta "Release Candidate" em ambientes de produção.
+ o Leia o "leia-me.txt" desta instalação e as notas de 
+   lançamento desta versão.
+
+ o Se tem dados a que dá valor lembre-se de fazer uma 
+   cópia de segurança antes de instalar esta versão.
+
+ o É recomendado que remova qualquer instalação 
+   anterior antes de prosseguir. A operação de remoção 
+   preserva os ficheiros de configuração e de logs.
+
+ o É recomendado que faça os seus próprios testes num 
+   ambiente de desenvolvimento antes de partir para um 
+   ambiente de produção.
 
 
 Questões Conhecidas
 ===================================================
 
-Windows Vista - O instalador falha ao iniciar o Firebird
-como serviço na altura da instalação, mas o serviço inicia
-correctamente após reiniciar o sistema. Para contornar este
-problema, poderá clicar com olado direito cobre a aplicação
-do Painel de Controlo, escolher "Exceutar como..." e arrancar
-o serviço desse local.
+Windows Vista - O instalador falha ao iniciar o 
+Firebird como serviço na altura da instalação, mas o 
+serviço inicia corretamente após reiniciar o sistema. 
+Para contornar este problema, poderá clicar com o lado 
+direito cobre a aplicação do Painel de Controlo, 
+escolher "Exceutar como..." e arrancar o serviço desse 
+local.
 
-Funcionalidades desta versão (todas as plataformas)
+Funcionalidades desta versão
 ===================================================
 
 Por favor consulte as "Notas de Lançamento" para mais
@@ -54,11 +63,12 @@ informações.
 Instalação
 ==========
 
-As questões relacionadas com a instalação são abordadas em detalhe
-no Guia de Instalação disponivel na directoria docs após a instalação.
-Um pequeno sumário de questões relacionadas com a instalação podem ser
-obtidas também no ficheiro instalacao_leia-me.txt, tambem disponivel
-nessa mesma directoria.
+As questões relacionadas com a instalação são 
+abordadas em detalhe no Guia de Instalação disponivel 
+na diretoria docs após a instalação. Um pequeno 
+sumário de questões relacionadas com a instalação podem 
+ser obtidas também no ficheiro instalacao_leia-me.txt, 
+tambem disponivel nessa mesma diretoria.
 
 Reportar Erros
 ==============
@@ -68,24 +78,16 @@ Antes de reportar um erro:
 o Tem a certeza que compreende como o Firebird funciona?
   Pode ser que não se trate de um erro.
 
-o Talvez o erro já esteja reportado? Pode procurar os erros
-  reportados aqui:
+o Talvez o erro já esteja reportado? Pode procurar os 
+  erros reportados aqui:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/browse/CORE
 
-o Em caso de dúvida porque não discute o problema na lista
-  dos programadores do Firebird ? Pode subscrever a lista aqui:
+o Em caso de dúvida porque não discute o problema na 
+  lista dos programadores do Firebird ? Pode subscrever 
+  a lista aqui:
 
-	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+    http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
-  ou pode consultar a mesma via newsgroups aqui:
-
-	news://news.atkin.com/
-
-  Por favor não utilize a lista Firebird-devel para questões de suporte,
-  excepto se a sua questão se relacionar especificamente com o Firebird 2.1
-
-
-Divirta-se com os testes !
-
+ 
 Equipa do Firebird

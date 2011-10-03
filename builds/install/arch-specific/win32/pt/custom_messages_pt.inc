@@ -15,33 +15,33 @@ pt.UseApplicationTaskMsg=Executar como &Aplicação?
 pt.TaskGroupDescription=Executar o servidor Firebird como:
 pt.UseServiceTask=Executar como um &Serviço?
 pt.AutoStartTask=Iniciar o &Firebird automaticamente de cada vez que o sistema arranca?
-pt.SuperClassicTask="Use SuperClassic?"
+pt.SuperClassicTask="Usar SuperClassic?"
 pt.CopyFbClientToSysTask=Copiar a biblioteca do cliente &Firebird para a pasta de <system>?
 pt.CopyFbClientAsGds32Task=Criar a biblioteca cliente como GDS32.DLL para "retro-compatibilidade"?
 pt.InstallCPLAppletTask="Instalar a aplicação do &Painel de Controlo?"
-pt.instreg=Modificando o registo
-pt.instclientCopyFbClient=Copiando o fbclient para a pasta <sys>
-pt.instclientGenGds32=Criando o gds32.dll para a pasta <sys>
-pt.instclientDecLibCountGds32="Decrementando o contador de bibliotecas partilhadas para o gds32 e removendo-o se possível."
-pt.instclientDecLibCountFbClient="Decrementando o contador de bibliotecas partilhadas para o fbclient e removendo-o se possível."
-pt.instsvcSetup=Configurando o serviço
+pt.instreg=A atualizar o registo
+pt.instclientCopyFbClient=A copiar o fbclient para a pasta <sys>
+pt.instclientGenGds32=A criar o gds32.dll na pasta <sys>
+pt.instclientDecLibCountGds32="A decrementar o contador de bibliotecas partilhadas para o gds32 e a removê-lo se possível."
+pt.instclientDecLibCountFbClient="A decrementar o contador de bibliotecas partilhadas para o fbclient e a removê-lo se possível."
+pt.instsvcSetup=A configurar o serviço
 pt.instsvcStartQuestion=Iniciar o Serviço Firebird agora?
-pt.instsvcStartMsg=Iniciando o servidor
-pt.instsvcStopMsg="Parando o servidor"
-pt.instsvcRemove="Removendo o servidor"
+pt.instsvcStartMsg=A iniciar o servidor
+pt.instsvcStopMsg="A parar o servidor"
+pt.instsvcRemove="A remover o servidor"
 pt.instappStartQuestion=Iniciar o Firebird agora?
-pt.instappStartMsg=Iniciando o servidor
+pt.instappStartMsg=A iniciar o servidor
 
 pt.InstallSummarySuffix1=Esta versão do Firebird tornar-se-á a instalação por omissão.
-pt.InstallSummarySuffix2=Todavia, tome atenção pois ao instalar esta versão do Firebird
-pt.InstallSummarySuffix3=  quando uma versão anterior já está instalada pode provocar
+pt.InstallSummarySuffix2=Todavia, preste atenção pois ao instalar esta versão do Firebird
+pt.InstallSummarySuffix3=  quando uma versão posterior já está instalada pode causar
 pt.InstallSummarySuffix4=                  resultados inesperados.
 
 pt.InstallSummaryCancel1= Se continuar com esta instalação o Firebird será instalado mas não configurado.
 pt.InstallSummaryCancel2= Terá que completar a instalação manualmente.
 pt.InstallSummaryCancel3= Pretende CANCELAR esta instalação?
 
-pt.InstalledProducts='A análise de reinstalação indica que foram encontradas %s instalações Firebird ou Interbase.
+pt.InstalledProducts='A análise de reinstalação indica que foram encontradas %s instalações do Firebird ou Interbase.
 pt.InstalledProdCountSingular=versão tem
 pt.InstalledProdCountPlural=versões têm
 
@@ -50,20 +50,20 @@ pt.FbRunning2=     Tem que fechar a aplicação ou parar o serviço
 pt.FbRunning3=                 antes de continuar.
 
 pt.PreviousInstallBroken=   (A Instalação aparenta estar danificada por disparidade no texto da versão.)
-pt.PreviousInstallGood=   (A Instalação aparenta estar correcta.)
+pt.PreviousInstallGood=   (A Instalação aparenta estar correta.)
 
 pt.IconReadme=Firebird %1 Leia-me
 pt.IconUninstall=Remoção do Firebird %1
-pt.ReleaseNotes= Notas de Lançamento. (Requer Acrobat Reader.)
-pt.InstallationGuide= Guia de Instalação. (Requer Acrobat Reader.)
-pt.BugFixes= erros corrigidos. (Requer Acrobat Reader.)
+pt.ReleaseNotes= Notas de Lançamento. (Em inglês, e requer Acrobat Reader.)
+pt.InstallationGuide= Guia de Instalação. (Em inglês e requer Acrobat Reader.)
+pt.BugFixes= erros corrigidos. (Em inglês e requer Acrobat Reader.)
 pt.Uninstall=Remoção do Firebird %1
 pt.Winsock2Web1=A biblioteca Winsock 2 não está instalada.
 pt.Winsock2Web2=Pretende visitar a página de actualização na Internet do Winsock 2?
-pt.NoWinsock2 = Por favor instale a actualização do Winsock 2 antes de continuar
+pt.NoWinsock2 = Por favor instale a atualização do Winsock 2 antes de continuar
 pt.MSWinsock2Update = http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
-pt.RunCSNoGuardian=Executar o Servidor Firebird classic (sem guardian)
+pt.RunCSNoGuardian=Executar o Servidor Firebird Classic (sem guardian)
 pt.RunSSNoGuardian=Executar o Servidor Firebird Superserver (sem guardian)
 pt.RunSSWithGuardian=Executar o Servidor Firebird Super (com guardian)
 pt.RunCSWithGuardian=Executar o Servidor Firebird Classic (com guardian)
