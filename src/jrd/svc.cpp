@@ -514,9 +514,12 @@ void Service::setServiceStatus(const ISC_STATUS* status_vector)
 	{
 		Arg::StatusVector svc(svc_status);
 		Arg::StatusVector passed(status_vector);
-		svc.append(passed);
-		svc.copyTo(svc_status);
-		makePermanentStatusVector();
+		if (svc != passed)
+		{
+			svc.append(passed);
+			svc.copyTo(svc_status);
+			makePermanentStatusVector();
+		}
 	}
 }
 

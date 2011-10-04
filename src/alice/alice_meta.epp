@@ -76,7 +76,7 @@ static const rfr_tab_t rfr_table[] =
 
 static inline void return_error(const ISC_STATUS* /*user_status*/)
 {
-	ALICE_print_status(gds_status);
+	ALICE_print_status(true, gds_status);
 	Firebird::LongJump::raise();
 }
 
@@ -315,7 +315,7 @@ static tdr* get_description(ISC_QUAD* blob_id)
 			tdgbl->status[1] = isc_virmemexh;
 			tdgbl->status[2] = isc_arg_end;
 
-			ALICE_print_status(tdgbl->status);
+			ALICE_print_status(true, tdgbl->status);
 			return NULL;
 		}
 		snarf_blob(blob_id, length, bigger_buffer);
@@ -479,7 +479,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id, USHORT buffer_length, TEXT* buffer)
 	FB_API_HANDLE blob = 0;
 	if (isc_open_blob(gds_status, &DB, &gds_trans, &blob, blob_id))
 	{
-		ALICE_print_status(gds_status);
+		ALICE_print_status(true, gds_status);
 		return 0;
 	}
 

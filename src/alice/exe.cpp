@@ -87,8 +87,6 @@ int EXE_action(const TEXT* database, const SINT64 switches)
 			dpb.getBufferLength(),
 			reinterpret_cast<const SCHAR*>(dpb.getBuffer()));
 
-		tdgbl->uSvc->started();
-
 		if (tdgbl->status[1] &&
 			// Ignore isc_shutdown error produced when we switch to full shutdown mode. It is expected.
 			(tdgbl->status[1] != isc_shutdown || !(switches & sw_shut) ||
@@ -100,7 +98,7 @@ int EXE_action(const TEXT* database, const SINT64 switches)
 		if (tdgbl->status[2] == isc_arg_warning)
 		{
 			Firebird::makePermanentVector(tdgbl->status);
-			ALICE_print_status(tdgbl->status);
+			ALICE_print_status(false, tdgbl->status);
 		}
 		else if (error)
 		{
@@ -125,6 +123,11 @@ int EXE_action(const TEXT* database, const SINT64 switches)
 			}
 
 			isc_detach_database(tdgbl->status, &handle);
+		}
+
+		if (error)
+		{
+			tdgbl->uSvc->setServiceStatus(tdgbl->status);
 		}
 	}
 
@@ -173,14 +176,14 @@ int EXE_two_phase(const TEXT* database, const SINT64 switches)
 			error = TDR_reconnect_multiple(handle, tdgbl->ALICE_data.ua_transaction, database, switches);
 		}
 
-		if (error)
-		{
-			Firebird::makePermanentVector(tdgbl->status);
-		}
-
 		if (handle)
 		{
 			isc_detach_database(tdgbl->status, &handle);
+		}
+
+		if (error)
+		{
+			tdgbl->uSvc->setServiceStatus(tdgbl->status);
 		}
 	}
 
