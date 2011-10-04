@@ -49,7 +49,6 @@ public:
 private:
 	Firebird::RefPtr<Firebird::IFirebirdConf> config;
 	FB_API_HANDLE database, transaction;
-	Firebird::string userName;
 };
 
 } // namespace Auth

@@ -82,25 +82,43 @@ void ClumpletWriter::initNewBuffer(UCHAR tag)
 }
 
 ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag)
-	 : ClumpletReader(k, NULL, 0), sizeLimit(limit), kindList(NULL), dynamic_buffer(getPool())
+	: ClumpletReader(k, NULL, 0), sizeLimit(limit), kindList(NULL), dynamic_buffer(getPool())
 {
 	create(buffer, buffLen, tag);
 }
 
 ClumpletWriter::ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit,
 							   const UCHAR* buffer, size_t buffLen)
-	 : ClumpletReader(pool, kl, buffer, buffLen), sizeLimit(limit),
-	   kindList(kl), dynamic_buffer(getPool())
+	: ClumpletReader(pool, kl, buffer, buffLen), sizeLimit(limit),
+	  kindList(kl), dynamic_buffer(getPool())
 {
 	create(buffer, buffLen, kl->tag);
 }
 
-ClumpletWriter::ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer, size_t buffLen) :
-	ClumpletReader(kl, buffer, buffLen), sizeLimit(limit), kindList(kl), dynamic_buffer(getPool())
+ClumpletWriter::ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer, size_t buffLen)
+	: ClumpletReader(kl, buffer, buffLen), sizeLimit(limit), kindList(kl), dynamic_buffer(getPool())
 {
 	create(buffer, buffLen, kl->tag);
 }
 
+ClumpletWriter::ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit)
+	: ClumpletReader(pool, kl, NULL, 0), sizeLimit(limit),
+	  kindList(kl), dynamic_buffer(getPool())
+{
+	create(NULL, 0, kl->tag);
+}
+
+ClumpletWriter::ClumpletWriter(const KindList* kl, size_t limit)
+	: ClumpletReader(kl, NULL, 0), sizeLimit(limit), kindList(kl), dynamic_buffer(getPool())
+{
+	create(NULL, 0, kl->tag);
+}
+
+ClumpletWriter::ClumpletWriter(MemoryPool& pool, const ClumpletWriter& from)
+	: ClumpletReader(pool, from), sizeLimit(from.sizeLimit), kindList(NULL), dynamic_buffer(getPool())
+{
+	create(from.getBuffer(), from.getBufferEnd() - from.getBuffer(), from.isTagged() ? from.getBufferTag() : 0);
+}
 
 void ClumpletWriter::create(const UCHAR* buffer, size_t buffLen, UCHAR tag)
 {
@@ -113,7 +131,6 @@ void ClumpletWriter::create(const UCHAR* buffer, size_t buffLen, UCHAR tag)
 	rewind();
 }
 
-/*
 ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit,
 							   const UCHAR* buffer, size_t buffLen, UCHAR tag) :
 	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
@@ -126,7 +143,6 @@ ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit,
 	}
 	rewind();
 }
-*/
 
 void ClumpletWriter::reset(UCHAR tag)
 {

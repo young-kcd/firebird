@@ -305,25 +305,27 @@
  * Service information items *
  *****************************/
 
-#define isc_info_svc_svr_db_info      50	/* Retrieves the number of attachments and databases */
-#define isc_info_svc_get_license      51	/* Retrieves all license keys and IDs from the license file */
-#define isc_info_svc_get_license_mask 52	/* Retrieves a bitmask representing licensed options on the server */
-#define isc_info_svc_get_config       53	/* Retrieves the parameters and values for IB_CONFIG */
-#define isc_info_svc_version          54	/* Retrieves the version of the services manager */
-#define isc_info_svc_server_version   55	/* Retrieves the version of the Firebird server */
-#define isc_info_svc_implementation   56	/* Retrieves the implementation of the Firebird server */
-#define isc_info_svc_capabilities     57	/* Retrieves a bitmask representing the server's capabilities */
-#define isc_info_svc_user_dbpath      58	/* Retrieves the path to the security database in use by the server */
-#define isc_info_svc_get_env	      59	/* Retrieves the setting of $FIREBIRD */
-#define isc_info_svc_get_env_lock     60	/* Retrieves the setting of $FIREBIRD_LCK */
-#define isc_info_svc_get_env_msg      61	/* Retrieves the setting of $FIREBIRD_MSG */
-#define isc_info_svc_line             62	/* Retrieves 1 line of service output per call */
-#define isc_info_svc_to_eof           63	/* Retrieves as much of the server output as will fit in the supplied buffer */
-#define isc_info_svc_timeout          64	/* Sets / signifies a timeout value for reading service information */
-#define isc_info_svc_get_licensed_users 65	/* Retrieves the number of users licensed for accessing the server */
-#define isc_info_svc_limbo_trans	66	/* Retrieve the limbo transactions */
-#define isc_info_svc_running		67	/* Checks to see if a service is running on an attachment */
-#define isc_info_svc_get_users		68	/* Returns the user information from isc_action_svc_display_users */
+#define isc_info_svc_svr_db_info		50	/* Retrieves the number of attachments and databases */
+#define isc_info_svc_get_license		51	/* Retrieves all license keys and IDs from the license file */
+#define isc_info_svc_get_license_mask	52	/* Retrieves a bitmask representing licensed options on the server */
+#define isc_info_svc_get_config			53	/* Retrieves the parameters and values for IB_CONFIG */
+#define isc_info_svc_version			54	/* Retrieves the version of the services manager */
+#define isc_info_svc_server_version		55	/* Retrieves the version of the Firebird server */
+#define isc_info_svc_implementation		56	/* Retrieves the implementation of the Firebird server */
+#define isc_info_svc_capabilities		57	/* Retrieves a bitmask representing the server's capabilities */
+#define isc_info_svc_user_dbpath		58	/* Retrieves the path to the security database in use by the server */
+#define isc_info_svc_get_env			59	/* Retrieves the setting of $FIREBIRD */
+#define isc_info_svc_get_env_lock		60	/* Retrieves the setting of $FIREBIRD_LCK */
+#define isc_info_svc_get_env_msg		61	/* Retrieves the setting of $FIREBIRD_MSG */
+#define isc_info_svc_line				62	/* Retrieves 1 line of service output per call */
+#define isc_info_svc_to_eof				63	/* Retrieves as much of the server output as will fit in the supplied buffer */
+#define isc_info_svc_timeout			64	/* Sets / signifies a timeout value for reading service information */
+#define isc_info_svc_get_licensed_users	65	/* Retrieves the number of users licensed for accessing the server */
+#define isc_info_svc_limbo_trans		66	/* Retrieve the limbo transactions */
+#define isc_info_svc_running			67	/* Checks to see if a service is running on an attachment */
+#define isc_info_svc_get_users			68	/* Returns the user information from isc_action_svc_display_users */
+#define isc_info_svc_auth_block			69	/* Sets authentication block for service query() call */
+
 
 /******************************************************
  * Parameters for isc_action_{add|del|mod|disp)_user  *

@@ -34,6 +34,11 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 
+namespace Firebird
+{
+	class ClumpletWriter;
+}
+
 namespace Why
 {
 
@@ -326,7 +331,7 @@ class YAttachment : public YHelper<YAttachment, Firebird::IAttachment, FB_ATTACH
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
 
-	explicit YAttachment(Firebird::IProvider* aProvider, Firebird::IAttachment* aNext,
+	YAttachment(Firebird::IProvider* aProvider, Firebird::IAttachment* aNext,
 		const Firebird::PathName& aDbPath);
 	~YAttachment();
 
@@ -383,12 +388,19 @@ public:
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 };
 
-class YService : public YHelper<YService, Firebird::IService, FB_SERVICE_VERSION>, public EnterCount
+class YService : public Firebird::StdPlugin<Firebird::IService, FB_SERVICE_VERSION>, public YObject, public EnterCount
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
 
-	explicit YService(Firebird::IProvider* aProvider, Firebird::IService* aNext);
+	static const int SERV_START = 1;
+	static const int SERV_QUERY = 2;
+	static const int SERV_DETACH = 3;
+
+	// Regular case
+	YService(Firebird::IProvider* aProvider, Firebird::IService* aNext);
+	// Used when next handle creation is delayed till service start
+	YService(const char* svcName, unsigned int spbLength, const unsigned char* spb);
 	~YService();
 
 	void destroy();
@@ -403,7 +415,51 @@ public:
 		unsigned int spbLength, const unsigned char* spb);
 
 public:
-	Firebird::IProvider* provider;
+	class ServiceType
+	{
+	public:
+		Firebird::IProvider* provider;
+		Firebird::RefPtr<Firebird::IService> next;
+
+	public:
+		ServiceType(Firebird::IService* n, Firebird::IProvider* p)
+			: provider(p), next(n)
+		{ }
+
+		ServiceType()
+			: provider(NULL)
+		{ }
+
+		void shutdown();
+		void detach(Firebird::IStatus* status);
+
+		~ServiceType();
+	};
+
+	ServiceType regular, started, queryCache;
+
+	Firebird::PathName attachName;
+	Firebird::AutoPtr<Firebird::ClumpletWriter> attachSpb;
+
+	int FB_CARG release();
+
+	typedef IService NextInterface;
+
+	void shutdown()
+	{
+		regular.shutdown();
+		started.shutdown();
+		queryCache.shutdown();
+	}
+
+	Firebird::IService* getNextService(int mode, Firebird::IStatus* status);
+
+private:
+	unsigned int checkSpbLen;
+	const unsigned char* checkSpbPresent;
+	Firebird::HalfStaticArray<UCHAR, 256> authBlock;
+
+	void populateSpb(Firebird::ClumpletWriter& spb, UCHAR tag);
 };
 
 class Dispatcher : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>

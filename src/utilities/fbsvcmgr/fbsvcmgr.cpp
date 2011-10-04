@@ -919,7 +919,7 @@ int main(int ac, char** av)
 			;
 
 		ClumpletWriter spbStart(ClumpletWriter::SpbStart, maxbuf);
-		ClumpletWriter spbItems(ClumpletWriter::SpbItems, 256);
+		ClumpletWriter spbItems(ClumpletWriter::SpbReceiveItems, 256);
 		// single action per one utility run, it may populate info items also
 		populateSpbFromSwitches(av, spbStart, actionSwitch, &spbItems);
 

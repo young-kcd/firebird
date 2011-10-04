@@ -100,11 +100,28 @@ typedef Firebird::RefPtr<Firebird::IEvents> ServEvents;
 typedef Firebird::RefPtr<Firebird::IService> ServService;
 
 
+struct Svc : public Firebird::GlobalStorage
+{
+	ServService					svc_iface;		// service interface
+	Firebird::ClumpletWriter*	svc_cached_spb;	// Saved auth tags from attachService() call
+	Firebird::Array<UCHAR>		svc_wide_auth;	// Server-wide (default) authentication block
+	enum {
+		SVCAUTH_NONE,							// Service is not authenticated
+		SVCAUTH_TEMP,							// Service is authenticated for single task
+		SVCAUTH_PERM							// Service is authenticated permanently
+	}							svc_auth;		// Authentication state of service
+	Svc() :
+		svc_iface(NULL), svc_cached_spb(NULL),
+		svc_wide_auth(getPool()), svc_auth(SVCAUTH_NONE)
+	{ }
+};
+
+
 struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 {
 	ServAttachment	rdb_iface;				// attachment interface
-	ServService		rdb_svc_iface;			// service interface
 	rem_port*		rdb_port;				// communication port
+	Firebird::AutoPtr<Svc>	rdb_svc;		// service-specific block
 	struct Rtr*		rdb_transactions;		// linked list of transactions
 	struct Rrq*		rdb_requests;			// compiled requests
 	struct Rvnt*	rdb_events;				// known events
@@ -120,9 +137,8 @@ public:
 
 public:
 	Rdb() :
-		rdb_iface(NULL), rdb_svc_iface(NULL),
-		rdb_port(0), rdb_transactions(0), rdb_requests(0),
-		rdb_events(0), rdb_sql_requests(0),
+		rdb_iface(NULL), rdb_port(0),
+		rdb_transactions(0), rdb_requests(0), rdb_events(0), rdb_sql_requests(0),
 		rdb_id(0), rdb_async_thread_id(0)
 	{
 	}
@@ -850,7 +866,7 @@ public:
 	ISC_STATUS	fetch_blob(P_SQLDATA*, PACKET*);
 	ISC_STATUS	get_segment(P_SGMT*, PACKET*);
 	ISC_STATUS	get_slice(P_SLC*, PACKET*);
-	ISC_STATUS	info(P_OP, P_INFO*, PACKET*);
+	void		info(P_OP, P_INFO*, PACKET*);
 	ISC_STATUS	insert(P_SQLDATA*, PACKET*);
 	ISC_STATUS	open_blob(P_OP, P_BLOB*, PACKET*);
 	ISC_STATUS	prepare(P_PREP*, PACKET*);
@@ -867,15 +883,17 @@ public:
 	{
 		return send_response(p, obj, length, status->get(), defer_flag);
 	}
-	ISC_STATUS	service_attach(const char*, Firebird::ClumpletWriter&, PACKET*);
+	ISC_STATUS	service_attach(const char*, Firebird::ClumpletWriter*, PACKET*, bool);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
-	ISC_STATUS	service_start(P_INFO*, PACKET*);
+	void		service_start(P_INFO*, PACKET*);
 	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);
 	ISC_STATUS	start(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
 	SSHORT		asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize);
+
+	Firebird::string getRemoteId() const;
 };
 
 

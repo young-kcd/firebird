@@ -35,7 +35,7 @@
 // This setting of maximum dpb size doesn't mean, that we
 // can't process larger DBPs! This is just recommended limit
 // cause it's hard to imagine sensefull DPB of even this size.
-const size_t MAX_DPB_SIZE = 1024;
+const size_t MAX_DPB_SIZE = 4096;
 
 namespace Firebird {
 
@@ -48,13 +48,20 @@ public:
 	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, UCHAR tag = 0);
 
 	// Create writer from a given buffer
-	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
-	//ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag = 0);
+	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag = 0);
 
 	// Create writer from a given buffer with possibly different clumplet version
-	ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer = NULL, size_t buffLen = 0);
+	ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer, size_t buffLen);
 	ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit,
-				   const UCHAR* buffer = NULL, size_t buffLen = 0);
+				   const UCHAR* buffer, size_t buffLen);
+
+	// Create empty writer
+	ClumpletWriter(const KindList* kl, size_t limit);
+	ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit);
+
+	// Create a copy of writer
+	ClumpletWriter(MemoryPool& pool, const ClumpletWriter& from);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, const size_t buffLen);

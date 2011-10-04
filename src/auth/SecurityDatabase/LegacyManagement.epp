@@ -117,7 +117,7 @@ static unsigned int secDbKey = INIT_KEY;
 namespace Auth {
 
 SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IPluginConfig* par)
-	: config(par->getFirebirdConf()), database(0), transaction(0), userName(getPool())
+	: config(par->getFirebirdConf()), database(0), transaction(0)
 {
 	config->release();
 }
@@ -144,24 +144,27 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 		dpb.insertByte(isc_dpb_gsec_attach, TRUE);
 
-		const char* str = logonInfo->name();
-		if (str && str[0])
+		const unsigned char* authBlock;
+		unsigned int authBlockSize = logonInfo->authBlock(&authBlock);
+		if (authBlockSize)
 		{
-			dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
-			userName = str;
+			dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 		}
+
 		else
 		{
-			userName = "<Unknown>";
+			const char* str = logonInfo->name();
+			if (str && str[0])
+			{
+				dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
+			}
+
+			str = logonInfo->role();
+			if (str && str[0])
+				dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
+			else if (logonInfo->forceAdmin())
+				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 		}
-
-		str = logonInfo->role();
-		if (str && str[0])
-			dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
-		else if (logonInfo->forceAdmin())
-			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-
-		// Work in progress - should put remote data to DPB !!!
 
 		ISC_STATUS_ARRAY status;
 		if (isc_attach_database(status, 0, secDbName, &database,

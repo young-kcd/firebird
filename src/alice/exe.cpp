@@ -321,35 +321,45 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 		dpb.insertInt(isc_dpb_set_db_sql_dialect, tdgbl->ALICE_data.ua_db_SQL_dialect);
 	}
 
-	if (tdgbl->ALICE_data.ua_user)
+	const unsigned char* authBlock;
+	unsigned int authBlockSize = tdgbl->uSvc->getAuthBlock(&authBlock);
+	if (authBlockSize)
 	{
-		dpb.insertString(isc_dpb_user_name,
-						 tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
+		dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 	}
-	if (tdgbl->ALICE_data.ua_password)
+
+	else
 	{
-		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-						 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
-	}
-	if (tdgbl->ALICE_data.ua_tr_user)
-	{
-		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_auth,
-						 tdgbl->ALICE_data.ua_tr_user, strlen(tdgbl->ALICE_data.ua_tr_user));
-	}
-	if (tdgbl->ALICE_data.ua_tr_role)
-	{
-		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-	}
-#ifdef TRUSTED_AUTH
-	if (tdgbl->ALICE_data.ua_trusted)
-	{
-		if (!dpb.find(isc_dpb_trusted_auth)) {
-			dpb.insertTag(isc_dpb_trusted_auth);
+		if (tdgbl->ALICE_data.ua_user)
+		{
+			dpb.insertString(isc_dpb_user_name,
+							 tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
 		}
-	}
+		if (tdgbl->ALICE_data.ua_password)
+		{
+			dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+							 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
+		}
+		if (tdgbl->ALICE_data.ua_tr_user)
+		{
+			tdgbl->uSvc->checkService();
+			dpb.insertString(isc_dpb_trusted_auth,
+							 tdgbl->ALICE_data.ua_tr_user, strlen(tdgbl->ALICE_data.ua_tr_user));
+		}
+		if (tdgbl->ALICE_data.ua_tr_role)
+		{
+			tdgbl->uSvc->checkService();
+			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+		}
+#ifdef TRUSTED_AUTH
+		if (tdgbl->ALICE_data.ua_trusted)
+		{
+			if (!dpb.find(isc_dpb_trusted_auth)) {
+				dpb.insertTag(isc_dpb_trusted_auth);
+			}
+		}
 #endif
+	}
 }
 
 

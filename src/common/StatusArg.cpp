@@ -88,6 +88,12 @@ void StatusVector::ImplStatusVector::clear() throw()
 	m_status_vector[0] = isc_arg_end;
 }
 
+bool StatusVector::ImplStatusVector::compare(const StatusVector& v) const throw()
+{
+	return m_length == v.length() &&
+		   memcmp(m_status_vector, v.value(), m_length  * sizeof(ISC_STATUS)) == 0;
+}
+
 void StatusVector::ImplStatusVector::makePermanent() throw()
 {
 	makePermanentVector(m_status_vector);

@@ -146,6 +146,9 @@ public:		// utilities interface with service
 			|| checkForShutdown();
 	}
 
+	// Get authentication block if present
+	virtual unsigned int getAuthBlock(const unsigned char** bytes);
+
 public:		// external interface with service
 	// Attach - service ctor
 	Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data);

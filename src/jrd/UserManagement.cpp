@@ -106,6 +106,13 @@ UserManagement::UserManagement(jrd_tra* tra)
 			return att->att_remote_address.c_str();
 		}
 
+		unsigned int FB_CARG authBlock(const unsigned char** bytes)
+		{
+			const Auth::UserData::AuthenticationBlock& aBlock = att->att_user->usr_auth_block;
+			*bytes = aBlock.getCount() ? aBlock.begin() : NULL;
+			return aBlock.getCount();
+		}
+
 	private:
 		const Attachment* att;
 	};

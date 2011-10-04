@@ -120,6 +120,16 @@ const UCHAR TPB[4] =
 	isc_tpb_wait
 };
 
+void getString(Auth::IClumplets* dpb, UCHAR tag, string& str)
+{
+	if (dpb->find(tag))
+	{
+		unsigned int len;
+		const UCHAR* s = dpb->get(&len);
+		str.assign(s, len);
+	}
+}
+
 } // anonymous namespace
 
 namespace Auth {
@@ -127,7 +137,7 @@ namespace Auth {
 class SecurityDatabase : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 {
 public:
-	Result verify(IWriter* authBlock, Firebird::ClumpletReader& originalDpb);
+	Result verify(IWriter* authBlock, IClumplets* originalDpb);
 
 	static int shutdown(const int, const int, void*);
 
@@ -291,7 +301,7 @@ void SecurityDatabase::prepare()
  *	Public interface
  */
 
-Result SecurityDatabase::verify(IWriter* authBlock, ClumpletReader& originalDpb)
+Result SecurityDatabase::verify(IWriter* authBlock, IClumplets* originalDpb)
 {
 	static AmCache useNative = AM_UNKNOWN;
 
@@ -309,22 +319,9 @@ Result SecurityDatabase::verify(IWriter* authBlock, ClumpletReader& originalDpb)
 	}
 
 	string login, password, passwordEnc;
-
-	for (originalDpb.rewind(); !originalDpb.isEof(); originalDpb.moveNext())
-	{
-		switch (originalDpb.getClumpTag())
-		{
-		case isc_dpb_user_name:
-			originalDpb.getString(login);
-			break;
-		case isc_dpb_password:
-			originalDpb.getString(password);
-			break;
-		case isc_dpb_password_enc:
-			originalDpb.getString(passwordEnc);
-			break;
-		}
-	}
+	getString(originalDpb, isc_dpb_user_name, login);
+	getString(originalDpb, isc_dpb_password, password);
+	getString(originalDpb, isc_dpb_password_enc, passwordEnc);
 
 	if (login.hasData() && (password.hasData() || passwordEnc.hasData()))
 	{
@@ -468,9 +465,8 @@ const static unsigned int INIT_KEY = ((~0) - 1);
 static unsigned int secDbKey = INIT_KEY;
 
 Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
-											  bool isService, const char*,
-											  const unsigned char* dpb, unsigned int dpbSize,
-											  IWriter* writerInterface)
+												   const AuthTags* tags, IClumplets* dpb,
+												   IWriter* writerInterface)
 {
 	status->init();
 
@@ -519,8 +515,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 
 		fb_assert(instance);
 
-		ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
-		Result rc = instance->verify(writerInterface, rdr);
+		Result rc = instance->verify(writerInterface, dpb);
 		TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
 		return rc;
 	}
@@ -531,9 +526,9 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 	}
 }
 
-Result SecurityDatabaseServer::contAuthentication(Firebird::IStatus*,
-											  IWriter* /*writerInterface*/,
-											  const unsigned char* /*data*/, unsigned int /*size*/)
+Result SecurityDatabaseServer::contAuthentication(Firebird::IStatus* status,
+											  const unsigned char* /*data*/, unsigned int /*size*/,
+											  IWriter* /*writerInterface*/)
 {
 	return AUTH_FAILED;
 }

@@ -139,6 +139,13 @@ int gsec(Firebird::UtilSvc* uSvc)
 	Auth::StackUserData u;
 	tdsec->tsec_user_data = &u;
 
+	const unsigned char* block;
+	unsigned int bs = uSvc->getAuthBlock(&block);
+	if (bs)
+	{
+		u.authenticationBlock.add(block, bs);
+	}
+
 	try {
 	// Perform some special handling when run as a Firebird service.
 
@@ -249,16 +256,19 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 		manager->addRef();
 
-		fb_assert(user_data->trustedUser.entered());
-		if (user_data->trustedUser.entered())
+		fb_assert(user_data->trustedUser.entered() || user_data->authenticationBlock.hasData());
+		if (user_data->trustedUser.entered() || user_data->authenticationBlock.hasData())
 		{
 			class GsecInfo : public Firebird::AutoIface<Auth::ILogonInfo, FB_AUTH_LOGON_INFO_VERSION>
 			{
 			public:
 				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole,
-						 const char* pProtocol, const char* pAddress)
+						 const char* pProtocol, const char* pAddress, 
+						 Auth::UserData::AuthenticationBlock* pAuthBlock)
 					: trustedUser(pTrustedUser), sqlRole(pRole), trustedRole(pTrustedRole),
-					  protocol(pProtocol), address(pAddress)
+					  protocol(pProtocol), address(pAddress),
+					  authBytes(pAuthBlock->getCount() ? pAuthBlock->begin() : NULL),
+					  authLength(pAuthBlock->getCount())
 				{ }
 
 				// ILogonInfo implementation
@@ -287,18 +297,26 @@ int gsec(Firebird::UtilSvc* uSvc)
 					return address;
 				}
 
+				unsigned int FB_CARG authBlock(const unsigned char** bytes)
+				{
+					*bytes = authBytes;
+					return authLength;
+				}
+
 			private:
 				const char* trustedUser;
 				const char* sqlRole;
 				int trustedRole;
 				const char* protocol;
 				const char* address;
+				const unsigned char* authBytes;
+				unsigned int authLength;
 			};
 
 			Firebird::LocalStatus st;
 			GsecInfo info(user_data->trustedUser.get(), user_data->role.get(),
 						  user_data->trustedRole && !user_data->role.entered(),
-						  network_protocol.c_str(), remote_address.c_str());
+						  network_protocol.c_str(), remote_address.c_str(), &user_data->authenticationBlock);
 			manager->start(&st, &info);
 
 			if (!st.isSuccess())

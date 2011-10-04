@@ -156,6 +156,8 @@ namespace fb_utils
 		unsigned int& bufferLength, unsigned char*& buffer,
 		Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath);
 
+	bool isRunningCheck(const UCHAR* items, unsigned int length);
+
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

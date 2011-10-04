@@ -123,6 +123,13 @@ public:
 		status_exception::raise(Arg::Gds(isc_utl_trusted_switch));
 	}
 
+	virtual unsigned int getAuthBlock(const unsigned char** bytes)
+	{
+		// Utility has no auth block
+		*bytes = NULL;
+		return 0;
+	}
+
 	// do nothing for non-service
 	virtual void finish() { m_finished = true; }
 	virtual void started() { }

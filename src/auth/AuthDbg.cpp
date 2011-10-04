@@ -56,21 +56,19 @@ DebugServer::DebugServer(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
-										const unsigned char* dpb, unsigned int dpbSize,
-										IWriter* writerInterface)
+Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, const AuthTags* tags,
+												IClumplets* dpb, IWriter* writerInterface)
 {
 	try
 	{
 		Firebird::MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 		str.erase();
-		Firebird::ClumpletReader rdr(isService ?
-			Firebird::ClumpletReader::spbList :
-			Firebird::ClumpletReader::dpbList, dpb, dpbSize);
 
-		if (rdr.find(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth))
+		if (dpb && dpb->find(tags->trustedAuth))
 		{
-			str.assign(rdr.getBytes(), rdr.getClumpLength());
+			unsigned int len;
+			const UCHAR* s = dpb->get(&len);
+			str.assign(s, len);
 		}
 
 		str += '_';
@@ -83,8 +81,8 @@ Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, bool 
 	}
 }
 
-Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
-									   const unsigned char* data, unsigned int size)
+Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const unsigned char* data,
+											   unsigned int size, IWriter* writerInterface)
 {
 	try
 	{
@@ -126,7 +124,7 @@ DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, bool isService, const char*, IDpbReader* dpb)
+Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb)
 {
 	try
 	{
@@ -134,8 +132,7 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, bool 
 		str = "HAND";
 		if (dpb)
 		{
-			dpb->add((isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth),
-					 str.c_str(), str.length());
+			dpb->add(tags->trustedAuth, str.c_str(), str.length());
 			return AUTH_SUCCESS;
 		}
 		return AUTH_MORE_DATA;

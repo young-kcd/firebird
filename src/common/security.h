@@ -27,6 +27,7 @@
 #include "../auth/AuthInterface.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/GetPlugins.h"
+#include "../common/classes/array.h"
 
 namespace Auth {
 
@@ -145,7 +146,7 @@ class UserData : public IUser
 {
 public:
 	UserData()
-		: op(0), trustedRole(0), trustedAuth(0)
+		: op(0), trustedRole(0), trustedAuth(0), authenticationBlock(*getDefaultMemoryPool())
 	{ }
 
 	// IUser implementation
@@ -201,10 +202,13 @@ public:
 
 	void FB_CARG clear();
 
+	typedef Firebird::Array<UCHAR> AuthenticationBlock;
+
 	int op, trustedRole, trustedAuth;
 	CharField user, pass, first, last, middle, group;
 	IntField u, g, adm;
 	CharField database, dba, dbaPassword, role, trustedUser;
+	AuthenticationBlock authenticationBlock;
 };
 
 class StackUserData : public Firebird::AutoIface<UserData, FB_AUTH_USER_VERSION>

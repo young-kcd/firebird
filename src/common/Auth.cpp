@@ -35,18 +35,21 @@ using namespace Firebird;
 
 namespace Auth {
 
-WriterImplementation::WriterImplementation(bool svcFlag)
+WriterImplementation::WriterImplementation()
 	: current(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE),
 	  result(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE),
 	  method(*getDefaultMemoryPool()),
-	  sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
+	  sequence(0)
 { }
 
-void WriterImplementation::store(ClumpletWriter& to)
+void WriterImplementation::store(ClumpletWriter* to, unsigned char tag)
 {
 	putLevel();
-	to.deleteWithTag(tag);
-	to.insertBytes(tag, result.getBuffer(), result.getBufferLength());
+	if (to)
+	{
+		to->deleteWithTag(tag);
+		to->insertBytes(tag, result.getBuffer(), result.getBufferLength());
+	}
 }
 
 void WriterImplementation::reset()
@@ -110,7 +113,24 @@ void DpbImplementation::add(UCHAR tag, const void* bytes, unsigned int count)
 
 void DpbImplementation::drop()
 {
-	body->deleteClumplet();
+	if (!body->isEof())
+	{
+		body->deleteClumplet();
+	}
+}
+
+const unsigned char* DpbImplementation::get(unsigned int* cntPtr)
+{
+	if (body->isEof())
+	{
+		return NULL;
+	}
+
+	if (cntPtr)
+	{
+		*cntPtr = body->getClumpLength();
+	}
+	return body->getBytes();
 }
 
 

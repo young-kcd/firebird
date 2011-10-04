@@ -48,23 +48,30 @@ public:
 };
 #define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 3)
 
-class IDpbReader : public Firebird::IVersioned
+class IClumplets : public Firebird::IVersioned
 {
 public:
 	virtual int FB_CARG find(UCHAR tag) = 0;
 	virtual void FB_CARG add(UCHAR tag, const void* bytes, unsigned int count) = 0;
 	virtual void FB_CARG drop() = 0;
+	virtual const unsigned char* FB_CARG get(unsigned int* cntPtr) = 0;
 };
-#define FB_AUTH_DPB_READER_VERSION (FB_VERSIONED_VERSION + 3)
+#define FB_AUTH_DPB_READER_VERSION (FB_VERSIONED_VERSION + 4)
+
+// This struct defines auth-related tags (including legacy ones) in parameter blocks
+struct AuthTags
+{
+	UCHAR authBlock, trustedAuth;
+	UCHAR service;	// non-zero if we work with service connection
+};
 
 class IServer : public Firebird::IPluginBase
 {
 public:
-	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
-									   const unsigned char* dpb, unsigned int dpbSize,
-									   IWriter* writerInterface) = 0;
-	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
-									  const unsigned char* data, unsigned int size) = 0;
+	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb,
+											   IWriter* writerInterface) = 0;
+	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, 
+											  unsigned int size, IWriter* writerInterface) = 0;
 	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 #define FB_AUTH_SERVER_VERSION (FB_PLUGIN_VERSION + 3)
@@ -72,7 +79,7 @@ public:
 class IClient : public Firebird::IPluginBase
 {
 public:
-	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, IDpbReader* dpb) = 0;
+	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb) = 0;
 	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size) = 0;
 	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
@@ -139,8 +146,9 @@ public:
 	virtual int FB_CARG forceAdmin() = 0;
 	virtual const char* FB_CARG networkProtocol() = 0;
 	virtual const char* FB_CARG remoteAddress() = 0;
+	virtual unsigned int FB_CARG authBlock(const unsigned char** bytes) = 0;
 };
-#define FB_AUTH_LOGON_INFO_VERSION (FB_VERSIONED_VERSION + 5)
+#define FB_AUTH_LOGON_INFO_VERSION (FB_VERSIONED_VERSION + 6)
 
 class IManagement : public Firebird::IPluginBase
 {

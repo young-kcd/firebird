@@ -36,6 +36,7 @@
 #include "../../jrd/trace/traceswi.h"
 #include "../../jrd/trace/TraceService.h"
 #include "../common/classes/MsgPrint.h"
+#include "../common/classes/ClumpletReader.h"
 #include "../jrd/license.h"
 
 
@@ -419,6 +420,35 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		}
 	}
 
+	// This is a temporal hack!!!
+	// AuthBlock should be passed inside trace and used on per-database basis
+	//		to make sure which attachments may be traced.
+	const unsigned char* bytes;
+	unsigned int authBlockSize = uSvc->getAuthBlock(&bytes);
+	if (authBlockSize)
+	{
+		AuthReader::AuthBlock authBlock;
+		authBlock.add(bytes, authBlockSize);
+
+		AuthReader auth(authBlock);
+		string dummy;
+		PathName secureDb;
+
+		if (auth.getInfo(&user, &dummy, &secureDb))
+		{
+			pwd = "";
+			adminRole = false;
+			if (!secureDb.hasData())
+			{
+				auth.moveNext();
+				string trusted_role;
+				if (auth.getInfo(&trusted_role, &dummy, &secureDb))
+				{
+					adminRole = true;
+				}
+			}
+		}
+	}
 
 	traceSvc->setAttachInfo(svc_name, user, pwd, adminRole);
 

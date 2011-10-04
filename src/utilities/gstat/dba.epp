@@ -676,30 +676,40 @@ int gstat(Firebird::UtilSvc* uSvc)
 	dpb.insertTag(isc_dpb_gstat_attach);
 	dpb.insertTag(isc_dpb_no_garbage_collect);
 
-	if (*username)
+	const unsigned char* authBlock;
+	unsigned int authBlockSize = uSvc->getAuthBlock(&authBlock);
+	if (authBlockSize)
 	{
-		dpb.insertString(isc_dpb_user_name, username, strlen(username));
+		dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 	}
-	if (*password)
+
+	else
 	{
-		dpb.insertString(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							password, strlen(password));
-	}
-	if (*tr_user)
-	{
-		uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_auth, tr_user, strlen(tr_user));
-		if (trusted_role)
+		if (*username)
 		{
-			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			dpb.insertString(isc_dpb_user_name, username, strlen(username));
 		}
-	}
+		if (*password)
+		{
+			dpb.insertString(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+							password, strlen(password));
+		}
+		if (*tr_user)
+		{
+			uSvc->checkService();
+			dpb.insertString(isc_dpb_trusted_auth, tr_user, strlen(tr_user));
+			if (trusted_role)
+			{
+				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			}
+		}
 #ifdef TRUSTED_AUTH
-	if (trusted_auth)
-	{
-		dpb.insertTag(isc_dpb_trusted_auth);
-	}
+		if (trusted_auth)
+		{
+			dpb.insertTag(isc_dpb_trusted_auth);
+		}
 #endif
+	}
 
 	isc_attach_database(status_vector, 0, connName.c_str(), &DB, dpb.getBufferLength(),
 						reinterpret_cast<const char*>(dpb.getBuffer()));
@@ -1045,14 +1055,17 @@ int gstat(Firebird::UtilSvc* uSvc)
 	if (status_vector[1])
 	{
 		tddba->uSvc->setServiceStatus(status_vector);
-		const ISC_STATUS* vector = status_vector;
-		SCHAR s[1024];
-		if (fb_interpret(s, sizeof(s), &vector))
+		if (!tddba->uSvc->isService())
 		{
-			tddba->uSvc->printf(true, "\n%s\n", s);
-			s[0] = '-';
-			while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
-				tddba->uSvc->printf(true, "%s\n", s);
+			const ISC_STATUS* vector = status_vector;
+			SCHAR s[1024];
+			if (fb_interpret(s, sizeof(s), &vector))
+			{
+				tddba->uSvc->printf(true, "\n%s\n", s);
+				s[0] = '-';
+				while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
+					tddba->uSvc->printf(true, "%s\n", s);
+				}
 			}
 		}
 	}

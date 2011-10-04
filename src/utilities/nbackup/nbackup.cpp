@@ -621,24 +621,34 @@ void NBackup::attach_database()
 
 	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
-	if (username.hasData()) {
-		dpb.insertString(isc_dpb_user_name, username);
-	}
-
-	if (password.hasData()) {
-		dpb.insertString(isc_dpb_password, password);
-	}
-
-	if (trustedUser.hasData())
+	const unsigned char* authBlock;
+	unsigned int authBlockSize = uSvc->getAuthBlock(&authBlock);
+	if (authBlockSize)
 	{
-		uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_auth, trustedUser);
+		dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 	}
 
-	if (trustedRole)
+	else
 	{
-		uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+		if (username.hasData()) {
+			dpb.insertString(isc_dpb_user_name, username);
+		}
+
+		if (password.hasData()) {
+			dpb.insertString(isc_dpb_password, password);
+		}
+
+		if (trustedUser.hasData())
+		{
+			uSvc->checkService();
+			dpb.insertString(isc_dpb_trusted_auth, trustedUser);
+		}
+
+		if (trustedRole)
+		{
+			uSvc->checkService();
+			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+		}
 	}
 
 	if (!run_db_triggers)

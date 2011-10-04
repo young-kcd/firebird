@@ -345,19 +345,18 @@ WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
 { }
 
 Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
-										  bool isService,
-										  const char* /*dbName*/,
-										  const unsigned char* dpb, unsigned int dpbSize,
+										  const AuthTags* tags,
+										  IClumplets* dpb,
 										  IWriter* /*writerInterface*/)
 {
-	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
-	ClumpletReader rdr((isService ? ClumpletReader::spbList : ClumpletReader::dpbList),
-		dpb, dpbSize);
+	const UCHAR tag = tags->trustedAuth;
 
-	if (rdr.find(tag))
+	if (dpb->find(tag))
 	{
 		sspiData.clear();
-		sspiData.add(rdr.getBytes(), rdr.getClumpLength());
+		unsigned int clumpLength;
+		const unsigned char* bytes = dpb->get(&clumpLength);
+		sspiData.add(bytes, clumpLength);
 		if (!sspi.accept(sspiData))
 		{
 			return AUTH_CONTINUE;
@@ -368,8 +367,8 @@ Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
 }
 
 Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
-										 IWriter* writerInterface,
-									     const unsigned char* data, unsigned int size)
+									     const unsigned char* data, unsigned int size,
+										 IWriter* writerInterface)
 {
 	sspiData.clear();
 	sspiData.add(data, size);
@@ -414,9 +413,8 @@ int WinSspiServer::release()
 }
 
 Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
-										  bool isService,
-										  const char* /*dbName*/,
-										  IDpbReader* dpb)
+										  const AuthTags* tags,
+										  IClumplets* dpb)
 {
 	sspi.request(sspiData);
 
@@ -424,12 +422,13 @@ Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 	{
 		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
 
-		UCHAR tag = isService ? isc_spb_trusted_role : isc_dpb_trusted_role;
+		UCHAR tag = tags->trustedRole;
 		while (dpb->find(tag))
 		{
 			dpb->drop();
 		}
-		tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
+
+		tag = tags->trustedAuth;
 		while (dpb->find(tag))
 		{
 			dpb->drop();

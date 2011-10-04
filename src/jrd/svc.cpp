@@ -497,9 +497,12 @@ void Service::setServiceStatus(const ISC_STATUS* status_vector)
 	{
 		Arg::StatusVector svc(svc_status);
 		Arg::StatusVector passed(status_vector);
-		svc.append(passed);
-		svc.copyTo(svc_status);
-		makePermanentStatusVector();
+		if (svc != passed)
+		{
+			svc.append(passed);
+			svc.copyTo(svc_status);
+			makePermanentStatusVector();
+		}
 	}
 }
 
@@ -622,6 +625,12 @@ void Service::checkService()
 	// no action
 }
 
+unsigned int Service::getAuthBlock(const unsigned char** bytes)
+{
+	*bytes = svc_auth_block.hasData() ? svc_auth_block.begin() : NULL;
+	return svc_auth_block.getCount();
+}
+
 void Service::getAddressPath(ClumpletWriter& dpb)
 {
 	if (svc_address_path.hasData())
@@ -684,7 +693,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_remote_pid(0), svc_current_guard(NULL)
 {
 	svc_trace_manager = NULL;
-	fb_utils::init_status(svc_status);
+	initStatus();
 	ThreadIdHolder holdId(svc_thread_strings);
 
 	{	// scope
@@ -1966,7 +1975,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_set_mapping ||
 		svc_id == isc_action_svc_drop_mapping;
 
-	if (flNeedUser)
+	if (flNeedUser && !svc_auth_block.hasData())
 	{
 		// add the username to the end of svc_switches if needed
 		if (svc_switches.hasData())
@@ -2007,7 +2016,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	parseSwitches();
 
 	// The service block can be reused hence init a status vector.
-	fb_utils::init_status(svc_status);
+	initStatus();
 
 	if (serv->serv_thd)
 	{
@@ -2089,7 +2098,7 @@ void Service::readFbLog()
 	{
 		if (file != NULL)
 		{
-			fb_utils::init_status(svc_status);
+			initStatus();
 			started();
 			svc_started = true;
 			TEXT buffer[100];

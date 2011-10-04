@@ -76,6 +76,8 @@ protected:
 		virtual void shiftLeft(const MetaName&) throw() { }
 		virtual void shiftLeft(const QualifiedName&) throw() { }
 
+		virtual bool compare(const StatusVector& v) const throw() { return false; }
+
 		ImplBase(ISC_STATUS k, ISC_STATUS c) throw() : kind(k), code(c) { }
 		virtual ~ImplBase() { }
 	};
@@ -120,6 +122,7 @@ protected:
 		virtual void shiftLeft(const AbstractString& text) throw();
 		virtual void shiftLeft(const MetaName& text) throw();
 		virtual void shiftLeft(const QualifiedName& text) throw();
+		virtual bool compare(const StatusVector& v) const throw();
 
 		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw() : ImplBase(k, c)
 		{
@@ -192,6 +195,16 @@ public:
 	{
 		implementation->shiftLeft(text);
 		return *this;
+	}
+
+	bool operator==(const StatusVector& arg) const throw()
+	{
+		return implementation->compare(arg);
+	}
+
+	bool operator!=(const StatusVector& arg) const throw()
+	{
+		return !(*this == arg);
 	}
 
 private:

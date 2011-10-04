@@ -853,3 +853,23 @@ void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
 		rsr_status->save(temp);
 	}
 }
+
+Firebird::string rem_port::getRemoteId() const
+{
+	Firebird::string id;
+
+	if (port_protocol_str)
+	{
+		id += Firebird::string(port_protocol_str->str_data, port_protocol_str->str_length);
+	}
+	if (port_protocol_str && port_address_str)
+	{
+		id += '/';
+	}
+	if (port_address_str)
+	{
+		id += Firebird::string(port_address_str->str_data, port_address_str->str_length);
+	}
+
+	return id;
+}

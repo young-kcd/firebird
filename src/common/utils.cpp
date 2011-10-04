@@ -1113,4 +1113,69 @@ void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
 	}
 }
 
+// returns true if passed info items work with running svc thread
+bool isRunningCheck(const UCHAR* items, unsigned int length)
+{
+	enum {S_NEU, S_RUN, S_INF} state = S_NEU;
+
+	while (length--)
+	{
+		if (!items)
+		{
+			(Firebird::Arg::Gds(isc_random) << "Missing info items block of non-zero length").raise();
+		}
+
+		switch(*items++)
+		{
+		case isc_info_end:
+		case isc_info_truncated:
+		case isc_info_error:
+		case isc_info_data_not_ready:
+		case isc_info_length:
+		case isc_info_flag_end:
+		case isc_info_svc_auth_block:
+			break;
+
+		case isc_info_svc_line:
+		case isc_info_svc_to_eof:
+		case isc_info_svc_timeout:
+		case isc_info_svc_limbo_trans:
+		case isc_info_svc_running:
+		case isc_info_svc_get_users:
+			if (state == S_INF)
+			{
+				(Firebird::Arg::Gds(isc_random) << "Wrong info items combination").raise();
+			}
+			state = S_RUN;
+			break;
+
+		case isc_info_svc_svr_db_info:
+		case isc_info_svc_get_license:
+		case isc_info_svc_get_license_mask:
+		case isc_info_svc_get_config:
+		case isc_info_svc_version:
+		case isc_info_svc_server_version:
+		case isc_info_svc_implementation:
+		case isc_info_svc_capabilities:
+		case isc_info_svc_user_dbpath:
+		case isc_info_svc_get_env:
+		case isc_info_svc_get_env_lock:
+		case isc_info_svc_get_env_msg:
+		case isc_info_svc_get_licensed_users:
+			if (state == S_RUN)
+			{
+				(Firebird::Arg::Gds(isc_random) << "Wrong info items combination").raise();
+			}
+			state = S_INF;
+			break;
+
+		default:
+			(Firebird::Arg::Gds(isc_random) << "Unknown info item").raise();
+			break;
+		}
+	}
+
+	return state == S_RUN;
+}
+
 } // namespace fb_utils

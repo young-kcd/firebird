@@ -955,6 +955,13 @@ int gbak(Firebird::UtilSvc* uSvc)
 	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
 	uSvc->getAddressPath(dpb);
 
+	const UCHAR* authBlock;
+	unsigned int authSize = uSvc->getAuthBlock(&authBlock);
+	if (authBlock)
+	{
+		dpb.insertBytes(isc_dpb_auth_block, authBlock, authSize);
+	}
+
 	// We call getTableMod() because we are interested in the items that were activated previously,
 	// not in the original, unchanged table that "switches" took as parameter in the constructor.
 	for (const Switches::in_sw_tab_t* in_sw_tab = switches.getTableMod();
@@ -999,8 +1006,11 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 		case IN_SW_BURP_PASS:
 		case IN_SW_BURP_FETCHPASS:
-			dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
+			if (!authBlock)
+			{
+				dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+								 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
+			}
 			break;
 
 		case IN_SW_BURP_R:
@@ -1023,19 +1033,28 @@ int gbak(Firebird::UtilSvc* uSvc)
 			break;
 
 		case IN_SW_BURP_USER:
-			dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+			if (!authBlock)
+			{
+				dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+			}
 			break;
 
 		case IN_SW_BURP_TRUSTED_USER:
 			uSvc->checkService();
-			dpb.deleteWithTag(isc_dpb_trusted_auth);
-			dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+			if (!authBlock)
+			{
+				dpb.deleteWithTag(isc_dpb_trusted_auth);
+				dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+			}
 			break;
 
 		case IN_SW_BURP_TRUSTED_ROLE:
 			uSvc->checkService();
-			dpb.deleteWithTag(isc_dpb_trusted_role);
-			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			if (!authBlock)
+			{
+				dpb.deleteWithTag(isc_dpb_trusted_role);
+				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			}
 			break;
 
 #ifdef TRUSTED_AUTH

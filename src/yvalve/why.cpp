@@ -617,7 +617,7 @@ namespace Why
 	class YEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		YEntry(IStatus* aStatus, Y* object, bool checkAttachment = true)
+		YEntry(IStatus* aStatus, Y* object, int checkAttachment = 1)
 			: ref(object->attachment), nextRef(object->next), counter(object->attachment)
 		{
 			aStatus->init();
@@ -671,7 +671,7 @@ namespace Why
 	};
 
 	template <>
-	YEntry<YAttachment>::YEntry(IStatus* aStatus, YAttachment* aAttachment, bool checkAttachment)
+	YEntry<YAttachment>::YEntry(IStatus* aStatus, YAttachment* aAttachment, int checkAttachment)
 		: ref(aAttachment), nextRef(aAttachment->next), counter(aAttachment)
 	{
 		aStatus->init();
@@ -686,13 +686,16 @@ namespace Why
 	}
 
 	template <>
-	YEntry<YService>::YEntry(IStatus* aStatus, YService* aService, bool)
-		: ref(aService), nextRef(aService->next), counter(aService)
+	YEntry<YService>::YEntry(IStatus* aStatus, YService* aService, int mode)
+		: ref(aService), nextRef(NULL), counter(aService)
 	{
 		aStatus->init();
 
-		if (!(nextRef.hasData()))
+		nextRef = aService->getNextService(mode, aStatus);
+		if ((mode != YService::SERV_DETACH) && !(nextRef.hasData()))
+		{
 			Arg::Gds(YService::ERROR_CODE).raise();
+		}
 
 		init();
 	}
@@ -700,14 +703,14 @@ namespace Why
 	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		explicit DispatcherEntry(IStatus* aStatus)
+		explicit DispatcherEntry(IStatus* aStatus, bool ignoreShutdownError = false)
 		{
 			signalInit();
 
 			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
 			registerBuiltinPlugins.init();
 
-			if (shutdownStarted)
+			if (shutdownStarted && !ignoreShutdownError)
 			{
 				Arg::Gds(isc_att_shutdown).raise();
 			}
@@ -4477,7 +4480,7 @@ void YAttachment::detach(IStatus* status)
 {
 	try
 	{
-		YEntry<YAttachment> entry(status, this, false);
+		YEntry<YAttachment> entry(status, this, 0);
 
 		if (entry.next())
 			entry.next()->detach(status);
@@ -4554,25 +4557,160 @@ void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTra
 //-------------------------------------
 
 
-YService::YService(IProvider* aProvider, IService* aNext)
-	: YHelper<YService, IService, FB_SERVICE_VERSION>(aNext),
-	  provider(aProvider)
+static IService* getServiceManagerByName(IProvider** provider, IStatus* status, const char* serviceName,
+										 unsigned int spbLength, const unsigned char* spb)
 {
-	provider->addRef();
+	for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
+			FB_PROVIDER_VERSION, upInfo);
+		 providerIterator.hasData();
+		 providerIterator.next())
+	{
+		IProvider* p = providerIterator.plugin();
+
+		IService* service = p->attachServiceManager(status, serviceName, spbLength, spb);
+
+		if (status->isSuccess())
+		{
+			if (provider)
+			{
+				p->addRef();
+				*provider = p;
+			}
+			return service;
+		}
+
+	}
+
+	if (status->isSuccess())
+		Arg::Gds(isc_service_att_err).copyTo(status);
+	return NULL;
+}
+
+void YService::ServiceType::shutdown()
+{
+	if (provider)
+	{
+		next = NULL;
+		PluginManagerInterfacePtr()->releasePlugin(provider);
+		provider = NULL;
+	}
+}
+
+void YService::ServiceType::detach(IStatus* status)
+{
+	if (next.hasData())
+	{
+		next->detach(status);
+		if (!status->isSuccess())
+		{
+			status_exception::raise(status->get());
+		}
+	}
+}
+
+YService::ServiceType::~ServiceType()
+{
+	if (provider)
+	{
+		PluginManagerInterfacePtr()->releasePlugin(provider);
+		provider = NULL;
+	}
+}
+
+YService::YService(IProvider* aProvider, IService* aNext)
+	: regular(aNext, aProvider), attachName(getPool()),
+	  checkSpbLen(0), checkSpbPresent(NULL),
+	  authBlock(getPool())
+{
 	handle = makeHandle(&services, this);
+	this->addRef();		// from YHelper
+}
+
+YService::YService(const char* svcName, unsigned int spbLength, const unsigned char* spb)
+	: attachName(getPool()),
+	  attachSpb(FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList,
+												 MAX_DPB_SIZE, spb, spbLength)),
+	  checkSpbLen(0), checkSpbPresent(NULL),
+	  authBlock(getPool())
+{
+	attachName.assign(svcName);
+	handle = makeHandle(&services, this);
+	this->addRef();		// from YHelper
+
+	if (attachSpb->find(isc_spb_auth_block))
+	{
+		authBlock.add(attachSpb->getBytes(), attachSpb->getClumpLength());
+	}
+}
+
+IService* YService::getNextService(int mode, IStatus* status)
+{
+	if (regular.next)
+	{
+		return regular.next;
+	}
+
+	switch (mode)
+	{
+	case SERV_START:
+		if (started.provider)
+		{
+			started.shutdown();
+		}
+
+		started.next = getServiceManagerByName(&started.provider, status, attachName.c_str(),
+											   attachSpb ? attachSpb->getBufferLength() : 0,
+											   attachSpb ? attachSpb->getBuffer() : NULL);
+		if (!status->isSuccess())
+		{
+			status_exception::raise(status->get());
+		}
+
+		return started.next;
+
+	case SERV_QUERY:
+		if (fb_utils::isRunningCheck(checkSpbPresent, checkSpbLen))
+		{
+			return started.next;
+		}
+
+		if (queryCache.next)
+		{
+			return queryCache.next;
+		}
+
+		attachSpb->dump();
+		queryCache.next = getServiceManagerByName(&queryCache.provider, status, attachName.c_str(),
+											  attachSpb ? attachSpb->getBufferLength() : 0,
+											  attachSpb ? attachSpb->getBuffer() : NULL);
+		if (!status->isSuccess())
+		{
+			status_exception::raise(status->get());
+		}
+
+		return queryCache.next;
+
+	case SERV_DETACH:
+		break;
+
+	default:
+		fb_assert(false);
+	}
+
+	return NULL;
 }
 
 YService::~YService()
 {
-	if (provider)
-		PluginManagerInterfacePtr()->releasePlugin(provider);
 }
 
 void YService::destroy()
 {
 	removeHandle(&services, handle);
 
-	next = NULL;
+	regular.next = NULL;
+	started.next = NULL;
+	queryCache.next = NULL;
 	release();
 }
 
@@ -4580,16 +4718,42 @@ void YService::detach(IStatus* status)
 {
 	try
 	{
-		YEntry<YService> entry(status, this);
+		YEntry<YService> entry(status, this, SERV_DETACH);
 
-		entry.next()->detach(status);
+		regular.detach(status);
+		started.detach(status);
+		queryCache.detach(status);
 
-		if (status->isSuccess())
-			destroy();
+		destroy();
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
+	}
+}
+
+void YService::populateSpb(ClumpletWriter& spb, UCHAR tag)
+{
+	if (attachSpb)
+	{
+		if (attachSpb->find(isc_spb_auth_block))
+		{
+			attachSpb->deleteClumplet();
+		}
+	}
+	else
+	{
+		attachSpb = FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList, MAX_DPB_SIZE);
+	}
+
+	if (spb.find(tag))
+	{
+		attachSpb->insertBytes(isc_spb_auth_block, spb.getBytes(), spb.getClumpLength());
+		spb.deleteClumplet();
+	}
+	else
+	{
+		attachSpb->insertTag(isc_spb_auth_block);
 	}
 }
 
@@ -4599,8 +4763,33 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 {
 	try
 	{
-		YEntry<YService> entry(status, this);
+		ClumpletWriter spb(ClumpletReader::SpbSendItems, MAX_DPB_SIZE, sendItems, sendLength);
+		populateSpb(spb, isc_info_svc_auth_block);
+
+		checkSpbLen = receiveLength;
+		checkSpbPresent = receiveItems;
+		YEntry<YService> entry(status, this, SERV_QUERY);
 		entry.next()->query(status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
+		checkSpbLen = 0;
+		checkSpbPresent = NULL;
+	}
+	catch (const Exception& e)
+	{
+		checkSpbLen = 0;
+		checkSpbPresent = NULL;
+		e.stuffException(status);
+	}
+}
+
+void YService::start(IStatus* status, unsigned int spbLength, const unsigned char* spbItems)
+{
+	try
+	{
+		ClumpletWriter spb(ClumpletReader::SpbStart, MAX_DPB_SIZE, spbItems, spbLength);
+		populateSpb(spb, isc_spb_auth_block);
+
+		YEntry<YService> entry(status, this, SERV_START);
+		entry.next()->start(status, spb.getBufferLength(), spb.getBuffer());
 	}
 	catch (const Exception& e)
 	{
@@ -4608,17 +4797,23 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 	}
 }
 
-void YService::start(IStatus* status, unsigned int spbLength, const unsigned char* spb)
+int YService::release()
 {
-	try
+	if (--this->refCounter == 0)
 	{
-		YEntry<YService> entry(status, this);
-		entry.next()->start(status, spbLength, spb);
+		if (regular.next || started.next || queryCache.next)
+		{
+			++this->refCounter; // to be decremented in destroy()
+			++this->refCounter; // to avoid recursion
+			this->destroy(); // destroy() must call release()
+			--this->refCounter;
+		}
+
+		delete this; // call correct destructor !
+		return 0;
 	}
-	catch (const Exception& e)
-	{
-		e.stuffException(status);
-	}
+
+	return 1;
 }
 
 
@@ -4632,9 +4827,6 @@ YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 	try
 	{
 		DispatcherEntry entry(status);
-
-		if (shutdownStarted)
-			status_exception::raise(Arg::Gds(isc_att_shutdown));
 
 		if (!filename)
 			status_exception::raise(Arg::Gds(isc_bad_db_format) << Arg::Str(""));
@@ -4751,9 +4943,6 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 	try
 	{
 		DispatcherEntry entry(status);
-
-		if (shutdownStarted)
-			status_exception::raise(Arg::Gds(isc_att_shutdown));
 
 		if (!filename)
 			status_exception::raise(Arg::Gds(isc_bad_db_format) << Arg::Str(""));
@@ -4879,14 +5068,11 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceName,
 	unsigned int spbLength, const unsigned char* spb)
 {
+	IService* service = NULL;
+
 	try
 	{
 		DispatcherEntry entry(status);
-
-		IService* service = NULL;
-
-		if (shutdownStarted)
-			status_exception::raise(Arg::Gds(isc_att_shutdown));
 
 		if (!serviceName)
 			status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svc_name_missing));
@@ -4894,42 +5080,32 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		if (spbLength > 0 && !spb)
 			status_exception::raise(Arg::Gds(isc_bad_spb_form));
 
-		string svcName(serviceName);
-		svcName.rtrim();
+		PathName svcName(serviceName);
+		svcName.trim();
 
-		try
+		if (ISC_check_if_remote(svcName, false))
 		{
-			for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-					FB_PROVIDER_VERSION, upInfo);
-				 providerIterator.hasData();
-				 providerIterator.next())
-			{
-				IProvider* provider = providerIterator.plugin();
+			IProvider* provider = NULL;
+			service = getServiceManagerByName(&provider, status, svcName.c_str(), spbLength, spb);
 
-				service = provider->attachServiceManager(status, svcName.c_str(), spbLength, spb);
-
-				if (status->isSuccess())
-					return new YService(provider, service);
-
-				service = NULL;
-			}
-
-			if (status->get()[1] == 0)
-				Arg::Gds(isc_service_att_err).raise();
-		}
-		catch (const Exception&)
-		{
 			if (service)
 			{
-				StatusVector temp(NULL);
-				service->detach(&temp);
+				return new YService(provider, service);
 			}
-
-			throw;
+		}
+		else
+		{
+			return new YService(svcName.c_str(), spbLength, spb);
 		}
 	}
 	catch (const Exception& e)
 	{
+		if (service)
+		{
+			StatusVector temp(NULL);
+			service->detach(&temp);
+		}
+
 		e.stuffException(status);
 	}
 
@@ -4940,7 +5116,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 {
 	try
 	{
-		DispatcherEntry entry(userStatus);
+		DispatcherEntry entry(userStatus, true);
 
 		static GlobalPtr<Mutex> singleShutdown;
 		MutexLockGuard guard(singleShutdown);
@@ -5019,16 +5195,15 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 						if (service->enterCount)
 						{
 							hasThreads = true;
-							continue;
+							break;
 						}
 
-						if (service->provider)
-						{
-							service->next = NULL;
-							PluginManagerInterfacePtr()->releasePlugin(service->provider);
-							service->provider = NULL;
-						}
+						service->shutdown();
 					} while (accessor.getNext());
+				}
+				if (hasThreads)
+				{
+					continue;
 				}
 			}
 

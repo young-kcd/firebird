@@ -121,6 +121,13 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, si
 	rewind();	// this will set cur_offset and spbState
 }
 
+ClumpletReader::ClumpletReader(MemoryPool& pool, const ClumpletReader& from) :
+	AutoStorage(pool), kind(from.kind),
+	static_buffer(from.getBuffer()), static_buffer_end(from.getBufferEnd())
+{
+	rewind();	// this will set cur_offset and spbState
+}
+
 ClumpletReader::ClumpletReader(MemoryPool& pool, const KindList* kl,
 							   const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
 	AutoStorage(pool), kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
@@ -222,7 +229,8 @@ UCHAR ClumpletReader::getBufferTag() const
 	case SpbStart:
 	case UnTagged:
 	case WideUnTagged:
-	case SpbItems:
+	case SpbSendItems:
+	case SpbReceiveItems:
 		usage_mistake("buffer is not tagged");
 		return 0;
 	case SpbAttach:
@@ -275,9 +283,27 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			return TraditionalDpb;
 		}
 		return SingleTpb;
-	case SpbItems:
+	case SpbSendItems:
+		switch (tag)
+		{
+		case isc_info_svc_auth_block:
+			return Wide;
+		case isc_info_end:
+		case isc_info_truncated:
+		case isc_info_error:
+		case isc_info_data_not_ready:
+		case isc_info_length:
+		case isc_info_flag_end:
+			return SingleTpb;
+		}
+		return StringSpb;
+	case SpbReceiveItems:
 		return SingleTpb;
 	case SpbStart:
+		if (spbState != 0 && tag == isc_spb_auth_block)
+		{
+			return Wide;
+		}
 		switch (spbState)
 		{
 		case 0:
@@ -554,7 +580,8 @@ void ClumpletReader::rewind()
 	case UnTagged:
 	case WideUnTagged:
 	case SpbStart:
-	case SpbItems:
+	case SpbSendItems:
+	case SpbReceiveItems:
 		cur_offset = 0;
 		break;
 	default:

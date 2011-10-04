@@ -45,7 +45,7 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {EndOfList, Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
+	enum Kind {EndOfList, Tagged, UnTagged, SpbAttach, SpbStart, Tpb, WideTagged, WideUnTagged, SpbSendItems, SpbReceiveItems};
 
 	struct KindList
 	{
@@ -63,10 +63,14 @@ public:
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
 	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
+
 	// Different versions of clumplets may have different kinds
 	ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
 	ClumpletReader(MemoryPool& pool, const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
 	virtual ~ClumpletReader() { }
+
+	// Create a copy of reader
+	ClumpletReader(MemoryPool& pool, const ClumpletReader& from);
 
 	// Navigation in clumplet buffer
 	bool isEof() const { return cur_offset >= getBufferLength(); }
@@ -89,6 +93,9 @@ public:
 	ISC_TIME getTime() const { return getInt(); }
 	ISC_DATE getDate() const { return getInt(); }
 
+	// get the most generic representation of clumplet
+	SingleClumplet getClumplet() const;
+
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
 	// true if buffer has tag
@@ -97,7 +104,8 @@ public:
 	{
 		size_t rc = getBufferEnd() - getBuffer();
 		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
-					   kind != WideUnTagged && kind != SpbItems)
+					   kind != WideUnTagged && kind != SpbSendItems &&
+					   kind != SpbReceiveItems)
 		{
 			rc = 0;
 		}
@@ -142,9 +150,6 @@ protected:
 
 	// This is called when passed buffer appears invalid
 	virtual void invalid_structure(const char* what) const;
-
-	// get the most generic representation of clumplet
-	SingleClumplet getClumplet() const;
 
 private:
 	// Assignment and copy constructor not implemented.

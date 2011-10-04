@@ -44,9 +44,9 @@ bool legacy(const char* nm);
 class WriterImplementation : public Firebird::AutoIface<IWriter, FB_AUTH_WRITER_VERSION>
 {
 public:
-	WriterImplementation(bool svcFlag);
+	WriterImplementation();
 
-	void store(Firebird::ClumpletWriter& to);
+	void store(Firebird::ClumpletWriter* to, unsigned char tag);
 	void setMethod(const char* m);
 
 	// IWriter implementation
@@ -58,82 +58,27 @@ private:
 	Firebird::ClumpletWriter current, result;
 	Firebird::string method;
 	unsigned int sequence;
-	unsigned char tag;
 
 	void putLevel();
 };
 
-class DpbImplementation : public Firebird::AutoIface<IDpbReader, FB_AUTH_DPB_READER_VERSION>
+class DpbImplementation : public Firebird::AutoIface<IClumplets, FB_AUTH_DPB_READER_VERSION>
 {
 public:
 	DpbImplementation(Firebird::ClumpletWriter& base);
 
-	// IDpbReader implementation
+	// DpbImplementation implementation
 	int FB_CARG find(UCHAR tag);
 	void FB_CARG add(UCHAR tag, const void* bytes, unsigned int count);
 	void FB_CARG drop();
+	const unsigned char* FB_CARG get(unsigned int* cntPtr);
 
 private:
 	Firebird::ClumpletWriter* body;
 };
 
-//#define AUTH_DEBUG
-
-#ifdef AUTH_DEBUG
-
-// The idea of debug plugin is to send some data from server to client,
-// modify them on client and return result (which becomes login name) to the server
-
-class DebugServer : Firebird::StdIface<public Firebird::IPluginFactory, FB_PLUGINS_FACTORY_VERSION>
-{
-public:
-	// IPluginFactory implementation
-	Firebird::IInterface* FB_CARG createPlugin(const char* name, const char* configFile);
-    int FB_CARG release();
-};
-
-class DebugClient : public Firebird::StdIface<Firebird::IPluginFactory, FB_PLUGINS_FACTORY_VERSION>
-{
-public:
-	// IPluginFactory implementation
-	Firebird::IInterface* FB_CARG createPlugin(const char* name, const char* configFile);
-    int FB_CARG release();
-};
-
-class DebugServerInstance : public Firebird::StdPlugin<ServerInstance, FB_AUTH_SERVER_VERSION>
-{
-public:
-	DebugServerInstance();
-
-	// ServerInstance implementation
-    Result FB_CARG startAuthentication(bool isService, const char* dbName,
-                                       const unsigned char* dpb, unsigned int dpbSize,
-                                       IWriter* writerInterface);
-    Result FB_CARG contAuthentication(IWriter* writerInterface,
-                                      const unsigned char* data, unsigned int size);
-    void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
-    int FB_CARG release();
-
-private:
-	Firebird::string str;
-};
-
-class DebugClientInstance : public Firebird::StdPlugin<ClientInstance, FB_AUTH_CLIENT_VERSION>
-{
-public:
-	DebugClientInstance();
-
-	// ClientInstance implementation
-	Result FB_CARG startAuthentication(bool isService, const char* dbName, IDpbReader* dpb);
-	Result FB_CARG contAuthentication(const unsigned char* data, unsigned int size);
-    void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
-    int FB_CARG release();
-
-private:
-	Firebird::string str;
-};
-
-#endif // AUTH_DEBUG
+static const AuthTags DB_ATTACH_LIST = {isc_dpb_auth_block, isc_dpb_trusted_auth, 0};
+static const AuthTags SVC_ATTACH_LIST = {isc_spb_auth_block, isc_spb_trusted_auth, 1};
 
 } // namespace Auth
 

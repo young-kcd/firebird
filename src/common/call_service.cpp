@@ -412,6 +412,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 
 	spb = spb_buffer;
 	stuffSpbByte(spb, isc_info_svc_timeout);
+	stuffSpbShort(spb, 4);
 	stuffSpbLong(spb, 10);
 
 	char resultBuffer[RESULT_BUF_SIZE + 4];
@@ -454,7 +455,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		for (;;)
 		{
 			isc_resv_handle reserved = 0;
-			isc_service_query(local_status, &handle, &reserved, spb - spb_buffer, spb_buffer,
+			isc_service_query(local_status, &handle, &reserved, 0, NULL,
 				1, &request, RESULT_BUF_SIZE, resultBuffer);
 			if (local_status[1])
 			{

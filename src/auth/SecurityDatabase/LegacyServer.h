@@ -51,11 +51,10 @@ public:
 	{ }
 
 	// IServer implementation
-	Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
-									   const unsigned char* dpb, unsigned int dpbSize,
+	Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb,
 									   IWriter* writerInterface);
-	Result FB_CARG contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
-									  const unsigned char* data, unsigned int size);
+    Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data,
+		                              unsigned int size, IWriter* writerInterface);
 	void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
 	int FB_CARG release();
 

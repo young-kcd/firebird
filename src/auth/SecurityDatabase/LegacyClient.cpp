@@ -33,7 +33,7 @@
 
 namespace Auth {
 
-Result SecurityDatabaseClient::startAuthentication(Firebird::IStatus*, bool, const char*, IDpbReader* dpb)
+Result SecurityDatabaseClient::startAuthentication(Firebird::IStatus*, const AuthTags* tags, IClumplets* dpb)
 {
 	return dpb->find(isc_dpb_user_name) &&
 		(dpb->find(isc_dpb_password) || dpb->find(isc_dpb_password_enc)) ?

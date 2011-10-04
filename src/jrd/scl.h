@@ -26,6 +26,7 @@
 
 #include "../common/classes/MetaName.h"
 #include "../common/classes/tree.h"
+#include "../common/security.h"
 
 namespace Jrd {
 
@@ -91,6 +92,7 @@ public:
 	Firebird::string	usr_sql_role_name;	// Role name
 	Firebird::string	usr_project_name;	// Project name
 	Firebird::string	usr_org_name;		// Organization name
+	Auth::UserData::AuthenticationBlock usr_auth_block;	// Authentication block like it was passed to engine
 	USHORT				usr_user_id;		// User id
 	USHORT				usr_group_id;		// Group id
 	USHORT				usr_flags;			// Misc. crud
@@ -109,10 +111,13 @@ public:
 		  usr_sql_role_name(p, ui.usr_sql_role_name),
 		  usr_project_name(p, ui.usr_project_name),
 		  usr_org_name(p, ui.usr_org_name),
+		  usr_auth_block(p),
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_flags(ui.usr_flags)
-	{ }
+	{
+		usr_auth_block.assign(ui.usr_auth_block);
+	}
 
 	UserId(const UserId& ui)
 		: usr_user_name(ui.usr_user_name),
@@ -122,7 +127,9 @@ public:
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_flags(ui.usr_flags)
-	{ }
+	{
+		usr_auth_block.assign(ui.usr_auth_block);
+	}
 
 	UserId& operator=(const UserId& ui)
 	{
@@ -133,6 +140,7 @@ public:
 		usr_user_id = ui.usr_user_id;
 		usr_group_id = ui.usr_group_id;
 		usr_flags = ui.usr_flags;
+		usr_auth_block.assign(ui.usr_auth_block);
 
 		return *this;
 	}

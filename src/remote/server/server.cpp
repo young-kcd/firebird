@@ -73,6 +73,7 @@
 #include "../common/classes/GetPlugins.h"
 #include "../common/db_alias.h"
 #include "../common/StatementMetadata.h"
+#include "../common/isc_f_proto.h"
 
 using namespace Firebird;
 
@@ -103,6 +104,15 @@ public:
 };
 
 namespace {
+
+// this sets of parameters help use same functions
+// for both services and databases attachments
+struct ParametersSet
+{
+	UCHAR address_path;
+};
+const ParametersSet dpbParam = {isc_dpb_address_path};
+const ParametersSet spbParam = {isc_spb_address_path};
 
 // Disable attempts to brute-force logins/passwords
 class FailedLogin
@@ -223,39 +233,20 @@ MakeUpgradeInfo<> upInfo;
 // delayed authentication block for auth callback
 class ServerAuth : public GlobalStorage, public ServerAuthBase
 {
-private:
-	typedef void Part2(rem_port*, P_OP, const char*, ClumpletWriter&, PACKET*);
-
 public:
-	ServerAuth(rem_port* port, const PathName& fName, const UCHAR *pb, int pbLen,
-			   Part2* p2, P_OP op)
-		: fileName(getPool(), fName),
-		  config(getConfig(fileName)),
-		  wrt(getPool(), op == op_service_attach ? ClumpletReader::spbList : ClumpletReader::dpbList,
-		  	  MAX_DPB_SIZE, pb, pbLen),
-		  authBlockInterface(op == op_service_attach),
+	virtual void accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock) = 0;
+
+	ServerAuth(const PathName* dbName, ClumpletWriter* aPb, const Auth::AuthTags& aTags)
+		: config(getConfig(dbName)),
+		  iPb(*aPb),
 		  authItr(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, upInfo, config),
-		  remoteId(getPool()), userName(getPool()), authServer(NULL),
-		  part2(p2), operation(op)
+		  userName(getPool()),
+		  authServer(NULL),
+		  tags(&aTags)
 	{
-		// Do not store port here - it will be passed to authenticate() explicitly
-
-		if (port->port_protocol_str)
+		if (aPb->find(isc_dpb_user_name))
 		{
-			remoteId += string(port->port_protocol_str->str_data, port->port_protocol_str->str_length);
-		}
-		if (port->port_protocol_str || port->port_address_str)
-		{
-			remoteId += '/';
-		}
-		if (port->port_address_str)
-		{
-			remoteId += string(port->port_address_str->str_data, port->port_address_str->str_length);
-		}
-
-		if (wrt.find(isc_dpb_user_name))
-		{
-			wrt.getString(userName);
+			aPb->getString(userName);
 		}
 	}
 
@@ -279,11 +270,8 @@ public:
 			fb_assert(first || data);
 			authBlockInterface.setMethod(authItr.name());
 			Auth::Result ar = first ?
-				authServer->startAuthentication(&st, operation == op_service_attach, fileName.c_str(),
-												  wrt.getBuffer(), wrt.getBufferLength(),
-												  &authBlockInterface) :
-				authServer->contAuthentication(&st, &authBlockInterface,
-												 data->cstr_address, data->cstr_length);
+				authServer->startAuthentication(&st, tags, &iPb, &authBlockInterface) :
+				authServer->contAuthentication(&st, data->cstr_address, data->cstr_length, &authBlockInterface);
 
 			cstring* s;
 
@@ -351,10 +339,9 @@ public:
 
 			case Auth::AUTH_SUCCESS:
 				usernameFailedLogins->loginSuccess(userName);
-				remoteFailedLogins->loginSuccess(remoteId);
+				remoteFailedLogins->loginSuccess(port->getRemoteId());
 				authServer = NULL;
-				authBlockInterface.store(wrt);
-				part2(port, operation, fileName.c_str(), wrt, send);
+				accept(port, send, &authBlockInterface);
 				return true;
 
 			case Auth::AUTH_FAILED:
@@ -367,7 +354,7 @@ public:
 		// no success - perform failure processing
 		// do not remove variables - both functions should be called
 		bool f1 = usernameFailedLogins->loginFail(userName);
-		bool f2 = remoteFailedLogins->loginFail(remoteId);
+		bool f2 = remoteFailedLogins->loginFail(port->getRemoteId());
 		if (f1 || f2)
 		{
 			// Ahh, someone is too active today
@@ -379,33 +366,63 @@ public:
 	}
 
 private:
-	PathName fileName;
 	RefPtr<Config> config;
-	ClumpletWriter wrt;
+	Auth::DpbImplementation iPb;
 	Auth::WriterImplementation authBlockInterface;
 	GetPlugins<Auth::IServer> authItr;
-	string remoteId, userName;
+	string userName;
 	Auth::IServer* authServer;
-	Part2* part2;
-	P_OP operation;
+	const Auth::AuthTags* tags;
 
-	RefPtr<Config> getConfig(const PathName& dbName)
+	RefPtr<Config> getConfig(const PathName* dbName)
 	{
-		RefPtr<Config> config;
-		PathName dummy;
-		ResolveDatabaseAlias(dbName, dummy, &config);
-		return config;
+		if (dbName)
+		{
+			RefPtr<Config> config;
+			PathName dummy;
+			ResolveDatabaseAlias(*dbName, dummy, &config);
+			return config;
+		}
+		return Config::getDefaultConfig();
 	}
 };
 
-// this sets of parameters help use same functions
-// for both services and databases attachments
-struct ParametersSet
+
+class DatabaseAuth : public ServerAuth
 {
-	UCHAR address_path;
+public:
+	DatabaseAuth(const PathName& adbName, ClumpletWriter* dpb, P_OP op)
+		: ServerAuth(&adbName, dpb, Auth::DB_ATTACH_LIST),
+		  dbName(getPool(), adbName),
+		  pb(dpb),
+		  operation(op)
+	{ }
+
+	void accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock);
+
+private:
+	PathName dbName;
+	AutoPtr<ClumpletWriter> pb;
+	P_OP operation;
 };
-const ParametersSet dpbParam = {isc_dpb_address_path};
-const ParametersSet spbParam = {isc_spb_address_path};
+
+
+class ServiceAttachAuth : public ServerAuth
+{
+public:
+	ServiceAttachAuth(const PathName& pmanagerName, ClumpletWriter* spb)
+		: ServerAuth(NULL, spb, Auth::SVC_ATTACH_LIST),
+		  managerName(getPool(), pmanagerName),
+		  pb(spb)
+	{ }
+
+	void accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock);
+
+private:
+	PathName managerName;
+	AutoPtr<ClumpletWriter> pb;
+};
+
 
 #ifdef WIN_NT
 class GlobalPortLock
@@ -566,8 +583,6 @@ static void		append_request_chain(server_req_t*, server_req_t**);
 static void		append_request_next(server_req_t*, server_req_t**);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
-static void		attach_database2(rem_port*, P_OP, const char*, ClumpletWriter&, PACKET*);
-static void		attach_service2(rem_port*, P_OP, const char*, ClumpletWriter&, PACKET*);
 static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
 
 #ifdef NOT_USED_OR_REPLACED
@@ -576,7 +591,7 @@ static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
 static bool		bad_port_context(IStatus*, IRefCounted*, const ISC_STATUS);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
-static void		addClumplets(ClumpletWriter&, const ParametersSet&, const rem_port*);
+static void		addClumplets(ClumpletWriter*, const ParametersSet&, const rem_port*);
 
 static void		cancel_operation(rem_port*, USHORT);
 
@@ -612,8 +627,9 @@ inline bool bad_db(IStatus* status_vector, Rdb* rdb)
 inline bool bad_service(IStatus* status_vector, Rdb* rdb)
 {
 	IRefCounted* iface = NULL;
-	if (rdb)
-		iface = rdb->rdb_svc_iface;
+	if (rdb && rdb->rdb_svc.hasData())
+		iface = rdb->rdb_svc->svc_iface;
+
 	return bad_port_context(status_vector, iface, isc_bad_svc_handle);
 }
 
@@ -1340,7 +1356,7 @@ static void append_request_next(server_req_t* request, server_req_t** que_inst)
 }
 
 
-static void addClumplets(ClumpletWriter& dpb_buffer,
+static void addClumplets(ClumpletWriter* dpb_buffer,
 						 const ParametersSet& par,
 						 const rem_port* port)
 {
@@ -1355,10 +1371,10 @@ static void addClumplets(ClumpletWriter& dpb_buffer,
  *
  **************************************/
 	ClumpletWriter address_stack_buffer(ClumpletReader::UnTagged, MAX_UCHAR - 2);
-	if (dpb_buffer.find(par.address_path))
+	if (dpb_buffer->find(par.address_path))
 	{
-		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
-		dpb_buffer.deleteClumplet();
+		address_stack_buffer.reset(dpb_buffer->getBytes(), dpb_buffer->getClumpLength());
+		dpb_buffer->deleteClumplet();
 	}
 
 	ClumpletWriter address_record(ClumpletReader::UnTagged, MAX_UCHAR - 2);
@@ -1379,7 +1395,7 @@ static void addClumplets(ClumpletWriter& dpb_buffer,
 	address_stack_buffer.insertBytes(isc_dpb_address,
 		address_record.getBuffer(), address_record.getBufferLength());
 
-	dpb_buffer.insertBytes(par.address_path, address_stack_buffer.getBuffer(),
+	dpb_buffer->insertBytes(par.address_path, address_stack_buffer.getBuffer(),
 								address_stack_buffer.getBufferLength());
 
 	// Remove all remaining isc_*pb_address_path clumplets.
@@ -1391,12 +1407,12 @@ static void addClumplets(ClumpletWriter& dpb_buffer,
 	// want with the engine including faking the source address, not much we
 	// can do about it.
 
-	while (!dpb_buffer.isEof())
+	while (!dpb_buffer->isEof())
 	{
-		if (dpb_buffer.getClumpTag() == par.address_path)
-			dpb_buffer.deleteClumplet();
+		if (dpb_buffer->getClumpTag() == par.address_path)
+			dpb_buffer->deleteClumplet();
 		else
-			dpb_buffer.moveNext();
+			dpb_buffer->moveNext();
 	}
 }
 
@@ -1413,10 +1429,11 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
  *	Process an attach or create packet.
  *
  **************************************/
-	port->port_auth = new ServerAuth(port,
-		PathName(attach->p_atch_file.cstr_address, attach->p_atch_file.cstr_length),
-		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length,
-		attach_database2, operation);
+	ClumpletWriter* wrt = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+		ClumpletReader::dpbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
+	port->port_auth = new DatabaseAuth(PathName(attach->p_atch_file.cstr_address,
+												attach->p_atch_file.cstr_length),
+									   wrt, operation);
 
 	if (port->port_auth->authenticate(port, send, NULL))
 	{
@@ -1426,19 +1443,17 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 }
 
 
-static void attach_database2(rem_port* port,
-							 P_OP operation,
-							 const char* fileName,
-							 ClumpletWriter& dpb_buffer,
-							 PACKET* send)
+void DatabaseAuth::accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock)
 {
 	static IProvider* provider = fb_get_master_interface()->getDispatcher();
 
+	authBlock->store(pb, isc_dpb_auth_block);
+
     send->p_operation = op_accept;
 
-	for (dpb_buffer.rewind(); !dpb_buffer.isEof();)
+	for (pb->rewind(); !pb->isEof();)
 	{
-		switch (dpb_buffer.getClumpTag())
+		switch (pb->getClumpTag())
 		{
 		// Disable remote gsec attachments
 		case isc_dpb_gsec_attach:
@@ -1452,29 +1467,29 @@ static void attach_database2(rem_port* port,
 		case isc_dpb_user_name:
 		case isc_dpb_password:
 		case isc_dpb_password_enc:
-			dpb_buffer.deleteClumplet();
+			pb->deleteClumplet();
 			break;
 
 		default:
-			dpb_buffer.moveNext();
+			pb->moveNext();
 			break;
 		}
 	}
 
 	// Now insert additional clumplets into dpb
-	addClumplets(dpb_buffer, dpbParam, port);
+	addClumplets(pb, dpbParam, port);
 
 	// See if user has specified parameters relevant to the connection,
 	// they will be stuffed in the DPB if so.
-	REMOTE_get_timeout_params(port, &dpb_buffer);
+	REMOTE_get_timeout_params(port, pb);
 
-	const UCHAR* dpb = dpb_buffer.getBuffer();
-	unsigned int dl = dpb_buffer.getBufferLength();
+	const UCHAR* dpb = pb->getBuffer();
+	unsigned int dl = pb->getBufferLength();
 
 	LocalStatus status_vector;
 	ServAttachment iface(operation == op_attach ?
-		provider->attachDatabase(&status_vector, fileName, dl, dpb) :
-		provider->createDatabase(&status_vector, fileName, dl, dpb));
+		provider->attachDatabase(&status_vector, dbName.c_str(), dl, dpb) :
+		provider->createDatabase(&status_vector, dbName.c_str(), dl, dpb));
 
 	if (status_vector.isSuccess())
 	{
@@ -1965,10 +1980,10 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 			release_statement(&this->port_statement);
 	}
 
-	if (rdb->rdb_svc_iface)
+	if (rdb->rdb_svc.hasData() && rdb->rdb_svc->svc_iface)
 	{
-		rdb->rdb_svc_iface->detach(&status_vector);
-		rdb->rdb_svc_iface = NULL;
+		rdb->rdb_svc->svc_iface->detach(&status_vector);
+		rdb->rdb_svc->svc_iface = NULL;
 	}
 
 	REMOTE_free_packet(this, sendL);
@@ -2983,7 +2998,69 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 }
 
 
-ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
+class ServiceQueryAuth : public ServerAuth
+{
+public:
+	ServiceQueryAuth(OBJCT pinfoObject, ClumpletWriter* spb,
+					 unsigned int pSendLength, const UCHAR* pSendItems,
+					 unsigned int pReceiveLength, const UCHAR* pReceiveItems,
+					 unsigned int pBufferLength)
+		: ServerAuth(NULL, spb, Auth::SVC_ATTACH_LIST),
+		  pb(spb),
+		  sendItems(getPool(), ClumpletReader::SpbSendItems, MAX_DPB_SIZE, pSendItems, pSendLength, 0),
+		  receiveItems(getPool()),
+		  bufferLength(pBufferLength),
+		  infoObject(pinfoObject)
+	{
+		receiveItems.add(pReceiveItems, pReceiveLength);
+	}
+
+	void accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock)
+	{
+    	LocalStatus status_vector;
+		Rdb* rdb = port->port_context;
+
+		if (bad_service(&status_vector, rdb))
+		{
+			port->send_response(send, 0, 0, &status_vector, false);
+			return;
+		}
+
+		authBlock->store(&sendItems, isc_info_svc_auth_block);
+		Array<UCHAR> buf;
+		UCHAR* const buffer = buf.getBuffer(bufferLength);
+		memset(buffer, 0, bufferLength);
+
+		rdb->rdb_svc->svc_iface->query(&status_vector,
+									   sendItems.getBufferLength(), sendItems.getBuffer(),
+									   receiveItems.getCount(), receiveItems.begin(),
+									   bufferLength, buffer);
+
+		SSHORT skip_len = 0;
+		if (buffer && *buffer == isc_info_length)
+		{
+			skip_len = gds__vax_integer(buffer + 1, 2);
+			const SLONG val = gds__vax_integer(buffer + 3, skip_len);
+			fb_assert(val >= 0);
+			skip_len += 3;
+			if (val && ULONG(val) < ULONG(bufferLength))
+				bufferLength = val;
+		}
+
+		send->p_resp.p_resp_data.cstr_address = buffer + skip_len;
+		port->send_response(send, infoObject, bufferLength, &status_vector, false);
+	}
+
+private:
+	AutoPtr<ClumpletWriter> pb;
+	ClumpletWriter sendItems;
+	HalfStaticArray<UCHAR, 64> receiveItems;
+	unsigned int bufferLength;
+	OBJCT infoObject;
+};
+
+
+void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -3000,7 +3077,10 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if ((op == op_service_info) ? bad_service(&status_vector, rdb) : bad_db(&status_vector, rdb))
-		return this->send_response(sendL, 0, 0, &status_vector, false);
+	{
+		this->send_response(sendL, 0, 0, &status_vector, false);
+		return;
+	}
 
 	// Make sure there is a suitable temporary blob buffer
 	Array<UCHAR> buf;
@@ -3035,8 +3115,10 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	Rbl* blob;
 	Rtr* transaction;
 	Rsr* statement;
+	Svc* service;
 
 	USHORT info_db_len = 0;
+	bool needRunningService = false;
 	switch (op)
 	{
 	case op_info_blob:
@@ -3079,9 +3161,39 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		break;
 
 	case op_service_info:
-		rdb->rdb_svc_iface->query(&status_vector,
-			stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
-			info_len, info_buffer, stuff->p_info_buffer_length, buffer);
+		service = rdb->rdb_svc;
+		needRunningService = fb_utils::isRunningCheck(info_buffer, info_len);
+		if (service->svc_auth == Svc::SVCAUTH_PERM ||
+			(service->svc_auth == Svc::SVCAUTH_TEMP && needRunningService))
+		{
+			service->svc_iface->query(&status_vector,
+				stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
+				info_len, info_buffer, stuff->p_info_buffer_length, buffer);
+		}
+		else if (needRunningService)
+		{
+			// Want to check state of running service, but appropriate auth is missing
+			(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "No auth of running service").raise();
+		}
+		else
+		{
+			ClumpletWriter* wrt = service->svc_cached_spb ?
+				FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+												*service->svc_cached_spb) :
+				FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+												ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
+			delete port_auth;
+			port_auth = NULL;
+			port_auth = new ServiceQueryAuth(stuff->p_info_object, wrt,
+				stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
+				info_len, info_buffer, stuff->p_info_buffer_length);
+			if (port_auth->authenticate(this, sendL, NULL))
+			{
+				delete port_auth;
+				port_auth = NULL;
+			}
+			return;
+		}
 		break;
 
 	case op_info_sql:
@@ -3109,10 +3221,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	sendL->p_resp.p_resp_data.cstr_address = buffer + skip_len;
 
-	const ISC_STATUS status = this->send_response(sendL, stuff->p_info_object,
-		response_len, &status_vector, false);
-
-	return status;
+	this->send_response(sendL, stuff->p_info_object, response_len, &status_vector, false);
 }
 
 
@@ -4490,32 +4599,46 @@ static void send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode)
 
 static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 {
-	port->port_auth = new ServerAuth(port,
-		PathName(attach->p_atch_file.cstr_address, attach->p_atch_file.cstr_length),
-		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length,
-		attach_service2, op_service_attach);
+	PathName manager(attach->p_atch_file.cstr_address, attach->p_atch_file.cstr_length);
 
-	if (port->port_auth->authenticate(port, sendL, NULL))
+	if (port->port_protocol < PROTOCOL_VERSION13 ||			// old protocol requires immediate auth
+		ISC_check_if_remote(manager, false))				// service redirect
 	{
-		delete port->port_auth;
-		port->port_auth = NULL;
+		// Check credentials in default way right now
+		ClumpletWriter* wrt = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+			ClumpletReader::spbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
+		port->port_auth = new ServiceAttachAuth(PathName(attach->p_atch_file.cstr_address,
+														 attach->p_atch_file.cstr_length),
+												wrt);
+
+		if (port->port_auth->authenticate(port, sendL, NULL))
+		{
+			delete port->port_auth;
+			port->port_auth = NULL;
+		}
+	}
+	else
+	{
+		// Delay authentication till service start/info request
+		ClumpletWriter spb(ClumpletReader::spbList, MAX_DPB_SIZE,
+						   attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
+		port->service_attach(manager.c_str(), &spb, sendL, false);
 	}
 }
 
 
-static void attach_service2(rem_port* port,
-							P_OP,
-							const char* service_name,
-							ClumpletWriter& spb,
-							PACKET* sendL)
+void ServiceAttachAuth::accept(rem_port* port,  PACKET* sendL, Auth::WriterImplementation* authBlock)
 {
-	port->service_attach(service_name, spb, sendL);
+	authBlock->store(pb, isc_spb_auth_block);
+
+	port->service_attach(managerName.c_str(), pb, sendL, true);
 }
 
 
 ISC_STATUS rem_port::service_attach(const char* service_name,
-									ClumpletWriter& spb,
-									PACKET* sendL)
+									ClumpletWriter* spb,
+									PACKET* sendL,
+									bool authenticated)
 {
 /**************************************
  *
@@ -4534,33 +4657,52 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 
 	// See if user has specified parameters relevent to the connection,
 	// they will be stuffed in the SPB if so.
-	REMOTE_get_timeout_params(this, &spb);
+	REMOTE_get_timeout_params(this, spb);
 
-	for (spb.rewind(); !spb.isEof();)
+	// Get ready to cache old-style auth parameters
+	ClumpletWriter* cache = NULL;
+	if (!authenticated)
 	{
-		switch (spb.getClumpTag())
-		{
-		// remove trusted auth & trusted role if present (security measure)
-		case isc_spb_trusted_role:
-		case isc_spb_trusted_auth:
+		cache = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
+	}
 
+	for (spb->rewind(); !spb->isEof();)
+	{
+		switch (spb->getClumpTag())
+		{
 		// remove old-style logon parameters
 		case isc_spb_user_name:
 		case isc_spb_password:
 		case isc_spb_password_enc:
-			spb.deleteClumplet();
+			if (!authenticated)
+			{
+				cache->insertClumplet(spb->getClumplet());
+			}
+			// fall down...
+
+		// remove trusted auth & trusted role if present (security measure)
+		case isc_spb_trusted_role:
+		case isc_spb_trusted_auth:
+			spb->deleteClumplet();
 			break;
 
 		default:
-			spb.moveNext();
+			spb->moveNext();
 			break;
 		}
 	}
 
+	if (!authenticated)
+	{
+		// add fake auth block to have additional guarantee that this service never reachs database
+		spb->insertTag(isc_spb_auth_block);
+	}
+
+
 	static IProvider* provider = fb_get_master_interface()->getDispatcher();
 	LocalStatus status_vector;
 	ServService iface(provider->attachServiceManager(&status_vector, service_name,
-		spb.getBufferLength(), spb.getBuffer()));
+		spb->getBufferLength(), spb->getBuffer()));
 
 	if (status_vector.isSuccess())
 	{
@@ -4571,7 +4713,10 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		printf("attach_service(server)  allocate rdb     %x\n", rdb);
 #endif
 		rdb->rdb_port = this;
-		rdb->rdb_svc_iface = iface;
+		Svc* svc = rdb->rdb_svc = new Svc;
+		svc->svc_auth = authenticated ? Svc::SVCAUTH_PERM : Svc::SVCAUTH_NONE;
+		svc->svc_cached_spb = cache;
+		svc->svc_iface = iface;
 	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
@@ -4596,19 +4741,50 @@ ISC_STATUS rem_port::service_end(P_RLSE* /*release*/, PACKET* sendL)
 	if (bad_service(&status_vector, rdb))
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 
-	rdb->rdb_svc_iface->detach(&status_vector);
+	rdb->rdb_svc->svc_iface->detach(&status_vector);
 
 	if (status_vector.isSuccess())
 	{
 		port_flags |= PORT_detached;
-		rdb->rdb_svc_iface = NULL;
+		rdb->rdb_svc->svc_iface = NULL;
 	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
 
 
-ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
+class ServiceStartAuth : public ServerAuth
+{
+public:
+	ServiceStartAuth(PathName& dbName, ClumpletWriter* authSpb, ClumpletWriter* origSpb)
+		: ServerAuth(dbName.hasData() ? &dbName : NULL, authSpb, Auth::SVC_ATTACH_LIST),
+		  authPb(authSpb), startPb(origSpb)
+	{ }
+
+	void accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock)
+	{
+    	LocalStatus status_vector;
+		Rdb* rdb = port->port_context;
+
+		if (bad_service(&status_vector, rdb))
+		{
+			port->send_response(send, 0, 0, &status_vector, false);
+			return;
+		}
+
+		authBlock->store(startPb, isc_spb_auth_block);
+
+		rdb->rdb_svc->svc_iface->start(&status_vector, startPb->getBufferLength(), startPb->getBuffer());
+		rdb->rdb_svc->svc_auth = Svc::SVCAUTH_TEMP;
+		port->send_response(send, 0, 0, &status_vector, false);
+	}
+
+private:
+	AutoPtr<ClumpletWriter> authPb, startPb;
+};
+
+
+void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 {
 /**************************************
  *
@@ -4624,12 +4800,48 @@ ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_service(&status_vector, rdb))
-		return this->send_response(sendL, 0, 0, &status_vector, false);
+	{
+		this->send_response(sendL, 0, 0, &status_vector, false);
+		return;
+	}
 
-	rdb->rdb_svc_iface->start(&status_vector,
-		stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address);
+	Svc* svc = rdb->rdb_svc;
+	if (svc->svc_auth == Svc::SVCAUTH_PERM)
+	{
+		svc->svc_iface->start(&status_vector, stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address);
+		this->send_response(sendL, 0, 0, &status_vector, false);
+	}
+	else
+	{
+		// Check credentials in default way right now
+		ClumpletWriter* authParams = svc->svc_cached_spb ?
+			FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(), *svc->svc_cached_spb) :
+			FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
 
-	return this->send_response(sendL, 0, 0, &status_vector, false);
+		ClumpletWriter* spb = FB_NEW(*getDefaultMemoryPool())
+			ClumpletWriter(*getDefaultMemoryPool(), ClumpletReader::SpbStart, MAX_DPB_SIZE,
+						   stuff->p_info_items.cstr_address, stuff->p_info_items.cstr_length);
+
+		PathName dbName;
+		for (spb->rewind(); !spb->isEof(); spb->moveNext())
+		{
+			if (spb->getClumpTag() == isc_spb_dbname)
+			{
+				spb->getPath(dbName);
+				break;
+			}
+		}
+
+		delete port_auth;
+		port_auth = NULL;
+		port_auth = new ServiceStartAuth(dbName, authParams, spb);
+
+		if (port_auth->authenticate(this, sendL, NULL))
+		{
+			delete port_auth;
+			port_auth = NULL;
+		}
+	}
 }
 
 

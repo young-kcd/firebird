@@ -5847,7 +5847,8 @@ static void init(IStatus* status,
 			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(authItr.name())))
 		{
 			// OK to use plugin
-			switch(authItr.plugin()->startAuthentication(&s, op == op_service_attach, file_name.c_str(), &di))
+			switch(authItr.plugin()->startAuthentication(&s, op == op_service_attach ?
+											&Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST, &di))
 			{
 			case Auth::AUTH_SUCCESS:
 				working = false;
@@ -5957,8 +5958,8 @@ static void init(IStatus* status,
 
 			if (authItr.hasData())
 			{
-				Auth::Result rc = authItr.plugin()->startAuthentication(&s, op == op_service_attach,
-																		file_name.c_str(), 0);
+				Auth::Result rc = authItr.plugin()->startAuthentication(&s, op == op_service_attach ?
+												&Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST, NULL);
 				if (rc == Auth::AUTH_FAILED)
 				{
 					break;

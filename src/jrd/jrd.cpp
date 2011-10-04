@@ -6855,6 +6855,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 	user.usr_org_name = "";
 	user.usr_user_id = id;
 	user.usr_group_id = group;
+	user.usr_auth_block.assign(options.dpb_auth_block);
 
 	if (wheel)
 	{

@@ -69,6 +69,7 @@ void FB_CARG UserData::clear()
 	dbaPassword.clear();
 	role.clear();
 	trustedUser.clear();
+	// never clear this permanent block!	authenticationBlock.clear();
 }
 
 } // namespace Auth

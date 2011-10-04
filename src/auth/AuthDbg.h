@@ -51,11 +51,10 @@ class DebugServer : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 public:
 	DebugServer(Firebird::IPluginConfig*);
 
-    Result startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
-                               const unsigned char* dpb, unsigned int dpbSize,
-                               IWriter* writerInterface);
-    Result contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
-                              const unsigned char* data, unsigned int size);
+    Result startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb,
+    						   IWriter* writerInterface);
+    Result contAuthentication(Firebird::IStatus* status, const unsigned char* data,
+                              unsigned int size, IWriter* writerInterface);
     void getData(const unsigned char** data, unsigned short* dataSize);
     int release();
 
@@ -68,7 +67,7 @@ class DebugClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
 public:
 	DebugClient(Firebird::IPluginConfig*);
 
-	Result startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, IDpbReader* dpb);
+	Result startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb);
 	Result contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     int release();
