@@ -1,3 +1,17 @@
+ 2011-10-03 15:52  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Mark sub procedure scratch as a procedure.
+
+ 2011-10-03 15:35  asfernandes 
+   M src/dsql/pass1.cpp
+This check appears to do nothing good. Let the error always be thrown in DSQL.
+
+ 2011-10-03 11:27  hvlad 
+   M src/jrd/idx.cpp
+   M src/jrd/vio.cpp
+Return explicit sign of active transaction from VIO_get_current() - it makes logic more clear in check_duplicates() and allows to clear transient lock error from status vector and not propagate up to the callers. 
+Cleanup : removed my old disabled code (checking for old and new values) and restored original code in check_duplicates().
+
  2011-10-02 22:11  asfernandes 
    M src/common/classes/alloc.h
    M src/dsql/BlrWriter.cpp
