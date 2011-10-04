@@ -221,7 +221,7 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 		if (tdgbl->ALICE_data.ua_debug)
 		{
 			ALICE_print(69);	// msg 69:  failed
-			ALICE_print_status(status_vector);
+			ALICE_print_status(false, status_vector);
 		}
 		return false;
 	}
@@ -291,7 +291,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switche
 						   sizeof(buffer),
 						   reinterpret_cast<char*>(buffer)))
 	{
-		ALICE_print_status(status_vector);
+		ALICE_print_status(true, status_vector);
 		return;
 	}
 
@@ -829,7 +829,7 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT
 	{
 		ALICE_print(90, SafeArg() << name);
 		// msg 90: failed to reconnect to a transaction in database %s
-		ALICE_print_status(status_vector);
+		ALICE_print_status(false, status_vector);
 		return true;
 	}
 
@@ -855,7 +855,7 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT
 
 	if (status_vector[1])
 	{
-		ALICE_print_status(status_vector);
+		ALICE_print_status(false, status_vector);
 		return true;
 	}
 

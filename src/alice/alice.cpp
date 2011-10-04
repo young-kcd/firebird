@@ -85,7 +85,7 @@ void ALICE_exit(int code, AliceGlobals* tdgbl)
     Firebird::LongJump::raise();
 }
 
-static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
+static void alice_output(bool error, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
 
 
 
@@ -106,8 +106,8 @@ THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 	{
 		ISC_STATUS_ARRAY status;
 		e.stuff_exception(status);
-		uSvc->initStatus();
 		uSvc->setServiceStatus(status);
+		uSvc->started();
 		exit_code = FB_FAILURE;
 	}
 
@@ -487,7 +487,6 @@ int alice(Firebird::UtilSvc* uSvc)
 		if (uSvc->isService())
 		{
 			uSvc->setServiceStatus(ALICE_MSG_FAC, 20, MsgFormat::SafeArg());
-			uSvc->started();
 		}
 		else
 		{
@@ -552,7 +551,7 @@ int alice(Firebird::UtilSvc* uSvc)
 
 	if (ret == FINI_ERROR)
 	{
-		ALICE_print_status(tdgbl->status);
+		ALICE_print_status(true, tdgbl->status);
 		ALICE_exit(FINI_ERROR, tdgbl);
 	}
 
@@ -570,11 +569,9 @@ int alice(Firebird::UtilSvc* uSvc)
 	{
 		// Non-alice exception was caught
 		e.stuff_exception(tdgbl->status_vector);
-		ALICE_print_status(tdgbl->status_vector);
+		ALICE_print_status(true, tdgbl->status_vector);
 		exit_code = FINI_ERROR;
 	}
-
-	tdgbl->uSvc->started();
 
 	AliceGlobals::restoreSpecific();
 
@@ -590,6 +587,7 @@ int alice(Firebird::UtilSvc* uSvc)
 		uSvc->initStatus();
 		uSvc->setServiceStatus(tdgbl->status);
 	}
+	tdgbl->uSvc->started();
 
 	return exit_code;
 }
@@ -620,7 +618,7 @@ void ALICE_print(USHORT	number, const SafeArg& arg)
 	TEXT buffer[256];
 
 	fb_msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg);
-	alice_output("%s\n", buffer);
+	alice_output(false, "%s\n", buffer);
 }
 
 
@@ -630,7 +628,7 @@ void ALICE_print(USHORT	number, const SafeArg& arg)
 //		to allow redirecting output.
 //
 
-void ALICE_print_status(const ISC_STATUS* status_vector)
+void ALICE_print_status(bool error, const ISC_STATUS* status_vector)
 {
 	if (status_vector && status_vector[1])
 	{
@@ -638,15 +636,20 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		tdgbl->uSvc->setServiceStatus(status_vector);
 
+		if (error && tdgbl->uSvc->isService())
+		{
+			return;
+		}
+
 		SCHAR s[1024];
 		if (fb_interpret(s, sizeof(s), &vector))
 		{
-			alice_output("%s\n", s);
+			alice_output(error, "%s\n", s);
 
 			// Continuation of error
 			s[0] = '-';
 			while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
-				alice_output("%s\n", s);
+				alice_output(error, "%s\n", s);
 			}
 		}
 	}
@@ -664,9 +667,12 @@ void ALICE_error(USHORT	number, const SafeArg& arg)
 	TEXT buffer[256];
 
 	tdgbl->uSvc->setServiceStatus(ALICE_MSG_FAC, number, arg);
+	if (!tdgbl->uSvc->isService())
+	{
+		fb_msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg);
+		alice_output(true, "%s\n", buffer);
+	}
 
-	fb_msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg);
-	alice_output("%s\n", buffer);
 	ALICE_exit(FINI_ERROR, tdgbl);
 }
 
@@ -676,7 +682,7 @@ void ALICE_error(USHORT	number, const SafeArg& arg)
 //		Platform independent output routine.
 //
 
-static void alice_output(const SCHAR* format, ...)
+static void alice_output(bool error, const SCHAR* format, ...)
 {
 
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
@@ -687,5 +693,8 @@ static void alice_output(const SCHAR* format, ...)
 	buf.vprintf(format, arglist);
 	va_end(arglist);
 
-	tdgbl->uSvc->outputError(buf.c_str());
+	if (error)
+		tdgbl->uSvc->outputError(buf.c_str());
+	else
+		tdgbl->uSvc->outputVerbose(buf.c_str());
 }
