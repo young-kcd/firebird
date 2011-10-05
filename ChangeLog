@@ -1,3 +1,63 @@
+ 2011-10-04 13:43  alexpeshkoff 
+   M src/remote/inet.cpp
+Front-ported fix for unregistered bug - check return value of poll() before using it's output structures
+
+ 2011-10-04 12:55  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/alice_meta.epp
+   M src/alice/alice_proto.h
+   M src/alice/exe.cpp
+   M src/alice/tdr.cpp
+Fixed CORE-3612: gfix-related services may loose error value in status vector in isc_service_start()
+
+ 2011-10-04 12:51  alexpeshkoff 
+   M src/alice/exe.cpp
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthDbg.h
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.h
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/burp/burp.cpp
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/common/call_service.cpp
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ClumpletReader.h
+   M src/common/classes/ClumpletWriter.cpp
+   M src/common/classes/ClumpletWriter.h
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/include/consts_pub.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/scl.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/trace/TraceCmdLine.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Make services work correctly with multiple security databases
+
  2011-10-03 15:52  asfernandes 
    M src/dsql/StmtNodes.cpp
 Mark sub procedure scratch as a procedure.
