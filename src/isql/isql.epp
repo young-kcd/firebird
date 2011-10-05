@@ -4137,6 +4137,9 @@ static void do_isql()
 		const Firebird::PathName filename = TempFile::create(SCRATCH);
 		const char* Tmpfile = filename.c_str();
 		FILE* f = fopen(Tmpfile, "w+"); // It was w+b
+#ifdef UNIX
+		unlink(Tmpfile);
+#endif
 		if (f)
 			Filelist->Ofp().init(f, Tmpfile, Tmpfile);
 		else
