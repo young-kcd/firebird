@@ -1,3 +1,14 @@
+ 2011-10-04 13:19  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/alice_meta.epp
+   M src/alice/alice_proto.h
+   M src/alice/exe.cpp
+   M src/alice/tdr.cpp
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/jrd/svc.cpp
+Backported fix for CORE-3612: gfix-related services may loose error value in status vector in isc_service_start()
+
  2011-10-03 14:54  paul_reeves 
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
    M builds/install/arch-specific/win32/FirebirdInstall_20.iss
