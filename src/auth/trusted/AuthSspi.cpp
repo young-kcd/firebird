@@ -349,17 +349,30 @@ Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
 										  IClumplets* dpb,
 										  IWriter* /*writerInterface*/)
 {
-	const UCHAR tag = tags->trustedAuth;
-
-	if (dpb->find(tag))
+	if (dpb)
 	{
-		sspiData.clear();
-		unsigned int clumpLength;
-		const unsigned char* bytes = dpb->get(&clumpLength);
-		sspiData.add(bytes, clumpLength);
-		if (!sspi.accept(sspiData))
+		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
+
+		const UCHAR tag = tags->trustedAuth;
+
+		try
 		{
-			return AUTH_CONTINUE;
+			if (dpb->find(tag))
+			{
+				sspiData.clear();
+				unsigned int clumpLength;
+				const unsigned char* bytes = dpb->get(&clumpLength);
+				sspiData.add(bytes, clumpLength);
+				if (!sspi.accept(sspiData))
+				{
+					return AUTH_CONTINUE;
+				}
+			}
+		}
+		catch (const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
+			return AUTH_FAILED;
 		}
 	}
 
@@ -384,11 +397,21 @@ Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
 		string login;
 		sspi.getLogin(login, wheel);
 		MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
-		writerInterface->add(login.c_str());
-		if (wheel)
+
+		try
 		{
-			writerInterface->add("RDB$ADMIN");
+			writerInterface->add(login.c_str());
+			if (wheel)
+			{
+				writerInterface->add("RDB$ADMIN");
+			}
 		}
+		catch (const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
+			return AUTH_FAILED;
+		}
+
 		return AUTH_SUCCESS;
 	}
 
@@ -422,21 +445,29 @@ Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 	{
 		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
 
-		UCHAR tag = tags->trustedRole;
-		while (dpb->find(tag))
+		try
 		{
-			dpb->drop();
-		}
+			UCHAR tag = tags->trustedRole;
+			while (dpb->find(tag))
+			{
+				dpb->drop();
+			}
 
-		tag = tags->trustedAuth;
-		while (dpb->find(tag))
-		{
-			dpb->drop();
-		}
+			tag = tags->trustedAuth;
+			while (dpb->find(tag))
+			{
+				dpb->drop();
+			}
 
-		if (sspi.isActive())
+			if (sspi.isActive())
+			{
+				dpb->add(tag, sspiData.begin(), sspiData.getCount());
+			}
+		}
+		catch (const Firebird::Exception& ex)
 		{
-			dpb->add(tag, sspiData.begin(), sspiData.getCount());
+			ex.stuffException(status);
+			return AUTH_FAILED;
 		}
 	}
 
