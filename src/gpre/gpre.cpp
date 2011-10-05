@@ -1335,6 +1335,9 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	const Firebird::PathName filename = Firebird::TempFile::create(SCRATCH);
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
+#ifdef UNIX
+	unlink(trace_file_name);
+#endif
 
 	if (!trace_file)
 	{

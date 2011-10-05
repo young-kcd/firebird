@@ -512,6 +512,9 @@ void LEX_init()
 	const Firebird::PathName filename = TempFile::create(SCRATCH);
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
+#ifdef UNIX
+	unlink(trace_file_name);
+#endif
 	if (!trace_file)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 
