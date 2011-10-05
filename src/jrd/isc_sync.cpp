@@ -3499,11 +3499,11 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 
 		InterlockedIncrement(FIX_TYPE(&lpSect->lThreadsWaiting));
 		unlockSharedSection(lpSect);
-		
+
 		// TODO actual timeout can be of any length
 		dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
 		InterlockedDecrement(FIX_TYPE(&lpSect->lThreadsWaiting));
-		
+
 		if (dwResult != WAIT_OBJECT_0)
 			return dwResult;
 	}

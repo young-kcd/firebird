@@ -190,7 +190,7 @@ CachedLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 		{
 			LockClass* chgLock = (LockClass*) ((SCHAR*) que_inst - OFFSET (LockClass*, m_lru));
 			fb_assert(chgLock->m_chgKey);
-			
+
 			if (memcmp(chgLock->m_chgKey, key, m_lockLen) == 0)
 			{
 				changing = true;
@@ -248,9 +248,11 @@ CachedLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 			continue;
 
 		bool found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
+#ifdef _DEBUG
 		if (!found) {
 			DebugBreak();
 		}
+#endif
 		fb_assert(found);
 
 		QUE_DELETE(lock->m_lru);
@@ -261,9 +263,11 @@ CachedLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 		if (lock->setLockKey(tdbb, key)) 
 		{
 			found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
+#ifdef _DEBUG
 			if (found) {
 				DebugBreak();
 			}
+#endif
 			fb_assert(!found);
 
 			// remove from changing que
@@ -273,13 +277,15 @@ CachedLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 			m_sortedLocks.insert(pos, lock);
 			return lock;
 		}
-		
+
 		tries--;
 
 		found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
 		if (found)
 		{
+#ifdef _DEBUG
 			DebugBreak();
+#endif
 		}
 		else
 		{
