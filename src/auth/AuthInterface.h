@@ -61,7 +61,7 @@ public:
 // This struct defines auth-related tags (including legacy ones) in parameter blocks
 struct AuthTags
 {
-	UCHAR authBlock, trustedAuth;
+	UCHAR authBlock, trustedAuth, trustedRole;
 	UCHAR service;	// non-zero if we work with service connection
 };
 

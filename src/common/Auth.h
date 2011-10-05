@@ -77,8 +77,8 @@ private:
 	Firebird::ClumpletWriter* body;
 };
 
-static const AuthTags DB_ATTACH_LIST = {isc_dpb_auth_block, isc_dpb_trusted_auth, 0};
-static const AuthTags SVC_ATTACH_LIST = {isc_spb_auth_block, isc_spb_trusted_auth, 1};
+static const AuthTags DB_ATTACH_LIST = {isc_dpb_auth_block, isc_dpb_trusted_auth, isc_dpb_trusted_role, 0};
+static const AuthTags SVC_ATTACH_LIST = {isc_spb_auth_block, isc_spb_trusted_auth, isc_spb_trusted_role, 1};
 
 } // namespace Auth
 
