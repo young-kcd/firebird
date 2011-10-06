@@ -190,14 +190,14 @@ copyFiles() {
     cp $BuildRootDir/src/extlib/ib_udf.sql $DestDir/UDF/
     cp $BuildRootDir/src/extlib/ib_udf2.sql $DestDir/UDF/
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/
-	    
+
 #   Copy various documentation
     cp $BuildRootDir/doc/*.pdf $DestDir/doc
     cp $BuildRootDir/doc/README.* $DestDir/doc
     cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
     cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
-    
+
 #	Copy various upgrade stuff
     cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
 
@@ -207,6 +207,9 @@ copyFiles() {
     cp $BuildRootDir/gen/install/misc/firebird.init.d.* $DestDir/misc
     cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
+
+#	License
+	cp $BuildRootDir/builds/install/misc/*License.txt $DestDir/
 
 	originalDir=`pwd`
 
