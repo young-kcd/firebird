@@ -310,6 +310,12 @@ copyFiles() {
 	chown root:root ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf
 
+	#license
+	cp $BuildRootDir/builds/install/misc/*License.txt ${TargetDir}@FB_CONFDIR@
+
+	chown root:root ${TargetDir}@FB_CONFDIR@/*License.txt
+	chmod 0444 ${TargetDir}@FB_CONFDIR@/*License.txt
+
 # Create links from @libdir@ to install area.
     origDir=`pwd`
     cd $BuiltFBDir/lib
