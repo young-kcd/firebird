@@ -7,30 +7,30 @@
 #  version 2.1 of the License, or (at your option) any later version.
 #  You may obtain a copy of the Licence at
 #  http://www.gnu.org/licences/lgpl.html
-#  
+#
 #  As a special exception this file can also be included in modules
 #  with other source code as long as that source code has been 
 #  released under an Open Source Initiative certificed licence.  
 #  More information about OSI certification can be found at: 
 #  http://www.opensource.org 
-#  
+#
 #  This module is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU Lesser General Public Licence for more details.
-#  
+#
 #  This module was created by members of the firebird development 
 #  team.  All individual contributions remain the Copyright (C) of 
 #  those individuals and all rights are reserved.  Contributors to 
 #  this file are either listed below or can be obtained from a CVS 
 #  history command.
-# 
+#
 #   Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-# 
+#
 #   Contributor(s):
-#  
-# 
-# 
+#
+#
+#
 
 # Script to copy install files from the build/transport area
 
@@ -194,14 +194,14 @@ copyFiles() {
     cp $BuildRootDir/src/extlib/ib_udf.sql $DestDir/UDF/
     cp $BuildRootDir/src/extlib/ib_udf2.sql $DestDir/UDF/
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/
-	    
+
 #   Copy various documentation
     cp $BuildRootDir/doc/*.pdf $DestDir/doc
     cp $BuildRootDir/doc/README.* $DestDir/doc
     cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
     cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
-    
+
 #	Copy various upgrade stuff
     cp $BuildRootDir/src/misc/intl.sql							$DestDir/misc/
     cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				$DestDir/misc/upgrade/ib_udf/
@@ -214,6 +214,9 @@ copyFiles() {
     cp $BuildRootDir/gen/install/misc/firebird.init.d.* $DestDir/misc
     cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
+
+#	License
+	cp $BuildRootDir/builds/install/misc/*License.txt $DestDir/
 
 	originalDir=`pwd`
 

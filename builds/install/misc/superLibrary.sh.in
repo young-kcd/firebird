@@ -37,7 +37,9 @@ fixFilePermissions() {
 
     touch firebird.log
     MakeFileFirebirdWritable firebird.log
-    
+
+	chmod a=r *License.txt
+
     # Security database
     # Nobody besides firebird permitted to even read this file
     chown $RunUser:$RunUser $SecurityDatabase

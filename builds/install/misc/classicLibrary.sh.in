@@ -82,7 +82,8 @@ fixFilePermissions() {
     chmod a=r firebird.msg
     chmod a=r help/help.fdb
     chmod ug=rw,o= $SecurityDatabase
-	
+	chmod a=r *License.txt
+
 	if [ "$RunUser" = "root" ]
 	# In that case we must open databases to the world...
 	# That's a pity, but required if root RunUser choosen.
