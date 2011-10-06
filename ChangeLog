@@ -1,3 +1,9 @@
+ 2011-10-05 10:00  alexpeshkoff 
+   M src/gpre/gpre.cpp
+   M src/isql/isql.epp
+   M src/qli/lex.cpp
+Backported posix-only fix for CORE-3600: temp files fb_query_xxxx remains after ISQL has been closed
+
  2011-10-04 13:19  alexpeshkoff 
    M src/alice/alice.cpp
    M src/alice/alice_meta.epp
