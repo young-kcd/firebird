@@ -226,7 +226,7 @@ copyFiles() {
 
 	chown root:root ${TargetDir}@FB_HELPDIR@/*.fdb
 	chmod 0444 ${TargetDir}@FB_HELPDIR@/*.fdb
-	
+
 	#message file
     cp $BuiltFBDir/*.msg ${TargetDir}@FB_MSGDIR@
 
@@ -277,14 +277,14 @@ copyFiles() {
 	chown root:root ${TargetDir}@FB_UDFDIR@/*.so ${TargetDir}@FB_UDFDIR@/*.sql
 	chmod 0755 ${TargetDir}@FB_UDFDIR@/*.so
 	chmod 0644 ${TargetDir}@FB_UDFDIR@/*.sql
-	    
+
 	#doc
     cp $BuildRootDir/doc/*.pdf ${TargetDir}@FB_DOCDIR@
     cp $BuildRootDir/doc/README.* ${TargetDir}@FB_DOCDIR@
     cp $BuildRootDir/doc/sql.extensions/README* ${TargetDir}@FB_DOCDIR@/sql.extensions
     cp $BuildRootDir/doc/WhatsNew ${TargetDir}@FB_CONFDIR@/WhatsNew
     cp $BuildRootDir/doc/README.user ${TargetDir}@FB_CONFDIR@/README
-    
+
 	chown -R root:root ${TargetDir}@FB_MISCDIR@
 	for i in `find ${TargetDir}@FB_MISCDIR@ -print`; do
 		chown root:root $i
@@ -314,6 +314,12 @@ copyFiles() {
 
 	chown root:root ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf
+
+	#license
+	cp $BuildRootDir/builds/install/misc/*License.txt ${TargetDir}@FB_CONFDIR@
+
+	chown root:root ${TargetDir}@FB_CONFDIR@/*License.txt
+	chmod 0444 ${TargetDir}@FB_CONFDIR@/*License.txt
 
 # Create links from @libdir@ to install area.
     origDir=`pwd`
