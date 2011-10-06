@@ -161,6 +161,11 @@ install: buildTarDir
 	cp -r $(GEN_ROOT)/$(DebugDir)/* /
 
 
+silent_install: buildTarDir
+	(cd $(GEN_ROOT)/$(TarDir); FIREBIRD= FIREBIRD_LOCK= ./install.sh -silent)
+	cp -r $(GEN_ROOT)/$(DebugDir)/* /
+
+
 rpmfile: $(RPMFile)
 
 $(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir

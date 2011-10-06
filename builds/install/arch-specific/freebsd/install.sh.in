@@ -465,6 +465,8 @@ fi
 # reset make env
 FIREBIRD_LOCK=
 export FIREBIRD_LOCK
+FIREBIRD=
+export FIREBIRD
 
 # restart inetd
 if [ -f /var/run/inetd.pid ]; then

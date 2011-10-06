@@ -484,9 +484,9 @@ rebuild_codes :
 #___________________________________________________________________________
 #
 
-.PHONY: install install-embedded package packages dist srctarfile
+.PHONY: install silent_install install-embedded package packages dist srctarfile
 
-install install-embedded package packages dist:
+install install-embedded silent_install package packages dist:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.install $@
 
 SrcTarFile=Firebird$(ArchPrefix)-$(Version).tar.bz2
