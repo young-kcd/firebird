@@ -499,7 +499,9 @@ Dependencies = $(AllObjects:.o=.d)
 # create binary packages
 #
 
-install install-embedded package packages dist:
+.PHONY: install silent_install install-embedded package packages dist
+ 
+install install-embedded silent_install package packages dist:
 	$(MAKE) -f Makefile.install $@
 
 

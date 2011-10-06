@@ -431,6 +431,12 @@ cat /etc/inetd.conf |grep -v @FB_SERVICE_NAME@ >/etc/inetd.conf.new
 mv /etc/services.new /etc/services
 mv /etc/inetd.conf.new /etc/inetd.conf
 
+# reset make env
+FIREBIRD_LOCK=
+export FIREBIRD_LOCK
+FIREBIRD=
+export FIREBIRD
+
 # add the gds service and restart inetd
 cat >>/etc/services <<EOF
 @FB_SERVICE_NAME@		@FB_SERVICE_PORT@/tcp  #Firebird Database Remote Protocol
