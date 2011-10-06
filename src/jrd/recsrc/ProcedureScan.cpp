@@ -149,7 +149,7 @@ void ProcedureScan::close(thread_db* tdbb) const
 			proc_request->req_attachment = NULL;
 		}
 
-		delete impure->irsb_message;
+		delete [] impure->irsb_message;
 		impure->irsb_message = NULL;
 	}
 }
@@ -169,16 +169,11 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	jrd_req* const proc_request = impure->irsb_req_handle;
 	const Format* const rec_format = m_format;
 	const Format* const msg_format = m_procedure->prc_output_msg->format;
+	const ULONG oml = msg_format->fmt_length;
+	UCHAR* om = impure->irsb_message;
 
-	if (!impure->irsb_message)
-	{
-		const SLONG size = msg_format->fmt_length + FB_ALIGNMENT;
-		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) VaryingString();
-		impure->irsb_message->str_length = size;
-	}
-
-	UCHAR* om = (UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data, FB_ALIGNMENT);
-	ULONG oml = impure->irsb_message->str_length - FB_ALIGNMENT;
+	if (!om)
+		om = impure->irsb_message = FB_NEW(*tdbb->getDefaultPool()) UCHAR[oml];
 
 	Record* record;
 

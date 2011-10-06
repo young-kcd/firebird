@@ -161,8 +161,11 @@ public:
 	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			// misc record flags
 	RecordNumber rec_number;	// original record_param number - used for undoing multiple updates
-	double rec_dummy;			// this is to force next field to a double boundary
-	UCHAR rec_data[1];			// THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY
+	union
+	{
+		double rec_dummy;			// this is to force next field to a double boundary
+		UCHAR rec_data[1];			// THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY
+	};
 };
 
 // rec_flags
