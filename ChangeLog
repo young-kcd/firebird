@@ -1,3 +1,24 @@
+ 2011-10-06 01:41  asfernandes 
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/req.h
+Avoid waste some bytes per record and procedure streams.
+
+ 2011-10-05 17:14  dimitr 
+   M src/auth/AuthInterface.h
+   M src/common/Auth.h
+Fixed the Windows build.
+
+ 2011-10-05 10:31  alexpeshkoff 
+   M src/auth/trusted/AuthSspi.cpp
+Added forgotten upgradeInterface() - thanks to Claudio
+
+ 2011-10-05 09:59  alexpeshkoff 
+   M src/gpre/gpre.cpp
+   M src/isql/isql.epp
+   M src/qli/lex.cpp
+Posix-only fix for CORE-3600: temp files fb_query_xxxx remains after ISQL has been closed
+
  2011-10-04 13:43  alexpeshkoff 
    M src/remote/inet.cpp
 Front-ported fix for unregistered bug - check return value of poll() before using it's output structures
