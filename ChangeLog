@@ -1,3 +1,13 @@
+ 2011-10-06 12:15  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+Added license files to linux packages
+
+ 2011-10-06 09:25  alexpeshkoff 
+   M builds/install/arch-specific/freebsd/install.sh.in
+   M builds/install/arch-specific/linux/Makefile.in
+   M builds/posix/Makefile.in.firebird
+CORE-3615: add silent_install target to firebird's Makefile
+
  2011-10-05 10:00  alexpeshkoff 
    M src/gpre/gpre.cpp
    M src/isql/isql.epp
