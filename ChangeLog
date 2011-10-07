@@ -1,3 +1,39 @@
+ 2011-10-07 02:33  asfernandes 
+   M src/alice/exe.cpp
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/classes/ClumpletReader.h
+   M src/common/utils.cpp
+   M src/jrd/idx.cpp
+   M src/jrd/vio.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Misc.
+
+ 2011-10-06 12:19  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+Added license files to linux packages
+
+ 2011-10-06 09:31  alexpeshkoff 
+   M builds/install/arch-specific/freebsd/install.sh.in
+   M builds/install/arch-specific/hpux/Makefile.in
+   M builds/install/arch-specific/linux/Makefile.in
+   M builds/install/arch-specific/netbsd/Makefile.in
+   M builds/posix/Makefile.in
+Fronported CORE-3615: add silent_install target to firebird's Makefile (and some other misc install-related fixes)
+
  2011-10-06 01:41  asfernandes 
    M src/jrd/recsrc/ProcedureScan.cpp
    M src/jrd/recsrc/RecordSource.h
