@@ -1125,7 +1125,7 @@ bool isRunningCheck(const UCHAR* items, unsigned int length)
 			(Firebird::Arg::Gds(isc_random) << "Missing info items block of non-zero length").raise();
 		}
 
-		switch(*items++)
+		switch (*items++)
 		{
 		case isc_info_end:
 		case isc_info_truncated:

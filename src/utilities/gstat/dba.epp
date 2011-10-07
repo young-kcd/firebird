@@ -682,32 +682,28 @@ int gstat(Firebird::UtilSvc* uSvc)
 	{
 		dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 	}
-
 	else
 	{
 		if (*username)
-		{
 			dpb.insertString(isc_dpb_user_name, username, strlen(username));
-		}
+
 		if (*password)
 		{
 			dpb.insertString(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
 							password, strlen(password));
 		}
+
 		if (*tr_user)
 		{
 			uSvc->checkService();
 			dpb.insertString(isc_dpb_trusted_auth, tr_user, strlen(tr_user));
 			if (trusted_role)
-			{
 				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-			}
 		}
+
 #ifdef TRUSTED_AUTH
 		if (trusted_auth)
-		{
 			dpb.insertTag(isc_dpb_trusted_auth);
-		}
 #endif
 	}
 
@@ -1063,9 +1059,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 			{
 				tddba->uSvc->printf(true, "\n%s\n", s);
 				s[0] = '-';
-				while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
+				while (fb_interpret(s + 1, sizeof(s) - 1, &vector))
 					tddba->uSvc->printf(true, "%s\n", s);
-				}
 			}
 		}
 	}

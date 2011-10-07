@@ -430,10 +430,10 @@ public:
 			: provider(NULL)
 		{ }
 
+		~ServiceType();
+
 		void shutdown();
 		void detach(Firebird::IStatus* status);
-
-		~ServiceType();
 	};
 
 	ServiceType regular, started, queryCache;

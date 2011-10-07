@@ -1016,10 +1016,10 @@ static idx_e check_duplicates(thread_db* tdbb,
 			VIO_get_current(tdbb, &rpb, insertion->iib_transaction, tdbb->getDefaultPool(),
 							is_fk, rec_tx_active) )
 		{
-			// hvlad: if record's transaction is still active, we should consider 
+			// hvlad: if record's transaction is still active, we should consider
 			// it as present and prevent duplicates
 
-			if (rpb.rpb_flags & rpb_deleted || rec_tx_active)
+			if ((rpb.rpb_flags & rpb_deleted) || rec_tx_active)
 			{
 				result = idx_e_duplicate;
 				break;

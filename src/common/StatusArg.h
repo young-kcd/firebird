@@ -206,8 +206,6 @@ public:
 	{
 		return !(*this == arg);
 	}
-
-private:
 };
 
 

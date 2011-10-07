@@ -1430,10 +1430,11 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
  *
  **************************************/
 	ClumpletWriter* wrt = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
-		ClumpletReader::dpbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
+		ClumpletReader::dpbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address,
+		attach->p_atch_dpb.cstr_length);
+
 	port->port_auth = new DatabaseAuth(PathName(attach->p_atch_file.cstr_address,
-												attach->p_atch_file.cstr_length),
-									   wrt, operation);
+		attach->p_atch_file.cstr_length), wrt, operation);
 
 	if (port->port_auth->authenticate(port, send, NULL))
 	{
@@ -3119,6 +3120,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	USHORT info_db_len = 0;
 	bool needRunningService = false;
+
 	switch (op)
 	{
 	case op_info_blob:
@@ -3163,6 +3165,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	case op_service_info:
 		service = rdb->rdb_svc;
 		needRunningService = fb_utils::isRunningCheck(info_buffer, info_len);
+
 		if (service->svc_auth == Svc::SVCAUTH_PERM ||
 			(service->svc_auth == Svc::SVCAUTH_TEMP && needRunningService))
 		{
@@ -3182,11 +3185,14 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 												*service->svc_cached_spb) :
 				FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
 												ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
+
 			delete port_auth;
-			port_auth = NULL;
+
+			///port_auth = NULL;
 			port_auth = new ServiceQueryAuth(stuff->p_info_object, wrt,
 				stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
 				info_len, info_buffer, stuff->p_info_buffer_length);
+
 			if (port_auth->authenticate(this, sendL, NULL))
 			{
 				delete port_auth;
@@ -4608,8 +4614,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 		ClumpletWriter* wrt = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
 			ClumpletReader::spbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
 		port->port_auth = new ServiceAttachAuth(PathName(attach->p_atch_file.cstr_address,
-														 attach->p_atch_file.cstr_length),
-												wrt);
+			attach->p_atch_file.cstr_length), wrt);
 
 		if (port->port_auth->authenticate(port, sendL, NULL))
 		{
@@ -4663,7 +4668,8 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	ClumpletWriter* cache = NULL;
 	if (!authenticated)
 	{
-		cache = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
+		cache = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+			ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
 	}
 
 	for (spb->rewind(); !spb->isEof();)
@@ -4808,7 +4814,8 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 	Svc* svc = rdb->rdb_svc;
 	if (svc->svc_auth == Svc::SVCAUTH_PERM)
 	{
-		svc->svc_iface->start(&status_vector, stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address);
+		svc->svc_iface->start(&status_vector, stuff->p_info_items.cstr_length,
+			stuff->p_info_items.cstr_address);
 		this->send_response(sendL, 0, 0, &status_vector, false);
 	}
 	else
@@ -4816,11 +4823,12 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 		// Check credentials in default way right now
 		ClumpletWriter* authParams = svc->svc_cached_spb ?
 			FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(), *svc->svc_cached_spb) :
-			FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
+			FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+				ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
 
-		ClumpletWriter* spb = FB_NEW(*getDefaultMemoryPool())
-			ClumpletWriter(*getDefaultMemoryPool(), ClumpletReader::SpbStart, MAX_DPB_SIZE,
-						   stuff->p_info_items.cstr_address, stuff->p_info_items.cstr_length);
+		ClumpletWriter* spb = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+			ClumpletReader::SpbStart, MAX_DPB_SIZE, stuff->p_info_items.cstr_address,
+			stuff->p_info_items.cstr_length);
 
 		PathName dbName;
 		for (spb->rewind(); !spb->isEof(); spb->moveNext())
@@ -4833,7 +4841,7 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 		}
 
 		delete port_auth;
-		port_auth = NULL;
+		///port_auth = NULL;
 		port_auth = new ServiceStartAuth(dbName, authParams, spb);
 
 		if (port_auth->authenticate(this, sendL, NULL))

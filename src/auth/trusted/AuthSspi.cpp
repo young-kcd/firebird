@@ -351,7 +351,7 @@ Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
 {
 	if (dpb)
 	{
-		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
+		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 
 		const UCHAR tag = tags->trustedAuth;
 
@@ -443,7 +443,7 @@ Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 
 	if (dpb)
 	{
-		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
+		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 
 		try
 		{

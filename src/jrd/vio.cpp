@@ -1964,7 +1964,7 @@ bool VIO_get_current(thread_db* tdbb,
 					jrd_tra* transaction,
 					MemoryPool* pool,
 					bool foreign_key,
-					bool &rec_tx_active)
+					bool& rec_tx_active)
 {
 /**************************************
  *

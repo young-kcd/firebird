@@ -130,6 +130,7 @@ const unsigned char* DpbImplementation::get(unsigned int* cntPtr)
 	{
 		*cntPtr = body->getClumpLength();
 	}
+
 	return body->getBytes();
 }
 

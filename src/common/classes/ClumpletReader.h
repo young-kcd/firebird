@@ -45,7 +45,19 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {EndOfList, Tagged, UnTagged, SpbAttach, SpbStart, Tpb, WideTagged, WideUnTagged, SpbSendItems, SpbReceiveItems};
+	enum Kind
+	{
+		EndOfList,
+		Tagged,
+		UnTagged,
+		SpbAttach,
+		SpbStart,
+		Tpb,
+		WideTagged,
+		WideUnTagged,
+		SpbSendItems,
+		SpbReceiveItems
+	};
 
 	struct KindList
 	{

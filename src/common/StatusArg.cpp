@@ -91,7 +91,7 @@ void StatusVector::ImplStatusVector::clear() throw()
 bool StatusVector::ImplStatusVector::compare(const StatusVector& v) const throw()
 {
 	return m_length == v.length() &&
-		   memcmp(m_status_vector, v.value(), m_length  * sizeof(ISC_STATUS)) == 0;
+		   memcmp(m_status_vector, v.value(), m_length * sizeof(ISC_STATUS)) == 0;
 }
 
 void StatusVector::ImplStatusVector::makePermanent() throw()

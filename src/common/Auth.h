@@ -62,7 +62,7 @@ private:
 	void putLevel();
 };
 
-class DpbImplementation : public Firebird::AutoIface<IClumplets, FB_AUTH_DPB_READER_VERSION>
+class DpbImplementation : public Firebird::AutoIface<IClumplets, FB_AUTH_CLUMPLETS_VERSION>
 {
 public:
 	DpbImplementation(Firebird::ClumpletWriter& base);

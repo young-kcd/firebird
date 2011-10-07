@@ -4557,8 +4557,8 @@ void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTra
 //-------------------------------------
 
 
-static IService* getServiceManagerByName(IProvider** provider, IStatus* status, const char* serviceName,
-										 unsigned int spbLength, const unsigned char* spb)
+static IService* getServiceManagerByName(IProvider** provider, IStatus* status,
+	const char* serviceName, unsigned int spbLength, const unsigned char* spb)
 {
 	for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
 			FB_PROVIDER_VERSION, upInfo);
@@ -4576,6 +4576,7 @@ static IService* getServiceManagerByName(IProvider** provider, IStatus* status, 
 				p->addRef();
 				*provider = p;
 			}
+
 			return service;
 		}
 
@@ -4583,7 +4584,17 @@ static IService* getServiceManagerByName(IProvider** provider, IStatus* status, 
 
 	if (status->isSuccess())
 		Arg::Gds(isc_service_att_err).copyTo(status);
+
 	return NULL;
+}
+
+YService::ServiceType::~ServiceType()
+{
+	if (provider)
+	{
+		PluginManagerInterfacePtr()->releasePlugin(provider);
+		provider = NULL;
+	}
 }
 
 void YService::ServiceType::shutdown()
@@ -4608,18 +4619,11 @@ void YService::ServiceType::detach(IStatus* status)
 	}
 }
 
-YService::ServiceType::~ServiceType()
-{
-	if (provider)
-	{
-		PluginManagerInterfacePtr()->releasePlugin(provider);
-		provider = NULL;
-	}
-}
-
 YService::YService(IProvider* aProvider, IService* aNext)
-	: regular(aNext, aProvider), attachName(getPool()),
-	  checkSpbLen(0), checkSpbPresent(NULL),
+	: regular(aNext, aProvider),
+	  attachName(getPool()),
+	  checkSpbLen(0),
+	  checkSpbPresent(NULL),
 	  authBlock(getPool())
 {
 	handle = makeHandle(&services, this);
@@ -4630,7 +4634,8 @@ YService::YService(const char* svcName, unsigned int spbLength, const unsigned c
 	: attachName(getPool()),
 	  attachSpb(FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList,
 												 MAX_DPB_SIZE, spb, spbLength)),
-	  checkSpbLen(0), checkSpbPresent(NULL),
+	  checkSpbLen(0),
+	  checkSpbPresent(NULL),
 	  authBlock(getPool())
 {
 	attachName.assign(svcName);
@@ -4638,63 +4643,51 @@ YService::YService(const char* svcName, unsigned int spbLength, const unsigned c
 	this->addRef();		// from YHelper
 
 	if (attachSpb->find(isc_spb_auth_block))
-	{
 		authBlock.add(attachSpb->getBytes(), attachSpb->getClumpLength());
-	}
 }
 
 IService* YService::getNextService(int mode, IStatus* status)
 {
 	if (regular.next)
-	{
 		return regular.next;
-	}
 
 	switch (mode)
 	{
-	case SERV_START:
-		if (started.provider)
-		{
-			started.shutdown();
-		}
+		case SERV_START:
+			if (started.provider)
+				started.shutdown();
 
-		started.next = getServiceManagerByName(&started.provider, status, attachName.c_str(),
-											   attachSpb ? attachSpb->getBufferLength() : 0,
-											   attachSpb ? attachSpb->getBuffer() : NULL);
-		if (!status->isSuccess())
-		{
-			status_exception::raise(status->get());
-		}
+			started.next = getServiceManagerByName(&started.provider, status, attachName.c_str(),
+				(attachSpb ? attachSpb->getBufferLength() : 0),
+				(attachSpb ? attachSpb->getBuffer() : NULL));
 
-		return started.next;
+			if (!status->isSuccess())
+				status_exception::raise(status->get());
 
-	case SERV_QUERY:
-		if (fb_utils::isRunningCheck(checkSpbPresent, checkSpbLen))
-		{
 			return started.next;
-		}
 
-		if (queryCache.next)
-		{
+		case SERV_QUERY:
+			if (fb_utils::isRunningCheck(checkSpbPresent, checkSpbLen))
+				return started.next;
+
+			if (queryCache.next)
+				return queryCache.next;
+
+			attachSpb->dump();
+			queryCache.next = getServiceManagerByName(&queryCache.provider, status, attachName.c_str(),
+				(attachSpb ? attachSpb->getBufferLength() : 0),
+				(attachSpb ? attachSpb->getBuffer() : NULL));
+
+			if (!status->isSuccess())
+				status_exception::raise(status->get());
+
 			return queryCache.next;
-		}
 
-		attachSpb->dump();
-		queryCache.next = getServiceManagerByName(&queryCache.provider, status, attachName.c_str(),
-											  attachSpb ? attachSpb->getBufferLength() : 0,
-											  attachSpb ? attachSpb->getBuffer() : NULL);
-		if (!status->isSuccess())
-		{
-			status_exception::raise(status->get());
-		}
+		case SERV_DETACH:
+			break;
 
-		return queryCache.next;
-
-	case SERV_DETACH:
-		break;
-
-	default:
-		fb_assert(false);
+		default:
+			fb_assert(false);
 	}
 
 	return NULL;
@@ -4737,14 +4730,10 @@ void YService::populateSpb(ClumpletWriter& spb, UCHAR tag)
 	if (attachSpb)
 	{
 		if (attachSpb->find(isc_spb_auth_block))
-		{
 			attachSpb->deleteClumplet();
-		}
 	}
 	else
-	{
 		attachSpb = FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList, MAX_DPB_SIZE);
-	}
 
 	if (spb.find(tag))
 	{
@@ -4752,9 +4741,7 @@ void YService::populateSpb(ClumpletWriter& spb, UCHAR tag)
 		spb.deleteClumplet();
 	}
 	else
-	{
 		attachSpb->insertTag(isc_spb_auth_block);
-	}
 }
 
 void YService::query(IStatus* status, unsigned int sendLength, const unsigned char* sendItems,
@@ -4769,7 +4756,8 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 		checkSpbLen = receiveLength;
 		checkSpbPresent = receiveItems;
 		YEntry<YService> entry(status, this, SERV_QUERY);
-		entry.next()->query(status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
+		entry.next()->query(status, sendLength, sendItems, receiveLength, receiveItems,
+			bufferLength, buffer);
 		checkSpbLen = 0;
 		checkSpbPresent = NULL;
 	}
@@ -5089,14 +5077,10 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 			service = getServiceManagerByName(&provider, status, svcName.c_str(), spbLength, spb);
 
 			if (service)
-			{
 				return new YService(provider, service);
-			}
 		}
 		else
-		{
 			return new YService(svcName.c_str(), spbLength, spb);
-		}
 	}
 	catch (const Exception& e)
 	{
@@ -5201,10 +5185,9 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 						service->shutdown();
 					} while (accessor.getNext());
 				}
+
 				if (hasThreads)
-				{
 					continue;
-				}
 			}
 
 			{

@@ -102,14 +102,16 @@ typedef Firebird::RefPtr<Firebird::IService> ServService;
 
 struct Svc : public Firebird::GlobalStorage
 {
-	ServService					svc_iface;		// service interface
-	Firebird::ClumpletWriter*	svc_cached_spb;	// Saved auth tags from attachService() call
-	Firebird::Array<UCHAR>		svc_wide_auth;	// Server-wide (default) authentication block
+	ServService svc_iface;						// service interface
+	Firebird::ClumpletWriter* svc_cached_spb;	// Saved auth tags from attachService() call
+	Firebird::Array<UCHAR> svc_wide_auth;		// Server-wide (default) authentication block
+
 	enum {
 		SVCAUTH_NONE,							// Service is not authenticated
 		SVCAUTH_TEMP,							// Service is authenticated for single task
 		SVCAUTH_PERM							// Service is authenticated permanently
-	}							svc_auth;		// Authentication state of service
+	} svc_auth;									// Authentication state of service
+
 	Svc() :
 		svc_iface(NULL), svc_cached_spb(NULL),
 		svc_wide_auth(getPool()), svc_auth(SVCAUTH_NONE)

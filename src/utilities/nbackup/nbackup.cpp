@@ -627,16 +627,13 @@ void NBackup::attach_database()
 	{
 		dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 	}
-
 	else
 	{
-		if (username.hasData()) {
+		if (username.hasData())
 			dpb.insertString(isc_dpb_user_name, username);
-		}
 
-		if (password.hasData()) {
+		if (password.hasData())
 			dpb.insertString(isc_dpb_password, password);
-		}
 
 		if (trustedUser.hasData())
 		{

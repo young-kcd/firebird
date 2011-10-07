@@ -146,20 +146,17 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo
 
 		const unsigned char* authBlock;
 		unsigned int authBlockSize = logonInfo->authBlock(&authBlock);
-		if (authBlockSize)
-		{
-			dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
-		}
 
+		if (authBlockSize)
+			dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 		else
 		{
 			const char* str = logonInfo->name();
 			if (str && str[0])
-			{
 				dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
-			}
 
 			str = logonInfo->role();
+
 			if (str && str[0])
 				dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
 			else if (logonInfo->forceAdmin())

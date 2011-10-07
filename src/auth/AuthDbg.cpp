@@ -128,7 +128,7 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, const
 {
 	try
 	{
-		Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
+		Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 		str = "HAND";
 		if (dpb)
 		{

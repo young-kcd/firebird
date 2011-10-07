@@ -56,7 +56,7 @@ public:
 	virtual void FB_CARG drop() = 0;
 	virtual const unsigned char* FB_CARG get(unsigned int* cntPtr) = 0;
 };
-#define FB_AUTH_DPB_READER_VERSION (FB_VERSIONED_VERSION + 4)
+#define FB_AUTH_CLUMPLETS_VERSION (FB_VERSIONED_VERSION + 4)
 
 // This struct defines auth-related tags (including legacy ones) in parameter blocks
 struct AuthTags
@@ -70,7 +70,7 @@ class IServer : public Firebird::IPluginBase
 public:
 	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb,
 											   IWriter* writerInterface) = 0;
-	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, 
+	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data,
 											  unsigned int size, IWriter* writerInterface) = 0;
 	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
