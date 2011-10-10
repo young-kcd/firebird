@@ -2395,8 +2395,7 @@ static void compress(thread_db* tdbb,
 		}
 		else
 		{
-			USHORT ttype;
-			length = MOV_get_string_ptr(desc, &ttype, &ptr, &buffer, MAX_KEY);
+			length = MOV_get_string(desc, &ptr, &buffer, MAX_KEY);
 		}
 
 		if (length)

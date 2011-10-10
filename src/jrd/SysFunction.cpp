@@ -1462,9 +1462,8 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 									Arg::Gds(isc_sysf_argviolates_uuidtype) << Arg::Str(function->name));
 	}
 
-	USHORT ttype;
 	UCHAR* data_temp;
-	const USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0);
+	const USHORT len = MOV_get_string(value, &data_temp, NULL, 0);
 	const UCHAR* data = data_temp;
 
 	// validate the UUID
@@ -3609,9 +3608,8 @@ dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValue
 										Arg::Str(function->name));
 	}
 
-	USHORT ttype;
 	UCHAR* data;
-	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0);
+	const USHORT len = MOV_get_string(value, &data, NULL, 0);
 
 	if (len != sizeof(FB_GUID))
 	{
