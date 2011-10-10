@@ -252,8 +252,6 @@ void CMP_fini(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-
-	CMP_shutdown_database(tdbb);	// Shutdown shared database locks.
 }
 
 
@@ -530,28 +528,6 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
  **************************************/
 	DEV_BLKCHK(request, type_req);
 	request->getStatement()->release(tdbb);
-}
-
-
-void CMP_shutdown_database(thread_db* tdbb)
-{
-/**************************************
- *
- *	C M P _ s h u t d o w n _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Release compile-time locks for database.
- *	Since this can be called at AST level, don't
- *	release any data structures.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-	DEV_BLKCHK(dbb, type_dbb);
 }
 
 

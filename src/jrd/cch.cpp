@@ -243,13 +243,9 @@ int CCH_down_grade_dbb(void* ast_object)
 
 		dbb->dbb_ast_flags |= DBB_blocking;
 
-		// Database shutdown will release the database lock; just return
+		// Process the database shutdown request, if any
 
-		if (SHUT_blocking_ast(tdbb))
-		{
-			dbb->dbb_ast_flags &= ~DBB_blocking;
-			return 0;
-		}
+		SHUT_blocking_ast(tdbb);
 
 		// If we are already shared, there is nothing more we can do.
 		// If any case, the other guy probably wants exclusive access,
@@ -320,8 +316,8 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
  *	Get exclusive access to a database.  If we get it, return true.
  *	If the wait flag is FALSE, and we can't get it, give up and
  *	return false. There are two levels of database exclusivity: LCK_PW
- *	guarantees there are  no normal users in the database while LCK_EX
- *	additionally guarantes background database processes like the
+ *	guarantees there are no normal users in the database while LCK_EX
+ *	additionally guarantees background database processes like the
  *	shared cache manager have detached.
  *
  **************************************/

@@ -225,10 +225,9 @@ const ULONG DBB_shutdown			= 0x8L;		// Database is shutdown
 const ULONG DBB_shut_attach			= 0x10L;	// no new attachments accepted
 const ULONG DBB_shut_tran			= 0x20L;	// no new transactions accepted
 const ULONG DBB_shut_force			= 0x40L;	// forced shutdown in progress
-const ULONG DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
-const ULONG DBB_shutdown_full		= 0x100L;	// Database fully shut down
-const ULONG DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
-const ULONG DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
+const ULONG DBB_shutdown_full		= 0x80L;	// Database fully shut down
+const ULONG DBB_shutdown_single		= 0x100L;	// Database is in single-user maintenance mode
+const ULONG DBB_monitor_off			= 0x200L;	// Database has the monitoring lock released
 
 class Database : public pool_alloc<type_dbb>
 {

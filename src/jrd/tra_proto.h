@@ -53,7 +53,6 @@ Jrd::jrd_tra*	TRA_reconnect(Jrd::thread_db*, const UCHAR*, USHORT);
 void	TRA_release_transaction(Jrd::thread_db*, Jrd::jrd_tra*);
 void	TRA_rollback(Jrd::thread_db*, Jrd::jrd_tra*, const bool, const bool);
 void	TRA_set_state(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, SSHORT);
-void	TRA_shutdown_attachment(Jrd::thread_db*, Jrd::Attachment*);
 int		TRA_snapshot_state(Jrd::thread_db*, const Jrd::jrd_tra*, SLONG);
 Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, ULONG flags, SSHORT lock_timeout, Jrd::jrd_tra* outer = NULL);
 Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, int, const UCHAR*, Jrd::jrd_tra* outer = NULL);
