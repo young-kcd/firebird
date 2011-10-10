@@ -128,10 +128,10 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, const
 {
 	try
 	{
-		Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 		str = "HAND";
 		if (dpb)
 		{
+			Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 			dpb->add(tags->trustedAuth, str.c_str(), str.length());
 			return AUTH_SUCCESS;
 		}
