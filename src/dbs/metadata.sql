@@ -19,12 +19,6 @@
  * files.
  */
 SET SQL DIALECT 1;
-/* 
- * Commented out the delete since it gives an error message, that puts off 
- * the builder.  Deletion handled in shell script instead. MOD 04-Jan-01
-CONNECT 'metadata.fdb';
-DROP DATABASE;
-*/
 
 CREATE DATABASE 'metadata.fdb' PAGE_SIZE 1024;
 
@@ -35,11 +29,6 @@ CREATE DOMAIN QLI$PROCEDURE AS BLOB SUB_TYPE TEXT SEGMENT SIZE 80;
 /* Table: QLI$PROCEDURES, Owner: BUILDER */
 CREATE TABLE QLI$PROCEDURES (QLI$PROCEDURE_NAME QLI$PROCEDURE_NAME,
         QLI$PROCEDURE QLI$PROCEDURE);
-
-/* Table: RDB$ROLES, Owner: BUILDER (For Interbase server < 5.0)
- * CREATE TABLE RDB$ROLES (RDB$ROLE_NAME CHAR(31) default null,
- *         RDB$OWNER_NAME CHAR(31) default null);
- */
 
 /*  Index definitions for all user tables */
 CREATE UNIQUE INDEX QLI$PROCEDURES_IDX1 ON QLI$PROCEDURES(QLI$PROCEDURE_NAME);

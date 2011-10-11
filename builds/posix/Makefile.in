@@ -219,8 +219,9 @@ yachts.lnk:		metadata.fdb
 	-$(RM) $@
 	$(LN) $^ $@
 
-metadata.fdb:	$(BLD_ROOT)/misc/metadata.gbak
-	$(GBAK) -MODE read_only -R $< $@
+metadata.fdb:	$(ISQL) $(SRC_ROOT)/dbs/metadata.sql
+	-$(RM) $@
+	$(ISQL) -q -i $(SRC_ROOT)/dbs/metadata.sql
 	$(CHMOD) 0444 $@
 
 $(HELP_FDB):	help.fdb
