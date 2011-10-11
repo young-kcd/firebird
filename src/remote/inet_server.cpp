@@ -271,7 +271,10 @@ int FB_EXPORTED server_main( int argc, char** argv)
 #endif
 
 #if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+
+#ifdef RLIMIT_NPROC
 	raiseLimit(RLIMIT_NPROC);
+#endif
 
 #if !(defined(DEV_BUILD))
 	if (Config::getBugcheckAbort())
