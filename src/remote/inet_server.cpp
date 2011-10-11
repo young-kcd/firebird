@@ -240,7 +240,6 @@ int FB_EXPORTED server_main( int argc, char** argv)
 
 					printf("  -t           : multithread - true  (non pc only)\n");
 					printf("  -u           : multithread - false (pc only)\n");
-					printf("  -t           : multithread (non pc only\n");
 #endif
 
 					printf("  -p<protocol> : specify protocol\n");
