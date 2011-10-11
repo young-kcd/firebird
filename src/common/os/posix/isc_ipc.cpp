@@ -147,7 +147,13 @@ static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef SA_SIGINFO
 static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context);
+#else
+static void CLIB_ROUTINE signal_action(int number);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -212,20 +218,34 @@ static bool isc_signal2(int signal_number, FPTR_VOID handler, void* arg, ULONG f
 	if (!sig) {
 		struct sigaction act, oact;
 
+#ifdef SA_SIGINFO
 		act.sa_sigaction = signal_action;
 		act.sa_flags = SA_RESTART | SA_SIGINFO;
+#else
+		act.sa_handler = signal_action;
+#endif
 		sigemptyset(&act.sa_mask);
 		sigaddset(&act.sa_mask, signal_number);
 		sigaction(signal_number, &act, &oact);
+#ifdef SA_SIGINFO
 		old_sig_w_siginfo = oact.sa_flags & SA_SIGINFO;
+#endif
 
-		if (oact.sa_sigaction != signal_action &&
+		if (
+#ifdef SA_SIGINFO
+			oact.sa_sigaction != signal_action &&
+#else
+			oact.sa_handler != signal_action &&
+#endif
 			oact.sa_handler != SIG_DFL &&
 			oact.sa_handler != SIG_HOLD &&
 			oact.sa_handler != SIG_IGN)
 		{
-			que_signal(signal_number, old_sig_w_siginfo ?
+			que_signal(signal_number,
+#ifdef SA_SIGINFO
+			old_sig_w_siginfo ?
 				reinterpret_cast<FPTR_VOID>(oact.sa_sigaction) :
+#endif
 				reinterpret_cast<FPTR_VOID>(oact.sa_handler),
 				NULL, SIG_client, old_sig_w_siginfo);
 			rc = true;
@@ -299,6 +319,12 @@ static SIG que_signal(int signal_number,
 		DEV_REPORT("que_signal: out of memory");
 		return NULL;			// NOMEM: not handled, too difficult
 	}
+#ifndef SA_SIGINFO
+	if (sig_w_siginfo) {
+		DEV_REPORT("SA_SIGINFO not supported");
+		return NULL;
+	}
+#endif
 
 #ifdef DEBUG_GDS_ALLOC
 	// This will only be freed when a signal handler is de-registered
@@ -319,7 +345,11 @@ static SIG que_signal(int signal_number,
 }
 
 
+#ifdef SA_SIGINFO
 static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context)
+#else
+static void CLIB_ROUTINE signal_action(int number)
+#endif
 {
 /**************************************
  *
@@ -339,11 +369,13 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 		{
 			if (sig->sig_flags & SIG_client)
 			{
+#ifdef SA_SIGINFO
 				if (sig->sig_w_siginfo)
 				{
 					(*sig->sig_routine.client3)(number, siginfo, context);
 				}
 				else
+#endif
 				{
 					(*sig->sig_routine.client1)(number);
 				}
