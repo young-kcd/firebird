@@ -307,7 +307,10 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	}
 
 #ifdef FB_RAISE_LIMITS
+
+#ifdef RLIMIT_NPROC
 	raiseLimit(RLIMIT_NPROC);
+#endif
 
 #if !(defined(DEV_BUILD))
 	if (Config::getBugcheckAbort())
