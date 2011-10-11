@@ -1,3 +1,24 @@
+ 2011-10-10 17:15  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+misc
+
+ 2011-10-10 13:51  dimitr 
+   M src/jrd/Database.h
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/jrd.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/shut_proto.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra_proto.h
+Refactored the database shutdown. Work in progress.
+
+ 2011-10-10 10:39  dimitr 
+   M src/jrd/SysFunction.cpp
+   M src/jrd/btr.cpp
+Misc.
+
  2011-10-07 02:33  asfernandes 
    M src/alice/exe.cpp
    M src/auth/AuthDbg.cpp
