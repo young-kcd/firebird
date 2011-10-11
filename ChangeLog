@@ -1,3 +1,7 @@
+ 2011-10-10 08:37  dimitr 
+   M src/misc/writeBuildNum.sh
+Bumped version number.
+
  2011-10-06 12:15  alexpeshkoff 
    M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
 Added license files to linux packages
