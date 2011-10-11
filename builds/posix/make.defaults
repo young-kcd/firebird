@@ -84,16 +84,16 @@ RealFirebirdPath = @NEW_FIREBIRD_DIR@
 #____________________________________________________________________________
 # From here we may set some global options to both compiler and linker.
 
-# Use configure's CFLAGS as global options for all compilers and linkers
-GLOB_OPTIONS=@CFLAGS@
+# Use empty default global options for all compilers and linkers
+GLOB_OPTIONS:=
 
 # Possible use - profiling.
-#GLOB_OPTIONS+= -pg
-
-CFLAGS:= $(CFLAGS) $(GLOB_OPTIONS)
-CXXFLAGS:= $(CXXFLAGS) $(GLOB_OPTIONS)
+#GLOB_OPTIONS:= -pg
 
 #____________________________________________________________________________
+
+# Firebird needs no RTTI
+RTTI_FLAG:= -fno-rtti
 
 # If this is defined then we use special rules useful for developers only
 IsDeveloper = @DEVEL_FLG@
@@ -113,7 +113,6 @@ SFIO_EXAMPLES=@SFIO_EXAMPLES@
 EDITLINE_FLG=@EDITLINE_FLG@
 STD_EDITLINE=@STD_EDITLINE@
 READLINE=@READLINE@
-STD_ICU=@STD_ICU@
 
 # threading options - set by configure
 THR_FLAGS=@PTHREAD_CFLAGS@
