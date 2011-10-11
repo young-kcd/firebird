@@ -78,17 +78,21 @@ public:
 
 	template <typename T> void getEntryPoint(const char* name, ModuleLoader::Module* module, T& ptr)
 	{
+		// ICU has too lot of schemas for entries names
+		const char* patterns[] =
+		{
+			"%s_%d_%d", "%s_%d%d", "%s", NULL
+		};
+
 		string symbol;
 
-		symbol.printf("%s_%d_%d", name, majorVersion, minorVersion);
-		module->findSymbol(symbol, ptr);
-		if (ptr)
-			return;
-
-		symbol.printf("%s_%d%d", name, majorVersion, minorVersion);
-		module->findSymbol(symbol, ptr);
-		if (ptr)
-			return;
+		for (const char** p = patterns; *p; ++p)
+		{
+			symbol.printf(*p, name, majorVersion, minorVersion);
+			module->findSymbol(symbol, ptr);
+			if (ptr)
+				return;
+		}
 
 		(Arg::Gds(isc_random) << "Missing entrypoint in ICU library" <<
 		 Arg::Gds(isc_random) << name).raise();
