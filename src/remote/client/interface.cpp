@@ -676,6 +676,12 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 		PathName node_name;
 		rem_port* port = analyze(expanded_name, user_verification, newDpb, node_name, loopback);
 
+		if (!port)
+		{
+			Arg::Gds(isc_unavailable).copyTo(status);
+			return NULL;
+		}
+
 		RefMutexGuard portGuard(*port->port_sync);
 		Rdb* rdb = port->port_context;
 
@@ -1213,6 +1219,12 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 		PathName expanded_name(filename);
 		PathName node_name;
 		rem_port* port = analyze(expanded_name, user_verification, newDpb, node_name, loopback);
+
+		if (!port)
+		{
+			Arg::Gds(isc_unavailable).copyTo(status);
+			return NULL;
+		}
 
 		RefMutexGuard portGuard(*port->port_sync);
 		Rdb* rdb = port->port_context;
@@ -4923,11 +4935,6 @@ static rem_port* analyze(PathName& file_name,
 				port = INET_analyze(file_name, INET_LOCALHOST, uv_flag, dpb);
 			}
 		}
-	}
-
-	if (!port)
-	{
-		Arg::Gds(isc_unavailable).raise();
 	}
 
 	return port;
