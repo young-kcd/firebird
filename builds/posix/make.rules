@@ -45,8 +45,8 @@ else
   WFLAGS:= $(WFLAGS) $(DEV_FLAGS) -DDEV_BUILD
 endif
 
-WCFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CFLAGS)
-WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CXXFLAGS)
+WCFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CFLAGS) $(GLOB_OPTIONS)
+WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CXXFLAGS) $(GLOB_OPTIONS)
 
 # Here we have definitions for using the preprocessor.
 

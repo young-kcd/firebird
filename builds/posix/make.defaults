@@ -79,14 +79,11 @@ RealFirebirdPath = @NEW_FIREBIRD_DIR@
 #____________________________________________________________________________
 # From here we may set some global options to both compiler and linker.
 
-# Use configure's CFLAGS as global options for all compilers and linkers
-GLOB_OPTIONS=@CFLAGS@
+# Use empty default global options
+GLOB_OPTIONS:=
 
 # Possible use - profiling.
-#GLOB_OPTIONS+= -pg
-
-CFLAGS:= $(CFLAGS) $(GLOB_OPTIONS)
-CXXFLAGS:= $(CXXFLAGS) $(GLOB_OPTIONS)
+#GLOB_OPTIONS:= -pg
 
 #____________________________________________________________________________
 
@@ -148,11 +145,11 @@ LD =	@CXX@
 
 # LINKER COMMANDS
 
-LIB_LINK:= @CXX@ $(GLOB_OPTIONS)
+LIB_LINK:= @CXX@ $(GLOB_OPTIONS) $(CXXFLAGS)
 STATICLIB_LINK:= ar cruvs
-CLIENTLIB_LINK:= @CC@ $(GLOB_OPTIONS)
-EXE_LINK:= @CXX@ $(GLOB_OPTIONS)
-STATICEXE_LINK:= @CXX@ $(GLOB_OPTIONS)
+CLIENTLIB_LINK:= @CC@ $(GLOB_OPTIONS) $(CFLAGS)
+EXE_LINK:= @CXX@ $(GLOB_OPTIONS) $(CXXFLAGS)
+STATICEXE_LINK:= @CXX@ $(GLOB_OPTIONS) $(CXXFLAGS)
 
 LINK_LIBS = @LIBS@
 ICU_LIBS = -licuuc -licudata -licui18n
