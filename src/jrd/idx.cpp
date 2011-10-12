@@ -1179,7 +1179,7 @@ static IDX_E check_duplicates(
 						field_id = insertion_idx->idx_rpt[i].idx_field;
 						const bool flag_old = EVL_field(relation_1, old_rpb.rpb_record, field_id, &desc1);
 
-						const bool not_equal_old = (flag_old != flag_idx || (flag_cur && MOV_compare(&desc1, &desc2) != 0));
+						const bool not_equal_old = (flag_old != flag_idx || (flag_cur && (MOV_compare(&desc1, &desc2) != 0)) );
 
 						if (is_fk) {
 							if (not_equal_cur || not_equal_old)
