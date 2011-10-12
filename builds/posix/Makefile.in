@@ -222,6 +222,7 @@ yachts.lnk:		metadata.fdb
 metadata.fdb:	$(ISQL) $(SRC_ROOT)/dbs/metadata.sql
 	-$(RM) $@
 	$(ISQL) -q -i $(SRC_ROOT)/dbs/metadata.sql
+	$(GFIX) -mode read_only $@
 	$(CHMOD) 0444 $@
 
 $(HELP_FDB):	help.fdb
