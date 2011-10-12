@@ -1703,13 +1703,12 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
  *      A data conversion error occurred.  Complain.
  *
  **************************************/
-	const char* p;
-	VaryStr<41> s;
+	Firebird::string message;
 
 	if (desc->dsc_dtype == dtype_blob)
-		p = "BLOB";
+		message = "BLOB";
 	else if (desc->dsc_dtype == dtype_array)
-		p = "ARRAY";
+		message = "ARRAY";
 	else
 	{
 		// CVC: I don't have access here to JRD_get_thread_data())->tdbb_status_vector
@@ -1724,9 +1723,11 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 
 		try
 	    {
+			const char* p;
+			VaryStr<41> s;
 			const USHORT length =
 				CVT_make_string(desc, ttype_ascii, &p, &s, sizeof(s) - 1, localError);
-			const_cast<char*>(p)[length] = 0;
+			message.assign(p, length);
 		}
 		/*
 		catch (status_exception& e)
@@ -1744,11 +1745,11 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		*/
 		catch (DummyException&)
 		{
-			p = "<Too long string or can't be translated>";
+			message = "<Too long string or can't be translated>";
 		}
 	}
 
-	err(Arg::Gds(isc_convert_error) << p);
+	err(Arg::Gds(isc_convert_error) << message);
 }
 
 
