@@ -1069,7 +1069,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 					field_id = record_idx->idx_rpt[i].idx_field;
 					const bool flag_idx = EVL_field(relation_2, record, field_id, &desc2);
 
-					if (flag_rec != flag_idx || (MOV_compare(&desc1, &desc2) != 0))
+					if (flag_rec != flag_idx || (flag_rec && (MOV_compare(&desc1, &desc2) != 0) ))
 						break;
 
 					all_nulls = all_nulls && !flag_rec && !flag_idx;
