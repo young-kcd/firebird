@@ -1,3 +1,15 @@
+ 2011-10-11 12:00  alexpeshkoff 
+   M src/remote/inet_server.cpp
+Backported fix for CORE-3607: Solaris does not define the RLIMIT_NPROC limit
+
+ 2011-10-11 11:51  alexpeshkoff 
+   M src/remote/inet_server.cpp
+Fixed CORE-3609: Option -t displayed twice by fb_inet_server -h
+
+ 2011-10-11 10:29  alexpeshkoff 
+   M src/jrd/os/posix/isc_ipc.cpp
+Porting - some Debians miss SA_SIGINFO, committed fixing it patch by Samuel Thibault
+
  2011-10-10 08:37  dimitr 
    M src/misc/writeBuildNum.sh
 Bumped version number.
