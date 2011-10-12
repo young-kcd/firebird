@@ -1161,7 +1161,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 
 					const bool not_equal_cur = !has_cur_values ||
 						has_cur_values &&
-							( (flag_cur != flag_idx) || (MOV_compare(&desc1, &desc2) != 0) );
+							( (flag_cur != flag_idx) || (flag_cur && (MOV_compare(&desc1, &desc2) != 0)) );
 
 					if ((is_fk || !has_old_values) && not_equal_cur)
 						break;
@@ -1173,7 +1173,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 							EVL_field(relation_1, old_rpb.rpb_record, field_id, &desc1);
 
 						const bool not_equal_old =
-							(flag_old != flag_idx || MOV_compare(&desc1, &desc2) != 0);
+							(flag_old != flag_idx || (flag_cur && (MOV_compare(&desc1, &desc2) != 0)) );
 
 						if (is_fk)
 						{
