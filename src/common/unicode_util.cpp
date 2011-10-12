@@ -175,9 +175,9 @@ public:
 
 
 // encapsulate ICU conversion library
-struct ImplementConversionICU : public UnicodeUtil::ConversionICU, BaseICU
+class ImplementConversionICU : public UnicodeUtil::ConversionICU, BaseICU
 {
-public:
+private:
 	ImplementConversionICU(int aMajorVersion, int aMinorVersion)
 		: BaseICU(aMajorVersion, aMinorVersion)
 	{
@@ -186,12 +186,7 @@ public:
 
 		module = ModuleLoader::fixAndLoadModule(filename);
 		if (!module)
-		{
-			//(Arg::Gds(isc_random) << "Missing library" <<
-			// Arg::Gds(isc_random) << filename).raise();
-			// Instead raise 'empty' exception in order to ignore "Missing library" later
-			LongJump::raise();
-		}
+			return;
 
 		try
 		{
@@ -230,6 +225,21 @@ public:
 				(Arg::Gds(isc_random) << diag).raise();
 			}
 		}
+	}
+
+public:
+	static ImplementConversionICU* create(int majorVersion, int minorVersion)
+	{
+		ImplementConversionICU* o = FB_NEW(*getDefaultMemoryPool()) ImplementConversionICU(
+			majorVersion, minorVersion);
+
+		if (!o->module)
+		{
+			delete o;
+			o = NULL;
+		}
+
+		return o;
 	}
 
 private:
@@ -1027,10 +1037,9 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 		{
 			try
 			{
-				convIcu = FB_NEW(*getDefaultMemoryPool()) ImplementConversionICU(*major, minor);
-				return *convIcu;
+				if ((convIcu = ImplementConversionICU::create(*major, minor)))
+					return *convIcu;
 			}
-			catch (const LongJump&) { }
 			catch (const Exception& ex)
 			{
 				ex.stuffException(&lastError);
