@@ -1,3 +1,48 @@
+ 2011-10-12 02:06  asfernandes 
+   M src/common/unicode_util.cpp
+Avoid thrown exceptions in normal operation when loading non-existent ICU versions. This was a pain in the debugger.
+
+ 2011-10-11 13:42  alexpeshkoff 
+   M builds/posix/make.defaults
+   M builds/posix/make.rules
+Cleanup
+
+ 2011-10-11 11:59  alexpeshkoff 
+   M src/remote/server/os/posix/inet_server.cpp
+Fixed CORE-3607: Solaris does not define the RLIMIT_NPROC limit
+
+ 2011-10-11 10:29  alexpeshkoff 
+   M src/common/os/posix/isc_ipc.cpp
+Porting - some Debians miss SA_SIGINFO, committed fixing it patch by Samuel Thibault
+
+ 2011-10-11 08:20  alexpeshkoff 
+   M builds/posix/Makefile.in
+   M src/dbs/metadata.sql
+Create metadata.fdb using isql
+
+ 2011-10-11 07:46  alexpeshkoff 
+   D src/dbs/dflt.gdl
+   D src/dbs/grant.gdl
+   D src/dbs/isc.gdl
+   D src/dbs/ods10.gdl
+   D src/dbs/ods101.gdl
+   D src/dbs/ods72.gdl
+   D src/dbs/ods80.gdl
+   D src/dbs/ods80dif.gdl
+   D src/dbs/ods81.gdl
+   D src/dbs/ods91.gdl
+   D src/dbs/procs2.gdl
+   D src/dbs/scrty_unix.gdl
+   D src/dbs/scrty_vms.gdl
+   D src/dbs/security.gdl
+   D src/dbs/stored_proc.gdl
+   D src/dbs/v2_triggers.gdl
+Cleanup: remove all GDEF files - we anyway have no tool to run them
+
+ 2011-10-11 06:46  alexpeshkoff 
+   M src/common/unicode_util.cpp
+Fixed CORE-3576: Make ICU built with U_DISABLE_RENAMING load correctly - thanks to Treeve Jelbert
+
  2011-10-10 17:15  alexpeshkoff 
    M src/auth/AuthDbg.cpp
 misc
