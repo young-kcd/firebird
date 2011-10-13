@@ -250,6 +250,7 @@ LockManager::~LockManager()
 			m_startupSemaphore.tryEnter(5);
 
 			// Wakeup the AST thread - it might be blocking
+			(void)  // Ignore errors in dtor()
 			ISC_event_post(&m_process->prc_blocking);
 
 			// Wait for the AST thread to finish cleanup or for 5 seconds
@@ -1549,7 +1550,7 @@ void LockManager::blocking_action_thread()
 				}
 			}
 
-			ISC_event_wait(&m_process->prc_blocking, value, 0);
+			(void) ISC_event_wait(&m_process->prc_blocking, value, 0);
 		}
 	}
 	catch (const Firebird::Exception& x)
@@ -1736,7 +1737,11 @@ bool LockManager::create_owner(Arg::StatusVector& statusVector,
 		remove_que(&owner->own_lhb_owners);
 	}
 
-	init_owner_block(owner, owner_type, owner_id);
+	if (!init_owner_block(statusVector, owner, owner_type, owner_id))
+	{
+		release_mutex();
+		return false;
+	}
 
 	insert_tail(&sh_mem_header->lhb_owners, &owner->own_lhb_owners);
 
@@ -1802,7 +1807,11 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 
 	insert_tail(&sh_mem_header->lhb_processes, &process->prc_lhb_processes);
 
-	ISC_event_init(&process->prc_blocking);
+	if (ISC_event_init(&process->prc_blocking) != FB_SUCCESS)
+	{
+		statusVector << Arg::Gds(isc_lockmanerr);
+		return false;
+	}
 
 	m_processOffset = SRQ_REL_PTR(process);
 
@@ -2298,7 +2307,7 @@ SRQ_PTR LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* loc
 }
 
 
-void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id)
+bool LockManager::init_owner_block(Arg::StatusVector& statusVector, own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id)
 {
 /**************************************
  *
@@ -2326,7 +2335,13 @@ void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T ow
 	owner->own_acquire_time = 0;
 	owner->own_ast_count = 0;
 
-	ISC_event_init(&owner->own_wakeup);
+	if (ISC_event_init(&owner->own_wakeup) != FB_SUCCESS)
+	{
+		statusVector << Arg::Gds(isc_lockmanerr);
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -2916,7 +2931,7 @@ void LockManager::post_wakeup(own* owner)
 	{
 		++sh_mem_header->lhb_wakeups;
 		owner->own_flags |= OWN_wakeup;
-		ISC_event_post(&owner->own_wakeup);
+		(void) ISC_event_post(&owner->own_wakeup);
 	}
 }
 
@@ -3067,7 +3082,10 @@ void LockManager::remap_local_owners()
 		own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
 		if (owner->own_flags & OWN_waiting)
 		{
-			ISC_event_post(&owner->own_wakeup);
+			if (ISC_event_post(&owner->own_wakeup) != FB_SUCCESS)
+			{
+				bug(NULL, "remap failed: ISC_event_post() failed");
+			}
 		}
 	}
 

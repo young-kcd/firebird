@@ -150,7 +150,7 @@ EventManager::~EventManager()
 	{
 		// Terminate the event watcher thread
 		m_startupSemaphore.tryEnter(5);
-		ISC_event_post(&m_process->prb_event);
+		(void) ISC_event_post(&m_process->prb_event);
 		m_cleanupSemaphore.tryEnter(5);
 
 #ifdef HAVE_OBJECT_MAP
@@ -393,7 +393,11 @@ SLONG EventManager::queEvents(SLONG session_id,
 
 	if (flag)
 	{
-		post_process((prb*) SRQ_ABS_PTR(m_processOffset));
+		if (!post_process((prb*) SRQ_ABS_PTR(m_processOffset)))
+		{
+			release_shmem();
+			(Firebird::Arg::Gds(isc_random) << "post_process() failed").raise();
+		}
 	}
 
 	release_shmem();
@@ -513,7 +517,11 @@ void EventManager::deliverEvents()
 			prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET (prb*, prb_processes));
 			if (process->prb_flags & PRB_wakeup)
 			{
-				post_process(process);
+				if (!post_process(process))
+				{
+					release_shmem();
+					(Firebird::Arg::Gds(isc_random) << "post_process() failed").raise();
+				}
 				flag = true;
 				break;
 			}
@@ -682,7 +690,11 @@ void EventManager::create_process()
 	insert_tail(&sh_mem_header->evh_processes, &process->prb_processes);
 	SRQ_INIT(process->prb_sessions);
 
-	ISC_event_init(&process->prb_event);
+	if (ISC_event_init(&process->prb_event) != FB_SUCCESS)
+	{
+		release_shmem();
+		(Firebird::Arg::Gds(isc_random) << "ISC_event_init() failed").raise();
+	}
 
 	m_processOffset = SRQ_REL_PTR(process);
 
@@ -1205,7 +1217,7 @@ void EventManager::mutex_bugcheck(const TEXT* string, int mutex_state)
 }
 
 
-void EventManager::post_process(prb* process)
+bool EventManager::post_process(prb* process)
 {
 /**************************************
  *
@@ -1219,7 +1231,7 @@ void EventManager::post_process(prb* process)
  **************************************/
 	process->prb_flags &= ~PRB_wakeup;
 	process->prb_flags |= PRB_pending;
-	ISC_event_post(&process->prb_event);
+	return ISC_event_post(&process->prb_event) == FB_SUCCESS;
 }
 
 
@@ -1424,7 +1436,7 @@ void EventManager::watcher_thread()
 			if (m_exiting)
 				break;
 
-			ISC_event_wait(&m_process->prb_event, value, 0);
+			(void) ISC_event_wait(&m_process->prb_event, value, 0);
 		}
 
 		m_cleanupSemaphore.release();

@@ -365,7 +365,7 @@ private:
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
 	SRQ_PTR grant_or_que(Attachment*, lrq*, lbl*, SSHORT);
-	void init_owner_block(own*, UCHAR, LOCK_OWNER_T);
+	bool init_owner_block(Firebird::Arg::StatusVector&, own*, UCHAR, LOCK_OWNER_T);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
 	bool internal_convert(Attachment* database, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT,
