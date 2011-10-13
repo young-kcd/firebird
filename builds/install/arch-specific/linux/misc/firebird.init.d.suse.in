@@ -42,6 +42,7 @@ test "$START_FIREBIRD" = yes || exit 0
 
 FIREBIRD=@FB_CONFDIR@
 FBRunUser=firebird
+INSTANCE=default
 
 makeFbDir() {
 	mDir=${1}
