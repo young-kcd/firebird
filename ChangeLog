@@ -1,3 +1,16 @@
+ 2011-10-12 19:00  hvlad 
+   M src/jrd/idx.cpp
+Backported fix for bug CORE-3631 : Duplicate records with NULLs checked incorrectly
+
+ 2011-10-12 11:58  alexpeshkoff 
+   M builds/posix/make.defaults
+   M builds/posix/make.rules
+Backported fixes for CORE-3605 and CORE-3606
+
+ 2011-10-12 09:52  alexpeshkoff 
+   M src/common/cvt.cpp
+Fixed CORE-3627: Server crashes with access violation when inserting row into table with unique index
+
  2011-10-11 12:00  alexpeshkoff 
    M src/remote/inet_server.cpp
 Backported fix for CORE-3607: Solaris does not define the RLIMIT_NPROC limit
