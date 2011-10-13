@@ -1,3 +1,11 @@
+ 2011-10-12 19:17  hvlad 
+   M src/jrd/idx.cpp
+Misc
+
+ 2011-10-12 19:14  hvlad 
+   M src/jrd/idx.cpp
+Backported fix for bug CORE-3631 : Duplicate records with NULLs checked incorrectly
+
  2011-10-06 12:40  alexpeshkoff 
    M builds/install/arch-specific/linux/classic/makeInstallImage.sh.in
    M builds/install/arch-specific/linux/super/makeInstallImage.sh.in
