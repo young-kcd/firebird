@@ -116,6 +116,7 @@ private:
 	void putItem(ITEM tag, ULONG len, const void* data);
 	bool getItemLength(ITEM& tag, ULONG& len);
 
+	int  m_recursive;
 	int  m_cfg_file;
 	bool m_dirty;
 };

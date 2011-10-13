@@ -80,7 +80,8 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 }
 
 ConfigStorage::ConfigStorage()
-	: timer(new TouchFile)
+	: timer(new TouchFile),
+	  m_recursive(0)
 {
 	m_cfg_file = -1;
 	m_dirty = false;
@@ -284,13 +285,23 @@ void ConfigStorage::checkFile()
 
 void ConfigStorage::acquire()
 {
-	mutexLock();
+	fb_assert(m_recursive >= 0);
+
+	if (m_recursive++ == 0)
+	{
+		mutexLock();
+	}
 }
 
 void ConfigStorage::release()
 {
-	checkDirty();
-	mutexUnlock();
+	fb_assert(m_recursive > 0);
+
+	if (--m_recursive == 0)
+	{
+		checkDirty();
+		mutexUnlock();
+	}
 }
 
 void ConfigStorage::addSession(TraceSession& session)
