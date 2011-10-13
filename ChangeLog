@@ -1,3 +1,23 @@
+ 2011-10-12 23:17  asfernandes 
+   M src/remote/client/interface.cpp
+Avoid exception in successfull attachments.
+
+ 2011-10-12 18:59  hvlad 
+   M src/jrd/idx.cpp
+Fixed bug CORE-3631 : Duplicate records with NULLs checked incorrectly
+
+ 2011-10-12 11:55  alexpeshkoff 
+   M builds/posix/make.defaults
+Fixed CORE-3606: Linker commands that use c or c++ compiler should apply CFLAGS and CXXFLAGS respectively
+
+ 2011-10-12 11:24  alexpeshkoff 
+   M builds/posix/Makefile.in
+Fixed non-root build
+
+ 2011-10-12 09:57  alexpeshkoff 
+   M src/common/cvt.cpp
+Frontported fix for CORE-3627: Server crashes with access violation when inserting row into table with unique index
+
  2011-10-12 02:06  asfernandes 
    M src/common/unicode_util.cpp
 Avoid thrown exceptions in normal operation when loading non-existent ICU versions. This was a pain in the debugger.
