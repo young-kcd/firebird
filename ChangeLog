@@ -1,3 +1,7 @@
+ 2011-10-13 11:52  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+misc
+
  2011-10-12 19:00  hvlad 
    M src/jrd/idx.cpp
 Backported fix for bug CORE-3631 : Duplicate records with NULLs checked incorrectly
