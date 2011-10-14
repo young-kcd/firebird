@@ -1,3 +1,20 @@
+ 2011-10-13 12:39  alexpeshkoff 
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+Frontported fix for CORE-3532: Server hangs starting new session when trace is running
+
+ 2011-10-13 11:58  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+misc
+
+ 2011-10-13 11:31  alexpeshkoff 
+   M src/common/isc_sync.cpp
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Frontported fix for CORE-3589: Internal shared resource leak. Make trunk work with SystemV semaphores as shared mutexes/events.
+
  2011-10-12 23:17  asfernandes 
    M src/remote/client/interface.cpp
 Avoid exception in successfull attachments.
