@@ -126,6 +126,7 @@ private:
 #endif
 	struct mtx* m_mutex;
 	int m_recursive;
+	FB_THREAD_ID m_mutexTID;
 	int  m_cfg_file;
 	bool m_dirty;
 	Firebird::Semaphore m_touchStartStop;
