@@ -71,17 +71,18 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 	// the same as GetLastError() codes
 	const char* strErr = strerror(errno);
 
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(operation) << Arg::Str(filename) <<
-		Arg::Gds(iscError) << Arg::Str(strErr));
+	(Arg::Gds(isc_io_error) << Arg::Str(operation) << Arg::Str(filename) <<
+		Arg::Gds(iscError) << Arg::Str(strErr)).raise();
 #else
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(operation) << Arg::Str(filename) <<
-		Arg::Gds(iscError) << SYS_ERR(errno));
+	(Arg::Gds(isc_io_error) << Arg::Str(operation) << Arg::Str(filename) <<
+		Arg::Gds(iscError) << SYS_ERR(errno)).raise();
 #endif
 }
 
 ConfigStorage::ConfigStorage()
 	: timer(new TouchFile),
-	  m_recursive(0)
+	  m_recursive(0),
+	  m_mutexTID(0)
 {
 	m_cfg_file = -1;
 	m_dirty = false;
@@ -286,10 +287,19 @@ void ConfigStorage::checkFile()
 void ConfigStorage::acquire()
 {
 	fb_assert(m_recursive >= 0);
+	const FB_THREAD_ID currTID = getThreadId();
 
-	if (m_recursive++ == 0)
+	if (m_mutexTID == currTID)
+		m_recursive++;
+	else
 	{
 		mutexLock();
+
+		fb_assert(m_recursive == 0);
+		m_recursive = 1;
+
+		fb_assert(m_mutexTID == 0);
+		m_mutexTID = currTID;
 	}
 }
 
@@ -297,9 +307,13 @@ void ConfigStorage::release()
 {
 	fb_assert(m_recursive > 0);
 
+	const FB_THREAD_ID currTID = getThreadId();
+	fb_assert(m_mutexTID == currTID);
+
 	if (--m_recursive == 0)
 	{
 		checkDirty();
+		m_mutexTID = 0;
 		mutexUnlock();
 	}
 }
