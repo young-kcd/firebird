@@ -400,5 +400,7 @@
 #define blr_exec_subproc			(unsigned char) 204
 #define blr_subproc_decl			(unsigned char) 205
 #define blr_subproc					(unsigned char) 206
+#define blr_subfunc_decl			(unsigned char) 207
+#define blr_subfunc					(unsigned char) 208
 
 #endif // JRD_BLR_H

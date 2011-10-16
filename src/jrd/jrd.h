@@ -228,13 +228,8 @@ class jrd_prc : public Routine
 {
 public:
 	USHORT prc_flags;
-	USHORT prc_defaults;
 	const MessageNode* prc_output_msg;
-	const Format*	prc_input_fmt;
-	const Format*	prc_output_fmt;
 	const Format*	prc_format;
-	Firebird::Array<NestConst<Parameter> > prc_input_fields;	// array of field blocks
-	Firebird::Array<NestConst<Parameter> > prc_output_fields;	// array of field blocks
 	prc_t		prc_type;					// procedure type
 	USHORT prc_use_count;					// requests compiled with procedure
 	SSHORT prc_int_use_count;				// number of procedures compiled with procedure, set and
@@ -254,13 +249,8 @@ public:
 	explicit jrd_prc(MemoryPool& p)
 		: Routine(p),
 		  prc_flags(0),
-		  prc_defaults(0),
 		  prc_output_msg(NULL),
-		  prc_input_fmt(NULL),
-		  prc_output_fmt(NULL),
 		  prc_format(NULL),
-		  prc_input_fields(p),
-		  prc_output_fields(p),
 		  prc_type(prc_legacy),
 		  prc_use_count(0),
 		  prc_int_use_count(0),
@@ -310,6 +300,7 @@ public:
 	prm_mech_t	prm_mechanism;
 	Firebird::MetaName prm_name;			// asciiz name
 	Firebird::MetaName prm_field_source;
+	FUN_T		prm_fun_mechanism;
 
 public:
 	explicit Parameter(MemoryPool& p)

@@ -1485,8 +1485,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		ARG.RDB$FUNCTION_NAME.NULL = FALSE;
 		strcpy(ARG.RDB$FUNCTION_NAME, name.c_str());
 
-		// Avoid the return with name INTERNAL_FIELD_NAME.
-		if (parameter.name.hasData() && pos != 0)
+		if (parameter.name.hasData())
 		{
 			ARG.RDB$ARGUMENT_NAME.NULL = FALSE;
 			strcpy(ARG.RDB$ARGUMENT_NAME, parameter.name.c_str());

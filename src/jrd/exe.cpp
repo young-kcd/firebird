@@ -640,13 +640,12 @@ void EXE_receive(thread_db* tdbb,
 	try
 	{
 
-	const bool external = request->getStatement()->procedure &&
-		request->getStatement()->procedure->getExternal();
+	const bool external =
+		(request->getStatement()->procedure && request->getStatement()->procedure->getExternal()) ||
+		(request->getStatement()->function && request->getStatement()->function->fun_external);
 
 	if (external)
-	{
 		execute_looper(tdbb, request, transaction, jrd_req::req_sync);
-	}
 	else
 	{
 		if (StmtNode::is<StallNode>(request->req_message))
@@ -777,7 +776,9 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	jrd_tra* transaction = request->req_transaction;
 	const JrdStatement* statement = request->getStatement();
 
-	const bool external = statement->procedure && statement->procedure->getExternal();
+	const bool external =
+		(statement->procedure && statement->procedure->getExternal()) ||
+		(statement->function && statement->function->fun_external);
 
 	if (external)
 	{
@@ -786,7 +787,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 			static_cast<const StmtNode*>(statement->topNode));
 		fb_assert(list);
 
-		message = list->statements[e_extproc_input_message]->as<MessageNode>();
+		message = list->statements[e_extrout_input_message]->as<MessageNode>();
 		fb_assert(message);
 	}
 	else
@@ -1062,7 +1063,7 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			request->req_message = extStmts->statements[e_extproc_input_message]->as<MessageNode>();
+			request->req_message = extStmts->statements[e_extrout_input_message]->as<MessageNode>();
 			request->req_flags |= req_stall;
 			request->req_operation = jrd_req::req_receive;
 			break;
@@ -1070,7 +1071,7 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 		case jrd_req::req_sync:
 		{
 			const MessageNode* outMsgNode =
-				extStmts->statements[e_extproc_output_message]->as<MessageNode>();
+				extStmts->statements[e_extrout_output_message]->as<MessageNode>();
 			fb_assert(outMsgNode);
 
 			const Format* outFormat = outMsgNode->format;
@@ -1078,11 +1079,11 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 			if (!request->resultSet)
 			{
 				const MessageNode* inMsgNode =
-					extStmts->statements[e_extproc_input_message]->as<MessageNode>();
+					extStmts->statements[e_extrout_input_message]->as<MessageNode>();
 				fb_assert(inMsgNode && request->req_message == inMsgNode);
 
 				const CompoundStmtNode* list =
-					extStmts->statements[e_extproc_input_assign]->as<CompoundStmtNode>();
+					extStmts->statements[e_extrout_input_assign]->as<CompoundStmtNode>();
 				fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
 
 				const Format* format = inMsgNode->format;
@@ -1103,23 +1104,30 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 				}
 
 				const MessageNode* inMsgNode2 =
-					extStmts->statements[e_extproc_input_message2]->as<MessageNode>();
+					extStmts->statements[e_extrout_input_message2]->as<MessageNode>();
 				if (!inMsgNode2)
 					inMsgNode2 = inMsgNode;
 
 				const MessageNode* outMsgNode2 =
-					extStmts->statements[e_extproc_output_message2]->as<MessageNode>();
+					extStmts->statements[e_extrout_output_message2]->as<MessageNode>();
 				if (!outMsgNode2)
 					outMsgNode2 = outMsgNode;
 
 				UCHAR* inMsg = request->getImpure<UCHAR>(inMsgNode2->impureOffset);
 				UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode2->impureOffset);
 
-				request->resultSet = statement->procedure->getExternal()->open(tdbb, inMsg, outMsg);
+				// Set all output fields to null.
+				memset(outMsg, 0, outMsgNode2->format->fmt_length);
+
+				if (statement->procedure)
+					request->resultSet = statement->procedure->getExternal()->open(tdbb, inMsg, outMsg);
+				else if (statement->function)
+					statement->function->fun_external->execute(tdbb, inMsg, outMsg);
 			}
 
 			request->req_message = outMsgNode;
-			bool result = request->resultSet->fetch(tdbb);
+
+			bool result = statement->procedure ? request->resultSet->fetch(tdbb) : true;
 			UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode->impureOffset);
 
 			// Set the eof flag.
@@ -1128,7 +1136,7 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 			*((SSHORT*)(UCHAR*) (outMsg + (IPTR) eofDesc.dsc_address)) = (SSHORT) result;
 
 			const CompoundStmtNode* list =
-				extStmts->statements[e_extproc_output_assign]->as<CompoundStmtNode>();
+				extStmts->statements[e_extrout_output_assign]->as<CompoundStmtNode>();
 			fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
 
 			if (result)
@@ -1450,14 +1458,16 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	const JrdStatement* statement = request->getStatement();
 
-	bool runExternal = statement->procedure && statement->procedure->getExternal();
+	bool runExternal = (statement->procedure && statement->procedure->getExternal()) ||
+		(statement->function && statement->function->fun_external);
 
 	while (runExternal ||
 		(node && !(request->req_flags & req_stall) &&
 		 (!stmtExpr || request->req_operation == jrd_req::req_evaluate)))
 	{
 	try {
-		if (statement->procedure && statement->procedure->getExternal())
+		if ((statement->procedure && statement->procedure->getExternal()) ||
+			(statement->function && statement->function->fun_external))
 		{
 			if (runExternal)
 				runExternal = false;

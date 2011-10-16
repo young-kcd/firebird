@@ -242,5 +242,7 @@ static const struct
 	{"exec_subproc", exec_proc},
 	{"subproc_decl", subproc_decl},
 	{"subproc", procedure2},
+	{"subfunc_decl", subfunc_decl},
+	{"subfunc", function},
 	{0, 0}
 };

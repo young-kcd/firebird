@@ -29,6 +29,7 @@
 #include "../dsql/node.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/Function.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
 #include "../jrd/extds/ExtDS.h"
@@ -1242,6 +1243,256 @@ const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request
 //--------------------
 
 
+static RegisterNode<DeclareSubFuncNode> regDeclareSubFuncNode(blr_subfunc_decl);
+
+DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	UCHAR /*blrOp*/)
+{
+	MetaName name;
+	PAR_name(csb, name);
+
+	if (csb->csb_g_flags & csb_subroutine)
+		PAR_error(csb, Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub function");
+
+	if (csb->subFunctions.exist(name))
+		PAR_error(csb, Arg::Gds(isc_random) << "duplicate sub function");
+
+	DeclareSubFuncNode* node = FB_NEW(pool) DeclareSubFuncNode(pool, name);
+
+	Function* subFunc = node->routine = FB_NEW(pool) Function(pool);
+	subFunc->setName(QualifiedName(name));
+	subFunc->setSubRoutine(true);
+	subFunc->setUndefined(false);
+
+	{	// scope
+		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);
+		subCsb->csb_g_flags |= csb_subroutine;
+		subCsb->csb_blr_reader = csb->csb_blr_reader;
+
+		BlrReader& reader = subCsb->csb_blr_reader;
+		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
+
+		UCHAR type = reader.getByte();
+		if (type != SUB_ROUTINE_TYPE_PSQL)
+			PAR_syntax_error(csb, "sub function type");
+
+		UCHAR deterministic = reader.getByte();
+		if (deterministic != 0 && deterministic != 1)
+			PAR_syntax_error(csb, "sub function deterministic");
+
+		subFunc->fun_deterministic = deterministic == 1;
+
+		USHORT defaultCount = 0;
+		parseParameters(tdbb, pool, subCsb, subFunc->getInputFields(), &defaultCount);
+		subFunc->setDefaultCount(defaultCount);
+
+		parseParameters(tdbb, pool, subCsb, subFunc->getOutputFields());
+
+		subFunc->fun_inputs = subFunc->getInputFields().getCount();
+
+		node->blrLength = reader.getLong();
+		node->blrStart = reader.getPos();
+
+		MET_par_messages(tdbb, reader.getPos(), node->blrLength, subFunc, subCsb);
+
+		USHORT count = subFunc->getInputFormat() ? subFunc->getInputFormat()->fmt_count : 0;
+		if (subFunc->getInputFields().getCount() * 2 != count)
+			PAR_error(csb, Arg::Gds(isc_prcmismat) << name);
+
+		for (USHORT i = 0; i < count; i += 2u)
+		{
+			Parameter* parameter = subFunc->getInputFields()[i / 2u];
+			parameter->prm_desc = subFunc->getInputFormat()->fmt_desc[i];
+		}
+
+		Array<NestConst<Parameter> >& paramArray = subFunc->getOutputFields();
+
+		count = subFunc->getOutputFormat() ? subFunc->getOutputFormat()->fmt_count : 0;
+		if (count == 0 || paramArray.getCount() * 2 != count - 1u)
+			PAR_error(csb, Arg::Gds(isc_prc_out_param_mismatch) << name);
+
+		for (USHORT i = 0; i < count - 1u; i += 2u)
+		{
+			Parameter* parameter = paramArray[i / 2u];
+			parameter->prm_desc = subFunc->getOutputFormat()->fmt_desc[i];
+		}
+
+		DbgInfo* subDbgInfo = NULL;
+		if (csb->csb_dbg_info->subFuncs.get(name, subDbgInfo))
+		{
+			subCsb->csb_dbg_info = subDbgInfo;
+			csb->csb_dbg_info->subFuncs.remove(name);
+		}
+	}
+
+	csb->subFunctions.put(name, node);
+	csb->csb_blr_reader.setPos(node->blrStart + node->blrLength);
+
+	return node;
+}
+
+void DeclareSubFuncNode::parseParameters(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	Firebird::Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount)
+{
+	BlrReader& reader = csb->csb_blr_reader;
+	USHORT count = reader.getWord();
+	size_t pos = paramArray.getCount();
+	paramArray.resize(pos + count);
+
+	if (defaultCount)
+		*defaultCount = 0;
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		Parameter* parameter = FB_NEW(pool) Parameter(pool);
+		parameter->prm_number = USHORT(i);
+		parameter->prm_fun_mechanism = FUN_value;
+		paramArray[pos + parameter->prm_number] = parameter;
+
+		PAR_name(csb, parameter->prm_name);
+
+		UCHAR hasDefault = reader.getByte();
+
+		if (hasDefault == 1)
+		{
+			if (defaultCount && *defaultCount == 0)
+				*defaultCount = paramArray.getCount() - i;
+
+			parameter->prm_default_value = PAR_parse_value(tdbb, csb);
+		}
+		else if (hasDefault != 0)
+			PAR_syntax_error(csb, "0 or 1");
+	}
+}
+
+void DeclareSubFuncNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "DeclareSubFuncNode";
+}
+
+DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	MemoryPool& pool = getPool();
+
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE)
+		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub function");
+
+	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
+
+	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
+		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+	else
+		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+
+	statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
+	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
+	statement->setReceiveMsg(message);
+	message->msg_number = 1;
+
+	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
+
+	blockScratch = FB_NEW(pool) DsqlCompilerScratch(pool,
+		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement);
+	blockScratch->clientDialect = dsqlScratch->clientDialect;
+	blockScratch->flags |= DsqlCompilerScratch::FLAG_FUNCTION | DsqlCompilerScratch::FLAG_SUB_ROUTINE;
+
+	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
+
+	dsqlFunction = FB_NEW(pool) dsql_udf(pool);
+	dsqlFunction->udf_flags = UDF_subfunc;
+	dsqlFunction->udf_name.identifier = name;
+
+	const Array<ParameterClause>& paramArray = dsqlBlock->parameters;
+	bool defaultFound = false;
+
+	for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+	{
+		if (param->legacyDefault)
+			defaultFound = true;
+		else if (defaultFound)
+		{
+			// Parameter without default value after parameters with default.
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_bad_default_value) <<
+					  Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
+		}
+	}
+
+	dsqlScratch->putSubFunction(dsqlFunction);
+
+	return this;
+}
+
+void DeclareSubFuncNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsql_nod* nod = MAKE_node(Dsql::nod_class_stmtnode, 1);
+	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(dsqlBlock);
+	GEN_request(blockScratch, nod);
+
+	dsqlScratch->appendUChar(blr_subfunc_decl);
+	dsqlScratch->appendNullString(name.c_str());
+
+	dsqlScratch->appendUChar(SUB_ROUTINE_TYPE_PSQL);
+	dsqlScratch->appendUChar(dsqlDeterministic ? 1 : 0);
+
+	genParameters(dsqlScratch, dsqlBlock->parameters);
+	genParameters(dsqlScratch, dsqlBlock->returns);
+
+	BlrWriter::BlrData& blrData = blockScratch->getBlrData();
+	dsqlScratch->appendULong(ULONG(blrData.getCount()));
+	dsqlScratch->appendBytes(blrData.begin(), blrData.getCount());
+
+	dsqlScratch->putDebugSubFunction(this);
+}
+
+void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
+	const Array<ParameterClause>& paramArray)
+{
+	dsqlScratch->appendUShort(USHORT(paramArray.getCount()));
+
+	for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+	{
+		dsqlScratch->appendNullString(param->name.c_str());
+
+		if (param->legacyDefault)
+		{
+			dsqlScratch->appendUChar(1);
+			GEN_expr(dsqlScratch, param->legacyDefault->nod_arg[Dsql::e_dft_default]);
+		}
+		else
+			dsqlScratch->appendUChar(0);
+	}
+}
+
+DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	return this;
+}
+
+DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	{	// scope
+		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
+		PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
+	}
+
+	return this;
+}
+
+const StmtNode* DeclareSubFuncNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+{
+	// Nothing to execute. This is the declaration node.
+
+	if (request->req_operation == jrd_req::req_evaluate)
+		request->req_operation = jrd_req::req_return;
+
+	return parentStmt;
+}
+
+
+//--------------------
+
+
 static RegisterNode<DeclareSubProcNode> regDeclareSubProcNode(blr_subproc_decl);
 
 DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
@@ -1257,7 +1508,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 	DeclareSubProcNode* node = FB_NEW(pool) DeclareSubProcNode(pool, name);
 
-	jrd_prc* subProc = node->procedure = FB_NEW(pool) jrd_prc(pool);
+	jrd_prc* subProc = node->routine = FB_NEW(pool) jrd_prc(pool);
 	subProc->setName(QualifiedName(name));
 	subProc->setSubRoutine(true);
 	subProc->setUndefined(false);
@@ -1272,31 +1523,38 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 		UCHAR type = reader.getByte();
 		if (type != SUB_ROUTINE_TYPE_PSQL)
+			PAR_syntax_error(csb, "sub routine type");
+
+		type = reader.getByte();
+		if (type != 0 && type != 1)
 			PAR_syntax_error(csb, "sub procedure type");
 
-		subProc->prc_type = reader.getByte() == 0 ? prc_executable : prc_selectable;
+		subProc->prc_type = type == 1 ? prc_selectable : prc_executable;
 
-		parseParameters(tdbb, pool, subCsb, subProc->prc_input_fields, &subProc->prc_defaults);
-		parseParameters(tdbb, pool, subCsb, subProc->prc_output_fields);
+		USHORT defaultCount = 0;
+		parseParameters(tdbb, pool, subCsb, subProc->getInputFields(), &defaultCount);
+		subProc->setDefaultCount(defaultCount);
+
+		parseParameters(tdbb, pool, subCsb, subProc->getOutputFields());
 
 		node->blrLength = reader.getLong();
 		node->blrStart = reader.getPos();
 
 		MET_par_messages(tdbb, reader.getPos(), node->blrLength, subProc, subCsb);
 
-		USHORT count = subProc->prc_input_fmt ? subProc->prc_input_fmt->fmt_count : 0;
-		if (subProc->prc_input_fields.getCount() * 2 != count)
+		USHORT count = subProc->getInputFormat() ? subProc->getInputFormat()->fmt_count : 0;
+		if (subProc->getInputFields().getCount() * 2 != count)
 			PAR_error(csb, Arg::Gds(isc_prcmismat) << name);
 
 		for (USHORT i = 0; i < count; i += 2u)
 		{
-			Parameter* parameter = subProc->prc_input_fields[i / 2u];
-			parameter->prm_desc = subProc->prc_input_fmt->fmt_desc[i];
+			Parameter* parameter = subProc->getInputFields()[i / 2u];
+			parameter->prm_desc = subProc->getInputFormat()->fmt_desc[i];
 		}
 
-		Array<NestConst<Parameter> >& paramArray = subProc->prc_output_fields;
+		Array<NestConst<Parameter> >& paramArray = subProc->getOutputFields();
 
-		count = subProc->prc_output_fmt ? subProc->prc_output_fmt->fmt_count : 0;
+		count = subProc->getOutputFormat() ? subProc->getOutputFormat()->fmt_count : 0;
 		if (count == 0 || paramArray.getCount() * 2 != count - 1u)
 			PAR_error(csb, Arg::Gds(isc_prc_out_param_mismatch) << name);
 
@@ -1307,7 +1565,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 		for (USHORT i = 0; i < count - 1u; i += 2u)
 		{
 			Parameter* parameter = paramArray[i / 2u];
-			parameter->prm_desc = subProc->prc_output_fmt->fmt_desc[i];
+			parameter->prm_desc = subProc->getOutputFormat()->fmt_desc[i];
 
 			dsc& fmtDesc = format->fmt_desc[i / 2u];
 			fmtDesc = parameter->prm_desc;
@@ -1489,7 +1747,7 @@ DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* 
 	}
 
 	fb_assert(subCsb->csb_rpt.getCount() >= 2);
-	procedure->prc_output_msg = subCsb->csb_rpt[1].csb_message;
+	routine->prc_output_msg = subCsb->csb_rpt[1].csb_message;
 
 	return this;
 }
@@ -2194,9 +2452,9 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 
 		if (blrOp == blr_exec_subproc)
 		{
-			DeclareSubProcNode* node;
-			if (csb->subProcedures.get(name.identifier, node))
-				procedure = node->procedure;
+			DeclareSubProcNode* declareNode;
+			if (csb->subProcedures.get(name.identifier, declareNode))
+				procedure = declareNode->routine;
 		}
 		else
 			procedure = MET_lookup_procedure(tdbb, name, false);
@@ -2482,13 +2740,13 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	// trace procedure execution start
 	TraceProcExecute trace(tdbb, procRequest, request, inputTargets);
 
-	Array<UCHAR> temp_buffer;
+	Array<UCHAR> tempBuffer;
 
 	if (!outputMessage)
 	{
 		format = procedure->prc_output_msg->format;
 		outMsgLength = format->fmt_length;
-		outMsg = temp_buffer.getBuffer(outMsgLength + FB_DOUBLE_ALIGN - 1);
+		outMsg = tempBuffer.getBuffer(outMsgLength + FB_DOUBLE_ALIGN - 1);
 		outMsg = (UCHAR*) FB_ALIGN((U_IPTR) outMsg, FB_DOUBLE_ALIGN);
 	}
 

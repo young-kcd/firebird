@@ -1159,7 +1159,7 @@ void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fi
 			name = varNode->dsqlDef->name.c_str();
 		else if ((cursorNode = (*ptr)->as<DeclareCursorNode>()))
 			name = cursorNode->dsqlName.c_str();
-		else if ((*ptr)->as<DeclareSubProcNode>())
+		else if ((*ptr)->as<DeclareSubProcNode>() || (*ptr)->as<DeclareSubFuncNode>())
 			continue;
 
 		fb_assert(name);

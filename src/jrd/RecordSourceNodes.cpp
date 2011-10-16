@@ -663,7 +663,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 			{
 				DeclareSubProcNode* node;
 				if (csb->subProcedures.get(name.identifier, node))
-					procedure = node->procedure;
+					procedure = node->routine;
 			}
 			else
 				procedure = MET_lookup_procedure(tdbb, name, false);

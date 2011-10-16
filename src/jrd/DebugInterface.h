@@ -84,6 +84,7 @@ struct DbgInfo : public PermanentStorage
 		  blrToSrc(p),
 		  varIndexToName(p),
 		  argInfoToName(p),
+		  subFuncs(p),
 		  subProcs(p)
 	{
 	}
@@ -99,17 +100,29 @@ struct DbgInfo : public PermanentStorage
 		varIndexToName.clear();
 		argInfoToName.clear();
 
-		GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subProcs);
+		{	// scope
+			GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subFuncs);
 
-		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-			delete accessor.current()->second;
+			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+				delete accessor.current()->second;
 
-		subProcs.clear();
+			subFuncs.clear();
+		}
+
+		{	// scope
+			GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subProcs);
+
+			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+				delete accessor.current()->second;
+
+			subProcs.clear();
+		}
 	}
 
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
 	MapVarIndexToName varIndexToName;		// mapping between variable index and name
 	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
+	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subFuncs;	// sub functions
 	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subProcs;	// sub procedures
 };
 

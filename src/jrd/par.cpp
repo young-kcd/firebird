@@ -804,7 +804,7 @@ void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxEr
 // Look for named field in procedure output fields.
 SSHORT PAR_find_proc_field(const jrd_prc* procedure, const Firebird::MetaName& name)
 {
-	const Array<NestConst<Parameter> >& list = procedure->prc_output_fields;
+	const Array<NestConst<Parameter> >& list = procedure->getOutputFields();
 
 	Array<NestConst<Parameter> >::const_iterator ptr = list.begin();
 	for (const Array<NestConst<Parameter> >::const_iterator end = list.end(); ptr < end; ++ptr)
@@ -1199,18 +1199,18 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 {
 	SET_TDBB(tdbb);
 	SLONG count = csb->csb_blr_reader.getWord();
-	const SLONG inputCount = procedure->prc_input_fields.getCount();
+	const SLONG inputCount = procedure->getInputFields().getCount();
 
 	// Check to see if the parameter count matches
 	if (input_flag ?
-			(count < (inputCount - procedure->prc_defaults) || (count > inputCount) ) :
-			(count != SLONG(procedure->prc_output_fields.getCount())))
+			(count < (inputCount - procedure->getDefaultCount()) || (count > inputCount) ) :
+			(count != SLONG(procedure->getOutputFields().getCount())))
 	{
 		PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
 						Arg::Str(procedure->getName().toString()));
 	}
 
-	if (count || input_flag && procedure->prc_defaults)
+	if (count || input_flag && procedure->getDefaultCount())
 	{
 		MemoryPool& pool = *tdbb->getDefaultPool();
 
@@ -1223,7 +1223,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 		MessageNode* message = tail->csb_message = *message_ptr = FB_NEW(pool) MessageNode(pool);
 		message->messageNumber = n;
 
-		const Format* format = input_flag ? procedure->prc_input_fmt : procedure->prc_output_fmt;
+		const Format* format = input_flag ? procedure->getInputFormat() : procedure->getOutputFormat();
 		/* dimitr: procedure (with its parameter formats) is allocated out of
 				   its own pool (prc_request->req_pool) and can be freed during
 				   the cache cleanup (MET_clear_cache). Since the current
@@ -1261,7 +1261,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 			// default value for parameter
 			if (count <= 0 && input_flag)
 			{
-				Parameter* parameter = procedure->prc_input_fields[inputCount - n];
+				Parameter* parameter = procedure->getInputFields()[inputCount - n];
 				*sourcePtr++ = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
 			else
@@ -1280,7 +1280,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 			*targetPtr++ = paramNode;
 		}
 	}
-	else if (input_flag ? inputCount : procedure->prc_output_fields.getCount())
+	else if (input_flag ? inputCount : procedure->getOutputFields().getCount())
 	{
 		PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
 						Arg::Str(procedure->getName().toString()));

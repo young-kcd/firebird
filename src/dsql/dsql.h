@@ -348,8 +348,9 @@ public:
 // udf_flags bits
 
 enum udf_flags_vals {
-	UDF_new_udf		= 1, // udf is newly declared, not committed yet
-	UDF_dropped		= 2  // udf has been dropped
+	UDF_new_udf		= 1,	// udf is newly declared, not committed yet
+	UDF_dropped		= 2,	// udf has been dropped
+	UDF_subfunc		= 4		// sub function
 };
 
 // Variables - input, output & local

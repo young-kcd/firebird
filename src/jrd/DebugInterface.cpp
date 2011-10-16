@@ -57,7 +57,9 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 
 	while (!bad_format && (data < end))
 	{
-		switch (*data++)
+		UCHAR code = *data++;
+
+		switch (code)
 		{
 		case fb_dbg_map_src2blr:
 			{
@@ -143,6 +145,7 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 			break;
 
 		case fb_dbg_subproc:
+		case fb_dbg_subfunc:
 			{
 				if (data >= end)
 				{
@@ -183,7 +186,10 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 				DBG_parse_debug_info(length, data, *sub);
 				data += length;
 
-				dbgInfo.subProcs.put(name, sub.release());
+				if (code == fb_dbg_subproc)
+					dbgInfo.subProcs.put(name, sub.release());
+				else
+					dbgInfo.subFuncs.put(name, sub.release());
 
 				break;
 			}

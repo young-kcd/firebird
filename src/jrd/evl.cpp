@@ -586,12 +586,12 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 					if (procedure)
 					{
-						if (index <= int(procedure->prc_output_fields.getCount()))
+						if (index <= int(procedure->getOutputFields().getCount()))
 							s.printf("output parameter number %d", index);
 						else
 						{
 							s.printf("variable number %d",
-								index - int(procedure->prc_output_fields.getCount()));
+								index - int(procedure->getOutputFields().getCount()));
 						}
 					}
 					else

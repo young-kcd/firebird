@@ -291,10 +291,10 @@ enum UdfError
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
-static SLONG get_scalar_array(const Function::Argument*, DSC*, scalar_array_desc*, UCharStack&);
+static SLONG get_scalar_array(const Parameter*, DSC*, scalar_array_desc*, UCharStack&);
 static void invoke(thread_db* tdbb,
 				   const Function* function,
-				   const Function::Argument* return_ptr,
+				   const Parameter* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
@@ -331,7 +331,28 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 	SET_TDBB(tdbb);
 
-	const Function::Argument* return_ptr = &function->fun_args[function->fun_return_arg];
+	Array<NestConst<Parameter> > allArgs;
+
+	{	// scope
+		const NestConst<Parameter>* end = function->getInputFields().end();
+		for (const NestConst<Parameter>* param = function->getInputFields().begin(); param != end; ++param)
+		{
+			allArgs.resize((*param)->prm_number + 1);
+			allArgs[(*param)->prm_number] = *param;
+		}
+
+		end = function->getOutputFields().end();
+		for (const NestConst<Parameter>* param = function->getOutputFields().begin(); param != end; ++param)
+		{
+			if ((*param)->prm_number != 0)
+			{
+				allArgs.resize((*param)->prm_number + 1);
+				allArgs[(*param)->prm_number] = *param;
+			}
+		}
+	}
+
+	const Parameter* return_ptr = function->getOutputFields()[0];
 
 	jrd_req* request = tdbb->getRequest();
 	// CVC: restoring the null flag seems like a Borland hack to try to
@@ -369,11 +390,15 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 	double d;
 
 	// Process arguments
-	const Function::Argument* const end = function->fun_args.end();
-	for (const Function::Argument* tail = function->fun_args.begin() + 1; tail < end; ++tail)
+	const NestConst<Parameter>* const end = allArgs.end();
+	for (const NestConst<Parameter>* tail = allArgs.begin(); tail != end; ++tail)
 	{
+		const Parameter* parameter = *tail;
+		if (!parameter)
+			continue;
+
 		DSC* input;
-		if (tail == return_ptr)
+		if (*tail == return_ptr)
 		{
 			input = &value->vlu_desc; // (DSC*) value;
 			// CVC: The return param we build for the UDF is not null!!!
@@ -386,7 +411,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 		// If we're passing data type ISC descriptor, there's
 		// nothing left to be done
 
-		if (tail->fun_mechanism == FUN_descriptor)
+		if (parameter->prm_fun_mechanism == FUN_descriptor)
 		{
 			// CVC: We have to protect the UDF from Borland's ill null signaling
 			// See EVL_expr(...), case nod_field for reference: the request may be
@@ -405,7 +430,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			continue;
 		}
 
-		temp_desc = tail->fun_parameter->prm_desc;
+		temp_desc = parameter->prm_desc;
 		temp_desc.dsc_address = temp_ptr;
 		// CVC: There's a theoretical possibility of overflowing "length" here.
 		USHORT length = FB_ALIGN(temp_desc.dsc_length, FB_DOUBLE_ALIGN);
@@ -414,7 +439,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 		if (!input || (request->req_flags & req_null))
 		{
-			if (tail->fun_mechanism == FUN_value)
+			if (parameter->prm_fun_mechanism == FUN_value)
 			{
 				UCHAR* p = (UCHAR *) arg_ptr;
 				MOVE_CLEAR(p, (SLONG) length);
@@ -423,18 +448,18 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 				continue;
 			}
 
-			if (tail->fun_parameter->prm_desc.dsc_dtype == dtype_blob)
+			if (parameter->prm_desc.dsc_dtype == dtype_blob)
 			{
 				length = sizeof(udf_blob);
 			}
 
-			if (tail->fun_mechanism != FUN_ref_with_null)
+			if (parameter->prm_fun_mechanism != FUN_ref_with_null)
 				MOVE_CLEAR(temp_ptr, (SLONG) length);
 			else
 			{
 				// Probably for arrays and blobs it's better to preserve the
 				// current behavior that sends a zeroed memory chunk.
-				switch (tail->fun_parameter->prm_desc.dsc_dtype)
+				switch (parameter->prm_desc.dsc_dtype)
 				{
 				case dtype_quad:
 				case dtype_array:
@@ -447,20 +472,20 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 				}
 			}
 		}
-		else if (tail->fun_mechanism == FUN_scalar_array)
+		else if (parameter->prm_fun_mechanism == FUN_scalar_array)
 		{
-			length = get_scalar_array(tail, input, (scalar_array_desc*)temp_ptr, array_stack);
+			length = get_scalar_array(parameter, input, (scalar_array_desc*)temp_ptr, array_stack);
 		}
 		else
 		{
 			SLONG l;
 			SLONG* lp;
-			switch (tail->fun_parameter->prm_desc.dsc_dtype)
+			switch (parameter->prm_desc.dsc_dtype)
 			{
 			case dtype_short:
 				{
-					const SSHORT s = MOV_get_long(input, (SSHORT) tail->fun_parameter->prm_desc.dsc_scale);
-					if (tail->fun_mechanism == FUN_value)
+					const SSHORT s = MOV_get_long(input, (SSHORT) parameter->prm_desc.dsc_scale);
+					if (parameter->prm_fun_mechanism == FUN_value)
 					{
 						// For (apparent) portability reasons, SHORT by value
 						// is always passed as a LONG.  See v3.2 release notes
@@ -478,8 +503,8 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 				break;
 
 			case dtype_long:
-				l = MOV_get_long(input, (SSHORT) tail->fun_parameter->prm_desc.dsc_scale);
-				if (tail->fun_mechanism == FUN_value)
+				l = MOV_get_long(input, (SSHORT) parameter->prm_desc.dsc_scale);
+				if (parameter->prm_fun_mechanism == FUN_value)
 				{
 					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
@@ -490,7 +515,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 			case dtype_sql_time:
 				l = MOV_get_sql_time(input);
-				if (tail->fun_mechanism == FUN_value)
+				if (parameter->prm_fun_mechanism == FUN_value)
 				{
 					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
@@ -501,7 +526,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 			case dtype_sql_date:
 				l = MOV_get_sql_date(input);
-				if (tail->fun_mechanism == FUN_value)
+				if (parameter->prm_fun_mechanism == FUN_value)
 				{
 					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
@@ -513,9 +538,9 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_int64:
 				{
 					SINT64* pi64;
-					const SINT64 i64 = MOV_get_int64(input, (SSHORT) tail->fun_parameter->prm_desc.dsc_scale);
+					const SINT64 i64 = MOV_get_int64(input, (SSHORT) parameter->prm_desc.dsc_scale);
 
-					if (tail->fun_mechanism == FUN_value)
+					if (parameter->prm_fun_mechanism == FUN_value)
 					{
 						pi64 = (SINT64*) arg_ptr;
 						*pi64++ = i64;
@@ -530,7 +555,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_real:
 				{
 					const float f = (float) MOV_get_double(input);
-					if (tail->fun_mechanism == FUN_value)
+					if (parameter->prm_fun_mechanism == FUN_value)
 					{
 						// For (apparent) portability reasons, FLOAT by value
 						// is always passed as a DOUBLE.  See v3.2 release notes
@@ -551,7 +576,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_double:
 				d = MOV_get_double(input);
 				double* dp;
-				if (tail->fun_mechanism == FUN_value)
+				if (parameter->prm_fun_mechanism == FUN_value)
 				{
 					dp = (double*) arg_ptr;
 					*dp++ = d;
@@ -566,7 +591,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_dbkey:
 			case dtype_cstring:
 			case dtype_varying:
-				if (tail == return_ptr)
+				if (*tail == return_ptr)
 				{
 					//temp_ptr = value->vlu_desc.dsc_address;
 					//length = 0;
@@ -581,7 +606,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			//		by value and the other way is to force the user to pass a dummy value as
 			//		an argument to keep the engine happy. So, here's the hack.
 			case dtype_timestamp:
-			    if (tail == return_ptr)
+			    if (*tail == return_ptr)
 				{
 					//temp_ptr = value->vlu_desc.dsc_address;
 					//length = sizeof(GDS_TIMESTAMP);
@@ -603,7 +628,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 					udf_blob* blob_desc = (udf_blob*) temp_ptr;
 					blb* blob;
 					length = sizeof(udf_blob);
-					if (tail == return_ptr)
+					if (*tail == return_ptr)
 					{
 						blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 										  (bid*) &value->vlu_misc);
@@ -641,7 +666,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 			case dtype_boolean:
 				l = (SLONG) MOV_get_boolean(input);
-				if (tail->fun_mechanism == FUN_value)
+				if (parameter->prm_fun_mechanism == FUN_value)
 				{
 					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
@@ -815,7 +840,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 }
 
 
-static SLONG get_scalar_array(const Function::Argument* arg,
+static SLONG get_scalar_array(const Parameter* arg,
 							  DSC*	value,
 							  scalar_array_desc*	scalar_desc,
 							  UCharStack&	stack)
@@ -848,7 +873,7 @@ static SLONG get_scalar_array(const Function::Argument* arg,
 
 	// Convert array, if necessary
 
-	dsc to = arg->fun_parameter->prm_desc;
+	dsc to = arg->prm_desc;
 	dsc from = array_desc->iad_rpt[0].iad_desc;
 
 	if (to.dsc_dtype != from.dsc_dtype ||
@@ -882,7 +907,7 @@ static SLONG get_scalar_array(const Function::Argument* arg,
 	// Fill out the scalar array descriptor
 
 	stack.push(data);
-	scalar_desc->sad_desc = arg->fun_parameter->prm_desc;
+	scalar_desc->sad_desc = arg->prm_desc;
 	scalar_desc->sad_desc.dsc_address = data;
 	scalar_desc->sad_dimensions = dimensions;
 
@@ -901,7 +926,7 @@ static SLONG get_scalar_array(const Function::Argument* arg,
 
 static void invoke(thread_db* tdbb,
 				   const Function* function,
-				   const Function::Argument* return_ptr,
+				   const Parameter* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
@@ -927,12 +952,12 @@ static void invoke(thread_db* tdbb,
 	if (function->fun_return_arg)
 	{
 		CALL_UDF<void>(att, function->fun_entrypoint, args);
-		result_is_null = return_ptr->fun_mechanism == FUN_descriptor &&
+		result_is_null = return_ptr->prm_fun_mechanism == FUN_descriptor &&
 			(value->vlu_desc.dsc_flags & DSC_null) ||
-			return_ptr->fun_mechanism == FUN_blob_struct && return_blob_struct &&
+			return_ptr->prm_fun_mechanism == FUN_blob_struct && return_blob_struct &&
 			!return_blob_struct->blob_handle;
 	}
-	else if (return_ptr->fun_mechanism == FUN_value)
+	else if (return_ptr->prm_fun_mechanism == FUN_value)
 	{
 		result_is_null = false;
 
@@ -985,7 +1010,7 @@ static void invoke(thread_db* tdbb,
 			//		convert it to the declared return type of the UDF.
 			dsc* return_dsc = 0;
 			result_is_null = false;
-			if ((FUN_T) abs(return_ptr->fun_mechanism) == FUN_descriptor)
+			if ((FUN_T) abs(return_ptr->prm_fun_mechanism) == FUN_descriptor)
 			{
 				// The formal param's type is contained in value->vlu_desc.dsc_dtype
 				// but I want to know if the UDF changed it to a compatible type
@@ -996,7 +1021,7 @@ static void invoke(thread_db* tdbb,
 					result_is_null = true;
 			}
 
-			const bool must_free = (SLONG) return_ptr->fun_mechanism < 0;
+			const bool must_free = (SLONG) return_ptr->prm_fun_mechanism < 0;
 
 			if (result_is_null)
 				; // nothing to do
@@ -1018,7 +1043,7 @@ static void invoke(thread_db* tdbb,
 					break;
 
 				case dtype_long:
-						value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+					value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
 					break;
 
 				case dtype_short:

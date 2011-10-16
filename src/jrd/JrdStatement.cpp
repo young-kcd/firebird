@@ -41,6 +41,10 @@ using namespace Firebird;
 using namespace Jrd;
 
 
+template <typename T> static void makeSubRoutines(thread_db* tdbb, JrdStatement* statement,
+	CompilerScratch* csb, T& subs);
+
+
 // Start to turn a parsed scratch into a statement. This is completed by makeStatement.
 JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	: pool(p),
@@ -61,50 +65,8 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 {
 	try
 	{
-		GenericMap<Left<MetaName, DeclareSubProcNode*> >::Accessor subProcAccessor(&csb->subProcedures);
-
-		for (bool found = subProcAccessor.getFirst(); found; found = subProcAccessor.getNext())
-		{
-			DeclareSubProcNode* subNode = subProcAccessor.current()->second;
-			jrd_prc* subProc = subNode->procedure;
-			CompilerScratch*& subCsb = subNode->subCsb;
-
-			JrdStatement* subStatement = JrdStatement::makeStatement(tdbb, subCsb, true);
-			subStatement->parentStatement = this;
-			subProc->setStatement(subStatement);
-
-			// Move dependencies and permissions from the sub routine to the parent.
-
-			for (CompilerScratch::Dependency* dependency = subCsb->csb_dependencies.begin();
-				 dependency != subCsb->csb_dependencies.end();
-				 ++dependency)
-			{
-				csb->csb_dependencies.push(*dependency);
-			}
-
-			for (ExternalAccess* access = subCsb->csb_external.begin();
-				 access != subCsb->csb_external.end();
-				 ++access)
-			{
-				size_t i;
-				if (!csb->csb_external.find(*access, i))
-					csb->csb_external.insert(i, *access);
-			}
-
-			for (AccessItem* access = subCsb->csb_access.begin();
-				 access != subCsb->csb_access.end();
-				 ++access)
-			{
-				size_t i;
-				if (!csb->csb_access.find(*access, i))
-					csb->csb_access.insert(i, *access);
-			}
-
-			delete subCsb;
-			subCsb = NULL;
-
-			subStatements.add(subStatement);
-		}
+		makeSubRoutines(tdbb, this, csb, csb->subProcedures);
+		makeSubRoutines(tdbb, this, csb, csb->subFunctions);
 
 		topNode = csb->csb_node;
 		accessList = csb->csb_access;
@@ -751,5 +713,56 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 			triggersExternalAccess(tdbb, list, vec1);
 			triggersExternalAccess(tdbb, list, vec2);
 		}
+	}
+}
+
+
+// Make sub routines.
+template <typename T> static void makeSubRoutines(thread_db* tdbb, JrdStatement* statement,
+	CompilerScratch* csb, T& subs)
+{
+	typename T::Accessor subAccessor(&subs);
+
+	for (bool found = subAccessor.getFirst(); found; found = subAccessor.getNext())
+	{
+		typename T::ValueType subNode = subAccessor.current()->second;
+		Routine* subRoutine = subNode->routine;
+		CompilerScratch*& subCsb = subNode->subCsb;
+
+		JrdStatement* subStatement = JrdStatement::makeStatement(tdbb, subCsb, true);
+		subStatement->parentStatement = statement;
+		subRoutine->setStatement(subStatement);
+
+		// Move dependencies and permissions from the sub routine to the parent.
+
+		for (CompilerScratch::Dependency* dependency = subCsb->csb_dependencies.begin();
+			 dependency != subCsb->csb_dependencies.end();
+			 ++dependency)
+		{
+			csb->csb_dependencies.push(*dependency);
+		}
+
+		for (ExternalAccess* access = subCsb->csb_external.begin();
+			 access != subCsb->csb_external.end();
+			 ++access)
+		{
+			size_t i;
+			if (!csb->csb_external.find(*access, i))
+				csb->csb_external.insert(i, *access);
+		}
+
+		for (AccessItem* access = subCsb->csb_access.begin();
+			 access != subCsb->csb_access.end();
+			 ++access)
+		{
+			size_t i;
+			if (!csb->csb_access.find(*access, i))
+				csb->csb_access.insert(i, *access);
+		}
+
+		delete subCsb;
+		subCsb = NULL;
+
+		statement->subStatements.add(subStatement);
 	}
 }

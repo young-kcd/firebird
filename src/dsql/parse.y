@@ -119,8 +119,6 @@ const int UNSIGNED	= 2;
 #define YYREDUCEPOSNFUNC yyReducePosn
 #define YYREDUCEPOSNFUNCARG NULL
 
-static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; // NTX: placeholder
-
 inline unsigned trigger_type_suffix(const unsigned slot1, const unsigned slot2, const unsigned slot3)
 {
 	return ((slot1 << 1) | (slot2 << 3) | (slot3 << 5));
@@ -661,6 +659,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ExecStatementNode* execStatementNode;
 	Jrd::MergeNode* mergeNode;
 	Jrd::DeclareSubProcNode* declareSubProcNode;
+	Jrd::DeclareSubFuncNode* declareSubFuncNode;
 }
 
 %type <legacyNode> access_mode access_type alias_list
@@ -2088,12 +2087,9 @@ function_clause_start
 	;
 
 deterministic_opt
-	: DETERMINISTIC
-		{ $$ = make_node (nod_flag, 0, NULL); }
-	| NOT DETERMINISTIC
-		{ $$ = NULL; }
-	|
-		{ $$ = NULL; }
+	:					{ $$ = NULL; }
+	| DETERMINISTIC		{ $$ = make_node (nod_flag, 0, NULL); }
+	| NOT DETERMINISTIC	{ $$ = NULL; }
 	;
 
 external_clause
@@ -2285,6 +2281,28 @@ local_declaration
 
 			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
 				node->dsqlBlock->parameters[i].legacyParameter = makeClassNode(make_parameter());
+
+			$$ = node;
+		}
+	| DECLARE FUNCTION symbol_UDF_name
+			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
+			input_parameters(&$<execBlockNode>4->parameters)
+			RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
+			domain_or_non_array_type collate_clause deterministic_opt AS
+			local_declaration_list
+			full_proc_block
+		{
+			DeclareSubFuncNode* node = newNode<DeclareSubFuncNode>(toName($3));
+			node->dsqlDeterministic = ($10 != NULL);
+			node->dsqlBlock = $<execBlockNode>4;
+			node->dsqlBlock->localDeclList = $12;
+			node->dsqlBlock->body = $13;
+
+			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
+				node->dsqlBlock->parameters[i].legacyParameter = makeClassNode(make_parameter());
+
+			node->dsqlBlock->returns.add(ParameterClause(getPool(), $<legacyField>7,
+				toName($9), NULL, NULL));
 
 			$$ = node;
 		}
@@ -6598,7 +6616,6 @@ static dsql_fld* make_field (dsql_nod* field_name)
 	if (field_name == NULL)
 	{
 		dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
-		field->fld_name = INTERNAL_FIELD_NAME;
 		return field;
 	}
 	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];

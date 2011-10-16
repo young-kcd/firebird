@@ -30,6 +30,7 @@
 namespace Jrd {
 
 class dsql_nod;
+class DeclareSubFuncNode;
 class DeclareSubProcNode;
 
 
@@ -132,6 +133,7 @@ public:
 	void putDebugSrcInfo(USHORT, USHORT);
 	void putDebugVariable(USHORT, const Firebird::MetaName&);
 	void putDebugArgument(UCHAR, USHORT, const TEXT*);
+	void putDebugSubFunction(DeclareSubFuncNode* subFuncNode);
 	void putDebugSubProcedure(DeclareSubProcNode* subProcNode);
 	void appendDebugInfo();
 

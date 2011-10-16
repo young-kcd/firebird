@@ -28,6 +28,7 @@
 namespace Jrd
 {
 	class JrdStatement;
+	class Parameter;
 
 	class Routine : public Firebird::PermanentStorage
 	{
@@ -40,7 +41,12 @@ namespace Jrd
 			  statement(NULL),
 			  subRoutine(false),
 			  undefined(false),
-			  implemented(true)
+			  implemented(true),
+			  defaultCount(0),
+			  inputFormat(NULL),
+			  outputFormat(NULL),
+			  inputFields(p),
+			  outputFields(p)
 		{
 		}
 
@@ -76,6 +82,21 @@ namespace Jrd
 		bool isImplemented() const { return implemented; }
 		void setImplemented(bool value) { implemented = value; }
 
+		USHORT getDefaultCount() const { return defaultCount; }
+		void setDefaultCount(USHORT value) { defaultCount = value; }
+
+		const Format* getInputFormat() const { return inputFormat; }
+		void setInputFormat(const Format* value) { inputFormat = value; }
+
+		const Format* getOutputFormat() const { return outputFormat; }
+		void setOutputFormat(const Format* value) { outputFormat = value; }
+
+		const Firebird::Array<NestConst<Parameter> >& getInputFields() const { return inputFields; }
+		Firebird::Array<NestConst<Parameter> >& getInputFields() { return inputFields; }
+
+		const Firebird::Array<NestConst<Parameter> >& getOutputFields() const { return outputFields; }
+		Firebird::Array<NestConst<Parameter> >& getOutputFields() { return outputFields; }
+
 	public:
 		virtual int getObjectType() const = 0;
 		virtual SLONG getSclType() const = 0;
@@ -88,6 +109,11 @@ namespace Jrd
 		bool subRoutine;					// Is this a subroutine?
 		bool undefined;						// Is the packaged routine missing the body/entrypoint?
 		bool implemented;					// routine has its implementation available
+		USHORT defaultCount;				// default input arguments
+		const Format* inputFormat;			// input format
+		const Format* outputFormat;			// output format
+		Firebird::Array<NestConst<Parameter> > inputFields;		// array of field blocks
+		Firebird::Array<NestConst<Parameter> > outputFields;	// array of field blocks
 	};
 }
 

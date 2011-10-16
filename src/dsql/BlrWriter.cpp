@@ -190,6 +190,25 @@ void BlrWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* name)
 	debugData.add(reinterpret_cast<const UCHAR*>(name), len);
 }
 
+void BlrWriter::putDebugSubFunction(DeclareSubFuncNode* subFuncNode)
+{
+	debugData.add(fb_dbg_subfunc);
+
+	dsql_udf* subFunc = subFuncNode->dsqlFunction;
+	const MetaName& name = subFunc->udf_name.identifier;
+	USHORT len = MIN(name.length(), MAX_UCHAR);
+
+	debugData.add(len);
+	debugData.add(reinterpret_cast<const UCHAR*>(name.c_str()), len);
+
+	HalfStaticArray<UCHAR, 128>& subDebugData = subFuncNode->blockScratch->debugData;
+	debugData.add(UCHAR(subDebugData.getCount()));
+	debugData.add(UCHAR(subDebugData.getCount() >> 8));
+	debugData.add(UCHAR(subDebugData.getCount() >> 16));
+	debugData.add(UCHAR(subDebugData.getCount() >> 24));
+	debugData.add(subDebugData.begin(), ULONG(subDebugData.getCount()));
+}
+
 void BlrWriter::putDebugSubProcedure(DeclareSubProcNode* subProcNode)
 {
 	debugData.add(fb_dbg_subproc);

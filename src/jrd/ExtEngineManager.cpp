@@ -617,23 +617,35 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	metadata->inputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
 	metadata->outputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
 
-	for (Array<Jrd::Function::Argument>::const_iterator i = udf->fun_args.begin();
-		 i != udf->fun_args.end();
+	for (Array<NestConst<Parameter> >::const_iterator i = udf->getInputFields().begin();
+		 i != udf->getInputFields().end();
 		 ++i)
 	{
 		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
-		i->fun_parameter->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+		(*i)->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
 
-		StatementMetadata::Parameters::Item& item = i == udf->fun_args.begin() ?
-			metadata->outputParameters->items.add() :
-			metadata->inputParameters->items.add();
-
-		item.field = i->fun_parameter->prm_name.c_str();
+		StatementMetadata::Parameters::Item& item = metadata->inputParameters->items.add();
+		item.field = (*i)->prm_name.c_str();
 		item.type = sqlType;
 		item.subType = sqlSubType;
 		item.length = sqlLen;
 		item.scale = sqlScale;
-		item.nullable = i->fun_parameter->prm_nullable;
+		item.nullable = (*i)->prm_nullable;
+	}
+
+	{	// scope
+		const Parameter* i = udf->getOutputFields()[0];
+
+		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
+		i->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+
+		StatementMetadata::Parameters::Item& item = metadata->outputParameters->items.add();
+		item.field = i->prm_name.c_str();
+		item.type = sqlType;
+		item.subType = sqlSubType;
+		item.length = sqlLen;
+		item.scale = sqlScale;
+		item.nullable = i->prm_nullable;
 	}
 
 	ExternalFunction* externalFunction;
@@ -690,7 +702,8 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	metadata->inputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
 	metadata->outputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
 
-	const Array<NestConst<Parameter> >* parameters[] = {&prc->prc_input_fields, &prc->prc_output_fields};
+	const Array<NestConst<Parameter> >* parameters[] = {
+		&prc->getInputFields(), &prc->getOutputFields()};
 
 	for (unsigned i = 0; i < 2; ++i)
 	{

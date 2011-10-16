@@ -104,6 +104,7 @@ public:
 		  cteAliases(p),
 		  currCteAlias(NULL),
 		  psql(false),
+		  subFunctions(p),
 		  subProcedures(p)
 	{
 		domainValue.clear();
@@ -221,6 +222,25 @@ public:
 	bool isPsql() const { return psql; }
 	void setPsql(bool value) { psql = value; }
 
+	dsql_udf* getSubFunction(const Firebird::MetaName& name)
+	{
+		dsql_udf* subFunc = NULL;
+		subFunctions.get(name, subFunc);
+		return subFunc;
+	}
+
+	void putSubFunction(dsql_udf* subFunc)
+	{
+		if (subFunctions.exist(subFunc->udf_name.identifier))
+		{
+			using namespace Firebird;
+			status_exception::raise(
+				Arg::Gds(isc_dsql_duplicate_spec) << subFunc->udf_name.identifier);
+		}
+
+		subFunctions.put(subFunc->udf_name.identifier, subFunc);
+	}
+
 	dsql_prc* getSubProcedure(const Firebird::MetaName& name)
 	{
 		dsql_prc* subProc = NULL;
@@ -294,6 +314,7 @@ private:
 	Firebird::HalfStaticArray<const Firebird::string*, 4> cteAliases; // CTE aliases in recursive members
 	const Firebird::string* const* currCteAlias;
 	bool psql;
+	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, dsql_udf*> > subFunctions;
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, dsql_prc*> > subProcedures;
 };
 

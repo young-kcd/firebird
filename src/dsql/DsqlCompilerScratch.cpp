@@ -290,12 +290,9 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 
 			++locals;
 		}
-		else if (StmtNode::is<DeclareCursorNode>(parameter))
-		{
-			parameter->dsqlPass(this);
-			parameter->genBlr(this);
-		}
-		else if (StmtNode::is<DeclareSubProcNode>(parameter))
+		else if (StmtNode::is<DeclareCursorNode>(parameter) ||
+			StmtNode::is<DeclareSubProcNode>(parameter) ||
+			StmtNode::is<DeclareSubFuncNode>(parameter))
 		{
 			parameter->dsqlPass(this);
 			parameter->genBlr(this);

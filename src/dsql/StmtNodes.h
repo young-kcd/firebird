@@ -26,6 +26,7 @@
 #include "../common/common.h"
 #include "../common/classes/MetaName.h"
 #include "../jrd/blr.h"
+#include "../jrd/Function.h"
 #include "../jrd/extds/ExtDS.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/DdlNodes.h"
@@ -305,6 +306,54 @@ public:
 };
 
 
+class DeclareSubFuncNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBFUNC>
+{
+public:
+	explicit DeclareSubFuncNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBFUNC>(pool),
+		  name(pool, aName),
+		  dsqlDeterministic(false),
+		  dsqlBlock(NULL),
+		  blockScratch(NULL),
+		  dsqlFunction(NULL),
+		  blrStart(NULL),
+		  blrLength(0),
+		  subCsb(NULL),
+		  routine(NULL)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual DeclareSubFuncNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+
+	virtual DeclareSubFuncNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual DeclareSubFuncNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+
+private:
+	static void parseParameters(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+		Firebird::Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount = NULL);
+
+	void genParameters(DsqlCompilerScratch* dsqlScratch,
+		const Firebird::Array<ParameterClause>& paramArray);
+
+public:
+	Firebird::MetaName name;
+	bool dsqlDeterministic;
+	ExecBlockNode* dsqlBlock;
+	DsqlCompilerScratch* blockScratch;
+	dsql_udf* dsqlFunction;
+	const UCHAR* blrStart;
+	ULONG blrLength;
+	CompilerScratch* subCsb;
+	Function* routine;
+};
+
+
 class DeclareSubProcNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBPROC>
 {
 public:
@@ -317,7 +366,7 @@ public:
 		  blrStart(NULL),
 		  blrLength(0),
 		  subCsb(NULL),
-		  procedure(NULL)
+		  routine(NULL)
 	{
 	}
 
@@ -347,7 +396,7 @@ public:
 	const UCHAR* blrStart;
 	ULONG blrLength;
 	CompilerScratch* subCsb;
-	jrd_prc* procedure;
+	jrd_prc* routine;
 };
 
 

@@ -37,12 +37,6 @@ namespace Jrd
 		static const char* const EXCEPTION_MESSAGE;
 
 	public:
-		struct Argument
-		{
-			NestConst<Parameter> fun_parameter;	// parameter info
-			FUN_T fun_mechanism;		// passing mechanism
-		};
-
 		static Function* lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
 		static Function* lookup(thread_db* tdbb, const Firebird::QualifiedName& name, bool noscan);
 
@@ -56,28 +50,15 @@ namespace Jrd
 
 		USHORT incrementAlterCount();
 
-		dsc* execute(thread_db* tdbb, const NestValueArray& args,
-			impure_value* value, bool invariant) const;
-
 		void releaseLocks(thread_db* tdbb);
 		void remove(thread_db* tdbb);
-		ULONG allocateImpure(CompilerScratch* csb) const;
-		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);
-		ValueListNode* parseArgs(thread_db* tdbb, CompilerScratch* csb);
 
-	private:
 		explicit Function(MemoryPool& p)
 			: Routine(p),
 			  fun_entrypoint(NULL),
 			  fun_inputs(0),
-			  fun_defaults(0),
 			  fun_return_arg(0),
 			  fun_temp_length(0),
-			  fun_in_msg_format(p, 0),
-			  fun_out_msg_format(p, 0),
-			  fun_in_msg_format2(p, 0),
-			  fun_out_msg_format2(p, 0),
-			  fun_args(p),
 			  fun_flags(0),
 			  fun_use_count(0),
 			  fun_existence_lock(NULL),
@@ -87,9 +68,6 @@ namespace Jrd
 			  fun_external(NULL)
 		{
 		}
-
-		void makeFormat(thread_db* tdbb, const Firebird::BlrMessage* inBlr,
-			const Firebird::BlrMessage* outBlr);
 
 		static Function* loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
 		static int blockingAst(void*);
@@ -108,17 +86,8 @@ namespace Jrd
 	public:
 		int (*fun_entrypoint)();				// function entrypoint
 		USHORT fun_inputs;						// input arguments
-		USHORT fun_defaults;					// default input arguments
 		USHORT fun_return_arg;					// return argument
 		ULONG fun_temp_length;					// temporary space required
-
-		Format fun_in_msg_format;
-		Format fun_out_msg_format;
-		Format fun_in_msg_format2;
-		Format fun_out_msg_format2;
-
-		Firebird::Array<Argument> fun_args;
-
 		USHORT fun_flags;						// flags
 		USHORT fun_use_count;					// requests compiled with function
 		Lock* fun_existence_lock;				// existence lock, if any

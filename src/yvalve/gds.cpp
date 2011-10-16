@@ -262,6 +262,7 @@ const int op_exec_stmt		= 24;
 const int op_derived_expr	= 25;
 const int op_partition_args	= 26;
 const int op_subproc_decl	= 27;
+const int op_subfunc_decl	= 28;
 
 static const UCHAR
 	// generic print formats
@@ -338,7 +339,8 @@ static const UCHAR
 	partition_by[] = {op_byte, op_line, op_partition_args, op_verb, 0},
 	decode[] = { op_line, op_verb, op_indent, op_byte, op_line, op_args, op_indent, op_byte,
 				 op_line, op_args, 0},
-	subproc_decl[] = { op_subproc_decl, 0};
+	subproc_decl[] = { op_subproc_decl, 0},
+	subfunc_decl[] = { op_subfunc_decl, 0};
 
 
 #include "../jrd/blp.h"
@@ -3212,7 +3214,9 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 	while (*ops)
 	{
-		switch (*ops++)
+		const UCHAR op = *ops++;
+
+		switch (op)
 		{
 		case op_verb:
 			blr_print_verb(control, level);
@@ -3496,6 +3500,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_subproc_decl:
+		case op_subfunc_decl:
 		{
 			n = blr_print_byte(control);
 			while (--n >= 0)
@@ -3508,6 +3513,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			if (n != SUB_ROUTINE_TYPE_PSQL)
 				blr_error(control, "*** unknown subroutine type %d ***", (int) n);
 
+			// Procedure: prc_executable / prc_selectable; Function: deterministic
 			offset = blr_print_line(control, (SSHORT) offset);
 			blr_indent(control, level);
 			n = blr_print_byte(control);

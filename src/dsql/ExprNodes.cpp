@@ -43,6 +43,7 @@
 #include "../common/dsc_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
+#include "../jrd/fun_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
@@ -10027,6 +10028,7 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<UdfCallNode> regUdfCallNode1(blr_function);
 static RegisterNode<UdfCallNode> regUdfCallNode2(blr_function2);
+static RegisterNode<UdfCallNode> regUdfCallNode3(blr_subfunc);
 
 UdfCallNode::UdfCallNode(MemoryPool& pool, const QualifiedName& aName, dsql_nod* aArgs)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_UDF_CALL>(pool),
@@ -10060,12 +10062,21 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		csb->csb_blr_reader.setPos(savePos);
 		return SysFuncCallNode::parse(tdbb, pool, csb, blr_sys_function);
 	}
-
-	node->function = Function::lookup(tdbb, name, false);
-
-	if (node->function)
+	else if (blrOp == blr_subfunc)
 	{
-		if (!node->function->isUndefined() && !node->function->isImplemented())
+		DeclareSubFuncNode* declareNode;
+		if (csb->subFunctions.get(name.identifier, declareNode))
+			node->function = declareNode->routine;
+	}
+
+	Function* function = node->function;
+
+	if (!function)
+		function = node->function = Function::lookup(tdbb, name, false);
+
+	if (function)
+	{
+		if (!function->isUndefined() && !function->isImplemented())
 		{
 			if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 			{
@@ -10086,13 +10097,25 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
-	node->args = node->function->parseArgs(tdbb, csb);
+	const UCHAR argCount = csb->csb_blr_reader.getByte();
 
-	// CVC: I will track ufds only if a proc is not being dropped.
-	if (csb->csb_g_flags & csb_get_dependencies)
+	// Check to see if the argument count matches.
+	if (argCount < function->fun_inputs - function->getDefaultCount() || argCount > function->fun_inputs)
+		PAR_error(csb, Arg::Gds(isc_funmismat) << name.toString());
+
+	node->args = PAR_args(tdbb, csb, argCount, function->fun_inputs);
+
+	for (USHORT i = argCount; i < function->fun_inputs; ++i)
+	{
+		Parameter* const parameter = function->getInputFields()[i];
+		node->args->args[i] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
+	}
+
+	// CVC: I will track ufds only if a function is not being dropped.
+	if (!function->isSubRoutine() && (csb->csb_g_flags & csb_get_dependencies))
 	{
 		CompilerScratch::Dependency dependency(obj_udf);
-		dependency.function = node->function;
+		dependency.function = function;
 		csb->csb_dependencies.push(dependency);
 	}
 
@@ -10113,7 +10136,7 @@ void UdfCallNode::setParameterName(dsql_par* parameter) const
 void UdfCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	if (dsqlFunction->udf_name.package.isEmpty())
-		dsqlScratch->appendUChar(blr_function);
+		dsqlScratch->appendUChar((dsqlFunction->udf_flags & UDF_subfunc) ? blr_subfunc : blr_function);
 	else
 	{
 		dsqlScratch->appendUChar(blr_function2);
@@ -10154,7 +10177,7 @@ void UdfCallNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* de
 	// For normal requests, function would never be null. We would have
 	// created a valid block while parsing.
 	if (function)
-		*desc = function->fun_args[function->fun_return_arg].fun_parameter->prm_desc;
+		*desc = function->getOutputFields()[0]->prm_desc;
 	else
 		desc->clear();
 }
@@ -10192,28 +10215,31 @@ ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	ValueExprNode::pass1(tdbb, csb);
 
-	if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
+	if (!function->isSubRoutine())
 	{
-		const TEXT* secName = function->getSecurityName().nullStr();
-
-		if (function->getName().package.isEmpty())
+		if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
 		{
-			CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_function,
-				function->getName().identifier.c_str());
-		}
-		else
-		{
-			CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_package,
-				function->getName().package.c_str());
+			const TEXT* secName = function->getSecurityName().nullStr();
+
+			if (function->getName().package.isEmpty())
+			{
+				CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_function,
+					function->getName().identifier.c_str());
+			}
+			else
+			{
+				CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_package,
+					function->getName().package.c_str());
+			}
+
+			ExternalAccess temp(ExternalAccess::exa_function, function->getId());
+			size_t idx;
+			if (!csb->csb_external.find(temp, idx))
+				csb->csb_external.insert(idx, temp);
 		}
 
-		ExternalAccess temp(ExternalAccess::exa_function, function->getId());
-		size_t idx;
-		if (!csb->csb_external.find(temp, idx))
-			csb->csb_external.insert(idx, temp);
+		CMP_post_resource(&csb->csb_resources, function, Resource::rsc_function, function->getId());
 	}
-
-	CMP_post_resource(&csb->csb_resources, function, Resource::rsc_function, function->getId());
 
 	return this;
 }
@@ -10224,23 +10250,233 @@ ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = function->allocateImpure(csb);
+
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
+
+	if (!function->fun_entrypoint)
+	{
+		if (function->getInputFormat() && function->getInputFormat()->fmt_count)
+		{
+			fb_assert(function->getInputFormat()->fmt_length);
+			CMP_impure(csb, function->getInputFormat()->fmt_length);
+		}
+
+		fb_assert(function->getOutputFormat()->fmt_count == 3);
+		fb_assert(function->getOutputFormat()->fmt_length);
+		CMP_impure(csb, function->getOutputFormat()->fmt_length);
+	}
 
 	return this;
 }
 
 dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = request->getImpure<impure_value>(impureOffset);
-	const bool invariant = (nodFlags & FLAG_INVARIANT);
-	return function->execute(tdbb, args->args, impure, invariant);
+	UCHAR* impure = request->getImpure<UCHAR>(impureOffset);
+	impure_value* value = request->getImpure<impure_value>(impureOffset);
+	const bool invariant = nodFlags & FLAG_INVARIANT;
+
+	USHORT& invariantFlags = value->vlu_flags;
+
+	// If the function is known as being both deterministic and invariant,
+	// check whether it has already been evaluated
+
+	if (function->fun_deterministic && invariant)
+	{
+		if (invariantFlags & VLU_computed)
+		{
+			if (invariantFlags & VLU_null)
+				request->req_flags |= req_null;
+			else
+				request->req_flags &= ~req_null;
+
+			return (request->req_flags & req_null) ? NULL : &value->vlu_desc;
+		}
+	}
+
+	if (function->isUndefined())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_func_pack_not_implemented) <<
+				Arg::Str(function->getName().identifier) << Arg::Str(function->getName().package));
+	}
+	else if (!function->isImplemented())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_funnotdef) << Arg::Str(function->getName().toString()) <<
+			Arg::Gds(isc_modnotfound));
+	}
+
+	// Evaluate the function.
+
+	if (function->fun_entrypoint)
+	{
+		const Parameter* const returnParam = function->getOutputFields()[0];
+		value->vlu_desc = returnParam->prm_desc;
+
+		// If the return data type is any of the string types, allocate space to hold value.
+
+		if (value->vlu_desc.dsc_dtype <= dtype_varying)
+		{
+			const USHORT retLength = value->vlu_desc.dsc_length;
+			VaryingString* string = value->vlu_string;
+
+			if (string && string->str_length < retLength)
+			{
+				delete string;
+				string = NULL;
+			}
+
+			if (!string)
+			{
+				string = FB_NEW_RPT(*tdbb->getDefaultPool(), retLength) VaryingString;
+				string->str_length = retLength;
+				value->vlu_string = string;
+			}
+
+			value->vlu_desc.dsc_address = string->str_data;
+		}
+		else
+			value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc;
+
+		FUN_evaluate(tdbb, function, args->args, value);
+	}
+	else
+	{
+		Jrd::Attachment* attachment = tdbb->getAttachment();
+
+		const ULONG inMsgLength = function->getInputFormat() ? function->getInputFormat()->fmt_length : 0;
+		const ULONG outMsgLength = function->getOutputFormat()->fmt_length;
+		UCHAR* const inMsg = (UCHAR*) FB_ALIGN((IPTR) impure + sizeof(impure_value), FB_ALIGNMENT);
+		UCHAR* const outMsg = (UCHAR*) FB_ALIGN((IPTR) inMsg + inMsgLength, FB_ALIGNMENT);
+
+		if (function->fun_inputs != 0)
+		{
+			const NestConst<ValueExprNode>* const sourceEnd = args->args.end();
+			const NestConst<ValueExprNode>* sourcePtr = args->args.begin();
+			const dsc* fmtDesc = function->getInputFormat()->fmt_desc.begin();
+
+			for (; sourcePtr != sourceEnd; ++sourcePtr, fmtDesc += 2)
+			{
+				const ULONG argOffset = (IPTR) fmtDesc[0].dsc_address;
+				const ULONG nullOffset = (IPTR) fmtDesc[1].dsc_address;
+
+				dsc argDesc = fmtDesc[0];
+				argDesc.dsc_address = inMsg + argOffset;
+
+				SSHORT* const nullPtr = reinterpret_cast<SSHORT*>(inMsg + nullOffset);
+
+				dsc* const srcDesc = EVL_expr(tdbb, request, *sourcePtr);
+				if (srcDesc && !(request->req_flags & req_null))
+				{
+					*nullPtr = FALSE;
+					MOV_move(tdbb, srcDesc, &argDesc);
+				}
+				else
+					*nullPtr = TRUE;
+			}
+		}
+
+		jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
+
+		// trace function execution start
+		//// TODO: TraceProcExecute trace(tdbb, funcRequest, request, inputTargets);
+
+		// Catch errors so we can unwind cleanly.
+
+		try
+		{
+			Jrd::ContextPoolHolder context(tdbb, funcRequest->req_pool);	// Save the old pool.
+
+			jrd_tra* transaction = request->req_transaction;
+			const SLONG savePointNumber = transaction->tra_save_point ?
+				transaction->tra_save_point->sav_number : 0;
+
+			funcRequest->req_timestamp = request->req_timestamp;
+
+			EXE_start(tdbb, funcRequest, transaction);
+
+			if (inMsgLength != 0)
+				EXE_send(tdbb, funcRequest, 0, inMsgLength, inMsg);
+
+			EXE_receive(tdbb, funcRequest, 1, outMsgLength, outMsg);
+
+			// Clean up all savepoints started during execution of the procedure.
+
+			if (transaction != attachment->getSysTransaction())
+			{
+				for (const Savepoint* savePoint = transaction->tra_save_point;
+					 savePoint && savePointNumber < savePoint->sav_number;
+					 savePoint = transaction->tra_save_point)
+				{
+					VIO_verb_cleanup(tdbb, transaction);
+				}
+			}
+		}
+		catch (const Exception& ex)
+		{
+			/*** TODO:
+			const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
+			trace.finish(false, noPriv ? res_unauthorized : res_failed);
+			***/
+
+			tdbb->setRequest(request);
+			EXE_unwind(tdbb, funcRequest);
+			funcRequest->req_attachment = NULL;
+			funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
+			funcRequest->req_timestamp.invalidate();
+			throw;
+		}
+
+		//// TODO: trace.finish(false, res_successful);
+
+		EXE_unwind(tdbb, funcRequest);
+		tdbb->setRequest(request);
+
+		funcRequest->req_attachment = NULL;
+		funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
+		funcRequest->req_timestamp.invalidate();
+
+		const dsc* fmtDesc = function->getOutputFormat()->fmt_desc.begin();
+		const ULONG nullOffset = (IPTR) fmtDesc[1].dsc_address;
+		SSHORT* const nullPtr = reinterpret_cast<SSHORT*>(outMsg + nullOffset);
+
+		if (*nullPtr)
+			request->req_flags |= req_null;
+		else
+		{
+			request->req_flags &= ~req_null;
+
+			const ULONG argOffset = (IPTR) fmtDesc[0].dsc_address;
+			value->vlu_desc = *fmtDesc;
+			value->vlu_desc.dsc_address = outMsg + argOffset;
+		}
+	}
+
+	if (!(request->req_flags & req_null))
+		INTL_adjust_text_descriptor(tdbb, &value->vlu_desc);
+
+	// If the function is declared as invariant, mark it as computed.
+	if (function->fun_deterministic && invariant)
+	{
+		invariantFlags |= VLU_computed;
+
+		if (request->req_flags & req_null)
+			invariantFlags |= VLU_null;
+	}
+
+	return (request->req_flags & req_null) ? NULL : &value->vlu_desc;
 }
 
 ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	UdfCallNode* node = FB_NEW(getPool()) UdfCallNode(getPool(), name,
 		PASS1_node(dsqlScratch, dsqlArgs));
-	node->dsqlFunction = METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, name);
+
+	if (name.package.isEmpty())
+		node->dsqlFunction = dsqlScratch->getSubFunction(name.identifier);
+
+	if (!node->dsqlFunction)
+		node->dsqlFunction = METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, name);
 
 	if (!node->dsqlFunction)
 	{
