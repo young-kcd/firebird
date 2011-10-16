@@ -377,7 +377,7 @@ void ConfigStorage::release()
 	fb_assert(m_recursive > 0);
 
 	const FB_THREAD_ID currTID = getThreadId();
-	fb_assert(m_mutexTID == currTID)
+	fb_assert(m_mutexTID == currTID);
 	
 	if (--m_recursive == 0)
 	{
