@@ -1,3 +1,48 @@
+ 2011-10-16 20:36  asfernandes 
+   M src/dsql/BlrWriter.cpp
+   M src/dsql/BlrWriter.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/consts_pub.h
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/DebugInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/Routine.h
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/jrd/dfw.epp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/fun.epp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+   M src/yvalve/gds.cpp
+Feature CORE-3626 - Subfunctions in PSQL and EXECUTE BLOCK.
+Tests at http://firebird.cvs.sourceforge.net/viewvc/firebird/fbtcs/GTCS/tests/FB_SQL_SUBFUNC_1.output.
+Also did:
+- Refactor to share more code/data between procedures and functions.
+- Fixed some PSQL functions problems.
+
+ 2011-10-16 14:10  hvlad 
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+Port forward fix for bug CORE-3636 : Firebird 2.5.1 server crashes with Trace API
+
  2011-10-13 12:39  alexpeshkoff 
    M src/jrd/trace/TraceConfigStorage.cpp
    M src/jrd/trace/TraceConfigStorage.h
