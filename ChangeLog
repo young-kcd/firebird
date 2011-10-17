@@ -1,3 +1,16 @@
+ 2011-10-16 14:11  hvlad 
+   M src/jrd/trace/TraceConfigStorage.cpp
+One more assertion
+
+ 2011-10-16 13:59  hvlad 
+   M src/jrd/trace/TraceConfigStorage.cpp
+Missed semicolon
+
+ 2011-10-16 13:49  hvlad 
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+Fixed bug CORE-3636 : Firebird 2.5.1 server crashes with Trace API
+
  2011-10-13 11:52  alexpeshkoff 
    M builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
 misc
