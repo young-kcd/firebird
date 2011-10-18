@@ -194,7 +194,6 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 
 Jrd::Attachment::~Attachment()
 {
-	destroyIntlObjects();
 	delete att_trace_manager;
 
 	while (att_pools.hasData())
@@ -498,7 +497,7 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 	}
 
 	// Release collation existence locks.
-	releaseIntlObjects();
+	releaseIntlObjects(tdbb);
 
 	// And release the system requests.
 

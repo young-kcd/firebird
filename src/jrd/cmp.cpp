@@ -238,23 +238,6 @@ CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, USHORT elemen
 }
 
 
-void CMP_fini(thread_db* tdbb)
-{
-/**************************************
- *
- *	C M P _ f i n i
- *
- **************************************
- *
- * Functional description
- *	Get rid of resource locks during shutdown.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-}
-
-
 const Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************

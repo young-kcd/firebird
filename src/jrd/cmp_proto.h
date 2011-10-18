@@ -43,7 +43,6 @@ Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT)
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
 void CMP_expand_view_nodes(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, Jrd::ValueExprNodeStack&,
 	UCHAR, bool);
-void CMP_fini(Jrd::thread_db*);
 const Jrd::Format* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 ULONG CMP_impure(Jrd::CompilerScratch*, ULONG);

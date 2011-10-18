@@ -3927,19 +3927,14 @@ static int blocking_ast_dsql_cache(void* ast_object)
  *	Mark the symbol as obsolete and release the lock.
  *
  **************************************/
-	DSqlCacheItem* item = static_cast<DSqlCacheItem*>(ast_object);
+	DSqlCacheItem* const item = static_cast<DSqlCacheItem*>(ast_object);
 
 	try
 	{
-		Database* dbb = item->lock->lck_dbb;
-		Jrd::Attachment* att = item->lock->lck_attachment;
+		Database* const dbb = item->lock->lck_dbb;
+		Jrd::Attachment* const att = item->lock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(att);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-		Jrd::Attachment::SyncGuard guard(att);
+		AsyncContextHolder tdbb(dbb, att);
 
 		item->obsolete = true;
 		item->locked = false;
@@ -4007,19 +4002,14 @@ static int blocking_ast_procedure(void* ast_object)
  *      and release the procedure existence lock.
  *
  **************************************/
-	jrd_prc* procedure = static_cast<jrd_prc*>(ast_object);
+	jrd_prc* const procedure = static_cast<jrd_prc*>(ast_object);
 
 	try
 	{
-		Database* dbb = procedure->prc_existence_lock->lck_dbb;
-		Jrd::Attachment* att = procedure->prc_existence_lock->lck_attachment;
+		Database* const dbb = procedure->prc_existence_lock->lck_dbb;
+		Jrd::Attachment* const att = procedure->prc_existence_lock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(att);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-		Jrd::Attachment::SyncGuard guard(att);
+		AsyncContextHolder tdbb(dbb, att);
 
 		if (procedure->prc_existence_lock)
 			LCK_release(tdbb, procedure->prc_existence_lock);
@@ -4049,19 +4039,14 @@ static int blocking_ast_relation(void* ast_object)
  *      and release the relation existence lock.
  *
  **************************************/
-	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
+	jrd_rel* const relation = static_cast<jrd_rel*>(ast_object);
 
 	try
 	{
-		Database* dbb = relation->rel_existence_lock->lck_dbb;
-		Jrd::Attachment* att = relation->rel_existence_lock->lck_attachment;
+		Database* const dbb = relation->rel_existence_lock->lck_dbb;
+		Jrd::Attachment* const att = relation->rel_existence_lock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(att);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-		Jrd::Attachment::SyncGuard guard(att);
+		AsyncContextHolder tdbb(dbb, att);
 
 		if (relation->rel_use_count)
 			relation->rel_flags |= REL_blocking;
@@ -4082,19 +4067,14 @@ static int blocking_ast_relation(void* ast_object)
 
 static int partners_ast_relation(void* ast_object)
 {
-	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
+	jrd_rel* const relation = static_cast<jrd_rel*>(ast_object);
 
 	try
 	{
-		Database* dbb = relation->rel_partners_lock->lck_dbb;
-		Jrd::Attachment* att = relation->rel_partners_lock->lck_attachment;
+		Database* const dbb = relation->rel_partners_lock->lck_dbb;
+		Jrd::Attachment* const att = relation->rel_partners_lock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(att);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-		Jrd::Attachment::SyncGuard guard(att);
+		AsyncContextHolder tdbb(dbb, att);
 
 		LCK_release(tdbb, relation->rel_partners_lock);
 		relation->rel_flags |= REL_check_partners;
@@ -4108,19 +4088,14 @@ static int partners_ast_relation(void* ast_object)
 
 static int rescan_ast_relation(void* ast_object)
 {
-	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
+	jrd_rel* const relation = static_cast<jrd_rel*>(ast_object);
 
 	try
 	{
-		Database* dbb = relation->rel_rescan_lock->lck_dbb;
-		Jrd::Attachment* att = relation->rel_rescan_lock->lck_attachment;
+		Database* const dbb = relation->rel_rescan_lock->lck_dbb;
+		Jrd::Attachment* const att = relation->rel_rescan_lock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(att);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-		Jrd::Attachment::SyncGuard guard(att);
+		AsyncContextHolder tdbb(dbb, att);
 
 		LCK_release(tdbb, relation->rel_rescan_lock);
 		relation->rel_flags &= ~REL_scanned;

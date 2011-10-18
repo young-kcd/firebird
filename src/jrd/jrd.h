@@ -57,6 +57,7 @@
 #include "../jrd/scl.h"
 #include "../jrd/Routine.h"
 #include "../jrd/ExtEngineManager.h"
+#include "../jrd/Attachment.h"
 #include "firebird/Provider.h"
 
 #ifdef DEV_BUILD
@@ -384,10 +385,10 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 class thread_db : public ThreadData
 {
 private:
-	MemoryPool*	tdbb_default;
+	MemoryPool*	defaultPool;
 	void setDefaultPool(MemoryPool* p)
 	{
-		tdbb_default = p;
+		defaultPool = p;
 	}
 	friend class Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool>;
 	Database*	database;
@@ -395,26 +396,27 @@ private:
 	jrd_tra*	transaction;
 	jrd_req*	request;
 	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
+	thread_db	*priorThread, *nextThread;
 
 public:
 	explicit thread_db(ISC_STATUS* status)
 		: ThreadData(ThreadData::tddDBB),
-		tdbb_bdbs(*getDefaultMemoryPool())
+		  defaultPool(NULL),
+		  database(NULL),
+		  attachment(NULL),
+		  transaction(NULL),
+		  request(NULL),
+		  priorThread(NULL),
+		  nextThread(NULL),
+		  tdbb_status_vector(status),
+		  tdbb_quantum(QUANTUM),
+		  tdbb_flags(0),
+		  tdbb_temp_traid(0),
+		  tdbb_bdbs(*getDefaultMemoryPool()),
+		  tdbb_thread(Firebird::ThreadSync::getThread("thread_db"))
 	{
-		tdbb_default = NULL;
-		database = NULL;
-		attachment = NULL;
-		transaction = NULL;
-		request = NULL;
-		tdbb_quantum = QUANTUM;
-		tdbb_flags = 0;
-		tdbb_temp_traid = 0;
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
-
-		tdbb_status_vector = status;
 		fb_utils::init_status(tdbb_status_vector);
-
-		tdbb_thread = Firebird::ThreadSync::getThread("thread_db");
 	}
 
 	~thread_db()
@@ -439,7 +441,7 @@ public:
 
 	MemoryPool* getDefaultPool()
 	{
-		return tdbb_default;
+		return defaultPool;
 	}
 
 	Database* getDatabase()
@@ -452,11 +454,7 @@ public:
 		return database;
 	}
 
-	void setDatabase(Database* val)
-	{
-		database = val;
-		dbbStat = val ? &val->dbb_stats : RuntimeStatistics::getDummy();
-	}
+	void setDatabase(Database* val);
 
 	Attachment* getAttachment()
 	{
@@ -553,6 +551,54 @@ public:
 		else
 			fb_assert(false);
 	}
+
+	void activate()
+	{
+		fb_assert(!priorThread && !nextThread);
+
+		if (database)
+		{
+			Firebird::SyncLockGuard sync(&database->dbb_threads_sync, Firebird::SYNC_EXCLUSIVE,
+										 "thread_db::activate");
+
+			if (database->dbb_active_threads)
+			{
+				fb_assert(!database->dbb_active_threads->priorThread);
+				database->dbb_active_threads->priorThread = this;
+				nextThread = database->dbb_active_threads;
+			}
+
+			database->dbb_active_threads = this;
+		}
+	}
+
+	void deactivate()
+	{
+		if (database)
+		{
+			Firebird::SyncLockGuard sync(&database->dbb_threads_sync, Firebird::SYNC_EXCLUSIVE,
+										 "thread_db::deactivate");
+
+			if (nextThread)
+			{
+				fb_assert(nextThread->priorThread == this);
+				nextThread->priorThread = priorThread;
+			}
+
+			if (priorThread)
+			{
+				fb_assert(priorThread->nextThread == this);
+				priorThread->nextThread = nextThread;
+			}
+			else
+			{
+				fb_assert(database->dbb_active_threads == this);
+				database->dbb_active_threads = nextThread;
+			}
+		}
+
+		priorThread = nextThread = NULL;
+	}
 };
 
 // tdbb_flags
@@ -584,6 +630,14 @@ public:
 	{
 		context.putSpecific();
 		externStatus->init();
+	}
+
+	ThreadContextHolder(Database* dbb, Jrd::Attachment* att, ISC_STATUS* status = NULL)
+		: context(status ? status : local_status), externStatus(NULL)
+	{
+		context.putSpecific();
+		context.setDatabase(dbb);
+		context.setAttachment(att);
 	}
 
 	~ThreadContextHolder()
@@ -787,6 +841,67 @@ extern int debug;
 
 namespace Jrd {
 	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool> ContextPoolHolder;
+
+	class DatabaseContextHolder : public Jrd::ContextPoolHolder
+	{
+	public:
+		explicit DatabaseContextHolder(thread_db* tdbb)
+			: Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent),
+			  savedTdbb(tdbb)
+		{
+			savedTdbb->activate();
+		}
+
+		~DatabaseContextHolder()
+		{
+			savedTdbb->deactivate();
+		}
+
+	private:
+		// copying is prohibited
+		DatabaseContextHolder(const DatabaseContextHolder&);
+		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
+
+		thread_db* const savedTdbb;
+	};
+
+	class BackgroundContextHolder : public ThreadContextHolder, public DatabaseContextHolder,
+		public Jrd::Attachment::SyncGuard
+	{
+	public:
+		explicit BackgroundContextHolder(Database* dbb, Jrd::Attachment* att, ISC_STATUS* status)
+			: ThreadContextHolder(dbb, att, status),
+			  DatabaseContextHolder(operator thread_db*()),
+			  Jrd::Attachment::SyncGuard(att)
+		{}
+
+	private:
+		// copying is prohibited
+		BackgroundContextHolder(const BackgroundContextHolder&);
+		BackgroundContextHolder& operator=(const BackgroundContextHolder&);
+	};
+
+	class AsyncContextHolder : public ThreadContextHolder, public DatabaseContextHolder,
+		public Jrd::Attachment::SyncGuard
+	{
+	public:
+		explicit AsyncContextHolder(Database* dbb, Jrd::Attachment* att = NULL)
+			: ThreadContextHolder(dbb, att),
+			  DatabaseContextHolder(operator thread_db*()),
+			  Jrd::Attachment::SyncGuard(att, true)
+		{
+			if (dbb->dbb_flags & DBB_not_in_use)
+			{
+				// usually to be swallowed by the AST, but it allows to skip its execution
+				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_unavailable));
+			}
+		}
+
+	private:
+		// copying is prohibited
+		AsyncContextHolder(const AsyncContextHolder&);
+		AsyncContextHolder& operator=(const AsyncContextHolder&);
+	};
 }
 
 #endif // JRD_JRD_H

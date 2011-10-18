@@ -467,38 +467,6 @@ namespace
 		AttachmentHolder& operator =(const AttachmentHolder&);
 	};
 
-	class DatabaseContextHolder : public Jrd::ContextPoolHolder
-	{
-	public:
-		explicit DatabaseContextHolder(thread_db* tdbb)
-			: Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent),
-			  savedTdbb(tdbb)
-		{
-			Database* dbb = tdbb->getDatabase();
-			fb_assert(dbb);
-			if (dbb)
-			{
-				++dbb->dbb_use_count;
-			}
-		}
-
-		~DatabaseContextHolder()
-		{
-			Database* dbb = savedTdbb->getDatabase();
-			if (dbb)
-			{
-				--dbb->dbb_use_count;
-			}
-		}
-
-	private:
-		// copying is prohibited
-		DatabaseContextHolder(const DatabaseContextHolder&);
-		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
-
-		thread_db* savedTdbb;
-	};
-
 	class EngineContextHolder : public ThreadContextHolder, private AttachmentHolder,
 		private DatabaseContextHolder
 	{
@@ -5951,6 +5919,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	delete attachment->att_val_errors;
 	attachment->att_val_errors = NULL;
 
+	attachment->destroyIntlObjects(tdbb);
+
 	attachment->detachLocksFromAttachment();
 
 	if (attachment->att_flags & ATT_lck_init_done)
@@ -6087,7 +6057,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 #endif
 
 	VIO_fini(tdbb);
-	CMP_fini(tdbb);
 	CCH_fini(tdbb);
 
 	if (dbb->dbb_backup_manager)
@@ -6967,6 +6936,27 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 
 // begin thread_db methods
+
+void thread_db::setDatabase(Database* val)
+{
+	if (database != val)
+	{
+		const bool wasActive = database && (priorThread || nextThread || database->dbb_active_threads == this);
+
+		if (wasActive)
+		{
+			deactivate();
+		}
+
+		database = val;
+		dbbStat = val ? &val->dbb_stats : RuntimeStatistics::getDummy();
+
+		if (wasActive)
+		{
+			activate();
+		}
+	}
+}
 
 // need the Jrd:: qualifier to not clash with Attachment in FirebirdApi.h
 void thread_db::setAttachment(Jrd::Attachment* val)

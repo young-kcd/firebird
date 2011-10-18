@@ -1717,12 +1717,7 @@ static int blocking_ast_attachment(void* ast_object)
 	{
 		Database* const dbb = attachment->att_database;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(attachment);
-
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-		Jrd::Attachment::SyncGuard guard(attachment);
+		AsyncContextHolder tdbb(dbb, attachment);
 
 		attachment->att_flags |= ATT_shutdown;
 		attachment->cancelExternalConnection(tdbb);

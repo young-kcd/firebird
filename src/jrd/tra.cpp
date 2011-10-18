@@ -1923,19 +1923,14 @@ static int blocking_ast_transaction(void* ast_object)
  *	Mark the transaction to cancel its active requests.
  *
  **************************************/
-	jrd_tra* transaction = static_cast<jrd_tra*>(ast_object);
+	jrd_tra* const transaction = static_cast<jrd_tra*>(ast_object);
 
 	try
 	{
-		Database* dbb = transaction->tra_cancel_lock->lck_dbb;
-		Jrd::Attachment* att = transaction->tra_cancel_lock->lck_attachment;
+		Database* const dbb = transaction->tra_cancel_lock->lck_dbb;
+		Jrd::Attachment* const att = transaction->tra_cancel_lock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(att);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-		Jrd::Attachment::SyncGuard guard(att);
+		AsyncContextHolder tdbb(dbb, att);
 
 		if (transaction->tra_cancel_lock)
 			LCK_release(tdbb, transaction->tra_cancel_lock);

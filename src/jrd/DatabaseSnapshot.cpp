@@ -350,28 +350,22 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	{
 		Lock* const lock = dbb->dbb_monitor_lock;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(lock->lck_dbb);
-
 		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 		{
 			SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "DatabaseSnapshot::blockingAst");
 
 			if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 			{
-				// Write the data to the shared memory
-				if (!(dbb->dbb_flags & DBB_not_in_use))
-				{
-					ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+				AsyncContextHolder tdbb(dbb);
 
-					try
-					{
-						dumpData(tdbb);
-					}
-					catch (const Exception& ex)
-					{
-						iscLogException("Cannot dump the monitoring data", ex);
-					}
+				// Write the data to the shared memory
+				try
+				{
+					dumpData(tdbb);
+				}
+				catch (const Exception& ex)
+				{
+					iscLogException("Cannot dump the monitoring data", ex);
 				}
 
 				// Release the lock and mark dbb as requesting a new one

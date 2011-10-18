@@ -294,10 +294,9 @@ public:
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, USHORT> > > att_charset_ids;	// Character set ids
 
-	void releaseIntlObjects();			// defined in intl.cpp
-	void destroyIntlObjects();			// defined in intl.cpp
+	void releaseIntlObjects(thread_db* tdbb);			// defined in intl.cpp
+	void destroyIntlObjects(thread_db* tdbb);			// defined in intl.cpp
 
-	// from CMP_shutdown_database and CMP_fini
 	void releaseLocks(thread_db* tdbb);
 
 	Firebird::Array<MemoryPool*>	att_pools;		// pools

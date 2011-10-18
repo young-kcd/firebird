@@ -213,7 +213,6 @@ const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
 const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
-const ULONG DBB_destroying			= 0x100000L;	// database destructor is called
 
 //
 // dbb_ast_flags
@@ -347,7 +346,6 @@ public:
 	USHORT dbb_dp_per_pp;				// data pages per pointer page
 	USHORT dbb_max_records;				// max record per data page
 	USHORT dbb_max_idx;					// max number of indexes on a root page
-	USHORT dbb_use_count;				// active count of threads
 
 #ifdef SUPERSERVER_V2
 	USHORT dbb_prefetch_sequence;		// sequence to pace frequency of prefetch requests
@@ -360,6 +358,9 @@ public:
 
 	Firebird::SyncObject			dbb_pools_sync;
 	Firebird::Array<MemoryPool*>	dbb_pools;		// pools
+
+	Firebird::SyncObject				dbb_threads_sync;
+	thread_db*							dbb_active_threads;
 
 	SLONG dbb_oldest_active;			// Cached "oldest active" transaction
 	SLONG dbb_oldest_transaction;		// Cached "oldest interesting" transaction

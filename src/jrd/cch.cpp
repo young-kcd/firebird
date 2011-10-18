@@ -228,18 +228,11 @@ int CCH_down_grade_dbb(void* ast_object)
 
 	try
 	{
-		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
-
-		if (dbb->dbb_flags & DBB_not_in_use)
-			return 0;
-
 		Lock* const lock = dbb->dbb_lock;
 
-		// Since this routine will be called asynchronously,
-		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(lock->lck_attachment);
+		AsyncContextHolder tdbb(dbb, lock->lck_attachment);
+
+		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
 
 		dbb->dbb_ast_flags |= DBB_blocking;
 
@@ -2524,25 +2517,19 @@ static int blocking_ast_bdb(void* ast_object)
  *	WHEW!
  *
  **************************************/
-	ThreadSync *thread = ThreadSync::getThread("blocking_ast_bdb");
+	ThreadSync* const thread = ThreadSync::getThread("blocking_ast_bdb");
 
-	BufferDesc* bdb = static_cast<BufferDesc*>(ast_object);
+	BufferDesc* const bdb = static_cast<BufferDesc*>(ast_object);
 
 	try
 	{
-		BufferControl* bcb = bdb->bdb_bcb;
+		BufferControl* const bcb = bdb->bdb_bcb;
 		fb_assert(!(bcb->bcb_flags & BCB_exclusive));
 
-		Database* dbb = bcb->bcb_database;
+		Database* const dbb = bcb->bcb_database;
 		fb_assert(dbb);
 
-		if (dbb->dbb_flags & (DBB_not_in_use | DBB_destroying))
-			return 0;
-
-		// Since this routine will be called asynchronously,
-		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
+		AsyncContextHolder tdbb(dbb);
 
 		// Do some fancy footwork to make sure that pages are
 		// not removed from the btc tree at AST level. Then
@@ -2978,31 +2965,21 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 	try
 	{
-		// Establish a thread context.
-		ThreadContextHolder tdbb(status_vector);
-
-		tdbb->setDatabase(dbb);
-
 		BufferControl* const bcb = dbb->dbb_bcb;
-		Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
 
 		UserId user;
 		user.usr_user_name = "Cache Writer";
 
-		RefPtr<SysAttachment> jAtt(NULL);
+		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
+		RefPtr<SysAttachment> jAtt(new SysAttachment(attachment));
+		attachment->att_interface = jAtt;
+		attachment->att_filename = dbb->dbb_filename;
+		attachment->att_user = &user;
+
+		BackgroundContextHolder tdbb(dbb, attachment, status_vector);
 
 		try
 		{
-			// Dummy attachment needed for lock owner identification.
-
-			Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-			attachment->att_interface = jAtt = new SysAttachment(attachment);
-			jAtt->getMutex()->enter();
-
-			tdbb->setAttachment(attachment);
-			attachment->att_filename = dbb->dbb_filename;
-			attachment->att_user = &user;
-
 			LCK_init(tdbb, LCK_OWNER_attachment);
 			PAG_header(tdbb, true);
 			PAG_attachment_id(tdbb);
@@ -3082,14 +3059,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			// continue execution to clean up
 		}
 
-		if (tdbb->getAttachment())
-		{
-			LCK_fini(tdbb, LCK_OWNER_attachment);
-
-			jAtt->getMutex()->leave();
-			jAtt = NULL;
-			tdbb->setAttachment(NULL);
-		}
+		LCK_fini(tdbb, LCK_OWNER_attachment);
 
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		bcb->bcb_writer_fini.release();

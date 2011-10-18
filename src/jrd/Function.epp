@@ -523,18 +523,11 @@ int Function::blockingAst(void* ast_object)
 	try
 	{
 		Database* const dbb = function->fun_existence_lock->lck_dbb;
-		Jrd::Attachment* att = function->fun_existence_lock->lck_attachment;
+		Jrd::Attachment* const att = function->fun_existence_lock->lck_attachment;
 
-		Jrd::Attachment::SyncGuard guard(att);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(function->fun_existence_lock->lck_attachment);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
+		AsyncContextHolder tdbb(dbb, att);
 
 		LCK_release(tdbb, function->fun_existence_lock);
-
 		function->fun_flags |= FUN_obsolete;
 	}
 	catch (const Firebird::Exception&)

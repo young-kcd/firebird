@@ -89,8 +89,6 @@ namespace Jrd
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
 
-		dbb_flags |= DBB_destroying;
-
 		//Checkout dcoHolder(this);
 
 		// This line decrements the usage counter and may cause the destructor to be called.
@@ -190,15 +188,9 @@ namespace Jrd
 
 		try
 		{
-			if (dbb->dbb_flags & DBB_not_in_use)
-				return 0;
+			AsyncContextHolder tdbb(dbb);
 
 			SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::blockingAstSharedCounter");
-
-			ThreadContextHolder tdbb;
-			tdbb->setDatabase(dbb);
-
-			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 			LCK_downgrade(tdbb, counter->lock);
 		}

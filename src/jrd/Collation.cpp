@@ -871,26 +871,17 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 	return NULL;	// compiler silencer
 }
 
-void Collation::release()
+void Collation::release(thread_db* tdbb)
 {
 	fb_assert(useCount >= 0);
 
 	if (existenceLock)
-	{
-		// Establish a thread context
-		ThreadContextHolder tdbb;
-
-		tdbb->setDatabase(existenceLock->lck_dbb);
-		tdbb->setAttachment(existenceLock->lck_attachment);
-		Jrd::ContextPoolHolder context(tdbb, 0);
-
 		LCK_release(tdbb, existenceLock);
 
-		useCount = 0;
-	}
+	useCount = 0;
 }
 
-void Collation::destroy()
+void Collation::destroy(thread_db* tdbb)
 {
 	fb_assert(useCount == 0);
 
@@ -899,7 +890,7 @@ void Collation::destroy()
 
 	delete tt;
 
-	release();
+	release(tdbb);
 
 	delete existenceLock;
 	existenceLock = NULL;

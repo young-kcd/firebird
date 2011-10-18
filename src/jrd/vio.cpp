@@ -4243,17 +4243,19 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 	try
 	{
-		// Establish a thread context.
-		ThreadContextHolder tdbb(status_vector);
-
-		tdbb->setDatabase(dbb);
-		tdbb->tdbb_quantum = SWEEP_QUANTUM;
-		tdbb->tdbb_flags = TDBB_sweeper;
-
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
 		UserId user;
 		user.usr_user_name = "Garbage Collector";
+
+		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
+		RefPtr<SysAttachment> jAtt(new SysAttachment(attachment));
+		attachment->att_interface = jAtt;
+		attachment->att_filename = dbb->dbb_filename;
+		attachment->att_flags = ATT_garbage_collector;
+		attachment->att_user = &user;
+
+		BackgroundContextHolder tdbb(dbb, attachment, status_vector);
+		tdbb->tdbb_quantum = SWEEP_QUANTUM;
+		tdbb->tdbb_flags = TDBB_sweeper;
 
 		record_param rpb;
 		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
@@ -4261,23 +4263,11 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 		jrd_rel* relation = NULL;
 		jrd_tra* transaction = NULL;
-		RefPtr<SysAttachment> jAtt(NULL);
 
-		GarbageCollector* gc = NULL;
+		AutoPtr<GarbageCollector> gc(FB_NEW(*attachment->att_pool) GarbageCollector(*attachment->att_pool, dbb));
 
 		try
 		{
-			// Pseudo attachment needed for lock owner identification.
-
-			Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-			attachment->att_interface = jAtt = new SysAttachment(attachment);
-			jAtt->getMutex()->enter();
-
-			tdbb->setAttachment(attachment);
-			attachment->att_filename = dbb->dbb_filename;
-			attachment->att_flags = ATT_garbage_collector;
-			attachment->att_user = &user;
-
 			LCK_init(tdbb, LCK_OWNER_attachment);
 			INI_init(tdbb);
 			INI_init2(tdbb);
@@ -4285,7 +4275,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			PAG_attachment_id(tdbb);
 			TRA_init(attachment);
 
-			gc = FB_NEW(*attachment->att_pool) GarbageCollector(*attachment->att_pool, dbb);
 			dbb->dbb_garbage_collector = gc;
 
 			jAtt->initDone();
@@ -4464,20 +4453,12 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 		delete rpb.rpb_record;
 
+		dbb->dbb_garbage_collector = NULL;
+
 		if (transaction)
 			TRA_commit(tdbb, transaction, false);
 
-		if (tdbb->getAttachment())
-		{
-			delete gc;
-			dbb->dbb_garbage_collector = NULL;
-
-			LCK_fini(tdbb, LCK_OWNER_attachment);
-
-			jAtt->getMutex()->leave();
-			jAtt = NULL;
-			tdbb->setAttachment(NULL);
-		}
+		LCK_fini(tdbb, LCK_OWNER_attachment);
 
 		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
 		// Notify the finalization caller that we're finishing.

@@ -1388,18 +1388,15 @@ static int index_block_flush(void* ast_object)
  *	out and release the lock.
  *
  **************************************/
-	IndexBlock* index_block = static_cast<IndexBlock*>(ast_object);
+	IndexBlock* const index_block = static_cast<IndexBlock*>(ast_object);
 
 	try
 	{
-		Lock* lock = index_block->idb_lock;
-		Database* dbb = lock->lck_dbb;
+		Lock* const lock = index_block->idb_lock;
+		Database* const dbb = lock->lck_dbb;
+		Jrd::Attachment* const att = lock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(lock->lck_attachment);
-
-		Jrd::Attachment::SyncGuard guard(lock->lck_attachment);
+		AsyncContextHolder tdbb(dbb, att);
 
 		release_index_block(tdbb, index_block);
 	}

@@ -1188,20 +1188,18 @@ static int blocking_ast_shadowing(void* ast_object)
  *	new shadow files before doing the next physical write.
  *
  **************************************/
-	Database* dbb = static_cast<Database*>(ast_object);
+	Database* const dbb = static_cast<Database*>(ast_object);
 
 	try
 	{
+		AsyncContextHolder tdbb(dbb);
+
 		SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "blocking_ast_shadowing");
 
-		Lock* lock = dbb->dbb_shadow_lock;
-
-		// Since this routine will be called asynchronously,
-		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-
 		dbb->dbb_ast_flags |= DBB_get_shadows;
+
+		Lock* const lock = dbb->dbb_shadow_lock;
+
 		if (LCK_read_data(tdbb, lock) & SDW_rollover)
 			update_dbb_to_sdw(dbb);
 

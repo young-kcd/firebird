@@ -144,22 +144,22 @@ class CharSetContainer
 public:
 	CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info);
 
-	void release()
+	void release(thread_db* tdbb)
 	{
 		for (size_t i = 0; i < charset_collations.getCount(); i++)
 		{
 			if (charset_collations[i])
-				charset_collations[i]->release();
+				charset_collations[i]->release(tdbb);
 		}
 	}
 
-	void destroy()
+	void destroy(thread_db* tdbb)
 	{
 		cs->destroy();
 		for (size_t i = 0; i < charset_collations.getCount(); i++)
 		{
 			if (charset_collations[i])
-				charset_collations[i]->destroy();
+				charset_collations[i]->destroy(tdbb);
 		}
 	}
 
@@ -361,7 +361,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			// else wait until all references are released
 			if (charset_collations[id]->useCount == 0)
 			{
-				charset_collations[id]->destroy();
+				charset_collations[id]->destroy(tdbb);
 				delete charset_collations[id];
 			}
 			else
@@ -438,7 +438,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			// we could safely delete obsolete instance
 			if (to_delete)
 			{
-				to_delete->destroy();
+				to_delete->destroy(tdbb);
 				delete to_delete;
 			}
 		}
@@ -448,7 +448,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (to_delete)
 		{
 			LCK_lock(tdbb, to_delete->existenceLock, LCK_SR, LCK_WAIT);
-			to_delete->destroy();
+			to_delete->destroy(tdbb);
 			delete to_delete;
 		}
 
@@ -504,23 +504,23 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 }
 
 
-void Jrd::Attachment::releaseIntlObjects()
+void Jrd::Attachment::releaseIntlObjects(thread_db* tdbb)
 {
 	for (size_t i = 0; i < att_charsets.getCount(); i++)
 	{
 		if (att_charsets[i])
-			att_charsets[i]->release();
+			att_charsets[i]->release(tdbb);
 	}
 }
 
 
-void Jrd::Attachment::destroyIntlObjects()
+void Jrd::Attachment::destroyIntlObjects(thread_db* tdbb)
 {
 	for (size_t i = 0; i < att_charsets.getCount(); i++)
 	{
 		if (att_charsets[i])
 		{
-			att_charsets[i]->destroy();
+			att_charsets[i]->destroy(tdbb);
 			att_charsets[i] = NULL;
 		}
 	}
@@ -1384,19 +1384,14 @@ static int blocking_ast_collation(void* ast_object)
  *      and release the collation existence lock.
  *
  **************************************/
-	Collation* tt = static_cast<Collation*>(ast_object);
+	Collation* const tt = static_cast<Collation*>(ast_object);
 
 	try
 	{
-		Database* dbb = tt->existenceLock->lck_dbb;
-		Jrd::Attachment* att = tt->existenceLock->lck_attachment;
+		Database* const dbb = tt->existenceLock->lck_dbb;
+		Jrd::Attachment* const att = tt->existenceLock->lck_attachment;
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(att);
-
-		Jrd::Attachment::SyncGuard guard(att);
-		Jrd::ContextPoolHolder context(tdbb, 0);
+		AsyncContextHolder tdbb(dbb, att);
 
 		tt->obsolete = true;
 		if (!tt->useCount)

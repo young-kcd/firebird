@@ -53,16 +53,13 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 
 	try
 	{
+		Database* const dbb = globalRWLock->cachedLock->lck_dbb;
+
+		AsyncContextHolder tdbb(dbb);
+
 		Firebird::MutexLockGuard counterGuard(globalRWLock->counterMutex);
-		if (!globalRWLock->cachedLock)
-			return 0;
 
-		Database* dbb = globalRWLock->cachedLock->lck_dbb;
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-
-		// do nothing if dbb is shutting down
-		if (!(dbb->dbb_flags & DBB_not_in_use))
+		if (globalRWLock->cachedLock)
 			globalRWLock->blockingAstHandler(tdbb);
 	}
 	catch (const Firebird::Exception&)
