@@ -1,3 +1,29 @@
+ 2011-10-18 18:02  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Collation.cpp
+   M src/jrd/Collation.h
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/Function.epp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/idx.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+Refactored the tdbb initialization, especially in AST and BG threads.
+Replaced dbb_use_count with a list of active requests (to be utilized later).
+Misc cleanup.
+
  2011-10-16 20:36  asfernandes 
    M src/dsql/BlrWriter.cpp
    M src/dsql/BlrWriter.h
