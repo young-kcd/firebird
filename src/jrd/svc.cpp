@@ -1104,7 +1104,8 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			case isc_info_svc_dump_pool_info:
 				break;
 			default:
-				status_exception::raise(Arg::Gds(isc_bad_spb_form));
+				status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
+										Arg::Gds(isc_random) << "wrong info request for anonymous service");
 				break;
 			}
 		}
@@ -1919,7 +1920,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	// currently we do not use "anonymous" service for any purposes but isc_service_query()
 	if (svc_user_flag == SVC_user_none) {
-		status_exception::raise(Arg::Gds(isc_bad_spb_form));
+		status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
+								Arg::Gds(isc_random) << "start request for anonymous service is impossible");
 	}
 
 	{ // scope for locked globalServicesMutex
@@ -2002,7 +2004,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	spb.rewind();
 	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log)
 	{
-		status_exception::raise(Arg::Gds(isc_bad_spb_form));
+		status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
+								Arg::Gds(isc_random) << "all services except for get_ib_log require switches");
 	}
 
 	// Do not let everyone look at server log

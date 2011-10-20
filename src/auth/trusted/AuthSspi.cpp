@@ -357,7 +357,7 @@ Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
 
 		try
 		{
-			if (dpb->find(tag))
+			if (tag && dpb->find(tag))
 			{
 				sspiData.clear();
 				unsigned int clumpLength;
@@ -448,18 +448,18 @@ Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 		try
 		{
 			UCHAR tag = tags->trustedRole;
-			while (dpb->find(tag))
+			while (tag && dpb->find(tag))
 			{
 				dpb->drop();
 			}
 
 			tag = tags->trustedAuth;
-			while (dpb->find(tag))
+			while (tag && dpb->find(tag))
 			{
 				dpb->drop();
 			}
 
-			if (sspi.isActive())
+			if (tag && sspi.isActive())
 			{
 				dpb->add(tag, sspiData.begin(), sspiData.getCount());
 			}

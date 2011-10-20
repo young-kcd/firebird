@@ -79,6 +79,8 @@ private:
 
 static const AuthTags DB_ATTACH_LIST = {isc_dpb_auth_block, isc_dpb_trusted_auth, isc_dpb_trusted_role, 0};
 static const AuthTags SVC_ATTACH_LIST = {isc_spb_auth_block, isc_spb_trusted_auth, isc_spb_trusted_role, 1};
+static const AuthTags SVC_START_LIST = {isc_spb_auth_block, isc_spb_trusted_auth, 0, 1};
+static const AuthTags SVC_QUERY_LIST = {isc_info_svc_auth_block, 0, 0, 1};
 
 } // namespace Auth
 

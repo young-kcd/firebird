@@ -300,7 +300,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 	case SpbReceiveItems:
 		return SingleTpb;
 	case SpbStart:
-		if (spbState != 0 && tag == isc_spb_auth_block)
+		if (tag == isc_spb_auth_block || tag == isc_spb_trusted_auth)
 		{
 			return Wide;
 		}
@@ -451,7 +451,9 @@ void ClumpletReader::adjustSpbState()
 	switch (kind)
 	{
 	case SpbStart:
-		if (spbState == 0) {	// Just started with service start block
+		if (spbState == 0 &&							// Just started with service start block ...
+			getClumpletSize(true, true, true) == 1)		// and this is action_XXX clumplet
+		{
 			spbState = getClumpTag();
 		}
 		break;

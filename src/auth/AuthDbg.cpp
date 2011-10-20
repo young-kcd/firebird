@@ -61,17 +61,26 @@ Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, const
 {
 	try
 	{
-		Firebird::MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
+		Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 		str.erase();
 
-		if (dpb && dpb->find(tags->trustedAuth))
+#ifdef AUTH_VERBOSE
+		fprintf(stderr, "DebugServerInstance::startAuthentication: tA-tag=%d dpb=%p\n", tags->trustedAuth, dpb);
+#endif
+		if (tags->trustedAuth && dpb && dpb->find(tags->trustedAuth))
 		{
 			unsigned int len;
 			const UCHAR* s = dpb->get(&len);
+#ifdef AUTH_VERBOSE
+			fprintf(stderr, "DebugServerInstance::startAuthentication: get()=%.*s\n", len, s);
+#endif
 			str.assign(s, len);
 		}
 
 		str += '_';
+#ifdef AUTH_VERBOSE
+		fprintf(stderr, "DebugServerInstance::startAuthentication: %s\n", str.c_str());
+#endif
 		return AUTH_MORE_DATA;
 	}
 	catch (const Firebird::Exception& ex)
@@ -129,10 +138,16 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, const
 	try
 	{
 		str = "HAND";
-		if (dpb)
+#ifdef AUTH_VERBOSE
+		fprintf(stderr, "DebugClientInstance::startAuthentication: %s\n", str.c_str());
+#endif
+		if (dpb && tags->trustedAuth)
 		{
 			Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 			dpb->add(tags->trustedAuth, str.c_str(), str.length());
+#ifdef AUTH_VERBOSE
+			fprintf(stderr, "DebugClientInstance::startAuthentication: DPB filled\n");
+#endif
 			return AUTH_SUCCESS;
 		}
 		return AUTH_MORE_DATA;
@@ -152,7 +167,11 @@ Result FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const 
 		fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
 #endif
 		str.assign(data, size);
-		str += "SHAKE";
+		const char* env = getenv("ISC_DEBUG_AUTH");
+		if (env && env[0] && str.length() > 0 && str[str.length() - 1] == '_')
+			str = env;
+		else
+			str += "SHAKE";
 		return AUTH_CONTINUE;
 	}
 	catch (const Firebird::Exception& ex)

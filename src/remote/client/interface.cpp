@@ -570,6 +570,9 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 
 namespace Remote {
 
+typedef GetPlugins<Auth::IClient> AuthClientPlugins;
+static MakeUpgradeInfo<> upInfo;
+
 static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
@@ -589,7 +592,8 @@ static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void handle_error(ISC_STATUS);
 static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
-				 const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*);
+				 const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*,
+				 AuthClientPlugins* authItr = NULL);
 static void init(IStatus*, rem_port*, P_OP, PathName&, ClumpletWriter&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
@@ -615,6 +619,17 @@ static void server_death(rem_port*);
 static void svcstart(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT, const UCHAR*);
 static void unsupported();
 static void zap_packet(PACKET *);
+
+static void authFillParametersBlock(AuthClientPlugins& authItr,
+									ClumpletWriter& dpb,
+									const Auth::AuthTags* tags,
+									rem_port* port);
+static void authReceiveResponse(AuthClientPlugins& authItr,
+								rem_port* port,
+								Rdb* rdb,
+								const Auth::AuthTags* tags,
+								IStatus* status,
+								PACKET* packet);
 
 static AtomicCounter remote_event_id;
 
@@ -4255,9 +4270,11 @@ void Service::query(IStatus* status,
 			unsupported();
 		}
 
+		AuthClientPlugins authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
+
 		info(status, rdb, op_service_info, rdb->rdb_id, 0,
 			 sendLength, sendItems, receiveLength, receiveItems,
-			 bufferLength, buffer);
+			 bufferLength, buffer, &authItr);
 	}
 	catch (const Exception& ex)
 	{
@@ -5763,7 +5780,8 @@ static void info(IStatus* status,
 				 USHORT recv_item_length,
 				 const UCHAR* recv_items,
 				 ULONG buffer_length,
-				 UCHAR* buffer)
+				 UCHAR* buffer,
+				 AuthClientPlugins* authItr)
 {
 /**************************************
  *
@@ -5803,7 +5821,17 @@ static void info(IStatus* status,
 
 	try
 	{
-		receive_response(status, rdb, packet);
+		if (operation == op_service_info)
+		{
+			// Probably communicate with services auth
+			fb_assert(authItr);
+			authReceiveResponse(*authItr, rdb->rdb_port, rdb, &Auth::SVC_QUERY_LIST, status, packet);
+		}
+		else
+		{
+			// Just get response from server
+			receive_response(status, rdb, packet);
+		}
 	}
 	catch (const Exception&)
 	{
@@ -5814,37 +5842,14 @@ static void info(IStatus* status,
 	response->p_resp_data = temp;
 }
 
-static MakeUpgradeInfo<> upInfo;
-
-static void init(IStatus* status,
-				 rem_port* port,
-				 P_OP op,
-				 PathName& file_name,
-				 ClumpletWriter& dpb)
+// Let plugins try to add data to DPB in order to avoid extra network roundtrip
+static void authFillParametersBlock(AuthClientPlugins& authItr,
+									ClumpletWriter& dpb,
+									const Auth::AuthTags* tags,
+									rem_port* port)
 {
-/**************************************
- *
- *	i n i t
- *
- **************************************
- *
- * Functional description
- *	Initialize for database access.  First call from both CREATE and
- *	OPEN.
- *
- **************************************/
-  try
-  {
-	Rdb* rdb = port->port_context;
-	PACKET* packet = &rdb->rdb_packet;
-
-	MemoryPool& pool = *getDefaultMemoryPool();
-	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
-
-	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
-	Auth::DpbImplementation di(dpb);
 	LocalStatus s;
-	GetPlugins<Auth::IClient> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
+	Auth::DpbImplementation di(dpb);
 
 	bool working = true;
 
@@ -5854,8 +5859,7 @@ static void init(IStatus* status,
 			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(authItr.name())))
 		{
 			// OK to use plugin
-			switch(authItr.plugin()->startAuthentication(&s,
-				(op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST), &di))
+			switch(authItr.plugin()->startAuthentication(&s, tags, &di))
 			{
 			case Auth::AUTH_SUCCESS:
 				working = false;
@@ -5873,56 +5877,21 @@ static void init(IStatus* status,
 			authItr.next();
 		}
 	}
+}
 
-	if (port->port_protocol < PROTOCOL_VERSION12)
-	{
-		// This is FB < 2.5. Lets remove that not recognized DPB and convert the UTF8
-		// strings to the OS codepage.
-		dpb.deleteWithTag(isc_dpb_utf8_filename);
-		ISC_unescape(file_name);
-		ISC_utf8ToSystem(file_name);
-
-		for (dpb.rewind(); !dpb.isEof(); dpb.moveNext())
-		{
-			UCHAR tag = dpb.getClumpTag();
-			switch (tag)
-			{
-				// Do not check isc_dpb_trusted_auth here. It's just bytes.
-				case isc_dpb_org_filename:
-				case isc_dpb_user_name:
-				case isc_dpb_password:
-				case isc_dpb_sql_role_name:
-				case isc_dpb_trusted_role:
-				case isc_dpb_working_directory:
-				case isc_dpb_set_db_charset:
-				case isc_dpb_process_name:
-				{
-					string s;
-					dpb.getString(s);
-					ISC_unescape(s);
-					ISC_utf8ToSystem(s);
-					dpb.deleteClumplet();
-					dpb.insertString(tag, s);
-					break;
-				}
-			}
-		}
-	}
-
-	// Make attach packet
-	P_ATCH* attach = &packet->p_atch;
-	packet->p_operation = op;
-	attach->p_atch_file.cstr_length = file_name.length();
-	attach->p_atch_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
-	attach->p_atch_dpb.cstr_length = dpb.getBufferLength();
-	attach->p_atch_dpb.cstr_address = dpb.getBuffer();
-
-	send_packet(port, packet);
+static void authReceiveResponse(AuthClientPlugins& authItr,
+								rem_port* port,
+								Rdb* rdb,
+								const Auth::AuthTags* tags,
+								IStatus* status,
+								PACKET* packet)
+{
+	LocalStatus s;
 
 	for (;;)
 	{
 		// Get response
-		receive_packet(rdb->rdb_port, packet);
+		receive_packet(port, packet);
 
 		// Check response
 		cstring* n = NULL;
@@ -5965,8 +5934,7 @@ static void init(IStatus* status,
 
 			if (authItr.hasData())
 			{
-				Auth::Result rc = authItr.plugin()->startAuthentication(&s,
-					(op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST), NULL);
+				Auth::Result rc = authItr.plugin()->startAuthentication(&s, tags, NULL);
 
 				if (rc == Auth::AUTH_FAILED)
 				{
@@ -5997,11 +5965,11 @@ static void init(IStatus* status,
 			}
 		}
 
-
 		if (!authItr.hasData())
 		{
 			break;
 		}
+
 		// send answer (may be empty) to server
 		packet->p_operation = op_trusted_auth;
 		d = &packet->p_trau.p_trau_data;
@@ -6015,12 +5983,92 @@ static void init(IStatus* status,
 
 	// If we have exited from the cycle, this mean auth failed
 	(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
-  }
-  catch (const Exception&)
-  {
-	disconnect(port);
-	throw;
-  }
+}
+
+static void init(IStatus* status,
+				 rem_port* port,
+				 P_OP op,
+				 PathName& file_name,
+				 ClumpletWriter& dpb)
+{
+/**************************************
+ *
+ *	i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize for database access.  First call from both CREATE and
+ *	OPEN.
+ *
+ **************************************/
+	try
+	{
+		Rdb* rdb = port->port_context;
+		PACKET* packet = &rdb->rdb_packet;
+
+		MemoryPool& pool = *getDefaultMemoryPool();
+		port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
+
+		AuthClientPlugins authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
+		authFillParametersBlock(authItr, dpb,
+								op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
+								port);
+
+		if (port->port_protocol < PROTOCOL_VERSION12)
+		{
+			// This is FB < 2.5. Lets remove that not recognized DPB and convert the UTF8
+			// strings to the OS codepage.
+			dpb.deleteWithTag(isc_dpb_utf8_filename);
+			ISC_unescape(file_name);
+			ISC_utf8ToSystem(file_name);
+
+			for (dpb.rewind(); !dpb.isEof(); dpb.moveNext())
+			{
+				UCHAR tag = dpb.getClumpTag();
+				switch (tag)
+				{
+					// Do not check isc_dpb_trusted_auth here. It's just bytes.
+					case isc_dpb_org_filename:
+					case isc_dpb_user_name:
+					case isc_dpb_password:
+					case isc_dpb_sql_role_name:
+					case isc_dpb_trusted_role:
+					case isc_dpb_working_directory:
+					case isc_dpb_set_db_charset:
+					case isc_dpb_process_name:
+					{
+						string s;
+						dpb.getString(s);
+						ISC_unescape(s);
+						ISC_utf8ToSystem(s);
+						dpb.deleteClumplet();
+						dpb.insertString(tag, s);
+						break;
+					}
+				}
+			}
+		}
+
+		// Make attach packet
+		P_ATCH* attach = &packet->p_atch;
+		packet->p_operation = op;
+		attach->p_atch_file.cstr_length = file_name.length();
+		attach->p_atch_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
+		attach->p_atch_dpb.cstr_length = dpb.getBufferLength();
+		attach->p_atch_dpb.cstr_address = dpb.getBuffer();
+
+		send_packet(port, packet);
+
+		authReceiveResponse(authItr, port, rdb,
+							op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
+							status, packet);
+	}
+	catch (const Exception&)
+	{
+		disconnect(port);
+		throw;
+	}
 }
 
 
@@ -6890,27 +6938,30 @@ static void svcstart(IStatus*	status,
  *
  **************************************/
 
-	// Build the primary packet to get the operation started.
+	// Get ready for multi-hop auth
+	ClumpletWriter send(ClumpletReader::SpbStart, MAX_DPB_SIZE, items, item_length);
+	AuthClientPlugins authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
+	authFillParametersBlock(authItr, send, &Auth::SVC_START_LIST, rdb->rdb_port);
 
+	// Build the primary packet to get the operation started.
 	PACKET* packet = &rdb->rdb_packet;
 	packet->p_operation = operation;
 	P_INFO* information = &packet->p_info;
 	information->p_info_object = object;
 	information->p_info_incarnation = incarnation;
-	information->p_info_items.cstr_length = item_length;
-	information->p_info_items.cstr_address = items;
-	information->p_info_buffer_length = item_length;
+	information->p_info_items.cstr_length = send.getBufferLength();
+	information->p_info_items.cstr_address = send.getBuffer();
+	information->p_info_buffer_length = send.getBufferLength();
 
 	send_packet(rdb->rdb_port, packet);
 
 	// Set up for the response packet.
-
 	P_RESP* response = &packet->p_resp;
 	CSTRING temp = response->p_resp_data;
 
 	try
 	{
-		receive_response(status, rdb, packet);
+		authReceiveResponse(authItr, rdb->rdb_port, rdb, &Auth::SVC_START_LIST, status, packet);
 	}
 	catch (const Exception&)
 	{

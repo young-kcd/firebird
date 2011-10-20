@@ -3006,7 +3006,7 @@ public:
 					 unsigned int pSendLength, const UCHAR* pSendItems,
 					 unsigned int pReceiveLength, const UCHAR* pReceiveItems,
 					 unsigned int pBufferLength)
-		: ServerAuth(NULL, spb, Auth::SVC_ATTACH_LIST),
+		: ServerAuth(NULL, spb, Auth::SVC_QUERY_LIST),
 		  pb(spb),
 		  sendItems(getPool(), ClumpletReader::SpbSendItems, MAX_DPB_SIZE, pSendItems, pSendLength, 0),
 		  receiveItems(getPool()),
@@ -4763,7 +4763,7 @@ class ServiceStartAuth : public ServerAuth
 {
 public:
 	ServiceStartAuth(PathName& dbName, ClumpletWriter* authSpb, ClumpletWriter* origSpb)
-		: ServerAuth(dbName.hasData() ? &dbName : NULL, authSpb, Auth::SVC_ATTACH_LIST),
+		: ServerAuth(dbName.hasData() ? &dbName : NULL, authSpb, Auth::SVC_START_LIST),
 		  authPb(authSpb), startPb(origSpb)
 	{ }
 
@@ -4778,6 +4778,10 @@ public:
 			return;
 		}
 
+		while (startPb->find(isc_spb_trusted_auth))
+		{
+			startPb->deleteClumplet();
+		}
 		authBlock->store(startPb, isc_spb_auth_block);
 
 		rdb->rdb_svc->svc_iface->start(&status_vector, startPb->getBufferLength(), startPb->getBuffer());
@@ -4831,12 +4835,23 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 			stuff->p_info_items.cstr_length);
 
 		PathName dbName;
-		for (spb->rewind(); !spb->isEof(); spb->moveNext())
+		for (spb->rewind(); !spb->isEof(); )
 		{
-			if (spb->getClumpTag() == isc_spb_dbname)
+			bool fDel = false;
+			switch(spb->getClumpTag())
 			{
+			case isc_spb_dbname:
 				spb->getPath(dbName);
 				break;
+			case isc_spb_trusted_auth:
+				authParams->insertBytes(isc_spb_trusted_auth, spb->getBytes(), spb->getClumpLength());
+				spb->deleteClumplet();
+				fDel = true;
+				break;
+			}
+			if (!fDel)
+			{
+				spb->moveNext();
 			}
 		}
 

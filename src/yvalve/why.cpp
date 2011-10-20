@@ -4673,7 +4673,6 @@ IService* YService::getNextService(int mode, IStatus* status)
 			if (queryCache.next)
 				return queryCache.next;
 
-			attachSpb->dump();
 			queryCache.next = getServiceManagerByName(&queryCache.provider, status, attachName.c_str(),
 				(attachSpb ? attachSpb->getBufferLength() : 0),
 				(attachSpb ? attachSpb->getBuffer() : NULL));
@@ -4751,12 +4750,15 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 	try
 	{
 		ClumpletWriter spb(ClumpletReader::SpbSendItems, MAX_DPB_SIZE, sendItems, sendLength);
-		populateSpb(spb, isc_info_svc_auth_block);
+		if (!regular.next)
+		{
+			populateSpb(spb, isc_info_svc_auth_block);
+		}
 
 		checkSpbLen = receiveLength;
 		checkSpbPresent = receiveItems;
 		YEntry<YService> entry(status, this, SERV_QUERY);
-		entry.next()->query(status, sendLength, sendItems, receiveLength, receiveItems,
+		entry.next()->query(status, spb.getBufferLength(), spb.getBuffer(), receiveLength, receiveItems,
 			bufferLength, buffer);
 		checkSpbLen = 0;
 		checkSpbPresent = NULL;
@@ -4774,7 +4776,10 @@ void YService::start(IStatus* status, unsigned int spbLength, const unsigned cha
 	try
 	{
 		ClumpletWriter spb(ClumpletReader::SpbStart, MAX_DPB_SIZE, spbItems, spbLength);
-		populateSpb(spb, isc_spb_auth_block);
+		if (!regular.next)
+		{
+			populateSpb(spb, isc_spb_auth_block);
+		}
 
 		YEntry<YService> entry(status, this, SERV_START);
 		entry.next()->start(status, spb.getBufferLength(), spb.getBuffer());
@@ -5066,12 +5071,14 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 			status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svc_name_missing));
 
 		if (spbLength > 0 && !spb)
-			status_exception::raise(Arg::Gds(isc_bad_spb_form));
+			status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
+									Arg::Gds(isc_random) << "NULL data with non-zero SPB length");
 
 		PathName svcName(serviceName);
 		svcName.trim();
 
-		if (ISC_check_if_remote(svcName, false))
+		ClumpletReader spbReader(ClumpletReader::SpbAttach, spb, spbLength);
+		if ((spbReader.find(isc_spb_auth_block) && spbReader.getClumpLength() > 0) || ISC_check_if_remote(svcName, false))
 		{
 			IProvider* provider = NULL;
 			service = getServiceManagerByName(&provider, status, svcName.c_str(), spbLength, spb);
