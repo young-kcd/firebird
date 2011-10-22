@@ -1,3 +1,14 @@
+ 2011-10-20 12:20  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/common/Auth.h
+   M src/common/classes/ClumpletReader.cpp
+   M src/jrd/svc.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Fixed services to make them work with trusted auth emulator and old client
+
  2011-10-18 18:02  dimitr 
    M src/jrd/Attachment.cpp
    M src/jrd/Attachment.h
