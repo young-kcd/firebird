@@ -279,7 +279,7 @@ LagLeadWinNode::LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aD
 	addChildNode(dsqlOutExpr, outExpr);
 }
 
-void LagLeadWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count)
+void LagLeadWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
 {
 	arg = PAR_parse_value(tdbb, csb);
 	rows = PAR_parse_value(tdbb, csb);
@@ -300,9 +300,6 @@ void LagLeadWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 void LagLeadWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
-
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	impure->make_int64(0, 0);
 }
 
 void LagLeadWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
