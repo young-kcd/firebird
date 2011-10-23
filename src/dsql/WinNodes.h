@@ -95,6 +95,33 @@ protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 };
 
+// FIRST_VALUE function.
+class FirstValueWinNode : public WinFuncNode
+{
+public:
+	explicit FirstValueWinNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual bool shouldCallWinPass() const
+	{
+		return true;
+	}
+
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+
+protected:
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
+};
+
 // LAG/LEAD function.
 class LagLeadWinNode : public WinFuncNode
 {

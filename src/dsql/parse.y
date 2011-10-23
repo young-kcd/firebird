@@ -575,6 +575,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> DETERMINISTIC
 %token <legacyNode> IDENTITY
 %token <legacyNode> DENSE_RANK
+%token <legacyNode> FIRST_VALUE
 %token <legacyNode> LAG
 %token <legacyNode> LEAD
 %token <legacyNode> RANK
@@ -5735,6 +5736,8 @@ window_function
 		{ $$ = newNode<RankWinNode>(); }
 	| ROW_NUMBER '(' ')'
 		{ $$ = newNode<RowNumberWinNode>(); }
+	| FIRST_VALUE '(' value ')'
+		{ $$ = newNode<FirstValueWinNode>($3); }
 	| LAG '(' value ',' value ',' value ')'
 		{ $$ = newNode<LagWinNode>($3, $5, $7); }
 	| LAG '(' value ',' value ')'
@@ -6505,6 +6508,7 @@ non_reserved_word
 	| RDB_SET_CONTEXT
 	| KW_RELATIVE
 	| DENSE_RANK
+	| FIRST_VALUE
 	| LAG
 	| LEAD
 	| RANK

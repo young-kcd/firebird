@@ -188,6 +188,7 @@ static const TOK tokens[] =
 	{KW_FILE, "FILE", 1, false},
 	{FILTER, "FILTER", 1, false},
 	{FIRST, "FIRST", 2, true},
+	{FIRST_VALUE, "FIRST_VALUE", 2, false},
 	{FIRSTNAME, "FIRSTNAME", 2, false},
 	{KW_FLOAT, "FLOAT", 1, false},
 	{FLOOR, "FLOOR", 2, false},
