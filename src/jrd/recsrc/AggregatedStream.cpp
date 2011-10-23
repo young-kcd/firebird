@@ -526,7 +526,8 @@ SlidingWindow::SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream
 	: tdbb(aTdbb),	// Note: instanciate the class only as local variable
 	  stream(aStream),
 	  group(aGroup),
-	  request(aRequest)
+	  request(aRequest),
+	  moved(false)
 {
 	savedPosition = stream->getPosition(request);
 }
