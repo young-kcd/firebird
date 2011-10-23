@@ -15,21 +15,24 @@ MERGE statement
 			INTO <table or view> [ [AS] <correlation name> ]
 			USING <table or view or derived table> [ [AS] <correlation name> ]
 			ON <condition>
-			[ <merge when matched> ]
-			[ <merge when not matched> ]
+			<merge when>...
+			<returning clause>
+
+	<merge when> ::=
+		<merge when matched> |
+		<merge when not matched>
 
 	<merge when matched> ::=
-		WHEN MATCHED THEN
+		WHEN MATCHED [ AND <condition> ] THEN
 			UPDATE SET <assignment list>
 
 	<merge when not matched> ::=
-		WHEN NOT MATCHED THEN
+		WHEN NOT MATCHED [ AND <condition> ] THEN
 			INSERT [ <left paren> <column list> <right paren> ]
 				VALUES <left paren> <value list> <right paren>
 
   Syntax rules:
-	1. At least one of <merge when matched> and <merge when not matched> should be specified
-	   and each one should not be specified more than one time.
+	1. At least one of <merge when matched> and <merge when not matched> should be specified.
 
   Scope:
     DSQL, PSQL
@@ -51,5 +54,10 @@ MERGE statement
 	A right join is made between INTO and USING tables using the condition.
 	UPDATE is called when a record exist in the left table (INTO), otherwise
 	INSERT is called.
+
+	As soon is decided if the source matched or not a record in the target, the set of the
+	correspondent (WHEN MATCHED / WHEN NOT MATCHED) statements are evaluated in the order specified,
+	to check its optional conditions. The first statement which have its condition evaluated to true
+	is the one which will be executed, and the subsequent ones will be ignored.
 
 	If no record is returned in the join, INSERT is not called.

@@ -4789,47 +4789,62 @@ merge
 	;
 
 merge_when_clause($mergeNode)
-	: merge_when_matched_clause($mergeNode) merge_when_not_matched_clause($mergeNode)
-	| merge_when_not_matched_clause($mergeNode) merge_when_matched_clause($mergeNode)
-	| merge_when_matched_clause($mergeNode)
+	: merge_when_matched_clause($mergeNode)
 	| merge_when_not_matched_clause($mergeNode)
+	| merge_when_clause merge_when_matched_clause($mergeNode)
+	| merge_when_clause merge_when_not_matched_clause($mergeNode)
 	;
 
 merge_when_matched_clause($mergeNode)
 	: WHEN MATCHED merge_update_specification($mergeNode)
-		{ $mergeNode->dsqlWhenMatchedPresent = true; }
 	;
 
 merge_when_not_matched_clause($mergeNode)
 	: WHEN NOT MATCHED merge_insert_specification($mergeNode)
-		{ $mergeNode->dsqlWhenNotMatchedPresent = true; }
 	;
 
 merge_update_specification($mergeNode)
 	: THEN UPDATE SET assignments
-		{ $mergeNode->dsqlWhenMatchedAssignments = $4; }
+		{
+			MergeNode::Matched when;
+			when.assignments = $4;
+			$mergeNode->dsqlWhenMatched.add(when);
+		}
 	| AND search_condition THEN UPDATE SET assignments
 		{
-			$mergeNode->dsqlWhenMatchedAssignments = $6;
-			$mergeNode->dsqlWhenMatchedCondition = $2;
+			MergeNode::Matched when;
+			when.assignments = $6;
+			when.condition = $2;
+			$mergeNode->dsqlWhenMatched.add(when);
 		}
 	| THEN KW_DELETE
-		// Nothing to do here.
+		{
+			MergeNode::Matched when;
+			$mergeNode->dsqlWhenMatched.add(when);
+		}
 	| AND search_condition THEN KW_DELETE
-		{ $mergeNode->dsqlWhenMatchedCondition = $2; }
+		{
+			MergeNode::Matched when;
+			when.condition = $2;
+			$mergeNode->dsqlWhenMatched.add(when);
+		}
 	;
 
 merge_insert_specification($mergeNode)
 	: THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
 		{
-			$mergeNode->dsqlWhenNotMatchedFields = make_list($3);
-			$mergeNode->dsqlWhenNotMatchedValues = make_list($6);
+			MergeNode::NotMatched when;
+			when.fields = make_list($3);
+			when.values = make_list($6);
+			$mergeNode->dsqlWhenNotMatched.add(when);
 		}
 	| AND search_condition THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
 		{
-			$mergeNode->dsqlWhenNotMatchedFields = make_list($5);
-			$mergeNode->dsqlWhenNotMatchedValues = make_list($8);
-			$mergeNode->dsqlWhenNotMatchedCondition = $2;
+			MergeNode::NotMatched when;
+			when.fields = make_list($5);
+			when.values = make_list($8);
+			when.condition = $2;
+			$mergeNode->dsqlWhenNotMatched.add(when);
 		}
 	;
 

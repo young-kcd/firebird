@@ -128,12 +128,12 @@ namespace
 		// Play with contexts for RETURNING purposes.
 		// Its assumed that oldContext is already on the stack.
 		// Changes oldContext name to "OLD".
-		ReturningProcessor(DsqlCompilerScratch* aScratch, dsql_ctx* oldContext, dsql_ctx* modContext)
+		ReturningProcessor(DsqlCompilerScratch* aScratch, dsql_ctx* aOldContext, dsql_ctx* modContext)
 			: scratch(aScratch),
-			  autoAlias(&oldContext->ctx_alias, OLD_CONTEXT),
-			  autoInternalAlias(&oldContext->ctx_internal_alias, oldContext->ctx_alias),
-			  autoFlags(&oldContext->ctx_flags, oldContext->ctx_flags | CTX_system | CTX_returning),
-			  hasModContext(modContext != NULL)
+			  oldContext(aOldContext),
+			  oldAlias(oldContext->ctx_alias),
+			  oldInternalAlias(oldContext->ctx_internal_alias),
+			  autoFlags(&oldContext->ctx_flags, oldContext->ctx_flags | CTX_system | CTX_returning)
 		{
 			// Clone the modify/old context and push with name "NEW" in a greater scope level.
 
@@ -141,20 +141,25 @@ namespace
 
 			if (modContext)
 			{
-				// push the modify context in the same scope level
+				// Push the modify context in the same scope level.
 				scratch->context->push(modContext);
 				*newContext = *modContext;
 				newContext->ctx_flags |= CTX_system;
 			}
 			else
 			{
+				// Create the target (= OLD) context and push it on the stack.
+				dsql_ctx* targetContext = FB_NEW(scratch->getPool()) dsql_ctx(scratch->getPool());
+				*targetContext = *oldContext;
+				targetContext->ctx_flags &= ~CTX_system;	// resolve unqualified fields
+				scratch->context->push(targetContext);
+
 				// This is NEW in the context of a DELETE. Mark it as NULL.
 				*newContext = *oldContext;
 				newContext->ctx_flags |= CTX_null;
-
-				// Remove the system flag, so unqualified fields could be resolved to this context.
-				oldContext->ctx_flags &= ~CTX_system;
 			}
+
+			oldContext->ctx_alias = oldContext->ctx_internal_alias = OLD_CONTEXT;
 
 			newContext->ctx_alias = newContext->ctx_internal_alias =
 				MAKE_cstring(NEW_CONTEXT)->str_data;
@@ -164,10 +169,12 @@ namespace
 
 		~ReturningProcessor()
 		{
+			oldContext->ctx_alias = oldAlias;
+			oldContext->ctx_internal_alias = oldInternalAlias;
+
 			// Restore the context stack.
 			scratch->context->pop();
-			if (hasModContext)
-				scratch->context->pop();
+			scratch->context->pop();
 		}
 
 		// Process the RETURNING clause.
@@ -208,8 +215,8 @@ namespace
 
 	private:
 		DsqlCompilerScratch* scratch;
-		AutoSetRestore<string> autoAlias;
-		AutoSetRestore<string> autoInternalAlias;
+		dsql_ctx* oldContext;
+		string oldAlias, oldInternalAlias;
 		AutoSetRestore<USHORT> autoFlags;
 		bool hasModContext;
 	};
@@ -4752,8 +4759,6 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	dsql_nod* source = dsqlUsing;		// USING
 	dsql_nod* target = dsqlRelation;	// INTO
-	dsql_nod* updDelCondition = dsqlWhenMatchedCondition;
-	dsql_nod* insCondition = dsqlWhenNotMatchedCondition;
 
 	// Build a join between USING and INTO tables.
 	RseNode* join = FB_NEW(pool) RseNode(pool);
@@ -4763,7 +4768,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	join->dsqlFrom->nod_arg[0] = source;
 
 	// Left join if WHEN NOT MATCHED is present.
-	if (dsqlWhenNotMatchedPresent)
+	if (dsqlWhenNotMatched.hasData())
 		join->rse_jointype = blr_left;
 
 	join->dsqlFrom->nod_arg[1] = target;
@@ -4777,13 +4782,40 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	dsql_nod* querySpecNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 	querySpecNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(querySpec);
 
-	if (updDelCondition || insCondition)
+	dsql_nod* matchedConditions = NULL;
+	dsql_nod* notMatchedConditions = NULL;
+
+	for (Matched* matched = dsqlWhenMatched.begin(); matched != dsqlWhenMatched.end(); ++matched)
+	{
+		if (matched->condition)
+			matchedConditions = PASS1_compose(matchedConditions, matched->condition, blr_or);
+		else
+		{
+			matchedConditions = NULL;
+			break;
+		}
+	}
+
+	for (NotMatched* notMatched = dsqlWhenNotMatched.begin();
+		 notMatched != dsqlWhenNotMatched.end();
+		 ++notMatched)
+	{
+		if (notMatched->condition)
+			notMatchedConditions = PASS1_compose(notMatchedConditions, notMatched->condition, blr_or);
+		else
+		{
+			notMatchedConditions = NULL;
+			break;
+		}
+	}
+
+	if (matchedConditions || notMatchedConditions)
 	{
 		const char* targetName = ExprNode::as<RelationSourceNode>(target)->alias.nullStr();
 		if (!targetName)
 			targetName = ExprNode::as<RelationSourceNode>(target)->dsqlName.c_str();
 
-		if (dsqlWhenMatchedPresent)	// WHEN MATCHED
+		if (dsqlWhenMatched.hasData())	// WHEN MATCHED
 		{
 			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
 				pool, MAKE_node(Dsql::nod_class_exprnode, 1));
@@ -4796,14 +4828,14 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			querySpec->dsqlWhere = MAKE_node(Dsql::nod_class_exprnode, 1);
 			querySpec->dsqlWhere->nod_arg[0] = reinterpret_cast<dsql_nod*>(notNode);
-		}
 
-		if (updDelCondition)
-			querySpec->dsqlWhere = PASS1_compose(querySpec->dsqlWhere, updDelCondition, blr_and);
+			if (matchedConditions)
+				querySpec->dsqlWhere = PASS1_compose(querySpec->dsqlWhere, matchedConditions, blr_and);
+		}
 
 		dsql_nod* temp = NULL;
 
-		if (dsqlWhenNotMatchedPresent)	// WHEN NOT MATCHED
+		if (dsqlWhenNotMatched.hasData())	// WHEN NOT MATCHED
 		{
 			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
 				pool, MAKE_node(Dsql::nod_class_exprnode, 1));
@@ -4813,8 +4845,8 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			temp = MAKE_node(Dsql::nod_class_exprnode, 1);
 			temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
 
-			if (insCondition)
-				temp = PASS1_compose(temp, insCondition, blr_and);
+			if (notMatchedConditions)
+				temp = PASS1_compose(temp, notMatchedConditions, blr_and);
 
 			querySpec->dsqlWhere = PASS1_compose(querySpec->dsqlWhere, temp, blr_or);
 		}
@@ -4845,113 +4877,124 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	DsqlContextStack usingCtxs;
 	dsqlGetContexts(usingCtxs, source);
 
-	StmtNode* update = NULL;
-	StmtNode* matchedRet = NULL;
+	StmtNode* processedRet = NULL;
 	StmtNode* nullRet = NULL;
 
-	if (dsqlWhenMatchedPresent && dsqlWhenMatchedAssignments)
+	StmtNode* update = NULL;
+	IfNode* lastIf = NULL;
+
+	for (Matched* matched = dsqlWhenMatched.begin(); matched != dsqlWhenMatched.end(); ++matched)
 	{
-		// Get the assignments of the UPDATE dsqlScratch.
-		CompoundStmtNode* stmts = dsqlWhenMatchedAssignments;
-		Array<dsql_nod*> org_values, new_values;
+		IfNode* thisIf = FB_NEW(pool) IfNode(pool);
 
-		// Separate the new and org values to process in correct contexts.
-		for (size_t i = 0; i < stmts->statements.getCount(); ++i)
+		if (matched->assignments)
 		{
-			const AssignmentNode* const assign = stmts->statements[i]->as<AssignmentNode>();
-			fb_assert(assign);
-			org_values.add(assign->dsqlAsgnFrom);
-			new_values.add(assign->dsqlAsgnTo);
-		}
+			// Get the assignments of the UPDATE dsqlScratch.
+			CompoundStmtNode* stmts = matched->assignments;
+			Array<dsql_nod*> orgValues, newValues;
 
-		// Build the MODIFY node.
-		ModifyNode* modify = FB_NEW(pool) ModifyNode(pool);
+			// Separate the new and org values to process in correct contexts.
+			for (size_t i = 0; i < stmts->statements.getCount(); ++i)
+			{
+				const AssignmentNode* const assign = stmts->statements[i]->as<AssignmentNode>();
+				fb_assert(assign);
+				orgValues.add(assign->dsqlAsgnFrom);
+				newValues.add(assign->dsqlAsgnTo);
+			}
 
-		dsql_ctx* const old_context = dsqlGetContext(target);
-		dsql_nod** ptr;
+			// Build the MODIFY node.
+			ModifyNode* modify = FB_NEW(pool) ModifyNode(pool);
+			thisIf->trueAction = modify;
 
-		modify->dsqlContext = old_context;
+			dsql_ctx* const oldContext = dsqlGetContext(target);
 
-		++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
+			modify->dsqlContext = oldContext;
 
-		for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
-			dsqlScratch->context->push(itr.object());	// push the USING contexts
-
-		dsqlScratch->context->push(old_context);	// process old context values
-
-		for (ptr = org_values.begin(); ptr != org_values.end(); ++ptr)
-			*ptr = PASS1_node_psql(dsqlScratch, *ptr, false);
-
-		// And pop the contexts.
-		dsqlScratch->context->pop();
-		dsqlScratch->context->pop();
-		--dsqlScratch->scopeLevel;
-
-		// Process relation.
-		modify->dsqlRelation = PASS1_relation(dsqlScratch, dsqlRelation);
-		dsql_ctx* mod_context = dsqlGetContext(modify->dsqlRelation);
-
-		// Process new context values.
-		for (ptr = new_values.begin(); ptr != new_values.end(); ++ptr)
-			*ptr = PASS1_node_psql(dsqlScratch, *ptr, false);
-
-		dsqlScratch->context->pop();
-
-		if (dsqlReturning)
-		{
-			// Repush the source contexts.
 			++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
 
 			for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
 				dsqlScratch->context->push(itr.object());	// push the USING contexts
 
-			dsqlScratch->context->push(old_context);	// process old context values
+			dsqlScratch->context->push(oldContext);	// process old context values
 
-			mod_context->ctx_scope_level = old_context->ctx_scope_level;
+			if (matched->condition)
+				thisIf->dsqlCondition = PASS1_node_psql(dsqlScratch, matched->condition, false);
 
-			matchedRet = modify->statement2 = ReturningProcessor(
-				dsqlScratch, old_context, mod_context).process(dsqlReturning, NULL);
+			dsql_nod** ptr;
 
-			nullRet = dsqlNullifyReturning(dsqlScratch, modify, false);
+			for (ptr = orgValues.begin(); ptr != orgValues.end(); ++ptr)
+				*ptr = PASS1_node_psql(dsqlScratch, *ptr, false);
 
-			// And pop them.
+			// And pop the contexts.
 			dsqlScratch->context->pop();
 			dsqlScratch->context->pop();
 			--dsqlScratch->scopeLevel;
+
+			// Process relation.
+			modify->dsqlRelation = PASS1_relation(dsqlScratch, dsqlRelation);
+			dsql_ctx* modContext = dsqlGetContext(modify->dsqlRelation);
+
+			// Process new context values.
+			for (ptr = newValues.begin(); ptr != newValues.end(); ++ptr)
+				*ptr = PASS1_node_psql(dsqlScratch, *ptr, false);
+
+			dsqlScratch->context->pop();
+
+			if (dsqlReturning)
+			{
+				StmtNode* updRet = ReturningProcessor::clone(dsqlScratch, dsqlReturning, processedRet);
+
+				// Repush the source contexts.
+				++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
+
+				for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
+					dsqlScratch->context->push(itr.object());	// push the USING contexts
+
+				dsqlScratch->context->push(oldContext);	// process old context values
+
+				modContext->ctx_scope_level = oldContext->ctx_scope_level;
+
+				processedRet = modify->statement2 = ReturningProcessor(
+					dsqlScratch, oldContext, modContext).process(dsqlReturning, updRet);
+
+				nullRet = dsqlNullifyReturning(dsqlScratch, modify, false);
+
+				// And pop them.
+				dsqlScratch->context->pop();
+				dsqlScratch->context->pop();
+				--dsqlScratch->scopeLevel;
+			}
+
+			// Recreate the list of assignments.
+
+			CompoundStmtNode* assignStatements = FB_NEW(pool) CompoundStmtNode(pool);
+			modify->statement = assignStatements;
+
+			assignStatements->statements.resize(stmts->statements.getCount());
+
+			for (size_t i = 0; i < assignStatements->statements.getCount(); ++i)
+			{
+				if (!PASS1_set_parameter_type(dsqlScratch, orgValues[i], newValues[i], false))
+					PASS1_set_parameter_type(dsqlScratch, newValues[i], orgValues[i], false);
+
+				AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
+				assign->dsqlAsgnFrom = orgValues[i];
+				assign->dsqlAsgnTo = newValues[i];
+				assignStatements->statements[i] = assign;
+			}
+
+			// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
+			dsqlFieldAppearsOnce(newValues, "MERGE");
 		}
-
-		// Recreate the list of assignments.
-
-		CompoundStmtNode* assignStatements = FB_NEW(pool) CompoundStmtNode(pool);
-		modify->statement = assignStatements;
-
-		assignStatements->statements.resize(stmts->statements.getCount());
-
-		for (size_t i = 0; i < assignStatements->statements.getCount(); ++i)
+		else
 		{
-			if (!PASS1_set_parameter_type(dsqlScratch, org_values[i], new_values[i], false))
-				PASS1_set_parameter_type(dsqlScratch, new_values[i], org_values[i], false);
+			// Build the DELETE node.
+			EraseNode* erase = FB_NEW(pool) EraseNode(pool);
+			thisIf->trueAction = erase;
 
-			AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
-			assign->dsqlAsgnFrom = org_values[i];
-			assign->dsqlAsgnTo = new_values[i];
-			assignStatements->statements[i] = assign;
-		}
+			dsql_ctx* context = dsqlGetContext(target);
+			erase->dsqlContext = context;
 
-		// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
-		dsqlFieldAppearsOnce(new_values, "MERGE");
-
-		update = modify;
-	}
-	else if (dsqlWhenMatchedPresent && !dsqlWhenMatchedAssignments)
-	{
-		// build the DELETE node
-		EraseNode* erase = FB_NEW(pool) EraseNode(pool);
-		dsql_ctx* context = dsqlGetContext(target);
-		erase->dsqlContext = context;
-
-		if (dsqlReturning)
-		{
 			++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
 
 			for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
@@ -4959,10 +5002,18 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			dsqlScratch->context->push(context);	// process old context values
 
-			matchedRet = erase->statement = ReturningProcessor(
-				dsqlScratch, context, NULL).process(dsqlReturning, NULL);
+			if (matched->condition)
+				thisIf->dsqlCondition = PASS1_node_psql(dsqlScratch, matched->condition, false);
 
-			nullRet = dsqlNullifyReturning(dsqlScratch, erase, false);
+			if (dsqlReturning)
+			{
+				StmtNode* delRet = ReturningProcessor::clone(dsqlScratch, dsqlReturning, processedRet);
+
+				processedRet = erase->statement = ReturningProcessor(
+					dsqlScratch, context, NULL).process(dsqlReturning, delRet);
+
+				nullRet = dsqlNullifyReturning(dsqlScratch, erase, false);
+			}
 
 			// And pop the contexts.
 			dsqlScratch->context->pop();
@@ -4970,13 +5021,27 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			--dsqlScratch->scopeLevel;
 		}
 
-		update = erase;
+		if (lastIf)
+			lastIf->falseAction = thisIf->dsqlCondition ? thisIf : thisIf->trueAction;
+		else
+			update = thisIf->dsqlCondition ? thisIf : thisIf->trueAction;
+
+		lastIf = thisIf;
+
+		// If a statement executes unconditionally, no other will ever execute.
+		if (!thisIf->dsqlCondition)
+			break;
 	}
 
 	StmtNode* insert = NULL;
+	lastIf = NULL;
 
-	if (dsqlWhenNotMatchedPresent)
+	for (NotMatched* notMatched = dsqlWhenNotMatched.begin();
+		 notMatched != dsqlWhenNotMatched.end();
+		 ++notMatched)
 	{
+		IfNode* thisIf = FB_NEW(pool) IfNode(pool);
+
 		++dsqlScratch->scopeLevel;	// Go to the same level of the source context.
 
 		for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
@@ -4988,29 +5053,32 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		// Build the INSERT node.
 		StoreNode* store = FB_NEW(pool) StoreNode(pool);
 		store->dsqlRelation = dsqlRelation;
-		store->dsqlFields = dsqlWhenNotMatchedFields;
-		store->dsqlValues = dsqlWhenNotMatchedValues;
+		store->dsqlFields = notMatched->fields;
+		store->dsqlValues = notMatched->values;
 
-		store = store->internalDsqlPass(dsqlScratch, false)->as<StoreNode>();
+		thisIf->trueAction = store = store->internalDsqlPass(dsqlScratch, false)->as<StoreNode>();
 		fb_assert(store);
+
+		if (notMatched->condition)
+			thisIf->dsqlCondition = PASS1_node_psql(dsqlScratch, notMatched->condition, false);
 
 		// Restore the scope level.
 		--dsqlScratch->scopeLevel;
 
-		StmtNode* insRet = ReturningProcessor::clone(dsqlScratch, dsqlReturning, matchedRet);
-
 		if (dsqlReturning)
 		{
-			dsql_ctx* const old_context = dsqlGetContext(target);
-			dsqlScratch->context->push(old_context);
+			StmtNode* insRet = ReturningProcessor::clone(dsqlScratch, dsqlReturning, processedRet);
+
+			dsql_ctx* const oldContext = dsqlGetContext(target);
+			dsqlScratch->context->push(oldContext);
 
 			dsql_ctx* context = dsqlGetContext(store->dsqlRelation);
-			context->ctx_scope_level = old_context->ctx_scope_level;
+			context->ctx_scope_level = oldContext->ctx_scope_level;
 
-			store->statement2 = ReturningProcessor(
-				dsqlScratch, old_context, context).process(dsqlReturning, insRet);
+			processedRet = store->statement2 = ReturningProcessor(
+				dsqlScratch, oldContext, context).process(dsqlReturning, insRet);
 
-			if (!matchedRet)
+			if (!processedRet)
 				nullRet = dsqlNullifyReturning(dsqlScratch, store, false);
 
 			dsqlScratch->context->pop();
@@ -5020,7 +5088,16 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->context->pop();
 		--dsqlScratch->scopeLevel;
 
-		insert = store;
+		if (lastIf)
+			lastIf->falseAction = thisIf->dsqlCondition ? thisIf : thisIf->trueAction;
+		else
+			insert = thisIf->dsqlCondition ? thisIf : thisIf->trueAction;
+
+		lastIf = thisIf;
+
+		// If a statement executes unconditionally, no other will ever execute.
+		if (!thisIf->dsqlCondition)
+			break;
 	}
 
 	MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(

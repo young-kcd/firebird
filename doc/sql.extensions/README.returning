@@ -4,7 +4,7 @@ RETURNING clause
 
   Function:
     Allow to return the column values actually stored in the table as a result of the "INSERT",
-    "UPDATE OR INSERT", UPDATE and DELETE statements.
+    "UPDATE OR INSERT", UPDATE, DELETE and MERGE statements.
     The most common usage is to retrieve the value of the primary key generated inside a BEFORE-trigger.
 
   Authors:
@@ -41,12 +41,15 @@ RETURNING clause
        so the existing connectivity drivers should support this feature automagically.
     4. Any explicit record change (update or delete) performed by AFTER-triggers is ignored by
        the RETURNING clause.
-    5. OLD and NEW could be used in RETURNING clause of UPDATE and INSERT OR UPDATE statements.
+    5. OLD and NEW could be used in RETURNING clause of UPDATE, INSERT OR UPDATE and MERGE statements.
     6. In UPDATE and INSERT OR UPDATE statements, unqualified or qualified by table name/alias
        fields are resolved to NEW.
+    7. In MERGE WHEN MATCHED UPDATE and MERGE WHEN NOT MATCHED statements, unqualified or qualified
+       by table name/alias fields are resolved to NEW. In MERGE WHEN MATCHED DELETE they are
+       resolved to OLD.
 
   Limitations:
-    1. The modify statement (INSERT, UPDATE, DELETE) should operate in no more than one record
+    1. The modify statement (INSERT, UPDATE, DELETE, MERGE) should operate in no more than one record
        (i.e. should be singleton).
     2. The statement always return one row in DSQL, even if no record is inserted/updated/deleted.
        This may be changed in the future (i.e. return empty resultset).

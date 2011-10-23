@@ -937,18 +937,39 @@ public:
 class MergeNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>
 {
 public:
+	struct Matched
+	{
+		Matched()
+			: assignments(NULL),
+			  condition(NULL)
+		{
+		}
+
+		CompoundStmtNode* assignments;
+		dsql_nod* condition;
+	};
+
+	struct NotMatched
+	{
+		NotMatched()
+			: fields(NULL),
+			  values(NULL),
+			  condition(NULL)
+		{
+		}
+
+		dsql_nod* fields;
+		dsql_nod* values;
+		dsql_nod* condition;
+	};
+
 	explicit MergeNode(MemoryPool& pool, dsql_nod* val = NULL)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>(pool),
 		  dsqlRelation(NULL),
 		  dsqlUsing(NULL),
 		  dsqlCondition(NULL),
-		  dsqlWhenMatchedPresent(false),
-		  dsqlWhenMatchedAssignments(NULL),
-		  dsqlWhenMatchedCondition(NULL),
-		  dsqlWhenNotMatchedPresent(false),
-		  dsqlWhenNotMatchedFields(NULL),
-		  dsqlWhenNotMatchedValues(NULL),
-		  dsqlWhenNotMatchedCondition(NULL),
+		  dsqlWhenMatched(pool),
+		  dsqlWhenNotMatched(pool),
 		  dsqlReturning(NULL)
 	{
 	}
@@ -961,13 +982,8 @@ public:
 	dsql_nod* dsqlRelation;
 	dsql_nod* dsqlUsing;
 	dsql_nod* dsqlCondition;
-	bool dsqlWhenMatchedPresent;
-	CompoundStmtNode* dsqlWhenMatchedAssignments;
-	dsql_nod* dsqlWhenMatchedCondition;
-	bool dsqlWhenNotMatchedPresent;
-	dsql_nod* dsqlWhenNotMatchedFields;
-	dsql_nod* dsqlWhenNotMatchedValues;
-	dsql_nod* dsqlWhenNotMatchedCondition;
+	Firebird::Array<Matched> dsqlWhenMatched;
+	Firebird::Array<NotMatched> dsqlWhenNotMatched;
 	ReturningClause* dsqlReturning;
 };
 
