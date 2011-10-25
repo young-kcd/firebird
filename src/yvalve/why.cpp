@@ -4583,7 +4583,10 @@ static IService* getServiceManagerByName(IProvider** provider, IStatus* status,
 	}
 
 	if (status->isSuccess())
-		Arg::Gds(isc_service_att_err).copyTo(status);
+	{
+		(Arg::Gds(isc_service_att_err) <<
+		 Arg::Gds(isc_random) << "No providers loaded").copyTo(status);
+	}
 
 	return NULL;
 }
