@@ -5738,6 +5738,10 @@ window_function
 		{ $$ = newNode<RowNumberWinNode>(); }
 	| FIRST_VALUE '(' value ')'
 		{ $$ = newNode<FirstValueWinNode>($3); }
+	| LAST_VALUE '(' value ')'
+		{ $$ = newNode<LastValueWinNode>($3); }
+	| NTH_VALUE '(' value ',' value ')'
+		{ $$ = newNode<NthValueWinNode>($3, $5); }
 	| LAG '(' value ',' value ',' value ')'
 		{ $$ = newNode<LagWinNode>($3, $5, $7); }
 	| LAG '(' value ',' value ')'

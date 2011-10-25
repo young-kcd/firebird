@@ -122,6 +122,64 @@ protected:
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 };
 
+// LAST_VALUE function.
+class LastValueWinNode : public WinFuncNode
+{
+public:
+	explicit LastValueWinNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual bool shouldCallWinPass() const
+	{
+		return true;
+	}
+
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+
+protected:
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
+};
+
+// NTH_VALUE function.
+class NthValueWinNode : public WinFuncNode
+{
+public:
+	explicit NthValueWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRow = NULL);
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual bool shouldCallWinPass() const
+	{
+		return true;
+	}
+
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+
+protected:
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
+
+private:
+	dsql_nod* dsqlRow;
+	NestConst<ValueExprNode> row;
+};
+
 // LAG/LEAD function.
 class LagLeadWinNode : public WinFuncNode
 {

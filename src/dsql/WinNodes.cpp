@@ -337,6 +337,172 @@ AggNode* FirstValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) const
 //--------------------
 
 
+static WinFuncNode::Register<LastValueWinNode> lastValueWinInfo("LAST_VALUE");
+
+LastValueWinNode::LastValueWinNode(MemoryPool& pool, dsql_nod* aArg)
+	: WinFuncNode(pool, lastValueWinInfo, aArg)
+{
+}
+
+void LastValueWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
+{
+	arg = PAR_parse_value(tdbb, csb);
+}
+
+void LastValueWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
+	desc->setNullable(true);
+}
+
+void LastValueWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	arg->getDesc(tdbb, csb, desc);
+}
+
+ValueExprNode* LastValueWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	LastValueWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LastValueWinNode(*tdbb->getDefaultPool());
+	node->arg = copier.copy(tdbb, arg);
+	return node;
+}
+
+void LastValueWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+{
+	AggNode::aggInit(tdbb, request);
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	impure->make_int64(0, 0);
+}
+
+void LastValueWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
+{
+}
+
+dsc* LastValueWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+{
+	return NULL;
+}
+
+dsc* LastValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
+{
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	SINT64 records = impure->vlu_misc.vlu_int64++;
+
+	if (!window->move(0))
+	{
+		window->move(0);	// Come back to our row.
+		return NULL;
+	}
+
+	dsc* desc = EVL_expr(tdbb, request, arg);
+	if (!desc || (request->req_flags & req_null))
+		return NULL;
+
+	return desc;
+}
+
+AggNode* LastValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) const
+{
+	return FB_NEW(getPool()) LastValueWinNode(getPool(), PASS1_node(dsqlScratch, dsqlArg));
+}
+
+
+//--------------------
+
+
+static WinFuncNode::Register<NthValueWinNode> nthValueWinInfo("NTH_VALUE");
+
+NthValueWinNode::NthValueWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRow)
+	: WinFuncNode(pool, nthValueWinInfo, aArg),
+	  dsqlRow(aRow)
+{
+	addChildNode(dsqlRow, row);
+}
+
+void NthValueWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
+{
+	arg = PAR_parse_value(tdbb, csb);
+	row = PAR_parse_value(tdbb, csb);
+}
+
+void NthValueWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
+	desc->setNullable(true);
+}
+
+void NthValueWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	arg->getDesc(tdbb, csb, desc);
+}
+
+ValueExprNode* NthValueWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	NthValueWinNode* node = FB_NEW(*tdbb->getDefaultPool()) NthValueWinNode(*tdbb->getDefaultPool());
+	node->arg = copier.copy(tdbb, arg);
+	node->row = copier.copy(tdbb, row);
+	return node;
+}
+
+void NthValueWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+{
+	AggNode::aggInit(tdbb, request);
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	impure->make_int64(0, 0);
+}
+
+void NthValueWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
+{
+}
+
+dsc* NthValueWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+{
+	return NULL;
+}
+
+dsc* NthValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
+{
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+
+	dsc* desc = EVL_expr(tdbb, request, row);
+	SINT64 records;
+
+	if (!desc || (request->req_flags & req_null) || (records = MOV_get_int64(desc, 0)) <= 0)
+	{
+		status_exception::raise(Arg::Gds(isc_sysf_argnmustbe_positive) <<
+			Arg::Num(2) << Arg::Str(aggInfo.name));
+	}
+
+	if (records > ++impure->vlu_misc.vlu_int64)
+		return NULL;
+
+	records -= impure->vlu_misc.vlu_int64;
+
+	if (!window->move(records))
+	{
+		window->move(0);	// Come back to our row.
+		return NULL;
+	}
+
+	desc = EVL_expr(tdbb, request, arg);
+	if (!desc || (request->req_flags & req_null))
+		return NULL;
+
+	return desc;
+}
+
+AggNode* NthValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) const
+{
+	return FB_NEW(getPool()) NthValueWinNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlArg), PASS1_node(dsqlScratch, dsqlRow));
+}
+
+
+//--------------------
+
+
 // A direction of -1 is LAG, and 1 is LEAD.
 LagLeadWinNode::LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
 			dsql_nod* aArg, dsql_nod* aRows, dsql_nod* aOutExpr)
