@@ -1,3 +1,15 @@
+ 2011-10-25 15:04  asfernandes 
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/parse.y
+   M src/yvalve/keywords.cpp
+Feature CORE-3620 - Window function LAST_VALUE.
+Feature CORE-3621 - Window function NTH_VALUE.
+
+ 2011-10-25 08:45  alexpeshkoff 
+   M src/yvalve/why.cpp
+Diag
+
  2011-10-23 21:27  asfernandes 
    M src/dsql/WinNodes.cpp
    M src/dsql/WinNodes.h
