@@ -1,3 +1,26 @@
+ 2011-10-27 01:04  asfernandes 
+   M doc/sql.extensions/README.merge.txt
+   M src/auth/AuthDbg.cpp
+   M src/common/cvt.cpp
+   M src/common/isc_sync.cpp
+   M src/common/os/posix/isc_ipc.cpp
+   M src/common/unicode_util.cpp
+   M src/dbs/metadata.sql
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2011-10-27 00:22  asfernandes 
+   M src/dsql/parse.y
+Correction.
+
  2011-10-25 15:04  asfernandes 
    M src/dsql/WinNodes.cpp
    M src/dsql/WinNodes.h
