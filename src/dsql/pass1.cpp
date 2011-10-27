@@ -1347,7 +1347,7 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 	{
 		if (derivedField1 && derivedField2)
 		{
-			if (derivedField1->scope != derivedField2->scope ||
+			if (derivedField1->context->ctx_context != derivedField2->context->ctx_context ||
 				derivedField1->name != derivedField2->name)
 			{
 				return false;
