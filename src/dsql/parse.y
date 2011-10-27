@@ -576,6 +576,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> IDENTITY
 %token <legacyNode> DENSE_RANK
 %token <legacyNode> FIRST_VALUE
+%token <legacyNode> NTH_VALUE
+%token <legacyNode> LAST_VALUE
 %token <legacyNode> LAG
 %token <legacyNode> LEAD
 %token <legacyNode> RANK
@@ -6513,6 +6515,8 @@ non_reserved_word
 	| KW_RELATIVE
 	| DENSE_RANK
 	| FIRST_VALUE
+	| NTH_VALUE
+	| LAST_VALUE
 	| LAG
 	| LEAD
 	| RANK
