@@ -65,21 +65,21 @@ Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, const
 		str.erase();
 
 #ifdef AUTH_VERBOSE
-		fprintf(stderr, "DebugServerInstance::startAuthentication: tA-tag=%d dpb=%p\n", tags->trustedAuth, dpb);
+		fprintf(stderr, "DebugServer::startAuthentication: tA-tag=%d dpb=%p\n", tags->trustedAuth, dpb);
 #endif
 		if (tags->trustedAuth && dpb && dpb->find(tags->trustedAuth))
 		{
 			unsigned int len;
 			const UCHAR* s = dpb->get(&len);
 #ifdef AUTH_VERBOSE
-			fprintf(stderr, "DebugServerInstance::startAuthentication: get()=%.*s\n", len, s);
+			fprintf(stderr, "DebugServer::startAuthentication: get()=%.*s\n", len, s);
 #endif
 			str.assign(s, len);
 		}
 
 		str += '_';
 #ifdef AUTH_VERBOSE
-		fprintf(stderr, "DebugServerInstance::startAuthentication: %s\n", str.c_str());
+		fprintf(stderr, "DebugServer::startAuthentication: %s\n", str.c_str());
 #endif
 		return AUTH_MORE_DATA;
 	}
@@ -96,7 +96,7 @@ Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const 
 	try
 	{
 #ifdef AUTH_VERBOSE
-		fprintf(stderr, "DebugServerInstance::contAuthentication: %.*s\n", size, data);
+		fprintf(stderr, "DebugServer::contAuthentication: %.*s\n", size, data);
 #endif
 		Firebird::MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 		writerInterface->add(Firebird::string((const char*) data, size).c_str());
@@ -114,7 +114,7 @@ void FB_CARG DebugServer::getData(const unsigned char** data, unsigned short* da
 	*data = reinterpret_cast<const unsigned char*>(str.c_str());
 	*dataSize = str.length();
 #ifdef AUTH_VERBOSE
-	fprintf(stderr, "DebugServerInstance::getData: %.*s\n", *dataSize, *data);
+	fprintf(stderr, "DebugServer::getData: %.*s\n", *dataSize, *data);
 #endif
 }
 
@@ -139,14 +139,14 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, const
 	{
 		str = "HAND";
 #ifdef AUTH_VERBOSE
-		fprintf(stderr, "DebugClientInstance::startAuthentication: %s\n", str.c_str());
+		fprintf(stderr, "DebugClient::startAuthentication: %s\n", str.c_str());
 #endif
 		if (dpb && tags->trustedAuth)
 		{
 			Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 			dpb->add(tags->trustedAuth, str.c_str(), str.length());
 #ifdef AUTH_VERBOSE
-			fprintf(stderr, "DebugClientInstance::startAuthentication: DPB filled\n");
+			fprintf(stderr, "DebugClient::startAuthentication: DPB filled\n");
 #endif
 			return AUTH_SUCCESS;
 		}
@@ -164,7 +164,7 @@ Result FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const 
 	try
 	{
 #ifdef AUTH_VERBOSE
-		fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
+		fprintf(stderr, "DebugClient::contAuthentication: %.*s\n", size, data);
 #endif
 		str.assign(data, size);
 		const char* env = getenv("ISC_DEBUG_AUTH");
@@ -186,7 +186,7 @@ void FB_CARG DebugClient::getData(const unsigned char** data, unsigned short* da
 	*data = reinterpret_cast<const unsigned char*>(str.c_str());
 	*dataSize = str.length();
 #ifdef AUTH_VERBOSE
-	fprintf(stderr, "DebugClientInstance::getData: %.*s\n", *dataSize, *data);
+	fprintf(stderr, "DebugClient::getData: %.*s\n", *dataSize, *data);
 #endif
 }
 

@@ -4264,7 +4264,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		jrd_rel* relation = NULL;
 		jrd_tra* transaction = NULL;
 
-		AutoPtr<GarbageCollector> gc(FB_NEW(*attachment->att_pool) GarbageCollector(*attachment->att_pool, dbb));
+		AutoPtr<GarbageCollector> gc(FB_NEW(*attachment->att_pool) GarbageCollector(
+			*attachment->att_pool, dbb));
 
 		try
 		{

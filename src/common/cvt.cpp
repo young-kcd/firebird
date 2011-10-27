@@ -1741,7 +1741,7 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
  *      A data conversion error occurred.  Complain.
  *
  **************************************/
-	Firebird::string message;
+	string message;
 
 	if (desc->dsc_dtype == dtype_blob)
 		message = "BLOB";

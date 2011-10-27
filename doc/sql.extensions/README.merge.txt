@@ -32,7 +32,7 @@ MERGE statement
 				VALUES <left paren> <value list> <right paren>
 
   Syntax rules:
-	1. At least one of <merge when matched> and <merge when not matched> should be specified.
+	1. At least one of <merge when matched> or <merge when not matched> should be specified.
 
   Scope:
     DSQL, PSQL

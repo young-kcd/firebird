@@ -218,7 +218,6 @@ namespace
 		dsql_ctx* oldContext;
 		string oldAlias, oldInternalAlias;
 		AutoSetRestore<USHORT> autoFlags;
-		bool hasModContext;
 	};
 }	// namespace
 

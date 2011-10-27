@@ -592,8 +592,7 @@ static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void handle_error(ISC_STATUS);
 static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
-				 const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*,
-				 AuthClientPlugins* authItr = NULL);
+	const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*, AuthClientPlugins* authItr = NULL);
 static void init(IStatus*, rem_port*, P_OP, PathName&, ClumpletWriter&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
@@ -620,16 +619,10 @@ static void svcstart(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT, const UCHAR*)
 static void unsupported();
 static void zap_packet(PACKET *);
 
-static void authFillParametersBlock(AuthClientPlugins& authItr,
-									ClumpletWriter& dpb,
-									const Auth::AuthTags* tags,
-									rem_port* port);
-static void authReceiveResponse(AuthClientPlugins& authItr,
-								rem_port* port,
-								Rdb* rdb,
-								const Auth::AuthTags* tags,
-								IStatus* status,
-								PACKET* packet);
+static void authFillParametersBlock(AuthClientPlugins& authItr, ClumpletWriter& dpb,
+	const Auth::AuthTags* tags, rem_port* port);
+static void authReceiveResponse(AuthClientPlugins& authItr, rem_port* port, Rdb* rdb,
+	const Auth::AuthTags* tags, IStatus* status, PACKET* packet);
 
 static AtomicCounter remote_event_id;
 
@@ -5843,10 +5836,8 @@ static void info(IStatus* status,
 }
 
 // Let plugins try to add data to DPB in order to avoid extra network roundtrip
-static void authFillParametersBlock(AuthClientPlugins& authItr,
-									ClumpletWriter& dpb,
-									const Auth::AuthTags* tags,
-									rem_port* port)
+static void authFillParametersBlock(AuthClientPlugins& authItr, ClumpletWriter& dpb,
+	const Auth::AuthTags* tags, rem_port* port)
 {
 	LocalStatus s;
 	Auth::DpbImplementation di(dpb);
@@ -5879,12 +5870,8 @@ static void authFillParametersBlock(AuthClientPlugins& authItr,
 	}
 }
 
-static void authReceiveResponse(AuthClientPlugins& authItr,
-								rem_port* port,
-								Rdb* rdb,
-								const Auth::AuthTags* tags,
-								IStatus* status,
-								PACKET* packet)
+static void authReceiveResponse(AuthClientPlugins& authItr, rem_port* port, Rdb* rdb,
+	const Auth::AuthTags* tags, IStatus* status, PACKET* packet)
 {
 	LocalStatus s;
 
@@ -5985,11 +5972,8 @@ static void authReceiveResponse(AuthClientPlugins& authItr,
 	(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
 }
 
-static void init(IStatus* status,
-				 rem_port* port,
-				 P_OP op,
-				 PathName& file_name,
-				 ClumpletWriter& dpb)
+static void init(IStatus* status, rem_port* port, P_OP op, PathName& file_name,
+	ClumpletWriter& dpb)
 {
 /**************************************
  *
@@ -6012,8 +5996,8 @@ static void init(IStatus* status,
 
 		AuthClientPlugins authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
 		authFillParametersBlock(authItr, dpb,
-								op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
-								port);
+			op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
+			port);
 
 		if (port->port_protocol < PROTOCOL_VERSION12)
 		{
@@ -6061,8 +6045,8 @@ static void init(IStatus* status,
 		send_packet(port, packet);
 
 		authReceiveResponse(authItr, port, rdb,
-							op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
-							status, packet);
+			op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
+			status, packet);
 	}
 	catch (const Exception&)
 	{

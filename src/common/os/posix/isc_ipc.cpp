@@ -149,7 +149,7 @@ extern "C" {
 #endif
 
 #ifdef SA_SIGINFO
-static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context);
+static void CLIB_ROUTINE signal_action(int number, siginfo_t* siginfo, void* context);
 #else
 static void CLIB_ROUTINE signal_action(int number);
 #endif
@@ -346,7 +346,7 @@ static SIG que_signal(int signal_number,
 
 
 #ifdef SA_SIGINFO
-static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context)
+static void CLIB_ROUTINE signal_action(int number, siginfo_t* siginfo, void* context)
 #else
 static void CLIB_ROUTINE signal_action(int number)
 #endif

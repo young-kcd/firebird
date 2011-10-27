@@ -534,30 +534,35 @@ namespace {
 #ifdef DEB_EVNT
 		struct AbsPtr
 		{
-			SLONG offset;
-			int fn;
-			bool bad()
-			{
-				return offset < 0 || fn < 0;
-			}
 			AbsPtr()
 				: offset(-1), fn(-1)
 			{ }
+
 			bool operator==(const AbsPtr& sec) const
 			{
 				return offset == sec.offset && fn == sec.fn;
 			}
+
+			bool bad()
+			{
+				return offset < 0 || fn < 0;
+			}
+
+			SLONG offset;
+			int fn;
 		};
 
 		static AbsPtr absPtr(const void* s)
 		{
 			const int n = getByAddress((UCHAR*) s);
 			AbsPtr rc;
+
 			if (n >= 0)
 			{
-				rc.offset = (IPTR)s - (IPTR)(sharedFiles[n].from);
+				rc.offset = (IPTR) s - (IPTR) (sharedFiles[n].from);
 				rc.fn = sharedFiles[n].fileNum;
 			}
+
 			return rc;
 		}
 #endif // DEB_EVNT
@@ -726,6 +731,7 @@ namespace {
 		} state;
 		int code;
 	};
+
 	GlobalPtr<Array<Dump> > dump;
 	GlobalPtr<Mutex> dMutex;
 

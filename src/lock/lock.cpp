@@ -2307,7 +2307,8 @@ SRQ_PTR LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* loc
 }
 
 
-bool LockManager::init_owner_block(Arg::StatusVector& statusVector, own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id)
+bool LockManager::init_owner_block(Arg::StatusVector& statusVector, own* owner, UCHAR owner_type,
+	LOCK_OWNER_T owner_id)
 {
 /**************************************
  *

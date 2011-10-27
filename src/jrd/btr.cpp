@@ -2376,9 +2376,9 @@ static void compress(thread_db* tdbb,
 		UCHAR* ptr;
 
 		size_t length;
-		if (isNull) {
+
+		if (isNull)
 			length = 0;
-		}
 		else if (itype >= idx_first_intl_string || itype == idx_metadata)
 		{
 			DSC to;
@@ -2394,24 +2394,23 @@ static void compress(thread_db* tdbb,
 			length = INTL_string_to_key(tdbb, itype, desc, &to, key_type);
 		}
 		else
-		{
 			length = MOV_get_string(desc, &ptr, &buffer, MAX_KEY);
-		}
 
 		if (length)
 		{
 			// clear key_empty flag, because length is >= 1
 			key->key_flags &= ~key_empty;
-			if (length > sizeof(key->key_data)) {
+
+			if (length > sizeof(key->key_data))
 				length = sizeof(key->key_data);
-			}
+
 			if (descending && ((*ptr == desc_end_value_prefix) || (*ptr == desc_end_value_check)))
 			{
 				*p++ = desc_end_value_prefix;
-				if ((length + 1) > sizeof(key->key_data)) {
+				if ((length + 1) > sizeof(key->key_data))
 					length = sizeof(key->key_data) - 1;
-				}
 			}
+
 			memcpy(p, ptr, length);
 			p += length;
 		}
@@ -2419,19 +2418,18 @@ static void compress(thread_db* tdbb,
 		{
 			// Leave key_empty flag, because the string is an empty string
 			if (descending && ((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
-			{
 				*p++ = desc_end_value_prefix;
-			}
+
 			*p++ = pad;
 		}
+
 		while (p > key->key_data)
 		{
-			if (*--p != pad) {
+			if (*--p != pad)
 				break;
-			}
 		}
-		key->key_length = p + 1 - key->key_data;
 
+		key->key_length = p + 1 - key->key_data;
 		return;
 	}
 

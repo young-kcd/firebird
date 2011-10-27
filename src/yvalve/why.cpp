@@ -4754,15 +4754,13 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 	{
 		ClumpletWriter spb(ClumpletReader::SpbSendItems, MAX_DPB_SIZE, sendItems, sendLength);
 		if (!regular.next)
-		{
 			populateSpb(spb, isc_info_svc_auth_block);
-		}
 
 		checkSpbLen = receiveLength;
 		checkSpbPresent = receiveItems;
 		YEntry<YService> entry(status, this, SERV_QUERY);
-		entry.next()->query(status, spb.getBufferLength(), spb.getBuffer(), receiveLength, receiveItems,
-			bufferLength, buffer);
+		entry.next()->query(status, spb.getBufferLength(), spb.getBuffer(),
+			receiveLength, receiveItems, bufferLength, buffer);
 		checkSpbLen = 0;
 		checkSpbPresent = NULL;
 	}
@@ -4780,9 +4778,7 @@ void YService::start(IStatus* status, unsigned int spbLength, const unsigned cha
 	{
 		ClumpletWriter spb(ClumpletReader::SpbStart, MAX_DPB_SIZE, spbItems, spbLength);
 		if (!regular.next)
-		{
 			populateSpb(spb, isc_spb_auth_block);
-		}
 
 		YEntry<YService> entry(status, this, SERV_START);
 		entry.next()->start(status, spb.getBufferLength(), spb.getBuffer());
@@ -5081,7 +5077,8 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		svcName.trim();
 
 		ClumpletReader spbReader(ClumpletReader::SpbAttach, spb, spbLength);
-		if ((spbReader.find(isc_spb_auth_block) && spbReader.getClumpLength() > 0) || ISC_check_if_remote(svcName, false))
+		if ((spbReader.find(isc_spb_auth_block) && spbReader.getClumpLength() > 0) ||
+			ISC_check_if_remote(svcName, false))
 		{
 			IProvider* provider = NULL;
 			service = getServiceManagerByName(&provider, status, svcName.c_str(), spbLength, spb);

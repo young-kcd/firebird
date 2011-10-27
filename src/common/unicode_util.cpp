@@ -1031,6 +1031,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 	LocalStatus lastError;
 	string version;
 	const int majorArray[] = {4, 3, 5, 6, 0};
+
 	for (const int* major = majorArray; *major; ++major)
 	{
 		for (int minor = 20; minor--; ) // from 19 down to 0
@@ -1054,9 +1055,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 		 << Arg::StatusVector(lastError.get())).raise();
 	}
 	else
-	{
 		(Arg::Gds(isc_random) << "Could not find acceptable ICU library").raise();
-	}
 
 	// compiler warning silencer
 	return *convIcu;
