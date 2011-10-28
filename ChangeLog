@@ -1,3 +1,7 @@
+ 2011-10-27 23:53  asfernandes 
+   M src/dsql/pass1.cpp
+Fixed CORE-3611 - Wrong data while retrieving from CTEs (or derived tables) with same column names.
+
  2011-10-27 01:04  asfernandes 
    M doc/sql.extensions/README.merge.txt
    M src/auth/AuthDbg.cpp
