@@ -13,6 +13,9 @@
 
 #ifdef WIN_NT
 #include <windows.h>
+#else
+#include <pthread.h>
+#include <signal.h>
 #endif
 
 namespace {
@@ -76,6 +79,15 @@ private:
 					thread = currTID;
 				}
 			}
+#else
+			if (thread != currTID)
+			{
+				if (pthread_kill(thread, 0) == ESRCH)
+				{
+					// Thread does not exist any more
+					thread = currTID;
+				}
+			}
 #endif
 
 			return thread == currTID;
@@ -91,9 +103,7 @@ public:
 	explicit StringsBuffer(Firebird::MemoryPool& p) : processBuffer(p) { }
 
 	~StringsBuffer()
-	{
-		ThreadCleanup::remove(cleanupAllStrings, this);
-	}
+	{ }
 
 private:
 	size_t position(FB_THREAD_ID thr)
@@ -126,29 +136,9 @@ private:
 		return b;
 	}
 
-	void cleanup()
-	{
-		Firebird::MutexLockGuard guard(mutex);
-
-		size_t p = position(getThreadId());
-		if (p >= processBuffer.getCount())
-		{
-			return;
-		}
-
-		delete processBuffer[p];
-		processBuffer.remove(p);
-	}
-
-	static void cleanupAllStrings(void* toClean)
-	{
-		static_cast<StringsBuffer*>(toClean)->cleanup();
-	}
-
 public:
 	const char* alloc(const char* s, size_t& len, FB_THREAD_ID thr = getThreadId())
 	{
-		ThreadCleanup::add(cleanupAllStrings, this);
 		return getThreadBuffer(thr)->alloc(s, len);
 	}
 };

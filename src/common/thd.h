@@ -37,23 +37,4 @@ void	THD_yield();
 // thread ID
 FB_THREAD_ID getThreadId() throw();
 
-class ThreadCleanup
-{
-public:
-	static void add(FPTR_VOID_PTR cleanup, void* arg);
-	static void remove(FPTR_VOID_PTR cleanup, void* arg);
-	static void destructor(void*);
-
-private:
-	FPTR_VOID_PTR function;
-	void* argument;
-	ThreadCleanup* next;
-
-	ThreadCleanup(FPTR_VOID_PTR cleanup, void* arg, ThreadCleanup* chain)
-		: function(cleanup), argument(arg), next(chain) { }
-	~ThreadCleanup() { }
-
-	static ThreadCleanup** findCleanup(FPTR_VOID_PTR cleanup, void* arg);
-};
-
 #endif // JRD_THD_H
