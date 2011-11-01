@@ -1,3 +1,9 @@
+ 2011-10-31 18:35  alexpeshkoff 
+   M src/common/fb_exception.cpp
+   M src/common/thd.cpp
+   M src/common/thd.h
+Fixed CORE-3646: Segmentation fault in multi-threaded program when using 2.5.x client library on Linux
+
  2011-10-16 14:11  hvlad 
    M src/jrd/trace/TraceConfigStorage.cpp
 One more assertion
