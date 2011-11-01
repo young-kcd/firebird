@@ -2962,11 +2962,10 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	Database* const dbb = (Database*) arg;
+	BufferControl* const bcb = dbb->dbb_bcb;
 
 	try
 	{
-		BufferControl* const bcb = dbb->dbb_bcb;
-
 		UserId user;
 		user.usr_user_name = "Cache Writer";
 
@@ -3060,10 +3059,19 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-
-		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
-		bcb->bcb_writer_fini.release();
 	}	// try
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(status_vector, ex);
+		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+	}
+
+	bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
+
+	try
+	{
+		bcb->bcb_writer_fini.release();
+	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);

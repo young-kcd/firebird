@@ -4460,12 +4460,20 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			TRA_commit(tdbb, transaction, false);
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
+	}	// try
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(status_vector, ex);
+		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+	}
 
-		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
+	dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
+
+	try
+	{
 		// Notify the finalization caller that we're finishing.
 		dbb->dbb_gc_fini.release();
-
-	}	// try
+	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
