@@ -1689,7 +1689,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 
 	case dtype_dbkey:
-		if (from->dsc_dtype <= dtype_any_text)
+		if (from->isText())
 		{
 			USHORT strtype_unused;
 			UCHAR* ptr;
@@ -1902,7 +1902,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		// Prior to BLR Version5, when a timestamp is converted to a string it
 		// is silently truncated if the destination string is not large enough
 
-		fb_assert(to->dsc_dtype <= dtype_any_text);
+		fb_assert(to->isText());
 
 		const USHORT l = (to->dsc_dtype == dtype_cstring) ? 1 :
 			(to->dsc_dtype == dtype_varying) ? sizeof(USHORT) : 0;
@@ -1931,13 +1931,17 @@ USHORT CVT_make_string(const dsc*          desc,
  *     The pointer to this string is returned in address.
  *
  **************************************/
+	const USHORT from_interp = INTL_TTYPE(desc);
+
+	const bool simple_return = desc->isText() &&
+		(from_interp == to_interp || to_interp == ttype_none || to_interp == ttype_binary);
+
 	fb_assert(desc != NULL);
 	fb_assert(address != NULL);
 	fb_assert(err != NULL);
-	fb_assert(((temp != NULL && length > 0) ||
-			(INTL_TTYPE(desc) <= dtype_any_text && INTL_TTYPE(desc) == to_interp)));
+	fb_assert((temp != NULL && length > 0) || simple_return);
 
-	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp)
+	if (simple_return)
 	{
 		*address = reinterpret_cast<char*>(desc->dsc_address);
 		const USHORT from_len = desc->dsc_length;
@@ -2263,28 +2267,24 @@ USHORT CVT_get_string_ptr_common(const dsc* desc, USHORT* ttype, UCHAR** address
 	fb_assert(ttype != NULL);
 	fb_assert(address != NULL);
 	fb_assert(cb != NULL);
-	fb_assert((temp != NULL && length > 0) ||
-			desc->dsc_dtype == dtype_text ||
-			desc->dsc_dtype == dtype_cstring || desc->dsc_dtype == dtype_varying);
+	fb_assert((temp != NULL && length > 0) || desc->isText());
 
 	// If the value is already a string (fixed or varying), just return
 	// the address and length.
 
-	if (desc->dsc_dtype <= dtype_any_text)
+	if (desc->isText())
 	{
 		*address = desc->dsc_address;
 		*ttype = INTL_TTYPE(desc);
 		if (desc->dsc_dtype == dtype_text)
 			return desc->dsc_length;
 		if (desc->dsc_dtype == dtype_cstring)
-			return MIN((USHORT) strlen((char *) desc->dsc_address),
-					   desc->dsc_length - 1);
+			return MIN((USHORT) strlen((char *) desc->dsc_address), desc->dsc_length - 1);
 		if (desc->dsc_dtype == dtype_varying)
 		{
 			vary* varying = (vary*) desc->dsc_address;
 			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
-			return MIN(varying->vary_length,
-					   (USHORT) (desc->dsc_length - sizeof(USHORT)));
+			return MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(USHORT)));
 		}
 	}
 

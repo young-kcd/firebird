@@ -421,7 +421,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		break;
 
 	case dtype_dbkey:
-		if (arg2->dsc_dtype <= dtype_any_text)
+		if (arg2->isText())
 		{
 			UCHAR* p = NULL;
 			USHORT t; // unused later
@@ -702,10 +702,9 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 		break;
 	}
 
-	if (desc->dsc_dtype <= dtype_any_text)
+	if (desc->isText())
 	{
-
-		if (to_interp == from_interp)
+		if (from_interp == to_interp || to_interp == ttype_none || to_interp == ttype_binary)
 		{
 			*address = from_buf;
 			return from_len;
