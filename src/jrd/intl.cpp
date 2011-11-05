@@ -473,11 +473,13 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 		}
 
 		fb_assert(charset_collations[id]->existenceLock);
-		LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
 
-		charset_collations[id]->obsolete = true;
-
-		LCK_release(tdbb, charset_collations[id]->existenceLock);
+		if (!charset_collations[id]->obsolete)
+		{
+			LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
+			charset_collations[id]->obsolete = true;
+			LCK_release(tdbb, charset_collations[id]->existenceLock);
+		}
 	}
 	else
 	{
@@ -1394,8 +1396,7 @@ static int blocking_ast_collation(void* ast_object)
 		AsyncContextHolder tdbb(dbb, att);
 
 		tt->obsolete = true;
-		if (!tt->useCount)
-			LCK_release(tdbb, tt->existenceLock);
+		LCK_release(tdbb, tt->existenceLock);
 	}
 	catch (const Firebird::Exception&)
 	{} // no-op
