@@ -1,3 +1,12 @@
+ 2011-11-05 20:51  asfernandes 
+   M src/jrd/intl.cpp
+Fixed CORE-3650 - Recreation of collation leads to FB "death".
+
+ 2011-11-05 18:07  dimitr 
+   M src/common/cvt.cpp
+   M src/jrd/cvt2.cpp
+Small optimizations in the mover/converter code.
+
  2011-11-01 04:02  dimitr 
    M src/jrd/cch.cpp
    M src/jrd/vio.cpp
