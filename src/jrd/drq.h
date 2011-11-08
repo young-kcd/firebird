@@ -64,8 +64,6 @@ enum drq_type_t
 	drq_s_files,			// store files
 	drq_s_filters,			// store filters
 	drq_s_gens,				// store generators
-	drq_s_funcs,			// store functions
-	drq_s_func_args,		// store function arguments
 	drq_s_gfields,			// store global fields
 	drq_s_lfields,			// store local fields
 	drq_s_gfields2,			// store global fields

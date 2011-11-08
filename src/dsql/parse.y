@@ -671,7 +671,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> alter_exception_clause alter_index_clause alter_op alter_ops
 %type <legacyNode> alter_role_clause alter_role_enable alter_sequence_clause
 %type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
-%type <legacyNode> arg_desc arg_desc_list arg_desc_list1 array_element array_range
+%type <legacyNode> array_element array_range
+%type arg_desc_list1(<parametersClause>) arg_desc_list(<parametersClause>)
+%type arg_desc(<parametersClause>)
+
 %type <legacyNode> array_spec array_type
 %type <stmtNode>   assignment
 %type <compoundStmtNode> assignments
@@ -788,7 +791,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type output_parameters(<parametersClause>) output_proc_parameter(<parametersClause>)
 %type output_proc_parameters(<parametersClause>)
 
-%type <legacyNode> param_mechanism parameter plan_clause
+%type <nullableIntVal> param_mechanism
+%type <legacyNode> parameter plan_clause
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
 %type <legacyNode> prec_scale primary_constraint privilege
 %type <legacyNode> privilege_list privileges proc_inputs
@@ -803,8 +807,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> recreate recreate_clause referential_action referential_constraint
 %type <legacyNode> referential_trigger_action release_savepoint replace_clause
 %type <legacyNode> replace_exception_clause
-%type <legacyNode> replace_view_clause restr_list restr_option return_mechanism return_value
-%type <legacyNode> return_value1 rev_admin_option rev_grant_option revoke
+%type <legacyNode> replace_view_clause restr_list restr_option
+%type <int32Val> return_mechanism
+%type <legacyNode> rev_admin_option rev_grant_option revoke
+%type return_value1(<createAlterFunctionNode>) return_value(<createAlterFunctionNode>)
 %type <returningClause> returning_clause
 %type <legacyNode> rexception_clause role_admin_option role_clause role_grantee role_grantee_list
 %type <legacyNode> role_name role_name_list rollback rows_clause rtable_clause
@@ -845,7 +851,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
 
-%type <legacyNode> u_constant u_numeric_constant udf_data_type udf_decl_clause undo_savepoint
+%type <legacyNode> u_constant u_numeric_constant udf_data_type undo_savepoint
+%type <createAlterFunctionNode> udf_decl_clause
 %type <legacyNode> unique_constraint unique_opt update_column_name
 %type <stmtNode>   update update_or_insert update_positioned update_searched
 %type <legacyNode> update_or_insert_matching_opt update_rule
@@ -1174,15 +1181,21 @@ declare
 
 declare_clause
 	: FILTER filter_decl_clause				{ $$ = $2; }
-	| EXTERNAL FUNCTION udf_decl_clause		{ $$ = $3; }
+	| EXTERNAL FUNCTION udf_decl_clause		{ $$ = makeClassNode($3); }
 	;
 
 udf_decl_clause
-	: symbol_UDF_name arg_desc_list1 RETURNS return_value1
-			ENTRY_POINT sql_string MODULE_NAME sql_string
-		{
-			$$ = make_node (nod_def_udf, (int) e_udf_count, $1, $6, $8, make_list ($2), $4);
-		}
+	: symbol_UDF_name
+			{ $$ = newNode<CreateAlterFunctionNode>(toName($1)); }
+		arg_desc_list1(&$2->parameters)
+		RETURNS return_value1($2)
+		ENTRY_POINT sql_string MODULE_NAME sql_string
+			{
+				$$ = $2;
+				$$->external = newNode<ExternalClause>();
+				$$->external->name = toString($7);
+				$$->external->udfModule = toString($9);
+			}
 	;
 
 udf_data_type
@@ -1196,50 +1209,54 @@ udf_data_type
 		}
 	;
 
-arg_desc_list1
-	: /* nothing */			 	{ $$ = NULL; }
-	| arg_desc_list
-	| '(' arg_desc_list ')'	 	{ $$ = $2; }
+arg_desc_list1($parameters)
+	:
+	| arg_desc_list($parameters)
+	| '(' arg_desc_list($parameters) ')'
 	;
 
-arg_desc_list
-	: arg_desc
-	| arg_desc_list ',' arg_desc	{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+arg_desc_list($parameters)
+	: arg_desc($parameters)
+	| arg_desc_list ',' arg_desc($parameters)
 	;
 
-arg_desc
+arg_desc($parameters)
 	: init_data_type udf_data_type param_mechanism
-		{ $$ = make_node (nod_udf_param, (int) e_udf_param_count, $1, $3); }
-	;
-
-param_mechanism
-	: /* nothing */			{ $$ = NULL; } // Beware: ddl.cpp converts this to mean FUN_reference.
-	| BY KW_DESCRIPTOR		{ $$ = MAKE_const_slong (FUN_descriptor); }
-	| BY SCALAR_ARRAY		{ $$ = MAKE_const_slong (FUN_scalar_array); }
-	| KW_NULL				{ $$ = MAKE_const_slong (FUN_ref_with_null); }
-	;
-
-return_value1
-	: return_value
-	| '(' return_value ')'	{ $$ = $2; }
-	;
-
-return_value
-	: init_data_type udf_data_type return_mechanism
-		{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count, $1, $3); }
-	| PARAMETER pos_short_integer
 		{
-			$$ = make_node(nod_udf_return_value, (int) e_udf_param_count, NULL, MAKE_const_slong($2));
+			$parameters->add(ParameterClause(getPool(), $1, NULL, NULL, NULL));
+			$parameters->back().udfMechanism = $3;
 		}
 	;
 
+param_mechanism
+	: /* nothing */		{ $$ = Nullable<int>::empty(); }	// Beware: This means FUN_reference or FUN_blob_struct.
+	| BY KW_DESCRIPTOR	{ $$ = Nullable<int>::val(FUN_descriptor); }
+	| BY SCALAR_ARRAY	{ $$ = Nullable<int>::val(FUN_scalar_array); }
+	| KW_NULL			{ $$ = Nullable<int>::val(FUN_ref_with_null); }
+	;
+
+return_value1($function)
+	: return_value($function)
+	| '(' return_value($function) ')'
+	;
+
+return_value($function)
+	: init_data_type udf_data_type return_mechanism
+		{
+			$function->returnType = ParameterClause(getPool(), $1, NULL, NULL, NULL);
+			$function->returnType.udfMechanism = $3;
+		}
+	| PARAMETER pos_short_integer
+		{ $function->udfReturnPos = $2; }
+	;
+
 return_mechanism
-	: /* nothing */				{ $$ = MAKE_const_slong (FUN_reference); }
-	| BY KW_VALUE				{ $$ = MAKE_const_slong (FUN_value); }
-	| BY KW_DESCRIPTOR			{ $$ = MAKE_const_slong (FUN_descriptor); }
+	: /* nothing */				{ $$ = FUN_reference; }
+	| BY KW_VALUE				{ $$ = FUN_value; }
+	| BY KW_DESCRIPTOR			{ $$ = FUN_descriptor; }
 	// FUN_refrence with FREE_IT is -ve
-	| FREE_IT					{ $$ = MAKE_const_slong (-1 * FUN_reference); }
-	| BY KW_DESCRIPTOR FREE_IT	{ $$ = MAKE_const_slong (-1 * FUN_descriptor); }
+	| FREE_IT					{ $$ = -1 * FUN_reference; }
+	| BY KW_DESCRIPTOR FREE_IT	{ $$ = -1 * FUN_descriptor; }
 	;
 
 

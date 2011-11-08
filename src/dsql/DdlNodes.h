@@ -47,19 +47,22 @@ class ExternalClause
 public:
 	ExternalClause(MemoryPool& p, const ExternalClause& o)
 		: name(p, o.name),
-		  engine(p, o.engine)
+		  engine(p, o.engine),
+		  udfModule(p)
 	{
 	}
 
 	explicit ExternalClause(MemoryPool& p)
 		: name(p),
-		  engine(p)
+		  engine(p),
+		  udfModule(p)
 	{
 	}
 
 public:
 	Firebird::string name;
 	Firebird::MetaName engine;
+	Firebird::string udfModule;
 };
 
 
@@ -113,6 +116,7 @@ public:
 	Firebird::MetaName name;
 	dsql_nod* legacyDefault;
 	dsql_nod* legacyParameter;
+	Nullable<int> udfMechanism;
 };
 
 
@@ -250,7 +254,8 @@ public:
 		  invalid(false),
 		  package(pool),
 		  packageOwner(pool),
-		  privateScope(false)
+		  privateScope(false),
+		  udfReturnPos(0)
 	{
 	}
 
@@ -270,6 +275,11 @@ protected:
 	}
 
 private:
+	bool isUdf()
+	{
+		return external && external->udfModule.hasData();
+	}
+
 	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		bool secondPass, bool runTriggers);
@@ -295,6 +305,7 @@ public:
 	Firebird::MetaName package;
 	Firebird::string packageOwner;
 	bool privateScope;
+	SLONG udfReturnPos;
 };
 
 

@@ -74,7 +74,6 @@ enum nod_t
 	nod_del_filter,
 	nod_def_shadow,
 	nod_del_shadow,
-	nod_def_udf,
 	nod_del_udf,
 	nod_grant,
 	nod_revoke,
@@ -317,10 +316,6 @@ enum node_args {
 	e_filter_count,
 
 	e_udf_name = 0,			//
-	e_udf_entry_pt,
-	e_udf_module,
-	e_udf_args,
-	e_udf_return_value,
 	e_udf_count,
 
 	// computed field

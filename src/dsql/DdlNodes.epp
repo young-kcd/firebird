@@ -1190,7 +1190,8 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 		parameters[i].resolve(dsqlScratch);
 
-	returnType.resolve(dsqlScratch);
+	if (returnType.legacyField)
+		returnType.resolve(dsqlScratch);
 
 	return DdlNode::dsqlPass(dsqlScratch);
 }
@@ -1220,9 +1221,7 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsql
 		}
 	}
 	else
-	{
 		executeCreate(tdbb, dsqlScratch, transaction);
-	}
 
 	compile(tdbb, dsqlScratch);
 
@@ -1277,12 +1276,6 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 				FUN.RDB$FUNCTION_ID = id;
 				FUN.RDB$SYSTEM_FLAG = 0;
 				strcpy(FUN.RDB$FUNCTION_NAME, name.c_str());
-
-				FUN.RDB$LEGACY_FLAG.NULL = FALSE;
-				FUN.RDB$LEGACY_FLAG = 0;
-
-				FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
-				FUN.RDB$RETURN_ARGUMENT = 0;
 
 				if (package.hasData())
 				{
@@ -1378,6 +1371,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 			else
 			{
 				FUN.RDB$ENGINE_NAME.NULL = TRUE;
+				FUN.RDB$MODULE_NAME.NULL = TRUE;
 				FUN.RDB$ENTRYPOINT.NULL = TRUE;
 				FUN.RDB$FUNCTION_SOURCE.NULL = TRUE;
 
@@ -1390,14 +1384,109 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 				FUN.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
 				FUN.RDB$DETERMINISTIC_FLAG = deterministic ? TRUE : FALSE;
+
+				if (isUdf())
+				{
+					FUN.RDB$LEGACY_FLAG.NULL = FALSE;
+					FUN.RDB$LEGACY_FLAG = TRUE;
+
+					FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
+
+					dsql_fld* field = returnType.legacyField;
+
+					if (field)
+					{
+						// CVC: This is case of "returns <type> [by value|reference]".
+						// Some data types can not be returned as value.
+
+						if (returnType.udfMechanism.value == FUN_value &&
+							(field->fld_dtype == dtype_text || field->fld_dtype == dtype_varying ||
+							 field->fld_dtype == dtype_cstring || field->fld_dtype == dtype_blob ||
+							 field->fld_dtype == dtype_timestamp))
+						{
+							// Return mode by value not allowed for this data type.
+							status_exception::raise(
+								Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+								Arg::Gds(isc_dsql_command_err) <<
+								Arg::Gds(isc_return_mode_err));
+						}
+
+						// For functions returning a blob, coerce return argument position to
+						// be the last parameter.
+
+						if (field->fld_dtype == dtype_blob)
+						{
+							const size_t blobPosition = parameters.getCount() + 1;
+							if (blobPosition > MAX_UDF_ARGUMENTS)
+							{
+								// External functions can not have more than 10 parameters
+								// Or 9 if the function returns a BLOB.
+								status_exception::raise(
+									Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+									Arg::Gds(isc_dsql_command_err) <<
+									Arg::Gds(isc_extern_func_err));
+							}
+
+							FUN.RDB$RETURN_ARGUMENT = (SSHORT) blobPosition;
+						}
+						else
+							FUN.RDB$RETURN_ARGUMENT = 0;
+					}
+					else	// CVC: This is case of "returns parameter <N>"
+					{
+						// Function modifies an argument whose value is the function return value.
+
+						if (udfReturnPos > parameters.getCount() || udfReturnPos < 1)
+						{
+							// CVC: We should devise new msg "position should be between 1 and #params";
+							// here it is: dsql_udf_return_pos_err
+
+							// External functions can not have more than 10 parameters
+							// Not strictly correct -- return position error
+							status_exception::raise(
+								Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+								Arg::Gds(isc_dsql_command_err) <<	// gds__extern_func_err
+								Arg::Gds(isc_dsql_udf_return_pos_err) << Arg::Num(parameters.getCount()));
+						}
+
+						// We'll verify that SCALAR_ARRAY can't be used as a return type.
+						// The support for SCALAR_ARRAY is only for input parameters.
+
+						if (parameters[udfReturnPos - 1].udfMechanism.specified &&
+							parameters[udfReturnPos - 1].udfMechanism.value == FUN_scalar_array)
+						{
+							status_exception::raise(
+								Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+								Arg::Gds(isc_dsql_command_err) <<
+								Arg::Gds(isc_random) << "BY SCALAR_ARRAY can't be used as a return parameter");
+						}
+
+						FUN.RDB$RETURN_ARGUMENT = (SSHORT) udfReturnPos;
+					}
+				}
+				else
+				{
+					FUN.RDB$LEGACY_FLAG.NULL = TRUE;
+					FUN.RDB$RETURN_ARGUMENT.NULL = TRUE;
+				}
 			}
 
 			if (external)
 			{
 				if (!secondPass)
 				{
-					FUN.RDB$ENGINE_NAME.NULL = FALSE;
+					FUN.RDB$ENGINE_NAME.NULL = (SSHORT) external->engine.isEmpty();
 					strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
+
+					if (external->udfModule.length() >= sizeof(FUN.RDB$MODULE_NAME))
+					{
+						status_exception::raise(
+							Arg::Gds(isc_arith_except) <<
+							Arg::Gds(isc_string_truncation));
+					}
+
+					FUN.RDB$MODULE_NAME.NULL = (SSHORT) external->udfModule.isEmpty();
+					strcpy(FUN.RDB$MODULE_NAME, external->udfModule.c_str());
 
 					if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
 					{
@@ -1430,9 +1519,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 				FUN.RDB$PRIVATE_FLAG = privateScope;
 			}
 			else
-			{
 				FUN.RDB$PRIVATE_FLAG.NULL = TRUE;
-			}
 
 			modified = true;
 		END_MODIFY
@@ -1450,12 +1537,10 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		// and insert the new ones
 
-		ParameterClause returnParameter(*tdbb->getDefaultPool(), returnType.legacyField,
-			returnType.collate, NULL, NULL);
-		returnParameter.resolve(dsqlScratch);
-		storeArgument(tdbb, dsqlScratch, transaction, 0, returnParameter, NULL);
+		if (returnType.legacyField)
+			storeArgument(tdbb, dsqlScratch, transaction, 0, returnType, NULL);
 
-		for (unsigned i = 0; i < parameters.getCount(); ++i)
+		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
 			bid comment;
@@ -1485,21 +1570,11 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		ARG.RDB$FUNCTION_NAME.NULL = FALSE;
 		strcpy(ARG.RDB$FUNCTION_NAME, name.c_str());
 
-		if (parameter.name.hasData())
-		{
-			ARG.RDB$ARGUMENT_NAME.NULL = FALSE;
-			strcpy(ARG.RDB$ARGUMENT_NAME, parameter.name.c_str());
-		}
-		else
-			ARG.RDB$ARGUMENT_NAME.NULL = TRUE;
+		ARG.RDB$ARGUMENT_NAME.NULL = (SSHORT) parameter.name.isEmpty();
+		strcpy(ARG.RDB$ARGUMENT_NAME, parameter.name.c_str());
 
-		if (package.hasData())
-		{
-			ARG.RDB$PACKAGE_NAME.NULL = FALSE;
-			strcpy(ARG.RDB$PACKAGE_NAME, package.c_str());
-		}
-		else
-			ARG.RDB$PACKAGE_NAME.NULL = TRUE;
+		ARG.RDB$PACKAGE_NAME.NULL = (SSHORT) package.isEmpty();
+		strcpy(ARG.RDB$PACKAGE_NAME, package.c_str());
 
 		ARG.RDB$SYSTEM_FLAG = 0;
 		ARG.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -1507,7 +1582,6 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		ARG.RDB$ARGUMENT_POSITION.NULL = FALSE;
 		ARG.RDB$ARGUMENT_POSITION = pos;
 
-		ARG.RDB$ARGUMENT_MECHANISM.NULL = TRUE;
 		ARG.RDB$NULL_FLAG.NULL = TRUE;
 		ARG.RDB$RELATION_NAME.NULL = TRUE;
 		ARG.RDB$FIELD_NAME.NULL = TRUE;
@@ -1533,17 +1607,40 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 			ARG.RDB$NULL_FLAG = TRUE;
 		}
 
-		ARG.RDB$FIELD_SOURCE.NULL = FALSE;
-
 		if (parameter.typeOfTable.isEmpty())
 		{
 			if (parameter.typeOfName.hasData())
+			{
+				ARG.RDB$FIELD_SOURCE.NULL = FALSE;
 				strcpy(ARG.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
+			}
 			else
 			{
-				MetaName fieldName;
-				storeGlobalField(tdbb, transaction, fieldName, parameter);
-				strcpy(ARG.RDB$FIELD_SOURCE, fieldName.c_str());
+				if (isUdf())
+				{
+					SSHORT segmentLength, segmentLengthNull;
+
+					ARG.RDB$FIELD_TYPE.NULL = FALSE;
+					ARG.RDB$FIELD_LENGTH.NULL = FALSE;
+					updateRdbFields(parameter,
+						ARG.RDB$FIELD_TYPE,
+						ARG.RDB$FIELD_LENGTH,
+						ARG.RDB$FIELD_SUB_TYPE.NULL, ARG.RDB$FIELD_SUB_TYPE,
+						ARG.RDB$FIELD_SCALE.NULL, ARG.RDB$FIELD_SCALE,
+						ARG.RDB$CHARACTER_SET_ID.NULL, ARG.RDB$CHARACTER_SET_ID,
+						ARG.RDB$CHARACTER_LENGTH.NULL, ARG.RDB$CHARACTER_LENGTH,
+						ARG.RDB$FIELD_PRECISION.NULL, ARG.RDB$FIELD_PRECISION,
+						ARG.RDB$COLLATION_ID.NULL, ARG.RDB$COLLATION_ID,
+						segmentLengthNull, segmentLength);
+				}
+				else
+				{
+					MetaName fieldName;
+					storeGlobalField(tdbb, transaction, fieldName, parameter);
+
+					ARG.RDB$FIELD_SOURCE.NULL = FALSE;
+					strcpy(ARG.RDB$FIELD_SOURCE, fieldName.c_str());
+				}
 			}
 		}
 		else
@@ -1554,6 +1651,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 			ARG.RDB$FIELD_NAME.NULL = FALSE;
 			strcpy(ARG.RDB$FIELD_NAME, parameter.typeOfName.c_str());
 
+			ARG.RDB$FIELD_SOURCE.NULL = FALSE;
 			strcpy(ARG.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
 		}
 
@@ -1567,8 +1665,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		}
 
 		// ASF: I moved this block to write defaults on RDB$FUNCTION_ARGUMENTS.
-		//		It was writing in RDB$FIELDS, but that would require special support
-		//		for packaged functions signature verification.
+		// It was writing in RDB$FIELDS, but that would require special support
+		// for packaged functions signature verification.
 
 		if (parameter.legacyDefault)
 		{
@@ -1593,6 +1691,27 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 
 			attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
 				dsqlScratch->getBlrData());
+		}
+
+		if (isUdf())
+		{
+			ARG.RDB$MECHANISM.NULL = FALSE;
+
+			if (pos == 0 &&	// CVC: This is case of "returns <type> [by value|reference]"
+				parameter.legacyField->fld_dtype == dtype_blob)
+			{
+				// CVC: I need to test returning blobs by descriptor before allowing the
+				// change there. For now, I ignore the return type specification.
+				const bool freeIt = parameter.udfMechanism.value < 0;
+				ARG.RDB$MECHANISM = (SSHORT) ((freeIt ? -1 : 1) * FUN_blob_struct);
+				// If we have the FREE_IT set then the blob has to be freed on return.
+			}
+			else if (parameter.udfMechanism.specified)
+				ARG.RDB$MECHANISM = (SSHORT) parameter.udfMechanism.value;
+			else if (parameter.legacyField->fld_dtype == dtype_blob)
+				ARG.RDB$MECHANISM = (SSHORT) FUN_blob_struct;
+			else
+				ARG.RDB$MECHANISM = (SSHORT) FUN_reference;
 		}
 
 		ARG.RDB$DESCRIPTION.NULL = !comment || comment->isEmpty();

@@ -122,7 +122,6 @@ static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_
 static void define_role(DsqlCompilerScratch*);
 static void define_index(DsqlCompilerScratch*);
 static void define_shadow(DsqlCompilerScratch*);
-static void define_udf(DsqlCompilerScratch*);
 static void generate_dyn(DsqlCompilerScratch*, dsql_nod*);
 static void grant_revoke(DsqlCompilerScratch*);
 static void modify_database(DsqlCompilerScratch*);
@@ -136,7 +135,6 @@ static char modify_privileges(DsqlCompilerScratch*, NOD_TYPE, SSHORT, const dsql
 static void modify_udf(DsqlCompilerScratch*);
 static void modify_map(DsqlCompilerScratch*);
 static void process_role_nm_list(DsqlCompilerScratch*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
-static void put_field(DsqlCompilerScratch*, dsql_fld*, bool);
 static void set_statistics(DsqlCompilerScratch*);
 static void define_user(DsqlCompilerScratch*, UCHAR);
 static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor);
@@ -997,184 +995,6 @@ static void define_shadow(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-static void define_udf(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ u d f
- *
- **************************************
- *
- * Function
- *	define a udf to the database.
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	SSHORT position, blob_position = -1;
-
-	dsql_nod* udf_node = statement->getDdlNode();
-	dsql_nod* arguments = udf_node->nod_arg[e_udf_args];
-	dsql_nod** ptr = udf_node->nod_arg;
-	const char* udf_name = ((dsql_str*) (ptr[e_udf_name]))->str_data;
-	const dsql_str* func_entry_point_name = reinterpret_cast<dsql_str*>(ptr[e_udf_entry_pt]);
-	const dsql_str* func_module_name = reinterpret_cast<dsql_str*>(ptr[e_udf_module]);
-
-	dsqlScratch->appendNullString(isc_dyn_def_function, udf_name);
-	dsqlScratch->appendNullString(isc_dyn_func_entry_point, func_entry_point_name->str_data);
-
-	if (func_module_name)
-		dsqlScratch->appendNullString(isc_dyn_func_module_name, func_module_name->str_data);
-
-	dsql_nod** ret_val_ptr = ptr[e_udf_return_value]->nod_arg;
-
-	dsql_fld* field = (dsql_fld*) ret_val_ptr[0];
-	if (field)
-	{
-
-		// CVC: This is case of "returns <type> [by value|reference]"
-		// Some data types can not be returned as value
-
-		if (((int) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong() == FUN_value) &&
-			(field->fld_dtype == dtype_text || field->fld_dtype == dtype_varying ||
-				field->fld_dtype == dtype_cstring || field->fld_dtype == dtype_blob ||
-				field->fld_dtype == dtype_timestamp))
-		{
-			// Return mode by value not allowed for this data type
-			post_607(Arg::Gds(isc_return_mode_err));
-		}
-
-		// For functions returning a blob, coerce return argument position to
-		// be the last parameter.
-
-		if (field->fld_dtype == dtype_blob)
-		{
-			blob_position = arguments ? arguments->nod_count + 1 : 1;
-			if (blob_position > MAX_UDF_ARGUMENTS)
-			{
-				// External functions can not have more than 10 parameters
-				// Or 9 if the function returns a BLOB
-				post_607(Arg::Gds(isc_extern_func_err));
-			}
-
-			dsqlScratch->appendNumber(isc_dyn_func_return_argument, blob_position);
-		}
-		else
-		{
-			dsqlScratch->appendNumber(isc_dyn_func_return_argument, (SSHORT) 0);
-		}
-
-		position = 0;
-	}
-	else
-	{
-
-		// CVC: This is case of "returns parameter <N>"
-
-		position = (SSHORT) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong();
-		// Function modifies an argument whose value is the function return value
-
-		if (!arguments || position > arguments->nod_count || position < 1)
-		{
-			post_607(Arg::Gds(isc_dsql_udf_return_pos_err) << //gds__extern_func_err,
-					 Arg::Num(arguments ? arguments->nod_count : 0));
-					// CVC: We should devise new msg "position should be between 1 and #params";
-					// here it is: dsql_udf_return_pos_err
-
-					// External functions can not have more than 10 parameters
-					// Not strictly correct -- return position error
-		}
-
-		// We'll verify that SCALAR_ARRAY can't be used as a return type.
-		// The support for SCALAR_ARRAY is only for input parameters.
-		const dsql_nod* ret_arg = arguments->nod_arg[position - 1];
-		const dsql_nod* const* param_node = ret_arg->nod_arg;
-		if (param_node[e_udf_param_type])
-		{
-			const SSHORT arg_mechanism =
-				(SSHORT) ExprNode::as<LiteralNode>(param_node[e_udf_param_type])->getSlong();
-
-			if (arg_mechanism == FUN_scalar_array)
-				post_607(Arg::Gds(isc_random) << Arg::Str("BY SCALAR_ARRAY can't be used as a return parameter"));
-		}
-
-		dsqlScratch->appendNumber(isc_dyn_func_return_argument, position);
-		position = 1;
-	}
-
-	// Now define all the arguments
-	if (!position)
-	{
-		// CVC: This is case of "returns <type> [by value|reference]"
-		if (field->fld_dtype == dtype_blob)
-		{
-			// CVC: I need to test returning blobs by descriptor before allowing the
-			// change there. For now, I ignore the return type specification.
-			const bool free_it = ((SSHORT) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong() < 0);
-			dsqlScratch->appendNumber(isc_dyn_def_function_arg, blob_position);
-			dsqlScratch->appendNumber(isc_dyn_func_mechanism,
-					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
-			// if we have the free_it set then the blob has to be freed on return
-		}
-		else
-		{
-			dsqlScratch->appendNumber(isc_dyn_def_function_arg, (SSHORT) 0);
-			dsqlScratch->appendNumber(isc_dyn_func_mechanism,
-				(SSHORT) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong());
-		}
-
-		dsqlScratch->appendNullString(isc_dyn_function_name, udf_name);
-		DDL_resolve_intl_type(dsqlScratch, field, NULL);
-		put_field(dsqlScratch, field, true);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		position = 1;
-	}
-
-	fb_assert(position == 1);
-
-	// CVC: This for all params, including the case of "returns parameter <N>"
-
-	if (arguments)
-	{
-		ptr = arguments->nod_arg;
-		for (const dsql_nod* const* const end = ptr + arguments->nod_count;
-			 ptr < end; ptr++, position++)
-		{
-			if (position > MAX_UDF_ARGUMENTS)
-			{
-				// External functions can not have more than 10 parameters
-				post_607(Arg::Gds(isc_extern_func_err));
-			}
-
-			// field = (dsql_fld*) *ptr;
-			dsql_nod** param_node = (*ptr)->nod_arg;
-			field = (dsql_fld*) param_node[e_udf_param_field];
-
-			dsqlScratch->appendNumber(isc_dyn_def_function_arg, position);
-
-			if (param_node[e_udf_param_type])
-			{
-				const SSHORT arg_mechanism =
-					(SSHORT) ExprNode::as<LiteralNode>(param_node[e_udf_param_type])->getSlong();
-				dsqlScratch->appendNumber(isc_dyn_func_mechanism, arg_mechanism);
-			}
-			else if (field->fld_dtype == dtype_blob) {
-				dsqlScratch->appendNumber(isc_dyn_func_mechanism, (SSHORT) FUN_blob_struct);
-			}
-			else {
-				dsqlScratch->appendNumber(isc_dyn_func_mechanism, (SSHORT) FUN_reference);
-			}
-
-			dsqlScratch->appendNullString(isc_dyn_function_name, udf_name);
-			DDL_resolve_intl_type(dsqlScratch, field, NULL);
-			put_field(dsqlScratch, field, true);
-			dsqlScratch->appendUChar(isc_dyn_end);
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
 /**************************************
@@ -1231,10 +1051,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		string = (dsql_str*) node->nod_arg[0];
 		dsqlScratch->appendNullString(isc_dyn_delete_filter, string->str_data);
 		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
-	case nod_def_udf:
-		define_udf(dsqlScratch);
 		break;
 
 	case nod_del_udf:
@@ -1901,96 +1717,6 @@ static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* granto
 		fb_assert(grantor->nod_type == nod_user_name);
 		const dsql_str* name = (const dsql_str*) grantor->nod_arg[0];
 		dsqlScratch->appendNullString(isc_dyn_grant_grantor, name->str_data);
-	}
-}
-
-
-static void put_field( DsqlCompilerScratch* dsqlScratch, dsql_fld* field, bool udf_flag)
-{
-/**************************************
- *
- *	p u t _ f i e l d
- *
- **************************************
- *
- * Function
- *	Emit dyn which describes a field data type.
- *	This field could be a column, a procedure input,
- *	or a procedure output.
- *
- **************************************/
-
-	if (field->fld_not_nullable)
-		dsqlScratch->appendUChar(isc_dyn_fld_not_null);
-
-	if (field->fld_type_of_name.hasData())
-	{
-		if (field->fld_source.hasData())
-		{
-			dsqlScratch->appendString(isc_dyn_fld_source, field->fld_source);
-			dsqlScratch->appendString(isc_dyn_fld_name, field->fld_type_of_name);
-			dsqlScratch->appendString(isc_dyn_rel_name, field->fld_type_of_table);
-		}
-		else
-			dsqlScratch->appendString(isc_dyn_fld_source, field->fld_type_of_name);
-
-		if (field->fld_explicit_collation)
-			dsqlScratch->appendNumber(isc_dyn_fld_collation, field->fld_collation_id);
-
-		return;
-	}
-
-	dsqlScratch->appendNumber(isc_dyn_fld_type, blr_dtypes[field->fld_dtype]);
-	if (field->fld_dtype == dtype_blob)
-	{
-		dsqlScratch->appendNumber(isc_dyn_fld_sub_type, field->fld_sub_type);
-		dsqlScratch->appendNumber(isc_dyn_fld_scale, 0);
-		if (!udf_flag)
-		{
-			if (!field->fld_seg_length) {
-				field->fld_seg_length = DEFAULT_BLOB_SEGMENT_SIZE;
-			}
-			dsqlScratch->appendNumber(isc_dyn_fld_segment_length, field->fld_seg_length);
-		}
-		else
-		{
-			dsqlScratch->appendNumber(isc_dyn_fld_length, sizeof(ISC_QUAD));
-		}
-		if (field->fld_sub_type == isc_blob_text)
-		{
-			dsqlScratch->appendNumber(isc_dyn_fld_character_set, field->fld_character_set_id);
-			dsqlScratch->appendNumber(isc_dyn_fld_collation, field->fld_collation_id);
-		}
-	}
-	else if (field->fld_dtype <= dtype_any_text)
-	{
-		dsqlScratch->appendNumber(isc_dyn_fld_sub_type, field->fld_sub_type);
-		dsqlScratch->appendNumber(isc_dyn_fld_scale, 0);
-		if (field->fld_dtype == dtype_varying)
-		{
-			// CVC: Fix the assertion
-			fb_assert((field->fld_length) <= MAX_SSHORT);
-			dsqlScratch->appendNumber(isc_dyn_fld_length,
-				(SSHORT) (field->fld_length - sizeof(USHORT)));
-		}
-		else
-		{
-			dsqlScratch->appendNumber(isc_dyn_fld_length, field->fld_length);
-		}
-		dsqlScratch->appendNumber(isc_dyn_fld_char_length, field->fld_character_length);
-		dsqlScratch->appendNumber(isc_dyn_fld_character_set, field->fld_character_set_id);
-		if (!udf_flag)
-			dsqlScratch->appendNumber(isc_dyn_fld_collation, field->fld_collation_id);
-	}
-	else
-	{
-		dsqlScratch->appendNumber(isc_dyn_fld_scale, field->fld_scale);
-		dsqlScratch->appendNumber(isc_dyn_fld_length, field->fld_length);
-		if (DTYPE_IS_EXACT(field->fld_dtype))
-		{
-			dsqlScratch->appendNumber(isc_dyn_fld_precision, field->fld_precision);
-			dsqlScratch->appendNumber(isc_dyn_fld_sub_type, field->fld_sub_type);
-		}
 	}
 }
 

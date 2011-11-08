@@ -2532,24 +2532,49 @@ static processing_state show_comments(const commentMode showextract, const char*
 		return ps_ERR;
 	END_ERROR
 
-	FOR UD IN RDB$FUNCTIONS
-		WITH UD.RDB$DESCRIPTION NOT MISSING
-		AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
-		SORTED BY UD.RDB$FUNCTION_NAME
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+	{
+		FOR UD IN RDB$FUNCTIONS
+			WITH UD.RDB$DESCRIPTION NOT MISSING
+			AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
+			AND UD.RDB$PACKAGE_NAME MISSING
+			SORTED BY UD.RDB$FUNCTION_NAME
 
-		// Avoid syntax error when extracting scripts due to an historical bug in gbak.
-		// See CORE-1174.
-		if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
-			continue;
+			// Avoid syntax error when extracting scripts due to an historical bug in gbak.
+			// See CORE-1174.
+			if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
+				continue;
 
-		show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
-			&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
-		first = false;
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(isc_status);
-		return ps_ERR;
-	END_ERROR
+			show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
+				&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
+			first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+	}
+	else
+	{
+		FOR UD IN RDB$FUNCTIONS
+			WITH UD.RDB$DESCRIPTION NOT MISSING
+			AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY UD.RDB$FUNCTION_NAME
+
+			// Avoid syntax error when extracting scripts due to an historical bug in gbak.
+			// See CORE-1174.
+			if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
+				continue;
+
+			show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
+				&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
+			first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+	}
 
 	FOR BF IN RDB$FILTERS
 		WITH BF.RDB$DESCRIPTION NOT MISSING
@@ -3351,175 +3376,372 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
  **************************************/
 	bool first = true;
 
-	// Show all functions
-	if (!*object)
+	if (isqlGlob.major_ods >= ODS_VERSION12)
 	{
-		bool odd = true;
-		if (!sys_flag)
+		// Show all functions
+		if (!*object)
 		{
-			FOR FUN IN RDB$FUNCTIONS
-				WITH FUN.RDB$SYSTEM_FLAG EQ 0
-				OR FUN.RDB$SYSTEM_FLAG MISSING
-				SORTED BY FUN.RDB$FUNCTION_NAME
-
-				first = false;
-				isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-				odd = !odd;
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(isc_status);
-				return ps_ERR;
-			END_ERROR;
-		}
-		else
-		{
-			FOR FUN IN RDB$FUNCTIONS
-				WITH FUN.RDB$SYSTEM_FLAG EQ sys_flag
-				SORTED BY FUN.RDB$FUNCTION_NAME
-
-				if (first)
-				{
-					first = false;
-					if (msg)
-						isqlGlob.printf("%s%s", msg, NEWLINE);
-				}
-				isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-				odd = !odd;
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(isc_status);
-				return ps_ERR;
-			END_ERROR;
-		}
-		if (!first)
-		{
-			isqlGlob.printf(NEWLINE);
-			return (SKIP);
-		}
-
-		return OBJECT_NOT_FOUND;
-	}
-
-	FOR FUN IN RDB$FUNCTIONS CROSS
-		FNA IN RDB$FUNCTION_ARGUMENTS WITH
-		FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
-		FUN.RDB$FUNCTION_NAME EQ object
-		SORTED BY FNA.RDB$ARGUMENT_POSITION
-
-		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-		fb_utils::exact_name(FUN.RDB$MODULE_NAME);
-		fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
-		if (first)
-		{
-			isqlGlob.printf("%sFunction %s:%s", NEWLINE, FUN.RDB$FUNCTION_NAME, NEWLINE);
-			isqlGlob.printf("Function library is %s%s", FUN.RDB$MODULE_NAME, NEWLINE);
-			isqlGlob.printf("Entry point is %s%s", FUN.RDB$ENTRYPOINT, NEWLINE);
-		}
-
-		SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
-		if (ptype > MAX_UDFPARAM_TYPES) {
-			ptype = MAX_UDFPARAM_TYPES;
-		}
-
-		first = false;
-		if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
-		{
-			isqlGlob.printf("Returns %s%s", UDF_param_types[ptype],
-					 (FNA.RDB$MECHANISM < 0 ? " FREE_IT " : " "));
-		}
-		else {
-			isqlGlob.printf("Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION, UDF_param_types[ptype]);
-		}
-		for (int i = 0; Column_types[i].type; i++)
-		{
-			if (FNA.RDB$FIELD_TYPE == Column_types[i].type)
+			bool odd = true;
+			if (!sys_flag)
 			{
-				bool precision_known = false;
+				FOR FUN IN RDB$FUNCTIONS
+					WITH (FUN.RDB$SYSTEM_FLAG EQ 0 OR FUN.RDB$SYSTEM_FLAG MISSING) AND
+						 FUN.RDB$PACKAGE_NAME MISSING
+					SORTED BY FUN.RDB$FUNCTION_NAME
 
-				// Handle Integral subtypes NUMERIC and DECIMAL
-				// We are ODS >= 10
-				if ( (isqlGlob.major_ods >= ODS_VERSION10) &&
-					 ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
-					  (FNA.RDB$FIELD_TYPE == INTEGER) ||
-					  (FNA.RDB$FIELD_TYPE == BIGINT)) )
-				{
-					FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
-						FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
-						FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION
-						AND FNA1.RDB$FIELD_PRECISION NOT MISSING
+					first = false;
+					isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+					odd = !odd;
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR;
+			}
+			else
+			{
+				FOR FUN IN RDB$FUNCTIONS
+					WITH FUN.RDB$SYSTEM_FLAG EQ sys_flag AND
+						 FUN.RDB$PACKAGE_NAME MISSING
+					SORTED BY FUN.RDB$FUNCTION_NAME
 
-						// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-						if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
-							FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-						{
-							isqlGlob.printf("%s(%d, %d)",
-									 Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
-									 FNA1.RDB$FIELD_PRECISION,
-									 -FNA1.RDB$FIELD_SCALE);
-							precision_known = true;
-						}
-					END_FOR
-					ON_ERROR
-						ISQL_errmsg (isc_status);
-					   return ps_ERR;
-				   END_ERROR;
-				}
-
-				if (!precision_known)
-				{
-					// Take a stab at numerics and decimals
-					if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
+					if (first)
 					{
-						isqlGlob.printf("NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
+						first = false;
+						if (msg)
+							isqlGlob.printf("%s%s", msg, NEWLINE);
 					}
-					else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
-					{
-						isqlGlob.printf("NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
-					}
-					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FNA.RDB$FIELD_SCALE < 0))
-					{
-						isqlGlob.printf("NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
-					}
-					else
-					{
-						isqlGlob.printf("%s", Column_types[i].type_name);
-					}
-				}
-				break;
+					isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+					odd = !odd;
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR;
+			}
+			if (!first)
+			{
+				isqlGlob.printf(NEWLINE);
+				return (SKIP);
 			}
 
+			return OBJECT_NOT_FOUND;
 		}
-		// Print length where appropriate
-		if (FNA.RDB$FIELD_TYPE == T_CHAR || FNA.RDB$FIELD_TYPE == VARCHAR ||
-			FNA.RDB$FIELD_TYPE == CSTRING)
+
+		FOR FUN IN RDB$FUNCTIONS CROSS
+			FNA IN RDB$FUNCTION_ARGUMENTS WITH
+			FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+			FUN.RDB$FUNCTION_NAME EQ object AND
+			FUN.RDB$PACKAGE_NAME MISSING AND
+			FNA.RDB$PACKAGE_NAME MISSING
+			SORTED BY FNA.RDB$ARGUMENT_POSITION
+
+			fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+			fb_utils::exact_name(FUN.RDB$MODULE_NAME);
+			fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
+			if (first)
+			{
+				isqlGlob.printf("%sFunction %s:%s", NEWLINE, FUN.RDB$FUNCTION_NAME, NEWLINE);
+				isqlGlob.printf("Function library is %s%s", FUN.RDB$MODULE_NAME, NEWLINE);
+				isqlGlob.printf("Entry point is %s%s", FUN.RDB$ENTRYPOINT, NEWLINE);
+			}
+
+			SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
+			if (ptype > MAX_UDFPARAM_TYPES) {
+				ptype = MAX_UDFPARAM_TYPES;
+			}
+
+			first = false;
+			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
+			{
+				isqlGlob.printf("Returns %s%s", UDF_param_types[ptype],
+						 (FNA.RDB$MECHANISM < 0 ? " FREE_IT " : " "));
+			}
+			else {
+				isqlGlob.printf("Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION, UDF_param_types[ptype]);
+			}
+
+			if (FNA.RDB$FIELD_TYPE.NULL)
+			{
+				FOR FLD IN RDB$FIELDS WITH
+					FLD.RDB$FIELD_NAME EQ FNA.RDB$FIELD_SOURCE
+				{
+					FNA.RDB$FIELD_TYPE = FLD.RDB$FIELD_TYPE;
+					FNA.RDB$FIELD_SCALE = FLD.RDB$FIELD_SCALE;
+					FNA.RDB$FIELD_LENGTH = FLD.RDB$FIELD_LENGTH;
+				}
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR;
+			}
+
+			for (int i = 0; Column_types[i].type; i++)
+			{
+				if (FNA.RDB$FIELD_TYPE == Column_types[i].type)
+				{
+					bool precision_known = false;
+
+					// Handle Integral subtypes NUMERIC and DECIMAL
+					// We are ODS >= 10
+					if ( (isqlGlob.major_ods >= ODS_VERSION10) &&
+						 ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
+						  (FNA.RDB$FIELD_TYPE == INTEGER) ||
+						  (FNA.RDB$FIELD_TYPE == BIGINT)) )
+					{
+						FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
+							FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
+							FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION AND
+							FNA1.RDB$FIELD_PRECISION NOT MISSING AND
+							FNA1.RDB$PACKAGE_NAME MISSING
+
+							// We are Dialect >=3 since FIELD_PRECISION is non-NULL
+							if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
+								FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+							{
+								isqlGlob.printf("%s(%d, %d)",
+										 Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
+										 FNA1.RDB$FIELD_PRECISION,
+										 -FNA1.RDB$FIELD_SCALE);
+								precision_known = true;
+							}
+						END_FOR
+						ON_ERROR
+							ISQL_errmsg (isc_status);
+						   return ps_ERR;
+					   END_ERROR;
+					}
+
+					if (!precision_known)
+					{
+						// Take a stab at numerics and decimals
+						if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
+						{
+							isqlGlob.printf("NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
+						}
+						else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
+						{
+							isqlGlob.printf("NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
+						}
+						else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FNA.RDB$FIELD_SCALE < 0))
+						{
+							isqlGlob.printf("NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
+						}
+						else
+						{
+							isqlGlob.printf("%s", Column_types[i].type_name);
+						}
+					}
+					break;
+				}
+
+			}
+			// Print length where appropriate
+			if (FNA.RDB$FIELD_TYPE == T_CHAR || FNA.RDB$FIELD_TYPE == VARCHAR ||
+				FNA.RDB$FIELD_TYPE == CSTRING)
+			{
+				FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
+					CHARSET IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
+					WITH V4FNA.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+						 V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION AND
+						 V4FNA.RDB$PACKAGE_NAME MISSING
+
+					fb_utils::exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
+					isqlGlob.printf("(%d) CHARACTER SET %s",
+							 (FNA.RDB$FIELD_LENGTH / MAX (1, CHARSET.RDB$BYTES_PER_CHARACTER)),
+							 CHARSET.RDB$CHARACTER_SET_NAME);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg (isc_status);
+					return ps_ERR;
+				END_ERROR;
+			}
+
+			isqlGlob.printf(NEWLINE);
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR;
+		if (first)
+			return (OBJECT_NOT_FOUND);
+		return (SKIP);
+	}
+	else
+	{
+		// Show all functions
+		if (!*object)
 		{
-			FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
-				CHARSET IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
-				WITH V4FNA.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
-				V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
+			bool odd = true;
+			if (!sys_flag)
+			{
+				FOR FUN IN RDB$FUNCTIONS
+					WITH FUN.RDB$SYSTEM_FLAG EQ 0 OR FUN.RDB$SYSTEM_FLAG MISSING
+					SORTED BY FUN.RDB$FUNCTION_NAME
 
-				fb_utils::exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
-				isqlGlob.printf("(%d) CHARACTER SET %s",
-						 (FNA.RDB$FIELD_LENGTH / MAX (1, CHARSET.RDB$BYTES_PER_CHARACTER)),
-						 CHARSET.RDB$CHARACTER_SET_NAME);
+					first = false;
+					isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+					odd = !odd;
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR;
+			}
+			else
+			{
+				FOR FUN IN RDB$FUNCTIONS
+					WITH FUN.RDB$SYSTEM_FLAG EQ sys_flag
+					SORTED BY FUN.RDB$FUNCTION_NAME
 
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg (isc_status);
-				return ps_ERR;
-			END_ERROR;
+					if (first)
+					{
+						first = false;
+						if (msg)
+							isqlGlob.printf("%s%s", msg, NEWLINE);
+					}
+					isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
+					odd = !odd;
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR;
+			}
+			if (!first)
+			{
+				isqlGlob.printf(NEWLINE);
+				return (SKIP);
+			}
+
+			return OBJECT_NOT_FOUND;
 		}
 
-		isqlGlob.printf(NEWLINE);
+		FOR FUN IN RDB$FUNCTIONS CROSS
+			FNA IN RDB$FUNCTION_ARGUMENTS WITH
+			FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+			FUN.RDB$FUNCTION_NAME EQ object
+			SORTED BY FNA.RDB$ARGUMENT_POSITION
 
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(isc_status);
-		return ps_ERR;
-	END_ERROR;
-	if (first)
-		return (OBJECT_NOT_FOUND);
-	return (SKIP);
+			fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+			fb_utils::exact_name(FUN.RDB$MODULE_NAME);
+			fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
+			if (first)
+			{
+				isqlGlob.printf("%sFunction %s:%s", NEWLINE, FUN.RDB$FUNCTION_NAME, NEWLINE);
+				isqlGlob.printf("Function library is %s%s", FUN.RDB$MODULE_NAME, NEWLINE);
+				isqlGlob.printf("Entry point is %s%s", FUN.RDB$ENTRYPOINT, NEWLINE);
+			}
+
+			SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
+			if (ptype > MAX_UDFPARAM_TYPES) {
+				ptype = MAX_UDFPARAM_TYPES;
+			}
+
+			first = false;
+			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
+			{
+				isqlGlob.printf("Returns %s%s", UDF_param_types[ptype],
+						 (FNA.RDB$MECHANISM < 0 ? " FREE_IT " : " "));
+			}
+			else {
+				isqlGlob.printf("Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION, UDF_param_types[ptype]);
+			}
+
+			for (int i = 0; Column_types[i].type; i++)
+			{
+				if (FNA.RDB$FIELD_TYPE == Column_types[i].type)
+				{
+					bool precision_known = false;
+
+					// Handle Integral subtypes NUMERIC and DECIMAL
+					// We are ODS >= 10
+					if ( (isqlGlob.major_ods >= ODS_VERSION10) &&
+						 ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
+						  (FNA.RDB$FIELD_TYPE == INTEGER) ||
+						  (FNA.RDB$FIELD_TYPE == BIGINT)) )
+					{
+						FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
+							FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
+							FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION
+							AND FNA1.RDB$FIELD_PRECISION NOT MISSING
+
+							// We are Dialect >=3 since FIELD_PRECISION is non-NULL
+							if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
+								FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+							{
+								isqlGlob.printf("%s(%d, %d)",
+										 Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
+										 FNA1.RDB$FIELD_PRECISION,
+										 -FNA1.RDB$FIELD_SCALE);
+								precision_known = true;
+							}
+						END_FOR
+						ON_ERROR
+							ISQL_errmsg (isc_status);
+						   return ps_ERR;
+					   END_ERROR;
+					}
+
+					if (!precision_known)
+					{
+						// Take a stab at numerics and decimals
+						if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
+						{
+							isqlGlob.printf("NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
+						}
+						else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
+						{
+							isqlGlob.printf("NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
+						}
+						else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FNA.RDB$FIELD_SCALE < 0))
+						{
+							isqlGlob.printf("NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
+						}
+						else
+						{
+							isqlGlob.printf("%s", Column_types[i].type_name);
+						}
+					}
+					break;
+				}
+
+			}
+			// Print length where appropriate
+			if (FNA.RDB$FIELD_TYPE == T_CHAR || FNA.RDB$FIELD_TYPE == VARCHAR ||
+				FNA.RDB$FIELD_TYPE == CSTRING)
+			{
+				FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
+					CHARSET IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
+					WITH V4FNA.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+					V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
+
+					fb_utils::exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
+					isqlGlob.printf("(%d) CHARACTER SET %s",
+							 (FNA.RDB$FIELD_LENGTH / MAX (1, CHARSET.RDB$BYTES_PER_CHARACTER)),
+							 CHARSET.RDB$CHARACTER_SET_NAME);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg (isc_status);
+					return ps_ERR;
+				END_ERROR;
+			}
+
+			isqlGlob.printf(NEWLINE);
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR;
+		if (first)
+			return (OBJECT_NOT_FOUND);
+		return (SKIP);
+	}
 }
 
 

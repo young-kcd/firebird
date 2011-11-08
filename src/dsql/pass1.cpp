@@ -908,7 +908,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_def_filter:
 	case nod_del_filter:
 	case nod_def_domain:
-	case nod_def_udf:
 	case nod_del_udf:
 	case nod_def_shadow:
 	case nod_del_shadow:
@@ -4886,25 +4885,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_constraint:
 		verb = "def_constraint";
 		break;
-/*
-	case nod_def_trigger_msg:
-		verb = "def_trigger_msg";
-		break;
-	case nod_mod_trigger_msg:
-		verb = "mod_trigger_msg";
-		break;
-	case nod_del_trigger_msg:
-		verb = "del_trigger_msg";
-		break;
-*/
 	case nod_def_shadow:
 		verb = "def_shadow";
 		break;
 	case nod_del_shadow:
 		verb = "del_shadow";
-		break;
-	case nod_def_udf:
-		verb = "def_udf";
 		break;
 	case nod_del_udf:
 		verb = "del_udf";
