@@ -1098,6 +1098,10 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 	else
 		GET_STRING(ptr, relation_name);
 
+	jrd_rel* rel_drop = MET_lookup_relation(tdbb, relation_name);
+	if (rel_drop)
+		MET_scan_relation(tdbb, rel_drop);
+
 	jrd_req* req2 = 0;
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
 	USHORT id = drq_e_rel_con2;
