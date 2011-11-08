@@ -7125,6 +7125,10 @@ void DropRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	jrd_rel* rel_drop = MET_lookup_relation(tdbb, name);
+	if (rel_drop)
+		MET_scan_relation(tdbb, rel_drop);
+
 	const dsql_rel* relation = METD_get_relation(transaction, dsqlScratch, name);
 
 	if (!relation && silent)
