@@ -1,3 +1,8 @@
+ 2011-11-08 16:48  hvlad 
+   M src/jrd/dyn_del.epp
+Additional fix for CORE-3557 : AV in engine when preparing query against dropping table
+Also fixed CORE-3579 : Can't drop table when computed field depends on later created another field
+
  2011-10-12 19:18  hvlad 
    M src/jrd/idx.cpp
 Backported fix for bug CORE-3631 : Duplicate records with NULLs checked incorrectly
