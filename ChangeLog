@@ -1,3 +1,23 @@
+ 2011-11-08 16:46  hvlad 
+   M src/dsql/DdlNodes.epp
+Additional fix for CORE-3557 : AV in engine when preparing query against dropping table
+Also fixed CORE-3579 : Can't drop table when computed field depends on later created another field
+
+ 2011-11-08 14:54  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/isql/show.epp
+   M src/jrd/drq.h
+   M src/jrd/dyn.epp
+   M src/jrd/dyn_def.epp
+   M src/jrd/dyn_df_proto.h
+1) Refactored legacy (UDF) function creation.
+2) Extend ISQL' SHOW FUNCTION to take packages and parameter's datatype of non-legacy functions into account.
+
  2011-11-05 20:51  asfernandes 
    M src/jrd/intl.cpp
 Fixed CORE-3650 - Recreation of collation leads to FB "death".
