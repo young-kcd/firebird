@@ -1053,6 +1053,7 @@ static const struct {
 	{"dsql_create_alter_view_failed", 336397300},
 	{"dsql_recreate_view_failed", 336397301},
 	{"dsql_drop_view_failed", 336397302},
+	{"dsql_drop_sequence_failed", 336397303},
 	{"gsec_cant_open_db", 336723983},
 	{"gsec_switches_error", 336723984},
 	{"gsec_no_op_spec", 336723985},

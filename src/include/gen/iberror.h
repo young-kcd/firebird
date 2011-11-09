@@ -1087,6 +1087,7 @@ const ISC_STATUS isc_dsql_alter_view_failed           = 336397299L;
 const ISC_STATUS isc_dsql_create_alter_view_failed    = 336397300L;
 const ISC_STATUS isc_dsql_recreate_view_failed        = 336397301L;
 const ISC_STATUS isc_dsql_drop_view_failed            = 336397302L;
+const ISC_STATUS isc_dsql_drop_sequence_failed        = 336397303L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -1188,7 +1189,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1132;
+const ISC_STATUS isc_err_max                          = 1133;
 
 #else /* c definitions */
 
@@ -2245,6 +2246,7 @@ const ISC_STATUS isc_err_max                          = 1132;
 #define isc_dsql_create_alter_view_failed    336397300L
 #define isc_dsql_recreate_view_failed        336397301L
 #define isc_dsql_drop_view_failed            336397302L
+#define isc_dsql_drop_sequence_failed        336397303L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -2346,7 +2348,7 @@ const ISC_STATUS isc_err_max                          = 1132;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1132
+#define isc_err_max                          1133
 
 #endif
 

@@ -25,7 +25,6 @@
 #define JRD_DYN_DL_PROTO_H
 
 void	DYN_delete_filter(Jrd::Global*, const UCHAR**);
-void	DYN_delete_generator(Jrd::Global*, const UCHAR**);
 void	DYN_delete_index(Jrd::Global*, const UCHAR**);
 void	DYN_delete_role(Jrd::Global*, const UCHAR**);
 void	DYN_delete_shadow(Jrd::Global*, const UCHAR**);

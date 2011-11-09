@@ -121,67 +121,6 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
-{
-/**************************************
- *
- *	D Y N _ d e l e t e _ g e n e r a t o r
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement that
- *	deletes a generator from rdb$generator but the
- *  space allocated in the page won't be released.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	bool found = false;
-	Firebird::MetaName t;
-    GET_STRING(ptr, t);
-
-	try
-	{
-        AutoCacheRequest request(tdbb, drq_e_gens, DYN_REQUESTS);
-
-        found = false;
-        FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-            X IN RDB$GENERATORS
-            WITH X.RDB$GENERATOR_NAME EQ t.c_str()
-		{
-			if (X.RDB$SYSTEM_FLAG != 0)
-				DYN_error_punt(false, 272);	// msg 272: "Cannot delete system generator"
-
-		    found = true;
-
-			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
-				DDL_TRIGGER_DROP_SEQUENCE, t, gbl->sqlText);
-
-            ERASE X;
-		}
-        END_FOR
-    }
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 213);
-		// msg 213: "ERASE GENERATOR failed"
-    }
-
-	if (found)
-	{
-		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
-			DDL_TRIGGER_DROP_SEQUENCE, t, gbl->sqlText);
-	}
-	else
-	{
-		DYN_error_punt(false, 214, t.c_str());
-	    // msg 214: "Generator %s not found"
-	}
-}
-
-
 void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 {
 /**************************************

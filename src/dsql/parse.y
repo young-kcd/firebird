@@ -3528,9 +3528,9 @@ drop_clause
 	| ROLE symbol_role_name
 		{ $$ = make_node (nod_del_role, (int) 1, $2); }
 	| GENERATOR symbol_generator_name
-		{ $$ = make_node (nod_del_generator, (int) 1, $2); }
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropSequenceNode(getPool(), toName($2))); }
 	| SEQUENCE symbol_generator_name
-		{ $$ = make_node (nod_del_generator, (int) 1, $2); }
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropSequenceNode(getPool(), toName($2))); }
 	| COLLATION symbol_collation_name
 		{ $$ = makeClassNode(newNode<DropCollationNode>(toName($2))); }
 	| USER drop_user_clause

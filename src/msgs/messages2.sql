@@ -1846,7 +1846,7 @@ COMMIT WORK;
 ('dyn_package_body_exists', NULL, 'DdlNodes.epp/PackageNodes.epp', NULL, 8, 269, NULL, 'Package body @1 already exists', NULL, NULL);
 ('dyn_invalid_ddl_func', 'CreateAlterFunctionNode::compile', 'DdlNodes.epp', NULL, 8, 270, NULL, 'Invalid DDL statement for function @1', NULL, NULL);
 ('dyn_newfc_oldsyntax', 'DYN_modify_function', 'dyn_mod.epp', NULL, 8, 271, NULL, 'Cannot alter new style function @1 with ALTER EXTERNAL FUNCTION. Use ALTER FUNCTION instead.', NULL, NULL);
-(NULL, 'DYN_delete_generator', 'dyn_del.epp', NULL, 8, 272, NULL, 'Cannot delete system generator', NULL, NULL);
+(NULL, 'DYN_delete_generator', 'dyn_del.epp', NULL, 8, 272, NULL, 'Cannot delete system generator @1', NULL, NULL);
 (NULL, 'DYN_define_sql_field', 'dyn_def.epp', NULL, 8, 273, NULL, 'Identity column @1 of table @2 must be of exact number type with zero scale', NULL, NULL);
 (NULL, 'DYN_modify_local_field', 'dyn_mod.epp', NULL, 8, 274, NULL, 'Identity column @1 of table @2 cannot be changed to NULLable', NULL, NULL);
 (NULL, 'DYN_modify_sql_field', 'dyn_mod.epp', NULL, 8, 275, NULL, 'Identity column @1 of table @2 cannot have default value', NULL, NULL);
@@ -2482,6 +2482,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_create_alter_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1012, NULL, 'CREATE OR ALTER VIEW @1 failed', NULL, NULL);
 ('dsql_recreate_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1013, NULL, 'RECREATE VIEW @1 failed', NULL, NULL);
 ('dsql_drop_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1014, NULL, 'DROP VIEW @1 failed', NULL, NULL);
+('dsql_drop_sequence_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1015, NULL, 'DROP SEQUENCE @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

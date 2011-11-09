@@ -1045,6 +1045,7 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1012, 'dsql_create_alter_view_failed', NULL, NULL);
 (-901, '42', '000', 13, 1013, 'dsql_recreate_view_failed', NULL, NULL);
 (-901, '42', '000', 13, 1014, 'dsql_drop_view_failed', NULL, NULL);
+(-901, '42', '000', 13, 1015, 'dsql_drop_sequence_failed', NULL, NULL);
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

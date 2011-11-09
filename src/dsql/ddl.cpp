@@ -1041,12 +1041,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		define_filter(dsqlScratch);
 		break;
 
-	case nod_del_generator:
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(isc_dyn_delete_generator, string->str_data);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
 	case nod_del_filter:
 		string = (dsql_str*) node->nod_arg[0];
 		dsqlScratch->appendNullString(isc_dyn_delete_filter, string->str_data);

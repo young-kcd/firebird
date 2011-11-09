@@ -4716,23 +4716,56 @@ void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const Meta
 
 //----------------------
 
-
-// Delete a record from RDB$GENERATORS. Return true if succeeded.
-bool DropSequenceNode::deleteGenerator(thread_db* tdbb, jrd_tra* transaction, const MetaName& name)
+void DropSequenceNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
-	AutoCacheRequest request(tdbb, drq_e_ident_gens, DYN_REQUESTS);
+	text.printf(
+		"DropSequenceNode\n"
+		"  name: %s\n",
+		name.c_str());
+}
+
+void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	AutoCacheRequest request(tdbb, drq_e_gens, DYN_REQUESTS);
 	bool found = false;
 
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		GEN IN RDB$GENERATORS
 		WITH GEN.RDB$GENERATOR_NAME EQ name.c_str()
 	{
+		if (!GEN.RDB$SYSTEM_FLAG.NULL && GEN.RDB$SYSTEM_FLAG != 0)
+		{
+			// msg 272: "Cannot delete system generator @1"
+			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(272, DYN_MSG_FAC)) << name);
+		}
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+			DDL_TRIGGER_DROP_SEQUENCE, name);
+
 		ERASE GEN;
 		found = true;
 	}
 	END_FOR
 
-	return found;
+	if (found)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_SEQUENCE, name);
+	else
+		status_exception::raise(Arg::Gds(isc_gennotdef) << Arg::Str(name));
+}
+
+
+// Delete a record from RDB$GENERATORS, without verifying RDB$SYSTEM_FLAG.
+void DropSequenceNode::deleteIdentity(thread_db* tdbb, jrd_tra* transaction, const MetaName& name)
+{
+	AutoCacheRequest request(tdbb, drq_e_ident_gens, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		GEN IN RDB$GENERATORS
+		WITH GEN.RDB$GENERATOR_NAME EQ name.c_str()
+	{
+		ERASE GEN;
+	}
+	END_FOR
 }
 
 
@@ -5036,7 +5069,7 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 			 RFR.RDB$RELATION_NAME EQ relationName.c_str()
 	{
 		if (!RFR.RDB$GENERATOR_NAME.NULL)
-			DropSequenceNode::deleteGenerator(tdbb, transaction, RFR.RDB$GENERATOR_NAME);
+			DropSequenceNode::deleteIdentity(tdbb, transaction, RFR.RDB$GENERATOR_NAME);
 
 		ERASE RFR;
 
@@ -7230,7 +7263,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		WITH RFR.RDB$RELATION_NAME EQ name.c_str()
 	{
 		if (!RFR.RDB$GENERATOR_NAME.NULL)
-			DropSequenceNode::deleteGenerator(tdbb, transaction, RFR.RDB$GENERATOR_NAME);
+			DropSequenceNode::deleteIdentity(tdbb, transaction, RFR.RDB$GENERATOR_NAME);
 
 		ERASE RFR;
 

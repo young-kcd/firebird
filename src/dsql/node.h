@@ -69,7 +69,6 @@ enum nod_t
 	nod_def_index,
 	nod_del_index,
 	nod_def_constraint,
-	nod_del_generator,
 	nod_def_filter,
 	nod_del_filter,
 	nod_def_shadow,

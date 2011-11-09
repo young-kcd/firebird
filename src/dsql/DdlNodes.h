@@ -893,11 +893,30 @@ private:
 };
 
 
-class DropSequenceNode
+class DropSequenceNode : public DdlNode
 {
 public:
-	static bool deleteGenerator(thread_db* tdbb, jrd_tra* transaction,
+	DropSequenceNode(MemoryPool& pool, const Firebird::MetaName&aName)
+		: DdlNode(pool),
+		  name(pool, aName)
+	{
+	}
+
+	static void deleteIdentity(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& name);
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_sequence_failed) << name;
+	}
+
+private:
+	Firebird::MetaName name;
 };
 
 

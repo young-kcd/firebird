@@ -392,10 +392,6 @@ void DYN_execute(Global* gbl,
 		DYN_modify_function(gbl, ptr);
 		break;
 
-	case isc_dyn_delete_generator:
-		DYN_delete_generator(gbl, ptr);
-		break;
-
 	case isc_dyn_def_sql_role:
 		DYN_define_role(gbl, ptr);
 		break;
