@@ -1228,9 +1228,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Release the transaction and its pool
 
-	jrd_tra::destroy(attachment, transaction);
-
 	tdbb->setTransaction(NULL);
+	jrd_tra::destroy(attachment, transaction);
 }
 
 

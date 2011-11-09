@@ -5953,9 +5953,9 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	delete attachment->att_user;
 
+	tdbb->setAttachment(NULL);
 	Jrd::Attachment::destroy(attachment);	// string were re-saved in the beginning of this function,
 											// keep that in sync please
-	tdbb->setAttachment(NULL);
 }
 
 
@@ -6616,8 +6616,6 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 			shutdown_database(dbb, true);
 		}
 	}
-
-	tdbb->setAttachment(NULL);
 }
 
 
