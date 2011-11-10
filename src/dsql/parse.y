@@ -742,7 +742,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <execStatementNode> for_exec_into
 
 %type <legacyNode> generated_always_clause grant grant_option granted_by granted_by_text grantee grantee_list
-%type <legacyNode> grantor group_by_item group_by_list group_clause gtt_recreate_clause
+%type <legacyNode> grantor group_by_item group_by_list group_clause
+%type <ddlNode> gtt_recreate_clause
 %type <legacyStr>  grant_admin grant_admin_opt
 
 %type <legacyNode> having_clause
@@ -805,7 +806,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> qualified_join query_spec query_term
 
-%type <legacyNode> recreate recreate_clause referential_action referential_constraint
+%type <ddlNode> recreate recreate_clause
+%type <legacyNode> referential_action referential_constraint
 %type <legacyNode> referential_trigger_action release_savepoint replace_clause
 %type <legacyNode> replace_exception_clause
 %type <legacyNode> replace_view_clause restr_list restr_option
@@ -813,9 +815,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> rev_admin_option rev_grant_option revoke
 %type return_value1(<createAlterFunctionNode>) return_value(<createAlterFunctionNode>)
 %type <returningClause> returning_clause
-%type <legacyNode> rexception_clause role_admin_option role_clause role_grantee role_grantee_list
-%type <legacyNode> role_name role_name_list rollback rows_clause rtable_clause
-%type <legacyNode> rview_clause
+%type <ddlNode> rexception_clause
+%type <legacyNode> role_admin_option role_clause role_grantee role_grantee_list
+%type <legacyNode> role_name role_name_list rollback rows_clause
+%type <ddlNode> rtable_clause
+%type <ddlNode> rview_clause
 %type <legacyStr>  revoke_admin
 
 %type <legacyNode> savepoint scroll_opt search_condition searched_case
@@ -978,6 +982,7 @@ statement
 	| exec_block
 		{ $$ = makeClassNode($1); }
 	| recreate
+		{ $$ = makeClassNode($1); }
 	| revoke
 	| rollback
 	| savepoint
@@ -1327,9 +1332,9 @@ recreate
 
 recreate_clause
 	: PROCEDURE procedure_clause
-		{ $$ = makeClassNode(newNode<RecreateProcedureNode>($2)); }
+		{ $$ = newNode<RecreateProcedureNode>($2); }
 	| FUNCTION function_clause
-		{ $$ = makeClassNode(newNode<RecreateFunctionNode>($2)); }
+		{ $$ = newNode<RecreateFunctionNode>($2); }
 	| TABLE rtable_clause
 		{ $$ = $2; }
 	| GLOBAL TEMPORARY TABLE gtt_recreate_clause
@@ -1337,17 +1342,17 @@ recreate_clause
 	| VIEW rview_clause
 		{ $$ = $2; }
 	| TRIGGER trigger_clause
-		{ $$ = makeClassNode(newNode<RecreateTriggerNode>($2)); }
+		{ $$ = newNode<RecreateTriggerNode>($2); }
 	| PACKAGE package_clause
-		{ $$ = makeClassNode(newNode<RecreatePackageNode>($2)); }
+		{ $$ = newNode<RecreatePackageNode>($2); }
 	| PACKAGE BODY package_body_clause
-		{ $$ = makeClassNode(newNode<RecreatePackageBodyNode>($3)); }
+		{ $$ = newNode<RecreatePackageBodyNode>($3); }
 	| EXCEPTION rexception_clause
 		{ $$ = $2; }
 	| GENERATOR generator_clause
-		{ $$ = makeClassNode(newNode<RecreateSequenceNode>($2)); }
+		{ $$ = newNode<RecreateSequenceNode>($2); }
 	| SEQUENCE generator_clause
-		{ $$ = makeClassNode(newNode<RecreateSequenceNode>($2)); }
+		{ $$ = newNode<RecreateSequenceNode>($2); }
 	;
 
 create_or_alter
@@ -1376,7 +1381,7 @@ rexception_clause
 		{
 			CreateAlterExceptionNode* createNode = newNode<CreateAlterExceptionNode>(
 				toName($1), toString($2));
-			$$ = makeClassNode(newNode<RecreateExceptionNode>(createNode));
+			$$ = newNode<RecreateExceptionNode>(createNode);
 		}
 	;
 
@@ -1722,7 +1727,7 @@ table_clause
 
 rtable_clause
 	: table_clause
-		{ $$ = makeClassNode(newNode<RecreateTableNode>($1)); }
+		{ $$ = newNode<RecreateTableNode>($1); }
 	;
 
 gtt_table_clause
@@ -1737,7 +1742,7 @@ gtt_table_clause
 
 gtt_recreate_clause
 	: gtt_table_clause
-		{ $$ = makeClassNode(newNode<RecreateTableNode>($1)); }
+		{ $$ = newNode<RecreateTableNode>($1); }
 	;
 
 gtt_scope
@@ -2897,7 +2902,7 @@ view_clause
 
 rview_clause
 	: view_clause
-		{ $$ = makeClassNode(newNode<RecreateViewNode>($1)); }
+		{ $$ = newNode<RecreateViewNode>($1); }
 	;
 
 replace_view_clause
