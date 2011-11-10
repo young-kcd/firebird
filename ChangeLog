@@ -1,3 +1,30 @@
+ 2011-11-09 15:30  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/dyn.epp
+   M src/jrd/dyn_del.epp
+   M src/jrd/dyn_dl_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Apply CORE-3114 patch (Attempt to drop non-existing generator produces bad error) with some modifications.
+
+ 2011-11-09 13:31  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+A little bit of safety doesn't hurt.
+
  2011-11-08 16:46  hvlad 
    M src/dsql/DdlNodes.epp
 Additional fix for CORE-3557 : AV in engine when preparing query against dropping table
