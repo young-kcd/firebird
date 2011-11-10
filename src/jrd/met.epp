@@ -2932,7 +2932,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				END_FOR
 			}
 
-			procedure->setUndefined(false);
+			procedure->setImplemented(true);
 			procedure->getInputFields().resize(P.RDB$PROCEDURE_INPUTS);
 			procedure->getOutputFields().resize(P.RDB$PROCEDURE_OUTPUTS);
 			procedure->setDefaultCount(0);
@@ -4644,7 +4644,7 @@ void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id,
 	routine->setStatement(statement);
 
 	if (!external && !blob_id)
-		routine->setUndefined(true);
+		routine->setImplemented(false);
 }
 
 

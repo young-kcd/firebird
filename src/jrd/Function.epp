@@ -375,8 +375,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			if (!X.RDB$DETERMINISTIC_FLAG.NULL)
 				function->fun_deterministic = (X.RDB$DETERMINISTIC_FLAG != 0);
 
-			function->setUndefined(false);
 			function->setImplemented(true);
+			function->setDefined(true);
 
 			function->fun_entrypoint = NULL;
 			function->fun_external = NULL;
@@ -414,7 +414,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 						&inBlr, &outBlr);
 
 					if (!function->fun_external)
-						function->setImplemented(false);
+						function->setDefined(false);
 				}
 
 				MemoryPool* const csb_pool = attachment->createPool();
@@ -463,10 +463,10 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				}
 
 				if (!function->fun_entrypoint)
-					function->setImplemented(false);
+					function->setDefined(false);
 			}
 			else
-				function->setUndefined(true);
+				function->setImplemented(false);
 
 			if (X.RDB$VALID_BLR.NULL || X.RDB$VALID_BLR == FALSE)
 				valid_blr = false;

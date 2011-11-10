@@ -1268,7 +1268,7 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 	Function* subFunc = node->routine = FB_NEW(pool) Function(pool);
 	subFunc->setName(QualifiedName(name));
 	subFunc->setSubRoutine(true);
-	subFunc->setUndefined(false);
+	subFunc->setImplemented(true);
 
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);
@@ -1517,7 +1517,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 	jrd_prc* subProc = node->routine = FB_NEW(pool) jrd_prc(pool);
 	subProc->setName(QualifiedName(name));
 	subProc->setSubRoutine(true);
-	subProc->setUndefined(false);
+	subProc->setImplemented(true);
 
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);

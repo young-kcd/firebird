@@ -10076,7 +10076,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	if (function)
 	{
-		if (!function->isUndefined() && !function->isImplemented())
+		if (function->isImplemented() && !function->isDefined())
 		{
 			if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 			{
@@ -10293,13 +10293,13 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 	}
 
-	if (function->isUndefined())
+	if (!function->isImplemented())
 	{
 		status_exception::raise(
 			Arg::Gds(isc_func_pack_not_implemented) <<
 				Arg::Str(function->getName().identifier) << Arg::Str(function->getName().package));
 	}
-	else if (!function->isImplemented())
+	else if (!function->isDefined())
 	{
 		status_exception::raise(
 			Arg::Gds(isc_funnotdef) << Arg::Str(function->getName().toString()) <<

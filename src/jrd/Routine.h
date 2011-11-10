@@ -40,8 +40,8 @@ namespace Jrd
 			  securityName(p),
 			  statement(NULL),
 			  subRoutine(false),
-			  undefined(false),
 			  implemented(true),
+			  defined(true),
 			  defaultCount(0),
 			  inputFormat(NULL),
 			  outputFormat(NULL),
@@ -76,11 +76,11 @@ namespace Jrd
 		bool isSubRoutine() const { return subRoutine; }
 		void setSubRoutine(bool value) { subRoutine = value; }
 
-		bool isUndefined() const { return undefined; }
-		void setUndefined(bool value) { undefined = value; }
-
 		bool isImplemented() const { return implemented; }
 		void setImplemented(bool value) { implemented = value; }
+
+		bool isDefined() const { return defined; }
+		void setDefined(bool value) { defined = value; }
 
 		USHORT getDefaultCount() const { return defaultCount; }
 		void setDefaultCount(USHORT value) { defaultCount = value; }
@@ -107,8 +107,8 @@ namespace Jrd
 		Firebird::MetaName securityName;	// security class name
 		JrdStatement* statement;			// compiled routine statement
 		bool subRoutine;					// Is this a subroutine?
-		bool undefined;						// Is the packaged routine missing the body/entrypoint?
-		bool implemented;					// routine has its implementation available
+		bool implemented;					// Is the packaged routine missing the body/entrypoint?
+		bool defined;						// UDF has its implementation module available
 		USHORT defaultCount;				// default input arguments
 		const Format* inputFormat;			// input format
 		const Format* outputFormat;			// output format

@@ -902,7 +902,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	JrdStatement* statement = request->getStatement();
 	const jrd_prc* proc = statement->procedure;
 
-	if (proc && proc->isUndefined())
+	if (proc && !proc->isImplemented())
 	{
 		status_exception::raise(
 			Arg::Gds(isc_proc_pack_not_implemented) <<
