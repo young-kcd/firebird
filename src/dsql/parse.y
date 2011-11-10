@@ -646,6 +646,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreateAlterProcedureNode* createAlterProcedureNode;
 	Jrd::CreateAlterTriggerNode* createAlterTriggerNode;
 	Jrd::CreateAlterPackageNode* createAlterPackageNode;
+	Jrd::CreateSequenceNode* createSequenceNode;
 	Firebird::Array<Jrd::CreateAlterPackageNode::Item>* packageItems;
 	Jrd::ExceptionArray* exceptionArray;
 	Jrd::CreateAlterPackageNode::Item packageItem;
@@ -881,7 +882,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <boolVal> release_only_opt
 
-%type <ddlNode> alter_charset_clause comment generator_clause
+%type <ddlNode> alter_charset_clause comment
+%type <createSequenceNode> generator_clause
 %type <stmtNode> if_then_else in_autonomous_transaction excp_statement raise_statement
 %type <execBlockNode> exec_block
 
@@ -1342,6 +1344,10 @@ recreate_clause
 		{ $$ = makeClassNode(newNode<RecreatePackageBodyNode>($3)); }
 	| EXCEPTION rexception_clause
 		{ $$ = $2; }
+	| GENERATOR generator_clause
+		{ $$ = makeClassNode(newNode<RecreateSequenceNode>($2)); }
+	| SEQUENCE generator_clause
+		{ $$ = makeClassNode(newNode<RecreateSequenceNode>($2)); }
 	;
 
 create_or_alter

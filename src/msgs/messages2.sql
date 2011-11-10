@@ -2483,6 +2483,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_recreate_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1013, NULL, 'RECREATE VIEW @1 failed', NULL, NULL);
 ('dsql_drop_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1014, NULL, 'DROP VIEW @1 failed', NULL, NULL);
 ('dsql_drop_sequence_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1015, NULL, 'DROP SEQUENCE @1 failed', NULL, NULL);
+('dsql_recreate_sequence_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1016, NULL, 'RECREATE SEQUENCE @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

@@ -1057,6 +1057,7 @@ Data source : @4"},		/* eds_statement */
 	{336397301, "RECREATE VIEW @1 failed"},		/* dsql_recreate_view_failed */
 	{336397302, "DROP VIEW @1 failed"},		/* dsql_drop_view_failed */
 	{336397303, "DROP SEQUENCE @1 failed"},		/* dsql_drop_sequence_failed */
+	{336397304, "RECREATE SEQUENCE @1 failed"},		/* dsql_recreate_sequence_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

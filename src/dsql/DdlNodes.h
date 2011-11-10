@@ -888,7 +888,7 @@ protected:
 		statusVector << Firebird::Arg::Gds(isc_dsql_create_sequence_failed) << name;
 	}
 
-private:
+public:
 	Firebird::MetaName name;
 };
 
@@ -898,7 +898,8 @@ class DropSequenceNode : public DdlNode
 public:
 	DropSequenceNode(MemoryPool& pool, const Firebird::MetaName&aName)
 		: DdlNode(pool),
-		  name(pool, aName)
+		  name(pool, aName),
+		  silent(false)
 	{
 	}
 
@@ -915,9 +916,14 @@ protected:
 		statusVector << Firebird::Arg::Gds(isc_dsql_drop_sequence_failed) << name;
 	}
 
-private:
+public:
 	Firebird::MetaName name;
+	bool silent;
 };
+
+
+typedef RecreateNode<CreateSequenceNode, DropSequenceNode, isc_dsql_recreate_sequence_failed>
+	RecreateSequenceNode;
 
 
 class RelationNode : public DdlNode

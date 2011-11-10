@@ -4749,7 +4749,7 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 	if (found)
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_SEQUENCE, name);
-	else
+	else if (!silent)
 		status_exception::raise(Arg::Gds(isc_gennotdef) << Arg::Str(name));
 }
 

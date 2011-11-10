@@ -1053,6 +1053,7 @@ static const struct {
 	{336397301, "42000"}, // 1013 dsql_recreate_view_failed
 	{336397302, "42000"}, // 1014 dsql_drop_view_failed
 	{336397303, "42000"}, // 1015 dsql_drop_sequence_failed
+	{336397304, "42000"}, // 1016 dsql_recreate_sequence_failed
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec
