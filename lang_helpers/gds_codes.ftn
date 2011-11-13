@@ -2118,6 +2118,18 @@ C --
       PARAMETER (GDS__dsql_drop_sequence_failed        = 336397303)
       INTEGER*4 GDS__dsql_recreate_sequence_failed   
       PARAMETER (GDS__dsql_recreate_sequence_failed    = 336397304)
+      INTEGER*4 GDS__dsql_drop_index_failed          
+      PARAMETER (GDS__dsql_drop_index_failed           = 336397305)
+      INTEGER*4 GDS__dsql_drop_filter_failed         
+      PARAMETER (GDS__dsql_drop_filter_failed          = 336397306)
+      INTEGER*4 GDS__dsql_drop_shadow_failed         
+      PARAMETER (GDS__dsql_drop_shadow_failed          = 336397307)
+      INTEGER*4 GDS__dsql_drop_role_failed           
+      PARAMETER (GDS__dsql_drop_role_failed            = 336397308)
+      INTEGER*4 GDS__dsql_drop_user_failed           
+      PARAMETER (GDS__dsql_drop_user_failed            = 336397309)
+      INTEGER*4 GDS__dsql_create_role_failed         
+      PARAMETER (GDS__dsql_create_role_failed          = 336397310)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

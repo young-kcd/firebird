@@ -1047,6 +1047,12 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1014, 'dsql_drop_view_failed', NULL, NULL);
 (-901, '42', '000', 13, 1015, 'dsql_drop_sequence_failed', NULL, NULL);
 (-901, '42', '000', 13, 1016, 'dsql_recreate_sequence_failed', NULL, NULL);
+(-901, '42', '000', 13, 1017, 'dsql_drop_index_failed', NULL, NULL);
+(-901, '42', '000', 13, 1018, 'dsql_drop_filter_failed', NULL, NULL);
+(-901, '42', '000', 13, 1019, 'dsql_drop_shadow_failed', NULL, NULL);
+(-901, '42', '000', 13, 1020, 'dsql_drop_role_failed', NULL, NULL);
+(-901, '42', '000', 13, 1021, 'dsql_drop_user_failed', NULL, NULL);
+(-901, '42', '000', 13, 1022, 'dsql_create_role_failed', NULL, NULL);
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

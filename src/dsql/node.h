@@ -67,12 +67,9 @@ enum nod_t
 	nod_mod_field,
 	nod_del_field,
 	nod_def_index,
-	nod_del_index,
 	nod_def_constraint,
 	nod_def_filter,
-	nod_del_filter,
 	nod_def_shadow,
-	nod_del_shadow,
 	nod_del_udf,
 	nod_grant,
 	nod_revoke,
@@ -134,10 +131,8 @@ enum nod_t
 	nod_set_statistics,	// set statistics
 	nod_ref_upd_del,	// referential integrity actions
 	nod_ref_trig_action,
-	nod_def_role,	// SQL role support
 	nod_role_name,
 	nod_grant_admin,
-	nod_del_role,
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
@@ -156,7 +151,6 @@ enum nod_t
 	nod_mod_role,
 	nod_add_user,
 	nod_mod_user,
-	nod_del_user,
 	nod_dfl_collate,
 	nod_trg_act,
 	nod_trg_ext,

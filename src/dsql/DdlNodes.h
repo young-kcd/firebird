@@ -1245,11 +1245,153 @@ public:
 };
 
 
-class DropIndexNode
+class DropIndexNode : public DdlNode
 {
 public:
+	DropIndexNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName)
+	{
+	}
+
 	static bool deleteSegmentRecords(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& name);
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_index_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+};
+
+
+class DropFilterNode : public DdlNode
+{
+public:
+	DropFilterNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_filter_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+};
+
+
+class DropShadowNode : public DdlNode
+{
+public:
+	DropShadowNode(MemoryPool& p, const SSHORT aNumber)
+		: DdlNode(p),
+		  number(aNumber)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_shadow_failed) << Firebird::Arg::Num(number);
+	}
+
+public:
+	SSHORT number;
+};
+
+
+class CreateRoleNode : public DdlNode
+{
+public:
+	CreateRoleNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_role_failed) << name;
+	}
+
+private:
+	bool isItUserName(thread_db* tdbb, jrd_tra* transaction);
+
+public:
+	Firebird::MetaName name;
+};
+
+
+class DropRoleNode : public DdlNode
+{
+public:
+	DropRoleNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_role_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+};
+
+
+class DropUserNode : public DdlNode
+{
+public:
+	DropUserNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_user_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
 };
 
 

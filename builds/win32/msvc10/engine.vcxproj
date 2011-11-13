@@ -26,7 +26,6 @@
     <ClCompile Include="..\..\..\gen\jrd\dpm.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\dyn.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\dyn_def.cpp" />
-    <ClCompile Include="..\..\..\gen\jrd\dyn_del.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\dyn_mod.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\dyn_util.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\fun.cpp" />
@@ -220,7 +219,6 @@
     <ClInclude Include="..\..\..\src\jrd\drq.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn_df_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\dyn_dl_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn_md_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn_ut_proto.h" />
@@ -353,7 +351,6 @@
     <None Include="..\..\..\src\jrd\dpm.epp" />
     <None Include="..\..\..\src\jrd\dyn.epp" />
     <None Include="..\..\..\src\jrd\dyn_def.epp" />
-    <None Include="..\..\..\src\jrd\dyn_del.epp" />
     <None Include="..\..\..\src\jrd\dyn_mod.epp" />
     <None Include="..\..\..\src\jrd\dyn_util.epp" />
     <None Include="..\..\..\src\jrd\fun.epp" />

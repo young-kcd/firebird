@@ -1066,6 +1066,12 @@ const
 	gds_dsql_drop_view_failed            = 336397302;
 	gds_dsql_drop_sequence_failed        = 336397303;
 	gds_dsql_recreate_sequence_failed    = 336397304;
+	gds_dsql_drop_index_failed           = 336397305;
+	gds_dsql_drop_filter_failed          = 336397306;
+	gds_dsql_drop_shadow_failed          = 336397307;
+	gds_dsql_drop_role_failed            = 336397308;
+	gds_dsql_drop_user_failed            = 336397309;
+	gds_dsql_create_role_failed          = 336397310;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

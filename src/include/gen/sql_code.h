@@ -1054,6 +1054,12 @@ static const struct {
 	{336397302, -901}, /* 1014 dsql_drop_view_failed */
 	{336397303, -901}, /* 1015 dsql_drop_sequence_failed */
 	{336397304, -901}, /* 1016 dsql_recreate_sequence_failed */
+	{336397305, -901}, /* 1017 dsql_drop_index_failed */
+	{336397306, -901}, /* 1018 dsql_drop_filter_failed */
+	{336397307, -901}, /* 1019 dsql_drop_shadow_failed */
+	{336397308, -901}, /* 1020 dsql_drop_role_failed */
+	{336397309, -901}, /* 1021 dsql_drop_user_failed */
+	{336397310, -901}, /* 1022 dsql_create_role_failed */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

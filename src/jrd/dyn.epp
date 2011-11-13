@@ -270,7 +270,7 @@ void DYN_error_punt(bool status_flag, USHORT number)
 }
 
 
-bool DYN_is_it_sql_role(Global* gbl,
+bool DYN_is_it_sql_role(jrd_tra* transaction,
 						const MetaName&	input_name,
 						MetaName& output_name,
 						thread_db* tdbb)
@@ -293,7 +293,7 @@ bool DYN_is_it_sql_role(Global* gbl,
 
 	AutoCacheRequest request(tdbb, drq_get_role_nm, DYN_REQUESTS);
 
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		X IN RDB$ROLES WITH
 			X.RDB$ROLE_NAME EQ input_name.c_str()
 	{
@@ -384,28 +384,12 @@ void DYN_execute(Global* gbl,
 		DYN_define_filter(gbl, ptr);
 		break;
 
-	case isc_dyn_delete_filter:
-		DYN_delete_filter(gbl, ptr);
-		break;
-
 	case isc_dyn_mod_function:
 		DYN_modify_function(gbl, ptr);
 		break;
 
-	case isc_dyn_def_sql_role:
-		DYN_define_role(gbl, ptr);
-		break;
-
-	case isc_dyn_del_sql_role:
-		DYN_delete_role(gbl, ptr);
-		break;
-
 	case isc_dyn_def_shadow:
 		DYN_define_shadow(gbl, ptr);
-		break;
-
-	case isc_dyn_delete_shadow:
-		DYN_delete_shadow(gbl, ptr);
 		break;
 
 	case isc_dyn_def_idx:
@@ -414,10 +398,6 @@ void DYN_execute(Global* gbl,
 
 	case isc_dyn_mod_idx:
 		DYN_modify_index(gbl, ptr);
-		break;
-
-	case isc_dyn_delete_idx:
-		DYN_delete_index(gbl, ptr);
 		break;
 
 	case isc_dyn_mapping:
@@ -720,28 +700,6 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 }
 
 
-USHORT DYN_skip_attribute(const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ s k i p _ a t t r i b u t e
- *
- **************************************
- *
- * Functional description
- *	Skip over attribute returning length (excluding
- *	size of count bytes).
- *
- **************************************/
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
-	length |= (*p++) << 8;
-	*ptr = p + length;
-
-	return length;
-}
-
-
 static void grant( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -813,7 +771,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
 			// This test may become obsolete as we now allow explicit ROLE keyword.
-			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			if (DYN_is_it_sql_role(gbl->gbl_transaction, user, dummy_name, tdbb))
 			{
 				user_type = obj_sql_role;
 				if (user == NULL_ROLE)
@@ -838,7 +796,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_role:
 		    user_type = obj_sql_role;
 		    GET_STRING(ptr, user);
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			if (!DYN_is_it_sql_role(gbl->gbl_transaction, user, dummy_name, tdbb))
 			{
 				DYN_error_punt(false, 188, user.c_str());
 				// msg 188: Role doesn't exist.
@@ -1351,7 +1309,7 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 
 	// Fetch the name of the owner of the ROLE
 	MetaName owner;
-	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
+	if (DYN_is_it_sql_role(gbl->gbl_transaction, role_name, owner, tdbb))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
 		if (tdbb->getAttachment()->locksmith() || owner == grantor)
@@ -1502,7 +1460,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
 			// This test may become obsolete as we now allow explicit ROLE keyword.
-			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			if (DYN_is_it_sql_role(gbl->gbl_transaction, user, dummy_name, tdbb))
 			{
 				user_type = obj_sql_role;
 				if (user == NULL_ROLE)
@@ -1527,7 +1485,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_role:
 			user_type = obj_sql_role;
 			GET_STRING(ptr, user);
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			if (!DYN_is_it_sql_role(gbl->gbl_transaction, user, dummy_name, tdbb))
 			{
 				DYN_error_punt(false, 188, user.c_str());
 				// msg 188: Role doesn't exist.
@@ -1741,7 +1699,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
 			// This test may become obsolete as we now allow explicit ROLE keyword.
-			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			if (DYN_is_it_sql_role(gbl->gbl_transaction, user, dummy_name, tdbb))
 			{
 				user_type = obj_sql_role;
 				if (user == NULL_ROLE)
@@ -1766,7 +1724,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_role:
 			GET_STRING(ptr, user);
 			user_type = obj_sql_role;
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+			if (!DYN_is_it_sql_role(gbl->gbl_transaction, user, dummy_name, tdbb)) {
 				DYN_error_punt(false, 188, user.c_str()); // msg 188: Role doesn't exist.
 			}
 			if (user == NULL_ROLE)
@@ -1948,7 +1906,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
  **************************************
  *
  * Functional description
- *	Implements CREATE/ALTER/DROP USER
+ *	Implements CREATE/ALTER USER
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1993,13 +1951,6 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			case isc_dyn_user_mod:
 				text.upper();
 				userData->op = MOD_OPER;
-				userData->user.set(text.c_str());
-				userData->user.setEntered(1);
-				break;
-
-			case isc_dyn_user_del:
-				text.upper();
-				userData->op = DEL_OPER;
 				userData->user.set(text.c_str());
 				userData->user.setEntered(1);
 				break;
@@ -2071,10 +2022,6 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 
 			case MOD_OPER:
 				ddlAction = DDL_TRIGGER_ALTER_USER;
-				break;
-
-			case DEL_OPER:
-				ddlAction = DDL_TRIGGER_DROP_USER;
 				break;
 		}
 

@@ -39,9 +39,10 @@
 #include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/ResultSet.h"
+#include "../jrd/UserManagement.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-#include "../common/dsc_proto.h"
+#include "../jrd/dfw_proto.h"
 #include "../jrd/dyn_dl_proto.h"
 #include "../jrd/dyn_ut_proto.h"
 #include "../jrd/exe_proto.h"
@@ -56,7 +57,29 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
+#include "../utilities/gsec/gsec.h"
+#include "../common/dsc_proto.h"
 #include "../common/StatusArg.h"
+
+namespace
+{
+	class DynamicUserData : public Firebird::VersionedIface<Auth::UserData, FB_AUTH_USER_VERSION>
+	{
+	public:
+
+#ifdef DEBUG_GDS_ALLOC
+		void* operator new(size_t size, Firebird::MemoryPool& pool, const char* fileName, int line)
+		{
+			return pool.allocate(size, fileName, line);
+		}
+#else	// DEBUG_GDS_ALLOC
+		void* operator new(size_t size, Firebird::MemoryPool& pool)
+		{
+			return pool.allocate(size);
+		}
+#endif	// DEBUG_GDS_ALLOC
+	};
+}	// namespace
 
 namespace Jrd {
 
@@ -8732,6 +8755,337 @@ bool DropIndexNode::deleteSegmentRecords(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 
 	return found;
+}
+
+void DropIndexNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"DropIndexNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest request(tdbb, drq_e_indices, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		IDX IN RDB$INDICES
+		WITH IDX.RDB$INDEX_NAME EQ name.c_str()
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+			DDL_TRIGGER_DROP_INDEX, name);
+
+		ERASE IDX;
+
+		if (IDX.RDB$EXPRESSION_BLR.NULL && !deleteSegmentRecords(tdbb, transaction, name))
+		{
+			// msg 50: "No segments found for index"
+			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(50, DYN_MSG_FAC)));
+		}
+
+		found = true;
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_INDEX, name);
+	else
+	{
+		// msg 48: "Index not found"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(48, DYN_MSG_FAC)));
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void DropFilterNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"DropFilterNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void DropFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest request(tdbb, drq_e_filters, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$FILTERS
+		WITH X.RDB$FUNCTION_NAME EQ name.c_str()
+	{
+		ERASE X;
+		found = true;
+	}
+	END_FOR
+
+	if (!found)
+	{
+		// msg 37: "Blob Filter %s not found"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(37, DYN_MSG_FAC)) << name);
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void DropShadowNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"DropShadowNode\n"
+		"  number: '%d'\n",
+		number);
+}
+
+void DropShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	if (!tdbb->getAttachment()->locksmith())
+		status_exception::raise(Arg::Gds(isc_adm_task_denied));
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest request(tdbb, drq_e_shadow, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FIL IN RDB$FILES
+		WITH FIL.RDB$SHADOW_NUMBER EQ number
+	{
+		ERASE FIL;
+	}
+	END_FOR
+
+	// ASF: No error is raised if the shadow is not found.
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void CreateRoleNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateRoleNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	MetaName ownerName(tdbb->getAttachment()->att_user->usr_user_name);
+	ownerName.upper7();
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+		DDL_TRIGGER_CREATE_ROLE, name);
+
+	if (name == ownerName)
+	{
+		// msg 193: "user name could not be used for SQL role"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(193, DYN_MSG_FAC)) << ownerName);
+	}
+
+	if (name == NULL_ROLE)
+	{
+		// msg 195: "keyword NONE could not be used as SQL role name"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(195, DYN_MSG_FAC)) << name);
+	}
+
+	if (isItUserName(tdbb, transaction))
+	{
+		// msg 193: "user name could not be used for SQL role"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(193, DYN_MSG_FAC)) << name);
+	}
+
+	MetaName dummyName;
+	if (DYN_is_it_sql_role(transaction, name, dummyName, tdbb))
+	{
+		// msg 194: "SQL role @1 already exists"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(194, DYN_MSG_FAC)) << name);
+	}
+
+	AutoCacheRequest request(tdbb, drq_role_gens, DYN_REQUESTS);
+
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$ROLES
+	{
+		strcpy(X.RDB$ROLE_NAME, name.c_str());
+		strcpy(X.RDB$OWNER_NAME, ownerName.c_str());
+		X.RDB$SYSTEM_FLAG = 0;
+	}
+	END_STORE
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
+		DDL_TRIGGER_CREATE_ROLE, name);
+
+	savePoint.release();	// everything is ok
+}
+
+// If role name is user name returns true. Otherwise returns false.
+bool CreateRoleNode::isItUserName(thread_db* tdbb, jrd_tra* transaction)
+{
+	bool found = false;
+
+	// If there is a user with privilege or a grantor on a relation we
+	// can infer there is a user with this name
+
+	AutoCacheRequest request(tdbb, drq_get_user_priv, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRIV IN RDB$USER_PRIVILEGES
+		WITH (PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_user) OR
+			 (PRIV.RDB$GRANTOR EQ name.c_str() AND PRIV.RDB$OBJECT_TYPE = obj_relation)
+	{
+		found = true;
+	}
+	END_FOR
+
+	if (found)
+		return found;
+
+	// We can infer that 'role name' is a user name if it owns any relations
+	// Note we can only get here if a user creates a table and revokes all
+	// his privileges on the table
+
+	request.reset(tdbb, drq_get_rel_owner, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		REL IN RDB$RELATIONS
+		WITH REL.RDB$OWNER_NAME EQ name.c_str()
+	{
+		found = true;
+	}
+	END_FOR
+
+	return found;
+}
+
+
+//----------------------
+
+
+void DropRoleNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"DropRoleNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
+	user.upper7();
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest request(tdbb, drq_drop_role, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		ROL IN RDB$ROLES
+		WITH ROL.RDB$ROLE_NAME EQ name.c_str()
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+			DDL_TRIGGER_DROP_ROLE, name);
+
+		const MetaName roleOwner(ROL.RDB$OWNER_NAME);
+
+		if (tdbb->getAttachment()->locksmith() || roleOwner == user)
+		{
+			AutoCacheRequest request2(tdbb, drq_del_role_1, DYN_REQUESTS);
+
+			// The first OR clause finds all members of the role.
+			// The 2nd OR clause finds all privileges granted to the role
+			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+				PRIV IN RDB$USER_PRIVILEGES
+				WITH (PRIV.RDB$RELATION_NAME EQ name.c_str() AND PRIV.RDB$OBJECT_TYPE = obj_sql_role) OR
+					 (PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_sql_role)
+			{
+				ERASE PRIV;
+			}
+			END_FOR
+
+			ERASE ROL;
+		}
+		else
+		{
+			// msg 191: "only owner of SQL role or USR_locksmith could drop SQL role"
+			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(191, DYN_MSG_FAC)));
+		}
+
+		found = true;
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_ROLE, name);
+	else
+	{
+		// msg 155: "Role %s not found"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(155, DYN_MSG_FAC)) << name);
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void DropUserNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"DropUserNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	DynamicUserData* userData = FB_NEW(*transaction->tra_pool) DynamicUserData;
+
+	string text = name.c_str();
+	text.upper();
+
+	userData->op = DEL_OPER;
+	userData->user.set(text.c_str());
+	userData->user.setEntered(1);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_USER,
+		userData->user.get());
+
+	USHORT id = transaction->getUserManagement()->put(userData);
+	DFW_post_work(transaction, dfw_user_management, NULL, id);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_USER,
+		userData->user.get());
+
+	savePoint.release();	// everything is ok
 }
 
 

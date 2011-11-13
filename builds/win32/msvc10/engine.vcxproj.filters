@@ -417,9 +417,6 @@
     <ClCompile Include="..\..\..\gen\jrd\dyn_def.cpp">
       <Filter>JRD files\GPRE cpp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\gen\jrd\dyn_del.cpp">
-      <Filter>JRD files\GPRE cpp</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\gen\jrd\dyn_mod.cpp">
       <Filter>JRD files\GPRE cpp</Filter>
     </ClCompile>
@@ -684,9 +681,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\dyn_df_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\dyn_dl_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\dyn_md_proto.h">
@@ -1025,9 +1019,6 @@
       <Filter>JRD files\GPRE files</Filter>
     </None>
     <None Include="..\..\..\src\jrd\dyn_def.epp">
-      <Filter>JRD files\GPRE files</Filter>
-    </None>
-    <None Include="..\..\..\src\jrd\dyn_del.epp">
       <Filter>JRD files\GPRE files</Filter>
     </None>
     <None Include="..\..\..\src\jrd\dyn_mod.epp">

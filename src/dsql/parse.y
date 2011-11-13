@@ -714,8 +714,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> delete_rule delimiter_opt derived_column_list derived_table
 %type <legacyNode> deterministic_opt distinct_clause
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
-%type <legacyNode> domain_or_non_array_type_name domain_type drop drop_behaviour
-%type <legacyNode> drop_clause drop_user_clause
+%type <legacyNode> domain_or_non_array_type_name domain_type drop_behaviour
+%type <ddlNode> drop drop_clause
 %type <legacyStr>  db_name ddl_desc
 
 %type <legacyNode> event_argument_opt exception_clause
@@ -972,6 +972,7 @@ statement
 	| delete
 		{ $$ = makeClassNode($1); }
 	| drop
+		{ $$ = makeClassNode($1); }
 	| grant
 	| insert
 		{ $$ = makeClassNode($1); }
@@ -1532,7 +1533,7 @@ generator_clause
 // CREATE ROLE
 
 role_clause
-	: symbol_role_name		{ $$ = make_node (nod_def_role, (int) 1, $1); }
+	: symbol_role_name		{ $$ = makeClassNode(newNode<CreateRoleNode>(toName($1))); }
 	;
 
 
@@ -3509,47 +3510,48 @@ trigger_type_opt	// we do not allow alter database triggers, hence we do not use
 
 // DROP metadata operations
 
-drop		: DROP drop_clause
-			{ $$ = $2; }
-				;
+drop
+	: DROP drop_clause
+		{ $$ = $2; }
+	;
 
 drop_clause
 	: EXCEPTION symbol_exception_name
-		{ $$ = makeClassNode(newNode<DropExceptionNode>(toName($2))); }
+		{ $$ = newNode<DropExceptionNode>(toName($2)); }
 	| INDEX symbol_index_name
-		{ $$ = make_node (nod_del_index, (int) 1, $2); }
+		{ $$ = newNode<DropIndexNode>(toName($2)); }
 	| PROCEDURE symbol_procedure_name
-		{ $$ = makeClassNode(newNode<DropProcedureNode>(toName($2))); }
+		{ $$ = newNode<DropProcedureNode>(toName($2)); }
 	| TABLE symbol_table_name
-		{ $$ = makeClassNode(newNode<DropRelationNode>(toName($2), false)); }
+		{ $$ = newNode<DropRelationNode>(toName($2), false); }
 	| TRIGGER symbol_trigger_name
-		{ $$ = makeClassNode(newNode<DropTriggerNode>(toName($2))); }
+		{ $$ = newNode<DropTriggerNode>(toName($2)); }
 	| VIEW symbol_view_name
-		{ $$ = makeClassNode(newNode<DropRelationNode>(toName($2), true)); }
+		{ $$ = newNode<DropRelationNode>(toName($2), true); }
 	| FILTER symbol_filter_name
-		{ $$ = make_node (nod_del_filter, (int) 1, $2); }
+		{ $$ = newNode<DropFilterNode>(toName($2)); }
 	| DOMAIN symbol_domain_name
-		{ $$ = makeClassNode(newNode<DropDomainNode>(toName($2))); }
+		{ $$ = newNode<DropDomainNode>(toName($2)); }
 	| EXTERNAL FUNCTION symbol_UDF_name
-		{ $$ = makeClassNode(newNode<DropFunctionNode>(toName($3))); }
+		{ $$ = newNode<DropFunctionNode>(toName($3)); }
 	| FUNCTION symbol_UDF_name
-		{ $$ = makeClassNode(newNode<DropFunctionNode>(toName($2))); }
+		{ $$ = newNode<DropFunctionNode>(toName($2)); }
 	| SHADOW pos_short_integer
-		{ $$ = make_node (nod_del_shadow, (int) 1, (dsql_nod*)(IPTR) $2); }
+		{ $$ = newNode<DropShadowNode>($2); }
 	| ROLE symbol_role_name
-		{ $$ = make_node (nod_del_role, (int) 1, $2); }
+		{ $$ = newNode<DropRoleNode>(toName($2)); }
 	| GENERATOR symbol_generator_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropSequenceNode(getPool(), toName($2))); }
+		{ $$ = newNode<DropSequenceNode>(toName($2)); }
 	| SEQUENCE symbol_generator_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropSequenceNode(getPool(), toName($2))); }
+		{ $$ = newNode<DropSequenceNode>(toName($2)); }
 	| COLLATION symbol_collation_name
-		{ $$ = makeClassNode(newNode<DropCollationNode>(toName($2))); }
-	| USER drop_user_clause
-		{ $$ = $2; }
+		{ $$ = newNode<DropCollationNode>(toName($2)); }
+	| USER symbol_user_name
+		{ $$ = newNode<DropUserNode>(toName($2)); }
 	| PACKAGE symbol_package_name
-		{ $$ = makeClassNode(newNode<DropPackageNode>(toName($2))); }
+		{ $$ = newNode<DropPackageNode>(toName($2)); }
 	| PACKAGE BODY symbol_package_name
-		{ $$ = makeClassNode(newNode<DropPackageBodyNode>(toName($3))); }
+		{ $$ = newNode<DropPackageBodyNode>(toName($3)); }
 	;
 
 
@@ -5327,10 +5329,6 @@ alter_user_clause
 		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
 	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
 		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6, $7); }
-	;
-
-drop_user_clause
-	: symbol_user_name		{ $$ = make_node(nod_del_user, (int) e_del_user_count, $1); }
 	;
 
 passwd_clause

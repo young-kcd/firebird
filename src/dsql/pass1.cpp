@@ -897,25 +897,19 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	case nod_def_index:
 	case nod_mod_index:
-	case nod_del_index:
 	case nod_def_constraint:
 	case nod_grant:
 	case nod_revoke:
 	case nod_mod_database:
-	case nod_def_role:
-	case nod_del_role:
 	case nod_def_filter:
-	case nod_del_filter:
 	case nod_def_domain:
 	case nod_del_udf:
 	case nod_def_shadow:
-	case nod_del_shadow:
 	case nod_set_statistics:
 	case nod_mod_udf:
 	case nod_mod_role:
 	case nod_add_user:
 	case nod_mod_user:
-	case nod_del_user:
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		return input;
 
@@ -4773,12 +4767,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_del_field:
 		verb = "delete field";
 		break;
-	case nod_del_filter:
-		verb = "delete filter";
-		break;
-	case nod_del_index:
-		verb = "delete index";
-		break;
 	case nod_execute:
 		verb = "execute";
 		break;
@@ -4884,9 +4872,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_shadow:
 		verb = "def_shadow";
 		break;
-	case nod_del_shadow:
-		verb = "del_shadow";
-		break;
 	case nod_del_udf:
 		verb = "del_udf";
 		break;
@@ -4986,17 +4971,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_ref_trig_action:
 		verb = "ref_trig_action";
 		break;
-	case nod_def_role:
-		verb = "def_role";
-		break;
 	case nod_role_name:
 		verb = "role_name";
 		break;
 	case nod_grant_admin:
 		verb = "grant_admin";
-		break;
-	case nod_del_role:
-		verb = "del_role";
 		break;
 	case nod_mod_field_name:
 		verb = "mod_field_name";
@@ -5079,10 +5058,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_mod_user:
 		verb = "mod_user";
-		break;
-
-	case nod_del_user:
-		verb = "del_user";
 		break;
 
 	case nod_class_exprnode:

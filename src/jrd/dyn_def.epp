@@ -100,8 +100,6 @@ const int FOR_KEY_DEL_NONE	= 0x80;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
-
 
 void DYN_define_file(Global*		gbl,
 					 const UCHAR**	ptr,
@@ -463,99 +461,6 @@ void DYN_define_index(Global* gbl, const UCHAR** ptr, const Firebird::MetaName* 
 }
 
 
-void DYN_define_role( Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ d e f i n e _ r o l e
- *
- **************************************
- *
- * Functional description
- *
- *     Define a SQL role.
- *     ROLES cannot be named the same as any existing user name
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	Firebird::MetaName owner_name(tdbb->getAttachment()->att_user->usr_user_name);
-	owner_name.upper7();
-
-	Firebird::MetaName role_name;
-	GET_STRING(ptr, role_name);
-
-	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
-		DDL_TRIGGER_CREATE_ROLE, role_name, gbl->sqlText);
-
-	if (role_name == owner_name)
-	{
-		// user name could not be used for SQL role
-		DYN_error(false, 193, SafeArg() << owner_name.c_str());
-		ERR_punt();
-	}
-
-	if (role_name == NULL_ROLE)
-	{
-		// keyword NONE could not be used as SQL role name
-		DYN_error(false, 195, SafeArg() << role_name.c_str());
-		ERR_punt();
-	}
-
-	try {
-
-		if (is_it_user_name(gbl, role_name, tdbb))
-		{
-			// user name could not be used for SQL role
-			DYN_error(false, 193, SafeArg() << role_name.c_str());
-			goto do_err_punt;
-		}
-
-		Firebird::MetaName dummy_name;
-		if (DYN_is_it_sql_role(gbl, role_name, dummy_name, tdbb))
-		{
-			// SQL role @1 already exists
-			DYN_error(false, 194, SafeArg() << role_name.c_str());
-			goto do_err_punt;
-		}
-
-		AutoCacheRequest request(tdbb, drq_role_gens, DYN_REQUESTS);
-
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$ROLES
-		{
-			strcpy(X.RDB$ROLE_NAME, role_name.c_str());
-			strcpy(X.RDB$OWNER_NAME, owner_name.c_str());
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		}
-		END_STORE
-
-		if (*(*ptr)++ != isc_dyn_end)
-			goto do_error_punt_9;
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 8);
-		// msg 8: "DEFINE ROLE failed"
-	}
-
-	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
-		DDL_TRIGGER_CREATE_ROLE, role_name, gbl->sqlText);
-
-	return;
-
-do_err_punt:
-	ERR_punt();
-	return;
-
-do_error_punt_9:
-	DYN_error_punt(true, 9);
-	// msg 9: "DEFINE ROLE unexpected dyn verb"
-}
-
-
 void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -615,70 +520,4 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 			DYN_unsupported_verb();
 		}
 	}
-}
-
-
-bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db* tdbb)
-{
-/**************************************
- *
- *	i s _ i t _ u s e r _ n a m e
- *
- **************************************
- *
- * Functional description
- *
- *     if role_name is user name returns true. Otherwise returns false.
- *
- **************************************/
-
-	USHORT request_id;
-
-	SET_TDBB(tdbb);
-	bool found = false;
-
-	try {
-
-		// If there is a user with privilege or a grantor on a relation we
-		// can infer there is a user with this name
-
-		request_id = drq_get_user_priv;
-		AutoCacheRequest request(tdbb, request_id, DYN_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			PRIV IN RDB$USER_PRIVILEGES WITH
-				(PRIV.RDB$USER EQ role_name.c_str() AND
-				 PRIV.RDB$USER_TYPE = obj_user) OR
-				(PRIV.RDB$GRANTOR EQ role_name.c_str() AND
-				 PRIV.RDB$OBJECT_TYPE = obj_relation)
-		{
-			found = true;
-		}
-		END_FOR
-
-		if (found)
-			return found;
-
-		// We can infer that 'role_name' is a user name if it owns any relations
-		// Note we can only get here if a user creates a table and revokes all
-		// his privileges on the table
-
-		request_id = drq_get_rel_owner;
-		request.reset(tdbb, request_id, DYN_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			REL IN RDB$RELATIONS WITH
-				REL.RDB$OWNER_NAME EQ role_name.c_str()
-		{
-			found = true;
-		}
-		END_FOR
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		ERR_punt();
-	}
-
-	return found;
 }

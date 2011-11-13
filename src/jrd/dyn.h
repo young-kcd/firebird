@@ -113,11 +113,9 @@ USHORT	DYN_get_string(const UCHAR**, Firebird::string&, size_t);
 USHORT	DYN_get_string(const UCHAR**, Firebird::UCharBuffer&, size_t);
 USHORT	DYN_get_string(const UCHAR**, TEXT*, size_t);
 
-bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
+bool	DYN_is_it_sql_role(Jrd::jrd_tra*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
 USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
-
-USHORT	DYN_skip_attribute(const UCHAR**);
 
 void	DYN_unsupported_verb();
 

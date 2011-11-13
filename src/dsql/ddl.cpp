@@ -119,7 +119,6 @@ static void define_computed(DsqlCompilerScratch*, dsql_nod*, dsql_fld*, dsql_nod
 static void define_database(DsqlCompilerScratch*);
 static void define_filter(DsqlCompilerScratch*);
 static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
-static void define_role(DsqlCompilerScratch*);
 static void define_index(DsqlCompilerScratch*);
 static void define_shadow(DsqlCompilerScratch*);
 static void generate_dyn(DsqlCompilerScratch*, dsql_nod*);
@@ -925,21 +924,6 @@ static void define_index(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-// ******************************
-// d e f i n e _ r o l e
-// ******************************
-//	Create a SQL role.
-//
-static void define_role(DsqlCompilerScratch* dsqlScratch)
-{
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_str* role_name = (dsql_str*) statement->getDdlNode()->nod_arg[0];
-
-	dsqlScratch->appendNullString(isc_dyn_def_sql_role, role_name->str_data);
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 //
 // create a shadow for the database
 //
@@ -1016,35 +1000,13 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		define_index(dsqlScratch);
 		break;
 
-	case nod_del_index:
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(isc_dyn_delete_idx, string->str_data);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
-	case nod_del_role:
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(isc_dyn_del_sql_role, string->str_data);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
 	case nod_grant:
 	case nod_revoke:
 		grant_revoke(dsqlScratch);
 		break;
 
-	case nod_def_role:
-		define_role(dsqlScratch);
-		break;
-
 	case nod_def_filter:
 		define_filter(dsqlScratch);
-		break;
-
-	case nod_del_filter:
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(isc_dyn_delete_filter, string->str_data);
-		dsqlScratch->appendUChar(isc_dyn_end);
 		break;
 
 	case nod_del_udf:
@@ -1055,11 +1017,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_def_shadow:
 		define_shadow(dsqlScratch);
-		break;
-
-	case nod_del_shadow:
-		dsqlScratch->appendNumber(isc_dyn_delete_shadow, (SSHORT) (IPTR) node->nod_arg[0]);
-		dsqlScratch->appendUChar(isc_dyn_end);
 		break;
 
 	case nod_mod_database:
@@ -1092,10 +1049,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_mod_user:
 		define_user(dsqlScratch, isc_dyn_user_mod);
-		break;
-
-	case nod_del_user:
-		define_user(dsqlScratch, isc_dyn_user_del);
 		break;
 
 	default: // CVC: Shouldn't we complain here?
@@ -1640,7 +1593,7 @@ static void define_user(DsqlCompilerScratch* dsqlScratch, UCHAR op)
 		}
 	}
 
-	if (argCount < 2 && op != isc_dyn_user_del)
+	if (argCount < 2)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
