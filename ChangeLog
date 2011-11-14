@@ -1,3 +1,32 @@
+ 2011-11-13 21:32  asfernandes 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/preprocess.bat
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/dyn.epp
+   M src/jrd/dyn.h
+   M src/jrd/dyn_def.epp
+   D src/jrd/dyn_del.epp
+   M src/jrd/dyn_df_proto.h
+   D src/jrd/dyn_dl_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Refactor DDL commands: DROP INDEX, DROP FILTER, DROP SHADOW, CREATE/DROP ROLE and DROP USER.
+
  2011-11-10 15:03  asfernandes 
    M src/dsql/parse.y
 Cleanup for RECREATE commands.
