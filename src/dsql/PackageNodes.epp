@@ -28,7 +28,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dfw_proto.h"
-#include "../jrd/dyn_dl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/vio_proto.h"
