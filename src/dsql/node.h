@@ -371,9 +371,6 @@ enum node_args {
 	e_mod_role_action,				// 0 - drop, 1 - add
 	e_mod_role_count,
 
-	e_del_user_name = 0,			// nod_del_user
-	e_del_user_count,
-
 	e_user_name = 0, 				// nod_add(mod)_user
 	e_user_passwd,
 	e_user_first,

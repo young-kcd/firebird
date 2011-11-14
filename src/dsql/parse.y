@@ -3557,34 +3557,35 @@ drop_clause
 
 // these are the allowable datatypes
 
-data_type	: non_array_type
-		| array_type
-		;
+data_type
+	: non_array_type
+	| array_type
+	;
 
 domain_or_non_array_type
-	:	domain_or_non_array_type_name
-	|	domain_or_non_array_type_name NOT KW_NULL
-			{ lex.g_field->fld_not_nullable = true; }
+	: domain_or_non_array_type_name
+	| domain_or_non_array_type_name NOT KW_NULL
+		{ lex.g_field->fld_not_nullable = true; }
 	;
 
 domain_or_non_array_type_name
-	:	non_array_type
-	|	domain_type
+	: non_array_type
+	| domain_type
 	;
 
 domain_type
-	:	KW_TYPE OF symbol_column_name
-			{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
-	|	KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
-			{
-				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
-				lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
-			}
-	|	symbol_column_name
-			{
-				lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
-				lex.g_field->fld_full_domain = true;
-			}
+	: KW_TYPE OF symbol_column_name
+		{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
+	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+		{
+			lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
+			lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
+		}
+	| symbol_column_name
+		{
+			lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
+			lex.g_field->fld_full_domain = true;
+		}
 	;
 
 
@@ -3840,122 +3841,125 @@ national_character_keyword
 
 // numeric type
 
-numeric_type	: KW_NUMERIC prec_scale
-			{ lex.g_field->fld_sub_type = dsc_num_type_numeric; }
-		| decimal_keyword prec_scale
+numeric_type
+	: KW_NUMERIC prec_scale
+		{ lex.g_field->fld_sub_type = dsc_num_type_numeric; }
+	| decimal_keyword prec_scale
+		{
+			lex.g_field->fld_sub_type = dsc_num_type_decimal;
+			if (lex.g_field->fld_dtype == dtype_short)
 			{
-				lex.g_field->fld_sub_type = dsc_num_type_decimal;
-				if (lex.g_field->fld_dtype == dtype_short)
+				lex.g_field->fld_dtype = dtype_long;
+				lex.g_field->fld_length = sizeof (SLONG);
+			}
+		}
+	;
+
+prec_scale
+	: // nothing
+		{
+			lex.g_field->fld_dtype = dtype_long;
+			lex.g_field->fld_length = sizeof (SLONG);
+			lex.g_field->fld_precision = 9;
+		}
+	| '(' signed_long_integer ')'
+		{
+			if ($2 < 1 || $2 > 18)
+				yyabandon(-842, isc_precision_err);	// Precision must be between 1 and 18.
+			if ($2 > 9)
+			{
+				if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
+					( (client_dialect > SQL_DIALECT_V5) && (db_dialect <= SQL_DIALECT_V5) ) )
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+							  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
+				}
+				if (client_dialect <= SQL_DIALECT_V5)
+				{
+					lex.g_field->fld_dtype = dtype_double;
+					lex.g_field->fld_length = sizeof (double);
+				}
+				else
+				{
+					if (client_dialect == SQL_DIALECT_V6_TRANSITION)
+					{
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
+					}
+					lex.g_field->fld_dtype = dtype_int64;
+					lex.g_field->fld_length = sizeof (SINT64);
+				}
+			}
+			else
+			{
+				if ($2 < 5)
+				{
+					lex.g_field->fld_dtype = dtype_short;
+					lex.g_field->fld_length = sizeof (SSHORT);
+				}
+				else
 				{
 					lex.g_field->fld_dtype = dtype_long;
 					lex.g_field->fld_length = sizeof (SLONG);
 				}
 			}
-		;
-
-prec_scale	:
+			lex.g_field->fld_precision = (USHORT) $2;
+		}
+	| '(' signed_long_integer ',' signed_long_integer ')'
+		{
+			if ($2 < 1 || $2 > 18)
+				yyabandon (-842, isc_precision_err);	// Precision should be between 1 and 18
+			if ($4 > $2 || $4 < 0)
+				yyabandon (-842, isc_scale_nogt);	// Scale must be between 0 and precision
+			if ($2 > 9)
 			{
-				lex.g_field->fld_dtype = dtype_long;
-				lex.g_field->fld_length = sizeof (SLONG);
-				lex.g_field->fld_precision = 9;
-			}
-		| '(' signed_long_integer ')'
-			{
-				if ($2 < 1 || $2 > 18)
-					yyabandon(-842, isc_precision_err);	// Precision must be between 1 and 18.
-				if ($2 > 9)
+				if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
+					( (client_dialect > SQL_DIALECT_V5) && (db_dialect <= SQL_DIALECT_V5) ) )
 				{
-					if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
-						( (client_dialect > SQL_DIALECT_V5) && (db_dialect <= SQL_DIALECT_V5) ) )
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
-								  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
-					}
-					if (client_dialect <= SQL_DIALECT_V5)
-					{
-						lex.g_field->fld_dtype = dtype_double;
-						lex.g_field->fld_length = sizeof (double);
-					}
-					else
-					{
-						if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-						{
-							ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous));
-							ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
-							ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
-						}
-						lex.g_field->fld_dtype = dtype_int64;
-						lex.g_field->fld_length = sizeof (SINT64);
-					}
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+							  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
+				}
+				if (client_dialect <= SQL_DIALECT_V5)
+				{
+					lex.g_field->fld_dtype = dtype_double;
+					lex.g_field->fld_length = sizeof (double);
 				}
 				else
 				{
-					if ($2 < 5)
+					if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 					{
-						lex.g_field->fld_dtype = dtype_short;
-						lex.g_field->fld_length = sizeof (SSHORT);
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
 					}
-					else
-					{
-						lex.g_field->fld_dtype = dtype_long;
-						lex.g_field->fld_length = sizeof (SLONG);
-					}
+					// client_dialect >= SQL_DIALECT_V6
+					lex.g_field->fld_dtype = dtype_int64;
+					lex.g_field->fld_length = sizeof (SINT64);
 				}
-				lex.g_field->fld_precision = (USHORT) $2;
 			}
-		| '(' signed_long_integer ',' signed_long_integer ')'
+			else
 			{
-				if ($2 < 1 || $2 > 18)
-					yyabandon (-842, isc_precision_err);	// Precision should be between 1 and 18
-				if ($4 > $2 || $4 < 0)
-					yyabandon (-842, isc_scale_nogt);	// Scale must be between 0 and precision
-				if ($2 > 9)
+				if ($2 < 5)
 				{
-					if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
-						( (client_dialect > SQL_DIALECT_V5) && (db_dialect <= SQL_DIALECT_V5) ) )
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
-								  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
-					}
-					if (client_dialect <= SQL_DIALECT_V5)
-					{
-						lex.g_field->fld_dtype = dtype_double;
-						lex.g_field->fld_length = sizeof (double);
-					}
-					else
-					{
-						if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-						{
-							ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous));
-							ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
-							ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
-						}
-						// client_dialect >= SQL_DIALECT_V6
-						lex.g_field->fld_dtype = dtype_int64;
-						lex.g_field->fld_length = sizeof (SINT64);
-					}
+					lex.g_field->fld_dtype = dtype_short;
+					lex.g_field->fld_length = sizeof (SSHORT);
 				}
 				else
 				{
-					if ($2 < 5)
-					{
-						lex.g_field->fld_dtype = dtype_short;
-						lex.g_field->fld_length = sizeof (SSHORT);
-					}
-					else
-					{
-						lex.g_field->fld_dtype = dtype_long;
-						lex.g_field->fld_length = sizeof (SLONG);
-					}
+					lex.g_field->fld_dtype = dtype_long;
+					lex.g_field->fld_length = sizeof (SLONG);
 				}
-				lex.g_field->fld_precision = (USHORT) $2;
-				lex.g_field->fld_scale = - (SSHORT) $4;
 			}
-		;
+			lex.g_field->fld_precision = (USHORT) $2;
+			lex.g_field->fld_scale = - (SSHORT) $4;
+		}
+	;
 
-decimal_keyword	: DECIMAL
-		| KW_DEC
-		;
+decimal_keyword
+	: DECIMAL
+	| KW_DEC
+	;
 
 
 
@@ -3993,7 +3997,7 @@ float_type
 	;
 
 precision_opt
-	:
+	: // nothing
 		{ $$ = 0; }
 	| '(' nonneg_short_integer ')'
 		{ $$ = $2; }
@@ -4637,33 +4641,31 @@ outer_noise
 
 // other clauses in the select expression
 
-group_clause	: GROUP BY group_by_list
-			{ $$ = make_list ($3); }
-		|
-			{ $$ = NULL; }
-		;
+group_clause
+	: /* nothing */				{ $$ = NULL; }
+	| GROUP BY group_by_list	{ $$ = make_list ($3); }
+	;
 
-group_by_list	: group_by_item
-		| group_by_list ',' group_by_item
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+group_by_list
+	: group_by_item
+	| group_by_list ',' group_by_item	{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
 // Except aggregate-functions are all expressions supported in group_by_item,
 // they are caught inside pass1.cpp
-group_by_item : value
-		;
+group_by_item
+	: value
+	;
 
-having_clause	: HAVING search_condition
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+having_clause
+	: /* nothing */				{ $$ = NULL; }
+	| HAVING search_condition	{ $$ = $2; }
+	;
 
-where_clause	: WHERE search_condition
-		 	{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+where_clause
+	: /* nothing */				{ $$ = NULL; }
+	| WHERE search_condition	{ $$ = $2; }
+	;
 
 
 // PLAN clause to specify an access plan for a query
@@ -5265,7 +5267,7 @@ ternary_pattern_operator
 	;
 
 escape_opt
-	:				{ $$ = NULL; }
+	: /* nothing */			{ $$ = NULL; }
 	| ESCAPE common_value	{ $$ = $2; }
 	;
 

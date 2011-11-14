@@ -8901,19 +8901,19 @@ void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 
 	if (name == ownerName)
 	{
-		// msg 193: "user name could not be used for SQL role"
+		// msg 193: "user name @1 could not be used for SQL role"
 		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(193, DYN_MSG_FAC)) << ownerName);
 	}
 
 	if (name == NULL_ROLE)
 	{
-		// msg 195: "keyword NONE could not be used as SQL role name"
+		// msg 195: "keyword @1 could not be used as SQL role name"
 		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(195, DYN_MSG_FAC)) << name);
 	}
 
 	if (isItUserName(tdbb, transaction))
 	{
-		// msg 193: "user name could not be used for SQL role"
+		// msg 193: "user name @1 could not be used for SQL role"
 		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(193, DYN_MSG_FAC)) << name);
 	}
 
