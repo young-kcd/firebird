@@ -701,8 +701,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <stmtNode>   complex_proc_statement
 %type <legacyNode> computed_by computed_clause conditional constant constraint_index_opt
 %type <legacyNode> constraint_name_opt correlation_name create
-%type <legacyNode> create_clause create_or_alter create_user_clause cross_join
+%type <legacyNode> create_clause create_user_clause cross_join
 %type <legacyNode> cursor_clause cursor_def
+%type <ddlNode>	   create_or_alter
 %type <stmtNode>   cursor_declaration_item continue cursor_statement
 
 %type <legacyNode> data_type data_type_or_domain
@@ -806,11 +807,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> qualified_join query_spec query_term
 
-%type <ddlNode> recreate recreate_clause
+%type <ddlNode> recreate recreate_clause replace_clause replace_exception_clause replace_view_clause
 %type <legacyNode> referential_action referential_constraint
-%type <legacyNode> referential_trigger_action release_savepoint replace_clause
-%type <legacyNode> replace_exception_clause
-%type <legacyNode> replace_view_clause restr_list restr_option
+%type <legacyNode> referential_trigger_action release_savepoint
+%type <legacyNode> restr_list restr_option
 %type <int32Val> return_mechanism
 %type <legacyNode> rev_admin_option rev_grant_option revoke
 %type return_value1(<createAlterFunctionNode>) return_value(<createAlterFunctionNode>)
@@ -968,6 +968,7 @@ statement
 	| commit
 	| create
 	| create_or_alter
+		{ $$ = makeClassNode($1); }
 	| declare
 	| delete
 		{ $$ = makeClassNode($1); }
@@ -1357,14 +1358,14 @@ recreate_clause
 	;
 
 create_or_alter
-	: CREATE OR ALTER replace_clause	{ $$ = $4; }
+	: CREATE OR ALTER replace_clause		{ $$ = $4; }
 	;
 
 replace_clause
-	: PROCEDURE replace_procedure_clause	{ $$ = makeClassNode($2); }
-	| FUNCTION replace_function_clause		{ $$ = makeClassNode($2); }
-	| TRIGGER replace_trigger_clause		{ $$ = makeClassNode($2); }
-	| PACKAGE replace_package_clause		{ $$ = makeClassNode($2); }
+	: PROCEDURE replace_procedure_clause	{ $$ = $2; }
+	| FUNCTION replace_function_clause		{ $$ = $2; }
+	| TRIGGER replace_trigger_clause		{ $$ = $2; }
+	| PACKAGE replace_package_clause		{ $$ = $2; }
 	| VIEW replace_view_clause				{ $$ = $2; }
 	| EXCEPTION replace_exception_clause	{ $$ = $2; }
 	;
@@ -1392,7 +1393,7 @@ replace_exception_clause
 			CreateAlterExceptionNode* node = newNode<CreateAlterExceptionNode>(
 				toName($1), toString($2));
 			node->alter = true;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -2910,7 +2911,7 @@ replace_view_clause
 	: view_clause
 		{
 			$1->alter = true;
-			$$ = makeClassNode($1);
+			$$ = $1;
 		}
 	;
 
