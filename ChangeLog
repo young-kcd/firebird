@@ -1,3 +1,23 @@
+ 2011-11-14 23:10  hvlad 
+   M src/utilities/ntrace/fbtrace.conf
+Update documentation
+
+ 2011-11-14 18:15  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/PackageNodes.epp
+   M src/jrd/dyn.epp
+Correction.
+
+ 2011-11-14 18:15  asfernandes 
+   M src/dsql/parse.y
+Misc.
+
+ 2011-11-14 18:06  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+Misc.
+
  2011-11-13 21:32  asfernandes 
    M builds/win32/msvc10/engine.vcxproj
    M builds/win32/msvc10/engine.vcxproj.filters
