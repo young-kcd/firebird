@@ -1,3 +1,7 @@
+ 2011-11-14 23:09  hvlad 
+   M src/utilities/ntrace/fbtrace.conf
+Update documentation
+
  2011-11-06 23:38  hvlad 
    M src/jrd/dyn_del.epp
 Additional fix for CORE-3557 : AV in engine when preparing query against dropping table
