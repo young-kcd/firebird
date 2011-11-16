@@ -44,8 +44,9 @@
 IMPLEMENT_TRACE_ROUTINE(cos_trace, "COS")
 #endif
 
+using namespace Firebird;
+using namespace Jrd;
 
-namespace Jrd {
 
 int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 {
@@ -57,12 +58,12 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 
 		AsyncContextHolder tdbb(dbb);
 
-		Firebird::MutexLockGuard counterGuard(globalRWLock->counterMutex);
+		MutexLockGuard counterGuard(globalRWLock->counterMutex);
 
 		if (globalRWLock->cachedLock)
 			globalRWLock->blockingAstHandler(tdbb);
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{} // no-op
 
 	return 0;
@@ -253,7 +254,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 			if (!pendingLock)
 				break;
 
-			Firebird::MutexUnlockGuard cout(counterMutex);
+			MutexUnlockGuard cout(counterMutex);
 			Attachment::Checkout attCout(att, true);
 			THD_yield();
 		}
@@ -356,6 +357,3 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 		blocking = true;
 	}
 }
-
-
-} // namespace Jrd
