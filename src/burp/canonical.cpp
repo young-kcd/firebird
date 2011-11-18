@@ -188,6 +188,11 @@ ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool_t
 				return FALSE;
 			break;
 
+		case dtype_boolean:
+			if (!xdr_opaque(xdrs, (SCHAR*) p, length))
+				return FALSE;
+			break;
+
 		default:
 			fb_assert(FALSE);
 			return FALSE;

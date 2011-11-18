@@ -2878,6 +2878,10 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 
 			break;
 
+		case blr_bool:
+			add_byte(blr, field->fld_type);
+			break;
+
 		default:
 			BURP_error(26, true, SafeArg() << field->fld_type);
 			// msg 26 datatype %ld not understood
