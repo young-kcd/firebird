@@ -1,3 +1,9 @@
+ 2011-11-18 01:07  asfernandes 
+   M src/burp/backup.epp
+   M src/burp/canonical.cpp
+   M src/burp/restore.epp
+Fixed backup/restore of BOOLEAN columns.
+
  2011-11-16 17:41  dimitr 
    M src/jrd/GlobalRWLock.cpp
 Misc.
