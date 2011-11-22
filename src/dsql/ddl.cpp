@@ -116,25 +116,18 @@ using namespace Firebird;
 
 static void assign_field_length(dsql_fld*, USHORT);
 static void define_computed(DsqlCompilerScratch*, dsql_nod*, dsql_fld*, dsql_nod*);
-static void define_database(DsqlCompilerScratch*);
 static void define_filter(DsqlCompilerScratch*);
 static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void define_index(DsqlCompilerScratch*);
-static void define_shadow(DsqlCompilerScratch*);
 static void generate_dyn(DsqlCompilerScratch*, dsql_nod*);
 static void grant_revoke(DsqlCompilerScratch*);
-static void modify_database(DsqlCompilerScratch*);
-static void modify_index(DsqlCompilerScratch*);
 static void modify_privilege(DsqlCompilerScratch* dsqlScratch, NOD_TYPE type, SSHORT option,
 							 const UCHAR* privs, const dsql_nod* table,
 							 const dsql_nod* user, const dsql_nod* grantor,
 							 const dsql_str* field_name);
 static char modify_privileges(DsqlCompilerScratch*, NOD_TYPE, SSHORT, const dsql_nod*,
 	const dsql_nod*, const dsql_nod*, const dsql_nod*);
-static void modify_udf(DsqlCompilerScratch*);
-static void modify_map(DsqlCompilerScratch*);
 static void process_role_nm_list(DsqlCompilerScratch*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
-static void set_statistics(DsqlCompilerScratch*);
 static void define_user(DsqlCompilerScratch*, UCHAR);
 static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor);
 static void post_607(const Arg::StatusVector& v);
@@ -176,17 +169,6 @@ void DDL_execute(dsql_req* request)
 	SYM_TYPE sym_type;
 
 	const NOD_TYPE type = statement->getDdlNode()->nod_type;
-
-	switch (type)
-	{
-		case nod_del_udf:
-		case nod_mod_udf:
-			// Signal UDF for obsolescence
-			string = (dsql_str*) statement->getDdlNode()->nod_arg[e_udf_name];
-			sym_type = SYM_udf;
-			METD_drop_function(request->getTransaction(), QualifiedName(string->str_data, ""));
-			break;
-	}
 
 	if (string)
 		MET_dsql_cache_release(tdbb, sym_type, string->str_data);
@@ -712,97 +694,6 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 }
 
 
-static void define_database(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ d a t a b a s e
- *
- **************************************
- *
- * Function
- *	Create a database. Assumes that
- *	database is created elsewhere with
- *	initial options. Modify the
- *	database using DYN to add the remaining
- *	options.
- *
- **************************************/
-	SLONG start = 0;
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->getDdlNode();
-
-	dsqlScratch->appendUChar(isc_dyn_mod_database);
-
-	// dsqlScratch->appendNumber(isc_dyn_rel_sql_protection, 1);
-
-	const dsql_nod* elements = ddl_node->nod_arg[e_database_initial_desc];
-
-	if (elements)
-	{
-		const dsql_nod* const* ptr = elements->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ptr++)
-		{
-			const dsql_nod* element = *ptr;
-
-			switch (element->nod_type)
-			{
-			case nod_file_length:
-				start = (IPTR) element->nod_arg[0] + 1;
-				break;
-
-			default:
-				break;
-			}
-		}
-	}
-
-	const dsql_str* name;
-	const dsql_fil* file;
-	elements = ddl_node->nod_arg[e_database_rem_desc];
-	if (elements)
-	{
-		const dsql_nod* const* ptr = elements->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ptr++)
-		{
-			const dsql_nod* element = *ptr;
-
-			switch (element->nod_type)
-			{
-			case nod_difference_file:
-				dsqlScratch->appendNullString(isc_dyn_def_difference,
-										  ((dsql_str*) element->nod_arg[0])->str_data);
-				break;
-			case nod_file_desc:
-				file = (dsql_fil*) element->nod_arg[0];
-				dsqlScratch->appendNullString(isc_dyn_def_file, file->fil_name->str_data);
-
-				start = MAX(start, file->fil_start);
-				dsqlScratch->appendFileStart(start);
-				dsqlScratch->appendFileLength(file->fil_length);
-				dsqlScratch->appendUChar(isc_dyn_end);
-				start += file->fil_length;
-				break;
-			case nod_dfl_charset:
-				name = (dsql_str*) element->nod_arg[0];
-				dsqlScratch->appendNullString(isc_dyn_fld_character_set_name, name->str_data);
-				break;
-			case nod_dfl_collate:
-				name = (dsql_str*) element->nod_arg[0];
-				dsqlScratch->appendNullString(isc_dyn_fld_collation, name->str_data);
-				break;
-
-			default:
-				break;
-			}
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
 {
 /*******************************************
@@ -924,61 +815,6 @@ static void define_index(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-//
-// create a shadow for the database
-//
-static void define_shadow(DsqlCompilerScratch* dsqlScratch)
-{
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* shadow_node = statement->getDdlNode();
-	const dsql_nod* const* ptr   = shadow_node->nod_arg;
-
-	if (!ptr[e_shadow_number])
-	{
-		post_607(Arg::Gds(isc_dsql_shadow_number_err));
-	}
-
-	dsqlScratch->appendNumber(isc_dyn_def_shadow, (SSHORT)(IPTR) (ptr[e_shadow_number]));
-	dsqlScratch->appendNullString(isc_dyn_def_file, ((dsql_str*) (ptr[e_shadow_name]))->str_data);
-	dsqlScratch->appendNumber(isc_dyn_shadow_man_auto,
-		(SSHORT) ExprNode::as<LiteralNode>(ptr[e_shadow_man_auto])->getSlong());
-	dsqlScratch->appendNumber(isc_dyn_shadow_conditional,
-		(SSHORT) ExprNode::as<LiteralNode>(ptr[e_shadow_conditional])->getSlong());
-
-	dsqlScratch->appendFileStart(0);
-
-	SLONG length = (IPTR) ptr[e_shadow_length];
-	dsqlScratch->appendFileLength(length);
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-	const dsql_nod* elements = ptr[e_shadow_sec_files];
-	if (elements)
-	{
-		ptr = elements->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ++ptr)
-		{
-			const dsql_nod* element = *ptr;
-			const dsql_fil* file    = (dsql_fil*) element->nod_arg[0];
-			dsqlScratch->appendNullString(isc_dyn_def_file, file->fil_name->str_data);
-
-			if (!length && !file->fil_start)
-			{
-				// Preceding file did not specify length, so %s must include starting page number
-				post_607(Arg::Gds(isc_dsql_file_length_err) << Arg::Str(file->fil_name->str_data));
-			}
-
-			const SLONG start = file->fil_start;
-			dsqlScratch->appendFileStart(start);
-			length = file->fil_length;
-			dsqlScratch->appendFileLength(length);
-			dsqlScratch->appendUChar(isc_dyn_end);
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
 /**************************************
@@ -1007,40 +843,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_def_filter:
 		define_filter(dsqlScratch);
-		break;
-
-	case nod_del_udf:
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(isc_dyn_delete_function, string->str_data);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
-	case nod_def_shadow:
-		define_shadow(dsqlScratch);
-		break;
-
-	case nod_mod_database:
-		modify_database(dsqlScratch);
-		break;
-
-	case nod_def_database:
-		define_database(dsqlScratch);
-		break;
-
-	case nod_mod_index:
-		modify_index(dsqlScratch);
-		break;
-
-	case nod_set_statistics:
-		set_statistics(dsqlScratch);
-		break;
-
-	case nod_mod_udf:
-		modify_udf(dsqlScratch);
-		break;
-
-	case nod_mod_role:
-		modify_map(dsqlScratch);
 		break;
 
 	case nod_add_user:
@@ -1138,113 +940,6 @@ static void grant_revoke(DsqlCompilerScratch* dsqlScratch)
 			}
 		}
 	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void modify_database( DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	m o d i f y _ d a t a b a s e
- *
- **************************************
- *
- * Function
- *	Modify a database.
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->getDdlNode();
-
-	dsqlScratch->appendUChar(isc_dyn_mod_database);
-	// dsqlScratch->appendNumber(isc_dyn_rel_sql_protection, 1);
-	bool drop_difference = false;
-
-	const dsql_nod* elements = ddl_node->nod_arg[e_adb_all];
-	const dsql_nod* const* end = elements->nod_arg + elements->nod_count;
-	const dsql_nod* const* ptr;
-
-	for (ptr = elements->nod_arg; ptr < end; ptr++)
-	{
-		const dsql_nod* element = *ptr;
-		if (element->nod_type == nod_drop_difference)
-			drop_difference = true;
-	}
-
-	if (drop_difference)
-		dsqlScratch->appendUChar(isc_dyn_drop_difference);
-
-	SLONG start = 0;
-
-	elements = ddl_node->nod_arg[e_adb_all];
-	end = elements->nod_arg + elements->nod_count;
-	for (ptr = elements->nod_arg; ptr < end; ptr++)
-	{
-		const dsql_fil* file;
-		const dsql_nod* element = *ptr;
-
-		switch (element->nod_type)
-		{
-		case nod_file_desc:
-			file = (dsql_fil*) element->nod_arg[0];
-			dsqlScratch->appendNullString(isc_dyn_def_file, file->fil_name->str_data);
-
-			start = MAX(start, file->fil_start);
-			dsqlScratch->appendFileStart(start);
-
-			dsqlScratch->appendFileLength(file->fil_length);
-			dsqlScratch->appendUChar(isc_dyn_end);
-			start += file->fil_length;
-			break;
-		case nod_difference_file:
-			dsqlScratch->appendNullString(isc_dyn_def_difference,
-				((dsql_str*) element->nod_arg[0])->str_data);
-			break;
-		case nod_begin_backup:
-			dsqlScratch->appendUChar(isc_dyn_begin_backup);
-			break;
-		case nod_end_backup:
-			dsqlScratch->appendUChar(isc_dyn_end_backup);
-			break;
-		case nod_dfl_charset:
-			dsqlScratch->appendNullString(isc_dyn_fld_character_set_name,
-				((dsql_str*) element->nod_arg[0])->str_data);
-			break;
-		default:
-			break;
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void modify_index( DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	m o d i f y _ i n d e x
- *
- **************************************
- *
- * Function
- *	Alter an index (only active or inactive for now)
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->getDdlNode();
-
-	dsql_nod* index_node = ddl_node->nod_arg[e_alt_index];
-	const dsql_str* index_name = (dsql_str*) index_node->nod_arg[e_alt_idx_name];
-
-	dsqlScratch->appendNullString(isc_dyn_mod_idx, index_name->str_data);
-
-	if (index_node->nod_type == nod_idx_active)
-		dsqlScratch->appendNumber(isc_dyn_idx_inactive, 0);
-	else if (index_node->nod_type == nod_idx_inactive)
-		dsqlScratch->appendNumber(isc_dyn_idx_inactive, 1);
 
 	dsqlScratch->appendUChar(isc_dyn_end);
 }
@@ -1477,68 +1172,6 @@ static char modify_privileges(DsqlCompilerScratch* dsqlScratch,
 }
 
 
-// *******************
-// m o d i f y _ u d f
-// *******************
-// Allow the user to change the entry point or module name.
-// Useful when there are dependencies on the udf, so it cannot be dropped.
-static void modify_udf(DsqlCompilerScratch* dsqlScratch)
-{
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	const dsql_nod* node = statement->getDdlNode();
-	fb_assert(node->nod_type == nod_mod_udf);
-	const dsql_str* obj_name = (dsql_str*) node->nod_arg[e_mod_udf_name];
-
-	if (!node->nod_arg[e_mod_udf_entry_pt] && !node->nod_arg[e_mod_udf_module])
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Unexpected end of command
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) <<
-													Arg::Num(node->nod_column + obj_name->str_length));
-																		   // + strlen("FUNCTION")
-	}
-
-	dsqlScratch->appendNullString(isc_dyn_mod_function, obj_name->str_data);
-
-	const dsql_str* entry_point_name = (dsql_str*) node->nod_arg[e_mod_udf_entry_pt];
-	if (entry_point_name)
-		dsqlScratch->appendNullString(isc_dyn_func_entry_point, entry_point_name->str_data);
-
-	const dsql_str* module_name = (dsql_str*) node->nod_arg[e_mod_udf_module];
-	if (module_name)
-		dsqlScratch->appendNullString(isc_dyn_func_module_name, module_name->str_data);
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-// *******************
-// m o d i f y _ m a p
-// *******************
-// Allow the user to establish/drop the mapping between OS security object and the role
-static void modify_map(DsqlCompilerScratch* dsqlScratch)
-{
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	const dsql_nod* node = statement->getDdlNode();
-	fb_assert(node->nod_type == nod_mod_role);
-
-	const dsql_str* ds = (dsql_str*) node->nod_arg[e_mod_role_os_name];
-	fb_assert(ds ||
-		ExprNode::as<LiteralNode>(node->nod_arg[e_mod_role_action])->getSlong() == isc_dyn_automap_role ||
-		ExprNode::as<LiteralNode>(node->nod_arg[e_mod_role_action])->getSlong() == isc_dyn_autounmap_role);
-	dsqlScratch->appendNullString(isc_dyn_mapping, ds ? ds->str_data : "");
-
-	ds = (dsql_str*) node->nod_arg[e_mod_role_db_name];
-	fb_assert(ds);
-	dsqlScratch->appendNullString(
-		ExprNode::as<LiteralNode>(node->nod_arg[e_mod_role_action])->getSlong(), ds->str_data);
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 // *********************
 // d e f i n e _ u s e r
 // *********************
@@ -1689,27 +1322,6 @@ void DDL_reset_context_stack(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->hiddenVarsNumber = 0;
 	dsqlScratch->hiddenVariables.clear();
-}
-
-
-static void set_statistics(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	s e t _ s t a t i s t i c s
- *
- **************************************
- *
- * Function
- *	Alter an index/.. statistics
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->getDdlNode();
-	const dsql_str* index_name = (dsql_str*) ddl_node->nod_arg[e_stat_name];
-	dsqlScratch->appendNullString(isc_dyn_mod_idx, index_name->str_data);
-	dsqlScratch->appendUChar(isc_dyn_idx_statistic);
-	dsqlScratch->appendUChar(isc_dyn_end);
 }
 
 

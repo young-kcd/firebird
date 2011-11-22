@@ -731,10 +731,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\jrd\dyn_mod.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\gen\jrd\dyn_util.cpp"
 					>
 				</File>
@@ -784,10 +780,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\src\jrd\dyn_def.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\dyn_mod.epp"
 					>
 				</File>
 				<File
@@ -1033,10 +1025,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dyn_df_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\dyn_md_proto.h"
 				>
 			</File>
 			<File

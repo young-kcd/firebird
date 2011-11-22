@@ -45,7 +45,6 @@
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dyn_proto.h"
-#include "../jrd/dyn_md_proto.h"
 #include "../jrd/dyn_ut_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"

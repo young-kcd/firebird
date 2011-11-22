@@ -83,7 +83,6 @@ private:
 	{
 		// This is, in fact, parser state. Not used in lexer itself
 		dsql_fld* g_field;
-		dsql_fil* g_file;
 		dsql_nod* g_field_name;
 		int dsql_debug;
 

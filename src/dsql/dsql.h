@@ -280,20 +280,6 @@ enum fld_flags_vals {
 	FLD_system		= 8
 };
 
-//! database/log/cache file block
-class dsql_fil : public pool_alloc<dsql_type_fil>
-{
-public:
-	SLONG	fil_length;			// File length in pages
-	SLONG	fil_start;			// Starting page
-	dsql_str*	fil_name;			// File name
-	//dsql_fil*	fil_next;			// next file
-	//SSHORT	fil_shadow_number;	// shadow number if part of shadow
-	//SSHORT	fil_manual;			// flag to indicate manual shadow
-	//SSHORT	fil_partitions;		// number of log file partitions
-	//USHORT	fil_flags;
-};
-
 //! Stored Procedure block
 class dsql_prc : public pool_alloc<dsql_type_prc>
 {

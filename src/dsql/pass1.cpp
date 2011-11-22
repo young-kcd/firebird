@@ -891,23 +891,12 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	switch (input->nod_type)
 	{
-	case nod_def_database:
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_CREATE_DB);
-		return input;
-
 	case nod_def_index:
-	case nod_mod_index:
 	case nod_def_constraint:
 	case nod_grant:
 	case nod_revoke:
-	case nod_mod_database:
 	case nod_def_filter:
 	case nod_def_domain:
-	case nod_del_udf:
-	case nod_def_shadow:
-	case nod_set_statistics:
-	case nod_mod_udf:
-	case nod_mod_role:
 	case nod_add_user:
 	case nod_mod_user:
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
@@ -4749,9 +4738,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_collate:
 		verb = "collate";
 		break;
-	case nod_def_database:
-		verb = "define database";
-		break;
 	case nod_def_field:
 		verb = "define field";
 		break;
@@ -4787,9 +4773,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_list:
 		verb = "list";
-		break;
-	case nod_mod_database:
-		verb = "modify database";
 		break;
 	case nod_mod_field:
 		verb = "modify field";
@@ -4869,12 +4852,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_constraint:
 		verb = "def_constraint";
 		break;
-	case nod_def_shadow:
-		verb = "def_shadow";
-		break;
-	case nod_del_udf:
-		verb = "del_udf";
-		break;
 	case nod_rel_constraint:
 		verb = "rel_constraint";
 		break;
@@ -4923,32 +4900,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_retain:
 		verb = "retain";
 		break;
-	case nod_page_size:
-		verb = "page_size";
-		break;
-	case nod_file_length:
-		verb = "file_length";
-		break;
-	case nod_file_desc:
-		verb = "file_desc";
-		break;
-	case nod_dfl_charset:
-		verb = "dfl_charset";
-		break;
-	case nod_password:
-		verb = "password";
-		break;
-	case nod_lc_ctype:
-		verb = "lc_ctype";
-		break;
-	case nod_udf_return_value:
-		verb = "udf_return_value";
-		break;
 	case nod_def_computed:
 		verb = "def_computed";
-		break;
-	case nod_mod_index:
-		verb = "mod_index";
 		break;
 	case nod_idx_active:
 		verb = "idx_active";
@@ -4961,9 +4914,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_cascade:
 		verb = "cascade";
-		break;
-	case nod_set_statistics:
-		verb = "set_statistics";
 		break;
 	case nod_ref_upd_del:
 		verb = "ref_upd_del";
@@ -4986,23 +4936,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_mod_field_pos:
 		verb = "mod_field_pos";
 		break;
-	case nod_udf_param:
-		verb = "udf_param";
-		break;
 	case nod_for_update:
 		verb = "for_update";
-		break;
-	case nod_difference_file:
-		verb = "difference_file";
-		break;
-	case nod_drop_difference:
-		verb = "drop_difference";
-		break;
-	case nod_begin_backup:
-		verb = "begin_backup";
-		break;
-	case nod_end_backup:
-		verb = "end_backup";
 		break;
 
 	case nod_label:
@@ -5032,10 +4967,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		trace_line("%s\"\n", string->str_data);
 		return;
 
-	case nod_mod_udf:
-		verb = "mod_udf";
-		break;
-
 	case nod_tra_misc:
 		verb = "tra_misc";
 		break;
@@ -5046,10 +4977,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_with:
 		verb = "with";
-		break;
-
-	case nod_mod_role:
-		verb = "mod_role";
 		break;
 
 	case nod_add_user:

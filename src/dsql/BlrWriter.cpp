@@ -84,18 +84,6 @@ void BlrWriter::appendULongWithLength(ULONG val)
 	appendULong(val);
 }
 
-void BlrWriter::appendFileLength(ULONG length)
-{
-	appendUChar(isc_dyn_file_length);
-	appendULongWithLength(length);
-}
-
-void BlrWriter::appendFileStart(ULONG start)
-{
-	appendUChar(isc_dyn_file_start);
-	appendULongWithLength(start);
-}
-
 // Write out a string of blr as part of a ddl string, as in a view or computed field definition.
 void BlrWriter::beginBlr(UCHAR verb)
 {

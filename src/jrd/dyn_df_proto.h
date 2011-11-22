@@ -24,10 +24,7 @@
 #ifndef JRD_DYN_DF_PROTO_H
 #define JRD_DYN_DF_PROTO_H
 
-void DYN_define_file(Jrd::Global*, const UCHAR**, SLONG, SLONG*, USHORT);
 void DYN_define_filter(Jrd::Global*, const UCHAR**);
 void DYN_define_index(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
-void DYN_define_shadow(Jrd::Global*, const UCHAR**);
-void DYN_define_difference(Jrd::Global*, const UCHAR**);
 
 #endif // JRD_DYN_DF_PROTO_H

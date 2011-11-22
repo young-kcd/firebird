@@ -137,12 +137,12 @@ using namespace Firebird;
 static bool		long_int(dsql_nod*, SLONG*);
 #endif
 static dsql_fld*	make_field (dsql_nod*);
-static dsql_fil*	make_file();
 #ifdef NOT_USED_OR_REPLACED
 static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
 static void	stack_nodes (dsql_nod*, DsqlNodStack&);
 static Firebird::MetaName toName(dsql_nod* node);
+static Firebird::PathName toPathName(dsql_str* node);
 static Firebird::string toString(dsql_str* node);
 
 static void	yyabandon (SLONG, ISC_STATUS);
@@ -633,8 +633,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ReturningClause* returningClause;
 	Firebird::PathName* pathNamePtr;
 	TEXT* textPtr;
+	Jrd::DbFileClause* dbFileClause;
+	Firebird::Array<Jrd::DbFileClause*>* dbFilesClause;
 	Jrd::ExternalClause* externalClause;
 	Firebird::Array<Jrd::ParameterClause>* parametersClause;
+	Jrd::Node* node;
 	Jrd::ExprNode* exprNode;
 	Jrd::BoolExprNode* boolExprNode;
 	Jrd::StmtNode* stmtNode;
@@ -647,12 +650,14 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreateAlterTriggerNode* createAlterTriggerNode;
 	Jrd::CreateAlterPackageNode* createAlterPackageNode;
 	Jrd::CreateSequenceNode* createSequenceNode;
+	Jrd::CreateShadowNode* createShadowNode;
 	Firebird::Array<Jrd::CreateAlterPackageNode::Item>* packageItems;
 	Jrd::ExceptionArray* exceptionArray;
 	Jrd::CreateAlterPackageNode::Item packageItem;
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
 	Jrd::CreateRelationNode* createRelationNode;
 	Jrd::CreateAlterViewNode* createAlterViewNode;
+	Jrd::AlterDatabaseNode* alterDatabaseNode;
 	Jrd::ExecBlockNode* execBlockNode;
 	Jrd::AggNode* aggNode;
 	Jrd::SysFuncCallNode* sysFuncCallNode;
@@ -668,11 +673,15 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> access_mode access_type alias_list
 %type <legacyNode> alter alter_clause alter_column_name
-%type <legacyNode> alter_data_type_or_domain alter_db
-%type <legacyNode> alter_exception_clause alter_index_clause alter_op alter_ops
-%type <legacyNode> alter_role_clause alter_role_enable alter_sequence_clause
-%type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
+%type <legacyNode> alter_data_type_or_domain
+%type <legacyNode> alter_op alter_ops
+%type <stmtNode>   alter_sequence_clause
+%type <legacyNode> alter_user_clause
 %type <legacyNode> array_element array_range
+%type <ddlNode>	   alter_exception_clause alter_index_clause alter_role_clause alter_udf_clause
+%type <ddlNode>	   alter_view_clause
+%type <boolVal>	   alter_role_enable
+%type alter_db(<alterDatabaseNode>)
 %type arg_desc_list1(<parametersClause>) arg_desc_list(<parametersClause>)
 %type arg_desc(<parametersClause>)
 
@@ -699,7 +708,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
 %type <legacyNode> column_singleton commit
 %type <stmtNode>   complex_proc_statement
-%type <legacyNode> computed_by computed_clause conditional constant constraint_index_opt
+%type <legacyNode> computed_by computed_clause constant constraint_index_opt
+%type <boolVal>	   conditional
 %type <legacyNode> constraint_name_opt correlation_name create
 %type <legacyNode> create_clause create_user_clause cross_join
 %type <legacyNode> cursor_clause cursor_def
@@ -707,8 +717,13 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <stmtNode>   cursor_declaration_item continue cursor_statement
 
 %type <legacyNode> data_type data_type_or_domain
-%type <legacyNode> db_alter_clause db_clause db_file db_file_list db_initial_desc db_initial_desc1
-%type <legacyNode> db_initial_option db_rem_desc db_rem_desc1 db_rem_option ddl_subname
+%type db_initial_desc(<alterDatabaseNode>) db_initial_desc1(<alterDatabaseNode>)
+%type db_initial_option(<alterDatabaseNode>) db_rem_desc(<alterDatabaseNode>)
+%type db_rem_desc1(<alterDatabaseNode>) db_rem_option(<alterDatabaseNode>)
+%type <alterDatabaseNode> db_clause
+%type <dbFileClause> db_file
+%type db_file_list(<dbFilesClause>)
+%type <legacyNode> ddl_subname
 %type <legacyNode> decimal_keyword declare declare_clause
 %type <legacyNode> decode_pairs def_computed default_par_opt default_value
 %type <stmtNode>   delete delete_positioned delete_searched
@@ -718,6 +733,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> domain_or_non_array_type_name domain_type drop_behaviour
 %type <ddlNode> drop drop_clause
 %type <legacyStr>  db_name ddl_desc
+%type db_alter_clause(<alterDatabaseNode>)
 
 %type <legacyNode> event_argument_opt exception_clause
 %type err(<exceptionArray>) errors(<exceptionArray>)
@@ -732,12 +748,13 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type exec_stmt_options_list(<execStatementNode>) exec_stmt_inputs(<execStatementNode>)
 
 %type <stmtNode>   fetch_cursor
-%type <legacyNode> file1 file_clause file_desc file_desc1
+%type <legacyNode> file1
 %type <legacyNode> filter_clause_io filter_decl_clause first_clause
 %type <legacyNode> float_type for_update_clause for_update_list from_clause
 %type <legacyNode> from_list
 %type <stmtNode>   for_select full_proc_block full_proc_block_body
 %type <legacyStr>  firstname_opt
+%type file_clause(<dbFileClause>) file_desc(<dbFileClause>) file_desc1(<dbFileClause>)
 %type fetch_scroll(<cursorStmtNode>)
 %type <int32Val>   first_file_length
 %type <execStatementNode> for_exec_into
@@ -770,7 +787,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  lastname_opt
 %type <int32Val>   long_integer
 
-%type <legacyNode> manual_auto
+%type <boolVal>	   manual_auto
 %type <mergeNode>  merge
 %type merge_insert_specification(<mergeNode>) merge_update_specification(<mergeNode>)
 %type merge_when_clause(<mergeNode>) merge_when_matched_clause(<mergeNode>)
@@ -824,9 +841,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> savepoint scroll_opt search_condition searched_case
 %type <valueIfNode> searched_when_clause
-%type <legacyNode> sec_shadow_files segment_clause_io segment_length_io select select_expr
+%type sec_shadow_files(<dbFilesClause>)
+%type <legacyNode> segment_clause_io segment_length_io select select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
-%type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause
+%type <legacyNode> set_savepoint set_statistics set_transaction
+%type <createShadowNode> shadow_clause
 %type <legacyNode> simple_case simple_UDF_name
 %type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_table_name
 %type <stmtNode>   simple_proc_statement singleton_select
@@ -1310,11 +1329,11 @@ create_clause
 	| SEQUENCE generator_clause
 		{ $$ = makeClassNode($2); }
 	| DATABASE db_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| DOMAIN domain_clause
 		{ $$ = makeClassNode($2); }
 	| SHADOW shadow_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| ROLE role_clause
 		{ $$ = $2; }
 	| COLLATION collation_clause
@@ -1404,7 +1423,7 @@ alter_exception_clause
 				toName($1), toString($2));
 			node->create = false;
 			node->alter = true;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -1427,22 +1446,27 @@ index_definition
 
 // CREATE SHADOW
 shadow_clause
-	: pos_short_integer manual_auto conditional sql_string first_file_length sec_shadow_files
-	 	{
-	 		$$ = make_node (nod_def_shadow, (int) e_shadow_count,
-				(dsql_nod*)(IPTR) $1, $2, $3, $4, (dsql_nod*)(IPTR) $5, make_list($6));
-	 	}
+	: pos_short_integer manual_auto conditional sql_string first_file_length
+	 		{
+	 			$$ = newNode<CreateShadowNode>($1);
+		 		$$->manual = $2;
+		 		$$->conditional = $3;
+		 		$$->files.add(newNode<DbFileClause>(toPathName($4)));
+		 		$$->files.front()->length = $5;
+	 		}
+		sec_shadow_files(&$6->files)
+		 	{ $$ = $6; }
 	;
 
 manual_auto
-	: /* nothing */		{ $$ = MAKE_const_slong (0); }
-	| MANUAL			{ $$ = MAKE_const_slong (1); }
-	| AUTO				{ $$ = MAKE_const_slong (0); }
+	: /* nothing */		{ $$ = false; }
+	| MANUAL			{ $$ = true; }
+	| AUTO				{ $$ = false; }
 	;
 
 conditional
-	: /* nothing */		{ $$ = MAKE_const_slong (0); }
-	| CONDITIONAL		{ $$ = MAKE_const_slong (1); }
+	: /* nothing */		{ $$ = false; }
+	| CONDITIONAL		{ $$ = true; }
 	;
 
 first_file_length
@@ -1450,14 +1474,14 @@ first_file_length
 	| LENGTH equals long_integer page_noise		{ $$ = $3; }
 	;
 
-sec_shadow_files
-	: /* nothing */		{ $$ = NULL; }
-	| db_file_list
+sec_shadow_files($dbFilesClause)
+	: // nothing
+	| db_file_list($dbFilesClause)
 	;
 
-db_file_list
-	: db_file
-	| db_file_list db_file	{ $$ = make_node (nod_list, (int) 2, $1, $2); }
+db_file_list($dbFilesClause)
+	: db_file				{ $dbFilesClause->add($1); }
+	| db_file_list db_file	{ $dbFilesClause->add($2); }
 	;
 
 
@@ -1611,12 +1635,16 @@ alter_charset_clause
 // in preparse.cpp.
 // Remote options always come after initial options, so they don't need to be parsed
 // in preparse.cpp. They are interpreted only in the server, using this grammar.
+// Altrough LENGTH is defined as a initial option, it's also used in the server.
 
 db_clause
-	: db_name db_initial_desc1 db_rem_desc1
-		{
-			$$ = make_node(nod_def_database, (int) e_cdb_count, $1, make_list($2), make_list($3));
-		}
+	: db_name
+			{
+				$$ = newNode<AlterDatabaseNode>();
+				$$->create = true;
+			}
+		db_initial_desc1($2) db_rem_desc1($2)
+			{ $$ = $2; }
 	;
 
 equals
@@ -1628,81 +1656,75 @@ db_name
 	: sql_string
 	;
 
-db_initial_desc1
-	: /* nothing */		{ $$ = NULL; }
-	| db_initial_desc
+db_initial_desc1($alterDatabaseNode)
+	: // nothing
+	| db_initial_desc($alterDatabaseNode)
 	;
 
-db_initial_desc
-	: db_initial_option
-	| db_initial_desc db_initial_option		{ $$ = make_node(nod_list, 2, $1, $2); }
+db_initial_desc($alterDatabaseNode)
+	: db_initial_option($alterDatabaseNode)
+	| db_initial_desc db_initial_option($alterDatabaseNode)
 	;
 
-db_initial_option
+// With the exception of LENGTH, all clauses here are handled only at the client.
+db_initial_option($alterDatabaseNode)
 	: KW_PAGE_SIZE equals pos_short_integer
-		{ $$ = make_node(nod_page_size, 1, (dsql_nod*)(IPTR) $3); }
-	| LENGTH equals long_integer page_noise
-		{ $$ = make_node(nod_file_length, 1, (dsql_nod*)(IPTR) $3); }
 	| USER sql_string
-		{ $$ = make_node(nod_user_name, 1, $2); }
 	| PASSWORD sql_string
-		{ $$ = make_node(nod_password, 1, $2); }
 	| SET NAMES sql_string
-		{ $$ = make_node(nod_lc_ctype, 1, $3); }
+	| LENGTH equals long_integer page_noise
+		{ $alterDatabaseNode->createLength = $3; }
 	;
 
-db_rem_desc1
-	: /* nothing */		{ $$ = NULL; }
-	| db_rem_desc
+db_rem_desc1($alterDatabaseNode)
+	: // nothing
+	| db_rem_desc($alterDatabaseNode)
 	;
 
-db_rem_desc
-	: db_rem_option
-	| db_rem_desc db_rem_option		{ $$ = make_node(nod_list, 2, $1, $2); }
+db_rem_desc($alterDatabaseNode)
+	: db_rem_option($alterDatabaseNode)
+	| db_rem_desc db_rem_option($alterDatabaseNode)
 	;
 
-db_rem_option
+db_rem_option($alterDatabaseNode)
 	: db_file
+		{ $alterDatabaseNode->files.add($1); }
 	| DEFAULT CHARACTER SET symbol_character_set_name
-		{ $$ = make_node(nod_dfl_charset, 1, $4); }
+		{ $alterDatabaseNode->setDefaultCharSet = toName($4); }
 	| DEFAULT CHARACTER SET symbol_character_set_name COLLATION symbol_collation_name
 		{
-			$$ = make_node(nod_list, 2,
-				make_node(nod_dfl_charset, 1, $4),
-				make_node(nod_dfl_collate, 1, $6));
+			$alterDatabaseNode->setDefaultCharSet = toName($4);
+			$alterDatabaseNode->setDefaultCollation = toName($6);
 		}
 	| KW_DIFFERENCE KW_FILE sql_string
-		{ $$ = make_node(nod_difference_file, 1, $3); }
+		{ $alterDatabaseNode->differenceFile = toPathName($3); }
 	;
 
 db_file
-	: file1 sql_string file_desc1
-		{
-			lex.g_file->fil_name = $2;
-			$$ = make_node(nod_file_desc, (int) 1, (dsql_nod*) lex.g_file);
-		}
+	: KW_FILE sql_string
+			{
+				DbFileClause* clause = newNode<DbFileClause>(toPathName($2));
+				$$ = clause;
+			}
+		file_desc1($3)
+			{ $$ = $3; }
 	;
 
-file1
-	: KW_FILE
-		{ lex.g_file = make_file();}
+file_desc1($dbFileClause)
+	: // nothing
+	| file_desc($dbFileClause)
 	;
 
-file_desc1
-	: /* nothing */		{ $$ = NULL; }
-	| file_desc
+file_desc($dbFileClause)
+	: file_clause($dbFileClause)
+	| file_desc file_clause($dbFileClause)
 	;
 
-file_desc
-	: file_clause
-	| file_desc file_clause
-	;
-
-file_clause
+file_clause($dbFileClause)
 	: STARTING file_clause_noise long_integer
-		{ lex.g_file->fil_start = $3; }
+		{ $dbFileClause->start = $3; }
 	| LENGTH equals long_integer page_noise
-		{ lex.g_file->fil_length = $3; }
+		{ $dbFileClause->length = $3; }
 	;
 
 file_clause_noise
@@ -2920,7 +2942,7 @@ alter_view_clause
 		{
 			$1->alter = true;
 			$1->create = false;
-			$$ = makeClassNode($1);
+			$$ = $1;
 		}
 	;
 
@@ -3154,7 +3176,7 @@ alter	: ALTER alter_clause
 
 alter_clause
 	: EXCEPTION alter_exception_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| TABLE simple_table_name alter_ops
 		{
 			AlterRelationNode* node = newNode<AlterRelationNode>($2);
@@ -3166,27 +3188,29 @@ alter_clause
 			$$ = makeClassNode(node);
 		}
 	| VIEW alter_view_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| TRIGGER alter_trigger_clause
 		{ $$ = makeClassNode($2); }
 	| PROCEDURE alter_procedure_clause
 		{ $$ = makeClassNode($2); }
 	| PACKAGE alter_package_clause
 		{ $$ = makeClassNode($2); }
-	| DATABASE alter_db
-		{ $$ = make_node(nod_mod_database, (int) e_adb_count, make_list($2)); }
+	| DATABASE
+			{ $<alterDatabaseNode>$ = newNode<AlterDatabaseNode>(); }
+		alter_db($<alterDatabaseNode>2)
+			{ $$ = makeClassNode($<alterDatabaseNode>2); }
 	| DOMAIN alter_domain
 		{ $$ = makeClassNode($2); }
 	| INDEX alter_index_clause
-		{ $$ = make_node (nod_mod_index, (int) e_mod_idx_count, $2); }
+		{ $$ = makeClassNode($2); }
 	| SEQUENCE alter_sequence_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| EXTERNAL FUNCTION alter_udf_clause
-		{ $$ = $3; }
+		{ $$ = makeClassNode($3); }
 	| FUNCTION alter_function_clause
 		{ $$ = makeClassNode($2); }
 	| ROLE alter_role_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| USER alter_user_clause
 		{ $$ = $2; }
 	| CHARACTER SET alter_charset_clause
@@ -3344,120 +3368,104 @@ keyword_or_column
 	| SQLSTATE
 	;
 
-col_opt	: ALTER
-			{ $$ = NULL; }
-		| ALTER COLUMN
-			{ $$ = NULL; }
-		;
+col_opt
+	: ALTER			{ $$ = NULL; }
+	| ALTER COLUMN	{ $$ = NULL; }
+	;
 
-alter_data_type_or_domain	: non_array_type
-			{ $$ = NULL; }
-		| simple_column_name
-			{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
-		;
+alter_data_type_or_domain
+	: non_array_type
+		{ $$ = NULL; }
+	| simple_column_name
+		{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
+	;
 
-alter_col_name	: simple_column_name
-			{
-				lex.g_field_name = $1;
-				lex.g_field = make_field ($1);
-				$$ = lex.g_field;
-			}
-		;
+alter_col_name
+	: simple_column_name
+		{
+			lex.g_field_name = $1;
+			lex.g_field = make_field ($1);
+			$$ = lex.g_field;
+		}
+	;
 
-drop_behaviour	: RESTRICT
-			{ $$ = make_node (nod_restrict, 0, NULL); }
-		| CASCADE
-			{ $$ = make_node (nod_cascade, 0, NULL); }
-		|
-			{ $$ = make_node (nod_restrict, 0, NULL); }
-		;
+drop_behaviour
+	:				{ $$ = make_node (nod_restrict, 0, NULL); }
+	| RESTRICT		{ $$ = make_node (nod_restrict, 0, NULL); }
+	| CASCADE		{ $$ = make_node (nod_cascade, 0, NULL); }
+	;
 
-alter_index_clause	: symbol_index_name ACTIVE
-				{ $$ = make_node (nod_idx_active, 1, $1); }
-			| symbol_index_name INACTIVE
-				{ $$ = make_node (nod_idx_inactive, 1, $1); }
-			;
+alter_index_clause
+	: symbol_index_name ACTIVE
+		{ $$ = newNode<AlterIndexNode>(toName($1), true); }
+	| symbol_index_name INACTIVE
+		{ $$ = newNode<AlterIndexNode>(toName($1), false); }
+	;
 
 alter_sequence_clause
 	: symbol_generator_name RESTART WITH signed_long_integer
-		{ $$ = makeClassNode(newNode<SetGeneratorNode>(toName($1), MAKE_const_slong($4))); }
+		{ $$ = newNode<SetGeneratorNode>(toName($1), MAKE_const_slong($4)); }
 	| symbol_generator_name RESTART WITH NUMBER64BIT
-		{
-			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($1),
-				MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)));
-		}
+		{ $$ = newNode<SetGeneratorNode>(toName($1), MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)); }
 	| symbol_generator_name RESTART WITH '-' NUMBER64BIT
 		{
-			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($1),
-				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)))));
+			$$ = newNode<SetGeneratorNode>(toName($1),
+				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))));
 		}
 	;
 
 alter_udf_clause
 	: symbol_UDF_name entry_op module_op
-		{ $$ = make_node(nod_mod_udf, e_mod_udf_count, $1, $2, $3); }
+		{
+			AlterExternalFunctionNode* node = newNode<AlterExternalFunctionNode>(toName($1));
+			if ($2)
+				node->clauses.name = toString($2);
+			if ($3)
+				node->clauses.udfModule = toString($3);
+			$$ = node;
+		}
 	;
 
-/*
-alter_role_clause	: symbol_role_name alter_role_action OS_NAME os_security_name
-			{ $$ = make_node(nod_mod_role, e_mod_role_count, $4, $1, $2); }
-			;
+entry_op
+	: /* nothing */				{ $$ = NULL; }
+	| ENTRY_POINT sql_string	{ $$ = $2; }
+	;
 
-alter_role_action	: ADD
-			{ $$ = MAKE_const_slong (isc_dyn_map_role); }
-		| DROP
-			{ $$ = MAKE_const_slong (isc_dyn_unmap_role); }
-		;
- */
+module_op
+	: /* nothing */				{ $$ = NULL; }
+	| MODULE_NAME sql_string	{ $$ = $2; }
+	;
 
-alter_role_clause	: symbol_role_name alter_role_enable AUTO ADMIN MAPPING
-			{ $$ = make_node(nod_mod_role, e_mod_role_count, NULL, $1, $2); }
-			;
+alter_role_clause
+	: symbol_role_name alter_role_enable AUTO ADMIN MAPPING
+		{ $$ = newNode<AlterRoleNode>(toName($1), $2); }
+	;
 
-alter_role_enable	: SET
-			{ $$ = MAKE_const_slong (isc_dyn_automap_role); }
-		| DROP
-			{ $$ = MAKE_const_slong (isc_dyn_autounmap_role); }
-		;
-/*
-os_security_name	: STRING
-			{ $$ = $1; }
-		;
-*/
-entry_op	: ENTRY_POINT sql_string
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
-
-module_op	: MODULE_NAME sql_string
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+alter_role_enable
+	: SET		{ $$ = true; }
+	| DROP		{ $$ = false; }
+	;
 
 
 // ALTER DATABASE
 
-alter_db
-	: db_alter_clause
-	| alter_db db_alter_clause
-			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
+alter_db($alterDatabaseNode)
+	: db_alter_clause($alterDatabaseNode)
+	| alter_db db_alter_clause($alterDatabaseNode)
 	;
 
-db_alter_clause
-	: ADD db_file_list
-		{ $$ = $2; }
+db_alter_clause($alterDatabaseNode)
+	: ADD db_file_list(&$alterDatabaseNode->files)
 	| ADD KW_DIFFERENCE KW_FILE sql_string
-		{ $$ = make_node(nod_difference_file, (int) 1, $4); }
+		{ $alterDatabaseNode->differenceFile = toPathName($4); }
 	| DROP KW_DIFFERENCE KW_FILE
-		{ $$ = make_node(nod_drop_difference, (int) 0, NULL); }
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DROP_DIFFERENCE; }
 	| BEGIN BACKUP
-		{ $$ = make_node(nod_begin_backup, (int) 0, NULL); }
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_BEGIN_BACKUP; }
 	| END BACKUP
-		{ $$ = make_node(nod_end_backup, (int) 0, NULL); }
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_END_BACKUP; }
 	| SET DEFAULT CHARACTER SET symbol_character_set_name
-		{ $$ = make_node(nod_dfl_charset, 1, $5); }
+		{ $alterDatabaseNode->setDefaultCharSet = toName($5); }
 	;
 
 
@@ -4227,7 +4235,7 @@ table_list
 
 set_statistics
 	: SET STATISTICS INDEX symbol_index_name
-		{ $$ = make_node (nod_set_statistics, (int) e_stat_count, $4); }
+		{ $$ = makeClassNode(newNode<SetStatisticsNode>(toName($4))); }
 	;
 
 comment
@@ -6685,26 +6693,6 @@ static dsql_fld* make_field (dsql_nod* field_name)
 }
 
 
-static dsql_fil* make_file()
-{
-/**************************************
- *
- *	m a k e _ f i l e
- *
- **************************************
- *
- * Functional description
- *	Make a file block
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	dsql_fil* temp_file = FB_NEW(*tdbb->getDefaultPool()) dsql_fil;
-
-	return temp_file;
-}
-
-
 dsql_nod* Parser::make_list (dsql_nod* node)
 {
 /**************************************
@@ -6981,6 +6969,11 @@ static MetaName toName(dsql_nod* node)
 		yyabandon(-104, isc_dyn_name_longer);
 
 	return MetaName(str->str_data);
+}
+
+static PathName toPathName(dsql_str* node)
+{
+	return PathName(node->str_data);
 }
 
 static string toString(dsql_str* node)

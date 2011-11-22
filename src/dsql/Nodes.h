@@ -133,7 +133,9 @@ public:
 	{
 		using namespace Firebird;
 
-		dsqlScratch->setTransaction(transaction);
+		// dsqlScratch should be NULL with CREATE DATABASE.
+		if (dsqlScratch)
+			dsqlScratch->setTransaction(transaction);
 
 		try
 		{

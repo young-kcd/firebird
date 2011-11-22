@@ -42,13 +42,37 @@ namespace Jrd {
 class CompoundStmtNode;
 
 
+class DbFileClause
+{
+public:
+	DbFileClause(MemoryPool& p, const DbFileClause& o)
+		: name(p, o.name),
+		  start(o.start),
+		  length(o.length)
+	{
+	}
+
+	explicit DbFileClause(MemoryPool& p, const Firebird::PathName& aName)
+		: name(p, aName),
+		  start(0),
+		  length(0)
+	{
+	}
+
+public:
+	Firebird::PathName name;	// File name
+	SLONG start;				// Starting page
+	SLONG length;				// File length in pages
+};
+
+
 class ExternalClause
 {
 public:
 	ExternalClause(MemoryPool& p, const ExternalClause& o)
 		: name(p, o.name),
 		  engine(p, o.engine),
-		  udfModule(p)
+		  udfModule(p, o.udfModule)
 	{
 	}
 
@@ -306,6 +330,34 @@ public:
 	Firebird::string packageOwner;
 	bool privateScope;
 	SLONG udfReturnPos;
+};
+
+
+
+
+class AlterExternalFunctionNode : public DdlNode
+{
+public:
+	AlterExternalFunctionNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName),
+		  clauses(p)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_func_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+	ExternalClause clauses;
 };
 
 
@@ -1245,6 +1297,57 @@ public:
 };
 
 
+class AlterIndexNode : public DdlNode
+{
+public:
+	AlterIndexNode(MemoryPool& p, const Firebird::MetaName& aName, bool aActive)
+		: DdlNode(p),
+		  name(p, aName),
+		  active(aActive)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_index_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+	bool active;
+};
+
+
+class SetStatisticsNode : public DdlNode
+{
+public:
+	SetStatisticsNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		// ASF: using ALTER INDEX's code.
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_index_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+};
+
+
 class DropIndexNode : public DdlNode
 {
 public:
@@ -1293,6 +1396,37 @@ protected:
 
 public:
 	Firebird::MetaName name;
+};
+
+
+class CreateShadowNode : public DdlNode
+{
+public:
+	CreateShadowNode(MemoryPool& p, const SSHORT aNumber)
+		: DdlNode(p),
+		  number(aNumber),
+		  manual(false),
+		  conditional(false),
+		  files(p)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_shadow_failed) << Firebird::Arg::Num(number);
+	}
+
+public:
+	SSHORT number;
+	bool manual;
+	bool conditional;
+	Nullable<SLONG> firstLength;
+	Firebird::Array<DbFileClause*> files;
 };
 
 
@@ -1347,6 +1481,32 @@ public:
 };
 
 
+class AlterRoleNode : public DdlNode
+{
+public:
+	AlterRoleNode(MemoryPool& p, const Firebird::MetaName& aName, bool aMap)
+		: DdlNode(p),
+		  name(p, aName),
+		  map(aMap)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_role_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+	bool map;
+};
+
+
 class DropRoleNode : public DdlNode
 {
 public:
@@ -1392,6 +1552,58 @@ protected:
 
 public:
 	Firebird::MetaName name;
+};
+
+
+class AlterDatabaseNode : public DdlNode
+{
+public:
+	static const unsigned CLAUSE_BEGIN_BACKUP = 0x01;
+	static const unsigned CLAUSE_END_BACKUP = 0x02;
+	static const unsigned CLAUSE_DROP_DIFFERENCE = 0x04;
+
+public:
+	AlterDatabaseNode(MemoryPool& p)
+		: DdlNode(p),
+		  create(false),
+		  createLength(0),
+		  clauses(0),
+		  differenceFile(p),
+		  setDefaultCharSet(p),
+		  setDefaultCollation(p),
+		  files(p)
+	{
+	}
+
+public:
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		dsqlScratch->getStatement()->setType(
+			create ? DsqlCompiledStatement::TYPE_CREATE_DB : DsqlCompiledStatement::TYPE_DDL);
+		return this;
+	}
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_database_failed);
+	}
+
+private:
+	static void changeBackupMode(thread_db* tdbb, jrd_tra* transaction, unsigned clause);
+	static void defineDifference(thread_db* tdbb, jrd_tra* transaction, const Firebird::PathName& file);
+
+public:
+	bool create;	// Is the node created with a CREATE DATABASE command?
+	SLONG createLength;
+	unsigned clauses;
+	Firebird::PathName differenceFile;
+	Firebird::MetaName setDefaultCharSet;
+	Firebird::MetaName setDefaultCollation;
+	Firebird::Array<DbFileClause*> files;
 };
 
 

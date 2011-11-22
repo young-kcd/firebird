@@ -100,6 +100,7 @@ enum drq_type_t
 	drq_l_fld_src2,			// lookup a field source
 	drq_m_database,			// modify database
 	drq_m_index,			// modify index
+	drq_m_set_statistics,	// modify index (set statistics)
 	drq_e_grant1,			// erase grant
 	drq_e_grant2,			// erase grant
 	drq_s_indices,			// store indices

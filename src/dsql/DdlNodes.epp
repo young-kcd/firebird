@@ -94,6 +94,9 @@ static void checkViewDependency(thread_db* tdbb, jrd_tra* transaction,
 static void clearPermanentField(dsql_rel* relation, bool permanent);
 static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& constraintName, const MetaName& indexName);
+static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber, bool manualShadow,
+	bool conditionalShadow, SLONG& dbAlloc,
+	const PathName& name, SLONG start, SLONG length);
 static bool fieldExists(thread_db* tdbb, jrd_tra* transaction, const MetaName& relationName,
 	const MetaName& fieldName);
 static void makeRelationScopeName(const MetaName& name, const rel_t type, string& message);
@@ -328,6 +331,46 @@ static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 		status_exception::raise(
 			Arg::Gds(ENCODE_ISC_MSG(130, DYN_MSG_FAC)) << constraintName);
 	}
+}
+
+// Define a database or shadow file.
+static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber, bool manualShadow,
+	bool conditionalShadow, SLONG& dbAlloc, const PathName& name, SLONG start, SLONG length)
+{
+	PathName expandedName = name;
+
+	if (!ISC_expand_filename(expandedName, false))
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(231, DYN_MSG_FAC)));	// File name is invalid.
+
+	if (tdbb->getDatabase()->dbb_filename == expandedName)
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(166, DYN_MSG_FAC)));
+
+	AutoCacheRequest request(tdbb, drq_l_files, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FIRST 1 X IN RDB$FILES
+		WITH X.RDB$FILE_NAME EQ expandedName.c_str()
+	{
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(166, DYN_MSG_FAC)));
+	}
+	END_FOR
+
+	request.reset(tdbb, drq_s_files, DYN_REQUESTS);
+
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$FILES
+	{
+		expandedName.copyTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
+		X.RDB$SHADOW_NUMBER = shadowNumber;
+		X.RDB$FILE_FLAGS = (manualShadow ? FILE_manual : 0) |
+			(conditionalShadow ? FILE_conditional : 0);
+
+		dbAlloc = MAX(dbAlloc, start);
+		X.RDB$FILE_START = dbAlloc;
+		X.RDB$FILE_LENGTH = length;
+		dbAlloc += length;
+	}
+	END_STORE
 }
 
 // Checks to see if the given field already exists in a relation.
@@ -1501,21 +1544,13 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 					strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
 
 					if (external->udfModule.length() >= sizeof(FUN.RDB$MODULE_NAME))
-					{
-						status_exception::raise(
-							Arg::Gds(isc_arith_except) <<
-							Arg::Gds(isc_string_truncation));
-					}
+						status_exception::raise(Arg::Gds(isc_dyn_name_longer));
 
 					FUN.RDB$MODULE_NAME.NULL = (SSHORT) external->udfModule.isEmpty();
 					strcpy(FUN.RDB$MODULE_NAME, external->udfModule.c_str());
 
 					if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
-					{
-						status_exception::raise(
-							Arg::Gds(isc_arith_except) <<
-							Arg::Gds(isc_string_truncation));
-					}
+						status_exception::raise(Arg::Gds(isc_dyn_name_longer));
 
 					FUN.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
 					strcpy(FUN.RDB$ENTRYPOINT, external->name.c_str());
@@ -1844,6 +1879,88 @@ void CreateAlterFunctionNode::collectParamComments(thread_db* tdbb, jrd_tra* tra
 		items.put(ARG.RDB$ARGUMENT_NAME, ARG.RDB$DESCRIPTION);
 	}
 	END_FOR
+}
+
+
+//----------------------
+
+
+void AlterExternalFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"AlterExternalFunctionNode\n"
+		"  name: '%s'\n"
+		"  entrypoint: '%s'\n"
+		"  module: '%s'\n",
+		name.c_str(), clauses.name.c_str(), clauses.udfModule.c_str());
+}
+
+// Allow changing the entry point and/or the module name of a UDF.
+void AlterExternalFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
+{
+	if (clauses.name.isEmpty() && clauses.udfModule.isEmpty())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-104) /*** FIXME: <<
+			// Unexpected end of command
+			Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) <<
+			Arg::Num(node->nod_column + obj_name->str_length)***/);	// + strlen("FUNCTION")
+	}
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest request(tdbb, drq_m_fun, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FUN IN RDB$FUNCTIONS
+		WITH FUN.RDB$FUNCTION_NAME EQ name.c_str() AND
+			 FUN.RDB$PACKAGE_NAME MISSING
+	{
+		found = true;
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION, name);
+
+		if (!FUN.RDB$ENGINE_NAME.NULL || !FUN.RDB$FUNCTION_BLR.NULL)
+			status_exception::raise(Arg::Gds(isc_dyn_newfc_oldsyntax) << name);
+
+		MODIFY FUN
+			if (clauses.name.hasData())
+			{
+				if (clauses.name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
+					status_exception::raise(Arg::Gds(isc_dyn_name_longer));
+
+				FUN.RDB$ENTRYPOINT.NULL = FALSE;
+				strcpy(FUN.RDB$ENTRYPOINT, clauses.name.c_str());
+			}
+
+			if (clauses.udfModule.hasData())
+			{
+				if (clauses.udfModule.length() >= sizeof(FUN.RDB$MODULE_NAME))
+					status_exception::raise(Arg::Gds(isc_dyn_name_longer));
+
+				FUN.RDB$MODULE_NAME.NULL = FALSE;
+				strcpy(FUN.RDB$MODULE_NAME, clauses.udfModule.c_str());
+			}
+		END_MODIFY
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_FUNCTION, name);
+	else
+	{
+		// msg 41: "Function %s not found"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(41, DYN_MSG_FAC)) << name);
+	}
+
+	savePoint.release();	// everything is ok
+
+	// Update DSQL cache
+	METD_drop_function(transaction, QualifiedName(name, ""));
+	MET_dsql_cache_release(tdbb, SYM_udf, name, "");
 }
 
 
@@ -2300,11 +2417,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 					strcpy(P.RDB$ENGINE_NAME, external->engine.c_str());
 
 					if (external->name.length() >= sizeof(P.RDB$ENTRYPOINT))
-					{
-						status_exception::raise(
-							Arg::Gds(isc_arith_except) <<
-							Arg::Gds(isc_string_truncation));
-					}
+						status_exception::raise(Arg::Gds(isc_dyn_name_longer));
 
 					P.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
 					strcpy(P.RDB$ENTRYPOINT, external->name.c_str());
@@ -2832,11 +2945,7 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				strcpy(TRG.RDB$ENGINE_NAME, external->engine.c_str());
 
 				if (external->name.length() >= sizeof(TRG.RDB$ENTRYPOINT))
-				{
-					status_exception::raise(
-						Arg::Gds(isc_arith_except) <<
-						Arg::Gds(isc_string_truncation));
-				}
+					status_exception::raise(Arg::Gds(isc_dyn_name_longer));
 
 				TRG.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
 				strcpy(TRG.RDB$ENTRYPOINT, external->name.c_str());
@@ -3752,7 +3861,7 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 
 		default:
 			fb_assert(FALSE);
-			errorCode = 87;			// MODIFY RDB$FIELDS FAILED
+			errorCode = ENCODE_ISC_MSG(87, DYN_MSG_FAC);			// MODIFY RDB$FIELDS FAILED
 			break;
 		}
 		break;
@@ -3947,14 +4056,14 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 
 		default:
 			fb_assert(FALSE);
-			errorCode = 87;			// MODIFY RDB$FIELDS FAILED
+			errorCode = ENCODE_ISC_MSG(87, DYN_MSG_FAC);			// MODIFY RDB$FIELDS FAILED
 			break;
 		}
 		break;
 
 	default:
 		fb_assert(FALSE);
-		errorCode = 87;				// MODIFY RDB$FIELDS FAILED
+		errorCode = ENCODE_ISC_MSG(87, DYN_MSG_FAC);				// MODIFY RDB$FIELDS FAILED
 		break;
 	}
 
@@ -8738,6 +8847,100 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 //----------------------
 
 
+void AlterIndexNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"AlterIndexNode\n"
+		"  name: '%s'\n"
+		"  active: '%d'\n",
+		name.c_str(), active);
+}
+
+void AlterIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest request(tdbb, drq_m_index, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		IDX IN RDB$INDICES
+		WITH IDX.RDB$INDEX_NAME EQ name.c_str()
+	{
+		found = true;
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_INDEX, name);
+
+		MODIFY IDX
+			IDX.RDB$INDEX_INACTIVE.NULL = FALSE;
+			IDX.RDB$INDEX_INACTIVE = active ? FALSE : TRUE;
+		END_MODIFY
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_INDEX, name);
+	else
+	{
+		// msg 48: "Index not found"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(48, DYN_MSG_FAC)));
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void SetStatisticsNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"SetStatisticsNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void SetStatisticsNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest request(tdbb, drq_m_set_statistics, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		IDX IN RDB$INDICES
+		WITH IDX.RDB$INDEX_NAME EQ name.c_str()
+	{
+		found = true;
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_INDEX, name);
+
+		MODIFY IDX
+			// For V4 index selectivity can be set only to -1.
+			IDX.RDB$STATISTICS.NULL = FALSE;
+			IDX.RDB$STATISTICS = -1.0;
+		END_MODIFY
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_INDEX, name);
+	else
+	{
+		// msg 48: "Index not found"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(48, DYN_MSG_FAC)));
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
 // Delete the records in RDB$INDEX_SEGMENTS pertaining to an index.
 bool DropIndexNode::deleteSegmentRecords(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& name)
@@ -8835,6 +9038,71 @@ void DropFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	{
 		// msg 37: "Blob Filter %s not found"
 		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(37, DYN_MSG_FAC)) << name);
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void CreateShadowNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateShadowNode\n"
+		"  number: '%d'\n",
+		number);
+}
+
+void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	if (!tdbb->getAttachment()->locksmith())
+		status_exception::raise(Arg::Gds(isc_adm_task_denied));
+
+	// Should be caught by the parser.
+	if (number == 0)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+			Arg::Gds(isc_dsql_command_err) <<
+			Arg::Gds(isc_dsql_shadow_number_err));
+	}
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	// If a shadow set identified by the shadow number already exists return error.
+
+	AutoCacheRequest request(tdbb, drq_l_shadow, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FIRST 1 X IN RDB$FILES
+		WITH X.RDB$SHADOW_NUMBER EQ number
+	{
+		// msg 165: "Shadow %ld already exists"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(165, DYN_MSG_FAC)) << Arg::Num(number));
+	}
+	END_FOR
+
+	SLONG start = 0;
+
+	for (DbFileClause** i = files.begin(); i != files.end(); ++i)
+	{
+		bool first = i == files.begin();
+		DbFileClause* file = *i;
+
+		if (!first && i[-1]->length == 0 && file->start == 0)
+		{
+			// Preceding file did not specify length, so %s must include starting page number
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_dsql_file_length_err) << file->name);
+		}
+
+		defineFile(tdbb, transaction, number, manual && first, conditional && first,
+			start, file->name, file->start, file->length);
 	}
 
 	savePoint.release();	// everything is ok
@@ -8983,6 +9251,62 @@ bool CreateRoleNode::isItUserName(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
+void AlterRoleNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"AlterRoleNode\n"
+		"  name: '%s'\n"
+		"  map: '%d'\n",
+		name.c_str(), map);
+}
+
+// It's purpose is to add/drop mapping from OS security name to DB security object.
+void AlterRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	// This is FB 2.5 limited implementation!
+	// Later it should work with new system table, something like RDB$MAPPING.
+
+	if (name != ADMIN_ROLE)
+		status_exception::raise(Arg::Gds(isc_wish_list));
+
+	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
+		status_exception::raise(Arg::Gds(isc_adm_task_denied));
+
+	AutoCacheRequest request(tdbb, drq_m_map, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		ROL IN RDB$ROLES
+		WITH ROL.RDB$ROLE_NAME EQ name.c_str()
+	{
+		found = true;
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_ROLE, name);
+
+		MODIFY ROL
+			ROL.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO | (map ? ROLE_FLAG_MAY_TRUST : 0);
+		END_MODIFY
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_ROLE, name);
+	else
+	{
+		status_exception::raise(
+			Arg::Gds(isc_random) << Arg::Str("Missing RDB$ADMIN role in the database"));
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
 void DropRoleNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
@@ -9085,6 +9409,198 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		userData->user.get());
 
 	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void AlterDatabaseNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"AlterDatabaseNode\n");
+}
+
+void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
+{
+	if (!tdbb->getAttachment()->locksmith())
+		status_exception::raise(Arg::Gds(isc_adm_task_denied));
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	Attachment* attachment = transaction->tra_attachment;
+	SLONG dbAlloc = PageSpace::maxAlloc(tdbb->getDatabase());
+	SLONG start = create ? createLength + 1 : 0;
+	AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		DBB IN RDB$DATABASE
+	{
+		MODIFY DBB USING
+			if (clauses & CLAUSE_DROP_DIFFERENCE)
+				changeBackupMode(tdbb, transaction, CLAUSE_DROP_DIFFERENCE);
+
+			for (DbFileClause** i = files.begin(); i != files.end(); ++i)
+			{
+				DbFileClause* file = *i;
+
+				start = MAX(start, file->start);
+				defineFile(tdbb, transaction, 0, false, false, dbAlloc,
+					file->name, start, file->length);
+				start += file->length;
+			}
+
+			if (differenceFile.hasData())
+				defineDifference(tdbb, transaction, differenceFile);
+
+			if (setDefaultCharSet.hasData())
+			{
+				//// TODO: Validate!
+				DBB.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+				strcpy(DBB.RDB$CHARACTER_SET_NAME, setDefaultCharSet.c_str());
+			}
+
+			if (!DBB.RDB$CHARACTER_SET_NAME.NULL && setDefaultCollation.hasData())
+			{
+				string sql;
+				sql.printf("alter character set \"%s\" set default collation \"%s\"",
+					PreparedStatement::escapeName(DBB.RDB$CHARACTER_SET_NAME).c_str(),
+					PreparedStatement::escapeName(setDefaultCollation).c_str());
+
+				AutoPtr<PreparedStatement> ps(attachment->prepareStatement(tdbb, transaction, sql));
+				ps->execute(tdbb, transaction);
+			}
+
+			if (clauses & CLAUSE_BEGIN_BACKUP)
+				changeBackupMode(tdbb, transaction, CLAUSE_BEGIN_BACKUP);
+
+			if (clauses & CLAUSE_END_BACKUP)
+				changeBackupMode(tdbb, transaction, CLAUSE_END_BACKUP);
+		END_MODIFY
+	}
+	END_FOR
+
+	savePoint.release();	// everything is ok
+}
+
+// Drop backup difference file for the database, begin or end backup.
+void AlterDatabaseNode::changeBackupMode(thread_db* tdbb, jrd_tra* transaction, unsigned clause)
+{
+	AutoCacheRequest request(tdbb, drq_d_difference, DYN_REQUESTS);
+	bool invalidState = false;
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$FILES
+	{
+		if (X.RDB$FILE_FLAGS & FILE_difference)
+		{
+			found = true;
+
+			switch (clause)
+			{
+				case CLAUSE_DROP_DIFFERENCE:
+					ERASE X;
+					break;
+
+				case CLAUSE_BEGIN_BACKUP:
+					if (X.RDB$FILE_FLAGS & FILE_backing_up)
+						invalidState = true;
+					else
+					{
+						MODIFY X USING
+							X.RDB$FILE_FLAGS |= FILE_backing_up;
+						END_MODIFY
+					}
+					break;
+
+				case CLAUSE_END_BACKUP:
+					if (X.RDB$FILE_FLAGS & FILE_backing_up)
+					{
+						if (X.RDB$FILE_NAME.NULL)
+							ERASE X;
+						else
+						{
+							MODIFY X USING
+								X.RDB$FILE_FLAGS &= ~FILE_backing_up;
+							END_MODIFY
+						}
+					}
+					else
+						invalidState = true;
+					break;
+			}
+		}
+	}
+	END_FOR
+
+	if (!found && clause == CLAUSE_BEGIN_BACKUP)
+	{
+		request.reset(tdbb, drq_s2_difference, DYN_REQUESTS);
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			X IN RDB$FILES
+		{
+			X.RDB$FILE_FLAGS = FILE_difference | FILE_backing_up;
+			X.RDB$FILE_START = 0;
+		}
+		END_STORE
+
+		found = true;
+	}
+
+	if (invalidState)
+	{
+		// msg 217: "Database is already in the physical backup mode"
+		// msg 218: "Database is not in the physical backup mode"
+		status_exception::raise(
+			Arg::Gds(ENCODE_ISC_MSG(clause == CLAUSE_BEGIN_BACKUP ? 217 : 218, DYN_MSG_FAC)));
+	}
+
+	if (!found)
+	{
+		// msg 218: "Database is not in the physical backup mode"
+		// msg 215: "Difference file is not defined"
+		status_exception::raise(
+			Arg::Gds(ENCODE_ISC_MSG(clause == CLAUSE_END_BACKUP ? 218 : 215, DYN_MSG_FAC)));
+	}
+}
+
+// Define backup difference file.
+void AlterDatabaseNode::defineDifference(thread_db* tdbb, jrd_tra* transaction, const PathName& file)
+{
+	AutoCacheRequest request(tdbb, drq_l_difference, DYN_REQUESTS);
+	bool found = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FIL IN RDB$FILES
+	{
+		if (FIL.RDB$FILE_FLAGS & FILE_difference)
+			found = true;
+	}
+	END_FOR
+
+	if (found)
+	{
+		// msg 216: "Difference file is already defined"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(216, DYN_MSG_FAC)));
+	}
+
+	request.reset(tdbb, drq_s_difference, DYN_REQUESTS);
+
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FIL IN RDB$FILES
+	{
+		if (file.length() >= sizeof(FIL.RDB$FILE_NAME))
+			status_exception::raise(Arg::Gds(isc_dyn_name_longer));
+
+		strcpy(FIL.RDB$FILE_NAME, file.c_str());
+		FIL.RDB$FILE_FLAGS = FILE_difference;
+		FIL.RDB$FILE_START = 0;
+	}
+	END_STORE
 }
 
 

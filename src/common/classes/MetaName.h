@@ -105,19 +105,6 @@ protected:
 	static void adjustLength(const char* const s, size_t& l);
 };
 
-// This class is used to simplify calls from GDML, when pointer to MetaName
-// should be passed to some function, at the same time reflecting changes in
-// associated GDML variable (database field).
-class MetaNameProxy : public MetaName
-{
-	char* target;
-public:
-	explicit MetaNameProxy(char* s)
-	 : Firebird::MetaName(s), target(s)
-	{ }
-	~MetaNameProxy() { strcpy(target, c_str()); }
-};
-
 typedef Pair<Full<MetaName, MetaName> > MetaNamePair;
 
 } // namespace Firebird

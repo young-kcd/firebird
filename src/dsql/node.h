@@ -60,17 +60,13 @@ enum nod_t
 	nod_trans,
 	nod_def_default,
 	nod_del_default,
-	nod_def_database,
 	nod_def_domain,
-	nod_mod_database,
 	nod_def_field,
 	nod_mod_field,
 	nod_del_field,
 	nod_def_index,
 	nod_def_constraint,
 	nod_def_filter,
-	nod_def_shadow,
-	nod_del_udf,
 	nod_grant,
 	nod_revoke,
 	nod_rel_constraint,
@@ -110,25 +106,16 @@ enum nod_t
 	nod_lock_mode,
 	nod_reserve,
 	nod_retain,
-	nod_page_size,
-	nod_file_length,
-	nod_file_desc,
-	nod_dfl_charset,
-	nod_password,
-	nod_lc_ctype,	// SET NAMES
-	nod_udf_return_value,
 	nod_def_computed,
 	nod_plan_expr,
 	nod_plan_item,
 	nod_natural,
 	nod_index,
 	nod_index_order,
-	nod_mod_index,	// alter index
 	nod_idx_active,
 	nod_idx_inactive,
 	nod_restrict,	// drop behaviour
 	nod_cascade,
-	nod_set_statistics,	// set statistics
 	nod_ref_upd_del,	// referential integrity actions
 	nod_ref_trig_action,
 	nod_role_name,
@@ -136,22 +123,14 @@ enum nod_t
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
-	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
-	nod_difference_file,
-	nod_drop_difference,
-	nod_begin_backup,
-	nod_end_backup,
 	nod_rows,	// ROWS support
-	nod_mod_udf,
 	nod_tra_misc,
 	nod_lock_timeout,
 	nod_with,
-	nod_mod_role,
 	nod_add_user,
 	nod_mod_user,
-	nod_dfl_collate,
 	nod_trg_act,
 	nod_trg_ext,
 	nod_class_stmtnode,
@@ -287,19 +266,11 @@ enum node_args {
 	e_lock_tables = 0,		//
 	e_lock_mode,
 
-	e_database_name = 0,	//
-	e_database_initial_desc,
-	e_database_rem_desc,
-	e_cdb_count,
-
 	e_commit_retain = 0,	//
 	e_commit_count,
 
 	e_rollback_retain = 0,	//
 	e_rollback_count,
-
-	e_adb_all = 0,			//
-	e_adb_count,
 
 	e_filter_name = 0,		//
 	e_filter_in_type,
@@ -308,36 +279,10 @@ enum node_args {
 	e_filter_module,
 	e_filter_count,
 
-	e_udf_name = 0,			//
-	e_udf_count,
-
 	// computed field
 
 	e_cmp_expr = 0,
 	e_cmp_text,
-
-	// create shadow
-
-	e_shadow_number = 0,
-	e_shadow_man_auto,
-	e_shadow_conditional,
-	e_shadow_name,
-	e_shadow_length,
-	e_shadow_sec_files,
-	e_shadow_count,
-
-	// alter index
-
-	e_alt_index = 0,
-	e_mod_idx_count,
-
-	e_alt_idx_name = 0,
-	e_alt_idx_name_count,
-
-	// set statistics
-
-	e_stat_name = 0,
-	e_stat_count,
 
 	e_mod_fld_name_orig_name = 0,	// nod_mod_field_name
 	e_mod_fld_name_new_name,
@@ -353,23 +298,9 @@ enum node_args {
 	e_mod_fld_pos_new_position,
 	e_mod_fld_pos_count,
 
-	e_udf_param_field = 0,
-	e_udf_param_type,		// Basically, by_reference or by_descriptor
-	e_udf_param_count,
-
 	e_label_name = 0,
 	e_label_number,
 	e_label_count,
-
-	e_mod_udf_name = 0,				// nod_mod_udf
-	e_mod_udf_entry_pt,
-	e_mod_udf_module,
-	e_mod_udf_count,
-
-	e_mod_role_os_name = 0,			// nod_mod_role
-	e_mod_role_db_name,
-	e_mod_role_action,				// 0 - drop, 1 - add
-	e_mod_role_count,
 
 	e_user_name = 0, 				// nod_add(mod)_user
 	e_user_passwd,

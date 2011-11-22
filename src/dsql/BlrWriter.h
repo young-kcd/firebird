@@ -122,8 +122,6 @@ public:
 	void appendNumber(UCHAR verb, SSHORT number);
 	void appendUShortWithLength(USHORT val);
 	void appendULongWithLength(ULONG val);
-	void appendFileLength(ULONG length);
-	void appendFileStart(ULONG start);
 
 	void beginBlr(UCHAR verb);
 	void endBlr();

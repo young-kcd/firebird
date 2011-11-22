@@ -2130,6 +2130,14 @@ C --
       PARAMETER (GDS__dsql_drop_user_failed            = 336397309)
       INTEGER*4 GDS__dsql_create_role_failed         
       PARAMETER (GDS__dsql_create_role_failed          = 336397310)
+      INTEGER*4 GDS__dsql_alter_role_failed          
+      PARAMETER (GDS__dsql_alter_role_failed           = 336397311)
+      INTEGER*4 GDS__dsql_alter_index_failed         
+      PARAMETER (GDS__dsql_alter_index_failed          = 336397312)
+      INTEGER*4 GDS__dsql_alter_database_failed      
+      PARAMETER (GDS__dsql_alter_database_failed       = 336397313)
+      INTEGER*4 GDS__dsql_create_shadow_failed       
+      PARAMETER (GDS__dsql_create_shadow_failed        = 336397314)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

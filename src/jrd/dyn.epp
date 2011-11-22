@@ -64,7 +64,6 @@
 #include "../jrd/dpm_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/dyn_df_proto.h"
-#include "../jrd/dyn_md_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../yvalve/gds_proto.h"
@@ -375,32 +374,12 @@ void DYN_execute(Global* gbl,
 	break;
 	***/
 
-	case isc_dyn_mod_database:
-		DYN_modify_database(gbl, ptr);
-		break;
-
 	case isc_dyn_def_filter:
 		DYN_define_filter(gbl, ptr);
 		break;
 
-	case isc_dyn_mod_function:
-		DYN_modify_function(gbl, ptr);
-		break;
-
-	case isc_dyn_def_shadow:
-		DYN_define_shadow(gbl, ptr);
-		break;
-
 	case isc_dyn_def_idx:
 		DYN_define_index(gbl, ptr, relation_name);
-		break;
-
-	case isc_dyn_mod_idx:
-		DYN_modify_index(gbl, ptr);
-		break;
-
-	case isc_dyn_mapping:
-		DYN_modify_mapping(gbl, ptr);
 		break;
 
 	case isc_dyn_user:

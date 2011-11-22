@@ -1064,6 +1064,10 @@ Data source : @4"},		/* eds_statement */
 	{336397308, "DROP ROLE @1 failed"},		/* dsql_drop_role_failed */
 	{336397309, "DROP USER @1 failed"},		/* dsql_drop_user_failed */
 	{336397310, "CREATE ROLE @1 failed"},		/* dsql_create_role_failed */
+	{336397311, "ALTER ROLE @1 failed"},		/* dsql_alter_role_failed */
+	{336397312, "ALTER INDEX @1 failed"},		/* dsql_alter_index_failed */
+	{336397313, "ALTER DATABASE failed"},		/* dsql_alter_database_failed */
+	{336397314, "CREATE SHADOW @1 failed"},		/* dsql_create_shadow_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

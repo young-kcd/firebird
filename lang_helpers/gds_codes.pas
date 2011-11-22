@@ -1072,6 +1072,10 @@ const
 	gds_dsql_drop_role_failed            = 336397308;
 	gds_dsql_drop_user_failed            = 336397309;
 	gds_dsql_create_role_failed          = 336397310;
+	gds_dsql_alter_role_failed           = 336397311;
+	gds_dsql_alter_index_failed          = 336397312;
+	gds_dsql_alter_database_failed       = 336397313;
+	gds_dsql_create_shadow_failed        = 336397314;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
