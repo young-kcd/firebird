@@ -333,8 +333,6 @@ public:
 };
 
 
-
-
 class AlterExternalFunctionNode : public DdlNode
 {
 public:

@@ -163,15 +163,7 @@ void DDL_execute(dsql_req* request)
 	}
 #endif
 
-	// for delete & modify, get rid of the cached relation metadata
-
-	const dsql_str* string = NULL;
-	SYM_TYPE sym_type;
-
 	const NOD_TYPE type = statement->getDdlNode()->nod_type;
-
-	if (string)
-		MET_dsql_cache_release(tdbb, sym_type, string->str_data);
 
 	if (type == nod_class_stmtnode)
 	{
@@ -828,8 +820,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
  *	DYN string.
  *
  **************************************/
-	const dsql_str* string;
-
 	switch (node->nod_type)
 	{
 	case nod_def_index:

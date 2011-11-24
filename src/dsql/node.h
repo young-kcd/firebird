@@ -112,8 +112,6 @@ enum nod_t
 	nod_natural,
 	nod_index,
 	nod_index_order,
-	nod_idx_active,
-	nod_idx_inactive,
 	nod_restrict,	// drop behaviour
 	nod_cascade,
 	nod_ref_upd_del,	// referential integrity actions
@@ -131,8 +129,6 @@ enum nod_t
 	nod_with,
 	nod_add_user,
 	nod_mod_user,
-	nod_trg_act,
-	nod_trg_ext,
 	nod_class_stmtnode,
 	nod_class_exprnode,
 	nod_package_name,

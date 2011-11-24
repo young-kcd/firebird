@@ -4903,12 +4903,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_computed:
 		verb = "def_computed";
 		break;
-	case nod_idx_active:
-		verb = "idx_active";
-		break;
-	case nod_idx_inactive:
-		verb = "idx_inactive";
-		break;
 	case nod_restrict:
 		verb = "restrict";
 		break;
