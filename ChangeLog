@@ -1,3 +1,10 @@
+ 2011-11-24 00:17  asfernandes 
+   M src/dsql/DdlNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/node.h
+   M src/dsql/pass1.cpp
+Misc.
+
  2011-11-22 16:33  asfernandes 
    M builds/win32/msvc10/engine.vcxproj
    M builds/win32/msvc10/engine.vcxproj.filters
