@@ -34,6 +34,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/obj.h"
+#include "../jrd/ods.h"
 #include "../jrd/tra.h"
 #include "../common/os/path_utils.h"
 #include "../jrd/IntlManager.h"
@@ -92,6 +93,8 @@ static void checkSpTrigDependency(thread_db* tdbb, jrd_tra* transaction,
 static void checkViewDependency(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName);
 static void clearPermanentField(dsql_rel* relation, bool permanent);
+static void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_fld* field,
+	dsql_nod* node, string& source, BlrWriter::BlrData& value);
 static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& constraintName, const MetaName& indexName);
 static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber, bool manualShadow,
@@ -284,6 +287,94 @@ static void clearPermanentField(dsql_rel* relation, bool permanent)
 		relation->rel_fields->fld_sub_type_name = NULL;
 		relation->rel_fields->fld_relation = relation;
 	}
+}
+
+// Define a COMPUTED BY clause, for a field or an index.
+void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_fld* field,
+	dsql_nod* node, string& source, BlrWriter::BlrData& value)
+{
+	AutoSetRestore2<dsql_nod*, DsqlCompiledStatement> autoDdlNode(dsqlScratch->getStatement(),
+		&DsqlCompiledStatement::getDdlNode, &DsqlCompiledStatement::setDdlNode, node);
+
+	// Get the table node and set up correct context.
+	DDL_reset_context_stack(dsqlScratch);
+
+	// Save the size of the field if it is specified.
+	dsc saveDesc;
+	saveDesc.dsc_dtype = 0;
+
+	if (field && field->fld_dtype)
+	{
+		fb_assert(field->fld_dtype <= MAX_UCHAR);
+		saveDesc.dsc_dtype = (UCHAR) field->fld_dtype;
+		saveDesc.dsc_length = field->fld_length;
+		fb_assert(field->fld_scale <= MAX_SCHAR);
+		saveDesc.dsc_scale = (SCHAR) field->fld_scale;
+		saveDesc.dsc_sub_type = field->fld_sub_type;
+
+		field->fld_dtype = 0;
+		field->fld_length = 0;
+		field->fld_scale = 0;
+		field->fld_sub_type = 0;
+	}
+
+	PASS1_make_context(dsqlScratch, relation);
+
+	dsql_nod* input = PASS1_node(dsqlScratch, node->nod_arg[Dsql::e_cmp_expr]);
+
+	// Try to calculate size of the computed field. The calculated size
+	// may be ignored, but it will catch self references.
+	dsc desc;
+	MAKE_desc(dsqlScratch, &desc, input);
+
+	// Generate the blr expression.
+
+	dsqlScratch->getBlrData().clear();
+	dsqlScratch->getDebugData().clear();
+	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+	GEN_expr(dsqlScratch, input);
+	dsqlScratch->appendUChar(blr_eoc);
+
+	if (saveDesc.dsc_dtype)
+	{
+		// Restore the field size/type overrides.
+		field->fld_dtype = saveDesc.dsc_dtype;
+		field->fld_length = saveDesc.dsc_length;
+		field->fld_scale = saveDesc.dsc_scale;
+
+		if (field->fld_dtype <= dtype_any_text)
+		{
+			field->fld_character_set_id = DSC_GET_CHARSET(&saveDesc);
+			field->fld_collation_id= DSC_GET_COLLATE(&saveDesc);
+		}
+		else
+			field->fld_sub_type = saveDesc.dsc_sub_type;
+	}
+	else if (field)
+	{
+		// Use size calculated.
+		field->fld_dtype = desc.dsc_dtype;
+		field->fld_length = desc.dsc_length;
+		field->fld_scale = desc.dsc_scale;
+
+		if (field->fld_dtype <= dtype_any_text)
+		{
+			field->fld_character_set_id = DSC_GET_CHARSET(&desc);
+			field->fld_collation_id = DSC_GET_COLLATE(&desc);
+		}
+		else
+			field->fld_sub_type = desc.dsc_sub_type;
+	}
+
+	DDL_reset_context_stack(dsqlScratch);
+
+	// Generate the source text.
+	const dsql_str* sourceStr = (dsql_str*) node->nod_arg[Dsql::e_cmp_text];
+	fb_assert(sourceStr->str_length <= MAX_USHORT);
+	source = string(sourceStr->str_data, sourceStr->str_length);
+
+	value.assign(dsqlScratch->getBlrData());
 }
 
 // Delete a record from RDB$RELATION_CONSTRAINTS based on a constraint name.
@@ -5357,7 +5448,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			{
 				field->fld_flags |= FLD_computed;
 
-				defineComputed(tdbb, dsqlScratch, field, element->nod_arg[e_dfl_computed],
+				defineComputed(dsqlScratch, dsqlNode, field, element->nod_arg[e_dfl_computed],
 					computedSource, computedValue);
 			}
 
@@ -5441,94 +5532,6 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 
 	clearPermanentField(relation, permanent);
-}
-
-// Define a COMPUTED BY clause.
-void RelationNode::defineComputed(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
-	dsql_fld* field, dsql_nod* node, string& source, BlrWriter::BlrData& value)
-{
-	AutoSetRestore2<dsql_nod*, DsqlCompiledStatement> autoDdlNode(dsqlScratch->getStatement(),
-		&DsqlCompiledStatement::getDdlNode, &DsqlCompiledStatement::setDdlNode, node);
-
-	// Get the table node and set up correct context.
-	DDL_reset_context_stack(dsqlScratch);
-
-	// Save the size of the field if it is specified.
-	dsc saveDesc;
-	saveDesc.dsc_dtype = 0;
-
-	if (field && field->fld_dtype)
-	{
-		fb_assert(field->fld_dtype <= MAX_UCHAR);
-		saveDesc.dsc_dtype = (UCHAR) field->fld_dtype;
-		saveDesc.dsc_length = field->fld_length;
-		fb_assert(field->fld_scale <= MAX_SCHAR);
-		saveDesc.dsc_scale = (SCHAR) field->fld_scale;
-		saveDesc.dsc_sub_type = field->fld_sub_type;
-
-		field->fld_dtype = 0;
-		field->fld_length = 0;
-		field->fld_scale = 0;
-		field->fld_sub_type = 0;
-	}
-
-	PASS1_make_context(dsqlScratch, dsqlNode);
-
-	dsql_nod* input = PASS1_node(dsqlScratch, node->nod_arg[Dsql::e_cmp_expr]);
-
-	// Try to calculate size of the computed field. The calculated size
-	// may be ignored, but it will catch self references.
-	dsc desc;
-	MAKE_desc(dsqlScratch, &desc, input);
-
-	// Generate the blr expression.
-
-	dsqlScratch->getBlrData().clear();
-	dsqlScratch->getDebugData().clear();
-	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
-
-	GEN_expr(dsqlScratch, input);
-	dsqlScratch->appendUChar(blr_eoc);
-
-	if (saveDesc.dsc_dtype)
-	{
-		// Restore the field size/type overrides.
-		field->fld_dtype = saveDesc.dsc_dtype;
-		field->fld_length = saveDesc.dsc_length;
-		field->fld_scale = saveDesc.dsc_scale;
-
-		if (field->fld_dtype <= dtype_any_text)
-		{
-			field->fld_character_set_id = DSC_GET_CHARSET(&saveDesc);
-			field->fld_collation_id= DSC_GET_COLLATE(&saveDesc);
-		}
-		else
-			field->fld_sub_type = saveDesc.dsc_sub_type;
-	}
-	else if (field)
-	{
-		// Use size calculated.
-		field->fld_dtype = desc.dsc_dtype;
-		field->fld_length = desc.dsc_length;
-		field->fld_scale = desc.dsc_scale;
-
-		if (field->fld_dtype <= dtype_any_text)
-		{
-			field->fld_character_set_id = DSC_GET_CHARSET(&desc);
-			field->fld_collation_id = DSC_GET_COLLATE(&desc);
-		}
-		else
-			field->fld_sub_type = desc.dsc_sub_type;
-	}
-
-	DDL_reset_context_stack(dsqlScratch);
-
-	// Generate the source text.
-	const dsql_str* sourceStr = (dsql_str*) node->nod_arg[Dsql::e_cmp_text];
-	fb_assert(sourceStr->str_length <= MAX_USHORT);
-	source = string(sourceStr->str_data, sourceStr->str_length);
-
-	value.assign(dsqlScratch->getBlrData());
 }
 
 // Define a DEFAULT clause. Return true for DEFAULT NULL.
@@ -6985,7 +6988,10 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			BlrWriter::BlrData computedValue;
 
 			if (computedNode)
-				defineComputed(tdbb, dsqlScratch, field, computedNode, computedSource, computedValue);
+			{
+				defineComputed(dsqlScratch, dsqlNode, field, computedNode, computedSource,
+					computedValue);
+			}
 
 			if (defaultNode)
 			{
@@ -8631,8 +8637,8 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 
 				if (keyLength)
 				{
-					keyLength += ((length + STUFF_COUNT - 1) / (unsigned) STUFF_COUNT) *
-						(STUFF_COUNT + 1);
+					keyLength += ((length + Ods::STUFF_COUNT - 1) / (unsigned) Ods::STUFF_COUNT) *
+						(Ods::STUFF_COUNT + 1);
 				}
 				else
 					keyLength = length;
@@ -8844,6 +8850,61 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 }
 
 
+void CreateIndexNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateIndexNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+// Define an index.
+void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_INDEX, name);
+
+	CreateIndexNode::Definition definition;
+	definition.type = isc_dyn_def_idx;
+	definition.relation = ExprNode::as<RelationSourceNode>(legacyRelation)->dsqlName;
+	definition.unique = unique;
+	definition.descending = descending;
+
+	if (legacyDef->nod_type == Dsql::nod_list)
+	{
+	    const dsql_nod* const* ptr = legacyDef->nod_arg;
+	    const dsql_nod* const* const end = ptr + legacyDef->nod_count;
+
+		for (; ptr != end; ++ptr)
+		{
+			MetaName& column = definition.columns.add();
+			column = ((dsql_str*) (*ptr)->nod_arg[1])->str_data;
+		}
+	}
+	else if (legacyDef->nod_type == Dsql::nod_def_computed)
+	{
+		string computedSource;
+		BlrWriter::BlrData computedValue;
+
+		defineComputed(dsqlScratch, legacyRelation, NULL, legacyDef, computedSource, computedValue);
+
+		attachment->storeMetaDataBlob(tdbb, transaction, &definition.expressionSource,
+			computedSource);
+		attachment->storeBinaryBlob(tdbb, transaction, &definition.expressionBlr, computedValue);
+	}
+
+	store(tdbb, transaction, name, definition);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_INDEX, name);
+
+	savePoint.release();	// everything is ok
+}
+
+
 //----------------------
 
 
@@ -9001,6 +9062,69 @@ void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 		// msg 48: "Index not found"
 		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(48, DYN_MSG_FAC)));
 	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void CreateFilterNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateFilterNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+// Define a blob filter.
+void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	///executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DECLARE_FILTER, name);
+
+	AutoCacheRequest request(tdbb, drq_s_filters, DYN_REQUESTS);
+
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$FILTERS
+	{
+		strcpy(X.RDB$FUNCTION_NAME, name.c_str());
+		X.RDB$SYSTEM_FLAG = 0;
+		moduleName.copyTo(X.RDB$MODULE_NAME, sizeof(X.RDB$MODULE_NAME));
+		entryPoint.copyTo(X.RDB$ENTRYPOINT, sizeof(X.RDB$ENTRYPOINT));
+
+		if (inputFilter->name.hasData())
+		{
+			if (!METD_get_type(transaction, inputFilter->name, "RDB$FIELD_SUB_TYPE", &X.RDB$INPUT_SUB_TYPE))
+			{
+				status_exception::raise(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					Arg::Gds(isc_dsql_datatype_err) <<
+					Arg::Gds(isc_dsql_blob_type_unknown) << inputFilter->name);
+			}
+		}
+		else
+			X.RDB$INPUT_SUB_TYPE = inputFilter->number;
+
+		if (outputFilter->name.hasData())
+		{
+			if (!METD_get_type(transaction, outputFilter->name, "RDB$FIELD_SUB_TYPE", &X.RDB$OUTPUT_SUB_TYPE))
+			{
+				status_exception::raise(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					Arg::Gds(isc_dsql_datatype_err) <<
+					Arg::Gds(isc_dsql_blob_type_unknown) << outputFilter->name);
+			}
+		}
+		else
+			X.RDB$OUTPUT_SUB_TYPE = outputFilter->number;
+	}
+	END_STORE
+
+	///executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DECLARE_FILTER, name);
 
 	savePoint.release();	// everything is ok
 }

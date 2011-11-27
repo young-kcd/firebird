@@ -2138,6 +2138,10 @@ C --
       PARAMETER (GDS__dsql_alter_database_failed       = 336397313)
       INTEGER*4 GDS__dsql_create_shadow_failed       
       PARAMETER (GDS__dsql_create_shadow_failed        = 336397314)
+      INTEGER*4 GDS__dsql_create_filter_failed       
+      PARAMETER (GDS__dsql_create_filter_failed        = 336397315)
+      INTEGER*4 GDS__dsql_create_index_failed        
+      PARAMETER (GDS__dsql_create_index_failed         = 336397316)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

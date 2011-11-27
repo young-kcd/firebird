@@ -1084,8 +1084,6 @@ protected:
 	void storePrivileges(thread_db* tdbb, jrd_tra* transaction);
 	void defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		const dsql_nod* element, SSHORT position, const dsql_nod* pkcols);
-	void defineComputed(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
-		dsql_nod* node, Firebird::string& source, BlrWriter::BlrData& value);
 	bool defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		dsql_nod* node, Firebird::string& source, BlrWriter::BlrData& value);
 	void makeConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
@@ -1266,7 +1264,7 @@ public:
 };
 
 
-class CreateIndexNode
+class CreateIndexNode : public DdlNode
 {
 public:
 	struct Definition
@@ -1290,8 +1288,37 @@ public:
 		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
 	};
 
+public:
+	CreateIndexNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName),
+		  unique(false),
+		  descending(false),
+		  legacyRelation(NULL),
+		  legacyDef(NULL)
+	{
+	}
+
+public:
 	static void store(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName& name,
 		const Definition& definition, Firebird::MetaName* referredIndexName = NULL);
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_index_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+	bool unique;
+	bool descending;
+	dsql_nod* legacyRelation;
+	dsql_nod* legacyDef;
 };
 
 
@@ -1370,6 +1397,57 @@ protected:
 
 public:
 	Firebird::MetaName name;
+};
+
+
+class CreateFilterNode : public DdlNode
+{
+public:
+	struct NameNumber
+	{
+		NameNumber(MemoryPool& p, const Firebird::MetaName& aName)
+			: name(p, aName),
+			  number(0)
+		{
+		}
+
+		NameNumber(MemoryPool& p, SSHORT aNumber)
+			: name(p),
+			  number(aNumber)
+		{
+		}
+
+		Firebird::MetaName name;
+		SSHORT number;
+	};
+
+public:
+	CreateFilterNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  name(p, aName),
+		  inputFilter(NULL),
+		  outputFilter(NULL),
+		  entryPoint(p),
+		  moduleName(p)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_filter_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+	NameNumber* inputFilter;
+	NameNumber* outputFilter;
+	Firebird::string entryPoint;
+	Firebird::string moduleName;
 };
 
 

@@ -649,6 +649,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreateAlterProcedureNode* createAlterProcedureNode;
 	Jrd::CreateAlterTriggerNode* createAlterTriggerNode;
 	Jrd::CreateAlterPackageNode* createAlterPackageNode;
+	Jrd::CreateFilterNode::NameNumber* filterNameNumber;
 	Jrd::CreateSequenceNode* createSequenceNode;
 	Jrd::CreateShadowNode* createShadowNode;
 	Firebird::Array<Jrd::CreateAlterPackageNode::Item>* packageItems;
@@ -690,7 +691,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <compoundStmtNode> assignments
 %type <legacyStr>  admin_opt
 
-%type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
+%type <legacyNode> blob_io blob_segsize blob_subtype blob_subtype_io
+%type <filterNameNumber> blob_filter_subtype
 %type <legacyNode> blob_subtype_value_io blob_type
 %type <stmtNode>   breakleave
 
@@ -724,18 +726,19 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <dbFileClause> db_file
 %type db_file_list(<dbFilesClause>)
 %type <legacyNode> ddl_subname
-%type <legacyNode> decimal_keyword declare declare_clause
+%type <legacyNode> decimal_keyword
 %type <legacyNode> decode_pairs def_computed default_par_opt default_value
 %type <stmtNode>   delete delete_positioned delete_searched
 %type <legacyNode> delete_rule delimiter_opt derived_column_list derived_table
 %type <legacyNode> deterministic_opt distinct_clause
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
 %type <legacyNode> domain_or_non_array_type_name domain_type drop_behaviour
-%type <ddlNode> drop drop_clause
+%type <ddlNode> declare declare_clause drop drop_clause
 %type <legacyStr>  db_name ddl_desc
 %type db_alter_clause(<alterDatabaseNode>)
 
-%type <legacyNode> event_argument_opt exception_clause
+%type <legacyNode> event_argument_opt
+%type <ddlNode>	   exception_clause
 %type err(<exceptionArray>) errors(<exceptionArray>)
 %type <stmtNode> excp_hndl_statement exec_procedure exec_function
 %type <compoundStmtNode> excp_hndl_statements
@@ -749,9 +752,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <stmtNode>   fetch_cursor
 %type <legacyNode> file1
-%type <legacyNode> filter_clause_io filter_decl_clause first_clause
+%type <legacyNode> filter_clause_io first_clause
 %type <legacyNode> float_type for_update_clause for_update_list from_clause
 %type <legacyNode> from_list
+%type <ddlNode>	   filter_decl_clause
 %type <stmtNode>   for_select full_proc_block full_proc_block_body
 %type <legacyStr>  firstname_opt
 %type file_clause(<dbFileClause>) file_desc(<dbFileClause>) file_desc1(<dbFileClause>)
@@ -807,7 +811,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <stmtNode>   open_cursor
 %type <legacyNode> optional_retain
 %type optional_savepoint opt_snapshot optional_work
-%type <legacyNode> order_clause order_direction order_item order_list
+%type <legacyNode> order_clause order_item order_list
+%type <boolVal>	   order_direction
 %type output_parameters(<parametersClause>) output_proc_parameter(<parametersClause>)
 %type output_proc_parameters(<parametersClause>)
 
@@ -833,9 +838,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type return_value1(<createAlterFunctionNode>) return_value(<createAlterFunctionNode>)
 %type <returningClause> returning_clause
 %type <ddlNode> rexception_clause
-%type <legacyNode> role_admin_option role_clause role_grantee role_grantee_list
+%type <legacyNode> role_admin_option role_grantee role_grantee_list
 %type <legacyNode> role_name role_name_list rollback rows_clause
-%type <ddlNode> rtable_clause
+%type <ddlNode> role_clause rtable_clause
 %type <ddlNode> rview_clause
 %type <legacyStr>  revoke_admin
 
@@ -877,7 +882,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> u_constant u_numeric_constant udf_data_type undo_savepoint
 %type <createAlterFunctionNode> udf_decl_clause
-%type <legacyNode> unique_constraint unique_opt update_column_name
+%type <legacyNode> unique_constraint update_column_name
+%type <boolVal>	   unique_opt
 %type <stmtNode>   update update_or_insert update_positioned update_searched
 %type <legacyNode> update_or_insert_matching_opt update_rule
 %type <legacyNode> user_grantee user_grantee_list
@@ -989,6 +995,7 @@ statement
 	| create_or_alter
 		{ $$ = makeClassNode($1); }
 	| declare
+		{ $$ = makeClassNode($1); }
 	| delete
 		{ $$ = makeClassNode($1); }
 	| drop
@@ -1209,7 +1216,7 @@ declare
 
 declare_clause
 	: FILTER filter_decl_clause				{ $$ = $2; }
-	| EXTERNAL FUNCTION udf_decl_clause		{ $$ = makeClassNode($3); }
+	| EXTERNAL FUNCTION udf_decl_clause		{ $$ = $3; }
 	;
 
 udf_decl_clause
@@ -1289,16 +1296,25 @@ return_mechanism
 
 
 filter_decl_clause
-	: symbol_filter_name INPUT_TYPE blob_filter_subtype OUTPUT_TYPE blob_filter_subtype
-			ENTRY_POINT sql_string MODULE_NAME sql_string
-		{ $$ = make_node (nod_def_filter, (int) e_filter_count, $1, $3, $5, $7, $9); }
+	: symbol_filter_name
+		INPUT_TYPE blob_filter_subtype
+		OUTPUT_TYPE blob_filter_subtype
+		ENTRY_POINT sql_string MODULE_NAME sql_string
+			{
+				CreateFilterNode* node = newNode<CreateFilterNode>(toName($1));
+				node->inputFilter = $3;
+				node->outputFilter = $5;
+				node->entryPoint = toString($7);
+				node->moduleName = toString($9);
+				$$ = node;
+			}
 	;
 
 blob_filter_subtype
 	: symbol_blob_subtype_name
-		{ $$ = MAKE_constant((dsql_str*) $1, CONSTANT_STRING); }
+		{ $$ = newNode<CreateFilterNode::NameNumber>(toName($1)); }
 	| signed_short_integer
-		{ $$ = MAKE_const_slong($1); }
+		{ $$ = newNode<CreateFilterNode::NameNumber>($1); }
 	;
 
 // CREATE metadata operations
@@ -1309,9 +1325,16 @@ create
 
 create_clause
 	: EXCEPTION exception_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| unique_opt order_direction INDEX symbol_index_name ON simple_table_name index_definition
-		{ $$ = make_node (nod_def_index, (int) e_idx_count, $1, $2, $4, $6, $7); }
+		{
+			CreateIndexNode* node = newNode<CreateIndexNode>(toName($4));
+			node->unique = $1;
+			node->descending = $2;
+			node->legacyRelation = $6;
+			node->legacyDef = $7;
+			$$ = makeClassNode(node);
+		}
 	| FUNCTION function_clause
 		{ $$ = makeClassNode($2); }
 	| PROCEDURE procedure_clause
@@ -1335,7 +1358,7 @@ create_clause
 	| SHADOW shadow_clause
 		{ $$ = makeClassNode($2); }
 	| ROLE role_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| COLLATION collation_clause
 		{ $$ = makeClassNode($2); }
 	| USER create_user_clause
@@ -1394,7 +1417,7 @@ replace_clause
 
 exception_clause
 	: symbol_exception_name sql_string
-		{ $$ = makeClassNode(newNode<CreateAlterExceptionNode>(toName($1), toString($2))); }
+		{ $$ = newNode<CreateAlterExceptionNode>(toName($1), toString($2)); }
 	;
 
 rexception_clause
@@ -1431,8 +1454,8 @@ alter_exception_clause
 // CREATE INDEX
 
 unique_opt
-	: /* nothing */		{ $$ = NULL; }
-	| UNIQUE			{ $$ = make_node (nod_unique, 0, NULL); }
+	: /* nothing */		{ $$ = false; }
+	| UNIQUE			{ $$ = true; }
 	;
 
 index_definition
@@ -1558,7 +1581,7 @@ generator_clause
 // CREATE ROLE
 
 role_clause
-	: symbol_role_name		{ $$ = makeClassNode(newNode<CreateRoleNode>(toName($1))); }
+	: symbol_role_name		{ $$ = newNode<CreateRoleNode>(toName($1)); }
 	;
 
 
@@ -1973,15 +1996,19 @@ referential_constraint	: FOREIGN KEY column_parens REFERENCES
 			{ $$ = make_node (nod_foreign, (int) e_for_count, $3, $5, $6, $7, $8); }
 		;
 
-constraint_index_opt	: USING order_direction INDEX symbol_index_name
-			{ $$ = make_node (nod_def_index, (int) e_idx_count, NULL, $2, $4, NULL, NULL); }
+constraint_index_opt
+	: USING order_direction INDEX symbol_index_name
+		{
+			$$ = make_node (nod_def_index, (int) e_idx_count,
+				NULL, ($2 ? make_node(nod_flag, 0, NULL) : NULL), $4, NULL, NULL);
+		}
 /*
-		| NO INDEX
-			{ $$ = NULL; }
+	| NO INDEX
+		{ $$ = NULL; }
 */
-		|
-			{ $$ = make_node (nod_def_index, (int) e_idx_count, NULL, NULL, NULL, NULL, NULL); }
-		;
+	|
+		{ $$ = make_node (nod_def_index, (int) e_idx_count, NULL, NULL, NULL, NULL, NULL); }
+	;
 
 referential_trigger_action:
 		  update_rule
@@ -4742,13 +4769,16 @@ order_list
 
 order_item
 	: value order_direction nulls_clause
-		{ $$ = make_node (nod_order, (int) e_order_count, $1, $2, $3); }
+		{
+			$$ = make_node (nod_order, (int) e_order_count,
+				$1, ($2 ? make_node(nod_flag, 0, NULL) : NULL), $3);
+		}
 	;
 
 order_direction
-	: /* nothing */		{ $$ = NULL; }
-	| ASC				{ $$ = NULL; }
-	| DESC				{ $$ = make_node(nod_flag, 0, NULL); }
+	: /* nothing */		{ $$ = false; }
+	| ASC				{ $$ = false; }
+	| DESC				{ $$ = true; }
 	;
 
 nulls_clause

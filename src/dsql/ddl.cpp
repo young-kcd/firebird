@@ -115,10 +115,6 @@ using namespace Firebird;
 
 
 static void assign_field_length(dsql_fld*, USHORT);
-static void define_computed(DsqlCompilerScratch*, dsql_nod*, dsql_fld*, dsql_nod*);
-static void define_filter(DsqlCompilerScratch*);
-static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
-static void define_index(DsqlCompilerScratch*);
 static void generate_dyn(DsqlCompilerScratch*, dsql_nod*);
 static void grant_revoke(DsqlCompilerScratch*);
 static void modify_privilege(DsqlCompilerScratch* dsqlScratch, NOD_TYPE type, SSHORT option,
@@ -352,7 +348,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		{
 			SSHORT blob_sub_type;
 			if (!METD_get_type(dsqlScratch->getTransaction(),
-					reinterpret_cast<const dsql_str*>(field->fld_sub_type_name),
+					reinterpret_cast<const dsql_str*>(field->fld_sub_type_name)->str_data,
 					"RDB$FIELD_SUB_TYPE", &blob_sub_type))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
@@ -587,226 +583,6 @@ static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
 }
 
 
-static void define_computed(DsqlCompilerScratch* dsqlScratch,
-							dsql_nod* relation_node,
-							dsql_fld* field,
-							dsql_nod* node)
-{
-/**************************************
- *
- *	d e f i n e _ c o m p u t e d
- *
- **************************************
- *
- * Function
- *	Create the ddl to define a computed field
- *	or an expression index.
- *
- **************************************/
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* const saved_ddl_node = statement->getDdlNode();
-	statement->setDdlNode(node);
-
-	// Get the table node & set up correct context
-	DDL_reset_context_stack(dsqlScratch);
-
-	dsc save_desc;
-	// Save the size of the field if it is specified
-	save_desc.dsc_dtype = 0;
-
-	if (field && field->fld_dtype)
-	{
-		fb_assert(field->fld_dtype <= MAX_UCHAR);
-		save_desc.dsc_dtype = (UCHAR) field->fld_dtype;
-		save_desc.dsc_length = field->fld_length;
-		fb_assert(field->fld_scale <= MAX_SCHAR);
-		save_desc.dsc_scale = (SCHAR) field->fld_scale;
-		save_desc.dsc_sub_type = field->fld_sub_type;
-
-		field->fld_dtype = 0;
-		field->fld_length = 0;
-		field->fld_scale = 0;
-		field->fld_sub_type = 0;
-	}
-
-	PASS1_make_context(dsqlScratch, relation_node);
-
-	dsql_nod* input = PASS1_node(dsqlScratch, node->nod_arg[e_cmp_expr]);
-
-	// try to calculate size of the computed field. The calculated size
-	// may be ignored, but it will catch self references
-	dsc desc;
-	MAKE_desc(dsqlScratch, &desc, input);
-
-	// generate the blr expression
-
-	dsqlScratch->beginBlr(isc_dyn_fld_computed_blr);
-	GEN_expr(dsqlScratch, input);
-	dsqlScratch->endBlr();
-
-	if (save_desc.dsc_dtype)
-	{
-		// restore the field size/type overrides
-		field->fld_dtype  = save_desc.dsc_dtype;
-		field->fld_length = save_desc.dsc_length;
-		field->fld_scale  = save_desc.dsc_scale;
-		if (field->fld_dtype <= dtype_any_text)
-		{
-			field->fld_character_set_id = DSC_GET_CHARSET(&save_desc);
-			field->fld_collation_id= DSC_GET_COLLATE(&save_desc);
-		}
-		else
-			field->fld_sub_type = save_desc.dsc_sub_type;
-	}
-	else if (field)
-	{
-		// use size calculated
-		field->fld_dtype  = desc.dsc_dtype;
-		field->fld_length = desc.dsc_length;
-		field->fld_scale  = desc.dsc_scale;
-		if (field->fld_dtype <= dtype_any_text)
-		{
-			field->fld_character_set_id = DSC_GET_CHARSET(&desc);
-			field->fld_collation_id= DSC_GET_COLLATE(&desc);
-		}
-		else
-			field->fld_sub_type = desc.dsc_sub_type;
-	}
-
-	statement->setType(DsqlCompiledStatement::TYPE_DDL);
-	statement->setDdlNode(saved_ddl_node);
-	DDL_reset_context_stack(dsqlScratch);
-
-	// generate the source text
-	const dsql_str* source = (dsql_str*) node->nod_arg[e_cmp_text];
-	fb_assert(source->str_length <= MAX_USHORT);
-	dsqlScratch->appendString(isc_dyn_fld_computed_source, source->str_data,
-		(USHORT) source->str_length);
-}
-
-
-static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-/*******************************************
- *
- *	g e t B l o b F i l t e r S u b T y p e
- *
- *******************************************
- *
- * Function
- *	get sub_type value from LiteralNode.
- *
- **************************************/
- 	const LiteralNode* literal = ExprNode::as<LiteralNode>(node);
- 	fb_assert(literal);
-
-	switch (literal->litDesc.dsc_dtype)
-	{
-	case dtype_long:
-		return (SSHORT) literal->getSlong();
-	case dtype_text:
-		break;
-	default:
-		fb_assert(false);
-		return 0;
-	}
-
-	// fall thru for dtype_text
-	const dsql_str* type_name = reinterpret_cast<const dsql_str*>(node->nod_arg[0]);
-	SSHORT blob_sub_type;
-	if (!METD_get_type(dsqlScratch->getTransaction(), type_name, "RDB$FIELD_SUB_TYPE", &blob_sub_type))
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-				  Arg::Gds(isc_dsql_datatype_err) <<
-				  Arg::Gds(isc_dsql_blob_type_unknown) << Arg::Str(type_name->str_data));
-	}
-	return blob_sub_type;
-}
-
-static void define_filter(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ f i l t e r
- *
- **************************************
- *
- * Function
- *	define a filter to the database.
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* filter_node = statement->getDdlNode();
-	const dsql_nod* const* ptr = filter_node->nod_arg;
-
-	dsqlScratch->appendNullString(isc_dyn_def_filter, ((dsql_str*) (ptr[e_filter_name]))->str_data);
-	dsqlScratch->appendNumber(isc_dyn_filter_in_subtype,
-		getBlobFilterSubType(dsqlScratch, ptr[e_filter_in_type]));
-	dsqlScratch->appendNumber(isc_dyn_filter_out_subtype,
-		getBlobFilterSubType(dsqlScratch, ptr[e_filter_out_type]));
-	dsqlScratch->appendNullString(isc_dyn_func_entry_point,
-		((dsql_str*) (ptr[e_filter_entry_pt]))->str_data);
-	dsqlScratch->appendNullString(isc_dyn_func_module_name,
-		((dsql_str*) (ptr[e_filter_module]))->str_data);
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void define_index(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ i n d e x
- *
- **************************************
- *
- * Function
- *	Generate ddl to create an index.
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	dsqlScratch->appendUChar(isc_dyn_begin);
-
-	const dsql_nod* ddl_node = statement->getDdlNode();
-	dsql_nod* relation_node = (dsql_nod*) ddl_node->nod_arg[e_idx_table];
-	const MetaName& relation_name = ExprNode::as<RelationSourceNode>(relation_node)->dsqlName;
-	dsql_nod* field_list = ddl_node->nod_arg[e_idx_fields];
-	const dsql_str* index_name = (dsql_str*) ddl_node->nod_arg[e_idx_name];
-
-	dsqlScratch->appendNullString(isc_dyn_def_idx, index_name->str_data);
-	dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name.c_str());
-
-	// go through the fields list, making an index segment for each field,
-	// unless we have a computation, in which case generate an expression index
-
-	if (field_list->nod_type == nod_list)
-	{
-	    const dsql_nod* const* ptr = field_list->nod_arg;
-	    const dsql_nod* const* const end = ptr + field_list->nod_count;
-		for (; ptr < end; ptr++)
-			dsqlScratch->appendNullString(isc_dyn_fld_name, ((dsql_str*) (*ptr)->nod_arg[1])->str_data);
-	}
-	else if (field_list->nod_type == nod_def_computed)
-		define_computed(dsqlScratch, relation_node, NULL, field_list);
-
-	// check for a unique index
-
-	if (ddl_node->nod_arg[e_idx_unique]) {
-		dsqlScratch->appendNumber(isc_dyn_idx_unique, 1);
-	}
-
-	if (ddl_node->nod_arg[e_idx_asc_dsc]) {
-		dsqlScratch->appendNumber(isc_dyn_idx_type, 1);
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);			// of define index
-	dsqlScratch->appendUChar(isc_dyn_end);			// of begin
-}
-
-
 static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
 /**************************************
@@ -822,17 +598,9 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
  **************************************/
 	switch (node->nod_type)
 	{
-	case nod_def_index:
-		define_index(dsqlScratch);
-		break;
-
 	case nod_grant:
 	case nod_revoke:
 		grant_revoke(dsqlScratch);
-		break;
-
-	case nod_def_filter:
-		define_filter(dsqlScratch);
 		break;
 
 	case nod_add_user:

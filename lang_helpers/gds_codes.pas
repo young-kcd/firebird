@@ -1076,6 +1076,8 @@ const
 	gds_dsql_alter_index_failed          = 336397312;
 	gds_dsql_alter_database_failed       = 336397313;
 	gds_dsql_create_shadow_failed        = 336397314;
+	gds_dsql_create_filter_failed        = 336397315;
+	gds_dsql_create_index_failed         = 336397316;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

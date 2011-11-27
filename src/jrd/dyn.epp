@@ -63,7 +63,6 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/dyn_proto.h"
-#include "../jrd/dyn_df_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../yvalve/gds_proto.h"
@@ -374,14 +373,6 @@ void DYN_execute(Global* gbl,
 	break;
 	***/
 
-	case isc_dyn_def_filter:
-		DYN_define_filter(gbl, ptr);
-		break;
-
-	case isc_dyn_def_idx:
-		DYN_define_index(gbl, ptr, relation_name);
-		break;
-
 	case isc_dyn_user:
 		dyn_user(gbl, ptr);
 		break;
@@ -556,123 +547,6 @@ USHORT DYN_get_string(const UCHAR** ptr, UCharBuffer& array, size_t)
 
 	p += length;
 	*ptr = p;
-
-	return length;
-}
-
-
-USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
-{
-/**************************************
- *
- *	D Y N _ p u t _ b l r _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Write out a blr blob.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	const UCHAR *p = *ptr;
-	USHORT length = *p++;
-	length |= (*p++) << 8;
-
-	if (!length)
-	{
-		*ptr = p;
-		return length;
-	}
-
-	try {
-		blb* blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
-		BLB_put_segment(tdbb, blob, p, length);
-		BLB_close(tdbb, blob);
-	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106);
-		// msg 106: "Create metadata blob failed"
-	}
-
-	*ptr = p + length;
-
-	return length;
-}
-
-USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
-{
-/**************************************
- *
- *	D Y N _ p u t _ t e x t _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Write out a text blob.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
-	length |= (*p++) << 8;
-
-	if (!length)
-	{
-		*ptr = p;
-		return length;
-	}
-
-	const UCHAR* const end = p + length;
-
-	try {
-		UCharBuffer bpb;
-		const size_t convSize = 15;
-		bpb.resize(convSize);
-
-		UCHAR* bpbPtr = bpb.begin();
-		*bpbPtr++ = isc_bpb_version1;
-
-		*bpbPtr++ = isc_bpb_source_type;
-		*bpbPtr++ = 2;
-		put_vax_short(bpbPtr, isc_blob_text);
-		bpbPtr += 2;
-		*bpbPtr++ = isc_bpb_source_interp;
-		*bpbPtr++ = 1;
-		*bpbPtr++ = tdbb->getCharSet();
-
-		*bpbPtr++ = isc_bpb_target_type;
-		*bpbPtr++ = 2;
-		put_vax_short(bpbPtr, isc_blob_text);
-		bpbPtr += 2;
-		*bpbPtr++ = isc_bpb_target_interp;
-		*bpbPtr++ = 1;
-		*bpbPtr++ = CS_METADATA;
-		fb_assert(size_t(bpbPtr - bpb.begin()) <= convSize);
-
-		// set the array count to the number of bytes we used
-		bpb.shrink(bpbPtr - bpb.begin());
-
-		blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, blob_id, bpb.getCount(), bpb.begin());
-
-		for (; p < end; p += TEXT_BLOB_LENGTH)
-		{
-			length = (p + TEXT_BLOB_LENGTH <= end) ? TEXT_BLOB_LENGTH : end - p;
-			BLB_put_segment(tdbb, blob, p, length);
-		}
-		BLB_close(tdbb, blob);
-	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106);
-		// msg 106: "Create metadata blob failed"
-	}
-
-	*ptr = end;
 
 	return length;
 }

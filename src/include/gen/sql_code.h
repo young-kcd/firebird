@@ -1064,6 +1064,8 @@ static const struct {
 	{336397312, -901}, /* 1024 dsql_alter_index_failed */
 	{336397313, -901}, /* 1025 dsql_alter_database_failed */
 	{336397314, -901}, /* 1026 dsql_create_shadow_failed */
+	{336397315, -901}, /* 1027 dsql_create_filter_failed */
+	{336397316, -901}, /* 1028 dsql_create_index_failed */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

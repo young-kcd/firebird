@@ -33,30 +33,25 @@
 const char* const ALL_PRIVILEGES = "SIUDR";	// all applicable grant/revoke privileges
 const char* const ALL_PROC_PRIVILEGES = "X";	// all applicable grant/revoke privileges for a procedure
 const int DYN_MSG_FAC		= 8;
-const int STUFF_COUNT		= 4; // Is this the same value defined in ods.h???
-const int TEXT_BLOB_LENGTH	= 512;
+///const int STUFF_COUNT		= 4; // Is this the same value defined in ods.h???
 
 
 #define GET_STRING(from, to)	DYN_get_string(from, to, sizeof(to))
-#define GET_BYTES(from, to)		DYN_get_string(from, to, sizeof(to))
 
 namespace Jrd {
 
-struct bid;
 class jrd_tra;
 class thread_db;
 
 class Global
 {
 public:
-	Global(jrd_tra* t, const Firebird::string& aSqlText) //, const UCHAR* dyn, size_t length)
-		: gbl_transaction(t),// gbl_length(length), gbl_end(dyn + length)
+	Global(jrd_tra* t, const Firebird::string& aSqlText)
+		: gbl_transaction(t),
 		  sqlText(aSqlText)
 	{ }
 
 	jrd_tra* const gbl_transaction;
-	//size_t gbl_length;			// length of BLR stream
-	//const UCHAR* const gbl_end;	// end of BLR sream
 	Firebird::string sqlText;
 };
 
@@ -114,8 +109,6 @@ USHORT	DYN_get_string(const UCHAR**, Firebird::UCharBuffer&, size_t);
 USHORT	DYN_get_string(const UCHAR**, TEXT*, size_t);
 
 bool	DYN_is_it_sql_role(Jrd::jrd_tra*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
-USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
-USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 
 void	DYN_unsupported_verb();
 

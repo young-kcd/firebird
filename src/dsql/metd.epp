@@ -1524,7 +1524,7 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 }
 
 
-bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field, SSHORT* value)
+bool METD_get_type(jrd_tra* transaction, const MetaName& name, const char* field, SSHORT* value)
 {
 /**************************************
  *
@@ -1546,7 +1546,7 @@ bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$TYPES WITH
-		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name->str_data;
+		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name.c_str();
 	{
 		found = true;
 		*value = X.RDB$TYPE;

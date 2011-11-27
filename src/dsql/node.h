@@ -66,7 +66,6 @@ enum nod_t
 	nod_del_field,
 	nod_def_index,
 	nod_def_constraint,
-	nod_def_filter,
 	nod_grant,
 	nod_revoke,
 	nod_rel_constraint,
@@ -267,13 +266,6 @@ enum node_args {
 
 	e_rollback_retain = 0,	//
 	e_rollback_count,
-
-	e_filter_name = 0,		//
-	e_filter_in_type,
-	e_filter_out_type,
-	e_filter_entry_pt,
-	e_filter_module,
-	e_filter_count,
 
 	// computed field
 

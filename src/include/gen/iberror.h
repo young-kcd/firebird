@@ -1099,6 +1099,8 @@ const ISC_STATUS isc_dsql_alter_role_failed           = 336397311L;
 const ISC_STATUS isc_dsql_alter_index_failed          = 336397312L;
 const ISC_STATUS isc_dsql_alter_database_failed       = 336397313L;
 const ISC_STATUS isc_dsql_create_shadow_failed        = 336397314L;
+const ISC_STATUS isc_dsql_create_filter_failed        = 336397315L;
+const ISC_STATUS isc_dsql_create_index_failed         = 336397316L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -1200,7 +1202,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1144;
+const ISC_STATUS isc_err_max                          = 1146;
 
 #else /* c definitions */
 
@@ -2269,6 +2271,8 @@ const ISC_STATUS isc_err_max                          = 1144;
 #define isc_dsql_alter_index_failed          336397312L
 #define isc_dsql_alter_database_failed       336397313L
 #define isc_dsql_create_shadow_failed        336397314L
+#define isc_dsql_create_filter_failed        336397315L
+#define isc_dsql_create_index_failed         336397316L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -2370,7 +2374,7 @@ const ISC_STATUS isc_err_max                          = 1144;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1144
+#define isc_err_max                          1146
 
 #endif
 
