@@ -1,3 +1,39 @@
+ 2011-11-28 00:57  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/parse.y
+   M src/jrd/dyn.h
+Misc.
+
+ 2011-11-27 19:08  asfernandes 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/preprocess.bat
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/dyn.epp
+   M src/jrd/dyn.h
+   D src/jrd/dyn_def.epp
+   D src/jrd/dyn_df_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Refactored CREATE FILTER and CREATE INDEX.
+
  2011-11-24 00:17  asfernandes 
    M src/dsql/DdlNodes.h
    M src/dsql/ddl.cpp
