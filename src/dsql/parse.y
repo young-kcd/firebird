@@ -1865,56 +1865,59 @@ computed_by
 	| COMPUTED
 	;
 
-data_type_or_domain	: data_type
-			  { $$ = NULL; }
-		| simple_column_name
-			  { $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
-		;
+data_type_or_domain
+	: data_type
+		  { $$ = NULL; }
+	| simple_column_name
+		{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
+	;
 
-collate_clause	: COLLATE symbol_collation_name
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
-
-
-column_def_name	: simple_column_name
-			{
-				lex.g_field_name = $1;
-				lex.g_field = make_field ($1);
-				$$ = lex.g_field;
-			}
-		;
-
-simple_column_def_name  : simple_column_name
-			{
-				lex.g_field = make_field ($1);
-				$$ = lex.g_field;
-			}
-		;
+collate_clause
+	:								{ $$ = NULL; }
+	| COLLATE symbol_collation_name	{ $$ = $2; }
+	;
 
 
-data_type_descriptor :	init_data_type data_type
-			{ $$ = $1; }
-		| KW_TYPE OF column_def_name
-			{
-				$3->fld_type_of_name = $3->fld_name;
-				$$ = $3;
-			}
-		| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
-			{
-				lex.g_field = make_field(NULL);
-				lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
-				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
-				$$ = lex.g_field;
-			}
-		| column_def_name
-			{
-				$1->fld_type_of_name = $1->fld_name;
-				$1->fld_full_domain = true;
-				$$ = $1;
-			}
-		;
+column_def_name
+	: simple_column_name
+		{
+			lex.g_field_name = $1;
+			lex.g_field = make_field ($1);
+			$$ = lex.g_field;
+		}
+	;
+
+simple_column_def_name
+	: simple_column_name
+		{
+			lex.g_field = make_field ($1);
+			$$ = lex.g_field;
+		}
+	;
+
+
+data_type_descriptor
+	: init_data_type data_type
+		{ $$ = $1; }
+	| KW_TYPE OF column_def_name
+		{
+			$3->fld_type_of_name = $3->fld_name;
+			$$ = $3;
+		}
+	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+		{
+			lex.g_field = make_field(NULL);
+			lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
+			lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
+			$$ = lex.g_field;
+		}
+	| column_def_name
+		{
+			$1->fld_type_of_name = $1->fld_name;
+			$1->fld_full_domain = true;
+			$$ = $1;
+		}
+	;
 
 init_data_type
 	:
@@ -1934,67 +1937,75 @@ default_value
 	| datetime_value_expression		{ $$ = makeClassNode($1); }
 	;
 
-column_constraint_clause :
-				{ $$ = NULL; }
-			| column_constraint_list
-			;
+column_constraint_clause
+	: /* nothing */				{ $$ = NULL; }
+	| column_constraint_list
+	;
 
-column_constraint_list	: column_constraint_def
-				| column_constraint_list column_constraint_def
-			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
-				;
+column_constraint_list
+	: column_constraint_def
+	| column_constraint_list column_constraint_def
+		{ $$ = make_node(nod_list, (int) 2, $1, $2); }
+	;
 
-column_constraint_def : constraint_name_opt column_constraint
-			{ $$ = make_node (nod_rel_constraint, (int) 2, $1, $2);}
-		;
+column_constraint_def
+	: constraint_name_opt column_constraint
+		{ $$ = make_node(nod_rel_constraint, (int) 2, $1, $2);}
+	;
 
 
-column_constraint : null_constraint
-				  | check_constraint
-				  | REFERENCES simple_table_name column_parens_opt
+column_constraint
+	: null_constraint
+	| check_constraint
+	| REFERENCES simple_table_name column_parens_opt
 			referential_trigger_action constraint_index_opt
-						{ $$ = make_node (nod_foreign, (int) e_for_count,
-						make_node (nod_list, (int) 1, lex.g_field_name), $2, $3, $4, $5); }
-
-				  | UNIQUE constraint_index_opt
-						{ $$ = make_node (nod_unique, 2, NULL, $2); }
-				  | PRIMARY KEY constraint_index_opt
-						{ $$ = make_node (nod_primary, (int) e_pri_count, NULL, $3); }
-		;
+		{
+			$$ = make_node(nod_foreign, (int) e_for_count,
+				make_node(nod_list, (int) 1, lex.g_field_name), $2, $3, $4, $5);
+		}
+	| UNIQUE constraint_index_opt
+		{ $$ = make_node(nod_unique, 2, NULL, $2); }
+	| PRIMARY KEY constraint_index_opt
+		{ $$ = make_node(nod_primary, (int) e_pri_count, NULL, $3); }
+	;
 
 
 
 // table constraints
 
-table_constraint_definition : constraint_name_opt table_constraint
-		   { $$ = make_node (nod_rel_constraint, (int) 2, $1, $2);}
-		;
+table_constraint_definition
+	: constraint_name_opt table_constraint
+		{ $$ = make_node (nod_rel_constraint, (int) 2, $1, $2);}
+	;
 
-constraint_name_opt : CONSTRAINT symbol_constraint_name
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+constraint_name_opt
+	: /* nothing */							{ $$ = NULL; }
+	| CONSTRAINT symbol_constraint_name		{ $$ = $2; }
+	;
 
-table_constraint : unique_constraint
-			| primary_constraint
-			| referential_constraint
-			| check_constraint
-		;
+table_constraint
+	: unique_constraint
+	| primary_constraint
+	| referential_constraint
+	| check_constraint
+	;
 
-unique_constraint	: UNIQUE column_parens constraint_index_opt
-			{ $$ = make_node (nod_unique, 2, $2, $3); }
-		;
+unique_constraint
+	: UNIQUE column_parens constraint_index_opt
+		{ $$ = make_node (nod_unique, 2, $2, $3); }
+	;
 
-primary_constraint	: PRIMARY KEY column_parens constraint_index_opt
-			{ $$ = make_node (nod_primary, (int) e_pri_count, $3, $4); }
-		;
+primary_constraint
+	: PRIMARY KEY column_parens constraint_index_opt
+		{ $$ = make_node (nod_primary, (int) e_pri_count, $3, $4); }
+	;
 
-referential_constraint	: FOREIGN KEY column_parens REFERENCES
-			  simple_table_name column_parens_opt
-			  referential_trigger_action constraint_index_opt
-			{ $$ = make_node (nod_foreign, (int) e_for_count, $3, $5, $6, $7, $8); }
-		;
+referential_constraint
+	: FOREIGN KEY column_parens REFERENCES
+			simple_table_name column_parens_opt
+			referential_trigger_action constraint_index_opt
+		{ $$ = make_node (nod_foreign, (int) e_for_count, $3, $5, $6, $7, $8); }
+	;
 
 constraint_index_opt
 	: USING order_direction INDEX symbol_index_name
@@ -2010,39 +2021,49 @@ constraint_index_opt
 		{ $$ = make_node (nod_def_index, (int) e_idx_count, NULL, NULL, NULL, NULL, NULL); }
 	;
 
-referential_trigger_action:
-		  update_rule
-		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, NULL);}
-		| delete_rule
-		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, NULL, $1);}
-		| delete_rule update_rule
-		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $2, $1); }
-		| update_rule delete_rule
-		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, $2);}
-		| // empty
-		  { $$ = NULL;}
-		;
+referential_trigger_action
+	: // nothing
+		{ $$ = NULL;}
+	| update_rule
+		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, NULL); }
+	| delete_rule
+		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, NULL, $1); }
+	| delete_rule update_rule
+		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $2, $1); }
+	| update_rule delete_rule
+		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, $2);}
+	;
 
-update_rule	: ON UPDATE referential_action
-		  { $$ = $3;}
-		;
-delete_rule	: ON KW_DELETE referential_action
-		  { $$ = $3;}
-		;
+update_rule
+	: ON UPDATE referential_action	{ $$ = $3;}
+	;
 
-referential_action: CASCADE
-		  { $$ = make_flag_node (nod_ref_trig_action,
-			 REF_ACTION_CASCADE, (int) e_ref_trig_action_count, NULL);}
-		| SET DEFAULT
-		  { $$ = make_flag_node (nod_ref_trig_action,
-			 REF_ACTION_SET_DEFAULT, (int) e_ref_trig_action_count, NULL);}
-		| SET KW_NULL
-		  { $$ = make_flag_node (nod_ref_trig_action,
-			 REF_ACTION_SET_NULL, (int) e_ref_trig_action_count, NULL);}
-		| NO ACTION
-		  { $$ = make_flag_node (nod_ref_trig_action,
-			 REF_ACTION_NONE, (int) e_ref_trig_action_count, NULL);}
-		;
+delete_rule
+	: ON KW_DELETE referential_action	 { $$ = $3;}
+	;
+
+referential_action
+	: CASCADE
+		{
+			$$ = make_flag_node (nod_ref_trig_action,
+		 		REF_ACTION_CASCADE, (int) e_ref_trig_action_count, NULL);
+		}
+	| SET DEFAULT
+		{
+			$$ = make_flag_node (nod_ref_trig_action,
+		 		REF_ACTION_SET_DEFAULT, (int) e_ref_trig_action_count, NULL);
+		}
+	| SET KW_NULL
+		{
+			$$ = make_flag_node (nod_ref_trig_action,
+				REF_ACTION_SET_NULL, (int) e_ref_trig_action_count, NULL);
+		}
+	| NO ACTION
+		{
+			$$ = make_flag_node (nod_ref_trig_action,
+				REF_ACTION_NONE, (int) e_ref_trig_action_count, NULL);
+		}
+	;
 
 
 // PROCEDURE
@@ -4782,7 +4803,7 @@ order_direction
 	;
 
 nulls_clause
-	: /* nothing */		{ $$ = NULL; }
+	: /* nothing */				{ $$ = NULL; }
 	| NULLS nulls_placement		{ $$ = $2; }
 	;
 

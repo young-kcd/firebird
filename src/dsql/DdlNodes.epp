@@ -9098,7 +9098,8 @@ void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 		if (inputFilter->name.hasData())
 		{
-			if (!METD_get_type(transaction, inputFilter->name, "RDB$FIELD_SUB_TYPE", &X.RDB$INPUT_SUB_TYPE))
+			if (!METD_get_type(transaction, inputFilter->name, "RDB$FIELD_SUB_TYPE",
+					&X.RDB$INPUT_SUB_TYPE))
 			{
 				status_exception::raise(
 					Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
@@ -9111,7 +9112,8 @@ void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 		if (outputFilter->name.hasData())
 		{
-			if (!METD_get_type(transaction, outputFilter->name, "RDB$FIELD_SUB_TYPE", &X.RDB$OUTPUT_SUB_TYPE))
+			if (!METD_get_type(transaction, outputFilter->name, "RDB$FIELD_SUB_TYPE",
+					&X.RDB$OUTPUT_SUB_TYPE))
 			{
 				status_exception::raise(
 					Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
