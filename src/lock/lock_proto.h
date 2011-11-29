@@ -100,7 +100,7 @@ const UCHAR type_MAX	= type_lpr;
 
 // Version number of the lock table.
 // Must be increased every time the shmem layout is changed.
-const UCHAR BASE_LHB_VERSION = 17;
+const UCHAR BASE_LHB_VERSION = 18;
 
 #if SIZEOF_VOID_P == 8
 const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
@@ -253,12 +253,11 @@ struct own
 };
 
 // Flags in own_flags
-const USHORT OWN_blocking	= 1;		// Owner is blocking
-const USHORT OWN_scanned	= 2;		// Owner has been deadlock scanned
-const USHORT OWN_waiting	= 4;		// Owner is waiting inside wait_for_request()
-const USHORT OWN_wakeup		= 8;		// Owner has been awoken
-const USHORT OWN_signaled	= 16;		// Signal is thought to be delivered
-const USHORT OWN_timeout	= 32;		// Owner is waiting with timeout
+const USHORT OWN_scanned	= 1;		// Owner has been deadlock scanned
+const USHORT OWN_waiting	= 2;		// Owner is waiting inside wait_for_request()
+const USHORT OWN_wakeup		= 4;		// Owner has been awoken
+const USHORT OWN_signaled	= 8;		// Signal is thought to be delivered
+const USHORT OWN_timeout	= 16;		// Owner is waiting with timeout
 
 // Lock manager history block
 

@@ -3661,7 +3661,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 	// Check that no invalid flag bit is set
 	CHECK(!
 		  (owner->own_flags &
-		  		~(OWN_blocking | OWN_scanned | OWN_waiting | OWN_wakeup | OWN_signaled | OWN_timeout)));
+		  		~(OWN_scanned | OWN_waiting | OWN_wakeup | OWN_signaled | OWN_timeout)));
 
 	const srq* lock_srq;
 	SRQ_LOOP(owner->own_requests, lock_srq)

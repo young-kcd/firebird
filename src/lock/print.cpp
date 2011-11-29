@@ -1218,7 +1218,6 @@ static void prt_owner(OUTFILE outfile,
 	{
 		const USHORT flags = owner->own_flags;
 		FPRINTF(outfile, "\tFlags: 0x%02X ", flags);
-		FPRINTF(outfile, " %s", (flags & OWN_blocking) ? "blkg" : "    ");
 		FPRINTF(outfile, " %s", (flags & OWN_wakeup) ? "wake" : "    ");
 		FPRINTF(outfile, " %s", (flags & OWN_scanned) ? "scan" : "    ");
 		FPRINTF(outfile, " %s", (flags & OWN_waiting) ? "wait" : "    ");
