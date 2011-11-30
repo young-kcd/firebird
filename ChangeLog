@@ -1,3 +1,13 @@
+ 2011-11-29 08:37  dimitr 
+   M builds/win32/msvc8/engine.vcproj
+Fixed the build.
+
+ 2011-11-29 08:14  dimitr 
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+Raised the lock table version. Some cleanup.
+
  2011-11-28 00:57  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/parse.y
