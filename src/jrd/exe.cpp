@@ -1318,12 +1318,14 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 				EXE_start(tdbb, trigger, transaction);
 
+				const bool ok = (trigger->req_operation != jrd_req::req_unwind);
+				trace.finish(ok ? res_successful : res_failed);
+
+				EXE_unwind(tdbb, trigger);
+
 				trigger->req_attachment = NULL;
 				trigger->req_flags &= ~req_in_use;
 				trigger->req_timestamp.invalidate();
-
-				const bool ok = (trigger->req_operation != jrd_req::req_unwind);
-				trace.finish(ok ? res_successful : res_failed);
 
 				if (!ok)
 				{
