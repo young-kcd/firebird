@@ -119,6 +119,7 @@ enum UndoDataRet {
 
 static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_param* rpb);
 
+static void invalidate_cursor_records(jrd_tra*, record_param*);
 static void list_staying(thread_db*, record_param*, RecordStack&);
 static void notify_garbage_collector(thread_db*, record_param*, SLONG = -1);
 static Record* realloc_record(Record*& record, USHORT fmt_length);
@@ -1608,6 +1609,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		}
 	}
 
+	// We're about to erase the record. Post a refetch request
+	// to all the active cursors positioned at this record.
+
+	invalidate_cursor_records(transaction, rpb);
+
 	// If the page can be updated simply, we can skip the remaining crud
 
 	record_param temp;
@@ -2581,6 +2587,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 		}
 	}
+
+	// We're about to modify the record. Post a refetch request
+	// to all the active cursors positioned at this record.
+
+	invalidate_cursor_records(transaction, org_rpb);
 
 	// hvlad: prepare_update() take EX lock on data page. Subsequent call of
 	// IDX_modify_flag_uk_modified() will read database - if relation's partners
@@ -4560,6 +4571,43 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_p
 	}
 
 	return udNone;
+}
+
+
+static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rpb)
+{
+/**************************************
+ *
+ *	i n v a l i d a t e _ c u r s o r _ r e c o r d s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post a refetch request to the records currently fetched
+ *  by active cursors of our transaction, because those records
+ *  have just been updated or deleted.
+ *
+ **************************************/
+	fb_assert(mod_rpb && mod_rpb->rpb_relation);
+
+	for (jrd_req* request = transaction->tra_requests; request; request = request->req_tra_next)
+	{
+		if (request->req_flags & req_active)
+		{
+			for (size_t i = 0; i < request->req_count; i++)
+			{
+				record_param* const org_rpb = &request->req_rpb[i];
+
+				if (org_rpb != mod_rpb &&
+					org_rpb->rpb_relation && org_rpb->rpb_number.isValid() &&
+					org_rpb->rpb_relation->rel_id == mod_rpb->rpb_relation->rel_id &&
+					org_rpb->rpb_number == mod_rpb->rpb_number)
+				{
+					org_rpb->rpb_stream_flags |= RPB_s_refetch;
+				}
+			}
+		}
+	}
 }
 
 
