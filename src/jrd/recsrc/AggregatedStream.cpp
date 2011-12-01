@@ -174,7 +174,11 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 		if (impure->pending > 0)
 			--impure->pending;
 
-		m_bufferedStream->getRecord(tdbb);
+		if (!m_bufferedStream->getRecord(tdbb))
+		{
+			rpb->rpb_number.setValid(false);
+			return false;
+		}
 
 		// If there is no group, we should reassign the map items.
 		if (!m_group)
