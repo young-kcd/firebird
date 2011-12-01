@@ -1,3 +1,7 @@
+ 2011-12-01 00:47  asfernandes 
+   M src/jrd/recsrc/AggregatedStream.cpp
+Fixed window function with empty streams.
+
  2011-11-29 08:37  dimitr 
    M builds/win32/msvc8/engine.vcproj
 Fixed the build.
