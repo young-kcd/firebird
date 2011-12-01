@@ -4594,7 +4594,7 @@ static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rp
 	{
 		if (request->req_flags & req_active)
 		{
-			for (size_t i = 0; i < request->req_count; i++)
+			for (size_t i = 0; i < request->req_rpb.getCount(); i++)
 			{
 				record_param* const org_rpb = &request->req_rpb[i];
 
