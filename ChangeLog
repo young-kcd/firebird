@@ -1,3 +1,11 @@
+ 2011-12-01 09:52  dimitr 
+   M src/jrd/exe.cpp
+For a number of reasons, it seems being a good thing to unwind the trigger requests ASAP.
+
+ 2011-12-01 09:23  dimitr 
+   M src/jrd/vio.cpp
+Attempted to fix CORE-3490: Concurrency problem when using named cursors. The solution may look sub-optimal but it doesn't seem to affect the performance.
+
  2011-11-14 23:09  hvlad 
    M src/utilities/ntrace/fbtrace.conf
 Update documentation
