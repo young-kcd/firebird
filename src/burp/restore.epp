@@ -645,6 +645,13 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	tdgbl->uSvc->getAddressPath(dpb);
 
+	const UCHAR* authBlock;
+	unsigned int authSize = tdgbl->uSvc->getAuthBlock(&authBlock);
+	if (authBlock)
+	{
+		dpb.insertBytes(isc_dpb_auth_block, authBlock, authSize);
+	}
+
 	if (tdgbl->flag_on_line)
 	{
 		dpb.insertTag(isc_dpb_online);
@@ -694,6 +701,15 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 		// msg 280: setting database to read-only access
 
 		dpb.reset(isc_dpb_version1);
+		tdgbl->uSvc->getAddressPath(dpb);
+
+		const UCHAR* authBlock;
+		unsigned int authSize = tdgbl->uSvc->getAuthBlock(&authBlock);
+		if (authBlock)
+		{
+			dpb.insertBytes(isc_dpb_auth_block, authBlock, authSize);
+		}
+
 		if (tdgbl->gbl_sw_user)
 		{
 			dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
@@ -962,6 +978,14 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	tdgbl->uSvc->getAddressPath(dpb);
+
+	const UCHAR* authBlock;
+	unsigned int authSize = tdgbl->uSvc->getAuthBlock(&authBlock);
+	if (authBlock)
+	{
+		dpb.insertBytes(isc_dpb_auth_block, authBlock, authSize);
+	}
+
 	dpb.insertInt(isc_dpb_page_size, page_size & 0xff00);
 	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
 
