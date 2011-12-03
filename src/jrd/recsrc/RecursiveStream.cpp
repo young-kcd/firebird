@@ -54,15 +54,21 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapSt
 	m_impure = CMP_impure(csb, sizeof(Impure));
 	m_saveSize = csb->csb_impure - saveOffset;
 
-	m_innerStreams.resize(streamCount);
-
-	for (size_t i = 0; i < streamCount; i++)
-	{
-		m_innerStreams[i] = innerStreams[i];
-	}
-
 	m_root->markRecursive();
 	m_inner->markRecursive();
+
+	// To make aggregates inside the inner stream work, we need to get its own and child streams.
+	// See CORE-3683 for a test case.
+	StreamList childStreams;
+	m_inner->findUsedStreams(childStreams);
+
+	m_innerStreams.resize(streamCount + childStreams.getCount());
+
+	for (size_t i = 0; i < streamCount; i++)
+		m_innerStreams[i] = innerStreams[i];
+
+	for (size_t i = 0; i < childStreams.getCount(); i++)
+		m_innerStreams[streamCount + i] = childStreams[i];
 }
 
 void RecursiveStream::open(thread_db* tdbb) const
