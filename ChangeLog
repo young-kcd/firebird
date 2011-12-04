@@ -1,3 +1,12 @@
+ 2011-12-03 20:22  asfernandes 
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/RecursiveStream.cpp
+Fixed CORE-3683 - Recursive query with GROUP BY in root part: wrong results if no index exists for fields that are grouped.
+
+ 2011-12-03 12:48  dimitr 
+   M src/burp/restore.epp
+Fixed the authentication during restore via the Services API.
+
  2011-12-01 09:54  dimitr 
    M src/jrd/exe.cpp
 For a number of reasons, it seems being a good thing to unwind the trigger requests ASAP.
