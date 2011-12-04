@@ -40,8 +40,9 @@ using namespace Jrd;
 
 // Note that we can have NULL order here, in case of window function with shouldCallWinPass
 // returning true, with partition, and without order. Example: ROW_NUMBER() OVER (PARTITION BY N).
-AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const NestValueArray* group,
-			const MapNode* map, BaseBufferedStream* next, const NestValueArray* order)
+AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+			const NestValueArray* group, MapNode* map, BaseBufferedStream* next,
+			const NestValueArray* order)
 	: RecordStream(csb, stream),
 	  m_bufferedStream(next),
 	  m_next(m_bufferedStream),
@@ -51,11 +52,11 @@ AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const Nes
 	  m_winPassSources(csb->csb_pool),
 	  m_winPassTargets(csb->csb_pool)
 {
-	init(csb);
+	init(tdbb, csb);
 }
 
-AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const NestValueArray* group,
-			const MapNode* map, RecordSource* next)
+AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+			const NestValueArray* group, MapNode* map, RecordSource* next)
 	: RecordStream(csb, stream),
 	  m_bufferedStream(NULL),
 	  m_next(next),
@@ -65,7 +66,7 @@ AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const Nes
 	  m_winPassSources(csb->csb_pool),
 	  m_winPassTargets(csb->csb_pool)
 {
-	init(csb);
+	init(tdbb, csb);
 }
 
 void AggregatedStream::open(thread_db* tdbb) const
@@ -256,10 +257,12 @@ void AggregatedStream::findUsedStreams(StreamList& streams) const
 		m_bufferedStream->findUsedStreams(streams);
 }
 
-void AggregatedStream::init(CompilerScratch* csb)
+void AggregatedStream::init(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(m_map && m_next);
 	m_impure = CMP_impure(csb, sizeof(Impure));
+
+	m_map->aggPostRse(tdbb, csb);
 
 	// Separate nodes that requires the winPass call.
 

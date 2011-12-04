@@ -443,13 +443,11 @@ namespace
 
 // ------------------------------
 
-WindowedStream::WindowedStream(CompilerScratch* csb,
+WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 			ObjectsArray<WindowSourceNode::Partition>& partitions, RecordSource* next)
 	: m_next(FB_NEW(csb->csb_pool) BufferedStream(csb, next)),
 	  m_joinedStream(NULL)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
 	// Process the unpartioned and unordered map, if existent.
@@ -476,8 +474,9 @@ WindowedStream::WindowedStream(CompilerScratch* csb,
 		{
 			fb_assert(!m_joinedStream);
 
-			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, partition->stream, NULL,
-				partition->map, FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next), NULL);
+			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(tdbb, csb, partition->stream,
+				NULL, partition->map, FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next),
+				NULL);
 
 			OPT_gen_aggregate_distincts(tdbb, csb, partition->map);
 		}
@@ -525,7 +524,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb,
 			SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
 				m_joinedStream, partitionOrder, false);
 
-			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, partition->stream,
+			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(tdbb, csb, partition->stream,
 				(partition->group ? &partition->group->expressions : NULL),
 				partition->map,
 				FB_NEW(csb->csb_pool) BufferedStream(csb, sortedStream),

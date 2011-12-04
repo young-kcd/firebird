@@ -300,9 +300,13 @@ ValueExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 
 	return this;
+}
+
+void AggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
+{
+	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 }
 
 void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
@@ -567,10 +571,15 @@ ValueExprNode* AvgAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (dialect1)
 		nodFlags |= FLAG_DOUBLE;
 
+	return AggNode::pass2(tdbb, csb);
+}
+
+void AvgAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
+{
+	AggNode::aggPostRse(tdbb, csb);
+
 	// We need a second descriptor in the impure area for AVG.
 	tempImpure = CMP_impure(csb, sizeof(impure_value_ex));
-
-	return AggNode::pass2(tdbb, csb);
 }
 
 void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const

@@ -203,6 +203,18 @@ MapNode* MapNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
+void MapNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
+{
+	for (NestConst<ValueExprNode>* source = sourceList.begin();
+		 source != sourceList.end();
+		 ++source)
+	{
+		AggNode* aggNode = (*source)->as<AggNode>();
+		if (aggNode)
+			aggNode->aggPostRse(tdbb, csb);
+	}
+}
+
 
 //--------------------
 
@@ -1288,8 +1300,8 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 
 	// allocate and optimize the record source block
 
-	AggregatedStream* const rsb = FB_NEW(*tdbb->getDefaultPool()) AggregatedStream(csb, stream,
-		(group ? &group->expressions : NULL), map, nextRsb);
+	AggregatedStream* const rsb = FB_NEW(*tdbb->getDefaultPool()) AggregatedStream(tdbb, csb,
+		stream, (group ? &group->expressions : NULL), map, nextRsb);
 
 	if (rse->rse_aggregate)
 	{
@@ -1782,8 +1794,8 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 
 	BoolExprNodeStack deliverStack;
 
-	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(opt->opt_csb, partitions,
-		OPT_compile(tdbb, opt->opt_csb, rse, &deliverStack));
+	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(tdbb, opt->opt_csb,
+		partitions, OPT_compile(tdbb, opt->opt_csb, rse, &deliverStack));
 
 	StreamList rsbStreams;
 	rsb->findUsedStreams(rsbStreams);

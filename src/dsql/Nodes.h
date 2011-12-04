@@ -749,6 +749,9 @@ public:
 		return NULL;
 	}
 
+	// Used to allocate aggregate impure inside the impure area of recursive CTEs.
+	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
+
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
 	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;

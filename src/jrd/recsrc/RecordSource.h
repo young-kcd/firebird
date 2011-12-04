@@ -612,11 +612,12 @@ namespace Jrd
 		};
 
 	public:
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, const NestValueArray* group,
-			const MapNode* map, BaseBufferedStream* next, const NestValueArray* order);
+		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+			const NestValueArray* group, MapNode* map, BaseBufferedStream* next,
+			const NestValueArray* order);
 
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, const NestValueArray* group,
-			const MapNode* map, RecordSource* next);
+		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+			const NestValueArray* group, MapNode* map, RecordSource* next);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -634,7 +635,7 @@ namespace Jrd
 		void findUsedStreams(StreamList& streams) const;
 
 	private:
-		void init(CompilerScratch* csb);
+		void init(thread_db* tdbb, CompilerScratch* csb);
 
 		State evaluateGroup(thread_db* tdbb, State state) const;
 		void finiDistinct(thread_db* tdbb, jrd_req* request) const;
@@ -642,7 +643,7 @@ namespace Jrd
 		NestConst<BaseBufferedStream> m_bufferedStream;
 		NestConst<RecordSource> m_next;
 		const NestValueArray* const m_group;
-		const MapNode* const m_map;
+		NestConst<MapNode> m_map;
 		const NestValueArray* const m_order;
 		NestValueArray m_winPassSources;
 		NestValueArray m_winPassTargets;
@@ -651,7 +652,7 @@ namespace Jrd
 	class WindowedStream : public RecordSource
 	{
 	public:
-		WindowedStream(CompilerScratch* csb,
+		WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 			Firebird::ObjectsArray<WindowSourceNode::Partition>& partitions, RecordSource* next);
 
 		void open(thread_db* tdbb) const;
