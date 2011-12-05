@@ -2266,7 +2266,7 @@ static dsql_nod* ambiguity_check(dsql_req* request, dsql_nod* node,
 						isc_arg_warning, isc_dsql_ambiguous_field_name,
 						isc_arg_string, buffer,
 						isc_arg_string, ++p,
-						isc_arg_gds, isc_random,
+						isc_arg_warning, isc_random,
 						isc_arg_string, name->str_data,
 						isc_arg_end);
 
