@@ -1,3 +1,15 @@
+ 2011-12-04 18:36  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/WindowedStream.cpp
+Fixed the problem with windowed functions in recursive CTEs, reported by Frank Ingermann in fb-devel.
+This fix is complementary to the one done in CORE-3683.
+
  2011-12-03 20:22  asfernandes 
    M src/jrd/recsrc/AggregatedStream.cpp
    M src/jrd/recsrc/RecursiveStream.cpp
