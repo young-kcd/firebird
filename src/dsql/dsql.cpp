@@ -261,7 +261,7 @@ void DSQL_execute(thread_db* tdbb,
 	}
 
 	// A select with a non zero output length is a singleton select
-	const bool singleton = (request->req_type == REQ_SELECT && out_msg_length != 0);
+	const bool singleton = (reqTypeWithCursor(request->req_type) && out_msg_length != 0);
 
 	if (request->req_type != REQ_EMBED_SELECT)
 	{
@@ -1136,7 +1136,7 @@ static void execute_immediate(thread_db* tdbb,
 		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
 		// A select with a non zero output length is a singleton select
-		const bool singleton = (request->req_type == REQ_SELECT && out_msg_length != 0);
+		const bool singleton = (reqTypeWithCursor(request->req_type) && out_msg_length != 0);
 
 		execute_request(tdbb, request, tra_handle,
 						in_blr_length, in_blr, in_msg_length, in_msg,
