@@ -155,7 +155,8 @@ const TEXT* ERR_cstring(const TEXT* in_string)
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_duplicate_error(IDX_E	code,
 						const jrd_rel*		relation,
-						USHORT index_number)
+						USHORT index_number,
+						const TEXT* idx_name)
 {
 /**************************************
  *
@@ -176,7 +177,11 @@ void ERR_duplicate_error(IDX_E	code,
 	ISC_STATUS_ARRAY org_status;
 	memcpy(org_status, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
 
-	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
+	if (!idx_name)
+		MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
+	else
+		index = idx_name;
+
 	if (index.length()) {
 		index_name = ERR_cstring(index);
 		MET_lookup_cnstrt_for_index(tdbb, constraint, index);
