@@ -2437,7 +2437,7 @@ static dsql_nod* ambiguity_check(CompiledStatement* statement, dsql_nod* node,
 	ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(204) <<
 					  Arg::Warning(isc_dsql_ambiguous_field_name) << Arg::Str(buffer) <<
 																	 Arg::Str(++p) <<
-					  Arg::Gds(isc_random) << Arg::Str(name->str_data));
+					  Arg::Warning(isc_random) << Arg::Str(name->str_data));
 
 	return node;
 }
