@@ -6164,12 +6164,9 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
 		return;
 
-	const TEXT* prc_sec_name =
-		(procedure->prc_security_name.length() > 0 ? procedure->prc_security_name.c_str() : NULL);
-
 	// this request must have EXECUTE permission on the stored procedure
-	CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
-					procedure->prc_name);
+	CMP_post_access(tdbb, csb, procedure->prc_security_name, csb->csb_view ? csb->csb_view->rel_id : 0,
+					SCL_execute, object_procedure, procedure->prc_name);
 
 	// Add the procedure to list of external objects accessed
 	ExternalAccess temp(procedure->prc_id);
