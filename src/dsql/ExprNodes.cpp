@@ -10219,17 +10219,15 @@ ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	{
 		if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
 		{
-			const TEXT* secName = function->getSecurityName().nullStr();
-
 			if (function->getName().package.isEmpty())
 			{
-				CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_function,
-					function->getName().identifier.c_str());
+				CMP_post_access(tdbb, csb, function->getSecurityName(), 0,
+					SCL_execute, SCL_object_function, function->getName().identifier);
 			}
 			else
 			{
-				CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_package,
-					function->getName().package.c_str());
+				CMP_post_access(tdbb, csb, function->getSecurityName(), 0,
+					SCL_execute, SCL_object_package, function->getName().package);
 			}
 
 			ExternalAccess temp(ExternalAccess::exa_function, function->getId());
