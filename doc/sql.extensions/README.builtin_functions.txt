@@ -586,7 +586,7 @@ POSITION
 
 Function:
     Returns the position of the first string inside the second string starting at
-    an offset (or from the beginning when omitted).
+    an offset (or from the beginning when omitted). When not found, returns 0.
 
 Format:
     POSITION( <string> IN <string> )
