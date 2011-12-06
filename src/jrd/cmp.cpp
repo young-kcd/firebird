@@ -636,18 +636,16 @@ void CMP_post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc* p
 	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
 		return;
 
-	const TEXT* prc_sec_name = procedure->getSecurityName().nullStr();
-
 	// this request must have EXECUTE permission on the stored procedure
 	if (procedure->getName().package.isEmpty())
 	{
-		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, SCL_object_procedure,
-						procedure->getName().identifier.c_str());
+		CMP_post_access(tdbb, csb, procedure->getSecurityName(), csb->csb_view ? csb->csb_view->rel_id : 0,
+			SCL_execute, SCL_object_procedure, procedure->getName().identifier);
 	}
 	else
 	{
-		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, SCL_object_package,
-						procedure->getName().package.c_str());
+		CMP_post_access(tdbb, csb, procedure->getSecurityName(), csb->csb_view ? csb->csb_view->rel_id : 0,
+			SCL_execute, SCL_object_package, procedure->getName().package);
 	}
 
 	// Add the procedure to list of external objects accessed
