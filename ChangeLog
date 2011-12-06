@@ -1,3 +1,7 @@
+ 2011-12-05 13:06  hvlad 
+   M src/dsql/pass1.cpp
+Fixed bug CORE-3690 : Wrong warning message for ambiguous query
+
  2011-12-04 18:36  asfernandes 
    M src/dsql/AggNodes.cpp
    M src/dsql/AggNodes.h
