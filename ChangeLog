@@ -1,3 +1,14 @@
+ 2011-12-05 20:05  hvlad 
+   M src/jrd/err.cpp
+   M src/jrd/err_proto.h
+   M src/jrd/idx.cpp
+Fixed bug CORE-3691 : Missing constraint name in foreign key error message in FB 2.1.4
+(backported missed piece from CORE-2289)
+
+ 2011-12-05 13:16  hvlad 
+   M src/dsql/pass1.cpp
+Fixed bug CORE-3690 : Wrong warning message for ambiguous query
+
  2011-11-08 16:48  hvlad 
    M src/jrd/dyn_del.epp
 Additional fix for CORE-3557 : AV in engine when preparing query against dropping table
