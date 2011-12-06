@@ -751,7 +751,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type exec_stmt_options_list(<execStatementNode>) exec_stmt_inputs(<execStatementNode>)
 
 %type <stmtNode>   fetch_cursor
-%type <legacyNode> file1
 %type <legacyNode> filter_clause_io first_clause
 %type <legacyNode> float_type for_update_clause for_update_list from_clause
 %type <legacyNode> from_list
