@@ -1007,7 +1007,7 @@ static const UCHAR trigger25[] =
 
 /******
 static const TEXT trigger_10_msg_0 [] = "Cannot delete PRIMARY KEY being used in FOREIGN KEY definition.";
-static const TEXT trigger_10_msg_1 [] = "Cannot drop NOT NULL constraint for fields in PRIMARY/UNIQUE constraints.";
+static const TEXT trigger_10_msg_1 [] = "Column used in a PRIMARY constraint must be NOT NULL.";
 ******/
 
 static const UCHAR trigger10[] =
@@ -1131,11 +1131,6 @@ static const UCHAR trigger10[] =
 		'A', 'M', 'E',
 	blr_field, 8, 14, 'R', 'D', 'B', '$', 'I', 'N', 'D', 'E', 'X', '_', 'N',
 		'A', 'M', 'E',
-	blr_or,
-	blr_eql,
-	blr_field, 9, 19, 'R', 'D', 'B', '$', 'C', 'O', 'N', 'S', 'T', 'R', 'A',
-		'I', 'N', 'T', '_', 'T', 'Y', 'P', 'E',
-	blr_literal, blr_text, 6, 0, 'U', 'N', 'I', 'Q', 'U', 'E',
 	blr_eql,
 	blr_field, 9, 19, 'R', 'D', 'B', '$', 'C', 'O', 'N', 'S', 'T', 'R', 'A',
 		'I', 'N', 'T', '_', 'T', 'Y', 'P', 'E',
