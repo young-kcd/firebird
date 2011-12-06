@@ -10228,12 +10228,12 @@ ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		{
 			if (function->getName().package.isEmpty())
 			{
-				CMP_post_access(tdbb, csb, function->getSecurityName(), 0,
+				CMP_post_access(tdbb, csb, function->getSecurityName(), csb->csb_view ? csb->csb_view->rel_id : 0,
 					SCL_execute, SCL_object_function, function->getName().identifier);
 			}
 			else
 			{
-				CMP_post_access(tdbb, csb, function->getSecurityName(), 0,
+				CMP_post_access(tdbb, csb, function->getSecurityName(), csb->csb_view ? csb->csb_view->rel_id : 0,
 					SCL_execute, SCL_object_package, function->getName().package);
 			}
 
