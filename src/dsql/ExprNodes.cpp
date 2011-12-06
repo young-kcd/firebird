@@ -4613,11 +4613,18 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 			PAR_name(csb, name);
 		}
 
-		DomainValidationNode* node = FB_NEW(pool) DomainValidationNode(pool);
+		DomainValidationNode* domNode = FB_NEW(pool) DomainValidationNode(pool);
+		MET_get_domain(tdbb, csb->csb_domain_validation, &domNode->domDesc, NULL);
 
-		MET_get_domain(tdbb, csb->csb_domain_validation, &node->domDesc, NULL);
+		// Cast to the target type - see CORE-3545.
+		CastNode* castNode = FB_NEW(pool) CastNode(pool);
+		Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
+		castNode->format = format;
+		format->fmt_desc[0] = domNode->domDesc;
+		format->fmt_length = domNode->domDesc.dsc_length;
+		castNode->source = domNode;
 
-		return node;
+		return castNode;
 	}
 
 	if (context >= csb->csb_rpt.getCount())/* ||
