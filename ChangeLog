@@ -1,3 +1,31 @@
+ 2011-12-06 18:09  dimitr 
+   M src/dsql/ExprNodes.cpp
+Correction related to CORE-927.
+
+ 2011-12-06 15:08  hvlad 
+   M src/dsql/parse.y
+Cleanup
+
+ 2011-12-06 14:38  asfernandes 
+   M doc/sql.extensions/README.builtin_functions.txt
+Fixed CORE-3382 - Incomplete description of POSITION() function.
+
+ 2011-12-06 14:24  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-3545 - Inconsistent domain's constraint validation in PSQL.
+
+ 2011-12-06 13:12  dimitr 
+   M src/jrd/trig.h
+Fixed CORE-3692: Cannot drop a NOT NULL constraint on a field participating in the UNIQUE constraint.
+
+ 2011-12-06 13:09  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-927: Grants don't work for procedures used inside views.
+
+ 2011-12-06 10:02  dimitr 
+   M src/jrd/cmp.cpp
+Fixed CORE-927: Grants don't work for procedures used inside views.
+
  2011-12-05 13:06  hvlad 
    M src/dsql/pass1.cpp
 Fixed bug CORE-3690 : Wrong warning message for ambiguous query
