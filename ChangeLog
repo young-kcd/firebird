@@ -1,3 +1,11 @@
+ 2011-12-06 13:12  dimitr 
+   M src/jrd/trig.h
+Fixed CORE-3692: Cannot drop a NOT NULL constraint on a field participating in the UNIQUE constraint.
+
+ 2011-12-06 10:00  dimitr 
+   M src/jrd/cmp.cpp
+Fixed CORE-927: Grants don't work for procedures used inside views.
+
  2011-12-05 13:52  hvlad 
    M src/dsql/dsql.cpp
 Fixed bug CORE-3680 : EXECUTE BLOCK statement and ISC_DSQL_EXECUTE2() problem
