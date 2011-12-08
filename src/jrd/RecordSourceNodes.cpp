@@ -731,6 +731,9 @@ bool ProcedureSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
 
 bool ProcedureSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 {
+	if (dsqlContext->ctx_procedure)
+		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+
 	return false;
 }
 
@@ -1844,8 +1847,8 @@ bool RseNode::dsqlAggregateFinder(AggregateFinder& visitor)
 bool RseNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 {
 	AutoSetRestore<bool> autoCurrentScopeLevelEqual(&visitor.currentScopeLevelEqual, false);
-	// Pass dsqlWhere and dsqlSelectList
-	return visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList);
+	// Pass dsqlWhere, dsqlSelectList and dsqlStreams.
+	return visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList) | visitor.visit(&dsqlStreams);
 }
 
 bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
