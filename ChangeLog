@@ -1,3 +1,7 @@
+ 2011-12-08 15:13  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-3694 - internal Firebird consistency check in query with grouping by subquery+stored procedure+aggregate.
+
  2011-12-06 18:09  dimitr 
    M src/dsql/ExprNodes.cpp
 Correction related to CORE-927.
