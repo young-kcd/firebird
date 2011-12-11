@@ -1,3 +1,7 @@
+ 2011-12-11 01:26  asfernandes 
+   M src/jrd/blb.cpp
+Backported fix for CORE-3601 - Incorrect TEXT BLOB charset transliteration on VIEW with trigger.
+
  2011-12-06 13:12  dimitr 
    M src/jrd/trig.h
 Fixed CORE-3692: Cannot drop a NOT NULL constraint on a field participating in the UNIQUE constraint.
