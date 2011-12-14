@@ -350,12 +350,12 @@ void HashJoin::markRecursive()
 	}
 }
 
-void HashJoin::findUsedStreams(StreamList& streams) const
+void HashJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_leader->findUsedStreams(streams);
+	m_leader->findUsedStreams(streams, expandAll);
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
-		m_args[i]->findUsedStreams(streams);
+		m_args[i]->findUsedStreams(streams, expandAll);
 	}
 }
 

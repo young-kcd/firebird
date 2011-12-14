@@ -137,10 +137,10 @@ void ConditionalStream::markRecursive()
 	m_second->markRecursive();
 }
 
-void ConditionalStream::findUsedStreams(StreamList& streams) const
+void ConditionalStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_first->findUsedStreams(streams);
-	m_second->findUsedStreams(streams);
+	m_first->findUsedStreams(streams, expandAll);
+	m_second->findUsedStreams(streams, expandAll);
 }
 
 void ConditionalStream::invalidateRecords(jrd_req* request) const

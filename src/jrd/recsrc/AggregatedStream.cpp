@@ -237,7 +237,6 @@ void AggregatedStream::print(thread_db* tdbb, string& plan,
 
 void AggregatedStream::markRecursive()
 {
-	m_recursive = true;
 	m_next->markRecursive();
 }
 
@@ -246,15 +245,15 @@ void AggregatedStream::invalidateRecords(jrd_req* request) const
 	m_next->invalidateRecords(request);
 }
 
-void AggregatedStream::findUsedStreams(StreamList& streams) const
+void AggregatedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	RecordStream::findUsedStreams(streams);
 
-	if (m_recursive)
-		m_next->findUsedStreams(streams);
+	if (expandAll)
+		m_next->findUsedStreams(streams, true);
 
 	if (m_bufferedStream)
-		m_bufferedStream->findUsedStreams(streams);
+		m_bufferedStream->findUsedStreams(streams, expandAll);
 }
 
 void AggregatedStream::init(thread_db* tdbb, CompilerScratch* csb)

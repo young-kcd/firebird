@@ -54,21 +54,17 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapSt
 	m_impure = CMP_impure(csb, sizeof(Impure));
 	m_saveSize = csb->csb_impure - saveOffset;
 
-	m_root->markRecursive();
-	m_inner->markRecursive();
-
-	// To make aggregates inside the inner stream work, we need to get its own and child streams.
-	// See CORE-3683 for a test case.
-	StreamList childStreams;
-	m_inner->findUsedStreams(childStreams);
-
-	m_innerStreams.resize(streamCount + childStreams.getCount());
+	m_innerStreams.resize(streamCount);
 
 	for (size_t i = 0; i < streamCount; i++)
 		m_innerStreams[i] = innerStreams[i];
 
-	for (size_t i = 0; i < childStreams.getCount(); i++)
-		m_innerStreams[streamCount + i] = childStreams[i];
+	// To make aggregates, unions and nested recursions inside the inner stream work correctly,
+	// we need to add all the child streams as well. See CORE-3683 for the test case.
+	m_inner->findUsedStreams(m_innerStreams, true);
+
+	m_root->markRecursive();
+	m_inner->markRecursive();
 }
 
 void RecursiveStream::open(thread_db* tdbb) const
@@ -286,6 +282,21 @@ void RecursiveStream::invalidateRecords(jrd_req* request) const
 {
 	m_root->invalidateRecords(request);
 	m_inner->invalidateRecords(request);
+}
+
+
+void RecursiveStream::findUsedStreams(StreamList& streams, bool expandAll) const
+{
+	RecordStream::findUsedStreams(streams);
+
+	if (expandAll)
+	{
+		if (!streams.exist(m_mapStream))
+			streams.add(m_mapStream);
+
+		m_root->findUsedStreams(streams, true);
+		m_inner->findUsedStreams(streams, true);
+	}
 }
 
 void RecursiveStream::cleanupLevel(jrd_req* request, Impure* impure) const

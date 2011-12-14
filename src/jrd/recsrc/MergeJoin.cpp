@@ -395,11 +395,11 @@ void MergeJoin::markRecursive()
 	}
 }
 
-void MergeJoin::findUsedStreams(StreamList& streams) const
+void MergeJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
-		m_args[i]->findUsedStreams(streams);
+		m_args[i]->findUsedStreams(streams, expandAll);
 	}
 }
 

@@ -312,9 +312,9 @@ void BufferedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void BufferedStream::findUsedStreams(StreamList& streams) const
+void BufferedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_next->findUsedStreams(streams);
+	m_next->findUsedStreams(streams, expandAll);
 }
 
 void BufferedStream::invalidateRecords(jrd_req* request) const

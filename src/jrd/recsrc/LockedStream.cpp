@@ -120,9 +120,9 @@ void LockedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void LockedStream::findUsedStreams(StreamList& streams) const
+void LockedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_next->findUsedStreams(streams);
+	m_next->findUsedStreams(streams, expandAll);
 }
 
 void LockedStream::invalidateRecords(jrd_req* request) const

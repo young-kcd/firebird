@@ -125,9 +125,9 @@ void SingularStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SingularStream::findUsedStreams(StreamList& streams) const
+void SingularStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_next->findUsedStreams(streams);
+	m_next->findUsedStreams(streams, expandAll);
 }
 
 void SingularStream::invalidateRecords(jrd_req* request) const

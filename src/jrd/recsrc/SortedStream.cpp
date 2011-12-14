@@ -136,9 +136,9 @@ void SortedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SortedStream::findUsedStreams(StreamList& streams) const
+void SortedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_next->findUsedStreams(streams);
+	m_next->findUsedStreams(streams, expandAll);
 }
 
 void SortedStream::invalidateRecords(jrd_req* request) const

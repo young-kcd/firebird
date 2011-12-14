@@ -225,3 +225,14 @@ void Union::invalidateRecords(jrd_req* request) const
 		m_args[i]->invalidateRecords(request);
 	}
 }
+
+void Union::findUsedStreams(StreamList& streams, bool expandAll) const
+{
+	RecordStream::findUsedStreams(streams);
+
+	if (expandAll)
+	{
+		for (size_t i = 0; i < m_args.getCount(); i++)
+			m_args[i]->findUsedStreams(streams, true);
+	}
+}

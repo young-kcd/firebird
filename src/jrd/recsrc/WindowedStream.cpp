@@ -63,7 +63,7 @@ namespace
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamList& streams) const;
+		void findUsedStreams(StreamList& streams, bool expandAll) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -121,7 +121,7 @@ namespace
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamList& streams) const;
+		void findUsedStreams(StreamList& streams, bool expandAll) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -201,9 +201,9 @@ namespace
 		m_next->markRecursive();
 	}
 
-	void BufferedStreamWindow::findUsedStreams(StreamList& streams) const
+	void BufferedStreamWindow::findUsedStreams(StreamList& streams, bool expandAll) const
 	{
-		m_next->findUsedStreams(streams);
+		m_next->findUsedStreams(streams, expandAll);
 	}
 
 	void BufferedStreamWindow::invalidateRecords(jrd_req* request) const
@@ -607,9 +607,9 @@ void WindowedStream::invalidateRecords(jrd_req* request) const
 	m_joinedStream->invalidateRecords(request);
 }
 
-void WindowedStream::findUsedStreams(StreamList& streams) const
+void WindowedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_joinedStream->findUsedStreams(streams);
+	m_joinedStream->findUsedStreams(streams, expandAll);
 }
 
 void WindowedStream::nullRecords(thread_db* tdbb) const

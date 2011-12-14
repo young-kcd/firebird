@@ -254,11 +254,11 @@ void NestedLoopJoin::markRecursive()
 	}
 }
 
-void NestedLoopJoin::findUsedStreams(StreamList& streams) const
+void NestedLoopJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
-		m_args[i]->findUsedStreams(streams);
+		m_args[i]->findUsedStreams(streams, expandAll);
 	}
 }
 

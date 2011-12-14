@@ -271,7 +271,7 @@ void RecordStream::markRecursive()
 	m_recursive = true;
 }
 
-void RecordStream::findUsedStreams(StreamList& streams) const
+void RecordStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	if (!streams.exist(m_stream))
 		streams.add(m_stream);

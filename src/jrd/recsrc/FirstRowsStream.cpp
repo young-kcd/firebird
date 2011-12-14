@@ -130,9 +130,9 @@ void FirstRowsStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void FirstRowsStream::findUsedStreams(StreamList& streams) const
+void FirstRowsStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_next->findUsedStreams(streams);
+	m_next->findUsedStreams(streams, expandAll);
 }
 
 void FirstRowsStream::invalidateRecords(jrd_req* request) const

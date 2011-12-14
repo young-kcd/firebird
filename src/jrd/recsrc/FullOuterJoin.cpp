@@ -142,10 +142,10 @@ void FullOuterJoin::markRecursive()
 	m_arg2->markRecursive();
 }
 
-void FullOuterJoin::findUsedStreams(StreamList& streams) const
+void FullOuterJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_arg1->findUsedStreams(streams);
-	m_arg2->findUsedStreams(streams);
+	m_arg1->findUsedStreams(streams, expandAll);
+	m_arg2->findUsedStreams(streams, expandAll);
 }
 
 void FullOuterJoin::invalidateRecords(jrd_req* request) const
