@@ -45,5 +45,8 @@ if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
 	launchctl unload /Library/LaunchDaemons/org.firebird/gds.plist
 	rm /Library/LaunchDaemons/org.firebird.gds.plist
 fi
-rm -rf "$FB_FW/Firebird.framework"
+
+rm -fr "$FB_FW"
+rm -fr /tmp/firebird
+
 exit 0
