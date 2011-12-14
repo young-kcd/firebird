@@ -48,6 +48,6 @@ if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
 	rm /Library/LaunchDaemons/org.firebird.gds.plist
 fi
 
-rm -fr "$FB_FW/Firebird.framework"
+rm -fr "$FB_FW"
 
 exit 0
