@@ -1,3 +1,7 @@
+ 2011-12-14 14:45  paulbeach 
+   M builds/install/arch-specific/darwin/preupgrade-script
+CORE-3862 - Multiple update installs can cause problems.
+
  2011-11-08 16:48  hvlad 
    M src/jrd/dyn_del.epp
 Additional fix for CORE-3557 : AV in engine when preparing query against dropping table
