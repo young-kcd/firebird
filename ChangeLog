@@ -1,3 +1,11 @@
+ 2011-12-14 16:08  dimitr 
+   M src/dsql/gen.cpp
+Fixed (methinks) CORE-3697: String truncation error when selecting from a VIEW with UNION inside. It doesn't look like a good idea to modify dsc_length in place, as it can be used afterwards (e.g. MAKE_desc(field) after GEN_expr(rse), see define_view() in ddl.cpp). We only need to ensure that the generated BLR has the real byte length and it can be achieved with a temporary descriptor copy. Other solutions are also possible but this one seems better at the first glance.
+
+ 2011-12-14 14:49  paulbeach 
+   M builds/install/arch-specific/darwin/preupgrade-script
+CORE-3862 - Multiple update installs can cause problems.
+
  2011-12-11 01:26  asfernandes 
    M src/jrd/blb.cpp
 Backported fix for CORE-3601 - Incorrect TEXT BLOB charset transliteration on VIEW with trigger.
