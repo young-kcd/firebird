@@ -1,3 +1,7 @@
+ 2011-12-14 14:46  paulbeach 
+   M src/install/arch-specific/darwin/preupgrade-script
+CORE-3862 - Multiple update installs can cause problems.
+
  2010-06-06 14:56  asfernandes 
    M src/misc/security.gbak
 Revert some files to binary

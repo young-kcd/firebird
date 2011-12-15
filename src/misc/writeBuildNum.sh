@@ -9,7 +9,7 @@ BuildType=V
 MajorVer=1
 MinorVer=5
 RevNo=6
-BuildNum=5032
+BuildNum=5033
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
 # Normal builds
@@ -91,7 +91,7 @@ cat >$1 <<eof
 MajorVer = $MajorVer
 MinorVer = $MinorVer
 RevNo = $RevNo
-BuildNum=5032
+BuildNum=5033
 BuildType = $BuildType
 BuildSuffix = $BuildSuffix
 
