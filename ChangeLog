@@ -1,3 +1,28 @@
+ 2011-12-14 14:51  paulbeach 
+   M builds/install/arch-specific/darwin/preupgrade-script
+CORE-3862 - Multiple update installs can cause problems.
+
+ 2011-12-14 06:45  dimitr 
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/ConditionalStream.cpp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/FirstRowsStream.cpp
+   M src/jrd/recsrc/FullOuterJoin.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/LockedStream.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/SingularStream.cpp
+   M src/jrd/recsrc/SkipRowsStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+Reworked the fix for CORE-3683: Recursive query with GROUP BY in root part: wrong results if no index exists for fields that are grouped. It resolves some optimization regressions appeared after the original fix.
+
  2011-12-10 01:18  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/jrd/cmp.cpp
