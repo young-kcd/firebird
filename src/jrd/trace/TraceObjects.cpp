@@ -279,11 +279,14 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 
 			// Use descriptor for nulls signaling
 			USHORT null_flag = 0;
-			if (parameter->par_null &&
-				parameter->par_null->par_desc.dsc_address &&
-				*((SSHORT*) parameter->par_null->par_desc.dsc_address))
+			if (parameter->par_null)
 			{
-				null_flag = DSC_null;
+				const UCHAR* msgBuffer = 
+					m_stmt->req_msg_buffers[parameter->par_null->par_message->msg_buffer_number];
+
+				if (*(SSHORT*) (msgBuffer + (IPTR) parameter->par_null->par_desc.dsc_address)) {
+					null_flag = DSC_null;
+				}
 			}
 
 			dsc* desc = NULL;
