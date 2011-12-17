@@ -284,7 +284,6 @@ void RecursiveStream::invalidateRecords(jrd_req* request) const
 	m_inner->invalidateRecords(request);
 }
 
-
 void RecursiveStream::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	RecordStream::findUsedStreams(streams);
