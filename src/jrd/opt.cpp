@@ -117,7 +117,7 @@ static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCH
 static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
 static USHORT find_order(thread_db*, OptimizerBlk*, const UCHAR*, const jrd_nod*);
 static void find_rsbs(RecordSource*, StreamStack*, RsbStack*);
-static void find_used_streams(const RecordSource*, UCHAR*);
+static void find_used_streams(const RecordSource*, UCHAR*, bool = false);
 static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&,
 	jrd_nod**, jrd_nod**, jrd_nod*);
 static bool form_river(thread_db*, OptimizerBlk*, USHORT, const UCHAR*, UCHAR*,
@@ -3701,7 +3701,7 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 }
 
 
-static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
+static void find_used_streams(const RecordSource* rsb, UCHAR* streams, bool expandAll)
 {
 /**************************************
  *
@@ -3720,54 +3720,80 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 
 	const RecordSource* const* ptr;
 	const RecordSource* const* end;
-	USHORT stream = 0;
-	bool found = false;
+	UCHAR local_streams[2]; // only recursive unions have two local streams
+	USHORT nstreams = 0;
 
 	switch (rsb->rsb_type)
 	{
-
-		case rsb_aggregate:
 		case rsb_ext_indexed:
 		case rsb_ext_sequential:
 		case rsb_indexed:
 		case rsb_navigate:
 		case rsb_procedure:
 		case rsb_sequential:
-		case rsb_union:
-		case rsb_recursive_union:
 		case rsb_virt_sequential:
-			stream = rsb->rsb_stream;
-			found = true;
+			local_streams[nstreams++] = rsb->rsb_stream;
+			break;
+
+		case rsb_aggregate:
+			local_streams[nstreams++] = rsb->rsb_stream;
+			if (expandAll) {
+				find_used_streams(rsb->rsb_next, streams, true);
+			}
+			break;
+
+		case rsb_union:
+			local_streams[nstreams++] = rsb->rsb_stream;
+			if (expandAll) {
+				const RecordSource* const* ptr = rsb->rsb_arg;
+				const RecordSource* const* end = ptr + rsb->rsb_count;
+
+				for (; ptr < end; ptr += 2)
+					find_used_streams(*ptr, streams, true);
+			}
+			break;
+
+		case rsb_recursive_union:
+			local_streams[nstreams++] = rsb->rsb_stream;
+			if (expandAll) {
+				const USHORT n = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+				local_streams[nstreams++] = (UCHAR)(U_IPTR) rsb->rsb_arg[n + rsb->rsb_count + 2];
+
+				find_used_streams(rsb->rsb_arg[0], streams, true);
+				find_used_streams(rsb->rsb_arg[2], streams, true);
+			}
 			break;
 
 		case rsb_cross:
 			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++) {
-				find_used_streams(*ptr, streams);
+				find_used_streams(*ptr, streams, expandAll);
 			}
 			break;
 
 		case rsb_merge:
 			for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;	ptr += 2) {
-				find_used_streams(*ptr, streams);
+				find_used_streams(*ptr, streams, expandAll);
 			}
 			break;
 
 		case rsb_left_cross:
-			find_used_streams(rsb->rsb_arg[RSB_LEFT_inner], streams);
-			find_used_streams(rsb->rsb_arg[RSB_LEFT_outer], streams);
+			find_used_streams(rsb->rsb_arg[RSB_LEFT_inner], streams, expandAll);
+			find_used_streams(rsb->rsb_arg[RSB_LEFT_outer], streams, expandAll);
 			break;
 
         default:	// Shut up compiler warnings.
 			break;
 	}
 
-	if (!found && rsb->rsb_next) {
-		find_used_streams(rsb->rsb_next, streams);
+	if (!nstreams && rsb->rsb_next) {
+		find_used_streams(rsb->rsb_next, streams, expandAll);
 	}
 
-	if (found)
+	for (USHORT n = 0; n < nstreams; n++)
 	{
-		found = false;
+		const UCHAR stream = local_streams[n];
+
+		bool found = false;
 		for (USHORT i = 1; i <= streams[0]; i++)
 		{
 			if (stream == streams[i])
@@ -3776,6 +3802,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 				break;
 			}
 		}
+
 		if (!found)
 		{
 			fb_assert(streams[0] < MAX_STREAMS);
@@ -5989,30 +6016,25 @@ static RecordSource* gen_union(thread_db* tdbb,
 	DEV_BLKCHK(union_node, type_nod);
 
 	SET_TDBB(tdbb);
+	CompilerScratch* csb = opt->opt_csb;
+
+	stream_array_t inner_streams;
+	inner_streams[0] = nstreams;
+	memcpy(inner_streams + 1, streams, nstreams);
+
 	jrd_nod* clauses = union_node->nod_arg[e_uni_clauses];
 	const USHORT count = clauses->nod_count;
 	const bool recurse = (union_node->nod_flags & nod_recurse);
-	CompilerScratch* csb = opt->opt_csb;
-	RecordSource* rsb =
-		FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1 + (recurse ? 2 : 0)) RecordSource();
-	if (recurse)
-	{
-		rsb->rsb_type   = rsb_recursive_union;
-		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb_recurse));
-	}
-	else
-	{
-		rsb->rsb_type   = rsb_union;
-		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
-	}
-	rsb->rsb_count = count;
-	rsb->rsb_stream = (UCHAR)(IPTR) union_node->nod_arg[e_uni_stream];
-	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
-	RecordSource** rsb_ptr = rsb->rsb_arg;
+
+	const ULONG impure = recurse ?
+		CMP_impure(csb, sizeof(struct irsb_recurse)) :
+		CMP_impure(csb, sizeof(struct irsb));
+
+	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
+
 	jrd_nod** ptr = clauses->nod_arg;
 	for (const jrd_nod* const* const end = ptr + count; ptr < end;)
 	{
-
 		RecordSelExpr* rse = (RecordSelExpr*) * ptr++;
 		jrd_nod* map = (jrd_nod*) * ptr++;
 
@@ -6024,8 +6046,12 @@ static RecordSource* gen_union(thread_db* tdbb,
 			gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
 		}
 
-		*rsb_ptr++ = OPT_compile(tdbb, csb, rse, &deliverStack);
-		*rsb_ptr++ = (RecordSource*) map;
+		RecordSource* rsb = OPT_compile(tdbb, csb, rse, &deliverStack);
+		rsbs.add(rsb);
+
+		if (recurse && ptr != clauses->nod_arg) {
+			find_used_streams(rsb, inner_streams, true);
+		}
 
 		// hvlad: activate recursive union itself after processing first (non-recursive)
 		// member to allow recursive members be optimized
@@ -6034,6 +6060,25 @@ static RecordSource* gen_union(thread_db* tdbb,
 			const SSHORT stream = (USHORT)(IPTR) union_node->nod_arg[STREAM_INDEX(union_node)];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 		}
+	}
+
+	nstreams = inner_streams[0];
+	streams = inner_streams + 1;
+
+	RecordSource* rsb =
+		FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1 + (recurse ? 2 : 0)) RecordSource();
+	rsb->rsb_type = recurse ? rsb_recursive_union : rsb_union;
+	rsb->rsb_impure = impure;
+	rsb->rsb_count = count;
+	rsb->rsb_stream = (UCHAR)(IPTR) union_node->nod_arg[e_uni_stream];
+	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
+	RecordSource** rsb_ptr = rsb->rsb_arg;
+
+	// Save the inner rsbs and corresponding maps
+
+	for (size_t i = 0; i < rsbs.getCount(); i++) {
+		*rsb_ptr++ = rsbs[i]; // generated record source
+		*rsb_ptr++ = (RecordSource*) clauses->nod_arg[i * 2 + 1]; // map
 	}
 
 	// Save the count and numbers of the streams that make up the union
