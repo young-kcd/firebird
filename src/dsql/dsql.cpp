@@ -2235,15 +2235,15 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 		child->addFlags(DsqlCompiledStatement::FLAG_ORPHAN);
 		child->setParentRequest(NULL);
 
-		Jrd::ContextPoolHolder context(tdbb, &child->getPool());
-		release_statement(child);
+		// hvlad: lines below is commented out as
+		// - child is already unlinked from its parent request
+		// - we should not free child's sql text until its owner request is alive
+		// It seems to me we should destroy owner request here, not a child 
+		// statement - as it always was before 
+		
+		//Jrd::ContextPoolHolder context(tdbb, &child->getPool());
+		//release_statement(child);
 	}
-
-	// For requests that are linked to a parent, unlink it
-
-	const DsqlCompiledStatement* statement = request->getStatement();
-
-	release_statement(const_cast<DsqlCompiledStatement*>(statement));
 
 	// If the request had an open cursor, close it
 
@@ -2281,6 +2281,9 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 		{
 		}
 	}
+
+	const DsqlCompiledStatement* statement = request->getStatement();
+	release_statement(const_cast<DsqlCompiledStatement*>(statement));
 
 	// Release the entire request if explicitly asked for
 
