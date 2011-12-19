@@ -131,6 +131,7 @@
 
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
+#include "../common/dllinst.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -3371,7 +3372,7 @@ int GDS_SHUTDOWN(unsigned int timeout)
 				attach_count, database_count, svc_count);
 		}
 
-		if (timeout)
+		if (timeout && !bEmbedded)
 		{
 			Semaphore shutdown_semaphore;
 

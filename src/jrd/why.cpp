@@ -911,16 +911,16 @@ namespace
 		ISC_STATUS* local_vector;
 	};
 
-#ifdef UNIX
-	int killed;
-	bool procInt, procTerm;
-
 	const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
 
 	void atExitShutdown()
 	{
 		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
 	}
+
+#ifdef UNIX
+	int killed;
+	bool procInt, procTerm;
 
 	GlobalPtr<SignalSafeSemaphore> shutdownSemaphore;
 
@@ -1031,6 +1031,13 @@ namespace
 		{
 #ifdef UNIX
 			static GlobalPtr<CtrlCHandler> ctrlCHandler;
+#elif defined WIN_NT
+			static volatile bool registered = false;
+			if (!registered)
+			{
+				registered = true;
+				InstanceControl::registerShutdown(atExitShutdown);
+			}
 #endif //UNIX
 			if (att)
 			{

@@ -223,7 +223,7 @@ namespace Firebird
 
 	void InstanceControl::registerShutdown(FPTR_VOID shutdown)
 	{
-		fb_assert(!gdsShutdown || !shutdown);
+		fb_assert(!gdsShutdown || !shutdown || gdsShutdown == shutdown);
 		gdsShutdown = shutdown;
 	}
 

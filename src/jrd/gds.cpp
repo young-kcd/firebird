@@ -997,6 +997,9 @@ const int SECS_PER_DAY	= SECS_PER_HOUR * 24;
 class CleanupTraceHandles
 {
 public:
+	CleanupTraceHandles(Firebird::MemoryPool&)
+	{};
+
 	~CleanupTraceHandles()
 	{
 		CloseHandle(trace_mutex_handle);
@@ -1017,7 +1020,7 @@ public:
 HANDLE CleanupTraceHandles::trace_mutex_handle = CreateMutex(NULL, FALSE, "firebird_trace_mutex");
 HANDLE CleanupTraceHandles::trace_file_handle = INVALID_HANDLE_VALUE;
 
-CleanupTraceHandles cleanupHandles;
+Firebird::GlobalPtr<CleanupTraceHandles> cleanupHandles;
 
 #endif
 
