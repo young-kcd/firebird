@@ -3372,7 +3372,11 @@ int GDS_SHUTDOWN(unsigned int timeout)
 				attach_count, database_count, svc_count);
 		}
 
+#ifdef WIN_NT
 		if (timeout && !bEmbedded)
+#else
+		if (timeout)
+#endif
 		{
 			Semaphore shutdown_semaphore;
 
