@@ -40,6 +40,7 @@
 
 // gstat directly reads database files, therefore
 using namespace Ods;
+using Firebird::Guid;
 
 void PPG_print_header(const header_page* header, ULONG page,
 					  bool nocreation, Firebird::UtilSvc* uSvc)
@@ -255,8 +256,8 @@ void PPG_print_header(const header_page* header, ULONG page,
 
 		case HDR_backup_guid:
 		{
-			char buff[GUID_BUFF_SIZE];
-			GuidToString(buff, reinterpret_cast<const FB_GUID*>(p + 2), true);
+			char buff[Firebird::GUID_BUFF_SIZE];
+			Firebird::GuidToString(buff, reinterpret_cast<const Guid*>(p + 2), Guid::STYLE_NBACKUP);
 			uSvc->printf(false, "\tDatabase backup GUID:\t%s\n", buff);
 			break;
 		}

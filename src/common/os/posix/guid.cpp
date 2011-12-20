@@ -37,6 +37,9 @@
 #include <stdio.h>
 #include <errno.h>
 
+namespace Firebird {
+
+
 void GenerateRandomBytes(void* buffer, size_t size)
 {
 	// do not use /dev/random because it may return lesser data than we need.
@@ -71,7 +74,12 @@ void GenerateRandomBytes(void* buffer, size_t size)
 	}
 }
 
-void GenerateGuid(FB_GUID* guid)
+void GenerateGuid(Guid* guid)
 {
-	GenerateRandomBytes(guid, sizeof(FB_GUID));
+	GenerateRandomBytes(guid, sizeof(Guid));
+	guid->data3 = (4 << 12) | (guid->data3 & 0xFFF);	// version 4
+	guid->data4[0] = 0x80 | (guid->data4[0] & 0x3F);	// variant
 }
+
+
+}	// namespace

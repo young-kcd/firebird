@@ -253,8 +253,8 @@ struct inc_header
 	SSHORT version;			// Incremental backup format version.
 	SSHORT level;			// Backup level.
 	// \\\\\ ---- this is 8 bytes. should not cause alignment problems
-	FB_GUID backup_guid;	// GUID of this backup
-	FB_GUID prev_guid;		// GUID of previous level backup
+	Guid backup_guid;		// GUID of this backup
+	Guid prev_guid;			// GUID of previous level backup
 	ULONG page_size;		// Size of pages in the database and backup file
 	// These fields are currently filled, but not used. May be used in future versions
 	ULONG backup_scn;		// SCN of this backup
@@ -925,7 +925,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		--db_size;
 		page_reads++;
 
-		FB_GUID backup_guid;
+		Guid backup_guid;
 		bool guid_found = false;
 		const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
 		while (true)
@@ -933,9 +933,9 @@ void NBackup::backup_database(int level, const PathName& fname)
 			switch (*p)
 			{
 			case Ods::HDR_backup_guid:
-				if (p[1] != sizeof(FB_GUID))
+				if (p[1] != sizeof(Guid))
 					break;
-				memcpy(&backup_guid, p + 2, sizeof(FB_GUID));
+				memcpy(&backup_guid, p + 2, sizeof(Guid));
 				guid_found = true;
 				break;
 			case Ods::HDR_difference_file:
@@ -957,7 +957,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 			bh.version = 1;
 			bh.level = level;
 			bh.backup_guid = backup_guid;
-			StringToGuid(&bh.prev_guid, prev_guid, true);
+			StringToGuid(&bh.prev_guid, prev_guid, Guid::STYLE_NBACKUP);
 			bh.page_size = header->hdr_page_size;
 			bh.backup_scn = backup_scn;
 			bh.prev_scn = prev_scn;
@@ -1115,7 +1115,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		in_sqlda->sqlvar[0].sqldata = (char*) &level;
 		in_sqlda->sqlvar[0].sqlind = &null_flag;
 		char temp[GUID_BUFF_SIZE];
-		GuidToString(temp, &backup_guid, true);
+		GuidToString(temp, &backup_guid, Guid::STYLE_NBACKUP);
 		in_sqlda->sqlvar[1].sqldata = temp;
 		in_sqlda->sqlvar[1].sqlind = &null_flag;
 		in_sqlda->sqlvar[2].sqldata = (char*) &backup_scn;
@@ -1184,7 +1184,7 @@ void NBackup::restore_database(const BackupFiles& files)
 	UCHAR *page_buffer = NULL;
 	try {
 		int curLevel = 0;
-		FB_GUID prev_guid;
+		Guid prev_guid;
 		while (true)
 		{
 			if (!filecount)
@@ -1266,7 +1266,7 @@ void NBackup::restore_database(const BackupFiles& files)
 						Arg::Num(bakheader.level) << bakname.c_str() << Arg::Num(curLevel));
 				}
 				// We may also add SCN check, but GUID check covers this case too
-				if (memcmp(&bakheader.prev_guid, &prev_guid, sizeof(FB_GUID)) != 0)
+				if (memcmp(&bakheader.prev_guid, &prev_guid, sizeof(Guid)) != 0)
 					status_exception::raise(Arg::Gds(isc_nbackup_wrong_orderbk) << bakname.c_str());
 
 				delete_database = true;
@@ -1330,9 +1330,9 @@ void NBackup::restore_database(const BackupFiles& files)
 					switch (*p)
 					{
 					case Ods::HDR_backup_guid:
-						if (p[1] != sizeof(FB_GUID))
+						if (p[1] != sizeof(Guid))
 							break;
-						memcpy(&prev_guid, p + 2, sizeof(FB_GUID));
+						memcpy(&prev_guid, p + 2, sizeof(Guid));
 						guid_found = true;
 						break;
 					case Ods::HDR_difference_file:

@@ -103,11 +103,11 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 
 		if (interactive)
 		{
-			FB_GUID guid;
+			Guid guid;
 			GenerateGuid(&guid);
 
 			char* buff = session.ses_logfile.getBuffer(GUID_BUFF_SIZE);
-			GuidToString(buff, &guid, false);
+			GuidToString(buff, &guid, Guid::STYLE_BROKEN);
 
 			session.ses_logfile.insert(0, "fb_trace.");
 		}

@@ -38,6 +38,8 @@
 #include "../common/os/guid.h"
 #include "fb_exception.h"
 
+namespace Firebird {
+
 
 void GenerateRandomBytes(void* buffer, size_t size)
 {
@@ -70,9 +72,12 @@ void GenerateRandomBytes(void* buffer, size_t size)
 	CryptReleaseContext(hProv, 0);
 }
 
-void GenerateGuid(FB_GUID* guid)
+void GenerateGuid(Guid* guid)
 {
 	const HRESULT error = CoCreateGuid((GUID*) guid);
 	if (!SUCCEEDED(error))
 		Firebird::system_call_failed::raise("CoCreateGuid", error);
 }
+
+
+}	// namespace

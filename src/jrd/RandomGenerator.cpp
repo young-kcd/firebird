@@ -25,14 +25,14 @@
 #include "../jrd/RandomGenerator.h"
 #include "../common/os/guid.h"
 
+using namespace Firebird;
+using namespace Jrd;
 
-namespace Jrd {
 
 RandomGenerator::RandomGenerator()
 	: bufferPos(BUFFER_SIZE)
 {
 }
-
 
 void RandomGenerator::getBytes(void* p, size_t size)
 {
@@ -54,6 +54,3 @@ void RandomGenerator::getBytes(void* p, size_t size)
 		size -= size2;
 	}
 }
-
-} // namespace
-

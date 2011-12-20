@@ -246,10 +246,36 @@ Function:
 Format:
     CHAR_TO_UUID( <string> )
 
+Notes:
+    If you have not used this function before, its usage is discouraged. CHAR_TO_UUID2 superseds it.
+
 Example:
     select char_to_uuid('93519227-8D50-4E47-81AA-8F6678C096A1') from rdb$database;
 
-See also: GEN_UUID and UUID_TO_CHAR
+See also: GEN_UUID, CHAR_TO_UUID2, UUID_TO_CHAR and UUID_TO_CHAR2
+
+
+-------------
+CHAR_TO_UUID2
+-------------
+
+Function:
+    Converts the CHAR(32) ASCII representation of an UUID
+    (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX) to the CHAR(16) OCTETS
+    representation (optimized for storage).
+
+Format:
+    CHAR_TO_UUID2( <string> )
+
+Notes:
+    This function superseds CHAR_TO_UUID. The difference between them is that CHAR_TO_UUID does a
+    byte-by-byte conversion of the ASCII string to the OCTETS one, while CHAR_TO_UUID2 converts
+    a RFC-4122 compliant ASCII UUID to a compliant OCTETS string.
+
+Example:
+    select char_to_uuid2('93519227-8D50-4E47-81AA-8F6678C096A1') from rdb$database;
+
+See also: GEN_UUID, UUID_TO_CHAR2
 
 
 ---
@@ -405,10 +431,17 @@ Function:
 Format:
     GEN_UUID()
 
+Notes:
+    In Firebird 2.5.0 and 2.5.1, GEN_UUID was returning completely random strings. This is not
+    compliant with the RFC-4122 (UUID specification).
+    In Firebird 2.5.2 and 3.0 this was fixed. Now GEN_UUID returns a compliant UUID version 4
+    string, where some bits are reserved and the others are random. The string format of a compliant
+    UUID is XXXXXXXX-XXXX-4XXX-YXXX-XXXXXXXXXXXX, where 4 is fixed (version) and Y is 8, 9, A or B.
+
 Example:
     insert into records (id) value (gen_uuid());
 
-See also: CHAR_TO_UUID and UUID_TO_CHAR
+See also: CHAR_TO_UUID, UUID_TO_CHAR, CHAR_TO_UUID2, UUID_TO_CHAR2
 
 
 ----
@@ -840,7 +873,32 @@ Function:
 Format:
     UUID_TO_CHAR( <string> )
 
+Notes:
+    If you have not used this function before, its usage is discouraged. UUID_TO_CHAR2 superseds it.
+
 Example:
     select uuid_to_char(gen_uuid()) from rdb$database;
 
-See also: GEN_UUID and CHAR_TO_UUID
+See also: GEN_UUID, UUID_TO_CHAR2, CHAR_TO_UUID and CHAR_TO_UUID2
+
+
+-------------
+UUID_TO_CHAR2
+-------------
+
+Function:
+    Converts a CHAR(16) OCTETS UUID (that's returned by GEN_UUID) to the
+    CHAR(32) ASCII representation (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX).
+
+Format:
+    UUID_TO_CHAR2( <string> )
+
+Notes:
+    This function superseds UUID_TO_CHAR. The difference between them is that UUID_TO_CHAR does a
+    byte-by-byte conversion of the OCTETS string to the ASCII one, while UUID_TO_CHAR2 converts
+    a RFC-4122 compliant OCTETS UUID to a compliant ASCII string.
+
+Example:
+    select uuid_to_char2(gen_uuid()) from rdb$database;
+
+See also: GEN_UUID, CHAR_TO_UUID2

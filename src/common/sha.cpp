@@ -398,7 +398,7 @@ void Jrd::CryptSupport::hash(Firebird::string& hashValue, const Firebird::string
 void Jrd::CryptSupport::random(Firebird::string& randomValue, size_t length)
 {
 	BinHash binRand;
-	GenerateRandomBytes(binRand.getBuffer(length), length);
+	Firebird::GenerateRandomBytes(binRand.getBuffer(length), length);
 	base64(randomValue, binRand);
 	randomValue.resize(length, '$');
 }

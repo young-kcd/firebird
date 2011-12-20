@@ -298,7 +298,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, tdbb->tdbb_status_vector))
 			ERR_punt();
 		NBAK_TRACE(("Set backup state in header"));
-		FB_GUID guid;
+		Guid guid;
 		GenerateGuid(&guid);
 		// Set state in database header page. All changes are written to main database file yet.
 		CCH_MARK_MUST_WRITE(tdbb, &window);

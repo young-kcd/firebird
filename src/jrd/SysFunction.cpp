@@ -1511,8 +1511,8 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 	buffer[38] = '\0';
 	memcpy(buffer + 1, data, GUID_BODY_SIZE);
 
-	FB_GUID guid;
-	StringToGuid(&guid, buffer, false);
+	Guid guid;
+	StringToGuid(&guid, buffer, (Guid::Style)(IPTR) function->misc);
 
 	dsc result;
 	result.makeText(16, ttype_binary, reinterpret_cast<UCHAR*>(guid.data));
@@ -2043,7 +2043,7 @@ dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 0);
 
-	FB_GUID guid;
+	Guid guid;
 	fb_assert(sizeof(guid.data) == 16);
 
 	GenerateGuid(&guid);
@@ -3611,16 +3611,16 @@ dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValue
 	UCHAR* data;
 	const USHORT len = MOV_get_string(value, &data, NULL, 0);
 
-	if (len != sizeof(FB_GUID))
+	if (len != sizeof(Guid))
 	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_binuuid_wrongsize) <<
-										Arg::Num(sizeof(FB_GUID)) <<
+										Arg::Num(sizeof(Guid)) <<
 										Arg::Str(function->name));
 	}
 
 	char buffer[GUID_BUFF_SIZE];
-	GuidToString(buffer, reinterpret_cast<const FB_GUID*>(data), false);
+	GuidToString(buffer, reinterpret_cast<const Guid*>(data), (Guid::Style)(IPTR) function->misc);
 
 	dsc result;
 	result.makeText(GUID_BODY_SIZE, ttype_ascii, reinterpret_cast<UCHAR*>(buffer) + 1);
@@ -3655,7 +3655,8 @@ const SysFunction SysFunction::functions[] =
 		{"BIN_XOR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor},
 		{"CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
-		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
+		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, (void*)(IPTR) Guid::STYLE_BROKEN},
+		{"CHAR_TO_UUID2", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, (void*)(IPTR) Guid::STYLE_UUID},
 		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCos},
 		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCosh},
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
@@ -3692,7 +3693,8 @@ const SysFunction SysFunction::functions[] =
 		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTan},
 		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
-		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
+		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, (void*)(IPTR) Guid::STYLE_BROKEN},
+		{"UUID_TO_CHAR2", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, (void*)(IPTR) Guid::STYLE_UUID},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
 	};
 
