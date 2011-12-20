@@ -1,3 +1,8 @@
+ 2011-12-19 10:01  hvlad 
+   M src/dsql/dsql.cpp
+Fixed AV in trace when statement free event is traced and it is first traced event for a given statement (i.e. prepare\execution was not traced before).
+Adriano, please review.
+
  2011-12-17 01:34  asfernandes 
    M src/jrd/recsrc/RecursiveStream.cpp
    M src/jrd/trace/TraceObjects.cpp
