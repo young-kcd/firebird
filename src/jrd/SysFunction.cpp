@@ -68,7 +68,9 @@ enum Function
 	funLPad,
 	funRPad,
 	funLnat,
-	funLog10
+	funLog10,
+	funUuidBroken,
+	funUuidRfc
 };
 
 enum TrigonFunction
@@ -1432,7 +1434,36 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	memcpy(buffer + 1, data, GUID_BODY_SIZE);
 
 	FB_GUID guid;
-	StringToGuid(&guid, buffer, false);
+
+	switch ((Function)(IPTR) function->misc)
+	{
+		case funUuidBroken:
+			StringToGuid(&guid, buffer, false);
+			break;
+
+		case funUuidRfc:
+		{
+			USHORT bytes[16];
+			sscanf(buffer, GUID_NEW_FORMAT,
+				&bytes[0], &bytes[1], &bytes[2], &bytes[3],
+				&bytes[4], &bytes[5], &bytes[6], &bytes[7],
+				&bytes[8], &bytes[9], &bytes[10], &bytes[11],
+				&bytes[12], &bytes[13], &bytes[14], &bytes[15]);
+
+			guid.data1 = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+			guid.data2 = (bytes[4] << 8) | bytes[5];
+			guid.data3 = (bytes[6] << 8) | bytes[7];
+			guid.data4[0] = bytes[8];
+			guid.data4[1] = bytes[9];
+			guid.data4[2] = bytes[10];
+			guid.data4[3] = bytes[11];
+			guid.data4[4] = bytes[12];
+			guid.data4[5] = bytes[13];
+			guid.data4[6] = bytes[14];
+			guid.data4[7] = bytes[15];
+			break;
+		}
+	}
 
 	dsc result;
 	result.makeText(16, ttype_binary, reinterpret_cast<UCHAR*>(guid.data));
@@ -3288,8 +3319,27 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 										Arg::Str(function->name));
 	}
 
+	const const FB_GUID* guid = reinterpret_cast<const FB_GUID*>(data);
 	char buffer[GUID_BUFF_SIZE];
-	GuidToString(buffer, reinterpret_cast<const FB_GUID*>(data), false);
+
+	switch ((Function)(IPTR) function->misc)
+	{
+		case funUuidBroken:
+			GuidToString(buffer, guid, false);
+			break;
+
+		case funUuidRfc:
+			sprintf(buffer, GUID_NEW_FORMAT,
+				USHORT((guid->data1 >> 24) & 0xFF), USHORT((guid->data1 >> 16) & 0xFF),
+				USHORT((guid->data1 >> 8) & 0xFF), USHORT(guid->data1 & 0xFF),
+				USHORT((guid->data2 >> 8) & 0xFF), USHORT(guid->data2 & 0xFF),
+				USHORT((guid->data3 >> 8) & 0xFF), USHORT(guid->data3 & 0xFF),
+				USHORT(guid->data4[0]), USHORT(guid->data4[1]),
+				USHORT(guid->data4[2]), USHORT(guid->data4[3]),
+				USHORT(guid->data4[4]), USHORT(guid->data4[5]),
+				USHORT(guid->data4[6]), USHORT(guid->data4[7]));
+			break;
+	}
 
 	dsc result;
 	result.makeText(GUID_BODY_SIZE, ttype_ascii, reinterpret_cast<UCHAR*>(buffer) + 1);
@@ -3324,7 +3374,8 @@ const SysFunction SysFunction::functions[] =
 		{"BIN_XOR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor},
 		{"CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
-		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
+		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, (void*) funUuidBroken},
+		{"CHAR_TO_UUID2", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, (void*) funUuidRfc},
 		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCos},
 		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCosh},
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
@@ -3359,7 +3410,8 @@ const SysFunction SysFunction::functions[] =
 		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTan},
 		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
-		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
+		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, (void*) funUuidBroken},
+		{"UUID_TO_CHAR2", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, (void*) funUuidRfc},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
 	};
 

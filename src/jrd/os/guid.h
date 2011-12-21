@@ -44,7 +44,18 @@ const char* const GUID_NEW_FORMAT =
 
 struct FB_GUID
 {
-	USHORT data[8];
+	union
+	{
+		USHORT data[8];
+
+		struct	// Compatible with Win32 GUID struct layout.
+		{
+			ULONG data1;
+			USHORT data2;
+			USHORT data3;
+			UCHAR data4[8];
+		};
+	};
 };
 
 void GenerateRandomBytes(void* buffer, size_t size);
@@ -63,14 +74,14 @@ inline void GuidToString(char* buffer, const FB_GUID* guid, bool legacy)
 	else
 	{
 		sprintf(buffer, GUID_NEW_FORMAT,
-			guid->data[0] & 0xFF, guid->data[0] >> 8,
-			guid->data[1] & 0xFF, guid->data[1] >> 8,
-			guid->data[2] & 0xFF, guid->data[2] >> 8,
-			guid->data[3] & 0xFF, guid->data[3] >> 8,
-			guid->data[4] & 0xFF, guid->data[4] >> 8,
-			guid->data[5] & 0xFF, guid->data[5] >> 8,
-			guid->data[6] & 0xFF, guid->data[6] >> 8,
-			guid->data[7] & 0xFF, guid->data[7] >> 8);
+			USHORT(guid->data[0] & 0xFF), USHORT(guid->data[0] >> 8),
+			USHORT(guid->data[1] & 0xFF), USHORT(guid->data[1] >> 8),
+			USHORT(guid->data[2] & 0xFF), USHORT(guid->data[2] >> 8),
+			USHORT(guid->data[3] & 0xFF), USHORT(guid->data[3] >> 8),
+			USHORT(guid->data[4] & 0xFF), USHORT(guid->data[4] >> 8),
+			USHORT(guid->data[5] & 0xFF), USHORT(guid->data[5] >> 8),
+			USHORT(guid->data[6] & 0xFF), USHORT(guid->data[6] >> 8),
+			USHORT(guid->data[7] & 0xFF), USHORT(guid->data[7] >> 8));
 	}
 }
 
