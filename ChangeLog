@@ -1,3 +1,7 @@
+ 2011-12-20 12:11  hvlad 
+   M src/jrd/jrd.cpp
+POSIX related correction for CORE-3671, thanks to Alex
+
  2011-12-19 16:01  hvlad 
    M src/common/classes/init.cpp
    M src/jrd/gds.cpp
