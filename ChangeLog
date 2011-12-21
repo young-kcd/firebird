@@ -1,3 +1,23 @@
+ 2011-12-21 00:51  asfernandes 
+   M src/dsql/dsql.cpp
+Misc.
+
+ 2011-12-20 14:30  asfernandes 
+   M doc/sql.extensions/README.builtin_functions.txt
+   M src/common/os/guid.h
+   M src/common/os/posix/guid.cpp
+   M src/common/os/win32/guid.cpp
+   M src/common/sha.cpp
+   M src/dsql/parse.y
+   M src/jrd/RandomGenerator.cpp
+   M src/jrd/SysFunction.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/trace/TraceService.cpp
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/keywords.cpp
+Fixed CORE-3238 - Makes GEN_UUID return a compliant RFC-4122 binary UUID and introduce CHAR_TO_UUID2 and UUID_TO_CHAR2 to convert UUIDs from/to string also complying with the RFC.
+
  2011-12-19 10:01  hvlad 
    M src/dsql/dsql.cpp
 Fixed AV in trace when statement free event is traced and it is first traced event for a given statement (i.e. prepare\execution was not traced before).
