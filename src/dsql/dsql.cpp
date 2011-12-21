@@ -2238,9 +2238,9 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 		// hvlad: lines below is commented out as
 		// - child is already unlinked from its parent request
 		// - we should not free child's sql text until its owner request is alive
-		// It seems to me we should destroy owner request here, not a child 
-		// statement - as it always was before 
-		
+		// It seems to me we should destroy owner request here, not a child
+		// statement - as it always was before
+
 		//Jrd::ContextPoolHolder context(tdbb, &child->getPool());
 		//release_statement(child);
 	}
