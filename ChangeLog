@@ -1,3 +1,13 @@
+ 2011-12-21 14:45  asfernandes 
+   M builds/make.new/config/install-sh
+   M doc/sql.extensions/README.builtin_functions.txt
+   M src/dsql/keywords.cpp
+   M src/dsql/parse.y
+   M src/jrd/SysFunction.cpp
+   M src/jrd/os/guid.h
+   M src/jrd/os/posix/guid.cpp
+Backport CORE-3238 - Make GEN_UUID return a compliant RFC-4122 binary UUID and introduce CHAR_TO_UUID2 and UUID_TO_CHAR2 to convert UUIDs from/to string also complying with the RFC.
+
  2011-12-20 12:11  hvlad 
    M src/jrd/jrd.cpp
 POSIX related correction for CORE-3671, thanks to Alex
