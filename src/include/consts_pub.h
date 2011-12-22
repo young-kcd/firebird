@@ -623,7 +623,7 @@
 #define fb_shutrsn_svc_stopped			  -1
 #define fb_shutrsn_no_connection		  -2
 #define fb_shutrsn_app_stopped			  -3
-#define fb_shutrsn_device_removed		  -4
+//#define fb_shutrsn_device_removed		  -4
 #define fb_shutrsn_signal				  -5
 #define fb_shutrsn_services				  -6
 #define fb_shutrsn_exit_called			  -7

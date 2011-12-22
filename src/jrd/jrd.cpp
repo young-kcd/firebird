@@ -3924,7 +3924,7 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 		ThreadContextHolder tdbb;
 
 		ULONG attach_count, database_count, svc_count;
-		JRD_num_attachments(NULL, 0, JRD_info_none, &attach_count, &database_count, &svc_count);
+		JRD_enum_attachments(NULL, attach_count, database_count, svc_count);
 
 		if (attach_count > 0 || svc_count > 0)
 		{
@@ -6186,53 +6186,25 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 }
 
 
-UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
-						  ULONG* atts, ULONG* dbs, ULONG* svcs)
+void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& svcs)
 {
 /**************************************
  *
- *	J R D _ n u m _ a t t a c h m e n t s
+ *	J R D _ e n u m _ a t t a c h m e n t s
  *
  **************************************
  *
  * Functional description
  *	Count the number of active databases and
- *	attachments.  If flag is set then put
- *	what it says into buf, if it fits. If it does not fit
- *	then allocate local buffer, put info into there, and
- *	return pointer to caller (in this case a caller must
- *	release memory allocated for local buffer).
+ *	attachments.
  *
  **************************************/
-
-	// protect against NULL value for buf
-
-	UCHAR* lbuf = buf;
-	if (!lbuf)
-		buf_len = 0;
-
-#ifdef WIN_NT
-	// Check that the buffer is big enough for the requested
-	// information.  If not, unset the flag
-
-	if (flag == JRD_info_drivemask)
-	{
-		if (buf_len < sizeof(ULONG))
-		{
-		    lbuf = (UCHAR*) gds__alloc((SLONG) (sizeof(ULONG)));
-			if (!lbuf)
-				flag = JRD_info_none;
-		}
-	}
-#endif
-
-	ULONG num_att = 0;
-	ULONG drive_mask = 0L;
-	ULONG total = 0;
-	SortedObjectsArray<PathName> dbFiles(*getDefaultMemoryPool());
+	atts = dbs = svcs = 0;
 
 	try
 	{
+		PathNameList dbFiles(*getDefaultMemoryPool());
+
 		MutexLockGuard guard(databases_mutex);
 
 		// Zip through the list of databases and count the number of local
@@ -6241,45 +6213,27 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 
 		for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 		{
-			SyncLockGuard guard(&dbb->dbb_sync, SYNC_SHARED, "JRD_num_attachments");
-
-#ifdef WIN_NT
-			// Get drive letters for db files
-
-			if (flag == JRD_info_drivemask)
-			{
-				const PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				for (const jrd_file* files = pageSpace->file; files; files = files->fil_next)
-					ExtractDriveLetter(files->fil_string, &drive_mask);
-			}
-#endif
+			SyncLockGuard guard(&dbb->dbb_sync, SYNC_SHARED, "JRD_enum_attachments");
 
 			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)))
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
-				total += sizeof(USHORT) + dbb->dbb_filename.length();
 
 				for (const Jrd::Attachment* attach = dbb->dbb_attachments; attach;
 					 attach = attach->att_next)
 				{
-					num_att++;
-
-#ifdef WIN_NT
-					// Get drive letters for temp directories
-
-					if (flag == JRD_info_drivemask)
-					{
-						const TempDirectoryList dirList;
-						for (size_t i = 0; i < dirList.getCount(); i++)
-						{
-							const PathName& path = dirList[i];
-							ExtractDriveLetter(path.c_str(), &drive_mask);
-						}
-					}
-#endif
+					atts++;
 				}
 			}
+		}
+
+		dbs = (ULONG) dbFiles.getCount();
+		svcs = Service::totalCount();
+
+		if (dbList)
+		{
+			*dbList = dbFiles;
 		}
 	}
 	catch (const Exception&)
@@ -6289,74 +6243,6 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 		// we really have no way to notify world about mutex problem.
 		//		AP. 2008.
 	}
-
-	const ULONG num_dbs = dbFiles.getCount();
-
-	*atts = num_att;
-	*dbs = num_dbs;
-
-	if (num_dbs > 0)
-	{
-		if (flag == JRD_info_dbnames)
-		{
-			if (buf_len < (sizeof(USHORT) + total))
-			{
-				lbuf = (UCHAR*) gds__alloc(sizeof(USHORT) + total);
-			}
-			UCHAR* lbufp = lbuf;
-			if (lbufp)
-			{
-				/*  Put db info into buffer. Format is as follows:
-
-				   number of dbases sizeof (USHORT)
-				   1st db name length   sizeof (USHORT)
-				   1st db name      sizeof (TEXT) * length
-				   2nd db name length
-				   2nd db name
-				   ...
-				   last db name length
-				   last db name
-				 */
-
-				 fb_assert(num_dbs < MAX_USHORT);
-				*lbufp++ = (UCHAR) num_dbs;
-				*lbufp++ = (UCHAR) (num_dbs >> 8);
-
-				for (size_t n = 0; n < num_dbs; ++n)
-				{
-					const USHORT dblen = dbFiles[n].length();
-					*lbufp++ = (UCHAR) dblen;
-					*lbufp++ = (UCHAR) (dblen >> 8);
-					memcpy(lbufp, dbFiles[n].c_str(), dblen);
-					lbufp += dblen;
-				}
-			}
-		}
-	}
-
-#ifdef WIN_NT
-	if (flag == JRD_info_drivemask)
-		*(ULONG*) lbuf = drive_mask;
-#endif
-
-	// CVC: Apparently, the original condition will leak memory, because flag
-	// may be JRD_info_drivemask and memory could be allocated for that purpose,
-	// as few as sizeof(ULONG), but a leak is a leak! I added the ifdef below.
-	if (num_dbs == 0)
-	{
-#ifdef WIN_NT
-		if (flag == JRD_info_drivemask && lbuf != buf)
-		    gds__free(lbuf);
-#endif
-		lbuf = NULL;
-	}
-
-	if (svcs)
-	{
-		*svcs = Service::totalCount();
-	}
-
-	return lbuf;
 }
 
 

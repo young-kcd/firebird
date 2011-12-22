@@ -1118,13 +1118,12 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		case isc_info_svc_svr_db_info:
 			if (svc_user_flag & SVC_user_dba)
 			{
-				UCHAR dbbuf[1024];
-				ULONG num_dbs = 0;
-				ULONG num_att = 0;
+				PathNameList databases(*getDefaultMemoryPool());
+				ULONG num_dbs, num_att, num_svc;
+				JRD_enum_attachments(&databases, num_att, num_dbs, num_svc);
+				fb_assert(num_dbs == databases.getCount());
 
 				*info++ = item;
-				UCHAR* const ptr = JRD_num_attachments(dbbuf, sizeof(dbbuf),
-					JRD_info_dbnames, &num_att, &num_dbs, NULL);
 				// Move the number of attachments into the info buffer
 				if (!ck_space_for_numeric(info, end))
 					return 0;
@@ -1138,27 +1137,15 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				ADD_SPB_NUMERIC(info, num_dbs);
 
 				// Move db names into the info buffer
-				const UCHAR* ptr2 = ptr;
-				if (ptr2)
+				for (size_t i = 0; i < databases.getCount(); i++)
 				{
-					USHORT num = (USHORT) gds__vax_integer(ptr2, sizeof(USHORT));
-					fb_assert(num == num_dbs);
-					ptr2 += sizeof(USHORT);
-					for (; num; num--)
+					if (!(info = INF_put_item(isc_spb_dbname,
+											  (USHORT) databases[i].length(),
+											  (const UCHAR*) databases[i].c_str(),
+											  info, end)))
 					{
-						length = (USHORT) gds__vax_integer(ptr2, sizeof(USHORT));
-						ptr2 += sizeof(USHORT);
-						if (!(info = INF_put_item(isc_spb_dbname, length, ptr2, info, end)))
-						{
-							if (ptr != dbbuf)
-								gds__free(ptr);	// memory has been allocated by JRD_num_attachments()
-							return 0;
-						}
-						ptr2 += length;
+						return 0;
 					}
-
-					if (ptr != dbbuf)
-						gds__free(ptr);	// memory has been allocated by JRD_num_attachments()
 				}
 
 				if (info < end)
@@ -1576,9 +1563,11 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_svr_db_info:
 			if (svc_user_flag & SVC_user_dba)
 			{
-				ULONG num_att = 0;
-				ULONG num_dbs = 0;
-				JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs, NULL);
+				PathNameList databases(*getDefaultMemoryPool());
+				ULONG num_dbs, num_att, num_svc;
+				JRD_enum_attachments(&databases, num_att, num_dbs, num_svc);
+				fb_assert(num_dbs == databases.getCount());
+
 				length = INF_convert(num_att, buffer);
 				info = INF_put_item(item, length, buffer, info, end);
 				if (!info) {

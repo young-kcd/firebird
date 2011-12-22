@@ -24,21 +24,12 @@
 #ifndef REMOTE_SERVE_PROTO_H
 #define REMOTE_SERVE_PROTO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef NO_PORT
 #define rem_port void
 #endif
 
 void SRVR_main(rem_port*, USHORT);
 void SRVR_multi_thread(rem_port*, USHORT);
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
+void SRVR_enum_attachments(ULONG& att_cnt, ULONG& dbs_cnt, ULONG& svc_cnt);
 
 #endif	// REMOTE_SERVE_PROTO_H
-

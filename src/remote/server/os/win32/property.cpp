@@ -38,7 +38,9 @@
 #include "../common/common.h"
 #include "../jrd/license.h"
 #include "../common/file_params.h"
+#include "../remote/remote.h"
 #include "../remote/remote_def.h"
+#include "../../remote/server/serve_proto.h"
 #include "../../remote/server/os/win32/window.h"
 #include "../../remote/server/os/win32/window.rh"
 #include "../../remote/server/os/win32/property.rh"
@@ -47,9 +49,14 @@
 
 #include "../jrd/ibase.h"
 
+#include "../common/StatusHolder.h"
+
 #include "../common/thd.h"		// get jrd_proto.h to declare the function
-#include "../jrd/jrd_proto.h"	// JRD_num_attachments()
+#include "../jrd/jrd_proto.h"	// gds__log()
 #include <stdio.h>				// sprintf()
+
+using namespace Firebird;
+
 
 static HINSTANCE hInstance = NULL;	// Handle to the current app. instance
 static HWND hPSDlg = NULL;		// Handle to the parent prop. sheet window
@@ -263,14 +270,13 @@ static void RefreshUserCount(HWND hDlg)
  *
  *  Return: void
  *
- *  Description: This method calls the JRD_num_attachments() function to get
- *               the number of active attachments to the server.
+ *  Description: This method outputs the number of active
+ *               databases, attachments and services.
  *****************************************************************************/
-	ULONG num_att = 0, num_dbs = 0, num_svc = 0;
 	const HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	//// FIXME: disabled!
-	//JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs, &num_svc);
+	ULONG num_att, num_dbs, num_svc;
+	SRVR_enum_attachments(num_att, num_dbs, num_svc);
 
 	char szText[BUFFER_MEDIUM];
 	sprintf(szText, "%d", num_att);

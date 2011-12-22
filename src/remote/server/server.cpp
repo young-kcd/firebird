@@ -722,6 +722,75 @@ static const UCHAR sql_info[] =
 #define GDS_DSQL_SQL_INFO	isc_dsql_sql_info
 
 
+void SRVR_enum_attachments(ULONG& att_cnt, ULONG& dbs_cnt, ULONG& svc_cnt)
+/**************************************
+ *
+ *	S R V R _ e n u m _ a t t a c h m e n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Queries the service manager to enumerate
+ *  active attachments to the server.
+ *
+ **************************************/
+{
+	att_cnt = dbs_cnt = svc_cnt = 0;
+
+	// TODO: we need some way to return a number of active services
+	// using the service manager. It could be either isc_info_svc_svr_db_info2
+	// that adds the third counter, or a completely new information tag.
+
+	static IProvider* provider = fb_get_master_interface()->getDispatcher();
+
+	static const UCHAR spb_attach[] =
+	{
+		isc_spb_version, isc_spb_current_version,
+		isc_spb_user_name, 6, 'S', 'Y', 'S', 'D', 'B', 'A'
+	};
+
+	LocalStatus status;
+	ServService iface(provider->attachServiceManager(&status, "service_mgr",
+					  sizeof(spb_attach), spb_attach));
+
+	if (iface.hasData())
+	{
+		static const UCHAR spb_query[] = {isc_info_svc_svr_db_info};
+
+		UCHAR buffer[BUFFER_XLARGE];
+		iface->query(&status, 0, NULL, sizeof(spb_query), spb_query, sizeof(buffer), buffer);
+		const char* p = reinterpret_cast<const char*>(buffer);
+
+		if (status.isSuccess() && *p++ == isc_info_svc_svr_db_info)
+		{
+			while (*p != isc_info_flag_end)
+			{
+				switch (*p++)
+				{
+				case isc_spb_dbname:
+					{
+						const USHORT length = (USHORT) isc_vax_integer(p, sizeof(USHORT));
+						p += sizeof(USHORT) + length;
+					}
+					break;
+				case isc_spb_num_att:
+					att_cnt = (ULONG) isc_vax_integer(p, sizeof(ULONG));
+					p += sizeof(ULONG);
+					break;
+				case isc_spb_num_db:
+					dbs_cnt = (ULONG) isc_vax_integer(p, sizeof(ULONG));
+					p += sizeof(ULONG);
+					break;
+				default:
+					fb_assert(false);
+				}
+			}
+		}
+
+		iface->detach(&status);
+	}
+}
+
 void SRVR_main(rem_port* main_port, USHORT flags)
 {
 /**************************************

@@ -26,6 +26,7 @@
 #define JRD_JRD_PROTO_H
 
 #include "../common/classes/fb_string.h"
+#include "../common/classes/objects_array.h"
 
 namespace Jrd {
 	class Database;
@@ -43,17 +44,10 @@ namespace Jrd {
 
 void jrd_vtof(const char*, char*, SSHORT);
 
-// Defines for parameter 3 of JRD_num_attachments
-enum JRD_info_tag
-{
-	JRD_info_none,
-	JRD_info_drivemask,
-	JRD_info_dbnames
-};
+typedef Firebird::SortedObjectsArray<Firebird::PathName> PathNameList;
+void JRD_enum_attachments(PathNameList*, ULONG&, ULONG&, ULONG&);
 
-UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*, ULONG*);
-
-bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
+bool JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 
 #ifdef DEBUG_PROCS
 void	JRD_print_procedure_info(Jrd::thread_db*, const char*);

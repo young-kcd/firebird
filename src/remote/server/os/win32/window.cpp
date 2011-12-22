@@ -68,7 +68,6 @@ static HWND hMainWnd = NULL;
 const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
 
 // Static functions to be called from this file only.
-static void GetDriveLetter(ULONG, char pchBuf[BUFFER_MEDIUM]);
 static BOOL CanEndServer(HWND);
 
 // Window Procedure
@@ -399,119 +398,11 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		PostQuitMessage(0);
 		break;
 
-	case WM_DEVICECHANGE:
-		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
-		//// FIXME: disabled!
-		//JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
-		//					sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs, &num_svc);
-
-		switch (wParam)
-		{
-		case DBT_DEVICEARRIVAL:
-			return TRUE;
-
-		case DBT_DEVICEQUERYREMOVE:
-			if (CHECK_VOLUME(pdbcv) && (ulLastMask != pdbcv->dbcv_unitmask))
-				if (CHECK_USAGE(pdbcv, ulInUseMask))
-				{
-					char tmp[BUFFER_MEDIUM];
-					char* p = tmp;
-					int len = LoadString(hInstance, IDS_PNP1, p, sizeof(tmp));
-					p += len;
-					*p++ = '\r';
-					*p++ = '\n';
-
-					fb_assert(p > tmp);
-					len = LoadString(hInstance, IDS_PNP2, p, p - tmp + sizeof(tmp));
-					p += len;
-					*p++ = '\r';
-					*p++ = '\n';
-					fb_assert(p > tmp);
-					len = LoadString(hInstance, IDS_PNP3, p, p - tmp + sizeof(tmp));
-					ulLastMask = pdbcv->dbcv_unitmask;
-					GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
-					if (MessageBox(hWnd, tmp, szDrives, MB_OKCANCEL | MB_ICONHAND) == IDCANCEL)
-					{
-						return FALSE;
-					}
-
-					fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_device_removed);
-					//DestroyWindow(hWnd);
-					return TRUE;
-				}
-			// Fall through to MOVEPENDING if we receive a QUERYDEVICE for the
-			// same device twice.  This will occur if we say yes to the removal
-			// of a controller.  The OS will prompt for the removal of all
-			// devices connected to that controller.  If you respond no, the
-			// OS will prompt you again, and then remove the device anyway...
-
-		case DBT_DEVICEREMOVEPENDING:
-			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv, ulInUseMask))
-			{
-				char tmp[BUFFER_MEDIUM];
-				char* p = tmp;
-				int len = LoadString(hInstance, IDS_PNP1, p, sizeof(tmp));
-				p += len;
-				*p++ = '\r';
-				*p++ = '\n';
-				fb_assert(p > tmp);
-				len = LoadString(hInstance, IDS_PNP2, p, sizeof(tmp) - (p - tmp));
-				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
-				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
-				PostMessage(hWnd, WM_DESTROY, 0, 0);
-				fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_device_removed);
-			}
-			return TRUE;
-
-		case DBT_DEVICEQUERYREMOVEFAILED:
-			return TRUE;
-
-		case DBT_DEVICEREMOVECOMPLETE:
-			return TRUE;
-
-		case DBT_DEVICETYPESPECIFIC:
-			return TRUE;
-
-		case DBT_CONFIGCHANGED:
-			return TRUE;
-		}
-		return TRUE;
-
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
+
 	return FALSE;
-}
-
-
-// Hmm, maybe some Pascal programmer doing the declaration?
-static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[BUFFER_MEDIUM])
-{
-/******************************************************************************
- *
- *  G e t D r i v e L e t t e r
- *
- ******************************************************************************
- *
- *  Input:  ulDriveMask - Bit flag mask encoding the drive letters
- *          pchBuf - Buffer to be filled
- *
- *  Return: Buffer containing the drive letters
- *
- *  Description: This function checks for the drives in Drive mask and returns
- *               the buffer filled with the drive letters which are on.
- *****************************************************************************/
-	char chDrive = 'A';
-	char* p = pchBuf;
-
-	while (ulDriveMask)
-	{
-		if (ulDriveMask & 1)
-			*p++ = chDrive;
-		chDrive++;
-		ulDriveMask >>= 1;
-	}
-	*p = '\0';
 }
 
 
@@ -531,9 +422,8 @@ BOOL CanEndServer(HWND hWnd)
  *  Description: This function displays a message mox and queries the user if
  *               the server can be shutdown.
  *****************************************************************************/
-	ULONG usNumAtt = 0, usNumDbs = 0, usNumSvc = 0;
-	//// FIXME: disabled!
-	//JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs, &usNumSvc);
+	ULONG usNumAtt, usNumDbs, usNumSvc;
+	SRVR_enum_attachments(usNumAtt, usNumDbs, usNumSvc);
 
 	if (!usNumAtt && !usNumSvc)				// IF 0 CONNECTIONS, JUST SHUTDOWN
 		return TRUE;
