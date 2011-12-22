@@ -390,10 +390,7 @@ dsc* LastValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow*
 	SINT64 records = impure->vlu_misc.vlu_int64++;
 
 	if (!window->move(0))
-	{
-		window->move(0);	// Come back to our row.
 		return NULL;
-	}
 
 	dsc* desc = EVL_expr(tdbb, request, arg);
 	if (!desc || (request->req_flags & req_null))
