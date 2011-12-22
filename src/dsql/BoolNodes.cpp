@@ -403,8 +403,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				thread_db* tdbb = JRD_get_thread_data();
 
 				InternalInfoNode* infoNode = FB_NEW(*tdbb->getDefaultPool()) InternalInfoNode(
-					*tdbb->getDefaultPool(),
-					MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
+					*tdbb->getDefaultPool(), MAKE_const_slong(INFO_TYPE_TRIGGER_ACTION));
 
 				procArg1 = MAKE_node(Dsql::nod_class_exprnode, 1);
 				procArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(infoNode);

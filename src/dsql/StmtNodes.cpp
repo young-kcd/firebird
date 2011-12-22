@@ -7577,8 +7577,8 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
 		blr_eql, MAKE_node(Dsql::nod_class_exprnode, 1), MAKE_const_slong(0));
 
-	eqlNode->dsqlArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(FB_NEW(pool) InternalInfoNode(pool,
-		MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_ROWS_AFFECTED))));
+	eqlNode->dsqlArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(FB_NEW(pool)
+		InternalInfoNode(pool, MAKE_const_slong(INFO_TYPE_ROWS_AFFECTED)));
 
 	dsql_nod* eqlNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 	eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);

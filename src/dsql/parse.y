@@ -5661,33 +5661,27 @@ current_role
 internal_info
 	: CURRENT_CONNECTION
 		{
-			$$ = newNode<InternalInfoNode>(
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_CONNECTION_ID)));
+			$$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_CONNECTION_ID));
 		}
 	| CURRENT_TRANSACTION
 		{
-			$$ = newNode<InternalInfoNode>(
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRANSACTION_ID)));
+			$$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_TRANSACTION_ID));
 		}
 	| GDSCODE
 		{
-			$$ = newNode<InternalInfoNode>(
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_GDSCODE)));
+			$$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_GDSCODE));
 		}
 	| SQLCODE
 		{
-			$$ = newNode<InternalInfoNode>(
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_SQLCODE)));
+			$$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_SQLCODE));
 		}
 	| SQLSTATE
 		{
-			$$ = newNode<InternalInfoNode>(
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_SQLSTATE)));
+			$$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_SQLSTATE));
 		}
 	| ROW_COUNT
 		{
-			$$ = newNode<InternalInfoNode>(
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_ROWS_AFFECTED)));
+			$$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_ROWS_AFFECTED));
 		}
 	;
 

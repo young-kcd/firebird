@@ -602,20 +602,6 @@ public:
 class InternalInfoNode : public TypedNode<ValueExprNode, ExprNode::TYPE_INTERNAL_INFO>
 {
 public:
-	// Constants stored in BLR.
-	enum InfoType
-	{
-		INFO_TYPE_UNKNOWN = 0,
-		INFO_TYPE_CONNECTION_ID = 1,
-		INFO_TYPE_TRANSACTION_ID = 2,
-		INFO_TYPE_GDSCODE = 3,
-		INFO_TYPE_SQLCODE = 4,
-		INFO_TYPE_ROWS_AFFECTED = 5,
-		INFO_TYPE_TRIGGER_ACTION = 6,
-		INFO_TYPE_SQLSTATE = 7,
-		MAX_INFO_TYPE
-	};
-
 	struct InfoAttr
 	{
 		const char* alias;
