@@ -595,25 +595,6 @@
 #LockMemSize = 1048576
 
 #
-# When a connection wants to lock an object, it gets a lock request
-# block which specifies the object and the lock level requested. Each
-# locked object has a lock block. Request blocks are connected to those
-# lock blocks either as requests that have been granted, or as pending
-# requests.
-#
-# The settings:
-# 	1 means locks are granted first come, first served.
-#	0 means emulate InterBase v3.3 behavior, where locks are granted
-#	  as soon as they are available; can result in lock request
-#       starvation.
-#
-# Per-database configurable.
-#
-# Type: integer/boolean
-#
-#LockGrantOrder = 1
-
-#
 # In Classic, only one client process may access the lock table at any
 # time. Access to the lock table is governed by a mutex. The mutex can
 # be requested conditionally - a wait is a failure and the request must
