@@ -515,23 +515,24 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	{
 	case LCK_database:
 	case LCK_bdb:
+	case LCK_shadow:
+	case LCK_retaining:
+	case LCK_backup_alloc:
+	case LCK_backup_database:
+	case LCK_monitor:
+	case LCK_shared_counter:
+		handle = *LCK_OWNER_HANDLE_DBB(tdbb);
+		break;
+
+	case LCK_attachment:
 	case LCK_rel_exist:
 	case LCK_rel_partners:
 	case LCK_rel_rescan:
 	case LCK_idx_exist:
-	case LCK_shadow:
-	case LCK_retaining:
 	case LCK_expression:
 	case LCK_prc_exist:
-	case LCK_backup_alloc:
-	case LCK_backup_database:
-	case LCK_monitor:
-	case LCK_tt_exist:
-	case LCK_shared_counter:
 	case LCK_fun_exist:
-		handle = *LCK_OWNER_HANDLE_DBB(tdbb);
-		break;
-	case LCK_attachment:
+	case LCK_tt_exist:
 	case LCK_page_space:
 	case LCK_relation:
 	case LCK_tra:
@@ -543,6 +544,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_btr_dont_gc:
 		handle = *LCK_OWNER_HANDLE_ATT(tdbb);
 		break;
+
 	default:
 		bug_lck("Invalid lock type in LCK_get_owner_handle()");
 	}
