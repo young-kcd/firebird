@@ -126,7 +126,6 @@ struct lhb : public Jrd::MemoryHeader
 	ULONG lhb_length;				// Size of lock table
 	ULONG lhb_used;					// Bytes of lock table in use
 	USHORT lhb_hash_slots;			// Number of hash slots allocated
-	USHORT lhb_flags;				// Miscellaneous info
 	struct mtx lhb_mutex;			// Mutex controlling access
 	SRQ_PTR lhb_history;
 	ULONG lhb_scan_interval;		// Deadlock scan interval (secs)
@@ -153,9 +152,6 @@ struct lhb : public Jrd::MemoryHeader
 	srq lhb_data[LCK_MAX_SERIES];
 	srq lhb_hash[1];			// Hash table
 };
-
-// lhb_flags
-const USHORT LHB_lock_ordering		= 1;	// Lock ordering is enabled
 
 // Secondary header block -- exists only in V3.3 and later lock managers.
 // It is pointed to by the word in the lhb that used to contain a pattern.
@@ -340,11 +336,6 @@ public:
 private:
 	explicit LockManager(const Firebird::string&, Firebird::RefPtr<Config>);
 	~LockManager();
-
-	bool lockOrdering() const
-	{
-		return (sh_mem_header->lhb_flags & LHB_lock_ordering) ? true : false;
-	}
 
 	void acquire_shmem(SRQ_PTR);
 	UCHAR* alloc(USHORT, Firebird::Arg::StatusVector*);

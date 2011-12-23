@@ -122,7 +122,6 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
-	{TYPE_BOOLEAN,		"LockGrantOrder",			(ConfigValue) true},
 	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 1009},		// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
@@ -439,11 +438,6 @@ int Config::getDummyPacketInterval()
 int Config::getLockMemSize() const
 {
 	return get<int>(KEY_LOCK_MEM_SIZE);
-}
-
-bool Config::getLockGrantOrder() const
-{
-	return get<bool>(KEY_LOCK_GRANT_ORDER);
 }
 
 int Config::getLockHashSlots() const

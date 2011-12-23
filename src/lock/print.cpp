@@ -698,9 +698,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->mhb_version, (const TEXT*)HtmlLink(preOwn, LOCK_header->lhb_active_owner),
 			LOCK_header->lhb_length, LOCK_header->lhb_used);
 
-	FPRINTF(outfile, "\tFlags: 0x%04X\n",
-			LOCK_header->lhb_flags);
-
 	FPRINTF(outfile,
 			"\tEnqs: %6"UQUADFORMAT", Converts: %6"UQUADFORMAT
 			", Rejects: %6"UQUADFORMAT", Blocks: %6"UQUADFORMAT"\n",
@@ -771,10 +768,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	prt_que(outfile, LOCK_header, "\tFree requests",
 			&LOCK_header->lhb_free_requests, OFFSET(lrq*, lrq_lbl_requests));
 
-	// Print lock ordering option
-
-	FPRINTF(outfile, "\tLock Ordering: %s\n",
-			(LOCK_header->lhb_flags & LHB_lock_ordering) ? "Enabled" : "Disabled");
 	FPRINTF(outfile, "\n");
 
 	// Print known owners
@@ -1321,19 +1314,7 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 			const lrq* lock_request = (lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_lbl_requests));
 			fb_assert(lock_request->lrq_type == type_lrq);
 
-			if (LOCK_header->lhb_flags & LHB_lock_ordering && !owner_conversion)
-			{
-				// Requests AFTER our request can't block us
-				if (owner_request == lock_request)
-					break;
-
-				if (compatibility[owner_request->lrq_requested]
-								[MAX(lock_request->lrq_state, lock_request->lrq_requested)])
-				{
-					continue;
-				}
-			}
-			else
+			if (owner_conversion)
 			{
 				// Requests AFTER our request CAN block us
 				if (lock_request == owner_request)
@@ -1341,6 +1322,19 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 
 				if (compatibility[owner_request->lrq_requested][lock_request->lrq_state])
 					continue;
+			}
+			else
+			{
+				// Requests AFTER our request can't block us
+				if (owner_request == lock_request)
+					break;
+
+				const UCHAR max_state = MAX(lock_request->lrq_state, lock_request->lrq_requested);
+
+				if (compatibility[owner_request->lrq_requested][max_state])
+				{
+					continue;
+				}
 			}
 
 			const own* const lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);

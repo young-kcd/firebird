@@ -1985,7 +1985,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 	{
 		lrq* block = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 
-		if (!lockOrdering() || conversion)
+		if (conversion)
 		{
 			// Don't pursue our own lock-request again
 
@@ -2012,7 +2012,9 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 			// Since lock ordering is in effect, granted locks and waiting
 			// requests that arrived before our request could block us
 
-			if (compatibility[request->lrq_requested][MAX(block->lrq_state, block->lrq_requested)])
+			const UCHAR max_state = MAX(block->lrq_state, block->lrq_requested);
+
+			if (compatibility[request->lrq_requested][max_state])
 			{
 				continue;
 			}
@@ -2268,7 +2270,7 @@ bool LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* lock, 
 
 	if (compatibility[request->lrq_requested][lock->lbl_state])
 	{
-		if (!lockOrdering() || request->lrq_requested == LCK_null || lock->lbl_pending_lrq_count == 0)
+		if (request->lrq_requested == LCK_null || lock->lbl_pending_lrq_count == 0)
 		{
 			grant(request, lock);
 			post_pending(lock);
@@ -2413,9 +2415,6 @@ bool LockManager::initialize(bool initializeMemory)
 	}
 
 	// Set lock_ordering flag for the first time
-
-	if (m_config->getLockGrantOrder())
-		sh_mem_header->lhb_flags |= LHB_lock_ordering;
 
 	const ULONG length = sizeof(lhb) + (sh_mem_header->lhb_hash_slots * sizeof(sh_mem_header->lhb_hash[0]));
 	sh_mem_header->lhb_length = sh_mem_length_mapped;
@@ -2862,11 +2861,8 @@ void LockManager::post_pending(lbl* lock)
 				++lock->lbl_counts[request->lrq_state];
 				own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
 				post_wakeup(owner);
-				if (lockOrdering())
-				{
-					CHECK(lock->lbl_pending_lrq_count >= pending_counter);
-					break;
-				}
+				CHECK(lock->lbl_pending_lrq_count >= pending_counter);
+				break;
 			}
 		}
 		else if (compatibility[request->lrq_requested][lock->lbl_state])
@@ -2878,11 +2874,8 @@ void LockManager::post_pending(lbl* lock)
 #endif
 			own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
 			post_wakeup(owner);
-			if (lockOrdering())
-			{
-				CHECK(lock->lbl_pending_lrq_count >= pending_counter);
-				break;
-			}
+			CHECK(lock->lbl_pending_lrq_count >= pending_counter);
+			break;
 		}
 	}
 
@@ -3560,33 +3553,22 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		// Request must be for this lock
 		CHECK(request->lrq_lock == lock_ptr);
 
-		// If the request is pending, then it must be incompatible with current
-		// state of the lock - OR lock_ordering is enabled and there is at
-		// least one pending request in the queue (before this request
-		// but not including it).
-
 		if (request->lrq_flags & LRQ_pending)
 		{
-			CHECK(!compatibility[request->lrq_requested][lock->lbl_state] ||
-				  (lockOrdering() && found_pending));
+			// If the request is pending, then it must be incompatible with current
+			// state of the lock - OR lock_ordering is enabled and there is at
+			// least one pending request in the queue (before this request
+			// but not including it).
 
-			// The above condition would probably be more clear if we
-			// wrote it as the following:
-			//
-			// CHECK (!compatibility[request->lrq_requested][lock->lbl_state] ||
-			// (lockOrdering() && found_pending &&
-			// compatibility[request->lrq_requested][lock->lbl_state]));
-			//
-			// but that would be redundant
+			CHECK(!compatibility[request->lrq_requested][lock->lbl_state] || found_pending);
 
 			found_pending++;
 		}
-
-		// If the request is NOT pending, then it must be rejected or
-		// compatible with the current state of the lock
-
-		if (!(request->lrq_flags & LRQ_pending))
+		else
 		{
+			// If the request is NOT pending, then it must be rejected or
+			// compatible with the current state of the lock
+
 			CHECK((request->lrq_flags & LRQ_rejected) ||
 				  (request->lrq_requested == lock->lbl_state) ||
 				  compatibility[request->lrq_requested][lock->lbl_state]);
@@ -3929,16 +3911,12 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 	lbl* lock = (lbl*) SRQ_ABS_PTR(lock_offset);
 	lock->lbl_pending_lrq_count++;
 
-	if (lockOrdering())
+	if (!request->lrq_state)
 	{
-		if (!request->lrq_state)
-		{
-			// If ordering is in effect, and this is a conversion of
-			// an existing lock in LCK_none state - put the lock to the
-			// end of the list so it's not taking cuts in the lineup
-			remove_que(&request->lrq_lbl_requests);
-			insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
-		}
+		// If this is a conversion of an existing lock in LCK_none state -
+		// put the lock to the end of the list so it's not taking cuts in the lineup
+		remove_que(&request->lrq_lbl_requests);
+		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 	}
 
 	if (lck_wait <= 0)

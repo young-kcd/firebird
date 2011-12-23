@@ -95,7 +95,6 @@ public:
 		KEY_CONNECTION_TIMEOUT,
 		KEY_DUMMY_PACKET_INTERVAL,
 		KEY_LOCK_MEM_SIZE,
-		KEY_LOCK_GRANT_ORDER,
 		KEY_LOCK_HASH_SLOTS,
 		KEY_LOCK_ACQUIRE_SPINS,
 		KEY_EVENT_MEM_SIZE,
@@ -240,9 +239,6 @@ public:
 
 	// Lock manager memory size
 	int getLockMemSize() const;
-
-	// Lock manager grant order
-	bool getLockGrantOrder() const;
 
 	// Lock manager hash slots
 	int getLockHashSlots() const;
