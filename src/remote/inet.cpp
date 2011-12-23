@@ -532,10 +532,10 @@ static Firebird::GlobalPtr<PortsCleanup>	inet_ports;
 
 
 rem_port* INET_analyze(ClntAuthBlock* cBlock,
-					const Firebird::PathName& file_name,
-					const TEXT*	node_name,
-					bool	uv_flag,
-					ClumpletReader &dpb)
+					   const Firebird::PathName& file_name,
+					   const TEXT* node_name,
+					   bool uv_flag,
+					   ClumpletReader &dpb)
 {
 /**************************************
  *

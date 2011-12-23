@@ -4988,7 +4988,7 @@ static rem_port* analyze_service(PathName& service_name,
 #if defined(WIN_NT)
 	if (ISC_analyze_protocol(PROTOCOL_XNET, service_name, node_name))
 	{
-		return XNET_analyze(cBlock, service_name, uv_flag);
+		return XNET_analyze(NULL, service_name, uv_flag);
 	}
 
 	if (ISC_analyze_protocol(PROTOCOL_WNET, service_name, node_name) ||
@@ -4998,7 +4998,7 @@ static rem_port* analyze_service(PathName& service_name,
 		{
 			node_name = WNET_LOCALHOST;
 		}
-		return WNET_analyze(cBlock, service_name, node_name.c_str(), uv_flag);
+		return WNET_analyze(NULL, service_name, node_name.c_str(), uv_flag);
 	}
 #endif
 
@@ -5025,12 +5025,12 @@ static rem_port* analyze_service(PathName& service_name,
 #if defined(WIN_NT)
 			if (!port)
 			{
-				port = XNET_analyze(cBlock, service_name, uv_flag);
+				port = XNET_analyze(NULL, service_name, uv_flag);
 			}
 
 			if (!port)
 			{
-				port = WNET_analyze(cBlock, service_name, WNET_LOCALHOST, uv_flag);
+				port = WNET_analyze(NULL, service_name, WNET_LOCALHOST, uv_flag);
 			}
 #endif
 			if (!port)

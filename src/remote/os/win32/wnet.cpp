@@ -56,10 +56,10 @@ const int BUFFER_SIZE	= MAX_DATA;
 const char* PIPE_PREFIX			= "pipe"; // win32-specific
 const char* SERVER_PIPE_SUFFIX	= "server";
 const char* EVENT_PIPE_SUFFIX	= "event";
-Firebird::AtomicCounter event_counter;
+AtomicCounter event_counter;
 
-static Firebird::GlobalPtr<PortsCleanup> wnet_ports;
-static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
+static GlobalPtr<PortsCleanup> wnet_ports;
+static GlobalPtr<Mutex> init_mutex;
 static volatile bool wnet_initialized = false;
 static volatile bool wnet_shutdown = false;
 
@@ -81,7 +81,7 @@ static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
 static bool_t	xdrwnet_endofrecord(XDR*);//, int);
 static int		wnet_destroy(XDR*);
 static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
-static void		wnet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
+static void		wnet_gen_error(rem_port*, const Arg::StatusVector& v);
 static bool_t	wnet_getbytes(XDR*, SCHAR*, u_int);
 static bool_t	wnet_getlong(XDR*, SLONG*);
 static u_int	wnet_getpostn(XDR*);
@@ -113,7 +113,10 @@ static xdr_t::xdr_ops wnet_ops =
 };
 
 
-rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_name, bool uv_flag)
+rem_port* WNET_analyze(ClntAuthBlock* cBlock,
+					   const PathName& file_name,
+					   const TEXT* node_name,
+					   bool uv_flag)
 {
 /**************************************
  *
@@ -137,8 +140,12 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
-	Firebird::string buffer;
-	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
+	string buffer;
+	ClumpletWriter user_id(ClumpletReader::UnTagged, 64000);
+	if (cBlock)
+	{
+		cBlock->extractDataFromPluginTo(user_id);
+	}
 
 	ISC_get_user(&buffer, 0, 0);
 	buffer.lower();
@@ -286,32 +293,68 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_nam
 		port->receive(packet);
 	}
 
-	if (packet->p_operation != op_accept)
+	P_ACPT* accept = NULL;
+	switch (packet->p_operation)
 	{
+	case op_accept_data:
+		accept = &packet->p_acpd;
+		if (cBlock)
+		{
+			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
+									   packet->p_acpd.p_acpt_data.cstr_address);
+			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
+		}
+		break;
+
+	case op_accept:
+		if (cBlock)
+		{
+			cBlock->reset(&file_name);
+		}
+		accept = &packet->p_acpt;
+		break;
+
+	case op_response:
+		try
+		{
+			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
+			REMOTE_check_response(&warning, rdb, packet);
+		}
+		catch(const Firebird::Exception&)
+		{
+			disconnect(port);
+			delete rdb;
+			throw;
+		}
+		// fall through - response is not a required accept
+
+	default:
 		disconnect(port);
 		delete rdb;
-
 		Arg::Gds(isc_connect_reject).raise();
+		break;
 	}
 
-	port->port_protocol = packet->p_acpt.p_acpt_version;
+	fb_assert(accept);
+	fb_assert(port);
+	port->port_protocol = accept->p_acpt_version;
 
 	// once we've decided on a protocol, concatenate the version
 	// string to reflect it...
 
-	Firebird::string temp;
+	string temp;
 	temp.printf("%s/P%d", port->port_version->str_data,
 						  port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
-	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
+	if (accept->p_acpt_architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
 
-	if (packet->p_acpt.p_acpt_type == ptype_rpc)
+	if (accept->p_acpt_type == ptype_rpc)
 		port->port_flags |= PORT_rpc;
 
-	if (packet->p_acpt.p_acpt_type != ptype_out_of_band)
+	if (accept->p_acpt_type != ptype_out_of_band)
 		port->port_flags |= PORT_no_oob;
 
 	return port;
@@ -408,7 +451,7 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
 		TEXT name[MAXPATHLEN];
 		GetModuleFileName(NULL, name, sizeof(name));
 
-		Firebird::string cmdLine;
+		string cmdLine;
 		cmdLine.printf("%s -w -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, port->port_pipe, GetCurrentProcessId());
 
 		STARTUPINFO start_crud;
@@ -494,11 +537,11 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
  **************************************/
 	// Default account to "guest" (in theory all packets contain a name)
 
-	Firebird::string name("guest"), password;
+	string name("guest"), password;
 
 	// Pick up account and password, if given. The password is ignored
 
-	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
+	ClumpletReader id(ClumpletReader::UnTagged,
 			cnct->p_cnct_user_id.cstr_address, cnct->p_cnct_user_id.cstr_length);
 
 	for (id.rewind(); !id.isEof(); id.moveNext())
@@ -540,7 +583,7 @@ static rem_port* alloc_port( rem_port* parent)
 
 	if (!wnet_initialized)
 	{
-		Firebird::MutexLockGuard guard(init_mutex);
+		MutexLockGuard guard(init_mutex);
 		if (!wnet_initialized)
 		{
 			wnet_initialized = true;
@@ -852,7 +895,7 @@ static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name
  *	If a server pid != 0, append it to pipe name  as <>/<pid>
  *
  **************************************/
-	Firebird::string buffer("\\\\");
+	string buffer("\\\\");
 
 	const TEXT* p = connect_name;
 
@@ -1061,7 +1104,7 @@ static bool wnet_error(rem_port* port,
 }
 
 
-static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v)
+static void wnet_gen_error (rem_port* port, const Arg::StatusVector& v)
 {
 /**************************************
  *

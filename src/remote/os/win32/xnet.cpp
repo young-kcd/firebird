@@ -200,7 +200,7 @@ static void xnet_log_error(const char* err_msg)
 #define ERR_STR(str) (str)
 #endif
 
-rem_port* XNET_analyze(const PathName& file_name, bool uv_flag)
+rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv_flag)
 {
 /**************************************
  *
@@ -225,7 +225,11 @@ rem_port* XNET_analyze(const PathName& file_name, bool uv_flag)
 	// Pick up some user identification information
 
 	string buffer;
-	ClumpletWriter user_id(ClumpletReader::UnTagged, MAX_DPB_SIZE);
+	ClumpletWriter user_id(ClumpletReader::UnTagged, 64000);
+	if (cBlock)
+	{
+		cBlock->extractDataFromPluginTo(user_id);
+	}
 
 	ISC_get_user(&buffer, 0, 0);
 	buffer.lower();
@@ -371,15 +375,51 @@ rem_port* XNET_analyze(const PathName& file_name, bool uv_flag)
 		port->receive(packet);
 	}
 
-	if (packet->p_operation != op_accept)
+	P_ACPT* accept = NULL;
+	switch (packet->p_operation)
 	{
+	case op_accept_data:
+		accept = &packet->p_acpd;
+		if (cBlock)
+		{
+			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
+									   packet->p_acpd.p_acpt_data.cstr_address);
+			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
+		}
+		break;
+
+	case op_accept:
+		if (cBlock)
+		{
+			cBlock->reset(&file_name);
+		}
+		accept = &packet->p_acpt;
+		break;
+
+	case op_response:
+		try
+		{
+			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
+			REMOTE_check_response(&warning, rdb, packet);
+		}
+		catch(const Firebird::Exception&)
+		{
+			disconnect(port);
+			delete rdb;
+			throw;
+		}
+		// fall through - response is not a required accept
+
+	default:
 		disconnect(port);
 		delete rdb;
-
 		Arg::Gds(isc_connect_reject).raise();
+		break;
 	}
 
-	port->port_protocol = packet->p_acpt.p_acpt_version;
+	fb_assert(accept);
+	fb_assert(port);
+	port->port_protocol = accept->p_acpt_version;
 
 	// Once we've decided on a protocol, concatenate the version
 	// string to reflect it...
@@ -391,13 +431,13 @@ rem_port* XNET_analyze(const PathName& file_name, bool uv_flag)
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
-	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
+	if (accept->p_acpt_architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
 
-	if (packet->p_acpt.p_acpt_type == ptype_rpc)
+	if (accept->p_acpt_type == ptype_rpc)
 		port->port_flags |= PORT_rpc;
 
-	if (packet->p_acpt.p_acpt_type != ptype_out_of_band)
+	if (accept->p_acpt_type != ptype_out_of_band)
 		port->port_flags |= PORT_no_oob;
 
 	return port;

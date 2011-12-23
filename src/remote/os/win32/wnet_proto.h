@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 
-rem_port*	WNET_analyze(const Firebird::PathName&, const TEXT*, bool);
+rem_port*	WNET_analyze(ClntAuthBlock*, const Firebird::PathName&, const TEXT*, bool);
 rem_port*	WNET_connect(const TEXT*, struct packet*, USHORT);
 rem_port*	WNET_reconnect(HANDLE);
 
