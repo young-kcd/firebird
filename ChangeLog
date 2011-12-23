@@ -1,3 +1,28 @@
+ 2011-12-22 15:32  dimitr 
+   M src/include/consts_pub.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+   M src/jrd/svc.cpp
+   M src/remote/server/os/win32/property.cpp
+   M src/remote/server/os/win32/window.cpp
+   M src/remote/server/serve_proto.h
+   M src/remote/server/server.cpp
+Re-implemented the disabled code in the remote server. Cleaned up the legacy logic that doesn't look actual these days.
+Some code refactoring.
+
+ 2011-12-22 14:18  asfernandes 
+   M src/dsql/WinNodes.cpp
+Misc.
+
+ 2011-12-22 08:07  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/parse.y
+   M src/gpre/cme.cpp
+   M src/jrd/constants.h
+Let's avoid duplication of shared constants.
+
  2011-12-21 00:51  asfernandes 
    M src/dsql/dsql.cpp
 Misc.
