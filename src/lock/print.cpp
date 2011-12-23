@@ -1207,28 +1207,27 @@ static void prt_owner(OUTFILE outfile,
 		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">OWNER BLOCK %6"SLONGFORMAT"</a>\n",
 				preOwn, rel_owner, rel_owner);
 	}
-	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d, pending: %s\n",
-			owner->own_owner_id, owner->own_owner_type,
-			(const TEXT*)HtmlLink(preRequest, owner->own_pending_request));
+	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d\n",
+			owner->own_owner_id, owner->own_owner_type);
 
 	FPRINTF(outfile, "\tProcess id: %6d (%s), thread id: %6"SIZEFORMAT"\n",
 			process->prc_process_id,
 			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead",
 			owner->own_thread_id);
-	{
-		const USHORT flags = owner->own_flags;
-		FPRINTF(outfile, "\tFlags: 0x%02X ", flags);
-		FPRINTF(outfile, " %s", (flags & OWN_wakeup) ? "wake" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_scanned) ? "scan" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_waiting) ? "wait" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_waiting) ? ((flags & OWN_timeout) ? "tout" : "infn") : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_signaled) ? "sgnl" : "    ");
-		FPRINTF(outfile, "\n");
-	}
+
+	const USHORT flags = owner->own_flags;
+	FPRINTF(outfile, "\tFlags: 0x%02X ", flags);
+	FPRINTF(outfile, " %s", (flags & OWN_wakeup) ? "wake" : "    ");
+	FPRINTF(outfile, " %s", (flags & OWN_scanned) ? "scan" : "    ");
+	FPRINTF(outfile, " %s", (flags & OWN_signaled) ? "sgnl" : "    ");
+	FPRINTF(outfile, "\n");
 
 	prt_que(outfile, LOCK_header, "\tRequests", &owner->own_requests,
 			OFFSET(lrq*, lrq_own_requests), preRequest);
-	prt_que(outfile, LOCK_header, "\tBlocks", &owner->own_blocks, OFFSET(lrq*, lrq_own_blocks));
+	prt_que(outfile, LOCK_header, "\tBlocks", &owner->own_blocks,
+			OFFSET(lrq*, lrq_own_blocks), preRequest);
+	prt_que(outfile, LOCK_header, "\tPending", &owner->own_pending,
+			OFFSET(lrq*, lrq_own_pending), preRequest);
 
 	if (sw_waitlist)
 	{
@@ -1284,9 +1283,10 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 
 	FPRINTF(outfile, "%s waits on ", (const TEXT*) HtmlLink(preOwn, SRQ_REL_PTR(owner)));
 
-	if (!owner->own_pending_request)
-		FPRINTF(outfile, "nothing.\n");
-	else
+	bool found = false;
+
+	srq* lock_srq;
+	SRQ_LOOP(owner->own_pending, lock_srq)
 	{
 		if (waiters->waitque_depth >= FB_NELEM(waiters->waitque_entry))
 		{
@@ -1294,21 +1294,22 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 			return;
 		}
 
+		found = true;
+
 		waiters->waitque_entry[waiters->waitque_depth++] = SRQ_REL_PTR(owner);
 
 		FPRINTF(outfile, "\n");
-		const lrq* owner_request = (lrq*) SRQ_ABS_PTR(owner->own_pending_request);
+		const lrq* const owner_request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_pending));
 		fb_assert(owner_request->lrq_type == type_lrq);
 		const bool owner_conversion = (owner_request->lrq_state > LCK_null);
 
-		const lbl* lock = (lbl*) SRQ_ABS_PTR(owner_request->lrq_lock);
+		const lbl* const lock = (lbl*) SRQ_ABS_PTR(owner_request->lrq_lock);
 		fb_assert(lock->lbl_type == type_lbl);
 
 		int counter = 0;
 		const srq* que_inst;
 		SRQ_LOOP(lock->lbl_requests, que_inst)
 		{
-
 			if (counter++ > 50)
 			{
 				for (USHORT i = indent + 6; i; i--)
@@ -1319,7 +1320,6 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 
 			const lrq* lock_request = (lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_lbl_requests));
 			fb_assert(lock_request->lrq_type == type_lrq);
-
 
 			if (LOCK_header->lhb_flags & LHB_lock_ordering && !owner_conversion)
 			{
@@ -1342,11 +1342,16 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 				if (compatibility[owner_request->lrq_requested][lock_request->lrq_state])
 					continue;
 			}
-			const own* lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);
+
+			const own* const lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4, waiters);
 		}
+
 		waiters->waitque_depth--;
 	}
+
+	if (!found)
+		FPRINTF(outfile, "nothing.\n");
 }
 
 
@@ -1382,7 +1387,9 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 	prt_que2(outfile, LOCK_header, "\tlrq_lbl_requests",
 			 &request->lrq_lbl_requests, OFFSET(lrq*, lrq_lbl_requests), preRequest);
 	prt_que2(outfile, LOCK_header, "\tlrq_own_blocks  ",
-			 &request->lrq_own_blocks, OFFSET(lrq*, lrq_own_blocks));
+			 &request->lrq_own_blocks, OFFSET(lrq*, lrq_own_blocks), preRequest);
+	prt_que2(outfile, LOCK_header, "\tlrq_own_pending ",
+			 &request->lrq_own_pending, OFFSET(lrq*, lrq_own_pending), preRequest);
 	FPRINTF(outfile, "\n");
 }
 

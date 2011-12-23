@@ -203,6 +203,7 @@ struct lrq
 	srq lrq_own_requests;			// Locks granted for owner
 	srq lrq_lbl_requests;			// Que of requests (active, pending)
 	srq lrq_own_blocks;				// Owner block que
+	srq lrq_own_pending;			// Owner pending que
 	lock_ast_t lrq_ast_routine;		// Block ast routine
 	void* lrq_ast_argument;			// Ast argument
 };
@@ -210,14 +211,13 @@ struct lrq
 // lrq_flags
 const USHORT LRQ_blocking		= 1;		// Request is blocking
 const USHORT LRQ_pending		= 2;		// Request is pending
-const USHORT LRQ_converting		= 4;		// Request is pending conversion
-const USHORT LRQ_rejected		= 8;		// Request is rejected
-const USHORT LRQ_timed_out		= 16;		// Wait timed out
-const USHORT LRQ_deadlock		= 32;		// Request has been seen by the deadlock-walk
-const USHORT LRQ_repost			= 64;		// Request block used for repost
-const USHORT LRQ_scanned		= 128;		// Request already scanned for deadlock
-const USHORT LRQ_blocking_seen	= 256;		// Blocking notification received by owner
-const USHORT LRQ_just_granted	= 512;		// Request is just granted and blocked owners still have not sent blocking AST
+const USHORT LRQ_rejected		= 4;		// Request is rejected
+const USHORT LRQ_deadlock		= 8;		// Request has been seen by the deadlock-walk
+const USHORT LRQ_repost			= 16;		// Request block used for repost
+const USHORT LRQ_scanned		= 32;		// Request already scanned for deadlock
+const USHORT LRQ_blocking_seen	= 64;		// Blocking notification received by owner
+const USHORT LRQ_just_granted	= 128;		// Request is just granted and blocked owners still have not sent blocking AST
+const USHORT LRQ_wait_timeout	= 256;		// Request is being waited on with a timeout
 
 // Process block
 
@@ -243,21 +243,20 @@ struct own
 	srq own_prc_owners;				// Owner que (process wide)
 	srq own_requests;				// Lock requests granted
 	srq own_blocks;					// Lock requests blocking
-	SRQ_PTR own_pending_request;	// Request we're waiting on
+	srq own_pending;				// Lock requests pending
 	SRQ_PTR own_process;			// Process we belong to
 	FB_THREAD_ID own_thread_id;		// Last thread attached to the owner
 	FB_UINT64 own_acquire_time;		// lhb_acquires when owner last tried acquire()
+	USHORT own_waits;				// Number of requests we are waiting on
 	USHORT own_ast_count;			// Number of ASTs being delivered
 	event_t own_wakeup;				// Wakeup event block
 	USHORT own_flags;				// Misc stuff
 };
 
 // Flags in own_flags
-const USHORT OWN_scanned	= 1;		// Owner has been deadlock scanned
-const USHORT OWN_waiting	= 2;		// Owner is waiting inside wait_for_request()
-const USHORT OWN_wakeup		= 4;		// Owner has been awoken
-const USHORT OWN_signaled	= 8;		// Signal is thought to be delivered
-const USHORT OWN_timeout	= 16;		// Owner is waiting with timeout
+const USHORT OWN_scanned	= 1;	// Owner has been deadlock scanned
+const USHORT OWN_wakeup		= 2;	// Owner has been awoken
+const USHORT OWN_signaled	= 4;	// Signal is thought to be delivered
 
 // Lock manager history block
 
@@ -363,7 +362,7 @@ private:
 	lbl* find_lock(SRQ_PTR, USHORT, const UCHAR*, USHORT, USHORT*);
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
-	SRQ_PTR grant_or_que(Attachment*, lrq*, lbl*, SSHORT);
+	bool grant_or_que(Attachment*, lrq*, lbl*, SSHORT);
 	bool init_owner_block(Firebird::Arg::StatusVector&, own*, UCHAR, LOCK_OWNER_T);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
@@ -393,7 +392,7 @@ private:
 	void validate_request(const SRQ_PTR, USHORT, USHORT);
 	void validate_shb(const SRQ_PTR);
 
-	USHORT wait_for_request(Attachment*, lrq*, SSHORT);
+	void wait_for_request(Attachment*, lrq*, SSHORT);
 	bool attach_shared_file(Firebird::Arg::StatusVector&);
 	void detach_shared_file(Firebird::Arg::StatusVector&);
 	void get_shared_file_name(Firebird::PathName&, ULONG extend = 0) const;
