@@ -2000,8 +2000,10 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 					// Reassert blocking AST after write failure with dummy lock convert
 					// to same level. This will re-enable blocking AST notification.
 
-					if (!LCK_convert_opt(tdbb, bdb->bdb_lock, bdb->bdb_lock->lck_logical))
-						fb_utils::init_status(tdbb->tdbb_status_vector);
+					{ // scope
+						ThreadStatusGuard temp_status(tdbb);
+						LCK_convert_opt(tdbb, bdb->bdb_lock, bdb->bdb_lock->lck_logical);
+					}
 
 					CCH_unwind(tdbb, true);
 				}
