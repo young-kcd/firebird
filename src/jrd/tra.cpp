@@ -92,9 +92,6 @@ static header_page* bump_transaction_id(thread_db*, WIN *);
 #endif
 static Lock* create_transaction_lock(thread_db* tdbb, void* object);
 static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
-#ifdef VMS
-static void compute_oldest_retaining(thread_db*, jrd_tra*, bool);
-#endif
 static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
 	const char* option_name, RelationLockTypeMap& lockmap, const int level);
 static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, ULONG, USHORT);
@@ -188,71 +185,7 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
  **************************************/
 	SET_TDBB(tdbb);
 
-#ifndef VMS
-	return ((LCK_query_data(tdbb, dbb->dbb_lock, LCK_tra, LCK_ANY)) ? true : false);
-#else
-
-	// Read header page and allocate transaction number.
-
-	ULONG number, oldest, active;
-#ifdef SUPERSERVER_V2
-	number = dbb->dbb_next_transaction;
-	oldest = dbb->dbb_oldest_transaction;
-	active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
-#else
-	if (dbb->dbb_flags & DBB_read_only)
-	{
-		number = dbb->dbb_next_transaction;
-		oldest = dbb->dbb_oldest_transaction;
-		active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
-	}
-	else
-	{
-		WIN window(HEADER_PAGE_NUMBER);
-		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-		number = header->hdr_next_transaction;
-		oldest = header->hdr_oldest_transaction;
-		active = MAX(header->hdr_oldest_active, header->hdr_oldest_transaction);
-		CCH_RELEASE(tdbb, &window);
-	}
-#endif // SUPERSERVER_V2
-
-	const ULONG base = oldest & ~TRA_MASK;
-	const size_t length = (number - base + TRA_MASK) / 4;
-
-	MemoryPool* const pool = dbb->dbb_permanent;
-	Firebird::AutoPtr<jrd_tra> trans =
-		FB_NEW(*pool) jrd_tra(pool, &dbb->dbb_memory_stats, NULL, NULL, length);
-
-	// Build transaction bitmap to scan for active transactions.
-
-	TRA_get_inventory(tdbb, trans->tra_transactions, base, number);
-
-	Lock temp_lock;
-	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = trans;
-	temp_lock.lck_type = LCK_tra;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-	temp_lock.lck_parent = dbb->dbb_lock;
-	temp_lock.lck_length = sizeof(SLONG);
-
-	for (; active <= number; active++)
-	{
-		const ULONG byte = TRANS_OFFSET(active - base);
-		const USHORT shift = TRANS_SHIFT(active);
-		const USHORT state = (trans->tra_transactions[byte] >> shift) & TRA_MASK;
-		if (state == tra_active)
-		{
-			temp_lock.lck_key.lck_long = active;
-			if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT)) {
-				return true;
-			}
-			LCK_release(tdbb, &temp_lock);
-		}
-	}
-
-	return false;
-#endif
+	return LCK_query_data(tdbb, dbb->dbb_lock, LCK_tra, LCK_ANY) ? true : false;
 }
 
 void TRA_cleanup(thread_db* tdbb)
@@ -2081,89 +2014,6 @@ static Lock* create_transaction_lock(thread_db* tdbb, void* object)
 }
 
 
-#ifdef VMS
-static void compute_oldest_retaining(thread_db* tdbb, jrd_tra* transaction, const bool write_flag)
-{
-/**************************************
- *
- *	c o m p u t e _ o l d e s t _ r e t a i n i n g
- *
- **************************************
- *
- * Functional description
- *	Read the oldest active for all transactions
- *	younger than us up to the youngest retaining
- *	transaction. If an "older" oldest active is
- *	found, by all means use it. Write flag is true
- *	to write retaining lock and false to read it.
- *	The retaining lock holds the youngest commit
- *	retaining transaction.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-	// Get a commit retaining lock, if not present.
-
-	Lock* lock = dbb->dbb_retaining_lock;
-	if (!lock)
-	{
-		lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
-		lock->lck_dbb = dbb;
-		lock->lck_type = LCK_retaining;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_length = sizeof(SLONG);
-		lock->lck_object = dbb;
-		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
-		dbb->dbb_retaining_lock = lock;
-	}
-
-	SLONG number = transaction->tra_number;
-
-	// Writers must synchronize their lock update so that
-	// an older retaining is not written over a younger retaining.
-	// In any case, lock types have been selected so that
-	// readers and writers don't interfere.
-
-	SLONG youngest_retaining;
-
-	if (write_flag)
-	{
-		LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);
-		youngest_retaining = LOCK_read_data(lock->lck_id);
-		if (number > youngest_retaining)
-			LCK_write_data(lock, number);
-		LCK_convert(tdbb, lock, LCK_SR, LCK_WAIT);
-	}
-	else
-	{
-		youngest_retaining = LOCK_read_data(lock->lck_id);
-		if (number > youngest_retaining)
-			return;
-
-		// fill out a lock block, zeroing it out first
-		Lock temp_lock;
-		temp_lock.lck_dbb = dbb;
-		temp_lock.lck_type = LCK_tra;
-		temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-		temp_lock.lck_parent = dbb->dbb_lock;
-		temp_lock.lck_length = sizeof(SLONG);
-		temp_lock.lck_object = transaction;
-
-		while (number < youngest_retaining)
-		{
-			temp_lock.lck_key.lck_long = ++number;
-			const SLONG data = LCK_read_data(&temp_lock);
-			if (data && data < transaction->tra_oldest_active)
-				transaction->tra_oldest_active = data;
-		}
-	}
-}
-#endif
-
-
 static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation,
 	UCHAR lock_type, const char* option_name, RelationLockTypeMap& lockmap, const int level)
 {
@@ -2569,11 +2419,6 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 	// is seen by other transactions.
 
 	const SLONG old_number = transaction->tra_number;
-#ifdef VMS
-	transaction->tra_number = new_number;
-	compute_oldest_retaining(tdbb, transaction, true);
-	transaction->tra_number = old_number;
-#endif
 
 	if (!(dbb->dbb_flags & DBB_read_only))
 	{
@@ -3377,7 +3222,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 			if (trans->tra_oldest_active == (SLONG) oldest_snapshot)
 				break;
-#ifndef VMS
+
 			// Query the minimum lock data for all active transaction locks.
 			// This will be the oldest active snapshot used for regulating garbage collection.
 
@@ -3385,7 +3230,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 			if (data && data < trans->tra_oldest_active)
 				trans->tra_oldest_active = data;
 			break;
-#endif
 		}
 	}
 
@@ -3419,16 +3263,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	if (lock->lck_data != (SLONG) lck_data)
 		LCK_write_data(tdbb, lock, lck_data);
-
-	// Scan commit retaining transactions which have started after us but which
-	// want to preserve an oldest active from an already committed transaction.
-	// If a previously computed oldest snapshot was matched then there's no
-	// need to worry about commit retaining transactions.
-
-#ifdef VMS
-	if (trans->tra_oldest_active != oldest_snapshot)
-		compute_oldest_retaining(tdbb, trans, false);
-#endif
 
 	// Finally, scan transactions looking for the oldest interesting transaction -- the oldest
 	// non-commited transaction.  This will not be updated immediately, but saved until the
