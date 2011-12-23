@@ -631,7 +631,7 @@ public:
 	Firebird::PathName getPluginName();
 
 //	Auth::IClientBlock implementation
-	int release();
+	int FB_CARG release();
 	const char* FB_CARG getLogin();
 	const char* FB_CARG getPassword();
 	const unsigned char* FB_CARG getData(unsigned int* length);
@@ -690,7 +690,7 @@ public:
 	void reset();
 
 //	Auth::IServerBlock implementation
-	int release();
+	int FB_CARG release();
 	const char* FB_CARG getLogin();
 	const unsigned char* FB_CARG getData(unsigned int* length);
 	void FB_CARG putData(unsigned int length, const void* data);
