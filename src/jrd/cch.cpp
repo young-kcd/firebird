@@ -2000,7 +2000,9 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 					// Reassert blocking AST after write failure with dummy lock convert
 					// to same level. This will re-enable blocking AST notification.
 
-					LCK_convert_opt(tdbb, bdb->bdb_lock, bdb->bdb_lock->lck_logical);
+					if (!LCK_convert_opt(tdbb, bdb->bdb_lock, bdb->bdb_lock->lck_logical))
+						fb_utils::init_status(tdbb->tdbb_status_vector);
+
 					CCH_unwind(tdbb, true);
 				}
 			}
@@ -4242,12 +4244,10 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	const LockState must_read = (lock->lck_logical < LCK_read) ? lsLocked : lsLockedHavePage;
 
-	ISC_STATUS_ARRAY alt_status;
-	memcpy(alt_status, tdbb->tdbb_status_vector, sizeof(alt_status));
-
-	if (LCK_convert_opt(tdbb, lock, lock_type)) {
+	if (LCK_convert_opt(tdbb, lock, lock_type))
 		return must_read;
-	}
+
+	fb_utils::init_status(status);
 
 	if (wait == LCK_NO_WAIT)
 	{
@@ -4255,11 +4255,8 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 		return lsLockTimeout;
 	}
 
-	memcpy(tdbb->tdbb_status_vector, alt_status, sizeof(alt_status));
-
-	if (LCK_lock(tdbb, lock, lock_type, wait)) {
+	if (LCK_lock(tdbb, lock, lock_type, wait))
 		return lsLocked;
-	}
 
 	// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
