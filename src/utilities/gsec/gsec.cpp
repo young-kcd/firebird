@@ -248,14 +248,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 		uSvc->checkService();
 
-		Auth::Get getPlugin(pseudoConfig);
-		manager = getPlugin.plugin();
-		if (!manager)
-		{
-			GSEC_error_redirect((Firebird::Arg::Gds(isc_random) << "Missing management plugin").value(), GsecMsg15);
-		}
-		manager->addRef();
-
 		fb_assert(user_data->trustedUser.entered() || user_data->authenticationBlock.hasData());
 		if (user_data->trustedUser.entered() || user_data->authenticationBlock.hasData())
 		{
@@ -314,10 +306,25 @@ int gsec(Firebird::UtilSvc* uSvc)
 			};
 
 			Firebird::LocalStatus st;
-			GsecInfo info(user_data->trustedUser.get(), user_data->role.get(),
-						  user_data->trustedRole && !user_data->role.entered(),
-						  network_protocol.c_str(), remote_address.c_str(), &user_data->authenticationBlock);
-			manager->start(&st, &info);
+			try
+			{
+				Auth::Get getPlugin(pseudoConfig);
+				manager = getPlugin.plugin();
+				if (!manager)
+				{
+					GSEC_error_redirect((Firebird::Arg::Gds(isc_random) << "Missing management plugin").value(), GsecMsg15);
+				}
+				manager->addRef();
+
+				GsecInfo info(user_data->trustedUser.get(), user_data->role.get(),
+							  user_data->trustedRole && !user_data->role.entered(),
+							  network_protocol.c_str(), remote_address.c_str(), &user_data->authenticationBlock);
+				manager->start(&st, &info);
+			}
+			catch (const Firebird::Exception& ex)
+			{
+				ex.stuffException(&st);
+			}
 
 			if (!st.isSuccess())
 			{
@@ -481,7 +488,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 				user_data->database.setEntered(databaseNameEntered);
 				user_data->role.set(sqlRoleName.c_str());
 				user_data->role.setEntered(sqlRoleName.hasData());
-				user_data->role.setSpecified(user_data->role.entered());
 
 				if (ret == 0)
 				{
@@ -1380,8 +1386,16 @@ void GSEC_error_redirect(const ISC_STATUS* status_vector, USHORT errcode)
  *
  **************************************/
 
-	GSEC_print_status(status_vector);
-	GSEC_error(errcode);
+	tsec* tdsec = tsec::getSpecific();
+	if (!tdsec->utilSvc->isService())
+	{
+		GSEC_print_status(status_vector);
+		GSEC_error(errcode);
+	}
+	else
+	{
+		GSEC_error(errcode, status_vector);
+	}
 }
 
 void GSEC_diag(USHORT errcode)
@@ -1403,7 +1417,7 @@ void GSEC_diag(USHORT errcode)
 		GSEC_print(errcode);
 }
 
-void GSEC_error(USHORT errcode)
+void GSEC_error(USHORT errcode, const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1419,6 +1433,10 @@ void GSEC_error(USHORT errcode)
 
 	tsec* tdsec = tsec::getSpecific();
 	tdsec->utilSvc->setServiceStatus(GSEC_MSG_FAC, errcode, dummy);
+	if (status_vector)
+	{
+		tdsec->utilSvc->setServiceStatus(status_vector);
+	}
 	tdsec->utilSvc->started();
 
 	GSEC_print(errcode);

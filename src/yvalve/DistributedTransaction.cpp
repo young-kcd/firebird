@@ -37,7 +37,6 @@
 #include "../jrd/inf_pub.h"
 #include "../common/isc_proto.h"
 #include "../jrd/acl.h"
-///#include "../common/classes/init.h"
 
 using namespace Firebird;
 using namespace Why;

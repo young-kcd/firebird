@@ -816,6 +816,7 @@ Data source : @4', NULL, NULL)
 ('ee_blr_mismatch_null', NULL, 'met.epp', NULL, 0, 706, NULL, 'External BLR message mismatch: invalid null descriptor at field @1', NULL, NULL)
 ('ee_blr_mismatch_length', NULL, 'met.epp', NULL, 0, 707, NULL, 'External BLR message mismatch: length = @1, expected @2', NULL, NULL)
 ('ss_out_of_bounds', NULL, 'sdl.cpp', NULL, 0, 708, NULL, 'Subscript @1 out of bounds [@2, @3]', NULL, NULL)
+('missing_data_structures', NULL, 'server.cpp', NULL, 0, 709, NULL, 'Install incomplete, please read chapter "Initializing security database" in Quick Start Guide', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

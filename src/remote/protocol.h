@@ -99,8 +99,7 @@ const USHORT FB_PROTOCOL_MASK = static_cast<USHORT>(~FB_PROTOCOL_FLAG);
 const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
 
 // Protocol 12 has support for asynchronous call op_cancel.
-// Currently implemented asynchronously only for TCP/IP
-// on superserver and superclassic.
+// Currently implemented asynchronously only for TCP/IP.
 
 const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
 
@@ -305,6 +304,8 @@ enum P_OP
 
 	op_ping					= 93,
 
+	op_accept_data			= 94,	// Server accepts connection and returns some data to client
+
 	op_max
 };
 
@@ -397,7 +398,10 @@ const UCHAR CNCT_host		= 4;
 const UCHAR CNCT_group		= 5;			// Effective Unix group id
 const UCHAR CNCT_user_verification	= 6;	// Attach/create using this connection
 					 						// will use user verification
-
+const UCHAR CNCT_specific_data		= 7;	// Some data, needed for user verification on server
+const UCHAR CNCT_plugin_name		= 8;	// Name of plugin, which generated that data
+const UCHAR CNCT_login				= 9;	// Same data as isc_dpb_user_name
+const UCHAR CNCT_plugin_list		= 10;	// List of plugins, available on client
 
 typedef struct bid	// BLOB ID
 {
@@ -429,6 +433,16 @@ typedef struct p_acpt
 	P_ARCH	p_acpt_architecture;	// Architecture for protocol
 	USHORT	p_acpt_type;			// Minimum type
 } P_ACPT;
+
+// Accept Block with Data (Server response to connect block, start with P.13)
+
+struct p_acpd : public p_acpt
+{
+	CSTRING	p_acpt_data;			// Returned auth data
+	CSTRING	p_acpt_plugin;			// Plugin to continue with
+	USHORT	p_acpt_authenticated;	// Auth complete in single step (few! strange...)
+};
+typedef p_acpd P_ACPD;
 
 // Generic Response block
 
@@ -644,8 +658,9 @@ typedef struct p_trau
 
 typedef struct p_auth_continue
 {
-	CSTRING	p_data;							// Request
+	CSTRING	p_data;							// Specific data
 	CSTRING p_name;							// Plugin name
+	CSTRING p_list;							// Plugin list
 } P_AUTH_CONT;
 
 struct p_update_account
@@ -684,6 +699,7 @@ typedef struct packet
     P_OP	p_operation;		// Operation/packet type
     P_CNCT	p_cnct;				// Connect block
     P_ACPT	p_acpt;				// Accept connection
+    P_ACPD	p_acpd;				// Accept connection with data
     P_RESP	p_resp;				// Generic response to a call
     P_ATCH	p_atch;				// Attach or create database
     P_RLSE	p_rlse;				// Release object

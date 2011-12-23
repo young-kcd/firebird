@@ -49,10 +49,12 @@ AllObjects += $(YValve_Objects)
 
 
 # Remote
-Remote_Common:= $(call dirObjects,remote)
-Remote_Server:= $(call dirObjects,remote/server) $(call makeObjects,auth/SecurityDatabase,LegacyServer.cpp)
-												 # legacy security database LegacyServer.cpp should become SA plugin
-Remote_Client:= $(call dirObjects,remote/client) $(call makeObjects,auth/SecurityDatabase,LegacyClient.cpp)
+Remote_Common:= $(call dirObjects,remote) $(call dirObjects,auth/SecureRemotePassword)
+Remote_Server:= $(call dirObjects,remote/server) $(call dirObjects,auth/SecureRemotePassword/server) \
+				$(call makeObjects,auth/SecurityDatabase,LegacyServer.cpp)
+				# legacy security database LegacyServer.cpp should become plugin soon
+Remote_Client:= $(call dirObjects,remote/client) $(call dirObjects,auth/SecureRemotePassword/client) \
+				$(call makeObjects,auth/SecurityDatabase,LegacyClient.cpp)
 Remote_Server_Objects:= $(Remote_Common) $(Remote_Server)
 Remote_Client_Objects:= $(Remote_Common) $(Remote_Client)
 
@@ -163,6 +165,13 @@ AllObjects += $(QLI_Objects)
 LEGACY_USERS_MANAGE_Objects:= $(call makeObjects,auth/SecurityDatabase,LegacyManagement.epp)
 
 AllObjects += $(LEGACY_USERS_MANAGE_Objects)
+
+
+# SRP-based users management in security database
+SRP_USERS_MANAGE_Objects:= $(call dirObjects,auth/SecureRemotePassword/manage) \
+						   $(call dirObjects,auth/SecureRemotePassword)
+
+AllObjects += $(SRP_USERS_MANAGE_Objects)
 
 
 # Multihop authentication debugger

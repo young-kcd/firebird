@@ -5076,7 +5076,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		PathName svcName(serviceName);
 		svcName.trim();
 
-		ClumpletReader spbReader(ClumpletReader::SpbAttach, spb, spbLength);
+		ClumpletReader spbReader(ClumpletReader::spbList, spb, spbLength);
 		if ((spbReader.find(isc_spb_auth_block) && spbReader.getClumpLength() > 0) ||
 			ISC_check_if_remote(svcName, false))
 		{

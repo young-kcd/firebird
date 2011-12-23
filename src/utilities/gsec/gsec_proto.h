@@ -7,7 +7,7 @@
 // Output reporting utilities
 void	GSEC_print_status(const ISC_STATUS*);
 void	GSEC_error_redirect(const ISC_STATUS*, USHORT);
-void	GSEC_error(USHORT);
+void	GSEC_error(USHORT code, const ISC_STATUS* status = NULL);
 void	GSEC_exit();
 void	GSEC_print(USHORT, const char* str = NULL);
 void	GSEC_message(USHORT, const char* str = NULL);

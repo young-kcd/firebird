@@ -246,6 +246,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	p_cnct::p_cnct_repeat* tail;
 	const rem_port* port;
 	P_ACPT *accept;
+	P_ACPD *accept_with_data;
 	P_ATCH *attach;
 	P_RESP *response;
 	P_CMPL *compile;
@@ -326,6 +327,18 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(accept->p_acpt_version));
 		MAP(xdr_enum, reinterpret_cast<xdr_op&>(accept->p_acpt_architecture));
 		MAP(xdr_u_short, accept->p_acpt_type);
+		DEBUG_PRINTSIZE(xdrs, p->p_operation);
+		return P_TRUE(xdrs, p);
+
+	case op_accept_data:
+		accept_with_data = &p->p_acpd;
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(accept_with_data->p_acpt_version));
+		MAP(xdr_enum, reinterpret_cast<xdr_op&>(accept_with_data->p_acpt_architecture));
+		MAP(xdr_u_short, accept_with_data->p_acpt_type);
+		MAP(xdr_cstring, accept_with_data->p_acpt_data);
+		MAP(xdr_cstring, accept_with_data->p_acpt_plugin);
+		MAP(xdr_u_short, accept_with_data->p_acpt_authenticated);
+//???		fprintf(stderr, "data length %d\n", accept_with_data->p_acpt_data.cstr_length);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -755,6 +768,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			P_AUTH_CONT* auth = &p->p_auth_cont;
 			MAP(xdr_cstring, auth->p_data);
 			MAP(xdr_cstring, auth->p_name);
+			MAP(xdr_cstring, auth->p_list);
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 
 			return P_TRUE(xdrs, p);

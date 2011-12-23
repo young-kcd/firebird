@@ -28,7 +28,7 @@
 #define AUTH_LEGACY_MANAGEMENT_H
 
 #include "../common/classes/ImplementHelper.h"
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 
 
 namespace Auth {

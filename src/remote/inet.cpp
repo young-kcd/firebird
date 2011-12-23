@@ -531,10 +531,11 @@ static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
 static Firebird::GlobalPtr<PortsCleanup>	inet_ports;
 
 
-rem_port* INET_analyze(const Firebird::PathName& file_name,
+rem_port* INET_analyze(ClntAuthBlock* cBlock,
+					const Firebird::PathName& file_name,
 					const TEXT*	node_name,
 					bool	uv_flag,
-					Firebird::ClumpletReader &dpb)
+					ClumpletReader &dpb)
 {
 /**************************************
  *
@@ -559,7 +560,12 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
-	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
+	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, 64000);
+	if (cBlock)
+	{
+		cBlock->extractDataFromPluginTo(user_id);
+	}
+
 	Firebird::string buffer;
 	int eff_gid;
 	int eff_uid;
@@ -604,7 +610,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 	copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try1, cnct->p_cnct_count);
 
-	// Try connection using first set of protocols.  punt if error
+	// Try connection using first set of protocols
 
 	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb);
 
@@ -630,15 +636,51 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		port = inet_try_connect(packet, rdb, file_name, node_name, dpb);
 	}
 
-	if (packet->p_operation != op_accept)
+	P_ACPT* accept = NULL;
+	switch (packet->p_operation)
 	{
+	case op_accept_data:
+		accept = &packet->p_acpd;
+		if (cBlock)
+		{
+			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
+									   packet->p_acpd.p_acpt_data.cstr_address);
+			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
+		}
+		break;
+
+	case op_accept:
+		if (cBlock)
+		{
+			cBlock->reset(&file_name);
+		}
+		accept = &packet->p_acpt;
+		break;
+
+	case op_response:
+		try
+		{
+			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
+			REMOTE_check_response(&warning, rdb, packet);
+		}
+		catch(const Firebird::Exception&)
+		{
+			disconnect(port);
+			delete rdb;
+			throw;
+		}
+		// fall through - response is not a required accept
+
+	default:
 		disconnect(port);
 		delete rdb;
-
 		Arg::Gds(isc_connect_reject).raise();
+		break;
 	}
 
-	port->port_protocol = packet->p_acpt.p_acpt_version;
+	fb_assert(accept);
+	fb_assert(port);
+	port->port_protocol = accept->p_acpt_version;
 
 	// once we've decided on a protocol, concatenate the version
 	// string to reflect it...
@@ -647,19 +689,19 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
-	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE) {
+	if (accept->p_acpt_architecture == ARCHITECTURE) {
 		port->port_flags |= PORT_symmetric;
 	}
 
-	if (packet->p_acpt.p_acpt_type == ptype_rpc) {
+	if (accept->p_acpt_type == ptype_rpc) {
 		port->port_flags |= PORT_rpc;
 	}
 
-	if (packet->p_acpt.p_acpt_type != ptype_out_of_band) {
+	if (accept->p_acpt_type != ptype_out_of_band) {
 		port->port_flags |= PORT_no_oob;
 	}
 
-	if (packet->p_acpt.p_acpt_type == ptype_lazy_send) {
+	if (accept->p_acpt_type == ptype_lazy_send) {
 		port->port_flags |= PORT_lazy;
 	}
 
@@ -1192,11 +1234,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	} // end scope
 #endif // !WIN_NT
 
-	// store FULL user identity in port_user_name for security purposes
-
-	Firebird::string temp;
-	temp.printf("%s.%ld.%ld", name.c_str(), eff_gid, eff_uid);
-	port->port_user_name = REMOTE_make_string(temp.c_str());
+	// store user identity in port_user_name
+	port->port_user_name = name;
 
 	port->port_protocol_str = REMOTE_make_string("TCPv4");
 
@@ -3076,6 +3115,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		}
 
 		n = recv(port->port_handle, reinterpret_cast<char*>(buffer), buffer_length, 0);
+		// ->decrypt
 		inetErrNo = INET_ERRNO;
 
 		if (n != -1 || !INTERRUPT_ERROR(inetErrNo))
@@ -3143,6 +3183,8 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 
 	const char* data = buffer;
 	SSHORT length = buffer_length;
+
+	// ->encrypt
 
 	while (length)
 	{

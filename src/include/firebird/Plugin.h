@@ -186,9 +186,9 @@ public:
 	// in case when plugin's version is less than desired
 	// If caller already has an interface for firebird.conf, it may be passed here
 	// If parameter is missing, plugins will get access to default (non database specific) config
-	virtual IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
-										   int desiredVersion, UpgradeInfo* ui,
-										   IFirebirdConf* firebirdConf) = 0;
+	virtual IPluginSet* FB_CARG getPlugins(IStatus* status, unsigned int interfaceType,
+						const char* namesList, int desiredVersion,
+						UpgradeInfo* ui, IFirebirdConf* firebirdConf) = 0;
 	// Get generic config interface for given file
 	virtual IConfig* FB_CARG getConfig(const char* filename) = 0;
 	// Plugins must be released using this function - use of plugin's release()
@@ -210,9 +210,18 @@ namespace PluginType {
 	static const unsigned int AuthUserManagement = 13;
 	static const unsigned int ExternalEngine = 14;
 	static const unsigned int Trace = 15;
+	static const unsigned int Crypt = 15;
 
 	static const unsigned int MaxType = 16;	// keep in sync please
 };
+
+class ICrypt : public IPluginBase
+{
+public:
+	virtual void FB_CARG setKey(IStatus* status, unsigned int length, const void* key) = 0;
+	virtual void FB_CARG transform(IStatus* status, unsigned int length, void* to, const void* from) = 0;
+};
+#define FB_CRYPT_VERSION (FB_PLUGIN_VERSION + 1)
 
 }	// namespace Firebird
 

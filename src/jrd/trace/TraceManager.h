@@ -115,7 +115,7 @@ public:
 	{
 		if (changeNumber != getStorage()->getChangeNumber())
 			update_sessions();
-		return trace_needs & (CONST64(1) << e);
+		return trace_needs & (FB_CONST64(1) << e);
 	}
 
 	/* DSQL-friendly routines to call Trace API hooks.

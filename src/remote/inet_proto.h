@@ -31,7 +31,8 @@ namespace Firebird
 	class ClumpletReader;
 }
 
-rem_port*	INET_analyze(const Firebird::PathName&, const TEXT*, bool, Firebird::ClumpletReader&);
+rem_port*	INET_analyze(ClntAuthBlock*, const Firebird::PathName&, const TEXT*,
+						 bool, Firebird::ClumpletReader&);
 rem_port*	INET_connect(const TEXT*, struct packet*, USHORT, Firebird::ClumpletReader*);
 rem_port*	INET_reconnect(SOCKET);
 rem_port*	INET_server(SOCKET);

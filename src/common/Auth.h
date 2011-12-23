@@ -30,7 +30,7 @@
 #ifndef FB_AUTH_H
 #define FB_AUTH_H
 
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
@@ -38,8 +38,6 @@
 #include "../common/classes/ImplementHelper.h"
 
 namespace Auth {
-
-bool legacy(const char* nm);
 
 class WriterImplementation : public Firebird::AutoIface<IWriter, FB_AUTH_WRITER_VERSION>
 {
@@ -61,26 +59,6 @@ private:
 
 	void putLevel();
 };
-
-class DpbImplementation : public Firebird::AutoIface<IClumplets, FB_AUTH_CLUMPLETS_VERSION>
-{
-public:
-	DpbImplementation(Firebird::ClumpletWriter& base);
-
-	// DpbImplementation implementation
-	int FB_CARG find(UCHAR tag);
-	void FB_CARG add(UCHAR tag, const void* bytes, unsigned int count);
-	void FB_CARG drop();
-	const unsigned char* FB_CARG get(unsigned int* cntPtr);
-
-private:
-	Firebird::ClumpletWriter* body;
-};
-
-static const AuthTags DB_ATTACH_LIST = {isc_dpb_auth_block, isc_dpb_trusted_auth, isc_dpb_trusted_role, 0};
-static const AuthTags SVC_ATTACH_LIST = {isc_spb_auth_block, isc_spb_trusted_auth, isc_spb_trusted_role, 1};
-static const AuthTags SVC_START_LIST = {isc_spb_auth_block, isc_spb_trusted_auth, 0, 1};
-static const AuthTags SVC_QUERY_LIST = {isc_info_svc_auth_block, 0, 0, 1};
 
 } // namespace Auth
 

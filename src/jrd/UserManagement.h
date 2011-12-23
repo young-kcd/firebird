@@ -29,7 +29,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/recsrc/RecordSource.h"
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 #include "../common/security.h"
 
 namespace Jrd {

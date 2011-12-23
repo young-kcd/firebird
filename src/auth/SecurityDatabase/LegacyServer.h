@@ -34,7 +34,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/ImplementHelper.h"
 
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -51,11 +51,9 @@ public:
 	{ }
 
 	// IServer implementation
-	Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb,
-									   IWriter* writerInterface);
-    Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data,
-		                              unsigned int size, IWriter* writerInterface);
-	void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
+	Result FB_CARG authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
+	Result FB_CARG getSessionKey(Firebird::IStatus* status,
+								 const unsigned char** key, unsigned int* keyLen);
 	int FB_CARG release();
 
 private:

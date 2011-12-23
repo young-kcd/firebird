@@ -56,10 +56,10 @@ DebugServer::DebugServer(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, const AuthTags* tags,
-												IClumplets* dpb, IWriter* writerInterface)
+Result FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
+                               IWriter* writerInterface)
 {
-	try
+/*	try
 	{
 		Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 		str.erase();
@@ -86,10 +86,10 @@ Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, const
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(status);
-		return AUTH_FAILED;
-	}
+	} */
+	return AUTH_FAILED;
 }
-
+/*
 Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const unsigned char* data,
 											   unsigned int size, IWriter* writerInterface)
 {
@@ -108,15 +108,7 @@ Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const 
 		return AUTH_FAILED;
 	}
 }
-
-void FB_CARG DebugServer::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = reinterpret_cast<const unsigned char*>(str.c_str());
-	*dataSize = str.length();
-#ifdef AUTH_VERBOSE
-	fprintf(stderr, "DebugServer::getData: %.*s\n", *dataSize, *data);
-#endif
-}
+ */
 
 int FB_CARG DebugServer::release()
 {
@@ -133,8 +125,9 @@ DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb)
+Result FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* cBlock)
 {
+/*
 	try
 	{
 		str = "HAND";
@@ -155,10 +148,11 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, const
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(status);
-		return AUTH_FAILED;
 	}
+ */
+	return AUTH_FAILED;
 }
-
+/*
 Result FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size)
 {
 	try
@@ -180,15 +174,7 @@ Result FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const 
 		return AUTH_FAILED;
 	}
 }
-
-void FB_CARG DebugClient::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = reinterpret_cast<const unsigned char*>(str.c_str());
-	*dataSize = str.length();
-#ifdef AUTH_VERBOSE
-	fprintf(stderr, "DebugClient::getData: %.*s\n", *dataSize, *data);
-#endif
-}
+*/
 
 int FB_CARG DebugClient::release()
 {
@@ -199,6 +185,22 @@ int FB_CARG DebugClient::release()
 	}
 
 	return 1;
+}
+
+Result DebugServer::getSessionKey(Firebird::IStatus*,
+								 const unsigned char** key, unsigned int* keyLen)
+{
+	*key = NULL;
+	*keyLen = 0;
+	return AUTH_CONTINUE;
+}
+
+Result DebugClient::getSessionKey(Firebird::IStatus*,
+								 const unsigned char** key, unsigned int* keyLen)
+{
+	*key = NULL;
+	*keyLen = 0;
+	return AUTH_CONTINUE;
 }
 
 } // namespace Auth

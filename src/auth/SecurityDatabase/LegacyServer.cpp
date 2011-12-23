@@ -61,7 +61,7 @@ const UCHAR PWD_REQUEST[] =
 	blr_long, 0,
 	blr_long, 0,
 	blr_short, 0,
-	blr_text, BLR_WORD(Auth::MAX_PASSWORD_LENGTH + 2),
+	blr_text, BLR_WORD(Auth::MAX_LEGACY_PASSWORD_LENGTH + 2),
 	blr_message, 0, 1, 0,
 	blr_cstring, 129, 0,
 	blr_receive, 0,
@@ -107,7 +107,7 @@ struct user_record
 	SLONG gid;
 	SLONG uid;
 	SSHORT flag;
-	SCHAR password[Auth::MAX_PASSWORD_LENGTH + 2];
+	SCHAR password[Auth::MAX_LEGACY_PASSWORD_LENGTH + 2];
 };
 
 // Transaction parameter buffer
@@ -120,16 +120,6 @@ const UCHAR TPB[4] =
 	isc_tpb_wait
 };
 
-void getString(Auth::IClumplets* dpb, UCHAR tag, string& str)
-{
-	if (dpb->find(tag))
-	{
-		unsigned int len;
-		const UCHAR* s = dpb->get(&len);
-		str.assign(s, len);
-	}
-}
-
 } // anonymous namespace
 
 namespace Auth {
@@ -137,7 +127,7 @@ namespace Auth {
 class SecurityDatabase : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 {
 public:
-	Result verify(IWriter* authBlock, IClumplets* originalDpb);
+	Result verify(IWriter* authBlock, IServerBlock* sBlock);
 
 	static int shutdown(const int, const int, void*);
 
@@ -247,8 +237,8 @@ bool SecurityDatabase::lookup_user(const char* user_name, char* pwd)
 
 		if (pwd)
 		{
-			strncpy(pwd, user.password, MAX_PASSWORD_LENGTH);
-			pwd[MAX_PASSWORD_LENGTH] = 0;
+			strncpy(pwd, user.password, MAX_LEGACY_PASSWORD_LENGTH);
+			pwd[MAX_LEGACY_PASSWORD_LENGTH] = 0;
 		}
 	}
 
@@ -301,7 +291,7 @@ void SecurityDatabase::prepare()
  *	Public interface
  */
 
-Result SecurityDatabase::verify(IWriter* authBlock, IClumplets* originalDpb)
+Result SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 {
 	static AmCache useNative = AM_UNKNOWN;
 
@@ -318,12 +308,16 @@ Result SecurityDatabase::verify(IWriter* authBlock, IClumplets* originalDpb)
 		return AUTH_CONTINUE;
 	}
 
-	string login, password, passwordEnc;
-	getString(originalDpb, isc_dpb_user_name, login);
-	getString(originalDpb, isc_dpb_password, password);
-	getString(originalDpb, isc_dpb_password_enc, passwordEnc);
+	string login(sBlock->getLogin());
+	unsigned length;
+	const unsigned char* data = sBlock->getData(&length);
+	string passwordEnc;
+	if (data)
+	{
+		passwordEnc.assign(data, length);
+	}
 
-	if (login.hasData() && (password.hasData() || passwordEnc.hasData()))
+	if (login.hasData() && passwordEnc.hasData())
 	{
 		login.upper();
 
@@ -331,21 +325,14 @@ Result SecurityDatabase::verify(IWriter* authBlock, IClumplets* originalDpb)
 		// found there. This means that another database must be accessed, and
 		// that means the current context must be saved and restored.
 
-		char pw1[MAX_PASSWORD_LENGTH + 1];
+		char pw1[MAX_LEGACY_PASSWORD_LENGTH + 1];
 		if (!lookup_user(login.c_str(), pw1))
 		{
 			return AUTH_FAILED;
 		}
-		pw1[MAX_PASSWORD_LENGTH] = 0;
-		string storedHash(pw1, MAX_PASSWORD_LENGTH);
+		pw1[MAX_LEGACY_PASSWORD_LENGTH] = 0;
+		string storedHash(pw1, MAX_LEGACY_PASSWORD_LENGTH);
 		storedHash.rtrim();
-
-		if (!passwordEnc.hasData())
-		{
-			char pwt[MAX_PASSWORD_LENGTH + 2];
-			ENC_crypt(pwt, sizeof pwt, password.c_str(), PASSWORD_SALT);
-			passwordEnc.assign(&pwt[2]);
-		}
 
 		string newHash;
 		LegacyHash::hash(newHash, login, passwordEnc, storedHash);
@@ -354,8 +341,8 @@ Result SecurityDatabase::verify(IWriter* authBlock, IClumplets* originalDpb)
 			bool legacyHash = Config::getLegacyHash();
 			if (legacyHash)
 			{
-				newHash.resize(MAX_PASSWORD_LENGTH + 2);
-				ENC_crypt(newHash.begin(), newHash.length(), passwordEnc.c_str(), PASSWORD_SALT);
+				newHash.resize(MAX_LEGACY_PASSWORD_LENGTH + 2);
+				ENC_crypt(newHash.begin(), newHash.length(), passwordEnc.c_str(), LEGACY_PASSWORD_SALT);
 				newHash.recalculate_length();
 				newHash.erase(0, 2);
 				legacyHash = newHash == storedHash;
@@ -464,9 +451,7 @@ int SecurityDatabase::shutdown(const int, const int, void*)
 const static unsigned int INIT_KEY = ((~0) - 1);
 static unsigned int secDbKey = INIT_KEY;
 
-Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
-												   const AuthTags* tags, IClumplets* dpb,
-												   IWriter* writerInterface)
+Result SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface)
 {
 	status->init();
 
@@ -515,7 +500,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 
 		fb_assert(instance);
 
-		Result rc = instance->verify(writerInterface, dpb);
+		Result rc = instance->verify(writerInterface, sBlock);
 		TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
 		return rc;
 	}
@@ -526,17 +511,12 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 	}
 }
 
-Result SecurityDatabaseServer::contAuthentication(Firebird::IStatus* status,
-											  const unsigned char* /*data*/, unsigned int /*size*/,
-											  IWriter* /*writerInterface*/)
+Result SecurityDatabaseServer::getSessionKey(Firebird::IStatus*,
+								 const unsigned char** key, unsigned int* keyLen)
 {
-	return AUTH_FAILED;
-}
-
-void SecurityDatabaseServer::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = NULL;
-	*dataSize = 0;
+	*key = NULL;
+	*keyLen = 0;
+	return AUTH_CONTINUE;
 }
 
 int SecurityDatabaseServer::release()

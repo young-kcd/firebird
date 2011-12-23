@@ -507,7 +507,7 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
 		{
 		case CNCT_user:
 			id.getString(name);
-			port->port_user_name = REMOTE_make_string(name.c_str());
+			port->port_user_name = name;
 			break;
 
 		case CNCT_passwd:

@@ -31,6 +31,7 @@
 #include <string.h>
 #include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
+#include "../common/common.h"
 
 namespace Firebird {
 
@@ -312,6 +313,12 @@ public:
 		copyFrom(source);
 	}
 
+	void assign(const T* items, const size_t itemsCount)
+	{
+		resize(itemsCount);
+		memcpy(data, items, sizeof(T) * count);
+	}
+
 	// NOTE: getCount method must be signal safe
 	// Used as such in GlobalRWLock::blockingAstHandler
 	size_t getCount() const { return count; }
@@ -332,6 +339,16 @@ public:
 		ensureCapacity(count + itemsSize);
 		memcpy(data + count, items, sizeof(T) * itemsSize);
 		count += itemsSize;
+	}
+
+	void append(const T* items, const size_t itemsSize)
+	{
+		push(items, itemsSize);
+	}
+
+	void append(const Array<T, Storage>& source)
+	{
+		push(source.begin(), source.getCount());
 	}
 
 	T pop()
@@ -477,7 +494,7 @@ public:
 		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };
 
-typedef HalfStaticArray<UCHAR, 16> UCharBuffer;
+typedef HalfStaticArray<UCHAR, BUFFER_TINY> UCharBuffer;
 
 }	// namespace Firebird
 

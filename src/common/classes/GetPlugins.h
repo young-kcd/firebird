@@ -31,6 +31,7 @@
 
 #include "../common/classes/ImplementHelper.h"
 #include "../common/config/config.h"
+#include "../common/StatusHolder.h"
 
 namespace Firebird {
 
@@ -42,11 +43,18 @@ public:
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
 			   UpgradeInfo* ui, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(masterInterface),
-		  pluginSet(pluginInterface->getPlugins(interfaceType,
-						namesList ? namesList : Config::getPlugins(interfaceType),
-					desiredVersion, ui, NULL)),
-		  currentPlugin(NULL)
+		  pluginSet(NULL), currentPlugin(NULL)
 	{
+		LocalStatus status;
+		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
+						namesList ? namesList : Config::getPlugins(interfaceType),
+					desiredVersion, ui, NULL);
+		if (!pluginSet)
+		{
+			fb_assert(!status.isSuccess());
+			status_exception::raise(status.get());
+		}
+
 		pluginSet->release();
 		getPlugin();
 	}
@@ -54,11 +62,18 @@ public:
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, UpgradeInfo* ui,
 			   Config* knownConfig, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(masterInterface),
-		  pluginSet(pluginInterface->getPlugins(interfaceType,
-						namesList ? namesList : Config::getPlugins(interfaceType),
-					desiredVersion, ui, new FirebirdConf(knownConfig))),
-		  currentPlugin(NULL)
+		  pluginSet(NULL), currentPlugin(NULL)
 	{
+		LocalStatus status;
+		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
+						namesList ? namesList : Config::getPlugins(interfaceType),
+						desiredVersion, ui, new FirebirdConf(knownConfig));
+		if (!pluginSet)
+		{
+			fb_assert(!status.isSuccess());
+			status_exception::raise(status.get());
+		}
+
 		pluginSet->release();
 		getPlugin();
 	}

@@ -83,12 +83,14 @@ public:
 
 	// Create a copy of reader
 	ClumpletReader(MemoryPool& pool, const ClumpletReader& from);
+	ClumpletReader(const ClumpletReader& from);
 
 	// Navigation in clumplet buffer
 	bool isEof() const { return cur_offset >= getBufferLength(); }
 	void moveNext();
 	void rewind();
 	bool find(UCHAR tag);
+	bool next(UCHAR tag);
 
     // Methods which work with currently selected clumplet
 	UCHAR getClumpTag() const;
@@ -99,6 +101,7 @@ public:
 	SINT64 getBigInt() const;
 	string& getString(string& str) const;
 	PathName& getPath(PathName& str) const;
+	void getData(UCharBuffer& data) const;
 	const UCHAR* getBytes() const;
 	double getDouble() const;
 	ISC_TIMESTAMP getTimeStamp() const;
@@ -164,8 +167,7 @@ protected:
 	virtual void invalid_structure(const char* what) const;
 
 private:
-	// Assignment and copy constructor not implemented.
-	ClumpletReader(const ClumpletReader& from);
+	// Assignment not implemented.
 	ClumpletReader& operator=(const ClumpletReader& from);
 
 	const UCHAR* static_buffer;
@@ -175,8 +177,9 @@ private:
 	void create(const KindList* kl, size_t buffLen, FPTR_VOID raise);
 
 public:
-	static const KindList dpbList[];	// Some frequently used kind lists
-	static const KindList spbList[];	// Some frequently used kind lists
+	// Some frequently used kind lists
+	static const KindList dpbList[];
+	static const KindList spbList[];
 };
 
 class AuthReader : public ClumpletReader

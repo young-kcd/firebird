@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird authentication
  *	MODULE:			LegacyClient.cpp
- *	DESCRIPTION:	Performs legacy actions on DPB at client side.
+ *	DESCRIPTION:	Performs legacy actions on password at client side.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -28,26 +28,33 @@
 #include "firebird.h"
 #include "../jrd/ibase.h"
 #include "../auth/SecurityDatabase/LegacyClient.h"
+#include "../auth/SecurityDatabase/LegacyHash.h"
+#include "../common/enc_proto.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/init.h"
 
 namespace Auth {
 
-Result SecurityDatabaseClient::startAuthentication(Firebird::IStatus*, const AuthTags* tags, IClumplets* dpb)
+Result SecurityDatabaseClient::authenticate(Firebird::IStatus*, IClientBlock* cb)
 {
-	return dpb->find(isc_dpb_user_name) &&
-		(dpb->find(isc_dpb_password) || dpb->find(isc_dpb_password_enc)) ?
-			AUTH_SUCCESS : AUTH_CONTINUE;
+	if (!(cb->getLogin() && cb->getPassword()))
+	{
+		return AUTH_CONTINUE;
+	}
+
+	TEXT pwt[Auth::MAX_LEGACY_PASSWORD_LENGTH + 2];
+	ENC_crypt(pwt, sizeof pwt, cb->getPassword(), Auth::LEGACY_PASSWORD_SALT);
+	cb->putData(strlen(&pwt[2]), &pwt[2]);
+
+	return AUTH_SUCCESS;
 }
 
-Result SecurityDatabaseClient::contAuthentication(Firebird::IStatus*, const unsigned char*, unsigned int)
+Result SecurityDatabaseClient::getSessionKey(Firebird::IStatus*,
+								 const unsigned char** key, unsigned int* keyLen)
 {
-	return AUTH_FAILED;
-}
-
-void SecurityDatabaseClient::getData(const unsigned char**, unsigned short* dataSize)
-{
-	*dataSize = 0;
+	*key = NULL;
+	*keyLen = 0;
+	return AUTH_CONTINUE;
 }
 
 int SecurityDatabaseClient::release()

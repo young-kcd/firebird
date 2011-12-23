@@ -14,27 +14,19 @@
 #include "../common/sha.h"
 #include "../common/classes/array.h"
 #include "../common/os/guid.h"
+#include "../common/utils_proto.h"
+
+using namespace Firebird;
 
 namespace
 {
 
-// Useful defines & typedefs
-typedef unsigned char BYTE;	// 8-bit quantity
-typedef unsigned long LONG;	// 32-or-more-bit quantity
-
-#define SHA_BLOCKSIZE		64
-#define SHA_DIGESTSIZE		20
-
-struct SHA_INFO
-{
-	LONG digest[5];				// message digest
-	LONG count_lo, count_hi;	// 64-bit bit count
-	BYTE data[SHA_BLOCKSIZE];	// SHA data buffer
-	int local;					// unprocessed amount in data
-};
+#define SHA_BLOCKSIZE		Sha1::BLOCK_SIZE
+#define SHA_DIGESTSIZE		Sha1::HASH_SIZE
+typedef Sha1::ShaInfo SHA_INFO;
 
 void sha_init(SHA_INFO *);
-void sha_update(SHA_INFO *, const BYTE *, int);
+void sha_update(SHA_INFO *, const BYTE *, unsigned int);
 void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 
 #define SHA_VERSION 1
@@ -135,7 +127,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 static void sha_transform(SHA_INFO *sha_info)
 {
 	int i;
-	LONG W[80];
+	Sha1::LONG W[80];
 
 	const BYTE* dp = sha_info->data;
 
@@ -151,7 +143,7 @@ nether regions of the anatomy...
 #define SWAP_DONE
 	for (i = 0; i < 16; ++i)
 	{
-		const LONG T = *((LONG *) dp);
+		const Sha1::LONG T = *((Sha1::LONG *) dp);
 		dp += 4;
 		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
 			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
@@ -162,7 +154,7 @@ nether regions of the anatomy...
 #define SWAP_DONE
 	for (i = 0; i < 16; ++i)
 	{
-		const LONG T = *((LONG *) dp);
+		const Sha1::LONG T = *((Sha1::LONG *) dp);
 		dp += 4;
 		W[i] = T32(T);
 	}
@@ -172,7 +164,7 @@ nether regions of the anatomy...
 #define SWAP_DONE
 	for (i = 0; i < 16; i += 2)
 	{
-		LONG T = *((LONG *) dp);
+		Sha1::LONG T = *((Sha1::LONG *) dp);
 		dp += 8;
 		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
 			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
@@ -186,7 +178,7 @@ nether regions of the anatomy...
 #define SWAP_DONE
 	for (i = 0; i < 16; i += 2)
 	{
-		const LONG T = *((LONG *) dp);
+		const Sha1::LONG T = *((Sha1::LONG *) dp);
 		dp += 8;
 		W[i] = T32(T >> 32);
 		W[i + 1] = T32(T);
@@ -204,13 +196,13 @@ nether regions of the anatomy...
 		W[i] = R32(W[i], 1);
 #endif // SHA_VERSION
 	}
-	LONG A = sha_info->digest[0];
-	LONG B = sha_info->digest[1];
-	LONG C = sha_info->digest[2];
-	LONG D = sha_info->digest[3];
-	LONG E = sha_info->digest[4];
-	const LONG* WP = W;
-	LONG T;
+	Sha1::LONG A = sha_info->digest[0];
+	Sha1::LONG B = sha_info->digest[1];
+	Sha1::LONG C = sha_info->digest[2];
+	Sha1::LONG D = sha_info->digest[3];
+	Sha1::LONG E = sha_info->digest[4];
+	const Sha1::LONG* WP = W;
+	Sha1::LONG T;
 #ifdef UNRAVEL
 	FA(1); FB(1); FC(1); FD(1); FE(1); FT(1); FA(1); FB(1); FC(1); FD(1);
 	FE(1); FT(1); FA(1); FB(1); FC(1); FD(1); FE(1); FT(1); FA(1); FB(1);
@@ -265,17 +257,17 @@ void sha_init(SHA_INFO *sha_info)
 
 // update the SHA digest
 
-void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
+void sha_update(SHA_INFO *sha_info, const BYTE *buffer, unsigned int count)
 {
-	const LONG clo = T32(sha_info->count_lo + ((LONG) count << 3));
+	const Sha1::LONG clo = T32(sha_info->count_lo + ((Sha1::LONG) count << 3));
 	if (clo < sha_info->count_lo) {
 		++sha_info->count_hi;
 	}
 	sha_info->count_lo = clo;
-	sha_info->count_hi += (LONG) count >> 29;
+	sha_info->count_hi += (Sha1::LONG) count >> 29;
 	if (sha_info->local)
 	{
-		int i = SHA_BLOCKSIZE - sha_info->local;
+		unsigned int i = SHA_BLOCKSIZE - sha_info->local;
 		if (i > count) {
 			i = count;
 		}
@@ -305,9 +297,9 @@ void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 
 void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
 {
-	const LONG lo_bit_count = sha_info->count_lo;
-	const LONG hi_bit_count = sha_info->count_hi;
-	int count = (int) ((lo_bit_count >> 3) & 0x3f);
+	const Sha1::LONG lo_bit_count = sha_info->count_lo;
+	const Sha1::LONG hi_bit_count = sha_info->count_hi;
+	unsigned int count = (int) ((lo_bit_count >> 3) & 0x3f);
 	sha_info->data[count++] = 0x80;
 	if (count > SHA_BLOCKSIZE - 8)
 	{
@@ -349,57 +341,58 @@ void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
 	digest[19] = (unsigned char) ((sha_info->digest[4]      ) & 0xff);
 }
 
-inline char conv_bin2ascii(ULONG l)
-{
-	return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[l & 0x3f];
-}
+}	// anonymous namespace
 
-typedef Firebird::HalfStaticArray<unsigned char, SHA_DIGESTSIZE> BinHash;
+namespace Firebird {
 
-void base64(Firebird::string& b64, const BinHash& bin)
-{
-	b64.erase();
-	const unsigned char* f = bin.begin();
-	for (int i = bin.getCount(); i > 0; i -= 3, f += 3)
+	void Sha1::hashBased64(Firebird::string& hash, const Firebird::string& data)
 	{
-		if (i >= 3)
+		SHA_INFO si;
+		sha_init(&si);
+		sha_update(&si, reinterpret_cast<const unsigned char*>(data.c_str()), data.length());
+		UCharBuffer b;
+		sha_final(b.getBuffer(SHA_DIGESTSIZE), &si);
+		fb_utils::base64(hash, b);
+	}
+
+	Sha1::Sha1()
+		: active(false)
+	{
+		reset();
+	}
+
+	void Sha1::process(unsigned int length, const void* bytes)
+	{
+		sha_update(&handle, reinterpret_cast<const unsigned char*>(bytes), length);
+	}
+
+	void Sha1::getHash(UCharBuffer& hash)
+	{
+		fb_assert(active);
+		sha_final(hash.getBuffer(HASH_SIZE), &handle);
+	}
+
+	void Sha1::reset()
+	{
+		clear();
+		sha_init(&handle);
+		active = true;
+	}
+
+	Sha1::~Sha1()
+	{
+		clear();
+	}
+
+	void Sha1::clear()
+	{
+		if (active)
 		{
-			const ULONG l = (ULONG(f[0]) << 16) | (ULONG(f[1]) <<  8) | f[2];
-			b64 += conv_bin2ascii(l >> 18);
-			b64 += conv_bin2ascii(l >> 12);
-			b64 += conv_bin2ascii(l >> 6);
-			b64 += conv_bin2ascii(l);
-		}
-		else
-		{
-			ULONG l = ULONG(f[0]) << 16;
-			if (i == 2)
-				l |= (ULONG(f[1]) << 8);
-			b64 += conv_bin2ascii(l >> 18);
-			b64 += conv_bin2ascii(l >> 12);
-			b64 += (i == 1 ? '=' : conv_bin2ascii(l >> 6));
-			b64 += '=';
+			unsigned char tmp[HASH_SIZE];
+			sha_final(tmp, &handle);
+			active = false;
 		}
 	}
-}
 
-}	// anon namespace
-
-void Jrd::CryptSupport::hash(Firebird::string& hashValue, const Firebird::string& data)
-{
-	SHA_INFO si;
-	sha_init(&si);
-	sha_update(&si, reinterpret_cast<const unsigned char*>(data.c_str()), data.length());
-	BinHash bh;
-	sha_final(bh.getBuffer(SHA_DIGESTSIZE), &si);
-	base64(hashValue, bh);
-}
-
-void Jrd::CryptSupport::random(Firebird::string& randomValue, size_t length)
-{
-	BinHash binRand;
-	Firebird::GenerateRandomBytes(binRand.getBuffer(length), length);
-	base64(randomValue, binRand);
-	randomValue.resize(length, '$');
-}
+} // namespace Firebird
 

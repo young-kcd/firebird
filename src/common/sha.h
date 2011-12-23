@@ -20,24 +20,64 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_OS_SHA_H
-#define JRD_OS_SHA_H
+#ifndef COMMON_SHA_H
+#define COMMON_SHA_H
 
 #include "firebird.h"
+#include "../common/classes/alloc.h"
+#include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 
-namespace Jrd
-{
-	class CryptSupport
-	{
-	private:
-		CryptSupport() {}
-		~CryptSupport() {}
-	public:
-		// hash and random return base64-coded values
-		static void hash(Firebird::string& hashValue, const Firebird::string& data);
-		static void random(Firebird::string& randomValue, size_t length);
-	};
-}
+namespace Firebird {
 
-#endif //JRD_OS_SHA_H
+class Sha1 : public GlobalStorage
+{
+public:
+	Sha1();
+
+	static const unsigned int HASH_SIZE = 20;
+	static const unsigned int BLOCK_SIZE = 64;
+	typedef unsigned long LONG;
+
+	struct ShaInfo
+	{
+		LONG digest[5];				// message digest
+		LONG count_lo, count_hi;	// 64-bit bit count
+		UCHAR data[BLOCK_SIZE];		// SHA data buffer
+		unsigned int local;			// unprocessed amount in data
+	};
+
+	void process(unsigned int length, const void* bytes);
+
+	void process(const UCharBuffer& bytes)
+	{
+		process(bytes.getCount(), bytes.begin());
+	}
+
+	void process(const string& str)
+	{
+		process(str.length(), str.c_str());
+	}
+
+	void process(const char* str)
+	{
+		process(strlen(str), str);
+	}
+
+	void getHash(UCharBuffer& h);
+	void reset();
+	~Sha1();
+
+	// return base64-coded values
+	static void hashBased64(Firebird::string& hashBase64, const Firebird::string& data);
+
+private:
+	void clear();
+
+	ShaInfo handle;
+	bool active;
+};
+
+} // namespace Firebird
+
+#endif // COMMON_SHA_H

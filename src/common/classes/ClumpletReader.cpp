@@ -128,6 +128,13 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, const ClumpletReader& from) :
 	rewind();	// this will set cur_offset and spbState
 }
 
+ClumpletReader::ClumpletReader(const ClumpletReader& from) :
+	AutoStorage(), kind(from.kind),
+	static_buffer(from.getBuffer()), static_buffer_end(from.getBufferEnd())
+{
+	rewind();	// this will set cur_offset and spbState
+}
+
 ClumpletReader::ClumpletReader(MemoryPool& pool, const KindList* kl,
 							   const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
 	AutoStorage(pool), kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
@@ -253,6 +260,9 @@ UCHAR ClumpletReader::getBufferTag() const
 				return 0;
 			}
 			return buffer_start[1];
+		case isc_spb_version3:
+			// This is wide SPB attach format - buffer's tag is the first byte.
+			return buffer_start[0];
 		default:
 			invalid_structure("spb in service attach should begin with isc_spb_version1 or isc_spb_version");
 			return 0;
@@ -300,8 +310,12 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 	case SpbReceiveItems:
 		return SingleTpb;
 	case SpbStart:
-		if (tag == isc_spb_auth_block || tag == isc_spb_trusted_auth)
+		switch(tag)
 		{
+		case isc_spb_auth_block:
+		case isc_spb_trusted_auth:
+		case isc_spb_auth_plugin_name:
+		case isc_spb_auth_plugin_list:
 			return Wide;
 		}
 		switch (spbState)
@@ -609,6 +623,27 @@ bool ClumpletReader::find(UCHAR tag)
 	return false;
 }
 
+bool ClumpletReader::next(UCHAR tag)
+{
+	if (!isEof())
+	{
+		const size_t co = getCurOffset();
+		if (tag == getClumpTag())
+		{
+			moveNext();
+		}
+		for (; !isEof(); moveNext())
+		{
+			if (tag == getClumpTag())
+			{
+				return true;
+			}
+		}
+		setCurOffset(co);
+	}
+	return false;
+}
+
 // Methods which work with currently selected clumplet
 UCHAR ClumpletReader::getClumpTag() const
 {
@@ -744,6 +779,11 @@ PathName& ClumpletReader::getPath(PathName& str) const
 		invalid_structure("path length doesn't match with clumplet");
 	}
 	return str;
+}
+
+void ClumpletReader::getData(UCharBuffer& data) const
+{
+	data.assign(getBytes(), getClumpLength());
 }
 
 bool ClumpletReader::getBoolean() const

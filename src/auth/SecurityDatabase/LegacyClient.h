@@ -27,7 +27,7 @@
 #ifndef AUTH_LEGACY_CLIENT_H
 #define AUTH_LEGACY_CLIENT_H
 
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 #include "../common/classes/ImplementHelper.h"
 
 namespace Auth {
@@ -43,9 +43,9 @@ public:
 	}
 
 	// IClient implementation
-	Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb);
-	Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size);
-    void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
+	Result FB_CARG authenticate(Firebird::IStatus*, IClientBlock* data);
+	Result FB_CARG getSessionKey(Firebird::IStatus* status,
+								 const unsigned char** key, unsigned int* keyLen);
     int FB_CARG release();
 };
 

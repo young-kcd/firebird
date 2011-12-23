@@ -35,6 +35,7 @@
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
+#include "../common/db_alias.h"
 #include "firebird/Provider.h"
 
 #ifdef DEV_BUILD
@@ -781,9 +782,9 @@ rem_port::~rem_port()
 		port_events_shutdown(this);
 	}
 
+	delete port_srv_auth;
 	delete port_version;
 	delete port_connection;
-	delete port_user_name;
 	delete port_host;
 	delete port_protocol_str;
 	delete port_address_str;
@@ -792,7 +793,7 @@ rem_port::~rem_port()
 	delete port_packet_vector;
 #endif
 
-	delete port_auth;
+	delete port_crypt_keys;
 
 #ifdef DEV_BUILD
 	--portCounter;
@@ -873,3 +874,270 @@ Firebird::string rem_port::getRemoteId() const
 
 	return id;
 }
+
+bool REMOTE_legacy_auth(const char* nm, int p)
+{
+	const char* legacyTrusted = "WIN_SSPI";
+	if (fb_utils::stricmp(legacyTrusted, nm) == 0 &&
+		(p == PROTOCOL_VERSION11 || p == PROTOCOL_VERSION12))
+	{
+		return true;
+	}
+
+	const char* legacyAuth = "LEGACY_AUTH";
+	if (fb_utils::stricmp(legacyAuth, nm) == 0 && p < PROTOCOL_VERSION11)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+Firebird::PathName ClntAuthBlock::getPluginName()
+{
+	return plugins.hasData() ? plugins.name() : "";
+}
+
+void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
+{
+	// Add user login name
+	if (userName.hasData())
+	{
+		user_id.insertString(CNCT_login, userName);
+	}
+
+	// Add plugin name
+	Firebird::PathName pluginName = getPluginName();
+	if (pluginName.hasData())
+	{
+		user_id.insertPath(CNCT_plugin_name, pluginName);
+	}
+
+	// Add plugin list
+	if (pluginList.hasData())
+	{
+		user_id.insertPath(CNCT_plugin_list, pluginList);
+	}
+
+	// This is specially tricky field - user_id is limited with 255 bytes per entry,
+	// and we have no ways to override this limit cause it can be send to any version server.
+	// Therefore divide data into 254-byte parts, leaving first byte for the number of that part.
+	// This appears more reliable than put them in strict order.
+	unsigned int remaining = dataFromPlugin.getCount();
+	UCHAR part = 0;
+	UCHAR buffer[255];
+	const UCHAR* ptr = dataFromPlugin.begin();
+	while (remaining > 0)
+	{
+		unsigned int step = remaining;
+		if (step > 254)
+			step = 254;
+		remaining -= step;
+		buffer[0] = part++;
+		fb_assert(part || remaining == 0);
+		memcpy(&buffer[1], ptr, step);
+		ptr += step;
+
+		user_id.insertBytes(CNCT_specific_data, buffer, step + 1);
+	}
+}
+
+void ClntAuthBlock::reset(const Firebird::PathName* fileName)
+{
+	dataForPlugin.clear();
+	dataFromPlugin.clear();
+	authComplete = false;
+	firstTime = true;
+	pluginList = REMOTE_get_config(fileName)->getPlugins(Firebird::PluginType::AuthClient);
+	plugins.set(pluginList.c_str());
+}
+
+void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char* data)
+{
+	dataForPlugin.assign(data, length);
+	HANDSHAKE_DEBUG(fprintf(stderr, "Cln: accepted data for plugin length=%d\n", length));
+}
+
+Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName)
+{
+	if (dbName)
+	{
+		Firebird::RefPtr<Config> rc;
+		Firebird::PathName dummy;
+		ResolveDatabaseAlias(*dbName, dummy, &rc);
+		return rc;
+	}
+	return Config::getDefaultConfig();
+}
+
+void REMOTE_parseList(Remote::ParsedList& parsed, Firebird::PathName list)
+{
+	list.alltrim(" \t");
+	parsed.clear();
+	const char* sep = " \t,;";
+
+	for(;;)
+	{
+		Firebird::PathName::size_type p = list.find_first_of(sep);
+		if (p == Firebird::PathName::npos)
+		{
+			if (list.hasData())
+			{
+				parsed.push(list);
+			}
+			break;
+		}
+
+		parsed.push(list.substr(0, p));
+		list = list.substr(p);
+		list.ltrim(" \t,;");
+	}
+}
+
+void REMOTE_mergeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
+{
+	list.erase();
+	for (unsigned i = 0; i < parsed.getCount(); ++i)
+	{
+		if (list.hasData())
+		{
+			list += ' ';
+		}
+		list += parsed[i];
+	}
+}
+
+void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet)
+{
+/**************************************
+ *
+ *	R E M O T E _ c h e c k _ r e s p o n s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check response to a remote call.
+ *
+ **************************************/
+
+	// Get status vector
+
+	const ISC_STATUS success_vector[] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+	const ISC_STATUS *vector = success_vector;
+	if (packet->p_resp.p_resp_status_vector)
+	{
+		vector = packet->p_resp.p_resp_status_vector->value();
+	}
+
+	// Translate any gds codes into local operating specific codes
+
+	Firebird::SimpleStatusVector newVector;
+	rem_port* port = rdb->rdb_port;
+
+	while (*vector != isc_arg_end)
+	{
+		const ISC_STATUS vec = *vector++;
+		newVector.push(vec);
+
+		switch ((USHORT) vec)
+		{
+		case isc_arg_warning:
+		case isc_arg_gds:
+			if (port->port_protocol < PROTOCOL_VERSION10)
+			{
+				fb_assert(vec == isc_arg_gds);
+				newVector.push(gds__encode(*vector++, 0));
+			}
+			else
+				newVector.push(*vector++);
+			break;
+
+		case isc_arg_cstring:
+			newVector.push(*vector++);
+			// fall down
+
+		default:
+			newVector.push(*vector++);
+			break;
+		}
+	}
+
+	newVector.push(isc_arg_end);
+	vector = newVector.begin();
+
+	const ISC_STATUS pktErr = vector[1];
+	if (pktErr == isc_shutdown || pktErr == isc_att_shutdown)
+	{
+		port->port_flags |= PORT_rdb_shutdown;
+	}
+
+	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
+		!vector[1])
+	{
+		warning->set(vector);
+		return;
+	}
+
+	if (!vector[1])
+	{
+		Firebird::Arg::Gds(isc_net_read_err).raise();
+	}
+
+	Firebird::status_exception::raise(vector);
+}
+
+const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
+								isc_dpb_user_name,
+								isc_dpb_auth_block,
+								isc_dpb_password,
+								isc_dpb_password_enc,
+								isc_dpb_trusted_auth,
+								isc_dpb_auth_plugin_name,
+								isc_dpb_auth_plugin_list,
+								isc_dpb_specific_auth_data,
+								isc_dpb_address_path,
+								isc_dpb_process_id,
+								isc_dpb_process_name,
+								isc_dpb_encrypt_key};
+
+const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
+								isc_spb_user_name,
+								isc_spb_auth_block,
+								isc_spb_password,
+								isc_spb_password_enc,
+								isc_spb_trusted_auth,
+								isc_spb_auth_plugin_name,
+								isc_spb_auth_plugin_list,
+								isc_spb_specific_auth_data,
+								isc_spb_address_path,
+								isc_spb_process_id,
+								isc_spb_process_name,
+								0};
+
+const ParametersSet spbStartParam = {0,
+									 0,
+									 isc_spb_auth_block,
+									 0,
+									 0,
+									 isc_spb_trusted_auth,
+									 isc_spb_auth_plugin_name,
+									 isc_spb_auth_plugin_list,
+									 isc_spb_specific_auth_data,
+									 0,
+									 0,
+									 0,
+									 0};	// Need new parameter here
+
+const ParametersSet spbInfoParam = {0,
+									0,
+									isc_info_svc_auth_block,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0};

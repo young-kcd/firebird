@@ -24,7 +24,7 @@
 #ifndef UTILITIES_SECUR_PROTO_H
 #define UTILITIES_SECUR_PROTO_H
 
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/GetPlugins.h"
 #include "../common/classes/array.h"

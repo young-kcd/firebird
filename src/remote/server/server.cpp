@@ -71,7 +71,6 @@
 #include "../common/classes/DbImplementation.h"
 #include "../common/Auth.h"
 #include "../common/classes/GetPlugins.h"
-#include "../common/db_alias.h"
 #include "../common/StatementMetadata.h"
 #include "../common/isc_f_proto.h"
 
@@ -104,15 +103,6 @@ public:
 };
 
 namespace {
-
-// this sets of parameters help use same functions
-// for both services and databases attachments
-struct ParametersSet
-{
-	UCHAR address_path;
-};
-const ParametersSet dpbParam = {isc_dpb_address_path};
-const ParametersSet spbParam = {isc_spb_address_path};
 
 // Disable attempts to brute-force logins/passwords
 class FailedLogin
@@ -200,7 +190,7 @@ public:
 		}
 		if (getCount() >= MAX_CONCURRENT_FAILURES)
 		{
-			// it seems we are under attack - too many wrong logins !!!
+			// it seems we are under attack - too many wrong logins !!
 			return true;
 		}
 
@@ -236,48 +226,137 @@ class ServerAuth : public GlobalStorage, public ServerAuthBase
 public:
 	virtual void accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock) = 0;
 
-	ServerAuth(const PathName* dbName, ClumpletWriter* aPb, const Auth::AuthTags& aTags)
-		: config(getConfig(dbName)),
-		  iPb(*aPb),
-		  authItr(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, upInfo, config),
+	ServerAuth(const PathName* aDbName, ClumpletWriter* aPb, const ParametersSet& aTags, rem_port* port)
+		: authItr(NULL),
 		  userName(getPool()),
 		  authServer(NULL),
-		  tags(&aTags)
+		  tags(&aTags),
+		  srvrBlock(port->port_srv_auth_block),
+		  dbName(getPool())
 	{
-		if (aPb->find(isc_dpb_user_name))
+		if (!srvrBlock)
+		{
+			port->port_srv_auth_block = srvrBlock = new SrvAuthBlock;
+		}
+
+		HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth()\n"));
+
+		if (aPb->find(tags->user_name))
 		{
 			aPb->getString(userName);
+			userName.upper();
+			if (srvrBlock->getLogin() && userName != srvrBlock->getLogin())
+			{
+				(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "Client error - login does not match").raise();
+			}
+			srvrBlock->setUser(userName);
+			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): user name=%s\n", userName.c_str()));
 		}
+
+		const char* oldPath = srvrBlock->getPath();
+		if (aDbName)
+		{
+			dbName = *aDbName;
+			if (oldPath && (dbName != oldPath))
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "old='%s' new='%s'\n", oldPath, dbName.c_str()));
+				(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "Client error - database name does not match").raise();
+			}
+			srvrBlock->setPath(aDbName);
+			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): db name=%s\n", dbName.c_str()));
+		}
+
+		string x;
+		UCharBuffer u;
+		if (port->port_protocol >= PROTOCOL_VERSION13)
+		{
+			if (aPb->find(tags->plugin_name))
+			{
+				aPb->getString(x);
+				srvrBlock->setPluginName(x);
+				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): plugin name=%s\n", x.c_str()));
+			}
+			if (aPb->find(tags->plugin_list))
+			{
+				aPb->getString(x);
+				srvrBlock->setPluginList(x);
+				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): plugin list=%s\n", x.c_str()));
+			}
+			if (aPb->find(tags->specific_data))
+			{
+				aPb->getData(u);
+				srvrBlock->setDataForPlugin(u);
+				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): plugin data is %" SIZEFORMAT " len\n", u.getCount()));
+			}
+			else
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): miss data with tag %d\n", tags->specific_data));
+			}
+		}
+		else if (srvrBlock->getLogin() && aPb->find(tags->password_enc))
+		{
+			srvrBlock->setPluginName("Legacy_Auth");
+			srvrBlock->setPluginList("Legacy_Auth");
+			aPb->getData(u);
+			srvrBlock->setDataForPlugin(u);
+		}
+#ifdef WIN_NT
+		else if (aPb->find(tags->trusted_auth) && port->port_protocol >= PROTOCOL_VERSION11)
+		{
+			srvrBlock->setPluginName("Win_Sspi");
+			srvrBlock->setPluginList("Win_Sspi");
+			aPb->getData(u);
+			srvrBlock->setDataForPlugin(u);
+		}
+#endif
 	}
 
 	~ServerAuth()
 	{ }
 
-	bool authenticate(rem_port* port, PACKET* send, const cstring* data)
+	bool authenticate(rem_port* port, PACKET* send)
 	{
+		if (srvrBlock->authCompleted())
+		{
+			accept(port, send, &srvrBlock->authBlockWriter);
+			return true;
+		}
+
 		bool working = true;
 		LocalStatus st;
 
-		while (working && authItr.hasData())
+		srvrBlock->createPluginsItr();
+		authItr = port->port_srv_auth_block->plugins;
+		if (!authItr)
 		{
-			bool first = false;
+			if (port->port_protocol >= PROTOCOL_VERSION13)
+			{
+				send->p_operation = op_cont_auth;
+				srvrBlock->extractDataFromPluginTo(&send->p_auth_cont);
+				port->send(send);
+				memset(&send->p_auth_cont, 0, sizeof send->p_auth_cont);
+				return false;
+			}
+		}
+
+		while (authItr && working && authItr->hasData())
+		{
 			if (! authServer)
 			{
-				authServer = authItr.plugin();
-				first = true;
+				authServer = authItr->plugin();
+				srvrBlock->authBlockWriter.setMethod(authItr->name());
 			}
 
-			fb_assert(first || data);
-			authBlockInterface.setMethod(authItr.name());
-			Auth::Result ar = first ?
-				authServer->startAuthentication(&st, tags, &iPb, &authBlockInterface) :
-				authServer->contAuthentication(&st, data->cstr_address, data->cstr_length, &authBlockInterface);
+			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth calls plug %s\n", authItr->name()));
+			Auth::Result ar = authServer->authenticate(&st, srvrBlock, &srvrBlock->authBlockWriter);
+			srvrBlock->setPluginName(authItr->name());
 
 			cstring* s;
 
 			switch(ar)
 			{
 			case Auth::AUTH_MORE_DATA:
+				HANDSHAKE_DEBUG(fprintf(stderr, "plugin wants more data\n"));
 				if (port->port_protocol < PROTOCOL_VERSION11)
 				{
 					authServer = NULL;
@@ -288,38 +367,18 @@ public:
 				if (port->port_protocol >= PROTOCOL_VERSION13)
 				{
 					send->p_operation = op_cont_auth;
-
-					s = &send->p_auth_cont.p_data;
-					s->cstr_allocated = 0;
-					// violate constness here safely - send operation does not modify data
-					authServer->getData(const_cast<const unsigned char**>(&s->cstr_address),
-										  &s->cstr_length);
-
-					s = &send->p_auth_cont.p_name;
-					s->cstr_allocated = 0;
-					if (first)
-					{
-						// violate constness here safely - send operation does not modify data
-						s->cstr_address = (UCHAR*) authItr.name();
-						s->cstr_length = strlen(authItr.name());
-					}
-					else
-					{
-						s->cstr_length = 0;
-					}
+					srvrBlock->extractDataFromPluginTo(&send->p_auth_cont);
 				}
 				else
 				{
-					if (Auth::legacy(authItr.name()))
+					if (REMOTE_legacy_auth(authItr->name(), port->port_protocol))
 					{
 						// compatibility with FB 2.1 trusted
 						send->p_operation = op_trusted_auth;
 
 						s = &send->p_trau.p_trau_data;
 						s->cstr_allocated = 0;
-						// violate constness here safely - send operation does not modify data
-						authServer->getData(const_cast<const unsigned char**>(&s->cstr_address),
-											  &s->cstr_length);
+						srvrBlock->extractDataFromPluginTo(s);
 					}
 					else
 					{
@@ -330,21 +389,27 @@ public:
 				}
 
 				port->send(send);
+				memset(&send->p_auth_cont, 0, sizeof send->p_auth_cont);
 				return false;
 
 			case Auth::AUTH_CONTINUE:
-				authItr.next();
+				HANDSHAKE_DEBUG(fprintf(stderr, "Next plug suggested\n"));
+				authItr->next();
 				authServer = NULL;
 				continue;
 
 			case Auth::AUTH_SUCCESS:
+				HANDSHAKE_DEBUG(fprintf(stderr, "Ahh - success\n"));
 				usernameFailedLogins->loginSuccess(userName);
 				remoteFailedLogins->loginSuccess(port->getRemoteId());
 				authServer = NULL;
-				accept(port, send, &authBlockInterface);
+				srvrBlock->authCompleted(true);
+				accept(port, send, &srvrBlock->authBlockWriter);
 				return true;
 
 			case Auth::AUTH_FAILED:
+				HANDSHAKE_DEBUG(fprintf(stderr, "No luck today...\n"));
+				isc_print_status(st.get());
 				authServer = NULL;
 				working = false;
 				break;
@@ -361,57 +426,51 @@ public:
 			THREAD_SLEEP(FAILURE_DELAY * 1000);
 		}
 
-		(Arg::Gds(isc_login) << Arg::StatusVector(st.get())).raise();
+		Arg::Gds loginError(isc_login);
+#ifndef DEV_BUILD
+		if (st.get()[1] == isc_missing_data_structures)
+#endif
+		{
+			loginError << Arg::StatusVector(st.get());
+		}
+		status_exception::raise(loginError.value());
 		return false;	// compiler warning silencer
 	}
 
 private:
-	RefPtr<Config> config;
-	Auth::DpbImplementation iPb;
-	Auth::WriterImplementation authBlockInterface;
-	GetPlugins<Auth::IServer> authItr;
+	AuthServerPlugins* authItr;
 	string userName;
 	Auth::IServer* authServer;
-	const Auth::AuthTags* tags;
+	const ParametersSet* tags;
+	SrvAuthBlock* srvrBlock;
 
-	RefPtr<Config> getConfig(const PathName* dbName)
-	{
-		if (dbName)
-		{
-			RefPtr<Config> config;
-			PathName dummy;
-			ResolveDatabaseAlias(*dbName, dummy, &config);
-			return config;
-		}
-		return Config::getDefaultConfig();
-	}
+protected:
+	PathName dbName;
 };
 
 
 class DatabaseAuth : public ServerAuth
 {
 public:
-	DatabaseAuth(const PathName& adbName, ClumpletWriter* dpb, P_OP op)
-		: ServerAuth(&adbName, dpb, Auth::DB_ATTACH_LIST),
-		  dbName(getPool(), adbName),
-		  pb(dpb),
-		  operation(op)
+	DatabaseAuth(rem_port* port, const PathName& adbName, ClumpletWriter* dpb, P_OP op)
+		: ServerAuth(&adbName, dpb, dpbParam, port),
+		  operation(op),
+		  pb(dpb)
 	{ }
 
 	void accept(rem_port* port, PACKET* send, Auth::WriterImplementation* authBlock);
 
 private:
-	PathName dbName;
-	AutoPtr<ClumpletWriter> pb;
 	P_OP operation;
+	AutoPtr<ClumpletWriter> pb;
 };
 
 
 class ServiceAttachAuth : public ServerAuth
 {
 public:
-	ServiceAttachAuth(const PathName& pmanagerName, ClumpletWriter* spb)
-		: ServerAuth(NULL, spb, Auth::SVC_ATTACH_LIST),
+	ServiceAttachAuth(rem_port* port, const PathName& pmanagerName, ClumpletWriter* spb)
+		: ServerAuth(NULL, spb, spbParam, port),
 		  managerName(getPool(), pmanagerName),
 		  pb(spb)
 	{ }
@@ -584,6 +643,7 @@ static void		append_request_next(server_req_t*, server_req_t**);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
 static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
+static void		continue_authentication(rem_port*, const p_auth_continue*, PACKET*);
 
 #ifdef NOT_USED_OR_REPLACED
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
@@ -610,6 +670,7 @@ static void		release_sql_request(Rsr*);
 static void		release_transaction(Rtr*);
 
 static void		send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode);
+static void		send_error(rem_port* port, PACKET* apacket, const Firebird::Arg::StatusVector&);
 static void		set_server(rem_port*, USHORT);
 static int		shut_server(const int, const int, void*);
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
@@ -1248,14 +1309,12 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	// Accept the physical connection
 	send->p_operation = op_reject;
-	P_ACPT* accept = &send->p_acpt;
 
 	if (!port->accept(connect))
 	{
 		port->send(send);
 		return false;
 	}
-
 
 	// Select the most appropriate protocol (this will get smarter)
 	P_ARCH architecture = arch_generic;
@@ -1288,19 +1347,106 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			version = protocol->p_cnct_version;
 			architecture = protocol->p_cnct_architecture;
 			type = MIN(protocol->p_cnct_max_type, ptype_lazy_send);
-			send->p_operation = op_accept;
+		}
+	}
+
+	HANDSHAKE_DEBUG(fprintf(stderr, "protoaccept a=%d (v>=13)=%d %d %d\n",
+					accepted, version >= PROTOCOL_VERSION13, version, PROTOCOL_VERSION13));
+
+	// We are going to try authentication handshake
+	LocalStatus status;
+	P_ACPT* accept = &send->p_acpt;
+	bool returnData = false;
+	if (accepted && version >= PROTOCOL_VERSION13)
+	{
+		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection creates port_srv_auth_block\n"));
+		port->port_srv_auth_block = new SrvAuthBlock;
+		send->p_acpd.p_acpt_authenticated = 0;
+
+		Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
+									connect->p_cnct_user_id.cstr_address,
+									connect->p_cnct_user_id.cstr_length);
+		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection is going to load data to port_srv_auth_block\n"));
+		port->port_srv_auth_block->load(id);
+		if (port->port_srv_auth_block->getLogin())
+		{
+			port->port_user_name = port->port_srv_auth_block->getLogin();
+		}
+
+		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection finished with port_srv_auth_block prepare, a=%d\n", accepted));
+
+		if (port->port_srv_auth_block->getPluginName())
+		{
+			accept = &send->p_acpd;
+			Firebird::PathName file(connect->p_cnct_file.cstr_address, connect->p_cnct_file.cstr_length);
+			port->port_srv_auth_block->setPath(&file);
+			HANDSHAKE_DEBUG(fprintf(stderr, "accept connection calls createPluginsItr\n"));
+			port->port_srv_auth_block->createPluginsItr();
+
+			if (port->port_srv_auth_block->plugins)		// We have all required data and iterator was created
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "call plugin %s\n", port->port_srv_auth_block->getPluginName()));
+
+				AuthServerPlugins* plugins = port->port_srv_auth_block->plugins;
+				for (; plugins->hasData(); plugins->next())
+				{
+					port->port_srv_auth_block->authBlockWriter.setMethod(plugins->name());
+					switch (port->port_srv_auth_block->plugins->plugin()->
+							authenticate(&status, port->port_srv_auth_block,
+										 &port->port_srv_auth_block->authBlockWriter))
+					{
+					case Auth::AUTH_SUCCESS:
+						port->port_srv_auth_block->authCompleted(true);
+						send->p_acpd.p_acpt_authenticated = 1;
+						break;
+					case Auth::AUTH_FAILED:
+						{
+							Arg::Gds loginError(isc_login);
+#ifndef DEV_BUILD
+							if (status.get()[1] == isc_missing_data_structures)
+#endif
+							{
+								loginError << Arg::StatusVector(status.get());
+							}
+							status.set(loginError.value());
+						}
+						accepted = false;
+						break;
+					case Auth::AUTH_CONTINUE:
+						// try next plugin
+						continue;
+					case Auth::AUTH_MORE_DATA:
+						port->port_srv_auth_block->extractDataFromPluginTo(&send->p_acpd.p_acpt_data);
+						port->port_srv_auth_block->extractPluginName(&send->p_acpd.p_acpt_plugin);
+						returnData = true;
+						break;
+					}
+					break;
+				}
+				if (!plugins->hasData())
+				{
+					accepted = false;
+				}
+			}
 		}
 	}
 
 	// Send off out gracious acceptance or flag rejection
 	if (!accepted)
 	{
-		port->send(send);
+		if (!status.isSuccess())
+			port->send_response(send, 0, 0, status.get(), false);
+		else
+			port->send(send);
 		return false;
 	}
+
 	accept->p_acpt_version = port->port_protocol = version;
 	accept->p_acpt_architecture = architecture;
 	accept->p_acpt_type = type;
+	send->p_operation = returnData ? op_accept_data : op_accept;
+
+	HANDSHAKE_DEBUG(fprintf(stderr, "accepted ud=%d v=%x\n", returnData, version));
 
 	// and modify the version string to reflect the chosen protocol
 
@@ -1502,13 +1648,13 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 		ClumpletReader::dpbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address,
 		attach->p_atch_dpb.cstr_length);
 
-	port->port_auth = new DatabaseAuth(PathName(attach->p_atch_file.cstr_address,
+	port->port_srv_auth = new DatabaseAuth(port, PathName(attach->p_atch_file.cstr_address,
 		attach->p_atch_file.cstr_length), wrt, operation);
 
-	if (port->port_auth->authenticate(port, send, NULL))
+	if (port->port_srv_auth->authenticate(port, send))
 	{
-		delete port->port_auth;
-		port->port_auth = NULL;
+		delete port->port_srv_auth;
+		port->port_srv_auth = NULL;
 	}
 }
 
@@ -2081,22 +2227,6 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 #endif
 		delete this->port_version;
 		this->port_version = NULL;
-	}
-	if (this->port_passwd)
-	{
-#ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free string      %x\n", this->port_passwd);
-#endif
-		delete this->port_passwd;
-		this->port_passwd = NULL;
-	}
-	if (this->port_user_name)
-	{
-#ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free string      %x\n", this->port_user_name);
-#endif
-		delete this->port_user_name;
-		this->port_user_name = NULL;
 	}
 	if (this->port_host)
 	{
@@ -3071,11 +3201,11 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 class ServiceQueryAuth : public ServerAuth
 {
 public:
-	ServiceQueryAuth(OBJCT pinfoObject, ClumpletWriter* spb,
+	ServiceQueryAuth(rem_port* port, OBJCT pinfoObject, ClumpletWriter* spb,
 					 unsigned int pSendLength, const UCHAR* pSendItems,
 					 unsigned int pReceiveLength, const UCHAR* pReceiveItems,
 					 unsigned int pBufferLength)
-		: ServerAuth(NULL, spb, Auth::SVC_QUERY_LIST),
+		: ServerAuth(NULL, spb, spbInfoParam, port),
 		  pb(spb),
 		  sendItems(getPool(), ClumpletReader::SpbSendItems, MAX_DPB_SIZE, pSendItems, pSendLength, 0),
 		  receiveItems(getPool()),
@@ -3255,17 +3385,24 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 				FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
 												ClumpletReader::WideUnTagged, MAX_DPB_SIZE);
 
-			delete port_auth;
-
-			///port_auth = NULL;
-			port_auth = new ServiceQueryAuth(stuff->p_info_object, wrt,
+			if (port_srv_auth_block)
+			{
+				port_srv_auth_block->reset();
+			}
+			delete port_srv_auth;
+			// port_srv_auth = NULL;
+			port_srv_auth = new ServiceQueryAuth(this, stuff->p_info_object, wrt,
 				stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
 				info_len, info_buffer, stuff->p_info_buffer_length);
-
-			if (port_auth->authenticate(this, sendL, NULL))
+			if (port_user_name.hasData())
 			{
-				delete port_auth;
-				port_auth = NULL;
+				port_srv_auth_block->setUser(port_user_name);
+			}
+
+			if (port_srv_auth->authenticate(this, sendL))
+			{
+				delete port_srv_auth;
+				port_srv_auth = NULL;
 			}
 			return;
 		}
@@ -3638,11 +3775,10 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		case op_connect:
 			if (!accept_connection(port, &receive->p_cnct, sendL))
 			{
-				rem_str* string = port->port_user_name;
-				if (string)
+				const string& s = port->port_user_name;
+				if (s.hasData())
 				{
-					gds__log("SERVER/process_packet: connection rejected for %*.*s",
-							string->str_length, string->str_length, string->str_data);
+					gds__log("SERVER/process_packet: connection rejected for %s", s.c_str());
 				}
 				if (port->port_server->srvr_flags & SRVR_multi_client) {
 					port->port_state = rem_port::BROKEN;
@@ -3669,8 +3805,12 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			attach_service(port, &receive->p_atch, sendL);
 			break;
 
-		case op_trusted_auth:
+		case op_trusted_auth:	// PROTOCOL < 13
 			trusted_auth(port, &receive->p_trau, sendL);
+			break;
+
+		case op_cont_auth:		// PROTOCOL >= 13
+			continue_authentication(port, &receive->p_auth_cont, sendL);
 			break;
 
 		case op_update_account_info:
@@ -3937,16 +4077,56 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
  *	Server side of trusted auth handshake.
  *
  **************************************/
-	ServerAuthBase* sa = port->port_auth;
+	ServerAuthBase* sa = port->port_srv_auth;
 	if (! sa)
 	{
 		send_error(port, send, isc_unavailable);
 	}
 
-	if (sa->authenticate(port, send, &p_trau->p_trau_data))
+	if (port->port_protocol < PROTOCOL_VERSION11 || port->port_protocol >= PROTOCOL_VERSION13)
+	{
+		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
+	}
+
+	HANDSHAKE_DEBUG(fprintf(stderr, "trusted_auth\n"));
+	port->port_srv_auth_block->setDataForPlugin(p_trau->p_trau_data);
+	if (sa->authenticate(port, send))
 	{
 		delete sa;
-		port->port_auth = NULL;
+		port->port_srv_auth = NULL;
+	}
+}
+
+
+static void continue_authentication(rem_port* port, const p_auth_continue* p_auth_c, PACKET* send)
+{
+/**************************************
+ *
+ *	c o n t i n u e _ a u t h e n t i c a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Server side of multi-hop auth handshake.
+ *
+ **************************************/
+	ServerAuthBase* sa = port->port_srv_auth;
+	if (! sa)
+	{
+		send_error(port, send, isc_unavailable);
+	}
+
+	if (port->port_protocol < PROTOCOL_VERSION13)
+	{
+		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
+	}
+
+	HANDSHAKE_DEBUG(fprintf(stderr, "continue_authentication\n"));
+	port->port_srv_auth_block->setDataForPlugin(p_auth_c);
+	if (sa->authenticate(port, send))
+	{
+		delete sa;
+		port->port_srv_auth = NULL;
 	}
 }
 
@@ -4671,6 +4851,14 @@ static void send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode)
 	port->send_response(apacket, 0, 0, &status_vector, false);
 }
 
+// Maybe this can be a member of rem_port?
+static void send_error(rem_port* port, PACKET* apacket, const Firebird::Arg::StatusVector& err)
+{
+	LocalStatus status_vector;
+	err.copyTo(&status_vector);
+	port->send_response(apacket, 0, 0, &status_vector, false);
+}
+
 
 static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 {
@@ -4682,13 +4870,13 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 		// Check credentials in default way right now
 		ClumpletWriter* wrt = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
 			ClumpletReader::spbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
-		port->port_auth = new ServiceAttachAuth(PathName(attach->p_atch_file.cstr_address,
+		port->port_srv_auth = new ServiceAttachAuth(port, PathName(attach->p_atch_file.cstr_address,
 			attach->p_atch_file.cstr_length), wrt);
 
-		if (port->port_auth->authenticate(port, sendL, NULL))
+		if (port->port_srv_auth->authenticate(port, sendL))
 		{
-			delete port->port_auth;
-			port->port_auth = NULL;
+			delete port->port_srv_auth;
+			port->port_srv_auth = NULL;
 		}
 	}
 	else
@@ -4696,6 +4884,11 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 		// Delay authentication till service start/info request
 		ClumpletWriter spb(ClumpletReader::spbList, MAX_DPB_SIZE,
 						   attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
+		if (spb.find(isc_spb_user_name))
+		{
+			spb.getString(port->port_user_name);
+			port->port_user_name.upper();
+		}
 		port->service_attach(manager.c_str(), &spb, sendL, false);
 	}
 }
@@ -4831,8 +5024,8 @@ ISC_STATUS rem_port::service_end(P_RLSE* /*release*/, PACKET* sendL)
 class ServiceStartAuth : public ServerAuth
 {
 public:
-	ServiceStartAuth(PathName& dbName, ClumpletWriter* authSpb, ClumpletWriter* origSpb)
-		: ServerAuth(dbName.hasData() ? &dbName : NULL, authSpb, Auth::SVC_START_LIST),
+	ServiceStartAuth(rem_port* port, PathName& dbName, ClumpletWriter* authSpb, ClumpletWriter* origSpb)
+		: ServerAuth(dbName.hasData() ? &dbName : NULL, authSpb, spbStartParam, port),
 		  authPb(authSpb), startPb(origSpb)
 	{ }
 
@@ -4912,8 +5105,10 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 			case isc_spb_dbname:
 				spb->getPath(dbName);
 				break;
-			case isc_spb_trusted_auth:
-				authParams->insertBytes(isc_spb_trusted_auth, spb->getBytes(), spb->getClumpLength());
+			case isc_spb_specific_auth_data:
+			case isc_spb_auth_plugin_list:
+			case isc_spb_auth_plugin_name:
+				authParams->insertBytes(spb->getClumpTag(), spb->getBytes(), spb->getClumpLength());
 				spb->deleteClumplet();
 				fDel = true;
 				break;
@@ -4924,14 +5119,22 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 			}
 		}
 
-		delete port_auth;
-		///port_auth = NULL;
-		port_auth = new ServiceStartAuth(dbName, authParams, spb);
-
-		if (port_auth->authenticate(this, sendL, NULL))
+		if (port_srv_auth_block)
 		{
-			delete port_auth;
-			port_auth = NULL;
+			port_srv_auth_block->reset();
+		}
+		delete port_srv_auth;
+		///port_srv_auth = NULL;
+		port_srv_auth = new ServiceStartAuth(this, dbName, authParams, spb);
+		if (port_user_name.hasData())
+		{
+			port_srv_auth_block->setUser(port_user_name);
+		}
+
+		if (port_srv_auth->authenticate(this, sendL))
+		{
+			delete port_srv_auth;
+			port_srv_auth = NULL;
 		}
 	}
 }
@@ -5665,4 +5868,259 @@ static int shut_server(const int, const int, void*)
 {
 	server_shutdown = true;
 	return 0;
+}
+
+void SrvAuthBlock::extractDataFromPluginTo(cstring* to)
+{
+	to->cstr_allocated = 0;
+	to->cstr_length = dataFromPlugin.getCount();
+	to->cstr_address = dataFromPlugin.begin();
+}
+
+bool SrvAuthBlock::authCompleted(bool flag)
+{
+	if (flag)
+		flComplete = true;
+	return flComplete;
+}
+
+void SrvAuthBlock::setPath(const Firebird::PathName* aDbPath)
+{
+	if (aDbPath)
+		dbPath = *aDbPath;
+	else
+		dbPath = "";
+}
+
+void SrvAuthBlock::setUser(const Firebird::string& user)
+{
+	userName = user;
+}
+
+const char* SrvAuthBlock::getPath()
+{
+	return dbPath.nullStr();
+}
+
+void SrvAuthBlock::load(Firebird::ClumpletReader& id)
+{
+	// This array is needed only to make sure that all parts of specific data is present
+	UCHAR checkBytes[256];
+	memset(checkBytes, 0, sizeof(checkBytes));
+	UCHAR top = 0;
+
+	for (id.rewind(); !id.isEof(); id.moveNext())
+	{
+		switch (id.getClumpTag())
+		{
+		case CNCT_login:
+			id.getString(userName);
+			userName.upper();
+			HANDSHAKE_DEBUG(fprintf(stderr, "login %s\n", userName.c_str()));
+			break;
+		case CNCT_plugin_name:
+			id.getPath(pluginName);
+			firstTime = false;
+			HANDSHAKE_DEBUG(fprintf(stderr, "plugin %s\n", pluginName.c_str()));
+			break;
+		case CNCT_plugin_list:
+			id.getPath(pluginList);
+			HANDSHAKE_DEBUG(fprintf(stderr, "plugin list %s\n", pluginList.c_str()));
+			break;
+		case CNCT_specific_data:
+			{
+				string tmp;
+				const UCHAR* specData = id.getBytes();
+				size_t len = id.getClumpLength();
+				if (len > 1)
+				{
+					--len;
+					unsigned offset = specData[0];
+
+					if (offset + 1 > top)
+						top = offset + 1;
+					checkBytes[offset] = 1;
+
+					offset *= 254;
+					++specData;
+					dataForPlugin.grow(offset + len);
+					memcpy(&dataForPlugin[offset], specData, len);
+				}
+			}
+			break;
+		}
+	}
+
+	for (UCHAR segment = 0; segment < top; ++segment)
+	{
+		if (!checkBytes[segment])
+		{
+			(Arg::Gds(isc_random) << "Missing segment in specific data").raise();
+		}
+	}
+
+	HANDSHAKE_DEBUG(fprintf(stderr, "data %" SIZEFORMAT "\n", dataForPlugin.getCount()));
+}
+
+const char* SrvAuthBlock::getPluginName()
+{
+	return pluginName.nullStr();
+}
+
+void SrvAuthBlock::setPluginName(const Firebird::string& name)
+{
+	pluginName = name.ToPathName();
+}
+
+void SrvAuthBlock::setPluginList(const Firebird::string& list)
+{
+	if (firstTime)
+	{
+		pluginList = list.ToPathName();
+	}
+	if (pluginList.hasData())
+	{
+		firstTime = false;
+	}
+}
+
+void SrvAuthBlock::setDataForPlugin(const Firebird::UCharBuffer& data)
+{
+	dataForPlugin.assign(data.begin(), data.getCount());
+}
+
+void SrvAuthBlock::setDataForPlugin(const cstring& data)
+{
+	dataForPlugin.assign(data.cstr_address, data.cstr_length);
+}
+
+void SrvAuthBlock::setDataForPlugin(const p_auth_continue* data)
+{
+	dataForPlugin.assign(data->p_data.cstr_address, data->p_data.cstr_length);
+	HANDSHAKE_DEBUG(fprintf(stderr, "setDataForPlugin=%d firstTime = %d nm=%d ls=%d login='%s'\n",
+						 data->p_data.cstr_length, firstTime, data->p_name.cstr_length,
+						 data->p_list.cstr_length, userName.c_str()));
+	if (firstTime)
+	{
+		pluginName.assign(data->p_name.cstr_address, data->p_name.cstr_length);
+		pluginList.assign(data->p_list.cstr_address, data->p_list.cstr_length);
+
+		firstTime = false;
+	}
+}
+
+void SrvAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
+{
+	to->p_data.cstr_length = dataFromPlugin.getCount();
+	to->p_data.cstr_address = dataFromPlugin.begin();
+	to->p_data.cstr_allocated = 0;
+
+	extractPluginName(&to->p_name);
+}
+
+void SrvAuthBlock::extractPluginName(cstring* to)
+{
+	to->cstr_length = pluginName.length();
+	to->cstr_address = (UCHAR*)(pluginName.c_str());
+	to->cstr_allocated = 0;
+}
+
+int SrvAuthBlock::release()
+{
+	if (--refCounter != 0)
+		return 1;
+
+	delete this;
+	return 0;
+}
+
+const char* SrvAuthBlock::getLogin()
+{
+	return userName.nullStr();
+}
+
+const unsigned char* SrvAuthBlock::getData(unsigned int* length)
+{
+	*length = dataForPlugin.getCount();
+	return (*length) ? dataForPlugin.begin() : NULL;
+}
+
+void SrvAuthBlock::putData(unsigned int length, const void* data)
+{
+	memcpy(dataFromPlugin.getBuffer(length), data, length);
+}
+
+void SrvAuthBlock::createPluginsItr()
+{
+	if (firstTime || plugins)
+	{
+		return;
+	}
+
+	Remote::ParsedList fromClient;
+	REMOTE_parseList(fromClient, pluginList);
+
+	RefPtr<Config> myConfig = REMOTE_get_config(dbPath.hasData() ? &dbPath : NULL);
+	Remote::ParsedList onServer;
+	REMOTE_parseList(onServer, myConfig->getPlugins(PluginType::AuthServer));
+
+	Remote::ParsedList final;
+	for (unsigned s = 0; s < onServer.getCount(); ++s)
+	{
+		// do not expect too long lists, therefore use double loop
+		for (unsigned c = 0; c < fromClient.getCount(); ++c)
+		{
+			if (onServer[s] == fromClient[c])
+			{
+				final.push(onServer[s]);
+			}
+		}
+	}
+
+	if (final.getCount() == 0)
+	{
+		HANDSHAKE_DEBUG(fprintf(stderr, "No matching plugins on server\n"));
+		(Arg::Gds(isc_login)
+#ifdef DEV_BUILD
+							<< Arg::Gds(isc_random) << "No matching plugins on server"
+#endif
+							).raise();
+	}
+
+	// reorder to make it match first, already passed, plugin data
+	for (unsigned f = 1; f < final.getCount(); ++f)
+	{
+		if (final[f] == pluginName)
+		{
+			final[f] = final[0];
+			final[0] = pluginName;
+			break;
+		}
+	}
+
+	// special case - last plugin from the list on the server may be used to check
+	// correctness of what previous one added to auth parameters block
+	if (final[final.getCount() - 1] != onServer[onServer.getCount() - 1])
+	{
+		final.push(onServer[onServer.getCount() - 1]);
+	}
+
+	REMOTE_mergeList(pluginList, final);
+
+	plugins = new AuthServerPlugins(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, upInfo,
+								myConfig, pluginList.c_str());
+}
+
+void SrvAuthBlock::reset()
+{
+	pluginName = "";
+	pluginList = "";
+	dataForPlugin.clear();
+	dataFromPlugin.clear();
+	flComplete = false;
+	firstTime = true;
+
+	authBlockWriter.reset();
+	delete plugins;
+	plugins = NULL;
 }

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:		Firebird authentication
- *	MODULE:			AuthInterface.h
+ *	MODULE:			Auth.h
  *	DESCRIPTION:	Interfaces, used by authentication plugins
  *
  *  The contents of this file are subject to the Initial
@@ -48,42 +48,46 @@ public:
 };
 #define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 3)
 
-class IClumplets : public Firebird::IVersioned
+// Representation of auth-related data, passed to server auth plugin
+class IServerBlock : public Firebird::IRefCounted
 {
 public:
-	virtual int FB_CARG find(UCHAR tag) = 0;
-	virtual void FB_CARG add(UCHAR tag, const void* bytes, unsigned int count) = 0;
-	virtual void FB_CARG drop() = 0;
-	virtual const unsigned char* FB_CARG get(unsigned int* cntPtr) = 0;
+	virtual const char* FB_CARG getLogin() = 0;
+	virtual const unsigned char* FB_CARG getData(unsigned int* length) = 0;
+	virtual void FB_CARG putData(unsigned int length, const void* data) = 0;
 };
-#define FB_AUTH_CLUMPLETS_VERSION (FB_VERSIONED_VERSION + 4)
+#define FB_AUTH_SERVER_BLOCK_VERSION (FB_VERSIONED_VERSION + 3)
 
-// This struct defines auth-related tags (including legacy ones) in parameter blocks
-struct AuthTags
+// Representation of auth-related data, passed to client auth plugin
+class IClientBlock : public Firebird::IRefCounted
 {
-	UCHAR authBlock, trustedAuth, trustedRole;
-	UCHAR service;	// non-zero if we work with service connection
+public:
+	virtual const char* FB_CARG getLogin() = 0;
+	virtual const char* FB_CARG getPassword() = 0;
+	virtual const unsigned char* FB_CARG getData(unsigned int* length) = 0;
+	virtual void FB_CARG putData(unsigned int length, const void* data) = 0;
 };
+#define FB_AUTH_CLIENT_BLOCK_VERSION (FB_VERSIONED_VERSION + 4)
 
+// server part of authentication plugin
 class IServer : public Firebird::IPluginBase
 {
 public:
-	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb,
-											   IWriter* writerInterface) = 0;
-	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data,
-											  unsigned int size, IWriter* writerInterface) = 0;
-	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
+	virtual Result FB_CARG authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) = 0;
+	virtual Result FB_CARG getSessionKey(Firebird::IStatus* status,
+										 const unsigned char** key, unsigned int* keyLen) = 0;
 };
-#define FB_AUTH_SERVER_VERSION (FB_PLUGIN_VERSION + 3)
+#define FB_AUTH_SERVER_VERSION (FB_PLUGIN_VERSION + 2)
 
+// .. and corresponding client
 class IClient : public Firebird::IPluginBase
 {
 public:
-	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb) = 0;
-	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size) = 0;
-	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
+	virtual Result FB_CARG authenticate(Firebird::IStatus* status, IClientBlock* cBlock) = 0;
+	virtual Result FB_CARG getSessionKey(Firebird::IStatus* status,
+										 const unsigned char** key, unsigned int* keyLen) = 0;
 };
-#define FB_AUTH_CLIENT_VERSION (FB_PLUGIN_VERSION + 3)
+#define FB_AUTH_CLIENT_VERSION (FB_PLUGIN_VERSION + 2)
 
 class IUserField : public Firebird::IVersioned
 {

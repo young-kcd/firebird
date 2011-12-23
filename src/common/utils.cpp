@@ -28,6 +28,7 @@
 
 #include "firebird.h"
 #include "../common/common.h"
+#include "../common/os/guid.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1084,6 +1085,7 @@ unsigned int statusLength(const ISC_STATUS* const status) throw()
 	}
 }
 
+// moves DB path information (from limbo transaction) to another buffer
 void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
 	unsigned int& bufferLength, unsigned char*& buffer,
 	Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath)
@@ -1176,6 +1178,47 @@ bool isRunningCheck(const UCHAR* items, unsigned int length)
 	}
 
 	return state == S_RUN;
+}
+
+static inline char conv_bin2ascii(ULONG l)
+{
+	return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[l & 0x3f];
+}
+
+// converts bytes to BASE64 representation
+void base64(Firebird::string& b64, const Firebird::UCharBuffer& bin)
+{
+	b64.erase();
+	const unsigned char* f = bin.begin();
+	for (int i = bin.getCount(); i > 0; i -= 3, f += 3)
+	{
+		if (i >= 3)
+		{
+			const ULONG l = (ULONG(f[0]) << 16) | (ULONG(f[1]) <<  8) | f[2];
+			b64 += conv_bin2ascii(l >> 18);
+			b64 += conv_bin2ascii(l >> 12);
+			b64 += conv_bin2ascii(l >> 6);
+			b64 += conv_bin2ascii(l);
+		}
+		else
+		{
+			ULONG l = ULONG(f[0]) << 16;
+			if (i == 2)
+				l |= (ULONG(f[1]) << 8);
+			b64 += conv_bin2ascii(l >> 18);
+			b64 += conv_bin2ascii(l >> 12);
+			b64 += (i == 1 ? '=' : conv_bin2ascii(l >> 6));
+			b64 += '=';
+		}
+	}
+}
+
+void random64(Firebird::string& randomValue, size_t length)
+{
+	Firebird::UCharBuffer binRand;
+	Firebird::GenerateRandomBytes(binRand.getBuffer(length), length);
+	base64(randomValue, binRand);
+	randomValue.resize(length, '$');
 }
 
 } // namespace fb_utils

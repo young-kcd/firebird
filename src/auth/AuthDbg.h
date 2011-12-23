@@ -34,7 +34,7 @@
 
 #ifdef AUTH_DEBUG
 
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/init.h"
@@ -51,11 +51,10 @@ class DebugServer : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 public:
 	DebugServer(Firebird::IPluginConfig*);
 
-    Result startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb,
+    Result authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
     						   IWriter* writerInterface);
-    Result contAuthentication(Firebird::IStatus* status, const unsigned char* data,
-                              unsigned int size, IWriter* writerInterface);
-    void getData(const unsigned char** data, unsigned short* dataSize);
+	Result getSessionKey(Firebird::IStatus* status,
+						 const unsigned char** key, unsigned int* keyLen);
     int release();
 
 private:
@@ -67,9 +66,9 @@ class DebugClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
 public:
 	DebugClient(Firebird::IPluginConfig*);
 
-	Result startAuthentication(Firebird::IStatus* status, const AuthTags* tags, IClumplets* dpb);
-	Result contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size);
-    void getData(const unsigned char** data, unsigned short* dataSize);
+    Result authenticate(Firebird::IStatus* status, IClientBlock* sBlock);
+	Result getSessionKey(Firebird::IStatus* status,
+						 const unsigned char** key, unsigned int* keyLen);
     int release();
 
 private:

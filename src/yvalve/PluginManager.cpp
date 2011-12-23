@@ -904,15 +904,23 @@ void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 
-IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const char* namesList,
+IPluginSet* FB_CARG PluginManager::getPlugins(IStatus* status, unsigned int interfaceType, const char* namesList,
 											  int desiredVersion, UpgradeInfo* ui,
 											  IFirebirdConf* firebirdConf)
 {
-	MutexLockGuard g(plugins->mutex);
+	try
+	{
+		MutexLockGuard g(plugins->mutex);
 
-	IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, ui, firebirdConf);
-	rc->addRef();
-	return rc;
+		IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, ui, firebirdConf);
+		rc->addRef();
+		return rc;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return NULL;
+	}
 }
 
 

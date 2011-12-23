@@ -729,6 +729,7 @@ static const struct {
 	{335545026, "42000"}, // 706 ee_blr_mismatch_null
 	{335545027, "42000"}, // 707 ee_blr_mismatch_length
 	{335545028, "42000"}, // 708 ss_out_of_bounds
+	{335545029, "28000"}, // 709 missing_data_structures
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

@@ -62,6 +62,7 @@ public:
 
 	// Create a copy of writer
 	ClumpletWriter(MemoryPool& pool, const ClumpletWriter& from);
+	ClumpletWriter(const ClumpletWriter& from);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, const size_t buffLen);
@@ -99,8 +100,7 @@ protected:
 	bool upgradeVersion();	// upgrade clumplet version - obtain newest from kindList
 
 private:
-	// Assignment and copy constructor not implemented.
-	ClumpletWriter(const ClumpletWriter& from);
+	// Assignment not implemented.
 	ClumpletWriter& operator=(const ClumpletWriter& from);
 
 	size_t sizeLimit;

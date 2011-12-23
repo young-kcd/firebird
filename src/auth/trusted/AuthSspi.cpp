@@ -437,7 +437,9 @@ int WinSspiServer::release()
 
 Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 										  const AuthTags* tags,
-										  IClumplets* dpb)
+										  IClumplets* dpb,
+										  const char* user,
+										  const char* pass)
 {
 	sspi.request(sspiData);
 

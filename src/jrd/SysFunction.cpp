@@ -2337,7 +2337,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 			{
 				impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
 
-				const SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
+				const SINT64 n = impure->vlu_misc.vlu_int64 & FB_CONST64(0xF000000000000000);
 				if (n)
 					impure->vlu_misc.vlu_int64 ^= n >> 56;
 				impure->vlu_misc.vlu_int64 &= ~n;
@@ -2355,7 +2355,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		{
 			impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
 
-			const SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
+			const SINT64 n = impure->vlu_misc.vlu_int64 & FB_CONST64(0xF000000000000000);
 			if (n)
 				impure->vlu_misc.vlu_int64 ^= n >> 56;
 			impure->vlu_misc.vlu_int64 &= ~n;

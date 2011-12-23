@@ -431,10 +431,9 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		authBlock.add(bytes, authBlockSize);
 
 		AuthReader auth(authBlock);
-		string dummy;
 		PathName secureDb;
 
-		if (auth.getInfo(&user, &dummy, &secureDb))
+		if (auth.getInfo(&user, NULL, &secureDb))
 		{
 			pwd = "";
 			adminRole = false;
@@ -442,7 +441,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 			{
 				auth.moveNext();
 				string trusted_role;
-				if (auth.getInfo(&trusted_role, &dummy, &secureDb))
+				if (auth.getInfo(&trusted_role, NULL, NULL))
 				{
 					adminRole = true;
 				}

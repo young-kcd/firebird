@@ -53,7 +53,6 @@
 #include "../remote/remot_proto.h"
 #include "../remote/proto_proto.h"
 #include "../common/cvt.h"
-#include "../common/enc_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_f_proto.h"
 #include "../common/sdl_proto.h"
@@ -67,6 +66,7 @@
 #include "../common/StatementMetadata.h"
 
 #include "../auth/SecurityDatabase/LegacyClient.h"
+#include "../auth/SecureRemotePassword/client/SrpClient.h"
 #include "../auth/trusted/AuthSspi.h"
 
 
@@ -105,34 +105,15 @@ const char* const WNET_LOCALHOST = "\\\\.";
 using namespace Firebird;
 
 namespace {
+	MakeUpgradeInfo<> upInfo;
+
 	// Success vector for general use
 	const ISC_STATUS success_vector[] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
-
-	// this sets of parameters help use same functions
-	// for both services and databases attachments
-	struct ParametersSet
-	{
-		UCHAR dummy_packet_interval, user_name,
-			  password, password_enc, address_path, process_id, process_name;
-	};
-	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
-									isc_dpb_user_name,
-									isc_dpb_password,
-									isc_dpb_password_enc,
-									isc_dpb_address_path,
-									isc_dpb_process_id,
-									isc_dpb_process_name};
-	const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
-									isc_spb_user_name,
-									isc_spb_password,
-									isc_spb_password_enc,
-									isc_spb_address_path,
-									isc_spb_process_id,
-									isc_spb_process_name};
 }
 
 namespace Remote {
 
+// Provider stuff
 class Attachment;
 
 class Blob : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
@@ -552,6 +533,7 @@ void registerRedirector(Firebird::IPluginManager* iPlugin)
 	iPlugin->registerPluginFactory(Firebird::PluginType::Provider, "Loopback", &loopbackFactory);
 
 	Auth::registerLegacyClient(iPlugin);
+	Auth::registerSrpClient(iPlugin);
 #ifdef TRUSTED_AUTH
 	Auth::registerTrustedClient(iPlugin);
 #endif
@@ -570,17 +552,13 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 
 namespace Remote {
 
-typedef GetPlugins<Auth::IClient> AuthClientPlugins;
-static MakeUpgradeInfo<> upInfo;
-
 static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
-static rem_port* analyze(PathName&, bool, ClumpletReader&, PathName&, bool);
+static rem_port* analyze(ClntAuthBlock&, PathName&, bool, ClumpletReader&, PathName&, bool);
 static rem_port* analyze_service(PathName&, bool, ClumpletReader&, bool);
 static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
-static void check_response(IStatus*, Rdb*, PACKET *);
 static void clear_queue(rem_port*);
 static void clear_stmt_que(rem_port*, Rsr*);
 static void disconnect(rem_port*);
@@ -592,8 +570,8 @@ static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void handle_error(ISC_STATUS);
 static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
-	const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*, AuthClientPlugins* authItr = NULL);
-static void init(IStatus*, rem_port*, P_OP, PathName&, ClumpletWriter&);
+	const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*, ClntAuthBlock* cBlock = NULL);
+static void init(IStatus*, ClntAuthBlock&, rem_port*, P_OP, PathName&, ClumpletWriter&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
@@ -618,11 +596,12 @@ static void server_death(rem_port*);
 static void svcstart(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT, const UCHAR*);
 static void unsupported();
 static void zap_packet(PACKET *);
+static void cleanDpb(Firebird::ClumpletWriter&, const ParametersSet*);
 
-static void authFillParametersBlock(AuthClientPlugins& authItr, ClumpletWriter& dpb,
-	const Auth::AuthTags* tags, rem_port* port);
-static void authReceiveResponse(AuthClientPlugins& authItr, rem_port* port, Rdb* rdb,
-	const Auth::AuthTags* tags, IStatus* status, PACKET* packet);
+static void authFillParametersBlock(ClntAuthBlock& authItr, ClumpletWriter& dpb,
+	const ParametersSet* tags, const PathName* filename, rem_port* port);
+static void authReceiveResponse(ClntAuthBlock& authItr, rem_port* port, Rdb* rdb,
+	const ParametersSet* tags, IStatus* status, PACKET* packet);
 
 static AtomicCounter remote_event_id;
 
@@ -682,7 +661,9 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_verification, newDpb, node_name, loopback);
+
+		ClntAuthBlock cBlock(&expanded_name);
+		rem_port* port = analyze(cBlock, expanded_name, user_verification, newDpb, node_name, loopback);
 
 		if (!port)
 		{
@@ -700,7 +681,7 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		init(status, port, op_attach, expanded_name, newDpb);
+		init(status, cBlock, port, op_attach, expanded_name, newDpb);
 
 		Attachment* a = new Attachment(port->port_context, filename);
 		a->addRef();
@@ -1226,7 +1207,9 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_verification, newDpb, node_name, loopback);
+
+		ClntAuthBlock cBlock(&expanded_name);
+		rem_port* port = analyze(cBlock, expanded_name, user_verification, newDpb, node_name, loopback);
 
 		if (!port)
 		{
@@ -1244,7 +1227,7 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		init(status, port, op_create, expanded_name, newDpb);
+		init(status, cBlock, port, op_create, expanded_name, newDpb);
 
 		Firebird::IAttachment* a = new Attachment(rdb, filename);
 		a->addRef();
@@ -1757,7 +1740,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		receive_packet(port, packet);
 
 		if (packet->p_operation != op_sql_response)
-			check_response(status, rdb, packet);
+			REMOTE_check_response(status, rdb, packet);
 		else
 		{
 			port->port_statement->rsr_message->msg_address = NULL;
@@ -1955,7 +1938,7 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 		receive_packet(rdb->rdb_port, packet);
 
 		if (packet->p_operation != op_sql_response)
-			check_response(status, rdb, packet);
+			REMOTE_check_response(status, rdb, packet);
 		else
 		{
 			message->msg_address = NULL;
@@ -3161,7 +3144,7 @@ int Attachment::getSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* array_
 
 		if (packet->p_operation != op_slice)
 		{
-			check_response(status, rdb, packet);
+			REMOTE_check_response(status, rdb, packet);
 		}
 
 		return response->p_slr_length;
@@ -4137,7 +4120,11 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 
 		add_other_params(port, newSpb, spbParam);
 
-		init(status, port, op_service_attach, expanded_name, newSpb);
+		ClntAuthBlock cBlock(NULL);
+		cBlock.load(newSpb, &spbParam);
+		init(status, cBlock, port, op_service_attach, expanded_name, newSpb);
+
+		cBlock.saveServiceDataTo(port);
 
 		Firebird::IService* s = new Service(rdb);
 		s->addRef();
@@ -4241,11 +4228,6 @@ void Service::query(IStatus* status,
  * Functional description
  *	Provide information on service object.
  *
- *	NOTE: The parameter RESERVED must not be used
- *	for any purpose as there are networking issues
- *	involved (as with any handle that goes over the
- *	network).  This parameter will be implemented at
- *	a later date.
  **************************************/
 	try
 	{
@@ -4263,11 +4245,12 @@ void Service::query(IStatus* status,
 			unsupported();
 		}
 
-		AuthClientPlugins authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
+		ClntAuthBlock cBlock(NULL);
+		cBlock.loadServiceDataFrom(port);
 
 		info(status, rdb, op_service_info, rdb->rdb_id, 0,
 			 sendLength, sendItems, receiveLength, receiveItems,
-			 bufferLength, buffer, &authItr);
+			 bufferLength, buffer, &cBlock);
 	}
 	catch (const Exception& ex)
 	{
@@ -4610,7 +4593,7 @@ void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 
 		if (packet->p_operation != op_transact_response)
 		{
-			check_response(status, rdb, packet);
+			REMOTE_check_response(status, rdb, packet);
 		}
 	}
 	catch (const Exception& ex)
@@ -4842,7 +4825,30 @@ static void add_working_directory(ClumpletWriter& dpb, const PathName& node_name
 }
 
 
-static rem_port* analyze(PathName& file_name,
+static void authenticateStep0(ClntAuthBlock& wire)
+{
+	for (LocalStatus s; wire.plugins.hasData(); wire.plugins.next())
+	{
+		switch(wire.plugins.plugin()->authenticate(&s, &wire))
+		{
+		case Auth::AUTH_SUCCESS:
+		case Auth::AUTH_MORE_DATA:
+			return;
+		case Auth::AUTH_FAILED:
+			gds__log_status("Authentication, client plugin:", s.get());
+			(Arg::Gds(isc_login)
+#ifdef DEV_BUILD
+								 << Arg::StatusVector(s.get())
+#endif
+								 ).raise();
+			break;	// compiler silencer
+		}
+	}
+}
+
+
+static rem_port* analyze(ClntAuthBlock& cBlock,
+						 PathName& file_name,
 						 bool uv_flag,
 						 ClumpletReader& dpb,
 						 PathName& node_name,
@@ -4869,10 +4875,13 @@ static rem_port* analyze(PathName& file_name,
 	// Analyze the file name to see if a remote connection is required.  If not,
 	// quietly (sic) return.
 
+	cBlock.load(dpb, &dpbParam);
+	authenticateStep0(cBlock);
+
 #ifdef WIN_NT
 	if (ISC_analyze_protocol(PROTOCOL_XNET, file_name, node_name))
 	{
-		return XNET_analyze(file_name, uv_flag);
+		return XNET_analyze(&cBlock, file_name, uv_flag);
 	}
 
 	if (ISC_analyze_protocol(PROTOCOL_WNET, file_name, node_name) ||
@@ -4882,7 +4891,7 @@ static rem_port* analyze(PathName& file_name,
 		{
 			node_name = WNET_LOCALHOST;
 		}
-		return WNET_analyze(file_name, node_name.c_str(), uv_flag);
+		return WNET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag);
 	}
 #endif
 
@@ -4893,7 +4902,7 @@ static rem_port* analyze(PathName& file_name,
 		{
 			node_name = INET_LOCALHOST;
 		}
-		return INET_analyze(file_name, node_name.c_str(), uv_flag, dpb);
+		return INET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag, dpb);
 	}
 
 	// We have a local connection string. If it's a file on a network share,
@@ -4907,7 +4916,7 @@ static rem_port* analyze(PathName& file_name,
 
 	if (ISC_analyze_pclan(expanded_name, node_name))
 	{
-		port = WNET_analyze(expanded_name, node_name.c_str(), uv_flag);
+		port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag);
 	}
 #endif
 
@@ -4917,7 +4926,7 @@ static rem_port* analyze(PathName& file_name,
 		PathName expanded_name = file_name;
 		if (ISC_analyze_nfs(expanded_name, node_name))
 		{
-			port = INET_analyze(expanded_name, node_name.c_str(), uv_flag, dpb);
+			port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag, dpb);
 		}
 	}
 #endif
@@ -4932,17 +4941,17 @@ static rem_port* analyze(PathName& file_name,
 #ifdef WIN_NT
 			if (!port)
 			{
-				port = XNET_analyze(file_name, uv_flag);
+				port = XNET_analyze(&cBlock, file_name, uv_flag);
 			}
 
 			if (!port)
 			{
-				port = WNET_analyze(file_name, WNET_LOCALHOST, uv_flag);
+				port = WNET_analyze(&cBlock, file_name, WNET_LOCALHOST, uv_flag);
 			}
 #endif
 			if (!port)
 			{
-				port = INET_analyze(file_name, INET_LOCALHOST, uv_flag, dpb);
+				port = INET_analyze(&cBlock, file_name, INET_LOCALHOST, uv_flag, dpb);
 			}
 		}
 	}
@@ -4971,15 +4980,15 @@ static rem_port* analyze_service(PathName& service_name,
  *	Otherwise, return NULL.
  *
  **************************************/
-	PathName node_name;
-
 	// Analyze the service name to see if a remote connection is required.  If not,
 	// quietly (sic) return.
+
+	PathName node_name;
 
 #if defined(WIN_NT)
 	if (ISC_analyze_protocol(PROTOCOL_XNET, service_name, node_name))
 	{
-		return XNET_analyze(service_name, uv_flag);
+		return XNET_analyze(cBlock, service_name, uv_flag);
 	}
 
 	if (ISC_analyze_protocol(PROTOCOL_WNET, service_name, node_name) ||
@@ -4989,7 +4998,7 @@ static rem_port* analyze_service(PathName& service_name,
 		{
 			node_name = WNET_LOCALHOST;
 		}
-		return WNET_analyze(service_name, node_name.c_str(), uv_flag);
+		return WNET_analyze(cBlock, service_name, node_name.c_str(), uv_flag);
 	}
 #endif
 
@@ -5000,7 +5009,7 @@ static rem_port* analyze_service(PathName& service_name,
 		{
 			node_name = INET_LOCALHOST;
 		}
-		return INET_analyze(service_name, node_name.c_str(), uv_flag, spb);
+		return INET_analyze(NULL, service_name, node_name.c_str(), uv_flag, spb);
 	}
 
 	rem_port* port = NULL;
@@ -5016,17 +5025,17 @@ static rem_port* analyze_service(PathName& service_name,
 #if defined(WIN_NT)
 			if (!port)
 			{
-				port = XNET_analyze(service_name, uv_flag);
+				port = XNET_analyze(cBlock, service_name, uv_flag);
 			}
 
 			if (!port)
 			{
-				port = WNET_analyze(service_name, WNET_LOCALHOST, uv_flag);
+				port = WNET_analyze(cBlock, service_name, WNET_LOCALHOST, uv_flag);
 			}
 #endif
 			if (!port)
 			{
-				port = INET_analyze(service_name, INET_LOCALHOST, uv_flag, spb);
+				port = INET_analyze(NULL, service_name, INET_LOCALHOST, uv_flag, spb);
 			}
 		}
 	}
@@ -5165,7 +5174,7 @@ static void batch_dsql_fetch(rem_port*	port,
 			statement->rsr_flags.set(Rsr::STREAM_ERR);
 			try
 			{
-				check_response(&status, rdb, packet);
+				REMOTE_check_response(&status, rdb, packet);
 				statement->saveException(status.get(), false);
 			}
 			catch (const Exception& ex)
@@ -5321,7 +5330,7 @@ static void batch_gds_receive(rem_port*		port,
 			try
 			{
 				LocalStatus status;
-				check_response(&status, rdb, packet);
+				REMOTE_check_response(&status, rdb, packet);
 #ifdef DEBUG
 				fprintf(stderr, "End of batch. rows pending = %d\n", tail->rrq_rows_pending);
 #endif
@@ -5365,85 +5374,6 @@ static void batch_gds_receive(rem_port*		port,
 		if (!clear_queue)
 			break;
 	}
-}
-
-
-static void check_response(IStatus* warning, Rdb* rdb, PACKET* packet)
-{
-/**************************************
- *
- *	c h e c k _ r e s p o n s e
- *
- **************************************
- *
- * Functional description
- *	Check response to a remote call.
- *
- **************************************/
-
-	// Get status vector
-
-	const ISC_STATUS* vector = success_vector;
-	if (packet->p_resp.p_resp_status_vector)
-	{
-		vector = packet->p_resp.p_resp_status_vector->value();
-	}
-
-	// Translate any gds codes into local operating specific codes
-
-	SimpleStatusVector newVector;
-	rem_port* port = rdb->rdb_port;
-
-	while (*vector != isc_arg_end)
-	{
-		const ISC_STATUS vec = *vector++;
-		newVector.push(vec);
-
-		switch ((USHORT) vec)
-		{
-		case isc_arg_warning:
-		case isc_arg_gds:
-			if (port->port_protocol < PROTOCOL_VERSION10)
-			{
-				fb_assert(vec == isc_arg_gds);
-				newVector.push(gds__encode(*vector++, 0));
-			}
-			else
-				newVector.push(*vector++);
-			break;
-
-		case isc_arg_cstring:
-			newVector.push(*vector++);
-			// fall down
-
-		default:
-			newVector.push(*vector++);
-			break;
-		}
-	}
-
-	newVector.push(isc_arg_end);
-	vector = newVector.begin();
-
-	const ISC_STATUS pktErr = vector[1];
-	if (pktErr == isc_shutdown || pktErr == isc_att_shutdown)
-	{
-		port->port_flags |= PORT_rdb_shutdown;
-	}
-
-	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
-		!vector[1])
-	{
-		warning->set(vector);
-		return;
-	}
-
-	if (!vector[1])
-	{
-		Arg::Gds(isc_net_read_err).raise();
-	}
-
-	status_exception::raise(vector);
 }
 
 
@@ -5668,7 +5598,7 @@ static int fetch_blob(IStatus* status,
 	if (packet->p_operation == op_fetch_response)
 		receive_response(status, rdb, packet);
 	else
- 		check_response(status, rdb, packet);
+ 		REMOTE_check_response(status, rdb, packet);
 
 	return packet->p_sqldata.p_sqldata_status;
 }
@@ -5721,25 +5651,6 @@ static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
 		}
 	}
 
-/* #ifndef NO_PASSWORD_ENCRYPTION */
-#ifdef NEVERDEF
-	if (dpb.find(par.password))
-	{
-		string password;
-		dpb.getString(password);
-		dpb.deleteClumplet();
-
-		if (!dpb.find(isc_dpb_utf8_filename))
-			ISC_systemToUtf8(password);
-		ISC_unescape(password);
-
-		TEXT pwt[Auth::MAX_PASSWORD_LENGTH + 2];
-		ENC_crypt(pwt, sizeof pwt, password.c_str(), Auth::PASSWORD_SALT);
-		password = pwt + 2;
-		dpb.insertString(par.password_enc, password);
-	}
-#endif
-
 	return dpb.find(par.user_name);
 }
 
@@ -5774,7 +5685,7 @@ static void info(IStatus* status,
 				 const UCHAR* recv_items,
 				 ULONG buffer_length,
 				 UCHAR* buffer,
-				 AuthClientPlugins* authItr)
+				 ClntAuthBlock* cBlock)
 {
 /**************************************
  *
@@ -5817,8 +5728,9 @@ static void info(IStatus* status,
 		if (operation == op_service_info)
 		{
 			// Probably communicate with services auth
-			fb_assert(authItr);
-			authReceiveResponse(*authItr, rdb->rdb_port, rdb, &Auth::SVC_QUERY_LIST, status, packet);
+			fb_assert(cBlock);
+			HANDSHAKE_DEBUG(fprintf(stderr, "info() calls authReceiveResponse\n"));
+			authReceiveResponse(*cBlock, rdb->rdb_port, rdb, &spbInfoParam, status, packet);
 		}
 		else
 		{
@@ -5836,42 +5748,40 @@ static void info(IStatus* status,
 }
 
 // Let plugins try to add data to DPB in order to avoid extra network roundtrip
-static void authFillParametersBlock(AuthClientPlugins& authItr, ClumpletWriter& dpb,
-	const Auth::AuthTags* tags, rem_port* port)
+static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
+	const ParametersSet* tags, const PathName* filename, rem_port* port)
 {
 	LocalStatus s;
-	Auth::DpbImplementation di(dpb);
 
-	bool working = true;
+	cBlock.resetDataFromPlugin();
 
-	while (working && authItr.hasData())
+	for (; cBlock.plugins.hasData(); cBlock.plugins.next())
 	{
 		if (port->port_protocol >= PROTOCOL_VERSION13 ||
-			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(authItr.name())))
+			REMOTE_legacy_auth(cBlock.plugins.name(), port->port_protocol))
 		{
+			cBlock.resetDataFromPlugin();
 			// OK to use plugin
-			switch(authItr.plugin()->startAuthentication(&s, tags, &di))
+			switch(cBlock.plugins.plugin()->authenticate(&s, &cBlock))
 			{
 			case Auth::AUTH_SUCCESS:
-				working = false;
-				break;
+			case Auth::AUTH_MORE_DATA:
+				HANDSHAKE_DEBUG(fprintf(stderr, "FPB: plugin %s is OK\n", cBlock.plugins.name()));
+				cleanDpb(dpb, tags);
+				cBlock.extractDataFromPluginTo(dpb, tags, port->port_protocol);
+				return;
 			case Auth::AUTH_FAILED:
+				HANDSHAKE_DEBUG(fprintf(stderr, "FPB: plugin %s FAILED\n", cBlock.plugins.name()));
 				(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
 				break;	// compiler silencer
-			default:
-				authItr.next();
-				break;
 			}
 		}
-		else
-		{
-			authItr.next();
-		}
+		HANDSHAKE_DEBUG(fprintf(stderr, "FPB: try next plugin, %s skipped\n", cBlock.plugins.name()));
 	}
 }
 
-static void authReceiveResponse(AuthClientPlugins& authItr, rem_port* port, Rdb* rdb,
-	const Auth::AuthTags* tags, IStatus* status, PACKET* packet)
+static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
+	const ParametersSet* tags, IStatus* status, PACKET* packet)
 {
 	LocalStatus s;
 
@@ -5887,27 +5797,31 @@ static void authReceiveResponse(AuthClientPlugins& authItr, rem_port* port, Rdb*
 		switch(packet->p_operation)
 		{
 		case op_trusted_auth:
+			HANDSHAKE_DEBUG(fprintf(stderr, "RR:TA\n"));
 			d = &packet->p_trau.p_trau_data;
 			break;
 
 		case op_cont_auth:
 			d = &packet->p_auth_cont.p_data;
 			n = &packet->p_auth_cont.p_name;
+			HANDSHAKE_DEBUG(fprintf(stderr, "RR:CA d=%d n=%d '%.*s' 0x%x\n", d->cstr_length, n->cstr_length,
+									n->cstr_length, n->cstr_address, n->cstr_address ? n->cstr_address[0] : 0));
 			break;
 
 		default:
-			check_response(status, rdb, packet);
+			HANDSHAKE_DEBUG(fprintf(stderr, "RR: Default answer\n"));
+			REMOTE_check_response(status, rdb, packet);
 			// successfully attached
+			HANDSHAKE_DEBUG(fprintf(stderr, "RR: OK!\n"));
 			rdb->rdb_id = packet->p_resp.p_resp_object;
 			return;
 		}
 
-		bool contFlag = true;
-		if (n && n->cstr_length && authItr.hasData())
+		if (n && n->cstr_length && cBlock.plugins.hasData())
 		{
 			// if names match, do not change instance
-			if (strlen(authItr.name()) == n->cstr_length &&
-				memcmp(authItr.name(), n->cstr_address, n->cstr_length) == 0)
+			if (strlen(cBlock.plugins.name()) == n->cstr_length &&
+				memcmp(cBlock.plugins.name(), n->cstr_address, n->cstr_length) == 0)
 			{
 				n = NULL;
 			}
@@ -5916,63 +5830,37 @@ static void authReceiveResponse(AuthClientPlugins& authItr, rem_port* port, Rdb*
 		if (n && n->cstr_length)
 		{
 			// switch to other plugin
-			string tmp(n->cstr_address, n->cstr_length);
-			authItr.set(tmp.c_str());
-
-			if (authItr.hasData())
+			PathName tmp(n->cstr_address, n->cstr_length);
+			if (!cBlock.checkPluginName(tmp))
 			{
-				Auth::Result rc = authItr.plugin()->startAuthentication(&s, tags, NULL);
-
-				if (rc == Auth::AUTH_FAILED)
-				{
-					break;
-				}
-				if (rc != Auth::AUTH_MORE_DATA)
-				{
-					contFlag = false;
-				}
+				break;
 			}
-			else
-			{
-				contFlag = false;
-				packet->p_trau.p_trau_data.cstr_length = 0;
-			}
+			cBlock.plugins.set(tmp.c_str());
 		}
 
-		if (contFlag)
+		if (!cBlock.plugins.hasData())
 		{
-			// continue auth
-			if (!authItr.hasData())
-			{
-				break;
-			}
-			if (authItr.plugin()->contAuthentication(&s, d->cstr_address, d->cstr_length) == Auth::AUTH_FAILED)
-			{
-				break;
-			}
+			break;
 		}
 
-		if (!authItr.hasData())
+		cBlock.storeDataForPlugin(d->cstr_length, d->cstr_address);
+		if (cBlock.plugins.plugin()->authenticate(&s, &cBlock) == Auth::AUTH_FAILED)
 		{
 			break;
 		}
 
 		// send answer (may be empty) to server
-		packet->p_operation = op_trusted_auth;
-		d = &packet->p_trau.p_trau_data;
-		d->cstr_allocated = 0;
-		// violate constness here safely - send operation does not modify data
-		authItr.plugin()->getData(const_cast<const unsigned char**>(&d->cstr_address),
-								  &d->cstr_length);
-
+		packet->p_operation = op_cont_auth;
+		cBlock.extractDataFromPluginTo(&packet->p_auth_cont);
 		send_packet(port, packet);
+		memset(&packet->p_auth_cont, 0, sizeof packet->p_auth_cont);
 	}
 
 	// If we have exited from the cycle, this mean auth failed
 	(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
 }
 
-static void init(IStatus* status, rem_port* port, P_OP op, PathName& file_name,
+static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op, PathName& file_name,
 	ClumpletWriter& dpb)
 {
 /**************************************
@@ -5993,11 +5881,6 @@ static void init(IStatus* status, rem_port* port, P_OP op, PathName& file_name,
 
 		MemoryPool& pool = *getDefaultMemoryPool();
 		port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
-
-		AuthClientPlugins authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
-		authFillParametersBlock(authItr, dpb,
-			op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
-			port);
 
 		if (port->port_protocol < PROTOCOL_VERSION12)
 		{
@@ -6034,6 +5917,12 @@ static void init(IStatus* status, rem_port* port, P_OP op, PathName& file_name,
 			}
 		}
 
+		HANDSHAKE_DEBUG(fprintf(stderr, "init calls authFillParametersBlock\n"));
+		authFillParametersBlock(cBlock, dpb,
+			op == op_service_attach ? &spbParam : &dpbParam,
+			op == op_service_attach ? NULL : &file_name,
+			port);
+
 		// Make attach packet
 		P_ATCH* attach = &packet->p_atch;
 		packet->p_operation = op;
@@ -6044,9 +5933,8 @@ static void init(IStatus* status, rem_port* port, P_OP op, PathName& file_name,
 
 		send_packet(port, packet);
 
-		authReceiveResponse(authItr, port, rdb,
-			op == op_service_attach ? &Auth::SVC_ATTACH_LIST : &Auth::DB_ATTACH_LIST,
-			status, packet);
+		authReceiveResponse(cBlock, port, rdb,
+			op == op_service_attach ? &spbParam : &dpbParam, status, packet);
 	}
 	catch (const Exception&)
 	{
@@ -6205,7 +6093,7 @@ static void receive_after_start(Rrq* request, USHORT msg_type)
 			try
 			{
 				LocalStatus status;
-				check_response(&status, rdb, packet);
+				REMOTE_check_response(&status, rdb, packet);
 				request->saveStatus(&status);
 			}
 			catch (const Exception& ex)
@@ -6321,7 +6209,7 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 			try
 			{
 				LocalStatus status;
-				check_response(&status, rdb, &p->packet);
+				REMOTE_check_response(&status, rdb, &p->packet);
 				statement->saveException(status.get(), false);
 			}
 			catch (const Exception& ex)
@@ -6464,7 +6352,7 @@ static void receive_response(IStatus* status, Rdb* rdb, PACKET* packet)
  **************************************/
 
 	receive_packet(rdb->rdb_port, packet);
-	check_response(status, rdb, packet);
+	REMOTE_check_response(status, rdb, packet);
 }
 
 
@@ -6924,8 +6812,10 @@ static void svcstart(IStatus*	status,
 
 	// Get ready for multi-hop auth
 	ClumpletWriter send(ClumpletReader::SpbStart, MAX_DPB_SIZE, items, item_length);
-	AuthClientPlugins authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
-	authFillParametersBlock(authItr, send, &Auth::SVC_START_LIST, rdb->rdb_port);
+	ClntAuthBlock cBlock(NULL);
+	cBlock.loadServiceDataFrom(rdb->rdb_port);
+	HANDSHAKE_DEBUG(fprintf(stderr, "start calls authFillParametersBlock\n"));
+	authFillParametersBlock(cBlock, send, &spbStartParam, NULL, rdb->rdb_port);
 
 	// Build the primary packet to get the operation started.
 	PACKET* packet = &rdb->rdb_packet;
@@ -6945,7 +6835,7 @@ static void svcstart(IStatus*	status,
 
 	try
 	{
-		authReceiveResponse(authItr, rdb->rdb_port, rdb, &Auth::SVC_START_LIST, status, packet);
+		authReceiveResponse(cBlock, rdb->rdb_port, rdb, &spbStartParam, status, packet);
 	}
 	catch (const Exception&)
 	{
@@ -7059,4 +6949,193 @@ Transaction* Attachment::remoteTransactionInterface(ITransaction* apiTra)
 	return static_cast<Transaction*>(valid);
 }
 
+static void cleanDpb(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
+{
+	dpb.deleteWithTag(tags->password);
+	dpb.deleteWithTag(tags->password_enc);
+	dpb.deleteWithTag(tags->trusted_auth);
+}
+
 } //namespace Remote
+
+ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName)
+	: pluginList(getPool()), userName(getPool()), password(getPool()),
+	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
+	  hasCryptKey(false),
+	  plugins(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo),
+	  authComplete(false), firstTime(true)
+{
+	reset(fileName);
+}
+
+void ClntAuthBlock::resetDataFromPlugin()
+{
+	dataFromPlugin.clear();
+}
+
+void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
+									  const ParametersSet* tags,
+									  int protocol)
+{
+	if (!dataFromPlugin.hasData())
+	{
+		return;
+	}
+
+	PathName pluginName = getPluginName();
+	if (protocol >= PROTOCOL_VERSION13)
+	{
+		if (firstTime)
+		{
+			fb_assert(tags->plugin_name && tags->plugin_list);
+			if (pluginName.hasData())
+			{
+				dpb.insertPath(tags->plugin_name, pluginName);
+			}
+			dpb.insertPath(tags->plugin_list, pluginList);
+			firstTime = false;
+			HANDSHAKE_DEBUG(fprintf(stderr, "first time - added plugName & pluginList\n"));
+		}
+		fb_assert(tags->specific_data);
+		dpb.insertBytes(tags->specific_data, dataFromPlugin.begin(), dataFromPlugin.getCount());
+
+		HANDSHAKE_DEBUG(fprintf(stderr, "Added %" SIZEFORMAT " bytes of spec data with tag %d\n",
+								dataFromPlugin.getCount(), tags->specific_data));
+
+		return;
+	}
+
+	if (REMOTE_legacy_auth(pluginName.c_str(), PROTOCOL_VERSION10))	// dataFromPlugin is encrypted password
+	{
+		fb_assert(tags->password_enc);
+		dpb.insertBytes(tags->password_enc, dataFromPlugin.begin(), dataFromPlugin.getCount());
+		return;
+	}
+
+	fb_assert(REMOTE_legacy_auth(pluginName.c_str(), protocol));		// dataFromPlugin must be trustedAuth
+	fb_assert(tags->trusted_auth);
+	dpb.insertBytes(tags->trusted_auth, dataFromPlugin.begin(), dataFromPlugin.getCount());
+}
+
+static inline void makeUtfString(bool uft8Convert, Firebird::string& s)
+{
+	if (uft8Convert)
+	{
+		ISC_systemToUtf8(s);
+	}
+	ISC_unescape(s);
+}
+
+void ClntAuthBlock::load(Firebird::ClumpletReader& dpb, const ParametersSet* tags)
+{
+	bool uft8Convert = !dpb.find(isc_dpb_utf8_filename);
+
+	for (dpb.rewind(); !dpb.isEof(); dpb.moveNext())
+	{
+		const UCHAR t = dpb.getClumpTag();
+		if (t == tags->user_name)
+		{
+			dpb.getString(userName);
+			makeUtfString(uft8Convert, userName);
+			HANDSHAKE_DEBUG(fprintf(stderr, "Loaded from PB user = %s\n", userName.c_str()));
+			userName.upper();
+		}
+		else if (t == tags->password)
+		{
+			makeUtfString(uft8Convert, password);
+			dpb.getString(password);
+			HANDSHAKE_DEBUG(fprintf(stderr, "Loaded from PB password = %s\n", password.c_str()));
+		}
+		else if (t == tags->encrypt_key)
+		{
+			hasCryptKey = true;
+			HANDSHAKE_DEBUG(fprintf(stderr, "PB contains crypt key - need encrypted line to pass\n"));
+		}
+	}
+}
+
+void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
+{
+	to->p_data.cstr_length = dataFromPlugin.getCount();
+	to->p_data.cstr_address = dataFromPlugin.begin();
+	to->p_data.cstr_allocated = 0;
+
+	PathName pluginName = getPluginName();
+	to->p_name.cstr_length = pluginName.length();
+	to->p_name.cstr_address = (UCHAR*)(pluginName.c_str());
+	to->p_name.cstr_allocated = 0;
+
+	HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo added plugin name (%d) and data (%d)\n",
+				to->p_name.cstr_length, to->p_data.cstr_length));
+
+	if (firstTime)
+	{
+		to->p_list.cstr_length = pluginList.length();
+		to->p_list.cstr_address = (UCHAR*)(pluginList.c_str());
+		to->p_list.cstr_allocated = 0;
+		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo added plugin list (%d len) to packet\n",
+								to->p_list.cstr_length));
+		firstTime = false;
+	}
+	else
+	{
+		to->p_list.cstr_length = 0;
+	}
+}
+
+const char* ClntAuthBlock::getLogin()
+{
+	return userName.nullStr();
+}
+
+const char* ClntAuthBlock::getPassword()
+{
+	return password.nullStr();
+}
+
+const unsigned char* ClntAuthBlock::getData(unsigned int* length)
+{
+	*length = dataForPlugin.getCount();
+	return (*length) ? dataForPlugin.begin() : NULL;
+}
+
+void ClntAuthBlock::putData(unsigned int length, const void* data)
+{
+	void* to = dataFromPlugin.getBuffer(length);
+	memcpy(to, data, length);
+}
+
+int ClntAuthBlock::release()
+{
+	if (--refCounter != 0)
+		return 1;
+
+	delete this;
+	return 0;
+}
+
+bool ClntAuthBlock::checkPluginName(Firebird::PathName& nameToCheck)
+{
+	Remote::ParsedList parsed;
+	REMOTE_parseList(parsed, pluginList);
+	for (unsigned i = 0; i < parsed.getCount(); ++i)
+	{
+		if (parsed[i] == nameToCheck)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void ClntAuthBlock::saveServiceDataTo(rem_port* port)
+{
+	port->port_user_name = userName;
+	port->port_password = password;
+}
+
+void ClntAuthBlock::loadServiceDataFrom(rem_port* port)
+{
+	userName = port->port_user_name;
+	password = port->port_password;
+}

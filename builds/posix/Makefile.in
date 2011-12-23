@@ -359,10 +359,11 @@ $(NBACKUP):		$(NBACKUP_Objects) $(COMMON_LIB)
 # plugins - some of them are required to build examples, use separate entry for them
 #
 
-.PHONY:	udr legacy_user_management trace auth_debug
+.PHONY:	udr legacy_user_management trace auth_debug 
 makePluginName= $(PLUGINS)/$(LIB_PREFIX)$(1).$(SHRLIB_EXT)
 UDR_PLUGIN = $(call makePluginName,udr_engine)
 LEGACY_USER_MANAGER = $(call makePluginName,Legacy_UserManager)
+SRP_USER_MANAGER = $(call makePluginName,Srp)
 AUTH_DEBUGGER = $(call makePluginName,Auth_Debug)
 
 BUILD_DEBUG:=
@@ -370,7 +371,7 @@ ifeq ($(TARGET),Debug)
 	BUILD_DEBUG:=auth_debug
 endif
 
-plugins: udr legacy_user_management trace $(BUILD_DEBUG)
+plugins: udr legacy_user_management srp_user_management trace $(BUILD_DEBUG)
 
 udr:	$(UDR_PLUGIN) $(PLUGINS)/udr_engine.conf
 
@@ -395,6 +396,10 @@ auth_debug:	$(AUTH_DEBUGGER)
 $(AUTH_DEBUGGER):	$(AUTH_DEBUGGER_Objects) $(COMMON_LIB)
 	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(notdir $@).0) -o $@ $^ $(LINK_PLUG_LIBS) $(FIREBIRD_LIBRARY_LINK)
 
+srp_user_management: $(SRP_USER_MANAGER)
+
+$(SRP_USER_MANAGER):	$(SRP_USERS_MANAGE_Objects) $(COMMON_LIB)
+	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(notdir $@).0) -o $@ $^ $(LINK_PLUG_LIBS) $(FIREBIRD_LIBRARY_LINK) $(MATHLIB)
 
 #___________________________________________________________________________
 # codes - developers change them sometimes

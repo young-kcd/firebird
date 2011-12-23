@@ -35,14 +35,17 @@
 #include "../common/ThreadData.h"
 #include "../common/ThreadStart.h"
 #include "../common/thd.h"
+#include "../common/Auth.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/RefMutex.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/RefCounted.h"
+#include "../common/classes/GetPlugins.h"
 
 #include "firebird/Provider.h"
+#include "firebird/Auth.h"
 
 #ifndef WIN_NT
 #include <signal.h>
@@ -83,11 +86,10 @@ const int BLOB_LENGTH		= 16384;
 // fwd. decl.
 namespace Firebird {
 	class Exception;
-}
-namespace Firebird {
 	class IEventCallback;
 }
 struct rem_port;
+class RemCryptKey;
 
 typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
 
@@ -98,6 +100,20 @@ typedef Firebird::RefPtr<Firebird::IStatement> ServStatement;
 typedef Firebird::RefPtr<Firebird::IRequest> ServRequest;
 typedef Firebird::RefPtr<Firebird::IEvents> ServEvents;
 typedef Firebird::RefPtr<Firebird::IService> ServService;
+
+
+// this set of parameters help use same functions
+// for both services and databases attachments
+struct ParametersSet
+{
+	UCHAR dummy_packet_interval, user_name, auth_block,
+		  password, password_enc, trusted_auth,
+		  plugin_name, plugin_list, specific_data,
+		  address_path, process_id, process_name,
+		  encrypt_key;
+};
+
+extern const ParametersSet dpbParam, spbParam, spbStartParam, spbInfoParam;
 
 
 struct Svc : public Firebird::GlobalStorage
@@ -578,8 +594,108 @@ class ServerAuthBase
 {
 public:
 	virtual ~ServerAuthBase();
-	virtual bool authenticate(rem_port* port, PACKET* send, const cstring* data) = 0;
+	virtual bool authenticate(rem_port* port, PACKET* send) = 0;
 };
+
+typedef Firebird::GetPlugins<Auth::IClient> AuthClientPlugins;
+
+// Representation of authentication data, visible for plugin
+// Transfered in format, depending upon type of the packet (phaze of handshake)
+class ClntAuthBlock : public Firebird::StdPlugin<Auth::IClientBlock, FB_AUTH_CLIENT_BLOCK_VERSION>
+{
+private:
+	Firebird::PathName pluginList;				// To be passed to server
+	Firebird::string userName, password;		// Used by plugin, taken from DPB
+	// That two are legacy encrypted password, trusted auth data and so on - what plugin needs
+	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
+
+	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over crypted wire
+
+public:
+	AuthClientPlugins plugins;
+	bool authComplete;						// Set as response from client that authentication accepted
+	bool firstTime;							// Invoked first time after reset
+
+	ClntAuthBlock(const Firebird::PathName* fileName);
+
+	void storeDataForPlugin(unsigned int length, const unsigned char* data);
+	void resetDataFromPlugin();
+	void extractDataFromPluginTo(Firebird::ClumpletWriter& dpb, const ParametersSet* tags, int protocol);
+	void extractDataFromPluginTo(P_AUTH_CONT* to);
+	void load(Firebird::ClumpletReader& dpb, const ParametersSet*);
+	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);
+	void reset(const Firebird::PathName* fileName);
+	bool checkPluginName(Firebird::PathName& nameToCheck);
+	void saveServiceDataTo(rem_port*);
+	void loadServiceDataFrom(rem_port*);
+	Firebird::PathName getPluginName();
+
+//	Auth::IClientBlock implementation
+	int release();
+	const char* FB_CARG getLogin();
+	const char* FB_CARG getPassword();
+	const unsigned char* FB_CARG getData(unsigned int* length);
+	void FB_CARG putData(unsigned int length, const void* data);
+};
+
+// Representation of authentication data, visible for plugin
+// Transfered from client data in format, suitable for plugins access
+typedef Firebird::GetPlugins<Auth::IServer> AuthServerPlugins;
+
+class SrvAuthBlock : public Firebird::StdPlugin<Auth::IServerBlock, FB_AUTH_SERVER_BLOCK_VERSION>
+{
+private:
+	Firebird::string userName;
+	Firebird::PathName pluginName, pluginList;
+
+	// That two may be legacy encrypted password, trusted auth data and so on
+	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
+
+	Firebird::PathName dbPath;
+	bool flComplete, firstTime;
+
+public:
+	AuthServerPlugins* plugins;
+	Auth::WriterImplementation authBlockWriter;
+
+	SrvAuthBlock()
+		: userName(getPool()), pluginName(getPool()), pluginList(getPool()),
+		  dataForPlugin(getPool()), dataFromPlugin(getPool()),
+		  dbPath(getPool()),
+		  flComplete(false), firstTime(true),
+		  plugins(NULL)
+	{ }
+
+	~SrvAuthBlock()
+	{
+		delete plugins;
+	}
+
+	void extractDataFromPluginTo(cstring* to);
+	void extractDataFromPluginTo(P_AUTH_CONT* to);
+	bool authCompleted(bool flag = false);
+	void setPath(const Firebird::PathName* dbPath);
+	void setUser(const Firebird::string& user);
+	const char* getPath();
+	void load(Firebird::ClumpletReader& userId);
+	const char* getPluginName();
+	void setPluginList(const Firebird::string& name);
+	const char* getPluginList();
+	void setPluginName(const Firebird::string& name);
+	void extractPluginName(cstring* to);
+	void setDataForPlugin(const Firebird::UCharBuffer& data);
+	void setDataForPlugin(const cstring& data);
+	void createPluginsItr();
+	void setDataForPlugin(const p_auth_continue* data);
+	void reset();
+
+//	Auth::IServerBlock implementation
+	int release();
+	const char* FB_CARG getLogin();
+	const unsigned char* FB_CARG getData(unsigned int* length);
+	void FB_CARG putData(unsigned int length, const void* data);
+};
+
 
 // port_flags
 const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic
@@ -669,8 +785,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	rem_str*		port_version;
 	rem_str*		port_host;				// Our name
 	rem_str*		port_connection;		// Name of connection
-	rem_str*		port_user_name;
-	rem_str*		port_passwd;
+	Firebird::string port_user_name;
+	Firebird::string port_password;
 	rem_str*		port_protocol_str;		// String containing protocol name for this port
 	rem_str*		port_address_str;		// Protocol-specific address string for the port
 	Rpr*			port_rpr;				// port stored procedure reference
@@ -682,7 +798,16 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	OBJCT			port_last_object_id;	// cached last id
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	size_t			port_qoffset;			// current packet in the queue
-	ServerAuthBase*		port_auth;
+
+	// Authentication and crypt stuff
+	ServerAuthBase*							port_srv_auth;
+	Firebird::RefPtr<SrvAuthBlock>			port_srv_auth_block;
+	RemCryptKey*	port_crypt_keys;		// linked list of available wire crypt keys
+	bool			port_need_disk_crypt;	// set when appropriate DPB/SPB item is present
+											// requires wire crypt active before attachDatabase()
+	Firebird::RefPtr<Firebird::ICrypt>		port_send_cipher, port_recv_cipher;
+	// when not NULL - used to encrypt transferred wire data and to decrypt received one
+
 	UCharArrayAutoPtr	port_buffer;
 
 public:
@@ -705,11 +830,14 @@ public:
 		port_packet_vector(0),
 #endif
 		port_objects(getPool()), port_version(0), port_host(0),
-		port_connection(0), port_user_name(0), port_passwd(0), port_protocol_str(0),
+		port_connection(0), port_user_name(getPool()), port_password(getPool()), port_protocol_str(0),
 		port_address_str(0), port_rpr(0), port_statement(0), port_receive_rmtque(0),
 		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0),
 		port_queue(getPool()), port_qoffset(0),
-		port_auth(0), port_buffer(FB_NEW(getPool()) UCHAR[rpt])
+		port_srv_auth(NULL), port_srv_auth_block(NULL),
+		port_crypt_keys(NULL), port_need_disk_crypt(false),
+		port_send_cipher(NULL), port_recv_cipher(NULL),
+		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		addRef();
 		memset (&port_linger, 0, sizeof port_linger);
@@ -899,7 +1027,6 @@ public:
 };
 
 
-
 // Queuing structure for Client batch fetches
 
 typedef void (*t_rmtque_fn)(rem_port*, rmtque*, USHORT);
@@ -947,6 +1074,47 @@ private:
 	typedef Firebird::SortedArray<rem_port*> PortsArray;
 	PortsArray*		m_ports;
 	Firebird::Mutex	m_mutex;
+};
+
+
+// Element of known crypt keys list
+class RemCryptKey : public Firebird::GlobalStorage
+{
+private:
+	RemCryptKey* next;
+	Firebird::UCharBuffer key;
+	Firebird::string name;
+
+	RemCryptKey(unsigned int len, const UCHAR* data, const char* nm)
+		: next(NULL), key(getPool()), name(getPool())
+	{
+		key.assign(data, len);
+		name = nm;
+	}
+
+public:
+	void append(unsigned int len, const UCHAR* data, const char* nm)
+	{
+		if (name == nm)
+			return;
+		if (next)
+			next->append(len, data, nm);
+		else
+			next = new RemCryptKey(len, data, nm);
+	}
+
+	Firebird::UCharBuffer* choose()
+	{
+		RemCryptKey* ptr = next;
+		Firebird::UCharBuffer* rc = &key;
+		while (ptr)
+		{
+			if (ptr->key.getCount() > rc->getCount())
+				rc = &ptr->key;
+			ptr = ptr->next;
+		}
+		return rc;
+	}
 };
 
 #endif // REMOTE_REMOTE_H

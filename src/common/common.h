@@ -867,9 +867,9 @@ void GDS_breakpoint(int);
 #define STRINGIZE(x)		STRINGIZE_AUX(x)
 
 #ifdef _MSC_VER
-#define CONST64(a) (a##i64)
+#define FB_CONST64(a) (a##i64)
 #else
-#define CONST64(a) (a##LL)
+#define FB_CONST64(a) (a##LL)
 #endif
 
 // 30 Dec 2002. Nickolay Samofatov

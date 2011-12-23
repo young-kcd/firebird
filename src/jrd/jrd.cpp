@@ -6649,9 +6649,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 		{
 			// stub instead mapUser(....);
 			AuthReader auth(options.dpb_auth_block);
-			string dummy;
 			PathName secureDb;
-			if (auth.getInfo(&name, &dummy, &secureDb))
+			if (auth.getInfo(&name, NULL, &secureDb))
 			{
 				if (secureDb.hasData())
 				{
@@ -6663,7 +6662,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 				else
 				{
 					auth.moveNext();
-					auth.getInfo(&trusted_role, &dummy, &secureDb);
+					auth.getInfo(&trusted_role, NULL, NULL);
 				}
 			}
 		}

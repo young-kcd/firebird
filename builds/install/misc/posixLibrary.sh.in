@@ -297,6 +297,17 @@ askForOrigDBAPassword() {
 
 
 #------------------------------------------------------------------------
+#  Ask user to enter new DBA password string
+#  !! This routine is interactive !!
+
+getNewDBAPasswordFromUser()
+{
+	AskQuestion "Please enter new password for SYSDBA user: "
+	echo $Answer
+}
+
+
+#------------------------------------------------------------------------
 #  Modify DBA password to value, asked from user. 
 #  $1 may be set to original DBA password
 #  !! This routine is interactive !!
@@ -313,8 +324,7 @@ askUserForNewDBAPassword() {
     NewPasswd=""
     while [ -z "$NewPasswd" ]
     do
-        AskQuestion "Please enter new password for SYSDBA user: "
-        NewPasswd=$Answer
+        NewPasswd=`getNewDBAPasswordFromUser`
         if [ ! -z "$NewPasswd" ]
         then
             if ! runSilent "@FB_BINDIR@/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
@@ -434,6 +444,26 @@ changeDBAPassword() {
       else
         askUserForNewDBAPassword masterkey
     fi
+}
+
+
+#------------------------------------------------------------------------
+#  Set sysdba password.
+
+setDBAPassword() {
+    if [ -z "$InteractiveInstall" ]
+      then
+        passwd=`createNewPassword`
+      else
+        passwd=`getNewDBAPasswordFromUser`
+    fi
+
+    if [ ! -z "$passwd" ]
+      then
+        passwd=masterkey
+    fi
+
+    runSilent "@FB_BINDIR@/gsec -add sysdba -pw $passwd"
 }
 
 

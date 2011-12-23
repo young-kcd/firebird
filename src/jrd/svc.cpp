@@ -52,7 +52,6 @@
 #include "../jrd/thread_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../common/enc_proto.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -750,8 +749,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					// stub instead mapUser(....);
 					AuthReader auth(svc_auth_block);
 					Firebird::string method;
-					PathName secDb;
-					if (auth.getInfo(&svc_username, &method, &secDb) && method == "Win_Sspi")
+					if (auth.getInfo(&svc_username, &method, NULL) && method == "Win_Sspi")
 					{
 						auth.moveNext();
 						if (!auth.isEof())

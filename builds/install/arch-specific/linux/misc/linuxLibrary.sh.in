@@ -178,35 +178,40 @@ stopSuperServerIfRunning() {
 }
 
 #------------------------------------------------------------------------
-#  Generate new sysdba password - this routine is used only in the 
-#  rpm file not in the install script.
+#  Create new password string - this routine is used only in
+#  silent mode of the install script.
 
-generateNewDBAPassword() {
+createNewPassword() {
     # openssl generates random data.
 	openssl </dev/null >/dev/null 2&>/dev/null
     if [ $? -eq 0 ]
     then
-        # We generate 20 random chars, strip any '/''s and get the first 8
-        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
+        # We generate 40 random chars, strip any '/''s and get the first 20
+        NewPasswd=`openssl rand -base64 40 | tr -d '/' | cut -c1-20`
     fi
 
-    # mkpasswd is a bit of a hassle, but check to see if it's there
-    if [ -z "$NewPasswd" ]
-    then
-        if [ -f /usr/bin/mkpasswd ]
-        then
-            NewPasswd=`/usr/bin/mkpasswd -l 8`
-        fi
-    fi
+	# If openssl is missing...
+	if [ -z "$NewPasswd" ]
+	then
+		NewPasswd=`dd if=/dev/urandom bs=10 count=1 2>/dev/null | od -x | head -n 1 | tr -d ' ' | cut -c8-27`
+	fi
 
-	# On some systems the mkpasswd program doesn't appear and on others
-	# there is another mkpasswd which does a different operation.  So if
+	# On some systems even this routines may be missing. So if
 	# the specific one isn't available then keep the original password.
     if [ -z "$NewPasswd" ]
     then
         NewPasswd="masterkey"
     fi
 
+	echo "$NewPasswd"
+}
+
+#------------------------------------------------------------------------
+#  Generate new sysdba password - this routine is used only in
+#  silent mode of the install script.
+
+generateNewDBAPassword() {
+	NewPasswd=`createNewPassword`
     writeNewPassword $NewPasswd
 }
 

@@ -120,6 +120,12 @@ ClumpletWriter::ClumpletWriter(MemoryPool& pool, const ClumpletWriter& from)
 	create(from.getBuffer(), from.getBufferEnd() - from.getBuffer(), from.isTagged() ? from.getBufferTag() : 0);
 }
 
+ClumpletWriter::ClumpletWriter(const ClumpletWriter& from)
+	: ClumpletReader(from), sizeLimit(from.sizeLimit), kindList(NULL), dynamic_buffer(getPool())
+{
+	create(from.getBuffer(), from.getBufferEnd() - from.getBuffer(), from.isTagged() ? from.getBufferTag() : 0);
+}
+
 void ClumpletWriter::create(const UCHAR* buffer, size_t buffLen, UCHAR tag)
 {
 	if (buffer && buffLen) {

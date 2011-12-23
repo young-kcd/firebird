@@ -62,7 +62,6 @@
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
-#include "../common/enc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TriState.h"

@@ -112,6 +112,10 @@
 #define isc_dpb_utf8_filename			  77
 #define isc_dpb_ext_call_depth			  78
 #define isc_dpb_auth_block				  79
+// This 3 will not be used in protocol 13, therefore may be reused
+#define isc_dpb_specific_auth_data		  isc_dpb_trusted_auth
+#define isc_dpb_auth_plugin_list		  isc_dpb_password
+#define isc_dpb_auth_plugin_name		  isc_dpb_password_enc
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -266,11 +270,15 @@
 #define isc_spb_trusted_role              113
 #define isc_spb_verbint                   114
 #define isc_spb_auth_block                115
-
+#define isc_spb_auth_plugin_name          116
+#define isc_spb_auth_plugin_list          117
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
 #define isc_spb_dummy_packet_interval     isc_dpb_dummy_packet_interval
 #define isc_spb_sql_role_name             isc_dpb_sql_role_name
+
+// This will not be used in protocol 13, therefore may be reused
+#define isc_spb_specific_auth_data		  isc_spb_trusted_auth
 
 /*****************************
  * Service action items      *

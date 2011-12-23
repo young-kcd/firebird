@@ -43,6 +43,18 @@ AC_ARG_WITH([$1],
 AC_SUBST([$3])
 ])
 
+define([XE_SAVE_ENV], [
+pre_save_restore_cflags=$CFLAGS
+pre_save_restore_cxxflags=$CXXFLAGS
+pre_save_restore_libs=$LIBS
+])
+
+define([XE_RESTORE_ENV], [
+CFLAGS=$pre_save_restore_cflags
+CXXFLAGS=$pre_save_restore_cxxflags
+LIBS=$pre_save_restore_libs
+])
+
 sinclude(acx_pthread.m4)
 sinclude(binreloc.m4)
 
@@ -458,14 +470,11 @@ if test "$CFLAGS" = "-g -O2" -o "$CFLAGS" = "-g" -o "$CFLAGS" = "-O2"; then
 fi
 
 dnl Find out how to use threads on this platform
-pre_acx_pthread_cflags=$CFLAGS
-pre_acx_pthread_cxxflags=$CXXFLAGS
-pre_acx_pthread_libs=$LIBS
+XE_SAVE_ENV()
 ACX_PTHREAD([
   AC_DEFINE(HAVE_MULTI_THREAD, 1,
     [Define this if multi-threading should be supported])])
-CFLAGS=$pre_acx_pthread_cflags
-LIBS=$pre_acx_pthread_libs
+XE_RESTORE_ENV()
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
@@ -507,7 +516,7 @@ AC_ARG_WITH(system-editline,
 
 # not need editline in default libs, but need to test for its presence
 READLINE=edit	# builtin default
-saveLIBS=$LIBS
+XE_SAVE_ENV()
 if test "$STD_EDITLINE" = "true"; then
   AC_CHECK_LIB(edit, readline, [READLINE=edit EDITLINE_FLG=Y],
     AC_CHECK_LIB(editline, readline, [READLINE=editline EDITLINE_FLG=Y],
@@ -517,7 +526,7 @@ if test "$STD_EDITLINE" = "true"; then
            AC_MSG_WARN([[[--with-system-editline specified, not found. Using bundled editline]]])])))
 		 fi
 fi
-LIBS=$saveLIBS
+XE_RESTORE_ENV()
 
 AC_SUBST(READLINE)
 AC_SUBST(STD_EDITLINE)
@@ -670,6 +679,14 @@ dnl check for ICU presence
 AC_CHECK_HEADER(unicode/ucnv.h,,AC_MSG_ERROR(ICU support not found - please install development ICU package))
 dnl setting ICU_OK here is done to only avoid default action
 AC_CHECK_LIB(icuuc, main, ICU_OK=yes, AC_MSG_ERROR(ICU support not found - please install development ICU package))
+
+dnl check for tommath presence
+XE_SAVE_ENV()
+LIBS=
+AC_CHECK_HEADER(tommath.h,,AC_MSG_ERROR(Include file for tommath not found - please install development tommath package))
+AC_CHECK_LIB(tommath, mp_init, MATHLIB=-ltommath, AC_MSG_ERROR(Library tommath not found - please install development tommath package))
+XE_RESTORE_ENV()
+AC_SUBST(MATHLIB)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
@@ -990,12 +1007,12 @@ case "$PLATFORM" in
 esac
 
 dnl Detect support for ISO syntax for thread-locals
-pre_tls_cxxflags=$CXXFLAGS
+XE_SAVE_ENV()
 CXXFLAGS=$TLS_OPTIONS
 AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM([[__thread int a = 42;]],[[a = a + 1;]])],
   AC_DEFINE(HAVE___THREAD, 1, [Define it if compiler supports ISO syntax for thread-local storage]),)
-CXXFLAGS=$pre_tls_cxxflags
+XE_RESTORE_ENV()
 AC_SUBST(TLS_OPTIONS)
 AC_SUBST(ATOMIC_OPTIONS)
 AC_SUBST(CAS_OPTIONS)

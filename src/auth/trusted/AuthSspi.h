@@ -36,7 +36,7 @@
 #include <../common/classes/array.h>
 #include "../common/classes/ImplementHelper.h"
 #include <../jrd/ibase.h>
-#include "../auth/AuthInterface.h"
+#include "firebird/Auth.h"
 
 #define SECURITY_WIN32
 
@@ -119,7 +119,7 @@ class WinSspiClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION
 public:
 	// IClient implementation
 	Result FB_CARG startAuthentication(Firebird::IStatus* status, const AuthTags* tags,
-									   IClumplets* dpb);
+									   IClumplets* dpb, const char* user, const char* pass);
 	Result FB_CARG contAuthentication(Firebird::IStatus* status,
 									  const unsigned char* data, unsigned int size);
     void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);

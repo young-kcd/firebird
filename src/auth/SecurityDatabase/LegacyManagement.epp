@@ -322,7 +322,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 
 		Firebird::MutexLockGuard guard(execLineMutex);
 
-		SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
+		SCHAR encrypted1[MAX_LEGACY_PASSWORD_LENGTH + 2];
 		Firebird::string encrypted2;
 		bool found;
 
@@ -383,7 +383,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 					U.PLG$GROUP_NAME.NULL = ISC_TRUE;
 				if (user->password()->entered())
 				{
-					ENC_crypt(encrypted1, sizeof encrypted1, user->password()->get(), PASSWORD_SALT);
+					ENC_crypt(encrypted1, sizeof encrypted1, user->password()->get(), LEGACY_PASSWORD_SALT);
 					LegacyHash::hash(encrypted2, user->userName()->get(), &encrypted1[2]);
 					STR_STORE(U.PLG$PASSWD, encrypted2.c_str());
 					U.PLG$PASSWD.NULL = ISC_FALSE;
@@ -458,7 +458,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 
 					if (user->password()->entered())
 					{
-						ENC_crypt(encrypted1, sizeof encrypted1, user->password()->get(), PASSWORD_SALT);
+						ENC_crypt(encrypted1, sizeof encrypted1, user->password()->get(), LEGACY_PASSWORD_SALT);
 						LegacyHash::hash(encrypted2, user->userName()->get(), &encrypted1[2]);
 						STR_STORE(U.PLG$PASSWD, encrypted2.c_str());
 						U.PLG$PASSWD.NULL = ISC_FALSE;

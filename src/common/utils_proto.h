@@ -152,11 +152,19 @@ namespace fb_utils
 	// Add appropriate file prefix.
 	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
 
+	// moves DB path information (from limbo transaction) to another buffer
 	void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
 		unsigned int& bufferLength, unsigned char*& buffer,
 		Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath);
 
+	// returns true if passed info items work with running svc thread
 	bool isRunningCheck(const UCHAR* items, unsigned int length);
+
+	// converts bytes to BASE64 representation
+	void base64(Firebird::string& b64, const Firebird::UCharBuffer& bin);
+
+	// generate random string in BASE64 representation
+	void random64(Firebird::string& randomValue, size_t length);
 
 } // namespace fb_utils
 
