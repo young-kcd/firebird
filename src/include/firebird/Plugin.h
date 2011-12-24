@@ -221,7 +221,7 @@ public:
 	virtual void FB_CARG setKey(IStatus* status, unsigned int length, const void* key) = 0;
 	virtual void FB_CARG transform(IStatus* status, unsigned int length, void* to, const void* from) = 0;
 };
-#define FB_CRYPT_VERSION (FB_PLUGIN_VERSION + 1)
+#define FB_CRYPT_VERSION (FB_PLUGIN_VERSION + 2)
 
 }	// namespace Firebird
 
