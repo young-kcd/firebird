@@ -1,3 +1,148 @@
+ 2011-12-23 18:33  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/wnet_proto.h
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet_proto.h
+Fixed some compilation errors.
+
+ 2011-12-23 18:13  dimitr 
+   M src/jrd/cch.cpp
+Methinks this solution should be a bit better, as it doesn't overwrite the pending error code (happened in PIO).
+
+ 2011-12-23 17:59  dimitr 
+   M src/remote/remote.h
+Correction.
+
+ 2011-12-23 17:55  dimitr 
+   M src/jrd/tra.cpp
+Cleanup.
+
+ 2011-12-23 17:50  dimitr 
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+Make locks unconditionally granted in the fair order. The legacy behavior is unsafe in the highly loaded systems.
+
+ 2011-12-23 17:47  dimitr 
+   M builds/install/misc/firebird.conf.in
+Make locks unconditionally granted in the fair order. The legacy behavior is unsafe in the highly loaded systems.
+
+ 2011-12-23 17:11  dimitr 
+   M src/jrd/cch.cpp
+Fixed the assertions caused by the isc_lock_conflict error left in the status vector after successful execution of the API call.
+
+ 2011-12-23 17:08  dimitr 
+   M src/jrd/lck.cpp
+Fixed the lock owners accordingly to the per-attachment metadata caches.
+
+ 2011-12-23 17:07  dimitr 
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+Allowed multiple waiting requests per owner. This resolves various crashes and asserts in the SharedDatabase + SharedCache mode. Page-level deadlocks are still expected, the cache manager needs fixing.
+Also, made the lock table synchronization a bit stricter. Some refactoring and cleanup was performed as well.
+
+ 2011-12-23 12:43  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+   M builds/install/arch-specific/linux/misc/postinstall.sh.in
+   M builds/install/misc/posixLibrary.sh.in
+   M builds/posix/Makefile.in
+   M builds/posix/make.defaults
+   M builds/posix/make.shared.variables
+   M configure.in
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthDbg.h
+   D src/auth/AuthInterface.h
+   A src/auth/SecureRemotePassword
+   A src/auth/SecureRemotePassword/BigInteger.cpp
+   A src/auth/SecureRemotePassword/BigInteger.h
+   A src/auth/SecureRemotePassword/Message.h
+   A src/auth/SecureRemotePassword/client
+   A src/auth/SecureRemotePassword/client/SrpClient.cpp
+   A src/auth/SecureRemotePassword/client/SrpClient.h
+   A src/auth/SecureRemotePassword/manage
+   A src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   A src/auth/SecureRemotePassword/misc
+   A src/auth/SecureRemotePassword/misc/prime.cpp
+   A src/auth/SecureRemotePassword/misc/test.sh
+   A src/auth/SecureRemotePassword/misc/test_srp.cpp
+   A src/auth/SecureRemotePassword/server
+   A src/auth/SecureRemotePassword/server/SrpServer.cpp
+   A src/auth/SecureRemotePassword/server/SrpServer.h
+   A src/auth/SecureRemotePassword/srp.cpp
+   A src/auth/SecureRemotePassword/srp.h
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyHash.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.h
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ClumpletReader.h
+   M src/common/classes/ClumpletWriter.cpp
+   M src/common/classes/ClumpletWriter.h
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/array.h
+   M src/common/common.h
+   M src/common/config/config.cpp
+   M src/common/security.h
+   M src/common/sha.cpp
+   M src/common/sha.h
+   M src/common/thd.cpp
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/include/consts_pub.h
+   A src/include/firebird/Auth.h (from /firebird/trunk/src/auth/AuthInterface.h:53609)
+   M src/include/firebird/Plugin.h
+   M src/include/firebird/Provider.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceCmdLine.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   A src/plugins/crypt
+   A src/plugins/crypt/arc4
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/inet_proto.h
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsec_proto.h
+   M src/utilities/gstat/dba.epp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+   M src/yvalve/why.cpp
+Fixed CORE-1898: Increase the password length from 8 characters, CORE-3372: Simplify process of non-default security database creation
+
  2011-12-22 15:32  dimitr 
    M src/include/consts_pub.h
    M src/jrd/jrd.cpp
