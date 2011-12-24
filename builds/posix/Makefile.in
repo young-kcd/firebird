@@ -359,7 +359,7 @@ $(NBACKUP):		$(NBACKUP_Objects) $(COMMON_LIB)
 # plugins - some of them are required to build examples, use separate entry for them
 #
 
-.PHONY:	udr legacy_user_management trace auth_debug 
+.PHONY:	udr legacy_user_management trace auth_debug
 makePluginName= $(PLUGINS)/$(LIB_PREFIX)$(1).$(SHRLIB_EXT)
 UDR_PLUGIN = $(call makePluginName,udr_engine)
 LEGACY_USER_MANAGER = $(call makePluginName,Legacy_UserManager)

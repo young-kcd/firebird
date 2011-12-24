@@ -62,8 +62,7 @@ public:
 
 	// IServer implementation
 	Result FB_CARG authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
-	Result FB_CARG getSessionKey(Firebird::IStatus* status,
-								 const unsigned char** key, unsigned int* keyLen);
+	Result FB_CARG getSessionKey(IStatus* status, const unsigned char** key, unsigned int* keyLen);
     int FB_CARG release();
 
 private:
@@ -75,7 +74,7 @@ private:
 	string salt;
 	UCharBuffer sessionKey;
 	RefPtr<IFirebirdConf> config;
-	const char *secDbName;
+	const char* secDbName;
 };
 
 Result SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerInterface)
@@ -158,25 +157,29 @@ Result SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* write
 
 			const char* sql = "SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ?";
 			stmt->prepare(status, tra, 0, sql, 3, 0);
+
 			if (!status->isSuccess())
 			{
 				const ISC_STATUS* v = status->get();
+
 				while (v[0] == isc_arg_gds)
 				{
 					if (v[1] == isc_dsql_relation_err)
 					{
 						Arg::Gds(isc_missing_data_structures).raise();
 					}
+
 					do
 					{
 						v += 2;
 					} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
 				}
+
 				status_exception::raise(status->get());
 			}
 
 			Message par;
-			Field <VarChar<SZ_LOGIN> > login(par);
+			Field<VarChar<SZ_LOGIN> > login(par);
 			login() = account.c_str();
 			login.null() = 0;
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: Ready to run statement with login '%s'\n", account.c_str()));
@@ -283,8 +286,7 @@ Result SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* write
 	return AUTH_FAILED;
 }
 
-Result SrpServer::getSessionKey(Firebird::IStatus*,
-								const unsigned char** key, unsigned int* keyLen)
+Result SrpServer::getSessionKey(IStatus*, const unsigned char** key, unsigned int* keyLen)
 {
 	if (!sessionKey.hasData())
 	{
@@ -318,4 +320,3 @@ void registerSrpServer(IPluginManager* iPlugin)
 }
 
 } // namespace Auth
-

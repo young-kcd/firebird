@@ -247,7 +247,7 @@ Format:
     CHAR_TO_UUID( <string> )
 
 Notes:
-    If you have not used this function before, its usage is discouraged. CHAR_TO_UUID2 superseds it.
+    If you have not used this function before, its usage is discouraged. CHAR_TO_UUID2 supersedes it.
 
 Example:
     select char_to_uuid('93519227-8D50-4E47-81AA-8F6678C096A1') from rdb$database;
@@ -268,7 +268,7 @@ Format:
     CHAR_TO_UUID2( <string> )
 
 Notes:
-    This function superseds CHAR_TO_UUID. The difference between them is that CHAR_TO_UUID does a
+    This function supersedes CHAR_TO_UUID. The difference between them is that CHAR_TO_UUID does a
     byte-by-byte conversion of the ASCII string to the OCTETS one, while CHAR_TO_UUID2 converts
     a RFC-4122 compliant ASCII UUID to a compliant OCTETS string.
 
@@ -874,7 +874,7 @@ Format:
     UUID_TO_CHAR( <string> )
 
 Notes:
-    If you have not used this function before, its usage is discouraged. UUID_TO_CHAR2 superseds it.
+    If you have not used this function before, its usage is discouraged. UUID_TO_CHAR2 supersedes it.
 
 Example:
     select uuid_to_char(gen_uuid()) from rdb$database;
@@ -894,7 +894,7 @@ Format:
     UUID_TO_CHAR2( <string> )
 
 Notes:
-    This function superseds UUID_TO_CHAR. The difference between them is that UUID_TO_CHAR does a
+    This function supersedes UUID_TO_CHAR. The difference between them is that UUID_TO_CHAR does a
     byte-by-byte conversion of the OCTETS string to the ASCII one, while UUID_TO_CHAR2 converts
     a RFC-4122 compliant OCTETS UUID to a compliant ASCII string.
 

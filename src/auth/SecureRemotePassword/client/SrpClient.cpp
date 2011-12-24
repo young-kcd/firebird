@@ -34,18 +34,17 @@ using namespace Firebird;
 
 namespace Auth {
 
-class SrpClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
+class SrpClient : public StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
 {
 public:
-	explicit SrpClient(Firebird::IPluginConfig*)
+	explicit SrpClient(IPluginConfig*)
 		: client(NULL), data(getPool()),
 		  sessionKey(getPool())
 	{ }
 
 	// IClient implementation
-	Result FB_CARG authenticate(Firebird::IStatus*, IClientBlock* cb);
-	Result FB_CARG getSessionKey(Firebird::IStatus* status,
-								 const unsigned char** key, unsigned int* keyLen);
+	Result FB_CARG authenticate(IStatus*, IClientBlock* cb);
+	Result FB_CARG getSessionKey(IStatus* status, const unsigned char** key, unsigned int* keyLen);
     int FB_CARG release();
 
 private:
@@ -54,14 +53,14 @@ private:
 	UCharBuffer sessionKey;
 };
 
-Result SrpClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
+Result SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 {
 	try
 	{
 		if (sessionKey.hasData())
 		{
 			// Why are we called when auth is completed?
-			(Firebird::Arg::Gds(isc_random) << "Auth sync failure - SRP's authenticate called more times than supported").raise();
+			(Arg::Gds(isc_random) << "Auth sync failure - SRP's authenticate called more times than supported").raise();
 		}
 
 		if (!client)
@@ -91,7 +90,7 @@ Result SrpClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
 
 		string salt, key;
 		unsigned charSize = *saltAndKey++;
-		charSize += ((unsigned)*saltAndKey++) << 8;
+		charSize += ((unsigned) *saltAndKey++) << 8;
 		if (charSize > RemotePassword::SRP_SALT_SIZE * 2)
 		{
 			string msg;
@@ -104,7 +103,7 @@ Result SrpClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
 		length -= (charSize + 2);
 
 		charSize = *saltAndKey++;
-		charSize += ((unsigned)*saltAndKey++) << 8;
+		charSize += ((unsigned) *saltAndKey++) << 8;
 		if (charSize + 2 != length)
 		{
 			string msg;
@@ -125,7 +124,7 @@ Result SrpClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
 
 		cb->putData(data.length(), data.c_str());
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 		return AUTH_FAILED;
@@ -135,8 +134,7 @@ Result SrpClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
 }
 
 
-Result SrpClient::getSessionKey(Firebird::IStatus*,
-								const unsigned char** key, unsigned int* keyLen)
+Result SrpClient::getSessionKey(IStatus*, const unsigned char** key, unsigned int* keyLen)
 {
 	if (!sessionKey.hasData())
 	{
@@ -161,13 +159,12 @@ int SrpClient::release()
 
 namespace
 {
-	Firebird::SimpleFactory<SrpClient> factory;
+	SimpleFactory<SrpClient> factory;
 }
 
-void registerSrpClient(Firebird::IPluginManager* iPlugin)
+void registerSrpClient(IPluginManager* iPlugin)
 {
 	iPlugin->registerPluginFactory(PluginType::AuthClient, RemotePassword::plugName, &factory);
 }
 
 } // namespace Auth
-

@@ -13,35 +13,35 @@ namespace Auth {
 
 /*
  * Order of battle for SRP handshake:
- * 
+ *
  * 													0.  At account creation, the server generates
- * 														a random salt and computes a password 
+ * 														a random salt and computes a password
  * 														verifier from the account name, password,
  * 														and salt.
-* 
+*
  * 		1. Client generates random number
  * 		   as private key, computes public
  * 		   key.
- * 
- * 		2. Client sends server the account 
+ *
+ * 		2. Client sends server the account
  * 		   name and its public key.
  * 													3.  Server receives account name, looks up
  * 														salt and password verifier.  Server
  * 														generates random number as private key.
  * 														Server computes public key from private
  * 														key, account name, verifier, and salt.
- * 
+ *
  * 													4.  Server sends client public key and salt
- * 
+ *
  * 		3. Client receives server public
  * 		   key and computes session key
  * 		   from server key, salt, account
  * 		   name, and password.
   * 												5.  Server computes session key from client
  * 														public key, client name, and verifier
- * 
+ *
  * 		For full details, see http://www.ietf.org/rfc/rfc5054.txt
- * 
+ *
  */
 
 class RemoteGroup;

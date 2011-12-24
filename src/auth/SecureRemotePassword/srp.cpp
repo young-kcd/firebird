@@ -218,4 +218,3 @@ void dumpIt(const char* name, const BigInteger& bi)
 #endif
 
 } // namespace Auth
-

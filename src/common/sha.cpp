@@ -345,7 +345,7 @@ void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
 
 namespace Firebird {
 
-	void Sha1::hashBased64(Firebird::string& hash, const Firebird::string& data)
+	void Sha1::hashBased64(string& hash, const string& data)
 	{
 		SHA_INFO si;
 		sha_init(&si);
@@ -395,4 +395,3 @@ namespace Firebird {
 	}
 
 } // namespace Firebird
-

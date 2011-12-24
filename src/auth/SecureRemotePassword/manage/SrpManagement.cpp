@@ -115,23 +115,25 @@ public:
 
 	void prepareDataStructures()
 	{
-		const char* script[] = { 
-"CREATE TABLE PLG$SRP (PLG$USER_NAME SEC$USER_NAME NOT NULL PRIMARY KEY, "
-"PLG$VERIFIER VARCHAR(128) CHARACTER SET OCTETS NOT NULL, "
-"PLG$SALT VARCHAR(32) CHARACTER SET OCTETS NOT NULL, "
-"PLG$COMMENT RDB$DESCRIPTION, PLG$FIRST SEC$NAME_PART, "
-"PLG$MIDDLE SEC$NAME_PART, PLG$LAST SEC$NAME_PART)" ,
-
-"CREATE VIEW PLG$SRP_VIEW AS "
-"SELECT PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$COMMENT, PLG$FIRST, PLG$MIDDLE, PLG$LAST "
-"FROM PLG$SRP WHERE CURRENT_USER = 'SYSDBA' OR CURRENT_ROLE = 'RDB$ADMIN' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME",
-
-"GRANT ALL ON PLG$SRP to VIEW PLG$SRP_VIEW",
-
-"GRANT SELECT ON PLG$SRP_VIEW to PUBLIC",
-
-"GRANT UPDATE(PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST) ON PLG$SRP_VIEW TO PUBLIC",
-								NULL };
+		const char* script[] = {
+			"CREATE TABLE PLG$SRP (PLG$USER_NAME SEC$USER_NAME NOT NULL PRIMARY KEY, "
+			"PLG$VERIFIER VARCHAR(128) CHARACTER SET OCTETS NOT NULL, "
+			"PLG$SALT VARCHAR(32) CHARACTER SET OCTETS NOT NULL, "
+			"PLG$COMMENT RDB$DESCRIPTION, PLG$FIRST SEC$NAME_PART, "
+			"PLG$MIDDLE SEC$NAME_PART, PLG$LAST SEC$NAME_PART)"
+			,
+			"CREATE VIEW PLG$SRP_VIEW AS "
+			"SELECT PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$COMMENT, PLG$FIRST, PLG$MIDDLE, PLG$LAST "
+			"FROM PLG$SRP WHERE CURRENT_USER = 'SYSDBA' OR CURRENT_ROLE = 'RDB$ADMIN' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
+			,
+			"GRANT ALL ON PLG$SRP to VIEW PLG$SRP_VIEW"
+			,
+			"GRANT SELECT ON PLG$SRP_VIEW to PUBLIC"
+			,
+			"GRANT UPDATE(PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST) ON PLG$SRP_VIEW TO PUBLIC"
+			,
+			NULL
+		};
 
 		Firebird::LocalStatus s;
 		Firebird::RefPtr<Firebird::ITransaction> ddlTran(att->startTransaction(&s, 0, NULL));
@@ -506,7 +508,7 @@ public:
 							Firebird::status_exception::raise(status->get());
 						}
 					}
-					catch(const Firebird::Exception&)
+					catch (const Firebird::Exception&)
 					{
 						printf("Exception\n");
 						if (stmt.hasData())
@@ -518,8 +520,8 @@ public:
 				}
 				break;
 
-				default:
-					return -1;
+			default:
+				return -1;
 			}
 		}
 		catch (const Firebird::Exception& ex)
@@ -527,7 +529,7 @@ public:
 			ex.stuffException(status);
 			return -1;
 
-/*
+			/*
 			switch(user->operation())
 			{
 			case ADD_OPER:
@@ -550,7 +552,7 @@ public:
 			default:
 				return GsecMsg17;
 			}
- */
+			*/
 		}
 
 		return 0;

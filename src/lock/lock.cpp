@@ -3581,7 +3581,6 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		CHECK(found == 1);		// request is in lock's queue
 	}
 
-
 	if (freed == EXPECT_inuse)
 	{
 		CHECK(found_pending == lock->lbl_pending_lrq_count);

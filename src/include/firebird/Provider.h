@@ -115,7 +115,7 @@ class IStatement : public IRefCounted
 {
 public:
 	// Prepare flags.
-	static const unsigned PREPARE_PREFETCH_NONE 				= 0x0;
+	static const unsigned PREPARE_PREFETCH_NONE 				= 0x00;
 	static const unsigned PREPARE_PREFETCH_TYPE 				= 0x01;
 	static const unsigned PREPARE_PREFETCH_INPUT_PARAMETERS 	= 0x02;
 	static const unsigned PREPARE_PREFETCH_OUTPUT_PARAMETERS	= 0x04;

@@ -41,7 +41,6 @@ const size_t SALT_LENGTH = 12;					// measured after base64 coding
 class LegacyHash
 {
 public:
-
 	static void hash(Firebird::string& h, const Firebird::string& userName, const TEXT* passwd)
 	{
 		Firebird::string salt;

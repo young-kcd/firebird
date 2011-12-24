@@ -451,7 +451,8 @@ int SecurityDatabase::shutdown(const int, const int, void*)
 const static unsigned int INIT_KEY = ((~0) - 1);
 static unsigned int secDbKey = INIT_KEY;
 
-Result SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface)
+Result SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
+	IWriter* writerInterface)
 {
 	status->init();
 
@@ -512,7 +513,7 @@ Result SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBl
 }
 
 Result SecurityDatabaseServer::getSessionKey(Firebird::IStatus*,
-								 const unsigned char** key, unsigned int* keyLen)
+	const unsigned char** key, unsigned int* keyLen)
 {
 	*key = NULL;
 	*keyLen = 0;

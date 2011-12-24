@@ -47,8 +47,9 @@ public:
 	{
 		LocalStatus status;
 		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
-						namesList ? namesList : Config::getPlugins(interfaceType),
-					desiredVersion, ui, NULL);
+			(namesList ? namesList : Config::getPlugins(interfaceType)),
+			desiredVersion, ui, NULL);
+
 		if (!pluginSet)
 		{
 			fb_assert(!status.isSuccess());
@@ -66,8 +67,9 @@ public:
 	{
 		LocalStatus status;
 		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
-						namesList ? namesList : Config::getPlugins(interfaceType),
-						desiredVersion, ui, new FirebirdConf(knownConfig));
+			(namesList ? namesList : Config::getPlugins(interfaceType)),
+			desiredVersion, ui, new FirebirdConf(knownConfig));
+
 		if (!pluginSet)
 		{
 			fb_assert(!status.isSuccess());
