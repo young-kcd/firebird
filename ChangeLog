@@ -1,3 +1,24 @@
+ 2011-12-24 18:08  asfernandes 
+   M builds/posix/Makefile.in
+   M doc/sql.extensions/README.builtin_functions.txt
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecureRemotePassword/srp.cpp
+   M src/auth/SecureRemotePassword/srp.h
+   M src/auth/SecurityDatabase/LegacyHash.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/classes/GetPlugins.h
+   M src/common/sha.cpp
+   M src/dsql/parse.y
+   M src/include/firebird/Provider.h
+   M src/lock/lock.cpp
+Misc.
+
+ 2011-12-24 17:59  asfernandes 
+   M src/include/firebird/Plugin.h
+Correction.
+
  2011-12-23 18:33  dimitr 
    M src/remote/client/interface.cpp
    M src/remote/inet.cpp
