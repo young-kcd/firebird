@@ -1,3 +1,7 @@
+ 2011-12-24 18:21  asfernandes 
+   M doc/sql.extensions/README.builtin_functions.txt
+Fix - thanks Paul Vinkenoog.
+
  2011-12-21 14:45  asfernandes 
    M builds/make.new/config/install-sh
    M doc/sql.extensions/README.builtin_functions.txt
