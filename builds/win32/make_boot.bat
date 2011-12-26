@@ -39,6 +39,9 @@ for %%v in ( alice auth burp dsql gpre isql jrd misc msgs qli examples yvalve) d
 call :btyacc
 if "%ERRLEV%"=="1" goto :END
 
+call :LibTomMath
+if "%ERRLEV%"=="1" goto :END
+
 @echo Generating DSQL parser...
 @call parse.bat %*
 if "%ERRLEV%"=="1" goto :END
@@ -99,6 +102,15 @@ if "%ERRLEV%"=="1" goto :END
 @echo Building btyacc (%FB_OBJ_DIR%)...
 @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3Boot btyacc_%FB_TARGET_PLATFORM%.log btyacc
 if errorlevel 1 call :boot2 btyacc
+goto :EOF
+
+::===================
+:: BUILD LibTomMath
+:LibTomMath
+@echo.
+@echo Building LibTomMath ...
+@call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_VS2010 libtommath_%FB_TARGET_PLATFORM%.log libtommath
+if errorlevel 1 call :boot2 LibTomMath
 goto :EOF
 
 ::===================
