@@ -206,6 +206,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.cpp" />
     <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyServer.cpp" />
     <ClCompile Include="..\..\..\src\remote\server\os\win32\chop.cpp" />
     <ClCompile Include="..\..\..\src\remote\server\os\win32\cntl.cpp" />
@@ -232,6 +233,9 @@
     <ProjectReference Include="yvalve.vcxproj">
       <Project>{4fe03933-98cd-4879-a135-fd9430087a6b}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

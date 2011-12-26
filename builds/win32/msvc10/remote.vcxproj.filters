@@ -38,6 +38,9 @@
     <ClCompile Include="..\..\..\src\remote\os\win32\xnet.cpp">
       <Filter>REMOTE files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\srp.cpp">
+      <Filter>AUTH files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\remote\inet_proto.h">
@@ -68,6 +71,12 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\remote\os\win32\xnet_proto.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\srp.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\Message.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

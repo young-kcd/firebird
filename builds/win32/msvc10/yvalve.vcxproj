@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\gen\yvalve\array.cpp" />
     <ClCompile Include="..\..\..\gen\yvalve\blob.cpp" />
+    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp" />
     <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp" />
     <ClCompile Include="..\..\..\src\jrd\os\win32\ibinitdll.cpp" />
     <ClCompile Include="..\..\..\src\remote\client\interface.cpp" />
@@ -37,6 +38,7 @@
     <ClCompile Include="..\..\..\src\yvalve\why.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.h" />
     <ClInclude Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.h" />
     <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h" />
     <ClInclude Include="..\..\..\src\yvalve\alt_proto.h" />

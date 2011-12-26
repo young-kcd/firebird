@@ -195,6 +195,9 @@
     <ClCompile Include="..\..\..\src\common\classes\ImplementHelper.cpp">
       <Filter>classes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\BigInteger.cpp">
+      <Filter>classes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common\xdr_proto.h">
@@ -489,6 +492,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\Synchronize.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\BigInteger.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

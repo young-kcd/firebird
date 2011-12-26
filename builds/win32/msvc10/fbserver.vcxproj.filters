@@ -34,6 +34,9 @@
     <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyServer.cpp">
       <Filter>AUTH files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.cpp">
+      <Filter>AUTH files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\remote\server\os\win32\server.ico">
@@ -47,5 +50,10 @@
     <ResourceCompile Include="..\..\..\src\remote\server\os\win32\window.rc">
       <Filter>Resource files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.h">
+      <Filter>AUTH files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

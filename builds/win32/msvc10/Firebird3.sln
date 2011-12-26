@@ -77,6 +77,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve", "yvalve.vcxproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "legacy_usermanager", "legacy_usermanager.vcxproj", "{D836FBF5-071E-4E04-8D63-C7EB6701B296}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srp", "srp.vcxproj", "{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -347,6 +349,14 @@ Global
 		{D836FBF5-071E-4E04-8D63-C7EB6701B296}.Release|Win32.Build.0 = Release|Win32
 		{D836FBF5-071E-4E04-8D63-C7EB6701B296}.Release|x64.ActiveCfg = Release|x64
 		{D836FBF5-071E-4E04-8D63-C7EB6701B296}.Release|x64.Build.0 = Release|x64
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Debug|Win32.Build.0 = Debug|Win32
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Debug|x64.ActiveCfg = Debug|x64
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Debug|x64.Build.0 = Debug|x64
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Release|Win32.ActiveCfg = Release|Win32
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Release|Win32.Build.0 = Release|Win32
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Release|x64.ActiveCfg = Release|x64
+		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
