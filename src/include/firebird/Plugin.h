@@ -89,7 +89,7 @@ class IPluginSet : public IRefCounted
 {
 public:
 	virtual const char* FB_CARG getName() const = 0;
-	virtual const char* FB_CARG getModule() const = 0;
+	virtual const char* FB_CARG getModuleName() const = 0;
 	virtual IPluginBase* FB_CARG getPlugin() = 0;
 	virtual void FB_CARG next() = 0;
 	virtual void FB_CARG set(const char*) = 0;

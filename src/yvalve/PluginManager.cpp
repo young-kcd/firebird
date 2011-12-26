@@ -435,7 +435,7 @@ namespace
 			return iconf;
 		}
 
-		const PluginModule* getModule() const
+		const PluginModule* getPluggedModule() const
 		{
 			return module;
 		}
@@ -639,9 +639,9 @@ namespace
 			return currentPlugin.hasData() ? currentName.c_str() : NULL;
 		}
 
-		const char* FB_CARG getModule() const
+		const char* FB_CARG getModuleName() const
 		{
-			return currentPlugin.hasData() ? currentPlugin->getModule()->getName() : NULL;
+			return currentPlugin.hasData() ? currentPlugin->getPluggedModule()->getName() : NULL;
 		}
 
 		void FB_CARG set(const char* newName)
