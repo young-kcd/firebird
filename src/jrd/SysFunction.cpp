@@ -3319,7 +3319,7 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 										Arg::Str(function->name));
 	}
 
-	const const FB_GUID* guid = reinterpret_cast<const FB_GUID*>(data);
+	const FB_GUID* guid = reinterpret_cast<const FB_GUID*>(data);
 	char buffer[GUID_BUFF_SIZE];
 
 	switch ((Function)(IPTR) function->misc)
