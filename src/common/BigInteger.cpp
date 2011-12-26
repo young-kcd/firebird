@@ -31,14 +31,12 @@
 
 #include <stdlib.h>
 
-#include "../auth/SecureRemotePassword/BigInteger.h"
+#include "../common/BigInteger.h"
 #include "../common/os/guid.h"
-
-using namespace Firebird;
 
 #define CHECK_MP(a) check(a, #a)
 
-namespace Auth
+namespace Firebird
 {
 
 	static inline void check(int rc, const char* function)

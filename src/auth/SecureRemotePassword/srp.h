@@ -1,4 +1,4 @@
-#include "../auth/SecureRemotePassword/BigInteger.h"
+#include "../common/BigInteger.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/fb_string.h"
 #include "../common/sha.h"
@@ -49,21 +49,21 @@ class RemoteGroup;
 class Sha1 : public Firebird::Sha1
 {
 public:
-	void getInt(BigInteger& hash)
+	void getInt(Firebird::BigInteger& hash)
 	{
 		Firebird::UCharBuffer tmp;
 		getHash(tmp);
 		hash.assign(tmp.getCount(), tmp.begin());
 	}
 
-	void processInt(const BigInteger& data)
+	void processInt(const Firebird::BigInteger& data)
 	{
 		Firebird::UCharBuffer bytes;
 		data.getBytes(bytes);
 		process(bytes);
 	}
 
-	void processStrippedInt(const BigInteger& data)
+	void processStrippedInt(const Firebird::BigInteger& data)
 	{
 		Firebird::UCharBuffer bytes;
 		data.getBytes(bytes);
@@ -75,14 +75,14 @@ public:
 class RemotePassword : public Firebird::GlobalStorage
 {
 private:
-	const RemoteGroup*	group;
-	Auth::Sha1			hash;
-	BigInteger			privateKey;
-	BigInteger			scramble;
+	const RemoteGroup*		group;
+	Auth::Sha1				hash;
+	Firebird::BigInteger	privateKey;
+	Firebird::BigInteger	scramble;
 
 public:
-	BigInteger			clientPublicKey;
-	BigInteger			serverPublicKey;
+	Firebird::BigInteger	clientPublicKey;
+	Firebird::BigInteger	serverPublicKey;
 
 public:
 	RemotePassword();
@@ -92,12 +92,12 @@ public:
 	static const unsigned SRP_VERIFIER_SIZE = SRP_KEY_SIZE;
 	static const unsigned SRP_SALT_SIZE = 32;
 
-	BigInteger getUserHash(const char* account,
-						   const char* salt,
-						   const char* password);
-	BigInteger computeVerifier(const Firebird::string& account,
-							   const Firebird::string& salt,
-							   const Firebird::string& password);
+	Firebird::BigInteger getUserHash(const char* account,
+									 const char* salt,
+									 const char* password);
+	Firebird::BigInteger computeVerifier(const Firebird::string& account,
+										 const Firebird::string& salt,
+										 const Firebird::string& password);
 	void genClientKey(Firebird::string& clientPubKey);
 	void genServerKey(Firebird::string& serverPubKey, const Firebird::UCharBuffer& verifier);
 	void computeScramble();
@@ -107,18 +107,18 @@ public:
 	void serverSessionKey(Firebird::UCharBuffer& sessionKey,
 						  const char* clientPubKey,
 						  const Firebird::UCharBuffer& verifier);
-	BigInteger clientProof(const char* account,
-						   const char* salt,
-						   const Firebird::UCharBuffer& sessionKey);
+	Firebird::BigInteger clientProof(const char* account,
+									 const char* salt,
+									 const Firebird::UCharBuffer& sessionKey);
 };
 
 
 #if SRP_DEBUG > 0
-void dumpIt(const char* name, const BigInteger& bi);
+void dumpIt(const char* name, const Firebird::BigInteger& bi);
 void dumpIt(const char* name, const Firebird::UCharBuffer& data);
 void dumpIt(const char* name, const Firebird::string& str);
 #else
-void static inline dumpIt(const char* name, const BigInteger& bi) { }
+void static inline dumpIt(const char* name, const Firebird::BigInteger& bi) { }
 void static inline dumpIt(const char* name, const Firebird::UCharBuffer& data) { }
 void static inline dumpIt(const char* name, const Firebird::string& str) { }
 #endif

@@ -34,7 +34,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/array.h"
 
-namespace Auth {
+namespace Firebird {
 
 class BigInteger
 {

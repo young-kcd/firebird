@@ -15,7 +15,7 @@ namespace Auth {
 class RemoteGroup
 {
 public:
-	Auth::BigInteger	prime, generator, k;
+	BigInteger	prime, generator, k;
 
 private:
 	RemoteGroup(const char* primeString, const char* generatorString)

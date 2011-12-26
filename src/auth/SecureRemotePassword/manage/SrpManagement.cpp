@@ -290,9 +290,9 @@ public:
 					setField(last, user->lastName());
 
 #if SRP_DEBUG > 1
-					BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
+					Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
 #else
-					BigInteger salt;
+					Firebird::BigInteger salt;
 					salt.random(RemotePassword::SRP_SALT_SIZE);
 #endif
 					Firebird::UCharBuffer s;
@@ -382,9 +382,9 @@ public:
 					if (verifier.hasData())
 					{
 #if SRP_DEBUG > 1
-						BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
+						Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
 #else
-						BigInteger salt;
+						Firebird::BigInteger salt;
 						salt.random(RemotePassword::SRP_SALT_SIZE);
 #endif
 						Firebird::UCharBuffer s;
@@ -510,7 +510,6 @@ public:
 					}
 					catch (const Firebird::Exception&)
 					{
-						printf("Exception\n");
 						if (stmt.hasData())
 						{
 							stmt->release();
@@ -529,7 +528,7 @@ public:
 			ex.stuffException(status);
 			return -1;
 
-			/*
+			/*	To be moved to plugin invoking code. !!!!
 			switch(user->operation())
 			{
 			case ADD_OPER:
