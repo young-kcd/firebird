@@ -344,84 +344,54 @@ WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
 	: sspiData(getPool())
 { }
 
-Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
-										  const AuthTags* tags,
-										  IClumplets* dpb,
-										  IWriter* /*writerInterface*/)
+Result WinSspiServer::authenticate(Firebird::IStatus* status,
+								   IServerBlock* sBlock,
+								   IWriter* writerInterface)
 {
-	if (dpb)
+	try
 	{
-		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
+		const bool wasActive = sspi.isActive();
 
-		const UCHAR tag = tags->trustedAuth;
+		sspiData.clear();
+		unsigned int length;
+		const unsigned char* bytes = sBlock->getData(&length);
+		sspiData.add(bytes, length);
 
-		try
+		if (!sspi.accept(sspiData))
+			return wasActive ? AUTH_FAILED : AUTH_CONTINUE;
+
+		if (wasActive && !sspi.isActive())
 		{
-			if (tag && dpb->find(tag))
-			{
-				sspiData.clear();
-				unsigned int clumpLength;
-				const unsigned char* bytes = dpb->get(&clumpLength);
-				sspiData.add(bytes, clumpLength);
-				if (!sspi.accept(sspiData))
-				{
-					return AUTH_CONTINUE;
-				}
-			}
+			bool wheel = false;
+			string login;
+			sspi.getLogin(login, wheel);
+			MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
+
+			writerInterface->add(login.c_str());
+			if (wheel)
+				writerInterface->add("RDB$ADMIN");
+
+			return AUTH_SUCCESS;
 		}
-		catch (const Firebird::Exception& ex)
-		{
-			ex.stuffException(status);
-			return AUTH_FAILED;
-		}
+
+		sBlock->putData(sspiData.getCount(), sspiData.begin());
 	}
-
-	return AUTH_MORE_DATA;
-}
-
-Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
-									     const unsigned char* data, unsigned int size,
-										 IWriter* writerInterface)
-{
-	sspiData.clear();
-	sspiData.add(data, size);
-
-	if (!sspi.accept(sspiData))
+	catch (const Firebird::Exception& ex)
 	{
+		ex.stuffException(status);
 		return AUTH_FAILED;
 	}
 
-	if (!sspi.isActive())
-	{
-		bool wheel = false;
-		string login;
-		sspi.getLogin(login, wheel);
-		MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
-
-		try
-		{
-			writerInterface->add(login.c_str());
-			if (wheel)
-			{
-				writerInterface->add("RDB$ADMIN");
-			}
-		}
-		catch (const Firebird::Exception& ex)
-		{
-			ex.stuffException(status);
-			return AUTH_FAILED;
-		}
-
-		return AUTH_SUCCESS;
-	}
-
 	return AUTH_MORE_DATA;
 }
 
-void WinSspiServer::getData(const unsigned char** data, unsigned short* dataSize)
+Result WinSspiServer::getSessionKey(Firebird::IStatus*,
+									const unsigned char** key,
+									unsigned int* keyLen)
 {
-	*data = sspiData.begin();
-	*dataSize = sspiData.getCount();
+	*key = NULL;
+	*keyLen = 0;
+	return AUTH_CONTINUE;
 }
 
 int WinSspiServer::release()
@@ -435,64 +405,42 @@ int WinSspiServer::release()
 	return 1;
 }
 
-Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
-										  const AuthTags* tags,
-										  IClumplets* dpb,
-										  const char* user,
-										  const char* pass)
+Result WinSspiClient::authenticate(Firebird::IStatus* status,
+								   IClientBlock* cBlock)
 {
-	sspi.request(sspiData);
-
-	if (dpb)
+	try
 	{
-		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
+		const bool wasActive = sspi.isActive();
 
-		try
-		{
-			UCHAR tag = tags->trustedRole;
-			while (tag && dpb->find(tag))
-			{
-				dpb->drop();
-			}
+		sspiData.clear();
+		unsigned int length;
+		const unsigned char* bytes = cBlock->getData(&length);
+		sspiData.add(bytes, length);
 
-			tag = tags->trustedAuth;
-			while (tag && dpb->find(tag))
-			{
-				dpb->drop();
-			}
+		if (!sspi.request(sspiData))
+			return wasActive ? AUTH_FAILED : AUTH_CONTINUE;
 
-			if (tag && sspi.isActive())
-			{
-				dpb->add(tag, sspiData.begin(), sspiData.getCount());
-			}
-		}
-		catch (const Firebird::Exception& ex)
-		{
-			ex.stuffException(status);
-			return AUTH_FAILED;
-		}
+		cBlock->putData(sspiData.getCount(), sspiData.begin());
+
+		if (!wasActive)
+			return AUTH_SUCCESS;
 	}
-
-	return sspi.isActive() ? AUTH_SUCCESS : AUTH_CONTINUE;
-}
-
-Result WinSspiClient::contAuthentication(Firebird::IStatus* status,
-										 const unsigned char* data, unsigned int size)
-{
-	sspiData.clear();
-	sspiData.add(data, size);
-
-	if (!sspi.request(sspiData))
+	catch (const Firebird::Exception& ex)
 	{
+		ex.stuffException(status);
 		return AUTH_FAILED;
 	}
-	return sspi.isActive() ? AUTH_MORE_DATA : AUTH_CONTINUE;
+
+	return AUTH_MORE_DATA;
 }
 
-void WinSspiClient::getData(const unsigned char** data, unsigned short* dataSize)
+Result WinSspiClient::getSessionKey(Firebird::IStatus* status,
+									const unsigned char** key,
+									unsigned int* keyLen)
 {
-	*data = sspiData.begin();
-	*dataSize = sspiData.getCount();
+	*key = NULL;
+	*keyLen = 0;
+	return AUTH_CONTINUE;
 }
 
 int WinSspiClient::release()
