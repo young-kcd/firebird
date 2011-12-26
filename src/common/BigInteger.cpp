@@ -78,7 +78,7 @@ namespace Firebird
 
 	BigInteger::BigInteger(const BigInteger& val)
 	{
-		CHECK_MP(mp_init_copy(const_cast<mp_int*>(&val.t), &t));
+		CHECK_MP(mp_init_copy(&t, const_cast<mp_int*>(&val.t) ));
 	}
 
 	BigInteger::~BigInteger()
