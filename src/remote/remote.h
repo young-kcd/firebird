@@ -621,6 +621,7 @@ public:
 	void storeDataForPlugin(unsigned int length, const unsigned char* data);
 	void resetDataFromPlugin();
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& dpb, const ParametersSet* tags, int protocol);
+	void extractDataFromPluginTo(CSTRING* to);
 	void extractDataFromPluginTo(P_AUTH_CONT* to);
 	void load(Firebird::ClumpletReader& dpb, const ParametersSet*);
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);

@@ -5850,8 +5850,16 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 		}
 
 		// send answer (may be empty) to server
-		packet->p_operation = op_cont_auth;
-		cBlock.extractDataFromPluginTo(&packet->p_auth_cont);
+		if (port->port_protocol >= PROTOCOL_VERSION13)
+		{
+			packet->p_operation = op_cont_auth;
+			cBlock.extractDataFromPluginTo(&packet->p_auth_cont);
+		}
+		else
+		{
+			packet->p_operation = op_trusted_auth;
+			cBlock.extractDataFromPluginTo(&packet->p_trau.p_trau_data);
+		}
 		send_packet(port, packet);
 		memset(&packet->p_auth_cont, 0, sizeof packet->p_auth_cont);
 	}
@@ -7054,11 +7062,16 @@ void ClntAuthBlock::load(Firebird::ClumpletReader& dpb, const ParametersSet* tag
 	}
 }
 
+void ClntAuthBlock::extractDataFromPluginTo(CSTRING* to)
+{
+	to->cstr_length = dataFromPlugin.getCount();
+	to->cstr_address = dataFromPlugin.begin();
+	to->cstr_allocated = 0;
+}
+
 void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 {
-	to->p_data.cstr_length = dataFromPlugin.getCount();
-	to->p_data.cstr_address = dataFromPlugin.begin();
-	to->p_data.cstr_allocated = 0;
+	extractDataFromPluginTo(&to->p_data);
 
 	PathName pluginName = getPluginName();
 	to->p_name.cstr_length = pluginName.length();
