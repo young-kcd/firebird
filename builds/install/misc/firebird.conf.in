@@ -360,13 +360,13 @@
 # by network server and client redirector. For non-windows systems default
 # for both is Legacy_Auth.
 #
-#AuthServer = Legacy_Auth, Win_Sspi
-#AuthClient = Legacy_Auth, Win_Sspi
+#AuthServer = Srp, Win_Sspi
+#AuthClient = Srp, Win_Sspi, Legacy_Auth
 
 # UserManager sets plugin used to work with security database. If more than
 # one plugin is given, first plugin from the list is used.
 #
-#UserManager = Legacy_UserManager
+#UserManager = Srp
 
 # TracePlugin is used by firebird trace facility to send trace data to the user
 # or log file in audit case.
