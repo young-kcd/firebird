@@ -1355,7 +1355,6 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	// We are going to try authentication handshake
 	LocalStatus status;
-	P_ACPT* accept = &send->p_acpt;
 	bool returnData = false;
 	if (accepted && version >= PROTOCOL_VERSION13)
 	{
@@ -1377,7 +1376,6 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 		if (port->port_srv_auth_block->getPluginName())
 		{
-			accept = &send->p_acpd;
 			Firebird::PathName file(connect->p_cnct_file.cstr_address, connect->p_cnct_file.cstr_length);
 			port->port_srv_auth_block->setPath(&file);
 			HANDSHAKE_DEBUG(fprintf(stderr, "accept connection calls createPluginsItr\n"));
@@ -1441,10 +1439,11 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		return false;
 	}
 
+	send->p_operation = returnData ? op_accept_data : op_accept;
+	P_ACPT* accept = returnData ? &send->p_acpd : &send->p_acpt;
 	accept->p_acpt_version = port->port_protocol = version;
 	accept->p_acpt_architecture = architecture;
 	accept->p_acpt_type = type;
-	send->p_operation = returnData ? op_accept_data : op_accept;
 
 	HANDSHAKE_DEBUG(fprintf(stderr, "accepted ud=%d v=%x\n", returnData, version));
 
