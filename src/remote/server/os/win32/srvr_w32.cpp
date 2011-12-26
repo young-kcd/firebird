@@ -111,6 +111,7 @@
 #include "../common/classes/ImplementHelper.h"
 #include "../auth/trusted/AuthSspi.h"
 #include "../auth/SecurityDatabase/LegacyServer.h"
+#include "../auth/SecureRemotePassword/server/SrpServer.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
@@ -261,6 +262,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	{ // scope for interface ptr
 		PluginManagerInterfacePtr pi;
 		Auth::registerLegacyServer(pi);
+		Auth::registerSrpServer(pi); 
 #ifdef TRUSTED_AUTH
 		Auth::registerTrustedServer(pi);
 #endif
