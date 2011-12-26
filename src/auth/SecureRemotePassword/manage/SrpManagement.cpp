@@ -456,8 +456,6 @@ public:
 						disp += " WHERE PLG$USER_NAME = ?";
 					}
 
-					printf("disp=%s\n", disp.c_str());
-
 					Login login(di);
 					Name first(di), middle(di), last(di);
 					Field<SLONG> admin(di);
@@ -527,31 +525,6 @@ public:
 		{
 			ex.stuffException(status);
 			return -1;
-
-			/*	To be moved to plugin invoking code. !!!!
-			switch(user->operation())
-			{
-			case ADD_OPER:
-				return GsecMsg19;
-
-			case MOD_OPER:
-				return GsecMsg20;
-
-			case DEL_OPER:
-				return GsecMsg23;
-
-			case OLD_DIS_OPER:
-			case DIS_OPER:
-				return GsecMsg28;
-
-			case MAP_DROP_OPER:
-			case MAP_SET_OPER:
-				return GsecMsg97;
-
-			default:
-				return GsecMsg17;
-			}
-			*/
 		}
 
 		return 0;

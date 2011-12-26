@@ -156,7 +156,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	//if (!uSvc->isService() && argv.getCount() == 1)
 	//	GSEC_error(GsecMsg101); // use gsec -? to get help
 
-	SSHORT ret = parse_cmd_line(argv, tdsec);
+	int ret = parse_cmd_line(argv, tdsec);
 	if (!uSvc->isService() && ret == -2) // user asked for help
 		GSEC_exit();
 
@@ -426,6 +426,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				if (ret)
 				{
+					ret = setGsecCode(ret, user_data);
 					fb_utils::copyStatus(status, FB_NELEM(status),
 										 st.get(), fb_utils::statusLength(st.get()));
 					GSEC_print(ret, user_data->userName()->get());

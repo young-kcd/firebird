@@ -221,6 +221,8 @@ public:
 	Get(Config* firebirdConf);
 };
 
+int setGsecCode(int code, IUser* iUser);
+
 } // namespace Auth
 
 #endif // UTILITIES_SECUR_PROTO_H

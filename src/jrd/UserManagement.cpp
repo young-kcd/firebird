@@ -179,12 +179,13 @@ USHORT UserManagement::put(Auth::UserData* userData)
 	return ret;
 }
 
-void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName)
+void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Auth::IUser* user)
 {
 	if (!errcode)
 	{
 	    return;
 	}
+	errcode = Auth::setGsecCode(errcode, user);
 
 	Arg::StatusVector tmp;
 	tmp << Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC));
@@ -212,7 +213,7 @@ void UserManagement::execute(USHORT id)
 
 	LocalStatus status;
 	int errcode = manager->execute(&status, commands[id], NULL);
-	checkSecurityResult(errcode, &status, commands[id]->userName()->get());
+	checkSecurityResult(errcode, &status, commands[id]->userName()->get(), commands[id]);
 
 	delete commands[id];
 	commands[id] = NULL;
@@ -310,7 +311,7 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 			Auth::StackUserData u;
 			u.op = DIS_OPER;
 			int errcode = manager->execute(&status, &u, &display);
-			checkSecurityResult(errcode, &status, "Unknown");
+			checkSecurityResult(errcode, &status, "Unknown", &u);
 		}
 		catch (const Exception&)
 		{

@@ -26,6 +26,7 @@
 #include "firebird.h"
 #include "../common/security.h"
 #include "../common/StatusArg.h"
+#include "../utilities/gsec/gsec.h"		// gsec error codes
 
 using namespace Firebird;
 
@@ -70,6 +71,37 @@ void FB_CARG UserData::clear()
 	role.clear();
 	trustedUser.clear();
 	// never clear this permanent block!	authenticationBlock.clear();
+}
+
+// This function sets typical gsec return code based on requested operation if it was not set by plugin
+int setGsecCode(int code, IUser* user)
+{
+	if (code >= 0)
+	{
+		return code;
+	}
+
+	switch(user->operation())
+	{
+	case ADD_OPER:
+		return GsecMsg19;
+
+	case MOD_OPER:
+		return GsecMsg20;
+
+	case DEL_OPER:
+		return GsecMsg23;
+
+	case OLD_DIS_OPER:
+	case DIS_OPER:
+		return GsecMsg28;
+
+	case MAP_DROP_OPER:
+	case MAP_SET_OPER:
+		return GsecMsg97;
+	}
+
+	return GsecMsg17;
 }
 
 } // namespace Auth
