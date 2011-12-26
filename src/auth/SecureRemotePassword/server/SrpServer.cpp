@@ -48,7 +48,7 @@ MakeUpgradeInfo<> upInfo;
 
 namespace Auth {
 
-class SrpServer : public StdPlugin<IServer, FB_AUTH_CLIENT_VERSION>
+class SrpServer : public StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 {
 public:
 	explicit SrpServer(IPluginConfig* par)
