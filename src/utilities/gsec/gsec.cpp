@@ -686,13 +686,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->user.setEntered(1);
 				break;
 			case IN_SW_GSEC_PASSWORD:
-				uname = "";
-				for (l = 0; l < 9 && string[l] && string[l] != ' '; l++)
-					uname += string[l];
-				if ((l == 9) && !(tdsec->utilSvc->isService())) {
-					GSEC_print(GsecMsg77);
-					// warning password maximum 8 significant bytes used
-				}
+				uname = string;
 				user_data->pass.set(uname.c_str());
 				user_data->pass.setEntered(1);
 				break;
