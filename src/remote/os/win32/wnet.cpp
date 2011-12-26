@@ -440,6 +440,7 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
 			port->port_server_flags |= SRVR_server;
+			port->port_flags |= PORT_server;
 			if (flag & SRVR_multi_client)
 			{
 				port->port_server_flags |= SRVR_multi_client;
@@ -516,6 +517,7 @@ rem_port* WNET_reconnect(HANDLE handle)
 
 	port->port_pipe = handle;
 	port->port_server_flags |= SRVR_server;
+	port->port_flags |= PORT_server;
 
 	return port;
 }
