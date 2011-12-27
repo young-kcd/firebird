@@ -51,7 +51,7 @@ SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Source
 fbserver : $(FB_SUPER_SERVER)
 
 $(FB_SUPER_SERVER):	$(SERVER_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ $(ICU_LIBS)
+	$(EXE_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ $(ICU_LIBS)
 
 AllObjects = $(SERVER_Objects)
 

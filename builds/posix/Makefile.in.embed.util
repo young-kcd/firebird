@@ -154,55 +154,55 @@ $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(COMMON_Objects)
 nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
 
 $(NBACKUP):	$(NBACKUP_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
 
 $(LOCKPRINT):	$(LOCKPRINT_Objects) $(COMMON_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gstat : $(LIBFBEMBED_SO) $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects) $(FBCONFIG_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 fbsvcmgr: $(FBSVCMGR)
 
 $(FBSVCMGR):	$(FBSVCMGR_Objects) $(LIBFBEMBED_SO)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gds_relay: $(GDS_RELAY)
 
 $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)
-	$(EXE_LINK) $(LINK_OPTS) $(RELAY_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(RELAY_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gsec: $(GSEC)
 
 $(GSEC):	$(GSEC_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 ibguard: $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_Objects) $(LIBFBEMBED_SO)  
-	$(EXE_LINK) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 ibmgr_bin: $(IBMGR_BIN)
 
 $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)  
-	$(EXE_LINK) $(LINK_OPTS) $(IBMGR_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(IBMGR_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 # This one needs a bit of work.
@@ -210,7 +210,7 @@ $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)
 rebuild: $(GDS_REBUILD)
 
 $(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBEMBED_SO)  
-	$(EXE_LINK) $(LINK_OPTS) $(REBUILD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(REBUILD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

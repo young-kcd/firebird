@@ -265,6 +265,7 @@ FBEMBED_LINK= -L$(LIB) -lfbembed
 
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
+LINK_EMPTY_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/empty.vers
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
