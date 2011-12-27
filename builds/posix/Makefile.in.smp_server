@@ -60,7 +60,7 @@ $(OS_SPECIFIC_Objects)
 fb_smp_server:	$(FB_DAEMON)
 
 $(FB_DAEMON):	$(SERVER_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 AllObjects = $(SERVER_Objects)
 

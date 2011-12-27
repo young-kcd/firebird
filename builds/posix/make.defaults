@@ -251,6 +251,7 @@ LINK_FIREBIRD_CLIENT_SYMBOLS = $(LINK_FIREBIRD_SYMBOLS)
 LINK_TRACE_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.vers
+LINK_EMPTY_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/empty.vers
 
 LIB_PLATFORM_RPATH = -Wl,-rpath,$(1)
 ifeq ($(strip @BINRELOC_CFLAGS@),)

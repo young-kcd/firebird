@@ -52,7 +52,7 @@ Dependencies = $(AllObjects:.o=.d)
 fb_inet_server : $(LIBFBEMBED_SO) $(FB_CLASSIC_SERVER)
 
 $(FB_CLASSIC_SERVER):	$(SERVER_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LIB_GUI) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LIB_GUI) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

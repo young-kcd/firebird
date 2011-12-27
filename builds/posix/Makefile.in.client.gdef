@@ -63,7 +63,7 @@ all:	gdef
 gdef:   $(GDEF)
 
 $(GDEF): $(GDEF_Objects) $(LIBFBCLIENT_SO) $(COMMON_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) 
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) 
 
 
 

@@ -59,7 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql : $(LIBFBEMBED_SO) $(ISQL)
 
 $(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LIBEDITLINE) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LIBEDITLINE) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

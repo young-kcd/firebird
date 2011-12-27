@@ -48,7 +48,7 @@ all: gsec
 gsec: $(LIBFBCLIENT_SO) $(GSEC)
 
 $(GSEC):	$(AllObjects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 
