@@ -1,3 +1,7 @@
+ 2011-12-26 17:11  alexpeshkoff 
+   M src/jrd/SysFunction.cpp
+misc
+
  2011-12-24 18:21  asfernandes 
    M doc/sql.extensions/README.builtin_functions.txt
 Fix - thanks Paul Vinkenoog.
