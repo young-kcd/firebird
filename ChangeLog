@@ -1,3 +1,242 @@
+ 2011-12-26 23:35  hvlad 
+   M builds/win32/msvc10/Firebird3.sln
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/fbserver.vcxproj
+   M builds/win32/msvc10/fbserver.vcxproj.filters
+   M builds/win32/msvc10/firebird2.props
+   M builds/win32/msvc10/remote.vcxproj
+   M builds/win32/msvc10/remote.vcxproj.filters
+   A builds/win32/msvc10/srp.filters
+   A builds/win32/msvc10/srp.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj.filters
+Update VS 2010 build to support SRP.
+New plugin srp.dll is created - it is necessary for user management using SRP.
+VC8\VC9 builds will follow tomorrow.
+
+ 2011-12-26 23:20  hvlad 
+   M builds/win32/make_boot.bat
+Build LibTomMath as part of boot build process. Only VS2010 supported so far.
+
+ 2011-12-26 23:18  hvlad 
+   M extern/libtommath
+   M extern/libtommath/libtommath_VS2010.vcxproj
+Clean up project file and make working folders ignored by SVN
+
+ 2011-12-26 22:37  hvlad 
+   A extern/libtommath/libtommath_VS2010.sln
+   A extern/libtommath/libtommath_VS2010.vcxproj
+VS2010 project files
+
+ 2011-12-26 22:29  hvlad 
+   A extern/libtommath
+   A extern/libtommath/LICENSE
+   A extern/libtommath/bn_error.c
+   A extern/libtommath/bn_fast_mp_invmod.c
+   A extern/libtommath/bn_fast_mp_montgomery_reduce.c
+   A extern/libtommath/bn_fast_s_mp_mul_digs.c
+   A extern/libtommath/bn_fast_s_mp_mul_high_digs.c
+   A extern/libtommath/bn_fast_s_mp_sqr.c
+   A extern/libtommath/bn_mp_2expt.c
+   A extern/libtommath/bn_mp_abs.c
+   A extern/libtommath/bn_mp_add.c
+   A extern/libtommath/bn_mp_add_d.c
+   A extern/libtommath/bn_mp_addmod.c
+   A extern/libtommath/bn_mp_and.c
+   A extern/libtommath/bn_mp_clamp.c
+   A extern/libtommath/bn_mp_clear.c
+   A extern/libtommath/bn_mp_clear_multi.c
+   A extern/libtommath/bn_mp_cmp.c
+   A extern/libtommath/bn_mp_cmp_d.c
+   A extern/libtommath/bn_mp_cmp_mag.c
+   A extern/libtommath/bn_mp_cnt_lsb.c
+   A extern/libtommath/bn_mp_copy.c
+   A extern/libtommath/bn_mp_count_bits.c
+   A extern/libtommath/bn_mp_div.c
+   A extern/libtommath/bn_mp_div_2.c
+   A extern/libtommath/bn_mp_div_2d.c
+   A extern/libtommath/bn_mp_div_3.c
+   A extern/libtommath/bn_mp_div_d.c
+   A extern/libtommath/bn_mp_dr_is_modulus.c
+   A extern/libtommath/bn_mp_dr_reduce.c
+   A extern/libtommath/bn_mp_dr_setup.c
+   A extern/libtommath/bn_mp_exch.c
+   A extern/libtommath/bn_mp_expt_d.c
+   A extern/libtommath/bn_mp_exptmod.c
+   A extern/libtommath/bn_mp_exptmod_fast.c
+   A extern/libtommath/bn_mp_exteuclid.c
+   A extern/libtommath/bn_mp_fread.c
+   A extern/libtommath/bn_mp_fwrite.c
+   A extern/libtommath/bn_mp_gcd.c
+   A extern/libtommath/bn_mp_get_int.c
+   A extern/libtommath/bn_mp_grow.c
+   A extern/libtommath/bn_mp_init.c
+   A extern/libtommath/bn_mp_init_copy.c
+   A extern/libtommath/bn_mp_init_multi.c
+   A extern/libtommath/bn_mp_init_set.c
+   A extern/libtommath/bn_mp_init_set_int.c
+   A extern/libtommath/bn_mp_init_size.c
+   A extern/libtommath/bn_mp_invmod.c
+   A extern/libtommath/bn_mp_invmod_slow.c
+   A extern/libtommath/bn_mp_is_square.c
+   A extern/libtommath/bn_mp_jacobi.c
+   A extern/libtommath/bn_mp_karatsuba_mul.c
+   A extern/libtommath/bn_mp_karatsuba_sqr.c
+   A extern/libtommath/bn_mp_lcm.c
+   A extern/libtommath/bn_mp_lshd.c
+   A extern/libtommath/bn_mp_mod.c
+   A extern/libtommath/bn_mp_mod_2d.c
+   A extern/libtommath/bn_mp_mod_d.c
+   A extern/libtommath/bn_mp_montgomery_calc_normalization.c
+   A extern/libtommath/bn_mp_montgomery_reduce.c
+   A extern/libtommath/bn_mp_montgomery_setup.c
+   A extern/libtommath/bn_mp_mul.c
+   A extern/libtommath/bn_mp_mul_2.c
+   A extern/libtommath/bn_mp_mul_2d.c
+   A extern/libtommath/bn_mp_mul_d.c
+   A extern/libtommath/bn_mp_mulmod.c
+   A extern/libtommath/bn_mp_n_root.c
+   A extern/libtommath/bn_mp_neg.c
+   A extern/libtommath/bn_mp_or.c
+   A extern/libtommath/bn_mp_prime_fermat.c
+   A extern/libtommath/bn_mp_prime_is_divisible.c
+   A extern/libtommath/bn_mp_prime_is_prime.c
+   A extern/libtommath/bn_mp_prime_miller_rabin.c
+   A extern/libtommath/bn_mp_prime_next_prime.c
+   A extern/libtommath/bn_mp_prime_rabin_miller_trials.c
+   A extern/libtommath/bn_mp_prime_random_ex.c
+   A extern/libtommath/bn_mp_radix_size.c
+   A extern/libtommath/bn_mp_radix_smap.c
+   A extern/libtommath/bn_mp_rand.c
+   A extern/libtommath/bn_mp_read_radix.c
+   A extern/libtommath/bn_mp_read_signed_bin.c
+   A extern/libtommath/bn_mp_read_unsigned_bin.c
+   A extern/libtommath/bn_mp_reduce.c
+   A extern/libtommath/bn_mp_reduce_2k.c
+   A extern/libtommath/bn_mp_reduce_2k_l.c
+   A extern/libtommath/bn_mp_reduce_2k_setup.c
+   A extern/libtommath/bn_mp_reduce_2k_setup_l.c
+   A extern/libtommath/bn_mp_reduce_is_2k.c
+   A extern/libtommath/bn_mp_reduce_is_2k_l.c
+   A extern/libtommath/bn_mp_reduce_setup.c
+   A extern/libtommath/bn_mp_rshd.c
+   A extern/libtommath/bn_mp_set.c
+   A extern/libtommath/bn_mp_set_int.c
+   A extern/libtommath/bn_mp_shrink.c
+   A extern/libtommath/bn_mp_signed_bin_size.c
+   A extern/libtommath/bn_mp_sqr.c
+   A extern/libtommath/bn_mp_sqrmod.c
+   A extern/libtommath/bn_mp_sqrt.c
+   A extern/libtommath/bn_mp_sub.c
+   A extern/libtommath/bn_mp_sub_d.c
+   A extern/libtommath/bn_mp_submod.c
+   A extern/libtommath/bn_mp_to_signed_bin.c
+   A extern/libtommath/bn_mp_to_signed_bin_n.c
+   A extern/libtommath/bn_mp_to_unsigned_bin.c
+   A extern/libtommath/bn_mp_to_unsigned_bin_n.c
+   A extern/libtommath/bn_mp_toom_mul.c
+   A extern/libtommath/bn_mp_toom_sqr.c
+   A extern/libtommath/bn_mp_toradix.c
+   A extern/libtommath/bn_mp_toradix_n.c
+   A extern/libtommath/bn_mp_unsigned_bin_size.c
+   A extern/libtommath/bn_mp_xor.c
+   A extern/libtommath/bn_mp_zero.c
+   A extern/libtommath/bn_prime_tab.c
+   A extern/libtommath/bn_reverse.c
+   A extern/libtommath/bn_s_mp_add.c
+   A extern/libtommath/bn_s_mp_exptmod.c
+   A extern/libtommath/bn_s_mp_mul_digs.c
+   A extern/libtommath/bn_s_mp_mul_high_digs.c
+   A extern/libtommath/bn_s_mp_sqr.c
+   A extern/libtommath/bn_s_mp_sub.c
+   A extern/libtommath/bncore.c
+   A extern/libtommath/libtommath.dsp
+   A extern/libtommath/libtommath_VS2005.sln
+   A extern/libtommath/libtommath_VS2005.vcproj
+   A extern/libtommath/libtommath_VS2008.sln
+   A extern/libtommath/libtommath_VS2008.vcproj
+   A extern/libtommath/makefile
+   A extern/libtommath/makefile.bcc
+   A extern/libtommath/makefile.cygwin_dll
+   A extern/libtommath/makefile.icc
+   A extern/libtommath/makefile.msvc
+   A extern/libtommath/makefile.shared
+   A extern/libtommath/mess.sh
+   A extern/libtommath/pretty.build
+   A extern/libtommath/tommath.h
+   A extern/libtommath/tommath_class.h
+   A extern/libtommath/tommath_superclass.h
+Import LibTomMath library required for SRP to work.
+This is minimal subset of source code.
+
+ 2011-12-26 16:06  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+Diagnostics
+
+ 2011-12-26 14:51  alexpeshkoff 
+   M src/utilities/gsec/gsec.cpp
+Enable passwords >9 bytes in gsec. Remove old warning.
+
+ 2011-12-26 14:46  hvlad 
+   M src/remote/server/os/win32/srvr_w32.cpp
+Built SRP server into firebird.exe
+
+ 2011-12-26 14:33  alexpeshkoff 
+   M src/auth/SecureRemotePassword/srp.cpp
+Fixed init/fini order in srp
+
+ 2011-12-26 13:51  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/remote.h
+A patch resolving client-side crashes with a new fbclient. Thanks to Alex.
+
+ 2011-12-26 13:35  hvlad 
+   M src/common/BigInteger.cpp
+Fixed mismatched parameters order
+
+ 2011-12-26 13:17  dimitr 
+   M src/remote/os/win32/wnet.cpp
+Fixed the asserts in the debug build.
+
+ 2011-12-26 12:57  dimitr 
+   M src/remote/server/server.cpp
+Fixed a connection error (FB3 client - FB3 server), only LegacyAuth was affected.
+
+ 2011-12-26 12:41  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+correct defaults
+
+ 2011-12-26 12:26  dimitr 
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+This should fix the trusted authentication.
+
+ 2011-12-26 10:05  alexpeshkoff 
+   M src/include/firebird/Plugin.h
+   M src/yvalve/PluginManager.cpp
+Fixed overloaded virtual function error - thanks to Adriano
+
+ 2011-12-26 09:16  alexpeshkoff 
+   D src/auth/SecureRemotePassword/BigInteger.cpp
+   D src/auth/SecureRemotePassword/BigInteger.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/srp.cpp
+   M src/auth/SecureRemotePassword/srp.h
+   A src/common/BigInteger.cpp (from /firebird/trunk/src/auth/SecureRemotePassword/BigInteger.cpp:53739)
+   A src/common/BigInteger.h (from /firebird/trunk/src/auth/SecureRemotePassword/BigInteger.h:53739)
+Moved big integer implementation to common dir
+
+ 2011-12-26 08:50  dimitr 
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+Correction.
+
  2011-12-24 18:08  asfernandes 
    M builds/posix/Makefile.in
    M doc/sql.extensions/README.builtin_functions.txt
