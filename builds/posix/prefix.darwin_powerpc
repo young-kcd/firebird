@@ -27,6 +27,6 @@ PROD_FLAGS=-DDARWIN -pipe -p -MMD -fPIC -fno-common -arch ppc -mmacosx-version-m
 DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch ppc -mmacosx-version-min=10.2 -Wno-non-virtual-dtor
 CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -fno-weak
 
-LINK_OPTS:=
+EXE_LINK_OPTIONS:=
 
 include $(ROOT)/gen/darwin.defaults

@@ -149,7 +149,7 @@ $(COMMON_LIB):	$(Common_Objects)
 boot: $(GPRE_BOOT)
 
 $(GPRE_BOOT):	$(GPRE_Boot_Objects) $(COMMON_LIB)
-	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+	$(STATICEXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
 
@@ -205,7 +205,7 @@ $(LIBFBINTL_SO):	$(INTL_Objects) $(COMMON_LIB)
 gpre: $(GPRE) databases
 
 $(GPRE):	$(GPRE_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 HELP_FDB = $(FIREBIRD)/help/help.fdb
 SECURITY_FDB = $(FIREBIRD)/security3.fdb
@@ -295,64 +295,62 @@ utilities: firebird_server fb_lock_print fbguard fbsvcmgr fbtracemgr gbak gfix g
 firebird_server:	$(FB_DAEMON)
 
 $(FB_DAEMON):	$(Remote_Server_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 fb_lock_print:	$(LOCKPRINT)
 
 $(LOCKPRINT):	$(LOCKPRINT_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 fbguard:		$(FBGUARD)
 
 $(FBGUARD):		$(FBGUARD_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 fbsvcmgr:		$(FBSVCMGR)
 
 $(FBSVCMGR):	$(FBSVCMGR_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
-#$(FBSVCMGR):	$(FBSVCMGR_Objects) $(YValve_Objects) $(Remote_Client_Objects) $(COMMON_LIB)
-#	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 fbtracemgr:		$(FBTRACEMGR)
 
 $(FBTRACEMGR):	$(FBTRACEMGR_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 gbak:			$(GBAK)
 
 $(GBAK):		$(GBAK_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 gsplit:			$(GSPLIT)
 
 $(GSPLIT):		$(GSPLIT_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 gfix:			$(GFIX)
 
 $(GFIX):		$(GFIX_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 gsec:			$(GSEC)
 
 $(GSEC):		$(GSEC_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 gstat:			$(GSTAT)
 
 $(GSTAT):		$(GSTAT_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 isql:			$(ISQL)
 
 $(ISQL):		$(ISQL_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(LIBEDITLINE)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(LIBEDITLINE)
 
 nbackup:		$(NBACKUP)
 
 $(NBACKUP):		$(NBACKUP_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 
 #___________________________________________________________________________
@@ -415,7 +413,7 @@ gen_codes:	$(CODES) msg.timestamp
 	$(CODES) $(SRC_ROOT)/include/gen $(LNG_ROOT)
 
 $(CODES):	$(CODES_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 $(IDS):		$(SRC_ROOT)/misc/ids.m $(SRC_ROOT)/jrd/relations.h
 	m4 $< > $@
@@ -432,7 +430,7 @@ rest:	qli message_file
 qli:		$(QLI)
 
 $(QLI):		$(QLI_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 examples: include_generic
 	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
@@ -445,7 +443,7 @@ $(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
 	$(CHMOD_6) $@
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 #---------------------------------------------------------------------------
 

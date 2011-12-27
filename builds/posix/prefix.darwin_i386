@@ -34,7 +34,7 @@ PROD_FLAGS=-O1 -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch i386 -mmacosx-vers
 DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch i386 -mmacosx-version-min=10.6 -Wno-non-virtual-dtor
 CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -fno-weak
 
-LINK_OPTS:=-m32
+EXE_LINK_OPTIONS:=-m32
 LD_FLAGS+=-m32 -arch i386
 
 include $(ROOT)/gen/darwin.defaults

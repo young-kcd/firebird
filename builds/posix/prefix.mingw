@@ -32,7 +32,7 @@ LIB_LINK_OPTIONS+=-Wl,--enable-stdcall-fixup
 
 # Strip symbols from release versions to decrease size
 ifeq ($(IsProdTypeBuild),Y)
-LINK_OPTS+=-Wl,-s
+EXE_LINK_OPTIONS+=-Wl,-s
 LIB_LINK_OPTIONS+=-Wl,-s
 endif
 

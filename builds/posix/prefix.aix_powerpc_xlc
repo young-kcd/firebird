@@ -86,7 +86,7 @@ PROD_FLAGS=$(COMMON_FLAGS) -O -qstaticinline -qmaxmem=-1 \
 DEV_FLAGS=$(COMMON_FLAGS) -g \
 	-qcheck -qformat=noall:exarg:zln
 
-LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -brtl
+EXE_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -brtl
 
 # -G is shorthand to create shared objects with run-time linking. -G includes
 #   -berok, -brtl, -bnosymbolic, -bnortllib, -bnoautoexp, -bM:SRE
@@ -96,7 +96,7 @@ LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(LIB_PATH_OPTS) -G -bnoentry -qmkshro
 # AIX ld uses "export files" to manage symbol visibility. Export files are
 # functionally similar to "version files" on ELF systems and are specified
 # with the "-bE:exportfile.exp" option.
-LIB_LINK_MAPFILE=-bE:
+LIB_LINK_MAPFILE=-bE:$(1)
 
 # These options aren't used by AIX (XCOFF) object files...
 LIB_LINK_RPATH=

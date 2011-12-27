@@ -62,13 +62,13 @@ PROD_FLAGS=-ggdb -O3 -fsigned-char -fmessage-length=0 -fno-omit-frame-pointer -p
 DEV_FLAGS=-ggdb -O0 -fsigned-char -fmessage-length=0 -pipe -MMD -fPIC -Wall -Wextra -Wno-unused-parameter -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-non-virtual-dtor
 
 # link options when using IBM /usr/bin/ld fronted by g++
-LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -Wl,-bbigtoc,-brtl
+EXE_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -Wl,-bbigtoc,-brtl
 LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(LIB_PATH_OPTS) -shared -Wl,-G,-bbigtoc
 
 # AIX ld uses "export files" to manage symbol visibility. Export files are
 # functionally similar to "version files" on ELF systems and are specified
 # with the "-Wl,-bE:exportfile.exp" option.
-LIB_LINK_MAPFILE=-Wl,-bE:
+LIB_LINK_MAPFILE=-Wl,-bE:$(1)
 
 # These options aren't used by AIX (XCOFF) object files...
 LIB_LINK_RPATH=

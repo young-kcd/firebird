@@ -87,10 +87,10 @@ DEV_FLAGS= -g -xs \
 
 LIB_PLATFORM_RPATH= -R $(1)
 LIB_LINK_SONAME= -h $(1)
-LIB_LINK_MAPFILE= -M
+LIB_LINK_MAPFILE= -M $(1)
 
 # link options for Solaris linker, /usr/ccs/bin/ld
-LINK_OPTS+= -library=no%Cstd,Crun
+EXE_LINK_OPTIONS+= -library=no%Cstd,Crun
 LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -G -library=no%Cstd,Crun 
 
 UNDEF_PLATFORM=

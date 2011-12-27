@@ -80,12 +80,12 @@ DEV_FLAGS= -g -z \
 endif
 
 # link options for HP-UX linker, /usr/bin/ld
-LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA +e -Wl,+concatrpath
+EXE_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA +e -Wl,+concatrpath
 LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -b +e -Wl,+concatrpath
 
 # From original HPUX prefix file
 LIB_LINK_RPATH= -Wl,+b,$(1)
 LIB_LINK_SONAME= -Wl,+h,$(1)
-LIB_LINK_MAPFILE= -Wl,-c,
+LIB_LINK_MAPFILE= -Wl,-c,$(1)
 
 UNDEF_PLATFORM=
