@@ -5362,7 +5362,7 @@ void GenIdNode::setParameterName(dsql_par* parameter) const
 }
 
 bool GenIdNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar) const
+	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar);
 }

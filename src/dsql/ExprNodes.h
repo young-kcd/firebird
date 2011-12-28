@@ -574,7 +574,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar) const;
+		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
