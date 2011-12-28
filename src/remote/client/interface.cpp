@@ -7075,7 +7075,7 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 
 	PathName pluginName = getPluginName();
 	to->p_name.cstr_length = pluginName.length();
-	to->p_name.cstr_address = (UCHAR*)(pluginName.c_str());
+	to->p_name.cstr_address = (UCHAR*) pluginName.c_str();
 	to->p_name.cstr_allocated = 0;
 
 	HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo added plugin name (%d) and data (%d)\n",
@@ -7084,7 +7084,7 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 	if (firstTime)
 	{
 		to->p_list.cstr_length = pluginList.length();
-		to->p_list.cstr_address = (UCHAR*)(pluginList.c_str());
+		to->p_list.cstr_address = (UCHAR*) pluginList.c_str();
 		to->p_list.cstr_allocated = 0;
 		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo added plugin list (%d len) to packet\n",
 								to->p_list.cstr_length));
@@ -7109,7 +7109,7 @@ const char* ClntAuthBlock::getPassword()
 const unsigned char* ClntAuthBlock::getData(unsigned int* length)
 {
 	*length = dataForPlugin.getCount();
-	return (*length) ? dataForPlugin.begin() : NULL;
+	return *length ? dataForPlugin.begin() : NULL;
 }
 
 void ClntAuthBlock::putData(unsigned int length, const void* data)

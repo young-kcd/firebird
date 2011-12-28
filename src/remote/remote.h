@@ -600,7 +600,7 @@ public:
 typedef Firebird::GetPlugins<Auth::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
-// Transfered in format, depending upon type of the packet (phaze of handshake)
+// Transfered in format, depending upon type of the packet (phase of handshake)
 class ClntAuthBlock : public Firebird::StdPlugin<Auth::IClientBlock, FB_AUTH_CLIENT_BLOCK_VERSION>
 {
 private:
@@ -631,7 +631,7 @@ public:
 	void loadServiceDataFrom(rem_port*);
 	Firebird::PathName getPluginName();
 
-//	Auth::IClientBlock implementation
+	// Auth::IClientBlock implementation
 	int FB_CARG release();
 	const char* FB_CARG getLogin();
 	const char* FB_CARG getPassword();
@@ -690,7 +690,7 @@ public:
 	void setDataForPlugin(const p_auth_continue* data);
 	void reset();
 
-//	Auth::IServerBlock implementation
+	// Auth::IServerBlock implementation
 	int FB_CARG release();
 	const char* FB_CARG getLogin();
 	const unsigned char* FB_CARG getData(unsigned int* length);

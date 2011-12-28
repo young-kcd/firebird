@@ -257,7 +257,7 @@ public:
 		if (aDbName)
 		{
 			dbName = *aDbName;
-			if (oldPath && (dbName != oldPath))
+			if (oldPath && dbName != oldPath)
 			{
 				HANDSHAKE_DEBUG(fprintf(stderr, "old='%s' new='%s'\n", oldPath, dbName.c_str()));
 				(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "Client error - database name does not match").raise();
@@ -1389,9 +1389,9 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 				for (; plugins->hasData(); plugins->next())
 				{
 					port->port_srv_auth_block->authBlockWriter.setMethod(plugins->name());
-					switch (port->port_srv_auth_block->plugins->plugin()->
-							authenticate(&status, port->port_srv_auth_block,
-										 &port->port_srv_auth_block->authBlockWriter))
+					switch (port->port_srv_auth_block->plugins->plugin()->authenticate(
+								&status, port->port_srv_auth_block,
+								&port->port_srv_auth_block->authBlockWriter))
 					{
 					case Auth::AUTH_SUCCESS:
 						port->port_srv_auth_block->authCompleted(true);
@@ -6040,7 +6040,7 @@ const char* SrvAuthBlock::getLogin()
 const unsigned char* SrvAuthBlock::getData(unsigned int* length)
 {
 	*length = dataForPlugin.getCount();
-	return (*length) ? dataForPlugin.begin() : NULL;
+	return *length ? dataForPlugin.begin() : NULL;
 }
 
 void SrvAuthBlock::putData(unsigned int length, const void* data)

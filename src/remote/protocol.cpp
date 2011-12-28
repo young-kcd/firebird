@@ -338,7 +338,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_cstring, accept_with_data->p_acpt_data);
 		MAP(xdr_cstring, accept_with_data->p_acpt_plugin);
 		MAP(xdr_u_short, accept_with_data->p_acpt_authenticated);
-//???		fprintf(stderr, "data length %d\n", accept_with_data->p_acpt_data.cstr_length);
+		//???	fprintf(stderr, "data length %d\n", accept_with_data->p_acpt_data.cstr_length);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
