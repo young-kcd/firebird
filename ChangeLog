@@ -1,3 +1,26 @@
+ 2011-12-27 12:45  alexpeshkoff 
+   M builds/posix/Makefile.in.client.gbak
+   M builds/posix/Makefile.in.client.gdef
+   M builds/posix/Makefile.in.client.gfix
+   M builds/posix/Makefile.in.client.gpre
+   M builds/posix/Makefile.in.client.gsec
+   M builds/posix/Makefile.in.client.isql
+   M builds/posix/Makefile.in.client.qli
+   M builds/posix/Makefile.in.client.util
+   M builds/posix/Makefile.in.embed.gbak
+   M builds/posix/Makefile.in.embed.gdef
+   M builds/posix/Makefile.in.embed.gfix
+   M builds/posix/Makefile.in.embed.gpre
+   M builds/posix/Makefile.in.embed.isql
+   M builds/posix/Makefile.in.embed.qli
+   M builds/posix/Makefile.in.embed.util
+   M builds/posix/Makefile.in.fbserver
+   M builds/posix/Makefile.in.inet_server
+   M builds/posix/Makefile.in.smp_server
+   A builds/posix/empty.vers
+   M builds/posix/make.defaults
+Backported fix for CORE-3677: Stop utilities to export entrypoints
+
  2011-12-26 17:11  alexpeshkoff 
    M src/jrd/SysFunction.cpp
 misc
