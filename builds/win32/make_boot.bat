@@ -108,8 +108,8 @@ goto :EOF
 :: BUILD LibTomMath
 :LibTomMath
 @echo.
-@echo Building LibTomMath ...
-@call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_VS2010 libtommath_%FB_TARGET_PLATFORM%.log libtommath
+@echo Building LibTomMath (%FB_OBJ_DIR%)...
+@call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 LibTomMath
 goto :EOF
 

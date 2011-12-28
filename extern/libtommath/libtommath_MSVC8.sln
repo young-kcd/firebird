@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath", "libtommath_VS2005.vcproj", "{0272C9B2-D68B-4F24-B32D-C1FD552F7E51}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath", "libtommath_MSVC8.vcproj", "{0272C9B2-D68B-4F24-B32D-C1FD552F7E51}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
