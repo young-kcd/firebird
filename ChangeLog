@@ -1,3 +1,40 @@
+ 2011-12-28 01:20  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+Warning.
+
+ 2011-12-28 01:07  asfernandes 
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Misc.
+
+ 2011-12-27 08:14  alexpeshkoff 
+   M builds/posix/Makefile.in
+   M builds/posix/Makefile.in.examples
+   M builds/posix/darwin.defaults
+   M builds/posix/make.defaults
+   M builds/posix/make.platform.solaris.examples
+   M builds/posix/prefix.aix_powerpc
+   M builds/posix/prefix.aix_powerpc_xlc
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_powerpc
+   M builds/posix/prefix.darwin_ppc64
+   M builds/posix/prefix.darwin_x86_64
+   M builds/posix/prefix.freebsd
+   M builds/posix/prefix.freebsd_amd64
+   M builds/posix/prefix.hpux
+   M builds/posix/prefix.hpux_aCC
+   M builds/posix/prefix.hpux_ia64
+   M builds/posix/prefix.mingw
+   M builds/posix/prefix.netbsd
+   M builds/posix/prefix.solaris
+   M builds/posix/prefix.solaris-64gcc
+   M builds/posix/prefix.solx86gcc
+   M builds/posix/prefix.solx86gcc_64
+Fixed CORE-3677: Stop utilities to export entrypoints
+
  2011-12-26 23:35  hvlad 
    M builds/win32/msvc10/Firebird3.sln
    M builds/win32/msvc10/common.vcxproj
