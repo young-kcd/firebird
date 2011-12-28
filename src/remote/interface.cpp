@@ -1803,7 +1803,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			sqldata->p_sqldata_message_number = msg_type;
 			if (sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0)
 			{
-				if (!(port->port_flags &PORT_rpc))
+				if (!(port->port_flags & PORT_rpc))
 				{
 					sqldata->p_sqldata_messages =
 						static_cast<USHORT>(REMOTE_compute_batch_size(port,
