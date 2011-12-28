@@ -348,6 +348,14 @@
 				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyServer.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource files"
