@@ -2114,7 +2114,7 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 			sqldata->p_sqldata_message_number = 0;	// msg_type
 			if (sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0)
 			{
-				if (!(port->port_flags &PORT_rpc))
+				if (!(port->port_flags & PORT_rpc))
 				{
 					sqldata->p_sqldata_messages =
 						static_cast<USHORT>(REMOTE_compute_batch_size(port,

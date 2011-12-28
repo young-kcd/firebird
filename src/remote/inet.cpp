@@ -120,8 +120,6 @@ extern int h_errno;
 
 using namespace Firebird;
 
-const USHORT MAX_PTYPE	= ptype_lazy_send;
-
 
 #ifdef WIN_NT
 
@@ -599,11 +597,11 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, MAX_PTYPE, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, MAX_PTYPE, 5)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_lazy_send, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_lazy_send, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_lazy_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_lazy_send, 4),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, ptype_lazy_send, 5)
 	};
 
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -626,7 +624,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
 			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_rpc, ptype_batch_send, 1),
-			REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, MAX_PTYPE, 2)
+			REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_lazy_send, 2)
 		};
 
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
