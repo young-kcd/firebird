@@ -63,8 +63,6 @@ void	ISC_unmap_mutex(mtx* mutex);
 
 #ifdef UNIX
 void	ISC_exception_post(ULONG, const TEXT*);
-void	ISC_sync_signals_set(void*);
-void	ISC_sync_signals_reset();
 #endif
 
 #ifdef WIN_NT

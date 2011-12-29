@@ -68,20 +68,11 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_pwd.h"
-#include "../common/classes/fb_tls.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/StatusArg.h"
 
-#ifdef UNIX
-#include <setjmp.h>
-#endif
-
 static int process_id;
-
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
 
 /* Unix specific stuff */
 
@@ -168,7 +159,6 @@ static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
 
-static void		longjmp_sig_handler(int);
 static GlobalPtr<Mutex> openFdInit;
 
 namespace {
@@ -838,10 +828,6 @@ int Sys5Semaphore::getId()
 
 #if defined(WIN_NT)
 static bool make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
-#endif
-
-#if defined FREEBSD || defined NETBSD || defined DARWIN || defined HPUX
-#define sigset      signal
 #endif
 
 
@@ -3569,52 +3555,6 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 
 #ifdef UNIX
-static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
-
-void ISC_sync_signals_set(void* arg)
-{
-/**************************************
- *
- *	I S C _ s y n c _ s i g n a l s _ s e t ( U N I X )
- *
- **************************************
- *
- * Functional description
- *	Set all the synchronous signals for a particular thread
- *
- **************************************/
-	sigjmp_buf* const sigenv = static_cast<sigjmp_buf*>(arg);
-	TLS_SET(sigjmp_ptr, sigenv);
-
-	sigset(SIGILL, longjmp_sig_handler);
-	sigset(SIGFPE, longjmp_sig_handler);
-	sigset(SIGBUS, longjmp_sig_handler);
-	sigset(SIGSEGV, longjmp_sig_handler);
-}
-
-
-void ISC_sync_signals_reset()
-{
-/**************************************
- *
- *	I S C _ s y n c _ s i g n a l s _ r e s e t ( U N I X )
- *
- **************************************
- *
- * Functional description
- *	Reset all the synchronous signals for a particular thread
- * to default.
- *
- **************************************/
-
-	sigset(SIGILL, SIG_DFL);
-	sigset(SIGFPE, SIG_DFL);
-	sigset(SIGBUS, SIG_DFL);
-	sigset(SIGSEGV, SIG_DFL);
-}
-#endif // UNIX
-
-#ifdef UNIX
 void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 {
 /**************************************
@@ -3719,8 +3659,6 @@ static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS stat
 }
 
 
-#ifdef UNIX
-
 #ifdef USE_SYS5SEMAPHORE
 
 static SLONG create_semaphores(ISC_STATUS* status_vector,
@@ -3799,25 +3737,7 @@ static SLONG create_semaphores(ISC_STATUS* status_vector,
 	}
 }
 
-#endif
-
-void longjmp_sig_handler(int sig_num)
-{
-/**************************************
- *
- *	l o n g j m p _ s i g _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	The generic signal handler for all signals in a thread.
- *
- **************************************/
-
-	siglongjmp(*TLS_GET(sigjmp_ptr), sig_num);
-}
-
-#endif // UNIX
+#endif // USE_SYS5SEMAPHORE
 
 
 #ifdef WIN_NT
