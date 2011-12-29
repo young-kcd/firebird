@@ -1,3 +1,8 @@
+ 2011-12-28 18:12  dimitr 
+   M src/remote/inet.cpp
+   M src/remote/interface.cpp
+Misc.
+
  2011-12-27 12:45  alexpeshkoff 
    M builds/posix/Makefile.in.client.gbak
    M builds/posix/Makefile.in.client.gdef
