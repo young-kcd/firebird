@@ -1,3 +1,46 @@
+ 2011-12-29 00:21  asfernandes 
+   M builds/posix/Makefile.in
+   M builds/posix/make.defaults
+Make the thing build with Ubuntu 11.10, binutils 2.21.53.20110810.
+Was failing to build 'firebird' caused by common.a (BigInteger.o) usage of libtommath functions.
+
+ 2011-12-28 18:16  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+Misc.
+
+ 2011-12-28 15:15  hvlad 
+   M builds/win32/make_boot.bat
+   A extern/libtommath/libtommath_MSVC10.sln (from /firebird/trunk/extern/libtommath/libtommath_VS2010.sln:53770)
+   A extern/libtommath/libtommath_MSVC10.vcxproj (from /firebird/trunk/extern/libtommath/libtommath_VS2010.vcxproj:53771)
+   A extern/libtommath/libtommath_MSVC8.sln (from /firebird/trunk/extern/libtommath/libtommath_VS2005.sln:53783)
+   A extern/libtommath/libtommath_MSVC8.vcproj (from /firebird/trunk/extern/libtommath/libtommath_VS2005.vcproj:53783)
+   A extern/libtommath/libtommath_MSVC9.sln (from /firebird/trunk/extern/libtommath/libtommath_VS2008.sln:53770)
+   A extern/libtommath/libtommath_MSVC9.vcproj (from /firebird/trunk/extern/libtommath/libtommath_VS2008.vcproj:53770)
+   D extern/libtommath/libtommath_VS2005.sln
+   D extern/libtommath/libtommath_VS2005.vcproj
+   D extern/libtommath/libtommath_VS2008.sln
+   D extern/libtommath/libtommath_VS2008.vcproj
+   D extern/libtommath/libtommath_VS2010.sln
+   D extern/libtommath/libtommath_VS2010.vcxproj
+Adjust LibTomMath project files to allow build both Firebird and libtommath library by the same version of MSVC.
+Adjust make_boot to automatically choose correct solution to build libtommath.
+
+ 2011-12-28 14:31  hvlad 
+   M builds/win32/msvc8/Firebird3.sln
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/fbserver.vcproj
+   M builds/win32/msvc8/firebird2.vsprops
+   M builds/win32/msvc8/remote.vcproj
+   A builds/win32/msvc8/srp.vcproj
+   M builds/win32/msvc8/yvalve.vcproj
+Update VS 2005 build to support SRP.
+
+ 2011-12-28 14:29  hvlad 
+   M extern/libtommath/libtommath_VS2005.sln
+   M extern/libtommath/libtommath_VS2005.vcproj
+Cleanup, tune and add x64 target
+
  2011-12-28 01:20  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
