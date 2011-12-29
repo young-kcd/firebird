@@ -88,7 +88,12 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 {
 	void* module = dlopen(modPath.c_str(), FB_RTLD_MODE);
 	if (module == NULL)
+	{
+#ifdef DEBUG_LOADER
+		fprintf(stderr, "load error: %s: %s\n", modPath.c_str(), dlerror());
+#endif // DEBUG_LOADER
 		return 0;
+	}
 
 	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
 }
