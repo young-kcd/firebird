@@ -245,10 +245,11 @@ void releaseUpgradeTabs(IPluginModule* module)
 #ifdef WIN_NT
 #include <windows.h>
 #else
-#ifndef USE_THREAD_DESTRUCTOR
 #include <pthread.h>
 #include <signal.h>
-#endif
+#include <setjmp.h>
+#include "../common/classes/fb_tls.h"
+#include "../common/os/SyncSignals.h"
 #endif
 
 namespace {
@@ -313,17 +314,26 @@ private:
 				}
 			}
 #else
-#ifndef USE_THREAD_DESTRUCTOR
 			if (thread != currTID)
 			{
-				if (pthread_kill(thread, 0) == ESRCH)
+				sigjmp_buf sigenv;
+				if (sigsetjmp(sigenv, 1) == 0)
 				{
-					// Thread does not exist any more
+					Firebird::syncSignalsSet(&sigenv);
+					if (pthread_kill(thread, 0) == ESRCH)
+					{
+						// Thread does not exist any more
+						thread = currTID;
+					}
+				}
+				else
+				{
+					// segfault in pthread_kill() - thread does not exist any more
 					thread = currTID;
 				}
+				Firebird::syncSignalsReset();
 			}
-#endif // USE_THREAD_DESTRUCTOR
-#endif // WIN_NT
+#endif
 
 			return thread == currTID;
 		}
@@ -341,9 +351,7 @@ public:
 	}
 
 	~StringsBuffer()
-	{
-		ThreadCleanup::remove(cleanupAllStrings, this);
-	}
+	{ }
 
 private:
 	size_t position(FB_THREAD_ID thr)
@@ -398,7 +406,6 @@ private:
 public:
 	const char* alloc(const char* s, size_t len, FB_THREAD_ID thr = getThreadId())
 	{
-		ThreadCleanup::add(cleanupAllStrings, this);
 		return getThreadBuffer(thr)->alloc(s, len);
 	}
 };

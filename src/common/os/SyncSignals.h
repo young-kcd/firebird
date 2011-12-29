@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:	JRD access method
- *	MODULE:		thd.h
- *	DESCRIPTION:	Thread support definitions
+ *	PROGRAM:	JRD Access Method
+ *	MODULE:		SyncSignals.h
+ *	DESCRIPTION:	Prototype header file for SyncSignals.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,22 +19,22 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *					Alex Peshkov
  *
- * 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
- *
- * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
- * Alex Peshkov
  */
 
-#ifndef JRD_THD_H
-#define JRD_THD_H
+#ifndef COMMON_SYNC_SIGNALS_H
+#define COMMON_SYNC_SIGNALS_H
 
-// thread run-ability control
-void	THD_sleep(ULONG);
-void	THD_yield();
+#include "../common/common.h"
 
-// thread ID
-FB_THREAD_ID getThreadId() throw();
+#ifdef UNIX
 
-#endif // JRD_THD_H
+namespace Firebird {
+	void syncSignalsSet(void*);
+	void syncSignalsReset();
+}
+
+#endif // UNIX
+
+#endif // COMMON_SYNC_SIGNALS_H

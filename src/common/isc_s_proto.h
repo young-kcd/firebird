@@ -166,12 +166,6 @@ int		ISC_mutex_lock(struct mtx*);
 int		ISC_mutex_lock_cond(struct mtx*);
 int		ISC_mutex_unlock(struct mtx*);
 
-
-#ifdef UNIX
-void	ISC_sync_signals_set(void*);
-void	ISC_sync_signals_reset();
-#endif
-
 ULONG	ISC_exception_post(ULONG, const TEXT*);
 
 namespace Jrd {

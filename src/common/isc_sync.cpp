@@ -59,21 +59,12 @@
 #include "../common/isc_s_proto.h"
 #include "../common/file_params.h"
 #include "../common/gdsassert.h"
-#include "../common/classes/fb_tls.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/StatusArg.h"
 #include "../common/ThreadData.h"
 
-#ifdef UNIX
-#include <setjmp.h>
-#endif
-
 static int process_id;
-
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
 
 // Unix specific stuff
 
@@ -161,14 +152,6 @@ static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-static void		longjmp_sig_handler(int);
-#ifdef __cplusplus
-}
-#endif
-static void		longjmp_sig_handler(int);
 static GlobalPtr<Mutex> openFdInit;
 
 namespace {
@@ -839,10 +822,6 @@ int Sys5Semaphore::getId()
 static bool make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 #endif
 
-#if defined FREEBSD || defined NETBSD || defined DARWIN || defined HPUX
-#define sigset      signal
-#endif
-
 
 static bool event_blocked(const event_t* event, const SLONG value)
 {
@@ -1125,11 +1104,6 @@ int ISC_event_wait(event_t* event, SLONG value, const SLONG micro_seconds)
 		return FB_SUCCESS;
 
 	// Set up timers if a timeout period was specified.
-
-	//struct itimerval user_timer;
-	//struct sigaction user_handler;
-	//struct timeval cur_time;
-	//struct timezone tzUnused;
 	SINT64 timeout = 0;
 	if (micro_seconds > 0)
 	{
@@ -3434,52 +3408,6 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG, bool)
 
 
 #ifdef UNIX
-static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
-
-void ISC_sync_signals_set(void* arg)
-{
-/**************************************
- *
- *	I S C _ s y n c _ s i g n a l s _ s e t ( U N I X )
- *
- **************************************
- *
- * Functional description
- *	Set all the synchronous signals for a particular thread
- *
- **************************************/
-	sigjmp_buf* const sigenv = static_cast<sigjmp_buf*>(arg);
-	TLS_SET(sigjmp_ptr, sigenv);
-
-	sigset(SIGILL, longjmp_sig_handler);
-	sigset(SIGFPE, longjmp_sig_handler);
-	sigset(SIGBUS, longjmp_sig_handler);
-	sigset(SIGSEGV, longjmp_sig_handler);
-}
-
-
-void ISC_sync_signals_reset()
-{
-/**************************************
- *
- *	I S C _ s y n c _ s i g n a l s _ r e s e t ( U N I X )
- *
- **************************************
- *
- * Functional description
- *	Reset all the synchronous signals for a particular thread
- * to default.
- *
- **************************************/
-
-	sigset(SIGILL, SIG_DFL);
-	sigset(SIGFPE, SIG_DFL);
-	sigset(SIGBUS, SIG_DFL);
-	sigset(SIGSEGV, SIG_DFL);
-}
-#endif // UNIX
-
-#ifdef UNIX
 void SharedMemoryBase::unmapFile(Arg::StatusVector& statusVector)
 {
 /**************************************
@@ -3591,8 +3519,6 @@ static void error(Arg::StatusVector& statusVector, const TEXT* string, ISC_STATU
 }
 
 
-#ifdef UNIX
-
 #ifdef USE_SYS5SEMAPHORE
 
 static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int semaphores)
@@ -3670,24 +3596,6 @@ static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int s
 }
 
 #endif // USE_SYS5SEMAPHORE
-
-void longjmp_sig_handler(int sig_num)
-{
-/**************************************
- *
- *	l o n g j m p _ s i g _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	The generic signal handler for all signals in a thread.
- *
- **************************************/
-
-	siglongjmp(*TLS_GET(sigjmp_ptr), sig_num);
-}
-
-#endif // UNIX
 
 
 #ifdef WIN_NT
