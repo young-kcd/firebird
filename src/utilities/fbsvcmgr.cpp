@@ -616,7 +616,7 @@ int main(int ac, char **av)
 		if (name)
 		{
 			av++;
-		}	
+		}
 
 		Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
 		while (populateSpbFromSwitches(av, spbAtt, attSwitch, 0))
@@ -639,6 +639,20 @@ int main(int ac, char **av)
 			Firebird::status_exception::raise(isc_fbsvcmgr_switch_unknown, isc_arg_string, *av, isc_arg_end);
 		}
 
+		if (!spbAtt.find(isc_spb_trusted_auth))
+		{
+			// Populate SPB with environment variables
+			Firebird::string env;
+			if ((!spbAtt.find(isc_spb_user_name)) && fb_utils::readenv("ISC_USER", env))
+			{
+				spbAtt.insertString(isc_spb_user_name, env);
+			}
+			if ((!spbAtt.find(isc_spb_password)) && fb_utils::readenv("ISC_PASSWORD", env))
+			{
+				spbAtt.insertString(isc_spb_password, env);
+			}
+		}
+
 		isc_svc_handle svc_handle = 0;
 		if (isc_service_attach(status, 
 					0, name, &svc_handle, 
@@ -648,7 +662,7 @@ int main(int ac, char **av)
 			isc_print_status(status);
 			return 1;
 		}
-	
+
 		if (spbStart.getBufferLength() > 0)
 		{
 			if (isc_service_start(status,
