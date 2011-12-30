@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
+#include "../jrd/constants.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -875,6 +876,20 @@ int main(int ac, char** av)
 		if (*av)
 		{
 			status_exception::raise(Arg::Gds(isc_fbsvcmgr_switch_unknown) << Arg::Str(*av));
+		}
+
+		if (!spbAtt.find(isc_spb_trusted_auth))
+		{
+			// Populate SPB with environment variables
+			string env;
+			if ((!spbAtt.find(isc_spb_user_name)) && fb_utils::readenv(ISC_USER, env))
+			{
+				spbAtt.insertString(isc_spb_user_name, env);
+			}
+			if ((!spbAtt.find(isc_spb_password)) && fb_utils::readenv(ISC_PASSWORD, env))
+			{
+				spbAtt.insertString(isc_spb_password, env);
+			}
 		}
 
 		isc_svc_handle svc_handle = 0;
