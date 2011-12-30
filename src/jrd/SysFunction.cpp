@@ -1444,7 +1444,7 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 		case funUuidRfc:
 		{
 			USHORT bytes[16];
-			sscanf(buffer, GUID_NEW_FORMAT,
+			sscanf(buffer, GUID_NEW_FORMAT_LOWER,
 				&bytes[0], &bytes[1], &bytes[2], &bytes[3],
 				&bytes[4], &bytes[5], &bytes[6], &bytes[7],
 				&bytes[8], &bytes[9], &bytes[10], &bytes[11],
@@ -3329,7 +3329,7 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 			break;
 
 		case funUuidRfc:
-			sprintf(buffer, GUID_NEW_FORMAT,
+			sprintf(buffer, GUID_NEW_FORMAT_LOWER,
 				USHORT((guid->data1 >> 24) & 0xFF), USHORT((guid->data1 >> 16) & 0xFF),
 				USHORT((guid->data1 >> 8) & 0xFF), USHORT(guid->data1 & 0xFF),
 				USHORT((guid->data2 >> 8) & 0xFF), USHORT(guid->data2 & 0xFF),

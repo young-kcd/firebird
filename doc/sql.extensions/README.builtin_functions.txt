@@ -261,7 +261,7 @@ CHAR_TO_UUID2
 
 Function:
     Converts the CHAR(32) ASCII representation of an UUID
-    (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX) to the CHAR(16) OCTETS
+    (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) to the CHAR(16) OCTETS
     representation (optimized for storage).
 
 Format:
@@ -884,7 +884,7 @@ UUID_TO_CHAR2
 
 Function:
     Converts a CHAR(16) OCTETS UUID (that's returned by GEN_UUID) to the
-    CHAR(32) ASCII representation (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX).
+    CHAR(32) ASCII representation (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).
 
 Format:
     UUID_TO_CHAR2( <string> )
@@ -892,7 +892,8 @@ Format:
 Notes:
     This function supersedes UUID_TO_CHAR. The difference between them is that UUID_TO_CHAR does a
     byte-by-byte conversion of the OCTETS string to the ASCII one, while UUID_TO_CHAR2 converts
-    a RFC-4122 compliant OCTETS UUID to a compliant ASCII string.
+    a RFC-4122 compliant OCTETS UUID to a compliant ASCII string. Also, UUID_TO_CHAR returns
+    upper-cased string and UUID_TO_CHAR2 returns lower-cased string.
 
 Example:
     select uuid_to_char2(gen_uuid()) from rdb$database;

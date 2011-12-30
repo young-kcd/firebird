@@ -39,8 +39,10 @@ const int GUID_BODY_SIZE = 36;
 
 const char* const GUID_LEGACY_FORMAT =
 	"{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}";
-const char* const GUID_NEW_FORMAT =
+const char* const GUID_NEW_FORMAT_UPPER =
 	"{%02hX%02hX%02hX%02hX-%02hX%02hX-%02hX%02hX-%02hX%02hX-%02hX%02hX%02hX%02hX%02hX%02hX}";
+const char* const GUID_NEW_FORMAT_LOWER =
+	"{%02hx%02hx%02hx%02hx-%02hx%02hx-%02hx%02hx-%02hx%02hx-%02hx%02hx%02hx%02hx%02hx%02hx}";
 
 struct FB_GUID
 {
@@ -73,7 +75,7 @@ inline void GuidToString(char* buffer, const FB_GUID* guid, bool legacy)
 	}
 	else
 	{
-		sprintf(buffer, GUID_NEW_FORMAT,
+		sprintf(buffer, GUID_NEW_FORMAT_UPPER,
 			USHORT(guid->data[0] & 0xFF), USHORT(guid->data[0] >> 8),
 			USHORT(guid->data[1] & 0xFF), USHORT(guid->data[1] >> 8),
 			USHORT(guid->data[2] & 0xFF), USHORT(guid->data[2] >> 8),
@@ -96,7 +98,7 @@ inline void StringToGuid(FB_GUID* guid, const char* buffer, bool legacy)
 	else
 	{
 		USHORT bytes[16];
-		sscanf(buffer, GUID_NEW_FORMAT,
+		sscanf(buffer, GUID_NEW_FORMAT_UPPER,
 			&bytes[0], &bytes[1], &bytes[2], &bytes[3],
 			&bytes[4], &bytes[5], &bytes[6], &bytes[7],
 			&bytes[8], &bytes[9], &bytes[10], &bytes[11],
