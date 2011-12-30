@@ -1,3 +1,15 @@
+ 2011-12-29 16:11  alexpeshkoff 
+   M src/common/fb_exception.cpp
+   M src/include/fb_exception.h
+   M src/jrd/ibsetjmp.h
+   M src/jrd/isc_s_proto.h
+   M src/jrd/isc_sync.cpp
+Fixed CORE-3646: Segmentation fault in Linux
+
+ 2011-12-29 16:09  alexpeshkoff 
+   M src/jrd/os/posix/mod_loader.cpp
+misc
+
  2011-12-28 18:12  dimitr 
    M src/remote/inet.cpp
    M src/remote/interface.cpp
