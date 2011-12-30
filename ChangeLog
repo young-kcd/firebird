@@ -1,3 +1,14 @@
+ 2011-12-29 17:48  alexpeshkoff 
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+   A src/common/os/SyncSignals.h
+   A src/common/os/posix/SyncSignals.cpp
+   M src/common/thd.cpp
+   M src/common/thd.h
+   M src/jrd/ibsetjmp.h
+   M src/yvalve/MasterImplementation.cpp
+Front-ported fix for CORE-3646: Segmentation fault in Linux
+
  2011-12-29 00:21  asfernandes 
    M builds/posix/Makefile.in
    M builds/posix/make.defaults
