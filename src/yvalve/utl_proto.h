@@ -76,7 +76,7 @@ namespace Firebird
 {
 	class ClumpletWriter;
 }
-void setLogin(Firebird::ClumpletWriter& dpb);
+void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag);
 
 #endif // JRD_UTL_PROTO_H
 

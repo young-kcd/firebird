@@ -4864,7 +4864,7 @@ YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 			}
 		}
 
-		setLogin(newDpb);
+		setLogin(newDpb, false);
 		orgFilename.rtrim();
 
 		PathName expandedFilename;
@@ -4982,7 +4982,7 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 			***/
 		}
 
-		setLogin(newDpb);
+		setLogin(newDpb, false);
 		orgFilename.rtrim();
 
 		PathName expandedFilename;
@@ -5076,18 +5076,21 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		PathName svcName(serviceName);
 		svcName.trim();
 
-		ClumpletReader spbReader(ClumpletReader::spbList, spb, spbLength);
-		if ((spbReader.find(isc_spb_auth_block) && spbReader.getClumpLength() > 0) ||
+		ClumpletWriter spbWriter(ClumpletReader::spbList, MAX_DPB_SIZE, spb, spbLength);
+		setLogin(spbWriter, true);
+
+		if ((spbWriter.find(isc_spb_auth_block) && spbWriter.getClumpLength() > 0) ||
 			ISC_check_if_remote(svcName, false))
 		{
 			IProvider* provider = NULL;
-			service = getServiceManagerByName(&provider, status, svcName.c_str(), spbLength, spb);
+			service = getServiceManagerByName(&provider, status, svcName.c_str(),
+											  spbWriter.getBufferLength(), spbWriter.getBuffer());
 
 			if (service)
 				return new YService(provider, service);
 		}
 		else
-			return new YService(svcName.c_str(), spbLength, spb);
+			return new YService(svcName.c_str(), spbWriter.getBufferLength(), spbWriter.getBuffer());
 	}
 	catch (const Exception& e)
 	{

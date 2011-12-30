@@ -2151,9 +2151,14 @@ static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* 
 	}
 }
 
-void setLogin(Firebird::ClumpletWriter& dpb)
+void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag)
 {
-	if (!(dpb.find(isc_dpb_trusted_auth) || dpb.find(isc_dpb_address_path)))
+	const UCHAR address_path = spbFlag ? isc_spb_address_path : isc_dpb_address_path;
+	const UCHAR trusted_auth = spbFlag ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
+	const UCHAR auth_block = spbFlag ? isc_spb_auth_block : isc_dpb_auth_block;
+	// username and password tags match for both SPB and DPB
+
+	if (!(dpb.find(trusted_auth) || dpb.find(address_path) || dpb.find(auth_block)))
 	{
 		Firebird::string username;
 		if (fb_utils::readenv(ISC_USER, username))
@@ -2162,7 +2167,7 @@ void setLogin(Firebird::ClumpletWriter& dpb)
 		}
 
 		Firebird::string password;
-		if (fb_utils::readenv(ISC_PASSWORD, password) && !dpb.find(isc_dpb_password_enc))
+		if (fb_utils::readenv(ISC_PASSWORD, password) && !dpb.find(isc_dpb_password))
 		{
 			setTag(dpb, isc_dpb_password, password.c_str());
 		}

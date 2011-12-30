@@ -250,26 +250,6 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 		}
 	}
 
-	if (usr.isEmpty())
-	{
-#ifdef TRUSTED_AUTH
-		if (!flag_trusted)
-#endif
-		{
-			fb_utils::readenv(ISC_USER, usr);
-		}
-	}
-
-	if (pswd.isEmpty())
-	{
-#ifdef TRUSTED_AUTH
-		if (!flag_trusted)
-#endif
-		{
-			fb_utils::readenv(ISC_PASSWORD, pswd);
-		}
-	}
-
 	ISC_STATUS_ARRAY status;
 	FB_API_HANDLE svc_handle = 0;
 

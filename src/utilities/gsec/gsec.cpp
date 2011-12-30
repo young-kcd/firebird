@@ -72,18 +72,6 @@ static void insert_error(ISC_STATUS*, ISC_STATUS);
 static void msg_get(USHORT number, TEXT* msg);
 
 
-inline void envPick(Firebird::UtilSvc* uSvc, Auth::CharField& dest, const TEXT* var)
-{
-	const char* oldVal = dest.get();
-	if (!uSvc->isService() && !(oldVal && oldVal[0]))
-	{
-		Firebird::string val;
-		if (fb_utils::readenv(var, val))
-			dest.set(val.c_str());
-	}
-}
-
-
 THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 {
 /**********************************************
@@ -336,13 +324,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 	isc_svc_handle sHandle = 0;
 	if (useServices)
 	{
-#ifdef TRUSTED_AUTH
-		if (!(user_data->trustedAuth))
-#endif
-		{
-			envPick(uSvc, user_data->dba, ISC_USER);
-			envPick(uSvc, user_data->dbaPassword, ISC_PASSWORD);
-		}
 		sHandle = attachRemoteServiceManager(
 					status,
 					user_data->dba.get(),

@@ -86,28 +86,6 @@ void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
 
 	ClumpletWriter spb(ClumpletWriter::SpbAttach, MAXBUF, isc_spb_current_version);
 
-	if (user.isEmpty() && !isAdmin)
-	{
-		string isc_user;
-		if (fb_utils::readenv(ISC_USER, isc_user)) {
-			spb.insertString(isc_spb_user_name, isc_user);
-		}
-	}
-	else if (user.hasData()) {
-		spb.insertString(isc_spb_user_name, user);
-	}
-
-	if (pwd.isEmpty() && !isAdmin)
-	{
-		string isc_pwd;
-		if (fb_utils::readenv(ISC_PASSWORD, isc_pwd)) {
-			spb.insertString(isc_spb_password, isc_pwd);
-		}
-	}
-	else if (pwd.hasData()) {
-		spb.insertString(isc_spb_password, pwd);
-	}
-
 	if (isAdmin) {
 		spb.insertTag(isc_spb_trusted_auth);
 	}
