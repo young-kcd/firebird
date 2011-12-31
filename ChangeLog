@@ -1,3 +1,7 @@
+ 2011-12-30 14:12  alexpeshkoff 
+   M src/utilities/fbsvcmgr.cpp
+Backported fix for CORE-3658: FBSVCMGR connects to server as OS user name rather than value of ISC_USER environment variable
+
  2011-12-27 12:45  alexpeshkoff 
    M builds/posix/Makefile.in.client.gbak
    M builds/posix/Makefile.in.client.gdef
