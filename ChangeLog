@@ -1,3 +1,21 @@
+ 2011-12-30 14:38  asfernandes 
+   M doc/sql.extensions/README.builtin_functions.txt
+   M src/common/os/guid.h
+Make UUID_TO_CHAR2 returns lower-cased strings, as the RFC specifies?\194?\183
+
+ 2011-12-30 14:19  alexpeshkoff 
+   M src/jrd/svc.cpp
+Small correction for CORE-3658
+
+ 2011-12-30 14:11  alexpeshkoff 
+   M src/burp/burp.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/utl_proto.h
+   M src/yvalve/why.cpp
+Fixed CORE-3658: FBSVCMGR connects to server as OS user name rather than value of ISC_USER environment variable
+
  2011-12-29 17:48  alexpeshkoff 
    M src/common/isc_s_proto.h
    M src/common/isc_sync.cpp
