@@ -868,8 +868,7 @@ void Blob::close(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		if (!(port->port_flags & PORT_rpc) &&
-			(blob->rbl_flags & Rbl::CREATE) && blob->rbl_ptr != blob->rbl_buffer)
+		if ((blob->rbl_flags & Rbl::CREATE) && blob->rbl_ptr != blob->rbl_buffer)
 		{
 			send_blob(status, blob, 0, NULL);
 		}
@@ -2088,8 +2087,6 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 			(					// Low in inventory
 				(statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
 				(statement->rsr_msgs_waiting <= statement->rsr_reorder_level) &&
-				// doing Batch, not RPC
-				!(port->port_flags & PORT_rpc) &&
 				// not using named pipe on NT
 				// Pipelining causes both server & client to
 				// write at the same time. In named pipes, writes
@@ -2112,23 +2109,21 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 			sqldata->p_sqldata_blr.cstr_length = blr_length;
 			sqldata->p_sqldata_blr.cstr_address = const_cast<unsigned char*>(blr);
 			sqldata->p_sqldata_message_number = 0;	// msg_type
-			if (sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0)
+			sqldata->p_sqldata_messages = 0;
+			if (statement->rsr_select_format)
 			{
-				if (!(port->port_flags & PORT_rpc))
-				{
-					sqldata->p_sqldata_messages =
-						static_cast<USHORT>(REMOTE_compute_batch_size(port,
-							0, op_fetch_response, statement->rsr_select_format));
-					sqldata->p_sqldata_messages *= 4;
+				sqldata->p_sqldata_messages =
+					static_cast<USHORT>(REMOTE_compute_batch_size(port,
+						0, op_fetch_response, statement->rsr_select_format));
+				sqldata->p_sqldata_messages *= 4;
 
-					// Reorder data when the local buffer is half empty
+				// Reorder data when the local buffer is half empty
 
-					statement->rsr_reorder_level = sqldata->p_sqldata_messages / 2;
+				statement->rsr_reorder_level = sqldata->p_sqldata_messages / 2;
 #ifdef DEBUG
-					fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
-							   statement->rsr_rows_pending);
+				fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
+						   statement->rsr_rows_pending);
 #endif
-				}
 			}
 			statement->rsr_rows_pending += sqldata->p_sqldata_messages;
 
@@ -2884,10 +2879,9 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 		P_RESP* response = &packet->p_resp;
 		CSTRING temp = response->p_resp_data;
 
-		// Handle old protocol.  Also handle new protocol on a blob that has
-		// been created rather than opened.   (This should yield an error.)
+		// Handle a blob that has been created rather than opened (this should yield an error)
 
-		if ((port->port_flags & PORT_rpc) || (blob->rbl_flags & Rbl::CREATE))
+		if (blob->rbl_flags & Rbl::CREATE)
 		{
 			packet->p_operation = op_get_segment;
 			segment->p_sgmt_length = buffer_length;
@@ -3309,11 +3303,9 @@ void Blob::putSegment(IStatus* status, unsigned int segment_length, const void* 
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		// If this is an ancient protocol, just send the segment.
-		// Also handle the new protocol on a blob that has been
-		// opened rather than created.   (This should yield an error.)
+		// Handle a blob that has been opened rather than created (this should yield an error)
 
-		if ((port->port_flags & PORT_rpc) || !(blob->rbl_flags & Rbl::CREATE))
+		if (!(blob->rbl_flags & Rbl::CREATE))
 		{
 			send_blob(status, blob, segment_length, segmentPtr);
 			fb_assert(false);
@@ -3578,7 +3570,6 @@ void Request::receive(IStatus* status, int level, unsigned int msg_type,
 			((!message->msg_address && tail->rrq_rows_pending == 0) ||	// No message waiting
 				(tail->rrq_rows_pending <= tail->rrq_reorder_level &&	// Low in inventory
 					tail->rrq_msgs_waiting <= tail->rrq_reorder_level &&
-					!(port->port_flags & PORT_rpc) &&	// doing Batch, not RPC
 					// Pipelining causes both server & client to
 					// write at the same time. In named pipes, writes
 					// block for the other end to read -  and so when both
@@ -3611,26 +3602,16 @@ void Request::receive(IStatus* status, int level, unsigned int msg_type,
 			// is the same for each batch (June 1996), perhaps in the future it
 			// could dynamically adjust batching sizes based on fetch patterns
 
-			if (port->port_flags & PORT_rpc)
-			{
-				// This is an RPC (remote procedure call) port - we just do
-				// one at a time processing as that's how RPC works.
-
-				data->p_data_messages = 1;
-			}
-			else
-			{
-				data->p_data_messages =
-					static_cast<USHORT>(REMOTE_compute_batch_size(port, 0, op_send, tail->rrq_format));
-				tail->rrq_reorder_level = 2 * data->p_data_messages;
-				data->p_data_messages *= 4;
-				tail->rrq_rows_pending += data->p_data_messages;
+			data->p_data_messages =
+				static_cast<USHORT>(REMOTE_compute_batch_size(port, 0, op_send, tail->rrq_format));
+			tail->rrq_reorder_level = 2 * data->p_data_messages;
+			data->p_data_messages *= 4;
+			tail->rrq_rows_pending += data->p_data_messages;
 
 #ifdef DEBUG
-				fprintf(stdout, "Recalculating Rows Pending in REM_receive=%d\n",
-						   tail->rrq_rows_pending);
+			fprintf(stdout, "Recalculating Rows Pending in REM_receive=%d\n",
+					   tail->rrq_rows_pending);
 #endif
-			}
 
 #ifdef DEBUG
 			fprintf(stderr, "port_flags %d max_msg %d\n", port->port_flags, request->rrq_max_msg);
@@ -5191,8 +5172,7 @@ static void batch_dsql_fetch(rem_port*	port,
 
 		// See if we're at end of the batch
 
-		if (packet->p_sqldata.p_sqldata_status || !packet->p_sqldata.p_sqldata_messages ||
-			(port->port_flags & PORT_rpc))
+		if (packet->p_sqldata.p_sqldata_status || !packet->p_sqldata.p_sqldata_messages)
 		{
 			if (packet->p_sqldata.p_sqldata_status == 100)
 			{
@@ -5358,7 +5338,7 @@ static void batch_gds_receive(rem_port*		port,
 
 		// See if we're at end of the batch
 
-		if (!packet->p_data.p_data_messages || (port->port_flags & PORT_rpc))
+		if (!packet->p_data.p_data_messages)
 		{
 			if (!(--tail->rrq_batch_count))
 				tail->rrq_rows_pending = 0;
@@ -6115,9 +6095,8 @@ static void receive_after_start(Rrq* request, USHORT msg_type)
 
 		// Reached end of batch
 
-		if (!packet->p_data.p_data_messages || (port->port_flags & PORT_rpc)) {
+		if (!packet->p_data.p_data_messages)
 			break;
-		}
 	}
 }
 

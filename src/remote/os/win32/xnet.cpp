@@ -258,12 +258,12 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_batch_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, ptype_batch_send, 6)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_batch_send, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_batch_send, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_batch_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_batch_send, 4),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_batch_send, 5),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_batch_send, 6)
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
@@ -307,8 +307,8 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
-			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_rpc, ptype_batch_send, 1),
-			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_rpc, ptype_batch_send, 2),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_batch_send, 2),
 		};
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
 
@@ -350,7 +350,7 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
-			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_rpc, ptype_batch_send, 1)
+			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_batch_send, 1)
 		};
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
 
@@ -433,9 +433,6 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 
 	if (accept->p_acpt_architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
-
-	if (accept->p_acpt_type == ptype_rpc)
-		port->port_flags |= PORT_rpc;
 
 	if (accept->p_acpt_type != ptype_out_of_band)
 		port->port_flags |= PORT_no_oob;

@@ -645,9 +645,6 @@ static void		attach_service(rem_port*, P_ATCH*, PACKET*);
 static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
 static void		continue_authentication(rem_port*, const p_auth_continue*, PACKET*);
 
-#ifdef NOT_USED_OR_REPLACED
-static void		aux_connect(rem_port*, P_REQ*, PACKET*);
-#endif
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
 static bool		bad_port_context(IStatus*, IRefCounted*, const ISC_STATUS);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
@@ -1457,9 +1454,6 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	if (architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
 
-	if (type == ptype_rpc)
-		port->port_flags |= PORT_rpc;
-
 	if (type != ptype_out_of_band)
 		port->port_flags |= PORT_no_oob;
 
@@ -1720,30 +1714,6 @@ void DatabaseAuth::accept(rem_port* port, PACKET* send, Auth::WriterImplementati
 
 	port->send_response(send, 0, 0, &status_vector, false);
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-static void aux_connect( rem_port* port, P_REQ * request, PACKET* send)
-{
-/**************************************
- *
- *	a u x _ c o n n e c t
- *
- **************************************
- *
- * Functional description
- *	We're receive a auxiliary connection on the main communications
- *	channel.  Accept connection and reply politely.
- *
- * 13-Mar-2004, Nickolay Samofatov
- *  This code is 64-bit unsafe, unused and also has a security hole, thus I disable it for now
- *
- **************************************/
-	port->connect(0);
-	rem_port* partner = (rem_port*) request->p_req_partner;
-	partner->port_async = port;
-}
-#endif
 
 
 static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
@@ -2747,8 +2717,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	else {
 		msg_length = 0;
 	}
-	USHORT count = ((this->port_flags & PORT_rpc) || statement->rsr_flags.test(Rsr::NO_BATCH)) ?
-						1 : sqldata->p_sqldata_messages;
+	USHORT count = statement->rsr_flags.test(Rsr::NO_BATCH) ? 1 : sqldata->p_sqldata_messages;
 	USHORT count2 = statement->rsr_flags.test(Rsr::NO_BATCH) ? 0 : count;
 
 	// On first fetch, clear the end-of-stream flag & reset the message buffers
@@ -3075,24 +3044,9 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 #endif
 	sendL->p_resp.p_resp_data.cstr_address = buffer;
 
-	// Be backwards compatible
+	// Gobble up a buffer's worth of segments
 
 	LocalStatus status_vector;
-
-	if (this->port_flags & PORT_rpc)
-	{
-		USHORT length = blob->rbl_iface->getSegment(&status_vector, segment->p_sgmt_length, buffer);
-
-		const ISC_STATUS status =
-			this->send_response(sendL, blob->rbl_id, length, &status_vector, false);
-#ifdef DEBUG_REMOTE_MEMORY
-		printf("get_segment(server)       free buffer      %x\n", buffer);
-#endif
-
-		return status;
-	}
-
-	// Gobble up a buffer's worth of segments
 
 	UCHAR* p = buffer;
 	ISC_STATUS state = 0;
@@ -3945,12 +3899,6 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			aux_request(port, /*&receive->p_req,*/ sendL);
 			break;
 
-#ifdef NOT_USED_OR_REPLACED
-		case op_aux_connect:
-			aux_connect(port, &receive->p_req, sendL);
-			break;
-#endif
-
 		case op_ddl:
 			port->ddl(&receive->p_ddl, sendL);
 			break;
@@ -4302,15 +4250,8 @@ ISC_STATUS rem_port::receive_after_start(P_DATA* data, PACKET* sendL, IStatus* s
 	const rem_fmt* format = tail->rrq_format;
 
 	data->p_data_message_number = msg_number;
-	if (this->port_flags & PORT_rpc)
-	{
-		data->p_data_messages = 1;
-	}
-	else
-	{
-		data->p_data_messages = (USHORT) REMOTE_compute_batch_size(this,
-			(USHORT) xdr_protocol_overhead(op_response_piggyback), op_send, format);
-	}
+	data->p_data_messages = (USHORT) REMOTE_compute_batch_size(this,
+		(USHORT) xdr_protocol_overhead(op_response_piggyback), op_send, format);
 
 	return this->receive_msg(data, sendL);
 }
@@ -4340,7 +4281,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	requestL = REMOTE_find_request(requestL, level);
 	const USHORT msg_number = data->p_data_message_number;
 	USHORT count, count2;
-	count2 = count = (this->port_flags & PORT_rpc) ? 1 : data->p_data_messages;
+	count2 = count = data->p_data_messages;
 
 	LocalStatus status_vector;
 

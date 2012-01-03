@@ -597,11 +597,11 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_lazy_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_lazy_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_lazy_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_lazy_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, ptype_lazy_send, 5)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_lazy_send, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_lazy_send, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_lazy_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_lazy_send, 4),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_lazy_send, 5)
 	};
 
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -623,8 +623,8 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
-			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_rpc, ptype_batch_send, 1),
-			REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_lazy_send, 2)
+			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_lazy_send, 2)
 		};
 
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
@@ -689,10 +689,6 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	if (accept->p_acpt_architecture == ARCHITECTURE) {
 		port->port_flags |= PORT_symmetric;
-	}
-
-	if (accept->p_acpt_type == ptype_rpc) {
-		port->port_flags |= PORT_rpc;
 	}
 
 	if (accept->p_acpt_type != ptype_out_of_band) {
@@ -1199,7 +1195,6 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	if (user_verification)
 	{
 		eff_gid = eff_uid = -1;
-		// port->port_flags |= PORT_not_trusted; // never tested
 	}
 
 #ifndef WIN_NT

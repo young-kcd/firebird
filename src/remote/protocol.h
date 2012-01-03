@@ -159,7 +159,7 @@ enum P_ARCH
 // Protocol Types
 // p_acpt_type
 //const USHORT ptype_page		= 1;	// Page server protocol
-const USHORT ptype_rpc			= 2;	// Simple remote procedure call
+//const USHORT ptype_rpc		= 2;	// Simple remote procedure call
 const USHORT ptype_batch_send	= 3;	// Batch sends, no asynchrony
 const USHORT ptype_out_of_band	= 4;	// Batch sends w/ out of band notification
 const USHORT ptype_lazy_send	= 5;	// Deferred packets delivery
@@ -371,12 +371,12 @@ typedef struct p_cnct
 } P_CNCT;
 
 #ifdef ASYMMETRIC_PROTOCOLS_ONLY
-#define REMOTE_PROTOCOL(version, min_type, max_type, weight) \
-	{version, arch_generic, min_type, max_type, weight * 2}
+#define REMOTE_PROTOCOL(version, max_type, weight) \
+	{version, arch_generic, ptype_batch_send, max_type, weight * 2}
 #else
-#define REMOTE_PROTOCOL(version, min_type, max_type, weight) \
-	{version, arch_generic, min_type, max_type, weight * 2}, \
-	{version, ARCHITECTURE, min_type, max_type, weight * 2 + 1}
+#define REMOTE_PROTOCOL(version, max_type, weight) \
+	{version, arch_generic, ptype_batch_send, max_type, weight * 2}, \
+	{version, ARCHITECTURE, ptype_batch_send, max_type, weight * 2 + 1}
 #endif
 
 /* User identification data, if any, is of form:

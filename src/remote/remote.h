@@ -700,18 +700,15 @@ public:
 
 // port_flags
 const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic
-const USHORT PORT_rpc			= 0x0002;	// Protocol is remote procedure call
-const USHORT PORT_async			= 0x0004;	// Port is asynchronous channel for events
-const USHORT PORT_no_oob		= 0x0008;	// Don't send out of band data
-const USHORT PORT_disconnect	= 0x0010;	// Disconnect is in progress
-// This is set only in inet.cpp but never tested
-//const USHORT PORT_not_trusted	= 0x0020;	// Connection is from an untrusted node
-const USHORT PORT_dummy_pckt_set= 0x0040;	// A dummy packet interval is set
-const USHORT PORT_partial_data	= 0x0080;	// Physical packet doesn't contain all API packet
-const USHORT PORT_lazy			= 0x0100;	// Deferred operations are allowed
-const USHORT PORT_server		= 0x0200;	// Server (not client) port
-const USHORT PORT_detached		= 0x0400;	// op_detach, op_drop_database or op_service_detach was processed
-const USHORT PORT_rdb_shutdown	= 0x0800;	// Database is shut down
+const USHORT PORT_async			= 0x0002;	// Port is asynchronous channel for events
+const USHORT PORT_no_oob		= 0x0004;	// Don't send out of band data
+const USHORT PORT_disconnect	= 0x0008;	// Disconnect is in progress
+const USHORT PORT_dummy_pckt_set= 0x0010;	// A dummy packet interval is set
+const USHORT PORT_partial_data	= 0x0020;	// Physical packet doesn't contain all API packet
+const USHORT PORT_lazy			= 0x0040;	// Deferred operations are allowed
+const USHORT PORT_server		= 0x0080;	// Server (not client) port
+const USHORT PORT_detached		= 0x0100;	// op_detach, op_drop_database or op_service_detach was processed
+const USHORT PORT_rdb_shutdown	= 0x0200;	// Database is shut down
 
 // Port itself
 
