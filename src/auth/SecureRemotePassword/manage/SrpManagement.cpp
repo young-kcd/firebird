@@ -108,7 +108,7 @@ class SrpManagement : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VER
 {
 public:
 	explicit SrpManagement(Firebird::IPluginConfig* par)
-		: config(par->getFirebirdConf())
+		: config(par->getFirebirdConf()), upCount(0), delCount(0)
 	{
 		config->release();
 	}
@@ -248,7 +248,10 @@ public:
 	{
 		try
 		{
-			Firebird::MasterInterfacePtr()->upgradeInterface(callback, FB_AUTH_LIST_USERS_VERSION, upInfo);
+			if (callback)
+			{
+				Firebird::MasterInterfacePtr()->upgradeInterface(callback, FB_AUTH_LIST_USERS_VERSION, upInfo);
+			}
 			Firebird::MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
 
 			status->init();
@@ -414,6 +417,11 @@ public:
 					{
 						Firebird::status_exception::raise(status->get());
 					}
+
+					if (!checkCount(status, &upCount, isc_info_update_count))
+					{
+						return -1;
+					}
 				}
 				break;
 
@@ -428,6 +436,11 @@ public:
 					if (!status->isSuccess())
 					{
 						Firebird::status_exception::raise(status->get());
+					}
+
+					if (!checkCount(status, &delCount, isc_info_delete_count))
+					{
+						return -1;
 					}
 				}
 				break;
@@ -591,6 +604,29 @@ private:
 	Firebird::RefPtr<Firebird::IAttachment> att;
 	Firebird::RefPtr<Firebird::ITransaction> tra;
 	RemotePassword server;
+	int upCount, delCount;
+
+	bool checkCount(Firebird::IStatus* status, int* count, UCHAR item)
+	{
+		unsigned char items[1];
+		items[0] = item;
+		unsigned char buffer[100];
+		att->getInfo(status, 1, items, sizeof(buffer), buffer);
+		if (!status->isSuccess())
+		{
+			Firebird::status_exception::raise(status->get());
+		}
+
+		if (gds__vax_integer(buffer + 1, 2) != 6)
+		{
+			return false;
+		}
+
+		int newCount = gds__vax_integer(buffer + 5, 4);
+		int oldCount = *count;
+		*count = newCount;
+		return newCount == oldCount + 1;
+	}
 };
 
 // register plugin
