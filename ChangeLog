@@ -1,3 +1,13 @@
+ 2012-01-02 11:28  hvlad 
+   M extern/libtommath/libtommath_MSVC10.sln
+   M extern/libtommath/libtommath_MSVC10.vcxproj
+Correction
+
+ 2012-01-02 11:14  hvlad 
+   D builds/win32/msvc10/srp.filters
+   A builds/win32/msvc10/srp.vcxproj.filters (from /firebird/trunk/builds/win32/msvc10/srp.filters:53803)
+Misc
+
  2011-12-30 14:38  asfernandes 
    M doc/sql.extensions/README.builtin_functions.txt
    M src/common/os/guid.h
