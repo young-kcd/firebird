@@ -193,8 +193,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	static bool bStartup = false;
 
 	ULONG ulInUseMask = 0L;
-	PDEV_BROADCAST_VOLUME pdbcv;
-	char szDrives[BUFFER_MEDIUM];
 	ULONG num_att = 0, num_dbs = 0, num_svc = 0;
 
 	switch (message)
