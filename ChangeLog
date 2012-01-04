@@ -1,3 +1,21 @@
+ 2012-01-03 18:26  dimitr 
+   M src/remote/server/os/win32/window.cpp
+Totally misc.
+
+ 2012-01-03 18:06  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/protocol.h
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Removed the outdated RPC support + some misc cleanup.
+
+ 2012-01-03 16:14  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+Make SRP management plugin notify caller when user to alter/drop is missing
+
  2012-01-02 11:28  hvlad 
    M extern/libtommath/libtommath_MSVC10.sln
    M extern/libtommath/libtommath_MSVC10.vcxproj
