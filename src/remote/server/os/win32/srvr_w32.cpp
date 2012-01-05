@@ -262,7 +262,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	{ // scope for interface ptr
 		PluginManagerInterfacePtr pi;
 		Auth::registerLegacyServer(pi);
-		Auth::registerSrpServer(pi); 
+		Auth::registerSrpServer(pi);
 #ifdef TRUSTED_AUTH
 		Auth::registerTrustedServer(pi);
 #endif

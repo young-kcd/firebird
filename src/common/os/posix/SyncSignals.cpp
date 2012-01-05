@@ -61,8 +61,8 @@
 
 namespace {
 
-// Here we can't use atomic counter instead mutex/counter pair - or some thread may leave SyncSignalsSet()
-// before signals are actually set in the other thread, which incremented counter first
+	// Here we can't use atomic counter instead mutex/counter pair - or some thread may leave SyncSignalsSet()
+	// before signals are actually set in the other thread, which incremented counter first
 	Firebird::GlobalPtr<Firebird::Mutex> syncEnterMutex;
 	int syncEnterCounter = 0;
 
