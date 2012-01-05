@@ -1,3 +1,8 @@
+ 2012-01-05 01:07  asfernandes 
+   M src/common/os/posix/SyncSignals.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+Misc.
+
  2012-01-03 18:26  dimitr 
    M src/remote/server/os/win32/window.cpp
 Totally misc.
