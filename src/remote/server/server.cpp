@@ -1324,14 +1324,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	for (const p_cnct::p_cnct_repeat* const end = protocol + connect->p_cnct_count;
 		protocol < end; protocol++)
 	{
-		if ((protocol->p_cnct_version == PROTOCOL_VERSION3 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION4 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION5 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION6 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION7 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION8 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION9 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION10 ||
+		if ((protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION12 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION13) &&
@@ -2811,12 +2804,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			statement->rsr_msgs_waiting--;
 		}
 
-		// For compatibility with Protocol 7, we must break out of the
-		// loop before sending the last record.
-
 		count--;
-		if (this->port_protocol <= PROTOCOL_VERSION7 && count <= 0)
-			break;
 
 		// There's a buffer waiting -- send it
 

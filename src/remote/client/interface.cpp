@@ -46,7 +46,6 @@
 #include "../jrd/ibase.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/license.h"
-#include "../common/sdl.h"
 #include "../remote/inet_proto.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
@@ -55,7 +54,6 @@
 #include "../common/cvt.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_f_proto.h"
-#include "../common/sdl_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
@@ -69,11 +67,6 @@
 #include "../auth/SecureRemotePassword/client/SrpClient.h"
 #include "../auth/trusted/AuthSspi.h"
 
-
-// hvlad: following code registering plugins is temporary and should be
-// moved at appropriate places
-
-#include "../auth/trusted/AuthSspi.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -828,13 +821,6 @@ void Events::cancel(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		// Make sure protocol supports action
-
-		if (port->port_protocol < PROTOCOL_VERSION6)
-		{
-			unsupported();
-		}
-
 		// Tell the remote server to cancel it and delete it from the list
 		send_cancel_event(rvnt);
 	}
@@ -942,12 +928,6 @@ void Transaction::commitRetaining(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		// Make sure protocol support action
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-			unsupported();
-		}
-
 		release_object(status, rdb, op_commit_retaining, transaction->rtr_id);
 	}
 	catch (const Exception& ex)
@@ -1037,10 +1017,6 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* status,
 		// Parse the request in case blr_d_float must be converted to blr_double
 
 		const UCHAR* new_blr = blr;
-		AutoPtr<const UCHAR> delete_blr;
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION5) {
-			delete_blr = new_blr = PARSE_prepare_messages(blr, blr_length);
-		}
 
 		// Make up a packet for the remote guy
 
@@ -1128,22 +1104,17 @@ IBlob* Attachment::createBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* b
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = op_create_blob;
+		packet->p_operation = op_create_blob2;
 		P_BLOB* p_blob = &packet->p_blob;
 		p_blob->p_blob_transaction = transaction->rtr_id;
-
-		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4)
-		{
-			packet->p_operation = op_create_blob2;
-			p_blob->p_blob_bpb.cstr_length = bpb_length;
-			fb_assert(!p_blob->p_blob_bpb.cstr_allocated ||
-				p_blob->p_blob_bpb.cstr_allocated < p_blob->p_blob_bpb.cstr_length);
-			// CVC: Should we ensure here that cstr_allocated < bpb_length???
-			// Otherwise, xdr_cstring() calling alloc_string() to decode would
-			// cause memory problems on the client side for SS, as the client
-			// would try to write to the application's provided R/O buffer.
-			p_blob->p_blob_bpb.cstr_address = bpb;
-		}
+		p_blob->p_blob_bpb.cstr_length = bpb_length;
+		fb_assert(!p_blob->p_blob_bpb.cstr_allocated ||
+			p_blob->p_blob_bpb.cstr_allocated < p_blob->p_blob_bpb.cstr_length);
+		// CVC: Should we ensure here that cstr_allocated < bpb_length???
+		// Otherwise, xdr_cstring() calling alloc_string() to decode would
+		// cause memory problems on the client side for SS, as the client
+		// would try to write to the application's provided R/O buffer.
+		p_blob->p_blob_bpb.cstr_address = bpb;
 
 		try
 		{
@@ -1343,10 +1314,6 @@ void Attachment::ddl(IStatus* status, ITransaction* apiTra, unsigned int length,
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-			unsupported();
-		}
-
 		// Make up a packet for the remote guy
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -1466,11 +1433,6 @@ void Attachment::drop(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		// Make sure protocol supports the action
-
-		if (port->port_protocol < PROTOCOL_VERSION8)
-			unsupported();
-
 		try
 		{
 			release_object(status, rdb, op_drop_database, rdb->rdb_id);
@@ -1529,11 +1491,6 @@ Firebird::IStatement* Attachment::allocateStatement(IStatus* status)
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
-
-		// Make sure protocol support action
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
-			unsupported();
 
 		Rsr* statement = NULL;
 		if (rdb->rdb_port->port_flags & PORT_lazy)
@@ -1622,14 +1579,6 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		{
 			transaction = rt->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		}
-
-		// bag it if the protocol doesn't support it...
-
-		if (port->port_protocol < PROTOCOL_VERSION7 ||
-			(out_msg_length && port->port_protocol < PROTOCOL_VERSION8))
-		{
-			unsupported();
 		}
 
 		// 24-Mar-2004 Nickolay Samofatov
@@ -1832,22 +1781,6 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 
 		reset(status);
 
-		// bag it if the protocol doesn't support it...
-
-		if (port->port_protocol < PROTOCOL_VERSION7 ||
-			((in_msg_length || out_msg_length) && port->port_protocol < PROTOCOL_VERSION8))
-		{
-		 	unsupported();
-		}
-
-		// If the server is pre-6.0, do not send anything if the client dialect is 3 and
-		// there is a SQLDA.  This will cause the older server to crash
-		if (port->port_protocol < PROTOCOL_VERSION10 &&
-			(in_msg_length || out_msg_length) && dialect > SQL_DIALECT_V5)
-		{
-			unsupported();
-		}
-
 		Rsr* statement = port->port_statement;
 		if (!statement) {
 			statement = port->port_statement = new Rsr;
@@ -1999,12 +1932,6 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
 		RefMutexGuard portGuard(*port->port_sync);
-
-		// make sure the protocol supports it
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-			unsupported();
-		}
 
 		// On first fetch, clear the end-of-stream flag & reset the message buffers
 
@@ -2244,12 +2171,6 @@ void Statement::free(IStatus* status, unsigned int option)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		// make sure the protocol supports it
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-			unsupported();
-		}
-
 		fb_assert(statement->haveException() == 0);
 		statement->clearException();
 
@@ -2342,12 +2263,6 @@ void Statement::insert(IStatus* status, const FbMessage* msgBuffer)
 		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
 		RefMutexGuard portGuard(*port->port_sync);
-
-		// make sure the protocol supports it
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
-			unsupported();
-		}
 
 		// Free existing format unconditionally.
 		// This is also related to SF#919246
@@ -2481,13 +2396,6 @@ void Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 
 		REMOTE_reset_statement(statement);
 
-		// if we're less than protocol 7, the remote server doesn't support
-		// DSQL, so we're done...
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-			unsupported();
-		}
-
 		// set up the packet for the other guy...
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -2608,12 +2516,6 @@ void Statement::setCursorName(IStatus* status, const char* cursor)
 
 		statement->raiseException();
 
-		// make sure the protocol supports it
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
-			unsupported();
-		}
-
 		if (!cursor)
 		{
 			// Return CURSOR unknown error
@@ -2690,11 +2592,6 @@ void Statement::getInfo(IStatus* status,
 		RefMutexGuard portGuard(*port->port_sync);
 
 		statement->raiseException();
-
-		// make sure the protocol supports it
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
-			unsupported();
 
 		if (!metadata.fillFromCache(itemsLength, items, bufferLength, buffer))
 		{
@@ -3093,17 +2990,9 @@ int Attachment::getSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* array_
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-			unsupported();
-		}
 		// Parse the sdl in case blr_d_float must be converted to blr_double
 
 		const UCHAR* new_sdl = sdl;
-		AutoPtr<const UCHAR> delete_sdl;		// To release memory if allocated by SDL_prepare_slice
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6)
-		{
-			delete_sdl = new_sdl = SDL_prepare_slice(sdl, sdl_length);
-		}
 
 		// CVC: Modified this horrible idea: don't touch input parameters!
 		// The modified (perhaps) sdl is send to the remote connection.  The
@@ -3176,23 +3065,18 @@ IBlob* Attachment::openBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = op_open_blob;
+		packet->p_operation = op_open_blob2;
 		P_BLOB* p_blob = &packet->p_blob;
 		p_blob->p_blob_transaction = transaction->rtr_id;
 		p_blob->p_blob_id = *id;
-
-		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION4)
-		{
-			packet->p_operation = op_open_blob2;
-			p_blob->p_blob_bpb.cstr_length = bpb_length;
-			fb_assert(!p_blob->p_blob_bpb.cstr_allocated ||
-				p_blob->p_blob_bpb.cstr_allocated < p_blob->p_blob_bpb.cstr_length);
-			// CVC: Should we ensure here that cstr_allocated < bpb_length???
-			// Otherwise, xdr_cstring() calling alloc_string() to decode would
-			// cause memory problems on the client side for SS, as the client
-			// would try to write to the application's provided R/O buffer.
-			p_blob->p_blob_bpb.cstr_address = bpb;
-		}
+		p_blob->p_blob_bpb.cstr_length = bpb_length;
+		fb_assert(!p_blob->p_blob_bpb.cstr_allocated ||
+			p_blob->p_blob_bpb.cstr_allocated < p_blob->p_blob_bpb.cstr_length);
+		// CVC: Should we ensure here that cstr_allocated < bpb_length???
+		// Otherwise, xdr_cstring() calling alloc_string() to decode would
+		// cause memory problems on the client side for SS, as the client
+		// would try to write to the application's provided R/O buffer.
+		p_blob->p_blob_bpb.cstr_address = bpb;
 
 		send_and_receive(status, rdb, packet);
 
@@ -3245,17 +3129,6 @@ void Transaction::prepare(IStatus* status, unsigned int msg_length, const unsign
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
-
-		// Handle historical version
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4)
-		{
-			if (msg_length)
-			{
-				unsupported();
-			}
-			release_object(status, rdb, op_prepare, transaction->rtr_id);
-		}
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_prepare2;
@@ -3376,18 +3249,9 @@ void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-			unsupported();
-		}
-
 		// Parse the sdl in case blr_d_float must be converted to blr_double
 
 		const UCHAR* new_sdl = sdl;
-		AutoPtr<const UCHAR> delete_sdl;		// To release memory if allocated by SDL_prepare_slice
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6)
-		{
-			delete_sdl = new_sdl = SDL_prepare_slice(sdl, sdl_length);
-		}
 
 		// CVC: Modified this horrible idea: don't touch input parameters!
 		// The modified (perhaps) sdl is send to the remote connection.  The
@@ -3458,12 +3322,6 @@ Firebird::IEvents* Attachment::queEvents(IStatus* status, Firebird::IEventCallba
 		RefMutexGuard portGuard(*port->port_sync);
 
 		PACKET* packet = &rdb->rdb_packet;
-
-		// Make sure protocol support action
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
-			unsupported();
-		}
 
 		// If there isn't a auxiliary asynchronous port, make one now
 
@@ -3969,10 +3827,6 @@ int Blob::seek(IStatus* status, int mode, int offset)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION6) {
-			unsupported();
-		}
-
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_seek_blob;
 		P_SEEK* seek = &packet->p_seek;
@@ -4088,13 +3942,6 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 		RefMutexGuard portGuard(*port->port_sync);
 		Rdb* rdb = port->port_context;
 
-		// make sure the protocol supports it
-		if (port->port_protocol < PROTOCOL_VERSION8)
-		{
-			disconnect(port);
-			unsupported();
-		}
-
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
 		// the SPB so the server can pay attention to it.  Note: allocation code must
 		// ensure sufficient space has been added.
@@ -4177,12 +4024,6 @@ void Service::detach(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		// make sure the protocol supports it
-
-		if (port->port_protocol < PROTOCOL_VERSION8) {
-			unsupported();
-		}
-
 		release_object(status, rdb, op_service_detach, rdb->rdb_id);
 		disconnect(port);
 		rdb = NULL;
@@ -4219,12 +4060,6 @@ void Service::query(IStatus* status,
 		CHECK_HANDLE(rdb, isc_bad_svc_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
-
-		// make sure the protocol supports it
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) {
-			unsupported();
-		}
 
 		ClntAuthBlock cBlock(NULL);
 		cBlock.loadServiceDataFrom(port);
@@ -4263,13 +4098,6 @@ void Service::start(IStatus* status,
 		CHECK_HANDLE(rdb, isc_bad_svc_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
-
-		// make sure the protocol supports it
-
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8)
-		{
-			unsupported();
-		}
 
 		svcstart(status, rdb, op_service_start, rdb->rdb_id, 0, spbLength, spb);
 	}
@@ -4326,8 +4154,7 @@ void Request::startAndSend(IStatus* status, Firebird::ITransaction* apiTra, int 
 		message->msg_address = const_cast<unsigned char*>(msg);
 
 		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) ?
-			op_start_and_send : op_start_send_and_receive;
+		packet->p_operation = op_start_send_and_receive;
 		P_DATA* data = &packet->p_data;
 		data->p_data_request = request->rrq_id;
 		data->p_data_transaction = transaction->rtr_id;
@@ -4348,8 +4175,7 @@ void Request::startAndSend(IStatus* status, Firebird::ITransaction* apiTra, int 
 
 		request->rrq_rtr = transaction;
 
-		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION8 &&
-			packet->p_operation == op_response_piggyback)
+		if (packet->p_operation == op_response_piggyback)
 		{
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
@@ -4398,8 +4224,7 @@ void Request::start(IStatus* status, Firebird::ITransaction* apiTra, int level)
 
 		REMOTE_reset_request(request, 0);
 		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) ?
-			op_start : op_start_and_receive;
+		packet->p_operation = op_start_and_receive;
 		P_DATA* data = &packet->p_data;
 		data->p_data_request = request->rrq_id;
 		data->p_data_transaction = transaction->rtr_id;
@@ -4412,8 +4237,7 @@ void Request::start(IStatus* status, Firebird::ITransaction* apiTra, int level)
 
 		request->rrq_rtr = transaction;
 
-		if (rdb->rdb_port->port_protocol >= PROTOCOL_VERSION8 &&
-			packet->p_operation == op_response_piggyback)
+		if (packet->p_operation == op_response_piggyback)
 		{
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
@@ -4497,12 +4321,6 @@ void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
-
-		// bag it if the protocol doesn't support it...
-
-		if (port->port_protocol < PROTOCOL_VERSION8) {
-			unsupported();
-		}
 
 		Rpr* procedure = port->port_rpr;
 		if (!procedure) {
@@ -5112,10 +4930,7 @@ static void batch_dsql_fetch(rem_port*	port,
 	// so we have to clear the wire before the response can be received
 	// In addtion to the above we grab all the records in case of XNET as
 	// we need to clear the queue
-	bool clear_queue = false;
-	if (id != statement->rsr_id || port->port_type == rem_port::XNET) {
-		clear_queue = true;
-	}
+	const bool clear_queue = (id != statement->rsr_id || port->port_type == rem_port::XNET);
 
 	statement->rsr_flags.set(Rsr::FETCHED);
 	while (true)

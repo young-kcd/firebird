@@ -434,10 +434,6 @@ static SocketsArray* forkSockets;
 static in_addr get_bind_address();
 static int get_host_address(const char* name, in_addr* const host_addr_arr, const int arr_size);
 
-static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
-										const p_cnct::p_cnct_repeat*	pSource,
-										size_t							nEntries);
-
 static int		inet_destroy(XDR*);
 static void		inet_gen_error(bool, rem_port*, const Firebird::Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
@@ -595,44 +591,23 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
-	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
+	static const p_cnct::p_cnct_repeat protocols_to_try[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_lazy_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_lazy_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_lazy_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_lazy_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_lazy_send, 5)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_lazy_send, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_lazy_send, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_lazy_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_lazy_send, 4)
 	};
+	fb_assert(FB_NELEM(protocols_to_try) <= FB_NELEM(cnct->p_cnct_versions));
+	cnct->p_cnct_count = FB_NELEM(protocols_to_try);
 
-	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
-
-	copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try1, cnct->p_cnct_count);
+	for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+		cnct->p_cnct_versions[i] = protocols_to_try[i];
+	}
 
 	// Try connection using first set of protocols
 
 	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb);
-
-	if (packet->p_operation == op_reject && !uv_flag)
-	{
-		disconnect(port);
-
-		// try again with next set of known protocols
-
-		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
-
-		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
-		{
-			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_batch_send, 1),
-			REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_lazy_send, 2)
-		};
-
-		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
-
-		copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try2, cnct->p_cnct_count);
-
-		port = inet_try_connect(packet, rdb, file_name, node_name, dpb);
-	}
 
 	P_ACPT* accept = NULL;
 	switch (packet->p_operation)
@@ -1964,19 +1939,6 @@ static int get_host_address(const char* name,
 	return 0;
 }
 
-//____________________________________________________________
-//
-//	Copy an array of p_cnct::p_cnct_repeat.
-//
-static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
-										const p_cnct::p_cnct_repeat*	pSource,
-										size_t							nEntries)
-{
-	for (size_t i = 0; i < nEntries; ++i) {
-		pDest[i] = pSource[i];
-	}
-}
-
 
 static rem_port* receive( rem_port* main_port, PACKET * packet)
 {
@@ -2079,10 +2041,8 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 			if (port->port_dummy_timeout < 0)
 			{
 				port->port_dummy_timeout = port->port_dummy_packet_interval;
-				if (port->port_flags & PORT_async || port->port_protocol < PROTOCOL_VERSION8)
-				{
+				if (port->port_flags & PORT_async)
 					continue;
-				}
 				*length = 0;
 				return true;
 			}
@@ -3016,7 +2976,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		timeout.tv_sec = port->port_connect_timeout;
 		time_ptr = &timeout;
 	}
-	else if (port->port_protocol >= PROTOCOL_VERSION8 && port->port_dummy_packet_interval > 0)
+	else if (port->port_dummy_packet_interval > 0)
 	{
 		// Set the time interval for sending dummy packets to the client
 		timeout.tv_sec = port->port_dummy_packet_interval;
@@ -3084,7 +3044,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 				return false;
 			}
 
-			if (!slct_count && port->port_protocol >= PROTOCOL_VERSION8)
+			if (!slct_count)
 			{
 #ifdef DEBUG
 				if (INET_trace & TRACE_operations)

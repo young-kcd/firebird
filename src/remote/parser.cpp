@@ -65,7 +65,6 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 	if (*blr++ != blr_begin)
 		return 0;
 
-
 	RMessage* message = NULL;
 	USHORT net_length = 0;
 
@@ -300,90 +299,3 @@ static RMessage* parse_error(rem_fmt* format, RMessage* message)
 	}
 	return (RMessage*) -1;
 }
-
-
-const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
-{
-/**************************************
- *
- *	P A R S E _ p r e p a r e _ m e s s a g e s
- *
- **************************************
- *
- * Functional description
- *	Parse the messages of a blr request and convert
- *	each occurrence of blr_d_float to blr_double.
- *
- *	This function is only called for protocol version 5 and below
- *
- **************************************/
-    const UCHAR* old_blr = blr;
-	const UCHAR* new_blr = blr;
-
-	const SSHORT version = *blr++;
-	if ((version != blr_version4 && version != blr_version5) || *blr++ != blr_begin)
-	{
-		return old_blr;
-	}
-
-	while (*blr++ == blr_message)
-	{
-		blr++;
-		USHORT count = *blr++;
-		count += (*blr++) << 8;
-		for (; count; --count)
-			switch (*blr++)
-			{
-			case blr_text2:
-			case blr_varying2:
-			case blr_cstring2:
-				blr += 4;		// SUBTYPE word & LENGTH word
-				break;
-			case blr_text:
-			case blr_varying:
-			case blr_cstring:
-				blr += 2;		// LENGTH word
-				break;
-			case blr_short:
-			case blr_long:
-			case blr_int64:
-			case blr_quad:
-				blr++;			// SCALE byte
-				break;
-			case blr_float:
-			case blr_double:
-			case blr_timestamp:
-			case blr_sql_date:
-			case blr_sql_time:
-			case blr_bool:
-				break;
-
-			case blr_d_float:
-				if (new_blr == old_blr)
-				{
-					new_blr = FB_NEW(*getDefaultMemoryPool()) UCHAR[blr_length];
-					// FREE:  Never freed, blr_d_float is VMS specific
-#ifdef DEBUG_REMOTE_MEMORY
-					printf("PARSE_prepare_messages    allocate blr     %x\n", new_blr);
-#endif
-					// Safe const_cast, we are allocating new space for new_blr
-					memcpy(const_cast<UCHAR*>(new_blr), old_blr, blr_length);
-					blr = new_blr + (int) (blr - old_blr);
-				}
-
-				// It's safe because blr has been replaced by new space,
-				// we aren't overwriting the original const parameter.
-				fb_assert(new_blr != old_blr);
-				const_cast<UCHAR*>(blr)[-1] = blr_double;
-				break;
-
-			default:
-				DEV_REPORT("Unexpected BLR in PARSE_prepare_messages()");
-				// This old code would return, so we will also
-				return new_blr;
-			}
-	}
-
-	return new_blr;
-}
-

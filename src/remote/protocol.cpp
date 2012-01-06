@@ -244,7 +244,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
  *
  **************************************/
 	p_cnct::p_cnct_repeat* tail;
-	const rem_port* port;
 	P_ACPT *accept;
 	P_ACPD *accept_with_data;
 	P_ATCH *attach;
@@ -682,9 +681,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 		// Changes to this op's protocol must mirror in xdr_protocol_overhead
 
-		port = (rem_port*) xdrs->x_public;
-		if ((port->port_protocol > PROTOCOL_VERSION7 && sqldata->p_sqldata_messages) ||
-			(port->port_protocol <= PROTOCOL_VERSION7 && !sqldata->p_sqldata_status))
+		if (sqldata->p_sqldata_messages)
 		{
 			return xdr_sql_message(xdrs, (SLONG)sqldata->p_sqldata_statement) ?
 				P_TRUE(xdrs, p) : P_FALSE(xdrs, p);

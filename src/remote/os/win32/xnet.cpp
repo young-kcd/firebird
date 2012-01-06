@@ -256,19 +256,18 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
-	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
+	static const p_cnct::p_cnct_repeat protocols_to_try[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_batch_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_batch_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_batch_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_batch_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_batch_send, 5),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_batch_send, 6)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_batch_send, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_batch_send, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_batch_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_batch_send, 4)
 	};
-	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
+	fb_assert(FB_NELEM(protocols_to_try) <= FB_NELEM(cnct->p_cnct_versions));
+	cnct->p_cnct_count = FB_NELEM(protocols_to_try);
 
 	for (size_t i = 0; i < cnct->p_cnct_count; i++) {
-		cnct->p_cnct_versions[i] = protocols_to_try1[i];
+		cnct->p_cnct_versions[i] = protocols_to_try[i];
 	}
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
@@ -289,91 +288,6 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 	rdb->rdb_port = port;
 	port->port_context = rdb;
 	port->receive(packet);
-
-	if (packet->p_operation == op_reject && !uv_flag)
-	{
-		disconnect(port);
-		packet->p_operation = op_connect;
-		cnct->p_cnct_operation = op_attach;
-		cnct->p_cnct_cversion = CONNECT_VERSION2;
-		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
-		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
-
-		// try again with next set of known protocols
-
-		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
-
-		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
-		{
-			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_batch_send, 1),
-			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_batch_send, 2),
-		};
-		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
-
-		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
-			cnct->p_cnct_versions[i] = protocols_to_try2[i];
-		}
-
-		try
-		{
-			port = XNET_connect(packet, 0);
-		}
-		catch (const Exception&)
-		{
-			delete rdb;
-			throw;
-		}
-
-		// Get response packet from server
-
-		rdb->rdb_port = port;
-		port->port_context = rdb;
-		port->receive(packet);
-	}
-
-	if (packet->p_operation == op_reject && !uv_flag)
-	{
-		disconnect(port);
-		packet->p_operation = op_connect;
-		cnct->p_cnct_operation = op_attach;
-		cnct->p_cnct_cversion = CONNECT_VERSION2;
-		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
-		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
-
-		// try again with next set of known protocols
-
-		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
-
-		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
-		{
-			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_batch_send, 1)
-		};
-		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
-
-		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
-			cnct->p_cnct_versions[i] = protocols_to_try3[i];
-		}
-
-		try
-		{
-			port = XNET_connect(packet, 0);
-		}
-		catch (const Exception&)
-		{
-			delete rdb;
-			throw;
-		}
-
-		// Get response packet from server
-
-		rdb->rdb_port = port;
-		port->port_context = rdb;
-		port->receive(packet);
-	}
 
 	P_ACPT* accept = NULL;
 	switch (packet->p_operation)

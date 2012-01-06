@@ -48,37 +48,6 @@ namespace Firebird {
 // p_cnct_version
 const USHORT CONNECT_VERSION2	= 2;
 
-// Protocol 4 is protocol 3 plus server management functions
-
-const USHORT PROTOCOL_VERSION3	= 3;
-const USHORT PROTOCOL_VERSION4	= 4;
-
-// Protocol 5 includes support for a d_float data type
-
-const USHORT PROTOCOL_VERSION5	= 5;
-
-// Protocol 6 includes support for cancel remote events, blob seek,
-// and unknown message type
-
-const USHORT PROTOCOL_VERSION6	= 6;
-
-// Protocol 7 includes DSQL support
-
-const USHORT PROTOCOL_VERSION7	= 7;
-
-// Protocol 8 includes collapsing first receive into a send, drop database,
-// DSQL execute 2, DSQL execute immediate 2, DSQL insert, services, and
-// transact request
-
-const USHORT PROTOCOL_VERSION8	= 8;
-
-// Protocol 9 includes support for SPX32
-// SPX32 uses WINSOCK instead of Novell SDK
-// In order to differentiate between the old implementation
-// of SPX and this one, different PROTOCOL VERSIONS are used
-
-const USHORT PROTOCOL_VERSION9	= 9;
-
 // Protocol 10 includes support for warnings and removes the requirement for
 // encoding and decoding status codes
 
@@ -364,19 +333,19 @@ typedef struct p_cnct
 	{
 		USHORT	p_cnct_version;			// Protocol version number
 		P_ARCH	p_cnct_architecture;	// Architecture of client
-		USHORT	p_cnct_min_type;		// Minimum type
+		USHORT	p_cnct_min_type;		// Minimum type (unused)
 		USHORT	p_cnct_max_type;		// Maximum type
 		USHORT	p_cnct_weight;			// Preference weight
 	}		p_cnct_versions[10];
 } P_CNCT;
 
 #ifdef ASYMMETRIC_PROTOCOLS_ONLY
-#define REMOTE_PROTOCOL(version, max_type, weight) \
-	{version, arch_generic, ptype_batch_send, max_type, weight * 2}
+#define REMOTE_PROTOCOL(version, type, weight) \
+	{version, arch_generic, 0, type, weight * 2}
 #else
-#define REMOTE_PROTOCOL(version, max_type, weight) \
-	{version, arch_generic, ptype_batch_send, max_type, weight * 2}, \
-	{version, ARCHITECTURE, ptype_batch_send, max_type, weight * 2 + 1}
+#define REMOTE_PROTOCOL(version, type, weight) \
+	{version, arch_generic, 0, type, weight * 2}, \
+	{version, ARCHITECTURE, 0, type, weight * 2 + 1}
 #endif
 
 /* User identification data, if any, is of form:
