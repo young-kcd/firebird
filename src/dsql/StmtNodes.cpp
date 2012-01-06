@@ -1900,7 +1900,16 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (cursor && dsqlScratch->isPsql())
 	{
 		node->dsqlContext = dsqlPassCursorContext(dsqlScratch, cursor, relation);
+
+		// Process old context values.
+		dsqlScratch->context->push(node->dsqlContext);
+		++dsqlScratch->scopeLevel;
+
 		node->statement = dsqlProcessReturning(dsqlScratch, dsqlReturning, statement);
+
+		--dsqlScratch->scopeLevel;
+		dsqlScratch->context->pop();
+
 		return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 	}
 
@@ -1936,10 +1945,10 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			PASS1_limit(dsqlScratch, temp->nod_arg[Dsql::e_rows_length],
 				temp->nod_arg[Dsql::e_rows_skip], rse);
 		}
-
-		if (dsqlReturning || statement)
-			rseNod->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
 	}
+
+	if (dsqlReturning || statement)
+		rseNod->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
 
 	node->dsqlRse = rseNod;
 	node->dsqlRelation = ExprNode::as<RseNode>(rseNod)->dsqlStreams->nod_arg[0];
@@ -5397,8 +5406,18 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		for (ptr = new_values.begin(); ptr != new_values.end(); ++ptr)
 			*ptr = PASS1_node_psql(dsqlScratch, *ptr, false);
 
-		node->statement2 = dsqlProcessReturning(dsqlScratch, dsqlReturning, statement2);
+		dsqlScratch->context->pop();
 
+		dsql_ctx* oldContext = node->dsqlContext;
+		dsql_ctx* modContext = dsqlGetContext(node->dsqlRelation);
+
+		dsqlScratch->context->push(oldContext);	// process old context values
+		++dsqlScratch->scopeLevel;
+
+		node->statement2 = ReturningProcessor(dsqlScratch, oldContext, modContext).process(
+			dsqlReturning, statement2);
+
+		--dsqlScratch->scopeLevel;
 		dsqlScratch->context->pop();
 
 		// Recreate list of assignments.
@@ -5444,9 +5463,15 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 	// Generate record selection expression
 
 	dsql_nod* rseNod;
+	dsql_ctx* old_context;
 
 	if (cursor)
+	{
 		rseNod = dsqlPassCursorReference(dsqlScratch, cursor, relation);
+
+		dsql_nod* temp = ExprNode::as<RseNode>(rseNod)->dsqlStreams->nod_arg[0];
+		old_context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
+	}
 	else
 	{
 		RseNode* rse = FB_NEW(pool) RseNode(pool);
@@ -5461,7 +5486,7 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		dsql_nod* temp = MAKE_node(Dsql::nod_list, 1);
 		rse->dsqlStreams = temp;
 		temp->nod_arg[0] = PASS1_node_psql(dsqlScratch, relation, false);
-		dsql_ctx* old_context = dsqlGetContext(temp->nod_arg[0]);
+		old_context = dsqlGetContext(temp->nod_arg[0]);
 
 		if ((temp = dsqlBoolean))
 			rse->dsqlWhere = PASS1_node_psql(dsqlScratch, temp, false);
@@ -5477,12 +5502,12 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 			PASS1_limit(dsqlScratch, temp->nod_arg[Dsql::e_rows_length],
 				temp->nod_arg[Dsql::e_rows_skip], rse);
 		}
+	}
 
-		if (dsqlReturning || statement2)
-		{
-			node->statement2 = ReturningProcessor(
-				dsqlScratch, old_context, mod_context).process(dsqlReturning, statement2);
-		}
+	if (dsqlReturning || statement2)
+	{
+		node->statement2 = ReturningProcessor(dsqlScratch, old_context, mod_context).process(
+			dsqlReturning, statement2);
 	}
 
 	node->dsqlRse = rseNod;

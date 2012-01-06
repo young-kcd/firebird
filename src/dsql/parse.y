@@ -4967,11 +4967,12 @@ delete_searched
 	;
 
 delete_positioned
-	: KW_DELETE FROM table_name cursor_clause
+	: KW_DELETE FROM table_name cursor_clause returning_clause
 		{
 			EraseNode* node = newNode<EraseNode>();
 			node->dsqlRelation = $3;
 			node->dsqlCursor = $4;
+			node->dsqlReturning = $5;
 			$$ = node;
 		}
 	;
@@ -5001,12 +5002,13 @@ update_searched
 	;
 
 update_positioned
-	: UPDATE table_name SET assignments cursor_clause
+	: UPDATE table_name SET assignments cursor_clause returning_clause
 		{
 			ModifyNode* node = newNode<ModifyNode>();
 			node->dsqlRelation = $2;
 			node->statement = $4;
 			node->dsqlCursor = $5;
+			node->dsqlReturning = $6;
 			$$ = node;
 		}
 	;
