@@ -324,10 +324,7 @@ struct index_root_page
 	struct irt_repeat
 	{
 		ULONG irt_root;				// page number of index root
-		union {
-			float irt_selectivity;	// selectivity of index - NOT USED since ODS11
-			SLONG irt_transaction;	// transaction in progress
-		} irt_stuff;
+		SLONG irt_transaction;		// transaction in progress
 		USHORT irt_desc;			// offset to key descriptions
 		UCHAR irt_keys;				// number of keys in index
 		UCHAR irt_flags;

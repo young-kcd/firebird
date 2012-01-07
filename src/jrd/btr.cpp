@@ -453,7 +453,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 		idx_desc->idx_selectivity = key_descriptor->irtd_selectivity;
 		ptr += sizeof(irtd);
 	}
-	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
+	idx->idx_selectivity = idx_desc->idx_selectivity;
 
 	if (idx->idx_flags & idx_expressn)
 	{
@@ -1676,7 +1676,7 @@ bool BTR_next_index(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, in
 		const index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
 		if (!irt_desc->irt_root && (irt_desc->irt_flags & irt_in_progress) && transaction)
 		{
-			const SLONG trans = irt_desc->irt_stuff.irt_transaction;
+			const SLONG trans = irt_desc->irt_transaction;
 			CCH_RELEASE(tdbb, window);
 			const int trans_state = TRA_wait(tdbb, transaction, trans, jrd_tra::tra_wait);
 			if ((trans_state == tra_dead) || (trans_state == tra_committed))
@@ -1684,7 +1684,7 @@ bool BTR_next_index(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, in
 				// clean up this left-over index
 				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_write, pag_root);
 				irt_desc = root->irt_rpt + id;
-				if (!irt_desc->irt_root && irt_desc->irt_stuff.irt_transaction == trans &&
+				if (!irt_desc->irt_root && irt_desc->irt_transaction == trans &&
 					(irt_desc->irt_flags & irt_in_progress))
 				{
 					BTR_delete_index(tdbb, window, id);
@@ -1910,7 +1910,7 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 	fb_assert(idx->idx_count <= MAX_UCHAR);
 	slot->irt_keys = (UCHAR) idx->idx_count;
 	slot->irt_flags = idx->idx_flags | irt_in_progress;
-	slot->irt_stuff.irt_transaction = transaction->tra_number;
+	slot->irt_transaction = transaction->tra_number;
 
 	slot->irt_root = 0;
 
@@ -6373,6 +6373,4 @@ void update_selectivity(index_root_page* root, USHORT id, const SelectivityList&
 	irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
 	for (int i = 0; i < idx_count; i++, key_descriptor++)
 		key_descriptor->irtd_selectivity = selectivity[i];
-
-	irt_desc->irt_stuff.irt_selectivity = selectivity.back();
 }
