@@ -1,3 +1,30 @@
+ 2012-01-07 02:30  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/ods.h
+Cleanup. We don't need a separately stored global index selectivity for along time already.
+
+ 2012-01-06 14:33  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/parse.y
+Improvement CORE-3343 - RETURNING clause is not supported in positioned (WHERE CURRENT OF) UPDATE and DELETE statements.
+
+ 2012-01-06 11:25  dimitr 
+   M src/common/sdl.cpp
+   M src/common/sdl_proto.h
+Removed support for the remote protocol versions prior to v10.
+
+ 2012-01-06 11:24  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/parse_proto.h
+   M src/remote/parser.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/server/server.cpp
+Removed support for the remote protocol versions prior to v10.
+
  2012-01-05 01:07  asfernandes 
    M src/common/os/posix/SyncSignals.cpp
    M src/remote/server/os/win32/srvr_w32.cpp
