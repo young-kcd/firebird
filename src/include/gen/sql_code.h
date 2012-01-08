@@ -857,6 +857,7 @@ static const struct {
 	{336068888, -901}, /* 280 dyn_routine_param_ambiguous */
 	{336068889, -901}, /* 281 dyn_coll_used_function */
 	{336068890, -901}, /* 282 dyn_domain_used_function */
+	{336068891, -901}, /* 283 dyn_alter_user_no_clause */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */
@@ -1067,6 +1068,8 @@ static const struct {
 	{336397314, -901}, /* 1026 dsql_create_shadow_failed */
 	{336397315, -901}, /* 1027 dsql_create_filter_failed */
 	{336397316, -901}, /* 1028 dsql_create_index_failed */
+	{336397317, -901}, /* 1029 dsql_create_user_failed */
+	{336397318, -901}, /* 1030 dsql_alter_user_failed */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

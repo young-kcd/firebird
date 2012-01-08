@@ -634,6 +634,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Firebird::Array<Jrd::dsql_nod*>* legacyArray;
 	Jrd::ReturningClause* returningClause;
 	Firebird::PathName* pathNamePtr;
+	Firebird::string* stringPtr;
 	TEXT* textPtr;
 	Jrd::DbFileClause* dbFileClause;
 	Firebird::Array<Jrd::DbFileClause*>* dbFilesClause;
@@ -679,7 +680,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> alter_data_type_or_domain
 %type <legacyNode> alter_op alter_ops
 %type <stmtNode>   alter_sequence_clause
-%type <legacyNode> alter_user_clause
+%type <ddlNode>    alter_user_clause
 %type <legacyNode> array_element array_range
 %type <ddlNode>	   alter_exception_clause alter_index_clause alter_role_clause alter_udf_clause
 %type <ddlNode>	   alter_view_clause
@@ -691,7 +692,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> array_spec array_type
 %type <stmtNode>   assignment
 %type <compoundStmtNode> assignments
-%type <legacyStr>  admin_opt
+%type <nullableIntVal>  admin_opt
 
 %type <legacyNode> blob_io blob_segsize blob_subtype blob_subtype_io
 %type <filterNameNumber> blob_filter_subtype
@@ -715,7 +716,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> computed_by computed_clause constant constraint_index_opt
 %type <boolVal>	   conditional
 %type <legacyNode> constraint_name_opt correlation_name create
-%type <legacyNode> create_clause create_user_clause cross_join
+%type <ddlNode>    create_user_clause
+%type <legacyNode> create_clause cross_join
 %type <legacyNode> cursor_clause cursor_def
 %type <ddlNode>	   create_or_alter
 %type <stmtNode>   cursor_declaration_item continue cursor_statement
@@ -758,7 +760,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> from_list
 %type <ddlNode>	   filter_decl_clause
 %type <stmtNode>   for_select full_proc_block full_proc_block_body
-%type <legacyStr>  firstname_opt
+%type <stringPtr>  firstname_opt
 %type file_clause(<dbFileClause>) file_desc(<dbFileClause>) file_desc1(<dbFileClause>)
 %type fetch_scroll(<cursorStmtNode>)
 %type <int32Val>   first_file_length
@@ -767,7 +769,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> generated_always_clause grant grant_option granted_by granted_by_text grantee grantee_list
 %type <legacyNode> grantor group_by_item group_by_list group_clause
 %type <ddlNode> gtt_recreate_clause
-%type <legacyStr>  grant_admin grant_admin_opt
+%type <nullableIntVal>  grant_admin grant_admin_opt
 
 %type <legacyNode> having_clause
 
@@ -789,7 +791,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <stmtNode>   local_declaration local_declaration_item
 %type <compoundStmtNode> local_declaration_list local_declarations
 %type <legacyNode> lock_clause lock_mode lock_type lock_wait
-%type <legacyStr>  lastname_opt
+%type <stringPtr>  lastname_opt
 %type <int32Val>   long_integer
 
 %type <boolVal>	   manual_auto
@@ -797,7 +799,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type merge_insert_specification(<mergeNode>) merge_update_specification(<mergeNode>)
 %type merge_when_clause(<mergeNode>) merge_when_matched_clause(<mergeNode>)
 %type merge_when_not_matched_clause(<mergeNode>)
-%type <legacyStr>  middlename_opt module_op
+%type <stringPtr>  middlename_opt
+%type <legacyStr>  module_op
 
 %type <legacyNode> named_columns_join national_character_keyword
 %type <legacyNode> national_character_type natural_join
@@ -825,7 +828,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyArray> proc_outputs_opt
 %type <stmtNode>   post_event proc_block proc_statement
 %type <compoundStmtNode> proc_statements
-%type <legacyStr>  passwd_clause passwd_opt
+%type <stringPtr>  passwd_clause passwd_opt
 %type <int32Val>   pos_short_integer precision_opt
 
 %type <legacyNode> qualified_join query_spec query_term
@@ -843,7 +846,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> role_name role_name_list rollback rows_clause
 %type <ddlNode> role_clause rtable_clause
 %type <ddlNode> rview_clause
-%type <legacyStr>  revoke_admin
+%type <nullableIntVal>  revoke_admin
 
 %type <legacyNode> savepoint scroll_opt search_condition searched_case
 %type <valueIfNode> searched_when_clause
@@ -1363,7 +1366,7 @@ create_clause
 	| COLLATION collation_clause
 		{ $$ = makeClassNode($2); }
 	| USER create_user_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| PACKAGE package_clause
 		{ $$ = makeClassNode($2); }
 	| PACKAGE BODY package_body_clause
@@ -3261,7 +3264,7 @@ alter_clause
 	| ROLE alter_role_clause
 		{ $$ = makeClassNode($2); }
 	| USER alter_user_clause
-		{ $$ = $2; }
+		{ $$ = makeClassNode($2); }
 	| CHARACTER SET alter_charset_clause
 		{ $$ = makeClassNode($3); }
 	;
@@ -5386,57 +5389,88 @@ table_subquery
 
 create_user_clause
 	: symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
-		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
+		{
+			CreateAlterUserNode* node = newNode<CreateAlterUserNode>(true, toName($1));
+			node->password = $2;
+			node->firstName = $3;
+			node->middleName = $4;
+			node->lastName = $5;
+			node->adminRole = $6;
+			$$ = node;
+		}
 	;
 
 alter_user_clause
-	: symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
-	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6, $7); }
+	: symbol_user_name set_noise passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
+		{
+			CreateAlterUserNode* node = newNode<CreateAlterUserNode>(false, toName($1));
+			node->password = $3;
+			node->firstName = $4;
+			node->middleName = $5;
+			node->lastName = $6;
+			node->adminRole = $7;
+			$$ = node;
+		}
 	;
 
 passwd_clause
-	: PASSWORD sql_string	{ $$ = $2; }
+	: PASSWORD sql_string
+		{ $$ = newNode<string>($2->str_data, $2->str_length); }
+	;
+
+set_noise
+	: // nothing
+	| SET
 	;
 
 passwd_opt
-	: /* nothing */		{ $$ = NULL; }
-	| passwd_clause		{ $$ = $1; }
+	: // nothing
+		{ $$ = NULL; }
+	| passwd_clause
 	;
 
 firstname_opt
-	: /* nothing */				{ $$ = NULL; }
-	| FIRSTNAME sql_string		{ $$ = $2; }
+	: // nothing
+		{ $$ = NULL; }
+	| FIRSTNAME sql_string
+		{ $$ = newNode<string>($2->str_data, $2->str_length); }
 	;
 
 middlename_opt
-	: /* nothing */				{ $$ = NULL; }
-	| MIDDLENAME sql_string		{ $$ = $2; }
+	: // nothing
+		{ $$ = NULL; }
+	| MIDDLENAME sql_string
+		{ $$ = newNode<string>($2->str_data, $2->str_length); }
 	;
 
 lastname_opt
-	: /* nothing */				{ $$ = NULL; }
-	| LASTNAME sql_string		{ $$ = $2; }
+	: // nothing
+		{ $$ = NULL; }
+	| LASTNAME sql_string
+		{ $$ = newNode<string>($2->str_data, $2->str_length); }
 	;
 
 admin_opt
-	: /* nothing */		{ $$ = NULL; }
+	: // nothing
+		{ $$ = Nullable<int>::empty(); }
 	| revoke_admin
 	| grant_admin
 	;
 
 grant_admin_opt
-	: /* nothing */		{ $$ = NULL; }
-	| grant_admin		{ $$ = $1; }
+	: // nothing
+		{ $$ = Nullable<int>::empty(); }
+	| grant_admin
 	;
 
 revoke_admin
-	: REVOKE ADMIN ROLE		{ $$ = MAKE_cstring("0"); }
+	: REVOKE ADMIN ROLE
+		{ $$ = Nullable<int>::val(0); }
 	;
 
 grant_admin
-	: GRANT ADMIN ROLE		{ $$ = MAKE_cstring("1"); }
+	: GRANT ADMIN ROLE
+		{ $$ = Nullable<int>::val(1); }
 	;
 
 // value types

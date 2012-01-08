@@ -896,8 +896,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_grant:
 	case nod_revoke:
 	case nod_def_domain:
-	case nod_add_user:
-	case nod_mod_user:
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		return input;
 
@@ -4967,14 +4965,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_with:
 		verb = "with";
-		break;
-
-	case nod_add_user:
-		verb = "add_user";
-		break;
-
-	case nod_mod_user:
-		verb = "mod_user";
 		break;
 
 	case nod_class_exprnode:

@@ -1858,6 +1858,7 @@ COMMIT WORK;
 ('dyn_routine_param_ambiguous', 'OnCommentNode::execute', 'DdlNodes.epp', NULL, 8, 280, NULL, 'Parameter @1 of routine @2 is ambiguous (found in both procedures and functions). Use a specifier keyword.', NULL, NULL);
 ('dyn_coll_used_function', 'DropCollationNode::execute', 'DdlNodes.epp', NULL, 8, 281, NULL, 'Collation @1 is used in function @2 (parameter name @3) and cannot be dropped', NULL, NULL);
 ('dyn_domain_used_function', 'DropDomainNode', 'DdlNodes.epp', NULL, 8, 282, NULL, 'Domain @1 is used in function @2 (parameter name @3) and cannot be dropped', NULL, NULL);
+('dyn_alter_user_no_clause', 'CreateAlterUserNode', 'DdlNodes.epp', NULL, 8, 283, NULL, 'ALTER USER requires at least one clause to be specified', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
@@ -2497,6 +2498,8 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_create_shadow_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1026, NULL, 'CREATE SHADOW @1 failed', NULL, NULL);
 ('dsql_create_filter_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1027, NULL, 'DECLARE FILTER @1 failed', NULL, NULL);
 ('dsql_create_index_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1028, NULL, 'CREATE INDEX @1 failed', NULL, NULL);
+('dsql_create_user_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1029, NULL, 'CREATE USER @1 failed', NULL, NULL);
+('dsql_alter_user_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1030, NULL, 'ALTER USER @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

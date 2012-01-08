@@ -126,8 +126,6 @@ enum nod_t
 	nod_tra_misc,
 	nod_lock_timeout,
 	nod_with,
-	nod_add_user,
-	nod_mod_user,
 	nod_class_stmtnode,
 	nod_class_exprnode,
 	nod_package_name,

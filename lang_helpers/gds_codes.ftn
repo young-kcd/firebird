@@ -1724,6 +1724,8 @@ C --
       PARAMETER (GDS__dyn_coll_used_function           = 336068889)
       INTEGER*4 GDS__dyn_domain_used_function        
       PARAMETER (GDS__dyn_domain_used_function         = 336068890)
+      INTEGER*4 GDS__dyn_alter_user_no_clause        
+      PARAMETER (GDS__dyn_alter_user_no_clause         = 336068891)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          
@@ -2144,6 +2146,10 @@ C --
       PARAMETER (GDS__dsql_create_filter_failed        = 336397315)
       INTEGER*4 GDS__dsql_create_index_failed        
       PARAMETER (GDS__dsql_create_index_failed         = 336397316)
+      INTEGER*4 GDS__dsql_create_user_failed         
+      PARAMETER (GDS__dsql_create_user_failed          = 336397317)
+      INTEGER*4 GDS__dsql_alter_user_failed          
+      PARAMETER (GDS__dsql_alter_user_failed           = 336397318)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

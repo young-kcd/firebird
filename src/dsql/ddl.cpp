@@ -124,7 +124,6 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch, NOD_TYPE type, SS
 static char modify_privileges(DsqlCompilerScratch*, NOD_TYPE, SSHORT, const dsql_nod*,
 	const dsql_nod*, const dsql_nod*, const dsql_nod*);
 static void process_role_nm_list(DsqlCompilerScratch*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
-static void define_user(DsqlCompilerScratch*, UCHAR);
 static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor);
 static void post_607(const Arg::StatusVector& v);
 static void put_user_grant(DsqlCompilerScratch* dsqlScratch, const dsql_nod* user);
@@ -603,14 +602,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		grant_revoke(dsqlScratch);
 		break;
 
-	case nod_add_user:
-		define_user(dsqlScratch, isc_dyn_user_add);
-		break;
-
-	case nod_mod_user:
-		define_user(dsqlScratch, isc_dyn_user_mod);
-		break;
-
 	default: // CVC: Shouldn't we complain here?
 		break;
 	}
@@ -927,73 +918,6 @@ static char modify_privileges(DsqlCompilerScratch* dsqlScratch,
 	}
 
 	return 0;
-}
-
-
-// *********************
-// d e f i n e _ u s e r
-// *********************
-// Support SQL operator create/alter/drop user
-static void define_user(DsqlCompilerScratch* dsqlScratch, UCHAR op)
-{
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	dsqlScratch->appendUChar(isc_dyn_user);
-
-	const dsql_nod* node = statement->getDdlNode();
-	int argCount = 0;
-
-	for (int i = 0; i < node->nod_count; ++i)
-	{
-		const dsql_str* ds = (dsql_str*) node->nod_arg[i];
-		if (! ds)
-		{
-			if (i == e_user_name || (i == e_user_passwd && op == isc_dyn_user_add))
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  // Unexpected end of command
-						  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) <<
-															Arg::Num(node->nod_column));
-			}
-
-			continue;
-		}
-
-		++argCount;
-
-		switch (i)
-		{
-		case e_user_name:
-			dsqlScratch->appendNullString(op, ds->str_data);
-			break;
-		case e_user_passwd:
-			dsqlScratch->appendNullString(isc_dyn_user_passwd, ds->str_data);
-			break;
-		case e_user_first:
-			dsqlScratch->appendNullString(isc_dyn_user_first, ds->str_data);
-			break;
-		case e_user_middle:
-			dsqlScratch->appendNullString(isc_dyn_user_middle, ds->str_data);
-			break;
-		case e_user_last:
-			dsqlScratch->appendNullString(isc_dyn_user_last, ds->str_data);
-			break;
-		case e_user_admin:
-			dsqlScratch->appendNullString(isc_dyn_user_admin, ds->str_data);
-			break;
-		}
-	}
-
-	if (argCount < 2)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Unexpected end of command
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) <<
-													Arg::Num(node->nod_column));
-	}
-
-	dsqlScratch->appendUChar(isc_user_end);
-	dsqlScratch->appendUChar(isc_dyn_end);
 }
 
 

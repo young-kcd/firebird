@@ -1607,6 +1607,38 @@ public:
 };
 
 
+class CreateAlterUserNode : public DdlNode
+{
+public:
+	CreateAlterUserNode(MemoryPool& p, bool creating, const Firebird::MetaName& aName)
+		: DdlNode(p),
+		  isCreating(creating),
+		  name(p, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isCreating ?
+			isc_dsql_create_user_failed : isc_dsql_alter_user_failed) << name;
+	}
+
+public:
+	const bool isCreating;
+	const Firebird::MetaName name;
+	const Firebird::string* password;
+	const Firebird::string* firstName;
+	const Firebird::string* middleName;
+	const Firebird::string* lastName;
+	Nullable<int> adminRole;
+};
+
+
 class DropUserNode : public DdlNode
 {
 public:

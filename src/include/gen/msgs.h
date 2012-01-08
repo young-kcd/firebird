@@ -861,6 +861,7 @@ Data source : @4"},		/* eds_statement */
 	{336068888, "Parameter @1 of routine @2 is ambiguous (found in both procedures and functions). Use a specifier keyword."},		/* dyn_routine_param_ambiguous */
 	{336068889, "Collation @1 is used in function @2 (parameter name @3) and cannot be dropped"},		/* dyn_coll_used_function */
 	{336068890, "Domain @1 is used in function @2 (parameter name @3) and cannot be dropped"},		/* dyn_domain_used_function */
+	{336068891, "ALTER USER requires at least one clause to be specified"},		/* dyn_alter_user_no_clause */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */
@@ -1071,6 +1072,8 @@ Data source : @4"},		/* eds_statement */
 	{336397314, "CREATE SHADOW @1 failed"},		/* dsql_create_shadow_failed */
 	{336397315, "DECLARE FILTER @1 failed"},		/* dsql_create_filter_failed */
 	{336397316, "CREATE INDEX @1 failed"},		/* dsql_create_index_failed */
+	{336397317, "CREATE USER @1 failed"},		/* dsql_create_user_failed */
+	{336397318, "ALTER USER @1 failed"},		/* dsql_alter_user_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

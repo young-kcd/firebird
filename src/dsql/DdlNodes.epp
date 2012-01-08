@@ -9647,6 +9647,110 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 //----------------------
 
 
+void CreateAlterUserNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateAlterUserNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	if (!isCreating && !password && !firstName && !middleName && !lastName && !adminRole.specified)
+	{
+		// 283: ALTER USER requires at least one clause to be specified
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(283, DYN_MSG_FAC)));
+	}
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	DynamicUserData* userData = FB_NEW(*transaction->tra_pool) DynamicUserData;
+
+	string text = name.c_str();
+	text.upper();
+
+	userData->op = isCreating ? ADD_OPER : MOD_OPER;
+	userData->user.set(text.c_str());
+	userData->user.setEntered(1);
+
+	if (password)
+	{
+		if (password->isEmpty())
+		{
+			// 250: Password should not be empty string
+			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(250, DYN_MSG_FAC)));
+		}
+
+		userData->pass.set(password->c_str());
+		userData->pass.setEntered(1);
+	}
+
+	if (firstName)
+	{
+		if (firstName->hasData())
+		{
+			userData->first.set(firstName->c_str());
+			userData->first.setEntered(1);
+		}
+		else
+		{
+			userData->first.setEntered(0);
+			userData->first.setSpecified(1);
+		}
+	}
+
+	if (middleName)
+	{
+		if (middleName->hasData())
+		{
+			userData->first.set(middleName->c_str());
+			userData->first.setEntered(1);
+		}
+		else
+		{
+			userData->first.setEntered(0);
+			userData->first.setSpecified(1);
+		}
+	}
+
+	if (lastName)
+	{
+		if (lastName->hasData())
+		{
+			userData->first.set(lastName->c_str());
+			userData->first.setEntered(1);
+		}
+		else
+		{
+			userData->first.setEntered(0);
+			userData->first.setSpecified(1);
+		}
+	}
+
+	if (adminRole.specified)
+	{
+		userData->adm.set(adminRole.value);
+		userData->adm.setEntered(1);
+	}
+
+	const int ddlAction = isCreating ? DDL_TRIGGER_CREATE_USER : DDL_TRIGGER_ALTER_USER;
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlAction, userData->user.get());
+
+	const USHORT id = transaction->getUserManagement()->put(userData);
+	DFW_post_work(transaction, dfw_user_management, NULL, id);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlAction, userData->user.get());
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
 void DropUserNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
@@ -9672,7 +9776,7 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_USER,
 		userData->user.get());
 
-	USHORT id = transaction->getUserManagement()->put(userData);
+	const USHORT id = transaction->getUserManagement()->put(userData);
 	DFW_post_work(transaction, dfw_user_management, NULL, id);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_USER,

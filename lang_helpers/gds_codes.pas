@@ -869,6 +869,7 @@ const
 	gds_dyn_routine_param_ambiguous      = 336068888;
 	gds_dyn_coll_used_function           = 336068889;
 	gds_dyn_domain_used_function         = 336068890;
+	gds_dyn_alter_user_no_clause         = 336068891;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;
@@ -1079,6 +1080,8 @@ const
 	gds_dsql_create_shadow_failed        = 336397314;
 	gds_dsql_create_filter_failed        = 336397315;
 	gds_dsql_create_index_failed         = 336397316;
+	gds_dsql_create_user_failed          = 336397317;
+	gds_dsql_alter_user_failed           = 336397318;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

@@ -845,6 +845,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 8, 280, 'dyn_routine_param_ambiguous', NULL, NULL)
 (-901, 'HY', '000', 8, 281, 'dyn_coll_used_function', NULL, NULL)
 (-901, 'HY', '000', 8, 282, 'dyn_domain_used_function', NULL, NULL)
+(-901, '42', '000', 8, 283, 'dyn_alter_user_no_clause', NULL, NULL)
 --  GBAK
 (-901, '00', '000', 12, 1, 'gbak_unknown_switch', NULL, NULL)
 (-901, '00', '000', 12, 2, 'gbak_page_size_missing', NULL, NULL)
@@ -1060,6 +1061,8 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1026, 'dsql_create_shadow_failed', NULL, NULL);
 (-901, '42', '000', 13, 1027, 'dsql_create_filter_failed', NULL, NULL);
 (-901, '42', '000', 13, 1028, 'dsql_create_index_failed', NULL, NULL);
+(-901, '42', '000', 13, 1029, 'dsql_create_user_failed', NULL, NULL);
+(-901, '42', '000', 13, 1030, 'dsql_alter_user_failed', NULL, NULL);
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)
