@@ -36,6 +36,11 @@ struct dsc;
 void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, SLONG, const Firebird::MetaName&,
 					  Jrd::SecurityClass::flags_t, SLONG type, const Firebird::MetaName&,
 					  const Firebird::MetaName& = "");
+void SCL_check_charset(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
+void SCL_check_collation(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
+void SCL_check_domain(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
+void SCL_check_exception(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
+void SCL_check_generator(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
 void SCL_check_index(Jrd::thread_db*, const Firebird::MetaName&, UCHAR, Jrd::SecurityClass::flags_t);
 void SCL_check_package(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_procedure(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);

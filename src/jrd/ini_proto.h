@@ -29,7 +29,7 @@ namespace Jrd {
 	class dsql_dbb;
 }
 
-void	INI_format(const TEXT*, const TEXT*);
+void	INI_format(const Firebird::MetaName&, const Firebird::MetaName&);
 USHORT	INI_get_trig_flags(const TEXT*);
 void	INI_init(Jrd::thread_db*);
 void	INI_init2(Jrd::thread_db*);

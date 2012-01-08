@@ -155,6 +155,16 @@ enum irq_type_t
 	irq_fun_validate,		// function blr validate
 	irq_c_fun_dpd,			// get function dependencies
 	irq_grant11,			// process grant option (functions)
+	irq_cs_security,		// verify security for character set
+	irq_coll_security,		// verify security for collation
+	irq_exc_security,		// verify security for exception
+	irq_gen_security,		// verify security for generator
+	irq_gfld_security,		// verify security for domain
+	irq_grant12,			// process grant option (charsets)
+	irq_grant13,			// process grant option (collations)
+	irq_grant14,			// process grant option (exceptions)
+	irq_grant15,			// process grant option (generators)
+	irq_grant16,			// process grant option (domains)
 
 	irq_MAX
 };

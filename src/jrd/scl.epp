@@ -103,12 +103,16 @@ namespace
 
 	// Database is never requested through CMP_post_access.
 	const char* const object_str_database	= "DATABASE";
-	const char* const object_str_schema		= "SCHEMA";
 	const char* const object_str_table		= "TABLE";
 	const char* const object_str_package	= "PACKAGE";
 	const char* const object_str_procedure	= "PROCEDURE";
 	const char* const object_str_function	= "FUNCTION";
 	const char* const object_str_column		= "COLUMN";
+	const char* const object_str_charset	= "CHARACTER SET";
+	const char* const object_str_collation	= "COLLATION";
+	const char* const object_str_domain		= "DOMAIN";
+	const char* const object_str_exception	= "EXCEPTION";
+	const char* const object_str_generator	= "GENERATOR";
 
 
 	struct SecObjectNamePriority
@@ -120,12 +124,16 @@ namespace
 	const SecObjectNamePriority priorities[] =
 	{
 		{object_str_database, SCL_object_database},
-		{object_str_schema, SCL_object_schema},
 		{object_str_table, SCL_object_table},
 		{object_str_package, SCL_object_package},
 		{object_str_procedure, SCL_object_procedure},
 		{object_str_function, SCL_object_function},
 		{object_str_column, SCL_object_column},
+		{object_str_charset, SCL_object_charset},
+		{object_str_collation, SCL_object_collation},
+		{object_str_domain, SCL_object_domain},
+		{object_str_exception, SCL_object_exception},
+		{object_str_generator, SCL_object_generator},
 		{"", 0}
 	};
 
@@ -245,13 +253,168 @@ void SCL_check_access(thread_db* tdbb,
 	else
 	{
 		fb_assert(type != SCL_object_database);
-		const char* typeAsStr = accTypeNumToStr(type);
+		const char* const typeAsStr = accTypeNumToStr(type);
 		const Firebird::string fullName = r_name.hasData() ?
 			r_name.c_str() + Firebird::string(".") + name.c_str() : name.c_str();
 		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) <<
 										  Arg::Str(typeAsStr) <<
 										  Arg::Str(fullName));
 	}
+}
+
+
+void SCL_check_charset(thread_db* tdbb, const MetaName& name, SecurityClass::flags_t mask)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ c h a r s e t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Given a character set name, check for a set of privileges.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	const SecurityClass* s_class = NULL;
+	AutoCacheRequest request(tdbb, irq_cs_security, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		CS IN RDB$CHARACTER_SETS
+		WITH CS.RDB$CHARACTER_SET_NAME EQ name.c_str()
+	{
+		if (!CS.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(tdbb, CS.RDB$SECURITY_CLASS);
+	}
+	END_FOR
+
+	SCL_check_access(tdbb, s_class, 0, id_charset, name, mask, SCL_object_charset, name);
+}
+
+
+void SCL_check_collation(thread_db* tdbb, const MetaName& name, SecurityClass::flags_t mask)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ c o l l a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Given a collation name, check for a set of privileges.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	const SecurityClass* s_class = NULL;
+	AutoCacheRequest request(tdbb, irq_coll_security, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		COLL IN RDB$COLLATIONS
+		WITH COLL.RDB$COLLATION_NAME EQ name.c_str()
+	{
+		if (!COLL.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(tdbb, COLL.RDB$SECURITY_CLASS);
+	}
+	END_FOR
+
+	SCL_check_access(tdbb, s_class, 0, id_collation, name, mask, SCL_object_collation, name);
+}
+
+
+void SCL_check_domain(thread_db* tdbb, const MetaName& name, SecurityClass::flags_t mask)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ d o m a i n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Given a domain name, check for a set of privileges.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	const SecurityClass* s_class = NULL;
+	AutoCacheRequest request(tdbb, irq_gfld_security, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		FLD IN RDB$FIELDS
+		WITH FLD.RDB$FIELD_NAME EQ name.c_str()
+	{
+		if (!FLD.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(tdbb, FLD.RDB$SECURITY_CLASS);
+	}
+	END_FOR
+
+	SCL_check_access(tdbb, s_class, 0, id_domain, name, mask, SCL_object_domain, name);
+}
+
+
+void SCL_check_exception(thread_db* tdbb, const MetaName& name, SecurityClass::flags_t mask)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ e x c e p t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Given an exception name, check for a set of privileges.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	const SecurityClass* s_class = NULL;
+	AutoCacheRequest request(tdbb, irq_exc_security, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		XCP IN RDB$EXCEPTIONS
+		WITH XCP.RDB$EXCEPTION_NAME EQ name.c_str()
+	{
+		if (!XCP.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(tdbb, XCP.RDB$SECURITY_CLASS);
+	}
+	END_FOR
+
+	SCL_check_access(tdbb, s_class, 0, id_exception, name, mask, SCL_object_exception, name);
+}
+
+
+void SCL_check_generator(thread_db* tdbb, const MetaName& name, SecurityClass::flags_t mask)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Given a generator name, check for a set of privileges.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	const SecurityClass* s_class = NULL;
+	AutoCacheRequest request(tdbb, irq_gen_security, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		GEN IN RDB$GENERATORS
+		WITH GEN.RDB$GENERATOR_NAME EQ name.c_str()
+	{
+		if (!GEN.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(tdbb, GEN.RDB$SECURITY_CLASS);
+	}
+	END_FOR
+
+	SCL_check_access(tdbb, s_class, 0, id_generator, name, mask, SCL_object_generator, name);
 }
 
 
@@ -276,7 +439,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
  *
  *******************************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const SecurityClass* s_class = NULL;
 	const SecurityClass* default_s_class = NULL;
@@ -384,7 +547,7 @@ void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 		dsc_name->dsc_length);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_pkg_security, IRQ_REQUESTS);
@@ -423,7 +586,7 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_p_security, IRQ_REQUESTS);
@@ -463,7 +626,7 @@ void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_f_security, IRQ_REQUESTS);
@@ -503,7 +666,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 								  dsc_name->dsc_length);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_v_security, IRQ_REQUESTS);
@@ -550,7 +713,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 		return NULL;
 	}
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	// Look for the class already known
 
@@ -597,7 +760,7 @@ SecurityClass::flags_t SCL_get_mask(thread_db* tdbb, const TEXT* relation_name, 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	// Start with database security class
 
@@ -650,7 +813,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
 	Firebird::string loginName(tempId.usr_user_name);
@@ -1000,7 +1163,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 	Acl acl;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	jrd_tra* sysTransaction = attachment->getSysTransaction();
 
 	SecurityClass::flags_t privileges = SCL_scanned;
@@ -1060,7 +1223,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	// Munch ACL. If we find a hit, eat up privileges.
 

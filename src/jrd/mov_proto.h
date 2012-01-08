@@ -37,8 +37,7 @@ void	MOV_double_to_date(double, SLONG[2]);
 bool	MOV_get_boolean(const dsc*);
 double	MOV_get_double(const dsc*);
 SLONG	MOV_get_long(const dsc*, SSHORT);
-void	MOV_get_metadata_str(const dsc*, TEXT*, USHORT);
-void	MOV_get_name(const dsc*, TEXT*);
+void	MOV_get_metaname(const dsc*, Firebird::MetaName&);
 SQUAD	MOV_get_quad(const dsc*, SSHORT);
 SINT64	MOV_get_int64(const dsc*, SSHORT);
 int		MOV_get_string_ptr(const dsc*, USHORT*, UCHAR**, vary*,

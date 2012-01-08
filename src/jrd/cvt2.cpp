@@ -634,29 +634,6 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 }
 
 
-void CVT2_get_name(const dsc* desc, TEXT* string)
-{
-/**************************************
- *
- *	C V T 2 _ g e t _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Get a name (max length 31, NULL terminated) from a descriptor.
- *
- **************************************/
-	VaryStr<MAX_SQL_IDENTIFIER_SIZE> temp;			// 31 bytes + 1 NULL
-	const char* p;
-
-	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, &temp, sizeof(temp), ERR_post);
-
-	memcpy(string, p, length);
-	string[length] = 0;
-	fb_utils::exact_name(string);
-}
-
-
 USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd::MoveBuffer& temp)
 {
 /**************************************

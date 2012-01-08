@@ -497,6 +497,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 	jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->getAttachment();
+	const string& user_name = attachment->att_user->usr_user_name;
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 		DDL_TRIGGER_CREATE_PACKAGE, name);
@@ -513,29 +514,27 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 		PKG.RDB$SYSTEM_FLAG = 0;
 
 		PKG.RDB$OWNER_NAME.NULL = FALSE;
-		strcpy(PKG.RDB$OWNER_NAME, attachment->att_user->usr_user_name.c_str());
+		strcpy(PKG.RDB$OWNER_NAME, user_name.c_str());
 
 		PKG.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
 		attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE, source);
 	}
 	END_STORE
 
-	for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++)
-	{
-		requestHandle.reset(tdbb, drq_s_pkg_usr_prvs, DYN_REQUESTS);
+	requestHandle.reset(tdbb, drq_s_pkg_usr_prvs, DYN_REQUESTS);
 
-		STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			X IN RDB$USER_PRIVILEGES
-		{
-			strcpy(X.RDB$RELATION_NAME, name.c_str());
-			strcpy(X.RDB$USER, attachment->att_user->usr_user_name.c_str());
-			X.RDB$USER_TYPE = obj_user;
-			X.RDB$OBJECT_TYPE = obj_package_header;
-			X.RDB$PRIVILEGE[0] = *p;
-			X.RDB$PRIVILEGE[1] = 0;
-		}
-		END_STORE;
+	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		X IN RDB$USER_PRIVILEGES
+	{
+		strcpy(X.RDB$RELATION_NAME, name.c_str());
+		strcpy(X.RDB$USER, user_name.c_str());
+		X.RDB$USER_TYPE = obj_user;
+		X.RDB$OBJECT_TYPE = obj_package_header;
+		X.RDB$PRIVILEGE[0] = EXEC_PRIVILEGE;
+		X.RDB$PRIVILEGE[1] = 0;
+		X.RDB$GRANT_OPTION = 1;
 	}
+	END_STORE;
 
 	owner = attachment->att_user->usr_user_name;
 

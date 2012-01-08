@@ -3380,9 +3380,9 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 
 void MET_revoke(thread_db* tdbb,
 				jrd_tra* transaction,
-				const TEXT* relation,
-				const TEXT* revokee,
-				const TEXT* privilege)
+				const MetaName& relation,
+				const MetaName& revokee,
+				const string& privilege)
 {
 /**************************************
  *
@@ -3405,9 +3405,9 @@ void MET_revoke(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		FIRST 1 P IN RDB$USER_PRIVILEGES WITH
-			P.RDB$RELATION_NAME EQ relation AND
-			P.RDB$PRIVILEGE EQ privilege AND
-			P.RDB$USER EQ revokee
+			P.RDB$RELATION_NAME EQ relation.c_str() AND
+			P.RDB$PRIVILEGE EQ privilege.c_str() AND
+			P.RDB$USER EQ revokee.c_str()
 	{
 		++count;
 	}
@@ -3422,9 +3422,9 @@ void MET_revoke(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		P IN RDB$USER_PRIVILEGES WITH
-			P.RDB$RELATION_NAME EQ relation AND
-			P.RDB$PRIVILEGE EQ privilege AND
-			P.RDB$GRANTOR EQ revokee
+			P.RDB$RELATION_NAME EQ relation.c_str() AND
+			P.RDB$PRIVILEGE EQ privilege.c_str() AND
+			P.RDB$GRANTOR EQ revokee.c_str()
 	{
 		ERASE P;
 	}

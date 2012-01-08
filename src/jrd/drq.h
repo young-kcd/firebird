@@ -231,6 +231,14 @@ enum drq_type_t
 	drq_m_fld2,				// alter domain
 	drq_c_unq_nam2,			// check for unique field names
 	drq_s_rels2,			// store relations
+	drq_e_coll_prvs,		// erase collation privileges
+	drq_e_xcp_prvs,			// erase exception privileges
+	drq_e_gen_prvs,			// erase generator privileges
+	drq_e_gfld_prvs,		// erase domain privileges
+	drq_s_coll_prvs,		// store collation privileges
+	drq_s_xcp_prvs,			// store exception privileges
+	drq_s_gen_prvs,			// store generator privileges
+	drq_s_gfld_prvs,		// store domain privileges
 
 	drq_MAX
 };

@@ -28,7 +28,6 @@
 
 SSHORT	CVT2_compare(const dsc*, const dsc*);
 SSHORT	CVT2_blob_compare(const dsc*, const dsc*);
-void	CVT2_get_name(const dsc*, TEXT*);
 USHORT	CVT2_make_string2(const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&);
 
 #endif // JRD_CVT2_PROTO_H

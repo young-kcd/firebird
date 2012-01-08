@@ -193,53 +193,30 @@ SINT64 MOV_get_int64(const dsc* desc, SSHORT scale)
 }
 
 
-void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
+void MOV_get_metaname(const dsc* desc, MetaName& name)
 {
 /**************************************
  *
- *	M O V _ g e t _ m e t a d a t a _ s t r
+ *	M O V _ g e t _ m e t a n a m e
  *
  **************************************
  *
  * Functional description
  *	Copy string, which will afterward's
  *	be treated as a metadata name value,
- *	to the user-supplied buffer.
+ *	to the user-supplied object.
  *
  **************************************/
-	USHORT dummy_type;
-	UCHAR *ptr;
+	USHORT ttype;
+	UCHAR* ptr = NULL;
 
-	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr, NULL, 0);
+	const USHORT length = CVT_get_string_ptr(desc, &ttype, &ptr, NULL, 0);
 
-#ifdef DEV_BUILD
-	if ((dummy_type != ttype_metadata) &&
-		(dummy_type != ttype_none) && (dummy_type != ttype_ascii))
-	{
-		ERR_bugcheck_msg("Expected METADATA name");
-	}
-#endif
+	fb_assert(length && ptr);
+	fb_assert(length <= MAX_SQL_IDENTIFIER_LEN);
+	fb_assert(ttype == ttype_metadata);
 
-	length = ptr ? MIN(length, buffer_length - 1) : 0;
-	memcpy(buffer, ptr, length);
-	buffer[length] = 0;
-}
-
-
-void MOV_get_name(const dsc* desc, TEXT* string)
-{
-/**************************************
- *
- *	M O V _ g e t _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Get a name (max length 31, blank terminated) from a descriptor.
- *
- **************************************/
-
-	CVT2_get_name(desc, string);
+	name.assign(reinterpret_cast<char*>(ptr), length);
 }
 
 

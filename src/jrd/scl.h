@@ -146,16 +146,19 @@ public:
 	}
 };
 
-// Here, lower is more priority.
 // These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.
 // We need to include here the new objects that accept ACLs.
 const SLONG SCL_object_database		= 1;
-const SLONG SCL_object_schema		= 2;
-const SLONG SCL_object_table		= 3;
-const SLONG SCL_object_package		= 4;
-const SLONG SCL_object_procedure	= 5;
-const SLONG SCL_object_function		= 6;
-const SLONG SCL_object_column		= 7;
+const SLONG SCL_object_table		= 2;
+const SLONG SCL_object_package		= 3;
+const SLONG SCL_object_procedure	= 4;
+const SLONG SCL_object_function		= 5;
+const SLONG SCL_object_column		= 6;
+const SLONG SCL_object_collation	= 7;
+const SLONG SCL_object_exception	= 8;
+const SLONG SCL_object_generator	= 9;
+const SLONG SCL_object_charset		= 10;
+const SLONG SCL_object_domain		= 11;
 
 } //namespace Jrd
 

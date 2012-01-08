@@ -60,9 +60,7 @@ using namespace Jrd;
 
 // privileges given to the owner of a relation
 
-const SecurityClass::flags_t OWNER_PRIVS	= SCL_control | SCL_read | SCL_write | SCL_delete | SCL_protect;
-//const SecurityClass::flags_t VIEW_PRIVS		= SCL_read | SCL_write | SCL_delete;
-//const ULONG ACL_BUFFER_SIZE	= 4096;
+const SecurityClass::flags_t OWNER_PRIVS = SCL_control | SCL_read | SCL_write | SCL_delete | SCL_protect;
 
 inline void CHECK_AND_MOVE(Acl& to, UCHAR from)
 {
@@ -73,11 +71,6 @@ DATABASE DB = STATIC "yachts.lnk";
 
 static void define_default_class(thread_db*, const TEXT*, Firebird::MetaName&, const Acl&,
 							jrd_tra*);
-#ifdef NOT_USED_OR_REPLACED
-static void delete_security_class(thread_db*, const TEXT*);
-static void grant_views(TEXT**, SecurityClass::flags_t);
-static void purge_default_class(TEXT*, SSHORT);
-#endif
 static void finish_security_class(Acl&, SecurityClass::flags_t);
 static void get_object_info(thread_db*, const TEXT*, SSHORT,
 							Firebird::MetaName&, Firebird::MetaName&, Firebird::MetaName&, bool&);
@@ -112,7 +105,6 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 
 	bool restrct = false;
 
-	//Database* dbb = tdbb->getDatabase();
 	Firebird::MetaName s_class, owner, default_class;
 	bool view; // unused after being retrieved.
 	get_object_info(tdbb, name.c_str(), id, owner, s_class, default_class, view);
@@ -137,7 +129,7 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 
 	grant_user(acl, owner, obj_user, priv);
 
-	// Pick up any relation-level privileges
+	// Pick up core privileges
 
 	const SecurityClass::flags_t public_priv = get_public_privs(tdbb, name.c_str(), id);
 	get_user_privs(tdbb, acl, name.c_str(), id, owner, public_priv);
@@ -154,12 +146,6 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 		const SecurityClass::flags_t aggregate_public =
 			save_field_privileges(tdbb, acl, name.c_str(), owner, public_priv,
 										  transaction);
-
-		// SQL tables don't need the 'all priviliges to all views' acl anymore.
-		// This special acl was only generated for SQL.
-#ifdef NOT_USED_OR_REPLACED
-		// grant_views (&acl, VIEW_PRIVS);
-#endif
 
 		// finish off and store the security class for the relation
 
@@ -394,6 +380,81 @@ static void get_object_info(thread_db* tdbb,
 		}
 		END_FOR
 	}
+	else if (obj_type == obj_charset)
+	{
+		AutoCacheRequest request(tdbb, irq_grant12, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			CS IN RDB$CHARACTER_SETS WITH
+				CS.RDB$CHARACTER_SET_NAME EQ object_name
+		{
+			s_class = CS.RDB$SECURITY_CLASS;
+			default_class = "";
+			owner = CS.RDB$OWNER_NAME;
+			view = false;
+		}
+		END_FOR
+	}
+	else if (obj_type == obj_collation)
+	{
+		AutoCacheRequest request(tdbb, irq_grant13, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			COLL IN RDB$COLLATIONS WITH
+				COLL.RDB$COLLATION_NAME EQ object_name
+		{
+			s_class = COLL.RDB$SECURITY_CLASS;
+			default_class = "";
+			owner = COLL.RDB$OWNER_NAME;
+			view = false;
+		}
+		END_FOR
+	}
+	else if (obj_type == obj_exception)
+	{
+		AutoCacheRequest request(tdbb, irq_grant14, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			XCP IN RDB$EXCEPTIONS WITH
+				XCP.RDB$EXCEPTION_NAME EQ object_name
+		{
+			s_class = XCP.RDB$SECURITY_CLASS;
+			default_class = "";
+			owner = XCP.RDB$OWNER_NAME;
+			view = false;
+		}
+		END_FOR
+	}
+	else if (obj_type == obj_generator)
+	{
+		AutoCacheRequest request(tdbb, irq_grant15, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			GEN IN RDB$GENERATORS WITH
+				GEN.RDB$GENERATOR_NAME EQ object_name
+		{
+			s_class = GEN.RDB$SECURITY_CLASS;
+			default_class = "";
+			owner = GEN.RDB$OWNER_NAME;
+			view = false;
+		}
+		END_FOR
+	}
+	else if (obj_type == obj_field)
+	{
+		AutoCacheRequest request(tdbb, irq_grant16, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			FLD IN RDB$FIELDS WITH
+				FLD.RDB$FIELD_NAME EQ object_name
+		{
+			s_class = FLD.RDB$SECURITY_CLASS;
+			default_class = "";
+			owner = FLD.RDB$OWNER_NAME;
+			view = false;
+		}
+		END_FOR
+	}
 }
 
 
@@ -522,97 +583,6 @@ static void grant_user(Acl& acl,
 
 	SCL_move_priv(privs, acl);
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
-{
-/**************************************
- *
- *	d e l e t e _ s e c u r i t y _ c l a s s
- *
- **************************************
- *
- * Functional description
- *	Delete a security class.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	AutoRequest handle;
-
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-		CLS IN RDB$SECURITY_CLASSES
-			WITH CLS.RDB$SECURITY_CLASS EQ s_class
-	{
-		ERASE CLS;
-	}
-	END_FOR
-}
-
-
-static void grant_views(Acl& acl, SecurityClass::flags_t privs)
-{
-/**************************************
- *
- *	g r a n t _ v i e w s
- *
- **************************************
- *
- * Functional description
- *	Grant privileges to all views.
- *
- **************************************/
-	CHECK_AND_MOVE(acl, ACL_id_list);
-	CHECK_AND_MOVE(acl, id_views);
-	CHECK_AND_MOVE(acl, 0);
-	SCL_move_priv(privs, acl);
-}
-
-
-static void purge_default_class( TEXT* object_name, SSHORT obj_type)
-{
-/**************************************
- *
- *	p u r g e _ d e f a u l t _ c l a s s
- *
- **************************************
- *
- * Functional description
- *	Get rid of any previously defined
- *	default security class for this relation.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	AutoCacheRequest request(tdbb, irq_grant8, IRQ_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		REL IN RDB$RELATIONS
-			WITH REL.RDB$RELATION_NAME EQ object_name
-			AND REL.RDB$DEFAULT_CLASS NOT MISSING
-	{
-		fb_utils::exact_name_limit(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
-		delete_security_class(tdbb, REL.RDB$DEFAULT_CLASS);
-
-		MODIFY REL USING
-			REL.RDB$DEFAULT_CLASS.NULL = TRUE;
-		END_MODIFY
-	}
-	END_FOR
-
-	dsc desc;
-	desc.dsc_dtype = dtype_text;
-	desc.dsc_sub_type = 0;
-	desc.dsc_scale = 0;
-	desc.dsc_ttype() = ttype_metadata;
-	desc.dsc_address = (UCHAR *) object_name;
-	desc.dsc_length = strlen(object_name);
-	DFW_post_work(transaction, dfw_scan_relation, &desc, 0);
-}
-#endif // NOT_USED_OR_REPLACED
 
 
 static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
