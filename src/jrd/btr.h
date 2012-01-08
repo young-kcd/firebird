@@ -110,7 +110,7 @@ const int idx_first_intl_string	= 64;	// .. MAX (short) Range of computed key st
 
 const int idx_offset_intl_range	= (0x7FFF + idx_first_intl_string);
 
-// these flags must match the irt_flags
+// these flags must match the irt_flags (see ods.h)
 
 const int idx_unique		= 1;
 const int idx_descending	= 2;

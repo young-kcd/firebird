@@ -340,13 +340,13 @@ struct irtd
 	float irtd_selectivity;
 };
 
-// irtd_itype
-const USHORT irt_unique		= 1; // Tested in validation.cpp's walk_index but never set!
-//const USHORT irt_descending	= 2;
-const USHORT irt_in_progress= 4;
-//const USHORT irt_foreign	= 8;
-//const USHORT irt_primary	= 16;
-const USHORT irt_expression	= 32; // Tested, disabled and restored in validation.cpp but never set originally
+// irt_flags, must match the idx_flags (see btr.h)
+const USHORT irt_unique			= 1;
+const USHORT irt_descending		= 2;
+const USHORT irt_in_progress	= 4;
+const USHORT irt_foreign		= 8;
+const USHORT irt_primary		= 16;
+const USHORT irt_expression		= 32;
 
 const int STUFF_COUNT		= 4;
 
