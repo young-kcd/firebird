@@ -1,3 +1,73 @@
+ 2012-01-09 00:49  asfernandes 
+   M src/dsql/parse.y
+Misc.
+
+ 2012-01-09 00:08  asfernandes 
+   M src/dsql/PackageNodes.epp
+   M src/dsql/parse.y
+   M src/jrd/ini.epp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+Misc.
+
+ 2012-01-09 00:08  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/node.h
+   M src/jrd/irq.h
+   M src/jrd/vio.cpp
+Corrections and cleanup.
+
+ 2012-01-08 18:33  dimitr 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/dyn.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Refactored CREATE/ALTER USER. Untested at runtime.
+
+ 2012-01-08 14:05  dimitr 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/PackageNodes.epp
+   M src/jrd/cvt2.cpp
+   M src/jrd/cvt2_proto.h
+   M src/jrd/drq.h
+   M src/jrd/dyn.h
+   M src/jrd/grant.epp
+   M src/jrd/ini.epp
+   M src/jrd/ini_proto.h
+   M src/jrd/irq.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/mov.cpp
+   M src/jrd/mov_proto.h
+   M src/jrd/obj.h
+   M src/jrd/scl.epp
+   M src/jrd/scl.h
+   M src/jrd/scl_proto.h
+   M src/jrd/types.h
+   M src/jrd/vio.cpp
+1) Restricted ALTER/DROP permissions to the object owners only. Now this applies to domains, charsets, collations, generators and exceptions. This fixes CORE-304: Metadata security hole - any user can alter/drop generators and exceptions.
+2) Opened the gates to implement the standard USAGE privilege (CORE-2884). SQL support and validation logic are still to be developed.
+3) Added the grant option to the owner permissions for packages, procedures and functions.
+4) Misc cleanup and refactoring.
+
+ 2012-01-08 09:40  dimitr 
+   M src/jrd/btr.h
+   M src/jrd/ods.h
+Misc.
+
  2012-01-07 02:30  dimitr 
    M src/jrd/btr.cpp
    M src/jrd/ods.h
