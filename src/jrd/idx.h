@@ -261,13 +261,23 @@ static const struct ini_idx_t indices[] =
 	INDEX(47, rel_packages, idx_unique, 1)
 		SEGMENT(f_pkg_name, idx_metadata)		// package name
 	}},
-	//	define index RDB$INDEX_48 for RDB$PROCEDURE_PARAMETERS RDB$FIELD_SOURCE; */
+	//	define index RDB$INDEX_48 for RDB$PROCEDURE_PARAMETERS RDB$FIELD_SOURCE;
 	INDEX(48, rel_prc_prms, 0, 1)
 		SEGMENT(f_prm_sname, idx_metadata)		// field source name
 	}},
-	//	define index RDB$INDEX_49 for RDB$FUNCTION_ARGUMENTS RDB$FIELD_SOURCE; */
+	//	define index RDB$INDEX_49 for RDB$FUNCTION_ARGUMENTS RDB$FIELD_SOURCE;
 	INDEX(49, rel_args, 0, 1)
 		SEGMENT(f_arg_sname, idx_metadata)		// field source name
+	}},
+	//	define index RDB$INDEX_50 for RDB$PROCEDURE_PARAMETERS RDB$RELATION_NAME, RDB$FIELD_NAME;
+	INDEX(50, rel_prc_prms, 0, 2)
+		SEGMENT(f_prm_rname, idx_metadata),		// relation name
+		SEGMENT(f_prm_fname, idx_metadata)		// field name
+	}},
+	//	define index RDB$INDEX_51 for RDB$FUNCTION_ARGUMENTS RDB$RELATION_NAME, RDB$FIELD_NAME;
+	INDEX(51, rel_args, 0, 2)
+		SEGMENT(f_arg_rname, idx_metadata),		// relation name
+		SEGMENT(f_arg_fname, idx_metadata)		// field name
 	}}
 };
 
