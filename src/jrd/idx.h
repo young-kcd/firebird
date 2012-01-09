@@ -310,9 +310,13 @@ static const struct ini_idx_t indices[] =
 	/*	define index RDB$INDEX_46 for RDB$GENERATORS unique RDB$GENERATOR_ID; */
 	INDEX(46, ODS_11_2, rel_gens, idx_unique, 1)
 		SEGMENT(f_gen_id, idx_numeric)	/* generator id */
+	}},
+	/*	define index RDB$INDEX_47 for RDB$PROCEDURE_PARAMETERS RDB$FIELD_SOURCE; */
+	INDEX(47, ODS_11_2, rel_prc_prms, 0, 1)
+		SEGMENT(f_prm_sname, idx_metadata)	/* field source name */
 	}}
 
-	/* Last index in ODS 11.2 is RDB$INDEX_46 */
+	/* Last index in ODS 11.2 is RDB$INDEX_47 */
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)
