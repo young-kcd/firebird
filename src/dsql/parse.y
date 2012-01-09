@@ -5414,8 +5414,7 @@ alter_user_clause
 	;
 
 passwd_clause
-	: PASSWORD sql_string
-		{ $$ = newNode<string>($2->str_data, $2->str_length); }
+	: PASSWORD sql_string	{ $$ = newNode<string>($2->str_data, $2->str_length); }
 	;
 
 set_noise
@@ -5424,53 +5423,42 @@ set_noise
 	;
 
 passwd_opt
-	: // nothing
-		{ $$ = NULL; }
+	: /* nothing */			{ $$ = NULL; }
 	| passwd_clause
 	;
 
 firstname_opt
-	: // nothing
-		{ $$ = NULL; }
-	| FIRSTNAME sql_string
-		{ $$ = newNode<string>($2->str_data, $2->str_length); }
+	: /* nothing */			{ $$ = NULL; }
+	| FIRSTNAME sql_string	{ $$ = newNode<string>($2->str_data, $2->str_length); }
 	;
 
 middlename_opt
-	: // nothing
-		{ $$ = NULL; }
-	| MIDDLENAME sql_string
-		{ $$ = newNode<string>($2->str_data, $2->str_length); }
+	: /* nothing */			{ $$ = NULL; }
+	| MIDDLENAME sql_string	{ $$ = newNode<string>($2->str_data, $2->str_length); }
 	;
 
 lastname_opt
-	: // nothing
-		{ $$ = NULL; }
-	| LASTNAME sql_string
-		{ $$ = newNode<string>($2->str_data, $2->str_length); }
+	: /* nothing */			{ $$ = NULL; }
+	| LASTNAME sql_string	{ $$ = newNode<string>($2->str_data, $2->str_length); }
 	;
 
 admin_opt
-	: // nothing
-		{ $$ = Nullable<int>::empty(); }
+	: /* nothing */			{ $$ = Nullable<int>::empty(); }
 	| revoke_admin
 	| grant_admin
 	;
 
 grant_admin_opt
-	: // nothing
-		{ $$ = Nullable<int>::empty(); }
+	: /* nothing */			{ $$ = Nullable<int>::empty(); }
 	| grant_admin
 	;
 
 revoke_admin
-	: REVOKE ADMIN ROLE
-		{ $$ = Nullable<int>::val(0); }
+	: REVOKE ADMIN ROLE		{ $$ = Nullable<int>::val(0); }
 	;
 
 grant_admin
-	: GRANT ADMIN ROLE
-		{ $$ = Nullable<int>::val(1); }
+	: GRANT ADMIN ROLE		{ $$ = Nullable<int>::val(1); }
 	;
 
 // value types

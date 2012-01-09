@@ -3378,11 +3378,8 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 }
 
 
-void MET_revoke(thread_db* tdbb,
-				jrd_tra* transaction,
-				const MetaName& relation,
-				const MetaName& revokee,
-				const string& privilege)
+void MET_revoke(thread_db* tdbb, jrd_tra* transaction, const MetaName& relation,
+	const MetaName& revokee, const string& privilege)
 {
 /**************************************
  *

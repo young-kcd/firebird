@@ -120,7 +120,8 @@ void		MET_verify_cache(Jrd::thread_db*);
 void		MET_clear_cache(Jrd::thread_db*);
 bool		MET_procedure_in_use(Jrd::thread_db*, Jrd::jrd_prc*);
 void		MET_remove_procedure(Jrd::thread_db*, int, Jrd::jrd_prc*);
-void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::string&);
+void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const Firebird::MetaName&,
+	const Firebird::MetaName&, const Firebird::string&);
 void		MET_scan_partners(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_scan_relation(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_trigger_msg(Jrd::thread_db*, Firebird::string&, const Firebird::MetaName&, USHORT);

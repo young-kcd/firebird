@@ -71,11 +71,10 @@ const int FB_MAX_ACL_SIZE	= 4096;
 
 
 static void add_index_set(thread_db*);
-static void add_security_to_sys_obj(thread_db*, const MetaName&,
-									USHORT, const MetaName&,
-									USHORT = 0, const UCHAR* = NULL);
+static void add_security_to_sys_obj(thread_db*, const MetaName&, USHORT, const MetaName&,
+	USHORT = 0, const UCHAR* = NULL);
 static void add_security_to_sys_rel(thread_db*, const MetaName&,
-		const TEXT*, const USHORT, const UCHAR*, const bool);
+	const TEXT*, const USHORT, const UCHAR*, const bool);
 static void store_generator(thread_db*, const gen*, AutoRequest&, const MetaName&);
 static void store_global_field(thread_db*, const gfld*, AutoRequest&, const MetaName&);
 static void store_intlnames(thread_db*, const MetaName&);
@@ -289,7 +288,7 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	}
 
 	jrd_tra* transaction = attachment->getSysTransaction();
-	
+
 	// Store RELATIONS and RELATION_FIELDS
 
 	SLONG rdbRelationId;
@@ -464,19 +463,27 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	length = acl - buffer;
 
 	for (const gfld* gfield = gfields; gfield->gfld_name; gfield++)
-		add_security_to_sys_obj(tdbb, ownerName, obj_field, names[(USHORT)gfield->gfld_name], length, buffer);
+	{
+		add_security_to_sys_obj(tdbb, ownerName, obj_field,
+			names[(USHORT) gfield->gfld_name], length, buffer);
+	}
 
 	for (const gen* generator = generators; generator->gen_name; generator++)
-		add_security_to_sys_obj(tdbb, ownerName, obj_generator, generator->gen_name, length, buffer);
+	{
+		add_security_to_sys_obj(tdbb, ownerName, obj_generator,
+			generator->gen_name, length, buffer);
+	}
 
 	for (const IntlManager::CharSetDefinition* charset = IntlManager::defaultCharSets;
-		 charset->name; ++charset)
+		 charset->name;
+		 ++charset)
 	{
 		add_security_to_sys_obj(tdbb, ownerName, obj_charset, charset->name, length, buffer);
 	}
 
 	for (const IntlManager::CollationDefinition* collation = IntlManager::defaultCollations;
-		 collation->name; ++collation)
+		 collation->name;
+		 ++collation)
 	{
 		add_security_to_sys_obj(tdbb, ownerName, obj_collation, collation->name, length, buffer);
 	}
@@ -1028,6 +1035,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 }
 
 
+// Add security to system objects.
 static void add_security_to_sys_obj(thread_db* tdbb,
 									const MetaName& user_name,
 									USHORT obj_type,
@@ -1035,17 +1043,6 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 									USHORT acl_length,
 									const UCHAR* acl)
 {
-/**************************************
- *
- *      a d d _ s e c u r i t y _ t o _ s y s _ o b j
- *
- **************************************
- *
- * Functional description
- *
- *      Add security to system objects.
- *
- **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
@@ -1055,7 +1052,7 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 
 	Firebird::MetaName security_class;
 	security_class.printf("%s%"SQUADFORMAT, SQL_SECCLASS_PREFIX,
-						  DPM_gen_id(tdbb, MET_lookup_generator(tdbb, SQL_SECCLASS_GENERATOR), false, 1));
+		DPM_gen_id(tdbb, MET_lookup_generator(tdbb, SQL_SECCLASS_GENERATOR), false, 1));
 
 	AutoRequest handle;
 
@@ -1145,7 +1142,7 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 
 
 static void store_generator(thread_db* tdbb, const gen* generator, AutoRequest& handle,
-						    const MetaName& owner)
+	const MetaName& owner)
 {
 /**************************************
  *
@@ -1183,7 +1180,7 @@ static void store_generator(thread_db* tdbb, const gen* generator, AutoRequest& 
 
 
 static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest& handle,
-							   const MetaName& owner)
+	const MetaName& owner)
 {
 /**************************************
  *
