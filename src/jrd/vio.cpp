@@ -2589,7 +2589,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_charsets:
-			EVL_field(0, new_rpb->rpb_record, fld_charset_name, &desc1);
+			EVL_field(0, new_rpb->rpb_record, f_cs_cs_name, &desc1);
 			MOV_get_metaname(&desc1, object_name);
 			SCL_check_charset(tdbb, object_name, SCL_protect);
 			break;

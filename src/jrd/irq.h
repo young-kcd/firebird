@@ -72,7 +72,6 @@ enum irq_type_t
 	irq_ch_cmp_dpd,			// check computed field dependencies
 	irq_grant6,				// get field-level security class
 	irq_grant7,				// update field-level security classes
-	irq_grant8,				// purge out field-level security classes
 	irq_foreign1,			// purge out field-level security classes
 	irq_foreign2,			// purge out field-level security classes
 	irq_format5,			// make a new format for a record

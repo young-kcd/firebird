@@ -288,14 +288,6 @@ enum node_args {
 	e_label_number,
 	e_label_count,
 
-	e_user_name = 0, 				// nod_add(mod)_user
-	e_user_passwd,
-	e_user_first,
-	e_user_middle,
-	e_user_last,
-	e_user_admin,
-	e_user_count,
-
 	e_mod_fld_null_flag_field = 0,				// nod_mod_field_null_flag
 	e_mod_fld_null_flag_value,
 	e_mod_fld_null_flag_count
