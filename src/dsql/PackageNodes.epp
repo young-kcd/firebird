@@ -521,20 +521,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 	}
 	END_STORE
 
-	requestHandle.reset(tdbb, drq_s_pkg_usr_prvs, DYN_REQUESTS);
-
-	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		X IN RDB$USER_PRIVILEGES
-	{
-		strcpy(X.RDB$RELATION_NAME, name.c_str());
-		strcpy(X.RDB$USER, userName.c_str());
-		X.RDB$USER_TYPE = obj_user;
-		X.RDB$OBJECT_TYPE = obj_package_header;
-		X.RDB$PRIVILEGE[0] = EXEC_PRIVILEGE;
-		X.RDB$PRIVILEGE[1] = 0;
-		X.RDB$GRANT_OPTION = 1;
-	}
-	END_STORE
+	storePrivileges(tdbb, transaction, name, obj_package_header, EXEC_PRIVILEGES);
 
 	owner = userName;
 

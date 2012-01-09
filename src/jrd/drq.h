@@ -111,7 +111,6 @@ enum drq_type_t
 	drq_e_trg_msgs2,		// erase trigger messages
 	drq_e_trigger2,			// erase trigger
 	drq_l_prc_name,			// lookup procedure name
-	drq_s_prc_usr_prvs,		// store procedure priviledges
 	drq_s_xcp,				// store an exception
 	drq_m_xcp,				// modify an exception
 	drq_e_trg_prv,			// erase trigger's privileges
@@ -204,7 +203,6 @@ enum drq_type_t
 	drq_l_pkg_func_args,	// lookup packaged function arguments
 	drq_l_pkg_procs,		// lookup packaged procedures
 	drq_l_pkg_proc_args,	// lookup packaged procedure arguments
-	drq_s_pkg_usr_prvs,		// store package privileges
 	drq_e_pkg_prv,			// erase package privileges
 	drq_m_pkg_prm_defs,		// modify packaged procedure parameters defaults
 	drq_m_pkg_arg_defs,		// modify packaged function arguments defaults
@@ -212,9 +210,7 @@ enum drq_type_t
 	drq_l_relation,			// lookup relation before erase
 	drq_l_fun_name,			// lookup function name
 	drq_g_nxt_fun_id,		// lookup next function ID
-	drq_s_fun_usr_prvs,		// store user privileges for a function
 	drq_e_arg_gfld,			// erase argument's global field
-	drq_e_arg_gfld2,		// erase argument's global field
 	drq_e_fun_prvs,			// erase function privileges
 	drq_e_fun_prv,			// erase function privileges
 	drq_s_fld_src,			// store field source
@@ -235,10 +231,6 @@ enum drq_type_t
 	drq_e_xcp_prvs,			// erase exception privileges
 	drq_e_gen_prvs,			// erase generator privileges
 	drq_e_gfld_prvs,		// erase domain privileges
-	drq_s_coll_prvs,		// store collation privileges
-	drq_s_xcp_prvs,			// store exception privileges
-	drq_s_gen_prvs,			// store generator privileges
-	drq_s_gfld_prvs,		// store domain privileges
 
 	drq_MAX
 };

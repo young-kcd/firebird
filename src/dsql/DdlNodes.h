@@ -1081,7 +1081,6 @@ public:
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName);
 
 protected:
-	void storePrivileges(thread_db* tdbb, jrd_tra* transaction);
 	void defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		const dsql_nod* element, SSHORT position, const dsql_nod* pkcols);
 	bool defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,

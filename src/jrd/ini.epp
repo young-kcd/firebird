@@ -1129,15 +1129,18 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 
 	handle.reset();
 
-	STORE(REQUEST_HANDLE handle) PRIV IN RDB$USER_PRIVILEGES
-		PAD(user_name.c_str(), PRIV.RDB$USER);
-		PAD(obj_name.c_str(), PRIV.RDB$RELATION_NAME);
-		PRIV.RDB$PRIVILEGE[0] = USAGE_PRIVILEGE;
-		PRIV.RDB$PRIVILEGE[1] = 0;
-		PRIV.RDB$GRANT_OPTION = 1;
-		PRIV.RDB$USER_TYPE = obj_user;
-		PRIV.RDB$OBJECT_TYPE = obj_type;
-	END_STORE
+	for (const char* p = USAGE_PRIVILEGES; *p; ++p)
+	{
+		STORE(REQUEST_HANDLE handle) PRIV IN RDB$USER_PRIVILEGES
+			PAD(user_name.c_str(), PRIV.RDB$USER);
+			PAD(obj_name.c_str(), PRIV.RDB$RELATION_NAME);
+			PRIV.RDB$PRIVILEGE[0] = *p;
+			PRIV.RDB$PRIVILEGE[1] = 0;
+			PRIV.RDB$GRANT_OPTION = 1;
+			PRIV.RDB$USER_TYPE = obj_user;
+			PRIV.RDB$OBJECT_TYPE = obj_type;
+		END_STORE
+	}
 }
 
 

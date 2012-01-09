@@ -126,6 +126,9 @@ public:
 	static bool deleteSecurityClass(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& secClass);
 
+	static void storePrivileges(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& name, int type, const char* privileges);
+
 public:
 	// Set the scratch's transaction when executing a node. Fact of accessing the scratch during
 	// execution is a hack.
