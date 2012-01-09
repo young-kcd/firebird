@@ -314,9 +314,14 @@ static const struct ini_idx_t indices[] =
 	/*	define index RDB$INDEX_47 for RDB$PROCEDURE_PARAMETERS RDB$FIELD_SOURCE; */
 	INDEX(47, ODS_11_2, rel_prc_prms, 0, 1)
 		SEGMENT(f_prm_sname, idx_metadata)	/* field source name */
+	}},
+	/*	define index RDB$INDEX_48 for RDB$PROCEDURE_PARAMETERS RDB$RELATION_NAME, RDB$FIELD_NAME; */
+	INDEX(48, ODS_11_2, rel_prc_prms, 0, 2)
+		SEGMENT(f_prm_rname, idx_metadata),	/* relation name */
+		SEGMENT(f_prm_fname, idx_metadata)	/* field name */
 	}}
 
-	/* Last index in ODS 11.2 is RDB$INDEX_47 */
+	/* Last index in ODS 11.2 is RDB$INDEX_48 */
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)
