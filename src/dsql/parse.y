@@ -676,11 +676,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 }
 
 %type <legacyNode> access_mode access_type alias_list
-%type <legacyNode> alter alter_clause alter_column_name
+%type <legacyNode> alter_column_name
 %type <legacyNode> alter_data_type_or_domain
 %type <legacyNode> alter_op alter_ops
 %type <stmtNode>   alter_sequence_clause
-%type <ddlNode>    alter_user_clause
+%type <ddlNode>    alter alter_clause alter_user_clause
 %type <legacyNode> array_element array_range
 %type <ddlNode>	   alter_exception_clause alter_index_clause alter_role_clause alter_udf_clause
 %type <ddlNode>	   alter_view_clause
@@ -715,9 +715,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <stmtNode>   complex_proc_statement
 %type <legacyNode> computed_by computed_clause constant constraint_index_opt
 %type <boolVal>	   conditional
-%type <legacyNode> constraint_name_opt correlation_name create
-%type <ddlNode>    create_user_clause
-%type <legacyNode> create_clause cross_join
+%type <legacyNode> constraint_name_opt correlation_name
+%type <ddlNode>    create create_clause create_user_clause
+%type <legacyNode> cross_join
 %type <legacyNode> cursor_clause cursor_def
 %type <ddlNode>	   create_or_alter
 %type <stmtNode>   cursor_declaration_item continue cursor_statement
@@ -990,40 +990,30 @@ top
 	;
 
 statement
-	: alter
+	: alter										{ $$ = makeClassNode($1); }
+	// ASF: ALTER SEQUENCE is defined here cause it's treated as DML.
+	| ALTER SEQUENCE alter_sequence_clause		{ $$ = makeClassNode($3); }
 	| blob_io
-	| comment
-		{ $$ = makeClassNode($1); }
+	| comment									{ $$ = makeClassNode($1); }
 	| commit
-	| create
-	| create_or_alter
-		{ $$ = makeClassNode($1); }
-	| declare
-		{ $$ = makeClassNode($1); }
-	| delete
-		{ $$ = makeClassNode($1); }
-	| drop
-		{ $$ = makeClassNode($1); }
+	| create									{ $$ = makeClassNode($1); }
+	| create_or_alter							{ $$ = makeClassNode($1); }
+	| declare									{ $$ = makeClassNode($1); }
+	| delete									{ $$ = makeClassNode($1); }
+	| drop										{ $$ = makeClassNode($1); }
 	| grant
-	| insert
-		{ $$ = makeClassNode($1); }
-	| merge
-		{ $$ = makeClassNode($1); }
-	| exec_procedure
-		{ $$ = makeClassNode($1); }
-	| exec_block
-		{ $$ = makeClassNode($1); }
-	| recreate
-		{ $$ = makeClassNode($1); }
+	| insert									{ $$ = makeClassNode($1); }
+	| merge										{ $$ = makeClassNode($1); }
+	| exec_procedure							{ $$ = makeClassNode($1); }
+	| exec_block								{ $$ = makeClassNode($1); }
+	| recreate									{ $$ = makeClassNode($1); }
 	| revoke
 	| rollback
 	| savepoint
 	| select
 	| set
-	| update
-		{ $$ = makeClassNode($1); }
-	| update_or_insert
-		{ $$ = makeClassNode($1); }
+	| update									{ $$ = makeClassNode($1); }
+	| update_or_insert							{ $$ = makeClassNode($1); }
 	;
 
 
@@ -1328,8 +1318,7 @@ create
 	;
 
 create_clause
-	: EXCEPTION exception_clause
-		{ $$ = makeClassNode($2); }
+	: EXCEPTION exception_clause				{ $$ = $2; }
 	| unique_opt order_direction INDEX symbol_index_name ON simple_table_name index_definition
 		{
 			CreateIndexNode* node = newNode<CreateIndexNode>(toName($4));
@@ -1337,40 +1326,24 @@ create_clause
 			node->descending = $2;
 			node->legacyRelation = $6;
 			node->legacyDef = $7;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
-	| FUNCTION function_clause
-		{ $$ = makeClassNode($2); }
-	| PROCEDURE procedure_clause
-		{ $$ = makeClassNode($2); }
-	| TABLE table_clause
-		{ $$ = makeClassNode($2); }
-	| GLOBAL TEMPORARY TABLE gtt_table_clause
-		{ $$ = makeClassNode($4); }
-	| TRIGGER trigger_clause
-		{ $$ = makeClassNode($2); }
-	| VIEW view_clause
-		{ $$ = makeClassNode($2); }
-	| GENERATOR generator_clause
-		{ $$ = makeClassNode($2); }
-	| SEQUENCE generator_clause
-		{ $$ = makeClassNode($2); }
-	| DATABASE db_clause
-		{ $$ = makeClassNode($2); }
-	| DOMAIN domain_clause
-		{ $$ = makeClassNode($2); }
-	| SHADOW shadow_clause
-		{ $$ = makeClassNode($2); }
-	| ROLE role_clause
-		{ $$ = makeClassNode($2); }
-	| COLLATION collation_clause
-		{ $$ = makeClassNode($2); }
-	| USER create_user_clause
-		{ $$ = makeClassNode($2); }
-	| PACKAGE package_clause
-		{ $$ = makeClassNode($2); }
-	| PACKAGE BODY package_body_clause
-		{ $$ = makeClassNode($3); }
+	| FUNCTION function_clause					{ $$ = $2; }
+	| PROCEDURE procedure_clause				{ $$ = $2; }
+	| TABLE table_clause						{ $$ = $2; }
+	| GLOBAL TEMPORARY TABLE gtt_table_clause	{ $$ = $4; }
+	| TRIGGER trigger_clause					{ $$ = $2; }
+	| VIEW view_clause							{ $$ = $2; }
+	| GENERATOR generator_clause				{ $$ = $2; }
+	| SEQUENCE generator_clause					{ $$ = $2; }
+	| DATABASE db_clause						{ $$ = $2; }
+	| DOMAIN domain_clause						{ $$ = $2; }
+	| SHADOW shadow_clause						{ $$ = $2; }
+	| ROLE role_clause							{ $$ = $2; }
+	| COLLATION collation_clause				{ $$ = $2; }
+	| USER create_user_clause					{ $$ = $2; }
+	| PACKAGE package_clause					{ $$ = $2; }
+	| PACKAGE BODY package_body_clause			{ $$ = $3; }
 	;
 
 
@@ -3222,13 +3195,12 @@ trigger_position
 
 // ALTER statement
 
-alter	: ALTER alter_clause
-			{ $$ = $2; }
-		;
+alter
+	: ALTER alter_clause	{ $$ = $2; }
+	;
 
 alter_clause
-	: EXCEPTION alter_exception_clause
-		{ $$ = makeClassNode($2); }
+	: EXCEPTION alter_exception_clause		{ $$ = $2; }
 	| TABLE simple_table_name alter_ops
 		{
 			AlterRelationNode* node = newNode<AlterRelationNode>($2);
@@ -3237,36 +3209,23 @@ alter_clause
 			for (dsql_nod** ptr = list->nod_arg; ptr != list->nod_arg + list->nod_count; ++ptr)
 				node->elements.add(*ptr);
 
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
-	| VIEW alter_view_clause
-		{ $$ = makeClassNode($2); }
-	| TRIGGER alter_trigger_clause
-		{ $$ = makeClassNode($2); }
-	| PROCEDURE alter_procedure_clause
-		{ $$ = makeClassNode($2); }
-	| PACKAGE alter_package_clause
-		{ $$ = makeClassNode($2); }
+	| VIEW alter_view_clause				{ $$ = $2; }
+	| TRIGGER alter_trigger_clause			{ $$ = $2; }
+	| PROCEDURE alter_procedure_clause		{ $$ = $2; }
+	| PACKAGE alter_package_clause			{ $$ = $2; }
 	| DATABASE
 			{ $<alterDatabaseNode>$ = newNode<AlterDatabaseNode>(); }
 		alter_db($<alterDatabaseNode>2)
-			{ $$ = makeClassNode($<alterDatabaseNode>2); }
-	| DOMAIN alter_domain
-		{ $$ = makeClassNode($2); }
-	| INDEX alter_index_clause
-		{ $$ = makeClassNode($2); }
-	| SEQUENCE alter_sequence_clause
-		{ $$ = makeClassNode($2); }
-	| EXTERNAL FUNCTION alter_udf_clause
-		{ $$ = makeClassNode($3); }
-	| FUNCTION alter_function_clause
-		{ $$ = makeClassNode($2); }
-	| ROLE alter_role_clause
-		{ $$ = makeClassNode($2); }
-	| USER alter_user_clause
-		{ $$ = makeClassNode($2); }
-	| CHARACTER SET alter_charset_clause
-		{ $$ = makeClassNode($3); }
+			{ $$ = $<alterDatabaseNode>2; }
+	| DOMAIN alter_domain					{ $$ = $2; }
+	| INDEX alter_index_clause				{ $$ = $2; }
+	| EXTERNAL FUNCTION alter_udf_clause	{ $$ = $3; }
+	| FUNCTION alter_function_clause		{ $$ = $2; }
+	| ROLE alter_role_clause				{ $$ = $2; }
+	| USER alter_user_clause				{ $$ = $2; }
+	| CHARACTER SET alter_charset_clause	{ $$ = $3; }
 	;
 
 alter_domain
@@ -3313,47 +3272,48 @@ alter_ops
 		{ $$ = make_node(nod_list, 2, $1, $3); }
 	;
 
-alter_op	: DROP simple_column_name drop_behaviour
-			{ $$ = make_node (nod_del_field, 2, $2, $3); }
-		| DROP CONSTRAINT symbol_constraint_name
-			{ $$ = make_node (nod_delete_rel_constraint, (int) 1, $3);}
-		| ADD column_def
-			{ $$ = $2; }
-		| ADD table_constraint_definition
-			{ $$ = $2; }
-		/* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example
-		| col_opt simple_column_name POSITION nonneg_short_integer
-			{ $$ = make_node (nod_mod_field_pos, 2, $2,
-			MAKE_const_slong ((IPTR) $4)); } */
-		| col_opt simple_column_name POSITION pos_short_integer
-			{ $$ = make_node(nod_mod_field_pos, 2, $2, MAKE_const_slong($4)); }
-		| col_opt alter_column_name TO simple_column_name
-			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
-		| col_opt alter_column_name KW_NULL
-			{
-				$$ = make_node(nod_mod_field_null_flag, e_mod_fld_null_flag_count,
-					$2, MAKE_const_slong(0));
-			}
-		| col_opt alter_column_name NOT KW_NULL
-			{
-				$$ = make_node(nod_mod_field_null_flag, e_mod_fld_null_flag_count,
-					$2, MAKE_const_slong(1));
-			}
-		| col_opt alter_col_name KW_TYPE alter_data_type_or_domain
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL, NULL); }
-		| col_opt alter_col_name KW_TYPE non_array_type def_computed
-			{
-				// Due to parser hacks, we should not pass $4 (non_array_type) to make_node.
-				$$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $5);
-			}
-		| col_opt alter_col_name def_computed
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $3); }
-		| col_opt alter_col_name SET domain_default
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, $4, NULL); }
-		| col_opt alter_col_name DROP DEFAULT
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
-					make_node(nod_del_default, (int) 0, NULL), NULL); }
-		;
+alter_op
+	: DROP simple_column_name drop_behaviour
+		{ $$ = make_node (nod_del_field, 2, $2, $3); }
+	| DROP CONSTRAINT symbol_constraint_name
+		{ $$ = make_node (nod_delete_rel_constraint, (int) 1, $3);}
+	| ADD column_def
+		{ $$ = $2; }
+	| ADD table_constraint_definition
+		{ $$ = $2; }
+	/* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example
+	| col_opt simple_column_name POSITION nonneg_short_integer
+		{ $$ = make_node (nod_mod_field_pos, 2, $2,
+		MAKE_const_slong ((IPTR) $4)); } */
+	| col_opt simple_column_name POSITION pos_short_integer
+		{ $$ = make_node(nod_mod_field_pos, 2, $2, MAKE_const_slong($4)); }
+	| col_opt alter_column_name TO simple_column_name
+		{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
+	| col_opt alter_column_name KW_NULL
+		{
+			$$ = make_node(nod_mod_field_null_flag, e_mod_fld_null_flag_count,
+				$2, MAKE_const_slong(0));
+		}
+	| col_opt alter_column_name NOT KW_NULL
+		{
+			$$ = make_node(nod_mod_field_null_flag, e_mod_fld_null_flag_count,
+				$2, MAKE_const_slong(1));
+		}
+	| col_opt alter_col_name KW_TYPE alter_data_type_or_domain
+		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL, NULL); }
+	| col_opt alter_col_name KW_TYPE non_array_type def_computed
+		{
+			// Due to parser hacks, we should not pass $4 (non_array_type) to make_node.
+			$$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $5);
+		}
+	| col_opt alter_col_name def_computed
+		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $3); }
+	| col_opt alter_col_name SET domain_default
+		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, $4, NULL); }
+	| col_opt alter_col_name DROP DEFAULT
+		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
+				make_node(nod_del_default, (int) 0, NULL), NULL); }
+	;
 
 alter_column_name
 	: keyword_or_column
