@@ -2147,7 +2147,11 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
  *  the same results as the generic boolean evaluation.
  *
  **************************************/
-	if (DTYPE_IS_TEXT(target.dsc_dtype))
+	if (source.isNull())
+	{
+		return true;
+	}
+	else if (DTYPE_IS_TEXT(target.dsc_dtype))
 	{
 		// should we also check for the INTL stuff here?
 		return (DTYPE_IS_TEXT(source.dsc_dtype));
