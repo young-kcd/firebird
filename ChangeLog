@@ -1,3 +1,11 @@
+ 2012-01-09 08:56  dimitr 
+   M src/jrd/idx.h
+One more index to avoid full table scans on system tables (this time during the column modification).
+
+ 2012-01-09 08:27  dimitr 
+   M src/jrd/idx.h
+Added a system index that helps to avoid a full table scan on RDB$PROCEDURE_PARAMETERS during domain deletion.
+
  2011-12-30 14:46  asfernandes 
    M doc/sql.extensions/README.builtin_functions.txt
    M src/jrd/SysFunction.cpp
