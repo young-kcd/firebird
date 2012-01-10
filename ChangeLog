@@ -1,3 +1,23 @@
+ 2012-01-09 09:48  dimitr 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/PackageNodes.epp
+   M src/jrd/drq.h
+   M src/jrd/dyn.h
+   M src/jrd/ini.epp
+1) Made the functions logic in sync with the procedures one.
+2) Simplified the privileges creation code.
+
+ 2012-01-09 08:57  dimitr 
+   M src/jrd/idx.h
+More indices to avoid full table scans on system tables (this time during the column modification).
+
+ 2012-01-09 08:41  dimitr 
+   M src/jrd/idx.h
+Added a system index that helps to avoid a full table scan on RDB$PROCEDURE_PARAMETERS and RDB$FUNCTION_ARGUMENTS during domain deletion.
+Also, simplified the system index definitions and removed the gaps in the ID numbering.
+
  2012-01-09 00:49  asfernandes 
    M src/dsql/parse.y
 Misc.
