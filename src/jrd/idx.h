@@ -95,13 +95,13 @@ static const struct ini_idx_t indices[] =
 	}},
 	// define index RDB$INDEX_9 for RDB$FUNCTIONS unique RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
 	INDEX(9, rel_funs, idx_unique, 2)
-		SEGMENT(f_fun_name, idx_metadata),		// function name
-		SEGMENT(f_fun_pkg_name, idx_metadata)	// package name
+		SEGMENT(f_fun_pkg_name, idx_metadata),	// package name
+		SEGMENT(f_fun_name, idx_metadata)		// function name
 	}},
 	// define index RDB$INDEX_10 for RDB$FUNCTION_ARGUMENTS RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
 	INDEX(10, rel_args, 0, 2)
-		SEGMENT(f_arg_fun_name, idx_metadata),	// function name
-		SEGMENT(f_arg_pkg_name, idx_metadata)	// package name
+		SEGMENT(f_arg_pkg_name, idx_metadata),	// package name
+		SEGMENT(f_arg_fun_name, idx_metadata)	// function name
 	}},
 	// define index RDB$INDEX_11 for RDB$GENERATORS unique RDB$GENERATOR_NAME;
 	INDEX(11, rel_gens, idx_unique, 1)
@@ -137,9 +137,9 @@ static const struct ini_idx_t indices[] =
 	// define index RDB$INDEX_18 for RDB$PROCEDURE_PARAMETERS unique RDB$PROCEDURE_NAME,
 	// RDB$PARAMETER_NAME, RDB$PACKAGE_NAME;
 	INDEX(18, rel_prc_prms, idx_unique, 3)
+		SEGMENT(f_prm_pkg_name, idx_metadata),	// package name
 		SEGMENT(f_prm_procedure, idx_metadata),	// procedure name
-		SEGMENT(f_prm_name, idx_metadata),		// parameter name
-		SEGMENT(f_prm_pkg_name, idx_metadata)	// package name
+		SEGMENT(f_prm_name, idx_metadata)		// parameter name
 	}},
 	// define index RDB$INDEX_19 for RDB$CHARACTER_SETS unique RDB$CHARACTER_SET_NAME;
 	INDEX(19, rel_charsets, idx_unique, 1)
@@ -151,8 +151,8 @@ static const struct ini_idx_t indices[] =
 	}},
 	// define index RDB$INDEX_21 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME, RDB$PACKAGE_NAME;
 	INDEX(21, rel_procedures, idx_unique, 2)
-		SEGMENT(f_prc_name, idx_metadata),		// procedure name
-		SEGMENT(f_prc_pkg_name, idx_metadata)	// package name
+		SEGMENT(f_prc_pkg_name, idx_metadata),	// package name
+		SEGMENT(f_prc_name, idx_metadata)		// procedure name
 	}},
 	// define index RDB$INDEX_22 for RDB$PROCEDURES unique RDB$PROCEDURE_ID;
 	INDEX(22, rel_procedures, idx_unique, 1)
