@@ -1,3 +1,7 @@
+ 2012-01-10 05:27  dimitr 
+   M src/jrd/Optimizer.cpp
+The simplest possible fix for CORE-3722: IS NOT DISTINCT FROM NULL doesn't use index.
+
  2012-01-09 08:56  dimitr 
    M src/jrd/idx.h
 One more index to avoid full table scans on system tables (this time during the column modification).
