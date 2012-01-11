@@ -1379,7 +1379,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 				for (; plugins->hasData(); plugins->next())
 				{
 					port->port_srv_auth_block->authBlockWriter.setMethod(plugins->name());
-					switch (port->port_srv_auth_block->plugins->plugin()->authenticate(
+					switch (plugins->plugin()->authenticate(
 								&status, port->port_srv_auth_block,
 								&port->port_srv_auth_block->authBlockWriter))
 					{
