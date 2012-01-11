@@ -5428,11 +5428,6 @@
 			path = tpc.cpp;
 			refType = 4;
 		};
-		F616C6DB0200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = tpc.h;
-			refType = 4;
-		};
 		F616C6DC0200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = tpc_proto.h;
