@@ -1540,10 +1540,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\tpc.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\tpc_proto.h"
 				>
 			</File>
