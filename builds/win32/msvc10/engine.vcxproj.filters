@@ -950,9 +950,6 @@
     <ClInclude Include="..\..\..\src\jrd\thread_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\tpc.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\tpc_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
