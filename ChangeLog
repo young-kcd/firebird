@@ -1,3 +1,7 @@
+ 2012-01-10 05:26  dimitr 
+   M src/jrd/Optimizer.cpp
+The simplest possible fix for CORE-3722: IS NOT DISTINCT FROM NULL doesn't use index.
+
  2011-12-30 14:12  alexpeshkoff 
    M src/utilities/fbsvcmgr.cpp
 Backported fix for CORE-3658: FBSVCMGR connects to server as OS user name rather than value of ISC_USER environment variable
