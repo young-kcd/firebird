@@ -1,3 +1,11 @@
+ 2012-01-10 13:53  asfernandes 
+   M src/jrd/idx.h
+Invert the RDB$PACKAGE_NAME segment in system indexes to make them usable in more cases.
+
+ 2012-01-10 13:15  dimitr 
+   M src/jrd/btr.cpp
+Slightly different fix for CORE-3722: IS NOT DISTINCT FROM NULL doesn't use index.
+
  2012-01-09 09:48  dimitr 
    M src/dsql/DdlNodes.epp
    M src/dsql/DdlNodes.h
