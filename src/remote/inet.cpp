@@ -344,7 +344,8 @@ static bool_t	packet_send(rem_port*, const SCHAR*, SSHORT);
 static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
-static rem_port*		select_port(rem_port*, SLCT *);
+enum HandleState {SEL_BAD, SEL_TIMEOUT, SEL_NO_DATA, SEL_READY};
+static rem_port*		select_port(rem_port*, SLCT *, HandleState&);
 static bool		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, rem_port*& port);
 static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
@@ -2465,23 +2466,29 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 /* Multi-client server multiplexes all known ports for incoming packets. */
 
 	for (;;) {
-		rem_port* port = select_port(main_port, &INET_select);
+		HandleState reason = SEL_BAD;
+		rem_port* port = select_port(main_port, &INET_select, reason);
+
 		if (port == main_port) {
 			if (port = select_accept(main_port))
 				return port;
 			continue;
 		}
-		if (port) {
-			if (port->port_dummy_timeout < 0) {
-				port->port_dummy_timeout = port->port_dummy_packet_interval;
-				if (port->port_flags & PORT_async ||
-					port->port_protocol < PROTOCOL_VERSION8)
-				{
-					continue;
-				}
-				packet->p_operation = op_dummy;
-				return port;
+
+		if (port && reason == SEL_TIMEOUT)
+		{
+			port->port_dummy_timeout = port->port_dummy_packet_interval;
+			if (port->port_flags & PORT_async ||
+				port->port_protocol < PROTOCOL_VERSION8)
+			{
+				continue;
 			}
+			packet->p_operation = op_dummy;
+			return port;
+		}
+
+		if (port && reason == SEL_READY)
+		{
 			/* We've got data -- lap it up and use it */
 
 			if (!xdr_protocol(&port->port_receive, packet))
@@ -2537,8 +2544,9 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 
 	for (;;) 
 	{
-		port = select_port(main_port, &INET_select);
-		if (port == main_port) 
+		HandleState reason = SEL_BAD;
+		port = select_port(main_port, &INET_select, reason);
+		if (port == main_port)
 		{
 			if ( (port = select_accept(main_port)) )
 			{
@@ -2551,26 +2559,28 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 
 			continue;
 		}
-		if (port) 
-		{
-			if (port->port_dummy_timeout < 0) 
-			{
-				port->port_dummy_timeout = port->port_dummy_packet_interval;
-				if (port->port_flags & PORT_async ||
-					port->port_protocol < PROTOCOL_VERSION8)
-				{
-					continue;
-				}
-				*length = 0;
-				return true;
-			}
 
+		if (port && reason == SEL_TIMEOUT)
+		{
+			port->port_dummy_timeout = port->port_dummy_packet_interval;
+			if (port->port_flags & PORT_async ||
+				port->port_protocol < PROTOCOL_VERSION8)
+			{
+				continue;
+			}
+			*length = 0;
+			return true;
+		}
+
+		if (port && reason == SEL_READY)
+		{
 			if (!packet_receive(port, buffer, bufsize, length))
 			{
 				*length = 0;
 			}
 			return (*length) ? true : false;
 		}
+
 		if (!select_wait(main_port, &INET_select))
 		{
 			port = NULL;
@@ -2634,7 +2644,7 @@ static rem_port* select_accept( rem_port* main_port)
 	return 0;
 }
 
-static rem_port* select_port( rem_port* main_port, SLCT * selct)
+static rem_port* select_port( rem_port* main_port, SLCT * selct, HandleState& reason)
 {
 /**************************************
  *
@@ -2669,10 +2679,12 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 			FD_CLR((SOCKET) port->port_handle, &selct->slct_fdset);
 			--selct->slct_count;
 			STOP_PORT_CRITICAL();
+			reason = SEL_READY;
 			return port;
 		}
 		else if (port->port_dummy_timeout < 0) {
 			STOP_PORT_CRITICAL();
+			reason = SEL_TIMEOUT;
 			return port;
 		}
 	}
@@ -2690,22 +2702,27 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 				continue;
 			}
 			STOP_PORT_CRITICAL();
+			reason = SEL_BAD;
 			return port;
-		}		
+		}
 		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) {
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
 			--selct->slct_count;
 			STOP_PORT_CRITICAL();
+			reason = SEL_READY;
 			return port;
 		}
 		else if (port->port_dummy_timeout < 0) {
 			STOP_PORT_CRITICAL();
+			reason = SEL_TIMEOUT;
 			return port;
 		}
 	}
 	STOP_PORT_CRITICAL();
 #endif
+
+	reason = SEL_NO_DATA;
 
 	return NULL;
 }
