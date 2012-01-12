@@ -30,7 +30,7 @@
 #
 ROOT=..
 ObjModuleType=boot
-CXXFLAGS+= -DBOOT_BUILD
+CPPFLAGS+= -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
