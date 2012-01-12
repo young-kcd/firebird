@@ -29,7 +29,7 @@
 #
 ROOT=../..
 
-CXXFLAGS+= -I$(FIREBIRD)/include
+CPPFLAGS+= -I$(FIREBIRD)/include
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
