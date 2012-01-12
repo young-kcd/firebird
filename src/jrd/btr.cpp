@@ -1083,7 +1083,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 
 
 idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx,
-			  temporary_key* key, idx_null_state* null_state, const bool fuzzy)
+			  temporary_key* key, idx_null_state* null_state, const bool fuzzy, USHORT count)
 {
 /**************************************
  *
@@ -1167,7 +1167,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			UCHAR* p = key->key_data;
 			SSHORT stuff_count = 0;
 			temp.key_flags |= key_empty;
-			for (USHORT n = 0; n < idx->idx_count; n++, tail++)
+			for (USHORT n = 0; n < count; n++, tail++)
 			{
 				for (; stuff_count; --stuff_count) {
 					*p++ = 0;
@@ -1251,6 +1251,12 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		key->key_length = 0;
 		return idx_e_conversion;
 	}
+}
+
+idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx,
+			  temporary_key* key, idx_null_state* null_state, const bool fuzzy)
+{
+	return BTR_key(tdbb, relation, record, idx, key, null_state, fuzzy, idx->idx_count);
 }
 
 
