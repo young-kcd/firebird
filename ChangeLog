@@ -1,3 +1,7 @@
+ 2012-01-11 11:47  alexpeshkoff 
+   M src/remote/inet.cpp
+Fixed CORE-3724: Server hangs when working with events
+
  2012-01-10 05:26  dimitr 
    M src/jrd/Optimizer.cpp
 The simplest possible fix for CORE-3722: IS NOT DISTINCT FROM NULL doesn't use index.
