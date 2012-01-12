@@ -1,3 +1,30 @@
+ 2012-01-11 13:24  alexpeshkoff 
+   M src/remote/inet.cpp
+Cleanup - use flags parameter of alloc_port() function for async ports
+
+ 2012-01-11 12:56  alexpeshkoff 
+   M builds/posix/Makefile.in
+Applied Michal's patch
+
+ 2012-01-11 12:05  alexpeshkoff 
+   M src/remote/server/server.cpp
+Misc
+
+ 2012-01-11 07:58  dimitr 
+   M builds/mac_os_x/CS/CS.pbproj/project.pbxproj
+Cleanup.
+
+ 2012-01-11 07:51  dimitr 
+   M builds/win32/msvc10/engine.vcxproj.filters
+Cleanup.
+
+ 2012-01-11 07:48  dimitr 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   D src/jrd/tpc.h
+Cleanup.
+
  2012-01-10 13:53  asfernandes 
    M src/jrd/idx.h
 Invert the RDB$PACKAGE_NAME segment in system indexes to make them usable in more cases.
