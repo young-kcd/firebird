@@ -6026,13 +6026,22 @@ void SrvAuthBlock::createPluginsItr()
 	}
 
 	// special case - last plugin from the list on the server may be used to check
-	// correctness of what previous one added to auth parameters block
-	if (final[final.getCount() - 1] != onServer[onServer.getCount() - 1])
+	// correctness of what previous plugins added to auth parameters block
+	bool multiFactor = true;
+	for (unsigned sp = 0; sp < final.getCount(); ++sp)
+	{
+		if (final[sp] == onServer[onServer.getCount() - 1])
+		{
+			multiFactor = false;
+			break;
+		}
+	}
+	if (multiFactor)
 	{
 		final.push(onServer[onServer.getCount() - 1]);
 	}
 
-	REMOTE_mergeList(pluginList, final);
+	REMOTE_makeList(pluginList, final);
 
 	plugins = new AuthServerPlugins(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, upInfo,
 								myConfig, pluginList.c_str());

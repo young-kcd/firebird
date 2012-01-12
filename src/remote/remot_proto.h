@@ -60,7 +60,7 @@ bool_t		REMOTE_getbytes (XDR*, SCHAR*, u_int);
 bool		REMOTE_legacy_auth(const char* nm, int protocol);
 Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName);
 void		REMOTE_parseList(Remote::ParsedList&, Firebird::PathName);
-void		REMOTE_mergeList(Firebird::PathName& list, const Remote::ParsedList& parsed);
+void		REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed);
 void		REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet);
 
 #define HANDSHAKE_DEBUG(A)

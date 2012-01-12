@@ -994,7 +994,7 @@ void REMOTE_parseList(Remote::ParsedList& parsed, Firebird::PathName list)
 	}
 }
 
-void REMOTE_mergeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
+void REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
 {
 	list.erase();
 	for (unsigned i = 0; i < parsed.getCount(); ++i)
