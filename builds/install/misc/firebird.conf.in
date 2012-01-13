@@ -150,18 +150,6 @@
 
 
 # ----------------------------
-# Legacy hash makes possible use of old security.fdb
-# after running misc/upgrade/security_database.sql.
-# If you want to disable logons with old passwords
-# after users' migration, set it to 0 (false).
-# Makes no difference when used with original
-# security2.fdb - it can't contain DES hash.
-#
-# Type: boolean
-#
-#LegacyHash = 1
-
-# ----------------------------
 # Which authentication method(s) should be used.
 # "native" means use of only traditional interbase/firebird
 # authentication with security database.
@@ -357,8 +345,9 @@
 # Type: string
 
 # AuthServer and AuthClient determine what authentication methods will be used
-# by network server and client redirector. For non-windows systems default
-# for both is Legacy_Auth.
+# by network server and client redirector. Secure remote passwords plugin
+# is default one. On windows Sspi is also used when no login/password is given.
+# Client can use legacy authentication to talk to old servers.
 #
 #AuthServer = Srp, Win_Sspi
 #AuthClient = Srp, Win_Sspi, Legacy_Auth
