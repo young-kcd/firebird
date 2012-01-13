@@ -9517,6 +9517,12 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 
 		const MetaName roleOwner(ROL.RDB$OWNER_NAME);
 
+		if (!ROL.RDB$SYSTEM_FLAG.NULL && ROL.RDB$SYSTEM_FLAG != 0)
+		{
+			// msg 284: can not drop system SQL role @1
+			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(284, DYN_MSG_FAC)) << name);
+		}
+
 		if (tdbb->getAttachment()->locksmith() || roleOwner == user)
 		{
 			AutoCacheRequest request2(tdbb, drq_del_role_1, DYN_REQUESTS);

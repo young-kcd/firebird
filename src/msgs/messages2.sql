@@ -1859,6 +1859,7 @@ COMMIT WORK;
 ('dyn_coll_used_function', 'DropCollationNode::execute', 'DdlNodes.epp', NULL, 8, 281, NULL, 'Collation @1 is used in function @2 (parameter name @3) and cannot be dropped', NULL, NULL);
 ('dyn_domain_used_function', 'DropDomainNode', 'DdlNodes.epp', NULL, 8, 282, NULL, 'Domain @1 is used in function @2 (parameter name @3) and cannot be dropped', NULL, NULL);
 ('dyn_alter_user_no_clause', 'CreateAlterUserNode', 'DdlNodes.epp', NULL, 8, 283, NULL, 'ALTER USER requires at least one clause to be specified', NULL, NULL);
+(NULL, 'DYN_delete_role', 'dyn_del.epp', NULL, 8, 284, NULL, 'Cannot delete system SQL role @1', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
