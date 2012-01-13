@@ -2138,6 +2138,7 @@ COMMIT WORK;
 (NULL, 'DYN_define_index', 'dyn_def.epp', NULL, 8, 241, NULL, 'Table @1 not found', NULL, NULL);
 (NULL, 'DYN_define_index', 'dyn_def.epp', NULL, 8, 242, NULL, 'attempt to reference a view (@1) in a foreign key', NULL, NULL);
 (NULL, 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 243, NULL, 'Collation @1 is used in procedure @2 (parameter name @3) and cannot be dropped', NULL, NULL);
+(NULL, 'DYN_delete_role', 'dyn_del.epp', NULL, 8, 284, NULL, 'Cannot delete system SQL role @1', NULL, NULL);
 -- Do not change the arguments of the previous DYN messages.
 -- Write the new DYN messages here.
 ('dyn_scale_too_big', 'check_update_numeric_type', 'dyn_mod.epp', NULL, 8, 244, NULL, 'New scale specified for column @1 must be at most @2.', NULL, NULL);

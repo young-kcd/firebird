@@ -1599,8 +1599,8 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 	}
 
 	jrd_req* request = NULL;
-	bool found = false;
-	bool del_role_ok = true;
+	enum DelRoleResult {DEL_R_OK, DEL_R_NOT_FOUND, DEL_R_FAIL_OWNER, DEL_R_FAIL_SYSTEM};
+	DelRoleResult del_role_result = DEL_R_NOT_FOUND;
 
 	Firebird::MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
 	user.upper7();
@@ -1620,18 +1620,25 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 			if (!DYN_REQUEST(drq_drop_role))
 				DYN_REQUEST(drq_drop_role) = request;
 
-			found = true;
 			role_owner = XX.RDB$OWNER_NAME;
 
 			// only owner of SQL role or USR_locksmith could drop SQL role
 
 			if (tdbb->getAttachment()->locksmith() || role_owner == user)
 			{
-				ERASE XX;
+				if (XX.RDB$SYSTEM_FLAG.NULL || XX.RDB$SYSTEM_FLAG == 0)
+				{
+					ERASE XX;
+					del_role_result = DEL_R_OK;
+				}
+				else
+				{
+					del_role_result = DEL_R_FAIL_SYSTEM;
+				}
 			}
 			else
 			{
-				del_role_ok = false;
+				del_role_result = DEL_R_FAIL_OWNER;
 			}
 
 		END_FOR;
@@ -1640,7 +1647,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_drop_role) = request;
 		}
 
-		if (del_role_ok)
+		if (del_role_result == DEL_R_OK)
 		{
 			request = CMP_find_request(tdbb, drq_del_role_1, DYN_REQUESTS);
 			id = drq_del_role_1;
@@ -1684,16 +1691,19 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 		}
 	}
 
-	if (!found)
+	switch (del_role_result)
 	{
+	case DEL_R_NOT_FOUND:
 		DYN_error_punt(false, 155, role_name.c_str());
 		// msg 155: "Role %s not found"
-	}
-
-	if (!del_role_ok)
-	{
+	case DEL_R_FAIL_OWNER:
 		DYN_error_punt(false, 191, SafeArg() << user.c_str() << role_name.c_str());
 		// msg 191: @1 is not the owner of SQL role @2
+		break;
+	case DEL_R_FAIL_SYSTEM:
+		DYN_error_punt(false, 284, SafeArg() << role_name.c_str());
+		// msg 284: can not drop system SQL role @1
+		break;
 	}
 }
 
