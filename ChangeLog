@@ -1,3 +1,24 @@
+ 2012-01-12 15:02  alexpeshkoff 
+   M builds/posix/Makefile.in.boot.gpre
+   M builds/posix/Makefile.in.client.fbudf
+   M builds/posix/Makefile.in.codes
+   M builds/posix/Makefile.in.embed.fbudf
+   M builds/posix/Makefile.in.examples
+   M builds/posix/Makefile.in.fbserver
+   M builds/posix/Makefile.in.fbtrace
+   M builds/posix/Makefile.in.intl
+   M builds/posix/Makefile.in.libfbclient
+   M builds/posix/Makefile.in.libfbstatic
+   M builds/posix/Makefile.in.msgs
+   M builds/posix/Makefile.in.refDatabases
+   M builds/posix/Makefile.in.smp_server
+   M builds/posix/Makefile.in.static.createdb
+   M builds/posix/Makefile.in.static.gbak
+   M builds/posix/Makefile.in.static.gpre
+   M builds/posix/Makefile.in.static.isql
+   M builds/posix/make.rules
+Backported fix for CORE-3727: Support C preprocessor flags in firebird build system
+
  2012-01-11 13:04  alexpeshkoff 
    M builds/posix/Makefile.in.client.isql
 Applied Michal's patch
