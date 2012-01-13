@@ -1,3 +1,20 @@
+ 2012-01-12 15:00  alexpeshkoff 
+   M builds/posix/Makefile.in.plugins_examples
+   M builds/posix/make.rules
+Fixed CORE-3727: Support C preprocessor flags in firebird build system
+
+ 2012-01-12 14:54  asfernandes 
+   M src/jrd/btr.cpp
+   M src/jrd/btr_proto.h
+   M src/jrd/idx.cpp
+Fixed (hope!) CORE-1997 - Broken foreign key handling for multi-segmented index using multi-level collations.
+
+ 2012-01-12 13:53  alexpeshkoff 
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/server/server.cpp
+Fixed multifactor auth-plugin use on server - thanks to Claudio
+
  2012-01-11 13:24  alexpeshkoff 
    M src/remote/inet.cpp
 Cleanup - use flags parameter of alloc_port() function for async ports
