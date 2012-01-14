@@ -1,3 +1,17 @@
+ 2012-01-13 15:58  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+cleanup
+
+ 2012-01-13 11:36  alexpeshkoff 
+   M src/include/firebird/Plugin.h
+Misc
+
+ 2012-01-13 08:23  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Fixed CORE-3599: Possible drop role RDB$ADMIN
+
  2012-01-12 15:00  alexpeshkoff 
    M builds/posix/Makefile.in.plugins_examples
    M builds/posix/make.rules
