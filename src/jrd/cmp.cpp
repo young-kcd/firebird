@@ -2474,7 +2474,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 	}
 
 	vec<jrd_req*>* vector = request->req_sub_requests;
-	if (vector) 
+	if (vector)
 	{
 		vec<jrd_req*>::const_iterator sub_req = vector->begin();
 		vec<jrd_req*>::const_iterator end = vector->end();
