@@ -1396,7 +1396,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		return port;
 	}
 
-	rem_port* const new_port = alloc_port(port->port_parent, (port->port_flags & PORT_no_oob) | PORT_async);
+	rem_port* const new_port = alloc_port(port->port_parent,
+		(port->port_flags & PORT_no_oob) | PORT_async);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -1510,7 +1511,8 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		inet_error(false, port, "listen", isc_net_event_listen_err, INET_ERRNO);
 	}
 
-    rem_port* const new_port = alloc_port(port->port_parent, (port->port_flags & PORT_no_oob) | PORT_async);
+    rem_port* const new_port = alloc_port(port->port_parent,
+		(port->port_flags & PORT_no_oob) | PORT_async);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -2144,7 +2146,7 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 		switch (result)
 		{
 		case Select::SEL_BAD:
-			if (port->port_state == rem_port::BROKEN || port->port_flags & PORT_connecting)
+			if (port->port_state == rem_port::BROKEN || (port->port_flags & PORT_connecting))
 				continue;
 			return;
 

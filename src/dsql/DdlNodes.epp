@@ -1503,9 +1503,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	}
 
 	if (package.isEmpty())
-	{
 		storePrivileges(tdbb, transaction, name, obj_udf, EXEC_PRIVILEGES);
-	}
 
 	executeAlter(tdbb, dsqlScratch, transaction, false, false);
 }
@@ -2422,9 +2420,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 	}
 
 	if (package.isEmpty())
-	{
 		storePrivileges(tdbb, transaction, name, obj_procedure, EXEC_PRIVILEGES);
-	}
 
 	executeAlter(tdbb, dsqlScratch, transaction, false, false);
 }
