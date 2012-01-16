@@ -2134,8 +2134,8 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 				PRIV.RDB$USER = user.c_str() AND
 				PRIV.RDB$USER_TYPE = user_type
 
-			if (!DYN_REQUEST(drq_e_grant1))
-				DYN_REQUEST(drq_e_grant1) = request;
+			if (!DYN_REQUEST(drq_e_grant3))
+				DYN_REQUEST(drq_e_grant3) = request;
 
 			if (revoking_user->locksmith() || revoking_as_user_name == PRIV.RDB$GRANTOR)
 			{
