@@ -2648,7 +2648,6 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 		Callback* callback = new Callback(ast, arg);
 
 		events = attachment->queEvents(&status, callback, length, eventsData);
-		events->deleteCallback = true;
 
 		if (!status.isSuccess())
 		{
@@ -2656,6 +2655,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 			return status[1];
 		}
 
+		events->deleteCallback = true;
 		*id = FB_API_HANDLE_TO_ULONG(events->handle);
 	}
 	catch (const Exception& e)
