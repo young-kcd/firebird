@@ -656,6 +656,14 @@ bool rem_port::select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPo
 	return (*this->port_select_multi)(this, buffer, bufsize, length, port);
 }
 
+void rem_port::abort_aux_connection()
+{
+	if (this->port_abort_aux_connection)
+	{
+		(*this->port_abort_aux_connection)(this);
+	}
+}
+
 XDR_INT rem_port::send(PACKET* pckt)
 {
 	return (*this->port_send_packet)(this, pckt);
@@ -674,6 +682,16 @@ rem_port* rem_port::connect(PACKET* pckt)
 rem_port* rem_port::request(PACKET* pckt)
 {
 	return (*this->port_request)(this, pckt);
+}
+
+void rem_port::auxAcceptError(PACKET* packet)
+{
+	if (port_protocol >= PROTOCOL_VERSION13)
+	{
+		packet->p_operation = op_abort_aux_connection;
+		// Ignore error return - we are already processing auxiliary connection error from the wire
+		send(packet);
+	}
 }
 
 bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)

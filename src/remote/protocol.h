@@ -275,6 +275,8 @@ enum P_OP
 
 	op_accept_data			= 94,	// Server accepts connection and returns some data to client
 
+	op_abort_aux_connection	= 95,	// Async operation - stop waiting for async connection to arrive
+
 	op_max
 };
 

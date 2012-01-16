@@ -709,6 +709,7 @@ const USHORT PORT_lazy			= 0x0040;	// Deferred operations are allowed
 const USHORT PORT_server		= 0x0080;	// Server (not client) port
 const USHORT PORT_detached		= 0x0100;	// op_detach, op_drop_database or op_service_detach was processed
 const USHORT PORT_rdb_shutdown	= 0x0200;	// Database is shut down
+const USHORT PORT_connecting	= 0x0400;	// Aux connection waits for a channel to be activated by client
 
 // Port itself
 
@@ -737,6 +738,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	t_port_connect	port_connect;		// Establish secondary connection
 	rem_port*		(*port_request)(rem_port*, PACKET*);	// Request to establish secondary connection
 	bool			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, RemPortPtr&);	// get packet from active port
+	void			(*port_abort_aux_connection)(rem_port*);	// stop waiting for secondary connection
 
 	enum rem_port_t {
 		INET,			// Internet (TCP/IP)
@@ -927,6 +929,7 @@ public:
 	rem_port*	connect(PACKET* pckt);
 	rem_port*	request(PACKET* pckt);
 	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
+	void		abort_aux_connection();
 
 	bool haveRecvData()
 	{
@@ -1022,6 +1025,7 @@ public:
 	SSHORT		asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize);
 
 	Firebird::string getRemoteId() const;
+	void auxAcceptError(PACKET* packet);
 };
 
 

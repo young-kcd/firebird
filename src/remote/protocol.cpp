@@ -280,6 +280,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_disconnect:
 	case op_dummy:
 	case op_ping:
+	case op_abort_aux_connection:
 		return P_TRUE(xdrs, p);
 
 	case op_connect:

@@ -399,6 +399,7 @@ static void		alarm_handler(int);
 #endif
 static rem_port*		alloc_port(rem_port*, const USHORT = 0);
 static rem_port*		aux_connect(rem_port*, PACKET*);
+static void				abort_aux_connection(rem_port*);
 static rem_port*		aux_request(rem_port*, PACKET*);
 
 #if !defined(WIN_NT)
@@ -1296,6 +1297,7 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
 	port->port_connect = aux_connect;
+	port->port_abort_aux_connection = abort_aux_connection;
 	port->port_request = aux_request;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
 	port->port_async_receive = inet_async_receive;
@@ -1315,6 +1317,15 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 	}
 
 	return port;
+}
+
+static void abort_aux_connection(rem_port* port)
+{
+	if (port->port_flags & PORT_connecting)
+	{
+		shutdown(port->port_channel, 2);
+		SOCLOSE(port->port_channel);
+	}
 }
 
 static rem_port* aux_connect(rem_port* port, PACKET* packet)
@@ -1396,8 +1407,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
 	if (n == INVALID_SOCKET)
 	{
-		inet_error(false, port, "socket", isc_net_event_connect_err, INET_ERRNO);
-		return NULL;
+		int savedError = INET_ERRNO;
+		port->auxAcceptError(packet);
+		inet_error(false, port, "socket", isc_net_event_connect_err, savedError);
 	}
 
 	// NJK - Determine address and port to use.
@@ -1414,6 +1426,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	if (status != 0)
 	{
 		int savedError = INET_ERRNO;
+		port->auxAcceptError(packet);
 		SOCLOSE(n);
 		inet_error(false, port, "socket", isc_net_event_connect_err, savedError);
 	}
@@ -1430,6 +1443,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	{
 		int savedError = INET_ERRNO;
 		SOCLOSE(n);
+		port->auxAcceptError(packet);
 		inet_error(false, port, "connect", isc_net_event_connect_err, savedError);
 	}
 
@@ -1650,6 +1664,9 @@ static void force_close(rem_port* port)
  *	Forcebly close remote connection.
  *
  **************************************/
+
+	if (port->port_async)
+		abort_aux_connection(port->port_async);
 
 	if (port->port_state != rem_port::PENDING)
 		return;
@@ -2127,7 +2144,7 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 		switch (result)
 		{
 		case Select::SEL_BAD:
-			if (port->port_state == rem_port::BROKEN)
+			if (port->port_state == rem_port::BROKEN || port->port_flags & PORT_connecting)
 				continue;
 			return;
 

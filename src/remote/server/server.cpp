@@ -1754,6 +1754,7 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 
 		if (aux_port)
 		{
+			aux_port->port_flags |= PORT_connecting;
 			try
 			{
 				if (aux_port->connect(send))
@@ -1761,11 +1762,13 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 			}
 			catch (const Exception& ex)
 			{
+				aux_port->port_flags &= ~PORT_connecting;
 				iscLogException("", ex);
 				fb_assert(port->port_async == aux_port);
 				port->port_async = NULL;
 				aux_port->disconnect();
 			}
+			aux_port->port_flags &= ~PORT_connecting;
 		}
 	}
 	catch (const Exception& ex)
@@ -5504,6 +5507,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 	switch (getOperation(buffer, dataSize))
 	{
 	case op_cancel:
+	case op_abort_aux_connection:
 		break;
 	default:
 		return 0;
@@ -5529,6 +5533,12 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 	{
 	case op_cancel:
 		cancel_operation(this, asyncPacket->p_cancel_op.p_co_kind);
+		break;
+	case op_abort_aux_connection:
+		if (port_async && (port_async->port_flags & PORT_connecting))
+		{
+			port_async->abort_aux_connection();
+		}
 		break;
 	default:
 		return 0;
