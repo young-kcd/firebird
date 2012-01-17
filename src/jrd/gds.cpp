@@ -997,7 +997,7 @@ const int SECS_PER_DAY	= SECS_PER_HOUR * 24;
 class CleanupTraceHandles
 {
 public:
-	CleanupTraceHandles(Firebird::MemoryPool&)
+	explicit CleanupTraceHandles(Firebird::MemoryPool&)
 	{};
 
 	~CleanupTraceHandles()

@@ -6020,6 +6020,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 
 	stream_array_t inner_streams;
 	inner_streams[0] = nstreams;
+	fb_assert(nstreams <= MAX_STREAMS);
 	memcpy(inner_streams + 1, streams, nstreams);
 
 	jrd_nod* clauses = union_node->nod_arg[e_uni_clauses];

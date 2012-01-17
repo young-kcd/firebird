@@ -1702,7 +1702,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 		break;
 	case DEL_R_FAIL_SYSTEM:
 		DYN_error_punt(false, 284, SafeArg() << role_name.c_str());
-		// msg 284: can not drop system SQL role @1
+		// msg 284: cannot drop system SQL role @1
 		break;
 	}
 }
