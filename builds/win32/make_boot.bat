@@ -108,9 +108,11 @@ goto :EOF
 :: BUILD LibTomMath
 :LibTomMath
 @echo.
+@call set_build_target.bat %* libtommath
 @echo Building LibTomMath (%FB_OBJ_DIR%)...
 @call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 LibTomMath
+@call set_build_target.bat %*
 goto :EOF
 
 ::===================
