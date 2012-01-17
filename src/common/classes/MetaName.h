@@ -100,6 +100,7 @@ public:
 	void upper7();
 	void lower7();
 	void printf(const char*, ...);
+	size_t copyTo(char* to, size_t toSize) const;
 
 protected:
 	static void adjustLength(const char* const s, size_t& l);
