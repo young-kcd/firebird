@@ -1550,7 +1550,8 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	RMessage* message = statement->rsr_buffer;
 	if (!message || statement->rsr_format->fmt_length > statement->rsr_fmt_length)
 	{
-		REMOTE_release_messages(message);
+		RMessage* const org_message = message;
+		const USHORT org_length = message ? statement->rsr_fmt_length : 0;
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
 		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;
@@ -1558,6 +1559,14 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 #ifdef SCROLLABLE_CURSORS
 		message->msg_prior = message;
 #endif
+		if (org_length)
+		{
+			// dimitr:	the original buffer might have something useful inside
+			//			(filled by a prior xdr_sql_message() call, for example),
+			//			so its contents must be preserved (see CORE-3730)
+			memcpy(message->msg_buffer, org_message->msg_buffer, org_length);
+		}
+		REMOTE_release_messages(org_message);
 	}
 
 	return TRUE;
