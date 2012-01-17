@@ -1,3 +1,21 @@
+ 2012-01-16 20:33  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/remote/inet.cpp
+Misc.
+
+ 2012-01-16 15:01  alexpeshkoff 
+   M src/remote/inet.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Fixed CORE-3718: Client Library Hangs after unsuccessful connection to remote auxiliary (events) port
+
+ 2012-01-16 14:30  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed segfault in case of error in queEvents()
+
  2012-01-13 15:58  alexpeshkoff 
    M builds/install/misc/firebird.conf.in
 cleanup
