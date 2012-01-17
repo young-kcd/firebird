@@ -328,6 +328,10 @@
 				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="GPRE files"
@@ -382,6 +386,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\yvalve\prepa_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.h"
 				>
 			</File>
 			<File

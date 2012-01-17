@@ -62,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -125,6 +126,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -185,6 +187,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -247,6 +250,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -452,6 +456,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\BigInteger.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletReader.cpp"
 				>
 			</File>
@@ -506,7 +514,7 @@
 			<File
 				RelativePath="..\..\..\src\common\classes\SyncObject.cpp"
 				>
-			</File>			
+			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp"
 				>
@@ -546,6 +554,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\BaseStream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\BigInteger.h"
 				>
 			</File>
 			<File
