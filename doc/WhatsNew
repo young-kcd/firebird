@@ -2,4 +2,10 @@
   * v3.0 Alpha 1
   **************
 
-  <to come later>
+    * Improvement CORE-1898
+        Increased the password length from 8 characters, removed support
+        for LegacyHash and Authentication parameters in firebird.conf.
+        Support of per 2.0 hashes is dropped, authentication is overridden 
+        by AuthServer parameter.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
