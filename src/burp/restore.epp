@@ -10387,7 +10387,7 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
 			   "DECLARE VARIABLE currentGen INT; "
 			   "BEGIN "
 			   " SELECT FIRST(1) CAST(SUBSTRING(%s FROM %d FOR 32) AS INT) FROM %s "
-			   " WHERE SUBSTRING(%s FROM %d FOR 32) < '999999999999999999999999999999' "
+			   " WHERE SUBSTRING(%s FROM %d FOR 32) SIMILAR TO '[0-9]+ *' "
 			   "   AND %s STARTING WITH '%s' ORDER BY 1 DESC INTO :maxInTable; "
 			   " "
 			   " currentGen = gen_id(%s, 0); "
