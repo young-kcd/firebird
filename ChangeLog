@@ -1,3 +1,13 @@
+ 2012-01-17 17:25  dimitr 
+   M src/remote/protocol.cpp
+Hopefully, this should fix CORE-3730: isc_dsql_exec_immed2() loses input parameter value with RETURNING clause.
+
+ 2012-01-17 06:20  robocop 
+   M src/jrd/dyn_del.epp
+   M src/jrd/gds.cpp
+   M src/jrd/opt.cpp
+Misc.
+
  2012-01-16 16:38  alexpeshkoff 
    M src/jrd/dyn.epp
 Fixed CORE-3732: Segfault when closing attachment to database
