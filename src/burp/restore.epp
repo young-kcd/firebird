@@ -2924,9 +2924,9 @@ bool get_exception(BurpGlobals* tdgbl)
 						BURP_print(313, SafeArg() << failed_attrib << X.RDB$EXCEPTION_NAME);
 					}
 
-					const int FIELD_LIMIT = 1021;
+					const ULONG FIELD_LIMIT = 1021;
 
-					const int remaining = FIELD_LIMIT - l2;
+					const ULONG remaining = FIELD_LIMIT - l2;
 					if (remaining < 1) // not enough space
 					{
 						bad_attribute (scan_next_attr, failed_attrib, 287);
@@ -5651,6 +5651,8 @@ bool get_relation_data(BurpGlobals* tdgbl)
 			break;
 		}
 	}
+
+	return false;	// warning silencer
 }
 
 bool get_sql_roles(BurpGlobals* tdgbl)
@@ -7892,8 +7894,8 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
 			   /* SELECT 2 */ g->name,
 			   /* SET GEN  */ g->name);
 
-	if (isc_execute_immediate(isc_status, &DB, &gds_trans, 0, sql.c_str()) != 0)
-		general_on_error();
+	// CORE-3733 - have to ignore errors cause there is no SIMILAR TO match in 2.1
+	isc_execute_immediate(isc_status, &DB, &gds_trans, 0, sql.c_str());
 }
 
 const FixGenerator genToFix[] = 
