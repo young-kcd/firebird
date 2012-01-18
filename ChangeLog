@@ -1,3 +1,35 @@
+ 2012-01-17 12:33  robocop 
+   M src/common/classes/MetaName.cpp
+   M src/common/classes/MetaName.h
+Helper method.
+
+ 2012-01-17 12:30  robocop 
+   M builds/win32/msvc9/Firebird3.sln
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/fbserver.vcproj
+   M builds/win32/msvc9/firebird2.vsprops
+   M builds/win32/msvc9/remote.vcproj
+   M builds/win32/msvc9/yvalve.vcproj
+Update vc9 files.
+
+ 2012-01-17 12:29  robocop 
+   M extern/libtommath/libtommath_MSVC9.sln
+   M extern/libtommath/libtommath_MSVC9.vcproj
+Update vc9 files.
+
+ 2012-01-17 12:23  robocop 
+   M builds/win32/make_boot.bat
+   M builds/win32/set_build_target.bat
+Make always the release version of LibTomMath, as we do with ICU.
+
+ 2012-01-17 10:44  alexpeshkoff 
+   M doc/WhatsNew
+misc
+
+ 2012-01-17 10:43  alexpeshkoff 
+   M doc/WhatsNew
+In order not to forget removed firebird.conf options
+
  2012-01-16 20:33  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/remote/inet.cpp
