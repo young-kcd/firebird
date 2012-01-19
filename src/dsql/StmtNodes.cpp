@@ -3799,7 +3799,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			ParameterClause& parameter = parameters[i];
 
 			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
-				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
+				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), i);
 		}
 
 		returnsPos = dsqlScratch->variables.getCount();
@@ -3810,7 +3810,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			ParameterClause& parameter = returns[i];
 
 			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
-				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
+				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), parameters.getCount() + i);
 		}
 	}
 
@@ -3869,42 +3869,37 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->appendUChar(blr_begin);
 
-	for (unsigned i = 0; i < returnsPos; ++i)
+	if (subRoutine)
 	{
-		const dsql_var* variable = dsqlScratch->variables[i];
-		const dsql_fld* field = variable->field;
+		// This validation is needed only for subroutines. Standard EXECUTE BLOCK moves input
+		// parameters to variables and are then validated.
 
-		if (field->fld_full_domain || field->fld_not_nullable)
+		for (unsigned i = 0; i < returnsPos; ++i)
 		{
-			dsqlScratch->appendUChar(blr_assignment);
+			const dsql_var* variable = dsqlScratch->variables[i];
+			const dsql_fld* field = variable->field;
 
-			// ASF: Validation of execute block input parameters is different than procedure
-			// parameters, because we can't generate messages using the domains due to the
-			// connection charset influence. So to validate, we cast them and assign to null.
-			if (!subRoutine)
+			if (field->fld_full_domain || field->fld_not_nullable)
 			{
-				dsqlScratch->appendUChar(blr_cast);
-				dsqlScratch->putDtype(field, true);
+				dsqlScratch->appendUChar(blr_assignment);
+				dsqlScratch->appendUChar(blr_parameter2);
+				dsqlScratch->appendUChar(0);
+				dsqlScratch->appendUShort(variable->msgItem);
+				dsqlScratch->appendUShort(variable->msgItem + 1);
+				dsqlScratch->appendUChar(blr_null);
 			}
-
-			dsqlScratch->appendUChar(blr_parameter2);
-			dsqlScratch->appendUChar(0);
-			dsqlScratch->appendUShort(variable->msgItem);
-			dsqlScratch->appendUShort(variable->msgItem + 1);
-			dsqlScratch->appendUChar(blr_null);
 		}
 	}
 
-	for (Array<dsql_var*>::const_iterator i = dsqlScratch->outputVariables.begin();
-		 i != dsqlScratch->outputVariables.end();
-		 ++i)
-	{
+	Array<dsql_var*>& variables = subRoutine ? dsqlScratch->outputVariables : dsqlScratch->variables;
+
+	for (Array<dsql_var*>::const_iterator i = variables.begin(); i != variables.end(); ++i)
 		dsqlScratch->putLocalVariable(*i, 0, NULL);
-	}
 
 	dsqlScratch->setPsql(true);
 
-	dsqlScratch->putLocalVariables(localDeclList, USHORT(returns.getCount()));
+	dsqlScratch->putLocalVariables(localDeclList,
+		USHORT((subRoutine ? 0 : parameters.getCount()) + returns.getCount()));
 
 	dsqlScratch->loopLevel = 0;
 

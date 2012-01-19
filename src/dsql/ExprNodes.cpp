@@ -10741,7 +10741,13 @@ void VariableNode::setParameterName(dsql_par* parameter) const
 
 void VariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	if (dsqlVar->type == dsql_var::TYPE_INPUT)
+	bool execBlock = (dsqlScratch->flags & DsqlCompilerScratch::FLAG_BLOCK) &&
+		!(dsqlScratch->flags &
+		  (DsqlCompilerScratch::FLAG_PROCEDURE |
+		   DsqlCompilerScratch::FLAG_TRIGGER |
+		   DsqlCompilerScratch::FLAG_FUNCTION));
+
+	if (dsqlVar->type == dsql_var::TYPE_INPUT && !execBlock)
 	{
 		dsqlScratch->appendUChar(blr_parameter2);
 		dsqlScratch->appendUChar(dsqlVar->msgNumber);
@@ -10750,6 +10756,7 @@ void VariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 	else
 	{
+		// If this is an EXECUTE BLOCK input parameter, use the internal variable.
 		dsqlScratch->appendUChar(blr_variable);
 		dsqlScratch->appendUShort(dsqlVar->number);
 	}

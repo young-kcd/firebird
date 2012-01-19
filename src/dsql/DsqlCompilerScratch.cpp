@@ -320,7 +320,21 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 	// Check for a default value, borrowed from define_domain
 	dsql_nod* node = hostParam ? hostParam->dsqlDef->legacyDefault : NULL;
 
-	if (node || (!field->fld_full_domain && !field->fld_not_nullable))
+	if (variable->type == dsql_var::TYPE_INPUT)
+	{
+		// Assign EXECUTE BLOCK's input parameter to its correspondent internal variable.
+
+		appendUChar(blr_assignment);
+
+		appendUChar(blr_parameter2);
+		appendUChar(variable->msgNumber);
+		appendUShort(variable->msgItem);
+		appendUShort(variable->msgItem + 1);
+
+		appendUChar(blr_variable);
+		appendUShort(variable->number);
+	}
+	else if (node || (!field->fld_full_domain && !field->fld_not_nullable))
 	{
 		appendUChar(blr_assignment);
 
