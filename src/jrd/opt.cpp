@@ -759,6 +759,23 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	if (rse->rse_first)
 		rsb = FB_NEW(*tdbb->getDefaultPool()) FirstRowsStream(csb, rsb, rse->rse_first);
 
+	if (rse->flags & RseNode::FLAG_WRITELOCK)
+	{
+		for (USHORT i = 1; i <= opt->compileStreams[0]; ++i)
+		{
+			const USHORT loopStream = opt->compileStreams[i];
+			CompilerScratch::csb_repeat* r = &csb->csb_rpt[loopStream];
+			r->csb_flags |= csb_update;
+
+			if (r->csb_relation)
+			{
+				CMP_post_access(tdbb, csb, r->csb_relation->rel_security_name,
+					r->csb_view ? r->csb_view->rel_id : 0,
+					SCL_sql_update, SCL_object_table, r->csb_relation->rel_name);
+			}
+		}
+	}
+
 	// release memory allocated for index descriptions
 	for (USHORT i = 1; i <= opt->compileStreams[0]; ++i)
 	{
@@ -794,15 +811,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		}
 
 		throw;
-	}
-
-	if (rse->flags & RseNode::FLAG_WRITELOCK)
-	{
-		for (USHORT i = 1; i <= opt->compileStreams[0]; ++i)
-		{
-			const USHORT loopStream = opt->compileStreams[i];
-			csb->csb_rpt[loopStream].csb_flags |= csb_update;
-		}
 	}
 
 	return rsb;
