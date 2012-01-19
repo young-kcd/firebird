@@ -35,6 +35,9 @@
 
 namespace Firebird {
 
+const size_t FB_MAX_SIZEOF = ~size_t(0);
+const size_t FB_HALF_MAX_SIZEOF = FB_MAX_SIZEOF >> 1;
+
 // Static part of the array
 template <typename T, size_t Capacity>
 class InlineStorage : public AutoStorage
@@ -73,7 +76,11 @@ class Array : protected Storage
 {
 public:
 	explicit Array(MemoryPool& p)
-		: Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage()) { }
+		: Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage())
+	{
+		// Ensure we can carry byte copy operations.
+		fb_assert(capacity < FB_MAX_SIZEOF / sizeof(T));
+	}
 
 	Array(MemoryPool& p, const size_t InitialCapacity)
 		: Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage())
@@ -186,6 +193,7 @@ public:
 	void insert(const size_t index, const T& item)
 	{
 		fb_assert(index <= count);
+		fb_assert(count < FB_MAX_SIZEOF);
 		ensureCapacity(count + 1);
 		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
@@ -194,6 +202,7 @@ public:
 	void insert(const size_t index, const Array<T, Storage>& items)
 	{
 		fb_assert(index <= count);
+		fb_assert(count <= FB_MAX_SIZEOF - items.count);
 		ensureCapacity(count + items.count);
 		memmove(data + index + items.count, data + index, sizeof(T) * (count - index));
 		memcpy(data + index, items.data, items.count);
@@ -203,6 +212,7 @@ public:
 	void insert(const size_t index, const T* items, const size_t itemsCount)
 	{
 		fb_assert(index <= count);
+		fb_assert(count <= FB_MAX_SIZEOF - itemsCount);
 		ensureCapacity(count + itemsCount);
 		memmove(data + index + itemsCount, data + index, sizeof(T) * (count - index));
 		memcpy(data + index, items, sizeof(T) * itemsCount);
@@ -218,6 +228,7 @@ public:
 
 	void add(const T* items, const size_t itemsCount)
 	{
+		fb_assert(count <= FB_MAX_SIZEOF - itemsCount);
 		ensureCapacity(count + itemsCount);
 		memcpy(data + count, items, sizeof(T) * itemsCount);
 		count += itemsCount;
@@ -303,6 +314,7 @@ public:
 
 	void join(const Array<T, Storage>& L)
 	{
+		fb_assert(count <= FB_MAX_SIZEOF - L.count);
 		ensureCapacity(count + L.count);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
@@ -336,6 +348,7 @@ public:
 
 	void push(const T* items, const size_t itemsSize)
 	{
+		fb_assert(count <= FB_MAX_SIZEOF - itemsSize);
 		ensureCapacity(count + itemsSize);
 		memcpy(data + count, items, sizeof(T) * itemsSize);
 		count += itemsSize;
@@ -416,9 +429,20 @@ protected:
 	{
 		if (newcapacity > capacity)
 		{
-			if (newcapacity < capacity * 2) {
-				newcapacity = capacity * 2;
+			if (capacity <= FB_HALF_MAX_SIZEOF)
+			{
+				if (newcapacity < capacity * 2)
+					newcapacity = capacity * 2;
 			}
+			else
+			{
+				newcapacity = FB_MAX_SIZEOF;
+			}
+
+			// Ensure we can carry byte copy operations.
+			// What to do here, throw in release build?
+			fb_assert(newcapacity < FB_MAX_SIZEOF / sizeof(T));
+
 			T* newdata = static_cast<T*>
 				(this->getPool().allocate(sizeof(T) * newcapacity
 #ifdef DEBUG_GDS_ALLOC

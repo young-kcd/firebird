@@ -134,7 +134,7 @@ namespace Firebird
 			pos = length;
 			n = 0;
 		}
-		else if (pos + n > length || n == npos) {
+		else if (n > length || pos + n > length || n == npos) {
 			n = length - pos;
 		}
 	}
