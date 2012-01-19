@@ -547,7 +547,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	SRQ_INIT(request->lrq_own_blocks);
 	SRQ_INIT(request->lrq_own_pending);
 
-	SRQ_PTR request_offset = SRQ_REL_PTR(request);
+	const SRQ_PTR request_offset = SRQ_REL_PTR(request);
 
 	// See if the lock already exists
 

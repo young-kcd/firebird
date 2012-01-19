@@ -273,10 +273,11 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
 				{
 					function->fun_inputs++;
-					function->getInputFields().resize(Y.RDB$ARGUMENT_POSITION -
-						function->getOutputFields().getCount() + 1);
-					function->getInputFields()[Y.RDB$ARGUMENT_POSITION -
-						function->getOutputFields().getCount()] = parameter;
+					int newCount = Y.RDB$ARGUMENT_POSITION - function->getOutputFields().getCount();
+					fb_assert(newCount >= 0);
+
+					function->getInputFields().resize(newCount + 1);
+					function->getInputFields()[newCount] = parameter;
 				}
 				else
 				{

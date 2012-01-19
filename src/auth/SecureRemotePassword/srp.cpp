@@ -26,7 +26,7 @@ class RemoteGroup
 public:
 	BigInteger	prime, generator, k;
 
-	RemoteGroup(Firebird::MemoryPool&)
+	explicit RemoteGroup(Firebird::MemoryPool&)
 		: prime(primeStr), generator(genStr), k()
 	{
 		Auth::Sha1 hash;

@@ -55,9 +55,9 @@ MERGE statement
 	UPDATE is called when a record exist in the left table (INTO), otherwise
 	INSERT is called.
 
-	As soon is decided if the source matched or not a record in the target, the set of the
-	correspondent (WHEN MATCHED / WHEN NOT MATCHED) statements are evaluated in the order specified,
-	to check its optional conditions. The first statement which have its condition evaluated to true
+	As soon it's decided if the source matched or not a record in the target, the set of the
+	corresponding (WHEN MATCHED / WHEN NOT MATCHED) statements is evaluated in the order specified,
+	to check their optional conditions. The first statement which has its condition evaluated to true
 	is the one which will be executed, and the subsequent ones will be ignored.
 
 	If no record is returned in the join, INSERT is not called.

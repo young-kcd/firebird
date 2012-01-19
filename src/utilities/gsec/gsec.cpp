@@ -244,7 +244,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 			public:
 				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole,
 						 const char* pProtocol, const char* pAddress,
-						 Auth::UserData::AuthenticationBlock* pAuthBlock)
+						 const Auth::UserData::AuthenticationBlock* pAuthBlock)
 					: trustedUser(pTrustedUser), sqlRole(pRole), trustedRole(pTrustedRole),
 					  protocol(pProtocol), address(pAddress),
 					  authBytes(pAuthBlock->getCount() ? pAuthBlock->begin() : NULL),

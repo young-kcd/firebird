@@ -40,9 +40,9 @@ class BigInteger
 {
 public:
 	BigInteger();
-	BigInteger(const char* text, unsigned int radix = 16u);
+	explicit BigInteger(const char* text, unsigned int radix = 16u);
 	BigInteger(unsigned int count, const unsigned char* bytes);
-	BigInteger(const Firebird::UCharBuffer& val);
+	explicit BigInteger(const Firebird::UCharBuffer& val);
 	BigInteger(const BigInteger& val);
 //	BigInteger(int numBits, Random& r);
 	~BigInteger();

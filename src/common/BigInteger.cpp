@@ -194,7 +194,7 @@ namespace Firebird
 		int size;
 		CHECK_MP(mp_radix_size(const_cast<mp_int*>(&t), radix, &size));
 		str.resize(size - 1, ' ');
-		CHECK_MP(mp_toradix(const_cast<mp_int*>(&t), const_cast<char*>(str.c_str()), radix));
+		CHECK_MP(mp_toradix(const_cast<mp_int*>(&t), str.begin(), radix));
 	}
 
 	BigInteger BigInteger::modPow(const BigInteger& pow, const BigInteger& mod) const

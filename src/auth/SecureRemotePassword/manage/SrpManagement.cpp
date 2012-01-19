@@ -608,10 +608,8 @@ private:
 
 	bool checkCount(Firebird::IStatus* status, int* count, UCHAR item)
 	{
-		unsigned char items[1];
-		items[0] = item;
 		unsigned char buffer[100];
-		att->getInfo(status, 1, items, sizeof(buffer), buffer);
+		att->getInfo(status, 1, &item, sizeof(buffer), buffer);
 		if (!status->isSuccess())
 		{
 			Firebird::status_exception::raise(status->get());

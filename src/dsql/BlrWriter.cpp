@@ -190,11 +190,12 @@ void BlrWriter::putDebugSubFunction(DeclareSubFuncNode* subFuncNode)
 	debugData.add(reinterpret_cast<const UCHAR*>(name.c_str()), len);
 
 	HalfStaticArray<UCHAR, 128>& subDebugData = subFuncNode->blockScratch->debugData;
-	debugData.add(UCHAR(subDebugData.getCount()));
-	debugData.add(UCHAR(subDebugData.getCount() >> 8));
-	debugData.add(UCHAR(subDebugData.getCount() >> 16));
-	debugData.add(UCHAR(subDebugData.getCount() >> 24));
-	debugData.add(subDebugData.begin(), ULONG(subDebugData.getCount()));
+	const ULONG count = ULONG(subDebugData.getCount());
+	debugData.add(UCHAR(count));
+	debugData.add(UCHAR(count >> 8));
+	debugData.add(UCHAR(count >> 16));
+	debugData.add(UCHAR(count >> 24));
+	debugData.add(subDebugData.begin(), count);
 }
 
 void BlrWriter::putDebugSubProcedure(DeclareSubProcNode* subProcNode)

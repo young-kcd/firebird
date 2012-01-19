@@ -102,7 +102,7 @@ typedef Firebird::RefPtr<Firebird::IEvents> ServEvents;
 typedef Firebird::RefPtr<Firebird::IService> ServService;
 
 
-// this set of parameters help use same functions
+// this set of parameters helps using same functions
 // for both services and databases attachments
 struct ParametersSet
 {
@@ -118,16 +118,14 @@ extern const ParametersSet dpbParam, spbParam, spbStartParam, spbInfoParam;
 
 struct Svc : public Firebird::GlobalStorage
 {
-	ServService svc_iface;						// service interface
-	Firebird::ClumpletWriter* svc_cached_spb;	// Saved auth tags from attachService() call
-	Firebird::Array<UCHAR> svc_wide_auth;		// Server-wide (default) authentication block
-
+	ServService					svc_iface;		// service interface
+	Firebird::ClumpletWriter*	svc_cached_spb;	// Saved auth tags from attachService() call
+	Firebird::Array<UCHAR>		svc_wide_auth;	// Server-wide (default) authentication block
 	enum {
 		SVCAUTH_NONE,							// Service is not authenticated
 		SVCAUTH_TEMP,							// Service is authenticated for single task
 		SVCAUTH_PERM							// Service is authenticated permanently
-	} svc_auth;									// Authentication state of service
-
+	}							svc_auth;		// Authentication state of service
 	Svc() :
 		svc_iface(NULL), svc_cached_spb(NULL),
 		svc_wide_auth(getPool()), svc_auth(SVCAUTH_NONE)
@@ -606,17 +604,17 @@ class ClntAuthBlock : public Firebird::StdPlugin<Auth::IClientBlock, FB_AUTH_CLI
 private:
 	Firebird::PathName pluginList;				// To be passed to server
 	Firebird::string userName, password;		// Used by plugin, taken from DPB
-	// That two are legacy encrypted password, trusted auth data and so on - what plugin needs
+	// These two are legacy encrypted password, trusted auth data and so on - what plugin needs
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 
-	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over crypted wire
+	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over encrypted wire
 
 public:
 	AuthClientPlugins plugins;
 	bool authComplete;						// Set as response from client that authentication accepted
 	bool firstTime;							// Invoked first time after reset
 
-	ClntAuthBlock(const Firebird::PathName* fileName);
+	explicit ClntAuthBlock(const Firebird::PathName* fileName);
 
 	void storeDataForPlugin(unsigned int length, const unsigned char* data);
 	void resetDataFromPlugin();
@@ -649,7 +647,7 @@ private:
 	Firebird::string userName;
 	Firebird::PathName pluginName, pluginList;
 
-	// That two may be legacy encrypted password, trusted auth data and so on
+	// These two may be legacy encrypted password, trusted auth data and so on
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 
 	Firebird::PathName dbPath;
@@ -1099,6 +1097,7 @@ public:
 	{
 		if (name == nm)
 			return;
+
 		if (next)
 			next->append(len, data, nm);
 		else

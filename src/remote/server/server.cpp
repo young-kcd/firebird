@@ -266,10 +266,10 @@ public:
 			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): db name=%s\n", dbName.c_str()));
 		}
 
-		string x;
 		UCharBuffer u;
 		if (port->port_protocol >= PROTOCOL_VERSION13)
 		{
+			string x;
 			if (aPb->find(tags->plugin_name))
 			{
 				aPb->getString(x);
@@ -817,7 +817,7 @@ void SRVR_enum_attachments(ULONG& att_cnt, ULONG& dbs_cnt, ULONG& svc_cnt)
 
 		UCHAR buffer[BUFFER_XLARGE];
 		iface->query(&status, 0, NULL, sizeof(spb_query), spb_query, sizeof(buffer), buffer);
-		const char* p = reinterpret_cast<const char*>(buffer);
+		const UCHAR* p = buffer;
 
 		if (status.isSuccess() && *p++ == isc_info_svc_svr_db_info)
 		{
@@ -827,16 +827,16 @@ void SRVR_enum_attachments(ULONG& att_cnt, ULONG& dbs_cnt, ULONG& svc_cnt)
 				{
 				case isc_spb_dbname:
 					{
-						const USHORT length = (USHORT) isc_vax_integer(p, sizeof(USHORT));
+						const USHORT length = (USHORT) gds__vax_integer(p, sizeof(USHORT));
 						p += sizeof(USHORT) + length;
 					}
 					break;
 				case isc_spb_num_att:
-					att_cnt = (ULONG) isc_vax_integer(p, sizeof(ULONG));
+					att_cnt = (ULONG) gds__vax_integer(p, sizeof(ULONG));
 					p += sizeof(ULONG);
 					break;
 				case isc_spb_num_db:
-					dbs_cnt = (ULONG) isc_vax_integer(p, sizeof(ULONG));
+					dbs_cnt = (ULONG) gds__vax_integer(p, sizeof(ULONG));
 					p += sizeof(ULONG);
 					break;
 				default:
@@ -1375,7 +1375,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			{
 				HANDSHAKE_DEBUG(fprintf(stderr, "call plugin %s\n", port->port_srv_auth_block->getPluginName()));
 
-				AuthServerPlugins* plugins = port->port_srv_auth_block->plugins;
+				AuthServerPlugins* const plugins = port->port_srv_auth_block->plugins;
 				for (; plugins->hasData(); plugins->next())
 				{
 					port->port_srv_auth_block->authBlockWriter.setMethod(plugins->name());
@@ -3719,7 +3719,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		case op_connect:
 			if (!accept_connection(port, &receive->p_cnct, sendL))
 			{
-				const string& s = port->port_user_name;
+				//const string& s = port->port_user_name;
 /*				if (s.hasData())
 				{								looks like logging rejects is not good idea any more?
 					gds__log("SERVER/process_packet: connection rejected for %s", s.c_str());
@@ -5841,7 +5841,7 @@ const char* SrvAuthBlock::getPath()
 
 void SrvAuthBlock::load(Firebird::ClumpletReader& id)
 {
-	// This array is needed only to make sure that all parts of specific data is present
+	// This array is needed only to make sure that all parts of specific data are present
 	UCHAR checkBytes[256];
 	memset(checkBytes, 0, sizeof(checkBytes));
 	UCHAR top = 0;
@@ -5873,7 +5873,6 @@ void SrvAuthBlock::load(Firebird::ClumpletReader& id)
 				{
 					--len;
 					unsigned offset = specData[0];
-
 					if (offset + 1 > top)
 						top = offset + 1;
 					checkBytes[offset] = 1;

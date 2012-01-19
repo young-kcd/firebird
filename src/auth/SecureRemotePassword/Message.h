@@ -100,7 +100,7 @@ template <class T>
 class Field
 {
 public:
-	Field(Message& m)
+	explicit Field(Message& m)
 		: msg(m), pos(~0), nullPos(~0)
 	{
 		msg.add<T>(pos, nullPos);

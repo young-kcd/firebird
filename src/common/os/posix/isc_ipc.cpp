@@ -320,7 +320,8 @@ static SIG que_signal(int signal_number,
 		return NULL;			// NOMEM: not handled, too difficult
 	}
 #ifndef SA_SIGINFO
-	if (sig_w_siginfo) {
+	if (sig_w_siginfo)
+	{
 		DEV_REPORT("SA_SIGINFO not supported");
 		return NULL;
 	}

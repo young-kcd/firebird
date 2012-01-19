@@ -363,7 +363,7 @@ namespace Firebird {
 
 	void Sha1::process(unsigned int length, const void* bytes)
 	{
-		sha_update(&handle, reinterpret_cast<const unsigned char*>(bytes), length);
+		sha_update(&handle, static_cast<const unsigned char*>(bytes), length);
 	}
 
 	void Sha1::getHash(UCharBuffer& hash)

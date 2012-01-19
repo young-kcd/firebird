@@ -1648,19 +1648,22 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 				if (!secondPass)
 				{
 					FUN.RDB$ENGINE_NAME.NULL = (SSHORT) external->engine.isEmpty();
-					strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
+					//strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
+					external->engine.copyTo(FUN.RDB$ENGINE_NAME, sizeof(FUN.RDB$ENGINE_NAME));
 
 					if (external->udfModule.length() >= sizeof(FUN.RDB$MODULE_NAME))
 						status_exception::raise(Arg::Gds(isc_dyn_name_longer));
 
 					FUN.RDB$MODULE_NAME.NULL = (SSHORT) external->udfModule.isEmpty();
-					strcpy(FUN.RDB$MODULE_NAME, external->udfModule.c_str());
+					//strcpy(FUN.RDB$MODULE_NAME, external->udfModule.c_str());
+					external->udfModule.copyTo(FUN.RDB$MODULE_NAME, sizeof(FUN.RDB$MODULE_NAME));
 
 					if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
 						status_exception::raise(Arg::Gds(isc_dyn_name_longer));
 
 					FUN.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
-					strcpy(FUN.RDB$ENTRYPOINT, external->name.c_str());
+					//strcpy(FUN.RDB$ENTRYPOINT, external->name.c_str());
+					external->name.copyTo(FUN.RDB$ENTRYPOINT, sizeof(FUN.RDB$ENTRYPOINT));
 				}
 			}
 			else if (body)

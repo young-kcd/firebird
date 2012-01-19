@@ -3254,7 +3254,7 @@ void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		const UCHAR* new_sdl = sdl;
 
 		// CVC: Modified this horrible idea: don't touch input parameters!
-		// The modified (perhaps) sdl is send to the remote connection.  The
+		// The modified (perhaps) sdl is sent to the remote connection.  The
 		// original sdl is used to process the slice data before it is sent.
 		// (This is why both 'new_sdl' and 'sdl' are saved in the packet.)
 		HalfStaticArray<UCHAR, 128> sdl_buffer;
@@ -5720,10 +5720,10 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 			}
 		}
 
+		const ParametersSet* ps = (op == op_service_attach ? &spbParam : &dpbParam);
+
 		HANDSHAKE_DEBUG(fprintf(stderr, "init calls authFillParametersBlock\n"));
-		authFillParametersBlock(cBlock, dpb,
-			op == op_service_attach ? &spbParam : &dpbParam,
-			op == op_service_attach ? NULL : &file_name,
+		authFillParametersBlock(cBlock, dpb, ps, op == op_service_attach ? NULL : &file_name,
 			port);
 
 		// Make attach packet
@@ -5736,8 +5736,7 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 
 		send_packet(port, packet);
 
-		authReceiveResponse(cBlock, port, rdb,
-			op == op_service_attach ? &spbParam : &dpbParam, status, packet);
+		authReceiveResponse(cBlock, port, rdb, ps, status, packet);
 	}
 	catch (const Exception&)
 	{

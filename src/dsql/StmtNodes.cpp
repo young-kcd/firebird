@@ -1477,6 +1477,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* tdbb, CompilerScratch* 
 
 DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
+	// scope needed here?
 	{	// scope
 		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
 		PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
@@ -3783,9 +3784,9 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->beginDebug();
 
-	// Sub routine needs a different approach than EXECUTE BLOCK.
+	// Sub routine needs a different approach from EXECUTE BLOCK.
 	// EXECUTE BLOCK needs "ports", which creates DSQL messages using the client charset.
-	// Sub routine don't need ports and should generate BLR as declared in its metadata.
+	// Sub routine doesn't need ports and should generate BLR as declared in its metadata.
 	const bool subRoutine = dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE;
 
 	unsigned returnsPos;

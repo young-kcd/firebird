@@ -937,11 +937,12 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 		user_id.insertPath(CNCT_plugin_list, pluginList);
 	}
 
-	// This is specially tricky field - user_id is limited with 255 bytes per entry,
-	// and we have no ways to override this limit cause it can be send to any version server.
+	// This is specially tricky field - user_id is limited to 255 bytes per entry,
+	// and we have no ways to override this limit cause it can be sent to any version server.
 	// Therefore divide data into 254-byte parts, leaving first byte for the number of that part.
 	// This appears more reliable than put them in strict order.
 	unsigned int remaining = dataFromPlugin.getCount();
+	fb_assert(remaining <= 254u * 256u); // paranoid check => 65024
 	UCHAR part = 0;
 	UCHAR buffer[255];
 	const UCHAR* ptr = dataFromPlugin.begin();
@@ -957,6 +958,8 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 		ptr += step;
 
 		user_id.insertBytes(CNCT_specific_data, buffer, step + 1);
+		if (!part) // we completed 256 loops, almost impossible but check anyway.
+			break;
 	}
 }
 
@@ -1007,20 +1010,19 @@ void REMOTE_parseList(Remote::ParsedList& parsed, Firebird::PathName list)
 		}
 
 		parsed.push(list.substr(0, p));
-		list = list.substr(p);
+		list = list.substr(p + 1);
 		list.ltrim(" \t,;");
 	}
 }
 
 void REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
 {
-	list.erase();
-	for (unsigned i = 0; i < parsed.getCount(); ++i)
+	fb_assert(parsed.hasData());
+	//list.erase();
+	list = parsed[0];
+	for (unsigned i = 1; i < parsed.getCount(); ++i)
 	{
-		if (list.hasData())
-		{
-			list += ' ';
-		}
+		list += ' ';
 		list += parsed[i];
 	}
 }

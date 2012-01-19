@@ -1903,7 +1903,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	svc_service_run = serv;
 
 	// currently we do not use "anonymous" service for any purposes but isc_service_query()
-	if (svc_user_flag == SVC_user_none) {
+	if (svc_user_flag == SVC_user_none)
+	{
 		status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
 								Arg::Gds(isc_random) << "start request for anonymous service is impossible");
 	}

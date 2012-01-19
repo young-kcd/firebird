@@ -78,7 +78,7 @@ public:
 
 	template <typename T> void getEntryPoint(const char* name, ModuleLoader::Module* module, T& ptr)
 	{
-		// ICU has too lot of schemas for entries names
+		// ICU has several schemas for entries names
 		const char* patterns[] =
 		{
 			"%s_%d_%d", "%s_%d%d", "%s", NULL

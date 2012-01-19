@@ -299,7 +299,7 @@ protected:
 	}
 
 private:
-	bool isUdf()
+	bool isUdf() const
 	{
 		return external && external->udfModule.hasData();
 	}
@@ -946,7 +946,7 @@ public:
 class DropSequenceNode : public DdlNode
 {
 public:
-	DropSequenceNode(MemoryPool& pool, const Firebird::MetaName&aName)
+	DropSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName)
 		: DdlNode(pool),
 		  name(pool, aName),
 		  silent(false)

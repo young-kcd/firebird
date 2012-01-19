@@ -310,7 +310,7 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 	}
 	else
 	{
-		bool block = statement->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK ||
+		const bool block = statement->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK ||
 			statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK;
 
 		// To parse sub-routines messages, they must not have that begin...end pair.

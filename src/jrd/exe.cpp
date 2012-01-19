@@ -640,9 +640,10 @@ void EXE_receive(thread_db* tdbb,
 	try
 	{
 
+	const JrdStatement* statement = request->getStatement();
 	const bool external =
-		(request->getStatement()->procedure && request->getStatement()->procedure->getExternal()) ||
-		(request->getStatement()->function && request->getStatement()->function->fun_external);
+		(statement->procedure && statement->procedure->getExternal()) ||
+		(statement->function && statement->function->fun_external);
 
 	if (external)
 		execute_looper(tdbb, request, transaction, jrd_req::req_sync);
@@ -1127,7 +1128,7 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 
 			request->req_message = outMsgNode;
 
-			bool result = statement->procedure ? request->resultSet->fetch(tdbb) : true;
+			const bool result = statement->procedure ? request->resultSet->fetch(tdbb) : true;
 			UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode->impureOffset);
 
 			// Set the eof flag.

@@ -389,7 +389,7 @@ jrd_req* JrdStatement::getRequest(thread_db* tdbb, USHORT level)
 }
 
 // Check that we have enough rights to access all resources this request touches including
-// resources it used indirectely via procedures or triggers.
+// resources it used indirectly via procedures or triggers.
 void JrdStatement::verifyAccess(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);

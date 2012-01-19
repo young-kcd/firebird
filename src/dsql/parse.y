@@ -1530,7 +1530,7 @@ domain_default
 		}
 	;
 
-domain_default_opt	
+domain_default_opt
 	: /* nothing */		{ $$ = NULL; }
 	| domain_default
 	;
@@ -1635,7 +1635,7 @@ alter_charset_clause
 // in preparse.cpp.
 // Remote options always come after initial options, so they don't need to be parsed
 // in preparse.cpp. They are interpreted only in the server, using this grammar.
-// Altrough LENGTH is defined as a initial option, it's also used in the server.
+// Although LENGTH is defined as an initial option, it's also used in the server.
 
 db_clause
 	: db_name

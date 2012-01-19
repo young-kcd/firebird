@@ -103,6 +103,7 @@ namespace
 
 	// Database is never requested through CMP_post_access.
 	const char* const object_str_database	= "DATABASE";
+	//const char* const object_str_schema		= "SCHEMA";
 	const char* const object_str_table		= "TABLE";
 	const char* const object_str_package	= "PACKAGE";
 	const char* const object_str_procedure	= "PROCEDURE";
@@ -124,6 +125,7 @@ namespace
 	const SecObjectNamePriority priorities[] =
 	{
 		{object_str_database, SCL_object_database},
+		//{object_str_schema, SCL_object_schema},
 		{object_str_table, SCL_object_table},
 		{object_str_package, SCL_object_package},
 		{object_str_procedure, SCL_object_procedure},
