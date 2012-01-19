@@ -131,6 +131,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #ifdef TRUSTED_AUTH
 	QLI_trusted = false;
 #endif
+	QLI_nodb_triggers = false;
 	QLI_lines = 60;
 	QLI_name_columns = 0;
 	QLI_prompt = QLI_prompt_string;
@@ -209,6 +210,10 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 		case IN_SW_QLI_NOBANNER:
 			banner_flag = false;
+			break;
+
+		case IN_SW_QLI_NODBTRIGGERS:
+			QLI_nodb_triggers = true;
 			break;
 
 		case IN_SW_QLI_PASSWORD:

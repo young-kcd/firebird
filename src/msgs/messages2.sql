@@ -1413,7 +1413,7 @@ Roll back all databases or commit databases individually', NULL, NULL);
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 517, NULL, '   -b(uffers)          set page buffers <n>', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 518, NULL, '   -f(etch_password)   fetch password from file', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 519, NULL, '   -i(nit_script)      startup script <name>', NULL, NULL)
-(NULL, 'usage', 'dtr.cpp', NULL, 1, 520, NULL, '   -n(o_banner)        do not show the welcome message', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 520, NULL, '   -nob(anner)         do not show the welcome message', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 521, NULL, '   -p(assword)         user''s password', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 522, NULL, '   -tra(ce)            show internal parser''s tokens', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 523, NULL, '   -tru(sted_auth)     use trusted authentication', NULL, NULL)
@@ -1424,6 +1424,7 @@ Roll back all databases or commit databases individually', NULL, NULL);
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 528, NULL, 'Start qli without [command] to enter interactive mode', NULL, NULL)
 (NULL, 'main', 'dtr.cpp', NULL, 1, 529, NULL, 'qli: ignoring unknown switch @1', NULL, NULL)
 (NULL, 'install', 'meta.epp', NULL, 1, 530, NULL, 'Warning: cannot issue DDL statements against database "@1"', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 531, NULL, '   -nod(btriggers)     do not run database triggers', NULL, NULL)
 -- GFIX
 ('gfix_db_name', 'ALICE_gfix', 'alice.c', NULL, 3, 1, NULL, 'data base file name (@1) already given', NULL, NULL);
 ('gfix_invalid_sw', 'ALICE_gfix', 'alice.c', NULL, 3, 2, NULL, 'invalid switch @1', NULL, NULL);
