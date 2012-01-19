@@ -916,6 +916,24 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		rsb = gen_first(tdbb, opt, rsb, rse->rse_first);
 	}
 
+	if (rse->rse_writelock)
+	{
+		rsb->rsb_flags |= rsb_writelock;
+
+		for (USHORT i = 1; i <= streams[0]; ++i)
+		{
+			const USHORT stream = streams[i];
+			CompilerScratch::csb_repeat* r = &csb->csb_rpt[stream];
+
+			if (r->csb_relation)
+			{
+				CMP_post_access(tdbb, csb, r->csb_relation->rel_security_name,
+					r->csb_view ? r->csb_view->rel_id : 0,
+					SCL_sql_update, "TABLE", r->csb_relation->rel_name);
+			}
+		}
+	}
+
 	// release memory allocated for index descriptions
 	for (i = 1; i <= streams[0]; ++i) {
 		stream = streams[i];
@@ -952,9 +970,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		delete opt;
 		throw;
 	}
-
-	if (rse->rse_writelock)
-		rsb->rsb_flags |= rsb_writelock;
 
 	// Assign pointer to list of dependent invariant values
 	rsb->rsb_invariants = rse->rse_invariants;
