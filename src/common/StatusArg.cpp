@@ -37,12 +37,19 @@
 #include "fb_exception.h"
 #include "gen/iberror.h"
 #include "firebird/Interface.h"
+#include "../jrd/msg_encode.h"
+
 
 #ifdef WIN_NT
 #include <windows.h>
 #else
 #include <errno.h>
 #endif
+
+namespace {
+	// Didn't want to bring dyn.h and friends here.
+	const int DYN_MSG_FAC		= 8;
+}
 
 namespace Firebird {
 
@@ -219,6 +226,9 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(IStatus* dest) const throw()
 
 Gds::Gds(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_gds, s) { }
+
+PrivateDyn::PrivateDyn(ISC_STATUS codeWithoutFacility) throw() :
+	Gds(ENCODE_ISC_MSG(codeWithoutFacility, DYN_MSG_FAC)) { }
 
 Num::Num(ISC_STATUS s) throw() :
 	Base(isc_arg_number, s) { }

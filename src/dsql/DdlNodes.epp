@@ -172,7 +172,7 @@ static void checkForeignKeyTempScope(thread_db* tdbb, jrd_tra* transaction,
 	if (error)
 	{
 		// Msg 232 : "%s can't reference %s"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(232, DYN_MSG_FAC)) << child << master);
+		status_exception::raise(Arg::PrivateDyn(232) << child << master);
 	}
 }
 
@@ -222,7 +222,7 @@ static void checkRelationTempScope(thread_db* tdbb, jrd_tra* transaction,
 	if (error)
 	{
 		// Msg 232 : "%s can't reference %s"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(232, DYN_MSG_FAC)) << child << master);
+		status_exception::raise(Arg::PrivateDyn(232) << child << master);
 	}
 }
 
@@ -243,7 +243,7 @@ static void checkSpTrigDependency(thread_db* tdbb, jrd_tra* transaction,
 
 		// msg 206: Column %s from table %s is referenced in %s.
 		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(206, DYN_MSG_FAC)) << fieldName << relationName << depName);
+			Arg::PrivateDyn(206) << fieldName << relationName << depName);
 	}
 	END_FOR
 }
@@ -271,7 +271,7 @@ static void checkViewDependency(thread_db* tdbb, jrd_tra* transaction,
 
 		// msg 206: Column %s from table %s is referenced in  %s.
 		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(206, DYN_MSG_FAC)) << fieldName << relationName << viewName);
+			Arg::PrivateDyn(206) << fieldName << relationName << viewName);
 	}
 	END_FOR
 }
@@ -420,7 +420,7 @@ static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 	{
 		// msg 130: "CONSTRAINT %s does not exist."
 		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(130, DYN_MSG_FAC)) << constraintName);
+			Arg::PrivateDyn(130) << constraintName);
 	}
 }
 
@@ -431,10 +431,10 @@ static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber
 	PathName expandedName = name;
 
 	if (!ISC_expand_filename(expandedName, false))
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(231, DYN_MSG_FAC)));	// File name is invalid.
+		status_exception::raise(Arg::PrivateDyn(231));	// File name is invalid.
 
 	if (tdbb->getDatabase()->dbb_filename == expandedName)
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(166, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(166));
 
 	AutoCacheRequest request(tdbb, drq_l_files, DYN_REQUESTS);
 
@@ -442,7 +442,7 @@ static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber
 		FIRST 1 X IN RDB$FILES
 		WITH X.RDB$FILE_NAME EQ expandedName.c_str()
 	{
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(166, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(166));
 	}
 	END_FOR
 
@@ -2063,7 +2063,7 @@ void AlterExternalFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* ds
 	else
 	{
 		// msg 41: "Function %s not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(41, DYN_MSG_FAC)) << name);
+		status_exception::raise(Arg::PrivateDyn(41) << name);
 	}
 
 	savePoint.release();	// everything is ok
@@ -3486,8 +3486,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		{
 			// msg: 223: "Collation @1 not installed for character set @2"
 			status_exception::raise(
-				Arg::Gds(ENCODE_ISC_MSG(223, DYN_MSG_FAC)) <<
-				info.baseCollationName << info.charsetName);
+				Arg::PrivateDyn(223) << info.baseCollationName << info.charsetName);
 		}
 
 		IntlUtil::SpecificAttributesMap map;
@@ -3498,7 +3497,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				cs, specificAttributes.getCount(), specificAttributes.begin(), &map))
 		{
 			// msg: 222: "Invalid collation attributes"
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+			status_exception::raise(Arg::PrivateDyn(222));
 		}
 
 		const string s = IntlUtil::generateSpecificAttributes(cs, map);
@@ -3509,7 +3508,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				newSpecificAttributes))
 		{
 			// msg: 222: "Invalid collation attributes"
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+			status_exception::raise(Arg::PrivateDyn(222));
 		}
 
 		memcpy(info.specificAttributes.getBuffer(newSpecificAttributes.length()),
@@ -3530,7 +3529,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		if (!INTL_texttype_validate(tdbb, &info))
 		{
 			// msg: 222: "Invalid collation attributes"
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+			status_exception::raise(Arg::PrivateDyn(222));
 		}
 
 		// ASF: User collations are created with the last number available,
@@ -3786,7 +3785,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	if (nameType.legacyDefault && dims != 0)
 	{
 		// Default value is not allowed for array type in domain %s
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(226, DYN_MSG_FAC)) << nameType.name);
+		status_exception::raise(Arg::PrivateDyn(226) << nameType.name);
 	}
 
 	nameType.resolve(dsqlScratch);
@@ -4223,7 +4222,7 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 
 	default:
 		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(95, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(95));
 	}
 }
 
@@ -4348,7 +4347,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				if (!FLD.RDB$VALIDATION_BLR.NULL)
 				{
 					// msg 160: "Only one constraint allowed for a domain"
-					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(160, DYN_MSG_FAC)));
+					status_exception::raise(Arg::PrivateDyn(160));
 				}
 
 				dsql_fld localField(dsqlScratch->getStatement()->getPool());
@@ -4401,7 +4400,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				if (FLD.RDB$DIMENSIONS)
 				{
 					// msg 226: "Default value is not allowed for array type in domain %s"
-					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(226, DYN_MSG_FAC)) << name);
+					status_exception::raise(Arg::PrivateDyn(226) << name);
 				}
 
 				dsql_str* defaultString =
@@ -4498,7 +4497,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 					{
 						// Domain @1 must be of exact number type with zero scale because it's used
 						// in an identity column.
-						status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(276, DYN_MSG_FAC)) << name);
+						status_exception::raise(Arg::PrivateDyn(276) << name);
 					}
 					END_FOR
 				}
@@ -4541,7 +4540,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	if (!found)
 	{
 		// msg 89: "Global field not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(89, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(89));
 	}
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_DOMAIN, name);
@@ -4559,7 +4558,7 @@ void AlterDomainNode::rename(thread_db* tdbb, jrd_tra* transaction, SSHORT dimen
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ renameTo.c_str()
 	{
 		// msg 204: Cannot rename domain %s to %s.  A domain with that name already exists.
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(204, DYN_MSG_FAC)) << name << renameTo);
+		status_exception::raise(Arg::PrivateDyn(204) << name << renameTo);
 	}
 	END_FOR
 
@@ -4669,7 +4668,7 @@ void DropDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	else
 	{
 		// msg 89: "Domain not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(89, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(89));
 	}
 
 	savePoint.release();	// everything is ok
@@ -4689,8 +4688,7 @@ void DropDomainNode::check(thread_db* tdbb, jrd_tra* transaction)
 
 		// msg 43: "Domain %s is used in table %s (local name %s) and can not be dropped"
 		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(43, DYN_MSG_FAC)) << Y.RDB$FIELD_SOURCE <<
-				Y.RDB$RELATION_NAME << Y.RDB$FIELD_NAME);
+			Arg::PrivateDyn(43) << Y.RDB$FIELD_SOURCE << Y.RDB$RELATION_NAME << Y.RDB$FIELD_NAME);
 	}
 	END_FOR
 
@@ -4706,7 +4704,7 @@ void DropDomainNode::check(thread_db* tdbb, jrd_tra* transaction)
 
 		// msg 239: "Domain %s is used in procedure %s (parameter name %s) and cannot be dropped"
 		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(239, DYN_MSG_FAC)) << X.RDB$FIELD_SOURCE <<
+			Arg::PrivateDyn(239) << X.RDB$FIELD_SOURCE <<
 				QualifiedName(X.RDB$PROCEDURE_NAME,
 					(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)).toString().c_str() <<
 				X.RDB$PARAMETER_NAME);
@@ -4763,7 +4761,7 @@ void CreateAlterExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsq
 			else
 			{
 				// msg 144: "Exception not found"
-				status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(144, DYN_MSG_FAC)));
+				status_exception::raise(Arg::PrivateDyn(144));
 			}
 		}
 	}
@@ -4911,7 +4909,7 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	else if (!silent)
 	{
 		// msg 144: "Exception not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(144, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(144));
 	}
 
 	savePoint.release();	// everything is ok
@@ -5018,7 +5016,7 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (!GEN.RDB$SYSTEM_FLAG.NULL && GEN.RDB$SYSTEM_FLAG != 0)
 		{
 			// msg 272: "Cannot delete system generator @1"
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(272, DYN_MSG_FAC)) << name);
+			status_exception::raise(Arg::PrivateDyn(272) << name);
 		}
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
@@ -5293,8 +5291,7 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 	{
 		// msg 52: "field %s from relation %s is referenced in view %s"
 		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(52, DYN_MSG_FAC)) <<
-				fieldName << relationName << Y.RDB$RELATION_NAME);
+			Arg::PrivateDyn(52) << fieldName << relationName << Y.RDB$RELATION_NAME);
 	}
 	END_FOR
 
@@ -5325,8 +5322,7 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 		{
 			// msg 187: "field %s from relation %s is referenced in index %s"
 			status_exception::raise(
-				Arg::Gds(ENCODE_ISC_MSG(187, DYN_MSG_FAC)) <<
-					fieldName << relationName << IDX.RDB$INDEX_NAME);
+				Arg::PrivateDyn(187) << fieldName << relationName << IDX.RDB$INDEX_NAME);
 		}
 	}
 	END_FOR
@@ -5351,7 +5347,7 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 	{
 		// msg 187: "field %s from relation %s is referenced in index %s"
 		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(187, DYN_MSG_FAC)) <<
+			Arg::PrivateDyn(187) <<
 				fieldName << relationName <<
 				fb_utils::exact_name_limit(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME)));
 	}
@@ -5398,8 +5394,7 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 	if (!found)
 	{
 		// msg 176: "column %s does not exist in table/view %s"
-		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(176, DYN_MSG_FAC)) << fieldName << relationName);
+		status_exception::raise(Arg::PrivateDyn(176) << fieldName << relationName);
 	}
 }
 
@@ -5537,8 +5532,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			if (!desc.isExact() || desc.dsc_scale != 0)
 			{
 				// Identity column @1 of table @2 must be exact numeric with zero scale.
-				status_exception::raise(
-					Arg::Gds(ENCODE_ISC_MSG(273, DYN_MSG_FAC)) << field->fld_name << name);
+				status_exception::raise(Arg::PrivateDyn(273) << field->fld_name << name);
 			}
 
 			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
@@ -5961,8 +5955,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		{
 			// msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY
 			// constraint definition"
-			status_exception::raise(
-				Arg::Gds(ENCODE_ISC_MSG(123, DYN_MSG_FAC)) << MetaName(RFR.RDB$FIELD_NAME));
+			status_exception::raise(Arg::PrivateDyn(123) << MetaName(RFR.RDB$FIELD_NAME));
 		}
 
 		++uniqueCount;
@@ -5983,7 +5976,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	if (uniqueCount != allCount)
 	{
 		// msg 124: "A column name is repeated in the definition of constraint: %s"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(124, DYN_MSG_FAC)) << constraint.name);
+		status_exception::raise(Arg::PrivateDyn(124) << constraint.name);
 	}
 
 	if (constraint.type == Constraint::TYPE_FK)
@@ -6065,7 +6058,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		{
 			// msg 126: "Same set of columns cannot be used in more than one PRIMARY KEY
 			// and/or UNIQUE constraint definition"
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(126, DYN_MSG_FAC)));
+			status_exception::raise(Arg::PrivateDyn(126));
 		}
 	}
 }
@@ -6580,7 +6573,7 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 			strcpy(REL.RDB$EXTERNAL_FILE, externalFile->c_str());
 
 			if (ISC_check_if_remote(*externalFile, false))
-				status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(163, DYN_MSG_FAC)));
+				status_exception::raise(Arg::PrivateDyn(163));
 
 			// Check for any path, present in filename.
 			// If miss it, file will be searched in External Tables Dirs,
@@ -6751,8 +6744,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 								// msg 205: Cannot rename field %s to %s.  A field with that name
 								// already exists in table %s.
 								status_exception::raise(
-									Arg::Gds(ENCODE_ISC_MSG(205, DYN_MSG_FAC)) <<
-										oldFieldName << newFieldName << name);
+									Arg::PrivateDyn(205) << oldFieldName << newFieldName << name);
 							}
 						END_MODIFY
 					}
@@ -6761,8 +6753,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					if (!found)
 					{
 						// msg 176: "column %s does not exist in table/view %s"
-						status_exception::raise(
-							Arg::Gds(ENCODE_ISC_MSG(176, DYN_MSG_FAC)) << oldFieldName << name);
+						status_exception::raise(Arg::PrivateDyn(176) << oldFieldName << name);
 					}
 
 					break;
@@ -6793,8 +6784,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 							if (!flag && !RFL.RDB$GENERATOR_NAME.NULL)
 							{
 								// msg 274: Identity column @1 of table @2 cannot be changed to NULLable
-								status_exception::raise(
-									Arg::Gds(ENCODE_ISC_MSG(274, DYN_MSG_FAC)) << fieldName << name);
+								status_exception::raise(Arg::PrivateDyn(274) << fieldName << name);
 							}
 
 							RFL.RDB$NULL_FLAG = SSHORT(flag);
@@ -6805,8 +6795,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					if (!found)
 					{
 						// msg 176: "column %s does not exist in table/view %s"
-						status_exception::raise(
-							Arg::Gds(ENCODE_ISC_MSG(176, DYN_MSG_FAC)) << fieldName << name);
+						status_exception::raise(Arg::PrivateDyn(176) << fieldName << name);
 					}
 
 					break;
@@ -6838,8 +6827,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					if (!found)
 					{
 						// msg 176: "column %s does not exist in table/view %s"
-						status_exception::raise(
-							Arg::Gds(ENCODE_ISC_MSG(176, DYN_MSG_FAC)) << fieldName << name);
+						status_exception::raise(Arg::PrivateDyn(176) << fieldName << name);
 					}
 
 					if (pos != oldPos)
@@ -6897,8 +6885,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					if (!found)
 					{
 						// msg 130: "CONSTRAINT %s does not exist."
-						status_exception::raise(
-							Arg::Gds(ENCODE_ISC_MSG(130, DYN_MSG_FAC)) << constraintName);
+						status_exception::raise(Arg::PrivateDyn(130) << constraintName);
 					}
 
 					break;
@@ -7011,8 +6998,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			if (!isView && (!FLD.RDB$COMPUTED_BLR.NULL != (computedNode != NULL)))
 			{
 				// Cannot add or remove COMPUTED from column @1
-				status_exception::raise(
-					Arg::Gds(ENCODE_ISC_MSG(249, DYN_MSG_FAC)) << field->fld_name);
+				status_exception::raise(Arg::PrivateDyn(249) << field->fld_name);
 			}
 
 			dyn_fld origDom;
@@ -7055,22 +7041,19 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 						if (!RFR.RDB$GENERATOR_NAME.NULL)
 						{
 							// msg 275: Identity column @1 of table @2 cannot have default value
-							status_exception::raise(
-								Arg::Gds(ENCODE_ISC_MSG(275, DYN_MSG_FAC)) << field->fld_name << name);
+							status_exception::raise(Arg::PrivateDyn(275) << field->fld_name << name);
 						}
 
 						if (hasDimensions)
 						{
 							// msg 225: "Default value is not allowed for array type in field %s"
-							status_exception::raise(
-								Arg::Gds(ENCODE_ISC_MSG(225, DYN_MSG_FAC)) << field->fld_name);
+							status_exception::raise(Arg::PrivateDyn(225) << field->fld_name);
 						}
 
 						if (computedNode)
 						{
 							// msg 233: "Local column %s is computed, cannot set a default value"
-							status_exception::raise(
-								Arg::Gds(ENCODE_ISC_MSG(233, DYN_MSG_FAC)) << field->fld_name);
+							status_exception::raise(Arg::PrivateDyn(233) << field->fld_name);
 						}
 
 						string defaultSource;
@@ -7093,14 +7076,13 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 							if (FLD.RDB$DEFAULT_VALUE.NULL)
 							{
 								// msg 229: "Local column %s doesn't have a default"
-								status_exception::raise(
-									Arg::Gds(ENCODE_ISC_MSG(229, DYN_MSG_FAC)) << field->fld_name);
+								status_exception::raise(Arg::PrivateDyn(229) << field->fld_name);
 							}
 							else
 							{
 								// msg 230: "Local column %s default belongs to domain %s"
 								status_exception::raise(
-									Arg::Gds(ENCODE_ISC_MSG(230, DYN_MSG_FAC)) <<
+									Arg::PrivateDyn(230) <<
 										field->fld_name << MetaName(FLD.RDB$FIELD_NAME));
 							}
 						}
@@ -7131,8 +7113,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					{
 						// msg 224: "Cannot use the internal domain %s as new type for field %s".
 						status_exception::raise(
-							Arg::Gds(ENCODE_ISC_MSG(224, DYN_MSG_FAC)) <<
-								newDomainName << field->fld_name);
+							Arg::PrivateDyn(224) << newDomainName << field->fld_name);
 					}
 
 					// Get the domain information.
@@ -7218,8 +7199,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 						if (!newDom.dyn_dsc.isExact() || newDom.dyn_dsc.dsc_scale != 0)
 						{
 							// Identity column @1 of table @2 must be exact numeric with zero scale.
-							status_exception::raise(
-								Arg::Gds(ENCODE_ISC_MSG(273, DYN_MSG_FAC)) << field->fld_name << name);
+							status_exception::raise(Arg::PrivateDyn(273) << field->fld_name << name);
 						}
 					}
 				}
@@ -7291,8 +7271,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		if (!found)
 		{
 			// msg 176: "column %s does not exist in table/view %s"
-			status_exception::raise(
-				Arg::Gds(ENCODE_ISC_MSG(176, DYN_MSG_FAC)) << field->fld_name << name);
+			status_exception::raise(Arg::PrivateDyn(176) << field->fld_name << name);
 		}
 
 		// Update any indices that exist.
@@ -7497,7 +7476,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	if (!found)
 	{
 		// msg 61: "Relation not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(61, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(61));
 	}
 
 	// Triggers must be deleted after check constraints
@@ -7553,7 +7532,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	else
 	{
 		// msg 61: "Relation not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(61, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(61));
 	}
 
 	savePoint.release();	// everything is ok
@@ -8598,7 +8577,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 			if (!VREL.RDB$VIEW_BLR.NULL)
 			{
 				// msg 181: "attempt to index a view"
-				status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(181, DYN_MSG_FAC)));
+				status_exception::raise(Arg::PrivateDyn(181));
 			}
 		}
 		END_FOR
@@ -8631,8 +8610,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 				{
 					// msg 240 "Field %s cannot be used twice in index %s"
 					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(240, DYN_MSG_FAC)) <<
-						definition.columns[i] << IDX.RDB$INDEX_NAME);
+						Arg::PrivateDyn(240) << definition.columns[i] << IDX.RDB$INDEX_NAME);
 				}
 			}
 
@@ -8650,20 +8628,17 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 				if (GF.RDB$FIELD_TYPE == blr_blob)
 				{
 					// msg 116 "attempt to index blob field in index %s"
-					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(116, DYN_MSG_FAC)) << IDX.RDB$INDEX_NAME);
+					status_exception::raise(Arg::PrivateDyn(116) << IDX.RDB$INDEX_NAME);
 				}
 				else if (!GF.RDB$DIMENSIONS.NULL)
 				{
 					// msg 117 "attempt to index array field in index %s"
-					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(117, DYN_MSG_FAC)) << IDX.RDB$INDEX_NAME);
+					status_exception::raise(Arg::PrivateDyn(117) << IDX.RDB$INDEX_NAME);
 				}
 				else if (!GF.RDB$COMPUTED_BLR.NULL)
 				{
 					// msg 179 "attempt to index COMPUTED BY field in index %s"
-					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(179, DYN_MSG_FAC)) << IDX.RDB$INDEX_NAME);
+					status_exception::raise(Arg::PrivateDyn(179) << IDX.RDB$INDEX_NAME);
 				}
 				else if (GF.RDB$FIELD_TYPE == blr_varying || GF.RDB$FIELD_TYPE == blr_text)
 				{
@@ -8705,8 +8680,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 			if (!found)
 			{
 				// msg 120 "Unknown columns in index %s"
-				status_exception::raise(
-					Arg::Gds(ENCODE_ISC_MSG(120, DYN_MSG_FAC)) << IDX.RDB$INDEX_NAME);
+				status_exception::raise(Arg::PrivateDyn(120) << IDX.RDB$INDEX_NAME);
 			}
 		}
 
@@ -8726,8 +8700,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 		if (keyLength >= MAX_KEY)
 		{
 			// msg 118 "key size too big for index %s"
-			status_exception::raise(
-				Arg::Gds(ENCODE_ISC_MSG(118, DYN_MSG_FAC)) << IDX.RDB$INDEX_NAME);
+			status_exception::raise(Arg::PrivateDyn(118) << IDX.RDB$INDEX_NAME);
 		}
 
 		if (definition.columns.hasData())
@@ -8753,8 +8726,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 		else if (IDX.RDB$EXPRESSION_BLR.NULL)
 		{
 			// msg 119 "no keys for index %s"
-			status_exception::raise(
-				Arg::Gds(ENCODE_ISC_MSG(119, DYN_MSG_FAC)) << IDX.RDB$INDEX_NAME);
+			status_exception::raise(Arg::PrivateDyn(119) << IDX.RDB$INDEX_NAME);
 		}
 
 		if (definition.refColumns.hasData())
@@ -8765,7 +8737,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 			{
 				// msg 133: "Number of referencing columns do not equal number of
 				// referenced columns
-				status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(133, DYN_MSG_FAC)));
+				status_exception::raise(Arg::PrivateDyn(133));
 			}
 
 			// Lookup a unique index in the referenced relation with the
@@ -8841,22 +8813,19 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 				if (isView)
 				{
 					// msg 242: "attempt to reference a view (%s) in a foreign key"
-					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(242, DYN_MSG_FAC)) << definition.refRelation);
+					status_exception::raise(Arg::PrivateDyn(242) << definition.refRelation);
 				}
 
 				if (found)
 				{
 					// msg 18: "could not find UNIQUE or PRIMARY KEY constraint in table %s with
 					// specified columns"
-					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(18, DYN_MSG_FAC)) << definition.refRelation);
+					status_exception::raise(Arg::PrivateDyn(18) << definition.refRelation);
 				}
 				else
 				{
 					// msg 241: "Table %s not found"
-					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(241, DYN_MSG_FAC)) << definition.refRelation);
+					status_exception::raise(Arg::PrivateDyn(241) << definition.refRelation);
 				}
 			}
 		}
@@ -8878,7 +8847,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 				{
 					// msg 133: "Number of referencing columns do not equal number of
 					// referenced columns"
-					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(133, DYN_MSG_FAC)));
+					status_exception::raise(Arg::PrivateDyn(133));
 				}
 
 				fb_utils::exact_name_limit(IND.RDB$INDEX_NAME, sizeof(IND.RDB$INDEX_NAME));
@@ -8894,8 +8863,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 			if (IDX.RDB$FOREIGN_KEY.NULL)
 			{
 				// msg 20: "could not find PRIMARY KEY index in specified table %s"
-				status_exception::raise(
-					Arg::Gds(ENCODE_ISC_MSG(20, DYN_MSG_FAC)) << definition.refRelation);
+				status_exception::raise(Arg::PrivateDyn(20) << definition.refRelation);
 			}
 		}
 
@@ -9000,7 +8968,7 @@ void AlterIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	else
 	{
 		// msg 48: "Index not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(48, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(48));
 	}
 
 	savePoint.release();	// everything is ok
@@ -9047,7 +9015,7 @@ void SetStatisticsNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	else
 	{
 		// msg 48: "Index not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(48, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(48));
 	}
 
 	savePoint.release();	// everything is ok
@@ -9103,7 +9071,7 @@ void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 		if (IDX.RDB$EXPRESSION_BLR.NULL && !deleteSegmentRecords(tdbb, transaction, name))
 		{
 			// msg 50: "No segments found for index"
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(50, DYN_MSG_FAC)));
+			status_exception::raise(Arg::PrivateDyn(50));
 		}
 
 		found = true;
@@ -9115,7 +9083,7 @@ void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 	else
 	{
 		// msg 48: "Index not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(48, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(48));
 	}
 
 	savePoint.release();	// everything is ok
@@ -9218,7 +9186,7 @@ void DropFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	if (!found)
 	{
 		// msg 37: "Blob Filter %s not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(37, DYN_MSG_FAC)) << name);
+		status_exception::raise(Arg::PrivateDyn(37) << name);
 	}
 
 	savePoint.release();	// everything is ok
@@ -9262,7 +9230,7 @@ void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		WITH X.RDB$SHADOW_NUMBER EQ number
 	{
 		// msg 165: "Shadow %ld already exists"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(165, DYN_MSG_FAC)) << Arg::Num(number));
+		status_exception::raise(Arg::PrivateDyn(165) << Arg::Num(number));
 	}
 	END_FOR
 
@@ -9350,26 +9318,26 @@ void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	if (name == ownerName)
 	{
 		// msg 193: "user name @1 could not be used for SQL role"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(193, DYN_MSG_FAC)) << ownerName);
+		status_exception::raise(Arg::PrivateDyn(193) << ownerName);
 	}
 
 	if (name == NULL_ROLE)
 	{
 		// msg 195: "keyword @1 could not be used as SQL role name"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(195, DYN_MSG_FAC)) << name);
+		status_exception::raise(Arg::PrivateDyn(195) << name);
 	}
 
 	if (isItUserName(tdbb, transaction))
 	{
 		// msg 193: "user name @1 could not be used for SQL role"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(193, DYN_MSG_FAC)) << name);
+		status_exception::raise(Arg::PrivateDyn(193) << name);
 	}
 
 	MetaName dummyName;
 	if (DYN_is_it_sql_role(transaction, name, dummyName, tdbb))
 	{
 		// msg 194: "SQL role @1 already exists"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(194, DYN_MSG_FAC)) << name);
+		status_exception::raise(Arg::PrivateDyn(194) << name);
 	}
 
 	AutoCacheRequest request(tdbb, drq_role_gens, DYN_REQUESTS);
@@ -9519,7 +9487,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		if (!ROL.RDB$SYSTEM_FLAG.NULL && ROL.RDB$SYSTEM_FLAG != 0)
 		{
 			// msg 284: can not drop system SQL role @1
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(284, DYN_MSG_FAC)) << name);
+			status_exception::raise(Arg::PrivateDyn(284) << name);
 		}
 
 		if (tdbb->getAttachment()->locksmith() || roleOwner == user)
@@ -9542,7 +9510,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		else
 		{
 			// msg 191: "only owner of SQL role or USR_locksmith could drop SQL role"
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(191, DYN_MSG_FAC)));
+			status_exception::raise(Arg::PrivateDyn(191));
 		}
 
 		found = true;
@@ -9554,7 +9522,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	else
 	{
 		// msg 155: "Role %s not found"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(155, DYN_MSG_FAC)) << name);
+		status_exception::raise(Arg::PrivateDyn(155) << name);
 	}
 
 	savePoint.release();	// everything is ok
@@ -9577,7 +9545,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	if (!isCreating && !password && !firstName && !middleName && !lastName && !adminRole.specified)
 	{
 		// 283: ALTER USER requires at least one clause to be specified
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(283, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(283));
 	}
 
 	// run all statements under savepoint control
@@ -9597,7 +9565,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		if (password->isEmpty())
 		{
 			// 250: Password should not be empty string
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(250, DYN_MSG_FAC)));
+			status_exception::raise(Arg::PrivateDyn(250));
 		}
 
 		userData->pass.set(password->c_str());
@@ -9846,16 +9814,14 @@ void AlterDatabaseNode::changeBackupMode(thread_db* tdbb, jrd_tra* transaction, 
 	{
 		// msg 217: "Database is already in the physical backup mode"
 		// msg 218: "Database is not in the physical backup mode"
-		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(clause == CLAUSE_BEGIN_BACKUP ? 217 : 218, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(clause == CLAUSE_BEGIN_BACKUP ? 217 : 218));
 	}
 
 	if (!found)
 	{
 		// msg 218: "Database is not in the physical backup mode"
 		// msg 215: "Difference file is not defined"
-		status_exception::raise(
-			Arg::Gds(ENCODE_ISC_MSG(clause == CLAUSE_END_BACKUP ? 218 : 215, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(clause == CLAUSE_END_BACKUP ? 218 : 215));
 	}
 }
 
@@ -9876,7 +9842,7 @@ void AlterDatabaseNode::defineDifference(thread_db* tdbb, jrd_tra* transaction, 
 	if (found)
 	{
 		// msg 216: "Difference file is already defined"
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(216, DYN_MSG_FAC)));
+		status_exception::raise(Arg::PrivateDyn(216));
 	}
 
 	request.reset(tdbb, drq_s_difference, DYN_REQUESTS);

@@ -215,6 +215,14 @@ public:
 	explicit Gds(ISC_STATUS s) throw();
 };
 
+// To simplify calls to DYN messages from DSQL, only for private DYN messages
+// that do not have presence in system_errors2.sql, when you have to call ENCODE_ISC_MSG
+class PrivateDyn : public Gds
+{
+public:
+	explicit PrivateDyn(ISC_STATUS codeWithoutFacility) throw();
+};
+
 class Str : public Base
 {
 public:
