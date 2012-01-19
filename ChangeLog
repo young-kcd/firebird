@@ -1,3 +1,11 @@
+ 2012-01-18 13:01  hvlad 
+   A builds/win32/msvc9/srp.vcproj
+Project file for VC9, by Claudio
+
+ 2012-01-18 12:03  alexpeshkoff 
+   M src/burp/restore.epp
+Fixed CORE-3733: GBAK fails to fix system generators while restoring
+
  2012-01-17 12:33  robocop 
    M src/common/classes/MetaName.cpp
    M src/common/classes/MetaName.h
