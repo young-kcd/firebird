@@ -1,3 +1,7 @@
+ 2012-01-18 12:05  alexpeshkoff 
+   M src/burp/restore.epp
+Backported fix for CORE-3733: GBAK fails to fix system generators while restoring
+
  2012-01-11 11:47  alexpeshkoff 
    M src/remote/inet.cpp
 Fixed CORE-3724: Server hangs when working with events
