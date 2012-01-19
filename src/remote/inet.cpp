@@ -1123,15 +1123,14 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
  **************************************/
 	// Default account to "guest" (in theory all packets contain a name)
 
-	Firebird::string name("guest"), password;
+	Firebird::string name("guest");
 
-	// Pick up account and password, if given
+	// Pick up account, if given
 
 	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
 								cnct->p_cnct_user_id.cstr_address,
 								cnct->p_cnct_user_id.cstr_length);
 
-	SLONG eff_gid = -1, eff_uid = -1;
 	bool user_verification = false;
 	for (id.rewind(); !id.isEof(); id.moveNext())
 	{
@@ -1142,39 +1141,24 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 			break;
 
 		case CNCT_passwd:
-			id.getString(password);
+			//id.getString(password); obsolete
 			break;
 
-		case CNCT_group:
-			{
-				const size_t length = id.getClumpLength();
-				if (length != 0)
-				{
-					eff_gid = 0;
-					memcpy(&eff_gid, id.getBytes(), length);
-					eff_gid = ntohl(eff_gid);
-				}
-				break;
-			}
+		case CNCT_group: // obsolete
+			break;
 
 			// this case indicates that the client has requested that
 			// we force the user name/password to be verified against
 			// the security database
-
 		case CNCT_user_verification:
 			user_verification = true;
 			break;
 		}
 	}
 
-	// See if user exists.  If not, reject connection
-	if (user_verification)
-	{
-		eff_gid = eff_uid = -1;
-	}
-
 #ifndef WIN_NT
-	else
+	// See if user exists.  If not, reject connection
+	if (!user_verification)
 	{
 		if (!check_host(port))
 		{
@@ -1195,7 +1179,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		Firebird::PathName home;
 		if (fb_utils::readenv("ISC_INET_SERVER_HOME", home))
 		{
-			if (chdir(home.c_str())) {
+			if (chdir(home.c_str()))
+			{
 				gds__log("inet_server: unable to cd to %s errno %d\n", home.c_str(), INET_ERRNO);
 				// We continue after the error
 			}
