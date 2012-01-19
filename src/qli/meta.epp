@@ -1446,6 +1446,9 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 	}
 #endif
 
+	if (QLI_nodb_triggers)
+		dpb.insertInt(isc_dpb_no_db_triggers, 1);
+
 	const qli_syntax* const* const end = node->syn_arg + node->syn_count;
 
 	// Start by attaching all databases

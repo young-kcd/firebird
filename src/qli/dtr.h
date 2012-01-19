@@ -515,6 +515,7 @@ EXTERN bool		QLI_hex_output;
 #ifdef TRUSTED_AUTH
 EXTERN bool		QLI_trusted;
 #endif
+EXTERN bool		QLI_nodb_triggers;
 
 EXTERN const char* QLI_error;
 EXTERN bool sw_verify;

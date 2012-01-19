@@ -124,6 +124,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 #ifdef TRUSTED_AUTH
 	QLI_trusted = false;
 #endif
+	QLI_nodb_triggers = false;
 	QLI_lines = 60;
 	QLI_name_columns = 0;
 	QLI_prompt = QLI_prompt_string;
@@ -150,6 +151,13 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			LEX_push_string(p - 1);
 			continue;
 		}
+		const size_t len = strlen(p);
+		if (len >= 3u && !fb_utils::strnicmp("NODBTRIGGERS", p, len))
+		{
+			QLI_nodb_triggers = true;
+			continue;
+		}
+
 		TEXT c;
 		while (c = *p++)
 			switch (UPPER(c))
