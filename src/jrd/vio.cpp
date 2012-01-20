@@ -132,6 +132,7 @@ const int PREPARE_LOCKERR	= 3;
 static int prepare_update(thread_db*, jrd_tra*, SLONG, record_param*,
 						  record_param*, record_param*, PageStack&, bool);
 
+static void protect_system_table(thread_db*, const jrd_rel*, const char*, bool = false);
 static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
@@ -1327,6 +1328,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		switch ((RIDS) relation->rel_id)
 		{
+		case rel_database:
+			protect_system_table(tdbb, relation, "DELETE", true);
+			break;
+
 		case rel_relations:
 			if (EVL_field(0, rpb->rpb_record, f_rel_name, &desc))
 			{
@@ -5257,6 +5262,38 @@ static int prepare_update(	thread_db*		tdbb,
 	}
 
 	return PREPARE_OK;
+}
+
+
+static void protect_system_table(thread_db* tdbb,
+								 const jrd_rel* relation,
+								 const char* operation,
+								 bool force_flag)
+{
+/**************************************
+ *
+ *	p r o t e c t _ s y s t e m _ t a b l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Disallow modifications on system tables for everyone except
+ *	the GBAK restore process and internal (system) requests used
+ *	by the engine itself.
+ *
+ **************************************/
+	const Attachment* const attachment = tdbb->getAttachment();
+	const jrd_req* const request = tdbb->getRequest();
+
+	if (force_flag ||
+		(!(attachment->att_flags & ATT_gbak_attachment) &&
+		!(request->getStatement()->flags & JrdStatement::FLAG_INTERNAL)))
+	{
+		fb_assert(relation->rel_flags & REL_scanned);
+
+		status_exception::raise(Arg::Gds(isc_protect_sys_tab) <<
+			Arg::Str(operation) << Arg::Str(relation->rel_name));
+	}
 }
 
 

@@ -734,6 +734,7 @@ Data source : @4"},		/* eds_statement */
 	{335545027, "External BLR message mismatch: length = @1, expected @2"},		/* ee_blr_mismatch_length */
 	{335545028, "Subscript @1 out of bounds [@2, @3]"},		/* ss_out_of_bounds */
 	{335545029, "Install incomplete, please read chapter \"Initializing security database\" in Quick Start Guide"},		/* missing_data_structures */
+	{335545030, "@1 operation is not allowed for system table @2"},		/* protect_sys_tab */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

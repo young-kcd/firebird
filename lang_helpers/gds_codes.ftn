@@ -1470,6 +1470,8 @@ C --
       PARAMETER (GDS__ss_out_of_bounds                 = 335545028)
       INTEGER*4 GDS__missing_data_structures         
       PARAMETER (GDS__missing_data_structures          = 335545029)
+      INTEGER*4 GDS__protect_sys_tab                 
+      PARAMETER (GDS__protect_sys_tab                  = 335545030)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

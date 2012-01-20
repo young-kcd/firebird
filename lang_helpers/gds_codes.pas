@@ -742,6 +742,7 @@ const
 	gds_ee_blr_mismatch_length           = 335545027;
 	gds_ss_out_of_bounds                 = 335545028;
 	gds_missing_data_structures          = 335545029;
+	gds_protect_sys_tab                  = 335545030;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
