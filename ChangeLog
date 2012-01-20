@@ -1,3 +1,79 @@
+ 2012-01-20 01:42  asfernandes 
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/classes/MetaName.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/jrd/cch.cpp
+   M src/remote/server/server.cpp
+Misc.
+
+ 2012-01-19 17:30  asfernandes 
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+Fixed CORE-3737 - EXECUTE BLOCK parameters definitions are not respected and may cause wrong behavior related to character sets.
+
+ 2012-01-19 15:11  alexpeshkoff 
+   M src/jrd/opt.cpp
+Fixed CORE-3736: WITH LOCK clause is allowed for users with read-only rights on some table, thus blocking others from updating this table
+
+ 2012-01-19 08:07  robocop 
+   M src/common/classes/array.h
+   M src/common/classes/fb_string.cpp
+Some paranoid checks for extreme cases.
+
+ 2012-01-19 08:00  robocop 
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/qli/dtr.cpp
+   M src/qli/dtr.h
+   M src/qli/meta.epp
+   M src/qli/qliswi.h
+Stop db triggers in qli, from Herr Schlottmann-G?\195?\182dde
+
+ 2012-01-19 06:26  robocop 
+   M src/remote/inet.cpp
+Cleanup.
+
+ 2012-01-19 05:42  robocop 
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Simplification.
+
+ 2012-01-19 04:54  robocop 
+   M doc/sql.extensions/README.merge.txt
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/srp.cpp
+   M src/common/BigInteger.cpp
+   M src/common/BigInteger.h
+   M src/common/isc_sync.cpp
+   M src/common/os/posix/isc_ipc.cpp
+   M src/common/sha.cpp
+   M src/common/unicode_util.cpp
+   M src/dsql/BlrWriter.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/parse.y
+   M src/jrd/Function.epp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/scl.epp
+   M src/jrd/svc.cpp
+   M src/lock/lock.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+Misc.
+
  2012-01-18 13:01  hvlad 
    A builds/win32/msvc9/srp.vcproj
 Project file for VC9, by Claudio
