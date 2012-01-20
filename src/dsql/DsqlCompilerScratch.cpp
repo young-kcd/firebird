@@ -322,7 +322,7 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 
 	if (variable->type == dsql_var::TYPE_INPUT)
 	{
-		// Assign EXECUTE BLOCK's input parameter to its correspondent internal variable.
+		// Assign EXECUTE BLOCK's input parameter to its corresponding internal variable.
 
 		appendUChar(blr_assignment);
 

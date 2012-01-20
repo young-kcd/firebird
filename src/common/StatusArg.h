@@ -216,7 +216,7 @@ public:
 };
 
 // To simplify calls to DYN messages from DSQL, only for private DYN messages
-// that do not have presence in system_errors2.sql, when you have to call ENCODE_ISC_MSG
+// that do not have presence in system_errors2.sql, when you have to call ENCODE_ISC_MSG.
 class PrivateDyn : public Gds
 {
 public:

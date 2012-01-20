@@ -39,7 +39,6 @@
 #include "firebird/Interface.h"
 #include "../jrd/msg_encode.h"
 
-
 #ifdef WIN_NT
 #include <windows.h>
 #else

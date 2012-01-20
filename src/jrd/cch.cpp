@@ -1060,7 +1060,7 @@ void CCH_fini(thread_db* tdbb)
 
 		delete[] bcb->bcb_rpt;
 		bcb->bcb_rpt = NULL; // Just in case we exit with failure
-		
+
 		while (bcb->bcb_memory.hasData())
 			bcb->bcb_bufferpool->deallocate(bcb->bcb_memory.pop());
 

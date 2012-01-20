@@ -3720,13 +3720,15 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			if (!accept_connection(port, &receive->p_cnct, sendL))
 			{
 				//const string& s = port->port_user_name;
-/*				if (s.hasData())
+				/***
+				if (s.hasData())
 				{								looks like logging rejects is not good idea any more?
 					gds__log("SERVER/process_packet: connection rejected for %s", s.c_str());
-				} */
-				if (port->port_server->srvr_flags & SRVR_multi_client) {
-					port->port_state = rem_port::BROKEN;
 				}
+				***/
+
+				if (port->port_server->srvr_flags & SRVR_multi_client)
+					port->port_state = rem_port::BROKEN;
 				else
 				{
 					// gds__log("SERVER/process_packet: connect reject, server exiting");

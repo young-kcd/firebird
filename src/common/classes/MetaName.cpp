@@ -133,6 +133,4 @@ namespace Firebird {
 		return toSize;
 	}
 
-
 } // namespace Firebird
-
