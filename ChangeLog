@@ -1,3 +1,13 @@
+ 2012-01-19 15:34  alexpeshkoff 
+   M src/jrd/opt.cpp
+Backported fix for CORE-3736: WITH LOCK clause is allowed for users with read-only rights on some table, thus blocking others from updating this table
+
+ 2012-01-19 07:26  robocop 
+   M src/qli/dtr.cpp
+   M src/qli/dtr.h
+   M src/qli/meta.epp
+Stop db triggers in qli, from Herr Schlottmann-G?\195?\182dde
+
  2012-01-18 12:05  alexpeshkoff 
    M src/burp/restore.epp
 Backported fix for CORE-3733: GBAK fails to fix system generators while restoring
