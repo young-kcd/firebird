@@ -1,3 +1,7 @@
+ 2012-01-19 15:34  alexpeshkoff 
+   M src/jrd/opt.cpp
+Backported fix for CORE-3736: WITH LOCK clause is allowed for users with read-only rights on some table, thus blocking others from updating this table
+
  2011-12-14 14:45  paulbeach 
    M builds/install/arch-specific/darwin/preupgrade-script
 CORE-3862 - Multiple update installs can cause problems.
