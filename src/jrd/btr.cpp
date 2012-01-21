@@ -1157,10 +1157,12 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			if (!isNull)
 				key->key_flags &= ~key_all_nulls;
 
+			const USHORT keyType = fuzzy ?
+				INTL_KEY_PARTIAL :
+				((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
+
 			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
-				(idx->idx_flags & idx_descending),
-				(fuzzy ? INTL_KEY_PARTIAL :
-						 ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
+				(idx->idx_flags & idx_descending), keyType);
 		}
 		else
 		{
@@ -1197,10 +1199,12 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					key->key_flags &= ~key_all_nulls;
 				}
 
+				const USHORT keyType = fuzzy ?
+					INTL_KEY_PARTIAL :
+					((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
+
 				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull,
-					(idx->idx_flags & idx_descending),
-					(fuzzy ? INTL_KEY_PARTIAL :
-							 ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
+					(idx->idx_flags & idx_descending), keyType);
 
 				if (temp.key_length)
 				{
@@ -1452,6 +1456,10 @@ idx_e BTR_make_key(thread_db* tdbb,
 
 	const index_desc::idx_repeat* tail = idx->idx_rpt;
 
+	const USHORT keyType = fuzzy ?
+		INTL_KEY_PARTIAL :
+		((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
+
 	// If the index is a single segment index, don't sweat the compound
 	// stuff.
 	if (idx->idx_count == 1)
@@ -1459,14 +1467,15 @@ idx_e BTR_make_key(thread_db* tdbb,
 		bool isNull;
 		const dsc* desc = eval(tdbb, *exprs, &temp_desc, &isNull);
 		key->key_flags |= key_empty;
-		if (!isNull) {
+
+		if (!isNull)
 			key->key_flags &= ~key_all_nulls;
-		}
+
 		compress(tdbb, desc, key, tail->idx_itype, isNull,
-			(idx->idx_flags & idx_descending), (fuzzy ? INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
-		if (fuzzy && (key->key_flags & key_empty)) {
+			(idx->idx_flags & idx_descending), keyType);
+
+		if (fuzzy && (key->key_flags & key_empty))
 			key->key_length = 0;
-		}
 	}
 	else
 	{
@@ -1489,7 +1498,8 @@ idx_e BTR_make_key(thread_db* tdbb,
 
 			compress(tdbb, desc, &temp, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending),
-				((n == count - 1) ? (fuzzy ? INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)) : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
+				(n == count - 1 ?
+					keyType : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 
 			if (temp.key_length)
 			{
@@ -1517,28 +1527,24 @@ idx_e BTR_make_key(thread_db* tdbb,
 		// in more scans on specific values (2^n, f.e. 131072) than needed.
 		if (!fuzzy && (n != idx->idx_count))
 		{
-			for (; stuff_count; --stuff_count) {
+			for (; stuff_count; --stuff_count)
 				*p++ = 0;
-			}
 		}
 
 		key->key_length = (p - key->key_data);
 		if (temp.key_flags & key_empty)
 		{
 			key->key_flags |= key_empty;
-			if (fuzzy) {
+			if (fuzzy)
 				key->key_length = 0;
-			}
 		}
 	}
 
-	if (key->key_length >= dbb->getMaxIndexKeyLength()) {
+	if (key->key_length >= dbb->getMaxIndexKeyLength())
 		result = idx_e_keytoobig;
-	}
 
-	if (idx->idx_flags & idx_descending) {
+	if (idx->idx_flags & idx_descending)
 		BTR_complement_key(key);
-	}
 
 	return result;
 }
