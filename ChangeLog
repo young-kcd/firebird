@@ -1,3 +1,17 @@
+ 2012-01-20 10:23  dimitr 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/vio.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Disallowed deletions from RDB$DATABASE. This fixes the only problematic part of CORE-3735: Unprivileged user can delete from RDB$DATABASE, RDB$COLLATIONS, RDB$CHARACTER_SETS. The implemented solution could be used to protect other system tables from direct modifications.
+
  2012-01-20 01:42  asfernandes 
    M src/common/StatusArg.cpp
    M src/common/StatusArg.h
