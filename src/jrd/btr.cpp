@@ -1117,6 +1117,10 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 	try {
 
+		const USHORT keyType = fuzzy ?
+			INTL_KEY_PARTIAL :
+			((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
+
 		// Special case single segment indices
 
 		if (idx->idx_count == 1)
@@ -1157,10 +1161,6 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			if (!isNull)
 				key->key_flags &= ~key_all_nulls;
 
-			const USHORT keyType = fuzzy ?
-				INTL_KEY_PARTIAL :
-				((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
-
 			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending), keyType);
 		}
@@ -1198,10 +1198,6 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 					key->key_flags &= ~key_all_nulls;
 				}
-
-				const USHORT keyType = fuzzy ?
-					INTL_KEY_PARTIAL :
-					((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
 
 				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull,
 					(idx->idx_flags & idx_descending), keyType);
