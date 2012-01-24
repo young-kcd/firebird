@@ -1301,6 +1301,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		switch (tail->idx_itype)
 		{
 		case idx_numeric:
+		case idx_timestamp1:
 			length = sizeof(double);
 			break;
 
@@ -1354,6 +1355,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		switch (tail->idx_itype)
 		{
 		case idx_numeric:
+		case idx_timestamp1:
 			length = sizeof(double);
 			break;
 		case idx_sql_time:
@@ -2450,6 +2452,7 @@ static void compress(thread_db* tdbb,
 			switch (itype)
 			{
 			case idx_numeric:
+			case idx_timestamp1:
 				length = sizeof(double);
 				break;
 			case idx_sql_time:
@@ -2576,6 +2579,13 @@ static void compress(thread_db* tdbb,
 
 #ifdef DEBUG_INDEXKEY
 		fprintf(stderr, "NUMERIC %lg ", temp.temp_double);
+#endif
+	}
+	else if (itype == idx_timestamp1) {
+		temp.temp_double = MOV_date_to_double(desc);
+		temp_is_negative = (temp.temp_double < 0);
+#ifdef DEBUG_INDEXKEY
+		fprintf(stderr, "TIMESTAMP1 %lg ", temp.temp_double);
 #endif
 	}
 	else if (itype == idx_numeric2) {

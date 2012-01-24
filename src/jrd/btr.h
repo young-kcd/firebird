@@ -96,7 +96,7 @@ struct IndexDescAlloc : public pool_alloc_rpt<index_desc> {
 
 const int idx_numeric		= 0;
 const int idx_string		= 1;
-// AB: idx_timestamp1 removed
+const int idx_timestamp1	= 2;
 const int idx_byte_array	= 3;
 const int idx_metadata		= 4;
 const int idx_sql_date		= 5;
