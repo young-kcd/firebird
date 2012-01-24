@@ -59,9 +59,9 @@ static const Switches::in_sw_tab_t qli_in_sw_table[] =
 	{IN_SW_QLI_FETCH_PASSWORD	, 0, "FETCH_PASSWORD"	, 0, 0, 0, false, 518,	1, NULL},
 	{IN_SW_QLI_INITIAL_SCRIPT	, 0, "INITSCRIPT"		, 0, 0, 0, false, 0,	1, NULL},
 	{IN_SW_QLI_INITIAL_SCRIPT	, 0, "INIT_SCRIPT"		, 0, 0, 0, false, 519,	1, NULL},
-	{IN_SW_QLI_NOBANNER			, 0, "NOBANNER"			, 0, 0, 0, false, 0,	3, NULL},
-	{IN_SW_QLI_NOBANNER			, 0, "NO_BANNER"		, 0, 0, 0, false, 520,	3, NULL},
 	{IN_SW_QLI_NODBTRIGGERS		, 0, "NODBTRIGGERS"		, 0, 0, 0, false, 531,	3, NULL},
+	{IN_SW_QLI_NOBANNER			, 0, "NOBANNER"			, 0, 0, 0, false, 0,	1, NULL},
+	{IN_SW_QLI_NOBANNER			, 0, "NO_BANNER"		, 0, 0, 0, false, 520,	1, NULL},
 	{IN_SW_QLI_PASSWORD			, 0, "PASSWORD"			, 0, 0, 0, false, 521,	1, NULL},
 	{IN_SW_QLI_TRACE			, 0, "TRACE"			, 0, 0, 0, false, 522,	3, NULL},
 #ifdef TRUSTED_AUTH
