@@ -1092,7 +1092,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
  **************************************
  *
  * Functional description
- *	Compute a key from an record and an index descriptor.
+ *	Compute a key from a record and an index descriptor.
  *	Note that compound keys are expanded by 25%.  If this
  *	changes, both BTR_key_length and GDEF exe.e have to
  *	change.
