@@ -1,4 +1,138 @@
   **************************
+  * v2.0.7
+  **************************
+
+    * Bugfix CORE-3736
+        WITH LOCK clause is allowed for users with read-only rights on some table,
+        thus blocking others from updating this table
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3730
+        isc_dsql_exec_immed2() loses input parameter value with RETURNING clause
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3631
+        Duplicate records with NULLs are checked incorrectly
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3557
+        Server crashes while preparing a query against the table being dropped
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3440
+        Server crashes if isc_que_events() has queued 0 events
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3397
+        Unresolved symbols in the INTL library
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3374
+        Server may crash or corrupt data if SELECT WITH LOCK is issued
+        against records not in the latest format
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3351
+        Windows client could put 10054 error messages into firebird.log at connection time
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3283
+        Bad plan with using LEFT OUTER JOIN in SUBSELECT
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3220
+        isc_info_svc_get_users returns error message in the result cluster
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3205
+        isc_dsql_exec_immed2() doesn't return error codes isc_stream_eof and isc_sing_select_err
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3202
+        execute_immediate API call family may crash the remote server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3148
+        Dangerous code in SQZ_apply_differences
+      Contributor(s):
+        Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3137
+        Partial rollback is possible for a selectable procedure modifying data
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+	* Bugfix CORE-3115
+        Bugs in the internal record compression routines
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+
+    * Bugfix CORE-3097
+        Updating blob field causes the server to crash with ACCESS_VIOLATION exception
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3067
+        Objects are not unmapped when the shared memory region is closed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3064
+        Using both the procedure name and alias inside an explicit plan crashes the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3050
+        Race condition in LocksCache::get() could lead to the engine crash
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3022
+        GPRE C++ compiler warnings with GCC 4.4.1
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3019
+        SuperServer startup failure on Linux Gentoo
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3001
+        Install fails to create user & group "firebird"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2977
+        FB 2.1 incorrectly works with indexed fields of type DATE in OLD ODS (9.1)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2900
+        Server crashes (access violation) using aggregate distinct
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+	* Bugfix CORE-1782
+        ISQL crashes when fetching data for a column having alias longer than 30 characters
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+
+  **************************
   * v2.0.6
   **************************
 
