@@ -1,3 +1,7 @@
+ 2012-01-23 18:17  dimitr 
+   M src/remote/protocol.cpp
+Backported CORE-3730: isc_dsql_exec_immed2() loses input parameter value with RETURNING clause.
+
  2012-01-19 15:34  alexpeshkoff 
    M src/jrd/opt.cpp
 Backported fix for CORE-3736: WITH LOCK clause is allowed for users with read-only rights on some table, thus blocking others from updating this table
