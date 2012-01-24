@@ -73,7 +73,6 @@
 	const USHORT  f_fld_precision = 27;
 	const USHORT  f_fld_class = 28;
 	const USHORT  f_fld_owner = 29;
-	const USHORT  f_fld_schema = 30;
 
 
 // Relation 3 (RDB$INDEX_SEGMENTS)
@@ -82,7 +81,6 @@
 	const USHORT  f_seg_field = 1;
 	const USHORT  f_seg_position = 2;
 	const USHORT  f_seg_statistics = 3;
-	const USHORT  f_seg_schema = 4;
 
 
 // Relation 4 (RDB$INDICES)
@@ -100,8 +98,6 @@
 	const USHORT  f_idx_exp_blr = 10;
 	const USHORT  f_idx_exp_source = 11;
 	const USHORT  f_idx_statistics = 12;
-	const USHORT  f_idx_schema = 13;
-	const USHORT  f_idx_foreign_schema = 14;
 
 
 // Relation 5 (RDB$RELATION_FIELDS)
@@ -127,8 +123,6 @@
 	const USHORT  f_rfr_coll_id = 18;
 	const USHORT  f_rfr_gen_name = 19;
 	const USHORT  f_rfr_identity_type = 20;
-	const USHORT  f_rfr_schema = 21;
-	const USHORT  f_rfr_source_schema = 22;
 
 
 // Relation 6 (RDB$RELATIONS)
@@ -150,7 +144,6 @@
 	const USHORT  f_rel_def_class = 14;
 	const USHORT  f_rel_flags = 15;
 	const USHORT  f_rel_type = 16;
-	const USHORT  f_rel_schema = 17;
 
 
 // Relation 7 (RDB$VIEW_RELATIONS)
@@ -161,8 +154,6 @@
 	const USHORT  f_vrl_cname = 3;
 	const USHORT  f_vrl_context_type = 4;
 	const USHORT  f_vrl_pkg_name = 5;
-	const USHORT  f_vrl_view_schema = 6;
-	const USHORT  f_vrl_rel_schema = 7;
 
 
 // Relation 8 (RDB$FORMATS)
@@ -177,7 +168,6 @@
 	const USHORT  f_cls_class = 0;
 	const USHORT  f_cls_acl = 1;
 	const USHORT  f_cls_desc = 2;
-	const USHORT  f_cls_schema = 3;
 
 
 // Relation 10 (RDB$FILES)
@@ -215,7 +205,6 @@
 	const USHORT  f_trg_debug_info = 11;
 	const USHORT  f_trg_engine_name = 12;
 	const USHORT  f_trg_entry = 13;
-	const USHORT  f_trg_schema = 14;
 
 
 // Relation 13 (RDB$DEPENDENCIES)
@@ -226,8 +215,6 @@
 	const USHORT  f_dpd_type = 3;
 	const USHORT  f_dpd_o_type = 4;
 	const USHORT  f_dpd_pkg_name = 5;
-	const USHORT  f_dpd_schema = 6;
-	const USHORT  f_dpd_on_schema = 7;
 
 
 // Relation 14 (RDB$FUNCTIONS)
@@ -252,7 +239,6 @@
 	const USHORT  f_fun_owner = 17;
 	const USHORT  f_fun_legacy_flag = 18;
 	const USHORT  f_fun_deterministic_flag = 19;
-	const USHORT  f_fun_schema = 20;
 
 
 // Relation 15 (RDB$FUNCTION_ARGUMENTS)
@@ -279,8 +265,6 @@
 	const USHORT  f_arg_rname = 19;
 	const USHORT  f_arg_sys_flag = 20;
 	const USHORT  f_arg_desc = 21;
-	const USHORT  f_arg_schema = 22;
-	const USHORT  f_arg_source_schema = 23;
 
 
 // Relation 16 (RDB$FILTERS)
@@ -292,7 +276,6 @@
 	const USHORT  f_flt_input = 4;
 	const USHORT  f_flt_output = 5;
 	const USHORT  f_flt_sys_flag = 6;
-	const USHORT  f_flt_schema = 7;
 
 
 // Relation 17 (RDB$TRIGGER_MESSAGES)
@@ -312,8 +295,6 @@
 	const USHORT  f_prv_fname = 5;
 	const USHORT  f_prv_u_type = 6;
 	const USHORT  f_prv_o_type = 7;
-	const USHORT  f_prv_user_schema = 8;
-	const USHORT  f_prv_rel_schema = 9;
 
 
 // Relation 19 (RDB$TRANSACTIONS)
@@ -332,7 +313,6 @@
 	const USHORT  f_gen_desc = 3;
 	const USHORT  f_gen_class = 4;
 	const USHORT  f_gen_owner = 5;
-	const USHORT  f_gen_schema = 6;
 
 
 // Relation 21 (RDB$FIELD_DIMENSIONS)
@@ -341,7 +321,6 @@
 	const USHORT  f_dims_dim = 1;
 	const USHORT  f_dims_lower = 2;
 	const USHORT  f_dims_upper = 3;
-	const USHORT  f_dims_schema = 4;
 
 
 // Relation 22 (RDB$RELATION_CONSTRAINTS)
@@ -352,7 +331,6 @@
 	const USHORT  f_rcon_dfr = 3;
 	const USHORT  f_rcon_idfr = 4;
 	const USHORT  f_rcon_iname = 5;
-	const USHORT  f_rcon_schema = 6;
 
 
 // Relation 23 (RDB$REF_CONSTRAINTS)
@@ -362,14 +340,12 @@
 	const USHORT  f_refc_match = 2;
 	const USHORT  f_refc_upd_rul = 3;
 	const USHORT  f_refc_del_rul = 4;
-	const USHORT  f_refc_schema = 5;
 
 
 // Relation 24 (RDB$CHECK_CONSTRAINTS)
 
 	const USHORT  f_ccon_cname = 0;
 	const USHORT  f_ccon_tname = 1;
-	const USHORT  f_ccon_schema = 2;
 
 
 // Relation 25 (RDB$LOG_FILES)
@@ -402,7 +378,6 @@
 	const USHORT  f_prc_entry = 15;
 	const USHORT  f_prc_pkg_name = 16;
 	const USHORT  f_prc_private_flag = 17;
-	const USHORT  f_prc_schema = 18;
 
 
 // Relation 27 (RDB$PROCEDURE_PARAMETERS)
@@ -422,8 +397,6 @@
 	const USHORT  f_prm_fname = 12;
 	const USHORT  f_prm_rname = 13;
 	const USHORT  f_prm_pkg_name = 14;
-	const USHORT  f_prm_schema = 15;
-	const USHORT  f_prm_source_schema = 16;
 
 
 // Relation 28 (RDB$CHARACTER_SETS)
@@ -439,7 +412,6 @@
 	const USHORT  f_cs_bytes_char = 8;
 	const USHORT  f_cs_class = 9;
 	const USHORT  f_cs_owner = 10;
-	const USHORT  f_cs_schema = 11;
 
 
 // Relation 29 (RDB$COLLATIONS)
@@ -455,8 +427,6 @@
 	const USHORT  f_coll_specific_attr = 8;
 	const USHORT  f_coll_class = 9;
 	const USHORT  f_coll_owner = 10;
-	const USHORT  f_coll_schema = 11;
-	const USHORT  f_coll_base_collation_schema = 12;
 
 
 // Relation 30 (RDB$EXCEPTIONS)
@@ -468,7 +438,6 @@
 	const USHORT  f_xcp_sys_flag = 4;
 	const USHORT  f_xcp_class = 5;
 	const USHORT  f_xcp_owner = 6;
-	const USHORT  f_xcp_schema = 7;
 
 
 // Relation 31 (RDB$ROLES)
@@ -477,7 +446,6 @@
 	const USHORT  f_rol_owner = 1;
 	const USHORT  f_rol_desc = 2;
 	const USHORT  f_rol_sys_flag = 3;
-	const USHORT  f_rol_schema = 4;
 
 
 // Relation 32 (RDB$BACKUP_HISTORY)
@@ -529,7 +497,6 @@
 	const USHORT  f_mon_att_gc = 11;
 	const USHORT  f_mon_att_remote_process = 12;
 	const USHORT  f_mon_att_stat_id = 13;
-	const USHORT  f_mon_att_schema = 14;
 
 
 // Relation 35 (MON$TRANSACTIONS)
@@ -572,7 +539,6 @@
 	const USHORT  f_mon_call_src_column = 7;
 	const USHORT  f_mon_call_stat_id = 8;
 	const USHORT  f_mon_call_pkg_name = 9;
-	const USHORT  f_mon_call_schema = 10;
 
 
 // Relation 38 (MON$IO_STATS)
@@ -626,7 +592,6 @@
 	const USHORT  f_pkg_owner = 4;
 	const USHORT  f_pkg_sys_flag = 5;
 	const USHORT  f_pkg_desc = 6;
-	const USHORT  f_pkg_schema = 7;
 
 
 // Relation 43 (SEC$USERS)
@@ -639,13 +604,4 @@
 	const USHORT  f_sec_middle_name = 5;
 	const USHORT  f_sec_last_name = 6;
 
-
-// Relation 44 (RDB$SCHEMAS)
-
-	const USHORT  f_schema_name = 0;
-	const USHORT  f_schema_charset = 1;
-	const USHORT  f_schema_class = 2;
-	const USHORT  f_schema_owner = 3;
-	const USHORT  f_schema_sys_flag = 4;
-	const USHORT  f_schema_desc = 5;
 
