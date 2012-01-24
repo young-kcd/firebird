@@ -1472,6 +1472,8 @@ C --
       PARAMETER (GDS__missing_data_structures          = 335545029)
       INTEGER*4 GDS__protect_sys_tab                 
       PARAMETER (GDS__protect_sys_tab                  = 335545030)
+      INTEGER*4 GDS__libtommath_generic              
+      PARAMETER (GDS__libtommath_generic               = 335545031)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
