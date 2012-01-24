@@ -266,6 +266,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	lowerCount = 0;
 	upperCount = 0;
 	nonFullMatchedSegments = 0;
+	fuzzy = false;
 
 	segments.grow(idx->idx_count);
 
@@ -315,6 +316,7 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
 	lowerCount = scratch.lowerCount;
 	upperCount = scratch.upperCount;
 	nonFullMatchedSegments = scratch.nonFullMatchedSegments;
+	fuzzy = scratch.fuzzy;
 	idx = scratch.idx;
 
 	// Allocate needed segments
@@ -849,6 +851,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 		scratch.lowerCount = 0;
 		scratch.upperCount = 0;
 		scratch.nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
+		scratch.fuzzy = false;
 
 		if (scratch.candidate)
 		{
@@ -864,10 +867,29 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				if (segment->scope == scope)
 					scratch.scopeCandidate = true;
 
+				if (segment->scanType != segmentScanMissing && !(scratch.idx->idx_flags & idx_unique))
+				{
+					const USHORT iType = scratch.idx->idx_rpt[j].idx_itype;
+
+					if (iType >= idx_first_intl_string)
+					{
+						TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(iType));
+
+						if (textType->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
+						{
+							// ASF: Order is more precise than equivalence class.
+							// We can't use the next segments, and we'll need to use
+							// INTL_KEY_PARTIAL to construct the last segment's key.
+							scratch.fuzzy = true;;
+						}
+					}
+				}
+
 				// Check if this is the last usable segment
-				if (((segment->scanType == segmentScanEqual) ||
-					(segment->scanType == segmentScanEquivalent) ||
-					(segment->scanType == segmentScanMissing)))
+				if (!scratch.fuzzy &&
+					(segment->scanType == segmentScanEqual ||
+					 segment->scanType == segmentScanEquivalent ||
+					 segment->scanType == segmentScanMissing))
 				{
 					// This is a perfect usable segment thus update root selectivity
 					scratch.lowerCount++;
@@ -934,6 +956,8 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 							break;
 
 						case segmentScanStarting:
+						case segmentScanEqual:
+						case segmentScanEquivalent:
 							scratch.lowerCount++;
 							scratch.upperCount++;
 							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
@@ -941,6 +965,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 							break;
 
 						default:
+							fb_assert(segment->scanType == segmentScanNone);
 							break;
 					}
 
@@ -1157,46 +1182,8 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 			retrieval->irb_generic |= irb_exclude_upper;
 	}
 
-	for (IndexScratchSegment** tail = indexScratch->segments.begin();
-		 tail != indexScratch->segments.end() && ((*tail)->lowerValue || (*tail)->upperValue); ++tail)
-	{
-		ComparativeBoolNode* cmpNode = (*tail)->matches[0]->as<ComparativeBoolNode>();
-		fb_assert(cmpNode);
-
-		dsc dsc0;
-		cmpNode->arg1->getDesc(tdbb, csb, &dsc0);
-
-		// ASF: "dsc0.dsc_ttype() > ttype_last_internal" is to avoid recursion
-		// when looking for charsets/collations
-		if (!(indexScratch->idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(dsc0.dsc_dtype) &&
-			dsc0.dsc_ttype() > ttype_last_internal)
-		{
-			TextType* tt = INTL_texttype_lookup(tdbb, dsc0.dsc_ttype());
-
-			if (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
-			{
-				// ASF: Order is more precise than equivalence class.
-				// It's necessary to use the partial key.
-				retrieval->irb_generic |= irb_starting;
-
-				// For multi-segmented indices we can't use the remaining segments.
-				int diff = indexScratch->lowerCount - indexScratch->upperCount;
-
-				if (diff >= 0)
-				{
-					retrieval->irb_lower_count = tail - indexScratch->segments.begin() + 1;
-					retrieval->irb_upper_count = tail - indexScratch->segments.begin() + 1 - diff;
-				}
-				else
-				{
-					retrieval->irb_lower_count = tail - indexScratch->segments.begin() + 1 + diff;
-					retrieval->irb_upper_count = tail - indexScratch->segments.begin() + 1;
-				}
-
-				break;
-			}
-		}
-	}
+	if (indexScratch->fuzzy)
+		retrieval->irb_generic |= irb_starting;	// Flag the need to use INTL_KEY_PARTIAL in btr.
 
 	// This index is never used for IS NULL, thus we can ignore NULLs
 	// already at index scan. But this rule doesn't apply to nod_equiv
