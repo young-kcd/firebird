@@ -48,8 +48,8 @@ namespace Firebird
 		case MP_MEM:
 			BadAlloc::raise();
 		default:
-			// Want fancy "Libtommath error in @1 code @2"
-			(Arg::Gds(isc_random) << "Libtommath error").raise();
+			// Libtommath error code @1 in function @2
+			(Arg::Gds(isc_libtommath_generic) << Arg::Num(rc) << function).raise();
 		}
 	}
 

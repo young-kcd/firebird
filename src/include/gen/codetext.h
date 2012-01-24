@@ -732,6 +732,7 @@ static const struct {
 	{"ss_out_of_bounds", 335545028},
 	{"missing_data_structures", 335545029},
 	{"protect_sys_tab", 335545030},
+	{"libtommath_generic", 335545031},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

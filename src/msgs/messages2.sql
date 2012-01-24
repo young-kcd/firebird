@@ -818,6 +818,7 @@ Data source : @4', NULL, NULL)
 ('ss_out_of_bounds', NULL, 'sdl.cpp', NULL, 0, 708, NULL, 'Subscript @1 out of bounds [@2, @3]', NULL, NULL)
 ('missing_data_structures', NULL, 'server.cpp', NULL, 0, 709, NULL, 'Install incomplete, please read chapter "Initializing security database" in Quick Start Guide', NULL, NULL)
 ('protect_sys_tab', NULL, 'vio.cpp', NULL, 0, 710, NULL, '@1 operation is not allowed for system table @2', NULL, NULL)
+('libtommath_generic', 'check', 'BigInteger.cpp', NULL, 0, 711, NULL, 'Libtommath error code @1 in function @2', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1414,7 +1415,7 @@ Roll back all databases or commit databases individually', NULL, NULL);
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 517, NULL, '   -b(uffers)          set page buffers <n>', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 518, NULL, '   -f(etch_password)   fetch password from file', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 519, NULL, '   -i(nit_script)      startup script <name>', NULL, NULL)
-(NULL, 'usage', 'dtr.cpp', NULL, 1, 520, NULL, '   -nob(anner)         do not show the welcome message', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 520, NULL, '   -n(obanner)         do not show the welcome message', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 521, NULL, '   -p(assword)         user''s password', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 522, NULL, '   -tra(ce)            show internal parser''s tokens', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 523, NULL, '   -tru(sted_auth)     use trusted authentication', NULL, NULL)

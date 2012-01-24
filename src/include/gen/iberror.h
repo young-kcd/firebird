@@ -766,6 +766,7 @@ const ISC_STATUS isc_ee_blr_mismatch_length           = 335545027L;
 const ISC_STATUS isc_ss_out_of_bounds                 = 335545028L;
 const ISC_STATUS isc_missing_data_structures          = 335545029L;
 const ISC_STATUS isc_protect_sys_tab                  = 335545030L;
+const ISC_STATUS isc_libtommath_generic               = 335545031L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1207,7 +1208,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1151;
+const ISC_STATUS isc_err_max                          = 1152;
 
 #else /* c definitions */
 
@@ -1943,6 +1944,7 @@ const ISC_STATUS isc_err_max                          = 1151;
 #define isc_ss_out_of_bounds                 335545028L
 #define isc_missing_data_structures          335545029L
 #define isc_protect_sys_tab                  335545030L
+#define isc_libtommath_generic               335545031L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2384,7 +2386,7 @@ const ISC_STATUS isc_err_max                          = 1151;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1151
+#define isc_err_max                          1152
 
 #endif
 
