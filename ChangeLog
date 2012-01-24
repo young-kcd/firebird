@@ -1,3 +1,16 @@
+ 2012-01-24 02:23  robocop 
+   M src/jrd/btr.cpp
+Totally misc.
+
+ 2012-01-24 02:21  robocop 
+   M src/qli/qliswi.h
+Make qli understand -n again for the almost useless function of suppressing the one-line welcome banner (but a common practice for TCS).
+
+ 2012-01-24 00:16  asfernandes 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Fixed CORE-2457 - UNICODE_CI internal gds software consistency check.
+
  2012-01-22 01:10  asfernandes 
    M src/jrd/btr.cpp
 Misc.
