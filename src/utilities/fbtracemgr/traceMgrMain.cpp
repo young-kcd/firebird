@@ -79,8 +79,8 @@ TraceSvcUtil::~TraceSvcUtil()
 	}
 }
 
-void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
-	const string& pwd, bool isAdmin)
+void TraceSvcUtil::setAttachInfo(const string& service_name, const string& /*user*/,
+	const string& /*pwd*/, bool isAdmin)
 {
 	ISC_STATUS_ARRAY status = {0};
 

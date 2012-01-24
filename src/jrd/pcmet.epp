@@ -72,7 +72,9 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
+#ifdef DEV_BUILD
 	Database* dbb = tdbb->getDatabase();
+#endif
 
 	MOVE_CLEAR(&idx, sizeof(index_desc));
 
@@ -200,7 +202,6 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	// Check the index blocks for the relation to see if we have a cached block
 

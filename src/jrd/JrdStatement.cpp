@@ -317,7 +317,6 @@ bool JrdStatement::isActive() const
 jrd_req* JrdStatement::findRequest(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 	Attachment* const attachment = tdbb->getAttachment();
 
 	if (!this)
@@ -519,7 +518,6 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 void JrdStatement::release(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	// Release sub statements.
 	for (JrdStatement** subStatement = subStatements.begin();

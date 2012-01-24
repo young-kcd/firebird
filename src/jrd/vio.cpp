@@ -2004,7 +2004,6 @@ bool VIO_get_current(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE)
@@ -3293,7 +3292,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void VIO_temp_cleanup(thread_db* tdbb, jrd_tra* transaction)
+void VIO_temp_cleanup(jrd_tra* transaction)
 /**************************************
  *
  *	V I O _ t e m p _ c l e a n u p
@@ -4911,7 +4910,6 @@ static int prepare_update(	thread_db*		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)

@@ -161,7 +161,6 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 	jrd_req* request = NULL;
 
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool

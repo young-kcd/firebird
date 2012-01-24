@@ -63,7 +63,6 @@ const char* const Function::EXCEPTION_MESSAGE = "The user defined function: \t%s
 Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags)
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* const dbb = tdbb->getDatabase();
 	Function* check_function = NULL;
 
 	Function* function = (id < attachment->att_functions.getCount()) ? attachment->att_functions[id] : NULL;
@@ -112,7 +111,6 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool noscan)
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* const dbb = tdbb->getDatabase();
 
 	Function* check_function = NULL;
 

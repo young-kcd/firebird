@@ -329,7 +329,7 @@ void registerEngine(IPluginManager* iPlugin)
 
 } // namespace Jrd
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* /*master*/)
 {
 	PluginManagerInterfacePtr pi;
 	registerEngine(pi);
@@ -744,9 +744,6 @@ static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 
 static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb);
-#ifdef WIN_NT
-static void		ExtractDriveLetter(const TEXT*, ULONG*);
-#endif
 
 static Database*	init(thread_db*, const PathName&, RefPtr<Config>, bool);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
@@ -771,7 +768,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 }
 
 
-static void cancel_attachments(thread_db* tdbb)
+static void cancel_attachments(thread_db* /*tdbb*/)
 {
 	MutexLockGuard guard(databases_mutex);
 	engineShuttingDown = true;
@@ -4038,7 +4035,6 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 
 		try
 		{
-			Database* const dbb = tdbb->getDatabase();
 			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 			Jrd::Attachment* const att = transaction->tra_attachment;
 
@@ -6244,34 +6240,6 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 		//		AP. 2008.
 	}
 }
-
-
-#ifdef WIN_NT
-static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
-{
-/**************************************
- *
- *	E x t r a c t D r i v e L e t t e r
- *
- **************************************
- *
- * Functional description
- *	Determine the drive letter of file_name
- *	and set the proper bit in the bit mask.
- *		bit 0 = drive A
- *		bit 1 = drive B and so on...
- *	This function is used to determine drive
- *	usage for use with Plug and Play for
- *	MS Windows 4.0.
- *
- **************************************/
-	ULONG mask = 1;
-
-	const SHORT shift = (*file_name - 'A');
-	mask <<= shift;
-	*drive_mask |= mask;
-}
-#endif
 
 
 void JTransaction::freeEngineData(Firebird::IStatus* user_status)

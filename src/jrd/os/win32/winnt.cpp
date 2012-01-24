@@ -275,7 +275,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
 }
 
 
-void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
+void PIO_extend(Database* /*dbb*/, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
 {
 /**************************************
  *
@@ -331,7 +331,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 }
 
 
-void PIO_flush(Database* dbb, jrd_file* main_file)
+void PIO_flush(Database* /*dbb*/, jrd_file* main_file)
 {
 /**************************************
  *

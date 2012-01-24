@@ -232,7 +232,7 @@ public:
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual bool containsStream(USHORT checkStream) const = 0;
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
 	}
@@ -252,7 +252,7 @@ public:
 		return false;
 	}
 
-	virtual bool sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/
+	virtual bool sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* /*other*/) /*const*/
 	{
 		return false;
 	}
@@ -282,7 +282,7 @@ public:
 	static RelationSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp,
 		bool parseContext);
 
-	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor)
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 	{
 		return false;
 	}

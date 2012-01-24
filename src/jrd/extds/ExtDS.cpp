@@ -1514,7 +1514,7 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
-void Statement::raise(const Firebird::IStatus& status, thread_db* tdbb, const char* sWhere,
+void Statement::raise(const Firebird::IStatus& status, thread_db* /*tdbb*/, const char* sWhere,
 		const string* sQuery)
 {
 	m_error = true;

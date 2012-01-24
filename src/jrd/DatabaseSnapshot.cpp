@@ -715,16 +715,20 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 		bid* blob_id = reinterpret_cast<bid*>(to_desc.dsc_address);
 		jrd_tra* tran = tdbb->getTransaction();
 
+#ifdef DEV_BUILD
 		const bool traFound = tran->tra_blobs->locate(blob_id->bid_temp_id());
 		fb_assert(traFound);
+#endif
 
 		BlobIndex& blobIdx = tran->tra_blobs->current();
 		fb_assert(!blobIdx.bli_materialized);
 
 		if (blobIdx.bli_request)
 		{
+#ifdef DEV_BUILD
 			const bool reqFound = blobIdx.bli_request->req_blobs.locate(blobIdx.bli_temp_id);
 			fb_assert(reqFound);
+#endif
 
 			blobIdx.bli_request->req_blobs.fastRemove();
 			blobIdx.bli_request = NULL;

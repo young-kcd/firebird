@@ -1028,7 +1028,6 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	if (!transaction->tra_outer)
@@ -1204,7 +1203,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		}
 	}
 	else
-		VIO_temp_cleanup(tdbb, transaction);
+		VIO_temp_cleanup(transaction);
 
 	//  Find out if there is a transaction savepoint we can use to rollback our transaction
 	bool tran_sav = false;

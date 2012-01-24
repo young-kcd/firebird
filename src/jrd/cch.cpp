@@ -146,7 +146,7 @@ static LockState lock_buffer(thread_db*, BufferDesc*, const SSHORT, const SCHAR)
 static ULONG memory_init(thread_db*, BufferControl*, SLONG);
 static void page_validation_error(thread_db*, win*, SSHORT);
 static SSHORT related(BufferDesc*, const BufferDesc*, SSHORT, const ULONG);
-static bool writeable(Database*, BufferDesc*);
+static bool writeable(BufferDesc*);
 static bool is_writeable(BufferDesc*, const ULONG);
 static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS* const,
 	const bool);
@@ -157,7 +157,7 @@ static void clear_dirty_flag(thread_db*, BufferDesc*);
 
 
 
-static inline void insertDirty(Database* dbb, BufferControl* bcb, BufferDesc* bdb)
+static inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
 {
 	if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty)
 		return;
@@ -172,7 +172,7 @@ static inline void insertDirty(Database* dbb, BufferControl* bcb, BufferDesc* bd
 	QUE_INSERT(bcb->bcb_dirty, bdb->bdb_dirty);
 }
 
-static inline void removeDirty(Database* dbb, BufferControl* bcb, BufferDesc* bdb)
+static inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
 {
 	if (bdb->bdb_dirty.que_forward == &bdb->bdb_dirty)
 		return;
@@ -947,7 +947,7 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 	bdb->bdb_flags = 0;
 	BufferControl* bcb = dbb->dbb_bcb;
 
-	removeDirty(dbb, bcb, bdb);
+	removeDirty(bcb, bdb);
 
 	QUE_DELETE(bdb->bdb_in_use);
 	QUE_DELETE(bdb->bdb_que);
@@ -1682,7 +1682,7 @@ void CCH_mark(thread_db* tdbb, WIN* window, bool mark_system, bool must_write)
 	set_dirty_flag(tdbb, bdb);
 
 	if (!(tdbb->tdbb_flags & TDBB_sweeper) || (bdb->bdb_flags & BDB_system_dirty))
-		insertDirty(dbb, bcb, bdb);
+		insertDirty(bcb, bdb);
 
 	bdb->bdb_flags |= BDB_marked;
 }
@@ -1943,7 +1943,6 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	BufferDesc* const bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -1984,7 +1983,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 
 			if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, tdbb->tdbb_status_vector, true))
 			{
-				insertDirty(dbb, bcb, bdb);
+				insertDirty(bcb, bdb);
 				CCH_unwind(tdbb, true);
 			}
 		}
@@ -2522,7 +2521,8 @@ static int blocking_ast_bdb(void* ast_object)
  *	WHEW!
  *
  **************************************/
-	ThreadSync* const thread = ThreadSync::getThread("blocking_ast_bdb");
+	// CVC: I assume we need the function call but not the variable.
+	/*ThreadSync* const thread = */ThreadSync::getThread("blocking_ast_bdb");
 
 	BufferDesc* const bdb = static_cast<BufferDesc*>(ast_object);
 
@@ -2581,7 +2581,7 @@ static int cmpBdbs(const void* a, const void* b)
 
 
 // Remove cleared precedence blocks from high precedence queue
-static void purgePrecedence(Database* dbb, BufferControl* bcb, BufferDesc* bdb)
+static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 {
 	Sync precSync(&bcb->bcb_syncPrecedence, "purgePrecedence");
 	precSync.lock(SYNC_EXCLUSIVE);
@@ -2630,7 +2630,7 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 
 			if (!(bdb->bdb_flags & BDB_dirty))
 			{
-				removeDirty(dbb, bcb, bdb);
+				removeDirty(bcb, bdb);
 				continue;
 			}
 
@@ -2659,7 +2659,7 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 			bdb->addRef(tdbb, SYNC_SHARED);
 
 			if (!writeAll) {
-				purgePrecedence(dbb, bcb, bdb);
+				purgePrecedence(bcb, bdb);
 			}
 			if (writeAll || QUE_EMPTY(bdb->bdb_higher))
 			{
@@ -2749,7 +2749,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 			bdb->addRef(tdbb, release_flag ? SYNC_EXCLUSIVE : SYNC_SHARED);
 
 			if (!writeAll) {
-				purgePrecedence(dbb, bcb, bdb);
+				purgePrecedence(bcb, bdb);
 			}
 			if (writeAll || QUE_EMPTY(bdb->bdb_higher))
 			{
@@ -3372,7 +3372,6 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		syncPrec.lock(SYNC_EXCLUSIVE);
 
 		bool found = false;
-		int hi_lock_id = 0;
 		for (QUE que_inst = bdb->bdb_higher.que_forward; que_inst != &bdb->bdb_higher;
 			 que_inst = que_inst->que_forward)
 		{
@@ -3870,7 +3869,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			if (oldest->bdb_use_count || !oldest->addRefConditional(tdbb, SYNC_EXCLUSIVE))
 				continue;
 
-			if ((oldest->bdb_flags & BDB_free_pending) || !writeable(dbb, oldest))
+			if ((oldest->bdb_flags & BDB_free_pending) || !writeable(oldest))
 			{
 				oldest->release(tdbb);
 				continue;
@@ -3952,7 +3951,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			// If the buffer is still in the dirty tree, remove it.
 			// In any case, release any lock it may have.
 
-			removeDirty(dbb, bcb, bdb);
+			removeDirty(bcb, bdb);
 
 			// Cleanup any residual precedence blocks.  Unless something is
 			// screwed up, the only precedence blocks that can still be hanging
@@ -4672,7 +4671,7 @@ static SSHORT related(BufferDesc* low, const BufferDesc* high, SSHORT limit, con
 }
 
 
-static inline bool writeable(Database* dbb, BufferDesc* bdb)
+static inline bool writeable(BufferDesc* bdb)
 {
 /**************************************
  *
@@ -4788,7 +4787,9 @@ static int write_buffer(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+#ifdef SUPERSERVER_V2
 	Database* const dbb = tdbb->getDatabase();
+#endif
 
 	bdb->lockIO(tdbb);
 	if (bdb->bdb_page != page)
@@ -4918,7 +4919,6 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
  *	including journaling, shadowing.
  *
  **************************************/
-	BufferControl* bcb = bdb->bdb_bcb;
 
 	CCH_TRACE(("WRITE   %d:%06d", bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum()));
 
@@ -5083,7 +5083,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 		bdb->bdb_transactions = bdb->bdb_mark_transaction = 0;
 
 		if (!(bdb->bdb_bcb->bcb_flags & BCB_keep_pages)) {
-			removeDirty(dbb, bdb->bdb_bcb, bdb);
+			removeDirty(bdb->bdb_bcb, bdb);
 		}
 
 		bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty);
@@ -5264,7 +5264,7 @@ void BufferDesc::downgrade(SyncType syncType)
 
 void BufferDesc::release(thread_db* tdbb)
 {
-	const SyncType oldState = bdb_syncPage.getState();
+	//const SyncType oldState = bdb_syncPage.getState(); Unfinished logic here???
 
 	fb_assert(!(bdb_flags & BDB_marked) || bdb_writers > 1);
 

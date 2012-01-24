@@ -305,7 +305,7 @@ void FirstValueWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* 
 {
 }
 
-dsc* FirstValueWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
+dsc* FirstValueWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 {
 	return NULL;
 }
@@ -386,8 +386,8 @@ dsc* LastValueWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) con
 
 dsc* LastValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	SINT64 records = impure->vlu_misc.vlu_int64++;
+	//impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	//SINT64 records = impure->vlu_misc.vlu_int64++;
 
 	if (!window->move(0))
 		return NULL;

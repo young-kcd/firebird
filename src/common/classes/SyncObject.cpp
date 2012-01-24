@@ -183,7 +183,7 @@ bool SyncObject::lockConditional(SyncType type)
 	return false;
 }
 
-void SyncObject::unlock(Sync* sync, SyncType type)
+void SyncObject::unlock(Sync* /*sync*/, SyncType type)
 {
 	fb_assert((type == SYNC_SHARED && lockState > 0) ||
 			  (type == SYNC_EXCLUSIVE && lockState == -1));

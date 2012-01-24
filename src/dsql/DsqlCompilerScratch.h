@@ -203,7 +203,9 @@ public:
 
 	void resetCTEAlias(const Firebird::string& alias)
 	{
+#ifdef DEV_BUILD
 		const Firebird::string* const* begin = cteAliases.begin();
+#endif
 
 		currCteAlias = cteAliases.end() - 1;
 		fb_assert(currCteAlias >= begin);

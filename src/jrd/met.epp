@@ -199,7 +199,6 @@ void MET_get_domain(thread_db* tdbb, const MetaName& name, dsc* desc, FieldInfo*
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 	bool found = false;
 
 	AutoCacheRequest handle(tdbb, irq_l_domain, IRQ_REQUESTS);
@@ -278,7 +277,6 @@ MetaName MET_get_relation_field(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 	bool found = false;
 	MetaName sourceName;
 
@@ -538,7 +536,6 @@ void MET_clear_cache(thread_db* tdbb)
 	MET_verify_cache(tdbb);
 #endif
 
-	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* att = tdbb->getAttachment();
 
 	for (int i = 0; i < DB_TRIGGER_MAX; i++) {
@@ -638,7 +635,6 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
-	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* att = tdbb->getAttachment();
 
 	// This should not really happen
@@ -2190,7 +2186,6 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	if (relation->rel_flags & REL_check_partners) {
 		scan_partners(tdbb, relation);
@@ -2287,7 +2282,6 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 	jrd_prc* check_procedure = NULL;
 
 	// See if we already know the procedure by name
@@ -2362,7 +2356,6 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 	jrd_prc* check_procedure = NULL;
 
 	jrd_prc* procedure;
@@ -2427,7 +2420,6 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const MetaName& name)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	// See if we already know the relation by name
 
@@ -2524,7 +2516,6 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	// System relations are above suspicion
 
@@ -3297,7 +3288,6 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* att = tdbb->getAttachment();
 
 	vec<jrd_prc*>* pvector = att->att_procedures;
@@ -3444,7 +3434,6 @@ void MET_scan_partners(thread_db* tdbb, jrd_rel* relation)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	if (relation->rel_flags & REL_check_partners)
 	{
@@ -4841,7 +4830,6 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	fb_assert(id != NULL);
 
@@ -5004,7 +4992,6 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	AutoCacheRequest request(tdbb, irq_foreign1, IRQ_REQUESTS);
 	frgn* references = &relation->rel_foreign_refs;

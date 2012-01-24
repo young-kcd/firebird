@@ -703,7 +703,7 @@ namespace Why
 	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		explicit DispatcherEntry(IStatus* aStatus, bool ignoreShutdownError = false)
+		explicit DispatcherEntry(IStatus* /*aStatus*/, bool ignoreShutdownError = false)
 		{
 			signalInit();
 
@@ -1675,7 +1675,7 @@ ISC_STATUS API_ROUTINE isc_detach_database(ISC_STATUS* userStatus, FB_API_HANDLE
 
 // Disable access to a specific subsystem. If no subsystem has been explicitly disabled, all are
 // available.
-int API_ROUTINE gds__disable_subsystem(TEXT* subsystem)
+int API_ROUTINE gds__disable_subsystem(TEXT* /*subsystem*/)
 {
 	return FALSE;
 }
@@ -2388,7 +2388,7 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 // Enable access to a specific subsystem. If no subsystem has been explicitly enabled, all are
 // available.
-int API_ROUTINE gds__enable_subsystem(TEXT* subsystem)
+int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 {
 	return FALSE;
 }
@@ -5119,7 +5119,6 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 			return;
 
 		StatusVector status(NULL);
-		int rc = FB_SUCCESS;
 
 #ifdef DEV_BUILD
 		// Make timeout huge in debug build: hard to debug something during 5-10 sec

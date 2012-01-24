@@ -592,9 +592,9 @@ static void zap_packet(PACKET *);
 static void cleanDpb(Firebird::ClumpletWriter&, const ParametersSet*);
 
 static void authFillParametersBlock(ClntAuthBlock& authItr, ClumpletWriter& dpb,
-	const ParametersSet* tags, const PathName* filename, rem_port* port);
+	const ParametersSet* tags, rem_port* port);
 static void authReceiveResponse(ClntAuthBlock& authItr, rem_port* port, Rdb* rdb,
-	const ParametersSet* tags, IStatus* status, PACKET* packet);
+	IStatus* status, PACKET* packet);
 
 static AtomicCounter remote_event_id;
 
@@ -665,7 +665,7 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 		}
 
 		RefMutexGuard portGuard(*port->port_sync);
-		Rdb* rdb = port->port_context;
+		//Rdb* rdb = port->port_context;
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
 		// the DPB so the server can pay attention to it.  Note: allocation code must
@@ -965,7 +965,7 @@ ITransaction* FB_CARG Transaction::join(IStatus* status, ITransaction* tra)
 }
 
 
-Transaction* FB_CARG Transaction::validate(IStatus* status, IAttachment* testAtt)
+Transaction* FB_CARG Transaction::validate(IStatus* /*status*/, IAttachment* testAtt)
 {
 	return (transaction && remAtt == testAtt) ? this : NULL;
 }
@@ -1562,7 +1562,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 
 		unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
 		const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
-		unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
+		//unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
 		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
 
 		unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
@@ -2259,7 +2259,7 @@ void Statement::insert(IStatus* status, const FbMessage* msgBuffer)
 
 		unsigned blr_length = msgBuffer ? msgBuffer->blrLength : 0;
 		const unsigned char* blr = msgBuffer ? msgBuffer->blr : NULL;
-		unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
+		//unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
 		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
 		RefMutexGuard portGuard(*port->port_sync);
@@ -4299,7 +4299,7 @@ Firebird::ITransaction* Attachment::startTransaction(IStatus* status, unsigned i
 void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 								  unsigned int blr_length, const unsigned char* blr,
 								  unsigned int in_msg_length, const unsigned char* in_msg,
-								  unsigned int out_msg_length, unsigned char* out_msg)
+								  unsigned int /*out_msg_length*/, unsigned char* out_msg)
 {
 /**************************************
  *
@@ -5525,7 +5525,7 @@ static void info(IStatus* status,
 			// Probably communicate with services auth
 			fb_assert(cBlock);
 			HANDSHAKE_DEBUG(fprintf(stderr, "info() calls authReceiveResponse\n"));
-			authReceiveResponse(*cBlock, rdb->rdb_port, rdb, &spbInfoParam, status, packet);
+			authReceiveResponse(*cBlock, rdb->rdb_port, rdb, status, packet);
 		}
 		else
 		{
@@ -5544,7 +5544,7 @@ static void info(IStatus* status,
 
 // Let plugins try to add data to DPB in order to avoid extra network roundtrip
 static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
-	const ParametersSet* tags, const PathName* filename, rem_port* port)
+	const ParametersSet* tags, rem_port* port)
 {
 	LocalStatus s;
 
@@ -5576,7 +5576,7 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 }
 
 static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
-	const ParametersSet* tags, IStatus* status, PACKET* packet)
+	IStatus* status, PACKET* packet)
 {
 	LocalStatus s;
 
@@ -5723,8 +5723,7 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 		const ParametersSet* ps = (op == op_service_attach ? &spbParam : &dpbParam);
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "init calls authFillParametersBlock\n"));
-		authFillParametersBlock(cBlock, dpb, ps, op == op_service_attach ? NULL : &file_name,
-			port);
+		authFillParametersBlock(cBlock, dpb, ps, port);
 
 		// Make attach packet
 		P_ATCH* attach = &packet->p_atch;
@@ -5736,7 +5735,7 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 
 		send_packet(port, packet);
 
-		authReceiveResponse(cBlock, port, rdb, ps, status, packet);
+		authReceiveResponse(cBlock, port, rdb, status, packet);
 	}
 	catch (const Exception&)
 	{
@@ -5854,7 +5853,6 @@ static void receive_after_start(Rrq* request, USHORT msg_type)
 	// Check to see if any data is waiting to happen
 
 	Rdb* rdb = request->rrq_rdb;
-	rem_port* port = rdb->rdb_port;
 	PACKET* packet = &rdb->rdb_packet;
 	Rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 	// CVC: I commented this line because it's overwritten immediately in the loop.
@@ -6616,7 +6614,7 @@ static void svcstart(IStatus*	status,
 	ClntAuthBlock cBlock(NULL);
 	cBlock.loadServiceDataFrom(rdb->rdb_port);
 	HANDSHAKE_DEBUG(fprintf(stderr, "start calls authFillParametersBlock\n"));
-	authFillParametersBlock(cBlock, send, &spbStartParam, NULL, rdb->rdb_port);
+	authFillParametersBlock(cBlock, send, &spbStartParam, rdb->rdb_port);
 
 	// Build the primary packet to get the operation started.
 	PACKET* packet = &rdb->rdb_packet;
@@ -6636,7 +6634,7 @@ static void svcstart(IStatus*	status,
 
 	try
 	{
-		authReceiveResponse(cBlock, rdb->rdb_port, rdb, &spbStartParam, status, packet);
+		authReceiveResponse(cBlock, rdb->rdb_port, rdb, status, packet);
 	}
 	catch (const Exception&)
 	{

@@ -330,7 +330,7 @@ void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, UL
 
 
 // Parse a BLR datatype. Return the alignment requirements of the datatype.
-USHORT PAR_datatype(thread_db* tdbb, BlrReader& blrReader, dsc* desc)
+USHORT PAR_datatype(thread_db* /*tdbb*/, BlrReader& blrReader, dsc* desc)
 {
 	desc->clear();
 
@@ -652,7 +652,7 @@ ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT cont
 	jrd_prc* const procedure = csb->csb_rpt[stream].csb_procedure;
 
 	const SSHORT id = procedure ? PAR_find_proc_field(procedure, base_field) :
-		MET_lookup_field(tdbb, csb->csb_rpt[stream].csb_relation, base_field);
+		MET_lookup_field(tdbb, relation, base_field);
 
 	if (id < 0)
 		return NULL;

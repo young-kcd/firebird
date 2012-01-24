@@ -304,7 +304,7 @@ ValueExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-void AggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
+void AggNode::aggPostRse(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
 	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 }
@@ -318,7 +318,6 @@ void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
 	{
 		// Initialize a sort to reject duplicate values.
 
-		Database* database = request->req_attachment->att_database;
 		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->impure);
 
 		// Get rid of the old sort areas if this request has been used already.

@@ -341,9 +341,8 @@ public:
 
 	void select(timeval* timeout)
 	{
-		bool hasRequest = false;
-
 #ifdef HAVE_POLL
+		bool hasRequest = false;
 		pollfd* const end = slct_poll.end();
 		for (pollfd* pf = slct_poll.begin(); pf < end; ++pf)
 		{
@@ -1423,7 +1422,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	setsockopt(n, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
-	const int inetErrNo = INET_ERRNO;
+	//const int inetErrNo = INET_ERRNO;
 
 	if (status < 0)
 	{

@@ -752,7 +752,7 @@ class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {
 } factory;
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* /*master*/)
 {
 	PluginManagerInterfacePtr pi;
 	pi->registerPluginFactory(PluginType::ExternalEngine, "UDR", &factory);

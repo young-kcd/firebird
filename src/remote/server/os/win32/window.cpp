@@ -49,17 +49,6 @@
 
 #include "../common/config/config.h"
 
-inline bool CHECK_VOLUME(PDEV_BROADCAST_VOLUME a)
-{
-	return a->dbcv_devicetype == DBT_DEVTYP_VOLUME;
-}
-
-inline bool CHECK_USAGE(PDEV_BROADCAST_VOLUME a, ULONG ulInUseMask)
-{
-	return a->dbcv_unitmask & ulInUseMask;
-}
-
-
 
 static HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
@@ -191,9 +180,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	static ULONG ulLastMask = 0L;
 	static BOOL bInTaskBar = FALSE;
 	static bool bStartup = false;
-
-	ULONG ulInUseMask = 0L;
-	ULONG num_att = 0, num_dbs = 0, num_svc = 0;
 
 	switch (message)
 	{

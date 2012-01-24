@@ -4585,7 +4585,7 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_node,
 	dsql_nod* node, bool force_varchar)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); // necessary ?
 
 	DEV_BLKCHK(in_node, dsql_type_nod);
 	DEV_BLKCHK(node, dsql_type_nod);

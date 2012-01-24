@@ -4990,7 +4990,7 @@ void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const Meta
 
 //----------------------
 
-void DropSequenceNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DropSequenceNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"DropSequenceNode\n"
@@ -8456,8 +8456,6 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 			temp.add(ptr);
 	}
 
-	dsql_nod*** endo = temp.end();
-
 	for (dsql_nod*** ptr = temp.begin(); ptr != temp.end(); ++ptr)
 	{
 		dsql_nod**& ptrNode = *ptr;
@@ -9099,7 +9097,7 @@ void CreateFilterNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 // Define a blob filter.
-void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -9163,7 +9161,7 @@ void DropFilterNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 		name.c_str());
 }
 
-void DropFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+void DropFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -9201,7 +9199,7 @@ void CreateShadowNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 		number);
 }
 
-void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
 	if (!tdbb->getAttachment()->locksmith())
 		status_exception::raise(Arg::Gds(isc_adm_task_denied));
@@ -9266,7 +9264,7 @@ void DropShadowNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 		number);
 }
 
-void DropShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+void DropShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
 	if (!tdbb->getAttachment()->locksmith())
 		status_exception::raise(Arg::Gds(isc_adm_task_denied));
@@ -9677,7 +9675,7 @@ void AlterDatabaseNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 		"AlterDatabaseNode\n");
 }
 
-void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/,
 	jrd_tra* transaction)
 {
 	if (!tdbb->getAttachment()->locksmith())

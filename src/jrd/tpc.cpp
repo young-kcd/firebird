@@ -152,7 +152,7 @@ void TipCache::initializeTpc(thread_db* tdbb, SLONG number)
 }
 
 
-void TipCache::setState(thread_db* tdbb, SLONG number, SSHORT state)
+void TipCache::setState(SLONG number, SSHORT state)
 {
 /**************************************
  *
@@ -290,7 +290,7 @@ int TipCache::snapshotState(thread_db* tdbb, SLONG number)
 }
 
 
-void TipCache::updateCache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG sequence)
+void TipCache::updateCache(const Ods::tx_inv_page* tip_page, SLONG sequence)
 {
 /**************************************
  *
@@ -338,7 +338,7 @@ void TipCache::updateCache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SL
 		tip_cache = m_cache[pos];
 	else
 	{
-		tip_cache = allocTxPage(tdbb, first_trans);
+		tip_cache = allocTxPage(first_trans);
 		m_cache.insert(pos, tip_cache);
 	}
 
@@ -349,7 +349,7 @@ void TipCache::updateCache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SL
 }
 
 
-TipCache::TxPage* TipCache::allocTxPage(thread_db* tdbb, SLONG base)
+TipCache::TxPage* TipCache::allocTxPage(SLONG base)
 {
 /**************************************
  *

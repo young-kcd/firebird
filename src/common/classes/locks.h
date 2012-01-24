@@ -339,18 +339,20 @@ typedef Mutex Spinlock;
 #endif //WIN_NT
 
 
+#ifdef DEV_BUILD
+#define MLG_REASON aReason
+#else
+#define MLG_REASON
+#endif
+
 // RAII holder
 class MutexLockGuard
 {
 public:
-	MutexLockGuard(Mutex &aLock, const char* aReason)
+	MutexLockGuard(Mutex &aLock, const char* MLG_REASON)
 		: lock(&aLock)
 	{
-		lock->enter(
-#ifdef DEV_BUILD
-					aReason
-#endif
-		);
+		lock->enter(MLG_REASON);
 	}
 
 	explicit MutexLockGuard(Mutex &aLock)
@@ -378,6 +380,8 @@ private:
 
 	Mutex* lock;
 };
+
+#undef MLG_REASON
 
 class MutexUnlockGuard
 {

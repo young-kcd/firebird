@@ -310,7 +310,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 	return node;
 }
 
-bool RelationSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool RelationSourceNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 {
 	const RelationSourceNode* o = other->as<RelationSourceNode>();
 	return o && dsqlContext == o->dsqlContext;
@@ -746,12 +746,12 @@ bool ProcedureSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& vis
 	return false;
 }
 
-bool ProcedureSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool ProcedureSourceNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
 
-bool ProcedureSourceNode::dsqlFieldFinder(FieldFinder& visitor)
+bool ProcedureSourceNode::dsqlFieldFinder(FieldFinder& /*visitor*/)
 {
 	return false;
 }
@@ -765,7 +765,7 @@ bool ProcedureSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return false;
 }
 
-bool ProcedureSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool ProcedureSourceNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 {
 	const ProcedureSourceNode* o = other->as<ProcedureSourceNode>();
 	return o && dsqlContext == o->dsqlContext;
@@ -1027,7 +1027,7 @@ bool AggregateSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& vis
 	return visitor.visit(&dsqlRse);
 }
 
-bool AggregateSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool AggregateSourceNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
@@ -1851,12 +1851,12 @@ bool RseNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 	return visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList) | visitor.visit(&dsqlStreams);
 }
 
-bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& /*visitor*/)
 {
 	return false;
 }
 
-bool RseNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool RseNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return true;
 }
@@ -1879,7 +1879,7 @@ bool RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return false;
 }
 
-bool RseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 {
 	const RseNode* o = other->as<RseNode>();
 

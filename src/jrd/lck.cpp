@@ -1043,7 +1043,6 @@ static void hash_allocate(Lock* lock)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database* const dbb = lock->lck_dbb;
 	Jrd::Attachment* const attachment = lock->lck_attachment;
 
 	if (attachment)

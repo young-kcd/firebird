@@ -7005,7 +7005,7 @@ static string toString(dsql_str* node)
 
 // Set the position of a left-hand non-terminal based on its right-hand rules.
 void Parser::yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* /*termVals*/, int termNo,
-	int /*stkPos*/, int /*yychar*/, YYPOSN& yyposn, void*)
+	int /*stkPos*/, int /*yychar*/, YYPOSN& /*yyposn*/, void*)
 {
 	if (termNo == 0)
 	{

@@ -204,12 +204,12 @@ public:
 	virtual ContinueLeaveNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual ContinueLeaveNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	virtual ContinueLeaveNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		return this;
 	}
 
-	virtual ContinueLeaveNode* pass2(thread_db* tdbb, CompilerScratch* csb)
+	virtual ContinueLeaveNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		return this;
 	}
@@ -963,7 +963,7 @@ public:
 		dsql_nod* condition;
 	};
 
-	explicit MergeNode(MemoryPool& pool, dsql_nod* val = NULL)
+	explicit MergeNode(MemoryPool& pool)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>(pool),
 		  dsqlRelation(NULL),
 		  dsqlUsing(NULL),
@@ -1353,12 +1353,12 @@ public:
 	virtual SavePointNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual SavePointNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	virtual SavePointNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		return this;
 	}
 
-	virtual SavePointNode* pass2(thread_db* tdbb, CompilerScratch* csb)
+	virtual SavePointNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		return this;
 	}
@@ -1373,7 +1373,7 @@ public:
 class UpdateOrInsertNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>
 {
 public:
-	explicit UpdateOrInsertNode(MemoryPool& pool, dsql_nod* val = NULL)
+	explicit UpdateOrInsertNode(MemoryPool& pool)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>(pool),
 		  dsqlRelation(NULL),
 		  dsqlFields(NULL),

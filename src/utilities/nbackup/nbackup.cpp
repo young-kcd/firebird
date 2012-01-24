@@ -227,7 +227,7 @@ namespace
 } // namespace
 
 
-static void checkCtrlC(UtilSvc* uSvc)
+static void checkCtrlC(UtilSvc* /*uSvc*/)
 {
 	if (flShutdown)
 	{

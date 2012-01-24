@@ -297,7 +297,7 @@ AssignmentNode* AssignmentNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void AssignmentNode::print(string& text, Array<dsql_nod*>& nodes) const
+void AssignmentNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "AssignmentNode";
 }
@@ -1371,7 +1371,7 @@ void DeclareSubFuncNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 	}
 }
 
-void DeclareSubFuncNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DeclareSubFuncNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "DeclareSubFuncNode";
 }
@@ -1470,12 +1470,12 @@ void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
 
-DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
 	// scope needed here?
 	{	// scope
@@ -1486,7 +1486,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* tdbb, CompilerScratch* 
 	return this;
 }
 
-const StmtNode* DeclareSubFuncNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* DeclareSubFuncNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
 
@@ -1628,7 +1628,7 @@ void DeclareSubProcNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 	}
 }
 
-void DeclareSubProcNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DeclareSubProcNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "DeclareSubProcNode";
 }
@@ -1741,12 +1741,12 @@ void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
 
-DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
 	{	// scope
 		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
@@ -1759,7 +1759,7 @@ DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* 
 	return this;
 }
 
-const StmtNode* DeclareSubProcNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* DeclareSubProcNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	// Nothing to execute. This is the declaration node.
 
@@ -1803,7 +1803,7 @@ DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerS
 	return node;
 }
 
-DeclareVariableNode* DeclareVariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+DeclareVariableNode* DeclareVariableNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -1813,7 +1813,7 @@ void DeclareVariableNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "DeclareVariableNode";
 }
 
-void DeclareVariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void DeclareVariableNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -1839,7 +1839,7 @@ DeclareVariableNode* DeclareVariableNode::pass1(thread_db* tdbb, CompilerScratch
 	return this;
 }
 
-DeclareVariableNode* DeclareVariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+DeclareVariableNode* DeclareVariableNode::pass2(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
 	return this;
@@ -1876,7 +1876,7 @@ const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, 
 
 static RegisterNode<EraseNode> regEraseNode(blr_erase);
 
-DmlNode* EraseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* EraseNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	const USHORT n = csb->csb_blr_reader.getByte();
 
@@ -1891,7 +1891,7 @@ DmlNode* EraseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); //necessary?
 
 	const dsql_nod* cursor = dsqlCursor;
 	dsql_nod* relation = dsqlRelation;
@@ -2613,7 +2613,7 @@ Array<dsql_nod*>* ExecProcedureNode::explodeOutputs(DsqlCompilerScratch* dsqlScr
 	return output;
 }
 
-void ExecProcedureNode::print(string& text, Array<dsql_nod*>& nodes) const
+void ExecProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "ExecProcedureNode";
 }
@@ -3028,7 +3028,7 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 }
 
-void ExecStatementNode::print(string& text, Array<dsql_nod*>& nodes) const
+void ExecStatementNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "ExecStatementNode";
 }
@@ -3405,7 +3405,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerS
 	return node;
 }
 
-void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& nodes) const
+void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "InAutonomousTransactionNode";
 }
@@ -3575,7 +3575,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 static RegisterNode<InitVariableNode> regInitVariableNode(blr_init_variable);
 
-DmlNode* InitVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* InitVariableNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	InitVariableNode* node = FB_NEW(pool) InitVariableNode(pool);
 	node->varId = csb->csb_blr_reader.getWord();
@@ -3588,7 +3588,7 @@ DmlNode* InitVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 	return node;
 }
 
-InitVariableNode* InitVariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+InitVariableNode* InitVariableNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -3598,7 +3598,7 @@ void InitVariableNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "InitVariableNode";
 }
 
-void InitVariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void InitVariableNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -3611,7 +3611,7 @@ InitVariableNode* InitVariableNode::copy(thread_db* tdbb, NodeCopier& copier) co
 	return node;
 }
 
-InitVariableNode* InitVariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+InitVariableNode* InitVariableNode::pass1(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
 	vec<DeclareVariableNode*>* vector = csb->csb_variables;
 
@@ -4498,7 +4498,7 @@ DmlNode* HandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-HandlerNode* HandlerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+HandlerNode* HandlerNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -4508,7 +4508,7 @@ void HandlerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "HandlerNode";
 }
 
-void HandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void HandlerNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -4556,7 +4556,7 @@ DmlNode* LabelNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	return node;
 }
 
-LabelNode* LabelNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+LabelNode* LabelNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -4566,7 +4566,7 @@ void LabelNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "LabelNode";
 }
 
-void LabelNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void LabelNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -4609,7 +4609,7 @@ const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSta
 //--------------------
 
 
-void LineColumnNode::print(string& text, Array<dsql_nod*>& nodes) const
+void LineColumnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf("LineColumnNode: line %d, col %d", line, column);
 }
@@ -4734,7 +4734,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 
 	public:
-		virtual void print(string& text, Array<dsql_nod*>& nodes) const
+		virtual void print(string& text, Array<dsql_nod*>& /*nodes*/) const
 		{
 			text = "MergeSendNode";
 		}
@@ -5165,12 +5165,12 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, sendNode);
 }
 
-void MergeNode::print(string& text, Array<dsql_nod*>& nodes) const
+void MergeNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "MergeNode";
 }
 
-void MergeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void MergeNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -5245,7 +5245,7 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-MessageNode* MessageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+MessageNode* MessageNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -5255,11 +5255,11 @@ void MessageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "MessageNode";
 }
 
-void MessageNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void MessageNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
-MessageNode* MessageNode::copy(thread_db* tdbb, NodeCopier& copier) const
+MessageNode* MessageNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	MessageNode* node = FB_NEW(*tdbb->getDefaultPool()) MessageNode(*tdbb->getDefaultPool());
 	node->messageNumber = messageNumber;
@@ -5268,12 +5268,12 @@ MessageNode* MessageNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-MessageNode* MessageNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+MessageNode* MessageNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
 
-MessageNode* MessageNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+MessageNode* MessageNode::pass2(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
 	fb_assert(format);
 
@@ -5345,7 +5345,7 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 
 StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); // necessary?
 	MemoryPool& pool = getPool();
 
 	const bool isUpdateSqlCompliant = !Config::getOldSetClauseSemantics();
@@ -6093,7 +6093,7 @@ DmlNode* ReceiveNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-ReceiveNode* ReceiveNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ReceiveNode* ReceiveNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -6103,7 +6103,7 @@ void ReceiveNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "ReceiveNode";
 }
 
-void ReceiveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void ReceiveNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -6175,7 +6175,7 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); // necessary?
 	DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
 
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
@@ -6987,7 +6987,7 @@ DmlNode* SelectNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-SelectNode* SelectNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+SelectNode* SelectNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -6997,7 +6997,7 @@ void SelectNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "SelectNode";
 }
 
-void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void SelectNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -7041,7 +7041,7 @@ const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSt
 
 static RegisterNode<SetGeneratorNode> regSetGeneratorNode(blr_set_generator);
 
-DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	MetaName name;
 	PAR_name(csb, name);
@@ -7067,7 +7067,7 @@ SetGeneratorNode* SetGeneratorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void SetGeneratorNode::print(string& text, Array<dsql_nod*>& nodes) const
+void SetGeneratorNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "SetGeneratorNode";
 }
@@ -7127,7 +7127,7 @@ DmlNode* StallNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch
 	return node;
 }
 
-StallNode* StallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+StallNode* StallNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -7137,16 +7137,16 @@ void StallNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "StallNode";
 }
 
-void StallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void StallNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
-StallNode* StallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+StallNode* StallNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
 
-StallNode* StallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+StallNode* StallNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
@@ -7339,13 +7339,13 @@ void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 static RegisterNode<SavePointNode> regSavePointNodeStart(blr_start_savepoint);
 static RegisterNode<SavePointNode> regSavePointNodeEnd(blr_end_savepoint);
 
-DmlNode* SavePointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* SavePointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/, UCHAR blrOp)
 {
 	SavePointNode* node = FB_NEW(pool) SavePointNode(pool, blrOp);
 	return node;
 }
 
-SavePointNode* SavePointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+SavePointNode* SavePointNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -7403,7 +7403,7 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 
 StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); // necessary?
 	MemoryPool& pool = getPool();
 
 	if (!dsqlScratch->isPsql())
@@ -7626,12 +7626,12 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, list);
 }
 
-void UpdateOrInsertNode::print(string& text, Array<dsql_nod*>& nodes) const
+void UpdateOrInsertNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "UpdateOrInsertNode";
 }
 
-void UpdateOrInsertNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void UpdateOrInsertNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 }
 
@@ -8197,7 +8197,7 @@ static StmtNode* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, Returnin
 													Arg::Num(errSrc->nod_column));
 	}
 
-	const int count = source->nod_count;
+	const unsigned int count = source->nod_count;
 	fb_assert(count);
 
 	CompoundStmtNode* node = FB_NEW(pool) CompoundStmtNode(pool);

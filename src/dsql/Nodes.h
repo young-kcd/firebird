@@ -712,7 +712,7 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(USHORT findStream)
+	virtual bool jrdStreamFinder(USHORT /*findStream*/)
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
@@ -726,7 +726,7 @@ public:
 		return;
 	}
 
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
 	{
 		return false;
 	}
@@ -822,7 +822,7 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 protected:
-	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count)
+	virtual void parseArgs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, unsigned count)
 	{
 		fb_assert(count == 0);
 	}
@@ -995,7 +995,7 @@ public:
 	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 
-	virtual StmtNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	virtual StmtNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	{
 		fb_assert(false);
 		Firebird::status_exception::raise(

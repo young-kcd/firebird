@@ -76,7 +76,7 @@ protected:
 		virtual void shiftLeft(const MetaName&) throw() { }
 		virtual void shiftLeft(const QualifiedName&) throw() { }
 
-		virtual bool compare(const StatusVector& v) const throw() { return false; }
+		virtual bool compare(const StatusVector& /*v*/) const throw() { return false; }
 
 		ImplBase(ISC_STATUS k, ISC_STATUS c) throw() : kind(k), code(c) { }
 		virtual ~ImplBase() { }

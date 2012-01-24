@@ -434,7 +434,7 @@ Result WinSspiClient::authenticate(Firebird::IStatus* status,
 	return AUTH_MORE_DATA;
 }
 
-Result WinSspiClient::getSessionKey(Firebird::IStatus* status,
+Result WinSspiClient::getSessionKey(Firebird::IStatus* /*status*/,
 									const unsigned char** key,
 									unsigned int* keyLen)
 {

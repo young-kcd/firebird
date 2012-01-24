@@ -793,7 +793,8 @@ void* MemoryPool::allocRaw(size_t size) throw (std::bad_alloc)
 	{
 		MutexLockGuard guard(*cache_mutex);
 		void* result = NULL;
-		if (extents_cache.getCount()) {
+		if (extents_cache.getCount())
+		{
 			// Use most recently used object to encourage caching
 			result = extents_cache[extents_cache.getCount() - 1];
 			extents_cache.shrink(extents_cache.getCount() - 1);

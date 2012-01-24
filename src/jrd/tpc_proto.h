@@ -44,9 +44,9 @@ public:
 
 	int		cacheState(thread_db*, SLONG number);
 	void	initializeTpc(thread_db*, SLONG number);
-	void	setState(thread_db*, SLONG number, SSHORT state);
+	void	setState(SLONG number, SSHORT state);
 	int		snapshotState(thread_db*, SLONG number);
-	void	updateCache(thread_db*, const Ods::tx_inv_page* tip_page, SLONG sequence);
+	void	updateCache(const Ods::tx_inv_page* tip_page, SLONG sequence);
 
 private:
 	class TxPage : public pool_alloc_rpt<SCHAR, type_tpc>
@@ -61,7 +61,7 @@ private:
 		}
 	};
 
-	TxPage* allocTxPage(thread_db* tdbb, SLONG base);
+	TxPage* allocTxPage(SLONG base);
 	SLONG cacheTransactions(thread_db* tdbb, SLONG oldest);
 	int extendCache(thread_db* tdbb, SLONG number);
 	void clearCache();
@@ -84,7 +84,7 @@ inline void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 
 inline void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 {
-	 tdbb->getDatabase()->dbb_tip_cache->setState(tdbb, number, state);
+	 tdbb->getDatabase()->dbb_tip_cache->setState(number, state);
 }
 
 inline int TPC_snapshot_state(thread_db* tdbb, SLONG number)
@@ -94,7 +94,7 @@ inline int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 
 inline void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG sequence)
 {
-	 tdbb->getDatabase()->dbb_tip_cache->updateCache(tdbb, tip_page, sequence);
+	 tdbb->getDatabase()->dbb_tip_cache->updateCache(tip_page, sequence);
 }
 
 } // namespace Jrd

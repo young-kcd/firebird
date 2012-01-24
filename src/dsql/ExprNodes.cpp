@@ -136,7 +136,7 @@ bool ExprNode::dsqlVisit(NonConstDsqlNodeVisitor& visitor)
 	return ret;
 }
 
-void ExprNode::print(string& text, Array<dsql_nod*>& nodes) const
+void ExprNode::print(string& /*text*/, Array<dsql_nod*>& nodes) const
 {
 	for (dsql_nod* const* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
 		nodes.add(**i);
@@ -1556,13 +1556,15 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNode* node, UCHAR blrOp)
 {
 	const ArithmeticNode* arithmeticNode = node->as<ArithmeticNode>();
-	const SubQueryNode* subQueryNode = node->as<SubQueryNode>();
 
+#ifdef DEV_BUILD
+	const SubQueryNode* subQueryNode = node->as<SubQueryNode>();
 	fb_assert(
 		(arithmeticNode && arithmeticNode->dialect1 &&
 			(arithmeticNode->blrOp == blr_add || arithmeticNode->blrOp == blr_subtract)) ||
 		node->is<AggNode>() ||
 		(subQueryNode && (subQueryNode->blrOp == blr_total || subQueryNode->blrOp == blr_average)));
+#endif
 
 	dsc* const result = &value->vlu_desc;
 
@@ -2521,13 +2523,13 @@ void BoolAsValueNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlBoolean);
 }
 
-void BoolAsValueNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+void BoolAsValueNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	desc->makeBoolean();
 	desc->setNullable(true);
 }
 
-void BoolAsValueNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void BoolAsValueNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeBoolean();
 	desc->setNullable(true);
@@ -2643,7 +2645,7 @@ void CastNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = dsqlAlias;
 }
 
-bool CastNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
+bool CastNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
 	dsql_nod* /*node*/, bool /*forceVarChar*/)
 {
 	// ASF: Attention: CastNode::dsqlPass calls us with NULL node.
@@ -2675,7 +2677,7 @@ void CastNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlSource);
 }
 
-void CastNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+void CastNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	*desc = castDesc;
 }
@@ -2936,7 +2938,7 @@ void CoalesceNode::setParameterName(dsql_par* parameter) const
 }
 
 bool CoalesceNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar)
+	dsql_nod* node, bool /*forceVarChar*/)
 {
 	// Set descriptor for output node.
 	MAKE_desc(dsqlScratch, &node->nod_desc, node);
@@ -3821,7 +3823,7 @@ void DecodeNode::setParameterName(dsql_par* parameter) const
 }
 
 bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar)
+	dsql_nod* node, bool /*forceVarChar*/)
 {
 	// Check if there is a parameter in the test/conditions.
 	bool setParameters = ExprNode::is<ParameterNode>(dsqlTest);
@@ -4167,7 +4169,7 @@ void DomainValidationNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUShort(0);		// field id
 }
 
-void DomainValidationNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+void DomainValidationNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	*desc = domDesc;
 }
@@ -4325,7 +4327,7 @@ void ExtractNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	desc->setNullable(desc1.isNullable());
 }
 
-void ExtractNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void ExtractNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	switch (blrSubOp)
 	{
@@ -4642,7 +4644,6 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	MetaName name;
 	SSHORT id;
 	const USHORT stream = csb->csb_rpt[context].csb_stream;
-	SSHORT flags = 0;
 	bool is_column = false;
 	bool byId = false;
 
@@ -4758,7 +4759,7 @@ void FieldNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	// AB: nod_field is an already passed node.
 	// This could be done in expand_select_list.
@@ -4773,7 +4774,7 @@ bool FieldNode::dsqlAggregateFinder(AggregateFinder& visitor)
 	return false;
 }
 
-bool FieldNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+bool FieldNode::dsqlAggregate2Finder(Aggregate2Finder& /*visitor*/)
 {
 	return false;
 }
@@ -4798,7 +4799,7 @@ bool FieldNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 	return false;
 }
 
-bool FieldNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool FieldNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
@@ -5387,7 +5388,7 @@ void GenIdNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	desc->setNullable(true);
 }
 
-void GenIdNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void GenIdNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	if (dialect1)
 		desc->makeLong(0);
@@ -5415,7 +5416,7 @@ bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return dialect1 == o->dialect1 && name == o->name;
 }
 
-bool GenIdNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool GenIdNode::sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* other)
 {
 	GenIdNode* otherNode = other->as<GenIdNode>();
 	return otherNode && dialect1 == otherNode->dialect1 && id == otherNode->id;
@@ -5961,8 +5962,8 @@ void LiteralNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = "CONSTANT";
 }
 
-bool LiteralNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar)
+bool LiteralNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
+	dsql_nod* /*node*/, bool /*forceVarChar*/)
 {
 	return false;
 }
@@ -5980,7 +5981,7 @@ void LiteralNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 	*desc = litDesc;
 }
 
-void LiteralNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void LiteralNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
 {
 	*desc = litDesc;
 
@@ -6012,7 +6013,7 @@ void LiteralNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* LiteralNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ValueExprNode* LiteralNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	LiteralNode* node = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
 	node->litDesc = litDesc;
@@ -6070,7 +6071,7 @@ ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* LiteralNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* LiteralNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 {
 	return const_cast<dsc*>(&litDesc);
 }
@@ -6130,7 +6131,7 @@ void DsqlMapNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* DsqlMapNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* DsqlMapNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return FB_NEW(getPool()) DsqlMapNode(getPool(), context, map);
 }
@@ -6171,7 +6172,7 @@ bool DsqlMapNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 	return visitor.visit(&map->map_node);
 }
 
-bool DsqlMapNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool DsqlMapNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
@@ -6317,7 +6318,7 @@ void DerivedFieldNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* DerivedFieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* DerivedFieldNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return this;
 }
@@ -6333,7 +6334,7 @@ bool DerivedFieldNode::dsqlAggregateFinder(AggregateFinder& visitor)
 	return false;
 }
 
-bool DerivedFieldNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+bool DerivedFieldNode::dsqlAggregate2Finder(Aggregate2Finder& /*visitor*/)
 {
 	return false;
 }
@@ -6349,7 +6350,7 @@ bool DerivedFieldNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visito
 	return false;
 }
 
-bool DerivedFieldNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool DerivedFieldNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
@@ -6714,7 +6715,7 @@ void NullNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_null);
 }
 
-void NullNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+void NullNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	// This occurs when SQL statement specifies a literal NULL, eg:
 	//  SELECT NULL FROM TABLE1;
@@ -6998,7 +6999,7 @@ ParameterNode::ParameterNode(MemoryPool& pool)
 	addChildNode(argIndicator);
 }
 
-DmlNode* ParameterNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* ParameterNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	MessageNode* message = NULL;
 	USHORT n = csb->csb_blr_reader.getByte();
@@ -7198,7 +7199,7 @@ void ParameterNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_parameter(dsqlScratch, dsqlParameter);
 }
 
-void ParameterNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+void ParameterNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	// We don't actually know the datatype of a parameter -
 	// we have to guess it based on the context that the
@@ -7211,14 +7212,14 @@ void ParameterNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 		*desc = dsqlParameter->par_desc;
 }
 
-bool ParameterNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool ParameterNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 {
 	const ParameterNode* o = other->as<ParameterNode>();
 
 	return o && dsqlParameter->par_index == o->dsqlParameter->par_index;
 }
 
-void ParameterNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void ParameterNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	*desc = message->format->fmt_desc[argNumber];
 }
@@ -7328,7 +7329,7 @@ RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDs
 	addChildNode(dsqlRelation);
 }
 
-DmlNode* RecordKeyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* RecordKeyNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	RecordKeyNode* node = FB_NEW(pool) RecordKeyNode(pool, blrOp);
 
@@ -7445,7 +7446,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return NULL;
 }
 
-bool RecordKeyNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+bool RecordKeyNode::dsqlAggregate2Finder(Aggregate2Finder& /*visitor*/)
 {
 	return false;
 }
@@ -7466,12 +7467,12 @@ bool RecordKeyNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 	return false;
 }
 
-bool RecordKeyNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool RecordKeyNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
 
-bool RecordKeyNode::dsqlFieldFinder(FieldFinder& visitor)
+bool RecordKeyNode::dsqlFieldFinder(FieldFinder& /*visitor*/)
 {
 	return false;
 }
@@ -7513,7 +7514,7 @@ void RecordKeyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_stuff_context(dsqlScratch, context);
 }
 
-void RecordKeyNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+void RecordKeyNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	fb_assert(blrOp == blr_dbkey);
 
@@ -7577,7 +7578,7 @@ void RecordKeyNode::findDependentFromStreams(const OptimizerRetrieval* optRet, S
 	}
 }
 
-void RecordKeyNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void RecordKeyNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	if (blrOp == blr_dbkey)
 	{
@@ -7779,7 +7780,7 @@ ValueExprNode* RecordKeyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* RecordKeyNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	const record_param* rpb = &request->req_rpb[recStream];
@@ -8311,7 +8312,7 @@ void StrLenNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	desc->setNullable(desc1.isNullable());
 }
 
-void StrLenNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void StrLenNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeLong(0);
 }
@@ -8517,7 +8518,7 @@ void SubQueryNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	// This node is created after dsqlPass and should never be called.
 	fb_assert(false);
@@ -8557,7 +8558,7 @@ bool SubQueryNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 	return visitor.visit(&dsqlRse);	// Pass only the rse.
 }
 
-bool SubQueryNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool SubQueryNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return true;
 }
@@ -8715,7 +8716,7 @@ ValueExprNode* SubQueryNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool SubQueryNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool SubQueryNode::sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* /*other*/)
 {
 	return false;
 }
@@ -10706,9 +10707,9 @@ VariableNode::VariableNode(MemoryPool& pool)
 {
 }
 
-DmlNode* VariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* VariableNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
-	USHORT n = csb->csb_blr_reader.getWord();
+	const USHORT n = csb->csb_blr_reader.getWord();
 	vec<DeclareVariableNode*>* vector = csb->csb_variables;
 
 	if (!vector || n >= vector->count())
@@ -10726,7 +10727,7 @@ void VariableNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	VariableNode* node = FB_NEW(getPool()) VariableNode(getPool());
 	node->dsqlVar = dsqlVar;
@@ -10767,7 +10768,7 @@ void VariableNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 	*desc = dsqlVar->desc;
 }
 
-bool VariableNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool VariableNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 {
 	const VariableNode* o = other->as<VariableNode>();
 	if (!o)
@@ -10785,7 +10786,7 @@ bool VariableNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return true;
 }
 
-void VariableNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void VariableNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	*desc = varDecl->varDesc;
 }

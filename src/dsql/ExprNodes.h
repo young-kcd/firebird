@@ -101,7 +101,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	virtual void setParameterName(dsql_par* parameter) const
+	virtual void setParameterName(dsql_par* /*parameter*/) const
 	{
 	}
 
@@ -397,22 +397,22 @@ public:
 
 	// This is a non-DSQL node.
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void setParameterName(dsql_par* parameter) const
+	virtual void setParameterName(dsql_par* /*parameter*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+	virtual void make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
 	}
@@ -447,7 +447,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	virtual void setParameterName(dsql_par* parameter) const
+	virtual void setParameterName(dsql_par* /*parameter*/) const
 	{
 	}
 
@@ -533,7 +533,7 @@ public:
 			streamList.add(fieldStream);
 	}
 
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
 	{
 		return true;
 	}
@@ -578,7 +578,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
 	{
 		return false;
 	}
@@ -685,18 +685,18 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	virtual ValueExprNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const
+	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -729,18 +729,18 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
-	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	virtual ValueExprNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const
+	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -772,18 +772,18 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	virtual ValueExprNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const
+	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -892,7 +892,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	virtual void setParameterName(dsql_par* parameter) const
+	virtual void setParameterName(dsql_par* /*parameter*/) const
 	{
 	}
 
@@ -902,7 +902,7 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
 	{
 		return false;
 	}
@@ -993,22 +993,22 @@ public:
 
 	// This is a non-DSQL node.
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void setParameterName(dsql_par* parameter) const
+	virtual void setParameterName(dsql_par* /*parameter*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+	virtual void make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
 	}
@@ -1040,22 +1040,22 @@ public:
 
 	// This is a non-DSQL node.
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void setParameterName(dsql_par* parameter) const
+	virtual void setParameterName(dsql_par* /*parameter*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+	virtual void make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
 	}
@@ -1151,7 +1151,7 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
 	{
 		return false;
 	}
@@ -1394,22 +1394,22 @@ public:
 
 	// This is a non-DSQL node.
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void setParameterName(dsql_par* parameter) const
+	virtual void setParameterName(dsql_par* /*parameter*/) const
 	{
 		fb_assert(false);
 	}
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
 	}
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+	virtual void make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
 	}
@@ -1428,12 +1428,12 @@ public:
 		return this;
 	}
 
-	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
 		fb_assert(false);	// Invalid operation.
 	}
 
-	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const
+	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	{
 		fb_assert(false);	// Invalid operation.
 		return NULL;
@@ -1458,7 +1458,7 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
 	{
 		return false;
 	}
