@@ -3254,7 +3254,7 @@ void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		const UCHAR* new_sdl = sdl;
 
 		// CVC: Modified this horrible idea: don't touch input parameters!
-		// The modified (perhaps) sdl is sent to the remote connection.  The
+		// The modified (perhaps) sdl is send to the remote connection.  The
 		// original sdl is used to process the slice data before it is sent.
 		// (This is why both 'new_sdl' and 'sdl' are saved in the packet.)
 		HalfStaticArray<UCHAR, 128> sdl_buffer;
@@ -3720,23 +3720,16 @@ void Transaction::rollbackRetaining(IStatus* status)
  *	Abort a transaction but keep its environment valid
  *
  **************************************/
-	reset(status);
-
-	CHECK_HANDLE(transaction, isc_bad_trans_handle);
-
-	Rdb* rdb = transaction->rtr_rdb;
-	CHECK_HANDLE(rdb, isc_bad_db_handle);
-	rem_port* port = rdb->rdb_port;
-	RefMutexGuard portGuard(*port->port_sync);
-
 	try
 	{
-		// Make sure protocol support action
+		reset(status);
 
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION10)
-		{
-			unsupported();
-		}
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
+
+		Rdb* rdb = transaction->rtr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync);
 
 		release_object(status, rdb, op_rollback_retaining, transaction->rtr_id);
 	}
@@ -3842,7 +3835,7 @@ int Blob::seek(IStatus* status, int mode, int offset)
 
 		send_and_receive(status, rdb, packet);
 
-		blob->rbl_offset = packet->p_resp.p_resp_blob_id.bid_quad_low;
+		blob->rbl_offset = packet->p_resp.p_resp_blob_id.gds_quad_low;
 		blob->rbl_length = 0;
 		blob->rbl_fragment_length = 0;
 		blob->rbl_flags &= ~(Rbl::EOF_SET | Rbl::EOF_PENDING | Rbl::SEGMENT);
@@ -5720,7 +5713,7 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 			}
 		}
 
-		const ParametersSet* ps = (op == op_service_attach ? &spbParam : &dpbParam);
+		const ParametersSet* const ps = (op == op_service_attach ? &spbParam : &dpbParam);
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "init calls authFillParametersBlock\n"));
 		authFillParametersBlock(cBlock, dpb, ps, port);

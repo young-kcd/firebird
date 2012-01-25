@@ -301,6 +301,7 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 	{
 		xdrmem_create(&xdr, reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
+		xdr.x_local = (port->port_type == rem_port::XNET);
 #ifdef DEV_BUILD
 		xdr.x_client = false;
 #endif
@@ -1063,13 +1064,7 @@ void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet)
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
-			if (port->port_protocol < PROTOCOL_VERSION10)
-			{
-				fb_assert(vec == isc_arg_gds);
-				newVector.push(gds__encode(*vector++, 0));
-			}
-			else
-				newVector.push(*vector++);
+			newVector.push(*vector++);
 			break;
 
 		case isc_arg_cstring:

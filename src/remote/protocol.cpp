@@ -97,13 +97,11 @@ static void free_cstring(XDR*, CSTRING*);
 static void reset_statement(XDR*, SSHORT);
 static bool_t xdr_cstring(XDR*, CSTRING*);
 static inline bool_t xdr_cstring_const(XDR*, CSTRING_CONST*);
-static bool_t xdr_datum(XDR*, const DSC*, BLOB_PTR*);
 #ifdef DEBUG_XDR_MEMORY
 static bool_t xdr_debug_packet(XDR*, enum xdr_op, PACKET*);
 #endif
 static bool_t xdr_longs(XDR*, CSTRING*);
 static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
-static bool_t xdr_quad(XDR*, struct bid*);
 static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
 static bool_t xdr_status_vector(XDR*, Firebird::DynamicStatusVector*&);
@@ -404,7 +402,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 		response = &p->p_resp;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(response->p_resp_object));
-		MAP(xdr_quad, response->p_resp_blob_id);
+		MAP(xdr_quad, reinterpret_cast<SQUAD&>(response->p_resp_blob_id));
 		MAP(xdr_cstring, response->p_resp_data);
 		return xdr_status_vector(xdrs, response->p_resp_status_vector) ?
 								 	P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
@@ -439,7 +437,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_create_blob:
 		blob = &p->p_blob;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(blob->p_blob_transaction));
-		MAP(xdr_quad, blob->p_blob_id);
+		MAP(xdr_quad, reinterpret_cast<SQUAD&>(blob->p_blob_id));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -559,7 +557,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_put_slice:
 		slice = &p->p_slc;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(slice->p_slc_transaction));
-		MAP(xdr_quad, slice->p_slc_id);
+		MAP(xdr_quad, reinterpret_cast<SQUAD&>(slice->p_slc_id));
 		MAP(xdr_long, reinterpret_cast<SLONG&>(slice->p_slc_length));
 		MAP(xdr_cstring, slice->p_slc_sdl);
 		MAP(xdr_longs, slice->p_slc_parameters);
@@ -1004,127 +1002,6 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 }
 
 
-static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
-{
-/**************************************
- *
- *	x d r _ d a t u m
- *
- **************************************
- *
- * Functional description
- *	Handle a data item by relative descriptor and buffer.
- *
- **************************************/
-	BLOB_PTR* p = buffer + (IPTR) desc->dsc_address;
-
-	switch (desc->dsc_dtype)
-	{
-	case dtype_dbkey:
-		fb_assert(false);	// dbkey should not get outside jrd,
-		// but in case it happenned in production server treat it as text
-		// Fall through ...
-
-	case dtype_text:
-	case dtype_boolean:
-		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), desc->dsc_length))
-			return FALSE;
-		break;
-
-	case dtype_varying:
-		{
-			fb_assert(desc->dsc_length >= sizeof(USHORT));
-			vary* v = reinterpret_cast<vary*>(p);
-			if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&v->vary_length)))
-			{
-				return FALSE;
-			}
-			if (!xdr_opaque(xdrs, v->vary_string,
-							MIN((USHORT) (desc->dsc_length - 2), v->vary_length)))
-			{
-				return FALSE;
-			}
-			if (xdrs->x_op == XDR_DECODE && desc->dsc_length - 2 > v->vary_length)
-			{
-				memset(v->vary_string + v->vary_length, 0, desc->dsc_length - 2 - v->vary_length);
-			}
-		}
-		break;
-
-	case dtype_cstring:
-	    {
-			//SSHORT n;
-			USHORT n;
-			if (xdrs->x_op == XDR_ENCODE)
-			{
-				n = MIN(strlen(reinterpret_cast<char*>(p)), (ULONG) (desc->dsc_length - 1));
-			}
-			if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&n)))
-				return FALSE;
-			if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), n))
-				return FALSE;
-			if (xdrs->x_op == XDR_DECODE)
-				p[n] = 0;
-		}
-		break;
-
-	case dtype_short:
-		fb_assert(desc->dsc_length >= sizeof(SSHORT));
-		if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(p)))
-			return FALSE;
-		break;
-
-	case dtype_sql_time:
-	case dtype_sql_date:
-	case dtype_long:
-		fb_assert(desc->dsc_length >= sizeof(SLONG));
-		if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(p)))
-			return FALSE;
-		break;
-
-	case dtype_real:
-		fb_assert(desc->dsc_length >= sizeof(float));
-		if (!xdr_float(xdrs, reinterpret_cast<float*>(p)))
-			return FALSE;
-		break;
-
-	case dtype_double:
-		fb_assert(desc->dsc_length >= sizeof(double));
-		if (!xdr_double(xdrs, reinterpret_cast<double*>(p)))
-			return FALSE;
-		break;
-
-	case dtype_timestamp:
-		fb_assert(desc->dsc_length >= 2 * sizeof(SLONG));
-		if (!xdr_long(xdrs, &((SLONG*) p)[0]))
-			return FALSE;
-		if (!xdr_long(xdrs, &((SLONG*) p)[1]))
-			return FALSE;
-		break;
-
-	case dtype_int64:
-		fb_assert(desc->dsc_length >= sizeof(SINT64));
-		if (!xdr_hyper(xdrs, p))
-			return FALSE;
-		break;
-
-	case dtype_array:
-	case dtype_quad:
-	case dtype_blob:
-		fb_assert(desc->dsc_length >= sizeof(struct bid));
-		if (!xdr_quad(xdrs, (struct bid*) p))
-			return FALSE;
-		break;
-
-	default:
-		fb_assert(FALSE);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-
 #ifdef DEBUG_XDR_MEMORY
 static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 {
@@ -1280,46 +1157,6 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 
 	DEBUG_PRINTSIZE(xdrs, op_void);
 	return TRUE;
-}
-
-
-static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
-{
-/**************************************
- *
- *	x d r _ q u a d
- *
- **************************************
- *
- * Functional description
- *	Map from external to internal representation (or vice versa).
- *	A "quad" is represented by two longs.
- *	Currently used only for blobs
- *
- **************************************/
-
-	switch (xdrs->x_op)
-	{
-	case XDR_ENCODE:
-		if ((*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high)) &&
-			(*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_low)))
-		{
-			return TRUE;
-		}
-		return FALSE;
-
-	case XDR_DECODE:
-		if (!(*xdrs->x_ops->x_getlong)(xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high)))
-		{
-			return FALSE;
-		}
-		return (*xdrs->x_ops->x_getlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_low));
-
-	case XDR_FREE:
-		return TRUE;
-	}
-
-	return FALSE;
 }
 
 

@@ -374,28 +374,6 @@ const UCHAR CNCT_plugin_name		= 8;	// Name of plugin, which generated that data
 const UCHAR CNCT_login				= 9;	// Same data as isc_dpb_user_name
 const UCHAR CNCT_plugin_list		= 10;	// List of plugins, available on client
 
-typedef struct bid	// BLOB ID
-{
-	ULONG	bid_quad_high;
-	ULONG	bid_quad_low;
-
-	bid& operator =(const ISC_QUAD& v)
-	{
-		bid_quad_high = v.gds_quad_high;
-		bid_quad_low = v.gds_quad_low;
-		return *this;
-	}
-
-	operator ISC_QUAD() const
-	{
-		ISC_QUAD rc;
-		rc.gds_quad_high = bid_quad_high;
-		rc.gds_quad_low = bid_quad_low;
-		return rc;
-	}
-} *BID;
-
-
 // Accept Block (Server response to connect block)
 
 typedef struct p_acpt
@@ -420,7 +398,7 @@ typedef p_acpd P_ACPD;
 typedef struct p_resp
 {
 	OBJCT		p_resp_object;		// Object id
-	struct bid	p_resp_blob_id;		// Blob id
+	SQUAD		p_resp_blob_id;		// Blob id
 	CSTRING		p_resp_data;		// Data
 	Firebird::DynamicStatusVector* p_resp_status_vector;
 } P_RESP;
@@ -487,7 +465,7 @@ typedef struct p_trrq
 typedef struct p_blob
 {
     OBJCT	p_blob_transaction;		// Transaction
-    struct bid	p_blob_id;			// Blob id for open
+    SQUAD	p_blob_id;				// Blob id for open
     CSTRING_CONST	p_blob_bpb;		// Blob parameter block
 } P_BLOB;
 
@@ -561,7 +539,7 @@ typedef struct p_ddl
 typedef struct p_slc
 {
     OBJCT	p_slc_transaction;	// Transaction
-    struct bid	p_slc_id;		// Slice id
+    SQUAD	p_slc_id;			// Slice id
     CSTRING	p_slc_sdl;			// Slice description language
     CSTRING	p_slc_parameters;	// Slice parameters
     lstring	p_slc_slice;		// Slice proper

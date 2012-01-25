@@ -69,32 +69,36 @@ inline void DEBUG_XDR_FREE(XDR*, const void*, const void*, ULONG)
 const u_int MAXSTRING_FOR_WRAPSTRING	= 65535;
 
 
-static XDR_INT mem_destroy(XDR*);
 static bool_t mem_getbytes(XDR*, SCHAR*, u_int);
-static bool_t mem_getlong(XDR*, SLONG*);
-static u_int mem_getpostn(XDR*);
-static caddr_t mem_inline(XDR*, u_int);
 static bool_t mem_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t mem_putlong(XDR*, const SLONG*);
-static bool_t mem_setpostn(XDR*, u_int);
 
 
 static const XDR::xdr_ops mem_ops =
 {
-	mem_getlong,
-	mem_putlong,
 	mem_getbytes,
-	mem_putbytes,
-	mem_getpostn,
-	mem_setpostn,
-	mem_inline,
-	mem_destroy
+	mem_putbytes
 };
 
 #define GETBYTES	 (*xdrs->x_ops->x_getbytes)
-#define GETLONG		 (*xdrs->x_ops->x_getlong)
 #define PUTBYTES	 (*xdrs->x_ops->x_putbytes)
-#define PUTLONG		 (*xdrs->x_ops->x_putlong)
+
+inline bool_t GETLONG(XDR* xdrs, SLONG* lp)
+{
+	SLONG l;
+
+	if (!(*xdrs->x_ops->x_getbytes)(xdrs, reinterpret_cast<char*>(&l), 4))
+		return FALSE;
+
+	*lp = xdrs->x_local ? l : ntohl(l);
+
+	return TRUE;
+}
+
+inline bool_t PUTLONG(XDR* xdrs, const SLONG* lp)
+{
+	const SLONG l = xdrs->x_local ? *lp : htonl(*lp);
+	return (*xdrs->x_ops->x_putbytes)(xdrs, reinterpret_cast<const char*>(&l), 4);
+}
 
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
 
@@ -128,14 +132,14 @@ bool_t xdr_hyper( XDR* xdrs, void* pi64)
 	case XDR_ENCODE:
 		memcpy(temp_long, pi64, sizeof temp_long);
 #ifndef WORDS_BIGENDIAN
-		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp_long[1]) &&
-			(*xdrs->x_ops->x_putlong) (xdrs, &temp_long[0]))
+		if (PUTLONG(xdrs, &temp_long[1]) &&
+			PUTLONG(xdrs, &temp_long[0]))
 		{
 			return TRUE;
 		}
 #else
-		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp_long[0]) &&
-			(*xdrs->x_ops->x_putlong) (xdrs, &temp_long[1]))
+		if (PUTLONG(xdrs, &temp_long[0]) &&
+			PUTLONG(xdrs, &temp_long[1]))
 		{
 			return TRUE;
 		}
@@ -144,14 +148,14 @@ bool_t xdr_hyper( XDR* xdrs, void* pi64)
 
 	case XDR_DECODE:
 #ifndef WORDS_BIGENDIAN
-		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[1]) ||
-			!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[0]))
+		if (!GETLONG(xdrs, &temp_long[1]) ||
+			!GETLONG(xdrs, &temp_long[0]))
 		{
 			return FALSE;
 		}
 #else
-		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[0]) ||
-			!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[1]))
+		if (!GETLONG(xdrs, &temp_long[0]) ||
+			!GETLONG(xdrs, &temp_long[1]))
 		{
 			return FALSE;
 		}
@@ -255,6 +259,128 @@ bool_t xdr_bytes(XDR* xdrs, SCHAR** bpp, u_int* lp, u_int maxlength)
 	}
 
 	return FALSE;
+}
+
+
+bool_t xdr_datum( XDR* xdrs, const dsc* desc, UCHAR* buffer)
+{
+/**************************************
+ *
+ *	x d r _ d a t u m
+ *
+ **************************************
+ *
+ * Functional description
+ *	Map from external to internal representation (or vice versa).
+ *	Handle a data item by relative descriptor and buffer.
+ *
+ **************************************/
+	BLOB_PTR* p = buffer + (IPTR) desc->dsc_address;
+
+	switch (desc->dsc_dtype)
+	{
+	case dtype_dbkey:
+		fb_assert(false);	// dbkey should not get outside jrd,
+		// but in case it happenned in production server treat it as text
+		// Fall through ...
+
+	case dtype_text:
+	case dtype_boolean:
+		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), desc->dsc_length))
+			return FALSE;
+		break;
+
+	case dtype_varying:
+		{
+			fb_assert(desc->dsc_length >= sizeof(USHORT));
+			vary* v = reinterpret_cast<vary*>(p);
+			if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&v->vary_length)))
+			{
+				return FALSE;
+			}
+			if (!xdr_opaque(xdrs, v->vary_string,
+							MIN((USHORT) (desc->dsc_length - 2), v->vary_length)))
+			{
+				return FALSE;
+			}
+			if (xdrs->x_op == XDR_DECODE && desc->dsc_length - 2 > v->vary_length)
+			{
+				memset(v->vary_string + v->vary_length, 0, desc->dsc_length - 2 - v->vary_length);
+			}
+		}
+		break;
+
+	case dtype_cstring:
+	    {
+			//SSHORT n;
+			USHORT n;
+			if (xdrs->x_op == XDR_ENCODE)
+			{
+				n = MIN(strlen(reinterpret_cast<char*>(p)), (ULONG) (desc->dsc_length - 1));
+			}
+			if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&n)))
+				return FALSE;
+			if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), n))
+				return FALSE;
+			if (xdrs->x_op == XDR_DECODE)
+				p[n] = 0;
+		}
+		break;
+
+	case dtype_short:
+		fb_assert(desc->dsc_length >= sizeof(SSHORT));
+		if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_sql_time:
+	case dtype_sql_date:
+	case dtype_long:
+		fb_assert(desc->dsc_length >= sizeof(SLONG));
+		if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_real:
+		fb_assert(desc->dsc_length >= sizeof(float));
+		if (!xdr_float(xdrs, reinterpret_cast<float*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_double:
+		fb_assert(desc->dsc_length >= sizeof(double));
+		if (!xdr_double(xdrs, reinterpret_cast<double*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_timestamp:
+		fb_assert(desc->dsc_length >= 2 * sizeof(SLONG));
+		if (!xdr_long(xdrs, &((SLONG*) p)[0]))
+			return FALSE;
+		if (!xdr_long(xdrs, &((SLONG*) p)[1]))
+			return FALSE;
+		break;
+
+	case dtype_int64:
+		fb_assert(desc->dsc_length >= sizeof(SINT64));
+		if (!xdr_hyper(xdrs, reinterpret_cast<SINT64*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_array:
+	case dtype_quad:
+	case dtype_blob:
+		fb_assert(desc->dsc_length >= sizeof(SQUAD));
+		if (!xdr_quad(xdrs, reinterpret_cast<SQUAD*>(p)))
+			return FALSE;
+		break;
+
+	default:
+		fb_assert(FALSE);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 
@@ -368,26 +494,6 @@ bool_t xdr_float(XDR* xdrs, float* ip)
 }
 
 
-bool_t xdr_free(xdrproc_t proc, SCHAR* objp)
-{
-/**************************************
- *
- *	x d r _ f r e e
- *
- **************************************
- *
- * Functional description
- *	Perform XDR_FREE operation on an XDR structure
- *
- **************************************/
-	XDR xdrs;
-
-	xdrs.x_op = XDR_FREE;
-
-	return (*proc)(&xdrs, objp);
-}
-
-
 bool_t xdr_int(XDR* xdrs, int* ip)
 {
 /**************************************
@@ -483,6 +589,46 @@ bool_t xdr_opaque(XDR* xdrs, SCHAR* p, u_int len)
 		if (l)
 			return GETBYTES(xdrs, trash, l);
 		return TRUE;
+
+	case XDR_FREE:
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+
+bool_t xdr_quad( XDR* xdrs, SQUAD* ip)
+{
+/**************************************
+ *
+ *	x d r _ q u a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Map from external to internal representation (or vice versa).
+ *	A "quad" is represented by two longs.
+ *	Currently used only for blobs
+ *
+ **************************************/
+
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		if (PUTLONG(xdrs, reinterpret_cast<SLONG*>(&ip->gds_quad_high)) &&
+			PUTLONG(xdrs, reinterpret_cast<SLONG*>(&ip->gds_quad_low)))
+		{
+			return TRUE;
+		}
+		return FALSE;
+
+	case XDR_DECODE:
+		if (!GETLONG(xdrs, reinterpret_cast<SLONG*>(&ip->gds_quad_high)))
+		{
+			return FALSE;
+		}
+		return GETLONG(xdrs, reinterpret_cast<SLONG*>(&ip->gds_quad_low));
 
 	case XDR_FREE:
 		return TRUE;
@@ -689,51 +835,6 @@ bool_t xdr_u_short(XDR* xdrs, u_short* ip)
 }
 
 
-int xdr_union(	XDR*			xdrs,
-				xdr_op*			dscmp,
-				SCHAR*			unp,
-				xdr_discrim*	choices,
-				xdrproc_t		dfault)
-{
-/**************************************
- *
- *	x d r _ u n i o n
- *
- **************************************
- *
- * Functional description
- *	Descriminated union.  Yuckola.
- *
- **************************************/
-
-	// TMN: Added temporary int to hold the enum_t, since an enum
-	// can have any size.
-	int enum_value = *dscmp;
-	const bool_t bOK = xdr_int(xdrs, &enum_value);
-	*dscmp = static_cast<xdr_op>(enum_value);
-
-	if (!bOK)
-	{
-		return FALSE;
-	}
-
-	for (; choices->proc; ++choices)
-	{
-		if (*dscmp == choices->value)
-		{
-			return (*choices->proc)(xdrs, unp);
-		}
-	}
-
-	if (dfault)
-	{
-		return (*dfault)(xdrs, unp);
-	}
-
-	return FALSE;
-}
-
-
 bool_t xdr_wrapstring(XDR* xdrs, SCHAR** strp)
 {
 /**************************************
@@ -773,22 +874,6 @@ int xdrmem_create(	XDR* xdrs, SCHAR* addr, u_int len, xdr_op x_op)
 }
 
 
-static XDR_INT mem_destroy(XDR*)
-{
-/**************************************
- *
- *	m e m _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *	Destroy a stream.  A no-op.
- *
- **************************************/
-	return TRUE;
-}
-
-
 static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
@@ -819,88 +904,24 @@ static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, u_int count)
 }
 
 
-static bool_t mem_getlong( XDR* xdrs, SLONG* lp)
+SLONG xdr_peek_long(const XDR* xdrs, const void* data, size_t size)
 {
 /**************************************
  *
- *	m e m _ g e t l o n g
+ *	x d r _ p e e k _ l o n g
  *
  **************************************
  *
  * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-	if ((xdrs->x_handy -= sizeof(SLONG)) < 0)
-	{
-		xdrs->x_handy += sizeof(SLONG);
-		return FALSE;
-	}
-
-	SLONG* p = (SLONG*) xdrs->x_private;
-	*lp = ntohl(*p++);
-	xdrs->x_private = (SCHAR*) p;
-
-	return TRUE;
-}
-
-
-SLONG getOperation(const void* data, size_t size)
-{
-/**************************************
- *
- *	g e t O p e r a t i o n
- *
- **************************************
- *
- * Functional description
- *	Fetch an operation from buffer in network format
+ *	Fetch the first four bytes (supposedly, the operation code)
+ *	from the given buffer and convert it into the host byte order.
  *
  **************************************/
 	if (size < sizeof(SLONG))
-	{
 		return 0;
-	}
 
 	const SLONG* p = (SLONG*) data;
-	return ntohl(*p);
-}
-
-
-static u_int mem_getpostn( XDR* xdrs)
-{
-/**************************************
- *
- *	m e m _ g e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Get the current position (which is also current length) from stream.
- *
- **************************************/
-
-	return (u_int) (xdrs->x_private - xdrs->x_base);
-}
-
-
-static caddr_t mem_inline( XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	m e m _  i n l i n e
- *
- **************************************
- *
- * Functional description
- *	Return a pointer to somewhere in the buffer.
- *
- **************************************/
-
-	if (bytecount > (u_int) ((xdrs->x_private + xdrs->x_handy) - xdrs->x_base))
-		return FALSE;
-
-	return xdrs->x_base + bytecount;
+	return xdrs->x_local ? *p : ntohl(*p);
 }
 
 
@@ -932,54 +953,3 @@ static bool_t mem_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 
 	return TRUE;
 }
-
-
-static bool_t mem_putlong( XDR* xdrs, const SLONG* lp)
-{
-/**************************************
- *
- *	m e m _ p u t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-	if ((xdrs->x_handy -= sizeof(SLONG)) < 0)
-	{
-		xdrs->x_handy += sizeof(SLONG);
-		return FALSE;
-	}
-
-	SLONG* p = (SLONG*) xdrs->x_private;
-	*p++ = htonl(*lp);
-	xdrs->x_private = (SCHAR*) p;
-
-	return TRUE;
-}
-
-
-static bool_t mem_setpostn( XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	m e m _ s e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Set the current position (which is also current length) from stream.
- *
- **************************************/
-	const u_int length = (u_int) ((xdrs->x_private - xdrs->x_base) + xdrs->x_handy);
-
-	if (bytecount > length)
-		return FALSE;
-
-	xdrs->x_handy = length - bytecount;
-	xdrs->x_private = xdrs->x_base + bytecount;
-
-	return TRUE;
-}
-

@@ -104,6 +104,8 @@ public:
 
 namespace {
 
+const USHORT PARSER_VERSION = 2;
+
 // Disable attempts to brute-force logins/passwords
 class FailedLogin
 {
@@ -2465,7 +2467,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
  *
  *****************************************/
 	Rtr* transaction = NULL;
-	USHORT in_blr_length, in_msg_type, parser_version, out_blr_length;
+	USHORT in_blr_length, in_msg_type, out_blr_length;
 	LocalStatus status_vector;
 
 	Rdb* rdb = this->port_context;
@@ -2542,15 +2544,13 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	//  parser = (combined) % 10 == 1
 	//  dialect = (combined) / 10 == 1
 
-	parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
-
 	InternalMessageBuffer iMsgBuffer(in_blr_length, in_blr, in_msg_length, in_msg);
 	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr, out_msg_length, out_msg);
 
 	ITransaction* newTra = rdb->rdb_iface->execute(&status_vector, tra,
 		exnow->p_sqlst_SQL_str.cstr_length,
 		reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
-		exnow->p_sqlst_SQL_dialect * 10 + parser_version,
+		exnow->p_sqlst_SQL_dialect * 10 + PARSER_VERSION,
 		in_msg_type, &iMsgBuffer, &oMsgBuffer);
 
 	if (op == op_exec_immediate2)
@@ -3621,14 +3621,12 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	//  parser = (combined) % 10 == 1
 	//  dialect = (combined) / 10 == 1
 
-	const USHORT parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
-
 	LocalStatus status_vector;
 
 	statement->rsr_iface->prepare(&status_vector,
 		iface, prepareL->p_sqlst_SQL_str.cstr_length,
 		reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
-		prepareL->p_sqlst_SQL_dialect * 10 + parser_version, flags);
+		prepareL->p_sqlst_SQL_dialect * 10 + PARSER_VERSION, flags);
 
 	if (!status_vector.isSuccess())
 		return this->send_response(sendL, 0, 0, &status_vector, false);
@@ -4603,7 +4601,7 @@ ISC_STATUS rem_port::seek_blob(P_SEEK* seek, PACKET* sendL)
 	LocalStatus status_vector;
 	SLONG result = blob->rbl_iface->seek(&status_vector, mode, offset);
 
-	sendL->p_resp.p_resp_blob_id.bid_quad_low = result;
+	sendL->p_resp.p_resp_blob_id.gds_quad_low = result;
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -4680,13 +4678,6 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
-			// When talking with older (pre 6.0) clients, do not send warnings
-			if (*old_vector == isc_arg_warning && this->port_protocol < PROTOCOL_VERSION10)
-			{
-				sw = false;
-				continue;
-			}
-
 			new_vector.push(*old_vector++);
 
 			// The status codes are converted to their offsets so that they
@@ -4696,14 +4687,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			// this on the client side, thus when talking with 6.0 and newer
 			// clients, do not decode the status code, just send it to the
 			// client.  The same check is made in interface.cpp::check_response
-
-			if (this->port_protocol < PROTOCOL_VERSION10)
-			{
-				USHORT fac = 0, code_class = 0;
-				new_vector.push(gds__decode(*old_vector++, &fac, &code_class));
-			}
-			else
-				new_vector.push(*old_vector++);
+			new_vector.push(*old_vector++);
 
 			for (;;)
 			{
@@ -5506,7 +5490,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		return 0;
 	}
 
-	switch (getOperation(buffer, dataSize))
+	switch (xdr_peek_long(&port_async_receive->port_receive, buffer, dataSize))
 	{
 	case op_cancel:
 	case op_abort_aux_connection:

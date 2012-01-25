@@ -79,17 +79,11 @@ static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
 static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
 static bool_t	xdrwnet_endofrecord(XDR*);//, int);
-static int		wnet_destroy(XDR*);
 static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static void		wnet_gen_error(rem_port*, const Arg::StatusVector& v);
 static bool_t	wnet_getbytes(XDR*, SCHAR*, u_int);
-static bool_t	wnet_getlong(XDR*, SLONG*);
-static u_int	wnet_getpostn(XDR*);
-static caddr_t	wnet_inline(XDR*, u_int);
-static bool_t	wnet_putlong(XDR*, const SLONG*);
 static bool_t	wnet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	wnet_read(XDR*);
-static bool_t	wnet_setpostn(XDR*, u_int);
 static bool_t	wnet_write(XDR*); //, int);
 #ifdef DEBUG
 static void		packet_print(const TEXT*, const UCHAR*, const int);
@@ -102,14 +96,8 @@ static int		cleanup_ports(const int, const int, void*);
 
 static xdr_t::xdr_ops wnet_ops =
 {
-	wnet_getlong,
-	wnet_putlong,
 	wnet_getbytes,
-	wnet_putbytes,
-	wnet_getpostn,
-	wnet_setpostn,
-	wnet_inline,
-	wnet_destroy
+	wnet_putbytes
 };
 
 
@@ -968,23 +956,6 @@ static bool_t xdrwnet_endofrecord( XDR* xdrs) //, bool_t flushnow)
 }
 
 
-static int wnet_destroy( XDR*)
-{
-/**************************************
- *
- *	w n e t _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *	Destroy a stream.  A no-op.
- *
- **************************************/
-
-	return 0;
-}
-
-
 static bool wnet_error(rem_port* port,
 					  const TEXT* function, ISC_STATUS operation, int status)
 {
@@ -1116,66 +1087,6 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 }
 
 
-static bool_t wnet_getlong( XDR* xdrs, SLONG* lp)
-{
-/**************************************
- *
- *	w n e t _ g e t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-	SLONG l;
-
-	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<char*>(&l), 4))
-		return FALSE;
-
-	*lp = ntohl(l);
-
-	return TRUE;
-}
-
-
-static u_int wnet_getpostn( XDR* xdrs)
-{
-/**************************************
- *
- *	w n e t _ g e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Get the current position (which is also current length) from stream.
- *
- **************************************/
-
-	return (u_int) (xdrs->x_private - xdrs->x_base);
-}
-
-
-static caddr_t wnet_inline( XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	w n e t _  i n l i n e
- *
- **************************************
- *
- * Functional description
- *	Return a pointer to somewhere in the buffer.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-
-	return xdrs->x_base + bytecount;
-}
-
-
 static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 {
 /**************************************
@@ -1240,23 +1151,6 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t wnet_putlong( XDR* xdrs, const SLONG* lp)
-{
-/**************************************
- *
- *	w n e t _ p u t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-	const SLONG l = htonl(*lp);
-	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(&l), 4);
-}
-
-
 static bool_t wnet_read( XDR* xdrs)
 {
 /**************************************
@@ -1303,28 +1197,6 @@ static bool_t wnet_read( XDR* xdrs)
 
 	xdrs->x_handy = (int) (p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
-
-	return TRUE;
-}
-
-
-static bool_t wnet_setpostn( XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	w n e t _ s e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Set the current position (which is also current length) from stream.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-
-	xdrs->x_private = xdrs->x_base + bytecount;
 
 	return TRUE;
 }

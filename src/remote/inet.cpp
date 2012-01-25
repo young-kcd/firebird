@@ -434,17 +434,11 @@ static SocketsArray* forkSockets;
 static in_addr get_bind_address();
 static int get_host_address(const char* name, in_addr* const host_addr_arr, const int arr_size);
 
-static int		inet_destroy(XDR*);
 static void		inet_gen_error(bool, rem_port*, const Firebird::Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
-static bool_t	inet_getlong(XDR*, SLONG *);
-static u_int	inet_getpostn(XDR*);
-static caddr_t	inet_inline(XDR*, u_int);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
-static bool_t	inet_putlong(XDR*, const SLONG*);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR*);
-static bool_t	inet_setpostn(XDR*, u_int);
 static rem_port*		inet_try_connect(	PACKET*,
 									Rdb*,
 									const Firebird::PathName&,
@@ -475,14 +469,8 @@ static FPTR_INT	tryStopMainThread = 0;
 
 static XDR::xdr_ops inet_ops =
 {
-	inet_getlong,
-	inet_putlong,
 	inet_getbytes,
-	inet_putbytes,
-	inet_getpostn,
-	inet_setpostn,
-	inet_inline,
-	inet_destroy
+	inet_putbytes
 };
 
 
@@ -2417,22 +2405,6 @@ static void alarm_handler( int x)
 }
 #endif
 
-static XDR_INT inet_destroy( XDR*)
-{
-/**************************************
- *
- *	i n e t _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *	Destroy a stream.  A no-op.
- *
- **************************************/
-
-	return (XDR_INT) 0;
-}
-
 static void inet_gen_error(bool releasePort, rem_port* port, const Arg::StatusVector& v)
 {
 /**************************************
@@ -2534,64 +2506,6 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 }
 
 
-static bool_t inet_getlong( XDR* xdrs, SLONG* lp)
-{
-/**************************************
- *
- *	i n e t _ g e t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-
-	SLONG l;
-
-	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<char*>(&l), 4))
-		return FALSE;
-
-	*lp = ntohl(l);
-
-	return TRUE;
-}
-
-static u_int inet_getpostn( XDR* xdrs)
-{
-/**************************************
- *
- *	i n e t _ g e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Get the current position (which is also current length) from stream.
- *
- **************************************/
-
-	return (u_int) (xdrs->x_private - xdrs->x_base);
-}
-
-static caddr_t inet_inline( XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	i n e t _  i n l i n e
- *
- **************************************
- *
- * Functional description
- *	Return a pointer to somewhere in the buffer.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-
-	return xdrs->x_base + bytecount;
-}
-
 static void inet_error(bool releasePort, rem_port* port, const TEXT* function, ISC_STATUS operation, int status)
 {
 /**************************************
@@ -2686,23 +2600,6 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	return TRUE;
 }
 
-
-static bool_t inet_putlong( XDR* xdrs, const SLONG* lp)
-{
-/**************************************
- *
- *	i n e t _ p u t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-	const SLONG l = htonl(*lp);
-	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(&l), 4);
-}
-
 static bool_t inet_read( XDR* xdrs)
 {
 /**************************************
@@ -2749,27 +2646,6 @@ static bool_t inet_read( XDR* xdrs)
 
 	xdrs->x_handy = (int) ((SCHAR *) p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
-
-	return TRUE;
-}
-
-static bool_t inet_setpostn( XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	i n e t _ s e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Set the current position (which is also current length) from stream.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-
-	xdrs->x_private = xdrs->x_base + bytecount;
 
 	return TRUE;
 }

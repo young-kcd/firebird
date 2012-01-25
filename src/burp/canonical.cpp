@@ -47,30 +47,16 @@
 // conflicting blk_t definitions (we are gonna fix this, in due time).
 
 
-static XDR_INT burp_destroy(XDR*);
 static bool_t burp_getbytes(XDR*, SCHAR *, u_int);
-static bool_t burp_getlong(XDR*, SLONG *);
-static u_int burp_getpostn(XDR*);
-static caddr_t burp_inline(XDR*, u_int);
 static bool_t burp_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t burp_putlong(XDR*, const SLONG*);
-static bool_t burp_setpostn(XDR*, u_int);
 static bool_t expand_buffer(XDR*);
-static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
-static bool_t xdr_quad(XDR*, SLONG*);
 static int xdr_init(XDR*, lstring*, enum xdr_op);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
 
 static xdr_t::xdr_ops burp_ops =
 {
-	burp_getlong,
-	burp_putlong,
 	burp_getbytes,
-	burp_putbytes,
-	burp_getpostn,
-	burp_setpostn,
-	burp_inline,
-	burp_destroy
+	burp_putbytes
 };
 
 const int increment = 1024;
@@ -179,7 +165,7 @@ ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool_t
 
 		case dtype_quad:
 		case dtype_blob:
-			if (!xdr_quad(xdrs, (SLONG*) p))
+			if (!xdr_quad(xdrs, (SQUAD*) p))
 				return FALSE;
 			break;
 
@@ -237,22 +223,6 @@ ULONG CAN_slice(lstring* buffer, lstring* slice, bool_t direction, /*USHORT sdl_
 }
 
 
-static XDR_INT burp_destroy(XDR*)
-{
-/**************************************
- *
- *	b u r p _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *	Destroy a stream.  A no-op.
- *
- **************************************/
-	return 0;
-}
-
-
 static bool_t burp_getbytes(XDR* xdrs, SCHAR* buff, u_int bytecount)
 {
 /**************************************
@@ -285,67 +255,6 @@ static bool_t burp_getbytes(XDR* xdrs, SCHAR* buff, u_int bytecount)
 	}
 
 	return TRUE;
-}
-
-
-static bool_t burp_getlong(XDR* xdrs, SLONG* lp)
-{
-/**************************************
- *
- *	b u r p _ g e t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-
-	SLONG l;
-
-	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<char*>(&l), 4))
-		return FALSE;
-
-	*lp = ntohl(l);
-
-	return TRUE;
-}
-
-
-static u_int burp_getpostn(XDR* xdrs)
-{
-/**************************************
- *
- *	b u r p _ g e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Get the current position (which is also current length) from stream.
- *
- **************************************/
-
-	return xdrs->x_private - xdrs->x_base;
-}
-
-
-static caddr_t burp_inline(XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	b u r p _  i n l i n e
- *
- **************************************
- *
- * Functional description
- *	Return a pointer to somewhere in the buffer.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-
-	return xdrs->x_base + bytecount;
 }
 
 
@@ -386,45 +295,6 @@ static bool_t burp_putbytes(XDR* xdrs, const SCHAR* buff, u_int bytecount)
 }
 
 
-static bool_t burp_putlong(XDR* xdrs, const SLONG* lp)
-{
-/**************************************
- *
- *	b u r p _ p u t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword into a memory stream if it fits.
- *
- **************************************/
-	SLONG l = htonl(*lp);
-	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<char*>(&l), 4);
-}
-
-
-static bool_t burp_setpostn(XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *	b u r p _ s e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Set the current position (which is also current length) from stream.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-
-	xdrs->x_private = xdrs->x_base + bytecount;
-
-	return TRUE;
-}
-
-
 static bool_t expand_buffer(XDR* xdrs)
 {
 /**************************************
@@ -458,144 +328,6 @@ static bool_t expand_buffer(XDR* xdrs)
 	buffer->lstr_address = (UCHAR *) new_buf;
 
 	return TRUE;
-}
-
-
-static bool_t xdr_datum(XDR* xdrs, DSC* desc, UCHAR* buffer)
-{
-/**************************************
- *
- *	x d r _ d a t u m
- *
- **************************************
- *
- * Functional description
- *	Handle a data item by relative descriptor and buffer.
- *
- **************************************/
-	SSHORT n;
-
-	UCHAR* p = buffer + (IPTR) desc->dsc_address;
-
-	switch (desc->dsc_dtype)
-	{
-	case dtype_text:
-		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), desc->dsc_length))
-		{
-			return FALSE;
-		}
-		break;
-
-	case dtype_varying:
-		{
-			vary* pVary = reinterpret_cast<vary*>(p);
-			if (!xdr_short(xdrs, reinterpret_cast<short*>(&pVary->vary_length)))
-			{
-				return FALSE;
-			}
-			if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(pVary->vary_string),
-							MIN(desc->dsc_length - 2, pVary->vary_length)))
-			{
-				return FALSE;
-			}
-		}
-		break;
-
-	case dtype_cstring:
-		if (xdrs->x_op == XDR_ENCODE) {
-			n = MIN(strlen(reinterpret_cast<const char*>(p)), (size_t) (desc->dsc_length - 1));
-		}
-		if (!xdr_short(xdrs, &n))
-			return FALSE;
-		if (!xdr_opaque(xdrs, reinterpret_cast<char*>(p), n))
-			  return FALSE;
-		if (xdrs->x_op == XDR_DECODE)
-			p[n] = 0;
-		break;
-
-	case dtype_short:
-		if (!xdr_short(xdrs, (SSHORT*) p))
-			return FALSE;
-		break;
-
-	case dtype_sql_date:
-	case dtype_sql_time:
-	case dtype_long:
-		if (!xdr_long(xdrs, (SLONG*) p))
-			return FALSE;
-		break;
-
-	case dtype_real:
-		if (!xdr_float(xdrs, (float *) p))
-			return FALSE;
-		break;
-
-	case dtype_double:
-		if (!xdr_double(xdrs, (double *) p))
-			return FALSE;
-		break;
-
-	case dtype_timestamp:
-		if (!xdr_long(xdrs, &((SLONG*) p)[0]))
-			return FALSE;
-		if (!xdr_long(xdrs, &((SLONG*) p)[1]))
-			return FALSE;
-		break;
-
-	case dtype_quad:
-	case dtype_blob:
-		if (!xdr_quad(xdrs, (SLONG*) p))
-			return FALSE;
-		break;
-
-	case dtype_int64:
-		if (!xdr_hyper(xdrs, (SINT64 *) p))
-			return FALSE;
-		break;
-
-	default:
-		fb_assert(FALSE);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-
-static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
-{
-/**************************************
- *
- *	x d r _ q u a d
- *
- **************************************
- *
- * Functional description
- *	Map from external to internal representation (or vice versa).
- *
- **************************************/
-
-	switch (xdrs->x_op)
-	{
-	case XDR_ENCODE:
-		if ((*xdrs->x_ops->x_putlong) (xdrs, &ip[0]) && (*xdrs->x_ops->x_putlong) (xdrs, &ip[1]))
-		{
-			return TRUE;
-		}
-		return FALSE;
-
-	case XDR_DECODE:
-		if (!(*xdrs->x_ops->x_getlong) (xdrs, &ip[0]))
-			return FALSE;
-		return (*xdrs->x_ops->x_getlong) (xdrs, &ip[1]);
-
-	case XDR_FREE:
-		return TRUE;
-
-	default:
-		fb_assert(FALSE);
-		return FALSE;
-	}
 }
 
 

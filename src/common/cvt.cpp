@@ -2416,7 +2416,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		{
 			USHORT length =
 				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
-			scale -= CVT_decompose(p, length, dtype_quad, &value.high, err);
+			scale -= CVT_decompose(p, length, dtype_quad, &value.gds_quad_high, err);
 		}
 		break;
 

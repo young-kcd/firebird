@@ -49,11 +49,6 @@
 #error compile_time_failure: SIZEOF_LONG not specified
 #endif
 
-typedef struct {
-	SLONG high;
-	ULONG low;
-} SQUAD;
-
 /* Basic data types */
 
 /* typedef signed char SCHAR;
@@ -86,6 +81,8 @@ typedef SINT64 ISC_INT64;
 typedef FB_UINT64 ISC_UINT64;
 
 #include "types_pub.h"
+
+typedef ISC_QUAD SQUAD;
 
 /*
  * TMN: some misc data types from all over the place

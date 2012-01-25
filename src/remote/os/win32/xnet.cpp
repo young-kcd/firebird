@@ -80,27 +80,15 @@ static bool fork(ULONG, USHORT, ULONG*);
 
 static int xdrxnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
 
-static int xnet_destroy(XDR*);
 static bool_t xnet_getbytes(XDR*, SCHAR*, u_int);
-static bool_t xnet_getlong(XDR*, SLONG*);
-static u_int xnet_getpostn(XDR*);
-static caddr_t xnet_inline(XDR*, u_int);
-static bool_t xnet_putlong(XDR*, const SLONG*);
 static bool_t xnet_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t xnet_setpostn(XDR*, u_int);
 static bool_t xnet_read(XDR* xdrs);
 static bool_t xnet_write(XDR* xdrs);
 
 static xdr_t::xdr_ops xnet_ops =
 {
-	xnet_getlong,
-	xnet_putlong,
 	xnet_getbytes,
-	xnet_putbytes,
-	xnet_getpostn,
-	xnet_setpostn,
-	xnet_inline,
-	xnet_destroy
+	xnet_putbytes
 };
 
 static ULONG global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
@@ -1632,25 +1620,9 @@ static int xdrxnet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT lengt
 	xdrs->x_handy = length;
 	xdrs->x_ops = &xnet_ops;
 	xdrs->x_op = x_op;
+	xdrs->x_local = true;
 
 	return TRUE;
-}
-
-
-static int xnet_destroy( XDR* /*xdrs*/)
-{
-/**************************************
- *
- *      x n e t _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *	Destroy a stream.  A no-op.
- *
- **************************************/
-
-	return 0;
 }
 
 
@@ -1765,60 +1737,6 @@ static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, u_int count)
 	}
 
 	return xnet_shutdown ? FALSE : TRUE;
-}
-
-
-static bool_t xnet_getlong(XDR* xdrs,  SLONG* lp)
-{
-/**************************************
- *
- *      x n e t _ g e t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fetch a longword from memory stream.
- *
- **************************************/
-
-	return (*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<SCHAR*>(lp), 4);
-}
-
-
-static u_int xnet_getpostn(XDR* xdrs)
-{
-/**************************************
- *
- *      x n e t _ g e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Get the current position (which is also current length) from stream.
- *
- **************************************/
-
-	return (u_int) (xdrs->x_private - xdrs->x_base);
-}
-
-
-static caddr_t xnet_inline(XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *      x n e t _  i n l i n e
- *
- **************************************
- *
- * Functional description
- *	Return a pointer to somewhere in the buffer.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-
-	return xdrs->x_base + bytecount;
 }
 
 
@@ -1938,23 +1856,6 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t xnet_putlong(XDR* xdrs, const SLONG* lp)
-{
-/**************************************
- *
- *      x n e t _ p u t l o n g
- *
- **************************************
- *
- * Functional description
- *	Fit a longword into a memory stream if it fits.
- *
- **************************************/
-
-	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(lp), 4);
-}
-
-
 static bool_t xnet_read(XDR* xdrs)
 {
 /**************************************
@@ -2059,26 +1960,6 @@ static bool_t xnet_write(XDR* xdrs)
 	}
 
 	return FALSE;
-}
-
-
-static bool_t xnet_setpostn(XDR* xdrs, u_int bytecount)
-{
-/**************************************
- *
- *      x n e t _ s e t p o s t n
- *
- **************************************
- *
- * Functional description
- *	Set the current position (which is also current length) from stream.
- *
- **************************************/
-
-	if (bytecount > (u_int) xdrs->x_handy)
-		return FALSE;
-	xdrs->x_private = xdrs->x_base + bytecount;
-	return TRUE;
 }
 
 
