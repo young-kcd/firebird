@@ -521,7 +521,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 	{
 		s_class = (!RF.RDB$SECURITY_CLASS.NULL) ?
 			SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS) : default_s_class;
-		SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask,
+		SCL_check_access(tdbb, s_class, 0, 0, NULL, mask,
 						 SCL_object_column, RF.RDB$FIELD_NAME, reln_name);
 	}
 	END_FOR
