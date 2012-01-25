@@ -35,6 +35,8 @@ class CharSet;
 
 }
 
+struct dsc;
+
 namespace Firebird {
 
 class Callbacks
