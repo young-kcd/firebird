@@ -1149,7 +1149,7 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 	}
 
 	const dsc* desc = format->fmt_desc.begin();
-	for (const dsc* const end = desc + format->fmt_count; desc < end; ++desc)
+	for (const dsc* const end = format->fmt_desc.end(); desc < end; ++desc)
 	{
 		if (!xdr_datum(xdrs, desc, message->msg_address))
 			return FALSE;

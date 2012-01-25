@@ -81,7 +81,6 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("PARSE_messages            allocate format  %x\n", format);
 #endif
-		format->fmt_count = count;
 		USHORT offset = 0;
 		for (dsc* desc = format->fmt_desc.begin(); count; --count, ++desc)
 		{

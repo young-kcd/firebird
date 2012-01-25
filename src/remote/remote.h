@@ -289,14 +289,12 @@ struct rem_fmt : public Firebird::GlobalStorage
 {
 	USHORT		fmt_length;
 	USHORT		fmt_net_length;
-	USHORT		fmt_count;
-	USHORT		fmt_version;
 	Firebird::Array<dsc> fmt_desc;
 
 public:
 	explicit rem_fmt(size_t rpt) :
-		fmt_length(0), fmt_net_length(0), fmt_count(0),
-		fmt_version(0), fmt_desc(getPool(), rpt)
+		fmt_length(0), fmt_net_length(0),
+		fmt_desc(getPool(), rpt)
 	{
 		fmt_desc.grow(rpt);
 	}

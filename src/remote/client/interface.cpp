@@ -5777,7 +5777,7 @@ static void mov_dsql_message(const UCHAR* from_msg,
  *
  **************************************/
 
-	if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count)
+	if (!from_fmt || !to_fmt || from_fmt->fmt_desc.getCount() != to_fmt->fmt_desc.getCount())
 	{
 		move_error(Arg::Gds(isc_dsql_sqlda_err));
 		// Msg 263 SQLDA missing or wrong number of variables
@@ -5785,8 +5785,8 @@ static void mov_dsql_message(const UCHAR* from_msg,
 
 	const dsc* from_desc = from_fmt->fmt_desc.begin();
 	const dsc* to_desc = to_fmt->fmt_desc.begin();
-	const dsc* const end_desc = to_desc + to_fmt->fmt_count;
-	for (; to_desc < end_desc; from_desc++, to_desc++)
+	for (const dsc* const end_desc = to_fmt->fmt_desc.end();
+		to_desc < end_desc; from_desc++, to_desc++)
 	{
 		dsc from = *from_desc;
 		dsc to = *to_desc;
