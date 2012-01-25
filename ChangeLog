@@ -1,3 +1,16 @@
+ 2012-01-24 12:06  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+Backport fix for bug CORE-2977 : FB 2.1 incorrectly works with indexed fields of type DATE in OLD ODS (9.1)
+
+ 2012-01-24 11:32  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
+ 2012-01-24 09:50  dimitr 
+   M src/remote/protocol.cpp
+Backported CORE-3730: isc_dsql_exec_immed2() loses input parameter value with RETURNING clause.
+
  2012-01-19 15:34  alexpeshkoff 
    M src/jrd/opt.cpp
 Backported fix for CORE-3736: WITH LOCK clause is allowed for users with read-only rights on some table, thus blocking others from updating this table
