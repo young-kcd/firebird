@@ -202,6 +202,11 @@ typedef struct dsc
 		}
 	}
 
+	USHORT getCollation() const
+	{
+		return getTextType() >> 8;
+	}
+
 	void clear()
 	{
 		memset(this, 0, sizeof(*this));

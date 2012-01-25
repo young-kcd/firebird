@@ -346,7 +346,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_f
 		if (field->fld_dtype <= dtype_any_text)
 		{
 			field->fld_character_set_id = DSC_GET_CHARSET(&saveDesc);
-			field->fld_collation_id= DSC_GET_COLLATE(&saveDesc);
+			field->fld_collation_id = DSC_GET_COLLATE(&saveDesc);
 		}
 		else
 			field->fld_sub_type = saveDesc.dsc_sub_type;
@@ -667,7 +667,7 @@ static void updateRdbFields(const TypeClause& type,
 			characterSetIdNull = FALSE;
 			characterSetId = type.charSetId;
 
-			collationIdNull = !type.collateSpecified;
+			collationIdNull = FALSE;
 			collationId = type.collationId;
 		}
 
@@ -694,7 +694,7 @@ static void updateRdbFields(const TypeClause& type,
 		characterSetIdNull = FALSE;
 		characterSetId = type.charSetId;
 
-		collationIdNull = !type.collateSpecified;
+		collationIdNull = FALSE;
 		collationId = type.collationId;
 	}
 	else
@@ -7967,7 +7967,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			if (desc.isText() || (desc.isBlob() && desc.getBlobSubType() == isc_blob_text))
 			{
 				newField.fld_character_set_id = desc.getCharSet();
-				newField.fld_collation_id = desc.getTextType();
+				newField.fld_collation_id = desc.getCollation();
 			}
 
 			if (desc.isText())
