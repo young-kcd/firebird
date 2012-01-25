@@ -24,7 +24,7 @@
 #ifndef JRD_MOV_PROTO_H
 #define JRD_MOV_PROTO_H
 
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 
@@ -34,10 +34,13 @@ struct vary;
 int		MOV_compare(const dsc*, const dsc*);
 double	MOV_date_to_double(const dsc*);
 void	MOV_double_to_date(double, SLONG[2]);
-bool	MOV_get_boolean(const dsc*);
+void	MOV_fast(const SCHAR*, SCHAR*, ULONG);
+void	MOV_faster(const SLONG*, SLONG*, ULONG);
+void	MOV_fill(SLONG*, ULONG);
 double	MOV_get_double(const dsc*);
 SLONG	MOV_get_long(const dsc*, SSHORT);
-void	MOV_get_metaname(const dsc*, Firebird::MetaName&);
+void	MOV_get_metadata_str(const dsc*, TEXT*, USHORT);
+void	MOV_get_name(const dsc*, TEXT*);
 SQUAD	MOV_get_quad(const dsc*, SSHORT);
 SINT64	MOV_get_int64(const dsc*, SSHORT);
 int		MOV_get_string_ptr(const dsc*, USHORT*, UCHAR**, vary*,
@@ -47,9 +50,9 @@ GDS_DATE	MOV_get_sql_date(const dsc*);
 GDS_TIME	MOV_get_sql_time(const dsc*);
 GDS_TIMESTAMP	MOV_get_timestamp(const dsc*);
 int		MOV_make_string(const dsc*, USHORT, const char**, vary*, USHORT);
-int		MOV_make_string2(Jrd::thread_db*, const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&, bool = true);
-Firebird::string MOV_make_string2(Jrd::thread_db* tdbb, const dsc* desc, USHORT ttype,
-	bool limit = true);
-void	MOV_move(Jrd::thread_db*, /*const*/ dsc*, dsc*);
+int		MOV_make_string2(const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&);
+void	MOV_move(const dsc*, dsc*);
+void	MOV_time_stamp(GDS_TIMESTAMP*);
+
 
 #endif // JRD_MOV_PROTO_H

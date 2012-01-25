@@ -31,12 +31,14 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: preUninstall.sh.in,v 1.1.2.1 2008-01-07 11:29:33 paulbeach Exp $
+# 
 
 # The pre uninstall routines for Firebird Classic
 
     checkIfServerRunning
 
-    cd @FB_SECDBDIR@
+    cd $FBRootDir
     
     if [ -f $SecurityDatabase ] 
       then 
@@ -44,7 +46,7 @@
         echo "Saved a copy of $SecurityDatabase in /tmp" 
     fi 
     
-    for i in @FB_GUARDDIR@/fb_guard @FB_LOGDIR@/firebird.log @FB_CONFDIR@/SYSDBA.password
+    for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
       do
         if [ -f $i ]
           then

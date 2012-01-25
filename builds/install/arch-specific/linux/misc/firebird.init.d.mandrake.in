@@ -1,101 +1,55 @@
 #!/bin/sh
 
-# chkconfig: 345 80 20
+# chkconfig: 345 20 80
 # description: Start/Stop firebird database server
 #
 # This file belongs in /etc/init.d where it will be run
 # on system startup and shutdown to start the background
-# Firebird database server daemon 
-### BEGIN INIT INFO
-# Provides: firebird
-# Required-Start: $local_fs $syslog
-# Required-Stop:
-# Default-Start: 3 4 5
-# Default-Stop: 0 1 2 6
-# Short-Description: Firebird server database
-# Description: Starts and stops the Firebird database server backend daemon.
-### END INIT INFO
+# Firebird/interbase database server daemon 
 
-# Source function library - RedHat or Mandriva specific
-# functions actually used: checkpid killproc daemon
+
+# This init script contains functions specific for redhat
+# and mandrake init scripts.
+
+# Source function library.
 . /etc/rc.d/init.d/functions
 
-# To run more instances of firebird:
-#   Copy @prefix@ somewhere
-#   Copy this script under a new name
-#   Change at least INSTANCE and FIREBIRD below
-#   Edit the copied firebird.conf to change at least RemoteServicePort
-#   Optionally run chkconfig to autostart the new service
-INSTANCE=default
-FIREBIRD=@FB_CONFDIR@
 
-# No changes needed below for multiple instances
-name=$(basename `readlink -f $0`)
+FIREBIRD=@prefix@
 FBRunUser=firebird
+pidfile=/var/run/firebird/`basename $0`.pid
 
-makeFbDir() {
-	mDir=${1}
-	mode=${2}
-	if [ ! -d $mDir ]; then
-		rm -rf $mDir
-		mkdir $mDir
-		if [ "$mode" ]; then
-			chmod $mode $mDir
-		fi
-	fi
-	chown $FBRunUser:$FBRunUser $mDir
-}
-runDir=/var/run/firebird
-makeFbDir $runDir
-lockDir=/tmp/firebird
-makeFbDir $lockDir 0770
+export FIREBIRD 
 
-pidfile="$runDir/$INSTANCE.pid"
-FULLNAME="Firebird server [$INSTANCE]"
-LD_LIBRARY_PATH=$FIREBIRD/lib
 
-export FIREBIRD LD_LIBRARY_PATH
+# Check the file is there and is executable.
+[ -x $FIREBIRD/bin/fbmgr ] || exit 1
 
-GUARDIAN=$FIREBIRD/bin/fbguard
-if [ ! -x $GUARDIAN ]; then
-	GUARDIAN=@FB_SBINDIR@/fbguard
-fi
 
-# initialize as "success"
-RETVAL=0
 
 # See how we were called.
 case "$1" in
   start)
-	echo -n "Starting $FULLNAME "
-	daemon --user=$FBRunUser "export FIREBIRD LD_LIBRARY_PATH; $GUARDIAN -pidfile $pidfile -daemon -forever"
+	echo -n "Starting Firebird server: "
+
+	daemon --user $FBRunUser $FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever
 	RETVAL=$?
- 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$name
 	echo
 	;;
   stop)
+	echo -n "Stopping Firebird server: "
+
 	if [ -f $pidfile ]
 	then
-		echo -n "Stopping $FULLNAME: "
-		killproc -p $pidfile $name
-		RETVAL=$?
-		echo
-	else
-		echo -n "$FULLNAME server is stopped"
-		echo
+	    kill `cat $pidfile`
 	fi
-	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$name
+	RETVAL=$?
+#	echo
+#	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd
 	;;
   status)
-	if [ -f $pidfile ]
-	then
-		pid=`cat $pidfile`
-		checkpid $pid
-		RETVAL=$?
-		[ $RETVAL -eq 0 ] && echo "$FULLNAME is running (pid $pid)" || echo "$FULLNAME is dead but pid file exists"
-	else
-		echo "$FULLNAME is stopped"
-	fi
+	status fbserver
+	RETVAL=$?
 	;;
   restart|reload)
 	$0 stop
@@ -104,8 +58,9 @@ case "$1" in
 	RETVAL=$?
 	;;
   *)
-	echo "Usage: $0 {start|stop|status|restart|reload}"
+	echo "Usage: firebird {start|stop|status|restart|reload}"
 	exit 1
 esac
 
 exit $RETVAL
+

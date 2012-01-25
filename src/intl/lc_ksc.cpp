@@ -27,22 +27,22 @@
 #include "cv_ksc.h"
 #include "ld_proto.h"
 
-static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
+static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar, USHORT);
-static USHORT LCKSC_key_length(texttype* obj, USHORT inLen);
-static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag);
+static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
+static SSHORT LCKSC_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag);
 
 static int GetGenHanNdx(UCHAR b1, UCHAR b2);
-static int GetSpeHanNdx(UCHAR b2);
+static int GetSpeHanNdx(UCHAR b1, UCHAR b2);
 
-static inline bool FAMILY_MULTIBYTE(texttype* cache,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
-									const UCHAR*, // specific_attributes,
+									const UCHAR* specific_attributes,
 									ULONG specific_attributes_length)
 {
-	//static inline void FAMILY_MULTIBYTE(id_number, name, charset, country)
+//static inline void FAMILY_MULTIBYTE(id_number, name, charset, country)
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
 		return false;
 
@@ -59,7 +59,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 	return true;
 }
 
-TEXTTYPE_ENTRY3(KSC_5601_init)
+TEXTTYPE_ENTRY(KSC_5601_init)
 {
 	static const ASCII POSIX[] = "C.KSC_5601";
 
@@ -67,7 +67,7 @@ TEXTTYPE_ENTRY3(KSC_5601_init)
 }
 
 
-TEXTTYPE_ENTRY3(ksc_5601_dict_init)
+TEXTTYPE_ENTRY(ksc_5601_dict_init)
 {
 	static const ASCII POSIX[] = "HANGUL.KSC_5601";
 
@@ -78,14 +78,14 @@ TEXTTYPE_ENTRY3(ksc_5601_dict_init)
 		cache->texttype_fn_compare = LCKSC_compare;
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
 const UCHAR spe_han[18][2] =
 {
-	// special hangul -> character sets with dictionary collation
+/* special hangul -> character sets with dictionary collation */
 	{ 0xa4, 0xa2 },
 	{ 0xa4, 0xa4 },
 	{ 0xa4, 0xa7 },
@@ -108,7 +108,7 @@ const UCHAR spe_han[18][2] =
 
 const UCHAR gen_han[18][2] =
 {
-	// general hangul -> character sets with binary collation
+/* general hangul -> character sets with binary collation */
 	{ 0xb1, 0xed },
 	{ 0xb3, 0xa9 },
 	{ 0xb4, 0xd8 },
@@ -133,9 +133,9 @@ const USHORT LANGKSC_MAX_KEY	= 4096;
 const BYTE	ASCII_SPACE	= 32;
 
 
-static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
+static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar,
-	USHORT /*key_type*/)
+	USHORT key_type) // unused
 {
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);
@@ -150,14 +150,10 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 
 	BYTE* outbuff = pOutChar;
 
-	for (USHORT i = 0; i < iInLen && iOutLen; i++, pInChar++)
-	{
-		if (GEN_HAN(*pInChar, *(pInChar + 1)))
-		{
-			// general hangul
+	for (USHORT i = 0; i < iInLen && iOutLen; i++, pInChar++) {
+		if (GEN_HAN(*pInChar, *(pInChar + 1))) {	/* general hangul */
 			const int idx = GetGenHanNdx(*pInChar, *(pInChar + 1));
-			if (idx >= 0)
-			{
+			if (idx >= 0) {
 				if (iOutLen < 3)
 					break;
 
@@ -166,8 +162,7 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 				*outbuff++ = 1;
 				iOutLen -= 3;
 			}
-			else
-			{
+			else {
 				if (iOutLen < 2)
 					break;
 
@@ -178,10 +173,8 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 			pInChar += 1;
 			i++;
 		}
-		else if (SPE_HAN(*pInChar, *(pInChar + 1)))
-		{
-			// special hangul
-			const int idx = GetSpeHanNdx(*(pInChar + 1));
+		else if (SPE_HAN(*pInChar, *(pInChar + 1))) {	/* special hangul */
+			const int idx = GetSpeHanNdx(*pInChar, *(pInChar + 1));
 			fb_assert(idx >= 0);
 
 			if (iOutLen < 3)
@@ -194,16 +187,12 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 			pInChar += 1;
 			i++;
 		}
-		else
-		{
-			// ascii or rest -> in case with binary collation
+		else {					/* ascii or rest -> in case with binary collation */
 
 			*outbuff++ = *pInChar;
 			iOutLen--;
 			fb_assert(KSC1(*pInChar) || (*pInChar < 0x80));
-			if (KSC1(*pInChar))
-			{
-				// the rest characters of KSC_5601 table
+			if (KSC1(*pInChar)) {	/* the rest characters of KSC_5601 table */
 				fb_assert(KSC2(*(pInChar + 1)));
 				if (!iOutLen)
 					break;
@@ -212,7 +201,7 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 				pInChar += 1;
 				i++;
 			}
-			else				// ascii
+			else				/* ascii */
 				continue;
 		}
 	}
@@ -228,8 +217,7 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 
 static int GetGenHanNdx(UCHAR b1, UCHAR b2)
 {
-	for (int i = 0; i < 18; i++)
-	{
+	for (int i = 0; i < 18; i++) {
 		if (gen_han[i][0] == b1 && b2 == gen_han[i][1])
 			return i;
 	}
@@ -242,10 +230,9 @@ static int GetGenHanNdx(UCHAR b1, UCHAR b2)
 *	description	:	in case of spe_han, get index from spe_han table
 */
 
-static int GetSpeHanNdx(const UCHAR b2)
+static int GetSpeHanNdx(UCHAR b1, UCHAR b2)
 {
-	for (int i = 0; i < 18; i++)
-	{
+	for (int i = 0; i < 18; i++) {
 		if (b2 == spe_han[i][1])
 			return i;
 	}
@@ -253,7 +240,7 @@ static int GetSpeHanNdx(const UCHAR b2)
 }
 
 
-static USHORT LCKSC_key_length(texttype* /*obj*/, USHORT inLen)
+static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
 {
 	const USHORT len = inLen + (inLen / 2);
 
@@ -265,7 +252,7 @@ static USHORT LCKSC_key_length(texttype* /*obj*/, USHORT inLen)
 *	function name	:	LCKSC_compare
 *	description	:	compare two string
 */
-static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
+static SSHORT LCKSC_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
 {
 	fb_assert(error_flag != NULL);
 
@@ -274,22 +261,21 @@ static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, c
 
 	*error_flag = false;
 
-	const ULONG len1 = LCKSC_string_to_key(obj, l1, s1, sizeof(key1), key1, 0);
-	const ULONG len2 = LCKSC_string_to_key(obj, l2, s2, sizeof(key2), key2, 0);
+	const ULONG len1 = LCKSC_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
+	const ULONG len2 = LCKSC_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
 	const ULONG len = MIN(len1, len2);
-	for (ULONG i = 0; i < len; i++)
-	{
+	for (ULONG i = 0; i < len; i++) {
 		if (key1[i] == key2[i])
 			continue;
-		if (key1[i] < key2[i])
+		else if (key1[i] < key2[i])
 			return -1;
-
-		return 1;
+		else
+			return 1;
 	}
 	if (len1 < len2)
 		return -1;
-	if (len1 > len2)
+	else if (len1 > len2)
 		return 1;
-
-	return 0;
+	else
+		return 0;
 }

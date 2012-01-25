@@ -32,6 +32,8 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: tarUninstall.sh.in,v 1.1.2.1 2008-01-07 11:29:52 paulbeach Exp $
+# 
 
 
 #------------------------------------------------------------------------
@@ -69,11 +71,12 @@ removeInstalledFiles() {
 
 removeUninstallFiles() {
     # remove the uninstall scripts files.
-    rm -rf @FB_MISCDIR@/scripts
-    rm -f @FB_MISCDIR@/manifest.txt
-    rm -f @FB_SBINDIR@/fbUninstall.sh
-    rm -f @FB_LIBDIR@/libfbembed.sl
-    rm -f @FB_LIBDIR@/libfbclient.sl
+    #echo $FBRootDir/misc/scripts
+    rm -rf $FBRootDir/misc/scripts
+    rm -f $FBRootDir/misc/manifest.txt
+    rm -f $FBRootDir/bin/uninstall.sh
+    rm -f $FBRootDir/lib/libfbembed.sl
+    rm -f $FBRootDir/lib/libfbclient.sl
 }
 
 
@@ -86,10 +89,13 @@ removeUninstallFiles() {
 
 removeEmptyDirs() {
 
-#rm -fr $FBRootDir
+rm -fr $FBRootDir
 
 }
 
+
+FBRootDir=/usr/local/firebird
+FBBin=$FBRootDir/bin
 
 removeInstalledFiles  # Remove installed files 
 removeUninstallFiles  # Remove the 'uninstall' utility files

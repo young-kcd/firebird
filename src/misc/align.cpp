@@ -22,8 +22,7 @@
 #include <signal.h>
 #include <stdio.h>
 
-struct xyz
-{
+struct xyz {
 	char a;
 	double b;
 };
@@ -33,8 +32,7 @@ typedef xyz* XYZ;
 #define EVEN		"((n + 1) & ~1)"
 #define NO_OP		"(n)"
 
-struct alignment
-{
+struct alignment {
 	short rule_offset;
 	short rule_length;
 	short rule_faults;
@@ -44,8 +42,7 @@ struct alignment
 	const char *rule_system;
 };
 
-static const alignment rules[] =
-{
+static const alignment rules[] = {
 	1, 9, 0, 4, 4, NO_OP, "VMS",	/* VMS */
 	2, 10, 0, 4, 4, EVEN, "MC 68K",	/* Generic Motorola */
 	4, 12, 0, 4, 4, MAJOR_MINOR, "VAX Ultrix, 386i, RT",	/* VAX Ultrix */
@@ -54,9 +51,9 @@ static const alignment rules[] =
 	0, 0, 0, 0, 0
 };
 
-static void check_byte_order();
-static int check_double();
-static void handler();
+static void check_byte_order(void);
+static int check_double(void);
+static void handler(void);
 
 
 int main(int argc, char *argv[])
@@ -76,8 +73,8 @@ int main(int argc, char *argv[])
 			rule->rule_length == length && rule->rule_faults == faults)
 		{
 			printf("\n/* %s */\n\n", rule->rule_system);
-			printf("#define FB_ALIGNMENT\t%d\n", rule->rule_base_align);
-			printf("#define FB_DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
+			printf("#define ALIGNMENT\t%d\n", rule->rule_base_align);
+			printf("#define DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
 			printf("#define FB_ALIGN(n, b)\t%s\n", rule->rule_rule);
 			check_byte_order();
 			printf("\n");
@@ -91,7 +88,7 @@ int main(int argc, char *argv[])
 	return 1;
 }
 
-static void check_byte_order()
+static void check_byte_order(void)
 {
 	union {
 		short s;
@@ -105,7 +102,7 @@ static void check_byte_order()
 		printf("#define WORDS_BIGENDIAN\t\t1\n");
 }
 
-static int check_double()
+static int check_double(void)
 {
 	double *p;
 #if SIZEOF_LONG == 8
@@ -124,7 +121,7 @@ static int check_double()
 		*p = 3;
 		*p *= 2.5;
 	}
-	catch (const Firebird::Exception&) {
+	catch(const std::exception&) {
 		return 1;
 	}
 

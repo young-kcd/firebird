@@ -27,7 +27,7 @@
 #include "lc_narrow.h"
 #include "ld_proto.h"
 
-static inline bool FAMILY1(texttype* cache,
+static inline bool FAMILY1(TEXTTYPE cache,
 							SSHORT country,
 							USHORT flags,
 							const SortOrderTblEntry* NoCaseOrderTbl,
@@ -37,14 +37,12 @@ static inline bool FAMILY1(texttype* cache,
 							const ExpandChar* ExpansionTbl,
 							const ASCII* POSIX,
 							USHORT attributes,
-							const UCHAR*, // specific_attributes,
+							const UCHAR* specific_attributes,
 							ULONG specific_attributes_length)
 //#define FAMILY1(id_number, name, charset, country)
 {
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
 		return false;
-
-	TextTypeImpl* impl = new TextTypeImpl;
 
 	cache->texttype_version			= TEXTTYPE_VERSION_1;
 	cache->texttype_name			= POSIX;
@@ -56,20 +54,20 @@ static inline bool FAMILY1(texttype* cache,
 	cache->texttype_fn_str_to_upper = fam1_str_to_upper;
 	cache->texttype_fn_str_to_lower = fam1_str_to_lower;
 	cache->texttype_fn_destroy		= LC_NARROW_destroy;
-	cache->texttype_impl 			= impl;
-	impl->texttype_collation_table	= (const BYTE*) NoCaseOrderTbl;
-	impl->texttype_toupper_table	= ToUpperConversionTbl;
-	impl->texttype_tolower_table	= ToLowerConversionTbl;
-	impl->texttype_compress_table	= (const BYTE*) CompressTbl;
-	impl->texttype_expand_table		= (const BYTE*) ExpansionTbl;
-	impl->texttype_flags			= ((flags) & REVERSE) ? (TEXTTYPE_reverse_secondary | TEXTTYPE_ignore_specials) : 0;
+	cache->texttype_impl			= new TextTypeImpl;
+	cache->texttype_impl->texttype_collation_table = (const BYTE*) NoCaseOrderTbl;
+	cache->texttype_impl->texttype_toupper_table	= ToUpperConversionTbl;
+	cache->texttype_impl->texttype_tolower_table	= ToLowerConversionTbl;
+	cache->texttype_impl->texttype_compress_table	= (const BYTE*) CompressTbl;
+	cache->texttype_impl->texttype_expand_table		= (const BYTE*) ExpansionTbl;
+	cache->texttype_impl->texttype_flags			= ((flags) & REVERSE) ? (TEXTTYPE_reverse_secondary | TEXTTYPE_ignore_specials) : 0;
 
 	return true;
 }
 
 
 
-TEXTTYPE_ENTRY3(DOS102_init)
+TEXTTYPE_ENTRY(DOS102_init)
 {
 	static const ASCII POSIX[] = "INTL.DOS437";
 
@@ -81,7 +79,7 @@ TEXTTYPE_ENTRY3(DOS102_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS105_init)
+TEXTTYPE_ENTRY(DOS105_init)
 {
 	static const ASCII POSIX[] = "NORDAN4.DOS437";
 
@@ -93,7 +91,7 @@ TEXTTYPE_ENTRY3(DOS105_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS106_init)
+TEXTTYPE_ENTRY(DOS106_init)
 {
 	static const ASCII POSIX[] = "SWEDFIN.DOS437";
 
@@ -105,7 +103,7 @@ TEXTTYPE_ENTRY3(DOS106_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c2_init)
+TEXTTYPE_ENTRY(DOS101_c2_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -117,7 +115,7 @@ TEXTTYPE_ENTRY3(DOS101_c2_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c3_init)
+TEXTTYPE_ENTRY(DOS101_c3_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -129,7 +127,7 @@ TEXTTYPE_ENTRY3(DOS101_c3_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c4_init)
+TEXTTYPE_ENTRY(DOS101_c4_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -141,7 +139,7 @@ TEXTTYPE_ENTRY3(DOS101_c4_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c5_init)
+TEXTTYPE_ENTRY(DOS101_c5_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -153,7 +151,7 @@ TEXTTYPE_ENTRY3(DOS101_c5_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c6_init)
+TEXTTYPE_ENTRY(DOS101_c6_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -165,7 +163,7 @@ TEXTTYPE_ENTRY3(DOS101_c6_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c7_init)
+TEXTTYPE_ENTRY(DOS101_c7_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -177,7 +175,7 @@ TEXTTYPE_ENTRY3(DOS101_c7_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c8_init)
+TEXTTYPE_ENTRY(DOS101_c8_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -189,7 +187,7 @@ TEXTTYPE_ENTRY3(DOS101_c8_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c9_init)
+TEXTTYPE_ENTRY(DOS101_c9_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -201,7 +199,7 @@ TEXTTYPE_ENTRY3(DOS101_c9_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS101_c10_init)
+TEXTTYPE_ENTRY(DOS101_c10_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS437";
 
@@ -213,7 +211,7 @@ TEXTTYPE_ENTRY3(DOS101_c10_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c1_init)
+TEXTTYPE_ENTRY(DOS160_c1_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -225,7 +223,7 @@ TEXTTYPE_ENTRY3(DOS160_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c2_init)
+TEXTTYPE_ENTRY(DOS160_c2_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -237,7 +235,7 @@ TEXTTYPE_ENTRY3(DOS160_c2_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c3_init)
+TEXTTYPE_ENTRY(DOS160_c3_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -249,7 +247,7 @@ TEXTTYPE_ENTRY3(DOS160_c3_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c4_init)
+TEXTTYPE_ENTRY(DOS160_c4_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -261,7 +259,7 @@ TEXTTYPE_ENTRY3(DOS160_c4_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c5_init)
+TEXTTYPE_ENTRY(DOS160_c5_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -273,7 +271,7 @@ TEXTTYPE_ENTRY3(DOS160_c5_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c6_init)
+TEXTTYPE_ENTRY(DOS160_c6_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -285,7 +283,7 @@ TEXTTYPE_ENTRY3(DOS160_c6_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c7_init)
+TEXTTYPE_ENTRY(DOS160_c7_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -297,7 +295,7 @@ TEXTTYPE_ENTRY3(DOS160_c7_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c8_init)
+TEXTTYPE_ENTRY(DOS160_c8_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -309,7 +307,7 @@ TEXTTYPE_ENTRY3(DOS160_c8_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c9_init)
+TEXTTYPE_ENTRY(DOS160_c9_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -321,7 +319,7 @@ TEXTTYPE_ENTRY3(DOS160_c9_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS160_c10_init)
+TEXTTYPE_ENTRY(DOS160_c10_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS850";
 
@@ -333,7 +331,7 @@ TEXTTYPE_ENTRY3(DOS160_c10_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS107_c1_init)
+TEXTTYPE_ENTRY(DOS107_c1_init)
 {
 	static const ASCII POSIX[] = "PDOX.DOS865";
 
@@ -345,7 +343,7 @@ TEXTTYPE_ENTRY3(DOS107_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS107_c2_init)
+TEXTTYPE_ENTRY(DOS107_c2_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS865";
 
@@ -357,7 +355,7 @@ TEXTTYPE_ENTRY3(DOS107_c2_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS107_c3_init)
+TEXTTYPE_ENTRY(DOS107_c3_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS865";
 
@@ -369,7 +367,7 @@ TEXTTYPE_ENTRY3(DOS107_c3_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS852_c1_init)
+TEXTTYPE_ENTRY(DOS852_c1_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS852";
 
@@ -381,7 +379,7 @@ TEXTTYPE_ENTRY3(DOS852_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS852_c2_init)
+TEXTTYPE_ENTRY(DOS852_c2_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS852";
 
@@ -393,7 +391,7 @@ TEXTTYPE_ENTRY3(DOS852_c2_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS852_c4_init)
+TEXTTYPE_ENTRY(DOS852_c4_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS852";
 
@@ -405,7 +403,7 @@ TEXTTYPE_ENTRY3(DOS852_c4_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS852_c5_init)
+TEXTTYPE_ENTRY(DOS852_c5_init)
 {
 	static const ASCII POSIX[] = "PDOX.DOS852";
 
@@ -417,7 +415,7 @@ TEXTTYPE_ENTRY3(DOS852_c5_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS852_c6_init)
+TEXTTYPE_ENTRY(DOS852_c6_init)
 {
 	static const ASCII POSIX[] = "PDOX.DOS852";
 
@@ -429,7 +427,7 @@ TEXTTYPE_ENTRY3(DOS852_c6_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS852_c7_init)
+TEXTTYPE_ENTRY(DOS852_c7_init)
 {
 	static const ASCII POSIX[] = "PDOX.DOS852";
 
@@ -441,7 +439,7 @@ TEXTTYPE_ENTRY3(DOS852_c7_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS852_c8_init)
+TEXTTYPE_ENTRY(DOS852_c8_init)
 {
 	static const ASCII POSIX[] = "PDOX.DOS852";
 
@@ -453,7 +451,7 @@ TEXTTYPE_ENTRY3(DOS852_c8_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS857_c1_init)
+TEXTTYPE_ENTRY(DOS857_c1_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS857";
 
@@ -465,7 +463,7 @@ TEXTTYPE_ENTRY3(DOS857_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS860_c1_init)
+TEXTTYPE_ENTRY(DOS860_c1_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS860";
 
@@ -477,7 +475,7 @@ TEXTTYPE_ENTRY3(DOS860_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS861_c1_init)
+TEXTTYPE_ENTRY(DOS861_c1_init)
 {
 	static const ASCII POSIX[] = "PDOX.DOS861";
 
@@ -489,7 +487,7 @@ TEXTTYPE_ENTRY3(DOS861_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(DOS863_c1_init)
+TEXTTYPE_ENTRY(DOS863_c1_init)
 {
 	static const ASCII POSIX[] = "DBASE.DOS863";
 
@@ -501,7 +499,7 @@ TEXTTYPE_ENTRY3(DOS863_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(CYRL_c1_init)
+TEXTTYPE_ENTRY(CYRL_c1_init)
 {
 	static const ASCII POSIX[] = "DBASE.CYRL";
 
@@ -513,7 +511,7 @@ TEXTTYPE_ENTRY3(CYRL_c1_init)
 }
 
 
-TEXTTYPE_ENTRY3(CYRL_c2_init)
+TEXTTYPE_ENTRY(CYRL_c2_init)
 {
 	static const ASCII POSIX[] = "PDOX.CYRL";
 
@@ -531,24 +529,22 @@ TEXTTYPE_ENTRY3(CYRL_c2_init)
  */
 
 
-#define	LOCALE_UPPER(ch)	\
-	(static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_toupper_table[(unsigned)(ch)])
-#define	LOCALE_LOWER(ch)	\
-	(static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_tolower_table[(unsigned)(ch)])
+#define	LOCALE_UPPER(ch)	(obj->texttype_impl->texttype_toupper_table [(unsigned)(ch)])
+#define	LOCALE_LOWER(ch)	(obj->texttype_impl->texttype_tolower_table [(unsigned)(ch)])
+
 
 
 
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-ULONG fam1_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG fam1_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen)
-	{
+	while (iLen && iOutLen) {
 		*pOutStr++ = LOCALE_UPPER(*pStr);
 		pStr++;
 		iLen--;
@@ -563,14 +559,13 @@ ULONG fam1_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutL
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-ULONG fam1_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG fam1_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen)
-	{
+	while (iLen && iOutLen) {
 		*pOutStr++ = LOCALE_LOWER(*pStr);
 		pStr++;
 		iLen--;

@@ -1,7 +1,7 @@
 ba.MyAppName=Firebird Database Server %1
 ba.ServerInstall=Puna instalacija Server-a i razvojnih alata.
 ba.SuperServerInstall=Puna instalacija Super Server-a i razvojnih alata.
-ba.ClassicServerInstall=Puna instalacija Classic Server-a i razvojnih alata.
+ba.ClassicServerInstall=Puna instalacijaClassic Server-a i razvojnih alata.
 ba.DeveloperInstall=Instalacija Client alata za Developere i database administratore.
 ba.ClientInstall=Minimalna instalacija client-a - bez server-a, bez alata.
 ba.CustomInstall=Custom instalacija
@@ -20,7 +20,7 @@ ba.CopyFbClientAsGds32Task=Generiši client biblioteku (library) kao GDS32.DLL za
 ba.InstallCPLAppletTask="Instaliraj Control &Panel Applet?"
 ba.instreg=Upisujem u registry
 ba.instclientCopyFbClient=Kopiram fbclient u folder <sys>
-ba.instclientGenGds32=Generišem gds32.dll u folder <sys>
+ba.instclientGenGds32=Generišem gds32.dll u folder <sys> 
 ba.instclientDecLibCountGds32="Umanjujem brojaè upotrebe za biblioteku gds32 i uklanjam ako treba."
 ba.instclientDecLibCountFbClient="Umanjujem brojaè upotrebe za biblioteku fbclient i uklanjam ako treba."
 ba.instsvcSetup=Podešavam service
@@ -44,8 +44,8 @@ ba.InstalledProducts='Pre-instalaciona analiza pokazuje da %s postojeæi Firebird
 ba.InstalledProdCountSingular=verzija ima
 ba.InstalledProdCountPlural=verzije imaju
 
-ba.FbRunning1=Postojeæi Firebird %s Server je pokrenut.
-ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti
+ba.FbRunning1=Postojeæi %s Server je pokrenut.
+ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti 
 ba.FbRunning3=         service prije nastavka.
 
 ba.PreviousInstallBroken=   (Instalacija je neuspješna zbog razlike u verzijama.)
@@ -53,7 +53,7 @@ ba.PreviousInstallGood=   (Instalacija je uspješna.)
 
 ba.IconReadme=Firebird %1 Readme
 ba.IconUninstall=Deinstalacija Firebird-a %1
-ba.ReleaseNotes= release notes. (Potreban je Acrobat Reader.)
+ba.ReleaseNotes= release notes. (Potreban je Acrobat Reader.)       
 ba.InstallationGuide= installation guide. (Potreban je Acrobat Reader.)
 ba.BugFixes= bug fixes. (Potreban je Acrobat Reader.)
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="intl"
 	ProjectGUID="{DFFA2117-E6A8-4806-BB69-94DAC8F8F42A}"
 	>
@@ -9,18 +9,16 @@
 		<Platform
 			Name="Win32"
 		/>
-		<Platform
-			Name="x64"
-		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\intl\"
+			OutputDirectory="..\..\..\temp\release\intl"
+			IntermediateDirectory="..\..\..\temp\release\intl"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\DllNoEmbedManifest.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -41,17 +39,32 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
 				TargetEnvironment="1"
+				TypeLibraryName="..\..\..\temp\release\intl\intl.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32"
+				OmitFramePointers="true"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
+				ExceptionHandling="0"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				PrecompiledHeaderFile="..\..\..\temp\release\intl/intl.pch"
+				AssemblerListingLocation="..\..\..\temp\release\intl/"
+				ObjectFile="..\..\..\temp\release\intl/"
+				ProgramDataBaseFileName="..\..\..\temp\release\intl/"
 				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -66,89 +79,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
-				OutputFile="$(OutDir)\fbintl.dll"
-				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\intl\"
-			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\DllNoEmbedManifest.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32"
-				BrowseInformation="1"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
-				OutputFile="$(OutDir)\fbintl.dll"
-				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
-				TargetMachine="17"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\release\firebird\intl\fbintl.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ProgramDatabaseFile="..\..\..\temp\release\intl\fbintl.pdb"
+				ImportLibrary="..\..\..\temp\release\intl\fbintl.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -177,9 +114,10 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\intl\"
+			OutputDirectory="..\..\..\temp\debug\intl"
+			IntermediateDirectory="..\..\..\temp\debug\intl"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\DllNoEmbedManifest.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -200,14 +138,29 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
 				TargetEnvironment="1"
+				TypeLibraryName="..\..\..\temp\debug\intl\intl.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;DEV_BUILD"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
+				ExceptionHandling="0"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				RuntimeTypeInfo="true"
+				PrecompiledHeaderFile="..\..\..\temp\debug\intl/intl.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\intl/"
+				ObjectFile="..\..\..\temp\debug\intl/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\intl/"
 				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -222,87 +175,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
-				OutputFile="$(OutDir)\fbintl.dll"
-				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\intl\"
-			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\DllNoEmbedManifest.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;DEV_BUILD"
-				BrowseInformation="1"
-				Detect64BitPortabilityProblems="true"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
-				OutputFile="$(OutDir)\fbintl.dll"
-				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
-				TargetMachine="17"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\debug\firebird\intl\fbintl.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="..\..\..\temp\debug\intl\fbintl.pdb"
+				ImportLibrary="..\..\..\temp\debug\intl\fbintl.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -346,10 +226,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_icu.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\cs_jis.cpp"
 				>
 			</File>
@@ -378,10 +254,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cv_icu.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\cv_jis.cpp"
 				>
 			</File>
@@ -398,10 +270,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\kanji.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\lc_ascii.cpp"
 				>
 			</File>
@@ -415,10 +283,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\lc_gb2312.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_icu.cpp"
 				>
 			</File>
 			<File
@@ -458,6 +322,14 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl"
 			>
+			<File
+				RelativePath="..\..\..\src\intl\collations\ascii.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\ascii2.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\bl88591ca0.h"
 				>
@@ -503,10 +375,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\collations\bl88591ptbr0.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\collations\bl88591sv0.h"
 				>
 			</File>
@@ -543,19 +411,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\countries.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\country_codes.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_437.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_737.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_775.h"
 				>
 			</File>
 			<File
@@ -571,10 +435,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_858.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_860.h"
 				>
 			</File>
@@ -583,27 +443,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_862.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_863.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_864.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_865.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_866.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_869.h"
 				>
 			</File>
 			<File
@@ -619,47 +463,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_icu.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_1.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_13.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_2.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_3.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_4.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_5.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_6.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_7.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_8.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_9.h"
 				>
 			</File>
 			<File
@@ -704,50 +512,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_w1254.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_w1255.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_w1256.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_w1257.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_w1258.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_big5.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_gb2312.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_icu.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_jis.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_ksc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_narrow.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_unicode_fss.h"
 				>
 			</File>
 			<File
@@ -831,6 +595,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\collations\db852hdc.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\collations\db852po0.h"
 				>
 			</File>
@@ -879,23 +647,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\lc_ascii.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_big5.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_dos.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_icu.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_narrow.h"
+				RelativePath="..\..\..\src\intl\langdrv.h"
 				>
 			</File>
 			<File
@@ -919,10 +671,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\collations\pd852czech.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\collations\pd852hundc.h"
 				>
 			</File>
@@ -935,6 +683,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\collations\pd857turk.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\collations\pd861iceland.h"
 				>
 			</File>
@@ -944,6 +696,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\pd866cyrr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\ps852czech.h"
 				>
 			</File>
 			<File
@@ -999,7 +755,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\collations\pw1254turk.h"
+				RelativePath="..\..\..\src\intl\collations\pw1253turk.h"
 				>
 			</File>
 			<File
@@ -1015,7 +771,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\collations\win1250bsba.h"
+				RelativePath="..\..\..\src\intl\collations\undef.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win1251_ua.h"
 				>
 			</File>
 			<File
@@ -1036,10 +796,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\win_cz_ci_ai.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\collations\xx1251_ua.h"
 				>
 			</File>
 			<File
@@ -1074,23 +830,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCResourceCompilerTool"

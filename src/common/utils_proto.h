@@ -19,7 +19,6 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  Nickolay Samofatov <nickolay@broadviewsoftware.com>
  */
 
 
@@ -31,38 +30,22 @@
 
 #include <string.h>
 #include "../common/classes/fb_string.h"
-#include "../common/classes/array.h"
-#include "gen/iberror.h"
-#include "firebird/Provider.h"
 
-#ifdef SFIO
-#include <stdio.h>
-#endif
 
 namespace fb_utils
 {
-	char* copy_terminate(char* dest, const char* src, size_t bufsize);
 	char* exact_name(char* const str);
 	inline void exact_name(Firebird::string& str)
 	{
 		str.rtrim();
 	}
 	char* exact_name_limit(char* const str, size_t bufsize);
-	bool implicit_domain(const char* domain_name);
-	bool implicit_integrity(const char* integ_name);
-	bool implicit_pk(const char* pk_name);
 	int name_length(const TEXT* const name);
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
-	char* cleanup_passwd(char* arg);
-	inline char* get_passwd(char* arg)
-	{
-		return cleanup_passwd(arg);
-	}
-	typedef char* arg_string;
 
-	// Warning: Only wrappers:
+// Warning: Only wrappers:
 
 	// ********************
 	// s t r i c m p
@@ -98,74 +81,9 @@ namespace fb_utils
 	}
 
 #ifdef WIN_NT
-	bool prefix_kernel_object_name(char* name, size_t bufsize);
-	bool isGlobalKernelPrefix();
-#endif
-
-	Firebird::PathName get_process_name();
-	SLONG genUniqueId();
-
-	void getCwd(Firebird::PathName& pn);
-
-	void inline init_status(ISC_STATUS* status)
-	{
-		status[0] = isc_arg_gds;
-		status[1] = FB_SUCCESS;
-		status[2] = isc_arg_end;
-	}
-
-	void inline init_status(Firebird::IStatus* status)
-	{
-		status->init();
-	}
-
-	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
-							const ISC_STATUS* const from, const unsigned int count) throw();
-
-	unsigned int statusLength(const ISC_STATUS* const status) throw();
-
-	enum FetchPassResult {
-		FETCH_PASS_OK,
-		FETCH_PASS_FILE_OPEN_ERROR,
-		FETCH_PASS_FILE_READ_ERROR,
-		FETCH_PASS_FILE_EMPTY
-	};
-	FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& password);
-
-	// Returns current value of performance counter
-	SINT64 query_performance_counter();
-
-	// Returns frequency of performance counter in Hz
-	SINT64 query_performance_frequency();
-
-	void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
-
-	enum FB_DIR {
-		FB_DIR_BIN = 0, FB_DIR_SBIN, FB_DIR_CONF, FB_DIR_LIB, FB_DIR_INC, FB_DIR_DOC, FB_DIR_UDF,
-		FB_DIR_SAMPLE, FB_DIR_SAMPLEDB, FB_DIR_HELP, FB_DIR_INTL, FB_DIR_MISC, FB_DIR_SECDB,
-		FB_DIR_MSG, FB_DIR_LOG, FB_DIR_GUARD, FB_DIR_PLUGINS,
-		FB_DIR_LAST};
-
-	// Returns true if called from firebird build process (appr. environment is set)
-	bool bootBuild();
-
-	// Add appropriate file prefix.
-	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
-
-	// moves DB path information (from limbo transaction) to another buffer
-	void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
-		unsigned int& bufferLength, unsigned char*& buffer,
-		Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath);
-
-	// returns true if passed info items work with running svc thread
-	bool isRunningCheck(const UCHAR* items, unsigned int length);
-
-	// converts bytes to BASE64 representation
-	void base64(Firebird::string& b64, const Firebird::UCharBuffer& bin);
-
-	// generate random string in BASE64 representation
-	void random64(Firebird::string& randomValue, size_t length);
-
+	void prefix_kernel_object_name(char*, size_t);
+#endif 
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H
+

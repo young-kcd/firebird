@@ -37,3 +37,4 @@ if test $? != 0; then
 echo "Adding Firebird User"
 useradd -d @prefix@ -s /bin/false -c "Firebird Database Owner" -g firebird firebird
 fi
+fi

@@ -692,7 +692,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,36);
+SetArrayLength(SharedFileArray,33);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
@@ -739,9 +739,6 @@ SharedFileArray[29].Filename := ExpandConstant('{app}')+'aliases.conf';
 SharedFileArray[30].Filename := ExpandConstant('{app}')+'firebird.conf';
 SharedFileArray[31].Filename := ExpandConstant('{app}')+'firebird.log';
 SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
-SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbtrace.conf';
-SharedFileArray[34].Filename := ExpandConstant('{app}')+'\bin\fbsvcmgr.exe';
-SharedFileArray[35].Filename := ExpandConstant('{app}')+'\bin\fbrmclib.dll';
 
 end;
 
@@ -910,7 +907,7 @@ begin
       mutex_found := CheckForMutexes(mutexes);
 
       if mutex_found then
-        RunningServerVerString := 'Firebird v2.1 or v2.5'
+        RunningServerVerString := 'Firebird v2.1'
   end;
 
   if RunningServerVerString <> '' then

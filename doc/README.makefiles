@@ -128,9 +128,3 @@ are included in the bottom line of the makefile with
 Dependencies = $(All_Objects:.o=.d) 
 
 include $(Dependancies)
-
-PLATFORM SUBDIRS OF JRD
-
-Please, forget about jrd/os/* in makefiles! Pretend that all files from
-there are placed in jrd/ itself. A little trick in make.rules will find
-files for your platform automatically.

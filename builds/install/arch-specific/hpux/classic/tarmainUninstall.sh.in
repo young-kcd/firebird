@@ -31,8 +31,10 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: tarmainUninstall.sh.in,v 1.1.2.1 2008-01-07 11:29:35 paulbeach Exp $
+# 
 
-#  Install script for Firebird database engine
+#  Install script for FirebirdSQL database engine
 #  http://www.firebirdsql.org
 
 InteractiveInstall=1
@@ -44,6 +46,8 @@ checkInstallUser
 BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
 PackageVersion=@FIREBIRD_PACKAGE_VERSION@
 CpuType=@CPU_TYPE@
+
+FBRootDir=@prefix@
 
 Version="$BuildVersion-$PackageVersion.$CpuType"
 
@@ -63,7 +67,7 @@ AskQuestion "Press Enter to start uninstall or ^C to abort"
 
 # Here we are uninstalling from a install tar.gz file
 
-scriptsDir=@FB_MISCDIR@/scripts
+scriptsDir=$FBRootDir/misc/scripts
 
 
 if [ -e $scriptsDir ]

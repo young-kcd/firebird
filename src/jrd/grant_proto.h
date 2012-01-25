@@ -24,13 +24,10 @@
 #ifndef JRD_GRANT_PROTO_H
 #define JRD_GRANT_PROTO_H
 
-#include "../common/classes/fb_string.h"
+class Jrd::DeferredWork;
+typedef Firebird::Array<UCHAR> UCharBuffer;
 
-namespace Jrd
-{
-	class DeferredWork;
-}
-
-void GRANT_privileges(Jrd::thread_db*, const Firebird::string&, USHORT, Jrd::jrd_tra*);
+bool GRANT_privileges(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
 
 #endif // JRD_GRANT_PROTO_H
+

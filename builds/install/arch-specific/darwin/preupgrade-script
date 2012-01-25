@@ -21,7 +21,6 @@ fi
 if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf"; then
 	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf" /tmp/fb-aliases.conf
 fi
-
 for i in /Library/Frameworks/Firebird.framework/Resources/English.lproj/var/UDF/*;do
 x=`basename $i`
 if test $x = "fbudf.dylib"; then
@@ -45,8 +44,5 @@ if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
 	launchctl unload /Library/LaunchDaemons/org.firebird/gds.plist
 	rm /Library/LaunchDaemons/org.firebird.gds.plist
 fi
-
-rm -fr "$FB_FW"
-rm -fr /tmp/firebird
-
+rm -rf "$FB_FW"
 exit 0

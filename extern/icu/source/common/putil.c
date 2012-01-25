@@ -204,14 +204,6 @@ static double * const fgInf = &gInf;
 #include <langinfo.h>
 #endif
 
-#if defined(U_HPUX)
-/* These 2 symbols are defined as empty strings for this platform */
-/* Have to undefine them to avoid syntax errors */
-#undef U_TZSET
-#undef U_TZNAME
-#endif
-
-
 /* Utilities to get the bits from a double */
 static char*
 u_topNBytesOfDouble(double* d, int n)
@@ -1267,8 +1259,8 @@ uprv_tzname(int n)
     }
 #endif
 
-#ifdef U_TZNAME
-	return U_TZNAME[n];
+#if U_TZNAME + 1 != 1
+    return U_TZNAME[n];
 #else
     return "";
 #endif

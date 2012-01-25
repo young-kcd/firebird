@@ -13,16 +13,7 @@ GEN_DEPS.c=  $(CC) -xM $(DEFS) $(CPPFLAGS)
 GEN_DEPS.cc= $(CXX) -xM $(DEFS) $(CPPFLAGS)
 
 # -libmil means use the intrinsic library functions like strlen
-CPPFLAGS += -libmil
-
-# add any desired instruction set architecture flags
-ISA=$(shell isainfo -k)
-ifeq ($(ISA),sparcv9)
-	CPPFLAGS+= -xarch=sparcvis2
-endif
-ifeq ($(ISA),amd64)
-	CPPFLAGS+= -xarch=sse2
-endif
+CPPFLAGS += -libmil  -xarch=v9
 
 # -mt means 'compiles and links a multithreaded program'
 THREADSCFLAGS += -mt
@@ -38,10 +29,10 @@ SHLIB.c=  $(CC) $(CFLAGS) $(LDFLAGS) -G
 SHLIB.cc= $(CXX) $(CXXFLAGS) $(LDFLAGS) -G
 
 ## Compiler switch to embed a runtime search path
-LD=cc
+LD=CC
 LD_RPATH= -R
 LD_RPATH_PRE= 
-LDFLAGS+= -mt
+LDFLAGS+= -xarch=v9
 
 ## Compiler switch to embed a library name
 LD_SONAME = -h $(notdir $(MIDDLE_SO_TARGET))
@@ -56,31 +47,31 @@ STATIC_O = o
 
 ## Compilation rules
 %.$(STATIC_O): $(srcdir)/%.c
-	$(COMPILE.c) $(STATICCPPFLAGS) $(STATICCFLAGS) -o $@ $<
+    $(COMPILE.c) $(STATICCPPFLAGS) $(STATICCFLAGS) -o $@ $<
 %.o: $(srcdir)/%.c
-	$(COMPILE.c) $(DYNAMICCPPFLAGS) $(DYNAMICCFLAGS) -o $@ $<
+    $(COMPILE.c) $(DYNAMICCPPFLAGS) $(DYNAMICCFLAGS) -o $@ $<
 
 %.$(STATIC_O): $(srcdir)/%.cpp
-	$(COMPILE.cc) $(STATICCPPFLAGS) $(STATICCXXFLAGS) -o $@ $<
+    $(COMPILE.cc) $(STATICCPPFLAGS) $(STATICCXXFLAGS) -o $@ $<
 %.o: $(srcdir)/%.cpp
-	$(COMPILE.cc) $(DYNAMICCPPFLAGS) $(DYNAMICCXXFLAGS) -o $@ $<
+    $(COMPILE.cc) $(DYNAMICCPPFLAGS) $(DYNAMICCXXFLAGS) -o $@ $<
 
 
 ## Dependency rules
 %.d : $(srcdir)/%.c
-	@echo "generating dependency information for $<"
-	@$(GEN_DEPS.c) $< > $@
+    @echo "generating dependency information for $<"
+    @$(GEN_DEPS.c) $< > $@
 
 %.d : $(srcdir)/%.cpp
-	@echo "generating dependency information for $<"
-	@$(GEN_DEPS.cc) $< > $@
+    @echo "generating dependency information for $<"
+    @$(GEN_DEPS.cc) $< > $@
 
 ## Versioned libraries rules
 
 %.$(SO).$(SO_TARGET_VERSION_MAJOR): %.$(SO).$(SO_TARGET_VERSION)
-	$(RM) $@ && ln -s ${<F} $@
+    $(RM) $@ && ln -s ${<F} $@
 %.$(SO): %.$(SO).$(SO_TARGET_VERSION_MAJOR)
-	$(RM) $@ && ln -s ${*F}.$(SO).$(SO_TARGET_VERSION) $@
+    $(RM) $@ && ln -s ${*F}.$(SO).$(SO_TARGET_VERSION) $@
 
 # 
 ifeq (strip $(GENCCODE_ASSEMBLY),)

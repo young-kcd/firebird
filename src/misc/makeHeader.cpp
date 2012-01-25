@@ -1,13 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-//#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-//#endif
 
 
-
-void ProcessFile(FILE *in, bool stripFirstComment)
+void ProcessFile(FILE *in, bool stripFirstComment) 
 {
 	char s[256];
 	bool striping = false;
@@ -32,12 +29,7 @@ void ProcessFile(FILE *in, bool stripFirstComment)
 			fputs(s, stdout);
 			continue;
 		}
-		char *p = strchr(s, '<');
-		if (p) {
-			fputs(s, stdout);
-			continue;
-		}
-		p = strchr(s, '"');
+		char *p = strchr(s, '"');
 		if (! p) {
 			throw "#include misses \" - start of filename";
 		}
@@ -68,7 +60,7 @@ int main()
 	try {
 		ProcessFile(stdin, false);
 	}
-	catch (const char* x)
+	catch(char* x)
 	{
 		fprintf(stderr, "%s\n", x);
 		return 1;
