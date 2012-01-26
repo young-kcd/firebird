@@ -150,7 +150,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 
 	// Find the next interesting node. If necessary, skip to the next page.
 	RecordNumber number;
-	Ods::IndexNode node;
+	IndexNode node;
 	while (true)
 	{
 		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
@@ -158,7 +158,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 		UCHAR* pointer = nextPointer;
 		if (pointer)
 		{
-			BTreeNode::readNode(&node, pointer, true);
+			node.readNode(pointer, true);
 			number = node.recordNumber;
 		}
 
@@ -168,7 +168,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 		if (node.isEndBucket)
 		{
 			page = (Ods::btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read, pag_index);
-			nextPointer = BTreeNode::getPointerFirstNode(page);
+			nextPointer = IndexJumpInfo::getPointerFirstNode(page);
 			continue;
 		}
 
@@ -194,7 +194,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 				!RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue()))) ||
 			RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue()))
 		{
-			nextPointer = BTreeNode::readNode(&node, pointer, true);
+			nextPointer = node.readNode(pointer, true);
 			continue;
 		}
 
@@ -397,14 +397,14 @@ bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window,
 	// looking for the node (in case the page has split);
 	// the inner loop goes through the nodes on each page
 	temporary_key key;
-	Ods::IndexNode node;
+	IndexNode node;
 	while (true)
 	{
-		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
+		UCHAR* pointer = IndexJumpInfo::getPointerFirstNode(page);
 		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 		while (pointer < endPointer)
 		{
-			pointer = BTreeNode::readNode(&node, pointer, true);
+			pointer = node.readNode(pointer, true);
 
 			if (node.isEndLevel)
 			{
@@ -462,14 +462,14 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
 
 	UCHAR* pointer = NULL;
 	const SLONG incarnation = CCH_get_incarnation(window);
-	Ods::IndexNode node;
+	IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation)
 	{
 		pointer = ((UCHAR*) page + impure->irsb_nav_offset);
 
 		// The new way of doing things is to have the current
 		// nav_offset be the last node fetched.
-		return BTreeNode::readNode(&node, pointer, true);
+		return node.readNode(pointer, true);
 	}
 
 	// Page is presumably changed.  If there is a previous
@@ -487,10 +487,10 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
 		// seek to the next node only if we found the actual node on page;
 		// if we did not find it, we are already at the next node
 		// (such as when the node is garbage collected)
-		return found ? BTreeNode::readNode(&node, pointer, true) : pointer;
+		return found ? node.readNode(pointer, true) : pointer;
 	}
 
-	return BTreeNode::getPointerFirstNode(page);
+	return IndexJumpInfo::getPointerFirstNode(page);
 }
 
 UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) const
@@ -539,14 +539,14 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) 
 				  LCK_read, pag_index);
 		}
 
-		Ods::IndexNode node;
-		BTreeNode::readNode(&node, pointer, true);
+		IndexNode node;
+		node.readNode(pointer, true);
 
 		impure->irsb_nav_length = node.prefix + node.length;
 		return pointer;
 	}
 
-	return BTreeNode::getPointerFirstNode(page);
+	return IndexJumpInfo::getPointerFirstNode(page);
 }
 
 void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window) const

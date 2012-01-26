@@ -31,11 +31,11 @@
 #include "../jrd/ods.h"
 #include "../jrd/btn.h"
 
-namespace BTreeNode {
-
+using namespace Jrd;
 using namespace Ods;
 
-USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, const UCHAR* string, USHORT length)
+USHORT IndexNode::computePrefix(const UCHAR* prevString, USHORT prevLength,
+								const UCHAR* string, USHORT length)
 {
 /**************************************
  *
@@ -67,8 +67,8 @@ USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, const UCHAR* st
 }
 
 
-SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
-			SLONG previousNumber, RecordNumber findRecordNumber)
+SLONG IndexNode::findPageInDuplicates(const btree_page* page, UCHAR* pointer,
+									  SLONG previousNumber, RecordNumber findRecordNumber)
 {
 /**************************************
  *
@@ -83,12 +83,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 	const bool leafPage = (page->btr_level == 0);
 
 	IndexNode node, previousNode;
-	pointer = readNode(&node, pointer, leafPage);
-
-	// Check if pointer is still valid
-	//if (pointer > endPointer) {
-	//	BUGCHECK(204);	// msg 204 index inconsistent
-	//}
+	pointer = node.readNode(pointer, leafPage);
 
 	while (true)
 	{
@@ -109,7 +104,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 		// for comparision.
 		previousNumber = node.pageNumber;
 		previousNode = node;
-		pointer = readNode(&node, pointer, leafPage);
+		pointer = node.readNode(pointer, leafPage);
 
 		// Check if pointer is still valid
 		//if (pointer > endPointer) {
@@ -129,7 +124,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 }
 
 
-USHORT getJumpNodeSize(const IndexJumpNode* jumpNode)
+USHORT IndexJumpNode::getJumpNodeSize() const
 {
 /**************************************
  *
@@ -145,7 +140,7 @@ USHORT getJumpNodeSize(const IndexJumpNode* jumpNode)
 	USHORT result = 0;
 
 	// Size needed for prefix
-	USHORT number = jumpNode->prefix;
+	USHORT number = prefix;
 	if (number & 0xC000) {
 		result += 3;
 	}
@@ -157,7 +152,7 @@ USHORT getJumpNodeSize(const IndexJumpNode* jumpNode)
 	}
 
 	// Size needed for length
-	number = jumpNode->length;
+	number = length;
 	if (number & 0xC000) {
 		result += 3;
 	}
@@ -173,12 +168,12 @@ USHORT getJumpNodeSize(const IndexJumpNode* jumpNode)
 	// therefor we can't use a compression method.
 	result += sizeof(USHORT);
 	// Size needed for data
-	result += jumpNode->length;
+	result += length;
 	return result;
 }
 
 
-USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
+USHORT IndexNode::getNodeSize(bool leafNode) const
 {
 /**************************************
  *
@@ -195,33 +190,33 @@ USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
 
 	// Determine flags
 	UCHAR internalFlags = 0;
-	if (indexNode->isEndLevel) {
+	if (isEndLevel) {
 		internalFlags = BTN_END_LEVEL_FLAG;
 	}
-	else if (indexNode->isEndBucket) {
+	else if (isEndBucket) {
 		internalFlags = BTN_END_BUCKET_FLAG;
 	}
-	else if (indexNode->length == 0)
+	else if (length == 0)
 	{
-		if (indexNode->prefix == 0) {
+		if (prefix == 0) {
 			internalFlags = BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG;
 		}
 		else {
 			internalFlags = BTN_ZERO_LENGTH_FLAG;
 		}
 	}
-	else if (indexNode->length == 1) {
+	else if (length == 1) {
 		internalFlags = BTN_ONE_LENGTH_FLAG;
 	}
 
 	// Store internal flags + 5 bits from number
-	SINT64 number = indexNode->recordNumber.getValue();
+	SINT64 number = recordNumber.getValue();
 	if (number < 0) {
 		number = 0;
 	}
 	result++;
 	// If this is a END_LEVEL marker then we're done
-	if (indexNode->isEndLevel) {
+	if (isEndLevel) {
 		return result;
 	}
 
@@ -247,7 +242,7 @@ USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
 	if (!leafNode)
 	{
 		// Size needed for page number
-		number = indexNode->pageNumber;
+		number = pageNumber;
 		if (number < 0) {
 			number = 0;
 		}
@@ -272,7 +267,7 @@ USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
 	if (internalFlags != BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG)
 	{
 		// Size needed for prefix
-		number = indexNode->prefix;
+		number = prefix;
 		if (number & 0xFFFFC000) {
 			result += 3;
 		}
@@ -289,7 +284,7 @@ USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
 		(internalFlags != BTN_ONE_LENGTH_FLAG))
 	{
 		// Size needed for length
-		number = indexNode->length;
+		number = length;
 		if (number & 0xFFFFC000) {
 			result += 3;
 		}
@@ -301,72 +296,12 @@ USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
 		}
 	}
 
-	result += indexNode->length;
+	result += length;
 	return result;
 }
 
 
-UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
-{
-/**************************************
- *
- *	g e t P o i n t e r F i r s t N o d e
- *
- **************************************
- *
- * Functional description
- *	Return the pointer to first data node
- *  in the bucket. When a jumpInfo is
- *  given, then pointer of first jump
- *  node is returned.
- *
- **************************************/
-	if (page->btr_header.pag_flags & btr_jump_info)
-	{
-		if (jumpInfo)
-		{
-			UCHAR* pointer = page->btr_nodes;
-			return readJumpInfo(jumpInfo, pointer);
-		}
-
-		IndexJumpInfo jumpInformation;
-		UCHAR* pointer = page->btr_nodes;
-		readJumpInfo(&jumpInformation, pointer);
-
-		return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
-	}
-
-	return page->btr_nodes;
-}
-
-
-bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
-{
-/**************************************
- *
- *	k e y E q u a l i t y
- *
- **************************************
- *
- * Functional description
- *	Check a B-tree node against a key for equality.
- *
- **************************************/
-
-	if (length != indexNode->length + indexNode->prefix) {
-		return false;
-	}
-
-	USHORT len = indexNode->length;
-	if (!len) {
-		return true;
-	}
-
-	return !memcmp(indexNode->data, data + indexNode->prefix, len);
-}
-
-
-UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
+UCHAR* IndexJumpInfo::readJumpInfo(UCHAR* pagePointer)
 {
 /**************************************
  *
@@ -381,16 +316,16 @@ UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
  *  the read.
  *
  **************************************/
-	jumpInfo->firstNodeOffset = get_short(pagePointer);
+	firstNodeOffset = get_short(pagePointer);
 	pagePointer += sizeof(USHORT);
-	jumpInfo->jumpAreaSize = get_short(pagePointer);
+	jumpAreaSize = get_short(pagePointer);
 	pagePointer += sizeof(USHORT);
-	jumpInfo->jumpers = (USHORT)(*pagePointer++);
+	jumpers = (USHORT)(*pagePointer++);
 	return pagePointer;
 }
 
 
-UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
+UCHAR* IndexJumpNode::readJumpNode(UCHAR* pagePointer)
 {
 /**************************************
  *
@@ -404,35 +339,35 @@ UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
  *  remaining position after the read.
  *
  **************************************/
-	jumpNode->nodePointer = pagePointer;
+	nodePointer = pagePointer;
 
 	// Get prefix
 	UCHAR tmp = *pagePointer++;
-	jumpNode->prefix = (tmp & 0x7F);
+	prefix = (tmp & 0x7F);
 	if (tmp & 0x80)
 	{
 		tmp = *pagePointer++;
-		jumpNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
+		prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 	}
 
 	// Get length
 	tmp = *pagePointer++;
-	jumpNode->length = (tmp & 0x7F);
+	length = (tmp & 0x7F);
 	if (tmp & 0x80)
 	{
 		tmp = *pagePointer++;
-		jumpNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
+		length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 	}
 
-	jumpNode->offset = get_short(pagePointer);
+	offset = get_short(pagePointer);
 	pagePointer += sizeof(USHORT);
-	jumpNode->data = pagePointer;
-	pagePointer += jumpNode->length;
+	data = pagePointer;
+	pagePointer += length;
 	return pagePointer;
 }
 
 
-UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
+UCHAR* IndexJumpInfo::writeJumpInfo(btree_page* page) const
 {
 /**************************************
  *
@@ -446,16 +381,16 @@ UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
  *
  **************************************/
 	UCHAR* pointer = page->btr_nodes;
-	put_short(pointer, jumpInfo->firstNodeOffset);
+	put_short(pointer, firstNodeOffset);
 	pointer += sizeof(USHORT);
-	put_short(pointer, jumpInfo->jumpAreaSize);
+	put_short(pointer, jumpAreaSize);
 	pointer += sizeof(USHORT);
-	*pointer++ = (UCHAR) jumpInfo->jumpers;
+	*pointer++ = (UCHAR) jumpers;
 	return pointer;
 }
 
 
-UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
+UCHAR* IndexJumpNode::writeJumpNode(UCHAR* pagePointer)
 {
 /**************************************
  *
@@ -468,10 +403,10 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
  *  given pointer.
  *
  **************************************/
-	jumpNode->nodePointer = pagePointer;
+	nodePointer = pagePointer;
 
 	// Write prefix, maximum 14 bits
-	USHORT number = jumpNode->prefix;
+	USHORT number = prefix;
 	UCHAR tmp = (number & 0x7F);
 	number >>= 7;
 	if (number > 0) {
@@ -485,7 +420,7 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
 	}
 
 	// Write length, maximum 14 bits
-	number = jumpNode->length;
+	number = length;
 	tmp = (number & 0x7F);
 	number >>= 7;
 	if (number > 0) {
@@ -498,15 +433,15 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
 		*pagePointer++ = tmp;
 	}
 
-	put_short(pagePointer, jumpNode->offset);
+	put_short(pagePointer, offset);
 	pagePointer += sizeof(USHORT);
-	memmove(pagePointer, jumpNode->data, jumpNode->length);
-	pagePointer += jumpNode->length;
+	memmove(pagePointer, data, length);
+	pagePointer += length;
 	return pagePointer;
 }
 
 
-UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool withData)
+UCHAR* IndexNode::writeNode(UCHAR* pagePointer, bool leafNode, bool withData)
 {
 /**************************************
  *
@@ -519,7 +454,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool w
  *  given page_pointer.
  *
  **************************************/
-	indexNode->nodePointer = pagePointer;
+	nodePointer = pagePointer;
 
 	// AB: 2004-02-22
 	// To allow as much as compression possible we
@@ -534,34 +469,34 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool w
 		// First move data so we can't override it.
 		// For older structure node was always the same, but length
 		// from new structure depends on the values.
-		const USHORT offset = getNodeSize(indexNode, leafNode) - indexNode->length;
+		const USHORT offset = getNodeSize(leafNode) - length;
 		pagePointer += offset; // set pointer to right position
-		memmove(pagePointer, indexNode->data, indexNode->length);
+		memmove(pagePointer, data, length);
 		pagePointer -= offset; // restore pointer to original position
 	}
 
 	// Internal flags
 	UCHAR internalFlags = 0;
-	if (indexNode->isEndLevel) {
+	if (isEndLevel) {
 		internalFlags = BTN_END_LEVEL_FLAG;
 	}
-	else if (indexNode->isEndBucket) {
+	else if (isEndBucket) {
 		internalFlags = BTN_END_BUCKET_FLAG;
 	}
-	else if (indexNode->length == 0)
+	else if (length == 0)
 	{
-		if (indexNode->prefix == 0) {
+		if (prefix == 0) {
 			internalFlags = BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG;
 		}
 		else {
 			internalFlags = BTN_ZERO_LENGTH_FLAG;
 		}
 	}
-	else if (indexNode->length == 1) {
+	else if (length == 1) {
 		internalFlags = BTN_ONE_LENGTH_FLAG;
 	}
 
-	SINT64 number = indexNode->recordNumber.getValue();
+	SINT64 number = recordNumber.getValue();
 	if (number < 0) {
 		number = 0;
 	}
@@ -569,7 +504,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool w
 	UCHAR tmp = internalFlags;
 	*pagePointer++ = ((tmp << 5) | (number & 0x1F));
 
-	if (indexNode->isEndLevel) {
+	if (isEndLevel) {
 		return pagePointer;
 	}
 
@@ -653,7 +588,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool w
 	if (!leafNode)
 	{
 		// Store page number for non-leaf pages
-		number = indexNode->pageNumber;
+		number = pageNumber;
 		if (number < 0) {
 			number = 0;
 		}
@@ -701,7 +636,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool w
 	if (internalFlags != BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG)
 	{
 		// Write prefix, maximum 14 bits
-		number = indexNode->prefix;
+		number = prefix;
 		tmp = (number & 0x7F);
 		number >>= 7;
 		if (number > 0) {
@@ -720,7 +655,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool w
 		(internalFlags != BTN_ONE_LENGTH_FLAG))
 	{
 		// Write length, maximum 14 bits
-		number = indexNode->length;
+		number = length;
 		tmp = (number & 0x7F);
 		number >>= 7;
 		if (number > 0) {
@@ -736,70 +671,9 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool w
 
 	// Store data
 	if (withData) {
-		memcpy(pagePointer, indexNode->data, indexNode->length);
+		memcpy(pagePointer, data, length);
 	}
-	pagePointer += indexNode->length;
+	pagePointer += length;
 
 	return pagePointer;
 }
-
-
-void setEndBucket(IndexNode* indexNode) //, bool leafNode)
-{
-/**************************************
- *
- *	s e t E n d B u c k e t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	indexNode->isEndBucket = true;
-	indexNode->isEndLevel = false;
-}
-
-
-void setEndLevel(IndexNode* indexNode) //, bool leafNode)
-{
-/**************************************
- *
- *	s e t E n d L e v e l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	indexNode->isEndBucket = false;
-	indexNode->isEndLevel = true;
-	indexNode->prefix = 0;
-	indexNode->length = 0;
-	indexNode->pageNumber = 0;
-	indexNode->recordNumber.setValue(0);
-}
-
-
-void setNode(IndexNode* indexNode, USHORT prefix, USHORT length,
-			RecordNumber recordNumber, SLONG pageNumber,
-			bool isEndBucket, bool isEndLevel)
-{
-/**************************************
- *
- *	s e t N o d e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	indexNode->isEndBucket = isEndBucket;
-	indexNode->isEndLevel = isEndLevel;
-	indexNode->prefix = prefix;
-	indexNode->length = length;
-	indexNode->recordNumber = recordNumber;
-	indexNode->pageNumber = pageNumber;
-}
-
-
-} // namespace BTreeNode

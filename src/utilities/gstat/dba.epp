@@ -69,6 +69,7 @@ using MsgFormat::SafeArg;
 #include <io.h>
 #endif
 
+using namespace Jrd;
 using namespace Ods;
 
 
@@ -1411,8 +1412,8 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 	IndexNode node;
 	while (bucket->btr_level)
 	{
-		pointer = BTreeNode::getPointerFirstNode(const_cast<btree_page*>(bucket));
-		BTreeNode::readNode(&node, pointer, false);
+		pointer = IndexJumpInfo::getPointerFirstNode(const_cast<btree_page*>(bucket));
+		node.readNode(pointer, false);
 		bucket = (const btree_page*) db_read(node.pageNumber);
 	}
 
@@ -1428,11 +1429,11 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 	while (true)
 	{
 		++index->idx_leaf_buckets;
-		pointer = BTreeNode::getPointerFirstNode(const_cast<btree_page*>(bucket));
+		pointer = IndexJumpInfo::getPointerFirstNode(const_cast<btree_page*>(bucket));
 		const UCHAR* const firstNode = pointer;
 		while (true)
 		{
-			pointer = BTreeNode::readNode(&node, pointer, true);
+			pointer = node.readNode(pointer, true);
 
 			if (node.isEndBucket || node.isEndLevel) {
 				break;
@@ -1467,7 +1468,7 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 
 			bool dup;
 			if (node.nodePointer == firstNode) {
-				dup = BTreeNode::keyEquality(key_length, key, &node);
+				dup = node.keyEqual(key_length, key);
 			}
 			else {
 				dup = (!node.length) && (l == key_length);

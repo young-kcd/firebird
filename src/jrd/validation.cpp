@@ -1504,7 +1504,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		if (useJumpInfo)
 		{
 			IndexJumpInfo jumpInfo;
-			pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
+			pointer = IndexJumpInfo::getPointerFirstNode(page, &jumpInfo);
 			const USHORT headerSize = (pointer - (UCHAR*)page);
 			// Check if firstNodeOffset is not out of page area.
 			if ((jumpInfo.firstNodeOffset < headerSize) ||
@@ -1520,8 +1520,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			IndexJumpNode jumpNode;
 			while (n)
 			{
-				pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
-				jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode);
+				pointer = jumpNode.readJumpNode(pointer);
+				jumpersSize += jumpNode.getJumpNodeSize();
 				// Check if jump node offset is inside page.
 				if ((jumpNode.offset < jumpInfo.firstNodeOffset) ||
 					(jumpNode.offset > page->btr_length))
@@ -1532,7 +1532,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				else
 				{
 					// Check if jump node has same length as data node prefix.
-					BTreeNode::readNode(&checknode, (UCHAR*) page + jumpNode.offset, leafPage);
+					checknode.readNode((UCHAR*) page + jumpNode.offset, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 								id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
@@ -1543,16 +1543,16 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		}
 
 		// go through all the nodes on the page and check for validity
-		pointer = BTreeNode::getPointerFirstNode(page);
+		pointer = IndexJumpInfo::getPointerFirstNode(page);
 		if (firstNode) {
-			BTreeNode::readNode(&lastNode, pointer, leafPage);
+			lastNode.readNode(pointer, leafPage);
 		}
 
 		const UCHAR* const endPointer = ((UCHAR *) page + page->btr_length);
 		while (pointer < endPointer)
 		{
 
-			pointer = BTreeNode::readNode(&node, pointer, leafPage);
+			pointer = node.readNode(pointer, leafPage);
 			if (pointer > endPointer) {
 				break;
 			}
@@ -1645,10 +1645,10 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				const bool downLeafPage = (down_page->btr_level == 0);
 
 				// make sure the initial key is greater than the pointer key
-				UCHAR* downPointer = BTreeNode::getPointerFirstNode(down_page);
+				UCHAR* downPointer = IndexJumpInfo::getPointerFirstNode(down_page);
 
 				IndexNode downNode;
-				downPointer = BTreeNode::readNode(&downNode, downPointer, downLeafPage);
+				downPointer = downNode.readNode(downPointer, downLeafPage);
 
 				p = downNode.data;
 				q = key.key_data;
@@ -1690,7 +1690,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
 				}
 
-				BTreeNode::readNode(&downNode, pointer, leafPage);
+				downNode.readNode(pointer, leafPage);
 				const ULONG next_number = downNode.pageNumber;
 
 				if (!(downNode.isEndBucket || downNode.isEndLevel) &&
@@ -1720,7 +1720,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			if (page->btr_level)
 			{
 				IndexNode newPageNode;
-				BTreeNode::readNode(&newPageNode, BTreeNode::getPointerFirstNode(page), false);
+				newPageNode.readNode(IndexJumpInfo::getPointerFirstNode(page), false);
 				down = newPageNode.pageNumber;
 			}
 			else {
