@@ -1964,7 +1964,6 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 	btree_page* bucket = (btree_page*) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
-	UCHAR flags = bucket->btr_header.pag_flags;
 
 	// go down the left side of the index to leaf level
 	UCHAR* pointer = IndexJumpInfo::getPointerFirstNode(bucket);
@@ -1974,7 +1973,6 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 		pageNode.readNode(pointer, false);
 		bucket = (btree_page*) CCH_HANDOFF(tdbb, &window, pageNode.pageNumber, LCK_read, pag_index);
 		pointer = IndexJumpInfo::getPointerFirstNode(bucket);
-		flags = bucket->btr_header.pag_flags;
 		page = pageNode.pageNumber;
 	}
 
@@ -1985,7 +1983,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	key.key_length = 0;
 	SSHORT l;
 	bool firstNode = true;
-	const bool descending = (flags & btr_descending);
+	const bool descending = (root->irt_rpt[id].irt_flags & irt_descending);
 	const ULONG segments = root->irt_rpt[id].irt_keys;
 
 	// SSHORT count, stuff_count, pos, i;
@@ -2113,7 +2111,6 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 		}
 		bucket = (btree_page*) CCH_HANDOFF_TAIL(tdbb, &window, page, LCK_read, pag_index);
 		pointer = IndexJumpInfo::getPointerFirstNode(bucket);
-		flags = bucket->btr_header.pag_flags;
 	}
 
 	CCH_RELEASE_TAIL(tdbb, &window);
@@ -3138,9 +3135,6 @@ static ULONG fast_load(thread_db* tdbb,
 	const USHORT lp_fill_limit = dbb->dbb_page_size - BTN_LEAF_SIZE;
 	const USHORT pp_fill_limit = dbb->dbb_page_size - BTN_PAGE_SIZE;
 	USHORT flags = 0;
-	if (idx->idx_flags & idx_descending) {
-		flags |= btr_descending;
-	}
 
 	// Jump information initialization
 
@@ -3197,7 +3191,7 @@ static ULONG fast_load(thread_db* tdbb,
 	bool error = false;
 	ULONG count = 0;
 	ULONG duplicates = 0;
-	const bool descending = (flags & btr_descending);
+	const bool descending = (idx->idx_flags & idx_descending);
 	const ULONG segments = idx->idx_count;
 
 	// hvlad: look at IDX_create_index for explanations about NULL indicator below
