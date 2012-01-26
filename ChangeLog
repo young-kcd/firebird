@@ -1,3 +1,49 @@
+ 2012-01-25 17:46  asfernandes 
+   M src/common/dsc.h
+   M src/dsql/DdlNodes.epp
+Fixed problem with default collation.
+
+ 2012-01-25 13:49  alexpeshkoff 
+   A src/common/classes/NoThrowTimeStamp.cpp
+   A src/common/classes/NoThrowTimeStamp.h
+   M src/common/classes/timestamp.cpp
+   M src/common/classes/timestamp.h
+   M src/extlib/fbudf/fbudf.cpp
+Avoid presence of a lot of unneeded stuff like exceptions and pools in fbudf. This also fixes segfault when library is unloaded.
+
+ 2012-01-25 13:30  alexpeshkoff 
+   M src/jrd/scl.epp
+Warning
+
+ 2012-01-25 09:19  alexpeshkoff 
+   M src/common/classes/timestamp.h
+   M src/common/cvt.h
+Simplify .h-file dependencies
+
+ 2012-01-25 07:32  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/parser.cpp
+   M src/remote/protocol.cpp
+   M src/remote/remote.h
+Simplification.
+
+ 2012-01-25 07:13  dimitr 
+   M src/burp/canonical.cpp
+   M src/common/cvt.cpp
+   M src/common/xdr.cpp
+   M src/common/xdr.h
+   M src/common/xdr_proto.h
+   M src/include/fb_types.h
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remote.cpp
+   M src/remote/server/server.cpp
+Cleaned up and slightly refactored the XDR logic.
+
  2012-01-24 10:02  dimitr 
    M src/remote/protocol.cpp
 Front ported CORE-3730: isc_dsql_exec_immed2() loses input parameter value with RETURNING clause.
