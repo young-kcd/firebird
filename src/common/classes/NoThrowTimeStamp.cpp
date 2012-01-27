@@ -169,7 +169,8 @@ void NoThrowTimeStamp::decode_date(ISC_DATE nday, struct tm* times) throw()
 
 	if (month < 10)
 		month += 3;
-	else {
+	else
+	{
 		month -= 9;
 		year += 1;
 	}
@@ -193,7 +194,8 @@ ISC_DATE NoThrowTimeStamp::encode_date(const struct tm* times) throw()
 
 	if (month > 2)
 		month -= 3;
-	else {
+	else
+	{
 		month += 9;
 		year -= 1;
 	}

@@ -67,7 +67,7 @@ struct IndexNode
 	static SLONG findPageInDuplicates(const Ods::btree_page* page, UCHAR* pointer,
 									  SLONG previousNumber, RecordNumber findRecordNumber);
 
-	bool keyEqual(USHORT length, const UCHAR* data)
+	bool keyEqual(USHORT length, const UCHAR* data) const
 	{
 		if (length != this->length + this->prefix)
 			return false;

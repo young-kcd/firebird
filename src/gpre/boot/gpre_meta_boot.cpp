@@ -713,7 +713,7 @@ public:
 		return 0;
 	}
 
-	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr)
+	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t /*thr*/)
 	{
 		char* buf = (char*) malloc(len + 1);
 		memcpy(buf, s, len);

@@ -131,16 +131,16 @@ public:
 		{ return p.calloc(s); }
 #endif
 
-	void operator delete(void* mem, MemoryPool& p)
+	void operator delete(void* mem, MemoryPool& /*p*/)
 	{
 		if (mem)
-			p.deallocate(mem);
+			MemoryPool::deallocate(mem); // deallocate is static
 	}
 
-	void operator delete[](void* mem, MemoryPool& p)
+	void operator delete[](void* mem, MemoryPool& /*p*/)
 	{
 		if (mem)
-			p.deallocate(mem);
+			MemoryPool::deallocate(mem); // deallocate is static
 	}
 
 	void operator delete(void* mem)

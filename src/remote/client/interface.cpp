@@ -3254,7 +3254,7 @@ void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		const UCHAR* new_sdl = sdl;
 
 		// CVC: Modified this horrible idea: don't touch input parameters!
-		// The modified (perhaps) sdl is send to the remote connection.  The
+		// The modified (perhaps) sdl is sent to the remote connection.  The
 		// original sdl is used to process the slice data before it is sent.
 		// (This is why both 'new_sdl' and 'sdl' are saved in the packet.)
 		HalfStaticArray<UCHAR, 128> sdl_buffer;

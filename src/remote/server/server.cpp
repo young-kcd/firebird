@@ -3119,7 +3119,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 	P_SLR* response = &sendL->p_slr;
 
 	response->p_slr_length = rdb->rdb_iface->getSlice(&status_vector,
-		transaction->rtr_iface, (ISC_QUAD*) &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
+		transaction->rtr_iface, &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
 		stuff->p_slc_sdl.cstr_address, stuff->p_slc_parameters.cstr_length,
 		stuff->p_slc_parameters.cstr_address, stuff->p_slc_length, slice);
 
@@ -3506,9 +3506,9 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 
 	ServBlob iface(op == op_open_blob || op == op_open_blob2 ?
 		rdb->rdb_iface->openBlob(&status_vector, transaction->rtr_iface,
-			(ISC_QUAD*) &stuff->p_blob_id, bpb_length, bpb) :
+			&stuff->p_blob_id, bpb_length, bpb) :
 		rdb->rdb_iface->createBlob(&status_vector, transaction->rtr_iface,
-			(ISC_QUAD*) &sendL->p_resp.p_resp_blob_id, bpb_length, bpb));
+			&sendL->p_resp.p_resp_blob_id, bpb_length, bpb));
 
 	USHORT object = 0;
 	if (status_vector.isSuccess())
@@ -4140,7 +4140,7 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 
 	sendL->p_resp.p_resp_blob_id = stuff->p_slc_id;
 	rdb->rdb_iface->putSlice(&status_vector, transaction->rtr_iface,
-		(ISC_QUAD*) &sendL->p_resp.p_resp_blob_id,
+		&sendL->p_resp.p_resp_blob_id,
 		stuff->p_slc_sdl.cstr_length, stuff->p_slc_sdl.cstr_address,
 		stuff->p_slc_parameters.cstr_length, stuff->p_slc_parameters.cstr_address,
 		stuff->p_slc_slice.lstr_length, stuff->p_slc_slice.lstr_address);

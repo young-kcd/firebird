@@ -402,7 +402,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 		response = &p->p_resp;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(response->p_resp_object));
-		MAP(xdr_quad, reinterpret_cast<SQUAD&>(response->p_resp_blob_id));
+		MAP(xdr_quad, response->p_resp_blob_id);
 		MAP(xdr_cstring, response->p_resp_data);
 		return xdr_status_vector(xdrs, response->p_resp_status_vector) ?
 								 	P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
@@ -437,7 +437,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_create_blob:
 		blob = &p->p_blob;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(blob->p_blob_transaction));
-		MAP(xdr_quad, reinterpret_cast<SQUAD&>(blob->p_blob_id));
+		MAP(xdr_quad, blob->p_blob_id);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -557,7 +557,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_put_slice:
 		slice = &p->p_slc;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(slice->p_slc_transaction));
-		MAP(xdr_quad, reinterpret_cast<SQUAD&>(slice->p_slc_id));
+		MAP(xdr_quad, slice->p_slc_id);
 		MAP(xdr_long, reinterpret_cast<SLONG&>(slice->p_slc_length));
 		MAP(xdr_cstring, slice->p_slc_sdl);
 		MAP(xdr_longs, slice->p_slc_parameters);
