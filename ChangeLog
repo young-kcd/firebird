@@ -1,3 +1,25 @@
+ 2012-01-26 14:14  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc9/common.vcproj
+Update windows builds 
+
+ 2012-01-26 07:38  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/ods.h
+I believe this flag is redundant as it duplicates the information already available on the index root page.
+
+ 2012-01-26 07:01  dimitr 
+   M src/jrd/btn.cpp
+   M src/jrd/btn.h
+   M src/jrd/btr.cpp
+   M src/jrd/ods.h
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/validation.cpp
+   M src/utilities/gstat/dba.epp
+Slightly refactored the b-tree nodes. This commit includes cleaning up ods.h from the runtime (in memory) structures and encapsulating the b-tree nodes implementation inside their corresponding objects. To be continued.
+
  2012-01-25 17:46  asfernandes 
    M src/common/dsc.h
    M src/dsql/DdlNodes.epp
