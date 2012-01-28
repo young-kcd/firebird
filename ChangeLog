@@ -1,3 +1,13 @@
+ 2012-01-27 09:10  robocop 
+   M src/common/classes/NoThrowTimeStamp.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/fb_blk.h
+   M src/jrd/btn.h
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.cpp
+   M src/remote/server/server.cpp
+Misc and cleanup
+
  2012-01-26 14:14  hvlad 
    M builds/win32/msvc10/common.vcxproj
    M builds/win32/msvc10/common.vcxproj.filters
