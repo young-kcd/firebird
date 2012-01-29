@@ -900,7 +900,6 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 					ULONG len = charSet->substring(originalPatternLen, originalPatternStr,
 												   sizeof(c), c, patternPos - patternStart, 1);
 
-					//const int previousRangeBufferCount = rangeBuffer.getCount();
 					rangeBuffer.push(len);
 					size_t rangeCount = rangeBuffer.getCount();
 					memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);

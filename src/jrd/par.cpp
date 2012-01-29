@@ -651,15 +651,15 @@ ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT cont
 	jrd_rel* const relation = csb->csb_rpt[stream].csb_relation;
 	jrd_prc* const procedure = csb->csb_rpt[stream].csb_procedure;
 
-	const SSHORT id = procedure ? PAR_find_proc_field(procedure, base_field) :
+	const SSHORT id = procedure ?
+		PAR_find_proc_field(procedure, base_field) :
 		MET_lookup_field(tdbb, relation, base_field);
 
 	if (id < 0)
 		return NULL;
 
-	if (csb->csb_g_flags & csb_get_dependencies) {
+	if (csb->csb_g_flags & csb_get_dependencies)
 		PAR_dependency(tdbb, csb, stream, id, base_field);
-	}
 
 	return PAR_gen_field(tdbb, stream, id);
 }

@@ -134,13 +134,13 @@ public:
 	void operator delete(void* mem, MemoryPool& /*p*/)
 	{
 		if (mem)
-			MemoryPool::deallocate(mem); // deallocate is static
+			MemoryPool::deallocate(mem);
 	}
 
 	void operator delete[](void* mem, MemoryPool& /*p*/)
 	{
 		if (mem)
-			MemoryPool::deallocate(mem); // deallocate is static
+			MemoryPool::deallocate(mem);
 	}
 
 	void operator delete(void* mem)

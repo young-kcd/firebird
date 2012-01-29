@@ -177,7 +177,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
  *               traps all the Firebird significant messages and processes
  *               them.
  *****************************************************************************/
-	static ULONG ulLastMask = 0L;
 	static BOOL bInTaskBar = FALSE;
 	static bool bStartup = false;
 

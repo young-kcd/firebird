@@ -370,9 +370,6 @@ ValueExprNode* LastValueWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 void LastValueWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
-
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	impure->make_int64(0, 0);
 }
 
 void LastValueWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
@@ -386,9 +383,6 @@ dsc* LastValueWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) con
 
 dsc* LastValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 {
-	//impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	//SINT64 records = impure->vlu_misc.vlu_int64++;
-
 	if (!window->move(0))
 		return NULL;
 

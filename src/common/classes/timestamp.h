@@ -33,7 +33,7 @@ namespace Firebird {
 
 // Wrapper class for ISC_TIMESTAMP supposed to implement date/time conversions
 // and arithmetic. Small and not platform-specific methods are implemented
-// inline. Usage of this class normally should involve zero overhead except 
+// inline. Usage of this class normally should involve zero overhead except
 // adding code for exceptions, memory allocation and all related when used in UDF.
 
 class TimeStamp : public NoThrowTimeStamp
