@@ -568,7 +568,7 @@ static void raiseLimit(int resource)
 		if (lim.rlim_cur != lim.rlim_max)
 		{
 			lim.rlim_cur = lim.rlim_max;
-			if (setrlimit(RLIMIT_CORE, &lim) != 0)
+			if (setrlimit(resource, &lim) != 0)
 			{
 				gds__log("setrlimit() failed, errno=%d", errno);
 			}
