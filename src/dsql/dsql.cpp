@@ -78,15 +78,6 @@ using namespace Firebird;
 
 
 static void		close_cursor(thread_db*, dsql_req*);
-static void		execute_blob(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, const UCHAR*,
-						 ULONG, const UCHAR*, ULONG, UCHAR*);
-static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
-							  ULONG, const TEXT*, USHORT,
-							  ULONG, const UCHAR*, ULONG, const UCHAR*,
-							  ULONG, const UCHAR*, ULONG, UCHAR*, bool);
-static void		execute_request(thread_db*, dsql_req*, jrd_tra**, ULONG, const UCHAR*,
-	ULONG, const UCHAR*, ULONG, const UCHAR*, ULONG, UCHAR*, bool);
-static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
 static void		map_in_out(dsql_req*, bool, const dsql_msg*, ULONG, const UCHAR*, ULONG, UCHAR*,
@@ -104,12 +95,10 @@ static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 {
 	switch (type)
 	{
-	case DsqlCompiledStatement::TYPE_SELECT:
-	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
-	case DsqlCompiledStatement::TYPE_SELECT_UPD:
-	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-		return true;
+		case DsqlCompiledStatement::TYPE_SELECT:
+		case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
+		case DsqlCompiledStatement::TYPE_SELECT_UPD:
+			return true;
 	}
 
 	return false;
@@ -125,6 +114,53 @@ namespace
 	{
 		isc_info_req_update_count, isc_info_req_delete_count,
 		isc_info_req_select_count, isc_info_req_insert_count
+	};
+
+	class DsqlDmlRequest : public dsql_req
+	{
+	public:
+		explicit DsqlDmlRequest(DsqlCompilerScratch* scratch)
+			: dsql_req(scratch)
+		{
+		}
+
+		virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+			ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+			ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+			bool singleton);
+
+		virtual void setCursor(thread_db* tdbb, const TEXT* name);
+
+		virtual ISC_STATUS fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
+			ULONG msgLength, UCHAR* msgBuffer);
+	};
+
+	class DsqlDdlRequest : public dsql_req
+	{
+	public:
+		explicit DsqlDdlRequest(DsqlCompilerScratch* scratch)
+			: dsql_req(scratch)
+		{
+		}
+
+		virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+			ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+			ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+			bool singleton);
+	};
+
+	class DsqlTransactionRequest : public dsql_req
+	{
+	public:
+		explicit DsqlTransactionRequest(DsqlCompilerScratch* scratch)
+			: dsql_req(scratch)
+		{
+		}
+
+		virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+			ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+			ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+			bool singleton);
 	};
 }	// namespace
 
@@ -159,35 +195,19 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
 	// allocate the request block
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
-	dsql_req* const request = FB_NEW(pool) dsql_req(statement);
+	DsqlCompilerScratch* scratch = FB_NEW(pool) DsqlCompilerScratch(pool, database,
+		NULL, statement);
+
+	dsql_req* const request = FB_NEW(pool) DsqlDmlRequest(scratch);
 	request->req_dbb = database;
 
 	return request;
 }
 
 
-/**
-
- 	DSQL_execute
-
-    @brief	Execute a non-SELECT dynamic SQL statement.
-
-
-    @param tdbb
-    @param tra_handle
-    @param request
-    @param in_blr_length
-    @param in_blr
-    @param in_msg_type
-    @param in_msg_length
-    @param in_msg
-    @param out_blr_length
-    @param out_blr
-    @param out_msg_length
-    @param out_msg
-
- **/
+// Execute a non-SELECT dynamic SQL statement.
 void DSQL_execute(thread_db* tdbb,
 				  jrd_tra** tra_handle,
 				  dsql_req* request,
@@ -235,15 +255,13 @@ void DSQL_execute(thread_db* tdbb,
 	const bool singleton =
 		(statement->getType() == DsqlCompiledStatement::TYPE_SELECT && out_msg_length != 0);
 
+	request->req_transaction = *tra_handle;
+
 	if (!(request->req_flags & dsql_req::FLAG_EMBEDDED))
 	{
-		execute_request(tdbb, request, tra_handle,
-						in_blr_length, in_blr, in_msg_length, in_msg,
-						out_blr_length, out_blr, out_msg_length, out_msg,
-						singleton);
+		request->execute(tdbb, tra_handle, in_blr_length, in_blr, in_msg_length, in_msg,
+			out_blr_length, out_blr, out_msg_length, out_msg, singleton);
 	}
-	else
-		request->req_transaction = *tra_handle;
 
 	// If the output message length is zero on a TYPE_SELECT then we must
 	// be doing an OPEN cursor operation.
@@ -259,79 +277,20 @@ void DSQL_execute(thread_db* tdbb,
 }
 
 
-/**
-
- 	DSQL_execute_immediate
-
-    @brief	Execute a non-SELECT dynamic SQL statement.
-
-
-    @param tdbb
-    @param attachment
-    @param tra_handle
-    @param length
-    @param string
-    @param dialect
-    @param in_blr_length
-    @param in_blr
-    @param in_msg_length
-    @param in_msg
-    @param out_blr_length
-    @param out_blr
-    @param out_msg_length
-    @param out_msg
-
- **/
-void DSQL_execute_immediate(thread_db* tdbb,
-							Jrd::Attachment* attachment,
-							jrd_tra** tra_handle,
-							ULONG length, const TEXT* string, USHORT dialect,
-							ULONG in_blr_length, const UCHAR* in_blr,
-							ULONG in_msg_length, const UCHAR* in_msg,
-							ULONG out_blr_length, const UCHAR* out_blr,
-							ULONG out_msg_length, UCHAR* out_msg,
-							bool isInternalRequest)
-{
-	execute_immediate(tdbb, attachment, tra_handle, length,
-		string, dialect,
-		in_blr_length, in_blr, in_msg_length, in_msg,
-		out_blr_length, out_blr, out_msg_length, out_msg,
-		isInternalRequest);
-}
-
-
-/**
-
- 	DSQL_fetch
-
-    @brief	Fetch next record from a dynamic SQL cursor
-
-
-    @param user_status
-    @param req_handle
-    @param blr_length
-    @param blr
-    @param msg_length
-    @param dsql_msg
-    @param direction
-    @param offset
-
- **/
-ISC_STATUS DSQL_fetch(thread_db* tdbb,
-					  dsql_req* request,
-					  ULONG blr_length, const UCHAR* blr,
-					  ULONG msg_length, UCHAR* dsql_msg_buf)
+// Fetch next record from a dynamic SQL cursor.
+ISC_STATUS DsqlDmlRequest::fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
+	ULONG msgLength, UCHAR* msgBuffer)
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
+	Jrd::ContextPoolHolder context(tdbb, &getPool());
 
-	const DsqlCompiledStatement* statement = request->getStatement();
+	const DsqlCompiledStatement* statement = getStatement();
 
 	// if the cursor isn't open, we've got a problem
 	if (reqTypeWithCursor(statement->getType()))
 	{
-		if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
+		if (!(req_flags & dsql_req::FLAG_OPENED_CURSOR))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 					  Arg::Gds(isc_dsql_cursor_err) <<
@@ -342,63 +301,32 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
 
 	// Set up things for tracing this call
-	Jrd::Attachment* att = request->req_dbb->dbb_attachment;
-	TraceDSQLFetch trace(att, request);
+	Jrd::Attachment* att = req_dbb->dbb_attachment;
+	TraceDSQLFetch trace(att, this);
 
 	// Insure that the blr for the message is parsed, regardless of
 	// whether anything is found by the call to receive.
 
-	if (blr_length) {
-		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
-	}
+	if (blrLength)
+		parse_blr(this, blrLength, blr, msgLength, message->msg_parameters);
 
-	if (statement->getType() == DsqlCompiledStatement::TYPE_GET_SEGMENT)
-	{
-		// For get segment, use the user buffer and indicator directly.
+	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
 
-		const dsql_par* parameter = statement->getBlob()->blb_segment;
-		const dsql_par* null = parameter->par_null;
-
-		dsc userDesc;
-		if (!request->req_user_descs.get(parameter, userDesc))
-			userDesc.clear();
-
-		dsc userNullDesc;
-		if (!request->req_user_descs.get(null, userNullDesc))
-			userNullDesc.clear();
-
-		USHORT* ret_length = (USHORT*) (dsql_msg_buf + (IPTR) userNullDesc.dsc_address);
-		UCHAR* buffer = dsql_msg_buf + (IPTR) userDesc.dsc_address;
-
-		*ret_length = BLB_get_segment(tdbb, request->req_blb, buffer, userDesc.dsc_length);
-
-		if (request->req_blb->blb_flags & BLB_eof)
-			return 100;
-
-		if (request->req_blb->blb_fragment_size)
-			return 101;
-
-		return 0;
-	}
-
-	UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
-
-	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-		msgBuffer);
+	JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
 
 	const dsql_par* const eof = statement->getEof();
 
 	dsc eofDesc = eof->par_desc;
-	eofDesc.dsc_address = msgBuffer + (IPTR) eofDesc.dsc_address;
-	const bool eof_reached = eof && !*((USHORT*) eofDesc.dsc_address);
+	eofDesc.dsc_address = dsqlMsgBuffer + (IPTR) eofDesc.dsc_address;
+	const bool eofReached = eof && !*((USHORT*) eofDesc.dsc_address);
 
-	if (eof_reached)
+	if (eofReached)
 	{
 		trace.fetch(true, res_successful);
 		return 100;
 	}
 
-	map_in_out(request, true, message, 0, blr, msg_length, dsql_msg_buf);
+	map_in_out(this, true, message, 0, blr, msgLength, msgBuffer);
 
 	trace.fetch(false, res_successful);
 	return FB_SUCCESS;
@@ -448,74 +376,6 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 
 			close_cursor(tdbb, request);
 		}
-	}
-}
-
-
-/**
-
- 	DSQL_insert
-
-    @brief	Insert next record into a dynamic SQL cursor
-
-
-    @param user_status
-    @param req_handle
-    @param blr_length
-    @param blr
-    @param msg_length
-    @param dsql_msg
-
- **/
-void DSQL_insert(thread_db* tdbb,
-				 dsql_req* request,
-				 ULONG blr_length, const UCHAR* blr,
-				 ULONG msg_length, const UCHAR* dsql_msg_buf)
-{
-	SET_TDBB(tdbb);
-
-	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
-
-	const DsqlCompiledStatement* statement = request->getStatement();
-
-	if (statement->getFlags() & DsqlCompiledStatement::FLAG_ORPHAN)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-		          Arg::Gds(isc_bad_req_handle));
-	}
-
-	// if the cursor isn't open, we've got a problem
-
-	if (statement->getType() == DsqlCompiledStatement::TYPE_PUT_SEGMENT)
-	{
-		if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-					  Arg::Gds(isc_dsql_cursor_err) <<
-					  Arg::Gds(isc_dsql_cursor_not_open));
-		}
-	}
-
-	dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
-
-	// Insure that the blr for the message is parsed, regardless of
-	// whether anything is found by the call to receive.
-
-	if (blr_length)
-		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
-
-	if (statement->getType() == DsqlCompiledStatement::TYPE_PUT_SEGMENT)
-	{
-		// For put segment, use the user buffer and indicator directly.
-
-		const dsql_par* const parameter = statement->getBlob()->blb_segment;
-
-		dsc userDesc;
-		if (!request->req_user_descs.get(parameter, userDesc))
-			userDesc.clear();
-
-		const UCHAR* const buffer = dsql_msg_buf + (IPTR) userDesc.dsc_address;
-		BLB_put_segment(tdbb, request->req_blb, buffer, userDesc.dsc_length);
 	}
 }
 
@@ -653,26 +513,15 @@ void DSQL_prepare(thread_db* tdbb,
 }
 
 
-/**
-
-	DSQL_set_cursor
-
-    @brief	Set a cursor name for a dynamic request
-
-
-    @param tdbb
-    @param req_handle
-    @param input_cursor
-
- **/
-void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_cursor)
+// Set a cursor name for a dynamic request.
+void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
+	Jrd::ContextPoolHolder context(tdbb, &getPool());
 
 	const size_t MAX_CURSOR_LENGTH = 132 - 1;
-	string cursor = input_cursor;
+	string cursor = name;
 
 	if (cursor[0] == '\"')
 	{
@@ -711,10 +560,10 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 
 	// If there already is a different cursor by the same name, bitch
 
-	dsql_req* const* symbol = request->req_dbb->dbb_cursors.get(cursor);
+	dsql_req* const* symbol = req_dbb->dbb_cursors.get(cursor);
 	if (symbol)
 	{
-		if (request == *symbol)
+		if (this == *symbol)
 			return;
 
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
@@ -725,17 +574,17 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 	// If there already is a cursor and its name isn't the same, ditto.
 	// We already know there is no cursor by this name in the hash table
 
-	if (request->req_cursor.isEmpty())
+	if (req_cursor.isEmpty())
 	{
-		request->req_cursor = cursor;
-		request->req_dbb->dbb_cursors.put(cursor, request);
+		req_cursor = cursor;
+		req_dbb->dbb_cursors.put(cursor, this);
 	}
 	else
 	{
-		fb_assert(request != *symbol);
+		fb_assert(this != *symbol);
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
-				  Arg::Gds(isc_dsql_cursor_redefined) << request->req_cursor);
+				  Arg::Gds(isc_dsql_cursor_redefined) << req_cursor);
 	}
 }
 
@@ -791,30 +640,21 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 		ThreadStatusGuard status_vector(tdbb);
 		try
 		{
-			if (statement->getType() == DsqlCompiledStatement::TYPE_GET_SEGMENT ||
-				statement->getType() == DsqlCompiledStatement::TYPE_PUT_SEGMENT)
+			// Report some remaining fetches if any
+			if (request->req_fetch_baseline)
 			{
-				BLB_close(tdbb, request->req_blb);
-				request->req_blb = NULL;
+				TraceDSQLFetch trace(attachment, request);
+				trace.fetch(true, res_successful);
 			}
-			else
+
+			if (request->req_traced && TraceManager::need_dsql_free(attachment))
 			{
-				// Report some remaining fetches if any
-				if (request->req_fetch_baseline)
-				{
-					TraceDSQLFetch trace(attachment, request);
-					trace.fetch(true, res_successful);
-				}
+				TraceSQLStatementImpl stmt(request, NULL);
 
-				if (request->req_traced && TraceManager::need_dsql_free(attachment))
-				{
-					TraceSQLStatementImpl stmt(request, NULL);
-
-					TraceManager::event_dsql_free(attachment, &stmt, DSQL_close);
-				}
-
-				JRD_unwind_request(tdbb, request->req_request);
+				TraceManager::event_dsql_free(attachment, &stmt, DSQL_close);
 			}
+
+			JRD_unwind_request(tdbb, request->req_request);
 		}
 		catch (Firebird::Exception&)
 		{
@@ -826,140 +666,12 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 }
 
 
-/**
-
- 	execute_blob
-
-    @brief	Open or create a blob.
-
-
-	@param tdbb
-    @param request
-    @param in_blr_length
-    @param in_blr
-    @param in_msg_length
-    @param in_msg
-    @param out_blr_length
-    @param out_blr
-    @param out_msg_length
-    @param out_msg
-
- **/
-static void execute_blob(thread_db* tdbb,
-						 dsql_req* request,
-						 ULONG in_blr_length,
-						 const UCHAR* in_blr,
-						 ULONG in_msg_length,
-						 const UCHAR* in_msg,
-						 ULONG out_blr_length,
-						 const UCHAR* out_blr,
-						 ULONG out_msg_length,
-						 UCHAR* out_msg)
-{
-	UCHAR bpb[24];
-
-	const DsqlCompiledStatement* statement = request->getStatement();
-
-	const dsql_blb* blob = statement->getBlob();
-	map_in_out(request, false, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length,
-		NULL, in_msg);
-
-	UCHAR* p = bpb;
-	*p++ = isc_bpb_version1;
-
-	SSHORT filter = filter_sub_type(request, blob->blb_to);
-
-	if (filter)
-	{
-		*p++ = isc_bpb_target_type;
-		*p++ = 2;
-		*p++ = static_cast<UCHAR>(filter);
-		*p++ = filter >> 8;
-	}
-
-	filter = filter_sub_type(request, blob->blb_from);
-
-	if (filter)
-	{
-		*p++ = isc_bpb_source_type;
-		*p++ = 2;
-		*p++ = static_cast<UCHAR>(filter);
-		*p++ = filter >> 8;
-	}
-
-	USHORT bpb_length = p - bpb;
-
-	if (bpb_length == 1)
-		bpb_length = 0;
-
-	dsql_par* parameter = blob->blb_blob_id;
-	const dsql_par* null = parameter->par_null;
-
-	UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
-
-	dsc desc = parameter->par_desc;
-	desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
-
-	bid* blob_id = (bid*) desc.dsc_address;
-
-	if (statement->getType() == DsqlCompiledStatement::TYPE_GET_SEGMENT)
-	{
-		if (null)
-		{
-			desc = null->par_desc;
-			desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
-
-			if (*((SSHORT*) desc.dsc_address) < 0)
-				memset(blob_id, 0, sizeof(bid));
-		}
-
-		request->req_blb = BLB_open2(tdbb, request->req_transaction, blob_id, bpb_length, bpb, true);
-	}
-	else
-	{
-		request->req_request = NULL;
-		memset(blob_id, 0, sizeof(bid));
-
-		request->req_blb = BLB_create2(tdbb, request->req_transaction, blob_id, bpb_length, bpb);
-
-		map_in_out(request, true, blob->blb_open_out_msg, out_blr_length, out_blr,
-			out_msg_length, out_msg);
-	}
-}
-
-
-/**
-
- 	execute_immediate
-
-    @brief	Common part of prepare and execute a statement.
-
-
-    @param tdbb
-    @param attachment
-    @param tra_handle
-	@param length
-	@param string
-	@param dialect
-    @param in_blr_length
-    @param in_blr
-    @param in_msg_length
-    @param in_msg
-    @param out_blr_length
-    @param out_blr
-    @param out_msg_length
-    @param out_msg
-
- **/
-static void execute_immediate(thread_db* tdbb,
-							  Jrd::Attachment* attachment,
-							  jrd_tra** tra_handle,
-							  ULONG length, const TEXT* string, USHORT dialect,
-							  ULONG in_blr_length, const UCHAR* in_blr,
-							  ULONG in_msg_length, const UCHAR* in_msg,
-							  ULONG out_blr_length, const UCHAR* out_blr,
-							  ULONG out_msg_length, UCHAR* out_msg,
-							  bool isInternalRequest)
+// Common part of prepare and execute a statement.
+void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra** tra_handle,
+	ULONG length, const TEXT* string, USHORT dialect,
+	ULONG in_blr_length, const UCHAR* in_blr, ULONG in_msg_length, const UCHAR* in_msg,
+	ULONG out_blr_length, const UCHAR* out_blr, ULONG out_msg_length, UCHAR* out_msg,
+	bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
 
@@ -1000,8 +712,8 @@ static void execute_immediate(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		request = prepareRequest(tdbb, database, *tra_handle, length, string, dialect, parser_version,
-			isInternalRequest);
+		request = prepareRequest(tdbb, database, *tra_handle, length, string, dialect,
+			parser_version, isInternalRequest);
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
@@ -1019,10 +731,10 @@ static void execute_immediate(thread_db* tdbb,
 		const bool singleton =
 			(statement->getType() == DsqlCompiledStatement::TYPE_SELECT && out_msg_length != 0);
 
-		execute_request(tdbb, request, tra_handle,
-						in_blr_length, in_blr, in_msg_length, in_msg,
-						out_blr_length, out_blr, out_msg_length, out_msg,
-						singleton);
+		request->req_transaction = *tra_handle;
+
+		request->execute(tdbb, tra_handle, in_blr_length, in_blr, in_msg_length, in_msg,
+			out_blr_length, out_blr, out_msg_length, out_msg, singleton);
 
 		dsql_req::destroy(tdbb, request, true);
 	}
@@ -1038,122 +750,30 @@ static void execute_immediate(thread_db* tdbb,
 }
 
 
-/**
-
- 	execute_request
-
-    @brief	Execute a dynamic SQL statement.
-
-
-	@param tdbb
-    @param request
-    @param trans_handle
-    @param in_blr_length
-    @param in_blr
-    @param in_msg_length
-    @param in_msg
-    @param out_blr_length
-    @param out_blr
-    @param out_msg_length
-    @param out_msg
-	@param singleton
-
- **/
-static void execute_request(thread_db* tdbb,
-							dsql_req* request,
-							jrd_tra** tra_handle,
-							ULONG in_blr_length, const UCHAR* in_blr,
-							ULONG in_msg_length, const UCHAR* in_msg,
-							ULONG out_blr_length, const UCHAR* out_blr,
-							ULONG out_msg_length, UCHAR* out_msg,
-							bool singleton)
+// Execute a dynamic SQL statement.
+void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+	bool singleton)
 {
-	request->req_transaction = *tra_handle;
-
-	const DsqlCompiledStatement* statement = request->getStatement();
-
-	switch (statement->getType())
-	{
-	case DsqlCompiledStatement::TYPE_START_TRANS:
-		JRD_start_transaction(tdbb, &request->req_transaction, request->req_dbb->dbb_attachment,
-			statement->getDdlData().getCount(), statement->getDdlData().begin());
-		*tra_handle = request->req_transaction;
-		return;
-
-	case DsqlCompiledStatement::TYPE_COMMIT:
-		JRD_commit_transaction(tdbb, request->req_transaction);
-		*tra_handle = NULL;
-		return;
-
-	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-		JRD_commit_retaining(tdbb, request->req_transaction);
-		return;
-
-	case DsqlCompiledStatement::TYPE_ROLLBACK:
-		JRD_rollback_transaction(tdbb, request->req_transaction);
-		*tra_handle = NULL;
-		return;
-
-	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-		JRD_rollback_retaining(tdbb, request->req_transaction);
-		return;
-
-	case DsqlCompiledStatement::TYPE_CREATE_DB:
-	case DsqlCompiledStatement::TYPE_DDL:
-		{
-			TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
-			DDL_execute(request);
-			trace.finish(false, res_successful);
-			return;
-		}
-
-	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-		execute_blob(tdbb, request,
-					 in_blr_length, in_blr, in_msg_length, in_msg,
-					 out_blr_length, out_blr, out_msg_length, out_msg);
-		return;
-
-	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-		execute_blob(tdbb, request,
-					 in_blr_length, in_blr, in_msg_length, in_msg,
-					 out_blr_length, out_blr, out_msg_length, out_msg);
-		return;
-
-	case DsqlCompiledStatement::TYPE_SELECT:
-	case DsqlCompiledStatement::TYPE_SELECT_UPD:
-	case DsqlCompiledStatement::TYPE_INSERT:
-	case DsqlCompiledStatement::TYPE_UPDATE:
-	case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
-	case DsqlCompiledStatement::TYPE_DELETE:
-	case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
-	case DsqlCompiledStatement::TYPE_EXEC_PROCEDURE:
-	case DsqlCompiledStatement::TYPE_SET_GENERATOR:
-	case DsqlCompiledStatement::TYPE_SAVEPOINT:
-	case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
-	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
-		break;
-
-	default:
-		// Catch invalid request types
-		fb_assert(false);
-	}
+	const DsqlCompiledStatement* statement = getStatement();
 
 	// If there is no data required, just start the request
 
 	const dsql_msg* message = statement->getSendMsg();
 	if (message)
-		map_in_out(request, false, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
+		map_in_out(this, false, message, inBlrLength, inBlr, inMsgLength, NULL, inMsg);
 
 	// we need to map_in_out before tracing of execution start to let trace
 	// manager know statement parameters values
-	TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
+	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
 
 	if (!message)
-		JRD_start(tdbb, request->req_request, request->req_transaction);
+		JRD_start(tdbb, req_request, req_transaction);
 	else
 	{
-		UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
-		JRD_start_and_send(tdbb, request->req_request, request->req_transaction, message->msg_number,
+		UCHAR* msgBuffer = req_msg_buffers[message->msg_buffer_number];
+		JRD_start_and_send(tdbb, req_request, req_transaction, message->msg_number,
 			message->msg_length, msgBuffer);
 	}
 
@@ -1161,8 +781,8 @@ static void execute_request(thread_db* tdbb,
 	// which ensures that the savepoint stack is preserved while suspending
 	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK)
 	{
-		fb_assert(request->req_request);
-		request->req_request->req_flags |= req_proc_fetch;
+		fb_assert(req_request);
+		req_request->req_flags |= req_proc_fetch;
 	}
 
 	// TYPE_EXEC_BLOCK has no outputs so there are no out_msg
@@ -1172,7 +792,7 @@ static void execute_request(thread_db* tdbb,
 
 	message = statement->getReceiveMsg();
 
-	if ((out_msg_length && message) || isBlock)
+	if ((outMsgLength && message) || isBlock)
 	{
 		UCHAR temp_buffer[FB_DOUBLE_ALIGN * 2];
 		dsql_msg temp_msg(*getDefaultMemoryPool());
@@ -1180,11 +800,11 @@ static void execute_request(thread_db* tdbb,
 		// Insure that the blr for the message is parsed, regardless of
 		// whether anything is found by the call to receive.
 
-		UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
+		UCHAR* msgBuffer = req_msg_buffers[message->msg_buffer_number];
 
-		if (out_msg_length && out_blr_length)
-			parse_blr(request, out_blr_length, out_blr, out_msg_length, message->msg_parameters);
-		else if (!out_msg_length && isBlock)
+		if (outMsgLength && outBlrLength)
+			parse_blr(this, outBlrLength, outBlr, outMsgLength, message->msg_parameters);
+		else if (!outMsgLength && isBlock)
 		{
 			message = &temp_msg;
 			temp_msg.msg_number = 1;
@@ -1192,11 +812,10 @@ static void execute_request(thread_db* tdbb,
 			msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) temp_buffer, FB_DOUBLE_ALIGN);
 		}
 
-		JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-			msgBuffer);
+		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, msgBuffer);
 
-		if (out_msg_length)
-			map_in_out(request, true, message, 0, out_blr, out_msg_length, out_msg);
+		if (outMsgLength)
+			map_in_out(this, true, message, 0, outBlr, outMsgLength, outMsg);
 
 		// if this is a singleton select, make sure there's in fact one record
 
@@ -1221,8 +840,8 @@ static void execute_request(thread_db* tdbb,
 
 				try
 				{
-					JRD_receive(tdbb, request->req_request, message->msg_number,
-								message->msg_length, message_buffer);
+					JRD_receive(tdbb, req_request, message->msg_number,
+						message->msg_length, message_buffer);
 					status = FB_SUCCESS;
 				}
 				catch (Firebird::Exception&)
@@ -1246,65 +865,79 @@ static void execute_request(thread_db* tdbb,
 		}
 	}
 
-	if (statement->getType() == DsqlCompiledStatement::TYPE_UPDATE_CURSOR)
+	switch (statement->getType())
 	{
-		if (!request->req_request->req_records_updated)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
-					  Arg::Gds(isc_deadlock) <<
-					  Arg::Gds(isc_update_conflict));
-		}
-	}
-	else if (statement->getType() == DsqlCompiledStatement::TYPE_DELETE_CURSOR)
-	{
-		if (!request->req_request->req_records_deleted)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
-					  Arg::Gds(isc_deadlock) <<
-					  Arg::Gds(isc_update_conflict));
-		}
+		case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
+			if (!req_request->req_records_updated)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
+						  Arg::Gds(isc_deadlock) <<
+						  Arg::Gds(isc_update_conflict));
+			}
+			break;
+
+		case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
+			if (!req_request->req_records_deleted)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
+						  Arg::Gds(isc_deadlock) <<
+						  Arg::Gds(isc_update_conflict));
+			}
+			break;
 	}
 
 	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
 	trace.finish(have_cursor, res_successful);
 }
 
-/**
-
- 	filter_sub_type
-
-    @brief	Determine the sub_type to use in filtering
- 	a blob.
-
-
-    @param node
-
- **/
-static SSHORT filter_sub_type(dsql_req* request, const dsql_nod* node)
+// Execute a dynamic SQL statement.
+void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+	bool singleton)
 {
-	const LiteralNode* literal = ExprNode::as<LiteralNode>(node);
-	if (literal)
-		return (SSHORT) literal->getSlong();
+	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
+	DDL_execute(this);
+	trace.finish(false, res_successful);
+}
 
-	const dsql_par* parameter = ExprNode::as<ParameterNode>(node)->dsqlParameter;
-	const dsql_par* null = parameter->par_null;
-	dsc desc;
+// Execute a dynamic SQL statement.
+void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+	bool singleton)
+{
+	const DsqlCompiledStatement* statement = getStatement();
 
-	UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
-
-	if (null)
+	switch (statement->getType())
 	{
-		desc = null->par_desc;
-		desc.dsc_address = msgBuffer + (IPTR) null->par_desc.dsc_address;
+		case DsqlCompiledStatement::TYPE_START_TRANS:
+			JRD_start_transaction(tdbb, &req_transaction, req_dbb->dbb_attachment,
+				statement->getDdlData().getCount(), statement->getDdlData().begin());
+			*traHandle = req_transaction;
+			break;
 
-		if (*((SSHORT*) desc.dsc_address))
-			return 0;
+		case DsqlCompiledStatement::TYPE_COMMIT:
+			JRD_commit_transaction(tdbb, req_transaction);
+			*traHandle = NULL;
+			break;
+
+		case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
+			JRD_commit_retaining(tdbb, req_transaction);
+			break;
+
+		case DsqlCompiledStatement::TYPE_ROLLBACK:
+			JRD_rollback_transaction(tdbb, req_transaction);
+			*traHandle = NULL;
+			break;
+
+		case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
+			JRD_rollback_retaining(tdbb, req_transaction);
+			break;
+
+		default:
+			fb_assert(false);
 	}
-
-	desc = parameter->par_desc;
-	desc.dsc_address = msgBuffer + (IPTR) parameter->par_desc.dsc_address;
-
-	return *((SSHORT*) desc.dsc_address);
 }
 
 
@@ -1842,7 +1475,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	ISC_STATUS_ARRAY local_status;
 	MOVE_CLEAR(local_status, sizeof(local_status));
 
-	TraceDSQLPrepare trace(database->dbb_attachment, string_length, string);
+	TraceDSQLPrepare trace(database->dbb_attachment, transaction, string_length, string);
 
 	if (client_dialect > SQL_DIALECT_CURRENT)
 	{
@@ -1888,12 +1521,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		transaction, statement);
 	scratch->clientDialect = client_dialect;
 
-	dsql_req* request = FB_NEW(statement->getPool()) dsql_req(statement);
-	request->req_dbb = database;
-	request->req_transaction = transaction;
-
-	request->req_traced = true;
-	trace.setStatement(request);
+	dsql_req* request = NULL;
 
 	try {
 
@@ -1958,113 +1586,83 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
 
-	// No work is done during pass1 for set transaction - like
-	// checking for valid table names.  This is because that will
-	// require a valid transaction handle.
-	// Error will be caught at execute time.
-
 	node = PASS1_statement(scratch, node);
-	if (!node)
-		return request;
+	fb_assert(node);
 
-	switch (statement->getType())
-	{
-	case DsqlCompiledStatement::TYPE_COMMIT:
-	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-	case DsqlCompiledStatement::TYPE_ROLLBACK:
-	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-	case DsqlCompiledStatement::TYPE_START_TRANS:
-		request->req_traced = false;
-		break;
-	default:
-		request->req_traced = true;
-	}
+	const DsqlCompiledStatement::Type statementType = statement->getType();
 
-	// stop here for statements not requiring code generation
-
-	if (statement->getType() == DsqlCompiledStatement::TYPE_DDL && parser.isStmtAmbiguous() &&
-		scratch->getAttachment()->dbb_db_SQL_dialect != client_dialect)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
-				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
-					  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
-	}
-
-	switch (statement->getType())
-	{
-		// Work on blob segment statements
-		case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-		case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-			GEN_port(scratch, statement->getBlob()->blb_open_in_msg);
-			GEN_port(scratch, statement->getBlob()->blb_open_out_msg);
-			GEN_port(scratch, statement->getBlob()->blb_segment_msg);
-			break;
-
-		case DsqlCompiledStatement::TYPE_DDL:
-			statement->setDdlScratch(scratch);
-			break;
-	}
-
-	switch (statement->getType())
+	switch (statementType)
 	{
 		case DsqlCompiledStatement::TYPE_COMMIT:
 		case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
 		case DsqlCompiledStatement::TYPE_ROLLBACK:
 		case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
+		case DsqlCompiledStatement::TYPE_START_TRANS:
+			request = FB_NEW(statement->getPool()) DsqlTransactionRequest(scratch);
+			request->req_traced = false;
+			trace.setStatement(request);
+
+			if (statementType == DsqlCompiledStatement::TYPE_START_TRANS)
+				GEN_start_transaction(scratch, node);
+
+			// Stop here for statements not requiring code generation.
 			return request;
 
-		case DsqlCompiledStatement::TYPE_START_TRANS:
-			GEN_start_transaction(scratch, node);
-			return request;
+		case DsqlCompiledStatement::TYPE_CREATE_DB:
+		case DsqlCompiledStatement::TYPE_DDL:
+			request = FB_NEW(statement->getPool()) DsqlDdlRequest(scratch);
+			break;
 
 		default:
-			if (client_dialect > SQL_DIALECT_V5)
-				statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
-			else
-				statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
-
-			GEN_request(scratch, node);
-			// fall into
-
-		case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-		case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-			{
-				// Create the messages buffers
-				for (size_t i = 0; i < scratch->ports.getCount(); ++i)
-				{
-					dsql_msg* message = scratch->ports[i];
-
-					// Allocate buffer for message
-					const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
-
-					message->msg_buffer_number = request->req_msg_buffers.getCount();
-					request->req_msg_buffers.grow(message->msg_buffer_number + 1);
-
-					UCHAR*& msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
-					fb_assert(!msgBuffer);
-
-					msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
-					msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
-				}
-				break;
-			}
+			request = FB_NEW(statement->getPool()) DsqlDmlRequest(scratch);
+			break;
 	}
 
-	switch (statement->getType())
+	request->req_traced = true;
+	trace.setStatement(request);
+
+	if (statementType == DsqlCompiledStatement::TYPE_DDL)
 	{
-		case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-		case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-			return request;
+		if (parser.isStmtAmbiguous() &&
+			scratch->getAttachment()->dbb_db_SQL_dialect != client_dialect)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+					  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
+						  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
+		}
+
+		statement->setDdlScratch(scratch);
 	}
 
-	const ULONG length = (ULONG) scratch->getBlrData().getCount();
+	if (client_dialect > SQL_DIALECT_V5)
+		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+	else
+		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+
+	GEN_request(scratch, node);
+
+	// Create the messages buffers
+	for (size_t i = 0; i < scratch->ports.getCount(); ++i)
+	{
+		dsql_msg* message = scratch->ports[i];
+
+		// Allocate buffer for message
+		const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
+
+		message->msg_buffer_number = request->req_msg_buffers.getCount();
+		request->req_msg_buffers.grow(message->msg_buffer_number + 1);
+
+		UCHAR*& msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
+		fb_assert(!msgBuffer);
+
+		msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+		msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
+	}
 
 	// stop here for ddl statements
 
-	if (statement->getType() == DsqlCompiledStatement::TYPE_CREATE_DB ||
-		statement->getType() == DsqlCompiledStatement::TYPE_DDL)
+	if (statementType == DsqlCompiledStatement::TYPE_CREATE_DB ||
+		statementType == DsqlCompiledStatement::TYPE_DDL)
 	{
 		// Notify Trace API manager about new DDL request cooked.
 		trace.prepare(res_successful);
@@ -2100,7 +1698,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		JRD_compile(tdbb,
 					scratch->getAttachment()->dbb_attachment,
 					&request->req_request,
-					length,
+					scratch->getBlrData().getCount(),
 					scratch->getBlrData().begin(),
 					statement->getSqlText(),
 					scratch->getDebugData().getCount(),
@@ -2146,8 +1744,13 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	catch (const Firebird::Exception&)
 	{
 		trace.prepare(res_failed);
-		request->req_traced = false;
-		dsql_req::destroy(tdbb, request, true);
+
+		if (request)
+		{
+			request->req_traced = false;
+			dsql_req::destroy(tdbb, request, true);
+		}
+
 		throw;
 	}
 }
@@ -2212,17 +1815,39 @@ static void release_statement(DsqlCompiledStatement* statement)
 }
 
 
-/**
+dsql_req::dsql_req(DsqlCompilerScratch* scratch)
+	: req_pool(scratch->getStatement()->getPool()),
+	  statement(scratch->getStatement()),
+	  cursors(req_pool),
+	  req_dbb(scratch->getAttachment()),
+	  req_transaction(scratch->getTransaction()),
+	  req_msg_buffers(req_pool),
+	  req_cursor(req_pool),
+	  req_user_descs(req_pool),
+	  req_interface(NULL)
+{
+}
 
- 	dsql_req::destroy
+void dsql_req::setCursor(thread_db* /*tdbb*/, const TEXT* /*name*/)
+{
+	status_exception::raise(
+		Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+		Arg::Gds(isc_dsql_sqlda_err) <<
+		Arg::Gds(isc_req_sync));
+}
 
-    @brief	Release a dynamic request.
+ISC_STATUS dsql_req::fetch(thread_db* /*tdbb*/, ULONG /*blrLength*/, const UCHAR* /*blr*/,
+	ULONG /*msgLength*/, UCHAR* /*msgBuffer*/)
+{
+	status_exception::raise(
+		Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+		Arg::Gds(isc_dsql_sqlda_err) <<
+		Arg::Gds(isc_req_sync));
 
+	return 0;	// avoid warning
+}
 
-    @param request
-    @param top_level
-
- **/
+// Release a dynamic request.
 void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 {
 	SET_TDBB(tdbb);
@@ -2247,9 +1872,8 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 
 	// If the request had an open cursor, close it
 
-	if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR) {
+	if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
 		close_cursor(tdbb, request);
-	}
 
 	Jrd::Attachment* att = request->req_dbb->dbb_attachment;
 	const bool need_trace_free = request->req_traced && TraceManager::need_dsql_free(att);
@@ -2377,12 +2001,6 @@ static void sql_info(thread_db* tdbb,
 			case DsqlCompiledStatement::TYPE_CREATE_DB:
 			case DsqlCompiledStatement::TYPE_DDL:
 				number = isc_info_sql_stmt_ddl;
-				break;
-			case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-				number = isc_info_sql_stmt_get_segment;
-				break;
-			case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-				number = isc_info_sql_stmt_put_segment;
 				break;
 			case DsqlCompiledStatement::TYPE_COMMIT:
 			case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:

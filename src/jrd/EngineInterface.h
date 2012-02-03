@@ -153,7 +153,6 @@ public:
 										unsigned int in_msg_type, const Firebird::FbMessage* inMsgBuffer,
 										const Firebird::FbMessage* outMsgBuffer);
 	virtual int FB_CARG fetch(Firebird::IStatus* status, const Firebird::FbMessage* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(Firebird::IStatus* status, const Firebird::FbMessage* msgBuffer);
 	virtual void FB_CARG free(Firebird::IStatus* status, unsigned int option);
 	virtual ISC_UINT64 FB_CARG getAffectedRecords(Firebird::IStatus* userStatus);
 	virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(Firebird::IStatus* userStatus);

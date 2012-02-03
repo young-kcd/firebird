@@ -3381,45 +3381,6 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 }
 
 
-ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
-{
-/*****************************************
- *
- *	i n s e r t
- *
- *****************************************
- *
- * Functional description
- *	Insert next record into a dynamic SQL cursor.
- *
- *****************************************/
-	Rsr* statement;
-
-	getHandle(statement, sqldata->p_sqldata_statement);
-
-	USHORT msg_length;
-	UCHAR* msg;
-	if (statement->rsr_format)
-	{
-		msg_length = statement->rsr_format->fmt_length;
-		msg = statement->rsr_message->msg_address;
-	}
-	else
-	{
-		msg_length = 0;
-		msg = NULL;
-	}
-
-	LocalStatus status_vector;
-
-	InternalMessageBuffer message(sqldata->p_sqldata_blr.cstr_length,
-		sqldata->p_sqldata_blr.cstr_address, msg_length, msg);
-	statement->rsr_iface->insert(&status_vector, &message);
-
-	return this->send_response(sendL, 0, 0, &status_vector, false);
-}
-
-
 static Rtr* make_transaction (Rdb* rdb, ITransaction* iface)
 {
 /**************************************
@@ -3924,10 +3885,6 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			port->end_statement(&receive->p_sqlfree, sendL);
 			break;
 
-		case op_insert:
-			port->insert(&receive->p_sqldata, sendL);
-			break;
-
 		case op_prepare_statement:
 			port->prepare_statement(&receive->p_sqlst, sendL);
 			break;
@@ -3949,6 +3906,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			ping_connection(port, sendL);
 			break;
 
+		///case op_insert:
 		default:
 			gds__log("SERVER/process_packet: don't understand packet type %d", receive->p_operation);
 			port->port_state = rem_port::BROKEN;

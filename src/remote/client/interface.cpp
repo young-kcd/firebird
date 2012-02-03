@@ -233,7 +233,6 @@ public:
 										unsigned int in_msg_type, const FbMessage* inMsgBuffer,
 										const FbMessage* outMsgBuffer);
 	virtual int FB_CARG fetch(IStatus* status, const FbMessage* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(IStatus* status, const FbMessage* msgBuffer);
 	virtual void FB_CARG free(IStatus* status, unsigned int option);
 
 public:
@@ -2224,113 +2223,6 @@ void Statement::free(IStatus* status, unsigned int option)
 			clear_queue(rdb->rdb_port);
 			REMOTE_reset_statement(statement);
 		}
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-}
-
-
-void Statement::insert(IStatus* status, const FbMessage* msgBuffer)
-{
-/**************************************
- *
- *	d s q l _ i n s e r t
- *
- **************************************
- *
- * Functional description
- *	Insert next record into a dynamic SQL cursor.
- *
- **************************************/
-
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-
-		Rdb* rdb = statement->rsr_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
-
-		unsigned blr_length = msgBuffer ? msgBuffer->blrLength : 0;
-		const unsigned char* blr = msgBuffer ? msgBuffer->blr : NULL;
-		//unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
-		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
-
-		RefMutexGuard portGuard(*port->port_sync);
-
-		// Free existing format unconditionally.
-		// This is also related to SF#919246
-		delete statement->rsr_bind_format;
-		statement->rsr_bind_format = NULL;
-
-		// Parse the blr describing the message, if there is any.
-
-		if (blr_length)
-		{
-			RMessage* message = PARSE_messages(blr, blr_length);
-			if (message != (RMessage*) - 1)
-			{
-				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
-				delete message;
-			}
-		}
-
-		RMessage* message = NULL;
-		if (!statement->rsr_buffer)
-		{
-			statement->rsr_buffer = message = new RMessage(0);
-			statement->rsr_message = message;
-			message->msg_next = message;
-			statement->rsr_fmt_length = 0;
-		}
-		else {
-			message = statement->rsr_message;
-		}
-
-		message->msg_address = const_cast<unsigned char*>(msg);
-		statement->rsr_format = statement->rsr_bind_format;
-
-		// set up the packet for the other guy...
-
-		PACKET* packet = &rdb->rdb_packet;
-
-		if (statement->rsr_flags.test(Rsr::LAZY))
-		{
-			packet->p_operation = op_allocate_statement;
-			packet->p_rlse.p_rlse_object = rdb->rdb_id;
-
-			send_partial_packet(rdb->rdb_port, packet);
-		}
-
-		packet->p_operation = op_insert;
-		P_SQLDATA* sqldata = &packet->p_sqldata;
-		sqldata->p_sqldata_statement = statement->rsr_id;
-		sqldata->p_sqldata_blr.cstr_length = blr_length;
-		sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(blr); // safe, see protocol.cpp and server.cpp
-		sqldata->p_sqldata_message_number = 0;	// msg_type
-		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
-
-		send_packet(port, packet);
-
-		message->msg_address = NULL;
-
-		if (statement->rsr_flags.test(Rsr::LAZY))
-		{
-			receive_response(status, rdb, packet);
-
-			statement->rsr_id = packet->p_resp.p_resp_object;
-			SET_OBJECT(rdb, statement, statement->rsr_id);
-
-			statement->rsr_flags.clear(Rsr::LAZY);
-		}
-
-		receive_response(status, rdb, packet);
 	}
 	catch (const Exception& ex)
 	{

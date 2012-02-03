@@ -35,11 +35,13 @@ namespace Jrd {
 class TraceDSQLPrepare
 {
 public:
-	TraceDSQLPrepare(Attachment* attachemnt, size_t string_length, const TEXT* string) :
-		m_attachment(attachemnt),
-		m_request(NULL),
-		m_string_len(string_length),
-		m_string(string)
+	TraceDSQLPrepare(Attachment* attachment, jrd_tra* transaction,
+				size_t string_length, const TEXT* string)
+		: m_attachment(attachment),
+		  m_transaction(transaction),
+		  m_request(NULL),
+		  m_string_len(string_length),
+		  m_string(string)
 	{
 		m_need_trace = TraceManager::need_dsql_prepare(m_attachment);
 		if (!m_need_trace)
@@ -80,22 +82,21 @@ public:
 		if ((result == res_successful) && m_request)
 		{
 			TraceSQLStatementImpl stmt(m_request, NULL);
-			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction,
-				&stmt, millis, result);
+			TraceManager::event_dsql_prepare(m_attachment, m_transaction, &stmt, millis, result);
 		}
 		else
 		{
 			Firebird::string str(*getDefaultMemoryPool(), m_string, m_string_len);
 
 			TraceFailedSQLStatement stmt(str);
-			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction,
-				&stmt, millis, result);
+			TraceManager::event_dsql_prepare(m_attachment, m_transaction, &stmt, millis, result);
 		}
 	}
 
 private:
 	bool m_need_trace;
-	Attachment* const m_attachment;
+	Attachment* m_attachment;
+	jrd_tra* const m_transaction;
 	dsql_req* m_request;
 	SINT64 m_start_clock;
 	size_t m_string_len;

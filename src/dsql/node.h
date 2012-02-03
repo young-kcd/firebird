@@ -95,8 +95,6 @@ enum nod_t
 	nod_array,
 	nod_not_null,
 	nod_collate,
-	nod_get_segment,	// blobs
-	nod_put_segment,
 	nod_access,
 	nod_wait,
 	nod_isolation,
@@ -175,12 +173,6 @@ enum node_args {
 	e_sel_alias,			// Alias name for derived table
 	e_sel_columns,			// List with alias names from derived table columns
 	e_sel_count,
-
-	e_blb_field = 0,		// nod_get_segment & nod_put_segment
-	e_blb_relation,
-	e_blb_filter,
-	e_blb_max_seg,
-	e_blb_count,
 
 	e_idx_unique = 0,		// nod_def_index
 	e_idx_asc_dsc,

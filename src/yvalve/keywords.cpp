@@ -256,7 +256,6 @@ static const TOK tokens[] =
 	{MATCHING, "MATCHING", 2, false},
 	{MAXIMUM, "MAX", 1, false},
 	{MAXVALUE, "MAXVALUE", 2, false},
-	{MAX_SEGMENT, "MAXIMUM_SEGMENT", 1, false},
 	{MERGE, "MERGE", 1, false},
 	{MILLISECOND, "MILLISECOND", 2, false},
 	{MIDDLENAME, "MIDDLENAME", 2, false},

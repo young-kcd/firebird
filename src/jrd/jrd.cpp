@@ -4424,7 +4424,7 @@ int JStatement::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 			unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
 			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
-			return_code = DSQL_fetch(tdbb, getHandle(), blr_length, blr, msg_length, msg);
+			return_code = getHandle()->fetch(tdbb, blr_length, blr, msg_length, msg);
 		}
 		catch (const Exception& ex)
 		{
@@ -4482,38 +4482,6 @@ void JStatement::free(IStatus* user_status, unsigned int option)
 	{
 		release();
 	}
-}
-
-
-void JStatement::insert(IStatus* user_status, const FbMessage* msgBuffer)
-{
-	try
-	{
-		EngineContextHolder tdbb(user_status, this);
-		check_database(tdbb);
-
-		try
-		{
-			unsigned blr_length = msgBuffer ? msgBuffer->blrLength : 0;
-			const unsigned char* blr = msgBuffer ? msgBuffer->blr : NULL;
-			unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
-			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
-
-			DSQL_insert(tdbb, getHandle(), blr_length, blr, msg_length, msg);
-		}
-		catch (const Exception& ex)
-		{
-			transliterateException(tdbb, ex, user_status);
-			return;
-		}
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return;
-	}
-
-	successful_completion(user_status);
 }
 
 
@@ -4721,7 +4689,7 @@ void JStatement::setCursorName(IStatus* user_status, const char* cursor)
 
 		try
 		{
-			DSQL_set_cursor(tdbb, getHandle(), cursor);
+			getHandle()->setCursor(tdbb, cursor);
 		}
 		catch (const Exception& ex)
 		{

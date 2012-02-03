@@ -2213,56 +2213,21 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 }
 
 
-// Insert next record into a dynamic SQL cursor
-ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
-	USHORT dialect, XSQLDA* sqlda)
+// Insert a BLOB into a dynamic SQL cursor. (deprecated)
+ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS* userStatus, FB_API_HANDLE* /*stmtHandle*/,
+	USHORT /*dialect*/, XSQLDA* /*sqlda*/)
 {
-	StatusVector status(userStatus);
-
-	try
-	{
-		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
-
-		statement->checkPrepared();
-
-		Array<UCHAR> inBlr, inMessage;
-		sqldaParse(sqlda, inBlr, inMessage, dialect);
-		sqldaMove(sqlda, inMessage, true);
-
-		return isc_dsql_insert_m(status, stmtHandle,
-			inBlr.getCount(), reinterpret_cast<SCHAR*>(inBlr.begin()), 0,
-			inMessage.getCount(), reinterpret_cast<SCHAR*>(inMessage.begin()));
-	}
-	catch (const Exception& e)
-	{
-		e.stuffException(&status);
-	}
-
-	return status[1];
+	(Arg::Gds(isc_feature_deprecated) << Arg::Str("isc_dsql_insert")).copyTo(userStatus);
+	return userStatus[1];
 }
 
 
-// Insert next record into a dynamic SQL cursor
+// Insert a BLOB into a dynamic SQL cursor. (deprecated)
 ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
 	USHORT blrLength, const SCHAR* blr, USHORT /*msgType*/, USHORT msgLength, const SCHAR* msg)
 {
-	StatusVector status(userStatus);
-
-	try
-	{
-		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
-
-		InternalMessageBuffer msgBuffer(blrLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(blr)),
-										msgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(msg)));
-
-		statement->insert(&status, &msgBuffer);
-	}
-	catch (const Exception& e)
-	{
-		e.stuffException(&status);
-	}
-
-	return status[1];
+	(Arg::Gds(isc_feature_deprecated) << Arg::Str("isc_dsql_insert")).copyTo(userStatus);
+	return userStatus[1];
 }
 
 
@@ -3833,21 +3798,6 @@ int YStatement::fetch(IStatus* status, const FbMessage* msgBuffer)
 	}
 
 	return status->get()[1];
-}
-
-void YStatement::insert(IStatus* status, const FbMessage* msgBuffer)
-{
-	try
-	{
-		YEntry<YStatement> entry(status, this);
-
-		checkPrepared();
-		entry.next()->insert(status, msgBuffer);
-	}
-	catch (const Exception& e)
-	{
-		e.stuffException(status);
-	}
 }
 
 void YStatement::free(IStatus* status, unsigned int option)

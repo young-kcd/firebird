@@ -272,7 +272,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> LSS
 %token <legacyNode> MANUAL
 %token <legacyNode> MAXIMUM
-%token <legacyNode> MAX_SEGMENT
 %token <legacyNode> MERGE
 %token <legacyNode> MINIMUM
 %token <legacyNode> MODULE_NAME
@@ -694,9 +693,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <compoundStmtNode> assignments
 %type <nullableIntVal>  admin_opt
 
-%type <legacyNode> blob_io blob_segsize blob_subtype blob_subtype_io
+%type <legacyNode> blob_segsize blob_subtype
 %type <filterNameNumber> blob_filter_subtype
-%type <legacyNode> blob_subtype_value_io blob_type
+%type <legacyNode> blob_type
 %type <stmtNode>   breakleave
 
 %type block_input_params(<parametersClause>) block_parameter(<parametersClause>)
@@ -755,7 +754,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type exec_stmt_options_list(<execStatementNode>) exec_stmt_inputs(<execStatementNode>)
 
 %type <stmtNode>   fetch_cursor
-%type <legacyNode> filter_clause_io first_clause
+%type <legacyNode> first_clause
 %type <legacyNode> float_type for_update_clause for_update_list from_clause
 %type <legacyNode> from_list
 %type <ddlNode>	   filter_decl_clause
@@ -851,7 +850,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> savepoint scroll_opt search_condition searched_case
 %type <valueIfNode> searched_when_clause
 %type sec_shadow_files(<dbFilesClause>)
-%type <legacyNode> segment_clause_io segment_length_io select select_expr
+%type <legacyNode> select select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
 %type <legacyNode> set_savepoint set_statistics set_transaction
 %type <createShadowNode> shadow_clause
@@ -993,7 +992,6 @@ statement
 	: alter										{ $$ = makeClassNode($1); }
 	// ASF: ALTER SEQUENCE is defined here cause it's treated as DML.
 	| ALTER SEQUENCE alter_sequence_clause		{ $$ = makeClassNode($3); }
-	| blob_io
 	| comment									{ $$ = makeClassNode($1); }
 	| commit
 	| create									{ $$ = makeClassNode($1); }
@@ -5061,44 +5059,6 @@ exec_function
 			node->dsqlAsgnFrom = makeClassNode($1);
 			$$ = node;
 		}
-	;
-
-
-// BLOB get and put
-
-blob_io
-	: READ BLOB simple_column_name FROM simple_table_name filter_clause_io segment_clause_io
-		{ $$ = make_node (nod_get_segment, (int) e_blb_count, $3, $5, $6, $7); }
-	| INSERT BLOB simple_column_name INTO simple_table_name filter_clause_io segment_clause_io
-		{ $$ = make_node (nod_put_segment, (int) e_blb_count, $3, $5, $6, $7); }
-	;
-
-filter_clause_io
-	: /* nothing */
-		{ $$ = NULL; }
-	| FILTER FROM blob_subtype_value_io TO blob_subtype_value_io
-		{ $$ = make_node (nod_list, 2, $3, $5); }
-	| FILTER TO blob_subtype_value_io
-		{ $$ = make_node (nod_list, 2, NULL, $3); }
-	;
-
-blob_subtype_value_io
-	: blob_subtype_io
-	| parameter
-	;
-
-blob_subtype_io
-	: signed_short_integer	{ $$ = MAKE_const_slong($1); }
-	;
-
-segment_clause_io
-	: /* nothing */						{ $$ = NULL; }
-	| MAX_SEGMENT segment_length_io		{ $$ = $2; }
-	;
-
-segment_length_io
-	: unsigned_short_integer	{ $$ = MAKE_const_slong($1); }
-	| parameter
 	;
 
 

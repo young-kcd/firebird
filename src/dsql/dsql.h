@@ -76,7 +76,6 @@ namespace Jrd
 	class blb;
 	struct bid;
 
-	class dsql_blb;
 	class dsql_ctx;
 	class dsql_msg;
 	class dsql_par;
@@ -412,8 +411,8 @@ public:
 	{
 		TYPE_SELECT, TYPE_SELECT_UPD, TYPE_INSERT, TYPE_DELETE, TYPE_UPDATE, TYPE_UPDATE_CURSOR,
 		TYPE_DELETE_CURSOR, TYPE_COMMIT, TYPE_ROLLBACK, TYPE_CREATE_DB, TYPE_DDL, TYPE_START_TRANS,
-		TYPE_GET_SEGMENT, TYPE_PUT_SEGMENT, TYPE_EXEC_PROCEDURE, TYPE_COMMIT_RETAIN,
-		TYPE_ROLLBACK_RETAIN, TYPE_SET_GENERATOR, TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK
+		TYPE_EXEC_PROCEDURE, TYPE_COMMIT_RETAIN, TYPE_ROLLBACK_RETAIN, TYPE_SET_GENERATOR,
+		TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK
 	};
 
 	// Statement flags.
@@ -430,7 +429,6 @@ public:
 		  flags(0),
 		  ddlData(p),
 		  ddlNode(NULL),
-		  blob(NULL),
 		  sendMsg(NULL),
 		  receiveMsg(NULL),
 		  eof(NULL),
@@ -464,10 +462,6 @@ public:
 	dsql_nod* getDdlNode() { return ddlNode; }
 	const dsql_nod* getDdlNode() const { return ddlNode; }
 	void setDdlNode(dsql_nod* value) { ddlNode = value; }
-
-	dsql_blb* getBlob() { return blob; }
-	const dsql_blb* getBlob() const { return blob; }
-	void setBlob(dsql_blb* value) { blob = value; }
 
 	dsql_msg* getSendMsg() { return sendMsg; }
 	const dsql_msg* getSendMsg() const { return sendMsg; }
@@ -509,7 +503,6 @@ private:
 	Firebird::RefStrPtr sqlText;
 	Firebird::HalfStaticArray<UCHAR, 1024> ddlData;
 	dsql_nod* ddlNode;			// Store metadata statement
-	dsql_blb* blob;				// Blob info for blob statements
 	dsql_msg* sendMsg;			// Message to be sent to start request
 	dsql_msg* receiveMsg;		// Per record message to be received
 	dsql_par* eof;				// End of file parameter
@@ -528,16 +521,7 @@ public:
 	static const unsigned FLAG_EMBEDDED			= 0x02;
 
 public:
-	explicit dsql_req(DsqlCompiledStatement* aStatement)
-		: req_pool(aStatement->getPool()),
-		  statement(aStatement),
-		  cursors(req_pool),
-		  req_msg_buffers(req_pool),
-		  req_cursor(req_pool),
-		  req_user_descs(req_pool),
-		  req_interface(NULL)
-	{
-	}
+	explicit dsql_req(DsqlCompilerScratch* scratch);
 
 public:
 	MemoryPool& getPool()
@@ -554,6 +538,16 @@ public:
 	{
 		return statement;
 	}
+
+	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		bool singleton) = 0;
+
+	virtual void setCursor(thread_db* tdbb, const TEXT* name);
+
+	virtual ISC_STATUS fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
+		ULONG msgLength, UCHAR* msgBuffer);
 
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
@@ -572,7 +566,6 @@ public:
 
 	Firebird::Array<UCHAR*>	req_msg_buffers;
 	Firebird::string req_cursor;	// Cursor name, if any
-	blb* req_blb;			// JRD blob
 	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
@@ -590,19 +583,6 @@ protected:
 	// To avoid posix warning about missing public destructor declare
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class Firebird::MemoryPool;
-};
-
-// Blob
-class dsql_blb : public pool_alloc<dsql_type_blb>
-{
-public:
-	dsql_par*	blb_blob_id;		// Parameter to hold blob id
-	dsql_par*	blb_segment;		// Parameter for segments
-	dsql_nod*	blb_from;
-	dsql_nod*	blb_to;
-	dsql_msg*	blb_open_in_msg;	// Input message to open cursor
-	dsql_msg*	blb_open_out_msg;	// Output message from open cursor
-	dsql_msg*	blb_segment_msg;	// Segment message
 };
 
 //! Implicit (NATURAL and USING) joins

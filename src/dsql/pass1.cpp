@@ -189,7 +189,6 @@ static dsql_ctx* pass1_alias_list(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* pass1_alias(DsqlCompilerScratch*, DsqlContextStack&, dsql_str*);
 static dsql_str* pass1_alias_concat(const dsql_str*, const char*);
 static dsql_rel* pass1_base_table(DsqlCompilerScratch*, const dsql_rel*, const dsql_str*);
-static void pass1_blob(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_collate(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
 static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, const char*);
@@ -929,11 +928,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_ROLLBACK);
 		return input;
 
-	case nod_get_segment:
-	case nod_put_segment:
-		pass1_blob(dsqlScratch, input);
-		return input;
-
 	case nod_list:
 		{
 			node = MAKE_node(input->nod_type, input->nod_count);
@@ -1380,100 +1374,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 	}
 
 	return true;
-}
-
-
-/**
-
- 	pass1_blob
-
-    @brief	Process a blob get or put segment.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	PASS1_make_context(dsqlScratch, input->nod_arg[e_blb_relation]);
-	FieldNode* field = ExprNode::as<FieldNode>(
-		pass1_field(dsqlScratch, input->nod_arg[e_blb_field], false, NULL));
-
-	if (field->dsqlDesc.dsc_dtype != dtype_blob)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
-				  Arg::Gds(isc_dsql_blob_err));
-	}
-
-	dsqlScratch->getStatement()->setType(input->nod_type == nod_get_segment ?
-		DsqlCompiledStatement::TYPE_GET_SEGMENT : DsqlCompiledStatement::TYPE_PUT_SEGMENT);
-
-	dsql_blb* blob = FB_NEW(*tdbb->getDefaultPool()) dsql_blb;
-	dsqlScratch->getStatement()->setBlob(blob);
-	//blob->blb_field = field;
-	blob->blb_open_in_msg = dsqlScratch->getStatement()->getSendMsg();
-	blob->blb_open_out_msg = FB_NEW(*tdbb->getDefaultPool()) dsql_msg(*tdbb->getDefaultPool());
-	blob->blb_segment_msg = dsqlScratch->getStatement()->getReceiveMsg();
-
-	// Create a parameter for the blob segment
-
-	dsql_par* parameter = MAKE_parameter(blob->blb_segment_msg, true, true, 0, NULL);
-	blob->blb_segment = parameter;
-	parameter->par_desc.dsc_dtype = dtype_text;
-	parameter->par_desc.dsc_ttype() = ttype_binary;
-	parameter->par_desc.dsc_length = field->dsqlField->fld_seg_length;
-	DEV_BLKCHK(field->dsqlField, dsql_type_fld);
-
-	// The Null indicator is used to pass back the segment length,
-	// set DSC_nullable so that the SQL_type is set to SQL_TEXT+1 instead
-	// of SQL_TEXT.
-
-	if (input->nod_type == nod_get_segment)
-		parameter->par_desc.dsc_flags |= DSC_nullable;
-
-	// Create a parameter for the blob id
-
-	dsql_msg* temp_msg = (input->nod_type == nod_get_segment) ?
-		blob->blb_open_in_msg : blob->blb_open_out_msg;
-	blob->blb_blob_id = parameter = MAKE_parameter(temp_msg, true, true, 0, NULL);
-	field->make(dsqlScratch, &parameter->par_desc);
-	parameter->par_desc.dsc_dtype = dtype_quad;
-	parameter->par_desc.dsc_scale = 0;
-
-	dsql_nod* list = input->nod_arg[e_blb_filter];
-	if (list)
-	{
-		if (list->nod_arg[0]) {
-			blob->blb_from = PASS1_node_psql(dsqlScratch, list->nod_arg[0], false);
-		}
-		if (list->nod_arg[1]) {
-			blob->blb_to = PASS1_node_psql(dsqlScratch, list->nod_arg[1], false);
-		}
-	}
-	if (!blob->blb_from) {
-		blob->blb_from = MAKE_const_slong(0);
-	}
-	if (!blob->blb_to) {
-		blob->blb_to = MAKE_const_slong(0);
-	}
-
-	for (size_t i = 0; i < blob->blb_open_in_msg->msg_parameters.getCount(); ++i)
-	{
-		dsql_par* parameter = blob->blb_open_in_msg->msg_parameters[i];
-
-		if (parameter->par_index > ((input->nod_type == nod_get_segment) ? 1 : 0))
-		{
-			parameter->par_desc.dsc_dtype = dtype_short;
-			parameter->par_desc.dsc_scale = 0;
-			parameter->par_desc.dsc_length = sizeof(SSHORT);
-		}
-	}
 }
 
 
@@ -4754,9 +4654,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_foreign:
 		verb = "foreign key";
 		break;
-	case nod_get_segment:
-		verb = "get segment";
-		break;
 	case nod_grant:
 		verb = "grant";
 		break;
@@ -4783,9 +4680,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_function_name:
 		verb = "function_name";
-		break;
-	case nod_put_segment:
-		verb = "put segment";
 		break;
 	case nod_revoke:
 		verb = "revoke";

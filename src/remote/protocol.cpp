@@ -695,22 +695,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
-	case op_insert:
-		sqldata = &p->p_sqldata;
-		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
-		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
-						 &sqldata->p_sqldata_blr, false, TYPE_PREPARED))
-		{
-			return P_FALSE(xdrs, p);
-		}
-		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
-		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
-		if (sqldata->p_sqldata_messages)
-			return xdr_sql_message(xdrs, (SLONG) sqldata->p_sqldata_statement) ?
-											P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
-		DEBUG_PRINTSIZE(xdrs, p->p_operation);
-		return P_TRUE(xdrs, p);
-
 	case op_set_cursor:
 		sqlcur = &p->p_sqlcur;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqlcur->p_sqlcur_statement));
@@ -779,6 +763,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
+	///case op_insert:
 	default:
 #ifdef DEV_BUILD
 		if (xdrs->x_op != XDR_FREE)

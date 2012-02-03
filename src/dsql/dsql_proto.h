@@ -46,17 +46,12 @@ void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
 							ULONG, const UCHAR*,
 							ULONG, UCHAR*,
 							bool);
-ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
 void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
-void DSQL_insert(Jrd::thread_db*, Jrd::dsql_req*,
-				 ULONG, const UCHAR*,
-				 ULONG, const UCHAR*);
 void DSQL_prepare(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::dsql_req**,
 				  ULONG, const TEXT*, USHORT,
 				  ULONG, const UCHAR*,
 				  ULONG, UCHAR*,
 				  bool);
-void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
 				   ULONG, const UCHAR*, ULONG, UCHAR*);
 

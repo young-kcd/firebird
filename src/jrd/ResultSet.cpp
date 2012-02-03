@@ -69,7 +69,7 @@ bool ResultSet::fetch(thread_db* tdbb)
 
 	memset(stmt->outMessage.begin(), 0, stmt->outMessage.getCount());
 
-	ISC_STATUS status = DSQL_fetch(tdbb, stmt->request, stmt->outBlr.getCount(), stmt->outBlr.begin(),
+	ISC_STATUS status = stmt->request->fetch(tdbb, stmt->outBlr.getCount(), stmt->outBlr.begin(),
 		/*0,*/ stmt->outMessage.getCount(), stmt->outMessage.begin());
 
 	if (status == 100)

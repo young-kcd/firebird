@@ -301,7 +301,6 @@ public:
 		unsigned int inMsgType, const Firebird::FbMessage* inMsgBuffer,
 		const Firebird::FbMessage* outMsgBuffer);
 	virtual int FB_CARG fetch(Firebird::IStatus* status, const Firebird::FbMessage* msgBuffer);
-	virtual void FB_CARG insert(Firebird::IStatus* status, const Firebird::FbMessage* msgBuffer);
 	virtual void FB_CARG free(Firebird::IStatus* status, unsigned int option);
 
 public:

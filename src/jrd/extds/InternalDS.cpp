@@ -472,8 +472,6 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
 	case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
 	case DsqlCompiledStatement::TYPE_DDL:
-	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
 	case DsqlCompiledStatement::TYPE_EXEC_PROCEDURE:
 	case DsqlCompiledStatement::TYPE_SET_GENERATOR:
 	case DsqlCompiledStatement::TYPE_SAVEPOINT:

@@ -994,7 +994,6 @@ public:
 	ISC_STATUS	get_segment(P_SGMT*, PACKET*);
 	ISC_STATUS	get_slice(P_SLC*, PACKET*);
 	void		info(P_OP, P_INFO*, PACKET*);
-	ISC_STATUS	insert(P_SQLDATA*, PACKET*);
 	ISC_STATUS	open_blob(P_OP, P_BLOB*, PACKET*);
 	ISC_STATUS	prepare(P_PREP*, PACKET*);
 	ISC_STATUS	prepare_statement(P_SQLST*, PACKET*);

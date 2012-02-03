@@ -144,7 +144,6 @@ public:
 										  unsigned int inMsgType, const FbMessage* inMsgBuffer,
 										  const FbMessage* outMsgBuffer) = 0;
 	virtual int FB_CARG fetch(IStatus* status, const FbMessage* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(IStatus* status, const FbMessage* msgBuffer) = 0;
 	virtual void FB_CARG free(IStatus* status, unsigned int option) = 0;
 };
 #define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 12)
