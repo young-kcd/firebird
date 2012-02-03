@@ -1,3 +1,7 @@
+ 2012-02-02 14:10  alexpeshkoff 
+   M src/remote/inet_server.cpp
+Fixed CORE-3750: Error increasing limits on posix (thanks to Dmitry Starodubov)
+
  2012-01-19 15:34  alexpeshkoff 
    M src/jrd/opt.cpp
 Backported fix for CORE-3736: WITH LOCK clause is allowed for users with read-only rights on some table, thus blocking others from updating this table
