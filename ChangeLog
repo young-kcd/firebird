@@ -1,3 +1,26 @@
+ 2012-02-03 19:01  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/dsql_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/fb_blk.h
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/ResultSet.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceDSQLHelpers.h
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/keywords.cpp
+   M src/yvalve/why.cpp
+1) Removed READ/WRITE BLOB sql commands. 2) Refactored request operations to fix server crashes.
+
  2012-01-29 02:53  asfernandes 
    M src/common/classes/locks.h
    M src/common/classes/timestamp.h
