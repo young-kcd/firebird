@@ -2223,8 +2223,9 @@ ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS* userStatus, FB_API_HANDLE* /*
 
 
 // Insert a BLOB into a dynamic SQL cursor. (deprecated)
-ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
-	USHORT blrLength, const SCHAR* blr, USHORT /*msgType*/, USHORT msgLength, const SCHAR* msg)
+ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* userStatus, FB_API_HANDLE* /*stmtHandle*/,
+	USHORT /*blrLength*/, const SCHAR* /*blr*/,
+	USHORT /*msgType*/, USHORT /*msgLength*/, const SCHAR* /*msg*/)
 {
 	(Arg::Gds(isc_feature_deprecated) << Arg::Str("isc_dsql_insert")).copyTo(userStatus);
 	return userStatus[1];
