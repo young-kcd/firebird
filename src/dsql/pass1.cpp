@@ -948,10 +948,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 		break;
 
-	case nod_trans:
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_START_TRANS);
-		return input;
-
 	default:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_command_err) <<
@@ -4697,9 +4693,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "natural";
 		break;
 	// SKIDDER: some more missing node types
-	case nod_trans:
-		verb = "trans";
-		break;
 	case nod_def_default:
 		verb = "def_default";
 		break;
@@ -4736,26 +4729,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_user_group:
 		verb = "user_group";
 		break;
-	case nod_access:
-		verb = "access";
-		break;
-	case nod_wait:
-		verb = "wait";
-		break;
-	case nod_isolation:
-		verb = "isolation";
-		break;
-	case nod_version:
-		verb = "version";
-		break;
 	case nod_table_lock:
 		verb = "table_lock";
 		break;
 	case nod_lock_mode:
 		verb = "lock_mode";
-		break;
-	case nod_reserve:
-		verb = "reserve";
 		break;
 	case nod_def_computed:
 		verb = "def_computed";
@@ -4817,14 +4795,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		string = (dsql_str*) node->nod_arg[e_vrn_name];
 		trace_line("%s\"\n", string->str_data);
 		return;
-
-	case nod_tra_misc:
-		verb = "tra_misc";
-		break;
-
-	case nod_lock_timeout:
-		verb = "lock_timeout"; // maybe show the timeout value?
-		break;
 
 	case nod_with:
 		verb = "with";

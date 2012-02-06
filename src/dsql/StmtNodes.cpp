@@ -7401,6 +7401,117 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 //--------------------
 
 
+SetTransactionNode* SetTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_START_TRANS);
+
+	// Generate tpb for set transaction. Use blr string of dsqlScratch.
+	// If a value is not specified, default is not stuffed, let the engine handle it.
+
+	fb_assert(dsqlScratch->getBlrData().getCount() == 0);
+
+	// Find out isolation level - if specified. This is required for
+	// specifying the correct lock level in reserving clause.
+	const USHORT lockLevel = isoLevel.specified && isoLevel.value == ISO_LEVEL_CONSISTENCY ?
+		isc_tpb_protected : isc_tpb_shared;
+
+	// Stuff some version info.
+	dsqlScratch->appendUChar(isc_tpb_version1);
+
+	if (readOnly.specified)
+		dsqlScratch->appendUChar(readOnly.value ? isc_tpb_read : isc_tpb_write);
+
+	if (wait.specified)
+		dsqlScratch->appendUChar(wait.value ? isc_tpb_wait : isc_tpb_nowait);
+
+	if (isoLevel.specified)
+	{
+		if (isoLevel.value == ISO_LEVEL_CONCURRENCY)
+			dsqlScratch->appendUChar(isc_tpb_concurrency);
+		else if (isoLevel.value == ISO_LEVEL_CONSISTENCY)
+			dsqlScratch->appendUChar(isc_tpb_consistency);
+		else
+		{
+			dsqlScratch->appendUChar(isc_tpb_read_committed);
+
+			if (isoLevel.value == ISO_LEVEL_READ_COMMITTED_REC_VERSION)
+				dsqlScratch->appendUChar(isc_tpb_rec_version);
+			else
+				dsqlScratch->appendUChar(isc_tpb_no_rec_version);
+		}
+	}
+
+	if (noAutoUndo.specified)
+		dsqlScratch->appendUChar(isc_tpb_no_auto_undo);
+
+	if (ignoreLimbo.specified)
+		dsqlScratch->appendUChar(isc_tpb_ignore_limbo);
+
+	if (restartRequests.specified)
+		dsqlScratch->appendUChar(isc_tpb_restart_requests);
+
+	if (lockTimeout.specified)
+	{
+		dsqlScratch->appendUChar(isc_tpb_lock_timeout);
+		dsqlScratch->appendUChar(2);
+		dsqlScratch->appendUShort(lockTimeout.value);
+	}
+
+	if (reserveList.specified)
+	{
+		const dsql_nod* const* temp = reserveList.value->nod_arg;
+		for (const dsql_nod* const* end = temp + reserveList.value->nod_count; temp != end; ++temp)
+			genTableLock(dsqlScratch, *temp, lockLevel);
+	}
+
+	if (dsqlScratch->getBlrData().getCount() > 1)	// 1 -> isc_tpb_version1
+	{
+		// Store DYN data in the statement.
+		dsqlScratch->getStatement()->setDdlData(dsqlScratch->getBlrData());
+	}
+
+	return this;
+}
+
+// Generate tpb for table lock.
+// If lock level is specified, it overrrides the transaction lock level.
+void SetTransactionNode::genTableLock(DsqlCompilerScratch* dsqlScratch, const dsql_nod* tblLock,
+	USHORT lockLevel)
+{
+	if (!tblLock || tblLock->nod_type != Dsql::nod_table_lock)
+		return;
+
+	const dsql_nod* tblNames = tblLock->nod_arg[Dsql::e_lock_tables];
+	SSHORT flags = 0;
+
+	if (tblLock->nod_arg[Dsql::e_lock_mode])
+		flags = tblLock->nod_arg[Dsql::e_lock_mode]->nod_flags;
+
+	if (flags & NOD_PROTECTED)
+		lockLevel = isc_tpb_protected;
+	else if (flags & NOD_SHARED)
+		lockLevel = isc_tpb_shared;
+
+	const USHORT lockMode = (flags & NOD_WRITE) ? isc_tpb_lock_write : isc_tpb_lock_read;
+
+	const dsql_nod* const* ptr = tblNames->nod_arg;
+	for (const dsql_nod* const* const end = ptr + tblNames->nod_count; ptr != end; ++ptr)
+	{
+		const RelationSourceNode* relNode = ExprNode::as<RelationSourceNode>(*ptr);
+
+		if (!relNode)
+			continue;
+
+		dsqlScratch->appendUChar(lockMode);
+		dsqlScratch->appendNullString(relNode->dsqlName.c_str());	// stuff table name
+		dsqlScratch->appendUChar(lockLevel);
+	}
+}
+
+
+//--------------------
+
+
 StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?

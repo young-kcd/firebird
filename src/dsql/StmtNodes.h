@@ -1421,6 +1421,50 @@ public:
 };
 
 
+class SetTransactionNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SET_TRANSACTION>
+{
+public:
+	enum
+	{
+		ISO_LEVEL_CONCURRENCY,
+		ISO_LEVEL_CONSISTENCY,
+		ISO_LEVEL_READ_COMMITTED_REC_VERSION,
+		ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION
+	};
+
+public:
+	explicit SetTransactionNode(MemoryPool& pool)
+		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SET_TRANSACTION>(pool)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	{
+		text = "SetTransactionNode";
+	}
+
+	virtual SetTransactionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	{
+	}
+
+private:
+	void genTableLock(DsqlCompilerScratch* dsqlScratch, const dsql_nod* tblLock, USHORT lockLevel);
+
+public:
+	Nullable<bool> readOnly;
+	Nullable<bool> wait;
+	Nullable<unsigned> isoLevel;
+	Nullable<bool> noAutoUndo;
+	Nullable<bool> ignoreLimbo;
+	Nullable<bool> restartRequests;
+	Nullable<USHORT> lockTimeout;
+	Nullable<dsql_nod*> reserveList;
+};
+
+
 class UpdateOrInsertNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>
 {
 public:

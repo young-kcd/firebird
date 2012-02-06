@@ -55,7 +55,6 @@ enum nod_t
 	// to an expression node.
 
 	nod_unknown_type = 0,
-	nod_trans,
 	nod_def_default,
 	nod_del_default,
 	nod_def_domain,
@@ -93,13 +92,8 @@ enum nod_t
 	nod_array,
 	nod_not_null,
 	nod_collate,
-	nod_access,
-	nod_wait,
-	nod_isolation,
-	nod_version,
 	nod_table_lock,
 	nod_lock_mode,
-	nod_reserve,
 	nod_def_computed,
 	nod_plan_expr,
 	nod_plan_item,
@@ -118,8 +112,6 @@ enum nod_t
 	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
 	nod_rows,	// ROWS support
-	nod_tra_misc,
-	nod_lock_timeout,
 	nod_with,
 	nod_class_stmtnode,
 	nod_class_exprnode,
@@ -310,27 +302,10 @@ enum nod_flags_vals {
 	NOD_UNION_ALL			= 1, // nod_list
 	NOD_UNION_RECURSIVE 	= 2,
 
-	NOD_READ_ONLY			= 1, // nod_access
-	NOD_READ_WRITE			= 2,
-
-	NOD_WAIT				= 1, // nod_wait
-	NOD_NO_WAIT				= 2,
-
-	NOD_VERSION				= 1, // nod_version
-	NOD_NO_VERSION			= 2,
-
-	NOD_CONCURRENCY			= 1, // nod_isolation
-	NOD_CONSISTENCY			= 2,
-	NOD_READ_COMMITTED		= 4,
-
 	NOD_SHARED				= 1, // nod_lock_mode
 	NOD_PROTECTED			= 2,
 	NOD_READ				= 4,
 	NOD_WRITE				= 8,
-
-	NOD_NO_AUTO_UNDO        = 1, // nod_tra_misc
-	NOD_IGNORE_LIMBO        = 2,
-	NOD_RESTART_REQUESTS    = 4,
 
 	NOD_NULLS_FIRST			= 1, // nod_order
 	NOD_NULLS_LAST			= 2,

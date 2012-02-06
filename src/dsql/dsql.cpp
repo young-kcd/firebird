@@ -1601,12 +1601,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			request = FB_NEW(statement->getPool()) DsqlTransactionRequest(scratch);
 			request->req_traced = false;
 			trace.setStatement(request);
-
-			if (statementType == DsqlCompiledStatement::TYPE_START_TRANS)
-				GEN_start_transaction(scratch, node);
-
-			// Stop here for statements not requiring code generation.
-			return request;
+			return request;	// Stop here for statements not requiring code generation.
 
 		case DsqlCompiledStatement::TYPE_CREATE_DB:
 		case DsqlCompiledStatement::TYPE_DDL:

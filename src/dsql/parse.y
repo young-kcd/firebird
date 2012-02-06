@@ -670,11 +670,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ErrorHandlerNode* errorHandlerNode;
 	Jrd::ExecStatementNode* execStatementNode;
 	Jrd::MergeNode* mergeNode;
+	Jrd::SetTransactionNode* setTransactionNode;
 	Jrd::DeclareSubProcNode* declareSubProcNode;
 	Jrd::DeclareSubFuncNode* declareSubFuncNode;
 }
 
-%type <legacyNode> access_mode access_type alias_list
+%type <legacyNode> access_type alias_list
 %type <legacyNode> alter_column_name
 %type <legacyNode> alter_data_type_or_domain
 %type <legacyNode> alter_op alter_ops
@@ -777,7 +778,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> ins_column_list ins_column_parens
 %type <legacyNode> ins_column_parens_opt integer_keyword
 %type <stmtNode>   insert
-%type <legacyNode> iso_mode isolation_mode
+%type <uintVal>	   iso_mode isolation_mode
 %type input_parameters(<parametersClause>) input_proc_parameter(<parametersClause>)
 %type input_proc_parameters(<parametersClause>)
 
@@ -789,7 +790,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> label_opt limit_clause
 %type <stmtNode>   local_declaration local_declaration_item
 %type <compoundStmtNode> local_declaration_list local_declarations
-%type <legacyNode> lock_clause lock_mode lock_type lock_wait
+%type <legacyNode> lock_clause lock_mode lock_type
 %type <stringPtr>  lastname_opt
 %type <int32Val>   long_integer
 
@@ -834,7 +835,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <ddlNode> recreate recreate_clause replace_clause replace_exception_clause replace_view_clause
 %type <legacyNode> referential_action referential_constraint
-%type <legacyNode> referential_trigger_action release_savepoint
+%type <legacyNode> referential_trigger_action
+%type <stmtNode>   release_savepoint
 %type <legacyNode> restr_list restr_option
 %type <int32Val> return_mechanism
 %type <legacyNode> rev_admin_option rev_grant_option revoke
@@ -848,18 +850,21 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <ddlNode> rview_clause
 %type <nullableIntVal>  revoke_admin
 
-%type <legacyNode> savepoint scroll_opt search_condition searched_case
+%type <stmtNode>   savepoint set_savepoint
+%type <legacyNode> scroll_opt search_condition searched_case
 %type <valueIfNode> searched_when_clause
 %type sec_shadow_files(<dbFilesClause>)
 %type <legacyNode> select select_expr
-%type <legacyNode> select_expr_body select_item select_items select_list set set_generator
-%type <legacyNode> set_savepoint set_statistics set_transaction
+%type <legacyNode> select_expr_body select_item select_items select_list
 %type <createShadowNode> shadow_clause
 %type <legacyNode> simple_case simple_UDF_name
 %type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_table_name
-%type <stmtNode>   simple_proc_statement singleton_select
+%type <stmtNode>   set_generator simple_proc_statement singleton_select
+%type <setTransactionNode> set_transaction
+%type <ddlNode>	   set_statistics
 %type <legacyNode> simple_type simple_when_clause skip_clause
-%type <legacyNode> snap_shot statement
+%type <uintVal>	   snap_shot
+%type <legacyNode> statement
 %type <legacyNode> string_length_opt
 %type <legacyNode> symbol_UDF_call_name symbol_UDF_name symbol_blob_subtype_name symbol_character_set_name
 %type <legacyNode> symbol_collation_name symbol_column_name symbol_constraint_name symbol_cursor_name
@@ -880,22 +885,25 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> table_constraint table_constraint_definition
 %type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
-%type <legacyNode> table_proc table_proc_inputs table_reference table_subquery tbl_reserve_options
-%type <legacyNode> top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
+%type <legacyNode> table_proc table_proc_inputs table_reference table_subquery
+%type <legacyNode> top
+%type tran_option(<setTransactionNode>) tran_option_list(<setTransactionNode>)
+%type tran_option_list_opt(<setTransactionNode>)
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
 
-%type <legacyNode> u_constant u_numeric_constant udf_data_type undo_savepoint
+%type <legacyNode> u_constant u_numeric_constant udf_data_type
 %type <createAlterFunctionNode> udf_decl_clause
 %type <legacyNode> unique_constraint update_column_name
 %type <boolVal>	   unique_opt
-%type <stmtNode>   update update_or_insert update_positioned update_searched
+%type <stmtNode>   undo_savepoint update update_or_insert update_positioned update_searched
 %type <legacyNode> update_or_insert_matching_opt update_rule
 %type <legacyNode> user_grantee user_grantee_list
 %type <int32Val>   unsigned_short_integer
 
 %type <legacyNode> valid_symbol_name value common_value common_value_list common_value_list_opt value_list value_list_opt var_decl_opt
 %type <stmtNode>   var_declaration_item
-%type <legacyNode> variable varying_keyword version_mode
+%type <legacyNode> variable varying_keyword
+%type <uintVal>	   version_mode
 %type <legacyArray> variable_list
 %type <createAlterViewNode> view_clause
 
@@ -1008,9 +1016,11 @@ statement
 	| recreate									{ $$ = makeClassNode($1); }
 	| revoke
 	| rollback									{ $$ = makeClassNode($1); }
-	| savepoint
+	| savepoint									{ $$ = makeClassNode($1); }
 	| select
-	| set
+	| set_transaction							{ $$ = makeClassNode($1); }
+	| set_generator								{ $$ = makeClassNode($1); }
+	| set_statistics							{ $$ = makeClassNode($1); }
 	| update									{ $$ = makeClassNode($1); }
 	| update_or_insert							{ $$ = makeClassNode($1); }
 	;
@@ -4024,26 +4034,18 @@ precision_opt
 	;
 
 
-// SET statements
-set
-	: set_transaction
-	| set_generator
-	| set_statistics
-	;
-
-
 set_generator
 	: SET GENERATOR symbol_generator_name TO signed_long_integer
-		{ $$ = makeClassNode(newNode<SetGeneratorNode>(toName($3), MAKE_const_slong($5))); }
+		{ $$ = newNode<SetGeneratorNode>(toName($3), MAKE_const_slong($5)); }
 	| SET GENERATOR symbol_generator_name TO NUMBER64BIT
 		{
-			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($3),
-				MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)));
+			$$ = newNode<SetGeneratorNode>(toName($3),
+				MAKE_constant((dsql_str*) $5, CONSTANT_SINT64));
 		}
 	| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
 		{
-			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($3),
-				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $6, CONSTANT_SINT64)))));
+			$$ = newNode<SetGeneratorNode>(toName($3),
+				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $6, CONSTANT_SINT64))));
 		}
 	;
 
@@ -4062,7 +4064,7 @@ set_savepoint
 			UserSavepointNode* node = newNode<UserSavepointNode>();
 			node->command = UserSavepointNode::CMD_SET;
 			node->name = toName($2);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4072,7 +4074,7 @@ release_savepoint
 			UserSavepointNode* node = newNode<UserSavepointNode>();
 			node->command = ($4 ? UserSavepointNode::CMD_RELEASE_ONLY : UserSavepointNode::CMD_RELEASE);
 			node->name = toName($3);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4087,7 +4089,7 @@ undo_savepoint
 			UserSavepointNode* node = newNode<UserSavepointNode>();
 			node->command = UserSavepointNode::CMD_ROLLBACK;
 			node->name = toName($5);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4122,42 +4124,49 @@ opt_snapshot
 	;
 
 set_transaction
-	: SET TRANSACTION tran_opt_list_m
-		{ $$ = make_node (nod_trans, 1, make_list ($3)); }
+	: SET TRANSACTION
+			{ $$ = newNode<SetTransactionNode>(); }
+		tran_option_list_opt($3)
+			{ $$ = $3; }
 	;
 
-tran_opt_list_m
-	: /* nothing */		{ $$ = NULL; }
-	| tran_opt_list
+tran_option_list_opt($setTransactionNode)
+	: // nothing
+	| tran_option_list($setTransactionNode)
 	;
 
-tran_opt_list
-	: tran_opt
-	| tran_opt_list tran_opt
-		{ $$ = make_node (nod_list, (int) 2, $1, $2); }
+tran_option_list($setTransactionNode)
+	: tran_option($setTransactionNode)
+	| tran_option_list tran_option($setTransactionNode)
 	;
 
-tran_opt
-	: access_mode
-	| lock_wait
-	| isolation_mode
-	| tra_misc_options
-	| tra_timeout
-	| tbl_reserve_options
-	;
-
-access_mode
+tran_option($setTransactionNode)
+	// access mode
 	: READ ONLY
-		{ $$ = make_flag_node (nod_access, NOD_READ_ONLY, (int) 0, NULL); }
+		{ setClause($setTransactionNode->readOnly, "READ {ONLY | WRITE}", true); }
 	| READ WRITE
-		{ $$ = make_flag_node (nod_access, NOD_READ_WRITE, (int) 0, NULL); }
-	;
-
-lock_wait
-	: WAIT
-		{ $$ = make_flag_node (nod_wait, NOD_WAIT, (int) 0, NULL); }
+		{ setClause($setTransactionNode->readOnly, "READ {ONLY | WRITE}", false); }
+	// wait mode
+	| WAIT
+		{ setClause($setTransactionNode->wait, "[NO] WAIT", true); }
 	| NO WAIT
-		{ $$ = make_flag_node (nod_wait, NOD_NO_WAIT, (int) 0, NULL); }
+		{ setClause($setTransactionNode->wait, "[NO] WAIT", false); }
+	// isolation mode
+	| isolation_mode
+		{ setClause($setTransactionNode->isoLevel, "ISOLATION LEVEL", $1); }
+	// misc options
+	| NO AUTO UNDO
+		{ setClause($setTransactionNode->noAutoUndo, "NO AUTO UNDO", true); }
+	| KW_IGNORE LIMBO
+		{ setClause($setTransactionNode->ignoreLimbo, "IGNORE LIMBO", true); }
+	| RESTART REQUESTS
+		{ setClause($setTransactionNode->restartRequests, "RESTART REQUESTS", true); }
+	// timeout
+	| LOCK TIMEOUT nonneg_short_integer
+		{ setClause($setTransactionNode->lockTimeout, "LOCK TIMEOUT", (USHORT) $3); }
+	// reserve options
+	| RESERVING restr_list
+		{ setClause($setTransactionNode->reserveList, "RESERVING", $2); }
 	;
 
 isolation_mode
@@ -4167,45 +4176,20 @@ isolation_mode
 
 iso_mode
 	: snap_shot
-		{ $$ = $1;}
-	| READ UNCOMMITTED version_mode
-		{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
-	| READ COMMITTED version_mode
-		{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
+	| READ UNCOMMITTED version_mode		{ $$ = $3; }
+	| READ COMMITTED version_mode		{ $$ = $3; }
 	;
 
 snap_shot
-	: SNAPSHOT
-		{ $$ = make_flag_node (nod_isolation, NOD_CONCURRENCY, 0, NULL); }
-	| SNAPSHOT TABLE
-		{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
-	| SNAPSHOT TABLE STABILITY
-		{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
+	: SNAPSHOT					{ $$ = SetTransactionNode::ISO_LEVEL_CONCURRENCY; }
+	| SNAPSHOT TABLE			{ $$ = SetTransactionNode::ISO_LEVEL_CONSISTENCY; }
+	| SNAPSHOT TABLE STABILITY	{ $$ = SetTransactionNode::ISO_LEVEL_CONSISTENCY; }
 	;
 
 version_mode
-	: /* nothing */	{ $$ = NULL; }
-	| VERSION		{ $$ = make_flag_node (nod_version, NOD_VERSION, 0, NULL); }
-	| NO VERSION	{ $$ = make_flag_node (nod_version, NOD_NO_VERSION, 0, NULL); }
-	;
-
-tra_misc_options
-	: NO AUTO UNDO
-		{ $$ = make_flag_node(nod_tra_misc, NOD_NO_AUTO_UNDO, 0, NULL); }
-	| KW_IGNORE LIMBO
-		{ $$ = make_flag_node(nod_tra_misc, NOD_IGNORE_LIMBO, 0, NULL); }
-	| RESTART REQUESTS
-		{ $$ = make_flag_node(nod_tra_misc, NOD_RESTART_REQUESTS, 0, NULL); }
-	;
-
-tra_timeout
-	: LOCK TIMEOUT nonneg_short_integer
-		{ $$ = make_node(nod_lock_timeout, 1, MAKE_const_slong($3)); }
-	;
-
-tbl_reserve_options
-	: RESERVING restr_list
-		{ $$ = make_node (nod_reserve, 1, make_list ($2)); }
+	: /* nothing */	{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION; }
+	| VERSION		{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_REC_VERSION; }
+	| NO VERSION	{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION; }
 	;
 
 lock_type
@@ -4222,12 +4206,12 @@ lock_mode
 restr_list
 	: restr_option
 	| restr_list ',' restr_option
-		{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+		{ $$ = make_node(nod_list, (int) 2, $1, $3); }
 	;
 
 restr_option
 	: table_list table_lock
-		{ $$ = make_node (nod_table_lock, (int) 2, make_list ($1), $2); }
+		{ $$ = make_node(nod_table_lock, (int) 2, make_list($1), $2); }
 	;
 
 table_lock
@@ -4240,13 +4224,13 @@ table_lock
 table_list
 	: simple_table_name
 	| table_list ',' simple_table_name
-		{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+		{ $$ = make_node(nod_list, (int) 2, $1, $3); }
 	;
 
 
 set_statistics
 	: SET STATISTICS INDEX symbol_index_name
-		{ $$ = makeClassNode(newNode<SetStatisticsNode>(toName($4))); }
+		{ $$ = newNode<SetStatisticsNode>(toName($4)); }
 	;
 
 comment
