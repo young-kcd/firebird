@@ -1458,10 +1458,10 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 // Prepare a request for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG stringLength, const TEXT* string, USHORT clientDialect, USHORT parserVersion,
+	ULONG textLength, const TEXT* text, USHORT clientDialect, USHORT parserVersion,
 	bool isInternalRequest)
 {
-	return prepareStatement(tdbb, database, transaction, stringLength, string, clientDialect,
+	return prepareStatement(tdbb, database, transaction, textLength, text, clientDialect,
 		parserVersion, isInternalRequest);
 }
 
@@ -1469,29 +1469,26 @@ static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* tr
 // Prepare a statement for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG string_length, const TEXT* string, USHORT client_dialect, USHORT parser_version,
+	ULONG textLength, const TEXT* text, USHORT clientDialect, USHORT parserVersion,
 	bool isInternalRequest)
 {
-	ISC_STATUS_ARRAY local_status;
-	MOVE_CLEAR(local_status, sizeof(local_status));
+	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text);
 
-	TraceDSQLPrepare trace(database->dbb_attachment, transaction, string_length, string);
-
-	if (client_dialect > SQL_DIALECT_CURRENT)
+	if (clientDialect > SQL_DIALECT_CURRENT)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_wish_list));
 	}
 
-	if (string && !string_length)
+	if (text && textLength == 0)
 	{
-		size_t sql_length = strlen(string);
-		if (sql_length > MAX_USHORT)
-			sql_length = MAX_USHORT;
-		string_length = static_cast<USHORT>(sql_length);
+		size_t sqlLength = strlen(text);
+		if (sqlLength > MAX_USHORT)
+			sqlLength = MAX_USHORT;
+		textLength = static_cast<USHORT>(sqlLength);
 	}
 
-	if (!string || !string_length)
+	if (!text || textLength == 0)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
@@ -1501,12 +1498,12 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	// Get rid of the trailing ";" if there is one.
 
-	for (const TEXT* p = string + string_length; p-- > string;)
+	for (const TEXT* p = text + textLength; p-- > text;)
 	{
 		if (*p != ' ')
 		{
 			if (*p == ';')
-				string_length = p - string;
+				textLength = p - text;
 			break;
 		}
 	}
@@ -1519,222 +1516,226 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
 	DsqlCompilerScratch* scratch = FB_NEW(pool) DsqlCompilerScratch(pool, database,
 		transaction, statement);
-	scratch->clientDialect = client_dialect;
+	scratch->clientDialect = clientDialect;
 
 	dsql_req* request = NULL;
 
-	try {
-
-	// Parse the SQL statement.  If it croaks, return
-
-	Parser parser(*tdbb->getDefaultPool(), client_dialect,
-		scratch->getAttachment()->dbb_db_SQL_dialect, parser_version, string, string_length,
-		tdbb->getAttachment()->att_charset);
-
-	dsql_nod* node = parser.parse();
-	Firebird::string transformedText = parser.getTransformedString();
-	SSHORT charSetId = database->dbb_attachment->att_charset;
-
-	// If the attachment charset is NONE, replace non-ASCII characters by question marks, so that
-	// engine internals doesn't receive non-mappeable data to UTF8. If an attachment charset is
-	// used, validate the string.
-	if (charSetId == CS_NONE)
-	{
-		for (char* p = transformedText.begin(), *end = transformedText.end(); p < end; ++p)
-		{
-			if (UCHAR(*p) > 0x7F)
-				*p = '?';
-		}
-	}
-	else
-	{
-		CharSet* charSet = INTL_charset_lookup(tdbb, charSetId);
-
-		if (!charSet->wellFormed(transformedText.length(), (const UCHAR*) transformedText.begin(), NULL))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_malformed_string));
-		}
-
-		UCharBuffer temp;
-
-		CsConvert conversor(charSet->getStruct(),
-			INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());
-		conversor.convert(transformedText.length(), (const UCHAR*) transformedText.c_str(), temp);
-
-		transformedText.assign(temp.begin(), temp.getCount());
-	}
-
-	statement->setSqlText(FB_NEW(pool) RefString(pool, transformedText));
-
-	if (!node)
-	{
-		// CVC: Apparently, Parser::parse won't return if the command is incomplete,
-		// because yyerror() will call ERRD_post().
-		// This may be a special case, but we don't know about positions here.
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Unexpected end of command
-				  Arg::Gds(isc_command_end_err));
-	}
-
-	// allocate the send and receive messages
-
-	statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
-	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
-	statement->setReceiveMsg(message);
-	message->msg_number = 1;
-
-	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
-
-	node = PASS1_statement(scratch, node);
-	fb_assert(node);
-
-	const DsqlCompiledStatement::Type statementType = statement->getType();
-
-	switch (statementType)
-	{
-		case DsqlCompiledStatement::TYPE_COMMIT:
-		case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-		case DsqlCompiledStatement::TYPE_ROLLBACK:
-		case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-		case DsqlCompiledStatement::TYPE_START_TRANS:
-			request = FB_NEW(statement->getPool()) DsqlTransactionRequest(scratch);
-			request->req_traced = false;
-			trace.setStatement(request);
-			return request;	// Stop here for statements not requiring code generation.
-
-		case DsqlCompiledStatement::TYPE_CREATE_DB:
-		case DsqlCompiledStatement::TYPE_DDL:
-			request = FB_NEW(statement->getPool()) DsqlDdlRequest(scratch);
-			break;
-
-		default:
-			request = FB_NEW(statement->getPool()) DsqlDmlRequest(scratch);
-			break;
-	}
-
-	request->req_traced = true;
-	trace.setStatement(request);
-
-	if (statementType == DsqlCompiledStatement::TYPE_DDL)
-	{
-		if (parser.isStmtAmbiguous() &&
-			scratch->getAttachment()->dbb_db_SQL_dialect != client_dialect)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
-					  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
-						  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
-		}
-
-		statement->setDdlScratch(scratch);
-	}
-
-	if (client_dialect > SQL_DIALECT_V5)
-		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
-	else
-		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
-
-	GEN_request(scratch, node);
-
-	// Create the messages buffers
-	for (size_t i = 0; i < scratch->ports.getCount(); ++i)
-	{
-		dsql_msg* message = scratch->ports[i];
-
-		// Allocate buffer for message
-		const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
-
-		message->msg_buffer_number = request->req_msg_buffers.getCount();
-		request->req_msg_buffers.grow(message->msg_buffer_number + 1);
-
-		UCHAR*& msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
-		fb_assert(!msgBuffer);
-
-		msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
-		msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
-	}
-
-	// stop here for ddl statements
-
-	if (statementType == DsqlCompiledStatement::TYPE_CREATE_DB ||
-		statementType == DsqlCompiledStatement::TYPE_DDL)
-	{
-		// Notify Trace API manager about new DDL request cooked.
-		trace.prepare(res_successful);
-		return request;
-	}
-
-	// have the access method compile the statement
-
-#ifdef DSQL_DEBUG
-	if (DSQL_debug & 64)
-	{
-		dsql_trace("Resulting BLR code for DSQL:");
-		gds__trace_raw("Statement:\n");
-		gds__trace_raw(string, string_length);
-		gds__trace_raw("\nBLR:\n");
-		fb_print_blr(scratch->getBlrData().begin(),
-			(ULONG) scratch->getBlrData().getCount(),
-			gds__trace_printer, 0, 0);
-	}
-#endif
-
-	// check for warnings
-	if (tdbb->tdbb_status_vector[2] == isc_arg_warning)
-	{
-		// save a status vector
-		memcpy(local_status, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
-	}
-
-	ISC_STATUS status = FB_SUCCESS;
-
 	try
 	{
-		JRD_compile(tdbb,
-					scratch->getAttachment()->dbb_attachment,
-					&request->req_request,
-					scratch->getBlrData().getCount(),
-					scratch->getBlrData().begin(),
-					statement->getSqlText(),
-					scratch->getDebugData().getCount(),
-					scratch->getDebugData().begin(),
-					isInternalRequest);
-	}
-	catch (const Firebird::Exception&)
-	{
-		status = tdbb->tdbb_status_vector[1];
-		trace.prepare(status == isc_no_priv ? res_unauthorized : res_failed);
-	}
+		// Parse the SQL statement.  If it croaks, return
 
-	// restore warnings (if there are any)
-	if (local_status[2] == isc_arg_warning)
-	{
-		size_t indx, len, warning;
+		Parser parser(*tdbb->getDefaultPool(), clientDialect,
+			scratch->getAttachment()->dbb_db_SQL_dialect, parserVersion, text, textLength,
+			tdbb->getAttachment()->att_charset);
 
-		// find end of a status vector
-		PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);
-		if (indx)
-			--indx;
+		dsql_nod* node = parser.parse();
 
-		// calculate length of saved warnings
-		PARSE_STATUS(local_status, len, warning);
-		len -= 2;
+		if (!node)
+		{
+			// CVC: Apparently, Parser::parse won't return if the command is incomplete,
+			// because yyerror() will call ERRD_post().
+			// This may be a special case, but we don't know about positions here.
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  // Unexpected end of command
+					  Arg::Gds(isc_command_end_err));
+		}
 
-		if ((len + indx - 1) < ISC_STATUS_LENGTH)
-			memcpy(&tdbb->tdbb_status_vector[indx], &local_status[2], sizeof(ISC_STATUS) * len);
-	}
+		string transformedText = parser.getTransformedString();
+		SSHORT charSetId = database->dbb_attachment->att_charset;
 
-	// free blr memory
-	scratch->getBlrData().free();
+		// If the attachment charset is NONE, replace non-ASCII characters by question marks, so
+		// that engine internals doesn't receive non-mappeable data to UTF8. If an attachment
+		// charset is used, validate the string.
+		if (charSetId == CS_NONE)
+		{
+			for (char* p = transformedText.begin(), *end = transformedText.end(); p < end; ++p)
+			{
+				if (UCHAR(*p) > 0x7F)
+					*p = '?';
+			}
+		}
+		else
+		{
+			CharSet* charSet = INTL_charset_lookup(tdbb, charSetId);
 
-	if (status)
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+			if (!charSet->wellFormed(transformedText.length(),
+					(const UCHAR*) transformedText.begin(), NULL))
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_malformed_string));
+			}
 
-	// Notify Trace API manager about new request cooked.
-	trace.prepare(res_successful);
+			UCharBuffer temp;
 
-	return request;
+			CsConvert conversor(charSet->getStruct(),
+				INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());
+			conversor.convert(transformedText.length(), (const UCHAR*) transformedText.c_str(), temp);
 
+			transformedText.assign(temp.begin(), temp.getCount());
+		}
+
+		statement->setSqlText(FB_NEW(pool) RefString(pool, transformedText));
+
+		// allocate the send and receive messages
+
+		statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
+		dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
+		statement->setReceiveMsg(message);
+		message->msg_number = 1;
+
+		statement->setType(DsqlCompiledStatement::TYPE_SELECT);
+
+		node = PASS1_statement(scratch, node);
+		fb_assert(node);
+
+		const DsqlCompiledStatement::Type statementType = statement->getType();
+
+		switch (statementType)
+		{
+			case DsqlCompiledStatement::TYPE_COMMIT:
+			case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
+			case DsqlCompiledStatement::TYPE_ROLLBACK:
+			case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
+			case DsqlCompiledStatement::TYPE_START_TRANS:
+				request = FB_NEW(statement->getPool()) DsqlTransactionRequest(scratch);
+				request->req_traced = false;
+				trace.setStatement(request);
+				return request;	// Stop here for statements not requiring code generation.
+
+			case DsqlCompiledStatement::TYPE_CREATE_DB:
+			case DsqlCompiledStatement::TYPE_DDL:
+				request = FB_NEW(statement->getPool()) DsqlDdlRequest(scratch);
+				break;
+
+			default:
+				request = FB_NEW(statement->getPool()) DsqlDmlRequest(scratch);
+				break;
+		}
+
+		request->req_traced = true;
+		trace.setStatement(request);
+
+		if (statementType == DsqlCompiledStatement::TYPE_DDL)
+		{
+			if (parser.isStmtAmbiguous() &&
+				scratch->getAttachment()->dbb_db_SQL_dialect != clientDialect)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+						  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
+							  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
+			}
+
+			statement->setDdlScratch(scratch);
+		}
+
+		if (clientDialect > SQL_DIALECT_V5)
+			statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+		else
+			statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+
+		GEN_request(scratch, node);
+
+		// Create the messages buffers
+		for (size_t i = 0; i < scratch->ports.getCount(); ++i)
+		{
+			dsql_msg* message = scratch->ports[i];
+
+			// Allocate buffer for message
+			const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
+
+			message->msg_buffer_number = request->req_msg_buffers.getCount();
+			request->req_msg_buffers.grow(message->msg_buffer_number + 1);
+
+			UCHAR*& msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
+			fb_assert(!msgBuffer);
+
+			msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+			msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
+		}
+
+		// stop here for ddl statements
+
+		if (statementType == DsqlCompiledStatement::TYPE_CREATE_DB ||
+			statementType == DsqlCompiledStatement::TYPE_DDL)
+		{
+			// Notify Trace API manager about new DDL request cooked.
+			trace.prepare(res_successful);
+			return request;
+		}
+
+		// have the access method compile the statement
+
+#ifdef DSQL_DEBUG
+		if (DSQL_debug & 64)
+		{
+			dsql_trace("Resulting BLR code for DSQL:");
+			gds__trace_raw("Statement:\n");
+			gds__trace_raw(text, textLength);
+			gds__trace_raw("\nBLR:\n");
+			fb_print_blr(scratch->getBlrData().begin(),
+				(ULONG) scratch->getBlrData().getCount(),
+				gds__trace_printer, 0, 0);
+		}
+#endif
+
+		ISC_STATUS_ARRAY localStatus;
+		MOVE_CLEAR(localStatus, sizeof(localStatus));
+
+		// check for warnings
+		if (tdbb->tdbb_status_vector[2] == isc_arg_warning)
+		{
+			// save a status vector
+			memcpy(localStatus, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
+		}
+
+		ISC_STATUS status = FB_SUCCESS;
+
+		try
+		{
+			JRD_compile(tdbb,
+						scratch->getAttachment()->dbb_attachment,
+						&request->req_request,
+						scratch->getBlrData().getCount(),
+						scratch->getBlrData().begin(),
+						statement->getSqlText(),
+						scratch->getDebugData().getCount(),
+						scratch->getDebugData().begin(),
+						isInternalRequest);
+		}
+		catch (const Firebird::Exception&)
+		{
+			status = tdbb->tdbb_status_vector[1];
+			trace.prepare(status == isc_no_priv ? res_unauthorized : res_failed);
+		}
+
+		// restore warnings (if there are any)
+		if (localStatus[2] == isc_arg_warning)
+		{
+			size_t indx, len, warning;
+
+			// find end of a status vector
+			PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);
+			if (indx)
+				--indx;
+
+			// calculate length of saved warnings
+			PARSE_STATUS(localStatus, len, warning);
+			len -= 2;
+
+			if ((len + indx - 1) < ISC_STATUS_LENGTH)
+				memcpy(&tdbb->tdbb_status_vector[indx], &localStatus[2], sizeof(ISC_STATUS) * len);
+		}
+
+		// free blr memory
+		scratch->getBlrData().free();
+
+		if (status)
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+
+		// Notify Trace API manager about new request cooked.
+		trace.prepare(res_successful);
+
+		return request;
 	}
 	catch (const Firebird::Exception&)
 	{
