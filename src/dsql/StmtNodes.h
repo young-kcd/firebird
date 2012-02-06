@@ -158,6 +158,57 @@ public:
 };
 
 
+class CommitRollbackNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_COMMIT_ROLLBACK>
+{
+public:
+	enum Command
+	{
+		CMD_COMMIT,
+		CMD_ROLLBACK
+	};
+
+public:
+	explicit CommitRollbackNode(MemoryPool& pool, Command aCommand, bool aRetain)
+		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_COMMIT_ROLLBACK>(pool),
+		  command(aCommand),
+		  retain(aRetain)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	{
+		text = "CommitRollbackNode";
+	}
+
+	virtual CommitRollbackNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		switch (command)
+		{
+			case CMD_COMMIT:
+				dsqlScratch->getStatement()->setType(retain ?
+					DsqlCompiledStatement::TYPE_COMMIT_RETAIN : DsqlCompiledStatement::TYPE_COMMIT);
+				break;
+
+			case CMD_ROLLBACK:
+				dsqlScratch->getStatement()->setType(retain ?
+					DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN : DsqlCompiledStatement::TYPE_ROLLBACK);
+				break;
+		}
+
+		return this;
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	{
+	}
+
+private:
+	Command command;
+	bool retain;
+};
+
+
 class CompoundStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT>	// blr_begin
 {
 public:

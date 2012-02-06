@@ -908,26 +908,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 		return input;
 
-	case nod_commit:
-		if ((input->nod_arg[e_commit_retain]) &&
-			(input->nod_arg[e_commit_retain]->nod_type == nod_retain))
-		{
-			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_COMMIT_RETAIN);
-		}
-		else
-			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_COMMIT);
-		return input;
-
-	case nod_rollback:
-		if ((input->nod_arg[e_rollback_retain]) &&
-			(input->nod_arg[e_rollback_retain]->nod_type == nod_retain))
-		{
-			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN);
-		}
-		else
-			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_ROLLBACK);
-		return input;
-
 	case nod_list:
 		{
 			node = MAKE_node(input->nod_type, input->nod_count);
@@ -4717,12 +4697,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "natural";
 		break;
 	// SKIDDER: some more missing node types
-	case nod_commit:
-		verb = "commit";
-		break;
-	case nod_rollback:
-		verb = "rollback";
-		break;
 	case nod_trans:
 		verb = "trans";
 		break;
@@ -4782,9 +4756,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_reserve:
 		verb = "reserve";
-		break;
-	case nod_retain:
-		verb = "retain";
 		break;
 	case nod_def_computed:
 		verb = "def_computed";

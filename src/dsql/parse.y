@@ -710,8 +710,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <boolVal>	   check_opt
 
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
-%type <legacyNode> column_singleton commit
-%type <stmtNode>   complex_proc_statement
+%type <legacyNode> column_singleton
+%type <stmtNode>   commit complex_proc_statement
 %type <legacyNode> computed_by computed_clause constant constraint_index_opt
 %type <boolVal>	   conditional
 %type <legacyNode> constraint_name_opt correlation_name
@@ -812,7 +812,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type not_named_param(<execStatementNode>) not_named_params_list(<execStatementNode>)
 
 %type <stmtNode>   open_cursor
-%type <legacyNode> optional_retain
+%type <boolVal>	   optional_retain
 %type optional_savepoint opt_snapshot optional_work
 %type <legacyNode> order_clause order_item order_list
 %type <boolVal>	   order_direction
@@ -842,7 +842,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <returningClause> returning_clause
 %type <ddlNode> rexception_clause
 %type <legacyNode> role_admin_option role_grantee role_grantee_list
-%type <legacyNode> role_name role_name_list rollback rows_clause
+%type <legacyNode> role_name role_name_list rows_clause
+%type <stmtNode> rollback
 %type <ddlNode> role_clause rtable_clause
 %type <ddlNode> rview_clause
 %type <nullableIntVal>  revoke_admin
@@ -993,7 +994,7 @@ statement
 	// ASF: ALTER SEQUENCE is defined here cause it's treated as DML.
 	| ALTER SEQUENCE alter_sequence_clause		{ $$ = makeClassNode($3); }
 	| comment									{ $$ = makeClassNode($1); }
-	| commit
+	| commit									{ $$ = makeClassNode($1); }
 	| create									{ $$ = makeClassNode($1); }
 	| create_or_alter							{ $$ = makeClassNode($1); }
 	| declare									{ $$ = makeClassNode($1); }
@@ -1006,7 +1007,7 @@ statement
 	| exec_block								{ $$ = makeClassNode($1); }
 	| recreate									{ $$ = makeClassNode($1); }
 	| revoke
-	| rollback
+	| rollback									{ $$ = makeClassNode($1); }
 	| savepoint
 	| select
 	| set
@@ -4097,12 +4098,12 @@ optional_savepoint
 
 commit
 	: COMMIT optional_work optional_retain
-		{ $$ = make_node (nod_commit, e_commit_count, $3); }
+		{ $$ = newNode<CommitRollbackNode>(CommitRollbackNode::CMD_COMMIT, $3); }
 	;
 
 rollback
 	: ROLLBACK optional_work optional_retain
-		{ $$ = make_node (nod_rollback, e_rollback_count, $3); }
+		{ $$ = newNode<CommitRollbackNode>(CommitRollbackNode::CMD_ROLLBACK, $3); }
 	;
 
 optional_work
@@ -4111,8 +4112,8 @@ optional_work
 	;
 
 optional_retain
-	: /* nothing */		 	{ $$ = NULL; }
-	| RETAIN opt_snapshot	{ $$ = make_node(nod_retain, 0, NULL); }
+	: /* nothing */		 	{ $$ = false; }
+	| RETAIN opt_snapshot	{ $$ = true; }
 	;
 
 opt_snapshot

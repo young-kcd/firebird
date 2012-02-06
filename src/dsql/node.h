@@ -55,8 +55,6 @@ enum nod_t
 	// to an expression node.
 
 	nod_unknown_type = 0,
-	nod_commit,
-	nod_rollback,
 	nod_trans,
 	nod_def_default,
 	nod_del_default,
@@ -102,7 +100,6 @@ enum nod_t
 	nod_table_lock,
 	nod_lock_mode,
 	nod_reserve,
-	nod_retain,
 	nod_def_computed,
 	nod_plan_expr,
 	nod_plan_item,
