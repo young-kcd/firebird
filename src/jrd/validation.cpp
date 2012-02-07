@@ -619,15 +619,15 @@ private:
 	RTN corrupt(thread_db*, bool validate, USHORT, const jrd_rel*, ...);
 	FETCH_CODE fetch_page(thread_db*, bool validate, ULONG, USHORT, WIN*, void*);
 
-	RTN walk_blob(thread_db*, bool validate, jrd_rel*, blh*, USHORT, ULONG);
-	RTN walk_chain(thread_db*, bool validate, jrd_rel*, rhd*, ULONG);
+	RTN walk_blob(thread_db*, bool validate, jrd_rel*, const blh*, USHORT, ULONG);
+	RTN walk_chain(thread_db*, bool validate, jrd_rel*, const rhd*, ULONG);
 	RTN walk_data_page(thread_db*, bool validate, jrd_rel*, ULONG, ULONG);
 	void walk_generators(thread_db*, bool validate);
 	void walk_header(thread_db*, bool validate, ULONG);
 	RTN walk_index(thread_db*, bool validate, jrd_rel*, index_root_page&, USHORT);
 	void walk_pip(thread_db*, bool validate);
 	RTN walk_pointer_page(thread_db*, bool validate, jrd_rel*, ULONG);
-	RTN walk_record(thread_db*, bool validate, jrd_rel*, rhd*, USHORT, ULONG, bool);
+	RTN walk_record(thread_db*, bool validate, jrd_rel*, const rhd*, USHORT, ULONG, bool);
 	RTN walk_relation(thread_db*, bool validate, jrd_rel*);
 	RTN walk_root(thread_db*, bool validate, jrd_rel*);
 	RTN walk_scns(thread_db*, bool validate);
@@ -1044,7 +1044,7 @@ static void print_rhd(USHORT length, const rhd* header)
 
 RTN Vdr::walk_blob(thread_db* tdbb,
 					 bool validate,
-					 jrd_rel* relation, blh* header, USHORT length, ULONG number)
+					 jrd_rel* relation, const blh* header, USHORT length, ULONG number)
 {
 /**************************************
  *
@@ -1125,7 +1125,7 @@ RTN Vdr::walk_blob(thread_db* tdbb,
 
 RTN Vdr::walk_chain(thread_db* tdbb,
 					  bool validate,
-					  jrd_rel* relation, rhd* header, ULONG head_number)
+					  jrd_rel* relation, const rhd* header, ULONG head_number)
 {
 /**************************************
  *
@@ -1158,7 +1158,7 @@ RTN Vdr::walk_chain(thread_db* tdbb,
 		data_page* page = 0;
 		fetch_page(tdbb, validate, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
-		header = (rhd*) ((UCHAR*) page + line->dpg_offset);
+		header = (const rhd*) ((UCHAR*) page + line->dpg_offset);
 		if (page->dpg_count <= line_number || !line->dpg_length ||
 			(header->rhd_flags & (rhd_blob | rhd_fragment)) ||
 			walk_record(tdbb, validate, relation, header, line->dpg_length,
@@ -1330,7 +1330,7 @@ RTN Vdr::walk_data_page(thread_db* tdbb,
 				((header->rhd_flags & rhd_large) || (vdr_flags & vdr_records)))
 			{
 				const RTN result = (header->rhd_flags & rhd_blob) ?
-					walk_blob(tdbb, validate, relation, (blh*) header, line->dpg_length, number) :
+					walk_blob(tdbb, validate, relation, (const blh*) header, line->dpg_length, number) :
 					walk_record(tdbb, validate, relation, header, line->dpg_length, number, false);
 				if ((result == rtn_corrupt) && (vdr_flags & vdr_repair))
 				{
@@ -1905,7 +1905,7 @@ RTN Vdr::walk_pointer_page(thread_db*	tdbb, bool validate, jrd_rel* relation, UL
 RTN Vdr::walk_record(thread_db* tdbb,
 					   bool validate,
 					   jrd_rel* relation,
-					   rhd* header,
+					   const rhd* header,
 					   USHORT length, ULONG number, bool delta_flag)
 {
 /**************************************
@@ -2023,12 +2023,12 @@ RTN Vdr::walk_record(thread_db* tdbb,
 #endif
 		if (fragment->rhdf_flags & rhd_incomplete)
 		{
-			p = (SCHAR *) fragment->rhdf_data;
+			p = (SCHAR*) fragment->rhdf_data;
 			end = p + line->dpg_length - OFFSETA(rhdf*, rhdf_data);
 		}
 		else
 		{
-			p = (SCHAR *) ((rhd*) fragment)->rhd_data;
+			p = (SCHAR*) ((rhd*) fragment)->rhd_data;
 			end = p + line->dpg_length - OFFSETA(rhd*, rhd_data);
 		}
 		while (p < end)
