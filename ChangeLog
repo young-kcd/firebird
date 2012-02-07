@@ -1,3 +1,57 @@
+ 2012-02-07 03:33  robocop 
+   M src/jrd/validation.cpp
+const
+
+ 2012-02-07 03:17  robocop 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/metd.epp
+   M src/jrd/Attachment.cpp
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/Function.epp
+   M src/jrd/SysFunction.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/blb.h
+   M src/jrd/blb_proto.h
+   M src/jrd/cvt2.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/exe.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/grant.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/mov.cpp
+   M src/jrd/scl.epp
+   M src/jrd/tra.cpp
+   M src/jrd/validation.cpp
+Playing with fire: converting some static functions into member functions. I tried to check every change I did.
+
+ 2012-02-06 21:50  asfernandes 
+   M src/dsql/dsql.cpp
+Misc.
+
+ 2012-02-06 20:10  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/gen_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactor SET TRANSACTION command.
+
+ 2012-02-06 20:10  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactor COMMIT and ROLLBACK commands.
+
  2012-02-05 14:46  asfernandes 
    M src/yvalve/why.cpp
 Misc.
