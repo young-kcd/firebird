@@ -1045,7 +1045,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 				else
 				{
 					ULONG temp_id = current->bli_temp_id;
-					BLB_cancel(tdbb, current->bli_blob_object);
+					current->bli_blob_object->BLB_cancel(tdbb);
 					if (!transaction->tra_blobs->locate(Firebird::locGreat, temp_id))
 						break;
 				}

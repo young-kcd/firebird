@@ -407,11 +407,13 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 
 		*address = buffer.getBuffer(size);
 
-		size = BLB_get_data(tdbb, blob, *address, size, true);
+		size = blob->BLB_get_data(tdbb, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
+		{
 			ERR_post(Arg::Gds(isc_arith_except) <<
 					 Arg::Gds(isc_blob_truncation));
+		}
 
 		return size;
 	}

@@ -985,7 +985,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 				if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 				{
 					// If characters left, or null byte character, return error
-					BLB_close(tdbb, blob);
+					blob->BLB_close(tdbb);
 					ERR_post(Arg::Gds(isc_escape_invalid));
 				}
 
@@ -995,7 +995,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 				if (!escape[0])
 				{
 					// If or null byte character, return error
-					BLB_close(tdbb, blob);
+					blob->BLB_close(tdbb);
 					ERR_post(Arg::Gds(isc_escape_invalid));
 				}
 			}
@@ -1041,7 +1041,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 
 			while (!(blob->blb_flags & BLB_eof))
 			{
-				const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+				const SLONG l1 = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCapacity(), false);
 				if (!evaluator->process(buffer.begin(), l1))
 					break;
 			}
@@ -1095,7 +1095,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 
 			while (!(blob->blb_flags & BLB_eof))
 			{
-				const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+				const SLONG l1 = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCapacity(), false);
 				if (!evaluator->process(buffer.begin(), l1))
 					break;
 			}
@@ -1109,7 +1109,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 		}
 	}
 
-	BLB_close(tdbb, blob);
+	blob->BLB_close(tdbb);
 
 	return ret_val;
 }
@@ -1311,7 +1311,7 @@ bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* d
 
 		while (!(blob->blb_flags & BLB_eof))
 		{
-			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
+			l1 = blob->BLB_get_segment(tdbb, buffer, sizeof(buffer));
 			if (obj->sleuthCheck(*tdbb->getDefaultPool(), 0, buffer, l1, control, control_length))
 			{
 				ret_val = true;
@@ -1319,7 +1319,7 @@ bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* d
 			}
 		}
 
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 	}
 
 	return ret_val;

@@ -306,15 +306,15 @@ void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 	blb* blob = BLB_create2(tdbb, transaction, blobId, bpb.getCount(), bpb.begin());
 	try
 	{
-		BLB_put_data(tdbb, blob, (const UCHAR*) text.c_str(), text.length());
+		blob->BLB_put_data(tdbb, (const UCHAR*) text.c_str(), text.length());
 	}
 	catch (const Exception&)
 	{
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 		throw;
 	}
 
-	BLB_close(tdbb, blob);
+	blob->BLB_close(tdbb);
 }
 
 
@@ -325,15 +325,15 @@ void Jrd::Attachment::storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction,
 	blb* blob = BLB_create2(tdbb, transaction, blobId, 0, NULL);
 	try
 	{
-		BLB_put_data(tdbb, blob, chunk.data, chunk.length);
+		blob->BLB_put_data(tdbb, chunk.data, chunk.length);
 	}
 	catch (const Exception&)
 	{
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 		throw;
 	}
 
-	BLB_close(tdbb, blob);
+	blob->BLB_close(tdbb);
 }
 
 

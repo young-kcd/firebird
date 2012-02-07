@@ -2161,9 +2161,9 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				return NULL;
 
 			blb* blob = BLB_create(tdbb, transaction, &impure->vlu_misc.vlu_bid);
-			BLB_put_data(tdbb, blob, reinterpret_cast<const UCHAR*>(context.sqlText.c_str()),
+			blob->BLB_put_data(tdbb, reinterpret_cast<const UCHAR*>(context.sqlText.c_str()),
 				context.sqlText.length());
-			BLB_close(tdbb, blob);
+			blob->BLB_close(tdbb);
 
 			dsc result;
 			result.makeBlob(isc_blob_text, ttype_metadata, (ISC_QUAD*) &impure->vlu_misc.vlu_bid);
@@ -2331,7 +2331,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			address = buffer;
-			const ULONG length = BLB_get_data(tdbb, blob, address, sizeof(buffer), false);
+			const ULONG length = blob->BLB_get_data(tdbb, address, sizeof(buffer), false);
 
 			for (const UCHAR* end = address + length; address < end; ++address)
 			{
@@ -2344,7 +2344,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 			}
 		}
 
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 	}
 	else
 	{
@@ -2633,7 +2633,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			cs->maxBytesPerChar();
 
 		str1 = temp1.getBuffer(len1);
-		len1 = BLB_get_data(tdbb, blob, str1, len1, true);
+		len1 = blob->BLB_get_data(tdbb, str1, len1, true);
 	}
 	else
 		len1 = MOV_make_string2(tdbb, value, resultTextType, &str1, temp1);
@@ -2654,7 +2654,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			cs->maxBytesPerChar();
 
 		str2 = temp2.getBuffer(len2);
-		len2 = BLB_get_data(tdbb, blob, str2, len2, true);
+		len2 = blob->BLB_get_data(tdbb, str2, len2, true);
 	}
 	else
 		len2 = MOV_make_string2(tdbb, placing, resultTextType, &str2, temp2);
@@ -2699,12 +2699,12 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		l1 = (from - 1) * cs->maxBytesPerChar();
 
 		if (!cs->isMultiByte())
-			BLB_put_data(tdbb, newBlob, str1, l1);
+			newBlob->BLB_put_data(tdbb, str1, l1);
 		else
 		{
 			l1 = cs->substring(len1, str1, l1, blobBuffer.getBuffer(l1), 0, from - 1);
 
-			BLB_put_data(tdbb, newBlob, blobBuffer.begin(), l1);
+			newBlob->BLB_put_data(tdbb, blobBuffer.begin(), l1);
 		}
 	}
 	else
@@ -2717,22 +2717,22 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 	if (newBlob)
 	{
-		BLB_put_data(tdbb, newBlob, str2, len2);
+		newBlob->BLB_put_data(tdbb, str2, len2);
 
 		const ULONG auxlen = len1 - l1;
 		if (!cs->isMultiByte())
 		{
-			BLB_put_data(tdbb, newBlob, str1 + l1 + length * cs->maxBytesPerChar(),
+			newBlob->BLB_put_data(tdbb, str1 + l1 + length * cs->maxBytesPerChar(),
 				auxlen - length * cs->maxBytesPerChar());
 		}
 		else
 		{
 			l2 = cs->substring(auxlen, str1 + l1, auxlen,
 				blobBuffer.getBuffer(auxlen), length, auxlen);
-			BLB_put_data(tdbb, newBlob, blobBuffer.begin(), l2);
+			newBlob->BLB_put_data(tdbb, blobBuffer.begin(), l2);
 		}
 
-		BLB_close(tdbb, newBlob);
+		newBlob->BLB_close(tdbb);
 	}
 	else
 	{
@@ -2851,7 +2851,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 	if ((Function)(IPTR) function->misc == funRPad)
 	{
 		if (newBlob)
-			BLB_put_data(tdbb, newBlob, address1, length1);
+			newBlob->BLB_put_data(tdbb, address1, length1);
 		else
 		{
 			memcpy(p, address1, length1);
@@ -2864,7 +2864,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 		if (charLength2 <= padLen)
 		{
 			if (newBlob)
-				BLB_put_data(tdbb, newBlob, address2, length2);
+				newBlob->BLB_put_data(tdbb, address2, length2);
 			else
 			{
 				memcpy(p, address2, length2);
@@ -2878,7 +2878,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 				buffer.getBuffer(padLen * cs->maxBytesPerChar());
 				SLONG len = cs->substring(length2, address2, buffer.getCapacity(),
 					buffer.begin(), 0, padLen);
-				BLB_put_data(tdbb, newBlob, address2, len);
+				newBlob->BLB_put_data(tdbb, address2, len);
 			}
 			else
 			{
@@ -2893,7 +2893,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 	if ((Function)(IPTR) function->misc == funLPad)
 	{
 		if (newBlob)
-			BLB_put_data(tdbb, newBlob, address1, length1);
+			newBlob->BLB_put_data(tdbb, address1, length1);
 		else
 		{
 			memcpy(p, address1, length1);
@@ -2902,7 +2902,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 	}
 
 	if (newBlob)
-		BLB_close(tdbb, newBlob);
+		newBlob->BLB_close(tdbb);
 	else
 		impure->vlu_desc.dsc_length = p - impure->vlu_desc.dsc_address;
 
@@ -2975,7 +2975,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			reinterpret_cast<bid*>(value1->dsc_address));
 
 		value1Address = value1Buffer.getBuffer(blob->blb_length);
-		value1Length = BLB_get_data(tdbb, blob, value1Address, blob->blb_length, true);
+		value1Length = blob->BLB_get_data(tdbb, value1Address, blob->blb_length, true);
 	}
 	else
 		value1Length = MOV_make_string2(tdbb, value1, ttype, &value1Address, value1Buffer);
@@ -3005,7 +3005,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			reinterpret_cast<bid*>(value2->dsc_address));
 
 		value2Address = value2Buffer.getBuffer(blob->blb_length);
-		value2Length = BLB_get_data(tdbb, blob, value2Address, blob->blb_length, true);
+		value2Length = blob->BLB_get_data(tdbb, value2Address, blob->blb_length, true);
 	}
 	else
 		value2Length = MOV_make_string2(tdbb, value2, ttype, &value2Address, value2Buffer);
@@ -3148,7 +3148,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 				reinterpret_cast<bid*>(values[i]->dsc_address));
 
 			addresses[i] = buffers[i].getBuffer(blob->blb_length);
-			lengths[i] = BLB_get_data(tdbb, blob, addresses[i], blob->blb_length, true);
+			lengths[i] = blob->BLB_get_data(tdbb, addresses[i], blob->blb_length, true);
 		}
 		else
 			lengths[i] = MOV_make_string2(tdbb, values[i], ttype, &addresses[i], buffers[i]);
@@ -3221,13 +3221,13 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 					len = cs->substring(addresses[0] + lengths[0] - srcPos, srcPos,
 						buffer.getCapacity(), buffer.begin(), 0, (p - last) / canonicalWidth);
 
-					BLB_put_data(tdbb, newBlob, buffer.begin(), len);
+					newBlob->BLB_put_data(tdbb, buffer.begin(), len);
 				}
 				else
-					BLB_put_data(tdbb, newBlob, srcPos, len);
+					newBlob->BLB_put_data(tdbb, srcPos, len);
 
 				if (!finished)
-					BLB_put_data(tdbb, newBlob, addresses[2], lengths[2]);
+					newBlob->BLB_put_data(tdbb, addresses[2], lengths[2]);
 			}
 			else
 			{
@@ -3252,7 +3252,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	}
 
 	if (newBlob)
-		BLB_close(tdbb, newBlob);
+		newBlob->BLB_close(tdbb);
 	else
 		impure->vlu_desc.dsc_length = dstPos - impure->vlu_desc.dsc_address;
 
@@ -3282,7 +3282,7 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
 
 		UCHAR* p = buffer.getBuffer(blob->blb_length);
-		const SLONG len = BLB_get_data(tdbb, blob, p, blob->blb_length, true);
+		const SLONG len = blob->BLB_get_data(tdbb, p, blob->blb_length, true);
 
 		if (cs->isMultiByte() || cs->minBytesPerChar() > 1)
 		{
@@ -3320,8 +3320,8 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 
 		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
-		BLB_put_data(tdbb, newBlob, p, len);
-		BLB_close(tdbb, newBlob);
+		newBlob->BLB_put_data(tdbb, p, len);
+		newBlob->BLB_close(tdbb);
 	}
 	else
 	{
@@ -3389,14 +3389,14 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		if (charSet->isMultiByte())
 		{
 			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-			SLONG length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length),
+			SLONG length = blob->BLB_get_data(tdbb, buffer.getBuffer(blob->blb_length),
 				blob->blb_length, false);
 			start = charSet->length(length, buffer.begin(), true);
 		}
 		else
 			start = blob->blb_length / charSet->maxBytesPerChar();
 
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 	}
 	else
 	{

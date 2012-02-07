@@ -1413,17 +1413,17 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 			if (!length)
 				break;
 
-			BLB_put_segment(tdbb, destBlob, buff, length);
+			destBlob->BLB_put_segment(tdbb, buff, length);
 		}
 
 		extBlob->close(tdbb);
-		BLB_close(tdbb, destBlob);
+		destBlob->BLB_close(tdbb);
 	}
 	catch (const Exception&)
 	{
 		extBlob->close(tdbb);
 		if (destBlob) {
-			BLB_cancel(tdbb, destBlob);
+			destBlob->BLB_cancel(tdbb);
 		}
 		throw;
 	}
@@ -1451,7 +1451,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 
 		while (true)
 		{
-			USHORT length = BLB_get_segment(tdbb, srcBlob, buff, srcBlob->blb_max_segment);
+			USHORT length = srcBlob->BLB_get_segment(tdbb, buff, srcBlob->blb_max_segment);
 			if (srcBlob->blb_flags & BLB_eof) {
 				break;
 			}
@@ -1459,14 +1459,14 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 			extBlob->write(tdbb, buff, length);
 		}
 
-		BLB_close(tdbb, srcBlob);
+		srcBlob->BLB_close(tdbb);
 		extBlob->close(tdbb);
 	}
 	catch (const Exception&)
 	{
 		extBlob->cancel(tdbb);
 		if (srcBlob) {
-			BLB_close(tdbb, srcBlob);
+			srcBlob->BLB_close(tdbb);
 		}
 		throw;
 	}

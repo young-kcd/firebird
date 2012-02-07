@@ -793,11 +793,11 @@ static void save_security_class(thread_db* tdbb,
 	while (length)
 	{
 		const size_t step = length > ACL_BLOB_BUFFER_SIZE ? ACL_BLOB_BUFFER_SIZE : length;
-		BLB_put_segment(tdbb, blob, buffer, static_cast<USHORT>(step));
+		blob->BLB_put_segment(tdbb, buffer, static_cast<USHORT>(step));
 		length -= step;
 		buffer += step;
 	}
-	BLB_close(tdbb, blob);
+	blob->BLB_close(tdbb);
 
 	AutoCacheRequest request(tdbb, irq_grant3, IRQ_REQUESTS);
 

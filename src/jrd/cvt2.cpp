@@ -549,8 +549,8 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 
 		while (ret_val == 0 && !(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
 		{
-			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
-			l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
+			l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
+			l2 = blob2->BLB_get_data(tdbb, buffer2.begin(), buffer2.getCapacity(), false);
 
 			ret_val = obj1->compare(l1, buffer1.begin(), l2, buffer2.begin());
 		}
@@ -568,17 +568,17 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 					 (blob2->blb_flags & BLB_eof) == BLB_eof))
 			{
 				if (!(blob1->blb_flags & BLB_eof))
-					l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+					l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
 
 				if (!(blob2->blb_flags & BLB_eof))
-					l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
+					l2 = blob2->BLB_get_data(tdbb, buffer2.begin(), buffer2.getCapacity(), false);
 
 				ret_val = obj1->compare(l1, buffer1.begin(), l2, buffer2.begin());
 			}
 		}
 
-		BLB_close(tdbb, blob1);
-		BLB_close(tdbb, blob2);
+		blob1->BLB_close(tdbb);
+		blob2->BLB_close(tdbb);
 	}
 	else if (arg2->dsc_dtype == dtype_array)
 	{
@@ -618,16 +618,16 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 		else
 			buffer1.getBuffer(l2);
 
-		l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+		l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
 		ret_val = obj1->compare(l1, buffer1.begin(), l2, p);
 
 		while (ret_val == 0 && (blob1->blb_flags & BLB_eof) != BLB_eof)
 		{
-			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+			l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
 			ret_val = obj1->compare(l1, buffer1.begin(), 0, p);
 		}
 
-		BLB_close(tdbb, blob1);
+		blob1->BLB_close(tdbb);
 	}
 
 	return ret_val;

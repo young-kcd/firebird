@@ -1181,7 +1181,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 		UCHAR* end = buffer;
 		while (true)
 		{
-			end += BLB_get_segment(tdbb, blob, end, (USHORT) (acl.getCount() - (end - buffer)) );
+			end += blob->BLB_get_segment(tdbb, end, (USHORT) (acl.getCount() - (end - buffer)) );
 			if (blob->blb_flags & BLB_eof)
 				break;
 
@@ -1194,7 +1194,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 				end = buffer + old_offset;
 			}
 		}
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 		blob = NULL;
 		acl.shrink(end - buffer);
 

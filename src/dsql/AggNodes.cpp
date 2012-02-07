@@ -396,7 +396,7 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (impure->vlu_blob)
 	{
-		BLB_close(tdbb, impure->vlu_blob);
+		impure->vlu_blob->BLB_close(tdbb);
 		impure->vlu_blob = NULL;
 	}
 
@@ -738,13 +738,13 @@ void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 		len = MOV_make_string2(tdbb, delimiterDesc, impure->vlu_desc.getTextType(),
 			&temp, buffer, false);
-		BLB_put_data(tdbb, impure->vlu_blob, temp, len);
+		impure->vlu_blob->BLB_put_data(tdbb, temp, len);
 	}
 
 	++impure->vlux_count;
 	len = MOV_make_string2(tdbb, desc, impure->vlu_desc.getTextType(),
 		&temp, buffer, false);
-	BLB_put_data(tdbb, impure->vlu_blob, temp, len);
+	impure->vlu_blob->BLB_put_data(tdbb, temp, len);
 }
 
 dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
@@ -755,7 +755,7 @@ dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 	{
 		if (impure->vlu_blob)
 		{
-			BLB_close(tdbb, impure->vlu_blob);
+			impure->vlu_blob->BLB_close(tdbb);
 			impure->vlu_blob = NULL;
 		}
 	}

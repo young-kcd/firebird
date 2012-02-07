@@ -79,28 +79,23 @@ using namespace Firebird;
 
 typedef Ods::blob_page blob_page;
 
-inline bool SEGMENTED(const blb* blob)
-{
-	return !(blob->blb_flags & BLB_stream);
-}
-
 static ArrayField* alloc_array(jrd_tra*, Ods::InternalArrayDesc*);
 static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*);
 static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*, USHORT);
-static void delete_blob(thread_db*, blb*, ULONG);
+//static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, ULONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
-static blob_page* get_next_page(thread_db*, blb*, WIN *);
-static void insert_page(thread_db*, blb*);
+//static blob_page* get_next_page(thread_db*, blb*, WIN *);
+//static void insert_page(thread_db*, blb*);
 static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const ValueExprNode*);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
 
 
-void BLB_cancel(thread_db* tdbb, blb* blob)
+void blb::BLB_cancel(thread_db* tdbb)
 {
 /**************************************
  *
@@ -119,14 +114,14 @@ void BLB_cancel(thread_db* tdbb, blb* blob)
 
 	// Release filter control resources
 
-	if (blob->blb_flags & BLB_temporary)
-		delete_blob(tdbb, blob, 0);
+	if (blb_flags & BLB_temporary)
+		delete_blob(tdbb, 0);
 
-	blb::destroy(blob, true);
+	destroy(true);
 }
 
 
-void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob)
+void blb::BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc)
 {
 /**************************************
  *
@@ -153,9 +148,9 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
 	ULONG pos = 0;
 
-	while (!(blob->blb_flags & BLB_eof))
+	while (!(blb_flags & BLB_eof))
 	{
-		const ULONG len = BLB_get_data(tdbb, blob,
+		const ULONG len = BLB_get_data(tdbb,
 			buffer.getBuffer(buffer.getCapacity()) + pos, buffer.getCapacity() - pos, false);
 		buffer.resize(pos + len);
 
@@ -178,7 +173,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 }
 
 
-void BLB_close(thread_db* tdbb, Jrd::blb* blob)
+void blb::BLB_close(thread_db* tdbb)
 {
 /**************************************
  *
@@ -197,40 +192,39 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 
 	// Release filter control resources
 
-	if (blob->blb_filter)
-		BLF_close_blob(tdbb, &blob->blb_filter);
+	if (blb_filter)
+		BLF_close_blob(tdbb, &blb_filter);
 
-	blob->blb_flags |= BLB_closed;
+	blb_flags |= BLB_closed;
 
-	if (!(blob->blb_flags & BLB_temporary))
+	if (!(blb_flags & BLB_temporary))
 	{
-		blb::destroy(blob, true);
+		destroy(true);
 		return;
 	}
 
-	if (blob->blb_level == 0)
+	if (blb_level == 0)
 	{
 		//Database* dbb = tdbb->getDatabase();
 
-		blob->blb_temp_size = blob->blb_clump_size - blob->blb_space_remaining;
+		blb_temp_size = blb_clump_size - blb_space_remaining;
 
-		if (blob->blb_temp_size > 0)
+		if (blb_temp_size > 0)
 		{
-			blob->blb_temp_size += BLP_SIZE;
-			jrd_tra* transaction = blob->blb_transaction;
+			blb_temp_size += BLP_SIZE;
+			jrd_tra* transaction = blb_transaction;
 			TempSpace* const tempSpace = transaction->getBlobSpace();
 
-			blob->blb_temp_offset = tempSpace->allocateSpace(blob->blb_temp_size);
-			tempSpace->write(blob->blb_temp_offset, blob->getBuffer(), blob->blb_temp_size);
+			blb_temp_offset = tempSpace->allocateSpace(blb_temp_size);
+			tempSpace->write(blb_temp_offset, getBuffer(), blb_temp_size);
 		}
 	}
-	else if (blob->blb_level >= 1 &&
-			 blob->blb_space_remaining < blob->blb_clump_size)
+	else if (blb_level >= 1 && blb_space_remaining < blb_clump_size)
 	{
-		insert_page(tdbb, blob);
+		insert_page(tdbb);
 	}
 
-	blob->freeBuffer();
+	freeBuffer();
 }
 
 
@@ -324,6 +318,7 @@ blb* BLB_create2(thread_db* tdbb,
 	}
 
 	blob->blb_space_remaining = blob->blb_clump_size;
+	blob->blb_flags |= BLB_temporary;
 
 	if (filter_required)
 	{
@@ -335,18 +330,15 @@ blb* BLB_create2(thread_db* tdbb,
 						bpb,
 						blob_filter,
 						filter);
-		blob->blb_flags |= BLB_temporary;
 		return blob;
 	}
-
-	blob->blb_flags |= BLB_temporary;
 
 	// Set up for a "small" blob -- a blob that fits on an ordinary blob page
 
 	blob_page* page = (blob_page*) blob->getBuffer();
 	memset(page, 0, BLP_SIZE);	// initialize page header with NULLs
 	page->blp_header.pag_type = pag_blob;
-	blob->blb_segment = (UCHAR *) page->blp_page;
+	blob->blb_segment = (UCHAR*) page->blp_page;
 
 	// Format blob id and return blob handle
 
@@ -545,22 +537,22 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
 
 	if (blob->blb_length < sizeof(Ods::InternalArrayDesc))
 	{
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 		IBERROR(193);			// msg 193 null or invalid array
 	}
 
-	BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc), sizeof(Ods::InternalArrayDesc));
+	blob->BLB_get_segment(tdbb, reinterpret_cast<UCHAR*>(desc), sizeof(Ods::InternalArrayDesc));
 
 	const USHORT n = desc->iad_length - sizeof(Ods::InternalArrayDesc);
 	if (n) {
-		BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc) + sizeof(Ods::InternalArrayDesc), n);
+		blob->BLB_get_segment(tdbb, reinterpret_cast<UCHAR*>(desc) + sizeof(Ods::InternalArrayDesc), n);
 	}
 
 	return blob;
 }
 
 
-ULONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool close)
+ULONG blb::BLB_get_data(thread_db* tdbb, UCHAR* buffer, SLONG length, bool close)
 {
 /**************************************
  *
@@ -582,21 +574,21 @@ ULONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool
 		// I have no idea why this limit is 32768 instead of 32767
 		// 1994-August-12 David Schnepper
 		USHORT n = (USHORT) MIN(length, (SLONG) 32768);
-		n = BLB_get_segment(tdbb, blob, p, n);
+		n = BLB_get_segment(tdbb, p, n);
 		p += n;
 		length -= n;
-		if (blob->blb_flags & BLB_eof)
+		if (blb_flags & BLB_eof)
 			break;
 	}
 
 	if (close)
-		BLB_close(tdbb, blob);
+		BLB_close(tdbb);
 
 	return (ULONG)(p - buffer);
 }
 
 
-USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_length)
+USHORT blb::BLB_get_segment(thread_db* tdbb, void* segment, USHORT buffer_length)
 {
 /**************************************
  *
@@ -617,23 +609,23 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 
 	// If we reached end of file, we're still there
 
-	if (blob->blb_flags & BLB_eof)
+	if (blb_flags & BLB_eof)
 		return 0;
 
-	if (blob->blb_filter)
+	if (blb_filter)
 	{
-		blob->blb_fragment_size = 0;
+		blb_fragment_size = 0;
 		USHORT tmp_len = 0;
 		const ISC_STATUS status =
-			BLF_get_segment(tdbb, &blob->blb_filter, &tmp_len, buffer_length, segment);
+			BLF_get_segment(tdbb, &blb_filter, &tmp_len, buffer_length, segment);
 
 		switch (status)
 		{
 			case isc_segstr_eof:
-				blob->blb_flags |= BLB_eof;
+				blb_flags |= BLB_eof;
 				break;
 			case isc_segment:
-				blob->blb_fragment_size = 1;
+				blb_fragment_size = 1;
 				break;
 			default:
 				fb_assert(status == 0);
@@ -646,33 +638,33 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 
 	USHORT seek = 0;
 
-	if (blob->blb_flags & BLB_seek)
+	if (blb_flags & BLB_seek)
 	{
-		if (blob->blb_seek >= blob->blb_length)
+		if (blb_seek >= blb_length)
 		{
-			blob->blb_flags |= BLB_eof;
+			blb_flags |= BLB_eof;
 			return 0;
 		}
 		const USHORT l = dbb->dbb_page_size - BLP_SIZE;
-		blob->blb_sequence = blob->blb_seek / l;
-		seek = (USHORT)(blob->blb_seek % l);	// safe cast
-		blob->blb_flags &= ~BLB_seek;
-		blob->blb_fragment_size = 0;
-		if (blob->blb_level)
+		blb_sequence = blb_seek / l;
+		seek = (USHORT)(blb_seek % l);	// safe cast
+		blb_flags &= ~BLB_seek;
+		blb_fragment_size = 0;
+		if (blb_level)
 		{
-			blob->blb_space_remaining = 0;
-			blob->blb_segment = NULL;
+			blb_space_remaining = 0;
+			blb_segment = NULL;
 		}
 		else
 		{
-			blob->blb_space_remaining = blob->blb_length - seek;
-			blob->blb_segment = blob->getBuffer() + seek;
+			blb_space_remaining = blb_length - seek;
+			blb_segment = getBuffer() + seek;
 		}
 	}
 
-	if (!blob->blb_space_remaining && blob->blb_segment)
+	if (!blb_space_remaining && blb_segment)
 	{
-		blob->blb_flags |= BLB_eof;
+		blb_flags |= BLB_eof;
 		return 0;
 	}
 
@@ -681,12 +673,12 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 	// size (or fragment size), buffer size, and amount of data left in the blob.
 
 	UCHAR* to = static_cast<UCHAR*>(segment);
-	const BLOB_PTR* from = blob->blb_segment;
-	USHORT length = blob->blb_space_remaining;
+	const BLOB_PTR* from = blb_segment;
+	USHORT length = blb_space_remaining;
 	bool active_page = false;
-	fb_assert(blob->blb_pg_space_id);
-	WIN window(blob->blb_pg_space_id, -1); // there was no initialization of win_page here.
-	if (blob->blb_flags & BLB_large_scan)
+	fb_assert(blb_pg_space_id);
+	WIN window(blb_pg_space_id, -1); // there was no initialization of win_page here.
+	if (blb_flags & BLB_large_scan)
 	{
 		window.win_flags = WIN_large_scan;
 		window.win_scans = 1;
@@ -697,7 +689,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 		// If the blob is segmented, and this isn't a fragment, pick up
 		// the length of the next segment.
 
-		if (SEGMENTED(blob) && !blob->blb_fragment_size)
+		if (isSegmented() && !blb_fragment_size)
 		{
 			while (length < 2)
 			{
@@ -708,10 +700,10 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 					else
 						CCH_RELEASE(tdbb, &window);
 				}
-				const blob_page* page = get_next_page(tdbb, blob, &window);
+				const blob_page* page = get_next_page(tdbb, &window);
 				if (!page)
 				{
-					blob->blb_flags |= BLB_eof;
+					blb_flags |= BLB_eof;
 					return 0;
 				}
 				from = (const UCHAR*) page->blp_page;
@@ -719,7 +711,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 				active_page = true;
 			}
 
-			UCHAR* p = (UCHAR *) & blob->blb_fragment_size;
+			UCHAR* p = (UCHAR*) &blb_fragment_size;
 			*p++ = *from++;
 			*p++ = *from++;
 			length -= 2;
@@ -729,10 +721,10 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 
 		USHORT l = MIN(buffer_length, length);
 
-		if (SEGMENTED(blob))
+		if (isSegmented())
 		{
-			l = MIN(l, blob->blb_fragment_size);
-			blob->blb_fragment_size -= l;
+			l = MIN(l, blb_fragment_size);
+			blb_fragment_size -= l;
 		}
 
 		length -= l;
@@ -754,7 +746,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 				else
 					CCH_RELEASE(tdbb, &window);
 			}
-			const blob_page* page = get_next_page(tdbb, blob, &window);
+			const blob_page* page = get_next_page(tdbb, &window);
 			if (!page)
 			{
 				active_page = false;
@@ -768,13 +760,13 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 
 		// If either the buffer or the fragment is exhausted, we're done.
 
-		if (!buffer_length || (SEGMENTED(blob) && !blob->blb_fragment_size))
+		if (!buffer_length || (isSegmented() && !blb_fragment_size))
 			break;
 	}
 
 	if (active_page)
 	{
-		UCHAR* buffer = blob->getBuffer();
+		UCHAR* buffer = getBuffer();
 		memcpy(buffer, from, length);
 		from = buffer;
 
@@ -784,16 +776,17 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_
 			CCH_RELEASE(tdbb, &window);
 	}
 
-	blob->blb_segment = const_cast<UCHAR*>(from); // safe cast
-	blob->blb_space_remaining = length;
+	blb_segment = const_cast<UCHAR*>(from); // safe cast
+	blb_space_remaining = length;
 	length = to - static_cast<UCHAR*>(segment);
-	blob->blb_seek += length;
+	blb_seek += length;
 
 	// If this is a stream blob, fake fragment unless we're at the end
 
-	if (!SEGMENTED(blob)) {
+	if (!isSegmented())
+	{
 		// stream blob
-		blob->blb_fragment_size = (blob->blb_seek == blob->blb_length) ? 0 : 1;
+		blb_fragment_size = (blb_seek == blb_length) ? 0 : 1;
 	}
 
 	return length;
@@ -862,13 +855,13 @@ SLONG BLB_get_slice(thread_db* tdbb,
 			if (from)
 			{
 				offset = from * desc->iad_element_length;
-				BLB_lseek(blob, 0, offset + (SLONG) desc->iad_length);
+				blob->BLB_lseek(0, offset + (SLONG) desc->iad_length);
 			}
 			length = (to - from + 1) * desc->iad_element_length;
 		}
 	}
 
-	length = BLB_get_data(tdbb, blob, data + offset, length) + offset;
+	length = blob->BLB_get_data(tdbb, data + offset, length) + offset;
 
 	// Walk array
 	arg.slice_desc = info.sdl_info_element;
@@ -891,7 +884,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 }
 
 
-SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
+SLONG blb::BLB_lseek(USHORT mode, SLONG offset)
 {
 /**************************************
  *
@@ -905,23 +898,23 @@ SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
  *
  **************************************/
 
-	if (!(blob->blb_flags & BLB_stream))
+	if (!(blb_flags & BLB_stream))
 		ERR_post(Arg::Gds(isc_bad_segstr_type));
 
 	if (mode == 1)
-		offset += blob->blb_seek;
+		offset += blb_seek;
 	else if (mode == 2)
-		offset = blob->blb_length + offset;
+		offset = blb_length + offset;
 
 	if (offset < 0)
 		offset = 0;
 
-	if (offset > (SLONG) blob->blb_length)
-		offset = blob->blb_length;
+	if (offset > (SLONG) blb_length)
+		offset = blb_length;
 
-	blob->blb_seek = offset;
-	blob->blb_flags |= BLB_seek;
-	blob->blb_flags &= ~BLB_eof;
+	blb_seek = offset;
+	blb_flags |= BLB_seek;
+	blb_flags &= ~BLB_eof;
 
 	return offset;
 }
@@ -1015,7 +1008,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
         (toCharSet != CS_NONE && toCharSet != CS_BINARY))
 	{
 		AutoBlb blob(tdbb, BLB_open(tdbb, tdbb->getTransaction(), source));
-		BLB_check_well_formed(tdbb, to_desc, blob.getBlb());
+		blob.getBlb()->BLB_check_well_formed(tdbb, to_desc);
 	}
 
 	// If the target node is not a field, just copy the blob id and return.
@@ -1170,7 +1163,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
 					blob->blb_temp_id = newBlob->blb_temp_id;
 					newBlob->blb_temp_id = oldTempID;
 
-					BLB_cancel(tdbb, blob);
+					blob->BLB_cancel(tdbb);
 					blob = newBlob;
 
 					transaction->tra_blobs->locate(blob->blb_temp_id);
@@ -1226,7 +1219,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
 			array->arr_request = own_request;
 	}
 
-	blb::destroy(blob, !materialized_blob);
+	blob->destroy(!materialized_blob);
 }
 
 
@@ -1461,7 +1454,7 @@ blb* BLB_open2(thread_db* tdbb,
 }
 
 
-void BLB_put_data(thread_db* tdbb, blb* blob, const UCHAR* buffer, SLONG length)
+void blb::BLB_put_data(thread_db* tdbb, const UCHAR* buffer, SLONG length)
 {
 /**************************************
  *
@@ -1483,14 +1476,14 @@ void BLB_put_data(thread_db* tdbb, blb* blob, const UCHAR* buffer, SLONG length)
 		// I have no idea why this limit is 32768 instead of 32767
 		// 1994-August-12 David Schnepper
 		const USHORT n = (USHORT) MIN(length, (SLONG) 32768);
-		BLB_put_segment(tdbb, blob, p, n);
+		BLB_put_segment(tdbb, p, n);
 		p += n;
 		length -= n;
 	}
 }
 
 
-void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment_length)
+void blb::BLB_put_segment(thread_db* tdbb, const void* seg, USHORT segment_length)
 {
 /**************************************
  *
@@ -1508,29 +1501,29 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment
 
 	// Make sure blob is a temporary blob.  If not, complain bitterly.
 
-	if (!(blob->blb_flags & BLB_temporary))
+	if (!(blb_flags & BLB_temporary))
 		IBERROR(195);			// msg 195 cannot update old blob
 
-	if (blob->blb_filter)
+	if (blb_filter)
 	{
-		BLF_put_segment(tdbb, &blob->blb_filter, segment_length, segment);
+		BLF_put_segment(tdbb, &blb_filter, segment_length, segment);
 		return;
 	}
 
 	// Account for new segment
 
-	blob->blb_count++;
-	blob->blb_length += segment_length;
+	blb_count++;
+	blb_length += segment_length;
 
-	if (segment_length > blob->blb_max_segment)
-		blob->blb_max_segment = segment_length;
+	if (segment_length > blb_max_segment)
+		blb_max_segment = segment_length;
 
 	// Compute the effective length of the segment (counts length unless
 	// the blob is a stream blob).
 
 	ULONG length;				// length of segment + overhead
 	bool length_flag;
-	if (SEGMENTED(blob))
+	if (isSegmented())
 	{
 		length = segment_length + 2;
 		length_flag = true;
@@ -1544,34 +1537,34 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment
 	// Case 0: Transition from small blob to medium size blob.  This really
 	// just does a form transformation and drops into the next case.
 
-	if (blob->blb_level == 0 && length > (ULONG) blob->blb_space_remaining)
+	if (blb_level == 0 && length > (ULONG) blb_space_remaining)
 	{
-		jrd_tra* transaction = blob->blb_transaction;
-		blob->blb_pages = vcl::newVector(*transaction->tra_pool, 0);
+		jrd_tra* transaction = blb_transaction;
+		blb_pages = vcl::newVector(*transaction->tra_pool, 0);
 		const USHORT l = dbb->dbb_page_size - BLP_SIZE;
-		blob->blb_space_remaining += l - blob->blb_clump_size;
-		blob->blb_clump_size = l;
-		blob->blb_level = 1;
+		blb_space_remaining += l - blb_clump_size;
+		blb_clump_size = l;
+		blb_level = 1;
 	}
 
 	// Case 1: The segment fits.  In what is immaterial.  Just move the segment and get out!
 
-	BLOB_PTR* p = blob->blb_segment;
+	BLOB_PTR* p = blb_segment;
 
-	if (length_flag && blob->blb_space_remaining >= 2)
+	if (length_flag && blb_space_remaining >= 2)
 	{
 		const BLOB_PTR* q = (UCHAR*) &segment_length;
 		*p++ = *q++;
 		*p++ = *q++;
-		blob->blb_space_remaining -= 2;
+		blb_space_remaining -= 2;
 		length_flag = false;
 	}
 
-	if (!length_flag && segment_length <= blob->blb_space_remaining)
+	if (!length_flag && segment_length <= blb_space_remaining)
 	{
-		blob->blb_space_remaining -= segment_length;
+		blb_space_remaining -= segment_length;
 		memcpy(p, segment, segment_length);
-		blob->blb_segment = p + segment_length;
+		blb_segment = p + segment_length;
 		return;
 	}
 
@@ -1585,12 +1578,12 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment
 	{
 		// Move what fits.  At this point, the length is known not to fit.
 
-		const USHORT l = MIN(segment_length, blob->blb_space_remaining);
+		const USHORT l = MIN(segment_length, blb_space_remaining);
 
 		if (!length_flag && l)
 		{
 			segment_length -= l;
-			blob->blb_space_remaining -= l;
+			blb_space_remaining -= l;
 
 			memcpy(p, segment, l);
 			p += l;
@@ -1598,21 +1591,21 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment
 
 			if (segment_length == 0)
 			{
-				blob->blb_segment = p;
+				blb_segment = p;
 				return;
 			}
 		}
 
 		// Data page is full.  Add the page to the blob data structure.
 
-		insert_page(tdbb, blob);
-		blob->blb_sequence++;
+		insert_page(tdbb);
+		blb_sequence++;
 
 		// Get ready to start filling the next page.
 
-		blob_page* page = (blob_page*) blob->getBuffer();
-		p = blob->blb_segment = (UCHAR *) page->blp_page;
-		blob->blb_space_remaining = blob->blb_clump_size;
+		blob_page* page = (blob_page*) getBuffer();
+		p = blb_segment = (UCHAR*) page->blp_page;
+		blb_space_remaining = blb_clump_size;
 
 		// If there's still a length waiting to be moved, move it already!
 
@@ -1621,9 +1614,9 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment
 			const BLOB_PTR* q = (UCHAR*) &segment_length;
 			*p++ = *q++;
 			*p++ = *q++;
-			blob->blb_space_remaining -= 2;
+			blb_space_remaining -= 2;
 			length_flag = false;
-			blob->blb_segment = p;
+			blb_segment = p;
 		}
 	}
 
@@ -1720,7 +1713,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 			blb* blob = BLB_get_array(tdbb, transaction, blob_id, p_ads);
 			array =	alloc_array(transaction, p_ads);
 			array->arr_effective_length = blob->blb_length - array->arr_desc.iad_length;
-			BLB_get_data(tdbb, blob, array->arr_data, array->arr_desc.iad_total_length);
+			blob->BLB_get_data(tdbb, array->arr_data, array->arr_desc.iad_total_length);
 			arg.slice_high_water = array->arr_data + array->arr_effective_length;
 			array->arr_blob = allocate_blob(tdbb, transaction);
 			(array->arr_blob)->blb_blob_id = *blob_id;
@@ -1836,13 +1829,13 @@ void BLB_scalar(thread_db*		tdbb,
 	const SLONG number = SDL_compute_subscript(tdbb->tdbb_status_vector, array_desc, count, subscripts);
 	if (number < 0)
 	{
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 		ERR_punt();
 	}
 
 	const SLONG offset = number * array_desc->iad_element_length;
-	BLB_lseek(blob, 0, offset + (SLONG) array_desc->iad_length);
-	BLB_get_segment(tdbb, blob, desc.dsc_address, desc.dsc_length);
+	blob->BLB_lseek(0, offset + (SLONG) array_desc->iad_length);
+	blob->BLB_get_segment(tdbb, desc.dsc_address, desc.dsc_length);
 
 	// If we have run out of data, then clear the data buffer.
 
@@ -1850,7 +1843,7 @@ void BLB_scalar(thread_db*		tdbb,
 		memset(desc.dsc_address, 0, (int) desc.dsc_length);
 	}
 	EVL_make_value(tdbb, &desc, value);
-	BLB_close(tdbb, blob);
+	blob->BLB_close(tdbb);
 }
 
 
@@ -1981,7 +1974,7 @@ static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
 	case isc_blob_filter_get_segment:
 		blob = control->source_handle;
 		control->ctl_segment_length =
-			BLB_get_segment(tdbb, blob, control->ctl_buffer, control->ctl_buffer_length);
+			blob->BLB_get_segment(tdbb, control->ctl_buffer, control->ctl_buffer_length);
 		if (blob->blb_flags & BLB_eof) {
 			return isc_segstr_eof;
 		}
@@ -1996,11 +1989,11 @@ static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
 
 	case isc_blob_filter_put_segment:
 		blob = control->source_handle;
-		BLB_put_segment(tdbb, blob, control->ctl_buffer, control->ctl_buffer_length);
+		blob->BLB_put_segment(tdbb, control->ctl_buffer, control->ctl_buffer_length);
 		return FB_SUCCESS;
 
 	case isc_blob_filter_close:
-		BLB_close(tdbb, control->source_handle);
+		control->source_handle->BLB_close(tdbb);
 		return FB_SUCCESS;
 
 	case isc_blob_filter_alloc:
@@ -2056,21 +2049,21 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination,
 
 	while (true)
 	{
-		const USHORT length = BLB_get_segment(tdbb, input, buff, input->blb_max_segment);
+		const USHORT length = input->BLB_get_segment(tdbb, buff, input->blb_max_segment);
 		if (input->blb_flags & BLB_eof) {
 			break;
 		}
-		BLB_put_segment(tdbb, output, buff, length);
+		output->BLB_put_segment(tdbb, buff, length);
 	}
 
-	BLB_close(tdbb, input);
-	BLB_close(tdbb, output);
+	input->BLB_close(tdbb);
+	output->BLB_close(tdbb);
 
 	return output;
 }
 
 
-static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
+void blb::delete_blob(thread_db* tdbb, ULONG prior_page)
 {
 /**************************************
  *
@@ -2089,7 +2082,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	const USHORT pageSpaceID = blob->blb_pg_space_id;
+	const USHORT pageSpaceID = blb_pg_space_id;
 
 	if (dbb->dbb_flags & DBB_read_only)
 	{
@@ -2103,18 +2096,18 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 
 	// Level 0 blobs don't need cleanup
 
-	if (blob->blb_level == 0)
+	if (blb_level == 0)
 		return;
 
 	const PageNumber prior(pageSpaceID, prior_page);
 
 	// Level 1 blobs just need the root page level released
 
-	vcl* vector = blob->blb_pages;
+	vcl* vector = blb_pages;
 	vcl::iterator ptr = vector->begin();
 	const vcl::iterator end = vector->end();
 
-	if (blob->blb_level == 1)
+	if (blb_level == 1)
 	{
 		for (; ptr < end; ++ptr)
 		{
@@ -2148,7 +2141,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 			PAG_release_page(tdbb, page1, prior);
 			page = (blob_page*) buffer;
 			const ULONG* ptr2 = page->blp_page;
-			for (const ULONG* const end2 = ptr2 + blob->blb_pointers; ptr2 < end2; ptr2++)
+			for (const ULONG* const end2 = ptr2 + blb_pointers; ptr2 < end2; ptr2++)
 			{
 				if (*ptr2) {
 					PAG_release_page(tdbb, PageNumber(pageSpaceID, *ptr2), page1);
@@ -2192,9 +2185,9 @@ static void delete_blob_id(thread_db* tdbb, const bid* blob_id, ULONG prior_page
 	prior_page = DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true, prior_page);
 
 	if (!(blob->blb_flags & BLB_damaged))
-		delete_blob(tdbb, blob, prior_page);
+		blob->delete_blob(tdbb, prior_page);
 
-	blb::destroy(blob, true);
+	blob->destroy(true);
 }
 
 
@@ -2261,7 +2254,7 @@ static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 }
 
 
-static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
+blob_page* blb::get_next_page(thread_db* tdbb, WIN* window)
 {
 /**************************************
  *
@@ -2274,9 +2267,9 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
  *      the next page. if there's no next page, return NULL.
  *
  **************************************/
-	if (blob->blb_level == 0 || blob->blb_sequence > blob->blb_max_sequence)
+	if (blb_level == 0 || blb_sequence > blb_max_sequence)
 	{
-		blob->blb_space_remaining = 0;
+		blb_space_remaining = 0;
 		return NULL;
 	}
 
@@ -2286,20 +2279,20 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	ULONG pages[PREFETCH_MAX_PAGES];
 #endif
 
-	const vcl* vector = blob->blb_pages;
+	const vcl* vector = blb_pages;
 
 	blob_page* page = 0;
 	// Level 1 blobs are much easier -- page number is in vector.
-	if (blob->blb_level == 1)
+	if (blb_level == 1)
 	{
 #ifdef SUPERSERVER_V2
 		// Perform prefetch of blob level 1 data pages.
 
-		if (!(blob->blb_sequence % dbb->dbb_prefetch_sequence))
+		if (!(blb_sequence % dbb->dbb_prefetch_sequence))
 		{
-			USHORT sequence = blob->blb_sequence;
+			USHORT sequence = blb_sequence;
 			USHORT i = 0;
-			while (i < dbb->dbb_prefetch_pages && sequence <= blob->blb_max_sequence)
+			while (i < dbb->dbb_prefetch_pages && sequence <= blb_max_sequence)
 			{
 				 pages[i++] = (*vector)[sequence++];
 			}
@@ -2307,23 +2300,23 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 			CCH_PREFETCH(tdbb, pages, i);
 		}
 #endif
-		window->win_page = (*vector)[blob->blb_sequence];
+		window->win_page = (*vector)[blb_sequence];
 		page = (blob_page*) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 	}
 	else
 	{
-		window->win_page = (*vector)[blob->blb_sequence / blob->blb_pointers];
+		window->win_page = (*vector)[blb_sequence / blb_pointers];
 		page = (blob_page*) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 #ifdef SUPERSERVER_V2
 		// Perform prefetch of blob level 2 data pages.
 
-		USHORT sequence = blob->blb_sequence % blob->blb_pointers;
+		USHORT sequence = blb_sequence % blb_pointers;
 		if (!(sequence % dbb->dbb_prefetch_sequence))
 		{
-			ULONG abs_sequence = blob->blb_sequence;
+			ULONG abs_sequence = blb_sequence;
 			USHORT i = 0;
-			while (i < dbb->dbb_prefetch_pages && sequence < blob->blb_pointers &&
-				abs_sequence <= blob->blb_max_sequence)
+			while (i < dbb->dbb_prefetch_pages && sequence < blb_pointers &&
+				abs_sequence <= blb_max_sequence)
 			{
 				pages[i++] = page->blp_page[sequence++];
 				abs_sequence++;
@@ -2333,20 +2326,20 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 		}
 #endif
 		page = (blob_page*) CCH_HANDOFF(tdbb, window,
-										page->blp_page[blob->blb_sequence % blob->blb_pointers],
+										page->blp_page[blb_sequence % blb_pointers],
 										LCK_read, pag_blob);
 	}
 
-	if (page->blp_sequence != blob->blb_sequence)
+	if (page->blp_sequence != blb_sequence)
 		CORRUPT(201);			// msg 201 cannot find blob page
 
-	blob->blb_sequence++;
+	blb_sequence++;
 
 	return page;
 }
 
 
-static void insert_page(thread_db* tdbb, blb* blob)
+void blb::insert_page(thread_db* tdbb)
 {
 /**************************************
  *
@@ -2364,31 +2357,31 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	const USHORT length = dbb->dbb_page_size - blob->blb_space_remaining;
-	vcl* vector = blob->blb_pages;
-	blob->blb_max_sequence = blob->blb_sequence;
+	const USHORT length = dbb->dbb_page_size - blb_space_remaining;
+	vcl* vector = blb_pages;
+	blb_max_sequence = blb_sequence;
 
 	// Allocate a page for the now full blob data page.  Move the page
 	// image to the buffer, and release the page.
 
-	const USHORT pageSpaceID = blob->blb_pg_space_id;
+	const USHORT pageSpaceID = blb_pg_space_id;
 
 	WIN window(pageSpaceID, -1);
 	blob_page* page = (blob_page*) DPM_allocate(tdbb, &window);
 	const PageNumber page_number = window.win_page;
 
-	if (blob->blb_sequence == 0)
-		blob->blb_lead_page = page_number.getPageNum();
+	if (blb_sequence == 0)
+		blb_lead_page = page_number.getPageNum();
 
 	// Page header is partially populated by DPM_allocate. Preserve it.
 	memcpy(
 		reinterpret_cast<char*>(page) + sizeof(Ods::pag),
-		reinterpret_cast<const char*>(blob->getBuffer()) + sizeof(Ods::pag),
+		reinterpret_cast<const char*>(getBuffer()) + sizeof(Ods::pag),
 		length - sizeof(Ods::pag));
 	page->blp_header.pag_type = pag_blob;
 
-	page->blp_sequence = blob->blb_sequence;
-	page->blp_lead_page = blob->blb_lead_page;
+	page->blp_sequence = blb_sequence;
+	page->blp_lead_page = blb_lead_page;
 	page->blp_length = length - BLP_SIZE;
 	CCH_RELEASE(tdbb, &window);
 
@@ -2397,26 +2390,26 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	// The second case is that the vector is full, and the blob must be
 	// transformed into a level 2 blob.
 
-	if (blob->blb_level == 1)
+	if (blb_level == 1)
 	{
 		// See if there is room in the page vector.  If so, just update the vector.
 
-		if (blob->blb_sequence < blob->blb_max_pages)
+		if (blb_sequence < blb_max_pages)
 		{
-			if (blob->blb_sequence >= vector->count()) {
-				vector->resize(blob->blb_sequence + 1);
+			if (blb_sequence >= vector->count()) {
+				vector->resize(blb_sequence + 1);
 			}
-			(*vector)[blob->blb_sequence] = page_number.getPageNum();
+			(*vector)[blb_sequence] = page_number.getPageNum();
 			return;
 		}
 
 		// The vector just overflowed.  Sigh.  Transform blob to level 2.
 
-		blob->blb_level = 2;
+		blb_level = 2;
 		page = (blob_page*) DPM_allocate(tdbb, &window);
 		page->blp_header.pag_flags = Ods::blp_pointers;
 		page->blp_header.pag_type = pag_blob;
-		page->blp_lead_page = blob->blb_lead_page;
+		page->blp_lead_page = blb_lead_page;
 		page->blp_length = vector->count() << SHIFTLONG;
 		memcpy(page->blp_page, vector->memPtr(), page->blp_length);
 		vector->resize(1);
@@ -2427,7 +2420,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	// The blob must be level 2.  Find the appropriate pointer page (creating
 	// it if need be, and stick the pointer in the appropriate slot.
 
-	USHORT l = blob->blb_sequence / blob->blb_pointers;
+	USHORT l = blb_sequence / blb_pointers;
 
 	if (l < vector->count())
 	{
@@ -2435,12 +2428,12 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		window.win_flags = 0;
 		page = (blob_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_blob);
 	}
-	else if (l < blob->blb_pointers)
+	else if (l < blb_pointers)
 	{
 		page = (blob_page*) DPM_allocate(tdbb, &window);
 		page->blp_header.pag_flags = Ods::blp_pointers;
 		page->blp_header.pag_type = pag_blob;
-		page->blp_lead_page = blob->blb_lead_page;
+		page->blp_lead_page = blb_lead_page;
 		vector->resize(l + 1);
 		(*vector)[l] = window.win_page.getPageNum();
 	}
@@ -2450,7 +2443,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 
 	CCH_precedence(tdbb, &window, page_number);
 	CCH_MARK(tdbb, &window);
-	l = blob->blb_sequence % blob->blb_pointers;
+	l = blb_sequence % blb_pointers;
 	page->blp_page[l] = page_number.getPageNum();
 	page->blp_length = (l + 1) << SHIFTLONG;
 	CCH_RELEASE(tdbb, &window);
@@ -2508,8 +2501,8 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	blob_desc.dsc_dtype = dtype_blob;
 	blob_desc.dsc_length = sizeof(ISC_QUAD);
 	blob_desc.dsc_address = reinterpret_cast<UCHAR*>(&temp_bid);
-	BLB_put_segment(tdbb, blob, fromstr, length);
-	BLB_close(tdbb, blob);
+	blob->BLB_put_segment(tdbb, fromstr, length);
+	blob->BLB_close(tdbb);
 	ULONG blob_temp_id = blob->blb_temp_id;
 	BLB_move(tdbb, &blob_desc, to_desc, field);
 
@@ -2609,7 +2602,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 
 	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) * toCharSet->maxBytesPerChar());
-	const ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
+	const ULONG len = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCapacity(), true);
 
 	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
 		ERR_post(Arg::Gds(isc_arith_except) << Arg::Gds(isc_blob_truncation));
@@ -2623,21 +2616,21 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 
 // Release a blob and associated blocks. Among other things, disconnect it from the transaction.
 // However, if purge_flag is false, then only release the associated blocks.
-void blb::destroy(blb* blob, const bool purge_flag)
+void blb::destroy(const bool purge_flag)
 {
-	jrd_tra* const transaction = blob->blb_transaction;
+	jrd_tra* const transaction = blb_transaction;
 
 	// Disconnect blob from transaction block.
 
 	if (purge_flag)
 	{
-		if (transaction->tra_blobs->locate(blob->blb_temp_id))
+		if (transaction->tra_blobs->locate(blb_temp_id))
 		{
 			jrd_req* blob_request = transaction->tra_blobs->current().bli_request;
 
 			if (blob_request)
 			{
-				if (blob_request->req_blobs.locate(blob->blb_temp_id))
+				if (blob_request->req_blobs.locate(blb_temp_id))
 					blob_request->req_blobs.fastRemove();
 				else
 				{
@@ -2657,15 +2650,15 @@ void blb::destroy(blb* blob, const bool purge_flag)
 		}
 	}
 
-	delete blob->blb_pages;
-	blob->blb_pages = NULL;
+	delete blb_pages;
+	blb_pages = NULL;
 
-	if ((blob->blb_flags & BLB_temporary) && blob->blb_temp_size > 0)
+	if ((blb_flags & BLB_temporary) && blb_temp_size > 0)
 	{
-		blob->blb_transaction->getBlobSpace()->releaseSpace(blob->blb_temp_offset, blob->blb_temp_size);
+		blb_transaction->getBlobSpace()->releaseSpace(blb_temp_offset, blb_temp_size);
 	}
 
-	delete blob;
+	delete this;
 }
 
 
@@ -2806,7 +2799,7 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 	// Write out array descriptor
 
-	BLB_put_segment(tdbb, blob, reinterpret_cast<const UCHAR*>(&array->arr_desc),
+	blob->BLB_put_segment(tdbb, reinterpret_cast<const UCHAR*>(&array->arr_desc),
 					array->arr_desc.iad_length);
 
 	// Write out actual array
@@ -2815,15 +2808,15 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 	SLONG length = array->arr_effective_length;
 	while (length > seg_limit)
 	{
-		BLB_put_segment(tdbb, blob, p, seg_limit);
+		blob->BLB_put_segment(tdbb, p, seg_limit);
 		length -= seg_limit;
 		p += seg_limit;
 	}
 
 	if (length)
-		BLB_put_segment(tdbb, blob, p, (USHORT) length);
+		blob->BLB_put_segment(tdbb, p, (USHORT) length);
 
-	BLB_close(tdbb, blob);
+	blob->BLB_close(tdbb);
 
 	return blob;
 }

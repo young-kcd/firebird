@@ -3236,7 +3236,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 
 		if (address1)
-			BLB_put_data(tdbb, newBlob, address1, length1);	// first value is not a blob
+			newBlob->BLB_put_data(tdbb, address1, length1);	// first value is not a blob
 		else
 		{
 			UCharBuffer bpb;
@@ -3247,17 +3247,17 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			while (!(blob->blb_flags & BLB_eof))
 			{
-				SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+				SLONG len = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCapacity(), false);
 
 				if (len)
-					BLB_put_data(tdbb, newBlob, buffer.begin(), len);
+					newBlob->BLB_put_data(tdbb, buffer.begin(), len);
 			}
 
-			BLB_close(tdbb, blob);
+			blob->BLB_close(tdbb);
 		}
 
 		if (address2)
-			BLB_put_data(tdbb, newBlob, address2, length2);	// second value is not a blob
+			newBlob->BLB_put_data(tdbb, address2, length2);	// second value is not a blob
 		else
 		{
 			UCharBuffer bpb;
@@ -3268,16 +3268,16 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			while (!(blob->blb_flags & BLB_eof))
 			{
-				SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+				SLONG len = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCapacity(), false);
 
 				if (len)
-					BLB_put_data(tdbb, newBlob, buffer.begin(), len);
+					newBlob->BLB_put_data(tdbb, buffer.begin(), len);
 			}
 
-			BLB_close(tdbb, blob);
+			blob->BLB_close(tdbb);
 		}
 
-		BLB_close(tdbb, newBlob);
+		newBlob->BLB_close(tdbb);
 
 		EVL_make_value(tdbb, &desc, impure);
 	}
@@ -8191,17 +8191,17 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		while (!(blob->blb_flags & BLB_eof))
 		{
-			SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+			SLONG len = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCapacity(), false);
 
 			if (len)
 			{
 				len = (textType->*intlFunction)(len, buffer.begin(), len, buffer.begin());
-				BLB_put_data(tdbb, newBlob, buffer.begin(), len);
+				newBlob->BLB_put_data(tdbb, buffer.begin(), len);
 			}
 		}
 
-		BLB_close(tdbb, newBlob);
-		BLB_close(tdbb, blob);
+		newBlob->BLB_close(tdbb);
+		blob->BLB_close(tdbb);
 	}
 	else
 	{
@@ -8404,7 +8404,7 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 				{
 					HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 
-					length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length),
+					length = blob->BLB_get_data(tdbb, buffer.getBuffer(blob->blb_length),
 						blob->blb_length, false);
 					length = charSet->length(length, buffer.begin(), true);
 				}
@@ -8421,7 +8421,7 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		*(ULONG*) impure->vlu_desc.dsc_address = length;
 
-		BLB_close(tdbb, blob);
+		blob->BLB_close(tdbb);
 
 		return &impure->vlu_desc;
 	}
@@ -9163,14 +9163,14 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 		if (charSet->isMultiByte())
 		{
 			buffer.getBuffer(MIN(blob->blb_length, byte_offset + byte_length));
-			dataLen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount(), false);
+			dataLen = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCount(), false);
 
 			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
 			buffer2.getBuffer(dataLen);
 
 			dataLen = charSet->substring(dataLen, buffer.begin(),
 				buffer2.getCapacity(), buffer2.begin(), start, length);
-			BLB_put_data(tdbb, newBlob, buffer2.begin(), dataLen);
+			newBlob->BLB_put_data(tdbb, buffer2.begin(), dataLen);
 		}
 		else if (byte_offset < blob->blb_length)
 		{
@@ -9180,23 +9180,23 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 			while (!(blob->blb_flags & BLB_eof) && start)
 			{
 				// Both cases are the same for now. Let's see if we can optimize in the future.
-				ULONG l1 = BLB_get_data(tdbb, blob, buffer.begin(),
+				ULONG l1 = blob->BLB_get_data(tdbb, buffer.begin(),
 					MIN(buffer.getCapacity(), start), false);
 				start -= l1;
 			}
 
 			while (!(blob->blb_flags & BLB_eof) && length)
 			{
-				dataLen = BLB_get_data(tdbb, blob, buffer.begin(),
+				dataLen = blob->BLB_get_data(tdbb, buffer.begin(),
 					MIN(length, buffer.getCapacity()), false);
 				length -= dataLen;
 
-				BLB_put_data(tdbb, newBlob, buffer.begin(), dataLen);
+				newBlob->BLB_put_data(tdbb, buffer.begin(), dataLen);
 			}
 		}
 
-		BLB_close(tdbb, blob);
-		BLB_close(tdbb, newBlob);
+		blob->BLB_close(tdbb);
+		newBlob->BLB_close(tdbb);
 
 		EVL_make_value(tdbb, &desc, impure);
 	}
@@ -9920,7 +9920,7 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 				cs->maxBytesPerChar();
 
 			tempAddress = charactersBuffer.getBuffer(maxLen);
-			charactersLength = BLB_get_data(tdbb, blob, tempAddress, maxLen, true);
+			charactersLength = blob->BLB_get_data(tdbb, tempAddress, maxLen, true);
 		}
 		else
 		{
@@ -9955,7 +9955,7 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 		// It's very difficult (and probably not very efficient) to trim a blob in chunks.
 		// So go simple way and always read entire blob in memory.
 		valueAddress = valueBuffer.getBuffer(blob->blb_length);
-		valueLength = BLB_get_data(tdbb, blob, valueAddress, blob->blb_length, true);
+		valueLength = blob->BLB_get_data(tdbb, valueAddress, blob->blb_length, true);
 	}
 	else
 		valueLength = MOV_make_string2(tdbb, valueDesc, ttype, &valueAddress, valueBuffer);
@@ -10012,8 +10012,8 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 		EVL_make_value(tdbb, valueDesc, impure);
 
 		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
-		BLB_put_data(tdbb, newBlob, valueCanonical.begin(), len);
-		BLB_close(tdbb, newBlob);
+		newBlob->BLB_put_data(tdbb, valueCanonical.begin(), len);
+		newBlob->BLB_close(tdbb);
 	}
 	else
 	{

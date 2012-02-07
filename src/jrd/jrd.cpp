@@ -1816,7 +1816,7 @@ void JBlob::freeEngineData(IStatus* user_status)
 
 		try
 		{
-			BLB_cancel(tdbb, getHandle());
+			getHandle()->BLB_cancel(tdbb);
 			blob = NULL;
 		}
 		catch (const Exception& ex)
@@ -1954,7 +1954,7 @@ void JBlob::close(IStatus* user_status)
 
 		try
 		{
-			BLB_close(tdbb, getHandle());
+			getHandle()->BLB_close(tdbb);
 			blob = NULL;
 			release();
 		}
@@ -2893,7 +2893,7 @@ unsigned int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length,
 
 		try
 		{
-			len = BLB_get_segment(tdbb, getHandle(), buffer, buffer_length);
+			len = getHandle()->BLB_get_segment(tdbb, buffer, buffer_length);
 
 			if (getHandle()->blb_flags & BLB_eof)
 				status_exception::raise(Arg::Gds(isc_segstr_eof));
@@ -3079,7 +3079,7 @@ void JBlob::putSegment(IStatus* user_status, unsigned int buffer_length, const v
 
 		try
 		{
-			BLB_put_segment(tdbb, getHandle(), buffer, buffer_length);
+			getHandle()->BLB_put_segment(tdbb, buffer, buffer_length);
 		}
 		catch (const Exception& ex)
 		{
@@ -3491,7 +3491,7 @@ int JBlob::seek(IStatus* user_status, int mode, int offset)
 
 		try
 		{
-			result = BLB_lseek(getHandle(), mode, offset);
+			result = getHandle()->BLB_lseek(mode, offset);
 		}
 		catch (const Exception& ex)
 		{

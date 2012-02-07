@@ -39,7 +39,7 @@ void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, DbgInfo& dbgInfo)
 	HalfStaticArray<UCHAR, 128> tmp;
 
 	UCHAR* temp = tmp.getBuffer(length);
-	BLB_get_data(tdbb, blob, temp, length);
+	blob->BLB_get_data(tdbb, temp, length);
 
 	DBG_parse_debug_info(length, temp, dbgInfo);
 }

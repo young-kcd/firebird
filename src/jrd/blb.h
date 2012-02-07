@@ -34,6 +34,12 @@
 
 #include "firebird/Provider.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/dsc.h"
+
+namespace Ods {
+struct blob_page;
+}				
+		
 namespace Jrd {
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
@@ -50,6 +56,8 @@ class jrd_rel;
 class jrd_req;
 class jrd_tra;
 class vcl;
+class thread_db;
+struct win;
 
 // This structure must occupy 8 bytes
 struct bid
@@ -204,9 +212,27 @@ public:
 		blb_has_buffer = false;
 	}
 
-	static void destroy(blb* blob, const bool purge_flag);
-
 	JBlob* blb_interface;
+
+	//	functions
+	bool isSegmented() const;
+
+	void	BLB_cancel(thread_db* tdbb);
+	void	BLB_check_well_formed(thread_db*, const dsc* desc);
+	void	BLB_close(thread_db*);
+	ULONG	BLB_get_data(thread_db*, UCHAR*, SLONG, bool = true);
+	USHORT	BLB_get_segment(thread_db*, void*, USHORT);
+	SLONG	BLB_lseek(USHORT, SLONG);
+	void	BLB_put_data(thread_db*, const UCHAR*, SLONG);
+	void	BLB_put_segment(thread_db*, const void*, USHORT);
+
+public: // due to delete_blob_id()
+	void delete_blob(thread_db*, ULONG);
+private:
+	Ods::blob_page* get_next_page(thread_db*, win*);
+	void insert_page(thread_db*);
+public: // due to BLB_move()
+	void destroy(const bool purge_flag);
 };
 
 const int BLB_temporary		= 1;		// Newly created blob
@@ -223,6 +249,12 @@ const int BLB_large_scan	= 64;		// Blob is larger than page buffer cache
 	1	medium blob -- blob "record" is pointer to pages
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
+
+inline bool blb::isSegmented() const
+{
+	return !(blb_flags & BLB_stream);
+}
+
 
 } //namespace Jrd
 

@@ -370,7 +370,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 			UCHAR* ptr_in_buffer = buffer;
 			while (true)
 			{
-				const USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
+				const USHORT length = blob_handle->BLB_get_segment(tdbb, ptr_in_buffer, buff_length);
 
 				ptr_in_buffer += length;
 				buff_length -= length;
@@ -392,7 +392,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 			{
 				ThreadStatusGuard status_vector(tdbb);
 
-				BLB_close(tdbb, blob_handle);
+				blob_handle->BLB_close(tdbb);
 				blob_handle = NULL;
 			}
 			catch (Exception&)
@@ -724,7 +724,7 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 			UCHAR* ptr_in_buffer = buffer;
 			while (true)
 			{
-				const USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
+				const USHORT length = blob_handle->BLB_get_segment(tdbb, ptr_in_buffer, buff_length);
 
 				ptr_in_buffer += length;
 				buff_length -= length;
@@ -746,7 +746,7 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 			{
 				ThreadStatusGuard status_vector(tdbb);
 
-				BLB_close(tdbb, blob_handle);
+				blob_handle->BLB_close(tdbb);
 				blob_handle = NULL;
 			}
 			catch (Exception&)

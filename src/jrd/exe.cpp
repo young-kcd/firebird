@@ -865,7 +865,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 				if (!bid->isEmpty())
 				{
 					AutoBlb blob(tdbb, BLB_open(tdbb, transaction/*tdbb->getTransaction()*/, bid));
-					BLB_check_well_formed(tdbb, desc, blob.getBlb());
+					blob.getBlb()->BLB_check_well_formed(tdbb, desc);
 				}
 			}
 		}
@@ -1681,7 +1681,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 					{
 						// Blob was created by request, is accounted for internal needs,
 						// but is not materialized. Get rid of it.
-						BLB_cancel(tdbb, current->bli_blob_object);
+						current->bli_blob_object->BLB_cancel(tdbb);
 						// Since the routine above modifies req_blobs
 						// we need to reestablish accessor position
 					}
