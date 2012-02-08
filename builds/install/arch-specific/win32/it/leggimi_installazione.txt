@@ -1,5 +1,5 @@
 ==============================
-Firebird Database Server 2.0.6
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ==============================
 
   ** IMPORTANTE **
@@ -13,9 +13,9 @@ Firebird Database Server 2.0.6
   ** ********** **
 
 Questo documento contiene istruzioni per
-l'installazione di Firebird 2.0.6 su piattaforma
+l'installazione di Firebird $MAJOR.$MINOR.$RELEASE su piattaforma
 Win32. Questa documentazione si riferisce dunque al
-solo processo di installazione, e non a Firebird 2.0.6
+solo processo di installazione, e non a Firebird $MAJOR.$MINOR.$RELEASE
 in generale.
 
 
@@ -25,7 +25,7 @@ Indice
 o Prima di installare
 o La nuova ODS 11.0
 o Installazione su sistemi contenenti Firebird 1.5
-o Installazione su sistemi contenenti Firebird 2.0
+o Installazione su sistemi contenenti Firebird $MAJOR.$MINOR
 o Nuove caratteristiche del programma di installazione
 o Problemi aperti del programma di installazione
 o Funzionalità di installazione obsolete
@@ -47,18 +47,18 @@ fbclient.dll e gds32.dll nella cartella di sistema.
 La nuova ODS 11.0
 -----------------
 
-Firebird 2.0 usa un nuovo formato per i file su disco
+Firebird $MAJOR.$MINOR usa un nuovo formato per i file su disco
 (ODS, che sta per On-Disk Structure), la versione 11.0.
 Si tratta di un formato assolutamente incompatibile con
 il formato (pure chiamato 11.0) delle precedenti
-versioni Alpha di Firebird 2.0.
+versioni Alpha di Firebird $MAJOR.$MINOR.
 
-Se è la prima volta che installate Firebird 2.0, e
+Se è la prima volta che installate Firebird $MAJOR.$MINOR, e
 avete già una versione Alpha, si raccomanda di
 installare in una nuova cartella. Questo
 perché una disinstallazione manterrebbe il file
 security2.fdb esistente, che però non è utilizzabile
-dalla versione finale di Firebird 2.0 (il che rende
+dalla versione finale di Firebird $MAJOR.$MINOR (il che rende
 impossibile la connessione a qualunque database).
 
 
@@ -81,12 +81,12 @@ Una possibile tecnica di migrazione è riportata in
 misc/upgrade/security.
 
 
-Installazione su sistemi contenenti Firebird 2.0
+Installazione su sistemi contenenti Firebird $MAJOR.$MINOR
 ------------------------------------------------
 
 Oltre alla modifica della ODS, occorre tenere presente
 che il programma di installazione non è in grado di
-rilevare automaticamente se un server Firebird 2.0
+rilevare automaticamente se un server Firebird $MAJOR.$MINOR
 Alpha o Beta è in esecuzione come servizio. Per questo
 motivo, in questa situazione non si riceverà alcun
 avviso fino a quando il programma non fallirà nel

@@ -1,4 +1,4 @@
-Firebird Adatbázis Szerver 2.0.6
+Firebird Adatbázis Szerver $MAJOR.$MINOR.$RELEASE
 ===================================================
 
   ** FONTOS **
@@ -11,9 +11,9 @@ Firebird Adatbázis Szerver 2.0.6
   ** ****** **
 
 Ez a dokumentum egy telepítési segédlet a Win32
-platformon mûködõ Firebird 2.0.6 telepítéséhez.
+platformon mûködõ Firebird $MAJOR.$MINOR telepítéséhez.
 A telepítési segédlet elsõsorban a telepítés menetét
-írja le, s nem a Firebird 2.0.6-rõl szól
+írja le, s nem a Firebird $MAJOR.$MINOR-ról szól
 általánosságban.
 
 
@@ -23,7 +23,7 @@ Tartalomjegyzék
 o Mielõtt telepítené
 o Az új OSD 11.0-ról
 o Telepítés meglévõ Firebird 1.5 mellé
-o Telepítés már meglévõ Firebird 2.0 esetén
+o Telepítés már meglévõ Firebird $MAJOR.$MINOR esetén
 o A telepítõ új szolgáltatásai
 o Ismert telepítési problémák
 o Eltávolítás
@@ -44,12 +44,12 @@ kerüljenek a <system32> mappából.
 Az új OSD 11-ról
 ----------------
 
-A Firebird 2.0  változatban használatos új ODS 11.0
+A Firebird $MAJOR.$MINOR  változatban használatos új ODS 11.0
 adattárolási struktúra teljességgel inkompatibilis az
 elõzõ verziókban alkalmazott ODS 11.0 adattárolási
 struktúrával.
 
-Amennyiben ez a Firebird 2.0 változat elsõ telepítése
+Amennyiben ez a Firebird $MAJOR.$MINOR változat elsõ telepítése
 ezen a rendszeren, de már telepítette a Firebird 2
 alfa változatait is, akkor ajánljuk, hogy válasszon
 egy tiszta, üres könyvtárat a telepítéshez. Ennek oka,
@@ -78,16 +78,16 @@ lehetséges áttérési utakról még többet olvashat a
 misc/ upgrade/security/ helyen.
 
 
-Telepítés már meglévõ Firebird 2.0 esetén
+Telepítés már meglévõ Firebird $MAJOR.$MINOR esetén
 -----------------------------------------
 
 Az ODS adattárolási struktúra megváltozása mellett
 jegyezzük meg, hogy a telepítõ nem képes
-automatikusan felismerni a Firebird 2.0 Alfa, Béta
+automatikusan felismerni a Firebird $MAJOR.$MINOR Alfa, Béta
 éppen szervizként futó változatait. Amennyiben a
-célgépen a Firebird 2.0 - nem stabil - változata fut,
+célgépen a Firebird $MAJOR.$MINOR - nem stabil - változata fut,
 úgy ajánlatos a szervert leállítani, mielõtt
-megpróbálja telepíteni a Firebird 2.0-t. Ellenkezõ
+megpróbálja telepíteni a Firebird $MAJOR.$MINOR-t. Ellenkezõ
 esetben figyelmeztetést csak akkor fog kapni, ha az
 éppen futó fájl felülírására kerülne a sor. Ez
 elkerülhetõ, ha a régi verziót telepítés elõtt

@@ -1,5 +1,5 @@
 ==================================================
-Servidor SQL Firebird 2.0.6
+Servidor SQL Firebird $MAJOR.$MINOR.$RELEASE
 ==================================================
 
   ** IMPORTANTE **
@@ -11,9 +11,9 @@ Servidor SQL Firebird 2.0.6
   ** ********* **
 
 Este documento constitui um guia para instalar o kit do
-Firebird 2.0.6 na plataforma Win32. Estas notas
+Firebird $MAJOR.$MINOR.$RELEASE na plataforma Win32. Estas notas
 referem-se ao próprio kit de instalação, em vez do
-Firebird 2.0.6 em geral.
+Firebird $MAJOR.$MINOR.$RELEASE em geral.
 
 
 Conteúdo
@@ -22,7 +22,7 @@ Conteúdo
 o Antes de Instalar
 o Nova ODS 11.0
 o Instalação em sistemas com o Firebird 1.5
-o Instalação em sistemas com o Firebird 2.0
+o Instalação em sistemas com o Firebird $MAJOR.$MINOR
 o Novas funcionalidades da aplicação de instalação
 o Problemas de instalação conhecidos
 o Remoção
@@ -42,11 +42,11 @@ gds32.dll são removidos do <system32>.
 Nova ODS 11.0
 ------------
 
-O Firebird 2.0 introduz uma nova ODS 11.0 a qual é totalmente
+O Firebird $MAJOR.$MINOR introduz uma nova ODS 11.0 a qual é totalmente
 incompatível com a ODS 11.0 usada por versões alfa
 anteriores.
 
-Se está a instalar o Firebird 2.0 pela primeira vez e já
+Se está a instalar o Firebird $MAJOR.$MINOR pela primeira vez e já
 possui um Firebird 2 alfa instalado, recomenda-se que
 proceda à instalação sobre uma pasta vazia.
 Tal deve-se à remoção de uma instalação preservar
@@ -73,12 +73,12 @@ possível de migração encontra--se disponível em
 misc/upgrade/security/.
 
 
-Instalação em sistemas com o Firebird 2.0
+Instalação em sistemas com o Firebird $MAJOR.$MINOR
 -----------------------------------------
 
 Além da modificação da ODS há a considerar que o
 processo de instalação não consegue detectar se um
-servidor de uma versão Firebird 2.0 Alfa se
+servidor de uma versão Firebird $MAJOR.$MINOR Alfa se
 encontra activo como um serviço. Como tal não receberá
 qualquer aviso até que o programa de instalação tente
 sobrepor um ficheiro activo. Este problema pode ser

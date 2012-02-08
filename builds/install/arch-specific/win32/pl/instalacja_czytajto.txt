@@ -1,5 +1,5 @@
 ==================================================
-Serwer Baz Danych Firebird 2.0.6
+Serwer Baz Danych Firebird $MAJOR.$MINOR.$RELEASE
 ==================================================
 
   ** WA¯NE **
@@ -10,9 +10,9 @@ Serwer Baz Danych Firebird 2.0.6
 
   ** ********* **
 
-Ten dokument jest przewodnikiem instalacji Firebird 2.0.6
+Ten dokument jest przewodnikiem instalacji Firebird $MAJOR.$MINOR.$RELEASE
 na platformie Win32. Poni¿sze informacje dotycz¹
-tego pakietu instalacyjnego, a nie ogólnie Firebird'a 2.0.6 .
+tego pakietu instalacyjnego, a nie ogólnie Firebird'a $MAJOR.$MINOR.$RELEASE.
 
 
 Spis treœci
@@ -21,7 +21,7 @@ Spis treœci
 o Przed instalacj¹
 o Nowy ODS 11.0
 o Instalacja w systemach z Firebird 1.5
-o Instalacja w systemach z Firebird 2.0
+o Instalacja w systemach z Firebird $MAJOR.$MINOR
 o Nowe funkcjonalnoœci instalatora
 o Znane problemy podczas instalacji
 o Deinstalacja
@@ -41,12 +41,12 @@ i gds32.dll s¹ usuniête z <system32>.
 Nowy ODS 11.0
 -------------
 
-Firebird 2.0 wprowadza nowy ODS 11.0, który jest zupe³nie
+Firebird $MAJOR.$MINOR wprowadza nowy ODS 11.0, który jest zupe³nie
 niekompatybilny z ODS 11.0 u¿ywanym przez poprzednie wersje
 Alpha.
 
-Jeœli instalujemy tê wersjê Firebird 2.0 pierwszy raz, a posiadamy
-wczeœniej zainstalowanego Firebird 2.0, zaleca siê instalacjê
+Jeœli instalujemy tê wersjê Firebird $MAJOR.$MINOR pierwszy raz, a posiadamy
+wczeœniej zainstalowanego Firebird $MAJOR.$MINOR, zaleca siê instalacjê
 do nowego katalogu, poniewa¿ deinstalacja zachowuje istniej¹c¹
 bazê security2. Wczeœniejsze wersje u¿ywa³y niekompatybilnego ODS
 i nie moglibyœmy po³¹czyæ siê do serwera.
@@ -69,12 +69,12 @@ Przysz³e wydania testowe bêd¹ rozwi¹zywa³y ten problem w szerszym
 zakresie.
 
 
-Instalacja w systemach z Firebird 2.0
+Instalacja w systemach z Firebird $MAJOR.$MINOR
 ----------------------------------------------
 
 Oprócz zmian w ODS nale¿y wzi¹æ pod uwagê, ¿e instalator
 nie potrafi automatycznie wykryæ, czy w systemie jest
-uruchomiony serwer Firebird 2.0 Beta 1. Tak wiêc, nie pojawi
+uruchomiony serwer Firebird $MAJOR.$MINOR Beta 1. Tak wiêc, nie pojawi
 siê ¿adne ostrze¿enie, dopóki nie nast¹pi próba nadpisania
 otwartego pliku. Unikniemy tego, jeœli instalujemy serwer
 po raz pierwszy.

@@ -1,4 +1,4 @@
-Firebird Database Server 2.0.6
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
   ** IMPORTANTE **
@@ -12,9 +12,9 @@ Firebird Database Server 2.0.6
   ** ********** **
   
 Este documento es una guía para instalar este paquete
-de Firebird 2.0.6 en la plataforma Win32. Estas notas
+de Firebird $MAJOR.$MINOR.$RELEASE en la plataforma Win32. Estas notas
 hacen referencia al paquete de instalación en sí, más
-que a Firebird 2.0.6 en general.
+que a Firebird $MAJOR.$MINOR.$RELEASE en general.
 
 
 Contenido
@@ -23,7 +23,7 @@ Contenido
 o Antes de instalar
 o Nueva ODS 11.0
 o Instalación en sistemas con Firebird 1.5
-o Instalación en sistemas con Firebird 2.0
+o Instalación en sistemas con Firebird $MAJOR.$MINOR
 o Nuevas características del instalador
 o Problemas conocidos relacionados con la instalación
 o Desinstalación
@@ -44,12 +44,12 @@ hayan sido eliminados de <system32>.
 Nueva ODS 11.0
 --------------
 
-Firebird 2.0 introduce una nueva versión (11.0) 
+Firebird $MAJOR.$MINOR introduce una nueva versión (11.0) 
 de la estructura en disco de archivos Firebird (ODS),
 que es completamente incompatible con la versión 11.0
 utilizada en las versiones alpha.
 
-Si está instalando esta versión de Firebird 2.0 por
+Si está instalando esta versión de Firebird $MAJOR.$MINOR por
 primera vez sobre una instalación previa de Firebird 2 
 alpha se recomienda que lo haga en una carpeta 
 diferente. Aunque la desinstalación no elimina
@@ -76,13 +76,13 @@ la cual debe ser realizada manualmente. Una posible
 técnica se describe en misc/upgrade/security/. 
 
 
-Instalación en sistemas con Firebird 2.0
+Instalación en sistemas con Firebird $MAJOR.$MINOR
 ----------------------------------------
 
 Adicionalmente al cambio de la estructura en disco 
 (ODS), tenga en cuenta que el instalador no puede
 detectar automáticamente si una versión Alfa o Beta
-de Firebird 2.0 se está ejecutando como servicio.
+de Firebird $MAJOR.$MINOR se está ejecutando como servicio.
 Por lo tanto, no recibirá ninguna advertencia hasta
 que el instalador intente reemplazar el archivo
 en uso. Esto puede evitarse mediante una desinstalación 

@@ -1,4 +1,4 @@
-Firebird Serveur Bases de données 2.0.6
+Firebird Serveur Bases de données $MAJOR.$MINOR.$RELEASE
 ==================================================
 
   ** IMPORTANT **
@@ -19,9 +19,9 @@ version, seul le texte original en anglais
 **       FIN      **
 
 Ce document est un guide pour l'installation de
-Firebird 2.0.6 sur une plateforme Win32. Ces notes concernent 
-l'itilitaire d'installation, pas
-Firebird 2.0.6 en général.
+Firebird $MAJOR.$MINOR.$RELEASE sur une plateforme Win32. Ces notes
+concernent l'utilitaire d'installation, pas Firebird $MAJOR.$MINOR.$RELEASE
+en général.
 
 
 Contenu
@@ -30,7 +30,7 @@ Contenu
 o Avant l'installation
 o Nouvel ODS 11.0
 o Installation sur une machine avec Firebird 1.5
-o Installation sur une machine avec Firebird 2.0
+o Installation sur une machine avec Firebird $MAJOR.$MINOR
 o Nouvelles fonctionnalités du programme d'installation
 o Problèmes connus d'installation
 o Fonctionnalités obsolètes du programme d'installation
@@ -52,10 +52,10 @@ fbclient.dll et gds32.dll ont été retirés de <system32>.
 Nouvel ODS 11.0
 ---------------
 
-Firebird 2.0 utilise le nouvel ODS 11.0 qui est incompatible
+Firebird $MAJOR.$MINOR utilise le nouvel ODS 11.0 qui est incompatible
 avec l' ODS 11.0 utilisé par les verions alpha.
 
-Si vous installez cette version de Firebird 2.0 pour
+Si vous installez cette version de Firebird $MAJOR.$MINOR pour
 la première fois au dessus d'un système avec Firebird 2 
 alpha il est recommandé de l'installer dans un nouveau répertoire.
 Ceci parce qu'une désinstallation va conserver la
@@ -80,12 +80,12 @@ faite manuellement. Une technique de technique de migration technique
 est décrite dans misc/upgrade/security/. 
 
 
-Installation sur une machine avec Firebird 2.0
+Installation sur une machine avec Firebird $MAJOR.$MINOR
 ----------------------------------------------
 
 En plus du changement d'ODS veuillez noter
 que l'utilitaire d'installation ne peut détecter automatiquement
-si un serveur Firebird 2.0 Alpha ou Beta fonctionne en
+si un serveur Firebird $MAJOR.$MINOR Alpha ou Beta fonctionne en
 tant que service. De ce fait vous ne serez pas averti
 tant que l'utilitaire n'essaiera pas de d'écrire sur un
 fichier en cours d'utilisation. Cela peut être évité si vous faites
@@ -141,7 +141,7 @@ o Si Firebird est exécuté comme application (et non
   Vous devrez alors supprimer les fichiers restant
   manuellement.
 
-o La desintalltion laisse quatre fichiers dans le
+o La desinstallation laisse quatre fichiers dans le
   répertoire d'installation:
 
   - aliases.conf

@@ -42,24 +42,23 @@ o The Win32 install files are located in install\arch-specific\win32.
     Firebird 1.5  - firebird2\src
     Firebird 2.n  - firebird2\builds
 
-o You can use anonymous CVS to checkout the Win32 install kit with these
-  commands:
+o You can use a tool such as TortoiseSVN to checkout the Win32 install 
+  kit. Just open the SVN checkout dialogue and enter something similar 
+  to this Repository URL:
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/branch/B2_0_Release/builds/install/arch-specific/win32
+ or this:
 
-  [login]
 
-    cvs -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird login
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/tags/R2_0_7/builds/install/arch-specific/win32
 
-  [checkout the Fb 1.5 Win32 installation kit]
+For 2.1 the equivalent URLs would be:
 
-    cvs -z3 -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird co -r B1_5_Release firebird2/src/install/arch-specific/win32
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/branch/B2_1_Release/builds/install/arch-specific/win32
 
-  [checkout the Fb 2.0 Win32 installation kit]
 
-    cvs -z3 -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird co -r B2_0_Release firebird2/builds/install/arch-specific/win32
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/tags/R2_1_4/builds/install/arch-specific/win32
 
-  [checkout the Fb 2.1 Win32 installation kit]
 
-    cvs -z3 -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird co -r B2_1_Release firebird2/builds/install/arch-specific/win32
 
 
 o Each language has its own sub-directory under install\arch-specific\win32.
