@@ -56,7 +56,7 @@
 #define PointRelease "0"
 #define BuildNumber "0"
 #define PackageNumber "0"
-
+#define FilenameSuffix ""
 
 
 ;-------Start of Innosetup script debug flags section
@@ -156,6 +156,15 @@
 #define PackageNumber FBBUILD_PACKAGE_NUMBER
 #endif
 
+#if Len(GetEnv("FBBUILD_FILENAME_SUFFIX")) > 0
+#define FBBUILD_FILENAME_SUFFIX GetEnv("FBBUILD_FILENAME_SUFFIX")
+#endif
+#ifdef FBBUILD_FILENAME_SUFFIX
+#define FilenameSuffix FBBUILD_FILENAME_SUFFIX
+#if pos('_',FilenameSuffix) == 0
+#define FilenameSuffix "_" + FilenameSuffix
+#endif
+#endif
 
 
 #if BuildNumber == "0"
@@ -228,12 +237,13 @@ AppUpdatesURL={#MyAppURL}
 AppVersion={#MyAppVerString}
 
 SourceDir=..\..\..\..\
-OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}
-;OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}_Setup-Manifest.txt
+OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}{#FilenameSuffix}
+;OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}{#FilenameSuffix}_Setup-Manifest.txt
 OutputDir=builds\install_images
 ;!!! These directories are as seen from SourceDir !!!
 #define ScriptsDir "builds\install\arch-specific\win32"
 #define LicensesDir "builds\install\misc"
+#define GenDir "gen\readmes"
 LicenseFile={#LicensesDir}\IPLicense.txt
 
 WizardImageFile={#ScriptsDir}\firebird_install_logo1.bmp
@@ -256,20 +266,20 @@ PrivilegesRequired=admin
 
 
 [Languages]
-Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#GenDir}\installation_readme.txt; InfoAfterFile: {#GenDir}\readme.txt;
 #ifdef i18n
-Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#ScriptsDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#ScriptsDir}\ba\ProcitajMe.txt;
-Name: cz; MessagesFile: compiler:Languages\Czech.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
-Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#ScriptsDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#ScriptsDir}\fr\lisezmoi.txt;
-Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#ScriptsDir}\de\installation_liesmich.txt; InfoAfterFile: {#ScriptsDir}\de\liesmich.txt;
-Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#ScriptsDir}\es\leame_instalacion.txt; InfoAfterFile: {#ScriptsDir}\es\leame.txt;
-Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: {#ScriptsDir}\hu\telepitesi_segedlet.txt; InfoAfterFile: {#ScriptsDir}\hu\olvass_el.txt;
-Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#ScriptsDir}\it\leggimi_installazione.txt; InfoAfterFile: {#ScriptsDir}\it\leggimi.txt
-Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
-Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
-Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
-Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
-Name: sk; MessagesFile: compiler:Languages\Slovak.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#GenDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#GenDir}\ba\ProcitajMe.txt;
+Name: cz; MessagesFile: compiler:Languages\Czech.isl; InfoBeforeFile: {#GenDir}\installation_readme.txt; InfoAfterFile: {#GenDir}\readme.txt;
+Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#GenDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#GenDir}\fr\lisezmoi.txt;
+Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#GenDir}\de\installation_liesmich.txt; InfoAfterFile: {#GenDir}\de\liesmich.txt;
+Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#GenDir}\es\leame_instalacion.txt; InfoAfterFile: {#GenDir}\es\leame.txt;
+Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: {#GenDir}\hu\telepitesi_segedlet.txt; InfoAfterFile: {#GenDir}\hu\olvass_el.txt;
+Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#GenDir}\it\leggimi_installazione.txt; InfoAfterFile: {#GenDir}\it\leggimi.txt
+Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#GenDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#GenDir}\pl\czytajto.txt;
+Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#GenDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#GenDir}\pt\leia-me.txt
+Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#GenDir}\ru\installation_readme.txt; InfoAfterFile: {#GenDir}\ru\readme.txt;
+;Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#GenDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#GenDir}\readme.txt;
+Name: sk; MessagesFile: compiler:Languages\Slovak.isl; InfoBeforeFile: {#GenDir}\installation_readme.txt; InfoAfterFile: {#GenDir}\readme.txt;
 #endif
 
 [Messages]
@@ -285,7 +295,7 @@ it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
 ru.BeveledLabel=Ðóññêèé
-si.BeveledLabel=Slovenski
+;si.BeveledLabel=Slovenski
 sk.BeveledLabel=Sloven?ina
 #endif
 
@@ -302,7 +312,7 @@ sk.BeveledLabel=Sloven?ina
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
 #include "ru\custom_messages_ru.inc"
-#include "si\custom_messages_si.inc"
+;#include "si\custom_messages_si.inc"
 #include "sk\custom_messages_sk.inc"
 #endif
 
@@ -407,21 +417,21 @@ Source: {#LicensesDir}\IDPLicense.txt; DestDir: {app}; Components: ClientCompone
 Source: {#ScriptsDir}\After_Installation.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
 Source: {#ScriptsDir}\firebirdsql.org.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
 ;Always install the original english version
-Source: {#ScriptsDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
+Source: {#GenDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 #ifdef i18n
 ;Translated files
-Source: {#ScriptsDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
-;Source: {#ScriptsDir}\cz\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: cz;
-Source: {#ScriptsDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
-Source: {#ScriptsDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
-Source: {#ScriptsDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
-Source: {#ScriptsDir}\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
-Source: {#ScriptsDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
-Source: {#ScriptsDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
-Source: {#ScriptsDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
-Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
-Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
-;Source: {#ScriptsDir}\sk\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: sk;
+Source: {#GenDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+;Source: {#GenDir}\cz\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: cz;
+Source: {#GenDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
+Source: {#GenDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
+Source: {#GenDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
+Source: {#GenDir}\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
+Source: {#GenDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
+Source: {#GenDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
+Source: {#GenDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
+Source: {#GenDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
+;Source: {#GenDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+;Source: {#genDir}\sk\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: sk;
 #endif
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
@@ -542,9 +552,9 @@ Var
   InstallRootDir: String;
   FirebirdConfSaved: String;
   ForceInstall: Boolean;        // If /force set on command-line we install _and_
-                                 // configure. Default is to install and configure only if
-                                 // no other working installation is found (unless we are installing
-                                 // over the same version)
+                                // configure. Default is to install and configure only if
+                                // no other working installation is found (unless we are installing
+                                // over the same version)
 
   //These three command-line options change the default behaviour
   // during a scripted install
@@ -552,7 +562,7 @@ Var
   // during an interactive install
   NoCPL: Boolean;               // pass /nocpl on command-line.
   NoLegacyClient: Boolean;      // pass /nogds32 on command line.
-  CopyFbClient: Boolean;     // pass /copyfbclient on command line.
+  CopyFbClient: Boolean;        // pass /copyfbclient on command line.
 
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
@@ -702,16 +712,16 @@ begin
 
   end;
 
-  if pos('FORCE',Uppercase(CommandLine))>0 then
+  if pos('FORCE',Uppercase(CommandLine)) > 0 then
     ForceInstall:=True;
 
-  if pos('NOCPL', Uppercase(CommandLine))>0 then
+  if pos('NOCPL', Uppercase(CommandLine)) > 0 then
     NoCPL := True;
 
-  if pos('NOGDS32', Uppercase(CommandLine))>0 then
+  if pos('NOGDS32', Uppercase(CommandLine)) > 0 then
     NoLegacyClient := True;
 
-  if pos('COPYFBCLIENT', Uppercase(CommandLine))>0 then
+  if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
 
   // Check if a server is running - we cannot continue if it is.
@@ -723,7 +733,7 @@ begin
   if not CheckWinsock2 then begin
     result := False;
     exit;
-  end
+  end;
 
   //By default we want to install and confugure,
   //unless subsequent analysis suggests otherwise.

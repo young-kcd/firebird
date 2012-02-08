@@ -1,4 +1,4 @@
-Firebird Datenbank Server 2.0.6
+Firebird Datenbank Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 
@@ -12,9 +12,9 @@ Firebird Datenbank Server 2.0.6
   ** ******* **
 
 Dieses Dokument ist eine Hilfestellung um dieses Paket
-von Firebird 2.0.6 auf einer Win32 Plattform zu installieren.
+von Firebird $MAJOR.$MINOR.$RELEASE auf einer Win32 Plattform zu installieren.
 Diese Hinweise beziehen sich ausschließlich auf das
-Installationspaket, und nicht auf Firebird 2.0.6 allgemein.
+Installationspaket, und nicht auf Firebird $MAJOR.$MINOR.$RELEASE allgemein.
 
 
 Inhalt
@@ -23,7 +23,7 @@ Inhalt
 o Vor der Installation
 o Neue ODS 11.0
 o Installation auf Systemen mit Firebird 1.5
-o Installation auf Systemen mit Firebird 2.0
+o Installation auf Systemen mit Firebird $MAJOR.$MINOR
 o Neue Features des Installers
 o Bekannte Installationsprobleme
 o Veraltete Features bezogen auf die Installation
@@ -43,11 +43,11 @@ Paket installieren.
 Neue ODS 11.0
 -------------
 
-Firebird 2.0 verwendet eine neue ODS 11.0, die komplett
+Firebird $MAJOR.$MINOR verwendet eine neue ODS 11.0, die komplett
 inkompatibel mit der ODS 11.0 von früheren Alpha Releases
 ist.
 
-Falls Sie dieses Release von Firebird 2.0 zum erstenmal
+Falls Sie dieses Release von Firebird $MAJOR.$MINOR zum erstenmal
 über ein Firebird 2 Alpha Release installieren, so empfehlen
 wir Ihnen, dass Sie dazu ein neues Verzeichnis verwenden.
 Der Grund dafür ist, dass eine Deinstallation die existierende
@@ -74,11 +74,11 @@ mögliche Migrationstechnik ist in misc/upgrade/security/
 angeführt.
 
 
-Installation auf Systemen mit Firebird 2.0
+Installation auf Systemen mit Firebird $MAJOR.$MINOR
 ------------------------------------------
 
 Zusätzlich zur ODS-Änderung wird die Setup-Routine einen
-laufenden Firebird 2.0 Alpha oder Beta Server als Dienst
+laufenden Firebird $MAJOR.$MINOR Alpha oder Beta Server als Dienst
 nicht automatisch erkennen. Daher bekommen Sie keine Warnung,
 bis der Installer versucht aktive Dateien zu überschreiben.
 

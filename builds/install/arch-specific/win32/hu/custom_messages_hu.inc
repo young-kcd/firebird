@@ -70,4 +70,4 @@ hu.RunISQL=A parancssoros Interaktív SQL eszköz futtatása
 
 hu.ReadmeFile=olvass_el.txt
 hu.InstallationReadmeFile=telepitesi_segedlet.txt
-;hu.IncompleteTranslationNotice=Ez a dokumentum nem naprakész információkat tartalmazhat. A legfrissebb információkért kérjük nézze át az eredeti angol nyelvû dokumentációt.
+hu.IncompleteTranslationNotice=Ez a dokumentum nem naprakész információkat tartalmazhat. A legfrissebb információkért kérjük nézze át az eredeti angol nyelvû dokumentációt.

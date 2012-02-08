@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.0.6       (Win32 Build)
+Firebird $MAJOR.$MINOR.$RELEASE       (Win32 Build)
 ==================================
 
 o Introduction
@@ -16,13 +16,13 @@ o Demander des nouvelles fonctionnalités
 Introduction
 ============
 
-Bienvenue dans le monde de Firebird 2.0.6
+Bienvenue dans le monde de Firebird $MAJOR.$MINOR
 
 
 Avertissements
 ==============
 
-Firebird 2.0.6 a été testé intensivement
+Firebird $MAJOR.$MINOR.$RELEASE a été testé intensivement
 et peut être utiliseé en production. Toutefois, les
 utilisateurs sont invités à suivre ces prescriptions avant de
 déployer cette version en production. ie:
@@ -41,14 +41,14 @@ déployer cette version en production. ie:
 Fonctionnalités nouvelles (toutes platformes)
 =============================================
 
-Voir doc/Firebird_v2.0.6.ReleaseNotes.pdf pour plus
+Voir doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf pour plus
 d'informations.
 
 
 Bugs corrigés dans cette version
 ================================
 
-Voir doc/Firebird_v2.0.6.ReleaseNotes.pdf pour plus
+Voir doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf pour plus
 d'informations.
 
 

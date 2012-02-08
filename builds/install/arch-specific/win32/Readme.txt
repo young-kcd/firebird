@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.0.6       (Win32 Build)
+Firebird $MAJOR.$MINOR.$RELEASE       (Win32 Build)
 ==================================
 
 
@@ -17,13 +17,13 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 2.0
+Welcome to Firebird $MAJOR.$MINOR
 
 
 Intended Users
 ==============
 
-Firebird 2.0 has undergone extensive testing and is
+Firebird $MAJOR.$MINOR has undergone extensive testing and is
 intended for widespread production use. However, users
 are recommended to follow standard practices before
 deploying this release on a production server. ie:
@@ -46,14 +46,14 @@ deploying this release on a production server. ie:
 Features in this release (all platforms)
 ========================================
 
-See doc/Firebird_v2.0.6.ReleaseNotes.pdf for more
+See doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf for more
 information.
 
 
 Bugs fixed in this release (all platforms)
 ==========================================
 
-See doc/Firebird_v2.0.6.ReleaseNotes.pdf for more
+See doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf for more
 information.
 
 
@@ -82,20 +82,16 @@ Before you report a bug:
  o Check you know how Firebird works.
    Maybe it is not a bug at all.
 
- o Perhaps some has already reported this? Browse
+ o Perhaps someone has already reported this? Browse
    existing bug reports here:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/browse/CORE
 
  o If in doubt why not discuss the problem on the
    Firebird-devel list? You can subscribe here:
 
-	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+    http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
-   and the list is viewable via a newsgroup interface
-   here:
-
-	news://news.atkin.com/
 
 
 

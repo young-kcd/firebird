@@ -1,6 +1,6 @@
 
 ==================================================
-Firebird Database Server 2.0.6
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
   ** IMPORTANT **
@@ -12,9 +12,9 @@ Firebird Database Server 2.0.6
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0.6 on the Win32 platform. These notes refer
+Firebird $MAJOR.$MINOR.$RELEASE on the Win32 platform. These notes refer
 to the installation package itself, rather than
-Firebird 2.0.6 in general.
+Firebird $MAJOR.$MINOR.$RELEASE in general.
 
 
 Contents
@@ -23,7 +23,7 @@ Contents
 o Before installation
 o New ODS 11.0
 o Installation on systems with Firebird 1.5
-o Installing on systems with Firebird 2.0
+o Installing on systems with Firebird $MAJOR.$MINOR
 o New features of the installer
 o Known installation problems
 o Uninstallation
@@ -43,11 +43,11 @@ fbclient.dll and gds32.dll are removed from <system32>.
 New ODS 11.0
 ------------
 
-Firebird 2.0 features a new ODS 11.0 which is wholly
+Firebird $MAJOR.$MINOR features a new ODS 11.0 which is wholly
 incompatible with the ODS 11.0 used by the previous
 alpha releases.
 
-If you are installing this release of Firebird 2.0 for
+If you are installing this release of Firebird $MAJOR.$MINOR for
 the first time over a previously installed Firebird 2
 alpha it is recommended that you install into a fresh
 directory. This is because an uninstall will preserve
@@ -73,12 +73,12 @@ possible migration technique is available in
 misc/upgrade/security/.
 
 
-Installing on systems with Firebird 2.0
+Installing on systems with Firebird $MAJOR.$MINOR
 ---------------------------------------
 
 In addition to the ODS change please note that the
 installer cannot automatically detect if a
-Firebird 2.0 Alpha or Beta server is running
+Firebird $MAJOR.$MINOR Alpha or Beta server is running
 as a service. Therefore you will receive no warning
 until the installer attempts to overwrite an active
 file. This can be avoided if you uninstall first.

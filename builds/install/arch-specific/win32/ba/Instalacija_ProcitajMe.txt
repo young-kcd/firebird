@@ -1,5 +1,5 @@
 ==================================================
-Firebird Database Server 2.0.6
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 ** VAZNO **
@@ -11,8 +11,8 @@ Firebird Database Server 2.0.6
   ** ********* **
 
 Ovaj dokument je vodic za instalaciju ovog paketa
-Firebird-a 2.0.6 za Win32 platformu. Ovaj tekst
-se odnosi na instalacioni paket, a ne na Firebird 2.0.6
+Firebird-a $MAJOR.$MINOR za Win32 platformu. Ovaj tekst
+se odnosi na instalacioni paket, a ne na Firebird $MAJOR.$MINOR $RELEASE
 u generalnom smislu.
 
 
@@ -22,7 +22,7 @@ Sadrzaj
 o Prije instalacije
 o Novi ODS 11.0
 o Instalacija na sisteme sa Firebird-om 1.5
-o Instalacija na sisteme sa Firebird-om 2.0
+o Instalacija na sisteme sa Firebird-om $MAJOR.$MINOR
 o Nove opcije installer-a
 o Poznati problemi u vezi s instalacijom
 o Deinstalacija
@@ -43,11 +43,11 @@ gds32.dll uklonjeni iz <system32>.
 New ODS 11.0
 ------------
 
-Firebird 2.0 donosi novi ODS 11.0 koji je potpuno
+Firebird $MAJOR.$MINOR donosi novi ODS 11.0 koji je potpuno
 nekompatibilan sa ODS 11.0 koji je koristen
 u prethodnim alpha verzijama.
 
-Ako instalirate ovaj release Firebird-a 2.0 prvi put
+Ako instalirate ovaj release Firebird-a $MAJOR.$MINOR prvi put
 i vec imate Firebird 2 alpha instaliran, preporucuje se da
 instalirate u novi direktorij.
 Ovo je zbog toga sto ce uninstal sacuvati postojecu
@@ -72,12 +72,12 @@ Moguca tehnika za migraciju je dostupna u
 misc/upgrade/security/.
 
 
-Instalacija na sisteme sa Firebird-om 2.0
+Instalacija na sisteme sa Firebird-om $MAJOR.$MINOR
 ------------------------------------------
 
 Kao dodatak ODS promjeni molimo primjetite da
 instaler ne moze automatski detektovati da li je
-Firebird 2.0 Alpha 1 ili Beta server pokrenut
+Firebird $MAJOR.$MINOR Alpha 1 ili Beta server pokrenut
 kao NT service. Zbog toga necete dobiti upozorenje
 sve dok instaler ne pokusa da prepise aktivnu datoteku.
 Ovo se moze izbjeci ako prvo deinstalirate Firebird.
