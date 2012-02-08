@@ -213,7 +213,7 @@ set FBBUILD_FB15_CUR_VER=1.5.6
 @echo s/\$MAJOR/%FB_MAJOR_VER%/g >  %temp%.\b$4.txt
 @echo s/\$MINOR/%FB_MINOR_VER%/g >> %temp%.\b$4.txt
 @echo s/\$RELEASE/%FB_REV_NO%/g  >> %temp%.\b$4.txt
-@for %%f in (Readme.txt installation_readme.txt) do (
+@for %%f in (Readme.txt installation_readme.txt After_Installation.url) do (
 	@echo   Processing version strings in %%f
 	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
 )
