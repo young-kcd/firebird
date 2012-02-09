@@ -1894,11 +1894,18 @@ bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 // Make up join node and mark relations as "possibly NULL" if they are in outer joins (inOuterJoin).
 RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	// Set up an empty context to process the joins
+	// Set up a new (empty) context to process the joins, but ensure
+	// that it includes system (e.g. trigger) contexts (if present).
 
 	DsqlContextStack* const base_context = dsqlScratch->context;
 	DsqlContextStack temp;
 	dsqlScratch->context = &temp;
+
+	for (DsqlContextStack::iterator iter(*base_context); iter.hasData(); ++iter)
+	{
+		if (iter.object()->ctx_flags & CTX_system)
+			temp.push(iter.object());
+	}
 
 	RseNode* node = FB_NEW(getPool()) RseNode(getPool());
 	node->dsqlExplicitJoin = dsqlExplicitJoin;
