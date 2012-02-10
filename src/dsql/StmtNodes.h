@@ -36,6 +36,7 @@ namespace Jrd {
 class CompoundStmtNode;
 class ExecBlockNode;
 class RelationSourceNode;
+class SelectNode;
 
 typedef Firebird::Pair<Firebird::NonPooled<dsql_nod*, Firebird::Array<dsql_nod*>*> > ReturningClause;
 
@@ -327,6 +328,7 @@ public:
 		  dsqlCursorType(aDsqlCursorType),
 		  dsqlScroll(false),
 		  dsqlName(aDsqlName),
+		  dsqlSelect(NULL),
 		  dsqlRse(NULL),
 		  rse(NULL),
 		  refs(NULL),
@@ -349,6 +351,7 @@ public:
 	USHORT dsqlCursorType;
 	bool dsqlScroll;
 	Firebird::MetaName dsqlName;
+	SelectNode* dsqlSelect;
 	dsql_nod* dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<ValueListNode> refs;
@@ -874,7 +877,7 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	dsql_nod* dsqlSelect;
+	SelectNode* dsqlSelect;
 	Firebird::Array<dsql_nod*>* dsqlInto;
 	dsql_nod* dsqlCursor;
 	dsql_nod* dsqlLabel;
@@ -1274,6 +1277,10 @@ class SelectNode : public TypedNode<StmtNode, StmtNode::TYPE_SELECT>
 public:
 	explicit SelectNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_SELECT>(pool),
+		  dsqlExpr(NULL),
+		  dsqlForUpdate(false),
+		  dsqlWithLock(false),
+		  dsqlRse(NULL),
 		  statements(pool)
 	{
 	}
@@ -1289,6 +1296,10 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	dsql_nod* dsqlExpr;
+	bool dsqlForUpdate;
+	bool dsqlWithLock;
+	dsql_nod* dsqlRse;
 	Firebird::Array<NestConst<StmtNode> > statements;
 };
 

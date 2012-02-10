@@ -196,10 +196,10 @@ static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_
 static dsql_nod* pass1_field(DsqlCompilerScratch*, dsql_nod*, const bool, dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
-static dsql_nod* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
-static dsql_nod* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
+static dsql_nod* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
+static dsql_nod* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
 static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
-static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
+static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
 static void pass1_union_auto_cast(DsqlCompilerScratch*, dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
 static dsql_nod* pass1_variable(DsqlCompilerScratch*, dsql_nod*);
@@ -724,7 +724,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 			const DsqlContextStack::iterator base(*dsqlScratch->context);
 
-			dsql_nod* rseNod = PASS1_rse(dsqlScratch, input, NULL);
+			dsql_nod* rseNod = PASS1_rse(dsqlScratch, input, false);
 			RseNode* rse = ExprNode::as<RseNode>(rseNod);
 
 			SubQueryNode* subQueryNode = FB_NEW(*tdbb->getDefaultPool()) SubQueryNode(*tdbb->getDefaultPool(),
@@ -825,31 +825,17 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 }
 
 
-/**
-
- 	PASS1_rse
-
-    @brief	Compile a record selection expression,
- 	bumping up the statement scope level
- 	everytime an rse is seen.  The scope
- 	level controls parsing of aliases.
-
-
-    @param dsqlScratch
-    @param input
-    @param update_lock
-
- **/
-dsql_nod* PASS1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* update_lock)
+// Compile a record selection expression, bumping up the statement scope level everytime an rse is
+// seen. The scope level controls parsing of aliases.
+dsql_nod* PASS1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, bool updateLock)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK(update_lock, dsql_type_nod);
 
 	fb_assert(input->nod_type == nod_select_expr);
 
 	dsqlScratch->scopeLevel++;
-	dsql_nod* node = pass1_rse(dsqlScratch, input, NULL, NULL, update_lock, 0);
+	dsql_nod* node = pass1_rse(dsqlScratch, input, NULL, NULL, updateLock, 0);
 	dsqlScratch->scopeLevel--;
 
 	return node;
@@ -921,32 +907,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			}
 			return node;
 		}
-
-	case nod_select:
-		{
-			node = PASS1_rse(dsqlScratch, input->nod_arg[e_select_expr], input->nod_arg[e_select_lock]);
-
-			if (input->nod_arg[e_select_update])
-			{
-				dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SELECT_UPD);
-				dsqlScratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_NO_BATCH);
-				break;
-			}
-
-			// If there is a union without ALL or order by or a select distinct
-			// buffering is OK even if stored procedure occurs in the select
-			// list. In these cases all of stored procedure is executed under
-			// savepoint for open cursor.
-
-			RseNode* rseNode = ExprNode::as<RseNode>(node);
-
-			if (rseNode->dsqlOrder || rseNode->dsqlDistinct)
-			{
-				dsqlScratch->getStatement()->setFlags(dsqlScratch->getStatement()->getFlags() &
-					~DsqlCompiledStatement::FLAG_NO_BATCH);
-			}
-		}
-		break;
 
 	default:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
@@ -1596,7 +1556,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 			rse = pass1_union(dsqlScratch, union_expr, NULL, NULL, NULL, 0);
 		}
 		else
-			rse = PASS1_rse(dsqlScratch, input, NULL);
+			rse = PASS1_rse(dsqlScratch, input, false);
 
 		USHORT minOuterJoin = MAX_USHORT;
 
@@ -1783,7 +1743,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 
 		dsqlScratch->resetCTEAlias(alias->str_data);
 
-		rse = PASS1_rse(dsqlScratch, input, NULL);
+		rse = PASS1_rse(dsqlScratch, input, false);
 
 		// Finish off by cleaning up contexts and put them into derivedContext
 		// so create view (ddl) can deal with it.
@@ -3020,24 +2980,9 @@ static dsql_rel* pass1_base_table( DsqlCompilerScratch* dsqlScratch, const dsql_
 }
 
 
-/**
-
- 	pass1_rse
-
-    @brief	wrapper for pass1_rse_impl
-		substitute recursive CTE alias (if needed)
-		and call pass1_rse_impl
-
-    @param dsqlScratch
-    @param input
-    @param order
-    @param rows
-    @param update_lock
-	@param flags
-
- **/
+// Wrapper for pass1_rse_impl. Substitute recursive CTE alias (if needed) and call pass1_rse_impl.
 static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
-	dsql_nod* rows, dsql_nod* update_lock, USHORT flags)
+	dsql_nod* rows, bool updateLock, USHORT flags)
 {
 	string save_alias;
 	const bool isRecursive = (input->nod_flags & NOD_SELECT_EXPR_RECURSIVE);
@@ -3050,7 +2995,7 @@ static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, d
 		dsqlScratch->recursiveCtx->ctx_alias = *dsqlScratch->getNextCTEAlias();
 	}
 
-	dsql_nod* ret = pass1_rse_impl(dsqlScratch, input, order, rows, update_lock, flags);
+	dsql_nod* ret = pass1_rse_impl(dsqlScratch, input, order, rows, updateLock, flags);
 
 	if (isRecursive)
 		dsqlScratch->recursiveCtx->ctx_alias = save_alias;
@@ -3059,25 +3004,10 @@ static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, d
 }
 
 
-/**
-
- 	pass1_rse_impl
-
-    @brief	Compile a record selection expression.
- 	The input node may either be a "select_expression"
- 	or a "list" (an implicit union) or a "query specification".
-
-
-    @param dsqlScratch
-    @param input
-    @param order
-    @param rows
-    @param update_lock
-	@param flags
-
- **/
+// Compile a record selection expression. The input node may either be a "select_expression"
+// or a "list" (an implicit union) or a "query specification".
 static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
-	dsql_nod* rows, dsql_nod* update_lock, USHORT flags)
+	dsql_nod* rows, bool updateLock, USHORT flags)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3099,10 +3029,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			if (node_with)
 				dsqlScratch->addCTEs(node_with);
 
-			dsql_nod* ret =
-				pass1_rse(dsqlScratch, input->nod_arg[e_sel_query_spec],
-						input->nod_arg[e_sel_order], input->nod_arg[e_sel_rows],
-						update_lock, viewFlags);
+			dsql_nod* ret = pass1_rse(dsqlScratch, input->nod_arg[e_sel_query_spec],
+				input->nod_arg[e_sel_order], input->nod_arg[e_sel_rows], updateLock, viewFlags);
 
 			if (node_with)
 			{
@@ -3122,7 +3050,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	else if (input->nod_type == nod_list)
 	{
 		fb_assert(input->nod_count > 1);
-		return pass1_union(dsqlScratch, input, order, rows, update_lock, flags);
+		return pass1_union(dsqlScratch, input, order, rows, updateLock, flags);
 	}
 
 	RseNode* inputRse = ExprNode::as<RseNode>(input);
@@ -3136,7 +3064,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	dsql_nod* rseNod = MAKE_node(nod_class_exprnode, 1);
 	rseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(rse);
 
-	if (update_lock)
+	if (updateLock)
 		rse->flags |= RseNode::FLAG_WRITELOCK;
 
 	dsql_nod* list = rse->dsqlStreams = PASS1_node_psql(dsqlScratch, inputRse->dsqlFrom, false);
@@ -3145,7 +3073,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		RelationSourceNode* relNode;
 		const dsql_rel* relation;
 
-		if (update_lock &&
+		if (updateLock &&
 			(list->nod_count != 1 || !(relNode = ExprNode::as<RelationSourceNode>(list->nod_arg[0])) ||
 				!(relation = relNode->dsqlContext->ctx_relation) ||
 				(relation->rel_flags & REL_view) || (relation->rel_flags & REL_external)))
@@ -3237,7 +3165,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		(rse->dsqlOrder && AggregateFinder::find(dsqlScratch, false, rse->dsqlOrder)))
 	{
 		// dimitr: don't allow WITH LOCK for aggregates
-		if (update_lock)
+		if (updateLock)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
@@ -3308,7 +3236,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	// sub-selects a new context number should be generated
 	if (inputRse->dsqlDistinct)
 	{
-		if (update_lock)
+		if (updateLock)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
@@ -3677,26 +3605,10 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 }
 
 
-/**
-
- 	pass1_union
-
-    @brief	Handle a UNION of substreams, generating
- 	a mapping of all the fields and adding an
- 	implicit PROJECT clause to ensure that all
- 	the records returned are unique.
-
-
-    @param dsqlScratch
-    @param input
-    @param order_list
-	@param rows
-	@param update_lock
-	@param flags
-
- **/
+// Handle a UNION of substreams, generating a mapping of all the fields and adding an implicit
+// PROJECT clause to ensure that all the records returned are unique.
 static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order_list,
-	dsql_nod* rows, dsql_nod* update_lock, USHORT flags)
+	dsql_nod* rows, bool updateLock, USHORT flags)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3741,7 +3653,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end; ++ptr, ++uptr)
 		{
 			dsqlScratch->scopeLevel++;
-			*uptr = pass1_rse(dsqlScratch, *ptr, NULL, NULL, NULL, 0);
+			*uptr = pass1_rse(dsqlScratch, *ptr, NULL, NULL, false, 0);
 			dsqlScratch->scopeLevel--;
 
 			while (*(dsqlScratch->context) != base)
@@ -3911,7 +3823,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	// PROJECT on all the select items unless UNION ALL was specified.
 	if (!(input->nod_flags & NOD_UNION_ALL))
 	{
-		if (update_lock)
+		if (updateLock)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
@@ -3922,7 +3834,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		unionRse->dsqlDistinct = union_items;
 	}
 
-	if (update_lock)
+	if (updateLock)
 		unionRse->flags |= RseNode::FLAG_WRITELOCK;
 
 	dsql_nod* unionRseNod = MAKE_node(nod_class_exprnode, 1);
@@ -4764,9 +4676,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_mod_field_pos:
 		verb = "mod_field_pos";
-		break;
-	case nod_for_update:
-		verb = "for_update";
 		break;
 
 	case nod_label:

@@ -50,7 +50,7 @@ Jrd::dsql_nod* PASS1_post_map(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::ds
 	Jrd::dsql_nod*, Jrd::dsql_nod*);
 void PASS1_put_args_on_stack(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::DsqlNodStack&);
 Jrd::dsql_nod* PASS1_relation(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
-Jrd::dsql_nod* PASS1_rse(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);
+Jrd::dsql_nod* PASS1_rse(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, bool);
 bool PASS1_set_parameter_type(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*, bool);
 Jrd::dsql_nod* PASS1_sort(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);

@@ -670,6 +670,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ErrorHandlerNode* errorHandlerNode;
 	Jrd::ExecStatementNode* execStatementNode;
 	Jrd::MergeNode* mergeNode;
+	Jrd::SelectNode* selectNode;
 	Jrd::SetTransactionNode* setTransactionNode;
 	Jrd::DeclareSubProcNode* declareSubProcNode;
 	Jrd::DeclareSubFuncNode* declareSubFuncNode;
@@ -756,7 +757,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <stmtNode>   fetch_cursor
 %type <legacyNode> first_clause
-%type <legacyNode> float_type for_update_clause for_update_list from_clause
+%type <legacyNode> float_type for_update_list from_clause
+%type <boolVal>	   for_update_clause
 %type <legacyNode> from_list
 %type <ddlNode>	   filter_decl_clause
 %type <stmtNode>   for_select full_proc_block full_proc_block_body
@@ -790,7 +792,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> label_opt limit_clause
 %type <stmtNode>   local_declaration local_declaration_item
 %type <compoundStmtNode> local_declaration_list local_declarations
-%type <legacyNode> lock_clause lock_mode lock_type
+%type <boolVal>	   lock_clause
+%type <legacyNode> lock_mode lock_type
 %type <stringPtr>  lastname_opt
 %type <int32Val>   long_integer
 
@@ -854,11 +857,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> scroll_opt search_condition searched_case
 %type <valueIfNode> searched_when_clause
 %type sec_shadow_files(<dbFilesClause>)
-%type <legacyNode> select select_expr
+%type <legacyNode> select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list
 %type <createShadowNode> shadow_clause
 %type <legacyNode> simple_case simple_UDF_name
 %type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_table_name
+%type <selectNode> select
 %type <stmtNode>   set_generator simple_proc_statement singleton_select
 %type <setTransactionNode> set_transaction
 %type <ddlNode>	   set_statistics
@@ -1017,7 +1021,7 @@ statement
 	| revoke
 	| rollback									{ $$ = makeClassNode($1); }
 	| savepoint									{ $$ = makeClassNode($1); }
-	| select
+	| select									{ $$ = makeClassNode($1); }
 	| set_transaction							{ $$ = makeClassNode($1); }
 	| set_generator								{ $$ = makeClassNode($1); }
 	| set_statistics							{ $$ = makeClassNode($1); }
@@ -2422,7 +2426,7 @@ cursor_declaration_item
 			DeclareCursorNode* node = newNode<DeclareCursorNode>(toName($1),
 				DeclareCursorNode::CUR_TYPE_EXPLICIT);
 			node->dsqlScroll = $2 != NULL;
-			node->dsqlRse = $6;
+			node->dsqlSelect = $6;
 			$$ = node;
 		}
 	;
@@ -4320,22 +4324,28 @@ ddl_desc
 
 select
 	: select_expr for_update_clause lock_clause
-		{ $$ = make_node(nod_select, (int) e_select_count, $1, $2, $3); }
+		{
+			SelectNode* node = newNode<SelectNode>();
+			node->dsqlExpr = $1;
+			node->dsqlForUpdate = $2;
+			node->dsqlWithLock = $3;
+			$$ = node;
+		}
 	;
 
 for_update_clause
-	: /* nothing */					{ $$ = NULL; }
-	| FOR UPDATE for_update_list	{ $$ = make_node(nod_for_update, (int) e_fpd_count, $3); }
+	: /* nothing */					{ $$ = false; }
+	| FOR UPDATE for_update_list	{ $$ = true; /* for_update_list is ignored */ }
 	;
 
 for_update_list
-	: /* nothing */		{ $$ = make_node(nod_flag, 0, NULL); }
+	: /* nothing */		{ $$ = NULL; }
 	| OF column_list	{ $$ = $2; }
 	;
 
 lock_clause
-	: /* nothing */	{ $$ = NULL; }
-	| WITH LOCK		{ $$ = make_node(nod_flag, 0, NULL); }
+	: /* nothing */	{ $$ = false; }
+	| WITH LOCK		{ $$ = true; }
 	;
 
 

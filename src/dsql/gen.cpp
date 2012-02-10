@@ -65,7 +65,6 @@ using namespace Dsql;
 using namespace Firebird;
 
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_select(DsqlCompilerScratch*, dsql_nod*);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
 
 
@@ -323,8 +322,6 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 		{
 		case DsqlCompiledStatement::TYPE_SELECT:
 		case DsqlCompiledStatement::TYPE_SELECT_UPD:
-			gen_select(scratch, node);
-			break;
 		case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
 		case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 			GEN_statement(scratch, node);
@@ -721,170 +718,6 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 	}
 
 	dsqlScratch->appendUChar(blr_end);
-}
-
-
-/**
-
- 	gen_select
-
-    @brief	Generate BLR for a SELECT statement.
-
-
-    @param dsqlScratch
-    @param rse
-
- **/
-static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
-{
-	dsql_ctx* context;
-
-	RseNode* const rse = ExprNode::as<RseNode>(rseNod);
-	fb_assert(rse);
-
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
-
-	// Set up parameter for things in the select list
-	const dsql_nod* list = rse->dsqlSelectList;
-	dsql_nod* const* ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-	{
-		dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), true, true, 0, *ptr);
-		parameter->par_node = *ptr;
-		MAKE_desc(dsqlScratch, &parameter->par_desc, *ptr);
-	}
-
-	// Set up parameter to handle EOF
-
-	dsql_par* const parameter_eof =
-		MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
-	statement->setEof(parameter_eof);
-	parameter_eof->par_desc.dsc_dtype = dtype_short;
-	parameter_eof->par_desc.dsc_scale = 0;
-	parameter_eof->par_desc.dsc_length = sizeof(SSHORT);
-
-	// Save DBKEYs for possible update later
-
-	GenericMap<NonPooled<dsql_par*, dsql_ctx*> > paramContexts(*getDefaultMemoryPool());
-
-	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT_UPD && !rse->dsqlDistinct)
-	{
-		list = rse->dsqlStreams;
-		dsql_nod* const* ptr2 = list->nod_arg;
-		for (const dsql_nod* const* const end2 = ptr2 + list->nod_count; ptr2 < end2; ptr2++)
-		{
-			dsql_nod* const item = *ptr2;
-			RelationSourceNode* relNode;
-
-			if (item && (relNode = ExprNode::as<RelationSourceNode>(item)))
-			{
-				context = relNode->dsqlContext;
-				const dsql_rel* const relation = context->ctx_relation;
-
-				if (relation)
-				{
-					// Set up dbkey
-					dsql_par* parameter =
-						MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
-
-					parameter->par_dbkey_relname = relation->rel_name;
-					paramContexts.put(parameter, context);
-
-					parameter->par_desc.dsc_dtype = dtype_text;
-					parameter->par_desc.dsc_ttype() = ttype_binary;
-					parameter->par_desc.dsc_length = relation->rel_dbkey_length;
-
-					// Set up record version - for post v33 databases
-
-					parameter = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
-					parameter->par_rec_version_relname = relation->rel_name;
-					paramContexts.put(parameter, context);
-
-					parameter->par_desc.dsc_dtype = dtype_text;
-					parameter->par_desc.dsc_ttype() = ttype_binary;
-					parameter->par_desc.dsc_length = relation->rel_dbkey_length / 2;
-				}
-			}
-		}
-	}
-
-	// Generate definitions for the messages
-
-	GEN_port(dsqlScratch, statement->getReceiveMsg());
-	dsql_msg* message = statement->getSendMsg();
-	if (message->msg_parameter)
-		GEN_port(dsqlScratch, message);
-	else
-		statement->setSendMsg(NULL);
-
-	// If there is a send message, build a RECEIVE
-
-	if ((message = statement->getSendMsg()) != NULL)
-	{
-		dsqlScratch->appendUChar(blr_receive);
-		dsqlScratch->appendUChar(message->msg_number);
-	}
-
-	// Generate FOR loop
-
-	message = statement->getReceiveMsg();
-
-	dsqlScratch->appendUChar(blr_for);
-	dsqlScratch->appendUChar(blr_stall);
-	GEN_rse(dsqlScratch, rseNod);
-
-	dsqlScratch->appendUChar(blr_send);
-	dsqlScratch->appendUChar(message->msg_number);
-	dsqlScratch->appendUChar(blr_begin);
-
-	// Build body of FOR loop
-
-	SSHORT constant;
-	dsc constant_desc;
-	constant_desc.makeShort(0, &constant);
-
-	// Add invalid usage here
-
-	dsqlScratch->appendUChar(blr_assignment);
-	constant = 1;
-	LiteralNode::genConstant(dsqlScratch, &constant_desc, false);
-	GEN_parameter(dsqlScratch, statement->getEof());
-
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
-	{
-		dsql_par* const parameter = message->msg_parameters[i];
-
-		if (parameter->par_node)
-		{
-			dsqlScratch->appendUChar(blr_assignment);
-			GEN_expr(dsqlScratch, parameter->par_node);
-			GEN_parameter(dsqlScratch, parameter);
-		}
-
-		if (parameter->par_dbkey_relname.hasData() && paramContexts.get(parameter, context))
-		{
-			dsqlScratch->appendUChar(blr_assignment);
-			dsqlScratch->appendUChar(blr_dbkey);
-			GEN_stuff_context(dsqlScratch, context);
-			GEN_parameter(dsqlScratch, parameter);
-		}
-
-		if (parameter->par_rec_version_relname.hasData() && paramContexts.get(parameter, context))
-		{
-			dsqlScratch->appendUChar(blr_assignment);
-			dsqlScratch->appendUChar(blr_record_version);
-			GEN_stuff_context(dsqlScratch, context);
-			GEN_parameter(dsqlScratch, parameter);
-		}
-	}
-
-	dsqlScratch->appendUChar(blr_end);
-	dsqlScratch->appendUChar(blr_send);
-	dsqlScratch->appendUChar(message->msg_number);
-	dsqlScratch->appendUChar(blr_assignment);
-	constant = 0;
-	LiteralNode::genConstant(dsqlScratch, &constant_desc, false);
-	GEN_parameter(dsqlScratch, statement->getEof());
 }
 
 

@@ -109,7 +109,6 @@ enum nod_t
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
-	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
 	nod_rows,	// ROWS support
 	nod_with,
@@ -132,14 +131,6 @@ enum nod_t
  *	entries.  These include nod_udf and nod_collate.
  */
 enum node_args {
-	e_select_expr = 0,		// nod_select
-	e_select_update,
-	e_select_lock,
-	e_select_count,
-
-	e_fpd_list = 0,			// nod_for_update
-	e_fpd_count,
-
 	e_ary_array = 0,		// nod_array
 	e_ary_indices,
 	e_ary_count,
