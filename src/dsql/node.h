@@ -170,11 +170,6 @@ enum node_args {
 	e_idx_fields,
 	e_idx_count,
 
-	e_drl_name = 0,			// relation support
-	e_drl_elements,
-	e_drl_ext_file,			// external file
-	e_drl_count,
-
 	e_dft_default = 0,		// nod_def_default
 	e_dft_default_source,
 	e_dft_count,
@@ -239,12 +234,6 @@ enum node_args {
 
 	e_lock_tables = 0,		//
 	e_lock_mode,
-
-	e_commit_retain = 0,	//
-	e_commit_count,
-
-	e_rollback_retain = 0,	//
-	e_rollback_count,
 
 	// computed field
 
@@ -314,9 +303,6 @@ enum nod_flags_vals {
 	REF_ACTION_SET_DEFAULT	= 2,
 	REF_ACTION_SET_NULL		= 4,
 	REF_ACTION_NONE			= 8,
-	// Node flag indicates that this node has a different type or result
-	// depending on the SQL dialect.
-	NOD_COMP_DIALECT		= 16, // nod_...2, see MAKE_desc
 
 	NOD_SELECT_EXPR_SINGLETON				= 1,	// nod_select_expr
 	NOD_SELECT_EXPR_VALUE					= 2,

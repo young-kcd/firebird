@@ -345,17 +345,7 @@ dsql_str* MAKE_cstring(const char* str)
 }
 
 
-/**
-
- 	MAKE_desc
-
-    @brief	Make a descriptor from input node.
-	This function can modify node->nod_flags to add NOD_COMP_DIALECT
-
-    @param desc
-    @param node
-
- **/
+// Make a descriptor from input node.
 void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 {
 	dsc desc1;
