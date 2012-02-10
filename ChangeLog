@@ -1,3 +1,22 @@
+ 2012-02-10 03:06  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+Refactor SELECT.
+
+ 2012-02-10 03:06  asfernandes 
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+Cleanup.
+
+ 2012-02-09 07:38  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+This should resolve CORE-3753.
+
  2012-02-07 03:33  robocop 
    M src/jrd/validation.cpp
 const
