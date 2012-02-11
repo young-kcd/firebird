@@ -1474,9 +1474,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 	key.key_length = 0;
 	ULONG previous_number = 0;
 
-	if (validate) {
+	if (validate)
 		RecordBitmap::reset(vdr_idx_records);
-	}
 
 	bool firstNode = true;
 	bool nullKeyNode = false;			// current node is a null key of unique index
@@ -1557,9 +1556,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 
 		// go through all the nodes on the page and check for validity
 		pointer = IndexJumpInfo::getPointerFirstNode(page);
-		if (firstNode) {
+		if (firstNode)
 			lastNode.readNode(pointer, leafPage);
-		}
 
 		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 		while (pointer < endPointer)
@@ -1611,7 +1609,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 						(node.recordNumber < lastNode.recordNumber))
 					{
 						corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+							__FILE__, __LINE__);
 					}
 				}
 
@@ -1630,18 +1629,15 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 					(memcmp(null_key->key_data, key.key_data, null_key->key_length) == 0);
 			}
 
-			if (firstNode) {
+			if (firstNode)
 				firstNode = false;
-			}
 
-			if (node.isEndBucket || node.isEndLevel) {
+			if (node.isEndBucket || node.isEndLevel)
 				break;
-			}
 
 			// Record the existance of a primary version of a record
-			if (leafPage && validate && (vdr_flags & vdr_records)) {
-			  RBM_SET(tdbb->getDefaultPool(), &vdr_idx_records, node.recordNumber.getValue());
-			}
+			if (leafPage && validate && (vdr_flags & vdr_records))
+				RBM_SET(tdbb->getDefaultPool(), &vdr_idx_records, node.recordNumber.getValue());
 
 			// fetch the next page down (if full validation was specified)
 			if (!leafPage && validate && (vdr_flags & vdr_records))
@@ -1671,11 +1667,11 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 					if (*p < *q)
 					{
 						corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+								__FILE__, __LINE__);
 					}
-					else if (*p > *q) {
+					else if (*p > *q)
 						break;
-					}
 				}
 
 				// Only check record-number if this isn't the first page in
@@ -1692,7 +1688,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 						(downNode.recordNumber < down_record_number))
 					{
 						corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+								__FILE__, __LINE__);
 					}
 				}
 
@@ -1700,7 +1697,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				if (previous_number != down_page->btr_left_sibling)
 				{
 					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+							__FILE__, __LINE__);
 				}
 
 				downNode.readNode(pointer, leafPage);
@@ -1710,7 +1708,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 					(next_number != down_page->btr_sibling))
 				{
 					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+							__FILE__, __LINE__);
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {
@@ -1736,9 +1735,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				newPageNode.readNode(IndexJumpInfo::getPointerFirstNode(page), false);
 				down = newPageNode.pageNumber;
 			}
-			else {
+			else
 				down = 0;
-			}
 		}
 
 		if (!(next = page->btr_sibling))
@@ -1838,9 +1836,8 @@ RTN Vdr::walk_pointer_page(thread_db*	tdbb, bool validate, jrd_rel* relation, UL
 
 	const vcl* vector = relation->getBasePages()->rel_pages;
 
-	if (!vector || sequence >= vector->count()) {
+	if (!vector || sequence >= vector->count())
 		return corrupt(tdbb, validate, VAL_P_PAGE_LOST, relation, sequence);
-	}
 
 	pointer_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
@@ -1938,9 +1935,7 @@ RTN Vdr::walk_record(thread_db* tdbb,
 	}
 
 	if (validate && header->rhd_transaction > vdr_max_transaction)
-	{
 		corrupt(tdbb, validate, VAL_REC_BAD_TID, relation, number, header->rhd_transaction);
-	}
 
 	// If there's a back pointer, verify that it's good
 
@@ -2113,15 +2108,14 @@ RTN Vdr::walk_relation(thread_db* tdbb, bool validate, jrd_rel* relation)
 		vdr_rel_chain_counter = 0;
 		RecordBitmap::reset(vdr_rel_records);
 	}
+
 	for (ULONG sequence = 0; true; sequence++)
 	{
 		const RTN result = walk_pointer_page(tdbb, validate, relation, sequence);
-		if (result == rtn_eof) {
+		if (result == rtn_eof)
 			break;
-		}
-		if (result != rtn_ok) {
+		if (result != rtn_ok)
 			return result;
-		}
 	}
 
 	// Walk indices for the relation
@@ -2174,17 +2168,15 @@ RTN Vdr::walk_root(thread_db* tdbb, bool validate, jrd_rel* relation)
 	// If the relation has an index root, walk it
 	RelationPages* relPages = relation->getBasePages();
 
-	if (!relPages->rel_index_root) {
+	if (!relPages->rel_index_root)
 		return corrupt(tdbb, validate, VAL_INDEX_ROOT_MISSING, relation);
-	}
 
 	index_root_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
 	fetch_page(tdbb, validate, relPages->rel_index_root, pag_root, &window, &page);
 
-	for (USHORT i = 0; i < page->irt_count; i++) {
+	for (USHORT i = 0; i < page->irt_count; i++)
 		walk_index(tdbb, validate, relation, *page, i);
-	}
 
 	CCH_RELEASE(tdbb, &window);
 
@@ -2209,9 +2201,8 @@ RTN Vdr::walk_tip(thread_db* tdbb, bool validate, SLONG transaction)
 	CHECK_DBB(dbb);
 
 	const vcl* vector = dbb->dbb_t_pages;
-	if (!vector) {
+	if (!vector)
 		return corrupt(tdbb, validate, VAL_TIP_LOST, 0);
-	}
 
 	tx_inv_page* page = 0;
 	const ULONG pages = transaction / dbb->dbb_page_manager.transPerTIP;

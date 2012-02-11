@@ -38,8 +38,8 @@
 
 namespace Ods {
 struct blob_page;
-}				
-		
+}
+
 namespace Jrd {
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
