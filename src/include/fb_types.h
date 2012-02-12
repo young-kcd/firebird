@@ -102,8 +102,6 @@ struct lstring
 
 typedef unsigned char BOOLEAN;
 typedef char TEXT;				/* To be expunged over time */
-/*typedef unsigned char STEXT;	Signed text - not used
-typedef unsigned char UTEXT;	Unsigned text - not used */
 typedef unsigned char BYTE;		/* Unsigned byte - common */
 /*typedef char SBYTE;			Signed byte - not used */
 typedef intptr_t IPTR;
