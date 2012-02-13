@@ -1,3 +1,7 @@
+ 2012-02-12 14:54  mapopa 
+   M src/include/fb_types.h
+comment cleanup  STEXT and UTEXT not used anywhere
+
  2012-02-11 14:34  asfernandes 
    M src/jrd/blb.h
    M src/jrd/validation.cpp
