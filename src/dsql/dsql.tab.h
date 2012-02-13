@@ -309,7 +309,9 @@
      LIMBO = 535,
      UNDO = 536,
      REQUESTS = 537,
-     TIMEOUT = 538
+     TIMEOUT = 538,
+     UPLUS = 539,
+     UMINUS = 540
    };
 #endif
 #define ACTIVE 258
@@ -593,6 +595,8 @@
 #define UNDO 536
 #define REQUESTS 537
 #define TIMEOUT 538
+#define UPLUS 539
+#define UMINUS 540
 
 
 
