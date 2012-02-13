@@ -161,8 +161,6 @@ static const bool compatibility[LCK_max][LCK_max] =
 /* EX */	{true,	true,	false,	false,	false,	false,	false}
 };
 
-//#define COMPATIBLE(st1, st2)	compatibility[st1 * LCK_max + st2]
-
 
 namespace Jrd {
 
@@ -1118,23 +1116,21 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	// Perform a spin wait on the lock table mutex. This should only
 	// be used on SMP machines; it doesn't make much sense otherwise.
 
-	SLONG status = FB_FAILURE;
+	bool locked = false;
 	ULONG spins = 0;
 	while (spins++ < m_acquireSpins)
 	{
 		if (mutexLockCond())
 		{
-			status = FB_SUCCESS;
+			locked = true;
 			break;
 		}
 	}
 
 	// If the spin wait didn't succeed then wait forever
 
-	if (status != FB_SUCCESS)
-	{
+	if (!locked)
 		mutexLock();
-	}
 
 	// Check for shared memory state consistency
 
@@ -3530,8 +3526,7 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 	USHORT direct_counts[LCK_max];
 	memset(direct_counts, 0, sizeof(direct_counts));
 
-	ULONG found = 0;
-	ULONG found_pending = 0;
+	ULONG found = 0, found_pending = 0, found_incompatible = 0;
 	const srq* lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
@@ -3556,11 +3551,10 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		if (request->lrq_flags & LRQ_pending)
 		{
 			// If the request is pending, then it must be incompatible with current
-			// state of the lock - OR lock_ordering is enabled and there is at
-			// least one pending request in the queue (before this request
-			// but not including it).
+			// state of the lock - OR there is at least one incompatible request
+			// in the queue before this request.
 
-			CHECK(!compatibility[request->lrq_requested][lock->lbl_state] || found_pending);
+			CHECK(!compatibility[request->lrq_requested][lock->lbl_state] || found_incompatible);
 
 			found_pending++;
 		}
@@ -3573,6 +3567,9 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 				  (request->lrq_requested == lock->lbl_state) ||
 				  compatibility[request->lrq_requested][lock->lbl_state]);
 		}
+
+		if (!compatibility[request->lrq_requested][lock->lbl_state])
+			found_incompatible++;
 
 		direct_counts[request->lrq_state]++;
 	}

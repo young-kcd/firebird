@@ -96,7 +96,6 @@ const UCHAR type_his	= 4;
 const UCHAR type_shb	= 5;
 const UCHAR type_own	= 6;
 const UCHAR type_lpr	= 7;
-const UCHAR type_MAX	= type_lpr;
 
 // Version number of the lock table.
 // Must be increased every time the shmem layout is changed.
@@ -319,7 +318,7 @@ public:
 	bool initializeOwner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	void shutdownOwner(Attachment*, SRQ_PTR*);
 
-	SLONG enqueue(Attachment*, Firebird::Arg::StatusVector&, SRQ_PTR, SRQ_PTR, const USHORT,
+	SRQ_PTR enqueue(Attachment*, Firebird::Arg::StatusVector&, SRQ_PTR, SRQ_PTR, const USHORT,
 		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
 	bool convert(Attachment*, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
 	UCHAR downgrade(Attachment*, Firebird::Arg::StatusVector&, const SRQ_PTR);
