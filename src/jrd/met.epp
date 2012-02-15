@@ -1814,8 +1814,7 @@ void MET_lookup_cnstrt_for_trigger(thread_db* tdbb,
 void MET_lookup_exception(thread_db* tdbb,
 						  SLONG number,
 						  Firebird::MetaName& name,
-						  TEXT* message,
-						  size_t messageSize)
+						  Firebird::string* message)
 {
 /**************************************
  *
@@ -1835,10 +1834,8 @@ void MET_lookup_exception(thread_db* tdbb,
 	jrd_req* request = CMP_find_request(tdbb, irq_l_exception, IRQ_REQUESTS);
 
 	name = "";
-	if (message && messageSize)
-	{
-		*message = 0;
-	}
+	if (message)
+		*message = "";
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$EXCEPTIONS WITH X.RDB$EXCEPTION_NUMBER = number
@@ -1854,8 +1851,7 @@ void MET_lookup_exception(thread_db* tdbb,
 		}
 		if (!X.RDB$MESSAGE.NULL && message)
 		{
-			Firebird::string tmp(X.RDB$MESSAGE);
-			tmp.copyTo(message, messageSize);
+			*message = X.RDB$MESSAGE;
 		}
 	END_FOR;
 
@@ -5064,7 +5060,7 @@ static void store_dependencies(thread_db* tdbb,
 		case obj_exception:
 			{
 				const SLONG number = (IPTR) node->nod_arg[e_dep_object];
-				MET_lookup_exception (tdbb, number, name, 0, 0);
+				MET_lookup_exception(tdbb, number, name, NULL);
 				dpdo_name = &name;
 			}
 			break;
@@ -5075,7 +5071,7 @@ static void store_dependencies(thread_db* tdbb,
 		case obj_generator:
 			{
 				const SLONG number = (IPTR) node->nod_arg[e_dep_object];
-				MET_lookup_generator_id (tdbb, number, name);
+				MET_lookup_generator_id(tdbb, number, name);
 				dpdo_name = &name;
 			}
 			break;

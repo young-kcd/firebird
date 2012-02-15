@@ -88,7 +88,7 @@ void		MET_load_db_triggers(Jrd::thread_db*, int);
 void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, Jrd::trig_vec**);
 void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Firebird::MetaName& constraint, const Firebird::MetaName& index_name);
 void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Firebird::MetaName&, Firebird::MetaName&, const Firebird::MetaName&);
-void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Firebird::MetaName&, /* OUT */ TEXT*, size_t);
+void		MET_lookup_exception(Jrd::thread_db*, SLONG, Firebird::MetaName&, Firebird::string*);
 SLONG		MET_lookup_exception_number(Jrd::thread_db*, const Firebird::MetaName&);
 int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&);
 Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);

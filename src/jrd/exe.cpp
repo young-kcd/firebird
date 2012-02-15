@@ -3642,8 +3642,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
  **************************************/
 	Firebird::MetaName name, relation_name;
 	TEXT message[XCP_MESSAGE_LENGTH + 1];
-
-	VaryStr<XCP_MESSAGE_LENGTH> temp;
+	MoveBuffer temp;
 
 	SET_TDBB(tdbb);
 
@@ -3660,13 +3659,12 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 
 	if (msg_node)
 	{
-		const char* string = 0;
+		UCHAR* string = NULL;
 		// evaluate exception message and convert it to string
 		DSC* desc = EVL_expr(tdbb, msg_node);
 		if (desc && !(request->req_flags & req_null))
 		{
-			length = MOV_make_string(desc, tdbb->getAttachment()->att_charset, &string,
-									 &temp, sizeof(temp));
+			length = MOV_make_string2(tdbb, desc, tdbb->getAttachment()->att_charset, &string, temp);
 			length = MIN(length, sizeof(message) - 1);
 
 			/* dimitr: or should we throw an error here, i.e.
@@ -3685,8 +3683,6 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	}
 	message[length] = 0;
 
-	const TEXT* s;
-
 	switch (exception->xcp_type)
 	{
 	case xcp_sql_code:
@@ -3701,36 +3697,40 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			ERR_post(Arg::Gds(exception->xcp_code));
 
 	case xcp_xcp_code:
-		// CVC: If we have the exception name, use it instead of the number.
-		// Solves SF Bug #494981.
-		MET_lookup_exception(tdbb, exception->xcp_code, name,
-							 temp.vary_string, sizeof(temp) - sizeof(USHORT));
+		{
+			const TEXT* s;
+			string tempStr;
 
-		if (message[0])
-			s = message;
-		else if (temp.vary_string[0])
-			s = temp.vary_string;
-		else
-			s = NULL;
+			// CVC: If we have the exception name, use it instead of the number.
+			// Solves SF Bug #494981.
+			MET_lookup_exception(tdbb, exception->xcp_code, name, &tempStr);
 
-		if (s && name.length())
-		{
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
-					 Arg::Gds(isc_random) << Arg::Str(name) <<
-					 Arg::Gds(isc_random) << Arg::Str(s));
+			if (message[0])
+				s = message;
+			else if (tempStr.hasData())
+				s = tempStr.c_str();
+			else
+				s = NULL;
+
+			if (s && name.length())
+			{
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
+						 Arg::Gds(isc_random) << Arg::Str(name) <<
+						 Arg::Gds(isc_random) << Arg::Str(s));
+			}
+			else if (s)
+			{
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
+						 Arg::Gds(isc_random) << Arg::Str(s));
+			}
+			else if (name.length())
+			{
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
+						 Arg::Gds(isc_random) << Arg::Str(name));
+			}
+			else
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code));
 		}
-		else if (s)
-		{
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
-					 Arg::Gds(isc_random) << Arg::Str(s));
-		}
-		else if (name.length())
-		{
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
-					 Arg::Gds(isc_random) << Arg::Str(name));
-		}
-		else
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code));
 
 	default:
 		fb_assert(false);
