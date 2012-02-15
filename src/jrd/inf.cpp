@@ -144,7 +144,7 @@ void INF_blob_info(const blb* blob,
 			break;
 
 		case isc_info_blob_max_segment:
-			length = INF_convert(static_cast<ULONG>(blob->blb_max_segment), buffer);
+			length = INF_convert(static_cast<ULONG>(blob->getMaxSegment()), buffer);
 			break;
 
 		case isc_info_blob_total_length:

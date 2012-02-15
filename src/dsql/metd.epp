@@ -382,7 +382,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 					*ptr_in_buffer = 0;
 					break;
 				}
-				if (blob_handle->blb_fragment_size)
+				if (blob_handle->getFragmentSize())
 					status_exception::raise(Arg::Gds(isc_segment));
 				else
 					continue;
@@ -736,7 +736,7 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 					*ptr_in_buffer = 0;
 					break;
 				}
-				if (blob_handle->blb_fragment_size)
+				if (blob_handle->getFragmentSize())
 					status_exception::raise(Arg::Gds(isc_segment));
 				else
 					continue;

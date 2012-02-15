@@ -1404,7 +1404,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 		destBlob->blb_charset = src.getCharSet();
 
 		Array<UCHAR> buffer;
-		const int bufSize = 32 * 1024 - 2/*input->blb_max_segment*/;
+		const int bufSize = 32 * 1024 - 2/*input->getMaxSegment()*/;
 		UCHAR* buff = buffer.getBuffer(bufSize);
 
 		while (true)
@@ -1446,12 +1446,12 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 		srcBlob = blb::open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
 
 		HalfStaticArray<UCHAR, 2048> buffer;
-		const int bufSize = srcBlob->blb_max_segment;
+		const int bufSize = srcBlob->getMaxSegment();
 		UCHAR* buff = buffer.getBuffer(bufSize);
 
 		while (true)
 		{
-			USHORT length = srcBlob->BLB_get_segment(tdbb, buff, srcBlob->blb_max_segment);
+			USHORT length = srcBlob->BLB_get_segment(tdbb, buff, srcBlob->getMaxSegment());
 			if (srcBlob->blb_flags & BLB_eof) {
 				break;
 			}

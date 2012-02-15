@@ -2897,7 +2897,7 @@ unsigned int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length,
 
 			if (getHandle()->blb_flags & BLB_eof)
 				status_exception::raise(Arg::Gds(isc_segstr_eof));
-			else if (getHandle()->blb_fragment_size)
+			else if (getHandle()->getFragmentSize())
 				status_exception::raise(Arg::Gds(isc_segment));
 		}
 		catch (const Exception& ex)

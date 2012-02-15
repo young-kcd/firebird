@@ -172,9 +172,8 @@ public:
 	JBlob* blb_interface;
 
 	ULONG blb_length;				// Total length of data sans segments
-	USHORT blb_max_segment;			// Longest segment
 	USHORT blb_flags;				// Interesting stuff (see below)
-	USHORT blb_fragment_size;		// Residual fragment size
+
 	SSHORT blb_sub_type;			// Blob's declared sub-type
 	UCHAR blb_charset;				// Blob's charset
 
@@ -189,6 +188,8 @@ public:
 	ULONG getMaxSequence() const;
 	ULONG getTempId() const;
 	ULONG getSegmentCount() const;
+	USHORT getFragmentSize() const;
+	USHORT getMaxSegment() const;
 	// end inline
 
 	void	BLB_cancel(thread_db* tdbb);
@@ -250,6 +251,8 @@ private:
 	USHORT blb_max_pages;			// Max pages in vector
 	USHORT blb_level;				// Storage type
 	USHORT blb_pg_space_id;			// page space
+	USHORT blb_fragment_size;		// Residual fragment size
+	USHORT blb_max_segment;			// Longest segment
 	bool blb_has_buffer;
 };
 
@@ -320,6 +323,16 @@ inline ULONG blb::getTempId() const
 inline ULONG blb::getSegmentCount() const
 {
 	return blb_count;
+}
+
+inline USHORT blb::getFragmentSize() const
+{
+	return blb_fragment_size;
+}
+
+inline USHORT blb::getMaxSegment() const
+{
+	return blb_max_segment;
 }
 
 

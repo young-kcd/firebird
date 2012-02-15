@@ -1187,7 +1187,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 
 			// There was not enough space, realloc point acl to the correct location
 
-			if (blob->blb_fragment_size)
+			if (blob->getFragmentSize())
 			{
 				const ptrdiff_t old_offset = end - buffer;
 				buffer = acl.getBuffer(acl.getCount() + ACL_BLOB_BUFFER_SIZE);

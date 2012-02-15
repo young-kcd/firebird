@@ -1974,7 +1974,7 @@ static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
 		blob = blb::open2(tdbb, transaction, blob_id, 0, 0);
 		control->source_handle = blob;
 		control->ctl_total_length = blob->blb_length;
-		control->ctl_max_segment = blob->blb_max_segment;
+		control->ctl_max_segment = blob->getMaxSegment();
 		control->ctl_number_segments = blob->getSegmentCount();
 		return FB_SUCCESS;
 
@@ -1985,7 +1985,7 @@ static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
 		if (blob->blb_flags & BLB_eof) {
 			return isc_segstr_eof;
 		}
-		if (blob->blb_fragment_size) {
+		if (blob->getFragmentSize()) {
 			return isc_segment;
 		}
 		return FB_SUCCESS;

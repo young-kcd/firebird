@@ -659,7 +659,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 					blob_desc->blob_seek = blob_lseek;
 					blob_desc->blob_handle = blob;
 					blob_desc->blob_number_segments = blob->getSegmentCount();
-					blob_desc->blob_max_segment = blob->blb_max_segment;
+					blob_desc->blob_max_segment = blob->getMaxSegment();
 					blob_desc->blob_total_length = blob->blb_length;
 				}
 				break;
@@ -833,7 +833,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 	if (blob->blb_flags & BLB_eof)
 		return 0;
 
-	if (blob->blb_fragment_size)
+	if (blob->getFragmentSize())
 		return -1;
 
 	return 1;
