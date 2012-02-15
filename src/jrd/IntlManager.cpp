@@ -701,7 +701,7 @@ bool IntlManager::setupCollationAttributes(
 			}
 
 			if (len != INTL_BAD_STR_LENGTH)
-				newSpecificAttributes = string((const char*) buffer.begin(), len);
+				newSpecificAttributes.assign((const char*) buffer.begin(), len);
 			else
 				return false;
 		}

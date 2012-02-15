@@ -4949,7 +4949,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 		ULONG length = bodyBlob->BLB_get_data(tdbb, (UCHAR*) temp.getBuffer(bodyBlob->blb_length),
 			bodyBlob->blb_length);
 
-		t.extBody = string(temp.begin(), length);
+		t.extBody.assign(temp.begin(), length);
 	}
 
 	t.type = type;

@@ -1135,7 +1135,7 @@ void Statement::preprocess(const string& sql, string& ret)
 		return;
 	}
 
-	ret += string(start, p - start);
+	ret.append(start, p - start);
 
 	while (p < end)
 	{
@@ -1183,7 +1183,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				ident.upper();
 				if (ident == "AS")
 				{
-					ret += string(start, end - start);
+					ret.append(start, end - start);
 					return;
 				}
 			}
@@ -1193,7 +1193,7 @@ void Statement::preprocess(const string& sql, string& ret)
 		case ttComment:
 		case ttString:
 		case ttOther:
-			ret += string(start, p - start);
+			ret.append(start, p - start);
 			break;
 
 		case ttBrokenComment:

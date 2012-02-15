@@ -880,7 +880,7 @@ Firebird::string rem_port::getRemoteId() const
 
 	if (port_protocol_str)
 	{
-		id += Firebird::string(port_protocol_str->str_data, port_protocol_str->str_length);
+		id.append(port_protocol_str->str_data, port_protocol_str->str_length);
 	}
 	if (port_protocol_str && port_address_str)
 	{
@@ -888,7 +888,7 @@ Firebird::string rem_port::getRemoteId() const
 	}
 	if (port_address_str)
 	{
-		id += Firebird::string(port_address_str->str_data, port_address_str->str_length);
+		id.append(port_address_str->str_data, port_address_str->str_length);
 	}
 
 	return id;

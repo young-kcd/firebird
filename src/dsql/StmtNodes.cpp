@@ -3280,7 +3280,7 @@ void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const Value
 			&p, buffer);
 	}
 
-	str = string((char*) p, len);
+	str.assign((char*) p, len);
 	str.trim();
 }
 

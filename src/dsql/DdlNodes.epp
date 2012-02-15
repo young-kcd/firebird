@@ -372,7 +372,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_f
 	// Generate the source text.
 	const dsql_str* sourceStr = (dsql_str*) node->nod_arg[Dsql::e_cmp_text];
 	fb_assert(sourceStr->str_length <= MAX_USHORT);
-	source = string(sourceStr->str_data, sourceStr->str_length);
+	source.assign(sourceStr->str_data, sourceStr->str_length);
 
 	value.assign(dsqlScratch->getBlrData());
 }
@@ -1839,7 +1839,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 
 			dsql_str* defaultString =
 				(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
-			string defaultSource = string(defaultString->str_data, defaultString->str_length);
+			const string defaultSource(defaultString->str_data, defaultString->str_length);
 			attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE, defaultSource);
 
 			dsqlScratch->getBlrData().clear();
@@ -2667,7 +2667,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 		{
 			dsql_str* defaultString =
 				(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
-			string defaultSource = string(defaultString->str_data, defaultString->str_length);
+			const string defaultSource(defaultString->str_data, defaultString->str_length);
 			attachment->storeMetaDataBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE, defaultSource);
 
 			dsqlScratch->getBlrData().clear();
@@ -3812,7 +3812,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				{
 					dsql_str* defaultString =
 						(dsql_str*) nameType.legacyDefault->nod_arg[e_dft_default_source];
-					string defaultSource = string(defaultString->str_data, defaultString->str_length);
+					const string defaultSource(defaultString->str_data, defaultString->str_length);
 
 					FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
 					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE, defaultSource);
@@ -3834,7 +3834,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				if (check)
 				{
 					dsql_str* checkString = (dsql_str*) check->nod_arg[e_cnstr_source];
-					string checkSource = string(checkString->str_data, checkString->str_length);
+					const string checkSource(checkString->str_data, checkString->str_length);
 
 					FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
 					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE, checkSource);
@@ -4365,7 +4365,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				dsqlScratch->domainValue.dsc_scale = localField.fld_scale;
 
 				dsql_str* checkString = (dsql_str*) setConstraint->nod_arg[e_cnstr_source];
-				string checkSource = string(checkString->str_data, checkString->str_length);
+				const string checkSource(checkString->str_data, checkString->str_length);
 
 				FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
 				attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE, checkSource);
@@ -4402,7 +4402,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 				dsql_str* defaultString =
 					(dsql_str*) setDefault->nod_arg[e_dft_default_source];
-				string defaultSource = string(defaultString->str_data, defaultString->str_length);
+				const string defaultSource(defaultString->str_data, defaultString->str_length);
 
 				FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
 				attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE, defaultSource);
@@ -5597,7 +5597,7 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 	// Generate the source text.
 	const dsql_str* sourceStr = (dsql_str*) node->nod_arg[Dsql::e_dft_default_source];
 	fb_assert(sourceStr->str_length <= MAX_USHORT);
-	source = string(sourceStr->str_data, sourceStr->str_length);
+	source.assign(sourceStr->str_data, sourceStr->str_length);
 
 	value.assign(dsqlScratch->getBlrData());
 

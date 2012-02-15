@@ -104,7 +104,7 @@ string IntlUtil::generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributes
 		size = cs->getConvFromUnicode().convert(
 			sizeof(equalChar), (const UCHAR*) &equalChar, sizeof(c), c);
 
-		s += string((const char*) &c, size);
+		s.append((const char*) &c, size);
 
 		s += escapeAttribute(cs, attribute->second);
 
@@ -116,7 +116,7 @@ string IntlUtil::generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributes
 			size = cs->getConvFromUnicode().convert(
 				sizeof(semiColonChar), (const UCHAR*) &semiColonChar, sizeof(c), c);
 
-			s += string((const char*) &c, size);
+			s.append((const char*) &c, size);
 		}
 	}
 
@@ -169,7 +169,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 		if (p - start == 0)
 			return false;
 
-		string name = string((const char*)start, p - start);
+		string name((const char*)start, p - start);
 		name = unescapeAttribute(cs, name);
 
 		while (p < end && size == cs->getSpaceLength() &&

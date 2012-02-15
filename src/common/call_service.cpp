@@ -637,7 +637,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 				parseLong(p, uData.adm, loop);
 				break;
 			default:	// give up - treat it as gsec error
-				text = Firebird::string(p - 1, loop + 1);
+				text.assign(p - 1, loop + 1);
 				return -1;
 			}
 		}
