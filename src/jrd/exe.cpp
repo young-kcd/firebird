@@ -3513,10 +3513,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
  **************************************/
 	Firebird::MetaName name, relation_name;
 	TEXT message[XCP_MESSAGE_LENGTH + 1];
-
-	// since temp used as vary, we need size of vary::vary_length 
-	// (USHORT) extra chars
-	TEXT temp[XCP_MESSAGE_LENGTH + sizeof(USHORT)]; 
+	MoveBuffer temp; 
 
 	SET_TDBB(tdbb);
 
@@ -3530,19 +3527,15 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	}
 
 	USHORT length = 0;
-	
+
 	if (msg_node)
 	{
-		const char* string = 0;
+		UCHAR* string = NULL;
 		// evaluate exception message and convert it to string
 		DSC* desc = EVL_expr(tdbb, msg_node);
 		if (desc && !(request->req_flags & req_null))
 		{
-			length = MOV_make_string(desc,
-									 tdbb->getAttachment()->att_charset,
-									 &string,
-									 reinterpret_cast<vary*>(temp),
-									 sizeof(temp));
+			length = MOV_make_string2(tdbb, desc, tdbb->getAttachment()->att_charset, &string, temp);
 			length = MIN(length, sizeof(message) - 1);
 
 			/* dimitr: or should we throw an error here, i.e.
@@ -3561,8 +3554,6 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	}
 	message[length] = 0;
 
-	const TEXT* s;
-
 	switch (exception->xcp_type)
 	{
 	case xcp_sql_code:
@@ -3580,33 +3571,37 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			ERR_post(exception->xcp_code, isc_arg_end);
 
 	case xcp_xcp_code:
-		// CVC: If we have the exception name, use it instead of the number.
-		// Solves SF Bug #494981.
-		MET_lookup_exception(tdbb, exception->xcp_code,
-							 name, temp, sizeof(temp));
+		{
+			const TEXT* s;
+			Firebird::string tempStr;
 
-		if (message[0])
-			s = message;
-		else if (temp[0])
-			s = temp;
-		else
-			s = NULL;
+			// CVC: If we have the exception name, use it instead of the number.
+			// Solves SF Bug #494981.
+			MET_lookup_exception(tdbb, exception->xcp_code, name, &tempStr);
 
-		if (s && name.length())
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-					 isc_arg_end);
-		else if (s)
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-					 isc_arg_end);
-		else if (name.length())
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
-					 isc_arg_end);
-		else		
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code, isc_arg_end);
+			if (message[0])
+				s = message;
+			else if (tempStr.hasData())
+				s = tempStr.c_str();
+			else
+				s = NULL;
+
+			if (s && name.length())
+				ERR_post(isc_except, isc_arg_number, exception->xcp_code,
+						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
+						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
+						 isc_arg_end);
+			else if (s)
+				ERR_post(isc_except, isc_arg_number, exception->xcp_code,
+						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
+						 isc_arg_end);
+			else if (name.length())
+				ERR_post(isc_except, isc_arg_number, exception->xcp_code,
+						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
+						 isc_arg_end);
+			else		
+				ERR_post(isc_except, isc_arg_number, exception->xcp_code, isc_arg_end);
+		}
 
 	default:
 		fb_assert(false);
