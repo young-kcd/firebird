@@ -683,7 +683,8 @@ static const TEXT msg_table[VAL_MAX_ERROR][80] =
 	"Index %d has orphan child page at page %ld",
 	"Index %d has a circular reference at page %ld",	// 25
 	"SCN's page %ld (sequence %ld) inconsistent",
-	"Page %d has SCN %d while at SCN's page is %d"
+	"Page %d has SCN %d while at SCN's page is %d",
+	"Blob %ld has unknown level %ld instead of (0, 1, 2)"
 };
 
 
@@ -1071,18 +1072,26 @@ RTN Vdr::walk_blob(thread_db* tdbb,
 	}
 #endif
 
-	// Level 0 blobs have no work to do.
-	if (header->blh_level == 0)
+	switch (header->blh_level)
+	{
+	case 0:
+		// Level 0 blobs have no work to do.
 		return rtn_ok;
+	case 1:
+	case 2:
+		break;
+	default:
+		corrupt(tdbb, validate, VAL_BLOB_UNKNOWN_LEVEL, relation, number, ULONG(header->blh_level));
+	}
 
 	// Level 1 blobs are a little more complicated
 	WIN window1(DB_PAGE_SPACE, -1), window2(DB_PAGE_SPACE, -1);
 
 	const ULONG* pages1 = header->blh_page;
 	const ULONG* const end1 = pages1 + ((USHORT) (length - BLH_SIZE) >> SHIFTLONG);
-	ULONG sequence;
+	ULONG sequence = 0;
 
-	for (sequence = 0; pages1 < end1; pages1++)
+	for (; pages1 < end1; pages1++)
 	{
 		blob_page* page1 = 0;
 		fetch_page(tdbb, validate, *pages1, pag_blob, &window1, &page1);

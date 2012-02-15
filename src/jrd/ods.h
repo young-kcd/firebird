@@ -533,7 +533,7 @@ struct blh
 	ULONG blh_max_sequence;		// Number of data pages
 	USHORT blh_max_segment;		// Longest segment
 	USHORT blh_flags;			// flags, etc
-	UCHAR blh_level;			// Number of address levels
+	UCHAR blh_level;			// Number of address levels, see blb_level in blb.h
 	ULONG blh_count;			// Total number of segments
 	ULONG blh_length;			// Total length of data
 	USHORT blh_sub_type;		// Blob sub-type

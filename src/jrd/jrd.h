@@ -220,7 +220,8 @@ const int VAL_INDEX_ORPHAN_CHILD		= 24;
 const int VAL_INDEX_CYCLE				= 25;
 const int VAL_SCNS_PAGE_INCONSISTENT	= 26;
 const int VAL_PAG_WRONG_SCN				= 27;
-const int VAL_MAX_ERROR					= 28;
+const int VAL_BLOB_UNKNOWN_LEVEL		= 28;
+const int VAL_MAX_ERROR					= 29;
 
 
 // Procedure block

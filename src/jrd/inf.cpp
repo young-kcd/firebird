@@ -643,7 +643,8 @@ void INF_database_info(thread_db* tdbb,
 			{
 				err_val = (*err_att->att_val_errors)[VAL_BLOB_INCONSISTENT] +
 						  (*err_att->att_val_errors)[VAL_BLOB_CORRUPT] +
-						  (*err_att->att_val_errors)[VAL_BLOB_TRUNCATED];
+						  (*err_att->att_val_errors)[VAL_BLOB_TRUNCATED] +
+						  (*err_att->att_val_errors)[VAL_BLOB_UNKNOWN_LEVEL];
 			}
 			else
 				err_val = 0;
