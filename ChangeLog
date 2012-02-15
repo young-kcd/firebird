@@ -1,3 +1,55 @@
+ 2012-02-15 03:44  robocop 
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.h
+   M src/jrd/ods.h
+   M src/jrd/validation.cpp
+Include a new type of validation error: unknown blob type.
+
+ 2012-02-15 03:43  robocop 
+   M src/common/IntlUtil.cpp
+   M src/common/call_service.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/Parser.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/IntlManager.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/met.epp
+   M src/remote/remote.cpp
+I don't see the point in creating temporary strings in these cases.
+
+ 2012-02-15 03:36  robocop 
+   M src/include/fb_types.h
+Delete unused and wrong definition.
+
+ 2012-02-15 03:34  robocop 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/metd.epp
+   M src/jrd/Attachment.cpp
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/Function.epp
+   M src/jrd/SysFunction.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/blb.h
+   M src/jrd/blb_proto.h
+   M src/jrd/cvt2.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/exe.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/grant.epp
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/mov.cpp
+   M src/jrd/scl.epp
+   M src/jrd/tra.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Make blb resemble more a class: private data members, convert some functions into methods, add methods with code that was in other files, etc.
+
  2012-02-13 15:39  dimitr 
    M src/lock/lock.cpp
    M src/lock/lock_proto.h
