@@ -1,7 +1,7 @@
 /* MAX_NUMBER is the next number to be used, always one more than the highest message number. */
 set bulk_insert INSERT INTO FACILITIES (LAST_CHANGE, FACILITY, FAC_CODE, MAX_NUMBER) VALUES (?, ?, ?, ?);
 --
-('2012-01-20 11:48:31', 'JRD', 0, 712)
+('2012-02-14 22:37:07', 'JRD', 0, 712)
 ('2012-01-23 20:10:30', 'QLI', 1, 532)
 ('2009-07-16 05:26:11', 'GFIX', 3, 121)
 ('1996-11-07 13:39:40', 'GPRE', 4, 1)

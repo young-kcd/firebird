@@ -939,7 +939,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 		l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str, false);
 	}
 
-	blb* blob =	BLB_open(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc1->dsc_address));
+	blb* blob =	blb::open(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc1->dsc_address));
 
 	if (charset->isMultiByte() &&
 		(blrOp != blr_starting || !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH)))
@@ -1303,7 +1303,7 @@ bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* d
 	{
 		// Source string is a blob, things get interesting
 
-		blb* blob = BLB_open(tdbb, request->req_transaction,
+		blb* blob = blb::open(tdbb, request->req_transaction,
 			reinterpret_cast<bid*>(desc1->dsc_address));
 
 		UCHAR buffer[BUFFER_LARGE];

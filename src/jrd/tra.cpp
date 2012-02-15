@@ -1053,7 +1053,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		}
 
 		while (transaction->tra_arrays)
-			BLB_release_array(transaction->tra_arrays);
+			blb::release_array(transaction->tra_arrays);
 	}
 
 	if (transaction->tra_pool)

@@ -399,7 +399,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 					if (!X.RDB$FUNCTION_SOURCE.NULL)
 					{
-						blb* const blob = BLB_open(tdbb, sysTransaction, &X.RDB$FUNCTION_SOURCE);
+						blb* const blob = blb::open(tdbb, sysTransaction, &X.RDB$FUNCTION_SOURCE);
 						const ULONG len = blob->BLB_get_data(tdbb,
 							body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
 						body[MIN(blob->blb_length, len)] = 0;

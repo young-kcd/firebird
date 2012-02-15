@@ -403,8 +403,8 @@ namespace
 		if (!blob)
 			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
 
-		validateHandle(tdbb, blob->blb_transaction);
-		validateHandle(tdbb, blob->blb_attachment);
+		validateHandle(tdbb, blob->getTransaction());
+		validateHandle(tdbb, blob->getAttachment());
 	}
 
 	inline void validateHandle(Service* service)
@@ -2190,7 +2190,7 @@ JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD
 		try
 		{
 			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-			blob = BLB_create2(tdbb, transaction, reinterpret_cast<bid*>(blob_id), bpb_length, bpb);
+			blob = blb::create2(tdbb, transaction, reinterpret_cast<bid*>(blob_id), bpb_length, bpb);
 		}
 		catch (const Exception& ex)
 		{
@@ -2950,7 +2950,7 @@ int JAttachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arr
 				MOVE_CLEAR(slice, slice_length);
 			else
 			{
-				return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+				return_length = blb::get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
 											  sdl, param_length, param, slice_length, slice);
 			}
 		}
@@ -2998,7 +2998,7 @@ JBlob* JAttachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* 
 		try
 		{
 			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-			blob = BLB_open2(tdbb, transaction, reinterpret_cast<bid*>(blob_id),
+			blob = blb::open2(tdbb, transaction, reinterpret_cast<bid*>(blob_id),
 				bpb_length, bpb, true);
 		}
 		catch (const Exception& ex)
@@ -3122,7 +3122,7 @@ void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* ar
 		try
 		{
 			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-			BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+			blb::put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
 				sdl, paramLength, param, sliceLength, slice);
 		}
 		catch (const Exception& ex)

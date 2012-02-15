@@ -2160,7 +2160,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			if (context.sqlText.isEmpty())
 				return NULL;
 
-			blb* blob = BLB_create(tdbb, transaction, &impure->vlu_misc.vlu_bid);
+			blb* blob = blb::create(tdbb, transaction, &impure->vlu_misc.vlu_bid);
 			blob->BLB_put_data(tdbb, reinterpret_cast<const UCHAR*>(context.sqlText.c_str()),
 				context.sqlText.length());
 			blob->BLB_close(tdbb);
@@ -2325,7 +2325,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	if (value->isBlob())
 	{
 		UCHAR buffer[BUFFER_LARGE];
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		while (!(blob->blb_flags & BLB_eof))
@@ -2626,7 +2626,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(value, &impure->vlu_desc, bpb);
 
-		blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address), bpb.getCount(), bpb.begin());
 		len1 =
 			(blob->blb_length / INTL_charset_lookup(tdbb, value->getCharSet())->minBytesPerChar()) *
@@ -2647,7 +2647,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(placing, &impure->vlu_desc, bpb);
 
-		blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(placing->dsc_address), bpb.getCount(), bpb.begin());
 		len2 =
 			(blob->blb_length / INTL_charset_lookup(tdbb, placing->getCharSet())->minBytesPerChar()) *
@@ -2688,7 +2688,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		EVL_make_value(tdbb, (value->isBlob() ? value : placing), impure);
 		impure->vlu_desc.setBlobSubType(DataTypeUtil::getResultBlobSubType(value, placing));
 		impure->vlu_desc.setTextType(resultTextType);
-		newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+		newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 	}
 
 	HalfStaticArray<UCHAR, BUFFER_LARGE> blobBuffer;
@@ -2814,7 +2814,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 		EVL_make_value(tdbb, (value1->isBlob() ? value1 : value2), impure);
 		impure->vlu_desc.setBlobSubType(value1->getBlobSubType());
 		impure->vlu_desc.setTextType(ttype);
-		newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+		newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 	}
 	else
 	{
@@ -2971,7 +2971,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	if (value1->isBlob())
 	{
 		// value1 is a blob
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value1->dsc_address));
 
 		value1Address = value1Buffer.getBuffer(blob->blb_length);
@@ -3001,7 +3001,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	if (value2->isBlob())
 	{
 		// value2 is a blob
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value2->dsc_address));
 
 		value2Address = value2Buffer.getBuffer(blob->blb_length);
@@ -3144,7 +3144,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		if (values[i]->isBlob())
 		{
 			// values[i] is a blob
-			blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+			blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 				reinterpret_cast<bid*>(values[i]->dsc_address));
 
 			addresses[i] = buffers[i].getBuffer(blob->blb_length);
@@ -3186,7 +3186,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		EVL_make_value(tdbb, firstBlob, impure);
 		impure->vlu_desc.setBlobSubType(values[0]->getBlobSubType());
 		impure->vlu_desc.setTextType(ttype);
-		newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+		newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 	}
 
 	// search 'find' in 'searched'
@@ -3275,7 +3275,7 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 
 	if (value->isBlob())
 	{
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
@@ -3318,7 +3318,7 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 
 		EVL_make_value(tdbb, value, impure);
 
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
+		blb* newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 		newBlob->BLB_put_data(tdbb, p, len);
 		newBlob->BLB_close(tdbb);
@@ -3383,7 +3383,7 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 
 	if (value->isBlob())
 	{
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		if (charSet->isMultiByte())

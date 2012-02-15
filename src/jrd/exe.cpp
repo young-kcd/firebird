@@ -384,9 +384,9 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) || DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
 		{
-			// ASF: Don't let MOV_move call BLB_move because MOV
-			// will not pass the destination field to BLB_move.
-			BLB_move(tdbb, from_desc, to_desc, to);
+			// ASF: Don't let MOV_move call blb::move because MOV
+			// will not pass the destination field to blb::_move.
+			blb::move(tdbb, from_desc, to_desc, to);
 		}
 		else if (!DSC_EQUIV(from_desc, to_desc, false))
 		{
@@ -864,7 +864,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 				if (!bid->isEmpty())
 				{
-					AutoBlb blob(tdbb, BLB_open(tdbb, transaction/*tdbb->getTransaction()*/, bid));
+					AutoBlb blob(tdbb, blb::open(tdbb, transaction/*tdbb->getTransaction()*/, bid));
 					blob.getBlb()->BLB_check_well_formed(tdbb, desc);
 				}
 			}
@@ -1708,7 +1708,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 		{
 			DEV_BLKCHK(*array, type_arr);
 			if ((*array)->arr_request == request)
-				BLB_release_array(*array);
+				blb::release_array(*array);
 			else
 				array = &(*array)->arr_next;
 		}

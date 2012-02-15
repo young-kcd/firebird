@@ -1458,14 +1458,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		// We've got the blob header and everything looks ducky.  Get the header
 		// fields.
 
-		blob->blb_lead_page = header->blh_lead_page;
-		blob->blb_max_sequence = header->blh_max_sequence;
-		blob->blb_count = header->blh_count;
-		blob->blb_length = header->blh_length;
-		blob->blb_max_segment = header->blh_max_segment;
-		blob->blb_level = header->blh_level;
-		blob->blb_sub_type = header->blh_sub_type;
-		blob->blb_charset = header->blh_charset;
+		blob->fromPageHeader(header);
 
 		// Unless this is the only attachment, don't allow the sequential scan
 		// of very large blobs to flush pages used by other attachments.
@@ -1478,7 +1471,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 			// large as the cumulative effect of scanning many small blobs is
 			// equivalent to scanning single large blobs.
 
-			if (blob->blb_max_sequence > dbb->dbb_bcb->bcb_count ||
+			if (blob->getMaxSequence() > dbb->dbb_bcb->bcb_count ||
 				attachment->att_flags & ATT_gbak_attachment)
 			{
 				blob->blb_flags |= BLB_large_scan;
@@ -1497,23 +1490,8 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		// 1 and 2).
 
 		const USHORT length = index->dpg_length - BLH_SIZE;
-		const UCHAR* q = (UCHAR *) header->blh_page;
-
-		if (blob->blb_level == 0)
-		{
-			blob->blb_space_remaining = length;
-			if (length)
-				memcpy(blob->getBuffer(), q, length);
-		}
-		else
-		{
-			vcl* vector = blob->blb_pages;
-			if (!vector) {
-				vector = blob->blb_pages = vcl::newVector(*blob->blb_transaction->tra_pool, 0);
-			}
-			vector->resize(length / sizeof(ULONG));
-			memcpy(vector->memPtr(), q, length);
-		}
+		const UCHAR* q = (UCHAR*) header->blh_page;
+		blob->getFromPage(length, q);
 
 		if (!delete_flag)
 		{
@@ -2026,49 +2004,12 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 
 	// Figure out length of blob on page.  Remember that blob can either
 	// be a clump of data or a vector of page pointers.
-	vcl* vector = 0;
 	USHORT length;
 	const UCHAR* q;
 	PageStack stack;
 	Firebird::Array<UCHAR> buffer;
 
-	if (blob->blb_level == 0)
-	{
-		length = blob->blb_clump_size - blob->blb_space_remaining;
-
-		if (!blob->hasBuffer())
-		{
-			if (blob->blb_temp_size > 0)
-			{
-				blob->blb_transaction->getBlobSpace()->read(
-					blob->blb_temp_offset, buffer.getBuffer(blob->blb_temp_size), blob->blb_temp_size);
-				q = buffer.begin();
-			}
-			else
-			{
-				fb_assert(length == 0);
-				q = NULL;
-			}
-		}
-		else
-			q = blob->getBuffer();
-
-		if (q)
-			q = (UCHAR*) ((blob_page*) q)->blp_page;
-	}
-	else
-	{
-		vector = blob->blb_pages;
-		length = vector->count() * sizeof(ULONG);
-		q = (UCHAR *) (vector->begin());
-		// Figure out precedence pages, if any
-		vcl::iterator ptr, end;
-		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr)
-		{
-            stack.push(PageNumber(DB_PAGE_SPACE, *ptr));
-        }
-	}
-
+	blob->storeToPage(&length, buffer, &q, &stack);
 
 	// Locate space to store blob
 
@@ -2081,24 +2022,17 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 		header->blh_flags |= rhd_stream_blob;
 	}
 
-	if (blob->blb_level) {
+	if (blob->getLevel()) {
 		header->blh_flags |= rhd_large;
 	}
 
-	header->blh_lead_page = blob->blb_lead_page;
-	header->blh_max_sequence = blob->blb_max_sequence;
-	header->blh_count = blob->blb_count;
-	header->blh_max_segment = blob->blb_max_segment;
-	header->blh_length = blob->blb_length;
-	header->blh_level = blob->blb_level;
-	header->blh_sub_type = blob->blb_sub_type;
-	header->blh_charset = blob->blb_charset;
+	blob->toPageHeader(header);
 
 	if (length)
 		memcpy(header->blh_page, q, length);
 
 	data_page* page = (data_page*) rpb.getWindow(tdbb).win_buffer;
-	if (blob->blb_level && !(page->dpg_header.pag_flags & dpg_large))
+	if (blob->getLevel() && !(page->dpg_header.pag_flags & dpg_large))
 	{
 		page->dpg_header.pag_flags |= dpg_large;
 		mark_full(tdbb, &rpb);

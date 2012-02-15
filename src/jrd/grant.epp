@@ -787,7 +787,7 @@ static void save_security_class(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	bid blob_id;
-	blb* blob = BLB_create(tdbb, transaction, &blob_id);
+	blb* blob = blb::create(tdbb, transaction, &blob_id);
 	size_t length = acl.getCount();
 	const UCHAR* buffer = acl.begin();
 	while (length)

@@ -303,7 +303,7 @@ void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 	UCharBuffer bpb;
 	BLB_gen_bpb(isc_blob_text, isc_blob_text, fromCharSet, CS_METADATA, bpb);
 
-	blb* blob = BLB_create2(tdbb, transaction, blobId, bpb.getCount(), bpb.begin());
+	blb* blob = blb::create2(tdbb, transaction, blobId, bpb.getCount(), bpb.begin());
 	try
 	{
 		blob->BLB_put_data(tdbb, (const UCHAR*) text.c_str(), text.length());
@@ -322,7 +322,7 @@ void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 void Jrd::Attachment::storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction,
 	bid* blobId, const ByteChunk& chunk)
 {
-	blb* blob = BLB_create2(tdbb, transaction, blobId, 0, NULL);
+	blb* blob = blb::create2(tdbb, transaction, blobId, 0, NULL);
 	try
 	{
 		blob->BLB_put_data(tdbb, chunk.data, chunk.length);

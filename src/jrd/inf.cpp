@@ -140,7 +140,7 @@ void INF_blob_info(const blb* blob,
 			break;
 
 		case isc_info_blob_num_segments:
-			length = INF_convert(blob->blb_count, buffer);
+			length = INF_convert(blob->getSegmentCount(), buffer);
 			break;
 
 		case isc_info_blob_max_segment:

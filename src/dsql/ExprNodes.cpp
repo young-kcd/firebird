@@ -2890,7 +2890,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
-		BLB_move(tdbb, value, &impure->vlu_desc, NULL);
+		blb::move(tdbb, value, &impure->vlu_desc, NULL);
 	else
 		MOV_move(tdbb, value, &impure->vlu_desc);
 
@@ -3230,7 +3230,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
 
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
+		blb* newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
@@ -3242,7 +3242,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 			UCharBuffer bpb;
 			BLB_gen_bpb_from_descs(value1, &desc, bpb);
 
-			blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
+			blb* blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction,
 				reinterpret_cast<bid*>(value1->dsc_address), bpb.getCount(), bpb.begin());
 
 			while (!(blob->blb_flags & BLB_eof))
@@ -3263,7 +3263,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 			UCharBuffer bpb;
 			BLB_gen_bpb_from_descs(value2, &desc, bpb);
 
-			blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
+			blb* blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction,
 				reinterpret_cast<bid*>(value2->dsc_address), bpb.getCount(), bpb.begin());
 
 			while (!(blob->blb_flags & BLB_eof))
@@ -7954,7 +7954,7 @@ dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 			return NULL;
 	}
 
-	BLB_scalar(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc->dsc_address),
+	blb::scalar(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc->dsc_address),
 		subscripts->args.getCount(), numSubscripts, impure);
 
 	return &impure->vlu_desc;
@@ -8178,7 +8178,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		CharSet* charSet = textType->getCharSet();
 
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
@@ -8186,7 +8186,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 		if (charSet->isMultiByte())
 			buffer.getBuffer(blob->blb_length);	// alloc space to put entire blob in memory
 
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
+		blb* newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 
 		while (!(blob->blb_flags & BLB_eof))
@@ -8374,7 +8374,7 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (value->isBlob())
 	{
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		switch (blrSubOp)
@@ -9149,9 +9149,9 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 
 		desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_bid;
 
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+		blb* newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(valueDsc->dsc_address));
 
 		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
@@ -9911,7 +9911,7 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 			else
 				charsCharSet = cs;
 
-			blb* blob = BLB_open2(tdbb, request->req_transaction,
+			blb* blob = blb::open2(tdbb, request->req_transaction,
 				reinterpret_cast<bid*>(trimCharsDesc->dsc_address), bpb.getCount(), bpb.begin());
 
 			// Go simple way and always read entire blob in memory.
@@ -9949,7 +9949,7 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (valueDesc->isBlob())
 	{
 		// Source string is a blob, things get interesting.
-		blb* blob = BLB_open(tdbb, request->req_transaction,
+		blb* blob = blb::open(tdbb, request->req_transaction,
 			reinterpret_cast<bid*>(valueDesc->dsc_address));
 
 		// It's very difficult (and probably not very efficient) to trim a blob in chunks.
@@ -10011,7 +10011,7 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		EVL_make_value(tdbb, valueDesc, impure);
 
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+		blb* newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 		newBlob->BLB_put_data(tdbb, valueCanonical.begin(), len);
 		newBlob->BLB_close(tdbb);
 	}

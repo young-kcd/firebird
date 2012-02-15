@@ -2979,7 +2979,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 					if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
 					{
-						blb* blob = BLB_open(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
+						blb* blob = blb::open(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
 						length = blob->blb_length + 10;
 						length = blob->BLB_get_data(tdbb, buffer.getBuffer(length), length);
 					}
@@ -4953,7 +4953,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 	{
 		FMTS.RDB$FORMAT = format->fmt_version;
 		FMTS.RDB$RELATION_ID = relation->rel_id;
-		blb* blob = BLB_create(tdbb, sysTransaction, &FMTS.RDB$DESCRIPTOR);
+		blb* blob = blb::create(tdbb, sysTransaction, &FMTS.RDB$DESCRIPTOR);
 
 		// Use generic representation of formats with 32-bit offsets
 
@@ -5082,7 +5082,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			}
 
 			MODIFY REL USING
-				blb* blob = BLB_create(tdbb, transaction, &REL.RDB$RUNTIME);
+				blb* blob = blb::create(tdbb, transaction, &REL.RDB$RUNTIME);
 				AutoCacheRequest request_fmtx(tdbb, irq_format2, IRQ_REQUESTS);
 
 				FOR(REQUEST_HANDLE request_fmtx TRANSACTION_HANDLE transaction)
@@ -5976,7 +5976,7 @@ static void put_summary_blob(thread_db* tdbb, blb* blob, rsr_t type, bid* blob_i
 		return;
 
 	// Go ahead and open blob
-	blb* blr = BLB_open(tdbb, transaction, blob_id);
+	blb* blr = blb::open(tdbb, transaction, blob_id);
 	fb_assert(blr->blb_length <= MAX_USHORT);
 
 	USHORT length = (USHORT) blr->blb_length;

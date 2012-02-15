@@ -33,6 +33,7 @@
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
 #include "../jrd/blb_proto.h"
+#include "../jrd/blb.h"
 #include "../jrd/cvt_proto.h"
 #include "../common/cvt.h"
 #include "../jrd/cvt2_proto.h"
@@ -390,7 +391,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		Firebird::UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(desc, &temp, bpb);
 
-		Jrd::blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
+		Jrd::blb* blob = Jrd::blb::open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<Jrd::bid*>(desc->dsc_address), bpb.getCount(), bpb.begin());
 
 		ULONG size;
@@ -448,7 +449,7 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
 	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) ||
 		DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
 	{
-		BLB_move(tdbb, from, to, NULL);
+		Jrd::blb::move(tdbb, from, to, NULL);
 	}
 	else
 		CVT_move(from, to);

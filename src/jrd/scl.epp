@@ -1176,7 +1176,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name.c_str()
 	{
 		privileges |= SCL_exists;
-		blb* blob = BLB_open(tdbb, sysTransaction, &X.RDB$ACL);
+		blb* blob = blb::open(tdbb, sysTransaction, &X.RDB$ACL);
 		UCHAR* buffer = acl.getBuffer(ACL_BLOB_BUFFER_SIZE);
 		UCHAR* end = buffer;
 		while (true)

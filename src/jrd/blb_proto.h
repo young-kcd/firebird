@@ -35,27 +35,27 @@
 //void   BLB_cancel(Jrd::thread_db*, Jrd::blb*);
 //void   BLB_check_well_formed(Jrd::thread_db*, const dsc* desc, Jrd::blb*);
 //void   BLB_close(Jrd::thread_db*, Jrd::blb*);
-Jrd::blb*   BLB_create(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*);
-Jrd::blb*   BLB_create2(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, USHORT, const UCHAR*);
+//Jrd::blb*   BLB_create(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*);
+//Jrd::blb*   BLB_create2(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, USHORT, const UCHAR*);
 void   BLB_garbage_collect(Jrd::thread_db*, Jrd::RecordStack&, Jrd::RecordStack&, ULONG, Jrd::jrd_rel*);
 void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, Firebird::UCharBuffer& bpb);
 void BLB_gen_bpb_from_descs(const dsc*, const dsc*, Firebird::UCharBuffer&);
-Jrd::blb*   BLB_get_array(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, Ods::InternalArrayDesc*);
+//Jrd::blb*   BLB_get_array(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, Ods::InternalArrayDesc*);
 //ULONG  BLB_get_data(Jrd::thread_db*, Jrd::blb*, UCHAR*, SLONG, bool = true);
 //USHORT BLB_get_segment(Jrd::thread_db*, Jrd::blb*, void*, USHORT);
-SLONG  BLB_get_slice(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, const UCHAR*, USHORT,
-	const UCHAR*, SLONG, UCHAR*);
+//SLONG  BLB_get_slice(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, const UCHAR*, USHORT,
+//	const UCHAR*, SLONG, UCHAR*);
 //SLONG  BLB_lseek(Jrd::blb*, USHORT, SLONG);
 
-void BLB_move(Jrd::thread_db*, dsc*, dsc*, const Jrd::ValueExprNode*);
-Jrd::blb* BLB_open(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*);
-Jrd::blb* BLB_open2(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const UCHAR*, bool = false);
+//void BLB_move(Jrd::thread_db*, dsc*, dsc*, const Jrd::ValueExprNode*);
+//Jrd::blb* BLB_open(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*);
+//Jrd::blb* BLB_open2(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const UCHAR*, bool = false);
 //void BLB_put_data(Jrd::thread_db*, Jrd::blb*, const UCHAR*, SLONG);
 //void BLB_put_segment(Jrd::thread_db*, Jrd::blb*, const void*, USHORT);
-void BLB_put_slice(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, const UCHAR*, USHORT,
-	const UCHAR*, SLONG, UCHAR*);
-void BLB_release_array(Jrd::ArrayField*);
-void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const SLONG*, Jrd::impure_value*);
+//void BLB_put_slice(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, const UCHAR*, USHORT,
+//	const UCHAR*, SLONG, UCHAR*);
+//void BLB_release_array(Jrd::ArrayField*);
+//void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const SLONG*, Jrd::impure_value*);
 
 
 class AutoBlb

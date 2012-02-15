@@ -715,7 +715,7 @@ void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 	if (!impure->vlu_blob)
 	{
-		impure->vlu_blob = BLB_create(tdbb, request->req_transaction,
+		impure->vlu_blob = blb::create(tdbb, request->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 		impure->vlu_desc.makeBlob(desc->getBlobSubType(), desc->getTextType(),
 			(ISC_QUAD*) &impure->vlu_misc.vlu_bid);

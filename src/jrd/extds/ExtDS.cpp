@@ -1397,7 +1397,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 		jrd_req* request = tdbb->getRequest();
 		const UCHAR bpb[] = {isc_bpb_version1, isc_bpb_storage, isc_bpb_storage_temp};
 		bid* localBlobID = (bid*) dst.dsc_address;
-		destBlob = BLB_create2(tdbb, request->req_transaction, localBlobID, sizeof(bpb), bpb);
+		destBlob = blb::create2(tdbb, request->req_transaction, localBlobID, sizeof(bpb), bpb);
 
 		// hvlad ?
 		destBlob->blb_sub_type = src.getBlobSubType();
@@ -1443,7 +1443,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 
 		UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(&src, &dst, bpb);
-		srcBlob = BLB_open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
+		srcBlob = blb::open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
 
 		HalfStaticArray<UCHAR, 2048> buffer;
 		const int bufSize = srcBlob->blb_max_segment;

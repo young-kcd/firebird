@@ -34,7 +34,7 @@ void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, DbgInfo& dbgInfo)
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	blb* blob = BLB_open(tdbb, attachment->getSysTransaction(), blob_id);
+	blb* blob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
 	const ULONG length = blob->blb_length;
 	HalfStaticArray<UCHAR, 128> tmp;
 

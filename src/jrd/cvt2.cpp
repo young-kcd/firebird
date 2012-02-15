@@ -538,8 +538,8 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 			bpbLength = sizeof(bpb);
 		}
 
-	    blb* blob1 = BLB_open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
-		blb* blob2 = BLB_open2(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg2->dsc_address, bpbLength, bpb);
+	    blb* blob1 = blb::open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
+		blb* blob2 = blb::open2(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg2->dsc_address, bpbLength, bpb);
 
 		if (charSet1->isMultiByte())
 		{
@@ -611,7 +611,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 
 		l2 = CVT2_make_string2(arg2, ttype1, &p, temp_str);
 
-		blb* blob1 = BLB_open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
+		blb* blob1 = blb::open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
 
 		if (charSet1->isMultiByte())
 			buffer1.getBuffer(blob1->blb_length);

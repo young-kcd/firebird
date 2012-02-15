@@ -364,7 +364,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 
 		if (*has_default)
 		{
-			blob_handle = BLB_open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
+			blob_handle = blb::open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assuming here that the buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
@@ -718,7 +718,7 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 
 		if (*has_default)
 		{
-			blb* blob_handle = BLB_open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
+			blb* blob_handle = blb::open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assume buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;

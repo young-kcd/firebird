@@ -630,7 +630,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 					length = sizeof(udf_blob);
 					if (*tail == return_ptr)
 					{
-						blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
+						blob = blb::create(tdbb, tdbb->getRequest()->req_transaction,
 										  (bid*) &value->vlu_misc);
 						return_blob_struct = blob_desc;
 						blob_stack.setBlobCreated(blob);
@@ -651,14 +651,14 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 							}
 							blob_id = *(bid*) input->dsc_address;
 						}
-						blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction, &blob_id);
+						blob = blb::open(tdbb, tdbb->getRequest()->req_transaction, &blob_id);
 					}
 					blob_stack.push(blob);
 					blob_desc->blob_get_segment = blob_get_segment;
 					blob_desc->blob_put_segment = blob_put_segment;
 					blob_desc->blob_seek = blob_lseek;
 					blob_desc->blob_handle = blob;
-					blob_desc->blob_number_segments = blob->blb_count;
+					blob_desc->blob_number_segments = blob->getSegmentCount();
 					blob_desc->blob_max_segment = blob->blb_max_segment;
 					blob_desc->blob_total_length = blob->blb_length;
 				}
@@ -863,7 +863,7 @@ static SLONG get_scalar_array(const Parameter* arg,
 
 	SLONG stuff[IAD_LEN(16) / 4];
 	Ods::InternalArrayDesc* array_desc = (Ods::InternalArrayDesc*) stuff;
-	blb* blob = BLB_get_array(tdbb, tdbb->getRequest()->req_transaction, (bid*)value->dsc_address,
+	blb* blob = blb::get_array(tdbb, tdbb->getRequest()->req_transaction, (bid*)value->dsc_address,
 							  array_desc);
 
 	fb_assert(array_desc->iad_total_length >= 0); // check before upcasting to size_t
