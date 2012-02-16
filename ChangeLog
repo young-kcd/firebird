@@ -1,3 +1,9 @@
+ 2012-02-15 10:01  dimitr 
+   M src/jrd/exe.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+Fixed CORE-3761: Conversion error when using a blob as an argument for the EXCEPTION statement.
+
  2012-02-02 14:10  alexpeshkoff 
    M src/remote/inet_server.cpp
 Fixed CORE-3750: Error increasing limits on posix (thanks to Dmitry Starodubov)
