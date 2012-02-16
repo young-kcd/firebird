@@ -82,7 +82,7 @@ typedef Ods::blob_page blob_page;
 static ArrayField* alloc_array(jrd_tra*, Ods::InternalArrayDesc*);
 //static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*);
-static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*, USHORT);
+//static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*, USHORT);
 //static void delete_blob(thread_db*, blb*, ULONG);
 //static void delete_blob_id(thread_db*, const bid*, ULONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
