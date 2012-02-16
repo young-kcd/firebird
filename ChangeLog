@@ -1,3 +1,9 @@
+ 2012-02-15 10:03  dimitr 
+   M src/jrd/exe.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+Fixed CORE-3761: Conversion error when using a blob as an argument for the EXCEPTION statement.
+
  2012-01-23 18:17  dimitr 
    M src/remote/protocol.cpp
 Backported CORE-3730: isc_dsql_exec_immed2() loses input parameter value with RETURNING clause.
