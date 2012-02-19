@@ -1,3 +1,33 @@
+ 2012-02-19 02:17  asfernandes 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/preprocess.bat
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/drq.h
+   D src/jrd/dyn.epp
+   M src/jrd/dyn.h
+   D src/jrd/dyn_proto.h
+   M src/jrd/dyn_ut_proto.h
+   M src/jrd/dyn_util.epp
+   M src/jrd/grant.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Refactor GRANT and REVOKE commands. This eliminates the DYN subsystem.
+
  2012-02-16 01:11  asfernandes 
    M src/jrd/blb.cpp
    M src/jrd/blb.h
