@@ -24,7 +24,6 @@
     <ClCompile Include="..\..\..\gen\dsql\PackageNodes.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\dfw.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\dpm.cpp" />
-    <ClCompile Include="..\..\..\gen\jrd\dyn.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\dyn_util.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\fun.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\Function.cpp" />
@@ -216,7 +215,6 @@
     <ClInclude Include="..\..\..\src\jrd\dpm_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\drq.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn.h" />
-    <ClInclude Include="..\..\..\src\jrd\dyn_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn_ut_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\ErrorImpl.h" />
     <ClInclude Include="..\..\..\src\jrd\EngineInterface.h" />
@@ -344,7 +342,6 @@
     </None>
     <None Include="..\..\..\src\jrd\dfw.epp" />
     <None Include="..\..\..\src\jrd\dpm.epp" />
-    <None Include="..\..\..\src\jrd\dyn.epp" />
     <None Include="..\..\..\src\jrd\dyn_util.epp" />
     <None Include="..\..\..\src\jrd\fun.epp" />
     <None Include="..\..\..\src\jrd\Function.epp" />

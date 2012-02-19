@@ -1072,6 +1072,8 @@ static const struct {
 	{336397316, "42000"}, // 1028 dsql_create_index_failed
 	{336397317, "42000"}, // 1029 dsql_create_user_failed
 	{336397318, "42000"}, // 1030 dsql_alter_user_failed
+	{336397319, "42000"}, // 1031 dsql_grant_failed
+	{336397320, "42000"}, // 1032 dsql_revoke_failed
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec

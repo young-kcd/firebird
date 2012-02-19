@@ -63,8 +63,6 @@ enum nod_t
 	nod_del_field,
 	nod_def_index,
 	nod_def_constraint,
-	nod_grant,
-	nod_revoke,
 	nod_rel_constraint,
 	nod_delete_rel_constraint,
 	nod_primary,
@@ -105,7 +103,6 @@ enum nod_t
 	nod_ref_upd_del,	// referential integrity actions
 	nod_ref_trig_action,
 	nod_role_name,
-	nod_grant_admin,
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
@@ -179,13 +176,6 @@ enum node_args {
 	e_dfl_computed,
 	e_dfl_identity,
 	e_dfl_count,
-
-	e_grant_privs = 0,		// nod_grant
-	e_grant_table,
-	e_grant_users,
-	e_grant_grant,
-	e_grant_grantor,
-	e_grant_count,
 
 	e_rct_name = 0,			// nod_rel_constraint
 	e_rct_type,

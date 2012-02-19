@@ -95,7 +95,6 @@ enum drq_type_t
 	drq_e_trg_msg,			// erase trigger message
 	drq_e_class,			// erase security class
 	drq_l_grant1,			// lookup grant
-	drq_l_grant2,			// lookup grant
 	drq_s_grant,			// store grant
 	drq_l_fld_src2,			// lookup a field source
 	drq_m_database,			// modify database
@@ -152,7 +151,6 @@ enum drq_type_t
 	drq_m_fun,				// modify udf
 	drq_m_view,				// modify view
 	drq_s_colls,			// store collations
-	drq_dom_is_array,		// lookup domain to see if it's an array
 	drq_l_rel_info,			// lookup name and flags of one master relation
 	drq_l_rel_info2,		// lookup names and flags of all master relations
 	drq_l_rel_type,			// lookup relation type

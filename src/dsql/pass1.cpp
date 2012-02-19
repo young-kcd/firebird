@@ -878,8 +878,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	{
 	case nod_def_index:
 	case nod_def_constraint:
-	case nod_grant:
-	case nod_revoke:
 	case nod_def_domain:
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		return input;
@@ -4542,9 +4540,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_foreign:
 		verb = "foreign key";
 		break;
-	case nod_grant:
-		verb = "grant";
-		break;
 	case nod_insert:
 		verb = "insert";
 		break;
@@ -4568,9 +4563,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_function_name:
 		verb = "function_name";
-		break;
-	case nod_revoke:
-		verb = "revoke";
 		break;
 	case nod_select:
 		verb = "select";
@@ -4664,9 +4656,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_role_name:
 		verb = "role_name";
-		break;
-	case nod_grant_admin:
-		verb = "grant_admin";
 		break;
 	case nod_mod_field_name:
 		verb = "mod_field_name";

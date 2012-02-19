@@ -768,9 +768,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <int32Val>   first_file_length
 %type <execStatementNode> for_exec_into
 
-%type <legacyNode> generated_always_clause grant grant_option granted_by granted_by_text grantee grantee_list
+%type <legacyNode> generated_always_clause grant_option granted_by granted_by_text grantee grantee_list
 %type <legacyNode> grantor group_by_item group_by_list group_clause
-%type <ddlNode> gtt_recreate_clause
+%type <ddlNode> grant gtt_recreate_clause
 %type <nullableIntVal>  grant_admin grant_admin_opt
 
 %type <legacyNode> having_clause
@@ -842,10 +842,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <stmtNode>   release_savepoint
 %type <legacyNode> restr_list restr_option
 %type <int32Val> return_mechanism
-%type <legacyNode> rev_admin_option rev_grant_option revoke
+%type <legacyNode> rev_admin_option rev_grant_option
 %type return_value1(<createAlterFunctionNode>) return_value(<createAlterFunctionNode>)
 %type <returningClause> returning_clause
-%type <ddlNode> rexception_clause
+%type <ddlNode> revoke rexception_clause
 %type <legacyNode> role_admin_option role_grantee role_grantee_list
 %type <legacyNode> role_name role_name_list rows_clause
 %type <stmtNode> rollback
@@ -1012,13 +1012,13 @@ statement
 	| declare									{ $$ = makeClassNode($1); }
 	| delete									{ $$ = makeClassNode($1); }
 	| drop										{ $$ = makeClassNode($1); }
-	| grant
+	| grant										{ $$ = makeClassNode($1); }
 	| insert									{ $$ = makeClassNode($1); }
 	| merge										{ $$ = makeClassNode($1); }
 	| exec_procedure							{ $$ = makeClassNode($1); }
 	| exec_block								{ $$ = makeClassNode($1); }
 	| recreate									{ $$ = makeClassNode($1); }
-	| revoke
+	| revoke									{ $$ = makeClassNode($1); }
 	| rollback									{ $$ = makeClassNode($1); }
 	| savepoint									{ $$ = makeClassNode($1); }
 	| select									{ $$ = makeClassNode($1); }
@@ -1033,24 +1033,59 @@ statement
 // GRANT statement
 
 grant
-	: GRANT privileges ON table_noise simple_table_name
-		TO non_role_grantee_list grant_option granted_by
-		{ $$ = make_node (nod_grant, (int) e_grant_count,
-				$2, $5, make_list($7), $8, $9); }
-	| GRANT execute_privilege ON PROCEDURE simple_proc_name
-		TO non_role_grantee_list grant_option granted_by
-		{ $$ = make_node (nod_grant, (int) e_grant_count,
-				$2, $5, make_list($7), $8, $9); }
-	| GRANT execute_privilege ON FUNCTION simple_UDF_name
-		TO non_role_grantee_list grant_option granted_by
-		{ $$ = make_node (nod_grant, (int) e_grant_count,
-				$2, $5, make_list($7), $8, $9); }
-	| GRANT execute_privilege ON PACKAGE simple_package_name
-		TO non_role_grantee_list grant_option granted_by
-		{ $$ = make_node (nod_grant, (int) e_grant_count, $2, $5, make_list($7), $8, $9); }
+	: GRANT privileges ON table_noise simple_table_name TO non_role_grantee_list
+			grant_option granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(true);
+			node->privileges = $2;
+			node->table = $5;
+			node->users = make_list($7);
+			node->grantAdminOption = $8;
+			node->grantor = $9;
+			$$ = node;
+		}
+	| GRANT execute_privilege ON PROCEDURE simple_proc_name TO non_role_grantee_list
+			grant_option granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(true);
+			node->privileges = $2;
+			node->table = $5;
+			node->users = make_list($7);
+			node->grantAdminOption = $8;
+			node->grantor = $9;
+			$$ = node;
+		}
+	| GRANT execute_privilege ON FUNCTION simple_UDF_name TO non_role_grantee_list
+			grant_option granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(true);
+			node->privileges = $2;
+			node->table = $5;
+			node->users = make_list($7);
+			node->grantAdminOption = $8;
+			node->grantor = $9;
+			$$ = node;
+		}
+	| GRANT execute_privilege ON PACKAGE simple_package_name TO non_role_grantee_list
+			grant_option granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(true);
+			node->privileges = $2;
+			node->table = $5;
+			node->users = make_list($7);
+			node->grantAdminOption = $8;
+			node->grantor = $9;
+			$$ = node;
+		}
 	| GRANT role_name_list TO role_grantee_list role_admin_option granted_by
-		{ $$ = make_node (nod_grant, (int) e_grant_count,
-				make_list($2), make_list($4), NULL, $5, $6); }
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(true);
+			node->roles = make_list($2);
+			node->users = make_list($4);
+			node->grantAdminOption = $5;
+			node->grantor = $6;
+			$$ = node;
+		}
 	;
 
 table_noise
@@ -1083,12 +1118,12 @@ privilege
 
 grant_option
 	: /* nothing */			{ $$ = NULL; }
-	| WITH GRANT OPTION		{ $$ = make_node (nod_grant, (int) 0, NULL); }
+	| WITH GRANT OPTION		{ $$ = make_node(nod_flag, (int) 0, NULL); }
 	;
 
 role_admin_option
 	: /* nothing */			{ $$ = NULL; }
-	| WITH ADMIN OPTION		{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
+	| WITH ADMIN OPTION		{ $$ = make_node(nod_flag, (int) 0, NULL); }
 	;
 
 granted_by
@@ -1122,36 +1157,75 @@ simple_UDF_name
 
 revoke
 	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
-		FROM non_role_grantee_list granted_by
-		{ $$ = make_node (nod_revoke, (int) e_grant_count,
-				$3, $6, make_list($8), $2, $9); }
+			FROM non_role_grantee_list granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(false);
+			node->privileges = $3;
+			node->table = $6;
+			node->users = make_list($8);
+			node->grantAdminOption = $2;
+			node->grantor = $9;
+			$$ = node;
+		}
 	| REVOKE rev_grant_option execute_privilege ON PROCEDURE simple_proc_name
-		FROM non_role_grantee_list granted_by
-		{ $$ = make_node (nod_revoke, (int) e_grant_count,
-				$3, $6, make_list($8), $2, $9); }
+			FROM non_role_grantee_list granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(false);
+			node->privileges = $3;
+			node->table = $6;
+			node->users = make_list($8);
+			node->grantAdminOption = $2;
+			node->grantor = $9;
+			$$ = node;
+		}
 	| REVOKE rev_grant_option execute_privilege ON FUNCTION simple_UDF_name
-		FROM non_role_grantee_list granted_by
-		{ $$ = make_node (nod_revoke, (int) e_grant_count,
-				$3, $6, make_list($8), $2, $9); }
+			FROM non_role_grantee_list granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(false);
+			node->privileges = $3;
+			node->table = $6;
+			node->users = make_list($8);
+			node->grantAdminOption = $2;
+			node->grantor = $9;
+			$$ = node;
+		}
 	| REVOKE rev_grant_option execute_privilege ON PACKAGE simple_package_name
-		FROM non_role_grantee_list granted_by
-		{ $$ = make_node (nod_revoke, (int) e_grant_count, $3, $6, make_list($8), $2, $9); }
+			FROM non_role_grantee_list granted_by
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(false);
+			node->privileges = $3;
+			node->table = $6;
+			node->users = make_list($8);
+			node->grantAdminOption = $2;
+			node->grantor = $9;
+			$$ = node;
+		}
 	| REVOKE rev_admin_option role_name_list FROM role_grantee_list granted_by
-		{ $$ = make_node (nod_revoke, (int) e_grant_count,
-				make_list($3), make_list($5), NULL, $2, $6); }
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(false);
+			node->roles = make_list($3);
+			node->table = $6;
+			node->users = make_list($5);
+			node->grantAdminOption = $2;
+			node->grantor = $6;
+			$$ = node;
+		}
 	| REVOKE ALL ON ALL FROM non_role_grantee_list
-		{ $$ = make_node (nod_revoke, (int) e_grant_count,
-				NULL, NULL, make_list($6), NULL, NULL); }
+		{
+			GrantRevokeNode* node = newNode<GrantRevokeNode>(false);
+			node->users = make_list($6);
+			$$ = node;
+		}
 	;
 
 rev_grant_option
 	: /* nothing */			{ $$ = NULL; }
-	| GRANT OPTION FOR		{ $$ = make_node (nod_grant, (int) 0, NULL); }
+	| GRANT OPTION FOR		{ $$ = make_node(nod_flag, (int) 0, NULL); }
 	;
 
 rev_admin_option
 	: /* nothing */			{ $$ = NULL; }
-	| ADMIN OPTION FOR		{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
+	| ADMIN OPTION FOR		{ $$ = make_node(nod_flag, (int) 0, NULL); }
 	;
 
 non_role_grantee_list

@@ -1084,6 +1084,8 @@ const
 	gds_dsql_create_index_failed         = 336397316;
 	gds_dsql_create_user_failed          = 336397317;
 	gds_dsql_alter_user_failed           = 336397318;
+	gds_dsql_grant_failed                = 336397319;
+	gds_dsql_revoke_failed               = 336397320;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

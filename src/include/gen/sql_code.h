@@ -1072,6 +1072,8 @@ static const struct {
 	{336397316, -901}, /* 1028 dsql_create_index_failed */
 	{336397317, -901}, /* 1029 dsql_create_user_failed */
 	{336397318, -901}, /* 1030 dsql_alter_user_failed */
+	{336397319, -901}, /* 1031 dsql_grant_failed */
+	{336397320, -901}, /* 1032 dsql_revoke_failed */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

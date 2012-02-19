@@ -1066,6 +1066,8 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1028, 'dsql_create_index_failed', NULL, NULL);
 (-901, '42', '000', 13, 1029, 'dsql_create_user_failed', NULL, NULL);
 (-901, '42', '000', 13, 1030, 'dsql_alter_user_failed', NULL, NULL);
+(-901, '42', '000', 13, 1031, 'dsql_grant_failed', NULL, NULL);
+(-901, '42', '000', 13, 1032, 'dsql_revoke_failed', NULL, NULL);
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

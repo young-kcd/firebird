@@ -44,6 +44,7 @@
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"
+#include "../jrd/dpm_proto.h"
 #include "../jrd/dyn_ut_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
@@ -102,6 +103,8 @@ static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber
 	const PathName& name, SLONG start, SLONG length);
 static bool fieldExists(thread_db* tdbb, jrd_tra* transaction, const MetaName& relationName,
 	const MetaName& fieldName);
+static bool isItSqlRole(thread_db* tdbb, jrd_tra* transaction, const MetaName& inputName,
+	MetaName& outputName);
 static void makeRelationScopeName(const MetaName& name, const rel_t type, string& message);
 static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName, USHORT newPosition,
@@ -483,6 +486,24 @@ static bool fieldExists(thread_db* tdbb, jrd_tra* transaction, const MetaName& r
 	return found;
 }
 
+// If inputName is found in RDB$ROLES, then returns true. Otherwise returns false.
+static bool isItSqlRole(thread_db* tdbb, jrd_tra* transaction, const MetaName& inputName,
+	MetaName& outputName)
+{
+	AutoCacheRequest request(tdbb, drq_get_role_nm, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$ROLES
+		WITH X.RDB$ROLE_NAME EQ inputName.c_str()
+	{
+		outputName = X.RDB$OWNER_NAME;
+		return true;
+	}
+	END_FOR
+
+	return false;
+}
+
 // Make string with relation name and type of its temporary scope.
 static void makeRelationScopeName(const MetaName& name, const rel_t type, string& message)
 {
@@ -544,7 +565,7 @@ static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
 
 	// Find the position of the last field in the relation.
 	SLONG maxPosition = -1;
-	DYN_UTIL_generate_field_position(tdbb, NULL, relationName, &maxPosition);
+	DYN_UTIL_generate_field_position(tdbb, relationName, &maxPosition);
 
 	// If the existing position of the field is less than the new position of
 	// the field, subtract 1 to move the fields to their new positions otherwise,
@@ -820,7 +841,7 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 	}
 
 	if (name.isEmpty())
-		DYN_UTIL_generate_field_name(tdbb, NULL, name);
+		DYN_UTIL_generate_field_name(tdbb, name);
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_fld_src, DYN_REQUESTS);
 
@@ -5112,7 +5133,7 @@ void RelationNode::FieldDefinition::modify(thread_db* tdbb, jrd_tra* transaction
 				fieldPos = position.value;
 			else
 			{
-				DYN_UTIL_generate_field_position(tdbb, NULL, relationName, &fieldPos);
+				DYN_UTIL_generate_field_position(tdbb, relationName, &fieldPos);
 				if (fieldPos >= 0)
 					++fieldPos;
 			}
@@ -5210,7 +5231,7 @@ void RelationNode::FieldDefinition::store(thread_db* tdbb, jrd_tra* transaction)
 			fieldPos = position.value;
 		else
 		{
-			DYN_UTIL_generate_field_position(tdbb, NULL, relationName, &fieldPos);
+			DYN_UTIL_generate_field_position(tdbb, relationName, &fieldPos);
 			if (fieldPos >= 0)
 				++fieldPos;
 		}
@@ -5830,7 +5851,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	jrd_tra* transaction, Constraint& constraint)
 {
 	if (constraint.name.isEmpty())
-		DYN_UTIL_generate_constraint_name(tdbb, NULL, constraint.name);
+		DYN_UTIL_generate_constraint_name(tdbb, constraint.name);
 
 	AutoCacheRequest request(tdbb, drq_s_rel_con, DYN_REQUESTS);
 	MetaName referredIndexName;
@@ -9329,7 +9350,7 @@ void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	}
 
 	MetaName dummyName;
-	if (DYN_is_it_sql_role(transaction, name, dummyName, tdbb))
+	if (isItSqlRole(tdbb, transaction, name, dummyName))
 	{
 		// msg 194: "SQL role @1 already exists"
 		status_exception::raise(Arg::PrivateDyn(194) << name);
@@ -9663,6 +9684,778 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		userData->user.get());
 
 	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void GrantRevokeNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"GrantRevokeNode\n"
+		"  isGrant: '%d'\n",
+		isGrant);
+}
+
+void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	const dsql_nod* const* usersPtr;
+	const dsql_nod* const* usersEnd;
+
+	if (!isGrant && !roles && !privileges && !table)	// REVOKE ALL ON ALL
+	{
+		usersEnd = users->nod_arg + users->nod_count;
+		for (usersPtr = users->nod_arg; usersPtr != usersEnd; ++usersPtr)
+			grantRevoke(tdbb, transaction, NULL, *usersPtr, grantor, NULL, NULL, 0);
+	}
+	else
+	{
+		SSHORT option = 0; // no grant/admin option
+
+		if (!roles)
+		{
+			if (grantAdminOption)
+				option = 1; // with grant option
+
+			usersEnd = users->nod_arg + users->nod_count;
+			for (usersPtr = users->nod_arg; usersPtr != usersEnd; ++usersPtr)
+				modifyPrivileges(tdbb, transaction, option, privileges, *usersPtr);
+		}
+		else
+		{
+			if (grantAdminOption)
+				option = 2; // with admin option
+
+			const dsql_nod* const* rolesEnd = roles->nod_arg + roles->nod_count;
+			for (const dsql_nod* const* rolesPtr = roles->nod_arg; rolesPtr != rolesEnd; ++rolesPtr)
+			{
+				usersEnd = users->nod_arg + users->nod_count;
+				for (usersPtr = users->nod_arg; usersPtr != usersEnd; ++usersPtr)
+					grantRevoke(tdbb, transaction, *rolesPtr, *usersPtr, grantor, "M", NULL, option);
+			}
+		}
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+// Return a char indicating the privilege to be modified.
+char GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option,
+	const dsql_nod* privs, const dsql_nod* user)
+{
+	char privileges[10];
+	const char* p = NULL;
+	const dsql_nod* const* ptr;
+	const dsql_nod* const* end;
+
+	switch (privs->nod_type)
+	{
+		case Dsql::nod_all:
+			p = "A";
+			break;
+
+		case Dsql::nod_select:
+			return 'S';
+
+		case Dsql::nod_execute:
+			return 'X';
+
+		case Dsql::nod_insert:
+			return 'I';
+
+		case Dsql::nod_references:
+		case Dsql::nod_update:
+		{
+			p = (privs->nod_type == Dsql::nod_references) ? "R" : "U";
+			const dsql_nod* fields = privs->nod_arg[0];
+			if (!fields)
+				return *p;
+
+			for (ptr = fields->nod_arg, end = ptr + fields->nod_count; ptr != end; ++ptr)
+			{
+				grantRevoke(tdbb, transaction, table, user, grantor, p,
+					reinterpret_cast<dsql_str*>((*ptr)->nod_arg[1]), option);
+			}
+
+			return '\0';
+		}
+
+		case Dsql::nod_delete:
+			return 'D';
+
+		case Dsql::nod_list:
+		{
+			char* q = privileges;
+			p = q;
+
+			for (ptr = privs->nod_arg, end = ptr + privs->nod_count; ptr != end; ++ptr)
+			{
+				*q = modifyPrivileges(tdbb, transaction, option, *ptr, user);
+				if (*q)
+					q++;
+			}
+
+			*q = '\0';
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	if (*p)
+		grantRevoke(tdbb, transaction, table, user, grantor, p, NULL, option);
+
+	return 0;
+}
+
+// Execute SQL grant/revoke operation.
+void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* table,
+	const dsql_nod* userNod, const dsql_nod* grantorNod, const char* privs,
+	const dsql_str* fieldName, int options)
+{
+	SSHORT userType = -1;
+    MetaName dummyName;
+	MetaName user(((dsql_str*) userNod->nod_arg[0])->str_data);
+
+	switch (userNod->nod_type)
+	{
+		case Dsql::nod_user_group:		// GRANT priv ON tbl TO GROUP unix_group
+			userType = obj_user_group;
+			break;
+
+		case Dsql::nod_user_name:
+			if (userNod->nod_count == 2)
+			{
+				userType = obj_user;
+				user.upper7();
+			}
+			else
+			{
+				// This test may become obsolete as we now allow explicit ROLE keyword.
+				if (isItSqlRole(tdbb, transaction, user, dummyName))
+				{
+					userType = obj_sql_role;
+					if (user == NULL_ROLE)
+					{
+						// msg 195: keyword NONE could not be used as SQL role name.
+						status_exception::raise(Arg::PrivateDyn(195) << user.c_str());
+					}
+				}
+				else
+				{
+					userType = obj_user;
+					user.upper7();
+				}
+			}
+			break;
+
+		case Dsql::nod_package_obj:
+			userType = obj_package_header;
+			break;
+
+		case Dsql::nod_proc_obj:
+			userType = obj_procedure;
+			break;
+
+		case Dsql::nod_func_obj:
+			userType = obj_udf;
+			break;
+
+		case Dsql::nod_trig_obj:
+			userType = obj_trigger;
+			break;
+
+		case Dsql::nod_view_obj:
+			userType = obj_view;
+			break;
+
+		case Dsql::nod_role_name:
+			userType = obj_sql_role;
+
+			if (!isItSqlRole(tdbb, transaction, user, dummyName))
+			{
+				// msg 188: Role doesn't exist.
+				status_exception::raise(Arg::PrivateDyn(188) << user.c_str());
+			}
+			if (user == NULL_ROLE)
+			{
+				// msg 195: keyword NONE could not be used as SQL role name.
+				status_exception::raise(Arg::PrivateDyn(195) << user.c_str());
+			}
+			break;
+
+		default:
+			fb_assert(false);
+			break;
+	}
+
+	MetaName grantorRevoker = grantorNod ?
+		((const dsql_str*) grantorNod->nod_arg[0])->str_data :
+		tdbb->getAttachment()->att_user->usr_user_name;
+
+	if (grantorNod && !tdbb->getAttachment()->locksmith())
+		status_exception::raise(Arg::PrivateDyn(252) << SYSDBA_USER_NAME);
+
+	grantorRevoker.upper7();
+
+	if (!isGrant && !privs)	// REVOKE ALL ON ALL
+	{
+		AutoCacheRequest request(tdbb, drq_e_grant3, DYN_REQUESTS);
+		bool grantErased = false;
+		bool badGrantor = false;
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			PRIV IN RDB$USER_PRIVILEGES
+			WITH PRIV.RDB$USER = user.c_str() AND
+				 PRIV.RDB$USER_TYPE = userType
+		{
+			if (tdbb->getAttachment()->att_user->locksmith() || grantorRevoker == PRIV.RDB$GRANTOR)
+			{
+				ERASE PRIV;
+				grantErased = true;
+			}
+			else
+				badGrantor = true;
+		}
+		END_FOR
+
+		const char* all = "ALL";
+
+		if (badGrantor && !grantErased)
+		{
+			// msg 246: @1 is not grantor of @2 on @3 to @4.
+			status_exception::raise(Arg::PrivateDyn(246) <<
+				grantorRevoker.c_str() << all << all << user.c_str());
+		}
+
+		if (!grantErased)
+		{
+			// msg 247: Warning: @1 on @2 is not granted to @3.
+			ERR_post_warning(
+				Arg::Warning(isc_dyn_miss_priv_warning) <<
+				all << all << Arg::Str(user));
+		}
+
+		return;
+	}
+
+	SSHORT objType = -1;
+
+	switch (table->nod_type)
+	{
+		case Dsql::nod_procedure_name:
+			objType = obj_procedure;
+			break;
+		case Dsql::nod_function_name:
+			objType = obj_udf;
+			break;
+		case Dsql::nod_package_name:
+			objType = obj_package_header;
+			break;
+		case Dsql::nod_role_name:
+			objType = obj_sql_role;
+			break;
+		default:
+			objType = obj_relation;
+			break;
+	}
+
+	char privileges[16];
+	strcpy(privileges, privs);
+	if (strcmp(privileges, "A") == 0)
+		strcpy(privileges, ALL_PRIVILEGES);
+
+	MetaName object(objType == obj_relation ?
+		ExprNode::as<RelationSourceNode>(table)->dsqlName.c_str() :
+		((dsql_str*) table->nod_arg[0])->str_data);
+
+	if (objType == obj_sql_role && object == NULL_ROLE)
+	{
+		if (isGrant)
+		{
+			// msg 195: keyword NONE could not be used as SQL role name.
+			status_exception::raise(Arg::PrivateDyn(195) << object.c_str());
+		}
+		else
+		{
+			///CVC: Make this a warning in the future.
+			///DYN_error_punt(false, 195, object.c_str());
+		}
+	}
+
+	MetaName field(fieldName ? fieldName->str_data : NULL);
+
+	char priv[2];
+	priv[1] = '\0';
+
+	if (isGrant)
+	{
+		AutoCacheRequest request(tdbb, drq_l_grant1, DYN_REQUESTS);
+
+		for (const char* pr = privileges; *pr; ++pr)
+		{
+			bool duplicate = false;
+			priv[0] = *pr;
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				PRIV IN RDB$USER_PRIVILEGES
+				WITH PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+					 PRIV.RDB$OBJECT_TYPE = objType AND
+					 PRIV.RDB$PRIVILEGE EQ priv AND
+					 PRIV.RDB$USER = user.c_str() AND
+					 PRIV.RDB$USER_TYPE = userType AND
+					 PRIV.RDB$GRANTOR EQ grantorRevoker.c_str() AND
+					 PRIV.RDB$FIELD_NAME EQUIV NULLIF(field.c_str(), '')
+			{
+				if (PRIV.RDB$GRANT_OPTION.NULL ||
+					PRIV.RDB$GRANT_OPTION ||
+					PRIV.RDB$GRANT_OPTION == options)
+				{
+					duplicate = true;
+				}
+				else
+					ERASE PRIV;	// has to be 0 and options == 1
+			}
+			END_FOR
+
+			if (duplicate)
+				continue;
+
+			if (objType == obj_sql_role)
+			{
+				checkGrantorCanGrantRole(tdbb, transaction, grantorRevoker, object);
+
+				if (userType == obj_sql_role)
+				{
+					// Temporary restriction. This should be removed once GRANT role1 TO rolex is
+					// supported and this message could be reused for blocking cycles of role grants.
+					status_exception::raise(Arg::PrivateDyn(192) << user.c_str());
+				}
+			}
+			else
+			{
+				// In the case where the object is a view, then the grantor must have
+				// some kind of grant privileges on the base table(s)/view(s).  If the
+				// grantor is the owner of the view, then we have to explicitely check
+				// this because the owner of a view by default has grant privileges on
+				// his own view.  If the grantor is not the owner of the view, then the
+				// base table/view grant privilege checks were made when the grantor
+				// got its grant privilege on the view and no further checks are
+				// necessary.
+				// As long as only locksmith can use GRANTED BY, no need specially checking
+				// for privileges of current user. AP-2008
+
+				if (objType == 0)
+				{
+					// Relation or view because we cannot distinguish at this point.
+					checkGrantorCanGrant(tdbb, transaction,
+						tdbb->getAttachment()->att_user->usr_user_name.c_str(), priv, object,
+						field, true);
+				}
+			}
+
+			storePrivilege(tdbb, transaction, object, user, field, pr, userType, objType,
+				options, grantorRevoker);
+		}
+	}
+	else	// REVOKE
+	{
+		AutoCacheRequest request(tdbb, (field.hasData() ? drq_e_grant1 : drq_e_grant2), DYN_REQUESTS);
+
+		for (const char* pr = privileges; (priv[0] = *pr); ++pr)
+		{
+			bool grantErased = false;
+			bool badGrantor = false;
+
+			if (field.hasData())
+			{
+				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+					PRIV IN RDB$USER_PRIVILEGES
+					WITH PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+						 PRIV.RDB$OBJECT_TYPE = objType AND
+						 PRIV.RDB$PRIVILEGE EQ priv AND
+						 PRIV.RDB$USER = user.c_str() AND
+						 PRIV.RDB$USER_TYPE = userType AND
+						 PRIV.RDB$FIELD_NAME EQ field.c_str()
+				{
+					if (grantorRevoker == PRIV.RDB$GRANTOR)
+					{
+						ERASE PRIV;
+						grantErased = true;
+					}
+					else
+						badGrantor = true;
+				}
+				END_FOR
+			}
+			else
+			{
+				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+					PRIV IN RDB$USER_PRIVILEGES
+					WITH PRIV.RDB$PRIVILEGE EQ priv AND
+						 PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+						 PRIV.RDB$OBJECT_TYPE = objType AND
+						 PRIV.RDB$USER EQ user.c_str() AND
+						 PRIV.RDB$USER_TYPE = userType
+				{
+					// Revoking a permission at the table level implies revoking the perm. on all
+					// columns. So for all fields in this table which have been granted the
+					// privilege, we erase the entries from RDB$USER_PRIVILEGES.
+
+					if (grantorRevoker == PRIV.RDB$GRANTOR)
+					{
+						ERASE PRIV;
+						grantErased = true;
+					}
+					else
+						badGrantor = true;
+				}
+				END_FOR
+			}
+
+			if (options && grantErased)
+			{
+				// Add the privilege without the grant option. There is a modify trigger on the
+				// rdb$user_privileges which disallows the table from being updated. It would have
+				// to be changed such that only the grant_option field can be updated.
+
+				storePrivilege(tdbb, transaction, object, user, field, pr, userType, objType,
+					0, grantorRevoker);
+			}
+
+			if (badGrantor && !grantErased)
+			{
+				// msg 246: @1 is not grantor of @2 on @3 to @4.
+				status_exception::raise(Arg::PrivateDyn(246) <<
+					grantorRevoker.c_str() << privilegeName(priv[0]) << object.c_str() <<
+					user.c_str());
+			}
+
+			if (!grantErased)
+			{
+				// msg 247: Warning: @1 on @2 is not granted to @3.
+				ERR_post_warning(
+					Arg::Warning(isc_dyn_miss_priv_warning) <<
+					Arg::Str(privilegeName(priv[0])) << Arg::Str(object) << Arg::Str(user));
+			}
+		}
+	}
+}
+
+// Check if the grantor has grant privilege on the relation/field.
+void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction,
+	const char* grantor, const char* privilege, const MetaName& relationName,
+	const MetaName& fieldName, bool topLevel)
+{
+	// Verify that the input relation exists.
+
+	AutoCacheRequest request(tdbb, drq_gcg4, DYN_REQUESTS);
+
+	bool sqlRelation = false;
+	bool relationExists = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		REL IN RDB$RELATIONS WITH
+			REL.RDB$RELATION_NAME = relationName.c_str()
+	{
+		relationExists = true;
+		if (!REL.RDB$FLAGS.NULL && (REL.RDB$FLAGS & REL_sql))
+			sqlRelation = true;
+	}
+	END_FOR
+
+	if (!relationExists)
+	{
+		// table/view .. does not exist
+		status_exception::raise(Arg::PrivateDyn(175) << relationName.c_str());
+	}
+
+	// Verify the the input field exists.
+
+	if (fieldName.hasData())
+	{
+		bool fieldExists = false;
+
+		request.reset(tdbb, drq_gcg5, DYN_REQUESTS);
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			G_FLD IN RDB$RELATION_FIELDS WITH
+				G_FLD.RDB$RELATION_NAME = relationName.c_str() AND
+				G_FLD.RDB$FIELD_NAME = fieldName.c_str()
+		{
+			fieldExists = true;
+		}
+		END_FOR
+
+		if (!fieldExists)
+		{
+			// column .. does not exist in table/view ..
+			status_exception::raise(Arg::PrivateDyn(176) <<
+				fieldName.c_str() << relationName.c_str());
+		}
+	}
+
+	// If the current user is locksmith - allow all grants to occur
+
+	if (tdbb->getAttachment()->locksmith())
+		return;
+
+	// If this is a non-sql table, then the owner will probably not have any
+	// entries in the rdb$user_privileges table.  Give the owner of a GDML
+	// table all privileges.
+	bool grantorIsOwner = false;
+
+	request.reset(tdbb, drq_gcg2, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		REL IN RDB$RELATIONS WITH
+			REL.RDB$RELATION_NAME = relationName.c_str() AND
+			REL.RDB$OWNER_NAME = UPPERCASE(grantor)
+	{
+		grantorIsOwner = true;
+	}
+	END_FOR
+
+	if (!sqlRelation && grantorIsOwner)
+		return;
+
+	// Remember the grant option for non field-specific user-privileges, and
+	// the grant option for the user-privileges for the input field.
+	// -1 = no privilege found (yet)
+	// 0 = privilege without grant option found
+	// 1 = privilege with grant option found
+	SSHORT goRel = -1;
+	SSHORT goFld = -1;
+
+	// Verify that the grantor has the grant option for this relation/field
+	// in the rdb$user_privileges.  If not, then we don't need to look further.
+
+	request.reset(tdbb, drq_gcg1, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRV IN RDB$USER_PRIVILEGES WITH
+			PRV.RDB$USER = UPPERCASE(grantor) AND
+			PRV.RDB$USER_TYPE = obj_user AND
+			PRV.RDB$RELATION_NAME = relationName.c_str() AND
+			PRV.RDB$OBJECT_TYPE = obj_relation AND
+			PRV.RDB$PRIVILEGE = privilege
+	{
+		if (PRV.RDB$FIELD_NAME.NULL)
+		{
+			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
+				goRel = 0;
+			else if (goRel)
+				goRel = 1;
+		}
+		else
+		{
+			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
+			{
+				if (fieldName.hasData() && fieldName == PRV.RDB$FIELD_NAME)
+					goFld = 0;
+			}
+			else
+			{
+				if (fieldName.hasData() && fieldName == PRV.RDB$FIELD_NAME)
+					goFld = 1;
+			}
+		}
+	}
+	END_FOR
+
+	if (fieldName.hasData())
+	{
+		if (goFld == 0)
+		{
+			// no grant option for privilege .. on column .. of [base] table/view ..
+			status_exception::raise(Arg::PrivateDyn(topLevel ? 167 : 168) <<
+				privilege << fieldName.c_str() << relationName.c_str());
+		}
+
+		if (goFld == -1)
+		{
+			if (goRel == 0)
+			{
+				// no grant option for privilege .. on [base] table/view .. (for column ..)
+				status_exception::raise(Arg::PrivateDyn(topLevel ? 169 : 170) <<
+					privilege << relationName.c_str() << fieldName.c_str());
+			}
+
+			if (goRel == -1)
+			{
+				// no .. privilege with grant option on [base] table/view .. (for column ..)
+				status_exception::raise(Arg::PrivateDyn(topLevel ? 171 : 172) <<
+					privilege << relationName.c_str() << fieldName.c_str());
+			}
+		}
+	}
+	else
+	{
+		if (goRel == 0)
+		{
+			// no grant option for privilege .. on table/view ..
+			status_exception::raise(Arg::PrivateDyn(173) << privilege << relationName.c_str());
+		}
+
+		if (goRel == -1)
+		{
+			// no .. privilege with grant option on table/view ..
+			status_exception::raise(Arg::PrivateDyn(174) << privilege << relationName.c_str());
+		}
+	}
+
+	// If the grantor is not the owner of the relation, then we don't need to
+	// check the base table(s)/view(s) because that check was performed when
+	// the grantor was given its privileges.
+
+	if (!grantorIsOwner)
+		return;
+
+	// Find all the base fields/relations and check for the correct grant privileges on them.
+
+	request.reset(tdbb, drq_gcg3, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		G_FLD IN RDB$RELATION_FIELDS CROSS
+			G_VIEW IN RDB$VIEW_RELATIONS WITH
+			G_FLD.RDB$RELATION_NAME = relationName.c_str() AND
+			G_FLD.RDB$BASE_FIELD NOT MISSING AND
+			G_VIEW.RDB$VIEW_NAME EQ G_FLD.RDB$RELATION_NAME AND
+			G_VIEW.RDB$VIEW_CONTEXT EQ G_FLD.RDB$VIEW_CONTEXT
+	{
+		if (fieldName.hasData())
+		{
+			if (fieldName == G_FLD.RDB$FIELD_NAME)
+			{
+				checkGrantorCanGrant(tdbb, transaction, grantor, privilege,
+					G_VIEW.RDB$RELATION_NAME, G_FLD.RDB$BASE_FIELD, false);
+			}
+		}
+		else
+		{
+			checkGrantorCanGrant(tdbb, transaction, grantor, privilege,
+				G_VIEW.RDB$RELATION_NAME, G_FLD.RDB$BASE_FIELD, false);
+		}
+	}
+	END_FOR
+}
+
+// Check if the grantor has admin privilege on the role.
+void GrantRevokeNode::checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& grantor, const MetaName& roleName)
+{
+	// Fetch the name of the owner of the ROLE.
+	MetaName owner;
+	if (isItSqlRole(tdbb, transaction, roleName, owner))
+	{
+		// Both SYSDBA and the owner of this ROLE can grant membership
+		if (tdbb->getAttachment()->locksmith() || owner == grantor)
+			return;
+	}
+	else
+	{
+		// 188: role name not exist.
+		status_exception::raise(Arg::PrivateDyn(188) << roleName.c_str());
+	}
+
+	AutoCacheRequest request(tdbb, drq_get_role_au, DYN_REQUESTS);
+	bool grantable = false;
+	bool noAdmin = false;
+
+	// The 'grantor' is not the owner of the ROLE, see if they have admin privilege on the role.
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRV IN RDB$USER_PRIVILEGES WITH
+			PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
+			PRV.RDB$USER_TYPE = obj_user AND
+			PRV.RDB$RELATION_NAME EQ roleName.c_str() AND
+			PRV.RDB$OBJECT_TYPE = obj_sql_role AND
+			PRV.RDB$PRIVILEGE EQ "M"
+	{
+		if (PRV.RDB$GRANT_OPTION == 2)
+			grantable = true;
+		else
+			noAdmin = true;
+	}
+	END_FOR
+
+	if (!grantable)
+	{
+		// 189: user have no admin option.
+		// 190: user is not a member of the role.
+		status_exception::raise(Arg::PrivateDyn(noAdmin ? 189 : 190) <<
+			grantor.c_str() << roleName.c_str());
+	}
+}
+
+void GrantRevokeNode::storePrivilege(thread_db* tdbb, jrd_tra* transaction, const MetaName& object,
+	const MetaName& user, const MetaName& field, const TEXT* privilege, SSHORT userType,
+	SSHORT objType, int option, const MetaName& grantor)
+{
+	AutoCacheRequest request(tdbb, drq_s_grant, DYN_REQUESTS);
+
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRIV IN RDB$USER_PRIVILEGES
+		PRIV.RDB$FIELD_NAME.NULL = TRUE;
+		strcpy(PRIV.RDB$RELATION_NAME, object.c_str());
+		strcpy(PRIV.RDB$USER, user.c_str());
+		strcpy(PRIV.RDB$GRANTOR, grantor.c_str());
+		PRIV.RDB$USER_TYPE = userType;
+		PRIV.RDB$OBJECT_TYPE = objType;
+	{
+		if (field.hasData())
+		{
+			strcpy(PRIV.RDB$FIELD_NAME, field.c_str());
+			PRIV.RDB$FIELD_NAME.NULL = FALSE;
+			setFieldClassName(tdbb, transaction, object, field);
+		}
+		PRIV.RDB$PRIVILEGE[0] = privilege[0];
+		PRIV.RDB$PRIVILEGE[1] = 0;
+		PRIV.RDB$GRANT_OPTION = option;
+	}
+	END_STORE
+}
+
+// For field level grants, be sure the field has a unique class name.
+void GrantRevokeNode::setFieldClassName(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& relation, const MetaName& field)
+{
+	AutoCacheRequest request(tdbb, drq_s_f_class, DYN_REQUESTS);
+
+	bool unique = false;
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		RFR IN RDB$RELATION_FIELDS
+		WITH RFR.RDB$FIELD_NAME = field.c_str() AND
+			 RFR.RDB$RELATION_NAME = relation.c_str() AND
+			 RFR.RDB$SECURITY_CLASS MISSING
+	{
+		MODIFY RFR
+			while (!unique)
+		    {
+				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, SQL_FLD_SECCLASS_PREFIX,
+				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, 1));
+
+				unique = true;
+
+				AutoCacheRequest request2(tdbb, drq_s_u_class, DYN_REQUESTS);
+				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+					RFR1 IN RDB$RELATION_FIELDS
+					WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
+				{
+					unique = false;
+				}
+				END_FOR
+		    }
+
+			RFR.RDB$SECURITY_CLASS.NULL = FALSE;
+		END_MODIFY
+	}
+	END_FOR
 }
 
 

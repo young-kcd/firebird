@@ -37,24 +37,10 @@ const char* const USAGE_PRIVILEGES = "S";	// usage privilege, currently equal to
 const int DYN_MSG_FAC		= 8;
 
 
-#define GET_STRING(from, to)	DYN_get_string(from, to, sizeof(to))
-
 namespace Jrd {
 
 class jrd_tra;
 class thread_db;
-
-class Global
-{
-public:
-	Global(jrd_tra* t, const Firebird::string& aSqlText)
-		: gbl_transaction(t),
-		  sqlText(aSqlText)
-	{ }
-
-	jrd_tra* const gbl_transaction;
-	Firebird::string sqlText;
-};
 
 class dyn_fld
 {
@@ -94,23 +80,6 @@ public:
 	{ }
 };
 
-} //namespace Jrd
-
-void	DYN_error(bool, USHORT, const MsgFormat::SafeArg& sarg = MsgFormat::SafeArg());
-void	DYN_error_punt(bool, USHORT, const MsgFormat::SafeArg& arg);
-void	DYN_error_punt(bool, USHORT, const char* str);
-void	DYN_error_punt(bool, USHORT);
-void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*,
-	Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
-SLONG	DYN_get_number(const UCHAR**);
-USHORT	DYN_get_string(const UCHAR**, Firebird::MetaName&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::PathName&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::string&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::UCharBuffer&, size_t);
-USHORT	DYN_get_string(const UCHAR**, TEXT*, size_t);
-
-bool	DYN_is_it_sql_role(Jrd::jrd_tra*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
-
-void	DYN_unsupported_verb();
+} // namespace Jrd
 
 #endif // JRD_DYN_H

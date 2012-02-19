@@ -93,7 +93,6 @@
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/dyn_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../yvalve/gds_proto.h"
@@ -115,21 +114,10 @@ using namespace Firebird;
 
 
 static void assign_field_length(dsql_fld*, USHORT);
-static void generate_dyn(DsqlCompilerScratch*, dsql_nod*);
-static void grant_revoke(DsqlCompilerScratch*);
-static void modify_privilege(DsqlCompilerScratch* dsqlScratch, NOD_TYPE type, SSHORT option,
-							 const UCHAR* privs, const dsql_nod* table,
-							 const dsql_nod* user, const dsql_nod* grantor,
-							 const dsql_str* field_name);
-static char modify_privileges(DsqlCompilerScratch*, NOD_TYPE, SSHORT, const dsql_nod*,
-	const dsql_nod*, const dsql_nod*, const dsql_nod*);
-static void process_role_nm_list(DsqlCompilerScratch*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
-static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor);
 static void post_607(const Arg::StatusVector& v);
-static void put_user_grant(DsqlCompilerScratch* dsqlScratch, const dsql_nod* user);
 
 
-const int DEFAULT_BLOB_SEGMENT_SIZE = 80; // bytes
+///const int DEFAULT_BLOB_SEGMENT_SIZE = 80; // bytes
 
 
 void DDL_execute(dsql_req* request)
@@ -160,26 +148,18 @@ void DDL_execute(dsql_req* request)
 
 	const NOD_TYPE type = statement->getDdlNode()->nod_type;
 
-	if (type == nod_class_stmtnode)
-	{
-		fb_utils::init_status(tdbb->tdbb_status_vector);	// Do the same as DYN_ddl does.
+	fb_assert(type == nod_class_stmtnode);
 
-		// run all statements under savepoint control
-		{	// scope
-			AutoSavePoint savePoint(tdbb, request->req_transaction);
+	fb_utils::init_status(tdbb->tdbb_status_vector);
 
-			DdlNode* ddlNode = reinterpret_cast<DdlNode*>(statement->getDdlNode()->nod_arg[0]);
-			ddlNode->executeDdl(tdbb, statement->getDdlScratch(), request->req_transaction);
+	// run all statements under savepoint control
+	{	// scope
+		AutoSavePoint savePoint(tdbb, request->req_transaction);
 
-			savePoint.release();	// everything is ok
-		}
-	}
-	else
-	{
-		fb_assert(statement->getDdlData().getCount() <= MAX_ULONG);
-		DYN_ddl(request->req_transaction,
-				statement->getDdlData().getCount(), statement->getDdlData().begin(),
-				*statement->getSqlText());
+		DdlNode* ddlNode = reinterpret_cast<DdlNode*>(statement->getDdlNode()->nod_arg[0]);
+		ddlNode->executeDdl(tdbb, statement->getDdlScratch(), request->req_transaction);
+
+		savePoint.release();	// everything is ok
 	}
 
 	JRD_autocommit_ddl(tdbb, request->req_transaction);
@@ -208,19 +188,6 @@ void DDL_generate(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	}
 
 	dsqlScratch->getStatement()->setDdlNode(node);
-
-	if (node->nod_type != nod_class_stmtnode)
-		dsqlScratch->appendUChar(isc_dyn_version_1);
-
-	generate_dyn(dsqlScratch, node);
-
-	if (node->nod_type != nod_class_stmtnode)
-	{
-		dsqlScratch->appendUChar(isc_dyn_eoc);
-
-		// Store DYN data in the statement.
-		dsqlScratch->getStatement()->setDdlData(dsqlScratch->getBlrData());
-	}
 }
 
 
@@ -579,407 +546,6 @@ static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
 		field->fld_length = (USHORT) field_length;
 	}
 
-}
-
-
-static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
-{
-/**************************************
- *
- *	g e n e r a t e _ d y n
- *
- **************************************
- *
- * Functional description
- *	Switch off the type of node to generate a
- *	DYN string.
- *
- **************************************/
-	switch (node->nod_type)
-	{
-	case nod_grant:
-	case nod_revoke:
-		grant_revoke(dsqlScratch);
-		break;
-
-	default: // CVC: Shouldn't we complain here?
-		break;
-	}
-}
-
-
-static void grant_revoke(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	g r a n t _ r e v o k e
- *
- **************************************
- *
- * Functional description
- *	Build DYN string for GRANT/REVOKE statements
- *
- **************************************/
-
-	const dsql_nod* const* uptr;
-	const dsql_nod* const* uend;
-
-	SSHORT option = 0; // no grant/admin option
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->getDdlNode();
-	const dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
-	const dsql_nod* table = ddl_node->nod_arg[e_grant_table];
-
-	if ((ddl_node->nod_type == nod_revoke) && !privs && !table)	// ALL ON ALL
-	{
-		dsqlScratch->appendUChar(isc_dyn_begin);
-		const dsql_nod* users = ddl_node->nod_arg[e_grant_users];
-		uend = users->nod_arg + users->nod_count;
-		for (uptr = users->nod_arg; uptr < uend; ++uptr)
-		{
-			dsqlScratch->appendUChar(isc_dyn_revoke_all);
-			put_user_grant(dsqlScratch, *uptr);
-			dsqlScratch->appendUChar(isc_dyn_end);
-		}
-		dsqlScratch->appendUChar(isc_dyn_end);
-
-		return;
-	}
-
-	bool process_grant_role = false;
-	if (privs->nod_arg[0] != NULL)
-	{
-		if (privs->nod_arg[0]->nod_type == nod_role_name) {
-			process_grant_role = true;
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_begin);
-
-	if (!process_grant_role)
-	{
-		const dsql_nod* users = ddl_node->nod_arg[e_grant_users];
-		if (ddl_node->nod_arg[e_grant_grant]) {
-			option = 1; // with grant option
-		}
-
-		uend = users->nod_arg + users->nod_count;
-		for (uptr = users->nod_arg; uptr < uend; ++uptr)
-		{
-			modify_privileges(dsqlScratch, ddl_node->nod_type, option,
-							  privs, table, *uptr, ddl_node->nod_arg[e_grant_grantor]);
-		}
-	}
-	else
-	{
-		const dsql_nod* role_list = ddl_node->nod_arg[0];
-		const dsql_nod* users = ddl_node->nod_arg[1];
-		if (ddl_node->nod_arg[3]) {
-			option = 2; // with admin option
-		}
-
-		const dsql_nod* const* role_end = role_list->nod_arg + role_list->nod_count;
-		for (const dsql_nod* const* role_ptr = role_list->nod_arg; role_ptr < role_end; ++role_ptr)
-		{
-			uend = users->nod_arg + users->nod_count;
-			for (uptr = users->nod_arg; uptr < uend; ++uptr)
-			{
-				process_role_nm_list(dsqlScratch, option, *uptr, *role_ptr,
-									 ddl_node->nod_type, ddl_node->nod_arg[e_grant_grantor]);
-			}
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void put_user_grant(DsqlCompilerScratch* dsqlScratch, const dsql_nod* user)
-{
-/**************************************
- *
- *	p u t _ u s e r _ g r a n t
- *
- **************************************
- *
- * Functional description
- *	Stuff a user/role/obj option in grant/revoke
- *
- **************************************/
-	const dsql_str* name = (dsql_str*) user->nod_arg[0];
-
-	switch (user->nod_type)
-	{
-	case nod_user_group:		// GRANT priv ON tbl TO GROUP unix_group
-		dsqlScratch->appendNullString(isc_dyn_grant_user_group, name->str_data);
-		break;
-
-	case nod_user_name:
-		if (user->nod_count == 2)
-		   dsqlScratch->appendNullString(isc_dyn_grant_user_explicit, name->str_data);
-		else
-			dsqlScratch->appendNullString(isc_dyn_grant_user, name->str_data);
-		break;
-
-	case nod_package_obj:
-		dsqlScratch->appendNullString(isc_dyn_grant_package, name->str_data);
-		break;
-
-	case nod_proc_obj:
-		dsqlScratch->appendNullString(isc_dyn_grant_proc, name->str_data);
-		break;
-
-	case nod_func_obj:
-		dsqlScratch->appendNullString(isc_dyn_grant_func, name->str_data);
-		break;
-
-	case nod_trig_obj:
-		dsqlScratch->appendNullString(isc_dyn_grant_trig, name->str_data);
-		break;
-
-	case nod_view_obj:
-		dsqlScratch->appendNullString(isc_dyn_grant_view, name->str_data);
-		break;
-
-	case nod_role_name:
-		dsqlScratch->appendNullString(isc_dyn_grant_role, name->str_data);
-		break;
-
-	default:
-		// CVC: Here we should complain: DYN doesn't check parameters
-		// and it will write trash in rdb$user_privileges. We probably
-		// should complain in most cases when "name" is blank, too.
-		break;
-	}
-}
-
-
-static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
-							 NOD_TYPE type,
-							 SSHORT option,
-							 const UCHAR* privs,
-							 const dsql_nod* table,
-							 const dsql_nod* user,
-							 const dsql_nod* grantor,
-							 const dsql_str* field_name)
-{
-/**************************************
- *
- *	m o d i f y _ p r i v i l e g e
- *
- **************************************
- *
- * Functional description
- *	Stuff a single grant/revoke verb and all its options.
- *
- **************************************/
-
-	if (type == nod_grant)
-		dsqlScratch->appendUChar(isc_dyn_grant);
-	else
-		dsqlScratch->appendUChar(isc_dyn_revoke);
-
-	// stuff the privileges string
-
-	SSHORT priv_count = 0;
-	dsqlScratch->appendUShort(0);
-
-	for (; *privs; privs++)
-	{
-		priv_count++;
-		dsqlScratch->appendUChar(*privs);
-	}
-
-	UCHAR* dynsave = dsqlScratch->getBlrData().end();
-	for (SSHORT i = priv_count + 2; i; i--)
-		--dynsave;
-
-	*dynsave++ = (UCHAR) priv_count;
-	*dynsave = (UCHAR) (priv_count >> 8);
-
-	UCHAR dynVerb = 0;
-
-	switch (table->nod_type)
-	{
-	case nod_procedure_name:
-		dynVerb = isc_dyn_prc_name;
-		break;
-	case nod_function_name:
-		dynVerb = isc_dyn_fun_name;
-		break;
-	case nod_package_name:
-		dynVerb = isc_dyn_pkg_name;
-		break;
-	default:
-		dynVerb = isc_dyn_rel_name;
-	}
-
-	const char* name = dynVerb == isc_dyn_rel_name ?
-		ExprNode::as<RelationSourceNode>(table)->dsqlName.c_str() :
-		((dsql_str*) table->nod_arg[0])->str_data;
-
-	dsqlScratch->appendNullString(dynVerb, name);
-
-	put_user_grant(dsqlScratch, user);
-
-	if (field_name)
-		dsqlScratch->appendNullString(isc_dyn_fld_name, field_name->str_data);
-
-	if (option)
-		dsqlScratch->appendNumber(isc_dyn_grant_options, option);
-
-	put_grantor(dsqlScratch, grantor);
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-
-static char modify_privileges(DsqlCompilerScratch* dsqlScratch,
-							   NOD_TYPE type,
-							   SSHORT option,
-							   const dsql_nod* privs,
-							   const dsql_nod* table,
-							   const dsql_nod* user,
-							   const dsql_nod* grantor)
-{
-/**************************************
- *
- *	m o d i f y _ p r i v i l e g e s
- *
- **************************************
- *
- * Functional description
- *     Return a char indicating the privilege to be modified
- *
- **************************************/
-
-	char privileges[10];
-	const char* p = 0;
-	char* q;
-	const dsql_nod* fields;
-	const dsql_nod* const* ptr;
-	const dsql_nod* const* end;
-
-	switch (privs->nod_type)
-	{
-	case nod_all:
-		p = "A";
-		break;
-
-	case nod_select:
-		return 'S';
-
-	case nod_execute:
-		return 'X';
-
-	case nod_insert:
-		return 'I';
-
-	case nod_references:
-	case nod_update:
-		p = (privs->nod_type == nod_references) ? "R" : "U";
-		fields = privs->nod_arg[0];
-		if (!fields) {
-			return *p;
-		}
-
-		for (ptr = fields->nod_arg, end = ptr + fields->nod_count; ptr < end; ptr++)
-		{
-			modify_privilege(dsqlScratch, type, option,
-							 reinterpret_cast<const UCHAR*>(p), table, user, grantor,
-							 reinterpret_cast<dsql_str*>((*ptr)->nod_arg[1]));
-		}
-		return 0;
-
-	case nod_delete:
-		return 'D';
-
-	case nod_list:
-		p = q = privileges;
-		for (ptr = privs->nod_arg, end = ptr + privs->nod_count; ptr < end; ptr++)
-		{
-			*q = modify_privileges(dsqlScratch, type, option, *ptr, table, user, grantor);
-			if (*q) {
-				q++;
-			}
-		}
-		*q = 0;
-		break;
-
-	default:
-		break;
-	}
-
-	if (*p)
-	{
-		modify_privilege(dsqlScratch, type, option,
-						 reinterpret_cast<const UCHAR*>(p), table, user, grantor, 0);
-	}
-
-	return 0;
-}
-
-
-static void process_role_nm_list(DsqlCompilerScratch* dsqlScratch,
-								 SSHORT option,
-								 const dsql_nod* user_ptr,
-								 const dsql_nod* role_ptr,
-								 NOD_TYPE type,
-								 const dsql_nod* grantor)
-{
-/**************************************
- *
- *  p r o c e s s _ r o l e _ n m _ l i s t
- *
- **************************************
- *
- * Functional description
- *     Build req_blr for grant & revoke role stmt
- *
- **************************************/
-	if (type == nod_grant)
-		dsqlScratch->appendUChar(isc_dyn_grant);
-	else
-		dsqlScratch->appendUChar(isc_dyn_revoke);
-
-	dsqlScratch->appendUShort(1);
-	dsqlScratch->appendUChar('M');
-
-	const dsql_str* role_nm = (dsql_str*) role_ptr->nod_arg[0];
-	dsqlScratch->appendNullString(isc_dyn_sql_role_name, role_nm->str_data);
-
-	const dsql_str* user_nm = (dsql_str*) user_ptr->nod_arg[0];
-	dsqlScratch->appendNullString(isc_dyn_grant_user, user_nm->str_data);
-
-	if (option) {
-		dsqlScratch->appendNumber(isc_dyn_grant_admin_options, option);
-	}
-
-	put_grantor(dsqlScratch, grantor);
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor)
-{
-/**************************************
- *
- *	p u t _ g r a n t o r
- *
- **************************************
- *
- * Function
- *	Write out grantor for grant / revoke.
- *
- **************************************/
-	if (grantor)
-	{
-		fb_assert(grantor->nod_type == nod_user_name);
-		const dsql_str* name = (const dsql_str*) grantor->nod_arg[0];
-		dsqlScratch->appendNullString(isc_dyn_grant_grantor, name->str_data);
-	}
 }
 
 

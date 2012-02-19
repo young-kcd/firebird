@@ -1076,6 +1076,8 @@ Data source : @4"},		/* eds_statement */
 	{336397316, "CREATE INDEX @1 failed"},		/* dsql_create_index_failed */
 	{336397317, "CREATE USER @1 failed"},		/* dsql_create_user_failed */
 	{336397318, "ALTER USER @1 failed"},		/* dsql_alter_user_failed */
+	{336397319, "GRANT failed"},		/* dsql_grant_failed */
+	{336397320, "REVOKE failed"},		/* dsql_revoke_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

@@ -44,7 +44,6 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"
 #include "../jrd/dpm_proto.h"
-#include "../jrd/dyn_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../yvalve/gds_proto.h"

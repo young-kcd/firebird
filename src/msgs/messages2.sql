@@ -2504,6 +2504,8 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_create_index_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1028, NULL, 'CREATE INDEX @1 failed', NULL, NULL);
 ('dsql_create_user_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1029, NULL, 'CREATE USER @1 failed', NULL, NULL);
 ('dsql_alter_user_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1030, NULL, 'ALTER USER @1 failed', NULL, NULL);
+('dsql_grant_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1031, NULL, 'GRANT failed', NULL, NULL);
+('dsql_revoke_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1032, NULL, 'REVOKE failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

@@ -1660,6 +1660,79 @@ public:
 };
 
 
+class GrantRevokeNode : public DdlNode
+{
+public:
+	GrantRevokeNode(MemoryPool& p, bool aIsGrant)
+		: DdlNode(p),
+		  isGrant(aIsGrant),
+		  privileges(NULL),
+		  roles(NULL),
+		  table(NULL),
+		  users(NULL),
+		  grantAdminOption(NULL),
+		  grantor(NULL)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector <<
+			Firebird::Arg::Gds(isGrant ? isc_dsql_grant_failed : isc_dsql_revoke_failed);
+	}
+
+private:
+	char modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option,
+		const dsql_nod* privs, const dsql_nod* user);
+	void grantRevoke(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* table,
+		const dsql_nod* userNod, const dsql_nod* grantorNod, const char* privs,
+		const dsql_str* fieldName, int options);
+	static void checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction, const char* grantor,
+		const char* privilege, const Firebird::MetaName& relationName,
+		const Firebird::MetaName& fieldName, bool topLevel);
+	static void checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transaction,
+			const Firebird::MetaName& grantor, const Firebird::MetaName& roleName);
+	static void storePrivilege(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& object, const Firebird::MetaName& user,
+		const Firebird::MetaName& field, const TEXT* privilege, SSHORT userType,
+		SSHORT objType, int option, const Firebird::MetaName& grantor);
+	static void setFieldClassName(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& relation, const Firebird::MetaName& field);
+
+	// Diagnostics print helper.
+	static const char* privilegeName(char symbol)
+	{
+		switch (UPPER7(symbol))
+		{
+			case 'A': return "All";
+			case 'I': return "Insert";
+			case 'U': return "Update";
+			case 'D': return "Delete";
+			case 'S': return "Select";
+			case 'X': return "Execute";
+			case 'M': return "Role";
+			case 'R': return "Reference";
+		}
+
+		return "<Unknown>";
+	}
+
+public:
+	bool isGrant;
+	dsql_nod* privileges;
+	dsql_nod* roles;
+	dsql_nod* table;
+	dsql_nod* users;
+	dsql_nod* grantAdminOption;
+	dsql_nod* grantor;
+};
+
+
 class AlterDatabaseNode : public DdlNode
 {
 public:
