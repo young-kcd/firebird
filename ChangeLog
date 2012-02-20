@@ -1,3 +1,24 @@
+ 2012-02-20 02:02  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/Nodes.h
+   M src/dsql/PackageNodes.epp
+   M src/dsql/Parser.cpp
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/ddl_proto.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/gen_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+Remove legacy statements residuals.
+
  2012-02-19 02:17  asfernandes 
    M builds/win32/msvc10/engine.vcxproj
    M builds/win32/msvc10/engine.vcxproj.filters
