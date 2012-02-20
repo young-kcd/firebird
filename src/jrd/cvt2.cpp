@@ -538,8 +538,10 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 			bpbLength = sizeof(bpb);
 		}
 
-	    blb* blob1 = blb::open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
-		blb* blob2 = blb::open2(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg2->dsc_address, bpbLength, bpb);
+	    blb* blob1 = blb::open(tdbb, tdbb->getRequest()->req_transaction,
+			(bid*) arg1->dsc_address);
+		blb* blob2 = blb::open2(tdbb, tdbb->getRequest()->req_transaction,
+			(bid*) arg2->dsc_address, bpbLength, bpb);
 
 		if (charSet1->isMultiByte())
 		{

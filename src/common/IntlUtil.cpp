@@ -169,7 +169,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 		if (p - start == 0)
 			return false;
 
-		string name((const char*)start, p - start);
+		string name((const char*) start, p - start);
 		name = unescapeAttribute(cs, name);
 
 		while (p < end && size == cs->getSpaceLength() &&

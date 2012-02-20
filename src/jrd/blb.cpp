@@ -1928,7 +1928,7 @@ blb* blb::allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 		// CVC: if we completed full cycle and we couldn't insert, we would be here forever.
 		// Maybe a new msg for BUGCHECK is necessary? This case is impossible under "normal" operation.
 		if (sentry == transaction->tra_next_blob_id)
-				BUGCHECK(305); // msg 305 Blobs accounting is inconsistent
+			BUGCHECK(305); // msg 305 Blobs accounting is inconsistent
 
 		// Do not generate null blob ID
 		if (!transaction->tra_next_blob_id)
@@ -2860,9 +2860,8 @@ void blb::getFromPage(USHORT length, const UCHAR* data)
 	}
 	else
 	{
-		if (!blb_pages) {
+		if (!blb_pages)
 			blb_pages = vcl::newVector(*blb_transaction->tra_pool, 0);
-		}
 		fb_assert(length % sizeof(ULONG) == 0);
 		blb_pages->resize(length / sizeof(ULONG));
 		memcpy(blb_pages->memPtr(), data, length);
