@@ -72,8 +72,8 @@ static void dsqlGetContexts(DsqlContextStack& contexts, const dsql_nod* node);
 static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch*, StmtNode* input, bool returnList);
 static void dsqlFieldAppearsOnce(const Array<dsql_nod*>&, const char*);
 static Array<dsql_nod*>* dsqlPassArray(DsqlCompilerScratch*, Array<dsql_nod*>*);
-static dsql_ctx* dsqlPassCursorContext(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*);
-static dsql_nod* dsqlPassCursorReference(DsqlCompilerScratch*, const dsql_nod*, dsql_nod*);
+static dsql_ctx* dsqlPassCursorContext(DsqlCompilerScratch*, const MetaName&, const dsql_nod*);
+static dsql_nod* dsqlPassCursorReference(DsqlCompilerScratch*, const MetaName&, dsql_nod*);
 static dsql_nod* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, dsql_nod* expr);
 static StmtNode* dsqlProcessReturning(DsqlCompilerScratch*, ReturningClause*, StmtNode*);
 static void dsqlSetParameterName(dsql_nod*, const dsql_nod*, const dsql_rel*);
@@ -226,16 +226,6 @@ namespace
 
 
 namespace Jrd {
-
-
-StmtNode* StmtNode::fromLegacy(const dsql_nod* node)
-{
-	return node && node->nod_type == Dsql::nod_class_stmtnode ?
-		reinterpret_cast<StmtNode*>(node->nod_arg[0]) : NULL;
-}
-
-
-//--------------------
 
 
 StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node)
@@ -1430,9 +1420,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 
 void DeclareSubFuncNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	dsql_nod* nod = MAKE_node(Dsql::nod_class_stmtnode, 1);
-	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(dsqlBlock);
-	GEN_request(blockScratch, nod);
+	GEN_request(blockScratch, dsqlBlock);
 
 	dsqlScratch->appendUChar(blr_subfunc_decl);
 	dsqlScratch->appendNullString(name.c_str());
@@ -1699,9 +1687,7 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 
 void DeclareSubProcNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	dsql_nod* nod = MAKE_node(Dsql::nod_class_stmtnode, 1);
-	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(dsqlBlock);
-	GEN_request(blockScratch, nod);
+	GEN_request(blockScratch, dsqlBlock);
 
 	dsqlScratch->appendUChar(blr_subproc_decl);
 	dsqlScratch->appendNullString(name.c_str());
@@ -1892,14 +1878,13 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	thread_db* tdbb = JRD_get_thread_data(); //necessary?
 
-	const dsql_nod* cursor = dsqlCursor;
 	dsql_nod* relation = dsqlRelation;
 
 	EraseNode* node = FB_NEW(getPool()) EraseNode(getPool());
 
-	if (cursor && dsqlScratch->isPsql())
+	if (dsqlCursorName.hasData() && dsqlScratch->isPsql())
 	{
-		node->dsqlContext = dsqlPassCursorContext(dsqlScratch, cursor, relation);
+		node->dsqlContext = dsqlPassCursorContext(dsqlScratch, dsqlCursorName, relation);
 
 		// Process old context values.
 		dsqlScratch->context->push(node->dsqlContext);
@@ -1913,14 +1898,14 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 	}
 
-	dsqlScratch->getStatement()->setType(
-		cursor ? DsqlCompiledStatement::TYPE_DELETE_CURSOR : DsqlCompiledStatement::TYPE_DELETE);
+	dsqlScratch->getStatement()->setType(dsqlCursorName.hasData() ?
+		DsqlCompiledStatement::TYPE_DELETE_CURSOR : DsqlCompiledStatement::TYPE_DELETE);
 
 	// Generate record selection expression.
 
 	dsql_nod* rseNod;
-	if (cursor)
-		rseNod = dsqlPassCursorReference(dsqlScratch, cursor, relation);
+	if (dsqlCursorName.hasData())
+		rseNod = dsqlPassCursorReference(dsqlScratch, dsqlCursorName, relation);
 	else
 	{
 		RseNode* rse = FB_NEW(getPool()) RseNode(getPool());
@@ -4298,12 +4283,11 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (dsqlCursor)
 	{
-		DeclareCursorNode* cursor = StmtNode::as<DeclareCursorNode>(dsqlCursor);
-		fb_assert(cursor->dsqlCursorType != DeclareCursorNode::CUR_TYPE_NONE);
-		PASS1_cursor_name(dsqlScratch, cursor->dsqlName, DeclareCursorNode::CUR_TYPE_ALL, false);
-		cursor->dsqlSelect = node->dsqlSelect;
-		cursor->cursorNumber = dsqlScratch->cursorNumber++;
-		dsqlScratch->cursors.push(cursor);
+		fb_assert(dsqlCursor->dsqlCursorType != DeclareCursorNode::CUR_TYPE_NONE);
+		PASS1_cursor_name(dsqlScratch, dsqlCursor->dsqlName, DeclareCursorNode::CUR_TYPE_ALL, false);
+		dsqlCursor->dsqlSelect = node->dsqlSelect;
+		dsqlCursor->cursorNumber = dsqlScratch->cursorNumber++;
+		dsqlScratch->cursors.push(dsqlCursor);
 	}
 
 	node->dsqlInto = dsqlPassArray(dsqlScratch, dsqlInto);
@@ -4331,7 +4315,6 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 void ForNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "ForNode";
-	nodes.add(dsqlCursor);
 	nodes.add(dsqlLabel);
 }
 
@@ -5361,15 +5344,14 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		new_values.add(assign->dsqlAsgnTo);
 	}
 
-	dsql_nod* cursor = dsqlCursor;
 	dsql_nod* relation = dsqlRelation;
 	dsql_nod** ptr;
 
 	ModifyNode* node = FB_NEW(pool) ModifyNode(pool);
 
-	if (cursor && dsqlScratch->isPsql())
+	if (dsqlCursorName.hasData() && dsqlScratch->isPsql())
 	{
-		node->dsqlContext = dsqlPassCursorContext(dsqlScratch, cursor, relation);
+		node->dsqlContext = dsqlPassCursorContext(dsqlScratch, dsqlCursorName, relation);
 
 		if (isUpdateSqlCompliant)
 		{
@@ -5433,8 +5415,8 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		return node;
 	}
 
-	dsqlScratch->getStatement()->setType(
-		cursor ? DsqlCompiledStatement::TYPE_UPDATE_CURSOR : DsqlCompiledStatement::TYPE_UPDATE);
+	dsqlScratch->getStatement()->setType(dsqlCursorName.hasData() ?
+		DsqlCompiledStatement::TYPE_UPDATE_CURSOR : DsqlCompiledStatement::TYPE_UPDATE);
 
 	node->dsqlRelation = PASS1_node_psql(dsqlScratch, relation, false);
 	dsql_ctx* mod_context = dsqlGetContext(node->dsqlRelation);
@@ -5457,9 +5439,9 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 	dsql_nod* rseNod;
 	dsql_ctx* old_context;
 
-	if (cursor)
+	if (dsqlCursorName.hasData())
 	{
-		rseNod = dsqlPassCursorReference(dsqlScratch, cursor, relation);
+		rseNod = dsqlPassCursorReference(dsqlScratch, dsqlCursorName, relation);
 
 		dsql_nod* temp = ExprNode::as<RseNode>(rseNod)->dsqlStreams->nod_arg[0];
 		old_context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
@@ -8198,18 +8180,16 @@ static Array<dsql_nod*>* dsqlPassArray(DsqlCompilerScratch* dsqlScratch, Array<d
 }
 
 // Turn a cursor reference into a record selection expression.
-static dsql_ctx* dsqlPassCursorContext( DsqlCompilerScratch* dsqlScratch, const dsql_nod* cursor,
+static dsql_ctx* dsqlPassCursorContext(DsqlCompilerScratch* dsqlScratch, const MetaName& cursor,
 	const dsql_nod* relation_name)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(cursor, dsql_type_nod);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
 	const MetaName& relName = ExprNode::as<RelationSourceNode>(relation_name)->dsqlName;
-	const MetaName& cursorName = StmtNode::as<DeclareCursorNode>(cursor)->dsqlName;
 
 	// this function must throw an error if no cursor was found
-	const DeclareCursorNode* node = PASS1_cursor_name(dsqlScratch, cursorName,
+	const DeclareCursorNode* node = PASS1_cursor_name(dsqlScratch, cursor,
 		DeclareCursorNode::CUR_TYPE_ALL, true);
 	fb_assert(node);
 
@@ -8220,7 +8200,7 @@ static dsql_ctx* dsqlPassCursorContext( DsqlCompilerScratch* dsqlScratch, const 
 	{
 		// cursor with DISTINCT is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
-				  Arg::Gds(isc_dsql_cursor_update_err) << cursorName);
+				  Arg::Gds(isc_dsql_cursor_update_err) << cursor);
 	}
 
 	const dsql_nod* temp = rse->dsqlStreams;
@@ -8249,7 +8229,7 @@ static dsql_ctx* dsqlPassCursorContext( DsqlCompilerScratch* dsqlScratch, const 
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 								  Arg::Gds(isc_dsql_cursor_err) <<
 								  Arg::Gds(isc_dsql_cursor_rel_ambiguous) << Arg::Str(relName) <<
-																			 cursorName);
+																			 cursor);
 					}
 					else
 						context = candidate;
@@ -8259,7 +8239,7 @@ static dsql_ctx* dsqlPassCursorContext( DsqlCompilerScratch* dsqlScratch, const 
 			{
 				// cursor with aggregation is not updatable
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
-						  Arg::Gds(isc_dsql_cursor_update_err) << cursorName);
+						  Arg::Gds(isc_dsql_cursor_update_err) << cursor);
 			}
 			// note that UnionSourceNode and joins will cause the error below,
 			// as well as derived tables. Some cases deserve fixing in the future
@@ -8270,18 +8250,17 @@ static dsql_ctx* dsqlPassCursorContext( DsqlCompilerScratch* dsqlScratch, const 
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_rel_not_found) << Arg::Str(relName) << cursorName);
+				  Arg::Gds(isc_dsql_cursor_rel_not_found) << Arg::Str(relName) << cursor);
 	}
 
 	return context;
 }
 
 // Turn a cursor reference into a record selection expression.
-static dsql_nod* dsqlPassCursorReference( DsqlCompilerScratch* dsqlScratch, const dsql_nod* cursor,
+static dsql_nod* dsqlPassCursorReference(DsqlCompilerScratch* dsqlScratch, const MetaName& cursor,
 	dsql_nod* relation_name)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(cursor, dsql_type_nod);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -8289,16 +8268,14 @@ static dsql_nod* dsqlPassCursorReference( DsqlCompilerScratch* dsqlScratch, cons
 
 	// Lookup parent dsqlScratch
 
-	const MetaName& cursorName = StmtNode::as<DeclareCursorNode>(cursor)->dsqlName;
-
-	dsql_req* const* symbol = dsqlScratch->getAttachment()->dbb_cursors.get(cursorName.c_str());
+	dsql_req* const* symbol = dsqlScratch->getAttachment()->dbb_cursors.get(cursor.c_str());
 
 	if (!symbol)
 	{
 		// cursor is not found
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_not_found) << cursorName);
+				  Arg::Gds(isc_dsql_cursor_not_found) << cursor);
 	}
 
 	dsql_req* parent = *symbol;
@@ -8313,7 +8290,7 @@ static dsql_nod* dsqlPassCursorReference( DsqlCompilerScratch* dsqlScratch, cons
 	{
 		// cursor is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
-				  Arg::Gds(isc_dsql_cursor_update_err) << cursorName);
+				  Arg::Gds(isc_dsql_cursor_update_err) << cursor);
 	}
 
 	dsqlScratch->getStatement()->setParentRequest(parent);

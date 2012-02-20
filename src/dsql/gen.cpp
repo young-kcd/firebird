@@ -271,27 +271,10 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 }
 
 
-/**
-
- 	GEN_request
-
-    @brief	Generate complete blr for a dsqlScratch.
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
+// Generate complete blr for a dsqlScratch.
+void GEN_request(DsqlCompilerScratch* scratch, DmlNode* node)
 {
 	DsqlCompiledStatement* statement = scratch->getStatement();
-
-	if (statement->getType() == DsqlCompiledStatement::TYPE_CREATE_DB ||
-		statement->getType() == DsqlCompiledStatement::TYPE_DDL)
-	{
-		DDL_generate(scratch, node);
-		return;
-	}
 
 	if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 		scratch->appendUChar(blr_version4);
@@ -304,7 +287,7 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 		// to avoid breaking of savepoint logic
 		statement->setSendMsg(NULL);
 		statement->setReceiveMsg(NULL);
-		GEN_statement(scratch, node);
+		node->genBlr(scratch);
 	}
 	else
 	{
@@ -324,7 +307,7 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 		case DsqlCompiledStatement::TYPE_SELECT_UPD:
 		case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
 		case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
-			GEN_statement(scratch, node);
+			node->genBlr(scratch);
 			break;
 		default:
 			{
@@ -342,7 +325,7 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 					statement->setReceiveMsg(NULL);
 				else
 					GEN_port(scratch, message);
-				GEN_statement(scratch, node);
+				node->genBlr(scratch);
 			}
 		}
 
@@ -351,47 +334,6 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 	}
 
 	scratch->appendUChar(blr_eoc);
-}
-
-
-/**
-
- 	GEN_statement
-
-    @brief	Generate blr for an arbitrary expression.
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
-{
-	dsql_nod** ptr;
-	const dsql_nod* const* end;
-
-	switch (node->nod_type)
-	{
-	case nod_class_stmtnode:
-		{
-			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
-			dmlNode->genBlr(dsqlScratch);
-		}
-		return;
-
-	case nod_list:
-		dsqlScratch->appendUChar(blr_begin);
-		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
-			GEN_statement(dsqlScratch, *ptr);
-		dsqlScratch->appendUChar(blr_end);
-		return;
-
-	default:
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-				  Arg::Gds(isc_dsql_internal_err) <<
-				  // gen.c: node not supported
-				  Arg::Gds(isc_node_err));
-	}
 }
 
 

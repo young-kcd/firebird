@@ -109,7 +109,6 @@ enum nod_t
 	nod_label, // label support
 	nod_rows,	// ROWS support
 	nod_with,
-	nod_class_stmtnode,
 	nod_class_exprnode,
 	nod_package_name,
 	nod_package_obj,

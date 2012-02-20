@@ -53,6 +53,5 @@ Jrd::dsql_nod* PASS1_relation(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_rse(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, bool);
 bool PASS1_set_parameter_type(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*, bool);
 Jrd::dsql_nod* PASS1_sort(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);
-Jrd::dsql_nod* PASS1_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 
 #endif // DSQL_PASS1_PROTO_H

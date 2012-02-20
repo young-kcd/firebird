@@ -128,7 +128,7 @@ public:
 	~Parser();
 
 public:
-	dsql_nod* parse();
+	Node* parse();
 
 	const Firebird::string& getTransformedString() const
 	{
@@ -271,8 +271,6 @@ private:
 	ParameterNode* make_parameter();
 	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
 	dsql_nod* makeClassNode(ExprNode* node);
-	dsql_nod* makeClassNode(DdlNode* node);
-	dsql_nod* makeClassNode(StmtNode* node);
 	dsql_nod* make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 
@@ -285,7 +283,7 @@ private:
 	Firebird::string transformedString;
 	Firebird::GenericMap<Firebird::NonPooled<dsql_str*, StrMark> > strMarks;
 	bool stmt_ambiguous;
-	dsql_nod* DSQL_parse;
+	Node* DSQL_parse;
 
 	// These value/posn are taken from the lexer
 	YYSTYPE yylval;

@@ -91,7 +91,7 @@ Parser::~Parser()
 }
 
 
-dsql_nod* Parser::parse()
+Node* Parser::parse()
 {
 	if (parseAux() != 0)
 		return NULL;

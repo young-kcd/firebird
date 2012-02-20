@@ -119,8 +119,7 @@ protected:
 
 	virtual bool isDdlDyn()
 	{
-		return (statement->getType() == DsqlCompiledStatement::TYPE_DDL || statement->getDdlNode()) &&
-			!(flags & FLAG_BLOCK);
+		return statement->isDdl() && !(flags & FLAG_BLOCK);
 	}
 
 public:

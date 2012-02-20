@@ -296,9 +296,6 @@ static void clearPermanentField(dsql_rel* relation, bool permanent)
 void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_fld* field,
 	dsql_nod* node, string& source, BlrWriter::BlrData& value)
 {
-	AutoSetRestore2<dsql_nod*, DsqlCompiledStatement> autoDdlNode(dsqlScratch->getStatement(),
-		&DsqlCompiledStatement::getDdlNode, &DsqlCompiledStatement::setDdlNode, node);
-
 	// Get the table node and set up correct context.
 	DDL_reset_context_stack(dsqlScratch);
 
@@ -6112,9 +6109,6 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 
 	actionNode->statements.add(exceptionNode);
 
-	dsql_nod* actionNod = MAKE_node(Dsql::nod_class_stmtnode, 1);
-	actionNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(actionNode);
-
 	// Generate the trigger blr.
 
 	dsqlScratch->getBlrData().clear();
@@ -6152,7 +6146,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	GEN_expr(dsqlScratch, condition);
 
 	// Generate the action statement for the trigger.
-	GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, actionNod));
+	Node::doDsqlPass(dsqlScratch, actionNode)->genBlr(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_end);	// of if (as there's no ELSE branch)
 	dsqlScratch->appendUChar(blr_end);	// of begin

@@ -106,6 +106,16 @@ public:
 	{
 	}
 
+	// Compile a parsed statement into something more interesting.
+	template <typename T>
+	static T* doDsqlPass(DsqlCompilerScratch* dsqlScratch, T* node)
+	{
+		if (!node)
+			return NULL;
+
+		return node->dsqlPass(dsqlScratch);
+	}
+
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const = 0;
 
 	virtual Node* dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -945,35 +955,20 @@ public:
 		return type == T::TYPE;
 	}
 
-	template <typename T, typename LegacyType> static T* as(LegacyType* node)
+	template <typename T, typename T2> static T* as(T2* node)
 	{
-		StmtNode* obj = T::fromLegacy(node);
-		return obj ? obj->as<T>() : NULL;
+		return node ? node->as<T>() : NULL;
 	}
 
-	template <typename T, typename LegacyType> static const T* as(const LegacyType* node)
+	template <typename T, typename T2> static const T* as(const T2* node)
 	{
-		const StmtNode* obj = T::fromLegacy(node);
-		return obj ? obj->as<T>() : NULL;
+		return node ? node->as<T>() : NULL;
 	}
 
-	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
+	template <typename T, typename T2> static bool is(const T2* node)
 	{
-		const StmtNode* obj = T::fromLegacy(node);
-		return obj ? obj->is<T>() : false;
+		return node && node->is<T>();
 	}
-
-	static const StmtNode* fromLegacy(const StmtNode* node)
-	{
-		return node;
-	}
-
-	static StmtNode* fromLegacy(StmtNode* node)
-	{
-		return node;
-	}
-
-	static StmtNode* fromLegacy(const dsql_nod* node);
 
 	// Allocate and assign impure space for various nodes.
 	template <typename T> static void doPass2(thread_db* tdbb, CompilerScratch* csb, T** node,

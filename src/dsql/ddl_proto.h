@@ -31,11 +31,8 @@
 // the DSQL module itself.
 
 namespace Jrd {
-	class dsql_req;
 	class DsqlCompilerScratch;
 	class dsql_fld;
-	class dsql_nod;
-	class dsql_str;
 };
 
 const USHORT blr_dtypes[] = {
@@ -63,8 +60,6 @@ const USHORT blr_dtypes[] = {
 	blr_bool					// dtype_boolean
 };
 
-void DDL_execute(Jrd::dsql_req*);
-void DDL_generate(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 bool DDL_ids(const Jrd::DsqlCompilerScratch*);
 void DDL_reset_context_stack(Jrd::DsqlCompilerScratch*);
 void DDL_resolve_intl_type(Jrd::DsqlCompilerScratch*, Jrd::dsql_fld*, const Firebird::MetaName&);

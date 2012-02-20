@@ -138,8 +138,9 @@ namespace
 	class DsqlDdlRequest : public dsql_req
 	{
 	public:
-		explicit DsqlDdlRequest(DsqlCompilerScratch* scratch)
-			: dsql_req(scratch)
+		explicit DsqlDdlRequest(DsqlCompilerScratch* scratch, DdlNode* aNode)
+			: dsql_req(scratch),
+			  node(aNode)
 		{
 		}
 
@@ -147,6 +148,9 @@ namespace
 			ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
 			ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
 			bool singleton);
+
+	private:
+		DdlNode* node;
 	};
 
 	class DsqlTransactionRequest : public dsql_req
@@ -897,7 +901,20 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	bool singleton)
 {
 	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
-	DDL_execute(this);
+
+	const DsqlCompiledStatement* statement = getStatement();
+
+	fb_utils::init_status(tdbb->tdbb_status_vector);
+
+	// run all statements under savepoint control
+	{	// scope
+		AutoSavePoint savePoint(tdbb, req_transaction);
+		node->executeDdl(tdbb, statement->getDdlScratch(), req_transaction);
+		savePoint.release();	// everything is ok
+	}
+
+	JRD_autocommit_ddl(tdbb, req_transaction);
+
 	trace.finish(false, res_successful);
 }
 
@@ -1528,7 +1545,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			scratch->getAttachment()->dbb_db_SQL_dialect, parserVersion, text, textLength,
 			tdbb->getAttachment()->att_charset);
 
-		dsql_nod* node = parser.parse();
+		Node* node = parser.parse();
 
 		if (!node)
 		{
@@ -1585,7 +1602,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		statement->setType(DsqlCompiledStatement::TYPE_SELECT);
 
-		node = PASS1_statement(scratch, node);
+		node = Node::doDsqlPass(scratch, node);
 		fb_assert(node);
 
 		const DsqlCompiledStatement::Type statementType = statement->getType();
@@ -1604,7 +1621,12 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 			case DsqlCompiledStatement::TYPE_CREATE_DB:
 			case DsqlCompiledStatement::TYPE_DDL:
-				request = FB_NEW(statement->getPool()) DsqlDdlRequest(scratch);
+				if (scratch->getAttachment()->dbb_read_only)
+					ERRD_post(Arg::Gds(isc_read_only_database));
+
+				request = FB_NEW(statement->getPool()) DsqlDdlRequest(scratch,
+					static_cast<DdlNode*>(node));
+
 				break;
 
 			default:
@@ -1633,7 +1655,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		else
 			statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
 
-		GEN_request(scratch, node);
+		if (!statement->isDdl())
+			GEN_request(scratch, static_cast<DmlNode*>(node));
 
 		// Create the messages buffers
 		for (size_t i = 0; i < scratch->ports.getCount(); ++i)

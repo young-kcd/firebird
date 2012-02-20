@@ -428,7 +428,6 @@ public:
 		  type(TYPE_SELECT),
 		  flags(0),
 		  ddlData(p),
-		  ddlNode(NULL),
 		  sendMsg(NULL),
 		  receiveMsg(NULL),
 		  eof(NULL),
@@ -459,9 +458,10 @@ public:
 	const Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() const { return ddlData; }
 	void setDdlData(Firebird::HalfStaticArray<UCHAR, 1024>& value) { ddlData = value; }
 
-	dsql_nod* getDdlNode() { return ddlNode; }
-	const dsql_nod* getDdlNode() const { return ddlNode; }
-	void setDdlNode(dsql_nod* value) { ddlNode = value; }
+	bool isDdl() const
+	{
+		return type == TYPE_DDL || type == TYPE_CREATE_DB;
+	}
 
 	dsql_msg* getSendMsg() { return sendMsg; }
 	const dsql_msg* getSendMsg() const { return sendMsg; }
@@ -502,7 +502,6 @@ private:
 	ULONG flags;				// generic flag
 	Firebird::RefStrPtr sqlText;
 	Firebird::HalfStaticArray<UCHAR, 1024> ddlData;
-	dsql_nod* ddlNode;			// Store metadata statement
 	dsql_msg* sendMsg;			// Message to be sent to start request
 	dsql_msg* receiveMsg;		// Per record message to be received
 	dsql_par* eof;				// End of file parameter

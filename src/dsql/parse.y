@@ -632,6 +632,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::dsql_fld* legacyField;
 	Firebird::Array<Jrd::dsql_nod*>* legacyArray;
 	Jrd::ReturningClause* returningClause;
+	Firebird::MetaName* metaNamePtr;
 	Firebird::PathName* pathNamePtr;
 	Firebird::string* stringPtr;
 	TEXT* textPtr;
@@ -667,6 +668,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ValueIfNode* valueIfNode;
 	Jrd::CompoundStmtNode* compoundStmtNode;
 	Jrd::CursorStmtNode* cursorStmtNode;
+	Jrd::DeclareCursorNode* declCursorNode;
 	Jrd::ErrorHandlerNode* errorHandlerNode;
 	Jrd::ExecStatementNode* execStatementNode;
 	Jrd::MergeNode* mergeNode;
@@ -719,8 +721,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> constraint_name_opt correlation_name
 %type <ddlNode>    create create_clause create_user_clause
 %type <legacyNode> cross_join
-%type <legacyNode> cursor_clause cursor_def
 %type <ddlNode>	   create_or_alter
+%type <metaNamePtr> cursor_clause
+%type <declCursorNode> cursor_def
 %type <stmtNode>   cursor_declaration_item continue cursor_statement
 
 %type <legacyNode> data_type data_type_or_domain
@@ -868,7 +871,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <ddlNode>	   set_statistics
 %type <legacyNode> simple_type simple_when_clause skip_clause
 %type <uintVal>	   snap_shot
-%type <legacyNode> statement
+%type <node>	   statement
 %type <legacyNode> string_length_opt
 %type <legacyNode> symbol_UDF_call_name symbol_UDF_name symbol_blob_subtype_name symbol_character_set_name
 %type <legacyNode> symbol_collation_name symbol_column_name symbol_constraint_name symbol_cursor_name
@@ -890,7 +893,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> table_constraint table_constraint_definition
 %type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
 %type <legacyNode> table_proc table_proc_inputs table_reference table_subquery
-%type <legacyNode> top
+%type top
 %type tran_option(<setTransactionNode>) tran_option_list(<setTransactionNode>)
 %type tran_option_list_opt(<setTransactionNode>)
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
@@ -1002,31 +1005,31 @@ top
 	;
 
 statement
-	: alter										{ $$ = makeClassNode($1); }
+	: alter										{ $$ = $1; }
 	// ASF: ALTER SEQUENCE is defined here cause it's treated as DML.
-	| ALTER SEQUENCE alter_sequence_clause		{ $$ = makeClassNode($3); }
-	| comment									{ $$ = makeClassNode($1); }
-	| commit									{ $$ = makeClassNode($1); }
-	| create									{ $$ = makeClassNode($1); }
-	| create_or_alter							{ $$ = makeClassNode($1); }
-	| declare									{ $$ = makeClassNode($1); }
-	| delete									{ $$ = makeClassNode($1); }
-	| drop										{ $$ = makeClassNode($1); }
-	| grant										{ $$ = makeClassNode($1); }
-	| insert									{ $$ = makeClassNode($1); }
-	| merge										{ $$ = makeClassNode($1); }
-	| exec_procedure							{ $$ = makeClassNode($1); }
-	| exec_block								{ $$ = makeClassNode($1); }
-	| recreate									{ $$ = makeClassNode($1); }
-	| revoke									{ $$ = makeClassNode($1); }
-	| rollback									{ $$ = makeClassNode($1); }
-	| savepoint									{ $$ = makeClassNode($1); }
-	| select									{ $$ = makeClassNode($1); }
-	| set_transaction							{ $$ = makeClassNode($1); }
-	| set_generator								{ $$ = makeClassNode($1); }
-	| set_statistics							{ $$ = makeClassNode($1); }
-	| update									{ $$ = makeClassNode($1); }
-	| update_or_insert							{ $$ = makeClassNode($1); }
+	| ALTER SEQUENCE alter_sequence_clause		{ $$ = $3; }
+	| comment									{ $$ = $1; }
+	| commit									{ $$ = $1; }
+	| create									{ $$ = $1; }
+	| create_or_alter							{ $$ = $1; }
+	| declare									{ $$ = $1; }
+	| delete									{ $$ = $1; }
+	| drop										{ $$ = $1; }
+	| grant										{ $$ = $1; }
+	| insert									{ $$ = $1; }
+	| merge										{ $$ = $1; }
+	| exec_procedure							{ $$ = $1; }
+	| exec_block								{ $$ = $1; }
+	| recreate									{ $$ = $1; }
+	| revoke									{ $$ = $1; }
+	| rollback									{ $$ = $1; }
+	| savepoint									{ $$ = $1; }
+	| select									{ $$ = $1; }
+	| set_transaction							{ $$ = $1; }
+	| set_generator								{ $$ = $1; }
+	| set_statistics							{ $$ = $1; }
+	| update									{ $$ = $1; }
+	| update_or_insert							{ $$ = $1; }
 	;
 
 
@@ -2857,11 +2860,7 @@ cursor_def
 	: // nothing
 		{ $$ = NULL; }
 	| AS CURSOR symbol_cursor_name
-		{
-			DeclareCursorNode* node = newNode<DeclareCursorNode>(toName($3),
-				DeclareCursorNode::CUR_TYPE_FOR);
-			$$ = makeClassNode(node);
-		}
+		{ $$ = newNode<DeclareCursorNode>(toName($3), DeclareCursorNode::CUR_TYPE_FOR); }
 	;
 
 excp_hndl_statements
@@ -5001,7 +5000,7 @@ delete_positioned
 		{
 			EraseNode* node = newNode<EraseNode>();
 			node->dsqlRelation = $3;
-			node->dsqlCursor = $4;
+			node->dsqlCursorName = *$4;
 			node->dsqlReturning = $5;
 			$$ = node;
 		}
@@ -5037,7 +5036,7 @@ update_positioned
 			ModifyNode* node = newNode<ModifyNode>();
 			node->dsqlRelation = $2;
 			node->statement = $4;
-			node->dsqlCursor = $5;
+			node->dsqlCursorName = *$5;
 			node->dsqlReturning = $6;
 			$$ = node;
 		}
@@ -5084,7 +5083,7 @@ returning_clause
 
 cursor_clause
 	: WHERE CURRENT OF symbol_cursor_name
-		{ $$ = makeClassNode(newNode<DeclareCursorNode>(toName($4))); }
+		{ $$ = newNode<MetaName>(toName($4)); }
 	;
 
 
@@ -6831,16 +6830,6 @@ dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
 dsql_nod* Parser::makeClassNode(ExprNode* node)
 {
 	return make_node(nod_class_exprnode, 1, reinterpret_cast<dsql_nod*>(node));
-}
-
-dsql_nod* Parser::makeClassNode(DdlNode* node)
-{
-	return make_node(nod_class_stmtnode, 1, reinterpret_cast<dsql_nod*>(node));
-}
-
-dsql_nod* Parser::makeClassNode(StmtNode* node)
-{
-	return make_node(nod_class_stmtnode, 1, reinterpret_cast<dsql_nod*>(node));
 }
 
 

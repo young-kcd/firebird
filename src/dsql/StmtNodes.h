@@ -493,7 +493,7 @@ public:
 		  dsqlPlan(NULL),
 		  dsqlSort(NULL),
 		  dsqlRows(NULL),
-		  dsqlCursor(NULL),
+		  dsqlCursorName(pool),
 		  dsqlReturning(NULL),
 		  dsqlRse(NULL),
 		  dsqlContext(NULL),
@@ -523,7 +523,7 @@ public:
 	dsql_nod* dsqlPlan;
 	dsql_nod* dsqlSort;
 	dsql_nod* dsqlRows;
-	dsql_nod* dsqlCursor;
+	Firebird::MetaName dsqlCursorName;
 	ReturningClause* dsqlReturning;
 	dsql_nod* dsqlRse;
 	dsql_ctx* dsqlContext;
@@ -879,7 +879,7 @@ public:
 public:
 	SelectNode* dsqlSelect;
 	Firebird::Array<dsql_nod*>* dsqlInto;
-	dsql_nod* dsqlCursor;
+	DeclareCursorNode* dsqlCursor;
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
 	NestConst<StmtNode> stall;
@@ -1081,7 +1081,7 @@ public:
 		  dsqlPlan(NULL),
 		  dsqlSort(NULL),
 		  dsqlRows(NULL),
-		  dsqlCursor(NULL),
+		  dsqlCursorName(pool),
 		  dsqlReturning(NULL),
 		  dsqlRseFlags(0),
 		  dsqlRse(NULL),
@@ -1117,7 +1117,7 @@ public:
 	dsql_nod* dsqlPlan;
 	dsql_nod* dsqlSort;
 	dsql_nod* dsqlRows;
-	dsql_nod* dsqlCursor;
+	Firebird::MetaName dsqlCursorName;
 	ReturningClause* dsqlReturning;
 	USHORT dsqlRseFlags;
 	dsql_nod* dsqlRse;

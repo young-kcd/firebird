@@ -804,7 +804,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		return node;
 
 	default:
-		fb_assert(input->nod_type != nod_class_stmtnode);
 		break;
 	}
 
@@ -837,93 +836,6 @@ dsql_nod* PASS1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, bool upda
 	dsqlScratch->scopeLevel++;
 	dsql_nod* node = pass1_rse(dsqlScratch, input, NULL, NULL, updateLock, 0);
 	dsqlScratch->scopeLevel--;
-
-	return node;
-}
-
-
-/**
-
- 	PASS1_statement
-
-    @brief	Compile a parsed statement into something more interesting.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	if (!input)
-		return NULL;
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-#ifdef DSQL_DEBUG
-	if (DSQL_debug & 2)
-	{
-		dsql_trace("Node tree at DSQL pass1 entry:");
-		DSQL_pretty(input, 0);
-	}
-#endif
-
-	dsql_nod* node = NULL;
-	const DsqlContextStack::iterator base(*dsqlScratch->context);
-
-	// Dispatch on node type.  Fall thru on easy ones
-
-	switch (input->nod_type)
-	{
-	case nod_def_index:
-	case nod_def_constraint:
-	case nod_def_domain:
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
-		return input;
-
-	case nod_class_stmtnode:
-		node = reinterpret_cast<dsql_nod*>(
-			reinterpret_cast<Node*>(input->nod_arg[0])->dsqlPass(dsqlScratch));
-		if (node != input->nod_arg[0])
-		{
-			input = MAKE_node(input->nod_type, input->nod_count);
-			input->nod_arg[0] = node;
-		}
-		return input;
-
-	case nod_list:
-		{
-			node = MAKE_node(input->nod_type, input->nod_count);
-			const dsql_nod** ptr2 = const_cast<const dsql_nod**>(node->nod_arg);
-			dsql_nod* const* ptr = input->nod_arg;
-			for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end; ptr++)
-			{
-				DEV_BLKCHK(*ptr, dsql_type_nod);
-				*ptr2++ = PASS1_statement(dsqlScratch, *ptr);
-				DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
-			}
-			return node;
-		}
-
-	default:
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-				  Arg::Gds(isc_dsql_command_err) <<
-				  // Unsupported DSQL construct
-				  Arg::Gds(isc_dsql_construct_err));
-		break;
-	}
-
-	// Finish off by cleaning up contexts
-	dsqlScratch->context->clear(base);
-
-#ifdef DSQL_DEBUG
-	if (DSQL_debug & 1)
-	{
-		dsql_trace("Node tree at DSQL pass1 exit:");
-		DSQL_pretty(node, 0);
-	}
-#endif
 
 	return node;
 }
@@ -4699,7 +4611,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 
 	case nod_class_exprnode:
-	case nod_class_stmtnode:
 		reinterpret_cast<Node*>(node->nod_arg[0])->print(verb, subNodes);
 		ptr = subNodes.begin();
 		end = subNodes.end();

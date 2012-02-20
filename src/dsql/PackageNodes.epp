@@ -411,7 +411,6 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
 		itemScratch->package = name;
-		itemStatement->setDdlNode(MAKE_node(nod_class_stmtnode, 1));
 
 		switch ((*items)[i].type)
 		{
@@ -421,7 +420,6 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					functionNames.add(fun->name);
 					fun->alter = true;
 					fun->package = name;
-					itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) fun;
 					fun->dsqlPass(itemScratch);
 				}
 				break;
@@ -432,7 +430,6 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					procedureNames.add(proc->name);
 					proc->alter = true;
 					proc->package = name;
-					itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) proc;
 					proc->dsqlPass(itemScratch);
 				}
 				break;
@@ -768,7 +765,6 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			itemScratch->clientDialect = dsqlScratch->clientDialect;
 			itemScratch->package = name;
-			itemStatement->setDdlNode(MAKE_node(nod_class_stmtnode, 1));
 
 			switch ((*arrays[i])[j].type)
 			{
@@ -779,7 +775,6 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						fun->create = true;
 						if (arrays[i] == items)
 							fun->alter = true;
-						itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) fun;
 						fun->dsqlPass(itemScratch);
 					}
 					break;
@@ -791,7 +786,6 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						proc->create = true;
 						if (arrays[i] == items)
 							proc->alter = true;
-						itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) proc;
 						proc->dsqlPass(itemScratch);
 					}
 					break;

@@ -120,84 +120,10 @@ static void post_607(const Arg::StatusVector& v);
 ///const int DEFAULT_BLOB_SEGMENT_SIZE = 80; // bytes
 
 
-void DDL_execute(dsql_req* request)
-{
-/**************************************
- *
- *	D D L _ e x e c u t e
- *
- **************************************
- *
- * Functional description
- *	Call access method layered service DYN
- *	to interpret dyn string and perform
- *	metadata updates.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	const DsqlCompiledStatement* statement = request->getStatement();
-
-#ifdef DSQL_DEBUG
-	if (DSQL_debug & 4)
-	{
-		dsql_trace("Output DYN string for DDL:");
-		PRETTY_print_dyn(statement->getDdlData().begin(), gds__trace_printer, NULL, 0);
-	}
-#endif
-
-	const NOD_TYPE type = statement->getDdlNode()->nod_type;
-
-	fb_assert(type == nod_class_stmtnode);
-
-	fb_utils::init_status(tdbb->tdbb_status_vector);
-
-	// run all statements under savepoint control
-	{	// scope
-		AutoSavePoint savePoint(tdbb, request->req_transaction);
-
-		DdlNode* ddlNode = reinterpret_cast<DdlNode*>(statement->getDdlNode()->nod_arg[0]);
-		ddlNode->executeDdl(tdbb, statement->getDdlScratch(), request->req_transaction);
-
-		savePoint.release();	// everything is ok
-	}
-
-	JRD_autocommit_ddl(tdbb, request->req_transaction);
-}
-
-
-void DDL_generate(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
-{
-/**************************************
- *
- *	D D L _ g e n e r a t e
- *
- **************************************
- *
- * Functional description
- *	Generate the DYN string for a
- *	metadata update.  Done during the
- *	prepare phase.
- *
- **************************************/
-
-	if (dsqlScratch->getAttachment()->dbb_read_only)
-	{
-		ERRD_post(Arg::Gds(isc_read_only_database));
-		return;
-	}
-
-	dsqlScratch->getStatement()->setDdlNode(node);
-}
-
-
-//
-// Determine whether ids or names should be referenced
-// when generating blr for fields and relations.
-//
+// Determine whether ids or names should be referenced when generating blr for fields and relations.
 bool DDL_ids(const DsqlCompilerScratch* scratch)
 {
-	return !scratch->getStatement()->getDdlNode();
+	return !scratch->getStatement()->isDdl();
 }
 
 
@@ -405,7 +331,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 		const dsql_str* dfl_charset = NULL;
 
-		if (dsqlScratch->getStatement()->getDdlNode() ||
+		if (dsqlScratch->getStatement()->isDdl() ||
 			(dsqlScratch->flags & (
 				DsqlCompilerScratch::FLAG_FUNCTION | DsqlCompilerScratch::FLAG_PROCEDURE |
 				DsqlCompilerScratch::FLAG_TRIGGER)))
