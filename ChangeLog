@@ -1,3 +1,10 @@
+ 2012-02-20 21:52  asfernandes 
+   M src/common/IntlUtil.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/cvt2.cpp
+   M src/jrd/mov.cpp
+Misc.
+
  2012-02-20 02:02  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DsqlCompilerScratch.h
