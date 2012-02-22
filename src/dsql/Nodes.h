@@ -56,7 +56,7 @@ const int MAX_CONJUNCTS	= 32000;
 const unsigned int MAX_STREAMS = 255;
 
 // This is number of ULONG's needed to store bit-mapped flags for all streams
-// OPT_STREAM_BITS = (MAX_STREAMS + 1) / sizeof(ULONG)
+// OPT_STREAM_BITS = (MAX_STREAMS + 1) / BITS_PER_LONG
 // This value cannot be increased simple way. Decrease is possible, but it is also
 // hardcoded in several places such as TEST_DEP_ARRAYS macro
 const int OPT_STREAM_BITS = 8;
