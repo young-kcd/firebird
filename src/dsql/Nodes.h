@@ -66,6 +66,8 @@ const int OPT_STREAM_BITS = 8;
 const int OPT_STATIC_ITEMS = 16;
 
 
+typedef USHORT StreamType; // for now
+
 typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamList;
 typedef Firebird::SortedArray<int> SortedStreamList;
 typedef UCHAR stream_array_t[MAX_STREAMS + 1];

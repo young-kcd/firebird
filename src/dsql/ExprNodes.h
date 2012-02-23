@@ -388,7 +388,7 @@ public:
 	explicit DerivedExprNode(MemoryPool& pool)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>(pool),
 		  arg(NULL),
-		  streamList(pool)
+		  internalStreamList(pool)
 	{
 		addChildNode(arg);
 	}
@@ -431,7 +431,7 @@ public:
 
 public:
 	NestConst<ValueExprNode> arg;
-	Firebird::Array<USHORT> streamList;
+	Firebird::Array<StreamType> internalStreamList;
 };
 
 

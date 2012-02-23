@@ -3986,7 +3986,7 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	for (UCHAR i = 0; i < streamCount; ++i)
 	{
 		const USHORT n = csb->csb_blr_reader.getByte();
-		node->streamList.add(csb->csb_rpt[n].csb_stream);
+		node->internalStreamList.add(csb->csb_rpt[n].csb_stream);
 	}
 
 	node->arg = PAR_parse_value(tdbb, csb);
@@ -4003,7 +4003,7 @@ bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	SortedStreamList argStreams;
 	arg->jrdStreamsCollector(argStreams);
 
-	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+	for (USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
 		const USHORT n = *i;
 
@@ -4037,7 +4037,7 @@ void DerivedExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 {
 	arg->findDependentFromStreams(optRet, streamList);
 
-	for (USHORT* i = this->streamList.begin(); i != this->streamList.end(); ++i)
+	for (USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
 		int derivedStream = *i;
 
@@ -4059,7 +4059,7 @@ ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	DerivedExprNode* node = FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
-	node->streamList = streamList;
+	node->internalStreamList = internalStreamList;
 
 	if (copier.remap)
 	{
@@ -4069,7 +4069,7 @@ ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 			csb->dump("\t%d: %d -> %d\n", i, *i, copier.remap[*i]);
 #endif
 
-		for (USHORT* i = node->streamList.begin(); i != node->streamList.end(); ++i)
+		for (USHORT* i = node->internalStreamList.begin(); i != node->internalStreamList.end(); ++i)
 			*i = copier.remap[*i];
 	}
 
@@ -4087,13 +4087,13 @@ ValueExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	csb->dump("\n");
 #endif
 
-	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+	for (USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
 		CMP_mark_variant(csb, *i);
 		CMP_expand_view_nodes(tdbb, csb, *i, stack, blr_dbkey, true);
 	}
 
-	streamList.clear();
+	internalStreamList.clear();
 
 #ifdef CMP_DEBUG
 	for (ExprValueNodeStack::iterator i(stack); i.hasData(); ++i)
@@ -4102,7 +4102,7 @@ ValueExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 #endif
 
 	for (ValueExprNodeStack::iterator i(stack); i.hasData(); ++i)
-		streamList.add(i.object()->as<RecordKeyNode>()->recStream);
+		internalStreamList.add(i.object()->as<RecordKeyNode>()->recStream);
 
 	return ValueExprNode::pass1(tdbb, csb);
 }
@@ -4122,7 +4122,7 @@ dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* value = NULL;
 
-	for (const USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+	for (const USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
 		if (request->req_rpb[*i].rpb_number.isValid())
 		{
@@ -5217,7 +5217,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 				derivedNode->arg = sub;
 
 				for (ValueExprNodeStack::iterator i(stack); i.hasData(); ++i)
-					derivedNode->streamList.add(i.object()->as<RecordKeyNode>()->recStream);
+					derivedNode->internalStreamList.add(i.object()->as<RecordKeyNode>()->recStream);
 
 				sub = derivedNode;
 			}
