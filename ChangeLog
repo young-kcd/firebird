@@ -1,3 +1,7 @@
+ 2012-02-22 08:09  dimitr 
+   M builds/win32/msvc8/engine.vcproj
+Fixed the MSVC8 build.
+
  2012-02-22 01:29  robocop 
    M src/dsql/Nodes.h
 Misc.
