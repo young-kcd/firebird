@@ -4285,7 +4285,7 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
 		fb_assert(dsqlCursor->dsqlCursorType != DeclareCursorNode::CUR_TYPE_NONE);
 		PASS1_cursor_name(dsqlScratch, dsqlCursor->dsqlName, DeclareCursorNode::CUR_TYPE_ALL, false);
-		dsqlCursor->dsqlSelect = node->dsqlSelect;
+		dsqlCursor->dsqlRse = node->dsqlSelect->dsqlRse;
 		dsqlCursor->cursorNumber = dsqlScratch->cursorNumber++;
 		dsqlScratch->cursors.push(dsqlCursor);
 	}
