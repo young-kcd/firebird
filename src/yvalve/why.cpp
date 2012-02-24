@@ -50,6 +50,7 @@
 #include "../common/os/path_utils.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../common/classes/stack.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/init.h"
@@ -107,8 +108,8 @@ static GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, YTransaction*> > > > t
 static GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, YStatement*> > > > statements;
 static GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, YRequest*> > > > requests;
 static GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, YBlob*> > > > blobs;
-static bool shutdownStarted = false;
 
+static bool shutdownStarted = false;
 
 //-------------------------------------
 
@@ -189,8 +190,7 @@ namespace {
 
 	void atExitShutdown()
 	{
-		if (!shutdownStarted)	// static not protected by mutex flag is OK here - works in dtors
-			fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
+		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
 	}
 
 	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
@@ -618,41 +618,57 @@ namespace Why
 	{
 	public:
 		YEntry(IStatus* aStatus, Y* object, int checkAttachment = 1)
-			: ref(object->attachment), nextRef(object->next), counter(object->attachment)
+			: ref(object->attachment)
 		{
 			aStatus->init();
+			init(object->next);
 
 			if (checkAttachment && !(nextRef.hasData()))
+			{
+				fini();
 				Arg::Gds(Y::ERROR_CODE).raise();
+			}
 
-			if (object->attachment && checkAttachment && object->attachment->savedStatus.getError())
+			if (checkAttachment && ref->savedStatus.getError())
+			{
+				fini();
 				status_exception::raise(object->attachment->savedStatus.value());
-
-			init();
+			}
 		}
 
 		~YEntry()
 		{
-			if (counter)
-			{
-				MutexLockGuard guard(counter->enterMutex);
-				--counter->enterCount;
-			}
+			fini();
 		}
 
-		void init()
+		void init(typename Y::NextInterface* nxt)
 		{
 			signalInit();
 
+			if (!ref)
+			{
+				Arg::Gds(Y::ERROR_CODE).raise();
+			}
+
+			{
+				MutexLockGuard guard(ref->enterMutex);
+				++ref->enterCount;
+			}
+
 			if (shutdownStarted)
 			{
+				fini();
 				Arg::Gds(isc_att_shutdown).raise();
 			}
 
-			if (counter)
+			nextRef = nxt;
+		}
+
+		void fini()
+		{
 			{
-				MutexLockGuard guard(counter->enterMutex);
-				++counter->enterCount;
+				MutexLockGuard guard(ref->enterMutex);
+				--ref->enterCount;
 			}
 		}
 
@@ -665,40 +681,46 @@ namespace Why
 		YEntry(const YEntry&);	// prohibit copy constructor
 
 	private:
-		RefPtr<IRefCounted> ref;
+		RefPtr<typename Y::YRef> ref;
 		RefPtr<typename Y::NextInterface> nextRef;
-		EnterCount* counter;
 	};
 
 	template <>
 	YEntry<YAttachment>::YEntry(IStatus* aStatus, YAttachment* aAttachment, int checkAttachment)
-		: ref(aAttachment), nextRef(aAttachment->next), counter(aAttachment)
+		: ref(aAttachment), nextRef(NULL)
 	{
 		aStatus->init();
+		init(aAttachment->next);
 
 		if (checkAttachment && !(nextRef.hasData()))
+		{
+			fini();
 			Arg::Gds(YAttachment::ERROR_CODE).raise();
+		}
 
-		if (aAttachment && checkAttachment && aAttachment->savedStatus.getError())
+		if (checkAttachment && aAttachment->savedStatus.getError())
+		{
+			fini();
 			status_exception::raise(aAttachment->savedStatus.value());
-
-		init();
+		}
 	}
 
 	template <>
 	YEntry<YService>::YEntry(IStatus* aStatus, YService* aService, int mode)
-		: ref(aService), nextRef(NULL), counter(aService)
+		: ref(aService), nextRef(NULL)
 	{
 		aStatus->init();
+		init(aService->getNextService(mode, aStatus));
 
-		nextRef = aService->getNextService(mode, aStatus);
 		if ((mode != YService::SERV_DETACH) && !(nextRef.hasData()))
 		{
+			fini();
 			Arg::Gds(YService::ERROR_CODE).raise();
 		}
 
-		init();
 	}
+
+	static AtomicCounter dispCounter;
 
 	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
@@ -714,6 +736,17 @@ namespace Why
 			{
 				Arg::Gds(isc_att_shutdown).raise();
 			}
+			++dispCounter;
+			if (shutdownStarted && !ignoreShutdownError)
+			{
+				--dispCounter;
+				Arg::Gds(isc_att_shutdown).raise();
+			}
+		}
+
+		~DispatcherEntry()
+		{
+			--dispCounter;
 		}
 
 	private:
@@ -3321,8 +3354,7 @@ void YEvents::destroy()
 
 	removeHandle(&events, handle);
 
-	next = NULL;
-	release();
+	destroy2();
 }
 
 void YEvents::cancel(IStatus* status)
@@ -3367,8 +3399,7 @@ void YRequest::destroy()
 
 	removeHandle(&requests, handle);
 
-	next = NULL;
-	release();
+	destroy2();
 }
 
 void YRequest::receive(IStatus* status, int level, unsigned int msgType,
@@ -3497,8 +3528,7 @@ void YBlob::destroy()
 
 	removeHandle(&blobs, handle);
 
-	next = NULL;
-	release();
+	destroy2();
 }
 
 void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
@@ -3618,8 +3648,7 @@ void YStatement::destroy()
 
 	removeHandle(&statements, handle);
 
-	next = NULL;
-	release();
+	destroy2();
 }
 
 void YStatement::prepare(IStatus* status, ITransaction* transaction,
@@ -3857,8 +3886,7 @@ void YTransaction::destroy()
 
 	removeHandle(&transactions, handle);
 
-	next = NULL;
-	release();
+	destroy2();
 }
 
 void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4093,7 +4121,9 @@ YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathNam
 YAttachment::~YAttachment()
 {
 	if (provider)
+	{
 		PluginManagerInterfacePtr()->releasePlugin(provider);
+	}
 }
 
 void YAttachment::destroy()
@@ -4115,9 +4145,17 @@ void YAttachment::destroy()
 
 	removeHandle(&attachments, handle);
 
-	next = NULL;
+	destroy2();
+}
 
-	release();
+void YAttachment::shutdown()
+{
+	if (provider)
+	{
+		destroy();
+		PluginManagerInterfacePtr()->releasePlugin(provider);
+		provider = NULL;
+	}
 }
 
 void YAttachment::getInfo(IStatus* status, unsigned int itemsLength,
@@ -5098,10 +5136,9 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		if (ShutChain::run(fb_shut_preproviders, reason) != FB_SUCCESS)
 			userStatus->set(error.value());
 
-		// shutdown yValve
-
+		// Shutdown yValve
 		// Since this moment no new thread will be able to enter yValve.
-		// Unfortunately existing threads continue to run inside it.
+		// Existing threads continue to run inside it - later do our best to close them.
 		shutdownStarted = true;
 
 		// Shutdown providers (if any present).
@@ -5120,15 +5157,20 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		}
 
 		// Close all known interfaces from providers...
-		bool hasThreads;
-
-		do
+		for (bool hasThreads = true; hasThreads; )
 		{
 			THD_yield();
-			WriteLockGuard sync(handleMappingLock);
+
+			if (dispCounter.value() > 1)	// 1 is OUR entry value
+			{
+				continue;
+			}
+
 			hasThreads = false;
 
+			Stack<YService*, 64> svcStack;
 			{
+				WriteLockGuard sync(handleMappingLock);
 				GenericMap<Pair<NonPooled<FB_API_HANDLE, YService*> > >::Accessor accessor(&services);
 
 				if (accessor.getFirst())
@@ -5139,18 +5181,28 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 						if (service->enterCount)
 						{
 							hasThreads = true;
-							break;
+							continue;
 						}
 
-						service->shutdown();
+						service->addRef();
+						svcStack.push(service);
 					} while (accessor.getNext());
 				}
-
-				if (hasThreads)
-					continue;
 			}
 
+			while(svcStack.hasData())
 			{
+				YService* service = svcStack.pop();
+				service->shutdown();
+				service->release();
+			}
+
+			if (hasThreads)
+				continue;
+
+			Stack<YAttachment*, 64> attStack;
+			{
+				WriteLockGuard sync(handleMappingLock);
 				GenericMap<Pair<NonPooled<FB_API_HANDLE, YAttachment*> > >::Accessor accessor(&attachments);
 
 				if (accessor.getFirst())
@@ -5164,16 +5216,20 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 							continue;
 						}
 
-						if (attachment->provider)
-						{
-							attachment->next = NULL;
-							PluginManagerInterfacePtr()->releasePlugin(attachment->provider);
-							attachment->provider = NULL;
-						}
+						attachment->addRef();
+						attStack.push(attachment);
 					} while (accessor.getNext());
 				}
 			}
-		} while (hasThreads);
+
+			while(attStack.hasData())
+			{
+				YAttachment* attachment = attStack.pop();
+				attachment->shutdown();
+				attachment->release();
+			}
+
+		}
 
 		// ... and wait for all providers to go away
 		PluginManager::waitForType(PluginType::Provider);

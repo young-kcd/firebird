@@ -132,9 +132,9 @@ public:
 
 			if (next)
 			{
-				++this->refCounter; // to be decremented in destroy()
-				++this->refCounter; // to avoid recursion
-				impl->destroy(); // destroy() must call release()
+				++this->refCounter;		// to be decremented in destroy()
+				++this->refCounter;		// to avoid recursion
+				impl->destroy();		// destroy() must call release()
 				--this->refCounter;
 			}
 
@@ -145,7 +145,14 @@ public:
 		return 1;
 	}
 
+	void destroy2()
+	{
+		next = NULL;
+		release();
+	}
+
 	typedef Intf NextInterface;
+	typedef YAttachment YRef;
 	Firebird::RefPtr<NextInterface> next;
 };
 
@@ -335,6 +342,7 @@ public:
 	~YAttachment();
 
 	void destroy();
+	void shutdown();
 
 	// IAttachment implementation
 	virtual void FB_CARG getInfo(Firebird::IStatus* status, unsigned int itemsLength,
@@ -443,6 +451,7 @@ public:
 	int FB_CARG release();
 
 	typedef IService NextInterface;
+	typedef YService YRef;
 
 	void shutdown()
 	{
