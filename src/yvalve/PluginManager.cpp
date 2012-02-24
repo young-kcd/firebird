@@ -349,12 +349,12 @@ namespace
 			}
 		}
 
+		PathName name;
 		Firebird::AutoPtr<ModuleLoader::Module> module;
 		Firebird::IPluginModule* cleanup;
 		HalfStaticArray<RegisteredPlugin, 2> regPlugins;
 		PluginModule* next;
 		PluginModule** prev;
-		PathName name;
 	};
 
 	struct CountByType
@@ -606,8 +606,8 @@ namespace
 	PluginModule* current = NULL;
 
 	PluginModule::PluginModule(ModuleLoader::Module* pmodule, const PathName& pname)
-			: module(pmodule), cleanup(NULL), regPlugins(getPool()), next(modules),
-			  prev(&modules), name(getPool(), pname)
+		: name(getPool(), pname), module(pmodule), cleanup(NULL), regPlugins(getPool()),
+		  next(modules), prev(&modules)
 	{
 		if (next)
 		{
