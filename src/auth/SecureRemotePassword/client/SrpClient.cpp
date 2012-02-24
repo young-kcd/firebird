@@ -43,8 +43,7 @@ public:
 	{ }
 
 	// IClient implementation
-	Result FB_CARG authenticate(IStatus*, IClientBlock* cb);
-	Result FB_CARG getSessionKey(IStatus* status, const unsigned char** key, unsigned int* keyLen);
+	int FB_CARG authenticate(IStatus*, IClientBlock* cb);
     int FB_CARG release();
 
 private:
@@ -53,7 +52,7 @@ private:
 	UCharBuffer sessionKey;
 };
 
-Result SrpClient::authenticate(IStatus* status, IClientBlock* cb)
+int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 {
 	try
 	{
@@ -74,8 +73,8 @@ Result SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 			client = new RemotePassword;
 			client->genClientKey(data);
 			dumpIt("Clnt: clientPubKey", data);
-			cb->putData(data.length(), data.begin());
-			return AUTH_MORE_DATA;
+			cb->putData(status, data.length(), data.begin());
+			return status->isSuccess() ? AUTH_MORE_DATA : AUTH_FAILED;
 		}
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cln SRP2\n"));
@@ -110,7 +109,6 @@ Result SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 			msg.printf("Wrong length (%d) of key from server", charSize);
 			(Arg::Gds(isc_random) << msg).raise();
 		}
-
 		key.assign(saltAndKey, charSize);
 		dumpIt("Clnt: key(srvPub)", key);
 
@@ -122,27 +120,25 @@ Result SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 		BigInteger cProof = client->clientProof(cb->getLogin(), salt.c_str(), sessionKey);
 		cProof.getText(data);
 
-		cb->putData(data.length(), data.c_str());
+		cb->putData(status, data.length(), data.c_str());
+		if (!status->isSuccess())
+		{
+			return AUTH_FAILED;
+		}
+
+		// output the key
+		FbCryptKey cKey = {"Symmetric", sessionKey.begin(), NULL, sessionKey.getCount(), 0};
+		cb->putKey(status, &cKey);
+		if (!status->isSuccess())
+		{
+			return AUTH_FAILED;
+		}
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 		return AUTH_FAILED;
 	}
-
-	return AUTH_SUCCESS;
-}
-
-
-Result SrpClient::getSessionKey(IStatus*, const unsigned char** key, unsigned int* keyLen)
-{
-	if (!sessionKey.hasData())
-	{
-		return AUTH_MORE_DATA;
-	}
-
-	*key = sessionKey.begin();
-	*keyLen = sessionKey.getCount();
 
 	return AUTH_SUCCESS;
 }

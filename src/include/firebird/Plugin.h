@@ -198,6 +198,16 @@ public:
 #define FB_PLUGIN_MANAGER_VERSION (FB_VERSIONED_VERSION + 6)
 
 
+struct FbCryptKey
+{
+	const char* type;					// If NULL type is auth plugin name
+	const void* encryptKey;
+	const void* decryptKey;				// May be NULL for symmetric keys
+	unsigned int encryptLength;
+	unsigned int decryptLength;			// Ignored when decryptKey is NULL
+};
+
+
 typedef void PluginEntrypoint(IMaster* masterInterface);
 
 namespace PluginType {
@@ -215,15 +225,6 @@ namespace PluginType {
 	static const unsigned int MaxType = 17;	// keep in sync please
 };
 
-class ICrypt : public IPluginBase
-{
-public:
-	virtual void FB_CARG setKey(IStatus* status, unsigned int length, const void* key) = 0;
-	virtual void FB_CARG transform(IStatus* status, unsigned int length, void* to, const void* from) = 0;
-};
-#define FB_CRYPT_VERSION (FB_PLUGIN_VERSION + 2)
-
 }	// namespace Firebird
-
 
 #endif	// FIREBIRD_PLUGIN_API_H

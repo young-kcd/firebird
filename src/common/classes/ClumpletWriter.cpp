@@ -69,14 +69,14 @@ void ClumpletWriter::initNewBuffer(UCHAR tag)
 			{
 				dynamic_buffer.push(isc_spb_version);
 			}
-			dynamic_buffer.push(tag);
-			break;
+			// fall down ....
 		case Tagged:
 		case Tpb:
 		case WideTagged:
 			dynamic_buffer.push(tag);
 			break;
 		default:
+			fb_assert(tag == 0);
 			break;
 	}
 }

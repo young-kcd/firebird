@@ -51,10 +51,8 @@ class DebugServer : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 public:
 	DebugServer(Firebird::IPluginConfig*);
 
-    Result authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
-    						   IWriter* writerInterface);
-	Result getSessionKey(Firebird::IStatus* status,
-						 const unsigned char** key, unsigned int* keyLen);
+    int authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
+    				 IWriter* writerInterface);
     int release();
 
 private:
@@ -66,9 +64,7 @@ class DebugClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
 public:
 	DebugClient(Firebird::IPluginConfig*);
 
-    Result authenticate(Firebird::IStatus* status, IClientBlock* sBlock);
-	Result getSessionKey(Firebird::IStatus* status,
-						 const unsigned char** key, unsigned int* keyLen);
+    int authenticate(Firebird::IStatus* status, IClientBlock* sBlock);
     int release();
 
 private:

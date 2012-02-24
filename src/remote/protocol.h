@@ -277,6 +277,8 @@ enum P_OP
 
 	op_abort_aux_connection	= 95,	// Async operation - stop waiting for async connection to arrive
 
+	op_crypt				= 96,
+
 	op_max
 };
 
@@ -390,6 +392,7 @@ struct p_acpd : public p_acpt
 	CSTRING	p_acpt_data;			// Returned auth data
 	CSTRING	p_acpt_plugin;			// Plugin to continue with
 	USHORT	p_acpt_authenticated;	// Auth complete in single step (few! strange...)
+	CSTRING p_acpt_keys;			// Keys known to the server
 };
 typedef p_acpd P_ACPD;
 
@@ -610,6 +613,7 @@ typedef struct p_auth_continue
 	CSTRING	p_data;							// Specific data
 	CSTRING p_name;							// Plugin name
 	CSTRING p_list;							// Plugin list
+	CSTRING p_keys;							// Keys available on server
 } P_AUTH_CONT;
 
 struct p_update_account
@@ -632,6 +636,11 @@ typedef struct p_cancel_op
     USHORT	p_co_kind;			// Kind of cancelation
 } P_CANCEL_OP;
 
+typedef struct p_crypt
+{
+	CSTRING p_plugin;						// Crypt plugin name
+	CSTRING p_key;							// Key name / keys available on server
+} P_CRYPT;
 
 
 // Generalize packet (sic!)
@@ -675,6 +684,7 @@ typedef struct packet
 	p_authenticate p_authenticate_user;
 	P_CANCEL_OP p_cancel_op;	// Cancel operation
 	P_AUTH_CONT p_auth_cont;	// Request more auth data
+	P_CRYPT p_crypt;			// Start wire crypt
 
 public:
 	packet()

@@ -344,9 +344,9 @@ WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
 	: sspiData(getPool())
 { }
 
-Result WinSspiServer::authenticate(Firebird::IStatus* status,
-								   IServerBlock* sBlock,
-								   IWriter* writerInterface)
+int WinSspiServer::authenticate(Firebird::IStatus* status,
+								IServerBlock* sBlock,
+								IWriter* writerInterface)
 {
 	try
 	{
@@ -385,15 +385,6 @@ Result WinSspiServer::authenticate(Firebird::IStatus* status,
 	return AUTH_MORE_DATA;
 }
 
-Result WinSspiServer::getSessionKey(Firebird::IStatus*,
-									const unsigned char** key,
-									unsigned int* keyLen)
-{
-	*key = NULL;
-	*keyLen = 0;
-	return AUTH_CONTINUE;
-}
-
 int WinSspiServer::release()
 {
 	if (--refCounter == 0)
@@ -405,8 +396,8 @@ int WinSspiServer::release()
 	return 1;
 }
 
-Result WinSspiClient::authenticate(Firebird::IStatus* status,
-								   IClientBlock* cBlock)
+int WinSspiClient::authenticate(Firebird::IStatus* status,
+								IClientBlock* cBlock)
 {
 	try
 	{
@@ -432,15 +423,6 @@ Result WinSspiClient::authenticate(Firebird::IStatus* status,
 	}
 
 	return AUTH_MORE_DATA;
-}
-
-Result WinSspiClient::getSessionKey(Firebird::IStatus* /*status*/,
-									const unsigned char** key,
-									unsigned int* keyLen)
-{
-	*key = NULL;
-	*keyLen = 0;
-	return AUTH_CONTINUE;
 }
 
 int WinSspiClient::release()

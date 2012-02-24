@@ -607,6 +607,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
 									   packet->p_acpd.p_acpt_data.cstr_address);
 			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
+			port->addServerKeys(&packet->p_acpd.p_acpt_keys);
 		}
 		break;
 
@@ -622,7 +623,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		try
 		{
 			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
-			REMOTE_check_response(&warning, rdb, packet);
+			REMOTE_check_response(&warning, rdb, packet, false);
 		}
 		catch(const Firebird::Exception&)
 		{
@@ -2871,6 +2872,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 
 	int n = 0;
 	int inetErrNo;
+	LocalStatus st;
 
 	for (;;)
 	{
@@ -2944,8 +2946,16 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		}
 
 		n = recv(port->port_handle, reinterpret_cast<char*>(buffer), buffer_length, 0);
-		// ->decrypt
 		inetErrNo = INET_ERRNO;
+
+		if (n > 0 && port->port_recv_cipher)
+		{
+			port->port_recv_cipher->transform(&st, n, buffer, buffer);
+			if (!st.isSuccess())
+			{
+				status_exception::raise(st.get());
+			}
+		}
 
 		if (n != -1 || !INTERRUPT_ERROR(inetErrNo))
 			break;
@@ -3010,10 +3020,24 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
  *
  **************************************/
 
-	const char* data = buffer;
 	SSHORT length = buffer_length;
+	const char* data = buffer;
 
-	// ->encrypt
+	// encrypt
+	HalfStaticArray<char, BUFFER_TINY> b;
+	if (port->port_send_cipher)
+	{
+		LocalStatus st;
+
+		char* d = b.getBuffer(buffer_length);
+		port->port_send_cipher->transform(&st, buffer_length, d, data);
+		if (!st.isSuccess())
+		{
+			status_exception::raise(st.get());
+		}
+
+		data = d;
+	}
 
 	while (length)
 	{

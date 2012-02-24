@@ -75,6 +75,12 @@ extern const char*	AmMixed;
 
 enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
 
+extern const char* WIRE_CRYPT_DISABLED;
+extern const char* WIRE_CRYPT_ENABLED;
+extern const char* WIRE_CRYPT_REQUIRED;
+
+enum WireCryptMode {WC_CLIENT, WC_SERVER};		// Have different defaults
+
 const char* const CONFIG_FILE = "firebird.conf";
 
 class Config : public Firebird::RefCounted, public Firebird::GlobalStorage
@@ -133,6 +139,8 @@ public:
 		KEY_SECURITY_DATABASE,
 		KEY_SHARED_CACHE,
 		KEY_SHARED_DATABASE,
+		KEY_WIRE_CRYPT,
+		KEY_PLUG_CRYPT,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -332,6 +340,8 @@ public:
 	static const char* getPlugins(unsigned int type);
 
 	const char* getSecurityDatabase() const;
+
+	static const char* getWireCrypt(WireCryptMode wcMode);
 };
 
 // Implementation of interface to access master configuration file

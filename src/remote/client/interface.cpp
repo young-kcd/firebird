@@ -66,6 +66,7 @@
 #include "../auth/SecurityDatabase/LegacyClient.h"
 #include "../auth/SecureRemotePassword/client/SrpClient.h"
 #include "../auth/trusted/AuthSspi.h"
+#include "../plugins/crypt/arc4/Arc4.h"
 
 
 #ifdef HAVE_UNISTD_H
@@ -529,6 +530,8 @@ void registerRedirector(Firebird::IPluginManager* iPlugin)
 #ifdef TRUSTED_AUTH
 	Auth::registerTrustedClient(iPlugin);
 #endif
+
+	Crypt::registerArc4(iPlugin);
 }
 
 } // namespace Remote
@@ -593,7 +596,7 @@ static void cleanDpb(Firebird::ClumpletWriter&, const ParametersSet*);
 static void authFillParametersBlock(ClntAuthBlock& authItr, ClumpletWriter& dpb,
 	const ParametersSet* tags, rem_port* port);
 static void authReceiveResponse(ClntAuthBlock& authItr, rem_port* port, Rdb* rdb,
-	IStatus* status, PACKET* packet);
+	IStatus* status, PACKET* packet, bool checkKeys);
 
 static AtomicCounter remote_event_id;
 
@@ -4562,21 +4565,24 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 	cBlock.load(dpb, &dpbParam);
 	authenticateStep0(cBlock);
 
+	rem_port* port = NULL;
+
 #ifdef WIN_NT
 	if (ISC_analyze_protocol(PROTOCOL_XNET, file_name, node_name))
 	{
-		return XNET_analyze(&cBlock, file_name, uv_flag);
+		port = XNET_analyze(&cBlock, file_name, uv_flag);
 	}
 
-	if (ISC_analyze_protocol(PROTOCOL_WNET, file_name, node_name) ||
+	else if (ISC_analyze_protocol(PROTOCOL_WNET, file_name, node_name) ||
 		ISC_analyze_pclan(file_name, node_name))
 	{
 		if (node_name.isEmpty())
 		{
 			node_name = WNET_LOCALHOST;
 		}
-		return WNET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag);
+		port = WNET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag);
 	}
+	else
 #endif
 
 	if (ISC_analyze_protocol(PROTOCOL_INET, file_name, node_name) ||
@@ -4586,13 +4592,17 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 		{
 			node_name = INET_LOCALHOST;
 		}
-		return INET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag, dpb);
+		port = INET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag, dpb);
 	}
 
 	// We have a local connection string. If it's a file on a network share,
 	// try to connect to the corresponding host remotely.
 
-	rem_port* port = NULL;
+	if (port)
+	{
+		cBlock.tryNewKeys(port);
+		return port;
+	}
 
 #ifdef WIN_NT
 	PathName expanded_name = file_name;
@@ -4640,6 +4650,10 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 		}
 	}
 
+	if (port)
+	{
+		cBlock.tryNewKeys(port);
+	}
 	return port;
 }
 
@@ -5410,7 +5424,7 @@ static void info(IStatus* status,
 			// Probably communicate with services auth
 			fb_assert(cBlock);
 			HANDSHAKE_DEBUG(fprintf(stderr, "info() calls authReceiveResponse\n"));
-			authReceiveResponse(*cBlock, rdb->rdb_port, rdb, status, packet);
+			authReceiveResponse(*cBlock, rdb->rdb_port, rdb, status, packet, false);
 		}
 		else
 		{
@@ -5440,9 +5454,11 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 		if (port->port_protocol >= PROTOCOL_VERSION13 ||
 			REMOTE_legacy_auth(cBlock.plugins.name(), port->port_protocol))
 		{
-			cBlock.resetDataFromPlugin();
 			// OK to use plugin
-			switch(cBlock.plugins.plugin()->authenticate(&s, &cBlock))
+			cBlock.resetDataFromPlugin();
+			int authRc = cBlock.plugins.plugin()->authenticate(&s, &cBlock);
+			cBlock.tryNewKeys(port);
+			switch(authRc)
 			{
 			case Auth::AUTH_SUCCESS:
 			case Auth::AUTH_MORE_DATA:
@@ -5460,8 +5476,35 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 	}
 }
 
+static CSTRING* REMOTE_dup_string(CSTRING* from)
+{
+	if (from && from->cstr_length)
+	{
+		CSTRING* rc = FB_NEW(*getDefaultMemoryPool()) CSTRING;
+		memset(rc, 0, sizeof(CSTRING));
+		rc->cstr_length = from->cstr_length;
+		rc->cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[rc->cstr_length];
+		memcpy(rc->cstr_address, from->cstr_address, rc->cstr_length);
+		return rc;
+	}
+
+	return NULL;
+}
+
+static void REMOTE_free_string(CSTRING* tmp)
+{
+	if (tmp)
+	{
+		if (tmp->cstr_address)
+		{
+			delete[] tmp->cstr_address;
+		}
+		delete tmp;
+	}
+}
+
 static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
-	IStatus* status, PACKET* packet)
+	IStatus* status, PACKET* packet, bool checkKeys)
 {
 	LocalStatus s;
 
@@ -5484,13 +5527,30 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 		case op_cont_auth:
 			d = &packet->p_auth_cont.p_data;
 			n = &packet->p_auth_cont.p_name;
+			port->addServerKeys(&packet->p_auth_cont.p_keys);
 			HANDSHAKE_DEBUG(fprintf(stderr, "RR:CA d=%d n=%d '%.*s' 0x%x\n", d->cstr_length, n->cstr_length,
 									n->cstr_length, n->cstr_address, n->cstr_address ? n->cstr_address[0] : 0));
 			break;
 
+		case op_crypt:
+			fb_assert(!checkKeys);
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "RR: Crypt answer\n"));
+				CSTRING* tmpKeys = REMOTE_dup_string(&packet->p_crypt.p_key);
+				// it was start crypt packet, receive next one
+				receive_response(status, rdb, packet);
+				// now try to start crypt
+				if (tmpKeys)
+				{
+					port->addServerKeys(tmpKeys);
+					REMOTE_free_string(tmpKeys);
+				}
+			}
+			return;
+
 		default:
 			HANDSHAKE_DEBUG(fprintf(stderr, "RR: Default answer\n"));
-			REMOTE_check_response(status, rdb, packet);
+			REMOTE_check_response(status, rdb, packet, checkKeys);
 			// successfully attached
 			HANDSHAKE_DEBUG(fprintf(stderr, "RR: OK!\n"));
 			rdb->rdb_id = packet->p_resp.p_resp_object;
@@ -5528,6 +5588,7 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 		{
 			break;
 		}
+		cBlock.tryNewKeys(port);
 
 		// send answer (may be empty) to server
 		if (port->port_protocol >= PROTOCOL_VERSION13)
@@ -5620,7 +5681,7 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 
 		send_packet(port, packet);
 
-		authReceiveResponse(cBlock, port, rdb, status, packet);
+		authReceiveResponse(cBlock, port, rdb, status, packet, true);
 	}
 	catch (const Exception&)
 	{
@@ -6519,7 +6580,7 @@ static void svcstart(IStatus*	status,
 
 	try
 	{
-		authReceiveResponse(cBlock, rdb->rdb_port, rdb, status, packet);
+		authReceiveResponse(cBlock, rdb->rdb_port, rdb, status, packet, true);
 	}
 	catch (const Exception&)
 	{
@@ -6788,10 +6849,17 @@ const unsigned char* ClntAuthBlock::getData(unsigned int* length)
 	return *length ? dataForPlugin.begin() : NULL;
 }
 
-void ClntAuthBlock::putData(unsigned int length, const void* data)
+void ClntAuthBlock::putData(IStatus* status, unsigned int length, const void* data)
 {
-	void* to = dataFromPlugin.getBuffer(length);
-	memcpy(to, data, length);
+	try
+	{
+		void* to = dataFromPlugin.getBuffer(length);
+		memcpy(to, data, length);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
 }
 
 int ClntAuthBlock::release()
@@ -6827,4 +6895,50 @@ void ClntAuthBlock::loadServiceDataFrom(rem_port* port)
 {
 	userName = port->port_user_name;
 	password = port->port_password;
+}
+
+void ClntAuthBlock::putKey(IStatus* status, FbCryptKey* cryptKey)
+{
+	status->init();
+	try
+	{
+		const char* t = cryptKey->type;
+		if (!t)
+		{
+			fb_assert(plugins.hasData());
+			t = plugins.name();
+		}
+
+		InternalCryptKey* k = FB_NEW(*getDefaultMemoryPool())
+			InternalCryptKey(t, cryptKey->encryptKey, cryptKey->encryptLength,
+								cryptKey->decryptKey, cryptKey->decryptLength);
+		cryptKeys.add(k);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+void ClntAuthBlock::tryNewKeys(rem_port* port)
+{
+	for (unsigned k = 0; k < cryptKeys.getCount(); ++k)
+	{
+		if (port->tryNewKey(cryptKeys[k]))
+		{
+			releaseKeys(k);
+			cryptKeys.clear();
+			return;
+		}
+	}
+
+	cryptKeys.clear();
+}
+
+void ClntAuthBlock::releaseKeys(unsigned from)
+{
+	while (from < cryptKeys.getCount())
+	{
+		delete cryptKeys[from++];
+	}
 }

@@ -51,9 +51,7 @@ public:
 	{ }
 
 	// IServer implementation
-	Result FB_CARG authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
-	Result FB_CARG getSessionKey(Firebird::IStatus* status,
-								 const unsigned char** key, unsigned int* keyLen);
+	int FB_CARG authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
 	int FB_CARG release();
 
 private:

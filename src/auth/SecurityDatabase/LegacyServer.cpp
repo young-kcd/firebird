@@ -127,7 +127,7 @@ namespace Auth {
 class SecurityDatabase : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 {
 public:
-	Result verify(IWriter* authBlock, IServerBlock* sBlock);
+	int verify(IWriter* authBlock, IServerBlock* sBlock);
 
 	static int shutdown(const int, const int, void*);
 
@@ -291,7 +291,7 @@ void SecurityDatabase::prepare()
  *	Public interface
  */
 
-Result SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
+int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 {
 	static AmCache useNative = AM_UNKNOWN;
 
@@ -451,7 +451,7 @@ int SecurityDatabase::shutdown(const int, const int, void*)
 const static unsigned int INIT_KEY = ((~0) - 1);
 static unsigned int secDbKey = INIT_KEY;
 
-Result SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
+int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
 	IWriter* writerInterface)
 {
 	status->init();
@@ -501,7 +501,7 @@ Result SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBl
 
 		fb_assert(instance);
 
-		Result rc = instance->verify(writerInterface, sBlock);
+		int rc = instance->verify(writerInterface, sBlock);
 		TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
 		return rc;
 	}
@@ -510,14 +510,6 @@ Result SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBl
 		ex.stuffException(status);
 		return AUTH_FAILED;
 	}
-}
-
-Result SecurityDatabaseServer::getSessionKey(Firebird::IStatus*,
-	const unsigned char** key, unsigned int* keyLen)
-{
-	*key = NULL;
-	*keyLen = 0;
-	return AUTH_CONTINUE;
 }
 
 int SecurityDatabaseServer::release()

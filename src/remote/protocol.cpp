@@ -336,7 +336,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_cstring, accept_with_data->p_acpt_data);
 		MAP(xdr_cstring, accept_with_data->p_acpt_plugin);
 		MAP(xdr_u_short, accept_with_data->p_acpt_authenticated);
-		//???	fprintf(stderr, "data length %d\n", accept_with_data->p_acpt_data.cstr_length);
+		MAP(xdr_cstring, accept_with_data->p_acpt_keys);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -749,6 +749,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			MAP(xdr_cstring, auth->p_data);
 			MAP(xdr_cstring, auth->p_name);
 			MAP(xdr_cstring, auth->p_list);
+			MAP(xdr_cstring, auth->p_keys);
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 
 			return P_TRUE(xdrs, p);
@@ -758,6 +759,16 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		{
 			P_CANCEL_OP* cancel_op = &p->p_cancel_op;
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(cancel_op->p_co_kind));
+			DEBUG_PRINTSIZE(xdrs, p->p_operation);
+
+			return P_TRUE(xdrs, p);
+		}
+
+	case op_crypt:
+		{
+			P_CRYPT* crypt = &p->p_crypt;
+			MAP(xdr_cstring, crypt->p_plugin);
+			MAP(xdr_cstring, crypt->p_key);
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 
 			return P_TRUE(xdrs, p);

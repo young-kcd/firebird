@@ -64,7 +64,7 @@ public:
 	ClumpletWriter(MemoryPool& pool, const ClumpletWriter& from);
 	ClumpletWriter(const ClumpletWriter& from);
 
-	void reset(UCHAR tag);
+	void reset(UCHAR tag = 0);
 	void reset(const UCHAR* buffer, const size_t buffLen);
 	void clear();
 

@@ -43,9 +43,7 @@ public:
 	}
 
 	// IClient implementation
-	Result FB_CARG authenticate(Firebird::IStatus*, IClientBlock* data);
-	Result FB_CARG getSessionKey(Firebird::IStatus* status,
-								 const unsigned char** key, unsigned int* keyLen);
+	int FB_CARG authenticate(Firebird::IStatus*, IClientBlock* data);
     int FB_CARG release();
 };
 

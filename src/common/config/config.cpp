@@ -109,6 +109,10 @@ const char*	AmNative	= "native";
 const char*	AmTrusted	= "trusted";
 const char*	AmMixed		= "mixed";
 
+const char* WIRE_CRYPT_DISABLED	= "DISABLED";
+const char* WIRE_CRYPT_ENABLED	= "ENABLED";
+const char* WIRE_CRYPT_REQUIRED	= "REQUIRED";
+
 const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
 	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
@@ -169,7 +173,9 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
 	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(root)/security3.fdb"},	// security database name
 	{TYPE_BOOLEAN,		"SharedCache",				(ConfigValue) true},
-	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false}
+	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false},
+	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
+	{TYPE_STRING,		"CryptPlugin",				(ConfigValue) "Arc4"}
 };
 
 /******************************************************************************
@@ -671,9 +677,11 @@ const char* Config::getPlugins(unsigned int type)
 			return (const char*) getDefaultConfig()->values[KEY_PLUG_AUTH_MANAGE];
 		case Firebird::PluginType::Trace:
 			return (const char*) getDefaultConfig()->values[KEY_PLUG_TRACE];
+		case Firebird::PluginType::Crypt:
+			return (const char*) getDefaultConfig()->values[KEY_PLUG_CRYPT];
 	}
 
-	(Firebird::Arg::Gds(isc_random) << "Internal error in getPlugins()").raise();
+	(Firebird::Arg::Gds(isc_random) << "Internal error in Config::getPlugins()").raise();
 	return NULL;		// compiler warning silencer
 }
 
@@ -706,4 +714,10 @@ int FB_CARG FirebirdConf::release()
 const char* Config::getSecurityDatabase() const
 {
 	return get<const char*>(KEY_SECURITY_DATABASE);
+}
+
+const char* Config::getWireCrypt(WireCryptMode wcMode)
+{
+	const char* rc = getDefaultConfig()->get<const char*>(KEY_WIRE_CRYPT);
+	return rc ? rc : wcMode == WC_CLIENT ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
 }

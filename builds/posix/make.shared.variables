@@ -54,7 +54,8 @@ Remote_Server:= $(call dirObjects,remote/server) $(call dirObjects,auth/SecureRe
 				$(call makeObjects,auth/SecurityDatabase,LegacyServer.cpp)
 				# legacy security database LegacyServer.cpp should become plugin soon
 Remote_Client:= $(call dirObjects,remote/client) $(call dirObjects,auth/SecureRemotePassword/client) \
-				$(call makeObjects,auth/SecurityDatabase,LegacyClient.cpp)
+				$(call makeObjects,auth/SecurityDatabase,LegacyClient.cpp) \
+				$(call dirObjects,plugins/crypt/arc4)
 Remote_Server_Objects:= $(Remote_Common) $(Remote_Server)
 Remote_Client_Objects:= $(Remote_Common) $(Remote_Client)
 

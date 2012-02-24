@@ -46,8 +46,68 @@ Firebird::AtomicCounter rem_port::portCounter;
 IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
 
+
+const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
+								isc_dpb_user_name,
+								isc_dpb_auth_block,
+								isc_dpb_password,
+								isc_dpb_password_enc,
+								isc_dpb_trusted_auth,
+								isc_dpb_auth_plugin_name,
+								isc_dpb_auth_plugin_list,
+								isc_dpb_specific_auth_data,
+								isc_dpb_address_path,
+								isc_dpb_process_id,
+								isc_dpb_process_name,
+								isc_dpb_encrypt_key};
+
+const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
+								isc_spb_user_name,
+								isc_spb_auth_block,
+								isc_spb_password,
+								isc_spb_password_enc,
+								isc_spb_trusted_auth,
+								isc_spb_auth_plugin_name,
+								isc_spb_auth_plugin_list,
+								isc_spb_specific_auth_data,
+								isc_spb_address_path,
+								isc_spb_process_id,
+								isc_spb_process_name,
+								0};
+
+const ParametersSet spbStartParam = {0,
+									 0,
+									 isc_spb_auth_block,
+									 0,
+									 0,
+									 isc_spb_trusted_auth,
+									 isc_spb_auth_plugin_name,
+									 isc_spb_auth_plugin_list,
+									 isc_spb_specific_auth_data,
+									 0,
+									 0,
+									 0,
+									 0};	// Need new parameter here
+
+const ParametersSet spbInfoParam = {0,
+									0,
+									isc_info_svc_auth_block,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0,
+									0};
+
+
 const SLONG DUMMY_INTERVAL		= 60;	// seconds
 const int ATTACH_FAILURE_SPACE	= 16 * 1024;	// bytes
+
+static Firebird::MakeUpgradeInfo<> upInfo;
 
 
 void REMOTE_cleanup_transaction( Rtr* transaction)
@@ -812,7 +872,17 @@ rem_port::~rem_port()
 	delete port_packet_vector;
 #endif
 
-	delete port_crypt_keys;
+	while (port_crypt_keys.hasData())
+	{
+		delete port_crypt_keys.pop();
+	}
+
+	if (port_send_cipher)
+		port_send_cipher->release();
+	if (port_recv_cipher)
+		port_recv_cipher->release();
+	if (port_crypt_plugin)
+		Firebird::PluginManagerInterfacePtr()->releasePlugin(port_crypt_plugin);
 
 #ifdef DEV_BUILD
 	--portCounter;
@@ -1028,7 +1098,23 @@ void REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
 	}
 }
 
-void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet)
+void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet, bool checkKeys)
+{
+/**************************************
+ *
+ *	R E M O T E _ c h e c k _ r e s p o n s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check response to a remote call.
+ *
+ **************************************/
+
+	rdb->rdb_port->checkResponse(warning, packet, checkKeys);
+}
+
+void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool checkKeys)
 {
 /**************************************
  *
@@ -1053,7 +1139,6 @@ void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet)
 	// Translate any gds codes into local operating specific codes
 
 	Firebird::SimpleStatusVector newVector;
-	rem_port* port = rdb->rdb_port;
 
 	while (*vector != isc_arg_end)
 	{
@@ -1083,7 +1168,11 @@ void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet)
 	const ISC_STATUS pktErr = vector[1];
 	if (pktErr == isc_shutdown || pktErr == isc_att_shutdown)
 	{
-		port->port_flags |= PORT_rdb_shutdown;
+		port_flags |= PORT_rdb_shutdown;
+	}
+	else if (checkKeys)
+	{
+		addServerKeys(&packet->p_resp.p_resp_data);
 	}
 
 	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
@@ -1101,58 +1190,129 @@ void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet)
 	Firebird::status_exception::raise(vector);
 }
 
-const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
-								isc_dpb_user_name,
-								isc_dpb_auth_block,
-								isc_dpb_password,
-								isc_dpb_password_enc,
-								isc_dpb_trusted_auth,
-								isc_dpb_auth_plugin_name,
-								isc_dpb_auth_plugin_list,
-								isc_dpb_specific_auth_data,
-								isc_dpb_address_path,
-								isc_dpb_process_id,
-								isc_dpb_process_name,
-								isc_dpb_encrypt_key};
+void rem_port::addServerKeys(CSTRING* passedStr)
+{
+	Firebird::ClumpletReader newKeys(Firebird::ClumpletReader::UnTagged,
+									 passedStr->cstr_address, passedStr->cstr_length);
 
-const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
-								isc_spb_user_name,
-								isc_spb_auth_block,
-								isc_spb_password,
-								isc_spb_password_enc,
-								isc_spb_trusted_auth,
-								isc_spb_auth_plugin_name,
-								isc_spb_auth_plugin_list,
-								isc_spb_specific_auth_data,
-								isc_spb_address_path,
-								isc_spb_process_id,
-								isc_spb_process_name,
-								0};
+	for (newKeys.rewind(); !newKeys.isEof(); newKeys.moveNext())
+	{
+		KnownServerKey key;
+		fb_assert(newKeys.getClumpTag() == TAG_KEY_TYPE);
+		newKeys.getPath(key.type);
+		newKeys.moveNext();
+		if (newKeys.isEof())
+		{
+			break;
+		}
+		fb_assert(newKeys.getClumpTag() == TAG_KEY_PLUGINS);
+		newKeys.getPath(key.plugins);
+		key.plugins += ' ';
+		key.plugins.insert(0, " ");
 
-const ParametersSet spbStartParam = {0,
-									 0,
-									 isc_spb_auth_block,
-									 0,
-									 0,
-									 isc_spb_trusted_auth,
-									 isc_spb_auth_plugin_name,
-									 isc_spb_auth_plugin_list,
-									 isc_spb_specific_auth_data,
-									 0,
-									 0,
-									 0,
-									 0};	// Need new parameter here
+		for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
+		{
+			if (tryKeyType(key, port_crypt_keys[k]))
+			{
+				return;
+			}
+		}
 
-const ParametersSet spbInfoParam = {0,
-									0,
-									isc_info_svc_auth_block,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0};
+		port_known_server_keys.add(key);
+	}
+}
+
+bool rem_port::tryNewKey(InternalCryptKey* cryptKey)
+{
+	for (unsigned t = 0; t < port_known_server_keys.getCount(); ++t)
+	{
+		if (tryKeyType(port_known_server_keys[t], cryptKey))
+		{
+			return true;
+		}
+	}
+
+	port_crypt_keys.push(cryptKey);
+	return false;
+}
+
+static void setCStr(CSTRING& to, const char* from)
+{
+	to.cstr_address = reinterpret_cast<UCHAR*>(const_cast<char*>(from));
+	to.cstr_length = strlen(from);
+	to.cstr_allocated = 0;
+}
+
+bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptKey)
+{
+	if (port_crypt_complete)
+	{
+		return true;
+	}
+
+	if (srvKey.type != cryptKey->type)
+	{
+		return false;
+	}
+
+	if (Config::getWireCrypt(WC_CLIENT) == WIRE_CRYPT_DISABLED)
+	{
+		port_crypt_complete = true;
+		return true;
+	}
+
+	// we got correct key's type pair
+	// check what about crypt plugin for it
+	Remote::ParsedList clientPlugins;
+	REMOTE_parseList(clientPlugins, Config::getPlugins(Firebird::PluginType::Crypt));
+	for (unsigned n = 0; n < clientPlugins.getCount(); ++n)
+	{
+		Firebird::PathName p(clientPlugins[n]);
+		if (srvKey.plugins.find(" " + p + " ") != Firebird::PathName::npos)
+		{
+			Firebird::GetPlugins<Firebird::ICryptPlugin>
+				cp(Firebird::PluginType::Crypt, FB_CRYPT_PLUGIN_VERSION, upInfo, p.c_str());
+			if (cp.hasData())
+			{
+				// looks like we've found correct crypt plugin and key for it
+				Firebird::ICryptPlugin* plugin = cp.plugin();
+				Firebird::LocalStatus st;
+
+				// Install decrypting cipher
+				port_recv_cipher = plugin->getDecrypt(&st, cryptKey);
+				if (!st.isSuccess())
+				{
+					Firebird::status_exception::raise(st.get());
+				}
+
+				// Now it's time to notify server about choice done
+				PACKET crypt;
+				crypt.p_operation = op_crypt;
+				setCStr(crypt.p_crypt.p_key, cryptKey->type);
+				setCStr(crypt.p_crypt.p_plugin, p.c_str());
+				send(&crypt);
+
+				// Validate answer - decryptor is installed, therefore OK to do
+				receive(&crypt);
+				checkResponse(&st, &crypt);
+
+				// Install encrypting cipher
+				port_send_cipher = plugin->getEncrypt(&st, cryptKey);
+				if (!st.isSuccess())
+				{
+					port_recv_cipher->release();
+					port_recv_cipher = NULL;
+					Firebird::status_exception::raise(st.get());
+				}
+
+				port_crypt_plugin = plugin;
+				port_crypt_plugin->addRef();
+				port_crypt_complete = true;
+				//	fprintf(stderr, "Installed cipher %s key %s\n", cp.name(), cryptKey->type);
+				return true;
+			}
+		}
+	}
+
+	return false;
+}

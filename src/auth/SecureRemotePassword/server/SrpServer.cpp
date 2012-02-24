@@ -61,8 +61,7 @@ public:
 	}
 
 	// IServer implementation
-	Result FB_CARG authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
-	Result FB_CARG getSessionKey(IStatus* status, const unsigned char** key, unsigned int* keyLen);
+	int FB_CARG authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
     int FB_CARG release();
 
 private:
@@ -77,7 +76,7 @@ private:
 	const char* secDbName;
 };
 
-Result SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerInterface)
+int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerInterface)
 {
 	RefPtr<IAttachment> att;
 	RefPtr<ITransaction> tra;
@@ -239,12 +238,23 @@ Result SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* write
 			data.append(serverPubKey);
 			dumpIt("Srv: serverPubKey", serverPubKey);
 			dumpIt("Srv: data", data);
-			sb->putData(data.length(), data.c_str());
+			sb->putData(status, data.length(), data.c_str());
+			if (!status->isSuccess())
+			{
+				return AUTH_FAILED;
+			}
 
-			// Will be used to produce ISessionKey
 			dumpIt("Srv: clientPubKey", clientPubKey);
 			server->serverSessionKey(sessionKey, clientPubKey.c_str(), verifier);
 			dumpIt("Srv: sessionKey", sessionKey);
+
+			// output the key
+			FbCryptKey cKey = {"Symmetric", sessionKey.begin(), NULL, sessionKey.getCount(), 0};
+			sb->putKey(status, &cKey);
+			if (!status->isSuccess())
+			{
+				return AUTH_FAILED;
+			}
 
 			return AUTH_MORE_DATA;
 		}
@@ -284,19 +294,6 @@ Result SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* write
 	}
 
 	return AUTH_FAILED;
-}
-
-Result SrpServer::getSessionKey(IStatus*, const unsigned char** key, unsigned int* keyLen)
-{
-	if (!sessionKey.hasData())
-	{
-		return AUTH_MORE_DATA;
-	}
-
-	*key = sessionKey.begin();
-	*keyLen = sessionKey.getCount();
-
-	return AUTH_SUCCESS;
 }
 
 int SrpServer::release()

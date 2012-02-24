@@ -35,7 +35,7 @@
 
 namespace Auth {
 
-Result SecurityDatabaseClient::authenticate(Firebird::IStatus*, IClientBlock* cb)
+int SecurityDatabaseClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
 {
 	if (!(cb->getLogin() && cb->getPassword()))
 	{
@@ -44,17 +44,13 @@ Result SecurityDatabaseClient::authenticate(Firebird::IStatus*, IClientBlock* cb
 
 	TEXT pwt[Auth::MAX_LEGACY_PASSWORD_LENGTH + 2];
 	ENC_crypt(pwt, sizeof pwt, cb->getPassword(), Auth::LEGACY_PASSWORD_SALT);
-	cb->putData(strlen(&pwt[2]), &pwt[2]);
+	cb->putData(status, strlen(&pwt[2]), &pwt[2]);
+	if (! status->isSuccess())
+	{
+		return AUTH_FAILED;
+	}
 
 	return AUTH_SUCCESS;
-}
-
-Result SecurityDatabaseClient::getSessionKey(Firebird::IStatus*,
-								 const unsigned char** key, unsigned int* keyLen)
-{
-	*key = NULL;
-	*keyLen = 0;
-	return AUTH_CONTINUE;
 }
 
 int SecurityDatabaseClient::release()

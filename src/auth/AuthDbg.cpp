@@ -56,7 +56,7 @@ DebugServer::DebugServer(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
+int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
                                IWriter* writerInterface)
 {
 /*	try
@@ -90,7 +90,7 @@ Result FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock
 	return AUTH_FAILED;
 }
 /*
-Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const unsigned char* data,
+int FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const unsigned char* data,
 											   unsigned int size, IWriter* writerInterface)
 {
 	try
@@ -125,7 +125,7 @@ DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* cBlock)
+int FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* cBlock)
 {
 /*
 	try
@@ -153,7 +153,7 @@ Result FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock
 	return AUTH_FAILED;
 }
 /*
-Result FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size)
+int FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size)
 {
 	try
 	{
@@ -185,22 +185,6 @@ int FB_CARG DebugClient::release()
 	}
 
 	return 1;
-}
-
-Result DebugServer::getSessionKey(Firebird::IStatus*,
-								 const unsigned char** key, unsigned int* keyLen)
-{
-	*key = NULL;
-	*keyLen = 0;
-	return AUTH_CONTINUE;
-}
-
-Result DebugClient::getSessionKey(Firebird::IStatus*,
-								 const unsigned char** key, unsigned int* keyLen)
-{
-	*key = NULL;
-	*keyLen = 0;
-	return AUTH_CONTINUE;
 }
 
 } // namespace Auth
