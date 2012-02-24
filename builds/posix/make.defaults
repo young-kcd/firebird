@@ -131,6 +131,9 @@ CAS_OPTIONS=@CAS_OPTIONS@
 # multiple-precision integer library
 MATHLIB=@MATHLIB@
 
+# switch to make sed edit files inplace
+INLINE_EDIT_SED:= -i
+
 # Default programs and tools to be used in the build process
 
 SH=			sh -c
