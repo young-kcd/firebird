@@ -1,3 +1,13 @@
+ 2012-02-23 15:39  dimitr 
+   M src/dsql/StmtNodes.cpp
+Fixed the assert/crash when using the cursors at runtime.
+
+ 2012-02-23 07:17  robocop 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+Kill variable shadowing.
+
  2012-02-22 08:09  dimitr 
    M builds/win32/msvc8/engine.vcproj
 Fixed the MSVC8 build.
