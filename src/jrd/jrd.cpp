@@ -2638,7 +2638,7 @@ void JAttachment::ddl(IStatus* status, ITransaction* /*tra*/, unsigned int /*len
  * This function is deprecated and "removed".
  *
  **************************************/
-	status->set((Arg::Gds(isc_feature_deprecated) << Arg::Str("isc_ddl")).value());
+	status->set((Arg::Gds(isc_feature_removed) << Arg::Str("isc_ddl")).value());
 }
 
 

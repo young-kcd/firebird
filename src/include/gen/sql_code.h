@@ -690,7 +690,7 @@ static const struct {
 	{335544987, -902}, /* 667 no_trusted_spb */
 	{335544988, -901}, /* 668 package_name */
 	{335544989, -901}, /* 669 cannot_make_not_null */
-	{335544990, -901}, /* 670 feature_deprecated */
+	{335544990, -901}, /* 670 feature_removed */
 	{335544991, -901}, /* 671 view_name */
 	{335544992, -904}, /* 672 lock_dir_access */
 	{335544993, -901}, /* 673 invalid_fetch_option */

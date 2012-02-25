@@ -1390,8 +1390,8 @@ C --
       PARAMETER (GDS__package_name                     = 335544988)
       INTEGER*4 GDS__cannot_make_not_null            
       PARAMETER (GDS__cannot_make_not_null             = 335544989)
-      INTEGER*4 GDS__feature_deprecated              
-      PARAMETER (GDS__feature_deprecated               = 335544990)
+      INTEGER*4 GDS__feature_removed                 
+      PARAMETER (GDS__feature_removed                  = 335544990)
       INTEGER*4 GDS__view_name                       
       PARAMETER (GDS__view_name                        = 335544991)
       INTEGER*4 GDS__lock_dir_access                 

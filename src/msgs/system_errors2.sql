@@ -675,7 +675,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-902, '28', '000', 0, 667, 'no_trusted_spb', NULL, NULL)
 (-901, '42', '000', 0, 668, 'package_name', NULL, NULL)
 (-901, '22', '006', 0, 669, 'cannot_make_not_null', NULL, NULL)
-(-901, '0A', '000', 0, 670, 'feature_deprecated', NULL, NULL)
+(-901, '0A', '000', 0, 670, 'feature_removed', NULL, NULL)
 (-901, '00', '000', 0, 671, 'view_name', NULL, NULL)
 (-904, '08', '006', 0, 672, 'lock_dir_access', NULL, NULL)
 (-901, 'HY', '106', 0, 673, 'invalid_fetch_option', NULL, NULL)

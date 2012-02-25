@@ -725,7 +725,7 @@ const ISC_STATUS isc_eds_expl_tran_ctrl               = 335544986L;
 const ISC_STATUS isc_no_trusted_spb                   = 335544987L;
 const ISC_STATUS isc_package_name                     = 335544988L;
 const ISC_STATUS isc_cannot_make_not_null             = 335544989L;
-const ISC_STATUS isc_feature_deprecated               = 335544990L;
+const ISC_STATUS isc_feature_removed                  = 335544990L;
 const ISC_STATUS isc_view_name                        = 335544991L;
 const ISC_STATUS isc_lock_dir_access                  = 335544992L;
 const ISC_STATUS isc_invalid_fetch_option             = 335544993L;
@@ -1905,7 +1905,7 @@ const ISC_STATUS isc_err_max                          = 1154;
 #define isc_no_trusted_spb                   335544987L
 #define isc_package_name                     335544988L
 #define isc_cannot_make_not_null             335544989L
-#define isc_feature_deprecated               335544990L
+#define isc_feature_removed                  335544990L
 #define isc_view_name                        335544991L
 #define isc_lock_dir_access                  335544992L
 #define isc_invalid_fetch_option             335544993L

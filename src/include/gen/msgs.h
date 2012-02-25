@@ -694,7 +694,7 @@ Data source : @4"},		/* eds_statement */
 	{335544987, "Use of TRUSTED switches in spb_command_line is prohibited"},		/* no_trusted_spb */
 	{335544988, "PACKAGE @1"},		/* package_name */
 	{335544989, "Cannot make field @1 of table @2 NOT NULL because there are NULLs present"},		/* cannot_make_not_null */
-	{335544990, "Feature @1 is deprecated"},		/* feature_deprecated */
+	{335544990, "Feature @1 is not supported any more"},		/* feature_removed */
 	{335544991, "VIEW @1"},		/* view_name */
 	{335544992, "Can not access lock files directory @1"},		/* lock_dir_access */
 	{335544993, "Fetch option @1 is invalid for a non-scrollable cursor"},		/* invalid_fetch_option */

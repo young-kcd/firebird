@@ -691,7 +691,7 @@ static const struct {
 	{"no_trusted_spb", 335544987},
 	{"package_name", 335544988},
 	{"cannot_make_not_null", 335544989},
-	{"feature_deprecated", 335544990},
+	{"feature_removed", 335544990},
 	{"view_name", 335544991},
 	{"lock_dir_access", 335544992},
 	{"invalid_fetch_option", 335544993},

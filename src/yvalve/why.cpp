@@ -2250,7 +2250,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS* userStatus, FB_API_HANDLE* /*stmtHandle*/,
 	USHORT /*dialect*/, XSQLDA* /*sqlda*/)
 {
-	(Arg::Gds(isc_feature_deprecated) << Arg::Str("isc_dsql_insert")).copyTo(userStatus);
+	(Arg::Gds(isc_feature_removed) << Arg::Str("isc_dsql_insert")).copyTo(userStatus);
 	return userStatus[1];
 }
 
@@ -2260,7 +2260,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	USHORT /*blrLength*/, const SCHAR* /*blr*/,
 	USHORT /*msgType*/, USHORT /*msgLength*/, const SCHAR* /*msg*/)
 {
-	(Arg::Gds(isc_feature_deprecated) << Arg::Str("isc_dsql_insert")).copyTo(userStatus);
+	(Arg::Gds(isc_feature_removed) << Arg::Str("isc_dsql_insert")).copyTo(userStatus);
 	return userStatus[1];
 }
 
