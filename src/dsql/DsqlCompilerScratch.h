@@ -46,17 +46,19 @@ class VariableNode;
 class DsqlCompilerScratch : public BlrWriter
 {
 public:
-	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x001;
-	static const unsigned FLAG_RETURNING_INTO		= 0x002;
-	static const unsigned FLAG_METADATA_SAVED		= 0x004;
-	static const unsigned FLAG_PROCEDURE			= 0x008;
-	static const unsigned FLAG_TRIGGER				= 0x010;
-	static const unsigned FLAG_BLOCK				= 0x020;
-	static const unsigned FLAG_RECURSIVE_CTE		= 0x040;
-	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x080;
-	static const unsigned FLAG_MERGE				= 0x100;
-	static const unsigned FLAG_FUNCTION				= 0x200;
-	static const unsigned FLAG_SUB_ROUTINE			= 0x400;
+	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x0001;
+	static const unsigned FLAG_RETURNING_INTO		= 0x0002;
+	static const unsigned FLAG_METADATA_SAVED		= 0x0004;
+	static const unsigned FLAG_PROCEDURE			= 0x0008;
+	static const unsigned FLAG_TRIGGER				= 0x0010;
+	static const unsigned FLAG_BLOCK				= 0x0020;
+	static const unsigned FLAG_RECURSIVE_CTE		= 0x0040;
+	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x0080;
+	static const unsigned FLAG_MERGE				= 0x0100;
+	static const unsigned FLAG_FUNCTION				= 0x0200;
+	static const unsigned FLAG_SUB_ROUTINE			= 0x0400;
+	static const unsigned FLAG_INTERNAL_REQUEST		= 0x0800;
+	static const unsigned FLAG_AMBIGUOUS_STMT		= 0x1000;
 
 public:
 	DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,

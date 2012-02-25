@@ -645,6 +645,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::BoolExprNode* boolExprNode;
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
+	Jrd::TransactionNode* traNode;
 	Jrd::CreateCollationNode* createCollationNode;
 	Jrd::CreateDomainNode* createDomainNode;
 	Jrd::AlterDomainNode* alterDomainNode;
@@ -676,6 +677,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::SetTransactionNode* setTransactionNode;
 	Jrd::DeclareSubProcNode* declareSubProcNode;
 	Jrd::DeclareSubFuncNode* declareSubFuncNode;
+	Jrd::dsql_req* dsqlReq;
 }
 
 %type <legacyNode> access_type alias_list
@@ -712,10 +714,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> column_constraint column_constraint_clause
 %type <legacyNode> column_constraint_def column_constraint_list column_def
 %type <boolVal>	   check_opt
-
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
 %type <legacyNode> column_singleton
-%type <stmtNode>   commit complex_proc_statement
+%type <traNode>    commit
+%type <stmtNode>   complex_proc_statement
 %type <legacyNode> computed_by computed_clause constant constraint_index_opt
 %type <boolVal>	   conditional
 %type <legacyNode> constraint_name_opt correlation_name
@@ -744,6 +746,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <ddlNode> declare declare_clause drop drop_clause
 %type <legacyStr>  db_name ddl_desc
 %type db_alter_clause(<alterDatabaseNode>)
+%type <ddlNode>    ddl_statement
+%type <stmtNode>   dml_statement
 
 %type <legacyNode> event_argument_opt
 %type <ddlNode>	   exception_clause
@@ -851,7 +855,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <ddlNode> revoke rexception_clause
 %type <legacyNode> role_admin_option role_grantee role_grantee_list
 %type <legacyNode> role_name role_name_list rows_clause
-%type <stmtNode> rollback
+%type <traNode> rollback
 %type <ddlNode> role_clause rtable_clause
 %type <ddlNode> rview_clause
 %type <nullableIntVal>  revoke_admin
@@ -871,7 +875,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <ddlNode>	   set_statistics
 %type <legacyNode> simple_type simple_when_clause skip_clause
 %type <uintVal>	   snap_shot
-%type <node>	   statement
+%type <dsqlReq>	   statement
 %type <legacyNode> string_length_opt
 %type <legacyNode> symbol_UDF_call_name symbol_UDF_name symbol_blob_subtype_name symbol_character_set_name
 %type <legacyNode> symbol_collation_name symbol_column_name symbol_constraint_name symbol_cursor_name
@@ -897,6 +901,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type tran_option(<setTransactionNode>) tran_option_list(<setTransactionNode>)
 %type tran_option_list_opt(<setTransactionNode>)
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
+%type <traNode>    tra_statement
 
 %type <legacyNode> u_constant u_numeric_constant udf_data_type
 %type <createAlterFunctionNode> udf_decl_clause
@@ -998,38 +1003,48 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 // list of possible statements
 
 top
-	: statement
-		{ DSQL_parse = $1; }
-	| statement ';'
-		{ DSQL_parse = $1; }
+	: statement			{ DSQL_parse = $1; }
+	| statement ';'		{ DSQL_parse = $1; }
 	;
 
 statement
-	: alter										{ $$ = $1; }
+	: dml_statement		{ $$ = newNode<DsqlDmlRequest>($1); }
+	| ddl_statement		{ $$ = newNode<DsqlDdlRequest>($1); }
+	| tra_statement		{ $$ = newNode<DsqlTransactionRequest>($1); }
+	;
+
+dml_statement
 	// ASF: ALTER SEQUENCE is defined here cause it's treated as DML.
-	| ALTER SEQUENCE alter_sequence_clause		{ $$ = $3; }
-	| comment									{ $$ = $1; }
-	| commit									{ $$ = $1; }
-	| create									{ $$ = $1; }
-	| create_or_alter							{ $$ = $1; }
-	| declare									{ $$ = $1; }
+	: ALTER SEQUENCE alter_sequence_clause		{ $$ = $3; }
 	| delete									{ $$ = $1; }
-	| drop										{ $$ = $1; }
-	| grant										{ $$ = $1; }
 	| insert									{ $$ = $1; }
 	| merge										{ $$ = $1; }
 	| exec_procedure							{ $$ = $1; }
 	| exec_block								{ $$ = $1; }
-	| recreate									{ $$ = $1; }
-	| revoke									{ $$ = $1; }
-	| rollback									{ $$ = $1; }
 	| savepoint									{ $$ = $1; }
 	| select									{ $$ = $1; }
-	| set_transaction							{ $$ = $1; }
 	| set_generator								{ $$ = $1; }
-	| set_statistics							{ $$ = $1; }
 	| update									{ $$ = $1; }
 	| update_or_insert							{ $$ = $1; }
+	;
+
+ddl_statement
+	: alter										{ $$ = $1; }
+	| comment									{ $$ = $1; }
+	| create									{ $$ = $1; }
+	| create_or_alter							{ $$ = $1; }
+	| declare									{ $$ = $1; }
+	| drop										{ $$ = $1; }
+	| grant										{ $$ = $1; }
+	| recreate									{ $$ = $1; }
+	| revoke									{ $$ = $1; }
+	| set_statistics							{ $$ = $1; }
+	;
+
+tra_statement
+	: set_transaction							{ $$ = $1; }
+	| commit									{ $$ = $1; }
+	| rollback									{ $$ = $1; }
 	;
 
 

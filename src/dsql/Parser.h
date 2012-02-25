@@ -128,7 +128,7 @@ public:
 	~Parser();
 
 public:
-	Node* parse();
+	dsql_req* parse();
 
 	const Firebird::string& getTransformedString() const
 	{
@@ -283,7 +283,7 @@ private:
 	Firebird::string transformedString;
 	Firebird::GenericMap<Firebird::NonPooled<dsql_str*, StrMark> > strMarks;
 	bool stmt_ambiguous;
-	Node* DSQL_parse;
+	dsql_req* DSQL_parse;
 
 	// These value/posn are taken from the lexer
 	YYSTYPE yylval;

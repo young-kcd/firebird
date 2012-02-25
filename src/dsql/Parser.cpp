@@ -91,10 +91,13 @@ Parser::~Parser()
 }
 
 
-Node* Parser::parse()
+dsql_req* Parser::parse()
 {
 	if (parseAux() != 0)
+	{
+		fb_assert(false);
 		return NULL;
+	}
 
 	transformString(lex.start, lex.end - lex.start, transformedString);
 

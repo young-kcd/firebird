@@ -159,7 +159,7 @@ public:
 };
 
 
-class CommitRollbackNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_COMMIT_ROLLBACK>
+class CommitRollbackNode : public TransactionNode
 {
 public:
 	enum Command
@@ -170,7 +170,7 @@ public:
 
 public:
 	explicit CommitRollbackNode(MemoryPool& pool, Command aCommand, bool aRetain)
-		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_COMMIT_ROLLBACK>(pool),
+		: TransactionNode(pool),
 		  command(aCommand),
 		  retain(aRetain)
 	{
@@ -200,8 +200,36 @@ public:
 		return this;
 	}
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
 	{
+		if (retain)
+		{
+			switch (command)
+			{
+				case CMD_COMMIT:
+					JRD_commit_retaining(tdbb, request->req_transaction);
+					break;
+
+				case CMD_ROLLBACK:
+					JRD_rollback_retaining(tdbb, request->req_transaction);
+					break;
+			}
+		}
+		else
+		{
+			switch (command)
+			{
+				case CMD_COMMIT:
+					JRD_commit_transaction(tdbb, request->req_transaction);
+					break;
+
+				case CMD_ROLLBACK:
+					JRD_rollback_transaction(tdbb, request->req_transaction);
+					break;
+			}
+
+			*transaction = NULL;
+		}
 	}
 
 private:
@@ -1432,7 +1460,7 @@ public:
 };
 
 
-class SetTransactionNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SET_TRANSACTION>
+class SetTransactionNode : public TransactionNode
 {
 public:
 	enum
@@ -1445,7 +1473,8 @@ public:
 
 public:
 	explicit SetTransactionNode(MemoryPool& pool)
-		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SET_TRANSACTION>(pool)
+		: TransactionNode(pool),
+		  tpb(pool)
 	{
 	}
 
@@ -1457,9 +1486,7 @@ public:
 
 	virtual SetTransactionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
-	{
-	}
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const;
 
 private:
 	void genTableLock(DsqlCompilerScratch* dsqlScratch, const dsql_nod* tblLock, USHORT lockLevel);
@@ -1473,6 +1500,7 @@ public:
 	Nullable<bool> restartRequests;
 	Nullable<USHORT> lockTimeout;
 	Nullable<dsql_nod*> reserveList;
+	Firebird::UCharBuffer tpb;
 };
 
 

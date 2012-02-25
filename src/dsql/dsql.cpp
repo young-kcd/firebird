@@ -115,57 +115,6 @@ namespace
 		isc_info_req_update_count, isc_info_req_delete_count,
 		isc_info_req_select_count, isc_info_req_insert_count
 	};
-
-	class DsqlDmlRequest : public dsql_req
-	{
-	public:
-		explicit DsqlDmlRequest(DsqlCompilerScratch* scratch)
-			: dsql_req(scratch)
-		{
-		}
-
-		virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-			ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-			ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
-			bool singleton);
-
-		virtual void setCursor(thread_db* tdbb, const TEXT* name);
-
-		virtual ISC_STATUS fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
-			ULONG msgLength, UCHAR* msgBuffer);
-	};
-
-	class DsqlDdlRequest : public dsql_req
-	{
-	public:
-		explicit DsqlDdlRequest(DsqlCompilerScratch* scratch, DdlNode* aNode)
-			: dsql_req(scratch),
-			  node(aNode)
-		{
-		}
-
-		virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-			ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-			ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
-			bool singleton);
-
-	private:
-		DdlNode* node;
-	};
-
-	class DsqlTransactionRequest : public dsql_req
-	{
-	public:
-		explicit DsqlTransactionRequest(DsqlCompilerScratch* scratch)
-			: dsql_req(scratch)
-		{
-		}
-
-		virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-			ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-			ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
-			bool singleton);
-	};
 }	// namespace
 
 
@@ -204,8 +153,10 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
 	DsqlCompilerScratch* scratch = FB_NEW(pool) DsqlCompilerScratch(pool, database,
 		NULL, statement);
 
-	dsql_req* const request = FB_NEW(pool) DsqlDmlRequest(scratch);
+	dsql_req* const request = FB_NEW(pool) DsqlDmlRequest(pool, NULL);
 	request->req_dbb = database;
+	request->req_transaction = scratch->getTransaction();
+	request->statement = scratch->getStatement();
 
 	return request;
 }
@@ -754,14 +705,108 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 }
 
 
+void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	ntrace_result_t* traceResult)
+{
+	node = Node::doDsqlPass(scratch, node);
+
+	if (scratch->clientDialect > SQL_DIALECT_V5)
+		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+	else
+		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+
+	GEN_request(scratch, node);
+
+	// Create the messages buffers
+	for (size_t i = 0; i < scratch->ports.getCount(); ++i)
+	{
+		dsql_msg* message = scratch->ports[i];
+
+		// Allocate buffer for message
+		const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
+
+		message->msg_buffer_number = req_msg_buffers.getCount();
+		req_msg_buffers.grow(message->msg_buffer_number + 1);
+
+		UCHAR*& msgBuffer = req_msg_buffers[message->msg_buffer_number];
+		fb_assert(!msgBuffer);
+
+		msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+		msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
+	}
+
+	// have the access method compile the statement
+
+#ifdef DSQL_DEBUG
+	if (DSQL_debug & 64)
+	{
+		dsql_trace("Resulting BLR code for DSQL:");
+		gds__trace_raw("Statement:\n");
+		gds__trace_raw(statement->getSqlText()->c_str(), statement->getSqlText()->length());
+		gds__trace_raw("\nBLR:\n");
+		fb_print_blr(scratch->getBlrData().begin(),
+			(ULONG) scratch->getBlrData().getCount(),
+			gds__trace_printer, 0, 0);
+	}
+#endif
+
+	ISC_STATUS_ARRAY localStatus;
+	MOVE_CLEAR(localStatus, sizeof(localStatus));
+
+	// check for warnings
+	if (tdbb->tdbb_status_vector[2] == isc_arg_warning)
+	{
+		// save a status vector
+		memcpy(localStatus, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
+	}
+
+	ISC_STATUS status = FB_SUCCESS;
+
+	try
+	{
+		JRD_compile(tdbb, scratch->getAttachment()->dbb_attachment, &req_request,
+			scratch->getBlrData().getCount(), scratch->getBlrData().begin(),
+			statement->getSqlText(),
+			scratch->getDebugData().getCount(), scratch->getDebugData().begin(),
+			(scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST));
+	}
+	catch (const Exception&)
+	{
+		status = tdbb->tdbb_status_vector[1];
+		*traceResult = (status == isc_no_priv ? res_unauthorized : res_failed);
+	}
+
+	// restore warnings (if there are any)
+	if (localStatus[2] == isc_arg_warning)
+	{
+		size_t indx, len, warning;
+
+		// find end of a status vector
+		PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);
+		if (indx)
+			--indx;
+
+		// calculate length of saved warnings
+		PARSE_STATUS(localStatus, len, warning);
+		len -= 2;
+
+		if ((len + indx - 1) < ISC_STATUS_LENGTH)
+			memcpy(&tdbb->tdbb_status_vector[indx], &localStatus[2], sizeof(ISC_STATUS) * len);
+	}
+
+	// free blr memory
+	scratch->getBlrData().free();
+
+	if (status)
+		status_exception::raise(tdbb->tdbb_status_vector);
+}
+
 // Execute a dynamic SQL statement.
 void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
 	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
 	bool singleton)
 {
-	const DsqlCompiledStatement* statement = getStatement();
-
 	// If there is no data required, just start the request
 
 	const dsql_msg* message = statement->getSendMsg();
@@ -894,6 +939,30 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	trace.finish(have_cursor, res_successful);
 }
 
+void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	ntrace_result_t* traceResult)
+{
+	this->scratch = scratch;
+
+	node = Node::doDsqlPass(scratch, node);
+
+	if (scratch->getAttachment()->dbb_read_only)
+		ERRD_post(Arg::Gds(isc_read_only_database));
+
+	if ((scratch->flags & DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT) &&
+		scratch->getAttachment()->dbb_db_SQL_dialect != scratch->clientDialect)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
+					  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
+	}
+
+	if (scratch->clientDialect > SQL_DIALECT_V5)
+		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+	else
+		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+}
+
 // Execute a dynamic SQL statement.
 void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
@@ -902,14 +971,12 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 {
 	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
 
-	const DsqlCompiledStatement* statement = getStatement();
-
 	fb_utils::init_status(tdbb->tdbb_status_vector);
 
 	// run all statements under savepoint control
 	{	// scope
 		AutoSavePoint savePoint(tdbb, req_transaction);
-		node->executeDdl(tdbb, statement->getDdlScratch(), req_transaction);
+		node->executeDdl(tdbb, scratch, req_transaction);
 		savePoint.release();	// everything is ok
 	}
 
@@ -918,43 +985,20 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	trace.finish(false, res_successful);
 }
 
+
+void DsqlTransactionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	ntrace_result_t* /*traceResult*/)
+{
+	node = Node::doDsqlPass(scratch, node);
+}
+
 // Execute a dynamic SQL statement.
 void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
 	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
 	bool singleton)
 {
-	const DsqlCompiledStatement* statement = getStatement();
-
-	switch (statement->getType())
-	{
-		case DsqlCompiledStatement::TYPE_START_TRANS:
-			JRD_start_transaction(tdbb, &req_transaction, req_dbb->dbb_attachment,
-				statement->getDdlData().getCount(), statement->getDdlData().begin());
-			*traHandle = req_transaction;
-			break;
-
-		case DsqlCompiledStatement::TYPE_COMMIT:
-			JRD_commit_transaction(tdbb, req_transaction);
-			*traHandle = NULL;
-			break;
-
-		case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-			JRD_commit_retaining(tdbb, req_transaction);
-			break;
-
-		case DsqlCompiledStatement::TYPE_ROLLBACK:
-			JRD_rollback_transaction(tdbb, req_transaction);
-			*traHandle = NULL;
-			break;
-
-		case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-			JRD_rollback_retaining(tdbb, req_transaction);
-			break;
-
-		default:
-			fb_assert(false);
-	}
+	node->execute(tdbb, this, traHandle);
 }
 
 
@@ -1535,6 +1579,9 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		transaction, statement);
 	scratch->clientDialect = clientDialect;
 
+	if (isInternalRequest)
+		scratch->flags |= DsqlCompilerScratch::FLAG_INTERNAL_REQUEST;
+
 	dsql_req* request = NULL;
 
 	try
@@ -1545,17 +1592,10 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			scratch->getAttachment()->dbb_db_SQL_dialect, parserVersion, text, textLength,
 			tdbb->getAttachment()->att_charset);
 
-		Node* node = parser.parse();
+		request = parser.parse();
 
-		if (!node)
-		{
-			// CVC: Apparently, Parser::parse won't return if the command is incomplete,
-			// because yyerror() will call ERRD_post().
-			// This may be a special case, but we don't know about positions here.
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Unexpected end of command
-					  Arg::Gds(isc_command_end_err));
-		}
+		if (parser.isStmtAmbiguous())
+			scratch->flags |= DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT;
 
 		string transformedText = parser.getTransformedString();
 		SSHORT charSetId = database->dbb_attachment->att_charset;
@@ -1602,161 +1642,24 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		statement->setType(DsqlCompiledStatement::TYPE_SELECT);
 
-		node = Node::doDsqlPass(scratch, node);
-		fb_assert(node);
+		if (request->req_traced)
+			trace.setStatement(request);
 
-		const DsqlCompiledStatement::Type statementType = statement->getType();
-
-		switch (statementType)
-		{
-			case DsqlCompiledStatement::TYPE_COMMIT:
-			case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-			case DsqlCompiledStatement::TYPE_ROLLBACK:
-			case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-			case DsqlCompiledStatement::TYPE_START_TRANS:
-				request = FB_NEW(statement->getPool()) DsqlTransactionRequest(scratch);
-				request->req_traced = false;
-				trace.setStatement(request);
-				return request;	// Stop here for statements not requiring code generation.
-
-			case DsqlCompiledStatement::TYPE_CREATE_DB:
-			case DsqlCompiledStatement::TYPE_DDL:
-				if (scratch->getAttachment()->dbb_read_only)
-					ERRD_post(Arg::Gds(isc_read_only_database));
-
-				request = FB_NEW(statement->getPool()) DsqlDdlRequest(scratch,
-					static_cast<DdlNode*>(node));
-
-				break;
-
-			default:
-				request = FB_NEW(statement->getPool()) DsqlDmlRequest(scratch);
-				break;
-		}
-
-		request->req_traced = true;
-		trace.setStatement(request);
-
-		if (statementType == DsqlCompiledStatement::TYPE_DDL)
-		{
-			if (parser.isStmtAmbiguous() &&
-				scratch->getAttachment()->dbb_db_SQL_dialect != clientDialect)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
-						  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
-							  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
-			}
-
-			statement->setDdlScratch(scratch);
-		}
-
-		if (clientDialect > SQL_DIALECT_V5)
-			statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
-		else
-			statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
-
-		if (!statement->isDdl())
-			GEN_request(scratch, static_cast<DmlNode*>(node));
-
-		// Create the messages buffers
-		for (size_t i = 0; i < scratch->ports.getCount(); ++i)
-		{
-			dsql_msg* message = scratch->ports[i];
-
-			// Allocate buffer for message
-			const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
-
-			message->msg_buffer_number = request->req_msg_buffers.getCount();
-			request->req_msg_buffers.grow(message->msg_buffer_number + 1);
-
-			UCHAR*& msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
-			fb_assert(!msgBuffer);
-
-			msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
-			msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
-		}
-
-		// stop here for ddl statements
-
-		if (statementType == DsqlCompiledStatement::TYPE_CREATE_DB ||
-			statementType == DsqlCompiledStatement::TYPE_DDL)
-		{
-			// Notify Trace API manager about new DDL request cooked.
-			trace.prepare(res_successful);
-			return request;
-		}
-
-		// have the access method compile the statement
-
-#ifdef DSQL_DEBUG
-		if (DSQL_debug & 64)
-		{
-			dsql_trace("Resulting BLR code for DSQL:");
-			gds__trace_raw("Statement:\n");
-			gds__trace_raw(text, textLength);
-			gds__trace_raw("\nBLR:\n");
-			fb_print_blr(scratch->getBlrData().begin(),
-				(ULONG) scratch->getBlrData().getCount(),
-				gds__trace_printer, 0, 0);
-		}
-#endif
-
-		ISC_STATUS_ARRAY localStatus;
-		MOVE_CLEAR(localStatus, sizeof(localStatus));
-
-		// check for warnings
-		if (tdbb->tdbb_status_vector[2] == isc_arg_warning)
-		{
-			// save a status vector
-			memcpy(localStatus, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
-		}
-
-		ISC_STATUS status = FB_SUCCESS;
-
+		ntrace_result_t traceResult = res_successful;
 		try
 		{
-			JRD_compile(tdbb,
-						scratch->getAttachment()->dbb_attachment,
-						&request->req_request,
-						scratch->getBlrData().getCount(),
-						scratch->getBlrData().begin(),
-						statement->getSqlText(),
-						scratch->getDebugData().getCount(),
-						scratch->getDebugData().begin(),
-						isInternalRequest);
+			request->req_dbb = scratch->getAttachment();
+			request->req_transaction = scratch->getTransaction();
+			request->statement = scratch->getStatement();
+
+			request->dsqlPass(tdbb, scratch, &traceResult);
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{
-			status = tdbb->tdbb_status_vector[1];
-			trace.prepare(status == isc_no_priv ? res_unauthorized : res_failed);
+			trace.prepare(traceResult);
+			throw;
 		}
-
-		// restore warnings (if there are any)
-		if (localStatus[2] == isc_arg_warning)
-		{
-			size_t indx, len, warning;
-
-			// find end of a status vector
-			PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);
-			if (indx)
-				--indx;
-
-			// calculate length of saved warnings
-			PARSE_STATUS(localStatus, len, warning);
-			len -= 2;
-
-			if ((len + indx - 1) < ISC_STATUS_LENGTH)
-				memcpy(&tdbb->tdbb_status_vector[indx], &localStatus[2], sizeof(ISC_STATUS) * len);
-		}
-
-		// free blr memory
-		scratch->getBlrData().free();
-
-		if (status)
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-
-		// Notify Trace API manager about new request cooked.
-		trace.prepare(res_successful);
+		trace.prepare(traceResult);
 
 		return request;
 	}
@@ -1830,16 +1733,15 @@ static void release_statement(DsqlCompiledStatement* statement)
 	}
 
 	statement->setSqlText(NULL);
-	statement->getDdlData().free();	// free blr memory
 }
 
 
-dsql_req::dsql_req(DsqlCompilerScratch* scratch)
-	: req_pool(scratch->getStatement()->getPool()),
-	  statement(scratch->getStatement()),
+dsql_req::dsql_req(MemoryPool& pool)
+	: req_pool(pool),
+	  statement(NULL),
 	  cursors(req_pool),
-	  req_dbb(scratch->getAttachment()),
-	  req_transaction(scratch->getTransaction()),
+	  req_dbb(NULL),
+	  req_transaction(NULL),
 	  req_msg_buffers(req_pool),
 	  req_cursor(req_pool),
 	  req_user_descs(req_pool),

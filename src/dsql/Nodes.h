@@ -225,6 +225,25 @@ public:
 };
 
 
+class TransactionNode : public Node
+{
+public:
+	explicit TransactionNode(MemoryPool& pool)
+		: Node(pool)
+	{
+	}
+
+public:
+	virtual TransactionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		Node::dsqlPass(dsqlScratch);
+		return this;
+	}
+
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const = 0;
+};
+
+
 class DmlNode : public Node
 {
 public:
@@ -239,7 +258,7 @@ public:
 
 	explicit DmlNode(MemoryPool& pool, Kind aKind)
 		: Node(pool),
-		kind(aKind)
+		  kind(aKind)
 	{
 	}
 
@@ -851,7 +870,6 @@ public:
 	{
 		TYPE_ASSIGNMENT,
 		TYPE_BLOCK,
-		TYPE_COMMIT_ROLLBACK,
 		TYPE_COMPOUND_STMT,
 		TYPE_CONTINUE_LEAVE,
 		TYPE_CURSOR_STMT,
@@ -885,7 +903,6 @@ public:
 		TYPE_SAVEPOINT_ENCLOSE,
 		TYPE_SELECT,
 		TYPE_SET_GENERATOR,
-		TYPE_SET_TRANSACTION,
 		TYPE_STALL,
 		TYPE_STORE,
 		TYPE_SUSPEND,

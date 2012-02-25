@@ -71,6 +71,9 @@ namespace Jrd
 	class Attachment;
 	class Database;
 	class DsqlCompilerScratch;
+	class DdlNode;
+	class StmtNode;
+	class TransactionNode;
 	class jrd_tra;
 	class jrd_req;
 	class blb;
@@ -427,7 +430,6 @@ public:
 		: PermanentStorage(p),
 		  type(TYPE_SELECT),
 		  flags(0),
-		  ddlData(p),
 		  sendMsg(NULL),
 		  receiveMsg(NULL),
 		  eof(NULL),
@@ -435,8 +437,7 @@ public:
 		  recVersion(NULL),
 		  parentRecVersion(NULL),
 		  parentDbKey(NULL),
-		  parentRequest(NULL),
-		  ddlScratch(NULL)
+		  parentRequest(NULL)
 	{
 	}
 
@@ -453,10 +454,6 @@ public:
 	Firebird::RefStrPtr& getSqlText() { return sqlText; }
 	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
 	void setSqlText(Firebird::RefString* value) { sqlText = value; }
-
-	Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() { return ddlData; }
-	const Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() const { return ddlData; }
-	void setDdlData(Firebird::HalfStaticArray<UCHAR, 1024>& value) { ddlData = value; }
 
 	bool isDdl() const
 	{
@@ -494,14 +491,10 @@ public:
 	dsql_req* getParentRequest() const { return parentRequest; }
 	void setParentRequest(dsql_req* value) { parentRequest = value; }
 
-	DsqlCompilerScratch* getDdlScratch() const { return ddlScratch; }
-	void setDdlScratch(DsqlCompilerScratch* value) { ddlScratch = value; }
-
 private:
 	Type type;					// Type of statement
 	ULONG flags;				// generic flag
 	Firebird::RefStrPtr sqlText;
-	Firebird::HalfStaticArray<UCHAR, 1024> ddlData;
 	dsql_msg* sendMsg;			// Message to be sent to start request
 	dsql_msg* receiveMsg;		// Per record message to be received
 	dsql_par* eof;				// End of file parameter
@@ -510,7 +503,6 @@ private:
 	dsql_par* parentRecVersion;	// parent record version
 	dsql_par* parentDbKey;		// Parent database key for current of
 	dsql_req* parentRequest;	// Source request, if cursor update
-	DsqlCompilerScratch* ddlScratch;	// DSQL scratch for DDL statements
 };
 
 class dsql_req : public pool_alloc<dsql_type_req>
@@ -520,7 +512,7 @@ public:
 	static const unsigned FLAG_EMBEDDED			= 0x02;
 
 public:
-	explicit dsql_req(DsqlCompilerScratch* scratch);
+	explicit dsql_req(MemoryPool& pool);
 
 public:
 	MemoryPool& getPool()
@@ -538,6 +530,9 @@ public:
 		return statement;
 	}
 
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+		ntrace_result_t* traceResult) = 0;
+
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
 		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
 		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
@@ -552,9 +547,9 @@ public:
 
 private:
 	MemoryPool&	req_pool;
-	const DsqlCompiledStatement* statement;
 
 public:
+	const DsqlCompiledStatement* statement;
 	Firebird::Array<DsqlCompiledStatement*> cursors;	// Cursor update statements
 
 	dsql_dbb* req_dbb;			// DSQL attachment
@@ -582,6 +577,79 @@ protected:
 	// To avoid posix warning about missing public destructor declare
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class Firebird::MemoryPool;
+};
+
+class DsqlDmlRequest : public dsql_req
+{
+public:
+	explicit DsqlDmlRequest(MemoryPool& pool, StmtNode* aNode)
+		: dsql_req(pool),
+		  node(aNode)
+	{
+		req_traced = true;
+	}
+
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+		ntrace_result_t* traceResult);
+
+	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		bool singleton);
+
+	virtual void setCursor(thread_db* tdbb, const TEXT* name);
+
+	virtual ISC_STATUS fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
+		ULONG msgLength, UCHAR* msgBuffer);
+
+private:
+	StmtNode* node;
+};
+
+class DsqlDdlRequest : public dsql_req
+{
+public:
+	explicit DsqlDdlRequest(MemoryPool& pool, DdlNode* aNode)
+		: dsql_req(pool),
+		  node(aNode),
+		  scratch(NULL)
+	{
+		req_traced = true;
+	}
+
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+		ntrace_result_t* traceResult);
+
+	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		bool singleton);
+
+private:
+	DdlNode* node;
+	DsqlCompilerScratch* scratch;
+};
+
+class DsqlTransactionRequest : public dsql_req
+{
+public:
+	explicit DsqlTransactionRequest(MemoryPool& pool, TransactionNode* aNode)
+		: dsql_req(pool),
+		  node(aNode)
+	{
+		req_traced = false;
+	}
+
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+		ntrace_result_t* traceResult);
+
+	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
+		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		bool singleton);
+
+private:
+	TransactionNode* node;
 };
 
 //! Implicit (NATURAL and USING) joins

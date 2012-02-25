@@ -6776,42 +6776,8 @@ DmlNode* UserSavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, Compile
 
 UserSavepointNode* UserSavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	// ASF: It should never enter in this IF, because the grammar does not allow it.
-	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_BLOCK) // blocks, procedures and triggers
-	{
-		const char* cmd = NULL;
-
-		switch (command)
-		{
-		//case CMD_NOTHING:
-		case CMD_SET:
-			cmd = "SAVEPOINT";
-			break;
-		case CMD_RELEASE:
-			cmd = "RELEASE";
-			break;
-		case CMD_RELEASE_ONLY:
-			cmd = "RELEASE ONLY";
-			break;
-		case CMD_ROLLBACK:
-			cmd = "ROLLBACK";
-			break;
-		default:
-			cmd = "UNKNOWN";
-			fb_assert(false);
-		}
-
-		ERRD_post(
-			Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			// Token unknown
-			Arg::Gds(isc_token_err) <<
-			Arg::Gds(isc_random) << Arg::Str(cmd));
-	}
-
-	statement->setType(DsqlCompiledStatement::TYPE_SAVEPOINT);
-
+	fb_assert(!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_BLOCK));
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SAVEPOINT);
 	return this;
 }
 
@@ -7616,12 +7582,16 @@ SetTransactionNode* SetTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	}
 
 	if (dsqlScratch->getBlrData().getCount() > 1)	// 1 -> isc_tpb_version1
-	{
-		// Store DYN data in the statement.
-		dsqlScratch->getStatement()->setDdlData(dsqlScratch->getBlrData());
-	}
+		tpb.add(dsqlScratch->getBlrData().begin(), dsqlScratch->getBlrData().getCount());
 
 	return this;
+}
+
+void SetTransactionNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
+{
+	JRD_start_transaction(tdbb, &request->req_transaction, request->req_dbb->dbb_attachment,
+		tpb.getCount(), tpb.begin());
+	*transaction = request->req_transaction;
 }
 
 // Generate tpb for table lock.
