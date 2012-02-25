@@ -1,3 +1,55 @@
+ 2012-02-24 16:55  alexpeshkoff 
+   M builds/posix/darwin.defaults
+   M builds/posix/make.defaults
+   M builds/posix/make.rules
+Mac port
+
+ 2012-02-24 12:39  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+   M builds/posix/make.shared.variables
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthDbg.h
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.h
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/common/classes/ClumpletWriter.cpp
+   M src/common/classes/ClumpletWriter.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/include/firebird/Auth.h
+   A src/include/firebird/Crypt.h
+   M src/include/firebird/Plugin.h
+   A src/plugins/crypt/arc4/Arc4.cpp
+   A src/plugins/crypt/arc4/Arc4.h
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Implemented CORE-672: "Over the wire" connection encryption
+
+ 2012-02-24 12:27  alexpeshkoff 
+   M src/jrd/jrd.cpp
+No use in specially handling DBB_security_db when closing engine. Keep it commented for a while.
+
+ 2012-02-24 12:25  alexpeshkoff 
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed races in YValve
+
+ 2012-02-24 12:24  alexpeshkoff 
+   M src/yvalve/PluginManager.cpp
+Minor debugging enhancement - makes it possible to watch name in dtor
+
  2012-02-23 15:39  dimitr 
    M src/dsql/StmtNodes.cpp
 Fixed the assert/crash when using the cursors at runtime.
