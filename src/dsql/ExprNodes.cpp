@@ -10261,7 +10261,7 @@ ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
-	if (!function->fun_entrypoint)
+	if (function->isDefined() && !function->fun_entrypoint)
 	{
 		if (function->getInputFormat() && function->getInputFormat()->fmt_count)
 		{
