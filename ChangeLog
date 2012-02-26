@@ -1,3 +1,36 @@
+ 2012-02-25 19:56  asfernandes 
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/Nodes.h
+   M src/dsql/Parser.cpp
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/parse.y
+1) Make a new kind of Node (TransactionNode).
+2) Make main parser statement return requests instead of nodes.
+3) Some related cleanup (ddlData, ddlScratch).
+4) Added dsqlPass to dsql_req and children, to get rid of ugly logic in prepareStatement.
+
+ 2012-02-25 13:55  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/jrd.cpp
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/why.cpp
+Renamed error constant/message by Alex request.
+
+ 2012-02-25 13:53  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Patch by Alex to fix some bug in restore.
+
  2012-02-24 16:55  alexpeshkoff 
    M builds/posix/darwin.defaults
    M builds/posix/make.defaults
