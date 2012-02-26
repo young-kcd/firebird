@@ -60,9 +60,10 @@ public:
 	{
 		status->init();
 
-		unsigned char* t = reinterpret_cast<unsigned char*>(to);
-		const unsigned char* f = reinterpret_cast<const unsigned char*>(from);
-		while(length--)
+		unsigned char* t = static_cast<unsigned char*>(to);
+		const unsigned char* f = static_cast<const unsigned char*>(from);
+
+		while (length--)
 		{
 			s2 += state[++s1];
 			swap(state[s1], state[s2]);
@@ -83,9 +84,9 @@ public:
 	}
 
 private:
-	unsigned char	state[256];
-	unsigned char	s1;
-	unsigned char	s2;
+	unsigned char state[256];
+	unsigned char s1;
+	unsigned char s2;
 
 	void swap(unsigned char& c1, unsigned char& c2)
 	{
@@ -149,7 +150,7 @@ ICrypt* Arc4::createCypher(IStatus* status, unsigned int l, const void* key)
 	try
 	{
 		Cypher* rc = new Cypher;
-		rc->setKey(l, reinterpret_cast<const unsigned char*>(key));
+		rc->setKey(l, static_cast<const unsigned char*>(key));
 		return rc;
 	}
 	catch (const Exception& ex)
