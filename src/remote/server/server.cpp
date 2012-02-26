@@ -357,7 +357,7 @@ public:
 
 			cstring* s;
 
-			switch(authResult)
+			switch (authResult)
 			{
 			case Auth::AUTH_SUCCESS:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Ahh - success\n"));

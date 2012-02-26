@@ -111,6 +111,7 @@ static GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, YBlob*> > > > blobs;
 
 static bool shutdownStarted = false;
 
+
 //-------------------------------------
 
 
@@ -4121,9 +4122,7 @@ YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathNam
 YAttachment::~YAttachment()
 {
 	if (provider)
-	{
 		PluginManagerInterfacePtr()->releasePlugin(provider);
-	}
 }
 
 void YAttachment::destroy()
@@ -5162,9 +5161,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 			THD_yield();
 
 			if (dispCounter.value() > 1)	// 1 is OUR entry value
-			{
 				continue;
-			}
 
 			hasThreads = false;
 
@@ -5190,7 +5187,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 				}
 			}
 
-			while(svcStack.hasData())
+			while (svcStack.hasData())
 			{
 				YService* service = svcStack.pop();
 				service->shutdown();
@@ -5222,7 +5219,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 				}
 			}
 
-			while(attStack.hasData())
+			while (attStack.hasData())
 			{
 				YAttachment* attachment = attStack.pop();
 				attachment->shutdown();

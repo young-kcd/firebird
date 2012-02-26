@@ -650,6 +650,7 @@ public:
 	bool firstTime;							// Invoked first time after reset
 
 	explicit ClntAuthBlock(const Firebird::PathName* fileName);
+
 	~ClntAuthBlock()
 	{
 		releaseKeys(0);
@@ -1108,6 +1109,7 @@ public:
 	void addServerKeys(CSTRING* str);
 	bool tryNewKey(InternalCryptKey* cryptKey);
 	void checkResponse(Firebird::IStatus* warning, PACKET* packet, bool checkKeys = false);
+
 private:
 	bool tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptKey);
 };

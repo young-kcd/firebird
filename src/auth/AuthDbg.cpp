@@ -59,7 +59,8 @@ DebugServer::DebugServer(Firebird::IPluginConfig*)
 int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
                                IWriter* writerInterface)
 {
-/*	try
+	/***
+	try
 	{
 		Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_CLUMPLETS_VERSION, upInfo);
 		str.erase();
@@ -86,10 +87,12 @@ int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* s
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(status);
-	} */
+	}
+	***/
 	return AUTH_FAILED;
 }
-/*
+
+/***
 int FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const unsigned char* data,
 											   unsigned int size, IWriter* writerInterface)
 {
@@ -108,7 +111,7 @@ int FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, const uns
 		return AUTH_FAILED;
 	}
 }
- */
+***/
 
 int FB_CARG DebugServer::release()
 {
@@ -127,7 +130,7 @@ DebugClient::DebugClient(Firebird::IPluginConfig*)
 
 int FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* cBlock)
 {
-/*
+	/***
 	try
 	{
 		str = "HAND";
@@ -149,10 +152,11 @@ int FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* c
 	{
 		ex.stuffException(status);
 	}
- */
+	***/
 	return AUTH_FAILED;
 }
-/*
+
+/***
 int FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size)
 {
 	try
@@ -174,7 +178,7 @@ int FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const uns
 		return AUTH_FAILED;
 	}
 }
-*/
+***/
 
 int FB_CARG DebugClient::release()
 {

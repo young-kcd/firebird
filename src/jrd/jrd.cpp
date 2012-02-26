@@ -775,7 +775,7 @@ static void cancel_attachments(thread_db* /*tdbb*/)
 
 	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
-		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use/* | DBB_security_db*/)) )
+		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use /* | DBB_security_db */)) )
 		{
 			SyncLockGuard guard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "cancel_attachments");
 			Jrd::Attachment* lockedAtt = NULL;
@@ -6117,7 +6117,7 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 	tdbb->tdbb_flags |= TDBB_shutdown_manager;
 	DatabaseContextHolder dbbHolder(tdbb);
 
-	if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use/* | DBB_security_db*/)))
+	if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use /* | DBB_security_db */)))
 	{
 		Jrd::Attachment* att_next;
 

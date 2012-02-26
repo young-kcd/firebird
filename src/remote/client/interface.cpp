@@ -4572,7 +4572,6 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 	{
 		port = XNET_analyze(&cBlock, file_name, uv_flag);
 	}
-
 	else if (ISC_analyze_protocol(PROTOCOL_WNET, file_name, node_name) ||
 		ISC_analyze_pclan(file_name, node_name))
 	{
@@ -5458,7 +5457,8 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 			cBlock.resetDataFromPlugin();
 			int authRc = cBlock.plugins.plugin()->authenticate(&s, &cBlock);
 			cBlock.tryNewKeys(port);
-			switch(authRc)
+
+			switch (authRc)
 			{
 			case Auth::AUTH_SUCCESS:
 			case Auth::AUTH_MORE_DATA:

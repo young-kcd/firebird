@@ -1485,7 +1485,6 @@ public:
 	}
 
 	virtual SetTransactionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
-
 	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const;
 
 private:
