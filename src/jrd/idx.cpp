@@ -1380,7 +1380,7 @@ static idx_e check_partner_index(thread_db* tdbb,
 	// tmpIndex.idx_flags |= idx_unique;
 	tmpIndex.idx_flags = (tmpIndex.idx_flags & ~idx_unique) | (partner_idx.idx_flags & idx_unique);
 	temporary_key key;
-	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, 0, starting);
+	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, 0, starting, segment);
 	CCH_RELEASE(tdbb, &window);
 
 	// now check for current duplicates

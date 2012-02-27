@@ -50,6 +50,8 @@ Ods::btree_page*	BTR_find_page(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::win*,
 #endif
 void	BTR_insert(Jrd::thread_db*, Jrd::win*, Jrd::index_insertion*);
 Jrd::idx_e	BTR_key(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::Record*, Jrd::index_desc*, Jrd::temporary_key*,
+					Jrd::idx_null_state*, const bool, USHORT);
+Jrd::idx_e	BTR_key(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::Record*, Jrd::index_desc*, Jrd::temporary_key*,
 					Jrd::idx_null_state*, const bool);
 USHORT	BTR_key_length(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
 UCHAR*	BTR_last_node(Ods::btree_page*, exp_index_buf*, btree_exp**);
