@@ -119,11 +119,7 @@ public:
 		++refCounter;
 	}
 
-#ifdef DEV_BUILD
-public:
-#else
 protected:
-#endif
 	AtomicCounter refCounter;
 };
 
