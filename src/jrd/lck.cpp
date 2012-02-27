@@ -227,7 +227,8 @@ public:
 	  m_save_lock(NULL)
 	{
 		Attachment* att = m_tdbb->getAttachment();
-		m_save_lock = att->att_wait_lock;
+		if (att)
+			m_save_lock = att->att_wait_lock;
 
 		m_cancel_disabled = (m_tdbb->tdbb_flags & TDBB_wait_cancel_disable); 
 		m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
@@ -239,7 +240,8 @@ public:
 		{
 		case LCK_tra:
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
-			att->att_wait_lock = lock;
+			if (att)
+				att->att_wait_lock = lock;
 		break;
 
 		default:
@@ -250,7 +252,8 @@ public:
 	~WaitCancelGuard()
 	{
 		Attachment* att = m_tdbb->getAttachment();
-		att->att_wait_lock = m_save_lock;
+		if (att)
+			att->att_wait_lock = m_save_lock;
 
 		if (m_cancel_disabled) 
 			m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
