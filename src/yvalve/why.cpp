@@ -614,6 +614,8 @@ namespace Why
 		void* arg;
 	};
 
+	static AtomicCounter dispCounter;
+
 	template <typename Y>
 	class YEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
@@ -630,7 +632,7 @@ namespace Why
 				Arg::Gds(Y::ERROR_CODE).raise();
 			}
 
-			if (checkAttachment && ref->savedStatus.getError())
+			if (checkAttachment && ref && ref->savedStatus.getError())
 			{
 				fini();
 				status_exception::raise(object->attachment->savedStatus.value());
@@ -646,14 +648,14 @@ namespace Why
 		{
 			signalInit();
 
-			if (!ref)
-			{
-				Arg::Gds(Y::ERROR_CODE).raise();
-			}
-
+			if (ref)
 			{
 				MutexLockGuard guard(ref->enterMutex);
 				++ref->enterCount;
+			}
+			else
+			{
+				++dispCounter;
 			}
 
 			if (shutdownStarted)
@@ -667,9 +669,16 @@ namespace Why
 
 		void fini()
 		{
+			nextRef = NULL;
+
+			if (ref)
 			{
 				MutexLockGuard guard(ref->enterMutex);
 				--ref->enterCount;
+			}
+			else
+			{
+				--dispCounter;
 			}
 		}
 
@@ -720,8 +729,6 @@ namespace Why
 		}
 
 	}
-
-	static AtomicCounter dispCounter;
 
 	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
