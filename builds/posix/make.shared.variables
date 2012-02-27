@@ -13,7 +13,7 @@ else
 dirFallBack=
 endif
 
-dirObjects= $(call dirMaster,$(1)) $(call dirOs,$(1)) $(call dirOs2,$(1))
+dirObjects= $(call dirMaster,$(1)) $(call dirOs,$(1)) $(call dirFallBack,$(1))
 
 
 # Collect all object files here
