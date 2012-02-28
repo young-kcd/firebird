@@ -1,3 +1,23 @@
+ 2012-02-27 16:59  alexpeshkoff 
+   M builds/posix/make.shared.variables
+Fixed Darwin build
+
+ 2012-02-27 16:09  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed broken multi DB transaction - thanks to Adriano
+
+ 2012-02-27 16:07  alexpeshkoff 
+   M src/remote/server/server.cpp
+cleanup
+
+ 2012-02-27 13:50  alexpeshkoff 
+   M src/common/classes/ImplementHelper.h
+cleanup
+
+ 2012-02-27 12:12  alexpeshkoff 
+   M builds/posix/darwin.defaults
+Fixed make syntax
+
  2012-02-26 14:27  asfernandes 
    M src/auth/AuthDbg.cpp
    M src/dsql/StmtNodes.h
