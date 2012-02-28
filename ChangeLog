@@ -1,3 +1,18 @@
+ 2012-02-27 15:51  asfernandes 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Backported fix for CORE-2457 - UNICODE_CI internal gds software consistency check.
+
+ 2012-02-27 15:51  asfernandes 
+   M src/jrd/btr.cpp
+   M src/jrd/btr_proto.h
+   M src/jrd/idx.cpp
+Backported fix for CORE-1997 - Broken foreign key handling for multi-segmented index using multi-level collations.
+
+ 2012-02-27 08:17  hvlad 
+   M src/jrd/lck.cpp
+Fixed bug CORE-3778 : AV at connection shutdown
+
  2012-02-15 10:01  dimitr 
    M src/jrd/exe.cpp
    M src/jrd/met.epp
