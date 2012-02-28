@@ -157,7 +157,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* const new_file = PIO_create(dbb, file_name, false, false, false);
+	jrd_file* const new_file = PIO_create(dbb, file_name, false, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -208,7 +208,7 @@ void PIO_close(jrd_file* main_file)
 
 
 jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
-					 const bool overwrite, const bool temporary, const bool share_delete)
+					 const bool overwrite, const bool temporary)
 {
 /**************************************
  *
@@ -226,8 +226,6 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 	const bool shareMode = dbb->dbb_config->getSharedDatabase();
 
 	DWORD dwShareMode = getShareFlags(shareMode, temporary);
-	if (share_delete)
-		dwShareMode |= FILE_SHARE_DELETE;
 
 	DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL | g_dwExtraFlags;
 	if (temporary)
@@ -547,8 +545,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 jrd_file* PIO_open(Database* dbb,
 				   const Firebird::PathName& string,
-				   const Firebird::PathName& file_name,
-				   const bool share_delete)
+				   const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -568,7 +565,7 @@ jrd_file* PIO_open(Database* dbb,
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
-					  getShareFlags(shareMode) | (share_delete ? FILE_SHARE_DELETE : 0),
+					  getShareFlags(shareMode),
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |

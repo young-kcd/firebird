@@ -1284,7 +1284,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 					dbb->dbb_database_name = expanded_name;
 
 				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				pageSpace->file = PIO_open(dbb, expanded_name, file_name, false);
+				pageSpace->file = PIO_open(dbb, expanded_name, file_name);
 
 				// Initialize the lock manager
 				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
@@ -2399,7 +2399,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			try
 			{
 				// try to create with overwrite = false
-				pageSpace->file = PIO_create(dbb, expanded_name, false, false, false);
+				pageSpace->file = PIO_create(dbb, expanded_name, false, false);
 			}
 			catch (status_exception)
 			{
@@ -2428,7 +2428,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 					if (allow_overwrite)
 					{
 						// file is a database and the user (SYSDBA or owner) has right to overwrite
-						pageSpace->file = PIO_create(dbb, expanded_name, options.dpb_overwrite, false, false);
+						pageSpace->file = PIO_create(dbb, expanded_name, options.dpb_overwrite, false);
 					}
 					else
 					{

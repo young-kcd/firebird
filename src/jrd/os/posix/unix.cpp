@@ -140,7 +140,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const PathName& file_name, 
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
 	if (!new_file)
 		return 0;
 
@@ -185,7 +185,7 @@ void PIO_close(jrd_file* main_file)
 
 
 jrd_file* PIO_create(Database* dbb, const PathName& file_name,
-	const bool overwrite, const bool temporary, const bool /*share_delete*/)
+	const bool overwrite, const bool temporary)
 {
 /**************************************
  *
@@ -589,8 +589,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 jrd_file* PIO_open(Database* dbb,
 				   const PathName& string,
-				   const PathName& file_name,
-				   const bool /*share_delete*/)
+				   const PathName& file_name)
 {
 /**************************************
  *

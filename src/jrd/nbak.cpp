@@ -190,7 +190,7 @@ void BackupManager::generateFilename()
 void BackupManager::openDelta()
 {
 	fb_assert(!diff_file);
-	diff_file = PIO_open(database, diff_name, diff_name, false);
+	diff_file = PIO_open(database, diff_name, diff_name);
 
 	if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -238,7 +238,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 	{
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name.c_str()));
-		diff_file = PIO_create(database, diff_name, true, false, false);
+		diff_file = PIO_create(database, diff_name, true, false);
 	}
 	catch (const Firebird::Exception&)
 	{

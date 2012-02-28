@@ -91,7 +91,7 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 													 Arg::Str(file_name));
 	}
 
-	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false, false);
+	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -995,7 +995,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 	try {
 
-	shadow_file = PIO_open(dbb, expanded_name, file_name, false);
+	shadow_file = PIO_open(dbb, expanded_name, file_name);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -1234,7 +1234,7 @@ static bool check_for_file(thread_db* tdbb, const SCHAR* name, USHORT length)
 		// This use of PIO_open is NOT checked against DatabaseAccess configuration
 		// parameter. It's not required, because here we only check for presence of
 		// existing file, never really use (or create) it.
-		jrd_file* temp_file = PIO_open(dbb, path, path, false);
+		jrd_file* temp_file = PIO_open(dbb, path, path);
 		PIO_close(temp_file);
 	}	// try
 	catch (const Firebird::Exception& ex)

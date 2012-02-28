@@ -428,7 +428,7 @@ static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 	if (!pageSpaceTemp->file)
 	{
 		Firebird::PathName file_name = TempFile::create(SCRATCH);
-		pageSpaceTemp->file = PIO_create(dbb, file_name, true, true, false);
+		pageSpaceTemp->file = PIO_create(dbb, file_name, true, true);
 		PAG_format_pip(tdbb, *pageSpaceTemp);
 	}
 }
@@ -1372,7 +1372,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 														 Arg::Str(fileName));
 		}
 
-		file->fil_next = PIO_open(dbb, file_name, file_name, false);
+		file->fil_next = PIO_open(dbb, file_name, file_name);
 		file->fil_max_page = last_page;
 		file = file->fil_next;
 		if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
