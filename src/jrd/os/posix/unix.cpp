@@ -109,7 +109,8 @@ static const mode_t MASK = 0660;
 // that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
 
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
-static jrd_file* setup_file(Database*, const PathName&, int, bool);
+static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool);
+static bool lockDatabaseFile(int desc, const bool shareMode, const bool temporary = false);
 static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = NULL);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR*, SLONG, SLONG);
@@ -220,6 +221,17 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
                  Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 	}
 
+	const bool shareMode = dbb->dbb_config->getSharedDatabase();
+	if (!lockDatabaseFile(desc, shareMode, temporary))
+	{
+		int lockErrno = errno;
+		close(desc);
+		// error when locking file almost always means it lcoked by someone else
+		// therefore do not remove file here (contrary to chmod error)
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_create_err) << Arg::Unix(lockErrno));
+	}
+
 #ifdef HAVE_FCHMOD
 	if (fchmod(desc, MASK) < 0)
 #else
@@ -259,7 +271,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 	PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
 
-	return setup_file(dbb, expanded_name, desc, false);
+	return setup_file(dbb, expanded_name, desc, false, shareMode);
 }
 
 
@@ -370,6 +382,11 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 		if (file->fil_desc == -1)
 		{
 			unix_error("re open() for SYNC/DIRECT", file, isc_io_open_err);
+		}
+
+		if (!lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write))
+		{
+			unix_error("lock", file, isc_io_open_err);
 		}
 #endif //FCNTL_BROKEN
 
@@ -627,6 +644,13 @@ jrd_file* PIO_open(Database* dbb,
 		readOnly = true;
 	}
 
+	const bool shareMode = dbb->dbb_config->getSharedDatabase();
+	if (!lockDatabaseFile(desc, shareMode))
+	{
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
+	}
+
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
 #ifdef SUPPORT_RAW_DEVICES
@@ -641,7 +665,7 @@ jrd_file* PIO_open(Database* dbb,
 	}
 #endif // SUPPORT_RAW_DEVICES
 
-	return setup_file(dbb, string, desc, readOnly);
+	return setup_file(dbb, string, desc, readOnly, shareMode);
 }
 
 
@@ -900,8 +924,9 @@ static void maybeCloseFile(int& desc)
 
 static jrd_file* setup_file(Database* dbb,
 							const PathName& file_name,
-							int desc,
-							bool read_only)
+							const int desc,
+							const bool readOnly,
+							const bool shareMode)
 {
 /**************************************
  *
@@ -922,8 +947,10 @@ static jrd_file* setup_file(Database* dbb,
 		file->fil_max_page = MAX_ULONG;
 		strcpy(file->fil_string, file_name.c_str());
 
-		if (read_only)
+		if (readOnly)
 			file->fil_flags |= FIL_readonly;
+		if (shareMode)
+			file->fil_flags |= FIL_sh_write;
 	}
 	catch (const Exception&)
 	{
@@ -934,6 +961,18 @@ static jrd_file* setup_file(Database* dbb,
 
 	fb_assert(file);
 	return file;
+}
+
+
+static bool lockDatabaseFile(int desc, const bool share, const bool temporary)
+{
+	struct flock lck;
+	lck.l_type = ((!temporary) && share) ? F_RDLCK : F_WRLCK;
+	lck.l_whence = SEEK_SET;
+	lck.l_start = 0;
+	lck.l_len = 0;
+
+	return fcntl(desc, F_SETLK, &lck) == 0;
 }
 
 
