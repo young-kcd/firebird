@@ -5619,7 +5619,7 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 
 	value.assign(dsqlScratch->getBlrData());
 
-	return input->nod_type == Dsql::nod_not_null;
+	return ExprNode::is<NullNode>(input);
 }
 
 // Make a constraint object from a legacy node.
