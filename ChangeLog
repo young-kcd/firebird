@@ -1,3 +1,17 @@
+ 2012-02-28 12:58  alexpeshkoff 
+   M src/jrd/os/posix/unix.cpp
+Lock database file when opening it
+
+ 2012-02-28 11:08  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/os/pio_proto.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+Cleanup unneeded parameter (was used in nbackup, where PIO is replaced with OS function calls)
+
  2012-02-27 16:59  alexpeshkoff 
    M builds/posix/make.shared.variables
 Fixed Darwin build
