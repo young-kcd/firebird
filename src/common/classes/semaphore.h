@@ -204,7 +204,7 @@ typedef SignalSafeSemaphore Semaphore;
 // Should implement Semaphore independent from SignalSafeSemaphore.
 // In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
 #define COMMON_CLASSES_SEMAPHORE_COND_VAR
-#include <pthread.h>
+#include "fb_pthread.h"
 #include <errno.h>
 
 namespace Firebird

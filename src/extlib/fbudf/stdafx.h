@@ -69,7 +69,7 @@
 
 
 #ifdef HAVE_PTHREAD_H
-#include <pthread.h>
+#include "fb_pthread.h"
 #endif
 
 #include "../../jrd/ibase.h"

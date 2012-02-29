@@ -45,7 +45,7 @@
 */
 
 #include <setjmp.h>
-#include <pthread.h>
+#include "fb_pthread.h"
 #include <signal.h>
 #include "../common/classes/fb_tls.h"
 

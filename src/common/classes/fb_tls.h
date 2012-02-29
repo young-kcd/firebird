@@ -104,7 +104,7 @@ private:
 
 #include "../common/classes/init.h"
 
-#include <pthread.h>
+#include "fb_pthread.h"
 
 namespace Firebird {
 

@@ -124,7 +124,7 @@ public:
 
 #else // WIN_NT
 
-#include <pthread.h>
+#include "fb_pthread.h"
 #include <errno.h>
 
 namespace Firebird

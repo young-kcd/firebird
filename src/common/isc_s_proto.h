@@ -56,13 +56,9 @@
 
 #define USE_ROBUST_MUTEX
 
-#if defined(LINUX) && (!defined(__USE_GNU))
-#define __USE_GNU 1	// required on this OS to have this stuff declared
-#endif // LINUX		// should be defined before include <pthread.h> - AP 2009
-
 #endif // ROBUST mutex
 
-#include <pthread.h>
+#include "fb_pthread.h"
 
 #ifdef USE_SYS5SEMAPHORE
 

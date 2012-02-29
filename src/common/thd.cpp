@@ -58,7 +58,7 @@
 #endif
 
 #ifdef USE_POSIX_THREADS
-#include <pthread.h>
+#include "fb_pthread.h"
 #endif
 
 FB_THREAD_ID getThreadId() throw()

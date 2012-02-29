@@ -37,7 +37,7 @@
 // in thd.h ? This is Windows platform maintainers choice
 #include <windows.h>
 #else
-#include <pthread.h>
+#include "fb_pthread.h"
 #include <errno.h>
 #endif
 

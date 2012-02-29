@@ -245,7 +245,7 @@ void releaseUpgradeTabs(IPluginModule* module)
 #ifdef WIN_NT
 #include <windows.h>
 #else
-#include <pthread.h>
+#include "fb_pthread.h"
 #include <signal.h>
 #include <setjmp.h>
 #include "../common/classes/fb_tls.h"

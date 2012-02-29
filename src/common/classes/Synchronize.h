@@ -36,7 +36,7 @@
 #include "../../common/classes/SyncObject.h"
 
 #ifndef _WIN32
-#include <pthread.h>
+#include "fb_pthread.h"
 #endif
 
 
