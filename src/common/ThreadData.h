@@ -31,7 +31,10 @@
 #define JRD_THREADDATA_H
 
 #include "firebird.h"
+
+#ifdef USE_POSIX_THREADS
 #include "fb_pthread.h"
+#endif
 
 // Thread specific data
 
