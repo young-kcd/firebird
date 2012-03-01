@@ -36,7 +36,7 @@ void	THD_yield();
 
 #ifdef WIN_NT
 #include <windows.h>
-typedef HANDLE ThreadId;
+typedef DWORD ThreadId;
 #endif
 
 #ifdef USE_POSIX_THREADS

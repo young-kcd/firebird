@@ -436,7 +436,7 @@ GlobalPtr<Mutex> timerAccess;
 GlobalPtr<Semaphore> timerWakeup;
 // Should use atomic flag for thread stop to provide correct membar
 AtomicCounter stopTimerThread(0);
-ThreadId timerThreadHandle = 0;
+Thread::Handle timerThreadHandle = 0;
 
 struct TimerEntry
 {

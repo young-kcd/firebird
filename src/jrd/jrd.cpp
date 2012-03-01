@@ -3941,7 +3941,7 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 		{
 			Semaphore shutdown_semaphore;
 
-			ThreadId h;
+			Thread::Handle h;
 			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))

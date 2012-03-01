@@ -24,6 +24,7 @@
     <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.cpp" />
     <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp" />
     <ClCompile Include="..\..\..\src\jrd\os\win32\ibinitdll.cpp" />
+    <ClCompile Include="..\..\..\src\plugins\crypt\arc4\Arc4.cpp" />
     <ClCompile Include="..\..\..\src\remote\client\interface.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\alt.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp" />
@@ -41,6 +42,7 @@
     <ClInclude Include="..\..\..\src\auth\SecureRemotePassword\client\SrpClient.h" />
     <ClInclude Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.h" />
     <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h" />
+    <ClInclude Include="..\..\..\src\plugins\crypt\arc4\Arc4.h" />
     <ClInclude Include="..\..\..\src\yvalve\alt_proto.h" />
     <ClInclude Include="..\..\..\src\yvalve\array_proto.h" />
     <ClInclude Include="..\..\..\src\yvalve\blob_proto.h" />
