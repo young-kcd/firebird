@@ -374,7 +374,7 @@ int WinSspiServer::authenticate(Firebird::IStatus* status,
 			return AUTH_SUCCESS;
 		}
 
-		sBlock->putData(sspiData.getCount(), sspiData.begin());
+		sBlock->putData(status,sspiData.getCount(), sspiData.begin());
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -411,7 +411,7 @@ int WinSspiClient::authenticate(Firebird::IStatus* status,
 		if (!sspi.request(sspiData))
 			return wasActive ? AUTH_FAILED : AUTH_CONTINUE;
 
-		cBlock->putData(sspiData.getCount(), sspiData.begin());
+		cBlock->putData(status, sspiData.getCount(), sspiData.begin());
 
 		if (!wasActive)
 			return AUTH_SUCCESS;
