@@ -30,7 +30,6 @@
 #ifndef JRD_THREADSTART_H
 #define JRD_THREADSTART_H
 
-#include "firebird.h"
 #include "../common/thd.h"
 #include "../common/ThreadData.h"
 
@@ -54,9 +53,17 @@ typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
 class Thread
 {
 public:
-	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id = NULL);
-	static void waitForCompletion(ThreadId& handle);
-	static void kill(ThreadId& handle);
+#ifdef WIN_NT
+	typedef HANDLE Handle;
+#endif
+
+#ifdef USE_POSIX_THREADS
+	typedef pthread_t Handle;
+#endif
+
+	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle = NULL);
+	static void waitForCompletion(Handle& handle);
+	static void kill(Handle& handle);
 };
 
 #endif // JRD_THREADSTART_H

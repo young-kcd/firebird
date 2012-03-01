@@ -93,7 +93,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
 {
 /**************************************
  *
@@ -173,14 +173,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Threa
 	}
 }
 
-void Thread::waitForCompletion(ThreadId& thread)
+void Thread::waitForCompletion(Handle& thread)
 {
 	int state = pthread_join(thread, NULL);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_join", state);
 }
 
-void Thread::kill(ThreadId& thread)
+void Thread::kill(Handle& thread)
 {
 	int state = pthread_cancel(thread);
 	if (state)
@@ -192,7 +192,7 @@ void Thread::kill(ThreadId& thread)
 
 #ifdef WIN_NT
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
 {
 /**************************************
  *
@@ -258,14 +258,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Threa
 	}
 }
 
-void Thread::waitForCompletion(ThreadId& handle)
+void Thread::waitForCompletion(Handle& handle)
 {
 	WaitForSingleObject(handle, INFINITE);
 	CloseHandle(handle);
 	handle = 0;
 }
 
-void Thread::kill(ThreadId& handle)
+void Thread::kill(Handle& handle)
 {
 	TerminateThread(handle, -1);
 	CloseHandle(handle);
@@ -276,7 +276,7 @@ void Thread::kill(ThreadId& handle)
 
 
 #ifndef START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
 {
 /**************************************
  *
@@ -291,11 +291,11 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Threa
 
 }
 
-void Thread::waitForCompletion(ThreadId&)
+void Thread::waitForCompletion(Handle&)
 {
 }
 
-void Thread::kill(ThreadId&)
+void Thread::kill(Handle&)
 {
 }
 #endif  // START_THREAD
