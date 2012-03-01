@@ -429,7 +429,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				if (status[1])
 				{
 					GSEC_print_status(status);
-					ret = GsecMsg75;
+					ret = setGsecCode(-1, user_data);
 				}
 			}
 		}
@@ -499,6 +499,11 @@ int gsec(Firebird::UtilSvc* uSvc)
 		if (status[1]) {
 			GSEC_print_status(status);
 		}
+	}
+
+	if (!exit_code)
+	{
+		exit_code = ret;
 	}
 	}	// try
 	catch (const Firebird::LongJump&)
