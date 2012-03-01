@@ -367,6 +367,11 @@ int gsec(Firebird::UtilSvc* uSvc)
 			GSEC_print_status(status);
 		}
 	}
+
+	if (!exit_code)
+	{
+		exit_code = ret;
+	}
 	}	// try
 	catch (const Firebird::LongJump&)
 	{
