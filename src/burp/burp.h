@@ -30,7 +30,6 @@
 #define BURP_BURP_H
 
 #include <stdio.h>
-#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../common/dsc.h"
 #include "../burp/misc_proto.h"

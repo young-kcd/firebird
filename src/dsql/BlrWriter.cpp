@@ -27,7 +27,6 @@
 #include "../dsql/BlrWriter.h"
 #include "../dsql/StmtNodes.h"
 #include "../dsql/dsql.h"
-#include "../common/common.h"
 #include "../jrd/blr.h"
 #include "../dsql/errd_proto.h"
 

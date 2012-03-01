@@ -39,7 +39,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../lock/lock_proto.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/jrd.h"

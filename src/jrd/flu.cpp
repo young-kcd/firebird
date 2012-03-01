@@ -53,7 +53,6 @@
 #include "../common/classes/init.h"
 #include "../jrd/jrd.h"
 
-#include "../common/common.h"
 #include "../jrd/flu.h"
 #include "../common/gdsassert.h"
 

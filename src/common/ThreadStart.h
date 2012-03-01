@@ -31,6 +31,7 @@
 #define JRD_THREADSTART_H
 
 #include "firebird.h"
+#include "../common/thd.h"
 #include "../common/ThreadData.h"
 
 // Thread priorities (may be ignored)
@@ -50,21 +51,12 @@ const int THREAD_critical		= 6;
 // The definition inside the thdd class should be replaced with the following one.
 typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
 
-class Thread : public ThreadData
+class Thread
 {
 public:
-	explicit Thread(ThreadData::ThreadDataType t) : ThreadData(t) { }
-
-#ifdef WIN_NT
-	typedef HANDLE Handle;
-#endif
-#ifdef USE_POSIX_THREADS
-	typedef pthread_t Handle;
-#endif
-
-	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id = NULL);
-	static void waitForCompletion(Handle& handle);
-	static void kill(Handle& handle);
+	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id = NULL);
+	static void waitForCompletion(ThreadId& handle);
+	static void kill(ThreadId& handle);
 };
 
 #endif // JRD_THREADSTART_H

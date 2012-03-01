@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 
 #ifdef HAVE_TIMES
 #include <sys/types.h>

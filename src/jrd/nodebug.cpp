@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 
 int DBG_supervisor(int /*arg*/)
 {

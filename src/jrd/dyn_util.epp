@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/scl.h"

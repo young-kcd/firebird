@@ -117,7 +117,7 @@ private:
 	bool getItemLength(ITEM& tag, ULONG& len);
 
 	int m_recursive;
-	FB_THREAD_ID m_mutexTID;
+	ThreadId m_mutexTID;
 	int m_cfg_file;
 	bool m_dirty;
 };

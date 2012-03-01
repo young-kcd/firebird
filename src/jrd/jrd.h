@@ -32,7 +32,6 @@
 #define JRD_JRD_H
 
 #include "../common/gdsassert.h"
-#include "../common/common.h"
 #include "../common/dsc.h"
 #include "../jrd/btn.h"
 #include "../jrd/jrd_proto.h"

@@ -21,7 +21,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../jrd/RandomGenerator.h"
 #include "../common/os/guid.h"
 

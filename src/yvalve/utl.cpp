@@ -44,7 +44,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../jrd/license.h"
 #include <stdarg.h>
 //#include "../common/classes/timestamp.h"
@@ -2133,7 +2132,7 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR entrypoint,
 	int rc = 0;
 	try
 	{
-		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (Thread::Handle*) thd_id);
+		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (ThreadId*) thd_id);
 	}
 	catch (const Firebird::status_exception& status)
 	{

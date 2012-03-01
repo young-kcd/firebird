@@ -27,7 +27,6 @@
 
 #include "firebird.h"
 #include "../common/os/mod_loader.h"
-#include "../common/common.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

@@ -31,7 +31,6 @@
 
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
-#include "../common/common.h"
 #include <stdio.h>
 #include "../common/classes/alloc.h"
 #include <errno.h>

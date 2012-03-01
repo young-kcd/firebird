@@ -263,10 +263,10 @@ private:
 		const static size_t BUFFER_SIZE = 4096;
 		char buffer[BUFFER_SIZE];
 		char* buffer_ptr;
-		FB_THREAD_ID thread;
+		ThreadId thread;
 
 	public:
-		explicit ThreadBuffer(FB_THREAD_ID thr) : buffer_ptr(buffer), thread(thr) { }
+		explicit ThreadBuffer(ThreadId thr) : buffer_ptr(buffer), thread(thr) { }
 
 		const char* alloc(const char* string, size_t length)
 		{
@@ -291,7 +291,7 @@ private:
 			return new_string;
 		}
 
-		bool thisThread(FB_THREAD_ID currTID)
+		bool thisThread(ThreadId currTID)
 		{
 #ifdef WIN_NT
 			if (thread != currTID)
@@ -354,7 +354,7 @@ public:
 	{ }
 
 private:
-	size_t position(FB_THREAD_ID thr)
+	size_t position(ThreadId thr)
 	{
 		// mutex should be locked when this function is called
 
@@ -369,7 +369,7 @@ private:
 		return processBuffer.getCount();
 	}
 
-	ThreadBuffer* getThreadBuffer(FB_THREAD_ID thr)
+	ThreadBuffer* getThreadBuffer(ThreadId thr)
 	{
 		Firebird::MutexLockGuard guard(mutex);
 
@@ -404,7 +404,7 @@ private:
 	}
 
 public:
-	const char* alloc(const char* s, size_t len, FB_THREAD_ID thr = getThreadId())
+	const char* alloc(const char* s, size_t len, ThreadId thr = getThreadId())
 	{
 		return getThreadBuffer(thr)->alloc(s, len);
 	}
@@ -436,7 +436,7 @@ GlobalPtr<Mutex> timerAccess;
 GlobalPtr<Semaphore> timerWakeup;
 // Should use atomic flag for thread stop to provide correct membar
 AtomicCounter stopTimerThread(0);
-Thread::Handle timerThreadHandle = 0;
+ThreadId timerThreadHandle = 0;
 
 struct TimerEntry
 {

@@ -20,7 +20,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../common/common.h"
 
 typedef struct {
 	unsigned int codepoint;

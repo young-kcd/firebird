@@ -30,7 +30,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <errno.h>
-#include "../common/common.h"
 #include "../common/ThreadStart.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_s_proto.h"
@@ -94,7 +93,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id)
 {
 /**************************************
  *
@@ -174,14 +173,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	}
 }
 
-void Thread::waitForCompletion(Handle& thread)
+void Thread::waitForCompletion(ThreadId& thread)
 {
 	int state = pthread_join(thread, NULL);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_join", state);
 }
 
-void Thread::kill(Handle& thread)
+void Thread::kill(ThreadId& thread)
 {
 	int state = pthread_cancel(thread);
 	if (state)
@@ -193,7 +192,7 @@ void Thread::kill(Handle& thread)
 
 #ifdef WIN_NT
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id)
 {
 /**************************************
  *
@@ -259,14 +258,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	}
 }
 
-void Thread::waitForCompletion(Handle& handle)
+void Thread::waitForCompletion(ThreadId& handle)
 {
 	WaitForSingleObject(handle, INFINITE);
 	CloseHandle(handle);
 	handle = 0;
 }
 
-void Thread::kill(Handle& handle)
+void Thread::kill(ThreadId& handle)
 {
 	TerminateThread(handle, -1);
 	CloseHandle(handle);
@@ -277,7 +276,7 @@ void Thread::kill(Handle& handle)
 
 
 #ifndef START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* thd_id)
 {
 /**************************************
  *
@@ -292,11 +291,11 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 
 }
 
-void Thread::waitForCompletion(Handle&)
+void Thread::waitForCompletion(ThreadId&)
 {
 }
 
-void Thread::kill(Handle&)
+void Thread::kill(ThreadId&)
 {
 }
 #endif  // START_THREAD

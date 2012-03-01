@@ -50,8 +50,6 @@
 #ifndef COMMON_COMMON_H
 #define COMMON_COMMON_H
 
-#include "firebird.h"
-
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif

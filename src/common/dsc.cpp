@@ -26,7 +26,6 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../common/common.h"
 #include "../common/dsc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"

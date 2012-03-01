@@ -27,7 +27,6 @@
 
 #include "firebird.h"
 #include "gen/iberror.h"
-#include "../common/common.h"
 
 #include "../common/classes/init.h"
 #include "../common/gdsassert.h"

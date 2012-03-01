@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../common/common.h"
 #include "../iscguard/cntlg_proto.h"
 #include "../remote/remote.h"
 #include "../utilities/install/install_nt.h"

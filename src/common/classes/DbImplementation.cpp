@@ -25,7 +25,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/classes/DbImplementation.h"
 
 #include "../jrd/ods.h"

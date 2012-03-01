@@ -25,7 +25,6 @@
 #ifndef IBMGR_IBMGRSWI_H
 #define IBMGR_IBMGRSWI_H
 
-#include "../common/common.h"
 #include "../common/classes/Switches.h"
 
 // Switch constants

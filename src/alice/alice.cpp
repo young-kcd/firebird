@@ -41,7 +41,6 @@
 #include <stdio.h>
 
 #include "../jrd/ibase.h"
-#include "../common/common.h"
 #include "../jrd/license.h"
 #include "../alice/alice.h"
 #include "../alice/exe_proto.h"

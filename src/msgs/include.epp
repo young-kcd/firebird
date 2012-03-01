@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../common/common.h"
 
 DATABASE DB = "msg.fdb";
 

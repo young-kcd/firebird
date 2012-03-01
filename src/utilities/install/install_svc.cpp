@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <conio.h>
-#include "../common/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/servi_proto.h"

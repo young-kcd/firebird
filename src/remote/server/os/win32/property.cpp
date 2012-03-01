@@ -35,7 +35,6 @@
 #error This is a Win32 only file.
 #endif
 
-#include "../common/common.h"
 #include "../jrd/license.h"
 #include "../common/file_params.h"
 #include "../remote/remote.h"

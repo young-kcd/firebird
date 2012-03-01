@@ -23,7 +23,6 @@
 #ifndef DSQL_NODES_H
 #define DSQL_NODES_H
 
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../dsql/DsqlCompilerScratch.h"
 #include "../dsql/node.h"

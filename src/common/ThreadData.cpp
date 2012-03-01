@@ -30,7 +30,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <errno.h>
-#include "../common/common.h"
 #include "../common/ThreadData.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/fb_tls.h"

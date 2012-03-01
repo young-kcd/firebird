@@ -21,7 +21,6 @@
 #include "firebird.h"
 #include <math.h>
 #include <ctype.h>
-#include "../common/common.h"
 #include "../common/classes/FpeControl.h"
 #include "../common/classes/VaryStr.h"
 #include "../dsql/ExprNodes.h"

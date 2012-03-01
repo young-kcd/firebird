@@ -23,7 +23,6 @@
 #ifndef DSQL_AGG_NODES_H
 #define DSQL_AGG_NODES_H
 
-#include "../common/common.h"
 #include "../jrd/blr.h"
 #include "../dsql/Nodes.h"
 

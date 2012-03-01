@@ -41,7 +41,6 @@
 #include "../jrd/tra.h"
 #include "../jrd/intl.h"
 #include "gen/iberror.h"
-#include "../common/common.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/sort.h"

@@ -23,7 +23,6 @@
 #ifndef DSQL_STMT_NODES_H
 #define DSQL_STMT_NODES_H
 
-#include "../common/common.h"
 #include "../common/classes/MetaName.h"
 #include "../jrd/blr.h"
 #include "../jrd/Function.h"

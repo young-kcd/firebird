@@ -23,7 +23,6 @@
 #ifndef DSQL_PACKAGE_NODES_H
 #define DSQL_PACKAGE_NODES_H
 
-#include "../common/common.h"
 #include "../dsql/DdlNodes.h"
 #include "../common/classes/array.h"
 

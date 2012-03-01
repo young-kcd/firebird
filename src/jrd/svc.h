@@ -289,7 +289,7 @@ private:
 public:
 	struct StatusStringsHelper
 	{
-		FB_THREAD_ID workerThread;
+		ThreadId workerThread;
 		Firebird::Mutex mtx;
 	};
 

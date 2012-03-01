@@ -31,7 +31,6 @@
 #define FIREBIRD_NTRACE_H
 
 #include "firebird/Plugin.h"
-#include "../common/common.h"		// to define SINT64
 
 // Database objects
 

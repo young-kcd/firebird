@@ -6,7 +6,6 @@
 */
 #include "firebird.h"
 
-#include "../common/common.h"
 #include "../common/enc_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/locks.h"

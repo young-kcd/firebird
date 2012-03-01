@@ -24,7 +24,6 @@
 #ifndef DSQL_SYM_H
 #define DSQL_SYM_H
 
-#include "../common/common.h"
 
 namespace Jrd {
 

@@ -26,10 +26,10 @@
  */
 
 #include "firebird.h"
+
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
 #include "../../common/utils_proto.h"
-#include "../../common/common.h"
 #include "../../jrd/err_proto.h"
 #include "../../common/isc_proto.h"
 #include "../../common/isc_s_proto.h"
@@ -287,7 +287,7 @@ void ConfigStorage::checkFile()
 void ConfigStorage::acquire()
 {
 	fb_assert(m_recursive >= 0);
-	const FB_THREAD_ID currTID = getThreadId();
+	const ThreadId currTID = getThreadId();
 
 	if (m_mutexTID == currTID)
 		m_recursive++;

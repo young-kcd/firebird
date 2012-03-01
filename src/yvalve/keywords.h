@@ -25,7 +25,6 @@
  * MOD 29-Jun-2002
  */
 
-#include "../common/common.h"
 
 struct tok
 {

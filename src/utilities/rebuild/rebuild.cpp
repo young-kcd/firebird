@@ -21,7 +21,6 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "../common/common.h"
 
 #include "firebird.h"
 #include <stdio.h>

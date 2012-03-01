@@ -32,7 +32,6 @@
 #include <errno.h>
 #include "../burp/burp.h"
 #include "../jrd/align.h"
-#include "../common/common.h"
 #include "../jrd/flags.h"
 #include "../jrd/license.h"
 #include "../jrd/obj.h"

@@ -36,7 +36,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../dsql/chars.h"
 #include "../dsql/sqlda.h"
 #include "../yvalve/gds_proto.h"

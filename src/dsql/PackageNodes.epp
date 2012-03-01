@@ -21,7 +21,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../dsql/PackageNodes.h"
 #include "../jrd/dyn.h"
 #include "../jrd/intl.h"

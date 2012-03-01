@@ -542,7 +542,6 @@ VI. ADDITIONAL NOTES
 #include "firebird.h"
 #include "memory_routines.h"
 #include <stdio.h>
-#include "../common/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"

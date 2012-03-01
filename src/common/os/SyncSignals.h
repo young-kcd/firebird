@@ -26,7 +26,6 @@
 #ifndef COMMON_SYNC_SIGNALS_H
 #define COMMON_SYNC_SIGNALS_H
 
-#include "../common/common.h"
 
 #ifdef UNIX
 

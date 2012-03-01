@@ -19,7 +19,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/classes/VaryStr.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"

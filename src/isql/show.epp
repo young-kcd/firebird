@@ -41,7 +41,6 @@
 #include <string.h>
 
 #include "../yvalve/gds_proto.h"
-#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../isql/isql.h"
 #include "../jrd/intl.h"

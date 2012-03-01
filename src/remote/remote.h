@@ -29,7 +29,6 @@
 #ifndef REMOTE_REMOTE_H
 #define REMOTE_REMOTE_H
 
-#include "../common/common.h"
 #include "gen/iberror.h"
 #include "../remote/remote_def.h"
 #include "../common/ThreadData.h"
@@ -146,7 +145,7 @@ struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 	USHORT			rdb_id;
 
 private:
-	FB_THREAD_ID	rdb_async_thread_id;		// Id of async thread (when active)
+	ThreadId		rdb_async_thread_id;	// Id of async thread (when active)
 
 public:
 	Firebird::Mutex	rdb_async_lock;			// Sync to avoid 2 async calls at once
@@ -844,7 +843,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	SOCKET			port_channel;		// handle for connection (from by OS)
 	struct linger	port_linger;		// linger value as defined by SO_LINGER
 	Rdb*			port_context;
-	Thread::Handle	port_events_thread;	// handle of thread, handling incoming events
+	ThreadId		port_events_thread;	// handle of thread, handling incoming events
 	void			(*port_events_shutdown)(rem_port*);	// hack - avoid changing API at beta stage
 #ifdef WIN_NT
 	HANDLE			port_pipe;			// port pipe handle

@@ -18,7 +18,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/ExprNodes.h"

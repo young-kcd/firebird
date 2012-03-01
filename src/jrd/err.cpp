@@ -29,7 +29,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../common/common.h"
 #include "gen/iberror.h"
 #include <errno.h>
 #include "../jrd/jrd.h"

@@ -33,7 +33,6 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdio.h>
-#include "../common/common.h"
 #include "../common/classes/init.h"
 
 #include <stdarg.h>

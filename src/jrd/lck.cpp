@@ -27,7 +27,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"

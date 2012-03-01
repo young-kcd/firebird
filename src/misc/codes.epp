@@ -28,7 +28,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/msg_encode.h"
 

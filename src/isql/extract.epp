@@ -45,7 +45,6 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>				// isdigit
-#include "../common/common.h"
 #include "../jrd/constants.h"
 #include "../jrd/ibase.h"
 #include "../yvalve/gds_proto.h"

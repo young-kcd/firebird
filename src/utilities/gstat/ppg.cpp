@@ -27,7 +27,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../common/classes/timestamp.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"

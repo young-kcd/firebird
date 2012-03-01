@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "../common/common.h"
 #include "../common/isc_proto.h"
 #include "../common/os/divorce.h"
 #include "../jrd/ibase.h"

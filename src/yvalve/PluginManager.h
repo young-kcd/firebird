@@ -26,7 +26,6 @@
 #include "firebird/Plugin.h"
 #include "../common/classes/ImplementHelper.h"
 
-#include "../common/common.h"
 #include "../common/os/mod_loader.h"
 #include "../common/classes/array.h"
 #include "../common/classes/auto.h"

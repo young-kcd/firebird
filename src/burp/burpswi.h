@@ -27,7 +27,6 @@
 #ifndef BURP_BURPSWI_H
 #define BURP_BURPSWI_H
 
-//#include "../common/common.h"
 #include "../jrd/constants.h"
 #include "../jrd/ibase.h"
 

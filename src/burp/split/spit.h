@@ -25,7 +25,6 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "../common/common.h"
 
 const char BLANK				= ' ';
 const int FILE_IS_FULL			= -9;

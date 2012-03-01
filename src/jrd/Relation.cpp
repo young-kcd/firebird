@@ -20,9 +20,10 @@
  *  Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/Relation.h"
-#include "../jrd/tra.h"
 
+#include "../jrd/tra.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/idx_proto.h"

@@ -32,7 +32,6 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../common/common.h"
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../yvalve/gds_proto.h"

@@ -37,7 +37,6 @@
 #include "../yvalve/YObjects.h"
 #include "../dsql/sqlda.h"
 #include "../dsql/sqlda_pub.h"
-#include "../common/common.h"
 #include "../common/gdsassert.h"
 #include "../common/db_alias.h"
 #include "../common/StatementMetadata.h"
@@ -279,7 +278,7 @@ namespace {
 			}
 		}
 	private:
-		Thread::Handle handle;
+		ThreadId handle;
 	};
 #endif // UNIX
 

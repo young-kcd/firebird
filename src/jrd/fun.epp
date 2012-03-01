@@ -36,7 +36,6 @@
 #include <string.h>
 #include "../common/config/config.h"
 #include "../common/os/path_utils.h"
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
@@ -45,7 +44,6 @@
 #include "../jrd/lls.h"
 #include "../jrd/blb.h"
 #include "../jrd/flu.h"
-#include "../common/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/irq.h"
 #include "../jrd/blb_proto.h"

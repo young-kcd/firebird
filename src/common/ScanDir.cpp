@@ -30,7 +30,6 @@
 
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "ScanDir.h"
 
 // In order to have readdir() working correct on solaris 10,

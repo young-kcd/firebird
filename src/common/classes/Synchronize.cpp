@@ -29,7 +29,7 @@
 *  Contributor(s):
 */
 
-#include "../../common/common.h"
+#include "firebird.h"
 #include "fb_tls.h"
 #include "../thd.h"
 #include "SyncObject.h"
@@ -233,7 +233,7 @@ void ThreadSync::setThread(ThreadSync* thread)
 	TLS_SET(threadIndex, thread);
 }
 
-FB_THREAD_ID ThreadSync::getCurrentThreadId()
+ThreadId ThreadSync::getCurrentThreadId()
 {
 	return getThreadId();
 }

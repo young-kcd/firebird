@@ -32,8 +32,7 @@
 #ifndef CLASSES_SYNCHRONIZE_H
 #define CLASSES_SYNCHRONIZE_H
 
-#include "../../common/common.h"
-#include "../../common/classes/SyncObject.h"
+#include "../common/classes/SyncObject.h"
 
 #ifndef _WIN32
 #include "fb_pthread.h"
@@ -81,7 +80,7 @@ public:
 
 	static ThreadSync* findThread();
 	static ThreadSync* getThread(const char* desc);
-	static FB_THREAD_ID getCurrentThreadId();
+	static ThreadId getCurrentThreadId();
 
 	const char* getWhere() const;
 
@@ -93,7 +92,7 @@ private:
 
 	static void setThread(ThreadSync* thread);
 
-	FB_THREAD_ID threadId;
+	ThreadId threadId;
 	ThreadSync* nextWaiting;	// next thread in sleep que (see SyncObject)
 	ThreadSync* prevWaiting;	// previous thread in sleep que (see SyncObject)
 	SyncType lockType;			// requested lock type (see SyncObject)

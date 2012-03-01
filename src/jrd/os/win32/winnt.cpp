@@ -35,7 +35,6 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/ods.h"

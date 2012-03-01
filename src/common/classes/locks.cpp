@@ -25,16 +25,15 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include "../../include/firebird.h"
-#include "../../common/common.h"
+#include "firebird.h"
 
 #if defined(WIN_NT)
 // minimum win32 version: win98 / winnt4 SP3
 #define _WIN32_WINNT 0x0403
 #endif
 
-#include "../../common/classes/locks.h"
-#include "../../common/thd.h"
+#include "../common/classes/locks.h"
+#include "../common/thd.h"
 
 
 namespace Firebird {

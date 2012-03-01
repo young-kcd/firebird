@@ -93,7 +93,6 @@ enum literal_string_type
 
 #include "../common/classes/timestamp.h"
 
-#include "../common/common.h"
 #if defined(WIN_NT)
 #include <windows.h>
 #endif

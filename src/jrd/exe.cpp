@@ -55,7 +55,6 @@
 # endif
 #endif
 
-#include "../common/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../common/classes/VaryStr.h"
 #include <string.h>

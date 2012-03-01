@@ -40,7 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../common/gdsassert.h"
 #include "../common/file_params.h"
 #include "../jrd/msg_encode.h"

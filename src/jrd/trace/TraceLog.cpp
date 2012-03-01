@@ -26,6 +26,7 @@
  */
 
 #include "firebird.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -35,9 +36,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include "../../common/StatusArg.h"
 #include "../../common/classes/TempFile.h"
-#include "../../common/common.h"
 #include "../../common/isc_proto.h"
 #include "../../common/isc_s_proto.h"
 #include "../../common/os/path_utils.h"

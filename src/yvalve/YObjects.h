@@ -29,7 +29,6 @@
 #include "firebird.h"
 #include "firebird/Provider.h"
 #include "gen/iberror.h"
-#include "../common/common.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"

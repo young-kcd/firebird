@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"

@@ -29,7 +29,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/ibase.h"			// fb_shutdown_callback() is used from it
@@ -822,7 +821,7 @@ private:
 	Semaphore m_sem;
 	bool	m_active;
 #ifdef DEV_BUILD
-	FB_THREAD_ID	m_tid;
+	ThreadId	m_tid;
 #endif
 
 	void remove();

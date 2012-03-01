@@ -39,7 +39,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ini.h"

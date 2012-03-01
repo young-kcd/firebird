@@ -29,7 +29,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <errno.h>
-#include "../common/common.h"
 #include "../common/thd.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/semaphore.h"
@@ -37,13 +36,11 @@
 #include "../common/classes/init.h"
 
 
-#ifdef WIN_NT
-#include <process.h>
-#include <windows.h>
-#endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef WIN_NT
+#include <process.h>
 #endif
 
 #ifdef TIME_WITH_SYS_TIME
@@ -57,11 +54,7 @@
 # endif
 #endif
 
-#ifdef USE_POSIX_THREADS
-#include "fb_pthread.h"
-#endif
-
-FB_THREAD_ID getThreadId() throw()
+ThreadId getThreadId() throw()
 {
 /**************************************
  *
@@ -73,16 +66,13 @@ FB_THREAD_ID getThreadId() throw()
  *	Get platform's notion of a thread ID.
  *
  **************************************/
-	FB_THREAD_ID id = 1;
 #ifdef WIN_NT
-	id = GetCurrentThreadId();
+	return GetCurrentThreadId();
 #endif
 
 #ifdef USE_POSIX_THREADS
-	id = (FB_THREAD_ID) pthread_self();
+	return pthread_self();
 #endif
-
-	return id;
 }
 
 

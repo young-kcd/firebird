@@ -26,7 +26,6 @@
 // File functions
 
 #include "firebird.h"
-#include "../common/common.h"
 
 #include "../common/classes/init.h"
 #include "../common/gdsassert.h"

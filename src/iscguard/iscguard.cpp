@@ -17,7 +17,6 @@
  * Contributor(s): ______________________________________.
  */
 #include "firebird.h"
-#include "../common/common.h"
 #include <stdio.h>
 #include "../yvalve/gds_proto.h"
 #include <stdlib.h>
@@ -250,7 +249,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
  *
  **************************************/
 
-	Thread::Handle thread_id = 0;
+	ThreadId thread_id = 0;
 
 	// If we're a service, don't create a window
 	if (service_flag)
@@ -377,7 +376,7 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	static BOOL bInTaskBar = FALSE;
 	static bool bStartup = false;
 	static HINSTANCE hInstance = NULL;
-	static Thread::Handle thread_id;
+	static ThreadId thread_id;
 	static UINT s_uTaskbarRestart;
 
 	hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);

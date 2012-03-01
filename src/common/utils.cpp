@@ -27,7 +27,6 @@
 // Utility functions
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/os/guid.h"
 
 #ifdef HAVE_SYS_TYPES_H

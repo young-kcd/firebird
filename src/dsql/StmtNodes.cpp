@@ -19,7 +19,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/classes/BaseStream.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/VaryStr.h"

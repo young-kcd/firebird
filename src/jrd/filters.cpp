@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/classes/array.h"
 #include <stdio.h>
 #include <string.h>

@@ -18,7 +18,7 @@
  */
 
 #if defined(__cplusplus) && defined(DARWIN)
-#include "../common/common.h"
+#include "firebird.h"
 #define EXPORT API_ROUTINE
 #else
 #define EXPORT

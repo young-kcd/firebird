@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../common/file_params.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"

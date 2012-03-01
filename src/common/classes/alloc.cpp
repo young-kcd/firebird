@@ -38,7 +38,6 @@
 //  PLEASE, DO NOT CONSTIFY THIS MODULE !!!
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/classes/alloc.h"
 
 #ifndef WIN_NT

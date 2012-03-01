@@ -31,9 +31,7 @@
 #define JRD_THREADDATA_H
 
 #include "firebird.h"
-#include "../common/classes/locks.h"
-#include "../common/classes/rwlock.h"
-#include "../common/classes/alloc.h"
+#include "fb_pthread.h"
 
 // Thread specific data
 

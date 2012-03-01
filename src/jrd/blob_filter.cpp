@@ -27,7 +27,6 @@
 #include <stdio.h>
 
 #include "../common/config/config.h"
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ibase.h"
 #include "../jrd/blob_filter.h"
@@ -39,7 +38,6 @@
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/err_proto.h"
-#include "../common/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../common/isc_s_proto.h"
 #include "gen/iberror.h"

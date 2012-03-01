@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/call_service.h"
 #include "../common/classes/ClumpletWriter.h"
 #include <string.h>

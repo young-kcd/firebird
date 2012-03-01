@@ -40,7 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../common/gdsassert.h"
-#include "../common/common.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"

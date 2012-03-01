@@ -34,7 +34,6 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../common/common.h"
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../yvalve/array_proto.h"

@@ -24,7 +24,6 @@
 #ifndef JRD_SORT_H
 #define JRD_SORT_H
 
-#include "../common/common.h"
 #include "../include/fb_blk.h"
 #include "../jrd/TempSpace.h"
 

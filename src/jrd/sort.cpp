@@ -31,7 +31,6 @@
 #include "firebird.h"
 #include <errno.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
 #include "gen/iberror.h"

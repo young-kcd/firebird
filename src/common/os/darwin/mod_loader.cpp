@@ -28,7 +28,6 @@
 #include "firebird.h"
 
 #include "../common/os/mod_loader.h"
-#include "../../common.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

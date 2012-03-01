@@ -36,7 +36,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -281,7 +280,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	// CVC: If you think this is dangerous, replace the "else" with a call to
 	// MEMMOVE(temp, temp + 1, chars_printed) or something cleverer.
 	// Paranoid assumption:
-	// UCHAR is unsigned char as seen on jrd\common.h => same size.
+	// UCHAR is unsigned char as seen on common/common.h => same size.
 	if (d < 0)
 	{
 		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp);

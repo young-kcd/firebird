@@ -23,7 +23,6 @@
 #ifndef DSQL_PARSER_H
 #define DSQL_PARSER_H
 
-#include "../common/common.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"

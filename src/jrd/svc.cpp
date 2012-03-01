@@ -34,7 +34,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../common/file_params.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"

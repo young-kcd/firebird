@@ -30,6 +30,7 @@
 #endif
 
 #include "../common/classes/semaphore.h"
+#include "../common/classes/rwlock.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"
 #include "../common/classes/RefCounted.h"
@@ -51,7 +52,6 @@
 #include <sys/sem.h>
 #endif
 
-#include "../common/common.h"
 #include "../common/file_params.h"
 #include "../jrd/que.h"
 
@@ -240,7 +240,7 @@ struct own
 	srq own_blocks;					// Lock requests blocking
 	srq own_pending;				// Lock requests pending
 	SRQ_PTR own_process;			// Process we belong to
-	FB_THREAD_ID own_thread_id;		// Last thread attached to the owner
+	ThreadId own_thread_id;			// Last thread attached to the owner
 	FB_UINT64 own_acquire_time;		// lhb_acquires when owner last tried acquire()
 	USHORT own_waits;				// Number of requests we are waiting on
 	USHORT own_ast_count;			// Number of ASTs being delivered

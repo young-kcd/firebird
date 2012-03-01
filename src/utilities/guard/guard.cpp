@@ -48,7 +48,6 @@ int errno = -1;
 
 #include <time.h>
 
-#include "../common/common.h"
 #include "../common/os/divorce.h"
 #include "../common/isc_proto.h"
 #include "../yvalve/gds_proto.h"

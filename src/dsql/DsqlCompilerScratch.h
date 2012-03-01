@@ -22,7 +22,6 @@
 #ifndef DSQL_COMPILER_SCRATCH_H
 #define DSQL_COMPILER_SCRATCH_H
 
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../dsql/dsql.h"
 #include "../dsql/BlrWriter.h"

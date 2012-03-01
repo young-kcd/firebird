@@ -135,8 +135,6 @@ vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,
 but our code never uses the return value. */
 typedef int (*lock_ast_t)(void*);
 
-typedef IPTR FB_THREAD_ID;
-
 /* Number of elements in an array */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
 

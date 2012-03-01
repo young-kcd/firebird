@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/license.h"
 #include "../yvalve/gds_proto.h"

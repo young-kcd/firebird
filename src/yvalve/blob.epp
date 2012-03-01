@@ -30,7 +30,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../yvalve/blob_proto.h"

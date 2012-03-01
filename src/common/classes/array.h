@@ -31,7 +31,6 @@
 #include <string.h>
 #include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
-#include "../common/common.h"
 
 namespace Firebird {
 

@@ -35,11 +35,9 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../common/common.h"
 #include "../common/ThreadStart.h"
 #include <stdarg.h>
 #ifdef HAVE_UNISTD_H
@@ -3943,7 +3941,7 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 		{
 			Semaphore shutdown_semaphore;
 
-			Thread::Handle h;
+			ThreadId h;
 			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))

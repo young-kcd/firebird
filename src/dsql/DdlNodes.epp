@@ -20,7 +20,6 @@
 
 #include "firebird.h"
 #include "dyn_consts.h"
-#include "../common/common.h"
 #include "../dsql/DdlNodes.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"

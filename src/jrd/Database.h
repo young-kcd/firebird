@@ -33,7 +33,6 @@
 #include "firebird.h"
 #include "../jrd/cch.h"
 #include "../common/gdsassert.h"
-#include "../common/common.h"
 #include "../common/dsc.h"
 #include "../jrd/btn.h"
 #include "../jrd/jrd_proto.h"

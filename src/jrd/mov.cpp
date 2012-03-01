@@ -27,7 +27,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../common/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"

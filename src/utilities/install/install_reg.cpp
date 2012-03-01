@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include "../common/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/regis_proto.h"

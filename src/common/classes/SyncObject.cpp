@@ -29,8 +29,8 @@
  *  Contributor(s):
  */
 
-#include "../../common/common.h"
-#include "../../common/gdsassert.h"
+#include "firebird.h"
+#include "../common/gdsassert.h"
 #include "fb_exception.h"
 
 #include "SyncObject.h"

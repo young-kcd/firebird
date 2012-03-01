@@ -25,7 +25,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/align.h"

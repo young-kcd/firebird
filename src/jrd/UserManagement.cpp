@@ -23,7 +23,6 @@
 #include "firebird.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/UserManagement.h"
-#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/msg_encode.h"

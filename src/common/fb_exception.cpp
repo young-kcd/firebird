@@ -17,7 +17,7 @@ namespace Firebird {
 // this functions itself.
 // CVC: Do not let "perm" be incremented before "trans", because it may lead to serious memory errors,
 // since several places in our code blindly pass the same vector twice.
-void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID thr) throw()
+void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, ThreadId thr) throw()
 {
 	try
 	{
@@ -72,7 +72,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 	}
 }
 
-void makePermanentVector(ISC_STATUS* v, FB_THREAD_ID thr) throw()
+void makePermanentVector(ISC_STATUS* v, ThreadId thr) throw()
 {
 	makePermanentVector(v, v, thr);
 }

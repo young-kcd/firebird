@@ -24,7 +24,6 @@
 
 #include "firebird.h"
 #include "../jrd/ibase.h"
-#include "../common/common.h"
 
 
 #define PATHSEP(c) ((c) == '\\' || (c) == '/')

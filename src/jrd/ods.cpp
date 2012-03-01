@@ -21,7 +21,6 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
 #include "../jrd/ods.h"
 #include "../jrd/ods_proto.h"
 

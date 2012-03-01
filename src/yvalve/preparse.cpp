@@ -25,7 +25,6 @@
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../dsql/chars.h"
 #include "../dsql/sqlda.h"
