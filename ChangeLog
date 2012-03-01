@@ -1,3 +1,23 @@
+ 2012-02-29 15:24  asfernandes 
+   M src/dsql/DdlNodes.epp
+Correction.
+
+ 2012-02-29 07:08  alexpeshkoff 
+   M src/common/classes/Synchronize.h
+   M src/common/classes/condition.h
+   M src/common/classes/fb_tls.h
+   M src/common/classes/locks.h
+   M src/common/classes/rwlock.h
+   M src/common/classes/semaphore.h
+   M src/common/isc_s_proto.h
+   M src/common/os/posix/SyncSignals.cpp
+   M src/common/thd.cpp
+   M src/extlib/fbudf/stdafx.h
+   A src/include/fb_pthread.h
+   M src/utilities/fbcpl/stdafx.h
+   M src/yvalve/MasterImplementation.cpp
+Always define appropriate macro before including pthread.h
+
  2012-02-28 12:58  alexpeshkoff 
    M src/jrd/os/posix/unix.cpp
 Lock database file when opening it
