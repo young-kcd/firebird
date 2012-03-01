@@ -634,6 +634,20 @@ jrd_file* PIO_open(Database* dbb,
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
 
+		readOnly = true;
+	}
+	else if (geteuid() == 0)
+	{
+		// root has too many rights - therefore artificially check for readonly file
+		struct stat st;
+		if (fstat(desc, &st) == 0)
+		{
+			readOnly = ((st.st_mode & 0222) == 0);	// nobody has write permissions
+		}
+	}
+
+	if (readOnly)
+	{
 		// If this is the primary file, set Database flag to indicate that it is
 		// being opened ReadOnly. This flag will be used later to compare with
 		// the Header Page flag setting to make sure that the database is set ReadOnly.
@@ -641,11 +655,10 @@ jrd_file* PIO_open(Database* dbb,
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		if (!pageSpace->file)
 			dbb->dbb_flags |= DBB_being_opened_read_only;
-		readOnly = true;
 	}
 
 	const bool shareMode = dbb->dbb_config->getSharedDatabase();
-	if (!lockDatabaseFile(desc, shareMode))
+	if (!lockDatabaseFile(desc, shareMode || readOnly))
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
