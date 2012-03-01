@@ -416,7 +416,7 @@ Firebird::GlobalPtr<StringsBuffer> allStrings;
 
 namespace Why {
 
-const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t len, ThreadId thr)
+const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t len, intptr_t thr)
 {
 	return allStrings->alloc(s, len, thr);
 }

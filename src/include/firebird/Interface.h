@@ -108,7 +108,7 @@ public:
 	virtual IPluginManager* FB_CARG getPluginManager() = 0;
 	virtual int FB_CARG upgradeInterface(IVersioned* toUpgrade, int desiredVersion,
 										 struct UpgradeInfo* upgradeInfo) = 0;
-	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, ThreadId thr) = 0;
+	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
 	virtual ITimerControl* FB_CARG getTimerControl() = 0;
 	virtual IDtc* FB_CARG getDtc() = 0;
 	virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
