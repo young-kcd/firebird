@@ -353,6 +353,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\plugins\crypt\arc4\Arc4.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\yvalve\array_proto.h"
 				>
 			</File>
@@ -430,6 +434,10 @@
 			>
 			<File
 				RelativePath="..\..\..\src\yvalve\alt.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\plugins\crypt\arc4\Arc4.cpp"
 				>
 			</File>
 			<File
