@@ -620,7 +620,7 @@ namespace Why
 	{
 	public:
 		YEntry(IStatus* aStatus, Y* object, int checkAttachment = 1)
-			: ref(object->attachment)
+			: ref(object->attachment), nextRef(NULL)
 		{
 			aStatus->init();
 			init(object->next);
@@ -732,32 +732,37 @@ namespace Why
 	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		explicit DispatcherEntry(IStatus* /*aStatus*/, bool ignoreShutdownError = false)
+		explicit DispatcherEntry(IStatus* aStatus, bool p_shutdownMode = false)
+			: shutdownMode(p_shutdownMode)
 		{
+			aStatus->init();
 			signalInit();
 
 			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
 			registerBuiltinPlugins.init();
 
-			if (shutdownStarted && !ignoreShutdownError)
+			if (!shutdownMode)
 			{
-				Arg::Gds(isc_att_shutdown).raise();
-			}
-			++dispCounter;
-			if (shutdownStarted && !ignoreShutdownError)
-			{
-				--dispCounter;
-				Arg::Gds(isc_att_shutdown).raise();
+				++dispCounter;
+				if (shutdownStarted)
+				{
+					--dispCounter;
+					Arg::Gds(isc_att_shutdown).raise();
+				}
 			}
 		}
 
 		~DispatcherEntry()
 		{
-			--dispCounter;
+			if (!shutdownMode)
+			{
+				--dispCounter;
+			}
 		}
 
 	private:
 		DispatcherEntry(const DispatcherEntry&);	// prohibit copy constructor
+		bool shutdownMode;
 	};
 
 }	// namespace Why
@@ -5166,8 +5171,10 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		{
 			THD_yield();
 
-			if (dispCounter.value() > 1)	// 1 is OUR entry value
+			if (dispCounter.value() > 0)
+			{
 				continue;
+			}
 
 			hasThreads = false;
 
