@@ -822,6 +822,7 @@ enum act_t {
 	ACT_unknown, // action is unknown
 	ACT_backup,
 	ACT_backup_split,
+	ACT_backup_fini,
 	ACT_restore,
 	ACT_restore_join
 };

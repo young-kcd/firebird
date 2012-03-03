@@ -1232,6 +1232,10 @@ int gbak(Firebird::UtilSvc* uSvc)
 	{
 		// All calls to exit_local(), normal and error exits, wind up here
 		tdgbl->burp_throw = false;
+		if (tdgbl->action->act_action == ACT_backup_fini)
+		{
+			tdgbl->exit_code = 0;
+		}
 		exit_code = tdgbl->exit_code;
 	}
 
@@ -1316,7 +1320,8 @@ void BURP_abort()
 
 	if (!tdgbl->uSvc->isService())
 	{
-		BURP_print(true, 83);
+		BURP_print(true, tdgbl->action->act_action == ACT_backup_fini ? 351 : 83);
+		// msg 351 Error closing database, but backup file is OK
 		// msg 83 Exiting before completion due to errors
 	}
 
