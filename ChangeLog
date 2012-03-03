@@ -1,3 +1,16 @@
+ 2012-03-02 15:38  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed hang in shutdown
+
+ 2012-03-02 12:12  hvlad 
+   M builds/win32/msvc8/yvalve.vcproj
+Update MSVC8 build
+
+ 2012-03-02 12:12  hvlad 
+   M src/common/classes/locks.cpp
+   M src/plugins/crypt/arc4/Arc4.cpp
+Fixed Win32 build
+
  2012-03-01 18:18  hvlad 
    M builds/win32/msvc10/yvalve.vcxproj
    M builds/win32/msvc10/yvalve.vcxproj.filters
