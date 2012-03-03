@@ -2497,6 +2497,15 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 325, NULL, 'general options are:', NULL, NULL);
 ('gbak_invalid_metadata', 'general_on_error', 'restore.epp', NULL, 12, 341, NULL, 'Invalid metadata detected. Use -FIX_FSS_METADATA option.', NULL, NULL);
 ('gbak_invalid_data', 'get_data', 'restore.epp', NULL, 12, 342, NULL, 'Invalid data detected. Use -FIX_FSS_DATA option.', NULL, NULL);
+(NULL, 'put_asciz', 'backup.epp', NULL, 12, 343, NULL, 'text for attribute @1 is too large in @2, truncating to @3 bytes', NULL, NULL);
+(NULL, 'restore.epp', 'burp.cpp', 'do not change the param order', 12, 344, NULL, 'Expected backup version @2..@3.  Found @1', NULL, NULL);
+(NULL, 'write_relations', 'backup.epp', NULL, 12, 345, NULL, '    writing view @1', NULL, NULL);
+(NULL, 'get_relation', 'restore.epp', NULL, 12, 346, NULL, '    table @1 is a view', NULL, NULL);
+(NULL, 'write_secclasses', 'backup.epp', NULL, 12, 347, NULL, 'writing security classes', NULL, NULL);
+(NULL, 'BACKUP_backup', 'backup.epp', NULL, 12, 348, NULL, 'database format @1 is too old to backup', NULL, NULL);
+(NULL, 'restore', 'restore.epp', NULL, 12, 349, NULL, 'backup version is @1', NULL, NULL);
+(NULL, 'fix_system_generators', 'restore.epp', NULL, 12, 350, NULL, 'fixing system generators', NULL, NULL);
+(NULL, 'BURP_abort', 'burp.cpp', NULL, 12, 351, NULL, 'Error closing database, but backup file is OK', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

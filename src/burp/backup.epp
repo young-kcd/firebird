@@ -523,8 +523,8 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	// Finish up
 
 	put(tdgbl, (UCHAR) rec_end);
-
 	FB_UINT64 cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
+	tdgbl->action->act_action = ACT_backup_fini;
 	BURP_verbose(176, SafeArg() << cumul_count);
 	// msg 176 closing file, committing, and finishing.  %ld bytes written
 
