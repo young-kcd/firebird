@@ -5615,7 +5615,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_current_timestamp:
 	case nod_current_date:
 	case nod_derived_expr:
-//	case nod_stmt_expr:
+	case nod_stmt_expr:
 #ifdef SCROLLABLE_CURSORS
 	case nod_seek:
 #endif
