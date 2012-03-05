@@ -133,8 +133,10 @@ public:
 
 		TreeAccessor treeAccessor(&from.tree);
 
-		if (treeAccessor.getFirst()) {
-			while (true) {
+		if (treeAccessor.getFirst())
+		{
+			while (true)
+			{
 				bool haveMore = treeAccessor.fastRemove();
 				if (!haveMore)
 					break;
@@ -149,8 +151,10 @@ public:
 	{
 		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.getFirst()) {
-			while (true) {
+		if (treeAccessor.getFirst())
+		{
+			while (true)
+			{
 				KeyValuePair* temp = treeAccessor.current();
 				bool haveMore = treeAccessor.fastRemove();
 				delete temp;
@@ -167,7 +171,8 @@ public:
 	{
 		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.locate(key)) {
+		if (treeAccessor.locate(key))
+		{
 			KeyValuePair* var = treeAccessor.current();
 			treeAccessor.fastRemove();
 			delete var;
@@ -183,7 +188,8 @@ public:
 	{
 		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.locate(key)) {
+		if (treeAccessor.locate(key))
+		{
 			treeAccessor.current()->second = value;
 			return true;
 		}
@@ -215,7 +221,8 @@ public:
 	{
 		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.locate(key)) {
+		if (treeAccessor.locate(key))
+		{
 			value = treeAccessor.current()->second;
 			return true;
 		}
