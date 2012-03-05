@@ -1,3 +1,7 @@
+ 2012-03-05 03:56  robocop 
+   M src/lock/print.cpp
+Misc: delete obsolete workaround.
+
  2012-03-03 16:47  alexpeshkoff 
    M src/burp/backup.epp
    M src/burp/burp.cpp
