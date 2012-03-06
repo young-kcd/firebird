@@ -1147,7 +1147,7 @@ void API_ROUTINE gds__trace(const TEXT* text)
 	gds__ulstr(p, apid, 5, ' ');
 	p += 5;
 	*p++ = ' ';
-	gds__ulstr(p, getThreadId(), 5, ' ');
+	gds__ulstr(p, (IPTR) getThreadId(), 5, ' ');
 	p += 5;
 	*p++ = ' ';
 	*p = '\0';
