@@ -5027,15 +5027,17 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 
 			if (currentStatus->isSuccess())
 			{
-				// ASF: Why this is different than in attachDatabase, which always uses expandedFilename?
+				expandedFilename = orgFilename;
 #ifdef WIN_NT
-				PathName path(expandedFilename);
-#else
-				PathName path(orgFilename);
+            	// Now we can expand, the file exists
+				ISC_unescape(expandedFilename);
+				ISC_utf8ToSystem(expandedFilename);
+				ISC_expand_filename(expandedFilename, true);
+				ISC_systemToUtf8(expandedFilename);
 #endif
 
 				status->set(currentStatus->get());
-				return new YAttachment(provider, attachment, filename);
+				return new YAttachment(provider, attachment, expandedFilename);
 			}
 
 			if (currentStatus->get()[1] != isc_unavailable)
