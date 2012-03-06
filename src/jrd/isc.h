@@ -33,16 +33,19 @@
 
 // Firebird platform-specific synchronization data structures
 
-#if defined(DARWIN) || defined(FREEBSD)
+#if defined(DARWIN) || defined(FREEBSD) || defined(LINUX)
 #define USE_SYS5SEMAPHORE
 #endif
 
-#ifdef LINUX
+#if defined(USE_SYS5SEMAPHORE) && (defined(SUPERSERVER) || defined(FB_SUPER_UTIL))
+#undef USE_SYS5SEMAPHORE
+#define USE_LOCAL_MUTEXES		// this kills -c switch in fb_lock_print, but makes all the rest happy
+#endif
 
+#ifdef LINUX
 // This hack fixes CORE-2896 - embedded connections fail on linux.
 // Looks like a lot of linux kernels are buggy when working with PRIO_INHERIT mutexes.
 #undef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
-
 #endif //LINUX
 
 #ifdef UNIX

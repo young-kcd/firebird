@@ -30,6 +30,7 @@
 #
 ROOT=..
 ObjModuleType=std
+CPPFLAGS+= -DFB_SUPER_UTIL
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

@@ -1290,11 +1290,13 @@ int ISC_event_init(event_t* event)
 
 	PTHREAD_ERROR(pthread_mutexattr_init(&mattr));
 	PTHREAD_ERROR(pthread_condattr_init(&cattr));
+#ifndef USE_LOCAL_MUTEXES
 #ifdef PTHREAD_PROCESS_SHARED
 	PTHREAD_ERROR(pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED));
 	PTHREAD_ERROR(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED));
 #else
 #error Your system must support PTHREAD_PROCESS_SHARED to use firebird.
+#endif
 #endif
 	PTHREAD_ERROR(pthread_mutex_init(event->event_mutex, &mattr));
 	PTHREAD_ERROR(pthread_cond_init(event->event_cond, &cattr));
@@ -2750,6 +2752,10 @@ int ISC_mutex_unlock(struct mtx* mutex)
 #define BUGGY_LINUX_MUTEX
 #endif
 
+#ifdef USE_LOCAL_MUTEXES
+#undef BUGGY_LINUX_MUTEX
+#endif
+
 #ifdef BUGGY_LINUX_MUTEX
 static volatile bool staticBugFlag = false;
 #endif
@@ -2782,11 +2788,12 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 	pthread_mutexattr_t mattr;
 
 	PTHREAD_ERRNO(pthread_mutexattr_init(&mattr));
+#ifndef USE_LOCAL_MUTEXES
 #ifdef PTHREAD_PROCESS_SHARED
 	PTHREAD_ERRNO(pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED));
 #else
 #error Your system must support PTHREAD_PROCESS_SHARED to use Firebird.
-#endif
+#endif //PTHREAD_PROCESS_SHARED
 
 #ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
 #ifdef BUGGY_LINUX_MUTEX
@@ -2802,7 +2809,7 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 #ifdef BUGGY_LINUX_MUTEX
 	}
 #endif
-#endif
+#endif //HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
 
 #ifdef USE_ROBUST_MUTEX
 #ifdef BUGGY_LINUX_MUTEX
@@ -2813,7 +2820,8 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 #ifdef BUGGY_LINUX_MUTEX
 	}
 #endif
-#endif
+#endif //USE_ROBUST_MUTEX
+#endif //USE_LOCAL_MUTEXES
 
 	memset(mutex->mtx_mutex, 0, sizeof(pthread_mutex_t));
 	//int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));

@@ -251,6 +251,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			FPRINTF(outfile, "%s", valid_switches);
 			exit(FINI_OK);
 		}
+
 		SCHAR c;
 		while (c = *p++)
 			switch (c)
@@ -261,6 +262,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			case 'c':
+#ifdef USE_LOCAL_MUTEXES
+				FPRINTF(outfile, "%s\n", "Sorry, on this platform -c switch is not supported for SuperServer");
+				exit(FINI_OK);
+#endif
 				sw_consistency = true;
 				break;
 
