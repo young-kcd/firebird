@@ -34,7 +34,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, ThreadId thr
 					perm [-1] = isc_arg_string;
 					const size_t len = *trans++;
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, thr));
+					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, (intptr_t) thr));
 				}
 				break;
 			case isc_arg_string:
@@ -43,7 +43,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, ThreadId thr
 				{
 					const char* temp = reinterpret_cast<char*>(*trans++);
 					const size_t len = strlen(temp);
-					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, thr));
+					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, (intptr_t) thr));
 				}
 				break;
 			default:

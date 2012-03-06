@@ -418,7 +418,7 @@ namespace Why {
 
 const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t len, intptr_t thr)
 {
-	return allStrings->alloc(s, len, thr);
+	return allStrings->alloc(s, len, (ThreadId) thr);
 }
 
 } // namespace Firebird
