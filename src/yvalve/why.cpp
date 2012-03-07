@@ -4953,7 +4953,6 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 		{
 			newDpb.insertTag(isc_dpb_utf8_filename);
 
-			/***
 			for (newDpb.rewind(); !newDpb.isEof(); newDpb.moveNext())
 			{
 				UCHAR tag = newDpb.getClumpTag();
@@ -4978,7 +4977,6 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 					}
 				}
 			}
-			***/
 		}
 
 		setLogin(newDpb, false);
@@ -5009,14 +5007,12 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 		StatusVector temp(NULL);
 		IStatus* currentStatus = status;
 
-		/***
 		PathName dummy;
 		RefPtr<Config> config;
 		ResolveDatabaseAlias(expandedFilename, dummy, &config);
-		***/
 
 		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-				FB_PROVIDER_VERSION, upInfo/***, config***/);
+				FB_PROVIDER_VERSION, upInfo, config);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
