@@ -65,6 +65,10 @@ pidfile="$runDir/$INSTANCE.pid"
 
 export FIREBIRD
 
+ISC_USER=
+ISC_PASSWORD=
+export ISC_USER ISC_PASSWORD
+
 # Check the files are there and are executable.
 FBSBIN=$FIREBIRD/bin
 if [ ! -x $FBSBIN/fbguard ]; then

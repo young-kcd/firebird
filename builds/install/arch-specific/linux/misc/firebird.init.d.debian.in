@@ -48,7 +48,11 @@ makeFbDir $lockDir 0770
 
 pidfile="$runDir/`basename $0`.pid"
 FB_OPTS="-pidfile $pidfile -daemon -forever"
-export FIREBIRD 
+export FIREBIRD
+
+ISC_USER=
+ISC_PASSWORD=
+export ISC_USER ISC_PASSWORD
 
 GUARDIAN=$FIREBIRD/bin/fbguard
 if [ ! -x $GUARDIAN ]; then
