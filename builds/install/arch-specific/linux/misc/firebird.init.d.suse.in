@@ -46,6 +46,10 @@ pidfile=/var/run/firebird/firebird.pid
 
 export FIREBIRD
 
+ISC_USER=
+ISC_PASSWORD=
+export ISC_USER ISC_PASSWORD
+
 # Check the file is there and is executable.
 [ -x $FIREBIRD/bin/fbmgr ] || exit 5
 [ -x $FIREBIRD/bin/fbguard ] || exit 5

@@ -31,8 +31,11 @@ FIREBIRD=@prefix@
 FBRunUser=firebird
 pidfile=/var/run/firebird/`basename $0`.pid
 FB_OPTS="-pidfile $pidfile -start -forever"
-export FIREBIRD 
+export FIREBIRD
 
+ISC_USER=
+ISC_PASSWORD=
+export ISC_USER ISC_PASSWORD
 
 # Check the file is there and is executable.
 MANAGER=$FIREBIRD/bin/fbmgr.bin

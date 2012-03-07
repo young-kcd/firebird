@@ -23,6 +23,10 @@ FB_OPTS="-pidfile $pidfile -start -forever"
 
 export FIREBIRD LD_LIBRARY_PATH
 
+ISC_USER=
+ISC_PASSWORD=
+export ISC_USER ISC_PASSWORD
+
 MANAGER=$FIREBIRD/bin/fbmgr.bin
 
 start(){
