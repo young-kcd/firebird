@@ -1,3 +1,12 @@
+ 2012-03-07 12:09  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+Backported fix for CORE-3721: Multiuser server startup (/etc/init.d) script picks up the ISC_ variables if set.
+
  2012-03-06 13:28  alexpeshkoff 
    M builds/make.new/config/install-sh
    M builds/posix/Makefile.in.client.util
