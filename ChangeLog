@@ -1,3 +1,16 @@
+ 2012-03-07 15:20  alexpeshkoff 
+   M src/yvalve/why.cpp
+Make createDatabase() work with config and national characters like attachDatabase()
+
+ 2012-03-07 12:04  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+Fixed CORE-3721: Multiuser server startup (/etc/init.d) script picks up the ISC_ variables if set.
+
  2012-03-06 13:29  alexpeshkoff 
    M src/common/fb_exception.cpp
    M src/yvalve/MasterImplementation.cpp
