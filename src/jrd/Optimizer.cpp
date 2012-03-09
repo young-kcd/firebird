@@ -1812,7 +1812,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 							// ASF: Order is more precise than equivalence class.
 							// We can't use the next segments, and we'll need to use
 							// INTL_KEY_PARTIAL to construct the last segment's key.
-							scratch.fuzzy = true;;
+							scratch.fuzzy = true;
 						}
 					}
 				}
