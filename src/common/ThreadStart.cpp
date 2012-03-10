@@ -93,7 +93,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *
@@ -114,7 +114,7 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
 		Firebird::system_call_failed::raise("pthread_create", state);
 
-	if (!thd_id)
+	if (!p_handle)
 	{
 		if (state = pthread_detach(thread))
 			Firebird::system_call_failed::raise("pthread_detach", state);
@@ -148,7 +148,7 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_setscope", state);
 
-	if (!thd_id)
+	if (!p_handle)
 	{
 		state = pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
 		if (state)
@@ -163,13 +163,13 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 
 #endif
 
-	if (thd_id)
+	if (p_handle)
 	{
 		int dummy;		// We do not want to know old cancel type
 		state = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &dummy);
 		if (state)
 			 Firebird::system_call_failed::raise("pthread_setcanceltype", state);
-		*thd_id = thread;
+		*p_handle = thread;
 	}
 }
 
@@ -192,7 +192,7 @@ void Thread::kill(Handle& thread)
 
 #ifdef WIN_NT
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *
@@ -248,9 +248,9 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 
 	ResumeThread(handle);
 
-	if (thd_id)
+	if (p_handle)
 	{
-		*thd_id = handle;
+		*p_handle = handle;
 	}
 	else
 	{
@@ -276,7 +276,7 @@ void Thread::kill(Handle& handle)
 
 
 #ifndef START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *
