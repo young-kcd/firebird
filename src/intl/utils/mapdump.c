@@ -18,7 +18,6 @@
  */
 
 #include "firebird.h"
-
 #include "cs_w1254.h"
 
 /*

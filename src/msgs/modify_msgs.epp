@@ -28,8 +28,6 @@
 #include <stdlib.h>
 
 
-
-
 DATABASE DB = "msg.fdb";
 
 static void explicit_print(const TEXT*);

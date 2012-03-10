@@ -45,8 +45,6 @@
  */
 
 
-
-
 // Switch handling constants.  Note that IN_SW_COUNT must always be
 // one larger than the largest switch value
 

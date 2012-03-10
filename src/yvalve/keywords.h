@@ -25,7 +25,6 @@
  * MOD 29-Jun-2002
  */
 
-
 struct tok
 {
     USHORT tok_ident;
@@ -38,8 +37,8 @@ typedef tok TOK;
 typedef const TOK* Tokens;
 
 // These symbols are exported
-extern "C" {
-int API_ROUTINE KEYWORD_stringIsAToken(const char*);
-Tokens API_ROUTINE KEYWORD_getTokens();
+extern "C"
+{
+	int API_ROUTINE KEYWORD_stringIsAToken(const char*);
+	Tokens API_ROUTINE KEYWORD_getTokens();
 }
-

@@ -374,7 +374,7 @@ int WinSspiServer::authenticate(Firebird::IStatus* status,
 			return AUTH_SUCCESS;
 		}
 
-		sBlock->putData(status,sspiData.getCount(), sspiData.begin());
+		sBlock->putData(status, sspiData.getCount(), sspiData.begin());
 	}
 	catch (const Firebird::Exception& ex)
 	{

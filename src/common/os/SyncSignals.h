@@ -26,10 +26,10 @@
 #ifndef COMMON_SYNC_SIGNALS_H
 #define COMMON_SYNC_SIGNALS_H
 
-
 #ifdef UNIX
 
-namespace Firebird {
+namespace Firebird
+{
 	void syncSignalsSet(void*);
 	void syncSignalsReset();
 }

@@ -225,7 +225,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 	{
 		int lockErrno = errno;
 		close(desc);
-		// error when locking file almost always means it lcoked by someone else
+		// error when locking file almost always means it's locked by someone else
 		// therefore do not remove file here (contrary to chmod error)
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_create_err) << Arg::Unix(lockErrno));
@@ -979,7 +979,7 @@ static jrd_file* setup_file(Database* dbb,
 static bool lockDatabaseFile(int desc, const bool share, const bool temporary)
 {
 	struct flock lck;
-	lck.l_type = ((!temporary) && share) ? F_RDLCK : F_WRLCK;
+	lck.l_type = (!temporary && share) ? F_RDLCK : F_WRLCK;
 	lck.l_whence = SEEK_SET;
 	lck.l_start = 0;
 	lck.l_len = 0;

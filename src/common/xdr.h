@@ -29,7 +29,6 @@
 #ifndef REMOTE_XDR_H
 #define REMOTE_XDR_H
 
-
 #include <sys/types.h>
 #ifdef WIN_NT
 #include <winsock2.h>

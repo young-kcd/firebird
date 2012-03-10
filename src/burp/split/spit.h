@@ -25,7 +25,6 @@
  * Contributor(s): ______________________________________.
  */
 
-
 const char BLANK				= ' ';
 const int FILE_IS_FULL			= -9;
 //const int FILE_NM_ARR_LEN		= 20;

@@ -24,7 +24,6 @@
 #ifndef DSQL_SYM_H
 #define DSQL_SYM_H
 
-
 namespace Jrd {
 
 // possible symbol types
@@ -45,7 +44,6 @@ enum sym_type {
 };
 
 typedef sym_type SYM_TYPE;
-
 
 } // namespace
 
