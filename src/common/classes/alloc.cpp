@@ -813,15 +813,13 @@ void* MemoryPool::allocRaw(size_t size) throw (std::bad_alloc)
 
 #else // WIN_NT
 
+#if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
 #ifdef MAP_ANONYMOUS
 
-#ifdef SOLARIS
-#define FB_MMAP_FLAGS MAP_PRIVATE | MAP_ANON
-#else // SOLARIS
-#define FB_MMAP_FLAGS MAP_PRIVATE | MAP_ANONYMOUS
-#endif // SOLARIS
-
-	void* result = mmap(NULL, size, PROT_READ | PROT_WRITE, FB_MMAP_FLAGS, -1, 0);
+	void* result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 #else // MAP_ANONYMOUS
 
