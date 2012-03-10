@@ -1,3 +1,7 @@
+ 2012-03-09 08:27  robocop 
+   M src/jrd/Optimizer.cpp
+Misc.
+
  2012-03-07 12:09  alexpeshkoff 
    M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
    M builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
