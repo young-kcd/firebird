@@ -30,7 +30,7 @@ namespace Firebird {
 class ICrypt : public IRefCounted
 {
 public:
-	virtual void FB_CARG transform(IStatus* status, unsigned int length, void* to, const void* from) = 0;
+	virtual void FB_CARG transform(IStatus* status, unsigned int length, const void* from, void* to) = 0;
 };
 
 #define FB_CRYPT_VERSION (FB_REFCOUNTED_VERSION + 1)

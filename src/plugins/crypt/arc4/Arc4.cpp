@@ -56,7 +56,7 @@ public:
 	}
 
 	// ICrypt implementation
-	void FB_CARG transform(IStatus* status, unsigned int length, void* to, const void* from)
+	void FB_CARG transform(IStatus* status, unsigned int length, const void* from, void* to)
 	{
 		status->init();
 

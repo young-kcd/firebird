@@ -3029,7 +3029,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 		LocalStatus st;
 
 		char* d = b.getBuffer(buffer_length);
-		port->port_send_cipher->transform(&st, buffer_length, d, data);
+		port->port_send_cipher->transform(&st, buffer_length, data, d);
 		if (!st.isSuccess())
 		{
 			status_exception::raise(st.get());
