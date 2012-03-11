@@ -1,3 +1,33 @@
+ 2012-03-10 15:37  asfernandes 
+   M src/auth/trusted/AuthSspi.cpp
+   M src/burp/split/spit.h
+   M src/common/os/SyncSignals.h
+   M src/common/xdr.h
+   M src/dsql/sym.h
+   M src/gpre/gpreswi.h
+   M src/intl/utils/mapdump.c
+   M src/jrd/os/posix/unix.cpp
+   M src/msgs/include.epp
+   M src/msgs/modify_msgs.epp
+   M src/remote/server/server.cpp
+   M src/yvalve/keywords.h
+Misc.
+
+ 2012-03-10 14:01  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/common.h
+Mac port
+
+ 2012-03-10 12:28  alexpeshkoff 
+   M src/common/ThreadStart.cpp
+Misc
+
+ 2012-03-10 12:07  alexpeshkoff 
+   M src/include/firebird/Crypt.h
+   M src/plugins/crypt/arc4/Arc4.cpp
+   M src/remote/inet.cpp
+Changed order of args as requested by Claudio
+
  2012-03-07 15:20  alexpeshkoff 
    M src/yvalve/why.cpp
 Make createDatabase() work with config and national characters like attachDatabase()
