@@ -4815,121 +4815,18 @@ int YService::release()
 YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 	unsigned int dpbLength, const unsigned char* dpb)
 {
-	try
-	{
-		DispatcherEntry entry(status);
-
-		if (!filename)
-			status_exception::raise(Arg::Gds(isc_bad_db_format) << Arg::Str(""));
-
-		if (dpbLength > 0 && !dpb)
-			status_exception::raise(Arg::Gds(isc_bad_dpb_form));
-
-		// Copy the file name to a temp buffer, since some of the following utilities can modify it.
-
-		PathName orgFilename(filename);
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpbLength);
-		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
-
-		if (utfFilename)
-			ISC_utf8ToSystem(orgFilename);
-		else
-		{
-			newDpb.insertTag(isc_dpb_utf8_filename);
-
-			for (newDpb.rewind(); !newDpb.isEof(); newDpb.moveNext())
-			{
-				UCHAR tag = newDpb.getClumpTag();
-
-				switch (tag)
-				{
-					case isc_dpb_user_name:
-					case isc_dpb_password:
-					case isc_dpb_sql_role_name:
-					case isc_dpb_trusted_auth:
-					case isc_dpb_trusted_role:
-					case isc_dpb_working_directory:
-					case isc_dpb_set_db_charset:
-					case isc_dpb_process_name:
-					{
-						string s;
-						newDpb.getString(s);
-						ISC_systemToUtf8(s);
-						newDpb.deleteClumplet();
-						newDpb.insertString(tag, s);
-						break;
-					}
-				}
-			}
-		}
-
-		setLogin(newDpb, false);
-		orgFilename.rtrim();
-
-		PathName expandedFilename;
-		bool unescaped = false;
-
-		if (!setPath(orgFilename, expandedFilename))
-		{
-			expandedFilename = orgFilename;
-			ISC_systemToUtf8(expandedFilename);
-			ISC_unescape(expandedFilename);
-			unescaped = true;
-			ISC_utf8ToSystem(expandedFilename);
-			ISC_expand_filename(expandedFilename, true);
-		}
-
-		ISC_systemToUtf8(orgFilename);
-		ISC_systemToUtf8(expandedFilename);
-
-		if (unescaped)
-			ISC_escape(expandedFilename);
-
-		if (orgFilename != expandedFilename && !newDpb.find(isc_dpb_org_filename))
-			newDpb.insertPath(isc_dpb_org_filename, orgFilename);
-
-		StatusVector temp(NULL);
-		IStatus* currentStatus = status;
-
-		PathName dummy;
-		RefPtr<Config> config;
-		ResolveDatabaseAlias(expandedFilename, dummy, &config);
-
-		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-				FB_PROVIDER_VERSION, upInfo, config);
-			 providerIterator.hasData();
-			 providerIterator.next())
-		{
-			IProvider* provider = providerIterator.plugin();
-
-			IAttachment* attachment = provider->attachDatabase(currentStatus,
-				expandedFilename.c_str(), newDpb.getBufferLength(), newDpb.getBuffer());
-
-			if (currentStatus->isSuccess())
-			{
-				status->set(currentStatus->get());
-				return new YAttachment(provider, attachment, expandedFilename);
-			}
-
-			if (currentStatus->get()[1] != isc_unavailable)
-				currentStatus = &temp;
-
-			currentStatus->init();
-		}
-
-		if (status->get()[1] == 0)
-			Arg::Gds(isc_unavailable).raise();
-	}
-	catch (const Exception& e)
-	{
-		e.stuffException(status);
-	}
-
-	return NULL;
+	return attachOrCreateDatabase(status, false, filename, dpbLength, dpb);
 }
 
+// Create new database using the first subsystem that can do it.
 YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 	unsigned int dpbLength, const unsigned char* dpb)
+{
+	return attachOrCreateDatabase(status, true, filename, dpbLength, dpb);
+}
+
+YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
+	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
 {
 	try
 	{
@@ -5018,18 +4915,24 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 		{
 			IProvider* provider = providerIterator.plugin();
 
-			IAttachment* attachment = provider->createDatabase(currentStatus,
-				expandedFilename.c_str(), newDpb.getBufferLength(), newDpb.getBuffer());
+			IAttachment* attachment = createFlag ?
+				provider->createDatabase(currentStatus,	expandedFilename.c_str(),
+					newDpb.getBufferLength(), newDpb.getBuffer()) :
+				provider->attachDatabase(currentStatus,	expandedFilename.c_str(),
+					newDpb.getBufferLength(), newDpb.getBuffer());
 
 			if (currentStatus->isSuccess())
 			{
-				expandedFilename = orgFilename;
 #ifdef WIN_NT
-            	// Now we can expand, the file exists
-				ISC_unescape(expandedFilename);
-				ISC_utf8ToSystem(expandedFilename);
-				ISC_expand_filename(expandedFilename, true);
-				ISC_systemToUtf8(expandedFilename);
+				if (createFlag)
+				{
+	            	// Now we can expand, the file exists
+					expandedFilename = orgFilename;
+					ISC_unescape(expandedFilename);
+					ISC_utf8ToSystem(expandedFilename);
+					ISC_expand_filename(expandedFilename, true);
+					ISC_systemToUtf8(expandedFilename);
+				}
 #endif
 
 				status->set(currentStatus->get());

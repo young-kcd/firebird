@@ -496,6 +496,10 @@ public:
 
 		return 1;
 	}
+
+private:
+	YAttachment* attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
+		const char* filename, unsigned int dpbLength, const unsigned char* dpb);
 };
 
 
