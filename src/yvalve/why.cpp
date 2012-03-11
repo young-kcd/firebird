@@ -4908,7 +4908,7 @@ YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 			if (currentStatus->isSuccess())
 			{
 				status->set(currentStatus->get());
-				return new YAttachment(provider, attachment, filename);
+				return new YAttachment(provider, attachment, expandedFilename);
 			}
 
 			if (currentStatus->get()[1] != isc_unavailable)
