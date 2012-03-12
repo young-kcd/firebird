@@ -1,3 +1,12 @@
+ 2012-03-11 15:32  alexpeshkoff 
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Avoid code duplication in yvalve. Always store expanded filename in YAttachment.
+
+ 2012-03-11 15:17  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed my old error done when applying providers interface in yValve
+
  2012-03-10 15:37  asfernandes 
    M src/auth/trusted/AuthSspi.cpp
    M src/burp/split/spit.h
