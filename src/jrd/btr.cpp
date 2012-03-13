@@ -915,9 +915,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
  *	Insert a node into an index.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->getDatabase();
 
 	index_desc* idx = insertion->iib_descriptor;
 	RelationPages* relPages = insertion->iib_relation->getPages(tdbb);
@@ -999,23 +997,18 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	}
 
 	// hvlad: save some info from bucket for latter use before releasing a page
-	const UCHAR flags = bucket->btr_header.pag_flags;
 	const USHORT btr_relation = bucket->btr_relation;
 	const UCHAR btr_level = bucket->btr_level + 1;
 	const UCHAR btr_id = bucket->btr_id;
 
-	const bool useJumpInfo = (flags & btr_jump_info);
 	IndexJumpInfo jumpInfo;
-	if (useJumpInfo)
-	{
-		// First get jumpinfo from the level deeper, because we need
-		// to know jumpAreaSize and keyLength.
-		IndexJumpInfo::getPointerFirstNode(bucket, &jumpInfo);
-		jumpInfo.jumpers = 0;
-	}
+	// First get jumpinfo from the level deeper, because we need
+	// to know jumpAreaSize and keyLength.
+	IndexJumpInfo::getPointerFirstNode(bucket, &jumpInfo);
+	jumpInfo.jumpers = 0;
 
 	// hvlad: don't even try to use page buffer after page was released
-	bucket = 0;
+	bucket = NULL;
 
 	CCH_RELEASE(tdbb, &new_window);
 	CCH_RELEASE(tdbb, &window);
@@ -1035,21 +1028,13 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	new_bucket->btr_relation = btr_relation;
 	new_bucket->btr_level = btr_level;
 	new_bucket->btr_id = btr_id;
-	new_bucket->btr_header.pag_flags = (flags & BTR_FLAG_COPY_MASK);
 
-	UCHAR* pointer;
-	if (useJumpInfo)
-	{
-		// Write uncomplete jumpinfo, so we can set the firstNodeOffset
-		// to the correct position.
-		pointer = jumpInfo.writeJumpInfo(new_bucket);
-		// Finally write correct jumpinfo.
-		jumpInfo.firstNodeOffset = (pointer - (UCHAR*)new_bucket);
-		pointer = jumpInfo.writeJumpInfo(new_bucket);
-	}
-	else {
-		pointer = IndexJumpInfo::getPointerFirstNode(new_bucket);
-	}
+	// Write uncomplete jumpinfo, so we can set the firstNodeOffset
+	// to the correct position.
+	UCHAR* pointer = jumpInfo.writeJumpInfo(new_bucket);
+	// Finally write correct jumpinfo.
+	jumpInfo.firstNodeOffset = (pointer - (UCHAR*)new_bucket);
+	pointer = jumpInfo.writeJumpInfo(new_bucket);
 
 	// Set up first node as degenerate, but pointing to first bucket on
 	// next level.
@@ -2805,10 +2790,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 
 	CCH_MARK(tdbb, window);
 
-	const UCHAR flags = page->btr_header.pag_flags;
 	const bool leafPage = (page->btr_level == 0);
-	const bool useJumpInfo = (flags & btr_jump_info);
-	//const SLONG nodeOffset = pointer - (UCHAR*)page;
 
 	// Read node that need to be removed
 	IndexNode removingNode;
@@ -2865,90 +2847,88 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 	page->btr_length = pointer - (UCHAR*) page;
 	delta -= page->btr_length;
 
-	if (useJumpInfo)
+	// We use a fast approach here.
+	// Only update offsets pointing after the deleted node and
+	// remove jump nodes pointing to the deleted node or node
+	// next to the deleted one.
+	jumpNodeList tmpJumpNodes;
+	jumpNodeList* jumpNodes = &tmpJumpNodes;
+
+	IndexJumpInfo jumpInfo;
+	pointer = IndexJumpInfo::getPointerFirstNode(page, &jumpInfo);
+
+	// We are going to rebuild jump nodes. In the end of this process we will either have
+	// the same jump nodes as before or one jump node less. jumpInfo.firstNodeOffset
+	// by its definition is a good upper estimate for summary size of all existing
+	// jump nodes data length's.
+	// After rebuild jump node next after removed one may have new length longer than
+	// before rebuild but no longer than length of removed node. All other nodes didn't
+	// change its lengths. Therefore jumpInfo.firstNodeOffset is valid upper estimate
+	// for summary size of all new jump nodes data length's too.
+	tempData = tempBuf.getBuffer(jumpInfo.firstNodeOffset);
+	UCHAR* const tempEnd = tempData + jumpInfo.firstNodeOffset;
+
+	bool rebuild = false;
+	USHORT n = jumpInfo.jumpers;
+	IndexJumpNode jumpNode, delJumpNode;
+	while (n)
 	{
-		// We use a fast approach here.
-		// Only update offsets pointing after the deleted node and
-		// remove jump nodes pointing to the deleted node or node
-		// next to the deleted one.
-		jumpNodeList tmpJumpNodes;
-		jumpNodeList* jumpNodes = &tmpJumpNodes;
-
-		IndexJumpInfo jumpInfo;
-		pointer = IndexJumpInfo::getPointerFirstNode(page, &jumpInfo);
-
-		// We are going to rebuild jump nodes. In the end of this process we will either have
-		// the same jump nodes as before or one jump node less. jumpInfo.firstNodeOffset
-		// by its definition is a good upper estimate for summary size of all existing
-		// jump nodes data length's.
-		// After rebuild jump node next after removed one may have new length longer than
-		// before rebuild but no longer than length of removed node. All other nodes didn't
-		// change its lengths. Therefore jumpInfo.firstNodeOffset is valid upper estimate
-		// for summary size of all new jump nodes data length's too.
-		tempData = tempBuf.getBuffer(jumpInfo.firstNodeOffset);
-		UCHAR* const tempEnd = tempData + jumpInfo.firstNodeOffset;
-
-		bool rebuild = false;
-		USHORT n = jumpInfo.jumpers;
-		IndexJumpNode jumpNode, delJumpNode;
-		while (n)
+		pointer = jumpNode.readJumpNode(pointer);
+		// Jump nodes pointing to the deleted node are removed.
+		if ((jumpNode.offset < offsetDeletePoint) || (jumpNode.offset > offsetNextPoint))
 		{
-			pointer = jumpNode.readJumpNode(pointer);
-			// Jump nodes pointing to the deleted node are removed.
-			if ((jumpNode.offset < offsetDeletePoint) || (jumpNode.offset > offsetNextPoint))
+			IndexJumpNode newJumpNode;
+			if (rebuild && jumpNode.prefix > delJumpNode.prefix)
 			{
-				IndexJumpNode newJumpNode;
-				if (rebuild && jumpNode.prefix > delJumpNode.prefix)
-				{
-					// This node has prefix against a removing jump node
-					const USHORT addLength = jumpNode.prefix - delJumpNode.prefix;
-					newJumpNode.prefix = jumpNode.prefix - addLength;
-					newJumpNode.length = jumpNode.length + addLength;
-					newJumpNode.offset = jumpNode.offset;
-					if (jumpNode.offset > offsetDeletePoint) {
-						newJumpNode.offset -= delta;
-					}
-					newJumpNode.data = tempData;
-					tempData += newJumpNode.length;
-					fb_assert(tempData < tempEnd);
+				// This node has prefix against a removing jump node
+				const USHORT addLength = jumpNode.prefix - delJumpNode.prefix;
+				newJumpNode.prefix = jumpNode.prefix - addLength;
+				newJumpNode.length = jumpNode.length + addLength;
+				newJumpNode.offset = jumpNode.offset;
+				if (jumpNode.offset > offsetDeletePoint) {
+					newJumpNode.offset -= delta;
+				}
+				newJumpNode.data = tempData;
+				tempData += newJumpNode.length;
+				fb_assert(tempData < tempEnd);
 
-					memcpy(newJumpNode.data, delJumpNode.data, addLength);
-					memcpy(newJumpNode.data + addLength, jumpNode.data, jumpNode.length);
-				}
-				else
-				{
-					newJumpNode.prefix = jumpNode.prefix;
-					newJumpNode.length = jumpNode.length;
-					newJumpNode.offset = jumpNode.offset;
-					if (jumpNode.offset > offsetDeletePoint) {
-						newJumpNode.offset -= delta;
-					}
-					newJumpNode.data = tempData;
-					tempData += newJumpNode.length;
-					fb_assert(tempData < tempEnd);
-					memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
-				}
-				jumpNodes->add(newJumpNode);
-				rebuild = false;
+				memcpy(newJumpNode.data, delJumpNode.data, addLength);
+				memcpy(newJumpNode.data + addLength, jumpNode.data, jumpNode.length);
 			}
 			else
 			{
-				delJumpNode = jumpNode;
-				rebuild = true;
+				newJumpNode.prefix = jumpNode.prefix;
+				newJumpNode.length = jumpNode.length;
+				newJumpNode.offset = jumpNode.offset;
+				if (jumpNode.offset > offsetDeletePoint) {
+					newJumpNode.offset -= delta;
+				}
+				newJumpNode.data = tempData;
+				tempData += newJumpNode.length;
+				fb_assert(tempData < tempEnd);
+				memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
 			}
-			n--;
+			jumpNodes->add(newJumpNode);
+			rebuild = false;
 		}
-
-		// Update jump information.
-		jumpInfo.jumpers = jumpNodes->getCount();
-		pointer = jumpInfo.writeJumpInfo(page);
-		// Write jump nodes.
-		IndexJumpNode* walkJumpNode = jumpNodes->begin();
-		for (size_t i = 0; i < jumpNodes->getCount(); i++) {
-			pointer = walkJumpNode[i].writeJumpNode(pointer);
+		else
+		{
+			delJumpNode = jumpNode;
+			rebuild = true;
 		}
-		jumpNodes->clear();
+		n--;
 	}
+
+	// Update jump information.
+	jumpInfo.jumpers = jumpNodes->getCount();
+	pointer = jumpInfo.writeJumpInfo(page);
+
+	// Write jump nodes.
+	IndexJumpNode* walkJumpNode = jumpNodes->begin();
+	for (size_t i = 0; i < jumpNodes->getCount(); i++) {
+		pointer = walkJumpNode[i].writeJumpNode(pointer);
+	}
+	jumpNodes->clear();
 
 	// check to see if the page is now empty
 	pointer = IndexJumpInfo::getPointerFirstNode(page);
@@ -3133,7 +3113,6 @@ static ULONG fast_load(thread_db* tdbb,
 	// leave room for the END_LEVEL node.
 	const USHORT lp_fill_limit = dbb->dbb_page_size - BTN_LEAF_SIZE;
 	const USHORT pp_fill_limit = dbb->dbb_page_size - BTN_PAGE_SIZE;
-	USHORT flags = 0;
 
 	// Jump information initialization
 
@@ -3159,8 +3138,8 @@ static ULONG fast_load(thread_db* tdbb,
 	// Remember, the lower the value how more jumpkeys are generated and
 	// how faster jumpkeys are recalculated on insert.
 
-
 	jumpInfo.jumpAreaSize = 512 + ((int)sqrt((float)key_length) * 16);
+
 	//  key_size  |  jumpAreaSize
 	//  ----------+-----------------
 	//         4  |    544
@@ -3169,22 +3148,6 @@ static ULONG fast_load(thread_db* tdbb,
 	//        64  |    640
 	//       128  |    693
 	//       256  |    768
-
-
-	// If our half page_size is smaller as the jump_size then jump_size isn't
-	// needfull at all.
-	if ((dbb->dbb_page_size / 2) < jumpInfo.jumpAreaSize) {
-		jumpInfo.jumpAreaSize = 0;
-	}
-
-	const bool useJumpInfo = (jumpInfo.jumpAreaSize > 0);
-	if (useJumpInfo)
-	{
-		// If you want to do tests without jump information
-		// set the useJumpInfo boolean to false, but don't
-		// disable this flag.
-		flags |= btr_jump_info;
-	}
 
 	WIN* window = NULL;
 	bool error = false;
@@ -3211,25 +3174,17 @@ static ULONG fast_load(thread_db* tdbb,
 		bucket->btr_id = (UCHAR)(idx->idx_id % 256);
 		bucket->btr_level = 0;
 		bucket->btr_length = BTR_SIZE;
-		bucket->btr_header.pag_flags |= flags;
 #ifdef DEBUG_BTR_PAGES
 		sprintf(debugtext, "\t new page (%d)", windows[0].win_page);
 		gds__log(debugtext);
 #endif
 
-		UCHAR* pointer;
-		if (useJumpInfo)
-		{
-			pointer = jumpInfo.writeJumpInfo(bucket);
-			jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)bucket);
-			jumpInfo.jumpers = 0;
-			pointer = jumpInfo.writeJumpInfo(bucket);
-			bucket->btr_length = jumpInfo.firstNodeOffset;
-			newAreaPointers[0] = pointer + jumpInfo.firstNodeOffset;
-		}
-		else {
-			pointer = IndexJumpInfo::getPointerFirstNode(bucket);
-		}
+		UCHAR* pointer = jumpInfo.writeJumpInfo(bucket);
+		jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)bucket);
+		jumpInfo.jumpers = 0;
+		pointer = jumpInfo.writeJumpInfo(bucket);
+		bucket->btr_length = jumpInfo.firstNodeOffset;
+		newAreaPointers[0] = pointer + jumpInfo.firstNodeOffset;
 
 		tdbb->tdbb_flags |= TDBB_no_cache_unwind;
 
@@ -3304,7 +3259,7 @@ static ULONG fast_load(thread_db* tdbb,
 				pointer = previousNode.writeNode(previousNode.nodePointer, true, false);
 				bucket->btr_length = pointer - (UCHAR*)bucket;
 
-				if (useJumpInfo && totalJumpSize[0])
+				if (totalJumpSize[0])
 				{
 					// Slide down current nodes;
 					// CVC: Warning, this may overlap. It seems better to use
@@ -3346,27 +3301,20 @@ static ULONG fast_load(thread_db* tdbb,
 				split->btr_relation = bucket->btr_relation;
 				split->btr_level = bucket->btr_level;
 				split->btr_id = bucket->btr_id;
-				split->btr_header.pag_flags |= flags;
 #ifdef DEBUG_BTR_PAGES
 				sprintf(debugtext, "\t new page (%d), left page (%d)",
 					split_window.win_page, split->btr_left_sibling);
 				gds__log(debugtext);
 #endif
 
-				if (useJumpInfo)
-				{
-					pointer = jumpInfo.writeJumpInfo(split);
-					jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)split);
-					jumpInfo.jumpers = 0;
-					pointer = jumpInfo.writeJumpInfo(split);
-					// Reset position and size for generating jumpnode
-					newAreaPointers[0] = pointer + jumpInfo.jumpAreaSize;
-					totalJumpSize[0] = 0;
-					jumpKey->keyLength = 0;
-				}
-				else {
-					pointer = IndexJumpInfo::getPointerFirstNode(split);
-				}
+				pointer = jumpInfo.writeJumpInfo(split);
+				jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)split);
+				jumpInfo.jumpers = 0;
+				pointer = jumpInfo.writeJumpInfo(split);
+				// Reset position and size for generating jumpnode
+				newAreaPointers[0] = pointer + jumpInfo.jumpAreaSize;
+				totalJumpSize[0] = 0;
+				jumpKey->keyLength = 0;
 
 				// store the first node on the split page
 				IndexNode splitNode;
@@ -3394,16 +3342,12 @@ static ULONG fast_load(thread_db* tdbb,
 				// save the first key on page as the page to be propagated
 				copy_key(key, &split_key);
 
-				if (useJumpInfo)
-				{
-					// Clear jumplist.
-					IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
-					for (size_t i = 0; i < leafJumpNodes->getCount(); i++) {
-						delete[] walkJumpNode[i].data;
-					}
-					leafJumpNodes->clear();
+				// Clear jumplist.
+				IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
+				for (size_t i = 0; i < leafJumpNodes->getCount(); i++) {
+					delete[] walkJumpNode[i].data;
 				}
-
+				leafJumpNodes->clear();
 			}
 
 			// Insert the new node in the current bucket
@@ -3504,7 +3448,7 @@ static ULONG fast_load(thread_db* tdbb,
 			key->key_length = isr->isr_key_length;
 			memcpy(key->key_data, record, key->key_length);
 
-			if (useJumpInfo && (newAreaPointers[0] < pointer))
+			if (newAreaPointers[0] < pointer)
 			{
 				// Create a jumpnode
 				IndexJumpNode jumpNode;
@@ -3552,7 +3496,6 @@ static ULONG fast_load(thread_db* tdbb,
 					bucket->btr_id = (UCHAR)(idx->idx_id % 256);
 					fb_assert(level <= MAX_UCHAR);
 					bucket->btr_level = (UCHAR) level;
-					bucket->btr_header.pag_flags |= flags;
 #ifdef DEBUG_BTR_PAGES
 					sprintf(debugtext, "\t new page (%d)", window->win_page);
 					gds__log(debugtext);
@@ -3562,16 +3505,10 @@ static ULONG fast_load(thread_db* tdbb,
 					// page with a "degenerate" zero-length node indicating that this page holds
 					// any key value less than the next node
 
-					if (useJumpInfo)
-					{
-						levelPointer = jumpInfo.writeJumpInfo(bucket);
-						jumpInfo.firstNodeOffset = (USHORT)(levelPointer - (UCHAR*)bucket);
-						jumpInfo.jumpers = 0;
-						levelPointer = jumpInfo.writeJumpInfo(bucket);
-					}
-					else {
-						levelPointer = IndexJumpInfo::getPointerFirstNode(bucket);
-					}
+					levelPointer = jumpInfo.writeJumpInfo(bucket);
+					jumpInfo.firstNodeOffset = (USHORT)(levelPointer - (UCHAR*)bucket);
+					jumpInfo.jumpers = 0;
+					levelPointer = jumpInfo.writeJumpInfo(bucket);
 
 					// First record-number of level must be zero
 					levelNode[level].setNode(0, 0, RecordNumber(0), split_pages[level - 1]);
@@ -3618,7 +3555,7 @@ static ULONG fast_load(thread_db* tdbb,
 					levelPointer = tempNode.writeNode(tempNode.nodePointer, false, false);
 					bucket->btr_length = levelPointer - (UCHAR*)bucket;
 
-					if (useJumpInfo && totalJumpSize[level])
+					if (totalJumpSize[level])
 					{
 						// Slide down current nodes;
 						// CVC: Warning, this may overlap. It seems better to use
@@ -3659,27 +3596,20 @@ static ULONG fast_load(thread_db* tdbb,
 					split->btr_relation = bucket->btr_relation;
 					split->btr_level = bucket->btr_level;
 					split->btr_id = bucket->btr_id;
-					split->btr_header.pag_flags |= flags;
 #ifdef DEBUG_BTR_PAGES
 					sprintf(debugtext, "\t new page (%d), left page (%d)",
 						split_window.win_page, split->btr_left_sibling);
 					gds__log(debugtext);
 #endif
 
-					if (useJumpInfo)
-					{
-						levelPointer = jumpInfo.writeJumpInfo(split);
-						jumpInfo.firstNodeOffset = (USHORT)(levelPointer - (UCHAR*)split);
-						jumpInfo.jumpers = 0;
-						levelPointer = jumpInfo.writeJumpInfo(split);
-						// Reset position and size for generating jumpnode
-						newAreaPointers[level] = levelPointer + jumpInfo.jumpAreaSize;
-						totalJumpSize[level] = 0;
-						pageJumpKey->keyLength = 0;
-					}
-					else {
-						levelPointer = IndexJumpInfo::getPointerFirstNode(split);
-					}
+					levelPointer = jumpInfo.writeJumpInfo(split);
+					jumpInfo.firstNodeOffset = (USHORT)(levelPointer - (UCHAR*)split);
+					jumpInfo.jumpers = 0;
+					levelPointer = jumpInfo.writeJumpInfo(split);
+					// Reset position and size for generating jumpnode
+					newAreaPointers[level] = levelPointer + jumpInfo.jumpAreaSize;
+					totalJumpSize[level] = 0;
+					pageJumpKey->keyLength = 0;
 
 					// insert the new node in the new bucket
 					IndexNode splitNode;
@@ -3705,16 +3635,12 @@ static ULONG fast_load(thread_db* tdbb,
 					buckets[level] = bucket = split;
 					copy_key(key, &split_key);
 
-					if (useJumpInfo)
-					{
-						// Clear jumplist.
-						IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
-						for (size_t i = 0; i < pageJumpNodes->getCount(); i++) {
-							delete[] walkJumpNode[i].data;
-						}
-						pageJumpNodes->clear();
+					// Clear jumplist.
+					IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
+					for (size_t i = 0; i < pageJumpNodes->getCount(); i++) {
+						delete[] walkJumpNode[i].data;
 					}
-
+					pageJumpNodes->clear();
 				}
 
 				// Now propagate up the lower-level bucket by storing a "pointer" to it.
@@ -3727,7 +3653,7 @@ static ULONG fast_load(thread_db* tdbb,
 					BUGCHECK(205);	// msg 205 index bucket overfilled
 				}
 
-				if (useJumpInfo && (newAreaPointers[level] < levelPointer))
+				if (newAreaPointers[level] < levelPointer)
 				{
 					// Create a jumpnode
 					IndexJumpNode jumpNode;
@@ -3787,7 +3713,7 @@ static ULONG fast_load(thread_db* tdbb,
 
 			// Store jump nodes on page if needed.
 			jumpNodeList* pageJumpNodes = jumpNodes[level];
-			if (useJumpInfo && totalJumpSize[level])
+			if (totalJumpSize[level])
 			{
 				// Slide down current nodes;
 				// CVC: Warning, this may overlap. It seems better to use
@@ -3959,7 +3885,6 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
  *
  **************************************/
 
-	const UCHAR flags = bucket->btr_header.pag_flags;
 	USHORT prefix = 0;
 	const UCHAR* const key_end = key->key_data + key->key_length;
 	bool firstPass = true;
@@ -3967,15 +3892,8 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 	const UCHAR* const endPointer = (UCHAR*)bucket + bucket->btr_length;
 
 	// Find point where we can start search.
-	UCHAR* pointer;
-	if (flags & btr_jump_info)
-	{
-		pointer = find_area_start_point(bucket, key, value, &prefix, descending, retrieval,
-										find_record_number);
-	}
-	else {
-		pointer = IndexJumpInfo::getPointerFirstNode(bucket);
-	}
+	UCHAR* pointer = find_area_start_point(bucket, key, value, &prefix, descending, retrieval,
+										   find_record_number);
 	const UCHAR* p = key->key_data + prefix;
 
 	IndexNode node;
@@ -4108,195 +4026,191 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
  *  a node at a specific offset.
  *
  **************************************/
-	const UCHAR flags = bucket->btr_header.pag_flags;
-	UCHAR* pointer;
+	const bool useFindRecordNumber = (find_record_number != NO_VALUE);
+	const bool leafPage = (bucket->btr_level == 0);
+	const UCHAR* keyPointer = key->key_data;
+	const UCHAR* const keyEnd = keyPointer + key->key_length;
+
+	// Retrieve jump information.
+	IndexJumpInfo jumpInfo;
+	UCHAR* pointer = IndexJumpInfo::getPointerFirstNode(bucket, &jumpInfo);
+	USHORT n = jumpInfo.jumpers;
+
+	// Set begin of page as default.
+	IndexJumpNode prevJumpNode;
+	prevJumpNode.offset = jumpInfo.firstNodeOffset;
+	prevJumpNode.prefix = 0;
+	prevJumpNode.length = 0;
+
+	temporary_key jumpKey;
+	jumpKey.key_length = 0;
+	jumpKey.key_flags = 0;
+
 	USHORT prefix = 0;
-	if (flags & btr_jump_info)
+	USHORT testPrefix = 0;
+
+	while (n)
 	{
-		const bool useFindRecordNumber = (find_record_number != NO_VALUE);
-		const bool leafPage = (bucket->btr_level == 0);
-		const UCHAR* keyPointer = key->key_data;
-		const UCHAR* const keyEnd = keyPointer + key->key_length;
-		IndexJumpInfo jumpInfo;
-		IndexJumpNode jumpNode, prevJumpNode;
+		IndexJumpNode jumpNode;
+		pointer = jumpNode.readJumpNode(pointer);
+
 		IndexNode node;
+		node.readNode((UCHAR*) bucket + jumpNode.offset, leafPage);
 
-		// Retrieve jump information.
-		pointer = IndexJumpInfo::getPointerFirstNode(bucket, &jumpInfo);
-		USHORT n = jumpInfo.jumpers;
-		temporary_key jumpKey;
+		// jumpKey will hold complete data off referenced node
+		memcpy(jumpKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
+		memcpy(jumpKey.key_data + node.prefix, node.data, node.length);
+		jumpKey.key_length = node.prefix + node.length;
 
-		// Set begin of page as default.
-		prevJumpNode.offset = jumpInfo.firstNodeOffset;
-		prevJumpNode.prefix = 0;
-		prevJumpNode.length = 0;
-		jumpKey.key_length = 0;
-		jumpKey.key_flags = 0;
-		USHORT testPrefix = 0;
-		while (n)
+		keyPointer = key->key_data + jumpNode.prefix;
+		const UCHAR* q = jumpKey.key_data + jumpNode.prefix;
+		const UCHAR* const nodeEnd = jumpKey.key_data + jumpKey.key_length;
+		bool done = false;
+
+		if ((jumpNode.prefix <= testPrefix) && descending)
 		{
-			pointer = jumpNode.readJumpNode(pointer);
-			node.readNode((UCHAR*)bucket + jumpNode.offset, leafPage);
-
-			// jumpKey will hold complete data off referenced node
-			memcpy(jumpKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
-			memcpy(jumpKey.key_data + node.prefix, node.data, node.length);
-			jumpKey.key_length = node.prefix + node.length;
-
-			keyPointer = key->key_data + jumpNode.prefix;
-			const UCHAR* q = jumpKey.key_data + jumpNode.prefix;
-			const UCHAR* const nodeEnd = jumpKey.key_data + jumpKey.key_length;
-			bool done = false;
-
-			if ((jumpNode.prefix <= testPrefix) && descending)
+			while (true)
 			{
-				while (true)
+				if (q == nodeEnd)
 				{
-					if (q == nodeEnd)
+					done = true;
+					// Check if this is a exact match or a duplicate.
+					// If the node is pointing to its end and the length is
+					// the same as the key then we have found a exact match.
+					// Now start walking between the jump nodes until we
+					// found a node reference that's not equal anymore
+					// or the record number is higher then the one we need.
+					if (useFindRecordNumber && (keyPointer == keyEnd))
 					{
-						done = true;
-						// Check if this is a exact match or a duplicate.
-						// If the node is pointing to its end and the length is
-						// the same as the key then we have found a exact match.
-						// Now start walking between the jump nodes until we
-						// found a node reference that's not equal anymore
-						// or the record number is higher then the one we need.
-						if (useFindRecordNumber && (keyPointer == keyEnd))
+						n--;
+						while (n)
 						{
-							n--;
-							while (n)
+							if (find_record_number <= node.recordNumber)
 							{
-								if (find_record_number <= node.recordNumber)
-								{
-									// If the record number from leaf is higer
-									// then we should be in our previous area.
-									break;
-								}
-								// Calculate new prefix to return right prefix.
-								prefix = jumpNode.length + jumpNode.prefix;
-
-								prevJumpNode = jumpNode;
-								pointer = jumpNode.readJumpNode(pointer);
-								node.readNode((UCHAR*)bucket + jumpNode.offset, leafPage);
-
-								if (node.length != 0 ||
-									node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
-									jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
-									node.isEndBucket || node.isEndLevel)
-								{
-									break;
-								}
-								n--;
+								// If the record number from leaf is higer
+								// then we should be in our previous area.
+								break;
 							}
+							// Calculate new prefix to return right prefix.
+							prefix = jumpNode.length + jumpNode.prefix;
+
+							prevJumpNode = jumpNode;
+							pointer = jumpNode.readJumpNode(pointer);
+							node.readNode((UCHAR*)bucket + jumpNode.offset, leafPage);
+
+							if (node.length != 0 ||
+								node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+								jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+								node.isEndBucket || node.isEndLevel)
+							{
+								break;
+							}
+							n--;
 						}
-						break;
 					}
-
-					if (retrieval && keyPointer == keyEnd)
-					{
-						done = true;
-						break;
-					}
-
-					if (keyPointer == keyEnd)   // End of key reached
-						break;
-
-					if (*keyPointer > *q)   // Our key is bigger so check next node.
-						break;
-
-					if (*keyPointer++ < *q++)
-					{
-						done = true;
-						break;
-					}
+					break;
 				}
-				testPrefix = (USHORT)(keyPointer - key->key_data);
-			}
-			else if (jumpNode.prefix <= testPrefix)
-			{
-				while (true)
+
+				if (retrieval && keyPointer == keyEnd)
 				{
-					if (keyPointer == keyEnd)
-					{
-						// Reached end of our key we're searching for.
-						done = true;
-						// Check if this is a exact match or a duplicate
-						// If the node is pointing to its end and the length is
-						// the same as the key then we have found a exact match.
-						// Now start walking between the jump nodes until we
-						// found a node reference that's not equal anymore
-						// or the record number is higher then the one we need.
-						if (useFindRecordNumber && q == nodeEnd)
-						{
-							n--;
-							while (n)
-							{
-								if (find_record_number <= node.recordNumber)
-								{
-									// If the record number from leaf is higer
-									// then we should be in our previous area.
-									break;
-								}
-								// Calculate new prefix to return right prefix.
-								prefix = jumpNode.length + jumpNode.prefix;
-
-								prevJumpNode = jumpNode;
-								pointer = jumpNode.readJumpNode(pointer);
-								node.readNode((UCHAR*)bucket + jumpNode.offset, leafPage);
-
-								if (node.length != 0 ||
-									node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
-									jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
-									node.isEndBucket || node.isEndLevel)
-								{
-									break;
-								}
-								n--;
-							}
-						}
-						break;
-					}
-
-					if (q == nodeEnd)	// End of node data reached
-						break;
-
-					if (*keyPointer > *q)	// Our key is bigger so check next node.
-						break;
-
-					if (*keyPointer++ < *q++)
-					{
-						done = true;
-						break;
-					}
+					done = true;
+					break;
 				}
-				testPrefix = (USHORT)(keyPointer - key->key_data);
-			}
-			if (done)
-			{
-				// We're done, go out of main loop.
-				break;
-			}
 
-			prefix = MIN(jumpNode.length + jumpNode.prefix, testPrefix);
-			if (value && (jumpNode.length + jumpNode.prefix))
-			{
-				// Copy prefix data from referenced node to value
-				memcpy(value, jumpKey.key_data, jumpNode.length + jumpNode.prefix);
+				if (keyPointer == keyEnd)   // End of key reached
+					break;
+
+				if (*keyPointer > *q)   // Our key is bigger so check next node.
+					break;
+
+				if (*keyPointer++ < *q++)
+				{
+					done = true;
+					break;
+				}
 			}
-			prevJumpNode = jumpNode;
-			n--;
+			testPrefix = (USHORT)(keyPointer - key->key_data);
+		}
+		else if (jumpNode.prefix <= testPrefix)
+		{
+			while (true)
+			{
+				if (keyPointer == keyEnd)
+				{
+					// Reached end of our key we're searching for.
+					done = true;
+					// Check if this is a exact match or a duplicate
+					// If the node is pointing to its end and the length is
+					// the same as the key then we have found a exact match.
+					// Now start walking between the jump nodes until we
+					// found a node reference that's not equal anymore
+					// or the record number is higher then the one we need.
+					if (useFindRecordNumber && q == nodeEnd)
+					{
+						n--;
+						while (n)
+						{
+							if (find_record_number <= node.recordNumber)
+							{
+								// If the record number from leaf is higer
+								// then we should be in our previous area.
+								break;
+							}
+							// Calculate new prefix to return right prefix.
+							prefix = jumpNode.length + jumpNode.prefix;
+
+							prevJumpNode = jumpNode;
+							pointer = jumpNode.readJumpNode(pointer);
+							node.readNode((UCHAR*)bucket + jumpNode.offset, leafPage);
+
+							if (node.length != 0 ||
+								node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+								jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+								node.isEndBucket || node.isEndLevel)
+							{
+								break;
+							}
+							n--;
+						}
+					}
+					break;
+				}
+
+				if (q == nodeEnd)	// End of node data reached
+					break;
+
+				if (*keyPointer > *q)	// Our key is bigger so check next node.
+					break;
+
+				if (*keyPointer++ < *q++)
+				{
+					done = true;
+					break;
+				}
+			}
+			testPrefix = (USHORT)(keyPointer - key->key_data);
+		}
+		if (done)
+		{
+			// We're done, go out of main loop.
+			break;
 		}
 
-		// Set return pointer
-		pointer = (UCHAR*)bucket + prevJumpNode.offset;
+		prefix = MIN(jumpNode.length + jumpNode.prefix, testPrefix);
+		if (value && (jumpNode.length + jumpNode.prefix))
+		{
+			// Copy prefix data from referenced node to value
+			memcpy(value, jumpKey.key_data, jumpNode.length + jumpNode.prefix);
+		}
+		prevJumpNode = jumpNode;
+		n--;
 	}
-	else {
-		pointer = IndexJumpInfo::getPointerFirstNode(bucket);
-	}
+
 	if (return_prefix) {
 		*return_prefix = prefix;
 	}
-	return pointer;
+
+	return (UCHAR*) bucket + prevJumpNode.offset;
 }
 
 
@@ -4705,20 +4619,6 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 		}
 	}
 
-	const UCHAR flags = gc_page->btr_header.pag_flags;
-	// Check if flags are valid.
-	if ((parent_page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != (flags & BTR_FLAG_COPY_MASK))
-	{
-		BUGCHECK(204);	// msg 204 index inconsistent
-	}
-
-	// find the last node on the left sibling and save its key value
-	// Check if flags are valid.
-	if ((left_page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != (flags & BTR_FLAG_COPY_MASK))
-	{
-		BUGCHECK(204);	// msg 204 index inconsistent
-	}
-	const bool useJumpInfo = (flags & btr_jump_info);
 	const bool leafPage = (gc_page->btr_level == 0);
 
 	UCHAR* leftPointer = IndexJumpInfo::getPointerFirstNode(left_page);
@@ -4727,30 +4627,27 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 	lastKey.key_length = 0;
 
 	IndexNode leftNode;
-	if (useJumpInfo)
+	IndexJumpInfo leftJumpInfo;
+	UCHAR* pointer = IndexJumpInfo::getPointerFirstNode(left_page, &leftJumpInfo);
+
+	// Walk trough node jumpers.
+	USHORT n = leftJumpInfo.jumpers;
+	IndexJumpNode jumpNode;
+	while (n)
 	{
-		IndexJumpInfo leftJumpInfo;
-		UCHAR* pointer = IndexJumpInfo::getPointerFirstNode(left_page, &leftJumpInfo);
+		pointer = jumpNode.readJumpNode(pointer);
+		leftNode.readNode((UCHAR*)left_page + jumpNode.offset, leafPage);
 
-		// Walk trough node jumpers.
-		USHORT n = leftJumpInfo.jumpers;
-		IndexJumpNode jumpNode;
-		while (n)
+		if (!(leftNode.isEndBucket || leftNode.isEndLevel))
 		{
-			pointer = jumpNode.readJumpNode(pointer);
-			leftNode.readNode((UCHAR*)left_page + jumpNode.offset, leafPage);
-
-			if (!(leftNode.isEndBucket || leftNode.isEndLevel))
-			{
-				memcpy(lastKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
-				leftPointer = (UCHAR*)left_page + jumpNode.offset;
-				lastKey.key_length = jumpNode.prefix + jumpNode.length;
-			}
-			else {
-				break;
-			}
-			n--;
+			memcpy(lastKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
+			leftPointer = (UCHAR*)left_page + jumpNode.offset;
+			lastKey.key_length = jumpNode.prefix + jumpNode.length;
 		}
+		else {
+			break;
+		}
+		n--;
 	}
 
 	while (true)
@@ -4776,12 +4673,11 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 	gcNode.readNode(gcPointer, leafPage);
 	const USHORT prefix = IndexNode::computePrefix(lastKey.key_data, lastKey.key_length,
 												   gcNode.data, gcNode.length);
-	if (useJumpInfo)
-	{
-		// Get pointer for calculating gcSize (including jump nodes).
-		IndexJumpInfo leftJumpInfo;
-		gcPointer = IndexJumpInfo::getPointerFirstNode(gc_page, &leftJumpInfo);
-	}
+
+	// Get pointer for calculating gcSize (including jump nodes).
+	IndexJumpInfo gcJumpInfo;
+	gcPointer = IndexJumpInfo::getPointerFirstNode(gc_page, &gcJumpInfo);
+
 	const USHORT gcSize = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
 	const USHORT leftAssumedSize = left_page->btr_length + gcSize - prefix;
 
@@ -4800,221 +4696,140 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 		return contents_above_threshold;
 	}
 
-	if (useJumpInfo)
+	// First copy left page to scratch page.
+	SLONG scratchPage[OVERSIZE];
+	btree_page* const newBucket = (btree_page*) scratchPage;
+
+	IndexJumpInfo jumpInfo;
+	pointer = IndexJumpInfo::getPointerFirstNode(left_page, &jumpInfo);
+	const USHORT headerSize = (pointer - (UCHAR*) left_page);
+	const USHORT jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
+
+	// Copy header and data
+	memcpy(newBucket, left_page, headerSize);
+	memcpy((UCHAR*) newBucket + headerSize, (UCHAR*) left_page + jumpInfo.firstNodeOffset,
+		left_page->btr_length - jumpInfo.firstNodeOffset);
+
+	// Update leftPointer to scratch page.
+	leftPointer = (UCHAR*) newBucket + (leftPointer - (UCHAR*) left_page) - jumpersOriginalSize;
+	gcPointer = IndexJumpInfo::getPointerFirstNode(gc_page);
+	//
+	leftNode.readNode(leftPointer, leafPage);
+	// Calculate the total amount of compression on page as the combined
+	// totals of the two pages, plus the compression of the first node
+	// on the g-c'ed page, minus the prefix of the END_BUCKET node to
+	// be deleted.
+	newBucket->btr_prefix_total += gc_page->btr_prefix_total + prefix - leftNode.prefix;
+
+	// Get first node from gc-page.
+	gcPointer = gcNode.readNode(gcPointer, leafPage);
+
+	// Write first node with prefix compression on left page.
+	leftNode.setNode(prefix, gcNode.length - prefix, gcNode.recordNumber,
+				     gcNode.pageNumber, gcNode.isEndBucket, gcNode.isEndLevel);
+	leftNode.data = gcNode.data + prefix;
+	leftPointer = leftNode.writeNode(leftPointer, leafPage);
+
+	// Update page-size.
+	newBucket->btr_length = (leftPointer - (UCHAR*)newBucket);
+	// copy over the remainder of the page to be garbage-collected.
+	const USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
+	memcpy(leftPointer, gcPointer, l);
+	// update page size.
+	newBucket->btr_length += l;
+
+	// Generate new jump nodes.
+	jumpNodeList jumpNodes;
+	USHORT jumpersNewSize = 0;
+	// Update jump information on scratch page, so generate_jump_nodes
+	// can deal with it.
+	jumpInfo.firstNodeOffset = headerSize;
+	jumpInfo.jumpers = 0;
+	jumpInfo.writeJumpInfo(newBucket);
+	generate_jump_nodes(tdbb, newBucket, &jumpNodes, 0, &jumpersNewSize, NULL, NULL);
+
+	// Now we know exact how big our updated left page is, so check size
+	// again to be sure it all will fit.
+	// If the new page will be larger then the page size don't gc ofcourse.
+	if (newBucket->btr_length + jumpersNewSize > dbb->dbb_page_size)
 	{
-		// First copy left page to scratch page.
-		SLONG scratchPage[OVERSIZE];
-		btree_page* const newBucket = (btree_page*) scratchPage;
-
-		IndexJumpInfo jumpInfo;
-		UCHAR* pointer = IndexJumpInfo::getPointerFirstNode(left_page, &jumpInfo);
-		const USHORT headerSize = (pointer - (UCHAR*) left_page);
-		const USHORT jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
-
-		// Copy header and data
-		memcpy(newBucket, left_page, headerSize);
-		memcpy((UCHAR*) newBucket + headerSize, (UCHAR*) left_page + jumpInfo.firstNodeOffset,
-			left_page->btr_length - jumpInfo.firstNodeOffset);
-
-		// Update leftPointer to scratch page.
-		leftPointer = (UCHAR*) newBucket + (leftPointer - (UCHAR*) left_page) - jumpersOriginalSize;
-		gcPointer = IndexJumpInfo::getPointerFirstNode(gc_page);
-		//
-		leftNode.readNode(leftPointer, leafPage);
-		// Calculate the total amount of compression on page as the combined
-		// totals of the two pages, plus the compression of the first node
-		// on the g-c'ed page, minus the prefix of the END_BUCKET node to
-		// be deleted.
-		newBucket->btr_prefix_total += gc_page->btr_prefix_total + prefix - leftNode.prefix;
-
-		// Get first node from gc-page.
-		gcPointer = gcNode.readNode(gcPointer, leafPage);
-
-		// Write first node with prefix compression on left page.
-		leftNode.setNode(prefix, gcNode.length - prefix, gcNode.recordNumber,
-					     gcNode.pageNumber, gcNode.isEndBucket, gcNode.isEndLevel);
-		leftNode.data = gcNode.data + prefix;
-		leftPointer = leftNode.writeNode(leftPointer, leafPage);
-
-		// Update page-size.
-		newBucket->btr_length = (leftPointer - (UCHAR*)newBucket);
-		// copy over the remainder of the page to be garbage-collected.
-		const USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
-		memcpy(leftPointer, gcPointer, l);
-		// update page size.
-		newBucket->btr_length += l;
-
-		// Generate new jump nodes.
-		jumpNodeList jumpNodes;
-		USHORT jumpersNewSize = 0;
-		// Update jump information on scratch page, so generate_jump_nodes
-		// can deal with it.
-		jumpInfo.firstNodeOffset = headerSize;
-		jumpInfo.jumpers = 0;
-		jumpInfo.writeJumpInfo(newBucket);
-		generate_jump_nodes(tdbb, newBucket, &jumpNodes, 0, &jumpersNewSize, NULL, NULL);
-
-		// Now we know exact how big our updated left page is, so check size
-		// again to be sure it all will fit.
-		// If the new page will be larger then the page size don't gc ofcourse.
-		if (newBucket->btr_length + jumpersNewSize > dbb->dbb_page_size)
-		{
-			CCH_RELEASE(tdbb, &parent_window);
-			CCH_RELEASE(tdbb, &left_window);
-			CCH_RELEASE(tdbb, window);
-			if (right_page) {
-				CCH_RELEASE(tdbb, &right_window);
-			}
-			IndexJumpNode* walkJumpNode = jumpNodes.begin();
-			for (size_t i = 0; i < jumpNodes.getCount(); i++) {
-				delete[] walkJumpNode[i].data;
-			}
-			return contents_above_threshold;
-		}
-
-#ifdef DEBUG_BTR_SPLIT
-		Firebird::string s;
-		s.printf("node with page %ld removed from parent page %ld",
-			parentNode.pageNumber, parent_window.win_page.getPageNum());
-		gds__trace(s.c_str());
-#endif
-		// Update the parent first.  If the parent is not written out first,
-		// we will be pointing to a page which is not in the doubly linked
-		// sibling list, and therefore navigation back and forth won't work.
-		// AB: Parent is always a index pointer page.
-		result = delete_node(tdbb, &parent_window, parentNode.nodePointer);
 		CCH_RELEASE(tdbb, &parent_window);
-
-		// Update the right sibling page next, since it does not really
-		// matter that the left sibling pointer points to the page directly
-		// to the left, only that it point to some page to the left.
-		// Set up the precedence so that the parent will be written first.
-		if (right_page)
-		{
-			if (parent_page) {
-				CCH_precedence(tdbb, &right_window, parent_window.win_page);
-			}
-			CCH_MARK(tdbb, &right_window);
-			right_page->btr_left_sibling = left_window.win_page.getPageNum();
-
+		CCH_RELEASE(tdbb, &left_window);
+		CCH_RELEASE(tdbb, window);
+		if (right_page) {
 			CCH_RELEASE(tdbb, &right_window);
 		}
-
-		// Now update the left sibling, effectively removing the garbage-collected page
-		// from the tree.  Set the precedence so the right sibling will be written first.
-		if (right_page) {
-			CCH_precedence(tdbb, &left_window, right_window.win_page);
-		}
-		else if (parent_page) {
-			CCH_precedence(tdbb, &left_window, parent_window.win_page);
-		}
-
-		CCH_MARK(tdbb, &left_window);
-
-		if (right_page) {
-			left_page->btr_sibling = right_window.win_page.getPageNum();
-		}
-		else {
-			left_page->btr_sibling = 0;
-		}
-
-		// Finally write all data to left page.
-		jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
-		jumpInfo.jumpers = jumpNodes.getCount();
-		pointer = jumpInfo.writeJumpInfo(left_page);
-		// Write jump nodes.
 		IndexJumpNode* walkJumpNode = jumpNodes.begin();
-		for (size_t i = 0; i < jumpNodes.getCount(); i++)
-		{
-			// Update offset to real position with new jump nodes.
-			walkJumpNode[i].offset += jumpersNewSize;
-			pointer = walkJumpNode[i].writeJumpNode(pointer);
+		for (size_t i = 0; i < jumpNodes.getCount(); i++) {
 			delete[] walkJumpNode[i].data;
 		}
-		// Copy data.
-		memcpy(pointer, (UCHAR*) newBucket + headerSize, newBucket->btr_length - headerSize);
-		// Update page header information.
-		left_page->btr_prefix_total = newBucket->btr_prefix_total;
-		left_page->btr_length = newBucket->btr_length + jumpersNewSize;
+		return contents_above_threshold;
 	}
-	else
-	{
-		// Now begin updating the pages.  We must write them out in such
-		// a way as to maintain on-disk integrity at all times.  That means
-		// not having pointers to released pages, and not leaving things in
-		// an inconsistent state for navigation through the pages.
-
-		// Update the parent first.  If the parent is not written out first,
-		// we will be pointing to a page which is not in the doubly linked
-		// sibling list, and therefore navigation back and forth won't work.
-		// AB: Parent is always a index pointer page.
 
 #ifdef DEBUG_BTR_SPLIT
-		Firebird::string s;
-		s.printf("node with page %ld removed from parent page %ld",
-			parentNode.pageNumber, parent_window.win_page.getPageNum());
-		gds__trace(s.c_str());
+	Firebird::string s;
+	s.printf("node with page %ld removed from parent page %ld",
+		parentNode.pageNumber, parent_window.win_page.getPageNum());
+	gds__trace(s.c_str());
 #endif
+	// Update the parent first.  If the parent is not written out first,
+	// we will be pointing to a page which is not in the doubly linked
+	// sibling list, and therefore navigation back and forth won't work.
+	// AB: Parent is always a index pointer page.
+	result = delete_node(tdbb, &parent_window, parentNode.nodePointer);
+	CCH_RELEASE(tdbb, &parent_window);
 
-		result = delete_node(tdbb, &parent_window, parentNode.nodePointer);
-		CCH_RELEASE(tdbb, &parent_window);
-
-		// Update the right sibling page next, since it does not really
-		// matter that the left sibling pointer points to the page directly
-		// to the left, only that it point to some page to the left.
-		// Set up the precedence so that the parent will be written first.
-		if (right_page)
-		{
-			if (parent_page) {
-				CCH_precedence(tdbb, &right_window, parent_window.win_page);
-			}
-			CCH_MARK(tdbb, &right_window);
-			right_page->btr_left_sibling = left_window.win_page.getPageNum();
-
-			CCH_RELEASE(tdbb, &right_window);
+	// Update the right sibling page next, since it does not really
+	// matter that the left sibling pointer points to the page directly
+	// to the left, only that it point to some page to the left.
+	// Set up the precedence so that the parent will be written first.
+	if (right_page)
+	{
+		if (parent_page) {
+			CCH_precedence(tdbb, &right_window, parent_window.win_page);
 		}
+		CCH_MARK(tdbb, &right_window);
+		right_page->btr_left_sibling = left_window.win_page.getPageNum();
 
-		// Now update the left sibling, effectively removing the garbage-collected page
-		// from the tree.  Set the precedence so the right sibling will be written first.
-		if (right_page) {
-			CCH_precedence(tdbb, &left_window, right_window.win_page);
-		}
-		else if (parent_page) {
-			CCH_precedence(tdbb, &left_window, parent_window.win_page);
-		}
-
-		CCH_MARK(tdbb, &left_window);
-
-		if (right_page) {
-			left_page->btr_sibling = right_window.win_page.getPageNum();
-		}
-		else {
-			left_page->btr_sibling = 0;
-		}
-
-		gcPointer = IndexJumpInfo::getPointerFirstNode(gc_page);
-		leftNode.readNode(leftPointer, leafPage);
-		// Calculate the total amount of compression on page as the combined totals
-		// of the two pages, plus the compression of the first node on the g-c'ed page,
-		// minus the prefix of the END_BUCKET node to be deleted.
-		left_page->btr_prefix_total += gc_page->btr_prefix_total + prefix - leftNode.prefix;
-
-		// Get first node from gc-page.
-		gcPointer = gcNode.readNode(gcPointer, leafPage);
-
-		// Write first node with prefix compression on left page.
-		leftNode.setNode(prefix, gcNode.length - prefix, gcNode.recordNumber,
-					     gcNode.pageNumber, gcNode.isEndBucket, gcNode.isEndLevel);
-		leftNode.data = gcNode.data + prefix;
-		leftPointer = leftNode.writeNode(leftPointer, leafPage);
-
-		// copy over the remainder of the page to be garbage-collected
-		const USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
-		memcpy(leftPointer, gcPointer, l);
-		leftPointer += l;
-		// update page size
-		left_page->btr_length = leftPointer - (UCHAR*)(left_page);
+		CCH_RELEASE(tdbb, &right_window);
 	}
+
+	// Now update the left sibling, effectively removing the garbage-collected page
+	// from the tree.  Set the precedence so the right sibling will be written first.
+	if (right_page) {
+		CCH_precedence(tdbb, &left_window, right_window.win_page);
+	}
+	else if (parent_page) {
+		CCH_precedence(tdbb, &left_window, parent_window.win_page);
+	}
+
+	CCH_MARK(tdbb, &left_window);
+
+	if (right_page) {
+		left_page->btr_sibling = right_window.win_page.getPageNum();
+	}
+	else {
+		left_page->btr_sibling = 0;
+	}
+
+	// Finally write all data to left page.
+	jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
+	jumpInfo.jumpers = jumpNodes.getCount();
+	pointer = jumpInfo.writeJumpInfo(left_page);
+	// Write jump nodes.
+	IndexJumpNode* walkJumpNode = jumpNodes.begin();
+	for (size_t i = 0; i < jumpNodes.getCount(); i++)
+	{
+		// Update offset to real position with new jump nodes.
+		walkJumpNode[i].offset += jumpersNewSize;
+		pointer = walkJumpNode[i].writeJumpNode(pointer);
+		delete[] walkJumpNode[i].data;
+	}
+	// Copy data.
+	memcpy(pointer, (UCHAR*) newBucket + headerSize, newBucket->btr_length - headerSize);
+	// Update page header information.
+	left_page->btr_prefix_total = newBucket->btr_prefix_total;
+	left_page->btr_length = newBucket->btr_length + jumpersNewSize;
 
 #ifdef DEBUG_BTR
 	if (left_page->btr_length > dbb->dbb_page_size)
@@ -5228,7 +5043,6 @@ static ULONG insert_node(thread_db* tdbb,
 
 	// find the insertion point for the specified key
 	btree_page* bucket = (btree_page*) window->win_buffer;
-	const UCHAR flags = bucket->btr_header.pag_flags;
 	temporary_key* key = insertion->iib_key;
 
 	const bool unique = (insertion->iib_descriptor->idx_flags & idx_unique);
@@ -5402,7 +5216,6 @@ static ULONG insert_node(thread_db* tdbb,
 	const bool endOfPage = (beforeInsertNode.isEndBucket || beforeInsertNode.isEndLevel);
 
 	// Initialize variables needed for generating jump information
-	const bool useJumpInfo = (flags & btr_jump_info);
 	bool fragmentedOffset = false;
 	USHORT jumpersOriginalSize = 0;
 	USHORT jumpersNewSize = 0;
@@ -5422,69 +5235,66 @@ static ULONG insert_node(thread_db* tdbb,
 		ensureEndInsert = 6 + key->key_length;
 	}
 
-	if (useJumpInfo)
+	// Get the total size of the jump nodes currently in use.
+	pointer = IndexJumpInfo::getPointerFirstNode(newBucket, &jumpInfo);
+	headerSize = (pointer - (UCHAR*)newBucket);
+	jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
+
+	// Allow some fragmentation, 10% below or above actual point.
+	jumpersNewSize = jumpersOriginalSize;
+	USHORT n = jumpInfo.jumpers;
+	USHORT index = 1;
+	const USHORT fragmentedThreshold = (jumpInfo.jumpAreaSize / 5);
+	IndexJumpNode jumpNode;
+	while (n)
 	{
-		// Get the total size of the jump nodes currently in use.
-		pointer = IndexJumpInfo::getPointerFirstNode(newBucket, &jumpInfo);
-		headerSize = (pointer - (UCHAR*)newBucket);
-		jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
-
-		// Allow some fragmentation, 10% below or above actual point.
-		jumpersNewSize = jumpersOriginalSize;
-		USHORT n = jumpInfo.jumpers;
-		USHORT index = 1;
-		const USHORT fragmentedThreshold = (jumpInfo.jumpAreaSize / 5);
-		IndexJumpNode jumpNode;
-		while (n)
-		{
-			pointer = jumpNode.readJumpNode(pointer);
-			if (jumpNode.offset == nodeOffset)
-			{
-				fragmentedOffset = true;
-				break;
-			}
-			if (jumpNode.offset > nodeOffset) {
-				jumpNode.offset += delta;
-			}
-			const USHORT minOffset = headerSize + jumpersOriginalSize +
-				(index * jumpInfo.jumpAreaSize) - fragmentedThreshold;
-			if (jumpNode.offset < minOffset)
-			{
-				fragmentedOffset = true;
-				break;
-			}
-			const USHORT maxOffset =  headerSize + jumpersOriginalSize +
-				(index * jumpInfo.jumpAreaSize) + fragmentedThreshold;
-			if (jumpNode.offset > maxOffset)
-			{
-				fragmentedOffset = true;
-				break;
-			}
-			jumpNodes->add(jumpNode);
-			index++;
-			n--;
-		}
-		// Rebuild jump nodes if new node is inserted after last
-		// jump node offset + jumpAreaSize.
-		if (nodeOffset >= (headerSize + jumpersOriginalSize +
-			((jumpInfo.jumpers + 1) * jumpInfo.jumpAreaSize)))
+		pointer = jumpNode.readJumpNode(pointer);
+		if (jumpNode.offset == nodeOffset)
 		{
 			fragmentedOffset = true;
+			break;
 		}
-		// Rebuild jump nodes if we gona split.
-		if (newBucket->btr_length + ensureEndInsert > dbb->dbb_page_size) {
-			fragmentedOffset = true;
+		if (jumpNode.offset > nodeOffset) {
+			jumpNode.offset += delta;
 		}
-
-		if (fragmentedOffset)
+		const USHORT minOffset = headerSize + jumpersOriginalSize +
+			(index * jumpInfo.jumpAreaSize) - fragmentedThreshold;
+		if (jumpNode.offset < minOffset)
 		{
-			// Clean up any previous nodes.
-			jumpNodes->clear();
-			// Generate new jump nodes.
-			generate_jump_nodes(tdbb, newBucket, jumpNodes,
-				(USHORT)(newNode.nodePointer - (UCHAR*)newBucket),
-				&jumpersNewSize, &splitJumpNodeIndex, &newPrefixTotalBySplit);
+			fragmentedOffset = true;
+			break;
 		}
+		const USHORT maxOffset =  headerSize + jumpersOriginalSize +
+			(index * jumpInfo.jumpAreaSize) + fragmentedThreshold;
+		if (jumpNode.offset > maxOffset)
+		{
+			fragmentedOffset = true;
+			break;
+		}
+		jumpNodes->add(jumpNode);
+		index++;
+		n--;
+	}
+	// Rebuild jump nodes if new node is inserted after last
+	// jump node offset + jumpAreaSize.
+	if (nodeOffset >= (headerSize + jumpersOriginalSize +
+		((jumpInfo.jumpers + 1) * jumpInfo.jumpAreaSize)))
+	{
+		fragmentedOffset = true;
+	}
+	// Rebuild jump nodes if we gona split.
+	if (newBucket->btr_length + ensureEndInsert > dbb->dbb_page_size) {
+		fragmentedOffset = true;
+	}
+
+	if (fragmentedOffset)
+	{
+		// Clean up any previous nodes.
+		jumpNodes->clear();
+		// Generate new jump nodes.
+		generate_jump_nodes(tdbb, newBucket, jumpNodes,
+			(USHORT)(newNode.nodePointer - (UCHAR*)newBucket),
+			&jumpersNewSize, &splitJumpNodeIndex, &newPrefixTotalBySplit);
 	}
 
 	// If the bucket still fits on a page, we're almost done.
@@ -5499,41 +5309,32 @@ static ULONG insert_node(thread_db* tdbb,
 		// Mark page as dirty.
 		CCH_MARK(tdbb, window);
 
-		if (useJumpInfo)
+		// Put all data back into bucket (= window->win_buffer).
+
+		// Write jump information header.
+		jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
+		jumpInfo.jumpers = jumpNodes->getCount();
+		pointer = jumpInfo.writeJumpInfo(bucket);
+
+		// Write jump nodes.
+		IndexJumpNode* walkJumpNode = jumpNodes->begin();
+		for (size_t i = 0; i < jumpNodes->getCount(); i++)
 		{
-			// Put all data back into bucket (= window->win_buffer).
-
-			// Write jump information header.
-			jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
-			jumpInfo.jumpers = jumpNodes->getCount();
-			pointer = jumpInfo.writeJumpInfo(bucket);
-
-			// Write jump nodes.
-			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (size_t i = 0; i < jumpNodes->getCount(); i++)
-			{
-				// Update offset to real position with new jump nodes.
-				walkJumpNode[i].offset += jumpersNewSize - jumpersOriginalSize;
-				pointer = walkJumpNode[i].writeJumpNode(pointer);
-				if (fragmentedOffset) {
-					delete[] walkJumpNode[i].data;
-				}
+			// Update offset to real position with new jump nodes.
+			walkJumpNode[i].offset += jumpersNewSize - jumpersOriginalSize;
+			pointer = walkJumpNode[i].writeJumpNode(pointer);
+			if (fragmentedOffset) {
+				delete[] walkJumpNode[i].data;
 			}
-			pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
-			// Copy data block.
-			memcpy(pointer, (UCHAR*)newBucket + headerSize + jumpersOriginalSize,
-				newBucket->btr_length - (headerSize + jumpersOriginalSize));
+		}
+		pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
+		// Copy data block.
+		memcpy(pointer, (UCHAR*)newBucket + headerSize + jumpersOriginalSize,
+			newBucket->btr_length - (headerSize + jumpersOriginalSize));
 
-			// Update header information.
-			bucket->btr_prefix_total = newBucket->btr_prefix_total;
-			bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
-		}
-		else
-		{
-			// Copy temp-buffer data to window buffer.
-			memcpy(window->win_buffer, newBucket, newBucket->btr_length);
-			bucket->btr_length = newBucket->btr_length;
-		}
+		// Update header information.
+		bucket->btr_prefix_total = newBucket->btr_prefix_total;
+		bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
 
 		CCH_RELEASE(tdbb, window);
 
@@ -5554,7 +5355,7 @@ static ULONG insert_node(thread_db* tdbb,
 	UCHAR* splitpoint = NULL;
 	USHORT jumpersSplitSize = 0;
 	IndexNode node;
-	if (useJumpInfo && splitJumpNodeIndex)
+	if (splitJumpNodeIndex)
 	{
 		// Get pointer after new inserted node.
 		splitpoint = node.readNode(newNode.nodePointer, leafPage);
@@ -5687,7 +5488,6 @@ static ULONG insert_node(thread_db* tdbb,
 	split->btr_level = bucket->btr_level;
 	split->btr_sibling = right_sibling;
 	split->btr_left_sibling = window->win_page.getPageNum();
-	split->btr_header.pag_flags = (flags & BTR_FLAG_COPY_MASK);
 
 	// Format the first node on the overflow page
 	newNode.setNode(0, new_key->key_length, node.recordNumber, node.pageNumber);
@@ -5697,41 +5497,36 @@ static ULONG insert_node(thread_db* tdbb,
 	const USHORT firstSplitNodeSize = newNode.getNodeSize(leafPage);
 
 	// Format the first node on the overflow page
-	if (useJumpInfo)
-	{
-		IndexJumpInfo splitJumpInfo;
-		splitJumpInfo.firstNodeOffset = headerSize + jumpersSplitSize;
-		splitJumpInfo.jumpAreaSize = jumpInfo.jumpAreaSize;
-		if (splitJumpNodeIndex > 0) {
-			splitJumpInfo.jumpers = jumpNodes->getCount() - splitJumpNodeIndex;
-		}
-		else {
-			splitJumpInfo.jumpers = 0;
-		}
-		pointer = splitJumpInfo.writeJumpInfo(split);
-		if (splitJumpNodeIndex > 0)
-		{
-			// Write jump nodes to split page.
-			USHORT index = 1;
-			// Calculate size that's between header and splitpoint.
-			const USHORT splitOffset = (splitpoint - (UCHAR*)newBucket);
-			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++)
-			{
-				if (index > splitJumpNodeIndex)
-				{
-					// Update offset to correct position.
-					walkJumpNode[i].offset = walkJumpNode[i].offset - splitOffset +
-						splitJumpInfo.firstNodeOffset + firstSplitNodeSize;
-					pointer = walkJumpNode[i].writeJumpNode(pointer);
-				}
-			}
-		}
-		pointer = (UCHAR*)split + splitJumpInfo.firstNodeOffset;
+	IndexJumpInfo splitJumpInfo;
+	splitJumpInfo.firstNodeOffset = headerSize + jumpersSplitSize;
+	splitJumpInfo.jumpAreaSize = jumpInfo.jumpAreaSize;
+	if (splitJumpNodeIndex > 0) {
+		splitJumpInfo.jumpers = jumpNodes->getCount() - splitJumpNodeIndex;
 	}
 	else {
-		pointer = IndexJumpInfo::getPointerFirstNode(split);
+		splitJumpInfo.jumpers = 0;
 	}
+	pointer = splitJumpInfo.writeJumpInfo(split);
+
+	if (splitJumpNodeIndex > 0)
+	{
+		// Write jump nodes to split page.
+		USHORT index = 1;
+		// Calculate size that's between header and splitpoint.
+		const USHORT splitOffset = (splitpoint - (UCHAR*)newBucket);
+		IndexJumpNode* walkJumpNode = jumpNodes->begin();
+		for (size_t i = 0; i < jumpNodes->getCount(); i++, index++)
+		{
+			if (index > splitJumpNodeIndex)
+			{
+				// Update offset to correct position.
+				walkJumpNode[i].offset = walkJumpNode[i].offset - splitOffset +
+					splitJumpInfo.firstNodeOffset + firstSplitNodeSize;
+				pointer = walkJumpNode[i].writeJumpNode(pointer);
+			}
+		}
+	}
+	pointer = (UCHAR*) split + splitJumpInfo.firstNodeOffset;
 
 	pointer = newNode.writeNode(pointer, leafPage);
 
@@ -5761,46 +5556,40 @@ static ULONG insert_node(thread_db* tdbb,
 	pointer = node.writeNode(node.nodePointer, leafPage, false);
 	newBucket->btr_length = pointer - (UCHAR*)newBucket;
 
-	if (useJumpInfo)
-	{
-		// Write jump information.
-		jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
-		if (splitJumpNodeIndex > 0) {
-			jumpInfo.jumpers = splitJumpNodeIndex - 1;
-		}
-		else {
-			jumpInfo.jumpers = jumpNodes->getCount();
-		}
-		pointer = jumpInfo.writeJumpInfo(bucket);
-
-		// Write jump nodes.
-		USHORT index = 1;
-		IndexJumpNode* walkJumpNode = jumpNodes->begin();
-		for (size_t i = 0; i < jumpNodes->getCount(); i++, index++)
-		{
-			if (index <= jumpInfo.jumpers)
-			{
-				// Update offset to correct position.
-				walkJumpNode[i].offset = walkJumpNode[i].offset + jumpersNewSize - jumpersOriginalSize;
-				pointer = walkJumpNode[i].writeJumpNode(pointer);
-			}
-		}
-		pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
-
-		memcpy(pointer, (UCHAR*)newBucket + headerSize + jumpersOriginalSize,
-			newBucket->btr_length - (headerSize + jumpersOriginalSize));
-		bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
-
-		if (fragmentedOffset)
-		{
-			IndexJumpNode* walkJumpNode2 = jumpNodes->begin();
-			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
-				delete[] walkJumpNode2[i].data;
-			}
-		}
+	// Write jump information.
+	jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
+	if (splitJumpNodeIndex > 0) {
+		jumpInfo.jumpers = splitJumpNodeIndex - 1;
 	}
 	else {
-		memcpy(window->win_buffer, newBucket, newBucket->btr_length);
+		jumpInfo.jumpers = jumpNodes->getCount();
+	}
+	pointer = jumpInfo.writeJumpInfo(bucket);
+
+	// Write jump nodes.
+	index = 1;
+	IndexJumpNode* walkJumpNode = jumpNodes->begin();
+	for (size_t i = 0; i < jumpNodes->getCount(); i++, index++)
+	{
+		if (index <= jumpInfo.jumpers)
+		{
+			// Update offset to correct position.
+			walkJumpNode[i].offset = walkJumpNode[i].offset + jumpersNewSize - jumpersOriginalSize;
+			pointer = walkJumpNode[i].writeJumpNode(pointer);
+		}
+	}
+	pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
+
+	memcpy(pointer, (UCHAR*)newBucket + headerSize + jumpersOriginalSize,
+		newBucket->btr_length - (headerSize + jumpersOriginalSize));
+	bucket->btr_length = newBucket->btr_length + jumpersNewSize - jumpersOriginalSize;
+
+	if (fragmentedOffset)
+	{
+		IndexJumpNode* walkJumpNode2 = jumpNodes->begin();
+		for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
+			delete[] walkJumpNode2[i].data;
+		}
 	}
 
 	// Update page information.

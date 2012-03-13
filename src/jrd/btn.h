@@ -284,22 +284,17 @@ struct IndexJumpInfo
 
 	static UCHAR* getPointerFirstNode(Ods::btree_page* page, IndexJumpInfo* jumpInfo = NULL)
 	{
-		if (page->btr_header.pag_flags & Ods::btr_jump_info)
+		if (jumpInfo)
 		{
-			if (jumpInfo)
-			{
-				UCHAR* pointer = page->btr_nodes;
-				return jumpInfo->readJumpInfo(pointer);
-			}
-
-			IndexJumpInfo jumpInformation;
 			UCHAR* pointer = page->btr_nodes;
-			jumpInformation.readJumpInfo(pointer);
-
-			return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
+			return jumpInfo->readJumpInfo(pointer);
 		}
 
-		return page->btr_nodes;
+		IndexJumpInfo jumpInformation;
+		UCHAR* pointer = page->btr_nodes;
+		jumpInformation.readJumpInfo(pointer);
+
+		return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
 	}
 
 	UCHAR* readJumpInfo(UCHAR* pagePointer);

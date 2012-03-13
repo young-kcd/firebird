@@ -1489,7 +1489,6 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 	bool nullKeyNode = false;			// current node is a null key of unique index
 	bool nullKeyHandled = !(unique && null_key);	// null key of unique index was handled
 
-	UCHAR flags = 0;
 	UCHAR* pointer;
 	IndexNode node, lastNode;
 	PageBitmap visited_pages; // used to check circular page references, Diane Downie 2007-02-09
@@ -1503,15 +1502,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 		// remember each page for circular reference detection
 		visited_pages.set(next);
 
-		if ((next != page_number) &&
-			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != (flags & BTR_FLAG_COPY_MASK))
-		{
-			corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-					id + 1, next, page->btr_level, 0, __FILE__, __LINE__);
-		}
-		flags = page->btr_header.pag_flags;
 		const bool leafPage = (page->btr_level == 0);
-		const bool useJumpInfo = (flags & btr_jump_info);
 
 		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256))
 		{
@@ -1521,45 +1512,43 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 			return rtn_corrupt;
 		}
 
-		if (useJumpInfo)
+		IndexJumpInfo jumpInfo;
+		pointer = IndexJumpInfo::getPointerFirstNode(page, &jumpInfo);
+		const USHORT headerSize = (pointer - (UCHAR*)page);
+		// Check if firstNodeOffset is not out of page area.
+		if ((jumpInfo.firstNodeOffset < headerSize) ||
+			(jumpInfo.firstNodeOffset > page->btr_length))
 		{
-			IndexJumpInfo jumpInfo;
-			pointer = IndexJumpInfo::getPointerFirstNode(page, &jumpInfo);
-			const USHORT headerSize = (pointer - (UCHAR*)page);
-			// Check if firstNodeOffset is not out of page area.
-			if ((jumpInfo.firstNodeOffset < headerSize) ||
-				(jumpInfo.firstNodeOffset > page->btr_length))
+			corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
+					id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
+		}
+
+		USHORT n = jumpInfo.jumpers;
+		USHORT jumpersSize = 0;
+		IndexNode checknode;
+		IndexJumpNode jumpNode;
+		while (n)
+		{
+			pointer = jumpNode.readJumpNode(pointer);
+			jumpersSize += jumpNode.getJumpNodeSize();
+			// Check if jump node offset is inside page.
+			if ((jumpNode.offset < jumpInfo.firstNodeOffset) ||
+				(jumpNode.offset > page->btr_length))
 			{
 				corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
 						id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
 			}
-
-			USHORT n = jumpInfo.jumpers;
-			USHORT jumpersSize = 0;
-			IndexNode checknode;
-			IndexJumpNode jumpNode;
-			while (n)
+			else
 			{
-				pointer = jumpNode.readJumpNode(pointer);
-				jumpersSize += jumpNode.getJumpNodeSize();
-				// Check if jump node offset is inside page.
-				if ((jumpNode.offset < jumpInfo.firstNodeOffset) ||
-					(jumpNode.offset > page->btr_length))
-				{
+				// Check if jump node has same length as data node prefix.
+				checknode.readNode((UCHAR*) page + jumpNode.offset, leafPage);
+				if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
 				}
-				else
-				{
-					// Check if jump node has same length as data node prefix.
-					checknode.readNode((UCHAR*) page + jumpNode.offset, leafPage);
-					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
-						corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
-					}
-				}
-				n--;
+
 			}
+			n--;
 		}
 
 		// go through all the nodes on the page and check for validity
@@ -1570,7 +1559,6 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 		while (pointer < endPointer)
 		{
-
 			pointer = node.readNode(pointer, leafPage);
 			if (pointer > endPointer) {
 				break;

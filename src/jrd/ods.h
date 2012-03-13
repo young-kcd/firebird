@@ -251,10 +251,8 @@ struct btree_page
 // pag_flags
 //const UCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page
 //const UCHAR btr_descending		= 2;	// Page/bucket is part of a descending index
-const UCHAR btr_jump_info			= 16;	// AB: 2003-index-structure enhancement
+//const UCHAR btr_jump_info			= 16;	// AB: 2003-index-structure enhancement
 const UCHAR btr_released			= 32;	// Page was released from b-tree
-
-const UCHAR BTR_FLAG_COPY_MASK = (btr_jump_info);
 
 // Data Page
 
