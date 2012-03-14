@@ -678,7 +678,6 @@ public:
 		for (GetPlugins<ICryptPlugin> cpItr(PluginType::Crypt, FB_CRYPT_PLUGIN_VERSION,
 											upInfo); cpItr.hasData(); cpItr.next())
 		{
-			unsigned l;
 			const char* list = cpItr.plugin()->getKnownTypes(&st);
 			if (! st.isSuccess())
 			{
