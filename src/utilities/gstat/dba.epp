@@ -1410,7 +1410,7 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 	IndexNode node;
 	while (bucket->btr_level)
 	{
-		pointer = IndexJumpInfo::getPointerFirstNode(const_cast<btree_page*>(bucket));
+		pointer = const_cast<UCHAR*>(bucket->btr_nodes) + bucket->btr_jump_size;
 		node.readNode(pointer, false);
 		bucket = (const btree_page*) db_read(node.pageNumber);
 	}
@@ -1427,7 +1427,7 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 	while (true)
 	{
 		++index->idx_leaf_buckets;
-		pointer = IndexJumpInfo::getPointerFirstNode(const_cast<btree_page*>(bucket));
+		pointer = const_cast<UCHAR*>(bucket->btr_nodes) + bucket->btr_jump_size;
 		const UCHAR* const firstNode = pointer;
 		while (true)
 		{
