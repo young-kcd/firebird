@@ -528,30 +528,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	}
 }
 
-namespace {
-	// we need a class here only to return memory on shutdown and avoid
-	// false memory leak reports
-	static const int ZERO_BUF_SIZE = 1024 * 128;
-
-	class HugeStaticBuffer 
-	{
-	public:
-		HugeStaticBuffer(MemoryPool& p)
-			: zeroArray(p), 
-			zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
-		{
-			memset(zeroBuff, 0, ZERO_BUF_SIZE);
-		}
-
-		const char* get() { return zeroBuff; }
-
-	private:
-		Firebird::Array<char> zeroArray;
-		char* zeroBuff;
-	};
-
-	static Firebird::InitInstance<HugeStaticBuffer> zeros;
-}
+static Firebird::InitInstance<Firebird::ZeroBuffer> zeros;
 
 
 USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
@@ -568,7 +545,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
  *
  **************************************/
 
-	const char* zero_buff = zeros().get();
+	const char* zero_buff = zeros().getBuffer();
+	const size_t zero_buff_size = zeros().getSize();
 
 	ThreadExit teHolder;
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
@@ -601,7 +579,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	for (ULONG i = startPage; i < startPage + initBy; )
 	{
 		bdb.bdb_page = PageNumber(0, i);
-		USHORT write_pages = ZERO_BUF_SIZE / dbb->dbb_page_size;
+		USHORT write_pages = zero_buff_size / dbb->dbb_page_size;
 		if (write_pages > leftPages)
 			write_pages = leftPages;
 

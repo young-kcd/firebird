@@ -48,7 +48,7 @@ public:
 	virtual ~TempFile();
 
 	size_t read(offset_t, void*, size_t);
-	size_t write(offset_t, void*, size_t);
+	size_t write(offset_t, const void*, size_t);
 
 	void unlink();
 

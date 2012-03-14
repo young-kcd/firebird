@@ -35,7 +35,7 @@ public:
 	virtual ~TempSpace();
 
 	size_t read(offset_t offset, void* buffer, size_t length);
-	size_t write(offset_t offset, void* buffer, size_t length);
+	size_t write(offset_t offset, const void* buffer, size_t length);
 
 	void unlink() {}
 
@@ -72,7 +72,7 @@ private:
 		virtual ~Block() {}
 
 		virtual size_t read(offset_t offset, void* buffer, size_t length) = 0;
-		virtual size_t write(offset_t offset, void* buffer, size_t length) = 0;
+		virtual size_t write(offset_t offset, const void* buffer, size_t length) = 0;
 
 		virtual char* inMemory(offset_t offset, size_t size) const = 0;
 		virtual bool sameFile(const TempFile* file) const = 0; 
@@ -88,7 +88,7 @@ private:
 		~MemoryBlock();
 
 		size_t read(offset_t offset, void* buffer, size_t length);
-		size_t write(offset_t offset, void* buffer, size_t length);
+		size_t write(offset_t offset, const void* buffer, size_t length);
 
 		char* inMemory(offset_t offset, size_t _size) const
 		{
@@ -113,7 +113,7 @@ private:
 		~FileBlock();
 
 		size_t read(offset_t offset, void* buffer, size_t length);
-		size_t write(offset_t offset, void* buffer, size_t length);
+		size_t write(offset_t offset, const void* buffer, size_t length);
 
 		char* inMemory(offset_t offset, size_t a_size) const
 		{

@@ -33,6 +33,7 @@
 #include "../include/fb_blk.h"
 #include "../jrd/thread_proto.h"
 #include "../common/classes/rwlock.h"
+#include "../common/classes/File.h"
 
 namespace Jrd {
 

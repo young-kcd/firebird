@@ -46,6 +46,7 @@
 
 #include "../jrd/gdsassert.h"
 #include "../jrd/os/path_utils.h"
+#include "../common/classes/init.h"
 
 #include "../common/classes/TempFile.h"
 
@@ -66,6 +67,10 @@ static const char* DEFAULT_PATH =
 static const char* const NAME_PATTERN = "XXXXXX";
 static const char* const NAME_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
 static const size_t MAX_TRIES = 256;
+
+// we need a class here only to return memory on shutdown and avoid
+// false memory leak reports
+static Firebird::InitInstance<Firebird::ZeroBuffer> zeros;
 
 //
 // TempFile::getTempPath
@@ -265,7 +270,14 @@ void TempFile::seek(offset_t offset)
 
 void TempFile::extend(size_t delta)
 {
-	seek(size + delta);
+	const char* const buffer = zeros().getBuffer();
+	const size_t bufferSize = zeros().getSize();
+	const size_t newSize = size + delta;
+	for (size_t offset = size; offset < newSize; offset += bufferSize)
+	{
+		const size_t length = MIN(newSize - size, bufferSize);
+		write(offset, buffer, length);
+	}
 }
 
 //
@@ -302,7 +314,7 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to file
 //
 
-size_t TempFile::write(offset_t offset, void* buffer, size_t length)
+size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
 {
 	fb_assert(offset <= size);
 	seek(offset);
