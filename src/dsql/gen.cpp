@@ -1542,10 +1542,12 @@ static void gen_constant( dsql_req* request, const dsc* desc, bool negate_value)
  **/
 static void gen_constant( dsql_req* request, dsql_nod* node, bool negate_value)
 {
-	if (node->nod_desc.dsc_dtype == dtype_text)
-		node->nod_desc.dsc_length = ((dsql_str*) node->nod_arg[0])->str_length;
+	dsc desc = node->nod_desc;
 
-	gen_constant(request, &node->nod_desc, negate_value);
+	if (desc.dsc_dtype == dtype_text)
+		desc.dsc_length = ((dsql_str*) node->nod_arg[0])->str_length;
+
+	gen_constant(request, &desc, negate_value);
 }
 
 
