@@ -3630,7 +3630,7 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  **************************************/
 	if (!mfb->mfb_space) {
 		MemoryPool& pool = *getDefaultMemoryPool();
-		mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+		mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH, false);
 	}
 
 	SORT_write_block(tdbb->tdbb_status_vector, mfb->mfb_space,

@@ -761,7 +761,7 @@ sort_context* SORT_init(thread_db* tdbb,
 
 	// Set up the temp space
 
-	scb->scb_space = FB_NEW(*pool) TempSpace(*pool, SCRATCH);
+	scb->scb_space = FB_NEW(*pool) TempSpace(*pool, SCRATCH, false);
 
 	// Set up to receive the first record
 
