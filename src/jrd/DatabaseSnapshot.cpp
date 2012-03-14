@@ -832,7 +832,9 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 		for (transaction = attachment->att_transactions;
 			transaction; transaction = transaction->tra_next)
 		{
-			for (request = transaction->tra_requests; request; request = request->req_caller)
+			for (request = transaction->tra_requests;
+				request && (request->req_flags & req_active);
+				request = request->req_caller)
 			{
 				request->adjustCallerStats();
 
