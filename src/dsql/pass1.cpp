@@ -10498,7 +10498,7 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 									(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
 
 								in_node->nod_desc.dsc_length =
-									UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+									UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC, diff);
 							}
 
 							in_node->nod_desc.dsc_length += diff;
