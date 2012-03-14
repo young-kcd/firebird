@@ -23,6 +23,12 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-3553
+        Nested loop plan is chosen instead of the sort merge for joining independent streams
+        using keys of different types
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-3547
         Floating-point negative zero doesn't match positive zero in the index
       Contributor(s):
