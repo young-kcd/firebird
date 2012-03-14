@@ -634,7 +634,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 				(fromCharSet == toCharSet ? INTL_GET_COLLATE(&parameter->par_desc) : 0)));
 
 			parameter->par_desc.dsc_length =
-				UTLD_char_length_to_byte_length(parameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+				UTLD_char_length_to_byte_length(parameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC, adjust);
 
 			parameter->par_desc.dsc_length += adjust;
 		}

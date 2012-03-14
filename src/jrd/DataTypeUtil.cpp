@@ -453,9 +453,15 @@ ULONG DataTypeUtilBase::convertLength(const dsc* src, const dsc* dst)
 
 ULONG DataTypeUtilBase::fixLength(const dsc* desc, ULONG length)
 {
-	UCHAR bpc = maxBytesPerChar(desc->getCharSet());
+	const UCHAR bpc = maxBytesPerChar(desc->getCharSet());
 
-	return MIN(((MAX_COLUMN_SIZE - sizeof(USHORT)) / bpc) * bpc, length);
+	USHORT overhead = 0;
+	if (desc->dsc_dtype == dtype_varying)
+		overhead = sizeof(USHORT);
+	else if (desc->dsc_dtype == dtype_cstring)
+		overhead = sizeof(UCHAR);
+
+	return MIN(((MAX_COLUMN_SIZE - overhead) / bpc) * bpc, length);
 }
 
 
