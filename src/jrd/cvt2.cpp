@@ -95,6 +95,65 @@ static const BYTE compare_priority[] = { dtype_unknown,	/* dtype_unknown through
 };								/* int64 goes right after long       */
 
 
+bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* arg2)
+{
+/**************************************
+ *
+ *	C V T 2 _ g e t _ b i n a r y _ c o m p a r a b l e _ d e s c
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return descriptor of the data type to be used for direct (binary) comparison of the given arguments.
+ *
+ **************************************/
+
+	if (arg1->dsc_dtype == dtype_blob || arg2->dsc_dtype == dtype_blob ||
+		arg1->dsc_dtype == dtype_array || arg2->dsc_dtype == dtype_array)
+	{
+		// Any of the arguments is a blob or an array
+		return false;
+	}
+	
+	if (arg1->isText() && arg2->isText())
+	{
+		// Both arguments are strings
+		if (arg1->getTextType() != arg2->getTextType())
+		{
+			// Charsets/collations are different
+			return false;
+		}
+
+		result->makeText(MAX(arg1->getStringLength(), arg2->getStringLength()), arg1->getTextType());
+
+		if (arg1->dsc_dtype == arg2->dsc_dtype)
+		{
+			result->dsc_dtype = arg1->dsc_dtype;
+
+			if (result->dsc_dtype == dtype_cstring)
+				result->dsc_length += sizeof(UCHAR);
+			else if (result->dsc_dtype == dtype_varying)
+				result->dsc_length += sizeof(USHORT);
+		}
+	}
+	else if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
+	{
+		// Arguments can be compared directly
+		*result = *arg1;
+	}
+	else
+	{
+		// Arguments are of different data types
+		*result = (compare_priority[arg1->dsc_dtype] > compare_priority[arg2->dsc_dtype]) ? *arg1 : *arg2;
+
+		if (arg1->isExact() && arg2->isExact())
+			result->dsc_scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
+	}
+
+	return true;
+}
+
+
 SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 {
 /**************************************

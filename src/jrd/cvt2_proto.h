@@ -26,6 +26,7 @@
 
 #include "../jrd/jrd.h"
 
+bool    CVT2_get_binary_comparable_desc(dsc*, const dsc*, const dsc*);
 SSHORT	CVT2_compare(const dsc*, const dsc*, FPTR_ERROR);
 SSHORT	CVT2_blob_compare(const dsc*, const dsc*, FPTR_ERROR);
 void	CVT2_get_name(const dsc*, TEXT*, FPTR_ERROR);

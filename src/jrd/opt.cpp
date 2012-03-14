@@ -63,6 +63,7 @@
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/cvt2_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
@@ -5609,13 +5610,44 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
 
-		dsc desc1, desc2;
+		dsc result, desc1, desc2;
 		CMP_get_desc(tdbb, opt->opt_csb, node1, &desc1);
 		CMP_get_desc(tdbb, opt->opt_csb, node2, &desc2);
 
-		if (!DSC_EQUIV(&desc1, &desc2, true) || desc1.isBlob() || desc2.isBlob())
+		// Ensure that arguments can be compared in the binary form
+		if (!CVT2_get_binary_comparable_desc(&result, &desc1, &desc2))
 		{
 			continue;
+		}
+
+		// Cast the arguments, if required
+		if (!DSC_EQUIV(&result, &desc1, true) || !DSC_EQUIV(&result, &desc2, true))
+		{
+			Format* const format = Format::newFormat(*tdbb->getDefaultPool(), 1);
+			format->fmt_length = result.dsc_length;
+			format->fmt_desc[0] = result;
+
+			if (!DSC_EQUIV(&result, &desc1, true))
+			{
+				jrd_nod* const cast = PAR_make_node(tdbb, e_cast_length);
+				cast->nod_type = nod_cast;
+				cast->nod_count = 1;
+				cast->nod_arg[e_cast_source] = node1;
+				cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
+				cast->nod_impure = CMP_impure(opt->opt_csb, sizeof(impure_value));
+				node1 = cast;
+			}
+
+			if (!DSC_EQUIV(&result, &desc2, true))
+			{
+				jrd_nod* const cast = PAR_make_node(tdbb, e_cast_length);
+				cast->nod_type = nod_cast;
+				cast->nod_count = 1;
+				cast->nod_arg[e_cast_source] = node2;
+				cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
+				cast->nod_impure = CMP_impure(opt->opt_csb, sizeof(impure_value));
+				node2 = cast;
+			}
 		}
 
 		for (RiverStack::iterator stack0(org_rivers); stack0.hasData(); ++stack0) {
