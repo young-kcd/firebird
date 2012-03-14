@@ -300,30 +300,6 @@ USHORT IndexNode::getNodeSize(bool leafNode) const
 }
 
 
-UCHAR* IndexJumpInfo::readJumpInfo(UCHAR* pagePointer)
-{
-/**************************************
- *
- *	r e a d J u m p I n f o
- *
- **************************************
- *
- * Functional description
- *	Read jump information from the page
- *  by the given pagePointer and the
- *  return the remaining position after
- *  the read.
- *
- **************************************/
-	firstNodeOffset = get_short(pagePointer);
-	pagePointer += sizeof(USHORT);
-	jumpAreaSize = get_short(pagePointer);
-	pagePointer += sizeof(USHORT);
-	jumpers = (USHORT)(*pagePointer++);
-	return pagePointer;
-}
-
-
 UCHAR* IndexJumpNode::readJumpNode(UCHAR* pagePointer)
 {
 /**************************************
@@ -363,29 +339,6 @@ UCHAR* IndexJumpNode::readJumpNode(UCHAR* pagePointer)
 	data = pagePointer;
 	pagePointer += length;
 	return pagePointer;
-}
-
-
-UCHAR* IndexJumpInfo::writeJumpInfo(btree_page* page) const
-{
-/**************************************
- *
- *	w r i t e J u m p I n f o
- *
- **************************************
- *
- * Functional description
- *	Write jump information to the page by the
- *  given pointer.
- *
- **************************************/
-	UCHAR* pointer = page->btr_nodes;
-	put_short(pointer, firstNodeOffset);
-	pointer += sizeof(USHORT);
-	put_short(pointer, jumpAreaSize);
-	pointer += sizeof(USHORT);
-	*pointer++ = (UCHAR) jumpers;
-	return pointer;
 }
 
 

@@ -1489,7 +1489,6 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 	bool nullKeyNode = false;			// current node is a null key of unique index
 	bool nullKeyHandled = !(unique && null_key);	// null key of unique index was handled
 
-	UCHAR* pointer;
 	IndexNode node, lastNode;
 	PageBitmap visited_pages; // used to check circular page references, Diane Downie 2007-02-09
 
@@ -1512,18 +1511,15 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 			return rtn_corrupt;
 		}
 
-		IndexJumpInfo jumpInfo;
-		pointer = IndexJumpInfo::getPointerFirstNode(page, &jumpInfo);
-		const USHORT headerSize = (pointer - (UCHAR*)page);
+		UCHAR* pointer = page->btr_nodes;
 		// Check if firstNodeOffset is not out of page area.
-		if ((jumpInfo.firstNodeOffset < headerSize) ||
-			(jumpInfo.firstNodeOffset > page->btr_length))
+		if (BTR_SIZE + page->btr_jump_size > page->btr_length)
 		{
 			corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
 					id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
 		}
 
-		USHORT n = jumpInfo.jumpers;
+		UCHAR n = page->btr_jump_count;
 		USHORT jumpersSize = 0;
 		IndexNode checknode;
 		IndexJumpNode jumpNode;
@@ -1532,7 +1528,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 			pointer = jumpNode.readJumpNode(pointer);
 			jumpersSize += jumpNode.getJumpNodeSize();
 			// Check if jump node offset is inside page.
-			if ((jumpNode.offset < jumpInfo.firstNodeOffset) ||
+			if ((jumpNode.offset < BTR_SIZE + page->btr_jump_size) ||
 				(jumpNode.offset > page->btr_length))
 			{
 				corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
@@ -1552,7 +1548,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 		}
 
 		// go through all the nodes on the page and check for validity
-		pointer = IndexJumpInfo::getPointerFirstNode(page);
+		pointer = page->btr_nodes + page->btr_jump_size;
 		if (firstNode)
 			lastNode.readNode(pointer, leafPage);
 
@@ -1650,7 +1646,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				const bool downLeafPage = (down_page->btr_level == 0);
 
 				// make sure the initial key is greater than the pointer key
-				UCHAR* downPointer = IndexJumpInfo::getPointerFirstNode(down_page);
+				UCHAR* downPointer = down_page->btr_nodes + down_page->btr_jump_size;
 
 				IndexNode downNode;
 				downPointer = downNode.readNode(downPointer, downLeafPage);
@@ -1728,7 +1724,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 			if (page->btr_level)
 			{
 				IndexNode newPageNode;
-				newPageNode.readNode(IndexJumpInfo::getPointerFirstNode(page), false);
+				pointer = page->btr_nodes + page->btr_jump_size;
+				newPageNode.readNode(pointer, false);
 				down = newPageNode.pageNumber;
 			}
 			else

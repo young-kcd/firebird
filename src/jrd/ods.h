@@ -245,8 +245,13 @@ struct btree_page
 	USHORT btr_length;			// length of data in bucket
 	UCHAR btr_id;				// index id for consistency
 	UCHAR btr_level;			// index level (0 = leaf)
+	USHORT btr_jump_interval;	// interval between jump nodes
+	USHORT btr_jump_size;		// size of the jump table
+	UCHAR btr_jump_count;		// number of jump nodes
 	UCHAR btr_nodes[1];
 };
+
+#define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
 
 // pag_flags
 //const UCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page

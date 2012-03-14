@@ -167,7 +167,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 		if (node.isEndBucket)
 		{
 			page = (Ods::btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read, pag_index);
-			nextPointer = IndexJumpInfo::getPointerFirstNode(page);
+			nextPointer = page->btr_nodes + page->btr_jump_size;
 			continue;
 		}
 
@@ -399,7 +399,7 @@ bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window,
 	IndexNode node;
 	while (true)
 	{
-		UCHAR* pointer = IndexJumpInfo::getPointerFirstNode(page);
+		UCHAR* pointer = page->btr_nodes + page->btr_jump_size;
 		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 		while (pointer < endPointer)
 		{
@@ -489,7 +489,7 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
 		return found ? node.readNode(pointer, true) : pointer;
 	}
 
-	return IndexJumpInfo::getPointerFirstNode(page);
+	return page->btr_nodes + page->btr_jump_size;
 }
 
 UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) const
@@ -545,7 +545,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) 
 		return pointer;
 	}
 
-	return IndexJumpInfo::getPointerFirstNode(page);
+	return page->btr_nodes + page->btr_jump_size;
 }
 
 void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window) const

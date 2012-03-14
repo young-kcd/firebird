@@ -276,31 +276,6 @@ struct IndexJumpNode
 	UCHAR* writeJumpNode(UCHAR* pagePointer);
 };
 
-struct IndexJumpInfo
-{
-	USHORT firstNodeOffset;		// offset to node in page
-	USHORT jumpAreaSize;		// size area before a new jumpnode is made
-	UCHAR  jumpers;				// nr of jump-nodes in page, with a maximum of 255
-
-	static UCHAR* getPointerFirstNode(Ods::btree_page* page, IndexJumpInfo* jumpInfo = NULL)
-	{
-		if (jumpInfo)
-		{
-			UCHAR* pointer = page->btr_nodes;
-			return jumpInfo->readJumpInfo(pointer);
-		}
-
-		IndexJumpInfo jumpInformation;
-		UCHAR* pointer = page->btr_nodes;
-		jumpInformation.readJumpInfo(pointer);
-
-		return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
-	}
-
-	UCHAR* readJumpInfo(UCHAR* pagePointer);
-	UCHAR* writeJumpInfo(Ods::btree_page* page) const;
-};
-
 struct dynKey
 {
 	USHORT keyLength;

@@ -213,9 +213,6 @@ const int irb_descending	= 16;			// Base index uses descending order
 const int irb_exclude_lower	= 32;			// exclude lower bound keys while scanning index
 const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning index
 
-// macros used to manipulate btree nodes
-#define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
-
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
 class BtrPageGCLock : public Lock
