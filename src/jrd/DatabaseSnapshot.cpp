@@ -808,7 +808,8 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb, bool ast)
 		for (transaction = attachment->att_transactions;
 			transaction; transaction = transaction->tra_next)
 		{
-			for (request = transaction->tra_requests; request;
+			for (request = transaction->tra_requests;
+				request && (request->req_flags & req_active);
 				request = request->req_caller)
 			{
 				request->adjustCallerStats();
