@@ -253,7 +253,7 @@ Sort::Sort(Jrd::Attachment* attachment,
 
 		// Set up the temp space
 
-		m_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+		m_space = FB_NEW(pool) TempSpace(pool, SCRATCH, false);
 
 		// Set up to receive the first record
 
