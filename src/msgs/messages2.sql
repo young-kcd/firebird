@@ -614,7 +614,7 @@ without specifying a character set.', NULL);
 ('wal_backup_err', 'begin_backup', 'dfw.epp', NULL, 0, 513, NULL, 'Physical backup is not allowed while Write-Ahead Log is in use', NULL, NULL);
 ('cursor_not_open', NULL, 'exe.cpp', NULL, 0, 514, NULL, 'Cursor is not open', NULL, NULL);
 ('bad_shutdown_mode', 'SHUT_database', 'shut.cpp', NULL, 0, 515, NULL, 'Target shutdown mode is invalid for database "@1"', NULL, NULL);
-('concat_overflow', NULL, 'evl.cpp', NULL, 0, 516, NULL, 'Concatenation overflow. Resulting string cannot exceed 32K in length.', NULL, NULL);
+('concat_overflow', NULL, 'evl.cpp', NULL, 0, 516, NULL, 'Concatenation overflow. Resulting string cannot exceed 32765 bytes in length.', NULL, NULL);
 ('bad_substring_offset', NULL, 'evl.cpp', NULL, 0, 517, NULL, 'Invalid offset parameter @1 to SUBSTRING. Only positive integers are allowed.', NULL, NULL);
 ('foreign_key_target_doesnt_exist', 'check_partner_index', 'IDX.C', NULL, 0, 518, NULL, 'Foreign key reference target does not exist', NULL, NULL);
 ('foreign_key_references_present', 'check_partner_index', 'IDX.C', NULL, 0, 519, NULL, 'Foreign key references are present for the record', NULL, NULL);
