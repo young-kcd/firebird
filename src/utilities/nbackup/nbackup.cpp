@@ -278,8 +278,7 @@ public:
 		if (strncmp(db.c_str(), local_prefix, sizeof(local_prefix) - 1) == 0)
 			db = db.substr(sizeof(local_prefix) - 1);
 
-		if (!ResolveDatabaseAlias(db, dbname, NULL))
-			dbname = db;
+		expandDatabaseName(db, dbname, NULL);
 
 		if (!uSvc->isService())
 		{

@@ -1056,7 +1056,7 @@ Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName)
 	{
 		Firebird::RefPtr<Config> rc;
 		Firebird::PathName dummy;
-		ResolveDatabaseAlias(*dbName, dummy, &rc);
+		expandDatabaseName(*dbName, dummy, &rc);
 		return rc;
 	}
 	return Config::getDefaultConfig();

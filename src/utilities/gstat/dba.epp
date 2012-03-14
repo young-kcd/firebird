@@ -580,9 +580,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	if (ResolveDatabaseAlias(fileName, tempStr, NULL)) {
-		fileName = tempStr;
-	}
+	expandDatabaseName(fileName, tempStr, NULL);
+	fileName = tempStr;
 
 	dba_fil* current = db_open(fileName.c_str(), fileName.length());
 

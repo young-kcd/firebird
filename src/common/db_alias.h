@@ -28,7 +28,7 @@
 
 class Config;
 
-bool ResolveDatabaseAlias(const Firebird::PathName& alias,
-						  Firebird::PathName& file,
-						  Firebird::RefPtr<Config>* config);
+bool expandDatabaseName(const Firebird::PathName& alias,
+						Firebird::PathName& file,
+						Firebird::RefPtr<Config>* config);
 #endif // JRD_DB_ALIAS_H

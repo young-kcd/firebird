@@ -31,6 +31,7 @@
 #include "../common/isc_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/Hash.h"
+#include "../common/isc_f_proto.h"
 #include <ctype.h>
 
 using namespace Firebird;
@@ -260,7 +261,102 @@ namespace
 	InitInstance<AliasesConf> aliasesConf;
 }
 
-bool ResolveDatabaseAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
+static bool resolveDatabaseAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
+{
+	PathName corrected_alias = alias;
+	replace_dir_sep(corrected_alias);
+
+	bool rc = true;
+	AliasName* a = aliasesConf().aliasHash.lookup(corrected_alias);
+	DbName* db = a ? a->database : NULL;
+	if (db)
+	{
+		file = db->name;
+	}
+	else
+	{
+		db = aliasesConf().dbHash.lookup(corrected_alias);
+		file = alias;
+		rc = false;
+	}
+
+	if (config)
+	{
+		*config = (db && db->config.hasData()) ? db->config : Config::getDefaultConfig();
+	}
+
+	return rc;
+}
+
+static bool resolveDatabaseAccess(const PathName& alias, PathName& file)
+{
+	PathName corrected_alias = alias;
+	replace_dir_sep(corrected_alias);
+
+	bool rc = true;
+
+	PathName path, name;
+	PathUtils::splitLastComponent(path, name, corrected_alias);
+
+	// if path component not present in file_name
+	if (path.isEmpty())
+	{
+		// try to expand to existing file
+		if (!databaseDirectoryList().expandFileName(file, name))
+		{
+			// try to use default path
+			if (!databaseDirectoryList().defaultName(file, name))
+			{
+				rc = false;
+			}
+		}
+	}
+	else
+	{
+		rc = false;
+	}
+
+	if (! rc)
+	{
+		file = corrected_alias;
+	}
+	return rc;
+}
+
+// Set a prefix to a filename based on the ISC_PATH user variable.
+static bool setPath(const PathName& filename, PathName& expandedName)
+{
+	// Look for the environment variables to tack onto the beginning of the database path.
+	PathName pathname;
+	if (!fb_utils::readenv("ISC_PATH", pathname))
+		return false;
+
+	// If the file already contains a remote node or any path at all forget it.
+	for (const char* p = filename.c_str(); *p; p++)
+	{
+		if (*p == ':' || *p == '/' || *p == '\\')
+			return false;
+	}
+
+	// concatenate the strings
+
+	expandedName = pathname;
+
+	// CVC: Make the concatenation work if no slash is present.
+	char lastChar = expandedName[expandedName.length() - 1];
+	if (lastChar != ':' && lastChar != '/' && lastChar != '\\')
+		expandedName.append(1, PathUtils::dir_sep);
+
+	expandedName.append(filename);
+
+	return true;
+}
+
+// Full processing of database name
+// Returns true if alias was found in aliases.conf
+bool expandDatabaseName(const Firebird::PathName& alias,
+						Firebird::PathName& file,
+						Firebird::RefPtr<Config>* config)
 {
 	try
 	{
@@ -274,51 +370,39 @@ bool ResolveDatabaseAlias(const PathName& alias, PathName& file, RefPtr<Config>*
 
 	ReadLockGuard guard(aliasesConf().rwLock);
 
-	PathName corrected_alias = alias;
-	replace_dir_sep(corrected_alias);
-
-	bool rc = true;
-	AliasName* a = aliasesConf().aliasHash.lookup(corrected_alias);
-	DbName* db = a ? a->database : NULL;
-	if (db)
+	// First of all check in aliases.conf
+	if (resolveDatabaseAlias(alias, file, config))
 	{
-		file = db->name;
-	}
-	else
-	{
-		// If file_name has no path part, expand it in DatabasesPath
-		PathName path, name;
-		PathUtils::splitLastComponent(path, name, corrected_alias);
-
-		// if path component not present in file_name
-		if (path.isEmpty())
-		{
-			// try to expand to existing file
-			if (!databaseDirectoryList().expandFileName(file, name))
-			{
-				// try to use default path
-				if (!databaseDirectoryList().defaultName(file, name))
-				{
-					rc = false;
-				}
-			}
-		}
-		else
-		{
-			rc = false;
-		}
-
-		if (! rc)
-		{
-			file = corrected_alias;
-		}
-		db = aliasesConf().dbHash.lookup(file);
+		return true;
 	}
 
+	// Now try ISC_PATH environment variable
+	if (!setPath(alias, file))
+	{
+		// At this step check DatabaseAccess paths in firebird.conf
+		if (!resolveDatabaseAccess(alias, file))
+		{
+			// Last chance - regular filename expansion
+			file = alias;
+
+			ISC_systemToUtf8(file);
+			ISC_unescape(file);
+			ISC_utf8ToSystem(file);
+
+			ISC_expand_filename(file, true);
+
+			ISC_systemToUtf8(file);
+			ISC_escape(file);
+			ISC_utf8ToSystem(file);
+		}
+	}
+
+	// Search for correct config in aliases.conf
 	if (config)
 	{
+		DbName* db = aliasesConf().dbHash.lookup(file);
 		*config = (db && db->config.hasData()) ? db->config : Config::getDefaultConfig();
 	}
 
-	return rc;
+	return false;
 }

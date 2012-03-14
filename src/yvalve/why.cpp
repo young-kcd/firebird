@@ -83,7 +83,6 @@ static void badHandle(ISC_STATUS code);
 static bool isNetworkError(const IStatus* status);
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
 static void saveErrorString(ISC_STATUS* status);
-static bool setPath(const PathName& filename, PathName& expandedName);
 static void error804(ISC_STATUS err);
 static void sqldaDescribeParameters(XSQLDA* sqlda, const IParametersMetadata* parameters);
 static void sqldaMove(const XSQLDA* sqlda, Array<UCHAR>& message, bool binding);
@@ -864,35 +863,6 @@ static void saveErrorString(ISC_STATUS* status)
 				break;
 		}
 	}
-}
-
-// Set a prefix to a filename based on the ISC_PATH user variable.
-static bool setPath(const PathName& filename, PathName& expandedName)
-{
-	// Look for the environment variables to tack onto the beginning of the database path.
-	PathName pathname;
-	if (!fb_utils::readenv("ISC_PATH", pathname))
-		return false;
-
-	// If the file already contains a remote node or any path at all forget it.
-	for (const char* p = filename.c_str(); *p; p++)
-	{
-		if (*p == ':' || *p == '/' || *p == '\\')
-			return false;
-	}
-
-	// concatenate the strings
-
-	expandedName = pathname;
-
-	// CVC: Make the concatenation work if no slash is present.
-	char lastChar = expandedName[expandedName.length() - 1];
-	if (lastChar != ':' && lastChar != '/' && lastChar != '\\')
-		expandedName.append(1, PathUtils::dir_sep);
-
-	expandedName.append(filename);
-
-	return true;
 }
 
 // Raises a DSQL -804 error message.
@@ -4810,6 +4780,44 @@ int YService::release()
 
 //-------------------------------------
 
+typedef bool ConvertTagFunction(UCHAR tag);
+
+// Convert strings in PB to UTF8
+static void intlParametersBlock(ClumpletWriter& pb, ConvertTagFunction* convertTag, UCHAR utf8Tag)
+{
+	pb.insertTag(utf8Tag);
+
+	for (pb.rewind(); !pb.isEof(); pb.moveNext())
+	{
+		UCHAR tag = pb.getClumpTag();
+		if (convertTag(tag))
+		{
+			string s;
+			pb.getString(s);
+			ISC_systemToUtf8(s);
+			pb.deleteClumplet();
+			pb.insertString(tag, s);
+		}
+	}
+}
+
+static bool convertDpbTag(UCHAR tag)
+{
+	switch (tag)
+	{
+	case isc_dpb_user_name:
+	case isc_dpb_password:
+	case isc_dpb_sql_role_name:
+	case isc_dpb_trusted_auth:
+	case isc_dpb_trusted_role:
+	case isc_dpb_working_directory:
+	case isc_dpb_set_db_charset:
+	case isc_dpb_process_name:
+		return true;
+	}
+	return false;
+}
+
 
 // Attach a database through the first subsystem that recognizes it.
 YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
@@ -4838,75 +4846,41 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 		if (dpbLength > 0 && !dpb)
 			status_exception::raise(Arg::Gds(isc_bad_dpb_form));
 
-		// Copy the file name to a temp buffer, since some of the following utilities can modify it.
-
-		PathName orgFilename(filename);
 		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpbLength);
-		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
+		bool utfData = newDpb.find(isc_dpb_utf8_filename);
 
-		if (utfFilename)
-			ISC_utf8ToSystem(orgFilename);
-		else
+		// Take care about DPB
+		setLogin(newDpb, false);
+		if (!utfData)
 		{
-			newDpb.insertTag(isc_dpb_utf8_filename);
-
-			for (newDpb.rewind(); !newDpb.isEof(); newDpb.moveNext())
-			{
-				UCHAR tag = newDpb.getClumpTag();
-
-				switch (tag)
-				{
-					case isc_dpb_user_name:
-					case isc_dpb_password:
-					case isc_dpb_sql_role_name:
-					case isc_dpb_trusted_auth:
-					case isc_dpb_trusted_role:
-					case isc_dpb_working_directory:
-					case isc_dpb_set_db_charset:
-					case isc_dpb_process_name:
-					{
-						string s;
-						newDpb.getString(s);
-						ISC_systemToUtf8(s);
-						newDpb.deleteClumplet();
-						newDpb.insertString(tag, s);
-						break;
-					}
-				}
-			}
+			intlParametersBlock(newDpb, convertDpbTag, isc_dpb_utf8_filename);
 		}
 
-		setLogin(newDpb, false);
+		// Take care about filename
+		PathName orgFilename(filename);
+		if (utfData)
+		{
+			ISC_utf8ToSystem(orgFilename);
+		}
 		orgFilename.rtrim();
 
 		PathName expandedFilename;
-		bool unescaped = false;
-
-		if (!setPath(orgFilename, expandedFilename))
+		RefPtr<Config> config;
+		if (expandDatabaseName(orgFilename, expandedFilename, &config))
 		{
 			expandedFilename = orgFilename;
-			ISC_systemToUtf8(expandedFilename);
-			ISC_unescape(expandedFilename);
-			unescaped = true;
-			ISC_utf8ToSystem(expandedFilename);
-			ISC_expand_filename(expandedFilename, true);
 		}
 
+		// Convert to UTF8
 		ISC_systemToUtf8(orgFilename);
 		ISC_systemToUtf8(expandedFilename);
 
-		if (unescaped)
-			ISC_escape(expandedFilename);
-
+		// Add original filename to DPB
 		if (orgFilename != expandedFilename && !newDpb.find(isc_dpb_org_filename))
 			newDpb.insertPath(isc_dpb_org_filename, orgFilename);
 
 		StatusVector temp(NULL);
 		IStatus* currentStatus = status;
-
-		PathName dummy;
-		RefPtr<Config> config;
-		ResolveDatabaseAlias(expandedFilename, dummy, &config);
 
 		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
 				FB_PROVIDER_VERSION, upInfo, config);
@@ -4927,10 +4901,11 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 				if (createFlag)
 				{
 	            	// Now we can expand, the file exists
-					expandedFilename = orgFilename;
-					ISC_unescape(expandedFilename);
-					ISC_utf8ToSystem(expandedFilename);
-					ISC_expand_filename(expandedFilename, true);
+					ISC_utf8ToSystem(orgFilename);
+					if (expandDatabaseName(orgFilename, expandedFilename, &config))
+					{
+						expandedFilename = orgFilename;
+					}
 					ISC_systemToUtf8(expandedFilename);
 				}
 #endif

@@ -1087,7 +1087,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		DatabaseOptions options;
 		RefPtr<Config> config;
 		bool invalid_client_SQL_dialect = false;
-		PathName file_name, expanded_name;
+		PathName org_filename, expanded_name;
 		bool is_alias = false;
 
 		try
@@ -1096,29 +1096,22 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			options.get(dpb, dpb_length, invalid_client_SQL_dialect);
 
 			if (options.dpb_org_filename.hasData())
-				file_name = options.dpb_org_filename;
+				org_filename = options.dpb_org_filename;
 			else
 			{
-				file_name = filename;
+				org_filename = filename;
 
 				if (!options.dpb_utf8_filename)
-					ISC_systemToUtf8(file_name);
+					ISC_systemToUtf8(org_filename);
 
-				ISC_unescape(file_name);
+				ISC_unescape(org_filename);
 			}
 
-			ISC_utf8ToSystem(file_name);
+			ISC_utf8ToSystem(org_filename);
 
 			// Resolve given alias name
-			is_alias = ResolveDatabaseAlias(file_name, expanded_name, &config);
-			if (is_alias)
-			{
-				ISC_systemToUtf8(expanded_name);
-				ISC_unescape(expanded_name);
-				ISC_utf8ToSystem(expanded_name);
-				ISC_expand_filename(expanded_name, false);
-			}
-			else
+			is_alias = expandDatabaseName(org_filename, expanded_name, &config);
+			if (!is_alias)
 			{
 				expanded_name = filename;
 
@@ -1183,7 +1176,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			{
 				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("direct") <<
 												  Arg::Str("security database") <<
-												  Arg::Str(file_name));
+												  Arg::Str(org_filename));
 			}
 
 			// Worry about encryption key
@@ -1199,7 +1192,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 					{
 						ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("encryption") <<
 														  Arg::Str("database") <<
-														  Arg::Str(file_name));
+														  Arg::Str(org_filename));
 					}
 				}
 				else if (options.dpb_key.hasData())
@@ -1216,7 +1209,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			MutexLockGuard guard(*(jAtt->getMutex()));
 
 			tdbb->setAttachment(attachment);
-			attachment->att_filename = is_alias ? file_name : expanded_name;
+			attachment->att_filename = is_alias ? org_filename : expanded_name;
 			attachment->att_network_protocol = options.dpb_network_protocol;
 			attachment->att_remote_address = options.dpb_remote_address;
 			attachment->att_remote_pid = options.dpb_remote_pid;
@@ -1277,12 +1270,12 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				// 2. Make sure that ID value can be used to connect back to database
 				//
 				if (is_alias && vdn == VDN_FAIL)
-					dbb->dbb_database_name = file_name;
+					dbb->dbb_database_name = org_filename;
 				else
 					dbb->dbb_database_name = expanded_name;
 
 				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				pageSpace->file = PIO_open(dbb, expanded_name, file_name);
+				pageSpace->file = PIO_open(dbb, expanded_name, org_filename);
 
 				// Initialize the lock manager
 				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
@@ -1357,7 +1350,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			if (options.dpb_disable_wal)
 			{
 				ERR_post(Arg::Gds(isc_lock_timeout) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
 			}
 
 			if (options.dpb_buffers && !dbb->dbb_page_buffers) {
@@ -1486,14 +1479,14 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				if (attachment->att_flags & ATT_shutdown)
 				{
 					if (dbb->dbb_ast_flags & DBB_shutdown) {
-						ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+						ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
 					}
 					else {
 						ERR_post(Arg::Gds(isc_att_shutdown));
 					}
 				}
 				if (!attachment_succeeded) {
-					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
 				}
 			}
 
@@ -1501,7 +1494,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 			{
-				ERR_post(Arg::Gds(isc_shutinprog) << Arg::Str(file_name));
+				ERR_post(Arg::Gds(isc_shutinprog) << Arg::Str(org_filename));
 			}
 
 			if (dbb->dbb_ast_flags & DBB_shutdown)
@@ -1530,7 +1523,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				if (!allow_access)
 				{
 					// Note we throw exception here when entering full-shutdown mode
-					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
 				}
 			}
 
@@ -1631,7 +1624,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
 				{
 					ERR_post(Arg::Gds(isc_lock_timeout) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
 				}
 				PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
 			}
@@ -2230,7 +2223,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 		UserId userId;
 		DatabaseOptions options;
-		PathName file_name, expanded_name;
+		PathName org_filename, expanded_name;
 		bool is_alias = false;
 		Firebird::RefPtr<Config> config;
 
@@ -2244,29 +2237,22 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			if (options.dpb_org_filename.hasData())
-				file_name = options.dpb_org_filename;
+				org_filename = options.dpb_org_filename;
 			else
 			{
-				file_name = filename;
+				org_filename = filename;
 
 				if (!options.dpb_utf8_filename)
-					ISC_systemToUtf8(file_name);
+					ISC_systemToUtf8(org_filename);
 
-				ISC_unescape(file_name);
+				ISC_unescape(org_filename);
 			}
 
-			ISC_utf8ToSystem(file_name);
+			ISC_utf8ToSystem(org_filename);
 
 			// Resolve given alias name
-			is_alias = ResolveDatabaseAlias(file_name, expanded_name, &config);
-			if (is_alias)
-			{
-				ISC_systemToUtf8(expanded_name);
-				ISC_unescape(expanded_name);
-				ISC_utf8ToSystem(expanded_name);
-				ISC_expand_filename(expanded_name, false);
-			}
-			else
+			is_alias = expandDatabaseName(org_filename, expanded_name, &config);
+			if (!is_alias)
 			{
 				expanded_name = filename;
 
@@ -2334,7 +2320,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			MutexLockGuard guard(*(jAtt->getMutex()));
 
 			tdbb->setAttachment(attachment);
-			attachment->att_filename = is_alias ? file_name : expanded_name;
+			attachment->att_filename = is_alias ? org_filename : expanded_name;
 			attachment->att_network_protocol = options.dpb_network_protocol;
 			attachment->att_remote_address = options.dpb_remote_address;
 			attachment->att_remote_pid = options.dpb_remote_pid;
@@ -2479,7 +2465,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			// 2. Make sure that ID value can be used to connect back to database
 			//
 			if (is_alias && vdn == VDN_FAIL)
-				dbb->dbb_database_name = file_name;
+				dbb->dbb_database_name = org_filename;
 			else
 				dbb->dbb_database_name = dbb->dbb_filename;
 
@@ -2505,7 +2491,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			// There is no point to move database online at database creation since it is online by default.
 			// We do not allow to create database that is fully shut down.
 			if (options.dpb_online || (options.dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_full)
-				ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(file_name));
+				ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(org_filename));
 
 			if (options.dpb_shutdown) {
 				SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay);
@@ -2532,7 +2518,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 				if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
 				{
 					ERR_post(Arg::Gds(isc_lock_timeout) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
 				}
 
 				PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
