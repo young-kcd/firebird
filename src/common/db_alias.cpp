@@ -261,6 +261,7 @@ namespace
 	InitInstance<AliasesConf> aliasesConf;
 }
 
+// Search for 'alias' in aliases.conf, return it's value in 'file' if found. Else set file to alias.
 static bool resolveDatabaseAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
 {
 	PathName corrected_alias = alias;
@@ -288,6 +289,8 @@ static bool resolveDatabaseAlias(const PathName& alias, PathName& file, RefPtr<C
 	return rc;
 }
 
+// Search for filenames, containing no path component, in dirs from DatabaseAccess list
+// of firebird.conf. If not found try first entry in that list as default entry.
 static bool resolveDatabaseAccess(const PathName& alias, PathName& file)
 {
 	PathName corrected_alias = alias;
