@@ -1,3 +1,10 @@
+ 2012-03-13 10:31  dimitr 
+   M src/jrd/btn.h
+   M src/jrd/btr.cpp
+   M src/jrd/ods.h
+   M src/jrd/validation.cpp
+Made the jump nodes unconditional. To be continued.
+
  2012-03-11 15:32  alexpeshkoff 
    M src/yvalve/YObjects.h
    M src/yvalve/why.cpp
