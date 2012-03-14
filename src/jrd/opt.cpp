@@ -61,6 +61,7 @@
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/cvt2_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/err_proto.h"
@@ -2703,12 +2704,39 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		ValueExprNode* node1 = cmpNode->arg1;
 		ValueExprNode* node2 = cmpNode->arg2;
 
-		dsc desc1, desc2;
+		dsc result, desc1, desc2;
 		node1->getDesc(tdbb, csb, &desc1);
 		node2->getDesc(tdbb, csb, &desc2);
 
-		if (!DSC_EQUIV(&desc1, &desc2, true) || desc1.isBlob() || desc2.isBlob())
+		// Ensure that arguments can be compared in the binary form
+		if (!CVT2_get_binary_comparable_desc(&result, &desc1, &desc2))
 			continue;
+
+		// Cast the arguments, if required
+		if (!DSC_EQUIV(&result, &desc1, true) || !DSC_EQUIV(&result, &desc2, true))
+		{
+			Format* const format = Format::newFormat(*tdbb->getDefaultPool(), 1);
+			format->fmt_length = result.dsc_length;
+			format->fmt_desc[0] = result;
+
+			if (!DSC_EQUIV(&result, &desc1, true))
+			{
+				CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+				cast->source = node1;
+				cast->format = format;
+				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
+				node1 = cast;
+			}
+
+			if (!DSC_EQUIV(&result, &desc2, true))
+			{
+				CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+				cast->source = node2;
+				cast->format = format;
+				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
+				node2 = cast;
+			}
+		}
 
 		USHORT number1 = 0;
 
