@@ -7113,7 +7113,7 @@ bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 						(fromCharSet == toCharSet ? INTL_GET_COLLATE(&dsqlParameter->par_desc) : 0)));
 
 					dsqlParameter->par_desc.dsc_length = UTLD_char_length_to_byte_length(
-						dsqlParameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+						dsqlParameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC, diff);
 				}
 
 				dsqlParameter->par_desc.dsc_length += diff;

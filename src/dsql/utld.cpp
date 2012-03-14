@@ -54,9 +54,9 @@ using namespace Jrd;
 	@param maxBytesPerChar
 
 **/
-USHORT UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar)
+USHORT UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar, USHORT overhead)
 {
-	return MIN(((MAX_COLUMN_SIZE - sizeof(USHORT)) / maxBytesPerChar) * maxBytesPerChar,
+	return MIN(((MAX_COLUMN_SIZE - overhead) / maxBytesPerChar) * maxBytesPerChar,
 			   (ULONG) lengthInChars * maxBytesPerChar);
 }
 
