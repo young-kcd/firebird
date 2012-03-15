@@ -64,6 +64,12 @@
 #include <windows.h>
 #endif
 
+#ifdef SUPERSERVER
+static const bool SHARED_DBB = true;
+#else
+static const bool SHARED_DBB = false;
+#endif
+
 
 using namespace Firebird;
 using namespace Jrd;
@@ -921,7 +927,16 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(&database->dbb_stats, writer, stat_id, stat_database);
+
+	if (SHARED_DBB)
+	{
+		putStatistics(&database->dbb_stats, writer, stat_id, stat_database);
+	}
+	else
+	{
+		RuntimeStatistics zero_stats;
+		putStatistics(&zero_stats, writer, stat_id, stat_database);
+	}
 }
 
 
@@ -981,7 +996,15 @@ bool DatabaseSnapshot::putAttachment(const Attachment* attachment,
 	// statistics
 	record.storeGlobalId(f_mon_att_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(&attachment->att_stats, writer, stat_id, stat_attachment);
+
+	if (SHARED_DBB)
+	{
+		putStatistics(&attachment->att_stats, writer, stat_id, stat_attachment);
+	}
+	else
+	{
+		putStatistics(&attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
+	}
 
 	return true;
 }
