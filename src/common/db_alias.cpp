@@ -262,35 +262,31 @@ namespace
 }
 
 // Search for 'alias' in aliases.conf, return it's value in 'file' if found. Else set file to alias.
-static bool resolveDatabaseAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
+// Returns true if alias is found in aliases.conf.
+static bool resolveAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
 {
 	PathName corrected_alias = alias;
 	replace_dir_sep(corrected_alias);
 
-	bool rc = true;
 	AliasName* a = aliasesConf().aliasHash.lookup(corrected_alias);
 	DbName* db = a ? a->database : NULL;
 	if (db)
 	{
 		file = db->name;
-	}
-	else
-	{
-		db = aliasesConf().dbHash.lookup(corrected_alias);
-		file = alias;
-		rc = false;
+		if (config)
+		{
+			*config = db->config.hasData() ? db->config : Config::getDefaultConfig();
+		}
+
+		return true;
 	}
 
-	if (config)
-	{
-		*config = (db && db->config.hasData()) ? db->config : Config::getDefaultConfig();
-	}
-
-	return rc;
+	return false;
 }
 
 // Search for filenames, containing no path component, in dirs from DatabaseAccess list
 // of firebird.conf. If not found try first entry in that list as default entry.
+// Returns true if expanded successfully.
 static bool resolveDatabaseAccess(const PathName& alias, PathName& file)
 {
 	PathName corrected_alias = alias;
@@ -327,6 +323,7 @@ static bool resolveDatabaseAccess(const PathName& alias, PathName& file)
 }
 
 // Set a prefix to a filename based on the ISC_PATH user variable.
+// Returns true if database name is expanded using ISC_PATH.
 static bool setPath(const PathName& filename, PathName& expandedName)
 {
 	// Look for the environment variables to tack onto the beginning of the database path.
@@ -374,7 +371,7 @@ bool expandDatabaseName(const Firebird::PathName& alias,
 	ReadLockGuard guard(aliasesConf().rwLock);
 
 	// First of all check in aliases.conf
-	if (resolveDatabaseAlias(alias, file, config))
+	if (resolveAlias(alias, file, config))
 	{
 		return true;
 	}

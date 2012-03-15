@@ -140,7 +140,7 @@ public:
 	virtual void setServiceStatus(const ISC_STATUS*) { }
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual const ISC_STATUS* getStatus() { return 0; }
-	virtual void getAddressPath(ClumpletWriter&) { }
+	virtual void fillDpb(ClumpletWriter&) { }
 	virtual bool finished() { return m_finished; };
 	virtual void initStatus() { }
 

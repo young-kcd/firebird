@@ -404,9 +404,9 @@ public:
 	static const int SERV_DETACH = 3;
 
 	// Regular case
-	YService(Firebird::IProvider* aProvider, Firebird::IService* aNext);
+	YService(Firebird::IProvider* aProvider, Firebird::IService* aNext, bool utf8);
 	// Used when next handle creation is delayed till service start
-	YService(const char* svcName, unsigned int spbLength, const unsigned char* spb);
+	YService(const char* svcName, unsigned int spbLength, const unsigned char* spb, bool utf8);
 	~YService();
 
 	void destroy();
@@ -465,6 +465,7 @@ private:
 	unsigned int checkSpbLen;
 	const unsigned char* checkSpbPresent;
 	Firebird::HalfStaticArray<UCHAR, 256> authBlock;
+	bool utf8Connection;		// Client talks to us using UTF8, else - system default collation
 
 	void populateSpb(Firebird::ClumpletWriter& spb, UCHAR tag);
 };

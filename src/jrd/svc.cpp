@@ -310,6 +310,10 @@ void Service::getOptions(ClumpletReader& spb)
 		case isc_spb_process_id:
 			svc_remote_pid = spb.getInt();
 			break;
+
+		case isc_spb_utf8_filename:
+			svc_utf8 = true;
+			break;
 		}
 	}
 }
@@ -629,11 +633,15 @@ unsigned int Service::getAuthBlock(const unsigned char** bytes)
 	return svc_auth_block.getCount();
 }
 
-void Service::getAddressPath(ClumpletWriter& dpb)
+void Service::fillDpb(ClumpletWriter& dpb)
 {
 	if (svc_address_path.hasData())
 	{
 		dpb.insertString(isc_dpb_address_path, svc_address_path);
+	}
+	if (svc_utf8)
+	{
+		dpb.insertTag(isc_dpb_utf8_filename);
 	}
 }
 
@@ -684,7 +692,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_auth_block(getPool()),
-	svc_trusted_login(getPool()), svc_trusted_role(false),
+	svc_trusted_login(getPool()), svc_trusted_role(false), svc_utf8(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),

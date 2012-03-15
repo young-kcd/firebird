@@ -132,8 +132,8 @@ public:		// utilities interface with service
 	virtual void initStatus();
 	// no-op for services
 	virtual void checkService();
-	// add address path (taken from spb) to dpb if present
-	virtual void getAddressPath(Firebird::ClumpletWriter& dpb);
+	// add address path and utf8 flag (taken from spb) to dpb if present
+	virtual void fillDpb(Firebird::ClumpletWriter& dpb);
 
 	virtual TraceManager* getTraceManager()
 	{
@@ -273,7 +273,7 @@ private:
 	Firebird::AuthReader::AuthBlock	svc_auth_block;
 	Firebird::string	svc_trusted_login;
 	bool                svc_trusted_role;
-	//bool				svc_uses_security_database;
+	bool				svc_utf8;
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table and/or passed using spb_command_line
 	Firebird::string	svc_address_path;

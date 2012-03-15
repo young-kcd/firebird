@@ -281,12 +281,36 @@ namespace {
 	};
 #endif // UNIX
 
-void signalInit()
-{
+	void signalInit()
+	{
 #ifdef UNIX
-	static GlobalPtr<CtrlCHandler> ctrlCHandler;
+		static GlobalPtr<CtrlCHandler> ctrlCHandler;
 #endif // UNIX
-}
+	}
+
+	typedef bool ConvertTagFunction(UCHAR tag);
+
+	// Convert strings in PB to UTF8
+	void intlParametersBlock(ClumpletWriter& pb, ConvertTagFunction* convertTag, UCHAR utf8Tag)
+	{
+		if (utf8Tag)
+		{
+			pb.insertTag(utf8Tag);
+		}
+
+		for (pb.rewind(); !pb.isEof(); pb.moveNext())
+		{
+			UCHAR tag = pb.getClumpTag();
+			if (convertTag(tag))
+			{
+				string s;
+				pb.getString(s);
+				ISC_systemToUtf8(s);
+				pb.deleteClumplet();
+				pb.insertString(tag, s);
+			}
+		}
+	}
 
 } // anonymous namespace
 
@@ -4591,24 +4615,26 @@ void YService::ServiceType::detach(IStatus* status)
 	}
 }
 
-YService::YService(IProvider* aProvider, IService* aNext)
+YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
 	: regular(aNext, aProvider),
 	  attachName(getPool()),
 	  checkSpbLen(0),
 	  checkSpbPresent(NULL),
-	  authBlock(getPool())
+	  authBlock(getPool()),
+	  utf8Connection(utf8)
 {
 	handle = makeHandle(&services, this);
 	this->addRef();		// from YHelper
 }
 
-YService::YService(const char* svcName, unsigned int spbLength, const unsigned char* spb)
+YService::YService(const char* svcName, unsigned int spbLength, const unsigned char* spb, bool utf8)
 	: attachName(getPool()),
 	  attachSpb(FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList,
 												 MAX_DPB_SIZE, spb, spbLength)),
 	  checkSpbLen(0),
 	  checkSpbPresent(NULL),
-	  authBlock(getPool())
+	  authBlock(getPool()),
+	  utf8Connection(utf8)
 {
 	attachName.assign(svcName);
 	handle = makeHandle(&services, this);
@@ -4741,13 +4767,30 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 	}
 }
 
+static bool convertSpbStartTag(UCHAR tag)
+{
+	switch (tag)
+	{
+	case isc_spb_dbname:
+	case isc_spb_command_line:
+		return true;
+	}
+	return false;
+}
+
 void YService::start(IStatus* status, unsigned int spbLength, const unsigned char* spbItems)
 {
 	try
 	{
 		ClumpletWriter spb(ClumpletReader::SpbStart, MAX_DPB_SIZE, spbItems, spbLength);
 		if (!regular.next)
+		{
 			populateSpb(spb, isc_spb_auth_block);
+		}
+		if (!utf8Connection)
+		{
+			intlParametersBlock(spb, convertSpbStartTag, 0);
+		}
 
 		YEntry<YService> entry(status, this, SERV_START);
 		entry.next()->start(status, spb.getBufferLength(), spb.getBuffer());
@@ -4780,25 +4823,19 @@ int YService::release()
 
 //-------------------------------------
 
-typedef bool ConvertTagFunction(UCHAR tag);
 
-// Convert strings in PB to UTF8
-static void intlParametersBlock(ClumpletWriter& pb, ConvertTagFunction* convertTag, UCHAR utf8Tag)
+// Attach a database through the first subsystem that recognizes it.
+YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
+	unsigned int dpbLength, const unsigned char* dpb)
 {
-	pb.insertTag(utf8Tag);
+	return attachOrCreateDatabase(status, false, filename, dpbLength, dpb);
+}
 
-	for (pb.rewind(); !pb.isEof(); pb.moveNext())
-	{
-		UCHAR tag = pb.getClumpTag();
-		if (convertTag(tag))
-		{
-			string s;
-			pb.getString(s);
-			ISC_systemToUtf8(s);
-			pb.deleteClumplet();
-			pb.insertString(tag, s);
-		}
-	}
+// Create new database using the first subsystem that can do it.
+YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
+	unsigned int dpbLength, const unsigned char* dpb)
+{
+	return attachOrCreateDatabase(status, true, filename, dpbLength, dpb);
 }
 
 static bool convertDpbTag(UCHAR tag)
@@ -4816,21 +4853,6 @@ static bool convertDpbTag(UCHAR tag)
 		return true;
 	}
 	return false;
-}
-
-
-// Attach a database through the first subsystem that recognizes it.
-YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
-	unsigned int dpbLength, const unsigned char* dpb)
-{
-	return attachOrCreateDatabase(status, false, filename, dpbLength, dpb);
-}
-
-// Create new database using the first subsystem that can do it.
-YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
-	unsigned int dpbLength, const unsigned char* dpb)
-{
-	return attachOrCreateDatabase(status, true, filename, dpbLength, dpb);
 }
 
 YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
@@ -4931,6 +4953,22 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 	return NULL;
 }
 
+static bool convertSpbTag(UCHAR tag)
+{
+	switch (tag)
+	{
+	case isc_spb_user_name:
+	case isc_spb_password:
+	case isc_spb_sql_role_name:
+	case isc_spb_trusted_auth:
+	case isc_spb_trusted_role:
+	case isc_spb_process_name:
+	case isc_spb_command_line:
+		return true;
+	}
+	return false;
+}
+
 // Attach a service through the first subsystem that recognizes it.
 YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceName,
 	unsigned int spbLength, const unsigned char* spb)
@@ -4951,8 +4989,14 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		PathName svcName(serviceName);
 		svcName.trim();
 
+		// Take care about SPB
 		ClumpletWriter spbWriter(ClumpletReader::spbList, MAX_DPB_SIZE, spb, spbLength);
 		setLogin(spbWriter, true);
+		bool utfData = spbWriter.find(isc_spb_utf8_filename);
+		if (!utfData)
+		{
+			intlParametersBlock(spbWriter, convertSpbTag, isc_spb_utf8_filename);
+		}
 
 		if ((spbWriter.find(isc_spb_auth_block) && spbWriter.getClumpLength() > 0) ||
 			ISC_check_if_remote(svcName, false))
@@ -4962,10 +5006,10 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 											  spbWriter.getBufferLength(), spbWriter.getBuffer());
 
 			if (service)
-				return new YService(provider, service);
+				return new YService(provider, service, utfData);
 		}
 		else
-			return new YService(svcName.c_str(), spbWriter.getBufferLength(), spbWriter.getBuffer());
+			return new YService(svcName.c_str(), spbWriter.getBufferLength(), spbWriter.getBuffer(), utfData);
 	}
 	catch (const Exception& e)
 	{

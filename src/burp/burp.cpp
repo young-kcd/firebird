@@ -932,7 +932,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
 	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
-	uSvc->getAddressPath(dpb);
+	uSvc->fillDpb(dpb);
 
 	const UCHAR* authBlock;
 	unsigned int authSize = uSvc->getAuthBlock(&authBlock);

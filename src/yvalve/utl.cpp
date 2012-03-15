@@ -61,6 +61,7 @@
 #include "../common/classes/TempFile.h"
 #include "../common/classes/DbImplementation.h"
 #include "../common/ThreadStart.h"
+#include "../common/isc_f_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -2142,11 +2143,15 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR entrypoint,
 }
 
 // new utl
-static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
+static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, Firebird::string& value, bool utf8)
 {
 	if (! dpb.find(tag))
 	{
-		dpb.insertString(tag, value, strlen(value));
+		if (utf8)
+		{
+			ISC_systemToUtf8(value);
+		}
+		dpb.insertString(tag, value);
 	}
 }
 
@@ -2155,20 +2160,22 @@ void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag)
 	const UCHAR address_path = spbFlag ? isc_spb_address_path : isc_dpb_address_path;
 	const UCHAR trusted_auth = spbFlag ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
 	const UCHAR auth_block = spbFlag ? isc_spb_auth_block : isc_dpb_auth_block;
+	const UCHAR utf8Tag = spbFlag ? isc_spb_utf8_filename : isc_dpb_utf8_filename;
 	// username and password tags match for both SPB and DPB
 
 	if (!(dpb.find(trusted_auth) || dpb.find(address_path) || dpb.find(auth_block)))
 	{
+		bool utf8 = dpb.find(utf8Tag);
 		Firebird::string username;
 		if (fb_utils::readenv(ISC_USER, username))
 		{
-			setTag(dpb, isc_dpb_user_name, username.c_str());
+			setTag(dpb, isc_dpb_user_name, username, utf8);
 		}
 
 		Firebird::string password;
 		if (fb_utils::readenv(ISC_PASSWORD, password) && !dpb.find(isc_dpb_password))
 		{
-			setTag(dpb, isc_dpb_password, password.c_str());
+			setTag(dpb, isc_dpb_password, password, utf8);
 		}
 	}
 }

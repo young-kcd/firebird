@@ -69,7 +69,7 @@ public:
 	virtual void initStatus() = 0;
 	virtual void checkService() = 0;
 	virtual void hidePasswd(ArgvType&, int) = 0;
-	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) = 0;
+	virtual void fillDpb(Firebird::ClumpletWriter& dpb) = 0;
 	virtual bool finished() = 0;
 	virtual unsigned int getAuthBlock(const unsigned char** bytes) = 0;
 

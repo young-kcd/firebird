@@ -272,6 +272,7 @@
 #define isc_spb_auth_block                115
 #define isc_spb_auth_plugin_name          116
 #define isc_spb_auth_plugin_list          117
+#define isc_spb_utf8_filename			  118
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
 #define isc_spb_dummy_packet_interval     isc_dpb_dummy_packet_interval
