@@ -71,7 +71,7 @@ typedef Firebird::HalfStaticArray<TraceCounts, 5> TraceCountsArray;
 
 // Runtime statistics class
 
-class RuntimeStatistics
+class RuntimeStatistics : protected Firebird::AutoStorage
 {
 public:
 	enum StatType {
@@ -96,13 +96,30 @@ public:
 		TOTAL_ITEMS		// last
 	};
 
-	explicit RuntimeStatistics(MemoryPool& pool) : rel_counts(pool)
+	RuntimeStatistics()
+		: Firebird::AutoStorage(), rel_counts(getPool())
 	{
 		reset();
 	}
 
-	RuntimeStatistics(MemoryPool& pool, const RuntimeStatistics& other) :
-		rel_counts(pool)
+	explicit RuntimeStatistics(MemoryPool& pool)
+		: Firebird::AutoStorage(pool), rel_counts(getPool())
+	{
+		reset();
+	}
+
+	explicit RuntimeStatistics(const RuntimeStatistics& other)
+		: Firebird::AutoStorage(), rel_counts(getPool())
+	{
+		memcpy(values, other.values, sizeof(values));
+		rel_counts = other.rel_counts;
+
+		allChgNumber = other.allChgNumber;
+		relChgNumber = other.relChgNumber;
+	}
+
+	RuntimeStatistics(MemoryPool& pool, const RuntimeStatistics& other)
+		: Firebird::AutoStorage(pool), rel_counts(getPool())
 	{
 		memcpy(values, other.values, sizeof(values));
 		rel_counts = other.rel_counts;

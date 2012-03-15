@@ -941,16 +941,18 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 
 	if (Config::getSharedCache())
 	{
+		putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
 	else
 	{
-		MemoryStats zero_stats;
-		putMemoryUsage(zero_stats, writer, stat_id, stat_database);
+		RuntimeStatistics zero_rt_stats;
+		MemoryStats zero_mem_stats;
+		putStatistics(zero_rt_stats, writer, stat_id, stat_database);
+		putMemoryUsage(zero_mem_stats, writer, stat_id, stat_database);
 	}
 }
 
@@ -1016,14 +1018,15 @@ bool DatabaseSnapshot::putAttachment(thread_db* /*tdbb*/, const Jrd::Attachment*
 	// statistics
 	record.storeGlobalId(f_mon_att_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 
 	if (Config::getSharedCache())
 	{
+		putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}
 	else
 	{
+		putStatistics(attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
 		putMemoryUsage(attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
 	}
 
