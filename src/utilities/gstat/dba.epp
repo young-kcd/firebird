@@ -1101,7 +1101,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	exit_code = tddba->exit_code;
 	tdba::restoreSpecific();
 
-	if ((exit_code != FINI_OK) && uSvc->isService())
+	if ((exit_code != FINI_OK) && uSvc->isService() && tddba->dba_status[1])
 	{
 		uSvc->initStatus();
 		uSvc->setServiceStatus(tddba->dba_status);
@@ -1665,7 +1665,10 @@ static void db_error( SLONG status)
 		sprintf(s, "unknown Windows NT error %ld", status);
 	}
 
-	tddba->uSvc->printf(true, "%s\n", s);
+	if (!tddba->uSvc->isService())
+	{
+		tddba->uSvc->printf(true, "%s\n", s);
+	}
 	dba_exit(FINI_ERROR, tddba);
 }
 
@@ -1846,7 +1849,10 @@ static void db_error( int status)
 	// FIXME: The strerror() function returns the appropriate description
 	// string, or an unknown error message if the error code is unknown.
 	// EKU: p cannot be NULL!
-	tddba->uSvc->printf(true, "%s\n", strerror(status));
+	if (!tddba->uSvc->isService())
+	{
+		tddba->uSvc->printf(true, "%s\n", strerror(status));
+	}
 	dba_exit(FINI_ERROR, tddba);
 }
 
