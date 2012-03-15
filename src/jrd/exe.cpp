@@ -141,16 +141,6 @@ void AffectedRows::bumpModified(bool increment)
 	}
 }
 
-bool AffectedRows::isReadOnly() const
-{
-	return !writeFlag;
-}
-
-bool AffectedRows::hasCursor() const
-{
-	return (fetchedRows > 0);
-}
-
 int AffectedRows::getCount() const
 {
 	return writeFlag ? modifiedRows : fetchedRows;
@@ -3803,10 +3793,9 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	switch (request->req_operation)
 	{
 	case jrd_req::req_evaluate:
-		if (request->req_records_affected.isReadOnly() && !request->req_records_affected.hasCursor())
-		{
+		if (node->nod_parent && node->nod_parent->nod_type != nod_for)
 			request->req_records_affected.clear();
-		}
+
 		request->req_records_affected.bumpModified(false);
 		impure->sta_state = 0;
 		RLCK_reserve_relation(tdbb, transaction, relation, true);
