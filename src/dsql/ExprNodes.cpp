@@ -2763,10 +2763,7 @@ ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	ValueExprNode::pass1(tdbb, csb);
 
-	dsc desc;
-	getDesc(tdbb, csb, &desc);
-
-	const USHORT ttype = INTL_TEXT_TYPE(desc);
+	const USHORT ttype = INTL_TEXT_TYPE(format->fmt_desc[0]);
 
 	// Are we using a collation?
 	if (TTYPE_TO_COLLATION(ttype) != 0)
