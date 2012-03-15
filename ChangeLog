@@ -1,3 +1,47 @@
+ 2012-03-14 17:45  dimitr 
+   M src/msgs/messages2.sql
+Pleased Paul V. so that CORE-3195 (Concatenation to CHAR(32766/7) impossible) could be resolved.
+
+ 2012-03-14 17:36  dimitr 
+   M src/dsql/gen.cpp
+   M src/dsql/pass1.cpp
+   M src/dsql/utld.cpp
+   M src/dsql/utld_proto.h
+   M src/jrd/DataTypeUtil.cpp
+Fixed CORE-3569: CHAR(32767) present in XSQLVAR with length 32765. The JRD part of the patch is not strictly required, as it's used exclusively for VARCHARs right now, but let's be protected for the unpredictable future.
+
+ 2012-03-14 15:53  dimitr 
+   M src/jrd/cvt2.cpp
+   M src/jrd/cvt2_proto.h
+   M src/jrd/opt.cpp
+Backported CORE-3553: Nested loop plan is chosen instead of the sort merge for joining independent streams using keys of different types.
+
+ 2012-03-14 15:23  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+Fixed CORE-2286: Selecting from MON$CALL_STACK within a Trigger or SP sometimes return 0 rows.
+
+ 2012-03-14 13:23  dimitr 
+   M src/jrd/TempSpace.cpp
+   M src/jrd/TempSpace.h
+   M src/jrd/rse.cpp
+   M src/jrd/sort.cpp
+Backported CORE-3457: Optimize the temporary space manager regarding small chunk allocations.
+
+ 2012-03-14 11:12  dimitr 
+   M src/dsql/gen.cpp
+Backported CORE-3697: String truncation error when selecting from a VIEW with UNION inside.
+
+ 2012-03-14 10:49  dimitr 
+   M src/common/classes/File.h
+   M src/common/classes/TempFile.cpp
+   M src/common/classes/TempFile.h
+   M src/jrd/TempSpace.cpp
+   M src/jrd/TempSpace.h
+   M src/jrd/os/pio.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+Backported CORE-2422 (Server doesn't switch between multiple entries configured in TempDirectories when some of them is out of free space).
+
  2012-03-07 12:09  alexpeshkoff 
    M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
    M builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
