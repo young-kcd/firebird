@@ -3759,10 +3759,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			node->nod_arg[e_cast_source] = CMP_pass1(tdbb, csb, node->nod_arg[e_cast_source]);
 
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			const USHORT ttype = INTL_TEXT_TYPE(desc);
+			const Format* const format = (Format*) node->nod_arg[e_cast_fmt];
+			const USHORT ttype = INTL_TEXT_TYPE(format->fmt_desc[0]);
 
 			// Are we using a collation?
 			if (TTYPE_TO_COLLATION(ttype) != 0)
