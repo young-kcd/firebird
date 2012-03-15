@@ -79,6 +79,7 @@ INTL_Files    =	intlddl.sql intldml.sql indexoff.sql indexon.sql \
 INTL_Sources =   $(addprefix $(EXAMPLES_DEST)/, $(INTL_Files))
 
 EMPLOYEE_DB=	$(EXAMPLES_DEST)/employee.fdb
+FINAL_EMPDB=	$(FIREBIRD)/examples/empbuild/employee.fdb
 INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 
 .PHONY: all examples
@@ -86,8 +87,11 @@ INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 all: examples
 
 # examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
-examples: $(EMPLOYEE_DB)
-	$(MAKE) -f Makefile.examples $(FIREBIRD)/examples/README
+examples:	$(FINAL_EMPDB) $(FIREBIRD)/examples/README
+
+$(FINAL_EMPDB):	$(EMPLOYEE_DB)
+	$(RM) $(FINAL_EMPDB)
+	$(CP) $(EMPLOYEE_DB) $(FINAL_EMPDB)
 
 $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
@@ -96,11 +100,9 @@ $(FIREBIRD)/examples/README:
 #	$(CP) $(ROOT)/examples/build_unix/*.* $(FIREBIRD)/examples/build_unix/
 #	$(CP) $(ROOT)/examples/build_win32/*.* $(FIREBIRD)/examples/build_win32/
 	$(CP) $(ROOT)/examples/dyn/*.* $(FIREBIRD)/examples/dyn/
-#	$(CP) $(ROOT)/examples/empbuild/*.* $(FIREBIRD)/examples/empbuild/
 	$(CP) $(ROOT)/examples/include/*.* $(FIREBIRD)/examples/include/
 	$(CP) $(ROOT)/examples/stat/*.* $(FIREBIRD)/examples/stat/
 	$(CP) $(ROOT)/examples/udf/*.* $(FIREBIRD)/examples/udf/
-	$(CP) employee.fdb $(FIREBIRD)/examples/empbuild/
 #	$(CP) intlemp.fdb $(FIREBIRD)/examples/empbuild/
 
 $(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
