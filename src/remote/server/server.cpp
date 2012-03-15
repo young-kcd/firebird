@@ -4982,7 +4982,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		svc->svc_iface = iface;
 	}
 
-	return this->send_response(sendL, 0, sendL->p_resp.p_resp_data.cstr_length,
+	return this->send_response(sendL, 0, authenticated ? sendL->p_resp.p_resp_data.cstr_length : 0,
 							   &status_vector, false);
 }
 
