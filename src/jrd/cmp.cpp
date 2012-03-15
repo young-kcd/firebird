@@ -3411,10 +3411,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	case nod_cast:
 		{
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			USHORT ttype = INTL_TEXT_TYPE(desc);
+			const Format* const format = (Format*) node->nod_arg[e_cast_fmt];
+			const USHORT ttype = INTL_TEXT_TYPE(format->fmt_desc[0]);
 
 			// Are we using a collation?
 			if (TTYPE_TO_COLLATION(ttype) != 0)
