@@ -144,16 +144,6 @@ void AffectedRows::bumpModified(bool increment)
 	}
 }
 
-bool AffectedRows::isReadOnly() const
-{
-	return !writeFlag;
-}
-
-bool AffectedRows::hasCursor() const
-{
-	return (fetchedRows > 0);
-}
-
 int AffectedRows::getCount() const
 {
 	return writeFlag ? modifiedRows : fetchedRows;

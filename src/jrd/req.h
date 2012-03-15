@@ -197,8 +197,6 @@ public:
 	void bumpFetched();
 	void bumpModified(bool);
 
-	bool isReadOnly() const;
-	bool hasCursor() const;
 	int getCount() const;
 
 private:

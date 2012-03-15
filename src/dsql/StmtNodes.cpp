@@ -6635,7 +6635,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			if (request->req_records_affected.isReadOnly() && !request->req_records_affected.hasCursor())
+			if (!StmtNode::is<ForNode>(parentStmt.getObject()))
 				request->req_records_affected.clear();
 
 			request->req_records_affected.bumpModified(false);
