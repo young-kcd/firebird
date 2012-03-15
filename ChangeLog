@@ -1,3 +1,67 @@
+ 2012-03-14 17:46  dimitr 
+   M src/msgs/messages2.sql
+Pleased Paul V. so that CORE-3195 (Concatenation to CHAR(32766/7) impossible) could be resolved.
+
+ 2012-03-14 17:39  dimitr 
+   M src/remote/server/server.cpp
+Totally misc.
+
+ 2012-03-14 17:38  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/utld.cpp
+   M src/dsql/utld_proto.h
+   M src/jrd/DataTypeUtil.cpp
+Fixed CORE-3569: CHAR(32767) present in XSQLVAR with length 32765. The JRD part of the patch is not strictly required, as it's used exclusively for VARCHARs right now, but let's be protected for the unpredictable future.
+
+ 2012-03-14 16:04  dimitr 
+   M src/jrd/cvt2.cpp
+   M src/jrd/cvt2_proto.h
+   M src/jrd/opt.cpp
+Front-ported CORE-3553: Nested loop plan is chosen instead of the sort merge for joining independent streams using keys of different types.
+
+ 2012-03-14 15:26  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+Fixed CORE-2286: Selecting from MON$CALL_STACK within a Trigger or SP sometimes return 0 rows.
+
+ 2012-03-14 14:35  dimitr 
+   M src/utilities/gstat/dba.epp
+Integrated the jumping information natively into the index bucket.
+WARNING: This is an ODS change, databases must be recreated.
+
+ 2012-03-14 14:33  dimitr 
+   M src/jrd/btn.cpp
+   M src/jrd/btn.h
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/ods.h
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/validation.cpp
+Integrated the jumping information natively into the index bucket.
+WARNING: This is an ODS change, databases must be recreated.
+
+ 2012-03-14 14:00  dimitr 
+   M src/jrd/TempSpace.cpp
+   M src/jrd/TempSpace.h
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/sort.cpp
+Front-ported CORE-3457: Optimize the temporary space manager regarding small chunk allocations.
+
+ 2012-03-14 13:46  alexpeshkoff 
+   M src/common/db_alias.cpp
+Comments
+
+ 2012-03-14 08:46  alexpeshkoff 
+   M src/common/db_alias.cpp
+   M src/common/db_alias.h
+   M src/jrd/jrd.cpp
+   M src/lock/print.cpp
+   M src/remote/remote.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/why.cpp
+Implemented CORE-3788: Make all utilities follow same rules when expanding database name
+
  2012-03-13 10:31  dimitr 
    M src/jrd/btn.h
    M src/jrd/btr.cpp
