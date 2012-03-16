@@ -199,15 +199,15 @@ void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status,
 
 void UserManagement::execute(USHORT id)
 {
+	if (id >= commands.getCount())
+	{
+		status_exception::raise(Arg::Gds(isc_random) << "Wrong job id passed to UserManagement::execute()");
+	}
+
 	if (!(manager && commands[id]))
 	{
 		// Already executed
 		return;
-	}
-
-	if (id >= commands.getCount())
-	{
-		status_exception::raise(Arg::Gds(isc_random) << "Wrong job id passed to UserManagement::execute()");
 	}
 
 	LocalStatus status;
