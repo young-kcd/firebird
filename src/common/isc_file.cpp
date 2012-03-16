@@ -78,6 +78,12 @@
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
 
 #include "../common/config/config.h"
 
@@ -1644,6 +1650,81 @@ static void share_name_from_unc(tstring& file_name, LPREMOTE_NAME_INFO unc_remot
 }
 #endif // WIN_NT
 
+#ifdef HAVE_ICONV_H
+namespace {
+
+class IConv
+{
+public:
+	IConv(MemoryPool& p)
+		: toBuf(p)
+	{
+#ifdef HAVE_LANGINFO_H
+		string systemCharmap = nl_langinfo(CODESET);
+#else
+		string systemCharmap;
+		if (!fb_utils::readenv("LC_CTYPE", systemCharmap))
+		{
+			systemCharmap = "ANSI_X3.4-1968";		// ascii
+		}
+#endif
+		const char* utfCharmap = "UTF-8";
+
+		toUtf = openIconv(utfCharmap, systemCharmap.c_str());
+		toSystem = openIconv(systemCharmap.c_str(), utfCharmap);
+	}
+
+	void systemToUtf8(AbstractString& str)
+	{
+		convert(str, toUtf);
+	}
+
+	void utf8ToSystem(AbstractString& str)
+	{
+		convert(str, toSystem);
+	}
+
+private:
+	iconv_t toUtf, toSystem;
+	Mutex mtx;
+	Array<char> toBuf;
+
+	iconv_t openIconv(const char *tocode, const char *fromcode)
+	{
+		toUtf = iconv_open(tocode, fromcode);
+		if (toUtf == (iconv_t) -1)
+		{
+			(Arg::Gds(isc_random) << "Error opening conversion descriptor" <<
+			 Arg::Unix(errno)).raise();
+			// adding text "from @1 to @2" is good idea
+		}
+	}
+
+	void convert(AbstractString& str, iconv_t id)
+	{
+		MutexLockGuard g(mtx);
+
+		const size_t outlength = str.length() * 4;
+		size_t outsize = outlength;
+		char* outbuf = toBuf.getBuffer(outsize);
+		size_t insize = str.length();
+		char* inbuf = str.begin();
+		if (iconv(id, &inbuf, &insize, &outbuf, &outsize) == (size_t) -1)
+		{
+			(Arg::Gds(isc_bad_conn_str) <<
+			 Arg::Gds(isc_transliteration_failed) <<
+			 Arg::Unix(errno)).raise();
+		}
+
+		outsize = outlength - outsize;
+		memcpy(str.getBuffer(outsize), toBuf.begin(), outsize);
+	}
+};
+
+InitInstance<IConv> iConv;
+
+}
+#endif // HAVE_ICONV_H
 
 // Converts a string from the system charset to UTF-8.
 void ISC_systemToUtf8(Firebird::AbstractString& str)
@@ -1651,7 +1732,7 @@ void ISC_systemToUtf8(Firebird::AbstractString& str)
 	if (str.isEmpty())
 		return;
 
-#ifdef WIN_NT
+#if defined(WIN_NT)
 	WCHAR utf16Buffer[MAX_PATH];
 	int len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(),
 		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
@@ -1667,6 +1748,8 @@ void ISC_systemToUtf8(Firebird::AbstractString& str)
 		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
 	memcpy(str.getBuffer(len), utf8Buffer, len);
+#elif defined(HAVE_ICONV_H)
+	iConv().systemToUtf8(str);
 #endif
 }
 
@@ -1677,7 +1760,7 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 	if (str.isEmpty())
 		return;
 
-#ifdef WIN_NT
+#if defined(WIN_NT)
 	WCHAR utf16Buffer[MAX_PATH];
 	int len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(),
 		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
@@ -1694,6 +1777,8 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
 	memcpy(str.getBuffer(len), ansiBuffer, len);
+#elif defined(HAVE_ICONV_H)
+	iConv().utf8ToSystem(str);
 #endif
 }
 
