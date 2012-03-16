@@ -45,6 +45,7 @@
 #include "../common/isc_proto.h"
 #include "../common/isc_f_proto.h"
 #include "../common/utils_proto.h"
+#include "../common/IntlParametersBlock.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/os/path_utils.h"
 #include "../common/classes/alloc.h"
@@ -286,30 +287,6 @@ namespace {
 #ifdef UNIX
 		static GlobalPtr<CtrlCHandler> ctrlCHandler;
 #endif // UNIX
-	}
-
-	typedef bool ConvertTagFunction(UCHAR tag);
-
-	// Convert strings in PB to UTF8
-	void intlParametersBlock(ClumpletWriter& pb, ConvertTagFunction* convertTag, UCHAR utf8Tag)
-	{
-		if (utf8Tag)
-		{
-			pb.insertTag(utf8Tag);
-		}
-
-		for (pb.rewind(); !pb.isEof(); pb.moveNext())
-		{
-			UCHAR tag = pb.getClumpTag();
-			if (convertTag(tag))
-			{
-				string s;
-				pb.getString(s);
-				ISC_systemToUtf8(s);
-				pb.deleteClumplet();
-				pb.insertString(tag, s);
-			}
-		}
 	}
 
 } // anonymous namespace
@@ -4767,17 +4744,6 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 	}
 }
 
-static bool convertSpbStartTag(UCHAR tag)
-{
-	switch (tag)
-	{
-	case isc_spb_dbname:
-	case isc_spb_command_line:
-		return true;
-	}
-	return false;
-}
-
 void YService::start(IStatus* status, unsigned int spbLength, const unsigned char* spbItems)
 {
 	try
@@ -4789,7 +4755,7 @@ void YService::start(IStatus* status, unsigned int spbLength, const unsigned cha
 		}
 		if (!utf8Connection)
 		{
-			intlParametersBlock(spb, convertSpbStartTag, 0);
+			IntlSpbStart().toUtf8(spb, 0);
 		}
 
 		YEntry<YService> entry(status, this, SERV_START);
@@ -4820,7 +4786,6 @@ int YService::release()
 	return 1;
 }
 
-
 //-------------------------------------
 
 
@@ -4836,23 +4801,6 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 	unsigned int dpbLength, const unsigned char* dpb)
 {
 	return attachOrCreateDatabase(status, true, filename, dpbLength, dpb);
-}
-
-static bool convertDpbTag(UCHAR tag)
-{
-	switch (tag)
-	{
-	case isc_dpb_user_name:
-	case isc_dpb_password:
-	case isc_dpb_sql_role_name:
-	case isc_dpb_trusted_auth:
-	case isc_dpb_trusted_role:
-	case isc_dpb_working_directory:
-	case isc_dpb_set_db_charset:
-	case isc_dpb_process_name:
-		return true;
-	}
-	return false;
 }
 
 YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
@@ -4875,7 +4823,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 		setLogin(newDpb, false);
 		if (!utfData)
 		{
-			intlParametersBlock(newDpb, convertDpbTag, isc_dpb_utf8_filename);
+			IntlDpb().toUtf8(newDpb, isc_dpb_utf8_filename);
 		}
 
 		// Take care about filename
@@ -4953,22 +4901,6 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 	return NULL;
 }
 
-static bool convertSpbTag(UCHAR tag)
-{
-	switch (tag)
-	{
-	case isc_spb_user_name:
-	case isc_spb_password:
-	case isc_spb_sql_role_name:
-	case isc_spb_trusted_auth:
-	case isc_spb_trusted_role:
-	case isc_spb_process_name:
-	case isc_spb_command_line:
-		return true;
-	}
-	return false;
-}
-
 // Attach a service through the first subsystem that recognizes it.
 YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceName,
 	unsigned int spbLength, const unsigned char* spb)
@@ -4995,7 +4927,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		bool utfData = spbWriter.find(isc_spb_utf8_filename);
 		if (!utfData)
 		{
-			intlParametersBlock(spbWriter, convertSpbTag, isc_spb_utf8_filename);
+			IntlSpb().toUtf8(spbWriter, isc_spb_utf8_filename);
 		}
 
 		if ((spbWriter.find(isc_spb_auth_block) && spbWriter.getClumpLength() > 0) ||

@@ -62,6 +62,7 @@
 #include "../common/classes/GetPlugins.h"
 #include "firebird/Provider.h"
 #include "../common/StatementMetadata.h"
+#include "../common/IntlParametersBlock.h"
 
 #include "../auth/SecurityDatabase/LegacyClient.h"
 #include "../auth/SecureRemotePassword/client/SrpClient.h"
@@ -566,7 +567,8 @@ static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void handle_error(ISC_STATUS);
 static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 	const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*, ClntAuthBlock* cBlock = NULL);
-static void init(IStatus*, ClntAuthBlock&, rem_port*, P_OP, PathName&, ClumpletWriter&);
+static void init(IStatus*, ClntAuthBlock&, rem_port*, P_OP, PathName&,
+	ClumpletWriter&, IntlParametersBlock&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
@@ -676,7 +678,8 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		init(status, cBlock, port, op_attach, expanded_name, newDpb);
+		IntlDpb intl;
+		init(status, cBlock, port, op_attach, expanded_name, newDpb, intl);
 
 		Attachment* a = new Attachment(port->port_context, filename);
 		a->addRef();
@@ -1199,7 +1202,8 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		init(status, cBlock, port, op_create, expanded_name, newDpb);
+		IntlDpb intl;
+		init(status, cBlock, port, op_create, expanded_name, newDpb, intl);
 
 		Firebird::IAttachment* a = new Attachment(rdb, filename);
 		a->addRef();
@@ -3838,7 +3842,8 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 
 		ClntAuthBlock cBlock(NULL);
 		cBlock.load(newSpb, &spbParam);
-		init(status, cBlock, port, op_service_attach, expanded_name, newSpb);
+		IntlSpb intl;
+		init(status, cBlock, port, op_service_attach, expanded_name, newSpb, intl);
 
 		cBlock.saveServiceDataTo(port);
 
@@ -5610,7 +5615,7 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 }
 
 static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op, PathName& file_name,
-	ClumpletWriter& dpb)
+	ClumpletWriter& dpb, IntlParametersBlock& intlParametersBlock)
 {
 /**************************************
  *
@@ -5633,37 +5638,11 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 
 		if (port->port_protocol < PROTOCOL_VERSION12)
 		{
-			// This is FB < 2.5. Lets remove that not recognized DPB and convert the UTF8
+			// This is FB < 2.5. Lets remove that not recognized DPB/SPB and convert the UTF8
 			// strings to the OS codepage.
-			dpb.deleteWithTag(isc_dpb_utf8_filename);
+			intlParametersBlock.fromUtf8(dpb, isc_dpb_utf8_filename);
 			ISC_unescape(file_name);
 			ISC_utf8ToSystem(file_name);
-
-			for (dpb.rewind(); !dpb.isEof(); dpb.moveNext())
-			{
-				UCHAR tag = dpb.getClumpTag();
-				switch (tag)
-				{
-					// Do not check isc_dpb_trusted_auth here. It's just bytes.
-					case isc_dpb_org_filename:
-					case isc_dpb_user_name:
-					case isc_dpb_password:
-					case isc_dpb_sql_role_name:
-					case isc_dpb_trusted_role:
-					case isc_dpb_working_directory:
-					case isc_dpb_set_db_charset:
-					case isc_dpb_process_name:
-					{
-						string s;
-						dpb.getString(s);
-						ISC_unescape(s);
-						ISC_utf8ToSystem(s);
-						dpb.deleteClumplet();
-						dpb.insertString(tag, s);
-						break;
-					}
-				}
-			}
 		}
 
 		const ParametersSet* const ps = (op == op_service_attach ? &spbParam : &dpbParam);
@@ -6557,6 +6536,12 @@ static void svcstart(IStatus*	status,
 
 	// Get ready for multi-hop auth
 	ClumpletWriter send(ClumpletReader::SpbStart, MAX_DPB_SIZE, items, item_length);
+	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION13)
+	{
+		// This is FB < 3.0. Lets convert the UTF8 strings to the OS codepage.
+		IntlSpbStart().fromUtf8(send, 0);
+	}
+
 	ClntAuthBlock cBlock(NULL);
 	cBlock.loadServiceDataFrom(rdb->rdb_port);
 	HANDSHAKE_DEBUG(fprintf(stderr, "start calls authFillParametersBlock\n"));
