@@ -1,3 +1,52 @@
+ 2012-03-15 15:05  alexpeshkoff 
+   M src/alice/exe.cpp
+   M src/alice/tdr.cpp
+   M src/burp/burp.cpp
+   M src/burp/restore.epp
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/common/db_alias.cpp
+   M src/include/consts_pub.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gstat/dba.epp
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Fixed use of UTF8 strings in services
+
+ 2012-03-15 15:03  alexpeshkoff 
+   M src/utilities/gstat/dba.epp
+Fixed delivery of errors from gstat service
+
+ 2012-03-15 14:39  alexpeshkoff 
+   M src/remote/server/server.cpp
+Fixed assertion at client side in service logon
+
+ 2012-03-15 12:10  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-1992: bad BLR -- invalid stream for union select.
+
+ 2012-03-15 10:40  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/req.h
+Fixed CORE-3092: ROW_COUNT is not cleared before the singleton INSERT statement,
+
+ 2012-03-15 09:52  alexpeshkoff 
+   M builds/posix/Makefile.in.examples
+Better track file dependencies
+
+ 2012-03-15 09:29  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/RuntimeStatistics.h
+Fixed CORE-3625: MON$IO_STATS doesn't report page writes performed asynchronously (at the AST level).
+
+ 2012-03-15 08:14  alexpeshkoff 
+   M src/include/gen/msgs.h
+Misc
+
  2012-03-14 17:46  dimitr 
    M src/msgs/messages2.sql
 Pleased Paul V. so that CORE-3195 (Concatenation to CHAR(32766/7) impossible) could be resolved.
