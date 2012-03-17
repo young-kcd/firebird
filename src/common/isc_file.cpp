@@ -1685,19 +1685,17 @@ public:
 	}
 
 private:
-	iconv_t toUtf, toSystem;
-	Mutex mtx;
-	Array<char> toBuf;
-
-	iconv_t openIconv(const char *tocode, const char *fromcode)
+	iconv_t openIconv(const char* tocode, const char* fromcode)
 	{
-		toUtf = iconv_open(tocode, fromcode);
-		if (toUtf == (iconv_t) -1)
+		iconv_t ret = iconv_open(tocode, fromcode);
+		if (ret == (iconv_t) -1)
 		{
 			(Arg::Gds(isc_random) << "Error opening conversion descriptor" <<
 			 Arg::Unix(errno)).raise();
 			// adding text "from @1 to @2" is good idea
 		}
+
+		return ret;
 	}
 
 	void convert(AbstractString& str, iconv_t id)
@@ -1719,6 +1717,10 @@ private:
 		outsize = outlength - outsize;
 		memcpy(str.getBuffer(outsize), toBuf.begin(), outsize);
 	}
+
+	iconv_t toUtf, toSystem;
+	Mutex mtx;
+	Array<char> toBuf;
 };
 
 InitInstance<IConv> iConv;
