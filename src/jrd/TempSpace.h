@@ -185,8 +185,8 @@ private:
 		Segment() : position(0), size(0)
 		{}
 
-		Segment(offset_t _position, offset_t _size) :
-			position(_position), size(_size)
+		Segment(offset_t aPosition, offset_t aSize) :
+			position(aPosition), size(aSize)
 		{}
 
 		offset_t position;

@@ -203,8 +203,8 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			parameter->par_desc.setTextType(INTL_CS_COLL_TO_TTYPE(toCharSet,
 				(fromCharSet == toCharSet ? INTL_GET_COLLATE(&parameter->par_desc) : 0)));
 
-			parameter->par_desc.dsc_length =
-				UTLD_char_length_to_byte_length(parameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC, adjust);
+			parameter->par_desc.dsc_length = UTLD_char_length_to_byte_length(
+				parameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC, adjust);
 
 			parameter->par_desc.dsc_length += adjust;
 		}

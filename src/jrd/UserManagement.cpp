@@ -206,7 +206,7 @@ void UserManagement::execute(USHORT id)
 
 	if (!(manager && commands[id]))
 	{
-		// Already executed
+		// Already executed.
 		return;
 	}
 

@@ -3128,7 +3128,7 @@ static ULONG fast_load(thread_db* tdbb,
 	// Remember, the lower the value how more jumpkeys are generated and
 	// how faster jumpkeys are recalculated on insert.
 
-	const USHORT jumpAreaSize = 512 + ((int)sqrt((float)key_length) * 16);
+	const USHORT jumpAreaSize = 512 + ((int) sqrt((float) key_length) * 16);
 
 	//  key_size  |  jumpAreaSize
 	//  ----------+-----------------
@@ -3151,7 +3151,8 @@ static ULONG fast_load(thread_db* tdbb,
 
 	Firebird::HalfStaticArray<ULONG, 4> duplicatesList;
 
-	try {
+	try
+	{
 		// Allocate and format the first leaf level bucket.  Awkwardly,
 		// the bucket header has room for only a byte of index id and that's
 		// part of the ODS.  So, for now, we'll just record the first byte

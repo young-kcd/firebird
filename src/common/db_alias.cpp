@@ -261,14 +261,14 @@ namespace
 	InitInstance<AliasesConf> aliasesConf;
 }
 
-// Search for 'alias' in aliases.conf, return it's value in 'file' if found. Else set file to alias.
+// Search for 'alias' in aliases.conf, return its value in 'file' if found. Else set file to alias.
 // Returns true if alias is found in aliases.conf.
 static bool resolveAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
 {
-	PathName corrected_alias = alias;
-	replace_dir_sep(corrected_alias);
+	PathName correctedAlias = alias;
+	replace_dir_sep(correctedAlias);
 
-	AliasName* a = aliasesConf().aliasHash.lookup(corrected_alias);
+	AliasName* a = aliasesConf().aliasHash.lookup(correctedAlias);
 	DbName* db = a ? a->database : NULL;
 	if (db)
 	{
@@ -289,13 +289,13 @@ static bool resolveAlias(const PathName& alias, PathName& file, RefPtr<Config>* 
 // Returns true if expanded successfully.
 static bool resolveDatabaseAccess(const PathName& alias, PathName& file)
 {
-	PathName corrected_alias = alias;
-	replace_dir_sep(corrected_alias);
+	PathName correctedAlias = alias;
+	replace_dir_sep(correctedAlias);
 
 	bool rc = true;
 
 	PathName path, name;
-	PathUtils::splitLastComponent(path, name, corrected_alias);
+	PathUtils::splitLastComponent(path, name, correctedAlias);
 
 	// if path component not present in file_name
 	if (path.isEmpty())
@@ -317,8 +317,9 @@ static bool resolveDatabaseAccess(const PathName& alias, PathName& file)
 
 	if (! rc)
 	{
-		file = corrected_alias;
+		file = correctedAlias;
 	}
+
 	return rc;
 }
 

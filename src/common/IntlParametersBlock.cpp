@@ -79,6 +79,7 @@ void IntlParametersBlock::fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag)
 	}
 }
 
+
 bool IntlDpb::checkTag(UCHAR tag)
 {
 	switch (tag)
@@ -97,6 +98,7 @@ bool IntlDpb::checkTag(UCHAR tag)
 	return false;
 }
 
+
 bool IntlSpb::checkTag(UCHAR tag)
 {
 	switch (tag)
@@ -114,9 +116,10 @@ bool IntlSpb::checkTag(UCHAR tag)
 	return false;
 }
 
+
 bool IntlSpbStart::checkTag(UCHAR tag)
 {
-	switch(mode)
+	switch (mode)
 	{
 	case 0:
 		switch (tag)
@@ -206,4 +209,3 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 }
 
 }
-

@@ -37,7 +37,7 @@ using Firebird::TempFile;
 
 // Static definitions/initializations
 
-const size_t MIN_TEMP_BLOCK_SIZE	= 64 * 1024;
+const size_t MIN_TEMP_BLOCK_SIZE = 64 * 1024;
 
 Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
@@ -498,7 +498,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 
 		return;
 	}
-	
+
 	if (freeSegments.locate(Firebird::locLess, position))
 	{
 		// Check the prior segment for being adjacent

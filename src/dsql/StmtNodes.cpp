@@ -6635,7 +6635,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			if (!StmtNode::is<ForNode>(parentStmt.getObject()))
+			if (!parentStmt->is<ForNode>())
 				request->req_records_affected.clear();
 
 			request->req_records_affected.bumpModified(false);
