@@ -2715,15 +2715,11 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		// Cast the arguments, if required
 		if (!DSC_EQUIV(&result, &desc1, true) || !DSC_EQUIV(&result, &desc2, true))
 		{
-			Format* const format = Format::newFormat(*tdbb->getDefaultPool(), 1);
-			format->fmt_length = result.dsc_length;
-			format->fmt_desc[0] = result;
-
 			if (!DSC_EQUIV(&result, &desc1, true))
 			{
 				CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 				cast->source = node1;
-				cast->format = format;
+				cast->castDesc = result;
 				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 				node1 = cast;
 			}
@@ -2732,7 +2728,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			{
 				CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 				cast->source = node2;
-				cast->format = format;
+				cast->castDesc = result;
 				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 				node2 = cast;
 			}

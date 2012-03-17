@@ -2580,7 +2580,6 @@ CastNode::CastNode(MemoryPool& pool, dsql_nod* aDsqlSource, dsql_fld* aDsqlField
 	  dsqlSource(aDsqlSource),
 	  dsqlField(aDsqlField),
 	  source(NULL),
-	  format(NULL),
 	  itemInfo(NULL)
 {
 	castDesc.clear();
@@ -2592,13 +2591,8 @@ DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 {
 	CastNode* node = FB_NEW(pool) CastNode(pool);
 
-	Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
-	node->format = format;
-
-	dsc* desc = &format->fmt_desc[0];
 	ItemInfo itemInfo;
-	PAR_desc(tdbb, csb, desc, &itemInfo);
-	format->fmt_length = desc->dsc_length;
+	PAR_desc(tdbb, csb, &node->castDesc, &itemInfo);
 
 	node->source = PAR_parse_value(tdbb, csb);
 
@@ -2608,7 +2602,7 @@ DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 	if (itemInfo.explicitCollation)
 	{
 		CompilerScratch::Dependency dependency(obj_collation);
-		dependency.number = INTL_TEXT_TYPE(*desc);
+		dependency.number = INTL_TEXT_TYPE(node->castDesc);
 		csb->csb_dependencies.push(dependency);
 	}
 
@@ -2691,7 +2685,7 @@ void CastNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	dsc desc1;
 	////source->getDesc(tdbb, csb, &desc1);
 
-	*desc = format->fmt_desc[0];
+	*desc = castDesc;
 
 	if ((desc->dsc_dtype <= dtype_any_text && !desc->dsc_length) ||
 		(desc->dsc_dtype == dtype_varying && desc->dsc_length <= sizeof(USHORT)))
@@ -2716,7 +2710,7 @@ ValueExprNode* CastNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	CastNode* node = FB_NEW(getPool()) CastNode(getPool());
 
 	node->source = copier.copy(tdbb, source);
-	node->format = format;
+	node->castDesc = castDesc;
 	node->itemInfo = itemInfo;
 
 	return node;
@@ -2763,7 +2757,7 @@ ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	ValueExprNode::pass1(tdbb, csb);
 
-	const USHORT ttype = INTL_TEXT_TYPE(format->fmt_desc[0]);
+	const USHORT ttype = INTL_TEXT_TYPE(castDesc);
 
 	// Are we using a collation?
 	if (TTYPE_TO_COLLATION(ttype) != 0)
@@ -2794,7 +2788,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
-	impure->vlu_desc = format->fmt_desc[0];
+	impure->vlu_desc = castDesc;
 	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
 
 	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype))
@@ -4616,10 +4610,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 		// Cast to the target type - see CORE-3545.
 		CastNode* castNode = FB_NEW(pool) CastNode(pool);
-		Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
-		castNode->format = format;
-		format->fmt_desc[0] = domNode->domDesc;
-		format->fmt_length = domNode->domDesc.dsc_length;
+		castNode->castDesc = domNode->domDesc;
 		castNode->source = domNode;
 
 		return castNode;

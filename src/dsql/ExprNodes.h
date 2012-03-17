@@ -147,7 +147,6 @@ public:
 	dsql_fld* dsqlField;
 	dsc castDesc;
 	NestConst<ValueExprNode> source;
-	NestConst<Format> format;
 	NestConst<ItemInfo> itemInfo;
 };
 

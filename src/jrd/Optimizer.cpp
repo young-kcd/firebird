@@ -1732,13 +1732,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 		if (desc1.dsc_dtype == dtype_int64)
 		{
-			Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
-			format->fmt_length = desc1.dsc_length;
-			format->fmt_desc[0] = desc1;
-
 			CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 			cast->source = value;
-			cast->format = format;
+			cast->castDesc = desc1;
 			cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 			value = cast;
@@ -1747,7 +1743,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 			{
 				cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 				cast->source = value2;
-				cast->format = format;
+				cast->castDesc = desc1;
 				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 				value2 = cast;
