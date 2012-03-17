@@ -465,7 +465,7 @@ private:
 	unsigned int checkSpbLen;
 	const unsigned char* checkSpbPresent;
 	Firebird::HalfStaticArray<UCHAR, 256> authBlock;
-	bool utf8Connection;		// Client talks to us using UTF8, else - system default collation
+	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 
 	void populateSpb(Firebird::ClumpletWriter& spb, UCHAR tag);
 };

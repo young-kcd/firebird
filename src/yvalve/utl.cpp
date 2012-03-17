@@ -2143,7 +2143,8 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR entrypoint,
 }
 
 // new utl
-static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, Firebird::string& value, bool utf8)
+static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag,
+	Firebird::string& value, bool utf8)
 {
 	if (! dpb.find(tag))
 	{

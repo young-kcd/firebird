@@ -4786,6 +4786,7 @@ int YService::release()
 	return 1;
 }
 
+
 //-------------------------------------
 
 
@@ -4941,7 +4942,10 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 				return new YService(provider, service, utfData);
 		}
 		else
-			return new YService(svcName.c_str(), spbWriter.getBufferLength(), spbWriter.getBuffer(), utfData);
+		{
+			return new YService(svcName.c_str(), spbWriter.getBufferLength(),
+				spbWriter.getBuffer(), utfData);
+		}
 	}
 	catch (const Exception& e)
 	{
