@@ -1,3 +1,40 @@
+ 2012-03-17 02:26  asfernandes 
+   M src/common/IntlParametersBlock.cpp
+   M src/common/db_alias.cpp
+   M src/common/db_alias.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/gen.cpp
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/TempSpace.cpp
+   M src/jrd/TempSpace.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/btr.cpp
+Misc.
+
+ 2012-03-17 02:26  asfernandes 
+   M src/common/isc_file.cpp
+Corrections.
+
+ 2012-03-16 17:10  alexpeshkoff 
+   A src/common/IntlParametersBlock.cpp
+   A src/common/IntlParametersBlock.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Finished with conversions of all strings in both kinds of SPBs (attach/start) to UTF8
+
+ 2012-03-16 17:08  alexpeshkoff 
+   M configure.in
+   M src/common/isc_file.cpp
+System to UTF8 conversion on non-Windows systems
+
+ 2012-03-16 17:05  alexpeshkoff 
+   M src/jrd/UserManagement.cpp
+Misc
+
+ 2012-03-16 12:46  alexpeshkoff 
+   M src/common/BigInteger.h
+Misc
+
  2012-03-15 15:05  alexpeshkoff 
    M src/alice/exe.cpp
    M src/alice/tdr.cpp
