@@ -663,6 +663,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::RelationNode* relationNode;
 	Jrd::RelationNode::AddColumnClause* addColumnClause;
 	Jrd::RelationNode::RefActionClause* refActionClause;
+	Jrd::RelationNode::IndexConstraintClause* indexConstraintClause;
 	Jrd::CreateRelationNode* createRelationNode;
 	Jrd::CreateAlterViewNode* createAlterViewNode;
 	Jrd::CreateIndexNode* createIndexNode;
@@ -724,7 +725,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> column_singleton
 %type <traNode>    commit
 %type <stmtNode>   complex_proc_statement
-%type <legacyNode> computed_by computed_clause constant constraint_index_opt
+%type <legacyNode> computed_by computed_clause constant
+%type <indexConstraintClause> constraint_index_opt
 %type <boolVal>	   conditional
 %type <legacyNode> constraint_name_opt correlation_name
 %type <ddlNode>    create create_clause create_user_clause
@@ -2118,27 +2120,19 @@ column_constraint($addColumnClause)
 				}
 			}
 
-			const dsql_nod* index = $5;
-			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
-			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+			constraint.index = $5;
 		}
 	| UNIQUE constraint_index_opt
 		{
 			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_UNIQUE;
-
-			const dsql_nod* index = $2;
-			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
-			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+			constraint.index = $2;
 		}
 	| PRIMARY KEY constraint_index_opt
 		{
 			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_PK;
-
-			const dsql_nod* index = $3;
-			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
-			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+			constraint.index = $3;
 		}
 	;
 
@@ -2170,9 +2164,7 @@ table_constraint($relationNode)
 				constraint.columns.add(fieldName->str_data);
 			}
 
-			const dsql_nod* index = $3;
-			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
-			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+			constraint.index = $3;
 
 			$relationNode->clauses.add(&constraint);
 		}
@@ -2190,9 +2182,7 @@ table_constraint($relationNode)
 				constraint.columns.add(fieldName->str_data);
 			}
 
-			const dsql_nod* index = $4;
-			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
-			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+			constraint.index = $4;
 
 			$relationNode->clauses.add(&constraint);
 		}
@@ -2225,9 +2215,7 @@ table_constraint($relationNode)
 				}
 			}
 
-			const dsql_nod* index = $8;
-			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
-			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+			constraint.index = $8;
 
 			$relationNode->clauses.add(&constraint);
 		}
@@ -2242,11 +2230,13 @@ table_constraint($relationNode)
 
 constraint_index_opt
 	: // nothing
-		{ $$ = make_node (nod_def_index, (int) e_idx_count, NULL, NULL, NULL, NULL, NULL); }
+		{ $$ = newNode<RelationNode::IndexConstraintClause>(); }
 	| USING order_direction INDEX symbol_index_name
 		{
-			$$ = make_node (nod_def_index, (int) e_idx_count,
-				NULL, ($2 ? make_node(nod_flag, 0, NULL) : NULL), $4, NULL, NULL);
+			RelationNode::IndexConstraintClause* clause = $$ =
+				newNode<RelationNode::IndexConstraintClause>();
+			clause->descending = $2;
+			clause->name = toName($4);
 		}
 	/***
 	| NO INDEX

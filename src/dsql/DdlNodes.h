@@ -1019,6 +1019,18 @@ public:
 		Firebird::MetaName baseField;
 	};
 
+	struct IndexConstraintClause
+	{
+		IndexConstraintClause(MemoryPool& p)
+			: name(p),
+			  descending(false)
+		{
+		}
+
+		Firebird::MetaName name;
+		bool descending;
+	};
+
 	struct Constraint : public PermanentStorage
 	{
 		enum Type { TYPE_CHECK, TYPE_NOT_NULL, TYPE_PK, TYPE_UNIQUE, TYPE_FK };
@@ -1061,8 +1073,7 @@ public:
 			  type(TYPE_CHECK),	// Just something to initialize. Do not assume it.
 			  name(p),
 			  columns(p),
-			  indexName(p),
-			  descending(false),
+			  index(NULL),
 			  refRelation(p),
 			  refColumns(p),
 			  refUpdateAction(RI_RESTRICT),
@@ -1075,8 +1086,7 @@ public:
 		Constraint::Type type;
 		Firebird::MetaName name;
 		Firebird::ObjectsArray<Firebird::MetaName> columns;
-		Firebird::MetaName indexName;
-		bool descending;
+		IndexConstraintClause* index;
 		Firebird::MetaName refRelation;
 		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
 		const char* refUpdateAction;
@@ -1141,8 +1151,7 @@ public:
 			  name(p),
 			  constraintType(CTYPE_NOT_NULL),
 			  columns(p),
-			  indexName(p),
-			  descending(false),
+			  index(NULL),
 			  refRelation(p),
 			  refColumns(p),
 			  refAction(NULL),
@@ -1153,8 +1162,7 @@ public:
 		Firebird::MetaName name;
 		ConstraintType constraintType;
 		Firebird::ObjectsArray<Firebird::MetaName> columns;
-		Firebird::MetaName indexName;
-		bool descending;
+		IndexConstraintClause* index;
 		Firebird::MetaName refRelation;
 		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
 		RefActionClause* refAction;

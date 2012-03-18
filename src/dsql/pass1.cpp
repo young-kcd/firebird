@@ -4431,9 +4431,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_collate:
 		verb = "collate";
 		break;
-	case nod_def_index:
-		verb = "define index";
-		break;
 	case nod_delete:
 		verb = "delete";
 		break;

@@ -5613,8 +5613,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 			constraint.type = clause->constraintType == AddConstraintClause::CTYPE_PK ?
 				Constraint::TYPE_PK : Constraint::TYPE_UNIQUE;
 			constraint.name = clause->name;
-			constraint.indexName = clause->indexName;
-			constraint.descending = clause->descending;
+			constraint.index = clause->index;
 			constraint.columns = clause->columns;
 			break;
 		}
@@ -5670,8 +5669,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 			// Define the foreign key index and the triggers that may be needed
 			// for referential integrity action.
-			constraint.indexName = clause->indexName;
-			constraint.descending = clause->descending;
+			constraint.index = clause->index;
 
 			if (clause->refAction)
 			{
@@ -5805,17 +5803,17 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					isc_dyn_def_primary_key :
 					(constraint.type == Constraint::TYPE_FK ? isc_dyn_def_foreign_key : 0));
 				definition.unique = constraint.type != Constraint::TYPE_FK;
-				if (constraint.descending)
+				if (constraint.index->descending)
 					definition.descending = true;
 				definition.columns = constraint.columns;
 				definition.refRelation = constraint.refRelation;
 				definition.refColumns = constraint.refColumns;
 
-				CreateIndexNode::store(tdbb, transaction, constraint.indexName, definition,
+				CreateIndexNode::store(tdbb, transaction, constraint.index->name, definition,
 					&referredIndexName);
 
 				CRT.RDB$INDEX_NAME.NULL = FALSE;
-				strcpy(CRT.RDB$INDEX_NAME, constraint.indexName.c_str());
+				strcpy(CRT.RDB$INDEX_NAME, constraint.index->name.c_str());
 
 				checkForeignKeyTempScope(tdbb, transaction, name, referredIndexName);
 
@@ -5862,7 +5860,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		IDS IN RDB$INDEX_SEGMENTS CROSS
 		RFR IN RDB$RELATION_FIELDS CROSS
 		FLX IN RDB$FIELDS
-		WITH IDS.RDB$INDEX_NAME EQ constraint.indexName.c_str() AND
+		WITH IDS.RDB$INDEX_NAME EQ constraint.index->name.c_str() AND
 			 RFR.RDB$RELATION_NAME EQ name.c_str() AND
 			 RFR.RDB$FIELD_NAME EQ IDS.RDB$FIELD_NAME AND
 			 FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
@@ -5887,7 +5885,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		IDS IN RDB$INDEX_SEGMENTS
-		WITH IDS.RDB$INDEX_NAME EQ constraint.indexName.c_str()
+		WITH IDS.RDB$INDEX_NAME EQ constraint.index->name.c_str()
 	{
 		++allCount;
 	}

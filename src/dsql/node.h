@@ -55,7 +55,6 @@ enum nod_t
 	// to an expression node.
 
 	nod_unknown_type = 0,
-	nod_def_index,
 	nod_references,
 	nod_proc_obj,
 	nod_trig_obj,
@@ -127,13 +126,6 @@ enum node_args {
 	e_sel_alias,			// Alias name for derived table
 	e_sel_columns,			// List with alias names from derived table columns
 	e_sel_count,
-
-	e_idx_unique = 0,		// nod_def_index
-	e_idx_asc_dsc,
-	e_idx_name,
-	e_idx_table,
-	e_idx_fields,
-	e_idx_count,
 
 	e_coll_target = 0,		// Not a DSQL_NOD   nod_collate
 	e_coll_source,
