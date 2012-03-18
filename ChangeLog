@@ -1,3 +1,17 @@
+ 2012-03-17 16:06  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/opt.cpp
+Simplificate CastNode. There is no need for a format there.
+
+ 2012-03-17 15:35  asfernandes 
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Misc.
+
  2012-03-17 02:26  asfernandes 
    M src/common/IntlParametersBlock.cpp
    M src/common/db_alias.cpp
