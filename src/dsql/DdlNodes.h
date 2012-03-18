@@ -41,6 +41,19 @@ namespace Jrd {
 class CompoundStmtNode;
 
 
+struct ValueSourceClause
+{
+	ValueSourceClause(MemoryPool& p)
+		: value(NULL),
+		  source(p)
+	{
+	}
+
+	dsql_nod* value;
+	Firebird::string source;
+};
+
+
 class DbFileClause
 {
 public:
@@ -130,14 +143,14 @@ class ParameterClause : public TypeClause
 {
 public:
 	ParameterClause(MemoryPool& pool, dsql_fld* field, const Firebird::MetaName& aCollate,
-		dsql_nod* dflt, dsql_nod* aLegacyParameter);
+		ValueSourceClause* aDefaultClause, dsql_nod* aLegacyParameter);
 
 public:
 	void print(Firebird::string& text) const;
 
 public:
 	Firebird::MetaName name;
-	dsql_nod* legacyDefault;
+	ValueSourceClause* defaultClause;
 	dsql_nod* legacyParameter;
 	Nullable<int> udfMechanism;
 };
@@ -764,7 +777,7 @@ protected:
 public:
 	ParameterClause nameType;
 	bool notNull;
-	dsql_nod* check;
+	ValueSourceClause* check;
 };
 
 
@@ -806,8 +819,8 @@ public:
 	Firebird::MetaName name;
 	bool dropConstraint;
 	bool dropDefault;
-	dsql_nod* setConstraint;
-	dsql_nod* setDefault;
+	ValueSourceClause* setConstraint;
+	ValueSourceClause* setDefault;
 	Firebird::MetaName renameTo;
 	Firebird::AutoPtr<TypeClause> type;
 	Nullable<bool> notNullFlag;	// true = NOT NULL / false = NULL
@@ -1072,6 +1085,187 @@ public:
 		Firebird::ObjectsArray<BlrWriter> blrWritersHolder;
 	};
 
+	struct Clause : public PermanentStorage
+	{
+		enum Type
+		{
+			TYPE_ADD_CONSTRAINT,
+			TYPE_ADD_COLUMN,
+			TYPE_ALTER_COL_NAME,
+			TYPE_ALTER_COL_NULL,
+			TYPE_ALTER_COL_POS,
+			TYPE_ALTER_COL_TYPE,
+			TYPE_DROP_COLUMN,
+			TYPE_DROP_CONSTRAINT
+		};
+
+		explicit Clause(MemoryPool& p, Type aType)
+			: PermanentStorage(p),
+			  type(aType)
+		{
+		}
+
+		const Type type;
+	};
+
+	struct RefActionClause
+	{
+		static const unsigned ACTION_CASCADE		= 1;
+		static const unsigned ACTION_SET_DEFAULT	= 2;
+		static const unsigned ACTION_SET_NULL		= 3;
+		static const unsigned ACTION_NONE			= 4;
+
+		RefActionClause(MemoryPool& p, unsigned aUpdateAction, unsigned aDeleteAction)
+			: updateAction(aUpdateAction),
+			  deleteAction(aDeleteAction)
+		{
+		}
+
+		unsigned updateAction;
+		unsigned deleteAction;
+	};
+
+	struct AddConstraintClause : public Clause
+	{
+		enum ConstraintType
+		{
+			CTYPE_NOT_NULL,
+			CTYPE_PK,
+			CTYPE_FK,
+			CTYPE_UNIQUE,
+			CTYPE_CHECK
+		};
+
+		AddConstraintClause(MemoryPool& p)
+			: Clause(p, TYPE_ADD_CONSTRAINT),
+			  name(p),
+			  constraintType(CTYPE_NOT_NULL),
+			  columns(p),
+			  indexName(p),
+			  descending(false),
+			  refRelation(p),
+			  refColumns(p),
+			  refAction(NULL),
+			  check(NULL)
+		{
+		}
+
+		Firebird::MetaName name;
+		ConstraintType constraintType;
+		Firebird::ObjectsArray<Firebird::MetaName> columns;
+		Firebird::MetaName indexName;
+		bool descending;
+		Firebird::MetaName refRelation;
+		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
+		RefActionClause* refAction;
+		ValueSourceClause* check;
+	};
+
+	struct AddColumnClause : public Clause
+	{
+		explicit AddColumnClause(MemoryPool& p)
+			: Clause(p, TYPE_ADD_COLUMN),
+			  field(NULL),
+			  defaultValue(NULL),
+			  constraints(p),
+			  collate(p),
+			  domain(p),
+			  computed(NULL),
+			  identity(false)
+		{
+		}
+
+		dsql_fld* field;
+		ValueSourceClause* defaultValue;
+		Firebird::ObjectsArray<AddConstraintClause> constraints;
+		Firebird::MetaName collate;
+		Firebird::MetaName domain;
+		ValueSourceClause* computed;
+		bool identity;
+	};
+
+	struct AlterColNameClause : public Clause
+	{
+		explicit AlterColNameClause(MemoryPool& p)
+			: Clause(p, TYPE_ALTER_COL_NAME),
+			  fromName(p),
+			  toName(p)
+		{
+		}
+
+		Firebird::MetaName fromName;
+		Firebird::MetaName toName;
+	};
+
+	struct AlterColNullClause : public Clause
+	{
+		explicit AlterColNullClause(MemoryPool& p)
+			: Clause(p, TYPE_ALTER_COL_NULL),
+			  name(p),
+			  notNullFlag(false)
+		{
+		}
+
+		Firebird::MetaName name;
+		bool notNullFlag;
+	};
+
+	struct AlterColPosClause : public Clause
+	{
+		explicit AlterColPosClause(MemoryPool& p)
+			: Clause(p, TYPE_ALTER_COL_POS),
+			  name(p),
+			  newPos(0)
+		{
+		}
+
+		Firebird::MetaName name;
+		SSHORT newPos;
+	};
+
+	struct AlterColTypeClause : public Clause
+	{
+		explicit AlterColTypeClause(MemoryPool& p)
+			: Clause(p, TYPE_ALTER_COL_TYPE),
+			  field(NULL),
+			  domain(p),
+			  defaultValue(NULL),
+			  dropDefault(false),
+			  computed(NULL)
+		{
+		}
+
+		dsql_fld* field;
+		Firebird::MetaName domain;
+		ValueSourceClause* defaultValue;
+		bool dropDefault;
+		ValueSourceClause* computed;
+	};
+
+	struct DropColumnClause : public Clause
+	{
+		explicit DropColumnClause(MemoryPool& p)
+			: Clause(p, TYPE_DROP_COLUMN),
+			  name(p),
+			  cascade(false)
+		{
+		}
+
+		Firebird::MetaName name;
+		bool cascade;
+	};
+
+	struct DropConstraintClause : public Clause
+	{
+		explicit DropConstraintClause(MemoryPool& p)
+			: Clause(p, TYPE_DROP_CONSTRAINT),
+			  name(p)
+		{
+		}
+
+		Firebird::MetaName name;
+	};
+
 	RelationNode(MemoryPool& p, dsql_nod* aDsqlNode);
 
 	static void deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
@@ -1079,17 +1273,19 @@ public:
 
 protected:
 	void defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		const dsql_nod* element, SSHORT position, const dsql_nod* pkcols);
+		const AddColumnClause* clause, SSHORT position,
+		const Firebird::ObjectsArray<Firebird::MetaName>* pkcols);
 	bool defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
-		dsql_nod* node, Firebird::string& source, BlrWriter::BlrData& value);
+		const ValueSourceClause* clause, Firebird::string& source, BlrWriter::BlrData& value);
 	void makeConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		const dsql_nod* node, Firebird::ObjectsArray<Constraint>& constraints, bool* notNull = NULL);
+		const AddConstraintClause* clause, Firebird::ObjectsArray<Constraint>& constraints,
+		bool* notNull = NULL);
 	void defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		Constraint& constraint);
 	void defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-		dsql_nod* node);
+		const ValueSourceClause* clause);
 	void defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-		dsql_nod* node, FB_UINT64 triggerType);
+		const ValueSourceClause* clause, FB_UINT64 triggerType);
 	void defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
 		bool onUpdate);
 	void defineSetNullTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
@@ -1105,7 +1301,7 @@ protected:
 public:
 	dsql_nod* dsqlNode;
 	Firebird::MetaName name;
-	Firebird::Array<dsql_nod*> elements;
+	Firebird::Array<Clause*> clauses;
 };
 
 
@@ -1131,7 +1327,7 @@ protected:
 	}
 
 private:
-	const dsql_nod* findPkColumns();
+	const Firebird::ObjectsArray<Firebird::MetaName>* findPkColumns();
 
 public:
 	const Firebird::PathName* externalFile;
@@ -1159,7 +1355,7 @@ protected:
 
 private:
 	void modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		const dsql_nod* element);
+		const AlterColTypeClause* clause);
 };
 
 
@@ -1291,7 +1487,8 @@ public:
 		  unique(false),
 		  descending(false),
 		  legacyRelation(NULL),
-		  legacyDef(NULL)
+		  columns(NULL),
+		  computed(NULL)
 	{
 	}
 
@@ -1314,7 +1511,8 @@ public:
 	bool unique;
 	bool descending;
 	dsql_nod* legacyRelation;
-	dsql_nod* legacyDef;
+	dsql_nod* columns;
+	ValueSourceClause* computed;
 };
 
 

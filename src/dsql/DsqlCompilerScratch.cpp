@@ -317,7 +317,7 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 	//field->fld_dtype = dtype;
 
 	// Check for a default value, borrowed from define_domain
-	dsql_nod* node = hostParam ? hostParam->dsqlDef->legacyDefault : NULL;
+	ValueSourceClause* node = hostParam ? hostParam->dsqlDef->defaultClause : NULL;
 
 	if (variable->type == dsql_var::TYPE_INPUT)
 	{
@@ -339,10 +339,8 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 
 		if (node)
 		{
-			fb_assert(node->nod_type == Dsql::nod_def_default);
 			PsqlChanger psqlChanger(this, false);
-			node = PASS1_node(this, node->nod_arg[Dsql::e_dft_default]);
-			GEN_expr(this, node);
+			GEN_expr(this, PASS1_node(this, node->value));
 		}
 		else
 			appendUChar(blr_null);	// Initialize variable to NULL

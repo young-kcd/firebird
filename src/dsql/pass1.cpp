@@ -4431,17 +4431,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_collate:
 		verb = "collate";
 		break;
-	case nod_def_field:
-		verb = "define field";
-		break;
 	case nod_def_index:
 		verb = "define index";
 		break;
 	case nod_delete:
 		verb = "delete";
-		break;
-	case nod_del_field:
-		verb = "delete field";
 		break;
 	case nod_execute:
 		verb = "execute";
@@ -4449,23 +4443,14 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_flag:
 		verb = "flag";
 		break;
-	case nod_foreign:
-		verb = "foreign key";
-		break;
 	case nod_insert:
 		verb = "insert";
 		break;
 	case nod_list:
 		verb = "list";
 		break;
-	case nod_mod_field:
-		verb = "modify field";
-		break;
 	case nod_order:
 		verb = "order";
-		break;
-	case nod_primary:
-		verb = "primary key";
 		break;
 	case nod_procedure_name:
 		verb = "procedure name";
@@ -4484,9 +4469,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_update:
 		verb = "update";
-		break;
-	case nod_unique:
-		verb = "unique";
 		break;
 
 	case nod_rows:
@@ -4509,24 +4491,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "natural";
 		break;
 	// SKIDDER: some more missing node types
-	case nod_def_default:
-		verb = "def_default";
-		break;
-	case nod_del_default:
-		verb = "del_default";
-		break;
-	case nod_def_domain:
-		verb = "def_domain";
-		break;
-	case nod_def_constraint:
-		verb = "def_constraint";
-		break;
-	case nod_rel_constraint:
-		verb = "rel_constraint";
-		break;
-	case nod_delete_rel_constraint:
-		verb = "delete_rel_constraint";
-		break;
 	case nod_references:
 		verb = "references";
 		break;
@@ -4551,32 +4515,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_lock_mode:
 		verb = "lock_mode";
 		break;
-	case nod_def_computed:
-		verb = "def_computed";
-		break;
-	case nod_restrict:
-		verb = "restrict";
-		break;
-	case nod_cascade:
-		verb = "cascade";
-		break;
-	case nod_ref_upd_del:
-		verb = "ref_upd_del";
-		break;
-	case nod_ref_trig_action:
-		verb = "ref_trig_action";
-		break;
 	case nod_role_name:
 		verb = "role_name";
-		break;
-	case nod_mod_field_name:
-		verb = "mod_field_name";
-		break;
-	case nod_mod_field_type:
-		verb = "mod_field_type";
-		break;
-	case nod_mod_field_pos:
-		verb = "mod_field_pos";
 		break;
 
 	case nod_label:
@@ -4614,10 +4554,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		reinterpret_cast<Node*>(node->nod_arg[0])->print(verb, subNodes);
 		ptr = subNodes.begin();
 		end = subNodes.end();
-		break;
-
-	case nod_mod_field_null_flag:
-		verb = "mod_field_null_flag";
 		break;
 
 	default:

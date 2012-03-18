@@ -620,7 +620,7 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
 }
 
 
-bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) // UTF-8
+bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const MetaName& name) // UTF-8
 {
 /**************************************
  *
@@ -641,7 +641,7 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
 	AutoCacheRequest handle(tdbb, irq_domain, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-		FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name
+		FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name.c_str()
 	{
 		found = true;
 		field->fld_length = FLX.RDB$FIELD_LENGTH;
@@ -680,7 +680,7 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
 }
 
 
-USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bool* has_default,
+USHORT METD_get_domain_default(jrd_tra* transaction, const MetaName& domain_name, bool* has_default,
 	UCHAR* buffer, USHORT buff_length)
 {
 /*************************************************************
@@ -705,7 +705,7 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 	AutoCacheRequest handle(tdbb, irq_domain_2, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
+		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name.c_str()
 	{
 		bid* blob_id;
 		if (!FLD.RDB$DEFAULT_VALUE.NULL)

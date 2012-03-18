@@ -94,7 +94,7 @@ static void checkViewDependency(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName);
 static void clearPermanentField(dsql_rel* relation, bool permanent);
 static void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_fld* field,
-	dsql_nod* node, string& source, BlrWriter::BlrData& value);
+	const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value);
 static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& constraintName, const MetaName& indexName);
 static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber, bool manualShadow,
@@ -293,7 +293,7 @@ static void clearPermanentField(dsql_rel* relation, bool permanent)
 
 // Define a COMPUTED BY clause, for a field or an index.
 void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_fld* field,
-	dsql_nod* node, string& source, BlrWriter::BlrData& value)
+	const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
 {
 	// Get the table node and set up correct context.
 	DDL_reset_context_stack(dsqlScratch);
@@ -319,7 +319,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_f
 
 	PASS1_make_context(dsqlScratch, relation);
 
-	dsql_nod* input = PASS1_node(dsqlScratch, node->nod_arg[Dsql::e_cmp_expr]);
+	dsql_nod* input = PASS1_node(dsqlScratch, clause->value);
 
 	// Try to calculate size of the computed field. The calculated size
 	// may be ignored, but it will catch self references.
@@ -369,9 +369,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_f
 	DDL_reset_context_stack(dsqlScratch);
 
 	// Generate the source text.
-	const dsql_str* sourceStr = (dsql_str*) node->nod_arg[Dsql::e_cmp_text];
-	fb_assert(sourceStr->str_length <= MAX_USHORT);
-	source.assign(sourceStr->str_data, sourceStr->str_length);
+	source = clause->source;
 
 	value.assign(dsqlScratch->getBlrData());
 }
@@ -977,10 +975,10 @@ void TypeClause::print(string& text) const
 
 
 ParameterClause::ParameterClause(MemoryPool& pool, dsql_fld* field, const MetaName& aCollate,
-			dsql_nod* dflt, dsql_nod* aLegacyParameter)
+			ValueSourceClause* aDefaultClause, dsql_nod* aLegacyParameter)
 	: TypeClause(pool, field, aCollate),
 	  name(pool, field ? field->fld_name : ""),
-	  legacyDefault(dflt),
+	  defaultClause(aDefaultClause),
 	  legacyParameter(aLegacyParameter)
 {
 }
@@ -1377,11 +1375,10 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
 		ParameterClause& parameter = parameters[i];
 
-		if (parameter.legacyDefault)
+		if (parameter.defaultClause)
 		{
 			hasDefaultParams = true;
-			parameter.legacyDefault->nod_arg[e_dft_default] =
-				PASS1_node(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+			parameter.defaultClause->value = PASS1_node(dsqlScratch, parameter.defaultClause->value);
 		}
 		else if (hasDefaultParams)
 		{
@@ -1849,15 +1846,13 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		// It was writing in RDB$FIELDS, but that would require special support
 		// for packaged functions signature verification.
 
-		if (parameter.legacyDefault)
+		if (parameter.defaultClause)
 		{
 			ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
 			ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
 
-			dsql_str* defaultString =
-				(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
-			const string defaultSource(defaultString->str_data, defaultString->str_length);
-			attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE, defaultSource);
+			attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE,
+				parameter.defaultClause->source);
 
 			dsqlScratch->getBlrData().clear();
 
@@ -1866,7 +1861,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 			else
 				dsqlScratch->appendUChar(blr_version5);
 
-			GEN_expr(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+			GEN_expr(dsqlScratch, parameter.defaultClause->value);
 
 			dsqlScratch->appendUChar(blr_eoc);
 
@@ -2298,11 +2293,10 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
 		ParameterClause& parameter = parameters[i];
 
-		if (parameter.legacyDefault)
+		if (parameter.defaultClause)
 		{
 			hasDefaultParams = true;
-			parameter.legacyDefault->nod_arg[e_dft_default] =
-				PASS1_node(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+			parameter.defaultClause->value = PASS1_node(dsqlScratch, parameter.defaultClause->value);
 		}
 		else if (hasDefaultParams)
 		{
@@ -2677,15 +2671,13 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 		// It was writing in RDB$FIELDS, but that would require special support
 		// for packaged procedures signature verification.
 
-		PRM.RDB$DEFAULT_VALUE.NULL = !parameter.legacyDefault;
-		PRM.RDB$DEFAULT_SOURCE.NULL = !parameter.legacyDefault;
+		PRM.RDB$DEFAULT_VALUE.NULL = !parameter.defaultClause;
+		PRM.RDB$DEFAULT_SOURCE.NULL = !parameter.defaultClause;
 
-		if (parameter.legacyDefault)
+		if (parameter.defaultClause)
 		{
-			dsql_str* defaultString =
-				(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
-			const string defaultSource(defaultString->str_data, defaultString->str_length);
-			attachment->storeMetaDataBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE, defaultSource);
+			attachment->storeMetaDataBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE,
+				parameter.defaultClause->source);
 
 			dsqlScratch->getBlrData().clear();
 
@@ -2694,7 +2686,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 			else
 				dsqlScratch->appendUChar(blr_version5);
 
-			GEN_expr(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+			GEN_expr(dsqlScratch, parameter.defaultClause->value);
 
 			dsqlScratch->appendUChar(blr_eoc);
 
@@ -3796,7 +3788,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	const dsql_nod* elements = nameType.legacyField->fld_ranges;
 	const USHORT dims = elements ? elements->nod_count / 2 : 0;
 
-	if (nameType.legacyDefault && dims != 0)
+	if (nameType.defaultClause && dims != 0)
 	{
 		// Default value is not allowed for array type in domain %s
 		status_exception::raise(Arg::PrivateDyn(226) << nameType.name);
@@ -3816,7 +3808,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 	storeGlobalField(tdbb, transaction, nameType.name, nameType);
 
-	if (nameType.legacyDefault || check || notNull)
+	if (nameType.defaultClause || check || notNull)
 	{
 		AutoCacheRequest request(tdbb, drq_m_fld, DYN_REQUESTS);
 
@@ -3825,19 +3817,16 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			WITH FLD.RDB$FIELD_NAME EQ nameType.name.c_str()
 		{
 			MODIFY FLD
-				if (nameType.legacyDefault)
+				if (nameType.defaultClause)
 				{
-					dsql_str* defaultString =
-						(dsql_str*) nameType.legacyDefault->nod_arg[e_dft_default_source];
-					const string defaultSource(defaultString->str_data, defaultString->str_length);
-
 					FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
-					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE, defaultSource);
+					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE,
+						nameType.defaultClause->source);
 
 					dsqlScratch->getBlrData().clear();
 					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
 
-					dsql_nod* node = PASS1_node(dsqlScratch, nameType.legacyDefault->nod_arg[e_dft_default]);
+					dsql_nod* node = PASS1_node(dsqlScratch, nameType.defaultClause->value);
 
 					GEN_expr(dsqlScratch, node);
 
@@ -3850,11 +3839,9 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 				if (check)
 				{
-					dsql_str* checkString = (dsql_str*) check->nod_arg[e_cnstr_source];
-					const string checkSource(checkString->str_data, checkString->str_length);
-
 					FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
-					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE, checkSource);
+					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE,
+						check->source);
 
 					dsqlScratch->getBlrData().clear();
 					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
@@ -3867,7 +3854,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 					// -- chrisj 1999-08-20
 					++dsqlScratch->contextNumber;
 
-					dsql_nod* node = PASS1_node(dsqlScratch, check->nod_arg[e_cnstr_condition]);
+					dsql_nod* node = PASS1_node(dsqlScratch, check->value);
 
 					GEN_expr(dsqlScratch, node);
 
@@ -4368,7 +4355,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 				// Get the attributes of the domain, and set any occurances of
 				// keyword VALUE to the correct type, length, scale, etc.
-				if (!METD_get_domain(dsqlScratch->getTransaction(), &localField, name.c_str()))
+				if (!METD_get_domain(dsqlScratch->getTransaction(), &localField, name))
 				{
 					// Specified domain or source field does not exist
 					status_exception::raise(
@@ -4381,11 +4368,9 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				dsqlScratch->domainValue.dsc_length = localField.fld_length;
 				dsqlScratch->domainValue.dsc_scale = localField.fld_scale;
 
-				dsql_str* checkString = (dsql_str*) setConstraint->nod_arg[e_cnstr_source];
-				const string checkSource(checkString->str_data, checkString->str_length);
-
 				FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
-				attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE, checkSource);
+				attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE,
+					setConstraint->source);
 
 				dsqlScratch->getBlrData().clear();
 				dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
@@ -4398,7 +4383,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				// -- chrisj 1999-08-20
 				++dsqlScratch->contextNumber;
 
-				dsql_nod* node = PASS1_node(dsqlScratch, setConstraint->nod_arg[e_cnstr_condition]);
+				dsql_nod* node = PASS1_node(dsqlScratch, setConstraint->value);
 
 				GEN_expr(dsqlScratch, node);
 
@@ -4417,17 +4402,14 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 					status_exception::raise(Arg::PrivateDyn(226) << name);
 				}
 
-				dsql_str* defaultString =
-					(dsql_str*) setDefault->nod_arg[e_dft_default_source];
-				const string defaultSource(defaultString->str_data, defaultString->str_length);
-
 				FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
-				attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE, defaultSource);
+				attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE,
+					setDefault->source);
 
 				dsqlScratch->getBlrData().clear();
 				dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
 
-				dsql_nod* node = PASS1_node(dsqlScratch, setDefault->nod_arg[e_dft_default]);
+				dsql_nod* node = PASS1_node(dsqlScratch, setDefault->value);
 
 				GEN_expr(dsqlScratch, node);
 
@@ -5087,7 +5069,7 @@ RelationNode::RelationNode(MemoryPool& p, dsql_nod* aDsqlNode)
 	: DdlNode(p),
 	  dsqlNode(aDsqlNode),
 	  name(p, ExprNode::as<RelationSourceNode>(aDsqlNode)->dsqlName),
-	  elements(p)
+	  clauses(p)
 {
 }
 
@@ -5413,9 +5395,10 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 }
 
 void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, const dsql_nod* element, SSHORT position, const dsql_nod* pkCols)
+	jrd_tra* transaction, const AddColumnClause* clause, SSHORT position,
+	const ObjectsArray<MetaName>* pkCols)
 {
-	dsql_fld* field = (dsql_fld*) element->nod_arg[Dsql::e_dfl_field];
+	dsql_fld* field = clause->field;
 
 	// Add the field to the relation being defined for parsing purposes.
 
@@ -5443,29 +5426,21 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		ObjectsArray<Constraint> constraints;
 		bool notNullFlag = false;
 
-		if (element->nod_arg[Dsql::e_dfl_identity])
+		if (clause->identity)
 			notNullFlag = true;	// identity columns are implicitly not null
 
-		if (element->nod_arg[Dsql::e_dfl_constraint])
+		for (ObjectsArray<AddConstraintClause>::const_iterator ptr = clause->constraints.begin();
+			 ptr != clause->constraints.end(); ++ptr)
 		{
-			const dsql_nod* node = element->nod_arg[Dsql::e_dfl_constraint];
-			const dsql_nod* const* const endPtr = node->nod_arg + node->nod_count;
-
-			for (const dsql_nod* const* ptr = node->nod_arg; ptr != endPtr; ++ptr)
-			{
-				if ((*ptr)->nod_type == Dsql::nod_rel_constraint)
-					makeConstraint(tdbb, dsqlScratch, transaction, *ptr, constraints, &notNullFlag);
-			}
+			makeConstraint(tdbb, dsqlScratch, transaction, &*ptr, constraints, &notNullFlag);
 		}
 
 		if (!notNullFlag && pkCols)
 		{
 			// Let's see if the field appears in a "primary_key (a, b, c)" relation constraint.
-			for (int i = 0; !notNullFlag && i < pkCols->nod_count; ++i)
+			for (int i = 0; !notNullFlag && i < pkCols->getCount(); ++i)
 			{
-				const dsql_str* pkFieldName = (dsql_str*) pkCols->nod_arg[i]->nod_arg[Dsql::e_fln_name];
-
-				if (field->fld_name == pkFieldName->str_data)
+				if (field->fld_name == (*pkCols)[i].c_str())
 					notNullFlag = true;
 			}
 		}
@@ -5478,44 +5453,34 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (position >= 0)
 			fieldDefinition.position = position;
 
-		MetaName collationName;
-
-		if (element->nod_arg[Dsql::e_dfl_collate])
-			collationName = ((dsql_str*) element->nod_arg[Dsql::e_dfl_collate])->str_data;
-
-		const dsql_nod* domainNode = element->nod_arg[Dsql::e_dfl_domain];
-
-		if (domainNode)
+		if (clause->domain.hasData())
 		{
-			const dsql_nod* node1 = domainNode->nod_arg[Dsql::e_dom_name];
-			const dsql_str* domainName = (dsql_str*) node1->nod_arg[Dsql::e_fln_name];
-
 			// Get the domain information.
-			if (!METD_get_domain(transaction, field, domainName->str_data))
+			if (!METD_get_domain(transaction, field, clause->domain))
 			{
 				// Specified domain or source field does not exist
 				status_exception::raise(
 					Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					Arg::Gds(isc_dsql_command_err) <<
-					Arg::Gds(isc_dsql_domain_not_found) << domainName->str_data);
+					Arg::Gds(isc_dsql_domain_not_found) << clause->domain);
 			}
 
-			fieldDefinition.fieldSource = domainName->str_data;
+			fieldDefinition.fieldSource = clause->domain;
 		}
 		else
 		{
 			string computedSource;
 			BlrWriter::BlrData computedValue;
 
-			if (element->nod_arg[e_dfl_computed])
+			if (clause->computed)
 			{
 				field->fld_flags |= FLD_computed;
 
-				defineComputed(dsqlScratch, dsqlNode, field, element->nod_arg[e_dfl_computed],
+				defineComputed(dsqlScratch, dsqlNode, field, clause->computed,
 					computedSource, computedValue);
 			}
 
-			TypeClause fieldType(*tdbb->getDefaultPool(), field, collationName);
+			TypeClause fieldType(*tdbb->getDefaultPool(), field, clause->collate);
 			fieldType.resolve(dsqlScratch);
 
 			// Generate a domain.
@@ -5535,10 +5500,10 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				Arg::Gds(isc_dsql_type_not_supp_ext_tab) << typeName << name << field->fld_name);
 		}
 
-		if (collationName.hasData())
-			DDL_resolve_intl_type(dsqlScratch, field, collationName);
+		if (clause->collate.hasData())
+			DDL_resolve_intl_type(dsqlScratch, field, clause->collate);
 
-		if (element->nod_arg[Dsql::e_dfl_identity])
+		if (clause->identity)
 		{
 			dsc desc;
 			MET_get_domain(tdbb, fieldDefinition.fieldSource, &desc, NULL);
@@ -5557,9 +5522,9 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 		BlrWriter::BlrData defaultValue;
 
-		if (element->nod_arg[Dsql::e_dfl_default])
+		if (clause->defaultValue)
 		{
-			if (defineDefault(tdbb, dsqlScratch, field, element->nod_arg[Dsql::e_dfl_default],
+			if (defineDefault(tdbb, dsqlScratch, field, clause->defaultValue,
 					fieldDefinition.defaultSource, defaultValue) &&
 				notNullFlag)
 			{
@@ -5572,7 +5537,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 		fieldDefinition.defaultValue = defaultValue;
 
-		if (element->nod_arg[Dsql::e_dfl_collate])
+		if (clause->collate.hasData())
 			fieldDefinition.collationId = field->fld_collation_id;
 
 		fieldDefinition.store(tdbb, transaction);
@@ -5598,9 +5563,9 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 // Define a DEFAULT clause. Return true for DEFAULT NULL.
 bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
-	dsql_fld* /*field*/, dsql_nod* node, string& source, BlrWriter::BlrData& value)
+	dsql_fld* /*field*/, const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
 {
-	dsql_nod* input = PASS1_node(dsqlScratch, node->nod_arg[Dsql::e_dft_default]);
+	dsql_nod* input = PASS1_node(dsqlScratch, clause->value);
 
 	// Generate the blr expression.
 
@@ -5612,9 +5577,7 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 	dsqlScratch->appendUChar(blr_eoc);
 
 	// Generate the source text.
-	const dsql_str* sourceStr = (dsql_str*) node->nod_arg[Dsql::e_dft_default_source];
-	fb_assert(sourceStr->str_length <= MAX_USHORT);
-	source.assign(sourceStr->str_data, sourceStr->str_length);
+	source = clause->source;
 
 	value.assign(dsqlScratch->getBlrData());
 
@@ -5623,80 +5586,53 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 
 // Make a constraint object from a legacy node.
 void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, const dsql_nod* node, ObjectsArray<Constraint>& constraints, bool* notNull)
+	jrd_tra* transaction, const AddConstraintClause* clause, ObjectsArray<Constraint>& constraints,
+	bool* notNull)
 {
-	const dsql_str* string = (dsql_str*) node->nod_arg[Dsql::e_rct_name];
-	dsql_nod* constraintNode = node->nod_arg[Dsql::e_rct_type];
-
-	switch (constraintNode->nod_type)
+	switch (clause->constraintType)
 	{
-		case Dsql::nod_not_null:
-		case Dsql::nod_primary:
+		case AddConstraintClause::CTYPE_NOT_NULL:
+		case AddConstraintClause::CTYPE_PK:
 			if (notNull && !*notNull)
 			{
 				*notNull = true;
 
 				Constraint& constraint = constraints.add();
 				constraint.type = Constraint::TYPE_NOT_NULL;
-				if (string && constraintNode->nod_type == Dsql::nod_not_null)
-					constraint.name = string->str_data;
+				if (clause->constraintType == AddConstraintClause::CTYPE_NOT_NULL)
+					constraint.name = clause->name;
 			}
 
-			if (constraintNode->nod_type == Dsql::nod_not_null)
+			if (clause->constraintType == AddConstraintClause::CTYPE_NOT_NULL)
 				break;
-			// nod_primary falls into
+			// AddConstraintClause::CTYPE_PK falls into
 
-		case Dsql::nod_unique:
+		case AddConstraintClause::CTYPE_UNIQUE:
 		{
 			Constraint& constraint = constraints.add();
-			constraint.type = constraintNode->nod_type == Dsql::nod_primary ?
+			constraint.type = clause->constraintType == AddConstraintClause::CTYPE_PK ?
 				Constraint::TYPE_PK : Constraint::TYPE_UNIQUE;
-			if (string)
-				constraint.name = string->str_data;
-
-			const dsql_nod* index = constraintNode->nod_arg[Dsql::e_pri_index];
-			fb_assert(index);
-
-			string = (dsql_str*) index->nod_arg[Dsql::e_idx_name];
-			constraint.indexName = (string ? string->str_data : constraint.name.c_str());
-
-			if (index->nod_arg[Dsql::e_idx_asc_dsc])
-				constraint.descending = true;
-
-			const dsql_nod* columns = constraintNode->nod_arg[Dsql::e_pri_columns];
-			if (columns)
-			{
-				const dsql_nod* const* ptr = columns->nod_arg;
-
-				for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr < end; ++ptr)
-				{
-					const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-					constraint.columns.add(fieldName->str_data);
-				}
-			}
-
+			constraint.name = clause->name;
+			constraint.indexName = clause->indexName;
+			constraint.descending = clause->descending;
+			constraint.columns = clause->columns;
 			break;
 		}
 
-		case Dsql::nod_foreign:
+		case AddConstraintClause::CTYPE_FK:
 		{
 			Constraint& constraint = constraints.add();
 			constraint.type = Constraint::TYPE_FK;
-			if (string)
-				constraint.name = string->str_data;
-
-			dsql_nod* columns = constraintNode->nod_arg[Dsql::e_for_columns];
-			RelationSourceNode* refRelationNode = ExprNode::as<RelationSourceNode>(
-				constraintNode->nod_arg[Dsql::e_for_reftable]);
-
-			constraint.refRelation = refRelationNode->dsqlName;
+			constraint.name = clause->name;
+			constraint.columns = clause->columns;
+			constraint.refRelation = clause->refRelation;
+			constraint.refColumns = clause->refColumns;
 
 			// If there is a referenced table name but no referenced field names, the
 			// primary key of the referenced table designates the referenced fields.
-			dsql_nod* refColumns = constraintNode->nod_arg[Dsql::e_for_refcolumns];
-			if (!refColumns)
+			if (clause->refColumns.isEmpty())
 			{
-				refColumns = METD_get_primary_key(transaction, refRelationNode->dsqlName);
+				dsql_nod* refColumns = METD_get_primary_key(transaction, clause->refRelation);
 
 				// If there is NEITHER an explicitly referenced field name, NOR does
 				// the referenced table have a primary key to serve as the implicitly
@@ -5711,9 +5647,19 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 						Arg::Gds(isc_dsql_command_err) <<
 						Arg::Gds(isc_reftable_requires_pk));
 				}
+				else
+				{
+					const dsql_nod* const* ptr = refColumns->nod_arg;
+
+					for (const dsql_nod* const* const end = ptr + refColumns->nod_count; ptr != end; ++ptr)
+					{
+						const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+						constraint.refColumns.add(fieldName->str_data);
+					}
+				}
 			}
 
-			if (refColumns && columns->nod_count != refColumns->nod_count)
+			if (constraint.refColumns.getCount() != constraint.columns.getCount())
 			{
 				// Foreign key field count does not match primary key.
 				status_exception::raise(
@@ -5724,61 +5670,26 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 			// Define the foreign key index and the triggers that may be needed
 			// for referential integrity action.
+			constraint.indexName = clause->indexName;
+			constraint.descending = clause->descending;
 
-			const dsql_nod* index = constraintNode->nod_arg[Dsql::e_for_index];
-			fb_assert(index);
-
-			string = (dsql_str*) index->nod_arg[Dsql::e_idx_name];
-			constraint.indexName = (string ? string->str_data : constraint.name.c_str());
-
-			if (index->nod_arg[Dsql::e_idx_asc_dsc])
-				constraint.descending = true;
-
-			if (columns)
+			if (clause->refAction)
 			{
-				const dsql_nod* const* ptr = columns->nod_arg;
-
-				for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr < end; ++ptr)
+				if (clause->refAction->updateAction != 0)
 				{
-					const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-					constraint.columns.add(fieldName->str_data);
-				}
-			}
-
-			if (refColumns)
-			{
-				const dsql_nod* const* ptr = refColumns->nod_arg;
-
-				for (const dsql_nod* const* const end = ptr + refColumns->nod_count; ptr < end; ++ptr)
-				{
-					const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-					constraint.refColumns.add(fieldName->str_data);
-				}
-			}
-
-			if (constraintNode->nod_arg[Dsql::e_for_action])
-			{
-				dsql_nod* forActionNode = constraintNode->nod_arg[Dsql::e_for_action];
-				fb_assert(forActionNode->nod_type == Dsql::nod_ref_upd_del);
-
-				dsql_nod* refUpdActionNode = forActionNode->nod_arg[Dsql::e_ref_upd];
-				if (refUpdActionNode)
-				{
-					fb_assert(refUpdActionNode->nod_type == Dsql::nod_ref_trig_action);
-
-					switch (refUpdActionNode->nod_flags)
+					switch (clause->refAction->updateAction)
 					{
-						case REF_ACTION_CASCADE:
+						case RefActionClause::ACTION_CASCADE:
 							constraint.refUpdateAction = RI_ACTION_CASCADE;
 							defineUpdateCascadeTrigger(dsqlScratch, constraint);
 							break;
 
-						case REF_ACTION_SET_DEFAULT:
+						case RefActionClause::ACTION_SET_DEFAULT:
 							constraint.refUpdateAction = RI_ACTION_DEFAULT;
 							defineSetDefaultTrigger(dsqlScratch, constraint, true);
 							break;
 
-						case REF_ACTION_SET_NULL:
+						case RefActionClause::ACTION_SET_NULL:
 							constraint.refUpdateAction = RI_ACTION_NULL;
 							defineSetNullTrigger(dsqlScratch, constraint, true);
 							break;
@@ -5787,30 +5698,27 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 							fb_assert(0);
 							// fall into
 
-						case REF_ACTION_NONE:
+						case RefActionClause::ACTION_NONE:
 							constraint.refUpdateAction = RI_ACTION_NONE;
 							break;
 					}
 				}
 
-				dsql_nod* refDelActionNode = forActionNode->nod_arg[Dsql::e_ref_del];
-				if (refDelActionNode)
+				if (clause->refAction->deleteAction != 0)
 				{
-					fb_assert(refDelActionNode->nod_type == Dsql::nod_ref_trig_action);
-
-					switch (refDelActionNode->nod_flags)
+					switch (clause->refAction->deleteAction)
 					{
-						case REF_ACTION_CASCADE:
+						case RefActionClause::ACTION_CASCADE:
 							constraint.refDeleteAction = RI_ACTION_CASCADE;
 							defineDeleteCascadeTrigger(dsqlScratch, constraint);
 							break;
 
-						case REF_ACTION_SET_DEFAULT:
+						case RefActionClause::ACTION_SET_DEFAULT:
 							constraint.refDeleteAction = RI_ACTION_DEFAULT;
 							defineSetDefaultTrigger(dsqlScratch, constraint, false);
 							break;
 
-						case REF_ACTION_SET_NULL:
+						case RefActionClause::ACTION_SET_NULL:
 							constraint.refDeleteAction = RI_ACTION_NULL;
 							defineSetNullTrigger(dsqlScratch, constraint, false);
 							break;
@@ -5819,7 +5727,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 							fb_assert(0);
 							// fall into
 
-						case REF_ACTION_NONE:
+						case RefActionClause::ACTION_NONE:
 							constraint.refDeleteAction = RI_ACTION_NONE;
 							break;
 					}
@@ -5829,14 +5737,12 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 			break;
 		}
 
-		case Dsql::nod_def_constraint:
+		case AddConstraintClause::CTYPE_CHECK:
 		{
 			Constraint& constraint = constraints.add();
 			constraint.type = Constraint::TYPE_CHECK;
-			if (string)
-				constraint.name = string->str_data;
-
-			defineCheckConstraint(dsqlScratch, constraint, constraintNode);
+			constraint.name = clause->name;
+			defineCheckConstraint(dsqlScratch, constraint, clause->check);
 			break;
 		}
 	}
@@ -6079,18 +5985,18 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 // Generate triggers to implement the CHECK clause, either at the field or table level.
 void RelationNode::defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-	dsql_nod* node)
+	const ValueSourceClause* clause)
 {
 	// Create the INSERT trigger.
-	defineCheckConstraintTrigger(dsqlScratch, constraint, node, PRE_STORE_TRIGGER);
+	defineCheckConstraintTrigger(dsqlScratch, constraint, clause, PRE_STORE_TRIGGER);
 
 	// Create the UPDATE trigger.
-	defineCheckConstraintTrigger(dsqlScratch, constraint, node, PRE_MODIFY_TRIGGER);
+	defineCheckConstraintTrigger(dsqlScratch, constraint, clause, PRE_MODIFY_TRIGGER);
 }
 
 // Define a check constraint trigger.
 void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch,
-	Constraint& constraint, dsql_nod* node, FB_UINT64 triggerType)
+	Constraint& constraint, const ValueSourceClause* clause, FB_UINT64 triggerType)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -6135,7 +6041,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 
 	// Generate the condition for firing the trigger.
 
-	NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(pool, node->nod_arg[Dsql::e_cnstr_condition]);
+	NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(pool, clause->value);
 
 	dsql_nod* condition = MAKE_node(Dsql::nod_class_exprnode, 1);
 	condition->nod_arg[0] = reinterpret_cast<dsql_nod*>(notNode);
@@ -6161,7 +6067,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	trigger.systemFlag = fb_sysflag_check_constraint;
 	trigger.relationName = name;
 	trigger.type = triggerType;
-	trigger.source = ((dsql_str*) node->nod_arg[Dsql::e_cnstr_source])->str_data;
+	trigger.source = clause->source;
 	trigger.blrData = blrWriter.getBlrData();
 }
 
@@ -6210,29 +6116,26 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 
 		// Search the parse tree to find the column
 
-		for (const dsql_nod* const* ptr = elements.begin(); ptr != elements.end(); ++ptr)
+		for (const Clause* const* ptr = clauses.begin(); ptr != clauses.end(); ++ptr)
 		{
-			const dsql_nod* elem = *ptr;
-
-			if (elem->nod_type != Dsql::nod_def_field)
+			if ((*ptr)->type != Clause::TYPE_ADD_COLUMN)
 				continue;
 
-			const dsql_fld* field = (dsql_fld*) elem->nod_arg[Dsql::e_dfl_field];
-			if (*column != field->fld_name)
+			const AddColumnClause* clause = static_cast<const AddColumnClause*>(*ptr);
+
+			if (*column != clause->field->fld_name)
 				continue;
 
 			// Now we have the right column in the parse tree. case (1) above
 
-			dsql_nod* default_node = elem->nod_arg[Dsql::e_dfl_default];
-			if (default_node)
+			if (clause->defaultValue)
 			{
 				// case (1-a) above: There is a column level default
-				fb_assert(default_node->nod_type == Dsql::nod_def_default);
 
 				dsqlScratch->getBlrData().clear();
 				dsqlScratch->getDebugData().clear();
 
-				GEN_expr(dsqlScratch, default_node->nod_arg[Dsql::e_dft_default]);
+				GEN_expr(dsqlScratch, clause->defaultValue->value);
 
 				foundDefault = true;
 				searchForDefault = false;
@@ -6242,23 +6145,13 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 			}
 			else
 			{
-				const TEXT* domainName;
-				const dsql_str* domainNameStr;
-				const dsql_nod* tmpNode;
-
-				const dsql_nod* domainNode = elem->nod_arg[Dsql::e_dfl_domain];
-				if (!domainNode ||
-					!(tmpNode = domainNode->nod_arg[Dsql::e_dom_name]) ||
-					!(domainNameStr = (dsql_str*) tmpNode->nod_arg[Dsql::e_fln_name]) ||
-					!(domainName = domainNameStr->str_data))
-				{
+				if (!clause->domain.hasData())
 					break;
-				}
 
 				// case: (1-b): Domain name is available. Column level default
 				// is not declared. So get the domain default.
 				const USHORT defaultLen = METD_get_domain_default(dsqlScratch->getTransaction(),
-					domainName, &foundDefault, defaultVal, sizeof(defaultVal));
+					clause->domain, &foundDefault, defaultVal, sizeof(defaultVal));
 
 				searchForDefault = false;
 
@@ -6607,22 +6500,22 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 	storePrivileges(tdbb, transaction, name, obj_relation, ALL_PRIVILEGES);
 
 	ObjectsArray<Constraint> constraints;
-	const dsql_nod* pkCols = findPkColumns();
+	const ObjectsArray<MetaName>* pkCols = findPkColumns();
 	SSHORT position = 0;
 
-	for (const dsql_nod* const* i = elements.begin(); i != elements.end(); ++i)
+	for (const Clause* const* i = clauses.begin(); i != clauses.end(); ++i)
 	{
-		const dsql_nod* element = *i;
-
-		switch (element->nod_type)
+		switch ((*i)->type)
 		{
-			case Dsql::nod_def_field:
-				defineField(tdbb, dsqlScratch, transaction, element, position, pkCols);
+			case Clause::TYPE_ADD_COLUMN:
+				defineField(tdbb, dsqlScratch, transaction,
+					static_cast<const AddColumnClause*>(*i), position, pkCols);
 				++position;
 				break;
 
-			case Dsql::nod_rel_constraint:
-				makeConstraint(tdbb, dsqlScratch, transaction, element, constraints);
+			case Clause::TYPE_ADD_CONSTRAINT:
+				makeConstraint(tdbb, dsqlScratch, transaction,
+					static_cast<const AddConstraintClause*>(*i), constraints);
 				break;
 
 			default:
@@ -6651,17 +6544,16 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 
 // Starting from the elements in a table definition, locate the PK columns if given in a
 // separate table constraint declaration.
-const dsql_nod* CreateRelationNode::findPkColumns()
+const ObjectsArray<MetaName>* CreateRelationNode::findPkColumns()
 {
-	for (const dsql_nod* const* i = elements.begin(); i != elements.end(); ++i)
+	for (const Clause* const* i = clauses.begin(); i != clauses.end(); ++i)
 	{
-		const dsql_nod* element = *i;
-
-		if (element->nod_type == Dsql::nod_rel_constraint)
+		if ((*i)->type == Clause::TYPE_ADD_CONSTRAINT)
 		{
-			const dsql_nod* node = element->nod_arg[Dsql::e_rct_type];
-			if (node->nod_type == Dsql::nod_primary)
-				return node->nod_arg[Dsql::e_pri_columns];
+			const AddConstraintClause* clause = static_cast<const AddConstraintClause*>(*i);
+
+			if (clause->constraintType == AddConstraintClause::CTYPE_PK)
+				return &clause->columns;
 		}
 	}
 
@@ -6709,53 +6601,49 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 		ObjectsArray<Constraint> constraints;
 
-		for (const dsql_nod* const* i = elements.begin(); i != elements.end(); ++i)
+		for (const Clause* const* i = clauses.begin(); i != clauses.end(); ++i)
 		{
-			const dsql_nod* element = *i;
-
-			switch (element->nod_type)
+			switch ((*i)->type)
 			{
-				case Dsql::nod_def_field:
-					defineField(tdbb, dsqlScratch, transaction, element, -1, NULL);
+				case Clause::TYPE_ADD_COLUMN:
+					defineField(tdbb, dsqlScratch, transaction,
+						static_cast<const AddColumnClause*>(*i), -1, NULL);
 					break;
 
-				case Dsql::nod_mod_field_type:
-					modifyField(tdbb, dsqlScratch, transaction, element);
+				case Clause::TYPE_ALTER_COL_TYPE:
+					modifyField(tdbb, dsqlScratch, transaction,
+						static_cast<const AlterColTypeClause*>(*i));
 					break;
 
-				case Dsql::nod_mod_field_name:
+				case Clause::TYPE_ALTER_COL_NAME:
 				{
-					const dsql_nod* oldField = element->nod_arg[e_mod_fld_name_orig_name];
-					MetaName oldFieldName = ((dsql_str*) oldField->nod_arg[e_fln_name])->str_data;
-					const dsql_nod* newField = element->nod_arg[e_mod_fld_name_new_name];
-					MetaName newFieldName = ((dsql_str*) newField->nod_arg[e_fln_name])->str_data;
-
+					const AlterColNameClause* clause = static_cast<const AlterColNameClause*>(*i);
 					AutoRequest request;
 					bool found = false;
 
 					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 						RFL IN RDB$RELATION_FIELDS
-						WITH RFL.RDB$FIELD_NAME EQ oldFieldName.c_str() AND
+						WITH RFL.RDB$FIELD_NAME EQ clause->fromName.c_str() AND
 							 RFL.RDB$RELATION_NAME EQ name.c_str()
 					{
 						found = true;
 
 						MODIFY RFL
-							checkViewDependency(tdbb, transaction, name, oldFieldName);
-							checkSpTrigDependency(tdbb, transaction, name, oldFieldName);
+							checkViewDependency(tdbb, transaction, name, clause->fromName);
+							checkSpTrigDependency(tdbb, transaction, name, clause->fromName);
 
-							if (!fieldExists(tdbb, transaction, name, newFieldName))
+							if (!fieldExists(tdbb, transaction, name, clause->toName))
 							{
-								strcpy(RFL.RDB$FIELD_NAME, newFieldName.c_str());
+								strcpy(RFL.RDB$FIELD_NAME, clause->toName.c_str());
 								AlterDomainNode::modifyLocalFieldIndex(tdbb, transaction, name,
-									oldFieldName, newFieldName);
+									clause->fromName, clause->toName);
 							}
 							else
 							{
 								// msg 205: Cannot rename field %s to %s.  A field with that name
 								// already exists in table %s.
 								status_exception::raise(
-									Arg::PrivateDyn(205) << oldFieldName << newFieldName << name);
+									Arg::PrivateDyn(205) << clause->fromName << clause->toName << name);
 							}
 						END_MODIFY
 					}
@@ -6764,41 +6652,38 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					if (!found)
 					{
 						// msg 176: "column %s does not exist in table/view %s"
-						status_exception::raise(Arg::PrivateDyn(176) << oldFieldName << name);
+						status_exception::raise(Arg::PrivateDyn(176) << clause->fromName << name);
 					}
 
 					break;
 				}
 
-				case Dsql::nod_mod_field_null_flag:
+				case Clause::TYPE_ALTER_COL_NULL:
 				{
+					const AlterColNullClause* clause = static_cast<const AlterColNullClause*>(*i);
+
 					//// FIXME: This clause allows inconsistencies like setting a field with a
 					//// not null CONSTRAINT as nullable, or setting a field based on a not null
 					//// domain as nullable (while ISQL shows it as not null).
-
-					const dsql_nod* fieldNode = element->nod_arg[e_mod_fld_null_flag_field];
-					MetaName fieldName = ((dsql_str*) fieldNode->nod_arg[e_fln_name])->str_data;
-					bool flag = ExprNode::as<LiteralNode>(
-						element->nod_arg[e_mod_fld_null_flag_value])->getSlong() != 0;
 
 					AutoRequest request;
 					bool found = false;
 
 					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 						RFL IN RDB$RELATION_FIELDS
-						WITH RFL.RDB$FIELD_NAME EQ fieldName.c_str() AND
+						WITH RFL.RDB$FIELD_NAME EQ clause->name.c_str() AND
 							 RFL.RDB$RELATION_NAME EQ name.c_str()
 					{
 						found = true;
 
 						MODIFY RFL
-							if (!flag && !RFL.RDB$GENERATOR_NAME.NULL)
+							if (!clause->notNullFlag && !RFL.RDB$GENERATOR_NAME.NULL)
 							{
 								// msg 274: Identity column @1 of table @2 cannot be changed to NULLable
-								status_exception::raise(Arg::PrivateDyn(274) << fieldName << name);
+								status_exception::raise(Arg::PrivateDyn(274) << clause->name << name);
 							}
 
-							RFL.RDB$NULL_FLAG = SSHORT(flag);
+							RFL.RDB$NULL_FLAG = SSHORT(clause->notNullFlag);
 						END_MODIFY
 					}
 					END_FOR
@@ -6806,20 +6691,17 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					if (!found)
 					{
 						// msg 176: "column %s does not exist in table/view %s"
-						status_exception::raise(Arg::PrivateDyn(176) << fieldName << name);
+						status_exception::raise(Arg::PrivateDyn(176) << clause->name << name);
 					}
 
 					break;
 				}
 
-				case Dsql::nod_mod_field_pos:
+				case Clause::TYPE_ALTER_COL_POS:
 				{
-					const dsql_nod* fieldNode = element->nod_arg[e_mod_fld_pos_orig_name];
-					MetaName fieldName = ((dsql_str*) fieldNode->nod_arg[e_fln_name])->str_data;
-					const dsql_nod* posNode = element->nod_arg[e_mod_fld_pos_new_position];
-
+					const AlterColPosClause* clause = static_cast<const AlterColPosClause*>(*i);
 					// CVC: Since now the parser accepts pos=1..N, let's subtract one here.
-					const SSHORT pos = (SSHORT) ExprNode::as<LiteralNode>(posNode)->getSlong() - 1;
+					const SSHORT pos = clause->newPos - 1;
 
 					AutoRequest request;
 					bool found = false;
@@ -6827,7 +6709,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 						RFL IN RDB$RELATION_FIELDS
-						WITH RFL.RDB$FIELD_NAME EQ fieldName.c_str() AND
+						WITH RFL.RDB$FIELD_NAME EQ clause->name.c_str() AND
 							 RFL.RDB$RELATION_NAME EQ name.c_str()
 					{
 						found = true;
@@ -6838,16 +6720,16 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					if (!found)
 					{
 						// msg 176: "column %s does not exist in table/view %s"
-						status_exception::raise(Arg::PrivateDyn(176) << fieldName << name);
+						status_exception::raise(Arg::PrivateDyn(176) << clause->name << name);
 					}
 
 					if (pos != oldPos)
-						modifyLocalFieldPosition(tdbb, transaction, name, fieldName, pos, oldPos);
+						modifyLocalFieldPosition(tdbb, transaction, name, clause->name, pos, oldPos);
 
 					break;
 				}
 
-				case Dsql::nod_del_field:
+				case Clause::TYPE_DROP_COLUMN:
 				{
 					// Fix for bug 8054:
 					// [CASCADE | RESTRICT] syntax is available in IB4.5, but not
@@ -6856,10 +6738,9 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					// Option CASCADE causes an error: unsupported DSQL construct.
 					// Option RESTRICT is default behaviour.
 
-					const dsql_nod* fieldNode = element->nod_arg[0];
-					MetaName fieldName = ((dsql_str*) fieldNode->nod_arg[e_fln_name])->str_data;
+					const DropColumnClause* clause = static_cast<const DropColumnClause*>(*i);
 
-					if ((element->nod_arg[1])->nod_type == nod_cascade)
+					if (clause->cascade)
 					{
 						// Unsupported DSQL construct
 						status_exception::raise(
@@ -6868,18 +6749,18 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 							Arg::Gds(isc_dsql_construct_err));
 					}
 
-					fb_assert((element->nod_arg[1])->nod_type == nod_restrict);
-					deleteLocalField(tdbb, transaction, name, fieldName);
+					deleteLocalField(tdbb, transaction, name, clause->name);
 					break;
 				}
 
-				case Dsql::nod_rel_constraint:
-					makeConstraint(tdbb, dsqlScratch, transaction, element, constraints);
+				case Clause::TYPE_ADD_CONSTRAINT:
+					makeConstraint(tdbb, dsqlScratch, transaction,
+						static_cast<const AddConstraintClause*>(*i), constraints);
 					break;
 
-				case Dsql::nod_delete_rel_constraint:
+				case Clause::TYPE_DROP_CONSTRAINT:
 				{
-					MetaName constraintName = ((dsql_str*) element->nod_arg[0])->str_data;
+					const MetaName& constraintName = static_cast<const DropConstraintClause *>(*i)->name;
 					AutoCacheRequest request(tdbb, drq_e_rel_con, DYN_REQUESTS);
 					bool found = false;
 
@@ -6959,11 +6840,11 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 //       Anything to Blob
 //       Anything to Array
 void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, const dsql_nod* element)
+	jrd_tra* transaction, const AlterColTypeClause* clause)
 {
 	Attachment* const attachment = transaction->tra_attachment;
 
-	dsql_fld* field = (dsql_fld*) element->nod_arg[Dsql::e_mod_fld_type_field];
+	dsql_fld* field = clause->field;
 
 	// Add the field to the relation being defined for parsing purposes.
 	bool permanent = false;
@@ -6987,9 +6868,6 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 	try
 	{
-		dsql_nod* domainNode = element->nod_arg[Dsql::e_mod_fld_type_dom_name];
-		dsql_nod* computedNode = element->nod_arg[Dsql::e_mod_fld_type_computed];
-		dsql_nod* defaultNode = element->nod_arg[Dsql::e_mod_fld_type_default];
 		bool found = false;
 		AutoRequest request;
 
@@ -7006,7 +6884,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 			bool isView = !REL.RDB$VIEW_BLR.NULL;
 
-			if (!isView && (!FLD.RDB$COMPUTED_BLR.NULL != (computedNode != NULL)))
+			if (!isView && (!FLD.RDB$COMPUTED_BLR.NULL != (clause->computed != NULL)))
 			{
 				// Cannot add or remove COMPUTED from column @1
 				status_exception::raise(Arg::PrivateDyn(249) << field->fld_name);
@@ -7038,70 +6916,70 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			string computedSource;
 			BlrWriter::BlrData computedValue;
 
-			if (computedNode)
+			if (clause->computed)
 			{
-				defineComputed(dsqlScratch, dsqlNode, field, computedNode, computedSource,
+				defineComputed(dsqlScratch, dsqlNode, field, clause->computed, computedSource,
 					computedValue);
 			}
 
-			if (defaultNode)
+			if (clause->defaultValue)
 			{
 				MODIFY RFR
-					if (defaultNode->nod_type == nod_def_default)
+					if (!RFR.RDB$GENERATOR_NAME.NULL)
 					{
-						if (!RFR.RDB$GENERATOR_NAME.NULL)
-						{
-							// msg 275: Identity column @1 of table @2 cannot have default value
-							status_exception::raise(Arg::PrivateDyn(275) << field->fld_name << name);
-						}
-
-						if (hasDimensions)
-						{
-							// msg 225: "Default value is not allowed for array type in field %s"
-							status_exception::raise(Arg::PrivateDyn(225) << field->fld_name);
-						}
-
-						if (computedNode)
-						{
-							// msg 233: "Local column %s is computed, cannot set a default value"
-							status_exception::raise(Arg::PrivateDyn(233) << field->fld_name);
-						}
-
-						string defaultSource;
-						BlrWriter::BlrData defaultValue;
-
-						defineDefault(tdbb, dsqlScratch, field, defaultNode, defaultSource, defaultValue);
-
-						RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
-						attachment->storeMetaDataBlob(tdbb, transaction,
-							&RFR.RDB$DEFAULT_SOURCE, defaultSource);
-
-						RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
-						attachment->storeBinaryBlob(tdbb, transaction,
-							&RFR.RDB$DEFAULT_VALUE, defaultValue);
+						// msg 275: Identity column @1 of table @2 cannot have default value
+						status_exception::raise(Arg::PrivateDyn(275) << field->fld_name << name);
 					}
-					else if (defaultNode->nod_type == nod_del_default)
+
+					if (hasDimensions)
 					{
-						if (RFR.RDB$DEFAULT_VALUE.NULL)
+						// msg 225: "Default value is not allowed for array type in field %s"
+						status_exception::raise(Arg::PrivateDyn(225) << field->fld_name);
+					}
+
+					if (clause->computed)
+					{
+						// msg 233: "Local column %s is computed, cannot set a default value"
+						status_exception::raise(Arg::PrivateDyn(233) << field->fld_name);
+					}
+
+					string defaultSource;
+					BlrWriter::BlrData defaultValue;
+
+					defineDefault(tdbb, dsqlScratch, field, clause->defaultValue,
+						defaultSource, defaultValue);
+
+					RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
+					attachment->storeMetaDataBlob(tdbb, transaction,
+						&RFR.RDB$DEFAULT_SOURCE, defaultSource);
+
+					RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction,
+						&RFR.RDB$DEFAULT_VALUE, defaultValue);
+				END_MODIFY
+			}
+			else if (clause->dropDefault)
+			{
+				MODIFY RFR
+					if (RFR.RDB$DEFAULT_VALUE.NULL)
+					{
+						if (FLD.RDB$DEFAULT_VALUE.NULL)
 						{
-							if (FLD.RDB$DEFAULT_VALUE.NULL)
-							{
-								// msg 229: "Local column %s doesn't have a default"
-								status_exception::raise(Arg::PrivateDyn(229) << field->fld_name);
-							}
-							else
-							{
-								// msg 230: "Local column %s default belongs to domain %s"
-								status_exception::raise(
-									Arg::PrivateDyn(230) <<
-										field->fld_name << MetaName(FLD.RDB$FIELD_NAME));
-							}
+							// msg 229: "Local column %s doesn't have a default"
+							status_exception::raise(Arg::PrivateDyn(229) << field->fld_name);
 						}
 						else
 						{
-							RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
-							RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
+							// msg 230: "Local column %s default belongs to domain %s"
+							status_exception::raise(
+								Arg::PrivateDyn(230) <<
+									field->fld_name << MetaName(FLD.RDB$FIELD_NAME));
 						}
+					}
+					else
+					{
+						RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
+						RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
 					}
 				END_MODIFY
 			}
@@ -7112,13 +6990,12 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				MetaName newDomainName;
 				dyn_fld newDom;
 
-				if (domainNode)
+				if (clause->domain.hasData())
 				{
 					// Case a1: Internal domain -> domain.
 					// Case a2: Domain -> domain.
 
-					const dsql_nod* node1 = domainNode->nod_arg[Dsql::e_dom_name];
-					newDomainName = ((dsql_str*) node1->nod_arg[Dsql::e_fln_name])->str_data;
+					newDomainName = clause->domain;
 
 					if (fb_utils::implicit_domain(newDomainName.c_str()))
 					{
@@ -7128,7 +7005,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					}
 
 					// Get the domain information.
-					if (!METD_get_domain(dsqlScratch->getTransaction(), field, newDomainName.c_str()))
+					if (!METD_get_domain(dsqlScratch->getTransaction(), field, newDomainName))
 					{
 						// Specified domain or source field does not exist.
 						status_exception::raise(
@@ -7156,10 +7033,10 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 					// If COMPUTED was specified but the type wasn't, we use the type of
 					// the computed expression.
-					if (computedNode && field->fld_dtype == dtype_unknown)
+					if (clause->computed && field->fld_dtype == dtype_unknown)
 					{
 						dsc desc;
-						MAKE_desc(dsqlScratch, &desc, computedNode);
+						MAKE_desc(dsqlScratch, &desc, clause->computed->value);
 
 						field->fld_dtype = desc.dsc_dtype;
 						field->fld_length = desc.dsc_length;
@@ -7197,7 +7074,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 						storeGlobalField(tdbb, transaction, newDomainName, type);
 				}
 
-				if (!computedNode && !isView)
+				if (!clause->computed && !isView)
 				{
 					if (newDomainName.hasData())
 						newDom.dyn_fld_source = newDomainName;
@@ -7221,7 +7098,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 						RFR.RDB$FIELD_SOURCE.NULL = FALSE;
 						strcpy(RFR.RDB$FIELD_SOURCE, newDomainName.c_str());
 
-						if (computedNode)
+						if (clause->computed)
 						{
 							RFR.RDB$UPDATE_FLAG.NULL = FALSE;
 							RFR.RDB$UPDATE_FLAG = 1;
@@ -7232,7 +7109,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				}
 			}
 
-			if (computedNode)
+			if (clause->computed)
 			{
 				// We can alter FLD directly here because if we are setting a computed expression,
 				// it means the field already was computed. And if it was, it should be the
@@ -8906,10 +8783,10 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	definition.unique = unique;
 	definition.descending = descending;
 
-	if (legacyDef->nod_type == Dsql::nod_list)
+	if (columns)
 	{
-	    const dsql_nod* const* ptr = legacyDef->nod_arg;
-	    const dsql_nod* const* const end = ptr + legacyDef->nod_count;
+	    const dsql_nod* const* ptr = columns->nod_arg;
+	    const dsql_nod* const* const end = ptr + columns->nod_count;
 
 		for (; ptr != end; ++ptr)
 		{
@@ -8917,12 +8794,12 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 			column = ((dsql_str*) (*ptr)->nod_arg[1])->str_data;
 		}
 	}
-	else if (legacyDef->nod_type == Dsql::nod_def_computed)
+	else if (computed)
 	{
 		string computedSource;
 		BlrWriter::BlrData computedValue;
 
-		defineComputed(dsqlScratch, legacyRelation, NULL, legacyDef, computedSource, computedValue);
+		defineComputed(dsqlScratch, legacyRelation, NULL, computed, computedSource, computedValue);
 
 		attachment->storeMetaDataBlob(tdbb, transaction, &definition.expressionSource,
 			computedSource);

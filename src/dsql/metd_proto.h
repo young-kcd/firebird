@@ -58,8 +58,8 @@ Firebird::MetaName METD_get_charset_name(Jrd::jrd_tra*, SSHORT);
 Jrd::dsql_intlsym* METD_get_collation(Jrd::jrd_tra*, const Firebird::MetaName&, USHORT charset_id);
 USHORT METD_get_col_default(Jrd::jrd_tra*, const char*, const char*, bool*, UCHAR*, USHORT);
 Jrd::dsql_str* METD_get_default_charset(Jrd::jrd_tra*);
-bool METD_get_domain(Jrd::jrd_tra*, class Jrd::dsql_fld*, const char* name);
-USHORT METD_get_domain_default(Jrd::jrd_tra*, const TEXT*, bool*, UCHAR*, USHORT);
+bool METD_get_domain(Jrd::jrd_tra*, class Jrd::dsql_fld*, const Firebird::MetaName& name);
+USHORT METD_get_domain_default(Jrd::jrd_tra*, const Firebird::MetaName&, bool*, UCHAR*, USHORT);
 bool METD_get_exception(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
 	const Firebird::QualifiedName&);

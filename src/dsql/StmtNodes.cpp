@@ -1401,7 +1401,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 
 	for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
 	{
-		if (param->legacyDefault)
+		if (param->defaultClause)
 			defaultFound = true;
 		else if (defaultFound)
 		{
@@ -1446,10 +1446,10 @@ void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	{
 		dsqlScratch->appendNullString(param->name.c_str());
 
-		if (param->legacyDefault)
+		if (param->defaultClause)
 		{
 			dsqlScratch->appendUChar(1);
-			GEN_expr(dsqlScratch, param->legacyDefault->nod_arg[Dsql::e_dft_default]);
+			GEN_expr(dsqlScratch, param->defaultClause->value);
 		}
 		else
 			dsqlScratch->appendUChar(0);
@@ -1661,7 +1661,7 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 
 		for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
 		{
-			if (param->legacyDefault)
+			if (param->defaultClause)
 			{
 				if (dsqlProcedure->prc_def_count == 0)
 					dsqlProcedure->prc_def_count = paramArray.end() - param;
@@ -1715,10 +1715,10 @@ void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	{
 		dsqlScratch->appendNullString(param->name.c_str());
 
-		if (param->legacyDefault)
+		if (param->defaultClause)
 		{
 			dsqlScratch->appendUChar(1);
-			GEN_expr(dsqlScratch, param->legacyDefault->nod_arg[Dsql::e_dft_default]);
+			GEN_expr(dsqlScratch, param->defaultClause->value);
 		}
 		else
 			dsqlScratch->appendUChar(0);
@@ -3667,11 +3667,8 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		newParam.legacyParameter = PASS1_node(dsqlScratch, newParam.legacyParameter);
 
-		if (newParam.legacyDefault)
-		{
-			newParam.legacyDefault->nod_arg[Dsql::e_dft_default] =
-				PASS1_node(dsqlScratch, newParam.legacyDefault->nod_arg[Dsql::e_dft_default]);
-		}
+		if (newParam.defaultClause)
+			newParam.defaultClause->value = PASS1_node(dsqlScratch, newParam.defaultClause->value);
 
 		newParam.resolve(dsqlScratch);
 		newParam.legacyField->fld_id = param - parameters.begin();

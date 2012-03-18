@@ -55,18 +55,7 @@ enum nod_t
 	// to an expression node.
 
 	nod_unknown_type = 0,
-	nod_def_default,
-	nod_del_default,
-	nod_def_domain,
-	nod_def_field,
-	nod_mod_field,
-	nod_del_field,
 	nod_def_index,
-	nod_def_constraint,
-	nod_rel_constraint,
-	nod_delete_rel_constraint,
-	nod_primary,
-	nod_foreign,
 	nod_references,
 	nod_proc_obj,
 	nod_trig_obj,
@@ -82,37 +71,26 @@ enum nod_t
 	nod_select_expr,
 	nod_order,
 	nod_flag,
-	nod_unique,
 	nod_field_name,
 	nod_user_name,
 	nod_user_group,
 	nod_var_name,
 	nod_array,
-	nod_not_null,
 	nod_collate,
 	nod_table_lock,
 	nod_lock_mode,
-	nod_def_computed,
 	nod_plan_expr,
 	nod_plan_item,
 	nod_natural,
 	nod_index,
 	nod_index_order,
-	nod_restrict,	// drop behaviour
-	nod_cascade,
-	nod_ref_upd_del,	// referential integrity actions
-	nod_ref_trig_action,
 	nod_role_name,
-	nod_mod_field_name,
-	nod_mod_field_type,
-	nod_mod_field_pos,
 	nod_label, // label support
 	nod_rows,	// ROWS support
 	nod_with,
 	nod_class_exprnode,
 	nod_package_name,
 	nod_package_obj,
-	nod_mod_field_null_flag,
 	nod_func_obj,
 	nod_function_name
 };
@@ -157,52 +135,6 @@ enum node_args {
 	e_idx_fields,
 	e_idx_count,
 
-	e_dft_default = 0,		// nod_def_default
-	e_dft_default_source,
-	e_dft_count,
-
-	e_dom_name = 0,			// nod_def_domain
-	e_dom_default,
-	e_dom_constraint,
-	e_dom_collate,
-	e_dom_count,
-
-	e_dfl_field = 0,		// nod_def_field
-	e_dfl_default,
-	e_dfl_constraint,
-	e_dfl_collate,
-	e_dfl_domain,
-	e_dfl_computed,
-	e_dfl_identity,
-	e_dfl_count,
-
-	e_rct_name = 0,			// nod_rel_constraint
-	e_rct_type,
-
-	e_pri_columns = 0,		// nod_primary
-	e_pri_index,
-	e_pri_count,
-
-	e_for_columns = 0,		// nod_foreign
-	e_for_reftable,
-	e_for_refcolumns,
-	e_for_action,
-	e_for_index,
-	e_for_count,
-
-	e_ref_upd = 0,			// nod_ref_upd_del_action
-	e_ref_del,
-	e_ref_upd_del_count,
-
-	e_ref_trig_action_count = 0,	// nod_ref_trig_action
-
-	e_cnstr_table = 0,		// nod_def_constraint
-	e_cnstr_type,
-	e_cnstr_condition,
-	e_cnstr_actions,
-	e_cnstr_source,
-	e_cnstr_count,
-
 	e_coll_target = 0,		// Not a DSQL_NOD   nod_collate
 	e_coll_source,
 	e_coll_count,
@@ -215,32 +147,9 @@ enum node_args {
 	e_lock_tables = 0,		//
 	e_lock_mode,
 
-	// computed field
-
-	e_cmp_expr = 0,
-	e_cmp_text,
-
-	e_mod_fld_name_orig_name = 0,	// nod_mod_field_name
-	e_mod_fld_name_new_name,
-	e_mod_fld_name_count,
-
-	e_mod_fld_type_field = 0,				// nod_mod_field_type
-	e_mod_fld_type_dom_name,
-	e_mod_fld_type_default,
-	e_mod_fld_type_computed,
-	e_mod_fld_type_count,
-
-	e_mod_fld_pos_orig_name = 0,	// nod_mod_field_position
-	e_mod_fld_pos_new_position,
-	e_mod_fld_pos_count,
-
 	e_label_name = 0,
 	e_label_number,
-	e_label_count,
-
-	e_mod_fld_null_flag_field = 0,				// nod_mod_field_null_flag
-	e_mod_fld_null_flag_value,
-	e_mod_fld_null_flag_count
+	e_label_count
 };
 
 } // namespace
@@ -278,11 +187,6 @@ enum nod_flags_vals {
 
 	NOD_NULLS_FIRST			= 1, // nod_order
 	NOD_NULLS_LAST			= 2,
-
-	REF_ACTION_CASCADE		= 1, // nod_ref_trig_action
-	REF_ACTION_SET_DEFAULT	= 2,
-	REF_ACTION_SET_NULL		= 4,
-	REF_ACTION_NONE			= 8,
 
 	NOD_SELECT_EXPR_SINGLETON				= 1,	// nod_select_expr
 	NOD_SELECT_EXPR_VALUE					= 2,

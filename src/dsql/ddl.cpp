@@ -209,7 +209,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		}
 		else
 		{
-			if (!METD_get_domain(dsqlScratch->getTransaction(), field, field->fld_type_of_name.c_str()))
+			if (!METD_get_domain(dsqlScratch->getTransaction(), field, field->fld_type_of_name))
 			{
 				// Specified domain or source field does not exist
 				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->fld_type_of_name));

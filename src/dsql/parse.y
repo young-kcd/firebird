@@ -659,8 +659,13 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ExceptionArray* exceptionArray;
 	Jrd::CreateAlterPackageNode::Item packageItem;
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
+	Jrd::ValueSourceClause* valueSourceClause;
+	Jrd::RelationNode* relationNode;
+	Jrd::RelationNode::AddColumnClause* addColumnClause;
+	Jrd::RelationNode::RefActionClause* refActionClause;
 	Jrd::CreateRelationNode* createRelationNode;
 	Jrd::CreateAlterViewNode* createAlterViewNode;
+	Jrd::CreateIndexNode* createIndexNode;
 	Jrd::AlterDatabaseNode* alterDatabaseNode;
 	Jrd::ExecBlockNode* execBlockNode;
 	Jrd::AggNode* aggNode;
@@ -682,7 +687,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> access_type alias_list
 %type <legacyNode> alter_column_name
 %type <legacyNode> alter_data_type_or_domain
-%type <legacyNode> alter_op alter_ops
+%type alter_op(<relationNode>) alter_ops(<relationNode>)
 %type <stmtNode>   alter_sequence_clause
 %type <ddlNode>    alter alter_clause alter_user_clause
 %type <legacyNode> array_element array_range
@@ -708,10 +713,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> case_abbreviation case_expression case_operand case_result case_specification
 %type <legacyNode> cast_specification character_keyword character_type
-%type <legacyNode> charset_clause check_constraint col_opt collate_clause
+%type <legacyNode> charset_clause col_opt collate_clause
+%type <valueSourceClause> check_constraint
 %type <stmtNode>   close_cursor
-%type <legacyNode> column_constraint column_constraint_clause
-%type <legacyNode> column_constraint_def column_constraint_list column_def
+%type column_constraint(<addColumnClause>) column_constraint_clause(<addColumnClause>)
+%type column_constraint_def(<addColumnClause>) column_constraint_list(<addColumnClause>)
+%type column_def(<relationNode>)
 %type <boolVal>	   check_opt
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
 %type <legacyNode> column_singleton
@@ -736,12 +743,16 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type db_file_list(<dbFilesClause>)
 %type <legacyNode> ddl_subname
 %type <legacyNode> decimal_keyword
-%type <legacyNode> decode_pairs def_computed default_par_opt default_value
+%type <legacyNode> decode_pairs default_value
+%type <valueSourceClause> def_computed default_par_opt
 %type <stmtNode>   delete delete_positioned delete_searched
-%type <legacyNode> delete_rule delimiter_opt derived_column_list derived_table
+%type <uintVal>	   delete_rule
+%type <legacyNode> delimiter_opt derived_column_list derived_table
 %type <legacyNode> deterministic_opt distinct_clause
-%type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
-%type <legacyNode> domain_or_non_array_type_name domain_type drop_behaviour
+%type <valueSourceClause> domain_default domain_default_opt
+%type <legacyNode> domain_or_non_array_type
+%type <legacyNode> domain_or_non_array_type_name domain_type
+%type <boolVal> drop_behaviour
 %type <ddlNode> declare declare_clause drop drop_clause
 %type <legacyStr>  db_name ddl_desc
 %type db_alter_clause(<alterDatabaseNode>)
@@ -781,8 +792,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> having_clause
 
-%type <legacyNode> identity_clause in_predicate_value
-%type <legacyNode> index_definition index_list
+%type <boolVal>	   identity_clause
+%type <legacyNode> in_predicate_value
+%type index_definition(<createIndexNode>)
+%type <legacyNode> index_list
 %type <legacyNode> ins_column_list ins_column_parens
 %type <legacyNode> ins_column_parens_opt integer_keyword
 %type <stmtNode>   insert
@@ -815,7 +828,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> national_character_type natural_join
 %type <legacyNode> non_array_type
 %type <legacyNode> non_charset_simple_type non_reserved_word non_role_grantee_list
-%type <legacyNode> null_constraint
 %type <legacyNode> nulls_clause nulls_placement numeric_type
 %type <int32Val>   neg_short_integer nonneg_short_integer
 %type named_param(<execStatementNode>) named_params_list(<execStatementNode>)
@@ -832,7 +844,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <nullableIntVal> param_mechanism
 %type <legacyNode> parameter plan_clause
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
-%type <legacyNode> prec_scale primary_constraint privilege
+%type <legacyNode> prec_scale privilege
 %type <legacyNode> privilege_list privileges proc_inputs
 %type <legacyArray> proc_outputs_opt
 %type <stmtNode>   post_event proc_block proc_statement
@@ -843,8 +855,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> qualified_join query_spec query_term
 
 %type <ddlNode> recreate recreate_clause replace_clause replace_exception_clause replace_view_clause
-%type <legacyNode> referential_action referential_constraint
-%type <legacyNode> referential_trigger_action
+%type <uintVal>	   referential_action
+%type <refActionClause> referential_trigger_action
 %type <stmtNode>   release_savepoint
 %type <legacyNode> restr_list restr_option
 %type <int32Val> return_mechanism
@@ -893,7 +905,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type table_element(<createRelationNode>)
 %type <intVal> gtt_scope
 
-%type <legacyNode> table_constraint table_constraint_definition
+%type table_constraint(<relationNode>) table_constraint_definition(<relationNode>)
 %type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
 %type <legacyNode> table_proc table_proc_inputs table_reference table_subquery
 %type top
@@ -904,10 +916,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> u_constant u_numeric_constant udf_data_type
 %type <createAlterFunctionNode> udf_decl_clause
-%type <legacyNode> unique_constraint update_column_name
+%type <legacyNode> update_column_name
 %type <boolVal>	   unique_opt
 %type <stmtNode>   undo_savepoint update update_or_insert update_positioned update_searched
-%type <legacyNode> update_or_insert_matching_opt update_rule
+%type <legacyNode> update_or_insert_matching_opt
+%type <uintVal>	   update_rule
 %type <legacyNode> user_grantee user_grantee_list
 %type <int32Val>   unsigned_short_integer
 
@@ -1423,15 +1436,18 @@ create
 
 create_clause
 	: EXCEPTION exception_clause				{ $$ = $2; }
-	| unique_opt order_direction INDEX symbol_index_name ON simple_table_name index_definition
-		{
-			CreateIndexNode* node = newNode<CreateIndexNode>(toName($4));
-			node->unique = $1;
-			node->descending = $2;
-			node->legacyRelation = $6;
-			node->legacyDef = $7;
-			$$ = node;
-		}
+	| unique_opt order_direction INDEX symbol_index_name ON simple_table_name
+			{
+				CreateIndexNode* node = newNode<CreateIndexNode>(toName($4));
+				node->unique = $1;
+				node->descending = $2;
+				node->legacyRelation = $6;
+				$$ = node;
+			}
+		index_definition(static_cast<CreateIndexNode*>($7))
+			{
+				$$ = $7;
+			}
 	| FUNCTION function_clause					{ $$ = $2; }
 	| PROCEDURE procedure_clause				{ $$ = $2; }
 	| TABLE table_clause						{ $$ = $2; }
@@ -1539,12 +1555,17 @@ unique_opt
 	| UNIQUE			{ $$ = true; }
 	;
 
-index_definition
+index_definition($createIndexNode)
 	: column_list
-		{ $$ = make_list ($1); }
+		{ $createIndexNode->columns = make_list ($1); }
 	| column_parens
+		{ $createIndexNode->columns = $1; }
 	| computed_by '(' value ')'
-		{ $$ = make_node(nod_def_computed, 2, $3, makeParseStr(YYPOSNARG(2), YYPOSNARG(4))); }
+		{
+ 			$createIndexNode->computed = newNode<ValueSourceClause>();
+			$createIndexNode->computed->value = $3;
+			$createIndexNode->computed->source = toString(makeParseStr(YYPOSNARG(2), YYPOSNARG(4)));
+		}
 	;
 
 
@@ -1629,8 +1650,10 @@ as_opt
 domain_default
 	: DEFAULT default_value
 		{
-			$$ = make_node(nod_def_default, (int) e_dft_count,
-				$2, makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+			ValueSourceClause* clause = newNode<ValueSourceClause>();
+			clause->value = $2;
+			clause->source = toString(makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+			$$ = clause;
 		}
 	;
 
@@ -1640,14 +1663,16 @@ domain_default_opt
 	;
 
 null_constraint
-	: NOT KW_NULL		{ $$ = make_node (nod_not_null, (int) 0, NULL); }
+	: NOT KW_NULL
 	;
 
 check_constraint
 	: CHECK '(' search_condition ')'
 		{
-			$$ = make_node(nod_def_constraint, (int) e_cnstr_count,
-				NULL, NULL, $3, NULL, makeParseStr(YYPOSNARG(1), YYPOSNARG(4)));
+			ValueSourceClause* clause = newNode<ValueSourceClause>();
+			clause->value = $3;
+			clause->source = toString(makeParseStr(YYPOSNARG(1), YYPOSNARG(4)));
+			$$ = clause;
 		}
 	;
 
@@ -1897,29 +1922,54 @@ table_elements($createRelationNode)
 	;
 
 table_element($createRelationNode)
-	: column_def
-		{ $createRelationNode->elements.add($1); }
-	| table_constraint_definition
-		{ $createRelationNode->elements.add($1); }
+	: column_def($createRelationNode)
+	| table_constraint_definition($createRelationNode)
 	;
 
 
 // column definition
 
-column_def
-	: column_def_name data_type_or_domain domain_default_opt column_constraint_clause collate_clause
-		{ $$ = make_node(nod_def_field, (int) e_dfl_count, $1, $3, make_list($4), $5, $2, NULL, NULL); }
-	| column_def_name data_type_or_domain identity_clause column_constraint_clause collate_clause
-		{ $$ = make_node(nod_def_field, (int) e_dfl_count, $1, NULL, make_list($4), $5, $2, NULL, $3); }
+column_def($relationNode)
+	: column_def_name data_type_or_domain domain_default_opt
+			{
+				RelationNode::AddColumnClause* clause = $<addColumnClause>$ =
+					newNode<RelationNode::AddColumnClause>();
+				clause->field = $1;
+				clause->defaultValue = $3;
+				clause->domain = toName($2);
+				$relationNode->clauses.add(clause);
+			}
+		column_constraint_clause($<addColumnClause>4) collate_clause
+			{ $<addColumnClause>4->collate = toName($6); }
+	| column_def_name data_type_or_domain identity_clause
+			{
+				RelationNode::AddColumnClause* clause = $<addColumnClause>$ =
+					newNode<RelationNode::AddColumnClause>();
+				clause->field = $1;
+				clause->identity = $3;
+				$relationNode->clauses.add(clause);
+			}
+		column_constraint_clause($<addColumnClause>4) collate_clause
+			{ $<addColumnClause>4->collate = toName($6); }
 	| column_def_name non_array_type def_computed
-		{ $$ = make_node(nod_def_field, (int) e_dfl_count, $1, NULL, NULL, NULL, NULL, $3, NULL); }
+		{
+			RelationNode::AddColumnClause* clause = newNode<RelationNode::AddColumnClause>();
+			clause->field = $1;
+			clause->computed = $3;
+			$relationNode->clauses.add(clause);
+		}
 	| column_def_name def_computed
-		{ $$ = make_node(nod_def_field, (int) e_dfl_count, $1, NULL, NULL, NULL, NULL, $2, NULL); }
+		{
+			RelationNode::AddColumnClause* clause = newNode<RelationNode::AddColumnClause>();
+			clause->field = $1;
+			clause->computed = $2;
+			$relationNode->clauses.add(clause);
+		}
 	;
 
 identity_clause
-	: GENERATED BY DEFAULT AS IDENTITY
-		{ $$ = make_node(nod_flag, 0, NULL); }
+	: /* nothing */ 					{ $$ = false; }
+	| GENERATED BY DEFAULT AS IDENTITY	{ $$ = true; }
 	;
 
 // value does allow parens around it, but there is a problem getting the source text.
@@ -1928,7 +1978,10 @@ def_computed
 	: computed_clause '(' value ')'
 		{
 			lex.g_field->fld_flags |= FLD_computed;
-			$$ = make_node(nod_def_computed, 2, $3, makeParseStr(YYPOSNARG(2), YYPOSNARG(4)));
+			ValueSourceClause* clause = newNode<ValueSourceClause>();
+			clause->value = $3;
+			clause->source = toString(makeParseStr(YYPOSNARG(2), YYPOSNARG(4)));
+			$$ = clause;
 		}
 	;
 
@@ -1947,10 +2000,8 @@ computed_by
 	;
 
 data_type_or_domain
-	: data_type
-		  { $$ = NULL; }
-	| simple_column_name
-		{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
+	: data_type				{ $$ = NULL; }
+	| symbol_column_name
 	;
 
 collate_clause
@@ -2018,45 +2069,85 @@ default_value
 	| datetime_value_expression		{ $$ = makeClassNode($1); }
 	;
 
-column_constraint_clause
-	: /* nothing */				{ $$ = NULL; }
-	| column_constraint_list
+column_constraint_clause($addColumnClause)
+	: // nothing
+	| column_constraint_list($addColumnClause)
 	;
 
-column_constraint_list
-	: column_constraint_def
-	| column_constraint_list column_constraint_def
-		{ $$ = make_node(nod_list, (int) 2, $1, $2); }
+column_constraint_list($addColumnClause)
+	: column_constraint_def($addColumnClause)
+	| column_constraint_list column_constraint_def($addColumnClause)
 	;
 
-column_constraint_def
-	: constraint_name_opt column_constraint
-		{ $$ = make_node(nod_rel_constraint, (int) 2, $1, $2);}
+column_constraint_def($addColumnClause)
+	: constraint_name_opt column_constraint($addColumnClause)
+		{ $addColumnClause->constraints.back()->name = toName($1); }
 	;
 
-
-column_constraint
+column_constraint($addColumnClause)
 	: null_constraint
+		{
+			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_NOT_NULL;
+		}
 	| check_constraint
-	| REFERENCES simple_table_name column_parens_opt
+		{
+			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_CHECK;
+			constraint.check = $1;
+		}
+	| REFERENCES symbol_table_name column_parens_opt
 			referential_trigger_action constraint_index_opt
 		{
-			$$ = make_node(nod_foreign, (int) e_for_count,
-				make_node(nod_list, (int) 1, lex.g_field_name), $2, $3, $4, $5);
+			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_FK;
+
+			constraint.columns.add(toName(lex.g_field_name->nod_arg[Dsql::e_fln_name]));
+			constraint.refRelation = toName($2);
+			constraint.refAction = $4;
+
+			const dsql_nod* refColumns = $3;
+			if (refColumns)
+			{
+				const dsql_nod* const* ptr = refColumns->nod_arg;
+
+				for (const dsql_nod* const* const end = ptr + refColumns->nod_count; ptr != end; ++ptr)
+				{
+					const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+					constraint.refColumns.add(fieldName->str_data);
+				}
+			}
+
+			const dsql_nod* index = $5;
+			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
+			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
 		}
 	| UNIQUE constraint_index_opt
-		{ $$ = make_node(nod_unique, 2, NULL, $2); }
-	| PRIMARY KEY constraint_index_opt
-		{ $$ = make_node(nod_primary, (int) e_pri_count, NULL, $3); }
-	;
+		{
+			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_UNIQUE;
 
+			const dsql_nod* index = $2;
+			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
+			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+		}
+	| PRIMARY KEY constraint_index_opt
+		{
+			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_PK;
+
+			const dsql_nod* index = $3;
+			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
+			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+		}
+	;
 
 
 // table constraints
 
-table_constraint_definition
-	: constraint_name_opt table_constraint
-		{ $$ = make_node (nod_rel_constraint, (int) 2, $1, $2);}
+table_constraint_definition($relationNode)
+	: constraint_name_opt table_constraint($relationNode)
+		{ static_cast<RelationNode::AddConstraintClause*>($relationNode->clauses.back())->name = toName($1); }
 	;
 
 constraint_name_opt
@@ -2064,86 +2155,126 @@ constraint_name_opt
 	| CONSTRAINT symbol_constraint_name		{ $$ = $2; }
 	;
 
-table_constraint
-	: unique_constraint
-	| primary_constraint
-	| referential_constraint
-	| check_constraint
-	;
-
-unique_constraint
+table_constraint($relationNode)
 	: UNIQUE column_parens constraint_index_opt
-		{ $$ = make_node (nod_unique, 2, $2, $3); }
-	;
+		{
+			RelationNode::AddConstraintClause& constraint = *newNode<RelationNode::AddConstraintClause>();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_UNIQUE;
 
-primary_constraint
-	: PRIMARY KEY column_parens constraint_index_opt
-		{ $$ = make_node (nod_primary, (int) e_pri_count, $3, $4); }
-	;
+			const dsql_nod* columns = $2;
+			const dsql_nod* const* ptr = columns->nod_arg;
 
-referential_constraint
-	: FOREIGN KEY column_parens REFERENCES
-			simple_table_name column_parens_opt
-			referential_trigger_action constraint_index_opt
-		{ $$ = make_node (nod_foreign, (int) e_for_count, $3, $5, $6, $7, $8); }
+			for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr != end; ++ptr)
+			{
+				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+				constraint.columns.add(fieldName->str_data);
+			}
+
+			const dsql_nod* index = $3;
+			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
+			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+
+			$relationNode->clauses.add(&constraint);
+		}
+	| PRIMARY KEY column_parens constraint_index_opt
+		{
+			RelationNode::AddConstraintClause& constraint = *newNode<RelationNode::AddConstraintClause>();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_PK;
+
+			const dsql_nod* columns = $3;
+			const dsql_nod* const* ptr = columns->nod_arg;
+
+			for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr != end; ++ptr)
+			{
+				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+				constraint.columns.add(fieldName->str_data);
+			}
+
+			const dsql_nod* index = $4;
+			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
+			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+
+			$relationNode->clauses.add(&constraint);
+		}
+	| FOREIGN KEY column_parens REFERENCES symbol_table_name column_parens_opt
+		referential_trigger_action constraint_index_opt
+		{
+			RelationNode::AddConstraintClause& constraint = *newNode<RelationNode::AddConstraintClause>();
+			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_FK;
+
+			const dsql_nod* columns = $3;
+			const dsql_nod* const* ptr = columns->nod_arg;
+
+			for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr != end; ++ptr)
+			{
+				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+				constraint.columns.add(fieldName->str_data);
+			}
+			constraint.refRelation = toName($5);
+			constraint.refAction = $7;
+
+			const dsql_nod* refColumns = $6;
+			if (refColumns)
+			{
+				const dsql_nod* const* ptr = refColumns->nod_arg;
+
+				for (const dsql_nod* const* const end = ptr + refColumns->nod_count; ptr != end; ++ptr)
+				{
+					const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+					constraint.refColumns.add(fieldName->str_data);
+				}
+			}
+
+			const dsql_nod* index = $8;
+			constraint.indexName = toName(index->nod_arg[Dsql::e_idx_name]);
+			constraint.descending = index->nod_arg[Dsql::e_idx_asc_dsc] != NULL;
+
+			$relationNode->clauses.add(&constraint);
+		}
+	| check_constraint
+		{
+			RelationNode::AddConstraintClause* constraint = newNode<RelationNode::AddConstraintClause>();
+			constraint->constraintType = RelationNode::AddConstraintClause::CTYPE_CHECK;
+			constraint->check = $1;
+			$relationNode->clauses.add(constraint);
+		}
 	;
 
 constraint_index_opt
-	: USING order_direction INDEX symbol_index_name
+	: // nothing
+		{ $$ = make_node (nod_def_index, (int) e_idx_count, NULL, NULL, NULL, NULL, NULL); }
+	| USING order_direction INDEX symbol_index_name
 		{
 			$$ = make_node (nod_def_index, (int) e_idx_count,
 				NULL, ($2 ? make_node(nod_flag, 0, NULL) : NULL), $4, NULL, NULL);
 		}
-/*
+	/***
 	| NO INDEX
 		{ $$ = NULL; }
-*/
-	|
-		{ $$ = make_node (nod_def_index, (int) e_idx_count, NULL, NULL, NULL, NULL, NULL); }
+	***/
 	;
 
 referential_trigger_action
-	: // nothing
-		{ $$ = NULL;}
-	| update_rule
-		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, NULL); }
-	| delete_rule
-		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, NULL, $1); }
-	| delete_rule update_rule
-		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $2, $1); }
-	| update_rule delete_rule
-		{ $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, $2);}
+	: /* nothing */				{ $$ = NULL; }
+	| update_rule				{ $$ = newNode<RelationNode::RefActionClause>($1, 0); }
+	| delete_rule				{ $$ = newNode<RelationNode::RefActionClause>(0, $1); }
+	| delete_rule update_rule	{ $$ = newNode<RelationNode::RefActionClause>($2, $1); }
+	| update_rule delete_rule	{ $$ = newNode<RelationNode::RefActionClause>($1, $2); }
 	;
 
 update_rule
-	: ON UPDATE referential_action	{ $$ = $3;}
+	: ON UPDATE referential_action		{ $$ = $3;}
 	;
 
 delete_rule
-	: ON KW_DELETE referential_action	 { $$ = $3;}
+	: ON KW_DELETE referential_action	{ $$ = $3;}
 	;
 
 referential_action
-	: CASCADE
-		{
-			$$ = make_flag_node (nod_ref_trig_action,
-		 		REF_ACTION_CASCADE, (int) e_ref_trig_action_count, NULL);
-		}
-	| SET DEFAULT
-		{
-			$$ = make_flag_node (nod_ref_trig_action,
-		 		REF_ACTION_SET_DEFAULT, (int) e_ref_trig_action_count, NULL);
-		}
-	| SET KW_NULL
-		{
-			$$ = make_flag_node (nod_ref_trig_action,
-				REF_ACTION_SET_NULL, (int) e_ref_trig_action_count, NULL);
-		}
-	| NO ACTION
-		{
-			$$ = make_flag_node (nod_ref_trig_action,
-				REF_ACTION_NONE, (int) e_ref_trig_action_count, NULL);
-		}
+	: CASCADE		{ $$ = RelationNode::RefActionClause::ACTION_CASCADE; }
+	| SET DEFAULT	{ $$ = RelationNode::RefActionClause::ACTION_SET_DEFAULT; }
+	| SET KW_NULL	{ $$ = RelationNode::RefActionClause::ACTION_SET_NULL; }
+	| NO ACTION		{ $$ = RelationNode::RefActionClause::ACTION_NONE; }
 	;
 
 
@@ -2223,17 +2354,21 @@ output_proc_parameter($parameters)
 	;
 
 default_par_opt
-	: /* nothing */
+	: // nothing
 		{ $$ = NULL; }
 	| DEFAULT default_value
 		{
-			$$ = make_node(nod_def_default, (int) e_dft_count,
-				$2, makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+			ValueSourceClause* clause = newNode<ValueSourceClause>();
+			clause->value = $2;
+			clause->source = toString(makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+			$$ = clause;
 		}
 	| '=' default_value
 		{
-			$$ = make_node(nod_def_default, (int) e_dft_count,
-				$2, makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+			ValueSourceClause* clause = newNode<ValueSourceClause>();
+			clause->value = $2;
+			clause->source = toString(makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+			$$ = clause;
 		}
 	;
 
@@ -3301,16 +3436,10 @@ alter
 
 alter_clause
 	: EXCEPTION alter_exception_clause		{ $$ = $2; }
-	| TABLE simple_table_name alter_ops
-		{
-			AlterRelationNode* node = newNode<AlterRelationNode>($2);
-
-			dsql_nod* list = make_list($3);
-			for (dsql_nod** ptr = list->nod_arg; ptr != list->nod_arg + list->nod_count; ++ptr)
-				node->elements.add(*ptr);
-
-			$$ = node;
-		}
+	| TABLE simple_table_name
+			{ $$ = newNode<AlterRelationNode>($2); }
+		alter_ops($<relationNode>3)
+			{ $$ = $<relationNode>3; }
 	| VIEW alter_view_clause				{ $$ = $2; }
 	| TRIGGER alter_trigger_clause			{ $$ = $2; }
 	| PROCEDURE alter_procedure_clause		{ $$ = $2; }
@@ -3366,58 +3495,95 @@ alter_domain_op($alterDomainNode)
 		}
 	;
 
-alter_ops
-	: alter_op
-	| alter_ops ',' alter_op
-		{ $$ = make_node(nod_list, 2, $1, $3); }
+alter_ops($relationNode)
+	: alter_op($relationNode)
+	| alter_ops ',' alter_op($relationNode)
 	;
 
-alter_op
-	: DROP simple_column_name drop_behaviour
-		{ $$ = make_node (nod_del_field, 2, $2, $3); }
+alter_op($relationNode)
+	: DROP symbol_column_name drop_behaviour
+		{
+			RelationNode::DropColumnClause* clause = newNode<RelationNode::DropColumnClause>();
+			clause->name = toName($2);
+			clause->cascade = $3;
+			$relationNode->clauses.add(clause);
+		}
 	| DROP CONSTRAINT symbol_constraint_name
-		{ $$ = make_node (nod_delete_rel_constraint, (int) 1, $3);}
-	| ADD column_def
-		{ $$ = $2; }
-	| ADD table_constraint_definition
-		{ $$ = $2; }
-	/* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example
-	| col_opt simple_column_name POSITION nonneg_short_integer
-		{ $$ = make_node (nod_mod_field_pos, 2, $2,
-		MAKE_const_slong ((IPTR) $4)); } */
-	| col_opt simple_column_name POSITION pos_short_integer
-		{ $$ = make_node(nod_mod_field_pos, 2, $2, MAKE_const_slong($4)); }
-	| col_opt alter_column_name TO simple_column_name
-		{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
+		{
+			RelationNode::DropConstraintClause* clause = newNode<RelationNode::DropConstraintClause>();
+			clause->name = toName($3);
+			$relationNode->clauses.add(clause);
+		}
+	| ADD column_def($relationNode)
+	| ADD table_constraint_definition($relationNode)
+	| col_opt alter_column_name POSITION pos_short_integer
+		{
+			RelationNode::AlterColPosClause* clause = newNode<RelationNode::AlterColPosClause>();
+			clause->name = toName($2);
+			clause->newPos = $4;
+			$relationNode->clauses.add(clause);
+		}
+	| col_opt alter_column_name TO symbol_column_name
+		{
+			RelationNode::AlterColNameClause* clause = newNode<RelationNode::AlterColNameClause>();
+			clause->fromName = toName($2);
+			clause->toName = toName($4);
+			$relationNode->clauses.add(clause);
+		}
 	| col_opt alter_column_name KW_NULL
 		{
-			$$ = make_node(nod_mod_field_null_flag, e_mod_fld_null_flag_count,
-				$2, MAKE_const_slong(0));
+			RelationNode::AlterColNullClause* clause = newNode<RelationNode::AlterColNullClause>();
+			clause->name = toName($2);
+			clause->notNullFlag = false;
+			$relationNode->clauses.add(clause);
 		}
 	| col_opt alter_column_name NOT KW_NULL
 		{
-			$$ = make_node(nod_mod_field_null_flag, e_mod_fld_null_flag_count,
-				$2, MAKE_const_slong(1));
+			RelationNode::AlterColNullClause* clause = newNode<RelationNode::AlterColNullClause>();
+			clause->name = toName($2);
+			clause->notNullFlag = true;
+			$relationNode->clauses.add(clause);
 		}
 	| col_opt alter_col_name KW_TYPE alter_data_type_or_domain
-		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL, NULL); }
+		{
+			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+			clause->field = $2;
+			clause->domain = toName($4);
+			$relationNode->clauses.add(clause);
+		}
 	| col_opt alter_col_name KW_TYPE non_array_type def_computed
 		{
 			// Due to parser hacks, we should not pass $4 (non_array_type) to make_node.
-			$$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $5);
+			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+			clause->field = $2;
+			clause->computed = $5;
+			$relationNode->clauses.add(clause);
 		}
 	| col_opt alter_col_name def_computed
-		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $3); }
+		{
+			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+			clause->field = $2;
+			clause->computed = $3;
+			$relationNode->clauses.add(clause);
+		}
 	| col_opt alter_col_name SET domain_default
-		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, $4, NULL); }
+		{
+			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+			clause->field = $2;
+			clause->defaultValue = $4;
+			$relationNode->clauses.add(clause);
+		}
 	| col_opt alter_col_name DROP DEFAULT
-		{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
-				make_node(nod_del_default, (int) 0, NULL), NULL); }
+		{
+			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+			clause->field = $2;
+			clause->dropDefault = true;
+			$relationNode->clauses.add(clause);
+		}
 	;
 
 alter_column_name
 	: keyword_or_column
-		{ $$ = make_node (nod_field_name, (int) e_fln_count, NULL, $1); }
 	;
 
 // below are reserved words that could be used as column identifiers
@@ -3486,10 +3652,8 @@ col_opt
 	;
 
 alter_data_type_or_domain
-	: non_array_type
-		{ $$ = NULL; }
-	| simple_column_name
-		{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
+	: non_array_type		{ $$ = NULL; }
+	| symbol_column_name
 	;
 
 alter_col_name
@@ -3502,9 +3666,9 @@ alter_col_name
 	;
 
 drop_behaviour
-	:				{ $$ = make_node (nod_restrict, 0, NULL); }
-	| RESTRICT		{ $$ = make_node (nod_restrict, 0, NULL); }
-	| CASCADE		{ $$ = make_node (nod_cascade, 0, NULL); }
+	:				{ $$ = false; }
+	| RESTRICT		{ $$ = false; }
+	| CASCADE		{ $$ = true; }
 	;
 
 alter_index_clause
