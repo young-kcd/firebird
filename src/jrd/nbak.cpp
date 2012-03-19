@@ -741,7 +741,13 @@ bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* 
 		return false;
 	return true;	
 }
-	
+
+void BackupManager::flush_difference()
+{
+	if (diff_file)
+		PIO_flush(diff_file);
+}
+
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	dbCreating(false), database(_database), diff_file(NULL), alloc_table(NULL),
 	last_allocated_page(0), current_scn(0), diff_name(*_database->dbb_permanent),
