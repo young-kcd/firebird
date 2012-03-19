@@ -1,3 +1,28 @@
+ 2012-03-18 22:22  asfernandes 
+   M src/dsql/parse.y
+Fix a parser conflict.
+
+ 2012-03-18 22:22  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactor nod_def_index.
+
+ 2012-03-18 21:37  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/ddl.cpp
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactor DDL nodes removing references to non-value/-rse dsql_nod.
+
  2012-03-17 16:06  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
