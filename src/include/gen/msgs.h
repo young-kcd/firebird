@@ -537,7 +537,7 @@ static const struct {
 	{335544833, "Physical backup is not allowed while Write-Ahead Log is in use"},		/* 513, wal_backup_err */
 	{335544834, "Cursor is not open"},		/* 514, cursor_not_open */
 	{335544835, "Target shutdown mode is invalid for database \"@1\""},		/* 515, bad_shutdown_mode */
-	{335544836, "Concatenation overflow. Resulting string cannot exceed 32K in length."},		/* 516, concat_overflow */
+	{335544836, "Concatenation overflow. Resulting string cannot exceed 32765 bytes in length."},		/* 516, concat_overflow */
 	{335544837, "Invalid offset parameter @1 to SUBSTRING. Only positive integers are allowed."},		/* 517, bad_substring_offset */
 	{335544838, "Foreign key reference target does not exist"},		/* 518, foreign_key_target_doesnt_exist */
 	{335544839, "Foreign key references are present for the record"},		/* 519, foreign_key_references_present */
