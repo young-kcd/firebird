@@ -1,3 +1,9 @@
+ 2012-03-19 08:02  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Backport fix for bug CORE-3521 : Delta file contents is not flushed to disk
+
  2012-03-15 12:08  dimitr 
    M src/jrd/cmp.cpp
 Fixed CORE-1992: bad BLR -- invalid stream for union select.
