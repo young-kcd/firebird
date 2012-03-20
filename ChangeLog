@@ -1,3 +1,15 @@
+ 2012-03-19 09:15  alexpeshkoff 
+   M src/jrd/isc.h
+Removed debugging code
+
+ 2012-03-19 09:10  alexpeshkoff 
+   M src/burp/burp.cpp
+Postfix for AV due to CORE-3649
+
+ 2012-03-19 09:10  alexpeshkoff 
+   M src/include/gen/msgs.h
+misc
+
  2012-03-15 12:08  dimitr 
    M src/jrd/cmp.cpp
 Fixed CORE-1992: bad BLR -- invalid stream for union select.
