@@ -1,3 +1,7 @@
+ 2012-03-19 09:09  alexpeshkoff 
+   M src/burp/burp.cpp
+Postfix for AV due to CORE-3649
+
  2012-03-18 22:22  asfernandes 
    M src/dsql/parse.y
 Fix a parser conflict.
