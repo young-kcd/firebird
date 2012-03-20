@@ -344,6 +344,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\IntlParametersBlock.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\IntlUtil.cpp"
 				>
 			</File>
@@ -722,6 +726,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\intlobj_new.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\IntlParametersBlock.h.h"
 				>
 			</File>
 			<File
