@@ -188,7 +188,8 @@ int TraceSQLStatementImpl::getStmtID()
 
 const char* TraceSQLStatementImpl::getText()
 {
-	return m_stmt->getStatement()->getSqlText()->c_str();
+	const string* stmtText = m_stmt->getStatement()->getSqlText();
+	return stmtText ? stmtText->c_str() : "";
 }
 
 // Returns false if conversion is not needed.
@@ -230,7 +231,7 @@ const char* TraceSQLStatementImpl::getTextUTF8()
 {
 	const string* stmtText = m_stmt->getStatement()->getSqlText();
 
-	if (m_textUTF8.isEmpty() && !stmtText->isEmpty())
+	if (m_textUTF8.isEmpty() && stmtText && !stmtText->isEmpty())
 	{
 		if (!convertToUTF8(*stmtText, m_textUTF8))
 			return stmtText->c_str();
