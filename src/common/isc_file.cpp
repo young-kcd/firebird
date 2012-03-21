@@ -1674,6 +1674,12 @@ public:
 		toSystem = openIconv(systemCharmap.c_str(), utfCharmap);
 	}
 
+	~IConv()
+	{
+		closeIconv(toUtf);
+		closeIconv(toSystem);
+	}
+
 	void systemToUtf8(AbstractString& str)
 	{
 		convert(str, toUtf);
@@ -1696,6 +1702,14 @@ private:
 		}
 
 		return ret;
+	}
+
+	void closeIconv(iconv_t id)
+	{
+		if (iconv_close(id) < 0)
+		{
+			system_call_failed::raise("iconv_close");
+		}
 	}
 
 	void convert(AbstractString& str, iconv_t id)
