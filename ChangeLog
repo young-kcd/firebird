@@ -1,3 +1,11 @@
+ 2012-03-20 10:38  dimitr 
+   M builds/win32/msvc8/common.vcproj
+Fixed MSVC8 build.
+
+ 2012-03-20 10:10  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+Fixed the broken monitoring code.
+
  2012-03-19 09:09  alexpeshkoff 
    M src/burp/burp.cpp
 Postfix for AV due to CORE-3649
