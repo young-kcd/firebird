@@ -1,3 +1,19 @@
+ 2012-03-22 00:21  hvlad 
+   M src/jrd/cch.cpp
+New patch for CORE-3468
+
+ 2012-03-21 14:45  hvlad 
+   M src/jrd/dpm.epp
+Undo patch for CORE-3468
+
+ 2012-03-21 11:16  alexpeshkoff 
+   M src/jrd/trace/TraceObjects.cpp
+Fixed segfault, reported by Thomas Steinmaurer in devel
+
+ 2012-03-21 09:31  alexpeshkoff 
+   M src/common/isc_file.cpp
+Added cleanup code - thanks to Claudio
+
  2012-03-20 10:38  dimitr 
    M builds/win32/msvc8/common.vcproj
 Fixed MSVC8 build.
