@@ -874,7 +874,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			CCH_unwind(tdbb, true);
 		}
 
-		if (page->pag_type == 0)
+		if (page->pag_type == 0 && page->pag_generation == 0 && page->pag_scn == 0)
 		{
 			// We encountered a page which was allocated, but never written to the
 			// difference file. In this case we try to read the page from database. With
