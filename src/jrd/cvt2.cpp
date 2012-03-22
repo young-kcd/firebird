@@ -124,16 +124,15 @@ bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* ar
 			return false;
 		}
 
-		result->makeText(MAX(arg1->getStringLength(), arg2->getStringLength()), arg1->getTextType());
-
 		if (arg1->dsc_dtype == arg2->dsc_dtype)
 		{
-			result->dsc_dtype = arg1->dsc_dtype;
-
-			if (result->dsc_dtype == dtype_cstring)
-				result->dsc_length += sizeof(UCHAR);
-			else if (result->dsc_dtype == dtype_varying)
-				result->dsc_length += sizeof(USHORT);
+			*result = *arg1;
+			result->dsc_length = MAX(arg1->dsc_length, arg2->dsc_length);
+		}
+		else
+		{
+			result->makeText(MAX(arg1->getStringLength(), arg2->getStringLength()),
+				arg1->getTextType());
 		}
 	}
 	else if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
