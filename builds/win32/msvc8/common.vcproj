@@ -729,7 +729,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\IntlParametersBlock.h.h"
+				RelativePath="..\..\..\src\common\IntlParametersBlock.h"
 				>
 			</File>
 			<File
