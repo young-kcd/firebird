@@ -1,3 +1,7 @@
+ 2012-03-22 07:55  dimitr 
+   M src/jrd/cvt2.cpp
+Slightly changed the logic to make it easier to understand.
+
  2012-03-21 12:55  hvlad 
    M src/jrd/dpm.epp
 Undo patch for CORE-3468
