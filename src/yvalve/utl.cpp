@@ -1197,7 +1197,7 @@ void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
 }
 
 
-int API_ROUTINE BLOB_close(BSTREAM* bstream)
+int API_ROUTINE BLOB_close(FB_BLOB_STREAM blobStream)
 {
 /**************************************
  *
@@ -1211,27 +1211,27 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (!bstream->bstr_blob)
+	if (!blobStream->bstr_blob)
 		return FALSE;
 
-	if (bstream->bstr_mode & BSTR_output)
+	if (blobStream->bstr_mode & BSTR_output)
 	{
-		const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
+		const USHORT l = (blobStream->bstr_ptr - blobStream->bstr_buffer);
 		if (l > 0)
 		{
-			if (isc_put_segment(status_vector, &bstream->bstr_blob, l, bstream->bstr_buffer))
+			if (isc_put_segment(status_vector, &blobStream->bstr_blob, l, blobStream->bstr_buffer))
 			{
 				return FALSE;
 			}
 		}
 	}
 
-	isc_close_blob(status_vector, &bstream->bstr_blob);
+	isc_close_blob(status_vector, &blobStream->bstr_blob);
 
-	if (bstream->bstr_mode & BSTR_alloc)
-		gds__free(bstream->bstr_buffer);
+	if (blobStream->bstr_mode & BSTR_alloc)
+		gds__free(blobStream->bstr_buffer);
 
-	gds__free(bstream);
+	gds__free(blobStream);
 
 	return TRUE;
 }
@@ -1416,7 +1416,7 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 }
 
 
-int API_ROUTINE BLOB_get(BSTREAM* bstream)
+int API_ROUTINE BLOB_get(FB_BLOB_STREAM blobStream)
 {
 /**************************************
  *
@@ -1431,27 +1431,27 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (!bstream->bstr_buffer)
+	if (!blobStream->bstr_buffer)
 		return EOF;
 
 	while (true)
 	{
-		if (--bstream->bstr_cnt >= 0)
-			return *bstream->bstr_ptr++ & 0377;
+		if (--blobStream->bstr_cnt >= 0)
+			return *blobStream->bstr_ptr++ & 0377;
 
-		isc_get_segment(status_vector, &bstream->bstr_blob,
+		isc_get_segment(status_vector, &blobStream->bstr_blob,
 			// safe - cast from short, alignment is OK
-			reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
-			bstream->bstr_length, bstream->bstr_buffer);
+			reinterpret_cast<USHORT*>(&blobStream->bstr_cnt),
+			blobStream->bstr_length, blobStream->bstr_buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment)
 		{
-			bstream->bstr_ptr = 0;
-			bstream->bstr_cnt = 0;
+			blobStream->bstr_ptr = 0;
+			blobStream->bstr_cnt = 0;
 			if (status_vector[1] != isc_segstr_eof)
 				isc_print_status(status_vector);
 			return EOF;
 		}
-		bstream->bstr_ptr = bstream->bstr_buffer;
+		blobStream->bstr_ptr = blobStream->bstr_buffer;
 	}
 }
 
@@ -1544,10 +1544,10 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
 }
 
 
-BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
-						   FB_API_HANDLE database,
-						   FB_API_HANDLE transaction,
-						   const SCHAR* mode)
+FB_BLOB_STREAM API_ROUTINE Bopen(ISC_QUAD* blob_id,
+								 FB_API_HANDLE database,
+								 FB_API_HANDLE transaction,
+								 const SCHAR* mode)
 {
 /**************************************
  *
@@ -1588,26 +1588,26 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 		return NULL;
 	}
 
-	BSTREAM* bstream = BLOB_open(blob, NULL, 0);
+	FB_BLOB_STREAM blobStream = BLOB_open(blob, NULL, 0);
 
 	if (*mode == 'w' || *mode == 'W')
 	{
-		bstream->bstr_mode |= BSTR_output;
-		bstream->bstr_cnt = bstream->bstr_length;
-		bstream->bstr_ptr = bstream->bstr_buffer;
+		blobStream->bstr_mode |= BSTR_output;
+		blobStream->bstr_cnt = blobStream->bstr_length;
+		blobStream->bstr_ptr = blobStream->bstr_buffer;
 	}
 	else
 	{
-		bstream->bstr_cnt = 0;
-		bstream->bstr_mode |= BSTR_input;
+		blobStream->bstr_cnt = 0;
+		blobStream->bstr_mode |= BSTR_input;
 	}
 
-	return bstream;
+	return blobStream;
 }
 
 
 // CVC: This routine doesn't open a blob really!
-BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
+FB_BLOB_STREAM API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 {
 /**************************************
  *
@@ -1622,47 +1622,47 @@ BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 	if (!blob)
 		return NULL;
 
-	BSTREAM* bstream = (BSTREAM*) gds__alloc((SLONG) sizeof(BSTREAM));
+	FB_BLOB_STREAM blobStream = (FB_BLOB_STREAM) gds__alloc((SLONG) sizeof(struct bstream));
 	// FREE: This structure is freed by BLOB_close
-	if (!bstream)				// NOMEM:
+	if (!blobStream)				// NOMEM:
 		return NULL;
 
 #ifdef DEBUG_gds__alloc
 	// This structure is handed to the user process, we depend on the client
 	// to call BLOB_close() for it to be freed.
-	gds_alloc_flag_unfreed((void*) bstream);
+	gds_alloc_flag_unfreed((void*) blobStream);
 #endif
 
-	bstream->bstr_blob = blob;
-	bstream->bstr_length = length ? length : 512;
-	bstream->bstr_mode = 0;
-	bstream->bstr_cnt = 0;
-	bstream->bstr_ptr = 0;
+	blobStream->bstr_blob = blob;
+	blobStream->bstr_length = length ? length : 512;
+	blobStream->bstr_mode = 0;
+	blobStream->bstr_cnt = 0;
+	blobStream->bstr_ptr = 0;
 
-	if (!(bstream->bstr_buffer = buffer))
+	if (!(blobStream->bstr_buffer = buffer))
 	{
-		bstream->bstr_buffer = (SCHAR*) gds__alloc((SLONG) (sizeof(SCHAR) * bstream->bstr_length));
+		blobStream->bstr_buffer = (SCHAR*) gds__alloc((SLONG) (sizeof(SCHAR) * blobStream->bstr_length));
 		// FREE: This structure is freed in BLOB_close()
-		if (!bstream->bstr_buffer)
+		if (!blobStream->bstr_buffer)
 		{
 			// NOMEM:
-			gds__free(bstream);
+			gds__free(blobStream);
 			return NULL;
 		}
 #ifdef DEBUG_gds__alloc
 		// This structure is handed to the user process, we depend on the client
 		// to call BLOB_close() for it to be freed.
-		gds_alloc_flag_unfreed((void*) bstream->bstr_buffer);
+		gds_alloc_flag_unfreed((void*) blobStream->bstr_buffer);
 #endif
 
-		bstream->bstr_mode |= BSTR_alloc;
+		blobStream->bstr_mode |= BSTR_alloc;
 	}
 
-	return bstream;
+	return blobStream;
 }
 
 
-int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
+int API_ROUTINE BLOB_put(SCHAR x, FB_BLOB_STREAM blobStream)
 {
 /**************************************
  *
@@ -1678,20 +1678,50 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
  *	block and retun TRUE if all is well.
  *
  **************************************/
-	if (!bstream->bstr_buffer)
+	if (!blobStream->bstr_buffer)
 		return FALSE;
 
-	*bstream->bstr_ptr++ = (x & 0377);
-	const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
+	*blobStream->bstr_ptr++ = (x & 0377);
+	const USHORT l = (blobStream->bstr_ptr - blobStream->bstr_buffer);
 
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_put_segment(status_vector, &bstream->bstr_blob, l, bstream->bstr_buffer))
+	if (isc_put_segment(status_vector, &blobStream->bstr_blob, l, blobStream->bstr_buffer))
 	{
 		return FALSE;
 	}
-	bstream->bstr_cnt = bstream->bstr_length;
-	bstream->bstr_ptr = bstream->bstr_buffer;
+	blobStream->bstr_cnt = blobStream->bstr_length;
+	blobStream->bstr_ptr = blobStream->bstr_buffer;
 	return TRUE;
+}
+
+
+int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR* entrypoint,
+								  void* arg,
+								  int priority,
+								  int /*flags*/,
+								  void* thd_id)
+{
+/**************************************
+ *
+ *	g d s _ _ t h r e a d _ s t a r t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Start a thread.
+ *
+ **************************************/
+
+	int rc = 0;
+	try
+	{
+		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (Thread::Handle*) thd_id);
+	}
+	catch (const Firebird::status_exception& status)
+	{
+		rc = status.value()[1];
+	}
+	return rc;
 }
 
 #if (defined SOLARIS ) || (defined __cplusplus)
@@ -2113,34 +2143,6 @@ static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 	return TRUE;
 }
 
-int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR entrypoint,
-								  void* arg,
-								  int priority,
-								  int /*flags*/,
-								  void* thd_id)
-{
-/**************************************
- *
- *	g d s _ _ t h r e a d _ s t a r t
- *
- **************************************
- *
- * Functional description
- *	Start a thread.
- *
- **************************************/
-
-	int rc = 0;
-	try
-	{
-		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (Thread::Handle*) thd_id);
-	}
-	catch (const Firebird::status_exception& status)
-	{
-		rc = status.value()[1];
-	}
-	return rc;
-}
 
 // new utl
 static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag,

@@ -757,7 +757,7 @@ void ERR_post(ISC_STATUS, ...)
 {
 }
 
-Firebird::IMaster* ISC_EXPORT fb_get_master_interface()
+Firebird::IMaster* API_ROUTINE fb_get_master_interface()
 {
 	static DummyMasterImpl dummyMaster;
 	return &dummyMaster;

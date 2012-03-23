@@ -125,13 +125,13 @@ typedef struct bstream {
     short	bstr_length;		/* Length of buffer */
     short	bstr_cnt;		/* Characters in buffer */
     char	bstr_mode;		/* (mode) ? OUTPUT : INPUT */
-} BSTREAM;
+} BSTREAM, * FB_BLOB_STREAM;
 
 #define getb(p)	(--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
 #define putb(x,p) ((x == '\n' || (!(--(p)->bstr_cnt))) ? BLOB_put (x,p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 #define putbx(x,p) ((!(--(p)->bstr_cnt)) ? BLOB_put (x,p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 
-BSTREAM	*Bopen(), *BLOB_open();
+FB_BLOB_STREAM	Bopen(), BLOB_open();
 
 /* Information call declarations */
 
@@ -454,13 +454,13 @@ typedef struct bstream {
     short	bstr_length;		/* Length of buffer */
     short	bstr_cnt;		/* Characters in buffer */
     char	bstr_mode;		/* (mode) ? OUTPUT : INPUT */
-} BSTREAM;
+} BSTREAM, * FB_BLOB_STREAM;
  
 #define getb(p)	(--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
 #define putb(x,p) ((x == '\n' || (!(--(p)->bstr_cnt))) ? BLOB_put (x,p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 #define putbx(x,p) ((!(--(p)->bstr_cnt)) ? BLOB_put (x,p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
  
-BSTREAM	*Bopen(), *BLOB_open();
+FB_BLOB_STREAM	Bopen(), BLOB_open();
  
 /* Information call declarations */
  

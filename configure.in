@@ -847,6 +847,11 @@ AC_SEARCH_LIBS(sem_open, rt)])
 fi
 fi
 
+dnl Some OS place iconv() support in separate library
+if test "$ac_cv_header_iconv_h" = "yes"; then
+AC_SEARCH_LIBS(iconv_open, iconv)
+fi
+
 dnl HPUX has a bug in .h files. To detect it we need C++ here.
 AC_LANG_PUSH(C++)
 AC_LINK_IFELSE(

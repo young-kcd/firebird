@@ -154,7 +154,7 @@ typedef struct bstream
 	short			bstr_length;	/* Length of buffer */
 	short			bstr_cnt;		/* Characters in buffer */
 	char			bstr_mode;		/* (mode) ? OUTPUT : INPUT */
-} BSTREAM;
+} BSTREAM, * FB_BLOB_STREAM;
 
 /* Three ugly macros, one even using octal radix... sigh... */
 #define getb(p)	(--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
@@ -997,16 +997,16 @@ ISC_STATUS ISC_EXPORT isc_embed_dsql_release(ISC_STATUS*,
 /* Other Blob functions       */
 /******************************/
 
-BSTREAM* ISC_EXPORT BLOB_open(isc_blob_handle,
-									  ISC_SCHAR*,
-									  int);
+FB_BLOB_STREAM ISC_EXPORT BLOB_open(isc_blob_handle,
+									ISC_SCHAR*,
+									int);
 
 int ISC_EXPORT BLOB_put(ISC_SCHAR,
-						BSTREAM*);
+						FB_BLOB_STREAM);
 
-int ISC_EXPORT BLOB_close(BSTREAM*);
+int ISC_EXPORT BLOB_close(FB_BLOB_STREAM);
 
-int ISC_EXPORT BLOB_get(BSTREAM*);
+int ISC_EXPORT BLOB_get(FB_BLOB_STREAM);
 
 int ISC_EXPORT BLOB_display(ISC_QUAD*,
 							isc_db_handle,
@@ -1038,10 +1038,10 @@ int ISC_EXPORT BLOB_text_load(ISC_QUAD*,
 							  isc_tr_handle,
 							  const ISC_SCHAR*);
 
-BSTREAM* ISC_EXPORT Bopen(ISC_QUAD*,
-								  isc_db_handle,
-								  isc_tr_handle,
-								  const ISC_SCHAR*);
+FB_BLOB_STREAM ISC_EXPORT Bopen(ISC_QUAD*,
+								isc_db_handle,
+								isc_tr_handle,
+								const ISC_SCHAR*);
 
 
 /******************************/

@@ -624,7 +624,7 @@ void shutdownTimers()
 // get master
 //
 
-Firebird::IMaster* ISC_EXPORT fb_get_master_interface()
+Firebird::IMaster* API_ROUTINE fb_get_master_interface()
 {
 	static Static<Why::MasterImplementation> instance;
 	return &instance;
