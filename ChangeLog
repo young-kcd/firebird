@@ -1,3 +1,17 @@
+ 2012-03-22 13:09  paulbeach 
+   M src/common/classes/semaphore.h
+Allow compile on Darwin
+
+ 2012-03-22 07:57  dimitr 
+   M src/jrd/cvt2.cpp
+Slightly changed the logic to make it easier to understand.
+
+ 2012-03-22 07:25  dimitr 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc9/common.vcproj
+Fixed all other Windows builds.
+
  2012-03-22 00:21  hvlad 
    M src/jrd/cch.cpp
 New patch for CORE-3468
