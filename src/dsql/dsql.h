@@ -843,6 +843,36 @@ typedef Firebird::SortedArray<const char*,
 			CStrCmp>
 		StrArray;
 
+class IntlString
+{
+public:
+	IntlString(const dsql_str* str)
+		: charset(str->str_charset ? str->str_charset : ""),
+		  s(str->str_data, str->str_length)
+	{ }
+
+	IntlString(Firebird::MemoryPool& p, const dsql_str* str)
+		: charset(p, str->str_charset ? str->str_charset : ""),
+		  s(p, str->str_data, str->str_length)
+	{ }
+
+	Firebird::string toUtf8(DsqlCompilerScratch*) const;
+
+	bool hasData() const
+	{
+		return s.hasData();
+	}
+
+	bool isEmpty() const
+	{
+		return s.isEmpty();
+	}
+
+private:
+	Firebird::MetaName charset;
+	Firebird::string s;
+};
+
 } // namespace
 
 /*! \var unsigned DSQL_debug

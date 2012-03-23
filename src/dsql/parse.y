@@ -634,6 +634,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Firebird::MetaName* metaNamePtr;
 	Firebird::PathName* pathNamePtr;
 	Firebird::string* stringPtr;
+	Jrd::IntlString* intlStringPtr;
 	TEXT* textPtr;
 	Jrd::DbFileClause* dbFileClause;
 	Firebird::Array<Jrd::DbFileClause*>* dbFilesClause;
@@ -852,7 +853,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyArray> proc_outputs_opt
 %type <stmtNode>   post_event proc_block proc_statement
 %type <compoundStmtNode> proc_statements
-%type <stringPtr>  passwd_clause passwd_opt
+%type <intlStringPtr>  passwd_clause passwd_opt
 %type <int32Val>   pos_short_integer precision_opt
 
 %type <legacyNode> qualified_join query_spec query_term
@@ -5570,7 +5571,7 @@ alter_user_clause
 	;
 
 passwd_clause
-	: PASSWORD sql_string	{ $$ = newNode<string>($2->str_data, $2->str_length); }
+	: PASSWORD sql_string	{ $$ = newNode<IntlString>($2); }
 	;
 
 set_noise

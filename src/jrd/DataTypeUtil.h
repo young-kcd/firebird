@@ -27,6 +27,9 @@
 #ifndef JRD_DATATYPEUTIL_H
 #define JRD_DATATYPEUTIL_H
 
+#include "../intl/charsets.h"
+#include "../common/classes/fb_string.h"
+
 struct dsc;
 
 class DataTypeUtilBase
@@ -72,6 +75,10 @@ public:
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet);
 	virtual USHORT getDialect() const;
+
+public:
+	static bool convertToUTF8(const Firebird::string& src, Firebird::string& dst,
+		CHARSET_ID charset = CS_ILLEGAL);
 
 private:
 	thread_db* tdbb;

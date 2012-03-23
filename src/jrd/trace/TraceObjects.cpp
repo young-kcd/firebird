@@ -192,48 +192,13 @@ const char* TraceSQLStatementImpl::getText()
 	return stmtText ? stmtText->c_str() : "";
 }
 
-// Returns false if conversion is not needed.
-static bool convertToUTF8(const string& src, string& dst)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-	const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
-
-	if (charset == CS_UTF8 || charset == CS_UNICODE_FSS)
-		return false;
-
-	if (charset == CS_NONE)
-	{
-		const size_t length = src.length();
-
-		const char* s = src.c_str();
-		char* p = dst.getBuffer(length);
-
-		for (const char* end = src.end(); s < end; ++p, ++s)
-			*p = (*s < 0 ? '?' : *s);
-	}
-	else // charset != CS_UTF8
-	{
-		DataTypeUtil dtUtil(tdbb);
-		ULONG length = dtUtil.convertLength(src.length(), charset, CS_UTF8);
-
-		length = INTL_convert_bytes(tdbb,
-			CS_UTF8, (UCHAR*) dst.getBuffer(length), length,
-			charset, (const BYTE*) src.begin(), src.length(),
-			ERR_post);
-
-		dst.resize(length);
-	}
-
-	return true;
-}
-
 const char* TraceSQLStatementImpl::getTextUTF8()
 {
 	const string* stmtText = m_stmt->getStatement()->getSqlText();
 
 	if (m_textUTF8.isEmpty() && stmtText && !stmtText->isEmpty())
 	{
-		if (!convertToUTF8(*stmtText, m_textUTF8))
+		if (!DataTypeUtil::convertToUTF8(*stmtText, m_textUTF8))
 			return stmtText->c_str();
 	}
 
@@ -332,7 +297,7 @@ const char* TraceFailedSQLStatement::getTextUTF8()
 {
 	if (m_textUTF8.isEmpty() && !m_text.isEmpty())
 	{
-		if (!convertToUTF8(m_text, m_textUTF8))
+		if (!DataTypeUtil::convertToUTF8(m_text, m_textUTF8))
 			return m_text.c_str();
 	}
 

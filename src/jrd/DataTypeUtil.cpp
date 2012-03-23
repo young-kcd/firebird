@@ -352,4 +352,43 @@ USHORT DataTypeUtil::getDialect() const
 	return (tdbb->getDatabase()->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
 }
 
+// Returns false if conversion is not needed.
+bool DataTypeUtil::convertToUTF8(const string& src, string& dst, CHARSET_ID charset)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	if (charset == CS_ILLEGAL)
+	{
+		fb_assert(tdbb->getAttachment());
+		charset = tdbb->getAttachment()->att_charset;
+	}
+
+	if (charset == CS_UTF8 || charset == CS_UNICODE_FSS)
+		return false;
+
+	if (charset == CS_NONE)
+	{
+		const size_t length = src.length();
+
+		const char* s = src.c_str();
+		char* p = dst.getBuffer(length);
+
+		for (const char* end = src.end(); s < end; ++p, ++s)
+			*p = (*s < 0 ? '?' : *s);
+	}
+	else // charset != CS_UTF8
+	{
+		DataTypeUtil dtUtil(tdbb);
+		ULONG length = dtUtil.convertLength(src.length(), charset, CS_UTF8);
+
+		length = INTL_convert_bytes(tdbb,
+			CS_UTF8, (UCHAR*) dst.getBuffer(length), length,
+			charset, (const BYTE*) src.begin(), src.length(),
+			ERR_post);
+
+		dst.resize(length);
+	}
+
+	return true;
+}
+
 }	// namespace Jrd

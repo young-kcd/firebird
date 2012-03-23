@@ -52,6 +52,8 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/movd_proto.h"
 #include "../dsql/pass1_proto.h"
+#include "../dsql/metd_proto.h"
+#include "../jrd/DataTypeUtil.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../yvalve/gds_proto.h"
@@ -1836,6 +1838,30 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 	{
 		request->req_dbb->deletePool(&request->getPool());
 	}
+}
+
+
+// Return as UTF8
+string IntlString::toUtf8(DsqlCompilerScratch* dsqlScratch) const
+{
+	CHARSET_ID id = CS_ILLEGAL;
+	if (charset.hasData())
+	{
+		const dsql_intlsym* resolved = METD_get_charset(dsqlScratch->getTransaction(),
+			charset.length(), charset.c_str());
+
+		if (!resolved)
+		{
+			// character set name is not defined
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+					  Arg::Gds(isc_charset_not_found) << charset);
+		}
+
+		id = resolved->intlsym_charset_id;
+	}
+
+	string utf;
+	return DataTypeUtil::convertToUTF8(s, utf) ? utf : s;
 }
 
 

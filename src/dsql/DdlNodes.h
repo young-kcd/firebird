@@ -1833,7 +1833,7 @@ protected:
 public:
 	const bool isCreating;
 	const Firebird::MetaName name;
-	const Firebird::string* password;
+	const IntlString* password;
 	const Firebird::string* firstName;
 	const Firebird::string* middleName;
 	const Firebird::string* lastName;

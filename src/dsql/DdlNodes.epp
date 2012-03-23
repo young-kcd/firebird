@@ -9452,7 +9452,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			status_exception::raise(Arg::PrivateDyn(250));
 		}
 
-		userData->pass.set(password->c_str());
+		userData->pass.set(password->toUtf8(dsqlScratch).c_str());
 		userData->pass.setEntered(1);
 	}
 
