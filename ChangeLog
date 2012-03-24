@@ -1,3 +1,25 @@
+ 2012-03-23 17:44  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/parse.y
+   M src/intl/charsets.h
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/DataTypeUtil.h
+   M src/jrd/trace/TraceObjects.cpp
+Fixed CORE-3782: Password encoding
+
+ 2012-03-23 14:06  alexpeshkoff 
+   M configure.in
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/jrd/ibase.h
+   M src/msgs/templates.sql
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/gds.cpp
+   M src/yvalve/utl.cpp
+MAC port. Also cleaned up one related place, where names of struct and variable were same (bstream)
+
  2012-03-22 13:09  paulbeach 
    M src/common/classes/semaphore.h
 Allow compile on Darwin
