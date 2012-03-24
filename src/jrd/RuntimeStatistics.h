@@ -107,7 +107,7 @@ public:
 		reset();
 	}
 
-	explicit RuntimeStatistics(const RuntimeStatistics& other)
+	RuntimeStatistics(const RuntimeStatistics& other)
 		: Firebird::AutoStorage(), rel_counts(getPool())
 	{
 		memcpy(values, other.values, sizeof(values));
