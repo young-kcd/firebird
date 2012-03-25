@@ -192,11 +192,8 @@ namespace Jrd
 				 i != node->jrdChildNodes.end();
 				 ++i)
 			{
-				if (*i)
-				{
-					if (!isReferenced((*i)->getExpr(), fieldFound))
-						return false;
-				}
+				if (**i && !isReferenced((*i)->getExpr(), fieldFound))
+					return false;
 			}
 
 			return true;
