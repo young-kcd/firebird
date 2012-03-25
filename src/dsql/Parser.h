@@ -144,40 +144,59 @@ public:
 	template <typename T>
 	T* newNode()
 	{
-		return FB_NEW(getPool()) T(getPool());
+		return setupNode<T>(FB_NEW(getPool()) T(getPool()));
 	}
 
 	template <typename T, typename T1>
 	T* newNode(T1 a1)
 	{
-		return FB_NEW(getPool()) T(getPool(), a1);
+		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1));
 	}
 
 	template <typename T, typename T1, typename T2>
 	T* newNode(T1 a1, T2 a2)
 	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2);
+		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2));
 	}
 
 	template <typename T, typename T1, typename T2, typename T3>
 	T* newNode(T1 a1, T2 a2, T3 a3)
 	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2, a3);
+		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2, a3));
 	}
 
 	template <typename T, typename T1, typename T2, typename T3, typename T4>
 	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4)
 	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4);
+		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4));
 	}
 
 	template <typename T, typename T1, typename T2, typename T3, typename T4, typename T5>
 	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
 	{
-		return FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4, a5);
+		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4, a5));
 	}
 
 private:
+	template <typename T> T* setupNode(Node* node)
+	{
+		node->line = (USHORT) lex.lines_bk;
+		node->column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
+		return static_cast<T*>(node);
+	}
+
+	// Overload to not make LineColumnNode data wrong after its construction.
+	template <typename T> T* setupNode(LineColumnNode* node)
+	{
+		return node;
+	}
+
+	// Overload for non-Node classes constructed with newNode.
+	template <typename T> T* setupNode(void* node)
+	{
+		return static_cast<T*>(node);
+	}
+
 	void transformString(const char* start, unsigned length, Firebird::string& dest);
 
 	// Set the value of a clause, checking if it was already specified.

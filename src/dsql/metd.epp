@@ -40,6 +40,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/irq.h"
 #include "../jrd/tra.h"
+#include "../dsql/ExprNodes.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/make_proto.h"
@@ -1058,7 +1059,8 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 }
 
 
-dsql_nod* METD_get_primary_key(jrd_tra* transaction, const MetaName& relationName)
+void METD_get_primary_key(jrd_tra* transaction, const MetaName& relationName,
+	Array<FieldNode*>& fields)
 {
 /**************************************
  *
@@ -1073,10 +1075,9 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const MetaName& relationNam
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	validateTransaction(transaction);
-
-	DsqlNodStack stack;
 
 	AutoCacheRequest handle(tdbb, irq_primary_key, IRQ_REQUESTS);
 
@@ -1090,11 +1091,11 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const MetaName& relationNam
 		AND Z.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY"
 		SORTED BY Y.RDB$FIELD_POSITION
 	{
-		stack.push(MAKE_field_name(Y.RDB$FIELD_NAME));
+		FieldNode* fieldNode = FB_NEW(pool) FieldNode(pool);
+		fieldNode->dsqlName = Y.RDB$FIELD_NAME;
+		fields.add(fieldNode);
 	}
 	END_FOR
-
-	return (stack.getCount() ? MAKE_list(stack) : NULL);
 }
 
 

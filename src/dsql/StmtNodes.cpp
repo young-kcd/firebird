@@ -62,7 +62,7 @@ using namespace Jrd;
 
 namespace Jrd {
 
-static dsql_nod* dsqlExplodeFields(dsql_rel*);
+template <typename T> static void dsqlExplodeFields(dsql_rel* relation, Array<T*>& fields);
 static dsql_par* dsqlFindDbKey(const dsql_req*, const dsql_nod*);
 static dsql_par* dsqlFindRecordVersion(const dsql_req*, const dsql_nod*);
 static const dsql_msg* dsqlGenDmlHeader(DsqlCompilerScratch*, dsql_nod*);
@@ -70,6 +70,7 @@ static dsql_ctx* dsqlGetContext(const dsql_nod* node);
 static void dsqlGetContexts(DsqlContextStack& contexts, const dsql_nod* node);
 static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch*, StmtNode* input, bool returnList);
 static void dsqlFieldAppearsOnce(const Array<dsql_nod*>&, const char*);
+static void dsqlFieldAppearsOnce(const Array<ValueExprNode*>& values, const char* command);
 static Array<dsql_nod*>* dsqlPassArray(DsqlCompilerScratch*, Array<dsql_nod*>*);
 static dsql_ctx* dsqlPassCursorContext(DsqlCompilerScratch*, const MetaName&, const dsql_nod*);
 static dsql_nod* dsqlPassCursorReference(DsqlCompilerScratch*, const MetaName&, dsql_nod*);
@@ -4766,7 +4767,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	dsql_nod* matchedConditions = NULL;
 	dsql_nod* notMatchedConditions = NULL;
 
-	for (Matched* matched = dsqlWhenMatched.begin(); matched != dsqlWhenMatched.end(); ++matched)
+	for (ObjectsArray<Matched>::iterator matched = dsqlWhenMatched.begin(); matched != dsqlWhenMatched.end(); ++matched)
 	{
 		if (matched->condition)
 			matchedConditions = PASS1_compose(matchedConditions, matched->condition, blr_or);
@@ -4777,7 +4778,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	for (NotMatched* notMatched = dsqlWhenNotMatched.begin();
+	for (ObjectsArray<NotMatched>::iterator notMatched = dsqlWhenNotMatched.begin();
 		 notMatched != dsqlWhenNotMatched.end();
 		 ++notMatched)
 	{
@@ -4862,7 +4863,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	StmtNode* update = NULL;
 	IfNode* lastIf = NULL;
 
-	for (Matched* matched = dsqlWhenMatched.begin(); matched != dsqlWhenMatched.end(); ++matched)
+	for (ObjectsArray<Matched>::iterator matched = dsqlWhenMatched.begin(); matched != dsqlWhenMatched.end(); ++matched)
 	{
 		IfNode* thisIf = FB_NEW(pool) IfNode(pool);
 
@@ -5015,7 +5016,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	StmtNode* insert = NULL;
 	lastIf = NULL;
 
-	for (NotMatched* notMatched = dsqlWhenNotMatched.begin();
+	for (ObjectsArray<NotMatched>::iterator notMatched = dsqlWhenNotMatched.begin();
 		 notMatched != dsqlWhenNotMatched.end();
 		 ++notMatched)
 	{
@@ -6182,31 +6183,26 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 
 	// If there isn't a field list, generate one
 
-	dsql_nod* fields = dsqlFields;
+	Array<ValueExprNode*> fields;
 
-	if (fields)
+	if (dsqlFields.hasData())
 	{
-		const dsql_nod* const old_fields = fields; // for error reporting.
-		fields = PASS1_node_psql(dsqlScratch, fields, false);
+		for (FieldNode** i = dsqlFields.begin(); i != dsqlFields.end(); ++i)
+		{
+			PsqlChanger changer(dsqlScratch, false);
+			fields.add((*i)->dsqlPass(dsqlScratch));
+		}
 
 		// We do not allow cases like INSERT INTO T (f1, f2, f1)...
-		{	// scope
-			Array<dsql_nod*> newValues;
-
-			for (USHORT i = 0; i < fields->nod_count; ++i)
-				newValues.add(fields->nod_arg[i]);
-
-			dsqlFieldAppearsOnce(newValues, "INSERT");
-		}	// scope
+		dsqlFieldAppearsOnce(fields, "INSERT");
 
 		// begin IBO hack
 		// 02-May-2004, Nickolay Samofatov. Do not constify ptr further e.g. to
 		// const dsql_nod* const* .... etc. It chokes GCC 3.4.0
-		dsql_nod** ptr = fields->nod_arg;
-		for (const dsql_nod* const* const end = ptr + fields->nod_count; ptr < end; ptr++)
+		ValueExprNode** ptr = fields.begin();
+		for (const ValueExprNode* const* const end = fields.end(); ptr != end; ++ptr)
 		{
-			DEV_BLKCHK (*ptr, dsql_type_nod);
-			const dsql_nod* temp2 = *ptr;
+			const ValueExprNode* temp2 = *ptr;
 
 			const dsql_ctx* tmp_ctx = NULL;
 			const TEXT* tmp_name = NULL;
@@ -6230,18 +6226,23 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 				 tmp_ctx->ctx_context != context->ctx_context))
 			{
 				const dsql_rel* bad_rel = tmp_ctx->ctx_relation;
-				// At this time, "fields" has been replaced by the processed list in
-				// the same variable, so we refer again to dsqlFields.
-				// CVC: After three years, made old_fields for that purpose.
 
 				PASS1_field_unknown((bad_rel ? bad_rel->rel_name.c_str() : NULL),
-					tmp_name, old_fields->nod_arg[ptr - fields->nod_arg]);
+					tmp_name, dsqlFields[ptr - fields.begin()]);
 			}
 		}
 		// end IBO hack
 	}
 	else
-		fields = PASS1_node_psql(dsqlScratch, dsqlExplodeFields(relation), false);
+	{
+		dsqlExplodeFields(relation, fields);
+
+		for (ValueExprNode** i = fields.begin(); i != fields.end(); ++i)
+		{
+			PsqlChanger changer(dsqlScratch, false);
+			*i = (*i)->dsqlPass(dsqlScratch);
+		}
+	}
 
 	// Match field fields and values
 
@@ -6250,26 +6251,25 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 
 	if (values)
 	{
-		if (fields->nod_count != values->nod_count)
+		if (fields.getCount() != values->nod_count)
 		{
 			// count of column list and value list don't match
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 					  Arg::Gds(isc_dsql_var_count_err));
 		}
 
-		dsql_nod** ptr = fields->nod_arg;
+		ValueExprNode** ptr = fields.begin();
 		dsql_nod** ptr2 = values->nod_arg;
-		for (const dsql_nod* const* const end = ptr + fields->nod_count; ptr < end; ptr++, ptr2++)
+		for (const ValueExprNode* const* const end = fields.end(); ptr != end; ++ptr, ++ptr2)
 		{
-			DEV_BLKCHK(*ptr, dsql_type_nod);
 			DEV_BLKCHK(*ptr2, dsql_type_nod);
 
 			AssignmentNode* temp = FB_NEW(getPool()) AssignmentNode(getPool());
 			temp->dsqlAsgnFrom = *ptr2;
-			temp->dsqlAsgnTo = *ptr;
+			temp->dsqlAsgnTo = MAKE_class_node(*ptr);
 			assignStatements->statements.add(temp);
 
-			PASS1_set_parameter_type(dsqlScratch, *ptr2, *ptr, false);
+			PASS1_set_parameter_type(dsqlScratch, *ptr2, temp->dsqlAsgnTo, false);
 		}
 	}
 
@@ -7655,16 +7655,16 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	DEV_BLKCHK(context, dsql_type_ctx);
 
 	dsql_rel* relation = context->ctx_relation;
-	dsql_nod* fields = dsqlFields;
+	Array<FieldNode*> fields = dsqlFields;
 
 	// If a field list isn't present, build one using the same rules of INSERT INTO table VALUES ...
-	if (!fields)
-		fields = dsqlExplodeFields(relation);
+	if (fields.isEmpty())
+		dsqlExplodeFields(relation, fields);
 
 	// Maintain a pair of view's field name / base field name.
 	MetaNamePairMap view_fields;
 
-	if ((relation->rel_flags & REL_view) && !dsqlMatching)
+	if ((relation->rel_flags & REL_view) && dsqlMatching.isEmpty())
 	{
 		dsql_rel* base_rel = METD_get_view_base(dsqlScratch->getTransaction(), dsqlScratch,
 			relation_name.c_str(), view_fields);
@@ -7676,37 +7676,36 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			ERRD_post(Arg::Gds(isc_upd_ins_with_complex_view));
 	}
 
-	dsql_nod* matching = dsqlMatching;
+	Array<FieldNode*> matching = dsqlMatching;
 	UCHAR equality_type;
 
-	if (matching)
+	if (dsqlMatching.hasData())
 	{
 		equality_type = blr_equiv;
 
 		dsqlScratch->context->push(context);
 		++dsqlScratch->scopeLevel;
 
-		const dsql_nod* matching_fields = PASS1_node_psql(dsqlScratch, matching, false);
+		Array<ValueExprNode*> matchingFields;
+
+		for (FieldNode** i = matching.begin(); i != matching.end(); ++i)
+		{
+			PsqlChanger changer(dsqlScratch, false);
+			matchingFields.add((*i)->dsqlPass(dsqlScratch));
+		}
 
 		--dsqlScratch->scopeLevel;
 		dsqlScratch->context->pop();
 
-		{	// scope
-			Array<dsql_nod*> newValues;
-
-			for (USHORT i = 0; i < matching_fields->nod_count; ++i)
-				newValues.add(matching_fields->nod_arg[i]);
-
-			dsqlFieldAppearsOnce(newValues, "UPDATE OR INSERT");
-		}	// scope
+		dsqlFieldAppearsOnce(matchingFields, "UPDATE OR INSERT");
 	}
 	else
 	{
 		equality_type = blr_eql;
 
-		matching = METD_get_primary_key(dsqlScratch->getTransaction(), base_name.c_str());
+		METD_get_primary_key(dsqlScratch->getTransaction(), base_name.c_str(), matching);
 
-		if (!matching)
+		if (matching.isEmpty())
 			ERRD_post(Arg::Gds(isc_primary_key_required) << base_name);
 	}
 
@@ -7717,57 +7716,44 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
 
 	CompoundStmtNode* assignments = FB_NEW(pool) CompoundStmtNode(pool);
-	dsql_nod** field_ptr = fields->nod_arg;
+	FieldNode** fieldPtr = fields.begin();
 	dsql_nod** value_ptr = values->nod_arg;
 
 	Array<NestConst<StmtNode> >& insertStatements =
 		insert->statement->as<CompoundStmtNode>()->statements;
 
-	for (const dsql_nod* const* const field_end = field_ptr + fields->nod_count;
-		 field_ptr < field_end; field_ptr++, value_ptr++)
+	for (; fieldPtr != fields.end(); ++fieldPtr, ++value_ptr)
 	{
-		DEV_BLKCHK(*field_ptr, dsql_type_nod);
 		DEV_BLKCHK(*value_ptr, dsql_type_nod);
 
 		AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
 		assign->dsqlAsgnFrom = *value_ptr;
-		assign->dsqlAsgnTo = *field_ptr;
+		assign->dsqlAsgnTo = MAKE_class_node(*fieldPtr);
 		assignments->statements.add(assign);
-
-		fb_assert((*field_ptr)->nod_type == Dsql::nod_field_name);
 
 		// When relation is a view and MATCHING was not specified, field_name
 		// stores the base field name that is what we should find in the primary
 		// key of base table.
 		MetaName field_name;
 
-		if ((relation->rel_flags & REL_view) && !dsqlMatching)
-		{
-			view_fields.get(
-				MetaName(((dsql_str*) (*field_ptr)->nod_arg[Dsql::e_fln_name])->str_data),
-				field_name);
-		}
+		if ((relation->rel_flags & REL_view) && dsqlMatching.isEmpty())
+			view_fields.get((*fieldPtr)->dsqlName, field_name);
 		else
-			field_name = ((dsql_str*) (*field_ptr)->nod_arg[Dsql::e_fln_name])->str_data;
+			field_name = (*fieldPtr)->dsqlName;
 
 		if (field_name.hasData())
 		{
-			dsql_nod** matching_ptr = matching->nod_arg;
-
-			for (const dsql_nod* const* const matching_end = matching_ptr + matching->nod_count;
-				 matching_ptr < matching_end; matching_ptr++)
+			for (FieldNode** matchingPtr = matching.begin();
+				 matchingPtr != matching.end();
+				 ++matchingPtr)
 			{
-				DEV_BLKCHK(*matching_ptr, dsql_type_nod);
-				fb_assert((*matching_ptr)->nod_type == Dsql::nod_field_name);
-
-				const MetaName
-					testField(((dsql_str*)(*matching_ptr)->nod_arg[Dsql::e_fln_name])->str_data);
+				const MetaName testField = (*matchingPtr)->dsqlName;
 
 				if (testField == field_name)
 				{
 					++match_count;
 
-					const size_t fieldPos = field_ptr - fields->nod_arg;
+					const size_t fieldPos = fieldPtr - fields.begin();
 					dsql_nod*& expr = insertStatements[fieldPos]->as<AssignmentNode>()->dsqlAsgnFrom;
 					dsql_nod* var = dsqlPassHiddenVariable(dsqlScratch, expr);
 
@@ -7785,7 +7771,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						var = *value_ptr;
 
 					ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-						equality_type, *field_ptr, var);
+						equality_type, assign->dsqlAsgnTo, var);
 
 					dsql_nod* eqlNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 					eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
@@ -7797,9 +7783,9 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// check if implicit or explicit MATCHING is valid
-	if (match_count != matching->nod_count)
+	if (match_count != matching.getCount())
 	{
-		if (dsqlMatching)
+		if (dsqlMatching.hasData())
 			ERRD_post(Arg::Gds(isc_upd_ins_doesnt_match_matching));
 		else
 			ERRD_post(Arg::Gds(isc_upd_ins_doesnt_match_pk) << base_name);
@@ -7868,22 +7854,22 @@ void UpdateOrInsertNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 
 
 // Generate a field list that correspond to table fields.
-static dsql_nod* dsqlExplodeFields(dsql_rel* relation)
+template <typename T>
+static void dsqlExplodeFields(dsql_rel* relation, Array<T*>& fields)
 {
-	DsqlNodStack stack;
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	for (dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		// CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list.
 		if (field->fld_flags & FLD_computed)
-		{
 			continue;
-		}
 
-		stack.push(MAKE_field_name(field->fld_name.c_str()));
+		FieldNode* fieldNode = FB_NEW(pool) FieldNode(pool);
+		fieldNode->dsqlName = field->fld_name.c_str();
+		fields.add(fieldNode);
 	}
-
-	return MAKE_list(stack);
 }
 
 // Find dbkey for named relation in statement's saved dbkeys.
@@ -8125,6 +8111,40 @@ static void dsqlFieldAppearsOnce(const Array<dsql_nod*>& values, const char* com
 					Arg::Gds(isc_dsql_no_dup_name) << str << command <<
 					Arg::Gds(isc_dsql_line_col_error) <<
 						Arg::Num(values[j]->nod_line) << Arg::Num(values[j]->nod_column));
+			}
+		}
+	}
+}
+
+// Check that a field is named only once in INSERT or UPDATE statements.
+static void dsqlFieldAppearsOnce(const Array<ValueExprNode*>& values, const char* command)
+{
+	for (size_t i = 0; i < values.getCount(); ++i)
+	{
+		const FieldNode* field1 = ExprNode::as<FieldNode>(values[i]);
+		fb_assert(field1);
+
+		const MetaName& name1 = field1->dsqlField->fld_name;
+
+		for (size_t j = i + 1; j < values.getCount(); ++j)
+		{
+			const FieldNode* field2 = ExprNode::as<FieldNode>(values[j]);
+			fb_assert(field2);
+
+			const MetaName& name2 = field2->dsqlField->fld_name;
+
+			if (name1 == name2)
+			{
+				string str = field1->dsqlContext->ctx_relation->rel_name.c_str();
+				str += ".";
+				str += name1.c_str();
+
+				//// FIXME: line/column is not very accurate for MERGE ... INSERT.
+				ERRD_post(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
+					Arg::Gds(isc_dsql_no_dup_name) << str << command <<
+					Arg::Gds(isc_dsql_line_col_error) <<
+						Arg::Num(values[j]->line) << Arg::Num(values[j]->column));
 			}
 		}
 	}

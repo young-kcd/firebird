@@ -645,6 +645,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::BoolExprNode* boolExprNode;
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
+	Firebird::Array<Jrd::FieldNode*>* fieldArray;
 	Jrd::TransactionNode* traNode;
 	Jrd::CreateCollationNode* createCollationNode;
 	Jrd::CreateDomainNode* createDomainNode;
@@ -670,6 +671,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreateIndexNode* createIndexNode;
 	Jrd::AlterDatabaseNode* alterDatabaseNode;
 	Jrd::ExecBlockNode* execBlockNode;
+	Jrd::StoreNode* storeNode;
+	Jrd::UpdateOrInsertNode* updInsNode;
 	Jrd::AggNode* aggNode;
 	Jrd::SysFuncCallNode* sysFuncCallNode;
 	Jrd::ValueIfNode* valueIfNode;
@@ -679,6 +682,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ErrorHandlerNode* errorHandlerNode;
 	Jrd::ExecStatementNode* execStatementNode;
 	Jrd::MergeNode* mergeNode;
+	Jrd::MergeNode::NotMatched* mergeNotMatchedClause;
+	Jrd::MergeNode::Matched* mergeMatchedClause;
 	Jrd::SelectNode* selectNode;
 	Jrd::SetTransactionNode* setTransactionNode;
 	Jrd::DeclareSubProcNode* declareSubProcNode;
@@ -726,8 +731,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> column_singleton
 %type <traNode>    commit
 %type <stmtNode>   complex_proc_statement
-%type computed_by
-%type <legacyNode> computed_clause constant
+%type <legacyNode> constant
 %type <indexConstraintClause> constraint_index_opt
 %type <boolVal>	   conditional
 %type <legacyNode> constraint_name_opt correlation_name
@@ -789,7 +793,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <int32Val>   first_file_length
 %type <execStatementNode> for_exec_into
 
-%type <legacyNode> generated_always_clause grant_option granted_by granted_by_text grantee grantee_list
+%type <legacyNode> grant_option granted_by granted_by_text grantee grantee_list
 %type <legacyNode> grantor group_by_item group_by_list group_clause
 %type <ddlNode> grant gtt_recreate_clause
 %type <nullableIntVal>  grant_admin grant_admin_opt
@@ -800,9 +804,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> in_predicate_value
 %type index_definition(<createIndexNode>)
 %type <legacyNode> index_list
-%type <legacyNode> ins_column_list ins_column_parens
-%type <legacyNode> ins_column_parens_opt integer_keyword
-%type <stmtNode>   insert
+%type ins_column_list(<fieldArray>) ins_column_parens(<fieldArray>) ins_column_parens_opt(<fieldArray>)
+%type <legacyNode> integer_keyword
+%type <storeNode>  insert insert_start
 %type <uintVal>	   iso_mode isolation_mode
 %type input_parameters(<parametersClause>) input_proc_parameter(<parametersClause>)
 %type input_proc_parameters(<parametersClause>)
@@ -822,7 +826,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <boolVal>	   manual_auto
 %type <mergeNode>  merge
-%type merge_insert_specification(<mergeNode>) merge_update_specification(<mergeNode>)
+%type merge_insert_specification(<mergeNotMatchedClause>) merge_update_specification(<mergeMatchedClause>)
 %type merge_when_clause(<mergeNode>) merge_when_matched_clause(<mergeNode>)
 %type merge_when_not_matched_clause(<mergeNode>)
 %type <stringPtr>  middlename_opt
@@ -922,8 +926,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <createAlterFunctionNode> udf_decl_clause
 %type <legacyNode> update_column_name
 %type <boolVal>	   unique_opt
-%type <stmtNode>   undo_savepoint update update_or_insert update_positioned update_searched
-%type <legacyNode> update_or_insert_matching_opt
+%type <stmtNode>   undo_savepoint update update_positioned update_searched
+%type <updInsNode> update_or_insert
+%type update_or_insert_matching_opt(<fieldArray>)
 %type <uintVal>	   update_rule
 %type <legacyNode> user_grantee user_grantee_list
 %type <int32Val>   unsigned_short_integer
@@ -2105,7 +2110,7 @@ column_constraint($addColumnClause)
 			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_FK;
 
-			constraint.columns.add(toName(lex.g_field_name->nod_arg[Dsql::e_fln_name]));
+			constraint.columns.add(ExprNode::as<FieldNode>(lex.g_field_name)->dsqlName);
 			constraint.refRelation = toName($2);
 			constraint.refAction = $4;
 
@@ -2115,10 +2120,7 @@ column_constraint($addColumnClause)
 				const dsql_nod* const* ptr = refColumns->nod_arg;
 
 				for (const dsql_nod* const* const end = ptr + refColumns->nod_count; ptr != end; ++ptr)
-				{
-					const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-					constraint.refColumns.add(fieldName->str_data);
-				}
+					constraint.refColumns.add(ExprNode::as<FieldNode>(*ptr)->dsqlName);
 			}
 
 			constraint.index = $5;
@@ -2160,10 +2162,7 @@ table_constraint($relationNode)
 			const dsql_nod* const* ptr = columns->nod_arg;
 
 			for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr != end; ++ptr)
-			{
-				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-				constraint.columns.add(fieldName->str_data);
-			}
+				constraint.columns.add(ExprNode::as<FieldNode>(*ptr)->dsqlName);
 
 			constraint.index = $3;
 
@@ -2178,10 +2177,7 @@ table_constraint($relationNode)
 			const dsql_nod* const* ptr = columns->nod_arg;
 
 			for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr != end; ++ptr)
-			{
-				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-				constraint.columns.add(fieldName->str_data);
-			}
+				constraint.columns.add(ExprNode::as<FieldNode>(*ptr)->dsqlName);
 
 			constraint.index = $4;
 
@@ -2197,10 +2193,8 @@ table_constraint($relationNode)
 			const dsql_nod* const* ptr = columns->nod_arg;
 
 			for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr != end; ++ptr)
-			{
-				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-				constraint.columns.add(fieldName->str_data);
-			}
+				constraint.columns.add(ExprNode::as<FieldNode>(*ptr)->dsqlName);
+
 			constraint.refRelation = toName($5);
 			constraint.refAction = $7;
 
@@ -2210,10 +2204,7 @@ table_constraint($relationNode)
 				const dsql_nod* const* ptr = refColumns->nod_arg;
 
 				for (const dsql_nod* const* const end = ptr + refColumns->nod_count; ptr != end; ++ptr)
-				{
-					const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-					constraint.refColumns.add(fieldName->str_data);
-				}
+					constraint.refColumns.add(ExprNode::as<FieldNode>(*ptr)->dsqlName);
 			}
 
 			constraint.index = $8;
@@ -2704,10 +2695,10 @@ proc_statement
 
 simple_proc_statement
 	: assignment
-	| insert
+	| insert			{ $$ = $1; }
 	| merge				{ $$ = $1; }
 	| update
-	| update_or_insert
+	| update_or_insert	{ $$ = $1; }
 	| delete
 	| singleton_select
 	| exec_procedure
@@ -2930,7 +2921,12 @@ singleton_select
 	;
 
 variable
-	: ':' symbol_variable_name	{ $$ = make_node (nod_var_name, (int) e_vrn_count, $2); }
+	: ':' symbol_variable_name
+		{
+			VariableNode* node = newNode<VariableNode>();
+			node->dsqlName = toName($2);
+			$$ = makeClassNode(node);
+		}
 	;
 
 variable_list
@@ -4713,7 +4709,11 @@ select_item
 	| value as_noise symbol_item_alias_name
 		{ $$ = makeClassNode(newNode<DsqlAliasNode>(toName($3), $1)); }
 	| symbol_table_alias_name '.' '*'
-		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, NULL); }
+		{
+			FieldNode* fieldNode = newNode<FieldNode>();
+			fieldNode->dsqlQualifier = toName($1);
+			$$ = makeClassNode(fieldNode);
+		}
 	;
 
 as_noise
@@ -5036,29 +5036,32 @@ rows_clause
 // INSERT statement
 // IBO hack: replace column_parens_opt by ins_column_parens_opt.
 insert
-	: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' value_list ')' returning_clause
+	: insert_start ins_column_parens_opt(&$1->dsqlFields) VALUES '(' value_list ')' returning_clause
 		{
-			StoreNode* node = newNode<StoreNode>();
-			node->dsqlRelation = $3;
-			node->dsqlFields = $4;
-			node->dsqlValues = make_list($7);
-			node->dsqlReturning = $9;
+			StoreNode* node = $$ = $1;
+			node->dsqlValues = make_list($5);
+			node->dsqlReturning = $7;
+		}
+	| insert_start ins_column_parens_opt(&$1->dsqlFields) select_expr returning_clause
+		{
+			StoreNode* node = $$ = $1;
+			node->dsqlRse = $3;
+			node->dsqlReturning = $4;
 			$$ = node;
 		}
-	| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
+	| insert_start DEFAULT VALUES returning_clause
 		{
-			StoreNode* node = newNode<StoreNode>();
-			node->dsqlRelation = $3;
-			node->dsqlFields = $4;
-			node->dsqlRse = $5;
-			node->dsqlReturning = $6;
+			StoreNode* node = $$ = $1;
+			node->dsqlReturning = $4;
 			$$ = node;
 		}
-	| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
+	;
+
+insert_start
+	: INSERT INTO simple_table_name
 		{
 			StoreNode* node = newNode<StoreNode>();
 			node->dsqlRelation = $3;
-			node->dsqlReturning = $6;
 			$$ = node;
 		}
 	;
@@ -5068,17 +5071,15 @@ insert
 merge
 	: MERGE INTO table_name USING table_reference ON search_condition
 			{
-				MergeNode* node = newNode<MergeNode>();
+				MergeNode* node = $$ = newNode<MergeNode>();
 				node->dsqlRelation = $3;
 				node->dsqlUsing = $5;
 				node->dsqlCondition = $7;
-				$<mergeNode>$ = node;
 			}
 		merge_when_clause($8) returning_clause
 			{
-				MergeNode* node = $8;
+				MergeNode* node = $$ = $8;
 				node->dsqlReturning = $10;
-				$$ = node;
 			}
 	;
 
@@ -5090,55 +5091,38 @@ merge_when_clause($mergeNode)
 	;
 
 merge_when_matched_clause($mergeNode)
-	: WHEN MATCHED merge_update_specification($mergeNode)
+	: WHEN MATCHED
+			{ $<mergeMatchedClause>$ = &$mergeNode->dsqlWhenMatched.add(); }
+		merge_update_specification($<mergeMatchedClause>3)
 	;
 
 merge_when_not_matched_clause($mergeNode)
-	: WHEN NOT MATCHED merge_insert_specification($mergeNode)
+	: WHEN NOT MATCHED
+			{ $<mergeNotMatchedClause>$ = &$mergeNode->dsqlWhenNotMatched.add(); }
+		merge_insert_specification($<mergeNotMatchedClause>4)
 	;
 
-merge_update_specification($mergeNode)
+merge_update_specification($mergeMatchedClause)
 	: THEN UPDATE SET assignments
-		{
-			MergeNode::Matched when;
-			when.assignments = $4;
-			$mergeNode->dsqlWhenMatched.add(when);
-		}
+		{ $mergeMatchedClause->assignments = $4; }
 	| AND search_condition THEN UPDATE SET assignments
 		{
-			MergeNode::Matched when;
-			when.assignments = $6;
-			when.condition = $2;
-			$mergeNode->dsqlWhenMatched.add(when);
+			$mergeMatchedClause->condition = $2;
+			$mergeMatchedClause->assignments = $6;
 		}
 	| THEN KW_DELETE
-		{
-			MergeNode::Matched when;
-			$mergeNode->dsqlWhenMatched.add(when);
-		}
 	| AND search_condition THEN KW_DELETE
-		{
-			MergeNode::Matched when;
-			when.condition = $2;
-			$mergeNode->dsqlWhenMatched.add(when);
-		}
+		{ $mergeMatchedClause->condition = $2; }
 	;
 
-merge_insert_specification($mergeNode)
-	: THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
+merge_insert_specification($mergeNotMatchedClause)
+	: THEN INSERT ins_column_parens_opt(&$mergeNotMatchedClause->fields) VALUES '(' value_list ')'
+		{ $mergeNotMatchedClause->values = make_list($6); }
+	| AND search_condition THEN INSERT ins_column_parens_opt(&$mergeNotMatchedClause->fields)
+			VALUES '(' value_list ')'
 		{
-			MergeNode::NotMatched when;
-			when.fields = make_list($3);
-			when.values = make_list($6);
-			$mergeNode->dsqlWhenNotMatched.add(when);
-		}
-	| AND search_condition THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
-		{
-			MergeNode::NotMatched when;
-			when.fields = make_list($5);
-			when.values = make_list($8);
-			when.condition = $2;
-			$mergeNode->dsqlWhenNotMatched.add(when);
+			$mergeNotMatchedClause->values = make_list($8);
+			$mergeNotMatchedClause->condition = $2;
 		}
 	;
 
@@ -5215,22 +5199,23 @@ update_positioned
 // UPDATE OR INSERT statement
 
 update_or_insert
-	: UPDATE OR INSERT INTO simple_table_name ins_column_parens_opt
-			VALUES '(' value_list ')' update_or_insert_matching_opt returning_clause
-		{
-			UpdateOrInsertNode* node = newNode<UpdateOrInsertNode>();
-			node->dsqlRelation = $5;
-			node->dsqlFields = make_list($6);
-			node->dsqlValues = make_list($9);
-			node->dsqlMatching = $11;
-			node->dsqlReturning = $12;
-			$$ = node;
-		}
+	: UPDATE OR INSERT INTO simple_table_name
+			{
+				UpdateOrInsertNode* node = $$ = newNode<UpdateOrInsertNode>();
+				node->dsqlRelation = $5;
+			}
+		ins_column_parens_opt(&$6->dsqlFields)
+		VALUES '(' value_list ')' update_or_insert_matching_opt(&$6->dsqlMatching) returning_clause
+			{
+				UpdateOrInsertNode* node = $$ = $6;
+				node->dsqlValues = make_list($10);
+				node->dsqlReturning = $13;
+			}
 	;
 
-update_or_insert_matching_opt
-	: /* nothing */					{ $$ = NULL; }
-	| MATCHING ins_column_parens	{ $$ = $2; }
+update_or_insert_matching_opt($fieldArray)
+	: // nothing
+	| MATCHING ins_column_parens($fieldArray)
 	;
 
 
@@ -5316,30 +5301,39 @@ column_list
 	;
 
 // begin IBO hack
-ins_column_parens_opt
-	: /* nothing */		{ $$ = NULL; }
-	| ins_column_parens
+ins_column_parens_opt($fieldArray)
+	: // nothing
+	| ins_column_parens($fieldArray)
 	;
 
-ins_column_parens
-	: '(' ins_column_list ')'	{ $$ = make_list ($2); }
+ins_column_parens($fieldArray)
+	: '(' ins_column_list($fieldArray) ')'
 	;
 
-ins_column_list
-	: update_column_name
-	| ins_column_list ',' update_column_name	{ $$ = make_node (nod_list, 2, $1, $3); }
+ins_column_list($fieldArray)
+	: update_column_name						{ $fieldArray->add(ExprNode::as<FieldNode>($1)); }
+	| ins_column_list ',' update_column_name	{ $fieldArray->add(ExprNode::as<FieldNode>($3)); }
 	;
 // end IBO hack
 
 column_name
 	: simple_column_name
 	| symbol_table_alias_name '.' symbol_column_name
-		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, $3); }
+		{
+			FieldNode* fieldNode = newNode<FieldNode>();
+			fieldNode->dsqlQualifier = toName($1);
+			fieldNode->dsqlName = toName($3);
+			$$ = makeClassNode(fieldNode);
+		}
 	;
 
 simple_column_name
 	: symbol_column_name
-		{ $$ = make_node (nod_field_name, (int) e_fln_count, NULL, $1); }
+		{
+			FieldNode* fieldNode = newNode<FieldNode>();
+			fieldNode->dsqlName = toName($1);
+			$$ = makeClassNode(fieldNode);
+		}
 	;
 
 update_column_name
@@ -5347,7 +5341,12 @@ update_column_name
 	// CVC: This option should be deprecated! The only allowed syntax should be
 	// Update...set column = expr, without qualifier for the column.
 	| symbol_table_alias_name '.' symbol_column_name
-		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, $3); }
+		{
+			FieldNode* fieldNode = newNode<FieldNode>();
+			fieldNode->dsqlQualifier = toName($1);
+			fieldNode->dsqlName = toName($3);
+			$$ = makeClassNode(fieldNode);
+		}
 	;
 
 // boolean expressions
@@ -5653,7 +5652,7 @@ common_value
 	| common_value CONCATENATE common_value
 		{ $$ = makeClassNode(newNode<ConcatenateNode>($1, $3)); }
 	| common_value COLLATE symbol_collation_name
-		{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
+		{ $$ = makeClassNode(newNode<CollateNode>($1, toName($3))); }
 	| common_value '-' common_value
 		{
 			$$ = makeClassNode(newNode<ArithmeticNode>(blr_subtract,
@@ -5744,7 +5743,10 @@ timestamp_precision_opt
 
 array_element
 	: column_name '[' value_list ']'
-		{ $$ = make_node (nod_array, (int) e_ary_count, $1, make_list ($3)); }
+		{
+			ArrayNode* node = newNode<ArrayNode>(ExprNode::as<FieldNode>($1));
+			node->dsqlField->dsqlIndices = make_list($3);
+		}
 	;
 
 common_value_list_opt
@@ -6901,9 +6903,8 @@ static dsql_fld* make_field (dsql_nod* field_name)
 		dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
 		return field;
 	}
-	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];
 	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
-	field->fld_name = string->str_data;
+	field->fld_name = ExprNode::as<FieldNode>(field_name)->dsqlName.c_str();
 	field->fld_explicit_collation = false;
 	field->fld_not_nullable = false;
 	field->fld_full_domain = false;

@@ -99,7 +99,9 @@ class Node : public Firebird::PermanentStorage
 {
 public:
 	explicit Node(MemoryPool& pool)
-		: PermanentStorage(pool)
+		: PermanentStorage(pool),
+		  line(0),
+		  column(0)
 	{
 	}
 
@@ -123,6 +125,10 @@ public:
 	{
 		return this;
 	}
+
+public:
+	USHORT line;
+	USHORT column;
 };
 
 
@@ -365,9 +371,11 @@ public:
 		TYPE_AGGREGATE,
 		TYPE_ALIAS,
 		TYPE_ARITHMETIC,
+		TYPE_ARRAY,
 		TYPE_BOOL_AS_VALUE,
 		TYPE_CAST,
 		TYPE_COALESCE,
+		TYPE_COLLATE,
 		TYPE_CONCATENATE,
 		TYPE_CURRENT_DATE,
 		TYPE_CURRENT_TIME,
@@ -952,9 +960,7 @@ public:
 		  type(aType),
 		  parentStmt(NULL),
 		  impureOffset(0),
-		  hasLineColumn(false),
-		  line(0),
-		  column(0)
+		  hasLineColumn(false)
 	{
 	}
 
@@ -1027,8 +1033,6 @@ public:
 	NestConst<StmtNode> parentStmt;
 	ULONG impureOffset;	// Inpure offset from request block.
 	bool hasLineColumn;
-	USHORT line;
-	USHORT column;
 };
 
 

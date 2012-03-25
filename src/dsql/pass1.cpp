@@ -184,16 +184,13 @@ static void DSQL_pretty(const dsql_nod*, int);
 #endif
 
 
-static void assign_fld_dtype_from_dsc(dsql_fld*, const dsc*);
 static dsql_ctx* pass1_alias_list(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* pass1_alias(DsqlCompilerScratch*, DsqlContextStack&, dsql_str*);
 static dsql_str* pass1_alias_concat(const dsql_str*, const char*);
 static dsql_rel* pass1_base_table(DsqlCompilerScratch*, const dsql_rel*, const dsql_str*);
-static dsql_nod* pass1_collate(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
 static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, const char*);
 static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
-static dsql_nod* pass1_field(DsqlCompilerScratch*, dsql_nod*, const bool, dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
 static dsql_nod* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
@@ -202,9 +199,7 @@ static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
 static void pass1_union_auto_cast(DsqlCompilerScratch*, dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
-static dsql_nod* pass1_variable(DsqlCompilerScratch*, dsql_nod*);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
-static dsql_fld* resolve_context(DsqlCompilerScratch*, const dsql_str*, dsql_ctx*, bool);
 
 
 AggregateFinder::AggregateFinder(const DsqlCompilerScratch* aDsqlScratch, bool aWindow)
@@ -343,10 +338,6 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_field_name:
-		case nod_var_name:
-			return false;
-
 		case nod_order:
 			fb_assert(false);
 			return true;
@@ -697,19 +688,17 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				return derived_node;
 			}
 
-			node = reinterpret_cast<dsql_nod*>(exprNode->dsqlPass(dsqlScratch));
-			if (node != input->nod_arg[0])
+			Node* newNode = exprNode->dsqlPass(dsqlScratch);
+			if (newNode != (Node*) input->nod_arg[0])
 			{
 				input = MAKE_node(input->nod_type, input->nod_count);
-				input->nod_arg[0] = node;
+				input->nod_arg[0] = (dsql_nod*) newNode;
 			}
+
+			input->nod_line = newNode->line;
+			input->nod_column = newNode->column;
 		}
 		return input;
-
-	case nod_collate:
-		sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_coll_source]);
-		node = pass1_collate(dsqlScratch, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
-		return node;
 
 	case nod_delete:
 	case nod_select:
@@ -740,23 +729,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 			return node;
 		}
-
-	case nod_field_name:
-		if (dsqlScratch->isPsql())
-			return pass1_variable(dsqlScratch, input);
-		return pass1_field(dsqlScratch, input, false, NULL);
-
-	case nod_array:
-		if (dsqlScratch->isPsql())
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_invalid_array));
-		}
-		else
-			return pass1_field(dsqlScratch, input, false, NULL);
-
-	case nod_var_name:
-		return pass1_variable(dsqlScratch, input);
 
 	// access plan node types
 
@@ -844,7 +816,7 @@ dsql_nod* PASS1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, bool upda
 // Check for ambiguity in a field reference. The list with contexts where the field was found is
 // checked and the necessary message is build from it.
 void PASS1_ambiguity_check(DsqlCompilerScratch* dsqlScratch,
-	const dsql_str* name, const DsqlContextStack& ambiguous_contexts)
+	const MetaName& name, const DsqlContextStack& ambiguous_contexts)
 {
 	// If there are no relations or only 1 there's no ambiguity, thus return.
 	if (ambiguous_contexts.getCount() < 2)
@@ -904,50 +876,13 @@ void PASS1_ambiguity_check(DsqlCompilerScratch* dsqlScratch,
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 				  Arg::Gds(isc_dsql_ambiguous_field_name) << Arg::Str(buffer) << Arg::Str(++p) <<
-				  Arg::Gds(isc_random) << Arg::Str(name->str_data));
+				  Arg::Gds(isc_random) << name);
 	}
 
 	ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(204) <<
 					  Arg::Warning(isc_dsql_ambiguous_field_name) << Arg::Str(buffer) <<
 																	 Arg::Str(++p) <<
-					  Arg::Warning(isc_random) << Arg::Str(name->str_data));
-}
-
-
-/**
-
- 	assign_fld_dtype_from_dsc
-
-    @brief	Set a field's descriptor from a DSC
- 	(If dsql_fld* is ever redefined this can be removed)
-
-
-    @param field
-    @param nod_desc
-
- **/
-static void assign_fld_dtype_from_dsc( dsql_fld* field, const dsc* nod_desc)
-{
-	DEV_BLKCHK(field, dsql_type_fld);
-
-	field->fld_dtype = nod_desc->dsc_dtype;
-	field->fld_scale = nod_desc->dsc_scale;
-	field->fld_sub_type = nod_desc->dsc_sub_type;
-	field->fld_length = nod_desc->dsc_length;
-
-	if (nod_desc->dsc_dtype <= dtype_any_text)
-	{
-		field->fld_collation_id = DSC_GET_COLLATE(nod_desc);
-		field->fld_character_set_id = DSC_GET_CHARSET(nod_desc);
-	}
-	else if (nod_desc->dsc_dtype == dtype_blob)
-	{
-		field->fld_character_set_id = nod_desc->dsc_scale;
-		field->fld_collation_id = nod_desc->dsc_flags >> 8;
-	}
-
-	if (nod_desc->dsc_flags & DSC_nullable)
-		field->fld_flags |= FLD_nullable;
+					  Arg::Warning(isc_random) << name);
 }
 
 
@@ -1022,7 +957,7 @@ dsql_nod* PASS1_compose(dsql_nod* expr1, dsql_nod* expr2, UCHAR blrOp)
 
 // Report a field parsing recognition error.
 void PASS1_field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
-	const dsql_nod* flawed_node)
+	const ExprNode* flawed_node)
 {
 	TEXT field_buffer[MAX_SQL_IDENTIFIER_SIZE * 2];
 
@@ -1040,15 +975,15 @@ void PASS1_field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
 					  Arg::Gds(isc_dsql_field_err) <<
 					  Arg::Gds(isc_random) << Arg::Str(field_name) <<
-					  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(flawed_node->nod_line) <<
-					  									   Arg::Num(flawed_node->nod_column));
+					  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(flawed_node->line) <<
+					  									   Arg::Num(flawed_node->column));
 		}
 		else
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
 					  Arg::Gds(isc_dsql_field_err) <<
-					  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(flawed_node->nod_line) <<
-					  									   Arg::Num(flawed_node->nod_column));
+					  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(flawed_node->line) <<
+					  									   Arg::Num(flawed_node->column));
 		}
 	}
 	else
@@ -1220,58 +1155,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 	}
 
 	return true;
-}
-
-
-/**
-
- 	pass1_collate
-
-    @brief	Turn a collate clause into a cast clause.
- 	If the source is not already text, report an error.
- 	(SQL 92: Section 13.1, pg 308, item 11)
-
-
-    @param dsqlScratch
-    @param sub1
-    @param collation
-
- **/
-static dsql_nod* pass1_collate( DsqlCompilerScratch* dsqlScratch, dsql_nod* sub1,
-	const dsql_str* collation)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(sub1, dsql_type_nod);
-	DEV_BLKCHK(collation, dsql_type_str);
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
-	CastNode* castNode = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool(),
-		sub1, field);
-
-	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
-
-	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
-	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(castNode);
-
-	if (sub1->nod_desc.dsc_dtype <= dtype_any_text ||
-		(sub1->nod_desc.dsc_dtype == dtype_blob && sub1->nod_desc.dsc_sub_type == isc_blob_text))
-	{
-		assign_fld_dtype_from_dsc(field, &sub1->nod_desc);
-		field->fld_character_length = 0;
-	}
-	else
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-				  Arg::Gds(isc_dsql_datatype_err) <<
-				  Arg::Gds(isc_collation_requires_text));
-	}
-
-	DDL_resolve_intl_type(dsqlScratch, field, collation->str_data);
-	MAKE_desc_from_field(&node->nod_desc, field);
-
-	return node;
 }
 
 
@@ -1736,6 +1619,7 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, 
 	RseNode* rseNode;
 	ProcedureSourceNode* procNode;
 	RelationSourceNode* relNode;
+	FieldNode* fieldNode;
 
 	if ((rseNode = ExprNode::as<RseNode>(node)))
 	{
@@ -1821,393 +1705,18 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, 
 			}
 		}
 	}
-	else if (node->nod_type == nod_field_name)
+	else if ((fieldNode = ExprNode::as<FieldNode>(node)))
 	{
-		dsql_nod* select_item = pass1_field(dsqlScratch, node, true, NULL);
-		// The node could be a relation so call recursively.
-		PASS1_expand_select_node(dsqlScratch, select_item, stack, false);
+		dsql_nod* list = NULL;
+		dsql_nod* value = fieldNode->internalDsqlPass(dsqlScratch, &list);
+
+		if (list)
+			PASS1_expand_select_node(dsqlScratch, list, stack, false);
+		else
+			stack.push(value);
 	}
 	else
 		stack.push(node);
-}
-
-
-/**
-
- 	pass1_field
-
-    @brief	Resolve a field name to an available context.
- 	If list is true, then this function can detect and
- 	return a relation node if there is no name.   This
- 	is used for cases of "SELECT <table_name>. ...".
-   CVC: The function attempts to detect
-   if an unqualified field appears in more than one context
-   and hence it returns the number of occurrences. This was
-   added to allow the caller to detect ambiguous commands like
-   select  from t1 join t2 on t1.f = t2.f order by common_field.
-   While inoffensive on inner joins, it changes the result on outer joins.
-
-
-    @param dsqlScratch
-    @param input
-    @param list
-
- **/
-static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
-							 const bool list, dsql_nod* select_list)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	// handle an array element.
-	dsql_nod* indices;
-	if (input->nod_type == nod_array)
-	{
-		indices = input->nod_arg[e_ary_indices];
-		input = input->nod_arg[e_ary_array];
-	}
-	else {
-		indices = NULL;
-	}
-
-	dsql_str* name;
-	const dsql_str* qualifier; // We assume the qualifier was stripped elsewhere.
-	if (input->nod_count == 1)
-	{
-		name = (dsql_str*) input->nod_arg[0];
-		qualifier = NULL;
-	}
-	else
-	{
-		name = (dsql_str*) input->nod_arg[1];
-		qualifier = (dsql_str*) input->nod_arg[0];
-	}
-	DEV_BLKCHK(name, dsql_type_str);
-	DEV_BLKCHK(qualifier, dsql_type_str);
-
-	// CVC: Let's strip trailing blanks or comparisons may fail in dialect 3.
-	if (name && name->str_data) {
-		fb_utils::exact_name(name->str_data);
-	}
-
-    /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
-       You should ensure that this function:
-       1.- Never returns NULL. In such case, it such fall back to an invocation
-       to PASS1_field_unknown() near the end of this function. None of the multiple callers
-       of this function (inside this same module) expect a null pointer, hence they
-       will crash the engine in such case.
-       2.- Doesn't allocate more than one field in "node". Either you put a break,
-       keep the current "continue" or call ALLD_release if you don't want nor the
-       continue neither the break if node is already allocated. If it isn't evident,
-       but this variable is initialized to zero in the declaration above. You
-       may write an explicit line to set it to zero here, before the loop.
-
-       3.- Doesn't waste cycles if qualifier is not null. The problem is not the cycles
-       themselves, but the fact that you'll detect an ambiguity that doesn't exist: if
-       the field appears in more than one context but it's always qualified, then
-       there's no ambiguity. There's PASS1_make_context() that prevents a context's
-       alias from being reused. However, other places in the code don't check that you
-       don't create a join or subselect with the same context without disambiguating it
-       with different aliases. This is the place where resolve_context() is called for
-       that purpose. In the future, it will be fine if we force the use of the alias as
-       the only allowed qualifier if the alias exists. Hopefully, we will eliminate
-       some day this construction: "select table.field from table t" because it
-       should be "t.field" instead.
-
-       AB: 2004-01-09
-       The explained query directly above doesn't work anymore, thus the day has come ;-)
-	   It's allowed to use the same fieldname between different scope levels (sub-queries)
-	   without being hit by the ambiguity check. The field uses the first match starting
-	   from it's own level (of course ambiguity-check on each level is done).
-
-       4.- Doesn't verify code derived automatically from check constraints. They are
-       ill-formed by nature but making that code generation more orthodox is not a
-       priority. Typically, they only check a field against a contant. The problem
-       appears when they check a field against a subselect, for example. For now,
-       allow the user to write ambiguous subselects in check() statements.
-       Claudio Valderrama - 2001.1.29.
-    */
-
-	if (select_list && !qualifier && name && name->str_data)
-	{
-		// AB: Check first against the select list for matching column.
-		// When no matches at all are found we go on with our
-		// normal way of field name lookup.
-		dsql_nod* node = PASS1_lookup_alias(dsqlScratch, name, select_list, true);
-		if (node)
-			return node;
-	}
-
-	// Try to resolve field against various contexts;
-	// if there is an alias, check only against the first matching
-
-	dsql_nod* node = NULL; // This var must be initialized.
-	DsqlContextStack ambiguous_ctx_stack;
-
-	bool resolve_by_alias = true;
-	const bool relaxedAliasChecking = Config::getRelaxedAliasChecking();
-
-	while (true)
-	{
-		// AB: Loop through the scope_levels starting by its own.
-		bool done = false;
-		USHORT current_scope_level = dsqlScratch->scopeLevel + 1;
-		for (; (current_scope_level > 0) && !done; current_scope_level--)
-		{
-
-			// If we've found a node we're done.
-			if (node)
-				break;
-
-			for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
-			{
-				// resolve_context() checks the type of the
-				// given context, so the cast to dsql_ctx* is safe.
-
-				dsql_ctx* context = stack.object();
-
-				if (context->ctx_scope_level != (current_scope_level - 1)) {
-					continue;
-				}
-
-				dsql_fld* field = resolve_context(dsqlScratch, qualifier, context, resolve_by_alias);
-
-				// AB: When there's no relation and no procedure then we have a derived table.
-				const bool is_derived_table =
-					(!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);
-
-				if (field)
-				{
-					// If there's no name then we have most probable an asterisk that
-					// needs to be exploded. This should be handled by the caller and
-					// when the caller can handle this, list is true.
-					if (!name)
-					{
-						if (list)
-						{
-							dsql_ctx* stackContext = stack.object();
-
-							RecordSourceNode* recSource = NULL;
-
-							if (context->ctx_relation)
-							{
-								RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool())
-									RelationSourceNode(*tdbb->getDefaultPool());
-								relNode->dsqlContext = stackContext;
-								recSource = relNode;
-							}
-							else if (context->ctx_procedure)
-							{
-								ProcedureSourceNode* procNode = FB_NEW(*tdbb->getDefaultPool())
-									ProcedureSourceNode(*tdbb->getDefaultPool());
-								procNode->dsqlContext = stackContext;
-								recSource = procNode;
-							}
-
-							fb_assert(recSource);
-
-							node = MAKE_node(nod_class_exprnode, 1);
-							node->nod_arg[0] = reinterpret_cast<dsql_nod*>(recSource);
-
-							return node;
-						}
-
-						break;
-					}
-
-					dsql_nod* using_field = NULL;
-
-					for (; field; field = field->fld_next)
-					{
-						if (field->fld_name == name->str_data)
-						{
-							if (!qualifier)
-							{
-								if (!context->getImplicitJoinField(field->fld_name, using_field))
-								{
-									field = NULL;
-									break;
-								}
-
-								if (using_field)
-									field = NULL;
-							}
-
-							ambiguous_ctx_stack.push(context);
-							break;
-						}
-					}
-
-					if (qualifier && !field)
-					{
-						// If a qualifier was present and we don't have found
-						// a matching field then we should stop searching.
-						// Column unknown error will be raised at bottom of function.
-						done = true;
-						break;
-					}
-
-					if (field || using_field)
-					{
-						// Intercept any reference to a field with datatype that
-						// did not exist prior to V6 and post an error
-
-						if (dsqlScratch->clientDialect <= SQL_DIALECT_V5 && field &&
-							(field->fld_dtype == dtype_sql_date ||
-								field->fld_dtype == dtype_sql_time || field->fld_dtype == dtype_int64))
-						{
-								ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
-										  Arg::Gds(isc_dsql_field_err) <<
-										  Arg::Gds(isc_random) << Arg::Str(field->fld_name) <<
-										  Arg::Gds(isc_sql_dialect_datatype_unsupport) <<
-										  			Arg::Num(dsqlScratch->clientDialect) <<
-										  			Arg::Str(DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype))));
-								return NULL;
-						}
-
-						// CVC: Stop here if this is our second or third iteration.
-						// Anyway, we can't report more than one ambiguity to the status vector.
-						// AB: But only if we're on different scope level, because a
-						// node inside the same context should have priority.
-						if (node)
-							continue;
-
-						if (indices)
-							indices = PASS1_node_psql(dsqlScratch, indices, false);
-
-						if (context->ctx_flags & CTX_null)
-						{
-							node = MAKE_node(nod_class_exprnode, 1);
-							node->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-								FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-						}
-						else if (field)
-							node = MAKE_field(context, field, indices);
-						else
-							node = list ? using_field : PASS1_node_psql(dsqlScratch, using_field, false);
-
-						node->nod_line = input->nod_line;
-						node->nod_column = input->nod_column;
-					}
-				}
-				else if (is_derived_table)
-				{
-					// if an qualifier is present check if we have the same derived
-					// table else continue;
-					if (qualifier)
-					{
-						if (context->ctx_alias.hasData())
-						{
-							if (context->ctx_alias != qualifier->str_data)
-								continue;
-						}
-						else
-							continue;
-					}
-
-					// If there's no name then we have most probable a asterisk that
-					// needs to be exploded. This should be handled by the caller and
-					// when the caller can handle this, list is true.
-					if (!name)
-					{
-						if (list)
-						{
-							// Return node which PASS1_expand_select_node() can deal with it.
-							return context->ctx_rse;
-						}
-
-						break;
-					}
-
-					// Because every select item has an alias we can just walk
-					// through the list and return the correct node when found.
-					const dsql_nod* rse_items = ExprNode::as<RseNode>(context->ctx_rse)->dsqlSelectList;
-					dsql_nod* const* ptr = rse_items->nod_arg;
-
-					for (const dsql_nod* const* const end = ptr + rse_items->nod_count;
-						 ptr < end; ptr++)
-					{
-						DerivedFieldNode* selectItem = ExprNode::as<DerivedFieldNode>(*ptr);
-
-						// select-item should always be a alias!
-						if (selectItem)
-						{
-							dsql_nod* using_field = NULL;
-
-							if (!qualifier)
-							{
-								if (!context->getImplicitJoinField(name->str_data, using_field))
-									break;
-							}
-
-							if (!strcmp(name->str_data, selectItem->name.c_str()) || using_field)
-							{
-
-								// This is a matching item so add the context to the ambiguous list.
-								ambiguous_ctx_stack.push(context);
-
-								// Stop here if this is our second or more iteration.
-								if (node)
-									break;
-
-								node = using_field ? using_field : *ptr;
-								break;
-							}
-						}
-						else
-						{
-							// Internal dsql error: alias type expected by pass1_field
-							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-									  Arg::Gds(isc_dsql_command_err) <<
-									  Arg::Gds(isc_dsql_derived_alias_field));
-						}
-					}
-
-					if (!node && qualifier)
-					{
-						// If a qualifier was present and we don't have found
-						// a matching field then we should stop searching.
-						// Column unknown error will be raised at bottom of function.
-						done = true;
-						break;
-					}
-				}
-			}
-		}
-
-		if (node)
-			break;
-
-		if (resolve_by_alias && !dsqlScratch->checkConstraintTrigger && relaxedAliasChecking)
-			resolve_by_alias = false;
-		else
-			break;
-	}
-
-	// CVC: We can't return blindly if this is a check constraint, because there's
-	// the possibility of an invalid field that wasn't found. The multiple places that
-	// call this function pass1_field() don't expect a NULL pointer, hence will crash.
-	// Don't check ambiguity if we don't have a field.
-
-	if (node && name)
-		PASS1_ambiguity_check(dsqlScratch, name, ambiguous_ctx_stack);
-
-	// Clean up stack
-	ambiguous_ctx_stack.clear();
-
-	if (node)
-	{
-		return node;
-	}
-
-	PASS1_field_unknown((qualifier ? qualifier->str_data : NULL),
-		(name ? name->str_data : NULL), input);
-
-	// CVC: PASS1_field_unknown() calls ERRD_post() that never returns, so the next line
-	// is only to make the compiler happy.
-	return NULL;
 }
 
 
@@ -2245,12 +1754,22 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		dsql_nod* sub = (*ptr);
 		dsql_nod* frnode = NULL;
+		FieldNode* field;
 		LiteralNode* literal;
 
-		if (sub->nod_type == nod_field_name)
+		if ((field = ExprNode::as<FieldNode>(sub)))
 		{
 			// check for alias or field node
-			frnode = pass1_field(dsqlScratch, sub, false, selectList);
+			if (field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
+			{
+				// AB: Check first against the select list for matching column.
+				// When no matches at all are found we go on with our
+				// normal way of field name lookup.
+				frnode = PASS1_lookup_alias(dsqlScratch, field->dsqlName, selectList, true);
+			}
+
+			if (!frnode)
+				frnode = field->internalDsqlPass(dsqlScratch, NULL);
 		}
 		else if ((literal = ExprNode::as<LiteralNode>(sub)) && (literal->litDesc.dsc_dtype == dtype_long))
 		{
@@ -2391,7 +1910,7 @@ void PASS1_limit(DsqlCompilerScratch* dsqlScratch, dsql_nod* firstNode, dsql_nod
 
 // Lookup a matching item in the select list. Return node if found else return NULL.
 // If more matches are found we raise ambiguity error.
-dsql_nod* PASS1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql_str* name,
+dsql_nod* PASS1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
 	dsql_nod* selectList, bool process)
 {
 	dsql_nod* returnNode = NULL;
@@ -2407,17 +1926,17 @@ dsql_nod* PASS1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql_str* n
 
 		if ((aliasNode = ExprNode::as<DsqlAliasNode>(node)))
 		{
-			if (aliasNode->name == name->str_data)
+			if (aliasNode->name == name)
 				matchingNode = node;
 		}
 		else if ((fieldNode = ExprNode::as<FieldNode>(node)))
 		{
-			if (fieldNode->dsqlField->fld_name == name->str_data)
+			if (fieldNode->dsqlField->fld_name == name.c_str())
 				matchingNode = node;
 		}
 		else if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
 		{
-			if (strcmp(derivedField->name.c_str(), name->str_data) == 0)
+			if (derivedField->name == name)
 				matchingNode = node;
 		}
 
@@ -2458,7 +1977,7 @@ dsql_nod* PASS1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql_str* n
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 						  Arg::Gds(isc_dsql_ambiguous_field_name) << Arg::Str(buffer1) <<
 																	 Arg::Str(buffer2) <<
-						  Arg::Gds(isc_random) << Arg::Str(name->str_data));
+						  Arg::Gds(isc_random) << name);
 			}
 
 			returnNode = matchingNode;
@@ -3464,24 +2983,34 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 		node2->nod_arg[e_order_flag] = node1->nod_arg[e_order_flag]; // asc/desc flag
 		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; // nulls first/last flag
 
-		const dsql_str* collate = NULL;
-
 		// get node of value to be ordered by
 		node1 = node1->nod_arg[e_order_field];
 
-		if (node1->nod_type == nod_collate)
+		const CollateNode* collateNode = ExprNode::as<CollateNode>(node1);
+
+		if (collateNode)
 		{
-			collate = (dsql_str*) node1->nod_arg[e_coll_target];
-			// substitute nod_collate with its argument (real value)
-			node1 = node1->nod_arg[e_coll_source];
+			// substitute CollateNode with its argument (real value)
+			node1 = collateNode->dsqlArg;
 		}
 
+		FieldNode* field;
 		LiteralNode* literal;
 
-		if (node1->nod_type == nod_field_name)
+		if ((field = ExprNode::as<FieldNode>(node1)))
 		{
+			dsql_nod* aliasNode = NULL;
+
 			// check for alias or field node
-			node1 = pass1_field(dsqlScratch, node1, false, selectList);
+			if (field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
+			{
+				// AB: Check first against the select list for matching column.
+				// When no matches at all are found we go on with our
+				// normal way of field name lookup.
+				aliasNode = PASS1_lookup_alias(dsqlScratch, field->dsqlName, selectList, true);
+			}
+
+			node1 = aliasNode ? aliasNode : field->internalDsqlPass(dsqlScratch, NULL);
 		}
 		else if ((literal = ExprNode::as<LiteralNode>(node1)) && literal->litDesc.dsc_dtype == dtype_long)
 		{
@@ -3500,10 +3029,11 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 		else
 			node1 = PASS1_node_psql(dsqlScratch, node1, false);
 
-		if (collate)
+		if (collateNode)
 		{
-			// finally apply collation order, if necessary
-			node1 = pass1_collate(dsqlScratch, node1, collate);
+			// Finally apply collation order, if necessary.
+			node1 = MAKE_class_node(
+				CollateNode::pass1Collate(dsqlScratch, node1, collateNode->collation));
 		}
 
 		// store actual value to be ordered by
@@ -3680,14 +3210,11 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		for (const dsql_nod* const* const end = ptr + order_list->nod_count; ptr < end; ptr++, uptr++)
 		{
 			dsql_nod* order1 = *ptr;
-			const dsql_str* collate = 0;
 			const dsql_nod* position = order1->nod_arg[e_order_field];
+			const CollateNode* collateNode = ExprNode::as<CollateNode>(position);
 
-			if (position->nod_type == nod_collate)
-			{
-				collate = (dsql_str*) position->nod_arg[e_coll_target];
-				position = position->nod_arg[e_coll_source];
-			}
+			if (collateNode)
+				position = collateNode->dsqlArg;
 
 			const LiteralNode* literal = ExprNode::as<LiteralNode>(position);
 
@@ -3715,10 +3242,10 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 			order2->nod_arg[e_order_field] = union_items->nod_arg[number - 1];
 			order2->nod_arg[e_order_flag] = order1->nod_arg[e_order_flag];
 
-			if (collate)
+			if (collateNode)
 			{
-				order2->nod_arg[e_order_field] =
-					pass1_collate(dsqlScratch, order2->nod_arg[e_order_field], collate);
+				order2->nod_arg[e_order_field] = MAKE_class_node(CollateNode::pass1Collate(
+					dsqlScratch, order2->nod_arg[e_order_field], collateNode->collation));
 			}
 
 			order2->nod_arg[e_order_nulls] = order1->nod_arg[e_order_nulls];
@@ -3973,72 +3500,6 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 }
 
 
-/**
-
- 	pass1_variable
-
-    @brief	Resolve a variable name to an available variable.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	// CVC: I commented this variable and its usage because it wasn't useful for
-	// anything. I didn't delete it in case it's an implementation in progress
-	// by someone.
-	//SSHORT position;
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	const dsql_str* var_name = NULL;
-
-	if (input->nod_type == nod_field_name)
-	{
-		if (input->nod_arg[e_fln_context])
-		{
-			if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_TRIGGER) // triggers only
-				return pass1_field(dsqlScratch, input, false, NULL);
-
-			PASS1_field_unknown(NULL, NULL, input);
-		}
-
-		var_name = (dsql_str*) input->nod_arg[e_fln_name];
-	}
-	else
-		var_name = (dsql_str*) input->nod_arg[e_vrn_name];
-
-	DEV_BLKCHK(var_name, dsql_type_str);
-
-	dsql_var* variable = dsqlScratch->resolveVariable(var_name);
-
-	if (variable)
-	{
-		VariableNode* varNode = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
-		varNode->dsqlVar = variable;
-
-		dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
-		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(varNode);
-		return node;
-	}
-
-	// field unresolved
-	// CVC: That's all [the fix], folks!
-
-	if (var_name)
-		PASS1_field_unknown(NULL, var_name->str_data, input);
-	else
-		PASS1_field_unknown(NULL, NULL, input);
-
-	return NULL;
-}
-
-
 // Post an item to a map for a context.
 dsql_nod* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* node, dsql_ctx* context,
 	dsql_nod* partitionNode, dsql_nod* orderNode)
@@ -4168,103 +3629,6 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 		}
 		break;
 	}
-}
-
-
-/**
-
- 	resolve_context
-
-    @brief	Attempt to resolve field against context.
- 	Return first field in context if successful,
- 	NULL if not.
-
-
-    @param dsqlScratch
-    @param name
-    @param qualifier
-    @param context
-
- **/
-static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_str* qualifier,
-	dsql_ctx* context, bool resolveByAlias)
-{
-	// CVC: Warning: the second param, "name" was is not used anymore and
-	// therefore it was removed. Thus, the local variable "table_name"
-	// is being stripped here to avoid mismatches due to trailing blanks.
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(qualifier, dsql_type_str);
-	DEV_BLKCHK(context, dsql_type_ctx);
-
-	if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RETURNING_INTO) &&
-		(context->ctx_flags & CTX_returning))
-	{
-		return NULL;
-	}
-
-	dsql_rel* relation = context->ctx_relation;
-	dsql_prc* procedure = context->ctx_procedure;
-	if (!relation && !procedure) {
-		return NULL;
-	}
-
-	// if there is no qualifier, then we cannot match against
-	// a context of a different scoping level
-	// AB: Yes we can, but the scope level where the field is has priority.
-//	if (!qualifier && context->ctx_scope_level != dsqlScratch->scopeLevel) {
-//		return NULL;
-//	}
-
-	// AB: If this context is a system generated context as in NEW/OLD inside
-	// triggers, the qualifier by the field is mandatory. While we can't
-	// fall back from a higher scope-level to the NEW/OLD contexts without
-	// the qualifier present.
-	// An exception is a check-constraint that is allowed to reference fields
-	// without the qualifier.
-	if (!dsqlScratch->checkConstraintTrigger && (context->ctx_flags & CTX_system) && !qualifier) {
-		return NULL;
-	}
-
-	const TEXT* table_name = NULL;
-	if (context->ctx_internal_alias.hasData() && resolveByAlias)
-		table_name = context->ctx_internal_alias.c_str();
-
-	// AB: For a check constraint we should ignore the alias if the alias
-	// contains the "NEW" alias. This is because it is possible
-	// to reference a field by the complete table-name as alias
-	// (see EMPLOYEE table in examples for a example).
-	if (dsqlScratch->checkConstraintTrigger && table_name)
-	{
-		// If a qualifier is present and it's equal to the alias then we've already the right table-name
-		if (!(qualifier && !strcmp(qualifier->str_data, table_name)))
-		{
-			if (strcmp(table_name, NEW_CONTEXT) == 0)
-				table_name = NULL;
-			else if (strcmp(table_name, OLD_CONTEXT) == 0)
-			{
-				// Only use the OLD context if it is explicit used. That means the
-				// qualifer should hold the "OLD" alias.
-				return NULL;
-			}
-		}
-	}
-
-	if (!table_name)
-	{
-		if (relation)
-			table_name = relation->rel_name.c_str();
-		else
-			table_name = procedure->prc_name.identifier.c_str();
-	}
-
-	// If a context qualifier is present, make sure this is the proper context
-	if (qualifier && strcmp(qualifier->str_data, table_name) != 0)
-		return NULL;
-
-	// Lookup field in relation or procedure
-
-	return relation ? relation->rel_fields : procedure->prc_outputs;
 }
 
 
@@ -4425,12 +3789,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_all:
 		verb = "all";
 		break;
-	case nod_array:
-		verb = "array element";
-		break;
-	case nod_collate:
-		verb = "collate";
-		break;
 	case nod_delete:
 		verb = "delete";
 		break;
@@ -4521,26 +3879,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		DSQL_pretty(node->nod_arg[e_label_name], column + 1);
 		trace_line("%s   number %d\n", buffer,
 			(int)(IPTR)node->nod_arg[e_label_number]);
-		return;
-
-	case nod_field_name:
-		trace_line("%sfield name: \"", buffer);
-		string = (dsql_str*) node->nod_arg[e_fln_context];
-		if (string)
-			trace_line("%s.", string->str_data);
-		string = (dsql_str*) node->nod_arg[e_fln_name];
-		if (string != 0) {
-			trace_line("%s\"\n", string->str_data);
-		}
-		else {
-			trace_line("%s\"\n", "*");
-		}
-		return;
-
-	case nod_var_name:
-		trace_line("%svariable name: \"", buffer);
-		string = (dsql_str*) node->nod_arg[e_vrn_name];
-		trace_line("%s\"\n", string->str_data);
 		return;
 
 	case nod_with:

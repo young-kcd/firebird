@@ -1020,7 +1020,7 @@ class MergeNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>
 public:
 	struct Matched
 	{
-		Matched()
+		Matched(MemoryPool& pool)
 			: assignments(NULL),
 			  condition(NULL)
 		{
@@ -1032,14 +1032,14 @@ public:
 
 	struct NotMatched
 	{
-		NotMatched()
-			: fields(NULL),
+		NotMatched(MemoryPool& pool)
+			: fields(pool),
 			  values(NULL),
 			  condition(NULL)
 		{
 		}
 
-		dsql_nod* fields;
+		Firebird::Array<FieldNode*> fields;
 		dsql_nod* values;
 		dsql_nod* condition;
 	};
@@ -1063,8 +1063,8 @@ public:
 	dsql_nod* dsqlRelation;
 	dsql_nod* dsqlUsing;
 	dsql_nod* dsqlCondition;
-	Firebird::Array<Matched> dsqlWhenMatched;
-	Firebird::Array<NotMatched> dsqlWhenNotMatched;
+	Firebird::ObjectsArray<Matched> dsqlWhenMatched;
+	Firebird::ObjectsArray<NotMatched> dsqlWhenNotMatched;
 	ReturningClause* dsqlReturning;
 };
 
@@ -1221,7 +1221,7 @@ public:
 	explicit StoreNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_STORE>(pool),
 		  dsqlRelation(NULL),
-		  dsqlFields(NULL),
+		  dsqlFields(pool),
 		  dsqlValues(NULL),
 		  dsqlReturning(NULL),
 		  dsqlRse(NULL),
@@ -1251,7 +1251,7 @@ private:
 
 public:
 	dsql_nod* dsqlRelation;
-	dsql_nod* dsqlFields;
+	Firebird::Array<FieldNode*> dsqlFields;
 	dsql_nod* dsqlValues;
 	ReturningClause* dsqlReturning;
 	dsql_nod* dsqlRse;
@@ -1508,9 +1508,9 @@ public:
 	explicit UpdateOrInsertNode(MemoryPool& pool)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>(pool),
 		  dsqlRelation(NULL),
-		  dsqlFields(NULL),
+		  dsqlFields(pool),
 		  dsqlValues(NULL),
-		  dsqlMatching(NULL),
+		  dsqlMatching(pool),
 		  dsqlReturning(NULL)
 	{
 	}
@@ -1521,9 +1521,9 @@ public:
 
 public:
 	dsql_nod* dsqlRelation;
-	dsql_nod* dsqlFields;
+	Firebird::Array<FieldNode*> dsqlFields;
 	dsql_nod* dsqlValues;
-	dsql_nod* dsqlMatching;
+	Firebird::Array<FieldNode*> dsqlMatching;
 	ReturningClause* dsqlReturning;
 };
 

@@ -70,12 +70,8 @@ enum nod_t
 	nod_select_expr,
 	nod_order,
 	nod_flag,
-	nod_field_name,
 	nod_user_name,
 	nod_user_group,
-	nod_var_name,
-	nod_array,
-	nod_collate,
 	nod_table_lock,
 	nod_lock_mode,
 	nod_plan_expr,
@@ -101,20 +97,9 @@ enum nod_t
  *	e_<nodename>_count	== count of arguments in nod_arg
  *	This is often used as the count of sub-nodes, but there
  *	are cases when non-DSQL_NOD arguments are stuffed into nod_arg
- *	entries.  These include nod_udf and nod_collate.
+ *	entries.  These include nod_udf.
  */
 enum node_args {
-	e_ary_array = 0,		// nod_array
-	e_ary_indices,
-	e_ary_count,
-
-	e_vrn_name = 0,			// nod_variable_name
-	e_vrn_count,
-
-	e_fln_context = 0,		// nod_field_name
-	e_fln_name,
-	e_fln_count,
-
 	e_rows_skip = 0,		// nod_rows
 	e_rows_length,
 	e_rows_count,
@@ -126,10 +111,6 @@ enum node_args {
 	e_sel_alias,			// Alias name for derived table
 	e_sel_columns,			// List with alias names from derived table columns
 	e_sel_count,
-
-	e_coll_target = 0,		// Not a DSQL_NOD   nod_collate
-	e_coll_source,
-	e_coll_count,
 
 	e_order_field = 0,		// nod_order
 	e_order_flag,

@@ -87,6 +87,14 @@ dsql_nod* MAKE_const_slong(SLONG value)
 }
 
 
+dsql_nod* MAKE_class_node(ExprNode* node)
+{
+	dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+	nod->nod_arg[0] = (dsql_nod*) node;
+	return nod;
+}
+
+
 /**
 
  	MAKE_constant
@@ -370,12 +378,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		}
 		return;
 
-#ifdef DEV_BUILD
-	case nod_collate:
-		ERRD_bugcheck("Not expecting nod_collate in dsql/MAKE_desc");
-		return;
-#endif
-
 	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
 		{
 			node = node->nod_arg[e_sel_query_spec];
@@ -544,9 +546,13 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
  **/
 dsql_nod* MAKE_field_name(const char* field_name)
 {
-    dsql_nod* const field_node = MAKE_node(nod_field_name, (int) e_fln_count);
-    field_node->nod_arg[e_fln_name] = (dsql_nod*) MAKE_cstring(field_name);
-	return field_node;
+	thread_db* tdbb = JRD_get_thread_data();
+	FieldNode* fieldNode = FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
+	fieldNode->dsqlName = field_name;
+
+    dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+    nod->nod_arg[0] = (dsql_nod*) fieldNode;
+	return nod;
 }
 
 

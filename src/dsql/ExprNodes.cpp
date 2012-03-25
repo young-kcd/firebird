@@ -2485,6 +2485,34 @@ ValueExprNode* ArithmeticNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
+ArrayNode::ArrayNode(MemoryPool& pool, FieldNode* field)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_ARRAY>(pool),
+	  dsqlField(field)
+{
+}
+
+void ArrayNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "ArrayNode";
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* ArrayNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	if (dsqlScratch->isPsql())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  Arg::Gds(isc_dsql_invalid_array));
+	}
+
+	dsql_nod* nod = dsqlField->internalDsqlPass(dsqlScratch, NULL);
+	return nod ? (ValueExprNode*) nod->nod_arg[0] : NULL;
+}
+
+
+//--------------------
+
+
 static RegisterNode<BoolAsValueNode> regBoolAsValueNode(blr_bool_as_value);
 
 BoolAsValueNode::BoolAsValueNode(MemoryPool& pool, dsql_nod* aBoolean)
@@ -3008,6 +3036,88 @@ dsc* CoalesceNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	return NULL;
+}
+
+
+//--------------------
+
+
+CollateNode::CollateNode(MemoryPool& pool, dsql_nod* aDsqlArg, const Firebird::MetaName& aCollation)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_COLLATE>(pool),
+	  dsqlArg(aDsqlArg),
+	  collation(pool, aCollation)
+{
+	addChildNode(dsqlArg);
+}
+
+void CollateNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "CollateNode";
+	ExprNode::print(text, nodes);
+}
+
+// Turn a collate clause into a cast clause.
+// If the source is not already text, report an error. (SQL 92: Section 13.1, pg 308, item 11).
+ValueExprNode* CollateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	dsql_nod* nod = PASS1_node(dsqlScratch, dsqlArg);
+	return pass1Collate(dsqlScratch, nod, collation);
+}
+
+ValueExprNode* CollateNode::pass1Collate(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
+	const MetaName& collation)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
+	dsql_fld* field = FB_NEW(pool) dsql_fld(pool);
+	CastNode* castNode = FB_NEW(pool) CastNode(pool, input, field);
+
+	MAKE_desc(dsqlScratch, &input->nod_desc, input);
+
+	if (input->nod_desc.dsc_dtype <= dtype_any_text ||
+		(input->nod_desc.dsc_dtype == dtype_blob && input->nod_desc.dsc_sub_type == isc_blob_text))
+	{
+		assignFieldDtypeFromDsc(field, &input->nod_desc);
+		field->fld_character_length = 0;
+	}
+	else
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				  Arg::Gds(isc_dsql_datatype_err) <<
+				  Arg::Gds(isc_collation_requires_text));
+	}
+
+	DDL_resolve_intl_type(dsqlScratch, field, collation);
+	MAKE_desc_from_field(&castNode->castDesc, field);
+
+	return castNode;
+}
+
+// Set a field's descriptor from a DSC.
+// (If dsql_fld* is ever redefined this can be removed)
+void CollateNode::assignFieldDtypeFromDsc(dsql_fld* field, const dsc* nodDesc)
+{
+	DEV_BLKCHK(field, dsql_type_fld);
+
+	field->fld_dtype = nodDesc->dsc_dtype;
+	field->fld_scale = nodDesc->dsc_scale;
+	field->fld_sub_type = nodDesc->dsc_sub_type;
+	field->fld_length = nodDesc->dsc_length;
+
+	if (nodDesc->dsc_dtype <= dtype_any_text)
+	{
+		field->fld_collation_id = DSC_GET_COLLATE(nodDesc);
+		field->fld_character_set_id = DSC_GET_CHARSET(nodDesc);
+	}
+	else if (nodDesc->dsc_dtype == dtype_blob)
+	{
+		field->fld_character_set_id = nodDesc->dsc_scale;
+		field->fld_collation_id = nodDesc->dsc_flags >> 8;
+	}
+
+	if (nodDesc->dsc_flags & DSC_nullable)
+		field->fld_flags |= FLD_nullable;
 }
 
 
@@ -4558,6 +4668,8 @@ static RegisterNode<FieldNode> regFieldNodeField(blr_field);
 
 FieldNode::FieldNode(MemoryPool& pool, dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>(pool),
+	  dsqlQualifier(pool),
+	  dsqlName(pool),
 	  dsqlContext(context),
 	  dsqlField(field),
 	  dsqlIndices(indices),
@@ -4571,6 +4683,8 @@ FieldNode::FieldNode(MemoryPool& pool, dsql_ctx* context, dsql_fld* field, dsql_
 
 FieldNode::FieldNode(MemoryPool& pool, USHORT stream, USHORT id, bool aById)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>(pool),
+	  dsqlQualifier(pool),
+	  dsqlName(pool),
 	  dsqlContext(NULL),
 	  dsqlField(NULL),
 	  dsqlIndices(NULL),
@@ -4746,11 +4860,439 @@ void FieldNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
+ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	// AB: nod_field is an already passed node.
-	// This could be done in expand_select_list.
-	return this;
+	if (dsqlContext)
+	{
+		// AB: This is an already processed node. This could be done in expand_select_list.
+		return this;
+	}
+
+	if (dsqlScratch->isPsql())
+	{
+		if (dsqlQualifier.hasData())
+		{
+			if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_TRIGGER) // triggers only
+			{
+				dsql_nod* nod = internalDsqlPass(dsqlScratch, NULL);
+				return nod ? (ValueExprNode*) nod->nod_arg[0] : NULL;
+			}
+
+			PASS1_field_unknown(NULL, NULL, this);
+		}
+
+
+		VariableNode* node = FB_NEW(getPool()) VariableNode(getPool());
+		node->line = line;
+		node->column = column;
+		node->dsqlName = dsqlName;
+
+		return node->dsqlPass(dsqlScratch);
+	}
+
+	dsql_nod* nod = internalDsqlPass(dsqlScratch, NULL);
+	return nod ? (ValueExprNode*) nod->nod_arg[0] : NULL;
+}
+
+// Resolve a field name to an available context.
+// If list is true, then this function can detect and return a relation node if there is no name.
+// This is used for cases of "SELECT <table_name>. ...".
+// CVC: The function attempts to detect if an unqualified field appears in more than one context
+// and hence it returns the number of occurrences. This was added to allow the caller to detect
+// ambiguous commands like select  from t1 join t2 on t1.f = t2.f order by common_field.
+// While inoffensive on inner joins, it changes the result on outer joins.
+dsql_nod* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, dsql_nod** list)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	if (list)
+		*list = NULL;
+
+    /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
+       You should ensure that this function:
+       1.- Never returns NULL. In such case, it such fall back to an invocation
+       to PASS1_field_unknown() near the end of this function. None of the multiple callers
+       of this function (inside this same module) expect a null pointer, hence they
+       will crash the engine in such case.
+       2.- Doesn't allocate more than one field in "node". Either you put a break,
+       keep the current "continue" or call ALLD_release if you don't want nor the
+       continue neither the break if node is already allocated. If it isn't evident,
+       but this variable is initialized to zero in the declaration above. You
+       may write an explicit line to set it to zero here, before the loop.
+
+       3.- Doesn't waste cycles if qualifier is not null. The problem is not the cycles
+       themselves, but the fact that you'll detect an ambiguity that doesn't exist: if
+       the field appears in more than one context but it's always qualified, then
+       there's no ambiguity. There's PASS1_make_context() that prevents a context's
+       alias from being reused. However, other places in the code don't check that you
+       don't create a join or subselect with the same context without disambiguating it
+       with different aliases. This is the place where resolveContext() is called for
+       that purpose. In the future, it will be fine if we force the use of the alias as
+       the only allowed qualifier if the alias exists. Hopefully, we will eliminate
+       some day this construction: "select table.field from table t" because it
+       should be "t.field" instead.
+
+       AB: 2004-01-09
+       The explained query directly above doesn't work anymore, thus the day has come ;-)
+	   It's allowed to use the same fieldname between different scope levels (sub-queries)
+	   without being hit by the ambiguity check. The field uses the first match starting
+	   from it's own level (of course ambiguity-check on each level is done).
+
+       4.- Doesn't verify code derived automatically from check constraints. They are
+       ill-formed by nature but making that code generation more orthodox is not a
+       priority. Typically, they only check a field against a contant. The problem
+       appears when they check a field against a subselect, for example. For now,
+       allow the user to write ambiguous subselects in check() statements.
+       Claudio Valderrama - 2001.1.29.
+    */
+
+	// Try to resolve field against various contexts;
+	// if there is an alias, check only against the first matching
+
+	dsql_nod* node = NULL; // This var must be initialized.
+	DsqlContextStack ambiguousCtxStack;
+
+	bool resolveByAlias = true;
+	const bool relaxedAliasChecking = Config::getRelaxedAliasChecking();
+
+	while (true)
+	{
+		// AB: Loop through the scope_levels starting by its own.
+		bool done = false;
+		USHORT currentScopeLevel = dsqlScratch->scopeLevel + 1;
+		for (; currentScopeLevel > 0 && !done; --currentScopeLevel)
+		{
+			// If we've found a node we're done.
+			if (node)
+				break;
+
+			for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
+			{
+				// resolveContext() checks the type of the
+				// given context, so the cast to dsql_ctx* is safe.
+
+				dsql_ctx* context = stack.object();
+
+				if (context->ctx_scope_level != currentScopeLevel - 1)
+					continue;
+
+				dsql_fld* field = resolveContext(dsqlScratch, dsqlQualifier, context, resolveByAlias);
+
+				// AB: When there's no relation and no procedure then we have a derived table.
+				const bool isDerivedTable =
+					(!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);
+
+				if (field)
+				{
+					// If there's no name then we have most probable an asterisk that
+					// needs to be exploded. This should be handled by the caller and
+					// when the caller can handle this, list is true.
+					if (dsqlName.isEmpty())
+					{
+						if (list)
+						{
+							dsql_ctx* stackContext = stack.object();
+
+							*list = MAKE_node(Dsql::nod_class_exprnode, 1);
+
+							if (context->ctx_relation)
+							{
+								RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool())
+									RelationSourceNode(*tdbb->getDefaultPool());
+								relNode->dsqlContext = stackContext;
+								(*list)->nod_arg[0] = reinterpret_cast<dsql_nod*>(relNode);
+							}
+							else if (context->ctx_procedure)
+							{
+								ProcedureSourceNode* procNode = FB_NEW(*tdbb->getDefaultPool())
+									ProcedureSourceNode(*tdbb->getDefaultPool());
+								procNode->dsqlContext = stackContext;
+								(*list)->nod_arg[0] = reinterpret_cast<dsql_nod*>(procNode);
+							}
+
+							fb_assert((*list)->nod_arg[0]);
+							return NULL;
+						}
+
+						break;
+					}
+
+					dsql_nod* usingField = NULL;
+
+					for (; field; field = field->fld_next)
+					{
+						if (field->fld_name == dsqlName.c_str())
+						{
+							if (dsqlQualifier.isEmpty())
+							{
+								if (!context->getImplicitJoinField(field->fld_name, usingField))
+								{
+									field = NULL;
+									break;
+								}
+
+								if (usingField)
+									field = NULL;
+							}
+
+							ambiguousCtxStack.push(context);
+							break;
+						}
+					}
+
+					if (dsqlQualifier.hasData() && !field)
+					{
+						// If a qualifier was present and we don't have found
+						// a matching field then we should stop searching.
+						// Column unknown error will be raised at bottom of function.
+						done = true;
+						break;
+					}
+
+					if (field || usingField)
+					{
+						// Intercept any reference to a field with datatype that
+						// did not exist prior to V6 and post an error
+
+						if (dsqlScratch->clientDialect <= SQL_DIALECT_V5 && field &&
+							(field->fld_dtype == dtype_sql_date ||
+								field->fld_dtype == dtype_sql_time || field->fld_dtype == dtype_int64))
+						{
+								ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
+										  Arg::Gds(isc_dsql_field_err) <<
+										  Arg::Gds(isc_random) << Arg::Str(field->fld_name) <<
+										  Arg::Gds(isc_sql_dialect_datatype_unsupport) <<
+													Arg::Num(dsqlScratch->clientDialect) <<
+													Arg::Str(DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype))));
+								return NULL;
+						}
+
+						// CVC: Stop here if this is our second or third iteration.
+						// Anyway, we can't report more than one ambiguity to the status vector.
+						// AB: But only if we're on different scope level, because a
+						// node inside the same context should have priority.
+						if (node)
+							continue;
+
+						dsql_nod* indices = dsqlIndices ?
+							PASS1_node_psql(dsqlScratch, dsqlIndices, false) : NULL;
+
+						if (context->ctx_flags & CTX_null)
+						{
+							node = MAKE_node(Dsql::nod_class_exprnode, 1);
+							node->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+								FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+						}
+						else if (field)
+							node = MAKE_field(context, field, indices);
+						else
+							node = list ? usingField : PASS1_node_psql(dsqlScratch, usingField, false);
+
+						node->nod_line = line;
+						node->nod_column = column;
+
+						FieldNode* fieldNode = ExprNode::as<FieldNode>(node);
+						if (fieldNode)
+						{
+							fieldNode->line = node->nod_line;
+							fieldNode->column = node->nod_column;
+						}
+					}
+				}
+				else if (isDerivedTable)
+				{
+					// if an qualifier is present check if we have the same derived
+					// table else continue;
+					if (dsqlQualifier.hasData())
+					{
+						if (context->ctx_alias.hasData())
+						{
+							if (dsqlQualifier != context->ctx_alias)
+								continue;
+						}
+						else
+							continue;
+					}
+
+					// If there's no name then we have most probable a asterisk that
+					// needs to be exploded. This should be handled by the caller and
+					// when the caller can handle this, list is true.
+					if (dsqlName.isEmpty())
+					{
+						if (list)
+						{
+							// Return node which PASS1_expand_select_node() can deal with it.
+							*list = context->ctx_rse;
+							return NULL;
+						}
+
+						break;
+					}
+
+					// Because every select item has an alias we can just walk
+					// through the list and return the correct node when found.
+					const dsql_nod* rseItems = ExprNode::as<RseNode>(context->ctx_rse)->dsqlSelectList;
+					dsql_nod* const* ptr = rseItems->nod_arg;
+
+					for (const dsql_nod* const* const end = ptr + rseItems->nod_count;
+						 ptr != end; ++ptr)
+					{
+						DerivedFieldNode* selectItem = ExprNode::as<DerivedFieldNode>(*ptr);
+
+						// select-item should always be a alias!
+						if (selectItem)
+						{
+							dsql_nod* usingField = NULL;
+
+							if (dsqlQualifier.isEmpty())
+							{
+								if (!context->getImplicitJoinField(dsqlName, usingField))
+									break;
+							}
+
+							if (dsqlName == selectItem->name || usingField)
+							{
+
+								// This is a matching item so add the context to the ambiguous list.
+								ambiguousCtxStack.push(context);
+
+								// Stop here if this is our second or more iteration.
+								if (node)
+									break;
+
+								node = usingField ? usingField : *ptr;
+								break;
+							}
+						}
+						else
+						{
+							// Internal dsql error: alias type expected by pass1_field
+							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+									  Arg::Gds(isc_dsql_command_err) <<
+									  Arg::Gds(isc_dsql_derived_alias_field));
+						}
+					}
+
+					if (!node && dsqlQualifier.hasData())
+					{
+						// If a qualifier was present and we don't have found
+						// a matching field then we should stop searching.
+						// Column unknown error will be raised at bottom of function.
+						done = true;
+						break;
+					}
+				}
+			}
+		}
+
+		if (node)
+			break;
+
+		if (resolveByAlias && !dsqlScratch->checkConstraintTrigger && relaxedAliasChecking)
+			resolveByAlias = false;
+		else
+			break;
+	}
+
+	// CVC: We can't return blindly if this is a check constraint, because there's
+	// the possibility of an invalid field that wasn't found. The multiple places that
+	// call this function pass1_field() don't expect a NULL pointer, hence will crash.
+	// Don't check ambiguity if we don't have a field.
+
+	if (node && dsqlName.hasData())
+		PASS1_ambiguity_check(dsqlScratch, dsqlName, ambiguousCtxStack);
+
+	// Clean up stack
+	ambiguousCtxStack.clear();
+
+	if (node)
+		return node;
+
+	PASS1_field_unknown(dsqlQualifier.nullStr(), dsqlName.nullStr(), this);
+
+	// CVC: PASS1_field_unknown() calls ERRD_post() that never returns, so the next line
+	// is only to make the compiler happy.
+	return NULL;
+}
+
+// Attempt to resolve field against context. Return first field in context if successful, NULL if not.
+dsql_fld* FieldNode::resolveContext(DsqlCompilerScratch* dsqlScratch, const MetaName& qualifier,
+	dsql_ctx* context, bool resolveByAlias)
+{
+	// CVC: Warning: the second param, "name" was is not used anymore and
+	// therefore it was removed. Thus, the local variable "table_name"
+	// is being stripped here to avoid mismatches due to trailing blanks.
+
+	DEV_BLKCHK(dsqlScratch, dsql_type_req);
+	DEV_BLKCHK(context, dsql_type_ctx);
+
+	if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RETURNING_INTO) &&
+		(context->ctx_flags & CTX_returning))
+	{
+		return NULL;
+	}
+
+	dsql_rel* relation = context->ctx_relation;
+	dsql_prc* procedure = context->ctx_procedure;
+	if (!relation && !procedure)
+		return NULL;
+
+	// if there is no qualifier, then we cannot match against
+	// a context of a different scoping level
+	// AB: Yes we can, but the scope level where the field is has priority.
+	/***
+	if (qualifier.isEmpty() && context->ctx_scope_level != dsqlScratch->scopeLevel)
+		return NULL;
+	***/
+
+	// AB: If this context is a system generated context as in NEW/OLD inside
+	// triggers, the qualifier by the field is mandatory. While we can't
+	// fall back from a higher scope-level to the NEW/OLD contexts without
+	// the qualifier present.
+	// An exception is a check-constraint that is allowed to reference fields
+	// without the qualifier.
+	if (!dsqlScratch->checkConstraintTrigger && (context->ctx_flags & CTX_system) && qualifier.isEmpty())
+		return NULL;
+
+	const TEXT* table_name = NULL;
+	if (context->ctx_internal_alias.hasData() && resolveByAlias)
+		table_name = context->ctx_internal_alias.c_str();
+
+	// AB: For a check constraint we should ignore the alias if the alias
+	// contains the "NEW" alias. This is because it is possible
+	// to reference a field by the complete table-name as alias
+	// (see EMPLOYEE table in examples for a example).
+	if (dsqlScratch->checkConstraintTrigger && table_name)
+	{
+		// If a qualifier is present and it's equal to the alias then we've already the right table-name
+		if (!(qualifier.hasData() && qualifier == table_name))
+		{
+			if (strcmp(table_name, NEW_CONTEXT) == 0)
+				table_name = NULL;
+			else if (strcmp(table_name, OLD_CONTEXT) == 0)
+			{
+				// Only use the OLD context if it is explicit used. That means the
+				// qualifer should hold the "OLD" alias.
+				return NULL;
+			}
+		}
+	}
+
+	if (!table_name)
+	{
+		if (relation)
+			table_name = relation->rel_name.c_str();
+		else
+			table_name = procedure->prc_name.identifier.c_str();
+	}
+
+	// If a context qualifier is present, make sure this is the proper context
+	if (qualifier.hasData() && qualifier != table_name)
+		return NULL;
+
+	// Lookup field in relation or procedure
+
+	return relation ? relation->rel_fields : procedure->prc_outputs;
 }
 
 bool FieldNode::dsqlAggregateFinder(AggregateFinder& visitor)
@@ -7368,7 +7910,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			if (context->ctx_flags & CTX_null)
 				return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 
-			PASS1_ambiguity_check(dsqlScratch, MAKE_cstring("RDB$DB_KEY"), contexts);
+			PASS1_ambiguity_check(dsqlScratch, "RDB$DB_KEY", contexts);
 
 			RelationSourceNode* relNode = FB_NEW(getPool()) RelationSourceNode(getPool());
 			relNode->dsqlContext = context;
@@ -7426,9 +7968,8 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	//// FIXME: pass the node to report line/column of the error.
 	// Field unresolved.
-	PASS1_field_unknown((dsqlQualifier.hasData() ? dsqlQualifier.c_str() : NULL), DB_KEY_NAME, NULL);
+	PASS1_field_unknown((dsqlQualifier.hasData() ? dsqlQualifier.c_str() : NULL), DB_KEY_NAME, this);
 
 	return NULL;
 }
@@ -10687,6 +11228,7 @@ static RegisterNode<VariableNode> regVariableNode(blr_variable);
 
 VariableNode::VariableNode(MemoryPool& pool)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_VARIABLE>(pool),
+	  dsqlName(pool),
 	  dsqlVar(NULL),
 	  varId(0),
 	  varDecl(NULL),
@@ -10714,10 +11256,14 @@ void VariableNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
+ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	VariableNode* node = FB_NEW(getPool()) VariableNode(getPool());
-	node->dsqlVar = dsqlVar;
+	node->dsqlName = dsqlName;
+	node->dsqlVar = dsqlScratch->resolveVariable(dsqlName);
+
+	if (!node->dsqlVar)
+		PASS1_field_unknown(NULL, dsqlName.c_str(), this);
 
 	return node;
 }

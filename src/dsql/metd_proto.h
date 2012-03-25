@@ -44,6 +44,7 @@ namespace Jrd {
 	class dsql_nod;
 	class dsql_prc;
 	class dsql_rel;
+	class FieldNode;
 };
 
 void METD_drop_charset(Jrd::jrd_tra*, const Firebird::MetaName&);
@@ -63,7 +64,7 @@ USHORT METD_get_domain_default(Jrd::jrd_tra*, const Firebird::MetaName&, bool*, 
 bool METD_get_exception(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
 	const Firebird::QualifiedName&);
-Jrd::dsql_nod* METD_get_primary_key(Jrd::jrd_tra*, const Firebird::MetaName&);
+void METD_get_primary_key(Jrd::jrd_tra*, const Firebird::MetaName&, Firebird::Array<Jrd::FieldNode*>&);
 Jrd::dsql_prc* METD_get_procedure(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
 	const Firebird::QualifiedName&);
 Jrd::dsql_rel* METD_get_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Firebird::MetaName&);

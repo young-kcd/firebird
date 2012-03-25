@@ -5631,12 +5631,13 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 			// primary key of the referenced table designates the referenced fields.
 			if (clause->refColumns.isEmpty())
 			{
-				dsql_nod* refColumns = METD_get_primary_key(transaction, clause->refRelation);
+				Array<FieldNode*> refColumns;
+				METD_get_primary_key(transaction, clause->refRelation, refColumns);
 
 				// If there is NEITHER an explicitly referenced field name, NOR does
 				// the referenced table have a primary key to serve as the implicitly
 				// referenced field, fail.
-				if (!refColumns)
+				if (refColumns.isEmpty())
 				{
 					// "REFERENCES table" without "(column)" requires PRIMARY
 					// KEY on referenced table
@@ -5648,13 +5649,10 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 				}
 				else
 				{
-					const dsql_nod* const* ptr = refColumns->nod_arg;
+					const FieldNode* const* ptr = refColumns.begin();
 
-					for (const dsql_nod* const* const end = ptr + refColumns->nod_count; ptr != end; ++ptr)
-					{
-						const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
-						constraint.refColumns.add(fieldName->str_data);
-					}
+					for (const FieldNode* const* const end = refColumns.end(); ptr != end; ++ptr)
+						constraint.refColumns.add((*ptr)->dsqlName);
 				}
 			}
 
@@ -7751,10 +7749,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		if (ptr)
 		{
 			if (ptr < end)
-			{
-				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[1];
-				fieldStr = fieldName->str_data;
-			}
+				fieldStr = ExprNode::as<FieldNode>(*ptr)->dsqlName.c_str();
 			else
 			{
 				// Generate an error when going out of this loop.
@@ -8236,24 +8231,29 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	for (; (ptr < end) && (ptr2 < end2); ptr++, ptr2++)
 	{
-		dsql_nod* fieldNode = *ptr;
+		dsql_nod* fieldNod = *ptr;
 		DsqlAliasNode* aliasNode;
 
-		if ((aliasNode = ExprNode::as<DsqlAliasNode>(fieldNode)))
-			fieldNode = aliasNode->value;
+		if ((aliasNode = ExprNode::as<DsqlAliasNode>(fieldNod)))
+			fieldNod = aliasNode->value;
+
+		FieldNode* fieldNode = ExprNode::as<FieldNode>(fieldNod);
 
 		// Generate the actual comparisons.
 
-		if (fieldNode->nod_type == Dsql::nod_field_name)
+		if (fieldNode)
 		{
-			fieldNode->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
+			fieldNode->dsqlQualifier = TEMP_CONTEXT;
 
-			dsql_nod* oldValueNode = MAKE_node(Dsql::nod_field_name, (int) Dsql::e_fln_count);
-			oldValueNode->nod_arg[Dsql::e_fln_name] = (*ptr2)->nod_arg[Dsql::e_fln_name];
-			oldValueNode->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
+			FieldNode* oldValueNode = FB_NEW(pool) FieldNode(pool);
+			oldValueNode->dsqlName = ExprNode::as<FieldNode>(*ptr2)->dsqlName;
+			oldValueNode->dsqlQualifier = OLD_CONTEXT;
+
+			dsql_nod* oldValueNod = MAKE_node(Dsql::nod_class_exprnode, 1);
+			oldValueNod->nod_arg[0] = (dsql_nod*) oldValueNode;
 
 			ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-				blr_eql, oldValueNode, fieldNode);
+				blr_eql, oldValueNod, fieldNod);
 
 			dsql_nod* eqlNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 			eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
@@ -8263,10 +8263,10 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 				MAKE_node(Dsql::nod_class_exprnode, 1));
 
 			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
-				pool, oldValueNode);
+				pool, oldValueNod);
 			andNode2->dsqlArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
 
-			missingNode = FB_NEW(pool) MissingBoolNode(pool, fieldNode);
+			missingNode = FB_NEW(pool) MissingBoolNode(pool, fieldNod);
 			andNode2->dsqlArg2->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
 
 			ComparativeBoolNode* orNode = FB_NEW(pool) ComparativeBoolNode(
@@ -8361,11 +8361,12 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 				Arg::Gds(isc_subquery_err));
 		}
 
-		if ((*ptrNode)->nod_type == Dsql::nod_field_name)
+		FieldNode* fieldNode = ExprNode::as<FieldNode>(*ptrNode);
+
+		if (fieldNode)
 		{
 			// Found a field node, check if it needs to be replaced.
 
-			const dsql_str* fieldName = (dsql_str*) (*ptrNode)->nod_arg[Dsql::e_fln_name];
 			dsql_nod** search = searchFields->nod_arg;
 			const dsql_nod* const* const end = search + searchFields->nod_count;
 			dsql_nod** replace = NULL;
@@ -8377,28 +8378,24 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 
 			for (; search < end; ++search, replace += (replaceFields ? 1 : 0))
 			{
-				const dsql_str* replaceName = NULL;
-				if (replaceFields)
-					replaceName = (dsql_str*) (*replace)->nod_arg[Dsql::e_fln_name];
+				FieldNode* replaceField = ExprNode::as<FieldNode>(*replace);
 
-				const FieldNode* fieldNode = ExprNode::as<FieldNode>(*search);
-				const dsql_fld* field = fieldNode->dsqlField;
+				MetaName replaceName(replaceFields ? replaceName = replaceField->dsqlName : "");
 
-				if (field->fld_name == fieldName->str_data)
+				const dsql_fld* field = ExprNode::as<FieldNode>(*search)->dsqlField;
+
+				if (field->fld_name == fieldNode->dsqlName.c_str())
 				{
 					found = true;
 
 					if (replaceFields)
-						(*ptrNode)->nod_arg[e_fln_name] = (*replace)->nod_arg[Dsql::e_fln_name];
+						fieldNode->dsqlName = replaceField->dsqlName;
 
-					(*ptrNode)->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(contextName);
+					fieldNode->dsqlQualifier = contextName;
 				}
 
-				if (nullThem && replaceFields &&
-					strcmp(fieldName->str_data, replaceName->str_data) == 0)
-				{
+				if (nullThem && replaceFields && fieldNode->dsqlName == replaceName)
 					found = true;
-				}
 			}
 
 			if (nullThem && !found)
@@ -8789,7 +8786,7 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		for (; ptr != end; ++ptr)
 		{
 			MetaName& column = definition.columns.add();
-			column = ((dsql_str*) (*ptr)->nod_arg[1])->str_data;
+			column = ExprNode::as<FieldNode>(*ptr)->dsqlName;
 		}
 	}
 	else if (computed)
@@ -9646,7 +9643,7 @@ char GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 			for (ptr = fields->nod_arg, end = ptr + fields->nod_count; ptr != end; ++ptr)
 			{
 				grantRevoke(tdbb, transaction, table, user, grantor, p,
-					reinterpret_cast<dsql_str*>((*ptr)->nod_arg[1]), option);
+					ExprNode::as<FieldNode>(*ptr)->dsqlName, option);
 			}
 
 			return '\0';
@@ -9684,7 +9681,7 @@ char GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 // Execute SQL grant/revoke operation.
 void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* table,
 	const dsql_nod* userNod, const dsql_nod* grantorNod, const char* privs,
-	const dsql_str* fieldName, int options)
+	const MetaName& field, int options)
 {
 	SSHORT userType = -1;
     MetaName dummyName;
@@ -9855,8 +9852,6 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const d
 			///DYN_error_punt(false, 195, object.c_str());
 		}
 	}
-
-	MetaName field(fieldName ? fieldName->str_data : NULL);
 
 	char priv[2];
 	priv[1] = '\0';

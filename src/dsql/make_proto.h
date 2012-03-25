@@ -34,6 +34,7 @@ namespace Jrd {
 	class dsql_fld;
 	class dsql_req;
 	class DsqlCompilerScratch;
+	class ExprNode;
 	class VariableNode;
 
 // Parameters to MAKE_constant
@@ -49,6 +50,7 @@ namespace Jrd {
 }
 
 
+Jrd::dsql_nod* MAKE_class_node(Jrd::ExprNode* node);
 Jrd::dsql_nod* MAKE_const_slong(SLONG);
 Jrd::dsql_nod* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
 Jrd::dsql_nod* MAKE_str_constant(Jrd::dsql_str*, SSHORT);

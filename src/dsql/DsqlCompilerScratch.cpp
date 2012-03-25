@@ -393,13 +393,13 @@ dsql_var* DsqlCompilerScratch::makeVariable(dsql_fld* field, const char* name,
 }
 
 // Try to resolve variable name against parameters and local variables.
-dsql_var* DsqlCompilerScratch::resolveVariable(const dsql_str* varName)
+dsql_var* DsqlCompilerScratch::resolveVariable(const MetaName& varName)
 {
 	for (dsql_var* const* i = variables.begin(); i != variables.end(); ++i)
 	{
 		const dsql_var* variable = *i;
 
-		if (variable->name == varName->str_data)
+		if (variable->name == varName)
 			return *i;
 	}
 

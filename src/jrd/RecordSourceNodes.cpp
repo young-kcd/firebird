@@ -50,8 +50,8 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
 	BoolExprNodeStack* parentStack, UCHAR shellStream);
 static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
-static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, dsql_str* name,
-	DsqlNodStack& stack, const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx);
+static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
+	DsqlNodStack& stack, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx);
 static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
 namespace
@@ -2014,18 +2014,17 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			for (int i = 0; i < boolean->nod_count; ++i)
 			{
-				dsql_nod* field = boolean->nod_arg[i];
-				dsql_str* fldName = reinterpret_cast<dsql_str*>(field->nod_arg[Dsql::e_fln_name]);
+				const FieldNode* field = ExprNode::as<FieldNode>(boolean->nod_arg[i]);
 
 				// verify if the column was already used
 				size_t pos;
-				if (usedColumns.find(fldName->str_data, pos))
+				if (usedColumns.find(field->dsqlName.c_str(), pos))
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  Arg::Gds(isc_dsql_col_more_than_once_using) << Arg::Str(fldName->str_data));
+							  Arg::Gds(isc_dsql_col_more_than_once_using) << field->dsqlName);
 				}
 				else
-					usedColumns.insert(pos, fldName->str_data);
+					usedColumns.insert(pos, field->dsqlName.c_str());
 
 				dsql_ctx* leftCtx = NULL;
 				dsql_ctx* rightCtx = NULL;
@@ -2041,10 +2040,10 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				// create the boolean
 
 				ComparativeBoolNode* eqlNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql);
-				eqlNode->dsqlArg1 = resolveUsingField(dsqlScratch, fldName, leftStack, field,
-					"left", leftCtx);
-				eqlNode->dsqlArg2 = resolveUsingField(dsqlScratch, fldName, rightStack, field,
-					"right", rightCtx);
+				eqlNode->dsqlArg1 = resolveUsingField(dsqlScratch, field->dsqlName, leftStack,
+					field, "left", leftCtx);
+				eqlNode->dsqlArg2 = resolveUsingField(dsqlScratch, field->dsqlName, rightStack,
+					field, "right", rightCtx);
 
 				dsql_nod* eqlNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 				eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
@@ -2054,7 +2053,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 				// We should hide the (unqualified) column in one side
 				ImplicitJoin* impJoinLeft;
-				if (!leftCtx->ctx_imp_join.get(fldName->str_data, impJoinLeft))
+				if (!leftCtx->ctx_imp_join.get(field->dsqlName, impJoinLeft))
 				{
 					impJoinLeft = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
 					impJoinLeft->value = eqlNode->dsqlArg1;
@@ -2064,7 +2063,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					fb_assert(impJoinLeft->visibleInContext == leftCtx);
 
 				ImplicitJoin* impJoinRight;
-				if (!rightCtx->ctx_imp_join.get(fldName->str_data, impJoinRight))
+				if (!rightCtx->ctx_imp_join.get(field->dsqlName, impJoinRight))
 				{
 					impJoinRight = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
 					impJoinRight->value = eqlNode->dsqlArg2;
@@ -2121,7 +2120,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 				coalesceNode = FB_NEW(getPool()) CoalesceNode(getPool(), MAKE_list(stack));
 
-				aliasNode = FB_NEW(getPool()) DsqlAliasNode(getPool(), fldName->str_data,
+				aliasNode = FB_NEW(getPool()) DsqlAliasNode(getPool(), field->dsqlName,
 					MAKE_node(Dsql::nod_class_exprnode, 1));
 
 				impJoinLeft->value = MAKE_node(Dsql::nod_class_exprnode, 1);
@@ -2133,8 +2132,8 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				impJoinRight->visibleInContext = NULL;
 
 				// both sides should refer to the same ImplicitJoin
-				leftCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
-				rightCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
+				leftCtx->ctx_imp_join.put(field->dsqlName, impJoinLeft);
+				rightCtx->ctx_imp_join.put(field->dsqlName, impJoinLeft);
 
 				newBoolean = PASS1_compose(newBoolean, eqlNod, blr_and);
 			}
@@ -3177,8 +3176,8 @@ static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 }
 
 // Resolve a field for JOIN USING purposes.
-static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, dsql_str* name,
-	DsqlNodStack& stack, const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx)
+static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
+	DsqlNodStack& stack, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx)
 {
 	dsql_nod* list = MAKE_list(stack);
 	dsql_nod* node = PASS1_lookup_alias(dsqlScratch, name, list, false);
@@ -3187,7 +3186,7 @@ static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, dsql_str* n
 	{
 		string qualifier;
 		qualifier.printf("<%s side of USING>", side);
-		PASS1_field_unknown(qualifier.c_str(), name->str_data, flawedNode);
+		PASS1_field_unknown(qualifier.c_str(), name.c_str(), flawedNode);
 	}
 
 	DsqlAliasNode* aliasNode;

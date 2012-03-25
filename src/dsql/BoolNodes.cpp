@@ -382,13 +382,12 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	dsql_nod* procArg1 = dsqlArg1;
 	dsql_nod* procArg2 = dsqlArg2;
 	dsql_nod* procArg3 = dsqlArg3;
+	FieldNode* fieldNode1;
 
 	// Make INSERTING/UPDATING/DELETING in booleans to read the trigger action.
 
-	if (dsqlWasValue && procArg1->nod_type == Dsql::nod_field_name)
+	if (dsqlWasValue && (fieldNode1 = ExprNode::as<FieldNode>(procArg1)))
 	{
-		const char* fieldName = ((dsql_str*) procArg1->nod_arg[Dsql::e_fln_name])->str_data;
-
 		static const char* const NAMES[] = {
 			"INSERTING",
 			"UPDATING",
@@ -397,7 +396,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		for (size_t i = 0; i < FB_NELEM(NAMES); ++i)
 		{
-			if (strcmp(fieldName, NAMES[i]) == 0)
+			if (fieldNode1->dsqlName == NAMES[i])
 			{
 				thread_db* tdbb = JRD_get_thread_data();
 

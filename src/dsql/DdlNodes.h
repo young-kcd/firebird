@@ -1896,7 +1896,7 @@ private:
 		const dsql_nod* privs, const dsql_nod* user);
 	void grantRevoke(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* table,
 		const dsql_nod* userNod, const dsql_nod* grantorNod, const char* privs,
-		const dsql_str* fieldName, int options);
+		const Firebird::MetaName& field, int options);
 	static void checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction, const char* grantor,
 		const char* privilege, const Firebird::MetaName& relationName,
 		const Firebird::MetaName& fieldName, bool topLevel);
