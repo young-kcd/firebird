@@ -1,3 +1,31 @@
+ 2012-03-25 01:08  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+   M src/jrd/RecordSourceNodes.cpp
+Refactored nod_field_name, nod_var_name, nod_array and nod_collate.
+
+ 2012-03-24 21:46  robocop 
+   M src/yvalve/gds.cpp
+   M src/yvalve/gds_proto.h
+I couldn't compile so I did this little change to the function declaration.
+
  2012-03-23 17:44  alexpeshkoff 
    M src/dsql/DdlNodes.epp
    M src/dsql/DdlNodes.h
