@@ -9046,11 +9046,20 @@ void SubQueryNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
+ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	// This node is created after dsqlPass and should never be called.
-	fb_assert(false);
-	return this;
+	const DsqlContextStack::iterator base(*dsqlScratch->context);
+
+	dsql_nod* rseNod = PASS1_rse(dsqlScratch, dsqlRse, false);
+	RseNode* rse = ExprNode::as<RseNode>(rseNod);
+
+	SubQueryNode* node = FB_NEW(getPool()) SubQueryNode(getPool(), blrOp, rseNod,
+		rse->dsqlSelectList->nod_arg[0], MAKE_class_node(FB_NEW(getPool()) NullNode(getPool())));
+
+	// Finish off by cleaning up contexts.
+	dsqlScratch->context->clear(base);
+
+	return node;
 }
 
 void SubQueryNode::setParameterName(dsql_par* parameter) const

@@ -4629,8 +4629,8 @@ column_select
 column_singleton
 	: column_select
 		{
-			$$ = $1;
-			$$->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
+			$1->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
+			$$ = makeClassNode(newNode<SubQueryNode>(blr_via, $1));
 		}
 	;
 

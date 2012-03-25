@@ -707,28 +707,8 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				  Arg::Gds(isc_dsql_command_err));
 
 	case nod_select_expr:
-		{
-			if (input->nod_flags & NOD_SELECT_EXPR_DERIVED)
-				return pass1_derived_table(dsqlScratch, input, NULL);
-
-			const DsqlContextStack::iterator base(*dsqlScratch->context);
-
-			dsql_nod* rseNod = PASS1_rse(dsqlScratch, input, false);
-			RseNode* rse = ExprNode::as<RseNode>(rseNod);
-
-			SubQueryNode* subQueryNode = FB_NEW(*tdbb->getDefaultPool()) SubQueryNode(*tdbb->getDefaultPool(),
-				blr_via, rseNod, rse->dsqlSelectList->nod_arg[0], MAKE_node(nod_class_exprnode, 1));
-			subQueryNode->dsqlValue2->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-				FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-
-			node = MAKE_node(nod_class_exprnode, 1);
-			node->nod_arg[0] = reinterpret_cast<dsql_nod*>(subQueryNode);
-
-			// Finish off by cleaning up contexts
-			dsqlScratch->context->clear(base);
-
-			return node;
-		}
+		fb_assert(input->nod_flags & NOD_SELECT_EXPR_DERIVED);
+		return pass1_derived_table(dsqlScratch, input, NULL);
 
 	// access plan node types
 
