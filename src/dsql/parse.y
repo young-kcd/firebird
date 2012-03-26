@@ -5746,6 +5746,7 @@ array_element
 		{
 			ArrayNode* node = newNode<ArrayNode>(ExprNode::as<FieldNode>($1));
 			node->dsqlField->dsqlIndices = make_list($3);
+			$$ = makeClassNode(node);
 		}
 	;
 
