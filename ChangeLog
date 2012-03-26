@@ -1,3 +1,17 @@
+ 2012-03-26 01:03  asfernandes 
+   M src/dsql/parse.y
+Correction.
+
+ 2012-03-25 18:21  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Make column_select a SubQueryNode instead of nod_select_expr directly.
+
+ 2012-03-25 17:21  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-3798: fb server die when carry out the LEFT + INNER JOIN. This is a v3 only regression.
+
  2012-03-25 01:08  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/dsql/DdlNodes.epp
