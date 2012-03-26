@@ -42,7 +42,7 @@ class GetPlugins
 public:
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
 			   UpgradeInfo* ui, const char* namesList = NULL)
-		: masterInterface(), pluginInterface(masterInterface),
+		: masterInterface(), pluginInterface(),
 		  pluginSet(NULL), currentPlugin(NULL)
 	{
 		LocalStatus status;
@@ -62,7 +62,7 @@ public:
 
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, UpgradeInfo* ui,
 			   Config* knownConfig, const char* namesList = NULL)
-		: masterInterface(), pluginInterface(masterInterface),
+		: masterInterface(), pluginInterface(),
 		  pluginSet(NULL), currentPlugin(NULL)
 	{
 		LocalStatus status;

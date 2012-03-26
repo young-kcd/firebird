@@ -41,9 +41,11 @@ static Firebird::SimpleFactory<Auth::DebugServer> serverFactory;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
+	Firebird::CachedMasterInterface::set(master);
+
 	const char* name = "Auth_Debug";
 
-	Firebird::PluginManagerInterfacePtr iPlugin(master);
+	Firebird::PluginManagerInterfacePtr iPlugin;
 
 	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, name, &clientFactory);
 	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, name, &serverFactory);

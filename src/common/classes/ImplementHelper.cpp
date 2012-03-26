@@ -28,7 +28,28 @@
 
 #include "../common/classes/ImplementHelper.h"
 
+namespace
+{
+	Firebird::IMaster* cached = NULL;
+}
+
 namespace Firebird
 {
 	UnloadDetector myModule;
+
+	void CachedMasterInterface::set(IMaster* master)
+	{
+		fb_assert(master);
+		fb_assert(!cached);
+		cached = master;
+	}
+
+	IMaster* CachedMasterInterface::getMasterInterface()
+	{
+		if (!cached)
+		{
+			cached = fb_get_master_interface();
+		}
+		return cached;
+	}
 }

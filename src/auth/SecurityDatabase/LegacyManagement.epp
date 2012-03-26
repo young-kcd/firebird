@@ -676,8 +676,7 @@ static Firebird::SimpleFactory<Auth::SecurityDatabaseManagement> factory;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::PluginManagerInterfacePtr pi(master);
-
-	pi->registerPluginFactory(Firebird::PluginType::AuthUserManagement, "Legacy_UserManager", &factory);
+	Firebird::CachedMasterInterface::set(master);
+	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::PluginType::AuthUserManagement, "Legacy_UserManager", &factory);
 	Firebird::myModule->registerMe();
 }

@@ -634,8 +634,7 @@ static Firebird::SimpleFactory<Auth::SrpManagement> factory;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::PluginManagerInterfacePtr pi(master);
-
-	pi->registerPluginFactory(Firebird::PluginType::AuthUserManagement, Auth::RemotePassword::plugName, &Auth::factory);
+	Firebird::CachedMasterInterface::set(master);
+	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::PluginType::AuthUserManagement, Auth::RemotePassword::plugName, &Auth::factory);
 	Firebird::myModule->registerMe();
 }

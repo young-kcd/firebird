@@ -327,10 +327,10 @@ void registerEngine(IPluginManager* iPlugin)
 
 } // namespace Jrd
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* /*master*/)
+extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
-	PluginManagerInterfacePtr pi;
-	registerEngine(pi);
+	CachedMasterInterface::set(master);
+	registerEngine(PluginManagerInterfacePtr());
 }
 
 namespace

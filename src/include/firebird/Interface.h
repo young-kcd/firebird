@@ -120,7 +120,9 @@ public:
 
 extern "C"
 {
-	// additional API function
+	// Additional API function.
+	// Should be used only in non-plugin modules.
+	// All plugins including providers should use passed at init time interface instead.
 	Firebird::IMaster* ISC_EXPORT fb_get_master_interface();
 }
 

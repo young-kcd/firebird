@@ -166,9 +166,19 @@ class SimpleFactory : public Static<SimpleFactoryBase<P> >
 };
 
 
+// Ensure access to cached pointer to master interface
+class CachedMasterInterface
+{
+public:
+	static void set(IMaster* master);
+
+protected:
+	static IMaster* getMasterInterface();
+};
+
 // Base for interface type independent accessors
 template <typename C>
-class AccessAutoInterface
+class AccessAutoInterface : public CachedMasterInterface
 {
 public:
 	explicit AccessAutoInterface(C* aPtr)
@@ -194,7 +204,7 @@ class MasterInterfacePtr : public AccessAutoInterface<IMaster>
 {
 public:
 	MasterInterfacePtr()
-		: AccessAutoInterface<IMaster>(fb_get_master_interface())
+		: AccessAutoInterface<IMaster>(getMasterInterface())
 	{ }
 };
 
@@ -204,11 +214,11 @@ class PluginManagerInterfacePtr : public AccessAutoInterface<IPluginManager>
 {
 public:
 	PluginManagerInterfacePtr()
-		: AccessAutoInterface<IPluginManager>(MasterInterfacePtr()->getPluginManager())
+		: AccessAutoInterface<IPluginManager>(getMasterInterface()->getPluginManager())
 	{ }
-	explicit PluginManagerInterfacePtr(IMaster* master)
+/*	explicit PluginManagerInterfacePtr(IMaster* master)
 		: AccessAutoInterface<IPluginManager>(master->getPluginManager())
-	{ }
+	{ } */
 };
 
 
@@ -217,7 +227,7 @@ class TimerInterfacePtr : public AccessAutoInterface<ITimerControl>
 {
 public:
 	TimerInterfacePtr()
-		: AccessAutoInterface<ITimerControl>(fb_get_master_interface()->getTimerControl())
+		: AccessAutoInterface<ITimerControl>(getMasterInterface()->getTimerControl())
 	{ }
 };
 
@@ -227,7 +237,7 @@ class DtcInterfacePtr : public AccessAutoInterface<IDtc>
 {
 public:
 	DtcInterfacePtr()
-		: AccessAutoInterface<IDtc>(fb_get_master_interface()->getDtc())
+		: AccessAutoInterface<IDtc>(getMasterInterface()->getDtc())
 	{ }
 };
 
