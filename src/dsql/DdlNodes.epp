@@ -8380,7 +8380,7 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 			{
 				FieldNode* replaceField = ExprNode::as<FieldNode>(*replace);
 
-				MetaName replaceName(replaceFields ? replaceName = replaceField->dsqlName : "");
+				MetaName replaceName(replaceFields ? replaceField->dsqlName : "");
 
 				const dsql_fld* field = ExprNode::as<FieldNode>(*search)->dsqlField;
 
