@@ -34,6 +34,7 @@
 #include "../common/dsc_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../common/gdsassert.h"
+#include "../jrd/err_proto.h"
 
 using namespace Firebird;
 
