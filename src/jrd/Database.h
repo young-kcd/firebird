@@ -236,9 +236,10 @@ public:
 
 		struct ValueCache
 		{
-			Lock* lock;		// lock which holds shared counter value
-			SLONG curVal;	// current value of shared counter lock
-			SLONG maxVal;	// maximum cached value of shared counter lock
+			Lock* lock;			// lock which holds shared counter value
+			bool isProtected;	// flag indicating that we own the lock in the PW mode
+			SLONG curVal;		// current value of shared counter lock
+			SLONG maxVal;		// maximum cached value of shared counter lock
 		};
 
 	public:
