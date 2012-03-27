@@ -155,13 +155,18 @@ namespace Jrd
 			lock->lck_object = counter;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
 
+			counter->isProtected = true;
 			counter->curVal = 1;
 			counter->maxVal = 0;
 		}
 
 		if (counter->curVal > counter->maxVal)
 		{
-			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
+			if (!counter->isProtected)
+			{
+				LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
+				counter->isProtected = true;
+			}
 
 			counter->curVal = LCK_read_data(tdbb, counter->lock);
 
@@ -196,6 +201,7 @@ namespace Jrd
 			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 			LCK_downgrade(tdbb, counter->lock);
+			counter->isProtected = false;
 		}
 		catch (const Firebird::Exception&)
 		{} // no-op

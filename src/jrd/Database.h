@@ -287,6 +287,7 @@ public:
 		struct ValueCache
 		{
 			Lock* lock;
+			bool isProtected;
 			SLONG curVal;
 			SLONG maxVal;
 		};
