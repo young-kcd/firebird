@@ -132,10 +132,9 @@ inline static DWORD getShareFlags(const bool shared_access, bool temporary = fal
 
 #ifdef SUPERSERVER_V2
 static const DWORD g_dwExtraFlags = FILE_FLAG_OVERLAPPED |
-									FILE_FLAG_NO_BUFFERING |
-									FILE_FLAG_RANDOM_ACCESS;
+									FILE_FLAG_NO_BUFFERING;
 #else
-static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
+static const DWORD g_dwExtraFlags = 0;
 #endif
 
 static const DWORD g_dwExtraTempFlags = FILE_ATTRIBUTE_TEMPORARY |

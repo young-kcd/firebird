@@ -245,7 +245,8 @@
 # setting will not be changed. Thus you may need to reboot the host for the
 # change of this setting to have effect.
 #
-# To leave host caching settings unchanged set this parameter to 0.
+# To leave host caching settings unchanged set this parameter to 0. This is
+# the default parameter value.
 #
 # Security note
 # To adjust the setting engine needs SeIncreaseQuotaPrivilege right. Built-in
@@ -255,7 +256,7 @@
 #
 # Type: integer, measured in % of total physical RAM
 #
-#FileSystemCacheSize = 30
+#FileSystemCacheSize = 0
 
 # ----------------------------
 # Remove protection against opening databases on NFS mounted volumes on

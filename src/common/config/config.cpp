@@ -165,7 +165,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false},	// if true disallow SET A = B, B = A to exchange column values
 	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
 	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
-	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 30},		// percent
+	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 0},		// percent
 	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote, Engine12, Loopback"},
 	{TYPE_STRING,		"AuthServer",				(ConfigValue) "Srp, Win_Sspi"},
 	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp, Win_Sspi, Legacy_Auth"},
