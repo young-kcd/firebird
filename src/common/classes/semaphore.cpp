@@ -29,6 +29,41 @@
 #include "../common/classes/alloc.h"
 #include "gen/iberror.h"
 
+#ifdef HAVE_SYS_TIMES_H
+#include <sys/times.h>
+#endif
+#ifdef HAVE_SYS_TIMEB_H
+#include <sys/timeb.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+
+#if defined(COMMON_CLASSES_SEMAPHORE_POSIX_RT) || defined(COMMON_CLASSES_SEMAPHORE_COND_VAR)
+
+static timespec getCurrentTime()
+{
+	timespec rc;
+
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval tp;
+	GETTIMEOFDAY(&tp);
+	rc.tv_sec = tp.tv_sec;
+	rc.tv_nsec = tp.tv_usec * 1000;
+#else
+	struct timeb time_buffer;
+	ftime(&time_buffer);
+	rc.tv_sec = time_buffer.time;
+	rc.tv_nsec = time_buffer.millitm * 1000000;
+#endif
+
+	return rc;
+}
+
+#endif	// semaphore kind defined
+
+
+
 namespace Firebird {
 
 #ifdef COMMON_CLASSES_SEMAPHORE_MACH
@@ -101,9 +136,9 @@ static const char* semName = "/firebird_temp_sem";
 #ifdef HAVE_SEM_TIMEDWAIT
 	bool SignalSafeSemaphore::tryEnter(const int seconds, int milliseconds)
 	{
-		milliseconds += seconds * 1000;
+		long nanoseconds = long(milliseconds + seconds * 1000) * 1000000l;
 		// Return true in case of success
-		if (milliseconds == 0)
+		if (nanoseconds == 0)
 		{
 			// Instant try
 			do {
@@ -114,7 +149,7 @@ static const char* semName = "/firebird_temp_sem";
 				return false;
 			system_call_failed::raise("sem_trywait");
 		}
-		if (milliseconds < 0)
+		if (nanoseconds < 0)
 		{
 			// Unlimited wait, like enter()
 			do {
@@ -124,9 +159,10 @@ static const char* semName = "/firebird_temp_sem";
 			system_call_failed::raise("sem_wait");
 		}
 		// Wait with timeout
-		struct timespec timeout;
-		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
+		timespec timeout = getCurrentTime();
+		nanoseconds += timeout.tv_nsec;
+		timeout.tv_sec += nanoseconds / 1000000000l;
+		timeout.tv_nsec = nanoseconds % 1000000000l;
 		int errcode = 0;
 		do {
 			int rc = sem_timedwait(sem, &timeout);
@@ -243,9 +279,10 @@ static const char* semName = "/firebird_temp_sem";
 			return true;
 		}
 
-		timespec timeout;
-		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
+		timespec timeout = getCurrentTime();
+		nanoseconds += timeout.tv_nsec;
+		timeout.tv_sec += nanoseconds / 1000000000l;
+		timeout.tv_nsec = nanoseconds % 1000000000l;
 		err = pthread_cond_timedwait(&cv, &mu, &timeout);
 
 		mtxUnlock();
