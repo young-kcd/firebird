@@ -1,3 +1,28 @@
+ 2012-03-26 15:28  dimitr 
+   M src/dsql/DdlNodes.epp
+Fixed compilation.
+
+ 2012-03-26 11:34  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/include/firebird/Interface.h
+   M src/jrd/jrd.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+Make plugins use passed instance of master interface, not one got from fb_get_master_interface(). This helps in case when >1 fbclient libraries is loaded by process.
+
+ 2012-03-26 09:26  alexpeshkoff 
+   M src/jrd/DataTypeUtil.cpp
+Fixed release build
+
+ 2012-03-26 09:01  alexpeshkoff 
+   M src/dsql/dsql.cpp
+Correction - thanks to Claudio
+
  2012-03-26 01:03  asfernandes 
    M src/dsql/parse.y
 Correction.
