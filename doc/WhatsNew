@@ -29,15 +29,15 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Bugfix CORE-3547
-        Floating-point negative zero doesn't match positive zero in the index
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
     * Bugfix CORE-3549
         Database corruption after end of session: "page xxx is of wrong type expected 4 found 7"
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3547
+        Floating-point negative zero doesn't match positive zero in the index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-3544
         Make install fails on Linux
@@ -161,6 +161,28 @@
         Passing non-existing SQL parameters always crash server
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3468
+        Attempt to read after the end of file when nbackup state is stalled
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3466
+        Some changes could be lost during the merge of delta file into main database file
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3465
+        Nbackup state lock could be not released after cache error.
+        It results in "Can't lock state for write" bugcheck when backup state is going to be changed.
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3464
+        Dirty page could be written without releasing (or downgrading) page lock.
+        It results in "lock denied" or "lock conversion denied" bugcheck.
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-3461
         DDL operations fail after backup/restore
