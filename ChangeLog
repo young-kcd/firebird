@@ -1,3 +1,21 @@
+ 2012-03-27 13:17  alexpeshkoff 
+   M configure.in
+   M src/common/classes/semaphore.cpp
+Backported fix for CORE-3770: fbtracemgr loads CPU up to ~55% when no activity is present
+
+ 2012-03-27 07:11  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+Optimized the shared counter generator to avoid LM calls if there's no contention on the protecting lock.
+
+ 2012-03-27 07:10  dimitr 
+   M builds/install/misc/firebird.conf.in
+   M src/common/classes/TempFile.cpp
+   M src/common/config/config.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/utilities/gstat/dba.epp
+Fixed CORE-3791: Performance degrades when actively working with databases bigger than the available RAM amount.
+
  2012-03-24 21:25  robocop 
    M src/jrd/RuntimeStatistics.h
 Misc.
