@@ -1,3 +1,9 @@
+ 2012-03-27 07:08  dimitr 
+   M src/common/classes/TempFile.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/utilities/gstat/dba.epp
+Fixed CORE-3791: Performance degrades when actively working with databases bigger than the available RAM amount.
+
  2012-03-24 21:12  robocop 
    M src/include/gen/msgs.h
 Update forgotten file.
