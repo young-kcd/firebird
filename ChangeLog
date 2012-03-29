@@ -1,3 +1,7 @@
+ 2012-03-28 18:15  dimitr 
+   M doc/WhatsNew
+Added the missing bug fixes. I have no clue how they could escape this document :-( My apologies to Vlad.
+
  2012-03-27 13:17  alexpeshkoff 
    M configure.in
    M src/common/classes/semaphore.cpp
