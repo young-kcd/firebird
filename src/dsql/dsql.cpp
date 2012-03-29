@@ -760,6 +760,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	{
 		// save a status vector
 		memcpy(localStatus, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
+		fb_utils::init_status(tdbb->tdbb_status_vector);
 	}
 
 	ISC_STATUS status = FB_SUCCESS;
