@@ -245,8 +245,9 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 {
 	fb_assert(!m_transaction);
 
+	jrd_tra* localTran = tdbb->getTransaction();
 	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
-		m_transaction = tdbb->getTransaction();
+		m_transaction = localTran;
 	}
 	else
 	{
@@ -255,6 +256,8 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 		EngineCallbackGuard guard(tdbb, *this);
 		jrd8_start_transaction(status, &m_transaction, 1, &att,
 			tpb.getBufferLength(), tpb.getBuffer());
+
+		m_transaction->tra_callback_count = localTran ? localTran->tra_callback_count : 1;
 	}
 }
 
