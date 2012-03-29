@@ -2060,6 +2060,16 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 			}
 			statement->rsr_rows_pending += sqldata->p_sqldata_messages;
 
+			// We've either got data, or some is on the way, or we have an error, or we have EOF
+
+			if (!(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0) ||
+			   statement->haveException() || statement->rsr_flags.test(Rsr::EOF_SET)))
+			{
+				// We were asked to fetch from the statement, not ready for it
+				// Give up before sending something to the server
+				Arg::Gds(isc_req_sync).raise();
+			}
+
 			// Make the batch request - and force the packet over the wire
 
 			send_packet(port, packet);
