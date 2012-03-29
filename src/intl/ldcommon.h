@@ -25,9 +25,9 @@
 #define INTL_LDCOMMON_H
 
 #include "../common/classes/alloc.h"
-#include "../common/intlobj_new.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
@@ -47,22 +47,11 @@ typedef USHORT UNICODE;
 
 
 #define	TEXTTYPE_ENTRY(name)	INTL_BOOL name (texttype* cache, charset* cs,										\
-												const ASCII* /*tt_name*/, const ASCII* /*cs_name*/,					\
-												USHORT attributes,													\
-												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
-												const ASCII* /*config_info*/)
-
-#define	TEXTTYPE_ENTRY2(name)	INTL_BOOL name (texttype* cache, charset* /*cs*/,									\
-												const ASCII* /*tt_name*/, const ASCII* cs_name,						\
+												const ASCII* tt_name, const ASCII* cs_name,							\
 												USHORT attributes,													\
 												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
 												const ASCII* config_info)
 
-#define	TEXTTYPE_ENTRY3(name)	INTL_BOOL name (texttype* cache, charset* /*cs*/,									\
-												const ASCII* /*tt_name*/, const ASCII* /*cs_name*/,					\
-												USHORT attributes,													\
-												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
-												const ASCII* /*config_info*/)
 
 
 #ifdef NOT_USED_OR_REPLACED
@@ -73,7 +62,7 @@ typedef USHORT UNICODE;
 
 
 
-#define CHARSET_ENTRY(name)	INTL_BOOL	name (charset* csptr, const ASCII* /*cs_name*/)
+#define CHARSET_ENTRY(name)	INTL_BOOL	name (charset* csptr, const ASCII* cs_name)
 
 #define CHARSET_RETURN	return (true)
 
@@ -87,4 +76,4 @@ inline void put(UCHAR*& dest, const C src)
 	dest += sizeof(C);
 }
 
-#endif // INTL_LDCOMMON_H
+#endif /* INTL_LDCOMMON_H */

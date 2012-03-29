@@ -30,11 +30,15 @@ namespace Jrd {
 	class blb;
 }
 
-void INF_blob_info(const Jrd::blb*, const ULONG, const UCHAR*, const ULONG, UCHAR*);
-USHORT INF_convert(SINT64, UCHAR*);
-void INF_database_info(Jrd::thread_db*, const ULONG, const UCHAR*, const ULONG, UCHAR*);
-UCHAR* INF_put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR*, const bool inserting = false);
-ULONG INF_request_info(const Jrd::jrd_req*, const ULONG, const UCHAR*, const ULONG, UCHAR*);
-void INF_transaction_info(const Jrd::jrd_tra*, const ULONG, const UCHAR*, const ULONG, UCHAR*);
+int		INF_blob_info(const Jrd::blb*, const SCHAR*, const SSHORT,
+						SCHAR*, const SSHORT);
+USHORT	INF_convert(SLONG, SCHAR*);
+int		INF_database_info(const SCHAR*, const SSHORT, SCHAR*, const SSHORT);
+SCHAR*	INF_put_item(SCHAR, USHORT, const SCHAR*, SCHAR*, const SCHAR*, const bool inserting = false);
+int		INF_request_info(const Jrd::jrd_req*, const SCHAR*, const SSHORT,
+						SCHAR*, const SSHORT);
+int		INF_transaction_info(const Jrd::jrd_tra*, const SCHAR*, const SSHORT,
+						SCHAR*, const SSHORT);
 
 #endif // JRD_INF_PROTO_H
+

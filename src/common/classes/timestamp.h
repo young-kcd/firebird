@@ -27,53 +27,101 @@
 #ifndef CLASSES_TIMESTAMP_H
 #define CLASSES_TIMESTAMP_H
 
-#include "../common/classes/NoThrowTimeStamp.h"
+// struct tm declaration
+#if defined(TIME_WITH_SYS_TIME)
+#include <sys/time.h>
+#include <time.h>
+#else
+#if defined(HAVE_SYS_TIME_H)
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#endif
 
 namespace Firebird {
 
 // Wrapper class for ISC_TIMESTAMP supposed to implement date/time conversions
-// and arithmetic. Small and not platform-specific methods are implemented
-// inline. Usage of this class normally should involve zero overhead except
-// adding code for exceptions, memory allocation and all related when used in UDF.
-
-class TimeStamp : public NoThrowTimeStamp
+// and arithmetic. Small and not platform-specific methods are implemented 
+// inline. Usage of this class normally should involve zero overhead.
+//
+// Note: default "shallow-copy" constructor and assignment operators
+// are just fine for our purposes
+//
+// TODO: migrate fbudf to this class.
+class TimeStamp
 {
 public:
-	// Constructors
-	TimeStamp()
-		: NoThrowTimeStamp()
-	{}
+	// Number of the first day of UNIX epoch in GDS counting
+	enum { GDS_EPOCH_START = 40617 };
 
-	TimeStamp(const ISC_TIMESTAMP& from)
-		: NoThrowTimeStamp(from)
-	{}
+	// Default constructor. Fills timestamp with current date/time
+	TimeStamp() { generate(); }
 
-	TimeStamp(const NoThrowTimeStamp& from)
-		: NoThrowTimeStamp(from)
-	{}
-
-	TimeStamp(ISC_DATE date, ISC_TIME time)
-		: NoThrowTimeStamp(date, time)
-	{}
-
-	explicit TimeStamp(const struct tm& times, int fractions = 0)
-		: NoThrowTimeStamp(times, fractions)
-	{}
-
-	// Return current timestamp value
-	static TimeStamp getCurrentTimeStamp();
-
-	// Assign current date/time to the timestamp
-	void validate()
+	// Altername constructor, may create empty timestamp object
+	explicit TimeStamp(bool zero) 
 	{
-		if (isEmpty())
-		{
-			*this = getCurrentTimeStamp();
-		}
+		if (zero)
+			invalidate();
+		else
+			generate();
 	}
 
+	// Construct wrapper around pre-existing timestamp
+	TimeStamp(const ISC_TIMESTAMP& from) : mValue(from) { }
+
+	// See if timestamp represents the supported range
+	bool isRangeValid() const;
+
+	// See if timestamp contains non-zero value
+	bool isEmpty() const {
+		return mValue.timestamp_date == 0 && mValue.timestamp_time == 0; 
+	}
+
+	// Set value of timestamp to zero
+	void invalidate() {
+		mValue.timestamp_date = 0;		
+		mValue.timestamp_time = 0;
+	}
+
+	// Assign value of timestamp to current date/time if it is zero
+	void validate() {
+		if (isEmpty())
+			generate();
+	}
+
+	// Encode timestamp from UNIX datetime structure
+	void encode(const struct tm* times);
+
+	// Decode timestamp into UNIX datetime structure
+	void decode(struct tm* times) const;
+
+	// Write access to timestamp structure we wrap
+	ISC_TIMESTAMP& value() { return mValue; }
+
+	// Read access to timestamp structure we wrap
+	const ISC_TIMESTAMP& value() const { return mValue; }
+
+	// ISC date/time helper routines. These functions are signal-safe.
+	static void decode_date(ISC_DATE nday, struct tm* times);
+	static ISC_DATE encode_date(const struct tm* times);
+	static void decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions);
+	static ISC_TIME encode_time(int hours, int minutes, int seconds, int fractions);
+	static void round_time(ISC_TIME &ntime, int precision);
+
+	static inline bool isLeapYear(int year)
+	{
+		return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+	}    
+
 private:
-	static void report_error(const char* msg);
+	ISC_TIMESTAMP mValue;
+
+	static int yday(const struct tm* times);
+
+	// Assign value of timestamp to current date/time
+	void generate();
+	void report_error(const char* msg);
 };
 
 }	// namespace Firebird

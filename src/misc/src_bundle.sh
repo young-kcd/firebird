@@ -36,7 +36,7 @@ popd >/dev/null 2>&1
 
 # What and where to bundle
 MODULE=$SRCROOT/temp/src
-MEMBERS="builds doc examples extern lang_helpers src ChangeLog Makefile.in acx_pthread.m4 autogen.sh binreloc.m4 configure.in"
+MEMBERS="builds doc examples extern lang_helpers src ChangeLog Makefile.am Makefile.in acx_pthread.m4 autogen.sh configure.in"
 
 # Cleanup
 rm -rf $MODULE
@@ -70,6 +70,9 @@ rm -rf gen
 
 # Copy pre-generated script
 cp $SRCROOT/configure .
+
+# Help poor windows people avoid awk dependency
+cp $SRCROOT/extern/btyacc/skeleton.c ./extern/btyacc/skeleton.c
 
 echo "Creating tarball for $PACKNAME"
 cd ..

@@ -62,7 +62,7 @@ InnoSetup Help Extract on Windows version strings:
 Windows NT versions:
 4.0.1381      Windows NT 4.0
 5.0.2195      Windows 2000
-5.01.2600 Windows XP
+5.01.2600     Windows XP
   or Windows XP 64-Bit Edition Version 2002 (Itanium)
 5.02.3790 Windows Server 2003
   or Windows XP x64 Edition (AMD64/EM64T)

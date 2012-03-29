@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This runs before firebird archive is opened
+
+checkIfServerRunning
+
+# Failing that we archive any files we find
+archivePriorInstallSystemFiles

@@ -26,11 +26,9 @@
 
 #include "../common/classes/fb_string.h"
 
-namespace Jrd
-{
-	class DeferredWork;
-}
+class Jrd::DeferredWork;
 
-void GRANT_privileges(Jrd::thread_db*, const Firebird::string&, USHORT, Jrd::jrd_tra*);
+void GRANT_privileges(Jrd::thread_db*, const Firebird::string&, USHORT);
 
 #endif // JRD_GRANT_PROTO_H
+

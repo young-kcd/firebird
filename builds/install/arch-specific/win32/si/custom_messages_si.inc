@@ -44,7 +44,7 @@ si.InstalledProducts='pri ponovni instalaciji je bila najdena obstojeèa %s Fireb
 si.InstalledProdCountSingular=verzija ima
 si.InstalledProdCountPlural=verzije imajo
 
-si.FbRunning1=Obstojeèa verzija Firebird %s Server je zagnana.
+si.FbRunning1=Obstojeèa verzija %s Server je zagnana.
 si.FbRunning2=Zaprite vse aplikacije oz. jih zakljuèite v
 si.FbRunning3=nastavitah servisov.
 
@@ -69,3 +69,5 @@ si.RunCSWithGuardian=Zaženi Firebird kot klasièni server (z nadzornikom)
 si.RunISQL=Zaženi ukazno vrstico z orodjem Interactive SQL
 si.ReadmeFile=readme.txt
 si.InstallationReadmeFile=instalacija_precitajMe.txt
+;si.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+

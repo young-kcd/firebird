@@ -44,6 +44,7 @@ BACKEND_BRIDGE_MISC=	head5.o allp.o
 BIN_PATH=		/usr/gds/bin
 BRIDGE_MISC=		head5.o allp.o
 COPT_DSQL_PASS1=	NO
+COPT_DUDLEY_PARSE=	NO
 COPT_JRD_CVT=		NO
 COPT_QLI_HELP=		NO
 DSQL_P_OBJECTS=		dsql_p_objects

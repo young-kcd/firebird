@@ -25,28 +25,28 @@
 #define GPRE_GPRE_META_H
 
 gpre_fld*	MET_context_field(gpre_ctx*, const char*);
-bool		MET_database(gpre_dbb*, bool);
+bool		MET_database(DBB, bool);
 bool		MET_domain_lookup(gpre_req*, gpre_fld*, const char*);
 gpre_fld*	MET_field(gpre_rel*, const char*);
-gpre_nod*	MET_fields(gpre_ctx*);
-void		MET_fini(gpre_dbb*);
-const SCHAR*		MET_generator(const TEXT*, const gpre_dbb*);
+GPRE_NOD	MET_fields(gpre_ctx*);
+void		MET_fini(DBB);
+const SCHAR*		MET_generator(const TEXT*, DBB);
 bool		MET_get_column_default(const gpre_rel*, const TEXT*, TEXT*, USHORT);
-bool		MET_get_domain_default(gpre_dbb*, const TEXT*, TEXT*, USHORT);
+bool		MET_get_domain_default(DBB, const TEXT*, TEXT*, USHORT);
 USHORT		MET_get_dtype(USHORT, USHORT, USHORT*);
-gpre_lls*	MET_get_primary_key(gpre_dbb*, const TEXT*);
-gpre_prc*	MET_get_procedure(gpre_dbb*, const TEXT*, const TEXT*);
-gpre_rel*	MET_get_relation(gpre_dbb*, const TEXT*, const TEXT*);
-intlsym*	MET_get_text_subtype(SSHORT);
-udf*		MET_get_udf(gpre_dbb*, const TEXT*);
+gpre_lls*	MET_get_primary_key(DBB, const TEXT*);
+gpre_prc*	MET_get_procedure(DBB, const TEXT*, const TEXT*);
+gpre_rel*	MET_get_relation(DBB, const TEXT*, const TEXT*);
+INTLSYM		MET_get_text_subtype(SSHORT);
+udf*		MET_get_udf(DBB, const TEXT*);
 gpre_rel*	MET_get_view_relation(gpre_req*, const char*, const char*, USHORT);
-gpre_index*	MET_index(gpre_dbb*, TEXT*);
-void		MET_load_hash_table(gpre_dbb*);
+IND			MET_index(DBB, TEXT*);
+void		MET_load_hash_table(DBB);
 gpre_fld*	MET_make_field(const SCHAR*, SSHORT, SSHORT, bool);
-gpre_index*	MET_make_index(const SCHAR*);
+IND			MET_make_index(const SCHAR*);
 gpre_rel*	MET_make_relation(const SCHAR*);
 bool		MET_type(gpre_fld*, const TEXT*, SSHORT*);
-bool		MET_trigger_exists(gpre_dbb*, const TEXT*);
+bool		MET_trigger_exists(DBB, const TEXT*);
 
 #endif // GPRE_GPRE_META_H
 

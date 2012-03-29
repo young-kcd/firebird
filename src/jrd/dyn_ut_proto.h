@@ -25,20 +25,22 @@
 #ifndef JRD_DYN_UT_PROTO_H
 #define JRD_DYN_UT_PROTO_H
 
-void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::jrd_tra*,
+void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::Global*,
 			const Firebird::MetaName&, const Firebird::MetaName&);
-bool	DYN_UTIL_find_field_source(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
-			const Firebird::MetaName& view_name, USHORT context, const TEXT* local_name,
-			TEXT* output_field_name);
-void	DYN_UTIL_generate_generator_name(Jrd::thread_db*, Firebird::MetaName&);
-void	DYN_UTIL_generate_trigger_name(Jrd::thread_db*, Jrd::jrd_tra*, Firebird::MetaName&);
-void	DYN_UTIL_generate_index_name(Jrd::thread_db*, Jrd::jrd_tra*, Firebird::MetaName&, UCHAR);
-void	DYN_UTIL_generate_field_position(Jrd::thread_db*, const Firebird::MetaName&, SLONG*);
-void	DYN_UTIL_generate_field_name(Jrd::thread_db*, TEXT*);
-void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Firebird::MetaName&);
-void	DYN_UTIL_generate_constraint_name(Jrd::thread_db*, Firebird::MetaName&);
-void	DYN_UTIL_check_unique_name(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
-								   const Firebird::MetaName& object_name, int object_type);
-SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, SSHORT, const char*);
+bool	DYN_UTIL_get_prot(Jrd::thread_db*, Jrd::Global*, const SCHAR*,
+			const SCHAR*, Jrd::SecurityClass::flags_t*);
+void	DYN_UTIL_generate_trigger_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
+void	DYN_UTIL_generate_index_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&, UCHAR);
+void	DYN_UTIL_generate_field_position(Jrd::thread_db*, Jrd::Global*,
+			const Firebird::MetaName&, SLONG*);
+void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, TEXT*);
+void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
+void	DYN_UTIL_generate_constraint_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
+SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT,
+							   const SCHAR*, Jrd::jrd_req**);
+bool    DYN_UTIL_is_array(Jrd::thread_db*, Jrd::Global*, const Firebird::MetaName&);
+void	DYN_UTIL_copy_domain(Jrd::thread_db*, Jrd::Global* gbl,
+			const Firebird::MetaName&, const Firebird::MetaName&);
 
 #endif // JRD_DYN_UT_PROTO_H
+

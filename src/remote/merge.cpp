@@ -26,15 +26,9 @@
 #include "../jrd/ibase.h"
 #include "../remote/remote.h"
 #include "../remote/merge_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/classes/DbImplementation.h"
+#include "../jrd/gds_proto.h"
 
-inline void PUT_WORD(UCHAR*& ptr, USHORT value)
-{
-	*ptr++ = static_cast<UCHAR>(value);
-	*ptr++ = static_cast<UCHAR>(value >> 8);
-}
-
+#define PUT_WORD(ptr, value)	{*(ptr)++ = static_cast<UCHAR>(value); *(ptr)++ = static_cast<UCHAR>(value >> 8);}
 #define PUT(ptr, value)		*(ptr)++ = value;
 
 #ifdef NOT_USED_OR_REPLACED
@@ -50,8 +44,8 @@ USHORT MERGE_database_info(const UCHAR* in,
 							USHORT class_,
 							USHORT base_level,
 							const UCHAR* version,
-							const UCHAR* id)
-							//ULONG mask Was always zero
+							const UCHAR* id,
+							ULONG mask)
 {
 /**************************************
  *
@@ -62,7 +56,6 @@ USHORT MERGE_database_info(const UCHAR* in,
  * Functional description
  *	Merge server / remote interface / Y-valve information into
  *	database block.  Return the actual length of the packet.
- *	See also jrd/utl.cpp for decoding of this block.
  *
  **************************************/
 	SSHORT l;
@@ -70,17 +63,6 @@ USHORT MERGE_database_info(const UCHAR* in,
 
 	UCHAR* start = out;
 	const UCHAR* const end = out + out_length;
-
-	UCHAR mergeLevel = 0;
-	for (const UCHAR* getMergeLevel = in; *getMergeLevel != isc_info_end;
-		 getMergeLevel += (3 + gds__vax_integer(getMergeLevel + 1, 2)))
-	{
-		if (*getMergeLevel == isc_info_implementation)
-		{
-			mergeLevel = getMergeLevel[3];
-			break;
-		}
-	}
 
 	for (;;)
 		switch (*out++ = *in++)
@@ -116,14 +98,6 @@ USHORT MERGE_database_info(const UCHAR* in,
 			PUT(out, (UCHAR) class_);
 			break;
 
-		case fb_info_implementation:
-			if (merge_setup(&in, &out, end, 6))
-				return 0;
-			Firebird::DbImplementation::current.stuff(&out);
-			PUT(out, (UCHAR) class_);
-			PUT(out, mergeLevel);
-			break;
-
 		case isc_info_base_level:
 			if (merge_setup(&in, &out, end, 1))
 				return 0;
@@ -134,8 +108,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 			{
 				USHORT length = (USHORT) gds__vax_integer(in, 2);
 				in += 2;
-				if (out + length + 2 >= end)
-				{
+				if (out + length + 2 >= end) {
 					out[-1] = isc_info_truncated;
 					return 0;
 				}
@@ -185,8 +158,10 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 }
 #endif
 
-static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const end,
-							  USHORT delta_length)
+static ISC_STATUS merge_setup(
+						  const UCHAR** in,
+						  UCHAR** out, const UCHAR* const end,
+						  USHORT delta_length)
 {
 /**************************************
  *
@@ -203,8 +178,7 @@ static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const 
 	USHORT length = (USHORT) gds__vax_integer(*in, 2);
 	const USHORT new_length = length + delta_length;
 
-	if (*out + new_length + 2 >= end)
-	{
+	if (*out + new_length + 2 >= end) {
 		(*out)[-1] = isc_info_truncated;
 		return FB_FAILURE;
 	}
@@ -214,7 +188,7 @@ static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const 
 	PUT_WORD(*out, new_length);
 	PUT(*out, (UCHAR) count);
 
-	// Copy data portion of information sans original count
+/* Copy data portion of information sans original count */
 
 	if (--length)
 	{
@@ -225,3 +199,4 @@ static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const 
 
 	return FB_SUCCESS;
 }
+

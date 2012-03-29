@@ -36,7 +36,7 @@ C2.- Define (type-safe?) unions for nod_arg and lls_object.
 Another solution exists.
 
 C3.- Modify gds__msg_format and derivated functions to use arglist instead of TEXT arguments. This change will also remove a lot of casts.
-Done with fb_msg_format in MsgPrint.h.
+Not achieved, probably it needs a new alternative function.
 
 C4.- Remove casts.
 Partially done.

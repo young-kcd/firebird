@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-// Note: all routines have cousins in jrd/intl.cpp
+ /* Note: all routines have cousins in jrd/intl.c */
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
@@ -31,12 +31,12 @@
 CHARSET_ENTRY(CS_unicode_fss)
 {
 	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = "UNICODE_FSS";
+	csptr->charset_name = (const ASCII*) "UNICODE_FSS";
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS | CHARSET_ASCII_BASED;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 3;
 	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*) " ";	// 0x20
+	csptr->charset_space_character = (const BYTE*) " ";	/* 0x20 */
 	csptr->charset_fn_well_formed = NULL;
 	CV_convert_init(&csptr->charset_to_unicode,
 					CS_UTFFSS_fss_to_unicode_cc,

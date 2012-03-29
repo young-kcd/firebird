@@ -18,6 +18,8 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
+
 #include "cs_w1254.h"
 
 /*
@@ -46,7 +48,7 @@ No errors
 #include "../intl/cs_iso8859_1.h"
 */
 
-/*
+/* 
 -- Multibyte character sets --
 #include "../intl/cs_big5.h"
 #include "../intl/cs_gb2312.h"

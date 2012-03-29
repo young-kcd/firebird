@@ -28,14 +28,13 @@
 #include "../intl/ldcommon.h"
 #include "cs_icu.h"
 #include "cv_icu.h"
-#include <unicode/ucnv.h>
-#include "../common/unicode_util.h"
+#include "unicode/ucnv.h"
 
 
 static void charset_destroy(charset* cs)
 {
-	delete[] const_cast<ASCII*>(cs->charset_name);
-	delete[] const_cast<BYTE*>(cs->charset_space_character);
+	delete [] const_cast<ASCII*>(cs->charset_name);
+	delete [] const_cast<BYTE*>(cs->charset_space_character);
 }
 
 
@@ -43,8 +42,7 @@ bool CSICU_charset_init(charset* cs,
 						const ASCII* charSetName)
 {
 	UErrorCode status = U_ZERO_ERROR;
-	Jrd::UnicodeUtil::ConversionICU& cIcu(Jrd::UnicodeUtil::getConversionICU());
-	UConverter* conv = cIcu.ucnv_open(charSetName, &status);
+	UConverter* conv = ucnv_open(charSetName, &status);
 
 	if (U_SUCCESS(status))
 	{
@@ -55,8 +53,8 @@ bool CSICU_charset_init(charset* cs,
 
 		cs->charset_version = CHARSET_VERSION_1;
 		cs->charset_flags |= CHARSET_ASCII_BASED;
-		cs->charset_min_bytes_per_char = cIcu.ucnv_getMinCharSize(conv);
-		cs->charset_max_bytes_per_char = cIcu.ucnv_getMaxCharSize(conv);
+		cs->charset_min_bytes_per_char = ucnv_getMinCharSize(conv);
+		cs->charset_max_bytes_per_char = ucnv_getMaxCharSize(conv);
 		cs->charset_fn_destroy = charset_destroy;
 		cs->charset_fn_well_formed = NULL;
 
@@ -64,11 +62,11 @@ bool CSICU_charset_init(charset* cs,
 
 		BYTE* p2 = new BYTE[cs->charset_max_bytes_per_char];
 		cs->charset_space_character = p2;
-		cs->charset_space_length = cIcu.ucnv_fromUChars(conv, reinterpret_cast<char*>(p2),
+		cs->charset_space_length = ucnv_fromUChars(conv, reinterpret_cast<char*>(p2),
 			cs->charset_max_bytes_per_char, &unicodeSpace, 1, &status);
 		fb_assert(U_SUCCESS(status));
 
-		cIcu.ucnv_close(conv);
+		ucnv_close(conv);
 
 		CVICU_convert_init(cs);
 	}

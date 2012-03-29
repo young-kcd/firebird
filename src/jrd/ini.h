@@ -25,29 +25,28 @@
    as well as by ini.epp in JRD.  Make sure that any
    changes are compatible in both places. */
 
-#include "../common/intlobj_new.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/intl.h"
 #include "../intl/country_codes.h"
 #include "../intl/charsets.h"
 #include "../jrd/obj.h"
 #include "../jrd/dflt.h"
-#include "../jrd/constants.h"
 
 //******************************
 // names.h
 //******************************
 
-// Define name ids
+/* Define name ids */
 
 #define NAME(name, id) id,
 
-enum name_ids { nam_MIN,
+typedef enum nam_i { nam_MIN,
 #include "../jrd/names.h"
-nam_MAX};
+nam_MAX} name_ids;
 
 #undef NAME
 
-// Define name strings
+/* Define name strings */
 
 #define NAME(name, id) name,
 
@@ -64,10 +63,10 @@ static const TEXT* const names[] =
 const USHORT BLOB_SIZE		= 8;
 const USHORT TIMESTAMP_SIZE	= 8;
 
-// Pick up global ids
+/* Pick up global ids */
 
 
-#define FIELD(type, name, dtype, length, sub_type, dflt_blr, nullable)	type,
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	type,
 enum gflds {
 #include "../jrd/fields.h"
 gfld_MAX};
@@ -75,31 +74,31 @@ gfld_MAX};
 
 typedef gflds GFLDS;
 
-// Pick up actual global fields
+/* Pick up actual global fields */
 
 #ifndef GPRE
-#define FIELD(type, name, dtype, length, sub_type, dflt_blr, nullable)	\
-	{ (int) type, (int) name, dtype, length, sub_type, dflt_blr, sizeof(dflt_blr), nullable },
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
+	{ (int) type, (int) name, dtype, length, sub_type, ods, dflt_blr, sizeof(dflt_blr) },
 #else
-#define FIELD(type, name, dtype, length, sub_type, dflt_blr, nullable)	\
-	{ (int) type, (int) name, dtype, length, sub_type, NULL, 0, true },
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
+	{ (int) type, (int) name, dtype, length, sub_type, ods, NULL, 0 },
 #endif
 
 struct gfld
 {
-	int				gfld_type;
-	int				gfld_name;
-	UCHAR			gfld_dtype;
-	USHORT			gfld_length;
-	SSHORT			gfld_sub_type;
-	const UCHAR*	gfld_dflt_blr;
-	USHORT			gfld_dflt_len;
-	bool			gfld_nullable;
+	int gfld_type;
+	int gfld_name;
+	UCHAR gfld_dtype;
+	USHORT gfld_length;
+	UCHAR gfld_sub_type;	// mismatch; dsc2.h uses SSHORT.
+	UCHAR gfld_minor;
+	const UCHAR *gfld_dflt_blr;
+	USHORT gfld_dflt_len;
 };
 
 static const struct gfld gfields[] = {
 #include "../jrd/fields.h"
-	{ 0, 0, dtype_unknown, 0, 0, NULL, 0, false }
+	{ 0, 0, dtype_unknown, 0, 0, 0, NULL, 0 }
 };
 #undef FIELD
 
@@ -107,10 +106,10 @@ static const struct gfld gfields[] = {
 // relations.h
 //******************************
 
-// Pick up relation ids
+/* Pick up relation ids */
 
 #define RELATION(name, id, ods, type) id,
-#define FIELD(symbol, name, id, update, ods)
+#define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
 enum rids {
 #include "../jrd/relations.h"
@@ -121,11 +120,11 @@ rel_MAX};
 
 typedef rids RIDS;
 
-// Pick up relations themselves
+/* Pick up relations themselves */
 
 #define RELATION(name, id, ods, type)	(int) name, (int) id, ods, type,
-#define FIELD(symbol, name, id, update, ods)\
-				(int) name, (int) id, update, (int) ods,
+#define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)\
+				(int) name, (int) id, update, ods, (int) upd_id, upd_ods,
 #define END_RELATION		0,
 
 const int RFLD_R_NAME	= 0;
@@ -137,8 +136,10 @@ const int RFLD_RPT		= 4;
 const int RFLD_F_NAME	= 0;
 const int RFLD_F_ID		= 1;
 const int RFLD_F_UPDATE	= 2;
-const int RFLD_F_ODS	= 3;
-const int RFLD_F_LENGTH	= 4;
+const int RFLD_F_MINOR	= 3;
+const int RFLD_F_UPD_ID	= 4;
+const int RFLD_F_UPD_MINOR	= 5;
+const int RFLD_F_LENGTH	= 6;
 
 static const int relfields[] =
 {
@@ -151,10 +152,10 @@ static const int relfields[] =
 #undef END_RELATION
 
 //******************************
-// types.h
+// types.h and intlnames.h
 //******************************
 
-// obtain field types
+/* obtain field types */
 
 struct rtyp {
 	const TEXT* rtyp_name;
@@ -164,9 +165,76 @@ struct rtyp {
 
 #define TYPE(text, type, field)	{ text, type, field },
 
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
+				{name, cs_id, nam_charset_name},
+#define CSALIAS(name, cs_id)	{name, cs_id, nam_charset_name},
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr, specific_attr)
+#define END_CHARSET
+
 static const rtyp types[] = {
 #include "../jrd/types.h"
+#include "../jrd/intlnames.h"
 	{NULL, 0, 0}
 };
 
 #undef TYPE
+#undef CHARSET
+#undef CSALIAS
+#undef COLLATION
+#undef END_CHARSET
+
+
+#ifndef GPRE
+/* obtain international names */
+
+struct initcharset {
+	const UCHAR* init_charset_name;
+	SSHORT init_charset_id;
+	USHORT init_charset_bytes_per_char;
+};
+
+typedef initcharset CS_TYPE;
+
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
+	{ (const UCHAR *) (name), (cs_id), (bytes)},
+#define CSALIAS(name, cs_id)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr, specific_attr)
+#define END_CHARSET
+
+static const CS_TYPE cs_types[] = {
+#include "../jrd/intlnames.h"
+	{NULL, 0, 0}
+};
+#undef CHARSET
+#undef CSALIAS
+#undef COLLATION
+#undef END_CHARSET
+
+struct initcollation {
+	const UCHAR *init_collation_name;
+	const UCHAR *init_collation_base_name;
+	SSHORT init_collation_charset;
+	SSHORT init_collation_id;
+	USHORT init_collation_attributes;
+	const char* init_collation_specific_attributes;
+};
+
+typedef initcollation COLL_TYPE;
+
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
+	{ (const UCHAR *) (name), NULL, (cs_id), (coll_id), (attr), NULL },
+#define CSALIAS(name, cs_id)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr, specific_attr) \
+	{ (const UCHAR *) (name), (const UCHAR *) (base_name), (cs_id), (coll_id), (attr), (specific_attr) },
+#define END_CHARSET
+
+static const COLL_TYPE coll_types[] = {
+#include "../jrd/intlnames.h"
+	{NULL, NULL, 0, 0, 0, NULL}
+};
+#undef CHARSET
+#undef CSALIAS
+#undef COLLATION
+#undef END_CHARSET
+#endif
+

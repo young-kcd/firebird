@@ -32,20 +32,25 @@
 namespace Jrd {
 	class jrd_req;
 	class jrd_rel;
+	class jrd_nod;
+	class RecordSelExpr;
 	class RecordSource;
 	struct index_desc;
 	class CompilerScratch;
 	class OptimizerBlk;
-	class SortedStream;
-	class SortNode;
-	class MapNode;
 }
 
-Firebird::string OPT_get_plan(Jrd::thread_db*, const Jrd::jrd_req*, bool);
+bool OPT_access_path(const Jrd::jrd_req*, SCHAR*, SSHORT, USHORT*);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
-	Jrd::RseNode*, Jrd::BoolExprNodeStack* const);
-void OPT_gen_aggregate_distincts(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::MapNode*);
-Jrd::SortedStream* OPT_gen_sort(Jrd::thread_db*, Jrd::CompilerScratch*, const UCHAR*,
-	const UCHAR*, Jrd::RecordSource*, Jrd::SortNode*, bool);
+							   Jrd::RecordSelExpr*, Jrd::NodeStack*);
+							   
+// Begin only exported for VMS
+Jrd::jrd_nod* OPT_make_dbkey(Jrd::OptimizerBlk*, Jrd::jrd_nod*,
+								  USHORT);
+Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, Jrd::OptimizerBlk*, Jrd::jrd_rel*,
+								  Jrd::index_desc*);
+int OPT_match_index(Jrd::OptimizerBlk*, USHORT, Jrd::index_desc*);
+// End only exported for VMS
 
 #endif // JRD_OPT_PROTO_H
+

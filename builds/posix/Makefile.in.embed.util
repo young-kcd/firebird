@@ -1,0 +1,217 @@
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# You may obtain a copy of the Licence at
+# http://www.gnu.org/licences/lgpl.html
+# 
+# As a special exception this file can also be included in modules
+# with other source code as long as that source code has been 
+# released under an Open Source Initiative certificed licence.  
+# More information about OSI certification can be found at: 
+# http://www.opensource.org 
+# 
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public Licence for more details.
+# 
+# This module was created by members of the firebird development 
+# team.  All individual contributions remain the Copyright (C) of 
+# those individuals and all rights are reserved.  Contributors to 
+# this file are either listed below or can be obtained from a CVS 
+# history command.
+#
+#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#
+#  Contributor(s):
+# 
+#
+#
+ROOT=..
+SERVICES_THREADED=@service_thread_CS@
+ifeq ($(SERVICES_THREADED),true)
+    ObjModuleType=superclient
+    CFLAGS+=-DSTD_UTIL -DSUPERCLIENT
+else
+    ObjModuleType=std
+endif
+
+include     $(ROOT)/gen/make.defaults
+include     $(ROOT)/gen/make.platform
+include     $(ROOT)/gen/make.rules
+include     $(ROOT)/gen/make.shared.variables
+
+
+@SET_MAKE@
+
+
+LOCKPRINT_Other_Sources += jrd/isc_ipc.cpp jrd/isc_sync.cpp jrd/isc.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
+LOCKPRINT_Files= print.cpp
+LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
+LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources))))
+
+
+NBACKUP_Other_Sources = jrd/db_alias.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
+NBACKUP_Files= nbackup.cpp
+NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files)) $(NBACKUP_Other_Sources)
+NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources))))
+
+
+CREATEDB_Files= create_db.cpp
+CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
+CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
+
+
+DROP_Other_Sources += common/utils.cpp lock/lock.cpp jrd/isc_ipc.cpp jrd/isc_sync.cpp jrd/isc.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+
+DROP_Files= drop.cpp
+DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
+DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
+
+
+GSEC_Other_Sources = jrd/enc.cpp jrd/sha.cpp jrd/guid.cpp \
+jrd/isc_file.cpp common/config/config.cpp common/config/config_file.cpp \
+common/config/dir_list.cpp $(OS_SPECIFIC_Sources)
+
+GSEC_Files =  gsec.cpp security.cpp call_service.cpp
+GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
+GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
+
+
+GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp jrd/ods.cpp \
+jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
+
+GSTAT_Files =  dba.epp ppg.cpp
+GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
+GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
+
+
+FBSVCMGR_Files= fbsvcmgr.cpp
+FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
+common/fb_exception.cpp common/utils.cpp
+
+FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
+FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
+$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects)
+
+
+IBGUARD_Files =  guard.cpp util.cpp
+IBGUARD_Sources = $(addprefix utilities/guard/, $(IBGUARD_Files))
+IBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBGUARD_Sources))))
+
+
+IBMGR_Files =  	ibmgr.cpp srvrmgr.cpp
+IBMGR_Sources = $(addprefix utilities/ibmgr/, $(IBMGR_Files))
+IBMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBMGR_Sources))))
+
+
+REBUILD_Files =  rebuild.cpp rstore.epp rmet.epp 
+REBUILD_Sources = $(addprefix utilities/rebuild/, $(REBUILD_Files))
+REBUILD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REBUILD_Sources))))
+
+
+RELAY_Files =  relay.cpp
+RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
+RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
+
+ifeq ($(PLATFORM),DARWIN)
+LINK_LIBS+=$(ICU_LIBS)
+endif
+
+AllObjects = $(CREATEDB_Object) $(DROP_Object) $(FBSVCMGR_Objects) \
+			 $(GSEC_Objects) $(GSTAT_Object) $(IBGUARD_Objects) \
+			 $(IBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(CLUMPLETS_Objects)
+
+AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
+			 $(GSEC_Objects) $(GSTAT_Objects) $(CLUMPLETS_Objects)
+
+
+Dependencies = $(AllObjects:.o=.d) 
+
+
+.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin nbackup fb_lock_print fbsvcmgr
+
+all: $(EMBED_UTIL_TARGETS)
+
+
+# it's important to note here that create_db is linked against the static
+# 'boot' libraries rather than the later embedded shared library.  The
+# other utilities are released but create_db is used in construction.
+# MOD 29-July-2002
+
+create_db: $(CREATE_DB)
+
+$(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(COMMON_Objects)
+	$(STATICEXE_LINK) $(LINK_OPTS) $(CREATEDB_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+
+
+nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
+
+$(NBACKUP):	$(NBACKUP_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
+
+$(LOCKPRINT):	$(LOCKPRINT_Objects) $(COMMON_Objects)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+gstat : $(LIBFBEMBED_SO) $(GSTAT)
+
+$(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects) $(FBCONFIG_Objects)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+gds_drop: $(GDS_DROP)
+
+$(GDS_DROP):	$(DROP_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+fbsvcmgr: $(FBSVCMGR)
+
+$(FBSVCMGR):	$(FBSVCMGR_Objects) $(LIBFBEMBED_SO)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+gds_relay: $(GDS_RELAY)
+
+$(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(RELAY_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+gsec: $(GSEC)
+
+$(GSEC):	$(GSEC_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+ibguard: $(IBGUARD)
+
+$(IBGUARD):	$(IBGUARD_Objects) $(LIBFBEMBED_SO)  
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+ibmgr_bin: $(IBMGR_BIN)
+
+$(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)  
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(IBMGR_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+# This one needs a bit of work.
+
+rebuild: $(GDS_REBUILD)
+
+$(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBEMBED_SO)  
+	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $(REBUILD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+include $(ROOT)/gen/make.shared.targets
+
+-include $(Dependencies)

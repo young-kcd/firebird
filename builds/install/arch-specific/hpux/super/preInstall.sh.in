@@ -54,7 +54,7 @@
 
 
 
-	    checkString=`ps -ef | egrep "(fb_inet_server|fb_smp_server)" |grep -v grep`
+	    checkString=`ps -ef | egrep "(fb_inet_server)" |grep -v grep`
 
 	    if [ ! -z "$checkString" ] 
 	      then
@@ -194,6 +194,8 @@
 
 #== Main Pre =================================================================
 
+	    FBRootDir=@prefix@
+	    FBBin=$FBRootDir/bin
 	    ArchiveDateTag=`date +"%Y%m%d_%H%M"`
 	    ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar"
 
