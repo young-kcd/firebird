@@ -1,3 +1,7 @@
+ 2012-03-28 16:45  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
  2012-03-27 07:08  dimitr 
    M src/common/classes/TempFile.cpp
    M src/jrd/os/win32/winnt.cpp
