@@ -263,8 +263,11 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 {
 	fb_assert(!m_transaction);
 
+	jrd_tra* localTran = tdbb->getTransaction();
+	fb_assert(localTran);
+
 	if (m_scope == traCommon && m_IntConnection.isCurrent())
-		m_transaction = tdbb->getTransaction()->getInterface();
+		m_transaction = localTran->getInterface();
 	else
 	{
 		JAttachment* att = m_IntConnection.getJrdAtt();
@@ -272,6 +275,8 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 		EngineCallbackGuard guard(tdbb, *this);
 		IntStatus s(status);
 		m_transaction = att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer());
+
+		m_transaction->getHandle()->tra_callback_count = localTran->tra_callback_count;
 	}
 }
 
