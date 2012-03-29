@@ -2706,9 +2706,11 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 #endif
 
 	// check for warnings
-	if (tdbb->tdbb_status_vector[2] == isc_arg_warning) {
+	if (tdbb->tdbb_status_vector[2] == isc_arg_warning) 
+	{
 		// save a status vector
 		memcpy(local_status, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
+		fb_utils::init_status(tdbb->tdbb_status_vector);
 	}
 
 	ISC_STATUS status = FB_SUCCESS;
