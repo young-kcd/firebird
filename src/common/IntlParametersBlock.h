@@ -39,6 +39,7 @@ class IntlParametersBlock
 {
 public:
 	enum TagType { TAG_SKIP, TAG_STRING, TAG_COMMAND_LINE };
+	typedef void ProcessString(string& s);
 
 	virtual TagType checkTag(UCHAR tag) = 0;
 
@@ -46,7 +47,6 @@ public:
 	void fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag);
 
 private:
-	typedef void ProcessString(string& s);
 	void processParametersBlock(ProcessString* processString, ClumpletWriter& pb);
 };
 

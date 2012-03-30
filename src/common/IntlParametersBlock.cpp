@@ -39,8 +39,6 @@ using namespace Firebird;
 namespace
 {
 
-typedef void ProcessString(string& s);
-
 void strToUtf8(string& s)
 {
 	ISC_systemToUtf8(s);
@@ -52,7 +50,7 @@ void strFromUtf8(string& s)
 	ISC_utf8ToSystem(s);
 }
 
-void processCommandLine(string& par, ProcessString* processString)
+void processCommandLine(string& par, IntlParametersBlock::ProcessString* processString)
 {
 	bool flagIn = false;
 	string current, result;
