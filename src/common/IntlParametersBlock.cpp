@@ -32,6 +32,75 @@
 #include "consts_pub.h"
 #include "../common/isc_f_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/UtilSvc.h"
+
+using namespace Firebird;
+
+namespace
+{
+
+typedef void ProcessString(string& s);
+
+void strToUtf8(string& s)
+{
+	ISC_systemToUtf8(s);
+}
+
+void strFromUtf8(string& s)
+{
+	ISC_unescape(s);
+	ISC_utf8ToSystem(s);
+}
+
+void processCommandLine(string& par, ProcessString* processString)
+{
+	bool flagIn = false;
+	string current, result;
+	for (const char* s = par.begin(); s < par.end(); ++s)
+	{
+		if (s[0] == SVC_TRMNTR)
+		{
+			if (!flagIn)
+			{
+				flagIn = true;
+			}
+			else if (s[1] == SVC_TRMNTR)
+			{
+				current += SVC_TRMNTR;
+				++s;
+			}
+			else
+			{
+				flagIn = false;
+				processString(current);
+				if (result.hasData())
+				{
+					result += ' ';
+				}
+				result += current;
+				current = "";
+			}
+		}
+		else if (s[0] != ' ' || flagIn || current.hasData())
+		{
+			current += s[0];
+		}
+	}
+
+	if (current.hasData())
+	{
+		processString(current);
+		if (result.hasData())
+		{
+			result += ' ';
+		}
+		result += current;
+	}
+
+	par = result;
+}
+
+}
 
 namespace Firebird
 {
@@ -43,18 +112,7 @@ void IntlParametersBlock::toUtf8(ClumpletWriter& pb, UCHAR utf8Tag)
 		pb.insertTag(utf8Tag);
 	}
 
-	for (pb.rewind(); !pb.isEof(); pb.moveNext())
-	{
-		UCHAR tag = pb.getClumpTag();
-		if (checkTag(tag))
-		{
-			string s;
-			pb.getString(s);
-			ISC_systemToUtf8(s);
-			pb.deleteClumplet();
-			pb.insertString(tag, s);
-		}
-	}
+	processParametersBlock(strToUtf8, pb);
 }
 
 void IntlParametersBlock::fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag)
@@ -64,23 +122,41 @@ void IntlParametersBlock::fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag)
 		pb.deleteWithTag(utf8Tag);
 	}
 
+	processParametersBlock(strFromUtf8, pb);
+}
+
+
+void IntlParametersBlock::processParametersBlock(ProcessString* processString, ClumpletWriter& pb)
+{
 	for (pb.rewind(); !pb.isEof(); pb.moveNext())
 	{
 		UCHAR tag = pb.getClumpTag();
-		if (checkTag(tag))
+		string s;
+
+		switch (checkTag(tag))
 		{
-			string s;
+		case TAG_SKIP:
+			break;
+
+		case TAG_STRING:
 			pb.getString(s);
-			ISC_unescape(s);
-			ISC_utf8ToSystem(s);
+			processString(s);
 			pb.deleteClumplet();
 			pb.insertString(tag, s);
+			break;
+
+		case TAG_COMMAND_LINE:
+			pb.getString(s);
+			processCommandLine(s, processString);
+			pb.deleteClumplet();
+			pb.insertString(tag, s);
+			break;
 		}
 	}
 }
 
 
-bool IntlDpb::checkTag(UCHAR tag)
+IntlParametersBlock::TagType IntlDpb::checkTag(UCHAR tag)
 {
 	switch (tag)
 	{
@@ -92,14 +168,14 @@ bool IntlDpb::checkTag(UCHAR tag)
 	case isc_dpb_working_directory:
 	case isc_dpb_set_db_charset:
 	case isc_dpb_process_name:
-		return true;
+		return TAG_STRING;
 	}
 
-	return false;
+	return TAG_SKIP;
 }
 
 
-bool IntlSpb::checkTag(UCHAR tag)
+IntlParametersBlock::TagType IntlSpb::checkTag(UCHAR tag)
 {
 	switch (tag)
 	{
@@ -109,15 +185,17 @@ bool IntlSpb::checkTag(UCHAR tag)
 	case isc_spb_trusted_auth:
 	case isc_spb_trusted_role:
 	case isc_spb_process_name:
+		return TAG_STRING;
+
 	case isc_spb_command_line:
-		return true;
+		return TAG_COMMAND_LINE;
 	}
 
-	return false;
+	return TAG_SKIP;
 }
 
 
-bool IntlSpbStart::checkTag(UCHAR tag)
+IntlParametersBlock::TagType IntlSpbStart::checkTag(UCHAR tag)
 {
 	switch (mode)
 	{
@@ -125,7 +203,7 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 		switch (tag)
 		{
 		case isc_spb_dbname:
-			return true;
+			return TAG_STRING;
 
 		case isc_action_svc_backup:
 		case isc_action_svc_restore:
@@ -149,7 +227,7 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 		switch (tag)
 		{
 		case isc_spb_bkp_file:
-			return true;
+			return TAG_STRING;
 		}
 		break;
 
@@ -157,7 +235,7 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 		switch (tag)
 		{
 		case isc_spb_tra_db_path:
-			return true;
+			return TAG_STRING;
 		}
 		break;
 
@@ -174,7 +252,7 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 		case isc_spb_sec_firstname:
 		case isc_spb_sec_middlename:
 		case isc_spb_sec_lastname:
-			return true;
+			return TAG_STRING;
 		}
 		break;
 
@@ -183,7 +261,7 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 		switch (tag)
 		{
 		case isc_spb_nbk_file:
-			return true;
+			return TAG_STRING;
 		}
 		break;
 
@@ -192,7 +270,7 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 		{
 		case isc_spb_trc_name:
 		case isc_spb_trc_cfg:
-			return true;
+			return TAG_STRING;
 		}
 		break;
 
@@ -200,12 +278,12 @@ bool IntlSpbStart::checkTag(UCHAR tag)
 		switch (tag)
 		{
 		case isc_spb_command_line:
-			return true;
+			return TAG_COMMAND_LINE;
 		}
 		break;
 	}
 
-	return false;
+	return TAG_SKIP;
 }
 
 }

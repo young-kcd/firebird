@@ -38,21 +38,28 @@ class ClumpletWriter;
 class IntlParametersBlock
 {
 public:
-	virtual bool checkTag(UCHAR tag) = 0;
+	enum TagType { TAG_SKIP, TAG_STRING, TAG_COMMAND_LINE };
+
+	virtual TagType checkTag(UCHAR tag) = 0;
+
 	void toUtf8(ClumpletWriter& pb, UCHAR utf8Tag);
 	void fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag);
+
+private:
+	typedef void ProcessString(string& s);
+	void processParametersBlock(ProcessString* processString, ClumpletWriter& pb);
 };
 
 class IntlDpb : public IntlParametersBlock
 {
 public:
-	bool checkTag(UCHAR tag);
+	TagType checkTag(UCHAR tag);
 };
 
 class IntlSpb : public IntlParametersBlock
 {
 public:
-	bool checkTag(UCHAR tag);
+	TagType checkTag(UCHAR tag);
 };
 
 class IntlSpbStart : public IntlParametersBlock
@@ -62,7 +69,7 @@ public:
 		: mode(0)
 	{ }
 
-	bool checkTag(UCHAR tag);
+	TagType checkTag(UCHAR tag);
 
 private:
 	UCHAR mode;
