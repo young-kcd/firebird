@@ -69,6 +69,21 @@ public:
 	}
 };
 
+
+template <typename T>
+class SimpleDispose
+{
+public:
+	static void clear(T* ptr)
+	{
+		if (ptr)
+		{
+			ptr->dispose();
+		}
+	}
+};
+
+
 template <typename Where, typename Clear = SimpleDelete<Where> >
 class AutoPtr
 {

@@ -44,17 +44,7 @@ namespace Firebird {
 
 // If you need interface on stack, use template AutoPtr<YourInterface, AutoDisposable>
 // as second parameter to store it.
-class AutoDisposable
-{
-public:
-	static void clear(IDisposable* ptr)
-	{
-		if (ptr)
-		{
-			ptr->dispose();
-		}
-	}
-};
+typedef SimpleDispose<IDisposable> AutoDisposable;
 
 
 // Implement standard interface and plugin functions
