@@ -56,6 +56,19 @@ public:
 	}
 };
 
+template <typename T>
+class SimpleRelease
+{
+public:
+	static void clear(T* ptr)
+	{
+		if (ptr) 
+		{
+			ptr->release();
+		}
+	}
+};
+
 template <typename Where, typename Clear = SimpleDelete<Where> >
 class AutoPtr
 {

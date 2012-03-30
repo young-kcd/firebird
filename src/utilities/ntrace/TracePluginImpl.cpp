@@ -91,7 +91,6 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	services(getDefaultMemoryPool()),
 	unicodeCollation(*getDefaultMemoryPool())
 {
-	MasterInterfacePtr()->upgradeInterface(logWriter, FB_TRACE_LOG_WRITER_VERSION, upInfo);
 	const char* ses_name = initInfo->getTraceSessionName();
 	session_name = ses_name && *ses_name ? ses_name : " ";
 
@@ -110,6 +109,11 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 		}
 
 		logWriter = new PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
+		logWriter->addRef();
+	}
+	else
+	{
+		MasterInterfacePtr()->upgradeInterface(logWriter, FB_TRACE_LOG_WRITER_VERSION, upInfo);
 	}
 
 	Jrd::TextType* textType = unicodeCollation.getTextType();

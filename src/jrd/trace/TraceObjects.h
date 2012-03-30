@@ -358,7 +358,6 @@ public:
 		if (m_attachment && !m_attachment->att_filename.empty()) {
 			m_filename = m_attachment->att_filename.c_str();
 		}
-		m_logWriter = NULL;
 	}
 
 	// TraceInitInfo implementation
@@ -381,7 +380,7 @@ public:
 
 private:
 	const Firebird::TraceSession& m_session;
-	TraceLogWriter* m_logWriter;
+	Firebird::RefPtr<TraceLogWriter> m_logWriter;
 	TraceConnectionImpl m_trace_conn;
 	const char* m_filename;
 	const Attachment* const m_attachment;

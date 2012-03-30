@@ -88,7 +88,9 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 			return NULL; // Plugin is not needed, no error happened.
 		}
 
-		TraceLogWriter* logWriter = initInfo->getLogWriter();
+		Firebird::AutoPtr<TraceLogWriter, Firebird::SimpleRelease<TraceLogWriter> > 
+			logWriter(initInfo->getLogWriter());
+
 		if (logWriter) {
 			config.log_filename = "";
 		}

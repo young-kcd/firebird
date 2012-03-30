@@ -160,6 +160,9 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 												   int desiredVersion,
 												   struct UpgradeInfo* upgradeInfo)
 {
+	if (!toUpgrade)
+		return 0;
+
 	int existingVersion = toUpgrade->getVersion();
 
 	if (existingVersion >= desiredVersion)

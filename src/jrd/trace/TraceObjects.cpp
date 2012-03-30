@@ -476,7 +476,10 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 	{
 		m_logWriter = new TraceLogWriterImpl(m_session);
 	}
-	m_logWriter->addRef();
+	if (m_logWriter)
+	{
+		m_logWriter->addRef();
+	}
 	return m_logWriter;
 }
 
