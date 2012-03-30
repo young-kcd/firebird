@@ -1,3 +1,15 @@
+ 2012-03-29 15:55  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Fixed CORE-3759: Problem with fetch on DDL statement in the remote protocol
+
+ 2012-03-29 13:56  hvlad 
+   M src/dsql/dsql.cpp
+Fixed bug CORE-3801 : Warnings could be put twice in status-vector
+
+ 2012-03-29 13:30  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+Fixed bug CORE-3799 : with caller privileges option don't work with autonomous transaction option
+
  2012-03-27 13:16  alexpeshkoff 
    M configure.in
    M src/common/classes/semaphore.cpp
