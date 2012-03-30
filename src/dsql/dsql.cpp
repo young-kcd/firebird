@@ -1536,6 +1536,14 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	ULONG textLength, const TEXT* text, USHORT clientDialect, USHORT parserVersion,
 	bool isInternalRequest)
 {
+	if (text && textLength == 0)
+	{
+		size_t sqlLength = strlen(text);
+		if (sqlLength > MAX_USHORT)
+			sqlLength = MAX_USHORT;
+		textLength = static_cast<USHORT>(sqlLength);
+	}
+
 	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text);
 
 	if (clientDialect > SQL_DIALECT_CURRENT)
@@ -1544,13 +1552,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 				  Arg::Gds(isc_wish_list));
 	}
 
-	if (text && textLength == 0)
-	{
-		size_t sqlLength = strlen(text);
-		if (sqlLength > MAX_USHORT)
-			sqlLength = MAX_USHORT;
-		textLength = static_cast<USHORT>(sqlLength);
-	}
 
 	if (!text || textLength == 0)
 	{
@@ -1645,8 +1646,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		statement->setType(DsqlCompiledStatement::TYPE_SELECT);
 
-		if (request->req_traced)
-			trace.setStatement(request);
+		request->req_traced = true;
+		trace.setStatement(request);
 
 		ntrace_result_t traceResult = res_successful;
 		try
@@ -1656,6 +1657,20 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			request->statement = scratch->getStatement();
 
 			request->dsqlPass(tdbb, scratch, &traceResult);
+
+			// don't trace preudo-statements (without requests associated)
+			switch (statement->getType())
+			{
+			case DsqlCompiledStatement::TYPE_COMMIT:
+			case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
+			case DsqlCompiledStatement::TYPE_ROLLBACK:
+			case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
+			case DsqlCompiledStatement::TYPE_START_TRANS:
+				request->req_traced = false;
+				break;
+			default:
+				request->req_traced = true;
+			}
 		}
 		catch (const Exception&)
 		{
@@ -1748,6 +1763,7 @@ dsql_req::dsql_req(MemoryPool& pool)
 	  req_msg_buffers(req_pool),
 	  req_cursor(req_pool),
 	  req_user_descs(req_pool),
+	  req_traced(false),
 	  req_interface(NULL)
 {
 }
