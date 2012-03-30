@@ -1,3 +1,11 @@
+ 2012-03-29 13:53  hvlad 
+   M src/dsql/dsql.cpp
+Fixed bug CORE-3801 : Warnings could be put twice in status-vector
+
+ 2012-03-29 13:25  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+Fixed bug CORE-3799 : with caller privileges option don't work with autonomous transaction option
+
  2012-03-28 18:15  dimitr 
    M doc/WhatsNew
 Added the missing bug fixes. I have no clue how they could escape this document :-( My apologies to Vlad.
