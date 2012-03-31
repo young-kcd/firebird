@@ -1,3 +1,34 @@
+ 2012-03-30 14:41  alexpeshkoff 
+   M src/common/IntlParametersBlock.cpp
+   M src/common/IntlParametersBlock.h
+Better organize code - thanks to Claudio
+
+ 2012-03-30 14:15  hvlad 
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/auto.h
+Small refactoring
+
+ 2012-03-30 13:52  hvlad 
+   M src/common/classes/auto.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/yvalve/MasterImplementation.cpp
+Correct reference counting for log writer in trace plugin. 
+Also fixed few AVs.
+
+ 2012-03-30 13:48  hvlad 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+Fixed issue reported by Thomas Steinmaurer in fb-devel : trace often put in log line
+  Statement 0, <unknown, bug?>
+
+ 2012-03-30 12:27  alexpeshkoff 
+   M src/common/IntlParametersBlock.cpp
+   M src/common/IntlParametersBlock.h
+Make parameters block intl converter deal with crazy isc_spb_command_line format
+
  2012-03-29 15:55  alexpeshkoff 
    M src/remote/client/interface.cpp
 Fixed CORE-3759: Problem with fetch on DDL statement in the remote protocol
