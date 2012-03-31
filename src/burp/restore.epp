@@ -3097,7 +3097,9 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 
 		ISC_STATUS s;
 
-		if (records == 1)
+		// ASF: Preferable we should call isc_start_and_send only when records == 1, but this leaks
+		// memory when there are blobs and arrays fields - CORE-3802.
+		if (records % 1000 == 1)
 			s = isc_start_and_send(status_vector, &request, &gds_trans, 0, (USHORT) length, buffer, 0);
 		else
 			s = isc_send(status_vector, &request, 0, (USHORT) length, buffer, 0);
