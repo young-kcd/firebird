@@ -1,3 +1,7 @@
+ 2012-03-31 15:59  asfernandes 
+   M src/burp/restore.epp
+Fixed CORE-3802 - Firebird runs out of memory while restoring database backup.
+
  2012-03-29 13:53  hvlad 
    M src/dsql/dsql.cpp
 Fixed bug CORE-3801 : Warnings could be put twice in status-vector
