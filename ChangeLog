@@ -1,3 +1,7 @@
+ 2012-03-31 17:23  asfernandes 
+   M src/burp/restore.epp
+Fixed CORE-3802 - Firebird runs out of memory while restoring database backup.
+
  2012-03-30 14:41  alexpeshkoff 
    M src/common/IntlParametersBlock.cpp
    M src/common/IntlParametersBlock.h
