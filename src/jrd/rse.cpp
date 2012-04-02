@@ -2986,7 +2986,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 	}
 
 	// For the sake of prudence, set all record parameter blocks to contain
-	// the most recent format. This is will guarentee that all fields mapped
+	// the most recent format. This will guarantee that all fields mapped
 	// back to records by get_sort() have homes in the target record.
 
 	if (!records)
@@ -3003,7 +3003,10 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 			continue;
 		stream = item->smb_stream;
 		record_param* rpb = &request->req_rpb[stream];
-		if (rpb->rpb_relation)
+		// dimitr:	I've added the check for !isValid to ensure that we don't overwrite
+		//			the format for an active rpb (i.e. the one having some record fetched).
+		//			See CORE-3806 for example.
+		if (rpb->rpb_relation && !rpb->rpb_number.isValid())
 			VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation), tdbb->getDefaultPool());
 	}
 }
