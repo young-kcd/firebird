@@ -897,7 +897,7 @@ static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 		return NULL;
 	}
 
-	if (!(mod->mod_handle = OPEN_HANDLE((TEXT*)absolute_module))) {
+	if (!(mod->mod_handle = OPEN_HANDLE(absolute_module))) {
 /*
  * Temporarily commented - what to do with dlerror() on NT ?
 #ifdef DEV_BUILD
