@@ -252,6 +252,9 @@
 			<File
 				RelativePath="..\..\..\src\jrd\status.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\utl.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="GPRE files"

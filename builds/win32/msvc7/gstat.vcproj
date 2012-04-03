@@ -165,6 +165,9 @@
 			<File
 				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\utl.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
