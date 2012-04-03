@@ -1,3 +1,7 @@
+ 2012-04-02 15:19  dimitr 
+   M src/jrd/rse.cpp
+Fixed CORE-3806: Wrong data returned if a sub-query or a computed field refers to the base table in the ORDER BY clause.
+
  2012-03-31 15:59  asfernandes 
    M src/burp/restore.epp
 Fixed CORE-3802 - Firebird runs out of memory while restoring database backup.
