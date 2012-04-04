@@ -1,3 +1,17 @@
+ 2012-04-03 13:42  hvlad 
+   M builds/win32/msvc7/gdef.vcproj
+   M builds/win32/msvc7/gstat.vcproj
+   M builds/win32/msvc7/qli.vcproj
+Fix MSVC7 build
+
+ 2012-04-03 13:40  hvlad 
+   M src/jrd/flu.cpp
+Fix compilation on Windows
+
+ 2012-04-03 12:45  alexpeshkoff 
+   M src/misc/security.gbak
+Fixed file, damaged probably when moving to SVN from CVS
+
  2011-12-14 14:46  paulbeach 
    M src/install/arch-specific/darwin/preupgrade-script
 CORE-3862 - Multiple update installs can cause problems.
