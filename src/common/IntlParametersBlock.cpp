@@ -50,7 +50,7 @@ void strFromUtf8(string& s)
 	ISC_utf8ToSystem(s);
 }
 
-void processCommandLine(string& par, IntlParametersBlock::ProcessString* processString)
+void processCommandLine(IntlParametersBlock::ProcessString* processString, string& par)
 {
 	bool flagIn = false;
 	string current, result;
@@ -145,7 +145,7 @@ void IntlParametersBlock::processParametersBlock(ProcessString* processString, C
 
 		case TAG_COMMAND_LINE:
 			pb.getString(s);
-			processCommandLine(s, processString);
+			processCommandLine(processString, s);
 			pb.deleteClumplet();
 			pb.insertString(tag, s);
 			break;
