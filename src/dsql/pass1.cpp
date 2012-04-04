@@ -3412,8 +3412,11 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		{
 			return false;
 		}
-		return !memcmp(node1->nod_desc.dsc_address, node2->nod_desc.dsc_address,
-					   node1->nod_desc.dsc_length);
+		{ // scope for the local vars
+			const dsql_str* const string1 = (dsql_str*) node1->nod_arg[0];
+			const dsql_str* const string2 = (dsql_str*) node2->nod_arg[0];
+			return !memcmp(string1->str_data, string2->str_data, string1->str_length);
+		}
 
 	case nod_map:
 		{
