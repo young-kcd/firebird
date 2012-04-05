@@ -1,3 +1,7 @@
+ 2012-04-04 11:00  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-3807: Error "Invalid expression in the select list" can be unexpectedly raised if a string literal is used inside a GROUP BY clause in a multi-byte connection.
+
  2012-04-02 15:19  dimitr 
    M src/jrd/rse.cpp
 Fixed CORE-3806: Wrong data returned if a sub-query or a computed field refers to the base table in the ORDER BY clause.
