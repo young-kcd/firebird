@@ -993,6 +993,9 @@ void DsqlTransactionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scra
 	ntrace_result_t* /*traceResult*/)
 {
 	node = Node::doDsqlPass(scratch, node);
+
+	// Don't trace pseudo-statements (without requests associated).
+	req_traced = false;
 }
 
 // Execute a dynamic SQL statement.
@@ -1657,20 +1660,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			request->statement = scratch->getStatement();
 
 			request->dsqlPass(tdbb, scratch, &traceResult);
-
-			// don't trace preudo-statements (without requests associated)
-			switch (statement->getType())
-			{
-			case DsqlCompiledStatement::TYPE_COMMIT:
-			case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-			case DsqlCompiledStatement::TYPE_ROLLBACK:
-			case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-			case DsqlCompiledStatement::TYPE_START_TRANS:
-				request->req_traced = false;
-				break;
-			default:
-				request->req_traced = true;
-			}
 		}
 		catch (const Exception&)
 		{
@@ -1861,7 +1850,8 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 // Return as UTF8
 string IntlString::toUtf8(DsqlCompilerScratch* dsqlScratch) const
 {
-	CHARSET_ID id = CS_ILLEGAL;
+	CHARSET_ID id = CS_dynamic;
+
 	if (charset.hasData())
 	{
 		const dsql_intlsym* resolved = METD_get_charset(dsqlScratch->getTransaction(),

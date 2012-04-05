@@ -357,7 +357,8 @@ USHORT DataTypeUtil::getDialect() const
 bool DataTypeUtil::convertToUTF8(const string& src, string& dst, CHARSET_ID charset)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	if (charset == CS_ILLEGAL)
+
+	if (charset == CS_dynamic)
 	{
 		fb_assert(tdbb->getAttachment());
 		charset = tdbb->getAttachment()->att_charset;

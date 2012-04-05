@@ -54,6 +54,7 @@ void processCommandLine(IntlParametersBlock::ProcessString* processString, strin
 {
 	bool flagIn = false;
 	string current, result;
+
 	for (const char* s = par.begin(); s < par.end(); ++s)
 	{
 		if (s[0] == SVC_TRMNTR)

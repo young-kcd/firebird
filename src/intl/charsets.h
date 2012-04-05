@@ -24,8 +24,6 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 
 #define DEFAULT_ATTACHMENT_CHARSET	CS_NONE
 
-#define   CS_ILLEGAL            -1	/* None existent character set */
-
 #define   CS_NONE                0	/* No Character Set */
 #define   CS_BINARY              1	/* BINARY BYTES     */
 #define   CS_ASCII               2	/* ASCII            */

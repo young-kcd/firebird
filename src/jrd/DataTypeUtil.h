@@ -78,7 +78,7 @@ public:
 
 public:
 	static bool convertToUTF8(const Firebird::string& src, Firebird::string& dst,
-		CHARSET_ID charset = CS_ILLEGAL);
+		CHARSET_ID charset = CS_dynamic);
 
 private:
 	thread_db* tdbb;

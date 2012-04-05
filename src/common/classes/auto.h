@@ -62,7 +62,7 @@ class SimpleRelease
 public:
 	static void clear(T* ptr)
 	{
-		if (ptr) 
+		if (ptr)
 		{
 			ptr->release();
 		}
