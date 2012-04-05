@@ -3228,9 +3228,9 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		{
 			return false;
 		}
-		const dsql_str* const string1 = (dsql_str*) node1->nod_arg[0];
-		const dsql_str* const string2 = (dsql_str*) node2->nod_arg[0];
-		return !memcmp(string1->str_data, string2->str_data, string1->str_length);
+		const USHORT len = (node1->nod_desc.dsc_dtype == dtype_text) ?
+			((dsql_str*) node1->nod_arg[0])->str_length : node1->nod_desc.dsc_length;
+		return !memcmp(node1->nod_desc.dsc_address, node2->nod_desc.dsc_address, len);
 	}
 
 	if (node1->nod_type == nod_map) {
