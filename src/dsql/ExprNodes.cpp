@@ -6569,7 +6569,9 @@ bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 	}
 
-	return memcmp(dsqlStr->str_data, o->dsqlStr->str_data, dsqlStr->str_length) == 0;
+	const USHORT len = (litDesc.dsc_dtype == dtype_text) ?
+		dsqlStr->str_length : litDesc.dsc_length;
+	return memcmp(litDesc.dsc_address, o->litDesc.dsc_address, len) == 0;
 }
 
 bool LiteralNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
