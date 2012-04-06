@@ -1,3 +1,7 @@
+ 2012-04-05 09:48  dimitr 
+   M src/dsql/pass1.cpp
+Fixed my yesterday's commit.
+
  2012-04-04 11:00  dimitr 
    M src/dsql/pass1.cpp
 Fixed CORE-3807: Error "Invalid expression in the select list" can be unexpectedly raised if a string literal is used inside a GROUP BY clause in a multi-byte connection.
