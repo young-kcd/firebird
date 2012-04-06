@@ -1,3 +1,18 @@
+ 2012-04-05 18:28  asfernandes 
+   M src/common/IntlParametersBlock.cpp
+   M src/common/classes/auto.h
+   M src/dsql/dsql.cpp
+   M src/intl/charsets.h
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/DataTypeUtil.h
+   M src/remote/client/interface.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+Misc.
+
+ 2012-04-05 09:54  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed my yesterday's commit.
+
  2012-04-04 12:54  alexpeshkoff 
    M src/common/IntlParametersBlock.cpp
 Misc
