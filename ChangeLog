@@ -1,3 +1,22 @@
+ 2012-04-05 13:23  paulbeach 
+   A builds/posix/firebird.darwin.vers
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+Allow Darwin to build using new firebird.vers
+
+ 2012-04-05 12:24  paulbeach 
+   A builds/posix/empty.darwin.vers
+Allow Darwin to build using new empty.vers
+
+ 2012-04-05 12:20  paulbeach 
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+Allow Darwin to build using new empty.vers
+
+ 2012-04-05 09:50  dimitr 
+   M src/dsql/pass1.cpp
+Fixed my yesterday's commit.
+
  2012-04-04 10:59  dimitr 
    M src/dsql/pass1.cpp
 Fixed CORE-3807: Error "Invalid expression in the select list" can be unexpectedly raised if a string literal is used inside a GROUP BY clause in a multi-byte connection.
