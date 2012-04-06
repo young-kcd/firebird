@@ -688,9 +688,12 @@
 #	background
 #	combined
 #
-# Superserver has by default "combined" policy
-# Classic has by default "cooperative" policy.
-#	Other values are ignored by classic server build
+# Note: this setting affects SuperServer only.
+#
+# ClassicServer (and SuperClassic) implements "cooperative" only, therefore it 
+# uses "cooperative" policy regardless of the value.
+#
+# SuperServer implements all three policies and used "combined" by default.
 #
 # Type: string (special format)
 #
