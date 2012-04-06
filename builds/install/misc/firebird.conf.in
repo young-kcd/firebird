@@ -693,7 +693,7 @@
 # ClassicServer (and SuperClassic) implements "cooperative" only, therefore it 
 # uses "cooperative" policy regardless of the value.
 #
-# SuperServer implements all three policies and used "combined" by default.
+# SuperServer implements all three policies and uses "combined" by default.
 #
 # Type: string (special format)
 #
