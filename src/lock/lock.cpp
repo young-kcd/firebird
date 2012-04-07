@@ -214,6 +214,7 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 	  m_sharedFileCreated(false),
 	  m_process(NULL),
 	  m_processOffset(0),
+	  m_blockage(false),
 	  m_dbId(getPool(), id),
 	  m_config(conf),
 	  m_acquireSpins(m_config->getLockAcquireSpins()),
@@ -233,7 +234,7 @@ LockManager::~LockManager()
 {
 	const SRQ_PTR process_offset = m_processOffset;
 	{ // guardian's scope
-		Firebird::MutexLockGuard guard(m_localMutex);
+		LocalGuard guard(this);
 		m_processOffset = 0;
 	}
 
@@ -388,7 +389,7 @@ bool LockManager::initializeOwner(Arg::StatusVector& statusVector,
  **************************************/
 	LOCK_TRACE(("LOCK_init (ownerid=%ld)\n", owner_id));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	// If everything is already initialized, just bump the use count
 
@@ -420,7 +421,7 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_fini(%ld)\n", *owner_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	if (!sh_mem_header)
 		return;
@@ -435,12 +436,12 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_offset)
 
 	while (owner->own_ast_count)
 	{
-		m_localMutex.leave();
-		{ // scope
+		{ // checkout scope
+			LocalCheckout checkout(this);
 			Jrd::Attachment::Checkout cout(attachment);
 			THREAD_SLEEP(10);
 		}
-		m_localMutex.enter();
+
 		owner = (own*) SRQ_ABS_PTR(offset); // Re-init after a potential remap
 	}
 
@@ -483,7 +484,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
  **************************************/
 	LOCK_TRACE(("LOCK_enq (%ld)\n", parent_request));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner_offset || !owner->own_count)
@@ -645,7 +646,7 @@ bool LockManager::convert(Attachment* attachment,
  **************************************/
 	LOCK_TRACE(("LOCK_convert (%d, %d)\n", type, lck_wait));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
@@ -687,7 +688,7 @@ UCHAR LockManager::downgrade(Attachment* attachment, Arg::StatusVector& statusVe
  **************************************/
 	LOCK_TRACE(("LOCK_downgrade (%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
@@ -751,7 +752,7 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_deq (%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
@@ -792,7 +793,7 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
 
 	LOCK_TRACE(("LOCK_re_post(%ld)\n", owner_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	acquire_shmem(owner_offset);
 
@@ -854,7 +855,7 @@ bool LockManager::cancelWait(SRQ_PTR owner_offset)
 	if (!owner_offset)
 		return false;
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	acquire_shmem(DUMMY_OWNER);
 
@@ -887,7 +888,7 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		return 0;
 	}
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	// Get root of lock hierarchy
 
@@ -984,7 +985,7 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_read_data(%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	acquire_shmem(request->lrq_owner);
@@ -1022,7 +1023,7 @@ SLONG LockManager::readData2(SRQ_PTR parent_request,
  **************************************/
 	LOCK_TRACE(("LOCK_read_data2(%ld)\n", parent_request));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	acquire_shmem(owner_offset);
 
@@ -1069,7 +1070,7 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
  **************************************/
 	LOCK_TRACE(("LOCK_write_data (%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	acquire_shmem(request->lrq_owner);
@@ -1105,24 +1106,22 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
  *
  **************************************/
 
-	// Measure the impact of the lock table resource as an overall
-	// system bottleneck. This will be useful metric for lock
-	// improvements and as a limiting factor for SMP. A conditional
-	// mutex would probably be more accurate but isn't worth the effort.
-
-	SRQ_PTR prior_active = sh_mem_header->lhb_active_owner;
-
 	// Perform a spin wait on the lock table mutex. This should only
 	// be used on SMP machines; it doesn't make much sense otherwise.
 
+	const ULONG spins_to_try = m_acquireSpins ? m_acquireSpins : 1;
 	bool locked = false;
 	ULONG spins = 0;
-	while (spins++ < m_acquireSpins)
+	while (spins++ < spins_to_try)
 	{
 		if (mutexLockCond())
 		{
 			locked = true;
 			break;
+		}
+		else
+		{
+			m_blockage = true;
 		}
 	}
 
@@ -1162,7 +1161,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			m_sharedFileCreated = false;
 
 			// no sense thinking about statistics now
-			prior_active = 0;
+			m_blockage = false;
 
 			break;
 		}
@@ -1171,19 +1170,20 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	fb_assert(!m_sharedFileCreated);
 
 	++sh_mem_header->lhb_acquires;
-	if (prior_active > 0) {
+	if (m_blockage) {
 		++sh_mem_header->lhb_acquire_blocks;
+		m_blockage = false;
 	}
 
-	if (spins)
+	if (spins > 1)
 	{
 		++sh_mem_header->lhb_acquire_retries;
-		if (spins < m_acquireSpins) {
+		if (spins < spins_to_try) {
 			++sh_mem_header->lhb_retry_success;
 		}
 	}
 
-	prior_active = sh_mem_header->lhb_active_owner;
+	const SRQ_PTR prior_active = sh_mem_header->lhb_active_owner;
 	sh_mem_header->lhb_active_owner = owner_offset;
 
 	if (owner_offset > 0)
@@ -1466,12 +1466,13 @@ void LockManager::blocking_action(Attachment* attachment,
 		{
 			owner->own_ast_count++;
 			release_shmem(blocked_owner_offset);
-			m_localMutex.leave();
-			{
+
+			{ // checkout scope
+				LocalCheckout checkout(this);
 				Jrd::Attachment::Checkout cout(attachment, true);
 				(*routine)(arg);
 			}
-			m_localMutex.enter();
+
 			acquire_shmem(blocked_owner_offset);
 			owner = (own*) SRQ_ABS_PTR(blocking_owner_offset);
 			owner->own_ast_count--;
@@ -1511,7 +1512,7 @@ void LockManager::blocking_action_thread()
 		{
 			SLONG value;
 			{ // guardian's scope
-				Firebird::MutexLockGuard guard(m_localMutex);
+				LocalGuard guard(this);
 
 				// See if the main thread has requested us to go away
 				if (!m_processOffset || m_process->prc_process_id != PID)
@@ -3972,20 +3973,23 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 			// semaphore looks 'un-poked'
 
 			release_shmem(owner_offset);
-			m_localMutex.leave();
 
-			{ // scope
-				Firebird::ReadLockGuard guard(m_remapSync);
-				owner = (own*) SRQ_ABS_PTR(owner_offset);
-				++m_waitingOwners;
-			}
-			{ // scope
-				Jrd::Attachment::Checkout cout(attachment);
-				ret = ISC_event_wait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
-				--m_waitingOwners;
+			{ // checkout scope
+				LocalCheckout checkout(this);
+
+				{ // scope
+					Firebird::ReadLockGuard guard(m_remapSync);
+					owner = (own*) SRQ_ABS_PTR(owner_offset);
+					++m_waitingOwners;
+				}
+
+				{ // scope
+					Jrd::Attachment::Checkout cout(attachment);
+					ret = ISC_event_wait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
+					--m_waitingOwners;
+				}
 			}
 
-			m_localMutex.enter();
 			acquire_shmem(owner_offset);
 
 			owner = (own*) SRQ_ABS_PTR(owner_offset);

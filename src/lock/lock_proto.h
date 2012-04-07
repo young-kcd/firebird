@@ -304,6 +304,72 @@ class LockManager : private Firebird::RefCounted,
 					public Firebird::GlobalStorage,
 					public SharedMemory<lhb>
 {
+	class LocalGuard
+	{
+	public:
+		explicit LocalGuard(LockManager* lm)
+			: m_lm(lm)
+		{
+			if (!m_lm->m_localMutex.tryEnter())
+			{
+				m_lm->m_localMutex.enter();
+				m_lm->m_blockage = true;
+			}
+		}
+
+		~LocalGuard()
+		{
+			try
+			{
+				m_lm->m_localMutex.leave();
+			}
+			catch (const Firebird::Exception&)
+			{
+				DtorException::devHalt();
+			}
+		}
+
+	private:
+		// Forbid copying
+		LocalGuard(const LocalGuard&);
+		LocalGuard& operator=(const LocalGuard&);
+
+		LockManager* m_lm;
+	};
+
+	class LocalCheckout
+	{
+	public:
+		explicit LocalCheckout(LockManager* lm)
+			: m_lm(lm)
+		{
+			m_lm->m_localMutex.leave();
+		}
+
+		~LocalCheckout()
+		{
+			try
+			{
+				if (!m_lm->m_localMutex.tryEnter())
+				{
+					m_lm->m_localMutex.enter();
+					m_lm->m_blockage = true;
+				}
+			}
+			catch (const Firebird::Exception&)
+			{
+				DtorException::devHalt();
+			}
+		}
+
+	private:
+		// Forbid copying
+		LocalCheckout(const LocalCheckout&);
+		LocalCheckout& operator=(const LocalCheckout&);
+
+		LockManager* m_lm;
+	};
+
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
 
 	static Firebird::GlobalPtr<DbLockMgrMap> g_lmMap;
@@ -408,6 +474,8 @@ private:
 
 	Firebird::Semaphore m_cleanupSemaphore;
 	Firebird::Semaphore m_startupSemaphore;
+
+	bool m_blockage;
 
 	Firebird::string m_dbId;
 	Firebird::RefPtr<Config> m_config;
