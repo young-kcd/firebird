@@ -567,7 +567,7 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 {
 	const RseNode* rse = ExprNode::as<RseNode>(rseNod);
 
-	if (rseNod->nod_flags & NOD_SELECT_EXPR_SINGLETON)
+	if (rse->dsqlFlags & RecordSourceNode::DFLAG_SINGLETON)
 		dsqlScratch->appendUChar(blr_singular);
 
 	if (rse->dsqlExplicitJoin)
@@ -711,8 +711,9 @@ void GEN_sort(DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_node)
 {
 	const RseNode* unionRse = ExprNode::as<RseNode>(union_node);
+	const UnionSourceNode* unionSource = ExprNode::as<UnionSourceNode>(unionRse->dsqlStreams);
 
-	if (unionRse->dsqlStreams->nod_flags & NOD_UNION_RECURSIVE)
+	if (unionSource->recursive)
 		dsqlScratch->appendUChar(blr_recurse);
 	else
 		dsqlScratch->appendUChar(blr_union);
@@ -732,7 +733,7 @@ static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_n
 	// secondary context number must be present once in generated blr
 	union_context->ctx_flags &= ~CTX_recursive;
 
-	dsql_nod* streams = ExprNode::as<UnionSourceNode>(unionRse->dsqlStreams)->dsqlClauses;
+	dsql_nod* streams = unionSource->dsqlClauses;
 	dsqlScratch->appendUChar(streams->nod_count);	// number of substreams
 
 	dsql_nod** ptr = streams->nod_arg;

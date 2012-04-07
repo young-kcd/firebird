@@ -25,6 +25,7 @@
 #include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../dsql/WinNodes.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../common/classes/Nullable.h"
 #include "gen/parse.h"
 #include "../dsql/Parser.h"

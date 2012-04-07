@@ -356,8 +356,6 @@ dsql_str* MAKE_cstring(const char* str)
 // Make a descriptor from input node.
 void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 {
-	dsc desc1;
-
 	DEV_BLKCHK(node, dsql_type_nod);
 
 	// If we already know the datatype, don't worry about anything.
@@ -370,27 +368,20 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-	case nod_class_exprnode:
+		case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
 			if (exprNode->kind == DmlNode::KIND_VALUE)
+			{
 				exprNode->make(dsqlScratch, desc);
-		}
-		return;
+				return;
+			}
 
-	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
-		{
-			node = node->nod_arg[e_sel_query_spec];
-			RseNode* rseNode = ExprNode::as<RseNode>(node);
-			fb_assert(rseNode);
-			node = rseNode->dsqlSelectList;
-			fb_assert(node->nod_type == nod_list && node->nod_count > 0);
-			MAKE_desc(dsqlScratch, desc, node->nod_arg[0]);
+			// fall into
 		}
-		return;
 
-	default:
-		fb_assert(false);			// unexpected dsql_nod type
+		default:
+			fb_assert(false);	// unexpected dsql_nod type
 	}
 }
 

@@ -189,14 +189,14 @@ static dsql_ctx* pass1_alias(DsqlCompilerScratch*, DsqlContextStack&, dsql_str*)
 static dsql_str* pass1_alias_concat(const dsql_str*, const char*);
 static dsql_rel* pass1_base_table(DsqlCompilerScratch*, const dsql_rel*, const dsql_str*);
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
-static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, const char*);
+static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, SelectExprNode*, const char*);
 static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
-static dsql_nod* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
-static dsql_nod* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
-static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
-static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
+static RseNode* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
+static RseNode* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
+static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*);
+static RseNode* pass1_union(DsqlCompilerScratch*, UnionSourceNode*, dsql_nod*, dsql_nod*, bool, USHORT);
 static void pass1_union_auto_cast(DsqlCompilerScratch*, dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
@@ -377,24 +377,18 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 	MetaName relation_name;
 	const ProcedureSourceNode* procNode = NULL;
 	const RelationSourceNode* relNode = NULL;
+	const SelectExprNode* selNode = NULL;
 
-	switch (relation_node->nod_type)
-	{
-	case nod_select_expr:
-		if (relation_node->nod_arg[e_sel_alias])
-			relation_name = ((dsql_str*) relation_node->nod_arg[e_sel_alias])->str_data;
-		break;
-	default:
-		if ((procNode = ExprNode::as<ProcedureSourceNode>(relation_node)))
-			relation_name = procNode->dsqlName.identifier;
-		else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
-			relation_name = relNode->dsqlName;
-		break;
-	}
+	if ((procNode = ExprNode::as<ProcedureSourceNode>(relation_node)))
+		relation_name = procNode->dsqlName.identifier;
+	else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
+		relation_name = relNode->dsqlName;
+	else if ((selNode = ExprNode::as<SelectExprNode>(relation_node)))
+		relation_name = selNode->alias.c_str();
 
-	const dsql_nod* cte = NULL;
+	SelectExprNode* cte = NULL;
 
-	if (relation_node->nod_type == nod_select_expr)
+	if (selNode)
 	{
 		// No processing needed here for derived tables.
 	}
@@ -420,7 +414,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 		}
 	}
 	else if ((cte = dsqlScratch->findCTE(relation_name)))
-		relation_node = cte;
+		relation_node = MAKE_class_node(cte);
 	else
 	{
 		if (procNode && procNode->dsqlName.package.isEmpty())
@@ -458,7 +452,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 	context->ctx_relation = relation;
 	context->ctx_procedure = procedure;
 
-	if (relation_node->nod_type == nod_select_expr)
+	if (selNode)
 		context->ctx_context = USHORT(MAX_UCHAR) + 1 + dsqlScratch->derivedContextNumber++;
 	else
 		context->ctx_context = dsqlScratch->contextNumber++;
@@ -478,17 +472,16 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 		string = procNode->alias.nullStr();
 	else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
 		string = relNode->alias.nullStr();
-	else if (relation_node->nod_type == nod_select_expr)
+	else if ((selNode = ExprNode::as<SelectExprNode>(relation_node)))
 	{
-		if (relation_node->nod_arg[e_sel_alias])
-			string = ((dsql_str*) relation_node->nod_arg[e_sel_alias])->str_data;
-		context->ctx_rse = relation_node->nod_arg[e_sel_query_spec];
+		string = selNode->alias.nullStr();
+		context->ctx_rse = selNode->querySpec;
 	}
 
 	if (string)
 		context->ctx_internal_alias = string;
 
-	if (dsqlScratch->aliasRelationPrefix && relation_node->nod_type != nod_select_expr)
+	if (dsqlScratch->aliasRelationPrefix && !selNode)
 	{
 		if (string)
 			string = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, string)->str_data;
@@ -616,6 +609,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
 			ProcedureSourceNode* procNode = NULL;
 			RelationSourceNode* relNode = NULL;
+			SelectExprNode* selNode = NULL;
 
 			//// TODO: Move this to dsqlPass when possible.
 			if ((procNode = exprNode->as<ProcedureSourceNode>()) ||
@@ -640,12 +634,12 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				if (rel_alias.isEmpty())
 					rel_alias = rel_name.c_str();
 
-				dsql_nod* cte = couldBeCte ? dsqlScratch->findCTE(rel_name) : NULL;
+				SelectExprNode* cte = couldBeCte ? dsqlScratch->findCTE(rel_name) : NULL;
 
 				if (!cte)
 					return PASS1_relation(dsqlScratch, input);
 
-				cte->nod_flags |= NOD_SELECT_EXPR_DT_CTE_USED;
+				cte->dsqlFlags |= RecordSourceNode::DFLAG_DT_CTE_USED;
 
 				if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RECURSIVE_CTE) &&
 					 dsqlScratch->currCtes.hasData() &&
@@ -656,9 +650,9 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 							  Arg::Gds(isc_dsql_cte_wrong_reference) << rel_name);
 				}
 
-				for (DsqlNodStack::const_iterator stack(dsqlScratch->currCtes); stack.hasData(); ++stack)
+				for (Stack<SelectExprNode*>::const_iterator stack(dsqlScratch->currCtes); stack.hasData(); ++stack)
 				{
-					dsql_nod* cte1 = stack.object();
+					SelectExprNode* cte1 = stack.object();
 					if (cte1 == cte)
 					{
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -667,13 +661,13 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 					}
 				}
 
-				dsql_nod* const query = cte->nod_arg[e_sel_query_spec];
-				const bool isRecursive =
-					(query->nod_type == nod_list) && (query->nod_flags & NOD_UNION_RECURSIVE);
+				dsql_nod* const query = cte->querySpec;
+				UnionSourceNode* unionQuery = ExprNode::as<UnionSourceNode>(query);
+				const bool isRecursive = unionQuery && unionQuery->recursive;
 
-				dsql_str* const save_cte_name = (dsql_str*) cte->nod_arg[e_sel_alias];
+				const string saveCteName = cte->alias;
 				if (!isRecursive)
-					cte->nod_arg[e_sel_alias] = (dsql_nod*) MAKE_cstring(rel_alias.c_str());
+					cte->alias = rel_alias;
 
 				dsqlScratch->currCtes.push(cte);
 
@@ -681,11 +675,16 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 					cte, (isRecursive ? rel_alias.c_str() : NULL));
 
 				if (!isRecursive)
-					cte->nod_arg[e_sel_alias] = (dsql_nod*) save_cte_name;
+					cte->alias = saveCteName;
 
 				dsqlScratch->currCtes.pop();
 
 				return derived_node;
+			}
+			else if ((selNode = exprNode->as<SelectExprNode>()))
+			{
+				fb_assert(selNode->dsqlFlags & RecordSourceNode::DFLAG_DERIVED);
+				return pass1_derived_table(dsqlScratch, selNode, NULL);
 			}
 
 			Node* newNode = exprNode->dsqlPass(dsqlScratch);
@@ -702,13 +701,8 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	case nod_delete:
 	case nod_select:
-	case nod_with:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  Arg::Gds(isc_dsql_command_err));
-
-	case nod_select_expr:
-		fb_assert(input->nod_flags & NOD_SELECT_EXPR_DERIVED);
-		return pass1_derived_table(dsqlScratch, input, NULL);
 
 	// access plan node types
 
@@ -783,10 +777,10 @@ dsql_nod* PASS1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, bool upda
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	fb_assert(input->nod_type == nod_select_expr);
+	fb_assert(ExprNode::as<SelectExprNode>(input));
 
 	dsqlScratch->scopeLevel++;
-	dsql_nod* node = pass1_rse(dsqlScratch, input, NULL, NULL, updateLock, 0);
+	dsql_nod* node = MAKE_class_node(pass1_rse(dsqlScratch, input, NULL, NULL, updateLock, 0));
 	dsqlScratch->scopeLevel--;
 
 	return node;
@@ -1228,19 +1222,19 @@ static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
     @param input
 
  **/
-static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
+static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* input,
 	const char* cte_alias)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
 
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
-	dsql_str* alias = (dsql_str*) input->nod_arg[e_sel_alias];
+	const string& alias = input->alias;
+	dsql_nod* inputNod = MAKE_class_node(input);
 
 	// Create the context now, because we need to know it for the tables inside.
-	dsql_ctx* const context = PASS1_make_context(dsqlScratch, input);
+	dsql_ctx* const context = PASS1_make_context(dsqlScratch, inputNod);
 
 	// Save some values to restore after rse process.
 	DsqlContextStack* const req_base = dsqlScratch->context;
@@ -1266,12 +1260,12 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		baseContext = temp.object();
 
 	dsqlScratch->context = &temp;
-	dsqlScratch->aliasRelationPrefix = pass1_alias_concat(
-		aliasRelationPrefix, (alias ? alias->str_data : NULL));
+	dsqlScratch->aliasRelationPrefix = pass1_alias_concat(aliasRelationPrefix, alias.nullStr());
 
-	dsql_nod* query = input->nod_arg[e_sel_query_spec];
+	dsql_nod* query = input->querySpec;
+	UnionSourceNode* unionQuery = ExprNode::as<UnionSourceNode>(query);
 	dsql_nod* rse = NULL;
-	const bool isRecursive = (query->nod_type == nod_list) && (query->nod_flags & NOD_UNION_RECURSIVE);
+	const bool isRecursive = unionQuery && unionQuery->recursive;
 	USHORT recursive_map_ctx = 0;
 
 	if (isRecursive)
@@ -1280,8 +1274,8 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		// one, non-recursive member. The dummy will be replaced at the end
 		// of this function.
 
-		query->nod_count = 1;
-		query->nod_flags &= ~NOD_UNION_RECURSIVE;
+		unionQuery->dsqlClauses->nod_count = 1;
+		unionQuery->recursive = false;
 
 		dsql_ctx* baseUnionCtx = dsqlScratch->unionContext.hasData() ?
 			dsqlScratch->unionContext.object() : NULL;
@@ -1290,12 +1284,12 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		recursive_map_ctx = dsqlScratch->contextNumber++;
 
 		dsqlScratch->recursiveCtxId = dsqlScratch->contextNumber;
-		rse = pass1_union(dsqlScratch, query, NULL, NULL, NULL, 0);
+		rse = MAKE_class_node(pass1_union(dsqlScratch, unionQuery, NULL, NULL, NULL, 0));
 		dsqlScratch->contextNumber = dsqlScratch->recursiveCtxId + 1;
 
 		// recursive union always have exactly 2 members
-		query->nod_count = 2;
-		query->nod_flags |= NOD_UNION_RECURSIVE;
+		unionQuery->dsqlClauses->nod_count = 2;
+		unionQuery->recursive = true;
 
 		while (dsqlScratch->unionContext.hasData() &&
 			   dsqlScratch->unionContext.object() != baseUnionCtx)
@@ -1323,13 +1317,14 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 
 		if (foundSubSelect)
 		{
-			dsql_nod* union_expr = MAKE_node(nod_list, 1);
-			union_expr->nod_arg[0] = input;
-			union_expr->nod_flags = NOD_UNION_ALL;
-			rse = pass1_union(dsqlScratch, union_expr, NULL, NULL, NULL, 0);
+			UnionSourceNode* unionExpr = FB_NEW(pool) UnionSourceNode(pool);
+			unionExpr->dsqlClauses = MAKE_node(nod_list, 1);
+			unionExpr->dsqlClauses->nod_arg[0] = inputNod;
+			unionExpr->dsqlAll = true;
+			rse = MAKE_class_node(pass1_union(dsqlScratch, unionExpr, NULL, NULL, NULL, 0));
 		}
 		else
-			rse = PASS1_rse(dsqlScratch, input, false);
+			rse = PASS1_rse(dsqlScratch, inputNod, false);
 
 		USHORT minOuterJoin = MAX_USHORT;
 
@@ -1373,17 +1368,17 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 	// because we need it several times.
 	TEXT aliasbuffer[100] = "";
 	const TEXT* aliasname = aliasbuffer;
-	if (alias)
+	if (alias.hasData())
 	{
-		int length = alias->str_length;
+		int length = alias.length();
 		if (length > 99)
 		{
 			length = 99;
-			memcpy(aliasbuffer, alias->str_data, length);
+			memcpy(aliasbuffer, alias.c_str(), length);
 			aliasbuffer[length] = 0;
 		}
 		else
-			aliasname = alias->str_data;
+			aliasname = alias.c_str();
 	}
 	else
 		aliasname = "<unnamed>";
@@ -1392,11 +1387,12 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 
 	// If an alias-list is specified, process it.
 
-	const bool ignoreColumnChecks = (input->nod_flags & NOD_SELECT_EXPR_DT_IGNORE_COLUMN_CHECK);
+	const bool ignoreColumnChecks =
+		(input->dsqlFlags & RecordSourceNode::DFLAG_DT_IGNORE_COLUMN_CHECK);
 
-	if (input->nod_arg[e_sel_columns] && input->nod_arg[e_sel_columns]->nod_count)
+	if (input->columns && input->columns->nod_count)
 	{
-		dsql_nod* list = input->nod_arg[e_sel_columns];
+		dsql_nod* list = input->columns;
 
 		// Do both lists have the same number of items?
 		if (list->nod_count != selectList->nod_count)
@@ -1514,9 +1510,9 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		dsqlScratch->recursiveCtx = context;
 		dsqlScratch->context = &temp;
 
-		dsqlScratch->resetCTEAlias(alias->str_data);
+		dsqlScratch->resetCTEAlias(alias.c_str());
 
-		rse = PASS1_rse(dsqlScratch, input, false);
+		rse = PASS1_rse(dsqlScratch, inputNod, false);
 
 		// Finish off by cleaning up contexts and put them into derivedContext
 		// so create view (ddl) can deal with it.
@@ -2390,11 +2386,12 @@ static dsql_rel* pass1_base_table( DsqlCompilerScratch* dsqlScratch, const dsql_
 
 
 // Wrapper for pass1_rse_impl. Substitute recursive CTE alias (if needed) and call pass1_rse_impl.
-static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
+static RseNode* pass1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
 	dsql_nod* rows, bool updateLock, USHORT flags)
 {
 	string save_alias;
-	const bool isRecursive = (input->nod_flags & NOD_SELECT_EXPR_RECURSIVE);
+	RseNode* rseNode = ExprNode::as<RseNode>(input);
+	const bool isRecursive = rseNode && (rseNode->dsqlFlags & RecordSourceNode::DFLAG_RECURSIVE);
 
 	if (isRecursive)
 	{
@@ -2404,7 +2401,7 @@ static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, d
 		dsqlScratch->recursiveCtx->ctx_alias = *dsqlScratch->getNextCTEAlias();
 	}
 
-	dsql_nod* ret = pass1_rse_impl(dsqlScratch, input, order, rows, updateLock, flags);
+	RseNode* ret = pass1_rse_impl(dsqlScratch, input, order, rows, updateLock, flags);
 
 	if (isRecursive)
 		dsqlScratch->recursiveCtx->ctx_alias = save_alias;
@@ -2415,7 +2412,7 @@ static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, d
 
 // Compile a record selection expression. The input node may either be a "select_expression"
 // or a "list" (an implicit union) or a "query specification".
-static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
+static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
 	dsql_nod* rows, bool updateLock, USHORT flags)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
@@ -2425,23 +2422,21 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
-	// Verify if we're processing view fields and reset flag to not pass to
-	// more than required inner nodes.
-	const USHORT viewFlags = input->nod_flags | (flags & NOD_SELECT_EXPR_VIEW_FIELDS);
-	flags &= ~NOD_SELECT_EXPR_VIEW_FIELDS;
+	SelectExprNode* selNode = ExprNode::as<SelectExprNode>(input);
+	UnionSourceNode* unionNode = ExprNode::as<UnionSourceNode>(input);
 
-	if (input->nod_type == nod_select_expr)
+	if (selNode)
 	{
-		dsql_nod* node_with = input->nod_arg[e_sel_with_list];
+		WithClause* withClause = selNode->withClause;
 		try
 		{
-			if (node_with)
-				dsqlScratch->addCTEs(node_with);
+			if (withClause)
+				dsqlScratch->addCTEs(withClause);
 
-			dsql_nod* ret = pass1_rse(dsqlScratch, input->nod_arg[e_sel_query_spec],
-				input->nod_arg[e_sel_order], input->nod_arg[e_sel_rows], updateLock, viewFlags);
+			RseNode* ret = pass1_rse(dsqlScratch, selNode->querySpec, selNode->order,
+				selNode->rows, updateLock, selNode->dsqlFlags);
 
-			if (node_with)
+			if (withClause)
 			{
 				dsqlScratch->checkUnusedCTEs();
 				dsqlScratch->clearCTEs();
@@ -2451,15 +2446,15 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		}
 		catch (const Firebird::Exception&)
 		{
-			if (node_with)
+			if (withClause)
 				dsqlScratch->clearCTEs();
 			throw;
 		}
 	}
-	else if (input->nod_type == nod_list)
+	else if (unionNode)
 	{
-		fb_assert(input->nod_count > 1);
-		return pass1_union(dsqlScratch, input, order, rows, updateLock, flags);
+		fb_assert(unionNode->dsqlClauses->nod_count > 1);
+		return pass1_union(dsqlScratch, unionNode, order, rows, updateLock, flags);
 	}
 
 	RseNode* inputRse = ExprNode::as<RseNode>(input);
@@ -2469,9 +2464,6 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 	RseNode* targetRse = FB_NEW(pool) RseNode(pool);
 	RseNode* rse = targetRse;
-
-	dsql_nod* rseNod = MAKE_node(nod_class_exprnode, 1);
-	rseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(rse);
 
 	if (updateLock)
 		rse->flags |= RseNode::FLAG_WRITELOCK;
@@ -2541,7 +2533,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	++dsqlScratch->inSelectList;
 	selectList = pass1_expand_select_list(dsqlScratch, selectList, rse->dsqlStreams);
 
-	if ((flags & NOD_SELECT_EXPR_VALUE) && (!selectList || selectList->nod_count > 1))
+	if ((flags & RecordSourceNode::DFLAG_VALUE) && (!selectList || selectList->nod_count > 1))
 	{
 		// More than one column (or asterisk) is specified in column_singleton
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -2550,8 +2542,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	}
 
 	// Pass select list
-	rse->dsqlSelectList = pass1_sel_list(dsqlScratch, selectList,
-		(viewFlags & NOD_SELECT_EXPR_VIEW_FIELDS));
+	rse->dsqlSelectList = pass1_sel_list(dsqlScratch, selectList);
 	--dsqlScratch->inSelectList;
 
 	// Process ORDER clause, if any
@@ -2592,7 +2583,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 		aggregate = FB_NEW(pool) AggregateSourceNode(pool);
 		aggregate->dsqlContext = parent_context;
-		aggregate->dsqlRse = rseNod;
+		aggregate->dsqlRse = MAKE_class_node(rse);
 		parentRse = targetRse = FB_NEW(pool) RseNode(pool);
 		parentRse->dsqlStreams = list = MAKE_node(nod_list, 1);
 
@@ -2656,7 +2647,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		++dsqlScratch->inSelectList;
 		// ASF: We pass false to viewFields parameter here because these expressions are
 		// generated inside the view body, and not in view fields.
-		targetRse->dsqlDistinct = pass1_sel_list(dsqlScratch, selectList, false);
+		targetRse->dsqlDistinct = pass1_sel_list(dsqlScratch, selectList);
 		--dsqlScratch->inSelectList;
 
 		// sort, group and distinct have the same limit for now
@@ -2755,8 +2746,6 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		}
 
 		rse = parentRse;
-		rseNod = MAKE_node(nod_class_exprnode, 1);
-		rseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(rse);
 
 		parent_context->ctx_context = dsqlScratch->contextNumber++;
 	}
@@ -2774,7 +2763,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 		AggregateSourceNode* window = FB_NEW(pool) AggregateSourceNode(pool);
 		window->dsqlContext = parent_context;
-		window->dsqlRse = rseNod;
+		window->dsqlRse = MAKE_class_node(rse);
 		window->dsqlWindow = true;
 
 		dsql_nod* windowNod = MAKE_node(nod_class_exprnode, 1);
@@ -2875,13 +2864,11 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		}
 
 		rse = parentRse;
-		rseNod = MAKE_node(nod_class_exprnode, 1);
-		rseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(rse);
 	}
 
-	rseNod->nod_flags = flags;
+	rse->dsqlFlags = flags;
 
-	return rseNod;
+	return rse;
 }
 
 
@@ -2895,7 +2882,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
     @param input
 
  **/
-static dsql_nod* pass1_sel_list(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, bool viewFields)
+static dsql_nod* pass1_sel_list(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -2904,14 +2891,8 @@ static dsql_nod* pass1_sel_list(DsqlCompilerScratch* dsqlScratch, dsql_nod* inpu
 	dsql_nod** ptr = input->nod_arg;
 	for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end; ptr++)
 	{
-		if (viewFields)
-			dsqlScratch->hiddenVarsNumber = 0;
-
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		stack.push(PASS1_node_psql(dsqlScratch, *ptr, false));
-
-		if (viewFields)
-			dsqlScratch->hiddenVarsNumber = 0;
 	}
 	dsql_nod* node = MAKE_list(stack);
 
@@ -3027,28 +3008,28 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 
 // Handle a UNION of substreams, generating a mapping of all the fields and adding an implicit
 // PROJECT clause to ensure that all the records returned are unique.
-static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order_list,
-	dsql_nod* rows, bool updateLock, USHORT flags)
+static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* input,
+	dsql_nod* order_list, dsql_nod* rows, bool updateLock, USHORT flags)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order_list, dsql_type_nod);
 
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	// set up the rse node for the union.
-	RseNode* unionRse = FB_NEW(pool) RseNode(pool);
-	UnionSourceNode* unionSource = FB_NEW(pool) UnionSourceNode(pool);
 
-	dsql_nod* unionNod = unionRse->dsqlStreams = MAKE_node(nod_class_exprnode, 1);
-	unionNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(unionSource);
-	unionNod->nod_flags = input->nod_flags;
+	UnionSourceNode* unionSource = FB_NEW(pool) UnionSourceNode(pool);
+	unionSource->dsqlAll = input->dsqlAll;
+	unionSource->recursive = input->recursive;
+
+	RseNode* unionRse = FB_NEW(pool) RseNode(pool);
+	unionRse->dsqlStreams = MAKE_class_node(unionSource);
 
 	// generate a context for the union itself.
 	dsql_ctx* union_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
 
-	if (input->nod_flags & NOD_UNION_RECURSIVE)
+	if (input->recursive)
 		union_context->ctx_context = dsqlScratch->recursiveCtxId;
 	else
 		union_context->ctx_context = dsqlScratch->contextNumber++;
@@ -3062,18 +3043,18 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 
 	dsqlScratch->context->push(union_context);
 
-	unionSource->dsqlClauses = MAKE_node(nod_list, input->nod_count);
+	unionSource->dsqlClauses = MAKE_node(nod_list, input->dsqlClauses->nod_count);
 
 	// process all the sub-rse's.
 	{ // scope block
 		dsql_nod** uptr = unionSource->dsqlClauses->nod_arg;
 		const DsqlContextStack::const_iterator base(*dsqlScratch->context);
-		dsql_nod** ptr = input->nod_arg;
+		dsql_nod** ptr = input->dsqlClauses->nod_arg;
 
-		for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end; ++ptr, ++uptr)
+		for (const dsql_nod* const* const end = ptr + input->dsqlClauses->nod_count; ptr < end; ++ptr, ++uptr)
 		{
 			dsqlScratch->scopeLevel++;
-			*uptr = pass1_rse(dsqlScratch, *ptr, NULL, NULL, false, 0);
+			*uptr = MAKE_class_node(pass1_rse(dsqlScratch, *ptr, NULL, NULL, false, 0));
 			dsqlScratch->scopeLevel--;
 
 			while (*(dsqlScratch->context) != base)
@@ -3081,7 +3062,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 
 			// Push recursive context after initial select has been processed.
 			// Corresponding pop occurs in pass1_derived_table
-			if ((input->nod_flags & NOD_UNION_RECURSIVE) && (ptr == input->nod_arg))
+			if (input->recursive && (ptr == input->dsqlClauses->nod_arg))
 				dsqlScratch->context->push(dsqlScratch->recursiveCtx);
 		}
 	} // end scope block
@@ -3238,7 +3219,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		PASS1_limit(dsqlScratch, rows->nod_arg[e_rows_length], rows->nod_arg[e_rows_skip], unionRse);
 
 	// PROJECT on all the select items unless UNION ALL was specified.
-	if (!(input->nod_flags & NOD_UNION_ALL))
+	if (!input->dsqlAll)
 	{
 		if (updateLock)
 		{
@@ -3254,11 +3235,9 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	if (updateLock)
 		unionRse->flags |= RseNode::FLAG_WRITELOCK;
 
-	dsql_nod* unionRseNod = MAKE_node(nod_class_exprnode, 1);
-	unionRseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(unionRse);
-	unionRseNod->nod_flags = flags;
+	unionRse->dsqlFlags = flags;
 
-	return unionRseNod;
+	return unionRse;
 }
 
 
@@ -3799,9 +3778,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_select:
 		verb = "select";
 		break;
-	case nod_select_expr:
-		verb = "select expr";
-		break;
 	case nod_update:
 		verb = "update";
 		break;
@@ -3860,10 +3836,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		trace_line("%s   number %d\n", buffer,
 			(int)(IPTR)node->nod_arg[e_label_number]);
 		return;
-
-	case nod_with:
-		verb = "with";
-		break;
 
 	case nod_class_exprnode:
 		reinterpret_cast<Node*>(node->nod_arg[0])->print(verb, subNodes);

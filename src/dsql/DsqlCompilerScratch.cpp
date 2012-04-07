@@ -503,11 +503,8 @@ void DsqlCompilerScratch::genParameters(Array<ParameterClause>& parameters,
 	appendUChar(0);
 }
 
-void DsqlCompilerScratch::addCTEs(dsql_nod* with)
+void DsqlCompilerScratch::addCTEs(WithClause* withClause)
 {
-	DEV_BLKCHK(with, dsql_type_nod);
-	fb_assert(with->nod_type == Dsql::nod_with);
-
 	if (ctes.getCount())
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -515,17 +512,14 @@ void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 				  Arg::Gds(isc_dsql_cte_nested_with));
 	}
 
-	if (with->nod_flags & NOD_UNION_RECURSIVE)
+	if (withClause->recursive)
 		flags |= DsqlCompilerScratch::FLAG_RECURSIVE_CTE;
 
-	const dsql_nod* list = with->nod_arg[0];
-	const dsql_nod* const* end = list->nod_arg + list->nod_count;
+	const SelectExprNode* const* end = withClause->end();
 
-	for (dsql_nod* const* cte = list->nod_arg; cte < end; cte++)
+	for (SelectExprNode* const* cte = withClause->begin(); cte != end; ++cte)
 	{
-		fb_assert((*cte)->nod_type == Dsql::nod_select_expr);
-
-		if (with->nod_flags & NOD_UNION_RECURSIVE)
+		if (withClause->recursive)
 		{
 			currCtes.push(*cte);
 			PsqlChanger changer(this, false);
@@ -534,28 +528,21 @@ void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 
 			// Add CTE name into CTE aliases stack. It allows later to search for
 			// aliases of given CTE.
-			const dsql_str* cteName = (dsql_str*) (*cte)->nod_arg[Dsql::e_sel_alias];
-			addCTEAlias(cteName->str_data);
+			addCTEAlias((*cte)->alias);
 		}
 		else
 			ctes.add(*cte);
 	}
 }
 
-dsql_nod* DsqlCompilerScratch::findCTE(const MetaName& name)
+SelectExprNode* DsqlCompilerScratch::findCTE(const MetaName& name)
 {
 	for (size_t i = 0; i < ctes.getCount(); ++i)
 	{
-		dsql_nod* cte = ctes[i];
-		fb_assert(cte->nod_type == Dsql::nod_select_expr);
+		SelectExprNode* cte = ctes[i];
 
-		const dsql_str* cteName = (dsql_str*) cte->nod_arg[Dsql::e_sel_alias];
-
-		if (name.length() == cteName->str_length &&
-			strncmp(name.c_str(), cteName->str_data, cteName->str_length) == 0)
-		{
+		if (cte->alias == name.c_str())
 			return cte;
-		}
 	}
 
 	return NULL;
@@ -572,15 +559,12 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 {
 	for (size_t i = 0; i < ctes.getCount(); ++i)
 	{
-		const dsql_nod* cte = ctes[i];
-		fb_assert(cte->nod_type == Dsql::nod_select_expr);
+		const SelectExprNode* cte = ctes[i];
 
-		if (!(cte->nod_flags & NOD_SELECT_EXPR_DT_CTE_USED))
+		if (!(cte->dsqlFlags & RecordSourceNode::DFLAG_DT_CTE_USED))
 		{
-			const dsql_str* cteName = (dsql_str*) cte->nod_arg[Dsql::e_sel_alias];
-
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_cte_not_used) << Arg::Str(cteName->str_data));
+					  Arg::Gds(isc_dsql_cte_not_used) << cte->alias);
 		}
 	}
 }
@@ -591,7 +575,7 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 // queries and union of recursive queries. Check recursive queries to satisfy various criterias.
 // Note that our parser is right-to-left therefore nested list linked as first node in parent list
 // and second node is always query spec.
-//  For example, if we have 4 CTE's where first two is non-recursive and last two is recursive:
+// For example, if we have 4 CTE's where first two is non-recursive and last two is recursive:
 //
 //				list							  union
 //			  [0]	[1]						   [0]		[1]
@@ -603,16 +587,19 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 //
 // Also, we should not change layout of original parse tree to allow it to be parsed again if
 // needed. Therefore recursive part is built using newly allocated list nodes.
-dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
+SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 {
-	dsql_str* const cte_alias = (dsql_str*) input->nod_arg[Dsql::e_sel_alias];
-	dsql_nod* query = input->nod_arg[Dsql::e_sel_query_spec];
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
-	if (query->nod_type != Dsql::nod_list && pass1RseIsRecursive(query))
+	dsql_nod* query = input->querySpec;
+	UnionSourceNode* unionQuery = ExprNode::as<UnionSourceNode>(query);
+
+	if (!unionQuery && pass1RseIsRecursive(query))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Recursive CTE (%s) must be an UNION
-				  Arg::Gds(isc_dsql_cte_not_a_union) << Arg::Str(cte_alias->str_data));
+				  Arg::Gds(isc_dsql_cte_not_a_union) << input->alias);
 	}
 
 	// split queries list on two parts: anchor and recursive
@@ -620,15 +607,22 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 	dsql_nod* recursiveRse = NULL;
 	dsql_nod* qry = query;
 
-	dsql_nod* newQry = MAKE_node(Dsql::nod_list, 2);
-	newQry->nod_flags = query->nod_flags;
+	UnionSourceNode* newQry = FB_NEW(pool) UnionSourceNode(pool);
+	dsql_nod* newQryNod = MAKE_class_node(newQry);
+	newQry->dsqlClauses = MAKE_node(Dsql::nod_list, 2);
+
+	if (unionQuery)
+	{
+		newQry->dsqlAll = unionQuery->dsqlAll;
+		newQry->recursive = unionQuery->recursive;
+	}
 
 	while (true)
 	{
 		dsql_nod* rse = NULL;
 
-		if (qry->nod_type == Dsql::nod_list)
-			rse = qry->nod_arg[1];
+		if (unionQuery)
+			rse = unionQuery->dsqlClauses->nod_arg[1];
 		else
 			rse = qry;
 
@@ -642,14 +636,14 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// CTE '%s' defined non-recursive member after recursive
-					Arg::Gds(isc_dsql_cte_nonrecurs_after_recurs) << Arg::Str(cte_alias->str_data));
+					Arg::Gds(isc_dsql_cte_nonrecurs_after_recurs) << input->alias);
 			}
 
 			if (newRse->dsqlDistinct)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive member of CTE '%s' has %s clause
-					Arg::Gds(isc_dsql_cte_wrong_clause) << Arg::Str(cte_alias->str_data) <<
+					Arg::Gds(isc_dsql_cte_wrong_clause) << input->alias <<
 														   Arg::Str("DISTINCT"));
 			}
 
@@ -657,7 +651,7 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive member of CTE '%s' has %s clause
-					Arg::Gds(isc_dsql_cte_wrong_clause) << Arg::Str(cte_alias->str_data) <<
+					Arg::Gds(isc_dsql_cte_wrong_clause) << input->alias <<
 														   Arg::Str("GROUP BY"));
 			}
 
@@ -665,55 +659,61 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive member of CTE '%s' has %s clause
-					Arg::Gds(isc_dsql_cte_wrong_clause) << Arg::Str(cte_alias->str_data) <<
+					Arg::Gds(isc_dsql_cte_wrong_clause) << input->alias <<
 														   Arg::Str("HAVING"));
 			}
 			// hvlad: we need also forbid any aggregate function here
 			// but for now i have no idea how to do it simple
 
-			if ((newQry->nod_type == Dsql::nod_list) && !(newQry->nod_flags & NOD_UNION_ALL))
+			if (!newQry->dsqlAll)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive members of CTE (%s) must be linked with another members via UNION ALL
-					Arg::Gds(isc_dsql_cte_union_all) << Arg::Str(cte_alias->str_data));
+					Arg::Gds(isc_dsql_cte_union_all) << input->alias);
 			}
 
 			if (!recursiveRse)
-				recursiveRse = newQry;
+				recursiveRse = newQryNod;
 
-			newRseNod->nod_flags |= NOD_SELECT_EXPR_RECURSIVE;
+			newRse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
 
-			if (qry->nod_type == Dsql::nod_list)
-				newQry->nod_arg[1] = newRseNod;
+			if (unionQuery)
+				newQry->dsqlClauses->nod_arg[1] = newRseNod;
 			else
-				newQry->nod_arg[0] = newRseNod;
+				newQry->dsqlClauses->nod_arg[0] = newRseNod;
 		}
 		else
 		{
-			if (qry->nod_type == Dsql::nod_list)
-				newQry->nod_arg[1] = rse;
+			if (unionQuery)
+				newQry->dsqlClauses->nod_arg[1] = rse;
 			else
-				newQry->nod_arg[0] = rse;
+				newQry->dsqlClauses->nod_arg[0] = rse;
 
 			if (!anchorRse)
 			{
-				if (qry->nod_type == Dsql::nod_list)
-					anchorRse = newQry;
+				if (unionQuery)
+					anchorRse = newQryNod;
 				else
 					anchorRse = rse;
 			}
 		}
 
-		if (qry->nod_type != Dsql::nod_list)
+		if (!unionQuery)
 			break;
 
-		qry = qry->nod_arg[0];
+		qry = unionQuery->dsqlClauses->nod_arg[0];
+		unionQuery = ExprNode::as<UnionSourceNode>(qry);
 
-		if (qry->nod_type == Dsql::nod_list)
+		if (unionQuery)
 		{
-			newQry->nod_arg[0] = MAKE_node(Dsql::nod_list, 2);
-			newQry = newQry->nod_arg[0];
-			newQry->nod_flags = qry->nod_flags;
+			UnionSourceNode* newUnion = FB_NEW(pool) UnionSourceNode(pool);
+			newUnion->dsqlClauses = MAKE_node(Dsql::nod_list, 2);
+			newUnion->dsqlAll = unionQuery->dsqlAll;
+			newUnion->recursive = unionQuery->recursive;
+
+			newQry->dsqlClauses->nod_arg[0] = MAKE_class_node(newUnion);
+			newQryNod = newQry->dsqlClauses->nod_arg[0];
+			newQry = newUnion;
 		}
 	}
 
@@ -724,37 +724,37 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			// Non-recursive member is missing in CTE '%s'
-			Arg::Gds(isc_dsql_cte_miss_nonrecursive) << Arg::Str(cte_alias->str_data));
+			Arg::Gds(isc_dsql_cte_miss_nonrecursive) << input->alias);
 	}
 
-	qry = recursiveRse;
-	dsql_nod* list = NULL;
+	UnionSourceNode* qry2 = ExprNode::as<UnionSourceNode>(recursiveRse);
+	UnionSourceNode* list = NULL;
 
-	while (qry->nod_arg[0] != anchorRse)
+	while (qry2->dsqlClauses->nod_arg[0] != anchorRse)
 	{
-		list = qry;
-		qry = qry->nod_arg[0];
+		list = qry2;
+		qry2 = ExprNode::as<UnionSourceNode>(qry2->dsqlClauses->nod_arg[0]);
 	}
 
-	qry->nod_arg[0] = 0;
+	qry2->dsqlClauses->nod_arg[0] = NULL;
 
 	if (list)
-		list->nod_arg[0] = qry->nod_arg[1];
+		list->dsqlClauses->nod_arg[0] = qry2->dsqlClauses->nod_arg[1];
 	else
-		recursiveRse = qry->nod_arg[1];
+		recursiveRse = qry2->dsqlClauses->nod_arg[1];
 
-	dsql_nod* unionNode = MAKE_node(Dsql::nod_list, 2);
-	unionNode->nod_flags = NOD_UNION_ALL | NOD_UNION_RECURSIVE;
-	unionNode->nod_arg[0] = anchorRse;
-	unionNode->nod_arg[1] = recursiveRse;
+	UnionSourceNode* unionNode = FB_NEW(pool) UnionSourceNode(pool);
+	unionNode->dsqlAll = true;
+	unionNode->recursive = true;
+	unionNode->dsqlClauses = MAKE_node(Dsql::nod_list, 2);
+	unionNode->dsqlClauses->nod_arg[0] = anchorRse;
+	unionNode->dsqlClauses->nod_arg[1] = recursiveRse;
 
-	dsql_nod* select = MAKE_node(Dsql::nod_select_expr, Dsql::e_sel_count);
-	select->nod_arg[Dsql::e_sel_query_spec] = unionNode;
-	select->nod_arg[Dsql::e_sel_order] = select->nod_arg[Dsql::e_sel_rows] =
-		select->nod_arg[Dsql::e_sel_with_list] = NULL;
+	SelectExprNode* select = FB_NEW(getPool()) SelectExprNode(getPool());
+	select->querySpec = MAKE_class_node(unionNode);
 
-	select->nod_arg[Dsql::e_sel_alias] = input->nod_arg[Dsql::e_sel_alias];
-	select->nod_arg[Dsql::e_sel_columns] = input->nod_arg[Dsql::e_sel_columns];
+	select->alias = input->alias;
+	select->columns = input->columns;
 
 	return select;
 }
@@ -792,9 +792,6 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 
 		switch ((*pDstTable)->nod_type)
 		{
-			case Dsql::nod_select_expr:
-				break;
-
 			case Dsql::nod_class_exprnode:
 			{
 				RseNode* rseNode = ExprNode::as<RseNode>(*pDstTable);
@@ -844,6 +841,8 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 					}
 					break;
 				}
+				else if (ExprNode::is<SelectExprNode>(*pDstTable))
+					break;
 
 				// fall into
 			}
@@ -885,11 +884,8 @@ bool DsqlCompilerScratch::pass1RelProcIsRecursive(dsql_nod* input)
 		return false;
 
 	fb_assert(currCtes.hasData());
-	const dsql_nod* curr_cte = currCtes.object();
-	const dsql_str* cte_name = (dsql_str*) curr_cte->nod_arg[Dsql::e_sel_alias];
-
-	const bool recursive = (cte_name->str_length == relName.length()) &&
-		(strncmp(relName.c_str(), cte_name->str_data, cte_name->str_length) == 0);
+	const SelectExprNode* currCte = currCtes.object();
+	const bool recursive = currCte->alias == relName.c_str();
 
 	if (recursive)
 		addCTEAlias(relAlias.hasData() ? relAlias.c_str() : relName.c_str());

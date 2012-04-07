@@ -37,8 +37,10 @@ class CompoundStmtNode;
 class DeclareCursorNode;
 class DeclareVariableNode;
 class ParameterClause;
+class SelectExprNode;
 class TypeClause;
 class VariableNode;
+class WithClause;
 
 
 // DSQL Compiler scratch block - may be discarded after compilation in the future.
@@ -177,8 +179,8 @@ public:
 		contextNumber = 0;
 	}
 
-	void addCTEs(dsql_nod* list);
-	dsql_nod* findCTE(const Firebird::MetaName& name);
+	void addCTEs(WithClause* withClause);
+	SelectExprNode* findCTE(const Firebird::MetaName& name);
 	void clearCTEs();
 	void checkUnusedCTEs() const;
 
@@ -263,7 +265,7 @@ public:
 	}
 
 private:
-	dsql_nod* pass1RecursiveCte(dsql_nod* input);
+	SelectExprNode* pass1RecursiveCte(SelectExprNode* input);
 	dsql_nod* pass1RseIsRecursive(dsql_nod* input);
 	bool pass1RelProcIsRecursive(dsql_nod* input);
 	dsql_nod* pass1JoinIsRecursive(dsql_nod*& inputNod);
@@ -300,7 +302,7 @@ public:
 	USHORT inOuterJoin;					// processing inside outer-join part
 	dsql_str* aliasRelationPrefix;		// prefix for every relation-alias.
 	Firebird::MetaName package;			// package being defined
-	DsqlNodStack currCtes;				// current processing CTE's
+	Firebird::Stack<SelectExprNode*> currCtes;	// current processing CTE's
 	class dsql_ctx* recursiveCtx;		// context of recursive CTE
 	USHORT recursiveCtxId;				// id of recursive union stream context
 	bool processingWindow;				// processing window functions
@@ -312,7 +314,7 @@ public:
 	Firebird::Array<dsql_var*> outputVariables;
 
 private:
-	Firebird::HalfStaticArray<dsql_nod*, 4> ctes; // common table expressions
+	Firebird::HalfStaticArray<SelectExprNode*, 4> ctes; // common table expressions
 	Firebird::HalfStaticArray<const Firebird::string*, 4> cteAliases; // CTE aliases in recursive members
 	const Firebird::string* const* currCteAlias;
 	bool psql;

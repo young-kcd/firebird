@@ -645,6 +645,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::BoolExprNode* boolExprNode;
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
+	Jrd::SelectExprNode* selectExprNode;
+	Jrd::WithClause* withClause;
 	Firebird::Array<Jrd::FieldNode*>* fieldArray;
 	Jrd::TransactionNode* traNode;
 	Jrd::CreateCollationNode* createCollationNode;
@@ -727,8 +729,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type column_constraint_def(<addColumnClause>) column_constraint_list(<addColumnClause>)
 %type column_def(<relationNode>)
 %type <boolVal>	   check_opt
-%type <legacyNode> column_list column_name column_parens column_parens_opt column_select
-%type <legacyNode> column_singleton
+%type <legacyNode> column_list column_name column_parens column_parens_opt column_singleton
+%type <selectExprNode> column_select
 %type <traNode>    commit
 %type <stmtNode>   complex_proc_statement
 %type <legacyNode> constant
@@ -755,7 +757,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <valueSourceClause> def_computed default_par_opt
 %type <stmtNode>   delete delete_positioned delete_searched
 %type <uintVal>	   delete_rule
-%type <legacyNode> delimiter_opt derived_column_list derived_table
+%type <legacyNode> delimiter_opt derived_column_list
+%type <selectExprNode> derived_table
 %type <legacyNode> deterministic_opt distinct_clause
 %type <valueSourceClause> domain_default domain_default_opt
 %type <legacyNode> domain_or_non_array_type
@@ -883,7 +886,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> scroll_opt search_condition searched_case
 %type <valueIfNode> searched_when_clause
 %type sec_shadow_files(<dbFilesClause>)
-%type <legacyNode> select_expr
+%type <selectExprNode> select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list
 %type <createShadowNode> shadow_clause
 %type <legacyNode> simple_case simple_UDF_name
@@ -942,7 +945,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> when_operand where_clause window_partition_opt
 %type <stmtNode>   while
-%type <legacyNode> with_clause with_item with_list
+%type <withClause> with_clause with_list
+%type <selectExprNode> with_item
 
 %type <legacyStr> external_body_clause_opt
 
@@ -3164,7 +3168,7 @@ block_parameter($parameters)
 view_clause
 	: simple_table_name column_parens_opt AS select_expr check_opt
 		{
-			CreateAlterViewNode* node = newNode<CreateAlterViewNode>($1, $2, $4);
+			CreateAlterViewNode* node = newNode<CreateAlterViewNode>($1, $2, makeClassNode($4));
 			node->source = toString(makeParseStr(YYPOSNARG(4), YYPOSNARG(5)));
 			node->withCheckOption = $5;
 			$$ = node;
@@ -4564,7 +4568,7 @@ select
 	: select_expr for_update_clause lock_clause
 		{
 			SelectNode* node = newNode<SelectNode>();
-			node->dsqlExpr = $1;
+			node->dsqlExpr = makeClassNode($1);
 			node->dsqlForUpdate = $2;
 			node->dsqlWithLock = $3;
 			$$ = node;
@@ -4591,30 +4595,47 @@ lock_clause
 
 select_expr
 	: with_clause select_expr_body order_clause rows_clause
-		{ $$ = make_node(nod_select_expr, (int) e_sel_count, $2, $3, $4, $1, NULL); }
+		{
+			SelectExprNode* node = $$ = newNode<SelectExprNode>();
+			node->querySpec = $2;
+			node->order = $3;
+			node->rows = $4;
+			node->withClause = $1;
+		}
 	;
 
 with_clause
-	: /* nothing */
+	: // nothing
 		{ $$ = NULL; }
 	| WITH RECURSIVE with_list
-		{ $$ = make_flag_node(nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
+		{
+			$$ = $3;
+			$$->recursive = true;
+		}
 	| WITH with_list
-		{ $$ = make_node(nod_with, 1, make_list($2)); }
+		{ $$ = $2; }
 	;
 
 with_list
 	: with_item
-	| with_item ',' with_list	{ $$ = make_node (nod_list, 2, $1, $3); }
+		{
+			$$ = newNode<WithClause>();
+			$$->add($1);
+		}
+	| with_item ',' with_list
+		{
+			$$ = $3;
+			$$->add($1);
+		}
 	;
 
 with_item
 	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
 		{
 			$$ = $5;
-			$$->nod_flags |= NOD_SELECT_EXPR_DERIVED;
-			$$->nod_arg[e_sel_alias] = $1;
-			$$->nod_arg[e_sel_columns] = $2;
+			$$->dsqlFlags |= RecordSourceNode::DFLAG_DERIVED;
+			$$->alias = toString((dsql_str*) $1);
+			$$->columns = $2;
 		}
 	;
 
@@ -4622,24 +4643,33 @@ column_select
 	: select_expr
 		{
 			$$ = $1;
-			$$->nod_flags |= NOD_SELECT_EXPR_VALUE;
+			$$->dsqlFlags |= RecordSourceNode::DFLAG_VALUE;
 		}
 	;
 
 column_singleton
 	: column_select
 		{
-			$1->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
-			$$ = makeClassNode(newNode<SubQueryNode>(blr_via, $1));
+			$1->dsqlFlags |= RecordSourceNode::DFLAG_SINGLETON;
+			$$ = makeClassNode(newNode<SubQueryNode>(blr_via, makeClassNode($1)));
 		}
 	;
 
 select_expr_body
 	: query_term
 	| select_expr_body UNION distinct_noise query_term
-		{ $$ = make_node (nod_list, 2, $1, $4); }
+		{
+			UnionSourceNode* node = newNode<UnionSourceNode>();
+			node->dsqlClauses = make_node(nod_list, 2, $1, $4);
+			$$ = makeClassNode(node);
+		}
 	| select_expr_body UNION ALL query_term
-		{ $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
+		{
+			UnionSourceNode* node = newNode<UnionSourceNode>();
+			node->dsqlAll = true;
+			node->dsqlClauses = make_node(nod_list, 2, $1, $4);
+			$$ = makeClassNode(node);
+		}
 	;
 
 query_term
@@ -4739,7 +4769,7 @@ table_reference
 
 table_primary
 	: table_proc
-	| derived_table
+	| derived_table			{ $$ = makeClassNode($1); }
 	| '(' joined_table ')'	{ $$ = $2; }
 	;
 
@@ -4748,9 +4778,9 @@ derived_table
 	: '(' select_expr ')' as_noise correlation_name derived_column_list
 		{
 			$$ = $2;
-			$$->nod_flags |= NOD_SELECT_EXPR_DERIVED;
-			$$->nod_arg[e_sel_alias] = $5;
-			$$->nod_arg[e_sel_columns] = $6;
+			$$->dsqlFlags |= RecordSourceNode::DFLAG_DERIVED;
+			$$->alias = toString((dsql_str*) $5);
+			$$->columns = $6;
 		}
 	;
 
@@ -5045,7 +5075,7 @@ insert
 	| insert_start ins_column_parens_opt(&$1->dsqlFields) select_expr returning_clause
 		{
 			StoreNode* node = $$ = $1;
-			node->dsqlRse = $3;
+			node->dsqlRse = makeClassNode($3);
 			node->dsqlReturning = $4;
 			$$ = node;
 		}
@@ -5422,7 +5452,7 @@ comparison_operator
 quantified_predicate
 	: common_value comparison_operator quantified_flag '(' column_select ')'
 		{
-			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1, $5);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1, makeClassNode($5));
 			node->dsqlFlag = $3;
 			$$ = node;
 		}
@@ -5510,12 +5540,12 @@ in_predicate
 
 exists_predicate
 	: EXISTS '(' select_expr ')'
-		{ $$ = newNode<RseBoolNode>(blr_any, $3); }
+		{ $$ = newNode<RseBoolNode>(blr_any, makeClassNode($3)); }
 	;
 
 singular_predicate
 	: SINGULAR '(' select_expr ')'
-		{ $$ = newNode<RseBoolNode>(blr_unique, $3); }
+		{ $$ = newNode<RseBoolNode>(blr_unique, makeClassNode($3)); }
 	;
 
 null_predicate
@@ -5538,7 +5568,7 @@ in_predicate_value
 	;
 
 table_subquery
-	: '(' column_select ')'		{ $$ = $2; }
+	: '(' column_select ')'		{ $$ = makeClassNode($2); }
 	;
 
 // USER control SQL interface
@@ -7189,7 +7219,7 @@ static PathName toPathName(dsql_str* node)
 
 static string toString(dsql_str* node)
 {
-	return string(node->str_data);
+	return string(node ? node->str_data : "");
 }
 
 // Set the position of a left-hand non-terminal based on its right-hand rules.

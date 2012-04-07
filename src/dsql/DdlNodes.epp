@@ -7477,7 +7477,6 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	DDL_reset_context_stack(dsqlScratch);
 	++dsqlScratch->contextNumber;
-	selectExpr->nod_flags |= NOD_SELECT_EXPR_VIEW_FIELDS;
 	dsql_nod* rse = PASS1_rse(dsqlScratch, selectExpr, NULL);
 
 	dsqlScratch->getBlrData().clear();
@@ -7961,7 +7960,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_col_name_err));
 		}
 
-		dsql_nod* querySpecNod = selectExpr->nod_arg[Dsql::e_sel_query_spec];
+		dsql_nod* querySpecNod = ExprNode::as<SelectExprNode>(selectExpr)->querySpec;
 
 		if (querySpecNod->nod_type == Dsql::nod_list)
 		{
@@ -8058,7 +8057,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
 
-	const dsql_nod* querySpecNod = selectExpr->nod_arg[Dsql::e_sel_query_spec];
+	const dsql_nod* querySpecNod = ExprNode::as<SelectExprNode>(selectExpr)->querySpec;
 	dsql_nod* relationNode = dsqlNode;
 
 	// Generate the trigger blr.
@@ -8173,7 +8172,7 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	// Check whether this is an updatable view definition.
 
-	RseNode* querySpec = ExprNode::as<RseNode>(selectExpr->nod_arg[Dsql::e_sel_query_spec]);
+	RseNode* querySpec = ExprNode::as<RseNode>(ExprNode::as<SelectExprNode>(selectExpr)->querySpec);
 	dsql_nod* fromList = NULL;
 
 	if (!querySpec || !(fromList = querySpec->dsqlFrom) || fromList->nod_count != 1)
@@ -8352,7 +8351,7 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 		if (!*ptrNode)
 			continue;
 
-		if ((*ptrNode)->nod_type == Dsql::nod_select_expr)
+		if (ExprNode::as<SelectExprNode>(*ptrNode))
 		{
 			// No subqueries permitted for VIEW WITH CHECK OPTION
 			status_exception::raise(

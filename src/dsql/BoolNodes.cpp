@@ -411,69 +411,60 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	switch (blrOp)
+	if (procArg2->nod_type == Dsql::nod_list)
 	{
-		case blr_eql:
-		case blr_neq:
-		case blr_gtr:
-		case blr_geq:
-		case blr_lss:
-		case blr_leq:
-			if (procArg2->nod_type == Dsql::nod_list)
+		int listItemCount = 0;
+		BoolExprNode* resultNode = NULL;
+		dsql_nod** ptr = procArg2->nod_arg;
+
+		for (const dsql_nod* const* const end = ptr + procArg2->nod_count;
+			 ptr != end; ++listItemCount, ++ptr)
+		{
+			if (listItemCount >= MAX_MEMBER_LIST)
 			{
-				int listItemCount = 0;
-				BoolExprNode* resultNode = NULL;
-				dsql_nod** ptr = procArg2->nod_arg;
-
-				for (const dsql_nod* const* const end = ptr + procArg2->nod_count;
-					 ptr != end; ++listItemCount, ++ptr)
-				{
-					if (listItemCount >= MAX_MEMBER_LIST)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-								  Arg::Gds(isc_imp_exc) <<
-								  Arg::Gds(isc_dsql_too_many_values) << Arg::Num(MAX_MEMBER_LIST));
-					}
-
-					DEV_BLKCHK(*ptr, dsql_type_nod);
-
-					ComparativeBoolNode* temp = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-						blrOp, procArg1, *ptr);
-
-					if (resultNode)
-					{
-						dsql_nod* tempNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-						tempNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
-
-						dsql_nod* resultNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-						resultNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(resultNode);
-
-						BinaryBoolNode* binaryNode = FB_NEW(getPool()) BinaryBoolNode(getPool(),
-							blr_or, resultNod, tempNod);
-
-						resultNode = binaryNode;
-					}
-					else
-						resultNode = temp;
-				}
-
-				return resultNode->dsqlPass(dsqlScratch);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+						  Arg::Gds(isc_imp_exc) <<
+						  Arg::Gds(isc_dsql_too_many_values) << Arg::Num(MAX_MEMBER_LIST));
 			}
 
-			if (procArg2->nod_type == Dsql::nod_select_expr &&
-				!(procArg2->nod_flags & NOD_SELECT_EXPR_SINGLETON))
+			DEV_BLKCHK(*ptr, dsql_type_nod);
+
+			ComparativeBoolNode* temp = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blrOp, procArg1, *ptr);
+
+			if (resultNode)
 			{
-				UCHAR newBlrOp = blr_any;
+				dsql_nod* tempNod = MAKE_node(Dsql::nod_class_exprnode, 1);
+				tempNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
 
-				if (dsqlFlag == DFLAG_ANSI_ANY)
-					newBlrOp = blr_ansi_any;
-				else if (dsqlFlag == DFLAG_ANSI_ALL)
-					newBlrOp = blr_ansi_all;
+				dsql_nod* resultNod = MAKE_node(Dsql::nod_class_exprnode, 1);
+				resultNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(resultNode);
 
-				return createRseNode(dsqlScratch, newBlrOp);
+				BinaryBoolNode* binaryNode = FB_NEW(getPool()) BinaryBoolNode(getPool(),
+					blr_or, resultNod, tempNod);
+
+				resultNode = binaryNode;
 			}
+			else
+				resultNode = temp;
+		}
 
-			break;
+		return resultNode->dsqlPass(dsqlScratch);
+	}
+
+	SelectExprNode* selNode = ExprNode::as<SelectExprNode>(procArg2);
+
+	if (selNode)
+	{
+		fb_assert(!(selNode->dsqlFlags & RecordSourceNode::DFLAG_SINGLETON));
+		UCHAR newBlrOp = blr_any;
+
+		if (dsqlFlag == DFLAG_ANSI_ANY)
+			newBlrOp = blr_ansi_any;
+		else if (dsqlFlag == DFLAG_ANSI_ALL)
+			newBlrOp = blr_ansi_all;
+
+		return createRseNode(dsqlScratch, newBlrOp);
 	}
 
 	ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blrOp,
@@ -565,7 +556,6 @@ bool ComparativeBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) c
 	return dsqlFlag == o->dsqlFlag && blrOp == o->blrOp;
 }
 
-
 bool ComparativeBoolNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
 {
 	ComparativeBoolNode* otherNode = other->as<ComparativeBoolNode>();
@@ -595,7 +585,6 @@ bool ComparativeBoolNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*
 
 	return false;
 }
-
 
 BoolExprNode* ComparativeBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
@@ -1325,28 +1314,25 @@ bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* d
 
 BoolExprNode* ComparativeBoolNode::createRseNode(DsqlCompilerScratch* dsqlScratch, UCHAR rseBlrOp)
 {
-	PASS1_set_parameter_type(dsqlScratch, dsqlArg1, dsqlArg2, false);
-
 	// Create a derived table representing our subquery.
-	dsql_nod* dt = MAKE_node(Dsql::nod_select_expr, Dsql::e_sel_count);
+	SelectExprNode* dt = FB_NEW(getPool()) SelectExprNode(getPool());
 	// Ignore validation for column names that must exist for "user" derived tables.
-	dt->nod_flags |= NOD_SELECT_EXPR_DT_IGNORE_COLUMN_CHECK | NOD_SELECT_EXPR_DERIVED;
-	dt->nod_arg[Dsql::e_sel_query_spec] = dsqlArg2;
+	dt->dsqlFlags = RecordSourceNode::DFLAG_DT_IGNORE_COLUMN_CHECK | RecordSourceNode::DFLAG_DERIVED;
+	dt->querySpec = dsqlArg2;
 	dsql_nod* from = MAKE_node(Dsql::nod_list, 1);
-	from->nod_arg[0] = dt;
+	from->nod_arg[0] = MAKE_class_node(dt);
 
 	RseNode* querySpec = FB_NEW(getPool()) RseNode(getPool());
 	querySpec->dsqlFrom = from;
 
-	dsql_nod* select_expr = MAKE_node(Dsql::nod_select_expr, Dsql::e_sel_count);
-	select_expr->nod_arg[Dsql::e_sel_query_spec] = MAKE_node(Dsql::nod_class_exprnode, 1);
-	select_expr->nod_arg[Dsql::e_sel_query_spec]->nod_arg[0] = reinterpret_cast<dsql_nod*>(querySpec);
+	SelectExprNode* select_expr = FB_NEW(getPool()) SelectExprNode(getPool());
+	select_expr->querySpec = MAKE_class_node(querySpec);
 
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 	const DsqlContextStack::iterator baseDT(dsqlScratch->derivedContext);
 	const DsqlContextStack::iterator baseUnion(dsqlScratch->unionContext);
 
-	dsql_nod* rseNod = PASS1_rse(dsqlScratch, select_expr, NULL);
+	dsql_nod* rseNod = PASS1_rse(dsqlScratch, MAKE_class_node(select_expr), NULL);
 	RseNode* rse = ExprNode::as<RseNode>(rseNod);
 	fb_assert(rse);
 

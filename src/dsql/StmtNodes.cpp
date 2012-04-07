@@ -1933,7 +1933,7 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	if (dsqlReturning || statement)
-		rseNod->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
+		ExprNode::as<RseNode>(rseNod)->dsqlFlags |= RecordSourceNode::DFLAG_SINGLETON;
 
 	node->dsqlRse = rseNod;
 	node->dsqlRelation = ExprNode::as<RseNode>(rseNod)->dsqlStreams->nod_arg[0];
@@ -4834,13 +4834,13 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	dsql_nod* select_expr = MAKE_node(Dsql::nod_select_expr, Dsql::e_sel_count);
-	select_expr->nod_arg[Dsql::e_sel_query_spec] = querySpecNod;
+	SelectExprNode* select_expr = FB_NEW(getPool()) SelectExprNode(getPool());
+	select_expr->querySpec = querySpecNod;
 
 	// build a FOR SELECT node
 	ForNode* forNode = FB_NEW(pool) ForNode(pool);
 	forNode->dsqlSelect = FB_NEW(pool) SelectNode(pool);
-	forNode->dsqlSelect->dsqlExpr = select_expr;
+	forNode->dsqlSelect->dsqlExpr = MAKE_class_node(select_expr);
 	forNode->statement = FB_NEW(pool) CompoundStmtNode(pool);
 
 	forNode = forNode->dsqlPass(dsqlScratch);
@@ -5449,10 +5449,10 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 		rseNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 		rseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(rse);
-		rseNod->nod_flags = dsqlRseFlags;
+		rse->dsqlFlags = dsqlRseFlags;
 
 		if (dsqlReturning || statement2)
-			rseNod->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
+			rse->dsqlFlags |= RecordSourceNode::DFLAG_SINGLETON;
 
 		dsql_nod* temp = MAKE_node(Dsql::nod_list, 1);
 		rse->dsqlStreams = temp;
@@ -6165,7 +6165,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 	if (rse)
 	{
 		if (dsqlReturning || statement2)
-			rse->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
+			ExprNode::as<RseNode>(rse)->dsqlFlags |= RecordSourceNode::DFLAG_SINGLETON;
 
 		node->dsqlRse = rse = PASS1_rse(dsqlScratch, rse, NULL);
 		values = ExprNode::as<RseNode>(rse)->dsqlSelectList;
@@ -7799,7 +7799,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (dsqlReturning)
 	{
-		update->dsqlRseFlags = NOD_SELECT_EXPR_SINGLETON;
+		update->dsqlRseFlags = RecordSourceNode::DFLAG_SINGLETON;
 		update->statement2 = ReturningProcessor::clone(
 			dsqlScratch, dsqlReturning, insert->statement2);
 	}

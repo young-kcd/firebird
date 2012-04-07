@@ -67,7 +67,6 @@ enum nod_t
 	nod_all,	// ALL privileges
 	nod_execute,	// EXECUTE privilege
 	nod_procedure_name,
-	nod_select_expr,
 	nod_order,
 	nod_flag,
 	nod_user_name,
@@ -82,7 +81,6 @@ enum nod_t
 	nod_role_name,
 	nod_label, // label support
 	nod_rows,	// ROWS support
-	nod_with,
 	nod_class_exprnode,
 	nod_package_name,
 	nod_package_obj,
@@ -103,14 +101,6 @@ enum node_args {
 	e_rows_skip = 0,		// nod_rows
 	e_rows_length,
 	e_rows_count,
-
-	e_sel_query_spec = 0,	// nod_select_expr
-	e_sel_order,
-	e_sel_rows,
-	e_sel_with_list,
-	e_sel_alias,			// Alias name for derived table
-	e_sel_columns,			// List with alias names from derived table columns
-	e_sel_count,
 
 	e_order_field = 0,		// nod_order
 	e_order_flag,
@@ -150,24 +140,13 @@ public:
 
 // values of flags
 enum nod_flags_vals {
-	NOD_UNION_ALL			= 1, // nod_list
-	NOD_UNION_RECURSIVE 	= 2,
-
 	NOD_SHARED				= 1, // nod_lock_mode
 	NOD_PROTECTED			= 2,
 	NOD_READ				= 4,
 	NOD_WRITE				= 8,
 
 	NOD_NULLS_FIRST			= 1, // nod_order
-	NOD_NULLS_LAST			= 2,
-
-	NOD_SELECT_EXPR_SINGLETON				= 1,	// nod_select_expr
-	NOD_SELECT_EXPR_VALUE					= 2,
-	NOD_SELECT_EXPR_RECURSIVE				= 4,	// recursive member of recursive CTE
-	NOD_SELECT_EXPR_VIEW_FIELDS				= 8,	// view's field list
-	NOD_SELECT_EXPR_DERIVED					= 16,
-	NOD_SELECT_EXPR_DT_IGNORE_COLUMN_CHECK	= 32,
-	NOD_SELECT_EXPR_DT_CTE_USED				= 64
+	NOD_NULLS_LAST			= 2
 };
 
 } // namespace

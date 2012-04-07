@@ -39,6 +39,7 @@ class BoolExprNode;
 class MessageNode;
 class RelationSourceNode;
 class RseNode;
+class SelectExprNode;
 class ValueListNode;
 
 
@@ -196,12 +197,33 @@ public:
 	USHORT id;
 };
 
+class WithClause : public Firebird::Array<SelectExprNode*>
+{
+public:
+	explicit WithClause(MemoryPool& pool)
+		: Array(pool),
+		  recursive(false)
+	{
+	}
+
+public:
+	bool recursive;
+};
+
 
 class RecordSourceNode : public ExprNode
 {
 public:
+	static const unsigned DFLAG_SINGLETON				= 0x01;
+	static const unsigned DFLAG_VALUE					= 0x02;
+	static const unsigned DFLAG_RECURSIVE				= 0x04;	// recursive member of recursive CTE
+	static const unsigned DFLAG_DERIVED					= 0x08;
+	static const unsigned DFLAG_DT_IGNORE_COLUMN_CHECK	= 0x10;
+	static const unsigned DFLAG_DT_CTE_USED				= 0x20;
+
 	RecordSourceNode(Type aType, MemoryPool& pool)
 		: ExprNode(aType, pool, KIND_REC_SOURCE),
+		  dsqlFlags(0),
 		  stream(MAX_USHORT)
 	{
 	}
@@ -259,6 +281,9 @@ public:
 	// Identify all of the streams for which a dbkey may need to be carried through a sort.
 	virtual void computeDbKeyStreams(UCHAR* streams) const = 0;
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream) = 0;
+
+public:
+	unsigned dsqlFlags;
 
 protected:
 	USHORT stream;
@@ -491,11 +516,12 @@ class UnionSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYP
 public:
 	explicit UnionSourceNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_UNION>(pool),
+		  dsqlAll(false),
+		  recursive(false),
 		  dsqlClauses(NULL),
 		  clauses(pool),
 		  maps(pool),
-		  mapStream(0),
-		  recursive(false)
+		  mapStream(0)
 	{
 	}
 
@@ -526,13 +552,14 @@ private:
 		BoolExprNodeStack* parentStack, UCHAR shellStream);
 
 public:
+	bool dsqlAll;		// UNION ALL
+	bool recursive;		// union node is a recursive union
 	dsql_nod* dsqlClauses;
 
 private:
 	Firebird::Array<NestConst<RseNode> > clauses;	// RseNode's for union
 	Firebird::Array<NestConst<MapNode> > maps;		// RseNode's maps
 	USHORT mapStream;	// stream for next level record of recursive union
-	bool recursive;		// union node is a recursive union
 };
 
 class WindowSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_WINDOW>
@@ -735,6 +762,80 @@ public:
 	NestConst<VarInvariantArray> rse_invariants; // Invariant nodes bound to top-level RSE
 	Firebird::Array<NestConst<RecordSourceNode> > rse_relations;
 	unsigned flags;
+};
+
+class SelectExprNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_SELECT_EXPR>
+{
+public:
+	explicit SelectExprNode(MemoryPool& pool)
+		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_SELECT_EXPR>(pool),
+		  querySpec(NULL),
+		  order(NULL),
+		  rows(NULL),
+		  withClause(NULL),
+		  alias(pool),
+		  columns(NULL)
+	{
+	}
+
+	virtual RseNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const
+	{
+		fb_assert(false);
+	}
+
+	virtual RseNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
+		BoolExprNode** boolean, RecordSourceNodeStack& stack)
+	{
+		fb_assert(false);
+	}
+
+	virtual RseNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb)
+	{
+		fb_assert(false);
+	}
+
+	virtual bool containsStream(USHORT checkStream) const
+	{
+		fb_assert(false);
+		return false;
+	}
+
+	virtual void computeDbKeyStreams(UCHAR* streams) const
+	{
+		fb_assert(false);
+	}
+
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream)
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+public:
+	dsql_nod* querySpec;
+	dsql_nod* order;
+	dsql_nod* rows;
+	WithClause* withClause;
+	Firebird::string alias;
+	dsql_nod* columns;
 };
 
 
