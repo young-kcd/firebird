@@ -8963,7 +8963,9 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			// command-line ISQL only.  For WISQL, print the column
 			// headings only once.
 
-			if (printHead && (lines % Pagelength == 0))
+			if (printHead && 
+				(Pagelength && (lines % Pagelength == 0) ||
+				 !Pagelength && !lines) )
 			{
 				isqlGlob.printf("%s%s%s%s%s",
 								NEWLINE,
