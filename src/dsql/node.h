@@ -80,7 +80,6 @@ enum nod_t
 	nod_index_order,
 	nod_role_name,
 	nod_label, // label support
-	nod_rows,	// ROWS support
 	nod_class_exprnode,
 	nod_package_name,
 	nod_package_obj,
@@ -98,10 +97,6 @@ enum nod_t
  *	entries.  These include nod_udf.
  */
 enum node_args {
-	e_rows_skip = 0,		// nod_rows
-	e_rows_length,
-	e_rows_count,
-
 	e_order_field = 0,		// nod_order
 	e_order_flag,
 	e_order_nulls,

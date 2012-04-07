@@ -647,6 +647,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::DdlNode* ddlNode;
 	Jrd::SelectExprNode* selectExprNode;
 	Jrd::WithClause* withClause;
+	Jrd::RowsClause* rowsClause;
 	Firebird::Array<Jrd::FieldNode*>* fieldArray;
 	Jrd::TransactionNode* traNode;
 	Jrd::CreateCollationNode* createCollationNode;
@@ -876,7 +877,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <returningClause> returning_clause
 %type <ddlNode> revoke rexception_clause
 %type <legacyNode> role_admin_option role_grantee role_grantee_list
-%type <legacyNode> role_name role_name_list rows_clause
+%type <legacyNode> role_name role_name_list
+%type <rowsClause> rows_clause
 %type <traNode> rollback
 %type <ddlNode> role_clause rtable_clause
 %type <ddlNode> rview_clause
@@ -4599,7 +4601,7 @@ select_expr
 			SelectExprNode* node = $$ = newNode<SelectExprNode>();
 			node->querySpec = $2;
 			node->order = $3;
-			node->rows = $4;
+			node->rowsClause = $4;
 			node->withClause = $1;
 		}
 	;
@@ -5044,21 +5046,23 @@ nulls_placement
 // ROWS clause
 
 rows_clause
-	: /* nothing */
+	: // nothing
 		{ $$ = NULL; }
 	// equivalent to FIRST value
 	| ROWS value
-		{ $$ = make_node (nod_rows, (int) e_rows_count, NULL, $2); }
+		{
+			$$ = newNode<RowsClause>();
+			$$->length = $2;
+		}
 	// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
 	| ROWS value TO value
 		{
-			$$ = make_node (nod_rows, (int) e_rows_count,
-				makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
-					$2, MAKE_const_slong(1))),
-				makeClassNode(newNode<ArithmeticNode>(blr_add, true,
-					makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
-						$4, $2)),
-					MAKE_const_slong(1))));
+			$$ = newNode<RowsClause>();
+			$$->skip = makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
+				$2, MAKE_const_slong(1)));
+			$$->length = makeClassNode(newNode<ArithmeticNode>(blr_add, true,
+				makeClassNode(newNode<ArithmeticNode>(blr_subtract, true, $4, $2)),
+				MAKE_const_slong(1)));
 		}
 	;
 

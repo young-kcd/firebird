@@ -1925,11 +1925,8 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		if ((temp = dsqlSort))
 			rse->dsqlOrder = PASS1_sort(dsqlScratch, temp, NULL);
 
-		if ((temp = dsqlRows))
-		{
-			PASS1_limit(dsqlScratch, temp->nod_arg[Dsql::e_rows_length],
-				temp->nod_arg[Dsql::e_rows_skip], rse);
-		}
+		if (dsqlRows)
+			PASS1_limit(dsqlScratch, dsqlRows->length, dsqlRows->skip, rse);
 	}
 
 	if (dsqlReturning || statement)
@@ -5468,11 +5465,8 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		if ((temp = dsqlSort))
 			rse->dsqlOrder = PASS1_sort(dsqlScratch, temp, NULL);
 
-		if ((temp = dsqlRows))
-		{
-			PASS1_limit(dsqlScratch, temp->nod_arg[Dsql::e_rows_length],
-				temp->nod_arg[Dsql::e_rows_skip], rse);
-		}
+		if (dsqlRows)
+			PASS1_limit(dsqlScratch, dsqlRows->length, dsqlRows->skip, rse);
 	}
 
 	if (dsqlReturning || statement2)

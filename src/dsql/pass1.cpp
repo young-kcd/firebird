@@ -193,10 +193,10 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, SelectExprNode*, cons
 static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
-static RseNode* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
-static RseNode* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, bool, USHORT);
+static RseNode* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, RowsClause*, bool, USHORT);
+static RseNode* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, RowsClause*, bool, USHORT);
 static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*);
-static RseNode* pass1_union(DsqlCompilerScratch*, UnionSourceNode*, dsql_nod*, dsql_nod*, bool, USHORT);
+static RseNode* pass1_union(DsqlCompilerScratch*, UnionSourceNode*, dsql_nod*, RowsClause*, bool, USHORT);
 static void pass1_union_auto_cast(DsqlCompilerScratch*, dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
@@ -2387,7 +2387,7 @@ static dsql_rel* pass1_base_table( DsqlCompilerScratch* dsqlScratch, const dsql_
 
 // Wrapper for pass1_rse_impl. Substitute recursive CTE alias (if needed) and call pass1_rse_impl.
 static RseNode* pass1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
-	dsql_nod* rows, bool updateLock, USHORT flags)
+	RowsClause* rows, bool updateLock, USHORT flags)
 {
 	string save_alias;
 	RseNode* rseNode = ExprNode::as<RseNode>(input);
@@ -2413,7 +2413,7 @@ static RseNode* pass1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsq
 // Compile a record selection expression. The input node may either be a "select_expression"
 // or a "list" (an implicit union) or a "query specification".
 static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
-	dsql_nod* rows, bool updateLock, USHORT flags)
+	RowsClause* rows, bool updateLock, USHORT flags)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -2434,7 +2434,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 				dsqlScratch->addCTEs(withClause);
 
 			RseNode* ret = pass1_rse(dsqlScratch, selNode->querySpec, selNode->order,
-				selNode->rows, updateLock, selNode->dsqlFlags);
+				selNode->rowsClause, updateLock, selNode->dsqlFlags);
 
 			if (withClause)
 			{
@@ -2496,7 +2496,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 				  Arg::Gds(isc_random) << Arg::Str("ROWS"));
 	}
 	else if (rows)
-		PASS1_limit(dsqlScratch, rows->nod_arg[e_rows_length], rows->nod_arg[e_rows_skip], rse);
+		PASS1_limit(dsqlScratch, rows->length, rows->skip, rse);
 	else if (inputRse->dsqlFirst || inputRse->dsqlSkip)
 		PASS1_limit(dsqlScratch, inputRse->dsqlFirst, inputRse->dsqlSkip, rse);
 
@@ -3009,7 +3009,7 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 // Handle a UNION of substreams, generating a mapping of all the fields and adding an implicit
 // PROJECT clause to ensure that all the records returned are unique.
 static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* input,
-	dsql_nod* order_list, dsql_nod* rows, bool updateLock, USHORT flags)
+	dsql_nod* order_list, RowsClause* rows, bool updateLock, USHORT flags)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(order_list, dsql_type_nod);
@@ -3216,7 +3216,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 	}
 
 	if (rows)
-		PASS1_limit(dsqlScratch, rows->nod_arg[e_rows_length], rows->nod_arg[e_rows_skip], unionRse);
+		PASS1_limit(dsqlScratch, rows->length, rows->skip, unionRse);
 
 	// PROJECT on all the select items unless UNION ALL was specified.
 	if (!input->dsqlAll)
@@ -3782,9 +3782,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "update";
 		break;
 
-	case nod_rows:
-		verb = "rows";
-		break;
 	// IOL: missing node types
 	case nod_plan_expr:
 		verb = "plan";

@@ -771,7 +771,7 @@ public:
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_SELECT_EXPR>(pool),
 		  querySpec(NULL),
 		  order(NULL),
-		  rows(NULL),
+		  rowsClause(NULL),
 		  withClause(NULL),
 		  alias(pool),
 		  columns(NULL)
@@ -832,7 +832,7 @@ public:
 public:
 	dsql_nod* querySpec;
 	dsql_nod* order;
-	dsql_nod* rows;
+	RowsClause* rowsClause;
 	WithClause* withClause;
 	Firebird::string alias;
 	dsql_nod* columns;

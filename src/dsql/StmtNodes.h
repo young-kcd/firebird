@@ -549,7 +549,7 @@ public:
 	dsql_nod* dsqlBoolean;
 	dsql_nod* dsqlPlan;
 	dsql_nod* dsqlSort;
-	dsql_nod* dsqlRows;
+	RowsClause* dsqlRows;
 	Firebird::MetaName dsqlCursorName;
 	ReturningClause* dsqlReturning;
 	dsql_nod* dsqlRse;
@@ -1143,7 +1143,7 @@ public:
 	dsql_nod* dsqlBoolean;
 	dsql_nod* dsqlPlan;
 	dsql_nod* dsqlSort;
-	dsql_nod* dsqlRows;
+	RowsClause* dsqlRows;
 	Firebird::MetaName dsqlCursorName;
 	ReturningClause* dsqlReturning;
 	USHORT dsqlRseFlags;

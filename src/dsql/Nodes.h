@@ -1096,6 +1096,22 @@ private:
 };
 
 
+class RowsClause : public Firebird::PermanentStorage
+{
+public:
+	explicit RowsClause(MemoryPool& pool)
+		: PermanentStorage(pool),
+		  length(NULL),
+		  skip(NULL)
+	{
+	}
+
+public:
+	dsql_nod* length;
+	dsql_nod* skip;
+};
+
+
 } // namespace
 
 #endif // DSQL_NODES_H
