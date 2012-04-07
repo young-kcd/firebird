@@ -527,22 +527,22 @@ private:
 
 	ULONG getTotalMapped() const
 	{
-		return m_extents.getCount() * getExtendSize();
+		return (ULONG) m_extents.getCount() * getExtentSize();
 	}
 
-	ULONG getExtendSize() const
+	ULONG getExtentSize() const
 	{
 		return m_memorySize;
 	}
 
 	ULONG getStartOffset(ULONG n) const
 	{
-		return n * getExtendSize();
+		return n * getExtentSize();
 	}
 
 	SRQ_PTR REL_PTR(const void* item);
 	void* ABS_PTR(SRQ_PTR item);
-	bool newExtent();
+	bool createExtent();
 #endif
 };
 

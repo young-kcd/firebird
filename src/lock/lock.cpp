@@ -295,32 +295,32 @@ LockManager::~LockManager()
 #ifdef USE_SHMEM_EXT
 SRQ_PTR LockManager::REL_PTR(const void* par_item)
 {
-	const UCHAR* item = static_cast<const UCHAR*>(par_item);
+	const UCHAR* const item = static_cast<const UCHAR*>(par_item);
 	for (ULONG i = 0; i < m_extents.getCount(); ++i)
 	{
 		Extent& l = m_extents[i];
 		UCHAR* adr = reinterpret_cast<UCHAR*>(l.sh_mem_header);
-		if (item >= adr && item < adr + getExtendSize())
+		if (item >= adr && item < adr + getExtentSize())
 		{
 			return getStartOffset(i) + (item - adr);
 		}
     }
 
 	errno = 0;
-    bug(NULL, "Extend not found in REL_PTR()");
+    bug(NULL, "Extent not found in REL_PTR()");
     return 0;	// compiler silencer
 }
 
 
 void* LockManager::ABS_PTR(SRQ_PTR item)
 {
-	ULONG extent = item / getExtendSize();
+	const ULONG extent = item / getExtentSize();
 	if (extent >= m_extents.getCount())
 	{
 		errno = 0;
-		bug(NULL, "Extend not found in ABS_PTR()");
+		bug(NULL, "Extent not found in ABS_PTR()");
 	}
-	return reinterpret_cast<UCHAR*>(m_extents[extent].sh_mem_header) + (item % getExtendSize());
+	return reinterpret_cast<UCHAR*>(m_extents[extent].sh_mem_header) + (item % getExtentSize());
 }
 #endif //USE_SHMEM_EXT
 
@@ -1195,7 +1195,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #ifdef USE_SHMEM_EXT
 	while (sh_mem_header->lhb_length > getTotalMapped())
 	{
-		if (! newExtent())
+		if (!createExtent())
 		{
 			bug(NULL, "map of lock file extent failed");
 		}
@@ -1266,10 +1266,10 @@ bool LockManager::Extent::initialize(bool)
 void LockManager::Extent::mutexBug(int, const char*)
 { }
 
-bool LockManager::newExtent()
+bool LockManager::createExtent()
 {
 	Firebird::PathName name;
-	get_shared_file_name(name, m_extents.getCount());
+	get_shared_file_name(name, (ULONG) m_extents.getCount());
 	Arg::StatusVector local_status;
 
 	Extent& extent = m_extents.add();
@@ -1277,7 +1277,7 @@ bool LockManager::newExtent()
 	if (!extent.mapFile(local_status, name.c_str(), m_memorySize))
 	{
 		m_extents.pop();
-		logError("LockManager::newExtent() mapFile", local_status);
+		logError("LockManager::createExtent() mapFile", local_status);
 		return false;
 	}
 
@@ -1309,7 +1309,7 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 #ifdef USE_SHMEM_EXT
 		// round up so next object starts at beginning of next extent
 		block = sh_mem_header->lhb_used = sh_mem_header->lhb_length;
-		if (newExtent())
+		if (createExtent())
 		{
 			sh_mem_header->lhb_length += m_memorySize;
 		}
