@@ -1,3 +1,12 @@
+ 2012-04-06 09:07  hvlad 
+   M builds/install/misc/firebird.conf.in
+Misc
+
+ 2012-04-06 08:39  hvlad 
+   M builds/install/misc/firebird.conf.in
+More clear explanation of GCPolicy setting.
+Thanks to the Paul Beach.
+
  2012-04-05 09:48  dimitr 
    M src/dsql/pass1.cpp
 Fixed my yesterday's commit.
