@@ -221,6 +221,7 @@ LockManager::LockManager(const Firebird::string& id)
 	  m_process(NULL),
 	  m_processOffset(0),
 	  m_dbId(getPool(), id),
+	  m_localBlockage(false),
 	  m_acquireSpins(Config::getLockAcquireSpins()),
 	  m_memorySize(Config::getLockMemSize())
 #ifdef USE_SHMEM_EXT
@@ -239,7 +240,7 @@ LockManager::~LockManager()
 {
 	const SRQ_PTR process_offset = m_processOffset;
 	{ // guardian's scope
-		Firebird::MutexLockGuard guard(m_localMutex);
+		LocalGuard guard(this);
 		m_processOffset = 0;
 	}
 
@@ -395,7 +396,7 @@ bool LockManager::initializeOwner(thread_db* tdbb,
  **************************************/
 	LOCK_TRACE(("LOCK_init (ownerid=%ld)\n", owner_id));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	// If everything is already initialized, just bump the use count
 
@@ -427,7 +428,7 @@ void LockManager::shutdownOwner(thread_db* tdbb, SRQ_PTR* owner_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_fini(%ld)\n", *owner_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	if (!m_header)
 		return;
@@ -442,12 +443,12 @@ void LockManager::shutdownOwner(thread_db* tdbb, SRQ_PTR* owner_offset)
 
 	while (owner->own_ast_count)
 	{
-		m_localMutex.leave();
-		{ // scope
+		{ // checkout scope
+			LocalCheckout checkout(this);
 			Database::Checkout dco(tdbb->getDatabase());
 			THREAD_SLEEP(10);
 		}
-		m_localMutex.enter();
+
 		owner = (own*) SRQ_ABS_PTR(offset); // Re-init after a potential remap
 	}
 
@@ -489,7 +490,7 @@ SRQ_PTR LockManager::enqueue(thread_db* tdbb,
  **************************************/
 	LOCK_TRACE(("LOCK_enq (%ld)\n", parent_request));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner_offset || !owner->own_count)
@@ -648,7 +649,7 @@ bool LockManager::convert(thread_db* tdbb,
  **************************************/
 	LOCK_TRACE(("LOCK_convert (%d, %d)\n", type, lck_wait));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
@@ -683,7 +684,7 @@ UCHAR LockManager::downgrade(thread_db* tdbb, const SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_downgrade (%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	SRQ_PTR owner_offset = request->lrq_owner;
@@ -747,7 +748,7 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_deq (%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
@@ -788,7 +789,7 @@ void LockManager::repost(thread_db* tdbb, lock_ast_t ast, void* arg, SRQ_PTR own
 
 	LOCK_TRACE(("LOCK_re_post(%ld)\n", owner_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	acquire_shmem(owner_offset);
 
@@ -849,7 +850,7 @@ bool LockManager::cancelWait(SRQ_PTR owner_offset)
 	if (!owner_offset)
 		return false;
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	acquire_shmem(DUMMY_OWNER);
 
@@ -881,7 +882,7 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		return 0;
 	}
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	// Get root of lock hierarchy
 
@@ -978,7 +979,7 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_read_data(%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	acquire_shmem(request->lrq_owner);
@@ -1016,7 +1017,7 @@ SLONG LockManager::readData2(SRQ_PTR parent_request,
  **************************************/
 	LOCK_TRACE(("LOCK_read_data2(%ld)\n", parent_request));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	acquire_shmem(owner_offset);
 
@@ -1063,7 +1064,7 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
  **************************************/
 	LOCK_TRACE(("LOCK_write_data (%ld)\n", request_offset));
 
-	Firebird::MutexLockGuard guard(m_localMutex);
+	LocalGuard guard(this);
 
 	lrq* request = get_request(request_offset);
 	acquire_shmem(request->lrq_owner);
@@ -1171,8 +1172,9 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	fb_assert(!m_sharedFileCreated);
 
 	++m_header->lhb_acquires;
-	if (prior_active > 0) {
+	if (m_localBlockage || prior_active > 0) {
 		++m_header->lhb_acquire_blocks;
+		m_localBlockage = false;
 	}
 
 	if (spins)
@@ -1474,17 +1476,21 @@ void LockManager::blocking_action(thread_db* tdbb,
 		{
 			owner->own_ast_count++;
 			release_shmem(blocked_owner_offset);
-			m_localMutex.leave();
-			if (tdbb)
-			{
-				Database::Checkout dcoHolder(tdbb->getDatabase());
-				(*routine)(arg);
+			
+			{ // checkout scope
+				LocalCheckout checkout(this);
+
+				if (tdbb)
+				{
+					Database::Checkout dcoHolder(tdbb->getDatabase());
+					(*routine)(arg);
+				}
+				else
+				{
+					(*routine)(arg);
+				}
 			}
-			else
-			{
-				(*routine)(arg);
-			}
-			m_localMutex.enter();
+
 			acquire_shmem(blocked_owner_offset);
 			owner = (own*) SRQ_ABS_PTR(blocking_owner_offset);
 			owner->own_ast_count--;
@@ -1524,7 +1530,7 @@ void LockManager::blocking_action_thread()
 		{
 			SLONG value;
 			{ // guardian's scope
-				Firebird::MutexLockGuard guard(m_localMutex);
+				LocalGuard guard(this);
 
 				// See if the main thread has requested us to go away
 				if (!m_processOffset || m_process->prc_process_id != PID)
@@ -4010,18 +4016,19 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			// Re-initialize value each time thru the loop to make sure that the
 			// semaphore looks 'un-poked'
 
-			m_localMutex.leave();
+			LocalCheckout checkout(this);
+
 			{ // scope
 				Firebird::ReadLockGuard guard(m_remapSync);
 				owner = (own*) SRQ_ABS_PTR(owner_offset);
 				++m_waitingOwners;
 			}
+
 			{ // scope
 				Database::Checkout dcoHolder(tdbb->getDatabase());
 				ret = ISC_event_wait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 				--m_waitingOwners;
 			}
-			m_localMutex.enter();
 		}
 
 		// We've woken up from the wait - now look around and see why we wokeup
