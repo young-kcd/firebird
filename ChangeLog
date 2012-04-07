@@ -1,3 +1,29 @@
+ 2012-04-07 04:21  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/RecordSourceNodes.h
+Refactored nod_rows.
+
+ 2012-04-07 03:03  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/btyacc_fb.ske
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/RecordSourceNodes.h
+Refactored nod_select_expr, nod_with and nod_list (union).
+
  2012-04-05 18:28  asfernandes 
    M src/common/IntlParametersBlock.cpp
    M src/common/classes/auto.h
