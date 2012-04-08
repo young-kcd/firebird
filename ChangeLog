@@ -1,3 +1,12 @@
+ 2012-04-07 18:06  hvlad 
+   M src/isql/isql.epp
+Fixed bug CORE-3810 : isql: zero divide + coredump when use "-pag 0" command switch & set heading on inside .sql script
+
+ 2012-04-07 09:07  dimitr 
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Fixed CORE-3686: Incorrect (zero) values are reported for "acquire blocks" and "mutex wait" counters in the fb_lock_print output.
+
  2012-04-06 09:07  hvlad 
    M builds/install/misc/firebird.conf.in
 Misc
