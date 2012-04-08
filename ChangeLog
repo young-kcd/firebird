@@ -1,3 +1,28 @@
+ 2012-04-08 04:15  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactored nod_order.
+
+ 2012-04-07 18:25  hvlad 
+   M src/isql/isql.epp
+Fixed bug CORE-3810 : isql: zero divide + coredump when use "-pag 0" command switch & set heading on inside .sql script
+
+ 2012-04-07 10:07  dimitr 
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Misc.
+
+ 2012-04-07 09:41  dimitr 
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Fixed CORE-3686: Incorrect (zero) values are reported for "acquire blocks" and "mutex wait" counters in the fb_lock_print output.
+
  2012-04-07 04:21  asfernandes 
    M src/dsql/Nodes.h
    M src/dsql/StmtNodes.cpp
