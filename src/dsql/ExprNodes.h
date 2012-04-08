@@ -952,6 +952,61 @@ public:
 };
 
 
+class OrderNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ORDER>
+{
+public:
+	enum NullsPlacement
+	{
+		NULLS_DEFAULT,
+		NULLS_FIRST,
+		NULLS_LAST
+	};
+
+	OrderNode(MemoryPool& pool, dsql_nod* aDsqlValue);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual OrderNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+
+	virtual void setParameterName(dsql_par* /*parameter*/) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
+	{
+		fb_assert(false);
+	}
+
+	virtual void make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
+	{
+		fb_assert(false);
+	}
+
+	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
+	{
+		fb_assert(false);
+	}
+
+	virtual ValueExprNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+public:
+	dsql_nod* dsqlValue;
+	bool descending;
+	NullsPlacement nullsPlacement;
+};
+
+
 // OVER is used only in DSQL. In the engine, normal aggregate functions are used in partitioned
 // maps.
 class OverNode : public TypedNode<ValueExprNode, ExprNode::TYPE_OVER>

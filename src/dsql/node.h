@@ -67,7 +67,6 @@ enum nod_t
 	nod_all,	// ALL privileges
 	nod_execute,	// EXECUTE privilege
 	nod_procedure_name,
-	nod_order,
 	nod_flag,
 	nod_user_name,
 	nod_user_group,
@@ -97,12 +96,7 @@ enum nod_t
  *	entries.  These include nod_udf.
  */
 enum node_args {
-	e_order_field = 0,		// nod_order
-	e_order_flag,
-	e_order_nulls,
-	e_order_count,
-
-	e_lock_tables = 0,		//
+	e_lock_tables = 0,
 	e_lock_mode,
 
 	e_label_name = 0,
@@ -138,10 +132,7 @@ enum nod_flags_vals {
 	NOD_SHARED				= 1, // nod_lock_mode
 	NOD_PROTECTED			= 2,
 	NOD_READ				= 4,
-	NOD_WRITE				= 8,
-
-	NOD_NULLS_FIRST			= 1, // nod_order
-	NOD_NULLS_LAST			= 2
+	NOD_WRITE				= 8
 };
 
 } // namespace

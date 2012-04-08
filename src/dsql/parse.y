@@ -625,6 +625,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	FB_UINT64 uint64Val;
 	BaseNullable<FB_UINT64> nullableUint64Val;
 	UCHAR blrOp;
+	Jrd::OrderNode::NullsPlacement nullsPlacement;
 	Jrd::ComparativeBoolNode::DsqlFlag cmpBoolFlag;
 	Jrd::dsql_nod* legacyNode;
 	Jrd::dsql_str* legacyStr;
@@ -840,7 +841,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> national_character_type natural_join
 %type <legacyNode> non_array_type
 %type <legacyNode> non_charset_simple_type non_reserved_word non_role_grantee_list
-%type <legacyNode> nulls_clause nulls_placement numeric_type
+%type <nullsPlacement> nulls_clause nulls_placement
+%type <legacyNode> numeric_type
 %type <int32Val>   neg_short_integer nonneg_short_integer
 %type named_param(<execStatementNode>) named_params_list(<execStatementNode>)
 %type not_named_param(<execStatementNode>) not_named_params_list(<execStatementNode>)
@@ -5022,8 +5024,10 @@ order_list
 order_item
 	: value order_direction nulls_clause
 		{
-			$$ = make_node (nod_order, (int) e_order_count,
-				$1, ($2 ? make_node(nod_flag, 0, NULL) : NULL), $3);
+			OrderNode* node = newNode<OrderNode>($1);
+			node->descending = $2;
+			node->nullsPlacement = $3;
+			$$ = makeClassNode(node);
 		}
 	;
 
@@ -5034,13 +5038,13 @@ order_direction
 	;
 
 nulls_clause
-	: /* nothing */				{ $$ = NULL; }
+	: /* nothing */				{ $$ = OrderNode::NULLS_DEFAULT; }
 	| NULLS nulls_placement		{ $$ = $2; }
 	;
 
 nulls_placement
-	: FIRST	{ $$ = MAKE_const_slong(NOD_NULLS_FIRST); }
-	| LAST	{ $$ = MAKE_const_slong(NOD_NULLS_LAST); }
+	: FIRST	{ $$ = OrderNode::NULLS_FIRST; }
+	| LAST	{ $$ = OrderNode::NULLS_LAST; }
 	;
 
 // ROWS clause

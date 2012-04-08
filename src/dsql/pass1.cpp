@@ -338,10 +338,6 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_order:
-			fb_assert(false);
-			return true;
-
 		default:
 			return visitChildren(node);
 	}
@@ -2907,6 +2903,9 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(selectList, dsql_type_nod);
 
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	if (input->nod_type != nod_list)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -2932,33 +2931,30 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 	for (int sortloop = 0; sortloop < input->nod_count; sortloop++)
 	{
 		DEV_BLKCHK(input->nod_arg[sortloop], dsql_type_nod);
-		dsql_nod* node1 = input->nod_arg[sortloop];
-		if (node1->nod_type != nod_order)
+		OrderNode* node1 = ExprNode::as<OrderNode>(input->nod_arg[sortloop]);
+		if (!node1)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_dsql_command_err) <<
 					  // invalid ORDER BY clause
 					  Arg::Gds(isc_order_by_err));
 		}
-		dsql_nod* node2 = MAKE_node(nod_order, e_order_count);
-		node2->nod_arg[e_order_flag] = node1->nod_arg[e_order_flag]; // asc/desc flag
-		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; // nulls first/last flag
 
 		// get node of value to be ordered by
-		node1 = node1->nod_arg[e_order_field];
+		dsql_nod* orderValue = node1->dsqlValue;
 
-		const CollateNode* collateNode = ExprNode::as<CollateNode>(node1);
+		const CollateNode* collateNode = ExprNode::as<CollateNode>(orderValue);
 
 		if (collateNode)
 		{
 			// substitute CollateNode with its argument (real value)
-			node1 = collateNode->dsqlArg;
+			orderValue = collateNode->dsqlArg;
 		}
 
 		FieldNode* field;
 		LiteralNode* literal;
 
-		if ((field = ExprNode::as<FieldNode>(node1)))
+		if ((field = ExprNode::as<FieldNode>(orderValue)))
 		{
 			dsql_nod* aliasNode = NULL;
 
@@ -2971,9 +2967,9 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 				aliasNode = PASS1_lookup_alias(dsqlScratch, field->dsqlName, selectList, true);
 			}
 
-			node1 = aliasNode ? aliasNode : field->internalDsqlPass(dsqlScratch, NULL);
+			orderValue = aliasNode ? aliasNode : field->internalDsqlPass(dsqlScratch, NULL);
 		}
-		else if ((literal = ExprNode::as<LiteralNode>(node1)) && literal->litDesc.dsc_dtype == dtype_long)
+		else if ((literal = ExprNode::as<LiteralNode>(orderValue)) && literal->litDesc.dsc_dtype == dtype_long)
 		{
 			const ULONG position = literal->getSlong();
 
@@ -2985,21 +2981,24 @@ dsql_nod* PASS1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_no
 			}
 
 			// substitute ordinal with appropriate field
-			node1 = PASS1_node_psql(dsqlScratch, selectList->nod_arg[position - 1], false);
+			orderValue = PASS1_node_psql(dsqlScratch, selectList->nod_arg[position - 1], false);
 		}
 		else
-			node1 = PASS1_node_psql(dsqlScratch, node1, false);
+			orderValue = PASS1_node_psql(dsqlScratch, orderValue, false);
 
 		if (collateNode)
 		{
 			// Finally apply collation order, if necessary.
-			node1 = MAKE_class_node(
-				CollateNode::pass1Collate(dsqlScratch, node1, collateNode->collation));
+			orderValue = MAKE_class_node(
+				CollateNode::pass1Collate(dsqlScratch, orderValue, collateNode->collation));
 		}
 
+		OrderNode* node2 = FB_NEW(pool) OrderNode(pool, orderValue);
+		node2->descending = node1->descending;
+		node2->nullsPlacement = node1->nullsPlacement;
+
 		// store actual value to be ordered by
-		node2->nod_arg[e_order_field] = node1;
-		*ptr2++ = node2;
+		*ptr2++ = MAKE_class_node(node2);
 	}
 
 	return node;
@@ -3170,8 +3169,8 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 
 		for (const dsql_nod* const* const end = ptr + order_list->nod_count; ptr < end; ptr++, uptr++)
 		{
-			dsql_nod* order1 = *ptr;
-			const dsql_nod* position = order1->nod_arg[e_order_field];
+			OrderNode* order1 = ExprNode::as<OrderNode>(*ptr);
+			const dsql_nod* position = order1->dsqlValue;
 			const CollateNode* collateNode = ExprNode::as<CollateNode>(position);
 
 			if (collateNode)
@@ -3198,18 +3197,17 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 			}
 
 			// make a new order node pointing at the Nth item in the select list.
-			dsql_nod* order2 = MAKE_node(nod_order, e_order_count);
-			*uptr = order2;
-			order2->nod_arg[e_order_field] = union_items->nod_arg[number - 1];
-			order2->nod_arg[e_order_flag] = order1->nod_arg[e_order_flag];
+			OrderNode* order2 = FB_NEW(pool) OrderNode(pool, union_items->nod_arg[number - 1]);
+			*uptr = MAKE_class_node(order2);
+			order2->descending = order1->descending;
 
 			if (collateNode)
 			{
-				order2->nod_arg[e_order_field] = MAKE_class_node(CollateNode::pass1Collate(
-					dsqlScratch, order2->nod_arg[e_order_field], collateNode->collation));
+				order2->dsqlValue = MAKE_class_node(CollateNode::pass1Collate(
+					dsqlScratch, order2->dsqlValue, collateNode->collation));
 			}
 
-			order2->nod_arg[e_order_nulls] = order1->nod_arg[e_order_nulls];
+			order2->nullsPlacement = order1->nullsPlacement;
 		}
 
 		unionRse->dsqlOrder = sort;
@@ -3762,9 +3760,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_list:
 		verb = "list";
-		break;
-	case nod_order:
-		verb = "order";
 		break;
 	case nod_procedure_name:
 		verb = "procedure name";

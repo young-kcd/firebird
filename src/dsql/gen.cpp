@@ -672,27 +672,20 @@ void GEN_sort(DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
-		dsql_nod* nulls_placement = (*ptr)->nod_arg[e_order_nulls];
+		const OrderNode* orderNode = ExprNode::as<OrderNode>(*ptr);
 
-		if (nulls_placement)
+		switch (orderNode->nullsPlacement)
 		{
-			switch (ExprNode::as<LiteralNode>(nulls_placement)->getSlong())
-			{
-				case NOD_NULLS_FIRST:
-					dsqlScratch->appendUChar(blr_nullsfirst);
-					break;
-				case NOD_NULLS_LAST:
-					dsqlScratch->appendUChar(blr_nullslast);
-					break;
-			}
+			case OrderNode::NULLS_FIRST:
+				dsqlScratch->appendUChar(blr_nullsfirst);
+				break;
+			case OrderNode::NULLS_LAST:
+				dsqlScratch->appendUChar(blr_nullslast);
+				break;
 		}
 
-		if ((*ptr)->nod_arg[e_order_flag])
-			dsqlScratch->appendUChar(blr_descending);
-		else
-			dsqlScratch->appendUChar(blr_ascending);
-
-		GEN_expr(dsqlScratch, (*ptr)->nod_arg[e_order_field]);
+		dsqlScratch->appendUChar((orderNode->descending ? blr_descending : blr_ascending));
+		GEN_expr(dsqlScratch, orderNode->dsqlValue);
 	}
 }
 

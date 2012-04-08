@@ -7296,6 +7296,43 @@ dsc* NullNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 //--------------------
 
 
+OrderNode::OrderNode(MemoryPool& pool, dsql_nod* aDsqlValue)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_ORDER>(pool),
+	  dsqlValue(aDsqlValue),
+	  descending(false),
+	  nullsPlacement(NULLS_DEFAULT)
+{
+	addChildNode(dsqlValue);
+}
+
+void OrderNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "OrderNode";
+	ExprNode::print(text, nodes);
+}
+
+OrderNode* OrderNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	OrderNode* node = FB_NEW(getPool()) OrderNode(getPool(), PASS1_node(dsqlScratch, dsqlValue));
+	node->descending = descending;
+	node->nullsPlacement = nullsPlacement;
+	return node;
+}
+
+bool OrderNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const OrderNode* o = other->as<OrderNode>();
+
+	return o && descending == o->descending && nullsPlacement == o->nullsPlacement;
+}
+
+
+//--------------------
+
+
 OverNode::OverNode(MemoryPool& pool, dsql_nod* aAggExpr, dsql_nod* aPartition, dsql_nod* aOrder)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_OVER>(pool),
 	  dsqlAggExpr(aAggExpr),
