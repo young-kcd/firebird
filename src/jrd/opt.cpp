@@ -221,12 +221,14 @@ namespace Jrd
 			}
 			else
 			{
-				HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
+				HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs(count);
 
 				// Reorder input rivers according to their possible inter-dependencies
 
 				while (rsbs.getCount() < count)
 				{
+					bool added = false;
+
 					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
 					{
 						River* const sub_river = *iter;
@@ -234,11 +236,35 @@ namespace Jrd
 
 						if (!rsbs.exist(sub_rsb) && sub_river->isComputable(csb))
 						{
+							added = true;
+							rsbs.add(sub_rsb);
+							sub_river->activate(csb);
+						}
+					}
+
+					if (!added)
+						break;
+				}
+
+				if (rsbs.getCount() < count)
+				{
+					// Ideally, we should never get here. Now it's possible only if some booleans
+					// were faked to be non-computable (FLAG_DEOPTIMIZE and FLAG_RESIDUAL).
+
+					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
+					{
+						River* const sub_river = *iter;
+						RecordSource* const sub_rsb = sub_river->getRecordSource();
+
+						if (!rsbs.exist(sub_rsb))
+						{
 							rsbs.add(sub_rsb);
 							sub_river->activate(csb);
 						}
 					}
 				}
+
+				fb_assert(rsbs.getCount() == count);
 
 				m_rsb = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, count, rsbs.begin());
 			}
@@ -3410,14 +3436,20 @@ static void set_position(const SortNode* from_clause, SortNode* to_clause, const
 	// we get to the end of the from list, all fields in the to list will be reordered.
 
 	NestConst<ValueExprNode>* to_swap = to_clause->expressions.begin();
+
+	// We need to process no more than the number of nodes in the "from" clause
+
+	const size_t count = from_clause->expressions.getCount();
+	fb_assert(count <= to_clause->expressions.getCount());
+
 	const NestConst<ValueExprNode>* from_ptr = from_clause->expressions.begin();
 
-	for (const NestConst<ValueExprNode>* const from_end = from_clause->expressions.end();
+	for (const NestConst<ValueExprNode>* const from_end = from_ptr + count;
 		 from_ptr != from_end; ++from_ptr)
 	{
 		NestConst<ValueExprNode>* to_ptr = to_clause->expressions.begin();
 
-		for (const NestConst<ValueExprNode>* const to_end = to_clause->expressions.end();
+		for (const NestConst<ValueExprNode>* const to_end = to_ptr + count;
 			 to_ptr != to_end; ++to_ptr)
 		{
 			const FieldNode* fromField = (*from_ptr)->as<FieldNode>();
