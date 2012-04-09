@@ -93,12 +93,12 @@ static const struct ini_idx_t indices[] =
 	INDEX(8, rel_triggers, idx_unique, 1)
 		SEGMENT(f_trg_name, idx_metadata)		// trigger name
 	}},
-	// define index RDB$INDEX_9 for RDB$FUNCTIONS unique RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
+	// define index RDB$INDEX_9 for RDB$FUNCTIONS unique RDB$PACKAGE_NAME, RDB$FUNCTION_NAME;
 	INDEX(9, rel_funs, idx_unique, 2)
 		SEGMENT(f_fun_pkg_name, idx_metadata),	// package name
 		SEGMENT(f_fun_name, idx_metadata)		// function name
 	}},
-	// define index RDB$INDEX_10 for RDB$FUNCTION_ARGUMENTS RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
+	// define index RDB$INDEX_10 for RDB$FUNCTION_ARGUMENTS RDB$PACKAGE_NAME, RDB$FUNCTION_NAME;
 	INDEX(10, rel_args, 0, 2)
 		SEGMENT(f_arg_pkg_name, idx_metadata),	// package name
 		SEGMENT(f_arg_fun_name, idx_metadata)	// function name
@@ -134,8 +134,8 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_flt_input, idx_numeric),		// input subtype
 		SEGMENT(f_flt_output, idx_numeric)		// output subtype
 	}},
-	// define index RDB$INDEX_18 for RDB$PROCEDURE_PARAMETERS unique RDB$PROCEDURE_NAME,
-	// RDB$PARAMETER_NAME, RDB$PACKAGE_NAME;
+	// define index RDB$INDEX_18 for RDB$PROCEDURE_PARAMETERS unique RDB$PACKAGE_NAME,
+	// RDB$PROCEDURE_NAME, RDB$PARAMETER_NAME;
 	INDEX(18, rel_prc_prms, idx_unique, 3)
 		SEGMENT(f_prm_pkg_name, idx_metadata),	// package name
 		SEGMENT(f_prm_procedure, idx_metadata),	// procedure name
@@ -149,7 +149,7 @@ static const struct ini_idx_t indices[] =
 	INDEX(20, rel_collations, idx_unique, 1)
 		SEGMENT(f_coll_name, idx_metadata)		// collation name
 	}},
-	// define index RDB$INDEX_21 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME, RDB$PACKAGE_NAME;
+	// define index RDB$INDEX_21 for RDB$PROCEDURES unique RDB$PACKAGE_NAME, RDB$PROCEDURE_NAME;
 	INDEX(21, rel_procedures, idx_unique, 2)
 		SEGMENT(f_prc_pkg_name, idx_metadata),	// package name
 		SEGMENT(f_prc_name, idx_metadata)		// procedure name
