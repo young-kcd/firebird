@@ -1,3 +1,7 @@
+ 2012-04-08 10:23  hvlad 
+   M src/common/isc_file.cpp
+Make Windows version of ISC_systemToUtf8() and ISC_utf8ToSystem() to work with strings longer than MAX_PATH
+
  2012-04-08 04:15  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
