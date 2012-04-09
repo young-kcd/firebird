@@ -2168,7 +2168,7 @@ bool Service::full() const
 	return add_one(svc_stdout_tail) == svc_stdout_head;
 }
 
-#define ENQUEUE_DEQUEUE_DELAY 100
+#define ENQUEUE_DEQUEUE_DELAY 1
 
 void Service::enqueue(const UCHAR* s, ULONG len)
 {
