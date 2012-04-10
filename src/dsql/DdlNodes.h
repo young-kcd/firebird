@@ -43,7 +43,7 @@ class CompoundStmtNode;
 
 struct ValueSourceClause
 {
-	ValueSourceClause(MemoryPool& p)
+	explicit ValueSourceClause(MemoryPool& p)
 		: value(NULL),
 		  source(p)
 	{
@@ -1021,7 +1021,7 @@ public:
 
 	struct IndexConstraintClause
 	{
-		IndexConstraintClause(MemoryPool& p)
+		explicit IndexConstraintClause(MemoryPool& p)
 			: name(p),
 			  descending(false)
 		{
@@ -1146,7 +1146,7 @@ public:
 			CTYPE_CHECK
 		};
 
-		AddConstraintClause(MemoryPool& p)
+		explicit AddConstraintClause(MemoryPool& p)
 			: Clause(p, TYPE_ADD_CONSTRAINT),
 			  name(p),
 			  constraintType(CTYPE_NOT_NULL),
