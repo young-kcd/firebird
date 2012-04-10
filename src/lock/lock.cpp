@@ -1119,10 +1119,8 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			locked = true;
 			break;
 		}
-		else
-		{
-			m_blockage = true;
-		}
+		
+		m_blockage = true;
 	}
 
 	// If the spin wait didn't succeed then wait forever
@@ -1170,7 +1168,8 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	fb_assert(!m_sharedFileCreated);
 
 	++sh_mem_header->lhb_acquires;
-	if (m_blockage) {
+	if (m_blockage)
+	{
 		++sh_mem_header->lhb_acquire_blocks;
 		m_blockage = false;
 	}

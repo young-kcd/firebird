@@ -235,7 +235,7 @@ public:
 		  authPort(port),
 		  dbName(getPool())
 	{
-		if (!port->port_srv_auth_block)
+		if (!authPort->port_srv_auth_block)
 		{
 			authPort->port_srv_auth_block = new SrvAuthBlock(authPort);
 		}
@@ -639,7 +639,7 @@ class CryptKeyTypeManager : public PermanentStorage
 	class CryptKeyType : public PermanentStorage
 	{
 	public:
-		CryptKeyType(MemoryPool& p)
+		explicit CryptKeyType(MemoryPool& p)
 			: PermanentStorage(p), keyType(getPool()), plugins(getPool())
 		{ }
 
@@ -671,7 +671,7 @@ class CryptKeyTypeManager : public PermanentStorage
 	};
 
 public:
-	CryptKeyTypeManager(MemoryPool& p)
+	explicit CryptKeyTypeManager(MemoryPool& p)
 		: PermanentStorage(p), knownTypes(getPool())
 	{
 		LocalStatus st;

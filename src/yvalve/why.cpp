@@ -5045,13 +5045,12 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 					{
 						YService* service = accessor.current()->second;
 						if (service->enterCount)
-						{
 							hasThreads = true;
-							continue;
+						else
+						{
+							service->addRef();
+							svcStack.push(service);
 						}
-
-						service->addRef();
-						svcStack.push(service);
 					} while (accessor.getNext());
 				}
 			}
@@ -5077,13 +5076,12 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 					{
 						YAttachment* attachment = accessor.current()->second;
 						if (attachment->enterCount)
-						{
 							hasThreads = true;
-							continue;
+						else
+						{
+							attachment->addRef();
+							attStack.push(attachment);
 						}
-
-						attachment->addRef();
-						attStack.push(attachment);
 					} while (accessor.getNext());
 				}
 			}

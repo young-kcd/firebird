@@ -5491,13 +5491,14 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 	}
 }
 
-static CSTRING* REMOTE_dup_string(CSTRING* from)
+static CSTRING* REMOTE_dup_string(const CSTRING* from)
 {
 	if (from && from->cstr_length)
 	{
 		CSTRING* rc = FB_NEW(*getDefaultMemoryPool()) CSTRING;
 		memset(rc, 0, sizeof(CSTRING));
 		rc->cstr_length = from->cstr_length;
+		rc->cstr_allocated = rc->cstr_length;
 		rc->cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[rc->cstr_length];
 		memcpy(rc->cstr_address, from->cstr_address, rc->cstr_length);
 		return rc;
@@ -5512,6 +5513,7 @@ static void REMOTE_free_string(CSTRING* tmp)
 	{
 		if (tmp->cstr_address)
 		{
+			fb_assert(tmp->cstr_allocated >= tmp->cstr_length);
 			delete[] tmp->cstr_address;
 		}
 		delete tmp;

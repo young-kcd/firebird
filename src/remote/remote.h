@@ -700,7 +700,7 @@ public:
 	AuthServerPlugins* plugins;
 	Auth::WriterImplementation authBlockWriter;
 
-	SrvAuthBlock(rem_port* p_port)
+	explicit SrvAuthBlock(rem_port* p_port)
 		: port(p_port),
 		  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
 		  dataForPlugin(getPool()), dataFromPlugin(getPool()),
@@ -754,7 +754,7 @@ public:
 		: Firebird::AutoStorage(), type(getPool()), plugins(getPool())
 	{ }
 
-	KnownServerKey(Firebird::MemoryPool& p)
+	explicit KnownServerKey(Firebird::MemoryPool& p)
 		: Firebird::AutoStorage(p), type(getPool()), plugins(getPool())
 	{ }
 
