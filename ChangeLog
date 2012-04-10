@@ -1,3 +1,72 @@
+ 2012-04-10 02:37  robocop 
+   M src/dsql/pass1.cpp
+Misc.
+
+ 2012-04-10 01:52  robocop 
+   M src/dsql/DdlNodes.h
+Misc.
+
+ 2012-04-10 01:47  robocop 
+   M src/jrd/RuntimeStatistics.h
+Misc.
+
+ 2012-04-10 01:46  robocop 
+   M src/lock/lock.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2012-04-10 01:41  robocop 
+   M src/gpre/languages/ada.cpp
+Misc.
+
+ 2012-04-10 01:40  robocop 
+   M src/common/cvt.cpp
+   M src/common/isc_file.cpp
+Misc.
+
+ 2012-04-10 01:38  robocop 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+I plan to use this msg because the current one is misleading.
+
+ 2012-04-10 01:36  robocop 
+   M builds/install/misc/firebird.conf.in
+Misc.
+
+ 2012-04-10 01:36  robocop 
+   M builds/win32/msvc9/yvalve.vcproj
+Update VC9 project.
+
+ 2012-04-09 12:03  alexpeshkoff 
+   M src/jrd/svc.cpp
+Fixed delay changed for debugging purposes
+
+ 2012-04-09 05:20  dimitr 
+   M src/jrd/trig.h
+   M src/msgs/messages2.sql
+Fixed the slow restore of user privileges.
+Added the missing validation for functions.
+
+ 2012-04-09 05:18  dimitr 
+   M src/jrd/idx.h
+Misc.
+
+ 2012-04-09 05:11  dimitr 
+   M src/jrd/opt.cpp
+1) Fixed the infinite loop in the optimizer.
+2) Fixed the refactoring error causing a crash.
+
  2012-04-08 10:23  hvlad 
    M src/common/isc_file.cpp
 Make Windows version of ISC_systemToUtf8() and ISC_utf8ToSystem() to work with strings longer than MAX_PATH
