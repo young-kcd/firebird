@@ -777,7 +777,7 @@ Data source : @4', NULL, NULL)
 ('no_trusted_spb', NULL, 'svc.cpp', NULL, 0, 667, NULL, 'Use of TRUSTED switches in spb_command_line is prohibited', NULL, NULL)
 ('package_name', 'check_dependencies', 'dfw.epp', NULL, 0, 668, NULL, 'PACKAGE @1', NULL, NULL);
 ('cannot_make_not_null', 'check_not_null', 'dfw.epp', NULL, 0, 669, NULL, 'Cannot make field @1 of table @2 NOT NULL because there are NULLs present', NULL, NULL);
-('feature_removed', NULL, '', NULL, 0, 670, NULL, 'Feature @1 is not supported any more', NULL, NULL);
+('feature_removed', NULL, '', NULL, 0, 670, NULL, 'Feature @1 is not supported anymore', NULL, NULL);
 ('view_name', 'check_dependencies', 'dfw.epp', NULL, 0, 671, NULL, 'VIEW @1', NULL, NULL);
 ('lock_dir_access', 'createLockDirectory', 'os_utils.cpp', NULL, 0, 672, NULL, 'Can not access lock files directory @1', NULL, NULL);
 ('invalid_fetch_option', NULL, 'Cursor.cpp', NULL, 0, 673, NULL, 'Fetch option @1 is invalid for a non-scrollable cursor', NULL, NULL);
@@ -819,6 +819,7 @@ Data source : @4', NULL, NULL)
 ('missing_data_structures', NULL, 'server.cpp', NULL, 0, 709, NULL, 'Install incomplete, please read chapter "Initializing security database" in Quick Start Guide', NULL, NULL)
 ('protect_sys_tab', NULL, 'vio.cpp', NULL, 0, 710, NULL, '@1 operation is not allowed for system table @2', NULL, NULL)
 ('libtommath_generic', 'check', 'BigInteger.cpp', NULL, 0, 711, NULL, 'Libtommath error code @1 in function @2', NULL, NULL)
+('wroblrver2', NULL, NULL, NULL, 0, 712, NULL, 'unsupported BLR version (expected between @1 and @2, encountered @3)', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

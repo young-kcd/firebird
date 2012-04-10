@@ -732,6 +732,7 @@ static const struct {
 	{335545029, -902}, /* 709 missing_data_structures */
 	{335545030, -902}, /* 710 protect_sys_tab */
 	{335545031, -901}, /* 711 libtommath_generic */
+	{335545032, -902}, /* 712 wroblrver2 */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

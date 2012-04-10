@@ -252,10 +252,10 @@ static const struct {
 	{335544548, "Attempt to define a second PRIMARY KEY for the same table"},		/* primary_key_exists */
 	{335544549, "cannot modify or erase a system trigger"},		/* systrig_update */
 	{335544550, "only the owner of a table may reassign ownership"},		/* not_rel_owner */
-	{335544551, "could not find table/procedure/package for GRANT"},		/* grant_obj_notfound */
+	{335544551, "could not find object for GRANT"},		/* grant_obj_notfound */
 	{335544552, "could not find column for GRANT"},		/* grant_fld_notfound */
 	{335544553, "user does not have GRANT privileges for operation"},		/* grant_nopriv */
-	{335544554, "table/procedure has non-SQL security class defined"},		/* nonsql_security_rel */
+	{335544554, "object has non-SQL security class defined"},		/* nonsql_security_rel */
 	{335544555, "column has non-SQL security class defined"},		/* nonsql_security_fld */
 	{335544556, "Write-ahead Log without shared cache configuration not allowed"},		/* wal_cache_err */
 	{335544557, "database shutdown unsuccessful"},		/* shutfail */
@@ -694,7 +694,7 @@ Data source : @4"},		/* eds_statement */
 	{335544987, "Use of TRUSTED switches in spb_command_line is prohibited"},		/* no_trusted_spb */
 	{335544988, "PACKAGE @1"},		/* package_name */
 	{335544989, "Cannot make field @1 of table @2 NOT NULL because there are NULLs present"},		/* cannot_make_not_null */
-	{335544990, "Feature @1 is not supported any more"},		/* feature_removed */
+	{335544990, "Feature @1 is not supported anymore"},		/* feature_removed */
 	{335544991, "VIEW @1"},		/* view_name */
 	{335544992, "Can not access lock files directory @1"},		/* lock_dir_access */
 	{335544993, "Fetch option @1 is invalid for a non-scrollable cursor"},		/* invalid_fetch_option */
@@ -736,6 +736,7 @@ Data source : @4"},		/* eds_statement */
 	{335545029, "Install incomplete, please read chapter \"Initializing security database\" in Quick Start Guide"},		/* missing_data_structures */
 	{335545030, "@1 operation is not allowed for system table @2"},		/* protect_sys_tab */
 	{335545031, "Libtommath error code @1 in function @2"},		/* libtommath_generic */
+	{335545032, "unsupported BLR version (expected between @1 and @2, encountered @3)"},		/* wroblrver2 */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
