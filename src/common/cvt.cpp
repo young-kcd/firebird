@@ -1828,7 +1828,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		break;
 
 	case dtype_timestamp:
-		cb->isVersion4(version4);
+		cb->isVersion4(version4); // Used in the conversion to text some lines below.
 		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP *) from->dsc_address,
 											  &times, &fractions);
 		break;
@@ -1866,7 +1866,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	// Put in a space to separate date & time components
 
-	if ((from->dsc_dtype == dtype_timestamp) && (!version4))
+	if (from->dsc_dtype == dtype_timestamp && !version4)
 		*p++ = ' ';
 
 	// Add the time part for data types that include it

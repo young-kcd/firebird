@@ -1656,7 +1656,7 @@ namespace {
 class IConv
 {
 public:
-	IConv(MemoryPool& p)
+	explicit IConv(MemoryPool& p)
 		: toBuf(p)
 	{
 #ifdef HAVE_LANGINFO_H
