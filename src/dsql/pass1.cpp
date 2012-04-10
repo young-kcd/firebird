@@ -1283,7 +1283,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExp
 		rse = MAKE_class_node(pass1_union(dsqlScratch, unionQuery, NULL, NULL, NULL, 0));
 		dsqlScratch->contextNumber = dsqlScratch->recursiveCtxId + 1;
 
-		// recursive union always have exactly 2 members
+		// recursive union always has exactly 2 members
 		unionQuery->dsqlClauses->nod_count = 2;
 		unionQuery->recursive = true;
 
@@ -3146,6 +3146,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 			// Set up the dsql_map* between the sub-rses and the union context.
 			dsql_map* map = union_context->ctx_map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
 			map->map_position = count++;
+			fb_assert(count != 0); // no wrap, please!
 			map->map_node = *uptr++;
 			map->map_next = union_context->ctx_map;
 			map->map_partition = NULL;
@@ -3735,7 +3736,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	}
 
 	TEXT s[64];
-	const dsql_str* string;
 	Firebird::string verb;
 	const dsql_nod* const* ptr = node->nod_arg;
 	const dsql_nod* const* end = ptr + node->nod_count;
