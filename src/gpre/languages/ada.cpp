@@ -28,10 +28,6 @@
 
 #include "firebird.h"
 
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-
 #include <stdio.h>
 #include <stdarg.h>
 #include "../jrd/ibase.h"
@@ -44,6 +40,10 @@
 #include "../common/prett_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 static void	align (int);
 static void	asgn_from (const act*, ref*, int);
