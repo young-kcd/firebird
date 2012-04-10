@@ -363,7 +363,7 @@
 #
 #TracePlugin = fbtrace
 
-# Crypt plugins are used to crypt data transfered over the wire
+# Crypt plugins are used to crypt data transferred over the wire
 #CryptPlugin = Arc4
 
 
