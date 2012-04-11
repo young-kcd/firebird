@@ -502,12 +502,12 @@ public:
 		dbbStat->bumpValue(index);
 	}
 
-	void bumpStats(const RuntimeStatistics::StatType index, SLONG relation_id)
+	void bumpRelStats(const RelStatType index, SLONG relation_id)
 	{
-		reqStat->bumpValue(index, relation_id);
-		//traStat->bumpValue(index, relation_id);
-		//attStat->bumpValue(index, relation_id);
-		//dbbStat->bumpValue(index, relation_id);
+		reqStat->bumpRelValue(index, relation_id);
+		//traStat->bumpRelValue(index, relation_id);
+		//attStat->bumpRelValue(index, relation_id);
+		//dbbStat->bumpRelValue(index, relation_id);
 	}
 
 	bool checkCancelState(bool punt);

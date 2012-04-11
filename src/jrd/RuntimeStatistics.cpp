@@ -25,6 +25,7 @@
 #include "../jrd/req.h"
 
 #include "../jrd/RuntimeStatistics.h"
+#include "../jrd/ntrace.h"
 
 using namespace Firebird;
 
@@ -34,7 +35,7 @@ GlobalPtr<RuntimeStatistics> RuntimeStatistics::dummy;
 
 #ifdef REL_COUNTS_TREE
 
-void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
+void RuntimeStatistics::bumpRelValue(const RelStatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
@@ -165,7 +166,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 #else  // REL_COUNTS_TREE
 
 
-void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
+void RuntimeStatistics::bumpRelValue(const RelStatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;

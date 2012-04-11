@@ -107,19 +107,6 @@ struct DdlTriggerContext
 };
 
 
-//
-// Database record counters.
-//
-const int DBB_read_seq_count		= 0;
-const int DBB_read_idx_count		= 1;
-const int DBB_update_count			= 2;
-const int DBB_insert_count			= 3;
-const int DBB_delete_count			= 4;
-const int DBB_backout_count			= 5;
-const int DBB_purge_count			= 6;
-const int DBB_expunge_count			= 7;
-const int DBB_max_count				= 8;
-
 struct bid;
 
 //

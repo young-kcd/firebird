@@ -35,6 +35,7 @@
 #define DSQL_DSQL_H
 
 #include "../jrd/RuntimeStatistics.h"
+#include "../jrd/ntrace.h"
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Attachment.h"
 #include "../dsql/BlrWriter.h"

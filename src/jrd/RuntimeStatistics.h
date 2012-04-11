@@ -27,7 +27,9 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/tree.h"
-#include "../jrd/ntrace.h"
+
+struct TraceCounts;		// declared in ntrace.h
+struct PerformanceInfo;	// declared in ntrace.h
 
 namespace Jrd {
 
@@ -38,11 +40,27 @@ namespace Jrd {
 class Attachment;
 class Database;
 
+//
+// Database record counters.
+//
+enum RelStatType 
+{
+	DBB_read_seq_count	= 0,
+	DBB_read_idx_count,
+	DBB_update_count,
+	DBB_insert_count,
+	DBB_delete_count,
+	DBB_backout_count,
+	DBB_purge_count,
+	DBB_expunge_count,
+	DBB_max_count
+};
+
 // Performance counters for individual table
 struct RelationCounts
 {
 	SLONG rlc_relation_id;	// Relation ID
-	SINT64 rlc_counter[DBB_max_rel_count];
+	SINT64 rlc_counter[DBB_max_count];
 
 #ifdef REL_COUNTS_PTR
 	inline static const SLONG* generate(const void* /*sender*/, const RelationCounts* item)
@@ -149,7 +167,7 @@ public:
 		++allChgNumber;
 	}
 
-	void bumpValue(const StatType index, SLONG relation_id);
+	void bumpRelValue(const RelStatType index, SLONG relation_id);
 
 	// Calculate difference between counts stored in this object and current
 	// counts of given request. Counts stored in object are destroyed.

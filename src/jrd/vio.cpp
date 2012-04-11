@@ -493,7 +493,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 }
 
 
-void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
+void VIO_bump_count(thread_db* tdbb, RelStatType count_id, jrd_rel* relation)
 {
 /**************************************
  *
@@ -524,7 +524,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 	vcl* vector = *ptr = vcl::newVector(*attachment->att_pool, *ptr, relation_id + 1);
 	((*vector)[relation_id])++;
 
-	tdbb->bumpStats((RuntimeStatistics::StatType) count_id, relation_id);
+	tdbb->bumpRelStats(count_id, relation_id);
 }
 
 
