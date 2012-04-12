@@ -5928,7 +5928,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 							throw;
 						}
 
-						dbb->deletePool(new_pool);
+						attachment->deletePool(new_pool);
 					}
 				}
 				catch (const Firebird::Exception&)
