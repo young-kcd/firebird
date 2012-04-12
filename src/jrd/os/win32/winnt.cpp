@@ -116,7 +116,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 static bool	maybeCloseFile(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool);
-static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* const);
+static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = NULL);
 static void adjustFileSystemCacheSize();
 
 struct AdjustFsCache
@@ -320,10 +320,10 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 
 			const DWORD ret = SetFilePointer(hFile, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
 			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
-				nt_error("SetFilePointer", file, isc_io_write_err, 0);
+				nt_error("SetFilePointer", file, isc_io_write_err);
 			}
 			if (!SetEndOfFile(hFile)) {
-				nt_error("SetEndOfFile", file, isc_io_write_err, 0);
+				nt_error("SetEndOfFile", file, isc_io_write_err);
 			}
 
 			leftPages -= extendBy;
@@ -434,7 +434,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 	overlapped_ptr = &overlapped;
 #ifdef SUPERSERVER_V2
 	if (!(overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
-		nt_error("Overlapped event", file, isc_io_read_err, 0);
+		nt_error("Overlapped event", file, isc_io_read_err);
 	ResetEvent(overlapped.hEvent);
 #endif
 
@@ -446,7 +446,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 		if (!ReadFile(desc, spare_buffer, length, &actual_length, overlapped_ptr) ||
 			actual_length != (DWORD) length)
 		{
-			nt_error("ReadFile", file, isc_io_read_err, 0);
+			nt_error("ReadFile", file, isc_io_read_err);
 		}
 
 		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(), spare_buffer, length, address);
@@ -461,10 +461,10 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 				actual_length != length)
 			{
 				CloseHandle(overlapped.hEvent);
-				nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
+				nt_error("GetOverlappedResult", file, isc_io_read_err);
 			}
 #else
-			nt_error("ReadFile", file, isc_io_read_err, 0);
+			nt_error("ReadFile", file, isc_io_read_err);
 #endif
 		}
 	}
@@ -893,7 +893,7 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 	const DWORD dwFileSizeLow = GetFileSize(hFile, &dwFileSizeHigh);
 
 	if (dwFileSizeLow == (DWORD) -1) {
-		nt_error("GetFileSize", file, isc_io_access_err, 0);
+		nt_error("GetFileSize", file, isc_io_access_err);
 	}
 
     const ULONGLONG ullFileSize = (((ULONGLONG) dwFileSizeHigh) << 32) + dwFileSizeLow;
@@ -914,7 +914,9 @@ void PIO_get_unique_file_id(const Jrd::jrd_file* file, Firebird::UCharBuffer& id
  *
  **************************************/
 	BY_HANDLE_FILE_INFORMATION file_info;
-	GetFileInformationByHandle(file->fil_desc, &file_info);
+	if (!GetFileInformationByHandle(file->fil_desc, &file_info)) {
+		nt_error("GetFileInformationByHandle", file, isc_io_access_err);
+	}
 
 	// The identifier is [nFileIndexHigh, nFileIndexLow]
 	// MSDN says: After a process opens a file, the identifier is constant until
@@ -1118,7 +1120,7 @@ static bool maybeCloseFile(HANDLE& hFile)
 
 static bool nt_error(const TEXT* string,
 					 const jrd_file* file, ISC_STATUS operation,
-					 ISC_STATUS* const status_vector)
+					 ISC_STATUS* status_vector)
 {
 /**************************************
  *

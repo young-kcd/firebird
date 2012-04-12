@@ -431,7 +431,9 @@ void PIO_get_unique_file_id(const Jrd::jrd_file* file, UCharBuffer& id)
  *
  **************************************/
 	struct stat statistics;
-	fstat(file->fil_desc, &statistics);
+	if (fstat(file->fil_desc, &statistics) != 0) {
+		unix_error("fstat", file, isc_io_access_err);
+	}
 
 	const size_t len1 = sizeof(statistics.st_dev);
 	const size_t len2 = sizeof(statistics.st_ino);
