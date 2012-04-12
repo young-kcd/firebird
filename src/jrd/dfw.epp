@@ -3639,8 +3639,7 @@ static bool delete_procedure(thread_db*	tdbb,
 						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 			}
 
-			CMP_release(tdbb, procedure->prc_request);
-			procedure->prc_request = 0;
+			MET_release_procedure_request(tdbb, procedure);
 		}
 
 		/* delete dependency lists */
@@ -5085,8 +5084,7 @@ static bool modify_procedure(thread_db*	tdbb,
 
 				/* release the request */
 
-				CMP_release(tdbb, procedure->prc_request);
-				procedure->prc_request = 0;
+				MET_release_procedure_request(tdbb, procedure);
 			}
 
 			/* delete dependency lists */

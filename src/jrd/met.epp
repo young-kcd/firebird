@@ -575,8 +575,8 @@ void MET_clear_cache(thread_db* tdbb)
 					 procedure->prc_int_use_count >= 0 &&
 					 procedure->prc_use_count == procedure->prc_int_use_count )
 				{
-					CMP_release(tdbb, procedure->prc_request);
-					procedure->prc_request = NULL;
+					MET_release_procedure_request(tdbb, procedure);
+
 					LCK_release(tdbb, procedure->prc_existence_lock);
 					procedure->prc_existence_lock = NULL;
 					procedure->prc_flags |= PRC_obsolete;
@@ -675,6 +675,15 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 	MET_verify_cache(tdbb);
 #endif
 	return result;
+}
+
+
+void MET_release_procedure_request(thread_db* tdbb, jrd_prc* procedure)
+{
+	CMP_release(tdbb, procedure->prc_request);
+	procedure->prc_request = NULL;
+	procedure->prc_input_fmt = procedure->prc_output_fmt = NULL;
+	procedure->prc_flags &= ~PRC_scanned;
 }
 
 
@@ -3311,8 +3320,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				catch (const Firebird::Exception&)
 				{
 					if (procedure->prc_request) {
-						CMP_release(tdbb, procedure->prc_request);
-						procedure->prc_request = NULL;
+						MET_release_procedure_request(tdbb, procedure);
 					}
 					else {
 						dbb->deletePool(csb_pool);
