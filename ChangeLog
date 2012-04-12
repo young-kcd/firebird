@@ -1,3 +1,17 @@
+ 2012-04-11 09:38  hvlad 
+   M src/dsql/dsql.h
+   M src/jrd/Attachment.h
+   M src/jrd/RuntimeStatistics.cpp
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/jrd.h
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Refactoring of runtime statistics and related classes:
+- moved relation's counters into RuntimeStatistics.h 
+- renamed RuntimeStatistics::bumpValue to RuntimeStatistics::bumpRelValue and thread_db::bumpStats to thread_db::bumpRelStats to make things more clear  
+- removed not obvious cast in VIO_bump_count
+- removed dependency of RuntimeStatistics.h from ntrace.h
+
  2012-04-10 02:37  robocop 
    M src/dsql/pass1.cpp
 Misc.
