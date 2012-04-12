@@ -473,7 +473,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 		}
 		END_FOR
 
-		if (!(dbb->dbb_flags & DBB_read_only) && !valid_blr)
+		if (!dbb->readOnly() && !valid_blr)
 		{
 			// if the BLR was marked as invalid but the function was compiled,
 			// mark the BLR as valid

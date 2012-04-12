@@ -102,11 +102,12 @@ namespace Jrd
 	class River
 	{
 	public:
-		River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, size_t count, UCHAR* streams)
+		River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, const StreamList& streams)//size_t count, UCHAR* streams)
 			: m_rsb(rsb), m_node(node), m_streams(csb->csb_pool)
 		{
-			m_streams.resize(count);
-			memcpy(m_streams.begin(), streams, count);
+			//m_streams.resize(count);
+			//memcpy(m_streams.begin(), streams, count);
+			m_streams.assign(streams);
 		}
 
 		River(CompilerScratch* csb, RecordSource* rsb, RiverList& rivers)
@@ -118,8 +119,12 @@ namespace Jrd
 
 				const size_t count = m_streams.getCount();
 				const size_t delta = sub_river->m_streams.getCount();
-				m_streams.grow(count + delta);
-				memcpy(m_streams.begin() + count, sub_river->m_streams.begin(), delta);
+				if (count + delta >= MAX_STREAMS)
+					ERR_post(Arg::Gds(isc_too_many_contexts));
+
+				//m_streams.grow(count + delta);
+				//memcpy(m_streams.begin() + count, sub_river->m_streams.begin(), delta);
+				m_streams.join(sub_river->m_streams);
 			}
 		}
 
@@ -128,29 +133,29 @@ namespace Jrd
 			return m_rsb;
 		}
 
-		size_t getStreamCount() const
-		{
-			return m_streams.getCount();
-		}
+		//size_t getStreamCount() const
+		//{
+		//	return m_streams.getCount();
+		//}
 
-		const UCHAR* getStreams() const
+		const StreamList& getStreams() const
 		{
-			return m_streams.begin();
+			return m_streams; //.begin();
 		}
 
 		void activate(CompilerScratch* csb)
 		{
-			for (const UCHAR* iter = m_streams.begin(); iter < m_streams.end(); iter++)
+			for (const StreamType* iter = m_streams.begin(); iter < m_streams.end(); iter++)
 			{
-				csb->csb_rpt[*iter].csb_flags |= csb_active;
+				csb->csb_rpt[*iter].activate();
 			}
 		}
 
 		void deactivate(CompilerScratch* csb)
 		{
-			for (const UCHAR* iter = m_streams.begin(); iter < m_streams.end(); iter++)
+			for (const StreamType* iter = m_streams.begin(); iter < m_streams.end(); iter++)
 			{
-				csb->csb_rpt[*iter].csb_flags &= ~csb_active;
+				csb->csb_rpt[*iter].deactivate();
 			}
 		}
 
@@ -166,7 +171,7 @@ namespace Jrd
 
 		bool isComputable(CompilerScratch* csb) const
 		{
-			return m_node ? m_node->computable(csb, -1, false) : true;
+			return m_node ? m_node->computable(csb, INVALID_STREAM, false) : true;
 		}
 
 	protected:
@@ -176,7 +181,7 @@ namespace Jrd
 
 			if ((fieldNode = node->as<FieldNode>()))
 			{
-				for (const UCHAR* iter = m_streams.begin(); iter != m_streams.end(); ++iter)
+				for (const StreamType* iter = m_streams.begin(); iter != m_streams.end(); ++iter)
 				{
 					if (fieldNode->fieldStream == *iter)
 					{
@@ -281,22 +286,30 @@ static void check_sorts(RseNode*);
 static void class_mask(USHORT, ValueExprNode**, ULONG*);
 static BoolExprNode* compose(thread_db*, BoolExprNode**, BoolExprNode*);
 static bool check_for_nod_from(const ValueExprNode*);
-static SLONG decompose(thread_db*, BoolExprNode*, BoolExprNodeStack&, CompilerScratch*);
-static USHORT distribute_equalities(BoolExprNodeStack&, CompilerScratch*, USHORT);
-static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
-static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, PlanNode*);
-static bool form_river(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, RiverList&, SortNode**);
-static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, PlanNode*);
-static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RseNode*, RiverList&, SortNode**);
-static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
-static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, SortNode**, bool, bool, BoolExprNode**);
+static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStack& stack,
+	CompilerScratch* csb);
+static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratch* csb,
+	USHORT base_count);
+static void find_index_relationship_streams(thread_db* tdbb, OptimizerBlk* opt,
+	const StreamList& streams, StreamList& dependent_streams, StreamList& free_streams);
+static void form_rivers(thread_db* tdbb, OptimizerBlk* opt, const StreamList& streams,
+	RiverList& river_list, SortNode** sort_clause, PlanNode* plan_clause);
+static bool form_river(thread_db* tdbb, OptimizerBlk* opt, StreamType count, size_t stream_count,
+	StreamList& temp, RiverList& river_list, SortNode** sort_clause);
+static void gen_join(thread_db* tdbb, OptimizerBlk* opt, const StreamList& streams,
+	RiverList& river_list, SortNode** sort_clause, PlanNode* plan_clause);
+static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
+	RiverList& river_list, SortNode** sort_clause);
+static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, RecordSource* prior_rsb);
+static RecordSource* gen_retrieval(thread_db* tdbb, OptimizerBlk* opt, StreamType stream,
+	SortNode** sort_ptr, bool outer_flag, bool inner_flag, BoolExprNode** return_boolean);
 static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
 static BoolExprNode* make_inference_node(CompilerScratch*, BoolExprNode*, ValueExprNode*, ValueExprNode*);
 static bool map_equal(const ValueExprNode*, const ValueExprNode*, const MapNode*);
 static bool node_equality(const ValueExprNode*, const ValueExprNode*);
 static bool node_equality(const BoolExprNode*, const BoolExprNode*);
 static ValueExprNode* optimize_like(thread_db*, CompilerScratch*, ComparativeBoolNode*);
-static USHORT river_count(USHORT, ValueExprNode**);
+static USHORT river_count(USHORT count, ValueExprNode** eq_class);
 static bool search_stack(const ValueExprNode*, const ValueExprNodeStack&);
 static void set_direction(SortNode*, SortNode*);
 static void set_position(const SortNode*, SortNode*, const MapNode*);
@@ -319,23 +332,34 @@ static int opt_debug_flag = DEBUG_NONE;
 
 inline void SET_DEP_BIT(ULONG* array, const SLONG bit)
 {
-	array[bit / 32] |= (1L << (bit % 32));
+	array[bit / BITS_PER_LONG] |= (1L << (bit % BITS_PER_LONG));
 }
 
+/*
 inline void CLEAR_DEP_BIT(ULONG* array, const SLONG bit)
 {
-	array[bit / 32] &= ~(1L << (bit % 32));
+	array[bit / BITS_PER_LONG] &= ~(1L << (bit % BITS_PER_LONG));
 }
+*/
 
 inline bool TEST_DEP_BIT(const ULONG* array, const ULONG bit)
 {
-	return (array[bit / 32] & (1L << (bit % 32))) != 0;
+	return (array[bit / BITS_PER_LONG] & (1L << (bit % BITS_PER_LONG))) != 0;
 }
 
+/*
 inline bool TEST_DEP_ARRAYS(const ULONG* ar1, const ULONG* ar2)
-{	return (ar1[0] & ar2[0]) || (ar1[1] & ar2[1]) || (ar1[2] & ar2[2]) || (ar1[3] & ar2[3]) ||
-		   (ar1[4] & ar2[4]) || (ar1[5] & ar2[5]) || (ar1[6] & ar2[6]) || (ar1[7] & ar2[7]);
+{
+	//return (ar1[0] & ar2[0]) || (ar1[1] & ar2[1]) || (ar1[2] & ar2[2]) || (ar1[3] & ar2[3]) ||
+	//	   (ar1[4] & ar2[4]) || (ar1[5] & ar2[5]) || (ar1[6] & ar2[6]) || (ar1[7] & ar2[7]);
+	for (SLONG i = 0; i < BITS_PER_LONG; i++)
+	{
+		if (ar1[i] & ar2[i])
+			return true;
+	}
+	return false;
 }
+*/
 
 // some arbitrary fudge factors for calculating costs, etc.--
 // these could probably be better tuned someday
@@ -471,7 +495,8 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	{
 		RecordSourceNode* node = *ptr;
 
-		opt->localStreams[0] = 0;
+		//opt->localStreams[0] = 0;
+		opt->localStreams.clear();
 
 		fb_assert(sort == rse->rse_sorted);
 		fb_assert(aggregate == rse->rse_aggregate);
@@ -497,9 +522,10 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 					rsb->findUsedStreams(opt->outerStreams);
 			}
 
-			const size_t count = opt->localStreams[0];
-			UCHAR* const streams = opt->localStreams + 1;
-			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, count, streams);
+			//const size_t count = opt->localStreams.getCount();
+			//UCHAR* const streams = opt->localStreams + 1;
+			//River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, count, streams);
+			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, opt->localStreams);
 			river->deactivate(csb);
 			rivers.add(river);
 		}
@@ -508,8 +534,8 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	// this is an attempt to make sure we have a large enough cache to
 	// efficiently retrieve this query; make sure the cache has a minimum
 	// number of pages for each stream in the RseNode (the number is just a guess)
-	if (opt->compileStreams[0] > 5)
-		CCH_expand(tdbb, (ULONG) (opt->compileStreams[0] * CACHE_PAGES_PER_STREAM));
+	if (opt->compileStreams.getCount() > 5)
+		CCH_expand(tdbb, (ULONG) (opt->compileStreams.getCount() * CACHE_PAGES_PER_STREAM));
 
 	// At this point we are ready to start optimizing.
 	// We will use the opt block to hold information of
@@ -630,7 +656,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 	// AB: Mark the previous used streams (sub-RseNode's) as active
 	for (StreamList::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
-		csb->csb_rpt[*i].csb_flags |= csb_active;
+		csb->csb_rpt[*i].activate();
 
 	// outer joins require some extra processing
 	if (rse->rse_jointype != blr_inner)
@@ -655,10 +681,10 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 			// AB: Mark the previous used streams (sub-RseNode's) again
 			// as active, because a SORT/MERGE could reset the flags
 			for (StreamList::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
-				csb->csb_rpt[*i].csb_flags |= csb_active;
+				csb->csb_rpt[*i].activate();
 		}
 
-		fb_assert(opt->compileStreams[0] != 1 || csb->csb_rpt[opt->compileStreams[1]].csb_relation != 0);
+		fb_assert(opt->compileStreams.getCount() != 1 || csb->csb_rpt[opt->compileStreams[0]].csb_relation != 0);
 
 		while (true)
 		{
@@ -667,24 +693,26 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 			// no merge is made between a new cross river and the
 			// currently active rivers. Where in the new cross river
 			// a stream depends (index) on the active rivers.
-			stream_array_t dependent_streams, free_streams;
-			dependent_streams[0] = free_streams[0] = 0;
+			//stream_array_t dependent_streams, free_streams;
+			StreamList dependent_streams, free_streams;
+			//dependent_streams[0] = free_streams[0] = 0;
 			find_index_relationship_streams(tdbb, opt, opt->compileStreams, dependent_streams, free_streams);
 
 			// If we have dependent and free streams then we can't rely on
 			// the sort node to be used for index navigation.
-			if (dependent_streams[0] && free_streams[0])
+			if (dependent_streams.getCount() && free_streams.getCount())
 			{
 				sort = NULL;
 				sort_can_be_used = false;
 			}
 
-			if (dependent_streams[0])
+			if (dependent_streams.getCount())
 			{
 				// copy free streams
-				for (USHORT i = 0; i <= free_streams[0]; i++) {
-					opt->compileStreams[i] = free_streams[i];
-				}
+				//for (StreamType i = 0; i <= free_streams.getCount(); i++) {
+				//	opt->compileStreams[i] = free_streams[i];
+				//}
+				opt->compileStreams.assign(free_streams);
 
 				// Make rivers from the dependent streams
 				gen_join(tdbb, opt, dependent_streams, rivers, &sort, rse->rse_plan);
@@ -697,7 +725,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 			}
 			else
 			{
-				if (free_streams[0])
+				if (free_streams.getCount())
 				{
 					// Deactivate streams from rivers on stack, because
 					// the remaining streams don't have any indexed relationship with them
@@ -741,34 +769,44 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	// check index usage in all the base streams to ensure
 	// that any user-specified access plan is followed
 
-	for (USHORT i = 1; i <= opt->compileStreams[0]; i++)
+	for (StreamType i = 0; i < opt->compileStreams.getCount(); i++)
 		check_indices(&csb->csb_rpt[opt->compileStreams[i]]);
 
 	if (project || sort)
 	{
+		// CVC: I'm not sure how to do this with Array in a clearer way.
+		// Please, once you agree with my changes or fix them, you can delete the comments.
 		// Eliminate any duplicate dbkey streams
-		const UCHAR* const b_end = opt->beds + opt->beds[0];
-		const UCHAR* const k_end = opt->keyStreams + opt->keyStreams[0];
-		UCHAR* k = &opt->keyStreams[1];
-		for (const UCHAR* p2 = k; p2 <= k_end; p2++)
+		//const UCHAR* const b_end = opt->beds + opt->beds[0];
+		const StreamType* const b_end = opt->beds.end();
+		//const UCHAR* const k_end = opt->keyStreams + opt->keyStreams[0];
+		const StreamType* const k_end = opt->keyStreams.end();
+		//UCHAR* k = &opt->keyStreams[1];
+		StreamType* k = opt->keyStreams.begin(); // the [1] was because count was [0]
+		//for (const UCHAR* p2 = k; p2 <= k_end; p2++)
+		for (const StreamType* p2 = k; p2 < k_end; ++p2) // changing <= to <
 		{
-			const UCHAR* q = &opt->beds[1];
-			while (q <= b_end && *q != *p2) {
+			//const UCHAR* q = &opt->beds[1];
+			const StreamType* q = opt->beds.begin(); // changing &[1] to &[0]
+			//while (q <= b_end && *q != *p2) {
+			while (q < b_end && *q != *p2) { // changing <= to <
 				q++;
 			}
-			if (q > b_end) {
+			//if (q > b_end) {
+			if (q >= b_end) { // changing > to >=
 				*k++ = *p2;
 			}
 		}
-		opt->keyStreams[0] = k - &opt->keyStreams[1];
+		//opt->keyStreams[0] = k - &opt->keyStreams[1];
+		opt->keyStreams.shrink(k - opt->keyStreams.begin());
 
 		// Handle project clause, if present
 		if (project)
-			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, opt->keyStreams, rsb, project, true);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, &opt->keyStreams, rsb, project, true);
 
 		// Handle sort clause if present
 		if (sort)
-			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, opt->keyStreams, rsb, sort, false);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, &opt->keyStreams, rsb, sort, false);
 	}
 
     // Handle first and/or skip.  The skip MUST (if present)
@@ -784,9 +822,9 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 	{
-		for (USHORT i = 1; i <= opt->compileStreams[0]; ++i)
+		for (StreamType i = 0; i < opt->compileStreams.getCount(); ++i)
 		{
-			const USHORT loopStream = opt->compileStreams[i];
+			const StreamType loopStream = opt->compileStreams[i];
 			CompilerScratch::csb_repeat* r = &csb->csb_rpt[loopStream];
 			r->csb_flags |= csb_update;
 
@@ -800,9 +838,9 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	}
 
 	// release memory allocated for index descriptions
-	for (USHORT i = 1; i <= opt->compileStreams[0]; ++i)
+	for (StreamType i = 0; i < opt->compileStreams.getCount(); ++i)
 	{
-		const USHORT loopStream = opt->compileStreams[i];
+		const StreamType loopStream = opt->compileStreams[i];
 		delete csb->csb_rpt[loopStream].csb_idx;
 		csb->csb_rpt[loopStream].csb_idx = NULL;
 
@@ -825,9 +863,9 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	}	// try
 	catch (const Exception&)
 	{
-		for (USHORT i = 1; i <= opt->compileStreams[0]; ++i)
+		for (StreamType i = 0; i < opt->compileStreams.getCount(); ++i)
 		{
-			const USHORT loopStream = opt->compileStreams[i];
+			const StreamType loopStream = opt->compileStreams[i];
 			delete csb->csb_rpt[loopStream].csb_idx;
 			csb->csb_rpt[loopStream].csb_idx = NULL;
 			csb->csb_rpt[loopStream].csb_indices = 0; // Probably needed to be safe
@@ -1083,7 +1121,7 @@ static void check_sorts(RseNode* rse)
 	// the most outer stream, if true update rse and ignore the sort
 	if (sort && !project)
 	{
-		int sort_stream = 0;
+		StreamType sort_stream = 0;
 		bool usableSort = true;
 		NestConst<ValueExprNode>* sort_ptr = sort->expressions.begin();
 		const NestConst<ValueExprNode>* const sort_end = sort->expressions.end();
@@ -1095,7 +1133,7 @@ static void check_sorts(RseNode* rse)
 			if ((sortField = (*sort_ptr)->as<FieldNode>()))
 			{
 				// Get stream for this field at this position.
-				const int current_stream = sortField->fieldStream;
+				const StreamType current_stream = sortField->fieldStream;
 
 				// If this is the first position node, save this stream.
 				if (sort_ptr == sort->expressions.begin())
@@ -1616,9 +1654,9 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 
 static void find_index_relationship_streams(thread_db* tdbb,
 											OptimizerBlk* opt,
-											const UCHAR* streams,
-											UCHAR* dependent_streams,
-											UCHAR* free_streams)
+											const StreamList& streams,
+											StreamList& dependent_streams,
+											StreamList& free_streams)
 {
 /**************************************
  *
@@ -1636,13 +1674,15 @@ static void find_index_relationship_streams(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	CompilerScratch* const csb = opt->opt_csb;
-	const UCHAR* end_stream = streams + 1 + streams[0];
-	for (const UCHAR* stream = streams + 1; stream < end_stream; stream++)
+	//const UCHAR* end_stream = streams + 1 + streams[0];
+	//for (const UCHAR* stream = streams + 1; stream < end_stream; stream++)
+	const StreamType* end_stream = streams.end();
+	for (const StreamType* stream = streams.begin(); stream < end_stream; stream++)
 	{
 		CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[*stream];
 
 		// Set temporary active flag for this stream
-		csb_tail->csb_flags |= csb_active;
+		csb_tail->activate();
 
 		bool indexed_relationship = false;
 
@@ -1666,22 +1706,22 @@ static void find_index_relationship_streams(thread_db* tdbb,
 
 		if (indexed_relationship)
 		{
-			dependent_streams[++dependent_streams[0]] = *stream;
+			dependent_streams.add(*stream);
 		}
 		else
 		{
-			free_streams[++free_streams[0]] = *stream;
+			free_streams.add(*stream);
 		}
 
 		// Reset active flag
-		csb_tail->csb_flags &= ~csb_active;
+		csb_tail->deactivate();
 	}
 }
 
 
 static void form_rivers(thread_db*		tdbb,
 						OptimizerBlk*	opt,
-						const UCHAR*	streams,
+						const StreamList&	streams,
 						RiverList&		river_list,
 						SortNode**		sort_clause,
 						PlanNode*		plan_clause)
@@ -1700,8 +1740,9 @@ static void form_rivers(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 
-	stream_array_t temp;
-	temp[0] = 0;
+	//stream_array_t temp;
+	StreamList temp;
+	//temp[0] = 0;
 
 	// this must be a join or a merge node, so go through
 	// the substreams and place them into the temp vector
@@ -1723,7 +1764,7 @@ static void form_rivers(thread_db*		tdbb,
 		// the stream into the river.
 		fb_assert(plan_node->type == PlanNode::TYPE_RETRIEVE);
 
-		const UCHAR stream = plan_node->relationNode->getStream();
+		const StreamType stream = plan_node->relationNode->getStream();
 
 		// dimitr:	the plan may contain more retrievals than the "streams"
 		//			array (some streams could already be joined to the active
@@ -1731,15 +1772,16 @@ static void form_rivers(thread_db*		tdbb,
 		//			streams that appear in both the plan and the "streams"
 		//			array.
 
-		const UCHAR* ptr_stream = streams + 1;
-		const UCHAR* const end_stream = ptr_stream + streams[0];
+		const StreamType* ptr_stream = streams.begin();
+		const StreamType* const end_stream = streams.end();
 
 		while (ptr_stream < end_stream)
 		{
 			if (*ptr_stream++ == stream)
 			{
-				temp[0]++;
-				temp[temp[0]] = stream;
+				//temp[0]++;
+				//temp[temp[0]] = stream;
+				temp.add(stream);
 				break;
 			}
 		}
@@ -1754,23 +1796,23 @@ static void form_rivers(thread_db*		tdbb,
 	// CVC: Notice "plan_node" is pointing to the last element in the loop above.
 	// If the loop didn't execute, we had garbage in "plan_node".
 
-	if (temp[0] != 0)
+	if (temp.getCount() != 0)
 	{
 		OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, temp, sort_clause, plan_clause);
 
-		USHORT count;
+		StreamType count;
 		do {
 			count = innerJoin.findJoinOrder();
-		} while (form_river(tdbb, opt, count, streams[0], temp, river_list, sort_clause));
+		} while (form_river(tdbb, opt, count, streams.getCount(), temp, river_list, sort_clause));
 	}
 }
 
 
 static bool form_river(thread_db*		tdbb,
 					   OptimizerBlk*	opt,
-					   USHORT			count,
-					   USHORT			stream_count,
-					   UCHAR*			temp,
+					   StreamType		count,
+					   size_t			stream_count,
+					   StreamList&		temp,
 					   RiverList&		river_list,
 					   SortNode** sort_clause)
 {
@@ -1799,7 +1841,7 @@ static bool form_river(thread_db*		tdbb,
 
 	StreamList streams;
 	streams.resize(count);
-	UCHAR* stream = streams.begin();
+	StreamType* stream = streams.begin();
 
 	if (count != stream_count)
 	{
@@ -1810,7 +1852,7 @@ static bool form_river(thread_db*		tdbb,
 	for (OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
 		 tail < opt_end; tail++, stream++, ptr++)
 	{
-		*stream = (UCHAR) tail->opt_best_stream;
+		*stream = tail->opt_best_stream;
 		*ptr = gen_retrieval(tdbb, opt, *stream, sort_clause, false, false, NULL);
 		sort_clause = NULL;
 	}
@@ -1819,20 +1861,25 @@ static bool form_river(thread_db*		tdbb,
 		FB_NEW(*tdbb->getDefaultPool()) NestedLoopJoin(csb, count, rsbs.begin());
 
 	// Allocate a river block and move the best order into it
-	River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, NULL, count, streams.begin());
+	River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, NULL, streams);
 	river->deactivate(csb);
 	river_list.push(river);
 
-	stream = temp + 1;
-	const UCHAR* const end_stream = stream + temp[0];
+	//stream = temp + 1;
+	stream = temp.begin();
+	//const UCHAR* const end_stream = stream + temp[0];
+	const StreamType* const end_stream = temp.end();
 
-	if (!(temp[0] -= count))
+	fb_assert(temp.getCount() >= count);
+	//if (!(temp[0] -= count))
+	temp.shrink(temp.getCount() - count);
+	if (!temp.getCount())
 	{
 		return false;
 	}
 
 	// Reform "temp" from streams not consumed
-	for (const UCHAR* t2 = stream; t2 < end_stream; t2++)
+	for (const StreamType* t2 = stream; t2 < end_stream; t2++)
 	{
 		bool used = false;
 
@@ -1934,7 +1981,7 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, MapNode*
 
 static void gen_join(thread_db*		tdbb,
 					 OptimizerBlk*	opt,
-					 const UCHAR*	streams,
+					 const StreamList&	streams,
 					 RiverList&		river_list,
 					 SortNode** sort_clause,
 					 PlanNode*		plan_clause)
@@ -1954,10 +2001,10 @@ static void gen_join(thread_db*		tdbb,
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
 
-	if (!streams[0])
+	if (!streams.getCount())
 		return;
 
-	if (plan_clause && streams[0] > 1)
+	if (plan_clause && streams.getCount() > 1)
 	{
 		// this routine expects a join/merge
 		form_rivers(tdbb, opt, streams, river_list, sort_clause, plan_clause);
@@ -1966,13 +2013,15 @@ static void gen_join(thread_db*		tdbb,
 
 	OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, streams, sort_clause, plan_clause);
 
-	stream_array_t temp;
-	memcpy(temp, streams, streams[0] + 1);
+	//stream_array_t temp;
+	StreamList temp;
+	//memcpy(temp, streams, streams[0] + 1);
+	temp.assign(streams);
 
-	USHORT count;
+	StreamType count;
 	do {
 		count = innerJoin.findJoinOrder();
-	} while (form_river(tdbb, opt, count, streams[0], temp, river_list, sort_clause));
+	} while (form_river(tdbb, opt, count, streams.getCount(), temp, river_list, sort_clause));
 }
 
 
@@ -1996,7 +2045,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
  **************************************/
 	struct {
 		RecordSource* stream_rsb;
-		USHORT stream_num;
+		StreamType stream_num;
 	} stream_o, stream_i, *stream_ptr[2];
 
 	DEV_BLKCHK(opt, type_opt);
@@ -2104,10 +2153,10 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 	}
 
 	if (!hasInnerRsb)
-		csb->csb_rpt[stream_i.stream_num].csb_flags &= ~csb_active;
+		csb->csb_rpt[stream_i.stream_num].deactivate();
 
 	if (!hasOuterRsb)
-		csb->csb_rpt[stream_o.stream_num].csb_flags &= ~csb_active;
+		csb->csb_rpt[stream_o.stream_num].deactivate();
 
 	if (!hasInnerRsb)
 	{
@@ -2172,7 +2221,7 @@ static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, Re
 
 static RecordSource* gen_retrieval(thread_db*     tdbb,
 						 OptimizerBlk*      opt,
-						 SSHORT   stream,
+						 StreamType   stream,
 						 SortNode** sort_ptr,
 						 bool     outer_flag,
 						 bool     inner_flag,
@@ -2202,7 +2251,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	fb_assert(relation);
 
 	const string alias = OPT_make_alias(tdbb, csb, csb_tail);
-	csb_tail->csb_flags |= csb_active;
+	csb_tail->activate();
 
 	// Time to find inversions. For each index on the relation
 	// match all unused booleans against the index looking for upper
@@ -2275,7 +2324,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			BoolExprNode* node = tail->opt_conjunct_node;
 
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				node->computable(csb, -1, false))
+				node->computable(csb, INVALID_STREAM, false))
 			{
 				compose(tdbb, return_boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -2299,7 +2348,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		BoolExprNode* const node = tail->opt_conjunct_node;
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			node->computable(csb, -1, false))
+			node->computable(csb, INVALID_STREAM, false))
 		{
 			// If no index is used then leave other nodes alone, because they
 			// could be used for building a SORT/MERGE.
@@ -2322,7 +2371,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
 
 			if (condition &&
-				condition->computable(csb, -1, false) &&
+				condition->computable(csb, INVALID_STREAM, false) &&
 				!condition->jrdStreamFinder(stream))
 			{
 				RecordSource* const other_rsb =
@@ -2344,8 +2393,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 }
 
 
-SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* streams,
-	const UCHAR* dbkey_streams, RecordSource* prior_rsb, SortNode* sort, bool project_flag)
+SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamList& streams,
+	const StreamList* dbkey_streams, RecordSource* prior_rsb, SortNode* sort, bool project_flag)
 {
 /**************************************
  *
@@ -2374,17 +2423,20 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	 * be used to detect update conflict in read committed
 	 * transactions. */
 
-	const UCHAR* ptr;
+	//const StreamType* ptr;
 	dsc descriptor;
 
 	ULONG items = sort->expressions.getCount() +
-		(streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
-	const UCHAR* const end_ptr = streams + streams[0];
+		//(streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
+		3 * streams.getCount() + 2 * (dbkey_streams ? dbkey_streams->getCount() : 0);
+	//const UCHAR* const end_ptr = streams + streams[0];
+	const StreamType* const end_ptr = streams.end();
 	const NestConst<ValueExprNode>* const end_node = sort->expressions.end();
-	HalfStaticArray<SLONG, OPT_STATIC_ITEMS> id_list;
+	HalfStaticArray<ULONG, OPT_STATIC_ITEMS> id_list;
 	StreamList stream_list;
 
-	for (ptr = &streams[1]; ptr <= end_ptr; ptr++)
+	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++)
+	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++)
 	{
 		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
 
@@ -2423,7 +2475,12 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 		}
 	}
 
-	if (items > MAX_USHORT)
+	// CVC: I'm not sure about this change, please check! 6 is an educated guess only.
+	// It comes from sort->expressions + streams * 3 + db_key_streams * 2 + the loop above,
+	// all of them having a theoretical maximum of MAX_STREAMS, thus MAX_STREAMS * 7,
+	// although the contribution of sort->expressions and the loop above seem to be small.
+	//if (items > MAX_USHORT)
+	if (items >= MAX_STREAMS * 7)
 		ERR_post(Arg::Gds(isc_imp_exc));
 
 	// Now that we know the number of items, allocate a sort map block.
@@ -2442,7 +2499,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	// correctly, two sort keys are made for each field, one for the null flag
 	// and one for field itself.
 
-	SortedStream::SortMap::Item* map_item = map->items.getBuffer((USHORT) items);
+	SortedStream::SortMap::Item* map_item = map->items.getBuffer(items);
 	sort_key_def* sort_key = map->keyItems.getBuffer(2 * sort->expressions.getCount());
 	int* nullOrder = sort->nullOrder.begin();
 	bool* descending = sort->descending.begin();
@@ -2546,8 +2603,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 
 	while (stream_list.hasData())
 	{
-		const SLONG id = id_list.pop();
-		const UCHAR stream = stream_list.pop();
+		const ULONG id = id_list.pop();
+		const StreamType stream = stream_list.pop();
 		const Format* format = CMP_format(tdbb, csb, stream);
 		const dsc* desc = &format->fmt_desc[id];
 		if (id >= format->fmt_count || desc->dsc_dtype == dtype_unknown)
@@ -2567,7 +2624,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	// Make fields for record numbers record for all streams
 
 	map_length = ROUNDUP(map_length, sizeof(SINT64));
-	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
+	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
+	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
 	{
 		map_item->clear();
 		map_item->fieldId = SortedStream::ID_DBKEY;
@@ -2581,7 +2639,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 
 	// Make fields for transaction id of record for all streams
 
-	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
+	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
+	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
 	{
 		map_item->clear();
 		map_item->fieldId = SortedStream::ID_TRANS;
@@ -2595,10 +2654,11 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 
 	if (dbkey_streams)
 	{
-		const UCHAR* const end_ptrL = dbkey_streams + dbkey_streams[0];
+		const StreamType* const end_ptrL = dbkey_streams->end();
 
 		map_length = ROUNDUP(map_length, sizeof(SINT64));
-		for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
+		//for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
+		for (const StreamType* ptr = dbkey_streams->begin(); ptr < end_ptrL; ptr++, map_item++)
 		{
 			map_item->clear();
 			map_item->fieldId = SortedStream::ID_DBKEY;
@@ -2610,7 +2670,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 			map_length += desc->dsc_length;
 		}
 
-		for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
+		//for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
+		for (const StreamType* ptr = dbkey_streams->begin(); ptr < end_ptrL; ptr++, map_item++)
 		{
 			map_item->clear();
 			map_item->fieldId = SortedStream::ID_DBKEY_VALID;
@@ -2624,7 +2685,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 		}
 	}
 
-	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
+	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
+	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
 	{
 		map_item->clear();
 		map_item->fieldId = SortedStream::ID_DBKEY_VALID;
@@ -2637,8 +2699,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 		map_length += desc->dsc_length;
 	}
 
-	fb_assert(map_item - map->items.begin() == USHORT(map->items.getCount()));
-	fb_assert(sort_key - map->keyItems.begin() == USHORT(map->keyItems.getCount()));
+	fb_assert(map_item - map->items.begin() == map->items.getCount());
+	fb_assert(sort_key - map->keyItems.begin() == map->keyItems.getCount());
 
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 
@@ -2840,13 +2902,14 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	// need to know which nodes are computable between the rivers used
 	// for the merge.
 
-	USHORT flag_vector[MAX_STREAMS + 1], *fv;
-	UCHAR stream_nr;
+	//USHORT flag_vector[MAX_STREAMS + 1]; // I think + 1 is not necessary anymore
+	bool flag_vector[MAX_STREAMS + 1];
+	//bool* fv = flag_vector;
 
-	for (stream_nr = 0, fv = flag_vector; stream_nr < csb->csb_n_stream; stream_nr++)
+	for (StreamType stream_nr = 0; stream_nr < csb->csb_n_stream; stream_nr++)
 	{
-		*fv++ = csb->csb_rpt[stream_nr].csb_flags & csb_active;
-		csb->csb_rpt[stream_nr].csb_flags &= ~csb_active;
+		flag_vector[stream_nr] = (csb->csb_rpt[stream_nr].csb_flags & csb_active) != 0;
+		csb->csb_rpt[stream_nr].deactivate();
 	}
 
 	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
@@ -2891,7 +2954,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			BoolExprNode* const node = tail->opt_conjunct_node;
 
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				node->computable(csb, -1, false))
+				node->computable(csb, INVALID_STREAM, false))
 			{
 				compose(tdbb, &river_boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -2921,11 +2984,14 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 				key->expressions.add((*selected_class)[number]);
 			}
 
-			const size_t stream_count = river->getStreamCount();
-			fb_assert(stream_count <= MAX_STREAMS);
-			stream_array_t streams;
-			streams[0] = (UCHAR) stream_count;
-			memcpy(streams + 1, river->getStreams(), stream_count);
+			//const size_t stream_count = river->getStreamCount();
+			//fb_assert(stream_count <= MAX_STREAMS);
+			fb_assert(river->getStreams().getCount() <= MAX_STREAMS);
+			//stream_array_t streams;
+			StreamList streams;
+			//streams[0] = stream_count;
+			//memcpy(streams + 1, river->getStreams(), stream_count);
+			streams.assign(river->getStreams());
 			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, rsb, key, false);
 		}
 		else
@@ -2986,7 +3052,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		BoolExprNode* const node = tail->opt_conjunct_node;
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			node->computable(csb, -1, false))
+			node->computable(csb, INVALID_STREAM, false))
 		{
 			compose(tdbb, &boolean, node);
 			tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -2998,8 +3064,13 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 	// Reset all the streams to their original state
 
-	for (stream_nr = 0, fv = flag_vector; stream_nr < csb->csb_n_stream; stream_nr++)
-		csb->csb_rpt[stream_nr].csb_flags |= *fv++;
+	//fv = flag_vector;
+	for (StreamType stream_nr = 0; stream_nr < csb->csb_n_stream; stream_nr++)
+	{
+		//csb->csb_rpt[stream_nr].csb_flags |= *fv++;
+		if (flag_vector[stream_nr])
+			csb->csb_rpt[stream_nr].activate();
+	}
 
 	River* const merged_river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, rivers_to_merge);
 
@@ -3498,7 +3569,7 @@ static void set_rse_inactive(CompilerScratch* csb, const RseNode* rse)
 			node->getStreams(sourceStreams);
 
 			for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
-				csb->csb_rpt[*i].csb_flags &= ~csb_active;
+				csb->csb_rpt[*i].deactivate();
 		}
 	}
 }

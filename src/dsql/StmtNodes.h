@@ -556,7 +556,7 @@ public:
 	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> subStatement;
-	USHORT stream;
+	StreamType stream;
 };
 
 
@@ -1020,7 +1020,7 @@ class MergeNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>
 public:
 	struct Matched
 	{
-		Matched(MemoryPool& pool)
+		explicit Matched(MemoryPool& pool)
 			: assignments(NULL),
 			  condition(NULL)
 		{
@@ -1032,7 +1032,7 @@ public:
 
 	struct NotMatched
 	{
-		NotMatched(MemoryPool& pool)
+		explicit NotMatched(MemoryPool& pool)
 			: fields(pool),
 			  values(NULL),
 			  condition(NULL)
@@ -1154,8 +1154,8 @@ public:
 	NestConst<StmtNode> subMod;
 	Firebird::Array<ValidateInfo> validations;
 	NestConst<StmtNode> mapView;
-	USHORT orgStream;
-	USHORT newStream;
+	StreamType orgStream;
+	StreamType newStream;
 };
 
 

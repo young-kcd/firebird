@@ -114,7 +114,7 @@ static bool find_type(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, UCHAR**, con
 
 inline void err_post_if_database_is_readonly(const Database* dbb)
 {
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 		ERR_post(Arg::Gds(isc_read_only_database));
 }
 
@@ -746,7 +746,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 
 	// Get new attachment id
 
-	if (dbb->dbb_flags & DBB_read_only) {
+	if (dbb->readOnly()) {
 		attachment->att_attachment_id = dbb->dbb_attachment_id + dbb->generateAttachmentId(tdbb);
 	}
 	else
@@ -1337,7 +1337,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 
 				case HDR_sweep_interval:
 					// CVC: Let's copy it always.
-					//if (!(dbb->dbb_flags & DBB_read_only))
+					//if (!dbb->readOnly())
 						memcpy(&dbb->dbb_sweep_interval, p + 2, sizeof(SLONG));
 					break;
 				}

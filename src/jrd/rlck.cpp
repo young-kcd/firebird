@@ -56,7 +56,7 @@ Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rela
 	// at read-only transactions at read-write databases, GTT's with ON COMMIT
 	// DELETE ROWS clause is writable at read-only databases.
 
-	if (write_flag && (tdbb->getDatabase()->dbb_flags & DBB_read_only) &&
+	if (write_flag && tdbb->getDatabase()->readOnly() &&
 		!relation->isVirtual() && !(relation->rel_flags & REL_temp_tran))
 	{
 		ERR_post(Arg::Gds(isc_read_only_database));

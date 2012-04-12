@@ -421,8 +421,8 @@ public:
 	// Statement flags.
 	static const unsigned FLAG_ORPHAN		= 0x01;
 	static const unsigned FLAG_NO_BATCH		= 0x02;
-	static const unsigned FLAG_BLR_VERSION4	= 0x04;
-	static const unsigned FLAG_BLR_VERSION5	= 0x08;
+	//static const unsigned FLAG_BLR_VERSION4	= 0x04;
+	//static const unsigned FLAG_BLR_VERSION5	= 0x08;
 	static const unsigned FLAG_SELECTABLE	= 0x10;
 
 public:
@@ -430,6 +430,7 @@ public:
 		: PermanentStorage(p),
 		  type(TYPE_SELECT),
 		  flags(0),
+		  blrVersion(5),
 		  sendMsg(NULL),
 		  receiveMsg(NULL),
 		  eof(NULL),
@@ -450,6 +451,9 @@ public:
 	ULONG getFlags() const { return flags; }
 	void setFlags(ULONG value) { flags = value; }
 	void addFlags(ULONG value) { flags |= value; }
+
+	unsigned getBlrVersion() const { return blrVersion; }
+	void setBlrVersion(unsigned value) { blrVersion = value; }
 
 	Firebird::RefStrPtr& getSqlText() { return sqlText; }
 	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
@@ -494,6 +498,7 @@ public:
 private:
 	Type type;					// Type of statement
 	ULONG flags;				// generic flag
+	unsigned blrVersion;
 	Firebird::RefStrPtr sqlText;
 	dsql_msg* sendMsg;			// Message to be sent to start request
 	dsql_msg* receiveMsg;		// Per record message to be received
@@ -611,7 +616,7 @@ public:
 	explicit DsqlDdlRequest(MemoryPool& pool, DdlNode* aNode)
 		: dsql_req(pool),
 		  node(aNode),
-		  scratch(NULL)
+		  internalScratch(NULL)
 	{
 	}
 
@@ -625,7 +630,7 @@ public:
 
 private:
 	DdlNode* node;
-	DsqlCompilerScratch* scratch;
+	DsqlCompilerScratch* internalScratch;
 };
 
 class DsqlTransactionRequest : public dsql_req
@@ -845,7 +850,7 @@ typedef Firebird::SortedArray<const char*,
 class IntlString
 {
 public:
-	IntlString(const dsql_str* str)
+	explicit IntlString(const dsql_str* str)
 		: charset(str->str_charset ? str->str_charset : ""),
 		  s(str->str_data, str->str_length)
 	{ }

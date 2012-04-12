@@ -38,7 +38,7 @@ using namespace Jrd;
 // Data access: external table scan
 // --------------------------------
 
-ExternalTableScan::ExternalTableScan(CompilerScratch* csb, const string& name, UCHAR stream)
+ExternalTableScan::ExternalTableScan(CompilerScratch* csb, const string& name, StreamType stream)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));

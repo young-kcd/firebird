@@ -1256,7 +1256,7 @@ bool CCH_free_page(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 
-	if (dbb->dbb_flags & DBB_read_only) {
+	if (dbb->readOnly()) {
 		return false;
 	}
 

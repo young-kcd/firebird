@@ -35,7 +35,7 @@ using namespace Jrd;
 // Data access: sequential complete table scan
 // -------------------------------------------
 
-FullTableScan::FullTableScan(CompilerScratch* csb, const string& name, UCHAR stream)
+FullTableScan::FullTableScan(CompilerScratch* csb, const string& name, StreamType stream)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));

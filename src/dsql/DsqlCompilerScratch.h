@@ -128,7 +128,7 @@ protected:
 public:
 	virtual bool isVersion4()
 	{
-		return statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4;
+		return statement->getBlrVersion() == 4;
 	}
 
 	MemoryPool& getPool()
@@ -270,7 +270,6 @@ private:
 	bool pass1RelProcIsRecursive(dsql_nod* input);
 	dsql_nod* pass1JoinIsRecursive(dsql_nod*& inputNod);
 
-private:
 	dsql_dbb* dbb;						// DSQL attachment
 	jrd_tra* transaction;				// Transaction
 	DsqlCompiledStatement* statement;	// Compiled statement
@@ -285,6 +284,7 @@ public:
 	DsqlContextStack unionContext;		// Save contexts for views of unions
 	DsqlContextStack derivedContext;	// Save contexts for views of derived tables
 	dsql_ctx* outerAggContext;			// agg context for outer ref
+	// CVC: I think the two contexts may need a bigger var, too.
 	USHORT contextNumber;				// Next available context number
 	USHORT derivedContextNumber;		// Next available context number for derived tables
 	USHORT scopeLevel;					// Scope level for parsing aliases in subqueries

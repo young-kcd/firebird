@@ -36,10 +36,10 @@ using namespace Jrd;
 // Data access: recursive union
 // ----------------------------
 
-RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapStream,
+RecursiveStream::RecursiveStream(CompilerScratch* csb, StreamType stream, StreamType mapStream,
 							     RecordSource* root, RecordSource* inner,
 							     const MapNode* rootMap, const MapNode* innerMap,
-							     size_t streamCount, const UCHAR* innerStreams,
+							     size_t streamCount, const StreamType* innerStreams,
 							     ULONG saveOffset)
 	: RecordStream(csb, stream),
 	  m_mapStream(mapStream),
@@ -87,7 +87,7 @@ void RecursiveStream::open(thread_db* tdbb) const
 
 	for (size_t i = 0; i < m_innerStreams.getCount(); i++)
 	{
-		const UCHAR stream = m_innerStreams[i];
+		const StreamType stream = m_innerStreams[i];
 		request->req_rpb[stream].rpb_number.setValue(BOF_NUMBER);
 	}
 
@@ -155,7 +155,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 			UCHAR* p = tmp + m_saveSize;
 			for (size_t i = 0; i < m_innerStreams.getCount(); i++)
 			{
-				const UCHAR stream = m_innerStreams[i];
+				const StreamType stream = m_innerStreams[i];
 				record_param* const rpb = &request->req_rpb[stream];
 				memmove(p, rpb, sizeof(record_param));
 				p += sizeof(record_param);
@@ -310,7 +310,7 @@ void RecursiveStream::cleanupLevel(jrd_req* request, Impure* impure) const
 
 	for (size_t i = 0; i < m_innerStreams.getCount(); i++)
 	{
-		const UCHAR stream = m_innerStreams[i];
+		const StreamType stream = m_innerStreams[i];
 		record_param* const rpb = &request->req_rpb[stream];
 		Record* const tempRecord = rpb->rpb_record;
 		memmove(rpb, p, sizeof(record_param));

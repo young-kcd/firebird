@@ -133,7 +133,7 @@ namespace {
 		// If the database is updateable, then try opening the external files in
 		// RW mode. If the DB is ReadOnly, then open the external files only in
 		// ReadOnly mode, thus being consistent.
-		if (!(dbb->dbb_flags & DBB_read_only))
+		if (!dbb->readOnly())
 			ext_file->ext_ifi = fopen(file_name, FOPEN_TYPE);
 
 		if (!ext_file->ext_ifi)
@@ -472,7 +472,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 		Database* dbb = tdbb->getDatabase();
 		CHECK_DBB(dbb);
 		// Distinguish error message for a ReadOnly database
-		if (dbb->dbb_flags & DBB_read_only)
+		if (dbb->readOnly())
 			ERR_post(Arg::Gds(isc_read_only_database));
 		else
 		{

@@ -2227,7 +2227,7 @@ void VIO_init(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	if ((dbb->dbb_flags & DBB_read_only) || !(dbb->dbb_flags & DBB_gc_background))
+	if (dbb->readOnly() || !(dbb->dbb_flags & DBB_gc_background))
 	{
 		return;
 	}

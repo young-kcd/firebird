@@ -47,7 +47,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/lls.h"
-#include "../jrd/rse.h"	// for MAX_STREAMS
+//#include "../jrd/rse.h"
 #include "../jrd/scl.h"
 #include "../jrd/req.h"
 #include "../jrd/blb.h"
@@ -82,6 +82,7 @@ static NodeParseFunc blr_parsers[256] = {NULL};
 
 static void par_error(BlrReader& blrReader, const Arg::StatusVector& v, bool isSyntaxError = true);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
+static void getBlrVersion(CompilerScratch* csb);
 
 
 namespace
@@ -163,17 +164,17 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 
 	if (trigger)
 	{
-		SSHORT stream = csb->nextStream();
+		StreamType stream = csb->nextStream();
 		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
-		t1->csb_stream = (UCHAR) stream;
+		t1->csb_stream = stream;
 
 		stream = csb->nextStream();
 		t1 = CMP_csb_element(csb, 1);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
-		t1->csb_stream = (UCHAR) stream;
+		t1->csb_stream = stream;
 	}
 	else if (relation)
 	{
@@ -192,7 +193,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		// be more then just csb_n_stream-numbers that hold data.
 		// Certainly csb_stream (see PAR_context where the context is retrieved)
 		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
-		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream)
+		for (StreamType stream = 0; ptr != end; ++ptr, ++stream)
 		{
 			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
@@ -203,18 +204,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		csb->csb_n_stream = view_csb->csb_n_stream;
 	}
 
-	const SSHORT version = csb->csb_blr_reader.getByte();
-	switch (version)
-	{
-	case blr_version4:
-		csb->csb_g_flags |= csb_blr_version4;
-		break;
-	case blr_version5:
-		break; // nothing to do
-	default:
-		PAR_error(csb, Arg::Gds(isc_metadata_corrupt) <<
-				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
-	}
+	getBlrVersion(csb);
 
 	DmlNode* node = PAR_parse_node(tdbb, csb);
 	csb->csb_node = node;
@@ -278,7 +268,7 @@ void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, UL
 		// be more then just csb_n_stream-numbers that hold data.
 		// Certainly csb_stream (see PAR_context where the context is retrieved)
 		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
-		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream)
+		for (StreamType stream = 0; ptr != end; ++ptr, ++stream)
 		{
 			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
@@ -289,18 +279,7 @@ void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, UL
 		csb->csb_n_stream = view_csb->csb_n_stream;
 	}
 
-	const SSHORT version = csb->csb_blr_reader.getByte();
-	switch (version)
-	{
-	case blr_version4:
-		csb->csb_g_flags |= csb_blr_version4;
-		break;
-	case blr_version5:
-		break; // nothing to do
-	default:
-		PAR_error(csb, Arg::Gds(isc_metadata_corrupt) <<
-				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
-	}
+	getBlrVersion(csb);
 
 	StmtNode* stmt = NULL;
 
@@ -611,7 +590,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 }
 
 
-ValueExprNode* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id, bool byId)
+ValueExprNode* PAR_gen_field(thread_db* tdbb, StreamType stream, USHORT id, bool byId)
 {
 /**************************************
  *
@@ -645,7 +624,7 @@ ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT cont
  **************************************/
 	SET_TDBB(tdbb);
 
-	const USHORT stream = csb->csb_rpt[context].csb_stream;
+	const StreamType stream = csb->csb_rpt[context].csb_stream;
 
 	jrd_rel* const relation = csb->csb_rpt[stream].csb_relation;
 	jrd_prc* const procedure = csb->csb_rpt[stream].csb_procedure;
@@ -704,17 +683,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	if (internal_flag)
 		csb->csb_g_flags |= csb_internal;
 
-	const SSHORT version = csb->csb_blr_reader.getByte();
-	switch (version)
-	{
-	case blr_version4:
-		csb->csb_g_flags |= csb_blr_version4;
-		break;
-	case blr_version5:
-		break; // nothing to do
-	default:
-		PAR_error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
-	}
+	getBlrVersion(csb);
 
 	if (dbginfo_length > 0)
 		DBG_parse_debug_info(dbginfo_length, dbginfo, *csb->csb_dbg_info);
@@ -850,7 +819,7 @@ ValueListNode* PAR_args(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-SSHORT PAR_context(CompilerScratch* csb, SSHORT* context_ptr)
+StreamType PAR_context(CompilerScratch* csb, SSHORT* context_ptr)
 {
 /**************************************
  *
@@ -865,6 +834,7 @@ SSHORT PAR_context(CompilerScratch* csb, SSHORT* context_ptr)
  *
  **************************************/
 
+	// CVC: Bottleneck
 	const SSHORT context = (unsigned int) csb->csb_blr_reader.getByte();
 
 	if (context_ptr)
@@ -881,14 +851,14 @@ SSHORT PAR_context(CompilerScratch* csb, SSHORT* context_ptr)
 		PAR_error(csb, Arg::Gds(isc_ctxinuse));
 	}
 
-	const USHORT stream = csb->nextStream(false);
+	const StreamType stream = csb->nextStream(false);
 	if (stream >= MAX_STREAMS)
 	{
 		PAR_error(csb, Arg::Gds(isc_too_many_contexts));
 	}
 
 	tail->csb_flags |= csb_used;
-	tail->csb_stream = (UCHAR) stream;
+	tail->csb_stream = stream;
 
 	CMP_csb_element(csb, stream);
 
@@ -896,7 +866,7 @@ SSHORT PAR_context(CompilerScratch* csb, SSHORT* context_ptr)
 }
 
 
-void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, SSHORT stream, SSHORT id,
+void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, StreamType stream, SSHORT id,
 	const MetaName& field_name)
 {
 /**************************************
@@ -1024,6 +994,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	if (node_type == blr_join || node_type == blr_merge)
 	{
+		// CVC: bottleneck
 		int count = (USHORT) csb->csb_blr_reader.getByte();
 		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_JOIN);
 
@@ -1055,10 +1026,11 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 		jrd_rel* relation = plan->relationNode->relation;
 
+		// CVC: bottleneck
 		n = csb->csb_blr_reader.getByte();
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
 			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
-		const SSHORT stream = csb->csb_rpt[n].csb_stream;
+		const StreamType stream = csb->csb_rpt[n].csb_stream;
 
 		plan->relationNode->setStream(stream);
 		plan->relationNode->context = n;
@@ -1426,7 +1398,7 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				}
 			}
 
-			PAR_syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
+			PAR_syntax_error(csb, ((rse_op == blr_rs_stream) ?
 						 "RecordSelExpr stream clause" :
 						 "record selection expression clause"));
 		}
@@ -1702,4 +1674,27 @@ void PAR_warning(const Arg::StatusVector& v)
 	// Save into tdbb
 	p.copyTo(tdbb->tdbb_status_vector);
 	ERR_make_permanent(tdbb->tdbb_status_vector);
+}
+
+
+// Get the BLR version from the CSB stream and complain if it's unknown.
+static void getBlrVersion(CompilerScratch* csb)
+{
+	const SSHORT version = csb->csb_blr_reader.getByte();
+	switch (version)
+	{
+	case blr_version4:
+		csb->blrVersion = 4;
+		break;
+	case blr_version5:
+		csb->blrVersion = 5;
+		break;
+	//case blr_version6:
+	//	csb->blrVersion = 6;
+	//	break;
+	default:
+		PAR_error(csb, Arg::Gds(isc_metadata_corrupt) <<
+				   Arg::Gds(isc_wroblrver2) << Arg::Num(blr_version4) << Arg::Num(blr_version5/*6*/) <<
+						Arg::Num(version));
+	}
 }

@@ -276,7 +276,7 @@ void GEN_request(DsqlCompilerScratch* scratch, DmlNode* node)
 {
 	DsqlCompiledStatement* statement = scratch->getStatement();
 
-	if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+	if (statement->getBlrVersion() == 4)
 		scratch->appendUChar(blr_version4);
 	else
 		scratch->appendUChar(blr_version5);

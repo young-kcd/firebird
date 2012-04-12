@@ -274,7 +274,7 @@ private:
 class MonitoringTableScan: public VirtualTableScan
 {
 public:
-	MonitoringTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream)
+	MonitoringTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream)
 		: VirtualTableScan(csb, name, stream)
 	{}
 

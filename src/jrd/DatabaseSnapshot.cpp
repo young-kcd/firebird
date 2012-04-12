@@ -905,7 +905,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	// sweep interval
 	record.storeInteger(f_mon_db_sweep_int, database->dbb_sweep_interval);
 	// read only flag
-	temp = (database->dbb_flags & DBB_read_only) ? 1 : 0;
+	temp = database->readOnly() ? 1 : 0;
 	record.storeInteger(f_mon_db_read_only, temp);
 	// forced writes flag
 	temp = (database->dbb_flags & DBB_force_write) ? 1 : 0;

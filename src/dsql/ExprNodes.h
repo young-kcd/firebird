@@ -516,7 +516,7 @@ public:
 		fb_assert(false);
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream,
+	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -596,7 +596,7 @@ class FieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>
 {
 public:
 	FieldNode(MemoryPool& pool, dsql_ctx* context = NULL, dsql_fld* field = NULL, dsql_nod* indices = NULL);
-	FieldNode(MemoryPool& pool, USHORT stream, USHORT id, bool aById);
+	FieldNode(MemoryPool& pool, StreamType stream, USHORT id, bool aById);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -623,7 +623,7 @@ public:
 		return false;
 	}
 
-	virtual bool jrdStreamFinder(USHORT findStream)
+	virtual bool jrdStreamFinder(StreamType findStream)
 	{
 		return fieldStream == findStream;
 	}
@@ -634,12 +634,12 @@ public:
 			streamList.add(fieldStream);
 	}
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return true;
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream,
+	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -662,10 +662,10 @@ public:
 	dsql_fld* const dsqlField;
 	dsql_nod* dsqlIndices;
 	dsc dsqlDesc;
-	const bool byId;
-	const USHORT fieldStream;
-	const USHORT fieldId;
+	const StreamType fieldStream;
 	const Format* format;
+	const USHORT fieldId;
+	const bool byId;
 };
 
 
@@ -685,7 +685,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
@@ -1064,7 +1064,7 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
@@ -1110,10 +1110,10 @@ public:
 		return false;
 	}
 
-	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual bool jrdStreamFinder(StreamType findStream);
 	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream,
+	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -1134,7 +1134,7 @@ public:
 	UCHAR blrOp;
 	Firebird::MetaName dsqlQualifier;
 	dsql_nod* dsqlRelation;
-	USHORT recStream;
+	StreamType recStream;
 	bool aggregate;
 };
 
@@ -1313,7 +1313,7 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
@@ -1323,10 +1323,10 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual bool jrdStreamFinder(StreamType findStream);
 	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream,
+	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -1620,7 +1620,7 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}

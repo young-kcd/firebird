@@ -143,4 +143,7 @@ typedef SSHORT CHARSET_ID;
 typedef SSHORT COLLATE_ID;
 typedef USHORT TTYPE_ID;
 
+// Stream type, had to move it from dsql/Nodes.h due to circular dependencies.
+typedef ULONG StreamType;
+
 #endif /* INCLUDE_FB_TYPES_H */

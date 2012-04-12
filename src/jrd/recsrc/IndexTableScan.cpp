@@ -40,7 +40,7 @@ using namespace Jrd;
 // Data access: index driven table scan
 // ------------------------------------
 
-IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR stream,
+IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, StreamType stream,
 			InversionNode* index, USHORT length)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_index(index), m_inversion(NULL),
 	  m_length(length), m_offset(0)

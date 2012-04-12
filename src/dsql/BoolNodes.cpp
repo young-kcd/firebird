@@ -63,17 +63,26 @@ namespace
 	class SubExprNodeCopier : public NodeCopier
 	{
 	public:
-		explicit SubExprNodeCopier(CompilerScratch* aCsb)
-			: NodeCopier(aCsb, localMap)
+		explicit SubExprNodeCopier(thread_db* tdbb, CompilerScratch* aCsb)
+			//: NodeCopier(aCsb, localMap)
+			: NodeCopier(aCsb, FB_NEW(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH])
 		{
-			// Initialize the map so all streams initially resolve to the original number. As soon
+			// Initialize the map so all streams initially resolve to the original number. As soon as
 			// copy creates new streams, the map are being overwritten.
-			for (unsigned i = 0; i < JrdStatement::MAP_LENGTH; ++i)
+			// CVC: better in the heap, because we need larger map.
+			localMap = remap;
+			for (unsigned i = 0; i < STREAM_MAP_LENGTH; ++i)
 				localMap[i] = i;
 		}
 
+		~SubExprNodeCopier()
+		{
+			delete[] localMap;
+		}
+
 	private:
-		UCHAR localMap[JrdStatement::MAP_LENGTH];
+		//StreamType localMap[JrdStatement::MAP_LENGTH];
+		StreamType* localMap;
 	};
 }	// namespace
 
@@ -81,7 +90,7 @@ namespace
 //--------------------
 
 
-bool BoolExprNode::computable(CompilerScratch* csb, SSHORT stream,
+bool BoolExprNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (nodFlags & (FLAG_DEOPTIMIZE | FLAG_RESIDUAL))
@@ -1945,7 +1954,7 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 
 	newInnerRse->rse_boolean = boolean;
 
-	SubExprNodeCopier copier(csb);
+	SubExprNodeCopier copier(tdbb, csb);
 
 	return copier.copy(tdbb, static_cast<BoolExprNode*>(newNode));
 }

@@ -467,7 +467,7 @@ public:
 		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
 	}
 
-	USHORT nextStream(bool check = true)
+	StreamType nextStream(bool check = true)
 	{
 		if (csb_n_stream >= MAX_STREAMS && check)
 		{
@@ -504,7 +504,7 @@ public:
 	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
 	Firebird::Array<RseOrExprNode> csb_current_nodes;	// RseNode's and other invariant
 												// candidates within whose scope we are
-	USHORT			csb_n_stream;				// Next available stream
+	StreamType		csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number
 	ULONG			csb_impure;					// Next offset into impure area
 	USHORT			csb_g_flags;
@@ -520,7 +520,8 @@ public:
 
 	// used in cmp.cpp/pass1
 	jrd_rel*	csb_view;
-	USHORT		csb_view_stream;
+	StreamType	csb_view_stream;
+	unsigned	blrVersion;
 	bool		csb_validate_expr;
 	USHORT		csb_remap_variable;
 
@@ -530,28 +531,12 @@ public:
 	struct csb_repeat
 	{
 		// We must zero-initialize this one
-		csb_repeat()
-		:	csb_stream(0),
-			csb_view_stream(0),
-			csb_flags(0),
-			csb_indices(0),
-			csb_relation(0),
-			csb_alias(0),
-			csb_procedure(0),
-			csb_view(0),
-			csb_idx(0),
-			csb_message(0),
-			csb_format(0),
-			csb_internal_format(0),
-			csb_fields(0),
-			csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
-			csb_plan(0),
-			csb_map(0),
-			csb_rsb_ptr(0)
-		{}
+		csb_repeat();
+		void activate();
+		void deactivate();
 
-		UCHAR csb_stream;				// Map user context to internal stream
-		UCHAR csb_view_stream;			// stream number for view relation, below
+		StreamType csb_stream;			// Map user context to internal stream
+		StreamType csb_view_stream;		// stream number for view relation, below
 		USHORT csb_flags;
 		USHORT csb_indices;				// Number of indices
 
@@ -567,7 +552,7 @@ public:
 		UInt32Bitmap* csb_fields;		// Fields referenced
 		double csb_cardinality;			// Cardinality of relation
 		PlanNode* csb_plan;				// user-specified plan for this relation
-		UCHAR* csb_map;					// Stream map for views
+		StreamType* csb_map;			// Stream map for views
 		RecordSource** csb_rsb_ptr;		// point to rsb for nod_stream
 	};
 
@@ -576,16 +561,40 @@ public:
 	Firebird::HalfStaticArray<csb_repeat, 5> csb_rpt;
 };
 
+	// We must zero-initialize this one
+inline CompilerScratch::csb_repeat::csb_repeat()
+	:	csb_stream(0),
+		csb_view_stream(0),
+		csb_flags(0),
+		csb_indices(0),
+		csb_relation(0),
+		csb_alias(0),
+		csb_procedure(0),
+		csb_view(0),
+		csb_idx(0),
+		csb_message(0),
+		csb_format(0),
+		csb_internal_format(0),
+		csb_fields(0),
+		csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
+		csb_plan(0),
+		csb_map(0),
+		csb_rsb_ptr(0)
+	{
+	}
+
+//CompilerScratch.csb_g_flags' values.
 const int csb_internal			= 1;	// "csb_g_flag" switch
 const int csb_get_dependencies	= 2;	// we are retrieving dependencies
 const int csb_ignore_perm		= 4;	// ignore permissions checks
-const int csb_blr_version4		= 8;	// the BLR is of version 4
+//const int csb_blr_version4		= 8;	// the BLR is of version 4
 const int csb_pre_trigger		= 16;	// this is a BEFORE trigger
 const int csb_post_trigger		= 32;	// this is an AFTER trigger
 const int csb_validation		= 64;	// we're in a validation expression (RDB hack)
 const int csb_reuse_context		= 128;	// allow context reusage
 const int csb_subroutine		= 256;	// sub routine
 
+//CompilerScratch.csb_rpt[].csb_flags's values.
 const int csb_active		= 1;		// stream is active
 const int csb_used			= 2;		// context has already been defined (BLR parsing only)
 const int csb_view_update	= 4;		// view update w/wo trigger is in progress
@@ -597,6 +606,18 @@ const int csb_sub_stream	= 128;		// a sub-stream of the RSE being processed
 const int csb_erase			= 256;		// we are processing an erase
 const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation
+
+inline void CompilerScratch::csb_repeat::activate()
+{
+	csb_flags |= csb_active;
+}
+
+inline void CompilerScratch::csb_repeat::deactivate()
+{
+	csb_flags &= ~csb_active;
+}
+
+
 
 class StatusXcp
 {

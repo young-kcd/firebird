@@ -80,13 +80,13 @@ static void dsqlSetParameterName(dsql_nod*, const dsql_nod*, const dsql_rel*);
 static void dsqlSetParametersName(CompoundStmtNode*, const dsql_nod*);
 
 static void cleanupRpb(thread_db* tdbb, record_param* rpb);
-static void makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
+static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 	Array<ValidateInfo>& validations);
-static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT orgStream,
-	USHORT newStream, bool remap);
+static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamType orgStream,
+	StreamType newStream, bool remap);
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, USHORT stream, USHORT updateStream, SecurityClass::flags_t priv,
-	jrd_rel* view, USHORT viewStream);
+	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	jrd_rel* view, StreamType viewStream);
 static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<ValidateInfo>& validations);
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
@@ -103,7 +103,7 @@ namespace
 	class RemapFieldNodeCopier : public NodeCopier
 	{
 	public:
-		RemapFieldNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap, USHORT aFldId)
+		RemapFieldNodeCopier(CompilerScratch* aCsb, StreamType* aRemap, USHORT aFldId)
 			: NodeCopier(aCsb, aRemap),
 			  fldId(aFldId)
 		{
@@ -313,7 +313,7 @@ AssignmentNode* AssignmentNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	ValueExprNode* sub = asgnFrom;
 	FieldNode* fieldNode;
-	USHORT stream;
+	StreamType stream;
 	CompilerScratch::csb_repeat* tail;
 
 	if ((fieldNode = sub->as<FieldNode>()))
@@ -1375,9 +1375,9 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
 
 	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
-		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+		statement->setBlrVersion(5);
 	else
-		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+		statement->setBlrVersion(4);
 
 	statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
 	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
@@ -1630,9 +1630,9 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
 
 	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
-		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+		statement->setBlrVersion(5);
 	else
-		statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+		statement->setBlrVersion(4);
 
 	statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
 	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
@@ -2019,12 +2019,12 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	USHORT parentStream = 0;
+	StreamType parentStream = 0;
 
 	for (;;)
 	{
-		USHORT newStream = node->stream;
-		const USHORT stream = newStream;
+		StreamType newStream = node->stream;
+		const StreamType stream = newStream;
 
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
@@ -2073,7 +2073,7 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 
 		// Remap the source stream.
 
-		UCHAR* map = csb->csb_rpt[stream].csb_map;
+		StreamType* map = csb->csb_rpt[stream].csb_map;
 
 		if (trigger)
 		{
@@ -5285,8 +5285,8 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
 		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 
-	const USHORT orgStream = csb->csb_rpt[context].csb_stream;
-	const USHORT newStream = csb->nextStream(false);
+	const StreamType orgStream = csb->csb_rpt[context].csb_stream;
+	const StreamType newStream = csb->nextStream(false);
 
 	if (newStream >= MAX_STREAMS)
 		PAR_error(csb, Arg::Gds(isc_too_many_contexts));
@@ -5296,7 +5296,7 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	// Make sure the compiler scratch block is big enough to hold everything.
 
 	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
-	tail->csb_stream = (UCHAR) newStream;
+	tail->csb_stream = newStream;
 	tail->csb_flags |= csb_used;
 
 	tail = CMP_csb_element(csb, newStream);
@@ -5582,15 +5582,15 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	USHORT parentStream = 0;
+	StreamType parentStream = 0;
 
 	// To support nested views, loop until we hit a table or a view with user-defined triggers
 	// (which means no update).
 
 	for (;;)
 	{
-		USHORT stream = node->orgStream;
-		USHORT newStream = node->newStream;
+		StreamType stream = node->orgStream;
+		StreamType newStream = node->newStream;
 
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[newStream];
 		tail->csb_flags |= csb_modify;
@@ -5642,7 +5642,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 
 		// Remap the source stream.
 
-		UCHAR* map = csb->csb_rpt[stream].csb_map;
+		StreamType* map = csb->csb_rpt[stream].csb_map;
 
 		stream = source->getStream();
 		stream = map[stream];
@@ -5659,7 +5659,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 
 			// Set up the new target stream.
 
-			const USHORT viewStream = newStream;
+			const StreamType viewStream = newStream;
 			newStream = source->getStream();
 			fb_assert(newStream <= MAX_STREAMS);
 			map[viewStream] = newStream;
@@ -5688,8 +5688,8 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	// AB: Mark the streams involved with UPDATE statements active.
 	// So that the optimizer can use indices for eventually used sub-selects.
-	csb->csb_rpt[orgStream].csb_flags |= csb_active;
-	csb->csb_rpt[newStream].csb_flags |= csb_active;
+	csb->csb_rpt[orgStream].activate();
+	csb->csb_rpt[newStream].activate();
 
 	doPass2(tdbb, csb, statement.getAddress(), this);
 	doPass2(tdbb, csb, statement2.getAddress(), this);
@@ -5705,8 +5705,8 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	doPass2(tdbb, csb, mapView.getAddress(), this);
 
 	// AB: Remove the previous flags
-	csb->csb_rpt[orgStream].csb_flags &= ~csb_active;
-	csb->csb_rpt[newStream].csb_flags &= ~csb_active;
+	csb->csb_rpt[orgStream].deactivate();
+	csb->csb_rpt[newStream].deactivate();
 
 	csb->csb_rpt[orgStream].csb_flags |= csb_update;
 
@@ -6354,7 +6354,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	USHORT parentStream = 0;
+	StreamType parentStream = 0;
 
 	// To support nested views, loop until we hit a table or a view with user-defined triggers
 	// (which means no update).
@@ -6362,7 +6362,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 	for (;;)
 	{
 		RelationSourceNode* relSource = node->relationSource;
-		const USHORT stream = relSource->getStream();
+		const StreamType stream = relSource->getStream();
 
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
@@ -6408,7 +6408,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 		parent = relation;
 		parentStream = stream;
 
-		UCHAR* map = CMP_alloc_map(tdbb, csb, stream);
+		StreamType* map = CMP_alloc_map(tdbb, csb, stream);
 		NodeCopier copier(csb, map);
 
 		if (trigger)
@@ -6421,7 +6421,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 			relSource = relSource->copy(tdbb, copier);
 
-			const USHORT newStream = relSource->getStream();
+			const StreamType newStream = relSource->getStream();
 			StoreNode* viewNode = FB_NEW(*tdbb->getDefaultPool()) StoreNode(*tdbb->getDefaultPool());
 
 			viewNode->relationSource = relSource;
@@ -6445,21 +6445,23 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 // Build a default value assignments.
 void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 {
-	const USHORT stream = relationSource->getStream();
+	const StreamType stream = relationSource->getStream();
 	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 
 	vec<jrd_fld*>* vector = relation->rel_fields;
 	if (!vector)
 		return;
 
-	UCHAR localMap[JrdStatement::MAP_LENGTH];
-	UCHAR* map = csb->csb_rpt[stream].csb_map;
+	//StreamType localMap[JrdStatement::MAP_LENGTH];
+	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamType* map = csb->csb_rpt[stream].csb_map;
 
 	if (!map)
 	{
+		localMap = FB_NEW(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
 		map = localMap;
 		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR relevant, too?
-		map[0] = (UCHAR) stream;
+		map[0] = stream;
 		map[1] = 1;
 		map[2] = 2;
 	}
@@ -6520,7 +6522,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 				literal->litDesc.makeLong(0, increment);
 
 				GenIdNode* genNode = FB_NEW(csb->csb_pool) GenIdNode(csb->csb_pool,
-					(csb->csb_g_flags & csb_blr_version4), (*ptr1)->fld_generator_name);
+					(csb->blrVersion == 4), (*ptr1)->fld_generator_name);
 				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name);
 				genNode->arg = literal;
 
@@ -6547,8 +6549,8 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// AB: Mark the streams involved with INSERT statements active.
 	// So that the optimizer can use indices for eventually used sub-selects.
 
-	const USHORT stream = relationSource->getStream();
-	csb->csb_rpt[stream].csb_flags |= csb_active;
+	const StreamType stream = relationSource->getStream();
+	csb->csb_rpt[stream].activate();
 
 	doPass2(tdbb, csb, statement.getAddress(), this);
 	doPass2(tdbb, csb, statement2.getAddress(), this);
@@ -6562,7 +6564,7 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	// AB: Remove the previous flags
-	csb->csb_rpt[stream].csb_flags &= ~csb_active;
+	csb->csb_rpt[stream].deactivate();
 
 	impureOffset = CMP_impure(csb, sizeof(impure_state));
 
@@ -6619,7 +6621,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 
-	const USHORT stream = relationSource->getStream();
+	const StreamType stream = relationSource->getStream();
 	record_param* rpb = &request->req_rpb[stream];
 	jrd_rel* relation = rpb->rpb_relation;
 
@@ -8639,7 +8641,7 @@ static void cleanupRpb(thread_db* tdbb, record_param* rpb)
 }
 
 // Build a validation list for a relation, if appropriate.
-static void makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
+static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 	Array<ValidateInfo>& validations)
 {
 	SET_TDBB(tdbb);
@@ -8652,13 +8654,15 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 	if (!vector)
 		return;
 
-	UCHAR local_map[JrdStatement::MAP_LENGTH];
-	UCHAR* map = csb->csb_rpt[stream].csb_map;
+	//StreamType local_map[JrdStatement::MAP_LENGTH];
+	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamType* map = csb->csb_rpt[stream].csb_map;
 	if (!map)
 	{
-		map = local_map;
+		localMap = FB_NEW(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
+		map = localMap;
 		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR still relevant for the bitmap?
-		map[0] = (UCHAR) stream;
+		map[0] = stream;
 	}
 
 	USHORT fieldId = 0;
@@ -8710,8 +8714,8 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 }
 
 // Process a view update performed by a trigger.
-static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT orgStream,
-	USHORT newStream, bool remap)
+static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamType orgStream,
+	StreamType newStream, bool remap)
 {
 	SET_TDBB(tdbb);
 
@@ -8766,8 +8770,8 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT o
 // If it's a view update, make sure the view is updatable, and return the view source for redirection.
 // If it's a simple relation, return NULL.
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, USHORT stream, USHORT updateStream, SecurityClass::flags_t priv,
-	jrd_rel* view, USHORT viewStream)
+	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	jrd_rel* view, StreamType viewStream)
 {
 	SET_TDBB(tdbb);
 

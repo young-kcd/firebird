@@ -748,7 +748,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_db_read_only:
-			*p++ = (dbb->dbb_flags & DBB_read_only) ? 1 : 0;
+			*p++ = dbb->readOnly() ? 1 : 0;
 			length = p - buffer;
 
 			break;

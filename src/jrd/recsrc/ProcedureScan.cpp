@@ -39,7 +39,7 @@ using namespace Jrd;
 // Data access: procedure scan
 // ---------------------------
 
-ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
 							 const jrd_prc* procedure, const ValueListNode* sourceList,
 							 const ValueListNode* targetList, MessageNode* message)
 	: RecordStream(csb, stream, procedure->prc_format), m_name(csb->csb_pool, name),

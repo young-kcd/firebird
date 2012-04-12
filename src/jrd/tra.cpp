@@ -208,7 +208,7 @@ void TRA_cleanup(thread_db* tdbb)
 	CHECK_DBB(dbb);
 
 	// Return without cleaning up the TIP's for a ReadOnly database
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 		return;
 
 	// First, make damn sure there are no outstanding transactions
@@ -962,7 +962,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	// Cannot work on limbo transactions for ReadOnly database
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 		ERR_post(Arg::Gds(isc_read_only_database));
 
 	const SLONG number = gds__vax_integer(id, length);
@@ -1343,7 +1343,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 	}
 
 	// If it is a ReadOnly DB, set the new state in the TIP cache and return
-	if ((dbb->dbb_flags & DBB_read_only) && dbb->dbb_tip_cache)
+	if (dbb->readOnly() && dbb->dbb_tip_cache)
 	{
 		TPC_set_state(tdbb, number, state);
 		return;
@@ -1614,7 +1614,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	CHECK_DBB(dbb);
 
 	// No point trying to sweep a ReadOnly database
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 		return true;
 
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
@@ -1903,7 +1903,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN* window)
 	const SLONG number = ++dbb->dbb_next_transaction;
 
 	// No need to write TID onto the TIP page, for a RO DB
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 		return number;
 
 	// If this is the first transaction on a TIP, allocate the TIP now.
@@ -2379,7 +2379,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 #ifdef SUPERSERVER_V2
 	new_number = bump_transaction_id(tdbb, &window);
 #else
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 		new_number = dbb->dbb_next_transaction + dbb->generateTransactionId(tdbb);
 	else
 	{
@@ -2399,7 +2399,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 		if (!LCK_lock(tdbb, new_lock, LCK_write, LCK_WAIT))
 		{
 #ifndef SUPERSERVER_V2
-			if (!(dbb->dbb_flags & DBB_read_only))
+			if (!dbb->readOnly())
 				CCH_RELEASE(tdbb, &window);
 #endif
 			ERR_post(Arg::Gds(isc_lock_conflict));
@@ -2407,7 +2407,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 	}
 
 #ifndef SUPERSERVER_V2
-	if (!(dbb->dbb_flags & DBB_read_only))
+	if (!dbb->readOnly())
 		CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -2418,7 +2418,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 
 	const SLONG old_number = transaction->tra_number;
 
-	if (!(dbb->dbb_flags & DBB_read_only))
+	if (!dbb->readOnly())
 	{
 		// Set the state on the inventory page
 		TRA_set_state(tdbb, transaction, old_number, state);
@@ -2471,7 +2471,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 
 	if (transaction->tra_flags & TRA_precommitted)
 	{
-		if (!(dbb->dbb_flags & DBB_read_only))
+		if (!dbb->readOnly())
 		{
 			transaction->tra_flags &= ~TRA_precommitted;
 			TRA_set_state(tdbb, transaction, new_number, tra_committed);
@@ -3068,7 +3068,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	oldest_snapshot = dbb->dbb_oldest_snapshot;
 
 #else // SUPERSERVER_V2
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 	{
 		number = dbb->dbb_next_transaction + dbb->generateTransactionId(tdbb);
 		oldest = dbb->dbb_oldest_transaction;
@@ -3128,7 +3128,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	if (!LCK_lock(tdbb, lock, LCK_write, LCK_WAIT))
 	{
 #ifndef SUPERSERVER_V2
-		if (!(dbb->dbb_flags & DBB_read_only))
+		if (!dbb->readOnly())
 			CCH_RELEASE(tdbb, &window);
 #endif
 		jrd_tra::destroy(attachment, trans);
@@ -3141,11 +3141,11 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	link_transaction(tdbb, trans);
 
 #ifndef SUPERSERVER_V2
-	if (!(dbb->dbb_flags & DBB_read_only))
+	if (!dbb->readOnly())
 		CCH_RELEASE(tdbb, &window);
 #endif
 
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 	{
 		// Set transaction flags to TRA_precommitted, TRA_readonly
 		trans->tra_flags |= (TRA_readonly | TRA_precommitted);

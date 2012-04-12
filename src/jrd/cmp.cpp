@@ -180,7 +180,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		if (csb->csb_dump.hasData())
 		{
 			csb->dump("streams:\n");
-			for (unsigned i = 0; i < csb->csb_n_stream; ++i)
+			for (StreamType i = 0; i < csb->csb_n_stream; ++i)
 			{
 				const CompilerScratch::csb_repeat& s = csb->csb_rpt[i];
 				csb->dump(
@@ -214,7 +214,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 }
 
 
-CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, USHORT element)
+CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, StreamType element)
 {
 /**************************************
  *
@@ -236,7 +236,7 @@ CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, USHORT elemen
 }
 
 
-const Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+const Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, StreamType stream)
 {
 /**************************************
  *
@@ -512,7 +512,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 }
 
 
-UCHAR* CMP_alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+StreamType* CMP_alloc_map(thread_db* tdbb, CompilerScratch* csb, StreamType stream)
 {
 /**************************************
  *
@@ -528,10 +528,10 @@ UCHAR* CMP_alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 
 	SET_TDBB(tdbb);
 
-	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
-	UCHAR* const p = FB_NEW(*tdbb->getDefaultPool()) UCHAR[JrdStatement::MAP_LENGTH];
-	memset(p, 0, JrdStatement::MAP_LENGTH);
-	p[0] = (UCHAR) stream;
+	fb_assert(stream <= MAX_STREAMS);
+	StreamType* const p = FB_NEW(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
+	memset(p, 0, sizeof(StreamType[STREAM_MAP_LENGTH]));
+	p[0] = stream;
 	csb->csb_rpt[stream].csb_map = p;
 
 	return p;
@@ -545,7 +545,7 @@ USHORT NodeCopier::getFieldId(const FieldNode* field)
 
 
 // Expand dbkey for view.
-void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
+void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 	ValueExprNodeStack& stack, UCHAR blrOp, bool allStreams)
 {
 	SET_TDBB(tdbb);
@@ -558,7 +558,7 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 		return;
 
 	// if the stream references a view, follow map
-	const UCHAR* map = csb->csb_rpt[stream].csb_map;
+	const StreamType* map = csb->csb_rpt[stream].csb_map;
 	if (map)
 	{
 		++map;
@@ -582,7 +582,7 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 // referencing, and mark them as variant - the rule is that if a field from one RseNode is
 // referenced within the scope of another RseNode, the inner RseNode can't be invariant.
 // This won't optimize all cases, but it is the simplest operating assumption for now.
-void CMP_mark_variant(CompilerScratch* csb, USHORT stream)
+void CMP_mark_variant(CompilerScratch* csb, StreamType stream)
 {
 	if (csb->csb_current_nodes.isEmpty())
 		return;
@@ -680,7 +680,7 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 	{
-		for (USHORT i = 0; i < csb->csb_n_stream; i++)
+		for (StreamType i = 0; i < csb->csb_n_stream; i++)
 			csb->csb_rpt[i].csb_flags |= csb_update;
 
 		rsb = FB_NEW(*tdbb->getDefaultPool()) LockedStream(csb, rsb);
@@ -700,7 +700,7 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 		node->getStreams(streams);
 
 		for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
-			csb->csb_rpt[*i].csb_flags &= ~csb_active;
+			csb->csb_rpt[*i].deactivate();
 	}
 
 	return rsb;

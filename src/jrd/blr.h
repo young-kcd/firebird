@@ -91,6 +91,7 @@
 
 #define blr_version4		(unsigned char)4
 #define blr_version5		(unsigned char)5
+//#define blr_version6		(unsigned char)6
 #define blr_eoc			(unsigned char)76
 #define blr_end			(unsigned char)255
 

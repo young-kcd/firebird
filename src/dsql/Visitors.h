@@ -287,7 +287,7 @@ public:
 class NodeCopier
 {
 public:
-	NodeCopier(CompilerScratch* aCsb, UCHAR* aRemap)
+	NodeCopier(CompilerScratch* aCsb, StreamType* aRemap)
 		: csb(aCsb),
 		  remap(aRemap),
 		  message(NULL)
@@ -319,13 +319,13 @@ public:
 	}
 
 	template <typename T>
-	static T* copy(thread_db* tdbb, CompilerScratch* csb, const T* input, UCHAR* remap)
+	static T* copy(thread_db* tdbb, CompilerScratch* csb, const T* input, StreamType* remap)
 	{
 		return NodeCopier(csb, remap).copy(tdbb, input);
 	}
 
 	template <typename T>
-	static T* copy(thread_db* tdbb, CompilerScratch* csb, const NestConst<T>& input, UCHAR* remap)
+	static T* copy(thread_db* tdbb, CompilerScratch* csb, const NestConst<T>& input, StreamType* remap)
 	{
 		return NodeCopier(csb, remap).copy(tdbb, input.getObject());
 	}
@@ -348,8 +348,8 @@ private:
 	}
 
 public:
-	CompilerScratch* csb;
-	UCHAR* remap;
+	CompilerScratch* const csb;
+	StreamType* const remap;
 	MessageNode* message;
 };
 

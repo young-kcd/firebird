@@ -457,6 +457,11 @@ public:
 		return dbb_page_size / 4;
 	}
 
+	bool readOnly() const
+	{
+		return (dbb_flags & DBB_read_only) != 0;
+	}
+
 private:
 	static int blockingAstSharedCounter(void*);
 

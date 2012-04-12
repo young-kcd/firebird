@@ -463,7 +463,6 @@ void EngineCallbacks::isVersion4(bool& v4)
 
 	if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
 	{
-		v4 = (tdbb->getRequest()->getStatement()->flags & JrdStatement::FLAG_VERSION4 ?
-			true : false);
+		v4 = (tdbb->getRequest()->getStatement()->blrVersion == 4);
 	}
 }

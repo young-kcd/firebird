@@ -520,7 +520,7 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 
 		if (partitionOrder)
 		{
-			SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
+			SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams, NULL,
 				m_joinedStream, partitionOrder, false);
 
 			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(tdbb, csb, partition->stream,

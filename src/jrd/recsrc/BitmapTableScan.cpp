@@ -34,7 +34,7 @@ using namespace Jrd;
 // Data access: Bitmap (DBKEY) driven table scan
 // ---------------------------------------------
 
-BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, UCHAR stream,
+BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, StreamType stream,
 			InversionNode* inversion)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_inversion(inversion)
 {

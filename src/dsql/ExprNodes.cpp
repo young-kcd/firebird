@@ -184,7 +184,7 @@ bool ExprNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode*
 	return true;
 }
 
-bool ExprNode::computable(CompilerScratch* csb, SSHORT stream,
+bool ExprNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
@@ -240,7 +240,7 @@ bool ExprNode::jrdPossibleUnknownFinder()
 }
 
 // Search if somewhere in the expression the given stream is used.
-bool ExprNode::jrdStreamFinder(USHORT findStream)
+bool ExprNode::jrdStreamFinder(StreamType findStream)
 {
 	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
@@ -262,7 +262,7 @@ void ExprNode::jrdStreamsCollector(SortedStreamList& streamList)
 }
 
 // Verify if this node is allowed in an unmapped boolean.
-bool ExprNode::jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+bool ExprNode::jrdUnmappableNode(const MapNode* mapNode, StreamType shellStream)
 {
 	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
@@ -325,7 +325,7 @@ ArithmeticNode::ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
 DmlNode* ArithmeticNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	ArithmeticNode* node = FB_NEW(pool) ArithmeticNode(
-		pool, blrOp, (csb->csb_g_flags & csb_blr_version4));
+		pool, blrOp, (csb->blrVersion == 4));
 	node->arg1 = PAR_parse_value(tdbb, csb);
 	node->arg2 = PAR_parse_value(tdbb, csb);
 	return node;
@@ -4081,9 +4081,10 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 {
 	DerivedExprNode* node = FB_NEW(pool) DerivedExprNode(pool);
 
-	const UCHAR streamCount = csb->csb_blr_reader.getByte();
+	// CVC: bottleneck
+	const StreamType streamCount = csb->csb_blr_reader.getByte();
 
-	for (UCHAR i = 0; i < streamCount; ++i)
+	for (StreamType i = 0; i < streamCount; ++i)
 	{
 		const USHORT n = csb->csb_blr_reader.getByte();
 		node->internalStreamList.add(csb->csb_rpt[n].csb_stream);
@@ -4094,7 +4095,7 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
+bool DerivedExprNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (!arg->computable(csb, stream, allowOnlyCurrentStream))
@@ -4103,9 +4104,9 @@ bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	SortedStreamList argStreams;
 	arg->jrdStreamsCollector(argStreams);
 
-	for (USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
+	for (StreamType* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
-		const USHORT n = *i;
+		const StreamType n = *i;
 
 		if (argStreams.exist(n))
 		{
@@ -4137,9 +4138,9 @@ void DerivedExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 {
 	arg->findDependentFromStreams(optRet, streamList);
 
-	for (USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
+	for (StreamType* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
-		int derivedStream = *i;
+		const StreamType derivedStream = *i;
 
 		if (derivedStream != optRet->stream &&
 			(optRet->csb->csb_rpt[derivedStream].csb_flags & csb_active))
@@ -4165,11 +4166,11 @@ ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	{
 #ifdef CMP_DEBUG
 		csb->dump("remap nod_derived_expr:\n");
-		for (USHORT* i = node->streamList.begin(); i != node->streamList.end(); ++i)
+		for (StreamType* i = node->streamList.begin(); i != node->streamList.end(); ++i)
 			csb->dump("\t%d: %d -> %d\n", i, *i, copier.remap[*i]);
 #endif
 
-		for (USHORT* i = node->internalStreamList.begin(); i != node->internalStreamList.end(); ++i)
+		for (StreamType* i = node->internalStreamList.begin(); i != node->internalStreamList.end(); ++i)
 			*i = copier.remap[*i];
 	}
 
@@ -4182,12 +4183,12 @@ ValueExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 #ifdef CMP_DEBUG
 	csb->dump("expand nod_derived_expr:");
-	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+	for (const StreamType* i = streamList.begin(); i != streamList.end(); ++i)
 		csb->dump(" %d", *i);
 	csb->dump("\n");
 #endif
 
-	for (USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
+	for (StreamType* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
 		CMP_mark_variant(csb, *i);
 		CMP_expand_view_nodes(tdbb, csb, *i, stack, blr_dbkey, true);
@@ -4222,7 +4223,7 @@ dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* value = NULL;
 
-	for (const USHORT* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
+	for (const StreamType* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
 		if (request->req_rpb[*i].rpb_number.isValid())
 		{
@@ -4673,25 +4674,25 @@ FieldNode::FieldNode(MemoryPool& pool, dsql_ctx* context, dsql_fld* field, dsql_
 	  dsqlContext(context),
 	  dsqlField(field),
 	  dsqlIndices(indices),
-	  byId(false),
 	  fieldStream(0),
+	  format(NULL),
 	  fieldId(0),
-	  format(NULL)
+	  byId(false)
 {
 	dsqlDesc.clear();
 }
 
-FieldNode::FieldNode(MemoryPool& pool, USHORT stream, USHORT id, bool aById)
+FieldNode::FieldNode(MemoryPool& pool, StreamType stream, USHORT id, bool aById)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>(pool),
 	  dsqlQualifier(pool),
 	  dsqlName(pool),
 	  dsqlContext(NULL),
 	  dsqlField(NULL),
 	  dsqlIndices(NULL),
-	  byId(aById),
 	  fieldStream(stream),
+	  format(NULL),
 	  fieldId(id),
-	  format(NULL)
+	  byId(aById)
 {
 	dsqlDesc.clear();
 }
@@ -4744,7 +4745,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 	MetaName name;
 	SSHORT id;
-	const USHORT stream = csb->csb_rpt[context].csb_stream;
+	const StreamType stream = csb->csb_rpt[context].csb_stream;
 	bool is_column = false;
 	bool byId = false;
 
@@ -5042,7 +5043,7 @@ dsql_nod* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, dsql_nod
 
 					if (dsqlQualifier.hasData() && !field)
 					{
-						// If a qualifier was present and we don't have found
+						// If a qualifier was present and we didn't find
 						// a matching field then we should stop searching.
 						// Column unknown error will be raised at bottom of function.
 						done = true;
@@ -5175,7 +5176,7 @@ dsql_nod* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, dsql_nod
 
 					if (!node && dsqlQualifier.hasData())
 					{
-						// If a qualifier was present and we don't have found
+						// If a qualifier was present and we didn't find
 						// a matching field then we should stop searching.
 						// Column unknown error will be raised at bottom of function.
 						done = true;
@@ -5219,7 +5220,7 @@ dsql_nod* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, dsql_nod
 dsql_fld* FieldNode::resolveContext(DsqlCompilerScratch* dsqlScratch, const MetaName& qualifier,
 	dsql_ctx* context, bool resolveByAlias)
 {
-	// CVC: Warning: the second param, "name" was is not used anymore and
+	// CVC: Warning: the second param, "name" is not used anymore and
 	// therefore it was removed. Thus, the local variable "table_name"
 	// is being stripped here to avoid mismatches due to trailing blanks.
 
@@ -5501,7 +5502,7 @@ bool FieldNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode
 	return false;
 }
 
-bool FieldNode::computable(CompilerScratch* csb, SSHORT stream,
+bool FieldNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (allowOnlyCurrentStream)
@@ -5566,7 +5567,7 @@ void FieldNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	USHORT fldId = copier.getFieldId(this);
-	USHORT stream = fieldStream;
+	StreamType stream = fieldStream;
 
 	fldId = copier.remapField(stream, fldId);
 
@@ -5583,7 +5584,7 @@ ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier) const
 
 ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	USHORT stream = fieldStream;
+	StreamType stream = fieldStream;
 
 	CMP_mark_variant(csb, stream);
 
@@ -5703,14 +5704,16 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			return ValueExprNode::pass1(tdbb, csb);
 	}
 
-	UCHAR local_map[JrdStatement::MAP_LENGTH];
-	UCHAR* map = tail->csb_map;
+	//StreamType local_map[JrdStatement::MAP_LENGTH];
+	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamType* map = tail->csb_map;
 
 	if (!map)
 	{
-		map = local_map;
+		localMap = FB_NEW(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
+		map = localMap;
 		fb_assert(stream + 2u <= MAX_STREAMS);
-		local_map[0] = (UCHAR) stream;
+		localMap[0] = stream;
 		map[1] = stream + 1;
 		map[2] = stream + 2;
 	}
@@ -5726,7 +5729,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		//			as belonging to a view (in order to compute the access
 		//			permissions properly).
 		AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
-		AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
+		AutoSetRestore<StreamType> autoViewStream(&csb->csb_view_stream, stream);
 
 		// ASF: If the view field doesn't reference an item of a stream, evaluate it
 		// based on the view dbkey - CORE-1245.
@@ -5737,7 +5740,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		{
 			ValueExprNodeStack stack;
 			CMP_expand_view_nodes(tdbb, csb, stream, stack, blr_dbkey, true);
-			const UCHAR streamCount = (UCHAR) stack.getCount();
+			const size_t streamCount = stack.getCount();
 
 			if (streamCount)
 			{
@@ -5867,7 +5870,7 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		csb->csb_dependencies.push(dependency);
 	}
 
-	GenIdNode* node = FB_NEW(pool) GenIdNode(pool, (csb->csb_g_flags & csb_blr_version4), name);
+	GenIdNode* node = FB_NEW(pool) GenIdNode(pool, (csb->blrVersion == 4), name);
 	node->id = id;
 	node->arg = PAR_parse_value(tdbb, csb);
 
@@ -6993,6 +6996,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			for (DsqlContextStack::const_iterator stack(context->ctx_main_derived_contexts);
 				 stack.hasData(); ++stack)
 			{
+				// bottleneck
 				fb_assert(stack.object()->ctx_context <= MAX_UCHAR);
 				dsqlScratch->appendUChar(stack.object()->ctx_context);
 			}
@@ -8108,7 +8112,7 @@ void RecordKeyNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 	}
 }
 
-bool RecordKeyNode::jrdStreamFinder(USHORT findStream)
+bool RecordKeyNode::jrdStreamFinder(StreamType findStream)
 {
 	return recStream == findStream;
 }
@@ -8119,7 +8123,7 @@ void RecordKeyNode::jrdStreamsCollector(SortedStreamList& streamList)
 		streamList.add(recStream);
 }
 
-bool RecordKeyNode::computable(CompilerScratch* csb, SSHORT stream,
+bool RecordKeyNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (allowOnlyCurrentStream)
@@ -9151,7 +9155,7 @@ bool SubQueryNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return false;
 }
 
-bool SubQueryNode::jrdStreamFinder(USHORT findStream)
+bool SubQueryNode::jrdStreamFinder(StreamType findStream)
 {
 	if (rse && rse->jrdStreamFinder(findStream))
 		return true;
@@ -9171,7 +9175,7 @@ void SubQueryNode::jrdStreamsCollector(SortedStreamList& streamList)
 		value1->jrdStreamsCollector(streamList);
 }
 
-bool SubQueryNode::computable(CompilerScratch* csb, SSHORT stream,
+bool SubQueryNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (value2 && !value2->computable(csb, stream, allowOnlyCurrentStream))

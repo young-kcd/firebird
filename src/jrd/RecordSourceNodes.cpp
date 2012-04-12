@@ -42,13 +42,13 @@ using namespace Firebird;
 using namespace Jrd;
 
 
-static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, USHORT stream);
+static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, StreamType stream);
 static SSHORT strcmpSpace(const char* p, const char* q);
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	RecordSourceNode* source, BoolExprNode** boolean, RecordSourceNodeStack& stack);
 static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Format** inputFormat);
 static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
-	BoolExprNodeStack* parentStack, UCHAR shellStream);
+	BoolExprNodeStack* parentStack, StreamType shellStream);
 static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
 static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
 	DsqlNodStack& stack, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx);
@@ -70,11 +70,14 @@ namespace
 				(*ptr)->getStreams(m_streams);
 			}
 
+			if (m_streams.getCount() >= MAX_STREAMS)
+				ERR_post(Arg::Gds(isc_too_many_contexts));
+
 			m_flags.resize(m_streams.getCount());
 
 			for (size_t i = 0; i < m_streams.getCount(); i++)
 			{
-				const UCHAR stream = m_streams[i];
+				const StreamType stream = m_streams[i];
 				m_flags[i] = m_csb->csb_rpt[stream].csb_flags;
 				m_csb->csb_rpt[stream].csb_flags |= (csb_active | csb_sub_stream);
 			}
@@ -84,7 +87,7 @@ namespace
 		{
 			for (size_t i = 0; i < m_streams.getCount(); i++)
 			{
-				const UCHAR stream = m_streams[i];
+				const StreamType stream = m_streams[i];
 				m_csb->csb_rpt[stream].csb_flags = m_flags[i];
 			}
 		}
@@ -133,7 +136,7 @@ SortNode* SortNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-bool SortNode::computable(CompilerScratch* csb, SSHORT stream, bool allowOnlyCurrentStream)
+bool SortNode::computable(CompilerScratch* csb, StreamType stream, bool allowOnlyCurrentStream)
 {
 	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
 	{
@@ -351,9 +354,9 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 	// Get that stream number so that the flags can be copied
 	// into the newly created child stream.
 
-	const int relativeStream = stream ? copier.remap[stream - 1] : stream;
+	const StreamType relativeStream = stream ? copier.remap[stream - 1] : stream;
 	newSource->stream = copier.csb->nextStream();
-	copier.remap[stream] = (UCHAR) newSource->stream;
+	copier.remap[stream] = newSource->stream;
 
 	newSource->context = context;
 	newSource->relation = relation;
@@ -429,7 +432,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	// relation is accessed.
 
 	jrd_rel* const parentView = csb->csb_view;
-	const USHORT viewStream = csb->csb_view_stream;
+	const StreamType viewStream = csb->csb_view_stream;
 
 	jrd_rel* relationView = relation;
 	CMP_post_resource(&csb->csb_resources, relationView, Resource::rsc_relation, relationView->rel_id);
@@ -438,7 +441,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
 	element->csb_view = parentView;
 	fb_assert(viewStream <= MAX_STREAMS);
-	element->csb_view_stream = (UCHAR) viewStream;
+	element->csb_view_stream = viewStream;
 
 	// in the case where there is a parent view, find the context name
 
@@ -465,12 +468,12 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 
 	DEBUG;
 	stack.pop();
-	UCHAR* map = CMP_alloc_map(tdbb, csb, stream);
+	StreamType* map = CMP_alloc_map(tdbb, csb, stream);
 
 	AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 		(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 	AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relationView);
-	AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
+	AutoSetRestore<StreamType> autoViewStream(&csb->csb_view_stream, stream);
 
 	// We don't expand the view in two cases:
 	// 1) If the view has a projection, sort, first/skip or explicit plan.
@@ -560,19 +563,21 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 void RelationSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(stream <= MAX_STREAMS);
-	csb->csb_rpt[stream].csb_flags |= csb_active;
+	csb->csb_rpt[stream].activate();
 
 	pass2(tdbb, csb);
 }
 
 RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
-	fb_assert(stream <= MAX_UCHAR);
-	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	//if (opt->beds[0] >= MAX_STREAMS) // all builds check
-	//	ERR_post(Arg::Gds(isc_too_many_contexts));
+	//fb_assert(stream <= MAX_UCHAR);
+	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
+	fb_assert(opt->beds.getCount() < MAX_STREAMS);
+	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
+		ERR_post(Arg::Gds(isc_too_many_contexts));
 
-	opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	opt->beds.add(stream);
 
 	// we have found a base relation; record its stream
 	// number in the streams array as a candidate for
@@ -581,9 +586,11 @@ RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bo
 	// TMN: Is the intention really to allow streams[0] to overflow?
 	// I must assume that is indeed not the intention (not to mention
 	// it would make code later on fail), so I added the following fb_assert.
-	fb_assert(opt->compileStreams[0] < MAX_STREAMS && opt->compileStreams[0] < MAX_UCHAR);
+	//fb_assert(opt->compileStreams[0] < MAX_STREAMS && opt->compileStreams[0] < MAX_UCHAR);
+	fb_assert(opt->compileStreams.getCount() < MAX_STREAMS);
 
-	opt->compileStreams[++opt->compileStreams[0]] = (UCHAR) stream;
+	//opt->compileStreams[++opt->compileStreams[0]] = (UCHAR) stream;
+	opt->compileStreams.add(stream);
 
 	if (opt->rse->rse_jointype == blr_left)
 		opt->outerStreams.add(stream);
@@ -846,7 +853,7 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	}
 
 	newSource->stream = copier.csb->nextStream();
-	copier.remap[stream] = (UCHAR) newSource->stream;
+	copier.remap[stream] = newSource->stream;
 	newSource->context = context;
 	newSource->procedure = procedure;
 	newSource->view = view;
@@ -882,13 +889,13 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 	}
 
 	jrd_rel* const parentView = csb->csb_view;
-	const USHORT viewStream = csb->csb_view_stream;
+	const StreamType viewStream = csb->csb_view_stream;
 	view = parentView;
 
 	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
 	element->csb_view = parentView;
 	fb_assert(viewStream <= MAX_STREAMS);
-	element->csb_view_stream = (UCHAR) viewStream;
+	element->csb_view_stream = viewStream;
 
 	// in the case where there is a parent view, find the context name
 
@@ -917,7 +924,7 @@ RecordSourceNode* ProcedureSourceNode::pass2(thread_db* tdbb, CompilerScratch* c
 void ProcedureSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(stream <= MAX_STREAMS);
-	csb->csb_rpt[stream].csb_flags |= csb_active;
+	csb->csb_rpt[stream].activate();
 
 	pass2(tdbb, csb);
 }
@@ -925,15 +932,19 @@ void ProcedureSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 RecordSource* ProcedureSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
 	fb_assert(stream <= MAX_UCHAR);
-	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	//if (opt->beds[0] >= MAX_STREAMS) // all builds check
-	//	ERR_post(Arg::Gds(isc_too_many_contexts));
+	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
+	fb_assert(opt->beds.getCount() < MAX_STREAMS);
+	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
+		ERR_post(Arg::Gds(isc_too_many_contexts));
 
-	opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	opt->beds.add(stream);
 
 	RecordSource* rsb = generate(tdbb, opt);
-	fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-	opt->localStreams[++opt->localStreams[0]] = stream;
+	//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
+	fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
+	//opt->localStreams[++opt->localStreams[0]] = stream;
+	opt->localStreams.add(stream);
 
 	return rsb;
 }
@@ -951,7 +962,7 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 		sourceList, targetList, in_msg);
 }
 
-bool ProcedureSourceNode::computable(CompilerScratch* csb, SSHORT stream,
+bool ProcedureSourceNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (sourceList && !sourceList->computable(csb, stream, allowOnlyCurrentStream))
@@ -973,7 +984,7 @@ void ProcedureSourceNode::findDependentFromStreams(const OptimizerRetrieval* opt
 		targetList->findDependentFromStreams(optRet, streamList);
 }
 
-bool ProcedureSourceNode::jrdStreamFinder(USHORT /*findStream*/)
+bool ProcedureSourceNode::jrdStreamFinder(StreamType /*findStream*/)
 {
 	// ASF: We used to visit nodes that were not handled appropriately. This is
 	// equivalent with the legacy code.
@@ -1134,6 +1145,9 @@ void AggregateSourceNode::genMap(DsqlCompilerScratch* dsqlScratch, dsql_map* map
 	for (dsql_map* temp = map; temp; temp = temp->map_next)
 		++count;
 
+	//if (count >= STREAM_MAP_LENGTH) // not sure if the same limit applies
+	//	ERR_post(Arg::Gds(isc_too_many_contexts)); // maybe there's better msg.
+
 	dsqlScratch->appendUChar(blr_map);
 	dsqlScratch->appendUShort(count);
 
@@ -1155,7 +1169,7 @@ AggregateSourceNode* AggregateSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	fb_assert(stream <= MAX_STREAMS);
 	newSource->stream = copier.csb->nextStream();
 	// fb_assert(newSource->stream <= MAX_UCHAR);
-	copier.remap[stream] = (UCHAR) newSource->stream;
+	copier.remap[stream] = newSource->stream;
 	CMP_csb_element(copier.csb, newSource->stream);
 
 	copier.csb->csb_rpt[newSource->stream].csb_flags |=
@@ -1213,12 +1227,12 @@ RecordSourceNode* AggregateSourceNode::pass2(thread_db* tdbb, CompilerScratch* c
 void AggregateSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(stream <= MAX_STREAMS);
-	csb->csb_rpt[stream].csb_flags |= csb_active;
+	csb->csb_rpt[stream].activate();
 
 	pass2(tdbb, csb);
 }
 
-bool AggregateSourceNode::containsStream(USHORT checkStream) const
+bool AggregateSourceNode::containsStream(StreamType checkStream) const
 {
 	// for aggregates, check current RseNode, if not found then check
 	// the sub-rse
@@ -1234,12 +1248,14 @@ bool AggregateSourceNode::containsStream(USHORT checkStream) const
 
 RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
-	fb_assert(stream <= MAX_UCHAR);
-	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	//if (opt->beds[0] >= MAX_STREAMS) // all builds check
-	//	ERR_post(Arg::Gds(isc_too_many_contexts));
+	//fb_assert(stream <= MAX_UCHAR);
+	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
+	fb_assert(opt->beds.getCount() < MAX_STREAMS);
+	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
+		ERR_post(Arg::Gds(isc_too_many_contexts));
 
-	opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	opt->beds.add(stream);
 
 	BoolExprNodeStack::const_iterator stackEnd;
 	if (opt->parentStack)
@@ -1250,8 +1266,10 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, b
 	if (opt->parentStack)
 		opt->conjunctStack.split(stackEnd, *opt->parentStack);
 
-	fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-	opt->localStreams[++opt->localStreams[0]] = stream;
+	//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
+	fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
+	//opt->localStreams[++opt->localStreams[0]] = stream;
+	opt->localStreams.add(stream);
 
 	return rsb;
 }
@@ -1259,7 +1277,7 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, b
 // Generate a RecordSource (Record Source Block) for each aggregate operation.
 // Generate an AggregateSort (Aggregate SortedStream Block) for each DISTINCT aggregate.
 RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
-	BoolExprNodeStack* parentStack, UCHAR shellStream)
+	BoolExprNodeStack* parentStack, StreamType shellStream)
 {
 	SET_TDBB(tdbb);
 
@@ -1298,7 +1316,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	RecordSource* const nextRsb = OPT_compile(tdbb, csb, rse, &deliverStack);
 
 	fb_assert(stream <= MAX_STREAMS);
-	fb_assert(stream <= MAX_UCHAR);
+	//fb_assert(stream <= MAX_UCHAR);
 
 	// allocate and optimize the record source block
 
@@ -1318,7 +1336,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	return rsb;
 }
 
-bool AggregateSourceNode::computable(CompilerScratch* csb, SSHORT stream,
+bool AggregateSourceNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	rse->rse_sorted = group;
@@ -1353,7 +1371,7 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, S
 	fb_assert(node->stream <= MAX_STREAMS);
 
 	// assign separate context for mapped record if union is recursive
-	USHORT stream2 = node->stream;
+	StreamType stream2 = node->stream;
 
 	if (node->recursive)
 	{
@@ -1361,6 +1379,7 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, S
 		node->mapStream = stream2;
 	}
 
+	// bottleneck
 	int count = (unsigned int) csb->csb_blr_reader.getByte();
 
 	// Pick up the sub-RseNode's and maps.
@@ -1385,11 +1404,11 @@ UnionSourceNode* UnionSourceNode::copy(thread_db* tdbb, NodeCopier& copier) cons
 
 	fb_assert(stream <= MAX_STREAMS);
 	newSource->stream = copier.csb->nextStream();
-	copier.remap[stream] = (UCHAR) newSource->stream;
+	copier.remap[stream] = newSource->stream;
 	CMP_csb_element(copier.csb, newSource->stream);
 
-	USHORT oldStream = stream;
-	USHORT newStream = newSource->stream;
+	StreamType oldStream = stream;
+	StreamType newStream = newSource->stream;
 
 	if (newSource->recursive)
 	{
@@ -1397,7 +1416,7 @@ UnionSourceNode* UnionSourceNode::copy(thread_db* tdbb, NodeCopier& copier) cons
 		fb_assert(oldStream <= MAX_STREAMS);
 		newStream = copier.csb->nextStream();
 		newSource->mapStream = newStream;
-		copier.remap[oldStream] = (UCHAR) newStream;
+		copier.remap[oldStream] = newStream;
 		CMP_csb_element(copier.csb, newStream);
 	}
 
@@ -1446,7 +1465,7 @@ RecordSourceNode* UnionSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	// make up a format block sufficiently large to hold instantiated record
 
-	const USHORT id = getStream();
+	const StreamType id = getStream();
 	Format** format = &csb->csb_rpt[id].csb_internal_format;
 
 	// Process RseNodes and map blocks.
@@ -1471,12 +1490,12 @@ RecordSourceNode* UnionSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 void UnionSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(stream <= MAX_STREAMS);
-	csb->csb_rpt[stream].csb_flags |= csb_active;
+	csb->csb_rpt[stream].activate();
 
 	pass2(tdbb, csb);
 }
 
-bool UnionSourceNode::containsStream(USHORT checkStream) const
+bool UnionSourceNode::containsStream(StreamType checkStream) const
 {
 	// for unions, check current RseNode, if not found then check
 	// all sub-rse's
@@ -1497,35 +1516,45 @@ bool UnionSourceNode::containsStream(USHORT checkStream) const
 
 RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
-	fb_assert(stream <= MAX_UCHAR);
-	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	//if (opt->beds[0] >= MAX_STREAMS) // all builds check
-	//	ERR_post(Arg::Gds(isc_too_many_contexts));
+	//fb_assert(stream <= MAX_UCHAR);
+	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
+	fb_assert(opt->beds.getCount() < MAX_STREAMS);
+	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
+		ERR_post(Arg::Gds(isc_too_many_contexts));
 
-	opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
+	opt->beds.add(stream);
 
-	const SSHORT i = (SSHORT) opt->keyStreams[0];
+	//const SSHORT i = (SSHORT) opt->keyStreams[0];
+	const size_t oldCount = opt->keyStreams.getCount();
 	computeDbKeyStreams(opt->keyStreams);
 
 	BoolExprNodeStack::const_iterator stackEnd;
 	if (opt->parentStack)
 		stackEnd = opt->conjunctStack.merge(*opt->parentStack);
 
-	RecordSource* rsb = generate(tdbb, opt, opt->keyStreams + i + 1,
-		(USHORT) (opt->keyStreams[0] - i), &opt->conjunctStack, stream);
+	//RecordSource* rsb = generate(tdbb, opt, opt->keyStreams + i + 1,
+	//	(USHORT) (opt->keyStreams[0] - i), &opt->conjunctStack, stream);
+	RecordSource* rsb = generate(tdbb, opt, opt->keyStreams.begin() + oldCount,
+		(opt->keyStreams.getCount() - oldCount), &opt->conjunctStack, stream);
 
 	if (opt->parentStack)
 		opt->conjunctStack.split(stackEnd, *opt->parentStack);
 
-	fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-	opt->localStreams[++opt->localStreams[0]] = stream;
+	//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
+	fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
+	if (opt->localStreams.getCount() >= MAX_STREAMS) // all builds check
+		ERR_post(Arg::Gds(isc_too_many_contexts));
+
+	//opt->localStreams[++opt->localStreams[0]] = stream;
+	opt->localStreams.add(stream);
 
 	return rsb;
 }
 
 // Generate an union complex.
-RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams,
-	USHORT nstreams, BoolExprNodeStack* parentStack, UCHAR shellStream)
+RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, const StreamType* streams,
+	size_t nstreams, BoolExprNodeStack* parentStack, StreamType shellStream)
 {
 	SET_TDBB(tdbb);
 
@@ -1554,7 +1583,7 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHA
 		// hvlad: activate recursive union itself after processing first (non-recursive)
 		// member to allow recursive members be optimized
 		if (recursive)
-			csb->csb_rpt[stream].csb_flags |= csb_active;
+			csb->csb_rpt[stream].activate();
 	}
 
 	if (recursive)
@@ -1571,7 +1600,7 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHA
 }
 
 // Identify all of the streams for which a dbkey may need to be carried through a sort.
-void UnionSourceNode::computeDbKeyStreams(UCHAR* streams) const
+void UnionSourceNode::computeDbKeyStreams(StreamList& streams) const
 {
 	const NestConst<RseNode>* ptr = clauses.begin();
 
@@ -1579,7 +1608,7 @@ void UnionSourceNode::computeDbKeyStreams(UCHAR* streams) const
 		(*ptr)->computeDbKeyStreams(streams);
 }
 
-bool UnionSourceNode::computable(CompilerScratch* csb, SSHORT stream,
+bool UnionSourceNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	NestConst<RseNode>* ptr = clauses.begin();
@@ -1669,7 +1698,7 @@ WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier) co
 		copyPartition.stream = copier.csb->nextStream();
 		// fb_assert(copyPartition.stream <= MAX_UCHAR);
 
-		copier.remap[inputPartition->stream] = (UCHAR) copyPartition.stream;
+		copier.remap[inputPartition->stream] = copyPartition.stream;
 		CMP_csb_element(copier.csb, copyPartition.stream);
 
 		if (inputPartition->group)
@@ -1760,11 +1789,11 @@ void WindowSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 		 partition != partitions.end();
 		 ++partition)
 	{
-		csb->csb_rpt[partition->stream].csb_flags |= csb_active;
+		csb->csb_rpt[partition->stream].activate();
 	}
 }
 
-bool WindowSourceNode::containsStream(USHORT checkStream) const
+bool WindowSourceNode::containsStream(StreamType checkStream) const
 {
 	for (ObjectsArray<Partition>::const_iterator partition = partitions.begin();
 		 partition != partitions.end();
@@ -1786,12 +1815,15 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 		 partition != partitions.end();
 		 ++partition)
 	{
-		fb_assert(partition->stream <= MAX_UCHAR);
-		fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-		//if (opt->beds[0] >= MAX_STREAMS) // all builds check
-		//	ERR_post(Arg::Gds(isc_too_many_contexts));
+		//fb_assert(partition->stream <= MAX_UCHAR);
+		fb_assert(partition->stream <= MAX_STREAMS);
+		//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
+		fb_assert(opt->beds.getCount() < MAX_STREAMS);
+		if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
+			ERR_post(Arg::Gds(isc_too_many_contexts));
 
-		opt->beds[++opt->beds[0]] = (UCHAR) partition->stream;
+		//opt->beds[++opt->beds[0]] = (UCHAR) partition->stream;
+		opt->beds.add(partition->stream);
 	}
 
 	BoolExprNodeStack deliverStack;
@@ -1802,16 +1834,22 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 	StreamList rsbStreams;
 	rsb->findUsedStreams(rsbStreams);
 
-	for (StreamList::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
-	{
-		fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-		opt->localStreams[++opt->localStreams[0]] = *i;
-	}
+	if (rsbStreams.getCount() + opt->localStreams.getCount() >= MAX_STREAMS)
+		ERR_post(Arg::Gds(isc_too_many_contexts));
+
+	//for (StreamList::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
+	//{
+		//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
+		//fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
+		//opt->localStreams[++opt->localStreams[0]] = *i;
+		//opt->localStreams.add(*i);
+	//}
+	opt->localStreams.join(rsbStreams);
 
 	return rsb;
 }
 
-bool WindowSourceNode::computable(CompilerScratch* csb, SSHORT stream,
+bool WindowSourceNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	return rse->computable(csb, stream, allowOnlyCurrentStream, NULL);
@@ -2373,7 +2411,7 @@ void RseNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Return true if stream is contained in the specified RseNode.
-bool RseNode::containsStream(USHORT checkStream) const
+bool RseNode::containsStream(StreamType checkStream) const
 {
 	// Look through all relation nodes in this RseNode to see
 	// if the field references this instance of the relation.
@@ -2414,7 +2452,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 		if (opt->rse->rse_jointype == blr_left)
 		{
 			for (StreamList::iterator i = opt->outerStreams.begin(); i != opt->outerStreams.end(); ++i)
-				opt->opt_csb->csb_rpt[*i].csb_flags |= csb_active;
+				opt->opt_csb->csb_rpt[*i].activate();
 		}
 
 		//const BoolExprNodeStack::iterator stackSavepoint(opt->conjunctStack);
@@ -2473,7 +2511,8 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 }
 
 // Identify the streams that make up a RseNode.
-void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) const
+//void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) const
+void RseNode::computeRseStreams(const CompilerScratch* csb, StreamList& streams) const
 {
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
@@ -2485,14 +2524,21 @@ void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) cons
 			static_cast<const RseNode*>(node)->computeRseStreams(csb, streams);
 		else
 		{
+			// This is a bit inefficient, dumping into a list, then joining the list to another list.
 			StreamList sourceStreams;
 			node->getStreams(sourceStreams);
 
-			for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
-			{
-				fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-				streams[++streams[0]] = (UCHAR) *i;
-			}
+			if (streams.getCount() + sourceStreams.getCount() >= MAX_STREAMS)
+				ERR_post(Arg::Gds(isc_too_many_contexts));
+
+			//for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
+			//{
+			//	//fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
+			//	fb_assert(streams.getCount() < MAX_STREAMS);
+			//	//streams[++streams[0]] = (UCHAR) *i;
+			//	streams.add(*i);
+			//}
+			streams.join(sourceStreams);
 		}
 	}
 }
@@ -2510,7 +2556,7 @@ void RseNode::planCheck(const CompilerScratch* csb) const
 
 		if (node->type == RelationSourceNode::TYPE)
 		{
-			const USHORT stream = node->getStream();
+			const StreamType stream = node->getStream();
 
 			if (!(csb->csb_rpt[stream].csb_plan))
 			{
@@ -2547,12 +2593,12 @@ void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 
 	// find the tail for the relation specified in the RseNode
 
-	const USHORT stream = plan->relationNode->getStream();
+	const StreamType stream = plan->relationNode->getStream();
 	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 
 	// if the plan references a view, find the real base relation
 	// we are interested in by searching the view map
-	UCHAR* map = NULL;
+	StreamType* map = NULL;
 
 	if (tail->csb_map)
 	{
@@ -2572,7 +2618,7 @@ void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 		}
 
 		// loop through potentially a stack of views to find the appropriate base table
-		UCHAR* mapBase;
+		StreamType* mapBase;
 
 		while ( (mapBase = tail->csb_map) )
 		{
@@ -2609,7 +2655,7 @@ void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 			if (!*p)
 			{
 				const jrd_rel* duplicateRelation = NULL;
-				UCHAR* duplicateMap = mapBase;
+				StreamType* duplicateMap = mapBase;
 
 				map = NULL;
 
@@ -2714,7 +2760,7 @@ void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 }
 
 // Identify all of the streams for which a dbkey may need to be carried through a sort.
-void RseNode::computeDbKeyStreams(UCHAR* streams) const
+void RseNode::computeDbKeyStreams(StreamList& streams) const
 {
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
@@ -2722,7 +2768,7 @@ void RseNode::computeDbKeyStreams(UCHAR* streams) const
 		(*ptr)->computeDbKeyStreams(streams);
 }
 
-bool RseNode::computable(CompilerScratch* csb, SSHORT stream,
+bool RseNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* value)
 {
 	if (rse_first && !rse_first->computable(csb, stream, allowOnlyCurrentStream))
@@ -2783,7 +2829,7 @@ void RseNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 		(*ptr)->findDependentFromStreams(optRet, streamList);
 }
 
-bool RseNode::jrdStreamFinder(USHORT findStream)
+bool RseNode::jrdStreamFinder(StreamType findStream)
 {
 	if (rse_first && rse_first->jrdStreamFinder(findStream))
 		return true;
@@ -2847,14 +2893,14 @@ void RseNode::jrdStreamsCollector(SortedStreamList& streamList)
 
 
 // Parse a MAP clause for a union or global aggregate expression.
-static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, StreamType stream)
 {
 	SET_TDBB(tdbb);
 
 	if (csb->csb_blr_reader.getByte() != blr_map)
 		PAR_syntax_error(csb, "blr_map");
 
-	int count = csb->csb_blr_reader.getWord();
+	unsigned int count = csb->csb_blr_reader.getWord();
 	MapNode* node = FB_NEW(csb->csb_pool) MapNode(csb->csb_pool);
 
 	while (count-- > 0)
@@ -3006,7 +3052,7 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 // Make new boolean nodes from nodes that contain a field from the given shellStream.
 // Those fields are references (mappings) to other nodes and are used by aggregates and union rse's.
 static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
-	BoolExprNodeStack* parentStack, UCHAR shellStream)
+	BoolExprNodeStack* parentStack, StreamType shellStream)
 {
 	SET_TDBB(tdbb);
 

@@ -33,9 +33,9 @@ using namespace Jrd;
 // Data access: regular union
 // --------------------------
 
-Union::Union(CompilerScratch* csb, UCHAR stream,
+Union::Union(CompilerScratch* csb, StreamType stream,
 			 size_t argCount, RecordSource* const* args, NestConst<MapNode>* maps,
-			 size_t streamCount, const UCHAR* streams)
+			 size_t streamCount, const StreamType* streams)
 	: RecordStream(csb, stream), m_args(csb->csb_pool), m_maps(csb->csb_pool),
 	  m_streams(csb->csb_pool)
 {
@@ -79,7 +79,7 @@ void Union::open(thread_db* tdbb) const
 
 	for (size_t i = 0; i < m_streams.getCount(); i++)
 	{
-		const UCHAR stream = m_streams[i];
+		const StreamType stream = m_streams[i];
 		request->req_rpb[stream].rpb_number.setValue(BOF_NUMBER);
 	}
 

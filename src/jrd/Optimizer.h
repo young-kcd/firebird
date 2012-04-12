@@ -158,7 +158,7 @@ typedef Firebird::ObjectsArray<IndexScratch> IndexScratchList;
 class OptimizerRetrieval
 {
 public:
-	OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, SSHORT streamNumber,
+	OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, StreamType streamNumber,
 		bool outer, bool inner, SortNode** sortNode);
 	~OptimizerRetrieval();
 
@@ -180,7 +180,7 @@ protected:
 	InversionCandidate* matchDbKey(BoolExprNode* boolean) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
 		BoolExprNode* boolean, USHORT scope) const;
-	ValueExprNode* findDbKey(ValueExprNode*, USHORT, SLONG*) const;
+	ValueExprNode* findDbKey(ValueExprNode* dbkey, StreamType stream, SLONG* position) const;
 
 #ifdef OPT_DEBUG_RETRIEVAL
 	void printCandidate(const InversionCandidate* candidate) const;
@@ -196,7 +196,7 @@ private:
 	thread_db* tdbb;
 
 public:
-	SSHORT stream;
+	StreamType stream;
 	Firebird::string alias;
 	SortNode** sort;
 	jrd_rel* relation;
@@ -216,7 +216,7 @@ class IndexRelationship
 public:
 	IndexRelationship();
 
-	int stream;
+	StreamType stream;
 	bool unique;
 	double cost;
 	double cardinality;
@@ -230,7 +230,7 @@ public:
 	explicit InnerJoinStreamInfo(MemoryPool& p);
 	bool independent() const;
 
-	int stream;
+	StreamType stream;
 	bool baseUnique;
 	double baseCost;
 	int baseIndexes;
@@ -246,27 +246,27 @@ typedef Firebird::HalfStaticArray<InnerJoinStreamInfo*, 8> StreamInfoList;
 class OptimizerInnerJoin
 {
 public:
-	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
+	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const StreamList& streams,
 					   SortNode** sort_clause, PlanNode* plan_clause);
 	~OptimizerInnerJoin();
 
-	int findJoinOrder();
+	StreamType findJoinOrder();
 
 protected:
 	void calculateCardinalities();
 	void calculateStreamInfo();
 	bool cheaperRelationship(IndexRelationship* checkRelationship,
 		IndexRelationship* withRelationship) const;
-	void estimateCost(USHORT stream, double* cost, double* resulting_cardinality) const;
-	void findBestOrder(int position, InnerJoinStreamInfo* stream,
+	void estimateCost(StreamType stream, double* cost, double* resulting_cardinality) const;
+	void findBestOrder(StreamType position, InnerJoinStreamInfo* stream,
 		IndexedRelationships* processList, double cost, double cardinality);
 	void getIndexedRelationship(InnerJoinStreamInfo* baseStream, InnerJoinStreamInfo* testStream);
-	InnerJoinStreamInfo* getStreamInfo(int stream);
+	InnerJoinStreamInfo* getStreamInfo(StreamType stream);
 #ifdef OPT_DEBUG
 	void printBestOrder() const;
-	void printFoundOrder(int position, double positionCost,
+	void printFoundOrder(StreamType position, double positionCost,
 		double positionCardinality, double cost, double cardinality) const;
-	void printProcessList(const IndexedRelationships* processList, int stream) const;
+	void printProcessList(const IndexedRelationships* processList, StreamType stream) const;
 	void printStartOrder() const;
 #endif
 
@@ -279,7 +279,7 @@ private:
 	Database* database;
 	OptimizerBlk* optimizer;
 	StreamInfoList innerStreams;
-	int remainingStreams;
+	StreamType remainingStreams;
 };
 
 typedef Firebird::HalfStaticArray<River*, OPT_STATIC_ITEMS> RiverList;

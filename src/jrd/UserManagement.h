@@ -41,7 +41,7 @@ class RecordBuffer;
 class UsersTableScan: public VirtualTableScan
 {
 public:
-	UsersTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream)
+	UsersTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream)
 		: VirtualTableScan(csb, name, stream)
 	{}
 

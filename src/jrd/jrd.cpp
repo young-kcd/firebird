@@ -1343,7 +1343,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			// Attachments to a ReadOnly database need NOT do garbage collection
-			if (dbb->dbb_flags & DBB_read_only) {
+			if (dbb->readOnly()) {
 				attachment->att_flags |= ATT_no_cleanup;
 			}
 

@@ -713,9 +713,9 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	node = Node::doDsqlPass(scratch, node);
 
 	if (scratch->clientDialect > SQL_DIALECT_V5)
-		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+		scratch->getStatement()->setBlrVersion(5);
 	else
-		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+		scratch->getStatement()->setBlrVersion(4);
 
 	GEN_request(scratch, node);
 
@@ -726,15 +726,9 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 		// Allocate buffer for message
 		const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
-
-		message->msg_buffer_number = req_msg_buffers.getCount();
-		req_msg_buffers.grow(message->msg_buffer_number + 1);
-
-		UCHAR*& msgBuffer = req_msg_buffers[message->msg_buffer_number];
-		fb_assert(!msgBuffer);
-
-		msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+		UCHAR* msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
 		msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
+		message->msg_buffer_number = req_msg_buffers.add(msgBuffer);
 	}
 
 	// have the access method compile the statement
@@ -945,7 +939,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	ntrace_result_t* traceResult)
 {
-	this->scratch = scratch;
+	internalScratch = scratch;
 
 	node = Node::doDsqlPass(scratch, node);
 
@@ -961,9 +955,9 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	}
 
 	if (scratch->clientDialect > SQL_DIALECT_V5)
-		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
+		scratch->getStatement()->setBlrVersion(5);
 	else
-		scratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
+		scratch->getStatement()->setBlrVersion(4);
 }
 
 // Execute a dynamic SQL statement.
@@ -979,7 +973,7 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	// run all statements under savepoint control
 	{	// scope
 		AutoSavePoint savePoint(tdbb, req_transaction);
-		node->executeDdl(tdbb, scratch, req_transaction);
+		node->executeDdl(tdbb, internalScratch, req_transaction);
 		savePoint.release();	// everything is ok
 	}
 
@@ -1070,7 +1064,7 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 	database->dbb_ods_version = dbb->dbb_ods_version;
 	database->dbb_minor_version = dbb->dbb_minor_version;
 
-	database->dbb_read_only = (dbb->dbb_flags & DBB_read_only) ? true : false;
+	database->dbb_read_only = dbb->readOnly();
 
 #ifdef DSQL_DEBUG
 	DSQL_debug = Config::getTraceDSQL();

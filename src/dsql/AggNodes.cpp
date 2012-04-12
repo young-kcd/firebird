@@ -448,7 +448,7 @@ DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 {
 	AvgAggNode* node = FB_NEW(pool) AvgAggNode(pool,
 		(blrOp == blr_agg_average_distinct),
-		(csb->csb_g_flags & csb_blr_version4));
+		(csb->blrVersion == 4));
 	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
 }
@@ -788,7 +788,7 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 {
 	CountAggNode* node = FB_NEW(pool) CountAggNode(pool,
 		(blrOp == blr_agg_count_distinct),
-		(csb->csb_g_flags & csb_blr_version4));
+		(csb->blrVersion == 4));
 
 	if (blrOp != blr_agg_count)
 		node->arg = PAR_parse_value(tdbb, csb);
@@ -878,7 +878,7 @@ SumAggNode::SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_no
 DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	SumAggNode* node = FB_NEW(pool) SumAggNode(pool, (blrOp == blr_agg_total_distinct),
-		(csb->csb_g_flags & csb_blr_version4));
+		(csb->blrVersion == 4));
 
 	node->arg = PAR_parse_value(tdbb, csb);
 

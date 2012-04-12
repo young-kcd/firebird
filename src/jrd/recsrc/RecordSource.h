@@ -119,7 +119,7 @@ namespace Jrd
 	class RecordStream : public RecordSource
 	{
 	public:
-		RecordStream(CompilerScratch* csb, UCHAR stream, const Format* format = NULL);
+		RecordStream(CompilerScratch* csb, StreamType stream, const Format* format = NULL);
 
 		virtual bool refetchRecord(thread_db* tdbb) const;
 		virtual bool lockRecord(thread_db* tdbb) const;
@@ -133,7 +133,7 @@ namespace Jrd
 		virtual void restoreRecords(thread_db* tdbb) const;
 
 	protected:
-		const UCHAR m_stream;
+		const StreamType m_stream;
 		const Format* const m_format;
 	};
 
@@ -143,7 +143,7 @@ namespace Jrd
 	class FullTableScan : public RecordStream
 	{
 	public:
-		FullTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
+		FullTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -165,7 +165,7 @@ namespace Jrd
 		};
 
 	public:
-		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
 			InversionNode* inversion);
 
 		void open(thread_db* tdbb) const;
@@ -198,7 +198,7 @@ namespace Jrd
 		};
 
 	public:
-		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
 			InversionNode* index, USHORT keyLength);
 
 		void open(thread_db* tdbb) const;
@@ -240,7 +240,7 @@ namespace Jrd
 		};
 
 	public:
-		ExternalTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
+		ExternalTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -259,7 +259,7 @@ namespace Jrd
 	class VirtualTableScan : public RecordStream
 	{
 	public:
-		VirtualTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
+		VirtualTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -289,7 +289,7 @@ namespace Jrd
 		};
 
 	public:
-		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
 					  const jrd_prc* procedure, const ValueListNode* sourceList,
 					  const ValueListNode* targetList, MessageNode* message);
 
@@ -506,13 +506,14 @@ namespace Jrd
 				void clear()
 				{
 					desc.clear();
-					flagOffset = stream = fieldId = 0;
+					flagOffset = fieldId = 0;
+					stream = 0;
 					node = NULL;
 				}
 
+				StreamType stream;			// stream for field id
 				dsc desc;					// relative descriptor
 				USHORT flagOffset;			// offset of missing flag
-				USHORT stream;				// stream for field id
 				SSHORT fieldId;				// id for field (or ID constants)
 				NestConst<ValueExprNode> node;	// expression node
 			};
@@ -612,11 +613,11 @@ namespace Jrd
 		};
 
 	public:
-		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 			const NestValueArray* group, MapNode* map, BaseBufferedStream* next,
 			const NestValueArray* order);
 
-		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 			const NestValueArray* group, MapNode* map, RecordSource* next);
 
 		void open(thread_db* tdbb) const;
@@ -699,13 +700,13 @@ namespace Jrd
 			FieldMap() : map_type(0), map_stream(0), map_id(0)
 			{}
 
-			FieldMap(UCHAR type, UCHAR stream, ULONG id)
-				: map_type(type), map_stream(stream), map_id(id)
+			FieldMap(UCHAR type, StreamType stream, ULONG id)
+				: map_stream(stream), map_id(id), map_type(type)
 			{}
 
-			UCHAR map_type;
-			UCHAR map_stream;
+			StreamType  map_stream;
 			USHORT map_id;
+			UCHAR map_type;
 		};
 
 		struct Impure : public RecordSource::Impure
@@ -877,6 +878,7 @@ namespace Jrd
 
 		struct Impure : public RecordSource::Impure
 		{
+			// CVC: should this value exist for compatibility? It's not used.
 			USHORT irsb_mrg_count;				// next stream in group
 			struct irsb_mrg_repeat
 			{
@@ -933,9 +935,9 @@ namespace Jrd
 		};
 
 	public:
-		Union(CompilerScratch* csb, UCHAR stream,
+		Union(CompilerScratch* csb, StreamType stream,
 			  size_t argCount, RecordSource* const* args, NestConst<MapNode>* maps,
-			  size_t streamCount, const UCHAR* streams);
+			  size_t streamCount, const StreamType* streams);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -972,10 +974,10 @@ namespace Jrd
 		};
 
 	public:
-		RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapStream,
+		RecursiveStream(CompilerScratch* csb, StreamType stream, StreamType mapStream,
 					    RecordSource* root, RecordSource* inner,
 					    const MapNode* rootMap, const MapNode* innerMap,
-					    size_t streamCount, const UCHAR* innerStreams,
+					    size_t streamCount, const StreamType* innerStreams,
 					    ULONG saveOffset);
 
 		void open(thread_db* tdbb) const;
@@ -995,7 +997,7 @@ namespace Jrd
 	private:
 		void cleanupLevel(jrd_req* request, Impure* impure) const;
 
-		const UCHAR m_mapStream;
+		const StreamType m_mapStream;
 		NestConst<RecordSource> m_root;
 		NestConst<RecordSource> m_inner;
 		const MapNode* const m_rootMap;

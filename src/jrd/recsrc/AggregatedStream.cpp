@@ -39,7 +39,7 @@ using namespace Jrd;
 
 // Note that we can have NULL order here, in case of window function with shouldCallWinPass
 // returning true, with partition, and without order. Example: ROW_NUMBER() OVER (PARTITION BY N).
-AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 			const NestValueArray* group, MapNode* map, BaseBufferedStream* next,
 			const NestValueArray* order)
 	: RecordStream(csb, stream),
@@ -54,7 +54,7 @@ AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR 
 	init(tdbb, csb);
 }
 
-AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, UCHAR stream,
+AggregatedStream::AggregatedStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 			const NestValueArray* group, MapNode* map, RecordSource* next)
 	: RecordStream(csb, stream),
 	  m_bufferedStream(NULL),

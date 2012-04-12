@@ -1260,7 +1260,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	window.win_page = (*vector)[sequence];
 	window.win_flags = 0;
 	generator_page* page;
-	if (dbb->dbb_flags & DBB_read_only) {
+	if (dbb->readOnly()) {
 		page = (generator_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_ids);
 	}
 	else {
@@ -1278,7 +1278,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 
 	if (val || initialize)
 	{
-		if (dbb->dbb_flags & DBB_read_only)
+		if (dbb->readOnly())
 		{
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(Arg::Gds(isc_read_only_database));

@@ -278,7 +278,7 @@ blb* blb::create2(thread_db* tdbb,
 	if (type & isc_bpb_type_stream)
 		blob->blb_flags |= BLB_stream;
 
-	if ((type & isc_bpb_storage_temp) || (dbb->dbb_flags & DBB_read_only)) {
+	if ((type & isc_bpb_storage_temp) || dbb->readOnly()) {
 		blob->blb_pg_space_id = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
 	}
 	else {
@@ -1021,7 +1021,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 			BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 			Database* dbb = tdbb->getDatabase();
-			const USHORT pageSpace = dbb->dbb_flags & DBB_read_only ?
+			const USHORT pageSpace = dbb->readOnly() ?
 				dbb->dbb_page_manager.getTempPageSpaceID(tdbb) : DB_PAGE_SPACE;
 
 			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), pageSpace);
@@ -1071,7 +1071,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 			BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 			Database* dbb = tdbb->getDatabase();
-			const USHORT pageSpace = dbb->dbb_flags & DBB_read_only ?
+			const USHORT pageSpace = dbb->readOnly() ?
 				dbb->dbb_page_manager.getTempPageSpaceID(tdbb) : DB_PAGE_SPACE;
 
 			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), pageSpace);
@@ -2090,7 +2090,7 @@ void blb::delete_blob(thread_db* tdbb, ULONG prior_page)
 
 	const USHORT pageSpaceID = blb_pg_space_id;
 
-	if (dbb->dbb_flags & DBB_read_only)
+	if (dbb->readOnly())
 	{
 		const USHORT tempSpaceID = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
 

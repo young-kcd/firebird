@@ -47,29 +47,43 @@ class ValueExprNode;
 // Must be less then MAX_SSHORT. Not used for static arrays.
 const int MAX_CONJUNCTS	= 32000;
 
+// CVC: Obsolete.
 // Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
 // Here we should really have a compile-time fb_assert, since this hard-coded
 // limit is NOT negotiable so long as we use an array of UCHAR, where index 0
 // tells how many streams are in the array (and the streams themselves are
 // identified by a UCHAR).
-const unsigned int MAX_STREAMS = 255;
+//const unsigned int MAX_STREAMS = 255;
 
+// New: MAX_STREAMS should be a multiple of BITS_PER_LONG (32 and hard to believe it will change)
+
+//typedef ULONG StreamType; // sorry, it can't be here because this file includes Visitors.h
+const StreamType INVALID_STREAM = ~StreamType(0);
+const StreamType MAX_STREAMS = 4096;
+
+
+const StreamType STREAM_MAP_LENGTH = MAX_STREAMS + 2;
+
+// CVC: Obsolete
 // This is number of ULONG's needed to store bit-mapped flags for all streams
 // OPT_STREAM_BITS = (MAX_STREAMS + 1) / BITS_PER_LONG
 // This value cannot be increased simple way. Decrease is possible, but it is also
 // hardcoded in several places such as TEST_DEP_ARRAYS macro
-const int OPT_STREAM_BITS = 8;
+// Note: TEST_DEP_ARRAYS is no longer used.
+
+// New formula is simply MAX_STREAMS / BITS_PER_LONG
+//const int OPT_STREAM_BITS = 8;
+const int OPT_STREAM_BITS = MAX_STREAMS / BITS_PER_LONG; // 128 with 4096 streams
 
 // Number of streams, conjuncts, indices that will be statically allocated
 // in various arrays. Larger numbers will have to be allocated dynamically
-const int OPT_STATIC_ITEMS = 16;
+// CVC: I think we need to have a special, higher value for streams.
+const int OPT_STATIC_ITEMS = 64;
 
-
-typedef USHORT StreamType; // for now
-
-typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamList;
-typedef Firebird::SortedArray<int> SortedStreamList;
-typedef UCHAR stream_array_t[MAX_STREAMS + 1];
+typedef Firebird::HalfStaticArray<StreamType, OPT_STATIC_ITEMS> StreamList;
+//typedef Firebird::Array<StreamType> StreamList;
+typedef Firebird::SortedArray<StreamType> SortedStreamList;
+//typedef StreamType stream_array_t[MAX_STREAMS + 1];
 
 typedef Firebird::Array<NestConst<ValueExprNode> > NestValueArray;
 
@@ -539,9 +553,9 @@ public:
 	}
 
 	virtual bool jrdPossibleUnknownFinder();
-	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual bool jrdStreamFinder(StreamType findStream);
 	virtual void jrdStreamsCollector(SortedStreamList& streamList);
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream);
+	virtual bool jrdUnmappableNode(const MapNode* mapNode, StreamType shellStream);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
@@ -559,7 +573,7 @@ public:
 	// A node is said to be computable, if all the streams involved
 	// in that node are csb_active. The csb_active flag defines
 	// all the streams available in the current scope of the query.
-	virtual bool computable(CompilerScratch* csb, SSHORT stream,
+	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value = NULL);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -621,7 +635,7 @@ public:
 		return this;
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream,
+	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value = NULL);
 
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -752,7 +766,7 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(USHORT /*findStream*/)
+	virtual bool jrdStreamFinder(StreamType /*findStream*/)
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
@@ -766,7 +780,7 @@ public:
 		return;
 	}
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, UCHAR /*shellStream*/)
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}

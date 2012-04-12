@@ -74,8 +74,9 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 		resources = csb->csb_resources; // Assign array contents
 		impureSize = csb->csb_impure;
 
-		if (csb->csb_g_flags & csb_blr_version4)
-			flags |= FLAG_VERSION4;
+		//if (csb->csb_g_flags & csb_blr_version4)
+		//	flags |= FLAG_VERSION4;
+		blrVersion = csb->blrVersion;
 
 		// Take out existence locks on resources used in statement. This is
 		// a little complicated since relation locks MUST be taken before
@@ -204,26 +205,30 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 		DmlNode::doPass1(tdbb, csb, &csb->csb_node);
 
+		// CVC: I'm going to allocate the map before the loop to avoid alloc/dealloc calls.
+		AutoPtr<StreamType, ArrayDelete<StreamType> > localMap(FB_NEW(*tdbb->getDefaultPool())
+			StreamType[STREAM_MAP_LENGTH]);
+
 		// Copy and compile (pass1) domains DEFAULT and constraints.
 		MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
 
 		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 		{
 			FieldInfo& fieldInfo = accessor.current()->second;
-			UCHAR local_map[MAP_LENGTH];
+			//StreamType local_map[MAP_LENGTH];
 
 			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-			fieldInfo.defaultValue = NodeCopier::copy(tdbb, csb, fieldInfo.defaultValue, local_map);
+			fieldInfo.defaultValue = NodeCopier::copy(tdbb, csb, fieldInfo.defaultValue, localMap);
 
 			csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
-			fieldInfo.validationStmt = NodeCopier::copy(tdbb, csb, fieldInfo.validationStmt, local_map);
+			fieldInfo.validationStmt = NodeCopier::copy(tdbb, csb, fieldInfo.validationStmt, localMap);
 
 			if (fieldInfo.validationExpr)
 			{
-				NodeCopier copier(csb, local_map);
+				NodeCopier copier(csb, localMap);
 				fieldInfo.validationExpr = copier.copy(tdbb, fieldInfo.validationExpr);
 			}
 

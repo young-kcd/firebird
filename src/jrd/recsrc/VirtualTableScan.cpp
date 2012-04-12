@@ -37,7 +37,7 @@ using namespace Jrd;
 // Data access: virtual table scan
 // -------------------------------
 
-VirtualTableScan::VirtualTableScan(CompilerScratch* csb, const string& name, UCHAR stream)
+VirtualTableScan::VirtualTableScan(CompilerScratch* csb, const string& name, StreamType stream)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
