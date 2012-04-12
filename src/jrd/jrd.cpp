@@ -4746,6 +4746,21 @@ void JAttachment::ping(IStatus* user_status)
 	successful_completion(user_status);
 }
 
+
+void jrd_prc::releaseStatement(thread_db* tdbb)
+{
+	if (getStatement()) 
+	{
+		getStatement()->release(tdbb);
+		setStatement(NULL);
+	}
+	
+	setInputFormat(NULL);
+	setOutputFormat(NULL);
+
+	prc_flags &= ~PRC_scanned;
+}
+
 } // namespace Jrd
 
 #ifdef DEBUG_PROCS

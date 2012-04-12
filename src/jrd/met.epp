@@ -596,8 +596,8 @@ void MET_clear_cache(thread_db* tdbb)
 					 procedure->prc_int_use_count >= 0 &&
 					 procedure->prc_use_count == procedure->prc_int_use_count )
 				{
-					procedure->getStatement()->release(tdbb);
-					procedure->setStatement(NULL);
+					procedure->releaseStatement(tdbb);
+
 					if (procedure->prc_existence_lock)	//// TODO: verify why this IF is necessary now
 						LCK_release(tdbb, procedure->prc_existence_lock);
 					procedure->prc_existence_lock = NULL;
@@ -3074,10 +3074,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				{
 					delete csb;
 
-					if (procedure->getStatement())
-					{
-						procedure->getStatement()->release(tdbb);
-						procedure->setStatement(NULL);
+					if (procedure->getStatement()) {
+						procedure->releaseStatement(tdbb);
 					}
 					else {
 						attachment->deletePool(csb_pool);

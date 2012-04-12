@@ -271,6 +271,8 @@ public:
 	{
 		return SCL_object_procedure;
 	}
+
+	void releaseStatement(thread_db* tdbb);
 };
 
 // prc_flags

@@ -3942,8 +3942,7 @@ static bool delete_procedure(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
 				}
 
-				procedure->getStatement()->release(tdbb);
-				procedure->setStatement(NULL);
+				procedure->releaseStatement(tdbb);
 			}
 
 			// delete dependency lists
@@ -5749,8 +5748,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 
 				// release the request
 
-				procedure->getStatement()->release(tdbb);
-				procedure->setStatement(NULL);
+				procedure->releaseStatement(tdbb);
 			}
 
 			// delete dependency lists
