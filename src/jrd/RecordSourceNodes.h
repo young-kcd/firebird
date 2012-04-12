@@ -200,8 +200,8 @@ public:
 class WithClause : public Firebird::Array<SelectExprNode*>
 {
 public:
-	explicit WithClause(MemoryPool& pool)
-		: Array(pool),
+	explicit WithClause(Firebird::MemoryPool& pool)
+		: Firebird::Array<SelectExprNode*>(pool),
 		  recursive(false)
 	{
 	}
