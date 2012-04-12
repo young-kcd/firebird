@@ -1,3 +1,8 @@
+ 2012-04-11 14:43  asfernandes 
+   M doc/WhatsNew
+   M src/jrd/SysFunction.cpp
+Backport fix for CORE-3479 - ASCII_VAL raises error instead of return 0 for empty strings.
+
  2012-04-05 13:23  paulbeach 
    A builds/posix/firebird.darwin.vers
    M builds/posix/prefix.darwin_i386
