@@ -3406,12 +3406,9 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		return true;
 
 	case nod_constant:
-		if (node1->nod_desc.dsc_dtype != node2->nod_desc.dsc_dtype ||
-			node1->nod_desc.dsc_length != node2->nod_desc.dsc_length ||
-			node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale)
-		{
+		if (!DSC_EQUIV(&node1->nod_desc, &node2->nod_desc, true))
 			return false;
-		}
+
 		{ // scope for the local vars
 			const USHORT len = (node1->nod_desc.dsc_dtype == dtype_text) ?
 				((dsql_str*) node1->nod_arg[0])->str_length : node1->nod_desc.dsc_length;
