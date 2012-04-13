@@ -1,3 +1,15 @@
+ 2012-04-12 16:32  dimitr 
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+For the safety sake, let's not ignore possible OS level errors even if they seem unlikely to happen.
+
+ 2012-04-12 10:48  hvlad 
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+Fixed bug CORE-3812 : Connection lost to database during massive dropping and altering primary keys of tables
+
  2012-04-08 05:57  dimitr 
    M src/jrd/Database.cpp
    M src/jrd/Database.h
