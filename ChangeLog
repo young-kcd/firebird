@@ -1,3 +1,92 @@
+ 2012-04-12 13:03  hvlad 
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+Front ported fix for bug CORE-3812 : Connection lost to database during massive dropping and altering primary keys of tables
+
+ 2012-04-12 12:50  hvlad 
+   M src/dsql/ExprNodes.cpp
+Allow DEBUG build to work with pre-FB3 BLR code.
+For example, it is impossible to restore database and to run script from CORE-3812.
+Thanks to Dmitry for explanation.
+
+ 2012-04-12 12:32  hvlad 
+   M src/jrd/dfw.epp
+Fixed wrong pool usage
+
+ 2012-04-12 09:02  robocop 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/include/fb_types.h
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/Function.epp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/UserManagement.h
+   M src/jrd/blb.cpp
+   M src/jrd/blr.h
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/cvt.cpp
+   M src/jrd/dpm.epp
+   M src/jrd/exe.h
+   M src/jrd/ext.cpp
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+   M src/jrd/pag.cpp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/ExternalTableScan.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/VirtualTableScan.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/rlck.cpp
+   M src/jrd/rse.h
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+- Got rid of the fixed array that kept the stream count in the first element and 255 streams after it.
+- Changed streams from UCHAR to ULONG as Dmitry wanted
+- Got rid of some redundant flags to indicate BLR level
+- Misc changes (for example, converted to test for DBB_read_only in Database to a function)
+- BLR v6 is left commented (waiting for a better solution to appear, if any exists)
+- This change is not going to raise the engine limits until a solution is found to express more than 255 streams in BLR.
+
+ 2012-04-12 07:54  alexpeshkoff 
+   M src/jrd/RecordSourceNodes.h
+Fixed snapshot's build using gcc 4.4
+
  2012-04-11 09:38  hvlad 
    M src/dsql/dsql.h
    M src/jrd/Attachment.h
