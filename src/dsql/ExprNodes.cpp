@@ -6566,11 +6566,8 @@ bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	const LiteralNode* o = other->as<LiteralNode>();
 	fb_assert(o);
 
-	if (litDesc.dsc_dtype != o->litDesc.dsc_dtype || litDesc.dsc_length != o->litDesc.dsc_length ||
-		litDesc.dsc_scale != o->litDesc.dsc_scale)
-	{
+	if (!DSC_EQUIV(&litDesc, &o->litDesc, true))
 		return false;
-	}
 
 	const USHORT len = (litDesc.dsc_dtype == dtype_text) ?
 		dsqlStr->str_length : litDesc.dsc_length;
