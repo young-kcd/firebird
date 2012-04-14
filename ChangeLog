@@ -1,3 +1,7 @@
+ 2012-04-13 09:11  dimitr 
+   M src/dsql/ExprNodes.cpp
+Additional fix for CORE-3807. Otherwise, _utf8 'A' is considered equal to _win1251 'ABCD' etc. The original code didn't check for charsets/collations but IMHO this was wrong.
+
  2012-04-12 13:03  hvlad 
    M src/jrd/cmp.cpp
    M src/jrd/dfw.epp
