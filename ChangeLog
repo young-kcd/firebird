@@ -1,3 +1,7 @@
+ 2012-04-13 09:08  dimitr 
+   M src/dsql/pass1.cpp
+Additional fix for CORE-3807. Otherwise, _utf8 'A' is considered equal to _win1251 'ABCD' etc. The original code didn't check for charsets/collations but IMHO this was wrong.
+
  2012-04-11 14:43  asfernandes 
    M doc/WhatsNew
    M src/jrd/SysFunction.cpp
