@@ -851,6 +851,12 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #endif // WIN_NT
 
+	// Make sure getservbyname returns the protocol we searched for.
+	// See also bug CORE-3819.
+
+	if (service && stricmp(service->s_name, protocol.c_str()))
+		service = NULL;
+
 	// Modification by luz (slightly modified by FSG)
 	// instead of failing here, try applying hard-wired
 	// translation of "gds_db" into "3050"
