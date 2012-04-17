@@ -1,3 +1,7 @@
+ 2012-04-16 15:16  hvlad 
+   M src/remote/inet.cpp
+Fixed bug CORE-3819 : Wrong service name to port address resolution in database connection string
+
  2012-04-13 09:09  dimitr 
    M src/dsql/pass1.cpp
 Additional fix for CORE-3807. Otherwise, _utf8 'A' is considered equal to _win1251 'ABCD' etc. The original code didn't check for charsets/collations but IMHO this was wrong.
