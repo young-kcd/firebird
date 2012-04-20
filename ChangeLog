@@ -1,3 +1,7 @@
+ 2012-04-19 05:14  alexpeshkoff 
+   M src/remote/inet.cpp
+fixed posix build
+
  2012-04-16 15:17  hvlad 
    M src/remote/inet.cpp
 Fixed bug CORE-3819 : Wrong service name to port address resolution in database connection string
