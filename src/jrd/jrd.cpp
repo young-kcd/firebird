@@ -6902,6 +6902,11 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 	// effects of the transaction, mark it dead and
 	// start a new transaction.
 
+	// Ignore autocommit for requests created by EXECUTE STATEMENT
+
+	if (transaction->tra_callback_count != 0)
+		return;
+
 	if (transaction->tra_flags & TRA_perform_autocommit)
 	{
 		transaction->tra_flags &= ~TRA_perform_autocommit;
