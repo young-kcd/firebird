@@ -1,3 +1,7 @@
+ 2012-04-21 05:16  alexpeshkoff 
+   M src/common/classes/semaphore.cpp
+Fixed 32-bit posix build
+
  2012-04-20 20:03  hvlad 
    M src/jrd/jrd.cpp
 Fixed bug CORE-3825 : If an autocommit transaction (i.e. transaction started with isc_tpb_autocommit option) run DDL using EXECUTE STATEMENT it will produce a bugcheck 287 (Too many savepoints) 
