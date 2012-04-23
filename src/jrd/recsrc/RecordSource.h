@@ -697,14 +697,14 @@ namespace Jrd
 			static const UCHAR DBKEY_NUMBER = 3;
 			static const UCHAR DBKEY_VALID = 4;
 
-			FieldMap() : map_type(0), map_stream(0), map_id(0)
+			FieldMap() : map_stream(0), map_id(0), map_type(0)
 			{}
 
 			FieldMap(UCHAR type, StreamType stream, ULONG id)
 				: map_stream(stream), map_id(id), map_type(type)
 			{}
 
-			StreamType  map_stream;
+			StreamType map_stream;
 			USHORT map_id;
 			UCHAR map_type;
 		};
