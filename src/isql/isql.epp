@@ -8813,7 +8813,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			// command-line ISQL only.  For WISQL, print the column
 			// headings only once.
 
-			if (printHead && 
+			if (printHead &&
 				(Pagelength && (lines % Pagelength == 0) ||
 				 !Pagelength && !lines) )
 			{

@@ -1119,7 +1119,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			locked = true;
 			break;
 		}
-		
+
 		m_blockage = true;
 	}
 

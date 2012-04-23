@@ -532,6 +532,7 @@ public:
 	{
 		// We must zero-initialize this one
 		csb_repeat();
+
 		void activate();
 		void deactivate();
 
@@ -563,27 +564,27 @@ public:
 
 	// We must zero-initialize this one
 inline CompilerScratch::csb_repeat::csb_repeat()
-	:	csb_stream(0),
-		csb_view_stream(0),
-		csb_flags(0),
-		csb_indices(0),
-		csb_relation(0),
-		csb_alias(0),
-		csb_procedure(0),
-		csb_view(0),
-		csb_idx(0),
-		csb_message(0),
-		csb_format(0),
-		csb_internal_format(0),
-		csb_fields(0),
-		csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
-		csb_plan(0),
-		csb_map(0),
-		csb_rsb_ptr(0)
-	{
-	}
+	: csb_stream(0),
+	  csb_view_stream(0),
+	  csb_flags(0),
+	  csb_indices(0),
+	  csb_relation(0),
+	  csb_alias(0),
+	  csb_procedure(0),
+	  csb_view(0),
+	  csb_idx(0),
+	  csb_message(0),
+	  csb_format(0),
+	  csb_internal_format(0),
+	  csb_fields(0),
+	  csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
+	  csb_plan(0),
+	  csb_map(0),
+	  csb_rsb_ptr(0)
+{
+}
 
-//CompilerScratch.csb_g_flags' values.
+// CompilerScratch.csb_g_flags' values.
 const int csb_internal			= 1;	// "csb_g_flag" switch
 const int csb_get_dependencies	= 2;	// we are retrieving dependencies
 const int csb_ignore_perm		= 4;	// ignore permissions checks
@@ -594,7 +595,7 @@ const int csb_validation		= 64;	// we're in a validation expression (RDB hack)
 const int csb_reuse_context		= 128;	// allow context reusage
 const int csb_subroutine		= 256;	// sub routine
 
-//CompilerScratch.csb_rpt[].csb_flags's values.
+// CompilerScratch.csb_rpt[].csb_flags's values.
 const int csb_active		= 1;		// stream is active
 const int csb_used			= 2;		// context has already been defined (BLR parsing only)
 const int csb_view_update	= 4;		// view update w/wo trigger is in progress
@@ -616,7 +617,6 @@ inline void CompilerScratch::csb_repeat::deactivate()
 {
 	csb_flags &= ~csb_active;
 }
-
 
 
 class StatusXcp

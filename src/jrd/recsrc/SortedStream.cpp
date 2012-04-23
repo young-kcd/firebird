@@ -275,7 +275,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 	{
 		StreamType stream = INVALID_STREAM;
 
-		const SortMap::Item* const end_item = m_map->items.end();//.begin() + m_map->items.getCount();
+		const SortMap::Item* const end_item = m_map->items.end();
 		for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 		{
 			if (item->node && !item->node->is<FieldNode>())

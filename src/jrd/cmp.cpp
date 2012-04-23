@@ -484,9 +484,9 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	if ((procedure->prc_use_count == 0) &&
 		( (*tdbb->getAttachment()->att_procedures)[procedure->getId()] != procedure))
 	{
-		if (procedure->getStatement()) {
+		if (procedure->getStatement())
 			procedure->releaseStatement(tdbb);
-		}
+
 		procedure->prc_flags &= ~PRC_being_altered;
 		MET_remove_procedure(tdbb, procedure->getId(), procedure);
 	}

@@ -102,7 +102,7 @@ namespace Jrd
 	class River
 	{
 	public:
-		River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, const StreamList& streams)//size_t count, UCHAR* streams)
+		River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, const StreamList& streams)
 			: m_rsb(rsb), m_node(node), m_streams(csb->csb_pool)
 		{
 			//m_streams.resize(count);
@@ -133,14 +133,16 @@ namespace Jrd
 			return m_rsb;
 		}
 
-		//size_t getStreamCount() const
-		//{
-		//	return m_streams.getCount();
-		//}
+		/***
+		size_t getStreamCount() const
+		{
+			return m_streams.getCount();
+		}
+		***/
 
 		const StreamList& getStreams() const
 		{
-			return m_streams; //.begin();
+			return m_streams;
 		}
 
 		void activate(CompilerScratch* csb)

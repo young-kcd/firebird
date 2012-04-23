@@ -4749,12 +4749,12 @@ void JAttachment::ping(IStatus* user_status)
 
 void jrd_prc::releaseStatement(thread_db* tdbb)
 {
-	if (getStatement()) 
+	if (getStatement())
 	{
 		getStatement()->release(tdbb);
 		setStatement(NULL);
 	}
-	
+
 	setInputFormat(NULL);
 	setOutputFormat(NULL);
 

@@ -1837,13 +1837,15 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 	if (rsbStreams.getCount() + opt->localStreams.getCount() >= MAX_STREAMS)
 		ERR_post(Arg::Gds(isc_too_many_contexts));
 
-	//for (StreamList::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
-	//{
-		//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-		//fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
-		//opt->localStreams[++opt->localStreams[0]] = *i;
-		//opt->localStreams.add(*i);
-	//}
+	/***
+	for (StreamList::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
+	{
+		fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
+		fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
+		opt->localStreams[++opt->localStreams[0]] = *i;
+		opt->localStreams.add(*i);
+	}
+	***/
 	opt->localStreams.join(rsbStreams);
 
 	return rsb;
@@ -2531,13 +2533,15 @@ void RseNode::computeRseStreams(const CompilerScratch* csb, StreamList& streams)
 			if (streams.getCount() + sourceStreams.getCount() >= MAX_STREAMS)
 				ERR_post(Arg::Gds(isc_too_many_contexts));
 
-			//for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
-			//{
-			//	//fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-			//	fb_assert(streams.getCount() < MAX_STREAMS);
-			//	//streams[++streams[0]] = (UCHAR) *i;
-			//	streams.add(*i);
-			//}
+			/***
+			for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
+			{
+				//fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
+				fb_assert(streams.getCount() < MAX_STREAMS);
+				//streams[++streams[0]] = (UCHAR) *i;
+				streams.add(*i);
+			}
+			***/
 			streams.join(sourceStreams);
 		}
 	}

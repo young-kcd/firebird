@@ -43,7 +43,7 @@ class Database;
 //
 // Database record counters.
 //
-enum RelStatType 
+enum RelStatType
 {
 	DBB_read_seq_count	= 0,
 	DBB_read_idx_count,
