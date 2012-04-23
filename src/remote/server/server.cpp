@@ -72,6 +72,8 @@
 #include "../common/classes/GetPlugins.h"
 #include "../common/StatementMetadata.h"
 #include "../common/isc_f_proto.h"
+#include "../auth/SecurityDatabase/LegacyHash.h"
+#include "../common/enc_proto.h"
 
 using namespace Firebird;
 
@@ -295,11 +297,22 @@ public:
 				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): miss data with tag %d\n", tags->specific_data));
 			}
 		}
-		else if (authPort->port_srv_auth_block->getLogin() && aPb->find(tags->password_enc))
+		else if (authPort->port_srv_auth_block->getLogin() && 
+			(aPb->find(tags->password_enc) || aPb->find(tags->password)))
 		{
 			authPort->port_srv_auth_block->setPluginName("Legacy_Auth");
 			authPort->port_srv_auth_block->setPluginList("Legacy_Auth");
 			aPb->getData(u);
+			if (aPb->getClumpTag() == tags->password)
+			{
+				TEXT pwt[Auth::MAX_LEGACY_PASSWORD_LENGTH + 2];
+				u.push(0);
+				ENC_crypt(pwt, sizeof pwt, reinterpret_cast<TEXT*>(u.begin()),
+					Auth::LEGACY_PASSWORD_SALT);
+				unsigned l = strlen(&pwt[2]);
+				memcpy(u.getBuffer(l), &pwt[2], l);
+				HANDSHAKE_DEBUG(fprintf(stderr, "CALLED des locally\n"));
+			}
 			authPort->port_srv_auth_block->setDataForPlugin(u);
 		}
 #ifdef WIN_NT
