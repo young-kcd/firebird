@@ -1,3 +1,44 @@
+ 2012-04-25 01:42  asfernandes 
+   M builds/posix/make.shared.targets
+   M builds/win32/parse.bat
+   M src/common/classes/objects_array.h
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/BlrWriter.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/PackageNodes.epp
+   M src/dsql/PackageNodes.h
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/gen_proto.h
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/metd_proto.h
+   D src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/obj.h
+Getting rid of dsql_nod.
+
  2012-04-23 08:20  alexpeshkoff 
    M src/remote/server/server.cpp
 Fix java client login
