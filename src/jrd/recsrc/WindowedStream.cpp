@@ -495,7 +495,6 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 		// Refresh the stream list based on the last m_joinedStream.
 		streams.clear();
 		m_joinedStream->findUsedStreams(streams);
-		streams.insert(0, streams.getCount());
 
 		// Build the sort key. It's the order items following the partition items.
 
