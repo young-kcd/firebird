@@ -11,7 +11,7 @@
 
 @sed -n "/%%type .*/p" < %FB_ROOT_PATH%\src\dsql\parse.y > y.types
 @sed "s/%%type .*//" < %FB_ROOT_PATH%\src\dsql\parse.y > y.y
-@sed -i "/\/*\*\* TYPES \*\*\*\//r" y.types y.y
+@sed -i "/\/*\*\* TYPES \*\*\*\//r y.types" y.y
 
 %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\btyacc\btyacc -l -d -S %FB_ROOT_PATH%\src\dsql\btyacc_fb.ske y.y
 @if errorlevel 1 (exit /B 1)
@@ -21,5 +21,6 @@
 @del y.types
 @del y_tab.h
 @del y_tab.c
+@del sed*
 
 :END
