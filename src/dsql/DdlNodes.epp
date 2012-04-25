@@ -24,7 +24,6 @@
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
-#include "../dsql/node.h"
 #include "../jrd/blr.h"
 #include "../jrd/btr.h"
 #include "../jrd/dyn.h"
@@ -84,7 +83,6 @@ namespace
 namespace Jrd {
 
 using namespace Firebird;
-using namespace Dsql;
 
 static void checkForeignKeyTempScope(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName&	childRelName, const MetaName& masterIndexName);
@@ -93,8 +91,8 @@ static void checkSpTrigDependency(thread_db* tdbb, jrd_tra* transaction,
 static void checkViewDependency(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName);
 static void clearPermanentField(dsql_rel* relation, bool permanent);
-static void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_fld* field,
-	const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value);
+static void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relation,
+	dsql_fld* field, const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value);
 static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& constraintName, const MetaName& indexName);
 static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber, bool manualShadow,
@@ -292,7 +290,7 @@ static void clearPermanentField(dsql_rel* relation, bool permanent)
 }
 
 // Define a COMPUTED BY clause, for a field or an index.
-void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_fld* field,
+void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relation, dsql_fld* field,
 	const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
 {
 	// Get the table node and set up correct context.
@@ -319,7 +317,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, dsql_nod* relation, dsql_f
 
 	PASS1_make_context(dsqlScratch, relation);
 
-	dsql_nod* input = PASS1_node(dsqlScratch, clause->value);
+	ValueExprNode* input = Node::doDsqlPass(dsqlScratch, clause->value);
 
 	// Try to calculate size of the computed field. The calculated size
 	// may be ignored, but it will catch self references.
@@ -824,8 +822,8 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 	Attachment* const attachment = transaction->tra_attachment;
 	const string& userName = attachment->att_user->usr_user_name;
 
-	const dsql_nod* elements = field.legacyField->fld_ranges;
-	const USHORT dims = elements ? elements->nod_count / 2 : 0;
+	const ValueListNode* elements = field.legacyField->fld_ranges;
+	const USHORT dims = elements ? elements->dsqlArgs.getCount() / 2 : 0;
 
 	if (dims > MAX_ARRAY_DIMENSIONS)
 	{
@@ -890,13 +888,15 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 		requestHandle.reset(tdbb, drq_s_fld_dym, DYN_REQUESTS);
 
 		SSHORT position = 0;
-		const dsql_nod* const* ptr = elements->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ++ptr, ++position)
+		const ValueExprNode* const* ptr = elements->dsqlArgs.begin();
+		for (const ValueExprNode* const* const end = elements->dsqlArgs.end();
+			 ptr != end;
+			 ++ptr, ++position)
 		{
-			const dsql_nod* element = *ptr++;
-			const SLONG lrange = ExprNode::as<LiteralNode>(element)->getSlong();
+			const ValueExprNode* element = *ptr++;
+			const SLONG lrange = element->as<LiteralNode>()->getSlong();
 			element = *ptr;
-			const SLONG hrange = ExprNode::as<LiteralNode>(element)->getSlong();
+			const SLONG hrange = element->as<LiteralNode>()->getSlong();
 
 			if (lrange >= hrange)
 			{
@@ -975,11 +975,11 @@ void TypeClause::print(string& text) const
 
 
 ParameterClause::ParameterClause(MemoryPool& pool, dsql_fld* field, const MetaName& aCollate,
-			ValueSourceClause* aDefaultClause, dsql_nod* aLegacyParameter)
+			ValueSourceClause* aDefaultClause, ValueExprNode* aParameterExpr)
 	: TypeClause(pool, field, aCollate),
 	  name(pool, field ? field->fld_name : ""),
 	  defaultClause(aDefaultClause),
-	  legacyParameter(aLegacyParameter)
+	  parameterExpr(aParameterExpr)
 {
 }
 
@@ -994,7 +994,7 @@ void ParameterClause::print(string& text) const
 //----------------------
 
 
-void AlterCharSetNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void AlterCharSetNode::print(string& text) const
 {
 	text.printf(
 		"AlterCharSetNode\n"
@@ -1061,7 +1061,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CommentOnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CommentOnNode::print(string& text) const
 {
 	text.printf(
 		"CommentOnNode\n"
@@ -1301,7 +1301,7 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 //----------------------
 
 
-void CreateAlterFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateAlterFunctionNode::print(string& text) const
 {
 	text.printf(
 		"CreateAlterFunctionNode\n"
@@ -1378,7 +1378,7 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		if (parameter.defaultClause)
 		{
 			hasDefaultParams = true;
-			parameter.defaultClause->value = PASS1_node(dsqlScratch, parameter.defaultClause->value);
+			parameter.defaultClause->value = doDsqlPass(dsqlScratch, parameter.defaultClause->value);
 		}
 		else if (hasDefaultParams)
 		{
@@ -2004,7 +2004,7 @@ void CreateAlterFunctionNode::collectParamComments(thread_db* tdbb, jrd_tra* tra
 //----------------------
 
 
-void AlterExternalFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void AlterExternalFunctionNode::print(string& text) const
 {
 	text.printf(
 		"AlterExternalFunctionNode\n"
@@ -2117,7 +2117,7 @@ void DropFunctionNode::dropArguments(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 }
 
-void DropFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropFunctionNode::print(string& text) const
 {
 	text.printf(
 		"DropFunctionNode\n"
@@ -2202,7 +2202,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CreateAlterProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateAlterProcedureNode::print(string& text) const
 {
 	text.printf(
 		"CreateAlterProcedureNode\n"
@@ -2296,7 +2296,7 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		if (parameter.defaultClause)
 		{
 			hasDefaultParams = true;
-			parameter.defaultClause->value = PASS1_node(dsqlScratch, parameter.defaultClause->value);
+			parameter.defaultClause->value = doDsqlPass(dsqlScratch, parameter.defaultClause->value);
 		}
 		else if (hasDefaultParams)
 		{
@@ -2842,7 +2842,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 }
 
-void DropProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropProcedureNode::print(string& text) const
 {
 	text.printf(
 		"DropProcedureNode\n"
@@ -3069,7 +3069,7 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CreateAlterTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateAlterTriggerNode::print(string& text) const
 {
 	text.printf(
 		"CreateAlterTriggerNode\n"
@@ -3201,16 +3201,12 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 			RelationSourceNode* relationNode = FB_NEW(getPool()) RelationSourceNode(getPool(),
 				relationName);
 
-			dsql_nod* relationNod = MAKE_node(nod_class_exprnode, 1);
-			///trigger_node->nod_arg[e_trg_table] = relationNod;
-			relationNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(relationNode);
-
 			const string temp = relationNode->alias;	// always empty?
 
 			if (hasOldContext(type.value))
 			{
 				relationNode->alias = OLD_CONTEXT;
-				dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNod);
+				dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNode);
 				oldContext->ctx_flags |= CTX_system;
 			}
 			else
@@ -3219,7 +3215,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 			if (hasNewContext(type.value))
 			{
 				relationNode->alias = NEW_CONTEXT;
-				dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNod);
+				dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNode);
 				newContext->ctx_flags |= CTX_system;
 			}
 			else
@@ -3272,7 +3268,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 //----------------------
 
 
-void DropTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropTriggerNode::print(string& text) const
 {
 	text.printf(
 		"DropTriggerNode\n"
@@ -3398,7 +3394,7 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 //----------------------
 
 
-void CreateCollationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateCollationNode::print(string& text) const
 {
 	text.printf(
 		"CreateCollationNode\n"
@@ -3616,7 +3612,7 @@ DdlNode* CreateCollationNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 //----------------------
 
 
-void DropCollationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropCollationNode::print(string& text) const
 {
 	text.printf(
 		"DropCollationNode\n"
@@ -3763,7 +3759,7 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 //----------------------
 
 
-void CreateDomainNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateDomainNode::print(string& text) const
 {
 	string nameTypeStr;
 	nameType.print(nameTypeStr);
@@ -3785,8 +3781,8 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			Arg::Gds(isc_dsql_implicit_domain_name) << nameType.name);
 	}
 
-	const dsql_nod* elements = nameType.legacyField->fld_ranges;
-	const USHORT dims = elements ? elements->nod_count / 2 : 0;
+	const ValueListNode* elements = nameType.legacyField->fld_ranges;
+	const USHORT dims = elements ? elements->dsqlArgs.getCount() / 2 : 0;
 
 	if (nameType.defaultClause && dims != 0)
 	{
@@ -3826,7 +3822,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 					dsqlScratch->getBlrData().clear();
 					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
 
-					dsql_nod* node = PASS1_node(dsqlScratch, nameType.defaultClause->value);
+					ValueExprNode* node = doDsqlPass(dsqlScratch, nameType.defaultClause->value);
 
 					GEN_expr(dsqlScratch, node);
 
@@ -3854,7 +3850,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 					// -- chrisj 1999-08-20
 					++dsqlScratch->contextNumber;
 
-					dsql_nod* node = PASS1_node(dsqlScratch, check->value);
+					BoolExprNode* node = doDsqlPass(dsqlScratch, check->value);
 
 					GEN_expr(dsqlScratch, node);
 
@@ -4304,7 +4300,7 @@ void AlterDomainNode::modifyLocalFieldIndex(thread_db* tdbb, jrd_tra* transactio
 	END_FOR
 }
 
-void AlterDomainNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void AlterDomainNode::print(string& text) const
 {
 	text.printf(
 		"AlterDomainNode\n"
@@ -4383,7 +4379,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				// -- chrisj 1999-08-20
 				++dsqlScratch->contextNumber;
 
-				dsql_nod* node = PASS1_node(dsqlScratch, setConstraint->value);
+				BoolExprNode* node = doDsqlPass(dsqlScratch, setConstraint->value);
 
 				GEN_expr(dsqlScratch, node);
 
@@ -4409,7 +4405,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				dsqlScratch->getBlrData().clear();
 				dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
 
-				dsql_nod* node = PASS1_node(dsqlScratch, setDefault->value);
+				ValueExprNode* node = doDsqlPass(dsqlScratch, setDefault->value);
 
 				GEN_expr(dsqlScratch, node);
 
@@ -4612,7 +4608,7 @@ bool DropDomainNode::deleteDimensionRecords(thread_db* tdbb, jrd_tra* transactio
 	return found;
 }
 
-void DropDomainNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropDomainNode::print(string& text) const
 {
 	text.printf(
 		"DropDomainNode\n"
@@ -4731,7 +4727,7 @@ void DropDomainNode::check(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void CreateAlterExceptionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateAlterExceptionNode::print(string& text) const
 {
 	text.printf(
 		"CreateAlterExceptionNode\n"
@@ -4857,7 +4853,7 @@ bool CreateAlterExceptionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 //----------------------
 
 
-void DropExceptionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropExceptionNode::print(string& text) const
 {
 	text.printf(
 		"DropExceptionNode\n"
@@ -4915,7 +4911,7 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 //----------------------
 
 
-void CreateSequenceNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateSequenceNode::print(string& text) const
 {
 	text.printf(
 		"CreateSequenceNode\n"
@@ -4989,7 +4985,7 @@ void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const Meta
 
 //----------------------
 
-void DropSequenceNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropSequenceNode::print(string& text) const
 {
 	text.printf(
 		"DropSequenceNode\n"
@@ -5065,10 +5061,10 @@ void DropSequenceNode::deleteIdentity(thread_db* tdbb, jrd_tra* transaction, con
 //----------------------
 
 
-RelationNode::RelationNode(MemoryPool& p, dsql_nod* aDsqlNode)
+RelationNode::RelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode)
 	: DdlNode(p),
 	  dsqlNode(aDsqlNode),
-	  name(p, ExprNode::as<RelationSourceNode>(aDsqlNode)->dsqlName),
+	  name(p, dsqlNode->dsqlName),
 	  clauses(p)
 {
 }
@@ -5565,7 +5561,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
 	dsql_fld* /*field*/, const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
 {
-	dsql_nod* input = PASS1_node(dsqlScratch, clause->value);
+	ValueExprNode* input = doDsqlPass(dsqlScratch, clause->value);
 
 	// Generate the blr expression.
 
@@ -5981,7 +5977,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 // Generate triggers to implement the CHECK clause, either at the field or table level.
 void RelationNode::defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-	const ValueSourceClause* clause)
+	const BoolSourceClause* clause)
 {
 	// Create the INSERT trigger.
 	defineCheckConstraintTrigger(dsqlScratch, constraint, clause, PRE_STORE_TRIGGER);
@@ -5992,7 +5988,7 @@ void RelationNode::defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Const
 
 // Define a check constraint trigger.
 void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch,
-	Constraint& constraint, const ValueSourceClause* clause, FB_UINT64 triggerType)
+	Constraint& constraint, const BoolSourceClause* clause, FB_UINT64 triggerType)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -6027,11 +6023,11 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	// errors in pre_store and pre_modify triggers. Also, what sense can I make from NEW in
 	// pre_delete? However, we clash at JRD with "no current record for fetch operation".
 
-	ExprNode::as<RelationSourceNode>(dsqlNode)->alias = OLD_CONTEXT;
+	dsqlNode->alias = OLD_CONTEXT;
 	dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, dsqlNode);
 	oldContext->ctx_flags |= CTX_system;
 
-	ExprNode::as<RelationSourceNode>(dsqlNode)->alias = NEW_CONTEXT;
+	dsqlNode->alias = NEW_CONTEXT;
 	dsql_ctx* newContext = PASS1_make_context(dsqlScratch, dsqlNode);
 	newContext->ctx_flags |= CTX_system;
 
@@ -6039,9 +6035,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 
 	NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(pool, clause->value);
 
-	dsql_nod* condition = MAKE_node(Dsql::nod_class_exprnode, 1);
-	condition->nod_arg[0] = reinterpret_cast<dsql_nod*>(notNode);
-	condition = PASS1_node(dsqlScratch, condition);
+	BoolExprNode* condition = notNode->dsqlPass(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, condition);
@@ -6422,7 +6416,7 @@ void RelationNode::stuffTriggerFiringCondition(const Constraint& constraint, Blr
 //----------------------
 
 
-void CreateRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateRelationNode::print(string& text) const
 {
 	text.printf(
 		"CreateRelationNode\n"
@@ -6560,7 +6554,7 @@ const ObjectsArray<MetaName>* CreateRelationNode::findPkColumns()
 //----------------------
 
 
-void AlterRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void AlterRelationNode::print(string& text) const
 {
 	text.printf(
 		"AlterRelationNode\n"
@@ -6575,15 +6569,17 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 	if (!dsqlScratch->relation)
 	{
-		TEXT linecol[64];
-		sprintf(linecol, "At line %d, column %d.",
-			(int) dsqlNode->nod_line, (int) dsqlNode->nod_column);
+		//// TODO: <Missing arg #1 - possibly status vector overflow>
+		/***
+		char linecol[64];
+		sprintf(linecol, "At line %d, column %d.", (int) dsqlNode->line, (int) dsqlNode->column);
+		***/
 
 		status_exception::raise(
 			Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 			Arg::Gds(isc_dsql_relation_err) <<
-			Arg::Gds(isc_random) << name <<
-			Arg::Gds(isc_random) << linecol);
+			Arg::Gds(isc_random) << name /***<<
+			Arg::Gds(isc_random) << linecol***/);
 	}
 
 	// If there is an error, get rid of the cached data.
@@ -7201,7 +7197,7 @@ void DropRelationNode::deleteGlobalField(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 }
 
-void DropRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropRelationNode::print(string& text) const
 {
 	text.printf(
 		"DropRelationNode\n"
@@ -7429,7 +7425,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CreateAlterViewNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateAlterViewNode::print(string& text) const
 {
 	text.printf(
 		"CreateAlterViewNode\n"
@@ -7477,7 +7473,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	DDL_reset_context_stack(dsqlScratch);
 	++dsqlScratch->contextNumber;
-	dsql_nod* rse = PASS1_rse(dsqlScratch, selectExpr, NULL);
+	RseNode* rse = PASS1_rse(dsqlScratch, selectExpr, NULL);
 
 	dsqlScratch->getBlrData().clear();
 	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
@@ -7645,33 +7641,33 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	// SELECT. Otherwise use all the fields from the rse node that was created from the select
 	// expression.
 
-	const dsql_nod* const* ptr = NULL;
-	const dsql_nod* const* end = NULL;
+	const ValueExprNode* const* ptr = NULL;
+	const ValueExprNode* const* end = NULL;
 
 	if (viewFields)
 	{
-		ptr = viewFields->nod_arg;
-		end = ptr + viewFields->nod_count;
+		ptr = viewFields->dsqlArgs.begin();
+		end = viewFields->dsqlArgs.end();
 	}
 
 	// Go through the fields list, defining or modifying the local fields;
 	// If an expression is specified rather than a field, define a global
 	// field for the computed value as well.
 
-	dsql_nod* items = ExprNode::as<RseNode>(rse)->dsqlSelectList;
-	dsql_nod** itemsPtr = items->nod_arg;
+	ValueListNode* items = rse->dsqlSelectList;
+	ValueExprNode** itemsPtr = items->dsqlArgs.begin();
 	SortedArray<dsql_fld*> modifiedFields;
 	bool updatable = true;
 	SSHORT position = 0;
 
-	for (const dsql_nod* const* const itemsEnd = itemsPtr + items->nod_count;
+	for (const ValueExprNode* const* const itemsEnd = items->dsqlArgs.end();
 		 itemsPtr < itemsEnd; ++itemsPtr, ++position)
 	{
-		dsql_nod* fieldNode = *itemsPtr;
+		ValueExprNode* fieldNode = *itemsPtr;
 
 		// Determine the proper field name, replacing the default if necessary.
 
-		const dsql_nod* nameNode = fieldNode;
+		const ValueExprNode* nameNode = fieldNode;
 		const char* aliasName = NULL;
 
 		while (ExprNode::is<DsqlAliasNode>(nameNode) ||
@@ -7960,8 +7956,9 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_col_name_err));
 		}
 
-		dsql_nod* querySpecNod = ExprNode::as<SelectExprNode>(selectExpr)->querySpec;
+		RecordSourceNode* querySpecNod = selectExpr->querySpec;
 
+#if 0	//// FIXME:
 		if (querySpecNod->nod_type == Dsql::nod_list)
 		{
 			// Only one table allowed for VIEW WITH CHECK OPTION
@@ -7970,11 +7967,12 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_dsql_command_err) <<
 				Arg::Gds(isc_table_view_err));
 		}
+#endif
 
 		RseNode* querySpec = ExprNode::as<RseNode>(querySpecNod);
 		fb_assert(querySpec);
 
-		if (querySpec->dsqlFrom->nod_count != 1)
+		if (querySpec->dsqlFrom->dsqlArgs.getCount() != 1)
 		{
 			// Only one table allowed for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -8017,7 +8015,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 // Generate triggers to implement the WITH CHECK OPTION clause for a VIEW.
 void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* items)
+	ValueListNode* items)
 {
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
@@ -8031,34 +8029,31 @@ void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScrat
 
 	// Create the UPDATE trigger.
 
-	dsql_nod* baseAndNode = NULL;
-	dsql_nod* baseRelation = NULL;
+	BoolExprNode* baseAndNode = NULL;
+	RelationSourceNode* baseRelation = NULL;
 	defineUpdateAction(dsqlScratch, &baseAndNode, &baseRelation, items);
 	fb_assert(baseAndNode);
 	fb_assert(baseRelation);
 
 	RseNode* rse = FB_NEW(pool) RseNode(pool);
 	rse->dsqlWhere = baseAndNode;
-	rse->dsqlStreams = MAKE_node(Dsql::nod_list, 1);
-	rse->dsqlStreams->nod_arg[0] = baseRelation;
+	rse->dsqlStreams = FB_NEW(pool) RecSourceListNode(pool, 1);
+	rse->dsqlStreams->dsqlArgs[0] = baseRelation;
 
-	dsql_nod* rseNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-	rseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(rse);
-
-	createCheckTrigger(tdbb, dsqlScratch, rseNod, items, actionNode, PRE_MODIFY_TRIGGER);
+	createCheckTrigger(tdbb, dsqlScratch, rse, items, actionNode, PRE_MODIFY_TRIGGER);
 	createCheckTrigger(tdbb, dsqlScratch, NULL, items, actionNode, PRE_STORE_TRIGGER);
 }
 
 // Define a trigger for a VIEW WITH CHECK OPTION.
 void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* rse, dsql_nod* items, CompoundStmtNode* actions, TriggerType triggerType)
+	RseNode* rse, ValueListNode* items, CompoundStmtNode* actions, TriggerType triggerType)
 {
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
 
-	const dsql_nod* querySpecNod = ExprNode::as<SelectExprNode>(selectExpr)->querySpec;
-	dsql_nod* relationNode = dsqlNode;
+	const RecordSourceNode* querySpecNod = selectExpr->querySpec;
+	RelationSourceNode* relationNode = dsqlNode;
 
 	// Generate the trigger blr.
 
@@ -8091,17 +8086,17 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	DDL_reset_context_stack(dsqlScratch);
 
-	string tempAlias = ExprNode::as<RelationSourceNode>(relationNode)->alias;
+	string tempAlias = relationNode->alias;
 
-	ExprNode::as<RelationSourceNode>(relationNode)->alias = OLD_CONTEXT;
+	relationNode->alias = OLD_CONTEXT;
 	dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNode);
 	oldContext->ctx_flags |= CTX_system;
 
-	ExprNode::as<RelationSourceNode>(relationNode)->alias = NEW_CONTEXT;
+	relationNode->alias = NEW_CONTEXT;
 	dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNode);
 	newContext->ctx_flags |= CTX_system;
 
-	ExprNode::as<RelationSourceNode>(relationNode)->alias = tempAlias;
+	relationNode->alias = tempAlias;
 
 	if (savContext)
 	{
@@ -8115,30 +8110,26 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 	const RseNode* querySpec = ExprNode::as<RseNode>(querySpecNod);
 	fb_assert(querySpec);
 
-	dsql_nod* condition;
-
 	if (triggerType == PRE_MODIFY_TRIGGER)
 	{
 		dsqlScratch->appendUChar(blr_for);
 
-		RseNode* rseNode = ExprNode::as<RseNode>(rse);
-
-		rseNode->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, rseNode->dsqlStreams->nod_arg[0]);
-		rseNode->dsqlWhere = PASS1_node(dsqlScratch, rseNode->dsqlWhere);
+		rse->dsqlStreams->dsqlArgs[0] = doDsqlPass(dsqlScratch, rse->dsqlStreams->dsqlArgs[0]);
+		rse->dsqlWhere = doDsqlPass(dsqlScratch, rse->dsqlWhere);
 
 		GEN_expr(dsqlScratch, rse);
 
-		condition = replaceFieldNames(querySpec->dsqlWhere, items, viewFields, false, NEW_CONTEXT);
+		replaceFieldNames(querySpec->dsqlWhere, items, viewFields, false, NEW_CONTEXT);
 	}
 	else if (triggerType == PRE_STORE_TRIGGER)
-		condition = replaceFieldNames(querySpec->dsqlWhere, items, viewFields, true, NEW_CONTEXT);
+		replaceFieldNames(querySpec->dsqlWhere, items, viewFields, true, NEW_CONTEXT);
 	else
-	{
 		fb_assert(false);
-	}
+
+	BoolExprNode* condition = querySpec->dsqlWhere;
 
 	dsqlScratch->appendUChar(blr_if);
-	GEN_expr(dsqlScratch, PASS1_node(dsqlScratch, condition));
+	GEN_expr(dsqlScratch, doDsqlPass(dsqlScratch, condition));
 	dsqlScratch->appendUChar(blr_begin);
 	dsqlScratch->appendUChar(blr_end);
 
@@ -8165,7 +8156,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 // Define an action statement which, given a view definition, will map an update to a record from
 // a view of a single relation into the base relation.
 void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod** baseAndNode, dsql_nod** baseRelation, dsql_nod* items)
+	BoolExprNode** baseAndNode, RelationSourceNode** baseRelation, ValueListNode* items)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -8173,9 +8164,9 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 	// Check whether this is an updatable view definition.
 
 	RseNode* querySpec = ExprNode::as<RseNode>(ExprNode::as<SelectExprNode>(selectExpr)->querySpec);
-	dsql_nod* fromList = NULL;
+	RecSourceListNode* fromList = NULL;
 
-	if (!querySpec || !(fromList = querySpec->dsqlFrom) || fromList->nod_count != 1)
+	if (!querySpec || !(fromList = querySpec->dsqlFrom) || fromList->dsqlArgs.getCount() != 1)
 	{
 		// The caller seems throwing proper errors for all the above conditions.
 		// But just in case it doesn't, here we have the final attempt to prevent the bad things.
@@ -8185,31 +8176,28 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 	// Use the relation referenced in the select statement for rse.
 
 	RelationSourceNode* relationNode = FB_NEW(pool) RelationSourceNode(pool,
-		ExprNode::as<RelationSourceNode>(fromList->nod_arg[0])->dsqlName);
+		ExprNode::as<ProcedureSourceNode>(fromList->dsqlArgs[0])->dsqlName.identifier);
 	relationNode->alias = TEMP_CONTEXT;
 
-	*baseRelation = MAKE_node(nod_class_exprnode, 1);
-	(*baseRelation)->nod_arg[0] = reinterpret_cast<dsql_nod*>(relationNode);
+	*baseRelation = relationNode;
 
 	// Get the list of values and fields to compare to -- if there is no list of fields, get all
 	// fields in the base relation that are not computed.
 
-	dsql_nod* valuesNode = viewFields;
-	dsql_nod* fieldsNode = querySpec->dsqlSelectList;
+	ValueListNode* valuesNode = viewFields;
+	ValueListNode* fieldsNode = querySpec->dsqlSelectList;
 
 	if (!fieldsNode)
 	{
 		const dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(),
 			dsqlScratch, name);
-		DsqlNodStack field_stack;
+		fieldsNode = FB_NEW(pool) ValueListNode(pool, 0u);
 
 		for (const dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
 		{
 			if (!(field->fld_flags & FLD_computed))
-				field_stack.push(MAKE_field_name(field->fld_name.c_str()));
+				fieldsNode->add(MAKE_field_name(field->fld_name.c_str()));
 		}
-
-		fieldsNode = MAKE_list(field_stack);
 	}
 
 	if (!valuesNode)
@@ -8217,20 +8205,17 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	// Generate the list of assignments to fields in the base relation.
 
-	dsql_nod** ptr = fieldsNode->nod_arg;
-	const dsql_nod* const* const end = ptr + fieldsNode->nod_count;
-	dsql_nod** ptr2 = valuesNode->nod_arg;
-	const dsql_nod* const* const end2 = ptr2 + valuesNode->nod_count;
+	ValueExprNode** ptr = fieldsNode->dsqlArgs.begin();
+	const ValueExprNode* const* const end = fieldsNode->dsqlArgs.end();
+	ValueExprNode** ptr2 = valuesNode->dsqlArgs.begin();
+	const ValueExprNode* const* const end2 = valuesNode->dsqlArgs.end();
 	int andArg = 0;
 
 	BinaryBoolNode* andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and);
 
-	dsql_nod* andNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-	andNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(andNode);
-
 	for (; (ptr < end) && (ptr2 < end2); ptr++, ptr2++)
 	{
-		dsql_nod* fieldNod = *ptr;
+		ValueExprNode* fieldNod = *ptr;
 		DsqlAliasNode* aliasNode;
 
 		if ((aliasNode = ExprNode::as<DsqlAliasNode>(fieldNod)))
@@ -8248,110 +8233,69 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 			oldValueNode->dsqlName = ExprNode::as<FieldNode>(*ptr2)->dsqlName;
 			oldValueNode->dsqlQualifier = OLD_CONTEXT;
 
-			dsql_nod* oldValueNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-			oldValueNod->nod_arg[0] = (dsql_nod*) oldValueNode;
-
 			ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-				blr_eql, oldValueNod, fieldNod);
+				blr_eql, oldValueNode, fieldNod);
 
-			dsql_nod* eqlNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-			eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
+			BinaryBoolNode* andNode2 = FB_NEW(pool) BinaryBoolNode(pool, blr_and,
+				FB_NEW(pool) MissingBoolNode(pool, oldValueNode),
+				FB_NEW(pool) MissingBoolNode(pool, fieldNod));
 
-			BinaryBoolNode* andNode2 = FB_NEW(pool) BinaryBoolNode(
-				pool, blr_and, MAKE_node(Dsql::nod_class_exprnode, 1),
-				MAKE_node(Dsql::nod_class_exprnode, 1));
-
-			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
-				pool, oldValueNod);
-			andNode2->dsqlArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
-
-			missingNode = FB_NEW(pool) MissingBoolNode(pool, fieldNod);
-			andNode2->dsqlArg2->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
-
-			ComparativeBoolNode* orNode = FB_NEW(pool) ComparativeBoolNode(
-				pool, blr_or, eqlNod, MAKE_node(Dsql::nod_class_exprnode, 1));
-			orNode->dsqlArg2->nod_arg[0] = reinterpret_cast<dsql_nod*>(andNode2);
-
-			dsql_nod* orNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-			orNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(orNode);
+			BinaryBoolNode* orNode = FB_NEW(pool) BinaryBoolNode(pool, blr_or, eqlNode, andNode2);
 
 			if (andArg == 0)
 			{
 				++andArg;
-				andNode->dsqlArg1 = orNod;
+				andNode->dsqlArg1 = orNode;
 			}
 			else if (andArg == 1)
 			{
 				++andArg;
-				andNode->dsqlArg2 = orNod;
+				andNode->dsqlArg2 = orNode;
 			}
 			else
-			{
-				dsql_nod* oldAnd = andNod;
-
-				andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and, oldAnd, orNod);
-
-				andNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-				andNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(andNode);
-			}
+				andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and, andNode, orNode);
 		}
 	}
 
 	if (andArg == 0)
-		andNode->dsqlArg1 = replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT);
+		replaceFieldNames((andNode->dsqlArg1 = querySpec->dsqlWhere), items, NULL, false, TEMP_CONTEXT);
 	else if (andArg == 1)
-		andNode->dsqlArg2 = replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT);
+		replaceFieldNames((andNode->dsqlArg2 = querySpec->dsqlWhere), items, NULL, false, TEMP_CONTEXT);
 	else
 	{
-		dsql_nod* oldAnd = andNod;
-
-		andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and, oldAnd,
-			replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT));
-
-		andNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-		andNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(andNode);
+		replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT);
+		andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and, andNode, querySpec->dsqlWhere);
 	}
 
-	*baseAndNode = andNod;
+	*baseAndNode = andNode;
 }
 
 // Given an input node tree, find any field name nodes and replace them according to the mapping
 // provided. This is used to create view WITH CHECK OPTION.
-dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* searchFields,
-	dsql_nod* replaceFields, bool nullThem, const char* contextName)
+void CreateAlterViewNode::replaceFieldNames(ExprNode* input, ValueListNode* searchFields,
+	ValueListNode* replaceFields, bool nullThem, const char* contextName)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	if (!input || input->getType() != dsql_type_nod)
-		return input;
+	if (!input)
+		return;
 
-	Array<dsql_nod**> temp;
+	Array<ExprNode*> temp;
 
-	if (input->nod_type == nod_class_exprnode)
+	for (NodeRef** i = input->dsqlChildNodes.begin(); i != input->dsqlChildNodes.end(); ++i)
 	{
-		ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
-
-		for (dsql_nod*** i = exprNode->dsqlChildNodes.begin();
-			 i != exprNode->dsqlChildNodes.end(); ++i)
-		{
-			if (**i)
-				temp.add(*i);
-		}
-	}
-	else
-	{
-		for (dsql_nod** ptr = input->nod_arg; ptr != input->nod_arg + input->nod_count; ++ptr)
-			temp.add(ptr);
+		if (*i && (*i)->getExpr())
+			temp.add((*i)->getExpr());
 	}
 
-	for (dsql_nod*** ptr = temp.begin(); ptr != temp.end(); ++ptr)
+	for (ExprNode** ptr = temp.begin(); ptr != temp.end(); ++ptr)
 	{
-		dsql_nod**& ptrNode = *ptr;
+		ExprNode*& ptrNode = *ptr;
 
-		if (!*ptrNode)
+		if (!ptrNode)
 			continue;
 
-		if (ExprNode::as<SelectExprNode>(*ptrNode))
+		if (ptrNode->as<SelectExprNode>())
 		{
 			// No subqueries permitted for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -8360,28 +8304,28 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 				Arg::Gds(isc_subquery_err));
 		}
 
-		FieldNode* fieldNode = ExprNode::as<FieldNode>(*ptrNode);
+		FieldNode* fieldNode = ptrNode->as<FieldNode>();
 
 		if (fieldNode)
 		{
 			// Found a field node, check if it needs to be replaced.
 
-			dsql_nod** search = searchFields->nod_arg;
-			const dsql_nod* const* const end = search + searchFields->nod_count;
-			dsql_nod** replace = NULL;
+			ValueExprNode** search = searchFields->dsqlArgs.begin();
+			const ValueExprNode* const* const end = searchFields->dsqlArgs.end();
+			ValueExprNode** replace = NULL;
 
 			if (replaceFields)
-				replace = replaceFields->nod_arg;
+				replace = replaceFields->dsqlArgs.begin();
 
 			bool found = false;
 
 			for (; search < end; ++search, replace += (replaceFields ? 1 : 0))
 			{
-				FieldNode* replaceField = ExprNode::as<FieldNode>(*replace);
+				FieldNode* replaceField = replace ? (*replace)->as<FieldNode>() : NULL;
 
 				MetaName replaceName(replaceFields ? replaceField->dsqlName : "");
 
-				const dsql_fld* field = ExprNode::as<FieldNode>(*search)->dsqlField;
+				const dsql_fld* field = (*search)->as<FieldNode>()->dsqlField;
 
 				if (field->fld_name == fieldNode->dsqlName.c_str())
 				{
@@ -8398,20 +8342,14 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 			}
 
 			if (nullThem && !found)
-			{
-				(*ptrNode) = MAKE_node(nod_class_exprnode, 1);
-				(*ptrNode)->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-					FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-			}
+				ptrNode = FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 		}
 		else
 		{
 			// Recursively go through the input tree looking for field name nodes.
-			replaceFieldNames(*ptrNode, searchFields, replaceFields, nullThem, contextName);
+			replaceFieldNames(ptrNode, searchFields, replaceFields, nullThem, contextName);
 		}
 	}
-
-	return input;
 }
 
 
@@ -8753,7 +8691,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 }
 
 
-void CreateIndexNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateIndexNode::print(string& text) const
 {
 	text.printf(
 		"CreateIndexNode\n"
@@ -8773,19 +8711,19 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 	CreateIndexNode::Definition definition;
 	definition.type = isc_dyn_def_idx;
-	definition.relation = ExprNode::as<RelationSourceNode>(legacyRelation)->dsqlName;
+	definition.relation = relation->dsqlName;
 	definition.unique = unique;
 	definition.descending = descending;
 
 	if (columns)
 	{
-	    const dsql_nod* const* ptr = columns->nod_arg;
-	    const dsql_nod* const* const end = ptr + columns->nod_count;
+	    const ValueExprNode* const* ptr = columns->dsqlArgs.begin();
+	    const ValueExprNode* const* const end = columns->dsqlArgs.end();
 
 		for (; ptr != end; ++ptr)
 		{
 			MetaName& column = definition.columns.add();
-			column = ExprNode::as<FieldNode>(*ptr)->dsqlName;
+			column = (*ptr)->as<FieldNode>()->dsqlName;
 		}
 	}
 	else if (computed)
@@ -8793,7 +8731,7 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		string computedSource;
 		BlrWriter::BlrData computedValue;
 
-		defineComputed(dsqlScratch, legacyRelation, NULL, computed, computedSource, computedValue);
+		defineComputed(dsqlScratch, relation, NULL, computed, computedSource, computedValue);
 
 		attachment->storeMetaDataBlob(tdbb, transaction, &definition.expressionSource,
 			computedSource);
@@ -8811,7 +8749,7 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 //----------------------
 
 
-void AlterIndexNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void AlterIndexNode::print(string& text) const
 {
 	text.printf(
 		"AlterIndexNode\n"
@@ -8858,7 +8796,7 @@ void AlterIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 //----------------------
 
 
-void SetStatisticsNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void SetStatisticsNode::print(string& text) const
 {
 	text.printf(
 		"SetStatisticsNode\n"
@@ -8923,7 +8861,7 @@ bool DropIndexNode::deleteSegmentRecords(thread_db* tdbb, jrd_tra* transaction,
 	return found;
 }
 
-void DropIndexNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropIndexNode::print(string& text) const
 {
 	text.printf(
 		"DropIndexNode\n"
@@ -8973,7 +8911,7 @@ void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 //----------------------
 
 
-void CreateFilterNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateFilterNode::print(string& text) const
 {
 	text.printf(
 		"CreateFilterNode\n"
@@ -9038,7 +8976,7 @@ void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 //----------------------
 
 
-void DropFilterNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropFilterNode::print(string& text) const
 {
 	text.printf(
 		"DropFilterNode\n"
@@ -9076,7 +9014,7 @@ void DropFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch
 //----------------------
 
 
-void CreateShadowNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateShadowNode::print(string& text) const
 {
 	text.printf(
 		"CreateShadowNode\n"
@@ -9141,7 +9079,7 @@ void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 //----------------------
 
 
-void DropShadowNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropShadowNode::print(string& text) const
 {
 	text.printf(
 		"DropShadowNode\n"
@@ -9176,7 +9114,7 @@ void DropShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch
 //----------------------
 
 
-void CreateRoleNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateRoleNode::print(string& text) const
 {
 	text.printf(
 		"CreateRoleNode\n"
@@ -9280,7 +9218,7 @@ bool CreateRoleNode::isItUserName(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void AlterRoleNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void AlterRoleNode::print(string& text) const
 {
 	text.printf(
 		"AlterRoleNode\n"
@@ -9336,7 +9274,7 @@ void AlterRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 //----------------------
 
 
-void DropRoleNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropRoleNode::print(string& text) const
 {
 	text.printf(
 		"DropRoleNode\n"
@@ -9412,7 +9350,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 //----------------------
 
 
-void CreateAlterUserNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateAlterUserNode::print(string& text) const
 {
 	text.printf(
 		"CreateAlterUserNode\n"
@@ -9516,7 +9454,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 //----------------------
 
 
-void DropUserNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropUserNode::print(string& text) const
 {
 	text.printf(
 		"DropUserNode\n"
@@ -9554,7 +9492,7 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 //----------------------
 
 
-void GrantRevokeNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void GrantRevokeNode::print(string& text) const
 {
 	text.printf(
 		"GrantRevokeNode\n"
@@ -9567,39 +9505,39 @@ void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	const dsql_nod* const* usersPtr;
-	const dsql_nod* const* usersEnd;
+	const GranteeClause* usersPtr;
+	const GranteeClause* usersEnd;
 
-	if (!isGrant && !roles && !privileges && !table)	// REVOKE ALL ON ALL
+	if (!isGrant && roles.isEmpty() && privileges.isEmpty() && !table)	// REVOKE ALL ON ALL
 	{
-		usersEnd = users->nod_arg + users->nod_count;
-		for (usersPtr = users->nod_arg; usersPtr != usersEnd; ++usersPtr)
-			grantRevoke(tdbb, transaction, NULL, *usersPtr, grantor, NULL, NULL, 0);
+		usersEnd = users.end();
+		for (usersPtr = users.begin(); usersPtr != usersEnd; ++usersPtr)
+			grantRevoke(tdbb, transaction, NULL, usersPtr, NULL, NULL, 0);
 	}
 	else
 	{
 		SSHORT option = 0; // no grant/admin option
 
-		if (!roles)
+		if (roles.isEmpty())
 		{
 			if (grantAdminOption)
 				option = 1; // with grant option
 
-			usersEnd = users->nod_arg + users->nod_count;
-			for (usersPtr = users->nod_arg; usersPtr != usersEnd; ++usersPtr)
-				modifyPrivileges(tdbb, transaction, option, privileges, *usersPtr);
+			usersEnd = users.end();
+			for (usersPtr = users.begin(); usersPtr != usersEnd; ++usersPtr)
+				modifyPrivileges(tdbb, transaction, option, usersPtr);
 		}
 		else
 		{
 			if (grantAdminOption)
 				option = 2; // with admin option
 
-			const dsql_nod* const* rolesEnd = roles->nod_arg + roles->nod_count;
-			for (const dsql_nod* const* rolesPtr = roles->nod_arg; rolesPtr != rolesEnd; ++rolesPtr)
+			const GranteeClause* rolesEnd = roles.end();
+			for (const GranteeClause* rolesPtr = roles.begin(); rolesPtr != rolesEnd; ++rolesPtr)
 			{
-				usersEnd = users->nod_arg + users->nod_count;
-				for (usersPtr = users->nod_arg; usersPtr != usersEnd; ++usersPtr)
-					grantRevoke(tdbb, transaction, *rolesPtr, *usersPtr, grantor, "M", NULL, option);
+				usersEnd = users.end();
+				for (usersPtr = users.begin(); usersPtr != usersEnd; ++usersPtr)
+					grantRevoke(tdbb, transaction, rolesPtr, usersPtr, "M", NULL, option);
 			}
 		}
 	}
@@ -9607,140 +9545,69 @@ void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	savePoint.release();	// everything is ok
 }
 
-// Return a char indicating the privilege to be modified.
-char GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option,
-	const dsql_nod* privs, const dsql_nod* user)
+void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option,
+	const GranteeClause* user)
 {
-	char privileges[10];
-	const char* p = NULL;
-	const dsql_nod* const* ptr;
-	const dsql_nod* const* end;
+	string privs;
 
-	switch (privs->nod_type)
+	for (PrivilegeClause* i = privileges.begin(); i != privileges.end(); ++i)
 	{
-		case Dsql::nod_all:
-			p = "A";
-			break;
-
-		case Dsql::nod_select:
-			return 'S';
-
-		case Dsql::nod_execute:
-			return 'X';
-
-		case Dsql::nod_insert:
-			return 'I';
-
-		case Dsql::nod_references:
-		case Dsql::nod_update:
+		if (i->first == 'A')
+			grantRevoke(tdbb, transaction, table, user, "A", NULL, option);
+		else if (i->second)
 		{
-			p = (privs->nod_type == Dsql::nod_references) ? "R" : "U";
-			const dsql_nod* fields = privs->nod_arg[0];
-			if (!fields)
-				return *p;
+			char privs0[2] = {i->first, '\0'};
 
-			for (ptr = fields->nod_arg, end = ptr + fields->nod_count; ptr != end; ++ptr)
+			ValueListNode* fields = i->second;
+
+			for (ValueExprNode** ptr = fields->dsqlArgs.begin(); ptr != fields->dsqlArgs.end(); ++ptr)
 			{
-				grantRevoke(tdbb, transaction, table, user, grantor, p,
-					ExprNode::as<FieldNode>(*ptr)->dsqlName, option);
+				grantRevoke(tdbb, transaction, table, user, privs0,
+					(*ptr)->as<FieldNode>()->dsqlName, option);
 			}
-
-			return '\0';
 		}
-
-		case Dsql::nod_delete:
-			return 'D';
-
-		case Dsql::nod_list:
-		{
-			char* q = privileges;
-			p = q;
-
-			for (ptr = privs->nod_arg, end = ptr + privs->nod_count; ptr != end; ++ptr)
-			{
-				*q = modifyPrivileges(tdbb, transaction, option, *ptr, user);
-				if (*q)
-					q++;
-			}
-
-			*q = '\0';
-			break;
-		}
-
-		default:
-			break;
+		else
+			privs += i->first;
 	}
 
-	if (*p)
-		grantRevoke(tdbb, transaction, table, user, grantor, p, NULL, option);
-
-	return 0;
+	if (privs.hasData())
+		grantRevoke(tdbb, transaction, table, user, privs.c_str(), NULL, option);
 }
 
 // Execute SQL grant/revoke operation.
-void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* table,
-	const dsql_nod* userNod, const dsql_nod* grantorNod, const char* privs,
+void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* table,
+	const GranteeClause* userNod, const char* privs,
 	const MetaName& field, int options)
 {
-	SSHORT userType = -1;
+	SSHORT userType = userNod->first;
+	MetaName user(userNod->second);
     MetaName dummyName;
-	MetaName user(((dsql_str*) userNod->nod_arg[0])->str_data);
 
-	switch (userNod->nod_type)
+	switch (userType)
 	{
-		case Dsql::nod_user_group:		// GRANT priv ON tbl TO GROUP unix_group
-			userType = obj_user_group;
-			break;
-
-		case Dsql::nod_user_name:
-			if (userNod->nod_count == 2)
+		case obj_user_or_role:
+			// This test may become obsolete as we now allow explicit ROLE keyword.
+			if (isItSqlRole(tdbb, transaction, user, dummyName))
+			{
+				userType = obj_sql_role;
+				if (user == NULL_ROLE)
+				{
+					// msg 195: keyword NONE could not be used as SQL role name.
+					status_exception::raise(Arg::PrivateDyn(195) << user.c_str());
+				}
+			}
+			else
 			{
 				userType = obj_user;
 				user.upper7();
 			}
-			else
-			{
-				// This test may become obsolete as we now allow explicit ROLE keyword.
-				if (isItSqlRole(tdbb, transaction, user, dummyName))
-				{
-					userType = obj_sql_role;
-					if (user == NULL_ROLE)
-					{
-						// msg 195: keyword NONE could not be used as SQL role name.
-						status_exception::raise(Arg::PrivateDyn(195) << user.c_str());
-					}
-				}
-				else
-				{
-					userType = obj_user;
-					user.upper7();
-				}
-			}
 			break;
 
-		case Dsql::nod_package_obj:
-			userType = obj_package_header;
+		case obj_user:
+			user.upper7();
 			break;
 
-		case Dsql::nod_proc_obj:
-			userType = obj_procedure;
-			break;
-
-		case Dsql::nod_func_obj:
-			userType = obj_udf;
-			break;
-
-		case Dsql::nod_trig_obj:
-			userType = obj_trigger;
-			break;
-
-		case Dsql::nod_view_obj:
-			userType = obj_view;
-			break;
-
-		case Dsql::nod_role_name:
-			userType = obj_sql_role;
-
+		case obj_sql_role:
 			if (!isItSqlRole(tdbb, transaction, user, dummyName))
 			{
 				// msg 188: Role doesn't exist.
@@ -9752,17 +9619,12 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const d
 				status_exception::raise(Arg::PrivateDyn(195) << user.c_str());
 			}
 			break;
-
-		default:
-			fb_assert(false);
-			break;
 	}
 
-	MetaName grantorRevoker = grantorNod ?
-		((const dsql_str*) grantorNod->nod_arg[0])->str_data :
-		tdbb->getAttachment()->att_user->usr_user_name;
+	MetaName grantorRevoker(grantor ?
+		*grantor : tdbb->getAttachment()->att_user->usr_user_name);
 
-	if (grantorNod && !tdbb->getAttachment()->locksmith())
+	if (grantor && !tdbb->getAttachment()->locksmith())
 		status_exception::raise(Arg::PrivateDyn(252) << SYSDBA_USER_NAME);
 
 	grantorRevoker.upper7();
@@ -9808,35 +9670,14 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const d
 		return;
 	}
 
-	SSHORT objType = -1;
-
-	switch (table->nod_type)
-	{
-		case Dsql::nod_procedure_name:
-			objType = obj_procedure;
-			break;
-		case Dsql::nod_function_name:
-			objType = obj_udf;
-			break;
-		case Dsql::nod_package_name:
-			objType = obj_package_header;
-			break;
-		case Dsql::nod_role_name:
-			objType = obj_sql_role;
-			break;
-		default:
-			objType = obj_relation;
-			break;
-	}
+	SSHORT objType = table->first;
 
 	char privileges[16];
 	strcpy(privileges, privs);
 	if (strcmp(privileges, "A") == 0)
 		strcpy(privileges, ALL_PRIVILEGES);
 
-	MetaName object(objType == obj_relation ?
-		ExprNode::as<RelationSourceNode>(table)->dsqlName.c_str() :
-		((dsql_str*) table->nod_arg[0])->str_data);
+	MetaName object(table->second);
 
 	if (objType == obj_sql_role && object == NULL_ROLE)
 	{
@@ -10324,7 +10165,7 @@ void GrantRevokeNode::setFieldClassName(thread_db* tdbb, jrd_tra* transaction,
 //----------------------
 
 
-void AlterDatabaseNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void AlterDatabaseNode::print(string& text) const
 {
 	text.printf(
 		"AlterDatabaseNode\n");

@@ -75,7 +75,6 @@
 #include "../jrd/SysFunction.h"
 #include "../common/classes/MetaName.h"
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
 #include "../dsql/ExprNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/Attachment.h"
@@ -109,7 +108,6 @@
 #endif
 
 using namespace Jrd;
-using namespace Dsql;
 using namespace Firebird;
 
 
@@ -239,14 +237,13 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		if (field->fld_sub_type_name)
 		{
 			SSHORT blob_sub_type;
-			if (!METD_get_type(dsqlScratch->getTransaction(),
-					reinterpret_cast<const dsql_str*>(field->fld_sub_type_name)->str_data,
+			if (!METD_get_type(dsqlScratch->getTransaction(), field->fld_sub_type_name->str_data,
 					"RDB$FIELD_SUB_TYPE", &blob_sub_type))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 						  Arg::Gds(isc_dsql_datatype_err) <<
 						  Arg::Gds(isc_dsql_blob_type_unknown) <<
-						  		Arg::Str(((dsql_str*) field->fld_sub_type_name)->str_data));
+						  		Arg::Str(field->fld_sub_type_name->str_data));
 			}
 			field->fld_sub_type = blob_sub_type;
 		}
@@ -349,7 +346,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		}
 
 		if (dfl_charset)
-			field->fld_character_set = (dsql_nod*) dfl_charset;
+			field->fld_character_set = dfl_charset;
 		else
 		{
 			// If field is not specified with NATIONAL, or CHARACTER SET
@@ -367,7 +364,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 	if (field->fld_flags & FLD_national)
 		charset_name = NATIONAL_CHARACTER_SET;
 	else if (field->fld_character_set)
-		charset_name = ((dsql_str*) field->fld_character_set)->str_data;
+		charset_name = field->fld_character_set->str_data;
 
 	// Find an intlsym for any specified character set name & collation name
 	const dsql_intlsym* resolved_type = NULL;

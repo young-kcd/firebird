@@ -26,7 +26,6 @@
 #include "../jrd/blr.h"
 #include "../jrd/dyn.h"
 #include "../jrd/msg_encode.h"
-#include "../dsql/node.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/BlrWriter.h"
 #include "../dsql/Nodes.h"
@@ -39,6 +38,21 @@
 namespace Jrd {
 
 class CompoundStmtNode;
+class RelationSourceNode;
+class ValueListNode;
+
+
+struct BoolSourceClause
+{
+	explicit BoolSourceClause(MemoryPool& p)
+		: value(NULL),
+		  source(p)
+	{
+	}
+
+	BoolExprNode* value;
+	Firebird::string source;
+};
 
 
 struct ValueSourceClause
@@ -49,7 +63,7 @@ struct ValueSourceClause
 	{
 	}
 
-	dsql_nod* value;
+	ValueExprNode* value;
 	Firebird::string source;
 };
 
@@ -143,7 +157,7 @@ class ParameterClause : public TypeClause
 {
 public:
 	ParameterClause(MemoryPool& pool, dsql_fld* field, const Firebird::MetaName& aCollate,
-		ValueSourceClause* aDefaultClause, dsql_nod* aLegacyParameter);
+		ValueSourceClause* aDefaultClause, ValueExprNode* aParameterExpr);
 
 public:
 	void print(Firebird::string& text) const;
@@ -151,7 +165,7 @@ public:
 public:
 	Firebird::MetaName name;
 	ValueSourceClause* defaultClause;
-	dsql_nod* legacyParameter;
+	ValueExprNode* parameterExpr;
 	Nullable<int> udfMechanism;
 };
 
@@ -169,7 +183,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& /*nodes*/) const
+	virtual void print(Firebird::string& text) const
 	{
 		text.printf("RecreateNode\n");
 	}
@@ -216,7 +230,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -247,7 +261,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -296,7 +310,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -356,7 +370,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -387,7 +401,7 @@ public:
 		const Firebird::MetaName& functionName, const Firebird::MetaName& packageName);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -431,7 +445,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -488,7 +502,7 @@ public:
 		const Firebird::MetaName& procedureName, const Firebird::MetaName& packageName);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -568,7 +582,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -641,7 +655,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -680,7 +694,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -739,7 +753,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -765,7 +779,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -777,7 +791,7 @@ protected:
 public:
 	ParameterClause nameType;
 	bool notNull;
-	ValueSourceClause* check;
+	BoolSourceClause* check;
 };
 
 
@@ -803,7 +817,7 @@ public:
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName,
 		const Firebird::MetaName& newFieldName);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -819,7 +833,7 @@ public:
 	Firebird::MetaName name;
 	bool dropConstraint;
 	bool dropDefault;
-	ValueSourceClause* setConstraint;
+	BoolSourceClause* setConstraint;
 	ValueSourceClause* setDefault;
 	Firebird::MetaName renameTo;
 	Firebird::AutoPtr<TypeClause> type;
@@ -840,7 +854,7 @@ public:
 		const Firebird::MetaName& name);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -871,7 +885,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -907,7 +921,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -939,7 +953,7 @@ public:
 		fb_sysflag sysFlag);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -967,7 +981,7 @@ public:
 		const Firebird::MetaName& name);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1166,7 +1180,7 @@ public:
 		Firebird::MetaName refRelation;
 		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
 		RefActionClause* refAction;
-		ValueSourceClause* check;
+		BoolSourceClause* check;
 	};
 
 	struct AddColumnClause : public Clause
@@ -1274,7 +1288,7 @@ public:
 		Firebird::MetaName name;
 	};
 
-	RelationNode(MemoryPool& p, dsql_nod* aDsqlNode);
+	RelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode);
 
 	static void deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName);
@@ -1291,9 +1305,9 @@ protected:
 	void defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		Constraint& constraint);
 	void defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-		const ValueSourceClause* clause);
+		const BoolSourceClause* clause);
 	void defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-		const ValueSourceClause* clause, FB_UINT64 triggerType);
+		const BoolSourceClause* clause, FB_UINT64 triggerType);
 	void defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
 		bool onUpdate);
 	void defineSetNullTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
@@ -1307,7 +1321,7 @@ protected:
 	void stuffTriggerFiringCondition(const Constraint& constraint, BlrWriter& blrWriter);
 
 public:
-	dsql_nod* dsqlNode;
+	RelationSourceNode* dsqlNode;
 	Firebird::MetaName name;
 	Firebird::Array<Clause*> clauses;
 };
@@ -1316,7 +1330,7 @@ public:
 class CreateRelationNode : public RelationNode
 {
 public:
-	CreateRelationNode(MemoryPool& p, dsql_nod* aDsqlNode,
+	CreateRelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode,
 				const Firebird::PathName* aExternalFile = NULL)
 		: RelationNode(p, aDsqlNode),
 		  externalFile(aExternalFile),
@@ -1325,7 +1339,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1346,13 +1360,13 @@ public:
 class AlterRelationNode : public RelationNode
 {
 public:
-	AlterRelationNode(MemoryPool& p, dsql_nod* aDsqlNode)
+	AlterRelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode)
 		: RelationNode(p, aDsqlNode)
 	{
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1382,7 +1396,7 @@ public:
 		const Firebird::MetaName& globalName);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1405,8 +1419,8 @@ typedef RecreateNode<CreateRelationNode, DropRelationNode, isc_dsql_recreate_tab
 class CreateAlterViewNode : public RelationNode
 {
 public:
-	CreateAlterViewNode(MemoryPool& p, dsql_nod* aDsqlNode, dsql_nod* aViewFields,
-				dsql_nod* aSelectExpr)
+	CreateAlterViewNode(MemoryPool& p, RelationSourceNode* aDsqlNode, ValueListNode* aViewFields,
+				SelectExprNode* aSelectExpr)
 		: RelationNode(p, aDsqlNode),
 		  create(true),
 		  alter(false),
@@ -1418,7 +1432,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1433,19 +1447,19 @@ protected:
 	}
 
 private:
-	void createCheckTriggers(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_nod* items);
+	void createCheckTriggers(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, ValueListNode* items);
 	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* rse, dsql_nod* items, CompoundStmtNode* actions, TriggerType triggerType);
-	void defineUpdateAction(DsqlCompilerScratch* dsqlScratch, dsql_nod** baseAndNode,
-		dsql_nod** baseRelation, dsql_nod* items);
-	static dsql_nod* replaceFieldNames(dsql_nod* input, dsql_nod* searchFields,
-		dsql_nod* replaceFields, bool nullThem, const char* contextName);
+		RseNode* rse, ValueListNode* items, CompoundStmtNode* actions, TriggerType triggerType);
+	void defineUpdateAction(DsqlCompilerScratch* dsqlScratch, BoolExprNode** baseAndNode,
+		RelationSourceNode** baseRelation, ValueListNode* items);
+	static void replaceFieldNames(ExprNode* input, ValueListNode* searchFields,
+		ValueListNode* replaceFields, bool nullThem, const char* contextName);
 
 public:
 	bool create;
 	bool alter;
-	dsql_nod* viewFields;
-	dsql_nod* selectExpr;
+	ValueListNode* viewFields;
+	SelectExprNode* selectExpr;
 	Firebird::string source;
 	bool withCheckOption;
 };
@@ -1494,7 +1508,7 @@ public:
 		  name(p, aName),
 		  unique(false),
 		  descending(false),
-		  legacyRelation(NULL),
+		  relation(NULL),
 		  columns(NULL),
 		  computed(NULL)
 	{
@@ -1505,7 +1519,7 @@ public:
 		const Definition& definition, Firebird::MetaName* referredIndexName = NULL);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1518,8 +1532,8 @@ public:
 	Firebird::MetaName name;
 	bool unique;
 	bool descending;
-	dsql_nod* legacyRelation;
-	dsql_nod* columns;
+	RelationSourceNode* relation;
+	ValueListNode* columns;
 	ValueSourceClause* computed;
 };
 
@@ -1535,7 +1549,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1560,7 +1574,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1588,7 +1602,7 @@ public:
 		const Firebird::MetaName& name);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1635,7 +1649,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1663,7 +1677,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1690,7 +1704,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1718,7 +1732,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1742,7 +1756,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1770,7 +1784,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1795,7 +1809,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1820,7 +1834,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1851,7 +1865,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1865,23 +1879,26 @@ public:
 };
 
 
+typedef Firebird::Pair<Firebird::NonPooled<char, ValueListNode*> > PrivilegeClause;
+typedef Firebird::Pair<Firebird::NonPooled<SSHORT, Firebird::MetaName> > GranteeClause;
+
 class GrantRevokeNode : public DdlNode
 {
 public:
 	GrantRevokeNode(MemoryPool& p, bool aIsGrant)
 		: DdlNode(p),
 		  isGrant(aIsGrant),
-		  privileges(NULL),
-		  roles(NULL),
+		  privileges(p),
+		  roles(p),
 		  table(NULL),
-		  users(NULL),
+		  users(p),
 		  grantAdminOption(NULL),
 		  grantor(NULL)
 	{
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1892,11 +1909,9 @@ protected:
 	}
 
 private:
-	char modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option,
-		const dsql_nod* privs, const dsql_nod* user);
-	void grantRevoke(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* table,
-		const dsql_nod* userNod, const dsql_nod* grantorNod, const char* privs,
-		const Firebird::MetaName& field, int options);
+	void modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option, const GranteeClause* user);
+	void grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* table,
+		const GranteeClause* userNod, const char* privs, const Firebird::MetaName& field, int options);
 	static void checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction, const char* grantor,
 		const char* privilege, const Firebird::MetaName& relationName,
 		const Firebird::MetaName& fieldName, bool topLevel);
@@ -1929,12 +1944,12 @@ private:
 
 public:
 	bool isGrant;
-	dsql_nod* privileges;
-	dsql_nod* roles;
-	dsql_nod* table;
-	dsql_nod* users;
-	dsql_nod* grantAdminOption;
-	dsql_nod* grantor;
+	Firebird::Array<PrivilegeClause> privileges;
+	Firebird::Array<GranteeClause> roles;
+	GranteeClause* table;
+	Firebird::Array<GranteeClause> users;
+	bool grantAdminOption;
+	Firebird::MetaName* grantor;
 };
 
 
@@ -1966,7 +1981,7 @@ public:
 		return this;
 	}
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:

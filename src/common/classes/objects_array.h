@@ -190,6 +190,12 @@ namespace Firebird
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
+		T& insert(size_t index)
+		{
+			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
+			inherited::insert(index, dataL);
+			return *dataL;
+		}
 		size_t add(const T& item)
 		{
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);

@@ -56,7 +56,7 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -98,7 +98,7 @@ protected:
 class FirstValueWinNode : public WinFuncNode
 {
 public:
-	explicit FirstValueWinNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit FirstValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -125,7 +125,7 @@ protected:
 class LastValueWinNode : public WinFuncNode
 {
 public:
-	explicit LastValueWinNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit LastValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -152,7 +152,7 @@ protected:
 class NthValueWinNode : public WinFuncNode
 {
 public:
-	explicit NthValueWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRow = NULL);
+	explicit NthValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRow = NULL);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -175,7 +175,7 @@ protected:
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
 private:
-	dsql_nod* dsqlRow;
+	ValueExprNode* dsqlRow;
 	NestConst<ValueExprNode> row;
 };
 
@@ -184,7 +184,7 @@ class LagLeadWinNode : public WinFuncNode
 {
 public:
 	explicit LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
-		dsql_nod* aArg = NULL, dsql_nod* aRows = NULL, dsql_nod* aOutExpr = NULL);
+		ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL, ValueExprNode* aOutExpr = NULL);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -205,8 +205,8 @@ protected:
 
 protected:
 	const int direction;
-	dsql_nod* dsqlRows;
-	dsql_nod* dsqlOutExpr;
+	ValueExprNode* dsqlRows;
+	ValueExprNode* dsqlOutExpr;
 	NestConst<ValueExprNode> rows;
 	NestConst<ValueExprNode> outExpr;
 };
@@ -215,8 +215,8 @@ protected:
 class LagWinNode : public LagLeadWinNode
 {
 public:
-	explicit LagWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
-		dsql_nod* aOutExpr = NULL);
+	explicit LagWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL,
+		ValueExprNode* aOutExpr = NULL);
 
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
@@ -228,8 +228,8 @@ protected:
 class LeadWinNode : public LagLeadWinNode
 {
 public:
-	explicit LeadWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
-		dsql_nod* aOutExpr = NULL);
+	explicit LeadWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL,
+		ValueExprNode* aOutExpr = NULL);
 
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 

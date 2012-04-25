@@ -72,8 +72,11 @@ namespace Jrd
 	class Database;
 	class DsqlCompilerScratch;
 	class DdlNode;
+	class RseNode;
 	class StmtNode;
 	class TransactionNode;
+	class ValueExprNode;
+	class ValueListNode;
 	class jrd_tra;
 	class jrd_req;
 	class blb;
@@ -84,12 +87,9 @@ namespace Jrd
 	class dsql_par;
 	class dsql_str;
 	class dsql_map;
-	class dsql_nod;
 	class dsql_intlsym;
 
 	typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
-	typedef Firebird::Stack<const dsql_str*> DsqlStrStack;
-	typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
 }
 
 namespace Firebird
@@ -246,9 +246,9 @@ public:
 	dsql_fld*	fld_next;				// Next field in relation
 	dsql_rel*	fld_relation;			// Parent relation
 	dsql_prc*	fld_procedure;			// Parent procedure
-	dsql_nod*	fld_ranges;				// ranges for multi dimension array
-	dsql_nod*	fld_character_set;		// null means not specified
-	dsql_nod*	fld_sub_type_name;		// Subtype name for later resolution
+	ValueListNode*	fld_ranges;			// ranges for multi dimension array
+	const dsql_str*	fld_character_set;	// null means not specified
+	dsql_str*	fld_sub_type_name;		// Subtype name for later resolution
 	USHORT		fld_flags;
 	USHORT		fld_id;					// Field in in database
 	USHORT		fld_dtype;				// Data type of field
@@ -659,13 +659,13 @@ private:
 class ImplicitJoin : public pool_alloc<dsql_type_imp_join>
 {
 public:
-	dsql_nod* value;
+	ValueExprNode* value;
 	dsql_ctx* visibleInContext;
 };
 
 struct PartitionMap
 {
-	PartitionMap(dsql_nod* aPartition, dsql_nod* aOrder)
+	PartitionMap(ValueListNode* aPartition, ValueListNode* aOrder)
 		: partition(aPartition),
 		  partitionRemapped(NULL),
 		  order(aOrder),
@@ -674,9 +674,9 @@ struct PartitionMap
 	{
 	}
 
-	dsql_nod* partition;
-	dsql_nod* partitionRemapped;
-	dsql_nod* order;
+	ValueListNode* partition;
+	ValueListNode* partitionRemapped;
+	ValueListNode* order;
 	dsql_map* map;
 	USHORT context;
 };
@@ -697,9 +697,9 @@ public:
 
 	dsql_rel*			ctx_relation;		// Relation for context
 	dsql_prc*			ctx_procedure;		// Procedure for context
-	dsql_nod*			ctx_proc_inputs;	// Procedure input parameters
+	ValueListNode*			ctx_proc_inputs;	// Procedure input parameters
 	dsql_map*			ctx_map;			// Maps for aggregates and unions
-	dsql_nod*			ctx_rse;			// Sub-rse for aggregates
+	RseNode*			ctx_rse;			// Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			// Parent context for aggregates
 	USHORT				ctx_context;		// Context id
 	USHORT				ctx_recursive;		// Secondary context id for recursive UNION (nobody referred to this context)
@@ -736,9 +736,9 @@ public:
 		return *this;
 	}
 
-	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
-	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode,
-		dsql_nod* orderNode);
+	bool getImplicitJoinField(const Firebird::MetaName& name, ValueExprNode*& node);
+	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch,
+		ValueListNode* partitionNode, ValueListNode* orderNode);
 };
 
 // Flag values for ctx_flags
@@ -755,7 +755,7 @@ class dsql_map : public pool_alloc<dsql_type_map>
 {
 public:
 	dsql_map* map_next;				// Next map in item
-	dsql_nod* map_node;				// Value for map item
+	ValueExprNode* map_node;		// Value for map item
 	USHORT map_position;			// Position in map
 	PartitionMap* map_partition;	// Partition
 };
@@ -808,7 +808,7 @@ public:
 
 	dsql_msg*	par_message;		// Parent message
 	dsql_par*	par_null;			// Null parameter, if used
-	dsql_nod*	par_node;			// Associated value node, if any
+	ValueExprNode* par_node;					// Associated value node, if any
 	Firebird::MetaName par_dbkey_relname;		// Context of internally requested dbkey
 	Firebird::MetaName par_rec_version_relname;	// Context of internally requested rec. version
 	Firebird::MetaName par_name;				// Parameter name, if any

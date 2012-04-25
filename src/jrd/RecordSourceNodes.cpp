@@ -36,12 +36,14 @@
 #include "../jrd/par_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/gen_proto.h"
+#include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
 
 using namespace Firebird;
 using namespace Jrd;
 
 
+static RecordSourceNode* dsqlPassRelProc(DsqlCompilerScratch* dsqlScratch, RecordSourceNode* source);
 static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, StreamType stream);
 static SSHORT strcmpSpace(const char* p, const char* q);
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
@@ -50,8 +52,8 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
 	BoolExprNodeStack* parentStack, StreamType shellStream);
 static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
-static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
-	DsqlNodStack& stack, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx);
+static ValueExprNode* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
+	ValueListNode* list, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx);
 static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
 namespace
@@ -221,6 +223,243 @@ void MapNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
 //--------------------
 
 
+PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	PlanNode* node = FB_NEW(getPool()) PlanNode(getPool(), type);
+
+	if (accessType)
+	{
+		node->accessType = FB_NEW(getPool()) AccessType(getPool(), accessType->type);
+		node->accessType->items = accessType->items;
+	}
+
+	node->relationNode = relationNode;
+
+	for (NestConst<PlanNode>* i = subNodes.begin(); i != subNodes.end(); ++i)
+		node->subNodes.add((*i)->dsqlPass(dsqlScratch));
+
+	if (dsqlNames)
+	{
+		node->dsqlNames = FB_NEW(getPool()) ObjectsArray<MetaName>(getPool());
+		*node->dsqlNames = *dsqlNames;
+
+		dsql_ctx* context = dsqlPassAliasList(dsqlScratch);
+
+		if (context->ctx_relation)
+		{
+			RelationSourceNode* relNode = FB_NEW(getPool()) RelationSourceNode(getPool());
+			relNode->dsqlContext = context;
+			node->dsqlRecordSourceNode = relNode;
+		}
+		else if (context->ctx_procedure)
+		{
+			// ASF: Note that usage of procedure name in a PLAN clause causes errors when
+			// parsing the BLR.
+			ProcedureSourceNode* procNode = FB_NEW(getPool()) ProcedureSourceNode(getPool());
+			procNode->dsqlContext = context;
+			node->dsqlRecordSourceNode = procNode;
+		}
+
+		// ASF: I think it's a error to let node->dsqlRecordSourceNode be NULL here, but it happens
+		// at least since v2.5. See gen.cpp/gen_plan for more information.
+		///fb_assert(node->dsqlRecordSourceNode);
+	}
+
+	return node;
+}
+
+// The passed alias list fully specifies a relation. The first alias represents a relation
+// specified in the from list at this scope levels. Subsequent contexts, if there are any,
+// represent base relations in a view stack. They are used to fully specify a base relation of
+// a view. The aliases used in the view stack are those used in the view definition.
+dsql_ctx* PlanNode::dsqlPassAliasList(DsqlCompilerScratch* dsqlScratch)
+{
+	DEV_BLKCHK(dsqlScratch, dsql_type_req);
+
+	ObjectsArray<MetaName>::iterator arg = dsqlNames->begin();
+	ObjectsArray<MetaName>::iterator end = dsqlNames->end();
+
+	// Loop through every alias and find the context for that alias.
+	// All aliases should have a corresponding context.
+	int aliasCount = dsqlNames->getCount();
+	USHORT savedScopeLevel = dsqlScratch->scopeLevel;
+	dsql_ctx* context = NULL;
+	while (aliasCount > 0)
+	{
+		if (context)
+		{
+			if (context->ctx_rse && !context->ctx_relation && !context->ctx_procedure)
+			{
+				// Derived table
+				dsqlScratch->scopeLevel++;
+				context = dsqlPassAlias(dsqlScratch, context->ctx_childs_derived_table, *arg);
+			}
+			else if (context->ctx_relation)
+			{
+				// This must be a VIEW
+				ObjectsArray<MetaName>::iterator startArg = arg;
+				dsql_rel* relation = context->ctx_relation;
+
+				// find the base table using the specified alias list, skipping the first one
+				// since we already matched it to the context.
+				for (; arg != end; ++arg, --aliasCount)
+				{
+					relation = METD_get_view_relation(dsqlScratch->getTransaction(),
+						dsqlScratch, relation->rel_name.c_str(), arg->c_str());
+
+					if (!relation)
+						break;
+				}
+
+				// Found base relation
+				if (aliasCount == 0 && relation)
+				{
+					// AB: Pretty ugly huh?
+					// make up a dummy context to hold the resultant relation.
+					dsql_ctx* new_context = FB_NEW(getPool()) dsql_ctx(getPool());
+					new_context->ctx_context = context->ctx_context;
+					new_context->ctx_relation = relation;
+
+					// concatenate all the contexts to form the alias name;
+					// calculate the length leaving room for spaces and a null
+					USHORT alias_length = dsqlNames->getCount();
+					ObjectsArray<MetaName>::iterator aliasArg = startArg;
+					for (; aliasArg != end; ++aliasArg)
+						alias_length += aliasArg->length();
+
+					dsql_str* alias = FB_NEW_RPT(getPool(), alias_length) dsql_str;
+					alias->str_length = alias_length;
+					new_context->ctx_alias = alias->str_data;
+
+					TEXT* p = alias->str_data;
+					for (aliasArg = startArg; aliasArg != end; ++aliasArg)
+					{
+						for (const TEXT* q = aliasArg->c_str(); *q;)
+							*p++ = *q++;
+						*p++ = ' ';
+					}
+					p[-1] = 0;
+
+					context = new_context;
+				}
+				else
+					context = NULL;
+			}
+			else
+				context = NULL;
+		}
+		else
+			context = dsqlPassAlias(dsqlScratch, *dsqlScratch->context, *arg);
+
+		if (!context)
+			break;
+
+		++arg;
+		--aliasCount;
+	}
+
+	dsqlScratch->scopeLevel = savedScopeLevel;
+
+	if (!context)
+	{
+		// there is no alias or table named %s at this scope level.
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  Arg::Gds(isc_dsql_command_err) <<
+				  Arg::Gds(isc_dsql_no_relation_alias) << *arg);
+	}
+
+	return context;
+}
+
+// The passed relation or alias represents a context which was previously specified in the from
+// list. Find and return the proper context.
+dsql_ctx* PlanNode::dsqlPassAlias(DsqlCompilerScratch* dsqlScratch, DsqlContextStack& stack,
+	const MetaName& alias)
+{
+	dsql_ctx* relation_context = NULL;
+
+	DEV_BLKCHK(dsqlScratch, dsql_type_req);
+
+	// look through all contexts at this scope level
+	// to find one that has a relation name or alias
+	// name which matches the identifier passed.
+	for (DsqlContextStack::iterator itr(stack); itr.hasData(); ++itr)
+	{
+		dsql_ctx* context = itr.object();
+		if (context->ctx_scope_level != dsqlScratch->scopeLevel)
+			continue;
+
+		// check for matching alias.
+		if (context->ctx_internal_alias.hasData())
+		{
+			if (context->ctx_internal_alias == alias.c_str())
+				return context;
+
+			continue;
+		}
+
+		// If an unnamed derived table and empty alias.
+		if (context->ctx_rse && !context->ctx_relation && !context->ctx_procedure && alias.isEmpty())
+			relation_context = context;
+
+		// Check for matching relation name; aliases take priority so
+		// save the context in case there is an alias of the same name.
+		// Also to check that there is no self-join in the query.
+		if (context->ctx_relation && context->ctx_relation->rel_name == alias)
+		{
+			if (relation_context)
+			{
+				// the table %s is referenced twice; use aliases to differentiate
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_dsql_command_err) <<
+						  Arg::Gds(isc_dsql_self_join) << alias);
+			}
+
+			relation_context = context;
+		}
+	}
+
+	return relation_context;
+}
+
+
+//--------------------
+
+
+RecSourceListNode::RecSourceListNode(MemoryPool& pool, unsigned count)
+	: TypedNode<ListExprNode, ExprNode::TYPE_REC_SOURCE_LIST>(pool),
+	  dsqlArgs(pool)
+{
+	dsqlArgs.resize(count);
+
+	for (unsigned i = 0; i < count; ++i)
+		addDsqlChildNode((dsqlArgs[i] = NULL));
+}
+
+RecSourceListNode::RecSourceListNode(MemoryPool& pool, RecordSourceNode* arg1)
+	: TypedNode<ListExprNode, ExprNode::TYPE_REC_SOURCE_LIST>(pool),
+	  dsqlArgs(pool)
+{
+	dsqlArgs.resize(1);
+	addDsqlChildNode((dsqlArgs[0] = arg1));
+}
+
+RecSourceListNode* RecSourceListNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	RecSourceListNode* node = FB_NEW(getPool()) RecSourceListNode(getPool(), dsqlArgs.getCount());
+
+	RecordSourceNode** dst = node->dsqlArgs.begin();
+
+	for (RecordSourceNode** src = dsqlArgs.begin(); src != dsqlArgs.end(); ++src, ++dst)
+		*dst = doDsqlPass(dsqlScratch, *src);
+
+	return node;
+}
+
+
+//--------------------
+
+
 // Parse a relation reference.
 RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* csb,
 	SSHORT blrOp, bool parseContext)
@@ -310,6 +549,11 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		delete aliasString;
 
 	return node;
+}
+
+RecordSourceNode* RelationSourceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return dsqlPassRelProc(dsqlScratch, this);
 }
 
 bool RelationSourceNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
@@ -723,13 +967,18 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	return node;
 }
 
+RecordSourceNode* ProcedureSourceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return dsqlPassRelProc(dsqlScratch, this);
+}
+
 bool ProcedureSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
 {
 	// Check if relation is a procedure.
 	if (dsqlContext->ctx_procedure)
 	{
 		// Check if an aggregate is buried inside the input parameters.
-		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+		return visitor.visit(dsqlContext->ctx_proc_inputs);
 	}
 
 	return false;
@@ -738,7 +987,7 @@ bool ProcedureSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
 bool ProcedureSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 {
 	if (dsqlContext->ctx_procedure)
-		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+		return visitor.visit(dsqlContext->ctx_proc_inputs);
 
 	return false;
 }
@@ -747,7 +996,7 @@ bool ProcedureSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& vis
 {
 	// If relation is a procedure, check if the parameters are valid.
 	if (dsqlContext->ctx_procedure)
-		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+		return visitor.visit(dsqlContext->ctx_proc_inputs);
 
 	return false;
 }
@@ -762,13 +1011,13 @@ bool ProcedureSourceNode::dsqlFieldFinder(FieldFinder& /*visitor*/)
 	return false;
 }
 
-bool ProcedureSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
+RecordSourceNode* ProcedureSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
 	// Check if relation is a procedure.
 	if (dsqlContext->ctx_procedure)
-		visitor.visit(&dsqlContext->ctx_proc_inputs);	// Remap the input parameters.
+		doDsqlFieldRemapper(visitor, dsqlContext->ctx_proc_inputs);	// Remap the input parameters.
 
-	return false;
+	return this;
 }
 
 bool ProcedureSourceNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
@@ -818,16 +1067,18 @@ void ProcedureSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	GEN_stuff_context(dsqlScratch, dsqlContext);
 
-	dsql_nod* inputs = dsqlContext->ctx_proc_inputs;
+	ValueListNode* inputs = dsqlContext->ctx_proc_inputs;
 
 	if (inputs)
 	{
-		dsqlScratch->appendUShort(inputs->nod_count);
+		dsqlScratch->appendUShort(inputs->dsqlArgs.getCount());
 
-		dsql_nod* const* ptr = inputs->nod_arg;
-
-		for (const dsql_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
+		for (ValueExprNode* const* ptr = inputs->dsqlArgs.begin();
+			 ptr != inputs->dsqlArgs.end();
+			 ++ptr)
+		{
 			GEN_expr(dsqlScratch, *ptr);
+		}
 	}
 	else
 		dsqlScratch->appendUShort(0);
@@ -1023,18 +1274,18 @@ AggregateSourceNode* AggregateSourceNode::parse(thread_db* tdbb, CompilerScratch
 
 bool AggregateSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
 {
-	return !visitor.ignoreSubSelects && visitor.visit(&dsqlRse);
+	return !visitor.ignoreSubSelects && visitor.visit(dsqlRse);
 }
 
 bool AggregateSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 {
 	// Pass only dsqlGroup.
-	return visitor.visit(&dsqlGroup);
+	return visitor.visit(dsqlGroup);
 }
 
 bool AggregateSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 {
-	return visitor.visit(&dsqlRse);
+	return visitor.visit(dsqlRse);
 }
 
 bool AggregateSourceNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
@@ -1045,13 +1296,13 @@ bool AggregateSourceNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 bool AggregateSourceNode::dsqlFieldFinder(FieldFinder& visitor)
 {
 	// Pass only dsqlGroup.
-	return visitor.visit(&dsqlGroup);
+	return visitor.visit(dsqlGroup);
 }
 
-bool AggregateSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
+RecordSourceNode* AggregateSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
-	visitor.visit(&dsqlRse);
-	return false;
+	doDsqlFieldRemapper(visitor, dsqlRse);
+	return this;
 }
 
 bool AggregateSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
@@ -1084,22 +1335,22 @@ void AggregateSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			 ++i)
 		{
 			dsqlScratch->appendUChar(blr_partition_by);
-			dsql_nod* partition = (*i)->partition;
-			dsql_nod* partitionRemapped = (*i)->partitionRemapped;
-			dsql_nod* order = (*i)->order;
+			ValueListNode* partition = (*i)->partition;
+			ValueListNode* partitionRemapped = (*i)->partitionRemapped;
+			ValueListNode* order = (*i)->order;
 
 			dsqlScratch->appendUChar((*i)->context);
 
 			if (partition)
 			{
-				dsqlScratch->appendUChar(partition->nod_count);	// partition by expression count
+				dsqlScratch->appendUChar(partition->dsqlArgs.getCount());	// partition by expression count
 
-				dsql_nod** ptr = partition->nod_arg;
-				for (const dsql_nod* const* end = ptr + partition->nod_count; ptr < end; ++ptr)
+				ValueExprNode** ptr = partition->dsqlArgs.begin();
+				for (const ValueExprNode* const* end = partition->dsqlArgs.end(); ptr != end; ++ptr)
 					GEN_expr(dsqlScratch, *ptr);
 
-				ptr = partitionRemapped->nod_arg;
-				for (const dsql_nod* const* end = ptr + partitionRemapped->nod_count; ptr < end; ++ptr)
+				ptr = partitionRemapped->dsqlArgs.begin();
+				for (const ValueExprNode* const* end = partitionRemapped->dsqlArgs.end(); ptr != end; ++ptr)
 					GEN_expr(dsqlScratch, *ptr);
 			}
 			else
@@ -1120,15 +1371,15 @@ void AggregateSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		dsqlScratch->appendUChar(blr_group_by);
 
-		dsql_nod* list = dsqlGroup;
+		ValueListNode* list = dsqlGroup;
 
-		if (list != NULL)
+		if (list)
 		{
-			dsqlScratch->appendUChar(list->nod_count);
-			dsql_nod** ptr = list->nod_arg;
+			dsqlScratch->appendUChar(list->dsqlArgs.getCount());
+			ValueExprNode** ptr = list->dsqlArgs.begin();
 
-			for (const dsql_nod* const* end = ptr + list->nod_count; ptr < end; ptr++)
-				GEN_expr(dsqlScratch, *ptr);
+			for (const ValueExprNode* const* end = list->dsqlArgs.end(); ptr != end; ++ptr)
+				(*ptr)->genBlr(dsqlScratch);
 		}
 		else
 			dsqlScratch->appendUChar(0);
@@ -1391,6 +1642,51 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, S
 	}
 
 	return node;
+}
+
+void UnionSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar((recursive ? blr_recurse : blr_union));
+
+	// Obtain the context for UNION from the first dsql_map* node.
+	ValueExprNode* mapItem = dsqlParentRse->dsqlSelectList->dsqlArgs[0];
+
+	// AB: First item could be a virtual field generated by derived table.
+	DerivedFieldNode* derivedField = mapItem->as<DerivedFieldNode>();
+
+	if (derivedField)
+		mapItem = derivedField->dsqlValue;
+
+	dsql_ctx* dsqlContext = mapItem->as<DsqlMapNode>()->context;
+
+	GEN_stuff_context(dsqlScratch, dsqlContext);
+	// secondary context number must be present once in generated blr
+	dsqlContext->ctx_flags &= ~CTX_recursive;
+
+	RecSourceListNode* streams = dsqlClauses;
+	dsqlScratch->appendUChar(streams->dsqlArgs.getCount());	// number of substreams
+
+	RecordSourceNode** ptr = streams->dsqlArgs.begin();
+	for (const RecordSourceNode* const* const end = streams->dsqlArgs.end(); ptr != end; ++ptr)
+	{
+		RseNode* sub_rse = (*ptr)->as<RseNode>();
+		GEN_rse(dsqlScratch, sub_rse);
+
+		ValueListNode* items = sub_rse->dsqlSelectList;
+
+		dsqlScratch->appendUChar(blr_map);
+		dsqlScratch->appendUShort(items->dsqlArgs.getCount());
+
+		USHORT count = 0;
+		ValueExprNode** iptr = items->dsqlArgs.begin();
+
+		for (const ValueExprNode* const* const iend = items->dsqlArgs.end(); iptr != iend; ++iptr)
+		{
+			dsqlScratch->appendUShort(count);
+			GEN_expr(dsqlScratch, *iptr);
+			++count;
+		}
+	}
 }
 
 UnionSourceNode* UnionSourceNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -1880,14 +2176,14 @@ void WindowSourceNode::findDependentFromStreams(const OptimizerRetrieval* optRet
 bool RseNode::dsqlAggregateFinder(AggregateFinder& visitor)
 {
 	AutoSetRestore<USHORT> autoValidateExpr(&visitor.currentLevel, visitor.currentLevel + 1);
-	return visitor.visit(&dsqlStreams) | visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList);
+	return visitor.visit(dsqlStreams) | visitor.visit(dsqlWhere) | visitor.visit(dsqlSelectList);
 }
 
 bool RseNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 {
 	AutoSetRestore<bool> autoCurrentScopeLevelEqual(&visitor.currentScopeLevelEqual, false);
 	// Pass dsqlWhere, dsqlSelectList and dsqlStreams.
-	return visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList) | visitor.visit(&dsqlStreams);
+	return visitor.visit(dsqlWhere) | visitor.visit(dsqlSelectList) | visitor.visit(dsqlStreams);
 }
 
 bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& /*visitor*/)
@@ -1903,19 +2199,19 @@ bool RseNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 bool RseNode::dsqlFieldFinder(FieldFinder& visitor)
 {
 	// Pass dsqlWhere and dsqlSelectList
-	return visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList);
+	return visitor.visit(dsqlWhere) | visitor.visit(dsqlSelectList);
 }
 
-bool RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
+RseNode* RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
 	AutoSetRestore<USHORT> autoCurrentLevel(&visitor.currentLevel, visitor.currentLevel + 1);
 
-	visitor.visit(&dsqlStreams);
-	visitor.visit(&dsqlWhere);
-	visitor.visit(&dsqlSelectList);
-	visitor.visit(&dsqlOrder);
+	doDsqlFieldRemapper(visitor, dsqlStreams);
+	doDsqlFieldRemapper(visitor, dsqlWhere);
+	doDsqlFieldRemapper(visitor, dsqlSelectList);
+	doDsqlFieldRemapper(visitor, dsqlOrder);
 
-	return false;
+	return this;
 }
 
 bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
@@ -1946,36 +2242,40 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			temp.push(iter.object());
 	}
 
+	RecSourceListNode* fromList = dsqlFrom;
+	RecSourceListNode* streamList = FB_NEW(getPool()) RecSourceListNode(
+		getPool(), fromList->dsqlArgs.getCount());
+
 	RseNode* node = FB_NEW(getPool()) RseNode(getPool());
 	node->dsqlExplicitJoin = dsqlExplicitJoin;
 	node->rse_jointype = rse_jointype;
-	node->dsqlStreams = MAKE_node(Dsql::nod_list, dsqlFrom->nod_count);
+	node->dsqlStreams = streamList;
 
 	switch (rse_jointype)
 	{
 		case blr_inner:
-			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
-			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			streamList->dsqlArgs[0] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[0]);
+			streamList->dsqlArgs[1] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[1]);
 			break;
 
 		case blr_left:
-			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
+			streamList->dsqlArgs[0] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[0]);
 			++dsqlScratch->inOuterJoin;
-			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			streamList->dsqlArgs[1] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[1]);
 			--dsqlScratch->inOuterJoin;
 			break;
 
 		case blr_right:
 			++dsqlScratch->inOuterJoin;
-			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
+			streamList->dsqlArgs[0] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[0]);
 			--dsqlScratch->inOuterJoin;
-			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			streamList->dsqlArgs[1] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[1]);
 			break;
 
 		case blr_full:
 			++dsqlScratch->inOuterJoin;
-			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
-			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			streamList->dsqlArgs[0] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[0]);
+			streamList->dsqlArgs[1] = doDsqlPass(dsqlScratch, fromList->dsqlArgs[1]);
 			--dsqlScratch->inOuterJoin;
 			break;
 
@@ -1984,9 +2284,10 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			break;
 	}
 
-	dsql_nod* boolean = dsqlWhere;
+	BoolExprNode* boolean = dsqlWhere;
+	ValueListNode* usingList = dsqlJoinUsing;
 
-	if (boolean && (boolean->nod_type == Dsql::nod_flag || boolean->nod_type == Dsql::nod_list))
+	if (usingList)
 	{
 		if (dsqlScratch->clientDialect < SQL_DIALECT_V6)
 		{
@@ -1994,32 +2295,37 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					  Arg::Gds(isc_dsql_unsupp_feature_dialect) << Arg::Num(dsqlScratch->clientDialect));
 		}
 
-		DsqlNodStack leftStack, rightStack;
+		ValueListNode leftStack(dsqlScratch->getPool(), 0u);
+		ValueListNode rightStack(dsqlScratch->getPool(), 0u);
 
-		if (boolean->nod_type == Dsql::nod_flag)	// NATURAL JOIN
+		if (usingList->dsqlArgs.isEmpty())	// NATURAL JOIN
 		{
 			StrArray leftNames(dsqlScratch->getPool());
-			DsqlNodStack matched;
+			ValueListNode* matched = FB_NEW(getPool()) ValueListNode(getPool(), 0u);
 
-			PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[0], leftStack, true);
-			PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[1], rightStack, true);
+			PASS1_expand_select_node(dsqlScratch, streamList->dsqlArgs[0], &leftStack, true);
+			PASS1_expand_select_node(dsqlScratch, streamList->dsqlArgs[1], &rightStack, true);
 
 			// verify columns that exist in both sides
 			for (int i = 0; i < 2; ++i)
 			{
-				for (DsqlNodStack::const_iterator j(i == 0 ? leftStack : rightStack); j.hasData(); ++j)
+				ValueListNode& currentStack = i == 0 ? leftStack : rightStack;
+
+				for (ValueExprNode** j = currentStack.dsqlArgs.begin();
+					 j != currentStack.dsqlArgs.end();
+					 ++j)
 				{
 					const TEXT* name = NULL;
-					dsql_nod* item = j.object();
+					ValueExprNode* item = *j;
 					DsqlAliasNode* aliasNode;
 					FieldNode* fieldNode;
 					DerivedFieldNode* derivedField;
 
-					if ((aliasNode = ExprNode::as<DsqlAliasNode>(item)))
+					if ((aliasNode = item->as<DsqlAliasNode>()))
 						name = aliasNode->name.c_str();
-					else if ((fieldNode = ExprNode::as<FieldNode>(item)))
+					else if ((fieldNode = item->as<FieldNode>()))
 						name = fieldNode->dsqlField->fld_name.c_str();
-					else if ((derivedField = ExprNode::as<DerivedFieldNode>(item)))
+					else if ((derivedField = item->as<DerivedFieldNode>()))
 						name = derivedField->name.c_str();
 
 					if (name)
@@ -2029,32 +2335,32 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						else	// right
 						{
 							if (leftNames.exist(name))
-								matched.push(MAKE_field_name(name));
+								matched->add(MAKE_field_name(name));
 						}
 					}
 				}
 			}
 
-			if (matched.isEmpty())
+			if (matched->dsqlArgs.isEmpty())
 			{
 				// There is no match. Transform to CROSS JOIN.
 				node->rse_jointype = blr_inner;
-				boolean = NULL;
+				usingList = NULL;
+
+				delete matched;
 			}
 			else
-				boolean = MAKE_list(matched);	// Transform to USING
+				usingList = matched;	// Transform to USING
 		}
 
-		if (boolean)	// JOIN ... USING
+		if (usingList)	// JOIN ... USING
 		{
-			fb_assert(boolean->nod_type == Dsql::nod_list);
-
-			dsql_nod* newBoolean = NULL;
+			BoolExprNode* newBoolean = NULL;
 			StrArray usedColumns(dsqlScratch->getPool());
 
-			for (int i = 0; i < boolean->nod_count; ++i)
+			for (size_t i = 0; i < usingList->dsqlArgs.getCount(); ++i)
 			{
-				const FieldNode* field = ExprNode::as<FieldNode>(boolean->nod_arg[i]);
+				const FieldNode* field = ExprNode::as<FieldNode>(usingList->dsqlArgs[i]);
 
 				// verify if the column was already used
 				size_t pos;
@@ -2074,19 +2380,18 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				rightStack.clear();
 
 				// get the column names from both sides
-				PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[0], leftStack, true);
-				PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[1], rightStack, true);
+				PASS1_expand_select_node(dsqlScratch, streamList->dsqlArgs[0], &leftStack, true);
+				PASS1_expand_select_node(dsqlScratch, streamList->dsqlArgs[1], &rightStack, true);
 
 				// create the boolean
 
-				ComparativeBoolNode* eqlNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql);
-				eqlNode->dsqlArg1 = resolveUsingField(dsqlScratch, field->dsqlName, leftStack,
+				ValueExprNode* arg1 = resolveUsingField(dsqlScratch, field->dsqlName, &leftStack,
 					field, "left", leftCtx);
-				eqlNode->dsqlArg2 = resolveUsingField(dsqlScratch, field->dsqlName, rightStack,
+				ValueExprNode* arg2 = resolveUsingField(dsqlScratch, field->dsqlName, &rightStack,
 					field, "right", rightCtx);
 
-				dsql_nod* eqlNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-				eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
+				ComparativeBoolNode* eqlNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+					blr_eql, arg1, arg2);
 
 				fb_assert(leftCtx);
 				fb_assert(rightCtx);
@@ -2106,15 +2411,15 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				if (!rightCtx->ctx_imp_join.get(field->dsqlName, impJoinRight))
 				{
 					impJoinRight = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
-					impJoinRight->value = eqlNode->dsqlArg2;
+					impJoinRight->value = arg2;
 				}
 				else
 					fb_assert(impJoinRight->visibleInContext == rightCtx);
 
 				// create the COALESCE
-				DsqlNodStack stack;
+				ValueListNode* stack = FB_NEW(getPool()) ValueListNode(getPool(), 0u);
 
-				dsql_nod* temp = impJoinLeft->value;
+				ValueExprNode* temp = impJoinLeft->value;
 				DsqlAliasNode* aliasNode = ExprNode::as<DsqlAliasNode>(temp);
 				CoalesceNode* coalesceNode;
 
@@ -2126,17 +2431,17 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 					if ((coalesceNode = ExprNode::as<CoalesceNode>(temp)))
 					{
-						dsql_nod** ptr = coalesceNode->dsqlArgs->nod_arg;
+						ValueListNode* list = coalesceNode->dsqlArgs;
 
-						for (dsql_nod** end = ptr + coalesceNode->dsqlArgs->nod_count;
-							 ptr != end;
+						for (ValueExprNode** ptr = list->dsqlArgs.begin();
+							 ptr != list->dsqlArgs.end();
 							 ++ptr)
 						{
-							PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
+							stack->add(doDsqlPass(dsqlScratch, *ptr));
 						}
 					}
 					else
-						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
+						stack->add(doDsqlPass(dsqlScratch, temp));
 
 					temp = impJoinRight->value;
 
@@ -2145,29 +2450,25 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 					if ((coalesceNode = ExprNode::as<CoalesceNode>(temp)))
 					{
-						dsql_nod** ptr = coalesceNode->dsqlArgs->nod_arg;
+						ValueListNode* list = coalesceNode->dsqlArgs;
 
-						for (dsql_nod** end = ptr + coalesceNode->dsqlArgs->nod_count;
-							 ptr != end;
+						for (ValueExprNode** ptr = list->dsqlArgs.begin();
+							 ptr != list->dsqlArgs.end();
 							 ++ptr)
 						{
-							PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
+							stack->add(doDsqlPass(dsqlScratch, *ptr));
 						}
 					}
 					else
-						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
+						stack->add(doDsqlPass(dsqlScratch, temp));
 				}
 
-				coalesceNode = FB_NEW(getPool()) CoalesceNode(getPool(), MAKE_list(stack));
+				coalesceNode = FB_NEW(getPool()) CoalesceNode(getPool(), stack);
 
-				aliasNode = FB_NEW(getPool()) DsqlAliasNode(getPool(), field->dsqlName,
-					MAKE_node(Dsql::nod_class_exprnode, 1));
-
-				impJoinLeft->value = MAKE_node(Dsql::nod_class_exprnode, 1);
-				impJoinLeft->value->nod_arg[0] = reinterpret_cast<dsql_nod*>(aliasNode);
-
-				aliasNode->value->nod_arg[0] = reinterpret_cast<dsql_nod*>(coalesceNode);
+				aliasNode = FB_NEW(getPool()) DsqlAliasNode(getPool(), field->dsqlName, coalesceNode);
 				aliasNode->implicitJoin = impJoinLeft;
+
+				impJoinLeft->value = aliasNode;
 
 				impJoinRight->visibleInContext = NULL;
 
@@ -2175,14 +2476,14 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				leftCtx->ctx_imp_join.put(field->dsqlName, impJoinLeft);
 				rightCtx->ctx_imp_join.put(field->dsqlName, impJoinLeft);
 
-				newBoolean = PASS1_compose(newBoolean, eqlNod, blr_and);
+				newBoolean = PASS1_compose(newBoolean, eqlNode, blr_and);
 			}
 
 			boolean = newBoolean;
 		}
 	}
 
-	node->dsqlWhere = PASS1_node(dsqlScratch, boolean);
+	node->dsqlWhere = doDsqlPass(dsqlScratch, boolean);
 
 	// Merge the newly created contexts with the original ones
 
@@ -2896,6 +3197,90 @@ void RseNode::jrdStreamsCollector(SortedStreamList& streamList)
 //--------------------
 
 
+RseNode* SelectExprNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	fb_assert(dsqlFlags & DFLAG_DERIVED);
+	return PASS1_derived_table(dsqlScratch, this, NULL);
+}
+
+
+//--------------------
+
+
+static RecordSourceNode* dsqlPassRelProc(DsqlCompilerScratch* dsqlScratch, RecordSourceNode* source)
+{
+	ProcedureSourceNode* procNode = source->as<ProcedureSourceNode>();
+	RelationSourceNode* relNode = source->as<RelationSourceNode>();
+
+	fb_assert(procNode || relNode);
+
+	bool couldBeCte = true;
+	MetaName relName;
+	string relAlias;
+
+	if (procNode)
+	{
+		relName = procNode->dsqlName.identifier;
+		relAlias = procNode->alias;
+		couldBeCte = !procNode->dsqlInputs && procNode->dsqlName.package.isEmpty();
+	}
+	else if (relNode)
+	{
+		relName = relNode->dsqlName;
+		relAlias = relNode->alias;
+	}
+
+	if (relAlias.isEmpty())
+		relAlias = relName.c_str();
+
+	SelectExprNode* cte = couldBeCte ? dsqlScratch->findCTE(relName) : NULL;
+
+	if (!cte)
+		return PASS1_relation(dsqlScratch, source);
+
+	cte->dsqlFlags |= RecordSourceNode::DFLAG_DT_CTE_USED;
+
+	if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RECURSIVE_CTE) &&
+		 dsqlScratch->currCtes.hasData() &&
+		 (dsqlScratch->currCtes.object() == cte))
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Recursive CTE member (%s) can refer itself only in FROM clause
+				  Arg::Gds(isc_dsql_cte_wrong_reference) << relName);
+	}
+
+	for (Stack<SelectExprNode*>::const_iterator stack(dsqlScratch->currCtes); stack.hasData(); ++stack)
+	{
+		SelectExprNode* cte1 = stack.object();
+		if (cte1 == cte)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  // CTE %s has cyclic dependencies
+					  Arg::Gds(isc_dsql_cte_cycle) << relName);
+		}
+	}
+
+	RecordSourceNode* const query = cte->querySpec;
+	UnionSourceNode* unionQuery = ExprNode::as<UnionSourceNode>(query);
+	const bool isRecursive = unionQuery && unionQuery->recursive;
+
+	const string saveCteName = cte->alias;
+	if (!isRecursive)
+		cte->alias = relAlias;
+
+	dsqlScratch->currCtes.push(cte);
+
+	RseNode* derivedNode = PASS1_derived_table(dsqlScratch,
+		cte, (isRecursive ? relAlias.c_str() : NULL));
+
+	if (!isRecursive)
+		cte->alias = saveCteName;
+
+	dsqlScratch->currCtes.pop();
+
+	return derivedNode;
+}
+
 // Parse a MAP clause for a union or global aggregate expression.
 static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, StreamType stream)
 {
@@ -3226,11 +3611,10 @@ static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 }
 
 // Resolve a field for JOIN USING purposes.
-static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
-	DsqlNodStack& stack, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx)
+static ValueExprNode* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
+	ValueListNode* list, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx)
 {
-	dsql_nod* list = MAKE_list(stack);
-	dsql_nod* node = PASS1_lookup_alias(dsqlScratch, name, list, false);
+	ValueExprNode* node = PASS1_lookup_alias(dsqlScratch, name, list, false);
 
 	if (!node)
 	{

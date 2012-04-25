@@ -27,14 +27,20 @@
 #define DSQL_MAKE_PROTO_H
 
 #include "../dsql/sym.h"
-#include "../dsql/node.h"
 
 namespace Jrd {
-	class dsql_nod;
+	class dsql_ctx;
 	class dsql_fld;
+	class dsql_msg;
+	class dsql_par;
 	class dsql_req;
+	class dsql_str;
 	class DsqlCompilerScratch;
 	class ExprNode;
+	class FieldNode;
+	class LiteralNode;
+	class ValueExprNode;
+	class ValueListNode;
 	class VariableNode;
 
 // Parameters to MAKE_constant
@@ -50,20 +56,17 @@ namespace Jrd {
 }
 
 
-Jrd::dsql_nod* MAKE_class_node(Jrd::ExprNode* node);
-Jrd::dsql_nod* MAKE_const_slong(SLONG);
-Jrd::dsql_nod* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
-Jrd::dsql_nod* MAKE_str_constant(Jrd::dsql_str*, SSHORT);
+Jrd::LiteralNode* MAKE_const_slong(SLONG);
+Jrd::ValueExprNode* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
+Jrd::LiteralNode* MAKE_str_constant(Jrd::dsql_str*, SSHORT);
 Jrd::dsql_str* MAKE_cstring(const char*);
-void MAKE_desc(Jrd::DsqlCompilerScratch*, dsc*, Jrd::dsql_nod*);
+void MAKE_desc(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueExprNode*);
 void MAKE_desc_from_field(dsc*, const Jrd::dsql_fld*);
-void MAKE_desc_from_list(Jrd::DsqlCompilerScratch*, dsc*, Jrd::dsql_nod*, const TEXT*);
-Jrd::dsql_nod* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::dsql_nod*);
-Jrd::dsql_nod* MAKE_field_name(const char*);
-Jrd::dsql_nod* MAKE_list(Jrd::DsqlNodStack&);
-Jrd::dsql_nod* MAKE_node(Dsql::nod_t, int);
-Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg*, bool, bool, USHORT, const Jrd::dsql_nod*);
-void MAKE_parameter_names(Jrd::dsql_par*, const Jrd::dsql_nod*);
+void MAKE_desc_from_list(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueListNode*, const TEXT*);
+Jrd::FieldNode* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::ValueListNode*);
+Jrd::FieldNode* MAKE_field_name(const char*);
+Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg*, bool, bool, USHORT, const Jrd::ValueExprNode*);
+void MAKE_parameter_names(Jrd::dsql_par*, const Jrd::ValueExprNode*);
 Jrd::dsql_str* MAKE_string(const char*, int);
 Jrd::dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
 

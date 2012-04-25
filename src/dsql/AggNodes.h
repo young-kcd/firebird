@@ -32,14 +32,14 @@ namespace Jrd {
 class AvgAggNode : public AggNode
 {
 public:
-	explicit AvgAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_nod* aArg = NULL);
+	explicit AvgAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
@@ -56,14 +56,14 @@ private:
 class ListAggNode : public AggNode
 {
 public:
-	explicit ListAggNode(MemoryPool& pool, bool aDistinct, dsql_nod* aArg = NULL,
-		dsql_nod* aDelimiter = NULL);
+	explicit ListAggNode(MemoryPool& pool, bool aDistinct, ValueExprNode* aArg = NULL,
+		ValueExprNode* aDelimiter = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
@@ -83,14 +83,14 @@ protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 
 private:
-	dsql_nod* dsqlDelimiter;
+	ValueExprNode* dsqlDelimiter;
 	NestConst<ValueExprNode> delimiter;
 };
 
 class CountAggNode : public AggNode
 {
 public:
-	explicit CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_nod* aArg = NULL);
+	explicit CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -110,7 +110,7 @@ protected:
 class SumAggNode : public AggNode
 {
 public:
-	explicit SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_nod* aArg = NULL);
+	explicit SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -135,7 +135,7 @@ public:
 		TYPE_MIN
 	};
 
-	explicit MaxMinAggNode(MemoryPool& pool, MaxMinType aType, dsql_nod* aArg = NULL);
+	explicit MaxMinAggNode(MemoryPool& pool, MaxMinType aType, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 

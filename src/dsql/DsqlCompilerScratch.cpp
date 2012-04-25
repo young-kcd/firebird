@@ -26,7 +26,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/blr.h"
 #include "../jrd/RecordSourceNodes.h"
-#include "../dsql/node.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
@@ -34,7 +33,6 @@
 #include "../dsql/pass1_proto.h"
 
 using namespace Firebird;
-using namespace Dsql;
 using namespace Jrd;
 
 
@@ -338,10 +336,7 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 		appendUChar(blr_assignment);
 
 		if (node)
-		{
-			PsqlChanger psqlChanger(this, false);
-			GEN_expr(this, PASS1_node(this, node->value));
-		}
+			GEN_expr(this, Node::doDsqlPass(this, node->value, false));
 		else
 			appendUChar(blr_null);	// Initialize variable to NULL
 
@@ -592,10 +587,10 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
-	dsql_nod* query = input->querySpec;
-	UnionSourceNode* unionQuery = ExprNode::as<UnionSourceNode>(query);
+	RecordSourceNode* query = input->querySpec;
+	UnionSourceNode* unionQuery = query->as<UnionSourceNode>();
 
-	if (!unionQuery && pass1RseIsRecursive(query))
+	if (!unionQuery && pass1RseIsRecursive(query->as<RseNode>()))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Recursive CTE (%s) must be an UNION
@@ -603,13 +598,12 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 	}
 
 	// split queries list on two parts: anchor and recursive
-	dsql_nod* anchorRse = NULL;
-	dsql_nod* recursiveRse = NULL;
-	dsql_nod* qry = query;
+	RecordSourceNode* anchorRse = NULL;
+	RecordSourceNode* recursiveRse = NULL;
+	RecordSourceNode* qry = query;
 
 	UnionSourceNode* newQry = FB_NEW(pool) UnionSourceNode(pool);
-	dsql_nod* newQryNod = MAKE_class_node(newQry);
-	newQry->dsqlClauses = MAKE_node(Dsql::nod_list, 2);
+	newQry->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 2);
 
 	if (unionQuery)
 	{
@@ -619,19 +613,17 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 
 	while (true)
 	{
-		dsql_nod* rse = NULL;
+		RecordSourceNode* rse = NULL;
 
 		if (unionQuery)
-			rse = unionQuery->dsqlClauses->nod_arg[1];
+			rse = unionQuery->dsqlClauses->dsqlArgs[1];
 		else
 			rse = qry;
 
-		dsql_nod* newRseNod = pass1RseIsRecursive(rse);
+		RseNode* newRse = pass1RseIsRecursive(rse->as<RseNode>());
 
-		if (newRseNod) // rse is recursive
+		if (newRse) // rse is recursive
 		{
-			RseNode* newRse = ExprNode::as<RseNode>(newRseNod);
-
 			if (anchorRse)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -673,26 +665,26 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 			}
 
 			if (!recursiveRse)
-				recursiveRse = newQryNod;
+				recursiveRse = newQry;
 
 			newRse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
 
 			if (unionQuery)
-				newQry->dsqlClauses->nod_arg[1] = newRseNod;
+				newQry->dsqlClauses->dsqlArgs[1] = newRse;
 			else
-				newQry->dsqlClauses->nod_arg[0] = newRseNod;
+				newQry->dsqlClauses->dsqlArgs[0] = newRse;
 		}
 		else
 		{
 			if (unionQuery)
-				newQry->dsqlClauses->nod_arg[1] = rse;
+				newQry->dsqlClauses->dsqlArgs[1] = rse;
 			else
-				newQry->dsqlClauses->nod_arg[0] = rse;
+				newQry->dsqlClauses->dsqlArgs[0] = rse;
 
 			if (!anchorRse)
 			{
 				if (unionQuery)
-					anchorRse = newQryNod;
+					anchorRse = newQry;
 				else
 					anchorRse = rse;
 			}
@@ -701,18 +693,17 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 		if (!unionQuery)
 			break;
 
-		qry = unionQuery->dsqlClauses->nod_arg[0];
-		unionQuery = ExprNode::as<UnionSourceNode>(qry);
+		qry = unionQuery->dsqlClauses->dsqlArgs[0];
+		unionQuery = qry->as<UnionSourceNode>();
 
 		if (unionQuery)
 		{
 			UnionSourceNode* newUnion = FB_NEW(pool) UnionSourceNode(pool);
-			newUnion->dsqlClauses = MAKE_node(Dsql::nod_list, 2);
+			newUnion->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 2);
 			newUnion->dsqlAll = unionQuery->dsqlAll;
 			newUnion->recursive = unionQuery->recursive;
 
-			newQry->dsqlClauses->nod_arg[0] = MAKE_class_node(newUnion);
-			newQryNod = newQry->dsqlClauses->nod_arg[0];
+			newQry->dsqlClauses->dsqlArgs[0] = newUnion;
 			newQry = newUnion;
 		}
 	}
@@ -727,31 +718,31 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 			Arg::Gds(isc_dsql_cte_miss_nonrecursive) << input->alias);
 	}
 
-	UnionSourceNode* qry2 = ExprNode::as<UnionSourceNode>(recursiveRse);
+	UnionSourceNode* qry2 = recursiveRse->as<UnionSourceNode>();
 	UnionSourceNode* list = NULL;
 
-	while (qry2->dsqlClauses->nod_arg[0] != anchorRse)
+	while (qry2->dsqlClauses->dsqlArgs[0] != anchorRse)
 	{
 		list = qry2;
-		qry2 = ExprNode::as<UnionSourceNode>(qry2->dsqlClauses->nod_arg[0]);
+		qry2 = qry2->dsqlClauses->dsqlArgs[0]->as<UnionSourceNode>();
 	}
 
-	qry2->dsqlClauses->nod_arg[0] = NULL;
+	qry2->dsqlClauses->dsqlArgs[0] = NULL;
 
 	if (list)
-		list->dsqlClauses->nod_arg[0] = qry2->dsqlClauses->nod_arg[1];
+		list->dsqlClauses->dsqlArgs[0] = qry2->dsqlClauses->dsqlArgs[1];
 	else
-		recursiveRse = qry2->dsqlClauses->nod_arg[1];
+		recursiveRse = qry2->dsqlClauses->dsqlArgs[1];
 
 	UnionSourceNode* unionNode = FB_NEW(pool) UnionSourceNode(pool);
 	unionNode->dsqlAll = true;
 	unionNode->recursive = true;
-	unionNode->dsqlClauses = MAKE_node(Dsql::nod_list, 2);
-	unionNode->dsqlClauses->nod_arg[0] = anchorRse;
-	unionNode->dsqlClauses->nod_arg[1] = recursiveRse;
+	unionNode->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 2);
+	unionNode->dsqlClauses->dsqlArgs[0] = anchorRse;
+	unionNode->dsqlClauses->dsqlArgs[1] = recursiveRse;
 
 	SelectExprNode* select = FB_NEW(getPool()) SelectExprNode(getPool());
-	select->querySpec = MAKE_class_node(unionNode);
+	select->querySpec = unionNode;
 
 	select->alias = input->alias;
 	select->columns = input->columns;
@@ -762,10 +753,10 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 // Check if rse is recursive. If recursive reference is a table in the FROM list remove it.
 // If recursive reference is a part of join add join boolean (returned by pass1JoinIsRecursive)
 // to the WHERE clause. Punt if more than one recursive reference is found.
-dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
+RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 {
-	RseNode* input = ExprNode::as<RseNode>(inputNod);
-	fb_assert(input);
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	RseNode* result = FB_NEW(getPool()) RseNode(getPool());
 	result->dsqlFirst = input->dsqlFirst;
@@ -775,107 +766,87 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 	result->dsqlWhere = input->dsqlWhere;
 	result->dsqlGroup = input->dsqlGroup;
 	result->dsqlHaving = input->dsqlHaving;
-	result->dsqlPlan = input->dsqlPlan;
+	result->rse_plan = input->rse_plan;
 
-	dsql_nod* srcTables = input->dsqlFrom;
-	dsql_nod* dstTables = MAKE_node(Dsql::nod_list, srcTables->nod_count);
+	RecSourceListNode* srcTables = input->dsqlFrom;
+	RecSourceListNode* dstTables = FB_NEW(pool) RecSourceListNode(pool, srcTables->dsqlArgs.getCount());
 	result->dsqlFrom = dstTables;
 
-	dsql_nod** pDstTable = dstTables->nod_arg;
-	dsql_nod** pSrcTable = srcTables->nod_arg;
-	dsql_nod** end = srcTables->nod_arg + srcTables->nod_count;
+	RecordSourceNode** pDstTable = dstTables->dsqlArgs.begin();
+	RecordSourceNode** pSrcTable = srcTables->dsqlArgs.begin();
+	RecordSourceNode** end = srcTables->dsqlArgs.end();
 	bool found = false;
 
-	for (dsql_nod** prev = pDstTable; pSrcTable < end; ++pSrcTable, ++pDstTable)
+	for (RecordSourceNode** prev = pDstTable; pSrcTable < end; ++pSrcTable, ++pDstTable)
 	{
 		*prev++ = *pDstTable = *pSrcTable;
 
-		switch ((*pDstTable)->nod_type)
+		RseNode* rseNode = (*pDstTable)->as<RseNode>();
+
+		if (rseNode)
 		{
-			case Dsql::nod_class_exprnode:
+			fb_assert(rseNode->dsqlExplicitJoin);
+
+			RseNode* dstRse = rseNode->clone();
+
+			*pDstTable = dstRse;
+
+			BoolExprNode* joinBool = pass1JoinIsRecursive(*pDstTable);
+
+			if (joinBool)
 			{
-				RseNode* rseNode = ExprNode::as<RseNode>(*pDstTable);
-
-				if (rseNode)
+				if (found)
 				{
-					fb_assert(rseNode->dsqlExplicitJoin);
-
-					RseNode* dstRse = rseNode->clone();
-
-					*pDstTable = MAKE_node(Dsql::nod_class_exprnode, 1);
-					(*pDstTable)->nod_arg[0] = reinterpret_cast<dsql_nod*>(dstRse);
-
-					dsql_nod* joinBool = pass1JoinIsRecursive(*pDstTable);
-
-					if (joinBool)
-					{
-						if (found)
-						{
-							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-									  // Recursive member of CTE can't reference itself more than once
-									  Arg::Gds(isc_dsql_cte_mult_references));
-						}
-
-						found = true;
-
-						result->dsqlWhere = PASS1_compose(result->dsqlWhere, joinBool, blr_and);
-					}
-
-					break;
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							  // Recursive member of CTE can't reference itself more than once
+							  Arg::Gds(isc_dsql_cte_mult_references));
 				}
-				else if (ExprNode::is<ProcedureSourceNode>(*pDstTable) ||
-					ExprNode::is<RelationSourceNode>(*pDstTable))
-				{
-					if (pass1RelProcIsRecursive(*pDstTable))
-					{
-						if (found)
-						{
-							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-									  // Recursive member of CTE can't reference itself more than once
-									  Arg::Gds(isc_dsql_cte_mult_references));
-						}
-						found = true;
 
-						--prev;
-						--dstTables->nod_count;
-					}
-					break;
-				}
-				else if (ExprNode::is<SelectExprNode>(*pDstTable))
-					break;
+				found = true;
 
-				// fall into
+				result->dsqlWhere = PASS1_compose(result->dsqlWhere, joinBool, blr_and);
 			}
-
-			default:
-				fb_assert(false);
 		}
+		else if ((*pDstTable)->is<ProcedureSourceNode>() || (*pDstTable)->is<RelationSourceNode>())
+		{
+			if (pass1RelProcIsRecursive(*pDstTable))
+			{
+				if (found)
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							  // Recursive member of CTE can't reference itself more than once
+							  Arg::Gds(isc_dsql_cte_mult_references));
+				}
+				found = true;
+
+				--prev;
+				dstTables->dsqlArgs.pop();
+			}
+		}
+		else if (!(*pDstTable)->is<SelectExprNode>())
+			fb_assert(false);
 	}
 
 	if (found)
-	{
-		dsql_nod* resultNod = MAKE_node(Dsql::nod_class_exprnode, 1);
-		resultNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(result);
-		return resultNod;
-	}
+		return result;
 
 	return NULL;
 }
 
 // Check if table reference is recursive i.e. its name is equal to the name of current processing CTE.
-bool DsqlCompilerScratch::pass1RelProcIsRecursive(dsql_nod* input)
+bool DsqlCompilerScratch::pass1RelProcIsRecursive(RecordSourceNode* input)
 {
 	MetaName relName;
 	string relAlias;
 	ProcedureSourceNode* procNode;
 	RelationSourceNode* relNode;
 
-	if ((procNode = ExprNode::as<ProcedureSourceNode>(input)))
+	if ((procNode = input->as<ProcedureSourceNode>()))
 	{
 		relName = procNode->dsqlName.identifier;
 		relAlias = procNode->alias;
 	}
-	else if ((relNode = ExprNode::as<RelationSourceNode>(input)))
+	else if ((relNode = input->as<RelationSourceNode>()))
 	{
 		relName = relNode->dsqlName;
 		relAlias = relNode->alias;
@@ -897,34 +868,34 @@ bool DsqlCompilerScratch::pass1RelProcIsRecursive(dsql_nod* input)
 // boolean (to be added into WHERE clause).
 // We must remove member only if it is a table reference. Punt if recursive reference is found in
 // outer join or more than one recursive reference is found
-dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& inputNod)
+BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input)
 {
-	RseNode* input = ExprNode::as<RseNode>(inputNod);
-	fb_assert(input);
+	RseNode* inputRse = input->as<RseNode>();
+	fb_assert(inputRse);
 
-	const UCHAR join_type = input->rse_jointype;
+	const UCHAR joinType = inputRse->rse_jointype;
 	bool remove = false;
 
 	bool leftRecursive = false;
-	dsql_nod* leftBool = NULL;
-	dsql_nod** join_table = &input->dsqlFrom->nod_arg[0];
+	BoolExprNode* leftBool = NULL;
+	RecordSourceNode** joinTable = &inputRse->dsqlFrom->dsqlArgs[0];
 	RseNode* joinRse;
 
-	if ((joinRse = ExprNode::as<RseNode>(*join_table)) && joinRse->dsqlExplicitJoin)
+	if ((joinRse = ExprNode::as<RseNode>(*joinTable)) && joinRse->dsqlExplicitJoin)
 	{
-		leftBool = pass1JoinIsRecursive(*join_table);
+		leftBool = pass1JoinIsRecursive(*joinTable);
 		leftRecursive = (leftBool != NULL);
 	}
 	else
 	{
-		leftBool = input->dsqlWhere;
-		leftRecursive = pass1RelProcIsRecursive(*join_table);
+		leftBool = inputRse->dsqlWhere;
+		leftRecursive = pass1RelProcIsRecursive(*joinTable);
 
 		if (leftRecursive)
 			remove = true;
 	}
 
-	if (leftRecursive && join_type != blr_inner)
+	if (leftRecursive && joinType != blr_inner)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Recursive member of CTE can't be member of an outer join
@@ -932,25 +903,25 @@ dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& inputNod)
 	}
 
 	bool rightRecursive = false;
-	dsql_nod* rightBool = NULL;
+	BoolExprNode* rightBool = NULL;
 
-	join_table = &input->dsqlFrom->nod_arg[1];
+	joinTable = &inputRse->dsqlFrom->dsqlArgs[1];
 
-	if ((joinRse = ExprNode::as<RseNode>(*join_table)) && joinRse->dsqlExplicitJoin)
+	if ((joinRse = ExprNode::as<RseNode>(*joinTable)) && joinRse->dsqlExplicitJoin)
 	{
-		rightBool = pass1JoinIsRecursive(*join_table);
+		rightBool = pass1JoinIsRecursive(*joinTable);
 		rightRecursive = (rightBool != NULL);
 	}
 	else
 	{
-		rightBool = input->dsqlWhere;
-		rightRecursive = pass1RelProcIsRecursive(*join_table);
+		rightBool = inputRse->dsqlWhere;
+		rightRecursive = pass1RelProcIsRecursive(*joinTable);
 
 		if (rightRecursive)
 			remove = true;
 	}
 
-	if (rightRecursive && join_type != blr_inner)
+	if (rightRecursive && joinType != blr_inner)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Recursive member of CTE can't be member of an outer join
@@ -967,7 +938,7 @@ dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& inputNod)
 	if (leftRecursive)
 	{
 		if (remove)
-			inputNod = input->dsqlFrom->nod_arg[1];
+			input = inputRse->dsqlFrom->dsqlArgs[1];
 
 		return leftBool;
 	}
@@ -975,7 +946,7 @@ dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& inputNod)
 	if (rightRecursive)
 	{
 		if (remove)
-			inputNod = input->dsqlFrom->nod_arg[0];
+			input = inputRse->dsqlFrom->dsqlArgs[0];
 
 		return rightBool;
 	}

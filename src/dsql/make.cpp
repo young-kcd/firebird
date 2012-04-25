@@ -37,7 +37,6 @@
 #include <ctype.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../jrd/ibase.h"
@@ -62,11 +61,10 @@
 #include "../common/StatusArg.h"
 
 using namespace Jrd;
-using namespace Dsql;
 using namespace Firebird;
 
 
-dsql_nod* MAKE_const_slong(SLONG value)
+LiteralNode* MAKE_const_slong(SLONG value)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -79,19 +77,7 @@ dsql_nod* MAKE_const_slong(SLONG value)
 	literal->litDesc.dsc_sub_type = 0;
 	literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(valuePtr);
 
-	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
-	node->nod_flags = 0;
-	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(literal);
-
-	return node;
-}
-
-
-dsql_nod* MAKE_class_node(ExprNode* node)
-{
-	dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
-	nod->nod_arg[0] = (dsql_nod*) node;
-	return nod;
+	return literal;
 }
 
 
@@ -106,15 +92,11 @@ dsql_nod* MAKE_class_node(ExprNode* node)
     @param numeric_flag
 
  **/
-dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
+ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
-
-	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
-	node->nod_flags = 0;
-	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(literal);
 
 	switch (numeric_flag)
 	{
@@ -202,12 +184,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 				{
 					value = -value;
 					*(SINT64*) literal->litDesc.dsc_address = value;
-
-					NegateNode* negateNode = FB_NEW(*tdbb->getDefaultPool()) NegateNode(
-						*tdbb->getDefaultPool(), node);
-
-					node = MAKE_node(nod_class_exprnode, 1);
-					node->nod_arg[0] = reinterpret_cast<dsql_nod*>(negateNode);
+					return FB_NEW(*tdbb->getDefaultPool()) NegateNode(*tdbb->getDefaultPool(), literal);
 				}
 				else
 					*(SINT64*) literal->litDesc.dsc_address = value;
@@ -296,7 +273,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		break;
 	}
 
-	return node;
+	return literal;
 }
 
 
@@ -312,7 +289,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
     @param character_set
 
  **/
-dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
+LiteralNode* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -328,11 +305,7 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 
 	literal->dsqlStr = constant;
 
-	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
-	node->nod_flags = 0;
-	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(literal);
-
-	return node;
+	return literal;
 }
 
 
@@ -354,35 +327,18 @@ dsql_str* MAKE_cstring(const char* str)
 
 
 // Make a descriptor from input node.
-void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
+void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, ValueExprNode* node)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
 
 	// If we already know the datatype, don't worry about anything.
-
-	if (node->nod_desc.dsc_dtype)
+	if (node->nodDesc.dsc_dtype)
 	{
-		*desc = node->nod_desc;
+		*desc = node->nodDesc;
 		return;
 	}
 
-	switch (node->nod_type)
-	{
-		case nod_class_exprnode:
-		{
-			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
-			if (exprNode->kind == DmlNode::KIND_VALUE)
-			{
-				exprNode->make(dsqlScratch, desc);
-				return;
-			}
-
-			// fall into
-		}
-
-		default:
-			fb_assert(false);	// unexpected dsql_nod type
-	}
+	node->make(dsqlScratch, desc);
 }
 
 
@@ -402,6 +358,7 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 
 	DEV_BLKCHK(field, dsql_type_fld);
 
+	desc->clear();
 	desc->dsc_dtype = static_cast<UCHAR>(field->fld_dtype);
 	desc->dsc_scale = static_cast<SCHAR>(field->fld_scale);
 	desc->dsc_sub_type = field->fld_sub_type;
@@ -429,17 +386,19 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	@param expression_name
 
  **/
-void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node,
+void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, ValueListNode* node,
 	const TEXT* expression_name)
 {
+	ValueExprNode** p = node->dsqlArgs.begin();
+	ValueExprNode** end = node->dsqlArgs.end();
+
 	Array<const dsc*> args;
 
-	fb_assert(node->nod_type == nod_list);
-
-	for (dsql_nod** p = node->nod_arg; p < node->nod_arg + node->nod_count; ++p)
+	while (p != end)
 	{
-		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p);
-		args.add(&(*p)->nod_desc);
+		MAKE_desc(dsqlScratch, &(*p)->nodDesc, *p);
+		args.add(&(*p)->nodDesc);
+		++p;
 	}
 
 	DSqlDataTypeUtil(dsqlScratch).makeFromList(desc, expression_name, args.getCount(), args.begin());
@@ -458,11 +417,10 @@ void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* 
     @param indices
 
  **/
-dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
+FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices)
 {
 	DEV_BLKCHK(context, dsql_type_ctx);
 	DEV_BLKCHK(field, dsql_type_fld);
-	DEV_BLKCHK(indices, dsql_type_nod);
 
 	thread_db* const tdbb = JRD_get_thread_data();
 	FieldNode* const node = FB_NEW(*tdbb->getDefaultPool()) FieldNode(
@@ -472,19 +430,19 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	{
 		if (indices)
 		{
-			MAKE_desc_from_field(&node->dsqlDesc, field);
-			node->dsqlDesc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
-			node->dsqlDesc.dsc_length = field->fld_element_length;
+			MAKE_desc_from_field(&node->nodDesc, field);
+			node->nodDesc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
+			node->nodDesc.dsc_length = field->fld_element_length;
 
-			// node->dsqlDesc.dsc_scale = field->fld_scale;
-			// node->dsqlDesc.dsc_sub_type = field->fld_sub_type;
+			// node->nodDesc.dsc_scale = field->fld_scale;
+			// node->nodDesc.dsc_sub_type = field->fld_sub_type;
 		}
 		else
 		{
-			node->dsqlDesc.dsc_dtype = dtype_array;
-			node->dsqlDesc.dsc_length = sizeof(ISC_QUAD);
-			node->dsqlDesc.dsc_scale = static_cast<SCHAR>(field->fld_scale);
-			node->dsqlDesc.dsc_sub_type = field->fld_sub_type;
+			node->nodDesc.dsc_dtype = dtype_array;
+			node->nodDesc.dsc_length = sizeof(ISC_QUAD);
+			node->nodDesc.dsc_scale = static_cast<SCHAR>(field->fld_scale);
+			node->nodDesc.dsc_sub_type = field->fld_sub_type;
 		}
 	}
 	else
@@ -495,33 +453,30 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 					  Arg::Gds(isc_dsql_only_can_subscript_array) << Arg::Str(field->fld_name));
 		}
 
-		MAKE_desc_from_field(&node->dsqlDesc, field);
+		MAKE_desc_from_field(&node->nodDesc, field);
 	}
 
 	if ((field->fld_flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))
-		node->dsqlDesc.dsc_flags |= DSC_nullable;
+		node->nodDesc.dsc_flags |= DSC_nullable;
 
 	// UNICODE_FSS_HACK
 	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-	if ((field->fld_flags & FLD_system) && node->dsqlDesc.dsc_dtype <= dtype_varying &&
-		INTL_GET_CHARSET(&node->dsqlDesc) == CS_METADATA)
+	if ((field->fld_flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
+		INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
 	{
 		USHORT adjust = 0;
 
-		if (node->dsqlDesc.dsc_dtype == dtype_varying)
+		if (node->nodDesc.dsc_dtype == dtype_varying)
 			adjust = sizeof(USHORT);
-		else if (node->dsqlDesc.dsc_dtype == dtype_cstring)
+		else if (node->nodDesc.dsc_dtype == dtype_cstring)
 			adjust = 1;
 
-		node->dsqlDesc.dsc_length -= adjust;
-		node->dsqlDesc.dsc_length *= 3;
-		node->dsqlDesc.dsc_length += adjust;
+		node->nodDesc.dsc_length -= adjust;
+		node->nodDesc.dsc_length *= 3;
+		node->nodDesc.dsc_length += adjust;
 	}
 
-	dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
-	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(node);
-
-	return nod;
+	return node;
 }
 
 
@@ -535,63 +490,12 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
     @param field_name
 
  **/
-dsql_nod* MAKE_field_name(const char* field_name)
+FieldNode* MAKE_field_name(const char* field_name)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	FieldNode* fieldNode = FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
 	fieldNode->dsqlName = field_name;
-
-    dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
-    nod->nod_arg[0] = (dsql_nod*) fieldNode;
-	return nod;
-}
-
-
-/**
-
- 	MAKE_list
-
-    @brief	Make a list node from a linked list stack of things.
-
-
-    @param stack
-
- **/
-dsql_nod* MAKE_list(DsqlNodStack& stack)
-{
-	USHORT count = stack.getCount();
-	dsql_nod* node = MAKE_node(nod_list, count);
-	dsql_nod** ptr = node->nod_arg + count;
-
-	while (stack.hasData())
-	{
-		*--ptr = stack.pop();
-	}
-
-	return node;
-}
-
-
-/**
-
- 	MAKE_node
-
-    @brief	Make a node of given type.
-
-
-    @param type
-    @param count
-
- **/
-dsql_nod* MAKE_node(NOD_TYPE type, int count)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), count) dsql_nod;
-	node->nod_type = type;
-	node->nod_count = count;
-
-	return node;
+	return fieldNode;
 }
 
 
@@ -611,7 +515,7 @@ dsql_nod* MAKE_node(NOD_TYPE type, int count)
 
  **/
 dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
-	USHORT sqlda_index, const dsql_nod* node)
+	USHORT sqlda_index, const ValueExprNode* node)
 {
 	if (!message)
 	{
@@ -728,14 +632,8 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 	@param item
 
 **/
-void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
+void MAKE_parameter_names(dsql_par* parameter, const ValueExprNode* item)
 {
 	fb_assert(parameter && item);
-
-	if (item->nod_type == nod_class_exprnode)
-	{
-		ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(item->nod_arg[0]);
-		if (exprNode->kind == DmlNode::KIND_VALUE)
-			exprNode->setParameterName(parameter);
-	}
+	item->setParameterName(parameter);
 }

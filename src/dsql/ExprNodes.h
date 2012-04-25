@@ -25,6 +25,7 @@
 
 #include "../jrd/blr.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/pass1_proto.h"
 
 class SysFunction;
 
@@ -33,6 +34,7 @@ namespace Jrd {
 struct ItemInfo;
 class DeclareVariableNode;
 class RecordSource;
+class RelationSourceNode;
 class ValueListNode;
 
 
@@ -40,15 +42,15 @@ class ArithmeticNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC
 {
 public:
 	ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
-		dsql_nod* aArg1 = NULL, dsql_nod* aArg2 = NULL);
+		ValueExprNode* aArg1 = NULL, ValueExprNode* aArg2 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -83,8 +85,8 @@ public:
 	UCHAR blrOp;
 	bool dialect1;
 	Firebird::string label;
-	dsql_nod* dsqlArg1;
-	dsql_nod* dsqlArg2;
+	ValueExprNode* dsqlArg1;
+	ValueExprNode* dsqlArg2;
 	NestConst<ValueExprNode> arg1;
 	NestConst<ValueExprNode> arg2;
 };
@@ -95,7 +97,7 @@ class ArrayNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARRAY>
 public:
 	ArrayNode(MemoryPool& pool, FieldNode* field);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	// This class is used only in the parser. It turns in a FieldNode in dsqlPass.
@@ -140,11 +142,11 @@ public:
 class BoolAsValueNode : public TypedNode<ValueExprNode, ExprNode::TYPE_BOOL_AS_VALUE>
 {
 public:
-	explicit BoolAsValueNode(MemoryPool& pool, dsql_nod* aBoolean = NULL);
+	explicit BoolAsValueNode(MemoryPool& pool, BoolExprNode* aBoolean = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual void setParameterName(dsql_par* /*parameter*/) const
@@ -160,7 +162,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlBoolean;
+	BoolExprNode* dsqlBoolean;
 	NestConst<BoolExprNode> boolean;
 };
 
@@ -168,15 +170,15 @@ public:
 class CastNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CAST>
 {
 public:
-	explicit CastNode(MemoryPool& pool, dsql_nod* aDsqlSource = NULL, dsql_fld* aDsqlField = NULL);
+	explicit CastNode(MemoryPool& pool, ValueExprNode* aDsqlSource = NULL, dsql_fld* aDsqlField = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -190,7 +192,7 @@ public:
 
 public:
 	Firebird::MetaName dsqlAlias;
-	dsql_nod* dsqlSource;
+	ValueExprNode* dsqlSource;
 	dsql_fld* dsqlField;
 	dsc castDesc;
 	NestConst<ValueExprNode> source;
@@ -201,7 +203,7 @@ public:
 class CoalesceNode : public TypedNode<ValueExprNode, ExprNode::TYPE_COALESCE>
 {
 public:
-	explicit CoalesceNode(MemoryPool& pool, dsql_nod* aDsqlArgs = NULL)
+	explicit CoalesceNode(MemoryPool& pool, ValueListNode* aDsqlArgs = NULL)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_COALESCE>(pool),
 		  dsqlArgs(aDsqlArgs),
 		  args(NULL)
@@ -211,11 +213,11 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -225,7 +227,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlArgs;
+	ValueListNode* dsqlArgs;
 	NestConst<ValueListNode> args;
 };
 
@@ -233,12 +235,12 @@ public:
 class CollateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_COLLATE>
 {
 public:
-	CollateNode(MemoryPool& pool, dsql_nod* aDsqlArg, const Firebird::MetaName& aCollation);
+	CollateNode(MemoryPool& pool, ValueExprNode* aDsqlArg, const Firebird::MetaName& aCollation);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	static ValueExprNode* pass1Collate(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
+	static ValueExprNode* pass1Collate(DsqlCompilerScratch* dsqlScratch, ValueExprNode* input,
 		const Firebird::MetaName& collation);
 
 	// This class is used only in the parser. It turns in a CastNode in dsqlPass.
@@ -276,10 +278,10 @@ public:
 	}
 
 private:
-	static void assignFieldDtypeFromDsc(dsql_fld* field, const dsc* nodDesc);
+	static void assignFieldDtypeFromDsc(dsql_fld* field, const dsc* desc);
 
 public:
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	Firebird::MetaName collation;
 };
 
@@ -287,15 +289,15 @@ public:
 class ConcatenateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CONCATENATE>
 {
 public:
-	explicit ConcatenateNode(MemoryPool& pool, dsql_nod* aArg1 = NULL, dsql_nod* aArg2 = NULL);
+	explicit ConcatenateNode(MemoryPool& pool, ValueExprNode* aArg1 = NULL, ValueExprNode* aArg2 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -305,8 +307,8 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlArg1;
-	dsql_nod* dsqlArg2;
+	ValueExprNode* dsqlArg1;
+	ValueExprNode* dsqlArg2;
 	NestConst<ValueExprNode> arg1;
 	NestConst<ValueExprNode> arg2;
 };
@@ -322,7 +324,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
@@ -345,7 +347,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -372,7 +374,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -398,7 +400,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -421,7 +423,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -437,8 +439,8 @@ public:
 class DecodeNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DECODE>
 {
 public:
-	explicit DecodeNode(MemoryPool& pool, dsql_nod* aDsqlTest = NULL,
-				dsql_nod* aDsqlConditions = NULL, dsql_nod* aDsqlValues = NULL)
+	explicit DecodeNode(MemoryPool& pool, ValueExprNode* aDsqlTest = NULL,
+				ValueListNode* aDsqlConditions = NULL, ValueListNode* aDsqlValues = NULL)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_DECODE>(pool),
 		  label(pool),
 		  dsqlTest(aDsqlTest),
@@ -457,11 +459,11 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -472,9 +474,9 @@ public:
 
 public:
 	Firebird::string label;
-	dsql_nod* dsqlTest;
-	dsql_nod* dsqlConditions;
-	dsql_nod* dsqlValues;
+	ValueExprNode* dsqlTest;
+	ValueListNode* dsqlConditions;
+	ValueListNode* dsqlValues;
 	NestConst<ValueExprNode> test;
 	NestConst<ValueListNode> conditions;
 	NestConst<ValueListNode> values;
@@ -496,7 +498,7 @@ public:
 
 	// This is a non-DSQL node.
 
-	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
+	virtual void print(Firebird::string& /*text*/) const
 	{
 		fb_assert(false);
 	}
@@ -543,7 +545,7 @@ public:
 		domDesc.clear();
 	}
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual void setParameterName(dsql_par* /*parameter*/) const
@@ -566,15 +568,15 @@ public:
 class ExtractNode : public TypedNode<ValueExprNode, ExprNode::TYPE_EXTRACT>
 {
 public:
-	ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, dsql_nod* aArg = NULL);
+	ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -587,7 +589,7 @@ public:
 
 public:
 	UCHAR blrSubOp;
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 };
 
@@ -595,22 +597,22 @@ public:
 class FieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>
 {
 public:
-	FieldNode(MemoryPool& pool, dsql_ctx* context = NULL, dsql_fld* field = NULL, dsql_nod* indices = NULL);
+	FieldNode(MemoryPool& pool, dsql_ctx* context = NULL, dsql_fld* field = NULL, ValueListNode* indices = NULL);
 	FieldNode(MemoryPool& pool, StreamType stream, USHORT id, bool aById);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	dsql_nod* internalDsqlPass(DsqlCompilerScratch* dsqlScratch, dsql_nod** list);
+	ValueExprNode* internalDsqlPass(DsqlCompilerScratch* dsqlScratch, RecordSourceNode** list);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -660,8 +662,7 @@ public:
 	Firebird::MetaName dsqlName;
 	dsql_ctx* const dsqlContext;
 	dsql_fld* const dsqlField;
-	dsql_nod* dsqlIndices;
-	dsc dsqlDesc;
+	ValueListNode* dsqlIndices;
 	const StreamType fieldStream;
 	const Format* format;
 	const USHORT fieldId;
@@ -673,15 +674,15 @@ class GenIdNode : public TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>
 {
 public:
 	GenIdNode(MemoryPool& pool, bool aDialect1, const Firebird::MetaName& aName,
-		dsql_nod* aArg = NULL);
+		ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -700,7 +701,7 @@ public:
 public:
 	bool dialect1;
 	Firebird::MetaName name;
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 	SLONG id;
 };
@@ -717,11 +718,11 @@ public:
 
 	static const InfoAttr INFO_TYPE_ATTRIBUTES[MAX_INFO_TYPE];
 
-	explicit InternalInfoNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit InternalInfoNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -733,7 +734,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 };
 
@@ -746,11 +747,11 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 	static void genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -776,16 +777,16 @@ public:
 class DsqlAliasNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ALIAS>
 {
 public:
-	DsqlAliasNode(MemoryPool& pool, const Firebird::MetaName& aName, dsql_nod* aValue)
+	DsqlAliasNode(MemoryPool& pool, const Firebird::MetaName& aName, ValueExprNode* aValue)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_ALIAS>(pool),
 		  name(aName),
 		  value(aValue),
 		  implicitJoin(NULL)
 	{
-		addChildNode(value);
+		addDsqlChildNode(value);
 	}
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -811,7 +812,7 @@ public:
 
 public:
 	const Firebird::MetaName name;
-	dsql_nod* value;
+	ValueExprNode* value;
 	NestConst<ImplicitJoin> implicitJoin;
 };
 
@@ -821,7 +822,7 @@ class DsqlMapNode : public TypedNode<ValueExprNode, ExprNode::TYPE_MAP>
 public:
 	DsqlMapNode(MemoryPool& pool, dsql_ctx* aContext, dsql_map* aMap);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
@@ -829,7 +830,7 @@ public:
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -863,9 +864,9 @@ class DerivedFieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_
 {
 public:
 	DerivedFieldNode(MemoryPool& pool, const Firebird::MetaName& aName, USHORT aScope,
-		dsql_nod* aDsqlValue);
+		ValueExprNode* aDsqlValue);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
@@ -873,7 +874,7 @@ public:
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -899,7 +900,7 @@ public:
 public:
 	Firebird::MetaName name;
 	USHORT scope;
-	dsql_nod* dsqlValue;
+	ValueExprNode* dsqlValue;
 	dsql_ctx* context;
 };
 
@@ -907,15 +908,15 @@ public:
 class NegateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NEGATE>
 {
 public:
-	explicit NegateNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit NegateNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -925,7 +926,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 };
 
@@ -940,7 +941,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
@@ -962,9 +963,9 @@ public:
 		NULLS_LAST
 	};
 
-	OrderNode(MemoryPool& pool, dsql_nod* aDsqlValue);
+	OrderNode(MemoryPool& pool, ValueExprNode* aDsqlValue);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual OrderNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
@@ -1001,7 +1002,7 @@ public:
 	}
 
 public:
-	dsql_nod* dsqlValue;
+	ValueExprNode* dsqlValue;
 	bool descending;
 	NullsPlacement nullsPlacement;
 };
@@ -1012,17 +1013,17 @@ public:
 class OverNode : public TypedNode<ValueExprNode, ExprNode::TYPE_OVER>
 {
 public:
-	explicit OverNode(MemoryPool& pool, dsql_nod* aAggExpr = NULL, dsql_nod* aPartition = NULL,
-		dsql_nod* aOrder = NULL);
+	explicit OverNode(MemoryPool& pool, AggNode* aAggExpr = NULL, ValueListNode* aPartition = NULL,
+		ValueListNode* aOrder = NULL);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -1033,9 +1034,9 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlAggExpr;
-	dsql_nod* dsqlPartition;
-	dsql_nod* dsqlOrder;
+	ValueExprNode* dsqlAggExpr;
+	ValueListNode* dsqlPartition;
+	ValueListNode* dsqlOrder;
 };
 
 
@@ -1051,7 +1052,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual void setParameterName(dsql_par* /*parameter*/) const
@@ -1059,7 +1060,7 @@ public:
 	}
 
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
@@ -1092,14 +1093,14 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -1133,7 +1134,7 @@ private:
 public:
 	UCHAR blrOp;
 	Firebird::MetaName dsqlQualifier;
-	dsql_nod* dsqlRelation;
+	RecordSourceNode* dsqlRelation;
 	StreamType recStream;
 	bool aggregate;
 };
@@ -1155,7 +1156,7 @@ public:
 
 	// This is a non-DSQL node.
 
-	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
+	virtual void print(Firebird::string& /*text*/) const
 	{
 		fb_assert(false);
 	}
@@ -1202,7 +1203,7 @@ public:
 
 	// This is a non-DSQL node.
 
-	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
+	virtual void print(Firebird::string& /*text*/) const
 	{
 		fb_assert(false);
 	}
@@ -1237,15 +1238,15 @@ public:
 class StrCaseNode : public TypedNode<ValueExprNode, ExprNode::TYPE_STR_CASE>
 {
 public:
-	StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg = NULL);
+	StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -1258,7 +1259,7 @@ public:
 
 public:
 	UCHAR blrOp;
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 };
 
@@ -1266,15 +1267,15 @@ public:
 class StrLenNode : public TypedNode<ValueExprNode, ExprNode::TYPE_STR_LEN>
 {
 public:
-	StrLenNode(MemoryPool& pool, UCHAR aBlrSubOp, dsql_nod* aArg = NULL);
+	StrLenNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -1287,7 +1288,7 @@ public:
 
 public:
 	UCHAR blrSubOp;
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 };
 
@@ -1296,12 +1297,12 @@ public:
 class SubQueryNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBQUERY>
 {
 public:
-	explicit SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aDsqlRse = NULL,
-		dsql_nod* aValue1 = NULL, dsql_nod* aValue2 = NULL);
+	explicit SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse = NULL,
+		ValueExprNode* aValue1 = NULL, ValueExprNode* aValue2 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -1311,7 +1312,7 @@ public:
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
@@ -1341,9 +1342,9 @@ public:
 
 public:
 	UCHAR blrOp;
-	dsql_nod* dsqlRse;
-	dsql_nod* dsqlValue1;
-	dsql_nod* dsqlValue2;
+	RecordSourceNode* dsqlRse;
+	ValueExprNode* dsqlValue1;
+	ValueExprNode* dsqlValue2;
 	NestConst<RseNode> rse;
 	NestConst<ValueExprNode> value1;
 	NestConst<ValueExprNode> value2;
@@ -1354,16 +1355,16 @@ public:
 class SubstringNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING>
 {
 public:
-	explicit SubstringNode(MemoryPool& pool, dsql_nod* aExpr = NULL,
-		dsql_nod* aStart = NULL, dsql_nod* aLength = NULL);
+	explicit SubstringNode(MemoryPool& pool, ValueExprNode* aExpr = NULL,
+		ValueExprNode* aStart = NULL, ValueExprNode* aLength = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -1376,9 +1377,9 @@ public:
 		const dsc* startDsc, const dsc* lengthDsc);
 
 public:
-	dsql_nod* dsqlExpr;
-	dsql_nod* dsqlStart;
-	dsql_nod* dsqlLength;
+	ValueExprNode* dsqlExpr;
+	ValueExprNode* dsqlStart;
+	ValueExprNode* dsqlLength;
 	NestConst<ValueExprNode> expr;
 	NestConst<ValueExprNode> start;
 	NestConst<ValueExprNode> length;
@@ -1388,16 +1389,16 @@ public:
 class SubstringSimilarNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
 {
 public:
-	explicit SubstringSimilarNode(MemoryPool& pool, dsql_nod* aExpr = NULL,
-		dsql_nod* aPattern = NULL, dsql_nod* aEscape = NULL);
+	explicit SubstringSimilarNode(MemoryPool& pool, ValueExprNode* aExpr = NULL,
+		ValueExprNode* aPattern = NULL, ValueExprNode* aEscape = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -1408,9 +1409,9 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlExpr;
-	dsql_nod* dsqlPattern;
-	dsql_nod* dsqlEscape;
+	ValueExprNode* dsqlExpr;
+	ValueExprNode* dsqlPattern;
+	ValueExprNode* dsqlEscape;
 	NestConst<ValueExprNode> expr;
 	NestConst<ValueExprNode> pattern;
 	NestConst<ValueExprNode> escape;
@@ -1421,11 +1422,11 @@ class SysFuncCallNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SYSFUNC_C
 {
 public:
 	explicit SysFuncCallNode(MemoryPool& pool, const Firebird::MetaName& aName,
-		dsql_nod* aArgs = NULL);
+		ValueListNode* aArgs = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -1440,7 +1441,7 @@ public:
 
 public:
 	Firebird::MetaName name;
-	dsql_nod* dsqlArgs;
+	ValueListNode* dsqlArgs;
 	bool dsqlSpecialSyntax;
 	NestConst<ValueListNode> args;
 	const SysFunction* function;
@@ -1451,15 +1452,15 @@ class TrimNode : public TypedNode<ValueExprNode, ExprNode::TYPE_TRIM>
 {
 public:
 	explicit TrimNode(MemoryPool& pool, UCHAR aWhere,
-		dsql_nod* aValue = NULL, dsql_nod* aTrimChars = NULL);
+		ValueExprNode* aValue = NULL, ValueExprNode* aTrimChars = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -1472,8 +1473,8 @@ public:
 
 public:
 	UCHAR where;
-	dsql_nod* dsqlValue;
-	dsql_nod* dsqlTrimChars;		// may be NULL
+	ValueExprNode* dsqlValue;
+	ValueExprNode* dsqlTrimChars;		// may be NULL
 	NestConst<ValueExprNode> value;
 	NestConst<ValueExprNode> trimChars;	// may be NULL
 };
@@ -1483,11 +1484,11 @@ class UdfCallNode : public TypedNode<ValueExprNode, ExprNode::TYPE_UDF_CALL>
 {
 public:
 	explicit UdfCallNode(MemoryPool& pool, const Firebird::QualifiedName& aName,
-		dsql_nod* aArgs = NULL);
+		ValueListNode* aArgs = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -1503,7 +1504,7 @@ public:
 
 public:
 	Firebird::QualifiedName name;
-	dsql_nod* dsqlArgs;
+	ValueListNode* dsqlArgs;
 	NestConst<ValueListNode> args;
 	NestConst<Function> function;
 
@@ -1515,16 +1516,16 @@ private:
 class ValueIfNode : public TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_IF>
 {
 public:
-	explicit ValueIfNode(MemoryPool& pool, dsql_nod* aCondition = NULL, dsql_nod* aTrueValue = NULL,
-		dsql_nod* aFalseValue = NULL);
+	explicit ValueIfNode(MemoryPool& pool, BoolExprNode* aCondition = NULL,
+		ValueExprNode* aTrueValue = NULL, ValueExprNode* aFalseValue = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar);
+		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
@@ -1539,70 +1540,12 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlCondition;
-	dsql_nod* dsqlTrueValue;
-	dsql_nod* dsqlFalseValue;
+	BoolExprNode* dsqlCondition;
+	ValueExprNode* dsqlTrueValue;
+	ValueExprNode* dsqlFalseValue;
 	NestConst<BoolExprNode> condition;
 	NestConst<ValueExprNode> trueValue;
 	NestConst<ValueExprNode> falseValue;
-};
-
-
-// Container for a list of value expressions.
-class ValueListNode : public TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_LIST>
-{
-public:
-	ValueListNode(MemoryPool& pool, unsigned count);
-
-	// This is a non-DSQL node.
-
-	virtual void print(Firebird::string& /*text*/, Firebird::Array<dsql_nod*>& /*nodes*/) const
-	{
-		fb_assert(false);
-	}
-
-	virtual void setParameterName(dsql_par* /*parameter*/) const
-	{
-		fb_assert(false);
-	}
-
-	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
-	{
-		fb_assert(false);
-	}
-
-	virtual void make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
-	{
-		fb_assert(false);
-	}
-
-	virtual ValueListNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-
-	virtual ValueListNode* pass1(thread_db* tdbb, CompilerScratch* csb)
-	{
-		ValueExprNode::pass1(tdbb, csb);
-		return this;
-	}
-
-	virtual ValueListNode* pass2(thread_db* tdbb, CompilerScratch* csb)
-	{
-		ValueExprNode::pass2(tdbb, csb);
-		return this;
-	}
-
-	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
-	{
-		fb_assert(false);	// Invalid operation.
-	}
-
-	virtual dsc* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
-	{
-		fb_assert(false);	// Invalid operation.
-		return NULL;
-	}
-
-public:
-	NestValueArray args;
 };
 
 
@@ -1613,7 +1556,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);

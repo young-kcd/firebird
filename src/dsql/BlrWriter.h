@@ -28,7 +28,6 @@
 
 namespace Jrd {
 
-class dsql_nod;
 class DeclareSubFuncNode;
 class DeclareSubProcNode;
 

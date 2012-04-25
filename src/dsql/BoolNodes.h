@@ -34,11 +34,12 @@ class RecordSource;
 class BinaryBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_BINARY_BOOL>
 {
 public:
-	BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg1 = NULL, dsql_nod* aArg2 = NULL);
+	BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, BoolExprNode* aArg1 = NULL,
+		BoolExprNode* aArg2 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -53,8 +54,8 @@ private:
 
 public:
 	UCHAR blrOp;
-	dsql_nod* dsqlArg1;
-	dsql_nod* dsqlArg2;
+	BoolExprNode* dsqlArg1;
+	BoolExprNode* dsqlArg2;
 	NestConst<BoolExprNode> arg1;
 	NestConst<BoolExprNode> arg2;
 };
@@ -70,12 +71,12 @@ public:
 		DFLAG_ANSI_ANY
 	};
 
-	ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg1 = NULL,
-		dsql_nod* aArg2 = NULL, dsql_nod* aArg3 = NULL);
+	ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp, ValueExprNode* aArg1 = NULL,
+		ExprNode* aArg2 = NULL, ValueExprNode* aArg3 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -103,9 +104,9 @@ private:
 
 public:
 	UCHAR blrOp;
-	dsql_nod* dsqlArg1;
-	dsql_nod* dsqlArg2;
-	dsql_nod* dsqlArg3;
+	ValueExprNode* dsqlArg1;
+	ExprNode* dsqlArg2;
+	ValueExprNode* dsqlArg3;
 	DsqlFlag dsqlFlag;
 	bool dsqlWasValue;
 	NestConst<ValueExprNode> arg1;
@@ -118,11 +119,11 @@ public:
 class MissingBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>
 {
 public:
-	explicit MissingBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL, bool aDsqlUnknown = false);
+	explicit MissingBoolNode(MemoryPool& pool, ValueExprNode* aArg = NULL, bool aDsqlUnknown = false);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -137,7 +138,7 @@ public:
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	bool dsqlUnknown;
 	NestConst<ValueExprNode> arg;
 };
@@ -146,11 +147,11 @@ public:
 class NotBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
 {
 public:
-	explicit NotBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit NotBoolNode(MemoryPool& pool, BoolExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -167,7 +168,7 @@ private:
 	BoolExprNode* process(DsqlCompilerScratch* dsqlScratch, bool invert);
 
 public:
-	dsql_nod* dsqlArg;
+	BoolExprNode* dsqlArg;
 	NestConst<BoolExprNode> arg;
 };
 
@@ -175,18 +176,18 @@ public:
 class RseBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>
 {
 public:
-	RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aDsqlRse = NULL);
+	RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{
 		fb_assert(blrOp != blr_any && blrOp != blr_ansi_any && blrOp != blr_ansi_all);
-		return visitor.ignoreSubSelects ? false : BoolExprNode::dsqlVisit(visitor);
+		return visitor.ignoreSubSelects ? false : BoolExprNode::dsqlAggregateFinder(visitor);
 	}
 
 	virtual bool jrdPossibleUnknownFinder()
@@ -207,7 +208,7 @@ private:
 
 public:
 	UCHAR blrOp;
-	dsql_nod* dsqlRse;
+	RecordSourceNode* dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<RecordSource> rsb;
 };

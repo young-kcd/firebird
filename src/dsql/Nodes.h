@@ -25,7 +25,6 @@
 
 #include "../jrd/jrd.h"
 #include "../dsql/DsqlCompilerScratch.h"
-#include "../dsql/node.h"
 #include "../dsql/Visitors.h"
 #include "../common/classes/array.h"
 #include "../common/classes/NestConst.h"
@@ -35,9 +34,10 @@ namespace Jrd {
 class AggregateSort;
 class CompilerScratch;
 class Cursor;
-class dsql_nod;
 class ExprNode;
+class OptimizerBlk;
 class OptimizerRetrieval;
+class RecordSource;
 class RseNode;
 class SlidingWindow;
 class TypeClause;
@@ -133,7 +133,33 @@ public:
 		return node->dsqlPass(dsqlScratch);
 	}
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const = 0;
+	// Compile a parsed statement into something more interesting and assign it to target.
+	template <typename T1, typename T2>
+	static void doDsqlPass(DsqlCompilerScratch* dsqlScratch, T1*& target, T2* node)
+	{
+		if (!node)
+			target = NULL;
+		else
+			target = node->dsqlPass(dsqlScratch);
+	}
+
+	// Changes dsqlScratch->isPsql() value, calls doDsqlPass and restore dsqlScratch->isPsql().
+	template <typename T>
+	static T* doDsqlPass(DsqlCompilerScratch* dsqlScratch, T* node, bool psql)
+	{
+		PsqlChanger changer(dsqlScratch, psql);
+		return doDsqlPass(dsqlScratch, node);
+	}
+
+	// Changes dsqlScratch->isPsql() value, calls doDsqlPass and restore dsqlScratch->isPsql().
+	template <typename T1, typename T2>
+	static void doDsqlPass(DsqlCompilerScratch* dsqlScratch, T1*& target, T2* node, bool psql)
+	{
+		PsqlChanger changer(dsqlScratch, psql);
+		doDsqlPass(dsqlScratch, target, node);
+	}
+
+	virtual void print(Firebird::string& text) const = 0;
 
 	virtual Node* dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
@@ -272,7 +298,8 @@ public:
 		KIND_STATEMENT,
 		KIND_VALUE,
 		KIND_BOOLEAN,
-		KIND_REC_SOURCE
+		KIND_REC_SOURCE,
+		KIND_LIST
 	};
 
 	explicit DmlNode(MemoryPool& pool, Kind aKind)
@@ -337,6 +364,7 @@ public:
 	virtual ExprNode* getExpr() = 0;
 	virtual const ExprNode* getExpr() const = 0;
 
+	virtual void remap(FieldRemapper& visitor) = 0;
 	virtual void pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	void pass2(thread_db* tdbb, CompilerScratch* csb);
 
@@ -353,20 +381,10 @@ public:
 		fb_assert(aPtr);
 	}
 
-	virtual ExprNode* getExpr()
-	{
-		return *ptr;
-	}
-
-	virtual const ExprNode* getExpr() const
-	{
-		return *ptr;
-	}
-
-	virtual void pass1(thread_db* tdbb, CompilerScratch* csb)
-	{
-		DmlNode::doPass1(tdbb, csb, ptr);
-	}
+	virtual ExprNode* getExpr();
+	virtual const ExprNode* getExpr() const;
+	virtual void remap(FieldRemapper& visitor);
+	virtual void pass1(thread_db* tdbb, CompilerScratch* csb);
 
 protected:
 	virtual inline void internalPass2(thread_db* tdbb, CompilerScratch* csb);
@@ -423,7 +441,6 @@ public:
 		TYPE_TRIM,
 		TYPE_UDF_CALL,
 		TYPE_VALUE_IF,
-		TYPE_VALUE_LIST,
 		TYPE_VARIABLE,
 
 		// Bool types
@@ -440,7 +457,11 @@ public:
 		TYPE_RSE,
 		TYPE_SELECT_EXPR,
 		TYPE_UNION,
-		TYPE_WINDOW
+		TYPE_WINDOW,
+
+		// List types
+		TYPE_REC_SOURCE_LIST,
+		TYPE_VALUE_LIST
 	};
 
 	// Generic flags.
@@ -470,48 +491,33 @@ public:
 
 	template <typename T> T* as()
 	{
-		return type == T::TYPE ? static_cast<T*>(this) : NULL;
+		return this && type == T::TYPE ? static_cast<T*>(this) : NULL;
 	}
 
 	template <typename T> const T* as() const
 	{
-		return type == T::TYPE ? static_cast<const T*>(this) : NULL;
+		return this && type == T::TYPE ? static_cast<const T*>(this) : NULL;
 	}
 
 	template <typename T> bool is() const
 	{
-		return type == T::TYPE;
+		return this && type == T::TYPE;
 	}
 
 	template <typename T, typename LegacyType> static T* as(LegacyType* node)
 	{
-		ExprNode* obj = T::fromLegacy(node);
-		return obj ? obj->as<T>() : NULL;
+		return node ? node->as<T>() : NULL;
 	}
 
 	template <typename T, typename LegacyType> static const T* as(const LegacyType* node)
 	{
-		const ExprNode* obj = T::fromLegacy(node);
-		return obj ? obj->as<T>() : NULL;
+		return node ? node->as<T>() : NULL;
 	}
 
 	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
 	{
-		const ExprNode* obj = T::fromLegacy(node);
-		return obj ? obj->is<T>() : false;
+		return node ? node->is<T>() : false;
 	}
-
-	static const ExprNode* fromLegacy(const ExprNode* node)
-	{
-		return node;
-	}
-
-	static ExprNode* fromLegacy(ExprNode* node)
-	{
-		return node;
-	}
-
-	static ExprNode* fromLegacy(const dsql_nod* node);
 
 	// Allocate and assign impure space for various nodes.
 	template <typename T> static void doPass2(thread_db* tdbb, CompilerScratch* csb, T** node)
@@ -524,32 +530,73 @@ public:
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{
-		return dsqlVisit(visitor);
+		bool ret = false;
+
+		for (NodeRef* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
+			ret |= visitor.visit((*i)->getExpr());
+
+		return ret;
 	}
 
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor)
 	{
-		return dsqlVisit(visitor);
+		bool ret = false;
+
+		for (NodeRef* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
+			ret |= visitor.visit((*i)->getExpr());
+
+		return ret;
 	}
 
 	virtual bool dsqlFieldFinder(FieldFinder& visitor)
 	{
-		return dsqlVisit(visitor);
+		bool ret = false;
+
+		for (NodeRef* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
+			ret |= visitor.visit((*i)->getExpr());
+
+		return ret;
 	}
 
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 	{
-		return dsqlVisit(visitor);
+		bool ret = false;
+
+		for (NodeRef* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
+			ret |= visitor.visit((*i)->getExpr());
+
+		return ret;
 	}
 
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor)
 	{
-		return dsqlVisit(visitor);
+		bool ret = false;
+
+		for (NodeRef* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
+			ret |= visitor.visit((*i)->getExpr());
+
+		return ret;
 	}
 
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor)
+	virtual ExprNode* dsqlFieldRemapper(FieldRemapper& visitor)
 	{
-		return dsqlVisit(visitor);
+		for (NodeRef* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
+			(*i)->remap(visitor);
+
+		return this;
+	}
+
+	template <typename T>
+	static void doDsqlFieldRemapper(FieldRemapper& visitor, T*& node)
+	{
+		if (node)
+			node = node->dsqlFieldRemapper(visitor);
+	}
+
+	template <typename T1, typename T2>
+	static void doDsqlFieldRemapper(FieldRemapper& visitor, T1*& target, T2* node)
+	{
+		target = node ? node->dsqlFieldRemapper(visitor) : NULL;
 	}
 
 	virtual bool jrdPossibleUnknownFinder();
@@ -557,7 +604,7 @@ public:
 	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 	virtual bool jrdUnmappableNode(const MapNode* mapNode, StreamType shellStream);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual ExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -583,19 +630,17 @@ public:
 	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
 
 protected:
-	virtual bool dsqlVisit(ConstDsqlNodeVisitor& visitor);
-	virtual bool dsqlVisit(NonConstDsqlNodeVisitor& visitor);
-
-	template <typename T>
-	void addChildNode(dsql_nod*& dsqlNode, NestConst<T>& jrdNode)
+	template <typename T1, typename T2>
+	void addChildNode(T1*& dsqlNode, NestConst<T2>& jrdNode)
 	{
-		dsqlChildNodes.add(&dsqlNode);
-		jrdChildNodes.add(FB_NEW(getPool()) NodeRefImpl<T>(jrdNode.getAddress()));
+		addDsqlChildNode(dsqlNode);
+		addChildNode(jrdNode);
 	}
 
-	void addChildNode(dsql_nod*& dsqlNode)
+	template <typename T>
+	void addDsqlChildNode(T*& dsqlNode)
 	{
-		dsqlChildNodes.add(&dsqlNode);
+		dsqlChildNodes.add(FB_NEW(getPool()) NodeRefImpl<T>(&dsqlNode));
 	}
 
 	template <typename T>
@@ -609,10 +654,34 @@ public:
 	unsigned nodFlags;
 	ULONG impureOffset;
 	const char* dsqlCompatDialectVerb;
-	Firebird::Array<dsql_nod**> dsqlChildNodes;
+	Firebird::Array<NodeRef*> dsqlChildNodes;
 	Firebird::Array<NodeRef*> jrdChildNodes;
 };
 
+
+template <typename T>
+inline ExprNode* NodeRefImpl<T>::getExpr()
+{
+	return *ptr;
+}
+
+template <typename T>
+inline const ExprNode* NodeRefImpl<T>::getExpr() const
+{
+	return *ptr;
+}
+
+template <typename T>
+inline void NodeRefImpl<T>::remap(FieldRemapper& visitor)
+{
+	ExprNode::doDsqlFieldRemapper(visitor, *ptr);
+}
+
+template <typename T>
+inline void NodeRefImpl<T>::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	DmlNode::doPass1(tdbb, csb, ptr);
+}
 
 template <typename T>
 inline void NodeRefImpl<T>::internalPass2(thread_db* tdbb, CompilerScratch* csb)
@@ -632,6 +701,12 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
 		ExprNode::dsqlPass(dsqlScratch);
+		return this;
+	}
+
+	virtual BoolExprNode* dsqlFieldRemapper(FieldRemapper& visitor)
+	{
+		ExprNode::dsqlFieldRemapper(visitor);
 		return this;
 	}
 
@@ -665,6 +740,7 @@ public:
 		: ExprNode(aType, pool, KIND_VALUE),
 		  nodScale(0)
 	{
+		nodDesc.clear();
 	}
 
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -674,13 +750,19 @@ public:
 	}
 
 	virtual bool setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
-		dsql_nod* /*node*/, bool /*forceVarChar*/)
+		const dsc* /*desc*/, bool /*forceVarChar*/)
 	{
 		return false;
 	}
 
 	virtual void setParameterName(dsql_par* parameter) const = 0;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc) = 0;
+
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor)
+	{
+		ExprNode::dsqlFieldRemapper(visitor);
+		return this;
+	}
 
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb)
 	{
@@ -702,6 +784,7 @@ public:
 
 public:
 	SCHAR nodScale;
+	dsc nodDesc;
 };
 
 class AggNode : public TypedNode<ValueExprNode, ExprNode::TYPE_AGGREGATE>
@@ -745,21 +828,27 @@ public:
 	};
 
 	explicit AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool aDialect1,
-		dsql_nod* aArg = NULL);
+		ValueExprNode* aArg = NULL);
 
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual AggNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	{
+		ValueExprNode::pass1(tdbb, csb);
+		return this;
+	}
+
+	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual bool jrdPossibleUnknownFinder()
 	{
@@ -826,7 +915,7 @@ public:
 	const AggInfo& aggInfo;
 	bool distinct;
 	bool dialect1;
-	dsql_nod* dsqlArg;
+	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 	const AggregateSort* asb;
 	bool indexed;
@@ -871,7 +960,7 @@ public:
 		}
 	};
 
-	explicit WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, dsql_nod* aArg = NULL);
+	explicit WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -883,6 +972,278 @@ protected:
 
 private:
 	static Factory* factories;
+};
+
+
+class RecordSourceNode : public ExprNode
+{
+public:
+	static const unsigned DFLAG_SINGLETON				= 0x01;
+	static const unsigned DFLAG_VALUE					= 0x02;
+	static const unsigned DFLAG_RECURSIVE				= 0x04;	// recursive member of recursive CTE
+	static const unsigned DFLAG_DERIVED					= 0x08;
+	static const unsigned DFLAG_DT_IGNORE_COLUMN_CHECK	= 0x10;
+	static const unsigned DFLAG_DT_CTE_USED				= 0x20;
+
+	RecordSourceNode(Type aType, MemoryPool& pool)
+		: ExprNode(aType, pool, KIND_REC_SOURCE),
+		  dsqlFlags(0),
+		  dsqlContext(NULL),
+		  stream(INVALID_STREAM)
+	{
+	}
+
+	virtual StreamType getStream() const
+	{
+		return stream;
+	}
+
+	void setStream(StreamType value)
+	{
+		stream = value;
+	}
+
+	// Identify the streams that make up an RseNode.
+	virtual void getStreams(StreamList& list) const
+	{
+		list.add(getStream());
+	}
+
+	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		ExprNode::dsqlPass(dsqlScratch);
+		return this;
+	}
+
+	virtual RecordSourceNode* dsqlFieldRemapper(FieldRemapper& visitor)
+	{
+		ExprNode::dsqlFieldRemapper(visitor);
+		return this;
+	}
+
+	virtual RecordSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
+	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const = 0;
+	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
+	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
+		BoolExprNode** boolean, RecordSourceNodeStack& stack) = 0;
+	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
+	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb) = 0;
+	virtual bool containsStream(StreamType checkStream) const = 0;
+
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
+	{
+		fb_assert(false);
+	}
+
+	virtual bool jrdPossibleUnknownFinder()
+	{
+		return true;
+	}
+
+	virtual bool jrdStreamFinder(StreamType /*findStream*/)
+	{
+		return true;
+	}
+
+	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	{
+		return false;
+	}
+
+	virtual bool sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* /*other*/) /*const*/
+	{
+		return false;
+	}
+
+	// Identify all of the streams for which a dbkey may need to be carried through a sort.
+	virtual void computeDbKeyStreams(StreamList& streams) const = 0;
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream) = 0;
+
+public:
+	unsigned dsqlFlags;
+	dsql_ctx* dsqlContext;
+
+protected:
+	StreamType stream;
+};
+
+
+class ListExprNode : public ExprNode
+{
+public:
+	ListExprNode(Type aType, MemoryPool& pool)
+		: ExprNode(aType, pool, KIND_LIST)
+	{
+	}
+
+	virtual void print(Firebird::string& /*text*/) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
+	{
+		fb_assert(false);
+	}
+};
+
+// Container for a list of value expressions.
+class ValueListNode : public TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>
+{
+public:
+	ValueListNode(MemoryPool& pool, unsigned count)
+		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
+		  dsqlArgs(pool),
+		  args(pool)
+	{
+		dsqlArgs.resize(count);
+		args.resize(count);
+
+		for (unsigned i = 0; i < count; ++i)
+			addChildNode((dsqlArgs[i] = NULL), (args[i] = NULL));
+	}
+
+	ValueListNode(MemoryPool& pool, ValueExprNode* arg1)
+		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
+		  dsqlArgs(pool),
+		  args(pool)
+	{
+		dsqlArgs.resize(1);
+		addDsqlChildNode((dsqlArgs[0] = arg1));
+	}
+
+	ValueListNode* add(ValueExprNode* argn)
+	{
+		dsqlArgs.add(argn);
+		resetChildNodes();
+		return this;
+	}
+
+	ValueListNode* addFront(ValueExprNode* argn)
+	{
+		dsqlArgs.insert(0, argn);
+		resetChildNodes();
+		return this;
+	}
+
+	void clear()
+	{
+		dsqlArgs.clear();
+		resetChildNodes();
+	}
+
+	virtual ValueListNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		ValueListNode* node = FB_NEW(getPool()) ValueListNode(getPool(), dsqlArgs.getCount());
+
+		ValueExprNode** dst = node->dsqlArgs.begin();
+
+		for (ValueExprNode** src = dsqlArgs.begin(); src != dsqlArgs.end(); ++src, ++dst)
+			*dst = doDsqlPass(dsqlScratch, *src);
+
+		return node;
+	}
+
+	virtual ValueListNode* dsqlFieldRemapper(FieldRemapper& visitor)
+	{
+		ExprNode::dsqlFieldRemapper(visitor);
+		return this;
+	}
+
+	virtual ValueListNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	{
+		ExprNode::pass1(tdbb, csb);
+		return this;
+	}
+
+	virtual ValueListNode* pass2(thread_db* tdbb, CompilerScratch* csb)
+	{
+		ExprNode::pass2(tdbb, csb);
+		return this;
+	}
+
+	virtual ValueListNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	{
+		ValueListNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueListNode(*tdbb->getDefaultPool(),
+			args.getCount());
+
+		NestConst<ValueExprNode>* j = node->args.begin();
+
+		for (const NestConst<ValueExprNode>* i = args.begin(); i != args.end(); ++i, ++j)
+			*j = copier.copy(tdbb, *i);
+
+		return node;
+	}
+
+private:
+	void resetChildNodes()
+	{
+		dsqlChildNodes.clear();
+		jrdChildNodes.clear();
+
+		for (size_t i = 0; i < dsqlArgs.getCount(); ++i)
+			addDsqlChildNode(dsqlArgs[i]);
+
+		for (size_t i = 0; i < args.getCount(); ++i)
+			addChildNode(args[i]);
+	}
+
+public:
+	Firebird::Array<ValueExprNode*> dsqlArgs;
+	NestValueArray args;
+};
+
+// Container for a list of record source expressions.
+class RecSourceListNode : public TypedNode<ListExprNode, ExprNode::TYPE_REC_SOURCE_LIST>
+{
+public:
+	RecSourceListNode(MemoryPool& pool, unsigned count);
+	RecSourceListNode(MemoryPool& pool, RecordSourceNode* arg1);
+
+	RecSourceListNode* add(RecordSourceNode* argn)
+	{
+		dsqlArgs.add(argn);
+		resetChildNodes();
+		return this;
+	}
+
+	virtual RecSourceListNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+
+	virtual RecSourceListNode* dsqlFieldRemapper(FieldRemapper& visitor)
+	{
+		ExprNode::dsqlFieldRemapper(visitor);
+		return this;
+	}
+
+	virtual RecSourceListNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	{
+		ExprNode::pass1(tdbb, csb);
+		return this;
+	}
+
+	virtual RecSourceListNode* pass2(thread_db* tdbb, CompilerScratch* csb)
+	{
+		ExprNode::pass2(tdbb, csb);
+		return this;
+	}
+
+	virtual RecSourceListNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+private:
+	void resetChildNodes()
+	{
+		dsqlChildNodes.clear();
+
+		for (size_t i = 0; i < dsqlArgs.getCount(); ++i)
+			addDsqlChildNode(dsqlArgs[i]);
+	}
+
+public:
+	Firebird::Array<RecordSourceNode*> dsqlArgs;
 };
 
 
@@ -1103,7 +1464,7 @@ public:
 	static StmtNode* make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node);
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void print(Firebird::string& text) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 private:
@@ -1122,8 +1483,8 @@ public:
 	}
 
 public:
-	dsql_nod* length;
-	dsql_nod* skip;
+	ValueExprNode* length;
+	ValueExprNode* skip;
 };
 
 

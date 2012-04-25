@@ -24,7 +24,6 @@
 #define DSQL_PARSER_H
 
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
@@ -40,8 +39,6 @@
 #include "gen/parse.h"
 
 namespace Jrd {
-
-class dsql_nod;
 
 class Parser : public Firebird::PermanentStorage
 {
@@ -82,7 +79,7 @@ private:
 	{
 		// This is, in fact, parser state. Not used in lexer itself
 		dsql_fld* g_field;
-		dsql_nod* g_field_name;
+		FieldNode* g_field_name;
 		int dsql_debug;
 
 		// Actual lexer state begins from here
@@ -204,42 +201,21 @@ private:
 	template <typename T>
 	void setClause(T& clause, const char* duplicateMsg, const T& value)
 	{
-		using namespace Firebird;
-		if (isDuplicateClause(clause))
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
-		}
-
+		checkDuplicateClause(clause, duplicateMsg);
 		clause = value;
 	}
 
 	template <typename T, typename Delete>
 	void setClause(Firebird::AutoPtr<T, Delete>& clause, const char* duplicateMsg, T* value)
 	{
-		using namespace Firebird;
-		if (isDuplicateClause(clause))
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
-		}
-
+		checkDuplicateClause(clause, duplicateMsg);
 		clause = value;
 	}
 
 	template <typename T>
 	void setClause(Nullable<T>& clause, const char* duplicateMsg, const T& value)
 	{
-		using namespace Firebird;
-		if (clause.specified)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
-		}
-
+		checkDuplicateClause(clause, duplicateMsg);
 		clause = value;
 	}
 
@@ -249,12 +225,36 @@ private:
 	}
 
 	template <typename T>
+	void checkDuplicateClause(const T& clause, const char* duplicateMsg)
+	{
+		using namespace Firebird;
+		if (isDuplicateClause(clause))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
+		}
+	}
+
+	template <typename T>
 	bool isDuplicateClause(const T& clause)
 	{
 		return clause != 0;
 	}
 
 	bool isDuplicateClause(const Firebird::MetaName& clause)
+	{
+		return clause.hasData();
+	}
+
+	template <typename T>
+	bool isDuplicateClause(const Nullable<T>& clause)
+	{
+		return clause.specified;
+	}
+
+	template <typename T>
+	bool isDuplicateClause(const Firebird::Array<T>& clause)
 	{
 		return clause.hasData();
 	}
@@ -285,11 +285,7 @@ private:
 	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
 
 	dsql_str* makeParseStr(const Position& p1, const Position& p2);
-	dsql_nod* make_list (dsql_nod* node);
 	ParameterNode* make_parameter();
-	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
-	dsql_nod* makeClassNode(ExprNode* node);
-	dsql_nod* make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 
 private:

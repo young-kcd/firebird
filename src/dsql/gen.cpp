@@ -37,7 +37,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
@@ -61,11 +60,9 @@
 #include "../common/StatusArg.h"
 
 using namespace Jrd;
-using namespace Dsql;
 using namespace Firebird;
 
-static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
+static void gen_plan(DsqlCompilerScratch*, const PlanNode*);
 
 
 void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch)
@@ -109,48 +106,36 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch)
     @param node
 
  **/
-void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
+void GEN_expr(DsqlCompilerScratch* dsqlScratch, ExprNode* node)
 {
-	if (node->nod_type == nod_class_exprnode)
+	RseNode* rseNode = node->as<RseNode>();
+	if (rseNode)
 	{
-		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-
-		if (exprNode->is<RseNode>())
-		{
-			GEN_rse(dsqlScratch, node);
-			return;
-		}
-
-		exprNode->genBlr(dsqlScratch);
-
-		// Check whether the node we just processed is for a dialect 3
-		// operation which gives a different result than the corresponding
-		// operation in dialect 1. If it is, and if the client dialect is 2,
-		// issue a warning about the difference.
-
-		// ASF: Shouldn't we check nod_gen_id2 too?
-
-		if (exprNode->dsqlCompatDialectVerb &&
-			dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
-		{
-			dsc desc;
-			MAKE_desc(dsqlScratch, &desc, node);
-
-			if (desc.dsc_dtype == dtype_int64)
-			{
-				ERRD_post_warning(
-					Arg::Warning(isc_dsql_dialect_warning_expr) <<
-					Arg::Str(exprNode->dsqlCompatDialectVerb));
-			}
-		}
+		GEN_rse(dsqlScratch, rseNode);
+		return;
 	}
-	else
+
+	node->genBlr(dsqlScratch);
+
+	// Check whether the node we just processed is for a dialect 3
+	// operation which gives a different result than the corresponding
+	// operation in dialect 1. If it is, and if the client dialect is 2,
+	// issue a warning about the difference.
+
+	// ASF: Shouldn't we check nod_gen_id2 too?
+
+	if (node->kind == DmlNode::KIND_VALUE && node->dsqlCompatDialectVerb &&
+		dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-				  Arg::Gds(isc_dsql_internal_err) <<
-				  // expression evaluation not supported
-				  Arg::Gds(isc_expression_eval_err) <<
-				  Arg::Gds(isc_dsql_eval_unknode) << Arg::Num(node->nod_type));
+		dsc desc;
+		MAKE_desc(dsqlScratch, &desc, static_cast<ValueExprNode*>(node));
+
+		if (desc.dsc_dtype == dtype_int64)
+		{
+			ERRD_post_warning(
+				Arg::Warning(isc_dsql_dialect_warning_expr) <<
+				Arg::Str(node->dsqlCompatDialectVerb));
+		}
 	}
 }
 
@@ -467,35 +452,26 @@ void GEN_parameter( DsqlCompilerScratch* dsqlScratch, const dsql_par* parameter)
 
 
 
-/**
-
- 	gen_plan
-
-    @brief	Generate blr for an access plan expression.
-
-
-    @param dsqlScratch
-    @param plan_expression
-
- **/
-static void gen_plan( DsqlCompilerScratch* dsqlScratch, const dsql_nod* plan_expression)
+// Generate blr for an access plan expression.
+static void gen_plan(DsqlCompilerScratch* dsqlScratch, const PlanNode* planNode)
 {
 	// stuff the join type
 
-	const dsql_nod* list = plan_expression->nod_arg[0];
-	if (list->nod_count > 1)
+	const Array<NestConst<PlanNode> >& list = planNode->subNodes;
+
+	if (list.hasData())
 	{
 		dsqlScratch->appendUChar(blr_join);
-		dsqlScratch->appendUChar(list->nod_count);
+		dsqlScratch->appendUChar(list.getCount());
 	}
 
 	// stuff one or more plan items
 
-	const dsql_nod* const* ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
+	for (const NestConst<PlanNode>* ptr = list.begin(); ptr != list.end(); ++ptr)
 	{
-		const dsql_nod* node = *ptr;
-		if (node->nod_type == nod_plan_expr)
+		const PlanNode* node = *ptr;
+
+		if (node->subNodes.hasData())
 		{
 			gen_plan(dsqlScratch, node);
 			continue;
@@ -505,49 +481,57 @@ static void gen_plan( DsqlCompilerScratch* dsqlScratch, const dsql_nod* plan_exp
 
 		dsqlScratch->appendUChar(blr_retrieve);
 
-		// stuff the relation--the relation id itself is redundant except
+		// stuff the relation -- the relation id itself is redundant except
 		// when there is a need to differentiate the base tables of views
 
-		/*const*/ dsql_nod* arg = node->nod_arg[0];
-		reinterpret_cast<RecordSourceNode*>(arg->nod_arg[0])->genBlr(dsqlScratch);
+		// ASF: node->dsqlRecordSourceNode may be NULL, and then a BLR error will happen.
+		// Example command: select * from (select * from t1) a plan (a natural);
+		if (node->dsqlRecordSourceNode)
+			node->dsqlRecordSourceNode->genBlr(dsqlScratch);
 
 		// now stuff the access method for this stream
-		const dsql_str* index_string;
 
-		arg = node->nod_arg[1];
-		switch (arg->nod_type)
+		unsigned delta = 0;
+
+		switch (node->accessType->type)
 		{
-		case nod_natural:
-			dsqlScratch->appendUChar(blr_sequential);
-			break;
-
-		case nod_index_order:
-			dsqlScratch->appendUChar(blr_navigational);
-			index_string = (dsql_str*) arg->nod_arg[0];
-			dsqlScratch->appendNullString(index_string->str_data);
-			if (!arg->nod_arg[1])
+			case PlanNode::AccessType::TYPE_SEQUENTIAL:
+				dsqlScratch->appendUChar(blr_sequential);
 				break;
-			// dimitr: FALL INTO, if the plan item is ORDER ... INDEX (...)
 
-		case nod_index:
+			case PlanNode::AccessType::TYPE_NAVIGATIONAL:
+				dsqlScratch->appendUChar(blr_navigational);
+				dsqlScratch->appendNullString(node->accessType->items[0].indexName.c_str());
+				if (node->accessType->items.getCount() == 1)
+					break;
+				// dimitr: FALL INTO, if the plan item is ORDER ... INDEX (...)
+				// ASF: The first item of a TYPE_NAVIGATIONAL is not for blr_indices.
+				++delta;
+
+			case PlanNode::AccessType::TYPE_INDICES:
 			{
 				dsqlScratch->appendUChar(blr_indices);
-				arg = (arg->nod_type == nod_index) ? arg->nod_arg[0] : arg->nod_arg[1];
-				dsqlScratch->appendUChar(arg->nod_count);
-				const dsql_nod* const* ptr2 = arg->nod_arg;
-				for (const dsql_nod* const* const end2 = ptr2 + arg->nod_count; ptr2 < end2; ptr2++)
+				dsqlScratch->appendUChar(node->accessType->items.getCount() - delta);
+
+				const ObjectsArray<PlanNode::AccessItem>& items = node->accessType->items;
+
+				for (ObjectsArray<PlanNode::AccessItem>::const_iterator ptr2 = items.begin();
+					 ptr2 != items.end();
+					 ++ptr2)
 				{
-					index_string = (dsql_str*) * ptr2;
-					dsqlScratch->appendNullString(index_string->str_data);
+					if (delta > 0)
+						--delta;
+					else
+						dsqlScratch->appendNullString(ptr2->indexName.c_str());
 				}
+
 				break;
 			}
 
-		default:
-			fb_assert(false);
-			break;
+			default:
+				fb_assert(false);
+				break;
 		}
-
 	}
 }
 
@@ -563,66 +547,39 @@ static void gen_plan( DsqlCompilerScratch* dsqlScratch, const dsql_nod* plan_exp
     @param rse
 
  **/
-void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
+void GEN_rse(DsqlCompilerScratch* dsqlScratch, const RseNode* rse)
 {
-	const RseNode* rse = ExprNode::as<RseNode>(rseNod);
-
 	if (rse->dsqlFlags & RecordSourceNode::DFLAG_SINGLETON)
 		dsqlScratch->appendUChar(blr_singular);
 
 	if (rse->dsqlExplicitJoin)
 	{
 		dsqlScratch->appendUChar(blr_rs_stream);
-		fb_assert(rse->dsqlStreams->nod_count == 2);
+		fb_assert(rse->dsqlStreams->dsqlArgs.getCount() == 2);
 	}
 	else
 		dsqlScratch->appendUChar(blr_rse);
 
-	dsql_nod* list = rse->dsqlStreams;
-
 	// Handle source streams
 
-	if (ExprNode::is<UnionSourceNode>(list))
-	{
-		dsqlScratch->appendUChar(1);
-		gen_union(dsqlScratch, rseNod);
-	}
-	else if (list->nod_type == nod_list)
-	{
-		dsqlScratch->appendUChar(list->nod_count);
-		dsql_nod* const* ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-		{
-			dsql_nod* node = *ptr;
-			switch (node->nod_type)
-			{
-			case nod_class_exprnode:
-				GEN_expr(dsqlScratch, node);
-				break;
-			}
-		}
-	}
-	else
-	{
-		dsqlScratch->appendUChar(1);
-		GEN_expr(dsqlScratch, list);
-	}
+	dsqlScratch->appendUChar(rse->dsqlStreams->dsqlArgs.getCount());
+	RecordSourceNode* const* ptr = rse->dsqlStreams->dsqlArgs.begin();
+	for (const RecordSourceNode* const* const end = rse->dsqlStreams->dsqlArgs.end(); ptr != end; ++ptr)
+		GEN_expr(dsqlScratch, *ptr);
 
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 		dsqlScratch->appendUChar(blr_writelock);
 
-	dsql_nod* node;
-
-	if ((node = rse->dsqlFirst))
+	if (rse->dsqlFirst)
 	{
 		dsqlScratch->appendUChar(blr_first);
-		GEN_expr(dsqlScratch, node);
+		GEN_expr(dsqlScratch, rse->dsqlFirst);
 	}
 
-	if ((node = rse->dsqlSkip))
+	if (rse->dsqlSkip)
 	{
 		dsqlScratch->appendUChar(blr_skip);
-		GEN_expr(dsqlScratch, node);
+		GEN_expr(dsqlScratch, rse->dsqlSkip);
 	}
 
 	if (rse->rse_jointype != blr_inner)
@@ -631,32 +588,32 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 		dsqlScratch->appendUChar(rse->rse_jointype);
 	}
 
-	if ((node = rse->dsqlWhere))
+	if (rse->dsqlWhere)
 	{
 		dsqlScratch->appendUChar(blr_boolean);
-		GEN_expr(dsqlScratch, node);
+		GEN_expr(dsqlScratch, rse->dsqlWhere);
 	}
 
-	if ((list = rse->dsqlOrder))
-		GEN_sort(dsqlScratch, list);
+	if (rse->dsqlOrder)
+		GEN_sort(dsqlScratch, rse->dsqlOrder);
 
-	if ((list = rse->dsqlDistinct))
+	if (rse->dsqlDistinct)
 	{
 		dsqlScratch->appendUChar(blr_project);
-		dsqlScratch->appendUChar(list->nod_count);
+		dsqlScratch->appendUChar(rse->dsqlDistinct->dsqlArgs.getCount());
 
-		dsql_nod** ptr = list->nod_arg;
+		ValueExprNode** ptr = rse->dsqlDistinct->dsqlArgs.begin();
 
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
+		for (const ValueExprNode* const* const end = rse->dsqlDistinct->dsqlArgs.end(); ptr != end; ++ptr)
 			GEN_expr(dsqlScratch, *ptr);
 	}
 
 	// if the user specified an access plan to use, add it here
 
-	if ((node = rse->dsqlPlan) != NULL)
+	if (rse->rse_plan)
 	{
 		dsqlScratch->appendUChar(blr_plan);
-		gen_plan(dsqlScratch, node);
+		gen_plan(dsqlScratch, rse->rse_plan);
 	}
 
 	dsqlScratch->appendUChar(blr_end);
@@ -664,15 +621,15 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 
 
 // Generate a sort clause.
-void GEN_sort(DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
+void GEN_sort(DsqlCompilerScratch* dsqlScratch, ValueListNode* list)
 {
 	dsqlScratch->appendUChar(blr_sort);
-	dsqlScratch->appendUChar(list->nod_count);
+	dsqlScratch->appendUChar(list->dsqlArgs.getCount());
 
-	dsql_nod* const* ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
+	ValueExprNode* const* ptr = list->dsqlArgs.begin();
+	for (const ValueExprNode* const* const end = list->dsqlArgs.end(); ptr != end; ++ptr)
 	{
-		const OrderNode* orderNode = ExprNode::as<OrderNode>(*ptr);
+		const OrderNode* orderNode = (*ptr)->as<OrderNode>();
 
 		switch (orderNode->nullsPlacement)
 		{
@@ -686,65 +643,6 @@ void GEN_sort(DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 
 		dsqlScratch->appendUChar((orderNode->descending ? blr_descending : blr_ascending));
 		GEN_expr(dsqlScratch, orderNode->dsqlValue);
-	}
-}
-
-
-/**
-
- 	gen_union
-
-    @brief	Generate a union of substreams.
-
-
-    @param dsqlScratch
-    @param union_node
-
- **/
-static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_node)
-{
-	const RseNode* unionRse = ExprNode::as<RseNode>(union_node);
-	const UnionSourceNode* unionSource = ExprNode::as<UnionSourceNode>(unionRse->dsqlStreams);
-
-	if (unionSource->recursive)
-		dsqlScratch->appendUChar(blr_recurse);
-	else
-		dsqlScratch->appendUChar(blr_union);
-
-	// Obtain the context for UNION from the first dsql_map* node
-	dsql_nod* items = unionRse->dsqlSelectList;
-	dsql_nod* map_item = items->nod_arg[0];
-
-	// AB: First item could be a virtual field generated by derived table.
-	DerivedFieldNode* derivedField = ExprNode::as<DerivedFieldNode>(map_item);
-
-	if (derivedField)
-		map_item = derivedField->dsqlValue;
-
-	dsql_ctx* union_context = ExprNode::as<DsqlMapNode>(map_item)->context;
-	GEN_stuff_context(dsqlScratch, union_context);
-	// secondary context number must be present once in generated blr
-	union_context->ctx_flags &= ~CTX_recursive;
-
-	dsql_nod* streams = unionSource->dsqlClauses;
-	dsqlScratch->appendUChar(streams->nod_count);	// number of substreams
-
-	dsql_nod** ptr = streams->nod_arg;
-	for (const dsql_nod* const* const end = ptr + streams->nod_count; ptr < end; ptr++)
-	{
-		dsql_nod* sub_rse = *ptr;
-		GEN_rse(dsqlScratch, sub_rse);
-		items = ExprNode::as<RseNode>(sub_rse)->dsqlSelectList;
-		dsqlScratch->appendUChar(blr_map);
-		dsqlScratch->appendUShort(items->nod_count);
-		USHORT count = 0;
-		dsql_nod** iptr = items->nod_arg;
-		for (const dsql_nod* const* const iend = iptr + items->nod_count; iptr < iend; iptr++)
-		{
-			dsqlScratch->appendUShort(count);
-			GEN_expr(dsqlScratch, *iptr);
-			count++;
-		}
 	}
 }
 

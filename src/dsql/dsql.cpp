@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
@@ -75,7 +74,6 @@
 #endif
 
 using namespace Jrd;
-using namespace Dsql;
 using namespace Firebird;
 
 

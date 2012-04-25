@@ -33,10 +33,12 @@
 namespace Jrd
 {
 
+class BinaryBoolNode;
 class CompoundStmtNode;
 class DeclareCursorNode;
 class DeclareVariableNode;
 class ParameterClause;
+class RseNode;
 class SelectExprNode;
 class TypeClause;
 class VariableNode;
@@ -266,9 +268,9 @@ public:
 
 private:
 	SelectExprNode* pass1RecursiveCte(SelectExprNode* input);
-	dsql_nod* pass1RseIsRecursive(dsql_nod* input);
-	bool pass1RelProcIsRecursive(dsql_nod* input);
-	dsql_nod* pass1JoinIsRecursive(dsql_nod*& inputNod);
+	RseNode* pass1RseIsRecursive(RseNode* input);
+	bool pass1RelProcIsRecursive(RecordSourceNode* input);
+	BoolExprNode* pass1JoinIsRecursive(RecordSourceNode*& input);
 
 	dsql_dbb* dbb;						// DSQL attachment
 	jrd_tra* transaction;				// Transaction
@@ -289,7 +291,7 @@ public:
 	USHORT derivedContextNumber;		// Next available context number for derived tables
 	USHORT scopeLevel;					// Scope level for parsing aliases in subqueries
 	USHORT loopLevel;					// Loop level
-	DsqlStrStack labels;				// Loop labels
+	Firebird::Stack<Firebird::MetaName*> labels;	// Loop labels
 	USHORT cursorNumber;				// Cursor number
 	Firebird::Array<DeclareCursorNode*> cursors; // Cursors
 	USHORT inSelectList;				// now processing "select list"

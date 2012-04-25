@@ -41,7 +41,6 @@ using namespace Firebird;
 namespace Jrd {
 
 using namespace Firebird;
-using namespace Dsql;
 
 DATABASE DB = STATIC "ODS.RDB";
 
@@ -361,7 +360,7 @@ namespace
 //----------------------
 
 
-void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreateAlterPackageNode::print(string& text) const
 {
 	fb_assert(items);
 
@@ -375,16 +374,15 @@ void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) co
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
 		string item;
-		Array<dsql_nod*> tempNodes;
 
 		switch ((*items)[i].type)
 		{
 			case Item::FUNCTION:
-				(*items)[i].function->print(item, tempNodes);
+				(*items)[i].function->print(item);
 				break;
 
 			case Item::PROCEDURE:
-				(*items)[i].procedure->print(item, tempNodes);
+				(*items)[i].procedure->print(item);
 				break;
 		}
 
@@ -591,7 +589,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 //----------------------
 
 
-void DropPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropPackageNode::print(string& text) const
 {
 	text.printf(
 		"DropPackageNode\n"
@@ -681,7 +679,7 @@ void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 //----------------------
 
 
-void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void CreatePackageBodyNode::print(string& text) const
 {
 	fb_assert(items);
 
@@ -697,16 +695,15 @@ void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) con
 		for (unsigned i = 0; i < declaredItems->getCount(); ++i)
 		{
 			string item;
-			Array<dsql_nod*> tempNodes;
 
 			switch ((*declaredItems)[i].type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
-					(*declaredItems)[i].function->print(item, tempNodes);
+					(*declaredItems)[i].function->print(item);
 					break;
 
 				case CreateAlterPackageNode::Item::PROCEDURE:
-					(*declaredItems)[i].procedure->print(item, tempNodes);
+					(*declaredItems)[i].procedure->print(item);
 					break;
 			}
 
@@ -722,16 +719,15 @@ void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) con
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
 		string item;
-		Array<dsql_nod*> tempNodes;
 
 		switch ((*items)[i].type)
 		{
 			case CreateAlterPackageNode::Item::FUNCTION:
-				(*items)[i].function->print(item, tempNodes);
+				(*items)[i].function->print(item);
 				break;
 
 			case CreateAlterPackageNode::Item::PROCEDURE:
-				(*items)[i].procedure->print(item, tempNodes);
+				(*items)[i].procedure->print(item);
 				break;
 		}
 
@@ -1011,7 +1007,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 //----------------------
 
 
-void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void DropPackageBodyNode::print(string& text) const
 {
 	text.printf(
 		"DropPackageBodyNode\n"
