@@ -1,3 +1,15 @@
+ 2012-04-25 16:00  asfernandes 
+   M src/jrd/recsrc/WindowedStream.cpp
+Fix window functions.
+
+ 2012-04-25 09:05  hvlad 
+   M builds/win32/parse.bat
+Correction
+
+ 2012-04-25 08:32  hvlad 
+   M builds/win32/parse.bat
+Correct syntax to make it works on Windows
+
  2012-04-25 01:42  asfernandes 
    M builds/posix/make.shared.targets
    M builds/win32/parse.bat
