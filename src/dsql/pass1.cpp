@@ -6467,7 +6467,7 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 				coalesce->nod_arg[1] = MAKE_list(stack);
 
 				impJoinLeft->value = MAKE_node(nod_alias, e_alias_count);
-				impJoinLeft->value->nod_arg[e_alias_value] = coalesce;
+				impJoinLeft->value->nod_arg[e_alias_value] = PASS1_node(request, coalesce, proc_flag);
 				impJoinLeft->value->nod_arg[e_alias_alias] = reinterpret_cast<dsql_nod*>(fldName);
 				impJoinLeft->value->nod_arg[e_alias_imp_join] = reinterpret_cast<dsql_nod*>(impJoinLeft);
 
