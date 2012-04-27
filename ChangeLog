@@ -1,3 +1,7 @@
+ 2012-04-26 09:38  paulbeach 
+   M builds/install/misc/firebird.conf
+Make the conf. parameter DummyPacketInterval more accurate.
+
  2012-02-13 06:53  alexpeshkoff 
    M src/dsql/dsql.tab.h
    M src/dsql/parse.cpp
