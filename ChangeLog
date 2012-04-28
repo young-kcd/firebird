@@ -1,3 +1,11 @@
+ 2012-04-27 16:31  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-3834: Usage of a NATURAL JOIN with a derived table crashes the server.
+
+ 2012-04-27 13:21  alexpeshkoff 
+   M src/remote/inet.cpp
+Fixed posix build
+
  2012-04-26 09:39  paulbeach 
    M builds/install/misc/firebird.conf.in
 Make the conf. parameter DummyPacketInterval more accurate.
