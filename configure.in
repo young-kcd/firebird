@@ -830,7 +830,7 @@ AC_CHECK_FUNCS(pthread_mutex_consistent_np)
 
 dnl Semaphores
 if test "$ac_cv_header_semaphore_h" = "yes"; then
-AC_SEARCH_LIBS(sem_init, rt)
+AC_SEARCH_LIBS(sem_init, rt pthread)
 AC_CHECK_FUNCS(sem_timedwait)
 AC_CHECK_FUNCS(sem_init)
 if test "$ac_cv_func_sem_init" = "yes"; then
