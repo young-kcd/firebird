@@ -1,3 +1,7 @@
+ 2012-04-29 18:39  asfernandes 
+   M configure.in
+Make Ubuntu 12.04 build work.
+
  2012-04-26 09:40  paulbeach 
    M builds/install/misc/firebird.conf.in
 Make the conf. parameter DummyPacketInterval more accurate.
