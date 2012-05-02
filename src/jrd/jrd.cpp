@@ -5604,10 +5604,13 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
 						// run ON TRANSACTION ROLLBACK triggers
 						EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
 					}
-					catch (const Exception&)
+					catch (const Exception& ex)
 					{
 						if (dbb->dbb_flags & DBB_bugcheck)
 							throw;
+
+						ISC_STATUS_ARRAY temp = {0};
+						trace_error(tdbb, ex, temp, "TRANSACTION_ROLLBACK_TRIGGER");
 					}
 				}
 
@@ -6135,11 +6138,14 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
 				}
-				catch (const Exception&)
+				catch (const Exception& ex)
 				{
 					attachment->att_flags = save_flags;
 					if (dbb->dbb_flags & DBB_bugcheck)
 						throw;
+
+					ISC_STATUS_ARRAY temp = {0};
+					trace_error(tdbb, ex, temp, "DISCONNECT_TRIGGER");
 
 					try
 					{
