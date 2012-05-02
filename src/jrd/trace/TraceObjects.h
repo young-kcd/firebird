@@ -47,7 +47,7 @@ class Database;
 class Attachment;
 class jrd_tra;
 
-class TraceConnectionImpl : public TraceConnection
+class TraceConnectionImpl : public TraceDatabaseConnection
 {
 public:
 	TraceConnectionImpl(const Attachment* att) :
@@ -56,6 +56,8 @@ public:
 
 	virtual int getConnectionID();
 	virtual int getProcessID();
+
+	virtual ntrace_connection_kind_t getKind();
 	virtual const char* getDatabaseName();
 	virtual const char* getUserName();
 	virtual const char* getRoleName();
@@ -311,7 +313,7 @@ private:
 };
 
 
-class TraceServiceImpl : public TraceService
+class TraceServiceImpl : public TraceServiceConnection
 {
 public:
 	TraceServiceImpl(const Service* svc) :
@@ -321,9 +323,12 @@ public:
 	virtual ntrace_service_t getServiceID();
 	virtual const char* getServiceMgr();
 	virtual const char* getServiceName();
+
+	virtual ntrace_connection_kind_t getKind();
+	virtual int getProcessID();
 	virtual const char* getUserName();
 	virtual const char* getRoleName();
-	virtual int getProcessID();
+	virtual const char* getCharSet();
 	virtual const char* getRemoteProtocol();
 	virtual const char* getRemoteAddress();
 	virtual int getRemoteProcessID();
@@ -345,7 +350,7 @@ public:
 private:
 	PerformanceInfo m_info;
 	TraceCountsArray m_counts;
-	static SINT64 m_dummy_counts[DBB_max_dbb_count];	// Zero-initialized array with zero counts
+	static SINT64 m_dummy_counts[RuntimeStatistics::TOTAL_ITEMS];	// Zero-initialized array with zero counts
 };
 
 
@@ -372,7 +377,7 @@ public:
 	virtual const char* getFirebirdRootDirectory();
 	virtual const char* getDatabaseName()		{ return m_filename; }
 
-	virtual TraceConnection* getConnection()
+	virtual TraceDatabaseConnection* getConnection()
 	{
 		if (m_attachment)
 			return &m_trace_conn;
@@ -390,6 +395,36 @@ private:
 	const Attachment* const m_attachment;
 };
 
+
+class TraceStatusVectorImpl : public TraceStatusVector
+{
+public:
+	TraceStatusVectorImpl(const ISC_STATUS* status) :
+		m_status(status)
+	{
+	}
+
+	virtual bool hasError() 
+	{
+		return m_status && (m_status[1] != 0);
+	}
+
+	virtual bool hasWarning()
+	{
+		return m_status && (m_status[1] == 0) && (m_status[2] == isc_arg_warning);
+	}
+
+	virtual const ISC_STATUS* getStatus() 
+	{
+		return m_status;
+	}
+
+	virtual const char* getText();
+
+private:
+	const ISC_STATUS* m_status;
+	Firebird::string m_error;
+};
 
 } // namespace Jrd
 

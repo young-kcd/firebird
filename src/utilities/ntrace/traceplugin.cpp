@@ -45,7 +45,7 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 			dbname ? dbname : "",
 			config);
 
-		TraceConnection* connection = initInfo->getConnection();
+		TraceDatabaseConnection* connection = initInfo->getConnection();
 		if (!config.enabled ||
 			(config.connection_id && connection && (connection->getConnectionID() != config.connection_id)))
 		{

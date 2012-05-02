@@ -34,7 +34,7 @@
 #include "../jrd/common.h"
 
 /* Version of API, used for version fields in TracePlugin structure */
-#define NTRACE_VERSION 2
+#define NTRACE_VERSION 3
 
 // plugin entry point
 static const char* const NTRACE_ATTACH = "trace_create";
@@ -43,11 +43,16 @@ static const char* const NTRACE_ATTACH = "trace_create";
 
 struct PerformanceInfo;
 
-class TraceConnection
+enum ntrace_connection_kind_t
+{
+	connection_database	= 1,
+	connection_service
+};
+
+class TraceBaseConnection
 {
 public:
-	virtual int getConnectionID() = 0;
-	virtual const char* getDatabaseName() = 0;
+	virtual ntrace_connection_kind_t getKind() = 0;
 
 	virtual int getProcessID() = 0;
 	virtual const char* getUserName() = 0;
@@ -57,8 +62,13 @@ public:
 	virtual const char* getRemoteAddress() = 0;
 	virtual int getRemoteProcessID() = 0;
 	virtual const char* getRemoteProcessName() = 0;
+};
 
-	virtual ~TraceConnection() { }
+class TraceDatabaseConnection : public TraceBaseConnection
+{
+public:
+	virtual int getConnectionID() = 0;
+	virtual const char* getDatabaseName() = 0;
 };
 
 enum ntrace_tra_isolation_t
@@ -77,8 +87,6 @@ public:
 	virtual int getWait() = 0;
 	virtual ntrace_tra_isolation_t getIsolation() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceTransaction() { }
 };
 
 typedef int ntrace_relation_t;
@@ -88,8 +96,6 @@ class TraceParams
 public:
 	virtual size_t getCount() = 0;
 	virtual const struct dsc* getParam(size_t idx) = 0;
-
-	virtual ~TraceParams() { }
 };
 
 class TraceStatement
@@ -97,8 +103,6 @@ class TraceStatement
 public:
 	virtual int getStmtID() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceStatement() { }
 };
 
 class TraceSQLStatement : public TraceStatement
@@ -124,8 +128,6 @@ public:
 	virtual const unsigned char* getData() = 0;
 	virtual size_t getDataLength() = 0;
 	virtual const char* getText() = 0;
-
-	virtual ~TraceDYNRequest() { }
 };
 
 class TraceContextVariable
@@ -134,8 +136,6 @@ public:
 	virtual const char* getNameSpace() = 0;
 	virtual const char* getVarName() = 0;
 	virtual const char* getVarValue() = 0;
-
-	virtual ~TraceContextVariable() { }
 };
 
 class TraceProcedure
@@ -144,8 +144,6 @@ public:
 	virtual const char* getProcName() = 0;
 	virtual TraceParams* getInputs() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceProcedure() { }
 };
 
 class TraceTrigger
@@ -156,30 +154,26 @@ public:
 	virtual int getAction() = 0;
 	virtual int getWhich() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceTrigger() { }
 };
 
 typedef void* ntrace_service_t;
 
-class TraceService
+class TraceServiceConnection  : public TraceBaseConnection
 {
 public:
 	virtual ntrace_service_t getServiceID() = 0;
 	virtual const char* getServiceMgr() = 0;
 	virtual const char* getServiceName() = 0;
-
-	virtual int getProcessID() = 0;
-	virtual const char* getUserName() = 0;
-	virtual const char* getRoleName() = 0;
-	virtual const char* getRemoteProtocol() = 0;
-	virtual const char* getRemoteAddress() = 0;
-	virtual int getRemoteProcessID() = 0;
-	virtual const char* getRemoteProcessName() = 0;
-
-	virtual ~TraceService() { }
 };
 
+class TraceStatusVector
+{
+public:
+	virtual bool hasError() = 0;
+	virtual bool hasWarning() = 0;
+	virtual const ISC_STATUS* getStatus() = 0;
+	virtual const char* getText() = 0;
+};
 
 /* Plugin-specific argument. Passed by the engine to each hook */
 typedef void* ntrace_object_t;
@@ -252,67 +246,71 @@ typedef ntrace_boolean_t (*ntrace_shutdown_t)(const struct TracePlugin* tpl_plug
 
 /* Create/close attachment */
 typedef ntrace_boolean_t (*ntrace_event_attach_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result);
+	TraceDatabaseConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result);
 typedef ntrace_boolean_t (*ntrace_event_detach_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, ntrace_boolean_t drop_db);
+	TraceDatabaseConnection* connection, ntrace_boolean_t drop_db);
 
 /* Start/end transaction */
 typedef ntrace_boolean_t (*ntrace_event_transaction_start_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
 typedef ntrace_boolean_t (*ntrace_event_transaction_end_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
 
 /* Assignment to context variables */
 typedef ntrace_boolean_t (*ntrace_event_set_context_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable);
+	TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable);
 
 /* Stored procedure and triggers executing */
 typedef	ntrace_boolean_t (*ntrace_event_proc_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 	bool started, ntrace_result_t proc_result);
 
 typedef ntrace_boolean_t (*ntrace_event_trigger_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 	bool started, ntrace_result_t trig_result);
 
 /* DSQL statement lifecycle */
 typedef ntrace_boolean_t (*ntrace_event_dsql_prepare_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
 typedef ntrace_boolean_t (*ntrace_event_dsql_free_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceSQLStatement* statement, unsigned short option);
+	TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned short option);
 typedef ntrace_boolean_t (*ntrace_event_dsql_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 	bool started, ntrace_result_t req_result);
 
 /* BLR requests */
 typedef ntrace_boolean_t (*ntrace_event_blr_compile_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
 typedef ntrace_boolean_t (*ntrace_event_blr_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_result_t req_result);
 
 /* DYN requests */
 typedef ntrace_boolean_t (*ntrace_event_dyn_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceDYNRequest* request, ntrace_counter_t time_millis,
 	ntrace_result_t req_result);
 
 /* Using the services */
 typedef ntrace_boolean_t (*ntrace_event_service_attach_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, ntrace_result_t att_result);
+	TraceServiceConnection* service, ntrace_result_t att_result);
 typedef ntrace_boolean_t (*ntrace_event_service_start_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, size_t switches_length, const char* switches,
+	TraceServiceConnection* service, size_t switches_length, const char* switches,
 	ntrace_result_t start_result);
 typedef ntrace_boolean_t (*ntrace_event_service_query_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, size_t send_item_length,
+	TraceServiceConnection* service, size_t send_item_length,
 	const ntrace_byte_t* send_items, size_t recv_item_length,
 	const ntrace_byte_t* recv_items, ntrace_result_t query_result);
 typedef ntrace_boolean_t (*ntrace_event_service_detach_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, ntrace_result_t detach_result);
+	TraceServiceConnection* service, ntrace_result_t detach_result);
+
+/* Errors happened */
+typedef ntrace_boolean_t (*ntrace_event_error_t)(const struct TracePlugin* tpl_plugin,
+	TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
 
 /* API of trace plugin. Used to deliver notifications for each database */
@@ -353,9 +351,11 @@ struct TracePlugin
 	ntrace_event_service_query_t tpl_event_service_query;
 	ntrace_event_service_detach_t tpl_event_service_detach;
 
+	ntrace_event_error_t tpl_event_error;
+
 	/* Some space for future extension of Trace API interface,
        must be zero-initialized by the plugin */
-	void* reserved_for_interface[24];
+	void* reserved_for_interface[23];
 
 	/* Some space which may be freely used by Trace API driver.
        If driver needs more space it may allocate and return larger TracePlugin structure. */
@@ -379,7 +379,7 @@ public:
 	virtual const char* getTraceSessionName() = 0;
 	virtual const char* getFirebirdRootDirectory() = 0;
 	virtual const char* getDatabaseName() = 0;
-	virtual TraceConnection* getConnection() = 0;
+	virtual TraceDatabaseConnection* getConnection() = 0;
 	virtual TraceLogWriter* getLogWriter() = 0;
 
 	virtual ~TraceInitInfo() { }

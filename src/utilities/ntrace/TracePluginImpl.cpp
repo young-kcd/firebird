@@ -91,6 +91,8 @@ TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configur
 		plugin_ptr->tpl_event_service_start = ntrace_event_service_start;
 		plugin_ptr->tpl_event_service_query = ntrace_event_service_query;
 		plugin_ptr->tpl_event_service_detach = ntrace_event_service_detach;
+
+		plugin_ptr->tpl_event_error = ntrace_event_error;
 	}
 	catch(const Firebird::Exception&)
 	{
@@ -266,7 +268,7 @@ void TracePluginImpl::logRecord(const char* action)
 	record = "";
 }
 
-void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connection)
+void TracePluginImpl::logRecordConn(const char* action, TraceDatabaseConnection* connection)
 {
 	// Lookup connection description
 	const int conn_id = connection->getConnectionID();
@@ -312,7 +314,7 @@ void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connect
 	logRecord(action);
 }
 
-void TracePluginImpl::logRecordTrans(const char* action, TraceConnection* connection,
+void TracePluginImpl::logRecordTrans(const char* action, TraceDatabaseConnection* connection,
 	TraceTransaction* transaction)
 {
 	const int tra_id = transaction->getTransactionID();
@@ -345,7 +347,7 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceConnection* connec
 	logRecordConn(action, connection);
 }
 
-void TracePluginImpl::logRecordProc(const char* action, TraceConnection* connection,
+void TracePluginImpl::logRecordProc(const char* action, TraceDatabaseConnection* connection,
 	TraceTransaction* transaction, const char* proc_name)
 {
 	string temp;
@@ -360,7 +362,7 @@ void TracePluginImpl::logRecordProc(const char* action, TraceConnection* connect
 	}
 }
 
-void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connection,
+void TracePluginImpl::logRecordStmt(const char* action, TraceDatabaseConnection* connection,
 	TraceTransaction* transaction, TraceStatement* statement, bool isSQL)
 {
 	const int stmt_id = statement->getStmtID();
@@ -430,7 +432,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 	}
 }
 
-void TracePluginImpl::logRecordServ(const char* action, TraceService* service)
+void TracePluginImpl::logRecordServ(const char* action, TraceServiceConnection* service)
 {
 	const ntrace_service_t svc_id = service->getServiceID();
 	bool reg = false;
@@ -464,6 +466,34 @@ void TracePluginImpl::logRecordServ(const char* action, TraceService* service)
 	logRecord(action);
 }
 
+void TracePluginImpl::logRecordError(const char* action, TraceBaseConnection* connection, 
+	TraceStatusVector* status)
+{
+	const char* err = status->getText();
+
+	record = "";
+	record.insert(0, err);
+
+	if (connection)
+	{
+		switch (connection->getKind())
+		{
+		case connection_database: 
+			logRecordConn(action, (TraceDatabaseConnection*) connection);
+			break;
+
+		case connection_service:
+			logRecordServ(action, (TraceServiceConnection*) connection);
+			break;
+
+		default:
+			break;
+		}
+	}
+	else
+		logRecord(action);
+}
+
 void TracePluginImpl::appendGlobalCounts(const PerformanceInfo* info)
 {
 	string temp;
@@ -494,6 +524,24 @@ void TracePluginImpl::appendGlobalCounts(const PerformanceInfo* info)
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_MARKS]) != 0)
 	{
 		temp.printf(", %"QUADFORMAT"d mark(s)", cnt);
+		record.append(temp);
+	}
+
+	if ((cnt = info->pin_counters[RuntimeStatistics::SORTS]) != 0)
+	{
+		temp.printf(", %"QUADFORMAT"d sort(s)", cnt);
+		record.append(temp);
+	}
+
+	if ((cnt = info->pin_counters[RuntimeStatistics::SORT_GETS]) != 0)
+	{
+		temp.printf(", %"QUADFORMAT"d sort get(s)", cnt);
+		record.append(temp);
+	}
+
+	if ((cnt = info->pin_counters[RuntimeStatistics::SORT_PUTS]) != 0)
+	{
+		temp.printf(", %"QUADFORMAT"d sort put(s)", cnt);
 		record.append(temp);
 	}
 
@@ -939,7 +987,7 @@ void TracePluginImpl::log_finalize()
 	logWriter = NULL;
 }
 
-void TracePluginImpl::register_connection(TraceConnection* connection)
+void TracePluginImpl::register_connection(TraceDatabaseConnection* connection)
 {
 	ConnectionData conn_data;
 	conn_data.id = connection->getConnectionID();
@@ -997,7 +1045,7 @@ void TracePluginImpl::register_connection(TraceConnection* connection)
 	}
 }
 
-void TracePluginImpl::log_event_attach(TraceConnection* connection,
+void TracePluginImpl::log_event_attach(TraceDatabaseConnection* connection,
 	ntrace_boolean_t create_db, ntrace_result_t att_result)
 {
 	if (config.log_connections)
@@ -1024,7 +1072,7 @@ void TracePluginImpl::log_event_attach(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_detach(TraceConnection* connection, ntrace_boolean_t drop_db)
+void TracePluginImpl::log_event_detach(TraceDatabaseConnection* connection, ntrace_boolean_t drop_db)
 {
 	if (config.log_connections)
 	{
@@ -1100,7 +1148,7 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 }
 
 
-void TracePluginImpl::log_event_transaction_start(TraceConnection* connection,
+void TracePluginImpl::log_event_transaction_start(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, size_t /*tpb_length*/,
 		const ntrace_byte_t* /*tpb*/, ntrace_result_t tra_result)
 {
@@ -1126,7 +1174,7 @@ void TracePluginImpl::log_event_transaction_start(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
+void TracePluginImpl::log_event_transaction_end(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, ntrace_boolean_t commit,
 		ntrace_boolean_t retain_context, ntrace_result_t tra_result)
 {
@@ -1176,7 +1224,7 @@ void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_set_context(TraceConnection* connection,
+void TracePluginImpl::log_event_set_context(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceContextVariable* variable)
 {
 	const char* ns = variable->getNameSpace();
@@ -1199,7 +1247,7 @@ void TracePluginImpl::log_event_set_context(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_proc_execute(TraceConnection* connection, TraceTransaction* transaction,
+void TracePluginImpl::log_event_proc_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceProcedure* procedure, bool started, ntrace_result_t proc_result)
 {
 	if (!config.log_procedure_start && started)
@@ -1342,7 +1390,7 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 	}
 }
 
-void TracePluginImpl::log_event_dsql_prepare(TraceConnection* connection,
+void TracePluginImpl::log_event_dsql_prepare(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceSQLStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
@@ -1369,7 +1417,7 @@ void TracePluginImpl::log_event_dsql_prepare(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_dsql_free(TraceConnection* connection,
+void TracePluginImpl::log_event_dsql_free(TraceDatabaseConnection* connection,
 		TraceSQLStatement* statement, unsigned short option)
 {
 	if (config.log_statement_free)
@@ -1389,7 +1437,7 @@ void TracePluginImpl::log_event_dsql_free(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection,
+void TracePluginImpl::log_event_dsql_execute(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result)
 {
@@ -1486,7 +1534,7 @@ void TracePluginImpl::register_blr_statement(TraceBLRStatement* statement)
 	statements.add(stmt_data);
 }
 
-void TracePluginImpl::log_event_blr_compile(TraceConnection* connection,
+void TracePluginImpl::log_event_blr_compile(TraceDatabaseConnection* connection,
 	TraceTransaction* transaction, TraceBLRStatement* statement,
 	ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
@@ -1522,7 +1570,7 @@ void TracePluginImpl::log_event_blr_compile(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_blr_execute(TraceConnection* connection,
+void TracePluginImpl::log_event_blr_execute(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_result_t req_result)
 {
@@ -1558,7 +1606,7 @@ void TracePluginImpl::log_event_blr_execute(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection,
+void TracePluginImpl::log_event_dyn_execute(TraceDatabaseConnection* connection,
 	TraceTransaction* transaction, TraceDYNRequest* request,
 	ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
@@ -1617,7 +1665,7 @@ void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection,
 }
 
 
-void TracePluginImpl::register_service(TraceService* service)
+void TracePluginImpl::register_service(TraceServiceConnection* service)
 {
 	string username(service->getUserName());
 	string remote_address;
@@ -1660,7 +1708,7 @@ void TracePluginImpl::register_service(TraceService* service)
 }
 
 
-bool TracePluginImpl::checkServiceFilter(TraceService* service, bool started)
+bool TracePluginImpl::checkServiceFilter(TraceServiceConnection* service, bool started)
 {
 	ReadLockGuard lock(servicesLock);
 
@@ -1698,7 +1746,7 @@ bool TracePluginImpl::checkServiceFilter(TraceService* service, bool started)
 }
 
 
-void TracePluginImpl::log_event_service_attach(TraceService* service,
+void TracePluginImpl::log_event_service_attach(TraceServiceConnection* service,
 	ntrace_result_t att_result)
 {
 	if (config.log_services)
@@ -1724,7 +1772,7 @@ void TracePluginImpl::log_event_service_attach(TraceService* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_start(TraceService* service,
+void TracePluginImpl::log_event_service_start(TraceServiceConnection* service,
 	size_t switches_length, const char* switches, ntrace_result_t start_result)
 {
 	if (config.log_services)
@@ -1776,7 +1824,7 @@ void TracePluginImpl::log_event_service_start(TraceService* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_query(TraceService* service,
+void TracePluginImpl::log_event_service_query(TraceServiceConnection* service,
 	size_t send_item_length, const ntrace_byte_t* send_items,
 	size_t recv_item_length, const ntrace_byte_t* recv_items,
 	ntrace_result_t query_result)
@@ -1814,7 +1862,7 @@ void TracePluginImpl::log_event_service_query(TraceService* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_detach(TraceService* service, ntrace_result_t detach_result)
+void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result)
 {
 	if (config.log_services)
 	{
@@ -1848,7 +1896,7 @@ void TracePluginImpl::log_event_service_detach(TraceService* service, ntrace_res
 	}
 }
 
-void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, TraceTransaction* transaction,
+void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceTrigger* trigger, bool started, ntrace_result_t trig_result)
 {
 	if (!config.log_trigger_start && started)
@@ -1953,6 +2001,22 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 	logRecordTrans(event_type, connection, transaction);
 }
 
+void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function)
+{
+	if (!config.log_errors)
+		return;
+
+	string event_type;
+	if (status->hasError())
+		event_type.printf("ERROR AT %s", function);
+	else if (status->hasWarning())
+		event_type.printf("WARNING AT %s", function);
+	else
+		return;
+
+	logRecordError(event_type.c_str(), connection, status);
+}
+
 //***************************** PLUGIN INTERFACE ********************************
 
 ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin)
@@ -1975,7 +2039,7 @@ const char* TracePluginImpl::ntrace_get_error(const TracePlugin* /*tpl_plugin*/)
 
 // Create/close attachment
 ntrace_boolean_t TracePluginImpl::ntrace_event_attach(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, ntrace_boolean_t create_db,
+	TraceDatabaseConnection* connection, ntrace_boolean_t create_db,
 	ntrace_result_t att_result)
 {
 	try
@@ -1992,7 +2056,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_attach(const TracePlugin* tpl_plu
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_detach(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, ntrace_boolean_t drop_db)
+	TraceDatabaseConnection* connection, ntrace_boolean_t drop_db)
 {
 	try
 	{
@@ -2008,7 +2072,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_detach(const TracePlugin* tpl_plu
 
 // Start/end transaction
 ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_start(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result)
 {
 	try
@@ -2025,7 +2089,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_start(const TracePlug
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_end(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result)
 {
 	try
@@ -2043,7 +2107,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_end(const TracePlugin
 
 // Assignment to context variables
 ntrace_boolean_t TracePluginImpl::ntrace_event_set_context(const struct TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceContextVariable* variable)
 {
 	try
@@ -2061,7 +2125,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_set_context(const struct TracePlu
 
 // Stored procedure executing
 ntrace_boolean_t TracePluginImpl::ntrace_event_proc_execute(const struct TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 		bool started, ntrace_result_t proc_result)
 {
 	try
@@ -2078,7 +2142,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_proc_execute(const struct TracePl
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_trigger_execute(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 	bool started, ntrace_result_t trig_result)
 {
 	try
@@ -2097,7 +2161,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_trigger_execute(const TracePlugin
 
 // DSQL statement lifecycle
 ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_prepare(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
@@ -2114,7 +2178,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_prepare(const TracePlugin* t
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_free(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceSQLStatement* statement, unsigned short option)
+	TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned short option)
 {
 	try
 	{
@@ -2130,7 +2194,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_free(const TracePlugin* tpl_
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_execute(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 	bool started, ntrace_result_t req_result)
 {
 	try
@@ -2149,7 +2213,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_execute(const TracePlugin* t
 
 // BLR requests
 ntrace_boolean_t TracePluginImpl::ntrace_event_blr_compile(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
@@ -2166,7 +2230,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_blr_compile(const TracePlugin* tp
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_blr_execute(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_result_t req_result)
 {
 	try
@@ -2184,7 +2248,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_blr_execute(const TracePlugin* tp
 
 // DYN requests
 ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
+	TraceDatabaseConnection* connection, TraceTransaction* transaction,
 	TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
@@ -2202,7 +2266,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tp
 
 // Using the services
 ntrace_boolean_t TracePluginImpl::ntrace_event_service_attach(const TracePlugin* tpl_plugin,
-	TraceService* service, ntrace_result_t att_result)
+	TraceServiceConnection* service, ntrace_result_t att_result)
 {
 	try
 	{
@@ -2218,7 +2282,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_service_attach(const TracePlugin*
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_service_start(const TracePlugin* tpl_plugin,
-	TraceService* service, size_t switches_length, const char* switches,
+	TraceServiceConnection* service, size_t switches_length, const char* switches,
 	ntrace_result_t start_result)
 {
 	try
@@ -2235,7 +2299,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_service_start(const TracePlugin* 
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_service_query(const TracePlugin* tpl_plugin,
-	TraceService* service, size_t send_item_length,
+	TraceServiceConnection* service, size_t send_item_length,
 	const ntrace_byte_t* send_items, size_t recv_item_length,
 	const ntrace_byte_t* recv_items, ntrace_result_t query_result)
 {
@@ -2255,12 +2319,28 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_service_query(const TracePlugin* 
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_service_detach(const TracePlugin* tpl_plugin,
-	TraceService* service, ntrace_result_t detach_result)
+	TraceServiceConnection* service, ntrace_result_t detach_result)
 {
 	try
 	{
 		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_service_detach(
 			service, detach_result);
+		return true;
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		marshal_exception(ex);
+		return false;
+	}
+}
+
+ntrace_boolean_t TracePluginImpl::ntrace_event_error(const TracePlugin* tpl_plugin,
+	TraceBaseConnection* connection, TraceStatusVector* status, const char* function)
+{
+	try
+	{
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_error(
+			connection, status, function);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)

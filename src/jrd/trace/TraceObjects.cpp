@@ -71,6 +71,11 @@ int TraceConnectionImpl::getProcessID()
 	return getpid();
 }
 
+ntrace_connection_kind_t TraceConnectionImpl::getKind()
+{
+	return connection_database;
+}
+
 const char* TraceConnectionImpl::getDatabaseName()
 {
 	return m_att->att_filename.c_str();
@@ -553,6 +558,11 @@ const char* TraceServiceImpl::getServiceName()
 	return m_svc->getServiceName();
 }
 
+ntrace_connection_kind_t TraceServiceImpl::getKind()
+{
+	return connection_service;
+}
+
 int TraceServiceImpl::getProcessID()
 {
 	return getpid();
@@ -564,6 +574,11 @@ const char* TraceServiceImpl::getUserName()
 }
 
 const char* TraceServiceImpl::getRoleName()
+{
+	return NULL;
+}
+
+const char* TraceServiceImpl::getCharSet()
 {
 	return NULL;
 }
@@ -607,6 +622,38 @@ TraceRuntimeStats::TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline,
 	}
 }
 
-SINT64 TraceRuntimeStats::m_dummy_counts[DBB_max_dbb_count] = {0};
+SINT64 TraceRuntimeStats::m_dummy_counts[RuntimeStatistics::TOTAL_ITEMS] = {0};
+
+
+/// TraceStatusVectorImpl
+
+const char* TraceStatusVectorImpl::getText()
+{
+	if (m_error.isEmpty() && (hasError() || hasWarning()))
+	{
+		char buff[1024];
+		const ISC_STATUS* p = m_status;
+		const ISC_STATUS* end = m_status + ISC_STATUS_LENGTH;
+
+		while (p < end - 1)
+		{
+			if (p[0] == isc_arg_gds && p[1] == 0)
+			{
+				p += 2;
+				continue;
+			}
+
+			const ISC_STATUS code = *p ? p[1] : 0;
+			if (!fb_interpret(buff, sizeof(buff), &p))
+				break;
+
+			string s;
+			s.printf("%9lu : %s\n", code, buff);
+			m_error += s;
+		}
+	}
+
+	return m_error.c_str();
+}
 
 } // namespace Jrd

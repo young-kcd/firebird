@@ -482,7 +482,7 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public TraceConnection
+class TraceFailedConnection : public TraceDatabaseConnection
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
@@ -502,6 +502,7 @@ public:
 		return m_options->dpb_user_name.c_str();
 	}
 
+	virtual ntrace_connection_kind_t getKind()	{ return connection_database; }
 	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
 	virtual const char* getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
 	virtual const char* getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
@@ -712,6 +713,7 @@ const char SINGLE_QUOTE			= '\'';
 #define GDS_DSQL_SET_CURSOR			jrd8_set_cursor
 #define GDS_DSQL_SQL_INFO			jrd8_sql_info
 
+#define ENTRYPOINT_NAME(func)	STRINGIZE(func)
 
 
 // External hook definitions
@@ -728,31 +730,75 @@ static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
 
 
-void trace_failed_attach(TraceManager* traceManager, const char* filename,
-	const DatabaseOptions& options, bool create, bool no_priv)
+static ISC_STATUS trace_error(thread_db* tdbb, const Exception& ex, ISC_STATUS* user_status, const char* func)
+{
+	const ISC_STATUS ret = ex.stuff_exception(user_status);
+
+	Attachment* att = tdbb->getAttachment();
+	if (ret == isc_bad_db_handle || !att)
+		return ret;
+
+	if (att->att_trace_manager->needs().event_error)
+	{
+		TraceConnectionImpl conn(att);
+		TraceStatusVectorImpl traceStatus(user_status);
+		
+		att->att_trace_manager->event_error(&conn, &traceStatus, func);
+	}
+
+	return ret;
+}
+
+static void trace_warning(thread_db* tdbb, ISC_STATUS* user_status, const char* func)
+{
+	Attachment* att = tdbb->getAttachment();
+	if (!att)
+		return;
+
+	if (att->att_trace_manager->needs().event_error)
+	{
+		TraceStatusVectorImpl traceStatus(user_status);
+		
+		if (traceStatus.hasWarning())
+		{
+			TraceConnectionImpl conn(att);
+			att->att_trace_manager->event_error(&conn, &traceStatus, func);
+		}
+	}
+}
+
+static void trace_failed_attach(TraceManager* traceManager, const char* filename,
+	const DatabaseOptions& options, bool create, ISC_STATUS* status)
 {
 	// Report to Trace API that attachment has not been created
 	const char* origFilename = filename;
 	if (options.dpb_org_filename.hasData())
 		origFilename = options.dpb_org_filename.c_str();
 
+	TraceFailedConnection conn(origFilename, &options);
+	TraceStatusVectorImpl traceStatus(status);
+
+	const bool no_priv = (status[1] == isc_login || status[1] == isc_no_priv);
+	const char* func = create ? ENTRYPOINT_NAME(GDS_CREATE_DATABASE) : 
+		ENTRYPOINT_NAME(GDS_ATTACH_DATABASE);
+
 	if (!traceManager)
 	{
 		TraceManager tempMgr(origFilename);
 
 		if (tempMgr.needs().event_attach)
-		{
-			TraceFailedConnection conn(origFilename, &options);
 			tempMgr.event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
-		}
+
+		if (tempMgr.needs().event_error)
+			tempMgr.event_error(&conn, &traceStatus, func);
 	}
 	else
 	{
 		if (traceManager->needs().event_attach)
-		{
-			TraceFailedConnection conn(origFilename, &options);
 			traceManager->event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
-		}
+
+		if (traceManager->needs().event_error)
+			traceManager->event_error(&conn, &traceStatus, func);
 	}
 }
 
@@ -837,22 +883,24 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const DelayFailedLogin& ex)
 	{
-		trace_failed_attach(NULL, filename, options, false, true);
+		const ISC_STATUS ret = ex.stuff_exception(user_status);
+		trace_failed_attach(NULL, filename, options, false, user_status);
 
 		ex.sleep();
-		return ex.stuff_exception(user_status);
+		return ret;
 	}
 	catch (const Exception& ex)
 	{
-		trace_failed_attach(NULL, filename, options, false, true);
-		return ex.stuff_exception(user_status);
+		const ISC_STATUS ret = ex.stuff_exception(user_status);
+		trace_failed_attach(NULL, filename, options, false, user_status);
+		return ret;
 	}
 
 	// Check database against conf file.
 	const VdnResult vdn = verifyDatabaseName(expanded_name, user_status, is_alias);
 	if (!is_alias && vdn == VDN_FAIL)
 	{
-		trace_failed_attach(NULL, filename, options, false, false);
+		trace_failed_attach(NULL, filename, options, false, user_status);
 		return user_status[1];
 	}
 
@@ -1420,10 +1468,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}	// try
 	catch (const Exception& ex)
 	{
-		const ISC_LONG exc = ex.stuff_exception(user_status);
-		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+		ex.stuff_exception(user_status);
 		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-			filename, options, false, no_priv);
+			filename, options, false, user_status);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
@@ -1456,11 +1503,18 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		INF_blob_info(blob, items2, item_length, buffer2, buffer_length);
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			INF_blob_info(blob, items2, item_length, buffer2, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_BLOB_INFO));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1490,10 +1544,17 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		BLB_cancel(tdbb, blob);
-		*blob_handle = NULL;
+			BLB_cancel(tdbb, blob);
+			*blob_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_CANCEL_BLOB));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1522,13 +1583,20 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS* user_status, Attachment** handle, SLONG
 
 		validateHandle(tdbb, *handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-
-		Database* const dbb = tdbb->getDatabase();
-
-		if (dbb->dbb_event_mgr)
+		try
 		{
-			dbb->dbb_event_mgr->cancelEvents(*id);
+			check_database(tdbb);
+
+			Database* const dbb = tdbb->getDatabase();
+
+			if (dbb->dbb_event_mgr)
+			{
+				dbb->dbb_event_mgr->cancelEvents(*id);
+			}
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_CANCEL_EVENTS));
 		}
 	}
 	catch (const Exception& ex)
@@ -1617,10 +1685,17 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		BLB_close(tdbb, blob);
-		*blob_handle = NULL;
+			BLB_close(tdbb, blob);
+			*blob_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_CLOSE_BLOB));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1649,9 +1724,16 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, jrd_tra** tra_handle)
 
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		JRD_commit_transaction(tdbb, tra_handle);
+			JRD_commit_transaction(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_COMMIT));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1680,9 +1762,16 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		JRD_commit_retaining(tdbb, tra_handle);
+			JRD_commit_retaining(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_COMMIT_RETAINING));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1733,7 +1822,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 			const bool no_priv = (exc == isc_no_priv);
 			trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
 
-			return exc;
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_COMPILE));
 		}
 	}
 	catch (const Exception& ex)
@@ -1775,11 +1864,18 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		*blob_handle = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
+			*blob_handle = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_CREATE_BLOB2));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1872,15 +1968,17 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const DelayFailedLogin& ex)
 	{
-		trace_failed_attach(NULL, filename, options, true, true);
+		const ISC_STATUS ret = ex.stuff_exception(user_status);
+		trace_failed_attach(NULL, filename, options, true, user_status);
 
 		ex.sleep();
-		return ex.stuff_exception(user_status);
+		return ret; 
 	}
 	catch (const Exception& ex)
 	{
-		trace_failed_attach(NULL, filename, options, true, true);
-		return ex.stuff_exception(user_status);
+		const ISC_STATUS ret = ex.stuff_exception(user_status);
+		trace_failed_attach(NULL, filename, options, true, user_status);
+		return ret; 
 	}
 
 	// Check database against conf file.
@@ -2160,10 +2258,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}	// try
 	catch (const Exception& ex)
 	{
-		const ISC_LONG exc = ex.stuff_exception(user_status);
-		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+		ex.stuff_exception(user_status);
 		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-			filename, options, true, no_priv);
+			filename, options, true, user_status);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
@@ -2196,11 +2293,18 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 		Attachment* const attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		INF_database_info(items2, item_length, buffer2, buffer_length);
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			INF_database_info(items2, item_length, buffer2, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DATABASE_INFO));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2250,7 +2354,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 			const ISC_STATUS exc = ex.stuff_exception(user_status);
 			trace.finish(exc == FB_SUCCESS ? res_successful : res_failed);
 
-			return exc;
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DDL));
 		}
 	}
 	catch (const Exception& ex) {
@@ -2341,94 +2445,100 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		Attachment* const attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
-
-		Database* const dbb = tdbb->getDatabase();
-
-		const PathName& file_name = attachment->att_filename;
-
-		if (!attachment->locksmith())
+		try
 		{
-			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
-											  Arg::Str("database") <<
-											  Arg::Str(file_name));
-		}
+			Database* const dbb = tdbb->getDatabase();
 
-		if (attachment->att_flags & ATT_shutdown)
-		{
-			if (dbb->dbb_ast_flags & DBB_shutdown)
+			const PathName& file_name = attachment->att_filename;
+
+			if (!attachment->locksmith())
 			{
-				ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
+												  Arg::Str("database") <<
+												  Arg::Str(file_name));
 			}
-			else
+
+			if (attachment->att_flags & ATT_shutdown)
 			{
-				ERR_post(Arg::Gds(isc_att_shutdown));
+				if (dbb->dbb_ast_flags & DBB_shutdown)
+				{
+					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+				}
+				else
+				{
+					ERR_post(Arg::Gds(isc_att_shutdown));
+				}
+			}
+
+			if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+			{
+				ERR_post(Arg::Gds(isc_lock_timeout) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
+			}
+
+			// Check if same process has more attachments
+
+			if (dbb->dbb_attachments && dbb->dbb_attachments->att_next)
+			{
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+			}
+
+			// Forced release of all transactions
+			purge_transactions(tdbb, attachment, true, attachment->att_flags);
+
+			attachment->att_flags |= ATT_cancel_disable;
+
+			// Here we have database locked in exclusive mode.
+			// Just mark the header page with an 0 ods version so that no other
+			// process can attach to this database once we release our exclusive
+			// lock and start dropping files.
+
+   			WIN window(HEADER_PAGE_NUMBER);
+			Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+			CCH_MARK_MUST_WRITE(tdbb, &window);
+			header->hdr_ods_version = 0;
+			CCH_RELEASE(tdbb, &window);
+
+			// This point on database is useless
+			// mark the dbb unusable
+
+			dbb->dbb_flags |= DBB_not_in_use;
+			*handle = NULL;
+
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			const jrd_file* file = pageSpace->file;
+			const Shadow* shadow = dbb->dbb_shadow;
+
+			// Notify Trace API manager about successful drop of database
+			if (attachment->att_trace_manager->needs().event_detach)
+			{
+				TraceConnectionImpl conn(attachment);
+				attachment->att_trace_manager->event_detach(&conn, true);
+			}
+
+			// Unlink attachment from database
+			release_attachment(tdbb, attachment);
+
+			shutdown_database(dbb, false);
+
+			// drop the files here
+			bool err = drop_files(file);
+			for (; shadow; shadow = shadow->sdw_next)
+			{
+				err = err || drop_files(shadow->sdw_file);
+			}
+
+			tdbb->setDatabase(NULL);
+			Database::destroy(dbb);
+
+			if (err) {
+				ERR_build_status(user_status, Arg::Gds(isc_drdb_completed_with_errs));
 			}
 		}
-
-		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+		catch (const Exception& ex)
 		{
-			ERR_post(Arg::Gds(isc_lock_timeout) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
-		}
-
-		// Check if same process has more attachments
-
-		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
-		}
-
-		// Forced release of all transactions
-		purge_transactions(tdbb, attachment, true, attachment->att_flags);
-
-		attachment->att_flags |= ATT_cancel_disable;
-
-		// Here we have database locked in exclusive mode.
-		// Just mark the header page with an 0 ods version so that no other
-		// process can attach to this database once we release our exclusive
-		// lock and start dropping files.
-
-   		WIN window(HEADER_PAGE_NUMBER);
-		Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-		CCH_MARK_MUST_WRITE(tdbb, &window);
-		header->hdr_ods_version = 0;
-		CCH_RELEASE(tdbb, &window);
-
-		// This point on database is useless
-		// mark the dbb unusable
-
-		dbb->dbb_flags |= DBB_not_in_use;
-		*handle = NULL;
-
-		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		const jrd_file* file = pageSpace->file;
-		const Shadow* shadow = dbb->dbb_shadow;
-
-		// Notify Trace API manager about successful drop of database
-		if (attachment->att_trace_manager->needs().event_detach)
-		{
-			TraceConnectionImpl conn(attachment);
-			attachment->att_trace_manager->event_detach(&conn, true);
-		}
-
-		// Unlink attachment from database
-		release_attachment(tdbb, attachment);
-
-		shutdown_database(dbb, false);
-
-		// drop the files here
-		bool err = drop_files(file);
-		for (; shadow; shadow = shadow->sdw_next)
-		{
-			err = err || drop_files(shadow->sdw_file);
-		}
-
-		tdbb->setDatabase(NULL);
-		Database::destroy(dbb);
-
-		if (err) {
-			ERR_build_status(user_status, Arg::Gds(isc_drdb_completed_with_errs));
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DROP_DATABASE));
 		}
 	}
 	catch (const Exception& ex)
@@ -2463,9 +2573,19 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
+			*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
+
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_GET_SEGMENT));
+		}
+
+		// Don't trace errors below as it is not real errors but kind of return value
 
 		if (blob->blb_flags & BLB_eof) {
 			status_exception::raise(Arg::Gds(isc_segstr_eof));
@@ -2512,19 +2632,26 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-
-		if (!array_id->gds_quad_low && !array_id->gds_quad_high)
+		try
 		{
-			MOVE_CLEAR(slice, slice_length);
-			*return_length = 0;
+			check_database(tdbb);
+
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+
+			if (!array_id->gds_quad_low && !array_id->gds_quad_high)
+			{
+				MOVE_CLEAR(slice, slice_length);
+				*return_length = 0;
+			}
+			else
+			{
+				*return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+											   sdl, param_length, param, slice_length, slice);
+			}
 		}
-		else
+		catch (const Exception& ex)
 		{
-			*return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
-										   sdl, param_length, param, slice_length, slice);
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_GET_SLICE));
 		}
 	}
 	catch (const Exception& ex)
@@ -2566,11 +2693,18 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		*blob_handle = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
+			*blob_handle = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_OPEN_BLOB2));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2601,9 +2735,16 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status, jrd_tra** tra_handle, USHORT len
 		jrd_tra* const transaction = *tra_handle;
 		validateHandle(tdbb, transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		prepare(tdbb, transaction, length, msg);
+			prepare(tdbb, transaction, length, msg);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_PREPARE));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2636,9 +2777,16 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		BLB_put_segment(tdbb, blob, buffer, buffer_length);
+			BLB_put_segment(tdbb, blob, buffer, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_PUT_SEGMENT));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2677,12 +2825,19 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
-					  sdl, param_length, param, slice_length, slice);
+			BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+						  sdl, param_length, param, slice_length, slice);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_PUT_SLICE));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2718,17 +2873,24 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		Attachment* const attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		Database* const dbb = tdbb->getDatabase();
-		Lock* const lock = dbb->dbb_lock;
+			Database* const dbb = tdbb->getDatabase();
+			Lock* const lock = dbb->dbb_lock;
 
-		EventManager::init(attachment);
+			EventManager::init(attachment);
 
-		*id = dbb->dbb_event_mgr->queEvents(attachment->att_event_session,
-											lock->lck_length, (const TEXT*) &lock->lck_key,
-											length, items,
-											ast, arg);
+			*id = dbb->dbb_event_mgr->queEvents(attachment->att_event_session,
+												lock->lck_length, (const TEXT*) &lock->lck_key,
+												length, items,
+												ast, arg);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_QUE_EVENTS));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2768,14 +2930,21 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-		check_transaction(tdbb, request->req_transaction);
+		try
+		{
+			check_database(tdbb);
+			check_transaction(tdbb, request->req_transaction);
 
-		JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level
+			JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level
 #ifdef SCROLLABLE_CURSORS
-			, direction, offset
+				, direction, offset
 #endif
-			);
+				);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_RECEIVE));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2814,9 +2983,16 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		*tra_handle = TRA_reconnect(tdbb, id, length);
+			*tra_handle = TRA_reconnect(tdbb, id, length);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_RECONNECT));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2846,10 +3022,17 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
 		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		CMP_release(tdbb, request);
-		*req_handle = NULL;
+			CMP_release(tdbb, request);
+			*req_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_RELEASE_REQUEST));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2885,13 +3068,20 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		// I can't change the GDS_REQUEST_INFO's signature, so I do the casts here.
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		SLONG buffer_length2 = (ULONG)(USHORT) buffer_length;
-		JRD_request_info(tdbb, request, level, item_length, items2, buffer_length2, buffer2);
+			// I can't change the GDS_REQUEST_INFO's signature, so I do the casts here.
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			SLONG buffer_length2 = (ULONG)(USHORT) buffer_length;
+			JRD_request_info(tdbb, request, level, item_length, items2, buffer_length2, buffer2);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_REQUEST_INFO));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2920,9 +3110,16 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		JRD_rollback_retaining(tdbb, tra_handle);
+			JRD_rollback_retaining(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_ROLLBACK_RETAINING));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2951,9 +3148,16 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, jrd_tra** tra_handle)
 
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		JRD_rollback_transaction(tdbb, tra_handle);
+			JRD_rollback_transaction(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_ROLLBACK));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2987,9 +3191,16 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		*result = BLB_lseek(blob, mode, offset);
+			*result = BLB_lseek(blob, mode, offset);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_SEEK_BLOB));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3024,19 +3235,26 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 		jrd_req* request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-		check_transaction(tdbb, request->req_transaction);
-
-		verify_request_synchronization(request, level);
-
-		EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
-
-		check_autocommit(request, tdbb);
-
-		if (request->req_flags & req_warning)
+		try
 		{
-			request->req_flags &= ~req_warning;
-			ERR_punt();
+			check_database(tdbb);
+			check_transaction(tdbb, request->req_transaction);
+
+			verify_request_synchronization(request, level);
+
+			EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
+
+			check_autocommit(request, tdbb);
+
+			if (request->req_flags & req_warning)
+			{
+				request->req_flags &= ~req_warning;
+				ERR_punt();
+			}
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_SEND));
 		}
 	}
 	catch (const Exception& ex)
@@ -3263,27 +3481,34 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 		validateHandle(tdbb, request);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-		check_transaction(tdbb, request->req_transaction);
-
-		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
-
-		TraceBlrExecute trace(tdbb, request);
 		try
 		{
-			JRD_start_and_send(tdbb, request, transaction, msg_type,
-								msg_length, reinterpret_cast<UCHAR*>(msg), level);
+			check_database(tdbb);
+			check_transaction(tdbb, request->req_transaction);
 
-			// Notify Trace API about blr execution
-			trace.finish(res_successful);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
+
+			TraceBlrExecute trace(tdbb, request);
+			try
+			{
+				JRD_start_and_send(tdbb, request, transaction, msg_type,
+									msg_length, reinterpret_cast<UCHAR*>(msg), level);
+
+				// Notify Trace API about blr execution
+				trace.finish(res_successful);
+			}
+			catch (const Exception& ex)
+			{
+				const ISC_LONG exc = ex.stuff_exception(user_status);
+				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+				trace.finish(no_priv ? res_unauthorized : res_failed);
+
+				throw;
+			}
 		}
 		catch (const Exception& ex)
 		{
-			const ISC_LONG exc = ex.stuff_exception(user_status);
-			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-			trace.finish(no_priv ? res_unauthorized : res_failed);
-
-			return exc;
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_START_AND_SEND));
 		}
 	}
 	catch (const Exception& ex)
@@ -3315,24 +3540,31 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status, jrd_req** req_handle, jrd_tra** tr
 		validateHandle(tdbb, request);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-		check_transaction(tdbb, request->req_transaction);
-
-		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
-
-		TraceBlrExecute trace(tdbb, request);
 		try
 		{
-			JRD_start(tdbb, request, transaction, level);
-			trace.finish(res_successful);
+			check_database(tdbb);
+			check_transaction(tdbb, request->req_transaction);
+
+			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
+
+			TraceBlrExecute trace(tdbb, request);
+			try
+			{
+				JRD_start(tdbb, request, transaction, level);
+				trace.finish(res_successful);
+			}
+			catch (const Exception& ex)
+			{
+				const ISC_LONG exc = stuff_exception(user_status, ex);
+				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+				trace.finish(no_priv ? res_unauthorized : res_failed);
+
+				throw;
+			}
 		}
 		catch (const Exception& ex)
 		{
-			const ISC_LONG exc = stuff_exception(user_status, ex);
-			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-			trace.finish(no_priv ? res_unauthorized : res_failed);
-
-			return exc;
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_START));
 		}
 	}
 	catch (const Exception& ex)
@@ -3506,101 +3738,108 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		validateHandle(tdbb, attachment);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-
-		Database* const dbb = tdbb->getDatabase();
-
-		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
-
-		jrd_nod* in_message = NULL;
-		jrd_nod* out_message = NULL;
-
-		jrd_req* request = NULL;
-		MemoryPool* new_pool = dbb->createPool();
-
 		try
 		{
-			Jrd::ContextPoolHolder context(tdbb, new_pool);
+			check_database(tdbb);
 
-			AutoPtr<CompilerScratch> csb;
-			PAR_parse(tdbb, csb, reinterpret_cast<const UCHAR*>(blr), blr_length, false);
+			Database* const dbb = tdbb->getDatabase();
 
-			request = CMP_make_request(tdbb, csb, false);
-			CMP_verify_access(tdbb, request);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-			jrd_nod* node;
-			for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
+			jrd_nod* in_message = NULL;
+			jrd_nod* out_message = NULL;
+
+			jrd_req* request = NULL;
+			MemoryPool* new_pool = dbb->createPool();
+
+			try
 			{
-				if ( (node = csb->csb_rpt[i].csb_message) )
+				Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+				AutoPtr<CompilerScratch> csb;
+				PAR_parse(tdbb, csb, reinterpret_cast<const UCHAR*>(blr), blr_length, false);
+
+				request = CMP_make_request(tdbb, csb, false);
+				CMP_verify_access(tdbb, request);
+
+				jrd_nod* node;
+				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-					if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
+					if ( (node = csb->csb_rpt[i].csb_message) )
 					{
-						in_message = node;
-					}
-					else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
-					{
-						out_message = node;
+						if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
+						{
+							in_message = node;
+						}
+						else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
+						{
+							out_message = node;
+						}
 					}
 				}
 			}
-		}
-		catch (const Exception&)
-		{
-			if (request)
-				CMP_release(tdbb, request);
-			else
-				dbb->deletePool(new_pool);
-
-			throw;
-		}
-
-		request->req_attachment = attachment;
-
-		USHORT len;
-		if (in_msg_length)
-		{
-			if (in_message)
+			catch (const Exception&)
 			{
-				const Format* format = (Format*) in_message->nod_arg[e_msg_format];
+				if (request)
+					CMP_release(tdbb, request);
+				else
+					dbb->deletePool(new_pool);
+
+				throw;
+			}
+
+			request->req_attachment = attachment;
+
+			USHORT len;
+			if (in_msg_length)
+			{
+				if (in_message)
+				{
+					const Format* format = (Format*) in_message->nod_arg[e_msg_format];
+					len = format->fmt_length;
+				}
+				else {
+					len = 0;
+				}
+
+				if (in_msg_length != len)
+				{
+					ERR_post(Arg::Gds(isc_port_len) << Arg::Num(in_msg_length) <<
+													   Arg::Num(len));
+				}
+
+				memcpy((SCHAR*) request + in_message->nod_impure, in_msg, in_msg_length);
+			}
+
+			EXE_start(tdbb, request, transaction);
+
+			if (out_message)
+			{
+				const Format* format = (Format*) out_message->nod_arg[e_msg_format];
 				len = format->fmt_length;
 			}
 			else {
 				len = 0;
 			}
 
-			if (in_msg_length != len)
+			if (out_msg_length != len)
 			{
-				ERR_post(Arg::Gds(isc_port_len) << Arg::Num(in_msg_length) <<
+				ERR_post(Arg::Gds(isc_port_len) << Arg::Num(out_msg_length) <<
 												   Arg::Num(len));
 			}
 
-			memcpy((SCHAR*) request + in_message->nod_impure, in_msg, in_msg_length);
+			if (out_msg_length) {
+				memcpy(out_msg, (SCHAR*) request + out_message->nod_impure, out_msg_length);
+			}
+
+			check_autocommit(request, tdbb);
+
+			CMP_release(tdbb, request);
 		}
-
-		EXE_start(tdbb, request, transaction);
-
-		if (out_message)
+		catch (const Exception& ex)
 		{
-			const Format* format = (Format*) out_message->nod_arg[e_msg_format];
-			len = format->fmt_length;
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_TRANSACT_REQUEST));
 		}
-		else {
-			len = 0;
-		}
-
-		if (out_msg_length != len)
-		{
-			ERR_post(Arg::Gds(isc_port_len) << Arg::Num(out_msg_length) <<
-											   Arg::Num(len));
-		}
-
-		if (out_msg_length) {
-			memcpy(out_msg, (SCHAR*) request + out_message->nod_impure, out_msg_length);
-		}
-
-		check_autocommit(request, tdbb);
-
-		CMP_release(tdbb, request);
 	}
 	catch (const Exception& ex)
 	{
@@ -3635,11 +3874,18 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		jrd_tra* const transaction = *tra_handle;
 		validateHandle(tdbb, transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		INF_transaction_info(transaction, items2, item_length, buffer2, buffer_length);
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			INF_transaction_info(transaction, items2, item_length, buffer2, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_TRANSACTION_INFO));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3670,9 +3916,16 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, jrd_req** req_handle, SSHORT leve
 		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		JRD_unwind_request(tdbb, request, level);
+			JRD_unwind_request(tdbb, request, level);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_UNWIND));
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3697,9 +3950,17 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status, Attachment** db_handle, ds
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		*stmt_handle = DSQL_allocate_statement(tdbb, attachment);
+			*stmt_handle = DSQL_allocate_statement(tdbb, attachment);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_ALLOCATE));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_ALLOCATE));
 	}
 	catch (const Exception& ex)
 	{
@@ -3729,13 +3990,21 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 			validateHandle(tdbb, *tra_handle);
 		}
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		DSQL_execute(tdbb, tra_handle, statement,
-					 in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
-					 in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
-					 out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
-					 /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+			DSQL_execute(tdbb, tra_handle, statement,
+						 in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
+						 in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
+						 out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
+						 /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_EXECUTE));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_EXECUTE));
 	}
 	catch (const Exception& ex)
 	{
@@ -3766,14 +4035,22 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 			validateHandle(tdbb, *tra_handle);
 		}
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		DSQL_execute_immediate(tdbb, attachment, tra_handle,
-							   length, string, dialect,
-							   in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
-							   /*in_msg_type,*/ in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
-							   out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
-							   /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+			DSQL_execute_immediate(tdbb, attachment, tra_handle,
+								   length, string, dialect,
+								   in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
+								   /*in_msg_type,*/ in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
+								   out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
+								   /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_EXECUTE_IMMEDIATE));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_EXECUTE_IMMEDIATE));
 	}
 	catch (const Exception& ex)
 	{
@@ -3803,14 +4080,22 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		validateHandle(tdbb, statement);
 		validateHandle(tdbb, statement->req_transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-						/*msg_type,*/ msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
+			return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
+							/*msg_type,*/ msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
 #ifdef SCROLLABLE_CURSORS
-						  , direction, offset
+							  , direction, offset
 #endif
-						  );
+							  );
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_FETCH));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_FETCH));
 	}
 	catch (const Exception& ex)
 	{
@@ -3830,12 +4115,20 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, dsql_req** stmt_handle, USHORT
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		DSQL_free_statement(tdbb, statement, option);
+			DSQL_free_statement(tdbb, statement, option);
 
-		if (option & DSQL_drop)
-			*stmt_handle = NULL;
+			if (option & DSQL_drop)
+				*stmt_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_FREE));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_FREE));
 	}
 	catch (const Exception& ex)
 	{
@@ -3858,10 +4151,18 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		DSQL_insert(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-					/*msg_type,*/ msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
+			DSQL_insert(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
+						/*msg_type,*/ msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_INSERT));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_INSERT));
 	}
 	catch (const Exception& ex)
 	{
@@ -3890,11 +4191,19 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 			validateHandle(tdbb, *tra_handle);
 		}
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		DSQL_prepare(tdbb, *tra_handle, stmt_handle, length, string, dialect,
-					 item_length, reinterpret_cast<const UCHAR*>(items),
-					 buffer_length, reinterpret_cast<UCHAR*>(buffer));
+			DSQL_prepare(tdbb, *tra_handle, stmt_handle, length, string, dialect,
+						 item_length, reinterpret_cast<const UCHAR*>(items),
+						 buffer_length, reinterpret_cast<UCHAR*>(buffer));
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_PREPARE));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_PREPARE));
 	}
 	catch (const Exception& ex)
 	{
@@ -3917,9 +4226,17 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		DSQL_set_cursor(tdbb, statement, cursor); //, type);
+			DSQL_set_cursor(tdbb, statement, cursor); //, type);
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_SET_CURSOR));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_SET_CURSOR));
 	}
 	catch (const Exception& ex)
 	{
@@ -3942,11 +4259,19 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
+		try
+		{
+			check_database(tdbb);
 
-		DSQL_sql_info(tdbb, statement,
-					  item_length, reinterpret_cast<const UCHAR*>(items),
-					  info_length, reinterpret_cast<UCHAR*>(info));
+			DSQL_sql_info(tdbb, statement,
+						  item_length, reinterpret_cast<const UCHAR*>(items),
+						  info_length, reinterpret_cast<UCHAR*>(info));
+		}
+		catch (const Exception& ex)
+		{
+			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DSQL_SQL_INFO));
+		}
+		trace_warning(tdbb, user_status, ENTRYPOINT_NAME(GDS_DSQL_SQL_INFO));
 	}
 	catch (const Exception& ex)
 	{
@@ -6568,18 +6893,28 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 				check_database(tdbb);
 			}
 
-			if (v->teb_tpb_length < 0 || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
+			try
 			{
-				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+				if (v->teb_tpb_length < 0 || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
+				{
+					status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+				}
+
+				transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
+
+				transaction->tra_sibling = prior;
+				prior = transaction;
+
+				// run ON TRANSACTION START triggers
+				EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
 			}
+			catch(const Exception& ex)
+			{
+				ISC_STATUS_ARRAY temp = {0};
+				trace_error(tdbb, ex, temp, ENTRYPOINT_NAME(GDS_START_TRANSACTION));
 
-			transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
-
-			transaction->tra_sibling = prior;
-			prior = transaction;
-
-			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
+				throw;
+			}
 		}
 
 		*tra_handle = transaction;

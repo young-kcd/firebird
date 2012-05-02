@@ -962,13 +962,24 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			else
 				trace_manager = FB_NEW(*getDefaultMemoryPool()) TraceManager(this);
 
-			if (trace_manager->needs().event_service_attach)
+			if (trace_manager->needs().event_service_attach ||
+				trace_manager->needs().event_error)
 			{
 				const ISC_LONG exc = ex.stuff_exception(status_vector);
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
 				TraceServiceImpl service(this);
-				trace_manager->event_service_attach(&service, no_priv ? res_unauthorized : res_failed);
+
+				if (trace_manager->needs().event_service_attach)
+				{
+					trace_manager->event_service_attach(&service, no_priv ? res_unauthorized : res_failed);
+				}
+
+				if (trace_manager->needs().event_error)
+				{
+					TraceStatusVectorImpl traceStatus(status_vector);
+					trace_manager->event_error(&service, &traceStatus, "jrd8_service_attach");
+				}
 			}
 
 			if (!hasTrace)
@@ -1611,17 +1622,36 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	{
 		ISC_STATUS_ARRAY status_vector;
 
-		if (svc_trace_manager->needs().event_service_query)
+		if (svc_trace_manager->needs().event_service_query ||
+			svc_trace_manager->needs().event_error)
 		{
 			const ISC_LONG exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv ||
 							exc == isc_insufficient_svc_privileges);
 
 			TraceServiceImpl service(this);
-			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
-				recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
+
+			if (svc_trace_manager->needs().event_service_query)
+			{
+				svc_trace_manager->event_service_query(&service, send_item_length, send_items,
+					recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
+			}
+
+			if (svc_trace_manager->needs().event_error)
+			{
+				TraceStatusVectorImpl traceStatus(status_vector);
+				svc_trace_manager->event_error(&service, &traceStatus, "jrd8_service_query");
+			}
 		}
 		throw;
+	}
+
+	if (svc_status[1] && svc_trace_manager->needs().event_error)
+	{
+		TraceServiceImpl service(this);
+		TraceStatusVectorImpl traceStatus(svc_status);
+
+		svc_trace_manager->event_error(&service, &traceStatus, "jrd8_service_query");
 	}
 
 	if (!(svc_flags & SVC_thd_running))
@@ -1997,15 +2027,26 @@ void Service::query(USHORT			send_item_length,
 	{
 		ISC_STATUS_ARRAY status_vector;
 
-		if (svc_trace_manager->needs().event_service_query)
+		if (svc_trace_manager->needs().event_service_query ||
+			svc_trace_manager->needs().event_error)
 		{
 			const ISC_LONG exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
-			// Report to Trace API that query failed
 			TraceServiceImpl service(this);
-			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
-				recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
+
+			// Report to Trace API that query failed
+			if (svc_trace_manager->needs().event_service_query)
+			{
+				svc_trace_manager->event_service_query(&service, send_item_length, send_items,
+					recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
+			}
+
+			if (svc_trace_manager->needs().event_error)
+			{
+				TraceStatusVectorImpl traceStatus(status_vector);
+				svc_trace_manager->event_error(&service, &traceStatus, "jrd8_service_query");
+			}
 		}
 		throw;
 	}
@@ -2202,16 +2243,27 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		if (svc_trace_manager->needs().event_service_start)
+		if (svc_trace_manager->needs().event_service_start ||
+			svc_trace_manager->needs().event_error)
 		{
 			ISC_STATUS_ARRAY status_vector;
 			const ISC_LONG exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
 			TraceServiceImpl service(this);
-			svc_trace_manager->event_service_start(&service,
-				this->svc_switches.length(), this->svc_switches.c_str(),
-				no_priv ? res_unauthorized : res_failed);
+
+			if (svc_trace_manager->needs().event_service_start)
+			{
+				svc_trace_manager->event_service_start(&service,
+					this->svc_switches.length(), this->svc_switches.c_str(),
+					no_priv ? res_unauthorized : res_failed);
+			}
+			
+			if (svc_trace_manager->needs().event_error)
+			{
+				TraceStatusVectorImpl traceStatus(status_vector);
+				svc_trace_manager->event_error(&service, &traceStatus, "jrd8_service_start");
+			}
 		}
 		throw;
 	}

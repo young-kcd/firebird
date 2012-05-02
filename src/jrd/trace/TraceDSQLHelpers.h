@@ -147,7 +147,7 @@ public:
 		}
 
 		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
-			&m_request->req_request->req_stats,
+			&m_request->req_request ? &m_request->req_request->req_stats : NULL,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
 
@@ -211,7 +211,8 @@ public:
 		}
 
 		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
-			&m_request->req_request->req_stats, m_request->req_fetch_elapsed,
+			m_request->req_request ? &m_request->req_request->req_stats : NULL, 
+			m_request->req_fetch_elapsed,
 			m_request->req_fetch_rowcount);
 
 		TraceSQLStatementImpl stmt(m_request, stats.getPerf());
