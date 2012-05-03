@@ -527,24 +527,6 @@ void TracePluginImpl::appendGlobalCounts(const PerformanceInfo* info)
 		record.append(temp);
 	}
 
-	if ((cnt = info->pin_counters[RuntimeStatistics::SORTS]) != 0)
-	{
-		temp.printf(", %"QUADFORMAT"d sort(s)", cnt);
-		record.append(temp);
-	}
-
-	if ((cnt = info->pin_counters[RuntimeStatistics::SORT_GETS]) != 0)
-	{
-		temp.printf(", %"QUADFORMAT"d sort get(s)", cnt);
-		record.append(temp);
-	}
-
-	if ((cnt = info->pin_counters[RuntimeStatistics::SORT_PUTS]) != 0)
-	{
-		temp.printf(", %"QUADFORMAT"d sort put(s)", cnt);
-		record.append(temp);
-	}
-
 	record.append(NEWLINE);
 }
 
