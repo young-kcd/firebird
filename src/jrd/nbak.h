@@ -403,6 +403,11 @@ public:
 		return flushInProgress;
 	}
 
+	bool isShuttedDown() const
+	{
+		return shuttedDown;
+	}
+
 	// Get size (in pages) of locked database file
 	ULONG getPageCount();
 private:
@@ -417,6 +422,7 @@ private:
 	Firebird::PathName diff_name;
 	bool explicit_diff_name;
 	bool flushInProgress;
+	bool shuttedDown;
 
 	NBackupStateLock* stateLock;
 	NBackupAllocLock* allocLock;
