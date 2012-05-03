@@ -490,8 +490,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 		LCK_convert(tdbb, lock, LCK_write, LCK_WAIT);
 	--transaction->tra_use_count;
 
-	trace.finish(res_successful);
-	TRA_release_transaction(tdbb, transaction);
+	TRA_release_transaction(tdbb, transaction, &trace);
 }
 
 
@@ -1086,7 +1085,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 }
 
 
-void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
+void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, TraceTransactionEnd* trace)
 {
 /**************************************
  *
@@ -1201,6 +1200,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	if (transaction->tra_flags & TRA_precommitted)
 		TRA_precommited(tdbb, transaction->tra_number, 0);
+
+	if (trace)
+		trace->finish(res_successful);
 
 	// Unlink the transaction from the database block
 
@@ -1391,8 +1393,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 	TRA_set_state(tdbb, transaction, transaction->tra_number, state);
 
-	trace.finish(res_successful);
-	TRA_release_transaction(tdbb, transaction);
+	TRA_release_transaction(tdbb, transaction, &trace);
 }
 
 
