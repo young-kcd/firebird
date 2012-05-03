@@ -320,7 +320,6 @@ public:
 			const Firebird::QualifiedName& aDsqlName = Firebird::QualifiedName())
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>(pool),
 		  dsqlName(pool, aDsqlName),
-		  dsqlInputs(NULL),
 		  alias(pool),
 		  sourceList(NULL),
 		  targetList(NULL),
@@ -381,7 +380,6 @@ private:
 
 public:
 	Firebird::QualifiedName dsqlName;
-	ValueListNode* dsqlInputs;
 	Firebird::string alias;
 	NestConst<ValueListNode> sourceList;
 	NestConst<ValueListNode> targetList;
@@ -445,8 +443,8 @@ private:
 		StreamType shellStream);
 
 public:
-	ValueListNode* dsqlGroup;
-	RseNode* dsqlRse;
+	NestConst<ValueListNode> dsqlGroup;
+	NestConst<RseNode> dsqlRse;
 	bool dsqlWindow;
 	NestConst<SortNode> group;
 	NestConst<MapNode> map;
@@ -685,17 +683,17 @@ private:
 	static void planSet(CompilerScratch* csb, PlanNode* plan);
 
 public:
-	ValueExprNode* dsqlFirst;
-	ValueExprNode* dsqlSkip;
-	ValueListNode* dsqlDistinct;
-	ValueListNode* dsqlSelectList;
-	RecSourceListNode* dsqlFrom;
-	BoolExprNode* dsqlWhere;
-	ValueListNode* dsqlJoinUsing;
-	ValueListNode* dsqlGroup;
-	BoolExprNode* dsqlHaving;
-	ValueListNode* dsqlOrder;
-	RecSourceListNode* dsqlStreams;
+	NestConst<ValueExprNode> dsqlFirst;
+	NestConst<ValueExprNode> dsqlSkip;
+	NestConst<ValueListNode> dsqlDistinct;
+	NestConst<ValueListNode> dsqlSelectList;
+	NestConst<RecSourceListNode> dsqlFrom;
+	NestConst<BoolExprNode> dsqlWhere;
+	NestConst<ValueListNode> dsqlJoinUsing;
+	NestConst<ValueListNode> dsqlGroup;
+	NestConst<BoolExprNode> dsqlHaving;
+	NestConst<ValueListNode> dsqlOrder;
+	NestConst<RecSourceListNode> dsqlStreams;
 	bool dsqlExplicitJoin;
 	USHORT rse_jointype;		// inner, left, full
 	NestConst<ValueExprNode> rse_first;
@@ -778,10 +776,10 @@ public:
 	}
 
 public:
-	RecordSourceNode* querySpec;
-	ValueListNode* orderClause;
-	RowsClause* rowsClause;
-	WithClause* withClause;
+	NestConst<RecordSourceNode> querySpec;
+	NestConst<ValueListNode> orderClause;
+	NestConst<RowsClause> rowsClause;
+	NestConst<WithClause> withClause;
 	Firebird::string alias;
 	Firebird::ObjectsArray<Firebird::MetaName>* columns;
 };

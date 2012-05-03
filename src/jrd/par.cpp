@@ -795,7 +795,7 @@ ValueListNode* PAR_args(thread_db* tdbb, CompilerScratch* csb, UCHAR count,
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
 	ValueListNode* node = FB_NEW(pool) ValueListNode(pool, allocCount);
-	NestConst<ValueExprNode>* ptr = node->args.begin();
+	NestConst<ValueExprNode>* ptr = node->items.begin();
 
 	if (count)
 	{
@@ -1222,9 +1222,9 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 		ValueListNode* targetValues = *targetList = FB_NEW(pool) ValueListNode(pool, n);
 
 		NestConst<ValueExprNode>* sourcePtr =
-			input_flag ? sourceValues->args.begin() : targetValues->args.begin();
+			input_flag ? sourceValues->items.begin() : targetValues->items.begin();
 		NestConst<ValueExprNode>* targetPtr =
-			input_flag ? targetValues->args.begin() : sourceValues->args.begin();
+			input_flag ? targetValues->items.begin() : sourceValues->items.begin();
 
 		for (USHORT i = 0; n; count--, n--)
 		{

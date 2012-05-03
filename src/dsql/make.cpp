@@ -389,8 +389,8 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, ValueListNode* node,
 	const TEXT* expression_name)
 {
-	ValueExprNode** p = node->dsqlArgs.begin();
-	ValueExprNode** end = node->dsqlArgs.end();
+	NestConst<ValueExprNode>* p = node->items.begin();
+	NestConst<ValueExprNode>* end = node->items.end();
 
 	Array<const dsc*> args;
 

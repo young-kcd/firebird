@@ -331,8 +331,8 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	const NestConst<ValueExprNode>* ptr = m_params->args.begin();
-	const NestConst<ValueExprNode>* const end = m_params->args.end();
+	const NestConst<ValueExprNode>* ptr = m_params->items.begin();
+	const NestConst<ValueExprNode>* const end = m_params->items.end();
 
 	for (; ptr != end; ++ptr)
 	{

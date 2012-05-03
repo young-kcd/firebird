@@ -45,9 +45,11 @@ Jrd::RseNode* PASS1_derived_table(Jrd::DsqlCompilerScratch*, Jrd::SelectExprNode
 void PASS1_expand_select_node(Jrd::DsqlCompilerScratch*, Jrd::ExprNode*, Jrd::ValueListNode*, bool);
 void PASS1_field_unknown(const TEXT*, const TEXT*, const Jrd::ExprNode*);
 USHORT PASS1_label(Jrd::DsqlCompilerScratch*, bool, Firebird::MetaName*);
-void PASS1_limit(Jrd::DsqlCompilerScratch*, Jrd::ValueExprNode*, Jrd::ValueExprNode*, Jrd::RseNode*);
-Jrd::ValueExprNode* PASS1_lookup_alias(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&, Jrd::ValueListNode*, bool);
-Jrd::dsql_ctx* PASS1_make_context(Jrd::DsqlCompilerScratch* statement, const Jrd::RecordSourceNode* relationNode);
+void PASS1_limit(Jrd::DsqlCompilerScratch*, NestConst<Jrd::ValueExprNode>,
+	NestConst<Jrd::ValueExprNode>, Jrd::RseNode*);
+Jrd::ValueExprNode* PASS1_lookup_alias(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&,
+	Jrd::ValueListNode*, bool);
+Jrd::dsql_ctx* PASS1_make_context(Jrd::DsqlCompilerScratch* statement, Jrd::RecordSourceNode* relationNode);
 bool PASS1_node_match(const Jrd::ExprNode*, const Jrd::ExprNode*, bool);
 Jrd::DsqlMapNode* PASS1_post_map(Jrd::DsqlCompilerScratch*, Jrd::ValueExprNode*, Jrd::dsql_ctx*,
 	Jrd::ValueListNode*, Jrd::ValueListNode*);

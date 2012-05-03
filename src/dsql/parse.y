@@ -620,7 +620,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ComparativeBoolNode::DsqlFlag cmpBoolFlag;
 	Jrd::dsql_str* legacyStr;
 	Jrd::dsql_fld* legacyField;
-	Firebird::Array<Jrd::ValueExprNode*>* valueArray;
 	Jrd::ReturningClause* returningClause;
 	Firebird::MetaName* metaNamePtr;
 	Firebird::ObjectsArray<Firebird::MetaName>* metaNameArray;
@@ -629,7 +628,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::IntlString* intlStringPtr;
 	TEXT* textPtr;
 	Jrd::DbFileClause* dbFileClause;
-	Firebird::Array<Jrd::DbFileClause*>* dbFilesClause;
+	Firebird::Array<NestConst<Jrd::DbFileClause> >* dbFilesClause;
 	Jrd::ExternalClause* externalClause;
 	Firebird::Array<Jrd::ParameterClause>* parametersClause;
 	Jrd::Node* node;
@@ -651,6 +650,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::FieldNode* fieldNode;
 	Jrd::DecodeNode* decodeNode;
 	Firebird::Array<Jrd::FieldNode*>* fieldArray;
+	Firebird::Array<NestConst<Jrd::FieldNode> >* nestFieldArray;
 	Jrd::TransactionNode* traNode;
 	Firebird::Array<Jrd::PrivilegeClause>* privilegeArray;
 	Jrd::GranteeClause* granteeClause;
@@ -1872,9 +1872,9 @@ column_constraint($addColumnClause)
 			const ValueListNode* refColumns = $3;
 			if (refColumns)
 			{
-				const ValueExprNode* const* ptr = refColumns->dsqlArgs.begin();
+				const NestConst<ValueExprNode>* ptr = refColumns->items.begin();
 
-				for (const ValueExprNode* const* const end = refColumns->dsqlArgs.end(); ptr != end; ++ptr)
+				for (const NestConst<ValueExprNode>* const end = refColumns->items.end(); ptr != end; ++ptr)
 					constraint.refColumns.add((*ptr)->as<FieldNode>()->dsqlName);
 			}
 
@@ -1900,7 +1900,7 @@ column_constraint($addColumnClause)
 %type table_constraint_definition(<relationNode>)
 table_constraint_definition($relationNode)
 	: constraint_name_opt table_constraint($relationNode)
-		{ static_cast<RelationNode::AddConstraintClause*>($relationNode->clauses.back())->name = toName($1); }
+		{ static_cast<RelationNode::AddConstraintClause*>($relationNode->clauses.back().getObject())->name = toName($1); }
 	;
 
 %type <legacyStr> constraint_name_opt
@@ -1917,9 +1917,9 @@ table_constraint($relationNode)
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_UNIQUE;
 
 			const ValueListNode* columns = $2;
-			const ValueExprNode* const* ptr = columns->dsqlArgs.begin();
+			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
-			for (const ValueExprNode* const* const end = columns->dsqlArgs.end(); ptr != end; ++ptr)
+			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
 				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
 
 			constraint.index = $3;
@@ -1932,9 +1932,9 @@ table_constraint($relationNode)
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_PK;
 
 			const ValueListNode* columns = $3;
-			const ValueExprNode* const* ptr = columns->dsqlArgs.begin();
+			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
-			for (const ValueExprNode* const* const end = columns->dsqlArgs.end(); ptr != end; ++ptr)
+			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
 				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
 
 			constraint.index = $4;
@@ -1948,9 +1948,9 @@ table_constraint($relationNode)
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_FK;
 
 			const ValueListNode* columns = $3;
-			const ValueExprNode* const* ptr = columns->dsqlArgs.begin();
+			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
-			for (const ValueExprNode* const* const end = columns->dsqlArgs.end(); ptr != end; ++ptr)
+			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
 				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
 
 			constraint.refRelation = toName($5);
@@ -1959,9 +1959,9 @@ table_constraint($relationNode)
 			const ValueListNode* refColumns = $6;
 			if (refColumns)
 			{
-				const ValueExprNode* const* ptr = refColumns->dsqlArgs.begin();
+				const NestConst<ValueExprNode>* ptr = refColumns->items.begin();
 
-				for (const ValueExprNode* const* const end = refColumns->dsqlArgs.end(); ptr != end; ++ptr)
+				for (const NestConst<ValueExprNode>* const end = refColumns->items.end(); ptr != end; ++ptr)
 					constraint.refColumns.add((*ptr)->as<FieldNode>()->dsqlName);
 			}
 
@@ -2583,7 +2583,7 @@ exec_into
 	: exec_sql INTO variable_list
 		{
 			$$ = $<execStatementNode>1;
-			$$->dsqlOutputs = $3;
+			$$->outputs = $3;
 		}
 	;
 
@@ -2600,15 +2600,11 @@ for_exec_into
 %type exec_stmt_inputs(<execStatementNode>)
 exec_stmt_inputs($execStatementNode)
 	: value
-		{ $execStatementNode->dsqlSql = $1; }
+		{ $execStatementNode->sql = $1; }
 	| '(' value ')' '(' named_params_list($execStatementNode) ')'
-		{
-			$execStatementNode->dsqlSql = $2;
-		}
+		{ $execStatementNode->sql = $2; }
 	| '(' value ')' '(' not_named_params_list($execStatementNode) ')'
-		{
-			$execStatementNode->dsqlSql = $2;
-		}
+		{ $execStatementNode->sql = $2; }
 	;
 
 %type named_params_list(<execStatementNode>)
@@ -2627,10 +2623,10 @@ named_param($execStatementNode)
 			$execStatementNode->inputNames->add(
 				FB_NEW(getPool()) string(getPool(), toString((dsql_str*) $1)));
 
-			if (!$execStatementNode->dsqlInputs)
-				$execStatementNode->dsqlInputs = newNode<ValueListNode>($3);
+			if (!$execStatementNode->inputs)
+				$execStatementNode->inputs = newNode<ValueListNode>($3);
 			else
-				$execStatementNode->dsqlInputs->add($3);
+				$execStatementNode->inputs->add($3);
 		}
 	;
 
@@ -2644,10 +2640,10 @@ not_named_params_list($execStatementNode)
 not_named_param($execStatementNode)
 	: value
 		{
-			if (!$execStatementNode->dsqlInputs)
-				$execStatementNode->dsqlInputs = newNode<ValueListNode>($1);
+			if (!$execStatementNode->inputs)
+				$execStatementNode->inputs = newNode<ValueListNode>($1);
 			else
-				$execStatementNode->dsqlInputs->add($1);
+				$execStatementNode->inputs->add($1);
 		}
 	;
 
@@ -2666,15 +2662,15 @@ exec_stmt_options_list($execStatementNode)
 %type exec_stmt_option(<execStatementNode>)
 exec_stmt_option($execStatementNode)
 	: ON EXTERNAL DATA SOURCE value
-		{ setClause($execStatementNode->dsqlDataSource, "EXTERNAL DATA SOURCE", $5); }
+		{ setClause($execStatementNode->dataSource, "EXTERNAL DATA SOURCE", $5); }
 	| ON EXTERNAL value
-		{ setClause($execStatementNode->dsqlDataSource, "EXTERNAL DATA SOURCE", $3); }
+		{ setClause($execStatementNode->dataSource, "EXTERNAL DATA SOURCE", $3); }
 	| AS USER value
-		{ setClause($execStatementNode->dsqlUserName, "USER", $3); }
+		{ setClause($execStatementNode->userName, "USER", $3); }
 	| PASSWORD value
-		{ setClause($execStatementNode->dsqlPassword, "PASSWORD", $2); }
+		{ setClause($execStatementNode->password, "PASSWORD", $2); }
 	| ROLE value
-		{ setClause($execStatementNode->dsqlRole, "ROLE", $2); }
+		{ setClause($execStatementNode->role, "ROLE", $2); }
 	| WITH AUTONOMOUS TRANSACTION
 		{ setClause($execStatementNode->traScope, "TRANSACTION", EDS::traAutonomous); }
 	| WITH COMMON TRANSACTION
@@ -2692,7 +2688,7 @@ if_then_else
 	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
 		{
 			IfNode* node = newNode<IfNode>();
-			node->dsqlCondition = $3;
+			node->condition = $3;
 			node->trueAction = $6;
 			node->falseAction = $8;
 			$$ = node;
@@ -2700,7 +2696,7 @@ if_then_else
 	| IF '(' search_condition ')' THEN proc_block
 		{
 			IfNode* node = newNode<IfNode>();
-			node->dsqlCondition = $3;
+			node->condition = $3;
 			node->trueAction = $6;
 			$$ = node;
 		}
@@ -2711,8 +2707,8 @@ post_event
 	: POST_EVENT value event_argument_opt
 		{
 			PostEventNode* node = newNode<PostEventNode>();
-			node->dsqlEvent = $2;
-			node->dsqlArgument = $3;
+			node->event = $2;
+			node->argument = $3;
 			$$ = node;
 		}
 	;
@@ -2744,28 +2740,12 @@ variable
 		}
 	;
 
-%type <valueArray> variable_list
+%type <valueListNode> variable_list
 variable_list
-	: variable
-		{
-			$$ = FB_NEW(getPool()) Array<ValueExprNode*>(getPool());
-			$$->add($1);
-		}
-	| column_name
-		{
-			$$ = FB_NEW(getPool()) Array<ValueExprNode*>(getPool());
-			$$->add($1);
-		}
-	| variable_list ',' column_name
-		{
-			$$ = $1;
-			$$->add($3);
-		}
-	| variable_list ',' variable
-		{
-			$$ = $1;
-			$$->add($3);
-		}
+	: variable							{ $$ = newNode<ValueListNode>($1); }
+	| column_name						{ $$ = newNode<ValueListNode>($1); }
+	| variable_list ',' column_name		{ $$ = $1->add($3); }
+	| variable_list ',' variable		{ $$ = $1->add($3); }
 	;
 
 %type <stmtNode> while
@@ -2922,12 +2902,12 @@ fetch_scroll($cursorStmtNode)
 	| KW_ABSOLUTE value
 		{
 			$cursorStmtNode->scrollOp = blr_scroll_absolute;
-			$cursorStmtNode->dsqlScrollExpr = $2;
+			$cursorStmtNode->scrollExpr = $2;
 		}
 	| KW_RELATIVE value
 		{
 			$cursorStmtNode->scrollOp = blr_scroll_relative;
-			$cursorStmtNode->dsqlScrollExpr = $2;
+			$cursorStmtNode->scrollExpr = $2;
 		}
 	;
 
@@ -2949,7 +2929,7 @@ proc_inputs
 	| '(' value_list ')'	{ $$ = $2; }
 	;
 
-%type <valueArray> proc_outputs_opt
+%type <valueListNode> proc_outputs_opt
 proc_outputs_opt
 	: /* nothing */								{ $$ = NULL; }
 	| RETURNING_VALUES variable_list			{ $$ = $2; }
@@ -3710,13 +3690,13 @@ array_type
 	: non_charset_simple_type '[' array_spec ']'
 		{
 			lex.g_field->fld_ranges = $3;
-			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->dsqlArgs.getCount() / 2;
+			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->items.getCount() / 2;
 			lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
 		}
 	| character_type '[' array_spec ']' charset_clause
 		{
 			lex.g_field->fld_ranges = $3;
-			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->dsqlArgs.getCount() / 2;
+			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->items.getCount() / 2;
 			lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
 		}
 	;
@@ -3724,7 +3704,7 @@ array_type
 %type <valueListNode> array_spec
 array_spec
 	: array_range
-	| array_spec ',' array_range	{ $$ = $1->add($3->dsqlArgs[0])->add($3->dsqlArgs[1]); }
+	| array_spec ',' array_range	{ $$ = $1->add($3->items[0])->add($3->items[1]); }
 	;
 
 %type <valueListNode> array_range
@@ -4550,8 +4530,8 @@ query_spec
 			 plan_clause
 		{
 			RseNode* rse = newNode<RseNode>();
-			rse->dsqlFirst = $2 ? $2->dsqlArgs[1] : NULL;
-			rse->dsqlSkip = $2 ? $2->dsqlArgs[0] : NULL;
+			rse->dsqlFirst = $2 ? $2->items[1] : NULL;
+			rse->dsqlSkip = $2 ? $2->items[0] : NULL;
 			rse->dsqlDistinct = $3;
 			rse->dsqlSelectList = $4;
 			rse->dsqlFrom = $5;
@@ -4757,21 +4737,21 @@ table_proc
 	: symbol_procedure_name table_proc_inputs as_noise symbol_table_alias_name
 		{
 			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(QualifiedName(toName($1)));
-			node->dsqlInputs = $2;
+			node->sourceList = $2;
 			node->alias = toString((dsql_str*) $4);
 			$$ = node;
 		}
 	| symbol_procedure_name table_proc_inputs
 		{
 			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(QualifiedName(toName($1)));
-			node->dsqlInputs = $2;
+			node->sourceList = $2;
 			$$ = node;
 		}
 	| symbol_package_name '.' symbol_procedure_name table_proc_inputs as_noise symbol_table_alias_name
 		{
 			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(
 				QualifiedName(toName($3), toName($1)));
-			node->dsqlInputs = $4;
+			node->sourceList = $4;
 			node->alias = toString((dsql_str*) $6);
 			$$ = node;
 		}
@@ -4779,7 +4759,7 @@ table_proc
 		{
 			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(
 				QualifiedName(toName($3), toName($1)));
-			node->dsqlInputs = $4;
+			node->sourceList = $4;
 			$$ = node;
 		}
 	;
@@ -5057,14 +5037,14 @@ merge
 	: MERGE INTO table_name USING table_reference ON search_condition
 			{
 				MergeNode* node = $$ = newNode<MergeNode>();
-				node->dsqlRelation = $3;
-				node->dsqlUsing = $5;
-				node->dsqlCondition = $7;
+				node->relation = $3;
+				node->usingClause = $5;
+				node->condition = $7;
 			}
 		merge_when_clause($8) returning_clause
 			{
 				MergeNode* node = $$ = $8;
-				node->dsqlReturning = $10;
+				node->returning = $10;
 			}
 	;
 
@@ -5079,14 +5059,14 @@ merge_when_clause($mergeNode)
 %type merge_when_matched_clause(<mergeNode>)
 merge_when_matched_clause($mergeNode)
 	: WHEN MATCHED
-			{ $<mergeMatchedClause>$ = &$mergeNode->dsqlWhenMatched.add(); }
+			{ $<mergeMatchedClause>$ = &$mergeNode->whenMatched.add(); }
 		merge_update_specification($<mergeMatchedClause>3)
 	;
 
 %type merge_when_not_matched_clause(<mergeNode>)
 merge_when_not_matched_clause($mergeNode)
 	: WHEN NOT MATCHED
-			{ $<mergeNotMatchedClause>$ = &$mergeNode->dsqlWhenNotMatched.add(); }
+			{ $<mergeNotMatchedClause>$ = &$mergeNode->whenNotMatched.add(); }
 		merge_insert_specification($<mergeNotMatchedClause>4)
 	;
 
@@ -5199,18 +5179,18 @@ update_or_insert
 	: UPDATE OR INSERT INTO simple_table_name
 			{
 				UpdateOrInsertNode* node = $$ = newNode<UpdateOrInsertNode>();
-				node->dsqlRelation = $5;
+				node->relation = $5;
 			}
-		ins_column_parens_opt(&$6->dsqlFields)
-		VALUES '(' value_list ')' update_or_insert_matching_opt(&$6->dsqlMatching) returning_clause
+		ins_column_parens_opt(&$6->fields)
+		VALUES '(' value_list ')' update_or_insert_matching_opt(&$6->matching) returning_clause
 			{
 				UpdateOrInsertNode* node = $$ = $6;
-				node->dsqlValues = $10;
-				node->dsqlReturning = $13;
+				node->values = $10;
+				node->returning = $13;
 			}
 	;
 
-%type update_or_insert_matching_opt(<fieldArray>)
+%type update_or_insert_matching_opt(<nestFieldArray>)
 update_or_insert_matching_opt($fieldArray)
 	: // nothing
 	| MATCHING ins_column_parens($fieldArray)
@@ -5261,8 +5241,8 @@ assignment
 	: update_column_name '=' value
 		{
 			AssignmentNode* node = newNode<AssignmentNode>();
-			node->dsqlAsgnTo = $1;
-			node->dsqlAsgnFrom = $3;
+			node->asgnTo = $1;
+			node->asgnFrom = $3;
 			$$ = node;
 		}
 	;
@@ -5272,15 +5252,15 @@ exec_function
 	: udf
 		{
 			AssignmentNode* node = newNode<AssignmentNode>();
-			node->dsqlAsgnTo = newNode<NullNode>();
-			node->dsqlAsgnFrom = $1;
+			node->asgnTo = newNode<NullNode>();
+			node->asgnFrom = $1;
 			$$ = node;
 		}
 	| non_aggregate_function
 		{
 			AssignmentNode* node = newNode<AssignmentNode>();
-			node->dsqlAsgnTo = newNode<NullNode>();
-			node->dsqlAsgnFrom = $1;
+			node->asgnTo = newNode<NullNode>();
+			node->asgnFrom = $1;
 			$$ = node;
 		}
 	;
@@ -5306,18 +5286,18 @@ column_list
 	;
 
 // begin IBO hack
-%type ins_column_parens_opt(<fieldArray>)
+%type ins_column_parens_opt(<nestFieldArray>)
 ins_column_parens_opt($fieldArray)
 	: // nothing
 	| ins_column_parens($fieldArray)
 	;
 
-%type ins_column_parens(<fieldArray>)
+%type ins_column_parens(<nestFieldArray>)
 ins_column_parens($fieldArray)
 	: '(' ins_column_list($fieldArray) ')'
 	;
 
-%type ins_column_list(<fieldArray>)
+%type ins_column_list(<nestFieldArray>)
 ins_column_list($fieldArray)
 	: update_column_name						{ $fieldArray->add($1); }
 	| ins_column_list ',' update_column_name	{ $fieldArray->add($3); }
@@ -5368,7 +5348,7 @@ search_condition
 		{
 			BoolAsValueNode* node = ExprNode::as<BoolAsValueNode>($1);
 			if (node)
-				$$ = node->dsqlBoolean;
+				$$ = node->boolean;
 			else
 			{
 				ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>(
@@ -5439,8 +5419,9 @@ comparison_operator
 quantified_predicate
 	: common_value comparison_operator quantified_flag '(' column_select ')'
 		{
-			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1, $5);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1);
 			node->dsqlFlag = $3;
+			node->dsqlSpecialArg = $5;
 			$$ = node;
 		}
 	;
@@ -5522,14 +5503,16 @@ escape_opt
 in_predicate
 	: common_value KW_IN in_predicate_value
 		{
-			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $3);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
+			node->dsqlSpecialArg = $3;
 			$$ = node;
 		}
 	| common_value NOT KW_IN in_predicate_value
 		{
-			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $4);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
+			node->dsqlSpecialArg = $4;
 			$$ = newNode<NotBoolNode>(node);
 		}
 	;
@@ -5782,7 +5765,7 @@ array_element
 	: column_name '[' value_list ']'
 		{
 			ArrayNode* node = newNode<ArrayNode>(ExprNode::as<FieldNode>($1));
-			node->dsqlField->dsqlIndices = $3;
+			node->field->dsqlIndices = $3;
 			$$ = node;
 		}
 	;
@@ -6335,13 +6318,13 @@ case_abbreviation
 	| DECODE '(' value ',' decode_pairs ')'
 		{
 			ValueListNode* list = $5;
-			ValueListNode* conditions = newNode<ValueListNode>(list->dsqlArgs.getCount() / 2);
-			ValueListNode* values = newNode<ValueListNode>(list->dsqlArgs.getCount() / 2);
+			ValueListNode* conditions = newNode<ValueListNode>(list->items.getCount() / 2);
+			ValueListNode* values = newNode<ValueListNode>(list->items.getCount() / 2);
 
-			for (size_t i = 0; i < list->dsqlArgs.getCount(); i += 2)
+			for (size_t i = 0; i < list->items.getCount(); i += 2)
 			{
-				conditions->dsqlArgs[i / 2] = list->dsqlArgs[i];
-				values->dsqlArgs[i / 2] = list->dsqlArgs[i + 1];
+				conditions->items[i / 2] = list->items[i];
+				values->items[i / 2] = list->items[i + 1];
 			}
 
 			$$ = newNode<DecodeNode>($3, conditions, values);
@@ -6349,16 +6332,16 @@ case_abbreviation
 	| DECODE '(' value ',' decode_pairs ',' value ')'
 		{
 			ValueListNode* list = $5;
-			ValueListNode* conditions = newNode<ValueListNode>(list->dsqlArgs.getCount() / 2);
-			ValueListNode* values = newNode<ValueListNode>(list->dsqlArgs.getCount() / 2 + 1);
+			ValueListNode* conditions = newNode<ValueListNode>(list->items.getCount() / 2);
+			ValueListNode* values = newNode<ValueListNode>(list->items.getCount() / 2 + 1);
 
-			for (size_t i = 0; i < list->dsqlArgs.getCount(); i += 2)
+			for (size_t i = 0; i < list->items.getCount(); i += 2)
 			{
-				conditions->dsqlArgs[i / 2] = list->dsqlArgs[i];
-				values->dsqlArgs[i / 2] = list->dsqlArgs[i + 1];
+				conditions->items[i / 2] = list->items[i];
+				values->items[i / 2] = list->items[i + 1];
 			}
 
-			values->dsqlArgs[list->dsqlArgs.getCount() / 2] = $7;
+			values->items[list->items.getCount() / 2] = $7;
 
 			$$ = newNode<DecodeNode>($3, conditions, values);
 		}
@@ -6374,12 +6357,12 @@ case_specification
 simple_case
 	: CASE case_operand
 			{ $$ = newNode<DecodeNode>($2, newNode<ValueListNode>(0u), newNode<ValueListNode>(0u)); }
-		simple_when_clause($3->dsqlConditions, $3->dsqlValues) else_case_result_opt END
+		simple_when_clause($3->conditions, $3->values) else_case_result_opt END
 			{
 				DecodeNode* node = $$ = $3;
 				node->label = "CASE";
 				if ($5)
-					node->dsqlValues->add($5);
+					node->values->add($5);
 			}
 	;
 
@@ -6411,12 +6394,12 @@ searched_case
 			ValueIfNode* last = $2;
 			ValueIfNode* next;
 
-			while ((next = ExprNode::as<ValueIfNode>(last->dsqlFalseValue)))
+			while ((next = last->falseValue->as<ValueIfNode>()))
 				last = next;
 
-			fb_assert(ExprNode::is<NullNode>(last->dsqlFalseValue));
+			fb_assert(last->falseValue->is<NullNode>());
 
-			last->dsqlFalseValue = $4;
+			last->falseValue = $4;
 			$$ = $2;
 		}
 	;
@@ -6431,12 +6414,12 @@ searched_when_clause
 			ValueIfNode* last = $1;
 			ValueIfNode* next;
 
-			while ((next = ExprNode::as<ValueIfNode>(last->dsqlFalseValue)))
+			while ((next = last->falseValue->as<ValueIfNode>()))
 				last = next;
 
-			fb_assert(ExprNode::is<NullNode>(last->dsqlFalseValue));
+			fb_assert(last->falseValue->is<NullNode>());
 
-			last->dsqlFalseValue = cond;
+			last->falseValue = cond;
 			$$ = $1;
 		}
 	;

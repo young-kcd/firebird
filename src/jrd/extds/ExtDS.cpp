@@ -1218,7 +1218,7 @@ void Statement::preprocess(const string& sql, string& ret)
 void Statement::setInParams(thread_db* tdbb, const string* const* names,
 	const ValueListNode* params)
 {
-	const size_t count = params ? params->args.getCount() : 0;
+	const size_t count = params ? params->items.getCount() : 0;
 
 	m_error = (names && (m_sqlParamNames.getCount() != count || count == 0)) ||
 		(!names && m_sqlParamNames.getCount());
@@ -1253,13 +1253,13 @@ void Statement::setInParams(thread_db* tdbb, const string* const* names,
 				status_exception::raise(Arg::Gds(isc_eds_input_prm_not_set) << Arg::Str(*sqlName));
 			}
 
-			sqlParams[sqlNum] = params->args[num];
+			sqlParams[sqlNum] = params->items[num];
 		}
 
 		doSetInParams(tdbb, sqlCount, m_sqlParamsMap.begin(), sqlParams);
 	}
 	else
-		doSetInParams(tdbb, count, names, (params ? params->args.begin() : NULL));
+		doSetInParams(tdbb, count, names, (params ? params->items.begin() : NULL));
 }
 
 void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const string* const* /*names*/,
@@ -1337,7 +1337,7 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const string*
 // m_outDescs -> ValueExprNode
 void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 {
-	const size_t count = params ? params->args.getCount() : 0;
+	const size_t count = params ? params->items.getCount() : 0;
 
 	if (count != getOutputs())
 	{
@@ -1349,7 +1349,7 @@ void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 	if (!count)
 		return;
 
-	const NestConst<ValueExprNode>* jrdVar = params->args.begin();
+	const NestConst<ValueExprNode>* jrdVar = params->items.begin();
 
 	for (size_t i = 0; i < count; ++i, ++jrdVar)
 	{

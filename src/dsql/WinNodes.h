@@ -44,7 +44,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
 // RANK function.
@@ -63,7 +63,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 private:
 	USHORT tempImpure;
@@ -91,7 +91,7 @@ public:
 	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
 // FIRST_VALUE function.
@@ -116,7 +116,7 @@ public:
 	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 };
@@ -143,7 +143,7 @@ public:
 	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 };
@@ -170,12 +170,11 @@ public:
 	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
 private:
-	ValueExprNode* dsqlRow;
 	NestConst<ValueExprNode> row;
 };
 
@@ -205,8 +204,6 @@ protected:
 
 protected:
 	const int direction;
-	ValueExprNode* dsqlRows;
-	ValueExprNode* dsqlOutExpr;
 	NestConst<ValueExprNode> rows;
 	NestConst<ValueExprNode> outExpr;
 };
@@ -221,7 +218,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
 // LEAD function.
@@ -234,7 +231,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
 

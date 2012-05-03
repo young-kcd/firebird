@@ -315,7 +315,7 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 	//field->fld_dtype = dtype;
 
 	// Check for a default value, borrowed from define_domain
-	ValueSourceClause* node = hostParam ? hostParam->dsqlDef->defaultClause : NULL;
+	NestConst<ValueSourceClause> node = hostParam ? hostParam->dsqlDef->defaultClause : NULL;
 
 	if (variable->type == dsql_var::TYPE_INPUT)
 	{
@@ -616,7 +616,7 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 		RecordSourceNode* rse = NULL;
 
 		if (unionQuery)
-			rse = unionQuery->dsqlClauses->dsqlArgs[1];
+			rse = unionQuery->dsqlClauses->items[1];
 		else
 			rse = qry;
 
@@ -670,16 +670,16 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 			newRse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
 
 			if (unionQuery)
-				newQry->dsqlClauses->dsqlArgs[1] = newRse;
+				newQry->dsqlClauses->items[1] = newRse;
 			else
-				newQry->dsqlClauses->dsqlArgs[0] = newRse;
+				newQry->dsqlClauses->items[0] = newRse;
 		}
 		else
 		{
 			if (unionQuery)
-				newQry->dsqlClauses->dsqlArgs[1] = rse;
+				newQry->dsqlClauses->items[1] = rse;
 			else
-				newQry->dsqlClauses->dsqlArgs[0] = rse;
+				newQry->dsqlClauses->items[0] = rse;
 
 			if (!anchorRse)
 			{
@@ -693,7 +693,7 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 		if (!unionQuery)
 			break;
 
-		qry = unionQuery->dsqlClauses->dsqlArgs[0];
+		qry = unionQuery->dsqlClauses->items[0];
 		unionQuery = qry->as<UnionSourceNode>();
 
 		if (unionQuery)
@@ -703,7 +703,7 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 			newUnion->dsqlAll = unionQuery->dsqlAll;
 			newUnion->recursive = unionQuery->recursive;
 
-			newQry->dsqlClauses->dsqlArgs[0] = newUnion;
+			newQry->dsqlClauses->items[0] = newUnion;
 			newQry = newUnion;
 		}
 	}
@@ -721,25 +721,25 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 	UnionSourceNode* qry2 = recursiveRse->as<UnionSourceNode>();
 	UnionSourceNode* list = NULL;
 
-	while (qry2->dsqlClauses->dsqlArgs[0] != anchorRse)
+	while (qry2->dsqlClauses->items[0] != anchorRse)
 	{
 		list = qry2;
-		qry2 = qry2->dsqlClauses->dsqlArgs[0]->as<UnionSourceNode>();
+		qry2 = qry2->dsqlClauses->items[0]->as<UnionSourceNode>();
 	}
 
-	qry2->dsqlClauses->dsqlArgs[0] = NULL;
+	qry2->dsqlClauses->items[0] = NULL;
 
 	if (list)
-		list->dsqlClauses->dsqlArgs[0] = qry2->dsqlClauses->dsqlArgs[1];
+		list->dsqlClauses->items[0] = qry2->dsqlClauses->items[1];
 	else
-		recursiveRse = qry2->dsqlClauses->dsqlArgs[1];
+		recursiveRse = qry2->dsqlClauses->items[1];
 
 	UnionSourceNode* unionNode = FB_NEW(pool) UnionSourceNode(pool);
 	unionNode->dsqlAll = true;
 	unionNode->recursive = true;
 	unionNode->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 2);
-	unionNode->dsqlClauses->dsqlArgs[0] = anchorRse;
-	unionNode->dsqlClauses->dsqlArgs[1] = recursiveRse;
+	unionNode->dsqlClauses->items[0] = anchorRse;
+	unionNode->dsqlClauses->items[1] = recursiveRse;
 
 	SelectExprNode* select = FB_NEW(getPool()) SelectExprNode(getPool());
 	select->querySpec = unionNode;
@@ -769,15 +769,15 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 	result->rse_plan = input->rse_plan;
 
 	RecSourceListNode* srcTables = input->dsqlFrom;
-	RecSourceListNode* dstTables = FB_NEW(pool) RecSourceListNode(pool, srcTables->dsqlArgs.getCount());
+	RecSourceListNode* dstTables = FB_NEW(pool) RecSourceListNode(pool, srcTables->items.getCount());
 	result->dsqlFrom = dstTables;
 
-	RecordSourceNode** pDstTable = dstTables->dsqlArgs.begin();
-	RecordSourceNode** pSrcTable = srcTables->dsqlArgs.begin();
-	RecordSourceNode** end = srcTables->dsqlArgs.end();
+	NestConst<RecordSourceNode>* pDstTable = dstTables->items.begin();
+	NestConst<RecordSourceNode>* pSrcTable = srcTables->items.begin();
+	NestConst<RecordSourceNode>* end = srcTables->items.end();
 	bool found = false;
 
-	for (RecordSourceNode** prev = pDstTable; pSrcTable < end; ++pSrcTable, ++pDstTable)
+	for (NestConst<RecordSourceNode>* prev = pDstTable; pSrcTable < end; ++pSrcTable, ++pDstTable)
 	{
 		*prev++ = *pDstTable = *pSrcTable;
 
@@ -791,7 +791,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 
 			*pDstTable = dstRse;
 
-			BoolExprNode* joinBool = pass1JoinIsRecursive(*pDstTable);
+			BoolExprNode* joinBool = pass1JoinIsRecursive(*pDstTable->getAddress());
 
 			if (joinBool)
 			{
@@ -820,7 +820,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 				found = true;
 
 				--prev;
-				dstTables->dsqlArgs.pop();
+				dstTables->items.pop();
 			}
 		}
 		else if (!(*pDstTable)->is<SelectExprNode>())
@@ -878,12 +878,12 @@ BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input
 
 	bool leftRecursive = false;
 	BoolExprNode* leftBool = NULL;
-	RecordSourceNode** joinTable = &inputRse->dsqlFrom->dsqlArgs[0];
+	NestConst<RecordSourceNode>* joinTable = &inputRse->dsqlFrom->items[0];
 	RseNode* joinRse;
 
-	if ((joinRse = ExprNode::as<RseNode>(*joinTable)) && joinRse->dsqlExplicitJoin)
+	if ((joinRse = (*joinTable)->as<RseNode>()) && joinRse->dsqlExplicitJoin)
 	{
-		leftBool = pass1JoinIsRecursive(*joinTable);
+		leftBool = pass1JoinIsRecursive(*joinTable->getAddress());
 		leftRecursive = (leftBool != NULL);
 	}
 	else
@@ -905,17 +905,17 @@ BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input
 	bool rightRecursive = false;
 	BoolExprNode* rightBool = NULL;
 
-	joinTable = &inputRse->dsqlFrom->dsqlArgs[1];
+	joinTable = &inputRse->dsqlFrom->items[1];
 
-	if ((joinRse = ExprNode::as<RseNode>(*joinTable)) && joinRse->dsqlExplicitJoin)
+	if ((joinRse = (*joinTable)->as<RseNode>()) && joinRse->dsqlExplicitJoin)
 	{
-		rightBool = pass1JoinIsRecursive(*joinTable);
+		rightBool = pass1JoinIsRecursive(*joinTable->getAddress());
 		rightRecursive = (rightBool != NULL);
 	}
 	else
 	{
 		rightBool = inputRse->dsqlWhere;
-		rightRecursive = pass1RelProcIsRecursive(*joinTable);
+		rightRecursive = pass1RelProcIsRecursive(*joinTable->getAddress());
 
 		if (rightRecursive)
 			remove = true;
@@ -938,7 +938,7 @@ BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input
 	if (leftRecursive)
 	{
 		if (remove)
-			input = inputRse->dsqlFrom->dsqlArgs[1];
+			input = inputRse->dsqlFrom->items[1];
 
 		return leftBool;
 	}
@@ -946,7 +946,7 @@ BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input
 	if (rightRecursive)
 	{
 		if (remove)
-			input = inputRse->dsqlFrom->dsqlArgs[0];
+			input = inputRse->dsqlFrom->items[0];
 
 		return rightBool;
 	}

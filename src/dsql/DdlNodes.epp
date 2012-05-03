@@ -92,7 +92,7 @@ static void checkViewDependency(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName);
 static void clearPermanentField(dsql_rel* relation, bool permanent);
 static void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relation,
-	dsql_fld* field, const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value);
+	dsql_fld* field, ValueSourceClause* clause, string& source, BlrWriter::BlrData& value);
 static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& constraintName, const MetaName& indexName);
 static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber, bool manualShadow,
@@ -291,7 +291,7 @@ static void clearPermanentField(dsql_rel* relation, bool permanent)
 
 // Define a COMPUTED BY clause, for a field or an index.
 void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relation, dsql_fld* field,
-	const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
+	ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
 {
 	// Get the table node and set up correct context.
 	DDL_reset_context_stack(dsqlScratch);
@@ -823,7 +823,7 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 	const string& userName = attachment->att_user->usr_user_name;
 
 	const ValueListNode* elements = field.legacyField->fld_ranges;
-	const USHORT dims = elements ? elements->dsqlArgs.getCount() / 2 : 0;
+	const USHORT dims = elements ? elements->items.getCount() / 2 : 0;
 
 	if (dims > MAX_ARRAY_DIMENSIONS)
 	{
@@ -888,8 +888,8 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 		requestHandle.reset(tdbb, drq_s_fld_dym, DYN_REQUESTS);
 
 		SSHORT position = 0;
-		const ValueExprNode* const* ptr = elements->dsqlArgs.begin();
-		for (const ValueExprNode* const* const end = elements->dsqlArgs.end();
+		const NestConst<ValueExprNode>* ptr = elements->items.begin();
+		for (const NestConst<ValueExprNode>* const end = elements->items.end();
 			 ptr != end;
 			 ++ptr, ++position)
 		{
@@ -1735,7 +1735,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 }
 
 void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, unsigned pos, const ParameterClause& parameter,
+	jrd_tra* transaction, unsigned pos, ParameterClause& parameter,
 	const bid* comment)
 {
 	Attachment* const attachment = transaction->getAttachment();
@@ -2596,7 +2596,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 }
 
 void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, USHORT type, unsigned pos, const ParameterClause& parameter,
+	jrd_tra* transaction, USHORT type, unsigned pos, ParameterClause& parameter,
 	const bid* comment)
 {
 	Attachment* const attachment = transaction->getAttachment();
@@ -3782,7 +3782,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 
 	const ValueListNode* elements = nameType.legacyField->fld_ranges;
-	const USHORT dims = elements ? elements->dsqlArgs.getCount() / 2 : 0;
+	const USHORT dims = elements ? elements->items.getCount() / 2 : 0;
 
 	if (nameType.defaultClause && dims != 0)
 	{
@@ -5391,7 +5391,7 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 }
 
 void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, const AddColumnClause* clause, SSHORT position,
+	jrd_tra* transaction, AddColumnClause* clause, SSHORT position,
 	const ObjectsArray<MetaName>* pkCols)
 {
 	dsql_fld* field = clause->field;
@@ -5425,7 +5425,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (clause->identity)
 			notNullFlag = true;	// identity columns are implicitly not null
 
-		for (ObjectsArray<AddConstraintClause>::const_iterator ptr = clause->constraints.begin();
+		for (ObjectsArray<AddConstraintClause>::iterator ptr = clause->constraints.begin();
 			 ptr != clause->constraints.end(); ++ptr)
 		{
 			makeConstraint(tdbb, dsqlScratch, transaction, &*ptr, constraints, &notNullFlag);
@@ -5559,7 +5559,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 // Define a DEFAULT clause. Return true for DEFAULT NULL.
 bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
-	dsql_fld* /*field*/, const ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
+	dsql_fld* /*field*/, ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
 {
 	ValueExprNode* input = doDsqlPass(dsqlScratch, clause->value);
 
@@ -5582,7 +5582,7 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 
 // Make a constraint object from a legacy node.
 void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, const AddConstraintClause* clause, ObjectsArray<Constraint>& constraints,
+	jrd_tra* transaction, AddConstraintClause* clause, ObjectsArray<Constraint>& constraints,
 	bool* notNull)
 {
 	switch (clause->constraintType)
@@ -5627,7 +5627,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 			// primary key of the referenced table designates the referenced fields.
 			if (clause->refColumns.isEmpty())
 			{
-				Array<FieldNode*> refColumns;
+				Array<NestConst<FieldNode> > refColumns;
 				METD_get_primary_key(transaction, clause->refRelation, refColumns);
 
 				// If there is NEITHER an explicitly referenced field name, NOR does
@@ -5645,9 +5645,9 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 				}
 				else
 				{
-					const FieldNode* const* ptr = refColumns.begin();
+					const NestConst<FieldNode>* ptr = refColumns.begin();
 
-					for (const FieldNode* const* const end = refColumns.end(); ptr != end; ++ptr)
+					for (const NestConst<FieldNode>* const end = refColumns.end(); ptr != end; ++ptr)
 						constraint.refColumns.add((*ptr)->dsqlName);
 				}
 			}
@@ -5803,11 +5803,11 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				definition.refRelation = constraint.refRelation;
 				definition.refColumns = constraint.refColumns;
 
-				CreateIndexNode::store(tdbb, transaction, constraint.index->name, definition,
-					&referredIndexName);
+				MetaName indexName(constraint.index->name);
+				CreateIndexNode::store(tdbb, transaction, indexName, definition, &referredIndexName);
 
 				CRT.RDB$INDEX_NAME.NULL = FALSE;
-				strcpy(CRT.RDB$INDEX_NAME, constraint.index->name.c_str());
+				strcpy(CRT.RDB$INDEX_NAME, indexName.c_str());
 
 				checkForeignKeyTempScope(tdbb, transaction, name, referredIndexName);
 
@@ -5977,7 +5977,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 // Generate triggers to implement the CHECK clause, either at the field or table level.
 void RelationNode::defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-	const BoolSourceClause* clause)
+	BoolSourceClause* clause)
 {
 	// Create the INSERT trigger.
 	defineCheckConstraintTrigger(dsqlScratch, constraint, clause, PRE_STORE_TRIGGER);
@@ -5988,7 +5988,7 @@ void RelationNode::defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Const
 
 // Define a check constraint trigger.
 void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch,
-	Constraint& constraint, const BoolSourceClause* clause, FB_UINT64 triggerType)
+	Constraint& constraint, BoolSourceClause* clause, FB_UINT64 triggerType)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -5999,7 +5999,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	blrWriter.init(dsqlScratch);
 
 	// Specify that the trigger should abort if the condition is not met.
-	CompoundStmtNode* actionNode = FB_NEW(pool) CompoundStmtNode(pool);
+	NestConst<CompoundStmtNode> actionNode = FB_NEW(pool) CompoundStmtNode(pool);
 
 	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
 	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
@@ -6106,12 +6106,12 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 
 		// Search the parse tree to find the column
 
-		for (const Clause* const* ptr = clauses.begin(); ptr != clauses.end(); ++ptr)
+		for (NestConst<Clause>* ptr = clauses.begin(); ptr != clauses.end(); ++ptr)
 		{
 			if ((*ptr)->type != Clause::TYPE_ADD_COLUMN)
 				continue;
 
-			const AddColumnClause* clause = static_cast<const AddColumnClause*>(*ptr);
+			AddColumnClause* clause = static_cast<AddColumnClause*>(ptr->getObject());
 
 			if (*column != clause->field->fld_name)
 				continue;
@@ -6493,19 +6493,19 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 	const ObjectsArray<MetaName>* pkCols = findPkColumns();
 	SSHORT position = 0;
 
-	for (const Clause* const* i = clauses.begin(); i != clauses.end(); ++i)
+	for (NestConst<Clause>* i = clauses.begin(); i != clauses.end(); ++i)
 	{
 		switch ((*i)->type)
 		{
 			case Clause::TYPE_ADD_COLUMN:
 				defineField(tdbb, dsqlScratch, transaction,
-					static_cast<const AddColumnClause*>(*i), position, pkCols);
+					static_cast<AddColumnClause*>(i->getObject()), position, pkCols);
 				++position;
 				break;
 
 			case Clause::TYPE_ADD_CONSTRAINT:
 				makeConstraint(tdbb, dsqlScratch, transaction,
-					static_cast<const AddConstraintClause*>(*i), constraints);
+					static_cast<AddConstraintClause*>(i->getObject()), constraints);
 				break;
 
 			default:
@@ -6536,11 +6536,11 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 // separate table constraint declaration.
 const ObjectsArray<MetaName>* CreateRelationNode::findPkColumns()
 {
-	for (const Clause* const* i = clauses.begin(); i != clauses.end(); ++i)
+	for (const NestConst<Clause>* i = clauses.begin(); i != clauses.end(); ++i)
 	{
 		if ((*i)->type == Clause::TYPE_ADD_CONSTRAINT)
 		{
-			const AddConstraintClause* clause = static_cast<const AddConstraintClause*>(*i);
+			const AddConstraintClause* clause = static_cast<const AddConstraintClause*>(i->getObject());
 
 			if (clause->constraintType == AddConstraintClause::CTYPE_PK)
 				return &clause->columns;
@@ -6593,23 +6593,24 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 		ObjectsArray<Constraint> constraints;
 
-		for (const Clause* const* i = clauses.begin(); i != clauses.end(); ++i)
+		for (NestConst<Clause>* i = clauses.begin(); i != clauses.end(); ++i)
 		{
 			switch ((*i)->type)
 			{
 				case Clause::TYPE_ADD_COLUMN:
 					defineField(tdbb, dsqlScratch, transaction,
-						static_cast<const AddColumnClause*>(*i), -1, NULL);
+						static_cast<AddColumnClause*>(i->getObject()), -1, NULL);
 					break;
 
 				case Clause::TYPE_ALTER_COL_TYPE:
 					modifyField(tdbb, dsqlScratch, transaction,
-						static_cast<const AlterColTypeClause*>(*i));
+						static_cast<AlterColTypeClause*>(i->getObject()));
 					break;
 
 				case Clause::TYPE_ALTER_COL_NAME:
 				{
-					const AlterColNameClause* clause = static_cast<const AlterColNameClause*>(*i);
+					const AlterColNameClause* clause =
+						static_cast<const AlterColNameClause*>(i->getObject());
 					AutoRequest request;
 					bool found = false;
 
@@ -6652,7 +6653,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 				case Clause::TYPE_ALTER_COL_NULL:
 				{
-					const AlterColNullClause* clause = static_cast<const AlterColNullClause*>(*i);
+					const AlterColNullClause* clause =
+						static_cast<const AlterColNullClause*>(i->getObject());
 
 					//// FIXME: This clause allows inconsistencies like setting a field with a
 					//// not null CONSTRAINT as nullable, or setting a field based on a not null
@@ -6691,7 +6693,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 				case Clause::TYPE_ALTER_COL_POS:
 				{
-					const AlterColPosClause* clause = static_cast<const AlterColPosClause*>(*i);
+					const AlterColPosClause* clause =
+						static_cast<const AlterColPosClause*>(i->getObject());
 					// CVC: Since now the parser accepts pos=1..N, let's subtract one here.
 					const SSHORT pos = clause->newPos - 1;
 
@@ -6730,7 +6733,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					// Option CASCADE causes an error: unsupported DSQL construct.
 					// Option RESTRICT is default behaviour.
 
-					const DropColumnClause* clause = static_cast<const DropColumnClause*>(*i);
+					const DropColumnClause* clause =
+						static_cast<const DropColumnClause*>(i->getObject());
 
 					if (clause->cascade)
 					{
@@ -6747,12 +6751,13 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 				case Clause::TYPE_ADD_CONSTRAINT:
 					makeConstraint(tdbb, dsqlScratch, transaction,
-						static_cast<const AddConstraintClause*>(*i), constraints);
+						static_cast<AddConstraintClause*>(i->getObject()), constraints);
 					break;
 
 				case Clause::TYPE_DROP_CONSTRAINT:
 				{
-					const MetaName& constraintName = static_cast<const DropConstraintClause *>(*i)->name;
+					const MetaName& constraintName =
+						static_cast<const DropConstraintClause*>(i->getObject())->name;
 					AutoCacheRequest request(tdbb, drq_e_rel_con, DYN_REQUESTS);
 					bool found = false;
 
@@ -6832,7 +6837,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 //       Anything to Blob
 //       Anything to Array
 void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, const AlterColTypeClause* clause)
+	jrd_tra* transaction, AlterColTypeClause* clause)
 {
 	Attachment* const attachment = transaction->tra_attachment;
 
@@ -7641,13 +7646,13 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	// SELECT. Otherwise use all the fields from the rse node that was created from the select
 	// expression.
 
-	const ValueExprNode* const* ptr = NULL;
-	const ValueExprNode* const* end = NULL;
+	const NestConst<ValueExprNode>* ptr = NULL;
+	const NestConst<ValueExprNode>* end = NULL;
 
 	if (viewFields)
 	{
-		ptr = viewFields->dsqlArgs.begin();
-		end = viewFields->dsqlArgs.end();
+		ptr = viewFields->items.begin();
+		end = viewFields->items.end();
 	}
 
 	// Go through the fields list, defining or modifying the local fields;
@@ -7655,47 +7660,46 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	// field for the computed value as well.
 
 	ValueListNode* items = rse->dsqlSelectList;
-	ValueExprNode** itemsPtr = items->dsqlArgs.begin();
+	NestConst<ValueExprNode>* itemsPtr = items->items.begin();
 	SortedArray<dsql_fld*> modifiedFields;
 	bool updatable = true;
 	SSHORT position = 0;
 
-	for (const ValueExprNode* const* const itemsEnd = items->dsqlArgs.end();
+	for (NestConst<ValueExprNode>* itemsEnd = items->items.end();
 		 itemsPtr < itemsEnd; ++itemsPtr, ++position)
 	{
 		ValueExprNode* fieldNode = *itemsPtr;
 
 		// Determine the proper field name, replacing the default if necessary.
 
-		const ValueExprNode* nameNode = fieldNode;
+		ValueExprNode* nameNode = fieldNode;
 		const char* aliasName = NULL;
 
-		while (ExprNode::is<DsqlAliasNode>(nameNode) ||
-			ExprNode::is<DerivedFieldNode>(nameNode) ||
-			ExprNode::is<DsqlMapNode>(nameNode))
+		while (nameNode->is<DsqlAliasNode>() || nameNode->is<DerivedFieldNode>() ||
+			nameNode->is<DsqlMapNode>(nameNode))
 		{
-			const DsqlAliasNode* aliasNode;
-			const DsqlMapNode* mapNode;
-			const DerivedFieldNode* derivedField;
+			DsqlAliasNode* aliasNode;
+			DsqlMapNode* mapNode;
+			DerivedFieldNode* derivedField;
 
-			if ((aliasNode = ExprNode::as<DsqlAliasNode>(nameNode)))
+			if ((aliasNode = nameNode->as<DsqlAliasNode>()))
 			{
 				if (!aliasName)
 					aliasName = aliasNode->name.c_str();
 				nameNode = aliasNode->value;
 			}
-			else if ((mapNode = ExprNode::as<DsqlMapNode>(nameNode)))
+			else if ((mapNode = nameNode->as<DsqlMapNode>()))
 				nameNode = mapNode->map->map_node;
-			else if ((derivedField = ExprNode::as<DerivedFieldNode>(nameNode)))
+			else if ((derivedField = nameNode->as<DerivedFieldNode>()))
 			{
 				if (!aliasName)
 					aliasName = derivedField->name.c_str();
-				nameNode = derivedField->dsqlValue;
+				nameNode = derivedField->value;
 			}
 		}
 
 		const dsql_fld* nameField = NULL;
-		const FieldNode* fieldNameNode = ExprNode::as<FieldNode>(nameNode);
+		const FieldNode* fieldNameNode = nameNode->as<FieldNode>();
 
 		if (fieldNameNode)
 			nameField = fieldNameNode->dsqlField;
@@ -7709,7 +7713,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 		// Check if this is a field or an expression.
 
-		const DsqlAliasNode* aliasNode = ExprNode::as<DsqlAliasNode>(fieldNode);
+		DsqlAliasNode* aliasNode = fieldNode->as<DsqlAliasNode>();
 
 		if (aliasNode)
 			fieldNode = aliasNode->value;
@@ -7717,7 +7721,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		dsql_fld* field = NULL;
 		const dsql_ctx* context = NULL;
 
-		fieldNameNode = ExprNode::as<FieldNode>(fieldNode);
+		fieldNameNode = fieldNode->as<FieldNode>();
 
 		if (fieldNameNode)
 		{
@@ -7744,7 +7748,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		if (ptr)
 		{
 			if (ptr < end)
-				fieldStr = ExprNode::as<FieldNode>(*ptr)->dsqlName.c_str();
+				fieldStr = (*ptr)->as<FieldNode>()->dsqlName.c_str();
 			else
 			{
 				// Generate an error when going out of this loop.
@@ -7972,7 +7976,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		RseNode* querySpec = ExprNode::as<RseNode>(querySpecNod);
 		fb_assert(querySpec);
 
-		if (querySpec->dsqlFrom->dsqlArgs.getCount() != 1)
+		if (querySpec->dsqlFrom->items.getCount() != 1)
 		{
 			// Only one table allowed for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -8038,7 +8042,7 @@ void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScrat
 	RseNode* rse = FB_NEW(pool) RseNode(pool);
 	rse->dsqlWhere = baseAndNode;
 	rse->dsqlStreams = FB_NEW(pool) RecSourceListNode(pool, 1);
-	rse->dsqlStreams->dsqlArgs[0] = baseRelation;
+	rse->dsqlStreams->items[0] = baseRelation;
 
 	createCheckTrigger(tdbb, dsqlScratch, rse, items, actionNode, PRE_MODIFY_TRIGGER);
 	createCheckTrigger(tdbb, dsqlScratch, NULL, items, actionNode, PRE_STORE_TRIGGER);
@@ -8052,7 +8056,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
 
-	const RecordSourceNode* querySpecNod = selectExpr->querySpec;
+	RecordSourceNode* querySpecNod = selectExpr->querySpec;
 	RelationSourceNode* relationNode = dsqlNode;
 
 	// Generate the trigger blr.
@@ -8107,26 +8111,26 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	// Generate the condition for firing the trigger.
 
-	const RseNode* querySpec = ExprNode::as<RseNode>(querySpecNod);
+	RseNode* querySpec = querySpecNod->as<RseNode>();
 	fb_assert(querySpec);
 
 	if (triggerType == PRE_MODIFY_TRIGGER)
 	{
 		dsqlScratch->appendUChar(blr_for);
 
-		rse->dsqlStreams->dsqlArgs[0] = doDsqlPass(dsqlScratch, rse->dsqlStreams->dsqlArgs[0]);
+		rse->dsqlStreams->items[0] = doDsqlPass(dsqlScratch, rse->dsqlStreams->items[0]);
 		rse->dsqlWhere = doDsqlPass(dsqlScratch, rse->dsqlWhere);
 
 		GEN_expr(dsqlScratch, rse);
 
-		replaceFieldNames(querySpec->dsqlWhere, items, viewFields, false, NEW_CONTEXT);
+		replaceFieldNames(querySpec->dsqlWhere.getObject(), items, viewFields, false, NEW_CONTEXT);
 	}
 	else if (triggerType == PRE_STORE_TRIGGER)
-		replaceFieldNames(querySpec->dsqlWhere, items, viewFields, true, NEW_CONTEXT);
+		replaceFieldNames(querySpec->dsqlWhere.getObject(), items, viewFields, true, NEW_CONTEXT);
 	else
 		fb_assert(false);
 
-	BoolExprNode* condition = querySpec->dsqlWhere;
+	NestConst<BoolExprNode> condition = querySpec->dsqlWhere;
 
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, doDsqlPass(dsqlScratch, condition));
@@ -8163,10 +8167,10 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	// Check whether this is an updatable view definition.
 
-	RseNode* querySpec = ExprNode::as<RseNode>(ExprNode::as<SelectExprNode>(selectExpr)->querySpec);
+	RseNode* querySpec = selectExpr->querySpec->as<RseNode>();
 	RecSourceListNode* fromList = NULL;
 
-	if (!querySpec || !(fromList = querySpec->dsqlFrom) || fromList->dsqlArgs.getCount() != 1)
+	if (!querySpec || !(fromList = querySpec->dsqlFrom) || fromList->items.getCount() != 1)
 	{
 		// The caller seems throwing proper errors for all the above conditions.
 		// But just in case it doesn't, here we have the final attempt to prevent the bad things.
@@ -8176,7 +8180,7 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 	// Use the relation referenced in the select statement for rse.
 
 	RelationSourceNode* relationNode = FB_NEW(pool) RelationSourceNode(pool,
-		ExprNode::as<ProcedureSourceNode>(fromList->dsqlArgs[0])->dsqlName.identifier);
+		fromList->items[0]->as<ProcedureSourceNode>()->dsqlName.identifier);
 	relationNode->alias = TEMP_CONTEXT;
 
 	*baseRelation = relationNode;
@@ -8205,10 +8209,10 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	// Generate the list of assignments to fields in the base relation.
 
-	ValueExprNode** ptr = fieldsNode->dsqlArgs.begin();
-	const ValueExprNode* const* const end = fieldsNode->dsqlArgs.end();
-	ValueExprNode** ptr2 = valuesNode->dsqlArgs.begin();
-	const ValueExprNode* const* const end2 = valuesNode->dsqlArgs.end();
+	NestConst<ValueExprNode>* ptr = fieldsNode->items.begin();
+	const NestConst<ValueExprNode>* const end = fieldsNode->items.end();
+	NestConst<ValueExprNode>* ptr2 = valuesNode->items.begin();
+	const NestConst<ValueExprNode>* const end2 = valuesNode->items.end();
 	int andArg = 0;
 
 	BinaryBoolNode* andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and);
@@ -8230,7 +8234,7 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 			fieldNode->dsqlQualifier = TEMP_CONTEXT;
 
 			FieldNode* oldValueNode = FB_NEW(pool) FieldNode(pool);
-			oldValueNode->dsqlName = ExprNode::as<FieldNode>(*ptr2)->dsqlName;
+			oldValueNode->dsqlName = (*ptr2)->as<FieldNode>()->dsqlName;
 			oldValueNode->dsqlQualifier = OLD_CONTEXT;
 
 			ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
@@ -8245,12 +8249,12 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 			if (andArg == 0)
 			{
 				++andArg;
-				andNode->dsqlArg1 = orNode;
+				andNode->arg1 = orNode;
 			}
 			else if (andArg == 1)
 			{
 				++andArg;
-				andNode->dsqlArg2 = orNode;
+				andNode->arg2 = orNode;
 			}
 			else
 				andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and, andNode, orNode);
@@ -8258,12 +8262,18 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 	}
 
 	if (andArg == 0)
-		replaceFieldNames((andNode->dsqlArg1 = querySpec->dsqlWhere), items, NULL, false, TEMP_CONTEXT);
+	{
+		replaceFieldNames((andNode->arg1 = querySpec->dsqlWhere).getObject(), items, NULL,
+			false, TEMP_CONTEXT);
+	}
 	else if (andArg == 1)
-		replaceFieldNames((andNode->dsqlArg2 = querySpec->dsqlWhere), items, NULL, false, TEMP_CONTEXT);
+	{
+		replaceFieldNames((andNode->arg2 = querySpec->dsqlWhere).getObject(), items, NULL,
+			false, TEMP_CONTEXT);
+	}
 	else
 	{
-		replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT);
+		replaceFieldNames(querySpec->dsqlWhere.getObject(), items, NULL, false, TEMP_CONTEXT);
 		andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and, andNode, querySpec->dsqlWhere);
 	}
 
@@ -8310,12 +8320,12 @@ void CreateAlterViewNode::replaceFieldNames(ExprNode* input, ValueListNode* sear
 		{
 			// Found a field node, check if it needs to be replaced.
 
-			ValueExprNode** search = searchFields->dsqlArgs.begin();
-			const ValueExprNode* const* const end = searchFields->dsqlArgs.end();
-			ValueExprNode** replace = NULL;
+			NestConst<ValueExprNode>* search = searchFields->items.begin();
+			const NestConst<ValueExprNode>* const end = searchFields->items.end();
+			NestConst<ValueExprNode>* replace = NULL;
 
 			if (replaceFields)
-				replace = replaceFields->dsqlArgs.begin();
+				replace = replaceFields->items.begin();
 
 			bool found = false;
 
@@ -8717,8 +8727,8 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 	if (columns)
 	{
-	    const ValueExprNode* const* ptr = columns->dsqlArgs.begin();
-	    const ValueExprNode* const* const end = columns->dsqlArgs.end();
+	    const NestConst<ValueExprNode>* ptr = columns->items.begin();
+	    const NestConst<ValueExprNode>* const end = columns->items.end();
 
 		for (; ptr != end; ++ptr)
 		{
@@ -9054,7 +9064,7 @@ void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 
 	SLONG start = 0;
 
-	for (DbFileClause** i = files.begin(); i != files.end(); ++i)
+	for (NestConst<DbFileClause>* i = files.begin(); i != files.end(); ++i)
 	{
 		bool first = i == files.begin();
 		DbFileClause* file = *i;
@@ -9560,7 +9570,7 @@ void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 
 			ValueListNode* fields = i->second;
 
-			for (ValueExprNode** ptr = fields->dsqlArgs.begin(); ptr != fields->dsqlArgs.end(); ++ptr)
+			for (NestConst<ValueExprNode>* ptr = fields->items.begin(); ptr != fields->items.end(); ++ptr)
 			{
 				grantRevoke(tdbb, transaction, table, user, privs0,
 					(*ptr)->as<FieldNode>()->dsqlName, option);
@@ -10192,7 +10202,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScra
 			if (clauses & CLAUSE_DROP_DIFFERENCE)
 				changeBackupMode(tdbb, transaction, CLAUSE_DROP_DIFFERENCE);
 
-			for (DbFileClause** i = files.begin(); i != files.end(); ++i)
+			for (NestConst<DbFileClause>* i = files.begin(); i != files.end(); ++i)
 			{
 				DbFileClause* file = *i;
 

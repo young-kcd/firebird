@@ -51,7 +51,7 @@ ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name,
 
 	if (sourceList && targetList)
 	{
-		fb_assert(sourceList->args.getCount() == targetList->args.getCount());
+		fb_assert(sourceList->items.getCount() == targetList->items.getCount());
 	}
 }
 
@@ -80,9 +80,9 @@ void ProcedureScan::open(thread_db* tdbb) const
 	{
 		enum jrd_req::req_s saved_state = request->req_operation;
 
-		const NestConst<ValueExprNode>* const sourceEnd = m_sourceList->args.end();
-		const NestConst<ValueExprNode>* sourcePtr = m_sourceList->args.begin();
-		const NestConst<ValueExprNode>* targetPtr = m_targetList->args.begin();
+		const NestConst<ValueExprNode>* const sourceEnd = m_sourceList->items.end();
+		const NestConst<ValueExprNode>* sourcePtr = m_sourceList->items.begin();
+		const NestConst<ValueExprNode>* targetPtr = m_targetList->items.begin();
 
 		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
 			EXE_assignment(tdbb, *sourcePtr, *targetPtr);

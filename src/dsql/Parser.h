@@ -219,6 +219,12 @@ private:
 		clause = value;
 	}
 
+	template <typename T1, typename T2>
+	void setClause(NestConst<T1>& clause, const char* duplicateMsg, const T2& value)
+	{
+		setClause(*clause.getAddress(), duplicateMsg, value);
+	}
+
 	void setClause(bool& clause, const char* duplicateMsg)
 	{
 		setClause(clause, duplicateMsg, true);

@@ -54,8 +54,6 @@ private:
 
 public:
 	UCHAR blrOp;
-	BoolExprNode* dsqlArg1;
-	BoolExprNode* dsqlArg2;
 	NestConst<BoolExprNode> arg1;
 	NestConst<BoolExprNode> arg2;
 };
@@ -72,7 +70,7 @@ public:
 	};
 
 	ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp, ValueExprNode* aArg1 = NULL,
-		ExprNode* aArg2 = NULL, ValueExprNode* aArg3 = NULL);
+		ValueExprNode* aArg2 = NULL, ValueExprNode* aArg3 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -104,15 +102,12 @@ private:
 
 public:
 	UCHAR blrOp;
-	ValueExprNode* dsqlArg1;
-	ExprNode* dsqlArg2;
-	ValueExprNode* dsqlArg3;
 	DsqlFlag dsqlFlag;
 	bool dsqlWasValue;
 	NestConst<ValueExprNode> arg1;
 	NestConst<ValueExprNode> arg2;
 	NestConst<ValueExprNode> arg3;
-
+	NestConst<ExprNode> dsqlSpecialArg;	// list or select expression
 };
 
 
@@ -138,7 +133,6 @@ public:
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	ValueExprNode* dsqlArg;
 	bool dsqlUnknown;
 	NestConst<ValueExprNode> arg;
 };
@@ -168,7 +162,6 @@ private:
 	BoolExprNode* process(DsqlCompilerScratch* dsqlScratch, bool invert);
 
 public:
-	BoolExprNode* dsqlArg;
 	NestConst<BoolExprNode> arg;
 };
 
@@ -208,7 +201,7 @@ private:
 
 public:
 	UCHAR blrOp;
-	RecordSourceNode* dsqlRse;
+	NestConst<RecordSourceNode> dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<RecordSource> rsb;
 };

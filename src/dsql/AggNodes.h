@@ -47,7 +47,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 private:
 	USHORT tempImpure;
@@ -80,10 +80,9 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 private:
-	ValueExprNode* dsqlDelimiter;
 	NestConst<ValueExprNode> delimiter;
 };
 
@@ -104,7 +103,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
 class SumAggNode : public AggNode
@@ -123,7 +122,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
 class MaxMinAggNode : public AggNode
@@ -148,7 +147,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 public:
 	const MaxMinType type;

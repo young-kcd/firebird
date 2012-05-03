@@ -1060,7 +1060,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 
 void METD_get_primary_key(jrd_tra* transaction, const MetaName& relationName,
-	Array<FieldNode*>& fields)
+	Array<NestConst<FieldNode> >& fields)
 {
 /**************************************
  *

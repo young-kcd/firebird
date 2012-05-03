@@ -547,7 +547,7 @@ static void gen_plan(DsqlCompilerScratch* dsqlScratch, const PlanNode* planNode)
     @param rse
 
  **/
-void GEN_rse(DsqlCompilerScratch* dsqlScratch, const RseNode* rse)
+void GEN_rse(DsqlCompilerScratch* dsqlScratch, RseNode* rse)
 {
 	if (rse->dsqlFlags & RecordSourceNode::DFLAG_SINGLETON)
 		dsqlScratch->appendUChar(blr_singular);
@@ -555,16 +555,16 @@ void GEN_rse(DsqlCompilerScratch* dsqlScratch, const RseNode* rse)
 	if (rse->dsqlExplicitJoin)
 	{
 		dsqlScratch->appendUChar(blr_rs_stream);
-		fb_assert(rse->dsqlStreams->dsqlArgs.getCount() == 2);
+		fb_assert(rse->dsqlStreams->items.getCount() == 2);
 	}
 	else
 		dsqlScratch->appendUChar(blr_rse);
 
 	// Handle source streams
 
-	dsqlScratch->appendUChar(rse->dsqlStreams->dsqlArgs.getCount());
-	RecordSourceNode* const* ptr = rse->dsqlStreams->dsqlArgs.begin();
-	for (const RecordSourceNode* const* const end = rse->dsqlStreams->dsqlArgs.end(); ptr != end; ++ptr)
+	dsqlScratch->appendUChar(rse->dsqlStreams->items.getCount());
+	NestConst<RecordSourceNode>* ptr = rse->dsqlStreams->items.begin();
+	for (const NestConst<RecordSourceNode>* const end = rse->dsqlStreams->items.end(); ptr != end; ++ptr)
 		GEN_expr(dsqlScratch, *ptr);
 
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
@@ -600,11 +600,11 @@ void GEN_rse(DsqlCompilerScratch* dsqlScratch, const RseNode* rse)
 	if (rse->dsqlDistinct)
 	{
 		dsqlScratch->appendUChar(blr_project);
-		dsqlScratch->appendUChar(rse->dsqlDistinct->dsqlArgs.getCount());
+		dsqlScratch->appendUChar(rse->dsqlDistinct->items.getCount());
 
-		ValueExprNode** ptr = rse->dsqlDistinct->dsqlArgs.begin();
+		NestConst<ValueExprNode>* ptr = rse->dsqlDistinct->items.begin();
 
-		for (const ValueExprNode* const* const end = rse->dsqlDistinct->dsqlArgs.end(); ptr != end; ++ptr)
+		for (const NestConst<ValueExprNode>* const end = rse->dsqlDistinct->items.end(); ptr != end; ++ptr)
 			GEN_expr(dsqlScratch, *ptr);
 	}
 
@@ -624,12 +624,12 @@ void GEN_rse(DsqlCompilerScratch* dsqlScratch, const RseNode* rse)
 void GEN_sort(DsqlCompilerScratch* dsqlScratch, ValueListNode* list)
 {
 	dsqlScratch->appendUChar(blr_sort);
-	dsqlScratch->appendUChar(list->dsqlArgs.getCount());
+	dsqlScratch->appendUChar(list->items.getCount());
 
-	ValueExprNode* const* ptr = list->dsqlArgs.begin();
-	for (const ValueExprNode* const* const end = list->dsqlArgs.end(); ptr != end; ++ptr)
+	NestConst<ValueExprNode>* ptr = list->items.begin();
+	for (const NestConst<ValueExprNode>* const end = list->items.end(); ptr != end; ++ptr)
 	{
-		const OrderNode* orderNode = (*ptr)->as<OrderNode>();
+		OrderNode* orderNode = (*ptr)->as<OrderNode>();
 
 		switch (orderNode->nullsPlacement)
 		{
@@ -642,7 +642,7 @@ void GEN_sort(DsqlCompilerScratch* dsqlScratch, ValueListNode* list)
 		}
 
 		dsqlScratch->appendUChar((orderNode->descending ? blr_descending : blr_ascending));
-		GEN_expr(dsqlScratch, orderNode->dsqlValue);
+		GEN_expr(dsqlScratch, orderNode->value);
 	}
 }
 

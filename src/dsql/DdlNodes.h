@@ -50,7 +50,7 @@ struct BoolSourceClause
 	{
 	}
 
-	BoolExprNode* value;
+	NestConst<BoolExprNode> value;
 	Firebird::string source;
 };
 
@@ -63,7 +63,7 @@ struct ValueSourceClause
 	{
 	}
 
-	ValueExprNode* value;
+	NestConst<ValueExprNode> value;
 	Firebird::string source;
 };
 
@@ -164,8 +164,8 @@ public:
 
 public:
 	Firebird::MetaName name;
-	ValueSourceClause* defaultClause;
-	ValueExprNode* parameterExpr;
+	NestConst<ValueSourceClause> defaultClause;
+	NestConst<ValueExprNode> parameterExpr;
 	Nullable<int> udfMechanism;
 };
 
@@ -213,7 +213,7 @@ protected:
 	}
 
 protected:
-	CreateNode* createNode;
+	NestConst<CreateNode> createNode;
 	DropNode dropNode;
 };
 
@@ -335,7 +335,7 @@ private:
 		bool secondPass, bool runTriggers);
 
 	void storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		unsigned pos, const ParameterClause& parameter, const bid* comment);
+		unsigned pos, ParameterClause& parameter, const bid* comment);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
 
@@ -343,7 +343,7 @@ public:
 	Firebird::MetaName name;
 	bool create;
 	bool alter;
-	ExternalClause* external;
+	NestConst<ExternalClause> external;
 	bool deterministic;
 	Firebird::Array<ParameterClause> parameters;
 	ParameterClause returnType;
@@ -464,7 +464,7 @@ private:
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		bool secondPass, bool runTriggers);
 	void storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		USHORT type, unsigned pos, const ParameterClause& parameter, const bid* comment);
+		USHORT type, unsigned pos, ParameterClause& parameter, const bid* comment);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
 
@@ -472,7 +472,7 @@ public:
 	Firebird::MetaName name;
 	bool create;
 	bool alter;
-	ExternalClause* external;
+	NestConst<ExternalClause> external;
 	Firebird::Array<ParameterClause> parameters;
 	Firebird::Array<ParameterClause> returns;
 	Firebird::string source;
@@ -556,7 +556,7 @@ public:
 	Nullable<FB_UINT64> type;
 	Nullable<bool> active;
 	Nullable<int> position;
-	ExternalClause* external;
+	NestConst<ExternalClause> external;
 	Firebird::string source;
 	Firebird::ByteChunk blrData;
 	Firebird::ByteChunk debugData;
@@ -791,7 +791,7 @@ protected:
 public:
 	ParameterClause nameType;
 	bool notNull;
-	BoolSourceClause* check;
+	NestConst<BoolSourceClause> check;
 };
 
 
@@ -833,8 +833,8 @@ public:
 	Firebird::MetaName name;
 	bool dropConstraint;
 	bool dropDefault;
-	BoolSourceClause* setConstraint;
-	ValueSourceClause* setDefault;
+	NestConst<BoolSourceClause> setConstraint;
+	NestConst<ValueSourceClause> setDefault;
 	Firebird::MetaName renameTo;
 	Firebird::AutoPtr<TypeClause> type;
 	Nullable<bool> notNullFlag;	// true = NOT NULL / false = NULL
@@ -1100,7 +1100,7 @@ public:
 		Constraint::Type type;
 		Firebird::MetaName name;
 		Firebird::ObjectsArray<Firebird::MetaName> columns;
-		IndexConstraintClause* index;
+		const IndexConstraintClause* index;
 		Firebird::MetaName refRelation;
 		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
 		const char* refUpdateAction;
@@ -1176,11 +1176,11 @@ public:
 		Firebird::MetaName name;
 		ConstraintType constraintType;
 		Firebird::ObjectsArray<Firebird::MetaName> columns;
-		IndexConstraintClause* index;
+		NestConst<IndexConstraintClause> index;
 		Firebird::MetaName refRelation;
 		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
-		RefActionClause* refAction;
-		BoolSourceClause* check;
+		NestConst<RefActionClause> refAction;
+		NestConst<BoolSourceClause> check;
 	};
 
 	struct AddColumnClause : public Clause
@@ -1198,11 +1198,11 @@ public:
 		}
 
 		dsql_fld* field;
-		ValueSourceClause* defaultValue;
+		NestConst<ValueSourceClause> defaultValue;
 		Firebird::ObjectsArray<AddConstraintClause> constraints;
 		Firebird::MetaName collate;
 		Firebird::MetaName domain;
-		ValueSourceClause* computed;
+		NestConst<ValueSourceClause> computed;
 		bool identity;
 	};
 
@@ -1259,9 +1259,9 @@ public:
 
 		dsql_fld* field;
 		Firebird::MetaName domain;
-		ValueSourceClause* defaultValue;
+		NestConst<ValueSourceClause> defaultValue;
 		bool dropDefault;
-		ValueSourceClause* computed;
+		NestConst<ValueSourceClause> computed;
 	};
 
 	struct DropColumnClause : public Clause
@@ -1295,19 +1295,19 @@ public:
 
 protected:
 	void defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		const AddColumnClause* clause, SSHORT position,
+		AddColumnClause* clause, SSHORT position,
 		const Firebird::ObjectsArray<Firebird::MetaName>* pkcols);
 	bool defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
-		const ValueSourceClause* clause, Firebird::string& source, BlrWriter::BlrData& value);
+		ValueSourceClause* clause, Firebird::string& source, BlrWriter::BlrData& value);
 	void makeConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		const AddConstraintClause* clause, Firebird::ObjectsArray<Constraint>& constraints,
+		AddConstraintClause* clause, Firebird::ObjectsArray<Constraint>& constraints,
 		bool* notNull = NULL);
 	void defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		Constraint& constraint);
 	void defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-		const BoolSourceClause* clause);
+		BoolSourceClause* clause);
 	void defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
-		const BoolSourceClause* clause, FB_UINT64 triggerType);
+		BoolSourceClause* clause, FB_UINT64 triggerType);
 	void defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
 		bool onUpdate);
 	void defineSetNullTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
@@ -1321,9 +1321,9 @@ protected:
 	void stuffTriggerFiringCondition(const Constraint& constraint, BlrWriter& blrWriter);
 
 public:
-	RelationSourceNode* dsqlNode;
+	NestConst<RelationSourceNode> dsqlNode;
 	Firebird::MetaName name;
-	Firebird::Array<Clause*> clauses;
+	Firebird::Array<NestConst<Clause> > clauses;
 };
 
 
@@ -1377,7 +1377,7 @@ protected:
 
 private:
 	void modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		const AlterColTypeClause* clause);
+		AlterColTypeClause* clause);
 };
 
 
@@ -1458,8 +1458,8 @@ private:
 public:
 	bool create;
 	bool alter;
-	ValueListNode* viewFields;
-	SelectExprNode* selectExpr;
+	NestConst<ValueListNode> viewFields;
+	NestConst<SelectExprNode> selectExpr;
 	Firebird::string source;
 	bool withCheckOption;
 };
@@ -1532,9 +1532,9 @@ public:
 	Firebird::MetaName name;
 	bool unique;
 	bool descending;
-	RelationSourceNode* relation;
-	ValueListNode* columns;
-	ValueSourceClause* computed;
+	NestConst<RelationSourceNode> relation;
+	NestConst<ValueListNode> columns;
+	NestConst<ValueSourceClause> computed;
 };
 
 
@@ -1660,8 +1660,8 @@ protected:
 
 public:
 	Firebird::MetaName name;
-	NameNumber* inputFilter;
-	NameNumber* outputFilter;
+	NestConst<NameNumber> inputFilter;
+	NestConst<NameNumber> outputFilter;
 	Firebird::string entryPoint;
 	Firebird::string moduleName;
 };
@@ -1718,7 +1718,7 @@ public:
 	bool manual;
 	bool conditional;
 	Nullable<SLONG> firstLength;
-	Firebird::Array<DbFileClause*> files;
+	Firebird::Array<NestConst<DbFileClause> > files;
 };
 
 
@@ -1946,10 +1946,10 @@ public:
 	bool isGrant;
 	Firebird::Array<PrivilegeClause> privileges;
 	Firebird::Array<GranteeClause> roles;
-	GranteeClause* table;
+	NestConst<GranteeClause> table;
 	Firebird::Array<GranteeClause> users;
 	bool grantAdminOption;
-	Firebird::MetaName* grantor;
+	NestConst<Firebird::MetaName> grantor;
 };
 
 
@@ -2001,7 +2001,7 @@ public:
 	Firebird::PathName differenceFile;
 	Firebird::MetaName setDefaultCharSet;
 	Firebird::MetaName setDefaultCollation;
-	Firebird::Array<DbFileClause*> files;
+	Firebird::Array<NestConst<DbFileClause> > files;
 };
 
 

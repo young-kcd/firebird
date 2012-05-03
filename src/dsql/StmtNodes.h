@@ -38,7 +38,8 @@ class PlanNode;
 class RelationSourceNode;
 class SelectNode;
 
-typedef Firebird::Pair<Firebird::NonPooled<ValueListNode*, Firebird::Array<ValueExprNode*>*> > ReturningClause;
+typedef Firebird::Pair<
+	Firebird::NonPooled<NestConst<ValueListNode>, NestConst<ValueListNode> > > ReturningClause;
 
 
 class ExceptionItem : public Firebird::PermanentStorage
@@ -100,8 +101,6 @@ class AssignmentNode : public TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>
 public:
 	explicit AssignmentNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>(pool),
-		  dsqlAsgnFrom(NULL),
-		  dsqlAsgnTo(NULL),
 		  asgnFrom(NULL),
 		  asgnTo(NULL),
 		  missing(NULL),
@@ -121,8 +120,6 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	ValueExprNode* dsqlAsgnFrom;
-	ValueExprNode* dsqlAsgnTo;
 	NestConst<ValueExprNode> asgnFrom;
 	NestConst<ValueExprNode> asgnTo;
 	NestConst<ValueExprNode> missing;
@@ -307,11 +304,10 @@ class CursorStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>
 {
 public:
 	explicit CursorStmtNode(MemoryPool& pool, UCHAR aCursorOp, const Firebird::MetaName& aDsqlName = "",
-				Firebird::Array<ValueExprNode*>* aDsqlIntoStmt = NULL)
+				ValueListNode* aDsqlIntoStmt = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>(pool),
 		  dsqlName(pool, aDsqlName),
 		  dsqlIntoStmt(aDsqlIntoStmt),
-		  dsqlScrollExpr(NULL),
 		  cursorOp(aCursorOp),
 		  cursorNumber(0),
 		  scrollOp(0),
@@ -332,8 +328,7 @@ public:
 
 public:
 	Firebird::MetaName dsqlName;
-	Firebird::Array<ValueExprNode*>* dsqlIntoStmt;
-	ValueExprNode* dsqlScrollExpr;
+	ValueListNode* dsqlIntoStmt;
 	UCHAR cursorOp;
 	USHORT cursorNumber;
 	UCHAR scrollOp;
@@ -357,7 +352,6 @@ public:
 		  dsqlScroll(false),
 		  dsqlName(aDsqlName),
 		  dsqlSelect(NULL),
-		  dsqlRse(NULL),
 		  rse(NULL),
 		  refs(NULL),
 		  cursorNumber(0),
@@ -379,8 +373,7 @@ public:
 	USHORT dsqlCursorType;
 	bool dsqlScroll;
 	Firebird::MetaName dsqlName;
-	SelectNode* dsqlSelect;
-	RseNode* dsqlRse;
+	NestConst<SelectNode> dsqlSelect;
 	NestConst<RseNode> rse;
 	NestConst<ValueListNode> refs;
 	USHORT cursorNumber;
@@ -421,12 +414,12 @@ private:
 		Firebird::Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount = NULL);
 
 	void genParameters(DsqlCompilerScratch* dsqlScratch,
-		const Firebird::Array<ParameterClause>& paramArray);
+		Firebird::Array<ParameterClause>& paramArray);
 
 public:
 	Firebird::MetaName name;
 	bool dsqlDeterministic;
-	ExecBlockNode* dsqlBlock;
+	NestConst<ExecBlockNode> dsqlBlock;
 	DsqlCompilerScratch* blockScratch;
 	dsql_udf* dsqlFunction;
 	const UCHAR* blrStart;
@@ -468,11 +461,11 @@ private:
 		Firebird::Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount = NULL);
 
 	void genParameters(DsqlCompilerScratch* dsqlScratch,
-		const Firebird::Array<ParameterClause>& paramArray);
+		Firebird::Array<ParameterClause>& paramArray);
 
 public:
 	Firebird::MetaName name;
-	ExecBlockNode* dsqlBlock;
+	NestConst<ExecBlockNode> dsqlBlock;
 	DsqlCompilerScratch* blockScratch;
 	dsql_prc* dsqlProcedure;
 	const UCHAR* blrStart;
@@ -546,14 +539,14 @@ private:
 	const StmtNode* erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
-	RelationSourceNode* dsqlRelation;
-	BoolExprNode* dsqlBoolean;
-	PlanNode* dsqlPlan;
-	ValueListNode* dsqlOrder;
-	RowsClause* dsqlRows;
+	NestConst<RelationSourceNode> dsqlRelation;
+	NestConst<BoolExprNode> dsqlBoolean;
+	NestConst<PlanNode> dsqlPlan;
+	NestConst<ValueListNode> dsqlOrder;
+	NestConst<RowsClause> dsqlRows;
 	Firebird::MetaName dsqlCursorName;
-	ReturningClause* dsqlReturning;
-	RseNode* dsqlRse;
+	NestConst<ReturningClause> dsqlReturning;
+	NestConst<RseNode> dsqlRse;
 	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> subStatement;
@@ -592,16 +585,14 @@ class ExecProcedureNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDU
 public:
 	explicit ExecProcedureNode(MemoryPool& pool,
 				const Firebird::QualifiedName& aDsqlName = Firebird::QualifiedName(),
-				ValueListNode* aDsqlInputs = NULL, Firebird::Array<ValueExprNode*>* aDsqlOutputs = NULL)
+				ValueListNode* aInputs = NULL, ValueListNode* aOutputs = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDURE>(pool),
 		  dsqlName(pool, aDsqlName),
-		  dsqlInputs(aDsqlInputs),
-		  dsqlOutputs(aDsqlOutputs),
 		  dsqlProcedure(NULL),
-		  inputSources(NULL),
+		  inputSources(aInputs),
 		  inputTargets(NULL),
 		  inputMessage(NULL),
-		  outputSources(NULL),
+		  outputSources(aOutputs),
 		  outputTargets(NULL),
 		  outputMessage(NULL),
 		  procedure(NULL)
@@ -619,14 +610,11 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
-	Firebird::Array<ValueExprNode*>* explodeOutputs(DsqlCompilerScratch* dsqlScratch,
-		const dsql_prc* procedure);
+	ValueListNode* explodeOutputs(DsqlCompilerScratch* dsqlScratch, const dsql_prc* procedure);
 	void executeProcedure(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	Firebird::QualifiedName dsqlName;
-	ValueListNode* dsqlInputs;
-	Firebird::Array<ValueExprNode*>* dsqlOutputs;
 	dsql_prc* dsqlProcedure;
 	NestConst<ValueListNode> inputSources;
 	NestConst<ValueListNode> inputTargets;
@@ -643,13 +631,6 @@ class ExecStatementNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_STATEME
 public:
 	explicit ExecStatementNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXEC_STATEMENT>(pool),
-		  dsqlSql(NULL),
-		  dsqlDataSource(NULL),
-		  dsqlUserName(NULL),
-		  dsqlPassword(NULL),
-		  dsqlRole(NULL),
-		  dsqlInputs(NULL),
-		  dsqlOutputs(NULL),
 		  dsqlLabelName(NULL),
 		  dsqlLabelNumber(0),
 		  sql(NULL),
@@ -683,13 +664,6 @@ private:
 		Firebird::string& str, bool useAttCS = false) const;
 
 public:
-	ValueExprNode* dsqlSql;
-	ValueExprNode* dsqlDataSource;
-	ValueExprNode* dsqlUserName;
-	ValueExprNode* dsqlPassword;
-	ValueExprNode* dsqlRole;
-	ValueListNode* dsqlInputs;
-	Firebird::Array<ValueExprNode*>* dsqlOutputs;
 	Firebird::MetaName* dsqlLabelName;
 	USHORT dsqlLabelNumber;
 	NestConst<ValueExprNode> sql;
@@ -711,7 +685,6 @@ class IfNode : public TypedNode<StmtNode, StmtNode::TYPE_IF>
 public:
 	explicit IfNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_IF>(pool),
-		  dsqlCondition(NULL),
 		  condition(NULL),
 		  trueAction(NULL),
 		  falseAction(NULL)
@@ -729,7 +702,6 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	BoolExprNode* dsqlCondition;
 	NestConst<BoolExprNode> condition;
 	NestConst<StmtNode> trueAction;
 	NestConst<StmtNode> falseAction;
@@ -822,12 +794,10 @@ class ExceptionNode : public TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>
 {
 public:
 	ExceptionNode(MemoryPool& pool, const Firebird::MetaName& name,
-				ValueExprNode* aDsqlMessageExpr = NULL, ValueListNode* aDsqlParameters = NULL)
+				ValueExprNode* aMessageExpr = NULL, ValueListNode* aParameters = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>(pool),
-		  dsqlMessageExpr(aDsqlMessageExpr),
-		  dsqlParameters(aDsqlParameters),
-		  messageExpr(NULL),
-		  parameters(NULL)
+		  messageExpr(aMessageExpr),
+		  parameters(aParameters)
 	{
 		exception = FB_NEW(pool) ExceptionItem(pool);
 		exception->type = ExceptionItem::XCP_CODE;
@@ -836,8 +806,6 @@ public:
 
 	explicit ExceptionNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>(pool),
-		  dsqlMessageExpr(NULL),
-		  dsqlParameters(NULL),
 		  messageExpr(NULL),
 		  parameters(NULL),
 		  exception(NULL)
@@ -858,8 +826,6 @@ private:
 	void setError(thread_db* tdbb) const;
 
 public:
-	ValueExprNode* dsqlMessageExpr;
-	ValueListNode* dsqlParameters;
 	NestConst<ValueExprNode> messageExpr;
 	NestConst<ValueListNode> parameters;
 	NestConst<ExceptionItem> exception;
@@ -909,8 +875,8 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	SelectNode* dsqlSelect;
-	Firebird::Array<ValueExprNode*>* dsqlInto;
+	NestConst<SelectNode> dsqlSelect;
+	NestConst<ValueListNode> dsqlInto;
 	DeclareCursorNode* dsqlCursor;
 	Firebird::MetaName* dsqlLabelName;
 	USHORT dsqlLabelNumber;
@@ -1018,7 +984,7 @@ public:
 public:
 	Firebird::MetaName* dsqlLabelName;
 	USHORT dsqlLabelNumber;
-	BoolExprNode* dsqlExpr;
+	NestConst<BoolExprNode> dsqlExpr;
 	NestConst<StmtNode> statement;
 };
 
@@ -1034,8 +1000,8 @@ public:
 		{
 		}
 
-		CompoundStmtNode* assignments;
-		BoolExprNode* condition;
+		NestConst<CompoundStmtNode> assignments;
+		NestConst<BoolExprNode> condition;
 	};
 
 	struct NotMatched
@@ -1047,19 +1013,19 @@ public:
 		{
 		}
 
-		Firebird::Array<FieldNode*> fields;
-		ValueListNode* values;
-		BoolExprNode* condition;
+		Firebird::Array<NestConst<FieldNode> > fields;
+		NestConst<ValueListNode> values;
+		NestConst<BoolExprNode> condition;
 	};
 
 	explicit MergeNode(MemoryPool& pool)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>(pool),
-		  dsqlRelation(NULL),
-		  dsqlUsing(NULL),
-		  dsqlCondition(NULL),
-		  dsqlWhenMatched(pool),
-		  dsqlWhenNotMatched(pool),
-		  dsqlReturning(NULL)
+		  relation(NULL),
+		  usingClause(NULL),
+		  condition(NULL),
+		  whenMatched(pool),
+		  whenNotMatched(pool),
+		  returning(NULL)
 	{
 	}
 
@@ -1068,12 +1034,12 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 public:
-	RelationSourceNode* dsqlRelation;
-	RecordSourceNode* dsqlUsing;
-	BoolExprNode* dsqlCondition;
-	Firebird::ObjectsArray<Matched> dsqlWhenMatched;
-	Firebird::ObjectsArray<NotMatched> dsqlWhenNotMatched;
-	ReturningClause* dsqlReturning;
+	NestConst<RelationSourceNode> relation;
+	NestConst<RecordSourceNode> usingClause;
+	NestConst<BoolExprNode> condition;
+	Firebird::ObjectsArray<Matched> whenMatched;
+	Firebird::ObjectsArray<NotMatched> whenNotMatched;
+	NestConst<ReturningClause> returning;
 };
 
 
@@ -1147,15 +1113,15 @@ private:
 	const StmtNode* modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
-	RecordSourceNode* dsqlRelation;
-	BoolExprNode* dsqlBoolean;
-	PlanNode* dsqlPlan;
-	ValueListNode* dsqlOrder;
-	RowsClause* dsqlRows;
+	NestConst<RecordSourceNode> dsqlRelation;
+	NestConst<BoolExprNode> dsqlBoolean;
+	NestConst<PlanNode> dsqlPlan;
+	NestConst<ValueListNode> dsqlOrder;
+	NestConst<RowsClause> dsqlRows;
 	Firebird::MetaName dsqlCursorName;
-	ReturningClause* dsqlReturning;
+	NestConst<ReturningClause> dsqlReturning;
 	USHORT dsqlRseFlags;
-	RecordSourceNode* dsqlRse;
+	NestConst<RecordSourceNode> dsqlRse;
 	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> statement2;
@@ -1172,8 +1138,6 @@ class PostEventNode : public TypedNode<StmtNode, StmtNode::TYPE_POST_EVENT>
 public:
 	explicit PostEventNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_POST_EVENT>(pool),
-		  dsqlEvent(NULL),
-		  dsqlArgument(NULL),
 		  event(NULL),
 		  argument(NULL)
 	{
@@ -1190,8 +1154,6 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	ValueExprNode* dsqlEvent;
-	ValueExprNode* dsqlArgument;
 	NestConst<ValueExprNode> event;
 	NestConst<ValueExprNode> argument;
 };
@@ -1258,11 +1220,11 @@ private:
 	const StmtNode* store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
-	RecordSourceNode* dsqlRelation;
-	Firebird::Array<FieldNode*> dsqlFields;
-	ValueListNode* dsqlValues;
-	ReturningClause* dsqlReturning;
-	RecordSourceNode* dsqlRse;
+	NestConst<RecordSourceNode> dsqlRelation;
+	Firebird::Array<NestConst<FieldNode> > dsqlFields;
+	NestConst<ValueListNode> dsqlValues;
+	NestConst<ReturningClause> dsqlReturning;
+	NestConst<RecordSourceNode> dsqlRse;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> statement2;
 	NestConst<StmtNode> subStore;
@@ -1331,10 +1293,10 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	SelectExprNode* dsqlExpr;
+	NestConst<SelectExprNode> dsqlExpr;
 	bool dsqlForUpdate;
 	bool dsqlWithLock;
-	RseNode* dsqlRse;
+	NestConst<RseNode> dsqlRse;
 	Firebird::Array<NestConst<StmtNode> > statements;
 };
 
@@ -1342,11 +1304,10 @@ public:
 class SetGeneratorNode : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>
 {
 public:
-	SetGeneratorNode(MemoryPool& pool, const Firebird::MetaName& aName, ValueExprNode* aDsqlValue = NULL)
+	SetGeneratorNode(MemoryPool& pool, const Firebird::MetaName& aName, ValueExprNode* aValue = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>(pool),
 		  name(aName),
-		  dsqlValue(aDsqlValue),
-		  value(NULL),
+		  value(aValue),
 		  genId(0)
 	{
 	}
@@ -1363,7 +1324,6 @@ public:
 
 public:
 	Firebird::MetaName name;
-	ValueExprNode* dsqlValue;
 	NestConst<ValueExprNode> value;
 	USHORT genId;
 };
@@ -1429,7 +1389,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 public:
-	ValueExprNode* value;
+	NestConst<ValueExprNode> value;
 };
 
 
@@ -1536,11 +1496,11 @@ class UpdateOrInsertNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPD
 public:
 	explicit UpdateOrInsertNode(MemoryPool& pool)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>(pool),
-		  dsqlRelation(NULL),
-		  dsqlFields(pool),
-		  dsqlValues(NULL),
-		  dsqlMatching(pool),
-		  dsqlReturning(NULL)
+		  relation(NULL),
+		  fields(pool),
+		  values(NULL),
+		  matching(pool),
+		  returning(NULL)
 	{
 	}
 
@@ -1549,11 +1509,11 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 public:
-	RelationSourceNode* dsqlRelation;
-	Firebird::Array<FieldNode*> dsqlFields;
-	ValueListNode* dsqlValues;
-	Firebird::Array<FieldNode*> dsqlMatching;
-	ReturningClause* dsqlReturning;
+	NestConst<RelationSourceNode> relation;
+	Firebird::Array<NestConst<FieldNode> > fields;
+	NestConst<ValueListNode> values;
+	Firebird::Array<NestConst<FieldNode> > matching;
+	NestConst<ReturningClause> returning;
 };
 
 

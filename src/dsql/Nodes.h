@@ -125,7 +125,7 @@ public:
 
 	// Compile a parsed statement into something more interesting.
 	template <typename T>
-	static T* doDsqlPass(DsqlCompilerScratch* dsqlScratch, T* node)
+	static T* doDsqlPass(DsqlCompilerScratch* dsqlScratch, NestConst<T>& node)
 	{
 		if (!node)
 			return NULL;
@@ -135,7 +135,7 @@ public:
 
 	// Compile a parsed statement into something more interesting and assign it to target.
 	template <typename T1, typename T2>
-	static void doDsqlPass(DsqlCompilerScratch* dsqlScratch, T1*& target, T2* node)
+	static void doDsqlPass(DsqlCompilerScratch* dsqlScratch, NestConst<T1>& target, NestConst<T2>& node)
 	{
 		if (!node)
 			target = NULL;
@@ -145,7 +145,7 @@ public:
 
 	// Changes dsqlScratch->isPsql() value, calls doDsqlPass and restore dsqlScratch->isPsql().
 	template <typename T>
-	static T* doDsqlPass(DsqlCompilerScratch* dsqlScratch, T* node, bool psql)
+	static T* doDsqlPass(DsqlCompilerScratch* dsqlScratch, NestConst<T>& node, bool psql)
 	{
 		PsqlChanger changer(dsqlScratch, psql);
 		return doDsqlPass(dsqlScratch, node);
@@ -153,7 +153,7 @@ public:
 
 	// Changes dsqlScratch->isPsql() value, calls doDsqlPass and restore dsqlScratch->isPsql().
 	template <typename T1, typename T2>
-	static void doDsqlPass(DsqlCompilerScratch* dsqlScratch, T1*& target, T2* node, bool psql)
+	static void doDsqlPass(DsqlCompilerScratch* dsqlScratch, NestConst<T1>& target, NestConst<T2>& node, bool psql)
 	{
 		PsqlChanger changer(dsqlScratch, psql);
 		doDsqlPass(dsqlScratch, target, node);
@@ -587,14 +587,14 @@ public:
 	}
 
 	template <typename T>
-	static void doDsqlFieldRemapper(FieldRemapper& visitor, T*& node)
+	static void doDsqlFieldRemapper(FieldRemapper& visitor, NestConst<T>& node)
 	{
 		if (node)
 			node = node->dsqlFieldRemapper(visitor);
 	}
 
 	template <typename T1, typename T2>
-	static void doDsqlFieldRemapper(FieldRemapper& visitor, T1*& target, T2* node)
+	static void doDsqlFieldRemapper(FieldRemapper& visitor, NestConst<T1>& target, NestConst<T2> node)
 	{
 		target = node ? node->dsqlFieldRemapper(visitor) : NULL;
 	}
@@ -631,16 +631,16 @@ public:
 
 protected:
 	template <typename T1, typename T2>
-	void addChildNode(T1*& dsqlNode, NestConst<T2>& jrdNode)
+	void addChildNode(NestConst<T1>& dsqlNode, NestConst<T2>& jrdNode)
 	{
 		addDsqlChildNode(dsqlNode);
 		addChildNode(jrdNode);
 	}
 
 	template <typename T>
-	void addDsqlChildNode(T*& dsqlNode)
+	void addDsqlChildNode(NestConst<T>& dsqlNode)
 	{
-		dsqlChildNodes.add(FB_NEW(getPool()) NodeRefImpl<T>(&dsqlNode));
+		dsqlChildNodes.add(FB_NEW(getPool()) NodeRefImpl<T>(dsqlNode.getAddress()));
 	}
 
 	template <typename T>
@@ -674,7 +674,8 @@ inline const ExprNode* NodeRefImpl<T>::getExpr() const
 template <typename T>
 inline void NodeRefImpl<T>::remap(FieldRemapper& visitor)
 {
-	ExprNode::doDsqlFieldRemapper(visitor, *ptr);
+	if (*ptr)
+		*ptr = (*ptr)->dsqlFieldRemapper(visitor);
 }
 
 template <typename T>
@@ -909,13 +910,12 @@ public:
 	virtual AggNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 protected:
-	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const = 0;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/ = 0;
 
 public:
 	const AggInfo& aggInfo;
 	bool distinct;
 	bool dialect1;
-	ValueExprNode* dsqlArg;
 	NestConst<ValueExprNode> arg;
 	const AggregateSort* asb;
 	bool indexed;
@@ -1093,52 +1093,52 @@ class ValueListNode : public TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>
 public:
 	ValueListNode(MemoryPool& pool, unsigned count)
 		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
-		  dsqlArgs(pool),
-		  args(pool)
+		  items(pool)
 	{
-		dsqlArgs.resize(count);
-		args.resize(count);
+		items.resize(count);
 
 		for (unsigned i = 0; i < count; ++i)
-			addChildNode((dsqlArgs[i] = NULL), (args[i] = NULL));
+		{
+			items[i] = NULL;
+			addChildNode(items[i], items[i]);
+		}
 	}
 
 	ValueListNode(MemoryPool& pool, ValueExprNode* arg1)
 		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
-		  dsqlArgs(pool),
-		  args(pool)
+		  items(pool)
 	{
-		dsqlArgs.resize(1);
-		addDsqlChildNode((dsqlArgs[0] = arg1));
+		items.resize(1);
+		addDsqlChildNode((items[0] = arg1));
 	}
 
 	ValueListNode* add(ValueExprNode* argn)
 	{
-		dsqlArgs.add(argn);
+		items.add(argn);
 		resetChildNodes();
 		return this;
 	}
 
 	ValueListNode* addFront(ValueExprNode* argn)
 	{
-		dsqlArgs.insert(0, argn);
+		items.insert(0, argn);
 		resetChildNodes();
 		return this;
 	}
 
 	void clear()
 	{
-		dsqlArgs.clear();
+		items.clear();
 		resetChildNodes();
 	}
 
 	virtual ValueListNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		ValueListNode* node = FB_NEW(getPool()) ValueListNode(getPool(), dsqlArgs.getCount());
+		ValueListNode* node = FB_NEW(getPool()) ValueListNode(getPool(), items.getCount());
 
-		ValueExprNode** dst = node->dsqlArgs.begin();
+		NestConst<ValueExprNode>* dst = node->items.begin();
 
-		for (ValueExprNode** src = dsqlArgs.begin(); src != dsqlArgs.end(); ++src, ++dst)
+		for (NestConst<ValueExprNode>* src = items.begin(); src != items.end(); ++src, ++dst)
 			*dst = doDsqlPass(dsqlScratch, *src);
 
 		return node;
@@ -1165,11 +1165,11 @@ public:
 	virtual ValueListNode* copy(thread_db* tdbb, NodeCopier& copier) const
 	{
 		ValueListNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueListNode(*tdbb->getDefaultPool(),
-			args.getCount());
+			items.getCount());
 
-		NestConst<ValueExprNode>* j = node->args.begin();
+		NestConst<ValueExprNode>* j = node->items.begin();
 
-		for (const NestConst<ValueExprNode>* i = args.begin(); i != args.end(); ++i, ++j)
+		for (const NestConst<ValueExprNode>* i = items.begin(); i != items.end(); ++i, ++j)
 			*j = copier.copy(tdbb, *i);
 
 		return node;
@@ -1181,16 +1181,12 @@ private:
 		dsqlChildNodes.clear();
 		jrdChildNodes.clear();
 
-		for (size_t i = 0; i < dsqlArgs.getCount(); ++i)
-			addDsqlChildNode(dsqlArgs[i]);
-
-		for (size_t i = 0; i < args.getCount(); ++i)
-			addChildNode(args[i]);
+		for (size_t i = 0; i < items.getCount(); ++i)
+			addChildNode(items[i], items[i]);
 	}
 
 public:
-	Firebird::Array<ValueExprNode*> dsqlArgs;
-	NestValueArray args;
+	NestValueArray items;
 };
 
 // Container for a list of record source expressions.
@@ -1202,7 +1198,7 @@ public:
 
 	RecSourceListNode* add(RecordSourceNode* argn)
 	{
-		dsqlArgs.add(argn);
+		items.add(argn);
 		resetChildNodes();
 		return this;
 	}
@@ -1238,12 +1234,12 @@ private:
 	{
 		dsqlChildNodes.clear();
 
-		for (size_t i = 0; i < dsqlArgs.getCount(); ++i)
-			addDsqlChildNode(dsqlArgs[i]);
+		for (size_t i = 0; i < items.getCount(); ++i)
+			addDsqlChildNode(items[i]);
 	}
 
 public:
-	Firebird::Array<RecordSourceNode*> dsqlArgs;
+	Firebird::Array<NestConst<RecordSourceNode> > items;
 };
 
 
@@ -1468,7 +1464,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 private:
-	StmtNode* stmt;
+	NestConst<StmtNode> stmt;
 };
 
 
@@ -1483,8 +1479,8 @@ public:
 	}
 
 public:
-	ValueExprNode* length;
-	ValueExprNode* skip;
+	NestConst<ValueExprNode> length;
+	NestConst<ValueExprNode> skip;
 };
 
 

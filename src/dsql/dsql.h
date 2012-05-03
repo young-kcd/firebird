@@ -577,7 +577,9 @@ public:
 protected:
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
-	~dsql_req();
+	~dsql_req()
+	{
+	}
 
 	// To avoid posix warning about missing public destructor declare
 	// MemoryPool as friend class. In fact IT releases request memory!
@@ -607,7 +609,7 @@ public:
 		ULONG msgLength, UCHAR* msgBuffer);
 
 private:
-	StmtNode* node;
+	NestConst<StmtNode> node;
 };
 
 class DsqlDdlRequest : public dsql_req
@@ -629,7 +631,7 @@ public:
 		bool singleton);
 
 private:
-	DdlNode* node;
+	NestConst<DdlNode> node;
 	DsqlCompilerScratch* internalScratch;
 };
 
@@ -652,7 +654,7 @@ public:
 		bool singleton);
 
 private:
-	TransactionNode* node;
+	NestConst<TransactionNode> node;
 };
 
 //! Implicit (NATURAL and USING) joins
@@ -674,9 +676,9 @@ struct PartitionMap
 	{
 	}
 
-	ValueListNode* partition;
-	ValueListNode* partitionRemapped;
-	ValueListNode* order;
+	NestConst<ValueListNode> partition;
+	NestConst<ValueListNode> partitionRemapped;
+	NestConst<ValueListNode> order;
 	dsql_map* map;
 	USHORT context;
 };
@@ -697,7 +699,7 @@ public:
 
 	dsql_rel*			ctx_relation;		// Relation for context
 	dsql_prc*			ctx_procedure;		// Procedure for context
-	ValueListNode*			ctx_proc_inputs;	// Procedure input parameters
+	NestConst<ValueListNode> ctx_proc_inputs;	// Procedure input parameters
 	dsql_map*			ctx_map;			// Maps for aggregates and unions
 	RseNode*			ctx_rse;			// Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			// Parent context for aggregates
@@ -736,7 +738,7 @@ public:
 		return *this;
 	}
 
-	bool getImplicitJoinField(const Firebird::MetaName& name, ValueExprNode*& node);
+	bool getImplicitJoinField(const Firebird::MetaName& name, NestConst<ValueExprNode>& node);
 	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch,
 		ValueListNode* partitionNode, ValueListNode* orderNode);
 };
@@ -754,10 +756,10 @@ const USHORT CTX_recursive	= 0x10;	// Context has secondary number (ctx_recursiv
 class dsql_map : public pool_alloc<dsql_type_map>
 {
 public:
-	dsql_map* map_next;				// Next map in item
-	ValueExprNode* map_node;		// Value for map item
-	USHORT map_position;			// Position in map
-	PartitionMap* map_partition;	// Partition
+	dsql_map* map_next;						// Next map in item
+	NestConst<ValueExprNode> map_node;		// Value for map item
+	USHORT map_position;					// Position in map
+	NestConst<PartitionMap> map_partition;	// Partition
 };
 
 // Message block used in communicating with a running request
