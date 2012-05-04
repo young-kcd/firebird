@@ -1,3 +1,39 @@
+ 2012-05-03 21:24  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Removed accidentally committed code.
+
+ 2012-05-03 13:48  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Fixed bug CORE-3814 : SuperClassic server crashes when performing a database shutdown (FW=OFF)
+
+ 2012-05-03 11:11  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra_proto.h
+Improvement CORE-3598 : TRACE: add statistics of actions that were after transaction finished
+
+ 2012-05-02 21:42  hvlad 
+   M src/jrd/jrd.cpp
+Trace errors raised by failed ON TRANSACTION ROLLBACK and ON DISCONNECT triggers.
+
+ 2012-05-02 20:53  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/ntrace.h
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceDSQLHelpers.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/fbtrace.conf
+   M src/utilities/ntrace/paramtable.h
+   M src/utilities/ntrace/traceplugin.cpp
+Improvement CORE-3539 : TRACE: add ability for logging ERRORs that occur in runtime (lock conflicts, PK/UK/FK violations et al)
+
  2012-04-27 16:31  dimitr 
    M src/dsql/pass1.cpp
 Fixed CORE-3834: Usage of a NATURAL JOIN with a derived table crashes the server.
