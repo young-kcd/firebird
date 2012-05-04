@@ -327,18 +327,14 @@ dsql_ctx* PlanNode::dsqlPassAliasList(DsqlCompilerScratch* dsqlScratch)
 					for (; aliasArg != end; ++aliasArg)
 						alias_length += aliasArg->length();
 
-					dsql_str* alias = FB_NEW_RPT(getPool(), alias_length) dsql_str;
-					alias->str_length = alias_length;
-					new_context->ctx_alias = alias->str_data;
+					TEXT* p = new_context->ctx_alias.getBuffer(alias_length);
 
-					TEXT* p = alias->str_data;
 					for (aliasArg = startArg; aliasArg != end; ++aliasArg)
 					{
 						for (const TEXT* q = aliasArg->c_str(); *q;)
 							*p++ = *q++;
 						*p++ = ' ';
 					}
-					p[-1] = 0;
 
 					context = new_context;
 				}

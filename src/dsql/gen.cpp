@@ -459,7 +459,7 @@ static void gen_plan(DsqlCompilerScratch* dsqlScratch, const PlanNode* planNode)
 
 	const Array<NestConst<PlanNode> >& list = planNode->subNodes;
 
-	if (list.hasData())
+	if (list.getCount() > 1)
 	{
 		dsqlScratch->appendUChar(blr_join);
 		dsqlScratch->appendUChar(list.getCount());
