@@ -125,7 +125,7 @@ bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 	for (const NodeRef* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i, ++j)
 	{
-		if (!*i != !*j || !PASS1_node_match((*i)->getExpr(), (*j)->getExpr(), ignoreMapCast))
+		if (!**i != !**j || !PASS1_node_match((*i)->getExpr(), (*j)->getExpr(), ignoreMapCast))
 			return false;
 	}
 
@@ -7287,7 +7287,7 @@ bool OverNode::dsqlAggregateFinder(AggregateFinder& visitor)
 	{
 		Array<NodeRef*>& exprChildren = aggExpr->dsqlChildNodes;
 		for (NodeRef** i = exprChildren.begin(); i != exprChildren.end(); ++i)
-			aggregate |= *i && visitor.visit((*i)->getExpr());
+			aggregate |= visitor.visit((*i)->getExpr());
 	}
 	else
 		aggregate |= visitor.visit(aggExpr);
@@ -7369,7 +7369,7 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 
 	for (NodeRef** i = exprChildren.begin(); i != exprChildren.end(); ++i)
 	{
-		if (*i && Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
+		if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 				true, (*i)->getExpr()))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -7391,10 +7391,7 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 
 				Array<NodeRef*>& exprChildren = aggNode->dsqlChildNodes;
 				for (NodeRef** i = exprChildren.begin(); i != exprChildren.end(); ++i)
-				{
-					if (*i)
-						(*i)->remap(visitor);
-				}
+					(*i)->remap(visitor);
 			}
 
 			if (partition)

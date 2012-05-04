@@ -106,10 +106,7 @@ bool AggNode::dsqlAggregateFinder(AggregateFinder& visitor)
 		AutoSetRestore<bool> autoIgnoreSubSelects(&visitor.ignoreSubSelects, true);
 
 		for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-		{
-			if (*i)
-				visitor.visit((*i)->getExpr());
-		}
+			visitor.visit((*i)->getExpr());
 
 		localDeepestLevel = visitor.deepestLevel;
 	}
@@ -138,7 +135,7 @@ bool AggNode::dsqlAggregateFinder(AggregateFinder& visitor)
 		AutoSetRestore<USHORT> autoDeepestLevel(&visitor.deepestLevel, localDeepestLevel);
 
 		for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-			aggregate |= *i && visitor.visit((*i)->getExpr());
+			aggregate |= visitor.visit((*i)->getExpr());
 	}
 
 	return aggregate;
@@ -153,7 +150,7 @@ bool AggNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 	FieldFinder fieldFinder(visitor.checkScopeLevel, visitor.matchType);
 
 	for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-		found |= *i && visitor.visit((*i)->getExpr());
+		found |= visitor.visit((*i)->getExpr());
 
 	if (!fieldFinder.getField())
 	{
@@ -202,7 +199,7 @@ bool AggNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 			// an higher one then it's a invalid aggregate, because
 			// aggregate-functions from the same context can't
 			// be part of each other.
-			if (*i && Aggregate2Finder::find(visitor.context->ctx_scope_level,
+			if (Aggregate2Finder::find(visitor.context->ctx_scope_level,
 					FIELD_MATCH_TYPE_EQUAL, false, (*i)->getExpr()))
 			{
 				// Nested aggregate functions are not allowed
@@ -236,10 +233,7 @@ ValueExprNode* AggNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	}
 
 	for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-	{
-		if (*i)
-			(*i)->remap(visitor);
-	}
+		(*i)->remap(visitor);
 
 	return this;
 }
@@ -276,7 +270,7 @@ void AggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 		for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
 		{
-			if (*i && (*i)->getExpr())
+			if (**i)
 				++count;
 		}
 
@@ -285,7 +279,7 @@ void AggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
 	{
-		if (*i)
+		if (**i)
 			GEN_expr(dsqlScratch, (*i)->getExpr());
 	}
 }

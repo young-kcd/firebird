@@ -8294,7 +8294,7 @@ void CreateAlterViewNode::replaceFieldNames(ExprNode* input, ValueListNode* sear
 
 	for (NodeRef** i = input->dsqlChildNodes.begin(); i != input->dsqlChildNodes.end(); ++i)
 	{
-		if (*i && (*i)->getExpr())
+		if (**i)
 			temp.add((*i)->getExpr());
 	}
 
