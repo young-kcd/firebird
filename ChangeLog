@@ -1,3 +1,42 @@
+ 2012-05-03 16:43  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/gen_proto.h
+   M src/dsql/make.cpp
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/par.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/trace/TraceObjects.cpp
+Unify DSQL/JRD sub-nodes.
+
+ 2012-05-03 14:05  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Fixed bug CORE-3814 : SuperClassic server crashes when performing a database shutdown (FW=OFF)
+
  2012-04-29 18:39  asfernandes 
    M configure.in
 Make Ubuntu 12.04 build work.
