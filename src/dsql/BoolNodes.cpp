@@ -1326,8 +1326,12 @@ BoolExprNode* ComparativeBoolNode::createRseNode(DsqlCompilerScratch* dsqlScratc
 
 	// Create a conjunct to be injected.
 
-	rse->dsqlWhere = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blrOp,
+	ComparativeBoolNode* cmpNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blrOp,
 		doDsqlPass(dsqlScratch, arg1, false), rse->dsqlSelectList->items[0]);
+
+	PASS1_set_parameter_type(dsqlScratch, cmpNode->arg1, cmpNode->arg2, false);
+
+	rse->dsqlWhere = cmpNode;
 
 	// Create output node.
 	RseBoolNode* rseBoolNode = FB_NEW(getPool()) RseBoolNode(getPool(), rseBlrOp, rse);
