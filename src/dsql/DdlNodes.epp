@@ -7676,7 +7676,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		const char* aliasName = NULL;
 
 		while (nameNode->is<DsqlAliasNode>() || nameNode->is<DerivedFieldNode>() ||
-			nameNode->is<DsqlMapNode>(nameNode))
+			nameNode->is<DsqlMapNode>())
 		{
 			DsqlAliasNode* aliasNode;
 			DsqlMapNode* mapNode;
