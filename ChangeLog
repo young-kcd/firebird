@@ -1,3 +1,14 @@
+ 2012-05-04 17:01  asfernandes 
+   M src/dsql/gen.cpp
+   M src/jrd/RecordSourceNodes.cpp
+Fixed problems with plans introduced in old refactorings.
+
+ 2012-05-04 15:32  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+Make usage of dsqlChildNodes consistent.
+
  2012-05-03 16:43  asfernandes 
    M src/dsql/AggNodes.cpp
    M src/dsql/AggNodes.h
