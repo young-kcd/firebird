@@ -316,27 +316,27 @@ dsql_ctx* PlanNode::dsqlPassAliasList(DsqlCompilerScratch* dsqlScratch)
 				{
 					// AB: Pretty ugly huh?
 					// make up a dummy context to hold the resultant relation.
-					dsql_ctx* new_context = FB_NEW(getPool()) dsql_ctx(getPool());
-					new_context->ctx_context = context->ctx_context;
-					new_context->ctx_relation = relation;
+					dsql_ctx* newContext = FB_NEW(getPool()) dsql_ctx(getPool());
+					newContext->ctx_context = context->ctx_context;
+					newContext->ctx_relation = relation;
 
-					// concatenate all the contexts to form the alias name;
-					// calculate the length leaving room for spaces and a null
-					USHORT alias_length = dsqlNames->getCount();
+					// Concatenate all the contexts to form the alias name.
+					// Calculate the length leaving room for spaces.
+					USHORT aliasLength = dsqlNames->getCount();
 					ObjectsArray<MetaName>::iterator aliasArg = startArg;
 					for (; aliasArg != end; ++aliasArg)
-						alias_length += aliasArg->length();
+						aliasLength += aliasArg->length();
 
-					TEXT* p = new_context->ctx_alias.getBuffer(alias_length);
+					newContext->ctx_alias.reserve(aliasLength);
 
 					for (aliasArg = startArg; aliasArg != end; ++aliasArg)
 					{
-						for (const TEXT* q = aliasArg->c_str(); *q;)
-							*p++ = *q++;
-						*p++ = ' ';
+						if (aliasArg != startArg)
+							newContext->ctx_alias.append(" ", 1);
+						newContext->ctx_alias.append(aliasArg->c_str(), aliasArg->length());
 					}
 
-					context = new_context;
+					context = newContext;
 				}
 				else
 					context = NULL;
