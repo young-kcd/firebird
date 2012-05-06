@@ -1,3 +1,11 @@
+ 2012-05-05 19:16  asfernandes 
+   M src/dsql/DdlNodes.epp
+Misc - seen by Claudio.
+
+ 2012-05-05 15:38  asfernandes 
+   M src/dsql/BoolNodes.cpp
+Fix CORE-2697 again after refactoring problems.
+
  2012-05-04 17:01  asfernandes 
    M src/dsql/gen.cpp
    M src/jrd/RecordSourceNodes.cpp
