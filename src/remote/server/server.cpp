@@ -297,7 +297,7 @@ public:
 				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): miss data with tag %d\n", tags->specific_data));
 			}
 		}
-		else if (authPort->port_srv_auth_block->getLogin() && 
+		else if (authPort->port_srv_auth_block->getLogin() &&
 			(aPb->find(tags->password_enc) || aPb->find(tags->password)))
 		{
 			authPort->port_srv_auth_block->setPluginName("Legacy_Auth");
