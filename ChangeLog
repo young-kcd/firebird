@@ -1,3 +1,7 @@
+ 2012-05-07 15:25  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed the problem reported a while ago in fb-devel by Thomas Steinmaurer ("Fb 3 and RDB$MECHANISM values for SP/SF parameters").
+
  2012-05-06 22:39  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Correction - thanks to Claudio.
