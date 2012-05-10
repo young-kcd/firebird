@@ -1,3 +1,7 @@
+ 2012-05-09 13:55  dimitr 
+   M src/jrd/cmp.cpp
+Fixed my patch for CORE-3777 to cure the unexpectedly introduced regression.
+
  2012-05-03 21:24  hvlad 
    M src/utilities/ntrace/TracePluginImpl.cpp
 Removed accidentally committed code.
