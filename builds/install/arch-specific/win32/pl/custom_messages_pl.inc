@@ -15,6 +15,7 @@ pl.UseApplicationTaskMsg=&Aplikacja
 pl.TaskGroupDescription=Uruchamienie Firebird'a jako:
 pl.UseServiceTask=&Us³uga
 pl.AutoStartTask=Uruchamianie &Firebird'a automatycznie przy ka¿dym starcie systemu
+pl.SuperClassicTask="Use SuperClassic?"
 pl.CopyFbClientToSysTask=Kopiowanie &biblioteki klienta Firebird katalogu <system>
 pl.CopyFbClientAsGds32Task=Wygenerowanie biblioteki klienta jako GDS32.DLL do &obs³ugiwania starszych aplikacji
 pl.InstallCPLAppletTask=Instalacja apletu w oknie &Panel sterowania
@@ -70,3 +71,8 @@ pl.RunISQL=Uruchom Interactive SQL - narzêdzie wiersza poleceñ
 
 pl.ReadmeFile=czytajto.txt
 pl.InstallationReadmeFile=instalacja_czytajto.txt
+
+pl.RunCS=Uruchom Firebird Classic server
+pl.RunSC=Uruchom Firebird SuperClassic server
+pl.RunSS=Uruchom Firebird SuperServer
+
