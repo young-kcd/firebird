@@ -63,6 +63,7 @@ using namespace Jrd;
 namespace Jrd {
 
 
+static const long LONG_POS_MAX = 2147483647;
 static const SINT64 MAX_INT64_LIMIT = MAX_SINT64 / 10;
 static const SINT64 MIN_INT64_LIMIT = MIN_SINT64 / 10;
 static const SINT64 SECONDS_PER_DAY = 24 * 60 * 60;
@@ -9492,9 +9493,20 @@ bool SubstringNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 void SubstringNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_substring);
+
 	GEN_expr(dsqlScratch, expr);
 	GEN_expr(dsqlScratch, start);
-	GEN_expr(dsqlScratch, length);
+
+	if (length)
+		GEN_expr(dsqlScratch, length);
+	else
+	{
+		dsqlScratch->appendUChar(blr_literal);
+		dsqlScratch->appendUChar(blr_long);
+		dsqlScratch->appendUChar(0);
+		dsqlScratch->appendUShort(LONG_POS_MAX);
+		dsqlScratch->appendUShort(LONG_POS_MAX >> 16);
+	}
 }
 
 void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -9503,9 +9515,10 @@ void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 	MAKE_desc(dsqlScratch, &desc1, expr);
 	MAKE_desc(dsqlScratch, &desc2, start);
-	MAKE_desc(dsqlScratch, &desc3, length);
+	if (length)
+		MAKE_desc(dsqlScratch, &desc3, length);
 
-	DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
+	DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, (length ? &desc3 : NULL));
 }
 
 void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)

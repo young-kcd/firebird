@@ -28,6 +28,7 @@
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/align.h"
+#include "../common/cvt.h"
 #include "../common/dsc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
@@ -300,10 +301,17 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 	}
 
 	result->setTextType(value->getTextType());
-	result->setNullable(value->isNullable() || offset->isNullable() || length->isNullable());
+	result->setNullable(value->isNullable() || offset->isNullable() || (length && length->isNullable()));
 
 	if (result->isText())
-		result->dsc_length = fixLength(result, convertLength(value, result)) + sizeof(USHORT);
+	{
+		SLONG len = convertLength(value, result);
+
+		if (length && length->dsc_address)	// constant
+			len = MIN(len, CVT_get_long(length, 0, ERR_post) * maxBytesPerChar(result->getCharSet()));
+
+		result->dsc_length = fixLength(result, len) + sizeof(USHORT);
+	}
 }
 
 

@@ -101,7 +101,6 @@
 const long SHRT_POS_MAX			= 32767;
 const long SHRT_UNSIGNED_MAX	= 65535;
 const long SHRT_NEG_MAX			= 32768;
-const long LONG_POS_MAX			= 2147483647;
 const int POSITIVE	= 0;
 const int NEGATIVE	= 1;
 const int UNSIGNED	= 2;
@@ -6255,7 +6254,7 @@ substring_function
 
 %type <valueExprNode> string_length_opt
 string_length_opt
-	: /* nothing */		{ $$ = MAKE_const_slong(LONG_POS_MAX); }
+	: /* nothing */		{ $$ = NULL; }
 	| FOR value 		{ $$ = $2; }
 	;
 
