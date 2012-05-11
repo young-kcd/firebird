@@ -8468,14 +8468,14 @@ DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 
 void StmtExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	fb_assert(stmt->is<AssignmentNode>());
+	fb_assert(false);
 
 	expr->getDesc(tdbb, csb, desc);
 }
 
 ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	fb_assert(stmt->is<AssignmentNode>());
+	fb_assert(false);
 
 	StmtExprNode* node = FB_NEW(*tdbb->getDefaultPool()) StmtExprNode(*tdbb->getDefaultPool());
 	node->stmt = copier.copy(tdbb, stmt);
@@ -8485,7 +8485,7 @@ ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 
 ValueExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	fb_assert(stmt->is<AssignmentNode>());
+	fb_assert(false);
 
 	doPass1(tdbb, csb, stmt.getAddress());
 	return ValueExprNode::pass1(tdbb, csb);
@@ -8493,7 +8493,7 @@ ValueExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 ValueExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	fb_assert(stmt->is<AssignmentNode>());
+	fb_assert(false);
 
 	StmtNode::doPass2(tdbb, csb, stmt.getAddress(), NULL);
 
@@ -8508,7 +8508,7 @@ ValueExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* StmtExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	fb_assert(stmt->is<AssignmentNode>());
+	fb_assert(false);
 
 	EXE_looper(tdbb, request, stmt.getObject(), true);
 
@@ -11030,42 +11030,104 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	// Get rid of blr_stmt_expr expressions.
 
+	// Coalesce.
 	MissingBoolNode* missing = node->condition->as<MissingBoolNode>();
-	if (!missing)
-		return node;
-
-	StmtExprNode* missingCond = missing->arg->as<StmtExprNode>();
-	if (!missingCond)
-		return node;
-
-	CompoundStmtNode* stmt = missingCond->stmt->as<CompoundStmtNode>();
-	DeclareVariableNode* declStmt = NULL;
-	AssignmentNode* assignStmt;
-
-	if (stmt)
+	if (missing)
 	{
-		if (stmt->statements.getCount() != 2 ||
-			!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
-			!(assignStmt = stmt->statements[1]->as<AssignmentNode>()))
-		{
+		StmtExprNode* missingCond = missing->arg->as<StmtExprNode>();
+		if (!missingCond)
 			return node;
+
+		CompoundStmtNode* stmt = missingCond->stmt->as<CompoundStmtNode>();
+		DeclareVariableNode* declStmt = NULL;
+		AssignmentNode* assignStmt;
+
+		if (stmt)
+		{
+			if (stmt->statements.getCount() != 2 ||
+				!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
+				!(assignStmt = stmt->statements[1]->as<AssignmentNode>()))
+			{
+				return node;
+			}
 		}
+		else if (!(assignStmt = missingCond->stmt->as<AssignmentNode>()))
+			return node;
+
+		VariableNode* var = node->falseValue->as<VariableNode>();
+		VariableNode* var2 = assignStmt->asgnTo->as<VariableNode>();
+
+		if (!var || !var2 || var->varId != var2->varId || (declStmt && declStmt->varId != var->varId))
+			return node;
+
+		CoalesceNode* coalesceNode = FB_NEW(pool) CoalesceNode(pool);
+		coalesceNode->args = FB_NEW(pool) ValueListNode(pool, 2);
+		coalesceNode->args->items[0] = assignStmt->asgnFrom;
+		coalesceNode->args->items[1] = node->trueValue;
+
+		return coalesceNode;
 	}
-	else if (!(assignStmt = missingCond->stmt->as<AssignmentNode>()))
-		return node;
 
-	VariableNode* var = node->falseValue->as<VariableNode>();
-	VariableNode* var2 = assignStmt->asgnTo->as<VariableNode>();
+	// Decode.
+	ComparativeBoolNode* cmp = node->condition->as<ComparativeBoolNode>();
+	if (cmp && cmp->blrOp == blr_eql)
+	{
+		StmtExprNode* cmpCond = cmp->arg1->as<StmtExprNode>();
+		if (!cmpCond)
+			return node;
 
-	if (!var || !var2 || var->varId != var2->varId || (declStmt && declStmt->varId != var->varId))
-		return node;
+		CompoundStmtNode* stmt = cmpCond->stmt->as<CompoundStmtNode>();
+		DeclareVariableNode* declStmt = NULL;
+		AssignmentNode* assignStmt;
 
-	CoalesceNode* coalesceNode = FB_NEW(pool) CoalesceNode(pool);
-	coalesceNode->args = FB_NEW(pool) ValueListNode(pool, 2);
-	coalesceNode->args->items[0] = assignStmt->asgnFrom;
-	coalesceNode->args->items[1] = node->trueValue;
+		if (stmt)
+		{
+			if (stmt->statements.getCount() != 2 ||
+				!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
+				!(assignStmt = stmt->statements[1]->as<AssignmentNode>()))
+			{
+				return node;
+			}
+		}
+		else if (!(assignStmt = cmpCond->stmt->as<AssignmentNode>()))
+			return node;
 
-	return coalesceNode;
+		VariableNode* var = assignStmt->asgnTo->as<VariableNode>();
+
+		if (!var || (declStmt && declStmt->varId != var->varId))
+			return node;
+
+		DecodeNode* decodeNode = FB_NEW(pool) DecodeNode(pool);
+		decodeNode->test = assignStmt->asgnFrom;
+		decodeNode->conditions = FB_NEW(pool) ValueListNode(pool, 0u);
+		decodeNode->values = FB_NEW(pool) ValueListNode(pool, 0u);
+
+		decodeNode->conditions->add(cmp->arg2);
+		decodeNode->values->add(node->trueValue);
+
+		ValueExprNode* last;
+
+		while ((node = (last = node->falseValue)->as<ValueIfNode>()))
+		{
+			ComparativeBoolNode* cmp = node->condition->as<ComparativeBoolNode>();
+			if (!cmp || cmp->blrOp != blr_eql)
+				break;
+
+			VariableNode* var2 = cmp->arg1->as<VariableNode>();
+
+			if (!var2 || var2->varId != var->varId)
+				break;
+
+			decodeNode->conditions->add(cmp->arg2);
+			decodeNode->values->add(node->trueValue);
+		}
+
+		decodeNode->values->add(last);
+
+		return decodeNode;
+	}
+
+	return node;
 }
 
 void ValueIfNode::print(string& text) const
