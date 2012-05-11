@@ -7712,6 +7712,9 @@ bool ParameterNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) con
 void ParameterNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	*desc = message->format->fmt_desc[argNumber];
+	// Must reset dsc_address because it's used in others places to read literals, but here it's an
+	// offset in the message.
+	desc->dsc_address = NULL;
 }
 
 ValueExprNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
