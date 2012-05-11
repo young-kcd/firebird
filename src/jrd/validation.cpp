@@ -1402,6 +1402,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	}
 
 	const bool unique = (root_page.irt_rpt[id].irt_flags & (irt_unique | idx_primary));
+	const bool descending = (root_page.irt_rpt[id].irt_flags & irt_descending);
 
 	temporary_key nullKey, *null_key = 0;
 	if (unique && tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11)
@@ -1540,6 +1541,47 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				else if (*p < *q) {
 					duplicateNode = false;
 					break;
+				}
+			}
+
+			// Two checks below are about case where one (shorter) key is
+			// a full prefix of another (longer) key, for example:
+			// 'aa' and 'aaa', '' and 'a', etc
+
+			// in ascending index short key is less then long key ('aa' < 'aaa')
+			// the only exception is end-of-level node with zero length
+
+			if (!firstNode && !descending && !node.isEndLevel && 
+				node.prefix < key.key_length && node.length == 0)
+			{
+				duplicateNode = false;
+				corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+						id + 1, next, page->btr_level, __FILE__, __LINE__);
+			}
+
+			// in descending index short key is greater then long key ('aaa' < 'aa')
+			// the only exception is first node after start-of-level node at 
+			// non-leaf level (also known as degenerate node)
+
+			if (!firstNode && descending && 
+				node.prefix == key.key_length && node.length > 0)
+			{
+				bool ok = (page->btr_left_sibling == 0 && page->btr_level > 0 && 
+						   key.key_length == 0);
+				if (ok)
+				{
+					UCHAR* p = BTreeNode::getPointerFirstNode(page);
+
+					IndexNode first;
+					p = BTreeNode::readNode(&first, p, flags, false);
+					ok = (node.nodePointer == p);
+				}
+
+				if (!ok)
+				{
+					duplicateNode = false;
+					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 			}
 
