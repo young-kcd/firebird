@@ -1,3 +1,37 @@
+ 2012-05-10 16:05  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/parse.y
+   M src/jrd/DataTypeUtil.cpp
+Fixed CORE-3672 - Computed index by substring function for long columns.
+
+ 2012-05-10 10:50  paul_reeves 
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/custom_messages_ba.inc
+   M builds/install/arch-specific/win32/de/custom_messages_de.inc
+   M builds/install/arch-specific/win32/de/installation_liesmich.txt
+   M builds/install/arch-specific/win32/de/liesmich.txt
+   M builds/install/arch-specific/win32/es/custom_messages_es.inc
+   M builds/install/arch-specific/win32/es/leame.txt
+   M builds/install/arch-specific/win32/es/leame_instalacion.txt
+   M builds/install/arch-specific/win32/fr/custom_messages_fr.inc
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+   M builds/install/arch-specific/win32/hu/custom_messages_hu.inc
+   M builds/install/arch-specific/win32/hu/olvass_el.txt
+   M builds/install/arch-specific/win32/hu/telepitesi_segedlet.txt
+   M builds/install/arch-specific/win32/it/custom_messages_it.inc
+   M builds/install/arch-specific/win32/it/leggimi.txt
+   M builds/install/arch-specific/win32/it/leggimi_installazione.txt
+   M builds/install/arch-specific/win32/pl/custom_messages_pl.inc
+   M builds/install/arch-specific/win32/pl/czytajto.txt
+   M builds/install/arch-specific/win32/pl/instalacja_czytajto.txt
+   M builds/install/arch-specific/win32/pt/custom_messages_pt.inc
+   M builds/install/arch-specific/win32/pt/instalacao_leia-me.txt
+   M builds/install/arch-specific/win32/pt/leia-me.txt
+   M builds/install/arch-specific/win32/si/custom_messages_si.inc
+Update the i18n files to make them relevant to Fb 3.0 alpha status.
+
  2012-05-07 15:25  asfernandes 
    M src/dsql/DdlNodes.epp
 Fixed the problem reported a while ago in fb-devel by Thomas Steinmaurer ("Fb 3 and RDB$MECHANISM values for SP/SF parameters").
