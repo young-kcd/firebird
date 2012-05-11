@@ -4571,6 +4571,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 
 								if (node.length != 0 ||
 									node.prefix != prevJumpNode.prefix + prevJumpNode.length ||
+									node.prefix < jumpKey.key_length ||
 									jumpNode.prefix != prevJumpNode.prefix + prevJumpNode.length ||
 									node.isEndBucket || node.isEndLevel)
 								{
