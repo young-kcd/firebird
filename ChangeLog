@@ -1,3 +1,20 @@
+ 2012-05-11 19:39  hvlad 
+   M src/jrd/btr.cpp
+Fixed bug CORE-3841 : Corrupted database after inserting rows.
+It should also fix CORE-3839 : Values disappearing from index
+
+ 2012-05-11 19:38  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-3844 : Validation not detects one specific case of index corruption
+
+ 2012-05-11 16:13  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Disable blr_stmt_expr (re-enabled with CORE-3812 changes) and implement blr conversion for DECODE.
+
+ 2012-05-11 13:58  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed problem with CORE-3672 and parameters.
+
  2012-05-10 16:05  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/parse.y
