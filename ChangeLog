@@ -1,3 +1,12 @@
+ 2012-05-11 19:34  hvlad 
+   M src/jrd/btr.cpp
+Fixed bug CORE-3841 : Corrupted database after inserting rows.
+It should also fix CORE-3839 : Values disappearing from index
+
+ 2012-05-11 19:32  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-3844 : Validation not detects one specific case of index corruption
+
  2012-05-09 13:55  dimitr 
    M src/jrd/cmp.cpp
 Fixed my patch for CORE-3777 to cure the unexpectedly introduced regression.
