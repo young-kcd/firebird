@@ -6232,8 +6232,9 @@ void JTransaction::freeEngineData(Firebird::IStatus* user_status)
 				tdbb->getDatabase()->dbb_ast_flags & DBB_shutdown ||
 				tdbb->getAttachment()->att_flags & ATT_shutdown)
 			{
+				TraceTransactionEnd trace(transaction, false, false);
 				EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, false, false);
-				TRA_release_transaction(tdbb, transaction);
+				TRA_release_transaction(tdbb, transaction, &trace);
 			}
 			else
 				TRA_rollback(tdbb, transaction, false, false);
@@ -6286,8 +6287,9 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 			if ((transaction->tra_flags & TRA_prepared) || (dbb->dbb_ast_flags & DBB_shutdown) ||
 				(att_flags & ATT_shutdown))
 			{
+				TraceTransactionEnd trace(transaction, false, false); // need ability to indicate prepared (in limbo) transaction
 				EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, false, true);
-				TRA_release_transaction(tdbb, transaction);
+				TRA_release_transaction(tdbb, transaction, &trace);
 			}
 			else if (force_flag)
 				TRA_rollback(tdbb, transaction, false, true);
@@ -6307,7 +6309,8 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 		attachment->att_dbkey_trans = NULL;
 		if ((dbb->dbb_ast_flags & DBB_shutdown) || (att_flags & ATT_shutdown))
 		{
-			TRA_release_transaction(tdbb, trans_dbk);
+			TraceTransactionEnd trace(trans_dbk, false, false);
+			TRA_release_transaction(tdbb, trans_dbk, &trace);
 		}
 		else
 		{

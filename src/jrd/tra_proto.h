@@ -29,6 +29,7 @@
 namespace Jrd {
 	class Attachment;
 	class Database;
+	class TraceTransactionEnd;
 }
 
 bool	TRA_active_transactions(Jrd::thread_db*, Jrd::Database*);
@@ -50,7 +51,7 @@ void	TRA_post_resources(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::ResourceList&);
 bool	TRA_precommited(Jrd::thread_db*, SLONG, SLONG);
 void	TRA_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 Jrd::jrd_tra*	TRA_reconnect(Jrd::thread_db*, const UCHAR*, USHORT);
-void	TRA_release_transaction(Jrd::thread_db*, Jrd::jrd_tra*);
+void	TRA_release_transaction(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceTransactionEnd*);
 void	TRA_rollback(Jrd::thread_db*, Jrd::jrd_tra*, const bool, const bool);
 void	TRA_set_state(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, SSHORT);
 int		TRA_snapshot_state(Jrd::thread_db*, const Jrd::jrd_tra*, SLONG);
