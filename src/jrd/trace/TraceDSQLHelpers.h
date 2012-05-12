@@ -176,7 +176,9 @@ public:
 		m_attachment(attachment),
 		m_request(request)
 	{
-		m_need_trace = m_request->req_traced && TraceManager::need_dsql_execute(m_attachment);
+		m_need_trace = m_request->req_traced && TraceManager::need_dsql_execute(m_attachment) && 
+					   m_request->req_request && (m_request->req_request->req_flags & req_active);
+
 		if (!m_need_trace)
 		{
 			m_request->req_fetch_baseline = NULL;
@@ -188,12 +190,6 @@ public:
 
 	~TraceDSQLFetch()
 	{
-		// don't trace fetch after EOS
-		if (m_request && m_request->req_request && 
-			!(m_request->req_request->req_flags & req_active))
-		{
-			return;
-		}
 		fetch(true, res_failed);
 	}
 
