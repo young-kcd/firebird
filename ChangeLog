@@ -1,3 +1,12 @@
+ 2012-05-11 19:47  hvlad 
+   M src/jrd/btr.cpp
+Fixed bug CORE-3841 : Corrupted database after inserting rows.
+It should also fix CORE-3839 : Values disappearing from index
+
+ 2012-05-11 19:47  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-3844 : Validation not detects one specific case of index corruption
+
  2012-04-27 16:30  dimitr 
    M src/dsql/pass1.cpp
 Fixed CORE-3834: Usage of a NATURAL JOIN with a derived table crashes the server.
