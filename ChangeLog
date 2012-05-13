@@ -1,3 +1,7 @@
+ 2012-05-12 09:18  hvlad 
+   M src/jrd/trace/TraceDSQLHelpers.h
+Fixed bug CORE-3845 : Interruption of 'heavy query' leads to 0 ms (zero duration) in it`s statistics in trace log
+
  2012-05-11 19:34  hvlad 
    M src/jrd/btr.cpp
 Fixed bug CORE-3841 : Corrupted database after inserting rows.
