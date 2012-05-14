@@ -301,14 +301,17 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 	}
 
 	result->setTextType(value->getTextType());
-	result->setNullable(value->isNullable() || offset->isNullable() || (length && length->isNullable()));
+	result->setNullable(value->isNullable() || offset->isNullable() || length->isNullable());
 
 	if (result->isText())
 	{
 		SLONG len = convertLength(value, result);
 
-		if (length && length->dsc_address)	// constant
-			len = MIN(len, CVT_get_long(length, 0, ERR_post) * maxBytesPerChar(result->getCharSet()));
+		if (length->dsc_address)	// constant
+		{
+			SLONG constant = MIN(MAX_COLUMN_SIZE, CVT_get_long(length, 0, ERR_post));
+			len = MIN(len, constant * maxBytesPerChar(result->getCharSet()));
+		}
 
 		result->dsc_length = fixLength(result, len) + sizeof(USHORT);
 	}

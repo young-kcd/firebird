@@ -9518,10 +9518,10 @@ void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 	MAKE_desc(dsqlScratch, &desc1, expr);
 	MAKE_desc(dsqlScratch, &desc2, start);
-	if (length)
+	if (length && length->is<LiteralNode>())
 		MAKE_desc(dsqlScratch, &desc3, length);
 
-	DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, (length ? &desc3 : NULL));
+	DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
 }
 
 void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
