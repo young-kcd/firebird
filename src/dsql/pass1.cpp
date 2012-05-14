@@ -3339,9 +3339,9 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 	{
 		if ((node1->nod_type == nod_derived_field) && (node2->nod_type == nod_derived_field))
 		{
-			const USHORT scope_level1 = (USHORT)(U_IPTR)node1->nod_arg[e_derived_field_scope];
-			const USHORT scope_level2 = (USHORT)(U_IPTR)node2->nod_arg[e_derived_field_scope];
-			if (scope_level1 != scope_level2)
+			const dsql_ctx* context1 = (dsql_ctx*) node1->nod_arg[e_derived_field_context];
+			const dsql_ctx* context2 = (dsql_ctx*) node2->nod_arg[e_derived_field_context];
+			if (context1->ctx_context != context2->ctx_context)
 				return false;
 
 			const dsql_str* alias1 = (dsql_str*) node1->nod_arg[e_derived_field_name];
