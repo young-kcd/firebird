@@ -698,15 +698,14 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public AutoIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
+class TraceFailedConnection : public AutoIface<TraceDatabaseConnection, FB_TRACE_CONNECTION_VERSION>
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
 
-	// TraceConnection implementation
-	virtual int FB_CARG getConnectionID()				{ return 0; }
+	// TraceBaseConnection implementation
+	virtual ntrace_connection_kind_t FB_CARG getKind()	{ return connection_database; };
 	virtual int FB_CARG getProcessID()					{ return m_options->dpb_remote_pid; }
-	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
 	virtual const char* FB_CARG getUserName()			{ return m_id.usr_user_name.c_str(); }
 	virtual const char* FB_CARG getRoleName()			{ return m_options->dpb_role_name.c_str(); }
 	virtual const char* FB_CARG getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
@@ -714,6 +713,10 @@ public:
 	virtual const char* FB_CARG getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
 	virtual int FB_CARG getRemoteProcessID()			{ return m_options->dpb_remote_pid; }
 	virtual const char* FB_CARG getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
+
+	// TraceDatabaseConnection implementation
+	virtual int FB_CARG getConnectionID()				{ return 0; }
+	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
 
 private:
 	const char* m_filename;
@@ -894,13 +897,22 @@ static ISC_STATUS successful_completion(Firebird::IStatus* s, ISC_STATUS return_
 
 
 // Stuff exception transliterated to the client charset.
-ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird::IStatus* vector) throw()
+ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird::IStatus* vector,
+			const char* func) throw()
 {
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	USHORT charSet;
-
 	ex.stuffException(vector);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	if (func && attachment && attachment->att_trace_manager->needs(TRACE_EVENT_ERROR))
+	{
+		TraceConnectionImpl conn(attachment);
+		TraceStatusVectorImpl traceStatus(vector->get());
+		
+		attachment->att_trace_manager->event_error(&conn, &traceStatus, func);
+	}
+
+
+	USHORT charSet;
 	if (!attachment || (charSet = attachment->att_client_charset) == CS_METADATA ||
 		charSet == CS_NONE)
 	{
@@ -1012,33 +1024,60 @@ const char SINGLE_QUOTE			= '\'';
 //static const char* DECRYPT = "decrypt";
 
 
+static void trace_warning(thread_db* tdbb, Firebird::IStatus* userStatus, const char* func)
+{
+	Jrd::Attachment* att = tdbb->getAttachment();
+	if (!att)
+		return;
+
+	if (att->att_trace_manager->needs(TRACE_EVENT_ERROR))
+	{
+		TraceStatusVectorImpl traceStatus(userStatus->get());
+		
+		if (traceStatus.hasWarning())
+		{
+			TraceConnectionImpl conn(att);
+			att->att_trace_manager->event_error(&conn, &traceStatus, func);
+		}
+	}
+}
+
+
 static void trace_failed_attach(TraceManager* traceManager, const char* filename,
-	const DatabaseOptions& options, bool create, bool no_priv)
+	const DatabaseOptions& options, bool create, const ISC_STATUS* status)
 {
 	// Report to Trace API that attachment has not been created
 	const char* origFilename = filename;
 	if (options.dpb_org_filename.hasData())
 		origFilename = options.dpb_org_filename.c_str();
 
+	TraceFailedConnection conn(origFilename, &options);
+	TraceStatusVectorImpl traceStatus(status);
+
+	const ntrace_result_t result = (status[1] == isc_login || status[1] == isc_no_priv) ? 
+									res_unauthorized : res_failed;
+	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
+
 	if (!traceManager)
 	{
 		TraceManager tempMgr(origFilename);
 
 		if (tempMgr.needs(TRACE_EVENT_ATTACH))
-		{
-			TraceFailedConnection conn(origFilename, &options);
-			tempMgr.event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
-		}
+			tempMgr.event_attach(&conn, create, result);
+
+		if (tempMgr.needs(TRACE_EVENT_ERROR))
+			tempMgr.event_error(&conn, &traceStatus, func);
 	}
 	else
 	{
 		if (traceManager->needs(TRACE_EVENT_ATTACH))
-		{
-			TraceFailedConnection conn(origFilename, &options);
-			traceManager->event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
-		}
+			traceManager->event_attach(&conn, create, result);
+
+		if (traceManager->needs(TRACE_EVENT_ERROR))
+			traceManager->event_error(&conn, &traceStatus, func);
 	}
 }
+
 
 namespace Jrd {
 
@@ -1131,9 +1170,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			// Check for correct credentials supplied
 			getUserInfo(userId, options, &config);
 		}
-		catch (const Exception&)
+		catch (const Exception& ex)
 		{
-			trace_failed_attach(NULL, filename, options, false, true);
+			ex.stuffException(user_status);
+			trace_failed_attach(NULL, filename, options, false, user_status->get());
 			throw;
 		}
 
@@ -1141,7 +1181,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(NULL, filename, options, false, false);
+			trace_failed_attach(NULL, filename, options, false, tdbb->tdbb_status_vector);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
@@ -1706,10 +1746,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		}	// try
 		catch (const Exception& ex)
 		{
-			const ISC_STATUS exc = ex.stuffException(user_status);
-			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+			ex.stuffException(user_status);
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-				filename, options, false, no_priv);
+				filename, options, false, user_status->get());
 
 			dbb->dbb_sync.lock(NULL, SYNC_EXCLUSIVE);
 			dbbGuard.unlock();
@@ -1754,7 +1793,7 @@ void JBlob::getInfo(IStatus* user_status,
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JBlob::getInfo");
 			return;
 		}
 	}
@@ -1812,7 +1851,7 @@ void JBlob::freeEngineData(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JBlob::freeEngineData");
 			return;
 		}
 	}
@@ -1876,7 +1915,7 @@ void JEvents::freeEngineData(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JEvents::freeEngineData");
 			return;
 		}
 	}
@@ -1912,7 +1951,7 @@ void JAttachment::cancelOperation(IStatus* user_status, int option)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::cancelOperation");
 			return;
 		}
 	}
@@ -1951,7 +1990,7 @@ void JBlob::close(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JBlob::close");
 			return;
 		}
 	}
@@ -1990,7 +2029,7 @@ void JTransaction::commit(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JTransaction::commit");
 			return;
 		}
 	}
@@ -2027,7 +2066,7 @@ void JTransaction::commitRetaining(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JTransaction::commitRetaining");
 			return;
 		}
 	}
@@ -2115,29 +2154,21 @@ JRequest* JAttachment::compileRequest(IStatus* user_status,
 		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
+		TraceBlrCompile trace(tdbb, blr_length, blr);
 		try
 		{
-			TraceBlrCompile trace(tdbb, blr_length, blr);
-			try
-			{
-				jrd_req* request = NULL;
-				JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
-				stmt = request->getStatement();
+			jrd_req* request = NULL;
+			JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
+			stmt = request->getStatement();
 
-				trace.finish(request, res_successful);
-			}
-			catch (const Exception& ex)
-			{
-				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status);
-				const bool no_priv = (exc == isc_no_priv);
-				trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
-
-				return NULL;
-			}
+			trace.finish(request, res_successful);
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JAttachment::compileRequest");
+			const bool no_priv = (exc == isc_no_priv);
+			trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
+
 			return NULL;
 		}
 	}
@@ -2185,7 +2216,7 @@ JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::createBlob");
 			return NULL;
 		}
 	}
@@ -2273,9 +2304,10 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			// Check for correct credentials supplied
 			getUserInfo(userId, options, &config);
 		}
-		catch (const Exception&)
+		catch (const Exception& ex)
 		{
-			trace_failed_attach(NULL, filename, options, true, true);
+			ex.stuffException(user_status);
+			trace_failed_attach(NULL, filename, options, true, user_status->get());
 			throw;
 		}
 
@@ -2283,7 +2315,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		const VdnResult vdn = verifyDatabaseName(expanded_name, tdbb->tdbb_status_vector, is_alias);
 		if (!is_alias && vdn == VDN_FAIL)
 		{
-			trace_failed_attach(NULL, filename, options, true, false);
+			trace_failed_attach(NULL, filename, options, true, tdbb->tdbb_status_vector);
 			status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
@@ -2549,10 +2581,9 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		}	// try
 		catch (const Exception& ex)
 		{
-			const ISC_STATUS exc = ex.stuffException(user_status);
-			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+			ex.stuffException(user_status);
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-				filename, options, true, no_priv);
+				filename, options, true, user_status->get());
 
 			dbb->dbb_sync.lock(NULL, SYNC_EXCLUSIVE);
 			dbbGuard.unlock();
@@ -2596,7 +2627,7 @@ void JAttachment::getInfo(IStatus* user_status, unsigned int item_length, const 
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::getInfo");
 			return;
 		}
 	}
@@ -2708,7 +2739,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::freeEngineData");
 			return;
 		}
 	}
@@ -2842,7 +2873,7 @@ void JAttachment::drop(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::drop");
 			return;
 		}
 	}
@@ -2878,17 +2909,19 @@ unsigned int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length,
 		try
 		{
 			len = getHandle()->BLB_get_segment(tdbb, buffer, buffer_length);
-
-			if (getHandle()->blb_flags & BLB_eof)
-				status_exception::raise(Arg::Gds(isc_segstr_eof));
-			else if (getHandle()->getFragmentSize())
-				status_exception::raise(Arg::Gds(isc_segment));
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JBlob::getSegment");
 			return len;
 		}
+
+		// Don't trace errors below as it is not real errors but kind of return value
+
+		if (getHandle()->blb_flags & BLB_eof)
+			status_exception::raise(Arg::Gds(isc_segstr_eof));
+		else if (getHandle()->getFragmentSize())
+			status_exception::raise(Arg::Gds(isc_segment));
 	}
 	catch (const Exception& ex)
 	{
@@ -2940,7 +2973,7 @@ int JAttachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arr
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::getSlice");
 			return return_length;
 		}
 	}
@@ -2987,7 +3020,7 @@ JBlob* JAttachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* 
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::openBlob");
 			return NULL;
 		}
 	}
@@ -3030,7 +3063,7 @@ void JTransaction::prepare(IStatus* user_status, unsigned int msg_length, const 
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JTransaction::prepare");
 			return;
 		}
 	}
@@ -3067,7 +3100,7 @@ void JBlob::putSegment(IStatus* user_status, unsigned int buffer_length, const v
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JBlob::putSegment");
 			return;
 		}
 	}
@@ -3111,7 +3144,7 @@ void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* ar
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::putSlice");
 			return;
 		}
 	}
@@ -3160,7 +3193,7 @@ JEvents* JAttachment::queEvents(IStatus* user_status, Firebird::IEventCallback* 
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::queEvents");
 			return ev;
 		}
 	}
@@ -3202,7 +3235,7 @@ void JRequest::receive(IStatus* user_status, int level, unsigned int msg_type,
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JRequest::receive");
 			return;
 		}
 	}
@@ -3242,7 +3275,7 @@ JTransaction* JAttachment::reconnectTransaction(IStatus* user_status, unsigned i
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::reconnectTransaction");
 			return NULL;
 		}
 	}
@@ -3305,7 +3338,7 @@ void JRequest::freeEngineData(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JRequest::freeEngineData");
 			return;
 		}
 	}
@@ -3345,7 +3378,7 @@ void JRequest::getInfo(IStatus* user_status, int level, unsigned int itemsLength
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JRequest::getInfo");
 			return;
 		}
 	}
@@ -3382,7 +3415,7 @@ void JTransaction::rollbackRetaining(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JTransaction::rollbackRetaining");
 			return;
 		}
 	}
@@ -3421,7 +3454,7 @@ void JTransaction::rollback(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JTransaction::rollback");
 			return;
 		}
 	}
@@ -3479,7 +3512,7 @@ int JBlob::seek(IStatus* user_status, int mode, int offset)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JBlob::seek");
 			return result;
 		}
 	}
@@ -3522,7 +3555,7 @@ void JRequest::send(IStatus* user_status, int level, unsigned int msg_type,
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JRequest::send");
 			return;
 		}
 	}
@@ -3764,7 +3797,7 @@ void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, i
 			}
 			catch (const Exception& ex)
 			{
-				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status);
+				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JRequest::startAndSend");
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 				trace.finish(no_priv ? res_unauthorized : res_failed);
 
@@ -3773,7 +3806,7 @@ void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, i
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JRequest::startAndSend");
 			return;
 		}
 	}
@@ -3825,7 +3858,7 @@ void JRequest::start(IStatus* user_status, Firebird::ITransaction* tra, int leve
 			}
 			catch (const Exception& ex)
 			{
-				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status);
+				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JRequest::start");
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 				trace.finish(no_priv ? res_unauthorized : res_failed);
 
@@ -3834,7 +3867,7 @@ void JRequest::start(IStatus* user_status, Firebird::ITransaction* tra, int leve
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JRequest::start");
 			return;
 		}
 	}
@@ -4098,7 +4131,7 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::transactRequest");
 			return;
 		}
 	}
@@ -4137,7 +4170,7 @@ void JTransaction::getInfo(IStatus* user_status,
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JTransaction::getInfo");
 			return;
 		}
 	}
@@ -4177,7 +4210,7 @@ void JRequest::unwind(IStatus* user_status, int level)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JRequest::unwind");
 			return;
 		}
 	}
@@ -4206,9 +4239,10 @@ JStatement* JAttachment::allocateStatement(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::allocateStatement");
 			return NULL;
 		}
+		trace_warning(tdbb, user_status, "JAttachment::allocateStatement");
 	}
 	catch (const Exception& ex)
 	{
@@ -4306,9 +4340,10 @@ JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* 
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JStatement::execute");
 			return NULL;
 		}
+		trace_warning(tdbb, user_status, "JStatement::execute");
 	}
 	catch (const Exception& ex)
 	{
@@ -4375,9 +4410,10 @@ JTransaction* JAttachment::execute(IStatus* user_status, Firebird::ITransaction*
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JAttachment::execute");
 			return NULL;
 		}
+		trace_warning(tdbb, user_status, "JAttachment::execute");
 	}
 	catch (const Exception& ex)
 	{
@@ -4412,9 +4448,10 @@ int JStatement::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JStatement::fetch");
 			return 0;
 		}
+		trace_warning(tdbb, user_status, "JStatement::fetch");
 	}
 	catch (const Exception& ex)
 	{
@@ -4445,7 +4482,7 @@ void JStatement::freeEngineData(IStatus* user_status, unsigned int option)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JStatement::freeEngineData");
 			return;
 		}
 	}
@@ -4497,9 +4534,10 @@ void JStatement::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JStatement::prepare");
 			return;
 		}
+		trace_warning(tdbb, user_status, "JStatement::prepare");
 	}
 	catch (const Exception& ex)
 	{
@@ -4526,7 +4564,7 @@ unsigned JStatement::getType(IStatus* userStatus)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, userStatus);
+			transliterateException(tdbb, ex, userStatus, "JStatement::getType");
 			return ret;
 		}
 	}
@@ -4557,9 +4595,10 @@ const char* JStatement::getPlan(IStatus* userStatus, bool detailed)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, userStatus);
+			transliterateException(tdbb, ex, userStatus, "JStatement::getPlan");
 			return ret;
 		}
+		trace_warning(tdbb, userStatus, "JStatement::getPlan");
 	}
 	catch (const Exception& ex)
 	{
@@ -4587,9 +4626,10 @@ const IParametersMetadata* JStatement::getInputParameters(IStatus* userStatus)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, userStatus);
+			transliterateException(tdbb, ex, userStatus, "JStatement::getInputParameters");
 			return ret;
 		}
+		trace_warning(tdbb, userStatus, "JStatement::getInputParameters");
 	}
 	catch (const Exception& ex)
 	{
@@ -4618,9 +4658,10 @@ const IParametersMetadata* JStatement::getOutputParameters(IStatus* userStatus)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, userStatus);
+			transliterateException(tdbb, ex, userStatus, "JStatement::getOutputParameters");
 			return ret;
 		}
+		trace_warning(tdbb, userStatus, "JStatement::getOutputParameters");
 	}
 	catch (const Exception& ex)
 	{
@@ -4649,7 +4690,7 @@ ISC_UINT64 JStatement::getAffectedRecords(IStatus* userStatus)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, userStatus);
+			transliterateException(tdbb, ex, userStatus, "JStatement::getAffectedRecords");
 			return ret;
 		}
 	}
@@ -4677,9 +4718,10 @@ void JStatement::setCursorName(IStatus* user_status, const char* cursor)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JStatement::setCursorName");
 			return;
 		}
+		trace_warning(tdbb, user_status, "JStatement::setCursorName");
 	}
 	catch (const Exception& ex)
 	{
@@ -4706,9 +4748,10 @@ void JStatement::getInfo(IStatus* user_status,
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JStatement::getInfo");
 			return;
 		}
+		trace_warning(tdbb, user_status, "JStatement::getInfo");
 	}
 	catch (const Exception& ex)
 	{
@@ -6243,7 +6286,7 @@ void JTransaction::freeEngineData(Firebird::IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status);
+			transliterateException(tdbb, ex, user_status, "JTransaction::freeEngineData");
 			return;
 		}
 	}
@@ -6664,7 +6707,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb)
 {
-	transliterateException(tdbb, ex, userStatus);
+	transliterateException(tdbb, ex, userStatus, NULL);
 
 	try
 	{
@@ -7140,7 +7183,7 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 			if (transliterate)
 			{
 				LocalStatus tempStatus;
-				transliterateException(tdbb, ex, &tempStatus);
+				transliterateException(tdbb, ex, &tempStatus, "JAttachment::startTransaction");
 				status_exception::raise(tempStatus.get());
 			}
 			throw;

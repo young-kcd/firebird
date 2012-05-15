@@ -63,51 +63,53 @@ public:
 	static size_t pluginsCount()
 	{ return factories->getCount(); }
 
-	void event_attach(TraceConnection* connection, bool create_db,
+	void event_attach(TraceDatabaseConnection* connection, bool create_db,
 		ntrace_result_t att_result);
 
-	void event_detach(TraceConnection* connection, bool drop_db);
+	void event_detach(TraceDatabaseConnection* connection, bool drop_db);
 
 	/* Start/end transaction */
-	void event_transaction_start(TraceConnection* connection, TraceTransaction* transaction,
+	void event_transaction_start(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
 
-	void event_transaction_end(TraceConnection* connection, TraceTransaction* transaction,
+	void event_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		bool commit, bool retain_context, ntrace_result_t tra_result);
 
-	void event_set_context(TraceConnection* connection,
+	void event_set_context(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceContextVariable* variable);
 
-	void event_proc_execute(TraceConnection* connection, TraceTransaction* transaction,
+	void event_proc_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceProcedure* procedure, bool started, ntrace_result_t proc_result);
 
-	void event_trigger_execute(TraceConnection* connection, TraceTransaction* transaction,
+	void event_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceTrigger* trigger, bool started, ntrace_result_t trig_result);
 
-	void event_blr_compile(TraceConnection* connection,
+	void event_blr_compile(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
 
-	void event_blr_execute(TraceConnection* connection,
+	void event_blr_execute(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_result_t req_result);
 
-	void event_dyn_execute(TraceConnection* connection,
+	void event_dyn_execute(TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceDYNRequest* request,
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
 
-	void event_service_attach(TraceService* service, ntrace_result_t att_result);
+	void event_service_attach(TraceServiceConnection* service, ntrace_result_t att_result);
 
-	void event_service_start(TraceService* service,
+	void event_service_start(TraceServiceConnection* service,
 		size_t switches_length, const char* switches,
 		ntrace_result_t start_result);
 
-	void event_service_query(TraceService* service,
+	void event_service_query(TraceServiceConnection* service,
 		size_t send_item_length, const ntrace_byte_t* send_items,
 		size_t recv_item_length, const ntrace_byte_t* recv_items,
 		ntrace_result_t query_result);
 
-	void event_service_detach(TraceService* service, ntrace_result_t detach_result);
+	void event_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result);
+
+	void event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
 	typedef ntrace_mask_t NotificationNeeds;
 
@@ -207,14 +209,14 @@ private:
 	bool check_result(TracePlugin* plugin, const char* module, const char* function, bool result);
 
 	/* DSQL statement lifecycle. To be moved to public and used directly when DSQL becomes a part of JRD */
-	void event_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,
+	void event_dsql_prepare(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceSQLStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
 
-	void event_dsql_free(TraceConnection* connection,
+	void event_dsql_free(TraceDatabaseConnection* connection,
 		TraceSQLStatement* statement, unsigned short option);
 
-	void event_dsql_execute(TraceConnection* connection, TraceTransaction* transaction,
+	void event_dsql_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
 

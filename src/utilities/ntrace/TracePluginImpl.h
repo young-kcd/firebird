@@ -173,132 +173,138 @@ private:
 	void formatStringArgument(Firebird::string& result, const UCHAR* str, size_t len);
 
 	// register various objects
-	void register_connection(TraceConnection* connection);
+	void register_connection(TraceDatabaseConnection* connection);
 	void register_transaction(TraceTransaction* transaction);
 	void register_sql_statement(TraceSQLStatement* statement);
 	void register_blr_statement(TraceBLRStatement* statement);
-	void register_service(TraceService* service);
+	void register_service(TraceServiceConnection* service);
 
-	bool checkServiceFilter(TraceService* service, bool started);
+	bool checkServiceFilter(TraceServiceConnection* service, bool started);
 
 	// Write message to text log file
 	void logRecord(const char* action);
-	void logRecordConn(const char* action, TraceConnection* connection);
-	void logRecordTrans(const char* action, TraceConnection* connection,
+	void logRecordConn(const char* action, TraceDatabaseConnection* connection);
+	void logRecordTrans(const char* action, TraceDatabaseConnection* connection,
 		TraceTransaction* transaction);
-	void logRecordProc(const char* action, TraceConnection* connection,
+	void logRecordProc(const char* action, TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, const char* proc_name);
-	void logRecordStmt(const char* action, TraceConnection* connection,
+	void logRecordStmt(const char* action, TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceStatement* statement,
 		bool isSQL);
-	void logRecordServ(const char* action, TraceService* service);
+	void logRecordServ(const char* action, TraceServiceConnection* service);
+	void logRecordError(const char* action, TraceBaseConnection* connection, TraceStatusVector* status);
 
 	/* Methods which do logging of events to file */
 	void log_init();
 	void log_finalize();
 
 	void log_event_attach(
-		TraceConnection* connection, ntrace_boolean_t create_db,
+		TraceDatabaseConnection* connection, ntrace_boolean_t create_db,
 		ntrace_result_t att_result);
 	void log_event_detach(
-		TraceConnection* connection, ntrace_boolean_t drop_db);
+		TraceDatabaseConnection* connection, ntrace_boolean_t drop_db);
 
 	void log_event_transaction_start(
-		TraceConnection* connection, TraceTransaction* transaction,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
 	void log_event_transaction_end(
-		TraceConnection* connection, TraceTransaction* transaction,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
 
 	void log_event_set_context(
-		TraceConnection* connection, TraceTransaction* transaction,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceContextVariable* variable);
 
 	void log_event_proc_execute(
-		TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 		bool started, ntrace_result_t proc_result);
 
 	void log_event_trigger_execute(
-		TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 		bool started, ntrace_result_t trig_result);
 
 	void log_event_dsql_prepare(
-		TraceConnection* connection, TraceTransaction* transaction,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
 	void log_event_dsql_free(
-		TraceConnection* connection, TraceSQLStatement* statement, unsigned short option);
+		TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned short option);
 	void log_event_dsql_execute(
-		TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
 
 	void log_event_blr_compile(
-		TraceConnection* connection,	TraceTransaction* transaction,
+		TraceDatabaseConnection* connection,	TraceTransaction* transaction,
 		TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
 	void log_event_blr_execute(
-		TraceConnection* connection, TraceTransaction* transaction,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceBLRStatement* statement, ntrace_result_t req_result);
 
 	void log_event_dyn_execute(
-		TraceConnection* connection, TraceTransaction* transaction,
+		TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceDYNRequest* request, ntrace_counter_t time_millis,
 		ntrace_result_t req_result);
 
-	void log_event_service_attach(TraceService* service, ntrace_result_t att_result);
-	void log_event_service_start(TraceService* service, size_t switches_length, const char* switches,
+	void log_event_service_attach(TraceServiceConnection* service, ntrace_result_t att_result);
+	void log_event_service_start(TraceServiceConnection* service, size_t switches_length, const char* switches,
 								 ntrace_result_t start_result);
-	void log_event_service_query(TraceService* service, size_t send_item_length,
+	void log_event_service_query(TraceServiceConnection* service, size_t send_item_length,
 								 const ntrace_byte_t* send_items, size_t recv_item_length,
 								 const ntrace_byte_t* recv_items, ntrace_result_t query_result);
-	void log_event_service_detach(TraceService* service, ntrace_result_t detach_result);
+	void log_event_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result);
+
+	void log_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
 	// TracePlugin implementation
 	int FB_CARG release();
 	const char* FB_CARG trace_get_error();
 
 	// Create/close attachment
-	int FB_CARG trace_attach(TraceConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result);
-	int FB_CARG trace_detach(TraceConnection* connection, ntrace_boolean_t drop_db);
+	int FB_CARG trace_attach(TraceDatabaseConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result);
+	int FB_CARG trace_detach(TraceDatabaseConnection* connection, ntrace_boolean_t drop_db);
 
 	// Start/end transaction
-	int FB_CARG trace_transaction_start(TraceConnection* connection, TraceTransaction* transaction,
+	int FB_CARG trace_transaction_start(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
-	int FB_CARG trace_transaction_end(TraceConnection* connection, TraceTransaction* transaction,
+	int FB_CARG trace_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
 
 	// Stored procedure and triggers executing
-	int FB_CARG trace_proc_execute (TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
+	int FB_CARG trace_proc_execute (TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 			bool started, ntrace_result_t proc_result);
-	int FB_CARG trace_trigger_execute(TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
+	int FB_CARG trace_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 			bool started, ntrace_result_t trig_result);
 
 	// Assignment to context variables
-	int FB_CARG trace_set_context(TraceConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable);
+	int FB_CARG trace_set_context(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable);
 
 	// DSQL statement lifecycle
-	int FB_CARG trace_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,
+	int FB_CARG trace_dsql_prepare(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
-	int FB_CARG trace_dsql_free(TraceConnection* connection, TraceSQLStatement* statement, unsigned short option);
-	int FB_CARG trace_dsql_execute(TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
+	int FB_CARG trace_dsql_free(TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned short option);
+	int FB_CARG trace_dsql_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 			bool started, ntrace_result_t req_result);
 
 	// BLR requests
-	int FB_CARG trace_blr_compile(TraceConnection* connection, TraceTransaction* transaction,
+	int FB_CARG trace_blr_compile(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
-	int FB_CARG trace_blr_execute(TraceConnection* connection, TraceTransaction* transaction,
+	int FB_CARG trace_blr_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			TraceBLRStatement* statement, ntrace_result_t req_result);
 
 	// DYN requests
-	int FB_CARG trace_dyn_execute(TraceConnection* connection, TraceTransaction* transaction,
+	int FB_CARG trace_dyn_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result);
 
 	// Using the services
-	int FB_CARG trace_service_attach(TraceService* service, ntrace_result_t att_result);
-	int FB_CARG trace_service_start(TraceService* service, size_t switches_length, const char* switches,
+	int FB_CARG trace_service_attach(TraceServiceConnection* service, ntrace_result_t att_result);
+	int FB_CARG trace_service_start(TraceServiceConnection* service, size_t switches_length, const char* switches,
 			ntrace_result_t start_result);
-	int FB_CARG trace_service_query(TraceService* service, size_t send_item_length,
+	int FB_CARG trace_service_query(TraceServiceConnection* service, size_t send_item_length,
 			const ntrace_byte_t* send_items, size_t recv_item_length,
 			const ntrace_byte_t* recv_items, ntrace_result_t query_result);
-	int FB_CARG trace_service_detach(TraceService* service, ntrace_result_t detach_result);
+	int FB_CARG trace_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result);
+
+	// Errors happened 
+	virtual ntrace_boolean_t FB_CARG trace_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 };
 
 

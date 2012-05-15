@@ -49,17 +49,16 @@ class Database;
 class Attachment;
 class jrd_tra;
 
-class TraceConnectionImpl : public Firebird::AutoIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
+class TraceConnectionImpl : public Firebird::AutoIface<TraceDatabaseConnection, FB_TRACE_CONNECTION_VERSION>
 {
 public:
 	TraceConnectionImpl(const Attachment* att) :
 		m_att(att)
 	{}
 
-	// TraceConnection implementation
-	virtual int FB_CARG getConnectionID();
+	// TraceBaseConnection implementation
+	virtual ntrace_connection_kind_t FB_CARG getKind();
 	virtual int FB_CARG getProcessID();
-	virtual const char* FB_CARG getDatabaseName();
 	virtual const char* FB_CARG getUserName();
 	virtual const char* FB_CARG getRoleName();
 	virtual const char* FB_CARG getCharSet();
@@ -68,6 +67,9 @@ public:
 	virtual int FB_CARG getRemoteProcessID();
 	virtual const char* FB_CARG getRemoteProcessName();
 
+	// TraceDatabaseConnection implementation
+	virtual int FB_CARG getConnectionID();
+	virtual const char* FB_CARG getDatabaseName();
 private:
 	const Attachment* const m_att;
 };
@@ -306,25 +308,28 @@ private:
 };
 
 
-class TraceServiceImpl : public Firebird::AutoIface<TraceService, FB_TRACE_SERVICE_VERSION>
+class TraceServiceImpl : public Firebird::AutoIface<TraceServiceConnection, FB_TRACE_SERVICE_VERSION>
 {
 public:
 	TraceServiceImpl(const Service* svc) :
 		m_svc(svc)
 	{}
 
-	// TraceService implementation
-	virtual ntrace_service_t FB_CARG getServiceID();
-	virtual const char* FB_CARG getServiceMgr();
-	virtual const char* FB_CARG getServiceName();
+	// TraceBaseConnection implementation
+	virtual ntrace_connection_kind_t FB_CARG getKind();
 	virtual const char* FB_CARG getUserName();
 	virtual const char* FB_CARG getRoleName();
+	virtual const char* FB_CARG getCharSet();
 	virtual int FB_CARG getProcessID();
 	virtual const char* FB_CARG getRemoteProtocol();
 	virtual const char* FB_CARG getRemoteAddress();
 	virtual int FB_CARG getRemoteProcessID();
 	virtual const char* FB_CARG getRemoteProcessName();
 
+	// TraceServiceConnection implementation
+	virtual ntrace_service_t FB_CARG getServiceID();
+	virtual const char* FB_CARG getServiceMgr();
+	virtual const char* FB_CARG getServiceName();
 private:
 	const Service* const m_svc;
 };
@@ -341,7 +346,7 @@ public:
 private:
 	PerformanceInfo m_info;
 	TraceCountsArray m_counts;
-	static SINT64 m_dummy_counts[DBB_max_dbb_count];	// Zero-initialized array with zero counts
+	static SINT64 m_dummy_counts[RuntimeStatistics::TOTAL_ITEMS];	// Zero-initialized array with zero counts
 };
 
 
@@ -368,7 +373,7 @@ public:
 	virtual const char* FB_CARG getFirebirdRootDirectory();
 	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
 
-	virtual TraceConnection* FB_CARG getConnection()
+	virtual TraceDatabaseConnection* FB_CARG getConnection()
 	{
 		if (m_attachment)
 			return &m_trace_conn;
@@ -386,6 +391,36 @@ private:
 	const Attachment* const m_attachment;
 };
 
+
+class TraceStatusVectorImpl : public Firebird::AutoIface<TraceStatusVector, FB_TRACE_STATUS_VERSION>
+{
+public:
+	TraceStatusVectorImpl(const ISC_STATUS* status) :
+		m_status(status)
+	{
+	}
+
+	virtual bool FB_CARG hasError() 
+	{
+		return m_status && (m_status[1] != 0);
+	}
+
+	virtual bool FB_CARG hasWarning()
+	{
+		return m_status && (m_status[1] == 0) && (m_status[2] == isc_arg_warning);
+	}
+
+	virtual const ISC_STATUS* FB_CARG getStatus() 
+	{
+		return m_status;
+	}
+
+	virtual const char* FB_CARG getText();
+
+private:
+	const ISC_STATUS* m_status;
+	Firebird::string m_error;
+};
 
 } // namespace Jrd
 

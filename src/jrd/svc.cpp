@@ -60,7 +60,7 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
-//#include "../jrd/trace/TraceService.h"
+
 #include "../common/classes/DbImplementation.h"
 
 // Services table. Empty at BootBuild.

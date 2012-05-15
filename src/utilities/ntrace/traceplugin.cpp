@@ -75,7 +75,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 		TracePluginConfig config;
 		TraceCfgReader::readTraceConfiguration(initInfo->getConfigText(), dbname, config);
 
-		TraceConnection* connection = initInfo->getConnection();
+		TraceDatabaseConnection* connection = initInfo->getConnection();
 		if (connection)
 		{
 			master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
