@@ -1,3 +1,7 @@
+ 2012-05-14 15:18  asfernandes 
+   M src/dsql/pass1.cpp
+Backport fix for CORE-3611 - Wrong data while retrieving from CTEs (or derived tables) with same column names.
+
  2012-05-12 09:18  hvlad 
    M src/jrd/trace/TraceDSQLHelpers.h
 Fixed bug CORE-3845 : Interruption of 'heavy query' leads to 0 ms (zero duration) in it`s statistics in trace log
