@@ -1,3 +1,18 @@
+ 2012-05-15 07:56  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/ntrace.h
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/fbtrace.conf
+   M src/utilities/ntrace/paramtable.h
+   M src/utilities/ntrace/traceplugin.cpp
+Improvement CORE-3539 : TRACE: add ability for logging ERRORs that occur in runtime (lock conflicts, PK/UK/FK violations et al)
+
  2012-05-14 15:45  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/jrd/DataTypeUtil.cpp
