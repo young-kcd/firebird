@@ -1390,11 +1390,13 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		{
 			fb_assert(id >= 0);
 
-			if (temp_rel->rel_fields && id < (int) temp_rel->rel_fields->count())
- 			{
-				const jrd_fld* const field = (*temp_rel->rel_fields)[id];
+			jrd_fld* field;
 
-				if (field && field->fld_default_value && field->fld_not_null)
+			if (temp_rel->rel_fields &&
+				id < (int) temp_rel->rel_fields->count() &&
+				(field = (*temp_rel->rel_fields)[id]))
+ 			{
+				if (field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] = field->fld_default_value;
  			}
  			else if (temp_rel->rel_flags & REL_system)
