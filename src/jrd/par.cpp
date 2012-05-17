@@ -552,8 +552,10 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	const CompilerScratch::csb_repeat* const tail = CMP_csb_element(csb, context);
-	const USHORT stream = tail->csb_stream;
+	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
+		return NULL;
+
+	const USHORT stream = csb->csb_rpt[context].csb_stream;
 
     /* CVC: This is just another case of a custom function that isn't prepared
        for quoted identifiers and that causes views with fields names like "z x"
@@ -564,8 +566,8 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
        mysterious message "cannot access column z x in view VF" when selecting from
        such view that has field "z x". This closes Firebird Bug #227758. */
 	// solved by using MetaName& as parameter - AP
-	jrd_rel* const relation = tail->csb_relation;
-	jrd_prc* const procedure = tail->csb_procedure;
+	jrd_rel* const relation = csb->csb_rpt[stream].csb_relation;
+	jrd_prc* const procedure = csb->csb_rpt[stream].csb_procedure;
 
 	const SSHORT id =
 		relation ? MET_lookup_field(tdbb, relation, base_field) :
