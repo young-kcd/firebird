@@ -4794,11 +4794,13 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 	if (is_column)
 	{
-		jrd_rel* const temp_rel = csb->csb_rpt[stream].csb_relation;
+		const jrd_rel* const temp_rel = csb->csb_rpt[stream].csb_relation;
 
 		if (temp_rel)
 		{
-			if (id >= (int) temp_rel->rel_fields->count() || !(*temp_rel->rel_fields)[id])
+			fb_assert(id >= 0);
+
+			if (!temp_rel->rel_fields || id >= (int) temp_rel->rel_fields->count() || !(*temp_rel->rel_fields)[id])
 			{
 				if (temp_rel->rel_flags & REL_system)
 					return FB_NEW(pool) NullNode(pool);

@@ -623,14 +623,17 @@ ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT cont
  **************************************/
 	SET_TDBB(tdbb);
 
+	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
+		return NULL;
+
 	const StreamType stream = csb->csb_rpt[context].csb_stream;
 
 	jrd_rel* const relation = csb->csb_rpt[stream].csb_relation;
 	jrd_prc* const procedure = csb->csb_rpt[stream].csb_procedure;
 
-	const SSHORT id = procedure ?
-		PAR_find_proc_field(procedure, base_field) :
-		MET_lookup_field(tdbb, relation, base_field);
+	const SSHORT id =
+		relation ? MET_lookup_field(tdbb, relation, base_field) :
+		procedure ? PAR_find_proc_field(procedure, base_field) : -1;
 
 	if (id < 0)
 		return NULL;
