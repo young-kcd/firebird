@@ -499,7 +499,8 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	const USHORT stream = csb->csb_rpt[context].csb_stream;
+	const CompilerScratch::csb_repeat* const tail = CMP_csb_element(csb, context);
+	const USHORT stream = tail->csb_stream;
 
     /* CVC: This is just another case of a custom function that isn't prepared
        for quoted identifiers and that causes views with fields names like "z x"
@@ -510,11 +511,12 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
        mysterious message "cannot access column z x in view VF" when selecting from
        such view that has field "z x". This closes Firebird Bug #227758. */
 	// solved by using MetaName& as parameter - AP
-	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-	jrd_prc* procedure = csb->csb_rpt[stream].csb_procedure;
+	jrd_rel* const relation = tail->csb_relation;
+	jrd_prc* const procedure = tail->csb_procedure;
 
-	const SSHORT id = procedure ? find_proc_field(procedure, base_field) :
-		MET_lookup_field (tdbb, csb->csb_rpt[stream].csb_relation, base_field);
+	const SSHORT id =
+		relation ? MET_lookup_field(tdbb, relation, base_field) :
+		procedure ? find_proc_field(procedure, base_field) : -1;
 
 	if (id < 0)
 		return NULL;
@@ -554,6 +556,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 		if (!relation->rel_fields) {
 			ERR_post(isc_depend_on_uncommitted_rel, isc_arg_end);
 		}
+
 		field = (*relation->rel_fields)[id];
 	}
 
@@ -561,7 +564,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 		par_dependency(tdbb, csb, stream, id, base_field);
 	}
 
-	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
+	jrd_nod* const temp_node = PAR_gen_field(tdbb, stream, id);
 	/*
 	if (param)
 	{
@@ -571,7 +574,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 	}
 	else
 	*/
-	if (field) 
+	if (field)
 	{
 		if (field->fld_default_value && field->fld_not_null)
 			temp_node->nod_arg[e_fld_default_value] = field->fld_default_value;
@@ -1326,7 +1329,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			if (!(relation->rel_flags & REL_scanned) ||
 				(relation->rel_flags & REL_being_scanned))
 			{
-					MET_scan_relation(tdbb, relation);
+				MET_scan_relation(tdbb, relation);
 			}
 
 			par_name(csb, name);
@@ -1379,24 +1382,23 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 	if (is_column)
 	{
- 		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
+ 		const jrd_rel* const temp_rel = csb->csb_rpt[stream].csb_relation;
 
 		if (temp_rel)
 		{
-			jrd_fld* field;
+			fb_assert(id >= 0);
 
-			if (id < (int) temp_rel->rel_fields->count() && (field = (*temp_rel->rel_fields)[id]))
+			if (temp_rel->rel_fields && id < (int) temp_rel->rel_fields->count())
  			{
-				if (field->fld_default_value && field->fld_not_null)
+				const jrd_fld* const field = (*temp_rel->rel_fields)[id];
+
+				if (field && field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] = field->fld_default_value;
  			}
- 			else
- 			{
-				if (temp_rel->rel_flags & REL_system)
-				{
-					node = PAR_make_node(tdbb, 0);
-					node->nod_type = nod_null;
- 				}
+ 			else if (temp_rel->rel_flags & REL_system)
+			{
+				node = PAR_make_node(tdbb, 0);
+				node->nod_type = nod_null;
  			}
  		}
  	}
