@@ -3222,13 +3222,11 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 	}
 
 	if (node1->nod_type == nod_constant) {
-		if (node1->nod_desc.dsc_dtype != node2->nod_desc.dsc_dtype ||
-			node1->nod_desc.dsc_length != node2->nod_desc.dsc_length ||
-			node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale)
-		{
+		if (!DSC_EQUIV(&node1->nod_desc, &node2->nod_desc, true))
 			return false;
-		}
-		unsigned int len = node1->nod_desc.dsc_length;
+
+		const USHORT len = (node1->nod_desc.dsc_dtype == dtype_text) ?
+			((dsql_str*) node1->nod_arg[0])->str_length : node1->nod_desc.dsc_length;
 		return !memcmp(node1->nod_desc.dsc_address, node2->nod_desc.dsc_address, len);
 	}
 
@@ -6469,7 +6467,7 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 				coalesce->nod_arg[1] = MAKE_list(stack);
 
 				impJoinLeft->value = MAKE_node(nod_alias, e_alias_count);
-				impJoinLeft->value->nod_arg[e_alias_value] = coalesce;
+				impJoinLeft->value->nod_arg[e_alias_value] = PASS1_node(request, coalesce, proc_flag);
 				impJoinLeft->value->nod_arg[e_alias_alias] = reinterpret_cast<dsql_nod*>(fldName);
 				impJoinLeft->value->nod_arg[e_alias_imp_join] = reinterpret_cast<dsql_nod*>(impJoinLeft);
 

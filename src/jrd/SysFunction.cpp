@@ -976,7 +976,7 @@ static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	int length = MOV_make_string2(tdbb, value, value->getCharSet(), &p, temp);
 	UCHAR dummy[4];
 
-	if (cs->substring(length, p, sizeof(dummy), dummy, 0, 1) != 1)
+	if (length > 0 && cs->substring(length, p, sizeof(dummy), dummy, 0, 1) != 1)
 		status_exception::raise(isc_arith_except, isc_arg_gds, isc_transliteration_failed, isc_arg_end);
 
 	impure->vlu_misc.vlu_short = (length > 0 ? p[0] : 0);

@@ -1,3 +1,68 @@
+ 2012-05-17 12:15  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2012-05-17 09:10  dimitr 
+   M src/jrd/par.cpp
+One more correction. This restores the accidentally changed original logic.
+
+ 2012-05-17 08:54  dimitr 
+   M src/jrd/par.cpp
+Correction.
+
+ 2012-05-17 08:12  dimitr 
+   M src/jrd/par.cpp
+More fixes for CORE-3557.
+
+ 2012-05-11 19:47  hvlad 
+   M src/jrd/btr.cpp
+Fixed bug CORE-3841 : Corrupted database after inserting rows.
+It should also fix CORE-3839 : Values disappearing from index
+
+ 2012-05-11 19:47  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-3844 : Validation not detects one specific case of index corruption
+
+ 2012-04-27 16:30  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-3834: Usage of a NATURAL JOIN with a derived table crashes the server.
+
+ 2012-04-26 09:39  paulbeach 
+   M builds/install/misc/firebird.conf
+Make the conf. parameter DummyPacketInterval more accurate.
+
+ 2012-04-13 09:08  dimitr 
+   M src/dsql/pass1.cpp
+Additional fix for CORE-3807. Otherwise, _utf8 'A' is considered equal to _win1251 'ABCD' etc. The original code didn't check for charsets/collations but IMHO this was wrong.
+
+ 2012-04-11 14:43  asfernandes 
+   M doc/WhatsNew
+   M src/jrd/SysFunction.cpp
+Backport fix for CORE-3479 - ASCII_VAL raises error instead of return 0 for empty strings.
+
+ 2012-04-05 13:23  paulbeach 
+   A builds/posix/firebird.darwin.vers
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+Allow Darwin to build using new firebird.vers
+
+ 2012-04-05 12:24  paulbeach 
+   A builds/posix/empty.darwin.vers
+Allow Darwin to build using new empty.vers
+
+ 2012-04-05 12:20  paulbeach 
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+Allow Darwin to build using new empty.vers
+
+ 2012-04-05 09:50  dimitr 
+   M src/dsql/pass1.cpp
+Fixed my yesterday's commit.
+
+ 2012-04-04 10:59  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-3807: Error "Invalid expression in the select list" can be unexpectedly raised if a string literal is used inside a GROUP BY clause in a multi-byte connection.
+
  2012-03-31 17:09  asfernandes 
    M src/burp/restore.epp
 Fixed CORE-3802 - Firebird runs out of memory while restoring database backup.

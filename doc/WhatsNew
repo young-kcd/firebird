@@ -2,6 +2,28 @@
   * v2.1.5
   ***************************
 
+    * Bugfix CORE-3844
+        Validation doesn't detect one specific case of index corruption
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3841
+        Corrupted database after inserting rows
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3834
+        Usage of a NATURAL JOIN with a derived table crashes the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3807
+        Error "Invalid expression in the select list" can be unexpectedly raised
+        if a string literal is used inside a GROUP BY clause in a multi-byte connection
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-3791
         Performance degrades when actively working with databases bigger than the available RAM amount
       Contributor(s):
@@ -135,6 +157,11 @@
         gds_drop utility prints an error when trying to shutdown missing lock manager process
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3479
+        ASCII_VAL raises error instead of return 0 for empty strings
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-3468
         Attempt to read after the end of file when nbackup state is stalled
