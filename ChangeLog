@@ -1,3 +1,8 @@
+ 2012-05-17 09:04  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/par.cpp
+Front-ported extra fixes for CORE-3557.
+
  2012-05-15 07:56  hvlad 
    M src/jrd/jrd.cpp
    M src/jrd/ntrace.h
