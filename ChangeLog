@@ -1,3 +1,19 @@
+ 2012-05-17 12:15  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2012-05-17 09:10  dimitr 
+   M src/jrd/par.cpp
+One more correction. This restores the accidentally changed original logic.
+
+ 2012-05-17 08:54  dimitr 
+   M src/jrd/par.cpp
+Correction.
+
+ 2012-05-17 08:12  dimitr 
+   M src/jrd/par.cpp
+More fixes for CORE-3557.
+
  2012-05-11 19:47  hvlad 
    M src/jrd/btr.cpp
 Fixed bug CORE-3841 : Corrupted database after inserting rows.
