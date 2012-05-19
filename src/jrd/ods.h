@@ -295,7 +295,7 @@ struct index_root_page
 	struct irt_repeat
 	{
 		ULONG irt_root;				// page number of index root
-		SLONG irt_transaction;		// transaction in progress
+		TraNumber irt_transaction;	// transaction in progress
 		USHORT irt_desc;			// offset to key descriptions
 		UCHAR irt_keys;				// number of keys in index
 		UCHAR irt_flags;
@@ -333,9 +333,9 @@ struct header_page
 	USHORT hdr_ods_version;			// Version of on-disk structure
 	ULONG hdr_PAGES;				// Page number of PAGES relation
 	ULONG hdr_next_page;			// Page number of next hdr page
-	SLONG hdr_oldest_transaction;	// Oldest interesting transaction
-	SLONG hdr_oldest_active;		// Oldest transaction thought active
-	SLONG hdr_next_transaction;		// Next transaction id
+	TraNumber hdr_oldest_transaction;	// Oldest interesting transaction
+	TraNumber hdr_oldest_active;		// Oldest transaction thought active
+	TraNumber hdr_next_transaction;		// Next transaction id
 	USHORT hdr_sequence;			// sequence number of file
 	USHORT hdr_flags;				// Flag settings, see below
 	SLONG hdr_creation_date[2];		// Date/time of creation
@@ -348,7 +348,7 @@ struct header_page
 	USHORT hdr_ods_minor;			// Update version of ODS
 	USHORT hdr_end;					// offset of HDR_end in page
 	ULONG hdr_page_buffers;			// Page buffers for database cache
-	SLONG hdr_oldest_snapshot;		// Oldest snapshot of active transactions
+	TraNumber hdr_oldest_snapshot;		// Oldest snapshot of active transactions
 	SLONG hdr_backup_pages; 		// The amount of pages in files locked for backup
 	SLONG hdr_misc[3];				// Stuff to be named later
 	UCHAR hdr_data[1];				// Misc data
@@ -501,7 +501,7 @@ struct generator_page
 
 struct rhd
 {
-	SLONG rhd_transaction;		// transaction id
+	TraNumber rhd_transaction;		// transaction id
 	ULONG rhd_b_page;			// back pointer
 	USHORT rhd_b_line;			// back line
 	USHORT rhd_flags;			// flags, etc
@@ -515,7 +515,7 @@ struct rhd
 
 struct rhdf
 {
-	SLONG rhdf_transaction;		// transaction id
+	TraNumber rhdf_transaction;		// transaction id
 	ULONG rhdf_b_page;			// back pointer
 	USHORT rhdf_b_line;			// back line
 	USHORT rhdf_flags;			// flags, etc

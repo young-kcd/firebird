@@ -35,18 +35,21 @@ using namespace Jrd;
 
 /// jrd_rel
 
-RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages)
+RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool allocPages)
 {
 	if (tdbb->tdbb_flags & TDBB_use_db_page_space)
 		return &rel_pages_base;
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	SLONG inst_id;
+
+	ULONG inst_id;
+	// Vlad asked for this compile-time check to make sure we can contain a txn number here
+	typedef int RangeCheck[sizeof(inst_id) >= sizeof(TraNumber)];
 
 	if (rel_flags & REL_temp_tran)
 	{
-		if (tran > 0)
+		if (tran > 0 && tran != MAX_TRA_NUMBER) //if (tran > 0)
 			inst_id = tran;
 		else if (tdbb->tdbb_temp_traid)
 			inst_id = tdbb->tdbb_temp_traid;
@@ -98,7 +101,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES)
 		{
-			printf("jrd_rel::getPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+			printf("jrd_rel::getPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
 				newPages->rel_instance_id,
 				newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
 				newPages->rel_index_root,
@@ -135,7 +138,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_WRITES)
 			{
-				printf("jrd_rel::getPages inst %"SLONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
+				printf("jrd_rel::getPages inst %"ULONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
 					newPages->rel_instance_id,
 					newPages->rel_index_root,
 					idx->idx_id,
@@ -157,13 +160,15 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 	return pages;
 }
 
-bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
+bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
 {
 	RelationPages* pages = aPages ? aPages : getPages(tdbb, tran, false);
 	if (!pages || !pages->rel_instance_id)
 		return false;
 
-	fb_assert((tran <= 0) || ((tran > 0) && (pages->rel_instance_id == tran)));
+	//fb_assert((tran <= 0) || ((tran > 0) && (pages->rel_instance_id == tran)));
+	fb_assert(tran == 0 || tran == MAX_TRA_NUMBER ||
+		(tran > 0 && pages->rel_instance_id == tran));
 
 	fb_assert(pages->useCount > 0);
 
@@ -173,7 +178,7 @@ bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 	{
-		printf("jrd_rel::delPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+		printf("jrd_rel::delPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
 			pages->rel_instance_id,
 			pages->rel_pages ? (*pages->rel_pages)[0] : 0,
 			pages->rel_index_root,
@@ -208,8 +213,8 @@ void jrd_rel::getRelLockKey(thread_db* tdbb, UCHAR* key)
 	memcpy(key, &val, sizeof(ULONG));
 	key += sizeof(ULONG);
 
-	const SLONG inst_id = getPages(tdbb)->rel_instance_id;
-	memcpy(key, &inst_id, sizeof(SLONG));
+	const ULONG inst_id = getPages(tdbb)->rel_instance_id;
+	memcpy(key, &inst_id, sizeof(ULONG));
 }
 
 SSHORT jrd_rel::getRelLockKeyLength() const
@@ -238,7 +243,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 				relPages->addRef();
 			}
 			else if ((rel_flags & REL_temp_conn) &&
-				(PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id))
+				(ULONG) PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id)
 			{
 				snapshot.add(relPages);
 				relPages->addRef();
@@ -274,7 +279,7 @@ void jrd_rel::RelPagesSnapshot::clear()
 		RelationPages* relPages = (*this)[i];
 		(*this)[i] = NULL;
 
-		spt_relation->delPages(spt_tdbb, -1, relPages);
+		spt_relation->delPages(spt_tdbb, MAX_TRA_NUMBER, relPages);
 	}
 
 	inherited::clear();
@@ -310,5 +315,6 @@ void RelationPages::free(RelationPages*& nextFree)
 		rel_pages->clear();
 
 	rel_index_root = rel_data_pages = 0;
-	rel_slot_space = rel_data_space = rel_instance_id = 0;
+	rel_slot_space = rel_data_space = 0;
+	rel_instance_id = 0;
 }

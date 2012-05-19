@@ -140,7 +140,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
+			("    record  %"SLONGFORMAT":%d transaction %"ULONGFORMAT" back %"
 			SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -309,7 +309,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    org record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
+			("    org record  %"SLONGFORMAT":%d transaction %"ULONGFORMAT
 			" back %"SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 			 org_rpb->rpb_b_page, org_rpb->rpb_b_line, org_rpb->rpb_f_page,
@@ -317,7 +317,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 
 		if (new_rpb)
 		{
-			printf("    new record length %d transaction %"SLONGFORMAT
+			printf("    new record length %d transaction %"ULONGFORMAT
 					  " flags %d\n",
 					  new_rpb->rpb_length, new_rpb->rpb_transaction_nr,
 					  new_rpb->rpb_flags);
@@ -711,7 +711,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
+			("    record  %"SLONGFORMAT":%d transaction %"ULONGFORMAT" back %"
 			SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -1039,7 +1039,7 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 	if (debug_flag > DEBUG_READS_INFO)
 	{
 		printf
-			("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
+			("    record  %"SLONGFORMAT":%d transaction %"ULONGFORMAT" back %"
 			 SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -1088,7 +1088,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT la
 	}
 	if (debug_flag > DEBUG_READS_INFO)
 	{
-		printf("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
+		printf("    record  %"SLONGFORMAT":%d transaction %"ULONGFORMAT
 				  " back %"SLONGFORMAT":%d\n",
 				  rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 				  rpb->rpb_b_page, rpb->rpb_b_line);
@@ -1120,7 +1120,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT la
 	if (debug_flag > DEBUG_READS_INFO)
 	{
 		printf("    record fetched  %"SLONGFORMAT":%d transaction %"
-			 SLONGFORMAT" back %"SLONGFORMAT":%d fragment %"SLONGFORMAT
+			 ULONGFORMAT" back %"SLONGFORMAT":%d fragment %"SLONGFORMAT
 			 ":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -1155,7 +1155,7 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 			rpb->rpb_number.getValue(), lock);
 	if (debug_flag > DEBUG_READS_INFO)
 	{
-		printf("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
+		printf("    record  %"SLONGFORMAT":%d transaction %"ULONGFORMAT
 				  " back %"SLONGFORMAT":%d\n",
 				  rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 				  rpb->rpb_b_page, rpb->rpb_b_line);
@@ -1177,7 +1177,7 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 	if (debug_flag > DEBUG_READS_INFO)
 	{
 		printf
-			("    record fetched  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
+			("    record fetched  %"SLONGFORMAT":%d transaction %"ULONGFORMAT
 			 " back %"SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -1912,7 +1912,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    record to store %"SLONGFORMAT":%d transaction %"SLONGFORMAT
+			("    record to store %"SLONGFORMAT":%d transaction %"ULONGFORMAT
 			 " back %"SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -2076,12 +2076,12 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    old flags %d, old transaction %"SLONGFORMAT
+			("    old flags %d, old transaction %"ULONGFORMAT
 			 ", old format %d, old back record %"SLONGFORMAT":%d\n",
 			 header->rhd_flags, header->rhd_transaction, (int) header->rhd_format,
 			 header->rhd_b_page, header->rhd_b_line);
 		printf
-			("    new flags %d, new transaction %"SLONGFORMAT
+			("    new flags %d, new transaction %"ULONGFORMAT
 			 ", new format %d, new back record %"SLONGFORMAT":%d\n",
 			 rpb->rpb_flags, rpb->rpb_transaction_nr, rpb->rpb_format_number,
 			 rpb->rpb_b_page, rpb->rpb_b_line);
@@ -2115,13 +2115,13 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 	{
-		printf("DPM_update (record_param %"QUADFORMAT"d, stack, transaction %"SLONGFORMAT")\n",
+		printf("DPM_update (record_param %"QUADFORMAT"d, stack, transaction %"ULONGFORMAT")\n",
 				  rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    record %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
+			("    record %"SLONGFORMAT":%d transaction %"ULONGFORMAT" back %"
 			 SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -2311,7 +2311,7 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 		printf("delete_tail (header, length)\n");
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
-		printf("    transaction %"SLONGFORMAT" flags %d fragment %"
+		printf("    transaction %"ULONGFORMAT" flags %d fragment %"
 				  SLONGFORMAT":%d back %"SLONGFORMAT":%d\n",
 				  header->rhdf_transaction, header->rhdf_flags,
 				  header->rhdf_f_page, header->rhdf_f_line,
@@ -2440,15 +2440,14 @@ static void fragment(thread_db* tdbb,
 	{
 		printf
 			("fragment (record_param %"QUADFORMAT
-			 "d, available_space %d, dcc, length %d, transaction %"
-			 SLONGFORMAT")\n",
+			 "d, available_space %d, dcc, length %d, transaction %"ULONGFORMAT")\n",
 			 rpb->rpb_number.getValue(), available_space, length,
 			 transaction ? transaction->tra_number : 0);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    record %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
+			("    record %"SLONGFORMAT":%d transaction %"ULONGFORMAT" back %"
 			 SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -2502,7 +2501,7 @@ static void fragment(thread_db* tdbb,
 	if (debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf
-			("    rhdf_transaction %"SLONGFORMAT", window record %"SLONGFORMAT
+			("    rhdf_transaction %"ULONGFORMAT", window record %"SLONGFORMAT
 			 ":%d, available_space %d, rhdf_flags %d, rhdf_f record %"
 			 SLONGFORMAT":%d, rhdf_b record %"SLONGFORMAT":%d\n",
 			 header->rhdf_transaction, window->win_page.getPageNum(), line,
@@ -2566,7 +2565,7 @@ static void fragment(thread_db* tdbb,
 	{
 		printf("    fragment head \n");
 		printf
-			("    rhdf_trans %"SLONGFORMAT", window record %"SLONGFORMAT
+			("    rhdf_trans %"ULONGFORMAT", window record %"SLONGFORMAT
 			 ":%d, dpg_length %d\n\trhdf_flags %d, rhdf_f record %"SLONGFORMAT
 			 ":%d, rhdf_b record %"SLONGFORMAT":%d\n",
 			 header->rhdf_transaction, window->win_page.getPageNum(), line,
@@ -3378,7 +3377,7 @@ static void store_big_record(thread_db* tdbb,
 	{
 		printf("    front part\n");
 		printf
-			("    rhdf_trans %"SLONGFORMAT", rpb_window record %"SLONGFORMAT
+			("    rhdf_trans %"ULONGFORMAT", rpb_window record %"SLONGFORMAT
 			 ":%d, dpg_length %d \n\trhdf_flags %d, rhdf_f record %"SLONGFORMAT
 			 ":%d, rhdf_b record %"SLONGFORMAT":%d\n",
 			 header->rhdf_transaction, rpb->getWindow(tdbb).win_page.getPageNum(),

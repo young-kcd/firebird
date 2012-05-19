@@ -275,7 +275,7 @@ void TracePluginImpl::logRecordConn(const char* action, TraceDatabaseConnection*
 void TracePluginImpl::logRecordTrans(const char* action, TraceDatabaseConnection* connection,
 	TraceTransaction* transaction)
 {
-	const int tra_id = transaction->getTransactionID();
+	const unsigned tra_id = transaction->getTransactionID();
 	bool reg = false;
 	while (true)
 	{
@@ -293,7 +293,7 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceDatabaseConnection
 		if (reg)
 		{
 			string temp;
-			temp.printf("\t\t(TRA_%d, <unknown, bug?>)" NEWLINE, transaction->getTransactionID());
+			temp.printf("\t\t(TRA_%lu, <unknown, bug?>)" NEWLINE, transaction->getTransactionID());
 			record.insert(0, temp);
 			break;
 		}
@@ -1041,7 +1041,7 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 	TransactionData trans_data;
 	trans_data.id = transaction->getTransactionID();
 	trans_data.description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
-	trans_data.description->printf("\t\t(TRA_%d, ", trans_data.id);
+	trans_data.description->printf("\t\t(TRA_%lu, ", trans_data.id);
 
 	switch (transaction->getIsolation())
 	{

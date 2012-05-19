@@ -48,7 +48,7 @@ LockState	CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, int, int, SCHAR);
 void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, const bool);
 void		CCH_fini(Jrd::thread_db*);
 void		CCH_forget_page(Jrd::thread_db*, Jrd::win*);
-void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
+void		CCH_flush(Jrd::thread_db* tdbb, USHORT flush_flag, TraNumber tra_number);
 bool		CCH_free_page(Jrd::thread_db*);
 SLONG		CCH_get_incarnation(Jrd::win*);
 void		CCH_get_related(Jrd::thread_db*, Jrd::PageNumber, Jrd::PagesArray&);
@@ -59,7 +59,7 @@ void		CCH_mark(Jrd::thread_db*, Jrd::win*, bool, bool);
 void		CCH_must_write(Jrd::thread_db*, Jrd::win*);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, ULONG);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, Jrd::PageNumber);
-void		CCH_tra_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
+void		CCH_tra_precedence(Jrd::thread_db*, Jrd::win*, TraNumber traNum);
 #ifdef SUPERSERVER_V2
 void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
 bool		CCH_prefetch_pages(Jrd::thread_db*);

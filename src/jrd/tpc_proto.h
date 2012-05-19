@@ -42,57 +42,57 @@ public:
 	explicit TipCache(Database* dbb);
 	~TipCache();
 
-	int		cacheState(thread_db*, SLONG number);
-	void	initializeTpc(thread_db*, SLONG number);
-	void	setState(SLONG number, SSHORT state);
-	int		snapshotState(thread_db*, SLONG number);
-	void	updateCache(const Ods::tx_inv_page* tip_page, SLONG sequence);
+	int		cacheState(thread_db*, TraNumber number);
+	void	initializeTpc(thread_db*, TraNumber number);
+	void	setState(TraNumber number, SSHORT state);
+	int		snapshotState(thread_db*, TraNumber number);
+	void	updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence);
 
 private:
 	class TxPage : public pool_alloc_rpt<SCHAR, type_tpc>
 	{
 	public:
-		SLONG tpc_base;				// id of first transaction in this block
+		TraNumber tpc_base;				// id of first transaction in this block
 		UCHAR tpc_transactions[1];	// two bits per transaction
 
-		static const SLONG generate(const void*, const TxPage* item)
+		static const TraNumber generate(const void*, const TxPage* item)
 		{
 			return item->tpc_base;
 		}
 	};
 
-	TxPage* allocTxPage(SLONG base);
-	SLONG cacheTransactions(thread_db* tdbb, SLONG oldest);
-	int extendCache(thread_db* tdbb, SLONG number);
+	TxPage* allocTxPage(TraNumber base);
+	TraNumber cacheTransactions(thread_db* tdbb, TraNumber oldest);
+	int extendCache(thread_db* tdbb, TraNumber number);
 	void clearCache();
 
 	Database* m_dbb;
 	Firebird::SyncObject m_sync;
-	Firebird::SortedArray<TxPage*, Firebird::EmptyStorage<TxPage*>, SLONG, TxPage> m_cache;
+	Firebird::SortedArray<TxPage*, Firebird::EmptyStorage<TxPage*>, TraNumber, TxPage> m_cache;
 };
 
 
-inline int TPC_cache_state(thread_db* tdbb, SLONG number)
+inline int TPC_cache_state(thread_db* tdbb, TraNumber number)
 {
 	 return tdbb->getDatabase()->dbb_tip_cache->cacheState(tdbb, number);
 }
 
-inline void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
+inline void TPC_initialize_tpc(thread_db* tdbb, TraNumber number)
 {
 	 tdbb->getDatabase()->dbb_tip_cache->initializeTpc(tdbb, number);
 }
 
-inline void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
+inline void TPC_set_state(thread_db* tdbb, TraNumber number, SSHORT state)
 {
 	 tdbb->getDatabase()->dbb_tip_cache->setState(number, state);
 }
 
-inline int TPC_snapshot_state(thread_db* tdbb, SLONG number)
+inline int TPC_snapshot_state(thread_db* tdbb, TraNumber number)
 {
 	 return tdbb->getDatabase()->dbb_tip_cache->snapshotState(tdbb, number);
 }
 
-inline void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG sequence)
+inline void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, ULONG sequence)
 {
 	 tdbb->getDatabase()->dbb_tip_cache->updateCache(tip_page, sequence);
 }

@@ -84,7 +84,7 @@ public:
 	{}
 
 	// TraceTransaction implementation
-	virtual int FB_CARG getTransactionID();
+	virtual unsigned FB_CARG getTransactionID();
 	virtual bool FB_CARG getReadOnly();
 	virtual int FB_CARG getWait();
 	virtual ntrace_tra_isolation_t FB_CARG getIsolation();
@@ -395,7 +395,7 @@ private:
 class TraceStatusVectorImpl : public Firebird::AutoIface<TraceStatusVector, FB_TRACE_STATUS_VERSION>
 {
 public:
-	TraceStatusVectorImpl(const ISC_STATUS* status) :
+	explicit TraceStatusVectorImpl(const ISC_STATUS* status) :
 		m_status(status)
 	{
 	}

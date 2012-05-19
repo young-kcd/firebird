@@ -2119,7 +2119,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		else if (nameStr == SESSION_ID_NAME)
 			resultStr.printf("%d", PAG_attachment_id(tdbb));
 		else if (nameStr == TRANSACTION_ID_NAME)
-			resultStr.printf("%d", transaction->tra_number);
+			resultStr.printf("%lu", transaction->tra_number);
 		else if (nameStr == ISOLATION_LEVEL_NAME)
 		{
 			if (transaction->tra_flags & TRA_read_committed)

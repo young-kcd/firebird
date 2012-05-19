@@ -75,7 +75,7 @@ public:
 	// Data for tracked (active) transactions
 	struct TransactionData
 	{
-		int id;
+		unsigned id;
 		Firebird::string* description;
 
 		// Deallocate memory used by objects hanging off this structure
@@ -85,13 +85,13 @@ public:
 			description = NULL;
 		}
 
-		static const int& generate(const void* /*sender*/, const TransactionData& item)
+		static const unsigned& generate(const void* /*sender*/, const TransactionData& item)
 		{
 			return item.id;
 		}
 	};
 
-	typedef Firebird::BePlusTree<TransactionData, int, Firebird::MemoryPool, TransactionData>
+	typedef Firebird::BePlusTree<TransactionData, unsigned, Firebird::MemoryPool, TransactionData>
 		TransactionsTree;
 
 	// Data for tracked (active) statements

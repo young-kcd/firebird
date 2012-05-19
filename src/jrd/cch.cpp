@@ -1000,7 +1000,7 @@ void CCH_fini(thread_db* tdbb)
 				}
 			}
 			else {
-				CCH_flush(tdbb, FLUSH_FINI, (SLONG) 0);
+				CCH_flush(tdbb, FLUSH_FINI, 0);
 			}
 		}
 
@@ -1082,7 +1082,7 @@ void CCH_fini(thread_db* tdbb)
 }
 
 
-void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
+void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 {
 /**************************************
  *
@@ -1098,7 +1098,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	ISC_STATUS* const status = tdbb->tdbb_status_vector;
 
 	// note that some of the code for btc_flush()
 	// replicates code in the for loop
@@ -1106,7 +1106,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 
 	if (flush_flag & (FLUSH_TRAN | FLUSH_SYSTEM))
 	{
-		const SLONG transaction_mask = tra_number ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
+		const ULONG transaction_mask = tra_number ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
 		bool sys_only = false;
 		if (!transaction_mask && (flush_flag & FLUSH_SYSTEM)) {
 			sys_only = true;
@@ -1649,7 +1649,7 @@ void CCH_mark(thread_db* tdbb, WIN* window, bool mark_system, bool must_write)
 	// has updated this page
 
 	int newFlags = 0;
-	SLONG number;
+	TraNumber number;
 	jrd_tra* transaction = tdbb->getTransaction();
 	if (transaction && (number = transaction->tra_number))
 	{
@@ -1722,7 +1722,7 @@ void CCH_precedence(thread_db* tdbb, WIN* window, ULONG pageNum)
 }
 
 
-void CCH_tra_precedence(thread_db* tdbb, WIN* window, SLONG traNum)
+void CCH_tra_precedence(thread_db* tdbb, WIN* window, TraNumber traNum)
 {
 	/*
 	if (traNum <= tdbb->getDatabase()->dbb_last_header_write)
@@ -3121,8 +3121,7 @@ static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 			break;
 
 		case TRANS_PAGE_SPACE:
-			// cast needed as long as transaction number remains signed
-			if (static_cast<SLONG>(page.getPageNum()) <= tdbb->getDatabase()->dbb_last_header_write)
+			if (page.getPageNum() <= tdbb->getDatabase()->dbb_last_header_write)
 			{
 				return;
 			}

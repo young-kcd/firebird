@@ -1098,7 +1098,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 		break;
 
 	case 4:
-		CCH_flush(tdbb, FLUSH_FINI, 0L);
+		CCH_flush(tdbb, FLUSH_FINI, 0);
 		max = PageSpace::maxAlloc(dbb) + 1;
 		AutoRequest handle;
 		AutoRequest handle2;
@@ -2236,7 +2236,7 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	{
 		tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
 		try {
-			if (relation->getPages(tdbb, -1, false)) {
+			if (relation->getPages(tdbb, MAX_TRA_NUMBER, false)) {
 				more2 = (*task_routine) (tdbb, phase, work, transaction);
 			}
 			tdbb->tdbb_flags |= TDBB_use_db_page_space;
@@ -2332,7 +2332,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			{
 				relation = MET_lookup_relation(tdbb, IDXN.RDB$RELATION_NAME);
 
-				RelationPages* relPages = relation->getPages(tdbb, -1, false);
+				RelationPages* relPages = relation->getPages(tdbb, MAX_TRA_NUMBER, false);
 				if (!relPages) {
 					return false;
 				}
@@ -2427,7 +2427,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					MET_scan_relation(tdbb, relation);
 
 					// no need to recalculate statistics for base instance of GTT
-					RelationPages* relPages = relation->getPages(tdbb, -1, false);
+					RelationPages* relPages = relation->getPages(tdbb, MAX_TRA_NUMBER, false);
 					const bool isTempInstance = relation->isTemporary() &&
 						relPages && (relPages->rel_instance_id != 0);
 
@@ -3642,7 +3642,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		return false;
 	}
 
-	RelationPages* relPages = relation->getPages(tdbb, -1, false);
+	RelationPages* relPages = relation->getPages(tdbb, MAX_TRA_NUMBER, false);
 	if (!relPages) {
 		return false;
 	}
@@ -3654,7 +3654,8 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	{
 	case 0:
 		index = CMP_get_index_lock(tdbb, relation, id);
-		if (index) {
+		if (index)
+		{
 			if (!index->idl_count) {
 				LCK_release(tdbb, index->idl_lock);
 			}

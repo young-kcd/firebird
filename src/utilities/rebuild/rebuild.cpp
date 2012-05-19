@@ -58,7 +58,7 @@ static USHORT compute_checksum(const rbdb*, PAG);
 static void db_error(int);
 static void dump(FILE*, rbdb*, ULONG, ULONG, UCHAR);
 static void dump_tips(FILE*, rbdb*);
-static void format_header(const rbdb*, header_page*, int, ULONG, ULONG, ULONG, ULONG);
+static void format_header(const rbdb*, header_page*, int, TraNumber, TraNumber, TraNumber, ULONG);
 static void format_index_root(index_root_page*, int, SSHORT, SSHORT);
 static void format_pointer(pointer_page*, int, SSHORT, SSHORT, bool, SSHORT, const SLONG*);
 static void format_pip(page_inv_page*, int, int);
@@ -596,7 +596,7 @@ static void dump_tips( FILE* file, rbdb* rbdb)
 static void format_header(const rbdb* rbdb,
 						  header_page* page,
 						  int page_size,
-						  ULONG oldest, ULONG active, ULONG next, ULONG imp)
+						  TraNumber oldest, TraNumber active, TraNumber next, ULONG imp)
 {
 /**************************************
  *
@@ -955,10 +955,10 @@ static void print_db_header( FILE* file, const header_page* header)
 		header->hdr_ods_version & ODS_TYPE_MASK);
 	fprintf(file, "    PAGES\t\t\t%d\n", header->hdr_PAGES);
 	fprintf(file, "    next page\t\t\t%d\n", header->hdr_next_page);
-	fprintf(file, "    Oldest transaction\t\t%ld\n", header->hdr_oldest_transaction);
-	fprintf(file, "    Oldest active\t\t%ld\n", header->hdr_oldest_active);
-	fprintf(file, "    Oldest snapshot\t\t%ld\n", header->hdr_oldest_snapshot);
-	fprintf(file, "    Next transaction\t\t%ld\n", header->hdr_next_transaction);
+	fprintf(file, "    Oldest transaction\t\t%lu\n", header->hdr_oldest_transaction);
+	fprintf(file, "    Oldest active\t\t%lu\n", header->hdr_oldest_active);
+	fprintf(file, "    Oldest snapshot\t\t%lu\n", header->hdr_oldest_snapshot);
+	fprintf(file, "    Next transaction\t\t%lu\n", header->hdr_next_transaction);
 
 	fprintf(file, "    Data pages per pointer page\t%ld\n", gdbb->tdbb_database->dbb_dp_per_pp);
 	fprintf(file, "    Max records per page\t%ld\n", gdbb->tdbb_database->dbb_max_records);

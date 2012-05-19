@@ -67,8 +67,12 @@ typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>
 class RelationPages
 {
 public:
+	typedef ULONG RP_INSTANCE_ID;
 	vcl*	rel_pages;			// vector of pointer page numbers
-	SLONG	rel_instance_id;	// 0 or att_attachment_id or tra_number
+	RP_INSTANCE_ID	rel_instance_id;	// 0 or att_attachment_id or tra_number
+	// Vlad asked for this compile-time check to make sure we can contain a txn number here
+	typedef int RangeCheck[sizeof(RP_INSTANCE_ID) >= sizeof(TraNumber)];
+
 	SLONG	rel_index_root;		// index root page number
 	SLONG	rel_data_pages;		// count of relation data pages
 	USHORT	rel_slot_space;		// lowest pointer page with slot space
@@ -78,7 +82,8 @@ public:
 	RelationPages()
 	{
 		rel_pages = 0;
-		rel_index_root = rel_data_pages = rel_instance_id = 0;
+		rel_index_root = rel_data_pages = 0;
+		rel_instance_id = 0;
 		rel_slot_space = rel_data_space = 0;
 		rel_pg_space_id = DB_PAGE_SPACE;
 		rel_next_free = 0;
@@ -92,7 +97,7 @@ public:
 
 	void free(RelationPages*& nextFree);
 
-	static inline SLONG generate(const void*, const RelationPages* item)
+	static inline ULONG generate(const void*, const RelationPages* item)
 	{
 		return item->rel_instance_id;
 	}
@@ -177,14 +182,14 @@ public:
 	bool isView() const;
 
 	// global temporary relations attributes
-	RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
+	RelationPages* getPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, bool allocPages = true);
 
 	RelationPages* getBasePages()
 	{
 		return &rel_pages_base;
 	}
 
-	bool			delPages(thread_db* tdbb, SLONG tran = -1, RelationPages* aPages = 0);
+	bool			delPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, RelationPages* aPages = 0);
 
 	void			getRelLockKey(thread_db* tdbb, UCHAR* key);
 	SSHORT			getRelLockKeyLength() const;
@@ -218,15 +223,18 @@ private:
 	typedef Firebird::SortedArray<
 				RelationPages*,
 				Firebird::EmptyStorage<RelationPages*>,
-				SLONG,
+				ULONG, // This type should be able to hold a TraNumber value
 				RelationPages>
 			RelationPagesInstances;
+
+	// Vlad asked for this compile-time check to make sure we can contain a txn number here
+	typedef int RangeCheck[sizeof(ULONG) >= sizeof(TraNumber)];
 
 	RelationPagesInstances* rel_pages_inst;
 	RelationPages			rel_pages_base;
 	RelationPages*			rel_pages_free;
 
-	RelationPages*	getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages);
+	RelationPages*	getPagesInternal(thread_db* tdbb, TraNumber tran, bool allocPages);
 
 public:
 	explicit jrd_rel(MemoryPool& p)
@@ -277,7 +285,7 @@ inline bool jrd_rel::isView() const
 	return (rel_flags & REL_jrd_view);
 }
 
-inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
+inline RelationPages* jrd_rel::getPages(thread_db* tdbb, TraNumber tran, bool allocPages)
 {
 	if (!isTemporary())
 		return &rel_pages_base;

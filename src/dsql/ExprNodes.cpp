@@ -6069,6 +6069,8 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 			result = PAG_attachment_id(tdbb);
 			break;
 		case INFO_TYPE_TRANSACTION_ID:
+			//fb_assert(sizeof(result) == sizeof(tdbb->getTransaction()->tra_number));
+			// Conversion from unsigned to SLONG, big values will be reported as negative.
 			result = tdbb->getTransaction()->tra_number;
 			break;
 		case INFO_TYPE_GDSCODE:
@@ -6078,6 +6080,7 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 			result = request->req_last_xcp.as_sqlcode();
 			break;
 		case INFO_TYPE_ROWS_AFFECTED:
+			// CVC: Not sure if this counter can overflow in extreme cases
 			result = request->req_records_affected.getCount();
 			break;
 		case INFO_TYPE_TRIGGER_ACTION:

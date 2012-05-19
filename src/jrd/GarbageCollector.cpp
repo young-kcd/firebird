@@ -45,7 +45,7 @@ void GarbageCollector::RelationData::clear()
 }
 
 
-void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tranid)
+void GarbageCollector::RelationData::addPage(const ULONG pageno, const TraNumber tranid)
 {
 	// look if given page number is already set at given tx bitmap
 	PageBitmap* bm = NULL;
@@ -83,7 +83,7 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tra
 }
 
 
-void GarbageCollector::RelationData::getPageBitmap(const SLONG oldest_snapshot, PageBitmap **sbm)
+void GarbageCollector::RelationData::getPageBitmap(const TraNumber oldest_snapshot, PageBitmap** sbm)
 {
 	TranData::Accessor accessor(&m_tranData);
 	while (accessor.getFirst())
@@ -110,7 +110,7 @@ void GarbageCollector::RelationData::getPageBitmap(const SLONG oldest_snapshot, 
 }
 
 
-void GarbageCollector::RelationData::swept(const SLONG oldest_snapshot)
+void GarbageCollector::RelationData::swept(const TraNumber oldest_snapshot)
 {
 	TranData::Accessor accessor(&m_tranData);
 	while (accessor.getFirst())
@@ -126,7 +126,7 @@ void GarbageCollector::RelationData::swept(const SLONG oldest_snapshot)
 }
 
 
-SLONG GarbageCollector::RelationData::minTranID() const
+TraNumber GarbageCollector::RelationData::minTranID() const
 {
 	TranData::ConstAccessor accessor(&m_tranData);
 	if (accessor.getFirst())
@@ -152,7 +152,7 @@ GarbageCollector::~GarbageCollector()
 }
 
 
-void GarbageCollector::addPage(const USHORT relID, const ULONG pageno, const SLONG tranid)
+void GarbageCollector::addPage(const USHORT relID, const ULONG pageno, const TraNumber tranid)
 {
 	Sync syncGC(&m_sync, "GarbageCollector::addPage");
 	RelationData* relData = getRelData(syncGC, relID, true);
@@ -164,7 +164,7 @@ void GarbageCollector::addPage(const USHORT relID, const ULONG pageno, const SLO
 }
 
 
-bool GarbageCollector::getPageBitmap(const SLONG oldest_snapshot, USHORT &relID, PageBitmap **sbm)
+bool GarbageCollector::getPageBitmap(const TraNumber oldest_snapshot, USHORT &relID, PageBitmap **sbm)
 {
 	*sbm = NULL;
 	SyncLockGuard shGuard(&m_sync, SYNC_EXCLUSIVE, "GarbageCollector::getPageBitmap");
@@ -220,7 +220,7 @@ void GarbageCollector::removeRelation(const USHORT relID)
 }
 
 
-void GarbageCollector::sweptRelation(const SLONG oldest_snapshot, const USHORT relID)
+void GarbageCollector::sweptRelation(const TraNumber oldest_snapshot, const USHORT relID)
 {
 	Sync syncGC(&m_sync, "GarbageCollector::sweptRelation");
 
@@ -235,7 +235,7 @@ void GarbageCollector::sweptRelation(const SLONG oldest_snapshot, const USHORT r
 }
 
 
-SLONG GarbageCollector::minTranID(const USHORT relID)
+TraNumber GarbageCollector::minTranID(const USHORT relID)
 {
 	Sync syncGC(&m_sync, "GarbageCollector::minTranID");
 

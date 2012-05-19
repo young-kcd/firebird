@@ -605,7 +605,7 @@ public:
 	USHORT vdr_flags;
 	USHORT vdr_errors;
 private:
-	SLONG vdr_max_transaction;
+	TraNumber vdr_max_transaction;
 	ULONG vdr_rel_backversion_counter;	// Counts slots w/rhd_chain
 	ULONG vdr_rel_chain_counter;		// Counts chains w/rdr_chain
 	RecordBitmap* vdr_rel_records;		// 1 bit per valid record
@@ -630,7 +630,7 @@ private:
 	RTN walk_relation(thread_db*, bool validate, jrd_rel*);
 	RTN walk_root(thread_db*, bool validate, jrd_rel*);
 	RTN walk_scns(thread_db*, bool validate);
-	RTN walk_tip(thread_db*, bool validate, SLONG);
+	RTN walk_tip(thread_db*, bool validate, TraNumber);
 };
 
 // vdr_flags
@@ -670,7 +670,7 @@ static const TEXT msg_table[VAL_MAX_ERROR][80] =
 	"Pointer page (sequence %ld) lost",
 	"Pointer page (sequence %ld) inconsistent",
 	"Record %ld is marked as damaged",
-	"Record %ld has bad transaction %ld",	// 15
+	"Record %ld has bad transaction %lu",	// 15
 	"Fragmented record %ld is corrupt",
 	"Record %ld is wrong length",
 	"Missing index root page",
@@ -2218,7 +2218,7 @@ RTN Vdr::walk_root(thread_db* tdbb, bool validate, jrd_rel* relation)
 	return rtn_ok;
 }
 
-RTN Vdr::walk_tip(thread_db* tdbb, bool validate, SLONG transaction)
+RTN Vdr::walk_tip(thread_db* tdbb, bool validate, TraNumber transaction)
 {
 /**************************************
  *

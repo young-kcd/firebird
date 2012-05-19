@@ -165,7 +165,7 @@ public:
 
 	ULONG pagesPerPIP;			// Pages per pip
 	ULONG bytesBitPIP;			// Number of bytes of bit in PIP
-	SLONG transPerTIP;			// Transactions per TIP
+	ULONG transPerTIP;			// Transactions per TIP
 	ULONG gensPerPage;			// Generators per generator page
 	ULONG pagesPerSCN;			// Slots per SCN's page
 	PageSpace* dbPageSpace;		// database page space
@@ -182,6 +182,7 @@ private:
 class PageNumber
 {
 public:
+	// CVC: To be completely in sync, the second param would have to be TraNumber
 	inline PageNumber(const USHORT aPageSpace, const ULONG aPageNum)
 		: pageNum(aPageNum), pageSpaceID(aPageSpace)
 	{

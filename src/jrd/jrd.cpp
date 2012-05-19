@@ -1004,7 +1004,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird
 }
 
 
-const int SWEEP_INTERVAL		= 20000;
+const ULONG SWEEP_INTERVAL		= 20000;
 
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
@@ -1627,7 +1627,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				PAG_set_db_SQL_dialect(tdbb, options.dpb_set_db_sql_dialect);
 			}
 
-			if (options.dpb_sweep_interval != -1)
+			if (options.dpb_sweep_interval > -1)
 			{
 				validateAccess(attachment);
 				PAG_sweep_interval(tdbb, options.dpb_sweep_interval);
@@ -2529,7 +2529,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 				SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay);
 			}
 
-			if (options.dpb_sweep_interval != -1)
+			if (options.dpb_sweep_interval > -1)
 			{
 				PAG_sweep_interval(tdbb, options.dpb_sweep_interval);
 				dbb->dbb_sweep_interval = options.dpb_sweep_interval;
@@ -6059,7 +6059,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	// Shutdown file and/or remote connection
 
 #ifdef SUPERSERVER_V2
-	TRA_header_write(tdbb, dbb, 0L);	// Update transaction info on header page.
+	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
 #endif
 
 	VIO_fini(tdbb);

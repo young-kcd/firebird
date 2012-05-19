@@ -435,7 +435,7 @@ public:
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 
-	SLONG		tdbb_temp_traid;	// current temporary table scope
+	TraNumber	tdbb_temp_traid;	// current temporary table scope
 
 	// BDB's held by thread
 	Firebird::HalfStaticArray<BufferDesc*, 16> tdbb_bdbs;

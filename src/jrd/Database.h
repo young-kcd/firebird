@@ -62,6 +62,7 @@
 #include "../common/config/config.h"
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/Synchronize.h"
+#include "fb_types.h"
 
 namespace Jrd
 {
@@ -186,7 +187,7 @@ private:
 	vcl(MemoryPool& p, const vcl& base) : vec_base<ULONG, type_vcl>(p, base) {}
 };
 
-typedef vec<SLONG> TransactionsVector;
+typedef vec<TraNumber> TransactionsVector;
 
 
 //
@@ -362,10 +363,10 @@ public:
 	Firebird::SyncObject				dbb_threads_sync;
 	thread_db*							dbb_active_threads;
 
-	SLONG dbb_oldest_active;			// Cached "oldest active" transaction
-	SLONG dbb_oldest_transaction;		// Cached "oldest interesting" transaction
-	SLONG dbb_oldest_snapshot;			// Cached "oldest snapshot" of all active transactions
-	SLONG dbb_next_transaction;			// Next transaction id used by NETWARE
+	TraNumber dbb_oldest_active;			// Cached "oldest active" transaction
+	TraNumber dbb_oldest_transaction;		// Cached "oldest interesting" transaction
+	TraNumber dbb_oldest_snapshot;			// Cached "oldest snapshot" of all active transactions
+	TraNumber dbb_next_transaction;			// Next transaction id used by NETWARE
 	SLONG dbb_attachment_id;			// Next attachment id for ReadOnly DB's
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
@@ -377,9 +378,9 @@ public:
 	Firebird::MemoryStats dbb_memory_stats;
 
 	RuntimeStatistics dbb_stats;
-	SLONG dbb_last_header_write;		// Transaction id of last header page physical write
+	TraNumber	dbb_last_header_write;		// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
-	SLONG dbb_sweep_interval;			// Transactions between sweep
+	ULONG dbb_sweep_interval;			// Transactions between sweep
 	const ULONG dbb_lock_owner_id;		// ID for the lock manager
 	SLONG dbb_lock_owner_handle;		// Handle for the lock manager
 

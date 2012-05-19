@@ -1663,7 +1663,7 @@ bool BTR_next_index(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, in
 		const index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
 		if (!irt_desc->irt_root && (irt_desc->irt_flags & irt_in_progress) && transaction)
 		{
-			const SLONG trans = irt_desc->irt_transaction;
+			const TraNumber trans = irt_desc->irt_transaction;
 			CCH_RELEASE(tdbb, window);
 			const int trans_state = TRA_wait(tdbb, transaction, trans, jrd_tra::tra_wait);
 			if ((trans_state == tra_dead) || (trans_state == tra_committed))

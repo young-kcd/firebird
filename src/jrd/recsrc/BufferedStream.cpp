@@ -198,7 +198,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 				break;
 
 			case FieldMap::TRANSACTION_ID:
-				*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
+				*reinterpret_cast<ULONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
 				break;
 
 			case FieldMap::DBKEY_NUMBER:
@@ -265,7 +265,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 				break;
 
 			case FieldMap::TRANSACTION_ID:
-				rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
+				rpb->rpb_transaction_nr = *reinterpret_cast<ULONG*>(from.dsc_address);
 				break;
 
 			case FieldMap::DBKEY_NUMBER:

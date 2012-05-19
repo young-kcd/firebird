@@ -224,7 +224,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 					switch (item->fieldId)
 					{
 					case ID_TRANS:
-						*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
+						*reinterpret_cast<ULONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
 						break;
 					case ID_DBKEY:
 						*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
@@ -346,7 +346,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 			switch (id)
 			{
 			case ID_TRANS:
-				rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
+				rpb->rpb_transaction_nr = *reinterpret_cast<ULONG*>(from.dsc_address);
 				break;
 			case ID_DBKEY:
 				rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));

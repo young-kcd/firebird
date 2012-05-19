@@ -68,7 +68,11 @@ class UserManagement;
 class thread_db;
 
 
-const SLONG MAX_TRA_NUMBER = MAX_SLONG;
+//Moved to fb_types.h
+//typedef ULONG TraNumber;
+
+// Moved to constants.h
+//const TraNumber MAX_TRA_NUMBER = ~TraNumber(0);
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this
 // structure small as there can be huge amount of them floating in memory.
@@ -227,12 +231,12 @@ public:
 
 	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
-	SLONG tra_number;					// transaction number
-	SLONG tra_top;						// highest transaction in snapshot
-	SLONG tra_oldest;					// oldest interesting transaction
-	SLONG tra_oldest_active;			// record versions older than this can be
+	TraNumber tra_number;					// transaction number
+	TraNumber tra_top;						// highest transaction in snapshot
+	TraNumber tra_oldest;					// oldest interesting transaction
+	TraNumber tra_oldest_active;			// record versions older than this can be
 										// gargage-collected by this tx
-	SLONG tra_att_oldest_active;		// oldest active transaction in the same attachment
+	TraNumber tra_att_oldest_active;		// oldest active transaction in the same attachment
 	jrd_tra*	tra_next;				// next transaction in database
 	jrd_tra*	tra_sibling;			// next transaction in group
 	MemoryPool* const tra_pool;			// pool for transaction
@@ -336,7 +340,7 @@ public:
 };
 
 // System transaction is always transaction 0.
-const SLONG TRA_system_transaction = 0;
+const TraNumber TRA_system_transaction = 0;
 
 // Flag definitions for tra_flags.
 

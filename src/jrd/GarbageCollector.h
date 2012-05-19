@@ -44,15 +44,15 @@ public:
 
 	~GarbageCollector();
 
-	void addPage(const USHORT relID, const ULONG pageno, const SLONG tranid);
-	bool getPageBitmap(const SLONG oldest_snapshot, USHORT &relID, PageBitmap** sbm);
+	void addPage(const USHORT relID, const ULONG pageno, const TraNumber tranid);
+	bool getPageBitmap(const TraNumber oldest_snapshot, USHORT &relID, PageBitmap** sbm);
 	void removeRelation(const USHORT relID);
-	void sweptRelation(const SLONG oldest_snapshot, const USHORT relID);
+	void sweptRelation(const TraNumber oldest_snapshot, const USHORT relID);
 
-	SLONG minTranID(const USHORT relID);
+	TraNumber minTranID(const USHORT relID);
 
 private:
-	typedef Firebird::Pair<Firebird::NonPooled<SLONG, PageBitmap*> > TranBitMap;
+	typedef Firebird::Pair<Firebird::NonPooled<TraNumber, PageBitmap*> > TranBitMap;
 	typedef Firebird::GenericMap<TranBitMap> TranData;
 
 	class RelationData
@@ -67,10 +67,10 @@ private:
 			clear();
 		}
 
-		void addPage(const ULONG pageno, const SLONG tranid);
-		void getPageBitmap(const SLONG oldest_snapshot, PageBitmap** sbm);
-		void swept(const SLONG oldest_snapshot);
-		SLONG minTranID() const;
+		void addPage(const ULONG pageno, const TraNumber tranid);
+		void getPageBitmap(const TraNumber oldest_snapshot, PageBitmap** sbm);
+		void swept(const TraNumber oldest_snapshot);
+		TraNumber minTranID() const;
 
 		USHORT getRelID() const
 		{

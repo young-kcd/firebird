@@ -335,7 +335,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_allocation:
-			CCH_flush(tdbb, FLUSH_ALL, 0L);
+			CCH_flush(tdbb, FLUSH_ALL, 0);
 			length = INF_convert(PageSpace::maxAlloc(dbb), buffer);
 			break;
 
@@ -511,7 +511,7 @@ void INF_database_info(thread_db* tdbb,
 		case isc_info_limbo:
 			if (!transaction)
 				transaction = TRA_start(tdbb, 0, NULL);
-			for (SLONG id = transaction->tra_oldest; id < transaction->tra_number; id++)
+			for (TraNumber id = transaction->tra_oldest; id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_limbo &&
 					TRA_wait(tdbb, transaction, id, jrd_tra::tra_wait) == tra_limbo)
@@ -530,7 +530,7 @@ void INF_database_info(thread_db* tdbb,
 		case isc_info_active_transactions:
 			if (!transaction)
 				transaction = TRA_start(tdbb, 0, NULL);
-			for (SLONG id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
+			for (TraNumber id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_active)
 				{
@@ -550,7 +550,7 @@ void INF_database_info(thread_db* tdbb,
 				transaction = TRA_start(tdbb, 0, NULL);
 			{ // scope
 				SLONG cnt = 0;
-				for (SLONG id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
+				for (TraNumber id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
 				{
 					if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
 						cnt++;
@@ -754,7 +754,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_db_size_in_pages:
-			CCH_flush(tdbb, FLUSH_ALL, 0L);
+			CCH_flush(tdbb, FLUSH_ALL, 0);
 			length = INF_convert(PageSpace::actAlloc(dbb), buffer);
 			break;
 

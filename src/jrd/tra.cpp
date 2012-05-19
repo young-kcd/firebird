@@ -85,18 +85,18 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> >
 
 static int blocking_ast_transaction(void*);
 #ifdef SUPERSERVER_V2
-static SLONG bump_transaction_id(thread_db*, WIN *);
+static TraNumber bump_transaction_id(thread_db*, WIN*);
 #else
-static header_page* bump_transaction_id(thread_db*, WIN *);
+static header_page* bump_transaction_id(thread_db*, WIN*);
 #endif
 static Lock* create_transaction_lock(thread_db* tdbb, void* object);
-static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
+static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, int state);
 static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
 	const char* option_name, RelationLockTypeMap& lockmap, const int level);
-static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, ULONG, USHORT);
+static tx_inv_page* fetch_inventory_page(thread_db*, WIN* window, ULONG sequence, USHORT lock_level);
 static const char* get_lockname_v3(const UCHAR lock);
 static ULONG inventory_page(thread_db*, ULONG);
-static SSHORT limbo_transaction(thread_db*, SLONG);
+static int limbo_transaction(thread_db*, TraNumber id);
 static void link_transaction(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*, Database*);
@@ -220,7 +220,7 @@ void TRA_cleanup(thread_db* tdbb)
 			return;
 	}
 
-	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 	// Read header page and allocate transaction number.  Since
 	// the transaction inventory page was initialized to zero, it
@@ -228,8 +228,8 @@ void TRA_cleanup(thread_db* tdbb)
 
 	WIN window(HEADER_PAGE_NUMBER);
 	const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-	const SLONG ceiling = header->hdr_next_transaction;
-	const SLONG active = header->hdr_oldest_active;
+	const TraNumber ceiling = header->hdr_next_transaction;
+	const TraNumber active = header->hdr_oldest_active;
 	CCH_RELEASE(tdbb, &window);
 
 	if (ceiling == 0)
@@ -238,23 +238,23 @@ void TRA_cleanup(thread_db* tdbb)
 	// Zip thru transactions from the "oldest active" to the next looking for
 	// active transactions.  When one is found, declare it dead.
 
-	const SLONG last = ceiling / trans_per_tip;
-	SLONG number = active % trans_per_tip;
-	SLONG limbo = 0;
+	const ULONG last = ceiling / trans_per_tip;
+	ULONG number = active % trans_per_tip;
+	TraNumber limbo = 0;
 
-	for (SLONG sequence = active / trans_per_tip; sequence <= last; sequence++, number = 0)
+	for (ULONG sequence = active / trans_per_tip; sequence <= last; sequence++, number = 0)
 	{
 		window.win_page = inventory_page(tdbb, sequence);
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
-		SLONG max = ceiling - (sequence * trans_per_tip);
+		ULONG max = ceiling - (sequence * trans_per_tip);
 		if (max > trans_per_tip)
 			max = trans_per_tip - 1;
 		for (; number <= max; number++)
 		{
-			const SLONG trans_offset = TRANS_OFFSET(number);
+			const ULONG trans_offset = TRANS_OFFSET(number);
 			UCHAR* byte = tip->tip_transactions + trans_offset;
-			const SSHORT shift = TRANS_SHIFT(number);
-			const SSHORT state = (*byte >> shift) & TRA_MASK;
+			const USHORT shift = TRANS_SHIFT(number);
+			const int state = (*byte >> shift) & TRA_MASK;
 			if (state == tra_limbo && limbo == 0)
 				limbo = sequence * trans_per_tip + number;
 			else if (state == tra_active)
@@ -277,9 +277,9 @@ void TRA_cleanup(thread_db* tdbb)
 			CCH_MARK(tdbb, &window);
 			for (; number < trans_per_tip; number++)
 			{
-				const SLONG trans_offset = TRANS_OFFSET(number);
+				const ULONG trans_offset = TRANS_OFFSET(number);
 				UCHAR* byte = tip->tip_transactions + trans_offset;
-				const SSHORT shift = TRANS_SHIFT(number);
+				const USHORT shift = TRANS_SHIFT(number);
 				*byte &= ~(TRA_MASK << shift);
 				if (tip->tip_next)
 					*byte |= tra_committed << shift;
@@ -303,7 +303,7 @@ void TRA_cleanup(thread_db* tdbb)
 		CCH_MARK(tdbb, &window);
 		for (number = 0; number < trans_per_tip; number++)
 		{
-			const SLONG trans_offset = TRANS_OFFSET(number);
+			const ULONG trans_offset = TRANS_OFFSET(number);
 			UCHAR* byte = tip->tip_transactions + trans_offset;
 			const USHORT shift = TRANS_SHIFT(number);
 			*byte &= ~(TRA_MASK << shift);
@@ -435,7 +435,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence) //, WIN* precedence_window)
 	tx_inv_page* prior_tip = NULL;
 	WIN prior_window(DB_PAGE_SPACE, -1);
 	if (sequence) {
-		prior_tip = fetch_inventory_page(tdbb, &prior_window, (SLONG) (sequence - 1), LCK_write);
+		prior_tip = fetch_inventory_page(tdbb, &prior_window, (sequence - 1), LCK_write);
 	}
 
 	// Allocate and format new page
@@ -467,7 +467,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence) //, WIN* precedence_window)
 }
 
 
-int TRA_fetch_state(thread_db* tdbb, SLONG number)
+int TRA_fetch_state(thread_db* tdbb, TraNumber number)
 {
 /**************************************
  *
@@ -487,17 +487,16 @@ int TRA_fetch_state(thread_db* tdbb, SLONG number)
 
 	// locate and fetch the proper TIP page
 
-    const ULONG tip_number = (ULONG) number;
-	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
-	const ULONG tip_seq = tip_number / trans_per_tip;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
+	const ULONG tip_seq = number / trans_per_tip;
 	WIN window(DB_PAGE_SPACE, -1);
 	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, tip_seq, LCK_read);
 
 	// calculate the state of the desired transaction
 
-	const ULONG byte = TRANS_OFFSET(tip_number % trans_per_tip);
-	const USHORT shift = TRANS_SHIFT(tip_number);
-	const USHORT state = (tip->tip_transactions[byte] >> shift) & TRA_MASK;
+	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
+	const USHORT shift = TRANS_SHIFT(number);
+	const int state = (tip->tip_transactions[byte] >> shift) & TRA_MASK;
 
 	CCH_RELEASE(tdbb, &window);
 
@@ -505,7 +504,7 @@ int TRA_fetch_state(thread_db* tdbb, SLONG number)
 }
 
 
-void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top)
+void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, TraNumber base, TraNumber top)
 {
 /**************************************
  *
@@ -532,7 +531,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 	// fetch the first inventory page
 
 	WIN window(DB_PAGE_SPACE, -1);
-	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, (SLONG) sequence++, LCK_read);
+	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, sequence++, LCK_read);
 
 	// move the first page into the bit vector
 
@@ -570,7 +569,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 }
 
 
-int TRA_get_state(thread_db* tdbb, SLONG number)
+int TRA_get_state(thread_db* tdbb, TraNumber number)
 {
 /**************************************
  *
@@ -601,7 +600,7 @@ int TRA_get_state(thread_db* tdbb, SLONG number)
 
 
 #ifdef SUPERSERVER_V2
-void TRA_header_write(thread_db* tdbb, Database* dbb, SLONG number)
+void TRA_header_write(thread_db* tdbb, Database* dbb, TraNumber number)
 {
 /**************************************
  *
@@ -825,7 +824,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 }
 
 
-bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
+bool TRA_precommited(thread_db* tdbb, TraNumber old_number, TraNumber new_number)
 {
 /**************************************
  *
@@ -854,7 +853,7 @@ bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 		vector = dbb->dbb_pc_transactions = TransactionsVector::newVector(*dbb->dbb_permanent, 1);
 	}
 
-	SLONG* zp = 0;
+	TraNumber* zp = 0;
 	for (TransactionsVector::iterator p = vector->begin(), end = vector->end(); p < end; ++p)
 	{
 		if (*p == old_number)
@@ -964,11 +963,11 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	if (dbb->readOnly())
 		ERR_post(Arg::Gds(isc_read_only_database));
 
-	const SLONG number = gds__vax_integer(id, length);
+	const TraNumber number = gds__vax_integer(id, length);
 	if (number > dbb->dbb_next_transaction)
 		PAG_header(tdbb, true);
 
-	const UCHAR state = (number > dbb->dbb_next_transaction) ?
+	const int state = (number > dbb->dbb_next_transaction) ?
 		255 : limbo_transaction(tdbb, number);
 
 	if (state != tra_limbo)
@@ -1261,7 +1260,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		}
 	}
 
-	SSHORT state = tra_dead;
+	int state = tra_dead;
 
 	// Only transaction savepoint could be there
 	if (transaction->tra_save_point)
@@ -1320,7 +1319,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 }
 
 
-void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT state)
+void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int state)
 {
 /**************************************
  *
@@ -1351,12 +1350,12 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 	}
 
 	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
-	const SLONG sequence = number / trans_per_tip;
+	const ULONG sequence = number / trans_per_tip;
 	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
-	const SSHORT shift = TRANS_SHIFT(number);
+	const USHORT shift = TRANS_SHIFT(number);
 
 	WIN window(DB_PAGE_SPACE, -1);
-	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, (SLONG) sequence, LCK_write);
+	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, sequence, LCK_write);
 
 #ifdef SUPERSERVER_V2
 	CCH_MARK(tdbb, &window);
@@ -1400,7 +1399,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 }
 
 
-int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
+int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number)
 {
 /**************************************
  *
@@ -1574,7 +1573,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 }
 
 
-int TRA_state(const UCHAR* bit_vector, ULONG oldest, ULONG number)
+int TRA_state(const UCHAR* bit_vector, TraNumber oldest, TraNumber number)
 {
 /**************************************
  *
@@ -1665,7 +1664,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (!(transaction = trans))
 		transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
 
-	SLONG transaction_oldest_active = transaction->tra_oldest_active;
+	TraNumber transaction_oldest_active = transaction->tra_oldest_active;
 	tdbb->setTransaction(transaction);
 
 
@@ -1681,8 +1680,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (VIO_sweep(tdbb, transaction))
 	{
 		const ULONG base = transaction->tra_oldest & ~TRA_MASK;
-		ULONG active = transaction->tra_oldest;
-		for (; active < (ULONG) transaction->tra_top; active++)
+		TraNumber active = transaction->tra_oldest;
+		for (; active < transaction->tra_top; active++)
 		{
 			if (transaction->tra_flags & TRA_read_committed)
 			{
@@ -1758,7 +1757,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 }
 
 
-int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait)
+int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t wait)
 {
 /**************************************
  *
@@ -1802,7 +1801,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
 		LCK_release(tdbb, &temp_lock);
 	}
 
-	USHORT state = TRA_get_state(tdbb, number);
+	int state = TRA_get_state(tdbb, number);
 
 	if (wait != jrd_tra::tra_no_wait && state == tra_committed)
 		return state;
@@ -1878,7 +1877,7 @@ static int blocking_ast_transaction(void* ast_object)
 
 
 #ifdef SUPERSERVER_V2
-static SLONG bump_transaction_id(thread_db* tdbb, WIN* window)
+static TraNumber bump_transaction_id(thread_db* tdbb, WIN* window)
 {
 /**************************************
  *
@@ -1901,7 +1900,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN* window)
 		ERR_post(Arg::Gds(isc_imp_exc) <<
 				 Arg::Gds(isc_tra_num_exc));
 	}
-	const SLONG number = ++dbb->dbb_next_transaction;
+	const TraNumber number = ++dbb->dbb_next_transaction;
 
 	// No need to write TID onto the TIP page, for a RO DB
 	if (dbb->readOnly())
@@ -1912,7 +1911,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN* window)
 	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 
 	if (new_tip) {
-		TRA_extend_tip(tdbb, (ULONG) (number / dbb->dbb_page_manager.transPerTIP)); //, window);
+		TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
 	}
 
 	return number;
@@ -1956,14 +1955,14 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 		ERR_post(Arg::Gds(isc_imp_exc) <<
 				 Arg::Gds(isc_tra_num_exc));
 	}
-	const SLONG number = header->hdr_next_transaction + 1;
+	const TraNumber number = header->hdr_next_transaction + 1;
 
 	// If this is the first transaction on a TIP, allocate the TIP now.
 
 	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 
 	if (new_tip) {
-		TRA_extend_tip(tdbb, (ULONG) (number / dbb->dbb_page_manager.transPerTIP)); //, window);
+		TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
 	}
 
 	// Extend, if necessary, has apparently succeeded.  Next, update header page
@@ -2248,7 +2247,7 @@ static ULONG inventory_page(thread_db* tdbb, ULONG sequence)
 }
 
 
-static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
+static int limbo_transaction(thread_db* tdbb, TraNumber id)
 {
 /**************************************
  *
@@ -2268,18 +2267,18 @@ static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
-	const SLONG page = id / trans_per_tip;
-	const SLONG number = id % trans_per_tip;
+	const ULONG page = id / trans_per_tip;
+	const ULONG number = id % trans_per_tip;
 
 	WIN window(DB_PAGE_SPACE, -1);
 	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, page, LCK_write);
 
-	const SLONG trans_offset = TRANS_OFFSET(number);
+	const ULONG trans_offset = TRANS_OFFSET(number);
 	const UCHAR* byte = tip->tip_transactions + trans_offset;
-	const SSHORT shift = TRANS_SHIFT(number);
-	const SSHORT state = (*byte >> shift) & TRA_MASK;
+	const USHORT shift = TRANS_SHIFT(number);
+	const int state = (*byte >> shift) & TRA_MASK;
 	CCH_RELEASE(tdbb, &window);
 
 	return state;
@@ -2342,7 +2341,7 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 }
 
 
-static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, SSHORT state)
+static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, int state)
 {
 /**************************************
  *
@@ -2369,14 +2368,16 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 	// because it must see the operations of the 'commit-retained' transaction and
 	// its snapshot doesn't contain these operations.
 
-	if (commit) {
+	if (commit)
+	{
+		//fb_assert(sizeof(transaction->tra_number) == sizeof(ULONG));
 		SBM_SET(tdbb->getDefaultPool(), &transaction->tra_commit_sub_trans, transaction->tra_number);
 	}
 
 	// Create a new transaction lock, inheriting oldest active from transaction being committed.
 
 	WIN window(DB_PAGE_SPACE, -1);
-	SLONG new_number;
+	TraNumber new_number;
 #ifdef SUPERSERVER_V2
 	new_number = bump_transaction_id(tdbb, &window);
 #else
@@ -2417,7 +2418,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 	// secures the original snapshot by insuring the oldest active
 	// is seen by other transactions.
 
-	const SLONG old_number = transaction->tra_number;
+	const TraNumber old_number = transaction->tra_number;
 
 	if (!dbb->readOnly())
 	{
@@ -3059,7 +3060,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// the transaction inventory page was initialized to zero, it
 	// transaction is automatically marked active.
 
-	ULONG oldest, number, active, oldest_active, oldest_snapshot;
+	TraNumber oldest, number, active, oldest_active, oldest_snapshot;
 
 #ifdef SUPERSERVER_V2
 	number = bump_transaction_id(tdbb, &window);
@@ -3097,7 +3098,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// make everything simpler, round down the oldest to a multiple
 	// of four, which puts the transaction on a byte boundary.
 
-	ULONG base = oldest & ~TRA_MASK;
+	TraNumber base = oldest & ~TRA_MASK;
 
 	const size_t length = (temp->tra_flags & TRA_read_committed) ? 0 : (number - base + TRA_MASK) / 4;
 
@@ -3179,7 +3180,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	base = oldest & ~TRA_MASK;
 	oldest_active = number;
 	bool cleanup = !(number % TRA_ACTIVE_CLEANUP);
-	USHORT oldest_state;
+	int oldest_state;
 
 	for (; active < number; active++)
 	{
@@ -3194,7 +3195,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		if (oldest_state == tra_active)
 		{
 			temp_lock.lck_key.lck_long = active;
-			SLONG data = LCK_read_data(tdbb, &temp_lock);
+			TraNumber data = LCK_read_data(tdbb, &temp_lock);
 			if (!data)
 			{
 				if (cleanup)
@@ -3219,7 +3220,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 			// computed value then there is no need to continue. There can't be
 			// an older lock data in the remaining active transactions.
 
-			if (trans->tra_oldest_active == (SLONG) oldest_snapshot)
+			if (trans->tra_oldest_active == oldest_snapshot)
 				break;
 
 			// Query the minimum lock data for all active transaction locks.
@@ -3238,8 +3239,8 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// data such as temporary tables (GTT's).
 
 	trans->tra_att_oldest_active = number;
-	SLONG att_oldest_active = number;
-	SLONG att_oldest_snapshot = number;
+	TraNumber att_oldest_active = number;
+	TraNumber att_oldest_snapshot = number;
 
 	for (jrd_tra* tx_att = attachment->att_transactions; tx_att; tx_att = tx_att->tra_next)
 	{
@@ -3258,8 +3259,9 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// unnecessary blocking of garbage collection by read-committed
 	// transactions
 
-	const ULONG lck_data = (trans->tra_flags & TRA_read_committed) ? number : oldest_active;
+	const TraNumber lck_data = (trans->tra_flags & TRA_read_committed) ? number : oldest_active;
 
+	//fb_assert(sizeof(lock->lck_data) == sizeof(lck_data));
 	if (lock->lck_data != (SLONG) lck_data)
 		LCK_write_data(tdbb, lock, lck_data);
 
@@ -3284,10 +3286,10 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 			break;
 	}
 
-	if (--oldest > (ULONG) dbb->dbb_oldest_transaction)
+	if (--oldest > dbb->dbb_oldest_transaction)
 		dbb->dbb_oldest_transaction = oldest;
 
-	if (oldest_active > (ULONG) dbb->dbb_oldest_active)
+	if (oldest_active > dbb->dbb_oldest_active)
 		dbb->dbb_oldest_active = oldest_active;
 
 	if (trans->tra_oldest_active > dbb->dbb_oldest_snapshot)

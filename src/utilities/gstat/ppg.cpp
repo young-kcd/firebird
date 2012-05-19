@@ -69,10 +69,10 @@ void PPG_print_header(const header_page* header, ULONG page,
 		uSvc->printf(false, "\tPage size\t\t%d\n", header->hdr_page_size);
 		uSvc->printf(false, "\tODS version\t\t%d.%d\n",
 				header->hdr_ods_version & ~ODS_FIREBIRD_FLAG, header->hdr_ods_minor);
-		uSvc->printf(false, "\tOldest transaction\t%"SLONGFORMAT"\n", header->hdr_oldest_transaction);
-		uSvc->printf(false, "\tOldest active\t\t%"SLONGFORMAT"\n", header->hdr_oldest_active);
-		uSvc->printf(false, "\tOldest snapshot\t\t%"SLONGFORMAT"\n", header->hdr_oldest_snapshot);
-		uSvc->printf(false, "\tNext transaction\t%"SLONGFORMAT"\n", header->hdr_next_transaction);
+		uSvc->printf(false, "\tOldest transaction\t%"ULONGFORMAT"\n", header->hdr_oldest_transaction);
+		uSvc->printf(false, "\tOldest active\t\t%"ULONGFORMAT"\n", header->hdr_oldest_active);
+		uSvc->printf(false, "\tOldest snapshot\t\t%"ULONGFORMAT"\n", header->hdr_oldest_snapshot);
+		uSvc->printf(false, "\tNext transaction\t%"ULONGFORMAT"\n", header->hdr_next_transaction);
 		uSvc->printf(false, "\tSequence number\t\t%d\n", header->hdr_sequence);
 
 		uSvc->printf(false, "\tNext attachment ID\t%"SLONGFORMAT"\n", header->hdr_attachment_id);

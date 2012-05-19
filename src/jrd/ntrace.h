@@ -78,7 +78,7 @@ enum ntrace_tra_isolation_t
 class TraceTransaction : public Firebird::IVersioned
 {
 public:
-	virtual int FB_CARG getTransactionID() = 0;
+	virtual unsigned FB_CARG getTransactionID() = 0;
 	virtual bool FB_CARG getReadOnly() = 0;
 	virtual int FB_CARG getWait() = 0;
 	virtual ntrace_tra_isolation_t FB_CARG getIsolation() = 0;

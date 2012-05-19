@@ -124,7 +124,7 @@ const char* TraceConnectionImpl::getRemoteProcessName()
 
 /// TraceTransactionImpl
 
-int TraceTransactionImpl::getTransactionID()
+unsigned TraceTransactionImpl::getTransactionID()
 {
 	return m_tran->tra_number;
 }

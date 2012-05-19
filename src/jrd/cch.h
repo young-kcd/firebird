@@ -235,7 +235,7 @@ public:
 	PageNumber	bdb_pending_page;		// Database page number to be
 	ULONG		bdb_incarnation;
 	ULONG		bdb_transactions;		// vector of dirty flags to reduce commit overhead
-	SLONG		bdb_mark_transaction;	// hi-water mark transaction to defer header page I/O
+	TraNumber	bdb_mark_transaction;	// hi-water mark transaction to defer header page I/O
 	que			bdb_lower;				// lower precedence que
 	que			bdb_higher;				// higher precedence que
 	thread_db*	bdb_exclusive;			// thread holding exclusive latch
