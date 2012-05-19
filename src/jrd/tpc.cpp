@@ -95,6 +95,7 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
 		tip_cache = m_cache[pos];
 
 		fb_assert(number >= tip_cache->tpc_base);
+		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		fb_assert(number < (tip_cache->tpc_base + trans_per_tip));
 
 		return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
@@ -137,6 +138,7 @@ void TipCache::initializeTpc(thread_db* tdbb, TraNumber number)
 
 	const TxPage* tip_cache = m_cache[m_cache.getCount() - 1];
 
+	fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 	if (number < (tip_cache->tpc_base + trans_per_tip))
 		return;
 
@@ -178,6 +180,7 @@ void TipCache::setState(TraNumber number, SSHORT state)
 		TxPage* tip_cache = m_cache[pos];
 
 		fb_assert(number >= tip_cache->tpc_base);
+		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		fb_assert(number < (tip_cache->tpc_base + trans_per_tip));
 
 		UCHAR* address = tip_cache->tpc_transactions + byte;
@@ -241,6 +244,7 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 		tip_cache = m_cache[pos];
 
 		fb_assert(number >= tip_cache->tpc_base);
+		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		fb_assert(number < (tip_cache->tpc_base + trans_per_tip));
 
 		const int state = TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
@@ -320,6 +324,7 @@ void TipCache::updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence)
 	{
 		tip_cache = m_cache[0];
 
+		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		if (m_dbb->dbb_oldest_transaction >= (tip_cache->tpc_base + trans_per_tip))
 		{
 			m_cache.remove((size_t) 0);
@@ -426,6 +431,7 @@ TraNumber TipCache::cacheTransactions(thread_db* tdbb, TraNumber oldest)
 	{
 		TxPage* tip_cache = m_cache[0];
 
+		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		if ((tip_cache->tpc_base + trans_per_tip) < hdr_oldest)
 		{
 			m_cache.remove((size_t) 0);
@@ -506,6 +512,7 @@ int TipCache::extendCache(thread_db* tdbb, TraNumber number)
 		tip_cache = m_cache[pos];
 
 		fb_assert(number >= tip_cache->tpc_base);
+		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		fb_assert(number < (tip_cache->tpc_base + trans_per_tip));
 
 		return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
