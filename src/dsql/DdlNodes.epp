@@ -1622,7 +1622,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 					{
 						// Function modifies an argument whose value is the function return value.
 
-						if (udfReturnPos > parameters.getCount() || udfReturnPos < 1)
+						if (udfReturnPos < 1 || ULONG(udfReturnPos) > parameters.getCount())
 						{
 							// CVC: We should devise new msg "position should be between 1 and #params";
 							// here it is: dsql_udf_return_pos_err
@@ -5434,7 +5434,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (!notNullFlag && pkCols)
 		{
 			// Let's see if the field appears in a "primary_key (a, b, c)" relation constraint.
-			for (int i = 0; !notNullFlag && i < pkCols->getCount(); ++i)
+			for (size_t i = 0; !notNullFlag && i < pkCols->getCount(); ++i)
 			{
 				if (field->fld_name == (*pkCols)[i].c_str())
 					notNullFlag = true;
@@ -8263,13 +8263,13 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	if (andArg == 0)
 	{
-		replaceFieldNames((andNode->arg1 = querySpec->dsqlWhere).getObject(), items, NULL,
-			false, TEMP_CONTEXT);
+		andNode->arg1 = querySpec->dsqlWhere;
+		replaceFieldNames(andNode->arg1.getObject(), items, NULL, false, TEMP_CONTEXT);
 	}
 	else if (andArg == 1)
 	{
-		replaceFieldNames((andNode->arg2 = querySpec->dsqlWhere).getObject(), items, NULL,
-			false, TEMP_CONTEXT);
+		andNode->arg2 = querySpec->dsqlWhere;
+		replaceFieldNames(andNode->arg2.getObject(), items, NULL, false, TEMP_CONTEXT);
 	}
 	else
 	{

@@ -51,7 +51,7 @@
 #include "../jrd/grant_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/constants.h"
-#include "../include/fb_exception.h"
+#include "fb_exception.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/array.h"
 #include "../common/config/config.h"

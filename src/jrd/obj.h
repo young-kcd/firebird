@@ -49,6 +49,6 @@ const int obj_package_header	= 18;
 const int obj_package_body		= 19;
 
 const int obj_type_MAX			= 20;	// keep this last!
-const int obj_user_or_role		= 20;	// used in the parser only / not relation with obj_type_MAX
+const int obj_user_or_role		= 20;	// used in the parser only / no relation with obj_type_MAX
 
 #endif // JRD_OBJ_H

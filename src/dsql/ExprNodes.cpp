@@ -9512,7 +9512,7 @@ void SubstringNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUChar(blr_literal);
 		dsqlScratch->appendUChar(blr_long);
 		dsqlScratch->appendUChar(0);
-		dsqlScratch->appendUShort(LONG_POS_MAX);
+		dsqlScratch->appendUShort(LONG_POS_MAX & 0xffff); // avoid warning
 		dsqlScratch->appendUShort(LONG_POS_MAX >> 16);
 	}
 }

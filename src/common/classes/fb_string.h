@@ -34,8 +34,8 @@
 #include <stdarg.h>
 
 #include "firebird.h"
-#include "../include/fb_types.h"
-#include "../include/fb_exception.h"
+#include "fb_types.h"
+#include "fb_exception.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/RefCounted.h"
 
@@ -88,6 +88,7 @@ namespace Firebird
 		void reserveBuffer(const size_type newLen)
 		{
 			size_type newSize = newLen + 1;
+			fb_assert(newSize != 0); // This large argument would be a programming error for sure.
 			if (newSize > bufferSize)
 			{
 				// Make sure we do not exceed string length limit
@@ -124,11 +125,13 @@ namespace Firebird
 		// Use it in constructors only when stringBuffer is not assigned yet.
 		void initialize(const size_type len)
 		{
-			if (len < INLINE_BUFFER_SIZE) {
+			if (len < INLINE_BUFFER_SIZE)
+			{
 				stringBuffer = inlineBuffer;
 				bufferSize = INLINE_BUFFER_SIZE;
 			}
-			else {
+			else
+			{
 				stringBuffer = NULL; // Be safe in case of exception
 				checkLength(len);
 

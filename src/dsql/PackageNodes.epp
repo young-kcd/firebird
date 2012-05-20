@@ -855,29 +855,30 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
 		{
-			switch ((*arrays[i])[j].type)
+			CreateAlterPackageNode::Item& elem = (*arrays[i])[j];
+			switch (elem.type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
 					{
-						CreateAlterFunctionNode* func = (*arrays[i])[j].function;
+						CreateAlterFunctionNode* func = elem.function;
 
 						if (arrays[i] == items)
 							func->privateScope = !headerFuncs.exist(Signature(func->name));
 
 						func->packageOwner = owner;
-						func->executeDdl(tdbb, (*arrays[i])[j].dsqlScratch, transaction);
+						func->executeDdl(tdbb, elem.dsqlScratch, transaction);
 					}
 					break;
 
 				case CreateAlterPackageNode::Item::PROCEDURE:
 					{
-						CreateAlterProcedureNode* proc = (*arrays[i])[j].procedure;
+						CreateAlterProcedureNode* proc = elem.procedure;
 
 						if (arrays[i] == items)
 							proc->privateScope = !headerProcs.exist(Signature(proc->name));
 
 						proc->packageOwner = owner;
-						proc->executeDdl(tdbb, (*arrays[i])[j].dsqlScratch, transaction);
+						proc->executeDdl(tdbb, elem.dsqlScratch, transaction);
 					}
 					break;
 			}

@@ -1179,7 +1179,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 		}
 
 		BackupManager* bm = dbb->dbb_backup_manager;
-		if (!bm->isShuttedDown())
+		if (!bm->isShutDown())
 		{
 			BackupManager::StateReadGuard stateGuard(tdbb);
 			const int backup_state = bm->getState();

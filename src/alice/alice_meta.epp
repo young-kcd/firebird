@@ -34,7 +34,7 @@
 #include "../alice/alice.h"
 #include "../alice/alice_meta.h"
 #include "../yvalve/gds_proto.h"
-#include "../include/fb_exception.h"
+#include "fb_exception.h"
 #include "../common/classes/alloc.h"
 #include "../alice/alice_proto.h"
 

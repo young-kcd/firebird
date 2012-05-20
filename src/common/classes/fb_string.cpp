@@ -81,6 +81,11 @@ namespace {
 			return m[uc >> 3] & (1 << (uc & 7));
 		}
 	};
+
+#ifndef CLASSES_ARRAY_H
+	const size_t FB_MAX_SIZEOF = ~size_t(0);
+#endif
+
 } // namespace
 
 namespace Firebird
@@ -150,6 +155,7 @@ namespace Firebird
 
 	AbstractString::pointer AbstractString::baseAppend(const size_type n)
 	{
+		fb_assert(stringLength < FB_MAX_SIZEOF - n);
 		reserveBuffer(stringLength + n);
 		stringLength += n;
 		stringBuffer[stringLength] = 0; // Set null terminator inside the new buffer

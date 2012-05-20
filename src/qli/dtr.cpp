@@ -52,7 +52,7 @@
 #include "../qli/parse_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/perf_proto.h"
-#include "../include/fb_exception.h"
+#include "fb_exception.h"
 #include "../common/utils_proto.h"
 #include "../jrd/align.h"
 #include "../common/classes/Switches.h"

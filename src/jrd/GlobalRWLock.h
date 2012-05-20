@@ -34,7 +34,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/lck_proto.h"
-#include "../include/fb_types.h"
+#include "fb_types.h"
 #include "os/pio.h"
 #include "../common/classes/condition.h"
 

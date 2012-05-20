@@ -310,6 +310,7 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 		if (length->dsc_address)	// constant
 		{
 			SLONG constant = MIN(MAX_COLUMN_SIZE, CVT_get_long(length, 0, ERR_post));
+			fb_assert(constant >= 0);
 			len = MIN(len, constant * maxBytesPerChar(result->getCharSet()));
 		}
 

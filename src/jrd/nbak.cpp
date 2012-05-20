@@ -697,7 +697,7 @@ void BackupManager::flushDifference()
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	dbCreating(false), database(_database), diff_file(NULL), alloc_table(NULL),
 	last_allocated_page(0), current_scn(0), diff_name(*_database->dbb_permanent),
-	explicit_diff_name(false), flushInProgress(false), shuttedDown(false),
+	explicit_diff_name(false), flushInProgress(false), shutDown(false),
 	stateLock(FB_NEW(*database->dbb_permanent) NBackupStateLock(tdbb, *database->dbb_permanent, this)),
 	allocLock(FB_NEW(*database->dbb_permanent) NBackupAllocLock(tdbb, *database->dbb_permanent, this))
 {
@@ -842,7 +842,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 
 void BackupManager::shutdown(thread_db* /*tdbb*/)
 {
-	shuttedDown = true;
+	shutDown = true;
 
 	closeDelta();
 	stateLock->shutdownLock();

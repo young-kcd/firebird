@@ -126,6 +126,8 @@ protected:
 
 	void freeData()
 	{
+		// CVC: Warning, after this call, "data" is an invalid pointer, be sure to reassign it
+		// or make it equal to this->getStorage()
 		if (data != this->getStorage())
 			this->getPool().deallocate(data);
 	}

@@ -24,7 +24,7 @@
 #ifndef JRD_UTL_PROTO_H
 #define JRD_UTL_PROTO_H
 
-#include "../include/fb_types.h"
+#include "fb_types.h"
 
 #ifdef __cplusplus
 extern "C" {
