@@ -1,3 +1,48 @@
+ 2012-05-19 12:20  robocop 
+   M src/jrd/tpc.cpp
+Vlad asked for this assertion but I think it should be runtime check for the release version, too.
+
+ 2012-05-19 12:04  robocop 
+   M src/dsql/ExprNodes.cpp
+   M src/include/fb_types.h
+   M src/jrd/Attachment.h
+   M src/jrd/Database.h
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/GarbageCollector.h
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+   M src/jrd/cch_proto.h
+   M src/jrd/constants.h
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/ntrace.h
+   M src/jrd/ods.h
+   M src/jrd/pag.h
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/tpc.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/tra_proto.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/rebuild/rebuild.cpp
+Change txn numbers to unsigned and commit after Vlad's review. If  the compile-time checks (to ensure enough room for the new txn type) are too ugly, they may be deleted.
+
  2012-05-17 09:04  dimitr 
    M src/dsql/ExprNodes.cpp
    M src/jrd/par.cpp
