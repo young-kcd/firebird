@@ -4991,7 +4991,13 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 						}
 					}
 
-					if (dsqlQualifier.hasData() && !field)
+					if ((context->ctx_flags & CTX_view_with_check) && !field)
+					{
+						node = FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+						node->line = line;
+						node->column = column;
+					}
+					else if (dsqlQualifier.hasData() && !field)
 					{
 						// If a qualifier was present and we didn't find
 						// a matching field then we should stop searching.
@@ -4999,8 +5005,7 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 						done = true;
 						break;
 					}
-
-					if (field || usingField)
+					else if (field || usingField)
 					{
 						// Intercept any reference to a field with datatype that
 						// did not exist prior to V6 and post an error
@@ -9512,7 +9517,7 @@ void SubstringNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUChar(blr_literal);
 		dsqlScratch->appendUChar(blr_long);
 		dsqlScratch->appendUChar(0);
-		dsqlScratch->appendUShort(LONG_POS_MAX & 0xffff); // avoid warning
+		dsqlScratch->appendUShort(LONG_POS_MAX & 0xFFFF);
 		dsqlScratch->appendUShort(LONG_POS_MAX >> 16);
 	}
 }

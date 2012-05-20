@@ -1447,13 +1447,7 @@ protected:
 	}
 
 private:
-	void createCheckTriggers(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, ValueListNode* items);
-	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-		RseNode* rse, ValueListNode* items, CompoundStmtNode* actions, TriggerType triggerType);
-	void defineUpdateAction(DsqlCompilerScratch* dsqlScratch, BoolExprNode** baseAndNode,
-		RelationSourceNode** baseRelation, ValueListNode* items);
-	static void replaceFieldNames(ExprNode* input, ValueListNode* searchFields,
-		ValueListNode* replaceFields, bool nullThem, const char* contextName);
+	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, ValueListNode* items);
 
 public:
 	bool create;
