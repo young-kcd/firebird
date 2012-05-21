@@ -1,3 +1,35 @@
+ 2012-05-20 19:28  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/dsql.h
+Fixed problems with views WITH CHECK OPTION. Also change its triggers as asked for opinions in fb-devel.
+
+ 2012-05-20 10:00  robocop 
+   M src/alice/alice_meta.epp
+   M src/burp/canonical.cpp
+   M src/common/classes/Switches.cpp
+   M src/common/classes/array.h
+   M src/common/classes/fb_string.cpp
+   M src/common/classes/fb_string.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/PackageNodes.epp
+   M src/dsql/pass1.cpp
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/GlobalRWLock.h
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/obj.h
+   M src/jrd/scl.epp
+   M src/qli/dtr.cpp
+   M src/utilities/ntrace/os/posix/platform.cpp
+   M src/utilities/ntrace/os/win32/platform.cpp
+   M src/yvalve/gds.cpp
+   M src/yvalve/utl_proto.h
+Misc and style.
+
  2012-05-19 12:20  robocop 
    M src/jrd/tpc.cpp
 Vlad asked for this assertion but I think it should be runtime check for the release version, too.
