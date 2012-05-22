@@ -55,6 +55,8 @@ addLibs() {
 	then
 		rm -f $libTarget
 		touch $libTarget
+		echo "#!/bin/sh" >>$libTarget
+		echo >>$libTarget
 		for i in posixLibrary.sh @FIREBIRD_ARCH_TYPE@Library.sh linuxLibrary.sh
 		do
 			echo "# $i" >>$libTarget
