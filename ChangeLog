@@ -1,3 +1,7 @@
+ 2012-05-22 16:55  mkubecek 
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+Add interpreter specification to generated scripts.
+
  2012-05-17 09:10  dimitr 
    M src/jrd/par.cpp
 One more correction. This restores the accidentally changed original logic.
