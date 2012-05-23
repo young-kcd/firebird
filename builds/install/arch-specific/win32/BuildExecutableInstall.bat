@@ -208,7 +208,7 @@ set FBBUILD_FB21_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
 :: This helps us copy the correct documentation,
 :: as well as set up the correct shortcuts
 set FBBUILD_FB15_CUR_VER=1.5.6
-set FBBUILD_FB20_CUR_VER=2.0.6
+set FBBUILD_FB20_CUR_VER=2.0.7
 
 :: Now fix up the major.minor version strings in the readme files.
 :: We place output in %FB_GEN_DIR%\readmes
@@ -220,7 +220,7 @@ set FBBUILD_FB20_CUR_VER=2.0.6
 @echo s/\$MAJOR/%FB_MAJOR_VER%/g >  %temp%.\b$4.txt
 @echo s/\$MINOR/%FB_MINOR_VER%/g >> %temp%.\b$4.txt
 @echo s/\$RELEASE/%FB_REV_NO%/g  >> %temp%.\b$4.txt
-@for %%f in (Readme.txt installation_readme.txt) do (
+@for %%f in (Readme.txt installation_readme.txt After_Installation.url) do (
 	@echo   Processing version strings in %%f
 	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
 )
@@ -389,7 +389,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 @copy  %FB_GEN_DIR%\readmes\readme.txt %FB_OUTPUT_DIR%\ > nul
 
 ::  Walk through all docs and transform any that are not .txt, .pdf or .html to .txt
-echo   Setting .txt filetype to ascii docs.
+@echo   Setting .txt filetype to ascii docs.
 for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
   pushd %%v
   for /F %%W in ( 'dir /B /A-D' ) do (
