@@ -441,6 +441,10 @@ void PreparedStatement::generateBlr(const dsc* desc, UCharBuffer& blr)
 		blr.add(desc->getTextType() >> 8);
 		break;
 
+	case dtype_boolean:
+		blr.add(blr_bool);
+		break;
+
 	default:
 		fb_assert(false);
 	}

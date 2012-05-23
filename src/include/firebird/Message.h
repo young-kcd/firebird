@@ -79,13 +79,20 @@
 	FB_BOOST_PP_CAT(FB_BLR_, FB_BOOST_PP_TUPLE_ELEM(2, 0, xy)),	\
 	FB_BLR_FB_SMALLINT,
 
-//// TODO: more types
 #define FB_BLR_FB_SCALED_SMALLINT(scale)	blr_short, (scale)
 #define FB_BLR_FB_SCALED_INTEGER(scale)		blr_long, (scale)
 #define FB_BLR_FB_SCALED_BIGINT(scale)		blr_int64, (scale)
 #define FB_BLR_FB_SMALLINT					FB_BLR_FB_SCALED_SMALLINT(0)
 #define FB_BLR_FB_INTEGER					FB_BLR_FB_SCALED_INTEGER(0)
 #define FB_BLR_FB_BIGINT					FB_BLR_FB_SCALED_BIGINT(0)
+#define FB_BLR_FB_FLOAT						blr_float
+#define FB_BLR_FB_DOUBLE					blr_double
+#define FB_BLR_FB_BLOB						blr_blob2, 0, 0, 0, 0
+#define FB_BLR_FB_BOOLEAN					blr_bool
+#define FB_BLR_FB_DATE						blr_sql_date
+#define FB_BLR_FB_TIME						blr_sql_time
+#define FB_BLR_FB_TIMESTAMP					blr_timestamp
+#define FB_BLR_FB_CHAR(len)					blr_text2, 0, 0, (len) & 0xFF, (len) >> 8
 #define FB_BLR_FB_VARCHAR(len)				blr_varying2, 0, 0, (len) & 0xFF, (len) >> 8
 
 #define FB_TYPE_FB_SCALED_SMALLINT(x)	ISC_SHORT
@@ -94,6 +101,14 @@
 #define FB_TYPE_FB_SMALLINT				ISC_SHORT
 #define FB_TYPE_FB_INTEGER				ISC_LONG
 #define FB_TYPE_FB_BIGINT				ISC_INT64
+#define FB_TYPE_FB_FLOAT				float
+#define FB_TYPE_FB_DOUBLE				double
+#define FB_TYPE_FB_BLOB					ISC_QUAD
+#define FB_TYPE_FB_BOOLEAN				unsigned char
+#define FB_TYPE_FB_DATE					ISC_DATE
+#define FB_TYPE_FB_TIME					ISC_TIME
+#define FB_TYPE_FB_TIMESTAMP			ISC_TIMESTAMP
+#define FB_TYPE_FB_CHAR(len)			::Firebird::FbChar<(len)>
 #define FB_TYPE_FB_VARCHAR(len)			::Firebird::FbVarChar<(len)>
 
 #define FB_MESSAGE_DESC(name, fields)	\
@@ -113,6 +128,12 @@
 
 namespace Firebird {
 
+
+template <unsigned N>
+struct FbChar
+{
+	char str[N];
+};
 
 template <unsigned N>
 struct FbVarChar

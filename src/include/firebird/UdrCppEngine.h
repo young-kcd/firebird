@@ -73,6 +73,14 @@ namespace Firebird
 	\
 	FB_UDR_EXECUTE__FUNCTION
 
+#define FB_UDR_EXECUTE_MESSAGE_FUNCTION_OUT(outputs)	\
+	typedef void* InMessage;	\
+	FB_MESSAGE(OutMessage,	\
+		outputs	\
+	);	\
+	\
+	FB_UDR_EXECUTE__FUNCTION
+
 #define FB_UDR_EXECUTE__FUNCTION	\
 	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
 		void* inMsg, void* outMsg)	\
@@ -123,6 +131,22 @@ namespace Firebird
 	FB_MESSAGE(InMessage,	\
 		inputs	\
 	);	\
+	FB_MESSAGE(OutMessage,	\
+		outputs	\
+	);	\
+	\
+	FB_UDR_EXECUTE__PROCEDURE
+
+#define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_IN(inputs)	\
+	FB_MESSAGE(InMessage,	\
+		inputs	\
+	);	\
+	typedef void* OutMessage;	\
+	\
+	FB_UDR_EXECUTE__PROCEDURE
+
+#define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_OUT(outputs)	\
+	typedef void* InMessage;	\
 	FB_MESSAGE(OutMessage,	\
 		outputs	\
 	);	\
