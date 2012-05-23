@@ -104,7 +104,7 @@
 #define FB_TYPE_FB_FLOAT				float
 #define FB_TYPE_FB_DOUBLE				double
 #define FB_TYPE_FB_BLOB					ISC_QUAD
-#define FB_TYPE_FB_BOOLEAN				unsigned char
+#define FB_TYPE_FB_BOOLEAN				ISC_UCHAR
 #define FB_TYPE_FB_DATE					ISC_DATE
 #define FB_TYPE_FB_TIME					ISC_TIME
 #define FB_TYPE_FB_TIMESTAMP			ISC_TIMESTAMP
