@@ -71,6 +71,9 @@
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
 #endif
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
 
 //#ifdef HAVE_IO_H
 //#include <io.h> // mktemp
@@ -558,6 +561,8 @@ int ISQL_main(int argc, char* argv[])
 		}
 	}
 #endif	// MU_ISQL
+
+	setlocale(LC_ALL, "");
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
