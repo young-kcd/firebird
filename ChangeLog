@@ -1,3 +1,17 @@
+ 2012-05-23 15:44  asfernandes 
+   M src/include/firebird/Message.h
+Misc.
+
+ 2012-05-23 15:39  asfernandes 
+   M src/include/firebird/Message.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/jrd/PreparedStatement.cpp
+Improvements and correction to external routines.
+
+ 2012-05-23 09:12  mkubecek 
+   M src/isql/isql.epp
+Fix broken isql history with libedit 3.0
+
  2012-05-22 16:49  mkubecek 
    M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
 Add interpreter specification to generated scripts.
