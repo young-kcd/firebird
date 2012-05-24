@@ -832,7 +832,7 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT
 	{
 		ALICE_print(90, SafeArg() << name);
 		// msg 90: failed to reconnect to a transaction in database %s
-		ALICE_print_status(false, status_vector);
+		ALICE_print_status(true, status_vector);
 		return true;
 	}
 
@@ -858,7 +858,7 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT
 
 	if (status_vector[1])
 	{
-		ALICE_print_status(false, status_vector);
+		ALICE_print_status(true, status_vector);
 		return true;
 	}
 
