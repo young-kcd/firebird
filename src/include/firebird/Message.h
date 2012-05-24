@@ -26,6 +26,7 @@
 #include "ibase.h"
 #include "firebird/impl/boost/preprocessor/seq/for_each_i.hpp"
 #include <assert.h>
+#include <time.h>
 #include <string.h>
 
 #define FB_MESSAGE(name, fields)	\
@@ -105,9 +106,9 @@
 #define FB_TYPE_FB_DOUBLE				double
 #define FB_TYPE_FB_BLOB					ISC_QUAD
 #define FB_TYPE_FB_BOOLEAN				ISC_UCHAR
-#define FB_TYPE_FB_DATE					ISC_DATE
-#define FB_TYPE_FB_TIME					ISC_TIME
-#define FB_TYPE_FB_TIMESTAMP			ISC_TIMESTAMP
+#define FB_TYPE_FB_DATE					::Firebird::FbDate
+#define FB_TYPE_FB_TIME					::Firebird::FbTime
+#define FB_TYPE_FB_TIMESTAMP			::Firebird::FbTimestamp
 #define FB_TYPE_FB_CHAR(len)			::Firebird::FbChar<(len)>
 #define FB_TYPE_FB_VARCHAR(len)			::Firebird::FbVarChar<(len)>
 
@@ -147,6 +148,128 @@ struct FbVarChar
 		assert(length <= N);
 		memcpy(str, s, length);
 	}
+};
+
+// This class has memory layout identical to ISC_DATE.
+class FbDate
+{
+public:
+	void decode(unsigned* year, unsigned* month, unsigned* day) const
+	{
+		tm times;
+		isc_decode_sql_date(&value, &times);
+
+		if (year)
+			*year = times.tm_year + 1900;
+		if (month)
+			*month = times.tm_mon + 1;
+		if (day)
+			*day = times.tm_mday;
+	}
+
+	unsigned getYear() const
+	{
+		unsigned year;
+		decode(&year, NULL, NULL);
+		return year;
+	}
+
+	unsigned getMonth() const
+	{
+		unsigned month;
+		decode(NULL, &month, NULL);
+		return month;
+	}
+
+	unsigned getDay() const
+	{
+		unsigned day;
+		decode(NULL, NULL, &day);
+		return day;
+	}
+
+	void encode(unsigned year, unsigned month, unsigned day)
+	{
+		tm times;
+		times.tm_year = year - 1900;
+		times.tm_mon = month - 1;
+		times.tm_mday = day;
+
+		isc_encode_sql_date(&times, &value);
+	}
+
+public:
+	ISC_DATE value;
+};
+
+// This class has memory layout identical to ISC_TIME.
+class FbTime
+{
+public:
+	void decode(unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) const
+	{
+		tm times;
+		isc_decode_sql_time(&value, &times);
+
+		if (hours)
+			*hours = times.tm_hour;
+		if (minutes)
+			*minutes = times.tm_min;
+		if (seconds)
+			*seconds = times.tm_sec;
+		if (fractions)
+			*fractions = value % ISC_TIME_SECONDS_PRECISION;
+	}
+
+	unsigned getHours() const
+	{
+		unsigned hours;
+		decode(&hours, NULL, NULL, NULL);
+		return hours;
+	}
+
+	unsigned getMinutes() const
+	{
+		unsigned minutes;
+		decode(NULL, &minutes, NULL, NULL);
+		return minutes;
+	}
+
+	unsigned getSeconds() const
+	{
+		unsigned seconds;
+		decode(NULL, NULL, &seconds, NULL);
+		return seconds;
+	}
+
+	unsigned getFractions() const
+	{
+		unsigned fractions;
+		decode(NULL, NULL, NULL, &fractions);
+		return fractions;
+	}
+
+	void encode(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
+	{
+		tm times;
+		times.tm_hour = hours;
+		times.tm_min = minutes;
+		times.tm_sec = seconds;
+
+		isc_encode_sql_time(&times, &value);
+		value += fractions;
+	}
+
+public:
+	ISC_TIME value;
+};
+
+// This class has memory layout identical to ISC_TIMESTAMP.
+class FbTimestamp
+{
+public:
+	FbDate date;
+	FbTime time;
 };
 
 
