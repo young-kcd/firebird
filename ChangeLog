@@ -1,3 +1,10 @@
+ 2012-05-23 06:12  paul_reeves 
+   M builds/install/arch-specific/win32/After_Installation.url
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstall_20.iss
+Synchronize changes from R2_1_5 to Branch B2_1_Release
+ - Modify After_Installation url to include firebird version.
+
  2012-05-17 12:15  dimitr 
    M doc/WhatsNew
 Updated the docs.
