@@ -1,3 +1,7 @@
+ 2012-05-24 15:56  asfernandes 
+   M src/include/firebird/Message.h
+More C++-ish to the C++ API.
+
  2012-05-23 15:44  asfernandes 
    M src/include/firebird/Message.h
 Misc.
