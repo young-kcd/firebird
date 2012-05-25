@@ -1,3 +1,7 @@
+ 2012-05-24 09:07  alexpeshkoff 
+   M src/alice/tdr.cpp
+Postfix for CORE-3612 - send errors to stderr
+
  2012-05-23 09:37  mkubecek 
    M src/isql/isql.epp
 Fix broken isql history with libedit 3.0
