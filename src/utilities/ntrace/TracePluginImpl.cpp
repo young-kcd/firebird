@@ -429,7 +429,6 @@ void TracePluginImpl::logRecordError(const char* action, TraceBaseConnection* co
 {
 	const char* err = status->getText();
 
-	record = "";
 	record.insert(0, err);
 
 	if (connection)
