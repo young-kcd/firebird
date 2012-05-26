@@ -2096,9 +2096,6 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	record_param rpb;
-	//rpb.getWindow(tdbb).win_flags = 0; redundant.
-
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 		printf("DPM_store_blob (blob, record)\n");
@@ -2151,7 +2148,12 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 
 	// Locate space to store blob
 
+	record_param rpb;
+	//rpb.getWindow(tdbb).win_flags = 0; redundant.
+
 	rpb.rpb_relation = blob->blb_relation;
+	rpb.rpb_transaction_nr = blob->blb_transaction->tra_number;
+
 	blh* header = (blh*) locate_space(tdbb, &rpb, (SSHORT)(BLH_SIZE + length),
 										stack, record, DPM_other);
 	header->blh_flags = rhd_blob;
