@@ -319,18 +319,6 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 }
 
 
-void DataTypeUtilBase::makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args)
-{
-	const SysFunction* function = SysFunction::lookup(name);
-
-	if (function)
-	{
-		function->checkArgsMismatch(argsCount);
-		function->makeFunc(this, function, result, argsCount, args);
-	}
-}
-
-
 bool DataTypeUtilBase::makeBlobOrText(dsc* result, const dsc* arg, bool force)
 {
 	if (arg->isBlob() || result->isBlob())

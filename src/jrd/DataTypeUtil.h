@@ -49,7 +49,6 @@ public:
 
 	void makeConcatenate(dsc* result, const dsc* value1, const dsc* value2);
 	void makeSubstr(dsc* result, const dsc* value, const dsc* offset, const dsc* length);
-	void makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args);
 
 private:
 	bool makeBlobOrText(dsc* result, const dsc* arg, bool force);

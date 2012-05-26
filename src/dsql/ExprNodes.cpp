@@ -3689,7 +3689,7 @@ void CurrentRoleNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc
 {
 	desc->dsc_dtype = dtype_text;
 	desc->dsc_ttype() = ttype_metadata;
-	desc->dsc_length = USERNAME_LENGTH * METADATA_BYTES_PER_CHAR;
+	desc->dsc_length = USERNAME_LENGTH;
 	desc->dsc_scale = 0;
 	desc->dsc_flags = 0;
 }
@@ -3784,7 +3784,7 @@ void CurrentUserNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc
 {
 	desc->dsc_dtype = dtype_text;
 	desc->dsc_ttype() = ttype_metadata;
-	desc->dsc_length = USERNAME_LENGTH * METADATA_BYTES_PER_CHAR;
+	desc->dsc_length = USERNAME_LENGTH;
 	desc->dsc_scale = 0;
 	desc->dsc_flags = 0;
 }
@@ -8580,27 +8580,23 @@ void StrCaseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void StrCaseNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, arg);
+	MAKE_desc(dsqlScratch, desc, arg);
 
-	if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
+	if (desc->dsc_dtype > dtype_any_text && desc->dsc_dtype != dtype_blob)
 	{
-		*desc = desc1;
-		return;
+		desc->dsc_length = sizeof(USHORT) + DSC_string_length(desc);
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_scale = 0;
+		desc->dsc_ttype() = ttype_ascii;
+		desc->dsc_flags = desc->dsc_flags & DSC_nullable;
 	}
-
-	desc->dsc_dtype = dtype_varying;
-	desc->dsc_scale = 0;
-	desc->dsc_ttype() = ttype_ascii;
-	desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-	desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 }
 
 void StrCaseNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	arg->getDesc(tdbb, csb, desc);
 
-	if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob)
+	if (desc->dsc_dtype > dtype_any_text && desc->dsc_dtype != dtype_blob)
 	{
 		desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
 		desc->dsc_dtype = dtype_text;
@@ -10081,8 +10077,9 @@ void SysFuncCallNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 		argsArray.add(&(*p)->nodDesc);
 	}
 
-	DSqlDataTypeUtil(dsqlScratch).makeSysFunction(desc, name.c_str(),
-		argsArray.getCount(), argsArray.begin());
+	DSqlDataTypeUtil dataTypeUtil(dsqlScratch);
+	function->checkArgsMismatch(argsArray.getCount());
+	function->makeFunc(&dataTypeUtil, function, desc, argsArray.getCount(), argsArray.begin());
 }
 
 void SysFuncCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
