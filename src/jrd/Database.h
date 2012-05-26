@@ -363,10 +363,10 @@ public:
 	Firebird::SyncObject				dbb_threads_sync;
 	thread_db*							dbb_active_threads;
 
-	TraNumber dbb_oldest_active;			// Cached "oldest active" transaction
-	TraNumber dbb_oldest_transaction;		// Cached "oldest interesting" transaction
-	TraNumber dbb_oldest_snapshot;			// Cached "oldest snapshot" of all active transactions
-	TraNumber dbb_next_transaction;			// Next transaction id used by NETWARE
+	TraNumber dbb_oldest_active;		// Cached "oldest active" transaction
+	TraNumber dbb_oldest_transaction;	// Cached "oldest interesting" transaction
+	TraNumber dbb_oldest_snapshot;		// Cached "oldest snapshot" of all active transactions
+	TraNumber dbb_next_transaction;		// Next transaction id used by NETWARE
 	SLONG dbb_attachment_id;			// Next attachment id for ReadOnly DB's
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
@@ -378,7 +378,7 @@ public:
 	Firebird::MemoryStats dbb_memory_stats;
 
 	RuntimeStatistics dbb_stats;
-	TraNumber	dbb_last_header_write;		// Transaction id of last header page physical write
+	TraNumber	dbb_last_header_write;	// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
 	ULONG dbb_sweep_interval;			// Transactions between sweep
 	const ULONG dbb_lock_owner_id;		// ID for the lock manager

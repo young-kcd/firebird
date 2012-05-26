@@ -552,9 +552,8 @@ void INF_database_info(thread_db* tdbb,
 				SLONG cnt = 0;
 				for (TraNumber id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
 				{
-					if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
+					if (TRA_snapshot_state(tdbb, transaction, id) == tra_active)
 						cnt++;
-					}
 				}
 				length = INF_convert(cnt, buffer);
 			}

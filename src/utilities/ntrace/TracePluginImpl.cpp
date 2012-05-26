@@ -424,7 +424,7 @@ void TracePluginImpl::logRecordServ(const char* action, TraceServiceConnection* 
 	logRecord(action);
 }
 
-void TracePluginImpl::logRecordError(const char* action, TraceBaseConnection* connection, 
+void TracePluginImpl::logRecordError(const char* action, TraceBaseConnection* connection,
 	TraceStatusVector* status)
 {
 	const char* err = status->getText();
@@ -436,7 +436,7 @@ void TracePluginImpl::logRecordError(const char* action, TraceBaseConnection* co
 	{
 		switch (connection->getKind())
 		{
-		case connection_database: 
+		case connection_database:
 			logRecordConn(action, (TraceDatabaseConnection*) connection);
 			break;
 
@@ -1810,7 +1810,8 @@ void TracePluginImpl::log_event_service_query(TraceServiceConnection* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result)
+void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service,
+	ntrace_result_t detach_result)
 {
 	if (config.log_services)
 	{
@@ -1844,8 +1845,8 @@ void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service, 
 	}
 }
 
-void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-		TraceTrigger* trigger, bool started, ntrace_result_t trig_result)
+void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, TraceTrigger* trigger, bool started, ntrace_result_t trig_result)
 {
 	if (!config.log_trigger_start && started)
 		return;
@@ -2017,8 +2018,9 @@ ntrace_boolean_t TracePluginImpl::trace_detach(TraceDatabaseConnection* connecti
 }
 
 // Start/end transaction
-ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result)
+ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, size_t tpb_length, const ntrace_byte_t* tpb,
+	ntrace_result_t tra_result)
 {
 	try
 	{
@@ -2036,8 +2038,9 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceDatabaseConnectio
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-	ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result)
+ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, ntrace_boolean_t commit, ntrace_boolean_t retain_context,
+	ntrace_result_t tra_result)
 {
 	try
 	{
@@ -2121,8 +2124,9 @@ ntrace_boolean_t TracePluginImpl::trace_trigger_execute(TraceDatabaseConnection*
 
 
 // DSQL statement lifecycle
-ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
+ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, TraceSQLStatement* statement, ntrace_counter_t time_millis,
+	ntrace_result_t req_result)
 {
 	try
 	{
@@ -2183,8 +2187,9 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_execute(TraceDatabaseConnection* co
 
 
 // BLR requests
-ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
+ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, TraceBLRStatement* statement, ntrace_counter_t time_millis,
+	ntrace_result_t req_result)
 {
 	try
 	{
@@ -2204,8 +2209,8 @@ ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceDatabaseConnection* con
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-	TraceBLRStatement* statement, ntrace_result_t req_result)
+ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, TraceBLRStatement* statement, ntrace_result_t req_result)
 {
 	try
 	{
@@ -2225,8 +2230,9 @@ ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceDatabaseConnection* con
 }
 
 // DYN requests
-ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-	TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result)
+ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, TraceDYNRequest* request, ntrace_counter_t time_millis,
+	ntrace_result_t req_result)
 {
 	try
 	{
@@ -2246,7 +2252,8 @@ ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceDatabaseConnection* con
 }
 
 // Using the services
-ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceServiceConnection* service, ntrace_result_t att_result)
+ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceServiceConnection* service,
+	ntrace_result_t att_result)
 {
 	try
 	{
@@ -2261,8 +2268,8 @@ ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceServiceConnection* s
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_start(TraceServiceConnection* service, size_t switches_length, const char* switches,
-	ntrace_result_t start_result)
+ntrace_boolean_t TracePluginImpl::trace_service_start(TraceServiceConnection* service,
+	size_t switches_length, const char* switches, ntrace_result_t start_result)
 {
 	try
 	{
@@ -2277,8 +2284,8 @@ ntrace_boolean_t TracePluginImpl::trace_service_start(TraceServiceConnection* se
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_query(TraceServiceConnection* service, size_t send_item_length,
-	const ntrace_byte_t* send_items, size_t recv_item_length,
+ntrace_boolean_t TracePluginImpl::trace_service_query(TraceServiceConnection* service,
+	size_t send_item_length, const ntrace_byte_t* send_items, size_t recv_item_length,
 	const ntrace_byte_t* recv_items, ntrace_result_t query_result)
 {
 	try
@@ -2296,7 +2303,8 @@ ntrace_boolean_t TracePluginImpl::trace_service_query(TraceServiceConnection* se
 
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result)
+ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceServiceConnection* service,
+	ntrace_result_t detach_result)
 {
 	try
 	{
@@ -2311,7 +2319,8 @@ ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceServiceConnection* s
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function)
+ntrace_boolean_t TracePluginImpl::trace_event_error(TraceBaseConnection* connection,
+	TraceStatusVector* status, const char* function)
 {
 	try
 	{

@@ -121,7 +121,8 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_p
 
 static void invalidate_cursor_records(jrd_tra*, record_param*);
 static void list_staying(thread_db*, record_param*, RecordStack&);
-static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, TraNumber tranid = MAX_TRA_NUMBER);
+static void notify_garbage_collector(thread_db* tdbb, record_param* rpb,
+	TraNumber tranid = MAX_TRA_NUMBER);
 static Record* realloc_record(Record*& record, USHORT fmt_length);
 
 const int PREPARE_OK		= 0;
@@ -130,7 +131,7 @@ const int PREPARE_DELETE	= 2;
 const int PREPARE_LOCKERR	= 3;
 
 static int prepare_update(thread_db*, jrd_tra*, TraNumber commit_tid_read, record_param*,
-						  record_param*, record_param*, PageStack&, bool);
+	record_param*, record_param*, PageStack&, bool);
 
 static void protect_system_table(thread_db*, const jrd_rel*, const char*, bool = false);
 static void purge(thread_db*, record_param*);
@@ -3407,9 +3408,8 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	if (sav_point->sav_verb_actions || sav_point->sav_verb_count ||
 		(sav_point->sav_flags & SAV_force_dfw))
 	{
-		if (sav_point->sav_verb_count) {
+		if (sav_point->sav_verb_count)
 			DFW_delete_deferred(transaction, sav_point->sav_number);
-		}
 		else
 		{
 			DFW_merge_work(transaction, sav_point->sav_number,

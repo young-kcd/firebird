@@ -434,9 +434,8 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence) //, WIN* precedence_window)
 	// Start by fetching prior transaction page, if any
 	tx_inv_page* prior_tip = NULL;
 	WIN prior_window(DB_PAGE_SPACE, -1);
-	if (sequence) {
+	if (sequence)
 		prior_tip = fetch_inventory_page(tdbb, &prior_window, (sequence - 1), LCK_write);
-	}
 
 	// Allocate and format new page
 	WIN window(DB_PAGE_SPACE, -1);
@@ -853,7 +852,7 @@ bool TRA_precommited(thread_db* tdbb, TraNumber old_number, TraNumber new_number
 		vector = dbb->dbb_pc_transactions = TransactionsVector::newVector(*dbb->dbb_permanent, 1);
 	}
 
-	TraNumber* zp = 0;
+	TraNumber* zp = NULL;
 	for (TransactionsVector::iterator p = vector->begin(), end = vector->end(); p < end; ++p)
 	{
 		if (*p == old_number)
@@ -1910,9 +1909,8 @@ static TraNumber bump_transaction_id(thread_db* tdbb, WIN* window)
 
 	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 
-	if (new_tip) {
+	if (new_tip)
 		TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
-	}
 
 	return number;
 }
@@ -1961,9 +1959,8 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 
 	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 
-	if (new_tip) {
+	if (new_tip)
 		TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
-	}
 
 	// Extend, if necessary, has apparently succeeded.  Next, update header page
 
@@ -2390,7 +2387,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	}
 #endif
 
-	Lock* new_lock = 0;
+	Lock* new_lock = NULL;
 	Lock* old_lock = transaction->tra_lock;
 	if (old_lock)
 	{

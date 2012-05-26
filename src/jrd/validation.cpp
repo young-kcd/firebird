@@ -1590,26 +1590,26 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 			// a full prefix of another (longer) key, for example:
 			// 'aa' and 'aaa', '' and 'a', etc
 
-			// in ascending index short key is less then long key ('aa' < 'aaa')
+			// in ascending index short key is less than long key ('aa' < 'aaa')
 			// the only exception is end-of-level node with zero length
 
-			if (!firstNode && !descending && !node.isEndLevel && 
+			if (!firstNode && !descending && !node.isEndLevel &&
 				node.prefix < key.key_length && node.length == 0)
 			{
 				duplicateNode = false;
 				corrupt(tdbb, true, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, 
+						id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page,
 						__FILE__, __LINE__);
 			}
 
-			// in descending index short key is greater then long key ('aaa' < 'aa')
-			// the only exception is first node after start-of-level node at 
+			// in descending index short key is greater than long key ('aaa' < 'aa')
+			// the only exception is first node after start-of-level node at
 			// non-leaf level (also known as degenerate node)
 
-			if (!firstNode && descending && 
+			if (!firstNode && descending &&
 				node.prefix == key.key_length && node.length > 0)
 			{
-				bool ok = (page->btr_left_sibling == 0 && page->btr_level > 0 && 
+				bool ok = (page->btr_left_sibling == 0 && page->btr_level > 0 &&
 						   key.key_length == 0);
 				if (ok)
 				{
@@ -1622,7 +1622,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				{
 					duplicateNode = false;
 					corrupt(tdbb, true, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, 
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
 							__FILE__, __LINE__);
 				}
 			}

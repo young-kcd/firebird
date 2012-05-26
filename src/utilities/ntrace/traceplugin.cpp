@@ -77,9 +77,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 
 		TraceDatabaseConnection* connection = initInfo->getConnection();
 		if (connection)
-		{
 			master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		}
 
 		if (!config.enabled ||
 			(config.connection_id && connection &&
@@ -91,9 +89,8 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 		Firebird::AutoPtr<TraceLogWriter, Firebird::SimpleRelease<TraceLogWriter> >
 			logWriter(initInfo->getLogWriter());
 
-		if (logWriter) {
+		if (logWriter)
 			config.log_filename = "";
-		}
 
 		return new TracePluginImpl(config, initInfo);	// Everything is ok, we created a plugin
 
@@ -116,9 +113,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 			logWriter->release();
 		}
 		else
-		{
 			ex.stuffException(status);
-		}
 	}
 
 	return NULL;

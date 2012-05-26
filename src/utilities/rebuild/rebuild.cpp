@@ -593,10 +593,8 @@ static void dump_tips( FILE* file, rbdb* rbdb)
 }
 
 
-static void format_header(const rbdb* rbdb,
-						  header_page* page,
-						  int page_size,
-						  TraNumber oldest, TraNumber active, TraNumber next, ULONG imp)
+static void format_header(const rbdb* rbdb, header_page* page, int page_size,
+	TraNumber oldest, TraNumber active, TraNumber next, ULONG imp)
 {
 /**************************************
  *

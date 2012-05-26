@@ -189,7 +189,7 @@ public:
 		return &rel_pages_base;
 	}
 
-	bool			delPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, RelationPages* aPages = 0);
+	bool			delPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, RelationPages* aPages = NULL);
 
 	void			getRelLockKey(thread_db* tdbb, UCHAR* key);
 	SSHORT			getRelLockKeyLength() const;

@@ -303,7 +303,7 @@ private:
 			const ntrace_byte_t* recv_items, ntrace_result_t query_result);
 	int FB_CARG trace_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result);
 
-	// Errors happened 
+	// Errors happened
 	virtual ntrace_boolean_t FB_CARG trace_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 };
 

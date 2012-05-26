@@ -501,7 +501,7 @@ struct generator_page
 
 struct rhd
 {
-	TraNumber rhd_transaction;		// transaction id
+	TraNumber rhd_transaction;	// transaction id
 	ULONG rhd_b_page;			// back pointer
 	USHORT rhd_b_line;			// back line
 	USHORT rhd_flags;			// flags, etc
@@ -515,7 +515,7 @@ struct rhd
 
 struct rhdf
 {
-	TraNumber rhdf_transaction;		// transaction id
+	TraNumber rhdf_transaction;	// transaction id
 	ULONG rhdf_b_page;			// back pointer
 	USHORT rhdf_b_line;			// back line
 	USHORT rhdf_flags;			// flags, etc

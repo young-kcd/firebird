@@ -898,7 +898,7 @@ static ISC_STATUS successful_completion(Firebird::IStatus* s, ISC_STATUS return_
 
 // Stuff exception transliterated to the client charset.
 ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird::IStatus* vector,
-			const char* func) throw()
+	const char* func) throw()
 {
 	ex.stuffException(vector);
 
@@ -907,7 +907,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceStatusVectorImpl traceStatus(vector->get());
-		
+
 		attachment->att_trace_manager->event_error(&conn, &traceStatus, func);
 	}
 
@@ -1033,7 +1033,7 @@ static void trace_warning(thread_db* tdbb, Firebird::IStatus* userStatus, const 
 	if (att->att_trace_manager->needs(TRACE_EVENT_ERROR))
 	{
 		TraceStatusVectorImpl traceStatus(userStatus->get());
-		
+
 		if (traceStatus.hasWarning())
 		{
 			TraceConnectionImpl conn(att);
@@ -1054,7 +1054,7 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 	TraceFailedConnection conn(origFilename, &options);
 	TraceStatusVectorImpl traceStatus(status);
 
-	const ntrace_result_t result = (status[1] == isc_login || status[1] == isc_no_priv) ? 
+	const ntrace_result_t result = (status[1] == isc_login || status[1] == isc_no_priv) ?
 									res_unauthorized : res_failed;
 	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 

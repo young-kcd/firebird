@@ -400,7 +400,7 @@ public:
 	{
 	}
 
-	virtual bool FB_CARG hasError() 
+	virtual bool FB_CARG hasError()
 	{
 		return m_status && (m_status[1] != 0);
 	}
@@ -410,7 +410,7 @@ public:
 		return m_status && (m_status[1] == 0) && (m_status[2] == isc_arg_warning);
 	}
 
-	virtual const ISC_STATUS* FB_CARG getStatus() 
+	virtual const ISC_STATUS* FB_CARG getStatus()
 	{
 		return m_status;
 	}

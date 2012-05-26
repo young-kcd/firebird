@@ -481,7 +481,7 @@ void TraceManager::event_service_detach(TraceServiceConnection* service, ntrace_
 
 void TraceManager::event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function)
 {
-	EXECUTE_HOOKS(trace_event_error, 
+	EXECUTE_HOOKS(trace_event_error,
 		(connection, status, function));
 }
 

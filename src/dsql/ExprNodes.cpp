@@ -4800,7 +4800,8 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		{
 			fb_assert(id >= 0);
 
-			if (!temp_rel->rel_fields || id >= (int) temp_rel->rel_fields->count() || !(*temp_rel->rel_fields)[id])
+			if (!temp_rel->rel_fields || id >= (int) temp_rel->rel_fields->count() ||
+				!(*temp_rel->rel_fields)[id])
 			{
 				if (temp_rel->rel_flags & REL_system)
 					return FB_NEW(pool) NullNode(pool);
@@ -7722,8 +7723,8 @@ bool ParameterNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) con
 void ParameterNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	*desc = message->format->fmt_desc[argNumber];
-	// Must reset dsc_address because it's used in others places to read literals, but here it's an
-	// offset in the message.
+	// Must reset dsc_address because it's used in others places to read literals, but here it was
+	// an offset in the message.
 	desc->dsc_address = NULL;
 }
 

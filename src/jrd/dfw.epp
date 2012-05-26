@@ -3656,9 +3656,8 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index)
 		{
-			if (!index->idl_count) {
+			if (!index->idl_count)
 				LCK_release(tdbb, index->idl_lock);
-			}
 		}
 		return false;
 

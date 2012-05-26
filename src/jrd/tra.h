@@ -231,12 +231,12 @@ public:
 
 	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
-	TraNumber tra_number;					// transaction number
-	TraNumber tra_top;						// highest transaction in snapshot
-	TraNumber tra_oldest;					// oldest interesting transaction
-	TraNumber tra_oldest_active;			// record versions older than this can be
+	TraNumber tra_number;				// transaction number
+	TraNumber tra_top;					// highest transaction in snapshot
+	TraNumber tra_oldest;				// oldest interesting transaction
+	TraNumber tra_oldest_active;		// record versions older than this can be
 										// gargage-collected by this tx
-	TraNumber tra_att_oldest_active;		// oldest active transaction in the same attachment
+	TraNumber tra_att_oldest_active;	// oldest active transaction in the same attachment
 	jrd_tra*	tra_next;				// next transaction in database
 	jrd_tra*	tra_sibling;			// next transaction in group
 	MemoryPool* const tra_pool;			// pool for transaction

@@ -999,9 +999,8 @@ void CCH_fini(thread_db* tdbb)
 					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 				}
 			}
-			else {
+			else
 				CCH_flush(tdbb, FLUSH_FINI, 0);
-			}
 		}
 
 
@@ -1108,9 +1107,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 	{
 		const ULONG transaction_mask = tra_number ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
 		bool sys_only = false;
-		if (!transaction_mask && (flush_flag & FLUSH_SYSTEM)) {
+		if (!transaction_mask && (flush_flag & FLUSH_SYSTEM))
 			sys_only = true;
-		}
 
 #ifdef SUPERSERVER_V2
 		BufferControl* bcb = dbb->dbb_bcb;
@@ -3122,9 +3120,7 @@ static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 
 		case TRANS_PAGE_SPACE:
 			if (page.getPageNum() <= tdbb->getDatabase()->dbb_last_header_write)
-			{
 				return;
-			}
 			page = PageNumber(DB_PAGE_SPACE, 0);
 			break;
 

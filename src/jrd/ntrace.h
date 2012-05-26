@@ -323,7 +323,7 @@ public:
 			const ntrace_byte_t* recv_items, ntrace_result_t query_result) = 0;
 	virtual int FB_CARG trace_service_detach(TraceServiceConnection* service, ntrace_result_t detach_result) = 0;
 
-	// Errors happened 
+	// Errors happened
 	virtual ntrace_boolean_t FB_CARG trace_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function) = 0;
 };
 #define FB_TRACE_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 19)
