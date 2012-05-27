@@ -1,3 +1,11 @@
+ 2012-05-26 21:51  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-3855 : Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed into newly allocated pages even if there is enough free place on some existing data page
+
+ 2012-05-26 21:35  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Misc
+
  2012-05-24 09:07  alexpeshkoff 
    M src/alice/tdr.cpp
 Postfix for CORE-3612 - send errors to stderr
