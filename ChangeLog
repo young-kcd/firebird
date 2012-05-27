@@ -1,3 +1,7 @@
+ 2012-05-26 21:59  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-3855 : Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed into newly allocated pages even if there is enough free place on some existing data page
+
  2012-05-23 06:12  paul_reeves 
    M builds/install/arch-specific/win32/After_Installation.url
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
