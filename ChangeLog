@@ -1,3 +1,41 @@
+ 2012-05-26 22:01  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-3855 : Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed into newly allocated pages even if there is enough free place on some existing data page
+
+ 2012-05-26 21:44  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Misc
+
+ 2012-05-26 21:18  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/DataTypeUtil.h
+Fix/misc.
+
+ 2012-05-26 18:05  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/Database.h
+   M src/jrd/Relation.h
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/ntrace.h
+   M src/jrd/ods.h
+   M src/jrd/req.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceDSQLHelpers.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/utilities/rebuild/rebuild.cpp
+Misc.
+
  2012-05-24 15:56  asfernandes 
    M src/include/firebird/Message.h
 More C++-ish to the C++ API.
