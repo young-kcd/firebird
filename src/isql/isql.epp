@@ -578,7 +578,7 @@ int ISQL_main(int argc, char* argv[])
 	}
 #endif	// MU_ISQL
 
-	setlocale(LC_ALL, "");
+	setlocale(LC_CTYPE, "");
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
@@ -7358,6 +7358,18 @@ static bool checkSpecial(TEXT* const p, const int length, const double value)
 }
 
 
+static void align_string(char* out, unsigned clen, unsigned slen, const char* s)
+{
+	if (slen > clen)
+		slen = clen;
+	memcpy(out, s, slen);
+	if (clen > slen)
+		memset(out + slen, ' ', clen - slen);
+	out[clen] = ' ';
+	out[clen + 1] = '\0';
+}
+
+
 static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 {
 /**************************************
@@ -7650,10 +7662,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 			}
 			else
 			{
-				// Truncate if necessary
-				if (length < var->sqllen)
-					string[length] = '\0';
-				sprintf(p, "%-*s ", length, var->sqldata);
+				align_string(p, length, var->sqllen, var->sqldata);
 			}
 			break;
 
@@ -7746,10 +7755,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 				}
 				else
 				{
-					// Truncate if necessary
-					if (length < avary->vary_length)
-						avary->vary_length = length;
-					sprintf(p, "%-*.*s ", length, (int) avary->vary_length, avary->vary_string);
+					align_string(p, length, avary->vary_length, avary->vary_string);
 				}
 				break;
 			}
