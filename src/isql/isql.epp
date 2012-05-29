@@ -8430,6 +8430,7 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 		{
 			if (!global_Cols.find(var->aliasname, &pad[i]) && global_Col_default)
 				pad[i] = global_Col_default;
+			disp_length = pad[i];
 		}
 
 		if ((type == SQL_TEXT || type == SQL_VARYING) && var->sqlsubtype == 4)
