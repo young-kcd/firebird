@@ -87,7 +87,7 @@ namespace Firebird
 	{	\
 		try	\
 		{	\
-			execute(error, context, (InMessage*) inMsg, (OutMessage*) outMsg);	\
+			internalExecute(error, context, (InMessage*) inMsg, (OutMessage*) outMsg);	\
 		}	\
 		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
 		{	\
@@ -103,7 +103,7 @@ namespace Firebird
 		}	\
 	}	\
 	\
-	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
+	void FB_CALL internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
 		InMessage* in, OutMessage* out)
 
 
@@ -190,7 +190,7 @@ namespace Firebird
 	{	\
 		try	\
 		{	\
-			return fetch0(error);	\
+			return internalFetch(error);	\
 		}	\
 		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
 		{	\
@@ -208,32 +208,31 @@ namespace Firebird
 		return 0;	\
 	}	\
 	\
-	bool FB_CALL fetch0(::Firebird::Error* error)
+	bool FB_CALL internalFetch(::Firebird::Error* error)
 
-
-#define FB_UDR_BEGIN_DECLARE_TRIGGER(name)	\
-	class FB_UDR_TRIGGER(name) : public ::Firebird::Udr::Trigger<FB_UDR_TRIGGER(name)>	\
-	{	\
-	public:	\
-		virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::ExternalTrigger::Action action, void* oldMsg, void* newMsg);
-
-#define FB_UDR_END_DECLARE_TRIGGER(name)	\
-	};
-
-#define FB_UDR_DECLARE_TRIGGER(name)	\
-	FB_UDR_BEGIN_DECLARE_TRIGGER(name)	\
-	FB_UDR_END_DECLARE_TRIGGER(name)
 
 #define FB_UDR_BEGIN_TRIGGER(name)	\
-	void FB_CALL FB_UDR_TRIGGER(name)::execute(::Firebird::Error* error,	\
-		::Firebird::ExternalContext* context, ::Firebird::ExternalTrigger::Action action, \
-		void* oldMsg, void* newMsg)	\
+	class FB_UDR_TRIGGER(name);	\
+	\
+	::Firebird::Udr::TriggerFactoryImpl<FB_UDR_TRIGGER(name)> TrigFactory##name(#name);	\
+	\
+	class FB_UDR_TRIGGER(name) : public ::Firebird::Udr::Trigger<FB_UDR_TRIGGER(name)>	\
+	{	\
+	public:
+
+#define FB_UDR_END_TRIGGER	\
+	};
+
+#define FB_UDR_EXECUTE_DYNAMIC_TRIGGER	\
+	FB_UDR_EXECUTE__TRIGGER
+
+#define FB_UDR_EXECUTE__TRIGGER	\
+	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+		::Firebird::ExternalTrigger::Action action, void* oldMsg, void* newMsg)	\
 	{	\
 		try	\
-		{
-
-#define FB_UDR_END_TRIGGER(name)	\
+		{	\
+			internalExecute(error, context, action, oldMsg, newMsg);	\
 		}	\
 		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
 		{	\
@@ -248,7 +247,9 @@ namespace Firebird
 				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
 		}	\
 	}	\
-	::Firebird::Udr::TriggerFactoryImpl<FB_UDR_TRIGGER(name)> TrigFactory##name(#name);
+	\
+	void FB_CALL internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+		::Firebird::ExternalTrigger::Action action, void* oldMsg, void* newMsg)
 
 
 #define FB_UDR_UNRECOGNIZED_EXCEPTION	"Unrecognized C++ exception"

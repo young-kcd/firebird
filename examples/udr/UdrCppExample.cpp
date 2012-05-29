@@ -829,271 +829,263 @@ create trigger persons_replicate
     external name 'udrcpp_example!replicate!ds1'
     engine udr;
 ***/
-FB_UDR_BEGIN_DECLARE_TRIGGER(replicate)
-public:
-	FB_UDR_TRIGGER(replicate)();
-	~FB_UDR_TRIGGER(replicate)();
+FB_UDR_BEGIN_TRIGGER(replicate)
+	FB_UDR_TRIGGER(replicate)()
+		: initialized(false)
+	{
+	}
+
+	~FB_UDR_TRIGGER(replicate)()
+	{
+		if (!initialized)
+			return;
+
+		for (int i = 0; i < inSqlDa->sqln; ++i)
+		{
+			XSQLVAR* var = &inSqlDa->sqlvar[i];
+			delete [] var->sqldata;
+			delete var->sqlind;
+		}
+
+		delete [] reinterpret_cast<char*>(inSqlDa);
+
+		ISC_STATUS_ARRAY statusVector = {0};
+		isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_drop);
+	}
+
+	FB_UDR_EXECUTE_DYNAMIC_TRIGGER
+	{
+		initialize(context);
+
+		AutoDispose<IStatus> status(master->getStatus());
+
+		const IParametersMetadata* fields = metadata->getTriggerFields(status);
+		ThrowError::check(status->get());
+
+		unsigned fieldsCount = fields->getCount(status);
+		ThrowError::check(status->get());
+
+		MessageImpl message(fieldsCount, newMsg);
+
+		ISC_STATUS_ARRAY statusVector = {0};
+		isc_db_handle dbHandle = getIscDbHandle(context);
+		isc_tr_handle trHandle = getIscTrHandle(context);
+
+		for (unsigned i = 1; i <= fieldsCount; ++i)
+		{
+			ParamDesc<void*> field(message, fields);
+
+			XSQLVAR* var = &inSqlDa->sqlvar[i - 1];
+
+			if (message.isNull(field))
+				*var->sqlind = -1;
+			else
+			{
+				*var->sqlind = 0;
+				memcpy(var->sqldata, message[field], var->sqllen);
+			}
+		}
+
+		ThrowError::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+			inSqlDa), statusVector);
+	}
 
 private:
-	void initialize(ExternalContext* context);
+	void initialize(ExternalContext* context)
+	{
+		if (initialized)
+			return;
+
+		ISC_STATUS_ARRAY statusVector = {0};
+		isc_db_handle dbHandle = getIscDbHandle(context);
+		isc_tr_handle trHandle = getIscTrHandle(context);
+
+		stmtHandle = 0;
+		ThrowError::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
+		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
+			"select data_source from replicate_config where name = ?",
+			SQL_DIALECT_CURRENT, NULL), statusVector);
+
+		AutoDispose<IStatus> status(master->getStatus());
+
+		const char* table = metadata->getTriggerTable(status);
+		ThrowError::check(status->get());
+
+		// Skip the first exclamation point, separing the module name and entry point.
+		const char* info = strchr(metadata->getEntryPoint(status), '!');
+		ThrowError::check(status->get());
+
+		// Skip the second exclamation point, separing the entry point and the misc info (config).
+		if (info)
+			info = strchr(info + 1, '!');
+
+		if (info)
+			++info;
+		else
+			info = "";
+
+		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
+		inSqlDa->version = SQLDA_VERSION1;
+		inSqlDa->sqln = 1;
+		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+			statusVector);
+		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
+		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
+		*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
+
+		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
+		outSqlDa->version = SQLDA_VERSION1;
+		outSqlDa->sqln = 1;
+		ThrowError::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
+			statusVector);
+		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
+		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
+
+		ThrowError::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+			inSqlDa, outSqlDa), statusVector);
+		ThrowError::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+
+		delete [] inSqlDa->sqlvar[0].sqldata;
+		delete [] reinterpret_cast<char*>(inSqlDa);
+		inSqlDa = NULL;
+
+		const IParametersMetadata* fields = metadata->getTriggerFields(status);
+		ThrowError::check(status->get());
+
+		unsigned count = fields->getCount(status);
+		ThrowError::check(status->get());
+
+		char buffer[65536];
+		strcpy(buffer, "execute block (\n");
+
+		for (unsigned i = 0; i < count; ++i)
+		{
+			if (i > 0)
+				strcat(buffer, ",\n");
+
+			const char* name = fields->getField(status, i);
+			ThrowError::check(status->get());
+
+			strcat(buffer, "    p");
+			sprintf(buffer + strlen(buffer), "%d type of column \"%s\".\"%s\" = ?", i, table, name);
+		}
+
+		strcat(buffer,
+			")\n"
+			"as\n"
+			"begin\n"
+			"    execute statement ('insert into \"");
+
+		strcat(buffer, table);
+		strcat(buffer, "\" (");
+
+		for (unsigned i = 0; i < count; ++i)
+		{
+			if (i > 0)
+				strcat(buffer, ", ");
+
+			const char* name = fields->getField(status, i);
+			ThrowError::check(status->get());
+
+			strcat(buffer, "\"");
+			strcat(buffer, name);
+			strcat(buffer, "\"");
+		}
+
+		strcat(buffer, ") values (");
+
+		for (unsigned i = 0; i < count; ++i)
+		{
+			if (i > 0)
+				strcat(buffer, ", ");
+			strcat(buffer, "?");
+		}
+
+		strcat(buffer, ")') (");
+
+		for (unsigned i = 0; i < count; ++i)
+		{
+			if (i > 0)
+				strcat(buffer, ", ");
+			strcat(buffer, ":p");
+			sprintf(buffer + strlen(buffer), "%d", i);
+		}
+
+		strcat(buffer, ")\n        on external data source '");
+		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
+		strcat(buffer, "';\nend");
+
+		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
+			SQL_DIALECT_CURRENT, NULL), statusVector);
+
+		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(count))]);
+		inSqlDa->version = SQLDA_VERSION1;
+		inSqlDa->sqln = count;
+		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+			statusVector);
+
+		for (unsigned i = 0; i < count; ++i)
+		{
+			XSQLVAR* var = &inSqlDa->sqlvar[i];
+
+			switch (var->sqltype & ~1)
+			{
+				case SQL_TEXT:
+					var->sqldata = new char[var->sqllen];
+					break;
+
+				case SQL_VARYING:
+					var->sqldata = new char[var->sqllen];
+					var->sqllen += sizeof(short);
+					break;
+
+				case SQL_SHORT:
+					var->sqldata = new char[sizeof(short)];
+					break;
+
+				case SQL_LONG:
+					var->sqldata = new char[sizeof(int32)];
+					break;
+
+				case SQL_INT64:
+					var->sqldata = new char[sizeof(int64)];
+					break;
+
+				case SQL_FLOAT:
+					var->sqltype = SQL_DOUBLE | (var->sqltype & 1);
+					var->sqllen = sizeof(double);
+					// fall into
+
+				case SQL_DOUBLE:
+					var->sqldata = new char[sizeof(double)];
+					break;
+
+				case SQL_TYPE_DATE:
+					var->sqldata = new char[sizeof(ISC_DATE)];
+					break;
+
+				//// TODO: SQL_TIMESTAMP, SQL_TYPE_TIME
+
+				case SQL_BLOB:
+					var->sqldata = new char[sizeof(ISC_QUAD)];
+					break;
+
+				default:
+					assert(false);
+			}
+
+			var->sqltype |= 1;
+			var->sqlind = new short;
+			*reinterpret_cast<short*>(var->sqlind) = -1;
+		}
+
+		delete [] outSqlDa->sqlvar[0].sqldata;
+		delete [] reinterpret_cast<char*>(outSqlDa);
+
+		initialized = true;
+	}
 
 	bool initialized;
 	XSQLDA* inSqlDa;
 	isc_stmt_handle stmtHandle;
-FB_UDR_END_DECLARE_TRIGGER(replicate)
-
-
-FB_UDR_TRIGGER(replicate)::FB_UDR_TRIGGER(replicate)()
-	: initialized(false)
-{
-}
-
-FB_UDR_TRIGGER(replicate)::~FB_UDR_TRIGGER(replicate)()
-{
-	if (!initialized)
-		return;
-
-	for (int i = 0; i < inSqlDa->sqln; ++i)
-	{
-		XSQLVAR* var = &inSqlDa->sqlvar[i];
-		delete [] var->sqldata;
-		delete var->sqlind;
-	}
-
-	delete [] reinterpret_cast<char*>(inSqlDa);
-
-	ISC_STATUS_ARRAY statusVector = {0};
-	isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_drop);
-}
-
-void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context)
-{
-	if (initialized)
-		return;
-
-	ISC_STATUS_ARRAY statusVector = {0};
-	isc_db_handle dbHandle = getIscDbHandle(context);
-	isc_tr_handle trHandle = getIscTrHandle(context);
-
-	stmtHandle = 0;
-	ThrowError::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
-	ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
-		"select data_source from replicate_config where name = ?",
-		SQL_DIALECT_CURRENT, NULL), statusVector);
-
-	AutoDispose<IStatus> status(master->getStatus());
-
-	const char* table = metadata->getTriggerTable(status);
-	ThrowError::check(status->get());
-
-	// Skip the first exclamation point, separing the module name and entry point.
-	const char* info = strchr(metadata->getEntryPoint(status), '!');
-	ThrowError::check(status->get());
-
-	// Skip the second exclamation point, separing the entry point and the misc info (config).
-	if (info)
-		info = strchr(info + 1, '!');
-
-	if (info)
-		++info;
-	else
-		info = "";
-
-	inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
-	inSqlDa->version = SQLDA_VERSION1;
-	inSqlDa->sqln = 1;
-	ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
-		statusVector);
-	inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
-	strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
-	*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
-
-	XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
-	outSqlDa->version = SQLDA_VERSION1;
-	outSqlDa->sqln = 1;
-	ThrowError::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
-		statusVector);
-	outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
-	outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
-
-	ThrowError::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
-		inSqlDa, outSqlDa), statusVector);
-	ThrowError::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
-
-	delete [] inSqlDa->sqlvar[0].sqldata;
-	delete [] reinterpret_cast<char*>(inSqlDa);
-	inSqlDa = NULL;
-
-	const IParametersMetadata* fields = metadata->getTriggerFields(status);
-	ThrowError::check(status->get());
-
-	unsigned count = fields->getCount(status);
-	ThrowError::check(status->get());
-
-	char buffer[65536];
-	strcpy(buffer, "execute block (\n");
-
-	for (unsigned i = 0; i < count; ++i)
-	{
-		if (i > 0)
-			strcat(buffer, ",\n");
-
-		const char* name = fields->getField(status, i);
-		ThrowError::check(status->get());
-
-		strcat(buffer, "    p");
-		sprintf(buffer + strlen(buffer), "%d type of column \"%s\".\"%s\" = ?", i, table, name);
-	}
-
-	strcat(buffer,
-		")\n"
-		"as\n"
-		"begin\n"
-		"    execute statement ('insert into \"");
-
-	strcat(buffer, table);
-	strcat(buffer, "\" (");
-
-	for (unsigned i = 0; i < count; ++i)
-	{
-		if (i > 0)
-			strcat(buffer, ", ");
-
-		const char* name = fields->getField(status, i);
-		ThrowError::check(status->get());
-
-		strcat(buffer, "\"");
-		strcat(buffer, name);
-		strcat(buffer, "\"");
-	}
-
-	strcat(buffer, ") values (");
-
-	for (unsigned i = 0; i < count; ++i)
-	{
-		if (i > 0)
-			strcat(buffer, ", ");
-		strcat(buffer, "?");
-	}
-
-	strcat(buffer, ")') (");
-
-	for (unsigned i = 0; i < count; ++i)
-	{
-		if (i > 0)
-			strcat(buffer, ", ");
-		strcat(buffer, ":p");
-		sprintf(buffer + strlen(buffer), "%d", i);
-	}
-
-	strcat(buffer, ")\n        on external data source '");
-	strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
-	strcat(buffer, "';\nend");
-
-	ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
-		SQL_DIALECT_CURRENT, NULL), statusVector);
-
-	inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(count))]);
-	inSqlDa->version = SQLDA_VERSION1;
-	inSqlDa->sqln = count;
-	ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
-		statusVector);
-
-	for (unsigned i = 0; i < count; ++i)
-	{
-		XSQLVAR* var = &inSqlDa->sqlvar[i];
-
-		switch (var->sqltype & ~1)
-		{
-			case SQL_TEXT:
-				var->sqldata = new char[var->sqllen];
-				break;
-
-			case SQL_VARYING:
-				var->sqldata = new char[var->sqllen];
-				var->sqllen += sizeof(short);
-				break;
-
-			case SQL_SHORT:
-				var->sqldata = new char[sizeof(short)];
-				break;
-
-			case SQL_LONG:
-				var->sqldata = new char[sizeof(int32)];
-				break;
-
-			case SQL_INT64:
-				var->sqldata = new char[sizeof(int64)];
-				break;
-
-			case SQL_FLOAT:
-				var->sqltype = SQL_DOUBLE | (var->sqltype & 1);
-				var->sqllen = sizeof(double);
-				// fall into
-
-			case SQL_DOUBLE:
-				var->sqldata = new char[sizeof(double)];
-				break;
-
-			case SQL_TYPE_DATE:
-				var->sqldata = new char[sizeof(ISC_DATE)];
-				break;
-
-			//// TODO: SQL_TIMESTAMP, SQL_TYPE_TIME
-
-			case SQL_BLOB:
-				var->sqldata = new char[sizeof(ISC_QUAD)];
-				break;
-
-			default:
-				assert(false);
-		}
-
-		var->sqltype |= 1;
-		var->sqlind = new short;
-		*reinterpret_cast<short*>(var->sqlind) = -1;
-	}
-
-	delete [] outSqlDa->sqlvar[0].sqldata;
-	delete [] reinterpret_cast<char*>(outSqlDa);
-
-	initialized = true;
-}
-
-FB_UDR_BEGIN_TRIGGER(replicate)
-{
-	initialize(context);
-
-	AutoDispose<IStatus> status(master->getStatus());
-
-	const IParametersMetadata* fields = metadata->getTriggerFields(status);
-	ThrowError::check(status->get());
-
-	unsigned fieldsCount = fields->getCount(status);
-	ThrowError::check(status->get());
-
-	MessageImpl message(fieldsCount, newMsg);
-
-	ISC_STATUS_ARRAY statusVector = {0};
-	isc_db_handle dbHandle = getIscDbHandle(context);
-	isc_tr_handle trHandle = getIscTrHandle(context);
-
-	for (unsigned i = 1; i <= fieldsCount; ++i)
-	{
-		ParamDesc<void*> field(message, fields);
-
-		XSQLVAR* var = &inSqlDa->sqlvar[i - 1];
-
-		if (message.isNull(field))
-			*var->sqlind = -1;
-		else
-		{
-			*var->sqlind = 0;
-			memcpy(var->sqldata, message[field], var->sqllen);
-		}
-	}
-
-	ThrowError::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
-		inSqlDa), statusVector);
-}
-FB_UDR_END_TRIGGER(replicate)
+FB_UDR_END_TRIGGER
