@@ -44,6 +44,10 @@
 
     function HasWI30: boolean;
     function HasNotWI30: boolean;
+		
+		function SummarizeInstalledProducts: String;
+		function AnalysisAssessment: boolean;
+
  *)
 
 
@@ -358,9 +362,9 @@ begin
       dbg_Server := ProductsInstalledArray[product].ServerVersion;
       dbg_InstallType := ProductsInstalledArray[product].InstallType;
 
-    if FileExists(ProductsInstalledArray[product].Path + '\bin\fbclient.dll') then
+    if FileExists(ProductsInstalledArray[product].Path + '\fbclient.dll') then
       ProductsInstalledArray[product].ClientVersion := GetInstalledVersion(
-        ProductsInstalledArray[product].Path + '\bin\fbclient.dll',VerInt)
+        ProductsInstalledArray[product].Path + '\fbclient.dll',VerInt)
       else
         ProductsInstalledArray[product].ClientVersion := gds32VersionString;
 
@@ -375,15 +379,15 @@ begin
     ///////////
     if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
 
-      GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\gbak.exe',
+      GetVersionNumbersString( ProductsInstalledArray[product].Path+'\gbak.exe',
           ProductsInstalledArray[product].GBAKVersion);
       If ProductsInstalledArray[product].GBAKVersion <> '' then begin
         ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].GBAKVersion;
         ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + AdminInstall;
       end;
 
-      if FileExists(ProductsInstalledArray[product].Path+'\bin\fb_inet_server.exe') then begin
-        GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\fb_inet_server.exe',
+      if FileExists(ProductsInstalledArray[product].Path+'\fb_inet_server.exe') then begin
+        GetVersionNumbersString( ProductsInstalledArray[product].Path+'\fb_inet_server.exe',
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
           ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
@@ -391,8 +395,8 @@ begin
         end;
       end;
 
-      if FileExists(ProductsInstalledArray[product].Path+'\bin\fbserver.exe') then begin
-        GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\fbserver.exe',
+      if FileExists(ProductsInstalledArray[product].Path+'\fbserver.exe') then begin
+        GetVersionNumbersString( ProductsInstalledArray[product].Path+'\fbserver.exe',
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
           ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
@@ -400,8 +404,8 @@ begin
         end;
       end;
 
-      if FileExists(ProductsInstalledArray[product].Path+'\bin\ibserver.exe') then begin
-        GetVersionNumbersString( ProductsInstalledArray[product].Path+'\bin\ibserver.exe',
+      if FileExists(ProductsInstalledArray[product].Path+'\ibserver.exe') then begin
+        GetVersionNumbersString( ProductsInstalledArray[product].Path+'\ibserver.exe',
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
           ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
@@ -684,7 +688,7 @@ var
 
 procedure SetupSharedFilesArray;
 //All shared files go in this list. Use
-// find /n "sharedfile" FirebirdInstall_15.iss
+// find /n "sharedfile" FirebirdInstall_20.iss
 //to list them in the order they appear in the setup script
 // Shared Files are defined as either:
 // - Files which are absolutely necessary for a functioning installation.
@@ -692,56 +696,57 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,36);
+SetArrayLength(SharedFileArray,35);
 
-SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
-SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
-SharedFileArray[2].Filename := ExpandConstant('{app}')+'\firebird.msg';
-SharedFileArray[3].Filename := ExpandConstant('{app}')+'\bin\gbak.exe';
-SharedFileArray[4].Filename := ExpandConstant('{app}')+'\bin\gfix.exe';
-SharedFileArray[5].Filename := ExpandConstant('{app}')+'\bin\gsec.exe';
-SharedFileArray[6].Filename := ExpandConstant('{app}')+'\bin\gsplit.exe';
-SharedFileArray[7].Filename := ExpandConstant('{app}')+'\bin\gstat.exe';
-SharedFileArray[8].Filename := ExpandConstant('{app}')+'\bin\fbguard.exe';
-SharedFileArray[9].Filename := ExpandConstant('{app}')+'\bin\fb_lock_print.exe';
-SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
-SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
-SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
-SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\instclient.exe';
-SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
-SharedFileArray[15].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
+SharedFileArray[0].Filename := ExpandConstant('{app}')+'IPLicense.txt';
+SharedFileArray[1].Filename := ExpandConstant('{app}')+'IDPLicense.txt';
+SharedFileArray[2].Filename := ExpandConstant('{app}')+'firebird.msg';
+SharedFileArray[3].Filename := ExpandConstant('{app}')+'gbak.exe';
+SharedFileArray[4].Filename := ExpandConstant('{app}')+'gfix.exe';
+SharedFileArray[5].Filename := ExpandConstant('{app}')+'gsec.exe';
+SharedFileArray[6].Filename := ExpandConstant('{app}')+'gsplit.exe';
+SharedFileArray[7].Filename := ExpandConstant('{app}')+'gstat.exe';
+SharedFileArray[8].Filename := ExpandConstant('{app}')+'fbguard.exe';
+SharedFileArray[9].Filename := ExpandConstant('{app}')+'fb_lock_print.exe';
+SharedFileArray[10].Filename := ExpandConstant('{app}')+'firebird.exe';
+SharedFileArray[11].Filename := ExpandConstant('{app}')+'ib_util.dll';
+SharedFileArray[12].Filename := ExpandConstant('{app}')+'instclient.exe';
+SharedFileArray[13].Filename := ExpandConstant('{app}')+'instreg.exe';
+SharedFileArray[14].Filename := ExpandConstant('{app}')+'instsvc.exe';
 
-SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\gds32.dll';
-SharedFileArray[17].Filename := ExpandConstant('{sys}')+'\fbclient.dll';
+SharedFileArray[15].Filename := ExpandConstant('{sys}')+'gds32.dll';
+SharedFileArray[16].Filename := ExpandConstant('{sys}')+'fbclient.dll';
 
-SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
+SharedFileArray[17].Filename := ExpandConstant('{app}')+'fbclient.dll';
 
-SharedFileArray[19].Filename := ExpandConstant('{app}')+'\bin\icuuc30.dll';
-SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\icuin30.dll';
-SharedFileArray[21].Filename := ExpandConstant('{app}')+'\bin\icudt30.dll';
+SharedFileArray[18].Filename := ExpandConstant('{app}')+'icuuc30.dll';
+SharedFileArray[19].Filename := ExpandConstant('{app}')+'icuin30.dll';
+SharedFileArray[20].Filename := ExpandConstant('{app}')+'icudt30.dll';
 
-SharedFileArray[22].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
-SharedFileArray[23].Filename := ExpandConstant('{app}')+'\bin\msvcr{#msvc_version}0.dll';
-SharedFileArray[24].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
+SharedFileArray[21].Filename := ExpandConstant('{app}')+'msvcrt.dll';
+SharedFileArray[22].Filename := ExpandConstant('{app}')+'msvcr{#msvc_version}0.dll';
 
-SharedFileArray[25].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
-
-SharedFileArray[26].Filename := ExpandConstant('{app}')+'\UDF\ib_udf.dll';
-SharedFileArray[27].Filename := ExpandConstant('{app}')+'\UDF\fbudf.dll';
+SharedFileArray[23].Filename := ExpandConstant('{app}')+'fbintl.dll';
+SharedFileArray[24].Filename := ExpandConstant('{app}')+'UDF\ib_udf.dll';
+SharedFileArray[25].Filename := ExpandConstant('{app}')+'UDF\fbudf.dll';
 
 
 if UsingWinNT then
-  SharedFileArray[28].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
+  SharedFileArray[26].Filename := ExpandConstant('{sys}')+'Firebird2Control.cpl'
 else
-  SharedFileArray[28].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
+  SharedFileArray[26].Filename := ExpandConstant('{sys}')+'FIREBI~1.CPL';
 
-SharedFileArray[29].Filename := ExpandConstant('{app}')+'aliases.conf';
-SharedFileArray[30].Filename := ExpandConstant('{app}')+'firebird.conf';
-SharedFileArray[31].Filename := ExpandConstant('{app}')+'firebird.log';
-SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
-SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbtrace.conf';
-SharedFileArray[34].Filename := ExpandConstant('{app}')+'\bin\fbsvcmgr.exe';
-SharedFileArray[35].Filename := ExpandConstant('{app}')+'\bin\fbrmclib.dll';
+SharedFileArray[27].Filename := ExpandConstant('{app}')+'aliases.conf';
+SharedFileArray[28].Filename := ExpandConstant('{app}')+'firebird.conf';
+SharedFileArray[29].Filename := ExpandConstant('{app}')+'firebird.log';
+SharedFileArray[30].Filename := ExpandConstant('{app}')+'security3.fdb';
+SharedFileArray[31].Filename := ExpandConstant('{app}')+'fbtrace.conf';
+SharedFileArray[32].Filename := ExpandConstant('{app}')+'fbsvcmgr.exe';
+SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbrmclib.dll';
+SharedFileArray[34].Filename := ExpandConstant('{app}')+'fbtracemgr.exe';
+
+// FIXME 
+// Add in WOW64 here.
 
 end;
 
@@ -804,7 +809,7 @@ begin
     RegQueryStringValue(HKEY_LOCAL_MACHINE,
       'SOFTWARE\FirebirdSQL\Firebird\CurrentVersion','RootDirectory', FirebirdDir);
   if (FirebirdDir<>'') then
-    GetInstalledVersion(FirebirdDir+'\bin\gbak.exe', FirebirdVer);
+    GetInstalledVersion(FirebirdDir+'\gbak.exe', FirebirdVer);
 
   Result := FirebirdDir;
 end;
@@ -821,7 +826,7 @@ begin
   RegQueryStringValue(HKEY_LOCAL_MACHINE,
     'SOFTWARE\Borland\InterBase\CurrentVersion','RootDirectory', InterBaseDir);
   if ( InterBaseDir <> '' ) then
-    GetInstalledVersion(InterBaseDir+'\bin\gbak.exe',InterBaseVer);
+    GetInstalledVersion(InterBaseDir+'\gbak.exe',InterBaseVer);
 
   Result := InterBaseDir;
 end;
@@ -993,3 +998,142 @@ begin
   result := NOT HasWI30;
 end;
 
+function SummarizeInstalledProducts: String;
+var
+  InstallSummaryArray: TArrayofString;
+  product: Integer;
+  i: Integer;
+  StatusDescription: String;
+  InstallSummary: String;
+  prodstr: String;
+begin
+
+//do nothing gracefully if we are called by accident.
+if ProductsInstalledCount = 0 then
+  exit;
+
+SetArrayLength(InstallSummaryArray,ProductsInstalledCount);
+for product := 0 to MaxProdInstalled -1 do begin
+  if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
+      InstallSummaryArray[i] := Format(ProductsInstalledArray[product].Description, [ProductsInstalledArray[product].ActualVersion]);
+
+    if (ProductsInstalledArray[product].ServerVersion <> '') then begin
+      if ((ProductsInstalledArray[product].InstallType AND ClassicServerInstall) = ClassicServerInstall) then
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:ClassicServerInstall}')
+      else
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:SuperServerInstall}')
+      end
+    else begin
+      if (ProductsInstalledArray[product].GBAKVersion <> '') then
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:DeveloperInstall}')
+      else
+        InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:ClientInstall}')
+    end;
+
+    if ((ProductsInstalledArray[product].InstallType AND BrokenInstall) = BrokenInstall) then
+      InstallSummaryArray[i] := InstallSummaryArray[i]
+      + #13 + ExpandConstant('{cm:PreviousInstallBroken}')
+    else
+      InstallSummaryArray[i] := InstallSummaryArray[i]
+      + #13 + ExpandConstant('{cm:PreviousInstallGood}')
+    ;
+
+    i:= i+1;
+  end;
+end;
+
+for i:=0 to ProductsInstalledCount-1 do
+  InstallSummary := InstallSummary + InstallSummaryArray[i] + #13;
+
+// If FB21 is installed and installed platform does not match current platform
+// then notify user.
+#if PlatformTarget == "x64"
+If ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) then
+#else
+If ((ProductsInstalled AND FB21 ) = FB21 ) then
+#endif
+      InstallSummary := InstallSummary
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix1}')
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix2}')
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix3}')
+      +#13 + ExpandConstant('{cm:InstallSummarySuffix4}')
+      +#13
+;
+
+if ProductsInstalledCount = 1 then
+  StatusDescription := Format(ExpandConstant('{cm:InstalledProducts}'), [IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}')])
+else
+  StatusDescription := Format(ExpandConstant('{cm:InstalledProducts}'), [IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}')]);
+
+  Result := StatusDescription
+    +#13
+    +#13 + InstallSummary
+    +#13 + ExpandConstant('{cm:InstallSummaryCancel1}')
+    +#13 + ExpandConstant('{cm:InstallSummaryCancel2}')
+    +#13
+    +#13 + ExpandConstant('{cm:InstallSummaryCancel3}')
+    +#13
+end;
+
+function AnalysisAssessment: boolean;
+var
+  MsgText: String;
+  MsgResult: Integer;
+  VerString: String;
+begin
+  result := false;
+
+  //We've got all this information. What do we do with it?
+
+  if ProductsInstalledCount = 0 then begin
+      result := true;
+      exit;
+  end;
+
+
+  //If existing install of the same majorver.minorver is
+  //found then we can upgrade it.
+  if ( (ProductsInstalledCount = 1) AND
+#if PlatformTarget == "x64"
+    ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) ) then begin
+#else
+    ((ProductsInstalled AND FB21 ) = FB21 ) ) then begin
+#endif
+        result := true;
+        exit;
+    end
+  ;
+
+  if ForceInstall then begin
+    result := true;
+    exit;
+  end;
+
+  //Otherwise, show user the analysis report.
+  MsgText := SummarizeInstalledProducts;
+  MsgResult := MsgBox(MsgText,mbConfirmation,MB_YESNO);
+  if (MsgResult = IDNO ) then
+    result := true;
+    //but we don't configure
+    if ((InstallAndConfigure AND Configure) = Configure) then
+      InstallAndConfigure := InstallAndConfigure - Configure;
+end;
+
+
+
+// Dummy functions to get us started
+{*function UseSSTask: boolean;
+begin
+  result := false
+end;
+
+function UseSCTask: boolean;
+begin
+  result := false
+end;
+
+function UseCSTask: boolean;
+begin
+  result := false
+end;
+*}

@@ -1,17 +1,33 @@
-Firebird Database Server 2.5 Beta 2
-==================================================
+Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha)
+========================================================
+
+
+############## NOTE ####################################
+#                                                      #
+# The installer is in an experimental state.           #
+# This is not the definitive version for Firebird 3.0. #
+#                                                      #
+# o Layout and work sequence of the installer is not   #
+#    definitive.                                       #
+# o Options available are subject to change.           #
+# o Method of library deployment has not been          #
+#   finalized.                                         #
+# o The notes below are not up-to-date.                #
+#                                                      #
+############## END NOTE ################################
+
 
 This document is a guide to installing this package of
-Firebird 2.5 on the Windows platform. These notes refer
+Firebird $MAJOR.$MINOR on the Windows platform. These notes refer
 to the installation package itself, rather than
-Firebird 2.5 in general. In addition, these notes are
+Firebird $MAJOR.$MINOR in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
-familiar with Firebird 2.1. If you are evaluating
-Firebird 2.5 as part of a migration from FB 2.1 you are
-advised to review the FB 2.1 documentation to
-understand the changes made between 2.1 and 2.5.
+familiar with Firebird 2.5. If you are evaluating
+Firebird $MAJOR.$MINOR as part of a migration from Fb 2.5 you are
+advised to review the Fb $MAJOR.$MINOR documentation to
+understand the changes made between 2.5 and $MAJOR.$MINOR.
 
 
 Contents
@@ -59,7 +75,7 @@ Other Known installation problems
 ---------------------------------
 
 o It is only possible to use the binary installer
-  to install the default instance of Firebird 2.1. If
+  to install the default instance of Firebird $MAJOR.$MINOR. If
   you wish to install additional, named instances you
   should manually install them with the zipped install
   image.
@@ -111,11 +127,12 @@ o If Firebird is running as an application (instead of
   uninstall the uninstall will complete with errors.
   You will have to delete the remnants by hand.
 
-o Uninstallation leaves four files in the install
+o Uninstallation leaves five files in the install
   directory:
 
   - aliases.conf
   - firebird.conf
+  - fbtrace.conf
   - firebird.log
   - security2.fdb
 
@@ -158,3 +175,4 @@ Please see this document:
     installation_scripted.txt
 
 for full details.
+

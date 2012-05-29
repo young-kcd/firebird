@@ -1,7 +1,7 @@
 
-==========================================
-Firebird 2.5.0 Beta 2 (Windows Build)
-==========================================
+====================================
+Firebird $MAJOR.$MINOR.$RELEASE    (Windows Build)
+====================================
 
 
 o Introduction
@@ -12,13 +12,13 @@ o Reporting Bugs
 Introduction
 ============
 
-Welcome to Firebird 2.5.
+Welcome to Firebird $MAJOR.$MINOR.
 
 
 Intended Users
 ==============
 
-This is a beta version of Firebird.
+This is a pre-alpha version of Firebird.
 
 It is not intended for production use. It is for
 test purposes only.
@@ -39,9 +39,10 @@ version of Firebird!
 
 Please don't use the Firebird-devel list for technical
 support unless the question specifically relates to a
-new feature in Firebird 2.5
+new feature in Firebird $MAJOR.$MINOR
 
 
 Happy Testing!
 
 From the Firebird team.
+

@@ -48,6 +48,10 @@ Function Prototypes
   procedure CreateHelpDlg;
   function ShowHelpDlg: Integer;
   procedure CloseHelpDlg;
+  procedure CreateDebugDlg(aString: String; aDescription: String);
+  function ShowDebugDlg(aString: String; aDescription: String): Integer;
+  procedure CloseDebugDlg;
+	
  *)
 
 (*
@@ -62,12 +66,18 @@ InnoSetup Help Extract on Windows version strings:
 Windows NT versions:
 4.0.1381      Windows NT 4.0
 5.0.2195      Windows 2000
-5.01.2600 Windows XP
-  or Windows XP 64-Bit Edition Version 2002 (Itanium)
-5.02.3790 Windows Server 2003
-  or Windows XP x64 Edition (AMD64/EM64T)
-  or Windows XP 64-Bit Edition Version 2003 (Itanium)
-6.0.6000 Windows Vista
+5.01.2600 		Windows XP
+							or Windows XP 64-Bit Edition Version 2002 (Itanium)
+5.02.3790 		Windows Server 2003
+							or Windows XP x64 Edition (AMD64/EM64T)
+							or Windows XP 64-Bit Edition Version 2003 (Itanium)
+6.0.6000 			Windows Vista
+6.0.6001 			Windows Vista with Service Pack 1
+							or Windows Server 2008
+6.0.6002 			Windows Vista with Service Pack 2
+6.1.7600 			Windows 7 
+							or Windows Server 2008 R2 
+
 
 *)
 
@@ -93,9 +103,18 @@ v3.1    3.1.4000.2435               Released with a fix to address the issue
                                     discussed in KB898628. This is the latest version
                                     of Windows Installer 3.1.
 v4.0    4.0.6000.16386              Released with Windows Vista.
-v4.0    4.0.6001.16531 or greater   Released with Windows Vista SP1 and
+v4.0    4.0.6001.16531							Released with Windows Vista SP1 and
                                     Windows Server 2008.
-
+v4.5		4.5.6002.18005							Released with Windows Vista with Service Pack 2 (SP2) 
+																		and Windows Server 2008 with Service Pack (SP2.)
+v4.5		4.5.6000.20817							Released as a redistributable for Windows Vista.
+v4.5		4.5.6001.22162							Released as a redistributable for Windows Server 2008 
+																		and Windows Vista with SP1.
+v4.5		4.5.6001.22159							Released as a redistributable for Windows XP with Service Pack 2 (SP2) and later, 
+																		and Windows Server 2003 with SP1 and later.
+v5.0		5.0.7600.16385 or greater 	Released with Windows Server 2008 R2 
+																		and Windows 7.
+ 																		
 (NB1 - msi.dll stores the correct version number and is updated
         automatically by Windows Update. msiexec.exe will be the original shipped version.
 
@@ -128,9 +147,47 @@ var
   Version: TWindowsVersion;
 begin
   GetWindowsVersionEx(Version);
-  if (Version.Major = 6) and (Version.Minor = 0) then
+  if ( Version.Major = 6 ) and ( Version.Minor = 0 ) and ( Version.build = 6000 )then
      result := true;
 end;
+
+function IsVistaSP1: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if ( Version.Major = 6 ) and ( Version.Minor = 0 ) and ( Version.build = 6001 )then
+     result := true;
+end;
+
+function IsWin2K8R1: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if ( Version.Major = 6 ) and ( Version.Minor = 0 ) and ( Version.build = 6001 )then
+     result := true;
+end;
+
+function IsWinSeven: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 6) and (Version.Minor = 1) then
+     result := true;
+end;
+
+//This test is identical to the test for Win7
+function IsWin2K8R2: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 6) and (Version.Minor = 1) then
+     result := true;
+end;
+
 
 function IsWin2k3: boolean;
 var
@@ -436,17 +493,76 @@ begin
   HelpDlg.ActiveControl := OKButton;
 end;
 
-function ShowHelpDlg: Integer;
-begin
-  result := HelpDlg.ShowModal;
-end;
-
 procedure CloseHelpDlg;
 begin
   with HelpDlg do begin
      Close;
      Free;
   end;
+end;
+
+function ShowHelpDlg: Integer;
+begin
+	CreateHelpDlg;
+  result := HelpDlg.ShowModal;
+	CloseHelpDlg;
+end;
+
+
+
+
+// Add a simple debug dialogue
+var 
+	DebugDlg: TForm;
+	
+procedure CreateDebugDlg(aString: String; ADescription: String);
+var
+  DebugText: TMemo;
+	DebugDescription: TLabel;
+  OKButton: TButton;
+begin
+  DebugDlg := TForm.create(nil);
+  with DebugDlg do begin
+      BorderStyle := bsSizeable;
+      Position := poScreenCenter;
+      ClientWidth := 450;
+      ClientHeight := 350;
+      Caption := 'Firebird Installation - command-line parameters.';
+  end;
+  DebugText := TMemo.Create(DebugDlg);
+  with DebugText do begin
+      Parent := DebugDlg;
+      ScrollBars := ssVertical;
+      Lines.Text :=aString;
+      Align := alTop;
+      Height := 200;
+      ReadOnly := True;
+    end;
+  OKButton := TButton.create(DebugDlg);
+  with OKButton do begin
+      Parent := DebugDlg;
+      Left := (Parent.width  div 2) - width div 2;
+      top := Parent.ClientHeight - 40;
+      Caption := 'OK';
+      ModalResult := mrOK;
+  end;
+  DebugDlg.ActiveControl := OKButton;
+
+end;
+	
+procedure CloseDebugDlg;
+begin
+  with DebugDlg do begin
+     Close;
+     Free;
+  end;
+end;
+
+function ShowDebugDlg(aString: String; aDescription: String): Integer;
+begin
+	CreateDebugDlg(aString,aDescription);
+  result := DebugDlg.ShowModal;
+	CloseDebugDlg;
 end;
 
 

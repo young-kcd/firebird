@@ -9,11 +9,12 @@ documentatation i18n should be available separately. I18n is a
 good thing, but bloating the installer with large amounts of translated
 documentation is not desirable. 
 
-The current version of InnoSetup - 4.2.7 - provides generic support for
-the following languages:
+The current version of InnoSetup used by Firebird $MAJOR.$MINOR - 5.4.2 - provides 
+generic support for the following languages:
 
-    Catalan, Czech, Dutch, French, German, Norwegian, Polish,
-    PortugueseStd, Russian and Slovenian.
+	Basque, BrazilianPortuguese, Catalan, Czech, Danish, Dutch, Finnish, French,
+	German, Hebrew, Hungarian, Italian, Japanese, Norwegian, Polish, Portuguese, 
+	Russian, Slovak, Slovenian, and Spanish	
 
 In addition, the InnoSetup user community has made other language packs
 available for download. See here for details:
@@ -23,37 +24,35 @@ available for download. See here for details:
 Therefore adding i18n support to the Firebird installer is extremely
 simple as all we need are translations of the Firebird specific messages.
 
-Currently the Firebird installer has support for English, French, German,
-Portuguese (standard), Hungarian and Slovenian installs. So there are still 
-opportunities for others to provide support for their native language.
+Currently the Firebird installer has support for Bosnian, Czech, Spanish, 
+French, German, Hungarian, Italian, Polish, Portuguese (standard), Russian, 
+Slovakian and Slovenian installs. So there are still opportunities for others 
+to provide support for their native language.
 
 
 How to add new languages
 ------------------------
 
 The simplest way to understand this is to study the implementation of
-the French translation. The steps to follow are these:
+an existing translation. The steps to follow are these:
 
 o The Win32 install files are located in install\arch-specific\win32.
   This sub-directory is located as follows:
 
     Firebird 1.5  - firebird2\src
-    Firebird 2.0  - firebird2\builds
+    Firebird 2.n  - firebird2\builds
+    Firebird 3.n  - firebird2\builds
 
-o You can use anonymous CVS to checkout the Win32 install kit with these
-  commands:
+o You can use a tool such as TortoiseSVN to checkout the Win32 install 
+  kit. Just open the SVN checkout dialogue and enter something similar 
+  to this Repository URL:
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/branch/B2_5_Release/builds/install/arch-specific/win32
+ or this:
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/tags/R2_5_1/builds/install/arch-specific/win32
+For 2.1 the equivalent URLs would be:
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/branch/B2_1_Release/builds/install/arch-specific/win32
+     https://firebird.svn.sourceforge.net/svnroot/firebird/firebird/tags/R2_1_4/builds/install/arch-specific/win32
 
-  [login]
-
-    cvs -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird login
-
-  [checkout the Fb 1.5 Win32 installation kit]
-
-    cvs -z3 -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird co -r B1_5_Release firebird2/src/install/arch-specific/win32
-
-  [checkout the Fb 2.0 Win32 installation kit]
-
-    cvs -z3 -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird co -r B2_0_Release firebird2/builds/install/arch-specific/win32
 
 
 o Each language has its own sub-directory under install\arch-specific\win32.

@@ -28,6 +28,8 @@ Setup parameters specific to the Firebird Installer
 /COMPONENTS="comma separated list of component names"
 /TASKS="comma separated list of task names"
 /MERGETASKS="comma separated list of task names"
+/SYSDBAName="SYSDBA"
+/SYSDBAPassword="masterkey"
 
 Setup parameters specific to the Firebird Uninstaller
 /CLEAN
@@ -281,7 +283,23 @@ Parameters specific to Firebird installs
 
   (This option is not intended to be used with the /TASKS parameter.)
 
+  
+/SYSDBANAME="SYSDBA"
 
+  SYSDBA name will default to SYSDBA unless overridden with this parameter.
+  
+  NOTE: If an existing Security database is found this parameter will be 
+  ignored.
+
+  
+/SYSDBAPASSWORD="masterkey"
+
+  SYSDBA password will use the default "masterkey" password.
+  
+  NOTE: If an existing Security database is found this parameter will be 
+  ignored.
+  
+  
 Setup Exit Codes
 ----------------
 
@@ -377,12 +395,13 @@ Parameters specific to Firebird uninstalls
 /CLEAN
 
   Uninstallation has always left the following files in place after
-  the uninstallation process hase completed:
+  the uninstallation process has completed:
 
     firebird.conf
     aliases.conf
     firebird.log
-    security2.fdb
+    security3.fdb
+	fbtrace.conf
 
   The assumption is that these files will be useful to users
   re-installing or upgrading Firebird. Starting with Firebird 2.1
