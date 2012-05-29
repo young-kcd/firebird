@@ -221,7 +221,18 @@ namespace IcuUtil
 			if (len > width)
 				len = width;
 
-			sprintf(buffer, (right ? "%*.*s" : "%-*.*s"), width, len, str);
+			if (right) {
+				memcpy(buffer + width - len, str, len);
+				if (width > len)
+					memset(buffer, ' ', width - len);
+			}
+			else
+			{
+				memcpy(buffer, str, len);
+				if (width > len)
+					memset(buffer + len, ' ', width - len);
+			}
+			buffer[width] = '\0';
 			return;
 		}
 
@@ -562,7 +573,7 @@ int ISQL_main(int argc, char* argv[])
 	}
 #endif	// MU_ISQL
 
-	setlocale(LC_ALL, "");
+	setlocale(LC_CTYPE, "");
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
