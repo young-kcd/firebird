@@ -1,3 +1,7 @@
+ 2012-05-29 20:25  mkubecek 
+   M src/isql/isql.epp
+isql: fix output if charset is different from locale
+
  2012-05-26 21:51  hvlad 
    M src/jrd/dpm.epp
 Fixed bug CORE-3855 : Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed into newly allocated pages even if there is enough free place on some existing data page
