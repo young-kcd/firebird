@@ -1,3 +1,44 @@
+ 2012-05-29 20:19  mkubecek 
+   M src/isql/isql.epp
+isql: fix buffer overflow when 'set width' sets bigger width
+than column's natural size
+
+ 2012-05-29 20:14  mkubecek 
+   M src/isql/isql.epp
+isql: fix output if charset is different from locale
+
+ 2012-05-29 16:02  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/firebird/UdrCppEngine.h
+1) Change UdrCpp triggers macros to match procedures and functions - first phase.
+2) Adjustments to procedures and functions.
+
+ 2012-05-29 10:14  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   A builds/install/arch-specific/win32/FirebirdInstallGUIFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   A builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/i18n_readme.txt
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/installation_scripted.txt
+Add innosetup install script for fb3. 
+Misc changes to support new install requirements of fb3
+(Note - this is still a work in progress.)
+
+ 2012-05-29 09:40  paul_reeves 
+   A builds/install/arch-specific/win32/cz
+   A builds/install/arch-specific/win32/cz/ctime.txt
+   A builds/install/arch-specific/win32/cz/custom_messages_cz.inc
+   A builds/install/arch-specific/win32/cz/instalace_ctime.txt
+   A builds/install/arch-specific/win32/ru
+   A builds/install/arch-specific/win32/ru/Readme.txt
+   A builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+   A builds/install/arch-specific/win32/ru/installation_readme.txt
+Add stub files for ru and cz for win32 installer.
+
  2012-05-26 22:01  hvlad 
    M src/jrd/dpm.epp
 Fixed bug CORE-3855 : Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed into newly allocated pages even if there is enough free place on some existing data page
