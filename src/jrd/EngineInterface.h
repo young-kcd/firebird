@@ -389,6 +389,7 @@ class JProvider : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VE
 {
 public:
 	explicit JProvider(Firebird::IPluginConfig*)
+		: cryptCallback(NULL)
 	{
 	}
 
@@ -405,10 +406,14 @@ public:
 		unsigned int dpbLength, const unsigned char* dpb);
 	virtual JService* FB_CARG attachServiceManager(Firebird::IStatus* status, const char* service,
 		unsigned int spbLength, const unsigned char* spb);
-	//virtual ITransaction* startTransaction(Firebird::IStatus* status, unsigned int count, ...);
-	//virtual ITransaction* startMultiple(Firebird::IStatus* status, MultipleTransaction* multi);
 	virtual void FB_CARG shutdown(Firebird::IStatus* status, unsigned int timeout, const int reason);
+	virtual void FB_CARG setDbCryptCallback(Firebird::IStatus* status,
+		Firebird::ICryptKeyCallback* cryptCallback);
+
 	virtual int FB_CARG release();
+
+private:
+	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
 } // namespace Jrd

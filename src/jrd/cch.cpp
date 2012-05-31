@@ -60,6 +60,7 @@
 #include "../common/config/config.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/MsgPrint.h"
+#include "../jrd/CryptoManager.h"
 
 using namespace Jrd;
 using namespace Ods;
@@ -229,7 +230,7 @@ int CCH_down_grade_dbb(void* ast_object)
 	{
 		Lock* const lock = dbb->dbb_lock;
 
-		AsyncContextHolder tdbb(dbb, lock->lck_attachment);
+		AsyncContextHolder tdbb(dbb, lock->getLockAttachment());
 
 		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
 
@@ -839,7 +840,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
 
 		// Read page from disk as normal
-		while (!PIO_read(file, bdb, page, status))
+		while (!CryptoManager::cryptRead(file, bdb, page, status))
 		{
 			if (isTempPage || !read_shadow) {
 				break;
@@ -884,7 +885,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			// this is a merge process.
 			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK",
 				bdb->bdb_page, bak_state, diff_page));
-			while (!PIO_read(file, bdb, page, status))
+			while (!CryptoManager::cryptRead(file, bdb, page, status))
 			{
 				if (!read_shadow) {
 					break;
@@ -2398,7 +2399,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		// shadow to be deleted at the next available opportunity when we
 		// know we don't have a page fetched
 
-		if (!PIO_write(sdw->sdw_file, bdb, page, status))
+		if (!CryptoManager::cryptWrite(sdw->sdw_file, bdb, page, status))
 		{
 			if (sdw->sdw_flags & SDW_manual) {
 				result = false;
@@ -2484,16 +2485,8 @@ static Lock* alloc_page_lock(thread_db* tdbb, BufferDesc* bdb)
 	BufferControl *bcb = bdb->bdb_bcb;
 
 	const SSHORT lockLen = PageNumber::getLockLen();
-	Lock* lock = FB_NEW_RPT(*bcb->bcb_bufferpool, lockLen) Lock;
-	lock->lck_type = LCK_bdb;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	Lock* lock = FB_NEW_RPT(*bcb->bcb_bufferpool, lockLen) Lock(tdbb, LCK_bdb, bdb, blocking_ast_bdb);
 	lock->lck_length = lockLen;
-
-	lock->lck_dbb = dbb;
-	lock->lck_parent = dbb->dbb_lock;
-
-	lock->lck_ast = blocking_ast_bdb;
-	lock->lck_object = bdb;
 
 	return lock;
 }
@@ -5024,7 +5017,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 				// We need to write our pages to main database files
 
 				jrd_file* file = pageSpace->file;
-				while (!PIO_write(file, bdb, page, status))
+				while (!CryptoManager::cryptWrite(file, bdb, page, status))
 				{
 					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
 					{

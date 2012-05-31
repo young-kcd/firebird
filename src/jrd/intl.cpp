@@ -118,6 +118,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../common/intlobj_new.h"
+#include "../jrd/Collation.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/init.h"
@@ -170,7 +171,7 @@ public:
 	CsConvert lookupConverter(thread_db* tdbb, CHARSET_ID to_cs);
 
 	static CharSetContainer* lookupCharset(thread_db* tdbb, USHORT ttype);
-	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype);
+	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype, void* object = NULL);
 
 private:
 	static bool lookupInternalCharSet(USHORT id, SubtypeInfo* info);
@@ -281,7 +282,7 @@ bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
 }
 
 
-Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
+Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype, void* object)
 {
 /**************************************
  *
@@ -293,15 +294,13 @@ Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
  *      Create a collation lock.
  *
  **************************************/
-	Lock* lock = FB_NEW_RPT(*tdbb->getDatabase()->dbb_permanent, 0) Lock;
-	lock->lck_parent = tdbb->getDatabase()->dbb_lock;
-	lock->lck_dbb = tdbb->getDatabase();
+	// Could we have an AST on this lock? If yes, it will fail if we don't
+	// have lck_object to it, so set ast routine to NULL for safety.
+
+	Lock* lock = FB_NEW_RPT(*tdbb->getDatabase()->dbb_permanent, 0)
+		Lock(tdbb, LCK_tt_exist, object, object ? blocking_ast_collation : NULL);
 	lock->lck_key.lck_long = ttype;
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
-	lock->lck_type = LCK_tt_exist;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_object = NULL;
-	lock->lck_ast = blocking_ast_collation;
 
 	return lock;
 }
@@ -425,8 +424,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (id != 0)
 		{
 			Lock* lock = charset_collations[id]->existenceLock =
-				CharSetContainer::createCollationLock(tdbb, tt_id);
-			lock->lck_object = charset_collations[id];
+				CharSetContainer::createCollationLock(tdbb, tt_id, charset_collations[id]);
 
 			fb_assert(charset_collations[id]->useCount == 0);
 			fb_assert(!charset_collations[id]->obsolete);
@@ -484,10 +482,6 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 	{
 		// signal other processes collation is gone
 		Lock* lock = CharSetContainer::createCollationLock(tdbb, tt_id);
-
-		// Could we have an AST on this lock? If yes, it will fail as we don't
-		// assign lck_object to it, so clear ast routine for safety.
-		lock->lck_ast = NULL;
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 		LCK_release(tdbb, lock);
@@ -1390,7 +1384,7 @@ static int blocking_ast_collation(void* ast_object)
 	try
 	{
 		Database* const dbb = tt->existenceLock->lck_dbb;
-		Jrd::Attachment* const att = tt->existenceLock->lck_attachment;
+		Jrd::Attachment* const att = tt->existenceLock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 

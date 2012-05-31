@@ -774,6 +774,15 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
+	case op_crypt_key_callback:
+		{
+			P_CRYPT_CALLBACK* cc = &p->p_cc;
+			MAP(xdr_cstring, cc->p_cc_data);
+			DEBUG_PRINTSIZE(xdrs, p->p_operation);
+
+			return P_TRUE(xdrs, p);
+		}
+
 	///case op_insert:
 	default:
 #ifdef DEV_BUILD

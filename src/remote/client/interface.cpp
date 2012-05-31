@@ -61,6 +61,7 @@
 #include "../common/Auth.h"
 #include "../common/classes/GetPlugins.h"
 #include "firebird/Provider.h"
+#include "firebird/Crypt.h"
 #include "../common/StatementMetadata.h"
 #include "../common/IntlParametersBlock.h"
 
@@ -464,17 +465,18 @@ class Provider : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VER
 {
 public:
 	explicit Provider(IPluginConfig*)
-	{
-	}
+		: cryptCallback(NULL)
+	{ }
 
 	// IProvider implementation
 	virtual IAttachment* FB_CARG attachDatabase(IStatus* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
 	virtual IAttachment* FB_CARG createDatabase(IStatus* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
-	virtual Firebird::IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
-										  unsigned int spbLength, const unsigned char* spb);
+	virtual IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
+		unsigned int spbLength, const unsigned char* spb);
 	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason);
+	virtual void FB_CARG setDbCryptCallback(IStatus* status, ICryptKeyCallback* cryptCallback);
 
 	virtual int FB_CARG release()
 	{
@@ -488,16 +490,27 @@ public:
 	}
 
 protected:
-	Firebird::IAttachment* attach(IStatus* status, const char* filename,
-							  unsigned int dpb_length, const unsigned char* dpb, bool loopback);
-	Firebird::IAttachment* create(IStatus* status, const char* filename,
-							  unsigned int dpb_length, const unsigned char* dpb, bool loopback);
-	Firebird::IService* attachSvc(IStatus* status, const char* service,
-							  unsigned int spbLength, const unsigned char* spb, bool loopback);
+	IAttachment* attach(IStatus* status, const char* filename, unsigned int dpb_length,
+		const unsigned char* dpb, bool loopback);
+	IAttachment* create(IStatus* status, const char* filename, unsigned int dpb_length,
+		const unsigned char* dpb, bool loopback);
+	IService* attachSvc(IStatus* status, const char* service, unsigned int spbLength,
+		const unsigned char* spb, bool loopback);
+
+private:
+	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
-void Provider::shutdown(IStatus* /*status*/, unsigned int /*timeout*/, const int /*reason*/)
-{ }
+void Provider::shutdown(IStatus* status, unsigned int /*timeout*/, const int /*reason*/)
+{
+	status->init();
+}
+
+void Provider::setDbCryptCallback(IStatus* status, ICryptKeyCallback* callback)
+{
+	status->init();
+	cryptCallback = callback;
+}
 
 class Loopback : public Provider
 {
@@ -513,7 +526,7 @@ public:
 	virtual IAttachment* FB_CARG createDatabase(IStatus* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
 	virtual Firebird::IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
-										  unsigned int spbLength, const unsigned char* spb);
+		unsigned int spbLength, const unsigned char* spb);
 };
 
 namespace {
@@ -568,7 +581,7 @@ static void handle_error(ISC_STATUS);
 static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 	const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*, ClntAuthBlock* cBlock = NULL);
 static void init(IStatus*, ClntAuthBlock&, rem_port*, P_OP, PathName&,
-	ClumpletWriter&, IntlParametersBlock&);
+	ClumpletWriter&, IntlParametersBlock&, ICryptKeyCallback* cryptCallback);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
@@ -636,8 +649,8 @@ inline static void defer_packet(rem_port* port, PACKET* packet, bool sent = fals
 	port->port_deferred_packets->add(p);
 }
 
-Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
-									unsigned int dpb_length, const unsigned char* dpb, bool loopback)
+IAttachment* Provider::attach(IStatus* status, const char* filename, unsigned int dpb_length,
+	const unsigned char* dpb, bool loopback)
 {
 /**************************************
  *
@@ -679,7 +692,7 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 		add_working_directory(newDpb, node_name);
 
 		IntlDpb intl;
-		init(status, cBlock, port, op_attach, expanded_name, newDpb, intl);
+		init(status, cBlock, port, op_attach, expanded_name, newDpb, intl, cryptCallback);
 
 		Attachment* a = new Attachment(port->port_context, filename);
 		a->addRef();
@@ -1159,7 +1172,7 @@ IBlob* Attachment::createBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* b
 
 
 Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
-									unsigned int dpb_length, const unsigned char* dpb, bool loopback)
+	unsigned int dpb_length, const unsigned char* dpb, bool loopback)
 {
 /**************************************
  *
@@ -1203,7 +1216,7 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 		add_working_directory(newDpb, node_name);
 
 		IntlDpb intl;
-		init(status, cBlock, port, op_create, expanded_name, newDpb, intl);
+		init(status, cBlock, port, op_create, expanded_name, newDpb, intl, cryptCallback);
 
 		Firebird::IAttachment* a = new Attachment(rdb, filename);
 		a->addRef();
@@ -1283,7 +1296,8 @@ void Attachment::getInfo(IStatus* status,
 			 item_length, items, 0, 0, buffer_length, temp_buffer);
 
 		string version;
-		version.printf("%s/%s", GDS_VERSION, port->port_version->str_data);
+		version.printf("%s/%s%s", GDS_VERSION, port->port_version->str_data,
+			port->port_crypt_complete ? ":C" : "");
 
 		MERGE_database_info(temp_buffer, buffer, buffer_length,
 							DbImplementation::current.backwardCompatibleImplementation(), 3, 1,
@@ -3818,7 +3832,7 @@ void Request::send(IStatus* status, int level, unsigned int msg_type,
 
 
 Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
-									unsigned int spbLength, const unsigned char* spb, bool loopback)
+	unsigned int spbLength, const unsigned char* spb, bool loopback)
 {
 /**************************************
  *
@@ -3853,7 +3867,7 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 		ClntAuthBlock cBlock(NULL);
 		cBlock.load(newSpb, &spbParam);
 		IntlSpb intl;
-		init(status, cBlock, port, op_service_attach, expanded_name, newSpb, intl);
+		init(status, cBlock, port, op_service_attach, expanded_name, newSpb, intl, cryptCallback);
 
 		cBlock.saveServiceDataTo(port);
 
@@ -3870,7 +3884,7 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 
 
 Firebird::IService* Provider::attachServiceManager(IStatus* status, const char* service,
-											   unsigned int spbLength, const unsigned char* spb)
+	unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
  *
@@ -3888,7 +3902,7 @@ Firebird::IService* Provider::attachServiceManager(IStatus* status, const char* 
 
 
 Firebird::IService* Loopback::attachServiceManager(IStatus* status, const char* service,
-												   unsigned int spbLength, const unsigned char* spb)
+	unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
  *
@@ -5627,7 +5641,7 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 }
 
 static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op, PathName& file_name,
-	ClumpletWriter& dpb, IntlParametersBlock& intlParametersBlock)
+	ClumpletWriter& dpb, IntlParametersBlock& intlParametersBlock, ICryptKeyCallback* cryptCallback)
 {
 /**************************************
  *
@@ -5661,6 +5675,8 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "init calls authFillParametersBlock\n"));
 		authFillParametersBlock(cBlock, dpb, ps, port);
+
+		port->port_client_crypt_callback = cryptCallback;
 
 		// Make attach packet
 		P_ATCH* attach = &packet->p_atch;
@@ -5877,6 +5893,63 @@ static void receive_packet(rem_port* port, PACKET* packet)
 }
 
 
+static void receive_packet_with_callback(rem_port* port, PACKET* packet)
+{
+/**************************************
+ *
+ *	r e c e i v e _ p a c k e t _ w i t h _ c a l l b a c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	If received packet is request fro callback info from user,
+ *	send requested info (or no data if callback not set) and
+ *	wait for next packet.
+ *
+ **************************************/
+
+	for (;;)
+	{
+		if (!port->receive(packet))
+		{
+			Arg::Gds(isc_net_read_err).raise();
+		}
+
+		switch (packet->p_operation)
+		{
+		case op_crypt_key_callback:
+			{
+				P_CRYPT_CALLBACK* cc = &packet->p_cc;
+				UCharBuffer buf;
+
+				if (port->port_client_crypt_callback)
+				{
+					if (cc->p_cc_reply <= 0)
+					{
+						cc->p_cc_reply = 1;
+					}
+					UCHAR* reply = buf.getBuffer(cc->p_cc_reply);
+					unsigned l = port->port_client_crypt_callback->callback(cc->p_cc_data.cstr_length,
+						cc->p_cc_data.cstr_address, cc->p_cc_reply, reply);
+					cc->p_cc_data.cstr_length = l;
+					cc->p_cc_data.cstr_address = reply;
+				}
+				else
+				{
+					cc->p_cc_data.cstr_length = 0;
+				}
+				cc->p_cc_data.cstr_allocated = 0;
+
+				port->send(packet);
+			}
+			break;
+		default:
+			return;
+		}
+	}
+}
+
+
 static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 {
 /**************************************
@@ -5898,10 +5971,6 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
  *	that can be received is a new status vector
  *
  *	See also cousin routine: send_packet, send_partial_packet
- *
- * Return codes:
- *	true  - no errors.
- *	false - Network error occurred, error code in status
  *
  **************************************/
 
@@ -5928,10 +5997,7 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 			bFreeStmt = (p->packet.p_sqlfree.p_sqlfree_option == DSQL_drop);
 		}
 
-		if (!port->receive(&p->packet))
-		{
-			Arg::Gds(isc_net_read_err).raise();
-		}
+		receive_packet_with_callback(port, &p->packet);
 
 		Rsr* statement = NULL;
 		if (bCheckResponse || bFreeStmt)
@@ -5974,10 +6040,7 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 		port->port_deferred_packets->remove(p);
 	}
 
-	if (!port->receive(packet))
-	{
-		Arg::Gds(isc_net_read_err).raise();
-	}
+	receive_packet_with_callback(port, packet);
 }
 
 
@@ -5992,9 +6055,6 @@ static void receive_queued_packet(rem_port* port, USHORT id)
  * Functional description
  *	We're marked as having pending receives on the
  *	wire.  Grab the first pending receive and return.
- * Return codes:
- *	true  - no errors.
- *	false - Network error occurred, error code in status
  *
  **************************************/
 	// Trivial case, nothing pending on the wire

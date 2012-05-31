@@ -210,6 +210,8 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
  *
  **************************************/
 
+	fb_assert(m_dbb == tdbb->getDatabase());
+
 	if (number && m_dbb->dbb_pc_transactions)
 	{
 		if (TRA_precommited(tdbb, number, number))
@@ -259,11 +261,7 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 
 		// see if we can get a lock on the transaction; if we can't
 		// then we know it is still active
-		Lock temp_lock;
-		temp_lock.lck_dbb = m_dbb;
-		temp_lock.lck_type = LCK_tra;
-		temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-		temp_lock.lck_parent = m_dbb->dbb_lock;
+		Lock temp_lock(tdbb, LCK_tra);
 		temp_lock.lck_length = sizeof(SLONG);
 		temp_lock.lck_key.lck_long = number;
 

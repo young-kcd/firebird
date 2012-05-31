@@ -49,6 +49,7 @@
 #include "../jrd/license.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
+#include "../jrd/Collation.h"
 #include "../common/classes/FpeControl.h"
 #include <math.h>
 

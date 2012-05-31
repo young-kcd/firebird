@@ -56,6 +56,7 @@
 #include "../dsql/utld_proto.h"
 #include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/DataTypeUtil.h"
+#include "../jrd/Collation.h"
 
 using namespace Firebird;
 using namespace Jrd;

@@ -126,7 +126,6 @@ static char* fb_prefix_msg = NULL;
 const SLONG GENERIC_SQLCODE		= -999;
 
 #include "fb_types.h"
-#include "../jrd/jrd.h"
 #include "../common/utils_proto.h"
 
 #include "../common/classes/SafeArg.h"

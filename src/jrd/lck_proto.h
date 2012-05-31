@@ -37,8 +37,6 @@ bool	LCK_convert(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
 bool	LCK_convert_opt(Jrd::thread_db*, Jrd::Lock*, USHORT);
 void	LCK_downgrade(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_fini(Jrd::thread_db*, Jrd::lck_owner_t);
-SLONG	LCK_get_owner_handle(Jrd::thread_db*, Jrd::lck_t);
-SLONG	LCK_get_owner_handle_by_type(Jrd::thread_db*, Jrd::lck_owner_t);
 void	LCK_init(Jrd::thread_db*, Jrd::lck_owner_t);
 bool	LCK_lock(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
 bool	LCK_lock_opt(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);

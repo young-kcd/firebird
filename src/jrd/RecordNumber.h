@@ -30,6 +30,8 @@
 #ifndef JRD_RECORDNUMBER_H
 #define JRD_RECORDNUMBER_H
 
+#include "../common/gdsassert.h"
+
 const SINT64 BOF_NUMBER = QUADCONST(-1);
 
 // This class is to be used everywhere you may need to handle record numbers. We
@@ -214,5 +216,107 @@ private:
 	SINT64 value;
 	bool valid;
 };
+
+namespace Jrd
+{
+/* Blob id.  A blob has two states -- temporary and permanent.  In each
+   case, the blob id is 8 bytes (2 longwords) long.  In the case of a
+   temporary blob, the first word is NULL and the second word points to
+   an internal blob block.  In the case of a permanent blob, the first
+   word contains the relation id of the blob and the second the record
+   number of the first segment-clump.  The two types of blobs can be
+   reliably distinguished by a zero or non-zero relation id. */
+
+// This structure must occupy 8 bytes
+struct bid
+{
+	// This is how bid structure represented in public API.
+	// Must be present to enforce alignment rules when structure is declared on stack
+	struct bid_quad_struct
+	{
+		ULONG bid_quad_high;
+		ULONG bid_quad_low;
+	};
+	union // anonymous union
+	{
+		// Internal decomposition of the structure
+		RecordNumber::Packed bid_internal;
+		bid_quad_struct bid_quad;
+	};
+
+	ULONG& bid_temp_id()
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return bid_internal.bid_temp_id();
+	}
+
+	ULONG bid_temp_id() const
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return bid_internal.bid_temp_id();
+	}
+
+	bool isEmpty() const
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0;
+	}
+
+	void clear()
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		bid_quad.bid_quad_high = 0;
+		bid_quad.bid_quad_low = 0;
+	}
+
+	void set_temporary(ULONG temp_id)
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		clear();
+		bid_temp_id() = temp_id;
+	}
+
+	void set_permanent(USHORT relation_id, RecordNumber num)
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		clear();
+		bid_internal.bid_relation_id = relation_id;
+		num.bid_encode(&bid_internal);
+	}
+
+	RecordNumber get_permanent_number() const
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		RecordNumber temp;
+		temp.bid_decode(&bid_internal);
+		return temp;
+	}
+
+	bool operator == (const bid& other) const
+	{
+		// Make sure that compiler packed structure like we wanted
+		fb_assert(sizeof(*this) == 8);
+
+		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high &&
+			bid_quad.bid_quad_low == other.bid_quad.bid_quad_low;
+	}
+};
+
+} //namespace Jrd
+
 
 #endif // JRD_RECORDNUMBER_H

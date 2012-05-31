@@ -1950,9 +1950,12 @@ public:
 class AlterDatabaseNode : public DdlNode
 {
 public:
-	static const unsigned CLAUSE_BEGIN_BACKUP = 0x01;
-	static const unsigned CLAUSE_END_BACKUP = 0x02;
-	static const unsigned CLAUSE_DROP_DIFFERENCE = 0x04;
+	static const unsigned CLAUSE_BEGIN_BACKUP =		0x01;
+	static const unsigned CLAUSE_END_BACKUP =		0x02;
+	static const unsigned CLAUSE_DROP_DIFFERENCE =	0x04;
+	static const unsigned CLAUSE_DECRYPT =			0x08;
+
+	static const unsigned RDB_DATABASE_MASK = CLAUSE_BEGIN_BACKUP | CLAUSE_END_BACKUP | CLAUSE_DROP_DIFFERENCE;
 
 public:
 	AlterDatabaseNode(MemoryPool& p)
@@ -1963,7 +1966,8 @@ public:
 		  differenceFile(p),
 		  setDefaultCharSet(p),
 		  setDefaultCollation(p),
-		  files(p)
+		  files(p),
+		  cryptPlugin(p)
 	{
 	}
 
@@ -1996,6 +2000,7 @@ public:
 	Firebird::MetaName setDefaultCharSet;
 	Firebird::MetaName setDefaultCollation;
 	Firebird::Array<NestConst<DbFileClause> > files;
+	Firebird::MetaName cryptPlugin;
 };
 
 

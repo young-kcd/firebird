@@ -29,6 +29,7 @@
 namespace Jrd {
 	class thread_db;
 	class Lock;
+	class Collation;
 }
 
 struct dsc;

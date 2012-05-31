@@ -49,7 +49,6 @@ namespace Why
 	class MasterImplementation : public Firebird::AutoIface<Firebird::IMaster, FB_MASTER_VERSION>
 	{
 	public:
-		static Firebird::Static<Dispatcher> dispatcher;
 		static Firebird::Static<Dtc> dtc;
 
 	public:
@@ -66,6 +65,7 @@ namespace Why
 		Firebird::ITransaction* registerTransaction(Firebird::IAttachment* attachment,
 			Firebird::ITransaction* transaction);
 		Dtc* FB_CARG getDtc();
+		int FB_CARG same(IVersioned* first, IVersioned* second);
 	};
 
 	void shutdownTimers();

@@ -201,16 +201,10 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 	if (!function->fun_existence_lock)
 	{
-		Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0) Lock;
+		Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0) Lock(tdbb, LCK_fun_exist, function, blockingAst);
 		function->fun_existence_lock = lock;
-		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_dbb = dbb;
 		lock->lck_key.lck_long = function->getId();
 		lock->lck_length = sizeof(lock->lck_key.lck_long);
-		lock->lck_type = LCK_fun_exist;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_object = function;
-		lock->lck_ast = blockingAst;
 	}
 
 	LCK_lock(tdbb, function->fun_existence_lock, LCK_SR, LCK_WAIT);
@@ -521,7 +515,7 @@ int Function::blockingAst(void* ast_object)
 	try
 	{
 		Database* const dbb = function->fun_existence_lock->lck_dbb;
-		Jrd::Attachment* const att = function->fun_existence_lock->lck_attachment;
+		Jrd::Attachment* const att = function->fun_existence_lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 

@@ -15,6 +15,8 @@ endif
 
 dirObjects= $(call dirMaster,$(1)) $(call dirOs,$(1)) $(call dirFallBack,$(1))
 
+makePluginName= $(PLUGINS)/$(LIB_PREFIX)$(1).$(SHRLIB_EXT)
+
 
 # Collect all object files here
 AllObjects=

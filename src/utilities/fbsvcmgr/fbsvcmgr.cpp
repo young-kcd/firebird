@@ -413,6 +413,7 @@ const SvcSwitches statisticsOptions[] =
 	{"sts_hdr_pages", putOption, 0, isc_spb_sts_hdr_pages, 0},
 	{"sts_idx_pages", putOption, 0, isc_spb_sts_idx_pages, 0},
 	{"sts_sys_relations", putOption, 0, isc_spb_sts_sys_relations, 0},
+	{"sts_encryption", putOption, 0, isc_spb_sts_encryption, 0},
 	{0, 0, 0, 0, 0}
 };
 

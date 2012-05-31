@@ -36,6 +36,7 @@ namespace Firebird {
 // This interfaces are implemented by yvalve code and by each of providers.
 
 class IAttachment;	// Forward
+class ICryptKeyCallback;	// From Crypt.h
 
 struct FbMessage
 {
@@ -235,10 +236,11 @@ public:
 	virtual IAttachment* FB_CARG createDatabase(IStatus* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb) = 0;
 	virtual IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
-										  unsigned int spbLength, const unsigned char* spb) = 0;
+		 unsigned int spbLength, const unsigned char* spb) = 0;
 	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason) = 0;
+	virtual void FB_CARG setDbCryptCallback(IStatus* status, ICryptKeyCallback* cryptCallback) = 0;
 };
-#define FB_PROVIDER_VERSION (FB_PLUGIN_VERSION + 4)
+#define FB_PROVIDER_VERSION (FB_PLUGIN_VERSION + 5)
 
 // DtcStart - structure to start transaction over >1 attachments (former TEB)
 struct DtcStart

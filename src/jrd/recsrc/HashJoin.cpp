@@ -29,6 +29,7 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/Collation.h"
 
 #include "RecordSource.h"
 

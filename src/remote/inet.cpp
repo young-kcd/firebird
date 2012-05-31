@@ -2953,9 +2953,9 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		n = recv(port->port_handle, reinterpret_cast<char*>(buffer), buffer_length, 0);
 		inetErrNo = INET_ERRNO;
 
-		if (n > 0 && port->port_recv_cipher)
+		if (n > 0 && port->port_crypt_plugin)
 		{
-			port->port_recv_cipher->transform(&st, n, buffer, buffer);
+			port->port_crypt_plugin->decrypt(&st, n, buffer, buffer);
 			if (!st.isSuccess())
 			{
 				status_exception::raise(st.get());
@@ -3030,12 +3030,12 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 
 	// encrypt
 	HalfStaticArray<char, BUFFER_TINY> b;
-	if (port->port_send_cipher)
+	if (port->port_crypt_plugin && port->port_crypt_complete)
 	{
 		LocalStatus st;
 
 		char* d = b.getBuffer(buffer_length);
-		port->port_send_cipher->transform(&st, buffer_length, data, d);
+		port->port_crypt_plugin->encrypt(&st, buffer_length, data, d);
 		if (!st.isSuccess())
 		{
 			status_exception::raise(st.get());

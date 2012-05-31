@@ -27,6 +27,7 @@
 #include "firebird.h"
 #include "../common/IntlUtil.h"
 #include "../common/unicode_util.h"
+#include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../intl/country_codes.h"
 #include "../common/classes/auto.h"

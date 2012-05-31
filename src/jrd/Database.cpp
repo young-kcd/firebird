@@ -35,6 +35,7 @@
 #include "../jrd/nbak.h"
 #include "../jrd/tra.h"
 #include "../jrd/lck_proto.h"
+#include "../jrd/CryptoManager.h"
 #include "../jrd/os/pio_proto.h"
 
 // Thread data block
@@ -87,6 +88,7 @@ namespace Jrd
 
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
+		delete dbb_crypto_manager;
 
 		//Checkout dcoHolder(this);
 
@@ -144,16 +146,10 @@ namespace Jrd
 
 		if (!counter->lock)
 		{
-			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock(tdbb, LCK_shared_counter, counter, blockingAst);
 			counter->lock = lock;
-			lock->lck_type = LCK_shared_counter;
-			lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-			lock->lck_parent = dbb->dbb_lock;
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = space;
-			lock->lck_dbb = dbb;
-			lock->lck_ast = blockingAst;
-			lock->lck_object = counter;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
 
 			counter->isProtected = true;

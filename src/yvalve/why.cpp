@@ -60,6 +60,7 @@
 #include "../common/classes/FpeControl.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/GetPlugins.h"
+#include "../common/classes/fb_tls.h"
 #include "../yvalve/prepa_proto.h"
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/why_proto.h"
@@ -1286,6 +1287,28 @@ static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHand
 //-------------------------------------
 
 
+static TLS_DECLARE(ICryptKeyCallback*, legacyCryptCallback);
+
+ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, ICryptKeyCallback* cb)
+{
+	StatusVector status(userStatus);
+
+	try
+	{
+		TLS_SET(legacyCryptCallback, cb);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&status);
+	}
+
+	return status[1];
+}
+
+
+//-------------------------------------
+
+
 // Attach a database through the first subsystem that recognizes it.
 ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLength,
 	const TEXT* filename, FB_API_HANDLE* publicHandle, SSHORT dpbLength, const SCHAR* dpb)
@@ -1301,9 +1324,14 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 
 		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
 
-		YAttachment* attachment = MasterImplementation::dispatcher->attachDatabase(
-			&status, pathName.c_str(), dpbLength, reinterpret_cast<const UCHAR*>(dpb));
+		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
+		dispatcher->setDbCryptCallback(&status, TLS_GET(legacyCryptCallback));
+		if (!status.isSuccess())
+			return status[1];
+
+		YAttachment* attachment = dispatcher->attachDatabase(&status, pathName.c_str(),
+			dpbLength, reinterpret_cast<const UCHAR*>(dpb));
 		if (!status.isSuccess())
 			return status[1];
 
@@ -1580,9 +1608,14 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 
 		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
 
-		YAttachment* attachment = MasterImplementation::dispatcher->createDatabase(
-			&status, pathName.c_str(), dpbLength, reinterpret_cast<const UCHAR*>(dpb));
+		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
+		dispatcher->setDbCryptCallback(&status, TLS_GET(legacyCryptCallback));
+		if (!status.isSuccess())
+			return status[1];
+
+		YAttachment* attachment = dispatcher->createDatabase(&status, pathName.c_str(),
+			dpbLength, reinterpret_cast<const UCHAR*>(dpb));
 		if (!status.isSuccess())
 			return status[1];
 
@@ -2867,9 +2900,14 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 
 		string svcName(serviceName, serviceLength ? serviceLength : strlen(serviceName));
 
-		service = MasterImplementation::dispatcher->attachServiceManager(&status, svcName.c_str(),
-			spbLength, reinterpret_cast<const UCHAR*>(spb));
+		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
+		dispatcher->setDbCryptCallback(&status, TLS_GET(legacyCryptCallback));
+		if (!status.isSuccess())
+			return status[1];
+
+		service = dispatcher->attachServiceManager(&status, svcName.c_str(),
+			spbLength, reinterpret_cast<const UCHAR*>(spb));
 		if (!status.isSuccess())
 			return status[1];
 
@@ -3214,7 +3252,9 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, FB_API_HANDLE*
 int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
 	StatusVector status(NULL);
-	MasterImplementation::dispatcher->shutdown(&status, timeout, reason);
+	RefPtr<Dispatcher> dispatcher(new Dispatcher);
+
+	dispatcher->shutdown(&status, timeout, reason);
 	return status.isSuccess() ? FB_SUCCESS : FB_FAILURE;
 }
 
@@ -4528,7 +4568,8 @@ void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTra
 
 
 static IService* getServiceManagerByName(IProvider** provider, IStatus* status,
-	const char* serviceName, unsigned int spbLength, const unsigned char* spb)
+	const char* serviceName, unsigned int spbLength, const unsigned char* spb,
+	Firebird::ICryptKeyCallback* cryptCallback)
 {
 	for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
 			FB_PROVIDER_VERSION, upInfo);
@@ -4537,8 +4578,14 @@ static IService* getServiceManagerByName(IProvider** provider, IStatus* status,
 	{
 		IProvider* p = providerIterator.plugin();
 
-		IService* service = p->attachServiceManager(status, serviceName, spbLength, spb);
+		if (cryptCallback)
+		{
+			p->setDbCryptCallback(status, cryptCallback);
+			if (!status->isSuccess())
+				continue;
+		}
 
+		IService* service = p->attachServiceManager(status, serviceName, spbLength, spb);
 		if (status->isSuccess())
 		{
 			if (provider)
@@ -4598,19 +4645,22 @@ YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
 	  checkSpbLen(0),
 	  checkSpbPresent(NULL),
 	  authBlock(getPool()),
+	  cryptCallback(NULL),
 	  utf8Connection(utf8)
 {
 	handle = makeHandle(&services, this);
 	this->addRef();		// from YHelper
 }
 
-YService::YService(const char* svcName, unsigned int spbLength, const unsigned char* spb, bool utf8)
+YService::YService(const char* svcName, unsigned int spbLength, const unsigned char* spb,
+				   ICryptKeyCallback* callback, bool utf8)
 	: attachName(getPool()),
 	  attachSpb(FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList,
 												 MAX_DPB_SIZE, spb, spbLength)),
 	  checkSpbLen(0),
 	  checkSpbPresent(NULL),
 	  authBlock(getPool()),
+	  cryptCallback(callback),
 	  utf8Connection(utf8)
 {
 	attachName.assign(svcName);
@@ -4634,7 +4684,7 @@ IService* YService::getNextService(int mode, IStatus* status)
 
 			started.next = getServiceManagerByName(&started.provider, status, attachName.c_str(),
 				(attachSpb ? attachSpb->getBufferLength() : 0),
-				(attachSpb ? attachSpb->getBuffer() : NULL));
+				(attachSpb ? attachSpb->getBuffer() : NULL), cryptCallback);
 
 			if (!status->isSuccess())
 				status_exception::raise(status->get());
@@ -4650,7 +4700,7 @@ IService* YService::getNextService(int mode, IStatus* status)
 
 			queryCache.next = getServiceManagerByName(&queryCache.provider, status, attachName.c_str(),
 				(attachSpb ? attachSpb->getBufferLength() : 0),
-				(attachSpb ? attachSpb->getBuffer() : NULL));
+				(attachSpb ? attachSpb->getBuffer() : NULL), cryptCallback);
 
 			if (!status->isSuccess())
 				status_exception::raise(status->get());
@@ -4860,6 +4910,13 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 		{
 			IProvider* provider = providerIterator.plugin();
 
+			if (cryptCallback)
+			{
+				provider->setDbCryptCallback(currentStatus, cryptCallback);
+				if (!currentStatus->isSuccess())
+					continue;
+			}
+
 			IAttachment* attachment = createFlag ?
 				provider->createDatabase(currentStatus,	expandedFilename.c_str(),
 					newDpb.getBufferLength(), newDpb.getBuffer()) :
@@ -4936,7 +4993,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		{
 			IProvider* provider = NULL;
 			service = getServiceManagerByName(&provider, status, svcName.c_str(),
-											  spbWriter.getBufferLength(), spbWriter.getBuffer());
+				spbWriter.getBufferLength(), spbWriter.getBuffer(), cryptCallback);
 
 			if (service)
 				return new YService(provider, service, utfData);
@@ -4944,7 +5001,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		else
 		{
 			return new YService(svcName.c_str(), spbWriter.getBufferLength(),
-				spbWriter.getBuffer(), utfData);
+				spbWriter.getBuffer(), cryptCallback, utfData);
 		}
 	}
 	catch (const Exception& e)
@@ -5115,6 +5172,12 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		e.stuffException(userStatus);
 		gds__log_status(0, userStatus->get());
 	}
+}
+
+void Dispatcher::setDbCryptCallback(IStatus* status, ICryptKeyCallback* callback)
+{
+	status->init();
+	cryptCallback = callback;
 }
 
 } // namespace Why

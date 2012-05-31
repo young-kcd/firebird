@@ -232,6 +232,21 @@ public:
 };
 
 
+// Dispatcher access
+class DispatcherPtr : public AccessAutoInterface<IProvider>
+{
+public:
+	DispatcherPtr()
+		: AccessAutoInterface<IProvider>(getMasterInterface()->getDispatcher())
+	{ }
+
+	~DispatcherPtr()
+	{
+		(*this)->release();
+	}
+};
+
+
 // When process exits, dynamically loaded modules (for us plugin modules)
 // are unloaded first. As the result all global variables in plugin are already destroyed
 // when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.

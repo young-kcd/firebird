@@ -96,6 +96,7 @@
 #include "../jrd/TempSpace.h"
 #include "../jrd/extds/ExtDS.h"
 #include "../common/classes/DbImplementation.h"
+#include "../jrd/CryptoManager.h"
 
 namespace Ods
 {
@@ -300,7 +301,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 #endif
 
 	header->hdr_header.pag_pageno = window.win_page.getPageNum();
-	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
+	CryptoManager::cryptWrite(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	next->fil_fudge = 1;
 
@@ -330,7 +331,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 	}
 
 	header->hdr_header.pag_pageno = window.win_page.getPageNum();
-	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
+	CryptoManager::cryptWrite(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	if (file->fil_min_page)
 		file->fil_fudge = 1;
@@ -761,16 +762,11 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 
 	// Take out lock on attachment id
 
-	Lock* const lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG)) Lock();
+	Lock* const lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
+		Lock(tdbb, LCK_attachment, attachment, blocking_ast_attachment);
 	attachment->att_id_lock = lock;
-	lock->lck_type = LCK_attachment;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = attachment->att_attachment_id;
-	lock->lck_dbb = dbb;
-	lock->lck_ast = blocking_ast_attachment;
-	lock->lck_object = attachment;
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
 	return attachment->att_attachment_id;
@@ -1316,7 +1312,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 			temp_bdb.bdb_page = window.win_page;
 
 			// Read the required page into the local buffer
-			PIO_read(file, &temp_bdb, (PAG) header, status);
+			CryptoManager::cryptRead(file, &temp_bdb, (PAG) header, status);
 
 			if (shadow_number && !file->fil_min_page)
 				CCH_RELEASE(tdbb, &window);
@@ -2178,12 +2174,8 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 
 		if (!attachment->att_temp_pg_lock)
 		{
-			Lock* lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG)) Lock();
-			lock->lck_type = LCK_page_space;
-			lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-			lock->lck_parent = dbb->dbb_lock;
+			Lock* lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG)) Lock(tdbb, LCK_page_space);
 			lock->lck_length = sizeof(SLONG);
-			lock->lck_dbb = dbb;
 
 			PAG_attachment_id(tdbb);
 

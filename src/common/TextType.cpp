@@ -93,7 +93,6 @@
 
 #include "firebird.h"
 #include "gen/iberror.h"
-#include "../jrd/jrd.h"
 #include "../jrd/intl_classes.h"
 #include "../common/IntlUtil.h"
 #include "../common/classes/Aligner.h"
@@ -380,5 +379,14 @@ ULONG TextType::canonical(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* d
 	return srcLen / getCharSet()->minBytesPerChar();
 }
 
+BYTE TextType::getCanonicalWidth() const
+{
+	return tt->texttype_canonical_width;
+}
+
+USHORT TextType::getFlags() const
+{
+	return tt->texttype_flags;
+}
 
 }	// namespace Jrd

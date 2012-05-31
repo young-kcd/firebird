@@ -140,7 +140,9 @@ public:
 		KEY_SHARED_CACHE,
 		KEY_SHARED_DATABASE,
 		KEY_WIRE_CRYPT,
-		KEY_PLUG_CRYPT,
+		KEY_PLUG_WIRE_CRYPT,
+		KEY_PLUG_DB_CRYPT,
+		KEY_PLUG_KEY_HOLDER,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -337,7 +339,7 @@ public:
 
 	static bool getMultiClientServer();
 
-	static const char* getPlugins(unsigned int type);
+	const char* getPlugins(unsigned int type) const;
 
 	const char* getSecurityDatabase() const;
 

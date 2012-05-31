@@ -406,7 +406,8 @@ public:
 	// Regular case
 	YService(Firebird::IProvider* aProvider, Firebird::IService* aNext, bool utf8);
 	// Used when next handle creation is delayed till service start
-	YService(const char* svcName, unsigned int spbLength, const unsigned char* spb, bool utf8);
+	YService(const char* svcName, unsigned int spbLength, const unsigned char* spb,
+		Firebird::ICryptKeyCallback* callback, bool utf8);
 	~YService();
 
 	void destroy();
@@ -465,6 +466,7 @@ private:
 	unsigned int checkSpbLen;
 	const unsigned char* checkSpbPresent;
 	Firebird::HalfStaticArray<UCHAR, 256> authBlock;
+	Firebird::ICryptKeyCallback* cryptCallback;
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 
 	void populateSpb(Firebird::ClumpletWriter& spb, UCHAR tag);
@@ -473,10 +475,9 @@ private:
 class Dispatcher : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
 {
 public:
-	void* operator new(size_t, void* memory) throw()
-	{
-		return memory;
-	}
+	Dispatcher()
+		: cryptCallback(NULL)
+	{ }
 
 	// IProvider implementation
 	virtual YAttachment* FB_CARG attachDatabase(Firebird::IStatus* status, const char* filename,
@@ -486,12 +487,14 @@ public:
 	virtual YService* FB_CARG attachServiceManager(Firebird::IStatus* status, const char* serviceName,
 		unsigned int spbLength, const unsigned char* spb);
 	virtual void FB_CARG shutdown(Firebird::IStatus* status, unsigned int timeout, const int reason);
+	virtual void FB_CARG setDbCryptCallback(Firebird::IStatus* status,
+		Firebird::ICryptKeyCallback* cryptCallback);
 
 	virtual int FB_CARG release()
 	{
 		if (--refCounter == 0)
 		{
-			//delete this;
+			delete this;
 			return 0;
 		}
 
@@ -499,6 +502,8 @@ public:
 	}
 
 private:
+	Firebird::ICryptKeyCallback* cryptCallback;
+
 	YAttachment* attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
 		const char* filename, unsigned int dpbLength, const unsigned char* dpb);
 };

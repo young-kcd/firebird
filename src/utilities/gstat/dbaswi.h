@@ -50,12 +50,14 @@ const int IN_SW_DBA_TRUSTED_ROLE	= 14;	// use predefined trusted role
 const int IN_SW_DBA_TRUSTEDAUTH		= 15;	// trusted user name
 #endif
 const int IN_SW_DBA_FETCH_PASS		= 16;	// fetch password from file
-const int IN_SW_DBA_HELP			= 17;	// show help
+const int IN_SW_DBA_ENCRYPTION		= 17;	// analyze pages encryption
+const int IN_SW_DBA_HELP			= 18;	// show help
 
 const static struct Switches::in_sw_tab_t dba_in_sw_table[] =
 {
     {IN_SW_DBA_DATAIDX,			0,							"ALL",		0,0,0,	false,	22,	1, NULL},	// msg 22: -a      analyze data and index pages
     {IN_SW_DBA_DATA,			isc_spb_sts_data_pages,		"DATA",		0,0,0,	false,	23,	1, NULL},	// msg 23: -d      analyze data pages
+    {IN_SW_DBA_ENCRYPTION,		isc_spb_sts_encryption,	  "ENCRYPTION",	0,0,0,	false,	51,	1, NULL},	// msg 51: -e      analyze database encryption
     {IN_SW_DBA_HEADER,			isc_spb_sts_hdr_pages,		"HEADER",	0,0,0,	false,	24,	1, NULL},	// msg 24: -h      analyze header page
     {IN_SW_DBA_INDEX,			isc_spb_sts_idx_pages,		"INDEX",	0,0,0,	false,	25,	1, NULL},	// msg 25: -i      analyze index leaf pages
 //  {IN_SW_DBA_LOG,				isc_spb_sts_db_log,			"LOG",		0,0,0,	false,	26,	1, NULL},	// msg 26: -l      analyze log page

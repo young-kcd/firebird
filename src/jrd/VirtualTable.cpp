@@ -83,11 +83,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	const SLONG id = MOV_get_long(&desc, 0);
 
 	// Post a blocking request
-	Lock temp_lock;
-	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_type = lock_type;
-	temp_lock.lck_parent = dbb->dbb_lock;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	Lock temp_lock(tdbb, lock_type);
 	temp_lock.lck_length = sizeof(SLONG);
 	temp_lock.lck_key.lck_long = id;
 

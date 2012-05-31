@@ -44,6 +44,10 @@ namespace EDS {
 	class Connection;
 }
 
+namespace Firebird {
+	class ICryptKeyCallback;
+}
+
 class CharSetContainer;
 
 namespace Jrd
@@ -273,6 +277,7 @@ public:
 
 	Firebird::Array<JrdStatement*>	att_internal;			// internal statements
 	Firebird::Array<JrdStatement*>	att_dyn_req;			// internal dyn statements
+	Firebird::ICryptKeyCallback*	att_crypt_callback;		// callback for DB crypt
 
 	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 

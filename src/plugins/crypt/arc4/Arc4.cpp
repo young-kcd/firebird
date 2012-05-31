@@ -34,20 +34,17 @@ using namespace Firebird;
 namespace
 {
 
-class Cypher : public RefCntIface<ICrypt, FB_CRYPT_VERSION>
+class Cypher : public GlobalStorage
 {
 public:
-	Cypher()
+	Cypher(unsigned int l, const unsigned char* key) throw()
 		: s1(0), s2(0)
 	{
 		for (unsigned int n = 0; n < sizeof(state); ++n)
 		{
 			state[n] = n;
 		}
-	}
 
-	void setKey(unsigned int l, const unsigned char* key)
-	{
 		for (unsigned int k1 = 0, k2 = 0; k1 < sizeof(state); ++k1)
 		{
 			k2 = (k2 + key[k1 % l] + state[k1]) & 0xff;
@@ -55,11 +52,8 @@ public:
 		}
 	}
 
-	// ICrypt implementation
-	void FB_CARG transform(IStatus* status, unsigned int length, const void* from, void* to)
+	void transform(unsigned int length, const void* from, void* to) throw()
 	{
-		status->init();
-
 		unsigned char* t = static_cast<unsigned char*>(to);
 		const unsigned char* f = static_cast<const unsigned char*>(from);
 
@@ -73,22 +67,12 @@ public:
 		}
 	}
 
-	int FB_CARG release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-		return 1;
-	}
-
 private:
 	unsigned char state[256];
 	unsigned char s1;
 	unsigned char s2;
 
-	void swap(unsigned char& c1, unsigned char& c2)
+	void swap(unsigned char& c1, unsigned char& c2) throw()
 	{
 		unsigned char temp = c1;
 		c1 = c2;
@@ -101,20 +85,24 @@ private:
 
 namespace Crypt {
 
-class Arc4 : public StdPlugin<ICryptPlugin, FB_CRYPT_PLUGIN_VERSION>
+class Arc4 : public StdPlugin<IWireCryptPlugin, FB_WIRECRYPT_PLUGIN_VERSION>
 {
 public:
 	explicit Arc4(IPluginConfig*)
+		: en(NULL), de(NULL)
 	{ }
 
 	// ICryptPlugin implementation
 	const char* FB_CARG getKnownTypes(IStatus* status);
-	ICrypt* FB_CARG getEncrypt(IStatus* status, FbCryptKey* key);
-	ICrypt* FB_CARG getDecrypt(IStatus* status, FbCryptKey* key);
+	void FB_CARG setKey(IStatus* status, FbCryptKey* key);
+	void FB_CARG encrypt(IStatus* status, unsigned int length, const void* from, void* to);
+	void FB_CARG decrypt(IStatus* status, unsigned int length, const void* from, void* to);
 	int FB_CARG release();
 
 private:
-	ICrypt* createCypher(IStatus* status, unsigned int l, const void* key);
+	Cypher* createCypher(unsigned int l, const void* key);
+	Cypher* en;
+	Cypher* de;
 };
 
 int Arc4::release()
@@ -127,37 +115,44 @@ int Arc4::release()
 	return 1;
 }
 
-ICrypt* Arc4::getEncrypt(IStatus* status, FbCryptKey* key)
-{
-	return createCypher(status, key->encryptLength, key->encryptKey);
-}
-
-ICrypt* Arc4::getDecrypt(IStatus* status, FbCryptKey* key)
-{
-	const void* k = key->decryptKey;
-    unsigned int l = key->decryptLength;
-    if (!k)
-    {
-    	k = key->encryptKey;
-    	l = key->encryptLength;
-    }
-	return createCypher(status, l, k);
-}
-
-ICrypt* Arc4::createCypher(IStatus* status, unsigned int l, const void* key)
+void Arc4::setKey(IStatus* status, FbCryptKey* key)
 {
 	status->init();
 	try
 	{
-		Cypher* rc = new Cypher;
-		rc->setKey(l, static_cast<const unsigned char*>(key));
-		return rc;
+		en = createCypher(key->encryptLength, key->encryptKey);
+
+		const void* k = key->decryptKey;
+    	unsigned int l = key->decryptLength;
+	    if (!k)
+    	{
+    		k = key->encryptKey;
+	    	l = key->encryptLength;
+    	}
+
+		de = createCypher(l, k);
 	}
-	catch (const Exception& ex)
+	catch(const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
-	return NULL;
+}
+
+void Arc4::encrypt(IStatus* status, unsigned int length, const void* from, void* to)
+{
+	status->init();
+	en->transform(length, from, to);
+}
+
+void Arc4::decrypt(IStatus* status, unsigned int length, const void* from, void* to)
+{
+	status->init();
+	de->transform(length, from, to);
+}
+
+Cypher* Arc4::createCypher(unsigned int l, const void* key)
+{
+	return new Cypher(l, static_cast<const unsigned char*>(key));
 }
 
 const char* Arc4::getKnownTypes(IStatus* status)
@@ -174,7 +169,7 @@ namespace
 
 void registerArc4(IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(PluginType::Crypt, "Arc4", &factory);
+	iPlugin->registerPluginFactory(PluginType::WireCrypt, "Arc4", &factory);
 }
 
 } // namespace Crypt

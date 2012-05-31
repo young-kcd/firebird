@@ -34,6 +34,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
+#include "../jrd/Collation.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"

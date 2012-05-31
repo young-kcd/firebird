@@ -208,13 +208,9 @@ static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temp
 
 
 BtrPageGCLock::BtrPageGCLock(thread_db* tdbb)
+	: Lock(tdbb, LCK_btr_dont_gc)
 {
-	Database* dbb = tdbb->getDatabase();
-	lck_parent = dbb->dbb_lock;
-	lck_dbb = dbb;
 	lck_length = PageNumber::getLockLen();
-	lck_type = LCK_btr_dont_gc;
-	lck_owner_handle = LCK_get_owner_handle(tdbb, lck_type);
 }
 
 BtrPageGCLock::~BtrPageGCLock()

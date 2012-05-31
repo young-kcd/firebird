@@ -45,6 +45,7 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/CryptoManager.h"
 
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
@@ -420,13 +421,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	}
 
 	// Signal other processes to dump their data
-	Lock temp_lock, *lock = &temp_lock;
-	lock->lck_dbb = dbb;
+	Lock temp_lock(tdbb, LCK_monitor), *lock = &temp_lock;
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = 0;
-	lock->lck_type = LCK_monitor;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
 
 	if (LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
 		LCK_release(tdbb, lock);
@@ -919,8 +916,11 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	record.storeInteger(f_mon_db_pages, PageSpace::actAlloc(database));
 
 	// database state
-	switch (database->dbb_backup_manager->getState())
+	temp = backup_state_unknown;
+	if (database->dbb_backup_manager)
 	{
+		switch (database->dbb_backup_manager->getState())
+		{
 		case nbak_state_normal:
 			temp = backup_state_normal;
 			break;
@@ -930,10 +930,15 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 		case nbak_state_merge:
 			temp = backup_state_merge;
 			break;
-		default:
-			temp = backup_state_unknown;
+		}
 	}
 	record.storeInteger(f_mon_db_backup_state, temp);
+
+	// crypt thread status
+	if (database->dbb_crypto_manager)
+	{
+		record.storeInteger(f_mon_db_crypt_page, database->dbb_crypto_manager->getCurrentPage());
+	}
 
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));

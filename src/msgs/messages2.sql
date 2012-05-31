@@ -3048,6 +3048,12 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 47, NULL, '    Big record pages: @1', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 48, NULL, '    Blobs: @1, total length: @2, blob pages: @3', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 49, NULL, '        Level 0: @1, Level 1: @2, Level 2: @3', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 50, NULL, 'option -e is incompatible with options -a, -d, -h, -i, -r, -s and -t', NULL, NULL)
+(NULL, 'dba_in_sw_table', 'dbaswi.h', NULL, 21, 51, NULL, '    -e      analyze database encryption', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 52, NULL, 'Data pages: total @1, encrypted @2, non-crypted @3', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 53, NULL, 'Index pages: total @1, encrypted @2, non-crypted @3', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 54, NULL, 'Blob pages: total @1, encrypted @2, non-crypted @3', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 55, NULL, 'no encrypted database support, only -e and -h can be used', NULL, NULL)
 -- FBSVCMGR
 -- All messages use the new format.
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);

@@ -40,6 +40,7 @@
 #include "../../common/classes/rwlock.h"
 #include "../../common/classes/GenericMap.h"
 #include "../../common/classes/locks.h"
+#include "../../common/classes/ImplementHelper.h"
 
 // Bring in off_t
 #include <sys/types.h>

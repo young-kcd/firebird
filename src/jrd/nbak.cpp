@@ -45,6 +45,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/os/guid.h"
 #include "../common/os/isc_i_proto.h"
+#include "../jrd/CryptoManager.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -348,7 +349,7 @@ ULONG BackupManager::getPageCount()
 			temp_bdb.bdb_buffer = buf;
 			temp_bdb.bdb_page = pageNum;
 			ISC_STATUS_ARRAY status;
-			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status))
+			if (!CryptoManager::cryptRead(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status))
 			{
 				Firebird::status_exception::raise(status);
 			}
@@ -608,7 +609,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = last_allocated_page + 1;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
-	if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
+	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 		return 0;
 
 	const bool alloc_page_full = alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 2;
@@ -617,7 +618,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 		// Pointer page is full. Its time to create new one.
 		temp_bdb.bdb_page = last_allocated_page + 2;
 		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
-		if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
+		if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 			return 0;
 	}
 
@@ -673,7 +674,7 @@ bool BackupManager::writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pa
 	temp_bdb.bdb_buffer = page;
 	// Check that diff page is not allocation page
 	fb_assert(diff_page % (database->dbb_page_size / sizeof(ULONG)));
-	if (!PIO_write(diff_file, &temp_bdb, page, status))
+	if (!CryptoManager::cryptWrite(diff_file, &temp_bdb, page, status))
 		return false;
 	return true;
 }
@@ -683,7 +684,7 @@ bool BackupManager::readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* p
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_buffer = page;
-	if (!PIO_read(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
+	if (!CryptoManager::cryptRead(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
 		return false;
 	NBAK_TRACE(("read_diff page=%d, diff=%d", page->pag_pageno, diff_page));
 	return true;
@@ -769,11 +770,11 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	Ods::header_page* header = reinterpret_cast<Ods::header_page*>(spare_buffer);
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = HEADER_PAGE_NUMBER;
-	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(header);
+	temp_bdb.bdb_buffer = &header->hdr_header;
 	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 	jrd_file* file = pageSpace->file;
-	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status))
+	while (!CryptoManager::cryptRead(file, &temp_bdb, temp_bdb.bdb_buffer, status))
 	{
 		if (!CCH_rollover_to_shadow(tdbb, database, file, false))
 		{

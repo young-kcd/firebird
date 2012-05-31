@@ -63,6 +63,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/Collation.h"
 
 
 using namespace Jrd;
@@ -550,16 +551,11 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	// any modification to the index so that the cached information
 	// about the index will be discarded
 
-	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0) Lock;
+	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0)
+		Lock(tdbb, LCK_expression, index_block, index_block_flush);
 	index_block->idb_lock = lock;
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = (relation->rel_id << 16) | index_block->idb_id;
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
-	lock->lck_type = LCK_expression;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_ast = index_block_flush;
-	lock->lck_object = index_block;
 
 	return index_block;
 }
@@ -1393,7 +1389,7 @@ static int index_block_flush(void* ast_object)
 	{
 		Lock* const lock = index_block->idb_lock;
 		Database* const dbb = lock->lck_dbb;
-		Jrd::Attachment* const att = lock->lck_attachment;
+		Jrd::Attachment* const att = lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 

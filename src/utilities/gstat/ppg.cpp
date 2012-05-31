@@ -143,6 +143,27 @@ void PPG_print_header(const header_page* header, ULONG page,
 			uSvc->printf(false, "active shadow");
 		}
 
+		if (flags & hdr_encrypted)
+		{
+			if (flag_count++)
+				uSvc->printf(false, ", ");
+			uSvc->printf(false, "encrypted");
+		}
+
+		if (flags & hdr_crypt_process)
+		{
+			if (flag_count++)
+				uSvc->printf(false, ", ");
+			uSvc->printf(false, "crypt process");
+		}
+
+		if (flags & (hdr_encrypted | hdr_crypt_process))
+		{
+			if (flag_count++)
+				uSvc->printf(false, ", ");
+			uSvc->printf(false, "plugin %s", header->hdr_crypt_plugin);
+		}
+
 		const USHORT sd_flags = flags & hdr_shutdown_mask;
 		if (sd_flags == hdr_shutdown_multi)
 		{

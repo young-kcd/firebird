@@ -175,7 +175,9 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"SharedCache",				(ConfigValue) true},
 	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false},
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
-	{TYPE_STRING,		"CryptPlugin",				(ConfigValue) "Arc4"}
+	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
+	{TYPE_STRING,		"DbCryptPlugin",			(ConfigValue) ""},
+	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""}
 };
 
 /******************************************************************************
@@ -663,22 +665,26 @@ bool Config::getMultiClientServer()
 #endif
 }
 
-const char* Config::getPlugins(unsigned int type)
+const char* Config::getPlugins(unsigned int type) const
 {
 	switch (type)
 	{
 		case Firebird::PluginType::Provider:
-			return (const char*) getDefaultConfig()->values[KEY_PLUG_PROVIDERS];
+			return (const char*) values[KEY_PLUG_PROVIDERS];
 		case Firebird::PluginType::AuthServer:
-			return (const char*) getDefaultConfig()->values[KEY_PLUG_AUTH_SERVER];
+			return (const char*) values[KEY_PLUG_AUTH_SERVER];
 		case Firebird::PluginType::AuthClient:
-			return (const char*) getDefaultConfig()->values[KEY_PLUG_AUTH_CLIENT];
+			return (const char*) values[KEY_PLUG_AUTH_CLIENT];
 		case Firebird::PluginType::AuthUserManagement:
-			return (const char*) getDefaultConfig()->values[KEY_PLUG_AUTH_MANAGE];
+			return (const char*) values[KEY_PLUG_AUTH_MANAGE];
 		case Firebird::PluginType::Trace:
-			return (const char*) getDefaultConfig()->values[KEY_PLUG_TRACE];
-		case Firebird::PluginType::Crypt:
-			return (const char*) getDefaultConfig()->values[KEY_PLUG_CRYPT];
+			return (const char*) values[KEY_PLUG_TRACE];
+		case Firebird::PluginType::WireCrypt:
+			return (const char*) values[KEY_PLUG_WIRE_CRYPT];
+		case Firebird::PluginType::DbCrypt:
+			return (const char*) values[KEY_PLUG_DB_CRYPT];
+		case Firebird::PluginType::KeyHolder:
+			return (const char*) values[KEY_PLUG_KEY_HOLDER];
 	}
 
 	(Firebird::Arg::Gds(isc_random) << "Internal error in Config::getPlugins()").raise();

@@ -125,9 +125,12 @@
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
 #include "../jrd/EngineInterface.h"
+#include "../jrd/CryptoManager.h"
 
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
+
+#include "firebird/Crypt.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -487,6 +490,23 @@ namespace
 			ERR_post(Arg::Gds(isc_adm_task_denied));
 		}
 	}
+
+
+	class DefaultCallback : public AutoIface<ICryptKeyCallback, FB_CRYPT_CALLBACK_VERSION>
+	{
+	public:
+		unsigned int FB_CARG callback(unsigned int, const void*, unsigned int, void*)
+		{
+			return 0;
+		}
+	};
+
+	DefaultCallback defCallback;
+
+	ICryptKeyCallback* getCryptCallback(ICryptKeyCallback* callback)
+	{
+		return callback ? callback : &defCallback;
+	}
 } // anonymous
 
 
@@ -646,7 +666,6 @@ public:
 	AuthReader::AuthBlock	dpb_auth_block;
 	string	dpb_role_name;
 	string	dpb_journal;
-	string	dpb_key;
 	string	dpb_lc_ctype;
 	PathName	dpb_working_directory;
 	string	dpb_set_db_charset;
@@ -1009,20 +1028,6 @@ const ULONG SWEEP_INTERVAL		= 20000;
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 
-// External hook definitions
-
-/* dimitr: just uncomment the following line to use this feature.
-		   Requires support from the PIO modules. Only Win32 is 100% ready
-		   for this so far. Note that the database encryption code in the
-		   PIO layer seems to be incompatible with the SUPERSERVER_V2 code.
-		   2003.02.09 */
-//#define ISC_DATABASE_ENCRYPTION
-
-// The code that uses these constants was disabled by Adriano with comment "old PluginManager".
-//static const char* CRYPT_IMAGE = "fbcrypt";
-//static const char* ENCRYPT = "encrypt";
-//static const char* DECRYPT = "decrypt";
-
 
 static void trace_warning(thread_db* tdbb, Firebird::IStatus* userStatus, const char* func)
 {
@@ -1219,28 +1224,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 												  Arg::Str(org_filename));
 			}
 
-			// Worry about encryption key
-
-			if (dbb->dbb_decrypt)
-			{
-				if (dbb->dbb_filename.hasData() &&
-					(dbb->dbb_encrypt_key.hasData() || options.dpb_key.hasData()))
-				{
-					if ((dbb->dbb_encrypt_key.hasData() && options.dpb_key.isEmpty()) ||
-						(dbb->dbb_encrypt_key.empty() && options.dpb_key.hasData()) ||
-						(dbb->dbb_encrypt_key != options.dpb_key))
-					{
-						ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("encryption") <<
-														  Arg::Str("database") <<
-														  Arg::Str(org_filename));
-					}
-				}
-				else if (options.dpb_key.hasData())
-				{
-					dbb->dbb_encrypt_key = options.dpb_key;
-				}
-			}
-
 			attachment = Jrd::Attachment::create(dbb);
 
 			RefPtr<JAttachment> jAtt(new JAttachment(attachment));
@@ -1256,6 +1239,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			attachment->att_remote_process = options.dpb_remote_process;
 			attachment->att_next = dbb->dbb_attachments;
 			attachment->att_ext_call_depth = options.dpb_ext_call_depth;
+			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
 
 			dbb->dbb_attachments = attachment;
 			dbb->dbb_flags &= ~DBB_being_opened;
@@ -1359,10 +1343,15 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				PAG_init2(tdbb, 0);
 				PAG_header(tdbb, false);
 
+				dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
+				dbb->dbb_crypto_manager->attach(tdbb, attachment);
+
 				// initialize shadowing as soon as the database is ready for it
 				// but before any real work is done
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
 				CCH_init2(tdbb);
+
+				dbb->dbb_crypto_manager->startCryptThread(tdbb);
 			}
 			else
 			{
@@ -1380,6 +1369,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				INI_init(tdbb);
 				INI_init2(tdbb);
 				PAG_header(tdbb, true);
+				dbb->dbb_crypto_manager->attach(tdbb, attachment);
+				dbb->dbb_crypto_manager->startCryptThread(tdbb);
 			}
 
 			// Attachments to a ReadOnly database need NOT do garbage collection
@@ -2338,12 +2329,6 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		bool initing_security = false;
 
 		try {
-
-			if (options.dpb_key.hasData())
-			{
-				dbb->dbb_encrypt_key = options.dpb_key;
-			}
-
 			attachment = Jrd::Attachment::create(dbb);
 
 			RefPtr<JAttachment> jAtt(new JAttachment(attachment));
@@ -2359,6 +2344,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			attachment->att_remote_process = options.dpb_remote_process;
 			attachment->att_ext_call_depth = options.dpb_ext_call_depth;
 			attachment->att_next = dbb->dbb_attachments;
+			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
 
 			dbb->dbb_attachments = attachment;
 			dbb->dbb_flags &= ~DBB_being_opened;
@@ -2511,6 +2497,8 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			PAG_format_header(tdbb);
 			INI_init2(tdbb);
 			PAG_format_pip(tdbb, *pageSpace);
+
+			dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 			if (options.dpb_set_page_buffers)
 				PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
@@ -3570,7 +3558,7 @@ void JRequest::send(IStatus* user_status, int level, unsigned int msg_type,
 
 
 JService* JProvider::attachServiceManager(IStatus* user_status, const char* service_name,
-										  unsigned int spbLength, const unsigned char* spb)
+	unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
  *
@@ -3588,7 +3576,7 @@ JService* JProvider::attachServiceManager(IStatus* user_status, const char* serv
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		svc = new JService(new Service(service_name, spbLength, spb));
+		svc = new JService(new Service(service_name, spbLength, spb, cryptCallback));
 		svc->addRef();
 	}
 	catch (const Exception& ex)
@@ -3987,6 +3975,13 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 		ex.stuffException(status);
 		gds__log_status(NULL, status->get());
 	}
+}
+
+
+void JProvider::setDbCryptCallback(IStatus* status, ICryptKeyCallback* callback)
+{
+	status->init();
+	cryptCallback = callback;
 }
 
 
@@ -5371,14 +5366,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_encrypt_key:
-#ifdef ISC_DATABASE_ENCRYPTION
-			rdr.getString(dpb_key);
-#else
 			// Just in case there WAS a customer using this unsupported
-			// feature - post an error when they try to access it in 4.0
+			// feature - post an error when they try to access it now
 			ERR_post(Arg::Gds(isc_uns_ext) <<
-					 Arg::Gds(isc_random) << Arg::Str("Encryption not supported"));
-#endif
+					 Arg::Gds(isc_random) << Arg::Str("Passing encryption key in DPB not supported"));
 			break;
 
 		case isc_dpb_no_garbage_collect:
@@ -5690,23 +5681,6 @@ static Database* init(thread_db* tdbb,
 		}
 	}
 
-	// Initialize a number of subsystems
-
-#ifdef ISC_DATABASE_ENCRYPTION
-	// Lookup some external "hooks"
-
-	/*** ASF: old PluginManager
-	PluginManager::Plugin crypt_lib = PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
-	if (crypt_lib)
-	{
-		string encrypt_entrypoint(ENCRYPT);
-		string decrypt_entrypoint(DECRYPT);
-		dbb->dbb_encrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
-		dbb->dbb_decrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
-	}
-	***/
-#endif
-
 	return dbb;
 }
 
@@ -5735,14 +5709,10 @@ static void init_database_locks(thread_db* tdbb)
 	PIO_get_unique_file_id(pageSpace->file, file_id);
 	size_t key_length = file_id.getCount();
 
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock;
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length)
+		Lock(tdbb, LCK_database, dbb, CCH_down_grade_dbb);
 	dbb->dbb_lock = lock;
-	lock->lck_type = LCK_database;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_object = dbb;
 	lock->lck_length = key_length;
-	lock->lck_dbb = dbb;
-	lock->lck_ast = CCH_down_grade_dbb;
 	memcpy(lock->lck_key.lck_string, file_id.begin(), key_length);
 
 	// Try to get an exclusive lock on database.
@@ -5777,15 +5747,10 @@ static void init_database_locks(thread_db* tdbb)
 	// Lock shared by all dbb owners, used to signal other processes
 	// to dump their monitoring data and synchronize operations
 
-	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG))
+		Lock(tdbb, LCK_monitor, dbb, DatabaseSnapshot::blockingAst);
 	dbb->dbb_monitor_lock = lock;
-	lock->lck_type = LCK_monitor;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = sizeof(SLONG);
-	lock->lck_dbb = dbb;
-	lock->lck_object = dbb;
-	lock->lck_ast = DatabaseSnapshot::blockingAst;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
@@ -6063,10 +6028,17 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 #endif
 
 	VIO_fini(tdbb);
+
+	if (dbb->dbb_crypto_manager)
+		dbb->dbb_crypto_manager->terminateCryptThread(tdbb);
+
 	CCH_fini(tdbb);
 
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
+
+	if (dbb->dbb_crypto_manager)
+		dbb->dbb_crypto_manager->shutdown(tdbb);
 
 	if (dbb->dbb_monitor_lock)
 		LCK_release(tdbb, dbb->dbb_monitor_lock);

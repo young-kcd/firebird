@@ -47,7 +47,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "gen/iberror.h"
-#include "../jrd/jrd.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/isc_f_proto.h"
@@ -1296,9 +1295,9 @@ bool Mnt::get()
 /**************************************
  *
  *	g e t _ m o u n t s	( S Y S T E M _ V )
- *				( E P S O N )
- *				( M 8 8 K )
- *				( U N I X W A R E )
+ *						( E P S O N )
+ *						( M 8 8 K )
+ *						( U N I X W A R E )
  *
  **************************************
  *
@@ -1401,7 +1400,9 @@ bool Mnt::get()
 	const char* start = device;
 
 	if (n<5)
-	return false;
+	{
+		return false;
+	}
 
 	const char* iflag = strchr(device, ':');
 	if (iflag)

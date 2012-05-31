@@ -688,8 +688,8 @@ public:
 		: PermanentStorage(p), knownTypes(getPool())
 	{
 		LocalStatus st;
-		for (GetPlugins<ICryptPlugin> cpItr(PluginType::Crypt, FB_CRYPT_PLUGIN_VERSION,
-											upInfo); cpItr.hasData(); cpItr.next())
+		for (GetPlugins<IWireCryptPlugin> cpItr(PluginType::WireCrypt, FB_WIRECRYPT_PLUGIN_VERSION,
+												upInfo); cpItr.hasData(); cpItr.next())
 		{
 			const char* list = cpItr.plugin()->getKnownTypes(&st);
 			if (! st.isSuccess())
@@ -743,6 +743,75 @@ private:
 };
 
 InitInstance<CryptKeyTypeManager> knownCryptKeyTypes;
+
+class CryptKeyCallback : public VersionedIface<ICryptKeyCallback, FB_CRYPT_CALLBACK_VERSION>
+{
+public:
+	CryptKeyCallback(rem_port* prt)
+		: port(prt), l(0), d(NULL)
+	{ }
+
+	unsigned int FB_CARG callback(unsigned int dataLength, const void* data,
+		unsigned int bufferLength, void* buffer)
+	{
+		Reference r(*port);
+
+		PACKET p;
+		p.p_operation = op_crypt_key_callback;
+		p.p_cc.p_cc_data.cstr_length = dataLength;
+		p.p_cc.p_cc_data.cstr_address = (UCHAR*)data;
+		p.p_cc.p_cc_reply = bufferLength;
+		port->send(&p);
+
+		sem.enter();
+		if (bufferLength > l)
+			bufferLength = l;
+		memcpy(buffer, d, bufferLength);
+		if (l)
+			sem2.release();
+
+		return l;
+	}
+
+	void wakeup(unsigned int length, const void* data)
+	{
+		l = length;
+		d = data;
+		sem.release();
+		if (l)
+			sem2.enter();
+	}
+
+private:
+	rem_port* port;
+	Semaphore sem, sem2;
+	unsigned int l;
+	const void* d;
+};
+
+class ServerCallback : public ServerCallbackBase, public GlobalStorage
+{
+public:
+	ServerCallback(rem_port* prt)
+		: cryptCallback(prt)
+	{ }
+
+	~ServerCallback()
+	{ }
+
+	void wakeup(unsigned int length, const void* data)
+	{
+		cryptCallback.wakeup(length, data);
+	}
+
+	ICryptKeyCallback* getInterface()
+	{
+		return &cryptCallback;
+	}
+
+private:
+	CryptKeyCallback cryptCallback;
+};
 
 } // anonymous
 
@@ -913,7 +982,7 @@ void SRVR_enum_attachments(ULONG& att_cnt, ULONG& dbs_cnt, ULONG& svc_cnt)
 	// using the service manager. It could be either isc_info_svc_svr_db_info2
 	// that adds the third counter, or a completely new information tag.
 
-	static IProvider* provider = fb_get_master_interface()->getDispatcher();
+	DispatcherPtr provider;
 
 	static const UCHAR spb_attach[] =
 	{
@@ -1211,7 +1280,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 #ifdef DEV_BUILD
 #ifndef WIN_NT
-			fprintf(stderr, "Server started successfully\n");
+			if (isatty(2))
+			{
+				fprintf(stderr, "Server started successfully\n");
+			}
 #endif
 #endif
 			// When this loop exits, the server will no longer receive requests
@@ -1768,7 +1840,7 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 
 void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 {
-	static IProvider* provider = fb_get_master_interface()->getDispatcher();
+	DispatcherPtr provider;
 
 	authBlock->store(pb, isc_dpb_auth_block);
 
@@ -1809,21 +1881,31 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 	const UCHAR* dpb = pb->getBuffer();
 	unsigned int dl = pb->getBufferLength();
 
+	if (!authPort->port_server_crypt_callback)
+	{
+		authPort->port_server_crypt_callback = new ServerCallback(authPort);
+	}
+
 	LocalStatus status_vector;
-	ServAttachment iface(operation == op_attach ?
-		provider->attachDatabase(&status_vector, dbName.c_str(), dl, dpb) :
-		provider->createDatabase(&status_vector, dbName.c_str(), dl, dpb));
+	provider->setDbCryptCallback(&status_vector, authPort->port_server_crypt_callback->getInterface());
 
 	if (status_vector.isSuccess())
 	{
-		Rdb* rdb = new Rdb;
+		ServAttachment iface(operation == op_attach ?
+			provider->attachDatabase(&status_vector, dbName.c_str(), dl, dpb) :
+			provider->createDatabase(&status_vector, dbName.c_str(), dl, dpb));
 
-		authPort->port_context = rdb;
+		if (status_vector.isSuccess())
+		{
+			Rdb* rdb = new Rdb;
+
+			authPort->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("attach_databases(server)  allocate rdb     %x\n", rdb);
+			printf("attach_databases(server)  allocate rdb     %x\n", rdb);
 #endif
-		rdb->rdb_port = authPort;
-		rdb->rdb_iface = iface;
+			rdb->rdb_port = authPort;
+			rdb->rdb_iface = iface;
+		}
 	}
 
 	CSTRING* s = &send->p_resp.p_resp_data;
@@ -3409,7 +3491,8 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		if (status_vector.isSuccess())
 		{
 			string version;
-			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
+			version.printf("%s/%s%s", GDS_VERSION, this->port_version->str_data,
+				this->port_crypt_complete ? ":C" : "");
 			info_db_len = MERGE_database_info(temp_buffer, //temp
 				buffer, stuff->p_info_buffer_length,
 				DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
@@ -4974,25 +5057,34 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		spb->insertTag(isc_spb_auth_block);
 	}
 
+	if (!port_server_crypt_callback)
+	{
+		port_server_crypt_callback = new ServerCallback(this);
+	}
 
-	static IProvider* provider = fb_get_master_interface()->getDispatcher();
+	DispatcherPtr provider;
 	LocalStatus status_vector;
-	ServService iface(provider->attachServiceManager(&status_vector, service_name,
-		spb->getBufferLength(), spb->getBuffer()));
 
+	provider->setDbCryptCallback(&status_vector, port_server_crypt_callback->getInterface());
 	if (status_vector.isSuccess())
 	{
-		Rdb* rdb = new Rdb;
+		ServService iface(provider->attachServiceManager(&status_vector, service_name,
+			spb->getBufferLength(), spb->getBuffer()));
 
-		this->port_context = rdb;
+		if (status_vector.isSuccess())
+		{
+			Rdb* rdb = new Rdb;
+
+			this->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("attach_service(server)  allocate rdb     %x\n", rdb);
+			printf("attach_service(server)  allocate rdb     %x\n", rdb);
 #endif
-		rdb->rdb_port = this;
-		Svc* svc = rdb->rdb_svc = new Svc;
-		svc->svc_auth = authenticated ? Svc::SVCAUTH_PERM : Svc::SVCAUTH_NONE;
-		svc->svc_cached_spb = cache;
-		svc->svc_iface = iface;
+			rdb->rdb_port = this;
+			Svc* svc = rdb->rdb_svc = new Svc;
+			svc->svc_auth = authenticated ? Svc::SVCAUTH_PERM : Svc::SVCAUTH_NONE;
+			svc->svc_cached_spb = cache;
+			svc->svc_iface = iface;
+		}
 	}
 
 	return this->send_response(sendL, 0,
@@ -5210,7 +5302,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 		PathName plugName(crypt->p_plugin.cstr_address, crypt->p_plugin.cstr_length);
 		// Check it's availability
 		Remote::ParsedList plugins;
-		REMOTE_parseList(plugins, Config::getPlugins(PluginType::Crypt));
+		REMOTE_parseList(plugins, Config::getDefaultConfig()->getPlugins(PluginType::WireCrypt));
 		bool found = false;
 		for (unsigned n = 0; n < plugins.getCount(); ++n)
 		{
@@ -5226,30 +5318,23 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 				// good idea to add plugName later
 		}
 
-		GetPlugins<ICryptPlugin> cp(PluginType::Crypt, FB_CRYPT_PLUGIN_VERSION, upInfo, plugName.c_str());
+		GetPlugins<IWireCryptPlugin> cp(PluginType::WireCrypt, FB_WIRECRYPT_PLUGIN_VERSION, upInfo,
+										plugName.c_str());
 		if (!cp.hasData())
 		{
 			(Arg::Gds(isc_random) << "Bad plugin from client").raise();
 				// good idea to add plugName later
 		}
 
-		// Install decrypting cipher
+		// Initialize crypt key
 		LocalStatus st;
-		port_recv_cipher = cp.plugin()->getDecrypt(&st, key);
+		cp.plugin()->setKey(&st, key);
 		if (! st.isSuccess())
 		{
 			status_exception::raise(st.get());
 		}
 
-		// Install encrypting cipher
-		port_send_cipher = cp.plugin()->getEncrypt(&st, key);
-		if (! st.isSuccess())
-		{
-			port_recv_cipher->release();
-			port_recv_cipher = NULL;
-			status_exception::raise(st.get());
-		}
-
+		// Install plugin
 		port_crypt_plugin = cp.plugin();
 		port_crypt_plugin->addRef();
 		port_crypt_complete = true;
@@ -5678,6 +5763,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 	{
 	case op_cancel:
 	case op_abort_aux_connection:
+	case op_crypt_key_callback:
 		break;
 	default:
 		return 0;
@@ -5710,7 +5796,12 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 			port_async->abort_aux_connection();
 		}
 		break;
+	case op_crypt_key_callback:
+		port_server_crypt_callback->wakeup(asyncPacket->p_cc.p_cc_data.cstr_length,
+			asyncPacket->p_cc.p_cc_data.cstr_address);
+		break;
 	default:
+		fb_assert(false);
 		return 0;
 	}
 

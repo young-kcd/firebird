@@ -75,7 +75,7 @@ class BackupManager;
 class ExternalFileDirectoryList;
 class MonitoringData;
 class GarbageCollector;
-
+class CryptoManager;
 
 // general purpose vector
 template <class T, BlockType TYPE = type_vec>
@@ -264,8 +264,6 @@ public:
 		ValueCache m_counters[TOTAL_ITEMS];
 	};
 
-	typedef int (*crypt_routine) (const char*, void*, int, void*);
-
 	static Database* create()
 	{
 		Firebird::MemoryStats temp_stats;
@@ -355,7 +353,6 @@ public:
 
 	Firebird::PathName dbb_filename;	// filename string
 	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
-	Firebird::string dbb_encrypt_key;	// encryption key
 
 	Firebird::SyncObject			dbb_pools_sync;
 	Firebird::Array<MemoryPool*>	dbb_pools;		// pools
@@ -387,9 +384,6 @@ public:
 	USHORT unflushed_writes;			// unflushed writes
 	time_t last_flushed_write;			// last flushed write time
 
-	crypt_routine dbb_encrypt;			// External encryption routine
-	crypt_routine dbb_decrypt;			// External decryption routine
-
 	TipCache*		dbb_tip_cache;		// cache of latest known state of all transactions in system
 	TransactionsVector*	dbb_pc_transactions;				// active precommitted transactions
 	BackupManager*	dbb_backup_manager;						// physical backup manager
@@ -398,6 +392,7 @@ public:
 	Firebird::RefPtr<Config> dbb_config;
 
 	SharedCounter dbb_shared_counter;
+	CryptoManager* dbb_crypto_manager;
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -424,7 +419,6 @@ private:
 		dbb_extManager(*p),
 		dbb_filename(*p),
 		dbb_database_name(*p),
-		dbb_encrypt_key(*p),
 		dbb_pools(*p, 4),
 		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),

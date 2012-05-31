@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/jrd.h"
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../common/sdl.h"

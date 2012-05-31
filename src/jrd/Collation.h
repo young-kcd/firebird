@@ -36,6 +36,7 @@
 namespace Jrd {
 
 class Lock;
+class BaseSubstringSimilarMatcher;
 
 class Collation : public TextType
 {

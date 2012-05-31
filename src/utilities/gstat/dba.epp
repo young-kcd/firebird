@@ -180,7 +180,7 @@ static void db_error(int);
 static USHORT get_format_length(ISC_STATUS*, isc_db_handle, isc_tr_handle, ISC_QUAD&);
 
 static dba_fil* db_open(const char*, USHORT);
-static const pag* db_read(SLONG);
+static const pag* db_read(SLONG page_number, bool ok_enc = false);
 #ifdef WIN_NT
 static void db_close(void* file_desc);
 #else
@@ -385,7 +385,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (argc == 1) // no parameters at all.
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 45, SafeArg());
 		dba_error(45);	// use gstat -? to get help'
 	}
 
@@ -394,6 +393,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	bool sw_index = false;
 	bool sw_version = false;
 	bool sw_header = false;
+	bool sw_enc = false;
 	//bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
@@ -411,7 +411,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 		{
 			if (name)
 			{
-				tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 40, SafeArg());
 				dba_error(40);	// database name was already specified
 			}
 
@@ -426,7 +425,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 				str = "-*NONE*";
 			dba_print(true, 20, SafeArg() << (str + 1));	// msg 20: unknown switch "%s"
 			print_help();
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg() << (str + 1));
 			dba_error(1);	// msg 1: found unknown switch
 			break; // redundant
 		}
@@ -487,6 +485,9 @@ int gstat(Firebird::UtilSvc* uSvc)
 		case IN_SW_DBA_HEADER:
 			sw_header = true;
 			break;
+		case IN_SW_DBA_ENCRYPTION:
+			sw_enc = true;
+			break;
 //			case IN_SW_DBA_LOG:
 //				sw_log = true;
 //				break;
@@ -505,7 +506,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 					char tbname[MAX_SQL_IDENTIFIER_LEN + 5];
 					fb_utils::copy_terminate(tbname, *argv, MAX_SQL_IDENTIFIER_SIZE);
 					memcpy(tbname + MAX_SQL_IDENTIFIER_LEN, "...\0", 4);
-					tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 42, SafeArg() << tbname);
 					dba_error(42, SafeArg() << tbname);	// option -t got a too long table name @1
 					break;
 				}
@@ -537,19 +537,21 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (sw_header && (sw_system || sw_data || sw_index || sw_record || sw_relation))
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 38, SafeArg());
 		dba_error(38);	//option -h is incompatible with options -a, -d, -i, -r, -s and -t
+	}
+
+	if (sw_enc && (sw_header || sw_system || sw_data || sw_index || sw_record || sw_relation))
+	{
+		dba_error(50);	//option -e is incompatible with options -a, -d, -h, -i, -r, -s and -t
 	}
 
 	if (!name)
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 2, SafeArg());
 		dba_error(2);	// msg 2: please retry, giving a database name
 	}
 
 	if (sw_relation && !tddba->relations)
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 41, SafeArg());
 		dba_error(41);	// option -t needs a table name.
 	}
 
@@ -596,7 +598,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
 		const int oversion = (header->hdr_ods_version & ~ODS_FIREBIRD_FLAG);
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 3, SafeArg() << ODS_VERSION << oversion);
 		dba_error(3, SafeArg() << ODS_VERSION << oversion);
 		// msg 3: Wrong ODS version, expected %d, encountered %d?
 	}
@@ -653,6 +654,64 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (sw_header)
 		dba_exit(FINI_OK, tddba);
+
+	if (sw_enc)
+	{
+		class Statist
+		{
+		public:
+			Statist()
+				: enc(0), non(0)
+			{ }
+
+			void print(USHORT messageNo)
+			{
+				dba_print(false, messageNo, SafeArg() << enc + non << enc << non);
+				// msg 5[2-4]: <TYPE> pages: total @1, encrypted @2, non-crypted @3
+			}
+
+			void log(UCHAR flags)
+			{
+				if (flags & crypted_page)
+					++enc;
+				else
+					++non;
+			}
+
+		private:
+			ULONG enc, non;
+		};
+		Statist data, index, blob;
+
+		for (page = 0; true; ++page)
+		{
+			const pag* p = db_read(page, true);
+			if (!p)
+			{
+				break;
+			}
+
+			switch(p->pag_type)
+			{
+			case pag_data:
+				data.log(p->pag_flags);
+				break;
+			case pag_index:
+				index.log(p->pag_flags);
+				break;
+			case pag_blob:
+				blob.log(p->pag_flags);
+				break;
+			}
+		}
+
+		uSvc->printf(false, "\n");
+		data.print(52);
+		index.print(53);
+		blob.print(54);
+
+		dba_exit(FINI_OK, tddba);
+	}
 
 	// print continuation file sequence
 
@@ -865,7 +924,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 			checkForShutdown(tddba);
 			if (relation->rel_id == -1)
 			{
-				tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 44, SafeArg() << relation->rel_name);
 				dba_error(44, SafeArg() << relation->rel_name);
 				// msg 44: table "@1" not found
 			}
@@ -1748,7 +1806,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 }
 
 
-static const pag* db_read( SLONG page_number)
+static const pag* db_read( SLONG page_number, bool ok_enc)
 {
 /**************************************
  *
@@ -1805,9 +1863,17 @@ static const pag* db_read( SLONG page_number)
 	}
 	if (actual_length != tddba->page_size)
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
+		if (ok_enc)
+		{
+			return NULL;
+		}
 		dba_error(4);
 		// msg 4: Unexpected end of database file.
+	}
+
+	if (tddba->global_buffer->pag_flags & Ods::crypted_page && !ok_enc)
+	{
+		dba_error(55);
 	}
 
 	return tddba->global_buffer;
@@ -1925,7 +1991,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 }
 
 
-static const pag* db_read( SLONG page_number)
+static const pag* db_read( SLONG page_number, bool ok_enc)
 {
 /**************************************
  *
@@ -1971,12 +2037,20 @@ static const pag* db_read( SLONG page_number)
 		}
 		if (!l)
 		{
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
+			if (ok_enc)
+			{
+				return NULL;
+			}
 			dba_error(4);
 			// msg 4: Unexpected end of database file.
 		}
 		p += l;
 		length -= l;
+	}
+
+	if (tddba->global_buffer->pag_flags & Ods::crypted_page && !ok_enc)
+	{
+		dba_error(55);
 	}
 
 	return tddba->global_buffer;
@@ -1999,7 +2073,11 @@ static void dba_error(USHORT errcode, const SafeArg& arg)
 	tdba* tddba = tdba::getSpecific();
 	tddba->page_number = -1;
 
-	dba_print(true, errcode, arg);
+	tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, errcode, arg);
+	if (!tddba->uSvc->isService())
+	{
+		dba_print(true, errcode, arg);
+	}
 	dba_exit(FINI_ERROR, tddba);
 }
 

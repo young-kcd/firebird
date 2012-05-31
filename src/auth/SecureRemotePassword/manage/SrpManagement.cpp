@@ -216,8 +216,7 @@ public:
 					dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 			}
 
-			Firebird::RefPtr<Firebird::IProvider> p(Firebird::MasterInterfacePtr()->getDispatcher());
-			p->release();
+			Firebird::DispatcherPtr p;
 			att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
 			if (!status->isSuccess())
 			{

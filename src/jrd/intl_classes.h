@@ -29,7 +29,6 @@
 #define JRD_INTL_CLASSES_H
 
 #include "firebird.h"
-#include "../jrd/jrd.h"
 
 #include "../common/intlobj_new.h"
 #include "../jrd/constants.h"
@@ -142,9 +141,6 @@ private:
 };
 
 } // namespace Jrd
-
-
-#include "../jrd/Collation.h"
 
 
 #endif	// JRD_INTL_CLASSES_H

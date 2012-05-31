@@ -368,11 +368,7 @@ void Jrd::Attachment::detachLocksFromAttachment()
 	Lock* long_lock = att_long_locks;
 	while (long_lock)
 	{
-		Lock* next = long_lock->lck_next;
-		long_lock->lck_attachment = NULL;
-		long_lock->lck_next = NULL;
-		long_lock->lck_prior = NULL;
-		long_lock = next;
+		long_lock = long_lock->detach();
 	}
 	att_long_locks = NULL;
 }

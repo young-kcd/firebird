@@ -69,23 +69,15 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 	return 0;
 }
 
-GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
+GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, lck_t lckType,
 		lck_owner_t lock_owner, bool lock_caching, size_t lockLen, const UCHAR* lockStr)
 	: PermanentStorage(p), pendingLock(0), readers(0), pendingWriters(0), currentWriter(false),
 	  lockCaching(lock_caching), blocking(false)
 {
 	SET_TDBB(tdbb);
 
-	cachedLock = FB_NEW_RPT(getPool(), lockLen) Lock();
-	cachedLock->lck_type = static_cast<lck_t>(lckType);
-	cachedLock->lck_owner_handle = LCK_get_owner_handle_by_type(tdbb, lock_owner);
+	cachedLock = FB_NEW_RPT(getPool(), lockLen) Lock(tdbb, lock_owner, lckType, this, lockCaching ? blocking_ast_cached_lock : NULL);
 	cachedLock->lck_length = lockLen;
-
-	Database* dbb = tdbb->getDatabase();
-	cachedLock->lck_dbb = dbb;
-	cachedLock->lck_parent = dbb->dbb_lock;
-	cachedLock->lck_object = this;
-	cachedLock->lck_ast = lockCaching ? blocking_ast_cached_lock : NULL;
 	memcpy(&cachedLock->lck_key, lockStr, lockLen);
 }
 

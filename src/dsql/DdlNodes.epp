@@ -9946,6 +9946,22 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScra
 	if (!tdbb->getAttachment()->locksmith())
 		status_exception::raise(Arg::Gds(isc_adm_task_denied));
 
+	if (cryptPlugin.hasData())
+	{
+		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
+	}
+
+	if (clauses & CLAUSE_DECRYPT)
+	{
+		DFW_post_work(transaction, dfw_db_crypt, "", 0);
+	}
+
+	if (!(clauses & RDB_DATABASE_MASK))
+	{
+		// No clauses requiring rdb$database present - work is done
+		return;
+	}
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 

@@ -113,8 +113,11 @@ public:
 	virtual IDtc* FB_CARG getDtc() = 0;
 	virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
 	virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
+
+	// This function is required to compare interfaces based on vtables of them
+	virtual int FB_CARG same(IVersioned* first, IVersioned* second) = 0;
 };
-#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 9)
+#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 10)
 
 } // namespace Firebird
 

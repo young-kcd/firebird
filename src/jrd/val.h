@@ -34,7 +34,7 @@
 #include "../common/classes/MetaName.h"
 #include "../common/classes/QualifiedName.h"
 
-#include "../jrd/blb.h"
+#include "../jrd/RecordNumber.h"
 #include "../common/dsc.h"
 #include "../jrd/ExtEngineManager.h"
 

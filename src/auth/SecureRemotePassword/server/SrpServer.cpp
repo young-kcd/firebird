@@ -123,8 +123,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			const char* str = "SYSDBA";
 			dpb.insertString(isc_dpb_user_name, str, strlen(str));
 
-			RefPtr<IProvider> p(MasterInterfacePtr()->getDispatcher());
-			p->release();
+			DispatcherPtr p;
 
 			att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
 			if (!status->isSuccess())

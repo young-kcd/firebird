@@ -72,6 +72,7 @@
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
 #include "../jrd/Function.h"
+#include "../jrd/Collation.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -1621,12 +1622,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	// fill out a lock block, zeroing it out first
 
-	Lock temp_lock;
-	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = trans;
-	temp_lock.lck_type = LCK_sweep;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-	temp_lock.lck_parent = dbb->dbb_lock;
+	Lock temp_lock(tdbb, LCK_sweep, trans);
 	temp_lock.lck_length = sizeof(SLONG);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
@@ -1784,11 +1780,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 
 	if (wait != jrd_tra::tra_no_wait)
 	{
-		Lock temp_lock;
-		temp_lock.lck_dbb = dbb;
-		temp_lock.lck_type = LCK_tra;
-		temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-		temp_lock.lck_parent = dbb->dbb_lock;
+		Lock temp_lock(tdbb, LCK_tra);
 		temp_lock.lck_length = sizeof(SLONG);
 		temp_lock.lck_key.lck_long = number;
 
@@ -1856,7 +1848,7 @@ static int blocking_ast_transaction(void* ast_object)
 	try
 	{
 		Database* const dbb = transaction->tra_cancel_lock->lck_dbb;
-		Jrd::Attachment* const att = transaction->tra_cancel_lock->lck_attachment;
+		Jrd::Attachment* const att = transaction->tra_cancel_lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 
@@ -1994,16 +1986,9 @@ static Lock* create_transaction_lock(thread_db* tdbb, void* object)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
-	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock();
-	lock->lck_type = LCK_tra;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock(tdbb, LCK_tra, object);
 	lock->lck_length = sizeof(SLONG);
-
-	lock->lck_dbb = dbb;
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_object = object;
 
 	return lock;
 }
@@ -2503,12 +2488,8 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	SET_TDBB(tdbb);
 
 	// fill out the lock block
-	Lock temp_lock;
-	temp_lock.lck_dbb			= dbb;
-	temp_lock.lck_type			= LCK_sweep;
-	temp_lock.lck_owner_handle	= LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-	temp_lock.lck_parent		= dbb->dbb_lock;
-	temp_lock.lck_length		= sizeof(SLONG);
+	Lock temp_lock(tdbb, LCK_sweep);
+	temp_lock.lck_length = sizeof(SLONG);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
@@ -3165,12 +3146,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// more complicated by the fact that existing transaction may have oldest
 	// actives older than they are.
 
-	Lock temp_lock;
-	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = trans;
-	temp_lock.lck_type = LCK_tra;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-	temp_lock.lck_parent = dbb->dbb_lock;
+	Lock temp_lock(tdbb, LCK_tra, trans);
 	temp_lock.lck_length = sizeof(SLONG);
 
 	trans->tra_oldest_active = number;
@@ -3304,6 +3280,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	if (dbb->dbb_sweep_interval &&
 		!(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
+		(trans->tra_oldest_active > trans->tra_oldest) &&
 		(trans->tra_oldest_active - trans->tra_oldest > dbb->dbb_sweep_interval) &&
 		oldest_state != tra_limbo)
 	{
@@ -3324,16 +3301,11 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	// Allocate the cancellation lock
 
-	lock = FB_NEW_RPT(*trans->tra_pool, sizeof(SLONG)) Lock();
+	lock = FB_NEW_RPT(*trans->tra_pool, sizeof(SLONG))
+		Lock(tdbb, LCK_cancel, trans, blocking_ast_transaction);
 	trans->tra_cancel_lock = lock;
-	lock->lck_type = LCK_cancel;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = trans->tra_number;
-	lock->lck_dbb = dbb;
-	lock->lck_ast = blocking_ast_transaction;
-	lock->lck_object = trans;
 
 	// if the user asked us to restart all requests in this attachment,
 	// do so now using the new transaction

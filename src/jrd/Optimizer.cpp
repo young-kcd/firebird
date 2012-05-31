@@ -32,6 +32,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
+#include "../jrd/Collation.h"
 #include "../jrd/rse.h"
 #include "../jrd/ods.h"
 #include "../jrd/Optimizer.h"

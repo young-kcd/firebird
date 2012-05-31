@@ -278,6 +278,7 @@ enum P_OP
 	op_abort_aux_connection	= 95,	// Async operation - stop waiting for async connection to arrive
 
 	op_crypt				= 96,
+	op_crypt_key_callback	= 97,
 
 	op_max
 };
@@ -642,6 +643,12 @@ typedef struct p_crypt
 	CSTRING p_key;							// Key name / keys available on server
 } P_CRYPT;
 
+typedef struct p_crypt_callback
+{
+	CSTRING	p_cc_data;						// User's data
+	USHORT p_cc_reply;
+} P_CRYPT_CALLBACK;
+
 
 // Generalize packet (sic!)
 
@@ -685,6 +692,7 @@ typedef struct packet
 	P_CANCEL_OP p_cancel_op;	// Cancel operation
 	P_AUTH_CONT p_auth_cont;	// Request more auth data
 	P_CRYPT p_crypt;			// Start wire crypt
+	P_CRYPT_CALLBACK p_cc;		// Database crypt callback
 
 public:
 	packet()

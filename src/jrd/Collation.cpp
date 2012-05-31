@@ -99,6 +99,7 @@
 #include "../jrd/intl_classes.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/intl_classes.h"
+#include "../jrd/Collation.h"
 #include "../common/TextType.h"
 
 #include "../jrd/SimilarToMatcher.h"

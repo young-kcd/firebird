@@ -47,7 +47,7 @@ public:
 	{
 		LocalStatus status;
 		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
-			(namesList ? namesList : Config::getPlugins(interfaceType)),
+			(namesList ? namesList : Config::getDefaultConfig()->getPlugins(interfaceType)),
 			desiredVersion, ui, NULL);
 
 		if (!pluginSet)
@@ -67,7 +67,7 @@ public:
 	{
 		LocalStatus status;
 		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
-			(namesList ? namesList : Config::getPlugins(interfaceType)),
+			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
 			desiredVersion, ui, new FirebirdConf(knownConfig));
 
 		if (!pluginSet)

@@ -220,9 +220,11 @@ namespace PluginType {
 	static const unsigned int AuthUserManagement = 13;
 	static const unsigned int ExternalEngine = 14;
 	static const unsigned int Trace = 15;
-	static const unsigned int Crypt = 16;
+	static const unsigned int WireCrypt = 16;
+	static const unsigned int DbCrypt = 17;
+	static const unsigned int KeyHolder = 18;
 
-	static const unsigned int MaxType = 17;	// keep in sync please
+	static const unsigned int MaxType = 19;	// keep in sync please
 };
 
 }	// namespace Firebird

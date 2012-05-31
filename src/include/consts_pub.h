@@ -505,6 +505,7 @@
 #define isc_spb_sts_record_versions	0x20
 #define isc_spb_sts_table			0x40
 #define isc_spb_sts_nocreation		0x80
+#define isc_spb_sts_encryption	   0x100
 
 /***********************************/
 /* Server configuration key values */

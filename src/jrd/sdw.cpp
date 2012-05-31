@@ -48,7 +48,7 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/Attachment.h"
-
+#include "../jrd/CryptoManager.h"
 
 using namespace Jrd;
 using namespace Ods;
@@ -209,7 +209,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		temp_bdb.bdb_page = next->fil_min_page;
 		temp_bdb.bdb_buffer = (PAG) header;
 		header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
-		if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+		if (!CryptoManager::cryptWrite(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 		{
 			delete[] spare_buffer;
 			return 0;
@@ -255,7 +255,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 			file->fil_fudge = 0;
 			temp_bdb.bdb_page = file->fil_min_page;
 			header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
-			if (!PIO_write(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+			if (!CryptoManager::cryptWrite(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 			{
 				delete[] spare_buffer;
 				return 0;
@@ -328,14 +328,10 @@ void SDW_check(thread_db* tdbb)
 	{
 		if (SDW_lck_update(tdbb, 0))
 		{
-			Lock temp_lock;
+			Lock temp_lock(tdbb, LCK_update_shadow);
 			Lock* lock = &temp_lock;
-			lock->lck_dbb = dbb;
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = -1;
-			lock->lck_type = LCK_update_shadow;
-			lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-			lock->lck_parent = dbb->dbb_lock;
 
 			LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT);
 			if (lock->lck_physical == LCK_EX)
@@ -591,15 +587,10 @@ void SDW_init(thread_db* tdbb, bool activate, bool delete_files)
 
 	header_page* header; // for sizeof here, used later
 	const USHORT key_length = sizeof(header->hdr_shadow_count);
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock();
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length)
+		Lock(tdbb, LCK_shadow, dbb, blocking_ast_shadowing);
 	dbb->dbb_shadow_lock = lock;
-	lock->lck_type = LCK_shadow;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = key_length;
-	lock->lck_dbb = dbb;
-	lock->lck_object = dbb;
-	lock->lck_ast = blocking_ast_shadowing;
 
 	if (activate)
 		activate_shadow(tdbb);
@@ -748,14 +739,10 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 
 	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_rollover_to_shadow");
 
-	Lock temp_lock;
+	Lock temp_lock(tdbb, LCK_update_shadow);
 	Lock* update_lock = &temp_lock;
-	update_lock->lck_dbb = dbb;
 	update_lock->lck_length = sizeof(SLONG);
 	update_lock->lck_key.lck_long = -1;
-	update_lock->lck_type = LCK_update_shadow;
-	update_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, update_lock->lck_type);
-	update_lock->lck_parent = dbb->dbb_lock;
 
 	SLONG sdw_update_flags = SDW_rollover;
 
@@ -1014,7 +1001,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		header_fetched++;
 
-		if (!PIO_read(shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
+		if (!CryptoManager::cryptRead(shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
 		{
 			ERR_punt();
 		}

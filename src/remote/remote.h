@@ -87,7 +87,9 @@ const int BLOB_LENGTH		= 16384;
 namespace Firebird {
 	class Exception;
 	class IEventCallback;
+	class ICryptKeyCallback;
 }
+
 struct rem_port;
 
 typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
@@ -592,6 +594,14 @@ public:
 	virtual bool authenticate(PACKET* send) = 0;
 };
 
+class ServerCallbackBase
+{
+public:
+	virtual ~ServerCallbackBase();
+	virtual void wakeup(unsigned int length, const void* data) = 0;
+	virtual Firebird::ICryptKeyCallback* getInterface() = 0;
+};
+
 // Helper class to work with public structure FbCryptKey
 class InternalCryptKey : public Firebird::FbCryptKey
 {
@@ -882,9 +892,9 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 											// up to being turned off in firebird.conf
 	Firebird::ObjectsArray<KnownServerKey>	port_known_server_keys;	// Server sends to client
 											// keys known by it, they are stored here
-	Firebird::ICryptPlugin* port_crypt_plugin;	// plugin holder
-	Firebird::ICrypt* port_send_cipher;		// when not NULL - encrypts wire data
-	Firebird::ICrypt* port_recv_cipher;		// when not NULL - decrypts wire data
+	Firebird::IWireCryptPlugin* port_crypt_plugin;		// plugin used by port, when not NULL - crypts wire data
+	Firebird::ICryptKeyCallback* port_client_crypt_callback;	// client callback to transfer database crypt key
+	ServerCallbackBase* port_server_crypt_callback;			// server callback to transfer database crypt key
 
 	UCharArrayAutoPtr	port_buffer;
 
@@ -914,8 +924,8 @@ public:
 		port_queue(getPool()), port_qoffset(0),
 		port_srv_auth(NULL), port_srv_auth_block(NULL),
 		port_crypt_keys(getPool()), port_need_disk_crypt(false), port_crypt_complete(false),
-		port_known_server_keys(getPool()),
-		port_crypt_plugin(NULL), port_send_cipher(NULL), port_recv_cipher(NULL),
+		port_known_server_keys(getPool()), port_crypt_plugin(NULL),
+		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL),
 		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		addRef();

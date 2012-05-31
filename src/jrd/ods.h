@@ -201,11 +201,22 @@ const USHORT MIN_NEW_PAGE_SIZE	= 4096;
 
 namespace Ods {
 
+// Crypt page by type
+
+const bool pag_crypt_page[pag_max + 1] = {false, false, false,
+										  false, false, true,	// data
+										  false, true, true,	// index, blob
+										  false, false};
+
+// pag_flags for any page type
+
+const UCHAR crypted_page	= 0x80;		// Page encrypted
+
 // Basic page header
 
 struct pag
 {
-	SCHAR pag_type;
+	UCHAR pag_type;
 	UCHAR pag_flags;
 	USHORT pag_reserved;		// not used but anyway present because of alignment rules
 	ULONG pag_generation;
@@ -231,7 +242,7 @@ struct blob_page
 #define BLP_SIZE	OFFSETA(Ods::blob_page*, blp_page)
 
 // pag_flags
-const UCHAR blp_pointers	= 1;		// Blob pointer page, not data page
+const UCHAR blp_pointers	= 0x01;		// Blob pointer page, not data page
 
 
 // B-tree page ("bucket")
@@ -350,7 +361,10 @@ struct header_page
 	ULONG hdr_page_buffers;			// Page buffers for database cache
 	TraNumber hdr_oldest_snapshot;		// Oldest snapshot of active transactions
 	SLONG hdr_backup_pages; 		// The amount of pages in files locked for backup
-	SLONG hdr_misc[3];				// Stuff to be named later
+	ULONG hdr_crypt_page;			// Page at which processing is in progress
+	ULONG hdr_top_crypt;			// Last page to crypt
+	TEXT hdr_crypt_plugin[32];		// Name of plugin used to crypt this DB
+	SLONG hdr_misc[3];				// Stuff to be named later - reserved for minor changes
 	UCHAR hdr_data[1];				// Misc data
 };
 
@@ -374,12 +388,14 @@ const UCHAR HDR_max					= 8;	// Maximum HDR_clump value
 
 // Header page flags
 
-const USHORT hdr_active_shadow		= 0x1;		// 1    file is an active shadow file
-const USHORT hdr_force_write		= 0x2;		// 2    database is forced write
-// const USHORT hdr_no_checksums	= 0x4;		// 4   don't calculate checksums, not used since ODS 12
-const USHORT hdr_no_reserve			= 0x8;		// 8   don't reserve space for versions
-const USHORT hdr_SQL_dialect_3		= 0x10;		// 16  database SQL dialect 3
-const USHORT hdr_read_only			= 0x20;		// 32  Database in ReadOnly. If not set, DB is RW
+const USHORT hdr_active_shadow		= 0x1;		// 1	file is an active shadow file
+const USHORT hdr_force_write		= 0x2;		// 2	database is forced write
+// const USHORT hdr_no_checksums	= 0x4;		// 4	don't calculate checksums, not used since ODS 12
+const USHORT hdr_crypt_process		= 0x4;		// 4	Encryption status is changing now
+const USHORT hdr_no_reserve			= 0x8;		// 8	don't reserve space for versions
+const USHORT hdr_SQL_dialect_3		= 0x10;		// 16	database SQL dialect 3
+const USHORT hdr_read_only			= 0x20;		// 32	Database is ReadOnly. If not set, DB is RW
+const USHORT hdr_encrypted			= 0x40;		// 64	Database is encrypted
 // backup status mask - see bit values in nbak.h
 const USHORT hdr_backup_mask		= 0xC00;
 const USHORT hdr_shutdown_mask		= 0x1080;

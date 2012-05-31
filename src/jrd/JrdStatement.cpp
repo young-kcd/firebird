@@ -35,6 +35,7 @@
 #include "../jrd/exe_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
+#include "../jrd/Collation.h"
 
 using namespace Firebird;
 using namespace Jrd;

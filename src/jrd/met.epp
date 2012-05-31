@@ -1139,13 +1139,8 @@ void MET_dsql_cache_release(thread_db* tdbb, int type, const MetaName& name, con
 	LCK_release(tdbb, item->lock);
 
 	// notify others through AST to mark as obsolete
-	Database* const dbb = tdbb->getDatabase();
 	const size_t key_length = item->lock->lck_length;
-	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), key_length) Lock());
-	temp_lock->lck_dbb = dbb;
-	temp_lock->lck_parent = dbb->dbb_lock;
-	temp_lock->lck_type = LCK_dsql_cache;
-	temp_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock->lck_type);
+	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), key_length) Lock(tdbb, LCK_dsql_cache));
 	temp_lock->lck_length = key_length;
 	memcpy(temp_lock->lck_key.lck_string, item->lock->lck_key.lck_string, key_length);
 
@@ -2873,16 +2868,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 	if (!procedure->prc_existence_lock)
 	{
-		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
+			Lock(tdbb, LCK_prc_exist, procedure, blocking_ast_procedure);
 		procedure->prc_existence_lock = lock;
-		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_dbb = dbb;
 		lock->lck_key.lck_long = procedure->getId();
 		lock->lck_length = sizeof(lock->lck_key.lck_long);
-		lock->lck_type = LCK_prc_exist;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_object = procedure;
-		lock->lck_ast = blocking_ast_procedure;
 	}
 
 	LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
@@ -3187,29 +3177,19 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	relation->rel_id = id;
 
 	{ // Scope block.
-		Lock* lock = FB_NEW_RPT(*pool, 0) Lock;
+		Lock* lock = FB_NEW_RPT(*pool, 0)
+			Lock(tdbb, LCK_rel_partners, relation, partners_ast_relation);
 		relation->rel_partners_lock = lock;
-		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_dbb = dbb;
 		lock->lck_key.lck_long = relation->rel_id;
 		lock->lck_length = sizeof(lock->lck_key.lck_long);
-		lock->lck_type = LCK_rel_partners;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_object = relation;
-		lock->lck_ast = partners_ast_relation;
 	}
 
 	{ // Scope block.
-		Lock* lock = FB_NEW_RPT(*pool, 0) Lock;
+		Lock* lock = FB_NEW_RPT(*pool, 0)
+			Lock(tdbb, LCK_rel_rescan, relation, rescan_ast_relation);
 		relation->rel_rescan_lock = lock;
-		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_dbb = dbb;
 		lock->lck_key.lck_long = relation->rel_id;
 		lock->lck_length = sizeof(lock->lck_key.lck_long);
-		lock->lck_type = LCK_rel_rescan;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_object = relation;
-		lock->lck_ast = rescan_ast_relation;
 	}
 
 	// This should check system flag instead.
@@ -3218,16 +3198,11 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	}
 
 	{ // Scope block.
-		Lock* lock = FB_NEW_RPT(*pool, 0) Lock;
+		Lock* lock = FB_NEW_RPT(*pool, 0)
+			Lock(tdbb, LCK_rel_exist, relation, blocking_ast_relation);
 		relation->rel_existence_lock = lock;
-		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_dbb = dbb;
 		lock->lck_key.lck_long = relation->rel_id;
 		lock->lck_length = sizeof(lock->lck_key.lck_long);
-		lock->lck_type = LCK_rel_exist;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_object = relation;
-		lock->lck_ast = blocking_ast_relation;
 	}
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
@@ -3911,7 +3886,7 @@ static int blocking_ast_dsql_cache(void* ast_object)
 	try
 	{
 		Database* const dbb = item->lock->lck_dbb;
-		Jrd::Attachment* const att = item->lock->lck_attachment;
+		Jrd::Attachment* const att = item->lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 
@@ -3945,14 +3920,9 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Quali
 	{
 		item->obsolete = false;
 		item->locked = false;
-		item->lock = FB_NEW_RPT(*dbb->dbb_permanent, key.length()) Lock();
+		item->lock = FB_NEW_RPT(*dbb->dbb_permanent, key.length())
+			Lock(tdbb, LCK_dsql_cache, item, blocking_ast_dsql_cache);
 
-		item->lock->lck_type = LCK_dsql_cache;
-		item->lock->lck_owner_handle = LCK_get_owner_handle(tdbb, item->lock->lck_type);
-		item->lock->lck_parent = dbb->dbb_lock;
-		item->lock->lck_dbb = dbb;
-		item->lock->lck_object = item;
-		item->lock->lck_ast = blocking_ast_dsql_cache;
 		item->lock->lck_length = key.length();
 		memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
 	}
@@ -3986,7 +3956,7 @@ static int blocking_ast_procedure(void* ast_object)
 	try
 	{
 		Database* const dbb = procedure->prc_existence_lock->lck_dbb;
-		Jrd::Attachment* const att = procedure->prc_existence_lock->lck_attachment;
+		Jrd::Attachment* const att = procedure->prc_existence_lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 
@@ -4023,7 +3993,7 @@ static int blocking_ast_relation(void* ast_object)
 	try
 	{
 		Database* const dbb = relation->rel_existence_lock->lck_dbb;
-		Jrd::Attachment* const att = relation->rel_existence_lock->lck_attachment;
+		Jrd::Attachment* const att = relation->rel_existence_lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 
@@ -4051,7 +4021,7 @@ static int partners_ast_relation(void* ast_object)
 	try
 	{
 		Database* const dbb = relation->rel_partners_lock->lck_dbb;
-		Jrd::Attachment* const att = relation->rel_partners_lock->lck_attachment;
+		Jrd::Attachment* const att = relation->rel_partners_lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 
@@ -4072,7 +4042,7 @@ static int rescan_ast_relation(void* ast_object)
 	try
 	{
 		Database* const dbb = relation->rel_rescan_lock->lck_dbb;
-		Jrd::Attachment* const att = relation->rel_rescan_lock->lck_attachment;
+		Jrd::Attachment* const att = relation->rel_rescan_lock->getLockAttachment();
 
 		AsyncContextHolder tdbb(dbb, att);
 

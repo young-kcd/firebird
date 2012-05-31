@@ -30,6 +30,8 @@
 #ifndef JRD_TEXTTYPE_H
 #define JRD_TEXTTYPE_H
 
+#include "../common/classes/MetaName.h"
+
 struct texttype;
 
 namespace Jrd {
@@ -85,15 +87,8 @@ public:
 		return cs;
 	}
 
-	BYTE getCanonicalWidth() const
-	{
-		return tt->texttype_canonical_width;
-	}
-
-	USHORT getFlags() const
-	{
-		return tt->texttype_flags;
-	}
+	BYTE getCanonicalWidth() const;
+	USHORT getFlags() const;
 
 public:
 	Firebird::MetaName name;

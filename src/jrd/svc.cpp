@@ -63,7 +63,7 @@
 
 #include "../common/classes/DbImplementation.h"
 
-// Services table. Empty at BootBuild.
+// Services table.
 #include "../jrd/svc_tab.h"
 
 // The switches tables. Needed only for utilities that run as service, too.
@@ -643,6 +643,14 @@ void Service::fillDpb(ClumpletWriter& dpb)
 	{
 		dpb.insertTag(isc_dpb_utf8_filename);
 	}
+	if (svc_crypt_callback)
+	{
+		// That's not DPB-related, but anyway should be done before attach/create DB
+		if (fb_database_crypt_callback(svc_status, svc_crypt_callback) != 0)
+		{
+			status_exception::raise(svc_status);
+		}
+	}
 }
 
 void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
@@ -686,7 +694,8 @@ namespace
 	}
 }
 
-Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
+Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data,
+				 Firebird::ICryptKeyCallback* crypt_callback)
 	: svc_parsed_sw(getPool()),
 	svc_stdout_head(0), svc_stdout_tail(0), svc_service(NULL), svc_service_run(NULL),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
@@ -696,9 +705,9 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
-	svc_remote_pid(0), svc_current_guard(NULL)
+	svc_remote_pid(0), svc_trace_manager(NULL), svc_crypt_callback(crypt_callback),
+	svc_current_guard(NULL)
 {
-	svc_trace_manager = NULL;
 	initStatus();
 	ThreadIdHolder holdId(svc_thread_strings);
 

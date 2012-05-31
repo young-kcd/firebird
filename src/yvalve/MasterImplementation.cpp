@@ -63,7 +63,6 @@ private:
 	}
 };
 
-Static<Dispatcher> MasterImplementation::dispatcher;
 Static<Dtc> MasterImplementation::dtc;
 
 Firebird::IStatus* FB_CARG MasterImplementation::getStatus()
@@ -77,8 +76,9 @@ Firebird::IStatus* FB_CARG MasterImplementation::getStatus()
 
 IProvider* FB_CARG MasterImplementation::getDispatcher()
 {
+	IProvider* dispatcher = new Dispatcher;
 	dispatcher->addRef();
-	return &dispatcher;
+	return dispatcher;
 }
 
 //
@@ -237,6 +237,13 @@ void releaseUpgradeTabs(IPluginModule* module)
 
 	for(unsigned int i = 0; i < removeList.getCount(); ++i)
 		functionMap->remove(removeList[i]);
+}
+
+int FB_CARG MasterImplementation::same(IVersioned* first, IVersioned* second)
+{
+	CVirtualClass* i1 = (CVirtualClass*) first;
+	CVirtualClass* i2 = (CVirtualClass*) second;
+	return i1->vTab == i2->vTab ? 1 : 0;
 }
 
 } // namespace Why

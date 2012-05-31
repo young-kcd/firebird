@@ -64,6 +64,7 @@
 #include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/classes/init.h"
+#include "firebird/Crypt.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -101,12 +102,12 @@ using namespace Firebird;
 #define O_BINARY	0
 #endif
 
-static const mode_t MASK = 0660;
-
-#define FCNTL_BROKEN
 // please undefine FCNTL_BROKEN for operating systems,
 // that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
 
+static const mode_t MASK = 0660;
+
+#define FCNTL_BROKEN
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
 static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool);
 static bool lockDatabaseFile(int desc, const bool shareMode, const bool temporary = false);
@@ -121,7 +122,6 @@ static int  raw_devices_unlink_database (const PathName&);
 #endif
 static int	openFile(const char*, const bool, const bool, const bool);
 static void	maybeCloseFile(int&);
-
 
 int PIO_add_file(Database* dbb, jrd_file* main_file, const PathName& file_name, SLONG start)
 {
@@ -470,8 +470,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
  **************************************
  *
  * Functional description
- *	Read the page header.  This assumes that the file has not been
- *	repositioned since the file was originally mapped.
+ *	Read the page header.
  *
  **************************************/
 	int i;
@@ -485,22 +484,6 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
-#ifdef ISC_DATABASE_ENCRYPTION
-		if (dbb->dbb_encrypt_key)
-		{
-			SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
-
-			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1)
-			{
-				if (SYSCALL_INTERRUPTED(errno))
-					continue;
-				unix_error("read", file, isc_io_read_err);
-			}
-
-			(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data, spare_buffer, length, address);
-		}
-		else
-#endif // ISC_DATABASE_ENCRYPTION
 		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1)
 		{
 			if (SYSCALL_INTERRUPTED(errno))
@@ -706,38 +689,15 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 
 	const FB_UINT64 size = dbb->dbb_page_size;
 
-#ifdef ISC_DATABASE_ENCRYPTION
-	if (dbb->dbb_encrypt_key)
+	for (i = 0; i < IO_RETRY; i++)
 	{
-		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
-
-		for (i = 0; i < IO_RETRY; i++)
-		{
-			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return false;
-            if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
-			{
-				(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data, spare_buffer, size, page);
-				break;
-			}
-			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("read", file, isc_io_read_err, status_vector);
-		}
+		if (!(file = seek_file(file, bdb, &offset, status_vector)))
+			return false;
+		if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
+			break;
+		if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
+			return unix_error("read", file, isc_io_read_err, status_vector);
 	}
-	else
-#endif // ISC_DATABASE_ENCRYPTION
-	{
-		for (i = 0; i < IO_RETRY; i++)
-		{
-			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return false;
-			if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
-				break;
-			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("read", file, isc_io_read_err, status_vector);
-		}
-	}
-
 
 	if (i == IO_RETRY)
 	{
@@ -788,35 +748,14 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 
 	const SLONG size = dbb->dbb_page_size;
 
-#ifdef ISC_DATABASE_ENCRYPTION
-	if (dbb->dbb_encrypt_key)
+	for (i = 0; i < IO_RETRY; i++)
 	{
-		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
-
-		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key->str_data, page, size, spare_buffer);
-
-		for (i = 0; i < IO_RETRY; i++)
-		{
-			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return false;
-			if ((bytes = pwrite(file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
-				break;
-			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("write", file, isc_io_write_err, status_vector);
-		}
-	}
-	else
-#endif // ISC_DATABASE_ENCRYPTION
-	{
-		for (i = 0; i < IO_RETRY; i++)
-		{
-			if (!(file = seek_file(file, bdb, &offset, status_vector)))
-				return false;
-			if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
-				break;
-			if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("write", file, isc_io_write_err, status_vector);
-		}
+		if (!(file = seek_file(file, bdb, &offset, status_vector)))
+			return false;
+		if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
+			break;
+		if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
+			return unix_error("write", file, isc_io_write_err, status_vector);
 	}
 
 

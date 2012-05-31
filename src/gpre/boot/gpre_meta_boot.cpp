@@ -744,6 +744,11 @@ public:
 		fb_assert(false);
 		return NULL;
 	}
+
+	virtual int FB_CARG same(IVersioned* /*first*/, IVersioned* /*second*/)
+	{
+		return 0;
+	}
 };
 
 

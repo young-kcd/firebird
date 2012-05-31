@@ -854,6 +854,10 @@ ServerAuthBase::~ServerAuthBase()
 {
 }
 
+ServerCallbackBase::~ServerCallbackBase()
+{
+}
+
 rem_port::~rem_port()
 {
 	if (port_events_shutdown)
@@ -867,6 +871,7 @@ rem_port::~rem_port()
 	delete port_host;
 	delete port_protocol_str;
 	delete port_address_str;
+	delete port_server_crypt_callback;
 
 #ifdef DEBUG_XDR_MEMORY
 	delete port_packet_vector;
@@ -877,10 +882,6 @@ rem_port::~rem_port()
 		delete port_crypt_keys.pop();
 	}
 
-	if (port_send_cipher)
-		port_send_cipher->release();
-	if (port_recv_cipher)
-		port_recv_cipher->release();
 	if (port_crypt_plugin)
 		Firebird::PluginManagerInterfacePtr()->releasePlugin(port_crypt_plugin);
 
@@ -1264,51 +1265,45 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 	// we got correct key's type pair
 	// check what about crypt plugin for it
 	Remote::ParsedList clientPlugins;
-	REMOTE_parseList(clientPlugins, Config::getPlugins(Firebird::PluginType::Crypt));
+	REMOTE_parseList(clientPlugins, Config::getDefaultConfig()->getPlugins(Firebird::PluginType::WireCrypt));
 	for (unsigned n = 0; n < clientPlugins.getCount(); ++n)
 	{
 		Firebird::PathName p(clientPlugins[n]);
 		if (srvKey.plugins.find(" " + p + " ") != Firebird::PathName::npos)
 		{
-			Firebird::GetPlugins<Firebird::ICryptPlugin>
-				cp(Firebird::PluginType::Crypt, FB_CRYPT_PLUGIN_VERSION, upInfo, p.c_str());
+			Firebird::GetPlugins<Firebird::IWireCryptPlugin>
+				cp(Firebird::PluginType::WireCrypt, FB_WIRECRYPT_PLUGIN_VERSION, upInfo, p.c_str());
 			if (cp.hasData())
 			{
-				// looks like we've found correct crypt plugin and key for it
-				Firebird::ICryptPlugin* plugin = cp.plugin();
 				Firebird::LocalStatus st;
 
-				// Install decrypting cipher
-				port_recv_cipher = plugin->getDecrypt(&st, cryptKey);
+				// Looks like we've found correct crypt plugin and key for it
+				port_crypt_plugin = cp.plugin();
+				port_crypt_plugin->addRef();
+
+				// Pass key to plugin
+				port_crypt_plugin->setKey(&st, cryptKey);
 				if (!st.isSuccess())
 				{
 					Firebird::status_exception::raise(st.get());
 				}
 
 				// Now it's time to notify server about choice done
+				// Notice - port_crypt_complete flag is not set still,
+				// therefore sent packet will be not encrypted
 				PACKET crypt;
 				crypt.p_operation = op_crypt;
 				setCStr(crypt.p_crypt.p_key, cryptKey->type);
 				setCStr(crypt.p_crypt.p_plugin, p.c_str());
 				send(&crypt);
 
-				// Validate answer - decryptor is installed, therefore OK to do
+				// Validate answer - decryptor is not affected by port_crypt_complete,
+				// therefore OK to do
 				receive(&crypt);
 				checkResponse(&st, &crypt);
 
-				// Install encrypting cipher
-				port_send_cipher = plugin->getEncrypt(&st, cryptKey);
-				if (!st.isSuccess())
-				{
-					port_recv_cipher->release();
-					port_recv_cipher = NULL;
-					Firebird::status_exception::raise(st.get());
-				}
-
-				port_crypt_plugin = plugin;
-				port_crypt_plugin->addRef();
+				// Complete port-crypt init
 				port_crypt_complete = true;
-				//	fprintf(stderr, "Installed cipher %s key %s\n", cp.name(), cryptKey->type);
 				return true;
 			}
 		}

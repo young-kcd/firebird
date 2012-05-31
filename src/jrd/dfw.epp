@@ -125,6 +125,7 @@
 #include "../jrd/ResultSet.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/Hash.h"
+#include "../jrd/CryptoManager.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -402,6 +403,7 @@ static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_header(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool db_crypt(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 // ----------------------------------------------------------------
 
@@ -493,6 +495,7 @@ static const deferred_task task_table[] =
 	{ dfw_user_management, user_management },
 	{ dfw_check_not_null, check_not_null },
 	{ dfw_store_view_context_type, store_view_context_type },
+	{ dfw_db_crypt, db_crypt },
 	{ dfw_null, NULL }
 };
 
@@ -913,6 +916,24 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
  *
  **************************************/
 
+	return DFW_post_work(transaction, type, get_string(desc), id, package);
+}
+
+
+DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string& name, USHORT id,
+	const MetaName& package)
+{
+/**************************************
+ *
+ *	D F W _ p o s t _ w o r k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post work to be deferred to commit time.
+ *
+ **************************************/
+
 	// get the current save point number
 
 	const SLONG sav_number = transaction->tra_save_point ?
@@ -935,7 +956,6 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
 		job->hash.add(sp);
 	}
 
-	const string name = get_string(desc);
 	DeferredWork tmp(AutoStorage::getAutoMemoryPool(), 0, type, id, sav_number, name, package);
 	DeferredWork* work = sp->hash.lookup(tmp);
 	if (work)
@@ -1473,6 +1493,35 @@ static bool end_backup(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_tra*)
 	case 3:
 		// End backup normally
 		dbb->dbb_backup_manager->endBackup(tdbb, false);
+		break;
+	}
+
+	return false;
+}
+
+static bool db_crypt(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
+{
+/**************************************
+ *
+ *	d b _ c r y p t
+ *
+ **************************************
+ *
+ * Encrypt database using plugin dfw_name or decrypt if dfw_name is empty.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
+	switch (phase)
+	{
+	case 1:
+	case 2:
+		return true;
+
+	case 3:
+		dbb->dbb_crypto_manager->changeCryptState(tdbb, work->dfw_name);
 		break;
 	}
 
@@ -2767,13 +2816,10 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	case 3:
 		// Take a relation lock on rel id -1 before actually generating a relation id.
 
-		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock;
-		lock->lck_dbb = dbb;
+		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG))
+			Lock(tdbb, LCK_relation);
 		lock->lck_length = sizeof(SLONG);
 		lock->lck_key.lck_long = -1;
-		lock->lck_type = LCK_relation;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_parent = dbb->dbb_lock;
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 

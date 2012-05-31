@@ -547,6 +547,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyStr> BODY
 %token <legacyStr> CONTINUE
 %token <legacyStr> DDL
+%token <legacyStr> DECRYPT
+%token <legacyStr> ENCRYPT
 %token <legacyStr> ENGINE
 %token <legacyStr> NAME
 %token <legacyStr> OVER
@@ -3546,6 +3548,10 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_END_BACKUP; }
 	| SET DEFAULT CHARACTER SET symbol_character_set_name
 		{ $alterDatabaseNode->setDefaultCharSet = toName($5); }
+	| ENCRYPT WITH valid_symbol_name
+		{ $alterDatabaseNode->cryptPlugin = toName($3); }
+	| DECRYPT
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DECRYPT; }
 	;
 
 
@@ -6842,6 +6848,8 @@ non_reserved_word
 	| BODY
 	| CONTINUE
 	| DDL
+	| DECRYPT
+	| ENCRYPT
 	| ENGINE
 	| IDENTITY
 	| NAME
