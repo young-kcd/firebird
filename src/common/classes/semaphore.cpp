@@ -136,9 +136,9 @@ static const char* semName = "/firebird_temp_sem";
 #ifdef HAVE_SEM_TIMEDWAIT
 	bool SignalSafeSemaphore::tryEnter(const int seconds, int milliseconds)
 	{
-		long nanoseconds = long(milliseconds + seconds * 1000) * 1000000l;
 		// Return true in case of success
-		if (nanoseconds == 0)
+		milliseconds += seconds * 1000;
+		if (milliseconds == 0)
 		{
 			// Instant try
 			do {
@@ -149,7 +149,7 @@ static const char* semName = "/firebird_temp_sem";
 				return false;
 			system_call_failed::raise("sem_trywait");
 		}
-		if (nanoseconds < 0)
+		if (milliseconds < 0)
 		{
 			// Unlimited wait, like enter()
 			do {
@@ -160,9 +160,10 @@ static const char* semName = "/firebird_temp_sem";
 		}
 		// Wait with timeout
 		timespec timeout = getCurrentTime();
-		nanoseconds += timeout.tv_nsec;
-		timeout.tv_sec += nanoseconds / 1000000000l;
-		timeout.tv_nsec = nanoseconds % 1000000000l;
+		timeout.tv_sec += milliseconds / 1000;
+		timeout.tv_nsec += (milliseconds % 1000) * 1000000;
+		timeout.tv_sec += (timeout.tv_nsec / 1000000000l);
+		timeout.tv_nsec %= 1000000000l;
 		int errcode = 0;
 		do {
 			int rc = sem_timedwait(sem, &timeout);
