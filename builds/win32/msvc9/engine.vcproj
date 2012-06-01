@@ -360,6 +360,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\CryptoManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cvt.cpp"
 				>
 			</File>
@@ -925,6 +929,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\constants.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\CryptoManager.h"
 				>
 			</File>
 			<File
