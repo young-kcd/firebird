@@ -434,34 +434,20 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 #endif
 
     DWORD actual_length;
-	if (dbb->dbb_encrypt_key.hasData())
-	{
-		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		if (!ReadFile(desc, spare_buffer, length, &actual_length, overlapped_ptr) ||
-			actual_length != (DWORD) length)
-		{
-			nt_error("ReadFile", file, isc_io_read_err, 0);
-		}
-
-		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(), spare_buffer, length, address);
-	}
-	else
+	if (!ReadFile(desc, address, length, &actual_length, overlapped_ptr) ||
+		actual_length != (DWORD) length)
 	{
-		if (!ReadFile(desc, address, length, &actual_length, overlapped_ptr) ||
-			actual_length != (DWORD) length)
-		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
-				actual_length != length)
-			{
-				CloseHandle(overlapped.hEvent);
-				nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
-			}
-#else
-			nt_error("ReadFile", file, isc_io_read_err, 0);
-#endif
+		if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+			actual_length != length)
+		{
+			CloseHandle(overlapped.hEvent);
+			nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
 		}
+#else
+		nt_error("ReadFile", file, isc_io_read_err, 0);
+#endif
 	}
 
 #ifdef SUPERSERVER_V2
@@ -629,36 +615,20 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 
 	HANDLE desc = file->fil_desc;
 
-	if (dbb->dbb_encrypt_key.hasData())
+	DWORD actual_length;
+	if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
+		actual_length != size)
 	{
-		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
-        DWORD actual_length;
-
-		if (!ReadFile(desc, spare_buffer, size, &actual_length, overlapped_ptr) ||
-			actual_length != size)
-		{
-			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
-		}
-
-		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(), spare_buffer, size, page);
-	}
-	else
-	{
-		DWORD actual_length;
-		if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
-			actual_length != size)
-		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
-				actual_length != size)
-			{
-				release_io_event(file, overlapped_ptr);
-				return nt_error("GetOverlappedResult", file, isc_io_read_err, status_vector);
-			}
-#else
-			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
-#endif
+		if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+			actual_length != size)
+		{
+			release_io_event(file, overlapped_ptr);
+			return nt_error("GetOverlappedResult", file, isc_io_read_err, status_vector);
 		}
+#else
+		return nt_error("ReadFile", file, isc_io_read_err, status_vector);
+#endif
 	}
 
 #ifdef SUPERSERVER_V2
@@ -833,35 +803,19 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 
 	HANDLE desc = file->fil_desc;
 
-	if (dbb->dbb_encrypt_key.hasData())
+	DWORD actual_length;
+	if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) || actual_length != size )
 	{
-		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
-
-		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(), page, size, spare_buffer);
-
-		DWORD actual_length;
-		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr) ||
+#ifdef SUPERSERVER_V2
+		if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
 			actual_length != size)
 		{
-			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
+			release_io_event(file, overlapped_ptr);
+			return nt_error("GetOverlappedResult", file, isc_io_write_err, status_vector);
 		}
-	}
-	else
-	{
-		DWORD actual_length;
-		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) || actual_length != size )
-		{
-#ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
-				actual_length != size)
-			{
-				release_io_event(file, overlapped_ptr);
-				return nt_error("GetOverlappedResult", file, isc_io_write_err, status_vector);
-			}
 #else
-			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
+		return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 #endif
-		}
 	}
 
 #ifdef SUPERSERVER_V2

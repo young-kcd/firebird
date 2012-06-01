@@ -64,7 +64,6 @@
 #include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/classes/init.h"
-#include "firebird/Crypt.h"
 
 using namespace Jrd;
 using namespace Firebird;

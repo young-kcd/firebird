@@ -36,6 +36,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
+#include "../common/ThreadStart.h"
 
 // forward
 
@@ -133,7 +134,7 @@ private:
 	Firebird::AtomicCounter currentPage;
 	Firebird::Mutex pluginLoadMtx;
 	KeyHolderPlugins keyHolderPlugins;
-	ThreadId cryptThreadId;
+	Thread::Handle cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
 	Database& dbb;
 	Lock* stateLock;
