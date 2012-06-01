@@ -1,3 +1,7 @@
+ 2012-05-31 11:01  alexpeshkoff 
+   M src/common/classes/semaphore.cpp
+Backported fix for 32-bit build
+
  2012-05-29 20:25  mkubecek 
    M src/isql/isql.epp
 isql: fix output if charset is different from locale
