@@ -1,3 +1,14 @@
+ 2012-06-01 07:13  hvlad 
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+Update MSVC8 and MSVC9 builds, MSVC10 will follow
+
+ 2012-06-01 07:09  hvlad 
+   M src/jrd/CryptoManager.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+Follow Alex changes, small correction and cleanup
+
  2012-05-31 16:53  alexpeshkoff 
    M builds/posix/Makefile.in
    M builds/posix/Makefile.in.plugins_examples
