@@ -759,7 +759,7 @@ public:
 		PACKET p;
 		p.p_operation = op_crypt_key_callback;
 		p.p_cc.p_cc_data.cstr_length = dataLength;
-		p.p_cc.p_cc_data.cstr_address = (UCHAR*)data;
+		p.p_cc.p_cc_data.cstr_address = (UCHAR*) data;
 		p.p_cc.p_cc_reply = bufferLength;
 		port->send(&p);
 

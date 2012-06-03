@@ -76,7 +76,8 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, lck_t lckType,
 {
 	SET_TDBB(tdbb);
 
-	cachedLock = FB_NEW_RPT(getPool(), lockLen) Lock(tdbb, lock_owner, lckType, this, lockCaching ? blocking_ast_cached_lock : NULL);
+	cachedLock = FB_NEW_RPT(getPool(), lockLen) Lock(tdbb, lock_owner, lckType, this,
+		(lockCaching ? blocking_ast_cached_lock : NULL));
 	cachedLock->lck_length = lockLen;
 	memcpy(&cachedLock->lck_key, lockStr, lockLen);
 }

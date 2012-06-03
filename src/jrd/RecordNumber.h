@@ -316,7 +316,7 @@ struct bid
 	}
 };
 
-} //namespace Jrd
+} // namespace Jrd
 
 
 #endif // JRD_RECORDNUMBER_H

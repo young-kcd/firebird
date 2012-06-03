@@ -1001,7 +1001,8 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		header_fetched++;
 
-		if (!CryptoManager::cryptRead(shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
+		if (!CryptoManager::cryptRead(shadow_file, window.win_bdb, (PAG) spare_page,
+				tdbb->tdbb_status_vector))
 		{
 			ERR_punt();
 		}

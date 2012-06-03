@@ -929,8 +929,8 @@ public:
 		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		addRef();
-		memset (&port_linger, 0, sizeof port_linger);
-		memset (port_buffer, 0, rpt);
+		memset(&port_linger, 0, sizeof port_linger);
+		memset(port_buffer, 0, rpt);
 #ifdef DEV_BUILD
 		++portCounter;
 #endif

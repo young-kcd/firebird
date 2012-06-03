@@ -502,10 +502,10 @@ public:
 	}
 
 private:
-	Firebird::ICryptKeyCallback* cryptCallback;
-
 	YAttachment* attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
 		const char* filename, unsigned int dpbLength, const unsigned char* dpb);
+
+	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
 

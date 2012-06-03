@@ -5902,8 +5902,8 @@ static void receive_packet_with_callback(rem_port* port, PACKET* packet)
  **************************************
  *
  * Functional description
- *	If received packet is request fro callback info from user,
- *	send requested info (or no data if callback not set) and
+ *	If received packet is request from callback info from user,
+ *	send requested info (or no data if callback is not set) and
  *	wait for next packet.
  *
  **************************************/
