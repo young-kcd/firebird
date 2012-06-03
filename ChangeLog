@@ -1,3 +1,16 @@
+ 2012-06-03 03:00  asfernandes 
+   M examples/dbcrypt/CryptApplication.cpp
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/include/firebird/Crypt.h
+   M src/isql/isql.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/Database.cpp
+Misc.
+
  2012-06-01 07:13  hvlad 
    M builds/win32/msvc8/engine.vcproj
    M builds/win32/msvc9/engine.vcproj
