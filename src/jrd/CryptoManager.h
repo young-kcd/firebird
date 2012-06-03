@@ -64,8 +64,9 @@ class CryptoManager : public Firebird::PermanentStorage
 {
 public:
 	CryptoManager(thread_db* tdbb);
-	void shutdown(thread_db* tdbb);
 	~CryptoManager();
+
+	void shutdown(thread_db* tdbb);
 
 	void changeCryptState(thread_db* tdbb, const Firebird::string& plugName);
 	void attach(thread_db* tdbb, Attachment* att);

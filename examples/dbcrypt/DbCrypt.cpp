@@ -124,7 +124,7 @@ public:
 		return &module;
 	}
 
-	void FB_CARG setOwner(Firebird::IRefCounted* o)
+	void FB_CARG setOwner(IRefCounted* o)
 	{
 		owner = o;
 	}
@@ -167,7 +167,8 @@ void FB_CARG DbCrypt::encrypt(IStatus* status, unsigned int length, const void* 
 
 	const UCHAR* f = static_cast<const UCHAR*>(from);
 	UCHAR* t = static_cast<UCHAR*>(to);
-	while(length--)
+
+	while (length--)
 	{
 		*t++ = (*f++) + key;
 	}
@@ -185,7 +186,8 @@ void FB_CARG DbCrypt::decrypt(IStatus* status, unsigned int length, const void* 
 
 	const UCHAR* f = static_cast<const UCHAR*>(from);
 	UCHAR* t = static_cast<UCHAR*>(to);
-	while(length--)
+
+	while (length--)
 	{
 		*t++ = (*f++) - key;
 	}
@@ -255,12 +257,11 @@ Factory factory;
 
 } // anonymous namespace
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* m)
+extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
 {
 	master = m;
 	pluginManager = master->getPluginManager();
 
 	module.registerMe();
-	pluginManager->registerPluginFactory(PluginType::DbCrypt, "DbCrypt_example",
-		&factory);
+	pluginManager->registerPluginFactory(PluginType::DbCrypt, "DbCrypt_example", &factory);
 }

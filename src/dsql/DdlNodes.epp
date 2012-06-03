@@ -9947,14 +9947,10 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScra
 		status_exception::raise(Arg::Gds(isc_adm_task_denied));
 
 	if (cryptPlugin.hasData())
-	{
 		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
-	}
 
 	if (clauses & CLAUSE_DECRYPT)
-	{
 		DFW_post_work(transaction, dfw_db_crypt, "", 0);
-	}
 
 	if (!(clauses & RDB_DATABASE_MASK))
 	{

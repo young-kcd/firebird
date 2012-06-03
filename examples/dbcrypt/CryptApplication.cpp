@@ -96,7 +96,7 @@ public:
 
 	enum Action {NONE, ENC, DEC};
 
-	void Execute(const char* dbName, const Action a)
+	void execute(const char* dbName, const Action a)
 	{
 		status->init();
 
@@ -181,10 +181,12 @@ int main(int ac, char** av)
 
 	if (ac < 2 || ac > 3)
 		return usage();
+
 	if (ac == 3)
 	{
 		if (av[1][0] != '-')
 			return usage();
+
 		switch(av[1][1])
 		{
 		case 'e':
@@ -205,9 +207,9 @@ int main(int ac, char** av)
 	App app;
 	try
 	{
-		app.Execute(av[1], act);
+		app.execute(av[1], act);
 	}
-	catch(const char* where)
+	catch (const char* where)
 	{
 		app.print(where);
 		return 1;

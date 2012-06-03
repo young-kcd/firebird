@@ -17,7 +17,7 @@
  *  The Original Code was created by Alex Peshkov
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2008 Alex Peshkov <peshkoff at mail.ru>
+ *  Copyright (c) 2012 Alex Peshkov <peshkoff at mail.ru>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
@@ -65,7 +65,7 @@ namespace {
 
 	THREAD_ENTRY_DECLARE cryptThreadStatic(THREAD_ENTRY_PARAM p)
 	{
-		Jrd::CryptoManager* cryptoManager = (Jrd::CryptoManager*)p;
+		Jrd::CryptoManager* cryptoManager = (Jrd::CryptoManager*) p;
 		cryptoManager->cryptThread();
 
 		return 0;
@@ -93,7 +93,7 @@ namespace {
 
 		void depends(Stack<ULONG>& pages)
 		{
-			while(pages.hasData())
+			while (pages.hasData())
 			{
 				CCH_precedence(tdbb, &window, pages.pop());
 			}
@@ -235,6 +235,7 @@ namespace Jrd {
 		}
 
 		bool newCryptState = plugName.hasData();
+
 		{	// window scope
 			Header hdr(tdbb, LCK_write);
 
@@ -442,7 +443,7 @@ namespace Jrd {
 				// Release exclusive lock on StartCryptThread
 				LCK_release(tdbb, threadLock);
 			}
-			catch(const Exception&)
+			catch (const Exception&)
 			{
 				try
 				{
@@ -452,13 +453,13 @@ namespace Jrd {
 					// Release exclusive lock on StartCryptThread
 					LCK_release(tdbb, threadLock);
 				}
-				catch(const Exception&)
+				catch (const Exception&)
 				{ }
 
 				throw;
 			}
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			// Error during context creation - we can't even release lock
 			iscLogException("Crypt thread:", ex);
@@ -485,7 +486,7 @@ namespace Jrd {
 		{
 			return bdb->bdb_bcb->bcb_database->dbb_crypto_manager->read(file, bdb, page, sv);
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			ex.stuff_exception(sv);
 		}
@@ -498,7 +499,7 @@ namespace Jrd {
 		{
 			return bdb->bdb_bcb->bcb_database->dbb_crypto_manager->write(file, bdb, page, sv);
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			ex.stuff_exception(sv);
 		}
@@ -516,7 +517,7 @@ namespace Jrd {
 		{
 			if (!cryptPlugin)
 			{
-				// We are invoked from shared cache manager, i.e. no valid attachment in tdbb 
+				// We are invoked from shared cache manager, i.e. no valid attachment in tdbb
 				// Therefore create system temporary attachment like in crypt thread to be able to work with locks
 				UserId user;
 				user.usr_user_name = "(Crypt plugin loader)";
@@ -593,7 +594,7 @@ namespace Jrd {
 
 	int CryptoManager::blockingAstChangeCryptState(void* object)
 	{
-		((CryptoManager*)object)->blockingAstChangeCryptState();
+		((CryptoManager*) object)->blockingAstChangeCryptState();
 		return 0;
 	}
 

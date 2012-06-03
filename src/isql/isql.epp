@@ -221,7 +221,8 @@ namespace IcuUtil
 			if (len > width)
 				len = width;
 
-			if (right) {
+			if (right)
+			{
 				memcpy(buffer + width - len, str, len);
 				if (width > len)
 					memset(buffer, ' ', width - len);

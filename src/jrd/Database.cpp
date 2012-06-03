@@ -146,7 +146,8 @@ namespace Jrd
 
 		if (!counter->lock)
 		{
-			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock(tdbb, LCK_shared_counter, counter, blockingAst);
+			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG))
+				Lock(tdbb, LCK_shared_counter, counter, blockingAst);
 			counter->lock = lock;
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = space;

@@ -195,7 +195,7 @@ void CryptKeyHolder::noKeyError(IStatus* status)
 	vector[0] = isc_arg_gds;
 	vector[1] = isc_random;
 	vector[2] = isc_arg_string;
-	vector[3] = (ISC_STATUS)"Key not set";
+	vector[3] = (ISC_STATUS) "Key not set";
 	vector[4] = isc_arg_end;
 	status->set(vector);
 }
@@ -212,6 +212,7 @@ int FB_CARG CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* call
 	IConfig* def = config->getDefaultConfig();
 	IConfigEntry* confEntry = def->find("Auto");
 	def->release();
+
 	if (confEntry)
 	{
 		char v = *(confEntry->getValue());
@@ -267,7 +268,7 @@ Factory factory;
 
 } // anonymous namespace
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* m)
+extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
 {
 	master = m;
 	pluginManager = master->getPluginManager();

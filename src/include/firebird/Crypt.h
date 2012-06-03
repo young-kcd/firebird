@@ -30,9 +30,9 @@ namespace Firebird {
 // Part 1. Network crypt.
 
 // Plugins of this type are used to crypt data, sent over the wire
-// Plugin must support encrypt and decrypt operations
+// Plugin must support encrypt and decrypt operations.
 // Interface of plugin is the same for both client and server,
-// and it may have differerent or same implementations for client and server
+// and it may have different or same implementations for client and server.
 class IWireCryptPlugin : public IPluginBase
 {
 public:
@@ -49,7 +49,7 @@ public:
 // Part 2. Database crypt.
 
 // This interface is used to transfer some data (related with crypt keys)
-// between different components of firebird
+// between different components of firebird.
 class ICryptKeyCallback : public IVersioned
 {
 public:
@@ -61,16 +61,16 @@ public:
 
 // Key holder accepts key(s) from attachment at database attach time
 // (or gets them it some other arbitrary way)
-// and sends it to database crypt plugin on request
+// and sends it to database crypt plugin on request.
 class IKeyHolderPlugin : public IPluginBase
 {
 public:
 	// keyCallback() is called when new attachment is probably ready to provide keys
-	// to key holder plugin, ICryptKeyCallback interface is provided by attachment
+	// to key holder plugin, ICryptKeyCallback interface is provided by attachment.
 	virtual int FB_CARG keyCallback(IStatus* status, ICryptKeyCallback* callback) = 0;
-	// Crypt plugin calls keyHandle() whne it needs a key, stored in key holder
-	// Key is not returned directly - instead of it callback interface is returned
-	// Missing key with given name is not an error condition for keyHandle()
+	// Crypt plugin calls keyHandle() when it needs a key, stored in key holder.
+	// Key is not returned directly - instead of it callback interface is returned.
+	// Missing key with given name is not an error condition for keyHandle().
 	// It should just return NULL in this case
 	virtual ICryptKeyCallback* FB_CARG keyHandle(IStatus* status, const char* keyName) = 0;
 };
@@ -81,10 +81,10 @@ class IDbCryptPlugin : public IPluginBase
 {
 public:
 	// When database crypt plugin is loaded, setKey() is called to provide information
-	// about key holders, available for givaen database
+	// about key holders, available for a given database.
 	// It's supposed that crypt plugin will invoke keyHandle() function from them
-	// to access callback interface for getting actual crypt key
-	// If crypt plugin fails to find appropriate key in sources, it should raise error
+	// to access callback interface for getting actual crypt key.
+	// If crypt plugin fails to find appropriate key in sources, it should raise error.
 	virtual void FB_CARG setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** sources) = 0;
 	virtual void FB_CARG encrypt(IStatus* status, unsigned int length, const void* from, void* to) = 0;
 	virtual void FB_CARG decrypt(IStatus* status, unsigned int length, const void* from, void* to) = 0;
