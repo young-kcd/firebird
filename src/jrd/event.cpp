@@ -500,6 +500,10 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 }
 
 
+// Protects EVENT_header from being changed by another thread
+// when MUTEX is already passed to ISC_mutex_lock()
+static Firebird::Mutex remapMutex;
+
 static EVH acquire(void)
 {
 /**************************************
@@ -512,6 +516,8 @@ static EVH acquire(void)
  *	Acquire exclusive access to shared global region.
  *
  **************************************/
+
+	Firebird::MutexLockGuard g(remapMutex);
 
 	int mutex_state;
 #ifdef MULTI_THREAD
@@ -584,6 +590,8 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 	}
 
 	if (!best && !recurse) {
+		Firebird::MutexLockGuard g(remapMutex);
+
 		const SLONG old_length = EVENT_data.sh_mem_length_mapped;
 		const SLONG ev_length = old_length + EVENT_EXTEND_SIZE;
 
