@@ -1,3 +1,16 @@
+ 2012-06-03 15:43  asfernandes 
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/RecordNumber.h
+   M src/jrd/intl.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/keywords.cpp
+Misc.
+
  2012-06-03 03:00  asfernandes 
    M examples/dbcrypt/CryptApplication.cpp
    M examples/dbcrypt/CryptKeyHolder.cpp
