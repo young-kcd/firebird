@@ -163,7 +163,7 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 			/* fake a description of the index */
 
 			idx.idx_count = 1;
-			idx.idx_flags |= idx_expressn | idx_complete_segs;
+			idx.idx_flags |= idx_expressn;
 			CMP_get_desc(tdbb, csb, idx.idx_expression, &idx.idx_expression_desc);
 			idx.idx_rpt[0].idx_itype =
 				DFW_assign_index_type(tdbb, name,

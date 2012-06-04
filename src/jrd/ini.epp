@@ -862,7 +862,7 @@ static void add_index_set(Database*	dbb,
 				END_STORE;
 			}
 			idx.idx_count = index->ini_idx_segment_count;
-			idx.idx_flags = index->ini_idx_flags | idx_complete_segs;
+			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 			IDX_create_index(tdbb, relation, &idx, string.c_str(), NULL, dbb->dbb_sys_trans, selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;

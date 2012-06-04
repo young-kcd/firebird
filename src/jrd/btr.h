@@ -122,7 +122,6 @@ const int idx_in_progress	= 4;
 const int idx_foreign		= 8;
 const int idx_primary		= 16;
 const int idx_expressn		= 32;
-const int idx_complete_segs	= 64;
 
 // these flags are for idx_runtime_flags
 
