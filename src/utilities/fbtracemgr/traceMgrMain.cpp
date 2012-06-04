@@ -286,6 +286,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 				break;
 
 			case isc_info_svc_timeout:
+			case isc_info_data_not_ready:
 				noData = false;
 				if (dirty)
 				{

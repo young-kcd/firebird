@@ -765,6 +765,7 @@ bool printInfo(const char* p, UserPrint& up)
 			break;
 
 		case isc_info_svc_timeout:
+		case isc_info_data_not_ready:
 			ret = true;
 			break;
 
