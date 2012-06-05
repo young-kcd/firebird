@@ -855,8 +855,6 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 
 	FB_UDR_EXECUTE_DYNAMIC_TRIGGER
 	{
-		initialize(context);
-
 		AutoDispose<IStatus> status(master->getStatus());
 
 		const IParametersMetadata* fields = metadata->getTriggerFields(status);
@@ -890,12 +888,8 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			inSqlDa), statusVector);
 	}
 
-private:
-	void initialize(ExternalContext* context)
+	FB_UDR_INITIALIZE
 	{
-		if (initialized)
-			return;
-
 		ISC_STATUS_ARRAY statusVector = {0};
 		isc_db_handle dbHandle = getIscDbHandle(context);
 		isc_tr_handle trHandle = getIscTrHandle(context);

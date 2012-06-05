@@ -52,7 +52,10 @@ namespace Firebird
 	\
 	class FB_UDR_FUNCTION(name) : public ::Firebird::Udr::Function<FB_UDR_FUNCTION(name)>	\
 	{	\
-	public:
+	public:	\
+		void initialize(::Firebird::Error* error, void*)	\
+		{	\
+		}
 
 #define FB_UDR_END_FUNCTION	\
 	};
@@ -89,21 +92,10 @@ namespace Firebird
 		{	\
 			internalExecute(error, context, (InMessage*) inMsg, (OutMessage*) outMsg);	\
 		}	\
-		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
-		{	\
-			e.stuff(error);	\
-		}	\
-		catch (...)	\
-		{	\
-			error->addCode(isc_arg_gds);	\
-			error->addCode(isc_random);	\
-			error->addString(	\
-				FB_UDR_UNRECOGNIZED_EXCEPTION,	\
-				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
-		}	\
+		FB_UDR__CATCH	\
 	}	\
 	\
-	void FB_CALL internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
+	void internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
 		InMessage* in, OutMessage* out)
 
 
@@ -115,7 +107,11 @@ namespace Firebird
 	class FB_UDR_PROCEDURE(name) : public ::Firebird::Udr::Procedure<FB_UDR_PROCEDURE(name)>	\
 	{	\
 	public:	\
-		typedef FB_UDR_PROCEDURE(name) This;
+		typedef FB_UDR_PROCEDURE(name) This;	\
+		\
+		void initialize(::Firebird::Error* error, void*)	\
+		{	\
+		}
 
 #define FB_UDR_END_PROCEDURE	\
 		};	\
@@ -161,18 +157,7 @@ namespace Firebird
 		{	\
 			return new ResultSet(error, context, this, (InMessage*) inMsg, (OutMessage*) outMsg);	\
 		}	\
-		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
-		{	\
-			e.stuff(error);	\
-		}	\
-		catch (...)	\
-		{	\
-			error->addCode(isc_arg_gds);	\
-			error->addCode(isc_random);	\
-			error->addString(	\
-				FB_UDR_UNRECOGNIZED_EXCEPTION,	\
-				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
-		}	\
+		FB_UDR__CATCH	\
 		\
 		return 0;	\
 	}	\
@@ -192,23 +177,12 @@ namespace Firebird
 		{	\
 			return internalFetch(error);	\
 		}	\
-		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
-		{	\
-			e.stuff(error);	\
-		}	\
-		catch (...)	\
-		{	\
-			error->addCode(isc_arg_gds);	\
-			error->addCode(isc_random);	\
-			error->addString(	\
-				FB_UDR_UNRECOGNIZED_EXCEPTION,	\
-				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
-		}	\
+		FB_UDR__CATCH	\
 		\
 		return 0;	\
 	}	\
 	\
-	bool FB_CALL internalFetch(::Firebird::Error* error)
+	bool internalFetch(::Firebird::Error* error)
 
 
 #define FB_UDR_BEGIN_TRIGGER(name)	\
@@ -218,7 +192,11 @@ namespace Firebird
 	\
 	class FB_UDR_TRIGGER(name) : public ::Firebird::Udr::Trigger<FB_UDR_TRIGGER(name)>	\
 	{	\
-	public:
+	public:	\
+		\
+		void initialize(::Firebird::Error* error, void*)	\
+		{	\
+		}
 
 #define FB_UDR_END_TRIGGER	\
 	};
@@ -234,25 +212,39 @@ namespace Firebird
 		{	\
 			internalExecute(error, context, action, oldMsg, newMsg);	\
 		}	\
-		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
-		{	\
-			e.stuff(error);	\
-		}	\
-		catch (...)	\
-		{	\
-			error->addCode(isc_arg_gds);	\
-			error->addCode(isc_random);	\
-			error->addString(	\
-				FB_UDR_UNRECOGNIZED_EXCEPTION,	\
-				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
-		}	\
+		FB_UDR__CATCH	\
 	}	\
 	\
-	void FB_CALL internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+	void internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
 		::Firebird::ExternalTrigger::Action action, void* oldMsg, void* newMsg)
 
 
-#define FB_UDR_UNRECOGNIZED_EXCEPTION	"Unrecognized C++ exception"
+#define FB_UDR_INITIALIZE	\
+	void initialize(::Firebird::Error* error, ExternalContext* context)	\
+	{	\
+		try	\
+		{	\
+			internalInitialize(error, context);	\
+		}	\
+		FB_UDR__CATCH	\
+	}	\
+	\
+	void internalInitialize(::Firebird::Error* error, ::Firebird::ExternalContext* context)
+
+
+#define FB_UDR__CATCH	\
+	catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
+	{	\
+		e.stuff(error);	\
+	}	\
+	catch (...)	\
+	{	\
+		const char exceptionText[] = "Unrecognized C++ exception";	\
+		\
+		error->addCode(isc_arg_gds);	\
+		error->addCode(isc_random);	\
+		error->addString(exceptionText, sizeof(exceptionText) - 1);	\
+	}
 
 
 class ThrowError : public Error
@@ -627,15 +619,19 @@ public:
 		fbUdrRegFunction(name, this);
 	}
 
-	virtual void setup(const IRoutineMetadata* /*metadata*/, BlrMessage* inBlr, BlrMessage* outBlr)
+	virtual void setup(Error* /*error*/, ExternalContext* /*context*/,
+		const IRoutineMetadata* /*metadata*/, BlrMessage* inBlr, BlrMessage* outBlr)
 	{
 		setBlr(inBlr, (typename T::InMessage*) 0);
 		setBlr(outBlr, (typename T::OutMessage*) 0);
 	}
 
-	virtual ExternalFunction* FB_CALL newItem(const IRoutineMetadata* metadata)
+	virtual ExternalFunction* FB_CALL newItem(Error* error, ExternalContext* context,
+		const IRoutineMetadata* metadata)
 	{
-		return new(metadata) Routine<T>;
+		T* obj = new(metadata) Routine<T>;
+		obj->initialize(error, context);
+		return obj;
 	}
 
 private:
@@ -659,15 +655,19 @@ public:
 		fbUdrRegProcedure(name, this);
 	}
 
-	virtual void setup(const IRoutineMetadata* /*metadata*/, BlrMessage* inBlr, BlrMessage* outBlr)
+	virtual void setup(Error* /*error*/, ExternalContext* /*context*/,
+		const IRoutineMetadata* /*metadata*/, BlrMessage* inBlr, BlrMessage* outBlr)
 	{
 		setBlr(inBlr, (typename T::InMessage*) 0);
 		setBlr(outBlr, (typename T::OutMessage*) 0);
 	}
 
-	virtual ExternalProcedure* FB_CALL newItem(const IRoutineMetadata* metadata)
+	virtual ExternalProcedure* FB_CALL newItem(Error* error, ExternalContext* context,
+		const IRoutineMetadata* metadata)
 	{
-		return new(metadata) Routine<T>;
+		T* obj = new(metadata) Routine<T>;
+		obj->initialize(error, context);
+		return obj;
 	}
 
 private:
@@ -691,13 +691,17 @@ public:
 		fbUdrRegTrigger(name, this);
 	}
 
-	virtual void setup(const IRoutineMetadata* /*metadata*/)
+	virtual void setup(Error* /*error*/, ExternalContext* /*context*/,
+		const IRoutineMetadata* /*metadata*/)
 	{
 	}
 
-	virtual ExternalTrigger* FB_CALL newItem(const IRoutineMetadata* metadata)
+	virtual ExternalTrigger* FB_CALL newItem(Error* error, ExternalContext* context,
+		const IRoutineMetadata* metadata)
 	{
-		return new(metadata) Routine<T>;
+		T* obj = new(metadata) Routine<T>;
+		obj->initialize(error, context);
+		return obj;
 	}
 };
 

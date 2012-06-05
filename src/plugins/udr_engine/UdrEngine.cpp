@@ -134,9 +134,9 @@ public:
 public:
 	void loadModule(const IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint);
 	template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* getChild(
-		GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children, SharedObjType* sharedObj,
-		ExternalContext* context, NodeType* nodes, SortedArray<SharedObjType*>& sharedObjs,
-		const PathName& moduleName);
+		Error* error, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
+		SharedObjType* sharedObj, ExternalContext* context, NodeType* nodes,
+		SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName);
 	template <typename ObjType> void deleteChildren(
 		GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children);
 
@@ -144,8 +144,9 @@ public:
 		const string& entryPoint);
 
 private:
-	template <typename T, typename T2> T2* getNode(T* nodes, const PathName& moduleName,
-		const IRoutineMetadata* metadata, const string& entryPoint);
+	template <typename T, typename T2> T2* getNode(Error* error, T* nodes,
+		const PathName& moduleName, ExternalContext* context, const IRoutineMetadata* metadata,
+		const string& entryPoint);
 
 public:
 	virtual void FB_CALL open(Error* error, ExternalContext* context, Utf8* name, uint nameSize);
@@ -205,8 +206,8 @@ static TriggerNode* registeredTriggers = NULL;
 class SharedFunction : public ExternalFunction
 {
 public:
-	SharedFunction(Engine* aEngine, const IRoutineMetadata* aMetadata,
-				BlrMessage* inBlr, BlrMessage* outBlr)
+	SharedFunction(Error* error, Engine* aEngine, ExternalContext* context,
+				const IRoutineMetadata* aMetadata, BlrMessage* inBlr, BlrMessage* outBlr)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -216,7 +217,7 @@ public:
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
 		FunctionNode* node = engine->findNode<FunctionNode>(registeredFunctions, moduleName, entryPoint);
-		node->factory->setup(metadata, inBlr, outBlr);
+		node->factory->setup(error, context, metadata, inBlr, outBlr);
 	}
 
 	virtual ~SharedFunction()
@@ -238,7 +239,7 @@ public:
 
 		try
 		{
-			ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(
+			ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(error,
 				children, this, context, registeredFunctions, engine->functions, moduleName);
 			if (function)
 				function->getCharSet(error, context, name, nameSize);
@@ -251,7 +252,7 @@ public:
 
 	virtual void FB_CALL execute(Error* error, ExternalContext* context, void* inMsg, void* outMsg)
 	{
-		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(
+		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(error,
 			children, this, context, registeredFunctions, engine->functions, moduleName);
 		if (function)
 			function->execute(error, context, inMsg, outMsg);
@@ -273,8 +274,8 @@ public:
 class SharedProcedure : public ExternalProcedure
 {
 public:
-	SharedProcedure(Engine* aEngine, const IRoutineMetadata* aMetadata,
-				BlrMessage* inBlr, BlrMessage* outBlr)
+	SharedProcedure(Error* error, Engine* aEngine, ExternalContext* context,
+				const IRoutineMetadata* aMetadata, BlrMessage* inBlr, BlrMessage* outBlr)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -284,7 +285,7 @@ public:
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
 		ProcedureNode* node = engine->findNode<ProcedureNode>(registeredProcedures, moduleName, entryPoint);
-		node->factory->setup(metadata, inBlr, outBlr);
+		node->factory->setup(error, context, metadata, inBlr, outBlr);
 	}
 
 	virtual ~SharedProcedure()
@@ -306,7 +307,7 @@ public:
 
 		try
 		{
-			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(
+			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(error,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
 			if (procedure)
 				procedure->getCharSet(error, context, name, nameSize);
@@ -322,7 +323,7 @@ public:
 	{
 		try
 		{
-			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(
+			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(error,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
 			return procedure ? procedure->open(error, context, inMsg, outMsg) : NULL;
 		}
@@ -349,7 +350,8 @@ public:
 class SharedTrigger : public ExternalTrigger
 {
 public:
-	SharedTrigger(Engine* aEngine, const IRoutineMetadata* aMetadata)
+	SharedTrigger(Error* error, Engine* aEngine, ExternalContext* context,
+				const IRoutineMetadata* aMetadata)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -359,7 +361,7 @@ public:
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
 		TriggerNode* node = engine->findNode<TriggerNode>(registeredTriggers, moduleName, entryPoint);
-		node->factory->setup(metadata);
+		node->factory->setup(error, context, metadata);
 	}
 
 	virtual ~SharedTrigger()
@@ -381,7 +383,7 @@ public:
 
 		try
 		{
-			ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(
+			ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(error,
 				children, this, context, registeredTriggers, engine->triggers, moduleName);
 			if (trigger)
 				trigger->getCharSet(error, context, name, nameSize);
@@ -395,7 +397,7 @@ public:
 	virtual void FB_CALL execute(Error* error, ExternalContext* context,
 		ExternalTrigger::Action action, void* oldMsg, void* newMsg)
 	{
-		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(
+		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(error,
 			children, this, context, registeredTriggers, engine->triggers, moduleName);
 		if (trigger)
 			trigger->execute(error, context, action, oldMsg, newMsg);
@@ -564,9 +566,9 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 
 
 template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* Engine::getChild(
-	GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children, SharedObjType* sharedObj,
-	ExternalContext* context, NodeType* nodes, SortedArray<SharedObjType*>& sharedObjs,
-	const PathName& moduleName)
+	Error* error, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
+	SharedObjType* sharedObj, ExternalContext* context, NodeType* nodes,
+	SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName)
 {
 	MutexLockGuard guard(childrenMutex);
 
@@ -576,7 +578,9 @@ template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* 
 	ObjType* obj;
 	if (!children.get(context, obj))
 	{
-		obj = getNode<NodeType, ObjType>(nodes, moduleName, sharedObj->metadata, sharedObj->entryPoint);
+		obj = getNode<NodeType, ObjType>(error, nodes, moduleName, context, sharedObj->metadata,
+			sharedObj->entryPoint);
+
 		if (obj)
 			children.put(context, obj);
 	}
@@ -620,11 +624,12 @@ template <typename T> T* Engine::findNode(T* nodes, const PathName& moduleName,
 }
 
 
-template <typename T, typename T2> T2* Engine::getNode(T* nodes, const PathName& moduleName,
-		const IRoutineMetadata* metadata, const string& entryPoint)
+template <typename T, typename T2> T2* Engine::getNode(Error* error, T* nodes,
+		const PathName& moduleName, ExternalContext* context, const IRoutineMetadata* metadata,
+		const string& entryPoint)
 {
 	T* node = findNode<T>(nodes, moduleName, entryPoint);
-	return node->factory->newItem(metadata);
+	return node->factory->newItem(error, context, metadata);
 }
 
 
@@ -675,12 +680,12 @@ void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 }
 
 
-ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* /*context*/,
+ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* context,
 	const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr)
 {
 	try
 	{
-		return new SharedFunction(this, metadata, inBlr, outBlr);
+		return new SharedFunction(error, this, context, metadata, inBlr, outBlr);
 	}
 	catch (const ThrowError::Exception& e)
 	{
@@ -690,12 +695,12 @@ ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* /*
 }
 
 
-ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* /*context*/,
+ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* context,
 	const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr)
 {
 	try
 	{
-		return new SharedProcedure(this, metadata, inBlr, outBlr);
+		return new SharedProcedure(error, this, context, metadata, inBlr, outBlr);
 	}
 	catch (const ThrowError::Exception& e)
 	{
@@ -705,12 +710,12 @@ ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* 
 }
 
 
-ExternalTrigger* FB_CALL Engine::makeTrigger(Error* error, ExternalContext* /*context*/,
+ExternalTrigger* FB_CALL Engine::makeTrigger(Error* error, ExternalContext* context,
 	const IRoutineMetadata* metadata)
 {
 	try
 	{
-		return new SharedTrigger(this, metadata);
+		return new SharedTrigger(error, this, context, metadata);
 	}
 	catch (const ThrowError::Exception& e)
 	{
