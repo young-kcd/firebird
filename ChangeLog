@@ -1,3 +1,7 @@
+ 2012-06-04 11:53  alexpeshkoff 
+   M src/jrd/event.cpp
+Fixed CORE-3859: Too many different dynamic events crash server
+
  2012-05-26 21:59  hvlad 
    M src/jrd/dpm.epp
 Fixed bug CORE-3855 : Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed into newly allocated pages even if there is enough free place on some existing data page
