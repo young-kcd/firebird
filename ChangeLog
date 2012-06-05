@@ -1,3 +1,17 @@
+ 2012-06-04 16:53  alexpeshkoff 
+   M src/utilities/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+Fixed CORE-3769: The message 'Unknown tag (4) in isc_svc_query() results' appears when fbtracemgr is interrupted by Ctrl-C
+
+ 2012-06-04 08:57  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/dfw.epp
+   M src/jrd/ini.epp
+   M src/jrd/ods.h
+   M src/jrd/pcmet.epp
+Rolled back the ODS level solution for CORE-2709 as it causes cross-version compatibility issues (CORE-3853) as well as functional regressions (CORE-3675). Another solution is likely to be committed instead.
+
  2012-05-31 11:01  alexpeshkoff 
    M src/common/classes/semaphore.cpp
 Backported fix for 32-bit build
