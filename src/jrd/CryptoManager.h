@@ -37,6 +37,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/ThreadStart.h"
+#include "../jrd/ods.h"
 
 // forward
 
@@ -75,12 +76,25 @@ public:
 	void startCryptThread(thread_db* tdbb);
 	void terminateCryptThread(thread_db* tdbb);
 
-	static bool cryptRead(jrd_file*, BufferDesc*, Ods::pag*, ISC_STATUS*);
-	static bool cryptWrite(jrd_file*, BufferDesc*, Ods::pag*, ISC_STATUS*);
+	bool decrypt(ISC_STATUS* sv, Ods::pag* page);
+	Ods::pag* encrypt(ISC_STATUS* sv, Ods::pag* from, Ods::pag* to);
 
 	void cryptThread();
 
 	ULONG getCurrentPage();
+
+	class Buffer
+	{
+	public:
+		operator Ods::pag*()
+		{
+			return reinterpret_cast<Ods::pag*> (FB_ALIGN(reinterpret_cast<U_IPTR>(buf),
+				MIN_PAGE_SIZE));
+		}
+
+	private:
+		char buf[MAX_PAGE_SIZE + MIN_PAGE_SIZE - 1];
+	};
 
 private:
 	class HolderAttachments
@@ -128,9 +142,6 @@ private:
 	void loadPlugin(const char* pluginName);
 	ULONG getLastPage(thread_db* tdbb);
 	void writeDbHeader(thread_db* tdbb, ULONG runpage, Firebird::Stack<ULONG>& pages);
-
-	bool read(jrd_file*, BufferDesc*, Ods::pag*, ISC_STATUS*);
-	bool write(jrd_file*, BufferDesc*, Ods::pag*, ISC_STATUS*);
 
 	Firebird::AtomicCounter currentPage;
 	Firebird::Mutex pluginLoadMtx;

@@ -209,7 +209,8 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		temp_bdb.bdb_page = next->fil_min_page;
 		temp_bdb.bdb_buffer = (PAG) header;
 		header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
-		if (!CryptoManager::cryptWrite(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+		// It's header, never encrypted
+		if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 		{
 			delete[] spare_buffer;
 			return 0;
@@ -255,7 +256,8 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 			file->fil_fudge = 0;
 			temp_bdb.bdb_page = file->fil_min_page;
 			header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
-			if (!CryptoManager::cryptWrite(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+			// It's header, never encrypted
+			if (!PIO_write(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 			{
 				delete[] spare_buffer;
 				return 0;
@@ -1001,8 +1003,12 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		header_fetched++;
 
-		if (!CryptoManager::cryptRead(shadow_file, window.win_bdb, (PAG) spare_page,
-				tdbb->tdbb_status_vector))
+		if (!PIO_read(shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
+		{
+			ERR_punt();
+		}
+
+		if (!dbb->dbb_crypto_manager->decrypt(tdbb->tdbb_status_vector, (PAG) spare_page))
 		{
 			ERR_punt();
 		}

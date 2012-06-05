@@ -301,8 +301,8 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 #endif
 
 	header->hdr_header.pag_pageno = window.win_page.getPageNum();
-	CryptoManager::cryptWrite(pageSpace->file, window.win_bdb, window.win_buffer,
-		tdbb->tdbb_status_vector);
+	// It's header, never encrypted
+	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	next->fil_fudge = 1;
 
@@ -332,8 +332,8 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 	}
 
 	header->hdr_header.pag_pageno = window.win_page.getPageNum();
-	CryptoManager::cryptWrite(pageSpace->file, window.win_bdb, window.win_buffer,
-		tdbb->tdbb_status_vector);
+	// It's header, never encrypted
+	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	if (file->fil_min_page)
 		file->fil_fudge = 1;
@@ -1310,11 +1310,12 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 				CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 
 			header_page* header = (header_page*) temp_page;
-			temp_bdb.bdb_buffer = (PAG) header;
+			temp_bdb.bdb_buffer = (pag*) header;
 			temp_bdb.bdb_page = window.win_page;
 
 			// Read the required page into the local buffer
-			CryptoManager::cryptRead(file, &temp_bdb, (PAG) header, status);
+			// It's header, never encrypted
+			PIO_read(file, &temp_bdb, (PAG) header, status);
 
 			if (shadow_number && !file->fil_min_page)
 				CCH_RELEASE(tdbb, &window);

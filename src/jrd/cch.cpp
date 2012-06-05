@@ -840,9 +840,11 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
 
 		// Read page from disk as normal
-		while (!CryptoManager::cryptRead(file, bdb, page, status))
+		bool error = false;
+		while (!PIO_read(file, bdb, page, status))
 		{
 			if (isTempPage || !read_shadow) {
+				error = true;
 				break;
 			}
 
@@ -862,6 +864,15 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 					CCH_unwind(tdbb, true);
 				}
+			}
+		}
+
+		if (!error)
+		{
+			if (!dbb->dbb_crypto_manager->decrypt(status, page))
+			{
+				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
+				CCH_unwind(tdbb, true);
 			}
 		}
 	}
@@ -885,9 +896,12 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			// this is a merge process.
 			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK",
 				bdb->bdb_page, bak_state, diff_page));
-			while (!CryptoManager::cryptRead(file, bdb, page, status))
+
+			bool error = false;
+			while (!PIO_read(file, bdb, page, status))
 			{
 				if (!read_shadow) {
+					error = true;
 					break;
 				}
 
@@ -907,6 +921,15 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 						PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 						CCH_unwind(tdbb, true);
 					}
+				}
+			}
+
+			if (!error)
+			{
+				if (!dbb->dbb_crypto_manager->decrypt(status, page))
+				{
+					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
+					CCH_unwind(tdbb, true);
 				}
 			}
 		}
@@ -2399,7 +2422,10 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		// shadow to be deleted at the next available opportunity when we
 		// know we don't have a page fetched
 
-		if (!CryptoManager::cryptWrite(sdw->sdw_file, bdb, page, status))
+		CryptoManager::Buffer buffer;
+		pag* writePage = dbb->dbb_crypto_manager->encrypt(status, page, buffer);
+
+		if (!(writePage && PIO_write(sdw->sdw_file, bdb, writePage, status)))
 		{
 			if (sdw->sdw_flags & SDW_manual) {
 				result = false;
@@ -5015,9 +5041,18 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 			else
 			{
 				// We need to write our pages to main database files
+				CryptoManager::Buffer buffer;
+				pag* writePage = dbb->dbb_crypto_manager->encrypt(status, page, buffer);
+
+				if (!writePage)
+				{
+					bdb->bdb_flags |= BDB_io_error;
+					dbb->dbb_flags |= DBB_suspend_bgio;
+					return false;
+				}
 
 				jrd_file* file = pageSpace->file;
-				while (!CryptoManager::cryptWrite(file, bdb, page, status))
+				while (!PIO_write(file, bdb, writePage, status))
 				{
 					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
 					{

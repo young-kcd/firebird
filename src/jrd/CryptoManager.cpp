@@ -33,9 +33,7 @@
 
 #include "../common/classes/alloc.h"
 #include "../jrd/Database.h"
-#include "../jrd/ods.h"
 #include "../common/ThreadStart.h"
-#include "../jrd/os/pio_proto.h"
 #include "../common/StatusArg.h"
 #include "../common/StatusHolder.h"
 #include "../jrd/lck.h"
@@ -51,18 +49,6 @@
 using namespace Firebird;
 
 namespace {
-	class SpareBuffer
-	{
-	public:
-		Ods::pag* get()
-		{
-			return buffer;
-		}
-
-	private:
-		Ods::pag buffer[MAX_PAGE_SIZE / sizeof(Ods::pag)];
-	};
-
 	THREAD_ENTRY_DECLARE cryptThreadStatic(THREAD_ENTRY_PARAM p)
 	{
 		Jrd::CryptoManager* cryptoManager = (Jrd::CryptoManager*) p;
@@ -480,116 +466,98 @@ namespace Jrd {
 		}
 	}
 
-	bool CryptoManager::cryptRead(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* sv)
+	bool CryptoManager::decrypt(ISC_STATUS* sv, Ods::pag* page)
 	{
+		// Code calling us is not ready to process exceptions correctly
+		// Therefore use old (status vector based) method
 		try
 		{
-			return bdb->bdb_bcb->bcb_database->dbb_crypto_manager->read(file, bdb, page, sv);
-		}
-		catch (const Exception& ex)
-		{
-			ex.stuff_exception(sv);
-		}
-		return false;
-	}
-
-	bool CryptoManager::cryptWrite(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* sv)
-	{
-		try
-		{
-			return bdb->bdb_bcb->bcb_database->dbb_crypto_manager->write(file, bdb, page, sv);
-		}
-		catch (const Exception& ex)
-		{
-			ex.stuff_exception(sv);
-		}
-		return false;
-	}
-
-	bool CryptoManager::read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* sv)
-	{
-		if (!PIO_read(file, bdb, page, sv))
-		{
-			return false;
-		}
-
-		if (page->pag_flags & Ods::crypted_page)
-		{
-			if (!cryptPlugin)
+			if (page->pag_flags & Ods::crypted_page)
 			{
-				// We are invoked from shared cache manager, i.e. no valid attachment in tdbb
-				// Therefore create system temporary attachment like in crypt thread to be able to work with locks
-				UserId user;
-				user.usr_user_name = "(Crypt plugin loader)";
-
-				Jrd::Attachment* const attachment = Jrd::Attachment::create(&dbb);
-				RefPtr<SysAttachment> jAtt(new SysAttachment(attachment));
-				attachment->att_interface = jAtt;
-				attachment->att_filename = dbb.dbb_filename;
-				attachment->att_user = &user;
-
-				BackgroundContextHolder tdbb(&dbb, attachment, sv);
-
-				// Lock crypt state
-				takeStateLock(tdbb);
-
-				Header hdr(tdbb, LCK_read);
-				crypt = hdr->hdr_flags & Ods::hdr_encrypted;
-				process = hdr->hdr_flags & Ods::hdr_crypt_process;
-
-				if (crypt || process)
-				{
-					loadPlugin(hdr->hdr_crypt_plugin);
-				}
-
 				if (!cryptPlugin)
 				{
-					(Arg::Gds(isc_random) << "Not crypt mode, but page appears encrypted").copyTo(sv);
-					return false;
+					// We are invoked from shared cache manager, i.e. no valid attachment in tdbb
+					// Therefore create system temporary attachment like in crypt thread to be able to work with locks
+					UserId user;
+					user.usr_user_name = "(Crypt plugin loader)";
+
+					Jrd::Attachment* const attachment = Jrd::Attachment::create(&dbb);
+					RefPtr<SysAttachment> jAtt(new SysAttachment(attachment));
+					attachment->att_interface = jAtt;
+					attachment->att_filename = dbb.dbb_filename;
+					attachment->att_user = &user;
+
+					BackgroundContextHolder tdbb(&dbb, attachment, sv);
+
+					// Lock crypt state
+					takeStateLock(tdbb);
+
+					Header hdr(tdbb, LCK_read);
+					crypt = hdr->hdr_flags & Ods::hdr_encrypted;
+					process = hdr->hdr_flags & Ods::hdr_crypt_process;
+
+					if (crypt || process)
+					{
+						loadPlugin(hdr->hdr_crypt_plugin);
+					}
+
+					if (!cryptPlugin)
+					{
+						(Arg::Gds(isc_random) << "Not crypt mode, but page appears encrypted").copyTo(sv);
+						return false;
+					}
 				}
-			}
-
-			LocalStatus status;
-			cryptPlugin->decrypt(&status, dbb.dbb_page_size - sizeof(page[0]), &page[1], &page[1]);
-			if (!status.isSuccess())
-			{
-				memcpy(sv, status.get(), sizeof(ISC_STATUS_ARRAY));
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool CryptoManager::write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* sv)
-	{
-		for (;;)
-		{
-			SpareBuffer spare_buffer;
-			Ods::pag* buffer = page;
-
-			if (crypt && cryptPlugin && Ods::pag_crypt_page[page->pag_type % (pag_max + 1)])
-			{
-				buffer = spare_buffer.get();
-				buffer[0] = page[0];
 
 				LocalStatus status;
-				cryptPlugin->encrypt(&status, dbb.dbb_page_size - sizeof(page[0]), &page[1], &buffer[1]);
+				cryptPlugin->decrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &page[1], &page[1]);
 				if (!status.isSuccess())
 				{
 					memcpy(sv, status.get(), sizeof(ISC_STATUS_ARRAY));
 					return false;
 				}
+			}
 
-				buffer->pag_flags |= Ods::crypted_page;
+			return true;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuff_exception(sv);
+		}
+		return false;
+	}
+
+	Ods::pag* CryptoManager::encrypt(ISC_STATUS* sv, Ods::pag* from, Ods::pag* to)
+	{
+		// Code calling us is not ready to process exceptions correctly
+		// Therefore use old (status vector based) method
+		try
+		{
+			if (crypt && cryptPlugin && Ods::pag_crypt_page[from->pag_type % (pag_max + 1)])
+			{
+				to[0] = from[0];
+
+				LocalStatus status;
+				cryptPlugin->encrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &from[1], &to[1]);
+				if (!status.isSuccess())
+				{
+					memcpy(sv, status.get(), sizeof(ISC_STATUS_ARRAY));
+					return NULL;
+				}
+
+				to->pag_flags |= Ods::crypted_page;
+				return to;
 			}
 			else
 			{
-				buffer->pag_flags &= ~Ods::crypted_page;
+				from->pag_flags &= ~Ods::crypted_page;
+				return from;
 			}
-
-			return PIO_write(file, bdb, buffer, sv);
 		}
+		catch (const Exception& ex)
+		{
+			ex.stuff_exception(sv);
+		}
+		return NULL;
 	}
 
 	int CryptoManager::blockingAstChangeCryptState(void* object)

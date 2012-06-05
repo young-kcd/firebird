@@ -349,7 +349,8 @@ ULONG BackupManager::getPageCount()
 			temp_bdb.bdb_buffer = buf;
 			temp_bdb.bdb_page = pageNum;
 			ISC_STATUS_ARRAY status;
-			if (!CryptoManager::cryptRead(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status))
+			// It's PIP - therefore no need to try to decrypt
+			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status))
 			{
 				Firebird::status_exception::raise(status);
 			}
@@ -672,9 +673,15 @@ bool BackupManager::writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pa
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_buffer = page;
+
 	// Check that diff page is not allocation page
 	fb_assert(diff_page % (database->dbb_page_size / sizeof(ULONG)));
-	if (!CryptoManager::cryptWrite(diff_file, &temp_bdb, page, status))
+
+	CryptoManager::Buffer buffer;
+	Ods::pag* writePage = database->dbb_crypto_manager->encrypt(status, page, buffer);
+	if (!writePage)
+		return false;
+	if (!PIO_write(diff_file, &temp_bdb, writePage, status))
 		return false;
 	return true;
 }
@@ -684,7 +691,9 @@ bool BackupManager::readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* p
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_buffer = page;
-	if (!CryptoManager::cryptRead(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
+	if (!PIO_read(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
+		return false;
+	if (!database->dbb_crypto_manager->decrypt(tdbb->tdbb_status_vector, page))
 		return false;
 	NBAK_TRACE(("read_diff page=%d, diff=%d", page->pag_pageno, diff_page));
 	return true;
@@ -774,7 +783,9 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 	jrd_file* file = pageSpace->file;
-	while (!CryptoManager::cryptRead(file, &temp_bdb, temp_bdb.bdb_buffer, status))
+
+	// It's header page, never encrypted
+	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status))
 	{
 		if (!CCH_rollover_to_shadow(tdbb, database, file, false))
 		{
