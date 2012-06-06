@@ -820,6 +820,7 @@ Data source : @4', NULL, NULL)
 ('protect_sys_tab', NULL, 'vio.cpp', NULL, 0, 710, NULL, '@1 operation is not allowed for system table @2', NULL, NULL)
 ('libtommath_generic', 'check', 'BigInteger.cpp', NULL, 0, 711, NULL, 'Libtommath error code @1 in function @2', NULL, NULL)
 ('wroblrver2', NULL, NULL, NULL, 0, 712, NULL, 'unsupported BLR version (expected between @1 and @2, encountered @3)', NULL, NULL);
+('trunc_limits', NULL, NULL, NULL, 0, 713, NULL, 'expected length @1, actual @2', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

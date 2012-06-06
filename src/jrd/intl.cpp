@@ -694,10 +694,10 @@ int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFun
 ULONG INTL_convert_bytes(thread_db* tdbb,
 						 CHARSET_ID dest_type,
 						 BYTE* dest_ptr,
-						 ULONG dest_len,
+						 const ULONG dest_len,
 						 CHARSET_ID src_type,
 						 const BYTE* src_ptr,
-						 ULONG src_len,
+						 const ULONG src_len,
 						 ErrorFunction err)
 {
 /**************************************
@@ -758,7 +758,8 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		if (len == 0 || allSpaces(INTL_charset_lookup(tdbb, src_type), src_ptr, len, 0))
 			return dest_ptr - start_dest_ptr;
 
-		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+			Arg::Gds(isc_trunc_limits) << Arg::Num(dest_len) << Arg::Num(src_len));
 	}
 	else if (src_len)
 	{
@@ -950,19 +951,24 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 	}
 
+	const ULONG src_len = toCharSet->length(toLength, start, false);
+	const ULONG dest_len  = (ULONG) to_size / toCharSet->maxBytesPerChar();
+
 	if (toCharSet->isMultiByte() &&
 		!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
 		toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
-		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
+		src_len > dest_len)
 	{
-		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+			Arg::Gds(isc_trunc_limits) << Arg::Num(dest_len) << Arg::Num(src_len));
 	}
 
 	if (from_fill)
 	{
 		// Make sure remaining characters on From string are spaces
 		if (!allSpaces(INTL_charset_lookup(tdbb, from_cs), q, from_fill, 0))
-			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+				Arg::Gds(isc_trunc_limits) << Arg::Num(dest_len) << Arg::Num(src_len));
 	}
 
 	return 0;

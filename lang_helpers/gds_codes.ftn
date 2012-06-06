@@ -1476,6 +1476,8 @@ C --
       PARAMETER (GDS__libtommath_generic               = 335545031)
       INTEGER*4 GDS__wroblrver2                      
       PARAMETER (GDS__wroblrver2                       = 335545032)
+      INTEGER*4 GDS__trunc_limits                    
+      PARAMETER (GDS__trunc_limits                     = 335545033)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

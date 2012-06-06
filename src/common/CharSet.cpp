@@ -108,8 +108,8 @@ public:
 	FixedWidthCharSet(USHORT _id, charset* _cs) : CharSet(_id, _cs) {}
 
 	virtual ULONG length(ULONG srcLen, const UCHAR* src, bool countTrailingSpaces) const;
-	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
-							ULONG startPos, ULONG len) const;
+	virtual ULONG substring(const ULONG srcLen, const UCHAR* src, const ULONG dstLen, UCHAR* dst,
+							const ULONG startPos, const ULONG len) const;
 };
 
 class MultiByteCharSet : public CharSet
@@ -118,8 +118,8 @@ public:
 	MultiByteCharSet(USHORT _id, charset* _cs) : CharSet(_id, _cs) {}
 
 	virtual ULONG length(ULONG srcLen, const UCHAR* src, bool countTrailingSpaces) const;
-	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
-							ULONG startPos, ULONG len) const;
+	virtual ULONG substring(const ULONG srcLen, const UCHAR* src, const ULONG dstLen, UCHAR* dst,
+							const ULONG startPos, const ULONG len) const;
 };
 
 }	// namespace
@@ -140,8 +140,8 @@ ULONG FixedWidthCharSet::length(ULONG srcLen, const UCHAR* src, bool countTraili
 }
 
 
-ULONG FixedWidthCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
-	ULONG startPos, ULONG len) const
+ULONG FixedWidthCharSet::substring(const ULONG srcLen, const UCHAR* src, const ULONG dstLen, UCHAR* dst,
+	const ULONG startPos, const ULONG len) const
 {
 	ULONG result;
 
@@ -162,7 +162,8 @@ ULONG FixedWidthCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen,
 	}
 
 	if (result == INTL_BAD_STR_LENGTH)
-		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+			Arg::Gds(isc_trunc_limits) << Arg::Num(dstLen) << Arg::Num(len));
 
 	return result;
 }
@@ -191,8 +192,8 @@ ULONG MultiByteCharSet::length(ULONG srcLen, const UCHAR* src, bool countTrailin
 }
 
 
-ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
-	ULONG startPos, ULONG len) const
+ULONG MultiByteCharSet::substring(const ULONG srcLen, const UCHAR* src, const ULONG dstLen, UCHAR* dst,
+	const ULONG startPos, const ULONG len) const
 {
 	ULONG result;
 
@@ -228,7 +229,8 @@ ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, 
 	}
 
 	if (result == INTL_BAD_STR_LENGTH)
-		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+			Arg::Gds(isc_trunc_limits) << Arg::Num(dstLen) << Arg::Num(len));
 
 	return result;
 }

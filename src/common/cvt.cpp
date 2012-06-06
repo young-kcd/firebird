@@ -123,7 +123,9 @@ using namespace Firebird;
 #define YESTERDAY       "YESTERDAY"
 
 #define CVT_COPY_BUFF(from, to, len) \
-{if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
+{if (len) {memcpy(to, from, len); from += len; to += len;} }
+// AP,2012: Look like there is no need making len zero, but I keep old define for a reference.
+// {if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
 
 enum EXPECT_DATETIME
 {
@@ -1456,7 +1458,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				}
 
 				if (l < from->dsc_length)
-					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+						Arg::Gds(isc_trunc_limits) << Arg::Num(l) << Arg::Num(from->dsc_length));
 
 				Jrd::CharSet* charSet = cb->getToCharset(to->getCharSet());
 				cb->validateData(charSet, from->dsc_length, from->dsc_address);
@@ -1596,7 +1599,9 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 					do {
 						if (*q++ != fill_char)
 						{
-							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+									Arg::Gds(isc_trunc_limits) <<
+										Arg::Num(to->dsc_length) << Arg::Num(from->dsc_length));
 						}
 					} while (--l);
 				}

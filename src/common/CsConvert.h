@@ -101,9 +101,9 @@ public:
 	}
 
 	// To be used for arbitrary conversions
-	ULONG convert(ULONG srcLen,
+	ULONG convert(const ULONG srcLen,
 				  const UCHAR* src,
-				  ULONG dstLen,
+				  const ULONG dstLen,
 				  UCHAR* dst,
 				  ULONG* badInputPos = NULL,
 				  bool ignoreTrailingSpaces = false)
@@ -119,7 +119,7 @@ public:
 			ULONG len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, NULL, 0, NULL, &errCode, &errPos);
 
 			if (len == INTL_BAD_STR_LENGTH || errCode != 0)
-				raiseError(isc_string_truncation);
+				raiseError(dstLen, srcLen);
 
 			fb_assert(len % sizeof(USHORT) == 0);
 
@@ -164,7 +164,7 @@ public:
 							if (badInputPos)
 								break;
 
-							raiseError(isc_string_truncation);
+							raiseError(dstLen, srcLen);
 						}
 					}
 
@@ -174,7 +174,7 @@ public:
 				else
 				{
 					if (!badInputPos)
-						raiseError(isc_string_truncation);
+						raiseError(dstLen, srcLen);
 				}
 
 				if (badInputPos)
@@ -221,7 +221,7 @@ public:
 							break;
 						}
 
-						raiseError(isc_string_truncation);
+						raiseError(dstLen, srcLen);
 					}
 				}
 			}
@@ -230,7 +230,7 @@ public:
 				if (badInputPos)
 					*badInputPos = errPos;
 				else
-					raiseError(isc_string_truncation);
+					raiseError(dstLen, srcLen);
 			}
 			else
 				raiseError(isc_transliteration_failed);
@@ -273,6 +273,14 @@ private:
 	{
 		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_arith_except) <<
 			Firebird::Arg::Gds(code));
+	}
+
+	void raiseError(ULONG dstLen, ULONG srcLen)
+	{
+		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_arith_except) <<
+			Firebird::Arg::Gds(isc_string_truncation) <<
+			Firebird::Arg::Gds(isc_trunc_limits) <<
+				Firebird::Arg::Num(dstLen) << Firebird::Arg::Num(srcLen));
 	}
 
 };

@@ -733,6 +733,7 @@ static const struct {
 	{335545030, "42000"}, // 710 protect_sys_tab
 	{335545031, "2F000"}, // 711 libtommath_generic
 	{335545032, "HY000"}, // 712 wroblrver2
+	{335545033, "22001"}, // 713 trunc_limits
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

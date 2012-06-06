@@ -123,8 +123,8 @@ public:
 	}
 
 	virtual ULONG length(ULONG srcLen, const UCHAR* src, bool countTrailingSpaces) const = 0;
-	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
-							ULONG startPos, ULONG length) const = 0;
+	virtual ULONG substring(const ULONG srcLen, const UCHAR* src, const ULONG dstLen, UCHAR* dst,
+							const ULONG startPos, const ULONG length) const = 0;
 
 private:
 	USHORT id;

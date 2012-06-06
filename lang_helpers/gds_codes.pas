@@ -745,6 +745,7 @@ const
 	gds_protect_sys_tab                  = 335545030;
 	gds_libtommath_generic               = 335545031;
 	gds_wroblrver2                       = 335545032;
+	gds_trunc_limits                     = 335545033;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
