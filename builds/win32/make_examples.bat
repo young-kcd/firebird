@@ -124,7 +124,7 @@ if defined FB2_INTLEMP (
 @echo Building employee.fdb
 :: Here we must use cd because isql does not have an option to set a base directory
 :: and empbuild.exe uses isql
-@set SAVE_PATH=%PATH%
+@set FB_SAVE_PATH=%PATH%
 @set PATH=%FB_BIN_DIR%;%PATH%
 
 @cd %FB_GEN_DIR%\examples
@@ -138,7 +138,7 @@ if defined FB2_INTLEMP (
   @echo s;intlemp.fdb;%SERVER_NAME%:%FB_GEN_DIR%\examples\intlemp.fdb;g > isql.tmp
   @%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\intlbuild\intlbuild.exe %FB_GEN_DB_DIR%/examples/intlemp.fdb
 )
-@set PATH=%SAVE_PATH%
+@set PATH=%FB_SAVE_PATH%
 @cd %FB_ROOT_PATH%\builds\win32
 
 @goto :EOF
