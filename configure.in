@@ -438,20 +438,6 @@ AC_DEFINE(CASE_SENSITIVITY, true, [Define this if paths are case sensitive])
 
 
 dnl Some controllable options
-FIREBIRD_ARCH_TYPE=classic
-AC_ARG_ENABLE(superserver,
-  [  --enable-superserver    build SuperServer architecture (default=no)],
-  [case "$enableval" in
-     yes) FIREBIRD_ARCH_TYPE=super;;
-     no)  FIREBIRD_ARCH_TYPE=classic;;
-     *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-superserver);;
-   esac])
-AC_SUBST(FIREBIRD_ARCH_TYPE)
-
-case $FIREBIRD_ARCH_TYPE in
-  super)   AC_SUBST(ARCH_TYPE_SUFFIX,SS);;
-  classic) AC_SUBST(ARCH_TYPE_SUFFIX,CS);;
-esac
 
 AC_ARG_ENABLE(developer,
   [  --enable-developer      use developer mode rules (default=no)],
@@ -1142,7 +1128,7 @@ case "$PLATFORM" in
         mkdir -p gen/install/scripts
         mkdir -p gen/install/misc])
 
-    INSTALL_SRC_DIR=builds/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
+    INSTALL_SRC_DIR=builds/install/arch-specific/linux
     AC_CONFIG_FILES([
         gen/install/makeInstallImage.sh:builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
         gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
@@ -1159,7 +1145,7 @@ case "$PLATFORM" in
     ;;
 
   HPUX)
-    HP_INSTALL_SRC_DIR=builds/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
+    HP_INSTALL_SRC_DIR=builds/install/arch-specific/hpux
     AC_CONFIG_FILES([gen/install/makeinstallImage.sh:${HP_INSTALL_SRC_DIR}/makeinstallImage.sh.in
     gen/firebirdCS.psf:${HP_INSTALL_SRC_DIR}/firebirdCS.psf.in
     gen/firebird/bin/preInstall.sh:${HP_INSTALL_SRC_DIR}/preInstall.sh.in
@@ -1177,7 +1163,7 @@ case "$PLATFORM" in
     ;;
 
   AIX)
-    AIX_INSTALL_SRC_DIR=builds/install/arch-specific/aix/${FIREBIRD_ARCH_TYPE}
+    AIX_INSTALL_SRC_DIR=builds/install/arch-specific/aix
     AC_CONFIG_FILES([gen/install/scripts/rpmheader.aix.txt:${AIX_INSTALL_SRC_DIR}/rpmheader.txt.in
     gen/install/scripts/rpmfiles.aix.txt:${AIX_INSTALL_SRC_DIR}/rpmfiles.txt.in
     gen/install/makeInstallImage.aix.sh:${AIX_INSTALL_SRC_DIR}/makeInstallImage.sh.in
@@ -1212,11 +1198,11 @@ case "$PLATFORM" in
 
 
   solx86|SOLARIS)
-    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
-                     gen/install/prototype.main:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
-                     gen/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
-                     gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
-                     gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
+    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/pkginfo.in
+                     gen/install/prototype.main:builds/install/arch-specific/solaris/prototype.in
+                     gen/install/Preinstall:builds/install/arch-specific/solaris/preinstall.in
+                     gen/install/Postinstall:builds/install/arch-specific/solaris/postinstall.in
+                     gen/install/Postremove:builds/install/arch-specific/solaris/postremove.in
                      gen/install/prototypelg:builds/install/arch-specific/solaris/libgcc/prototypelg.in
                      gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in
       ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
@@ -1276,11 +1262,6 @@ echo
 echo
 echo The Firebird2 package has been configured with the following options:
 echo
-
-case $FIREBIRD_ARCH_TYPE in
- super)   echo "                   Architecture : SuperServer";;
- classic) echo "                   Architecture : ClassicServer";;
-esac
 
 case $DEVEL_FLG in
  Y)       echo "                 Developer mode : enabled";;

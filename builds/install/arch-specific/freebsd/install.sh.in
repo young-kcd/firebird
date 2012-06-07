@@ -56,7 +56,7 @@ addLibs() {
 
 	rm -f $libTarget
 	touch $libTarget
-	for i in posixLibrary.sh @FIREBIRD_ARCH_TYPE@Library.sh freebsdLibrary.sh
+	for i in posixLibrary.sh freebsdLibrary.sh
 	do
 		echo "# $i" >>$libTarget
 		cat $libSdir/$i >>$libTarget

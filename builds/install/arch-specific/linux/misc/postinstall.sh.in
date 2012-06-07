@@ -44,7 +44,7 @@ fi
 fixFilePermissions
 
 # Install script in /etc/init.d (exact location is distro dependent)
-installInitdScript @FIREBIRD_ARCH_TYPE@
+installInitdScript
 
 # Create libgds.so links
 createLinksForBackCompatibility
@@ -62,4 +62,4 @@ setDBAPassword
 resetInetdServer
 
 # start the RDBMS server
-startService @FIREBIRD_ARCH_TYPE@
+startService

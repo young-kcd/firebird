@@ -99,14 +99,7 @@ RTTI_FLAG:= -fno-rtti
 IsDeveloper = @DEVEL_FLG@
 
 CpuType=@CPU_TYPE@
-
 PLATFORM=@PLATFORM@
-ifeq (@FIREBIRD_ARCH_TYPE@,classic)
-	ArchPrefix=CS
-else
-	ArchPrefix=SS
-endif
-
 SFIO_EXAMPLES=@SFIO_EXAMPLES@
 
 # link with readline libraries - set by configure

@@ -39,7 +39,7 @@ if [ ! -z "$InteractiveInstall" ]
 then
 	cat <<EOF
 
-Firebird @FIREBIRD_ARCH_TYPE@ $Version Uninstall program
+Firebird $Version Uninstall program
 
 Are you sure you want to proceed?
 

@@ -53,10 +53,10 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 # This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
 
-TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
-TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar.gz
-DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
-DebugFile=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType).tar.gz
+TarDir= Firebird-$(Version).$(CpuType)
+TarFile=Firebird-$(Version).$(CpuType).tar.gz
+DebugDir=Firebird-debuginfo-$(Version).$(CpuType)
+DebugFile=Firebird-debuginfo-$(Version).$(CpuType).tar.gz
 
 
 PkgSrcDir=$(InstallRoot)/$(ArchType)
