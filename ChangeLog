@@ -1,3 +1,47 @@
+ 2012-06-06 14:50  asfernandes 
+   M src/dsql/pass1.cpp
+Warning.
+
+ 2012-06-06 13:17  paul_reeves 
+   M builds/win32/make_examples.bat
+Use FB_ prefix for environment variables
+
+ 2012-06-06 11:06  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/CharSet.cpp
+   M src/common/CharSet.h
+   M src/common/CsConvert.h
+   M src/common/cvt.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/cvt.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/intl_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Implemented CORE-3594: Include expected and actual string length into error message
+
+ 2012-06-05 15:31  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+Improvements to the UDR engines.
+
+ 2012-06-05 10:06  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+Some changes in CryptoManager, discussed with Vlad and Adriano
+
  2012-06-04 16:53  alexpeshkoff 
    M src/utilities/fbsvcmgr/fbsvcmgr.cpp
    M src/utilities/fbtracemgr/traceMgrMain.cpp
