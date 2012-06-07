@@ -15,6 +15,9 @@
 ::Uncomment this to build intlemp
 ::set FB2_INTLEMP=1
 
+:: This allows us to use the new engine in embedded mode to build 
+:: the employee database.
+set FIREBIRD=%FB_BIN_DIR%
 
 ::===========
 :MAIN
