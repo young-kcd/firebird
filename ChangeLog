@@ -1,3 +1,32 @@
+ 2012-06-07 11:43  alexpeshkoff 
+   M builds/install/arch-specific/aix/Makefile.in
+   M builds/install/arch-specific/aix/classic/rpmheader.txt.in
+   M builds/install/arch-specific/aix/misc/postinstall.sh.in
+   M builds/install/arch-specific/aix/misc/tarmaininstall.sh.in
+   M builds/install/arch-specific/aix/misc/tarmainuninstall.sh.in
+   M builds/install/arch-specific/freebsd/install.sh.in
+   M builds/install/arch-specific/hpux/Makefile.in
+   M builds/install/arch-specific/hpux/classic/tarmainInstall.sh.in
+   M builds/install/arch-specific/hpux/classic/tarmainUninstall.sh.in
+   M builds/install/arch-specific/linux/Makefile.in
+   M builds/install/arch-specific/linux/misc/postinstall.sh.in
+   M builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
+   M builds/install/arch-specific/solaris/CS/pkginfo.in
+   M builds/install/arch-specific/solaris/Makefile.in
+   M builds/install/arch-specific/solaris/SS/pkginfo.in
+   M builds/install/arch-specific/solx86gcc/Makefile.in
+   M builds/posix/make.defaults
+   M configure.in
+Cleanup - no more separate classic/super builds support
+
+ 2012-06-07 10:08  paul_reeves 
+   M builds/win32/run_all.bat
+Add option to just build (default is to do make packages after build.)
+
+ 2012-06-07 10:06  paul_reeves 
+   M builds/win32/make_examples.bat
+Build employee database with newly built embedded engine.
+
  2012-06-06 14:50  asfernandes 
    M src/dsql/pass1.cpp
 Warning.
