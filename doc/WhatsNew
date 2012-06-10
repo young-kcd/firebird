@@ -1,4 +1,364 @@
   **************************
+  * v2.5.2
+  **************************
+
+    * Bugfix CORE-3855
+        Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed
+        into newly allocated pages even if there is enough free place on some existing data page
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3853
+        Database created in Firebird 2.5.1 may cause the "IS NULL" predicate evaluated differently if used with Firebird 2.5.0
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3845
+        Interruption of a "heavy query" leads to 0 ms (zero duration) in its statistics in the trace log
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3844
+        Validation does not detect one specific case of index corruption
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3841
+        Corrupted database after inserting rows
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3834
+        Usage of a NATURAL JOIN with a derived table crashes the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3825
+        If an autocommit transaction (i.e. transaction started with isc_tpb_autocommit option) run DDL
+        using EXECUTE STATEMENT it will produce a bugcheck 287 (too many savepoints)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3819
+        Wrong service name to port address resolution in a database connection string
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3814
+        SuperClassic server crashes when performing a database shutdown (FW=OFF)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3812
+        Connection lost to database during massive dropping and altering primary keys of tables
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3810
+        ISQL: zero divide + coredump when use "-pag 0" command switch & set heading on inside .sql script
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3807
+        Error "Invalid expression in the select list" can be unexpectedly raised
+        if a string literal is used inside a GROUP BY clause in a multi-byte connection
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3806
+        Wrong data returned if a sub-query or a computed field refers to the base table in the ORDER BY clause
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3802
+        Firebird 2.5.1 runs out of memory while restoring database backup
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3801
+        Warnings could be put twice into the status vector
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3799
+        WITH CALLER PRIVILEGES option doesn't work with AUTONOMOUS TRANSACTION option
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3792
+        Performance of batch inserts is degraded
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3791
+        Performance degrades when actively working with databases bigger than the available RAM amount
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3778
+        Access violation at connection shutdown
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3777
+        Conversion error from string when using GROUP BY
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3770
+        fbtracemgr loads CPU up to ~55% when no activity is present
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3769
+        Message `Unknown tag (4) in isc_svc_query() results` appears when fbtracemgr is interrupted by Ctrl-C
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3762
+        GSEC returns 0 return code on some errors
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3761
+        Conversion error when using a blob as an argument for the EXCEPTION statement
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3750
+        Error increasing limits on POSIX
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3736
+        WITH LOCK clause is allowed for users with read-only rights on some table,
+        thus blocking others from updating this table
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3733
+        GBAK fails to fix system generators while restoring
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3732
+        Segfault when closing attachment to database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3730
+        isc_dsql_exec_immed2() loses input parameter value with RETURNING clause
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3722
+        IS NOT DISTINCT FROM NULL doesn't use index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3721
+        Multiuser server startup (/etc/init.d) script picks up the ISC_ variables if set
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3697
+        String truncation error when selecting from a VIEW with UNION inside
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3692
+        Cannot drop a NOT NULL constraint on a field participating in the UNIQUE constraint
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3690
+        Wrong warning message for ambiguous query
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3686
+        Incorrect (zero) values are reported for "acquire blocks" and "mutex wait" counters in the fb_lock_print output
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3683
+        Wrong results if the recursive query contains an embedded GROUP BY clause
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3682
+        Firebird 2.5.1 OSX Lion hangs on attaching to second database
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3677
+        Stop utilities to export entrypoints
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3675
+        CREATE INDEX considers NULL and empty string being the same in compound indices
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3658
+        FBSVCMGR connects to server as OS user name rather than value of ISC_USER environment variable
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3649
+        GBAK deletes backup file even if error happens when it's already successfully closed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3646
+        Segmentation fault in FreePascal multi-threaded program when using 2.5.x client library on Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3636
+        Firebird 2.5.1 server crashes with Trace API
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3631
+        Duplicate records with NULLs are checked incorrectly
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3627
+        Server crashes with access violation when inserting row into table with unique index
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3625
+        MON$IO_STATS doesn't report page writes performed asynchronously (at the AST level)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3612
+        GFIX-related services may loose error value in status vector in isc_service_start()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3611
+        Wrong data while retrieving from CTEs (or derived tables) with same column names
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3610
+        It's possible to insert duplicate keys into a unique index
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3609
+        Option -t displayed twice by fb_inet_server -h
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3607
+        Solaris does not define the RLIMIT_NPROC limit
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3606
+        Linker commands that use c or c++ compiler should apply CFLAGS and CXXFLAGS respectively
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3605
+        GLOB_OPTIONS mixes CFLAGS and CXXFLAGS which could be exclusively different
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3601
+        Incorrect TEXT BLOB charset transliteration on VIEW with trigger
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3599
+        Dropping the role RDB$ADMIN is allowed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3579
+        Can't drop table when computed field depends on later created another field
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3569
+        CHAR(32767) present in XSQLVAR with length 32765
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3557
+        Server crashes while preparing a query against the table being dropped
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3490
+        Concurrency problem when using named cursors
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3238
+        Makes GEN_UUID return a compliant RFC-4122 binary UUID and introduce
+        CHAR_TO_UUID2 and UUID_TO_CHAR2 to convert UUIDs from/to string also complying with the RFC
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3092
+        ROW_COUNT is not cleared before the singleton INSERT statement
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2457
+        UNICODE_CI internal gds software consistency check
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2286
+        Selecting from MON$CALL_STACK within a trigger or SP sometimes return zero rows
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1997
+        Broken foreign key handling for multi-segmented index using multi-level collations
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1992
+        Error "bad BLR -- invalid stream for union select"
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-927
+        Grants don't work for procedures used inside views
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-3727
+        Support C preprocessor flags in firebird build system
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3598
+        TRACE: add statistics of actions that happened after transaction has finished
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-3539
+        TRACE: add ability for logging ERRORs that occur in runtime (lock conflicts, PK/UK/FK violations et al)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+
+  **************************
   * v2.5.1
   **************************
 
