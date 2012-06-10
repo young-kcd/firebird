@@ -1795,6 +1795,24 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 			for (int j = 0; j < scratch.idx->idx_count; j++)
 			{
 				IndexScratchSegment* segment = scratch.segments[j];
+
+				// Special case: IS NULL against the in-the-middle segment of the ascending compound index.
+				// In ODS11, such a retrieval is not better than the one for the prior segment. So stop before
+				// utilizing that segment and leave the boolean for other possible matches.
+				if (!(scratch.idx->idx_flags & idx_descending) &&
+					segment->scanType == segmentScanMissing &&
+					j > 0 && j < scratch.idx->idx_count - 1)
+				{
+					IndexScratchSegment* const next_segment = scratch.segments[j + 1];
+
+					if (next_segment->scanType != segmentScanEqual &&
+						next_segment->scanType != segmentScanEquivalent &&
+						next_segment->scanType != segmentScanMissing)
+					{
+						break;
+					}
+				}
+
 				if (segment->scope == scope) {
 					scratch.scopeCandidate = true;
 				}
