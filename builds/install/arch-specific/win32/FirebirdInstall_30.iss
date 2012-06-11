@@ -896,7 +896,7 @@ end;
 
 function InitSecurityDb(Default: String): String;
 begin
-    Result := ' -add ' + GetAdminUserName + ' -pass ' + GetAdminUserPassword ;
+    Result := ' -add ' + GetAdminUserName + ' -pw ' + GetAdminUserPassword ;
 end;
 
 
