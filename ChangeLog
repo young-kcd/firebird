@@ -1,3 +1,11 @@
+ 2012-06-10 13:22  dimitr 
+   M src/jrd/Optimizer.cpp
+Optimizer level solution for CORE-2790/CORE-3449.
+
+ 2012-06-10 12:35  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
  2012-06-04 16:53  alexpeshkoff 
    M src/utilities/fbsvcmgr.cpp
    M src/utilities/fbtracemgr/traceMgrMain.cpp
