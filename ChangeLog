@@ -1,3 +1,11 @@
+ 2012-06-11 09:34  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Pass correct param to gsec
+
+ 2012-06-11 09:04  paul_reeves 
+   D builds/install/arch-specific/win32/FirebirdInstall_20.iss
+remove redundant file
+
  2012-06-07 11:43  alexpeshkoff 
    M builds/install/arch-specific/aix/Makefile.in
    M builds/install/arch-specific/aix/classic/rpmheader.txt.in
