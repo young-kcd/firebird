@@ -142,6 +142,27 @@ begin
   result := not Is64BitInstallMode;
 end;
 
+
+function IsWinEight: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 6) and (Version.Minor = 2) then
+     result := true;
+end;
+
+//this test is identical to IsWinEight
+function IsW2K12: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 6) and (Version.Minor = 2) then
+     result := true;
+end;
+
+
 function IsVista: boolean;
 var
   Version: TWindowsVersion;

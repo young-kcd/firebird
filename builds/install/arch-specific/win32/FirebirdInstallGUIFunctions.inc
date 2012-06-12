@@ -143,6 +143,8 @@ begin
 			
 end;
 
+
+// This needs more work. for now it is not used by the installer.
 procedure ResizeWizardFormWidth(AValue: Integer);
 var
 	i: integer;
@@ -163,10 +165,10 @@ begin
 		end;
 
     // Group 3 - reset left of components but keep 'centered' horizontally.
-		for i:=0 to GetArrayLength(CompGroup3Array)-1 do
-			TControl( CompGroup3.objects[i]).left := TControl(CompGroup3.objects[i]).left - (AValue div 2);
+//		for i:=0 to GetArrayLength(CompGroup3Array)-1 do
+//			TControl( CompGroup3.objects[i]).left := TControl(CompGroup3.objects[i]).left - (AValue div 2);
 
-		// Group 2 - reset left of buttons
+		// Group 4 - reset left of buttons
 		for i:=0 to GetArrayLength(CompGroupButtonsArray)-1 do begin
 			TControl(CompGroupButtons.objects[i]).left := TControl(CompGroupButtons.objects[i]).left + AValue;
 		end;
