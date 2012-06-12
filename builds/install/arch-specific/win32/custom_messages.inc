@@ -77,3 +77,5 @@ en.RunSC=Run Firebird SuperClassic server
 en.RunSS=Run Firebird SuperServer
 en.ServerTaskDescription=Choose Server Architecture:
 en.initSecurityDb=Adding SYSDBA to security database.
+en.SYSDBAPasswordMismatch=Password entry mismatch. Please re-enter the SYSDBA password.
+en.SYSDBAPasswordEmpty=Password is empty. You must enter a password for SYSDBA.
