@@ -348,11 +348,11 @@ ru.BeveledLabel=Русский
 #ifdef iss_debug
 ; By default, the languages available at runtime depend on the user's
 ; code page. A user with the Western European code page set will not
-; even see that we support installation with the Slovenian language
+; even see that we support installation with the czech language
 ; for example.
 ; It can be useful when debugging to force the display of all available
 ; languages by setting LanguageCodePage to 0. Of course, if the langauge
-; is not supported by the user's current code page it be unusable.
+; is not supported by the user's current code page it will be unusable.
 [LangOptions]
 LanguageCodePage=0
 #endif
@@ -371,7 +371,7 @@ Name: ClientComponent; Description: {cm:ClientComponent}; Types: ServerInstall D
 [Tasks]
 ;Server tasks
 Name: UseClassicServerTask; Description: {cm:RunCS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
-Name: UseSuperClassicTask; Description: {cm:RunSC}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
+;Name: UseSuperClassicTask; Description: {cm:RunSC}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseSuperServerTask; Description: {cm:RunSS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
 ;Name: UseGuardianTask; Description: {cm:UseGuardianTask}; GroupDescription: {cm:UseGuardianTaskDecription}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
@@ -440,7 +440,7 @@ Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 [Icons]
 ;TODO - get correct params for the different server flavours
 Name: {group}\Firebird SuperServer; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
-Name: {group}\Firebird SuperClassic; Filename: {app}\firebird.exe; Parameters: -a -m; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
+;Name: {group}\Firebird SuperClassic; Filename: {app}\firebird.exe; Parameters: -a -m; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Classic; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
@@ -490,9 +490,9 @@ Source: {#GenDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; F
 Source: {#GenDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
 ;Source: {#GenDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
-Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
+Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
-Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf.default; Components: ServerComponent;  check: fbtraceConfExists;
+Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf.default; Components: ServerComponent;
 Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist; check: NofbtraceConfExists;
 Source: {#FilesDir}\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\security3.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
@@ -695,9 +695,11 @@ begin
     );
   AdminUserPage.Add('SYSDBA Name:', False);
   AdminUserPage.Add('Password:', True);
+  AdminUserPage.Add('Retype Password:', True);
 
   AdminUserPage.Values[0] := SYSDBAName;
   AdminUserPage.Values[1] := SYSDBAPassword;
+  AdminUserPage.Values[2] := SYSDBAPassword;
 
 end;
 
@@ -900,7 +902,6 @@ begin
 end;
 
 
-
 function InstallGuardianIcon(): Boolean;
 begin
   result := false;
@@ -916,6 +917,7 @@ begin
     if NOT (IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask')) then
       result := true;
 end;
+
 //#FIXME
 function StartApp(Default: String): String;
 begin
@@ -1002,7 +1004,7 @@ begin
 
   SetupWizardFormComponentsArrays;
   ResizeWizardFormHeight(AHeight);
-  ResizeWizardFormWidth(AWidth);
+//  ResizeWizardFormWidth(AWidth);
 
 end;
 
@@ -1177,5 +1179,26 @@ begin
 end;
 
 
+function NextButtonClick(CurPageID: Integer): Boolean;
+var
+	i: integer;
+begin
+  { check user has entered sysdba password correctly. }
+	Result := True;
+  if CurPageID = AdminUserPage.ID then begin
+		if not (AdminUserPage.Values[0] = '') and (AdminUserPage.Values[1] = '') then begin
+			Result := False;
+      MsgBox(ExpandConstant('{cm:SYSDBAPasswordEmpty}'), mbError, MB_OK);
+		end;
+		i := CompareStr(AdminUserPage.Values[1],AdminUserPage.Values[2]);
+		If  not (i = 0) then begin
+			Result := False;
+			AdminUserPage.Values[1] :='';
+			AdminUserPage.Values[2] :='';
+      MsgBox(ExpandConstant('{cm:SYSDBAPasswordMismatch}'), mbError, MB_OK);
+    end;
+	end;
+end;
+	
 begin
 end.
