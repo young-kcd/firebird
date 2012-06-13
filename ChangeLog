@@ -1,3 +1,16 @@
+ 2012-06-12 14:32  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Validate sysdba password entry
+
+ 2012-06-12 14:29  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallGUIFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+Misc
+
+ 2012-06-12 14:27  paul_reeves 
+   M builds/install/arch-specific/win32/custom_messages.inc
+Add a couple of new i18n strings for the innosetup installer.
+
  2012-06-11 09:34  paul_reeves 
    M builds/install/arch-specific/win32/FirebirdInstall_30.iss
 Pass correct param to gsec
