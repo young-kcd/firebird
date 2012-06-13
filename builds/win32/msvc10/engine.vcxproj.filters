@@ -450,6 +450,9 @@
     <ClCompile Include="..\..\..\src\jrd\GarbageCollector.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\CryptoManager.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
@@ -975,6 +978,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\GarbageCollector.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\CryptoManager.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
