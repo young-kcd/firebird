@@ -1,3 +1,8 @@
+ 2012-06-13 07:59  hvlad 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+Update msvc10 build
+
  2012-06-12 14:32  paul_reeves 
    M builds/install/arch-specific/win32/FirebirdInstall_30.iss
 Validate sysdba password entry
