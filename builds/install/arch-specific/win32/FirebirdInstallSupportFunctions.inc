@@ -339,8 +339,9 @@ begin
   CommentSize := Length(CommentType);
   ArraySize := GetArrayLength(Lines)-1;
 
-  // Search through all textlines for given text
-  for i := 0 to ArraySize do begin
+  // Search through all textlines in reverse order for given text
+  // this way we can be sure to only change the active entry
+  for i := ArraySize downto 0 do begin
     // Overwrite textline when text searched for is part of it
     if Pos(StringToFind,Lines[i]) > 0 then begin
       // does this line start with a comment ?
@@ -349,13 +350,16 @@ begin
         // only replace if line does not start with a comment
         if CompareText(Copy(TempStr,1,CommentSize),CommentType) <> 0 then begin
           Lines[i] := NewLine;
-          FileChanged := true
+          FileChanged := true;
+          Break;
           end
-        end
+      end
       else begin
         Lines[i] := NewLine;
-        FileChanged := true
-      end
+        FileChanged := true;
+        Break;
+      end;
+      // break after first match.
     end
   end;
 

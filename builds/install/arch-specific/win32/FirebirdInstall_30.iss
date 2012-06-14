@@ -960,8 +960,10 @@ begin
 end;
 
 procedure UpdateFirebirdConf;
-// Update firebird conf. If user has deselected the guardian we should update
-// firebird.conf accordingly. Otherwise we leave the file unchanged.
+// Update firebird conf. 
+// If user has deselected the guardian we should update firebird.conf accordingly. 
+// We also test if user has asked for classic or super server
+// Otherwise we leave the file unchanged.
 var
   fbconf: TArrayOfString;
   i, position: Integer;
@@ -972,8 +974,29 @@ begin
   //we are doing a server install, so the easiest way is to see if a
   //firebird.conf exists. If it doesn't then we don't care.
   if FileExists(GetAppPath+'\firebird.conf') then begin
-    if NOT (IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask')) then
-      ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
+
+    if (IsComponentSelected('ServerComponent') ) then begin 
+	
+      if not IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
+				ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
+
+      // Firstly we need to count how many lines begin with SharedCache and SharedDatabase
+      // If 0 or 1 then proceed to modify else log error in some way.
+
+			if IsTaskSelected('UseClassicServerTask') OR IsTaskSelected('UseSuperClassicTask') then begin
+        // This will force server to classic, irrespective of whether the existing settings are the default or not.
+				ReplaceLine(GetAppPath+'\firebird.conf','SharedCache = ','SharedCache = false','');
+				ReplaceLine(GetAppPath+'\firebird.conf','SharedDatabase = ','SharedDatabase = true','');
+			end;	
+
+			if IsTaskSelected('UseSuperServerTask') OR IsTaskSelected('UseSuperClassicTask') then begin
+        // This will not change the settings if they are already commented out. (ie defaults will apply.)
+				ReplaceLine(GetAppPath+'\firebird.conf','SharedCache = ','SharedCache = true','#');
+				ReplaceLine(GetAppPath+'\firebird.conf','SharedDatabase = ','SharedDatabase = false','#');
+			end;	
+
+		end;	
+			
   end;
 end;
 
@@ -1162,7 +1185,6 @@ begin
 //    usDone :
 
   end;
-
 
 end;
 
