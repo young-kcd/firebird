@@ -1,3 +1,9 @@
+ 2012-06-14 09:31  paul_reeves 
+   M builds/install/arch-specific/win32
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Modify firebird.conf at install time according to choice of server architecture.
+
  2012-06-13 07:59  hvlad 
    M builds/win32/msvc10/engine.vcxproj
    M builds/win32/msvc10/engine.vcxproj.filters
