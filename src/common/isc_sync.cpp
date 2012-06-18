@@ -2883,18 +2883,14 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 		if (lpSect->lAvailable > 0)
 		{
 			lpSect->lAvailable--;
-#ifdef _DEBUG
-			lpSect->dwThreadId = GetCurrentThreadId();
-#endif
 			lpSect->lOwnerPID = pid;
+#ifdef DEV_BUILD
+			lpSect->lThreadId = GetCurrentThreadId();
+#endif
 			unlockSharedSection(lpSect);
 			return WAIT_OBJECT_0;
 		}
 
-#ifdef _DEBUG
-		if (lpSect->dwThreadId == GetCurrentThreadId())
-			DebugBreak();
-#endif
 		if (dwMilliseconds == 0)
 		{
 			unlockSharedSection(lpSect);
@@ -2928,8 +2924,9 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 		{
 			if (!ISC_check_process_existence(lpSect->lOwnerPID))
 			{
-#ifdef DEBUG
+#ifdef DEV_BUILD
 				gds__log("enterFastMutex: dead process detected, pid = %d", lpSect->lOwnerPID);
+				lpSect->lThreadId = 0;
 #endif
 				lpSect->lOwnerPID = 0;
 				lpSect->lAvailable++;
@@ -2953,7 +2950,12 @@ static bool leaveFastMutex(FAST_MUTEX* lpMutex)
 	lpSect->lAvailable++;
 	if (lpSect->lThreadsWaiting)
 		SetEvent(lpMutex->hEvent);
-	lpSect->lOwnerPID = -pid;
+	fb_assert(lpSect->lOwnerPID == pid);
+	lpSect->lOwnerPID = -lpSect->lOwnerPID;
+#ifdef DEV_BUILD
+	fb_assert(lpSect->lThreadId == GetCurrentThreadId());
+	lpSect->lThreadId = -lpSect->lThreadId;
+#endif
 	unlockSharedSection(lpSect);
 
 	return true;
@@ -3037,6 +3039,9 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 					lpMutex->lpSharedInfo->lThreadsWaiting = 0;
 					lpMutex->lpSharedInfo->lAvailable = bInitialState ? 0 : 1;
 					lpMutex->lpSharedInfo->lOwnerPID = bInitialState ? pid : 0;
+#ifdef DEV_BUILD
+					lpMutex->lpSharedInfo->lThreadId = bInitialState ? GetCurrentThreadId() : 0;
+#endif
 					InterlockedExchange(FIX_TYPE(&lpMutex->lpSharedInfo->fInitialized), 1);
 				}
 				else

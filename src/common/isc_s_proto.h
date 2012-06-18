@@ -114,8 +114,8 @@ struct FAST_MUTEX_SHARED_SECTION
 	SLONG lThreadsWaiting;
 	SLONG lAvailable;
 	SLONG lOwnerPID;
-#ifdef _DEBUG
-	DWORD dwThreadId;
+#ifdef DEV_BUILD
+	SLONG lThreadId;
 #endif
 };
 
