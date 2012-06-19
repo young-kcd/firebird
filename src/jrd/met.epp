@@ -2872,7 +2872,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			Lock(tdbb, LCK_prc_exist, procedure, blocking_ast_procedure);
 		procedure->prc_existence_lock = lock;
 		lock->lck_key.lck_long = procedure->getId();
-		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_length = sizeof(SLONG);
 	}
 
 	LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
@@ -3181,7 +3181,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 			Lock(tdbb, LCK_rel_partners, relation, partners_ast_relation);
 		relation->rel_partners_lock = lock;
 		lock->lck_key.lck_long = relation->rel_id;
-		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_length = sizeof(SLONG);
 	}
 
 	{ // Scope block.
@@ -3189,7 +3189,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 			Lock(tdbb, LCK_rel_rescan, relation, rescan_ast_relation);
 		relation->rel_rescan_lock = lock;
 		lock->lck_key.lck_long = relation->rel_id;
-		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_length = sizeof(SLONG);
 	}
 
 	// This should check system flag instead.
@@ -3202,7 +3202,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 			Lock(tdbb, LCK_rel_exist, relation, blocking_ast_relation);
 		relation->rel_existence_lock = lock;
 		lock->lck_key.lck_long = relation->rel_id;
-		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_length = sizeof(SLONG);
 	}
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
