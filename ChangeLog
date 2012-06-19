@@ -1,3 +1,8 @@
+ 2012-06-18 16:51  dimitr 
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+Removed the faulty debug break and reworked the code a bit to be more useful.
+
  2012-06-14 09:31  paul_reeves 
    M builds/install/arch-specific/win32
    M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
