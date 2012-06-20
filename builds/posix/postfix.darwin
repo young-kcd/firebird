@@ -53,6 +53,7 @@ darwin_finish_cs_framework: extlib
 	ln -s A $(FB_FW)/Versions/Current
 	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
 	cp ../gen/firebird/lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/lib/libfbclient.dylib $(FB_FW)/Versions/A/Libraries/libfbclient.dylib
 	cp ../gen/firebird/lib/libib_util.dylib $(FB_FW)/Versions/A/Libraries/libib_util.dylib
 	cp ../gen/firebird/firebird.msg \
 			$(FB_FW)/Resources/English.lproj/var/firebird.msg
@@ -100,6 +101,7 @@ darwin_finish_ss_framework: extlib
 	ln -s A $(FB_FW)/Versions/Current
 	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
 	cp ../gen/firebird/lib/libfbclient.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/lib/libfbclient.dylib $(FB_FW)/Versions/A/Libraries/libfbclient.dylib
 	cp ../gen/firebird/lib/libib_util.dylib $(FB_FW)/Versions/A/Libraries/libib_util.dylib
 	cp ../gen/firebird/firebird.msg \
 			$(FB_FW)/Resources/English.lproj/var/firebird.msg
