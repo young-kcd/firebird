@@ -815,7 +815,8 @@ public:
 		  defaultCollations(*getDefaultMemoryPool()),
 		  flag_on_line(true),
 		  uSvc(us),
-		  firstMap(true)
+		  firstMap(true),
+		  stdIoMode(false)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -977,6 +978,7 @@ public:
 	bool flag_on_line;	// indicates whether we will bring the database on-line
 	Firebird::UtilSvc* uSvc;
 	bool firstMap;      // this is the first time we entered get_mapping()
+	bool stdIoMode;		// stdin or stdout is used as backup file
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
@@ -988,16 +990,7 @@ const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
 											indices */
 
 // I/O definitions
-
-#ifndef IO_BUFFER_SIZE
-#ifdef BUFSIZ
-const int GBAK_IO_BUFFER_SIZE = (16 * (BUFSIZ));
-#else
-const int GBAK_IO_BUFFER_SIZE = (16 * (1024));
-#endif
-#else
-const int GBAK_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
-#endif
+const int GBAK_IO_BUFFER_SIZE = SVC_IO_BUFFER_SIZE;
 
 /* Burp will always write a backup in multiples of the following number
  * of bytes.  The initial value is the smallest which ensures that writes

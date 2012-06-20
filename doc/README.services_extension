@@ -31,6 +31,7 @@ password are set using some other method):
  Return to normal state:
   fbsvcmgr service_mgr action_properties dbname employee prp_online_mode prp_sm_normal
 
+
 2) Services API extension - nbackup support.
 (Alex Peshkov, peshkoff@mail.ru, 2008)
 
@@ -82,7 +83,7 @@ Start user trace session :
 
 Stop trace session
 	action
-		isc_action_svc_trace_stop     
+		isc_action_svc_trace_stop
 
 	parameter(s)
 		isc_spb_trc_id : trace session ID, integer, mandatory
@@ -96,7 +97,7 @@ Stop trace session
 
 Suspend trace session
 	action
-		isc_action_svc_trace_suspend  
+		isc_action_svc_trace_suspend
 
 	parameter(s)
 		isc_spb_trc_id : trace session ID, integer, mandatory
@@ -109,7 +110,7 @@ Suspend trace session
 
 Resume trace session
 	action
-		isc_action_svc_trace_resume   
+		isc_action_svc_trace_resume
 
 	parameter(s)
 		isc_spb_trc_id : trace session ID, integer, mandatory
@@ -122,7 +123,7 @@ Resume trace session
 
 List of existing trace sessions
 	action
-		isc_action_svc_trace_list     
+		isc_action_svc_trace_list
 
 	parameter(s)
 		none
@@ -134,7 +135,7 @@ List of existing trace sessions
 			-   user:  <string>
 			-   date:  YYYY-MM-DD HH:NN:SS
 			-   flags: <string>
-		
+
 		"name" is trace session name and not printed if empty.
 		"user" is creator user name
 		"date" is session start date and time
@@ -150,3 +151,44 @@ List of existing trace sessions
 with isc_info_svc_line or isc_info_svc_to_eof information items.
 
 See also README.trace_services
+
+
+4) Services API extension - running gbak at server side with .fbk at the client.
+(Alex Peshkov, peshkoff@mail.ru, 2011-2012)
+
+This way of doing backups is specially efficient when one needs to perform
+backup/restore operation for database, located on ther server accessed using
+internet, due to serious performance instrease.
+
+The simplest way to use this feature is fbsvcmgr. To backup database run
+approximately the following:
+fbsvcmgr remotehost:service_mgr -user sysdba -password XXX \
+	action_backup -dbname some.fdb -bkp_file stdout >some.fbk
+
+and to restore it:
+fbsvcmgr remotehost:service_mgr -user sysdba -password XXX \
+	action_restore -dbname some.fdb -bkp_file stdin <some.fbk
+
+Please notice - you can't use "verbose" switch when performing backup because
+data channel from server to client is used to deliver blocks of fbk files. You
+will get appropriate error message if you try to do it. When restoring database
+verbose mode may be used without limitations.
+
+If you want to perform backup/restore from your own program, you should use
+services API for it. Backup is very simple - just pass "stdout" as backup file
+name to server and use isc_info_svc_to_eof in isc_service_query() call. Data,
+returned by repeating calls to isc_service_query() (certainly with
+isc_info_svc_to_eof tag) is a stream, representing image of backup file. Restore
+is a bit more tricky. Client sends new spb parameter isc_info_svc_stdin to server
+in isc_service_query(). If service needs some data in stdin, it returns
+isc_info_svc_stdin in query results, followed by 4-bytes value - number of bytes
+server is ready to accept from client. (0 value means no more data is needed right
+now.) The main trick is that client should NOT send more data than requested by
+server - this causes an error "Size of data is more than requested". The data is
+sent in next isc_service_query() call in the send_items block, using
+isc_info_svc_line tag in tradition form: isc_info_svc_line, 2 bytes length, data.
+When server needs next portion, it once more returns non-zero isc_info_svc_stdin
+value from isc_service_query().
+
+A sample of how services API should be used for remote backup and restore can be
+found in source code of fbsvcmgr.

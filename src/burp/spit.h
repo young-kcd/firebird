@@ -42,8 +42,3 @@ const int MAX_NUM_OF_FILES		= 9999;
 const int MIN_FILE_SIZE			= M_BYTES;
 const char NEW_LINE				= '\n';
 const char TERMINAL				= '\0';
-
-typedef int FILE_DESC;
-
-const FILE_DESC GBAK_STDIN_DESC		= 0;	// standard input file descriptor
-const FILE_DESC GBAK_STDOUT_DESC	= 1;	// standard output file descriptor

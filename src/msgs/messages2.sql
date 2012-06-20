@@ -2432,7 +2432,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('gbak_file_outof_sequence', 'open_files', 'burp.c', NULL, 12, 263, NULL, 'file @1 out of sequence', NULL, NULL);
 ('gbak_join_file_missing', 'open_files', 'burp.c', NULL, 12, 264, NULL, 'can''t join -- one of the files missing', NULL, NULL);
 ('gbak_stdin_not_supptd', 'open_files', 'burp.c', NULL, 12, 265, NULL, ' standard input is not supported when using join operation', NULL, NULL);
-('gbak_stdout_not_supptd', 'open_files', 'burp.c', NULL, 12, 266, NULL, 'standard output is not supported when using split operation', NULL, NULL);
+('gbak_stdout_not_supptd', 'open_files', 'burp.c', NULL, 12, 266, NULL, 'standard output is not supported when using split operation or in verbose mode', NULL, NULL);
 ('gbak_bkup_corrupt', 'open_files', 'burp.c', NULL, 12, 267, NULL, 'backup file @1 might be corrupt', NULL, NULL);
 ('gbak_unk_db_file_spec', 'open_files', 'burp.c', NULL, 12, 268, NULL, 'database file specification missing', NULL, NULL);
 ('gbak_hdr_write_failed', 'MVOL_init_write', 'mvol.c', NULL, 12, 269, NULL, 'can''t write a header record to file @1', NULL, NULL);

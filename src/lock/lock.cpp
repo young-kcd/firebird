@@ -103,7 +103,7 @@
 #endif
 
 #ifdef DEV_BUILD
-#define VALIDATE_LOCK_TABLE
+//#define VALIDATE_LOCK_TABLE
 #endif
 
 #ifdef DEV_BUILD

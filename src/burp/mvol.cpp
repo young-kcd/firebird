@@ -100,6 +100,7 @@ static void  put_numeric(SCHAR, int);
 static bool  read_header(DESC, ULONG*, USHORT*, bool);
 static bool  write_header(DESC, ULONG, bool);
 static DESC	 next_volume(DESC, ULONG, bool);
+static void	 mvol_read(int*, UCHAR**);
 
 
 //____________________________________________________________
@@ -109,15 +110,16 @@ FB_UINT64 MVOL_fini_read()
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (strcmp(tdgbl->mvol_old_file, "stdin") != 0)
+	if (!tdgbl->stdIoMode)
 	{
 		close_platf(tdgbl->file_desc);
+	}
 
-		for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+	for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+	{
+		if (file->fil_fd == tdgbl->file_desc) 
 		{
-			if (file->fil_fd == tdgbl->file_desc) {
-				file->fil_fd = INVALID_HANDLE_VALUE;
-			}
+			file->fil_fd = INVALID_HANDLE_VALUE;
 		}
 	}
 
@@ -139,15 +141,19 @@ FB_UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 
 	MVOL_write(rec_end, io_cnt, io_ptr);
 	flush_platf(tdgbl->file_desc);
-	if (strcmp(tdgbl->mvol_old_file, "stdout") != 0)
+
+	if (!tdgbl->stdIoMode)
 	{
 		close_platf(tdgbl->file_desc);
-		for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+	}
+	for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+	{
+		if (file->fil_fd == tdgbl->file_desc)
 		{
-			if (file->fil_fd == tdgbl->file_desc)
-				file->fil_fd = INVALID_HANDLE_VALUE;
+			file->fil_fd = INVALID_HANDLE_VALUE;
 		}
 	}
+
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
 	BURP_free(tdgbl->mvol_io_header);
 	tdgbl->mvol_io_header = NULL;
@@ -260,12 +266,48 @@ void MVOL_init_write(const char*	file_name,
 }
 
 
+//____________________________________________________________
+//
+// Read a buffer's worth of data. (common)
+//
+int MVOL_read(int* cnt, UCHAR** ptr)
+{
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+
+	if (tdgbl->stdIoMode && tdgbl->uSvc->isService())
+	{
+		tdgbl->uSvc->started();
+		tdgbl->mvol_io_cnt = tdgbl->uSvc->getBytes(tdgbl->mvol_io_buffer, tdgbl->mvol_io_buffer_size);
+		if (!tdgbl->mvol_io_cnt)
+		{
+			BURP_error_redirect(0, 220);
+			// msg 220 Unexpected I/O error while reading from backup file
+		}
+		tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
+	}
+	else
+	{
+		mvol_read(cnt, ptr);
+	}
+
+	tdgbl->mvol_cumul_count += tdgbl->mvol_io_cnt;
+	file_not_empty();
+
+	if (ptr)
+		*ptr = tdgbl->mvol_io_ptr + 1;
+	if (cnt)
+		*cnt = tdgbl->mvol_io_cnt - 1;
+
+	return *tdgbl->mvol_io_ptr;
+}
+
+
 #ifndef WIN_NT
 //____________________________________________________________
 //
 // Read a buffer's worth of data. (non-WIN_NT)
 //
-int MVOL_read(int* cnt, UCHAR** ptr)
+static void mvol_read(int* cnt, UCHAR** ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -300,14 +342,6 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 			}
 		}
 	}
-
-	tdgbl->mvol_cumul_count += tdgbl->mvol_io_cnt;
-	file_not_empty();
-
-	*ptr = tdgbl->mvol_io_ptr + 1;
-	*cnt = tdgbl->mvol_io_cnt - 1;
-
-	return *tdgbl->mvol_io_ptr;
 }
 
 
@@ -316,7 +350,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 //
 // Read a buffer's worth of data. (WIN_NT)
 //
-int MVOL_read(int* cnt, UCHAR** ptr)
+static void mvol_read(int* cnt, UCHAR** ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -348,14 +382,6 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 				// msg 50 unexpected end of file on backup file
 		}
 	}
-
-	tdgbl->mvol_cumul_count += tdgbl->mvol_io_cnt;
-	file_not_empty();
-
-	*ptr = tdgbl->mvol_io_ptr + 1;
-	*cnt = tdgbl->mvol_io_cnt - 1;
-
-	return *tdgbl->mvol_io_ptr;
 }
 #endif // !WIN_NT
 
@@ -512,78 +538,22 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 	const ULONG size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
 	ULONG left = size_to_write;
 
-	for (ptr = tdgbl->mvol_io_buffer; left > 0; ptr += cnt, left -= cnt)
+	if (tdgbl->stdIoMode && tdgbl->uSvc->isService())
 	{
-		if (tdgbl->action->act_action == ACT_backup_split)
+		tdgbl->uSvc->started();
+		tdgbl->uSvc->putBytes(tdgbl->mvol_io_buffer, left);
+		left = 0;
+	}
+	else
+	{
+		for (ptr = tdgbl->mvol_io_buffer; left > 0; ptr += cnt, left -= cnt)
 		{
-			// Write to the current file till fil_length > 0, otherwise
-			// switch to the next one
-			if (tdgbl->action->act_file->fil_length == 0)
-			{
-				if (tdgbl->action->act_file->fil_next)
-				{
-					close_platf(tdgbl->file_desc);
-					for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
-					{
-						if (file->fil_fd == tdgbl->file_desc)
-							file->fil_fd = INVALID_HANDLE_VALUE;
-					}
-					tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
-					tdgbl->action->act_file = tdgbl->action->act_file->fil_next;
-					tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
-				}
-				else
-				{
-					// This is a last file. Keep writing in a hope that there is
-					// enough free disk space ...
-					tdgbl->action->act_file->fil_length = MAX_LENGTH;
-				}
-			}
-		}
-
-		const size_t nBytesToWrite =
-			(tdgbl->action->act_action == ACT_backup_split &&
-				tdgbl->action->act_file->fil_length < left) ?
-			 		tdgbl->action->act_file->fil_length : left;
-
-#ifndef WIN_NT
-		cnt = write(tdgbl->file_desc, ptr, nBytesToWrite);
-#else
-
-		DWORD ret = 0;
-		if (!WriteFile(tdgbl->file_desc, ptr, (DWORD) nBytesToWrite, &cnt, NULL))
-		{
-			ret = GetLastError();
-		}
-#endif // !WIN_NT
-		tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
-		if (cnt > 0)
-		{
-			tdgbl->mvol_cumul_count += cnt;
-			file_not_empty();
 			if (tdgbl->action->act_action == ACT_backup_split)
 			{
-				if (tdgbl->action->act_file->fil_length < left)
-					tdgbl->action->act_file->fil_length = 0;
-				else
-					tdgbl->action->act_file->fil_length -= left;
-			}
-		}
-		else
-		{
-			if (!cnt ||
-#ifndef WIN_NT
-				errno == ENOSPC || errno == EIO || errno == ENXIO ||
-				errno == EFBIG)
-#else
-				ret == ERROR_DISK_FULL || ret == ERROR_HANDLE_DISK_FULL)
-#endif // !WIN_NT
-			{
-				if (tdgbl->action->act_action == ACT_backup_split)
+				// Write to the current file till fil_lingth > 0, otherwise
+				// switch to the next one
+				if (tdgbl->action->act_file->fil_length == 0)
 				{
-					// Close the current file and switch to the next one.
-					// If there is no more specified files left then
-					// issue an error and give up
 					if (tdgbl->action->act_file->fil_next)
 					{
 						close_platf(tdgbl->file_desc);
@@ -592,89 +562,154 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 							if (file->fil_fd == tdgbl->file_desc)
 								file->fil_fd = INVALID_HANDLE_VALUE;
 						}
-
 						tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
-						BURP_print(true, 272, SafeArg() <<
-									tdgbl->action->act_file->fil_name.c_str() <<
-									tdgbl->action->act_file->fil_length <<
-									tdgbl->action->act_file->fil_next->fil_name.c_str());
-						// msg 272 Warning -- free disk space exhausted for file %s,
-						// the rest of the bytes (%d) will be written to file %s
-						tdgbl->action->act_file->fil_next->fil_length +=
-							tdgbl->action->act_file->fil_length;
 						tdgbl->action->act_file = tdgbl->action->act_file->fil_next;
 						tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
 					}
 					else
 					{
+						// This is a last file. Keep writing in a hope that there is
+						// enough free disk space ...
+						tdgbl->action->act_file->fil_length = MAX_LENGTH;
+					}
+				}
+			}
+
+			const size_t nBytesToWrite =
+				(tdgbl->action->act_action == ACT_backup_split &&
+					tdgbl->action->act_file->fil_length < left) ?
+				 		tdgbl->action->act_file->fil_length : left;
+
+#ifndef WIN_NT
+			cnt = write(tdgbl->file_desc, ptr, nBytesToWrite);
+#else
+
+			DWORD ret = 0;
+			if (!WriteFile(tdgbl->file_desc, ptr, (DWORD) nBytesToWrite, &cnt, NULL))
+			{
+				ret = GetLastError();
+			}
+#endif // !WIN_NT
+			tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
+			if (cnt > 0)
+			{
+				tdgbl->mvol_cumul_count += cnt;
+				file_not_empty();
+				if (tdgbl->action->act_action == ACT_backup_split)
+				{
+					if (tdgbl->action->act_file->fil_length < left)
+						tdgbl->action->act_file->fil_length = 0;
+					else
+						tdgbl->action->act_file->fil_length -= left;
+				}
+			}
+			else
+			{
+				if (!cnt ||
+#ifndef WIN_NT
+					errno == ENOSPC || errno == EIO || errno == ENXIO ||
+					errno == EFBIG)
+#else
+					ret == ERROR_DISK_FULL || ret == ERROR_HANDLE_DISK_FULL)
+#endif // !WIN_NT
+				{
+					if (tdgbl->action->act_action == ACT_backup_split)
+					{
+						// Close the current file and switch to the next one.
+						// If there is no more specified files left then
+						// issue an error and give up
+						if (tdgbl->action->act_file->fil_next)
+						{
+							close_platf(tdgbl->file_desc);
+							for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+							{
+								if (file->fil_fd == tdgbl->file_desc)
+									file->fil_fd = INVALID_HANDLE_VALUE;
+							}
+
+							tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
+							BURP_print(false, 272, SafeArg() <<
+										tdgbl->action->act_file->fil_name.c_str() <<
+										tdgbl->action->act_file->fil_length <<
+										tdgbl->action->act_file->fil_next->fil_name.c_str());
+							// msg 272 Warning -- free disk space exhausted for file %s,
+							// the rest of the bytes (%d) will be written to file %s
+							tdgbl->action->act_file->fil_next->fil_length +=
+								tdgbl->action->act_file->fil_length;
+							tdgbl->action->act_file = tdgbl->action->act_file->fil_next;
+							tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
+						}
+						else
+						{
+							BURP_error(270, true);
+							// msg 270 free disk space exhausted
+						}
+						cnt = 0;
+						continue;
+					}
+
+					if (tdgbl->uSvc->isService())
+					{
 						BURP_error(270, true);
 						// msg 270 free disk space exhausted
 					}
-					cnt = 0;
-					continue;
-				}
 
-				if (tdgbl->uSvc->isService())
+					// Note: there is an assumption here, that if header data is being
+					// written, it is really being rewritten, so at least all the
+					// header data will be written
+
+					if (left != size_to_write)
+					{
+						// Wrote some, move remainder up in buffer.
+
+						// NOTE: We should NOT use memcpy here.  We're moving overlapped
+						// data and memcpy does not guanantee the order the data
+						// is moved in
+						memcpy(tdgbl->mvol_io_data, ptr, left);
+					}
+					left += tdgbl->mvol_io_data - tdgbl->mvol_io_header;
+					bool full_buffer;
+					if (left >=  tdgbl->mvol_io_buffer_size)
+						full_buffer = true;
+					else
+						full_buffer = false;
+					tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
+					if (full_buffer)
+					{
+						left -= tdgbl->mvol_io_buffer_size;
+						memcpy(tdgbl->mvol_io_data,
+							   tdgbl->mvol_io_header + tdgbl->mvol_io_buffer_size,
+							   left);
+						tdgbl->mvol_cumul_count += tdgbl->mvol_io_buffer_size;
+						tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
+					}
+					else
+						tdgbl->mvol_io_buffer = tdgbl->mvol_io_header;
+					break;
+				}
+				else if (!SYSCALL_INTERRUPTED(errno))
 				{
-					BURP_error(270, true);
-					// msg 270 free disk space exhausted
+					BURP_error_redirect(0, 221);
+					// msg 221 Unexpected I/O error while writing to backup file
 				}
-
-				// Note: there is an assumption here, that if header data is being
-				// written, it is really being rewritten, so at least all the
-				// header data will be written
-
-				if (left != size_to_write)
-				{
-					// Wrote some, move remainder up in buffer.
-
-					// NOTE: We should NOT use memcpy here.  We're moving overlapped
-					// data and memcpy does not guanantee the order the data
-					// is moved in
-					memcpy(tdgbl->mvol_io_data, ptr, left);
-				}
-				left += tdgbl->mvol_io_data - tdgbl->mvol_io_header;
-				bool full_buffer;
-				if (left >=  tdgbl->mvol_io_buffer_size)
-					full_buffer = true;
-				else
-					full_buffer = false;
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
-				if (full_buffer)
-				{
-					left -= tdgbl->mvol_io_buffer_size;
-					memcpy(tdgbl->mvol_io_data,
-						   tdgbl->mvol_io_header + tdgbl->mvol_io_buffer_size,
-						   left);
-					tdgbl->mvol_cumul_count += tdgbl->mvol_io_buffer_size;
-					tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
-				}
-				else
-					tdgbl->mvol_io_buffer = tdgbl->mvol_io_header;
-				break;
 			}
-			else if (!SYSCALL_INTERRUPTED(errno))
-			{
-				BURP_error_redirect(0, 221);
-				// msg 221 Unexpected I/O error while writing to backup file
+			if (left < cnt) {	// this is impossible, but...
+				cnt = left;
 			}
-		}
-		if (left < cnt) {	// this is impossible, but...
-			cnt = left;
-		}
 
-	} // for
+		} // for
 
 #ifdef DEBUG
-	{
-		int dbg_cnt;
-		if (debug_on)
 		{
-			for (dbg_cnt = 0; dbg_cnt < cnt; dbg_cnt++)
-				printf("%d,\n", *(ptr + dbg_cnt));
+			int dbg_cnt;
+			if (debug_on)
+			{
+				for (dbg_cnt = 0; dbg_cnt < cnt; dbg_cnt++)
+					printf("%d,\n", *(ptr + dbg_cnt));
+			}
 		}
-	}
 #endif
+	}
 
 	// After the first block of first volume is written (using a default block size)
 	// change the block size to one that reflects the user's blocking factor.  By
@@ -956,27 +991,27 @@ static void prompt_for_name(SCHAR* name, int length)
 		if (strlen(tdgbl->mvol_old_file) > 0)
 		{
 			BURP_msg_get(225, msg, SafeArg() << (tdgbl->mvol_volume_count - 1) << tdgbl->mvol_old_file);
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 			BURP_msg_get(226, msg);
 			// \tPress return to reopen that file, or type a new\n\tname
 			// followed by return to open a different file.\n
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 		}
 		else	// First volume
 		{
 			BURP_msg_get(227, msg);
 			// Type a file name to open and hit return
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 		}
 		BURP_msg_get(228, msg);	// "  Name: "
-		fprintf(term_out, msg);
+		fprintf(term_out, "%s", msg);
 
 		fflush(term_out);
 		if (fgets(name, length, term_in) == NULL)
 		{
 			BURP_msg_get(229, msg);
 			// \n\nERROR: Backup incomplete\n
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 			BURP_exit_local(FINI_ERROR, tdgbl);
 		}
 
@@ -1073,13 +1108,21 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 
 	// Headers are a version number, and a volume number
 
+	if (tdgbl->stdIoMode && tdgbl->uSvc->isService())
+	{
+		tdgbl->uSvc->started();
+		tdgbl->mvol_io_cnt = tdgbl->uSvc->getBytes(tdgbl->mvol_io_buffer, tdgbl->mvol_io_buffer_size);
+	}
+	else
+	{
 #ifndef WIN_NT
-	tdgbl->mvol_io_cnt = read(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size);
+		tdgbl->mvol_io_cnt = read(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size);
 #else
-	DWORD bytesRead = 0;
-	ReadFile(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size, &bytesRead, NULL);
-	tdgbl->mvol_io_cnt = bytesRead;
+		DWORD bytesRead = 0;
+		ReadFile(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size, &bytesRead, NULL);
+		tdgbl->mvol_io_cnt = bytesRead;
 #endif
+	}
 	if (!tdgbl->mvol_io_cnt)
 		BURP_error_redirect(0, 45); // maybe there's a better message
 
@@ -1140,7 +1183,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(230, msg, SafeArg() << tdgbl->gbl_backup_start_time << buffer);
 				// Expected backup start time %s, found %s\n
-				printf(msg);
+				printf("%s", msg);
 				return false;
 			}
 			break;
@@ -1174,7 +1217,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(231, msg, SafeArg() << tdgbl->gbl_database_file_name << buffer);
 				// Expected backup database %s, found %s\n
-				printf(msg);
+				printf("%s", msg);
 				return false;
 			}
 			if (init_flag)
@@ -1203,7 +1246,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(232, msg, SafeArg() << tdgbl->mvol_volume_count << temp);
 				// Expected volume number %d, found volume %d\n
-				printf(msg);
+				printf("%s", msg);
 				return false;
 			}
 			break;

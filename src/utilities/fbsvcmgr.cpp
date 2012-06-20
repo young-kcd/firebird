@@ -40,6 +40,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 #include "../jrd/license.h"
+#include "../burp/std_desc.h"
 
 using namespace Firebird;
 
@@ -475,7 +476,7 @@ const SvcSwitches traceChgStateOptions[] =
 
 const SvcSwitches actionSwitch[] =
 {
-	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
+	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_to_eof},
 	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
 	{"action_properties", putSingleTag, propertiesOptions, isc_action_svc_properties, 0},
 	{"action_repair", putSingleTag, repairOptions, isc_action_svc_repair, 0},
@@ -527,9 +528,23 @@ bool printLine(const char*& p)
 
 bool printData(const char*& p)
 {
+	static DESC binout = INVALID_HANDLE_VALUE;
+	if (binout == INVALID_HANDLE_VALUE)
+	{
+		binout = GBAK_STDOUT_DESC();
+	}
+
 	string s;
 	bool rc = getLine(s, p);
-	printf ("%s", s.c_str());
+	if (rc)
+	{
+#ifdef WIN_NT
+		DWORD cnt;
+		WriteFile(binout, s.c_str(), s.length(), &cnt, NULL);
+#else
+		write(binout, s.c_str(), s.length());
+#endif
+	}
 	return rc;
 }
 
@@ -599,12 +614,14 @@ public:
 	}
 };
 
-bool printInfo(const char* p, UserPrint& up)
+bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 {
 	bool ret = false;
 	bool ignoreTruncation = false;
+	stdinRq = 0;
+	const char* const end = p + pSize;
 
-	while (*p != isc_info_end)
+	while (p < end && *p != isc_info_end)
 	{
 		switch (*p++)
 		{
@@ -759,9 +776,10 @@ bool printInfo(const char* p, UserPrint& up)
 		case isc_info_truncated:
 			if (!ignoreTruncation)
 			{
-				printf("%s\n", getMessage(18).c_str());
-				return false;
+				printf("\n%s\n", getMessage(18).c_str());
 			}
+			fflush(stdout);
+			ret = true;
 			break;
 
 		case isc_info_svc_timeout:
@@ -769,12 +787,24 @@ bool printInfo(const char* p, UserPrint& up)
 			ret = true;
 			break;
 
+		case isc_info_svc_stdin:
+			stdinRq = getNumeric(p);
+			if (stdinRq > 0)
+			{
+				ret = true;
+			}
+			break;
+
 		default:
 			status_exception::raise(Arg::Gds(isc_fbsvcmgr_query_err) <<
 									Arg::Num(static_cast<unsigned char>(p[-1])));
+#ifdef DEV_BUILD
+			abort();
+#endif
 		}
 	}
 
+	fflush(stdout);
 	return ret;
 }
 
@@ -916,6 +946,8 @@ int main(int ac, char** av)
 
 		if (spbItems.getBufferLength() > 0)
 		{
+			spbItems.insertTag(isc_info_svc_stdin);
+
 			// use one second timeout to poll service
 			char send[16];
 			char* p = send;
@@ -925,10 +957,53 @@ int main(int ac, char** av)
 			*p++ = isc_info_end;
 
 			char results[maxbuf];
-			UserPrint up;
+			UserPrint uPrint;
+			ULONG stdinRequest = 0;
+			Array<char> stdinBuffer;
 			do
 			{
-				if (isc_service_query(status, &svc_handle, 0, p - send, send,
+				char *sendBlock = send;
+				USHORT sendSize = p - send;
+				if (stdinRequest)
+				{
+					--sendSize;
+					size_t len = sendSize;
+					len += (1 + 2 + stdinRequest);
+					if (len > MAX_USHORT - 1)
+					{
+						len = MAX_USHORT - 1;
+						stdinRequest = len - (1 + 2) - sendSize;
+					}
+					sendBlock = stdinBuffer.getBuffer(len + 1);
+					memcpy(sendBlock, send, sendSize);
+
+					static DESC binIn = INVALID_HANDLE_VALUE;
+					if (binIn == INVALID_HANDLE_VALUE)
+					{
+						binIn = GBAK_STDIN_DESC();
+					}
+
+#ifdef WIN_NT
+					DWORD n;
+					if (!ReadFile(binIn, &sendBlock[sendSize + 1 + 2], stdinRequest, &n, NULL))
+#else
+					int n = read(binIn, &sendBlock[sendSize + 1 + 2], stdinRequest);
+					if (n < 0)
+#endif
+					{
+						perror("stdin");
+						break;
+					}
+					stdinRequest = n;
+					sendBlock[sendSize] = isc_info_svc_line;
+					sendBlock[sendSize + 1] = stdinRequest;
+					sendBlock[sendSize + 2] = stdinRequest >> 8;
+					sendBlock [sendSize + 1 + 2 + stdinRequest] = isc_info_end;
+					sendSize += (1 + 2 + stdinRequest + 1);
+
+					stdinRequest = 0;
+				}
+				if (isc_service_query(status, &svc_handle, 0, sendSize, sendBlock,
 						static_cast<USHORT>(spbItems.getBufferLength()),
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))
@@ -937,10 +1012,14 @@ int main(int ac, char** av)
 					isc_service_detach(status, &svc_handle);
 					return 1;
 				}
-			} while (printInfo(results, up) && !terminated);
+			} while (printInfo(results, sizeof(results), uPrint, stdinRequest) && !terminated);
 		}
 
-		isc_service_detach(status, &svc_handle);
+		if (isc_service_detach(status, &svc_handle))
+		{
+			isc_print_status(status);
+			return 1;
+		}
 		return 0;
 	}
 	catch (const Exception& e)

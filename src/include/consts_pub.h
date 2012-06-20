@@ -318,6 +318,7 @@
 #define isc_info_svc_limbo_trans	66	/* Retrieve the limbo transactions */
 #define isc_info_svc_running		67	/* Checks to see if a service is running on an attachment */
 #define isc_info_svc_get_users		68	/* Returns the user information from isc_action_svc_display_users */
+#define isc_info_svc_stdin			78	/* Returns size of data, needed as stdin for service */
 
 /******************************************************
  * Parameters for isc_action_{add|del|mod|disp)_user  *
