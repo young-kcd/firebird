@@ -871,10 +871,11 @@ public:
 	BurpGlobals(Firebird::UtilSvc* us)
 		: ThreadData(ThreadData::tddGBL),
 		  defaultCollations(*getDefaultMemoryPool()),
-		  flag_on_line(true),
 		  uSvc(us),
+		  verboseInterval(10000),
+		  flag_on_line(true),
 		  firstMap(true),
-		  verboseInterval(10000)
+		  stdIoMode(false)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -886,8 +887,6 @@ public:
 								// would be set to FINI_OK (==0) in exit_local
 	}
 
-	Firebird::Array<Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> > >
-		defaultCollations;
 	const TEXT*	gbl_database_file_name;
 	TEXT		gbl_backup_start_time[30];
 	bool		gbl_sw_verbose;
@@ -1034,10 +1033,13 @@ public:
 	char veryEnd;
 	//starting after this members must be initialized in constructor explicitly
 
-	bool flag_on_line;	// indicates whether we will bring the database on-line
+	Firebird::Array<Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> > >
+		defaultCollations;
 	Firebird::UtilSvc* uSvc;
-	bool firstMap;      // this is the first time we entered get_mapping()
 	ULONG verboseInterval;	// How many records should be backed up or restored before we show this message
+	bool flag_on_line;		// indicates whether we will bring the database on-line
+	bool firstMap;			// this is the first time we entered get_mapping()
+	bool stdIoMode;			// stdin or stdout is used as backup file
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
@@ -1048,16 +1050,7 @@ void	BURP_exit_local(int code, BurpGlobals* tdgbl);
 const int FINI_DB_NOT_ONLINE		= 2;
 
 // I/O definitions
-
-#ifndef IO_BUFFER_SIZE
-#ifdef BUFSIZ
-const int GBAK_IO_BUFFER_SIZE = (16 * (BUFSIZ));
-#else
-const int GBAK_IO_BUFFER_SIZE = (16 * (1024));
-#endif
-#else
-const int GBAK_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
-#endif
+const int GBAK_IO_BUFFER_SIZE = SVC_IO_BUFFER_SIZE;
 
 /* Burp will always write a backup in multiples of the following number
  * of bytes.  The initial value is the smallest which ensures that writes

@@ -63,6 +63,7 @@ public:
 	virtual void putSLong(char, SLONG) = 0;
 	virtual void putChar(char, char) = 0;
 	virtual void putBytes(const UCHAR*, size_t) = 0;
+	virtual ULONG getBytes(UCHAR*, ULONG) = 0;
 	virtual void setServiceStatus(const ISC_STATUS*) = 0;
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) = 0;
 	virtual const ISC_STATUS* getStatus() = 0;

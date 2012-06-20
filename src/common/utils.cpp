@@ -1143,6 +1143,7 @@ bool isRunningCheck(const UCHAR* items, unsigned int length)
 		case isc_info_svc_limbo_trans:
 		case isc_info_svc_running:
 		case isc_info_svc_get_users:
+		case isc_info_svc_stdin:
 			if (state == S_INF)
 			{
 				(Firebird::Arg::Gds(isc_random) << "Wrong info items combination").raise();

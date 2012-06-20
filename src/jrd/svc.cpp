@@ -119,6 +119,7 @@ const int SVC_user_none			= 0;
 const int GET_LINE		= 1;
 const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
+const int GET_ONCE		= 8;
 
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
@@ -433,6 +434,7 @@ void Service::started()
 
 void Service::finish()
 {
+	svc_sem_full.release();
 	finish(SVC_finished);
 }
 
@@ -661,7 +663,7 @@ void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
 bool Service::ck_space_for_numeric(UCHAR*& info, const UCHAR* const end)
 {
 	if ((info + 1 + sizeof(ULONG)) > end)
-    {
+	{
 		if (info < end)
 			*info++ = isc_info_truncated;
 		return false;
@@ -706,7 +708,9 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
 	svc_remote_pid(0), svc_trace_manager(NULL), svc_crypt_callback(crypt_callback),
-	svc_current_guard(NULL)
+	svc_current_guard(NULL),
+	svc_stdin_size_requested(0), svc_stdin_buffer(NULL), svc_stdin_size_preload(0),
+	svc_stdin_preload_requested(0), svc_stdin_user_size(0)
 {
 	initStatus();
 	ThreadIdHolder holdId(svc_thread_strings);
@@ -1004,6 +1008,8 @@ void Service::shutdownServices()
 	{
 		if (all[pos]->svc_flags & SVC_thd_running)
 			all[pos]->svc_detach_sem.release();
+		if (all[pos]->svc_stdin_size_requested)
+			all[pos]->svc_stdin_semaphore.release();
 	}
 
 	for (pos = 0; pos < all.getCount(); )
@@ -1035,11 +1041,14 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 	UCHAR item;
 	UCHAR buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
+	UCHAR* stdin_request_notification = NULL;
 
 	ThreadIdHolder holdId(svc_thread_strings);
 
 	// Setup the status vector
 	Arg::StatusVector status;
+
+	ULONG requestFromPut = 0;
 
 	try
 	{
@@ -1047,6 +1056,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 	USHORT timeout = 0;
 	const UCHAR* items = send_items;
 	const UCHAR* const end_items = items + send_item_length;
+
 	while (items < end_items && *items != isc_info_end)
 	{
 		switch ((item = *items++))
@@ -1064,10 +1074,10 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 					switch (item)
 					{
 					case isc_info_svc_line:
-						put(items, l);
+						requestFromPut = put(items, l);
 						break;
 					case isc_info_svc_message:
-						put(items - 3, l + 3);
+						//put(items - 3, l + 3);
 						break;
 					case isc_info_svc_timeout:
 						timeout = (USHORT) gds__vax_integer(items, l);
@@ -1311,6 +1321,21 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			} // scope
 			break;
 
+		case isc_info_svc_stdin:
+			// Check - is stdin data required for server
+			if (!ck_space_for_numeric(info, end))
+			{
+				return 0;
+			}
+			*info++ = item;
+			if (!stdin_request_notification)
+			{
+				stdin_request_notification = info;
+			}
+			ADD_SPB_NUMERIC(info, 0);
+
+			break;
+
 		case isc_info_svc_user_dbpath:
 			if (svc_user_flag & SVC_user_dba)
 			{
@@ -1335,7 +1360,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				*info++ = isc_info_truncated;
 				break;
 			}
-			put(&item, 1);
+			//put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
 			l = (USHORT) gds__vax_integer(buffer, 2);
@@ -1380,7 +1405,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			break;
 
 		case isc_info_svc_total_length:
-			put(&item, 1);
+			//put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
 			l = (USHORT) gds__vax_integer(buffer, 2);
@@ -1413,6 +1438,11 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				break;
 			}
 
+			if (requestFromPut)
+			{
+				get_flags |= GET_ONCE;
+			}
+
 			get(info + 3, end - (info + 5), get_flags, timeout, &length);
 
 			// If the read timed out, return the data, if any, & a timeout
@@ -1428,7 +1458,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			{
 				*info++ = isc_info_svc_timeout;
 			}
-			else
+			else //if (!svc_stdin_size_requested)
 			{
 				if (!length && !(svc_flags & SVC_finished))
 				{
@@ -1458,6 +1488,8 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		const SLONG number = info - start_info;
 		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
+		if (stdin_request_notification)
+			stdin_request_notification += 7;
 		USHORT length2 = INF_convert(number, buffer);
 		fb_assert(length2 == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length2, buffer, start_info, end, true);
@@ -1468,6 +1500,23 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		TraceServiceImpl service(this);
 		svc_trace_manager->event_service_query(&service, send_item_length, send_items,
 			recv_item_length, recv_items, res_successful);
+	}
+
+	if (!requestFromPut)
+	{
+		requestFromPut = svc_stdin_size_requested;
+	}
+
+	if (requestFromPut)
+	{
+		if (stdin_request_notification)
+		{
+			ADD_SPB_NUMERIC(stdin_request_notification, requestFromPut);
+		}
+		else
+		{
+			(Arg::Gds(isc_random) << "No request from user for stdin data").raise();
+		}
 	}
 
 	if (status.hasData())
@@ -1538,10 +1587,10 @@ void Service::query(USHORT			send_item_length,
 					switch (item)
 					{
 					case isc_info_svc_line:
-						put(items, l);
+						//put(items, l);
 						break;
 					case isc_info_svc_message:
-						put(items - 3, l + 3);
+						//put(items - 3, l + 3);
 						break;
 					case isc_info_svc_timeout:
 						timeout = (USHORT) gds__vax_integer(items, l);
@@ -1764,7 +1813,7 @@ void Service::query(USHORT			send_item_length,
 				*info++ = isc_info_truncated;
 				break;
 			}
-			put(&item, 1);
+			//put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
 			l = (USHORT) gds__vax_integer(buffer, 2);
@@ -1809,7 +1858,7 @@ void Service::query(USHORT			send_item_length,
 			break;
 
 		case isc_info_svc_total_length:
-			put(&item, 1);
+			//put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
 			l = (USHORT) gds__vax_integer(buffer, 2);
@@ -2181,19 +2230,29 @@ bool Service::full() const
 
 void Service::enqueue(const UCHAR* s, ULONG len)
 {
+	static int transferCount = 0;
+
 	if (checkForShutdown() || (svc_flags & SVC_detached))
 	{
+		svc_sem_full.release();
 		return;
 	}
 
 	while (len)
 	{
 		// Wait for space in buffer
+		bool flagFirst = true;
 		while (full())
 		{
-			THREAD_SLEEP(ENQUEUE_DEQUEUE_DELAY);
+			if (flagFirst)
+			{
+				svc_sem_full.release();
+				flagFirst = false;
+			}
+			svc_sem_empty.tryEnter(1, 0);
 			if (checkForShutdown() || (svc_flags & SVC_detached))
 			{
+				svc_sem_full.release();
 				return;
 			}
 		}
@@ -2211,10 +2270,12 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 		}
 
 		memcpy(&svc_stdout[svc_stdout_tail], s, cnt);
+		transferCount += cnt;
 		svc_stdout_tail = add_val(svc_stdout_tail, cnt);
 		s += cnt;
 		len -= cnt;
 	}
+	svc_sem_full.release();
 }
 
 
@@ -2235,6 +2296,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 		svc_flags &= ~SVC_timeout;
 	}
 
+	bool flagFirst = true;
 	while (length)
 	{
 		if ((empty() && (svc_flags & SVC_finished)) || checkForShutdown())
@@ -2244,7 +2306,24 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 		if (empty())
 		{
-			THREAD_SLEEP(ENQUEUE_DEQUEUE_DELAY);
+			if (svc_stdin_size_requested && (!(flags & GET_BINARY)))
+			{
+				// service needs data from user - notify him
+				break;
+			}
+
+			if (flagFirst)
+			{
+				svc_sem_empty.release();
+				flagFirst = false;
+			}
+
+			if (flags & GET_ONCE)
+			{
+				break;
+			}
+
+			svc_sem_full.tryEnter(1, 0);
 		}
 #ifdef HAVE_GETTIMEOFDAY
 		GETTIMEOFDAY(&end_time);
@@ -2264,6 +2343,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 		while (head != svc_stdout_tail && length > 0)
 		{
+			flagFirst = true;
 			const UCHAR ch = svc_stdout[head];
 			head = add_one(head);
 			length--;
@@ -2283,12 +2363,100 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 		svc_stdout_head = head;
 	}
+	svc_sem_empty.release();
 }
 
 
-void Service::put(const UCHAR* /*buffer*/, USHORT /*length*/)
+ULONG Service::put(const UCHAR* buffer, ULONG length)
 {
-	// Nothing
+	MutexLockGuard guard(svc_stdin_mutex);
+
+	// check length correctness
+	if (length > svc_stdin_size_requested && length > svc_stdin_preload_requested)
+	{
+		(Arg::Gds(isc_random) << "Size of data is more than requested").raise();
+	}
+
+	if (svc_stdin_size_requested)		// service waits for data from us
+	{
+		svc_stdin_user_size = MIN(length, svc_stdin_size_requested);
+		memcpy(svc_stdin_buffer, buffer, svc_stdin_user_size);
+		// reset satisfied request
+		ULONG blockSize = svc_stdin_size_requested;
+		svc_stdin_size_requested = 0;
+		// let data be used
+		svc_stdin_semaphore.release();
+
+		if (length == 0)
+		{
+			return 0;
+		}
+
+		// reset used block of data
+		length -= svc_stdin_user_size;
+		buffer += svc_stdin_user_size;
+
+		if (length == 0)				// ask user to preload next block of data
+		{
+			if (!svc_stdin_preload)
+			{
+				svc_stdin_preload.reset(FB_NEW(getPool()) UCHAR[PRELOAD_BUFFER_SIZE]);
+			}
+
+			svc_stdin_preload_requested = MIN(blockSize, PRELOAD_BUFFER_SIZE);
+			return svc_stdin_preload_requested;
+		}
+	}
+
+	// Store data in preload buffer
+	fb_assert(length <= PRELOAD_BUFFER_SIZE);
+	fb_assert(length <= svc_stdin_preload_requested);
+	fb_assert(svc_stdin_size_preload == 0);
+
+	memcpy(svc_stdin_preload, buffer, length);
+	svc_stdin_size_preload = length;
+	return 0;
+}
+
+
+ULONG Service::getBytes(UCHAR* buffer, ULONG size)
+{
+	{	// Guard scope
+		MutexLockGuard guard(svc_stdin_mutex);
+
+		if (svc_flags & SVC_detached)			// no more data for this service please
+		{
+			return 0;
+		}
+
+		if (svc_stdin_size_preload != 0)		// use data, preloaded by user
+		{
+			// Use data from preload buffer
+			size = MIN(size, svc_stdin_size_preload);
+			memcpy(buffer, svc_stdin_preload, size);
+			if (size < svc_stdin_size_preload)
+			{
+				// not good, client should not request so small block
+				svc_stdin_size_preload -= size;
+				memmove(svc_stdin_preload, svc_stdin_preload + size, svc_stdin_size_preload);
+			}
+			else
+			{
+				svc_stdin_size_preload = 0;
+			}
+			return size;
+		}
+
+		// Request new data portion
+		svc_stdin_size_requested = size;
+		svc_stdin_buffer = buffer;
+		// Wakeup Service::query() if it waits for data from service
+		svc_sem_full.release();
+	}
+
+	// Wait for data from client
+	svc_stdin_semaphore.enter();
+	return svc_stdin_user_size;
 }
 
 
@@ -2308,8 +2476,26 @@ void Service::finish(USHORT flag)
 			delete this;
 			return;
 		}
+
+		if (svc_flags & SVC_detached)
+		{
+			svc_sem_empty.release();
+
+			// if service waits for data from us - return EOF
+			{	// guard scope
+				MutexLockGuard guard(svc_stdin_mutex);
+
+				if (svc_stdin_size_requested)
+				{
+					svc_stdin_user_size = 0;
+					svc_stdin_semaphore.release();
+				}
+			}
+		}
+
 		if (svc_flags & SVC_finished)
 		{
+			svc_sem_full.release();
 			svc_flags &= ~SVC_thd_running;
 		}
 		else

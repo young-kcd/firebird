@@ -1255,12 +1255,17 @@ int gbak(Firebird::UtilSvc* uSvc)
 	// Close the gbak file handles if they still open
 	for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 	{
-		if (file->fil_fd != INVALID_HANDLE_VALUE)
-			close_platf(file->fil_fd);
-		if (exit_code != FINI_OK &&
-			(tdgbl->action->act_action == ACT_backup_split || tdgbl->action->act_action == ACT_backup))
+		if (file->fil_fd != GBAK_STDIN_DESC() && file->fil_fd != GBAK_STDOUT_DESC())
 		{
-			unlink_platf(file->fil_name.c_str());
+			if (file->fil_fd != INVALID_HANDLE_VALUE)
+			{
+				close_platf(file->fil_fd);
+			}
+			if (exit_code != FINI_OK &&
+				(tdgbl->action->act_action == ACT_backup_split || tdgbl->action->act_action == ACT_backup))
+			{
+				unlink_platf(file->fil_name.c_str());
+			}
 		}
 	}
 
@@ -1840,10 +1845,10 @@ static gbak_action open_files(const TEXT* file1,
 			}
 			if (fil->fil_name == "stdout")
 			{
-				if (tdgbl->action->act_total >= 2 || fil->fil_next)
+				if (tdgbl->action->act_total >= 2 || fil->fil_next || sw_verbose)
 				{
 					BURP_error(266, true);
-					// msg 266 standard output is not supported when using split operation
+					// msg 266 standard output is not supported when using split operation or in verbose mode
 					flag = QUIT;
 					break;
 				}
@@ -1855,6 +1860,7 @@ static gbak_action open_files(const TEXT* file1,
 #endif
 				tdgbl->uSvc->setDataMode(true);
 				fil->fil_fd = GBAK_STDOUT_DESC();
+				tdgbl->stdIoMode = true;
 				break;
 			}
 			else
@@ -1959,10 +1965,13 @@ static gbak_action open_files(const TEXT* file1,
 	{
 		fil->fil_fd = GBAK_STDIN_DESC();
 		tdgbl->file_desc = fil->fil_fd;
+		tdgbl->stdIoMode = true;
 		tdgbl->gbl_sw_files = fil->fil_next;
 	}
 	else
 	{
+		tdgbl->stdIoMode = false;
+
 		// open first file
 #ifdef WIN_NT
 		if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_READ, OPEN_EXISTING)) ==

@@ -903,11 +903,17 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 			case isc_info_svc_to_eof:
 				recv_query.printf(NEWLINE "\t\t retrieve as much of the server output as will fit in the supplied buffer");
 				break;
+
 			case isc_info_svc_limbo_trans:
 				recv_query.printf(NEWLINE "\t\t retrieve the limbo transactions");
 				break;
+
 			case isc_info_svc_get_users:
 				recv_query.printf(NEWLINE "\t\t retrieve the user information");
+				break;
+
+			case isc_info_svc_stdin:
+				recv_query.printf(NEWLINE "\t\t retrieve the size of data to send to the server");
 				break;
 		}
 	}

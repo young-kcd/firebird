@@ -38,6 +38,17 @@
 #include "../common/UtilSvc.h"
 #include "../common/classes/Switches.h"
 #include "../common/classes/ClumpletReader.h"
+#include "../burp/split/spit.h"
+
+#ifndef IO_BUFFER_SIZE
+#ifdef BUFSIZ
+const int SVC_IO_BUFFER_SIZE = (16 * (BUFSIZ));
+#else // BUFSIZ
+const int SVC_IO_BUFFER_SIZE = (16 * (1024));
+#endif // BUFSIZ
+#else // IO_BUFFER_SIZE
+const int SVC_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
+#endif // IO_BUFFER_SIZE
 
 // forward decl.
 
@@ -121,6 +132,8 @@ public:		// utilities interface with service
 	virtual void putChar(char tag, char val);
 	// put raw bytes to svc_stdout
 	virtual void putBytes(const UCHAR*, size_t);
+	// get raw bytes from svc_stdin
+	virtual ULONG getBytes(UCHAR*, ULONG);
 	// append status_vector to service's status
 	virtual void setServiceStatus(const ISC_STATUS* status_vector);
 	// append error message to service's status
@@ -218,8 +231,9 @@ private:
 	bool	checkForShutdown();
 	// Transfer data from svc_stdout into buffer
 	void	get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, USHORT* return_length);
-	// Designed to send output to a service - does nothing.
-	void	put(const UCHAR* buffer, USHORT length);
+	// Sends stdin for a service
+	// Returns number of bytes service wants more
+	ULONG	put(const UCHAR* buffer, ULONG length);
 
 	// Increment circular buffer pointer
 	static ULONG		add_one(ULONG i);
@@ -301,6 +315,8 @@ public:
 private:
 	StatusStringsHelper	svc_thread_strings;
 
+	Firebird::Semaphore svc_sem_empty, svc_sem_full;
+
 	//Service existence guard
 	class ExistenceGuard
 	{
@@ -318,6 +334,23 @@ private:
 
 	Firebird::Mutex		svc_existence_lock;
 	ExistenceGuard*		svc_current_guard;
+
+	// Data pipe from client to service
+	Firebird::Semaphore svc_stdin_semaphore;
+	Firebird::Mutex svc_stdin_mutex;
+	// Size of data, requested by service (set in getBytes, reset in put)
+	ULONG svc_stdin_size_requested;
+	// Buffer passed by service
+	UCHAR* svc_stdin_buffer;
+	// Size of data, preloaded by user (set in put, reset in getBytes)
+	ULONG svc_stdin_size_preload;
+	// Buffer for datam preloaded by user
+	Firebird::AutoPtr<UCHAR> svc_stdin_preload;
+	// Size of data, requested from user to preload (set in getBytes)
+	ULONG svc_stdin_preload_requested;
+	// Size of data, placed into svc_stdin_buffer (set in put)
+	ULONG svc_stdin_user_size;
+	static const ULONG PRELOAD_BUFFER_SIZE = SVC_IO_BUFFER_SIZE;
 };
 
 } //namespace Jrd

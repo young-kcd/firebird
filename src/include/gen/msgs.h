@@ -939,7 +939,7 @@ Data source : @4"},		/* eds_statement */
 	{336331015, "file @1 out of sequence"},		/* gbak_file_outof_sequence */
 	{336331016, "can't join -- one of the files missing"},		/* gbak_join_file_missing */
 	{336331017, " standard input is not supported when using join operation"},		/* gbak_stdin_not_supptd */
-	{336331018, "standard output is not supported when using split operation"},		/* gbak_stdout_not_supptd */
+	{336331018, "standard output is not supported when using split operation or in verbose mode"},		/* gbak_stdout_not_supptd */
 	{336331019, "backup file @1 might be corrupt"},		/* gbak_bkup_corrupt */
 	{336331020, "database file specification missing"},		/* gbak_unk_db_file_spec */
 	{336331021, "can't write a header record to file @1"},		/* gbak_hdr_write_failed */

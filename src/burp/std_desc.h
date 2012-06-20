@@ -61,4 +61,6 @@ const int INVALID_HANDLE_VALUE = -1;
 
 #endif //WIN_NT
 
+typedef DESC FILE_DESC;
+
 #endif  //GBAK_STD_DESC_H

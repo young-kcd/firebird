@@ -47,6 +47,7 @@
 #endif
 #include "../burp/split/spit.h"
 #include "../common/classes/Switches.h"
+#include "../burp/std_desc.h"
 #include "../burp/burpswi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -60,6 +61,53 @@
 static const int mode_read	= O_RDONLY;
 static const int mode_write	= O_WRONLY | O_CREAT;
 static const int mask		= 0666;
+
+static DESC open_platf(const char* name, int writeFlag)
+{
+#ifdef WIN_NT
+	return CreateFile(name, writeFlag ? GENERIC_WRITE : GENERIC_READ, 0, NULL, 
+		writeFlag ? CREATE_ALWAYS : OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+#else
+	return open(name, writeFlag ? mode_write : mode_read, mask);
+#endif
+}
+
+static int read_platf(DESC file, void* buf, int count)
+{
+#ifdef WIN_NT
+	DWORD act;
+	if (!ReadFile(file, buf, count, &act, NULL))
+	{
+		return -1;
+	}
+	return act;
+#else
+	return read(file, buf, count);
+#endif
+}
+
+static int write_platf(DESC file, const void* buf, int count)
+{
+#ifdef WIN_NT
+	DWORD act;
+	if (!WriteFile(file, buf, count, &act, NULL))
+	{
+		return -1;
+	}
+	return act;
+#else
+	return write(file, buf, count);
+#endif
+}
+
+static void close_platf(DESC file)
+{
+#ifdef WIN_NT
+	CloseHandle(file);
+#else
+	close(file);
+#endif
+}
 
 // Definitions for GSPLIT
 enum gsplit_option
@@ -291,7 +339,7 @@ int main( int argc, char* argv[])
 	switch (sw_replace)
 	{
 	case IN_SW_SPIT_SP:
-		input_file_desc = GBAK_STDIN_DESC;
+		input_file_desc = GBAK_STDIN_DESC();
 		ret_cd = gen_multy_bakup_files(file_list, input_file_desc, file_num);
 		if (ret_cd == FB_FAILURE)
 		{
@@ -610,8 +658,8 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 			file_size = fl_ptr->b_fil_size - header_rec_len;
 			file_name = fl_ptr->b_fil_name;
 
-			output_fl_desc = open(file_name, mode_write, mask);
-			if (output_fl_desc == -1)
+			output_fl_desc = open_platf(file_name, 1);
+			if (output_fl_desc == INVALID_HANDLE_VALUE)
 			{
 				free(io_buffer);
 				fprintf(stderr, "can not open back up file %s\n", file_name);
@@ -681,8 +729,8 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 							file_size = fl_ptr->b_fil_size - header_rec_len;
 							file_name = fl_ptr->b_fil_name;
 
-							output_fl_desc = open(file_name, mode_write, mask);
-							if (output_fl_desc == -1)
+							output_fl_desc = open_platf(file_name, 1);
+							if (output_fl_desc == INVALID_HANDLE_VALUE)
 							{
 								free(io_buffer);
 								fprintf(stderr, "can not open back up file %s\n", file_name);
@@ -793,21 +841,21 @@ static int read_and_write(FILE_DESC input_file_desc,
 	if (*byte_read + io_size > file_size)
 	{
 		last_read_size = (SLONG) (file_size - *byte_read);
-		read_cnt = read(input_file_desc, *io_buffer, last_read_size);
+		read_cnt = read_platf(input_file_desc, *io_buffer, last_read_size);
 	}
 	else
-		read_cnt = read(input_file_desc, *io_buffer, io_size);
+		read_cnt = read_platf(input_file_desc, *io_buffer, io_size);
 
 	switch (read_cnt)
 	{
 	case 0:					// no more data to be read
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		*end_of_input = true;
 		*byte_read = *byte_read + read_cnt;
 		return FB_SUCCESS;
 
 	case -1:					// read failed
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		fprintf(stderr,  "fail to read input from stdin, errno = %d\n", errno);
 		return FB_FAILURE;
 
@@ -816,12 +864,12 @@ static int read_and_write(FILE_DESC input_file_desc,
 		break;
 	}
 
-	const SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
+	const SLONG write_cnt = write_platf(output_fl_desc, *io_buffer, read_cnt);
 
 	switch (write_cnt)
 	{
 	case -1:					// write failed
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		return FB_FAILURE;
 
 	default:
@@ -829,7 +877,7 @@ static int read_and_write(FILE_DESC input_file_desc,
 			return FB_SUCCESS;
 
 		// write less data than it reads in
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		*byte_write = write_cnt;
 		return FILE_IS_FULL;
 	}
@@ -858,17 +906,17 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 *********************************************************************
 */
 
-	const SLONG read_cnt = read(input_file_desc, *io_buffer, io_size);
+	const SLONG read_cnt = read_platf(input_file_desc, *io_buffer, io_size);
 
 	switch (read_cnt)
 	{
 	case 0:					// no more data to be read
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		*end_of_input = true;
 		return FB_SUCCESS;
 
 	case -1:					// read failed
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		fprintf(stderr, "problem when reading input file, errno = %d\n", errno);
 		return FB_FAILURE;
 
@@ -876,12 +924,12 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 		break;
 	}
 
-	const SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
+	const SLONG write_cnt = write_platf(output_fl_desc, *io_buffer, read_cnt);
 
 	switch (write_cnt)
 	{
 	case -1:					// write failed
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		return FB_FAILURE;
 
 	default:
@@ -889,7 +937,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 			return FB_SUCCESS;
 
 		fprintf(stderr, "There is no enough space to write to back up file %s\n", file_name);
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		return FB_FAILURE;
 	}
 }
@@ -914,7 +962,7 @@ static int join_multy_bakup_files( b_fil* file_list)
 *********************************************************************
 */
 
-	FILE_DESC output_fl_desc = GBAK_STDOUT_DESC;
+	FILE_DESC output_fl_desc = GBAK_STDOUT_DESC();
 
 	// See comment near the beginning of gen_multy_bakup_files() as it
 	// also applies to read_and_write_for_join().
@@ -974,18 +1022,18 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 	TEXT num_arr[5], total_arr[5];
 	header_rec hdr_rec;
 
-	FILE_DESC input_fl_desc = open(file_name, mode_read);
+	FILE_DESC input_fl_desc = open_platf(file_name, mode_read);
 
-	if (input_fl_desc == -1)
+	if (input_fl_desc == INVALID_HANDLE_VALUE)
 	{
 		fprintf(stderr, "can not open input file %s\n", file_name);
 		return FB_FAILURE;
 	}
 
-	int read_cnt = read(input_fl_desc, io_buffer, header_rec_len);
+	int read_cnt = read_platf(input_fl_desc, io_buffer, header_rec_len);
 	if (read_cnt != static_cast<int>(header_rec_len))
 	{
-		close(input_fl_desc);
+		close_platf(input_fl_desc);
 		fprintf(stderr, "progam fails to read gsplit header record in back-up file%s\n", file_name);
 		return FB_FAILURE;
 	}
@@ -994,7 +1042,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 	SLONG ret_cd = strncmp(char_ptr1, header_rec_name, sizeof(hdr_rec.name) - 1);
 	if (ret_cd != 0)
 	{
-		close(input_fl_desc);
+		close_platf(input_fl_desc);
 		fprintf(stderr, "gsplit: expected GSPLIT description record\n");
 		fprintf(stderr, "gsplit: Exiting before completion due to errors\n");
 		return FB_FAILURE;
@@ -1026,13 +1074,13 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 
 	if ((num_int != cnt) || (num_int > *total_int))
 	{
-		close(input_fl_desc);
+		close_platf(input_fl_desc);
 		fprintf(stderr, "gsplit: join backup file is out of sequence\n");
 		fprintf(stderr, "gsplit: Exiting before completion due to errors\n");
 		return FB_FAILURE;
 	}
 
-	read_cnt = read(input_fl_desc, io_buffer, IO_BUFFER_SIZE);
+	read_cnt = read_platf(input_fl_desc, io_buffer, IO_BUFFER_SIZE);
 
 
 	while (true)
@@ -1040,23 +1088,23 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		switch (read_cnt)
 		{
 		case 0:				// no more data to be read
-			close(input_fl_desc);
+			close_platf(input_fl_desc);
 			return FB_SUCCESS;
 
 		case -1:				// read failed
-			close(input_fl_desc);
+			close_platf(input_fl_desc);
 			return FB_FAILURE;
 
 		default:				// this is the last read
 			break;
 		}
 
-		SLONG write_cnt = write(output_fl_desc, io_buffer, read_cnt);
+		SLONG write_cnt = write_platf(output_fl_desc, io_buffer, read_cnt);
 
 		switch (write_cnt)
 		{
 		case -1:				// write failed
-			close(input_fl_desc);
+			close_platf(input_fl_desc);
 			return FB_FAILURE;
 
 		default:
@@ -1064,7 +1112,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 			break;
 		}
 
-		read_cnt = read(input_fl_desc, io_buffer, IO_BUFFER_SIZE);
+		read_cnt = read_platf(input_fl_desc, io_buffer, IO_BUFFER_SIZE);
 
 	}	// end of while (true) loop
 }
@@ -1150,11 +1198,11 @@ static int write_header(const b_fil* fl_ptr,
 	ret_cd = set_hdr_str(header_str, file_name, pos, strlen(file_name));
 
 	SLONG end, indx;
-	SLONG write_cnt = write(output_fl_desc, header_str, header_rec_len);
+	SLONG write_cnt = write_platf(output_fl_desc, header_str, header_rec_len);
 	switch (write_cnt)
 	{
 	case -1:					// write failed
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		return FB_FAILURE;
 
 	default:
@@ -1202,14 +1250,14 @@ static int flush_io_buff(const UCHAR* remaining_io,
 	SLONG write_cnt;
 
 	if (file_size > remaining_io_len)
-		write_cnt = write(output_fl_desc, remaining_io, remaining_io_len);
+		write_cnt = write_platf(output_fl_desc, remaining_io, remaining_io_len);
 	else	// file_size <= remaining_io_len
-		write_cnt = write(output_fl_desc, remaining_io, (unsigned int) file_size);
+		write_cnt = write_platf(output_fl_desc, remaining_io, (unsigned int) file_size);
 
 	switch (write_cnt)
 	{
 	case -1:					// write failed
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		*flush_done = false;
 		return FB_FAILURE;
 
@@ -1219,7 +1267,7 @@ static int flush_io_buff(const UCHAR* remaining_io,
 		else
 		{
 			// could not write out all remaining data
-			close(output_fl_desc);
+			close_platf(output_fl_desc);
 			*flush_done = false;
 		}
 		*byte_write = write_cnt;
@@ -1245,18 +1293,18 @@ static int final_flush_io_buff(const UCHAR* remaining_io,
 *********************************************************************
 */
 
-	SLONG write_cnt = write(output_fl_desc, remaining_io, remaining_io_len);
+	SLONG write_cnt = write_platf(output_fl_desc, remaining_io, remaining_io_len);
 	switch (write_cnt)
 	{
 	case -1:					// write failed
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		return FB_FAILURE;
 
 	default:
 		if (write_cnt == remaining_io_len)	// write ok
 			return FB_SUCCESS;
 
-		close(output_fl_desc);
+		close_platf(output_fl_desc);
 		return FB_FAILURE;
 	}
 }
