@@ -912,7 +912,9 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page,
 		((lock_type >= LCK_write) ? LATCH_exclusive : LATCH_shared), wait);
 
-	if (wait != 1 && bdb == 0) {
+	if (wait != 1 && bdb == 0) 
+	{
+		attachment->backupStateReadUnLock(tdbb);
 		return -2;				// latch timeout
 	}
 
