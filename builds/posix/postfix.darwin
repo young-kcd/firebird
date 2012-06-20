@@ -115,6 +115,7 @@ darwin_finish_ss_framework:
 	ln -s A $(FB_FW)/Versions/Current
 	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
 	cp ../gen/firebird/lib/libfbclient.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/lib/libfbclient.dylib $(FB_FW)/Versions/A/Libraries/libfbclient.dylib
 	cp ../gen/firebird/lib/libicudata.dylib $(FB_FW)/Versions/A/Libraries/libicudata.dylib
 	cp ../gen/firebird/lib/libicui18n.dylib $(FB_FW)/Versions/A/Libraries/libicui18n.dylib
 	cp ../gen/firebird/lib/libicuuc.dylib $(FB_FW)/Versions/A/Libraries/libicuuc.dylib
