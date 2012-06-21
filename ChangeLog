@@ -1,3 +1,7 @@
+ 2012-06-20 09:39  paulbeach 
+   M builds/posix/postfix.darwin
+Copy libfbclient.dylib to Firebird SuperServer Framework Libraries to support the ODBC driver
+
  2012-04-26 09:37  paulbeach 
    M src/install/misc/firebird.conf
 Make the conf parameter DummyPacketInterval more accurate.
