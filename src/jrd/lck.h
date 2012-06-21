@@ -79,8 +79,7 @@ enum lck_owner_t {
 class Lock : public pool_alloc_rpt<UCHAR, type_lck>
 {
 public:
-	Lock(thread_db* tdbb, lck_t type, void* object = NULL, lock_ast_t ast = NULL);
-	Lock(thread_db* tdbb, lck_owner_t ownerType, lck_t type, void* object, lock_ast_t ast);
+	Lock(thread_db* tdbb, USHORT length, lck_t type, void* object = NULL, lock_ast_t ast = NULL);
 
 	Lock* detach();
 
@@ -108,8 +107,6 @@ public:
 	void* lck_object;				// Argument to be passed to AST
 
 //private:
-	Lock* lck_parent;
-
 	Lock* lck_next;					// lck_next and lck_prior form a doubly linked list of locks
 	Lock* lck_prior;				// bound to attachment
 
@@ -118,7 +115,7 @@ public:
 
 	SLONG lck_id;					// Lock id from the lock manager
 	SLONG lck_owner_handle;			// Lock owner handle from the lock manager's point of view
-	SSHORT lck_length;				// Length of lock key string
+	USHORT lck_length;				// Length of lock key string
 	lck_t lck_type;					// Lock type
 
 public:

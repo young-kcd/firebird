@@ -1305,10 +1305,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
 
 				LCK_init(tdbb, LCK_OWNER_database);
-				dbb->dbb_flags |= DBB_lck_init_done;
-
 				LCK_init(tdbb, LCK_OWNER_attachment);
-				attachment->att_flags |= ATT_lck_init_done;
 
 				// Initialize locks
 				init_database_locks(tdbb);
@@ -1364,7 +1361,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				fb_assert(dbb->dbb_lock_mgr);
 
 				LCK_init(tdbb, LCK_OWNER_attachment);
-				attachment->att_flags |= ATT_lck_init_done;
 
 				INI_init(tdbb);
 				INI_init2(tdbb);
@@ -2449,10 +2445,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
 
 			LCK_init(tdbb, LCK_OWNER_database);
-			dbb->dbb_flags |= DBB_lck_init_done;
-
 			LCK_init(tdbb, LCK_OWNER_attachment);
-			attachment->att_flags |= ATT_lck_init_done;
 
 			// Initialize locks
 			init_database_locks(tdbb);
@@ -3169,12 +3162,10 @@ JEvents* JAttachment::queEvents(IStatus* user_status, Firebird::IEventCallback* 
 		try
 		{
 			Database* const dbb = tdbb->getDatabase();
-			Lock* const lock = dbb->dbb_lock;
 
 			EventManager::init(getHandle());
 
 			int id = dbb->dbb_event_mgr->queEvents(getHandle()->att_event_session,
-												   lock->lck_length, (const TEXT*) &lock->lck_key,
 												   length, events, callback);
 			ev = new JEvents(id, this);
 			ev->addRef();
@@ -5699,21 +5690,13 @@ static void init_database_locks(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	// Main database lock
 
-	PageSpace* const pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	fb_assert(pageSpace && pageSpace->file);
-
-	UCharBuffer file_id;
-	PIO_get_unique_file_id(pageSpace->file, file_id);
-	size_t key_length = file_id.getCount();
-
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length)
-		Lock(tdbb, LCK_database, dbb, CCH_down_grade_dbb);
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
+		Lock(tdbb, 0, LCK_database, dbb, CCH_down_grade_dbb);
 	dbb->dbb_lock = lock;
-	lock->lck_length = key_length;
-	memcpy(lock->lck_key.lck_string, file_id.begin(), key_length);
 
 	// Try to get an exclusive lock on database.
 	// If this fails, insist on at least a shared lock.
@@ -5739,7 +5722,7 @@ static void init_database_locks(thread_db* tdbb)
 
 			if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 			{
-				ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(pageSpace->file->fil_string));
+				ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(attachment->att_filename));
 			}
 		}
 	}
@@ -5747,10 +5730,9 @@ static void init_database_locks(thread_db* tdbb)
 	// Lock shared by all dbb owners, used to signal other processes
 	// to dump their monitoring data and synchronize operations
 
-	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG))
-		Lock(tdbb, LCK_monitor, dbb, DatabaseSnapshot::blockingAst);
+	lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
+		Lock(tdbb, 0, LCK_monitor, dbb, DatabaseSnapshot::blockingAst);
 	dbb->dbb_monitor_lock = lock;
-	lock->lck_length = sizeof(SLONG);
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
@@ -5841,41 +5823,19 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (attachment->att_relations)
 	{
 		vec<jrd_rel*>* vector = attachment->att_relations;
-		vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end();
 
-		while (ptr < end)
+		for (vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr)
 		{
-			jrd_rel* relation = *ptr++;
+			jrd_rel* relation = *ptr;
+
 			if (relation)
 			{
 				if (relation->rel_file)
-				{
 					EXT_fini(relation, false);
-				}
-
-				for (IndexBlock* index_block = relation->rel_index_blocks;
-					 index_block;
-					 index_block = index_block->idb_next)
-				{
-					if (index_block->idb_lock)
-						LCK_release(tdbb, index_block->idb_lock);
-				}
 
 				delete relation;
 			}
 		}
-	}
-
-	if (attachment->att_id_lock)
-		LCK_release(tdbb, attachment->att_id_lock);
-
-	if (attachment->att_temp_pg_lock)
-		LCK_release(tdbb, attachment->att_temp_pg_lock);
-
-	DSqlCache::Accessor accessor(&attachment->att_dsql_cache);
-	for (bool getResult = accessor.getFirst(); getResult; getResult = accessor.getNext())
-	{
-		LCK_release(tdbb, accessor.current()->second.lock);
 	}
 
 	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count;
@@ -5894,11 +5854,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	attachment->detachLocksFromAttachment();
 
-	if (attachment->att_flags & ATT_lck_init_done)
-	{
-		LCK_fini(tdbb, LCK_OWNER_attachment);
-		attachment->att_flags &= ~ATT_lck_init_done;
-	}
+	LCK_fini(tdbb, LCK_OWNER_attachment);
 
 	delete attachment->att_compatibility_table;
 
@@ -6064,13 +6020,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		}
 	}
 
-	if (dbb->dbb_flags & DBB_lck_init_done)
-	{
-		dbb->dbb_page_manager.releaseLocks();
-
-		LCK_fini(tdbb, LCK_OWNER_database);
-		dbb->dbb_flags &= ~DBB_lck_init_done;
-	}
+	LCK_fini(tdbb, LCK_OWNER_database);
 
 	if (release_pools)
 	{

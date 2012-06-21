@@ -313,10 +313,9 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 	index->idl_id = id;
 	index->idl_count = 0;
 
-	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0) Lock(tdbb, LCK_idx_exist);
+	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0) Lock(tdbb, sizeof(SLONG), LCK_idx_exist);
 	index->idl_lock = lock;
 	lock->lck_key.lck_long = (relation->rel_id << 16) | id;
-	lock->lck_length = sizeof(lock->lck_key.lck_long);
 
 	return index;
 }

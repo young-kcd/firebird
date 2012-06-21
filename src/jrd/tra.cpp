@@ -90,7 +90,6 @@ static TraNumber bump_transaction_id(thread_db*, WIN*);
 #else
 static header_page* bump_transaction_id(thread_db*, WIN*);
 #endif
-static Lock* create_transaction_lock(thread_db* tdbb, void* object);
 static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, int state);
 static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
 	const char* option_name, RelationLockTypeMap& lockmap, const int level);
@@ -185,7 +184,7 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	return LCK_query_data(tdbb, dbb->dbb_lock, LCK_tra, LCK_ANY) ? true : false;
+	return LCK_query_data(tdbb, LCK_tra, LCK_ANY) ? true : false;
 }
 
 void TRA_cleanup(thread_db* tdbb)
@@ -1622,8 +1621,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	// fill out a lock block, zeroing it out first
 
-	Lock temp_lock(tdbb, LCK_sweep, trans);
-	temp_lock.lck_length = sizeof(SLONG);
+	Lock temp_lock(tdbb, 0, LCK_sweep, trans);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
@@ -1780,8 +1778,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 
 	if (wait != jrd_tra::tra_no_wait)
 	{
-		Lock temp_lock(tdbb, LCK_tra);
-		temp_lock.lck_length = sizeof(SLONG);
+		Lock temp_lock(tdbb, sizeof(SLONG), LCK_tra);
 		temp_lock.lck_key.lck_long = number;
 
 		const SSHORT timeout = (wait == jrd_tra::tra_wait) ? trans->getLockWait() : 0;
@@ -1971,27 +1968,6 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 	return header;
 }
 #endif
-
-
-static Lock* create_transaction_lock(thread_db* tdbb, void* object)
-{
-/**************************************
- *
- *	c r e a t e _ t r a n s a c t i o n _ l o c k
- *
- **************************************
- *
- * Functional description
- *	Allocate a transaction lock block.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock(tdbb, LCK_tra, object);
-	lock->lck_length = sizeof(SLONG);
-
-	return lock;
-}
 
 
 static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation,
@@ -2376,7 +2352,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	Lock* old_lock = transaction->tra_lock;
 	if (old_lock)
 	{
-		new_lock = create_transaction_lock(tdbb, transaction);
+		new_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(SLONG), LCK_tra);
 		new_lock->lck_key.lck_long = new_number;
 		new_lock->lck_data = transaction->tra_lock->lck_data;
 
@@ -2488,8 +2464,7 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	SET_TDBB(tdbb);
 
 	// fill out the lock block
-	Lock temp_lock(tdbb, LCK_sweep);
-	temp_lock.lck_length = sizeof(SLONG);
+	Lock temp_lock(tdbb, 0, LCK_sweep);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
@@ -3032,7 +3007,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
-	Lock* lock = create_transaction_lock(tdbb, temp);
+	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(SLONG), LCK_tra);
 
 	// Read header page and allocate transaction number.  Since
 	// the transaction inventory page was initialized to zero, it
@@ -3146,8 +3121,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// more complicated by the fact that existing transaction may have oldest
 	// actives older than they are.
 
-	Lock temp_lock(tdbb, LCK_tra, trans);
-	temp_lock.lck_length = sizeof(SLONG);
+	Lock temp_lock(tdbb, sizeof(SLONG), LCK_tra, trans);
 
 	trans->tra_oldest_active = number;
 	base = oldest & ~TRA_MASK;
@@ -3199,7 +3173,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 			// Query the minimum lock data for all active transaction locks.
 			// This will be the oldest active snapshot used for regulating garbage collection.
 
-			data = LCK_query_data(tdbb, dbb->dbb_lock, LCK_tra, LCK_MIN);
+			data = LCK_query_data(tdbb, LCK_tra, LCK_MIN);
 			if (data && data < trans->tra_oldest_active)
 				trans->tra_oldest_active = data;
 			break;
@@ -3301,10 +3275,9 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	// Allocate the cancellation lock
 
-	lock = FB_NEW_RPT(*trans->tra_pool, sizeof(SLONG))
-		Lock(tdbb, LCK_cancel, trans, blocking_ast_transaction);
+	lock = FB_NEW_RPT(*trans->tra_pool, 0)
+		Lock(tdbb, sizeof(SLONG), LCK_cancel, trans, blocking_ast_transaction);
 	trans->tra_cancel_lock = lock;
-	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = trans->tra_number;
 
 	// if the user asked us to restart all requests in this attachment,

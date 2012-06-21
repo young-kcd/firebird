@@ -133,11 +133,8 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_
 		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks,
 					   relation->rel_id + 1);
 
-	const SSHORT relLockLen = relation->getRelLockKeyLength();
-	// the lck_object is used here to find the relation
-	// block from the lock block
-	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock(tdbb, LCK_relation, relation);
-	lock->lck_length = relLockLen;
+	const USHORT relLockLen = relation->getRelLockKeyLength();
+	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock(tdbb, relLockLen, LCK_relation);
 	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
 	// enter all relation locks into the intra-process lock manager and treat
 	// them as compatible within the attachment according to IPLM rules

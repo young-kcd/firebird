@@ -132,8 +132,8 @@ namespace Jrd {
 		  down(false)
 	{
 		stateLock = FB_NEW_RPT(getPool(), 0)
-			Lock(tdbb, LCK_crypt_status, this, blockingAstChangeCryptState);
-		threadLock = FB_NEW_RPT(getPool(), 0) Lock(tdbb, LCK_crypt);
+			Lock(tdbb, 0, LCK_crypt_status, this, blockingAstChangeCryptState);
+		threadLock = FB_NEW_RPT(getPool(), 0) Lock(tdbb, 0, LCK_crypt);
 
 		takeStateLock(tdbb);
 	}

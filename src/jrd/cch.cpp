@@ -549,15 +549,13 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, int wait)
 		SDW_get_shadows(tdbb);
 	}
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	if (!attachment->backupStateReadLock(tdbb, wait))
+	if (!BackupManager::StateReadGuard::lock(tdbb, wait))
 		return NULL;
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page, SYNC_EXCLUSIVE, wait);
 	if (!bdb)
 	{
-		attachment->backupStateReadUnLock(tdbb);
+		BackupManager::StateReadGuard::unlock(tdbb);
 		return NULL;			// latch timeout occurred
 	}
 
@@ -572,7 +570,7 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, int wait)
 
 		if (!wait)
 		{
-			attachment->backupStateReadUnLock(tdbb);
+			BackupManager::StateReadGuard::unlock(tdbb);
 			bdb->release(tdbb);
 			return NULL;
 		}
@@ -736,9 +734,7 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 		SDW_get_shadows(tdbb);
 
 	// Look for the page in the cache.
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	if (!attachment->backupStateReadLock(tdbb, wait))
+	if (!BackupManager::StateReadGuard::lock(tdbb, wait))
 		return lsLockTimeout;
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page,
@@ -746,8 +742,8 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 
 	if (wait != 1 && bdb == 0)
 	{
-		attachment->backupStateReadUnLock(tdbb);
-		return lsLatchTimeout;		// latch timeout
+		BackupManager::StateReadGuard::unlock(tdbb);
+		return lsLatchTimeout; // latch timeout
 	}
 
 	if (lock_type >= LCK_write)
@@ -760,7 +756,7 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 	const LockState lock_result = lock_buffer(tdbb, bdb, wait, page_type);
 
 	if (lock_result == lsLockTimeout)
-		attachment->backupStateReadUnLock(tdbb);
+		BackupManager::StateReadGuard::unlock(tdbb);
 
 	return lock_result;
 }
@@ -1983,7 +1979,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 		window->win_flags &= ~WIN_garbage_collect;
 	}
 
-	tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+	BackupManager::StateReadGuard::unlock(tdbb);
 
 //	if (bdb->bdb_writers == 1 || bdb->bdb_use_count == 1)
 	if (bdb->bdb_writers == 1 ||
@@ -2229,9 +2225,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			}
 			else
 			{
-				if (tdbb->getAttachment()) {
-					tdbb->getAttachment()->backupStateReadUnLock(tdbb);
-				}
+				BackupManager::StateReadGuard::unlock(tdbb);
 
 				if (bdb->ourExclusiveLock()) {
 					bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
@@ -2258,7 +2252,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			if (bdb->bdb_flags & BDB_marked) {
 				BUGCHECK(268);	// msg 268 buffer marked during cache unwind
 			}
-			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+			BackupManager::StateReadGuard::unlock(tdbb);
 
 			bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
 			release_bdb(tdbb, bdb, true, false, false);
@@ -2270,7 +2264,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 		SharedLatch* latch = findSharedLatch(tdbb, bdb);
 		while (latch)
 		{
-			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+			BackupManager::StateReadGuard::unlock(tdbb);
 
 			release_bdb(tdbb, bdb, true, false, false);
 			latch = findSharedLatch(tdbb, bdb);
@@ -2510,11 +2504,10 @@ static Lock* alloc_page_lock(thread_db* tdbb, BufferDesc* bdb)
 	Database* dbb = tdbb->getDatabase();
 	BufferControl *bcb = bdb->bdb_bcb;
 
-	const SSHORT lockLen = PageNumber::getLockLen();
-	Lock* lock = FB_NEW_RPT(*bcb->bcb_bufferpool, lockLen) Lock(tdbb, LCK_bdb, bdb, blocking_ast_bdb);
-	lock->lck_length = lockLen;
+	const USHORT lockLen = PageNumber::getLockLen();
 
-	return lock;
+	return FB_NEW_RPT(*bcb->bcb_bufferpool, lockLen)
+		Lock(tdbb, lockLen, LCK_bdb, bdb, blocking_ast_bdb);
 }
 
 
@@ -3078,6 +3071,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 			// continue execution to clean up
 		}
+
+		attachment->releaseLocks(tdbb);
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 	}	// try

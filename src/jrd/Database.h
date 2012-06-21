@@ -205,14 +205,13 @@ const ULONG DBB_DB_SQL_dialect_3	= 0x100L;	// database SQL dialect 3
 const ULONG DBB_read_only			= 0x200L;	// DB is ReadOnly (RO). If not set, DB is RW
 const ULONG DBB_being_opened_read_only	= 0x400L;	// DB is being opened RO. If unset, opened as RW
 const ULONG DBB_not_in_use			= 0x800L;	// Database to be ignored while attaching
-const ULONG DBB_lck_init_done		= 0x1000L;	// LCK_init() called for the database
-const ULONG DBB_sweep_in_progress	= 0x2000L;	// A database sweep operation is in progress
-const ULONG DBB_security_db			= 0x4000L;	// ISC security database
-const ULONG DBB_suspend_bgio		= 0x8000L;	// Suspend I/O by background threads
-const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
-const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
-const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
-const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
+const ULONG DBB_sweep_in_progress	= 0x1000L;	// A database sweep operation is in progress
+const ULONG DBB_security_db			= 0x2000L;	// ISC security database
+const ULONG DBB_suspend_bgio		= 0x4000L;	// Suspend I/O by background threads
+const ULONG DBB_being_opened		= 0x8000L;	// database is being attached to
+const ULONG DBB_gc_cooperative		= 0x10000L;	// cooperative garbage collection
+const ULONG DBB_gc_background		= 0x20000L;	// background garbage collection by gc_thread
+const ULONG DBB_no_fs_cache			= 0x40000L;	// Not using file system cache
 
 //
 // dbb_ast_flags
@@ -238,7 +237,6 @@ public:
 		struct ValueCache
 		{
 			Lock* lock;			// lock which holds shared counter value
-			bool isProtected;	// flag indicating that we own the lock in the PW mode
 			SLONG curVal;		// current value of shared counter lock
 			SLONG maxVal;		// maximum cached value of shared counter lock
 		};

@@ -201,10 +201,10 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 	if (!function->fun_existence_lock)
 	{
-		Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0) Lock(tdbb, LCK_fun_exist, function, blockingAst);
+		Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0)
+			Lock(tdbb, sizeof(SLONG), LCK_fun_exist, function, blockingAst);
 		function->fun_existence_lock = lock;
 		lock->lck_key.lck_long = function->getId();
-		lock->lck_length = sizeof(SLONG);
 	}
 
 	LCK_lock(tdbb, function->fun_existence_lock, LCK_SR, LCK_WAIT);

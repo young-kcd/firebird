@@ -146,25 +146,19 @@ namespace Jrd
 
 		if (!counter->lock)
 		{
-			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG))
-				Lock(tdbb, LCK_shared_counter, counter, blockingAst);
+			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
+				Lock(tdbb, sizeof(SLONG), LCK_shared_counter, counter, blockingAst);
 			counter->lock = lock;
-			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = space;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
 
-			counter->isProtected = true;
 			counter->curVal = 1;
 			counter->maxVal = 0;
 		}
 
 		if (counter->curVal > counter->maxVal)
 		{
-			if (!counter->isProtected)
-			{
-				LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
-				counter->isProtected = true;
-			}
+			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
 
 			counter->curVal = LCK_read_data(tdbb, counter->lock);
 
@@ -194,7 +188,6 @@ namespace Jrd
 			SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::blockingAstSharedCounter");
 
 			LCK_downgrade(tdbb, counter->lock);
-			counter->isProtected = false;
 		}
 		catch (const Exception&)
 		{} // no-op

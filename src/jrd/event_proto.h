@@ -56,9 +56,9 @@ public:
 
 	void deleteSession(SLONG);
 
-	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*, Firebird::IEventCallback*);
+	SLONG queEvents(SLONG, USHORT, const UCHAR*, Firebird::IEventCallback*);
 	void cancelEvents(SLONG);
-	void postEvent(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
+	void postEvent(USHORT, const TEXT*, USHORT);
 	void deliverEvents();
 
 	bool initialize(bool);
@@ -76,11 +76,11 @@ private:
 	void deliver();
 	void deliver_request(evt_req*);
 	void exit_handler(void *);
-	evnt* find_event(USHORT, const TEXT*, evnt*);
+	evnt* find_event(USHORT, const TEXT*);
 	void free_global(frb*);
 	req_int* historical_interest(ses*, SLONG);
 	void insert_tail(srq*, srq*);
-	evnt* make_event(USHORT, const TEXT*, SLONG);
+	evnt* make_event(USHORT, const TEXT*);
 	bool post_process(prb*);
 	void probe_processes();
 	void release_shmem();

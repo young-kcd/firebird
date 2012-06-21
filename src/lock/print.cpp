@@ -1083,9 +1083,8 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, lbl* lock, USHORT 
 				preLock, rel_lock, rel_lock);
 	}
 	FPRINTF(outfile,
-			"\tSeries: %d, Parent: %s, State: %d, size: %d length: %d data: %"ULONGFORMAT"\n",
-			lock->lbl_series, (const TEXT*)HtmlLink(preLock, lock->lbl_parent), lock->lbl_state,
-			lock->lbl_size, lock->lbl_length, lock->lbl_data);
+			"\tSeries: %d, State: %d, size: %d length: %d data: %"ULONGFORMAT"\n",
+			lock->lbl_series, lock->lbl_state, lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
 	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) &&
 		lock->lbl_length == Jrd::PageNumber::getLockLen())

@@ -176,7 +176,6 @@ struct lbl
 	srq lbl_lhb_hash;				// Collision que for hash table
 	srq lbl_lhb_data;				// Lock data que by series
 	SLONG lbl_data;					// User data
-	SRQ_PTR lbl_parent;				// Parent
 	UCHAR lbl_series;				// Lock series
 	UCHAR lbl_flags;				// Unused. Misc flags
 	USHORT lbl_pending_lrq_count;	// count of lbl_requests with LRQ_pending
@@ -304,23 +303,29 @@ class LockManager : private Firebird::RefCounted,
 					public Firebird::GlobalStorage,
 					public SharedMemory<lhb>
 {
-	class LocalGuard
+	class LockTableGuard
 	{
 	public:
-		explicit LocalGuard(LockManager* lm)
-			: m_lm(lm)
+		explicit LockTableGuard(LockManager* lm, SRQ_PTR owner = 0)
+			: m_lm(lm), m_owner(owner)
 		{
 			if (!m_lm->m_localMutex.tryEnter())
 			{
 				m_lm->m_localMutex.enter();
 				m_lm->m_blockage = true;
 			}
+
+			if (m_owner)
+				m_lm->acquire_shmem(m_owner);
 		}
 
-		~LocalGuard()
+		~LockTableGuard()
 		{
 			try
 			{
+				if (m_owner)
+					m_lm->release_shmem(m_owner);
+
 				m_lm->m_localMutex.leave();
 			}
 			catch (const Firebird::Exception&)
@@ -329,24 +334,32 @@ class LockManager : private Firebird::RefCounted,
 			}
 		}
 
+		void setOwner(SLONG owner)
+		{
+			fb_assert(owner && m_owner && m_owner == m_lm->sh_mem_header->lhb_active_owner);
+			m_owner = m_lm->sh_mem_header->lhb_active_owner = owner;
+		}
+
 	private:
 		// Forbid copying
-		LocalGuard(const LocalGuard&);
-		LocalGuard& operator=(const LocalGuard&);
+		LockTableGuard(const LockTableGuard&);
+		LockTableGuard& operator=(const LockTableGuard&);
 
 		LockManager* m_lm;
+		SRQ_PTR m_owner;
 	};
 
-	class LocalCheckout
+	class LockTableCheckout
 	{
 	public:
-		explicit LocalCheckout(LockManager* lm)
-			: m_lm(lm)
+		explicit LockTableCheckout(LockManager* lm)
+			: m_lm(lm), m_owner(m_lm->sh_mem_header->lhb_active_owner)
 		{
+			m_lm->release_shmem(m_owner);
 			m_lm->m_localMutex.leave();
 		}
 
-		~LocalCheckout()
+		~LockTableCheckout()
 		{
 			try
 			{
@@ -355,6 +368,8 @@ class LockManager : private Firebird::RefCounted,
 					m_lm->m_localMutex.enter();
 					m_lm->m_blockage = true;
 				}
+
+				m_lm->acquire_shmem(m_owner);
 			}
 			catch (const Firebird::Exception&)
 			{
@@ -364,10 +379,11 @@ class LockManager : private Firebird::RefCounted,
 
 	private:
 		// Forbid copying
-		LocalCheckout(const LocalCheckout&);
-		LocalCheckout& operator=(const LocalCheckout&);
+		LockTableCheckout(const LockTableCheckout&);
+		LockTableCheckout& operator=(const LockTableCheckout&);
 
 		LockManager* m_lm;
+		const SRQ_PTR m_owner;
 	};
 
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
@@ -384,7 +400,7 @@ public:
 	bool initializeOwner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	void shutdownOwner(Attachment*, SRQ_PTR*);
 
-	SRQ_PTR enqueue(Attachment*, Firebird::Arg::StatusVector&, SRQ_PTR, SRQ_PTR, const USHORT,
+	SRQ_PTR enqueue(Attachment*, Firebird::Arg::StatusVector&, SRQ_PTR, const USHORT,
 		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
 	bool convert(Attachment*, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
 	UCHAR downgrade(Attachment*, Firebird::Arg::StatusVector&, const SRQ_PTR);
@@ -393,9 +409,9 @@ public:
 	void repost(Attachment*, lock_ast_t, void*, SRQ_PTR);
 	bool cancelWait(SRQ_PTR);
 
-	SLONG queryData(SRQ_PTR, const USHORT, const USHORT);
+	SLONG queryData(const USHORT, const USHORT);
 	SLONG readData(SRQ_PTR);
-	SLONG readData2(SRQ_PTR, USHORT, const UCHAR*, USHORT, SRQ_PTR);
+	SLONG readData2(USHORT, const UCHAR*, USHORT, SRQ_PTR);
 	SLONG writeData(SRQ_PTR, SLONG);
 
 private:
@@ -405,17 +421,17 @@ private:
 	void acquire_shmem(SRQ_PTR);
 	UCHAR* alloc(USHORT, Firebird::Arg::StatusVector*);
 	lbl* alloc_lock(USHORT, Firebird::Arg::StatusVector&);
-	void blocking_action(Attachment*, SRQ_PTR, SRQ_PTR);
+	void blocking_action(Attachment*, SRQ_PTR);
 	void blocking_action_thread();
 	void bug(Firebird::Arg::StatusVector*, const TEXT*);
 	void bug_assert(const TEXT*, ULONG);
-	bool create_owner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
+	SRQ_PTR create_owner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR);
 	bool create_process(Firebird::Arg::StatusVector&);
 	void deadlock_clear();
 	lrq* deadlock_scan(own*, lrq*);
 	lrq* deadlock_walk(lrq*, bool*);
 	void debug_delay(ULONG);
-	lbl* find_lock(SRQ_PTR, USHORT, const UCHAR*, USHORT, USHORT*);
+	lbl* find_lock(USHORT, const UCHAR*, USHORT, USHORT*);
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
 	bool grant_or_que(Attachment*, lrq*, lbl*, SSHORT);
@@ -436,12 +452,10 @@ private:
 	void remap_local_owners();
 	void remove_que(SRQ);
 	void release_shmem(SRQ_PTR);
-	void release_mutex();
 	void release_request(lrq*);
-	bool signal_owner(Attachment*, own*, SRQ_PTR);
+	bool signal_owner(Attachment*, own*);
 
 	void validate_history(const SRQ_PTR history_header);
-	void validate_parent(const lhb*, const SRQ_PTR);
 	void validate_lhb(const lhb*);
 	void validate_lock(const SRQ_PTR, USHORT, const SRQ_PTR);
 	void validate_owner(const SRQ_PTR, USHORT);

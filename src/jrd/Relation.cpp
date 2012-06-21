@@ -217,7 +217,7 @@ void jrd_rel::getRelLockKey(thread_db* tdbb, UCHAR* key)
 	memcpy(key, &inst_id, sizeof(ULONG));
 }
 
-SSHORT jrd_rel::getRelLockKeyLength() const
+USHORT jrd_rel::getRelLockKeyLength() const
 {
 	return sizeof(ULONG) + sizeof(SLONG);
 }

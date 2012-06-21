@@ -76,7 +76,7 @@ using namespace Firebird;
 /******************************** NBackupStateLock ******************************/
 
 NBackupStateLock::NBackupStateLock(thread_db* tdbb, MemoryPool& p, BackupManager* bakMan):
-	GlobalRWLock(tdbb, p, LCK_backup_database, LCK_OWNER_database), backup_manager(bakMan)
+	GlobalRWLock(tdbb, p, LCK_backup_database), backup_manager(bakMan)
 {
 }
 
@@ -123,7 +123,7 @@ void NBackupStateLock::blockingAstHandler(thread_db* tdbb)
 /******************************** NBackupAllocLock ******************************/
 
 NBackupAllocLock::NBackupAllocLock(thread_db* tdbb, MemoryPool& p, BackupManager* bakMan):
-	GlobalRWLock(tdbb, p, LCK_backup_alloc, LCK_OWNER_database), backup_manager(bakMan)
+	GlobalRWLock(tdbb, p, LCK_backup_alloc), backup_manager(bakMan)
 {
 }
 
@@ -136,46 +136,52 @@ bool NBackupAllocLock::fetch(thread_db* tdbb)
 
 /******************************** BackupManager::StateWriteGuard ******************************/
 
-BackupManager::StateWriteGuard::StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd)
-	: tdbb(_tdbb), window(NULL), success(false)
+BackupManager::StateWriteGuard::StateWriteGuard(thread_db* tdbb, Jrd::WIN* window)
+	: m_tdbb(tdbb), m_window(NULL), m_success(false)
 {
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
+	Jrd::Attachment* const att = tdbb->getAttachment();
+
 	dbb->dbb_backup_manager->beginFlush();
 	CCH_flush(tdbb, FLUSH_ALL, 0); // Flush local cache to release all dirty pages
 
-	if (!tdbb->getAttachment()->backupStateWriteLock(tdbb, true))
+	if (!att->backupStateWriteLock(tdbb, true))
 		ERR_bugcheck_msg("Can't lock state for write");
 
 	dbb->dbb_backup_manager->endFlush();
+
 	NBAK_TRACE(("backup state locked for write"));
-	CCH_FETCH(tdbb, wnd, LCK_write, pag_header);
-	window = wnd;
+	CCH_FETCH(tdbb, window, LCK_write, pag_header);
+
+	m_window = window;
 }
 
 BackupManager::StateWriteGuard::~StateWriteGuard()
 {
+	Database* const dbb = m_tdbb->getDatabase();
+	Jrd::Attachment* const att = m_tdbb->getAttachment();
+
 	// It is important to set state into nbak_state_unknown *before* release of state lock,
 	// otherwise someone could acquire state lock, fetch and modify some page before state will
 	// be set into unknown. But dirty page can't be written when backup state is unknown
 	// because write target (database or delta) is also unknown.
 
-	if (!success)
+	if (!m_success)
 	{
 		NBAK_TRACE( ("invalidate state") );
-		Database* dbb = tdbb->getDatabase();
 		dbb->dbb_backup_manager->setState(nbak_state_unknown);
 	}
 
 	releaseHeader();
-	tdbb->getAttachment()->backupStateWriteUnLock(tdbb);
+	att->backupStateWriteUnLock(m_tdbb);
 }
 
 void BackupManager::StateWriteGuard::releaseHeader()
 {
-	if (window)
+	if (m_window)
 	{
-		CCH_RELEASE(tdbb, window);
-		window = NULL;
+		CCH_RELEASE(m_tdbb, m_window);
+		m_window = NULL;
 	}
 }
 

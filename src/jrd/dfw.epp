@@ -848,7 +848,6 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 	bool pending_events = false;
 
 	Database* dbb = GET_DBB();
-	Lock* lock = dbb->dbb_lock;
 
 	for (DeferredWork* itr = transaction->tra_deferred_job->work; itr;)
 	{
@@ -860,8 +859,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 		case dfw_post_event:
 			EventManager::init(transaction->tra_attachment);
 
-			dbb->dbb_event_mgr->postEvent(lock->lck_length, (const TEXT*) &lock->lck_key,
-										  work->dfw_name.length(), work->dfw_name.c_str(),
+			dbb->dbb_event_mgr->postEvent(work->dfw_name.length(), work->dfw_name.c_str(),
 										  work->dfw_count);
 
 			delete work;
@@ -2817,8 +2815,7 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		// Take a relation lock on rel id -1 before actually generating a relation id.
 
 		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG))
-			Lock(tdbb, LCK_relation);
-		lock->lck_length = sizeof(SLONG);
+			Lock(tdbb, sizeof(SLONG), LCK_relation);
 		lock->lck_key.lck_long = -1;
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
@@ -4171,7 +4168,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		}
 
 		if (relation->rel_file) {
-		    EXT_fini (relation, false);
+		    EXT_fini(relation, false);
 		}
 
 		RelationPages* relPages = relation->getBasePages();

@@ -107,7 +107,6 @@ struct evnt
 	event_hdr evnt_header;
 	srq evnt_events;				// System event que (owned by header)
 	srq evnt_interests;				// Que of request interests in event
-	SRQ_PTR evnt_parent;			// Major event name
 	SLONG evnt_count;				// Current event count
 	USHORT evnt_length;				// Length of event name
 	TEXT evnt_name[1];				// Event name

@@ -765,9 +765,8 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 	// Take out lock on attachment id
 
 	Lock* const lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
-		Lock(tdbb, LCK_attachment, attachment, blocking_ast_attachment);
+		Lock(tdbb, sizeof(SLONG), LCK_attachment, attachment, blocking_ast_attachment);
 	attachment->att_id_lock = lock;
-	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = attachment->att_attachment_id;
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
@@ -2151,20 +2150,6 @@ void PageManager::closeAll()
 	}
 }
 
-void PageManager::releaseLocks()
-{
-#ifdef WIN_NT
-	for (size_t i = 0; i < pageSpaces.getCount(); i++)
-	{
-		if (pageSpaces[i]->file && pageSpaces[i]->file->fil_ext_lock)
-		{
-			delete pageSpaces[i]->file->fil_ext_lock;
-			pageSpaces[i]->file->fil_ext_lock = NULL;
-		}
-	}
-#endif
-}
-
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
@@ -2177,8 +2162,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 
 		if (!attachment->att_temp_pg_lock)
 		{
-			Lock* lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG)) Lock(tdbb, LCK_page_space);
-			lock->lck_length = sizeof(SLONG);
+			Lock* lock = FB_NEW_RPT(*attachment->att_pool, 0) Lock(tdbb, sizeof(SLONG), LCK_page_space);
 
 			PAG_attachment_id(tdbb);
 

@@ -69,7 +69,6 @@ static bool internal_compatible(Lock*, const Lock*, USHORT);
 static void internal_dequeue(thread_db*, Lock*);
 static USHORT internal_downgrade(thread_db*, Arg::StatusVector&, Lock*);
 static bool internal_enqueue(thread_db*, Arg::StatusVector&, Lock*, USHORT, SSHORT, bool);
-static SLONG get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type);
 static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type);
 
 #ifdef DEBUG_LCK
@@ -558,33 +557,6 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 }
 
 
-static SLONG get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
-{
-/**********************************************************
- *
- *	L C K _ g e t _ o w n e r _ h a n d l e _ b y _ t y p e
- *
- **********************************************************
- *
- * Functional description
- *	return the lock owner given a lock owner type.
- *
- *********************************************************/
-	SET_TDBB(tdbb);
-
-	switch (lck_owner_type)
-	{
-		case LCK_OWNER_database:
-			return *LCK_OWNER_HANDLE_DBB(tdbb);
-		case LCK_OWNER_attachment:
-			return *LCK_OWNER_HANDLE_ATT(tdbb);
-		default:
-			bug_lck("Invalid lock owner type in LCK_get_owner_handle_by_type ()");
-			return 0;
-	}
-}
-
-
 void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 {
 /**************************************
@@ -725,7 +697,7 @@ bool LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 }
 
 
-SLONG LCK_query_data(thread_db* tdbb, Lock* parent, enum lck_t lock_type, USHORT aggregate)
+SLONG LCK_query_data(thread_db* tdbb, enum lck_t lock_type, USHORT aggregate)
 {
 /**************************************
  *
@@ -742,9 +714,7 @@ SLONG LCK_query_data(thread_db* tdbb, Lock* parent, enum lck_t lock_type, USHORT
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	fb_assert(LCK_CHECK_LOCK(parent));
-
-	return dbb->dbb_lock_mgr->queryData(parent->lck_id, lock_type, aggregate);
+	return dbb->dbb_lock_mgr->queryData(lock_type, aggregate);
 }
 
 
@@ -772,10 +742,8 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 	const SLONG data = dbb->dbb_lock_mgr->readData(lock->lck_id);
 	LCK_release(lock);
 #else
-	Lock* parent = lock->lck_parent;
 	const SLONG data =
-		dbb->dbb_lock_mgr->readData2(parent ? parent->lck_id : 0,
-									 lock->lck_type,
+		dbb->dbb_lock_mgr->readData2(lock->lck_type,
 									 (UCHAR*) &lock->lck_key, lock->lck_length,
 									 lock->lck_owner_handle);
 #endif
@@ -949,10 +917,9 @@ static void enqueue(thread_db* tdbb, Arg::StatusVector& statusVector, Lock* lock
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Lock* parent = lock->lck_parent;
 	lock->lck_id = dbb->dbb_lock_mgr->enqueue(att, statusVector, lock->lck_id,
-		(parent ? parent->lck_id : 0), lock->lck_type, (const UCHAR*) &lock->lck_key,
-		lock->lck_length, level, lock->lck_ast, lock->lck_object, lock->lck_data, wait,
+		lock->lck_type, (const UCHAR*) &lock->lck_key, lock->lck_length,
+		level, lock->lck_ast, lock->lck_object, lock->lck_data, wait,
 		lock->lck_owner_handle);
 
 	if (!lock->lck_id)
@@ -1078,7 +1045,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	if (!att->att_compatibility_table)
 		hash_allocate(lock);
 
-	const USHORT hash_value = hash_func((UCHAR*) & lock->lck_key, lock->lck_length);
+	const USHORT hash_value = hash_func((UCHAR*) &lock->lck_key, lock->lck_length);
 
 	if (hash_slot)
 		*hash_slot = hash_value;
@@ -1098,9 +1065,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	for (Lock* collision = match; collision; collision = collision->lck_collision)
 	{
 		fb_assert(LCK_CHECK_LOCK(collision));
-		if (collision->lck_parent && lock->lck_parent &&
-			collision->lck_parent->lck_id == lock->lck_parent->lck_id &&
-			collision->lck_type == lock->lck_type &&
+		if (collision->lck_type == lock->lck_type &&
 			collision->lck_length == lock->lck_length)
 		{
 			// check that the keys are the same
@@ -1472,9 +1437,8 @@ static bool internal_enqueue(thread_db* tdbb, Arg::StatusVector& statusVector, L
 	// with the local ast handler, passing it the lock block itself
 
 	lock->lck_id = dbb->dbb_lock_mgr->enqueue(att, statusVector, lock->lck_id,
-		(lock->lck_parent ? lock->lck_parent->lck_id : 0), lock->lck_type,
-		(const UCHAR*) &lock->lck_key, lock->lck_length, level, external_ast, lock, lock->lck_data,
-		wait, lock->lck_owner_handle);
+		lock->lck_type, (const UCHAR*) &lock->lck_key, lock->lck_length,
+		level, external_ast, lock, lock->lck_data, wait, lock->lck_owner_handle);
 
 	// If the lock exchange failed, set the lock levels appropriately
 	if (lock->lck_id == 0)
@@ -1495,45 +1459,20 @@ static bool internal_enqueue(thread_db* tdbb, Arg::StatusVector& statusVector, L
 	return lock->lck_id ? true : false;
 }
 
-Lock::Lock(thread_db* tdbb, lck_t type, void* object, lock_ast_t ast)
+Lock::Lock(thread_db* tdbb, USHORT length, lck_t type, void* object, lock_ast_t ast)
 :	lck_dbb(tdbb->getDatabase()),
 	lck_attachment(0),
 	lck_compatible(0),
 	lck_compatible2(0),
 	lck_ast(ast),
 	lck_object(object),
-	lck_parent(type == LCK_database ? NULL : lck_dbb->dbb_lock),
 	lck_next(0),
 	lck_prior(0),
 	lck_collision(0),
 	lck_identical(0),
 	lck_id(0),
 	lck_owner_handle(get_owner_handle(tdbb, type)),
-	lck_length(0),
-	lck_type(type),
-	lck_logical(0),
-	lck_physical(0),
-	lck_data(0)
-{
-	lck_key.lck_long = 0;
-	lck_tail[0] = 0;
-}
-
-Lock::Lock(thread_db* tdbb, lck_owner_t ownerType, lck_t type, void* object, lock_ast_t ast)
-:	lck_dbb(tdbb->getDatabase()),
-	lck_attachment(0),
-	lck_compatible(0),
-	lck_compatible2(0),
-	lck_ast(ast),
-	lck_object(object),
-	lck_parent(type == LCK_database ? NULL : lck_dbb->dbb_lock),
-	lck_next(0),
-	lck_prior(0),
-	lck_collision(0),
-	lck_identical(0),
-	lck_id(0),
-	lck_owner_handle(get_owner_handle_by_type(tdbb, ownerType)),
-	lck_length(0),
+	lck_length(length),
 	lck_type(type),
 	lck_logical(0),
 	lck_physical(0),

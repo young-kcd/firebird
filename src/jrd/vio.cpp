@@ -4518,6 +4518,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		if (transaction)
 			TRA_commit(tdbb, transaction, false);
 
+		attachment->releaseLocks(tdbb);
+
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 	}	// try
 	catch (const Firebird::Exception& ex)

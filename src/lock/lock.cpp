@@ -137,7 +137,6 @@ using namespace Firebird;
 // It's LONG.
 
 const SRQ_PTR DUMMY_OWNER = -1;
-const SRQ_PTR CREATE_OWNER = -2;
 
 const SLONG HASH_MIN_SLOTS	= 101;
 const SLONG HASH_MAX_SLOTS	= 65521;
@@ -233,8 +232,9 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 LockManager::~LockManager()
 {
 	const SRQ_PTR process_offset = m_processOffset;
+
 	{ // guardian's scope
-		LocalGuard guard(this);
+		LockTableGuard guard(this);
 		m_processOffset = 0;
 	}
 
@@ -262,25 +262,28 @@ LockManager::~LockManager()
 #endif
 	}
 
-	acquire_shmem(DUMMY_OWNER);
-	if (process_offset)
-	{
-		prc* const process = (prc*) SRQ_ABS_PTR(process_offset);
-		purge_process(process);
-	}
-	if (sh_mem_header && SRQ_EMPTY(sh_mem_header->lhb_processes))
-	{
-		Firebird::PathName name;
-		get_shared_file_name(name);
-		removeMapFile();
-#ifdef USE_SHMEM_EXT
-		for (ULONG i = 1; i < m_extents.getCount(); ++i)
+	{ // guardian's scope
+		LockTableGuard guard(this, DUMMY_OWNER);
+
+		if (process_offset)
 		{
-			m_extents[i].removeMapFile();
+			prc* const process = (prc*) SRQ_ABS_PTR(process_offset);
+			purge_process(process);
 		}
+
+		if (sh_mem_header && SRQ_EMPTY(sh_mem_header->lhb_processes))
+		{
+			Firebird::PathName name;
+			get_shared_file_name(name);
+			removeMapFile();
+#ifdef USE_SHMEM_EXT
+			for (ULONG i = 1; i < m_extents.getCount(); ++i)
+			{
+				m_extents[i].removeMapFile();
+			}
 #endif //USE_SHMEM_EXT
+		}
 	}
-	release_mutex();
 
 	detach_shared_file(localStatus);
 #ifdef USE_SHMEM_EXT
@@ -387,26 +390,34 @@ bool LockManager::initializeOwner(Arg::StatusVector& statusVector,
  *	Return success or failure.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_init (ownerid=%ld)\n", owner_id));
+	LOCK_TRACE(("LM::init (ownerid=%ld)\n", owner_id));
 
-	LocalGuard guard(this);
+	SRQ_PTR owner_offset = *owner_handle;
 
-	// If everything is already initialized, just bump the use count
-
-	if (*owner_handle)
+	if (owner_offset)
 	{
-		own* const owner = (own*) SRQ_ABS_PTR(*owner_handle);
+		LockTableGuard guard(this, owner_offset);
+
+		// If everything is already initialized, just bump the use count
+
+		own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
 		owner->own_count++;
 		return true;
 	}
 
-	const bool rc = create_owner(statusVector, owner_id, owner_type, owner_handle);
-	LOCK_TRACE(("LOCK_init done (%ld)\n", *owner_handle));
-	return rc;
+	LockTableGuard guard(this, DUMMY_OWNER);
+
+	owner_offset = create_owner(statusVector, owner_id, owner_type);
+
+	if (owner_offset)
+		*owner_handle = owner_offset;
+
+	LOCK_TRACE(("LM::init done (%ld)\n", owner_offset));
+	return (owner_offset != 0);
 }
 
 
-void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_offset)
+void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
 {
 /**************************************
  *
@@ -419,16 +430,16 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_offset)
  *	The exit handler will unmap the shared memory.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_fini(%ld)\n", *owner_offset));
+	LOCK_TRACE(("LM::fini (%ld)\n", *owner_handle));
 
-	LocalGuard guard(this);
-
-	if (!sh_mem_header)
+	const SRQ_PTR owner_offset = *owner_handle;
+	if (!owner_offset)
 		return;
 
-	const SRQ_PTR offset = *owner_offset;
-	own* owner = (own*) SRQ_ABS_PTR(offset);
-	if (!offset || !owner->own_count)
+	LockTableGuard guard(this, owner_offset);
+
+	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
+	if (!owner->own_count)
 		return;
 
 	if (--owner->own_count > 0)
@@ -437,29 +448,28 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_offset)
 	while (owner->own_ast_count)
 	{
 		{ // checkout scope
-			LocalCheckout checkout(this);
-			Jrd::Attachment::Checkout cout(attachment);
+			LockTableCheckout checkout(this);
+			Jrd::Attachment::Checkout cout(attachment, true);
 			THREAD_SLEEP(10);
 		}
 
-		owner = (own*) SRQ_ABS_PTR(offset); // Re-init after a potential remap
+		owner = (own*) SRQ_ABS_PTR(owner_offset);
 	}
 
-	acquire_shmem(offset);
-	owner = (own*) SRQ_ABS_PTR(offset);	// Re-init after a potential remap
+	// This assert expects that all the granted locks have been explicitly
+	// released before destroying the lock owner. This is not strictly required,
+	// but it enforces the proper object lifetime discipline through the codebase.
+	fb_assert(SRQ_EMPTY(owner->own_requests));
 
-	purge_owner(offset, owner);
+	purge_owner(owner_offset, owner);
 
-	release_mutex();
-
-	*owner_offset = (SRQ_PTR) 0;
+	*owner_handle = 0;
 }
 
 
 SRQ_PTR LockManager::enqueue(Attachment* attachment,
 							 Arg::StatusVector& statusVector,
 							 SRQ_PTR prior_request,
-							 SRQ_PTR parent_request,
 							 const USHORT series,
 							 const UCHAR* value,
 							 const USHORT length,
@@ -482,15 +492,16 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
  *	be granted because of deadlock, return NULL.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_enq (%ld)\n", parent_request));
+	LOCK_TRACE(("LM::enqueue (%ld)\n", owner_offset));
 
-	LocalGuard guard(this);
-
-	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
-	if (!owner_offset || !owner->own_count)
+	if (!owner_offset)
 		return 0;
 
-	acquire_shmem(owner_offset);
+	LockTableGuard guard(this, owner_offset);
+
+	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
+	if (!owner->own_count)
+		return 0;
 
 	ASSERT_ACQUIRED;
 	++sh_mem_header->lhb_enqs;
@@ -503,22 +514,15 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	if (prior_request)
 		internal_dequeue(prior_request);
 
-	lrq* request = NULL;
-	SRQ_PTR parent = 0;
-	if (parent_request)
-	{
-		request = get_request(parent_request);
-		parent = request->lrq_lock;
-	}
-
 	// Allocate or reuse a lock request block
+
+	lrq* request;
 
 	ASSERT_ACQUIRED;
 	if (SRQ_EMPTY(sh_mem_header->lhb_free_requests))
 	{
 		if (!(request = (lrq*) alloc(sizeof(lrq), &statusVector)))
 		{
-			release_shmem(owner_offset);
 			return 0;
 		}
 	}
@@ -530,7 +534,6 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		remove_que(&request->lrq_lbl_requests);
 	}
 
-	owner = (own*) SRQ_ABS_PTR(owner_offset);	// Re-init after a potential remap
 	post_history(his_enq, owner_offset, (SRQ_PTR)0, SRQ_REL_PTR(request), true);
 
 	request->lrq_type = type_lrq;
@@ -550,7 +553,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	// See if the lock already exists
 
 	USHORT hash_slot;
-	lbl* lock = find_lock(parent, series, value, length, &hash_slot);
+	lbl* lock = find_lock(series, value, length, &hash_slot);
 	if (lock)
 	{
 		if (series < LCK_MAX_SERIES) {
@@ -565,14 +568,12 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 
 		if (grant_or_que(attachment, request, lock, lck_wait))
 		{
-			release_shmem(owner_offset);
 			return request_offset;
 		}
 
 		statusVector << Arg::Gds(lck_wait > 0 ? isc_deadlock :
 			(lck_wait < 0 ? isc_lock_timeout : isc_lock_conflict));
 
-		release_shmem(owner_offset);
 		return 0;
 	}
 
@@ -584,12 +585,10 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		remove_que(&request->lrq_own_requests);
 		request->lrq_type = type_null;
 		insert_tail(&sh_mem_header->lhb_free_requests, &request->lrq_lbl_requests);
-		release_shmem(owner_offset);
 		return 0;
 	}
 
 	lock->lbl_state = type;
-	lock->lbl_parent = parent;
 	fb_assert(series <= MAX_UCHAR);
 	lock->lbl_series = (UCHAR)series;
 
@@ -620,7 +619,6 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 	request->lrq_lock = SRQ_REL_PTR(lock);
 	grant(request, lock);
-	release_shmem(request->lrq_owner);
 
 	return request_offset;
 }
@@ -644,19 +642,20 @@ bool LockManager::convert(Attachment* attachment,
  *	Perform a lock conversion, if possible.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_convert (%d, %d)\n", type, lck_wait));
+	LOCK_TRACE(("LM::convert (%d, %d)\n", type, lck_wait));
 
-	LocalGuard guard(this);
+	LockTableGuard guard(this, DUMMY_OWNER);
 
-	lrq* request = get_request(request_offset);
+	lrq* const request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
+	guard.setOwner(owner_offset);
+
 	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
 		return false;
 
-	acquire_shmem(request->lrq_owner);
 	++sh_mem_header->lhb_converts;
-	request = (lrq*) SRQ_ABS_PTR(request_offset);
+
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++sh_mem_header->lhb_operations[lock->lbl_series];
@@ -667,13 +666,13 @@ bool LockManager::convert(Attachment* attachment,
 		internal_convert(attachment, statusVector, request_offset, type, lck_wait,
 						 ast_routine, ast_argument);
 
-	release_shmem(owner_offset);
 	return result;
 }
 
 
-UCHAR LockManager::downgrade(Attachment* attachment, Arg::StatusVector& statusVector,
-	const SRQ_PTR request_offset)
+UCHAR LockManager::downgrade(Attachment* attachment,
+							 Arg::StatusVector& statusVector,
+							 const SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -686,20 +685,20 @@ UCHAR LockManager::downgrade(Attachment* attachment, Arg::StatusVector& statusVe
  *	its new state.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_downgrade (%ld)\n", request_offset));
+	LOCK_TRACE(("LM::downgrade (%ld)\n", request_offset));
 
-	LocalGuard guard(this);
+	LockTableGuard guard(this, DUMMY_OWNER);
 
-	lrq* request = get_request(request_offset);
+	lrq* const request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
+	guard.setOwner(owner_offset);
+
 	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
 		return LCK_none;
 
-	acquire_shmem(owner_offset);
 	++sh_mem_header->lhb_downgrades;
 
-	request = (lrq*) SRQ_ABS_PTR(request_offset);	// Re-init after a potential remap
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	UCHAR pending_state = LCK_none;
 
@@ -733,7 +732,6 @@ UCHAR LockManager::downgrade(Attachment* attachment, Arg::StatusVector& statusVe
 						 request->lrq_ast_routine, request->lrq_ast_argument);
 	}
 
-	release_shmem(owner_offset);
 	return state;
 }
 
@@ -750,19 +748,20 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
  *	Release an outstanding lock.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_deq (%ld)\n", request_offset));
+	LOCK_TRACE(("LM::dequeue (%ld)\n", request_offset));
 
-	LocalGuard guard(this);
+	LockTableGuard guard(this, DUMMY_OWNER);
 
-	lrq* request = get_request(request_offset);
+	lrq* const request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
-	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
+	guard.setOwner(owner_offset);
+
+	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
 		return false;
 
-	acquire_shmem(owner_offset);
 	++sh_mem_header->lhb_deqs;
-	request = (lrq*) SRQ_ABS_PTR(request_offset);
+
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++sh_mem_header->lhb_operations[lock->lbl_series];
@@ -770,7 +769,6 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
 		++sh_mem_header->lhb_operations[0];
 
 	internal_dequeue(request_offset);
-	release_shmem(owner_offset);
 	return true;
 }
 
@@ -789,22 +787,22 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
  *	at the re-post list only test the ast element.
  *
  **************************************/
-	lrq* request;
+	LOCK_TRACE(("LM::repost (%ld)\n", owner_offset));
 
-	LOCK_TRACE(("LOCK_re_post(%ld)\n", owner_offset));
+	if (!owner_offset)
+		return;
 
-	LocalGuard guard(this);
-
-	acquire_shmem(owner_offset);
+	LockTableGuard guard(this, owner_offset);
 
 	// Allocate or reuse a lock request block
+
+	lrq* request;
 
 	ASSERT_ACQUIRED;
 	if (SRQ_EMPTY(sh_mem_header->lhb_free_requests))
 	{
 		if (!(request = (lrq*) alloc(sizeof(lrq), NULL)))
 		{
-			release_shmem(owner_offset);
 			return;
 		}
 	}
@@ -816,7 +814,6 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
 		remove_que(&request->lrq_lbl_requests);
 	}
 
-	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	request->lrq_type = type_lrq;
 	request->lrq_flags = LRQ_repost;
 	request->lrq_ast_routine = ast;
@@ -824,15 +821,16 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
 	request->lrq_requested = LCK_none;
 	request->lrq_state = LCK_none;
 	request->lrq_owner = owner_offset;
-	request->lrq_lock = (SRQ_PTR) 0;
+	request->lrq_lock = 0;
+
+	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
 	insert_tail(&owner->own_blocks, &request->lrq_own_blocks);
 	SRQ_INIT(request->lrq_own_pending);
 
 	DEBUG_DELAY;
 
-	signal_owner(attachment, (own*) SRQ_ABS_PTR(owner_offset), (SRQ_PTR) NULL);
-
-	release_shmem(owner_offset);
+	if (!(owner->own_flags & OWN_signaled))
+		signal_owner(attachment, owner);
 }
 
 
@@ -850,26 +848,23 @@ bool LockManager::cancelWait(SRQ_PTR owner_offset)
  *	don't trust the input params blindly.
  *
  **************************************/
-	LOCK_TRACE(("cancelWait (%ld)\n", owner_offset));
+	LOCK_TRACE(("LM::cancelWait (%ld)\n", owner_offset));
 
 	if (!owner_offset)
 		return false;
 
-	LocalGuard guard(this);
+	LockTableGuard guard(this, owner_offset);
 
-	acquire_shmem(DUMMY_OWNER);
+	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
+	if (!owner->own_count)
+		return false;
 
-	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
-	if (owner->own_type == type_own)
-		post_wakeup(owner);
-
-	release_shmem(DUMMY_OWNER);
-
+	post_wakeup(owner);
 	return true;
 }
 
 
-SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const USHORT aggregate)
+SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 {
 /**************************************
  *
@@ -882,22 +877,18 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
  *	lock hierarchy calculating aggregates as we go.
  *
  **************************************/
-	if (!parent_request || series >= LCK_MAX_SERIES)
+	if (series >= LCK_MAX_SERIES)
 	{
 		CHECK(false);
 		return 0;
 	}
 
-	LocalGuard guard(this);
+	LOCK_TRACE(("LM::queryData (%ld)\n", owner_offset));
 
-	// Get root of lock hierarchy
-
-	lrq* parent = get_request(parent_request);
-	acquire_shmem(parent->lrq_owner);
-
-	parent = (lrq*) SRQ_ABS_PTR(parent_request);
+	LockTableGuard guard(this, DUMMY_OWNER);
 
 	++sh_mem_header->lhb_query_data;
+
 	const srq& data_header = sh_mem_header->lhb_data[series];
 	SLONG data = 0, count = 0;
 
@@ -914,10 +905,8 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		for (const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_forward);
 			 lock_srq != &data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
-			const lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* const lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
-			if (lock->lbl_parent != parent->lrq_lock)
-				continue;
 
 			switch (aggregate)
 			{
@@ -952,10 +941,8 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		for (const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_backward);
 			 lock_srq != &data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward))
 		{
-			const lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* const lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
-			if (lock->lbl_parent != parent->lrq_lock)
-				continue;
 
 			data = lock->lbl_data;
 			break;
@@ -966,7 +953,6 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		CHECK(false);
 	}
 
-	release_shmem(parent->lrq_owner);
 	return data;
 }
 
@@ -983,30 +969,27 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
  *	Read data associated with a lock.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_read_data(%ld)\n", request_offset));
+	LOCK_TRACE(("LM::readData (%ld)\n", request_offset));
 
-	LocalGuard guard(this);
+	LockTableGuard guard(this, DUMMY_OWNER);
 
-	lrq* request = get_request(request_offset);
-	acquire_shmem(request->lrq_owner);
+	const lrq* const request = get_request(request_offset);
+	guard.setOwner(request->lrq_owner);
 
 	++sh_mem_header->lhb_read_data;
-	request = (lrq*) SRQ_ABS_PTR(request_offset);	// Re-init after a potential remap
-	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
+
+	const lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	const SLONG data = lock->lbl_data;
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++sh_mem_header->lhb_operations[lock->lbl_series];
 	else
 		++sh_mem_header->lhb_operations[0];
 
-	release_shmem(request->lrq_owner);
-
 	return data;
 }
 
 
-SLONG LockManager::readData2(SRQ_PTR parent_request,
-							 USHORT series,
+SLONG LockManager::readData2(USHORT series,
 							 const UCHAR* value,
 							 USHORT length,
 							 SRQ_PTR owner_offset)
@@ -1021,38 +1004,24 @@ SLONG LockManager::readData2(SRQ_PTR parent_request,
  *	Read data associated with transient locks.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_read_data2(%ld)\n", parent_request));
+	LOCK_TRACE(("LM::readData2 (%ld)\n", owner_offset));
 
-	LocalGuard guard(this);
+	if (!owner_offset)
+		return 0;
 
-	acquire_shmem(owner_offset);
+	LockTableGuard guard(this, owner_offset);
 
 	++sh_mem_header->lhb_read_data;
+
 	if (series < LCK_MAX_SERIES)
 		++sh_mem_header->lhb_operations[series];
 	else
 		++sh_mem_header->lhb_operations[0];
 
-	SRQ_PTR parent;
-	if (parent_request)
-	{
-		lrq* request = get_request(parent_request);
-		parent = request->lrq_lock;
-	}
-	else
-		parent = 0;
-
-	SLONG data;
 	USHORT junk;
-	const lbl* lock = find_lock(parent, series, value, length, &junk);
-	if (lock)
-		data = lock->lbl_data;
-	else
-		data = 0;
+	const lbl* const lock = find_lock(series, value, length, &junk);
 
-	release_shmem(owner_offset);
-
-	return data;
+	return lock ? lock->lbl_data : 0;
 }
 
 
@@ -1068,16 +1037,16 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
  *	Write a longword into the lock block.
  *
  **************************************/
-	LOCK_TRACE(("LOCK_write_data (%ld)\n", request_offset));
+	LOCK_TRACE(("LM::writeData (%ld)\n", request_offset));
 
-	LocalGuard guard(this);
+	LockTableGuard guard(this, DUMMY_OWNER);
 
-	lrq* request = get_request(request_offset);
-	acquire_shmem(request->lrq_owner);
+	const lrq* const request = get_request(request_offset);
+	guard.setOwner(request->lrq_owner);
 
 	++sh_mem_header->lhb_write_data;
-	request = (lrq*) SRQ_ABS_PTR(request_offset);	// Re-init after a potential remap
-	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
+
+	lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	remove_que(&lock->lbl_lhb_data);
 	if ( (lock->lbl_data = data) )
 		insert_data_que(lock);
@@ -1086,8 +1055,6 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
 		++sh_mem_header->lhb_operations[lock->lbl_series];
 	else
 		++sh_mem_header->lhb_operations[0];
-
-	release_shmem(request->lrq_owner);
 
 	return data;
 }
@@ -1129,12 +1096,6 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		mutexLock();
 
 	// Check for shared memory state consistency
-
-	if (SRQ_EMPTY(sh_mem_header->lhb_processes))
-	{
-		fb_assert(owner_offset == CREATE_OWNER);
-		owner_offset = DUMMY_OWNER;
-	}
 
 	while (SRQ_EMPTY(sh_mem_header->lhb_processes))
 	{
@@ -1399,9 +1360,7 @@ lbl* LockManager::alloc_lock(USHORT length, Arg::StatusVector& statusVector)
 }
 
 
-void LockManager::blocking_action(Attachment* attachment,
-								  SRQ_PTR blocking_owner_offset,
-								  SRQ_PTR blocked_owner_offset)
+void LockManager::blocking_action(Attachment* attachment, SRQ_PTR blocking_owner_offset)
 {
 /**************************************
  *
@@ -1430,19 +1389,10 @@ void LockManager::blocking_action(Attachment* attachment,
 	ASSERT_ACQUIRED;
 	own* owner = (own*) SRQ_ABS_PTR(blocking_owner_offset);
 
-	if (!blocked_owner_offset)
-		blocked_owner_offset = blocking_owner_offset;
-
-	while (owner->own_count)
+	while (owner->own_count && !SRQ_EMPTY(owner->own_blocks))
 	{
 		srq* const lock_srq = SRQ_NEXT(owner->own_blocks);
-		if (lock_srq == &owner->own_blocks)
-		{
-			// We've processed the own_blocks queue, reset the "we've been
-			// signaled" flag and start winding out of here
-			owner->own_flags &= ~OWN_signaled;
-			break;
-		}
+
 		lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		lock_ast_t routine = request->lrq_ast_routine;
 		void* arg = request->lrq_ast_argument;
@@ -1464,19 +1414,19 @@ void LockManager::blocking_action(Attachment* attachment,
 		if (routine)
 		{
 			owner->own_ast_count++;
-			release_shmem(blocked_owner_offset);
 
 			{ // checkout scope
-				LocalCheckout checkout(this);
+				LockTableCheckout checkout(this);
 				Jrd::Attachment::Checkout cout(attachment, true);
 				(*routine)(arg);
 			}
 
-			acquire_shmem(blocked_owner_offset);
 			owner = (own*) SRQ_ABS_PTR(blocking_owner_offset);
 			owner->own_ast_count--;
 		}
 	}
+
+	owner->own_flags &= ~OWN_signaled;
 }
 
 
@@ -1510,8 +1460,9 @@ void LockManager::blocking_action_thread()
 		while (true)
 		{
 			SLONG value;
+
 			{ // guardian's scope
-				LocalGuard guard(this);
+				LockTableGuard guard(this, DUMMY_OWNER);
 
 				// See if the main thread has requested us to go away
 				if (!m_processOffset || m_process->prc_process_id != PID)
@@ -1527,26 +1478,29 @@ void LockManager::blocking_action_thread()
 
 				DEBUG_DELAY;
 
-				Firebird::HalfStaticArray<SRQ_PTR, 4> blocking_owners;
-
-				acquire_shmem(DUMMY_OWNER);
-				const prc* const process = (prc*) SRQ_ABS_PTR(m_processOffset);
-
-				srq* lock_srq;
-				SRQ_LOOP(process->prc_owners, lock_srq)
+				while (m_processOffset)
 				{
-					own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
-					blocking_owners.add(SRQ_REL_PTR(owner));
-				}
+					const prc* const process = (prc*) SRQ_ABS_PTR(m_processOffset);
 
-				release_mutex();
+					bool completed = true;
 
-				while (blocking_owners.getCount() && m_processOffset)
-				{
-					const SRQ_PTR owner_offset = blocking_owners.pop();
-					acquire_shmem(owner_offset);
-					blocking_action(NULL, owner_offset, (SRQ_PTR) NULL);
-					release_shmem(owner_offset);
+					srq* lock_srq;
+					SRQ_LOOP(process->prc_owners, lock_srq)
+					{
+						const own* const owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
+
+						if (owner->own_flags & OWN_signaled)
+						{
+							const SRQ_PTR owner_offset = SRQ_REL_PTR(owner);
+							guard.setOwner(owner_offset);
+							blocking_action(NULL, owner_offset);
+							completed = false;
+							break;
+						}
+					}
+
+					if (completed)
+						break;
 				}
 
 				if (atStartup)
@@ -1556,7 +1510,7 @@ void LockManager::blocking_action_thread()
 				}
 			}
 
-			(void) ISC_event_wait(&m_process->prc_blocking, value, 0);
+			ISC_event_wait(&m_process->prc_blocking, value, 0);
 		}
 	}
 	catch (const Firebird::Exception& x)
@@ -1676,10 +1630,9 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 }
 
 
-bool LockManager::create_owner(Arg::StatusVector& statusVector,
-							   LOCK_OWNER_T owner_id,
-							   UCHAR owner_type,
-							   SRQ_PTR* owner_handle)
+SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
+								  LOCK_OWNER_T owner_id,
+								  UCHAR owner_type)
 {
 /**************************************
  *
@@ -1697,10 +1650,8 @@ bool LockManager::create_owner(Arg::StatusVector& statusVector,
 		sprintf(bug_buffer, "inconsistent lock table type/version; found %d/%d, expected %d/%d",
 				sh_mem_header->mhb_type, sh_mem_header->mhb_version, SRAM_LOCK_MANAGER, LHB_VERSION);
 		bug(&statusVector, bug_buffer);
-		return false;
+		return 0;
 	}
-
-	acquire_shmem(CREATE_OWNER);	// acquiring owner is being created
 
 	// Allocate a process block, if required
 
@@ -1708,8 +1659,7 @@ bool LockManager::create_owner(Arg::StatusVector& statusVector,
 	{
 		if (!create_process(statusVector))
 		{
-			release_mutex();
-			return false;
+			return 0;
 		}
 	}
 
@@ -1733,8 +1683,7 @@ bool LockManager::create_owner(Arg::StatusVector& statusVector,
 	{
 		if (!(owner = (own*) alloc(sizeof(own), &statusVector)))
 		{
-			release_mutex();
-			return false;
+			return 0;
 		}
 	}
 	else
@@ -1745,8 +1694,7 @@ bool LockManager::create_owner(Arg::StatusVector& statusVector,
 
 	if (!init_owner_block(statusVector, owner, owner_type, owner_id))
 	{
-		release_mutex();
-		return false;
+		return 0;
 	}
 
 	insert_tail(&sh_mem_header->lhb_owners, &owner->own_lhb_owners);
@@ -1756,16 +1704,7 @@ bool LockManager::create_owner(Arg::StatusVector& statusVector,
 
 	probe_processes();
 
-	*owner_handle = SRQ_REL_PTR(owner);
-	sh_mem_header->lhb_active_owner = *owner_handle;
-
-#ifdef VALIDATE_LOCK_TABLE
-	validate_lhb(sh_mem_header);
-#endif
-
-	release_shmem(*owner_handle);
-
-	return true;
+	return SRQ_REL_PTR(owner);
 }
 
 
@@ -2112,8 +2051,7 @@ void LockManager::debug_delay(ULONG lineno)
 #endif
 
 
-lbl* LockManager::find_lock(SRQ_PTR parent,
-							USHORT series,
+lbl* LockManager::find_lock(USHORT series,
 							const UCHAR* value,
 							USHORT length,
 							USHORT* slot)
@@ -2156,7 +2094,7 @@ lbl* LockManager::find_lock(SRQ_PTR parent,
 		 lock_srq != hash_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 	{
 		lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
-		if (lock->lbl_series != series || lock->lbl_length != length || lock->lbl_parent != parent)
+		if (lock->lbl_series != series || lock->lbl_length != length)
 		{
 			continue;
 		}
@@ -2472,7 +2410,7 @@ void LockManager::insert_data_que(lbl* lock)
  *
  **************************************/
 
-	if (lock->lbl_series < LCK_MAX_SERIES && lock->lbl_parent && lock->lbl_data)
+	if (lock->lbl_series < LCK_MAX_SERIES && lock->lbl_data)
 	{
 		SRQ data_header = &sh_mem_header->lhb_data[lock->lbl_series];
 
@@ -2482,8 +2420,6 @@ void LockManager::insert_data_que(lbl* lock)
 		{
 			const lbl* lock2 = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock2->lbl_series == lock->lbl_series);
-			if (lock2->lbl_parent != lock->lbl_parent)
-				continue;
 
 			if (lock->lbl_data <= lock2->lbl_data)
 				break;
@@ -2567,7 +2503,7 @@ bool LockManager::internal_convert(Attachment* attachment,
 	ASSERT_ACQUIRED;
 	lrq* request = get_request(request_offset);
 	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
-	SRQ_PTR owner_offset = request->lrq_owner;
+	const SRQ_PTR owner_offset = request->lrq_owner;
 	post_history(his_convert, owner_offset, request->lrq_lock, request_offset, true);
 	request->lrq_requested = type;
 	request->lrq_flags &= ~LRQ_blocking_seen;
@@ -2607,6 +2543,7 @@ bool LockManager::internal_convert(Attachment* attachment,
 		wait_for_request(attachment, request, lck_wait);
 
 		request = (lrq*) SRQ_ABS_PTR(request_offset);
+		lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 
 		if (!(request->lrq_flags & LRQ_rejected))
 		{
@@ -2619,12 +2556,9 @@ bool LockManager::internal_convert(Attachment* attachment,
 			return true;
 		}
 
-		request = get_request(request_offset);
-		lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 		post_pending(lock);
 	}
 
-	request = (lrq*) SRQ_ABS_PTR(request_offset);
 	request->lrq_requested = request->lrq_state;
 	ASSERT_ACQUIRED;
 	++sh_mem_header->lhb_denies;
@@ -2705,17 +2639,19 @@ void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
  *
  **************************************/
 	const SRQ_PTR owner_offset = request->lrq_owner;
-	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
+	const own* owner = (own*) SRQ_ABS_PTR(owner_offset);
+
+	const SRQ_PTR request_offset = SRQ_REL_PTR(request);
+	const SRQ_PTR lock_offset = SRQ_REL_PTR(lock);
 
 	ASSERT_ACQUIRED;
 	CHECK(request->lrq_flags & LRQ_pending);
 
-	Firebird::HalfStaticArray<SRQ_PTR, 16> blocking_owners;
-
-	SRQ lock_srq;
-	SRQ_LOOP(lock->lbl_requests, lock_srq)
+	srq* lock_srq = SRQ_NEXT(lock->lbl_requests);
+	while (lock_srq != &lock->lbl_requests)
 	{
 		lrq* const block = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		own* const blocking_owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
 		// Figure out if this lock request is blocking our own lock request.
 		// Of course, our own request cannot block ourselves.  Compatible
@@ -2726,14 +2662,14 @@ void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
 		// to release the lock as soon as possible (so don't bug the owner).
 
 		if (block == request ||
+			blocking_owner == owner ||
 			compatibility[request->lrq_requested][block->lrq_state] ||
 			!block->lrq_ast_routine ||
 			(block->lrq_flags & LRQ_blocking_seen))
 		{
+			lock_srq = SRQ_NEXT((*lock_srq));
 			continue;
 		}
-
-		own* const blocking_owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
 		// Add the blocking request to the list of blocks if it's not
 		// there already (LRQ_blocking)
@@ -2745,29 +2681,26 @@ void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
 			block->lrq_flags &= ~(LRQ_blocking_seen | LRQ_just_granted);
 		}
 
-		if (blocking_owner != owner)
-			blocking_owners.add(block->lrq_owner);
-
-		if (block->lrq_state == LCK_EX)
-			break;
-	}
-
-	Firebird::HalfStaticArray<SRQ_PTR, 16> dead_processes;
-
-	while (blocking_owners.getCount())
-	{
-		own* const blocking_owner = (own*) SRQ_ABS_PTR(blocking_owners.pop());
-		if (blocking_owner->own_count && !signal_owner(attachment, blocking_owner, owner_offset))
+		if (blocking_owner->own_flags & OWN_signaled)
 		{
-			dead_processes.add(blocking_owner->own_process);
+			lock_srq = SRQ_NEXT((*lock_srq));
+			continue;
 		}
-	}
 
-	while (dead_processes.getCount())
-	{
-		prc* const process = (prc*) SRQ_ABS_PTR(dead_processes.pop());
-		if (process->prc_process_id)
+		if (!signal_owner(attachment, blocking_owner))
+		{
+			prc* const process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
 			purge_process(process);
+		}
+
+		// Restart from the beginning, as the list of requests chained to our lock
+		// could be changed in the meantime thus invalidating the iterator
+
+		owner = (own*) SRQ_ABS_PTR(owner_offset);
+		request = (lrq*) SRQ_ABS_PTR(request_offset);
+		lock = (lbl*) SRQ_ABS_PTR(lock_offset);
+
+		lock_srq = SRQ_NEXT(lock->lbl_requests);
 	}
 }
 
@@ -2836,7 +2769,7 @@ void LockManager::post_pending(lbl* lock)
 	// be granted for compatibility reason, post_wakeup () that owner so that
 	// it can post_blockage() to the newly granted owner of the lock.
 
-	SRQ lock_srq;
+	srq* lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
 		lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
@@ -2930,7 +2863,7 @@ bool LockManager::probe_processes()
  **************************************/
 	ASSERT_ACQUIRED;
 
-	Firebird::HalfStaticArray<prc*, 16> dead_processes;
+	bool purged = false;
 
 	SRQ lock_srq;
 	SRQ_LOOP(sh_mem_header->lhb_processes, lock_srq)
@@ -2938,17 +2871,10 @@ bool LockManager::probe_processes()
 		prc* const process = (prc*) ((UCHAR*) lock_srq - OFFSET(prc*, prc_lhb_processes));
 		if (process->prc_process_id != PID && !ISC_check_process_existence(process->prc_process_id))
 		{
-			dead_processes.add(process);
-		}
-	}
-
-	const bool purged = (dead_processes.getCount() > 0);
-
-	while (dead_processes.getCount())
-	{
-		prc* const process = dead_processes.pop();
-		if (process->prc_process_id)
+			lock_srq = SRQ_PREV((*lock_srq));
 			purge_process(process);
+			purged = true;
+		}
 	}
 
 	return purged;
@@ -3154,6 +3080,9 @@ void LockManager::release_shmem(SRQ_PTR owner_offset)
  *
  **************************************/
 
+	if (!sh_mem_header)
+		return;
+
 	if (owner_offset && sh_mem_header->lhb_active_owner != owner_offset)
 		bug(NULL, "release when not owner");
 
@@ -3163,31 +3092,13 @@ void LockManager::release_shmem(SRQ_PTR owner_offset)
 		validate_lhb(sh_mem_header);
 #endif
 
-	release_mutex();
-}
-
-
-void LockManager::release_mutex()
-{
-/**************************************
- *
- *	r e l e a s e _ m u t e x
- *
- **************************************
- *
- * Functional description
- *	Release the mapped lock file.  Advance the event count to wake up
- *	anyone waiting for it.  If there appear to be blocking items
- *	posted.
- *
- **************************************/
-
-	DEBUG_DELAY;
-
 	if (!sh_mem_header->lhb_active_owner)
 		bug(NULL, "release when not active");
 
+	DEBUG_DELAY;
+
 	sh_mem_header->lhb_active_owner = 0;
+
 	mutexUnlock();
 
 	DEBUG_DELAY;
@@ -3243,10 +3154,7 @@ void LockManager::release_request(lrq* request)
 	if (SRQ_EMPTY(lock->lbl_requests))
 	{
 		CHECK(lock->lbl_pending_lrq_count == 0);
-#ifdef VALIDATE_LOCK_TABLE
-		if (sh_mem_header->lhb_active_owner > 0)
-			validate_parent(sh_mem_header, request->lrq_lock);
-#endif
+
 		remove_que(&lock->lbl_lhb_hash);
 		remove_que(&lock->lbl_lhb_data);
 		lock->lbl_type = type_null;
@@ -3277,7 +3185,7 @@ void LockManager::release_request(lrq* request)
 }
 
 
-bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner, SRQ_PTR blocked_owner_offset)
+bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner)
 {
 /**************************************
  *
@@ -3300,15 +3208,6 @@ bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner, SRQ_
 
 	DEBUG_DELAY;
 
-	if (blocking_owner->own_flags & OWN_signaled)
-	{
-#ifdef DEBUG_LM
-		const prc* const process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
-		DEBUG_MSG(1, ("signal_owner (%ld) - skipped OWN_signaled\n", process->prc_process_id));
-#endif
-		return true;
-	}
-
 	blocking_owner->own_flags |= OWN_signaled;
 	DEBUG_DELAY;
 
@@ -3319,7 +3218,7 @@ bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner, SRQ_
 	if (process->prc_process_id == PID)
 	{
 		DEBUG_DELAY;
-		blocking_action(attachment, SRQ_REL_PTR(blocking_owner), blocked_owner_offset);
+		blocking_action(attachment, SRQ_REL_PTR(blocking_owner));
 		DEBUG_DELAY;
 		return true;
 	}
@@ -3370,44 +3269,6 @@ void LockManager::validate_history(const SRQ_PTR history_header)
 		if (history->his_next == history_header)
 			break;
 		CHECK(count <= HISTORY_BLOCKS);
-	}
-}
-
-
-void LockManager::validate_parent(const lhb* alhb, const SRQ_PTR isSomeoneParent)
-{
-/**************************************
- *
- *	v a l i d a t e _ p a r e n t
- *
- **************************************
- *
- * Functional description
- *	Validate lock under release not to be someone parent.
- *
- **************************************/
-	if (alhb->lhb_active_owner == 0)
-		return;
-
-	const own* const owner = (own*) SRQ_ABS_PTR(alhb->lhb_active_owner);
-
-	const srq* lock_srq;
-	SRQ_LOOP(owner->own_requests, lock_srq)
-	{
-		const lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_requests));
-
-		if (!(request->lrq_flags & LRQ_repost))
-		{
-			if (request->lrq_lock != isSomeoneParent)
-			{
-				const lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
-
-				if (lock->lbl_parent == isSomeoneParent)
-				{
-					bug_assert("deleting someone's parent", __LINE__);
-				}
-			}
-		}
 	}
 }
 
@@ -3586,9 +3447,6 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		for (USHORT j = LCK_null; j < LCK_max; j++)
 			CHECK(direct_counts[j] == lock->lbl_counts[j]);
 	}
-
-	if (lock->lbl_parent && (freed == EXPECT_inuse))
-		validate_lock(lock->lbl_parent, EXPECT_inuse, (SRQ_PTR) 0);
 }
 
 
@@ -3971,10 +3829,8 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 			// Re-initialize value each time thru the loop to make sure that the
 			// semaphore looks 'un-poked'
 
-			release_shmem(owner_offset);
-
 			{ // checkout scope
-				LocalCheckout checkout(this);
+				LockTableCheckout checkout(this);
 
 				{ // scope
 					Firebird::ReadLockGuard guard(m_remapSync);
@@ -3988,8 +3844,6 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 					--m_waitingOwners;
 				}
 			}
-
-			acquire_shmem(owner_offset);
 
 			owner = (own*) SRQ_ABS_PTR(owner_offset);
 			request = (lrq*) SRQ_ABS_PTR(request_offset);

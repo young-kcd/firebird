@@ -57,9 +57,9 @@ enum lck_t;
 class GlobalRWLock : public Firebird::PermanentStorage
 {
 public:
-	GlobalRWLock(thread_db* tdbb, MemoryPool& p, lck_t lckType,
-			lck_owner_t lock_owner, bool lock_caching = true,
-			size_t lockLen = 0, const UCHAR* lockStr = NULL);
+	GlobalRWLock(thread_db* tdbb, MemoryPool& p,
+				 lck_t lckType, bool lock_caching = true,
+				 size_t lockLen = 0, const UCHAR* lockStr = NULL);
 
 	virtual ~GlobalRWLock();
 

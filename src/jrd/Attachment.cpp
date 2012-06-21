@@ -454,11 +454,17 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 						LCK_release(tdbb, index->idl_lock);
 					}
 				}
+
+				for (IndexBlock* index = relation->rel_index_blocks; index; index = index->idb_next)
+				{
+					if (index->idb_lock)
+						LCK_release(tdbb, index->idb_lock);
+				}
 			}
 		}
 	}
 
-	// Release all procedure existence locks that might have been taken.
+	// Release all procedure existence locks that might have been taken
 
 	vec<jrd_prc*>* pvector = att_procedures;
 
@@ -482,7 +488,7 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 		}
 	}
 
-	// Release all function existence locks that might have been taken.
+	// Release all function existence locks that might have been taken
 
 	for (Function** iter = att_functions.begin(); iter < att_functions.end(); ++iter)
 	{
@@ -492,10 +498,27 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 			function->releaseLocks(tdbb);
 	}
 
-	// Release collation existence locks.
+	// Release collation existence locks
+
 	releaseIntlObjects(tdbb);
 
-	// And release the system requests.
+	// Release the DSQL cache locks
+
+	DSqlCache::Accessor accessor(&att_dsql_cache);
+	for (bool getResult = accessor.getFirst(); getResult; getResult = accessor.getNext())
+	{
+		LCK_release(tdbb, accessor.current()->second.lock);
+	}
+
+	// Release the remaining locks
+
+	if (att_id_lock)
+		LCK_release(tdbb, att_id_lock);
+
+	if (att_temp_pg_lock)
+		LCK_release(tdbb, att_temp_pg_lock);
+
+	// And release the system requests
 
 	for (JrdStatement** itr = att_internal.begin(); itr != att_internal.end(); ++itr)
 	{

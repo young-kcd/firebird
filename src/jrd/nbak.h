@@ -186,14 +186,14 @@ public:
 	class StateWriteGuard
 	{
 	public:
-		StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd);
+		StateWriteGuard(thread_db* tdbb, Jrd::WIN* window);
 		~StateWriteGuard();
 
 		void releaseHeader();
 
 		void setSuccess()
 		{
-			success = true;
+			m_success = true;
 		}
 
 	private:
@@ -201,31 +201,43 @@ public:
 		StateWriteGuard(const StateWriteGuard&);
 		StateWriteGuard& operator=(const StateWriteGuard&);
 
-		thread_db* tdbb;
-		Jrd::WIN* window;
-		bool success;
+		thread_db* m_tdbb;
+		Jrd::WIN* m_window;
+		bool m_success;
 	};
 
 	class StateReadGuard
 	{
 	public:
-		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
+		explicit StateReadGuard(thread_db* tdbb) : m_tdbb(tdbb)
 		{
-			Jrd::Attachment* att = tdbb->getAttachment();
-			Database* dbb = tdbb->getDatabase();
-
-			const bool ok = att ?
-				att->backupStateReadLock(tdbb, LCK_WAIT) :
-				dbb->dbb_backup_manager->lockStateRead(tdbb, LCK_WAIT);
-
-			if (!ok)
-				ERR_bugcheck_msg("Can't lock state for read");
+			lock(tdbb, LCK_WAIT);
 		}
 
 		~StateReadGuard()
 		{
-			Jrd::Attachment* att = tdbb->getAttachment();
-			Database* dbb = tdbb->getDatabase();
+			unlock(m_tdbb);
+		}
+
+		static bool lock(thread_db* tdbb, SSHORT wait)
+		{
+			Jrd::Attachment* const att = tdbb->getAttachment();
+			Database* const dbb = tdbb->getDatabase();
+
+			const bool ok = att ?
+				att->backupStateReadLock(tdbb, wait) :
+				dbb->dbb_backup_manager->lockStateRead(tdbb, wait);
+
+			if (!ok)
+				ERR_bugcheck_msg("Can't lock state for read");
+
+			return ok;
+		}
+
+		static void unlock(thread_db* tdbb)
+		{
+			Jrd::Attachment* const att = tdbb->getAttachment();
+			Database* const dbb = tdbb->getDatabase();
 
 			if (att)
 				att->backupStateReadUnLock(tdbb);
@@ -238,21 +250,21 @@ public:
 		StateReadGuard(const StateReadGuard&);
 		StateReadGuard& operator=(const StateReadGuard&);
 
-		thread_db* tdbb;
+		thread_db* m_tdbb;
 	};
 
 	class AllocWriteGuard
 	{
 	public:
-		AllocWriteGuard(thread_db* _tdbb, BackupManager* _backupManager)
-			: tdbb(_tdbb), backupManager(_backupManager)
+		AllocWriteGuard(thread_db* tdbb, BackupManager* backupManager)
+			: m_tdbb(tdbb), m_backupManager(backupManager)
 		{
 			backupManager->lockAllocWrite(tdbb);
 		}
 
 		~AllocWriteGuard()
 		{
-			backupManager->unlockAllocWrite(tdbb);
+			m_backupManager->unlockAllocWrite(m_tdbb);
 		}
 
 	private:
@@ -260,22 +272,22 @@ public:
 		AllocWriteGuard(const AllocWriteGuard&);
 		AllocWriteGuard& operator=(const AllocWriteGuard&);
 
-		thread_db* tdbb;
-		BackupManager* backupManager;
+		thread_db* m_tdbb;
+		BackupManager* m_backupManager;
 	};
 
 	class AllocReadGuard
 	{
 	public:
-		AllocReadGuard(thread_db* _tdbb, BackupManager* _backupManager)
-			: tdbb(_tdbb), backupManager(_backupManager)
+		AllocReadGuard(thread_db* tdbb, BackupManager* backupManager)
+			: m_tdbb(tdbb), m_backupManager(backupManager)
 		{
 			backupManager->lockAllocRead(tdbb);
 		}
 
 		~AllocReadGuard()
 		{
-			backupManager->unlockAllocRead(tdbb);
+			m_backupManager->unlockAllocRead(m_tdbb);
 		}
 
 	private:
@@ -283,8 +295,8 @@ public:
 		AllocReadGuard(const AllocReadGuard&);
 		AllocReadGuard& operator=(const AllocReadGuard&);
 
-		thread_db* tdbb;
-		BackupManager* backupManager;
+		thread_db* m_tdbb;
+		BackupManager* m_backupManager;
 	};
 
 	// Set when db is creating. Default = false

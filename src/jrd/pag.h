@@ -146,12 +146,8 @@ public:
 
 	~PageManager()
 	{
-		for (size_t i = pageSpaces.getCount(); i > 0; --i)
-		{
-			PageSpace* pageSpace = pageSpaces[i - 1];
-			pageSpaces.remove(i - 1);
-			delete pageSpace;
-		}
+		while (pageSpaces.hasData())
+			delete pageSpaces.pop();
 	}
 
 	PageSpace* addPageSpace(const USHORT pageSpaceID);
@@ -161,7 +157,6 @@ public:
 	USHORT getTempPageSpaceID(thread_db* tdbb);
 
 	void closeAll();
-	void releaseLocks();
 
 	ULONG pagesPerPIP;			// Pages per pip
 	ULONG bytesBitPIP;			// Number of bytes of bit in PIP
@@ -224,7 +219,7 @@ public:
 		return (pageSpaceID >= TEMP_PAGE_SPACE);
 	}
 
-	inline static SSHORT getLockLen()
+	inline static USHORT getLockLen()
 	{
 		return 2 * sizeof(ULONG);
 	}

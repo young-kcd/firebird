@@ -1139,9 +1139,9 @@ void MET_dsql_cache_release(thread_db* tdbb, int type, const MetaName& name, con
 	LCK_release(tdbb, item->lock);
 
 	// notify others through AST to mark as obsolete
-	const size_t key_length = item->lock->lck_length;
-	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), key_length) Lock(tdbb, LCK_dsql_cache));
-	temp_lock->lck_length = key_length;
+	const USHORT key_length = item->lock->lck_length;
+	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), key_length)
+		Lock(tdbb, key_length, LCK_dsql_cache));
 	memcpy(temp_lock->lck_key.lck_string, item->lock->lck_key.lck_string, key_length);
 
 	if (LCK_lock(tdbb, temp_lock, LCK_EX, LCK_WAIT))
@@ -2869,10 +2869,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	if (!procedure->prc_existence_lock)
 	{
 		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
-			Lock(tdbb, LCK_prc_exist, procedure, blocking_ast_procedure);
+			Lock(tdbb, sizeof(SLONG), LCK_prc_exist, procedure, blocking_ast_procedure);
 		procedure->prc_existence_lock = lock;
 		lock->lck_key.lck_long = procedure->getId();
-		lock->lck_length = sizeof(SLONG);
 	}
 
 	LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
@@ -3178,18 +3177,16 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 
 	{ // Scope block.
 		Lock* lock = FB_NEW_RPT(*pool, 0)
-			Lock(tdbb, LCK_rel_partners, relation, partners_ast_relation);
+			Lock(tdbb, sizeof(SLONG), LCK_rel_partners, relation, partners_ast_relation);
 		relation->rel_partners_lock = lock;
 		lock->lck_key.lck_long = relation->rel_id;
-		lock->lck_length = sizeof(SLONG);
 	}
 
 	{ // Scope block.
 		Lock* lock = FB_NEW_RPT(*pool, 0)
-			Lock(tdbb, LCK_rel_rescan, relation, rescan_ast_relation);
+			Lock(tdbb, sizeof(SLONG), LCK_rel_rescan, relation, rescan_ast_relation);
 		relation->rel_rescan_lock = lock;
 		lock->lck_key.lck_long = relation->rel_id;
-		lock->lck_length = sizeof(SLONG);
 	}
 
 	// This should check system flag instead.
@@ -3199,10 +3196,9 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 
 	{ // Scope block.
 		Lock* lock = FB_NEW_RPT(*pool, 0)
-			Lock(tdbb, LCK_rel_exist, relation, blocking_ast_relation);
+			Lock(tdbb, sizeof(SLONG), LCK_rel_exist, relation, blocking_ast_relation);
 		relation->rel_existence_lock = lock;
 		lock->lck_key.lck_long = relation->rel_id;
-		lock->lck_length = sizeof(SLONG);
 	}
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
@@ -3921,9 +3917,7 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Quali
 		item->obsolete = false;
 		item->locked = false;
 		item->lock = FB_NEW_RPT(*dbb->dbb_permanent, key.length())
-			Lock(tdbb, LCK_dsql_cache, item, blocking_ast_dsql_cache);
-
-		item->lock->lck_length = key.length();
+			Lock(tdbb, key.length(), LCK_dsql_cache, item, blocking_ast_dsql_cache);
 		memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
 	}
 	else

@@ -421,8 +421,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	}
 
 	// Signal other processes to dump their data
-	Lock temp_lock(tdbb, LCK_monitor), *lock = &temp_lock;
-	lock->lck_length = sizeof(SLONG);
+	Lock temp_lock(tdbb, sizeof(SLONG), LCK_monitor), *lock = &temp_lock;
 
 	if (LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
 		LCK_release(tdbb, lock);

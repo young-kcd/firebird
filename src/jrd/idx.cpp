@@ -552,10 +552,9 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	// about the index will be discarded
 
 	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0)
-		Lock(tdbb, LCK_expression, index_block, index_block_flush);
+		Lock(tdbb, sizeof(SLONG), LCK_expression, index_block, index_block_flush);
 	index_block->idb_lock = lock;
 	lock->lck_key.lck_long = (relation->rel_id << 16) | index_block->idb_id;
-	lock->lck_length = sizeof(lock->lck_key.lck_long);
 
 	return index_block;
 }

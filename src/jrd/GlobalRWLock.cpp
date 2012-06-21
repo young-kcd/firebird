@@ -70,15 +70,14 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 }
 
 GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, lck_t lckType,
-		lck_owner_t lock_owner, bool lock_caching, size_t lockLen, const UCHAR* lockStr)
+						   bool lock_caching, size_t lockLen, const UCHAR* lockStr)
 	: PermanentStorage(p), pendingLock(0), readers(0), pendingWriters(0), currentWriter(false),
 	  lockCaching(lock_caching), blocking(false)
 {
 	SET_TDBB(tdbb);
 
-	cachedLock = FB_NEW_RPT(getPool(), lockLen) Lock(tdbb, lock_owner, lckType, this,
-		(lockCaching ? blocking_ast_cached_lock : NULL));
-	cachedLock->lck_length = lockLen;
+	cachedLock = FB_NEW_RPT(getPool(), lockLen)
+		Lock(tdbb, lockLen, lckType, this, lockCaching ? blocking_ast_cached_lock : NULL);
 	memcpy(&cachedLock->lck_key, lockStr, lockLen);
 }
 

@@ -298,9 +298,8 @@ Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype, void*
 	// have lck_object to it, so set ast routine to NULL for safety.
 
 	Lock* lock = FB_NEW_RPT(*tdbb->getDatabase()->dbb_permanent, 0)
-		Lock(tdbb, LCK_tt_exist, object, (object ? blocking_ast_collation : NULL));
+		Lock(tdbb, sizeof(SLONG), LCK_tt_exist, object, (object ? blocking_ast_collation : NULL));
 	lock->lck_key.lck_long = ttype;
-	lock->lck_length = sizeof(lock->lck_key.lck_long);
 
 	return lock;
 }

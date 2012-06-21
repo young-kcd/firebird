@@ -261,7 +261,6 @@ void EventManager::deleteSession(SLONG session_id)
 
 
 SLONG EventManager::queEvents(SLONG session_id,
-							  USHORT string_length, const TEXT* string,
 							  USHORT events_length, const UCHAR* events,
 							  Firebird::IEventCallback* ast)
 {
@@ -297,18 +296,6 @@ SLONG EventManager::queEvents(SLONG session_id,
 
 	const SLONG request_offset = SRQ_REL_PTR(request);
 
-	// Find parent block
-
-	evnt* parent = find_event(string_length, string, 0);
-	if (!parent)
-	{
-		parent = make_event(string_length, string, 0);
-		request = (evt_req*) SRQ_ABS_PTR(request_offset);
-		session = (ses*) SRQ_ABS_PTR(session_id);
-	}
-
-	const SLONG parent_offset = SRQ_REL_PTR(parent);
-
 	// Process event block
 
 	SRQ_PTR* ptr = &request->req_interests;
@@ -336,11 +323,10 @@ SLONG EventManager::queEvents(SLONG session_id,
 			; // nothing to do.
 		const USHORT len = find_end - p + 1;
 
-		evnt* event = find_event(len, reinterpret_cast<const char*>(p), parent);
+		evnt* event = find_event(len, reinterpret_cast<const char*>(p));
 		if (!event)
 		{
-			event = make_event(len, reinterpret_cast<const char*>(p), parent_offset);
-			parent = (evnt*) SRQ_ABS_PTR(parent_offset);
+			event = make_event(len, reinterpret_cast<const char*>(p));
 			session = (ses*) SRQ_ABS_PTR(session_id);
 			request = (evt_req*) SRQ_ABS_PTR(request_offset);
 			ptr = (SRQ_PTR *) SRQ_ABS_PTR(ptr_offset);
@@ -371,7 +357,6 @@ SLONG EventManager::queEvents(SLONG session_id,
 			insert_tail(&event->evnt_interests, &interest->rint_interests);
 			interest->rint_event = event_offset;
 
-			parent = (evnt*) SRQ_ABS_PTR(parent_offset);
 			request = (evt_req*) SRQ_ABS_PTR(request_offset);
 			ptr = (SRQ_PTR *) SRQ_ABS_PTR(ptr_offset);
 			session = (ses*) SRQ_ABS_PTR(session_id);
@@ -442,9 +427,7 @@ void EventManager::cancelEvents(SLONG request_id)
 }
 
 
-void EventManager::postEvent(USHORT major_length, const TEXT* major_code,
-							 USHORT minor_length, const TEXT* minor_code,
-							 USHORT count)
+void EventManager::postEvent(USHORT length, const TEXT* string, USHORT count)
 {
 /**************************************
  *
@@ -458,10 +441,9 @@ void EventManager::postEvent(USHORT major_length, const TEXT* major_code,
  **************************************/
 	acquire_shmem();
 
-	evnt* event;
-	evnt* const parent = find_event(major_length, major_code, 0);
+	evnt* const event = find_event(length, string);
 
-	if (parent && (event = find_event(minor_length, minor_code, parent)))
+	if (event)
 	{
 		event->evnt_count += count;
 		srq* event_srq;
@@ -731,16 +713,6 @@ void EventManager::delete_event(evnt* event)
  *
  **************************************/
 	remove_que(&event->evnt_events);
-
-	if (event->evnt_parent)
-	{
-		evnt* const parent = (evnt*) SRQ_ABS_PTR(event->evnt_parent);
-		if (!--parent->evnt_count)
-		{
-			delete_event(parent);
-		}
-	}
-
 	free_global((frb*) event);
 }
 
@@ -989,7 +961,7 @@ void EventManager::deliver_request(evt_req* request)
 }
 
 
-evnt* EventManager::find_event(USHORT length, const TEXT* string, evnt* parent)
+evnt* EventManager::find_event(USHORT length, const TEXT* string)
 {
 /**************************************
  *
@@ -1001,17 +973,13 @@ evnt* EventManager::find_event(USHORT length, const TEXT* string, evnt* parent)
  *	Lookup an event.
  *
  **************************************/
-	const SRQ_PTR parent_offset = parent ? SRQ_REL_PTR(parent) : 0;
-
 	srq* event_srq;
 	SRQ_LOOP(sh_mem_header->evh_events, event_srq)
 	{
 		evnt* const event = (evnt*) ((UCHAR*) event_srq - OFFSET(evnt*, evnt_events));
-		if (event->evnt_parent == parent_offset && event->evnt_length == length &&
-			!memcmp(string, event->evnt_name, length))
-		{
+
+		if (event->evnt_length == length && !memcmp(string, event->evnt_name, length))
 			return event;
-		}
 	}
 
 	return NULL;
@@ -1163,7 +1131,7 @@ void EventManager::insert_tail(srq * event_srq, srq * node)
 }
 
 
-evnt* EventManager::make_event(USHORT length, const TEXT* string, SLONG parent_offset)
+evnt* EventManager::make_event(USHORT length, const TEXT* string)
 {
 /**************************************
  *
@@ -1172,20 +1140,13 @@ evnt* EventManager::make_event(USHORT length, const TEXT* string, SLONG parent_o
  **************************************
  *
  * Functional description
- *	Allocate an link in an event.
+ *	Allocate a link in an event.
  *
  **************************************/
 	evnt* const event = (evnt*) alloc_global(type_evnt, sizeof(evnt) + length, false);
+
 	insert_tail(&sh_mem_header->evh_events, &event->evnt_events);
 	SRQ_INIT(event->evnt_interests);
-
-	if (parent_offset)
-	{
-		event->evnt_parent = parent_offset;
-		evnt* parent = (evnt*) SRQ_ABS_PTR(parent_offset);
-		++parent->evnt_count;
-	}
-
 	event->evnt_length = length;
 	memcpy(event->evnt_name, string, length);
 
