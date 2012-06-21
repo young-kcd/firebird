@@ -727,24 +727,27 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 	if (file != pageSpace->file)
 		return true;
 
-	Lock temp_lock;
-	Lock* update_lock = &temp_lock;
-	update_lock->lck_dbb = dbb;
-	update_lock->lck_length = sizeof(SLONG);
-	update_lock->lck_key.lck_long = -1;
-	update_lock->lck_type = LCK_update_shadow;
-	update_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, update_lock->lck_type);
-	update_lock->lck_parent = dbb->dbb_lock;
-
 	SLONG sdw_update_flags = SDW_rollover;
 
-	LCK_lock(tdbb, update_lock, LCK_EX, LCK_NO_WAIT);
 	// If our attachment is already purged and an error comes from
 	// CCH_fini(), then consider us accessing the shadow exclusively.
 	// LCK_update_shadow locking isn't going to work anyway. The below
 	// code must be executed for valid active attachments only.
-	if (tdbb->getAttachment()->att_flags & ATT_lck_init_done)
+
+	AutoPtr<Lock> update_lock;
+
+	if (tdbb->getAttachment())
 	{
+		update_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock;
+		update_lock->lck_dbb = dbb;
+		update_lock->lck_length = sizeof(SLONG);
+		update_lock->lck_key.lck_long = -1;
+		update_lock->lck_type = LCK_update_shadow;
+		update_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, update_lock->lck_type);
+		update_lock->lck_parent = dbb->dbb_lock;
+
+		LCK_lock(tdbb, update_lock, LCK_EX, LCK_NO_WAIT);
+
 		if (update_lock->lck_physical != LCK_EX ||
 			file != pageSpace->file || !SDW_lck_update(tdbb, sdw_update_flags))
 		{
@@ -791,14 +794,16 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 	if (!shadow)
 	{
 		LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
-		LCK_release(tdbb, update_lock);
+		if (update_lock)
+			LCK_release(tdbb, update_lock);
 		return false;
 	}
 
 	if (file != pageSpace->file)
 	{
 		LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
-		LCK_release(tdbb, update_lock);
+		if (update_lock)
+			LCK_release(tdbb, update_lock);
 		return true;
 	}
 
@@ -840,7 +845,8 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 	LCK_release(tdbb, shadow_lock);
 	delete shadow_lock;
 	dbb->dbb_shadow_lock = 0;
-	LCK_release(tdbb, update_lock);
+	if (update_lock)
+		LCK_release(tdbb, update_lock);
 	if (start_conditional && !inAst)
 	{
 		CCH_unwind(tdbb, false);
