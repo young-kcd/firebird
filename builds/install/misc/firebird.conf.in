@@ -691,10 +691,17 @@
 #GCPolicy = combined
 
 
-# ==============================
-# Classic Server Engine Settings
-# ==============================
+# ----------------------------
+# Security database
 #
+# Defines locations of security database (one that stores logins and passwords),
+# used by server to validate remote connections.
+#
+# Per-database configurable.
+#
+# Type: string (pathname)
+#
+#SecurityDatabase = $(root)/security3.fdb
 
 
 # ==============================
