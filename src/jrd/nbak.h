@@ -209,18 +209,30 @@ public:
 	public:
 		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
 		{
+			lock(tdbb, LCK_WAIT);
+		}
+
+		~StateReadGuard()
+		{
+			unlock(tdbb);
+		}
+
+		static bool lock(thread_db* tdbb, SSHORT wait)
+		{
 			Attachment* att = tdbb->getAttachment();
 			Database* dbb = tdbb->getDatabase();
 
 			const bool ok = att ? 
-				att->backupStateReadLock(tdbb, LCK_WAIT) :
-				dbb->dbb_backup_manager->lockStateRead(tdbb, LCK_WAIT);
+				att->backupStateReadLock(tdbb, wait) :
+				dbb->dbb_backup_manager->lockStateRead(tdbb, wait);
 
 			if (!ok)
 				ERR_bugcheck_msg("Can't lock state for read");
+
+			return ok;
 		}
 
-		~StateReadGuard()
+		static void unlock(thread_db* tdbb)
 		{
 			Attachment* att = tdbb->getAttachment();
 			Database* dbb = tdbb->getDatabase();

@@ -709,15 +709,13 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 		SDW_get_shadows(tdbb);
 	}
 
-	Attachment* attachment = tdbb->getAttachment();
-
-	if (!attachment->backupStateReadLock(tdbb, latch_wait))
+	if (!BackupManager::StateReadGuard::lock(tdbb, latch_wait))
 		return NULL;
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page, LATCH_exclusive, latch_wait);
 	if (!bdb)
 	{
-		attachment->backupStateReadUnLock(tdbb);
+		BackupManager::StateReadGuard::unlock(tdbb);
 		return NULL;			// latch timeout occurred
 	}
 
@@ -732,7 +730,7 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 
 		if (!latch_wait)
 		{
-			attachment->backupStateReadUnLock(tdbb);
+			BackupManager::StateReadGuard::unlock(tdbb);
 			release_bdb(tdbb, bdb, false, false, false);
 			return NULL;
 		}
@@ -904,9 +902,8 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	}
 
 	// Look for the page in the cache.
-	Attachment* attachment = tdbb->getAttachment();
 
-	if (!attachment->backupStateReadLock(tdbb, wait))
+	if (!BackupManager::StateReadGuard::lock(tdbb, wait))
 		return -2;
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page,
@@ -914,8 +911,8 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 
 	if (wait != 1 && bdb == 0) 
 	{
-		attachment->backupStateReadUnLock(tdbb);
-		return -2;				// latch timeout
+		BackupManager::StateReadGuard::unlock(tdbb);
+		return -2; // latch timeout
 	}
 
 	if (lock_type >= LCK_write)
@@ -939,7 +936,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	// lock_buffer returns 0 or 1 or -1.
 	const SSHORT lock_result = lock_buffer(tdbb, bdb, wait, page_type);
 	if (lock_result == -1)
-		attachment->backupStateReadUnLock(tdbb);
+		BackupManager::StateReadGuard::unlock(tdbb);
 
 	return lock_result;
 }
@@ -2177,7 +2174,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 		window->win_flags &= ~WIN_garbage_collect;
 	}
 
-	tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+	BackupManager::StateReadGuard::unlock(tdbb);
 
 	if (bdb->bdb_use_count == 1)
 	{
@@ -2428,7 +2425,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			if (bdb->bdb_flags & BDB_marked) {
 				BUGCHECK(268);	// msg 268 buffer marked during cache unwind
 			}
-			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+			BackupManager::StateReadGuard::unlock(tdbb);
 
 			bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
 			release_bdb(tdbb, bdb, true, false, false);
@@ -2439,7 +2436,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 		SharedLatch* latch = findSharedLatch(tdbb, bdb);
 		while (latch)
 		{
-			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+			BackupManager::StateReadGuard::unlock(tdbb);
 
 			release_bdb(tdbb, bdb, true, false, false);
 			latch = findSharedLatch(tdbb, bdb);
