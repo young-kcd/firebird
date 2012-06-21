@@ -1,3 +1,30 @@
+ 2012-06-20 18:57  hvlad 
+   M src/jrd/cch.cpp
+Backported fix from v3 : backup state lock should be released at latch timeout, else lock state accounting becomes inconsistent.
+
+ 2012-06-20 11:56  alexpeshkoff 
+   M doc/README.services_extension
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/mvol.cpp
+   M src/burp/spit.cpp
+   M src/burp/spit.h
+   M src/burp/std_desc.h
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/include/consts_pub.h
+   M src/include/gen/msgs.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/lock/lock.cpp
+   M src/msgs/messages2.sql
+   M src/utilities/fbsvcmgr.cpp
+Backported implementation of CORE-2666: Make it possible to use API to do remote backups/restores
+
+ 2012-06-20 09:32  paulbeach 
+   M builds/posix/postfix.darwin
+Copy libfbclient.dylib to Firebird SuperServer Framework Libraries to support the ODBC driver
+
  2012-06-10 13:22  dimitr 
    M src/jrd/Optimizer.cpp
 Optimizer level solution for CORE-2790/CORE-3449.
