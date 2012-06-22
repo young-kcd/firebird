@@ -451,7 +451,7 @@ AC_SUBST(DEVEL_FLG)
 CROSS=
 IS_CROSS=N
 AC_ARG_WITH(cross-build,
-  [  --with-cross-build     build for platform different from current one],
+  [  --with-cross-build      build for platform different from current one],
   [CROSS=${withval}
    IS_CROSS=Y])
 AC_SUBST(IS_CROSS)
