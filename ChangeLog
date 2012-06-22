@@ -1,3 +1,52 @@
+ 2012-06-21 15:37  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/Function.epp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/GlobalRWLock.h
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/event.cpp
+   M src/jrd/event.h
+   M src/jrd/event_proto.h
+   M src/jrd/idx.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/lck_proto.h
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/pag.cpp
+   M src/jrd/pag.h
+   M src/jrd/rlck.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/tpc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+1) Removed the no longer actual "parent lock" concept from both the lock and event managers.
+2) Reworked the lock manager synchronization: added the RAII mutex holders and avoided dirty reads for the shared memory.
+3) Encapsulated lck_length into the Lock class + small related  refactoring.
+4) Front ported recent fixes from the v2.x branches.
+5) Misc cleanup.
+
+ 2012-06-21 07:17  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+Added parameter to firebird.conf, thanks to Carlos
+
  2012-06-20 11:47  alexpeshkoff 
    M doc/README.services_extension
    M src/burp/burp.cpp
