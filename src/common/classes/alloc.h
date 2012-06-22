@@ -75,6 +75,12 @@
 #define VALGRIND_REDZONE 8
 #endif
 
+#ifdef USE_SYSTEM_NEW
+#define OOM_EXCEPTION std::bad_alloc
+#else
+#define OOM_EXCEPTION Firebird::BadAlloc
+#endif
+
 
 namespace Firebird {
 
@@ -275,7 +281,7 @@ private:
 	AtomicCounter used_memory, mapped_memory;
 
 protected:
-	MemBlock* alloc(const size_t length) throw (std::bad_alloc);
+	MemBlock* alloc(const size_t length) throw (OOM_EXCEPTION);
 	void releaseBlock(MemBlock *block) throw ();
 
 public:
@@ -283,16 +289,16 @@ public:
 #ifdef DEBUG_GDS_ALLOC
 		, const char* fileName = NULL, int line = 0
 #endif
-	) throw (std::bad_alloc);
+	) throw (OOM_EXCEPTION);
 
 protected:
 	void corrupt(const char* text) throw ();
 
 private:
-	virtual void memoryIsExhausted(void) throw (std::bad_alloc);
+	virtual void memoryIsExhausted(void) throw (OOM_EXCEPTION);
 	void remove(MemFreeBlock* block) throw ();
 	void insert(MemFreeBlock* block) throw ();
-	void* allocRaw(size_t length) throw (std::bad_alloc);
+	void* allocRaw(size_t length) throw (OOM_EXCEPTION);
 	void validateFreeList(void) throw ();
 	void validateBigBlock(MemBigObject* block) throw ();
 	static void release(void* block) throw ();
@@ -312,14 +318,14 @@ public:
 #ifdef DEBUG_GDS_ALLOC
 		, const char* fileName, int line
 #endif
-				) throw (std::bad_alloc);
+				) throw (OOM_EXCEPTION);
 	static void deallocate(void* block) throw ();
 	void validate(void) throw ();
 
 #ifdef LIBC_CALLS_NEW
-	static void* globalAlloc(size_t s) throw (std::bad_alloc);
+	static void* globalAlloc(size_t s) throw (OOM_EXCEPTION);
 #else
-	static void* globalAlloc(size_t s) throw (std::bad_alloc)
+	static void* globalAlloc(size_t s) throw (OOM_EXCEPTION)
 	{
 		return defaultMemoryManager->allocate(s
 #ifdef DEBUG_GDS_ALLOC
@@ -442,11 +448,11 @@ private:
 using Firebird::MemoryPool;
 
 // Global versions of operators new and delete
-inline void* operator new(size_t s) throw (std::bad_alloc)
+inline void* operator new(size_t s) throw (OOM_EXCEPTION)
 {
 	return MemoryPool::globalAlloc(s);
 }
-inline void* operator new[](size_t s) throw (std::bad_alloc)
+inline void* operator new[](size_t s) throw (OOM_EXCEPTION)
 {
 	return MemoryPool::globalAlloc(s);
 }
@@ -461,22 +467,22 @@ inline void operator delete[](void* mem) throw()
 }
 
 #ifdef DEBUG_GDS_ALLOC
-inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line)
+inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) throw (OOM_EXCEPTION)
 {
 	return pool.allocate(s, file, line);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line)
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) throw (OOM_EXCEPTION)
 {
 	return pool.allocate(s, file, line);
 }
 #define FB_NEW(pool) new(pool, __FILE__, __LINE__)
 #define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
 #else
-inline void* operator new(size_t s, Firebird::MemoryPool& pool)
+inline void* operator new(size_t s, Firebird::MemoryPool& pool) throw (OOM_EXCEPTION)
 {
 	return pool.allocate(s);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool)
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool) throw (OOM_EXCEPTION)
 {
 	return pool.allocate(s);
 }
@@ -484,6 +490,21 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool)
 #define FB_NEW_RPT(pool, count) new(pool, count)
 #endif
 
+#ifndef USE_SYSTEM_NEW
+// We must define placement operators NEW & DELETE ourself
+inline void* operator new(size_t s, void* place) throw ()
+{
+	return place;
+}
+inline void* operator new[](size_t s, void* place) throw ()
+{
+	return place;
+}
+inline void operator delete(void*, void*) throw()
+{ }
+inline void operator delete[](void*, void*) throw()
+{ }
+#endif
 
 namespace Firebird
 {

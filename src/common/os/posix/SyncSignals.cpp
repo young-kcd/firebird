@@ -76,6 +76,17 @@ namespace {
 
 	} // extern "C"
 
+#ifndef HAVE_SIGSET
+	typedef void HandlerType(int);
+	void sigset(int signum, HandlerType* handler)
+	{
+		struct sigaction act;
+		memset(&act, 0, sizeof act);
+		act.sa_handler = handler;
+		sigaction(signum, &act, NULL);
+	}
+#endif
+
 } // anonymous namespace
 
 namespace Firebird {

@@ -184,7 +184,7 @@ namespace {
 #endif //NO_NFS
 } // anonymous namespace
 
-#if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
+#ifndef WIN_NT
 static void expand_filename2(tstring&, bool);
 #endif
 
@@ -523,7 +523,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 }
 
 
-#if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
+#ifndef WIN_NT
 bool ISC_expand_filename(tstring& buff, bool expand_mounts)
 {
 /**************************************
@@ -1027,7 +1027,7 @@ void ISC_expand_share(tstring& file_name)
 #endif	// WIN_NT
 
 
-#if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
+#ifndef WIN_NT
 static void expand_filename2(tstring& buff, bool expand_mounts)
 {
 /**************************************

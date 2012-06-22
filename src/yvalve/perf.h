@@ -31,7 +31,7 @@
 #ifndef JRD_PERF_H
 #define JRD_PERF_H
 
-#ifdef LINUX
+#ifdef HAVE_LIBIO_H
 #include <libio.h>
 #endif
 

@@ -33,7 +33,7 @@ ROOT=../..
 # Add the install include directory to the search path since the
 # examples need to build using those headers values.
 
-CFLAGS := $(CFLAGS) -I$(FIREBIRD)/include
+CFLAGS := $(CFLAGS) -I$(FB_BUILD)/include
 
 
 include     $(ROOT)/gen/make.defaults

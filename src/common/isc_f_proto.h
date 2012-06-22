@@ -28,6 +28,7 @@
 #define JRD_ISC_FILE_PROTO_H
 
 #include "../common/classes/fb_string.h"
+#include "../common/common.h"
 
 enum iscProtocol {ISC_PROTOCOL_LOCAL, ISC_PROTOCOL_TCPIP, ISC_PROTOCOL_WLAN};
 

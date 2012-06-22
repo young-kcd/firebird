@@ -36,7 +36,11 @@
 ROOT=$(shell cd ..; pwd)
 
 include     make.defaults
+ifeq ($(CROSS_OUT), Y)
+include     make.crossPlatform
+else
 include     make.platform
+endif
 include     make.rules
 include     make.shared.variables
 
@@ -48,18 +52,24 @@ else
   DefaultTarget := Release
 endif
 
-.PHONY:	master_process firebird Debug Release extern
+ifeq ($(IsCross), Y)
+  Process := cross_process
+else
+  Process := master_process
+endif
+
+.PHONY:	master_process cross_process firebird Debug Release extern
 
 all:	firebird
 
 firebird:
-	$(MAKE) TARGET=$(DefaultTarget) master_process
+	$(MAKE) TARGET=$(DefaultTarget) $(Process)
 
 Release:
-	$(MAKE) TARGET=Release master_process
+	$(MAKE) TARGET=Release $(Process)
 
 Debug:
-	$(MAKE) TARGET=Debug master_process
+	$(MAKE) TARGET=Debug $(Process)
 
 
 #----------------------------------------------------------------------------
@@ -102,14 +112,28 @@ endif
 
 export_lists: $(ALLVERS)
 
+#___________________________________________________________________________
+# LibTomMath - used by cross-builds
+#
+
+.PHONY:	tommath
+TOMLIB=$(LIB)/libtommath.a
+TOM_Objs=$(addprefix ../extern/libtommath/,$(call doObjects,$(call dirFiles,../extern/libtommath)))
+
+tommath:	$(TOMLIB)
+
+$(TOMLIB):	$(TOM_Objs)
+	-$(RM) $@
+	$(STATICLIB_LINK) $@ $^
 
 #___________________________________________________________________________
 # main build target for both debug abd release builds
 #
 
-.PHONY:	boot yvalve engine fbintl gpre utilities plugins rest codes examples
+.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes examples
 
 master_process:
+	ln -sf $(SRC_ROOT)/include/gen/autoconfig.auto $(SRC_ROOT)/include/gen/autoconfig.h
 	$(MAKE) updateBuildNum
 	$(MAKE) export_lists
 	$(MAKE) extern
@@ -132,6 +156,35 @@ endif
 	$(MAKE) plugins
 	$(MAKE) examples
 	$(MAKE) rest
+
+
+cross_process:
+	$(MAKE) TARGET=Native cross1
+	$(MAKE) CROSS_OUT=Y cross2
+
+cross1:
+	ln -sf $(SRC_ROOT)/include/gen/autoconfig.auto $(SRC_ROOT)/include/gen/autoconfig.h
+	$(MAKE) updateBuildNum
+	$(MAKE) export_lists
+	$(MAKE) extern
+	$(MAKE) boot
+	$(MAKE) yvalve
+	$(MAKE) engine
+	$(MAKE) fbintl
+	$(MAKE) gbak isql gfix
+# Now having ready such useful tools as gbak and isql, we may restore / create
+# required databases and switch to full-featured gpre
+	$(MAKE) gpre
+# Pay attention - after build force gpre_current to point to gpre 
+# even if gpre itself was not rebuilt
+	-$(RM) $(GPRE_CURRENT)
+	(cd $(BIN); $(LN) $(notdir $(RUN_GPRE)) $(notdir $(GPRE_CURRENT)))
+
+cross2:
+	ln -sf $(SRC_ROOT)/include/cross/$(CROSS_CONFIG) $(SRC_ROOT)/include/gen/autoconfig.h
+	$(MAKE) tommath
+	$(MAKE) yvalve
+
 
 #___________________________________________________________________________
 # static library - various common code, used in different FB projects
@@ -219,10 +272,10 @@ yachts.lnk:		metadata.fdb
 	-$(RM) $@
 	$(LN) $^ $@
 
-metadata.fdb:	$(ISQL) $(SRC_ROOT)/dbs/metadata.sql
+metadata.fdb:	$(RUN_ISQL) $(SRC_ROOT)/dbs/metadata.sql
 	-$(RM) $@
-	$(ISQL) -q -i $(SRC_ROOT)/dbs/metadata.sql
-	$(GFIX) -mode read_only $@
+	$(RUN_ISQL) -q -i $(SRC_ROOT)/dbs/metadata.sql
+	$(RUN_GFIX) -mode read_only $@
 	$(CHMOD) 0444 $@
 
 $(HELP_FDB):	help.fdb
@@ -231,7 +284,7 @@ $(HELP_FDB):	help.fdb
 	$(CHMOD) 0444 $@
 
 help.fdb:	$(BLD_ROOT)/misc/help.gbak
-	$(GBAK) -MODE read_only -R $< $@
+	$(RUN_GBAK) -MODE read_only -R $< $@
 	$(CHMOD) 0444 $@
 
 $(SECURITY_FDB):	security.fdb
@@ -241,18 +294,18 @@ $(SECURITY_FDB):	security.fdb
 security.fdb:	$(SRC_ROOT)/dbs/security.sql
 	-$(RM) $@
 	-$(RM) $(SECURITY_TMP)
-	echo create database \'$(SECURITY_TMP)\'\; | $(ISQL)
-	$(GFIX) -write async $(SECURITY_TMP)
-	$(ISQL) -i $^ $(SECURITY_TMP)
+	echo create database \'$(SECURITY_TMP)\'\; | $(RUN_ISQL)
+	$(RUN_GFIX) -write async $(SECURITY_TMP)
+	$(RUN_ISQL) -i $^ $(SECURITY_TMP)
 	$(CHMOD) a=rw $(SECURITY_TMP)
 	$(CP) $(SECURITY_TMP) $@
-	$(GFIX) -write sync $@
+	$(RUN_GFIX) -write sync $@
 
 msg.timestamp:	$(MSG_FILES)
 	-$(RM) msg.fdb
-	echo create database \'msg.fdb\'\; | $(ISQL)
-	$(GFIX) -write async msg.fdb
-	for sql in $(MSG_FILES); do (echo $$sql; $(ISQL) -i $$sql msg.fdb) || exit; done
+	echo create database \'msg.fdb\'\; | $(RUN_ISQL)
+	$(RUN_GFIX) -write async msg.fdb
+	for sql in $(MSG_FILES); do (echo $$sql; $(RUN_ISQL) -i $$sql msg.fdb) || exit; done
 	$(TOUCH) $@
 
 
@@ -264,7 +317,7 @@ udfsupport:
 
 udfs:	ibudf fbudf
 
-UDF = $(FIREBIRD)/UDF
+UDF = $(FB_BUILD)/UDF
 IBUDF_SO = $(UDF)/ib_udf.$(SHRLIB_EXT)
 FBUDF_SO = $(UDF)/fbudf.$(SHRLIB_EXT)
 
@@ -439,8 +492,8 @@ examples: include_generic
 
 message_file:	$(FIREBIRD_MSG)
 
-$(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
-	$(BUILD_FILE) -d msg.fdb -f $@
+$(FIREBIRD_MSG):	$(RUN_BUILD_FILE) msg.timestamp
+	$(RUN_BUILD_FILE) -d msg.fdb -f $@
 	$(CHMOD_6) $@
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
@@ -454,7 +507,7 @@ $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
 # software - mainly they are just flattened out to make the view simpler
 # from an external point of view.
 
-INCLUDE_DEST=   $(FIREBIRD)/include
+INCLUDE_DEST=   $(FB_BUILD)/include
 
 include_generic: $(INCLUDE_DEST)/ib_util.h  \
                  $(INCLUDE_DEST)/ibase.h
@@ -521,7 +574,7 @@ install install-embedded silent_install package packages dist:
 
 
 clean: clean_objects clean_dependancies clean_extern_objects clean_build \
-		clean_yacc_gen clean_gpre_gen clean_dbs clean_examples
+		clean_yacc_gen clean_gpre_gen clean_dbs clean_examples clean_tommath
 
 ifeq ($(EDITLINE_FLG),Y)
 ifeq ($(STD_EDITLINE),false)
@@ -557,6 +610,9 @@ clean_editline:
 
 #clean_icu:
 #	-$(MAKE) -C $(ROOT)/extern/icu/source clean
+
+clean_tommath:
+	-$(MAKE) -C $(ROOT)/extern/libtommath clean
 
 clean_objects:
 	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`

@@ -291,6 +291,15 @@
 #endif /* NETBSD */
 
 
+/*****************************************************
+* Android
+*****************************************************/
+#ifdef ANDROID
+
+#define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
+
+#endif /* NETBSD */
+
 
 /*****************************************************
  * SUN platforms--the 386i is obsolete

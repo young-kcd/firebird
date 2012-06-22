@@ -47,7 +47,14 @@ BLD_ROOT=$(ROOT)/builds
 LNG_ROOT=$(ROOT)/lang_helpers
 EXA_ROOT=$(ROOT)/examples
 
-FIREBIRD=$(GEN_ROOT)/$(TARGET)/firebird
+IsCross=@IS_CROSS@
+
+FB_BUILD=$(GEN_ROOT)/$(TARGET)/firebird
+ifeq ($(IsCross), Y)
+  FIREBIRD=$(GEN_ROOT)/Native/firebird
+else
+  FIREBIRD=$(FB_BUILD)
+endif
 FIREBIRD_LOCK=$(FIREBIRD)
 
 export FIREBIRD
@@ -57,9 +64,10 @@ export FIREBIRD_LOCK
 FIREBIRD_BOOT_BUILD=1
 export FIREBIRD_BOOT_BUILD
 
-LIB=$(FIREBIRD)/lib
-BIN=$(FIREBIRD)/bin
-PLUGINS=$(FIREBIRD)/plugins
+LIB=$(FB_BUILD)/lib
+BIN=$(FB_BUILD)/bin
+PLUGINS=$(FB_BUILD)/plugins
+RBIN=$(FIREBIRD)/bin
 
 # This picks up the current directory and maps it to the equivalent module
 # in the src and gen area.
@@ -143,7 +151,7 @@ ECHO=			echo
 QUIET_ECHO=		@echo
 CD=			cd
 CAT=			cat
-AR=			ar @AR_OPTIONS@ crsu
+AR=			ar @AR_OPTIONS@
 LN=			@LN_S@
 RANLIB=			@RANLIB@
 BTYACC=$(ROOT)/extern/btyacc/btyacc
@@ -155,7 +163,7 @@ LD =	@CXX@
 # LINKER COMMANDS
 
 LIB_LINK = $(CXX) $(GLOB_OPTIONS) $(CXXFLAGS)
-STATICLIB_LINK = ar cruvs
+STATICLIB_LINK = $(AR) crus
 EXE_LINK = $(CXX) $(GLOB_OPTIONS) $(CXXFLAGS)
 STATICEXE_LINK = $(CXX) $(GLOB_OPTIONS) $(CXXFLAGS)
 
@@ -226,7 +234,7 @@ ENGINE_SONAME = $(PLUGINS)/$(EngineSoName)
 # confuses the dynamic load process.  So we only have the .$(SHRLIB_EXT) file
 # MOD 28-July-2002
 
-LIBFBINTL_SO = $(FIREBIRD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
+LIBFBINTL_SO = $(FB_BUILD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
 
 ifeq ($(EDITLINE_FLG),Y)
   ifeq ($(STD_EDITLINE), true)
@@ -323,7 +331,7 @@ LINK_PLUG_LIBS = -L$(LIB) $(SO_LINK_LIBS)
 COMMON_LIB	= $(OBJ)/common.a
 
 # From utilities
-CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
+CREATE_DB	= $(RBIN)/create_db$(EXEC_EXT)
 GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
 FBSVCMGR	= $(BIN)/fbsvcmgr$(EXEC_EXT)
 FBTRACEMGR	= $(BIN)/fbtracemgr$(EXEC_EXT)
@@ -332,8 +340,8 @@ NBACKUP		= $(BIN)/nbackup$(EXEC_EXT)
 LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)
 GSEC		= $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)
+RUN_GFIX	= $(RBIN)/gfix$(EXEC_EXT)
 GDS_REBUILD	= $(BIN)/gds_rebuild$(EXEC_EXT)
-GDS_RELAY	= $(BIN)/gds_relay$(EXEC_EXT)
 GDS_INSTALL	= $(BIN)/gds_install$(EXEC_EXT)
 GDS_INSTALL	= $(BIN)/gds_install_service$(EXEC_EXT)
 FBGUARD		= $(BIN)/fbguard$(EXEC_EXT)
@@ -349,25 +357,25 @@ QLI            = $(BIN)/qli$(EXEC_EXT)
 
 # From isql
 ISQL            = $(BIN)/isql$(EXEC_EXT)
-ISQL_STATIC     = $(BIN)/isql_static$(EXEC_EXT)
-MUISQL          = $(BIN)/muisql$(EXEC_EXT)
+RUN_ISQL        = $(RBIN)/isql$(EXEC_EXT)
 
 # From burp
-GBAK_STATIC     = $(BIN)/gbak_static$(EXEC_EXT)
 GBAK            = $(BIN)/gbak$(EXEC_EXT)
+RUN_GBAK        = $(RBIN)/gbak$(EXEC_EXT)
 GSPLIT          = $(BIN)/gsplit$(EXEC_EXT)
 
 # From gpre
 # (gpre current is a link to one of the others)
-GPRE_BOOT       = $(BIN)/gpre_boot$(EXEC_EXT)
-GPRE_STATIC     = $(BIN)/gpre_static$(EXEC_EXT)
+GPRE_BOOT       = $(RBIN)/gpre_boot$(EXEC_EXT)
 GPRE            = $(BIN)/gpre$(EXEC_EXT)
-GPRE_CURRENT    = $(BIN)/gpre_current$(EXEC_EXT)
+RUN_GPRE        = $(RBIN)/gpre$(EXEC_EXT)
+GPRE_CURRENT    = $(RBIN)/gpre_current$(EXEC_EXT)
 
 
 # From msgs
 CHECK_MESSAGES  = $(BIN)/check_messages$(EXEC_EXT)
 BUILD_FILE      = $(BIN)/build_file$(EXEC_EXT)
+RUN_BUILD_FILE  = $(RBIN)/build_file$(EXEC_EXT)
 FIREBIRD_MSG    = $(FIREBIRD)/firebird.msg
 
 ENTER_MESSAGES  = $(BIN)/enter_messages$(EXEC_EXT)

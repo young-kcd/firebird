@@ -156,6 +156,13 @@ void createLockDirectory(const char* pathname)
 	changeFileRights(pathname, 0770);
 }
 
+#ifndef S_IREAD
+#define S_IREAD S_IRUSR
+#endif
+#ifndef S_IWRITE
+#define S_IWRITE S_IWUSR
+#endif
+
 // open (or create if missing) and set appropriate access rights
 int openCreateSharedFile(const char* pathname, int flags)
 {

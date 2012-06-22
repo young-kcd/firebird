@@ -12,7 +12,7 @@ m4_ifdef([AC_CONFIG_MACRO_DIR],
          [m4_define([AC_CONFIG_MACRO_DIR], [])])
 AC_CONFIG_MACRO_DIR(m4)
 
-AC_CONFIG_HEADER(src/include/gen/autoconfig.h:builds/make.new/config/config.h.in)
+AC_CONFIG_HEADER(src/include/gen/autoconfig.auto:builds/make.new/config/config.h.in)
 
 dnl XE_APPEND(value, varname)
 define([XE_APPEND],[[$2]="$[$2] [$1]"])
@@ -448,6 +448,14 @@ AC_ARG_ENABLE(developer,
    esac])
 AC_SUBST(DEVEL_FLG)
 
+CROSS=
+IS_CROSS=N
+AC_ARG_WITH(cross-build,
+  [  --with-cross-build     build for platform different from current one],
+  [CROSS=${withval}
+   IS_CROSS=Y])
+AC_SUBST(IS_CROSS)
+
 dnl Avoid dumb '-g -O2' autoconf's default
 dnl Debugging information and optimization flags should be set in prefix.$platform file
 dnl Should be replaced with AC_PROG_GCC_DEFAULT_FLAGS() when available
@@ -663,6 +671,7 @@ AC_CHECK_HEADERS(atomic_ops.h)
 AC_CHECK_HEADERS(poll.h)
 AC_CHECK_HEADERS(langinfo.h)
 AC_CHECK_HEADERS(iconv.h)
+AC_CHECK_HEADERS(libio.h)
 
 dnl check for ICU presence
 AC_CHECK_HEADER(unicode/ucnv.h,,AC_MSG_ERROR(ICU support not found - please install development ICU package))
@@ -813,6 +822,9 @@ dnl Checks for pthread functions
 AC_CHECK_FUNCS(pthread_mutexattr_setprotocol)
 AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
 AC_CHECK_FUNCS(pthread_mutex_consistent_np)
+AC_CHECK_FUNCS(pthread_rwlockattr_setkind_np)
+AC_CHECK_FUNCS(pthread_cancel)
+AC_CHECK_FUNCS(sigset)
 
 dnl Semaphores
 if test "$ac_cv_header_semaphore_h" = "yes"; then
@@ -1036,8 +1048,16 @@ AC_SUBST(EXPORT_SYMBOLS_STYLE)
 
 AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi), [Installation path prefix])
 
+FB_TARGETS="Debug Release"
+test "x$CROSS" = "x" || FB_TARGETS="$FB_TARGETS Native"
+
 AC_CONFIG_COMMANDS(,,[
-for fb_tgt in Debug Release; do
+
+FB_TARGETS="$FB_TARGETS"
+for fb_tgt in \$FB_TARGETS; do
+
+	echo "Creating \$fb_tgt directories"
+
 dnl ### GEN ### directories for databases and misc
 	mkdir -p gen/\$fb_tgt/examples
 	mkdir -p gen/\$fb_tgt/refDatabases
@@ -1062,8 +1082,7 @@ dnl # output
 	mkdir -p gen/\$fb_tgt/firebird/help
 	mkdir -p gen/\$fb_tgt/firebird/plugins/udr
 
-dnl #### TEMP ######### directories for generated .cpp, .o and .d
-dnl # by module name
+dnl ### TEMP ### directories for generated .cpp, .o and .d by module name
 	for src_dir in `cd src; ls -R -1 * | grep : | tr -d : | tr "\n" " "; cd ..`; do
     	mkdir -p temp/\$fb_tgt/\$src_dir
 	done
@@ -1071,8 +1090,8 @@ dnl # by module name
 	src/misc/writeBuildNum.sh createMakeVersion gen/Make.Version
 
 dnl # sql files for UDF declarations
-	for sql_file in src/extlib/ib_udf.sql src/extlib/fbudf/fbudf.sql src/extlib/ib_udf2.sql; do
-		cp \$sql_file gen/\$fb_tgt/firebird/UDF
+	for sql_file in ib_udf.sql fbudf/fbudf.sql ib_udf2.sql; do
+		cp src/extlib/\$sql_file gen/\$fb_tgt/firebird/UDF
 	done
 done
 
@@ -1090,17 +1109,21 @@ MAKE_SRC_DIR=builds/posix
 
 dnl common files for all posix hosts
 dnl TODO: fix "arch-specific/linux/" paths for common posix scripts with SVN
+for fb_tgt in $FB_TARGETS; do
 AC_CONFIG_FILES([
-gen/Debug/firebird/firebird.conf:builds/install/misc/firebird.conf.in
-gen/Release/firebird/firebird.conf:builds/install/misc/firebird.conf.in
-gen/Debug/firebird/aliases.conf:builds/install/misc/aliases.conf.in
-gen/Release/firebird/aliases.conf:builds/install/misc/aliases.conf.in
-gen/Debug/firebird/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
-gen/Release/firebird/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
-gen/Debug/firebird/intl/fbintl.conf:builds/install/misc/fbintl.conf
-gen/Release/firebird/intl/fbintl.conf:builds/install/misc/fbintl.conf
-gen/Debug/firebird/plugins.conf:builds/install/misc/plugins.conf
-gen/Release/firebird/plugins.conf:builds/install/misc/plugins.conf
+gen/$fb_tgt/firebird/firebird.conf:builds/install/misc/firebird.conf.in
+gen/$fb_tgt/firebird/aliases.conf:builds/install/misc/aliases.conf.in
+gen/$fb_tgt/firebird/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
+gen/$fb_tgt/firebird/intl/fbintl.conf:builds/install/misc/fbintl.conf
+gen/$fb_tgt/firebird/plugins.conf:builds/install/misc/plugins.conf
+])
+done
+
+if test "x$CROSS" != "x"; then
+AC_CONFIG_FILES([gen/make.crossPlatform:builds/posix/make.$CROSS])
+fi
+
+AC_CONFIG_FILES([
 gen/Release/firebird/bin/fb_config:builds/install/misc/fb_config.in
 gen/Release/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
 gen/Release/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
@@ -1113,12 +1136,11 @@ gen/Release/firebird/bin/preuninstall.sh:builds/install/arch-specific/linux/misc
 gen/Release/firebird/bin/postuninstall.sh:builds/install/arch-specific/linux/misc/postuninstall.sh.in
 gen/Release/firebird/bin/taruninstall.sh:builds/install/arch-specific/linux/misc/taruninstall.sh.in
 gen/Release/firebird/bin/tarMainUninstall.sh:builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
-gen/vers.sh:builds/posix/vers.sh.in
 gen/Release/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
 gen/Release/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in
 gen/Release/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
-],
-[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+gen/vers.sh:builds/posix/vers.sh.in
+])
 
 dnl: Platform Specific Files
 

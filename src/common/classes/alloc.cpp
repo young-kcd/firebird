@@ -284,7 +284,7 @@ void MemoryPool::setStatsGroup(MemoryStats& newStats) throw ()
 	stats->increment_usage(sav_used_memory);
 }
 
-MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
+MemBlock* MemoryPool::alloc(const size_t length) throw (OOM_EXCEPTION)
 {
 	MutexLockGuard guard(mutex, "MemoryPool::alloc");
 
@@ -473,7 +473,7 @@ void* MemoryPool::allocate(size_t size
 #ifdef DEBUG_GDS_ALLOC
 	, const char* fileName, int line
 #endif
-) throw (std::bad_alloc)
+) throw (OOM_EXCEPTION)
 {
 	size_t length = ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + OFFSET(MemBlock*, body) + GUARD_BYTES;
 	MemBlock* memory = alloc(length);
@@ -669,7 +669,7 @@ void MemoryPool::corrupt(const char* text) throw ()
 #endif
 }
 
-void MemoryPool::memoryIsExhausted(void) throw (std::bad_alloc)
+void MemoryPool::memoryIsExhausted(void) throw (OOM_EXCEPTION)
 {
 	Firebird::BadAlloc::raise();
 }
@@ -785,7 +785,7 @@ inline size_t get_map_page_size()
 
 }
 
-void* MemoryPool::allocRaw(size_t size) throw (std::bad_alloc)
+void* MemoryPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 {
 #ifndef USE_VALGRIND
 	if (size == DEFAULT_ALLOCATION)
@@ -976,7 +976,7 @@ void* MemoryPool::calloc(size_t size
 #ifdef DEBUG_GDS_ALLOC
 	, const char* fileName, int line
 #endif
-) throw (std::bad_alloc)
+) throw (OOM_EXCEPTION)
 {
 	void *block = allocate((int) size
 #ifdef DEBUG_GDS_ALLOC

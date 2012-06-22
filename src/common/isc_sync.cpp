@@ -105,14 +105,6 @@ static int process_id;
 //#define SIGURG		SIGINT
 //#endif
 
-#ifndef HAVE_SEMUN
-union semun
-{
-	int val;
-	struct semid_ds *buf;
-	ushort *array;
-};
-#endif
 #endif // UNIX
 
 #ifdef HAVE_SYS_PARAM_H
@@ -291,6 +283,15 @@ namespace {
 
 // Uncomment to trace details of event_init/fini calls
 //#define DEB_EVNT
+
+#ifndef HAVE_SEMUN
+union semun
+{
+	int val;
+	struct semid_ds *buf;
+	ushort *array;
+};
+#endif
 
 static SLONG	create_semaphores(Arg::StatusVector&, SLONG, int);
 

@@ -165,10 +165,12 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 
 	if (p_handle)
 	{
+#ifdef HAVE_PTHREAD_CANCEL
 		int dummy;		// We do not want to know old cancel type
 		state = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &dummy);
 		if (state)
 			 Firebird::system_call_failed::raise("pthread_setcanceltype", state);
+#endif
 		*p_handle = thread;
 	}
 }
@@ -182,10 +184,12 @@ void Thread::waitForCompletion(Handle& thread)
 
 void Thread::kill(Handle& thread)
 {
+#ifdef HAVE_PTHREAD_CANCEL
 	int state = pthread_cancel(thread);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_cancel", state);
 	waitForCompletion(thread);
+#endif
 }
 #endif /* USE_POSIX_THREADS */
 
