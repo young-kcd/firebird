@@ -1,3 +1,33 @@
+ 2012-06-22 11:43  alexpeshkoff 
+   M configure.in
+Misc
+
+ 2012-06-22 11:39  alexpeshkoff 
+   M builds/posix/Makefile.in
+   M builds/posix/Makefile.in.examples
+   M builds/posix/Makefile.in.plugins_examples
+   A builds/posix/make.android.arme
+   M builds/posix/make.defaults
+   M builds/posix/make.rules
+   M builds/posix/make.shared.variables
+   M configure.in
+   M extern/libtommath/makefile
+   M src/common/ThreadStart.cpp
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/rwlock.h
+   M src/common/common.h
+   M src/common/isc_f_proto.h
+   M src/common/isc_file.cpp
+   M src/common/isc_sync.cpp
+   M src/common/os/posix/SyncSignals.cpp
+   M src/common/os/posix/os_utils.cpp
+   A src/include/cross
+   A src/include/cross/android.arme
+   M src/include/fb_exception.h
+   M src/yvalve/perf.h
+Cross-build support + android port: work in progress, currently can build fbclient for android
+
  2012-06-21 15:37  dimitr 
    M src/jrd/Attachment.cpp
    M src/jrd/Attachment.h
