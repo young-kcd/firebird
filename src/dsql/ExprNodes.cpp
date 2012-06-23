@@ -5706,7 +5706,16 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		doPass1(tdbb, csb, &sub);	// note: scope of AutoSetRestore
 	}
 	else
+	{
+		DerivedExprNode* derivedNode =
+			FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
+		derivedNode->arg = sub;
+		derivedNode->internalStreamList.add(stream);
+
+		sub = derivedNode;
+
 		doPass1(tdbb, csb, &sub);
+	}
 
 	return sub;
 }
