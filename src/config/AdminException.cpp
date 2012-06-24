@@ -63,6 +63,9 @@ void AdminException::setLocation(const Firebird::PathName& file, int lineNumber)
 	fileName = file;
 	Firebird::string buffer;
 
-	buffer.printf("%s, line %d: %s", fileName.c_str(), lineNumber, text.c_str());
+	if (fileName.isEmpty())
+		buffer.printf("line %d: %s", lineNumber, text.c_str());
+	else
+		buffer.printf("%s, line %d: %s", fileName.c_str(), lineNumber, text.c_str());
 	text = buffer;
 }

@@ -104,7 +104,7 @@ void InputStream::release()
 
 const char* InputStream::getFileName() const
 {
-	return NULL;
+	return "";
 }
 
 InputFile* InputStream::getInputFile()
