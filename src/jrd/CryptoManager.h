@@ -104,7 +104,7 @@ private:
 		~HolderAttachments();
 
 		void registerAttachment(Attachment* att);
-		Firebird::IKeyHolderPlugin* unregisterAttachment(Attachment* att);
+		bool unregisterAttachment(Attachment* att);
 
 		void setPlugin(Firebird::IKeyHolderPlugin* kh);
 		Firebird::IKeyHolderPlugin* getPlugin() const

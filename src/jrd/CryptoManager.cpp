@@ -599,21 +599,18 @@ namespace Jrd {
 		attachments.add(att);
 	}
 
-	IKeyHolderPlugin* CryptoManager::HolderAttachments::unregisterAttachment(Attachment* att)
+	bool CryptoManager::HolderAttachments::unregisterAttachment(Attachment* att)
 	{
-		for (unsigned i = 0; i < attachments.getCount(); ++i)
+		unsigned i = attachments.getCount();
+		while (i--)
 		{
 			if (attachments[i] == att)
 			{
 				attachments.remove(i);
-				if (attachments.getCount() == 0)
-				{
-					return keyHolder;		// to be removed from holdersVector
-				}
 				break;
 			}
 		}
-		return NULL;
+		return attachments.getCount() == 0;
 	}
 
 	bool CryptoManager::HolderAttachments::operator==(IKeyHolderPlugin* kh) const
@@ -664,10 +661,10 @@ namespace Jrd {
 	{
 		MutexLockGuard g(holdersMutex);
 
-		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
+		unsigned i = knownHolders.getCount();
+		while (i--)
 		{
-			IKeyHolderPlugin* keyPlugin = knownHolders[i].unregisterAttachment(att);
-			if (keyPlugin)
+			if (knownHolders[i].unregisterAttachment(att))
 			{
 				knownHolders.remove(i);
 			}
