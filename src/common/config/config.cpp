@@ -176,7 +176,6 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false},
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
 	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
-	{TYPE_STRING,		"DbCryptPlugin",			(ConfigValue) ""},
 	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""}
 };
 
@@ -681,8 +680,6 @@ const char* Config::getPlugins(unsigned int type) const
 			return (const char*) values[KEY_PLUG_TRACE];
 		case Firebird::PluginType::WireCrypt:
 			return (const char*) values[KEY_PLUG_WIRE_CRYPT];
-		case Firebird::PluginType::DbCrypt:
-			return (const char*) values[KEY_PLUG_DB_CRYPT];
 		case Firebird::PluginType::KeyHolder:
 			return (const char*) values[KEY_PLUG_KEY_HOLDER];
 	}
