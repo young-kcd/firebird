@@ -1,3 +1,7 @@
+ 2012-06-23 16:08  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-3874 - Computed column appears in non-existant rows of left join.
+
  2012-06-22 11:43  alexpeshkoff 
    M configure.in
 Misc
