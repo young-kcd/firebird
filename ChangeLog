@@ -1,3 +1,8 @@
+ 2012-06-24 09:13  hvlad 
+   M src/config/AdminException.cpp
+   M src/config/InputStream.cpp
+Fixed bug CORE-3860 : Trace API: Faulty database filter crashes server
+
  2012-06-21 12:16  dimitr 
    M src/jrd/cch.cpp
    M src/jrd/nbak.h
