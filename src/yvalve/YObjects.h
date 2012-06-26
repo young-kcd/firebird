@@ -366,7 +366,7 @@ public:
 	virtual void FB_CARG putSlice(Firebird::IStatus* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
 		unsigned int sdlLength, const unsigned char* sdl, unsigned int paramLength,
 		const unsigned char* param, int sliceLength, unsigned char* slice);
-	virtual void FB_CARG ddl(Firebird::IStatus* status, Firebird::ITransaction* transaction, unsigned int length,
+	virtual void FB_CARG executeDyn(Firebird::IStatus* status, Firebird::ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
 	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
 		unsigned int length, const char* string, unsigned int dialect, unsigned int inMsgType,
@@ -376,7 +376,7 @@ public:
 	virtual void FB_CARG cancelOperation(Firebird::IStatus* status, int option);
 	virtual void FB_CARG ping(Firebird::IStatus* status);
 	virtual void FB_CARG detach(Firebird::IStatus* status);
-	virtual void FB_CARG drop(Firebird::IStatus* status);
+	virtual void FB_CARG dropDatabase(Firebird::IStatus* status);
 
 	void addCleanupHandler(Firebird::IStatus* status, CleanupCallback* callback);
 	YTransaction* getTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);

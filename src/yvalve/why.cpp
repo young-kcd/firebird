@@ -1689,7 +1689,7 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		attachment->ddl(&status, transaction, length, dyn);
+		attachment->executeDyn(&status, transaction, length, dyn);
 	}
 	catch (const Exception& e)
 	{
@@ -1738,7 +1738,7 @@ ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
-		attachment->drop(&status);
+		attachment->dropDatabase(&status);
 
 		if (status.isSuccess() || status[1] == isc_drdb_completed_with_errs)
 			*handle = 0;
@@ -4371,7 +4371,7 @@ void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD*
 	}
 }
 
-void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int length,
+void YAttachment::executeDyn(IStatus* status, ITransaction* transaction, unsigned int length,
 	const unsigned char* dyn)
 {
 	try
@@ -4381,7 +4381,7 @@ void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int l
 		NextTransaction trans;
 		getNextTransaction(status, transaction, trans);
 
-		return entry.next()->ddl(status, trans, length, dyn);
+		return entry.next()->executeDyn(status, trans, length, dyn);
 	}
 	catch (const Exception& e)
 	{
@@ -4504,13 +4504,13 @@ void YAttachment::detach(IStatus* status)
 	}
 }
 
-void YAttachment::drop(IStatus* status)
+void YAttachment::dropDatabase(IStatus* status)
 {
 	try
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		entry.next()->drop(status);
+		entry.next()->dropDatabase(status);
 
 		if (status->isSuccess())
 			destroy();

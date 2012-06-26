@@ -2622,7 +2622,7 @@ void JAttachment::getInfo(IStatus* user_status, unsigned int item_length, const 
 }
 
 
-void JAttachment::ddl(IStatus* status, ITransaction* /*tra*/, unsigned int /*length*/,
+void JAttachment::executeDyn(IStatus* status, ITransaction* /*tra*/, unsigned int /*length*/,
 	const unsigned char* /*dyn*/)
 {
 /**************************************
@@ -2734,7 +2734,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 }
 
 
-void JAttachment::drop(IStatus* user_status)
+void JAttachment::dropDatabase(IStatus* user_status)
 {
 /**************************************
  *

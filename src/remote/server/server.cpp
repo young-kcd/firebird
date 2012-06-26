@@ -2266,7 +2266,7 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 	const UCHAR* blr = ddlL->p_ddl_blr.cstr_address;
 	const USHORT blr_length = ddlL->p_ddl_blr.cstr_length;
 
-	rdb->rdb_iface->ddl(&status_vector, transaction->rtr_iface, blr_length, blr);
+	rdb->rdb_iface->executeDyn(&status_vector, transaction->rtr_iface, blr_length, blr);
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -2431,7 +2431,7 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 		return;
 	}
 
-	rdb->rdb_iface->drop(&status_vector);
+	rdb->rdb_iface->dropDatabase(&status_vector);
 
 	if (!status_vector.isSuccess() && (status_vector.get()[1] != isc_drdb_completed_with_errs))
 	{

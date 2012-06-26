@@ -373,7 +373,7 @@ public:
 						  unsigned int sdl_length, const unsigned char* sdl,
 						  unsigned int param_length, const unsigned char* param,
 						  int sliceLength, unsigned char* slice);
-	virtual void FB_CARG ddl(IStatus* status, ITransaction* transaction, unsigned int length,
+	virtual void FB_CARG executeDyn(IStatus* status, ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
@@ -384,7 +384,7 @@ public:
 	virtual void FB_CARG cancelOperation(IStatus* status, int option);
 	virtual void FB_CARG ping(IStatus* status);
 	virtual void FB_CARG detach(IStatus* status);
-	virtual void FB_CARG drop(IStatus* status);
+	virtual void FB_CARG dropDatabase(IStatus* status);
 
 public:
 	Attachment(Rdb* handle, const PathName& path)
@@ -1311,7 +1311,7 @@ void Attachment::getInfo(IStatus* status,
 }
 
 
-void Attachment::ddl(IStatus* status, ITransaction* apiTra, unsigned int length,
+void Attachment::executeDyn(IStatus* status, ITransaction* apiTra, unsigned int length,
 	const unsigned char* dyn)
 {
 /**************************************
@@ -1433,7 +1433,7 @@ void Attachment::detach(IStatus* status)
 }
 
 
-void Attachment::drop(IStatus* status)
+void Attachment::dropDatabase(IStatus* status)
 {
 /**************************************
  *

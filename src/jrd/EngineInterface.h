@@ -284,7 +284,7 @@ public:
 						  unsigned int sdl_length, const unsigned char* sdl,
 						  unsigned int param_length, const unsigned char* param,
 						  int sliceLength, unsigned char* slice);
-	virtual void FB_CARG ddl(Firebird::IStatus* status, Firebird::ITransaction* transaction, unsigned int length,
+	virtual void FB_CARG executeDyn(Firebird::IStatus* status, Firebird::ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
 	virtual JTransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
@@ -295,7 +295,7 @@ public:
 	virtual void FB_CARG cancelOperation(Firebird::IStatus* status, int option);
 	virtual void FB_CARG ping(Firebird::IStatus* status);
 	virtual void FB_CARG detach(Firebird::IStatus* status);
-	virtual void FB_CARG drop(Firebird::IStatus* status);
+	virtual void FB_CARG dropDatabase(Firebird::IStatus* status);
 
 public:
 	explicit JAttachment(Attachment* handle);

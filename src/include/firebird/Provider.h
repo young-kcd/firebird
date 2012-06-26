@@ -200,7 +200,7 @@ public:
 						  unsigned int sdlLength, const unsigned char* sdl,
 						  unsigned int paramLength, const unsigned char* param,
 						  int sliceLength, unsigned char* slice) = 0;
-	virtual void FB_CARG ddl(IStatus* status, ITransaction* transaction, unsigned int length,
+	virtual void FB_CARG executeDyn(IStatus* status, ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
@@ -211,7 +211,7 @@ public:
 	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;
 	virtual void FB_CARG ping(IStatus* status) = 0;
 	virtual void FB_CARG detach(IStatus* status) = 0;
-	virtual void FB_CARG drop(IStatus* status) = 0;
+	virtual void FB_CARG dropDatabase(IStatus* status) = 0;
 };
 #define FB_ATTACHMENT_VERSION (FB_REFCOUNTED_VERSION + 17)
 
