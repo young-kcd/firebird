@@ -1,3 +1,17 @@
+ 2012-06-25 13:11  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Fixed an issue, found by Claudio
+
+ 2012-06-25 13:08  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+Misc
+
+ 2012-06-25 13:02  alexpeshkoff 
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+No need in entry for this type of plugins in conf file - plugin name is taken from SQL command or DB header
+
  2012-06-23 16:08  asfernandes 
    M src/dsql/ExprNodes.cpp
 Fixed CORE-3874 - Computed column appears in non-existant rows of left join.
