@@ -156,8 +156,8 @@ See also README.trace_services
 (Alex Peshkov, peshkoff@mail.ru, 2011-2012)
 
 This way of doing backups is specially efficient when one needs to perform
-backup/restore operation for database, located on ther server accessed using
-internet, due to serious performance instrease.
+backup/restore operation for database, located on a server accessed using
+internet, due to serious performance increase.
 
 The simplest way to use this feature is fbsvcmgr. To backup database run
 approximately the following:

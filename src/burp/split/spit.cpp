@@ -65,10 +65,10 @@ static const int mask		= 0666;
 static DESC open_platf(const char* name, int writeFlag)
 {
 #ifdef WIN_NT
-	return CreateFile(name, writeFlag ? GENERIC_WRITE : GENERIC_READ, 0, NULL, 
-		writeFlag ? CREATE_ALWAYS : OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	return CreateFile(name, (writeFlag ? GENERIC_WRITE : GENERIC_READ), 0, NULL,
+		(writeFlag ? CREATE_ALWAYS : OPEN_EXISTING), FILE_ATTRIBUTE_NORMAL, 0);
 #else
-	return open(name, writeFlag ? mode_write : mode_read, mask);
+	return open(name, (writeFlag ? mode_write : mode_read), mask);
 #endif
 }
 

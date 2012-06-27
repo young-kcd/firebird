@@ -117,7 +117,7 @@ FB_UINT64 MVOL_fini_read()
 
 	for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 	{
-		if (file->fil_fd == tdgbl->file_desc) 
+		if (file->fil_fd == tdgbl->file_desc)
 		{
 			file->fil_fd = INVALID_HANDLE_VALUE;
 		}
