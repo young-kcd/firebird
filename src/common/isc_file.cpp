@@ -399,11 +399,16 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
  *
  **************************************/
 
+	// Avoid trivial case
+
+	if (!file_name.hasData())
+		return false;
+
 	// Scan file name looking for separator character
 
 	node_name.erase();
 	const size p = file_name.find(INET_FLAG);
-	if (p == npos)
+	if (p == npos || p == 0 || p == file_name.length() - 1)
 		return false;
 
 	node_name = file_name.substr(0, p);
