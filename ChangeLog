@@ -1,3 +1,19 @@
+ 2012-06-27 02:24  asfernandes 
+   M doc/README.services_extension
+   M src/burp/mvol.cpp
+   M src/burp/split/spit.cpp
+Misc.
+
+ 2012-06-26 13:43  alexpeshkoff 
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Better names for API functions
+
  2012-06-25 13:11  alexpeshkoff 
    M src/jrd/CryptoManager.cpp
    M src/jrd/CryptoManager.h
