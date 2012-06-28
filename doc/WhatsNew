@@ -2,6 +2,21 @@
   * v2.5.2
   **************************
 
+    * Bugfix CORE-3875
+        GBAK does not check correctly parameters and backups random database with -B ":"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3873
+        Server crashes while switching to the shadow if the disk I/O fault happens while flushing the cache
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3860
+        Trace API: faulty database filter crashes the server
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3855
         Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed
         into newly allocated pages even if there is enough free place on some existing data page
@@ -342,10 +357,20 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-3879
+        Make fb_lock_print a bit more handy
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Improvement CORE-3727
         Support C preprocessor flags in firebird build system
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3656
+        Support for sweep information in Trace API
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-3598
         TRACE: add statistics of actions that happened after transaction has finished
@@ -356,6 +381,18 @@
         TRACE: add ability for logging ERRORs that occur in runtime (lock conflicts, PK/UK/FK violations et al)
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2668
+        Write note into log when automatic sweep is started
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2666
+        Make it possible to use API to do remote backup/restore
+      See also:
+        /doc/README.services_extension
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
 
   **************************
