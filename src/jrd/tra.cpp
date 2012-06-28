@@ -1739,6 +1739,10 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
 		return true;
 
+	if (tdbb->getAttachment()->att_flags & ATT_NO_CLEANUP) {
+		return true;
+	}
+
 	// fill out a lock block, zeroing it out first
 
 	Lock temp_lock;
@@ -1774,6 +1778,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	tdbb->tdbb_flags |= TDBB_sweeper;
 
+	TraceSweepEvent traceSweep(tdbb);
+
 	// Start a transaction, if necessary, to perform the sweep.
 	// Save the transaction's oldest snapshot as it is refreshed
 	// during the course of the database sweep. Since it is used
@@ -1797,8 +1803,6 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	transaction->tra_attachment->att_flags &= ~ATT_notify_gc;
 #endif
-
-	TraceSweepEvent traceSweep(tdbb);
 
 	if (VIO_sweep(tdbb, transaction, &traceSweep))
 	{
@@ -1859,6 +1863,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
+		iscLogException("Error during sweep:", ex);
+
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		try {
 			if (!trans && transaction)
@@ -3634,7 +3640,24 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb) :
 {
 	m_tdbb = tdbb;
 
+	WIN window(HEADER_PAGE_NUMBER);
+	Ods::header_page *header = (Ods::header_page*) CCH_FETCH(m_tdbb, &window, LCK_read, pag_header);
+
+	m_sweep_info.update(header);
+	CCH_RELEASE(m_tdbb, &window);
+
 	Attachment* att = m_tdbb->getAttachment();
+
+	gds__log("Sweep is started by %s\n"
+		"\tDatabase \"%s\" \n"
+		"\tOIT %ld, OAT %ld, OST %ld, Next %ld",
+		att->att_user->usr_user_name.c_str(),
+		att->att_filename.c_str(),
+		m_sweep_info.getOIT(),
+		m_sweep_info.getOAT(),
+		m_sweep_info.getOST(),
+		m_sweep_info.getNext());
+
 	TraceManager* trace_mgr = att->att_trace_manager;
 
 	m_need_trace = trace_mgr->needs().event_sweep;
@@ -3644,12 +3667,6 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb) :
 
 	m_tdbb->setRequest(&m_request);
 	m_start_clock = fb_utils::query_performance_counter();
-
-	WIN window(HEADER_PAGE_NUMBER);
-	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(m_tdbb, &window, LCK_read, pag_header);
-
-	m_sweep_info.update(header);
-	CCH_RELEASE(m_tdbb, &window);
 
 	TraceConnectionImpl conn(att);
 	trace_mgr->event_sweep(&conn, &m_sweep_info, process_state_started);
@@ -3667,11 +3684,24 @@ TraceSweepEvent::~TraceSweepEvent()
 
 void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
 {
+	Attachment* att = m_tdbb->getAttachment();
+
+	if (state == process_state_finished) 
+	{
+		gds__log("Sweep is finished\n"
+			"\tDatabase \"%s\" \n"
+			"\tOIT %ld, OAT %ld, OST %ld, Next %ld",
+			att->att_filename.c_str(),
+			m_sweep_info.getOIT(),
+			m_sweep_info.getOAT(),
+			m_sweep_info.getOST(),
+			m_sweep_info.getNext());
+	}
+
 	if (!m_need_trace)
 		return;
 
 	Database* dbb = m_tdbb->getDatabase();
-	Attachment* att = m_tdbb->getAttachment();
 	TraceManager* trace_mgr = att->att_trace_manager;
 
 	TraceConnectionImpl conn(att);
