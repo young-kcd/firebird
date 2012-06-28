@@ -34,7 +34,7 @@
 #include "../jrd/common.h"
 
 /* Version of API, used for version fields in TracePlugin structure */
-#define NTRACE_VERSION 3
+#define NTRACE_VERSION 4
 
 // plugin entry point
 static const char* const NTRACE_ATTACH = "trace_create";
@@ -47,6 +47,14 @@ enum ntrace_connection_kind_t
 {
 	connection_database	= 1,
 	connection_service
+};
+
+enum ntrace_process_state_t
+{
+	process_state_started	= 1,
+	process_state_finished,
+	process_state_failed,
+	process_state_progress
 };
 
 class TraceBaseConnection
@@ -173,6 +181,16 @@ public:
 	virtual bool hasWarning() = 0;
 	virtual const ISC_STATUS* getStatus() = 0;
 	virtual const char* getText() = 0;
+};
+
+class TraceSweepInfo
+{
+public:
+	virtual ISC_LONG getOIT() = 0;
+	virtual ISC_LONG getOST() = 0;
+	virtual ISC_LONG getOAT() = 0;
+	virtual ISC_LONG getNext() = 0;
+	virtual PerformanceInfo* getPerf() = 0;
 };
 
 /* Plugin-specific argument. Passed by the engine to each hook */
@@ -312,6 +330,10 @@ typedef ntrace_boolean_t (*ntrace_event_service_detach_t)(const struct TracePlug
 typedef ntrace_boolean_t (*ntrace_event_error_t)(const struct TracePlugin* tpl_plugin,
 	TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
+/* Sweep activity */
+typedef ntrace_boolean_t (*ntrace_event_sweep_t)(const struct TracePlugin* tpl_plugin,
+	TraceDatabaseConnection* connection, TraceSweepInfo* sweep, ntrace_process_state_t sweep_state);
+
 
 /* API of trace plugin. Used to deliver notifications for each database */
 struct TracePlugin
@@ -353,9 +375,11 @@ struct TracePlugin
 
 	ntrace_event_error_t tpl_event_error;
 
+	ntrace_event_sweep_t tpl_event_sweep;
+
 	/* Some space for future extension of Trace API interface,
        must be zero-initialized by the plugin */
-	void* reserved_for_interface[23];
+	void* reserved_for_interface[22];
 
 	/* Some space which may be freely used by Trace API driver.
        If driver needs more space it may allocate and return larger TracePlugin structure. */

@@ -259,6 +259,9 @@ private:
 
 	void log_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
+	void log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+						 ntrace_process_state_t sweep_state);
+
 	/* Finalize plugin. Called when database is closed by the engine */
 	static ntrace_boolean_t ntrace_shutdown(const TracePlugin* tpl_plugin);
 
@@ -333,6 +336,9 @@ private:
 
 	static ntrace_boolean_t ntrace_event_error(const struct TracePlugin* tpl_plugin,
 		TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
+
+	static ntrace_boolean_t ntrace_event_sweep(const struct TracePlugin* tpl_plugin,
+		TraceDatabaseConnection* connection, TraceSweepInfo* sweep, ntrace_process_state_t sweep_state);
 };
 
 #endif // TRACEPLUGINIMPL_H

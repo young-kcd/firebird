@@ -110,6 +110,9 @@ public:
 
 	void event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
+	void event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+		ntrace_process_state_t sweep_state);
+
 	struct NotificationNeeds
 	{
 		// Set if event is tracked
@@ -131,6 +134,7 @@ public:
 		bool event_service_query;
 		bool event_service_detach;
 		bool event_error;
+		bool event_sweep;
 	};
 
 	inline const NotificationNeeds& needs()

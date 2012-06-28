@@ -34,6 +34,7 @@ namespace Jrd {
 	struct record_param;
 	class Savepoint;
 	class Format;
+	class TraceSweepEvent;
 }
 
 void	VIO_backout(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
@@ -66,7 +67,7 @@ Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*,
 void	VIO_refetch_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
-bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
+bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceSweepEvent*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
 IPTR	VIO_savepoint_large(const Jrd::Savepoint*, IPTR);
 void	VIO_temp_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);

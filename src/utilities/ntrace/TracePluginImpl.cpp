@@ -93,6 +93,8 @@ TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configur
 		plugin_ptr->tpl_event_service_detach = ntrace_event_service_detach;
 
 		plugin_ptr->tpl_event_error = ntrace_event_error;
+		
+		plugin_ptr->tpl_event_sweep = ntrace_event_sweep;
 	}
 	catch(const Firebird::Exception&)
 	{
@@ -1998,6 +2000,60 @@ void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStat
 	logRecordError(event_type.c_str(), connection, status);
 }
 
+
+void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+	ntrace_process_state_t sweep_state)
+{
+	if (sweep_state != process_state_progress) 
+	{
+		record.printf("\nTransaction counters:\n"
+			"\tOldest interesting %10ld\n"
+			"\tOldest active      %10ld\n"
+			"\tOldest snapshot    %10ld\n"
+			"\tNext transaction   %10ld\n",
+			sweep->getOIT(),
+			sweep->getOAT(),
+			sweep->getOST(),
+			sweep->getNext()
+			);
+	}
+
+	PerformanceInfo* info = sweep->getPerf();
+	if (info)
+	{
+		appendGlobalCounts(info);
+		appendTableCounts(info);
+	}
+
+	const char* event_type = NULL;
+	switch (sweep_state)
+	{
+	case process_state_started:
+		event_type = "SWEEP_START";
+		break;
+
+	case process_state_finished:
+		event_type = "SWEEP_FINISH";
+		break;
+
+	case process_state_failed:
+		event_type = "SWEEP_FAILED";
+		break;
+
+	case process_state_progress:
+		event_type = "SWEEP_PROGRESS";
+		break;
+
+	default:
+		fb_assert(false);
+		event_type = "Unknown SWEEP process state";
+		break;
+	}
+
+	logRecordConn(event_type, connection);
+}
+
+
 //***************************** PLUGIN INTERFACE ********************************
 
 ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin)
@@ -2322,6 +2378,22 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_error(const TracePlugin* tpl_plug
 	{
 		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_error(
 			connection, status, function);
+		return true;
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		marshal_exception(ex);
+		return false;
+	}
+}
+
+ntrace_boolean_t TracePluginImpl::ntrace_event_sweep(const struct TracePlugin* tpl_plugin,
+	TraceDatabaseConnection* connection, TraceSweepInfo* sweep, ntrace_process_state_t sweep_state)
+{
+	try
+	{
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_sweep(
+			connection, sweep, sweep_state);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)

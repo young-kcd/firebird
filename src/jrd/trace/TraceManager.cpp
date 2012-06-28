@@ -324,6 +324,8 @@ void TraceManager::update_session(const TraceSession& session)
 				trace_needs.event_trigger_execute = true;
 			if (plugin->tpl_event_error)
 				trace_needs.event_error = true;
+			if (plugin->tpl_event_sweep)
+				trace_needs.event_sweep = true;
 		}
 	}
 }
@@ -522,6 +524,13 @@ void TraceManager::event_error(TraceBaseConnection* connection, TraceStatusVecto
 {
 	EXECUTE_HOOKS(tpl_event_error,
 		(plug_info->plugin, connection, status, function));
+}
+
+void TraceManager::event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+	ntrace_process_state_t sweep_state)
+{
+	EXECUTE_HOOKS(tpl_event_sweep,
+		(plug_info->plugin, connection, sweep, sweep_state));
 }
 
 }
