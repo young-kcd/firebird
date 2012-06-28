@@ -112,8 +112,8 @@ namespace
 
 static void prt_lock_activity(OUTFILE, const lhb*, USHORT, ULONG, ULONG);
 static void prt_history(OUTFILE, const lhb*, SRQ_PTR, const SCHAR*);
-static void prt_lock(OUTFILE, const lhb*, lbl*, USHORT);
-static void prt_owner(OUTFILE, const lhb*, const own*, bool, bool);
+static void prt_lock(OUTFILE, const lhb*, const lbl*, USHORT);
+static void prt_owner(OUTFILE, const lhb*, const own*, bool, bool, bool);
 static void prt_owner_wait_cycle(OUTFILE, const lhb*, const own*, USHORT, waitque*);
 static void prt_request(OUTFILE, const lhb*, const lrq*);
 static void prt_que(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT, const TEXT* prefix = NULL);
@@ -164,8 +164,44 @@ static const TEXT history_names[][10] =
 	"SCAN", "DEAD", "ENTER", "BUG", "ACTIVE", "CLEANUP", "DEL_OWNER"
 };
 
-static const TEXT valid_switches[] =
-	"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>, -m";
+
+static const char* usage =
+	"Firebird lock print utility.\n"
+	"Usage: fb_lock_print (-d | -f) [<parameters>]\n"
+	"\n"
+	"One of -d or -f switches is mandatory:\n"
+	"  -d  <database file name>      specify database which lock table to be printed\n"
+	"  -f  <lock table file name>    specify lock table file itself to be printed\n"
+	"\n"
+	"Optional parameters are:\n"
+	"  -o        print list of lock owners\n"
+	"  -p        same as -o\n"
+	"  -l        print locks\n"
+	"  -r        print requests made by lock owners (valid only if -o specified)\n"
+	"  -h        print recent events history\n"
+	"  -a        print all of the above (equal to -o -l -r -h swithes)\n"
+	"  -s <N>    print only locks of given series (valid only if -l specified)\n"
+	"  -n        print only pending owners (if -o specified) or \n"
+	"            pending locks (if -l specified)\n"
+	"  -w        print \"waiting for\" list for every owner\n"
+	"            (valid only if -o specified)\n"
+	"  -c        acquire lock manager's mutex to print consistent view of\n"
+	"            lock table (valid only if -d specified)\n"
+	"  -m        make output in html format\n"
+	"\n"
+	"  -i[<counters>] [<N> [<M>]]    interactive mode:\n"
+	"     print chosen lock manager activity counters during <N> seconds\n"
+	"     witn interval of <M> seconds. Defaults are 1 sec for both values.\n"
+	"     Counters are:\n"
+	"     a    number of mutex acquires, acquire blocks, etc \n"
+	"     o    number of lock operations (enqueues, converts, downgrades, etc)\n"
+	"     t    number of operations with most important lock series\n"
+	"     w    number of waits, timeouts, deadlock scans, etc\n"
+	"     Default is aotw\n"
+	"\n"
+	"  -?        this help screen \n"
+	"\n";
+
 
 // The same table is in lock.cpp, maybe worth moving to a common file?
 static const UCHAR compatibility[LCK_max][LCK_max] =
@@ -248,7 +284,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	bool sw_requests = false;
 	bool sw_locks = false;
 	bool sw_history = false;
-	bool sw_owners = true;
+	bool sw_owners = false;
+	bool sw_pending = false;
 
 	USHORT sw_interactive;
 	// Those variables should be signed to accept negative values from atoi
@@ -264,13 +301,18 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		SCHAR* p = *argv++;
 		if (*p++ != '-')
 		{
-			FPRINTF(outfile, "%s\n", valid_switches);
+			FPRINTF(outfile, "%s", usage);
 			exit(FINI_OK);
 		}
 		SCHAR c;
 		while (c = *p++)
 			switch (c)
 			{
+			case '?':
+				FPRINTF(outfile, usage);
+				exit(FINI_OK);
+				break;
+
 			case 'o':
 			case 'p':
 				sw_owners = true;
@@ -390,8 +432,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				sw_html_format = true;
 				break;
 
+			case 'n':
+				sw_pending = true;
+				break;
+
 			default:
-				FPRINTF(outfile, "%s\n", valid_switches);
+				FPRINTF(outfile, "%s", usage);
 				exit(FINI_OK);
 				break;
 			}
@@ -463,7 +509,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 	else
 	{
-		FPRINTF(outfile, "Please specify either -d <database name> or -f <lock file name>\n");
+		FPRINTF(outfile, "Please specify either -d <database name> or -f <lock file name>\n\n");
+		FPRINTF(outfile, usage);
 		exit(FINI_OK);
 	}
 
@@ -771,9 +818,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		const srq* que_inst;
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst)
 		{
-			prt_owner(outfile, LOCK_header,
-					  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
-					  sw_requests, sw_waitlist);
+			const own* owner = (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners));
+			if (!sw_pending || !SRQ_EMPTY(owner->own_pending))
+				prt_owner(outfile, LOCK_header, owner, sw_requests, sw_waitlist, sw_pending);
 		}
 	}
 
@@ -787,16 +834,18 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			for (const srq* que_inst = (SRQ) SRQ_ABS_PTR(slot->srq_forward); que_inst != slot;
 				 que_inst = (SRQ) SRQ_ABS_PTR(que_inst->srq_forward))
 			{
-				prt_lock(outfile, LOCK_header,
-						 (lbl*) ((UCHAR *) que_inst - OFFSET(lbl*, lbl_lhb_hash)), sw_series);
+				const lbl* lock = (lbl*) ((UCHAR *) que_inst - OFFSET(lbl*, lbl_lhb_hash));
+				if (!sw_pending || lock->lbl_pending_lrq_count)
+					prt_lock(outfile, LOCK_header, lock, sw_series);
 			}
 		}
 	}
 
 	if (sw_history)
+	{
 		prt_history(outfile, LOCK_header, LOCK_header->lhb_history, "History");
-
-	prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
+		prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
+	}
 
 	prt_html_end(outfile);
 
@@ -1059,7 +1108,7 @@ static void prt_history(OUTFILE outfile,
 }
 
 
-static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, lbl* lock, USHORT sw_series)
+static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, USHORT sw_series)
 {
 /**************************************
  *
@@ -1171,7 +1220,8 @@ static void prt_owner(OUTFILE outfile,
 					  const lhb* LOCK_header,
 					  const own* owner,
 					  bool sw_requests,
-					  bool sw_waitlist)
+					  bool sw_waitlist,
+					  bool sw_pending)
 {
 /**************************************
  *
@@ -1224,12 +1274,20 @@ static void prt_owner(OUTFILE outfile,
 
 	FPRINTF(outfile, "\n");
 
-	if (sw_requests)
+	if (sw_requests && !sw_pending)
 	{
 		const srq* que_inst;
 		SRQ_LOOP(owner->own_requests, que_inst)
 			prt_request(outfile, LOCK_header,
 						(lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_own_requests)));
+	}
+
+	if (sw_requests && sw_pending)
+	{
+		const srq* que_inst;
+		SRQ_LOOP(owner->own_pending, que_inst)
+			prt_request(outfile, LOCK_header,
+						(lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_own_pending)));
 	}
 }
 
