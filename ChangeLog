@@ -1,3 +1,7 @@
+ 2012-06-27 11:54  alexpeshkoff 
+   M src/jrd/isc_file.cpp
+Backported fix for posix of CORE-3875: GBak does not check correctly parameters and backups random database with -B ":"
+
  2012-06-24 09:13  hvlad 
    M src/config/AdminException.cpp
    M src/config/InputStream.cpp
