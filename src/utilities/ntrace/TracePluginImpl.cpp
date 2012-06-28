@@ -2004,7 +2004,8 @@ void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStat
 void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
 	ntrace_process_state_t sweep_state)
 {
-	if (sweep_state != process_state_progress) 
+	if (sweep_state == process_state_started ||
+		sweep_state == process_state_finished) 
 	{
 		record.printf("\nTransaction counters:\n"
 			"\tOldest interesting %10ld\n"
