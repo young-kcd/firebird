@@ -655,7 +655,7 @@ Vdr::Vdr()
 
 static const TEXT msg_table[VAL_MAX_ERROR][80] =
 {
-	"Page %ld wrong type (expected %d encountered %d)",	// 0
+	"Page %ld wrong type (expected %s encountered %s)",	// 0
 	"Checksum error on page %ld",
 	"Page %ld doubly allocated",
 	"Page %ld is used but marked free",
@@ -847,7 +847,8 @@ FETCH_CODE Vdr::fetch_page(thread_db* tdbb,
 
 	if ((*page_pointer)->pag_type != type && type != pag_undefined)
 	{
-		corrupt(tdbb, validate, VAL_PAG_WRONG_TYPE, 0, page_number, type, (*page_pointer)->pag_type);
+		corrupt(tdbb, validate, VAL_PAG_WRONG_TYPE, 0, page_number,
+			pagtype(type).c_str(), pagtype((*page_pointer)->pag_type).c_str());
 		return fetch_type;
 	}
 

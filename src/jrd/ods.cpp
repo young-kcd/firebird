@@ -138,4 +138,31 @@ size_t maxIndices(size_t page_size)
 		(sizeof(index_root_page::irt_repeat) + sizeof(irtd));
 }
 
+Firebird::string pagtype(UCHAR type)
+{
+	// Print pretty name for database page type
+
+	const char* nameArray[pag_max + 1] = {
+		"purposely undefined",
+		"database header",
+		"page inventory",
+		"transaction inventory",
+		"pointer",
+		"data",
+		"index root",
+		"index B-tree",
+		"blob",
+		"generators",
+		"SCN inventory"
+	};
+
+	Firebird::string rc;
+	if (type < FB_NELEM(nameArray))
+		rc = nameArray[type];
+	else
+		rc.printf("unknown (%d)", type);
+
+	return rc;
+}
+
 } // namespace

@@ -61,6 +61,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/MsgPrint.h"
 #include "../jrd/CryptoManager.h"
+#include "../common/utils_proto.h"
 
 using namespace Jrd;
 using namespace Ods;
@@ -4426,8 +4427,8 @@ static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type)
 					 Arg::Gds(isc_db_corrupt) << Arg::Str(pages->file->fil_string) <<
 					 Arg::Gds(isc_page_type_err) <<
 					 Arg::Gds(isc_badpagtyp) << Arg::Num(bdb->bdb_page.getPageNum()) <<
-												Arg::Num(type) <<
-												Arg::Num(page->pag_type));
+												pagtype(type) <<
+												pagtype(page->pag_type));
 	// We should invalidate this bad buffer.
 	CCH_unwind(tdbb, true);
 }

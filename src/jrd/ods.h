@@ -34,6 +34,7 @@
 #define JRD_ODS_H
 
 #include "../jrd/RecordNumber.h"
+#include "../common/classes/fb_string.h"
 
 // This macro enables the ability of the engine to connect to databases
 // from ODS 8 up to the latest.  If this macro is undefined, the engine
@@ -628,6 +629,8 @@ inline int IAD_LEN(int count)
 */
 #define IAD_LEN(count)	(sizeof (Ods::InternalArrayDesc) + \
 	(count ? count - 1: count) * sizeof (Ods::InternalArrayDesc::iad_repeat))
+
+Firebird::string pagtype(UCHAR type);
 
 } //namespace Ods
 
