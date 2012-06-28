@@ -26,6 +26,7 @@
 #include <sys/param.h>
 #include <signal.h>
 
+#include "../jrd/common.h"
 #include "../jrd/license.h"
 
 #include <stdlib.h>

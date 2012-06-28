@@ -15,20 +15,20 @@ en.UseApplicationTaskMsg=Run as an &Application?
 en.TaskGroupDescription=Run Firebird server as:
 en.UseServiceTask=Run as a &Service?
 en.AutoStartTask=Start &Firebird automatically everytime you boot up?
-en.SuperClassicTask=Use SuperClassic?
+en.SuperClassicTask="Use SuperClassic?"
 en.CopyFbClientToSysTask=Copy &Firebird client library to <system> directory?
 en.CopyFbClientAsGds32Task=Generate client library as GDS32.DLL for &legacy app. support?
-en.InstallCPLAppletTask=Install Control &Panel Applet?
+en.InstallCPLAppletTask="Install Control &Panel Applet?"
 en.instreg=Updating the registry
 en.instclientCopyFbClient=Copying fbclient to the <sys> directory
 en.instclientGenGds32=Generating gds32.dll for <sys> directory
-en.instclientDecLibCountGds32=Decrementing shared lib count for gds32 and removing it if appropriate.
-en.instclientDecLibCountFbClient=Decrementing shared lib count for fbclient and removing it if appropriate.
+en.instclientDecLibCountGds32="Decrementing shared lib count for gds32 and removing it if appropriate."
+en.instclientDecLibCountFbClient="Decrementing shared lib count for fbclient and removing it if appropriate."
 en.instsvcSetup=Setting up the service
 en.instsvcStartQuestion=Start Firebird Service now?
 en.instsvcStartMsg=Starting the server
-en.instsvcStopMsg=Stopping the service
-en.instsvcRemove=Removing the service
+en.instsvcStopMsg="Stopping the service"
+en.instsvcRemove="Removing the service"
 en.instappStartQuestion=Start Firebird now?
 en.instappStartMsg=Starting the server
 
@@ -75,7 +75,5 @@ en.InstallationReadmeFile=installation_readme.txt
 en.RunCS=Run Firebird Classic server
 en.RunSC=Run Firebird SuperClassic server
 en.RunSS=Run Firebird SuperServer
-en.ServerTaskDescription=Choose Server Architecture:
-en.initSecurityDb=Adding SYSDBA to security database.
-en.SYSDBAPasswordMismatch=Password entry mismatch. Please re-enter the SYSDBA password.
-en.SYSDBAPasswordEmpty=Password is empty. You must enter a password for SYSDBA.
+
+

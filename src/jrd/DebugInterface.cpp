@@ -21,7 +21,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/Attachment.h"
 #include "../jrd/DebugInterface.h"
 #include "../jrd/blb_proto.h"
 
@@ -30,21 +29,21 @@ using namespace Firebird;
 
 const UCHAR CURRENT_DBG_INFO_VERSION = UCHAR(1);
 
-void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, DbgInfo& dbgInfo)
+void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgInfo)
 {
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	blb* blob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
+	Database* dbb = tdbb->getDatabase();
+	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const ULONG length = blob->blb_length;
-	HalfStaticArray<UCHAR, 128> tmp;
+	fb_assert(length < MAX_USHORT); // CVC: Otherwise, we'll overflow the function below.
+	Firebird::HalfStaticArray<UCHAR, 128> tmp;
 
 	UCHAR* temp = tmp.getBuffer(length);
-	blob->BLB_get_data(tdbb, temp, length);
+	BLB_get_data(tdbb, blob, temp, length);
 
 	DBG_parse_debug_info(length, temp, dbgInfo);
 }
 
-void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
+void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& dbgInfo)
 {
 	const UCHAR* const end = data + length;
 	bool bad_format = false;
@@ -57,14 +56,11 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 
 	while (!bad_format && (data < end))
 	{
-		UCHAR code = *data++;
-
-		switch (code)
+		switch (*data++)
 		{
 		case fb_dbg_map_src2blr:
 			{
-				if (data + 6 > end)
-				{
+				if (data + 6 > end) {
 					bad_format = true;
 					break;
 				}
@@ -85,21 +81,19 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 
 		case fb_dbg_map_varname:
 			{
-				if (data + 3 > end)
-				{
+				if (data + 3 > end) {
 					bad_format = true;
 					break;
 				}
 
 				// variable number
 				USHORT index = *data++;
-				index |= *data++ << 8;
+				index |= *data++;
 
 				// variable name string length
 				USHORT length = *data++;
 
-				if (data + length > end)
-				{
+				if (data + length > end) {
 					bad_format = true;
 					break;
 				}
@@ -113,8 +107,7 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 
 		case fb_dbg_map_argument:
 			{
-				if (data + 4 > end)
-				{
+				if (data + 4 > end) {
 					bad_format = true;
 					break;
 				}
@@ -126,13 +119,12 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 
 				// argument number
 				info.index = *data++;
-				info.index |= *data++ << 8;
+				info.index |= *data++;
 
 				// argument name string length
 				USHORT length = *data++;
 
-				if (data + length > end)
-				{
+				if (data + length > end) {
 					bad_format = true;
 					break;
 				}
@@ -143,56 +135,6 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 				data += length;
 			}
 			break;
-
-		case fb_dbg_subproc:
-		case fb_dbg_subfunc:
-			{
-				if (data >= end)
-				{
-					bad_format = true;
-					break;
-				}
-
-				// argument name string length
-				ULONG length = *data++;
-
-				if (data + length >= end)
-				{
-					bad_format = true;
-					break;
-				}
-
-				MetaName name((const TEXT*) data, length);
-				data += length;
-
-				if (data + 2 >= end)
-				{
-					bad_format = true;
-					break;
-				}
-
-				length = *data++;
-				length |= *data++ << 8;
-				length |= *data++ << 16;
-				length |= *data++ << 24;
-
-				if (data + length >= end)
-				{
-					bad_format = true;
-					break;
-				}
-
-				AutoPtr<DbgInfo> sub(FB_NEW(dbgInfo.getPool()) DbgInfo(dbgInfo.getPool()));
-				DBG_parse_debug_info(length, data, *sub);
-				data += length;
-
-				if (code == fb_dbg_subproc)
-					dbgInfo.subProcs.put(name, sub.release());
-				else
-					dbgInfo.subFuncs.put(name, sub.release());
-
-				break;
-			}
 
 		case fb_dbg_end:
 			if (data != end)

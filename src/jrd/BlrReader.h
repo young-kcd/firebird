@@ -103,50 +103,6 @@ public:
 		return high * 256 + low;
 	}
 
-	ULONG getLong()
-	{
-		const UCHAR b1 = getByte();
-		const UCHAR b2 = getByte();
-		const UCHAR b3 = getByte();
-		const UCHAR b4 = getByte();
-
-		return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
-	}
-
-	UCHAR checkByte(UCHAR expected)
-	{
-		using namespace Firebird;
-
-		UCHAR byte = getByte();
-
-		if (byte != expected)
-		{
-			status_exception::raise(Arg::Gds(isc_syntaxerr) <<
-				Arg::Num(expected) <<
-				Arg::Num(getOffset() - 1) <<
-				Arg::Num(byte));
-		}
-
-		return byte;
-	}
-
-	USHORT checkWord(USHORT expected)
-	{
-		using namespace Firebird;
-
-		USHORT word = getWord();
-
-		if (word != expected)
-		{
-			status_exception::raise(Arg::Gds(isc_syntaxerr) <<
-				Arg::Num(expected) <<
-				Arg::Num(getOffset() - 2) <<
-				Arg::Num(word));
-		}
-
-		return word;
-	}
-
 private:
 	const UCHAR* start;
 	const UCHAR* end;

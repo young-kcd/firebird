@@ -35,11 +35,19 @@ export DYLD_LIBRARY_PATH
 MACOSX_DEPLOYMENT_TARGET=10.5
 export MACOSX_DEPLOYMENT_TARGET
 
-PROD_FLAGS=-O3 -DDARWIN -pipe -p -MMD -fPIC -fno-common -mmacosx-version-min=10.5
-DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -mmacosx-version-min=10.5 -Wno-non-virtual-dtor
-CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden
+OS_ServerFiles=inet_server.cpp
 
-EXE_LINK_OPTIONS:=-arch ppc64 
+PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -p -MMD -fPIC -fno-common -mmacosx-version-min=10.5
+DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -mmacosx-version-min=10.5
+CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbsvcmgr fbtracemgr
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr \
+	fbtracemgr
+
+Physical_IO_Module=os/posix/unix.cpp
+PLATFORM_PATH=os/darwin
+
+LINK_OPTS:=-arch ppc64 
 LD_FLAGS+=-arch ppc64
 
 include $(ROOT)/gen/darwin.defaults

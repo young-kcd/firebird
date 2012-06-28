@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include "ib_udf.h"
 #include "firebird.h"
+#include "../jrd/common.h"
 
 typedef void* VoidPtr;
 

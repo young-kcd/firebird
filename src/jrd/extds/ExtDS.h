@@ -32,9 +32,9 @@
 
 namespace Jrd
 {
+	class jrd_nod;
 	class jrd_tra;
 	class thread_db;
-	class ValueListNode;
 }
 
 namespace EDS {
@@ -69,9 +69,11 @@ public:
 
 	// Notify providers when some jrd attachment is about to be released
 	static void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att);
-	static int shutdown();
 
 private:
+	static void init();
+	static int shutdown(const int reason, const int mask, void* arg);
+
 	static Firebird::GlobalPtr<Manager> manager;
 	static Firebird::Mutex m_mutex;
 	static Provider* m_providers;
@@ -112,7 +114,7 @@ public:
 	int getFlags() const { return m_flags; }
 
 	// Interprete status and put error description into passed string
-	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const = 0;
+	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const = 0;
 
 	static const Firebird::string* generate(const void*, const Provider* item)
 	{
@@ -186,8 +188,7 @@ public:
 
 	// Get error description from provider and put it with additional context
 	// info into locally raised exception
-	void raise(const ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
-	void raise(const Firebird::IStatus& status, Jrd::thread_db* tdbb, const char* sWhere);
+	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
 
 	// will we wrap external errors into our ones (isc_eds_xxx) or pass them as is
 	bool getWrapErrors() const	{ return m_wrapErrors; }
@@ -313,12 +314,12 @@ public:
 	Transaction* getTransaction() { return m_transaction; }
 
 	void prepare(Jrd::thread_db* tdbb, Transaction* tran, const Firebird::string& sql, bool named);
-	void execute(Jrd::thread_db* tdbb, Transaction* tran,
-		const Firebird::string* const* in_names, const Jrd::ValueListNode* in_params,
-		const Jrd::ValueListNode* out_params);
-	void open(Jrd::thread_db* tdbb, Transaction* tran,
-		const Firebird::string* const* in_names, const Jrd::ValueListNode* in_params, bool singleton);
-	bool fetch(Jrd::thread_db* tdbb, const Jrd::ValueListNode* out_params);
+	void execute(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
+		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params,
+		int out_count, Jrd::jrd_nod** out_params);
+	void open(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
+		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params, bool singleton);
+	bool fetch(Jrd::thread_db* tdbb, int out_count, Jrd::jrd_nod** out_params);
 	void close(Jrd::thread_db* tdbb);
 	void deallocate(Jrd::thread_db* tdbb);
 
@@ -332,15 +333,13 @@ public:
 
 	bool isSelectable() const { return m_stmt_selectable; }
 
-	unsigned int getInputs() const { return m_inputs; }
+	int getInputs() const { return m_inputs; }
 
-	unsigned int getOutputs() const { return m_outputs; }
+	int getOutputs() const { return m_outputs; }
 
 	// Get error description from provider and put it with additional contex
 	// info into locally raised exception
 	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere,
-		const Firebird::string* sQuery = NULL);
-	void raise(const Firebird::IStatus& status, Jrd::thread_db* tdbb, const char* sWhere,
 		const Firebird::string* sQuery = NULL);
 
 	// Active statement must be bound to parent jrd request
@@ -354,12 +353,12 @@ protected:
 	virtual bool doFetch(Jrd::thread_db* tdbb) = 0;
 	virtual void doClose(Jrd::thread_db* tdbb, bool drop) = 0;
 
-	void setInParams(Jrd::thread_db* tdbb, const Firebird::string* const* names,
-		const Jrd::ValueListNode* params);
-	virtual void getOutParams(Jrd::thread_db* tdbb, const Jrd::ValueListNode* params);
+	void setInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
+		Jrd::jrd_nod** params);
+	virtual void getOutParams(Jrd::thread_db* tdbb, int count, Jrd::jrd_nod** params);
 
-	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count, const Firebird::string* const* names,
-		const NestConst<Jrd::ValueExprNode>* params);
+	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
+		Jrd::jrd_nod** params);
 
 	virtual void putExtBlob(Jrd::thread_db* tdbb, dsc& src, dsc& dst);
 	virtual void getExtBlob(Jrd::thread_db* tdbb, const dsc& src, dsc& dst);
@@ -398,8 +397,8 @@ protected:
 	// set in prepare()
 	bool	m_allocated;
 	bool	m_stmt_selectable;
-	unsigned int m_inputs;
-	unsigned int m_outputs;
+	int		m_inputs;
+	int		m_outputs;
 
 	bool	m_callerPrivileges;
 	Jrd::jrd_req* m_preparedByReq;

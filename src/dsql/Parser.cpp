@@ -30,9 +30,8 @@ using namespace Jrd;
 
 
 Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
-			const TEXT* string, size_t length, SSHORT characterSet)
+			const TEXT* string, USHORT length, SSHORT characterSet)
 	: PermanentStorage(pool),
-	  compilingText(pool, string, length),
 	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
 	  parser_version(aParserVersion),
@@ -91,13 +90,10 @@ Parser::~Parser()
 }
 
 
-dsql_req* Parser::parse()
+Parser::YYSTYPE Parser::parse()
 {
 	if (parseAux() != 0)
-	{
-		fb_assert(false);
 		return NULL;
-	}
 
 	transformString(lex.start, lex.end - lex.start, transformedString);
 
@@ -163,5 +159,5 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 	fb_assert(start + length - pos >= 0);
 	buffer.add(pos, start + length - pos);
 
-	dest.assign(buffer.begin(), MIN(string::max_length(), buffer.getCount()));
+	dest = string(buffer.begin(), MIN(string::max_length(), buffer.getCount()));
 }

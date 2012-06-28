@@ -39,9 +39,11 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/movg_proto.h"
 #include "../gpre/par_proto.h"
-#include "../common/prett_proto.h"
-#include "../common/dsc_proto.h"
+#include "../gpre/prett_proto.h"
+#include "../jrd/dsc_proto.h"
 #include "../gpre/msc_proto.h"
+#include "../jrd/misc_func_ids.h"
+#include "../jrd/misc_func_ids.h"
 #include "../jrd/align.h"
 
 static void cmp_array(gpre_nod*, gpre_req*);
@@ -347,7 +349,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		request->add_byte(blr_literal);
 		request->add_byte(blr_long);
 		request->add_byte(0);
-		request->add_long(INFO_TYPE_CONNECTION_ID);
+		request->add_long(internal_connection_id);
 		return;
 
 	case nod_current_transaction:
@@ -355,7 +357,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		request->add_byte(blr_literal);
 		request->add_byte(blr_long);
 		request->add_byte(0);
-		request->add_long(INFO_TYPE_TRANSACTION_ID);
+		request->add_long(internal_transaction_id);
 		return;
 
 	case nod_coalesce:
@@ -1330,6 +1332,27 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 			request->add_byte(blr_full);
 		}
 	}
+
+#ifdef SCROLLABLE_CURSORS
+	// generate a statement to be executed if the user scrolls
+	// in a direction other than forward; a message is sent outside
+	// the normal send/receive protocol to specify the direction
+	// and offset to scroll; note that we do this only on a SELECT
+	// type statement and only when talking to a 4.1 engine or greater
+
+	if (request->req_flags & REQ_sql_cursor && request->req_database->dbb_base_level >= 5)
+	{
+		request->add_byte(blr_receive);
+		request->add_byte(request->req_aport->por_msg_number);
+		request->add_byte(blr_seek);
+		request->add_byte(blr_parameter);
+		request->add_byte(request->req_aport->por_msg_number);
+		request->add_word(1);
+		request->add_byte(blr_parameter);
+		request->add_byte(request->req_aport->por_msg_number);
+		request->add_word(0);
+	}
+#endif
 
 	// Finish up by making a BLR_END
 

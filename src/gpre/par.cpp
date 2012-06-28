@@ -1033,7 +1033,7 @@ TEXT* PAR_native_value(bool array_ref, bool handle_ref)
 			break;
 	}
 
-	const unsigned int length = string - buffer;
+	const int length = string - buffer;
 	fb_assert(length < sizeof(buffer));
 	string = (SCHAR*) MSC_alloc(length + 1);
 

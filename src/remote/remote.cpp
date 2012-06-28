@@ -26,17 +26,15 @@
 #include <stdlib.h>
 #include "../jrd/ibase.h"
 #include "../remote/remote.h"
-#include "../common/file_params.h"
-#include "../common/gdsassert.h"
+#include "../jrd/file_params.h"
+#include "../jrd/gdsassert.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../common/xdr_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../remote/xdr_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
-#include "../common/db_alias.h"
-#include "firebird/Provider.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter;
@@ -46,68 +44,8 @@ Firebird::AtomicCounter rem_port::portCounter;
 IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
 
-
-const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
-								isc_dpb_user_name,
-								isc_dpb_auth_block,
-								isc_dpb_password,
-								isc_dpb_password_enc,
-								isc_dpb_trusted_auth,
-								isc_dpb_auth_plugin_name,
-								isc_dpb_auth_plugin_list,
-								isc_dpb_specific_auth_data,
-								isc_dpb_address_path,
-								isc_dpb_process_id,
-								isc_dpb_process_name,
-								isc_dpb_encrypt_key};
-
-const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
-								isc_spb_user_name,
-								isc_spb_auth_block,
-								isc_spb_password,
-								isc_spb_password_enc,
-								isc_spb_trusted_auth,
-								isc_spb_auth_plugin_name,
-								isc_spb_auth_plugin_list,
-								isc_spb_specific_auth_data,
-								isc_spb_address_path,
-								isc_spb_process_id,
-								isc_spb_process_name,
-								0};
-
-const ParametersSet spbStartParam = {0,
-									 0,
-									 isc_spb_auth_block,
-									 0,
-									 0,
-									 isc_spb_trusted_auth,
-									 isc_spb_auth_plugin_name,
-									 isc_spb_auth_plugin_list,
-									 isc_spb_specific_auth_data,
-									 0,
-									 0,
-									 0,
-									 0};	// Need new parameter here
-
-const ParametersSet spbInfoParam = {0,
-									0,
-									isc_info_svc_auth_block,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0};
-
-
 const SLONG DUMMY_INTERVAL		= 60;	// seconds
 const int ATTACH_FAILURE_SPACE	= 16 * 1024;	// bytes
-
-static Firebird::MakeUpgradeInfo<> upInfo;
 
 
 void REMOTE_cleanup_transaction( Rtr* transaction)
@@ -334,6 +272,9 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 		printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
 		msg->msg_next = msg;
+#ifdef SCROLLABLE_CURSORS
+		msg->msg_prior = msg;
+#endif
 		msg->msg_number = tail->rrq_message->msg_number;
 		tail->rrq_message = msg;
 	}
@@ -361,10 +302,6 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 	{
 		xdrmem_create(&xdr, reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
-		xdr.x_local = (port->port_type == rem_port::XNET);
-#ifdef DEV_BUILD
-		xdr.x_client = false;
-#endif
 
 		if (partial) {
 			xdr_protocol(&xdr, packet);
@@ -574,8 +511,7 @@ void REMOTE_reset_request( Rrq* request, RMessage* active_message)
 
 	// Initialize the request status to FB_SUCCESS
 
-	//request->rrq_status_vector[1] = 0;
-	request->rrqStatus.clear();
+	request->rrq_status_vector[1] = 0;
 }
 
 
@@ -616,6 +552,9 @@ void REMOTE_reset_statement( Rsr* statement)
 
 	temp->msg_next = message->msg_next;
 	message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+	message->msg_prior = message;
+#endif
 
 	statement->rsr_buffer = statement->rsr_message;
 
@@ -717,14 +656,6 @@ bool rem_port::select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPo
 	return (*this->port_select_multi)(this, buffer, bufsize, length, port);
 }
 
-void rem_port::abort_aux_connection()
-{
-	if (this->port_abort_aux_connection)
-	{
-		(*this->port_abort_aux_connection)(this);
-	}
-}
-
 XDR_INT rem_port::send(PACKET* pckt)
 {
 	return (*this->port_send_packet)(this, pckt);
@@ -745,16 +676,7 @@ rem_port* rem_port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
-void rem_port::auxAcceptError(PACKET* packet)
-{
-	if (port_protocol >= PROTOCOL_VERSION13)
-	{
-		packet->p_operation = op_abort_aux_connection;
-		// Ignore error return - we are already processing auxiliary connection error from the wire
-		send(packet);
-	}
-}
-
+#ifdef REM_SERVER
 bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
@@ -806,6 +728,28 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 
 	return TRUE;
 }
+#endif //REM_SERVER
+
+#ifdef TRUSTED_AUTH
+ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb,
+					   ServerAuth::Part2* p2, P_OP op)
+	: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()),
+	  part2(p2), operation(op)
+{
+	fileName.assign(fName, fLen);
+	size_t pbLen = pb.getBufferLength();
+	if (pbLen)
+	{
+		memcpy(clumplet.getBuffer(pbLen), pb.getBuffer(), pbLen);
+	}
+	authSspi = FB_NEW(*getDefaultMemoryPool()) AuthSspi;
+}
+
+ServerAuth::~ServerAuth()
+{
+	delete authSspi;
+}
+#endif // TRUSTED_AUTH
 
 void PortsCleanup::registerPort(rem_port* port)
 {
@@ -850,14 +794,6 @@ void PortsCleanup::closePorts()
 	}
 }
 
-ServerAuthBase::~ServerAuthBase()
-{
-}
-
-ServerCallbackBase::~ServerCallbackBase()
-{
-}
-
 rem_port::~rem_port()
 {
 	if (port_events_shutdown)
@@ -865,32 +801,26 @@ rem_port::~rem_port()
 		port_events_shutdown(this);
 	}
 
-	delete port_srv_auth;
 	delete port_version;
 	delete port_connection;
+	delete port_user_name;
 	delete port_host;
 	delete port_protocol_str;
 	delete port_address_str;
-	delete port_server_crypt_callback;
 
 #ifdef DEBUG_XDR_MEMORY
 	delete port_packet_vector;
 #endif
 
-	while (port_crypt_keys.hasData())
-	{
-		delete port_crypt_keys.pop();
-	}
-
-	if (port_crypt_plugin)
-		Firebird::PluginManagerInterfacePtr()->releasePlugin(port_crypt_plugin);
+#ifdef TRUSTED_AUTH
+	delete port_trusted_auth;
+#endif
 
 #ifdef DEV_BUILD
 	--portCounter;
 #endif
 }
 
-/*
 void Rdb::set_async_vector(ISC_STATUS* userStatus) throw()
 {
 	rdb_async_status_vector = userStatus;
@@ -906,408 +836,4 @@ void Rdb::reset_async_vector() throw()
 ISC_STATUS* Rdb::get_status_vector() throw()
 {
 	return rdb_async_thread_id == getThreadId() ? rdb_async_status_vector : rdb_status_vector;
-}
-*/
-
-Rrq::~Rrq()
-{
-}
-
-void Rrq::saveStatus(const Firebird::Exception& ex) throw()
-{
-	if (rrqStatus.isSuccess())
-	{
-		ISC_STATUS_ARRAY tmp;
-		ex.stuff_exception(tmp);
-		rrqStatus.save(tmp);
-	}
-}
-
-void Rrq::saveStatus(const Firebird::IStatus* v) throw()
-{
-	if (rrqStatus.isSuccess())
-	{
-		rrqStatus.save(v->get());
-	}
-}
-
-void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
-{
-	if (!rsr_status) {
-		rsr_status = new Firebird::StatusHolder();
-	}
-
-	if (overwrite || !rsr_status->getError())
-	{
-		ISC_STATUS_ARRAY temp;
-		ex.stuff_exception(temp);
-		rsr_status->save(temp);
-	}
-}
-
-Firebird::string rem_port::getRemoteId() const
-{
-	Firebird::string id;
-
-	if (port_protocol_str)
-	{
-		id.append(port_protocol_str->str_data, port_protocol_str->str_length);
-	}
-	if (port_protocol_str && port_address_str)
-	{
-		id += '/';
-	}
-	if (port_address_str)
-	{
-		id.append(port_address_str->str_data, port_address_str->str_length);
-	}
-
-	return id;
-}
-
-bool REMOTE_legacy_auth(const char* nm, int p)
-{
-	const char* legacyTrusted = "WIN_SSPI";
-	if (fb_utils::stricmp(legacyTrusted, nm) == 0 &&
-		(p == PROTOCOL_VERSION11 || p == PROTOCOL_VERSION12))
-	{
-		return true;
-	}
-
-	const char* legacyAuth = "LEGACY_AUTH";
-	if (fb_utils::stricmp(legacyAuth, nm) == 0 && p < PROTOCOL_VERSION11)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-Firebird::PathName ClntAuthBlock::getPluginName()
-{
-	return plugins.hasData() ? plugins.name() : "";
-}
-
-void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
-{
-	// Add user login name
-	if (userName.hasData())
-	{
-		user_id.insertString(CNCT_login, userName);
-	}
-
-	// Add plugin name
-	Firebird::PathName pluginName = getPluginName();
-	if (pluginName.hasData())
-	{
-		user_id.insertPath(CNCT_plugin_name, pluginName);
-	}
-
-	// Add plugin list
-	if (pluginList.hasData())
-	{
-		user_id.insertPath(CNCT_plugin_list, pluginList);
-	}
-
-	// This is specially tricky field - user_id is limited to 255 bytes per entry,
-	// and we have no ways to override this limit cause it can be sent to any version server.
-	// Therefore divide data into 254-byte parts, leaving first byte for the number of that part.
-	// This appears more reliable than put them in strict order.
-	unsigned int remaining = dataFromPlugin.getCount();
-	fb_assert(remaining <= 254u * 256u); // paranoid check => 65024
-	UCHAR part = 0;
-	UCHAR buffer[255];
-	const UCHAR* ptr = dataFromPlugin.begin();
-	while (remaining > 0)
-	{
-		unsigned int step = remaining;
-		if (step > 254)
-			step = 254;
-		remaining -= step;
-		buffer[0] = part++;
-		fb_assert(part || remaining == 0);
-		memcpy(&buffer[1], ptr, step);
-		ptr += step;
-
-		user_id.insertBytes(CNCT_specific_data, buffer, step + 1);
-		if (!part) // we completed 256 loops, almost impossible but check anyway.
-			break;
-	}
-}
-
-void ClntAuthBlock::reset(const Firebird::PathName* fileName)
-{
-	dataForPlugin.clear();
-	dataFromPlugin.clear();
-	authComplete = false;
-	firstTime = true;
-	pluginList = REMOTE_get_config(fileName)->getPlugins(Firebird::PluginType::AuthClient);
-	plugins.set(pluginList.c_str());
-}
-
-void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char* data)
-{
-	dataForPlugin.assign(data, length);
-	HANDSHAKE_DEBUG(fprintf(stderr, "Cln: accepted data for plugin length=%d\n", length));
-}
-
-Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName)
-{
-	if (dbName)
-	{
-		Firebird::RefPtr<Config> rc;
-		Firebird::PathName dummy;
-		expandDatabaseName(*dbName, dummy, &rc);
-		return rc;
-	}
-	return Config::getDefaultConfig();
-}
-
-void REMOTE_parseList(Remote::ParsedList& parsed, Firebird::PathName list)
-{
-	list.alltrim(" \t");
-	parsed.clear();
-	const char* sep = " \t,;";
-
-	for(;;)
-	{
-		Firebird::PathName::size_type p = list.find_first_of(sep);
-		if (p == Firebird::PathName::npos)
-		{
-			if (list.hasData())
-			{
-				parsed.push(list);
-			}
-			break;
-		}
-
-		parsed.push(list.substr(0, p));
-		list = list.substr(p + 1);
-		list.ltrim(" \t,;");
-	}
-}
-
-void REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
-{
-	fb_assert(parsed.hasData());
-	//list.erase();
-	list = parsed[0];
-	for (unsigned i = 1; i < parsed.getCount(); ++i)
-	{
-		list += ' ';
-		list += parsed[i];
-	}
-}
-
-void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet, bool checkKeys)
-{
-/**************************************
- *
- *	R E M O T E _ c h e c k _ r e s p o n s e
- *
- **************************************
- *
- * Functional description
- *	Check response to a remote call.
- *
- **************************************/
-
-	rdb->rdb_port->checkResponse(warning, packet, checkKeys);
-}
-
-void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool checkKeys)
-{
-/**************************************
- *
- *	R E M O T E _ c h e c k _ r e s p o n s e
- *
- **************************************
- *
- * Functional description
- *	Check response to a remote call.
- *
- **************************************/
-
-	// Get status vector
-
-	const ISC_STATUS success_vector[] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
-	const ISC_STATUS *vector = success_vector;
-	if (packet->p_resp.p_resp_status_vector)
-	{
-		vector = packet->p_resp.p_resp_status_vector->value();
-	}
-
-	// Translate any gds codes into local operating specific codes
-
-	Firebird::SimpleStatusVector newVector;
-
-	while (*vector != isc_arg_end)
-	{
-		const ISC_STATUS vec = *vector++;
-		newVector.push(vec);
-
-		switch ((USHORT) vec)
-		{
-		case isc_arg_warning:
-		case isc_arg_gds:
-			newVector.push(*vector++);
-			break;
-
-		case isc_arg_cstring:
-			newVector.push(*vector++);
-			// fall down
-
-		default:
-			newVector.push(*vector++);
-			break;
-		}
-	}
-
-	newVector.push(isc_arg_end);
-	vector = newVector.begin();
-
-	const ISC_STATUS pktErr = vector[1];
-	if (pktErr == isc_shutdown || pktErr == isc_att_shutdown)
-	{
-		port_flags |= PORT_rdb_shutdown;
-	}
-	else if (checkKeys)
-	{
-		addServerKeys(&packet->p_resp.p_resp_data);
-	}
-
-	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
-		!vector[1])
-	{
-		warning->set(vector);
-		return;
-	}
-
-	if (!vector[1])
-	{
-		Firebird::Arg::Gds(isc_net_read_err).raise();
-	}
-
-	Firebird::status_exception::raise(vector);
-}
-
-void rem_port::addServerKeys(CSTRING* passedStr)
-{
-	Firebird::ClumpletReader newKeys(Firebird::ClumpletReader::UnTagged,
-									 passedStr->cstr_address, passedStr->cstr_length);
-
-	for (newKeys.rewind(); !newKeys.isEof(); newKeys.moveNext())
-	{
-		KnownServerKey key;
-		fb_assert(newKeys.getClumpTag() == TAG_KEY_TYPE);
-		newKeys.getPath(key.type);
-		newKeys.moveNext();
-		if (newKeys.isEof())
-		{
-			break;
-		}
-		fb_assert(newKeys.getClumpTag() == TAG_KEY_PLUGINS);
-		newKeys.getPath(key.plugins);
-		key.plugins += ' ';
-		key.plugins.insert(0, " ");
-
-		for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
-		{
-			if (tryKeyType(key, port_crypt_keys[k]))
-			{
-				return;
-			}
-		}
-
-		port_known_server_keys.add(key);
-	}
-}
-
-bool rem_port::tryNewKey(InternalCryptKey* cryptKey)
-{
-	for (unsigned t = 0; t < port_known_server_keys.getCount(); ++t)
-	{
-		if (tryKeyType(port_known_server_keys[t], cryptKey))
-		{
-			return true;
-		}
-	}
-
-	port_crypt_keys.push(cryptKey);
-	return false;
-}
-
-static void setCStr(CSTRING& to, const char* from)
-{
-	to.cstr_address = reinterpret_cast<UCHAR*>(const_cast<char*>(from));
-	to.cstr_length = strlen(from);
-	to.cstr_allocated = 0;
-}
-
-bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptKey)
-{
-	if (port_crypt_complete)
-	{
-		return true;
-	}
-
-	if (srvKey.type != cryptKey->type)
-	{
-		return false;
-	}
-
-	if (Config::getWireCrypt(WC_CLIENT) == WIRE_CRYPT_DISABLED)
-	{
-		port_crypt_complete = true;
-		return true;
-	}
-
-	// we got correct key's type pair
-	// check what about crypt plugin for it
-	Remote::ParsedList clientPlugins;
-	REMOTE_parseList(clientPlugins, Config::getDefaultConfig()->getPlugins(Firebird::PluginType::WireCrypt));
-	for (unsigned n = 0; n < clientPlugins.getCount(); ++n)
-	{
-		Firebird::PathName p(clientPlugins[n]);
-		if (srvKey.plugins.find(" " + p + " ") != Firebird::PathName::npos)
-		{
-			Firebird::GetPlugins<Firebird::IWireCryptPlugin>
-				cp(Firebird::PluginType::WireCrypt, FB_WIRECRYPT_PLUGIN_VERSION, upInfo, p.c_str());
-			if (cp.hasData())
-			{
-				Firebird::LocalStatus st;
-
-				// Looks like we've found correct crypt plugin and key for it
-				port_crypt_plugin = cp.plugin();
-				port_crypt_plugin->addRef();
-
-				// Pass key to plugin
-				port_crypt_plugin->setKey(&st, cryptKey);
-				if (!st.isSuccess())
-				{
-					Firebird::status_exception::raise(st.get());
-				}
-
-				// Now it's time to notify server about choice done
-				// Notice - port_crypt_complete flag is not set still,
-				// therefore sent packet will be not encrypted
-				PACKET crypt;
-				crypt.p_operation = op_crypt;
-				setCStr(crypt.p_crypt.p_key, cryptKey->type);
-				setCStr(crypt.p_crypt.p_plugin, p.c_str());
-				send(&crypt);
-
-				// Validate answer - decryptor is not affected by port_crypt_complete,
-				// therefore OK to do
-				receive(&crypt);
-				checkResponse(&st, &crypt);
-
-				// Complete port-crypt init
-				port_crypt_complete = true;
-				return true;
-			}
-		}
-	}
-
-	return false;
 }

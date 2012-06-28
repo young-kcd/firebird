@@ -18,7 +18,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *		Alex Peshkoff, 2010 - divided into class DataDump and the remaining part of DatabaseSnapshot
  */
 
 #ifndef JRD_DATABASE_SNAPSHOT_H
@@ -26,38 +25,24 @@
 
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
-#include "../common/isc_s_proto.h"
-#include "../common/classes/timestamp.h"
-#include "../jrd/val.h"
-#include "../jrd/recsrc/RecordSource.h"
 
 namespace Jrd {
 
 // forward declarations
 class jrd_rel;
-class Record;
 class RecordBuffer;
 class RuntimeStatistics;
 
-class DataDump
+class DatabaseSnapshot
 {
-public:
 	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING};
-
-	explicit DataDump(MemoryPool& pool)
-		: idMap(pool), idCounter(0) { }
 
 	struct DumpField
 	{
-		DumpField(USHORT p_id, ValueType p_type, USHORT p_length, const void* p_data)
-			: id(p_id), type(p_type), length(p_length), data(p_data) { }
-		DumpField()
-			: id(0), type(VALUE_GLOBAL_ID), length(0), data(NULL) { }
-
 		USHORT id;
 		ValueType type;
 		USHORT length;
-		const void* data;
+		void* data;
 	};
 
 	class DumpRecord
@@ -81,6 +66,8 @@ public:
 
 		void assign(USHORT length, const UCHAR* ptr)
 		{
+			// CVC: While length is USHORT, this assertion is redundant.
+			// fb_assert(length <= MAX_FORMAT_SIZE); // commented - AP - avoid gcc warning
 			offset = 0;
 			sizeLimit = length;
 			memcpy(buffer, ptr, length);
@@ -185,118 +172,102 @@ public:
 			offset += (ULONG) delta;
 		}
 
-		UCHAR buffer[MAX_RECORD_SIZE];
+		UCHAR buffer[MAX_FORMAT_SIZE];
 		ULONG offset;
 		ULONG sizeLimit;
 	};
 
-	void clearRecord(Record*);
-	void putField(thread_db*, Record*, const DumpField&, int);
-
-private:
-	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
-	int idCounter;
-};
-
-
-class MonitoringHeader : public MemoryHeader
-{
-public:
-	ULONG used;
-	ULONG allocated;
-};
-
-class MonitoringData : public SharedMemory<MonitoringHeader>
-{
-	static const ULONG MONITOR_VERSION = 3;
-	static const ULONG DEFAULT_SIZE = 1048576;
-
-	typedef MonitoringHeader Header;
-
-	struct Element
-	{
-		SLONG processId;
-		SLONG localId;
-		ULONG length;
-	};
-
-	static ULONG alignOffset(ULONG absoluteOffset);
-
-public:
-	class Guard
-	{
-	public:
-		explicit Guard(MonitoringData* ptr)
-			: data(ptr)
-		{
-			data->acquire();
-		}
-
-		~Guard()
-		{
-			data->release();
-		}
-
-	private:
-		Guard(const Guard&);
-		Guard& operator=(const Guard&);
-
-		MonitoringData* const data;
-	};
-
-	explicit MonitoringData(const Database*);
-	~MonitoringData();
-
-	bool initialize(bool);
-	void mutexBug(int osErrorCode, const char* text);
-
-	void acquire();
-	void release();
-
-	UCHAR* read(MemoryPool&, ULONG&);
-	ULONG setup();
-	void write(ULONG, ULONG, const void*);
-
-	void cleanup();
-
-private:
-	// copying is prohibited
-	MonitoringData(const MonitoringData&);
-	MonitoringData& operator =(const MonitoringData&);
-
-	void ensureSpace(ULONG);
-
-	const SLONG process_id;
-	const SLONG local_id;
-};
-
-
-class MonitoringTableScan: public VirtualTableScan
-{
-public:
-	MonitoringTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream)
-		: VirtualTableScan(csb, name, stream)
-	{}
-
-protected:
-	const Format* getFormat(thread_db* tdbb, jrd_rel* relation) const;
-	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const;
-};
-
-
-class DatabaseSnapshot : public DataDump
-{
 	struct RelationData
 	{
 		int rel_id;
 		RecordBuffer* data;
 	};
 
+public:
+	class SharedData
+	{
+		static const ULONG MONITOR_VERSION = 3;
+		static const ULONG DEFAULT_SIZE = 1048576;
+
+		struct Header
+		{
+			ULONG version;
+			ULONG used;
+			ULONG allocated;
+#ifndef WIN_NT
+			struct mtx mutex;
+#endif
+		};
+
+		struct Element
+		{
+			SLONG processId;
+			SLONG localId;
+			ULONG length;
+		};
+
+		static ULONG alignOffset(ULONG absoluteOffset);
+
+	public:
+		explicit SharedData(const Database*);
+		~SharedData();
+
+		void acquire();
+		void release();
+
+		UCHAR* read(MemoryPool&, ULONG&);
+		ULONG setup();
+		void write(ULONG, ULONG, const void*);
+
+		void cleanup();
+
+	private:
+		// copying is prohibited
+		SharedData(const SharedData&);
+		SharedData& operator =(const SharedData&);
+
+		void ensureSpace(ULONG);
+
+		static void checkMutex(const TEXT*, int);
+		static void init(void*, sh_mem*, bool);
+
+		sh_mem handle;
+#ifdef WIN_NT
+		struct mtx winMutex;
+#endif
+		struct mtx *mutex;
+		Header* base;
+
+		const SLONG process_id;
+		const SLONG local_id;
+	};
+
 private:
+	class DumpGuard
+	{
+	public:
+		explicit DumpGuard(SharedData* ptr)
+			: data(ptr)
+		{
+			data->acquire();
+		}
+
+		~DumpGuard()
+		{
+			data->release();
+		}
+
+	private:
+		DumpGuard(const DumpGuard&);
+		DumpGuard& operator=(const DumpGuard&);
+
+		SharedData* const data;
+	};
+
 	class Writer
 	{
 	public:
-		explicit Writer(MonitoringData* data)
+		explicit Writer(SharedData* data)
 			: dump(data)
 		{
 			fb_assert(dump);
@@ -312,7 +283,7 @@ private:
 		}
 
 	private:
-		MonitoringData* dump;
+		SharedData* dump;
 		ULONG offset;
 	};
 
@@ -351,21 +322,21 @@ public:
 
 	static DatabaseSnapshot* create(thread_db*);
 	static int blockingAst(void*);
-	static bool getRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record);
 
 protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&);
 
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
+	void clearRecord(Record*);
+	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
 
 	static void dumpData(thread_db*);
-	static void dumpAttachment(thread_db*, const Attachment*, Writer&);
 
 	static SINT64 getGlobalId(int);
 
 	static void putDatabase(const Database*, Writer&, int);
-	static bool putAttachment(thread_db*, const Attachment*, Writer&, int);
+	static bool putAttachment(const Attachment*, Writer&, int);
 	static void putTransaction(const jrd_tra*, Writer&, int);
 	static void putRequest(const jrd_req*, Writer&, int);
 	static void putCall(const jrd_req*, Writer&, int);
@@ -374,6 +345,8 @@ private:
 	static void putMemoryUsage(const Firebird::MemoryStats&, Writer&, int, int);
 
 	Firebird::Array<RelationData> snapshot;
+	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
+	int idCounter;
 };
 
 } // namespace

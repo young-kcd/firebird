@@ -33,11 +33,6 @@
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
 
-// forward
-namespace Firebird {
-	class DynamicStatusVector;
-}
-
 // dimitr: ask for asymmetric protocols only.
 // Comment it out to return back to FB 1.0 behaviour.
 #define ASYMMETRIC_PROTOCOLS_ONLY
@@ -47,6 +42,37 @@ namespace Firebird {
 
 // p_cnct_version
 const USHORT CONNECT_VERSION2	= 2;
+
+// Protocol 4 is protocol 3 plus server management functions
+
+const USHORT PROTOCOL_VERSION3	= 3;
+const USHORT PROTOCOL_VERSION4	= 4;
+
+// Protocol 5 includes support for a d_float data type
+
+const USHORT PROTOCOL_VERSION5	= 5;
+
+// Protocol 6 includes support for cancel remote events, blob seek,
+// and unknown message type
+
+const USHORT PROTOCOL_VERSION6	= 6;
+
+// Protocol 7 includes DSQL support
+
+const USHORT PROTOCOL_VERSION7	= 7;
+
+// Protocol 8 includes collapsing first receive into a send, drop database,
+// DSQL execute 2, DSQL execute immediate 2, DSQL insert, services, and
+// transact request
+
+const USHORT PROTOCOL_VERSION8	= 8;
+
+// Protocol 9 includes support for SPX32
+// SPX32 uses WINSOCK instead of Novell SDK
+// In order to differentiate between the old implementation
+// of SPX and this one, different PROTOCOL VERSIONS are used
+
+const USHORT PROTOCOL_VERSION9	= 9;
 
 // Protocol 10 includes support for warnings and removes the requirement for
 // encoding and decoding status codes
@@ -68,13 +94,20 @@ const USHORT FB_PROTOCOL_MASK = static_cast<USHORT>(~FB_PROTOCOL_FLAG);
 const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
 
 // Protocol 12 has support for asynchronous call op_cancel.
-// Currently implemented asynchronously only for TCP/IP.
+// Currently implemented asynchronously only for TCP/IP
+// on superserver and superclassic.
 
 const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
 
-// Protocol 13 has support for authentication plugins (op_cont_auth).
+#ifdef SCROLLABLE_CURSORS
+This Protocol includes support for scrollable cursors
+and is purposely being undefined so that changes can be made
+to the remote protocol version to support new features without the 'fear' that
+they will be turned off once SCROLLABLE_CURSORS is turned on.
 
-const USHORT PROTOCOL_VERSION13	= (FB_PROTOCOL_FLAG | 13);
+#error PROTOCOL_SCROLLABLE_CURSORS	this needs to be defined
+
+#endif
 
 // Architecture types
 
@@ -128,7 +161,7 @@ enum P_ARCH
 // Protocol Types
 // p_acpt_type
 //const USHORT ptype_page		= 1;	// Page server protocol
-//const USHORT ptype_rpc		= 2;	// Simple remote procedure call
+const USHORT ptype_rpc			= 2;	// Simple remote procedure call
 const USHORT ptype_batch_send	= 3;	// Batch sends, no asynchrony
 const USHORT ptype_out_of_band	= 4;	// Batch sends w/ out of band notification
 const USHORT ptype_lazy_send	= 5;	// Deferred packets delivery
@@ -269,17 +302,6 @@ enum P_OP
 
 	op_cancel				= 91,
 
-	op_cont_auth			= 92,
-
-	op_ping					= 93,
-
-	op_accept_data			= 94,	// Server accepts connection and returns some data to client
-
-	op_abort_aux_connection	= 95,	// Async operation - stop waiting for async connection to arrive
-
-	op_crypt				= 96,
-	op_crypt_key_callback	= 97,
-
 	op_max
 };
 
@@ -338,19 +360,19 @@ typedef struct p_cnct
 	{
 		USHORT	p_cnct_version;			// Protocol version number
 		P_ARCH	p_cnct_architecture;	// Architecture of client
-		USHORT	p_cnct_min_type;		// Minimum type (unused)
+		USHORT	p_cnct_min_type;		// Minimum type
 		USHORT	p_cnct_max_type;		// Maximum type
 		USHORT	p_cnct_weight;			// Preference weight
 	}		p_cnct_versions[10];
 } P_CNCT;
 
 #ifdef ASYMMETRIC_PROTOCOLS_ONLY
-#define REMOTE_PROTOCOL(version, type, weight) \
-	{version, arch_generic, 0, type, weight * 2}
+#define REMOTE_PROTOCOL(version, min_type, max_type, weight) \
+	{version, arch_generic, min_type, max_type, weight * 2}
 #else
-#define REMOTE_PROTOCOL(version, type, weight) \
-	{version, arch_generic, 0, type, weight * 2}, \
-	{version, ARCHITECTURE, 0, type, weight * 2 + 1}
+#define REMOTE_PROTOCOL(version, min_type, max_type, weight) \
+	{version, arch_generic, min_type, max_type, weight * 2}, \
+	{version, ARCHITECTURE, min_type, max_type, weight * 2 + 1}
 #endif
 
 /* User identification data, if any, is of form:
@@ -372,10 +394,14 @@ const UCHAR CNCT_host		= 4;
 const UCHAR CNCT_group		= 5;			// Effective Unix group id
 const UCHAR CNCT_user_verification	= 6;	// Attach/create using this connection
 					 						// will use user verification
-const UCHAR CNCT_specific_data		= 7;	// Some data, needed for user verification on server
-const UCHAR CNCT_plugin_name		= 8;	// Name of plugin, which generated that data
-const UCHAR CNCT_login				= 9;	// Same data as isc_dpb_user_name
-const UCHAR CNCT_plugin_list		= 10;	// List of plugins, available on client
+
+
+typedef struct bid	// BLOB ID
+{
+	ULONG	bid_quad_high;
+	ULONG	bid_quad_low;
+} *BID;
+
 
 // Accept Block (Server response to connect block)
 
@@ -386,25 +412,14 @@ typedef struct p_acpt
 	USHORT	p_acpt_type;			// Minimum type
 } P_ACPT;
 
-// Accept Block with Data (Server response to connect block, start with P.13)
-
-struct p_acpd : public p_acpt
-{
-	CSTRING	p_acpt_data;			// Returned auth data
-	CSTRING	p_acpt_plugin;			// Plugin to continue with
-	USHORT	p_acpt_authenticated;	// Auth complete in single step (few! strange...)
-	CSTRING p_acpt_keys;			// Keys known to the server
-};
-typedef p_acpd P_ACPD;
-
 // Generic Response block
 
 typedef struct p_resp
 {
 	OBJCT		p_resp_object;		// Object id
-	SQUAD		p_resp_blob_id;		// Blob id
+	struct bid	p_resp_blob_id;		// Blob id
 	CSTRING		p_resp_data;		// Data
-	Firebird::DynamicStatusVector* p_resp_status_vector;
+	ISC_STATUS*	p_resp_status_vector;
 } P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number
@@ -450,6 +465,10 @@ typedef struct p_data
     OBJCT	p_data_transaction;		// Transaction object id
     USHORT	p_data_message_number;	// Message number in request
     USHORT	p_data_messages;		// Number of messages
+#ifdef SCROLLABLE_CURSORS
+    USHORT	p_data_direction;		// direction to scroll before returning records
+    ULONG	p_data_offset;			// offset to scroll before returning records
+#endif
 } P_DATA;
 
 // Execute stored procedure block
@@ -469,7 +488,7 @@ typedef struct p_trrq
 typedef struct p_blob
 {
     OBJCT	p_blob_transaction;		// Transaction
-    SQUAD	p_blob_id;				// Blob id for open
+    struct bid	p_blob_id;			// Blob id for open
     CSTRING_CONST	p_blob_bpb;		// Blob parameter block
 } P_BLOB;
 
@@ -543,7 +562,7 @@ typedef struct p_ddl
 typedef struct p_slc
 {
     OBJCT	p_slc_transaction;	// Transaction
-    SQUAD	p_slc_id;			// Slice id
+    struct bid	p_slc_id;		// Slice id
     CSTRING	p_slc_sdl;			// Slice description language
     CSTRING	p_slc_parameters;	// Slice parameters
     lstring	p_slc_slice;		// Slice proper
@@ -609,14 +628,6 @@ typedef struct p_trau
 	CSTRING	p_trau_data;					// Context
 } P_TRAU;
 
-typedef struct p_auth_continue
-{
-	CSTRING	p_data;							// Specific data
-	CSTRING p_name;							// Plugin name
-	CSTRING p_list;							// Plugin list
-	CSTRING p_keys;							// Keys available on server
-} P_AUTH_CONT;
-
 struct p_update_account
 {
     OBJCT			p_account_database;		// Database object id
@@ -637,17 +648,6 @@ typedef struct p_cancel_op
     USHORT	p_co_kind;			// Kind of cancelation
 } P_CANCEL_OP;
 
-typedef struct p_crypt
-{
-	CSTRING p_plugin;						// Crypt plugin name
-	CSTRING p_key;							// Key name / keys available on server
-} P_CRYPT;
-
-typedef struct p_crypt_callback
-{
-	CSTRING	p_cc_data;						// User's data
-	USHORT p_cc_reply;
-} P_CRYPT_CALLBACK;
 
 
 // Generalize packet (sic!)
@@ -664,7 +664,6 @@ typedef struct packet
     P_OP	p_operation;		// Operation/packet type
     P_CNCT	p_cnct;				// Connect block
     P_ACPT	p_acpt;				// Accept connection
-    P_ACPD	p_acpd;				// Accept connection with data
     P_RESP	p_resp;				// Generic response to a call
     P_ATCH	p_atch;				// Attach or create database
     P_RLSE	p_rlse;				// Release object
@@ -689,10 +688,7 @@ typedef struct packet
 	P_TRAU	p_trau;				// Trusted authentication
 	p_update_account p_account_update;
 	p_authenticate p_authenticate_user;
-	P_CANCEL_OP p_cancel_op;	// Cancel operation
-	P_AUTH_CONT p_auth_cont;	// Request more auth data
-	P_CRYPT p_crypt;			// Start wire crypt
-	P_CRYPT_CALLBACK p_cc;		// Database crypt callback
+	P_CANCEL_OP p_cancel_op;	// cancel operation
 
 public:
 	packet()

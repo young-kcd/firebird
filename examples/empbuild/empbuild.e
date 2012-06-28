@@ -93,14 +93,6 @@ if (SQLCODE)
     exit (FINI_ERROR);
     }
 
-printf ("Turning forced writes off\n");
-sprintf (cmd, "gfix -write async %s", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn forced writed off\n");
-    exit (FINI_ERROR);
-    }
-
 printf ("Creating tables\n");
 sprintf (cmd, "isql %s -q -i empddl.sql", Db_name);
 if (system (cmd))

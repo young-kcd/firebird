@@ -47,7 +47,7 @@ be easy to add needed headers to stdafx.h after a makefile is built.
 #endif
 
 #include "fbudf.h"
-#include "../common/classes/NoThrowTimeStamp.h"
+#include "../common/classes/timestamp.h"
 
 #if defined(HAVE_GETTIMEOFDAY) && (!(defined (HAVE_LOCALTIME_R) && defined (HAVE_GMTIME_R)))
 #define NEED_TIME_MUTEX
@@ -396,14 +396,14 @@ FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 
 namespace internal
 {
-	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg) throw()
+	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg)
 	{
-		Firebird::NoThrowTimeStamp::decode_timestamp(*date, times_arg);
+		Firebird::TimeStamp::decode_timestamp(*date, times_arg);
 	}
 
-	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date) throw()
+	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date)
 	{
-		*date = Firebird::NoThrowTimeStamp::encode_timestamp(times_arg);
+		*date = Firebird::TimeStamp::encode_timestamp(times_arg);
 	}
 
 	enum day_format {day_short, day_long};

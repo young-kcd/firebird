@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 #include "../jrd/ibase.h"
-#include "../common/ThreadData.h"
+#include "../jrd/ThreadData.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -180,7 +180,7 @@ public:
 	static inline AliceGlobals* getSpecific()
 	{
 		ThreadData* tData = ThreadData::getSpecific();
-		fb_assert(tData->getType() == ThreadData::tddALICE);
+		fb_assert (tData->getType() == ThreadData::tddALICE)
 		return (AliceGlobals*) tData;
 	}
 	static inline void putSpecific(AliceGlobals* tdgbl)

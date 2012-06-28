@@ -37,8 +37,8 @@
 #include "../qli/hsh_proto.h"
 #include "../qli/lex_proto.h"
 #include "../qli/proc_proto.h"
-#include "../yvalve/utl_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/utl_proto.h"
+#include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/TempFile.h"
 
@@ -438,7 +438,7 @@ bool LEX_get_line(const TEXT* prompt, TEXT* buffer, int size)
 	// UNIX flavor
 
 	if (prompt)
-		printf("%s", prompt);
+		printf(prompt);
 
 	errno = 0;
 	TEXT* p = buffer;
@@ -1141,7 +1141,7 @@ static void retchar()
  **************************************/
 
 	// CVC: Too naive implementation: what if the pointer is at the beginning?
-	fb_assert(QLI_line);
+	fb_assert(QLI_line)
 	--QLI_line->line_ptr;
 }
 

@@ -26,7 +26,7 @@
 #define COMMON_REF_COUNTED_H
 
 #include "../common/classes/fb_atomic.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 namespace Firebird
 {
@@ -66,13 +66,13 @@ namespace Firebird
 		explicit Reference(RefCounted& refCounted) :
 			r(refCounted)
 		{
-			r.addRef();
+			r.RefCounted::addRef();
 		}
 
 		~Reference()
 		{
 			try {
-				r.release();
+				r.RefCounted::release();
 			}
 			catch (const Exception&)
 			{
@@ -154,11 +154,6 @@ namespace Firebird
 			return ptr ? true : false;
 		}*/
 
-		bool hasData() const
-		{
-			return ptr ? true : false;
-		}
-
 		bool operator !() const
 		{
 			return !ptr;
@@ -179,16 +174,17 @@ namespace Firebird
 		{
 			if (ptr != p)
 			{
-				if (p)
-				{
-					p->addRef();
-				}
 				if (ptr)
 				{
 					ptr->release();
 				}
 
 				ptr = p;
+
+				if (ptr)
+				{
+					ptr->addRef();
+				}
 			}
 
 			return ptr;

@@ -55,14 +55,15 @@
 #endif
 
 
-#include "../common/gdsassert.h"
+#include "../jrd/common.h"
+#include "../jrd/gdsassert.h"
 #include "../utilities/guard/util_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../common/utils_proto.h"
 
 
-pid_t UTIL_start_process(const char* process, char** argv, const char* prog_name)
+pid_t UTIL_start_process(const char* process, const char* process2, char** argv, const char* prog_name)
 {
 /**************************************
  *
@@ -87,8 +88,11 @@ pid_t UTIL_start_process(const char* process, char** argv, const char* prog_name
 	fb_assert(argv != NULL);
 
 	// prepend Firebird home directory to the program name
+	// choose correct (super/superclassic) image - to be removed in 3.0
 	Firebird::PathName string = fb_utils::getPrefix(fb_utils::FB_DIR_SBIN, process);
-
+	if (access(string.c_str(), X_OK) < 0) {
+		string = fb_utils::getPrefix(fb_utils::FB_DIR_SBIN, process2);
+	}
 	if (prog_name) {
 		gds__log("%s: guardian starting %s\n", prog_name, string.c_str());
 	}

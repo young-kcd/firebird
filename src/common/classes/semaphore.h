@@ -29,7 +29,7 @@
 #ifndef CLASSES_SEMAPHORE_H
 #define CLASSES_SEMAPHORE_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class
@@ -204,7 +204,7 @@ typedef SignalSafeSemaphore Semaphore;
 // Should implement Semaphore independent from SignalSafeSemaphore.
 // In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
 #define COMMON_CLASSES_SEMAPHORE_COND_VAR
-#include "fb_pthread.h"
+#include <pthread.h>
 #include <errno.h>
 
 namespace Firebird

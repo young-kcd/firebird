@@ -42,8 +42,8 @@
 #include "../burp/burp.h"
 #include "../burp/burp_proto.h"
 #include "../burp/mvol_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 #include <fcntl.h>
 #include <sys/types.h>
 
@@ -117,7 +117,7 @@ FB_UINT64 MVOL_fini_read()
 
 	for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 	{
-		if (file->fil_fd == tdgbl->file_desc)
+		if (file->fil_fd == tdgbl->file_desc) 
 		{
 			file->fil_fd = INVALID_HANDLE_VALUE;
 		}
@@ -179,7 +179,10 @@ void MVOL_init(ULONG io_buf_size)
 //
 // Read init record from backup file
 //
-void MVOL_init_read(const char* file_name, USHORT* format, int* cnt, UCHAR** ptr)
+void MVOL_init_read(const char*	file_name,
+					USHORT*		format,
+					int*		cnt,
+					UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -222,7 +225,9 @@ void MVOL_init_read(const char* file_name, USHORT* format, int* cnt, UCHAR** ptr
 //
 // Write init record to the backup file
 //
-void MVOL_init_write(const char* file_name, int* cnt, UCHAR** ptr)
+void MVOL_init_write(const char*	file_name,
+					 int*			cnt,
+					 UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -572,8 +577,8 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 
 			const size_t nBytesToWrite =
 				(tdgbl->action->act_action == ACT_backup_split &&
-						tdgbl->action->act_file->fil_length < left) ?
-			 			tdgbl->action->act_file->fil_length : left;
+					tdgbl->action->act_file->fil_length < left) ?
+				 		tdgbl->action->act_file->fil_length : left;
 
 #ifndef WIN_NT
 			cnt = write(tdgbl->file_desc, ptr, nBytesToWrite);
@@ -623,14 +628,14 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 							}
 
 							tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
-							BURP_print(true, 272, SafeArg() <<
+							BURP_print(false, 272, SafeArg() <<
 										tdgbl->action->act_file->fil_name.c_str() <<
 										tdgbl->action->act_file->fil_length <<
 										tdgbl->action->act_file->fil_next->fil_name.c_str());
 							// msg 272 Warning -- free disk space exhausted for file %s,
 							// the rest of the bytes (%d) will be written to file %s
 							tdgbl->action->act_file->fil_next->fil_length +=
-							tdgbl->action->act_file->fil_length;
+								tdgbl->action->act_file->fil_length;
 							tdgbl->action->act_file = tdgbl->action->act_file->fil_next;
 							tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
 						}
@@ -884,8 +889,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 	{
 		// We aim to keep our descriptors clean
 
-		if (new_desc != INVALID_HANDLE_VALUE)
-		{
+		if (new_desc != INVALID_HANDLE_VALUE) {
 			close_platf(new_desc);
 			new_desc = INVALID_HANDLE_VALUE;
 		}
@@ -1021,8 +1025,8 @@ static void prompt_for_name(SCHAR* name, int length)
 				strcpy(name, tdgbl->mvol_old_file);
 				break;
 			}
-
-			continue; // reprompt
+			else				// reprompt
+				continue;
 		}
 
 		// OK, its a file name, strip the carriage return
@@ -1225,9 +1229,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 		case att_backup_format:
 			temp = get_numeric();
 			if (init_flag)
-			{
 				*format = temp;
-			}
 			break;
 
 		case att_backup_transportable:

@@ -39,7 +39,7 @@ if [ ! -z "$InteractiveInstall" ]
 then
     cat <<EOF
 
-Firebird classic $Version Installation
+Firebird @FIREBIRD_ARCH_TYPE@ $Version Installation
 
 EOF
 

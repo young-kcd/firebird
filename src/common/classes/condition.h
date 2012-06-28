@@ -28,7 +28,7 @@
 #ifndef CLASSES_CONDITION_H
 #define CLASSES_CONDITION_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 
@@ -124,7 +124,7 @@ public:
 
 #else // WIN_NT
 
-#include "fb_pthread.h"
+#include <pthread.h>
 #include <errno.h>
 
 namespace Firebird
@@ -138,8 +138,7 @@ private:
 	void init()
 	{
 		int err = pthread_cond_init(&cv, NULL);
-		if (err != 0)
-		{
+		if (err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("pthread_cond_init", err);
 		}
@@ -152,8 +151,7 @@ public:
 	~Condition()
 	{
 		int err = pthread_cond_destroy(&cv);
-		if (err != 0)
-		{
+		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
 			//system_call_failed::raise("pthread_cond_destroy", err);
 		}
@@ -185,4 +183,4 @@ public:
 
 #endif // WIN_NT
 
-#endif // CLASSES_CONDITION_H
+#endif // CLASSES_SEMAPHORE_H

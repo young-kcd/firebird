@@ -190,12 +190,6 @@ namespace Firebird
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
-		T& insert(size_t index)
-		{
-			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
-			inherited::insert(index, dataL);
-			return *dataL;
-		}
 		size_t add(const T& item)
 		{
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
@@ -285,11 +279,6 @@ namespace Firebird
 		size_t getCount() const {return inherited::getCount();}
 		size_t getCapacity() const {return inherited::getCapacity();}
 
-		bool hasData() const
-		{
-			return getCount() != 0;
-		}
-
 		bool isEmpty() const
 		{
 			return getCount() == 0;
@@ -361,9 +350,7 @@ namespace Firebird
 		explicit SortedObjectsArray(MemoryPool& p) :
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
-				ObjectCmp> >(p)
-		{ }
-
+				ObjectCmp> >(p) { }
 		bool find(const ObjectKey& item, size_t& pos) const
 		{
 			const ObjectKey* const pItem = &item;
@@ -371,13 +358,11 @@ namespace Firebird
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
-
 		bool exist(const ObjectKey& item) const
 		{
-			size_t pos;	// ignored
+			size_t pos;
 			return find(item, pos);
 		}
-
 		size_t add(const ObjectValue& item)
 		{
 			return inherited::add(item);

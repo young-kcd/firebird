@@ -23,9 +23,10 @@
 
 #include "firebird.h"
 #include "fb_types.h"
+#include "../jrd/common.h"
 #include "../jrd/event.h"
 #include "../jrd/event_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 
 #define isc_print_status gds__print_status

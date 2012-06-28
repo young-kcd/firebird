@@ -174,7 +174,7 @@ public:
 
 #else
 
-#include "fb_pthread.h"
+#include <pthread.h>
 #include <errno.h>
 
 namespace Firebird
@@ -191,7 +191,7 @@ private:
 
 	void init()
 	{
-#if defined(LINUX) && !defined(USE_VALGRIND) && defined(HAVE_PTHREAD_RWLOCKATTR_SETKIND_NP)
+#if defined(LINUX) && !defined(USE_VALGRIND)
 		pthread_rwlockattr_t attr;
 		if (pthread_rwlockattr_init(&attr))
 			system_call_failed::raise("pthread_rwlockattr_init");
@@ -265,23 +265,12 @@ namespace Firebird {
 class ReadLockGuard
 {
 public:
-	explicit ReadLockGuard(RWLock& alock)
+	ReadLockGuard(RWLock &alock)
 		: lock(&alock)
 	{
 		lock->beginRead();
 	}
-
-	explicit ReadLockGuard(RWLock* alock)
-		: lock(alock)
-	{
-		if (lock)
-			lock->beginRead();
-	}
-
-	~ReadLockGuard()
-	{
-		release();
-	}
+	~ReadLockGuard() { release(); }
 
 	void release()
 	{
@@ -295,30 +284,19 @@ public:
 private:
 	// Forbid copy constructor
 	ReadLockGuard(const ReadLockGuard& source);
-	RWLock* lock;
+	RWLock *lock;
 };
 
 // RAII holder of write lock
 class WriteLockGuard
 {
 public:
-	explicit WriteLockGuard(RWLock& alock)
+	WriteLockGuard(RWLock &alock)
 		: lock(&alock)
 	{
 		lock->beginWrite();
 	}
-
-	explicit WriteLockGuard(RWLock* alock)
-		: lock(alock)
-	{
-		if (lock)
-			lock->beginWrite();
-	}
-
-	~WriteLockGuard()
-	{
-		release();
-	}
+	~WriteLockGuard() { release(); }
 
 	void release()
 	{
@@ -332,9 +310,10 @@ public:
 private:
 	// Forbid copy constructor
 	WriteLockGuard(const WriteLockGuard& source);
-	RWLock* lock;
+	RWLock *lock;
 };
 
 } // namespace Firebird
 
 #endif // #ifndef CLASSES_RWLOCK_H
+

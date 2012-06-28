@@ -44,8 +44,8 @@
 #include <unistd.h>
 #endif
 
-#include "../common/gdsassert.h"
-#include "../common/os/path_utils.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/os/path_utils.h"
 #include "../common/classes/init.h"
 
 #include "../common/classes/TempFile.h"

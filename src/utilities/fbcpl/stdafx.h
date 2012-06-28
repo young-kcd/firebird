@@ -18,6 +18,7 @@
 #undef TRACE				// TRACE is used by Firebird too.
 
 #include "firebird.h"
+#include "../../jrd/common.h"
 
 #ifdef HAVE_MATH_H
 #include <math.h>
@@ -47,7 +48,7 @@
 #endif
 
 #ifdef HAVE_PTHREAD_H
-#include "fb_pthread.h"
+#include <pthread.h>
 #endif
 
 #include "../../jrd/ibase.h"

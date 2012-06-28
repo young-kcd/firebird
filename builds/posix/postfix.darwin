@@ -74,11 +74,12 @@ darwin_finish_cs_framework:
 	cp -r ../gen/firebird/examples $(FB_FW)/Resources
 	mkdir -p $(FB_FW)/Resources/bin
 	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
-	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_inet_server $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
@@ -87,6 +88,8 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
+	chmod +x ../builds/install/arch-specific/darwin/changeMultiConnectMode
 	cp ../builds/install/arch-specific/darwin/changeMultiConnectMode \
 			$(FB_FW)/Resources/bin/changeMultiConnectMode.sh
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
@@ -151,6 +154,7 @@ darwin_finish_ss_framework:
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF

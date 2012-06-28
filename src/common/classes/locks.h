@@ -30,14 +30,14 @@
 #define CLASSES_LOCKS_H
 
 #include "firebird.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
 // in thd.h ? This is Windows platform maintainers choice
 #include <windows.h>
 #else
-#include "fb_pthread.h"
+#include <pthread.h>
 #include <errno.h>
 #endif
 
@@ -74,23 +74,13 @@ class Mutex
 {
 protected:
 	CRITICAL_SECTION spinlock;
-#ifdef DEV_BUILD
-	const char* reason;
-	int lockCount;
-#endif
 
 public:
 	Mutex()
-#ifdef DEV_BUILD
-		: reason(NULL), lockCount(0)
-#endif
 	{
 		InitializeCriticalSection(&spinlock);
 	}
 	explicit Mutex(MemoryPool&)
-#ifdef DEV_BUILD
-		: reason(NULL), lockCount(0)
-#endif
 	{
 		InitializeCriticalSection(&spinlock);
 	}
@@ -100,40 +90,18 @@ public:
 #if defined DEV_BUILD && !defined WIN9X_SUPPORT
 		if (spinlock.OwningThread != 0)
 			DebugBreak();
-		fb_assert(lockCount == 0);
 #endif
 		DeleteCriticalSection(&spinlock);
 	}
 
-#ifdef DEV_BUILD
-	void enter(const char* aReason)
-	{
-		EnterCriticalSection(&spinlock);
-		reason = aReason;
-		lockCount++;
-	}
-#endif
-
 	void enter()
 	{
 		EnterCriticalSection(&spinlock);
-#ifdef DEV_BUILD
-		reason = "<..unspecified..>";
-		lockCount++;
-#endif
 	}
 
 	bool tryEnter()
 	{
-		const bool ret = TryEnterCS::tryEnter(&spinlock);
-#ifdef DEV_BUILD
-		if (ret)
-		{
-			reason = "<..unspecified..>";
-			lockCount++;
-		}
-#endif
-		return ret;
+		return TryEnterCS::tryEnter(&spinlock);
 	}
 
 	void leave()
@@ -143,26 +111,8 @@ public:
 		// On 9X it works differently, and future OS versions may break this check as well
 		if ((U_IPTR) spinlock.OwningThread != GetCurrentThreadId())
 			DebugBreak();
-
-		lockCount--;
 #endif
 		LeaveCriticalSection(&spinlock);
-	}
-
-	void assertLocked()
-	{
-#ifdef DEV_BUILD
-		// first of all try to enter the mutex
-		// this will help to make sure it's not locked by other thread
-		if (!tryEnter())
-		{
-			fb_assert(false);
-		}
-		// make sure mutex was already locked prior assertLocked
-		fb_assert(lockCount > 1);
-		// leave to release lock, done by us in tryEnter
-		leave();
-#endif
 	}
 
 public:
@@ -195,18 +145,10 @@ friend class Condition;
 private:
 	pthread_mutex_t mlock;
 	static pthread_mutexattr_t attr;
-#ifdef DEV_BUILD
-	const char* reason;
-	int lockCount;
-#endif
 
 private:
 	void init()
 	{
-#ifdef DEV_BUILD
-		reason = NULL;
-		lockCount = 0;
-#endif
 		int rc = pthread_mutex_init(&mlock, &attr);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_init", rc);
@@ -218,32 +160,16 @@ public:
 
 	~Mutex()
 	{
-		fb_assert(lockCount == 0);
 		int rc = pthread_mutex_destroy(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_destroy", rc);
 	}
-
-#ifdef DEV_BUILD
-	void enter(const char* aReason)
-	{
-		int rc = pthread_mutex_lock(&mlock);
-		if (rc)
-			system_call_failed::raise("pthread_mutex_lock", rc);
-		reason = aReason;
-		++lockCount;
-	}
-#endif
 
 	void enter()
 	{
 		int rc = pthread_mutex_lock(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_lock", rc);
-#ifdef DEV_BUILD
-		reason = "<..unspecified..>";
-		++lockCount;
-#endif
 	}
 
 	bool tryEnter()
@@ -253,43 +179,14 @@ public:
 			return false;
 		if (rc)
 			system_call_failed::raise("pthread_mutex_trylock", rc);
-#ifdef DEV_BUILD
-		reason = "<..unspecified..>";
-		++lockCount;
-#endif
 		return true;
 	}
 
 	void leave()
 	{
-#ifdef DEV_BUILD
-		fb_assert(lockCount > 0);
-		--lockCount;
-#endif
 		int rc = pthread_mutex_unlock(&mlock);
 		if (rc)
-		{
-#ifdef DEV_BUILD
-			++lockCount;
-#endif
 			system_call_failed::raise("pthread_mutex_unlock", rc);
-		}
-	}
-
-	void assertLocked()
-	{
-#ifdef DEV_BUILD
-		// first of all try to enter the mutex
-		// this will help to make sure it's not locked by other thread
-		if (!tryEnter())
-		{
-			fb_assert(false);
-		}
-		// make sure mutex was already locked prior assertLocked
-		fb_assert(lockCount > 1);
-		// leave to release lock, done by us in tryEnter
-		leave();
-#endif
 	}
 
 public:
@@ -343,27 +240,15 @@ typedef Mutex Spinlock;
 class MutexLockGuard
 {
 public:
-	MutexLockGuard(Mutex& aLock, const char* aReason)
-		: lock(&aLock)
-	{
-#ifdef DEV_BUILD
-		lock->enter(aReason);
-#else
-		(void) aReason;	// warning
-		lock->enter();
-#endif
-	}
-
-	explicit MutexLockGuard(Mutex& aLock)
-		: lock(&aLock)
+	explicit MutexLockGuard(Mutex &alock)
+		: lock(&alock)
 	{
 		lock->enter();
 	}
 
 	~MutexLockGuard()
 	{
-		try
-		{
+		try {
 			lock->leave();
 		}
 		catch (const Exception&)
@@ -378,50 +263,6 @@ private:
 	MutexLockGuard& operator=(const MutexLockGuard&);
 
 	Mutex* lock;
-};
-
-class MutexUnlockGuard
-{
-public:
-	explicit MutexUnlockGuard(Mutex& aLock)
-		: lock(&aLock)
-	{
-		try
-		{
-			lock->leave();
-		}
-		catch (const Exception&)
-		{
-			DtorException::devHalt();
-		}
-	}
-
-	~MutexUnlockGuard()
-	{
-		lock->enter();
-	}
-
-private:
-	// Forbid copying
-	MutexUnlockGuard(const MutexUnlockGuard&);
-	MutexUnlockGuard& operator=(const MutexUnlockGuard&);
-
-	Mutex* lock;
-};
-
-
-class MutexCheckoutGuard
-{
-public:
-	MutexCheckoutGuard(Mutex& mtxCout, Mutex& mtxLock) :
-		unlock(mtxCout),
-		lock(mtxLock)
-	{
-	}
-
-private:
-	MutexUnlockGuard unlock;
-	MutexLockGuard	lock;
 };
 
 } //namespace Firebird

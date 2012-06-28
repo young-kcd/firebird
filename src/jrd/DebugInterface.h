@@ -77,21 +77,17 @@ struct ArgumentInfo
 
 typedef GenericMap<Pair<Right<ArgumentInfo, MetaName> > > MapArgumentInfoToName;
 
-struct DbgInfo : public PermanentStorage
+struct DbgInfo
 {
 	explicit DbgInfo(MemoryPool& p)
-		: PermanentStorage(p),
-		  blrToSrc(p),
+		: blrToSrc(p),
 		  varIndexToName(p),
-		  argInfoToName(p),
-		  subFuncs(p),
-		  subProcs(p)
+		  argInfoToName(p)
 	{
 	}
 
-	~DbgInfo()
+	DbgInfo()
 	{
-		clear();
 	}
 
 	void clear()
@@ -99,36 +95,16 @@ struct DbgInfo : public PermanentStorage
 		blrToSrc.clear();
 		varIndexToName.clear();
 		argInfoToName.clear();
-
-		{	// scope
-			GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subFuncs);
-
-			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-				delete accessor.current()->second;
-
-			subFuncs.clear();
-		}
-
-		{	// scope
-			GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subProcs);
-
-			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-				delete accessor.current()->second;
-
-			subProcs.clear();
-		}
 	}
 
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
 	MapVarIndexToName varIndexToName;		// mapping between variable index and name
 	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
-	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subFuncs;	// sub functions
-	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subProcs;	// sub procedures
 };
 
 } // namespace Firebird
 
 void DBG_parse_debug_info(Jrd::thread_db*, Jrd::bid*, Firebird::DbgInfo&);
-void DBG_parse_debug_info(ULONG, const UCHAR*, Firebird::DbgInfo&);
+void DBG_parse_debug_info(USHORT, const UCHAR*, Firebird::DbgInfo&);
 
 #endif // DEBUG_INTERFACE_H
