@@ -738,6 +738,18 @@ Data source : @4"},		/* eds_statement */
 	{335545031, "Libtommath error code @1 in function @2"},		/* libtommath_generic */
 	{335545032, "unsupported BLR version (expected between @1 and @2, encountered @3)"},		/* wroblrver2 */
 	{335545033, "expected length @1, actual @2"},		/* trunc_limits */
+	{335545034, "Wrong info requested in isc_svc_query() for anonymous service"},		/* info_access */
+	{335545035, "No isc_info_svc_stdin in user request, but service thread requested stdin data"},		/* svc_no_stdin */
+	{335545036, "Start request for anonymous service is impossible"},		/* svc_start_failed */
+	{335545037, ""},		/* svc_no_switches */
+	{335545038, "Size of stdin data is more than was requested from client"},		/* svc_bad_size */
+	{335545039, "Crypt plugin @1 failed to load"},		/* no_crypt_plugin */
+	{335545040, "Length of crypt plugin name should not exceed @1 byte"},		/* cp_name_too_long */
+	{335545041, "Crypt failed - already crypting database"},		/* cp_process_active */
+	{335545042, "Crypt failed - database is already in requested state"},		/* cp_already_crypted */
+	{335545043, "Missing crypt plugin, but page appears encrypted"},		/* decrypt_error */
+	{335545044, "No providers loaded"},		/* no_providers */
+	{335545045, "NULL data with non-zero SPB length"},		/* null_spb */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

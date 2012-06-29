@@ -821,6 +821,18 @@ Data source : @4', NULL, NULL)
 ('libtommath_generic', 'check', 'BigInteger.cpp', NULL, 0, 711, NULL, 'Libtommath error code @1 in function @2', NULL, NULL)
 ('wroblrver2', NULL, NULL, NULL, 0, 712, NULL, 'unsupported BLR version (expected between @1 and @2, encountered @3)', NULL, NULL);
 ('trunc_limits', NULL, NULL, NULL, 0, 713, NULL, 'expected length @1, actual @2', NULL, NULL);
+('info_access', NULL, 'svc.cpp', NULL, 0, 714, NULL, 'Wrong info requested in isc_svc_query() for anonymous service', NULL, NULL);
+('svc_no_stdin', NULL, 'svc.cpp', NULL, 0, 715, NULL, 'No isc_info_svc_stdin in user request, but service thread requested stdin data', NULL, NULL);
+('svc_start_failed', NULL, 'svc.cpp', NULL, 0, 716, NULL, 'Start request for anonymous service is impossible', NULL, NULL);
+('svc_no_switches', NULL, 'svc.cpp', NULL, 0, 717, NULL, '', NULL, NULL);
+('svc_bad_size', NULL, 'svc.cpp', NULL, 0, 718, NULL, 'Size of stdin data is more than was requested from client', NULL, NULL);
+('no_crypt_plugin', NULL, 'CryptoManager.cpp', NULL, 0, 719, NULL, 'Crypt plugin @1 failed to load', NULL, NULL);
+('cp_name_too_long', NULL, 'CryptoManager.cpp', NULL, 0, 720, NULL, 'Length of crypt plugin name should not exceed @1 byte', NULL, NULL);
+('cp_process_active', NULL, 'CryptoManager.cpp', NULL, 0, 721, NULL, 'Crypt failed - already crypting database', NULL, NULL);
+('cp_already_crypted', NULL, 'CryptoManager.cpp', NULL, 0, 722, NULL, 'Crypt failed - database is already in requested state', NULL, NULL);
+('decrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 723, NULL, 'Missing crypt plugin, but page appears encrypted', NULL, NULL);
+('no_providers', NULL, 'why.cpp', NULL, 0, 724, NULL, 'No providers loaded', NULL, NULL);
+('null_spb', NULL, 'why.cpp', NULL, 0, 725, NULL, 'NULL data with non-zero SPB length', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

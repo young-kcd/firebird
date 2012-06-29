@@ -67,7 +67,7 @@ namespace {
 		{
 			if (!header)
 			{
-				(Arg::Gds(isc_random) << "Header page fetch failed").raise();
+				ERR_punt();
 			}
 		}
 
@@ -201,8 +201,7 @@ namespace Jrd {
 			upInfo, dbb.dbb_config, pluginName);
 		if (!cryptControl.hasData())
 		{
-			(Arg::Gds(isc_random) <<
-			 "Invalid crypt plugin name").raise();
+			(Arg::Gds(isc_no_crypt_plugin) << pluginName).raise();
 		}
 
 		// do not assign cryptPlugin directly before key init complete
@@ -216,8 +215,7 @@ namespace Jrd {
 	{
 		if (plugName.length() > 31)
 		{
-			(Arg::Gds(isc_random) <<
-			 "Crypt plugin name should not be >31 bytes").raise();
+			(Arg::Gds(isc_cp_name_too_long) << Arg::Num(31)).raise();
 		}
 
 		bool newCryptState = plugName.hasData();
@@ -228,15 +226,13 @@ namespace Jrd {
 			// Check header page for flags
 			if (hdr->hdr_flags & Ods::hdr_crypt_process)
 			{
-				(Arg::Gds(isc_random) <<
-				 "Crypt failed - already crypting database").raise();
+				(Arg::Gds(isc_cp_process_active)).raise();
 			}
 
 			bool headerCryptState = hdr->hdr_flags & Ods::hdr_encrypted;
 			if (headerCryptState == newCryptState)
 			{
-				(Arg::Gds(isc_random) <<
-				 "Crypt failed - database is already in requested state").raise();
+				(Arg::Gds(isc_cp_already_crypted)).raise();
 			}
 
 			fb_assert(stateLock);
@@ -503,7 +499,7 @@ namespace Jrd {
 
 					if (!cryptPlugin)
 					{
-						(Arg::Gds(isc_random) << "Not crypt mode, but page appears encrypted").copyTo(sv);
+						(Arg::Gds(isc_decrypt_error)).raise();
 						return false;
 					}
 				}

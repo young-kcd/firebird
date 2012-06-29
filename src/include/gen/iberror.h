@@ -769,6 +769,18 @@ const ISC_STATUS isc_protect_sys_tab                  = 335545030L;
 const ISC_STATUS isc_libtommath_generic               = 335545031L;
 const ISC_STATUS isc_wroblrver2                       = 335545032L;
 const ISC_STATUS isc_trunc_limits                     = 335545033L;
+const ISC_STATUS isc_info_access                      = 335545034L;
+const ISC_STATUS isc_svc_no_stdin                     = 335545035L;
+const ISC_STATUS isc_svc_start_failed                 = 335545036L;
+const ISC_STATUS isc_svc_no_switches                  = 335545037L;
+const ISC_STATUS isc_svc_bad_size                     = 335545038L;
+const ISC_STATUS isc_no_crypt_plugin                  = 335545039L;
+const ISC_STATUS isc_cp_name_too_long                 = 335545040L;
+const ISC_STATUS isc_cp_process_active                = 335545041L;
+const ISC_STATUS isc_cp_already_crypted               = 335545042L;
+const ISC_STATUS isc_decrypt_error                    = 335545043L;
+const ISC_STATUS isc_no_providers                     = 335545044L;
+const ISC_STATUS isc_null_spb                         = 335545045L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1212,7 +1224,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1156;
+const ISC_STATUS isc_err_max                          = 1168;
 
 #else /* c definitions */
 
@@ -1951,6 +1963,18 @@ const ISC_STATUS isc_err_max                          = 1156;
 #define isc_libtommath_generic               335545031L
 #define isc_wroblrver2                       335545032L
 #define isc_trunc_limits                     335545033L
+#define isc_info_access                      335545034L
+#define isc_svc_no_stdin                     335545035L
+#define isc_svc_start_failed                 335545036L
+#define isc_svc_no_switches                  335545037L
+#define isc_svc_bad_size                     335545038L
+#define isc_no_crypt_plugin                  335545039L
+#define isc_cp_name_too_long                 335545040L
+#define isc_cp_process_active                335545041L
+#define isc_cp_already_crypted               335545042L
+#define isc_decrypt_error                    335545043L
+#define isc_no_providers                     335545044L
+#define isc_null_spb                         335545045L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2394,7 +2418,7 @@ const ISC_STATUS isc_err_max                          = 1156;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1156
+#define isc_err_max                          1168
 
 #endif
 

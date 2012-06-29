@@ -1126,7 +1126,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				break;
 			default:
 				status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
-										Arg::Gds(isc_random) << "wrong info request for anonymous service");
+										Arg::Gds(isc_info_access));
 				break;
 			}
 		}
@@ -1515,7 +1515,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		}
 		else
 		{
-			(Arg::Gds(isc_random) << "No request from user for stdin data").raise();
+			(Arg::Gds(isc_svc_no_stdin)).raise();
 		}
 	}
 
@@ -1971,7 +1971,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	if (svc_user_flag == SVC_user_none)
 	{
 		status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
-								Arg::Gds(isc_random) << "start request for anonymous service is impossible");
+								Arg::Gds(isc_svc_start_failed));
 	}
 
 	{ // scope for locked globalServicesMutex
@@ -2055,7 +2055,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log)
 	{
 		status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
-								Arg::Gds(isc_random) << "all services except for get_ib_log require switches");
+								Arg::Gds(isc_svc_no_switches));
 	}
 
 	// Do not let everyone look at server log
@@ -2371,7 +2371,7 @@ ULONG Service::put(const UCHAR* buffer, ULONG length)
 	// check length correctness
 	if (length > svc_stdin_size_requested && length > svc_stdin_preload_requested)
 	{
-		(Arg::Gds(isc_random) << "Size of data is more than requested").raise();
+		(Arg::Gds(isc_svc_bad_size)).raise();
 	}
 
 	if (svc_stdin_size_requested)		// service waits for data from us

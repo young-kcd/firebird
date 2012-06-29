@@ -4602,7 +4602,7 @@ static IService* getServiceManagerByName(IProvider** provider, IStatus* status,
 	if (status->isSuccess())
 	{
 		(Arg::Gds(isc_service_att_err) <<
-		 Arg::Gds(isc_random) << "No providers loaded").copyTo(status);
+		 Arg::Gds(isc_no_providers)).copyTo(status);
 	}
 
 	return NULL;
@@ -4974,7 +4974,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 
 		if (spbLength > 0 && !spb)
 			status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
-									Arg::Gds(isc_random) << "NULL data with non-zero SPB length");
+ 									Arg::Gds(isc_null_spb));
 
 		PathName svcName(serviceName);
 		svcName.trim();

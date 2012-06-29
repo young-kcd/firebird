@@ -733,7 +733,19 @@ static const struct {
 	{335545030, "42000"}, // 710 protect_sys_tab
 	{335545031, "2F000"}, // 711 libtommath_generic
 	{335545032, "HY000"}, // 712 wroblrver2
-	{335545033, "22001"}, // 713 trunc_limits
+	{335545033, "28000"}, // 713 trunc_limits
+	{335545034, "28000"}, // 714 info_access
+	{335545035, "HY024"}, // 715 svc_no_stdin
+	{335545036, "28000"}, // 716 svc_start_failed
+	{335545037, "HY024"}, // 717 svc_no_switches
+	{335545038, "HY109"}, // 718 svc_bad_size
+	{335545039, "HY024"}, // 719 no_crypt_plugin
+	{335545040, "22001"}, // 720 cp_name_too_long
+	{335545041, "42818"}, // 721 cp_process_active
+	{335545042, "42818"}, // 722 cp_already_crypted
+	{335545043, "39000"}, // 723 decrypt_error
+	{335545044, "39000"}, // 724 no_providers
+	{335545045, "42818"}, // 725 null_spb
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

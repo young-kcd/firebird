@@ -1478,6 +1478,30 @@ C --
       PARAMETER (GDS__wroblrver2                       = 335545032)
       INTEGER*4 GDS__trunc_limits                    
       PARAMETER (GDS__trunc_limits                     = 335545033)
+      INTEGER*4 GDS__info_access                     
+      PARAMETER (GDS__info_access                      = 335545034)
+      INTEGER*4 GDS__svc_no_stdin                    
+      PARAMETER (GDS__svc_no_stdin                     = 335545035)
+      INTEGER*4 GDS__svc_start_failed                
+      PARAMETER (GDS__svc_start_failed                 = 335545036)
+      INTEGER*4 GDS__svc_no_switches                 
+      PARAMETER (GDS__svc_no_switches                  = 335545037)
+      INTEGER*4 GDS__svc_bad_size                    
+      PARAMETER (GDS__svc_bad_size                     = 335545038)
+      INTEGER*4 GDS__no_crypt_plugin                 
+      PARAMETER (GDS__no_crypt_plugin                  = 335545039)
+      INTEGER*4 GDS__cp_name_too_long                
+      PARAMETER (GDS__cp_name_too_long                 = 335545040)
+      INTEGER*4 GDS__cp_process_active               
+      PARAMETER (GDS__cp_process_active                = 335545041)
+      INTEGER*4 GDS__cp_already_crypted              
+      PARAMETER (GDS__cp_already_crypted               = 335545042)
+      INTEGER*4 GDS__decrypt_error                   
+      PARAMETER (GDS__decrypt_error                    = 335545043)
+      INTEGER*4 GDS__no_providers                    
+      PARAMETER (GDS__no_providers                     = 335545044)
+      INTEGER*4 GDS__null_spb                        
+      PARAMETER (GDS__null_spb                         = 335545045)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
