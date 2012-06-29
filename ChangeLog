@@ -1,3 +1,18 @@
+ 2012-06-29 01:47  asfernandes 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Misc.
+
+ 2012-06-28 11:46  alexpeshkoff 
+   M src/jrd/cch.cpp
+   M src/jrd/ods.cpp
+   M src/jrd/ods.h
+   M src/jrd/validation.cpp
+Improvement CORE-3588: More detail in message "wrong page type"
+
+ 2012-06-28 07:49  hvlad 
+   M src/lock/print.cpp
+Improvement CORE-3879 : Make fb_lock_print a bit more handy
+
  2012-06-27 11:53  alexpeshkoff 
    M src/common/isc_file.cpp
 Fixed for posix CORE-3875: GBak does not check correctly parameters and backups random database with -B ":"
