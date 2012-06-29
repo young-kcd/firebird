@@ -513,15 +513,6 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 	}
 #endif
 
-#ifndef DEV_BUILD
-	// The sweeper threads run in the background without
-	// any way to inspect these counters. For debugging
-	// purposes, they are maintained in the DEV_BUILD.
-
-	if (tdbb->tdbb_flags & TDBB_sweeper) {
-		return;
-	}
-#endif
 
 	const USHORT relation_id = relation->rel_id;
 	vcl** ptr = attachment->att_counts + count_id;
