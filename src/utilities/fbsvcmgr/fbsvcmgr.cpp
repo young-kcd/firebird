@@ -1014,7 +1014,7 @@ int main(int ac, char** av)
 			Array<char> stdinBuffer;
 			do
 			{
-				char *sendBlock = send;
+				char* sendBlock = send;
 				USHORT sendSize = p - send;
 				if (stdinRequest)
 				{
@@ -1046,6 +1046,7 @@ int main(int ac, char** av)
 						perror("stdin");
 						break;
 					}
+
 					stdinRequest = n;
 					sendBlock[sendSize] = isc_info_svc_line;
 					sendBlock[sendSize + 1] = stdinRequest;
@@ -1055,6 +1056,7 @@ int main(int ac, char** av)
 
 					stdinRequest = 0;
 				}
+
 				if (isc_service_query(status, &svc_handle, 0, sendSize, sendBlock,
 						static_cast<USHORT>(spbItems.getBufferLength()),
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
