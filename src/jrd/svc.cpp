@@ -2230,8 +2230,6 @@ bool Service::full() const
 
 void Service::enqueue(const UCHAR* s, ULONG len)
 {
-	static int transferCount = 0;
-
 	if (checkForShutdown() || (svc_flags & SVC_detached))
 	{
 		svc_sem_full.release();
@@ -2270,7 +2268,6 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 		}
 
 		memcpy(&svc_stdout[svc_stdout_tail], s, cnt);
-		transferCount += cnt;
 		svc_stdout_tail = add_val(svc_stdout_tail, cnt);
 		s += cnt;
 		len -= cnt;
