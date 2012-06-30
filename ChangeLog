@@ -1,3 +1,23 @@
+ 2012-06-29 12:44  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/svc.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/why.cpp
+Anti isc_random pass
+
+ 2012-06-29 07:13  alexpeshkoff 
+   M src/jrd/svc.cpp
+Removed unused var - thanks to Adriano
+
  2012-06-29 01:47  asfernandes 
    M src/utilities/fbsvcmgr/fbsvcmgr.cpp
 Misc.
