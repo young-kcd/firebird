@@ -88,7 +88,7 @@ public:
 			Firebird::string str(*getDefaultMemoryPool(), m_string, m_string_len);
 
 			TraceFailedSQLStatement stmt(str);
-			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction,
+			TraceManager::event_dsql_prepare(m_attachment, m_request ? m_request->req_transaction : NULL,
 				&stmt, millis, result);
 		}
 	}
