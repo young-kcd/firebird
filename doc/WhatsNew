@@ -2,6 +2,11 @@
   * v2.5.2
   **************************
 
+    * Bugfix CORE-3887
+        CHAR_TO_UUID and UUID_TO_CHAR works different in big endian architectures
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-3875
         GBAK does not check correctly parameters and backups random database with -B ":"
       Contributor(s):
@@ -322,8 +327,7 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-3238
-        Makes GEN_UUID return a compliant RFC-4122 binary UUID and introduce
-        CHAR_TO_UUID2 and UUID_TO_CHAR2 to convert UUIDs from/to string also complying with the RFC
+        Makes GEN_UUID return a compliant RFC-4122 UUID
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
