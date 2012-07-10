@@ -890,7 +890,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 			bh.version = 1;
 			bh.level = level;
 			bh.backup_guid = backup_guid;
-			StringToGuid(&bh.prev_guid, prev_guid, true);
+			StringToGuid(&bh.prev_guid, prev_guid);
 			bh.page_size = header->hdr_page_size;
 			bh.backup_scn = backup_scn;
 			bh.prev_scn = prev_scn;
@@ -990,7 +990,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		in_sqlda->sqlvar[0].sqldata = (char*)&level;
 		in_sqlda->sqlvar[0].sqlind = &null_flag;
 		char temp[GUID_BUFF_SIZE];
-		GuidToString(temp, &backup_guid, true);
+		GuidToString(temp, &backup_guid);
 		in_sqlda->sqlvar[1].sqldata = temp;
 		in_sqlda->sqlvar[1].sqlind = &null_flag;
 		in_sqlda->sqlvar[2].sqldata = (char*)&backup_scn;
