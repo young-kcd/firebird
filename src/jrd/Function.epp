@@ -499,6 +499,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 		if (function->fun_existence_lock)
 		{
 			LCK_release(tdbb, function->fun_existence_lock);
+			delete function->fun_existence_lock;
 			function->fun_existence_lock = NULL;
 		}
 
