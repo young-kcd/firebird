@@ -162,7 +162,6 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
 	{TYPE_INTEGER,		"FileSystemCacheThreshold",	(ConfigValue) 65536},	// page buffers
 	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false},	// if true relax strict alias checking rules in DSQL a bit
-	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false},	// if true disallow SET A = B, B = A to exchange column values
 	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
 	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
 	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 0},		// percent
@@ -621,11 +620,6 @@ int Config::getFileSystemCacheThreshold() const
 bool Config::getRelaxedAliasChecking()
 {
 	return (bool) getDefaultConfig()->values[KEY_RELAXED_ALIAS_CHECKING];
-}
-
-bool Config::getOldSetClauseSemantics()
-{
-	return (bool) getDefaultConfig()->values[KEY_OLD_SET_CLAUSE_SEMANTICS];
 }
 
 int Config::getFileSystemCacheSize()

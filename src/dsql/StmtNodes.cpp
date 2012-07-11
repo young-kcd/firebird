@@ -5278,8 +5278,6 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?
 	MemoryPool& pool = getPool();
 
-	const bool isUpdateSqlCompliant = !Config::getOldSetClauseSemantics();
-
 	// Separate old and new context references.
 
 	Array<NestConst<ValueExprNode> > orgValues, newValues;
@@ -5306,28 +5304,18 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 	{
 		node->dsqlContext = dsqlPassCursorContext(dsqlScratch, dsqlCursorName, relation);
 
-		if (isUpdateSqlCompliant)
-		{
-			// Process old context values.
-			dsqlScratch->context->push(node->dsqlContext);
-			++dsqlScratch->scopeLevel;
+		// Process old context values.
+		dsqlScratch->context->push(node->dsqlContext);
+		++dsqlScratch->scopeLevel;
 
-			for (ptr = orgValues.begin(); ptr != orgValues.end(); ++ptr)
-				*ptr = doDsqlPass(dsqlScratch, *ptr, false);
+		for (ptr = orgValues.begin(); ptr != orgValues.end(); ++ptr)
+			*ptr = doDsqlPass(dsqlScratch, *ptr, false);
 
-			--dsqlScratch->scopeLevel;
-			dsqlScratch->context->pop();
-		}
+		--dsqlScratch->scopeLevel;
+		dsqlScratch->context->pop();
 
 		// Process relation.
 		doDsqlPass(dsqlScratch, node->dsqlRelation, relation, false);
-
-		if (!isUpdateSqlCompliant)
-		{
-			// Process old context values.
-			for (ptr = orgValues.begin(); ptr != orgValues.end(); ++ptr)
-				*ptr = doDsqlPass(dsqlScratch, *ptr, false);
-		}
 
 		// Process new context values.
 		for (ptr = newValues.begin(); ptr != newValues.end(); ++ptr)
@@ -5373,13 +5361,6 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 	doDsqlPass(dsqlScratch, node->dsqlRelation, relation, false);
 	dsql_ctx* mod_context = dsqlGetContext(node->dsqlRelation);
-
-	if (!isUpdateSqlCompliant)
-	{
-		// Process old context values.
-		for (ptr = orgValues.begin(); ptr != orgValues.end(); ++ptr)
-			*ptr = doDsqlPass(dsqlScratch, *ptr, false);
-	}
 
 	// Process new context values.
 	for (ptr = newValues.begin(); ptr != newValues.end(); ++ptr)
@@ -5430,12 +5411,9 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 	node->dsqlRse = rse;
 
-	if (isUpdateSqlCompliant)
-	{
-		// Process old context values.
-		for (ptr = orgValues.begin(); ptr != orgValues.end(); ++ptr)
-			*ptr = doDsqlPass(dsqlScratch, *ptr, false);
-	}
+	// Process old context values.
+	for (ptr = orgValues.begin(); ptr != orgValues.end(); ++ptr)
+		*ptr = doDsqlPass(dsqlScratch, *ptr, false);
 
 	dsqlScratch->context->pop();
 

@@ -127,7 +127,6 @@ public:
 		KEY_DATABASE_GROWTH_INCREMENT,
 		KEY_FILESYSTEM_CACHE_THRESHOLD,
 		KEY_RELAXED_ALIAS_CHECKING,
-		KEY_OLD_SET_CLAUSE_SEMANTICS,
 		KEY_TRACE_CONFIG,
 		KEY_MAX_TRACELOG_SIZE,
 		KEY_FILESYSTEM_CACHE_SIZE,
@@ -325,8 +324,6 @@ public:
 	static int getFileSystemCacheSize();
 
 	static bool getRelaxedAliasChecking();
-
-	static bool getOldSetClauseSemantics();
 
 	static const char* getAuditTraceConfigFile();
 
