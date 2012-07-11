@@ -523,7 +523,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %token <legacyStr> AUTONOMOUS
 %token <legacyStr> CHAR_TO_UUID
-%token <legacyStr> CHAR_TO_UUID2
 %token <legacyStr> FIRSTNAME
 %token <legacyStr> GRANTED
 %token <legacyStr> LASTNAME
@@ -532,7 +531,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyStr> OS_NAME
 %token <legacyStr> SIMILAR
 %token <legacyStr> UUID_TO_CHAR
-%token <legacyStr> UUID_TO_CHAR2
 // new execute statement
 %token <legacyStr> CALLER
 %token <legacyStr> COMMON
@@ -6148,7 +6146,6 @@ system_function_std_syntax
 	| BIN_XOR
 	| CEIL
 	| CHAR_TO_UUID
-	| CHAR_TO_UUID2
 	| COS
 	| COSH
 	| COT
@@ -6182,7 +6179,6 @@ system_function_std_syntax
 	| TANH
 	| TRUNC
 	| UUID_TO_CHAR
-	| UUID_TO_CHAR2
 	;
 
 %type <sysFuncCallNode> system_function_special_syntax
@@ -6754,14 +6750,12 @@ non_reserved_word
 	| WEEK
 	| AUTONOMOUS			// added in FB 2.5
 	| CHAR_TO_UUID
-	| CHAR_TO_UUID2
 	| FIRSTNAME
 	| MIDDLENAME
 	| LASTNAME
 	| MAPPING
 	| OS_NAME
 	| UUID_TO_CHAR
-	| UUID_TO_CHAR2
 	| GRANTED
 	| CALLER				// new execute statement
 	| COMMON

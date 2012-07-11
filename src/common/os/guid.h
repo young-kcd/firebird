@@ -40,20 +40,11 @@ const int GUID_BODY_SIZE = 36;
 
 const char* const GUID_LEGACY_FORMAT =
 	"{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}";
-const char* const GUID_NEW_FORMAT_UPPER =
+const char* const GUID_NEW_FORMAT =
 	"{%02hX%02hX%02hX%02hX-%02hX%02hX-%02hX%02hX-%02hX%02hX-%02hX%02hX%02hX%02hX%02hX%02hX}";
-const char* const GUID_NEW_FORMAT_LOWER =
-	"{%02hx%02hx%02hx%02hx-%02hx%02hx-%02hx%02hx-%02hx%02hx-%02hx%02hx%02hx%02hx%02hx%02hx}";
 
 struct Guid
 {
-	enum Style
-	{
-		STYLE_NBACKUP,	// Format introduced with nbackup
-		STYLE_BROKEN,	// Format introduced in FB 2.5.0
-		STYLE_UUID		// Format as defined in the RFC-4122.
-	};
-
 	union
 	{
 		USHORT data[8];
@@ -71,87 +62,21 @@ struct Guid
 void GenerateRandomBytes(void* buffer, size_t size);
 void GenerateGuid(Guid* guid);
 
-// These functions receive buffers of at least GUID_BUFF_SIZE length
+// These functions receive buffers of at least GUID_BUFF_SIZE length.
+// Warning: they are BROKEN in little-endian and should not be used on new code.
 
-inline void GuidToString(char* buffer, const Guid* guid, Guid::Style style)
+inline void GuidToString(char* buffer, const Guid* guid)
 {
-	switch (style)
-	{
-		case Guid::STYLE_NBACKUP:
-			sprintf(buffer, GUID_LEGACY_FORMAT,
-				guid->data[0], guid->data[1], guid->data[2], guid->data[3],
-				guid->data[4], guid->data[5], guid->data[6], guid->data[7]);
-			break;
-
-		case Guid::STYLE_BROKEN:
-			sprintf(buffer, GUID_NEW_FORMAT_UPPER,
-				USHORT(guid->data[0] & 0xFF), USHORT(guid->data[0] >> 8),
-				USHORT(guid->data[1] & 0xFF), USHORT(guid->data[1] >> 8),
-				USHORT(guid->data[2] & 0xFF), USHORT(guid->data[2] >> 8),
-				USHORT(guid->data[3] & 0xFF), USHORT(guid->data[3] >> 8),
-				USHORT(guid->data[4] & 0xFF), USHORT(guid->data[4] >> 8),
-				USHORT(guid->data[5] & 0xFF), USHORT(guid->data[5] >> 8),
-				USHORT(guid->data[6] & 0xFF), USHORT(guid->data[6] >> 8),
-				USHORT(guid->data[7] & 0xFF), USHORT(guid->data[7] >> 8));
-			break;
-
-		case Guid::STYLE_UUID:
-			sprintf(buffer, GUID_NEW_FORMAT_LOWER,
-				USHORT((guid->data1 >> 24) & 0xFF), USHORT((guid->data1 >> 16) & 0xFF),
-				USHORT((guid->data1 >> 8) & 0xFF), USHORT(guid->data1 & 0xFF),
-				USHORT((guid->data2 >> 8) & 0xFF), USHORT(guid->data2 & 0xFF),
-				USHORT((guid->data3 >> 8) & 0xFF), USHORT(guid->data3 & 0xFF),
-				USHORT(guid->data4[0]), USHORT(guid->data4[1]),
-				USHORT(guid->data4[2]), USHORT(guid->data4[3]),
-				USHORT(guid->data4[4]), USHORT(guid->data4[5]),
-				USHORT(guid->data4[6]), USHORT(guid->data4[7]));
-			break;
-	}
+	sprintf(buffer, GUID_LEGACY_FORMAT,
+		guid->data[0], guid->data[1], guid->data[2], guid->data[3],
+		guid->data[4], guid->data[5], guid->data[6], guid->data[7]);
 }
 
-inline void StringToGuid(Guid* guid, const char* buffer, Guid::Style style)
+inline void StringToGuid(Guid* guid, const char* buffer)
 {
-	if (style == Guid::STYLE_NBACKUP)
-	{
-		sscanf(buffer, GUID_LEGACY_FORMAT,
-			&guid->data[0], &guid->data[1], &guid->data[2], &guid->data[3],
-			&guid->data[4], &guid->data[5], &guid->data[6], &guid->data[7]);
-	}
-	else
-	{
-		USHORT bytes[16];
-		sscanf(buffer, GUID_NEW_FORMAT_LOWER,
-			&bytes[0], &bytes[1], &bytes[2], &bytes[3],
-			&bytes[4], &bytes[5], &bytes[6], &bytes[7],
-			&bytes[8], &bytes[9], &bytes[10], &bytes[11],
-			&bytes[12], &bytes[13], &bytes[14], &bytes[15]);
-
-		if (style == Guid::STYLE_BROKEN)
-		{
-			guid->data[0] = bytes[0] | (bytes[1] << 8);
-			guid->data[1] = bytes[2] | (bytes[3] << 8);
-			guid->data[2] = bytes[4] | (bytes[5] << 8);
-			guid->data[3] = bytes[6] | (bytes[7] << 8);
-			guid->data[4] = bytes[8] | (bytes[9] << 8);
-			guid->data[5] = bytes[10] | (bytes[11] << 8);
-			guid->data[6] = bytes[12] | (bytes[13] << 8);
-			guid->data[7] = bytes[14] | (bytes[15] << 8);
-		}
-		else if (style == Guid::STYLE_UUID)
-		{
-			guid->data1 = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-			guid->data2 = (bytes[4] << 8) | bytes[5];
-			guid->data3 = (bytes[6] << 8) | bytes[7];
-			guid->data4[0] = bytes[8];
-			guid->data4[1] = bytes[9];
-			guid->data4[2] = bytes[10];
-			guid->data4[3] = bytes[11];
-			guid->data4[4] = bytes[12];
-			guid->data4[5] = bytes[13];
-			guid->data4[6] = bytes[14];
-			guid->data4[7] = bytes[15];
-		}
-	}
+	sscanf(buffer, GUID_LEGACY_FORMAT,
+		&guid->data[0], &guid->data[1], &guid->data[2], &guid->data[3],
+		&guid->data[4], &guid->data[5], &guid->data[6], &guid->data[7]);
 }
 
 }	// namespace

@@ -277,7 +277,7 @@ void PPG_print_header(const header_page* header, ULONG page,
 		case HDR_backup_guid:
 		{
 			char buff[Firebird::GUID_BUFF_SIZE];
-			Firebird::GuidToString(buff, reinterpret_cast<const Guid*>(p + 2), Guid::STYLE_NBACKUP);
+			Firebird::GuidToString(buff, reinterpret_cast<const Guid*>(p + 2));
 			uSvc->printf(false, "\tDatabase backup GUID:\t%s\n", buff);
 			break;
 		}
