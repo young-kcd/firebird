@@ -7,6 +7,12 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-3884
+        Server crashes on preparing empty query when trace is enabled
+      Contributor(s):
+        Dmitry Starodubov <dmitry.starodubov at red-soft.biz>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3875
         GBAK does not check correctly parameters and backups random database with -B ":"
       Contributor(s):
