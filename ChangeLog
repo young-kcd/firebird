@@ -1,3 +1,26 @@
+ 2012-07-11 01:38  asfernandes 
+   M src/dsql/keywords.cpp
+   M src/dsql/parse.y
+More changes related to CORE-3238 and CORE-3887.
+
+ 2012-07-10 16:09  asfernandes 
+   M doc/WhatsNew
+Update.
+
+ 2012-07-10 16:00  asfernandes 
+   M doc/sql.extensions/README.builtin_functions.txt
+   M src/jrd/SysFunction.cpp
+   M src/jrd/os/guid.h
+   M src/jrd/trace/TraceService.cpp
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/nbackup.cpp
+Rework on CORE-3238 - Makes GEN_UUID return a compliant RFC-4122 binary UUID.
+Fixed CORE-3887 - CHAR_TO_UUID and UUID_TO_CHAR works different in big/little endian architectures - problem similar to CORE-2898.
+
+ 2012-07-05 09:49  hvlad 
+   M src/jrd/trace/TraceDSQLHelpers.h
+Fixed bug CORE-3884 : Server crashes on preparing empty query when trace is enabled
+
  2012-06-29 16:29  hvlad 
    M src/jrd/vio.cpp
 Enabled per-table runtime stats for sweeper (necessary for CORE-3656). 

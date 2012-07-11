@@ -68,9 +68,7 @@ enum Function
 	funLPad,
 	funRPad,
 	funLnat,
-	funLog10,
-	funUuidBroken,
-	funUuidRfc
+	funLog10
 };
 
 enum TrigonFunction
@@ -1433,40 +1431,19 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	buffer[38] = '\0';
 	memcpy(buffer + 1, data, GUID_BODY_SIZE);
 
-	FB_GUID guid;
+	USHORT bytes[16];
+	sscanf(buffer, GUID_NEW_FORMAT,
+		&bytes[0], &bytes[1], &bytes[2], &bytes[3],
+		&bytes[4], &bytes[5], &bytes[6], &bytes[7],
+		&bytes[8], &bytes[9], &bytes[10], &bytes[11],
+		&bytes[12], &bytes[13], &bytes[14], &bytes[15]);
 
-	switch ((Function)(IPTR) function->misc)
-	{
-		case funUuidBroken:
-			StringToGuid(&guid, buffer, false);
-			break;
-
-		case funUuidRfc:
-		{
-			USHORT bytes[16];
-			sscanf(buffer, GUID_NEW_FORMAT_LOWER,
-				&bytes[0], &bytes[1], &bytes[2], &bytes[3],
-				&bytes[4], &bytes[5], &bytes[6], &bytes[7],
-				&bytes[8], &bytes[9], &bytes[10], &bytes[11],
-				&bytes[12], &bytes[13], &bytes[14], &bytes[15]);
-
-			guid.data1 = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-			guid.data2 = (bytes[4] << 8) | bytes[5];
-			guid.data3 = (bytes[6] << 8) | bytes[7];
-			guid.data4[0] = bytes[8];
-			guid.data4[1] = bytes[9];
-			guid.data4[2] = bytes[10];
-			guid.data4[3] = bytes[11];
-			guid.data4[4] = bytes[12];
-			guid.data4[5] = bytes[13];
-			guid.data4[6] = bytes[14];
-			guid.data4[7] = bytes[15];
-			break;
-		}
-	}
+	UCHAR resultData[16];
+	for (unsigned i = 0; i < 16; ++i)
+		resultData[i] = (UCHAR) bytes[i];
 
 	dsc result;
-	result.makeText(16, ttype_binary, reinterpret_cast<UCHAR*>(guid.data));
+	result.makeText(16, ttype_binary, resultData);
 	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
@@ -1999,8 +1976,26 @@ dsc* evlGenUuid(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 
 	GenerateGuid(&guid);
 
+	UCHAR data[16];
+	data[0] = (guid.data1 >> 24) & 0xFF;
+	data[1] = (guid.data1 >> 16) & 0xFF;
+	data[2] = (guid.data1 >> 8) & 0xFF;
+	data[3] = guid.data1 & 0xFF;
+	data[4] = (guid.data2 >> 8) & 0xFF;
+	data[5] = guid.data2 & 0xFF;
+	data[6] = (guid.data3 >> 8) & 0xFF;
+	data[7] = guid.data3 & 0xFF;
+	data[8] = guid.data4[0];
+	data[9] = guid.data4[1];
+	data[10] = guid.data4[2];
+	data[11] = guid.data4[3];
+	data[12] = guid.data4[4];
+	data[13] = guid.data4[5];
+	data[14] = guid.data4[6];
+	data[15] = guid.data4[7];
+
 	dsc result;
-	result.makeText(16, ttype_binary, reinterpret_cast<UCHAR*>(guid.data));
+	result.makeText(16, ttype_binary, data);
 	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
@@ -3319,27 +3314,12 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 										Arg::Str(function->name));
 	}
 
-	const FB_GUID* guid = reinterpret_cast<const FB_GUID*>(data);
 	char buffer[GUID_BUFF_SIZE];
-
-	switch ((Function)(IPTR) function->misc)
-	{
-		case funUuidBroken:
-			GuidToString(buffer, guid, false);
-			break;
-
-		case funUuidRfc:
-			sprintf(buffer, GUID_NEW_FORMAT_LOWER,
-				USHORT((guid->data1 >> 24) & 0xFF), USHORT((guid->data1 >> 16) & 0xFF),
-				USHORT((guid->data1 >> 8) & 0xFF), USHORT(guid->data1 & 0xFF),
-				USHORT((guid->data2 >> 8) & 0xFF), USHORT(guid->data2 & 0xFF),
-				USHORT((guid->data3 >> 8) & 0xFF), USHORT(guid->data3 & 0xFF),
-				USHORT(guid->data4[0]), USHORT(guid->data4[1]),
-				USHORT(guid->data4[2]), USHORT(guid->data4[3]),
-				USHORT(guid->data4[4]), USHORT(guid->data4[5]),
-				USHORT(guid->data4[6]), USHORT(guid->data4[7]));
-			break;
-	}
+	sprintf(buffer, GUID_NEW_FORMAT,
+		USHORT(data[0]), USHORT(data[1]), USHORT(data[2]), USHORT(data[3]), USHORT(data[4]),
+		USHORT(data[5]), USHORT(data[6]), USHORT(data[7]), USHORT(data[8]), USHORT(data[9]),
+		USHORT(data[10]), USHORT(data[11]), USHORT(data[12]), USHORT(data[13]), USHORT(data[14]),
+		USHORT(data[15]));
 
 	dsc result;
 	result.makeText(GUID_BODY_SIZE, ttype_ascii, reinterpret_cast<UCHAR*>(buffer) + 1);
@@ -3374,8 +3354,7 @@ const SysFunction SysFunction::functions[] =
 		{"BIN_XOR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor},
 		{"CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
-		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, (void*) funUuidBroken},
-		{"CHAR_TO_UUID2", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, (void*) funUuidRfc},
+		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
 		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCos},
 		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCosh},
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
@@ -3410,8 +3389,7 @@ const SysFunction SysFunction::functions[] =
 		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTan},
 		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
-		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, (void*) funUuidBroken},
-		{"UUID_TO_CHAR2", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, (void*) funUuidRfc},
+		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
 	};
 
