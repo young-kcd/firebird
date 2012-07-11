@@ -1,3 +1,19 @@
+ 2012-07-11 01:56  asfernandes 
+   M doc/sql.extensions/README.builtin_functions.txt
+   M src/common/os/guid.h
+   M src/dsql/parse.y
+   M src/jrd/SysFunction.cpp
+   M src/jrd/trace/TraceService.cpp
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/keywords.cpp
+Frontport UUID fixes (CORE-3238 and CORE-3887).
+
+ 2012-07-10 16:08  dimitr 
+   M src/jrd/Function.epp
+   M src/jrd/met.epp
+Avoid a small memory leak.
+
  2012-06-29 12:44  alexpeshkoff 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
