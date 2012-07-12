@@ -158,7 +158,7 @@ See also README.trace_services
 
 This way of doing backups is specially efficient when one needs to perform
 backup/restore operation for database, located on ther server accessed using
-internet, due to serious performance instrease.
+internet, due to the great performance advantage.
 
 The simplest way to use this feature is fbsvcmgr. To backup database run
 approximately the following:
@@ -186,7 +186,7 @@ server is ready to accept from client. (0 value means no more data is needed rig
 now.) The main trick is that client should NOT send more data than requested by
 server - this causes an error "Size of data is more than requested". The data is
 sent in next isc_service_query() call in the send_items block, using
-isc_info_svc_line tag in tradition form: isc_info_svc_line, 2 bytes length, data.
+isc_info_svc_line tag in traditional form: isc_info_svc_line, 2 bytes length, data.
 When server needs next portion, it once more returns non-zero isc_info_svc_stdin
 value from isc_service_query().
 
