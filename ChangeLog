@@ -1,3 +1,7 @@
+ 2012-07-11 05:20  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
  2012-07-11 01:38  asfernandes 
    M src/dsql/keywords.cpp
    M src/dsql/parse.y
