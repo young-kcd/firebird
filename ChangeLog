@@ -1,3 +1,10 @@
+ 2012-07-11 12:54  dimitr 
+   M builds/install/misc/firebird.conf.in
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/dsql/StmtNodes.cpp
+Wiped out the legacy compatibility option.
+
  2012-07-11 01:56  asfernandes 
    M doc/sql.extensions/README.builtin_functions.txt
    M src/common/os/guid.h
