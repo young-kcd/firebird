@@ -1,3 +1,7 @@
+ 2012-07-12 06:35  robocop 
+   M doc/README.services_extension
+Misc.
+
  2012-07-11 12:54  dimitr 
    M builds/install/misc/firebird.conf.in
    M src/common/config/config.cpp
