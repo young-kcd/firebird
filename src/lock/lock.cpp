@@ -499,7 +499,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 
 	LockTableGuard guard(this, owner_offset);
 
-	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
+	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
 		return 0;
 
@@ -525,6 +525,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		{
 			return 0;
 		}
+		owner = (own*) SRQ_ABS_PTR(owner_offset);
 	}
 	else
 	{
