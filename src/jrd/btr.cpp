@@ -1950,8 +1950,8 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 		page = pageNode.pageNumber;
 	}
 
-	SLONG nodes = 0;
-	SLONG duplicates = 0;
+	FB_UINT64 nodes = 0;
+	FB_UINT64 duplicates = 0;
 	temporary_key key;
 	key.key_flags = 0;
 	key.key_length = 0;
@@ -1961,9 +1961,9 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	const ULONG segments = root->irt_rpt[id].irt_keys;
 
 	// SSHORT count, stuff_count, pos, i;
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList;
+	Firebird::HalfStaticArray<FB_UINT64, 4> duplicatesList;
 	duplicatesList.grow(segments);
-	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
+	memset(duplicatesList.begin(), 0, segments * sizeof(FB_UINT64));
 
 	//const Database* dbb = tdbb->getDatabase();
 
@@ -3136,15 +3136,15 @@ static ULONG fast_load(thread_db* tdbb,
 
 	WIN* window = NULL;
 	bool error = false;
-	ULONG count = 0;
-	ULONG duplicates = 0;
+	FB_UINT64 count = 0;
+	FB_UINT64 duplicates = 0;
 	const bool descending = (idx->idx_flags & idx_descending);
 	const ULONG segments = idx->idx_count;
 
 	// hvlad: look at IDX_create_index for explanations about NULL indicator below
 	const int nullIndLen = !descending && (idx->idx_count == 1) ? 1 : 0;
 
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList;
+	Firebird::HalfStaticArray<FB_UINT64, 4> duplicatesList;
 
 	try
 	{
@@ -3177,7 +3177,7 @@ static ULONG fast_load(thread_db* tdbb,
 		buckets[1] = NULL;
 
 		duplicatesList.grow(segments);
-		memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
+		memset(duplicatesList.begin(), 0, segments * sizeof(FB_UINT64));
 
 		// If there's an error during index construction, fall
 		// thru to release the last index bucket at each level
