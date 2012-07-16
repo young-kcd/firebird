@@ -814,9 +814,6 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 		default:
 			status_exception::raise(Arg::Gds(isc_fbsvcmgr_query_err) <<
 									Arg::Num(static_cast<unsigned char>(p[-1])));
-#ifdef DEV_BUILD
-			abort();
-#endif
 		}
 	}
 
