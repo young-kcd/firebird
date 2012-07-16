@@ -1,3 +1,11 @@
+ 2012-07-15 12:43  dimitr 
+   M src/jrd/btr.cpp
+Calculate the index statistics correctly for very large tables.
+
+ 2012-07-14 21:26  hvlad 
+   M src/lock/lock.cpp
+Fixed AV in LM after remapping of shared memory
+
  2012-07-12 06:35  robocop 
    M doc/README.services_extension
 Misc.
