@@ -1,3 +1,7 @@
+ 2012-07-16 10:43  alexpeshkoff 
+   M src/utilities/fbsvcmgr.cpp
+Removed debugging code
+
  2012-07-12 06:33  robocop 
    M doc/README.services_extension
 Misc.
