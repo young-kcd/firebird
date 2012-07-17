@@ -48,21 +48,21 @@ namespace Firebird {
 			Entry(Object e, Entry* stk) 
 				: inherited(), next(stk) 
 			{
-				add(e);
+				this->add(e);
 			}
-			
+
 			Entry(Entry* stk) : inherited(), next(stk) { }
 
 			~Entry() 
 			{
 				delete next;
 			}
-			
+
 			Entry* push(Object e, MemoryPool& p)
 			{
 				if (inherited::getCount() < this->getCapacity())
 				{
-					add(e);
+					this->add(e);
 					return this;
 				}
 				Entry* newEntry = FB_NEW(p) Entry(e, this);
@@ -218,7 +218,7 @@ namespace Firebird {
 				{
 					if (value < elem)
 						return true;
-				
+
 					value -= elem;
 				}
 
@@ -278,13 +278,13 @@ namespace Firebird {
 				elem = stk ? stk->getCount() : 0;
 				return *this;
 			}
-			
+
 			//friend void class Stack<Object, Capacity>::clear (const iterator& mark);
 		}; // iterator
 
 		class const_iterator;
 		friend class const_iterator;
-		
+
 		class const_iterator
 		{
 		private:
@@ -398,7 +398,7 @@ namespace Firebird {
 				elem = stk ? stk->getCount() : 0;
 				return *this;
 			}
-			
+
 			//friend const const_iterator class Stack<Object, Capacity>::merge(Stack<Object, Capacity>& s);
 			//void class Stack<Object, Capacity>::split (const const_iterator& mark, Stack<Object, Capacity>& s);
 		}; // const_iterator
@@ -567,7 +567,7 @@ namespace Firebird {
 		{
 			delete stk;
 			stk = v.stk ? v.stk->dup(getPool()) : 0;
-			
+
 			if (stk) 
 			{
 				delete stk_cache;
