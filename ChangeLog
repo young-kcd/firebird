@@ -1,3 +1,7 @@
+ 2012-07-16 10:40  alexpeshkoff 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Removed debugging code
+
  2012-07-15 12:43  dimitr 
    M src/jrd/btr.cpp
 Calculate the index statistics correctly for very large tables.
