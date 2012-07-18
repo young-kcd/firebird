@@ -1,3 +1,9 @@
+ 2012-07-17 11:45  alexpeshkoff 
+   M src/common/classes/array.h
+   M src/common/classes/stack.h
+   M src/common/classes/vector.h
+Modified patch from SUSE to make it build with gcc 4.7
+
  2012-06-27 17:57  dimitr 
    M src/misc/writeBuildNum.sh
 Bumped the version number.
