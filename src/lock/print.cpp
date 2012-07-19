@@ -181,7 +181,7 @@ static const char* usage =
 	"  -h        print recent events history\n"
 	"  -a        print all of the above (equal to -o -l -r -h swithes)\n"
 	"  -s <N>    print only locks of given series (valid only if -l specified)\n"
-	"  -n        print only pending owners (if -o specified) or \n"
+	"  -n        print only pending owners (if -o specified) or\n"
 	"            pending locks (if -l specified)\n"
 	"  -w        print \"waiting for\" list for every owner\n"
 	"            (valid only if -o specified)\n"
@@ -191,15 +191,15 @@ static const char* usage =
 	"\n"
 	"  -i[<counters>] [<N> [<M>]]    interactive mode:\n"
 	"     print chosen lock manager activity counters during <N> seconds\n"
-	"     witn interval of <M> seconds. Defaults are 1 sec for both values.\n"
+	"     with interval of <M> seconds. Defaults are 1 sec for both values.\n"
 	"     Counters are:\n"
-	"     a    number of mutex acquires, acquire blocks, etc \n"
+	"     a    number of mutex acquires, acquire blocks, etc\n"
 	"     o    number of lock operations (enqueues, converts, downgrades, etc)\n"
 	"     t    number of operations with most important lock series\n"
 	"     w    number of waits, timeouts, deadlock scans, etc\n"
 	"     Default is aotw\n"
 	"\n"
-	"  -?        this help screen \n"
+	"  -?        this help screen\n"
 	"\n";
 
 
@@ -1279,7 +1279,7 @@ static void prt_owner(OUTFILE outfile,
 		const srq* que_inst;
 		SRQ_LOOP(owner->own_requests, que_inst)
 			prt_request(outfile, LOCK_header,
-						(lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_own_requests)));
+						(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_requests)));
 	}
 
 	if (sw_requests && sw_pending)
@@ -1287,7 +1287,7 @@ static void prt_owner(OUTFILE outfile,
 		const srq* que_inst;
 		SRQ_LOOP(owner->own_pending, que_inst)
 			prt_request(outfile, LOCK_header,
-						(lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_own_pending)));
+						(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_pending)));
 	}
 }
 

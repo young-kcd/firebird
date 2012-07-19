@@ -827,7 +827,7 @@ Data source : @4', NULL, NULL)
 ('svc_no_switches', NULL, 'svc.cpp', NULL, 0, 717, NULL, '', NULL, NULL);
 ('svc_bad_size', NULL, 'svc.cpp', NULL, 0, 718, NULL, 'Size of stdin data is more than was requested from client', NULL, NULL);
 ('no_crypt_plugin', NULL, 'CryptoManager.cpp', NULL, 0, 719, NULL, 'Crypt plugin @1 failed to load', NULL, NULL);
-('cp_name_too_long', NULL, 'CryptoManager.cpp', NULL, 0, 720, NULL, 'Length of crypt plugin name should not exceed @1 byte', NULL, NULL);
+('cp_name_too_long', NULL, 'CryptoManager.cpp', NULL, 0, 720, NULL, 'Length of crypt plugin name should not exceed @1 bytes', NULL, NULL);
 ('cp_process_active', NULL, 'CryptoManager.cpp', NULL, 0, 721, NULL, 'Crypt failed - already crypting database', NULL, NULL);
 ('cp_already_crypted', NULL, 'CryptoManager.cpp', NULL, 0, 722, NULL, 'Crypt failed - database is already in requested state', NULL, NULL);
 ('decrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 723, NULL, 'Missing crypt plugin, but page appears encrypted', NULL, NULL);

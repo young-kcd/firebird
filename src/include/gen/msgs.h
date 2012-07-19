@@ -744,7 +744,7 @@ Data source : @4"},		/* eds_statement */
 	{335545037, ""},		/* svc_no_switches */
 	{335545038, "Size of stdin data is more than was requested from client"},		/* svc_bad_size */
 	{335545039, "Crypt plugin @1 failed to load"},		/* no_crypt_plugin */
-	{335545040, "Length of crypt plugin name should not exceed @1 byte"},		/* cp_name_too_long */
+	{335545040, "Length of crypt plugin name should not exceed @1 bytes"},		/* cp_name_too_long */
 	{335545041, "Crypt failed - already crypting database"},		/* cp_process_active */
 	{335545042, "Crypt failed - database is already in requested state"},		/* cp_already_crypted */
 	{335545043, "Missing crypt plugin, but page appears encrypted"},		/* decrypt_error */
