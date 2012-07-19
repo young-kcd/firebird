@@ -1,3 +1,9 @@
+ 2012-07-19 01:52  asfernandes 
+   M src/include/gen/msgs.h
+   M src/lock/print.cpp
+   M src/msgs/messages2.sql
+Misc.
+
  2012-07-16 10:40  alexpeshkoff 
    M src/utilities/fbsvcmgr/fbsvcmgr.cpp
 Removed debugging code
