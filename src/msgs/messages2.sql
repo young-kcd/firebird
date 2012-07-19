@@ -824,7 +824,7 @@ Data source : @4', NULL, NULL)
 ('info_access', NULL, 'svc.cpp', NULL, 0, 714, NULL, 'Wrong info requested in isc_svc_query() for anonymous service', NULL, NULL);
 ('svc_no_stdin', NULL, 'svc.cpp', NULL, 0, 715, NULL, 'No isc_info_svc_stdin in user request, but service thread requested stdin data', NULL, NULL);
 ('svc_start_failed', NULL, 'svc.cpp', NULL, 0, 716, NULL, 'Start request for anonymous service is impossible', NULL, NULL);
-('svc_no_switches', NULL, 'svc.cpp', NULL, 0, 717, NULL, '', NULL, NULL);
+('svc_no_switches', NULL, 'svc.cpp', NULL, 0, 717, NULL, 'All services except for getting server log require switches', NULL, NULL);
 ('svc_bad_size', NULL, 'svc.cpp', NULL, 0, 718, NULL, 'Size of stdin data is more than was requested from client', NULL, NULL);
 ('no_crypt_plugin', NULL, 'CryptoManager.cpp', NULL, 0, 719, NULL, 'Crypt plugin @1 failed to load', NULL, NULL);
 ('cp_name_too_long', NULL, 'CryptoManager.cpp', NULL, 0, 720, NULL, 'Length of crypt plugin name should not exceed @1 bytes', NULL, NULL);

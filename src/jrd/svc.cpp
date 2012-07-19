@@ -2542,6 +2542,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	const UCHAR svc_action = spb.getClumpTag();
 	spb.moveNext();
 
+	if (spb.isEof())
+		return false;
+
 	string burp_database, burp_backup;
 	int burp_options = 0;
 

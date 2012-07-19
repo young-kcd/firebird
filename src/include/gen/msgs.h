@@ -741,7 +741,7 @@ Data source : @4"},		/* eds_statement */
 	{335545034, "Wrong info requested in isc_svc_query() for anonymous service"},		/* info_access */
 	{335545035, "No isc_info_svc_stdin in user request, but service thread requested stdin data"},		/* svc_no_stdin */
 	{335545036, "Start request for anonymous service is impossible"},		/* svc_start_failed */
-	{335545037, ""},		/* svc_no_switches */
+	{335545037, "All services except for getting server log require switches"},		/* svc_no_switches */
 	{335545038, "Size of stdin data is more than was requested from client"},		/* svc_bad_size */
 	{335545039, "Crypt plugin @1 failed to load"},		/* no_crypt_plugin */
 	{335545040, "Length of crypt plugin name should not exceed @1 bytes"},		/* cp_name_too_long */
