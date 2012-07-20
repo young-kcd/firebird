@@ -939,6 +939,8 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 {
 	internalScratch = scratch;
 
+	scratch->flags |= DsqlCompilerScratch::FLAG_DDL;
+
 	node = Node::doDsqlPass(scratch, node);
 
 	if (scratch->getAttachment()->dbb_read_only)

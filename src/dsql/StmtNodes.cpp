@@ -1388,6 +1388,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement);
 	blockScratch->clientDialect = dsqlScratch->clientDialect;
 	blockScratch->flags |= DsqlCompilerScratch::FLAG_FUNCTION | DsqlCompilerScratch::FLAG_SUB_ROUTINE;
+	blockScratch->flags |= dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL;
 
 	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
 
@@ -1643,6 +1644,7 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement);
 	blockScratch->clientDialect = dsqlScratch->clientDialect;
 	blockScratch->flags |= DsqlCompilerScratch::FLAG_PROCEDURE | DsqlCompilerScratch::FLAG_SUB_ROUTINE;
+	blockScratch->flags |= dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL;
 
 	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
 

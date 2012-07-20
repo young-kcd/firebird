@@ -458,11 +458,6 @@ public:
 	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
 	void setSqlText(Firebird::RefString* value) { sqlText = value; }
 
-	bool isDdl() const
-	{
-		return type == TYPE_DDL || type == TYPE_CREATE_DB;
-	}
-
 	dsql_msg* getSendMsg() { return sendMsg; }
 	const dsql_msg* getSendMsg() const { return sendMsg; }
 	void setSendMsg(dsql_msg* value) { sendMsg = value; }

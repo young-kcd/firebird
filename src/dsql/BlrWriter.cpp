@@ -137,11 +137,6 @@ void BlrWriter::putDebugSrcInfo(USHORT line, USHORT col)
 	debugData.add(col >> 8);
 
 	ULONG offset = (blrData.getCount() - baseOffset);
-
-	// for DDL statements we store BLR's length at the first 2 bytes
-	if (isDdlDyn())
-		offset -= 2;
-
 	debugData.add(offset);
 	debugData.add(offset >> 8);
 }

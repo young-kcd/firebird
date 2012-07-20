@@ -1072,12 +1072,6 @@ public:
 				return dsqlScratch->isVersion4();
 			}
 
-		protected:
-			virtual bool isDdlDyn()
-			{
-				return false;
-			}
-
 		private:
 			DsqlCompilerScratch* dsqlScratch;
 		};

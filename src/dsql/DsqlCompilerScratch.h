@@ -62,6 +62,7 @@ public:
 	static const unsigned FLAG_SUB_ROUTINE			= 0x0400;
 	static const unsigned FLAG_INTERNAL_REQUEST		= 0x0800;
 	static const unsigned FLAG_AMBIGUOUS_STMT		= 0x1000;
+	static const unsigned FLAG_DDL					= 0x2000;
 
 public:
 	DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
@@ -120,11 +121,6 @@ protected:
 	// It dies together with it's pool in release_request().
 	~DsqlCompilerScratch()
 	{
-	}
-
-	virtual bool isDdlDyn()
-	{
-		return statement->isDdl() && !(flags & FLAG_BLOCK);
 	}
 
 public:

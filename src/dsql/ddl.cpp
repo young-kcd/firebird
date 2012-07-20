@@ -121,7 +121,7 @@ static void post_607(const Arg::StatusVector& v);
 // Determine whether ids or names should be referenced when generating blr for fields and relations.
 bool DDL_ids(const DsqlCompilerScratch* scratch)
 {
-	return !scratch->getStatement()->isDdl();
+	return !(scratch->flags & DsqlCompilerScratch::FLAG_DDL);
 }
 
 
@@ -328,13 +328,8 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 		const dsql_str* dfl_charset = NULL;
 
-		if (dsqlScratch->getStatement()->isDdl() ||
-			(dsqlScratch->flags & (
-				DsqlCompilerScratch::FLAG_FUNCTION | DsqlCompilerScratch::FLAG_PROCEDURE |
-				DsqlCompilerScratch::FLAG_TRIGGER)))
-		{
+		if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL)
 			dfl_charset = METD_get_default_charset(dsqlScratch->getTransaction());
-		}
 		else
 		{
 			USHORT charSet = dsqlScratch->getAttachment()->dbb_attachment->att_charset;

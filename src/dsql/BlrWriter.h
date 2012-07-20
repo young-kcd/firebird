@@ -141,9 +141,6 @@ public:
 
 	virtual bool isVersion4() = 0;
 
-protected:
-	virtual bool isDdlDyn() = 0;
-
 private:
 	BlrData blrData;
 	DebugData debugData;
