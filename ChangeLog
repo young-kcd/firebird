@@ -1,3 +1,20 @@
+ 2012-07-20 02:41  asfernandes 
+   M src/dsql/BlrWriter.cpp
+   M src/dsql/BlrWriter.h
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/ddl.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+Fixed CORE-3893 - Cannot restore tpcc database in FB 3.0.
+
+ 2012-07-19 07:49  alexpeshkoff 
+   M src/include/gen/msgs.h
+   M src/jrd/svc.cpp
+   M src/msgs/messages2.sql
+Misc diags
+
  2012-07-19 01:52  asfernandes 
    M src/include/gen/msgs.h
    M src/lock/print.cpp
