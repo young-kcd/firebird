@@ -3900,6 +3900,9 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 {
 	ULONG errorCode = FB_SUCCESS;
 
+	const USHORT origLen = DTYPE_IS_TEXT(origFld.dyn_dsc.dsc_dtype) ?
+		origFld.dyn_charlen : DSC_string_length(&origFld.dyn_dsc);
+
 	// Check to make sure that the old and new types are compatible
 	switch (origFld.dyn_dtype)
 	{
@@ -3934,22 +3937,10 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 		case blr_text:
 		case blr_varying:
 		case blr_cstring:
+			if (newFld.dyn_charlen < origLen)
 			{
-				// CVC: Because our caller invoked DSC_make_descriptor() on newFld previously,
-				// we should have the added bytes for varchar. For cstring, we are done, since
-				// DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor).
-
-				const USHORT maxflen = DSC_string_length(&origFld.dyn_dsc);
-
-				// We can have this assertion since this case is for both string fields.
-				const ULONG new_len = DSC_string_length(&newFld.dyn_dsc);
-				fb_assert(new_len - maxflen == (ULONG) newFld.dyn_charbytelen - origFld.dyn_charbytelen);
-				// if (newFld.dyn_dsc.dsc_length < maxflen)
-				if (new_len < maxflen)
-				{
-					// msg 208: New size specified for column %s must be at least %d characters.
-					errorCode = isc_dyn_char_fld_too_small;
-				}
+				// msg 208: New size specified for column %s must be at least %d characters.
+				errorCode = isc_dyn_char_fld_too_small;
 			}
 			break;
 
@@ -4006,18 +3997,11 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 		case blr_varying2:
 		case blr_cstring:
 		case blr_cstring2:
+			if (newFld.dyn_charlen < origLen)
 			{
-				const USHORT maxflen = DSC_string_length(&origFld.dyn_dsc);
-
-				// CVC: Solve bug #910423, missing DSC_string_length call.
-				// if (newFld.dyn_dsc.dsc_length < maxflen)
-				if (DSC_string_length(&newFld.dyn_dsc) < maxflen)
-				{
-					// msg 208: New size specified for column %s must be at least %d characters.
-					errorCode = isc_dyn_char_fld_too_small;
-				}
+				// msg 208: New size specified for column %s must be at least %d characters.
+				errorCode = isc_dyn_char_fld_too_small;
 			}
-
 			break;
 
 		default:
@@ -4135,16 +4119,10 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 		case blr_text:
 		case blr_varying:
 		case blr_cstring:
+			if (newFld.dyn_charlen < origLen)
 			{
-				const USHORT maxflen = DSC_string_length(&origFld.dyn_dsc);
-
-				// CVC: Solve bug #910423, missing DSC_string_length call.
-				// if (newFld.dyn_dsc.dsc_length < maxflen)
-				if (DSC_string_length(&newFld.dyn_dsc) < maxflen)
-				{
-					// msg 208: New size specified for column %s must be at least %d characters.
-					errorCode = isc_dyn_char_fld_too_small;
-				}
+				// msg 208: New size specified for column %s must be at least %d characters.
+				errorCode = isc_dyn_char_fld_too_small;
 			}
 			break;
 
@@ -4180,7 +4158,7 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 		// msg 208: New size specified for column %s must be at least %d characters.
 		status_exception::raise(
 			Arg::Gds(errorCode) << origFld.dyn_fld_name.c_str() <<
-				Arg::Num(DSC_string_length(&origFld.dyn_dsc)));
+				Arg::Num(origLen));
 		break;
 
 	case isc_dyn_scale_too_big:
