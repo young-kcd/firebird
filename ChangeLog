@@ -1,3 +1,7 @@
+ 2012-07-22 01:42  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-3894 - Wrong numbers in error message for decreasing char/varchar columns.
+
  2012-07-20 02:41  asfernandes 
    M src/dsql/BlrWriter.cpp
    M src/dsql/BlrWriter.h
