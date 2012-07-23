@@ -239,7 +239,13 @@ const int tra_precommitted	= 5;	/* Transaction is precommitted */
 
 class Savepoint : public pool_alloc<type_sav>
 {
-    public:
+public:
+	~Savepoint()
+	{
+		deleteActions(sav_verb_actions);
+		deleteActions(sav_verb_free);
+	}
+
 	VerbAction*		sav_verb_actions;	/* verb action list */
 	VerbAction*		sav_verb_free;		/* free verb actions */
 	USHORT			sav_verb_count;		/* Active verb count */
@@ -247,6 +253,9 @@ class Savepoint : public pool_alloc<type_sav>
 	Savepoint*		sav_next;
 	USHORT			sav_flags;
 	TEXT			sav_name[32]; /* Savepoint name */
+
+private:
+	void deleteActions(VerbAction* list);
 };
 
 /* Savepoint block flags. */
@@ -339,11 +348,28 @@ typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTre
 
 class VerbAction : public pool_alloc<type_vct>
 {
-    public:
+public:
+	~VerbAction()
+	{
+		delete vct_records;
+		delete vct_undo;
+	}
+
 	VerbAction* 	vct_next;		/* Next action within verb */
 	jrd_rel*		vct_relation;	/* Relation involved */
 	RecordBitmap*	vct_records;	/* Record involved */
 	UndoItemTree*	vct_undo;		/* Data for undo records */
+};
+
+
+inline void Savepoint::deleteActions(VerbAction* list)
+{
+	while (list)
+	{
+		VerbAction* next = list->vct_next;
+		delete list;
+		list = next;
+	}
 };
 
 } //namespace Jrd
