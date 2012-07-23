@@ -3319,7 +3319,7 @@ static void release_proc_save_points(jrd_req* request)
  **************************************
  *
  * Functional description
- *	Release temporary blobs assigned by this request.
+ *	Release savepoints used by this request.
  *
  **************************************/
 	Savepoint* sav_point = request->req_proc_sav_point;
