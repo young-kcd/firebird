@@ -16,5 +16,5 @@ service @FB_SERVICE_NAME@
 # using default firewall configuration (SF#1065511)
 #	log_on_success	+= USERID
 #	log_on_failure	+= USERID
-	server		= @FB_SBINDIR@/fb_smp_server
+	server		= @FB_SBINDIR@/firebird
 }
