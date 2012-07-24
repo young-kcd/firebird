@@ -261,6 +261,16 @@ namespace
 	InitInstance<AliasesConf> aliasesConf;
 }
 
+// Checks that argument doesn't contain colon or directory separator
+static inline bool hasSeparator(const PathName& name)
+{
+	for (const char* p = name.c_str(); *p; p++) {
+		if (*p == ':' || *p == '/' || *p == '\\')
+			return true;
+	}
+	return false;
+}
+
 // Search for 'alias' in aliases.conf, return its value in 'file' if found. Else set file to alias.
 // Returns true if alias is found in aliases.conf.
 static bool resolveAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
@@ -289,38 +299,22 @@ static bool resolveAlias(const PathName& alias, PathName& file, RefPtr<Config>* 
 // Returns true if expanded successfully.
 static bool resolveDatabaseAccess(const PathName& alias, PathName& file)
 {
-	PathName correctedAlias = alias;
-	replace_dir_sep(correctedAlias);
+	file = alias;
 
-	bool rc = true;
+	if (hasSeparator(alias))
+		return false;
 
-	PathName path, name;
-	PathUtils::splitLastComponent(path, name, correctedAlias);
-
-	// if path component not present in file_name
-	if (path.isEmpty())
+	// try to expand to existing file
+	if (!databaseDirectoryList().expandFileName(file, alias))
 	{
-		// try to expand to existing file
-		if (!databaseDirectoryList().expandFileName(file, name))
+		// try to use default path
+		if (!databaseDirectoryList().defaultName(file, alias))
 		{
-			// try to use default path
-			if (!databaseDirectoryList().defaultName(file, name))
-			{
-				rc = false;
-			}
+			return false;
 		}
 	}
-	else
-	{
-		rc = false;
-	}
 
-	if (! rc)
-	{
-		file = correctedAlias;
-	}
-
-	return rc;
+	return true;
 }
 
 // Set a prefix to a filename based on the ISC_PATH user variable.
@@ -333,11 +327,8 @@ static bool setPath(const PathName& filename, PathName& expandedName)
 		return false;
 
 	// If the file already contains a remote node or any path at all forget it.
-	for (const char* p = filename.c_str(); *p; p++)
-	{
-		if (*p == ':' || *p == '/' || *p == '\\')
-			return false;
-	}
+	if (hasSeparator(filename))
+		return false;
 
 	// concatenate the strings
 
