@@ -1,3 +1,8 @@
+ 2012-07-23 09:29  hvlad 
+   M src/jrd/exe.cpp
+   M src/jrd/tra.h
+Fixed bug CORE-3895 : High memory usage when PSQL code SELECT's from stored procedure which modified some data
+
  2012-07-17 11:45  alexpeshkoff 
    M src/common/classes/array.h
    M src/common/classes/stack.h
