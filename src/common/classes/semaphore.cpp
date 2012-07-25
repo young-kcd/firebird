@@ -281,9 +281,10 @@ static const char* semName = "/firebird_temp_sem";
 		}
 
 		timespec timeout = getCurrentTime();
-		nanoseconds += timeout.tv_nsec;
-		timeout.tv_sec += nanoseconds / 1000000000l;
-		timeout.tv_nsec = nanoseconds % 1000000000l;
+		timeout.tv_sec += milliseconds / 1000;
+		timeout.tv_nsec += (milliseconds % 1000) * 1000000;
+		timeout.tv_sec += (timeout.tv_nsec / 1000000000l);
+		timeout.tv_nsec %= 1000000000l;
 		err = pthread_cond_timedwait(&cv, &mu, &timeout);
 
 		mtxUnlock();
