@@ -1,3 +1,7 @@
+ 2012-07-24 07:54  mkubecek 
+   M src/common/db_alias.cpp
+Do not prepend DatabaseAccess paths to connection strings.
+
  2012-07-23 15:29  mkubecek 
    M builds/install/arch-specific/linux/misc/firebird.xinetd.in
 Use firebird instead of fb_smp_server in xinetd config template
