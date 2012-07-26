@@ -2238,6 +2238,8 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			temp.push(iter.object());
 	}
 
+	size_t systemContexts = temp.getCount();
+
 	RecSourceListNode* fromList = dsqlFrom;
 	RecSourceListNode* streamList = FB_NEW(getPool()) RecSourceListNode(
 		getPool(), fromList->items.getCount());
@@ -2415,17 +2417,17 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				// create the COALESCE
 				ValueListNode* stack = FB_NEW(getPool()) ValueListNode(getPool(), 0u);
 
-				NestConst<ValueExprNode> temp = impJoinLeft->value;
-				NestConst<DsqlAliasNode> aliasNode = temp->as<DsqlAliasNode>();
+				NestConst<ValueExprNode> tempNode = impJoinLeft->value;
+				NestConst<DsqlAliasNode> aliasNode = tempNode->as<DsqlAliasNode>();
 				NestConst<CoalesceNode> coalesceNode;
 
 				if (aliasNode)
-					temp = aliasNode->value;
+					tempNode = aliasNode->value;
 
 				{	// scope
 					PsqlChanger changer(dsqlScratch, false);
 
-					if ((coalesceNode = temp->as<CoalesceNode>()))
+					if ((coalesceNode = tempNode->as<CoalesceNode>()))
 					{
 						ValueListNode* list = coalesceNode->args;
 
@@ -2437,14 +2439,14 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						}
 					}
 					else
-						stack->add(doDsqlPass(dsqlScratch, temp));
+						stack->add(doDsqlPass(dsqlScratch, tempNode));
 
-					temp = impJoinRight->value;
+					tempNode = impJoinRight->value;
 
-					if ((aliasNode = temp->as<DsqlAliasNode>()))
-						temp = aliasNode->value;
+					if ((aliasNode = tempNode->as<DsqlAliasNode>()))
+						tempNode = aliasNode->value;
 
-					if ((coalesceNode = temp->as<CoalesceNode>()))
+					if ((coalesceNode = tempNode->as<CoalesceNode>()))
 					{
 						ValueListNode* list = coalesceNode->args;
 
@@ -2456,7 +2458,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						}
 					}
 					else
-						stack->add(doDsqlPass(dsqlScratch, temp));
+						stack->add(doDsqlPass(dsqlScratch, tempNode));
 				}
 
 				coalesceNode = FB_NEW(getPool()) CoalesceNode(getPool(), stack);
@@ -2483,7 +2485,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	// Merge the newly created contexts with the original ones
 
-	while (temp.hasData())
+	while (temp.getCount() > systemContexts)
 		base_context->push(temp.pop());
 
 	dsqlScratch->context = base_context;
