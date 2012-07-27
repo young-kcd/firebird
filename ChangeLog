@@ -1,3 +1,12 @@
+ 2012-07-27 01:48  asfernandes 
+   M extern/editline/configure
+   M src/jrd/IntlManager.cpp
+Fixed CORE-3820 - RDB$TYPES contain duplicate character sets.
+
+ 2012-07-26 16:20  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-3883 - Ambiguous field name in the trigger when it does a select from the table.
+
  2012-07-24 07:54  mkubecek 
    M src/common/db_alias.cpp
 Do not prepend DatabaseAccess paths to connection strings.
