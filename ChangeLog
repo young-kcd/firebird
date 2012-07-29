@@ -1,3 +1,7 @@
+ 2012-07-29 00:21  robocop 
+   M doc/sql.extensions/README.builtin_functions.txt
+Misc.
+
  2012-07-25 11:11  alexpeshkoff 
    M src/common/classes/semaphore.cpp
    M src/common/fb_exception.cpp
