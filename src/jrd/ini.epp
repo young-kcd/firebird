@@ -595,7 +595,11 @@ void INI_init(thread_db* tdbb)
 				fb_assert(desc->dsc_length <= MAX_USHORT - sizeof(USHORT));
 				desc->dsc_length += sizeof(USHORT);
 			}
+
 			desc->dsc_dtype = gfield->gfld_dtype;
+
+			if (desc->dsc_dtype == dtype_int64 && !(dbb->dbb_flags & DBB_DB_SQL_dialect_3))
+				desc->dsc_dtype = dtype_double;
 
 			if (desc->isText())
 			{
@@ -740,6 +744,9 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 
 			field->fld_dtype = gfield->gfld_dtype;
 
+			if (field->fld_dtype == dtype_int64 && !(dbb->dbb_flags & DBB_DB_SQL_dialect_3))
+				field->fld_dtype = dtype_double;
+			
 			if (field->fld_dtype == dtype_varying)
 				field->fld_length += sizeof(USHORT);
 			else if (field->fld_dtype == dtype_blob)
