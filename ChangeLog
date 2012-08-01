@@ -1,3 +1,7 @@
+ 2012-07-31 12:23  asfernandes 
+   M src/dsql/WinNodes.cpp
+Fixed CORE-3899 - row_number(), rank() and dense_rank() return BIGINT datatype in dialect 1.
+
  2012-07-29 10:35  dimitr 
    M src/jrd/ini.epp
 Propagate the solution for fld_counter to both metadata caches. This fixes the regression of not being able to select from the MON$ tables in Dialect 1.
