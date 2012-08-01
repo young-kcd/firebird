@@ -247,10 +247,10 @@ Format:
     CHAR_TO_UUID( <string> )
 
 Important (for big-endian servers):
-    It has been discovered that before Firebird 2.5.2, CHAR_TO_UUID and UUID_TO_CHAR works
-    incorrectly in big-endian servers. In these machines, bytes/characters are swapped and goes in
+    It has been discovered that before Firebird 2.5.2, CHAR_TO_UUID and UUID_TO_CHAR work
+    incorrectly in big-endian servers. In these machines, bytes/characters are swapped and go in
     wrong positions when converting. This bug was fixed in 2.5.2 and 3.0, but that means these
-    functions now returns different values (for the same input parameter) than before.
+    functions now return different values (for the same input parameter) than before.
 
 Example:
     select char_to_uuid('93519227-8D50-4E47-81AA-8F6678C096A1') from rdb$database;
@@ -850,10 +850,10 @@ Format:
     UUID_TO_CHAR( <string> )
 
 Important (for big-endian servers):
-    It has been discovered that before Firebird 2.5.2, CHAR_TO_UUID and UUID_TO_CHAR works
-    incorrectly in big-endian servers. In these machines, bytes/characters are swapped and goes in
+    It has been discovered that before Firebird 2.5.2, CHAR_TO_UUID and UUID_TO_CHAR work
+    incorrectly in big-endian servers. In these machines, bytes/characters are swapped and go in
     wrong positions when converting. This bug was fixed in 2.5.2 and 3.0, but that means these
-    functions now returns different values (for the same input parameter) than before.
+    functions now return different values (for the same input parameter) than before.
 
 Example:
     select uuid_to_char(gen_uuid()) from rdb$database;

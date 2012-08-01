@@ -88,7 +88,7 @@ private:
 				if (sigsetjmp(sigenv, 1) == 0)
 				{
 					Firebird::sync_signals_set(&sigenv);
-					if (pthread_kill(thread, 0) == ESRCH)
+					if (pthread_kill((pthread_t)thread, 0) == ESRCH)
 					{
 						// Thread does not exist any more
 						thread = currTID;
