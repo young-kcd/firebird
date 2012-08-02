@@ -485,4 +485,12 @@ void TraceManager::event_error(TraceBaseConnection* connection, TraceStatusVecto
 		(connection, status, function));
 }
 
+
+void TraceManager::event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+		ntrace_process_state_t sweep_state)
+{
+	EXECUTE_HOOKS(trace_event_sweep,
+		(connection, sweep, sweep_state));
+}
+
 }

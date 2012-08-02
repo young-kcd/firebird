@@ -255,6 +255,8 @@ private:
 
 	void log_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
+	void log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, ntrace_process_state_t sweep_state);
+
 	// TracePlugin implementation
 	int FB_CARG release();
 	const char* FB_CARG trace_get_error();
@@ -306,6 +308,10 @@ private:
 
 	// Errors happened
 	virtual ntrace_boolean_t FB_CARG trace_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
+
+	// Sweep activity
+	virtual ntrace_boolean_t FB_CARG trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+			ntrace_process_state_t sweep_state);
 };
 
 

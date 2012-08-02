@@ -42,6 +42,14 @@ enum ntrace_connection_kind_t
 	connection_service
 };
 
+enum ntrace_process_state_t
+{
+	process_state_started	= 1,
+	process_state_finished,
+	process_state_failed,
+	process_state_progress
+};
+
 class TraceBaseConnection : public Firebird::IVersioned
 {
 public:
@@ -182,6 +190,18 @@ public:
 	virtual const char* FB_CARG getText() = 0;
 };
 #define FB_TRACE_STATUS_VERSION (FB_VERSIONED_VERSION + 4)
+
+
+class TraceSweepInfo : public Firebird::IVersioned
+{
+public:
+	virtual TraNumber FB_CARG getOIT() = 0;
+	virtual TraNumber FB_CARG getOST() = 0;
+	virtual TraNumber FB_CARG getOAT() = 0;
+	virtual TraNumber FB_CARG getNext() = 0;
+	virtual PerformanceInfo* FB_CARG getPerf() = 0;
+};
+#define FB_TRACE_SWEEP_INFO_VERSION (FB_VERSIONED_VERSION + 5)
 
 
 // Plugin-specific argument. Passed by the engine to each hook
@@ -325,8 +345,12 @@ public:
 
 	// Errors happened
 	virtual ntrace_boolean_t FB_CARG trace_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function) = 0;
+
+	// Sweep activity
+	virtual ntrace_boolean_t FB_CARG trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+			ntrace_process_state_t sweep_state) = 0;
 };
-#define FB_TRACE_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 19)
+#define FB_TRACE_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 20)
 
 // Trace plugin second level factory (this is what is known to PluginManager as "trace plugin")
 class TraceFactory : public Firebird::IPluginBase
@@ -361,6 +385,7 @@ enum TraceEvent
 	TRACE_EVENT_SERVICE_QUERY,
 	TRACE_EVENT_SERVICE_DETACH,
 	TRACE_EVENT_ERROR,
+	TRACE_EVENT_SWEEP,
 	TRACE_EVENT_MAX					// keep it last
 };
 

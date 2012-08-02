@@ -1619,6 +1619,10 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
 		return true;
 
+	if (tdbb->getAttachment()->att_flags & ATT_no_cleanup) {
+		return true;
+	}
+
 	// fill out a lock block, zeroing it out first
 
 	Lock temp_lock(tdbb, 0, LCK_sweep, trans);
@@ -1660,6 +1664,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	TraNumber transaction_oldest_active = transaction->tra_oldest_active;
 	tdbb->setTransaction(transaction);
 
+	TraceSweepEvent traceSweep(tdbb);
 
 	// The garbage collector runs asynchronously with respect to
 	// our database sweep. This isn't good enough since we must
@@ -1670,7 +1675,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	transaction->tra_attachment->att_flags &= ~ATT_notify_gc;
 
-	if (VIO_sweep(tdbb, transaction))
+	if (VIO_sweep(tdbb, transaction, &traceSweep))
 	{
 		const ULONG base = transaction->tra_oldest & ~TRA_MASK;
 		TraNumber active = transaction->tra_oldest;
@@ -1711,7 +1716,11 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			header->hdr_oldest_transaction = MIN(active, (ULONG) transaction_oldest_active);
 		}
 
+		traceSweep.update(header);
+
 		CCH_RELEASE(tdbb, &window);
+
+		traceSweep.report(process_state_finished);
 	}
 
 	if (!trans)
@@ -1725,6 +1734,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
+		iscLogException("Error during sweep:", ex);
+
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		try {
 			if (!trans && transaction)
@@ -3359,3 +3370,103 @@ UserManagement* jrd_tra::getUserManagement()
 	return tra_user_management;
 }
 
+
+/// class TraceSweepEvent
+
+TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
+{
+	m_tdbb = tdbb;
+
+	WIN window(HEADER_PAGE_NUMBER);
+	Ods::header_page *header = (Ods::header_page*) CCH_FETCH(m_tdbb, &window, LCK_read, pag_header);
+
+	m_sweep_info.update(header);
+	CCH_RELEASE(m_tdbb, &window);
+
+	Attachment* att = m_tdbb->getAttachment();
+
+	gds__log("Sweep is started by %s\n"
+		"\tDatabase \"%s\" \n"
+		"\tOIT %lu, OAT %lu, OST %lu, Next %lu",
+		att->att_user->usr_user_name.c_str(),
+		att->att_filename.c_str(),
+		m_sweep_info.getOIT(),
+		m_sweep_info.getOAT(),
+		m_sweep_info.getOST(),
+		m_sweep_info.getNext());
+
+	TraceManager* trace_mgr = att->att_trace_manager;
+
+	m_need_trace = trace_mgr->needs(TRACE_EVENT_SWEEP);
+
+	if (!m_need_trace)
+		return;
+
+	m_start_clock = fb_utils::query_performance_counter();
+
+	TraceConnectionImpl conn(att);
+	trace_mgr->event_sweep(&conn, &m_sweep_info, process_state_started);
+
+	m_relation_clock = fb_utils::query_performance_counter();
+	m_relation_stats.assign(m_tdbb->getTransaction()->tra_stats);
+}
+
+
+TraceSweepEvent::~TraceSweepEvent()
+{
+	m_tdbb->setRequest(NULL);
+	report(process_state_failed);
+}
+
+
+void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
+{
+	Attachment* att = m_tdbb->getAttachment();
+
+	if (state == process_state_finished) 
+	{
+		gds__log("Sweep is finished\n"
+			"\tDatabase \"%s\" \n"
+			"\tOIT %lu, OAT %lu, OST %lu, Next %lu",
+			att->att_filename.c_str(),
+			m_sweep_info.getOIT(),
+			m_sweep_info.getOAT(),
+			m_sweep_info.getOST(),
+			m_sweep_info.getNext());
+	}
+
+	if (!m_need_trace)
+		return;
+
+	Database* dbb = m_tdbb->getDatabase();
+	TraceManager* trace_mgr = att->att_trace_manager;
+
+	TraceConnectionImpl conn(att);
+
+	if (relation && relation->rel_name.isEmpty())
+	{
+		// don't accumulate per-relation stats for metadata query below
+		MET_lookup_relation_id(m_tdbb, relation->rel_id, false);
+	}
+
+	// we need to compare stats against zero base 
+	if (state != process_state_progress)
+		m_relation_stats.reset(); 
+
+	jrd_tra* tran = m_tdbb->getTransaction();
+
+	TraceRuntimeStats stats(att, &m_relation_stats, 
+		state == process_state_progress ? &tran->tra_stats : &att->att_stats,
+		fb_utils::query_performance_counter() - (state == process_state_progress ? 
+			m_relation_clock : m_start_clock), 
+		0);
+
+	m_relation_clock = fb_utils::query_performance_counter();
+	m_relation_stats.assign(m_tdbb->getTransaction()->tra_stats);
+
+	m_sweep_info.setPerf(stats.getPerf());
+	trace_mgr->event_sweep(&conn, &m_sweep_info, state);
+
+	if (state == process_state_failed || state == process_state_finished)
+		m_need_trace = false;
+}

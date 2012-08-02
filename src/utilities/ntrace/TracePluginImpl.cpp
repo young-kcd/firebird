@@ -1971,6 +1971,59 @@ void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStat
 	logRecordError(event_type.c_str(), connection, status);
 }
 
+void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+	ntrace_process_state_t sweep_state)
+{
+	if (sweep_state == process_state_started ||
+		sweep_state == process_state_finished) 
+	{
+		record.printf("\nTransaction counters:\n"
+			"\tOldest interesting %10ld\n"
+			"\tOldest active      %10ld\n"
+			"\tOldest snapshot    %10ld\n"
+			"\tNext transaction   %10ld\n",
+			sweep->getOIT(),
+			sweep->getOAT(),
+			sweep->getOST(),
+			sweep->getNext()
+			);
+	}
+
+	PerformanceInfo* info = sweep->getPerf();
+	if (info)
+	{
+		appendGlobalCounts(info);
+		appendTableCounts(info);
+	}
+
+	const char* event_type = NULL;
+	switch (sweep_state)
+	{
+	case process_state_started:
+		event_type = "SWEEP_START";
+		break;
+
+	case process_state_finished:
+		event_type = "SWEEP_FINISH";
+		break;
+
+	case process_state_failed:
+		event_type = "SWEEP_FAILED";
+		break;
+
+	case process_state_progress:
+		event_type = "SWEEP_PROGRESS";
+		break;
+
+	default:
+		fb_assert(false);
+		event_type = "Unknown SWEEP process state";
+		break;
+	}
+
+	logRecordConn(event_type, connection);
+}
+
 //***************************** PLUGIN INTERFACE ********************************
 
 int TracePluginImpl::release()
@@ -2331,6 +2384,23 @@ ntrace_boolean_t TracePluginImpl::trace_event_error(TraceBaseConnection* connect
 	{
 		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_BASE_CONNECTION_VERSION, upInfo);
 		log_event_error(connection, status, function);
+		return true;
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		marshal_exception(ex);
+		return false;
+	}
+}
+
+ntrace_boolean_t TracePluginImpl::trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+		ntrace_process_state_t sweep_state)
+{
+	try
+	{
+		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		MasterInterfacePtr()->upgradeInterface(sweep, FB_TRACE_SWEEP_INFO_VERSION, upInfo);
+		log_event_sweep(connection, sweep, sweep_state);
 		return true;
 	}
 	catch(const Firebird::Exception& ex)

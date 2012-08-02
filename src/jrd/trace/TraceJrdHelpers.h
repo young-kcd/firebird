@@ -412,6 +412,31 @@ private:
 };
 
 
+class TraceSweepEvent
+{
+	// implementation is at tra.cpp
+public:
+	TraceSweepEvent(thread_db* tdbb);
+
+	~TraceSweepEvent();
+
+	void update(const Ods::header_page* header)
+	{
+		m_sweep_info.update(header);
+	}
+
+	void report(ntrace_process_state_t state, jrd_rel* relation = 0);
+
+private:
+	bool				m_need_trace;
+	thread_db*			m_tdbb;
+	TraceSweepImpl		m_sweep_info;
+	SINT64				m_start_clock;
+	SINT64				m_relation_clock;
+	RuntimeStatistics	m_relation_stats;
+};
+
+
 } // namespace Jrd
 
 #endif // JRD_TRACE_JRD_HELPERS_H

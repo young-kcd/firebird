@@ -422,6 +422,45 @@ private:
 	Firebird::string m_error;
 };
 
+class TraceSweepImpl : public Firebird::AutoIface<TraceSweepInfo, FB_TRACE_SWEEP_INFO_VERSION>
+{
+public:
+	TraceSweepImpl()
+	{
+		m_oit = 0;
+		m_ost = 0;
+		m_oat = 0;
+		m_next = 0;
+		m_perf = 0;
+	}
+
+	void update(const Ods::header_page* header)
+	{
+		m_oit = header->hdr_oldest_transaction;
+		m_ost = header->hdr_oldest_snapshot;
+		m_oat = header->hdr_oldest_active;
+		m_next = header->hdr_next_transaction;
+	}
+
+	void setPerf(PerformanceInfo* perf)
+	{
+		m_perf = perf;
+	}
+
+	virtual TraNumber FB_CARG getOIT()	{ return m_oit; };
+	virtual TraNumber FB_CARG getOST()	{ return m_ost; };
+	virtual TraNumber FB_CARG getOAT()	{ return m_oat; };
+	virtual TraNumber FB_CARG getNext()	{ return m_next; };
+	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; };
+
+private:
+	TraNumber m_oit;
+	TraNumber m_ost;
+	TraNumber m_oat;
+	TraNumber m_next;
+	PerformanceInfo* m_perf;
+};
+
 } // namespace Jrd
 
 #endif // JRD_TRACE_OBJECTS_H

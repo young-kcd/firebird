@@ -91,6 +91,8 @@
 #include "../jrd/Function.h"
 #include "../common/StatusArg.h"
 #include "../jrd/GarbageCollector.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceJrdHelpers.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -3210,7 +3212,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 }
 
 
-bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
+bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSweep)
 {
 /**************************************
  *
@@ -3253,6 +3255,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 
 		for (size_t i = 1; (vector = attachment->att_relations) && i < vector->count(); i++)
 		{
+			bool haveRecs = false;
 			if ((relation = (*vector)[i]) && !(relation->rel_flags & (REL_deleted | REL_deleting)) &&
 				 relation->getPages(tdbb)->rel_pages)
 			{
@@ -3275,7 +3278,13 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 						JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
 					}
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
+					haveRecs = true;
 				}
+
+				if (haveRecs) {
+					traceSweep->report(process_state_progress, relation);
+				}
+
 				--relation->rel_sweep_count;
 				--relation->rel_scan_count;
 			}
