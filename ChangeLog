@@ -1,3 +1,22 @@
+ 2012-08-02 08:55  hvlad 
+   M src/jrd/jrd.h
+   M src/jrd/ntrace.h
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/jrd/trace/TraceObjects.h
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/fbtrace.conf
+   M src/utilities/ntrace/paramtable.h
+Front ported improvements 
+CORE-3656 : Support for sweep information in Trace API, and
+CORE-2668 : Write note into log when automatic sweep is started
+Also per-table stats is enabled at transaction level (see thread_db::bumpRelStats)
+
  2012-07-31 12:23  asfernandes 
    M src/dsql/WinNodes.cpp
 Fixed CORE-3899 - row_number(), rank() and dense_rank() return BIGINT datatype in dialect 1.
