@@ -1,3 +1,23 @@
+ 2012-08-08 03:31  dimitr 
+   M src/jrd/nbak.cpp
+Fixed the refactoring error spotted by Claudio.
+
+ 2012-08-08 02:20  robocop 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M src/burp/burp.h
+   M src/common/classes/alloc.h
+   M src/common/cvt.cpp
+   M src/common/db_alias.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/include/firebird/Crypt.h
+   M src/jrd/CryptoManager.h
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/lock/print.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/history2.sql
+   M src/remote/server/server.cpp
+Misc.
+
  2012-08-02 08:55  hvlad 
    M src/jrd/jrd.h
    M src/jrd/ntrace.h
