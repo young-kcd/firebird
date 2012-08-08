@@ -1274,20 +1274,22 @@ static void prt_owner(OUTFILE outfile,
 
 	FPRINTF(outfile, "\n");
 
-	if (sw_requests && !sw_pending)
+	if (sw_requests)
 	{
-		const srq* que_inst;
-		SRQ_LOOP(owner->own_requests, que_inst)
-			prt_request(outfile, LOCK_header,
-						(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_requests)));
-	}
-
-	if (sw_requests && sw_pending)
-	{
-		const srq* que_inst;
-		SRQ_LOOP(owner->own_pending, que_inst)
-			prt_request(outfile, LOCK_header,
-						(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_pending)));
+		if (sw_pending)
+		{
+			const srq* que_inst;
+			SRQ_LOOP(owner->own_pending, que_inst)
+				prt_request(outfile, LOCK_header,
+							(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_pending)));
+		}
+		else
+		{
+			const srq* que_inst;
+			SRQ_LOOP(owner->own_requests, que_inst)
+				prt_request(outfile, LOCK_header,
+							(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_requests)));
+		}
 	}
 }
 
@@ -1295,7 +1297,7 @@ static void prt_owner(OUTFILE outfile,
 static void prt_owner_wait_cycle(OUTFILE outfile,
 								 const lhb* LOCK_header,
 								 const own* owner,
-								 USHORT indent, waitque *waiters)
+								 USHORT indent, waitque* waiters)
 {
 /**************************************
  *

@@ -264,7 +264,8 @@ namespace
 // Checks that argument doesn't contain colon or directory separator
 static inline bool hasSeparator(const PathName& name)
 {
-	for (const char* p = name.c_str(); *p; p++) {
+	for (const char* p = name.c_str(); *p; p++)
+	{
 		if (*p == ':' || *p == '/' || *p == '\\')
 			return true;
 	}

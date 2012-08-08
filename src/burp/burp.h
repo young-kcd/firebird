@@ -868,7 +868,7 @@ const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes
 class BurpGlobals : public ThreadData
 {
 public:
-	BurpGlobals(Firebird::UtilSvc* us)
+	explicit BurpGlobals(Firebird::UtilSvc* us)
 		: ThreadData(ThreadData::tddGBL),
 		  defaultCollations(*getDefaultMemoryPool()),
 		  uSvc(us),

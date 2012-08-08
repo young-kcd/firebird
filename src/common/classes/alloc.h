@@ -491,7 +491,7 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) throw (OOM_EXC
 #endif
 
 #ifndef USE_SYSTEM_NEW
-// We must define placement operators NEW & DELETE ourself
+// We must define placement operators NEW & DELETE ourselves
 inline void* operator new(size_t s, void* place) throw ()
 {
 	return place;

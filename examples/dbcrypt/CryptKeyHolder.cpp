@@ -145,7 +145,7 @@ private:
 	class CallbackInterface : public ICryptKeyCallback
 	{
 	public:
-		CallbackInterface(CryptKeyHolder* p)
+		explicit CallbackInterface(CryptKeyHolder* p)
 			: parent(p)
 		{ }
 

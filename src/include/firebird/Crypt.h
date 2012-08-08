@@ -48,7 +48,7 @@ public:
 
 // Part 2. Database crypt.
 
-// This interface is used to transfer some data (related with crypt keys)
+// This interface is used to transfer some data (related to crypt keys)
 // between different components of firebird.
 class ICryptKeyCallback : public IVersioned
 {

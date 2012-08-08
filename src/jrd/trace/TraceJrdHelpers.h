@@ -416,7 +416,7 @@ class TraceSweepEvent
 {
 	// implementation is at tra.cpp
 public:
-	TraceSweepEvent(thread_db* tdbb);
+	explicit TraceSweepEvent(thread_db* tdbb);
 
 	~TraceSweepEvent();
 

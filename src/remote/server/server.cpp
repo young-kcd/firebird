@@ -747,7 +747,7 @@ InitInstance<CryptKeyTypeManager> knownCryptKeyTypes;
 class CryptKeyCallback : public VersionedIface<ICryptKeyCallback, FB_CRYPT_CALLBACK_VERSION>
 {
 public:
-	CryptKeyCallback(rem_port* prt)
+	explicit CryptKeyCallback(rem_port* prt)
 		: port(prt), l(0), d(NULL)
 	{ }
 
@@ -792,7 +792,7 @@ private:
 class ServerCallback : public ServerCallbackBase, public GlobalStorage
 {
 public:
-	ServerCallback(rem_port* prt)
+	explicit ServerCallback(rem_port* prt)
 		: cryptCallback(prt)
 	{ }
 

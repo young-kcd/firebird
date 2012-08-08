@@ -64,7 +64,7 @@ class Lock;
 class CryptoManager : public Firebird::PermanentStorage
 {
 public:
-	CryptoManager(thread_db* tdbb);
+	explicit CryptoManager(thread_db* tdbb);
 	~CryptoManager();
 
 	void shutdown(thread_db* tdbb);
@@ -100,7 +100,7 @@ private:
 	class HolderAttachments
 	{
 	public:
-		HolderAttachments(Firebird::MemoryPool& p);
+		explicit HolderAttachments(Firebird::MemoryPool& p);
 		~HolderAttachments();
 
 		void registerAttachment(Attachment* att);
@@ -122,7 +122,7 @@ private:
 	class KeyHolderPlugins
 	{
 	public:
-		KeyHolderPlugins(Firebird::MemoryPool& p)
+		explicit KeyHolderPlugins(Firebird::MemoryPool& p)
 			: knownHolders(p)
 		{ }
 

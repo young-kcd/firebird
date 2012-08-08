@@ -1258,6 +1258,7 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1249, 'alexpeshkoff', '2009-11-13 17:49:54', 18, 27, '------------------------------------------------------------------------------------------', NULL, NULL, 'c_pg')
 (1250, 'cvc', '2009-12-18 09:21:40', 12, 68, '    committing metadata', NULL, NULL, 'c_pg')
 (1251, 'cvc', '2009-12-18 08:21:50', 12, 196, 'restoring parameter @1 for stored procedure', NULL, NULL, 'c_pg')
+(1252, 'alexpeshkoff', '2012-06-23 05:40:21', 12, 266, 'standard output is not supported when using split operation', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;

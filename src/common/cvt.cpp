@@ -124,7 +124,7 @@ using namespace Firebird;
 
 #define CVT_COPY_BUFF(from, to, len) \
 {if (len) {memcpy(to, from, len); from += len; to += len;} }
-// AP,2012: Look like there is no need making len zero, but I keep old define for a reference.
+// AP,2012: Looks like there is no need making len zero, but I keep old define for a reference.
 // {if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
 
 enum EXPECT_DATETIME

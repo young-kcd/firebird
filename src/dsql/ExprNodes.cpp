@@ -11123,9 +11123,8 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		decodeNode->conditions->add(cmp->arg2);
 		decodeNode->values->add(node->trueValue);
 
-		ValueExprNode* last;
-
-		while ((node = (last = node->falseValue)->as<ValueIfNode>()))
+		ValueExprNode* last = node->falseValue;
+		while ((node = last->as<ValueIfNode>()))
 		{
 			ComparativeBoolNode* cmp = node->condition->as<ComparativeBoolNode>();
 			if (!cmp || cmp->blrOp != blr_eql)
@@ -11138,6 +11137,8 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 			decodeNode->conditions->add(cmp->arg2);
 			decodeNode->values->add(node->trueValue);
+
+			last = node->falseValue;
 		}
 
 		decodeNode->values->add(last);
