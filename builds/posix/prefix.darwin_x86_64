@@ -27,7 +27,7 @@ export MACOSX_DEPLOYMENT_TARGET
 
 OS_ServerFiles=inet_server.cpp
 
-PROD_FLAGS=-O3 -DDARWIN -pipe -p -MMD -fPIC -fno-common -mmacosx-version-min=10.6
+PROD_FLAGS=-O1 -DDARWIN -pipe -p -MMD -fPIC -fno-common -mmacosx-version-min=10.6
 DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -mmacosx-version-min=10.6
 CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -fno-weak
 EMBED_UTIL_TARGETS=gstat gds_relay gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
