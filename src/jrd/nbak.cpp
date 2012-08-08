@@ -377,8 +377,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 
 	// Check for recover
 
-	GlobalRWLock endLock(tdbb, *database->dbb_permanent, LCK_backup_end,
-		LCK_OWNER_attachment, false);
+	GlobalRWLock endLock(tdbb, *database->dbb_permanent, LCK_backup_end, false);
 
 	if (!endLock.lockWrite(tdbb, LCK_NO_WAIT))
 	{
