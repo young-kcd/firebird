@@ -1,3 +1,7 @@
+ 2012-08-08 14:39  paulbeach 
+   M builds/posix/prefix.darwin_x86_64
+Fix CORE-3740 - optimisation bug in GCC
+
  2012-07-23 09:29  hvlad 
    M src/jrd/exe.cpp
    M src/jrd/tra.h
