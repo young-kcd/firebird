@@ -1595,6 +1595,10 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		request = parser.parse();
 
+		request->req_dbb = scratch->getAttachment();
+		request->req_transaction = scratch->getTransaction();
+		request->statement = scratch->getStatement();
+
 		if (parser.isStmtAmbiguous())
 			scratch->flags |= DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT;
 
@@ -1649,10 +1653,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		ntrace_result_t traceResult = res_successful;
 		try
 		{
-			request->req_dbb = scratch->getAttachment();
-			request->req_transaction = scratch->getTransaction();
-			request->statement = scratch->getStatement();
-
 			request->dsqlPass(tdbb, scratch, &traceResult);
 		}
 		catch (const Exception&)
