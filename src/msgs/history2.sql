@@ -1211,6 +1211,7 @@ Fetches = !f', NULL, NULL, 'c_pg');
 				database from backup file', NULL, NULL, 'c_pg')
 (1206, 'alexpeshkoff', '2009-11-13 17:49:10', 18, 26, '     user name                      uid   gid     full name', NULL, NULL, 'c_pg')
 (1207, 'alexpeshkoff', '2009-11-13 17:49:54', 18, 27, '------------------------------------------------------------------------------------------', NULL, NULL, 'c_pg')
+(1208, 'alexpeshkoff', '2012-06-23 05:40:21', 12, 266, 'standard output is not supported when using split operation', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;
