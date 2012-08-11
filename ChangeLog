@@ -1,3 +1,9 @@
+ 2012-08-11 02:39  robocop 
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/msgs/facilities2.sql
+   M src/msgs/history2.sql
+Misc.
+
  2012-08-08 14:38  paulbeach 
    M builds/posix/prefix.darwin_x86_64
 Fix CORE-3740 - optimisation bug in GCC
