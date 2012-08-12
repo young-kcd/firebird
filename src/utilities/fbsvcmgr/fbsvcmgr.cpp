@@ -38,7 +38,6 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 #include "../jrd/license.h"
-#include "../burp/std_desc.h"
 
 using namespace Firebird;
 
@@ -534,22 +533,22 @@ bool printLine(const char*& p)
 
 bool printData(const char*& p)
 {
-	static DESC binout = INVALID_HANDLE_VALUE;
-	if (binout == INVALID_HANDLE_VALUE)
+	static int binout = -1;
+	if (binout == -1)
 	{
-		binout = GBAK_STDOUT_DESC();
+#ifdef WIN_NT
+		binout = fileno(stdout);
+		setmode(binout, 0);
+#else
+		binout = 1;
+#endif
 	}
 
 	string s;
 	bool rc = getLine(s, p);
 	if (rc)
 	{
-#ifdef WIN_NT
-		DWORD cnt;
-		WriteFile(binout, s.c_str(), s.length(), &cnt, NULL);
-#else
 		write(binout, s.c_str(), s.length());
-#endif
 	}
 	return rc;
 }
@@ -1026,19 +1025,19 @@ int main(int ac, char** av)
 					sendBlock = stdinBuffer.getBuffer(len + 1);
 					memcpy(sendBlock, send, sendSize);
 
-					static DESC binIn = INVALID_HANDLE_VALUE;
-					if (binIn == INVALID_HANDLE_VALUE)
+					static int binIn = -1;
+					if (binIn == -1)
 					{
-						binIn = GBAK_STDIN_DESC();
+#ifdef WIN_NT
+						binIn = fileno(stdin);
+						setmode(binIn, 0);
+#else
+						binIn = 0;
+#endif
 					}
 
-#ifdef WIN_NT
-					DWORD n;
-					if (!ReadFile(binIn, &sendBlock[sendSize + 1 + 2], stdinRequest, &n, NULL))
-#else
 					int n = read(binIn, &sendBlock[sendSize + 1 + 2], stdinRequest);
 					if (n < 0)
-#endif
 					{
 						perror("stdin");
 						break;
