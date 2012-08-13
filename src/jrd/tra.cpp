@@ -3378,7 +3378,7 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 	m_tdbb = tdbb;
 
 	WIN window(HEADER_PAGE_NUMBER);
-	Ods::header_page *header = (Ods::header_page*) CCH_FETCH(m_tdbb, &window, LCK_read, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(m_tdbb, &window, LCK_read, pag_header);
 
 	m_sweep_info.update(header);
 	CCH_RELEASE(m_tdbb, &window);
@@ -3423,7 +3423,7 @@ void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
 {
 	Attachment* att = m_tdbb->getAttachment();
 
-	if (state == process_state_finished) 
+	if (state == process_state_finished)
 	{
 		gds__log("Sweep is finished\n"
 			"\tDatabase \"%s\" \n"
@@ -3449,16 +3449,16 @@ void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
 		MET_lookup_relation_id(m_tdbb, relation->rel_id, false);
 	}
 
-	// we need to compare stats against zero base 
+	// we need to compare stats against zero base
 	if (state != process_state_progress)
-		m_relation_stats.reset(); 
+		m_relation_stats.reset();
 
 	jrd_tra* tran = m_tdbb->getTransaction();
 
-	TraceRuntimeStats stats(att, &m_relation_stats, 
-		state == process_state_progress ? &tran->tra_stats : &att->att_stats,
-		fb_utils::query_performance_counter() - (state == process_state_progress ? 
-			m_relation_clock : m_start_clock), 
+	TraceRuntimeStats stats(att, &m_relation_stats,
+		(state == process_state_progress ? &tran->tra_stats : &att->att_stats),
+		(fb_utils::query_performance_counter() - (state == process_state_progress ?
+			m_relation_clock : m_start_clock)),
 		0);
 
 	m_relation_clock = fb_utils::query_performance_counter();

@@ -746,7 +746,7 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 
 			if (field->fld_dtype == dtype_int64 && !(dbb->dbb_flags & DBB_DB_SQL_dialect_3))
 				field->fld_dtype = dtype_double;
-			
+
 			if (field->fld_dtype == dtype_varying)
 				field->fld_length += sizeof(USHORT);
 			else if (field->fld_dtype == dtype_blob)

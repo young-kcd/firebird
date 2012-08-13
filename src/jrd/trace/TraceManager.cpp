@@ -486,7 +486,7 @@ void TraceManager::event_error(TraceBaseConnection* connection, TraceStatusVecto
 }
 
 
-void TraceManager::event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+void TraceManager::event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep,
 		ntrace_process_state_t sweep_state)
 {
 	EXECUTE_HOOKS(trace_event_sweep,

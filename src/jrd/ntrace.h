@@ -44,7 +44,7 @@ enum ntrace_connection_kind_t
 
 enum ntrace_process_state_t
 {
-	process_state_started	= 1,
+	process_state_started = 1,
 	process_state_finished,
 	process_state_failed,
 	process_state_progress
@@ -347,7 +347,7 @@ public:
 	virtual ntrace_boolean_t FB_CARG trace_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function) = 0;
 
 	// Sweep activity
-	virtual ntrace_boolean_t FB_CARG trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+	virtual ntrace_boolean_t FB_CARG trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep,
 			ntrace_process_state_t sweep_state) = 0;
 };
 #define FB_TRACE_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 20)

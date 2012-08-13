@@ -111,8 +111,8 @@ public:
 
 	void event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function);
 
-	void event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
-			ntrace_process_state_t sweep_state);
+	void event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep,
+		ntrace_process_state_t sweep_state);
 
 	typedef ntrace_mask_t NotificationNeeds;
 

@@ -1971,11 +1971,11 @@ void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStat
 	logRecordError(event_type.c_str(), connection, status);
 }
 
-void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
+void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep,
 	ntrace_process_state_t sweep_state)
 {
 	if (sweep_state == process_state_started ||
-		sweep_state == process_state_finished) 
+		sweep_state == process_state_finished)
 	{
 		record.printf("\nTransaction counters:\n"
 			"\tOldest interesting %10ld\n"
@@ -2052,7 +2052,7 @@ ntrace_boolean_t TracePluginImpl::trace_attach(TraceDatabaseConnection* connecti
 		log_event_attach(connection, create_db, att_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2068,7 +2068,7 @@ ntrace_boolean_t TracePluginImpl::trace_detach(TraceDatabaseConnection* connecti
 		log_event_detach(connection, drop_db);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2089,7 +2089,7 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceDatabaseConnectio
 		log_event_transaction_start(connection, transaction, tpb_length, tpb, tra_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2109,7 +2109,7 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceDatabaseConnection*
 		log_event_transaction_end(connection, transaction, commit, retain_context, tra_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2130,7 +2130,7 @@ ntrace_boolean_t TracePluginImpl::trace_set_context(TraceDatabaseConnection* con
 		log_event_set_context(connection, transaction, variable);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2152,7 +2152,7 @@ ntrace_boolean_t TracePluginImpl::trace_proc_execute(TraceDatabaseConnection* co
 		log_event_proc_execute(connection, transaction, procedure, started, proc_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2173,7 +2173,7 @@ ntrace_boolean_t TracePluginImpl::trace_trigger_execute(TraceDatabaseConnection*
 		log_event_trigger_execute(connection, transaction, trigger, started, trig_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2196,7 +2196,7 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceDatabaseConnection* co
 		log_event_dsql_prepare(connection, transaction, statement, time_millis, req_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2215,7 +2215,7 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_free(TraceDatabaseConnection* conne
 		log_event_dsql_free(connection, statement, option);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2236,7 +2236,7 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_execute(TraceDatabaseConnection* co
 		log_event_dsql_execute(connection, transaction, statement, started, req_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2260,7 +2260,7 @@ ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceDatabaseConnection* con
 		log_event_blr_compile(connection, transaction, statement, time_millis, req_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2280,7 +2280,7 @@ ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceDatabaseConnection* con
 		log_event_blr_execute(connection, transaction, statement, req_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2302,7 +2302,7 @@ ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceDatabaseConnection* con
 		log_event_dyn_execute(connection, transaction, request, time_millis, req_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2319,7 +2319,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceServiceConnection* s
 		log_event_service_attach(service, att_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2335,7 +2335,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_start(TraceServiceConnection* se
 		log_event_service_start(service, switches_length, switches, start_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2353,7 +2353,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_query(TraceServiceConnection* se
 								recv_item_length, recv_items, query_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2370,7 +2370,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceServiceConnection* s
 		log_event_service_detach(service, detach_result);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
@@ -2386,15 +2386,15 @@ ntrace_boolean_t TracePluginImpl::trace_event_error(TraceBaseConnection* connect
 		log_event_error(connection, status, function);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, 
-		ntrace_process_state_t sweep_state)
+ntrace_boolean_t TracePluginImpl::trace_event_sweep(TraceDatabaseConnection* connection,
+	TraceSweepInfo* sweep, ntrace_process_state_t sweep_state)
 {
 	try
 	{
@@ -2403,7 +2403,7 @@ ntrace_boolean_t TracePluginImpl::trace_event_sweep(TraceDatabaseConnection* con
 		log_event_sweep(connection, sweep, sweep_state);
 		return true;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		marshal_exception(ex);
 		return false;

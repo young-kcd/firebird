@@ -412,9 +412,8 @@ private:
 };
 
 
-class TraceSweepEvent
+class TraceSweepEvent	// implementation is in tra.cpp
 {
-	// implementation is at tra.cpp
 public:
 	explicit TraceSweepEvent(thread_db* tdbb);
 
@@ -428,12 +427,12 @@ public:
 	void report(ntrace_process_state_t state, jrd_rel* relation = 0);
 
 private:
-	bool				m_need_trace;
-	thread_db*			m_tdbb;
-	TraceSweepImpl		m_sweep_info;
-	SINT64				m_start_clock;
-	SINT64				m_relation_clock;
-	RuntimeStatistics	m_relation_stats;
+	bool m_need_trace;
+	thread_db* m_tdbb;
+	TraceSweepImpl m_sweep_info;
+	SINT64 m_start_clock;
+	SINT64 m_relation_clock;
+	RuntimeStatistics m_relation_stats;
 };
 
 
