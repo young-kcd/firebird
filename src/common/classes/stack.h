@@ -92,7 +92,7 @@ namespace Firebird {
 			Entry* dup(MemoryPool& p)
 			{
 				Entry* rc = FB_NEW(p) Entry(next ? next->dup(p) : 0);
-				rc->join(*next);
+				rc->join(*this);
 				return rc;
 			}
 
