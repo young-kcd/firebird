@@ -4605,9 +4605,13 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 		ISC_analyze_pclan(file_name, node_name))
 	{
 		if (node_name.isEmpty())
-		{
 			node_name = WNET_LOCALHOST;
+		else
+		{
+			ISC_unescape(node_name);
+			ISC_utf8ToSystem(node_name);
 		}
+
 		port = WNET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag);
 	}
 	else
@@ -4617,9 +4621,13 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 		ISC_analyze_tcp(file_name, node_name))
 	{
 		if (node_name.isEmpty())
-		{
 			node_name = INET_LOCALHOST;
+		else
+		{
+			ISC_unescape(node_name);
+			ISC_utf8ToSystem(node_name);
 		}
+
 		port = INET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag, dpb);
 	}
 
@@ -4638,6 +4646,9 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 
 	if (ISC_analyze_pclan(expanded_name, node_name))
 	{
+		ISC_unescape(node_name);
+		ISC_utf8ToSystem(node_name);
+
 		port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag);
 	}
 #endif
@@ -4648,6 +4659,9 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 		PathName expanded_name = file_name;
 		if (ISC_analyze_nfs(expanded_name, node_name))
 		{
+			ISC_unescape(node_name);
+			ISC_utf8ToSystem(node_name);
+
 			port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag, dpb);
 		}
 	}
