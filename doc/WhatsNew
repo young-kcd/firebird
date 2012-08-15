@@ -125,6 +125,11 @@
         Nickolay Samofatov <skidder at users.sourceforge.net>
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-3786
+        Firebird 2.5.1 Classic (32-bit) Hangs on MacOSX 10.7 (Lion) on DB create after reboot
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-3778
         Access violation at connection shutdown
       Contributor(s):
@@ -159,6 +164,11 @@
         Error increasing limits on POSIX
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3740
+        SELECT using IN list with 153 or more elements causes crash on MacOS
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
 
     * Bugfix CORE-3736
         WITH LOCK clause is allowed for users with read-only rights on some table,
