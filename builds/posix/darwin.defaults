@@ -29,6 +29,8 @@ LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.da
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
 LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.darwin.vers
 LINK_TRACE_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.darwin.vers
+LINK_EMPTY_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/empty.darwin.vers
+LINK_FIREBIRD_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.vers
 
 LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
