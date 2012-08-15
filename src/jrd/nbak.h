@@ -362,7 +362,7 @@ public:
 	{
 		if (tdbb->tdbb_flags & TDBB_backup_write_locked)
 			return;
-		if (!stateLock->lockRead(tdbb, true, true))
+		if (!stateLock->lockRead(tdbb, LCK_WAIT, true))
 			ERR_bugcheck_msg("Can't lock backup state to set dirty flag");
 	}
 
@@ -435,7 +435,7 @@ private:
 
 	void lockAllocWrite(thread_db* tdbb)
 	{
-		if (!allocLock->lockWrite(tdbb, true))
+		if (!allocLock->lockWrite(tdbb, LCK_WAIT))
 			ERR_bugcheck_msg("Can't lock alloc table for writing");
 	}
 
@@ -446,7 +446,7 @@ private:
 
 	void lockAllocRead(thread_db* tdbb)
 	{
-		if (!allocLock->lockRead(tdbb, true))
+		if (!allocLock->lockRead(tdbb, LCK_WAIT))
 			ERR_bugcheck_msg("Can't lock alloc table for reading");
 
 	}
