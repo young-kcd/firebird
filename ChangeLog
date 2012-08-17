@@ -1,3 +1,32 @@
+ 2012-08-15 15:24  dimitr 
+   M src/jrd/nbak.h
+Corrected the arguments. Luckily, their binary values are the same.
+
+ 2012-08-14 15:49  asfernandes 
+   M src/remote/client/interface.cpp
+Fixed CORE-3596 - Client library cannot connect to the non-ASCII host name.
+
+ 2012-08-13 16:50  dimitr 
+   M src/common/classes/stack.h
+Fixed the server crash in Stack::assign().
+
+ 2012-08-13 01:20  asfernandes 
+   M src/jrd/ini.epp
+   M src/jrd/ntrace.h
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+Misc.
+
+ 2012-08-12 21:10  hvlad 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Make consistent usage of CRT routines in windows builds (perror() not aware of Win32 errors).
+Unify file IO API usage across POSIX\WIN32 platforms (use common read()\write() routines).
+Avoid usage of (questionable) gbak code in other utility. 
+
  2012-08-10 15:40  asfernandes 
    M src/dsql/dsql.cpp
 Fix segfault while checking for trace of failed statement compilation. (happens with CORE-3794 testcase)
