@@ -456,7 +456,6 @@ private:
 	{
 		if (!allocLock->lockRead(tdbb, LCK_WAIT))
 			ERR_bugcheck_msg("Can't lock alloc table for reading");
-
 	}
 
 	void unlockAllocRead(thread_db* tdbb)
