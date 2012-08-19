@@ -1,3 +1,7 @@
+ 2012-08-18 08:52  robocop 
+   M src/jrd/nbak.h
+Misc.
+
  2012-08-15 15:24  dimitr 
    M src/jrd/nbak.h
 Corrected the arguments. Luckily, their binary values are the same.
