@@ -1,3 +1,7 @@
+ 2012-08-21 00:53  asfernandes 
+   M src/dsql/gen.cpp
+Backport fix for CORE-3902 - Derived fields may not be optimized via an index.
+
  2012-08-15 15:22  dimitr 
    M src/jrd/nbak.h
 Corrected the arguments. Luckily, their binary values are the same.
