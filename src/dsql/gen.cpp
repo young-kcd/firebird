@@ -172,37 +172,46 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_derived_field:
-		// ASF: If we are not referencing a field, we should evaluate the expression based on
-		// a set (ORed) of contexts. If any of them are in a valid position the expression is
-		// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
-		if (node->nod_arg[e_derived_field_value]->nod_type != nod_derived_field &&
-			node->nod_arg[e_derived_field_value]->nod_type != nod_field &&
-			node->nod_arg[e_derived_field_value]->nod_type != nod_dbkey &&
-			node->nod_arg[e_derived_field_value]->nod_type != nod_map)
 		{
-			const dsql_ctx* ctx = (dsql_ctx*) node->nod_arg[e_derived_field_context];
+			// ASF: If we are not referencing a field, we should evaluate the expression based on
+			// a set (ORed) of contexts. If any of them are in a valid position the expression is
+			// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
+			// Note that the field may be enclosed by an alias.
 
-			if (ctx->ctx_main_derived_contexts.hasData())
+			dsql_nod* val = node;
+
+			while (val->nod_type == nod_alias)
+				val = val->nod_arg[e_alias_value];
+
+			if (val->nod_type != nod_derived_field &&
+				val->nod_type != nod_field &&
+				val->nod_type != nod_dbkey &&
+				val->nod_type != nod_map)
 			{
-				if (ctx->ctx_main_derived_contexts.getCount() > MAX_UCHAR)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-							  Arg::Gds(isc_imp_exc) <<
-							  Arg::Gds(isc_ctx_too_big));
-				}
+				const dsql_ctx* ctx = (dsql_ctx*) node->nod_arg[e_derived_field_context];
 
-				stuff(statement, blr_derived_expr);
-				stuff(statement, ctx->ctx_main_derived_contexts.getCount());
-
-				for (DsqlContextStack::const_iterator stack(ctx->ctx_main_derived_contexts);
-					 stack.hasData(); ++stack)
+				if (ctx->ctx_main_derived_contexts.hasData())
 				{
-					fb_assert(stack.object()->ctx_context <= MAX_UCHAR);
-					stuff(statement, stack.object()->ctx_context);
+					if (ctx->ctx_main_derived_contexts.getCount() > MAX_UCHAR)
+					{
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+								  Arg::Gds(isc_imp_exc) <<
+								  Arg::Gds(isc_ctx_too_big));
+					}
+
+					stuff(statement, blr_derived_expr);
+					stuff(statement, ctx->ctx_main_derived_contexts.getCount());
+
+					for (DsqlContextStack::const_iterator stack(ctx->ctx_main_derived_contexts);
+						 stack.hasData(); ++stack)
+					{
+						fb_assert(stack.object()->ctx_context <= MAX_UCHAR);
+						stuff(statement, stack.object()->ctx_context);
+					}
 				}
 			}
+			GEN_expr(statement, node->nod_arg[e_derived_field_value]);
 		}
-		GEN_expr(statement, node->nod_arg[e_derived_field_value]);
 		return;
 
 	case nod_extract:
