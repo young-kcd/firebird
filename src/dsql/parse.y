@@ -4588,15 +4588,19 @@ select_items
 
 %type <valueExprNode> select_item
 select_item
-	: value
-	| value as_noise symbol_item_alias_name
-		{ $$ = newNode<DsqlAliasNode>(toName($3), $1); }
+	: value_opt_alias
 	| symbol_table_alias_name '.' '*'
 		{
 			FieldNode* fieldNode = newNode<FieldNode>();
 			fieldNode->dsqlQualifier = toName($1);
 			$$ = fieldNode;
 		}
+	;
+
+%type <valueExprNode> value_opt_alias
+value_opt_alias
+	: value
+	| value as_noise symbol_item_alias_name		{ $$ = newNode<DsqlAliasNode>(toName($3), $1); }
 	;
 
 as_noise
@@ -5204,17 +5208,23 @@ update_or_insert_matching_opt($fieldArray)
 returning_clause
 	: /* nothing */
 		{ $$ = NULL; }
-	| RETURNING value_list
+	| RETURNING value_opt_alias_list
 		{
 			$$ = FB_NEW(getPool()) ReturningClause(getPool());
 			$$->first = $2;
 		}
-	| RETURNING value_list INTO variable_list
+	| RETURNING value_opt_alias_list INTO variable_list
 		{
 			$$ = FB_NEW(getPool()) ReturningClause(getPool());
 			$$->first = $2;
 			$$->second = $4;
 		}
+	;
+
+%type <valueListNode> value_opt_alias_list
+value_opt_alias_list
+	: value_opt_alias							{ $$ = newNode<ValueListNode>($1); }
+	| value_opt_alias_list ',' value_opt_alias	{ $$ = $1->add($3); }
 	;
 
 %type <metaNamePtr> cursor_clause
