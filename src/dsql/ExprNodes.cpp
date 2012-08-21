@@ -6930,9 +6930,15 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	// ASF: If we are not referencing a field, we should evaluate the expression based on
 	// a set (ORed) of contexts. If any of them are in a valid position the expression is
 	// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
+	// Note that the field may be enclosed by an alias.
 
-	if (!value->is<FieldNode>() && !value->is<DerivedFieldNode>() &&
-		!value->is<RecordKeyNode>() && !value->is<DsqlMapNode>())
+	ValueExprNode* val = value;
+
+	while (val->is<DsqlAliasNode>())
+		val = val->as<DsqlAliasNode>()->value;
+
+	if (!val->is<FieldNode>() && !val->is<DerivedFieldNode>() &&
+		!val->is<RecordKeyNode>() && !val->is<DsqlMapNode>())
 	{
 		if (context->ctx_main_derived_contexts.hasData())
 		{
