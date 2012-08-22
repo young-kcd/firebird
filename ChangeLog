@@ -1,3 +1,7 @@
+ 2012-08-21 15:38  asfernandes 
+   M src/dsql/parse.y
+Improvement CORE-3546 - Aliases for the RETURNING clause.
+
  2012-08-21 00:45  asfernandes 
    M src/dsql/ExprNodes.cpp
 Fixed CORE-3902 - Derived fields may not be optimized via an index.
