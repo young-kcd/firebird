@@ -159,9 +159,28 @@ static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
 
+#if defined(USE_FILELOCKS) || (!defined(HAVE_FLOCK))
+#define USE_FCNTL
+#endif
+
 static GlobalPtr<Mutex> openFdInit;
 
+
 namespace {
+
+#ifdef USE_FCNTL
+
+	struct CountedRWLock
+	{
+		RWLock rwlock;
+		AtomicCounter cnt;
+	};
+
+	typedef GenericMap<Pair<Left<string, CountedRWLock> > > RWLocks;
+	GlobalPtr<RWLocks> rwlocks;
+	GlobalPtr<Mutex> rwlocksMutex;
+
+#endif // USE_FCNTL
 
 	// File lock holder
 	class FileLock
@@ -172,22 +191,43 @@ namespace {
 		enum LockMode {FLM_EXCLUSIVE, FLM_TRY_EXCLUSIVE, FLM_SHARED, FLM_TRY_SHARED};
 
 		FileLock(int pFd, DtorMode pMode = CLOSED, int s = 0)
-			: level(LCK_NONE), fd(pFd), dtorMode(pMode), start(s)
+			: level(LCK_NONE), fd(pFd), dtorMode(pMode)
+#ifdef USE_FCNTL
+			, start(s), rwlock(getRw())
+#endif
 		{ }
 
 		~FileLock()
 		{
-			switch (dtorMode)
+			if (dtorMode != LOCKED)
 			{
-			case LOCKED:
-				break;
-			case OPENED:
+#ifdef USE_FCNTL
+				MutexLockGuard g(rwlocksMutex);
+#ifdef DEBUG_RWLOCKS
+				fprintf(stderr, "\n-- %p\n", rwlock);
+#endif
+				if (--(rwlock->cnt) == 0)
+				{
+					unlock();
+#ifdef DEBUG_RWLOCKS
+					fprintf(stderr, "\nremove %p\n", rwlock);
+#endif
+					rwlocks->remove(getLockId());
+				}
+#else
 				unlock();
-				break;
-			case CLOSED:
-				unlock();
+#endif
+			}
+			else
+			{
+#ifdef DEBUG_RWLOCKS
+				fprintf(stderr, "\nlocked %p\n", rwlock);
+#endif
+			}
+
+			if (dtorMode == CLOSED)
+			{
 				close(fd);
-				break;
 			}
 		}
 
@@ -199,18 +239,38 @@ namespace {
 				return;
 			}
 
+#ifdef USE_FCNTL
 			struct flock lock;
 			lock.l_type = F_UNLCK;
 			lock.l_whence = SEEK_SET;
 			lock.l_start = start;
 			lock.l_len = 1;
-			if (fcntl(fd, F_SETLK, &lock) == -1)
+			if (fcntl(fd, F_SETLK, &lock) == 0)
+			{
+				try
+				{
+					if (level == LCK_SHARED)
+						rwlock->rwlock.endRead();
+					else
+						rwlock->rwlock.endWrite();
+				}
+				catch(const Exception& ex)
+				{
+					iscLogException("Unlock error", ex);
+					return;
+				}
+#else
+			if (flock(fd, LOCK_UN) == 0)
+			{
+#endif
+				level = LCK_NONE;
+			}
+			else
 			{
 				ISC_STATUS_ARRAY local;
 				error(local, "fcntl", errno);
 				iscLogStatus("Unlock error", local);
 			}
-			level = LCK_NONE;
 		}
 
 		// Main method to lock file
@@ -242,6 +302,35 @@ namespace {
 				unlock();
 			}
 
+#ifdef USE_FCNTL
+			bool rc = true;
+			try
+			{
+				switch(mode)
+				{
+				case FLM_TRY_EXCLUSIVE:
+					rc = rwlock->rwlock.tryBeginWrite();
+					break;
+				case FLM_EXCLUSIVE:
+					rwlock->rwlock.beginWrite();
+					break;
+				case FLM_TRY_SHARED:
+					rc = rwlock->rwlock.tryBeginRead();
+					break;
+				case FLM_SHARED:
+					rwlock->rwlock.beginRead();
+					break;
+				}
+			}
+			catch(const system_call_failed& fail)
+			{
+				return fail.getErrorCode();
+			}
+			if (!rc)
+			{
+				return EBUSY;
+			}
+
 			struct flock lock;
 			lock.l_type = shared ? F_RDLCK : F_WRLCK;
 			lock.l_whence = SEEK_SET;
@@ -249,7 +338,23 @@ namespace {
 			lock.l_len = 1;
 			if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1)
 			{
+				int rc = errno;
+				try
+				{
+					if (newLevel == LCK_SHARED)
+						rwlock->rwlock.endRead();
+					else
+						rwlock->rwlock.endWrite();
+				}
+				catch(const Exception&)
+				{ }
+
+				return rc;
+#else
+			if (flock(fd, (shared ? LOCK_SH : LOCK_EX) | (wait ? 0 : LOCK_NB)))
+			{
 				return errno;
+#endif
 			}
 			level = newLevel;
 
@@ -279,13 +384,68 @@ namespace {
 		void setLevel(LockLevel l)
 		{
 			level = l;
+#ifdef USE_FCNTL
+			if (level != LCK_NONE)
+			{
+				// was not done in dtor
+				--(rwlock->cnt);
+#ifdef DEBUG_RWLOCKS
+				fprintf(stderr, "\n-- %p\n", rwlock);
+#endif
+			}
+#endif
 		}
 
 	private:
 		LockLevel level;
 		int fd;
 		DtorMode dtorMode;
+#ifdef USE_FCNTL
 		int start;
+		CountedRWLock* rwlock;	// Due to order of init in ctor rwlock must go after fd & start
+
+		string getLockId()
+		{
+			struct stat statistics;
+			fstat(fd, &statistics);
+
+			const size_t len1 = sizeof(statistics.st_dev);
+			const size_t len2 = sizeof(statistics.st_ino);
+			const size_t len3 = sizeof(int);
+
+			string rc(len1 + len2 + len3, ' ');
+			char* p = rc.begin();
+
+			memcpy(p, &statistics.st_dev, len1);
+			p += len1;
+			memcpy(p, &statistics.st_ino, len2);
+			p += len2;
+			memcpy(p, &start, len3);
+
+			return rc;
+		}
+
+		CountedRWLock* getRw()
+		{
+			string id = getLockId();
+
+			MutexLockGuard g(rwlocksMutex);
+			CountedRWLock* rc = rwlocks->get(id);
+			if (!rc)
+			{
+				rc = rwlocks->put(id);
+#ifdef DEBUG_RWLOCKS
+				fprintf(stderr, "\ncreated %p\n", rc);
+#endif
+			}
+
+			++(rc->cnt);
+#ifdef DEBUG_RWLOCKS
+			fprintf(stderr, "\n++ %p\n", rc);
+#endif
+			return rc;
+		}
+#endif
 	};
 }
 
@@ -2084,6 +2244,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 /* keep opened the shared file_decriptor */
 	mainLock.setDtorMode(FileLock::LOCKED);
+
 #ifdef USE_SYS5SEMAPHORE
 	// keep shared lock before last shared memory region unmapped
 	semLock.setDtorMode(FileLock::LOCKED);
@@ -2778,6 +2939,7 @@ int ISC_mutex_lock(struct mtx* mutex)
 	return 0;
 
 #endif // USE_FILELOCKS
+
 }
 
 
@@ -2825,6 +2987,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
 	return 0;
 
 #endif // USE_FILELOCKS
+
 }
 
 
@@ -3765,7 +3928,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
-	
+
 	// Delete file only if it is not used by anyone else
 	HANDLE hFile = CreateFile(expanded_filename,
 							 DELETE,
