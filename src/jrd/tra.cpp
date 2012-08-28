@@ -1779,7 +1779,7 @@ void TRA_sweep(thread_db* tdbb)
 
 	TraceSweepEvent traceSweep(tdbb);
 
-	// Start a transaction, if necessary, to perform the sweep.
+	// Start a transaction to perform the sweep.
 	// Save the transaction's oldest snapshot as it is refreshed
 	// during the course of the database sweep. Since it is used
 	// below to advance the OIT we must save it before it changes.
