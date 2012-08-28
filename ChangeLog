@@ -1,3 +1,24 @@
+ 2012-08-28 01:02  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/dsql.h
+   M src/dsql/parse.y
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/jrd/constants.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/keywords.cpp
+Feature CORE-3291 - New pseudocolumn to get number of transaction that created this record version.
+
  2012-08-21 15:38  asfernandes 
    M src/dsql/parse.y
 Improvement CORE-3546 - Aliases for the RETURNING clause.
