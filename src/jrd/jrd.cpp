@@ -1664,11 +1664,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			guardDatabases.leave();
 
-			if (options.dpb_sweep & isc_dpb_records)
-			{
-				if (!TRA_sweep(tdbb, 0)) {
-					ERR_punt();
-				}
+			if (options.dpb_sweep & isc_dpb_records) {
+				TRA_sweep(tdbb);
 			}
 
 			if (options.dpb_dbkey_scope) {
