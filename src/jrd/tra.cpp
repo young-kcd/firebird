@@ -108,7 +108,7 @@ static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
 static void link_transaction(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
-static void start_sweeper(thread_db*, Database*);
+static void start_sweeper(thread_db*);
 static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp);
@@ -1716,7 +1716,7 @@ int TRA_state(const UCHAR* bit_vector, ULONG oldest, ULONG number)
 }
 
 
-bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
+void TRA_sweep(thread_db* tdbb)
 {
 /**************************************
  *
@@ -1729,25 +1729,25 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	// No point trying to sweep a ReadOnly database
 	if (dbb->dbb_flags & DBB_read_only)
-		return true;
+		return;
 
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
-		return true;
+		return;
 
-	if (tdbb->getAttachment()->att_flags & ATT_NO_CLEANUP) {
-		return true;
-	}
+	Attachment* const attachment = tdbb->getAttachment();
+
+	if (attachment->att_flags & ATT_no_cleanup)
+		return;
 
 	// fill out a lock block, zeroing it out first
 
 	Lock temp_lock;
 	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = trans;
 	temp_lock.lck_type = LCK_sweep;
 	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 	temp_lock.lck_parent = dbb->dbb_lock;
@@ -1757,8 +1757,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	{
 		// clear lock error from status vector
 		fb_utils::init_status(tdbb->tdbb_status_vector);
-
-		return true;
+		return;
 	}
 
 	dbb->dbb_flags |= DBB_sweep_in_progress;
@@ -1785,13 +1784,10 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	// during the course of the database sweep. Since it is used
 	// below to advance the OIT we must save it before it changes.
 
-
-	if (!(transaction = trans))
-		transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
+	transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
 
 	SLONG transaction_oldest_active = transaction->tra_oldest_active;
 	tdbb->setTransaction(transaction);
-
 
 #ifdef GARBAGE_THREAD
 	// The garbage collector runs asynchronously with respect to
@@ -1801,7 +1797,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	// the "notify garbage collector" flag for the attachment and
 	// synchronously perform the garbage collection ourselves.
 
-	transaction->tra_attachment->att_flags &= ~ATT_notify_gc;
+	attachment->att_flags &= ~ATT_notify_gc;
 #endif
 
 	if (VIO_sweep(tdbb, transaction, &traceSweep))
@@ -1852,8 +1848,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 		traceSweep.report(process_state_finished);
 	}
 
-	if (!trans)
-		TRA_commit(tdbb, transaction, false);
+	TRA_commit(tdbb, transaction, false);
 
 	LCK_release(tdbb, &temp_lock);
 	dbb->dbb_flags &= ~DBB_sweep_in_progress;
@@ -1866,27 +1861,26 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 		iscLogException("Error during sweep:", ex);
 
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		try {
-			if (!trans && transaction)
-				TRA_commit(tdbb, transaction, false);
 
-			LCK_release(tdbb, &temp_lock);
-			dbb->dbb_flags &= ~DBB_sweep_in_progress;
-			tdbb->tdbb_flags &= ~TDBB_sweeper;
-			tdbb->setTransaction(tdbb_old_trans);
-		}
-		catch (const Firebird::Exception& ex2)
+		if (transaction)
 		{
-			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex2);
-			LCK_release(tdbb, &temp_lock);
-			dbb->dbb_flags &= ~DBB_sweep_in_progress;
-			tdbb->tdbb_flags &= ~TDBB_sweeper;
-			tdbb->setTransaction(tdbb_old_trans);
+			try
+			{
+				TRA_commit(tdbb, transaction, false);
+			}
+			catch (const Firebird::Exception& ex2)
+			{
+				Firebird::stuff_exception(tdbb->tdbb_status_vector, ex2);
+			}
 		}
-		return false;
-	}
 
-	return true;
+		LCK_release(tdbb, &temp_lock);
+		dbb->dbb_flags &= ~DBB_sweep_in_progress;
+		tdbb->tdbb_flags &= ~TDBB_sweeper;
+		tdbb->setTransaction(tdbb_old_trans);
+
+		throw;
+	}
 }
 
 
@@ -2718,7 +2712,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 }
 
 
-static void start_sweeper(thread_db* tdbb, Database* dbb)
+static void start_sweeper(thread_db* tdbb)
 {
 /**************************************
  *
@@ -2730,28 +2724,25 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
  *	Start a thread to sweep the database.
  *
  **************************************/
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	if ((dbb->dbb_flags & DBB_sweep_in_progress) || (dbb->dbb_ast_flags & DBB_shutdown))
-	{
-		return; // false;
-	}
-
-	SET_TDBB(tdbb);
+		return;
 
 	// fill out the lock block
 	Lock temp_lock;
-	temp_lock.lck_dbb			= dbb;
-	temp_lock.lck_type			= LCK_sweep;
-	temp_lock.lck_owner_handle	= LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-	temp_lock.lck_parent		= dbb->dbb_lock;
-	temp_lock.lck_length		= sizeof(SLONG);
+	temp_lock.lck_dbb = dbb;
+	temp_lock.lck_type = LCK_sweep;
+	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_parent = dbb->dbb_lock;
+	temp_lock.lck_length = sizeof(SLONG);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
 		// clear lock error from status vector
 		fb_utils::init_status(tdbb->tdbb_status_vector);
-
-		return; // false;
+		return;
 	}
 
 	LCK_release(tdbb, &temp_lock);
@@ -2759,22 +2750,21 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	// allocate space for the string and a null at the end
 	const char* pszFilename = tdbb->getAttachment()->att_filename.c_str();
 
-	char* database = (char*)gds__alloc(strlen(pszFilename) + 1);
+	char* database = (char*) gds__alloc(strlen(pszFilename) + 1);
 
-	if (!database)
+	if (database)
+	{
+		strcpy(database, pszFilename);
+		if (gds__thread_start(sweep_database, database, THREAD_medium, 0, 0))
+		{
+			gds__free(database);
+			ERR_log(0, 0, "cannot start sweep thread");
+		}
+	}
+	else
 	{
 		ERR_log(0, 0, "cannot start sweep thread, Out of Memory");
-		return; // false;
 	}
-
-	strcpy(database, pszFilename);
-	if (gds__thread_start(sweep_database, database, THREAD_medium, 0, 0))
-	{
-		gds__free(database);
-		ERR_log(0, 0, "cannot start sweep thread");
-	}
-
-	return; // true;
 }
 
 
@@ -3548,8 +3538,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		(trans->tra_oldest_active - trans->tra_oldest > dbb->dbb_sweep_interval) &&
 		oldest_state != tra_limbo)
 	{
-		// Why nobody checks the result? Changed the function to return nothing.
-		start_sweeper(tdbb, dbb);
+		start_sweeper(tdbb);
 	}
 
 	// Check in with external file system

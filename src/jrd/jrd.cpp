@@ -1401,11 +1401,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	guardDatabases.leave();
 
-	if (options.dpb_sweep & isc_dpb_records)
-	{
-		if (!TRA_sweep(tdbb, 0)) {
-			ERR_punt();
-		}
+	if (options.dpb_sweep & isc_dpb_records) {
+		TRA_sweep(tdbb);
 	}
 
 	if (options.dpb_dbkey_scope) {
