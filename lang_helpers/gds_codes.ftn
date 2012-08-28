@@ -1616,6 +1616,8 @@ C --
       PARAMETER (GDS__dsql_incompatible_trigger_type   = 336003102)
       INTEGER*4 GDS__dsql_db_trigger_type_cant_change
       PARAMETER (GDS__dsql_db_trigger_type_cant_change = 336003103)
+      INTEGER*4 GDS__dsql_record_version_table       
+      PARAMETER (GDS__dsql_record_version_table        = 336003104)
       INTEGER*4 GDS__dyn_filter_not_found            
       PARAMETER (GDS__dyn_filter_not_found             = 336068645)
       INTEGER*4 GDS__dyn_func_not_found              

@@ -1596,6 +1596,7 @@ COMMIT WORK;
 ('upd_ins_with_complex_view', 'pass1_update_or_insert', 'pass1.cpp', NULL, 7, 29, NULL, 'UPDATE OR INSERT without MATCHING could not be used with views based on more than one table', NULL, NULL);
 ('dsql_incompatible_trigger_type', 'define_trigger', 'ddl.cpp', NULL, 7, 30, NULL, 'Incompatible trigger type', NULL, NULL);
 ('dsql_db_trigger_type_cant_change', 'define_trigger', 'ddl.cpp', NULL, 7, 31, NULL, 'Database trigger type can''t be changed', NULL, NULL);
+('dsql_record_version_table', 'MAKE_desc', 'ExprNodes.cpp', NULL, 7, 32, NULL, 'To be used with RDB$RECORD_VERSION, @1 must be a table or a view of single table', NULL, NULL);
 -- Do not change the arguments of the previous DSQL messages.
 -- Write the new DSQL messages here.
 -- DYN

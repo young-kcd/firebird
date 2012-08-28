@@ -803,6 +803,7 @@ static const struct {
 	{336003101, "54001"}, //  29 upd_ins_with_complex_view
 	{336003102, "42000"}, //  30 dsql_incompatible_trigger_type
 	{336003103, "42000"}, //  31 dsql_db_trigger_type_cant_change
+	{336003104, "HY000"}, //  32 dsql_record_version_table
 	{336068645, "42000"}, //  37 dyn_filter_not_found
 	{336068649, "42000"}, //  41 dyn_func_not_found
 	{336068656, "42000"}, //  48 dyn_index_not_found

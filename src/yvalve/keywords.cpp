@@ -318,6 +318,7 @@ static const TOK tokens[] =
 	{RANK, "RANK", 2, false},
 	{DB_KEY, "RDB$DB_KEY", 1, false},
 	{RDB_GET_CONTEXT, "RDB$GET_CONTEXT", 2, true},
+	{RDB_RECORD_VERSION, "RDB$RECORD_VERSION", 2, false},
 	{RDB_SET_CONTEXT, "RDB$SET_CONTEXT", 2, true},
 	{READ, "READ", 1, false},
 	{REAL, "REAL", 1, false},

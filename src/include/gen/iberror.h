@@ -838,6 +838,7 @@ const ISC_STATUS isc_upd_ins_doesnt_match_matching    = 336003100L;
 const ISC_STATUS isc_upd_ins_with_complex_view        = 336003101L;
 const ISC_STATUS isc_dsql_incompatible_trigger_type   = 336003102L;
 const ISC_STATUS isc_dsql_db_trigger_type_cant_change = 336003103L;
+const ISC_STATUS isc_dsql_record_version_table        = 336003104L;
 const ISC_STATUS isc_dyn_filter_not_found             = 336068645L;
 const ISC_STATUS isc_dyn_func_not_found               = 336068649L;
 const ISC_STATUS isc_dyn_index_not_found              = 336068656L;
@@ -1224,7 +1225,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1168;
+const ISC_STATUS isc_err_max                          = 1169;
 
 #else /* c definitions */
 
@@ -2032,6 +2033,7 @@ const ISC_STATUS isc_err_max                          = 1168;
 #define isc_upd_ins_with_complex_view        336003101L
 #define isc_dsql_incompatible_trigger_type   336003102L
 #define isc_dsql_db_trigger_type_cant_change 336003103L
+#define isc_dsql_record_version_table        336003104L
 #define isc_dyn_filter_not_found             336068645L
 #define isc_dyn_func_not_found               336068649L
 #define isc_dyn_index_not_found              336068656L
@@ -2418,7 +2420,7 @@ const ISC_STATUS isc_err_max                          = 1168;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1168
+#define isc_err_max                          1169
 
 #endif
 

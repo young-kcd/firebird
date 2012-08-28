@@ -807,6 +807,7 @@ Data source : @4"},		/* eds_statement */
 	{336003101, "UPDATE OR INSERT without MATCHING could not be used with views based on more than one table"},		/* upd_ins_with_complex_view */
 	{336003102, "Incompatible trigger type"},		/* dsql_incompatible_trigger_type */
 	{336003103, "Database trigger type can't be changed"},		/* dsql_db_trigger_type_cant_change */
+	{336003104, "To be used with RDB$RECORD_VERSION, @1 must be a table or a view of single table"},		/* dsql_record_version_table */
 	{336068645, "BLOB Filter @1 not found"},		/* dyn_filter_not_found */
 	{336068649, "Function @1 not found"},		/* dyn_func_not_found */
 	{336068656, "Index not found"},		/* dyn_index_not_found */

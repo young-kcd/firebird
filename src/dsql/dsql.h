@@ -732,6 +732,16 @@ public:
 		return *this;
 	}
 
+	Firebird::string getObjectName()
+	{
+		if (ctx_relation)
+			return ctx_relation->rel_name.c_str();
+		else if (ctx_procedure)
+			return ctx_procedure->prc_name.toString();
+		else
+			return "";
+	}
+
 	bool getImplicitJoinField(const Firebird::MetaName& name, NestConst<ValueExprNode>& node);
 	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch,
 		ValueListNode* partitionNode, ValueListNode* orderNode);

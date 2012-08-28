@@ -5684,7 +5684,8 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		RecordKeyNode* recNode;
 
 		if (!sub->is<FieldNode>() &&
-			(!(recNode = sub->as<RecordKeyNode>()) || recNode->blrOp != blr_dbkey))
+			(!(recNode = sub->as<RecordKeyNode>()) ||
+			 (recNode->blrOp != blr_dbkey && recNode->blrOp != blr_record_version2)))
 		{
 			ValueExprNodeStack stack;
 			CMP_expand_view_nodes(tdbb, csb, stream, stack, blr_dbkey, true);
@@ -6707,6 +6708,7 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 	const DsqlAliasNode* aliasNode;
 	const LiteralNode* literalNode;
 	const DerivedFieldNode* derivedField;
+	const RecordKeyNode* dbKeyNode;
 
 	if ((aggNode = ExprNode::as<AggNode>(nestNode)))
 		aggNode->setParameterName(parameter);
@@ -6718,8 +6720,8 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 	}
 	else if ((literalNode = ExprNode::as<LiteralNode>(nestNode)))
 		literalNode->setParameterName(parameter);
-	else if (ExprNode::is<RecordKeyNode>(nestNode))
-		nameAlias = DB_KEY_NAME;
+	else if ((dbKeyNode = ExprNode::as<RecordKeyNode>(nestNode)))
+		nameAlias = dbKeyNode->getAlias(false);
 	else if ((derivedField = ExprNode::as<DerivedFieldNode>(nestNode)))
 	{
 		parameter->par_alias = derivedField->name;
@@ -7836,6 +7838,7 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<RecordKeyNode> regRecordKeyNodeDbKey(blr_dbkey);
 static RegisterNode<RecordKeyNode> regRecordKeyNodeRecordVersion(blr_record_version);
+static RegisterNode<RecordKeyNode> regRecordKeyNodeRecordVersion2(blr_record_version2);
 
 RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDsqlQualifier)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_RECORD_KEY>(pool),
@@ -7845,7 +7848,7 @@ RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDs
 	  recStream(0),
 	  aggregate(false)
 {
-	fb_assert(blrOp == blr_dbkey || blrOp == blr_record_version);
+	fb_assert(blrOp == blr_dbkey || blrOp == blr_record_version || blrOp == blr_record_version2);
 	addDsqlChildNode(dsqlRelation);
 }
 
@@ -7865,7 +7868,10 @@ DmlNode* RecordKeyNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScr
 
 void RecordKeyNode::print(string& text) const
 {
-	text.printf("RecordKeyNode (%s)", (blrOp == blr_dbkey ? "dbkey" : "record_version"));
+	text.printf("RecordKeyNode (%s)",
+		(blrOp == blr_dbkey ? "dbkey" :
+		 blrOp == blr_record_version2 ? "record_version2" : "record_version"));
+
 	ExprNode::print(text);
 }
 
@@ -7893,15 +7899,12 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			dsql_ctx* context = contexts.object();
 
 			if (!context->ctx_relation)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_dsql_dbkey_from_non_table));
-			}
+				raiseError(context);
 
 			if (context->ctx_flags & CTX_null)
 				return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 
-			PASS1_ambiguity_check(dsqlScratch, "RDB$DB_KEY", contexts);
+			PASS1_ambiguity_check(dsqlScratch, getAlias(true), contexts);
 
 			RelationSourceNode* relNode = FB_NEW(getPool()) RelationSourceNode(getPool());
 			relNode->dsqlContext = context;
@@ -7933,10 +7936,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				}
 
 				if (!context->ctx_relation)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-							  Arg::Gds(isc_dsql_dbkey_from_non_table));
-				}
+					raiseError(context);
 
 				if (context->ctx_flags & CTX_null)
 					return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
@@ -7958,7 +7958,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// Field unresolved.
-	PASS1_field_unknown((dsqlQualifier.hasData() ? dsqlQualifier.c_str() : NULL), DB_KEY_NAME, this);
+	PASS1_field_unknown(dsqlQualifier.nullStr(), getAlias(false), this);
 
 	return NULL;
 }
@@ -8000,7 +8000,7 @@ ValueExprNode* RecordKeyNode::dsqlFieldRemapper(FieldRemapper& visitor)
 
 void RecordKeyNode::setParameterName(dsql_par* parameter) const
 {
-	parameter->par_name = parameter->par_alias = DB_KEY_NAME;
+	parameter->par_name = parameter->par_alias = getAlias(false);
 
 	dsql_ctx* context = dsqlRelation->dsqlContext;
 
@@ -8030,28 +8030,35 @@ void RecordKeyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void RecordKeyNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	fb_assert(blrOp == blr_dbkey);
+	fb_assert(blrOp == blr_dbkey || blrOp == blr_record_version2);
 
 	// Fix for bug 10072 check that the target is a relation
-	dsql_rel* relation;
+	dsql_rel* relation = dsqlRelation->dsqlContext->ctx_relation;
 
-	if (dsqlRelation && (relation = dsqlRelation->dsqlContext->ctx_relation))
+	if (relation)
 	{
-		desc->dsc_dtype = dtype_text;
+		USHORT dbKeyLength = (relation->rel_flags & REL_creating ? 8 : relation->rel_dbkey_length);
 
-		if (relation->rel_flags & REL_creating)
-			desc->dsc_length = 8;
-		else
-			desc->dsc_length = relation->rel_dbkey_length;
-
-		desc->dsc_flags = DSC_nullable;
-		desc->dsc_ttype() = ttype_binary;
+		if (blrOp == blr_dbkey)
+		{
+			desc->dsc_dtype = dtype_text;
+			desc->dsc_length = dbKeyLength;
+			desc->dsc_flags = DSC_nullable;
+			desc->dsc_ttype() = ttype_binary;
+		}
+		else	// blr_record_version2
+		{
+			if (dbKeyLength == 8)
+			{
+				desc->makeLong(0);
+				desc->setNullable(true);
+			}
+			else
+				raiseError(dsqlRelation->dsqlContext);
+		}
 	}
 	else
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-				  Arg::Gds(isc_dsql_dbkey_from_non_table));
-	}
+		raiseError(dsqlRelation->dsqlContext);
 }
 
 bool RecordKeyNode::jrdStreamFinder(StreamType findStream)
@@ -8108,6 +8115,8 @@ void RecordKeyNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* 
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 	}
+	else if (blrOp == blr_record_version2)
+		desc->makeLong(0);
 }
 
 ValueExprNode* RecordKeyNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -8340,7 +8349,7 @@ dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 		// If the current transaction has updated the record, the record version
 		// coming in from DSQL will have the original transaction # (or current
 		// transaction if the current transaction updated the record in a different
-		// request.).  In these cases, mark the request so that the boolean
+		// request).  In these cases, mark the request so that the boolean
 		// to check equality of record version will be forced to evaluate to true.
 
 		if (request->req_transaction->tra_number == rpb->rpb_transaction_nr)
@@ -8365,6 +8374,20 @@ dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 		impure->vlu_desc.dsc_length = 4;
 		impure->vlu_desc.dsc_ttype() = ttype_binary;
 	}
+	else if (blrOp == blr_record_version2)
+	{
+		const jrd_rel* relation = rpb->rpb_relation;
+
+		// If it doesn't point to a valid record, return NULL.
+		if (!rpb->rpb_number.isValid() || !relation || relation->isVirtual() || relation->rel_file)
+		{
+			request->req_flags |= req_null;
+			return NULL;
+		}
+
+		impure->vlu_misc.vlu_long = rpb->rpb_transaction_nr;
+		impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
+	}
 
 	return &impure->vlu_desc;
 }
@@ -8385,6 +8408,31 @@ ValueExprNode* RecordKeyNode::catenateNodes(thread_db* tdbb, ValueExprNodeStack&
 	concatNode->arg2 = catenateNodes(tdbb, stack);
 
 	return concatNode;
+}
+
+void RecordKeyNode::raiseError(dsql_ctx* context) const
+{
+	if (blrOp != blr_record_version2)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+			Arg::Gds(isc_dsql_dbkey_from_non_table));
+	}
+
+	string name = context->getObjectName();
+	const string& alias = context->ctx_internal_alias;
+
+	if (alias.hasData() && name != alias)
+	{
+		if (name.hasData())
+			name += " (alias " + alias + ")";
+		else
+			name = alias;
+	}
+
+	status_exception::raise(
+		Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+		Arg::Gds(isc_dsql_record_version_table) << name);
 }
 
 

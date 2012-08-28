@@ -244,5 +244,6 @@ static const struct
 	{"subproc", procedure2},
 	{"subfunc_decl", subfunc_decl},
 	{"subfunc", function},
+	{"record_version2", byte_line},
 	{0, 0}
 };

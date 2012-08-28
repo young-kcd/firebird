@@ -573,11 +573,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyStr> RANK
 %token <legacyStr> ROW_NUMBER
 %token <legacyStr> SQLSTATE
-
 %token <legacyStr> KW_BOOLEAN
 %token <legacyStr> KW_FALSE
 %token <legacyStr> KW_TRUE
 %token <legacyStr> UNKNOWN
+%token <legacyStr> RDB_RECORD_VERSION
 
 // precedence declarations for expression evaluation
 
@@ -5707,16 +5707,22 @@ common_value
 		{ $$ = $1; }
 	| internal_info
 		{ $$ = $1; }
-	| DB_KEY
-		{ $$ = newNode<RecordKeyNode>(blr_dbkey); }
-	| symbol_table_alias_name '.' DB_KEY
-		{ $$ = newNode<RecordKeyNode>(blr_dbkey, toName($1)); }
+	| recordKeyType
+		{ $$ = newNode<RecordKeyNode>($1); }
+	| symbol_table_alias_name '.' recordKeyType
+		{ $$ = newNode<RecordKeyNode>($3, toName($1)); }
 	| KW_VALUE
 		{ $$ = newNode<DomainValidationNode>(); }
 	| datetime_value_expression
 		{ $$ = $1; }
 	| null_value
 		{ $$ = $1; }
+	;
+
+%type <blrOp> recordKeyType
+recordKeyType
+	: DB_KEY				{ $$ = blr_dbkey; }
+	| RDB_RECORD_VERSION	{ $$ = blr_record_version2; }
 	;
 
 %type <valueExprNode> datetime_value_expression

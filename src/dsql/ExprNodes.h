@@ -1110,8 +1110,22 @@ public:
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
+	const char* getAlias(bool rdb) const
+	{
+		if (blrOp == blr_record_version2)
+		{
+			// ASF: It's on purpose that RDB$ prefix is always used here.
+			// Absense of it with DB_KEY seems more a bug than feature.
+			return RDB_RECORD_VERSION_NAME;
+		}
+		else
+			return (rdb ? RDB_DB_KEY_NAME : DB_KEY_NAME);
+	}
+
 private:
 	static ValueExprNode* catenateNodes(thread_db* tdbb, ValueExprNodeStack& stack);
+
+	void raiseError(dsql_ctx* context) const;
 
 public:
 	UCHAR blrOp;
