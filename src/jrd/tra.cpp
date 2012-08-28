@@ -1739,9 +1739,10 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
 		return true;
 
-	if (tdbb->getAttachment()->att_flags & ATT_NO_CLEANUP) {
+	Attachment* attachment = tdbb->getAttachment();
+		
+	if (attachment->att_flags & ATT_no_cleanup)
 		return true;
-	}
 
 	// fill out a lock block, zeroing it out first
 
@@ -1785,13 +1786,11 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	// during the course of the database sweep. Since it is used
 	// below to advance the OIT we must save it before it changes.
 
-
 	if (!(transaction = trans))
 		transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
 
 	SLONG transaction_oldest_active = transaction->tra_oldest_active;
 	tdbb->setTransaction(transaction);
-
 
 #ifdef GARBAGE_THREAD
 	// The garbage collector runs asynchronously with respect to
@@ -1801,7 +1800,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	// the "notify garbage collector" flag for the attachment and
 	// synchronously perform the garbage collection ourselves.
 
-	transaction->tra_attachment->att_flags &= ~ATT_notify_gc;
+	attachment->att_flags &= ~ATT_notify_gc;
 #endif
 
 	if (VIO_sweep(tdbb, transaction, &traceSweep))
