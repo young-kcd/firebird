@@ -2402,17 +2402,18 @@ static void compress(thread_db* tdbb,
 			// Leave key_empty flag, because the string is an empty string
 			if (descending && ((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
 				*p++ = desc_end_value_prefix;
-
-			*p++ = pad;
 		}
 
 		while (p > key->key_data)
 		{
 			if (*--p != pad)
+			{
+				++p;
 				break;
+			}
 		}
 
-		key->key_length = p + 1 - key->key_data;
+		key->key_length = p - key->key_data;
 		return;
 	}
 
