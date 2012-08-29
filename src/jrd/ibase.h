@@ -154,7 +154,7 @@ typedef struct bstream
 	short			bstr_length;	/* Length of buffer */
 	short			bstr_cnt;		/* Characters in buffer */
 	char			bstr_mode;		/* (mode) ? OUTPUT : INPUT */
-} BSTREAM;
+} BSTREAM, *BLOBSTREAM;
 
 /* Three ugly macros, one even using octal radix... sigh... */
 #define getb(p)	(--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
