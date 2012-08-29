@@ -379,6 +379,7 @@ struct
 	{"ISO8859_1", "PT_BR", ISO88591_55_init},
 	{"ISO8859_1", "ES_ES_CI_AI", ISO88591_56_init},
 	{"ISO8859_1", "FR_FR_CI_AI", ISO88591_42_init},
+	{"ISO8859_1", "FR_CA_CI_AI", ISO88591_43_init},
 	{"ISO8859_2", "ISO8859_2", ISO88592_cp_init},
 	{"ISO8859_2", "CS_CZ", ISO88592_c1_init},
 	{"ISO8859_2", "ISO_HUN", ISO88592_c2_init},
