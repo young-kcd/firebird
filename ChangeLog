@@ -1,3 +1,16 @@
+ 2012-08-28 18:19  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra_proto.h
+Minor cleanup and simplification.
+
+ 2012-08-28 15:40  asfernandes 
+   M src/jrd/btr.cpp
+Fixed three related bugs:
+CORE-1188 - Select Starting with :Param (Empty string) doesn't work if using index with many fields
+CORE-3052 - Wrong resultset
+CORE-3239 - UTF8 UNICODE_CI collate can not be used in compound index
+
  2012-08-28 01:02  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
