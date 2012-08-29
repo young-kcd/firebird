@@ -294,9 +294,9 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
 void ThreadData::start(ThreadEntryPoint* routine,
-				void *arg, 
-				int priority_arg, 
-				int flags, 
+				void *arg,
+				int priority_arg,
+				int flags,
 				void *thd_id)
 {
 /**************************************
@@ -314,70 +314,55 @@ void ThreadData::start(ThreadEntryPoint* routine,
 	pthread_attr_t pattr;
 	int state;
 
-#if ( !defined HP10 && !defined LINUX && !defined FREEBSD )
+#if defined (LINUX) || defined (FREEBSD)
+	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
+		Firebird::system_call_failed::raise("pthread_create", state);
+
+	if (state = pthread_detach(thread))
+		Firebird::system_call_failed::raise("pthread_detach", state);
+#else
 	state = pthread_attr_init(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_init", state);
 
-	// Do not make thread bound for superserver/client
-#if (!defined (SUPERCLIENT) && !defined (SUPERSERVER))
-	pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
-#endif
+#if defined(_AIX) || defined(DARWIN)
+// adjust stack size
 
-	pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
-	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
-	pthread_attr_destroy(&pattr);
+// For AIX 32-bit compiled applications, the default stacksize is 96 KB,
+// see <pthread.h>. For 64-bit compiled applications, the default stacksize
+// is 192 KB. This is too small - see HP-UX note above
+
+// For MaxOS default stack is 512 KB, which is also too small in 2012.
+
+	size_t stack_size;
+	state = pthread_attr_getstacksize(&pattr, &stack_size);
 	if (state)
-		Firebird::system_call_failed::raise("pthread_create", state);
-
-#else
-#if ( defined LINUX || defined FREEBSD )
-
-	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
-		Firebird::system_call_failed::raise("pthread_create", state);
-	if (state = pthread_detach(thread))
-		Firebird::system_call_failed::raise("pthread_detach", state);
-
-#else
-	
-	state = pthread_attr_create(&pattr);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_attr_create", state);
-
-/* The default HP's stack size is too small. HP's documentation
-   says it is "machine specific". My test showed it was less
-   than 64K. We definitly need more stack to be able to execute
-   concurrently many (at least 100) copies of the same request
-   (like, for example in case of recursive stored prcedure).
-   The following code sets threads stack size up to 256K if the
-   default stack size is less than this number
-*/
-	const long stack_size = pthread_attr_getstacksize(pattr);
-	if (stack_size == -1)
 		Firebird::system_call_failed::raise("pthread_attr_getstacksize");
 
-	if (stack_size < 0x40000L) {
-		state = pthread_attr_setstacksize(&pattr, 0x40000L);
+	if (stack_size < 0x400000L)
+	{
+		state = pthread_attr_setstacksize(&pattr, 0x400000L);
 		if (state)
 			Firebird::system_call_failed::raise("pthread_attr_setstacksize", state);
 	}
+#endif // _AIX
 
-/* HP's Posix threads implementation does not support
-   bound attribute. It just a user level library.
-*/
-	state = pthread_create(&thread, pattr, THREAD_ENTRYPOINT, THREAD_ARG);
+	state = pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_setscope", state);
+
+	state = pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_setdetachstate", state);
+
+	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
+	int state2 = pthread_attr_destroy(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_create", state);
+	if (state2)
+		Firebird::system_call_failed::raise("pthread_attr_destroy", state2);
 
-	state = pthread_detach(&thread);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_detach", state);
-	state = pthread_attr_delete(&pattr);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_attr_delete", state);
-
-#endif /* linux */
-#endif /* HP10 */
+#endif
 }
 #endif /* USE_POSIX_THREADS */
 
