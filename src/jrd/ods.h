@@ -358,6 +358,7 @@ const USHORT irt_in_progress	= 4;
 const USHORT irt_foreign		= 8;
 const USHORT irt_primary		= 16;
 const USHORT irt_expression		= 32;
+const USHORT irt_complete_segs	= 64;
 
 const int STUFF_COUNT		= 4;
 const SLONG END_LEVEL		= -1;
