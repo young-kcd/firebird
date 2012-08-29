@@ -27,7 +27,7 @@
 #include "../include/fb_types.h"
 
 #ifndef JRD_IBASE_H
-typedef struct bstream* BLOBSTREAM;
+typedef struct bstream* FB_BLOB_STREAM;
 #endif
 
 #ifdef __cplusplus
@@ -55,21 +55,21 @@ void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
 uintptr_t	API_ROUTINE isc_baddress(SCHAR*);
 void	API_ROUTINE isc_baddress_s(const SCHAR*, uintptr_t*);
-int		API_ROUTINE BLOB_close(BLOBSTREAM);
+int		API_ROUTINE BLOB_close(FB_BLOB_STREAM);
 int		API_ROUTINE blob__display(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*, const SSHORT*);
 int		API_ROUTINE BLOB_display(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
 int		API_ROUTINE blob__dump(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*, const SSHORT*);
 int		API_ROUTINE BLOB_dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
 int		API_ROUTINE blob__edit(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*, const SSHORT*);
 int		API_ROUTINE BLOB_edit(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
-int		API_ROUTINE BLOB_get(BLOBSTREAM);
+int		API_ROUTINE BLOB_get(FB_BLOB_STREAM);
 int		API_ROUTINE blob__load(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*, const SSHORT*);
 int		API_ROUTINE BLOB_load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
 int		API_ROUTINE BLOB_text_dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
 int		API_ROUTINE BLOB_text_load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
-BLOBSTREAM	API_ROUTINE Bopen(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
-BLOBSTREAM	API_ROUTINE BLOB_open(FB_API_HANDLE, SCHAR*, int);
-int		API_ROUTINE BLOB_put(SCHAR, BLOBSTREAM);
+FB_BLOB_STREAM	API_ROUTINE Bopen(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
+FB_BLOB_STREAM	API_ROUTINE BLOB_open(FB_API_HANDLE, SCHAR*, int);
+int		API_ROUTINE BLOB_put(SCHAR, FB_BLOB_STREAM);
 
 #ifdef __cplusplus
 } /* extern "C" */
