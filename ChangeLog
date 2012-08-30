@@ -1,3 +1,14 @@
+ 2012-08-29 15:43  asfernandes 
+   D src/intl/collations/bl88591fr0.h
+   M src/intl/lc_iso8859_1.cpp
+   M src/intl/ld.cpp
+   M src/jrd/IntlManager.cpp
+Fixed CORE-3638 - Introduce FR_CA_CI_AI collation and change FR_FR and FR_FR_CI_AI to be identical to FR_CA and FR_CA_CI_AI respectively.
+
+ 2012-08-29 13:20  alexpeshkoff 
+   M src/common/ThreadStart.cpp
+Front-ported fix for CORE-3740: SELECT using IN list with >413 elements causes crash
+
  2012-08-28 18:19  dimitr 
    M src/jrd/jrd.cpp
    M src/jrd/tra.cpp
