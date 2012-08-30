@@ -1,3 +1,25 @@
+ 2012-08-29 16:22  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/ods.h
+Restored the ODS level compatibility with v2.5.1 index keys, while using the "old good" index key format in new indices. It allows to claim that CORE-3675 and CORE-3853 are fixed (after migration via backup/restore) but still operate almost correctly with keys created in v2.5.1. This is *much* better than silently returning wrong data if a v2.5.1 database is used with v2.5.2 without backup/restore.
+
+ 2012-08-29 12:34  alexpeshkoff 
+   M src/jrd/ibase.h
+   M src/jrd/utl.cpp
+   M src/jrd/utl_proto.h
+Use better name from trunk for CORE-3911
+
+ 2012-08-29 11:35  alexpeshkoff 
+   M src/jrd/ibase.h
+   M src/jrd/utl.cpp
+   M src/jrd/utl_proto.h
+Fixed CORE-3911: API entrypoints Bopen and BLOB_open are not visible on Darwin
+
+ 2012-08-29 11:30  alexpeshkoff 
+   M src/jrd/ThreadStart.cpp
+Fixed CORE-3740: SELECT using IN list with >413 elements causes crash on Mac
+
  2012-08-28 18:00  dimitr 
    M src/jrd/tra.cpp
 Misc.
