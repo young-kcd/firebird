@@ -169,7 +169,6 @@ static GlobalPtr<Mutex> openFdInit;
 namespace {
 
 #ifdef USE_FCNTL
-
 	struct CountedRWLock
 	{
 		RWLock rwlock;
@@ -180,6 +179,9 @@ namespace {
 	GlobalPtr<RWLocks> rwlocks;
 	GlobalPtr<Mutex> rwlocksMutex;
 
+	const char* NAME = "fcntl";
+#else
+	const char* NAME = "flock";
 #endif // USE_FCNTL
 
 	// File lock holder
@@ -268,7 +270,7 @@ namespace {
 			else
 			{
 				ISC_STATUS_ARRAY local;
-				error(local, "fcntl", errno);
+				error(local, NAME, errno);
 				iscLogStatus("Unlock error", local);
 			}
 		}
@@ -367,7 +369,7 @@ namespace {
 			int rc = doLock(mode);
 			if (rc != 0)
 			{
-				error(status, "fcntl", rc);
+				error(status, NAME, rc);
 				return false;
 			}
 
