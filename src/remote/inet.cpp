@@ -263,8 +263,18 @@ public:
 	Select()
 		: slct_time(0), slct_count(0), slct_poll(*getDefaultMemoryPool())
 	{ }
+
+	Select(Firebird::MemoryPool& pool)
+		: slct_time(0), slct_count(0), slct_poll(pool)
+	{ }
 #else
 	Select()
+		: slct_time(0), slct_count(0), slct_width(0)
+	{
+		memset(&slct_fdset, 0, sizeof slct_fdset);
+	}
+
+	Select(Firebird::MemoryPool& /*pool*/)
 		: slct_time(0), slct_count(0), slct_width(0)
 	{
 		memset(&slct_fdset, 0, sizeof slct_fdset);
@@ -504,7 +514,7 @@ SLONG INET_remote_buffer;
 static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static volatile bool INET_initialized = false;
 static volatile bool INET_shutting_down = false;
-static Select INET_select;
+static Firebird::GlobalPtr<Select> INET_select;
 static rem_port* inet_async_receive = NULL;
 
 
