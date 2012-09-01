@@ -1,3 +1,7 @@
+ 2012-08-31 10:26  alexpeshkoff 
+   M src/remote/inet.cpp
+Fixed CORE-3912: segfault in superclassic
+
  2012-08-29 15:43  asfernandes 
    D src/intl/collations/bl88591fr0.h
    M src/intl/lc_iso8859_1.cpp
