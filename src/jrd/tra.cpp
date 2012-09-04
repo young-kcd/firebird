@@ -1848,7 +1848,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 		CCH_RELEASE(tdbb, &window);
 
-		traceSweep.report(process_state_finished);
+		traceSweep.finish();
 	}
 
 	if (!trans)
@@ -3681,7 +3681,54 @@ TraceSweepEvent::~TraceSweepEvent()
 }
 
 
-void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
+void TraceSweepEvent::beginSweepRelation(jrd_rel* relation)
+{
+	if (!m_need_trace)
+		return;
+
+	if (relation && relation->rel_name.isEmpty())
+	{
+		// don't accumulate per-relation stats for metadata query below
+		MET_lookup_relation_id(m_tdbb, relation->rel_id, false);
+	}
+
+	m_relation_clock = fb_utils::query_performance_counter();
+	m_request.req_stats.reset();
+}
+
+
+void TraceSweepEvent::endSweepRelation(jrd_rel* relation)
+{
+	if (!m_need_trace)
+		return;
+
+	// don't report empty relation
+	if (m_request.req_stats.getValue(RuntimeStatistics::RECORD_SEQ_READS) == 0 &&
+		m_request.req_stats.getValue(RuntimeStatistics::RECORD_BACKOUTS) == 0 &&
+		m_request.req_stats.getValue(RuntimeStatistics::RECORD_PURGES) == 0 &&
+		m_request.req_stats.getValue(RuntimeStatistics::RECORD_EXPUNGES) == 0)
+	{
+		return;
+	}
+
+	// we need to compare stats against zero base 
+	m_request.req_base_stats.reset();
+
+	Database* dbb = m_tdbb->getDatabase();
+	TraceRuntimeStats stats(dbb, &m_request.req_base_stats, &m_request.req_stats,
+		fb_utils::query_performance_counter() - m_relation_clock, 
+		0);
+
+	m_sweep_info.setPerf(stats.getPerf());
+
+	Attachment* att = m_tdbb->getAttachment();
+	TraceConnectionImpl conn(att);
+	TraceManager* trace_mgr = att->att_trace_manager;
+	trace_mgr->event_sweep(&conn, &m_sweep_info, process_state_progress);
+}
+
+
+void TraceSweepEvent::report(ntrace_process_state_t state)
 {
 	Attachment* att = m_tdbb->getAttachment();
 
@@ -3705,25 +3752,12 @@ void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
 
 	TraceConnectionImpl conn(att);
 
-	if (relation && relation->rel_name.isEmpty())
-	{
-		// don't accumulate per-relation stats for metadata query below
-		m_tdbb->setRequest(NULL);
-		MET_lookup_relation_id(m_tdbb, relation->rel_id, false);
-		m_tdbb->setRequest(&m_request);
-	}
-
 	// we need to compare stats against zero base 
 	m_request.req_base_stats.reset(); 
 
-	TraceRuntimeStats stats(dbb, &m_request.req_base_stats, 
-		state == process_state_progress ? &m_request.req_stats : &att->att_stats,
-		fb_utils::query_performance_counter() - (state == process_state_progress ? 
-			m_relation_clock : m_start_clock), 
+	TraceRuntimeStats stats(dbb, &m_request.req_base_stats, &att->att_stats,
+		fb_utils::query_performance_counter() - m_start_clock, 
 		0);
-
-	m_request.req_stats.reset();
-	m_relation_clock = fb_utils::query_performance_counter();
 
 	m_sweep_info.setPerf(stats.getPerf());
 	trace_mgr->event_sweep(&conn, &m_sweep_info, state);

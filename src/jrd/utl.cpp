@@ -1261,7 +1261,7 @@ void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
 }
 
 
-int API_ROUTINE BLOB_close(BSTREAM* bstream)
+int API_ROUTINE BLOB_close(FB_BLOB_STREAM bstream)
 {
 /**************************************
  *
@@ -1480,7 +1480,7 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 }
 
 
-int API_ROUTINE BLOB_get(BSTREAM* bstream)
+int API_ROUTINE BLOB_get(FB_BLOB_STREAM bstream)
 {
 /**************************************
  *
@@ -1608,7 +1608,7 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
 }
 
 
-BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
+FB_BLOB_STREAM API_ROUTINE Bopen(ISC_QUAD* blob_id,
 						   FB_API_HANDLE database,
 						   FB_API_HANDLE transaction,
 						   const SCHAR* mode)
@@ -1652,7 +1652,7 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 		return NULL;
 	}
 
-	BSTREAM* bstream = BLOB_open(blob, NULL, 0);
+	FB_BLOB_STREAM bstream = BLOB_open(blob, NULL, 0);
 
 	if (*mode == 'w' || *mode == 'W')
 	{
@@ -1671,7 +1671,7 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 
 
 // CVC: This routine doesn't open a blob really!
-BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
+FB_BLOB_STREAM API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 {
 /**************************************
  *
@@ -1686,7 +1686,7 @@ BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 	if (!blob)
 		return NULL;
 
-	BSTREAM* bstream = (BSTREAM*) gds__alloc((SLONG) sizeof(BSTREAM));
+	FB_BLOB_STREAM bstream = (FB_BLOB_STREAM) gds__alloc((SLONG) sizeof(BSTREAM));
 	// FREE: This structure is freed by BLOB_close
 	if (!bstream)				// NOMEM:
 		return NULL;
@@ -1726,7 +1726,7 @@ BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 }
 
 
-int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
+int API_ROUTINE BLOB_put(SCHAR x, FB_BLOB_STREAM bstream)
 {
 /**************************************
  *

@@ -2,6 +2,16 @@
   * v2.5.2
   **************************
 
+    * Bugfix CORE-3912
+        Segmentation fault in SuperClassic
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3911
+        API entrypoints Bopen and BLOB_open are not visible on MacOS
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-3887
         CHAR_TO_UUID and UUID_TO_CHAR works different in big endian architectures
       Contributor(s):
@@ -169,6 +179,7 @@
         SELECT using IN list with 153 or more elements causes crash on MacOS
       Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-3736
         WITH LOCK clause is allowed for users with read-only rights on some table,

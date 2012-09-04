@@ -2926,7 +2926,6 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 		for (size_t i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
 		{
-			bool haveRecs = false;
 			if ((relation = (*vector)[i]) && !(relation->rel_flags & (REL_deleted | REL_deleting)) &&
 				 relation->getPages(tdbb)->rel_pages)
 			{
@@ -2934,6 +2933,9 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 				rpb.rpb_number.setValue(BOF_NUMBER);
 				rpb.rpb_org_scans = relation->rel_scan_count++;
 				++relation->rel_sweep_count;
+
+				traceSweep->beginSweepRelation(relation);
+
 #ifdef GARBAGE_THREAD
 				if (relation->rel_garbage) {
 					relation->rel_garbage->clear();
@@ -2955,12 +2957,9 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 #ifdef SUPERSERVER
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 #endif
-					haveRecs = true;
 				}
 
-				if (haveRecs) {
-					traceSweep->report(process_state_progress, relation);
-				}
+				traceSweep->endSweepRelation(relation);
 
 				--relation->rel_sweep_count;
 				--relation->rel_scan_count;
