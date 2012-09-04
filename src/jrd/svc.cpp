@@ -2052,7 +2052,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	// All services except for get_ib_log require switches
 	spb.rewind();
-	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log)
+	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log && svc_id != isc_action_svc_trace_list)
 	{
 		status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
 								Arg::Gds(isc_svc_no_switches));
