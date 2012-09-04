@@ -1650,6 +1650,8 @@ void TRA_sweep(thread_db* tdbb)
 
 	tdbb->tdbb_flags |= TDBB_sweeper;
 
+	TraceSweepEvent traceSweep(tdbb);
+
 	// Start a transaction, if necessary, to perform the sweep.
 	// Save the transaction's oldest snapshot as it is refreshed
 	// during the course of the database sweep. Since it is used
@@ -1659,8 +1661,6 @@ void TRA_sweep(thread_db* tdbb)
 
 	TraNumber transaction_oldest_active = transaction->tra_oldest_active;
 	tdbb->setTransaction(transaction);
-
-	TraceSweepEvent traceSweep(tdbb);
 
 	// The garbage collector runs asynchronously with respect to
 	// our database sweep. This isn't good enough since we must
@@ -1716,7 +1716,7 @@ void TRA_sweep(thread_db* tdbb)
 
 		CCH_RELEASE(tdbb, &window);
 
-		traceSweep.report(process_state_finished);
+		traceSweep.finish();
 	}
 
 	TRA_commit(tdbb, transaction, false);
@@ -3395,9 +3395,6 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 
 	TraceConnectionImpl conn(att);
 	trace_mgr->event_sweep(&conn, &m_sweep_info, process_state_started);
-
-	m_relation_clock = fb_utils::query_performance_counter();
-	m_relation_stats.assign(m_tdbb->getTransaction()->tra_stats);
 }
 
 
@@ -3408,7 +3405,59 @@ TraceSweepEvent::~TraceSweepEvent()
 }
 
 
-void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
+void TraceSweepEvent::beginSweepRelation(jrd_rel* relation)
+{
+	if (!m_need_trace)
+		return;
+
+	if (relation && relation->rel_name.isEmpty())
+	{
+		// don't accumulate per-relation stats for metadata query below
+		MET_lookup_relation_id(m_tdbb, relation->rel_id, false);
+	}
+
+	m_relation_clock = fb_utils::query_performance_counter();
+	m_base_stats.assign(m_tdbb->getTransaction()->tra_stats);
+}
+
+
+void TraceSweepEvent::endSweepRelation(jrd_rel* relation)
+{
+	if (!m_need_trace)
+		return;
+
+	Attachment* att = m_tdbb->getAttachment();
+	jrd_tra* tran = m_tdbb->getTransaction();
+
+	// don't report empty relation
+	if (m_base_stats.getValue(RuntimeStatistics::RECORD_SEQ_READS) ==
+		tran->tra_stats.getValue(RuntimeStatistics::RECORD_SEQ_READS) &&
+
+		m_base_stats.getValue(RuntimeStatistics::RECORD_BACKOUTS) == 
+		tran->tra_stats.getValue(RuntimeStatistics::RECORD_BACKOUTS) &&
+	
+		m_base_stats.getValue(RuntimeStatistics::RECORD_PURGES) == 
+		tran->tra_stats.getValue(RuntimeStatistics::RECORD_PURGES) &&
+	
+		m_base_stats.getValue(RuntimeStatistics::RECORD_EXPUNGES) ==
+		tran->tra_stats.getValue(RuntimeStatistics::RECORD_EXPUNGES) )
+	{
+		return;
+	}
+
+	TraceRuntimeStats stats(att, &m_base_stats, &tran->tra_stats,
+		fb_utils::query_performance_counter() - m_relation_clock,
+		0);
+
+	m_sweep_info.setPerf(stats.getPerf());
+
+	TraceConnectionImpl conn(att);
+	TraceManager* trace_mgr = att->att_trace_manager;
+	trace_mgr->event_sweep(&conn, &m_sweep_info, process_state_progress);
+}
+
+
+void TraceSweepEvent::report(ntrace_process_state_t state)
 {
 	Attachment* att = m_tdbb->getAttachment();
 
@@ -3432,26 +3481,15 @@ void TraceSweepEvent::report(ntrace_process_state_t state, jrd_rel* relation)
 
 	TraceConnectionImpl conn(att);
 
-	if (relation && relation->rel_name.isEmpty())
-	{
-		// don't accumulate per-relation stats for metadata query below
-		MET_lookup_relation_id(m_tdbb, relation->rel_id, false);
-	}
-
 	// we need to compare stats against zero base
 	if (state != process_state_progress)
-		m_relation_stats.reset();
+		m_base_stats.reset();
 
 	jrd_tra* tran = m_tdbb->getTransaction();
 
-	TraceRuntimeStats stats(att, &m_relation_stats,
-		(state == process_state_progress ? &tran->tra_stats : &att->att_stats),
-		(fb_utils::query_performance_counter() - (state == process_state_progress ?
-			m_relation_clock : m_start_clock)),
+	TraceRuntimeStats stats(att, &m_base_stats, &att->att_stats,
+		fb_utils::query_performance_counter() - m_start_clock,
 		0);
-
-	m_relation_clock = fb_utils::query_performance_counter();
-	m_relation_stats.assign(m_tdbb->getTransaction()->tra_stats);
 
 	m_sweep_info.setPerf(stats.getPerf());
 	trace_mgr->event_sweep(&conn, &m_sweep_info, state);
