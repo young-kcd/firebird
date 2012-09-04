@@ -215,6 +215,8 @@ private:
 	void	readFbLog();
 	// Create argv, argc and svc_parsed_sw
 	void	parseSwitches();
+	// Check does this action need arg or not
+	static bool actionNeedsArg(UCHAR action);
 	// Put data into stdout buffer
 	void	enqueue(const UCHAR* s, ULONG len);
 	// true if there is no data in stdout buffer

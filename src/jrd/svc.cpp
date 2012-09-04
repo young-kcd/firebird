@@ -2052,7 +2052,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	// All services except for get_ib_log require switches
 	spb.rewind();
-	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log && svc_id != isc_action_svc_trace_list)
+	if ((!svc_switches.hasData()) && actionNeedsArg(svc_id))
 	{
 		status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
 								Arg::Gds(isc_svc_no_switches));
@@ -2533,6 +2533,18 @@ const TEXT* Service::find_switch(int in_spb_sw, const Switches::in_sw_tab_t* tab
 }
 
 
+bool Service::actionNeedsArg(UCHAR action)
+{
+	switch (action)
+	{
+	case isc_action_svc_get_fb_log:
+	case isc_action_svc_trace_list:
+		return false;
+	}
+	return true;
+}
+
+
 bool Service::process_switches(ClumpletReader& spb, string& switches)
 {
 	if (spb.getBufferLength() == 0)
@@ -2542,7 +2554,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	const UCHAR svc_action = spb.getClumpTag();
 	spb.moveNext();
 
-	if (spb.isEof())
+	if (spb.isEof() && actionNeedsArg(svc_action))
 		return false;
 
 	string burp_database, burp_backup;
