@@ -480,9 +480,17 @@ public:
 		m_sweep_info.update(header);
 	}
 
-	void report(ntrace_process_state_t state, jrd_rel* relation = 0);
+	void beginSweepRelation(jrd_rel* relation);
+	void endSweepRelation(jrd_rel* relation);
+
+	void finish()
+	{
+		report(process_state_finished);
+	}
 
 private:
+	void report(ntrace_process_state_t state);
+
 	bool				m_need_trace;
 	thread_db*			m_tdbb;
 	TraceSweepImpl		m_sweep_info;
@@ -490,6 +498,7 @@ private:
 	SINT64				m_relation_clock;
 	jrd_req				m_request;
 };
+
 
 } // namespace Jrd
 
