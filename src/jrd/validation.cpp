@@ -625,19 +625,19 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 	"Page %ld doubly allocated",
 	"Page %ld is used but marked free",
 	"Page %ld is an orphan",
-	"Warning: blob %ld appears inconsistent",	// 5
-	"Blob %ld is corrupt",
-	"Blob %ld is truncated",
-	"Chain for record %ld is broken",
+	"Warning: blob %"QUADFORMAT"d appears inconsistent",	// 5
+	"Blob %"QUADFORMAT"d is corrupt",
+	"Blob %"QUADFORMAT"d is truncated",
+	"Chain for record %"QUADFORMAT"d is broken",
 	"Data page %ld (sequence %ld) is confused",
 	"Data page %ld (sequence %ld), line %ld is bad",	// 10
 	"Index %d is corrupt on page %ld level %d. File: %s, line: %d\n\t",
 	"Pointer page (sequence %ld) lost",
 	"Pointer page (sequence %ld) inconsistent",
-	"Record %ld is marked as damaged",
-	"Record %ld has bad transaction %ld",	// 15
-	"Fragmented record %ld is corrupt",
-	"Record %ld is wrong length",
+	"Record %"QUADFORMAT"d is marked as damaged",
+	"Record %"QUADFORMAT"d has bad transaction %ld",	// 15
+	"Fragmented record %"QUADFORMAT"d is corrupt",
+	"Record %"QUADFORMAT"d is wrong length",
 	"Missing index root page",
 	"Transaction inventory pages lost",
 	"Transaction inventory page lost, sequence %ld",	// 20
@@ -655,8 +655,8 @@ static void garbage_collect(thread_db*, vdr*);
 #ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT, const rhd*);
 #endif
-static RTN walk_blob(thread_db*, vdr*, jrd_rel*, blh*, USHORT, SLONG);
-static RTN walk_chain(thread_db*, vdr*, jrd_rel*, rhd*, SLONG);
+static RTN walk_blob(thread_db*, vdr*, jrd_rel*, blh*, USHORT, RecordNumber);
+static RTN walk_chain(thread_db*, vdr*, jrd_rel*, rhd*, RecordNumber);
 static void walk_database(thread_db*, vdr*);
 static RTN walk_data_page(thread_db*, vdr*, jrd_rel*, SLONG, SLONG);
 static void walk_generators(thread_db*, vdr*);
@@ -665,7 +665,7 @@ static RTN walk_index(thread_db*, vdr*, jrd_rel*, index_root_page&, USHORT);
 static void walk_log(thread_db*, vdr*);
 static void walk_pip(thread_db*, vdr*);
 static RTN walk_pointer_page(thread_db*, vdr*, jrd_rel*, int);
-static RTN walk_record(thread_db*, vdr*, jrd_rel*, rhd*, USHORT, SLONG, bool);
+static RTN walk_record(thread_db*, vdr*, jrd_rel*, rhd*, USHORT, RecordNumber, bool);
 static RTN walk_relation(thread_db*, vdr*, jrd_rel*);
 static RTN walk_root(thread_db*, vdr*, jrd_rel*);
 static RTN walk_tip(thread_db*, vdr*, SLONG);
@@ -993,7 +993,7 @@ static void print_rhd(USHORT length, const rhd* header)
 
 static RTN walk_blob(thread_db* tdbb,
 					 vdr* control,
-					 jrd_rel* relation, blh* header, USHORT length, SLONG number)
+					 jrd_rel* relation, blh* header, USHORT length, RecordNumber number)
 {
 /**************************************
  *
@@ -1035,11 +1035,12 @@ static RTN walk_blob(thread_db* tdbb,
 	{
 		blob_page* page1 = 0;
 		fetch_page(tdbb, control, *pages1, pag_blob, &window1, &page1);
-		if (page1->blp_lead_page != header->blh_lead_page)
-			corrupt(tdbb, control, VAL_BLOB_INCONSISTENT, relation, number);
+		if (page1->blp_lead_page != header->blh_lead_page) {
+			corrupt(tdbb, control, VAL_BLOB_INCONSISTENT, relation, number.getValue());
+		}
 		if ((header->blh_level == 1 && page1->blp_sequence != sequence))
 		{
-			corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation, number);
+			corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation, number.getValue());
 			CCH_RELEASE(tdbb, &window1);
 			return rtn_corrupt;
 		}
@@ -1055,7 +1056,7 @@ static RTN walk_blob(thread_db* tdbb,
 				fetch_page(tdbb, control, *pages2, pag_blob, &window2, &page2);
 				if (page2->blp_lead_page != header->blh_lead_page || page2->blp_sequence != sequence)
 				{
-					corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation, number);
+					corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation, number.getValue());
 					CCH_RELEASE(tdbb, &window1);
 					CCH_RELEASE(tdbb, &window2);
 					return rtn_corrupt;
@@ -1067,14 +1068,14 @@ static RTN walk_blob(thread_db* tdbb,
 	}
 
 	if (sequence - 1 != header->blh_max_sequence)
-		return corrupt(tdbb, control, VAL_BLOB_TRUNCATED, relation, number);
+		return corrupt(tdbb, control, VAL_BLOB_TRUNCATED, relation, number.getValue());
 
 	return rtn_ok;
 }
 
 static RTN walk_chain(thread_db* tdbb,
 					  vdr* control,
-					  jrd_rel* relation, rhd* header, SLONG head_number)
+					  jrd_rel* relation, rhd* header, RecordNumber head_number)
 {
 /**************************************
  *
@@ -1114,7 +1115,7 @@ static RTN walk_chain(thread_db* tdbb,
 						head_number, delta_flag) != rtn_ok)
 		{
 			CCH_RELEASE(tdbb, &window);
-			return corrupt(tdbb, control, VAL_REC_CHAIN_BROKEN, relation, head_number);
+			return corrupt(tdbb, control, VAL_REC_CHAIN_BROKEN, relation, head_number.getValue());
 		}
 		page_number = header->rhd_b_page;
 		line_number = header->rhd_b_line;
@@ -1218,9 +1219,9 @@ static RTN walk_data_page(thread_db* tdbb,
 
 	const UCHAR* const end_page = (UCHAR *) page + dbb->dbb_page_size;
 	const data_page::dpg_repeat* const end = page->dpg_rpt + page->dpg_count;
-	SLONG number = sequence * dbb->dbb_max_records;
+	RecordNumber number((SINT64)sequence * dbb->dbb_max_records);
 
-	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end; line++, number++)
+	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end; line++, number.increment())
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
@@ -1252,7 +1253,7 @@ static RTN walk_data_page(thread_db* tdbb,
 				// state of the lone primary record version.
 
 				if (header->rhd_b_page)
-					RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
+					RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number.getValue());
 				else
 				{
 					int state;
@@ -1261,7 +1262,7 @@ static RTN walk_data_page(thread_db* tdbb,
 					else
 						state = TRA_fetch_state(tdbb, header->rhd_transaction);
 					if (state == tra_committed || state == tra_limbo)
-						RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
+						RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number.getValue());
 				}
 			}
 
@@ -1925,7 +1926,7 @@ static RTN walk_record(thread_db* tdbb,
 					   vdr* control,
 					   jrd_rel* relation,
 					   rhd* header,
-					   USHORT length, SLONG number, bool delta_flag)
+					   USHORT length, RecordNumber number, bool delta_flag)
 {
 /**************************************
  *
@@ -1952,13 +1953,13 @@ static RTN walk_record(thread_db* tdbb,
 
 	if (header->rhd_flags & rhd_damaged)
 	{
-		corrupt(tdbb, control, VAL_REC_DAMAGED, relation, number);
+		corrupt(tdbb, control, VAL_REC_DAMAGED, relation, number.getValue());
 		return rtn_ok;
 	}
 
 	if (control && header->rhd_transaction > control->vdr_max_transaction)
 	{
-		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number, header->rhd_transaction);
+		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number.getValue(), header->rhd_transaction);
 	}
 
 	// If there's a back pointer, verify that it's good
@@ -2028,7 +2029,7 @@ static RTN walk_record(thread_db* tdbb,
 		if (page->dpg_relation != relation->rel_id ||
 			line_number >= page->dpg_count || !(length = line->dpg_length))
 		{
-			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation, number);
+			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation, number.getValue());
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
@@ -2075,7 +2076,7 @@ static RTN walk_record(thread_db* tdbb,
 	const Format* format = MET_format(tdbb, relation, header->rhd_format);
 
 	if (!delta_flag && record_length != format->fmt_length)
-		return corrupt(tdbb, control, VAL_REC_WRONG_LENGTH, relation, number);
+		return corrupt(tdbb, control, VAL_REC_WRONG_LENGTH, relation, number.getValue());
 
 	return rtn_ok;
 }
