@@ -1,3 +1,10 @@
+ 2012-09-04 08:50  hvlad 
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/vio.cpp
+Improvement CORE-3656 : Support for sweep information in Trace API.
+Fixed case when sweep cleaned up relation with all records deleted but corresponding event was missed in trace log.
+
  2012-08-31 10:34  alexpeshkoff 
    M src/jrd/isc_sync.cpp
 Better diagnostic (CORE-3786)
