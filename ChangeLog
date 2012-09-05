@@ -1,3 +1,19 @@
+ 2012-09-04 11:35  hvlad 
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/vio.cpp
+Improvement CORE-3656 : Support for sweep information in Trace API.
+Fixed case when sweep cleaned up relation with all records deleted but corresponding event was missed in trace log.
+
+ 2012-09-04 08:21  alexpeshkoff 
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+Complete fix to make trace list service work correctly
+
+ 2012-09-04 07:10  alexpeshkoff 
+   M src/jrd/svc.cpp
+We have one more service w/o parameters
+
  2012-08-31 10:26  alexpeshkoff 
    M src/remote/inet.cpp
 Fixed CORE-3912: segfault in superclassic
