@@ -1,3 +1,7 @@
+ 2012-09-05 19:31  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-3916 : gfix & "Index x is corrupt (missing entries) in table ..." all indexes on large tables
+
  2012-09-04 08:50  hvlad 
    M src/jrd/tra.cpp
    M src/jrd/trace/TraceJrdHelpers.h
