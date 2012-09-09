@@ -90,6 +90,7 @@ private:
 		enum Op
 		{
 			opRepeat,
+			opRepeatEnd,
 			opBranch,
 			opStart,
 			opEnd,
@@ -97,7 +98,10 @@ private:
 			opNothing,
 			opAny,
 			opAnyOf,
-			opExactly
+			opExactly,
+			opExactlyOne,	// optimization for opExactly with a single character
+			opRet			// implementation detail of the non-recursive match
+			// If new codes are added, shifts in MatchState codes may need to change.
 		};
 
 		struct Node
@@ -170,7 +174,11 @@ private:
 				switch (op)
 				{
 					case opRepeat:
-						temp.printf("opRepeat(%d, %d, %d)", len, len2, ref);
+						temp.printf("opRepeat(%d, %d, %d)", len, len2, i + ref);
+						break;
+
+					case opRepeatEnd:
+						temp.printf("opRepeatEnd(%d)", i + ref);
 						break;
 
 					case opBranch:
@@ -212,6 +220,10 @@ private:
 						temp.printf("opExactly(%.*s, %d)", len, str, len);
 						break;
 
+					case opExactlyOne:
+						temp.printf("opExactlyOne(%.*s)", len, str);
+						break;
+
 					default:
 						temp = "unknown";
 						break;
@@ -234,26 +246,80 @@ private:
 			int branchNum;
 		};
 
+#ifndef RECURSIVE_SIMILAR
 		// Struct used to evaluate expressions without recursion.
 		// Represents local variables to implement a "virtual stack".
 		struct Scope
 		{
-			Scope(int ai, int aLimit)
+			inline explicit Scope(const Node* ai)
 				: i(ai),
-				  limit(aLimit),
-				  save(NULL),
-				  j(0),
-				  flag(false)
+				  save(NULL)
 			{
 			}
 
-			// variables used in the recursive commented out function
-			int i;
-			int limit;
+			inline void operator =(const Node* ai)
+			{
+				i = ai;
+				save = NULL;
+			}
+
+			const Node* i;
 			const CharType* save;
-			int j;
-			bool flag;	// aux. variable to make non-recursive logic
 		};
+
+		// Stack for recursion emulation.
+		template <typename T>
+		class SimpleStack
+		{
+		public:
+			SimpleStack()
+				: size(INCREASE_FACTOR)
+			{
+				data = FB_NEW(*getDefaultMemoryPool()) UCHAR[(size + 1) * sizeof(T)];
+				back = (T*) FB_ALIGN((U_IPTR)(UCHAR*) data, sizeof(T));
+				end = back + size;
+
+				// 'back' starts before initial element, then always points to the last pushed element.
+				--back;
+			}
+
+			template <typename T2>
+			inline void push(T2 node)
+			{
+				// If the limit is reach, resize.
+				if (++back == end)
+				{
+					unsigned newSize = size + INCREASE_FACTOR;
+					UCHAR* newData = FB_NEW(*getDefaultMemoryPool()) UCHAR[(newSize + 1) * sizeof(T)];
+
+					T* p = (T*) FB_ALIGN((U_IPTR)(UCHAR*) newData, sizeof(T));
+					memcpy(p, end - size, size * sizeof(T));
+
+					back = p + size;
+					end = p + newSize;
+					size = newSize;
+
+					data.reset(newData);
+				}
+
+				*back = node;
+			}
+
+			inline void pop()
+			{
+				--back;
+			}
+
+		public:
+			T* back;
+
+		private:
+			static const unsigned INCREASE_FACTOR = 50;
+			unsigned size;
+			AutoPtr<UCHAR> data;
+			T* end;
+		};
+#endif	// RECURSIVE_SIMILAR
 
 		static const int FLAG_NOT_EMPTY	= 1;	// known never to match empty string
 		static const int FLAG_EXACTLY	= 2;	// non-escaped string
@@ -276,7 +342,7 @@ private:
 
 	private:
 #ifdef RECURSIVE_SIMILAR
-		bool match(int limit, int start);
+		bool match(int start);
 #else
 		bool match();
 #endif
@@ -306,7 +372,6 @@ private:
 		StrConverter patternCvt;
 		CharSet* charSet;
 		Array<Node> nodes;
-		Array<Scope> scopes;
 		const CharType* patternStart;
 		const CharType* patternEnd;
 		const CharType* patternPos;
@@ -399,7 +464,6 @@ SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 	  patternCvt(pool, textType, patternStr, patternLen),
 	  charSet(textType->getCharSet()),
 	  nodes(pool),
-	  scopes(pool),
 	  branchNum(0)
 {
 	fb_assert(patternLen % sizeof(CharType) == 0);
@@ -470,7 +534,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 
 	const bool matched =
 #ifdef RECURSIVE_SIMILAR
-		match(nodes.getCount(), 0);
+		match(0);
 #else
 		match();
 #endif
@@ -508,7 +572,6 @@ template <typename CharType, typename StrConverter>
 void SimilarToMatcher<CharType, StrConverter>::Evaluator::reset()
 {
 	buffer.shrink(0);
-	scopes.shrink(0);
 
 	memset(branches, 0, sizeof(Range) * (branchNum + 1));
 }
@@ -605,11 +668,12 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 	// If the last primary is a string, split the last character
 	if (flags & FLAG_EXACTLY)
 	{
-		fb_assert(nodes.back().op == opExactly);
+		fb_assert(nodes.back().op == opExactly || nodes.back().op == opExactlyOne);
 
-		if (nodes.back().len > 1)
+		if (nodes.back().op == opExactly && nodes.back().len > 1)
 		{
 			Node last = nodes.back();
+			last.op = opExactlyOne;
 			last.str += nodes.back().len - 1;
 			last.len = 1;
 
@@ -703,7 +767,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 
 		*flagp = n1 == 0 ? 0 : FLAG_NOT_EMPTY;
 
-		nodes.insert(atomPos, Node(opRepeat, n1, n2, nodes.getCount() - atomPos));
+		nodes.insert(atomPos, Node(opRepeat, n1, n2, nodes.getCount() - atomPos + 1));
+		nodes.add(Node(opRepeatEnd, atomPos - nodes.getCount()));
 	}
 
 	++patternPos;
@@ -978,7 +1043,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 			status_exception::raise(Arg::Gds(isc_escape_invalid));
 		}
 
-		nodes.push(Node(opExactly, patternPos++, 1));
+		nodes.push(Node(opExactlyOne, patternPos++, 1));
 		*flagp |= FLAG_NOT_EMPTY;
 	}
 	else
@@ -993,7 +1058,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 		*flagp |= FLAG_NOT_EMPTY | FLAG_EXACTLY;
 
-		nodes.push(Node(opExactly, patternPos, len));
+		nodes.push(Node((len == 1 ? opExactlyOne : opExactly), patternPos, len));
 		patternPos += len;
 	}
 }
@@ -1033,13 +1098,13 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::dump() const
 
 template <typename CharType, typename StrConverter>
 #ifdef RECURSIVE_SIMILAR
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int start)
+bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 {
 #ifdef DEBUG_SIMILAR
 	AutoSetRestore<int> autoDebugLevel(&debugLevel, debugLevel + 1);
 #endif
 
-	for (int i = start; i < limit; ++i)
+	for (int i = start;; ++i)
 	{
 		const Node* node = &nodes[i];
 
@@ -1056,10 +1121,11 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 
 		switch (node->op)
 		{
+			//// FIXME: Recursive opRepeat has problems!
 			case opRepeat:
 				for (int j = 0; j < node->len; ++j)
 				{
-					if (!match(i + 1 + node->ref, i + 1))
+					if (!match(i + 1))
 						return false;
 				}
 
@@ -1067,17 +1133,20 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 				{
 					const CharType* save = bufferPos;
 
-					if (match(limit, i + 1 + node->ref))
+					if (match(i + 1 + node->ref))
 						return true;
 
 					bufferPos = save;
 
-					if (!match(i + 1 + node->ref, i + 1))
+					if (!match(i + 1))
 						return false;
 				}
 
-				++i;
+				i += 1 + node->ref;
 				break;
+
+			case opRepeatEnd:
+				return true;
 
 			case opBranch:
 			{
@@ -1088,7 +1157,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 					if (node->branchNum != -1)
 						branches[node->branchNum].start = save - bufferStart;
 
-					if (match(limit, i + 1))
+					if (match(i + 1))
 						return true;
 
 					bufferPos = save;
@@ -1122,9 +1191,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 				break;
 
 			case opEnd:
-				if (bufferPos != bufferEnd)
-					return false;
-				break;
+				return (bufferPos == bufferEnd);
 
 			case opRef:
 				if (node->branchNum != -1)
@@ -1136,7 +1203,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 
 				if (node->ref == 1)	// avoid recursion
 					break;
-				return match(limit, i + node->ref);
+				return match(i + node->ref);
 
 			case opNothing:
 				break;
@@ -1221,13 +1288,23 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 				break;
 
 			case opExactly:
-				if (node->len > bufferEnd - bufferPos ||
-					memcmp(node->str, bufferPos, node->len * sizeof(CharType)) != 0)
+				if (bufferEnd - bufferPos >= node->len &&
+					memcmp(node->str, bufferPos, node->len * sizeof(CharType)) == 0)
 				{
-					return false;
+					bufferPos += node->len;
+					break;
 				}
-				bufferPos += node->len;
-				break;
+				else
+					return false;
+
+			case opExactlyOne:
+				if (bufferEnd - bufferPos >= 1 && *node->str == *bufferPos)
+				{
+					bufferPos += node->len;
+					break;
+				}
+				else
+					return false;
 
 			default:
 				fb_assert(false);
@@ -1240,296 +1317,256 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 #else
 bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 {
-	//
-	// state  description
-	// ----------------------
-	//   0    recursing
-	//   1    iteration (for)
-	//   2    returning
-	enum MatchState { msRecursing, msIterating, msReturning };
+	// Left shift by 4 to OR MatchState's and Op's without additional runtime shifts.
+	static const unsigned MATCH_STATE_SHIFT = 4;
 
-	int start = 0;
-	MatchState state = msRecursing;
-	int limit = nodes.getCount();
-	bool ret = true;
-
-	do
+	enum MatchState
 	{
-		if (state == msRecursing)
-		{
-			if (start >= limit)
-				state = msReturning;
-			else
-			{
-				scopes.push(Scope(start, limit));
-				state = msIterating;
-			}
-		}
+		msIterating			= 0x00 << MATCH_STATE_SHIFT,
+		msReturningFalse	= 0x01 << MATCH_STATE_SHIFT,
+		msReturningTrue		= 0x02 << MATCH_STATE_SHIFT,
+		msReturningMask		= (msReturningFalse | msReturningTrue)
+	};
 
-		while (state != 0 && scopes.getCount() != 0)
+	SimpleStack<Scope> scopeStack;
+
+	// Add special node to return without needing additional comparations after popping
+	// the stack on each return.
+	Node nodeRet(opRet);
+	scopeStack.push(&nodeRet);
+
+	scopeStack.push(nodes.begin());
+
+	MatchState state = msIterating;
+
+	SimpleStack<ULONG> repeatStack;
+
+	while (true)
+	{
+		Scope* const scope = scopeStack.back;
+		const Node* const node = scope->i;
+
+#define ENCODE_OP_STATE(op, state) ((op) | (state))
+
+		// Go directly to op and state with a single switch.
+
+		switch (ENCODE_OP_STATE(node->op, state))
 		{
-			Scope* scope = &scopes.back();
-			if (scope->i >= scope->limit)
+			case ENCODE_OP_STATE(opRepeat, msIterating):
+				repeatStack.push(0);
+				scopeStack.push(scope->i + node->ref);
+				continue;
+
+			case ENCODE_OP_STATE(opRepeat, msReturningFalse):
+			case ENCODE_OP_STATE(opRepeat, msReturningTrue):
+				repeatStack.pop();
 				break;
 
-			const Node* node = &nodes[scope->i];
-
-			switch (node->op)
+			case ENCODE_OP_STATE(opRepeatEnd, msIterating):
 			{
-				case opRepeat:
-					fb_assert(state == msIterating || state == msReturning);
+				const Node* repeatNode = scope->i + node->ref;
+				ULONG* repeatCount = repeatStack.back;
 
-					if (state == msIterating)
-						scope->j = 0;
-					else if (state == msReturning)
-					{
-						if (scope->j < node->len)
-						{
-							if (!ret)
-								break;
-						}
-						else if (scope->j < node->len2)
-						{
-							if ((!scope->flag && ret) || (scope->flag && !ret))
-								break;
-
-							if (!scope->flag)
-							{
-								bufferPos = scope->save;
-
-								scope->flag = true;
-								start = scope->i + 1;
-								limit = scope->i + 1 + node->ref;
-								state = msRecursing;
-
-								break;
-							}
-						}
-						++scope->j;
-					}
-
-					if (scope->j < node->len)
-					{
-						start = scope->i + 1;
-						limit = scope->i + 1 + node->ref;
-						state = msRecursing;
-					}
-					else if (scope->j < node->len2)
-					{
-						scope->save = bufferPos;
-						scope->flag = false;
-						start = scope->i + 1 + node->ref;
-						limit = scope->limit;
-						state = msRecursing;
-					}
-					else
-					{
-						scope->i += node->ref;
-						state = msIterating;
-					}
-
-					break;
-
-				case opBranch:
-					if (state == msIterating)
-					{
-						if (node->branchNum != -1)
-							branches[node->branchNum].start = bufferPos - bufferStart;
-
-						scope->save = bufferPos;
-						start = scope->i + 1;
-						limit = scope->limit;
-						state = msRecursing;
-					}
-					else
-					{
-						fb_assert(state == msReturning);
-
-						if (!ret)
-						{
-							bufferPos = scope->save;
-
-							if (node->ref == 0)
-								ret = false;
-							else
-							{
-								scope->i += node->ref;
-								node = &nodes[scope->i];
-
-								if (node->ref == 0)
-									state = msIterating;
-								else
-								{
-									scope->save = bufferPos;
-									start = scope->i + 1;
-									limit = scope->limit;
-									state = msRecursing;
-								}
-							}
-						}
-					}
-					break;
-
-				case opStart:
-					fb_assert(state == msIterating);
-					if (bufferPos != bufferStart)
-					{
-						ret = false;
-						state = msReturning;
-					}
-					break;
-
-				case opEnd:
-					fb_assert(state == msIterating);
-					if (bufferPos != bufferEnd)
-					{
-						ret = false;
-						state = msReturning;
-					}
-					break;
-
-				case opRef:
-					fb_assert(state == msIterating || state == msReturning);
-					if (state == msIterating)
-					{
-						if (node->branchNum != -1)
-						{
-							fb_assert(unsigned(node->branchNum) <= branchNum);
-							branches[node->branchNum].length =
-								bufferPos - bufferStart - branches[node->branchNum].start;
-						}
-
-						if (node->ref != 1)
-						{
-							state = msRecursing;
-							start = scope->i + node->ref;
-							limit = scope->limit;
-						}
-					}
-					break;
-
-				case opNothing:
-					break;
-
-				case opAny:
-					fb_assert(state == msIterating);
-					if (bufferPos >= bufferEnd)
-					{
-						ret = false;
-						state = msReturning;
-					}
-					else
-						++bufferPos;
-					break;
-
-				case opAnyOf:
-					fb_assert(state == msIterating);
-					if (bufferPos >= bufferEnd)
-					{
-						ret = false;
-						state = msReturning;
-					}
-					else
-					{
-						if (notInSet(bufferPos, 1, node->str, node->len) != 0)
-						{
-							const UCHAR* const end = node->str2 + node->len2;
-							const UCHAR* p = node->str2;
-
-							while (p < end)
-							{
-								UCHAR c[sizeof(ULONG)];
-								const ULONG len = charSet->substring(buffer.getCount(), buffer.begin(),
-														sizeof(c), c, bufferPos - bufferStart, 1);
-
-								if (textType->compare(len, c, p[0], p + 1) >= 0 &&
-									textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
-								{
-									break;
-								}
-
-								p += 2 + p[0] + p[1 + p[0]];
-							}
-
-							if (node->len + node->len2 != 0 && p >= end)
-							{
-								ret = false;
-								state = msReturning;
-								break;
-							}
-						}
-
-						if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
-						{
-							ret = false;
-							state = msReturning;
-						}
-						else
-						{
-							const UCHAR* const end = node->str4 + node->len4;
-							const UCHAR* p = node->str4;
-
-							while (p < end)
-							{
-								UCHAR c[sizeof(ULONG)];
-								const ULONG len = charSet->substring(
-									buffer.getCount(), buffer.begin(),
-									sizeof(c), c, bufferPos - bufferStart, 1);
-
-								if (textType->compare(len, c, p[0], p + 1) >= 0 &&
-									textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
-								{
-									break;
-								}
-
-								p += 2 + p[0] + p[1 + p[0]];
-							}
-
-							if (p < end)
-							{
-								ret = false;
-								state = msReturning;
-							}
-						}
-					}
-
-					if (state == msIterating)
-						++bufferPos;
-					break;
-
-				case opExactly:
-					fb_assert(state == msIterating);
-					if (node->len > bufferEnd - bufferPos ||
-						memcmp(node->str, bufferPos, node->len * sizeof(CharType)) != 0)
-					{
-						ret = false;
-						state = msReturning;
-					}
-					else
-						bufferPos += node->len;
-					break;
-
-				default:
-					fb_assert(false);
-					return false;
-			}
-
-			if (state == msIterating)
-			{
-				++scope->i;
-				if (scope->i >= scope->limit)
+				if (*repeatCount < repeatNode->len2)
 				{
-					ret = true;
-					state = msReturning;
+					++*repeatCount;
+					scopeStack.push(repeatNode + 1);
+					continue;
 				}
+				else
+					break;
 			}
 
-			if (state == msReturning)
-				scopes.pop();
-		}
-	} while (scopes.getCount() != 0);
+			case ENCODE_OP_STATE(opRepeatEnd, msReturningFalse):
+			{
+				const Node* repeatNode = scope->i + node->ref;
+				ULONG* repeatCount = repeatStack.back;
 
-	return ret;
+				if (--*repeatCount >= repeatNode->len)
+					state = msIterating;
+
+				break;
+			}
+
+			case ENCODE_OP_STATE(opRepeatEnd, msReturningTrue):
+				break;
+
+			case ENCODE_OP_STATE(opBranch, msIterating):
+				if (node->branchNum != -1)
+					branches[node->branchNum].start = bufferPos - bufferStart;
+
+				scope->save = bufferPos;
+
+				scopeStack.push(scope->i + 1);
+				continue;
+
+			case ENCODE_OP_STATE(opBranch, msReturningFalse):
+				bufferPos = scope->save;
+
+				if (node->ref != 0)
+				{
+					state = msIterating;
+
+					scope->i += node->ref;
+
+					if (scope->i->ref != 0)
+					{
+						scope->save = bufferPos;
+
+						scopeStack.push(scope->i + 1);
+						continue;
+					}
+				}
+
+				break;
+
+			case ENCODE_OP_STATE(opBranch, msReturningTrue):
+				break;
+
+			case ENCODE_OP_STATE(opStart, msIterating):
+				if (bufferPos != bufferStart)
+					state = msReturningFalse;
+				break;
+
+			case ENCODE_OP_STATE(opEnd, msIterating):
+				state = (bufferPos == bufferEnd ? msReturningTrue : msReturningFalse);
+				break;
+
+			case ENCODE_OP_STATE(opRef, msIterating):
+				if (node->branchNum != -1)
+				{
+					fb_assert(unsigned(node->branchNum) <= branchNum);
+					branches[node->branchNum].length =
+						bufferPos - bufferStart - branches[node->branchNum].start;
+				}
+
+				scope->i += node->ref;
+				scope->save = NULL;
+				continue;
+
+			case ENCODE_OP_STATE(opRef, msReturningFalse):
+			case ENCODE_OP_STATE(opRef, msReturningTrue):
+				break;
+
+			case ENCODE_OP_STATE(opNothing, msIterating):
+			case ENCODE_OP_STATE(opNothing, msReturningFalse):
+			case ENCODE_OP_STATE(opNothing, msReturningTrue):
+				break;
+
+			case ENCODE_OP_STATE(opAny, msIterating):
+				if (bufferPos >= bufferEnd)
+					state = msReturningFalse;
+				else
+					++bufferPos;
+				break;
+
+			case ENCODE_OP_STATE(opAnyOf, msIterating):
+				if (bufferPos >= bufferEnd)
+					state = msReturningFalse;
+				else
+				{
+					if (notInSet(bufferPos, 1, node->str, node->len) != 0)
+					{
+						const UCHAR* const end = node->str2 + node->len2;
+						const UCHAR* p = node->str2;
+
+						while (p < end)
+						{
+							UCHAR c[sizeof(ULONG)];
+							const ULONG len = charSet->substring(buffer.getCount(), buffer.begin(),
+													sizeof(c), c, bufferPos - bufferStart, 1);
+
+							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+							{
+								break;
+							}
+
+							p += 2 + p[0] + p[1 + p[0]];
+						}
+
+						if (node->len + node->len2 != 0 && p >= end)
+						{
+							state = msReturningFalse;
+							break;
+						}
+					}
+
+					if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
+						state = msReturningFalse;
+					else
+					{
+						const UCHAR* const end = node->str4 + node->len4;
+						const UCHAR* p = node->str4;
+
+						while (p < end)
+						{
+							UCHAR c[sizeof(ULONG)];
+							const ULONG len = charSet->substring(
+								buffer.getCount(), buffer.begin(),
+								sizeof(c), c, bufferPos - bufferStart, 1);
+
+							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+							{
+								break;
+							}
+
+							p += 2 + p[0] + p[1 + p[0]];
+						}
+
+						if (p < end)
+							state = msReturningFalse;
+					}
+				}
+
+				if (state == msIterating)
+					++bufferPos;
+				break;
+
+			case ENCODE_OP_STATE(opExactly, msIterating):
+				if (bufferEnd - bufferPos >= node->len &&
+					memcmp(node->str, bufferPos, node->len * sizeof(CharType)) == 0)
+				{
+					bufferPos += node->len;
+				}
+				else
+					state = msReturningFalse;
+				break;
+
+			case ENCODE_OP_STATE(opExactlyOne, msIterating):
+				if (bufferEnd - bufferPos >= 1 && *node->str == *bufferPos)
+					++bufferPos;
+				else
+					state = msReturningFalse;
+				break;
+
+			case ENCODE_OP_STATE(opRet, msReturningFalse):
+			case ENCODE_OP_STATE(opRet, msReturningTrue):
+				return state == msReturningTrue;
+
+			default:
+				fb_assert(false);
+				return false;
+		}
+
+#undef ENCODE_OP_STATE
+
+		switch (state)
+		{
+			case msIterating:
+				++scope->i;
+				break;
+
+			case msReturningFalse:
+			case msReturningTrue:
+				scopeStack.pop();
+				break;
+		}
+	}
+
+	fb_assert(false);
+	return false;
 }
 #endif
 
