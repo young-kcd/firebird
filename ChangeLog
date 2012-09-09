@@ -1,3 +1,8 @@
+ 2012-09-09 01:47  asfernandes 
+   M src/jrd/SimilarToMatcher.h
+Fixed CORE-3754 - SIMILAR TO works wrongly.
+Improvement CORE-3919 - Improve SIMILAR TO performance.
+
  2012-09-05 19:32  hvlad 
    M src/jrd/validation.cpp
 Fixed bug CORE-3916 : gfix & "Index x is corrupt (missing entries) in table ..." all indexes on large tables
