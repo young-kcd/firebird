@@ -1961,6 +1961,7 @@ bool VIO_get_current(thread_db* tdbb,
 		if (!(rpb->rpb_flags & rpb_gc_active))
 		{
 			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
+
 			if (state == tra_precommitted)
 				state = check_precommitted(transaction, rpb);
 		}
@@ -1984,7 +1985,6 @@ bool VIO_get_current(thread_db* tdbb,
 			// removed the records it modified and marked itself
 			// committed
 
-
 			if (!DPM_get(tdbb, rpb, LCK_read)) {
 				return false;
 			}
@@ -1992,7 +1992,6 @@ bool VIO_get_current(thread_db* tdbb,
 			// if the transaction actually rolled back and what
 			// we are reading is another record (newly inserted),
 			// loop back and try again.
-
 
 			if (tid_fetch != rpb->rpb_transaction_nr) {
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
@@ -2040,8 +2039,12 @@ bool VIO_get_current(thread_db* tdbb,
 			VIO_backout(tdbb, rpb, transaction);
 			break;
 
-		default:
+		case tra_limbo:
 			BUGCHECK(184);		// limbo impossible
+			break;
+
+		default:
+			fb_assert(false);
 		}
 	}
 
@@ -4804,11 +4807,11 @@ static int prepare_update(	thread_db*		tdbb,
 
 			/*
 			 * The case statement for tra_us has been pushed down to this
-			 * current position as we donot want to give update conflict
+			 * current position as we do not want to give update conflict
 			 * errors and the "cannot update erased record" within the same
-			 * transaction. We were getting these erroe in case of triggers.
+			 * transaction. We were getting these errors in case of triggers.
 			 * A pre-delete trigger could update or delete a record which we
-			 * are then tring to change.
+			 * are then trying to change.
 			 * In order to remove these changes and restore original behaviour,
 			 * move this case statement above the 2 "if" statements.
 			 * smistry 23-Aug-99
@@ -4874,8 +4877,12 @@ static int prepare_update(	thread_db*		tdbb,
 			// backout a fragmented dead record version, spin wait because it will
 			// finish shortly.
 
-			if (!(rpb->rpb_flags & rpb_gc_active)) {
+			if (!(rpb->rpb_flags & rpb_gc_active))
+			{
 				state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
+
+				if (state == tra_precommitted)
+					state = check_precommitted(transaction, rpb);
 			}
 			else
 			{
@@ -4899,6 +4906,7 @@ static int prepare_update(	thread_db*		tdbb,
 				update_conflict_trans = rpb->rpb_transaction_nr;
 				continue;
 			}
+
 			if (state != tra_dead && !(temp->rpb_flags & rpb_deleted))
 			{
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
@@ -4906,6 +4914,7 @@ static int prepare_update(	thread_db*		tdbb,
 				}
 				delete_record(tdbb, temp, (SLONG) 0, 0);
 			}
+
 			switch (state)
 			{
 			case tra_committed:
@@ -4925,6 +4934,10 @@ static int prepare_update(	thread_db*		tdbb,
 
 			case tra_dead:
 				break;
+
+			default:
+				fb_assert(false);
+
 			} // switch (state)
 			break;
 
