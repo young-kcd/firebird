@@ -100,9 +100,9 @@ TYPE("LIMBO", 1, nam_trans_state)
 TYPE("COMMITTED", 2, nam_trans_state)
 TYPE("ROLLED_BACK", 3, nam_trans_state)
 
-TYPE("USER",  0, nam_sys_flag)
-TYPE("SYSTEM",  1, nam_sys_flag)
-TYPE("QLI",  2, nam_sys_flag)
+TYPE("USER", 0, nam_sys_flag)
+TYPE("SYSTEM", 1, nam_sys_flag)
+TYPE("QLI", 2, nam_sys_flag)
 TYPE("CHECK_CONSTRAINT", 3, nam_sys_flag)
 TYPE("REFERENTIAL_CONSTRAINT", 4, nam_sys_flag)
 TYPE("VIEW_CHECK", 5, nam_sys_flag)
@@ -147,3 +147,39 @@ TYPE("CALL", stat_call, nam_mon_stat_group)
 
 TYPE("ALWAYS", IDENT_TYPE_ALWAYS, nam_identity_type)
 TYPE("BY DEFAULT", IDENT_TYPE_BY_DEFAULT, nam_identity_type)
+
+TYPE("INPUT", 0, nam_prm_type)
+TYPE("OUTPUT", 1, nam_prm_type)
+
+TYPE("ACTIVE", 0, nam_trg_inactive)
+TYPE("INACTIVE", 1, nam_trg_inactive)
+
+TYPE("ACTIVE", 0, nam_i_inactive)
+TYPE("INACTIVE", 1, nam_i_inactive)
+
+TYPE("NON_UNIQUE", 0, nam_un_flag)
+TYPE("UNIQUE", 1, nam_un_flag)
+
+TYPE("NONE", 0, nam_grant)
+TYPE("GRANT_OPTION", 1, nam_grant)
+TYPE("ADMIN_OPTION", 2, nam_grant)
+
+TYPE("HEADER", 1, nam_p_type)
+TYPE("PAGE_INVENTORY", 2, nam_p_type)
+TYPE("TRANSACTION_INVENTORY", 3, nam_p_type)
+TYPE("POINTER", 4, nam_p_type)
+TYPE("DATA", 5, nam_p_type)
+TYPE("INDEX_ROOT", 6, nam_p_type)
+TYPE("INDEX_BUCKET", 7, nam_p_type)
+TYPE("BLOB", 8, nam_p_type)
+TYPE("GENERATOR", 9, nam_p_type)
+TYPE("SCN_INVENTORY", 10, nam_p_type)
+
+TYPE("PUBLIC", 0, nam_private_flag)
+TYPE("PRIVATE", 1, nam_private_flag)
+
+TYPE("NEW_STYLE", 0, nam_legacy_flag)
+TYPE("LEGACY_STYLE", 1, nam_legacy_flag)
+
+TYPE("NON_DETERMINISTIC", 0, nam_deterministic_flag)
+TYPE("DETERMINISTIC", 1, nam_deterministic_flag)
