@@ -709,7 +709,7 @@ static SSHORT get_switches(int argc,
 				if (!sw_version)
 				{
 					SRVRMGR_msg_get(MSG_VERSION, msg);
-					fprintf(OUTFILE, "%s %s\n", msg, GDS_VERSION);
+					fprintf(OUTFILE, "%s %s\n", msg, FB_VERSION);
 				}
 				break;
 

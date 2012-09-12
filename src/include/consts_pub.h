@@ -112,6 +112,10 @@
 #define isc_dpb_utf8_filename			  77
 #define isc_dpb_ext_call_depth			  78
 #define isc_dpb_auth_block				  79
+#define isc_dpb_client_version			  80
+#define isc_dpb_remote_protocol			  81
+#define isc_dpb_host_name				  82
+#define isc_dpb_os_user					  83
 // This 3 will not be used in protocol 13, therefore may be reused
 #define isc_dpb_specific_auth_data		  isc_dpb_trusted_auth
 #define isc_dpb_auth_plugin_list		  isc_dpb_password
@@ -273,6 +277,10 @@
 #define isc_spb_auth_plugin_name          116
 #define isc_spb_auth_plugin_list          117
 #define isc_spb_utf8_filename			  118
+#define isc_spb_client_version            119
+#define isc_spb_remote_protocol           120
+#define isc_spb_host_name                 121
+#define isc_spb_os_user                   122
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
 #define isc_spb_dummy_packet_interval     isc_dpb_dummy_packet_interval

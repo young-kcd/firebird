@@ -671,6 +671,10 @@ public:
 	string	dpb_set_db_charset;
 	string	dpb_network_protocol;
 	string	dpb_remote_address;
+	string	dpb_remote_host;
+	string	dpb_remote_os_user;
+	string	dpb_client_version;
+	string	dpb_remote_protocol;
 	string	dpb_trusted_login;
 	PathName	dpb_remote_process;
 	PathName	dpb_org_filename;
@@ -1237,10 +1241,14 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			attachment->att_remote_address = options.dpb_remote_address;
 			attachment->att_remote_pid = options.dpb_remote_pid;
 			attachment->att_remote_process = options.dpb_remote_process;
-			attachment->att_next = dbb->dbb_attachments;
+			attachment->att_remote_host = options.dpb_remote_host;
+			attachment->att_remote_os_user = options.dpb_remote_os_user;
+			attachment->att_client_version = options.dpb_client_version;
+			attachment->att_remote_protocol = options.dpb_remote_protocol;
 			attachment->att_ext_call_depth = options.dpb_ext_call_depth;
 			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
 
+			attachment->att_next = dbb->dbb_attachments;
 			dbb->dbb_attachments = attachment;
 			dbb->dbb_flags &= ~DBB_being_opened;
 
@@ -2335,10 +2343,14 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			attachment->att_remote_address = options.dpb_remote_address;
 			attachment->att_remote_pid = options.dpb_remote_pid;
 			attachment->att_remote_process = options.dpb_remote_process;
+			attachment->att_remote_host = options.dpb_remote_host;
+			attachment->att_remote_os_user = options.dpb_remote_os_user;
+			attachment->att_client_version = options.dpb_client_version;
+			attachment->att_remote_protocol = options.dpb_remote_protocol;
 			attachment->att_ext_call_depth = options.dpb_ext_call_depth;
-			attachment->att_next = dbb->dbb_attachments;
 			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
 
+			attachment->att_next = dbb->dbb_attachments;
 			dbb->dbb_attachments = attachment;
 			dbb->dbb_flags &= ~DBB_being_opened;
 
@@ -5527,6 +5539,22 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_process_name:
 			getPath(rdr, dpb_remote_process);
+			break;
+
+		case isc_dpb_host_name:
+			getString(rdr, dpb_remote_host);
+			break;
+
+		case isc_dpb_os_user:
+			getString(rdr, dpb_remote_os_user);
+			break;
+
+		case isc_dpb_client_version:
+			getString(rdr, dpb_client_version);
+			break;
+
+		case isc_dpb_remote_protocol:
+			getString(rdr, dpb_remote_protocol);
 			break;
 
 		case isc_dpb_no_db_triggers:

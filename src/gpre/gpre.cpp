@@ -1847,7 +1847,7 @@ static bool get_switches(int			argc,
 
 		case IN_SW_GPRE_Z:
 			if (!gpreGlob.sw_version) {
-				printf("gpre version %s\n", GDS_VERSION);
+				printf("gpre version %s\n", FB_VERSION);
 			}
 			gpreGlob.sw_version = true;
 			break;
@@ -2472,7 +2472,7 @@ static void pass2( SLONG start_position)
 		}
 		fprintf(gpreGlob.out_file,
 				   "%s**************** gpre version %s *********************%s\n",
-				   comment_start, GDS_VERSION, comment_stop);
+				   comment_start, FB_VERSION, comment_stop);
 	}
 
 #ifdef GPRE_ADA

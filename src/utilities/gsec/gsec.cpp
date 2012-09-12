@@ -985,7 +985,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				{
 					TEXT msg[MSG_LENGTH];
 					msg_get(GsecMsg39, msg);
-					util_output(true, "%s %s\n", msg, GDS_VERSION);
+					util_output(true, "%s %s\n", msg, FB_VERSION);
 				}
 				tdsec->tsec_sw_version = true;
 				break;

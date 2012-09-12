@@ -111,7 +111,8 @@ struct ParametersSet
 		  password, password_enc, trusted_auth,
 		  plugin_name, plugin_list, specific_data,
 		  address_path, process_id, process_name,
-		  encrypt_key;
+		  encrypt_key, client_version, remote_protocol,
+		  host_name, os_user;
 };
 
 extern const ParametersSet dpbParam, spbParam, spbStartParam, spbInfoParam;
@@ -730,7 +731,7 @@ public:
 	void extractDataFromPluginTo(P_AUTH_CONT* to);
 	bool authCompleted(bool flag = false);
 	void setPath(const Firebird::PathName* dbPath);
-	void setUser(const Firebird::string& user);
+	void setLogin(const Firebird::string& user);
 	const char* getPath();
 	void load(Firebird::ClumpletReader& userId);
 	const char* getPluginName();
@@ -868,8 +869,10 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	rem_str*		port_version;
 	rem_str*		port_host;				// Our name
 	rem_str*		port_connection;		// Name of connection
-	Firebird::string port_user_name;
+	Firebird::string port_login;
 	Firebird::string port_password;
+	Firebird::string port_user_name;
+	Firebird::string port_peer_name;
 	rem_str*		port_protocol_str;		// String containing protocol name for this port
 	rem_str*		port_address_str;		// Protocol-specific address string for the port
 	Rpr*			port_rpr;				// port stored procedure reference
@@ -918,8 +921,9 @@ public:
 		port_packet_vector(0),
 #endif
 		port_objects(getPool()), port_version(0), port_host(0),
-		port_connection(0), port_user_name(getPool()), port_password(getPool()), port_protocol_str(0),
-		port_address_str(0), port_rpr(0), port_statement(0), port_receive_rmtque(0),
+		port_connection(0), port_login(getPool()), port_password(getPool()),
+		port_user_name(getPool()), port_peer_name(getPool()),
+		port_protocol_str(0), port_address_str(0), port_rpr(0), port_statement(0), port_receive_rmtque(0),
 		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0),
 		port_queue(getPool()), port_qoffset(0),
 		port_srv_auth(NULL), port_srv_auth_block(NULL),

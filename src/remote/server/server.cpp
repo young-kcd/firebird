@@ -253,7 +253,7 @@ public:
 			{
 				(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "Client error - login does not match").raise();
 			}
-			authPort->port_srv_auth_block->setUser(userName);
+			authPort->port_srv_auth_block->setLogin(userName);
 			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): user name=%s\n", userName.c_str()));
 		}
 
@@ -1545,7 +1545,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		port->port_srv_auth_block->load(id);
 		if (port->port_srv_auth_block->getLogin())
 		{
-			port->port_user_name = port->port_srv_auth_block->getLogin();
+			port->port_login = port->port_srv_auth_block->getLogin();
 		}
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection finished with port_srv_auth_block prepare, a=%d\n", accepted));
@@ -1761,7 +1761,7 @@ static void addClumplets(ClumpletWriter* dpb_buffer,
  **************************************
  *
  * Functional description
- *	Insert remote endpoint data into DPB address stack
+ *	Insert remote connection info into DPB
  *
  **************************************/
 	ClumpletWriter address_stack_buffer(ClumpletReader::UnTagged, MAX_UCHAR - 2);
@@ -1808,6 +1808,24 @@ static void addClumplets(ClumpletWriter* dpb_buffer,
 		else
 			dpb_buffer->moveNext();
 	}
+
+	// Append information about the remote protocol
+
+	string protocol;
+	protocol.printf("P%d", port->port_protocol & FB_PROTOCOL_MASK);
+
+	dpb_buffer->deleteWithTag(par.remote_protocol);
+	dpb_buffer->insertString(par.remote_protocol, protocol);
+
+	// Append information about the peer host name and OS user
+
+	dpb_buffer->deleteWithTag(par.host_name);
+	if (port->port_peer_name.hasData())
+		dpb_buffer->insertString(par.host_name, port->port_peer_name);
+
+	dpb_buffer->deleteWithTag(par.os_user);
+	if (port->port_user_name.hasData())
+		dpb_buffer->insertString(par.os_user, port->port_user_name);
 }
 
 
@@ -3491,7 +3509,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		if (status_vector.isSuccess())
 		{
 			string version;
-			version.printf("%s/%s%s", GDS_VERSION, this->port_version->str_data,
+			version.printf("%s/%s%s", FB_VERSION, this->port_version->str_data,
 				this->port_crypt_complete ? ":C" : "");
 			info_db_len = MERGE_database_info(temp_buffer, //temp
 				buffer, stuff->p_info_buffer_length,
@@ -3549,9 +3567,9 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 			port_srv_auth = new ServiceQueryAuth(this, stuff->p_info_object, wrt,
 				stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
 				info_len, info_buffer, stuff->p_info_buffer_length);
-			if (port_user_name.hasData())
+			if (port_login.hasData())
 			{
-				port_srv_auth_block->setUser(port_user_name);
+				port_srv_auth_block->setLogin(port_login);
 			}
 
 			if (port_srv_auth->authenticate(sendL))
@@ -4976,8 +4994,8 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 						   attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
 		if (spb.find(isc_spb_user_name))
 		{
-			spb.getString(port->port_user_name);
-			port->port_user_name.upper();
+			spb.getString(port->port_login);
+			port->port_login.upper();
 		}
 		port->service_attach(manager.c_str(), &spb, sendL, false);
 	}
@@ -5229,9 +5247,9 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 		delete port_srv_auth;
 		///port_srv_auth = NULL;
 		port_srv_auth = new ServiceStartAuth(this, dbName, authParams, spb);
-		if (port_user_name.hasData())
+		if (port_login.hasData())
 		{
-			port_srv_auth_block->setUser(port_user_name);
+			port_srv_auth_block->setLogin(port_login);
 		}
 
 		if (port_srv_auth->authenticate(sendL))
@@ -6090,7 +6108,7 @@ void SrvAuthBlock::setPath(const Firebird::PathName* aDbPath)
 		dbPath = "";
 }
 
-void SrvAuthBlock::setUser(const Firebird::string& user)
+void SrvAuthBlock::setLogin(const Firebird::string& user)
 {
 	userName = user;
 }

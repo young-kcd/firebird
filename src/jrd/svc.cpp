@@ -1301,8 +1301,8 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		case isc_info_svc_server_version:
 			// The version of the server engine
 			{ // scope
-				static const UCHAR* pv = reinterpret_cast<const UCHAR*>(GDS_VERSION);
-				info = INF_put_item(item, strlen(GDS_VERSION), pv, info, end);
+				static const UCHAR* pv = reinterpret_cast<const UCHAR*>(FB_VERSION);
+				info = INF_put_item(item, strlen(FB_VERSION), pv, info, end);
 				if (!info) {
 					return 0;
 				}
@@ -1765,8 +1765,8 @@ void Service::query(USHORT			send_item_length,
 
 				p = buffer;
 				*p++ = 1;			// Count
-				*p++ = sizeof(GDS_VERSION) - 1;
-				for (const TEXT* gvp = GDS_VERSION; *gvp; p++, gvp++)
+				*p++ = sizeof(FB_VERSION) - 1;
+				for (const TEXT* gvp = FB_VERSION; *gvp; p++, gvp++)
 					*p = *gvp;
 				if (!(info = INF_put_item(item, p - buffer, buffer, info, end)))
 				{

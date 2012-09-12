@@ -127,7 +127,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				}
 
 	if (sw_version)
-		printf("gds_drop version %s\n", GDS_VERSION);
+		printf("gds_drop version %s\n", FB_VERSION);
 
 	if (sw_events)
 		remove_resource(EVENT_FILE, Config::getEventMemSize(), "events");

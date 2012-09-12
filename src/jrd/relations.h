@@ -497,6 +497,10 @@ RELATION(nam_mon_attachments, rel_mon_attachments, ODS_11_1, rel_virtual)
 	FIELD(f_mon_att_gc, nam_mon_gc, fld_flag_nullable, 0, ODS_11_1)
 	FIELD(f_mon_att_remote_process, nam_mon_remote_process, fld_file_name2, 0, ODS_11_1)
 	FIELD(f_mon_att_stat_id, nam_mon_stat_id, fld_stat_id, 0, ODS_11_1)
+	FIELD(f_mon_att_client_version, nam_mon_client_ver, fld_client_ver, 0, ODS_12_0)
+	FIELD(f_mon_att_remote_version, nam_mon_remote_ver, fld_remote_ver, 0, ODS_12_0)
+	FIELD(f_mon_att_remote_host, nam_mon_remote_host, fld_host_name, 0, ODS_12_0)
+	FIELD(f_mon_att_remote_os_user, nam_mon_remote_os_user, fld_os_user, 0, ODS_12_0)
 END_RELATION
 
 // Relation 35 (MON$TRANSACTIONS)

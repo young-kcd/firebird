@@ -252,6 +252,10 @@ public:
 	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
 	SLONG att_remote_pid;					// Process id of remote client
 	Firebird::PathName att_remote_process;	// Process name of remote client
+	Firebird::string att_client_version;	// Version of the client library
+	Firebird::string att_remote_protocol;	// Details about the remote protocol
+	Firebird::string att_remote_host;		// Host name of remote client
+	Firebird::string att_remote_os_user;	// OS user name of remote client
 	RandomGenerator att_random_generator;	// Random bytes generator
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
 	DSqlCache att_dsql_cache;	// DSQL cache locks

@@ -36,6 +36,7 @@
 #include "../../../remote/server/serve_proto.h"
 #include "../../../yvalve/gds_proto.h"
 #include "../../../common/isc_proto.h"
+#include "../../../common/isc_f_proto.h"
 #include "../../../common/classes/init.h"
 #include "../../../common/classes/fb_string.h"
 #include "../../../common/config/config.h"
@@ -554,7 +555,7 @@ static void connect_fini()
 }
 
 
-static bool accept_connection(rem_port* port, const P_CNCT*)
+static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 {
 /**************************************
  *
@@ -566,21 +567,38 @@ static bool accept_connection(rem_port* port, const P_CNCT*)
  *	Accept an incoming request for connection.
  *
  **************************************/
-	port->port_protocol_str = REMOTE_make_string("XNET");
+	// Default account to "guest" (in theory all packets contain a name)
 
-	// Use client process ID as remote address for XNET protocol
+	string user_name("guest"), host_name;
 
-	XCC xcc = port->port_xcc;
-	if (xcc)
+	// Pick up account and host name, if given
+
+	ClumpletReader id(ClumpletReader::UnTagged,
+					  cnct->p_cnct_user_id.cstr_address,
+					  cnct->p_cnct_user_id.cstr_length);
+
+	for (id.rewind(); !id.isEof(); id.moveNext())
 	{
-		XPS xps = (XPS) xcc->xcc_mapped_addr;
-		if (xps)
+		switch (id.getClumpTag())
 		{
-			TEXT address[MAX_COMPUTERNAME_LENGTH + 1];
-			ISC_get_host(address, sizeof(address));
-			port->port_address_str = REMOTE_make_string(address);
+		case CNCT_user:
+			id.getString(user_name);
+			break;
+
+		case CNCT_host:
+			id.getString(host_name);
+			break;
+
+		default:
+			break;
 		}
 	}
+
+	port->port_login = port->port_user_name = user_name;
+	port->port_peer_name = host_name;
+
+	port->port_protocol_str = REMOTE_make_string("XNET");
+	port->port_address_str = REMOTE_make_string(host_name.c_str());
 
 	return true;
 }

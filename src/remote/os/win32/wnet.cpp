@@ -438,31 +438,40 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
  **************************************/
 	// Default account to "guest" (in theory all packets contain a name)
 
-	string name("guest"), password;
+	string user_name("guest"), host_name;
 
-	// Pick up account and password, if given. The password is ignored
+	// Pick up account and host name, if given
 
 	ClumpletReader id(ClumpletReader::UnTagged,
-			cnct->p_cnct_user_id.cstr_address, cnct->p_cnct_user_id.cstr_length);
+					  cnct->p_cnct_user_id.cstr_address,
+					  cnct->p_cnct_user_id.cstr_length);
 
 	for (id.rewind(); !id.isEof(); id.moveNext())
 	{
 		switch (id.getClumpTag())
 		{
 		case CNCT_user:
-			id.getString(name);
-			port->port_user_name = name;
+			id.getString(user_name);
 			break;
 
-		case CNCT_passwd:
-			id.getString(password);
+		case CNCT_host:
+			id.getString(host_name);
+			break;
+
+		default:
 			break;
 		}
 	}
 
+	port->port_login = port->port_user_name = user_name;
+	port->port_peer_name = host_name;
+
 	// NS: Put in connection address. I have no good idea where to get an
 	// address of the remote end of named pipe so let's live without it for now
 	port->port_protocol_str = REMOTE_make_string("WNET");
+
+	// dimitr: let's use the passed host name as the address
+	port->port_address_str = REMOTE_make_string(host_name.c_str());
 
 	return true;
 }

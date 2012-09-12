@@ -196,7 +196,7 @@ int alice(Firebird::UtilSvc* uSvc)
 		}
 		else if (table->in_sw == IN_SW_ALICE_VERSION)
 		{
-			ALICE_print(3, SafeArg() << GDS_VERSION);	// msg 3: gfix version %s
+			ALICE_print(3, SafeArg() << FB_VERSION);	// msg 3: gfix version %s
 			version = true;
 		}
 

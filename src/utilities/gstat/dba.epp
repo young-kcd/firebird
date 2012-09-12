@@ -533,7 +533,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	}
 
 	if (sw_version)
-		dba_print(false, 5, SafeArg() << GDS_VERSION);	// msg 5: gstat version %s
+		dba_print(false, 5, SafeArg() << FB_VERSION);	// msg 5: gstat version %s
 
 	if (sw_header && (sw_system || sw_data || sw_index || sw_record || sw_relation))
 	{

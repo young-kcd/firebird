@@ -930,7 +930,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	// Initialize 'dpb'
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
-	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
+	dpb.insertString(isc_dpb_gbak_attach, FB_VERSION, strlen(FB_VERSION));
 	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
 	uSvc->fillDpb(dpb);
 
@@ -1046,7 +1046,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 #endif
 
 		case IN_SW_BURP_Z:
-			BURP_print(false, 91, GDS_VERSION);
+			BURP_print(false, 91, FB_VERSION);
 			// msg 91 gbak version %s
 			tdgbl->gbl_sw_version = true;
 			break;

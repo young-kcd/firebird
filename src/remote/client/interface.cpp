@@ -1296,7 +1296,7 @@ void Attachment::getInfo(IStatus* status,
 			 item_length, items, 0, 0, buffer_length, temp_buffer);
 
 		string version;
-		version.printf("%s/%s%s", GDS_VERSION, port->port_version->str_data,
+		version.printf("%s/%s%s", FB_VERSION, port->port_version->str_data,
 			port->port_crypt_complete ? ":C" : "");
 
 		MERGE_database_info(temp_buffer, buffer, buffer_length,
@@ -4472,7 +4472,6 @@ static void add_other_params(rem_port* port, ClumpletWriter& dpb, const Paramete
  * Functional description
  *	Add parameters to a dpb to describe client-side
  *	settings that the server should know about.
- *	Currently dummy_packet_interval, process_id and process_name.
  *
  **************************************/
 	if (port->port_flags & PORT_dummy_pckt_set)
@@ -4501,6 +4500,12 @@ static void add_other_params(rem_port* port, ClumpletWriter& dpb, const Paramete
 
 			dpb.insertPath(par.process_name, path);
 		}
+	}
+
+	if (port->port_protocol >= PROTOCOL_VERSION13)
+	{
+		dpb.deleteWithTag(par.client_version);
+		dpb.insertString(par.client_version, FB_VERSION);
 	}
 }
 
@@ -6958,13 +6963,13 @@ bool ClntAuthBlock::checkPluginName(Firebird::PathName& nameToCheck)
 
 void ClntAuthBlock::saveServiceDataTo(rem_port* port)
 {
-	port->port_user_name = userName;
+	port->port_login = userName;
 	port->port_password = password;
 }
 
 void ClntAuthBlock::loadServiceDataFrom(rem_port* port)
 {
-	userName = port->port_user_name;
+	userName = port->port_login;
 	password = port->port_password;
 }
 

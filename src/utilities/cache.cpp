@@ -124,7 +124,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					break;
 
 				case 'Z':
-					printf("Shared cache manager version %s\n", GDS_VERSION);
+					printf("Shared cache manager version %s\n", FB_VERSION);
 					exit(FINI_OK);
 				}
 			}

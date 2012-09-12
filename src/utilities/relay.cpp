@@ -86,7 +86,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				switch (UPPER(c))
 				{
 				case 'Z':
-					printf("Firebird relay version %s\n", GDS_VERSION);
+					printf("Firebird relay version %s\n", FB_VERSION);
 					exit(FINI_OK);
 				}
 		}

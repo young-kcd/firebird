@@ -414,7 +414,7 @@ static rem_port*		aux_request(rem_port*, PACKET*);
 static bool		check_host(rem_port*);
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM);
 
-static Firebird::GlobalPtr<Firebird::Mutex> waitThreadMutex;
+static GlobalPtr<Mutex> waitThreadMutex;
 static unsigned int procCount = 0;
 #endif // WIN_NT
 
@@ -431,11 +431,11 @@ static void		wsaExitHandler(void*);
 static int		fork(SOCKET, USHORT);
 static THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM);
 
-static Firebird::GlobalPtr<Firebird::Mutex> forkMutex;
+static GlobalPtr<Mutex> forkMutex;
 static HANDLE forkEvent = INVALID_HANDLE_VALUE;
 static bool forkThreadStarted = false;
 
-typedef Firebird::Array<SOCKET> SocketsArray;
+typedef Array<SOCKET> SocketsArray;
 static SocketsArray* forkSockets;
 
 #endif
@@ -443,16 +443,16 @@ static SocketsArray* forkSockets;
 static in_addr get_bind_address();
 static int get_host_address(const char* name, in_addr* const host_addr_arr, const int arr_size);
 
-static void		inet_gen_error(bool, rem_port*, const Firebird::Arg::StatusVector& v);
+static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR*);
 static rem_port*		inet_try_connect(	PACKET*,
 									Rdb*,
-									const Firebird::PathName&,
+									const PathName&,
 									const TEXT*,
-									Firebird::ClumpletReader&);
+									ClumpletReader&);
 static bool_t	inet_write(XDR*); //, int);
 
 #ifdef DEBUG
@@ -511,19 +511,19 @@ static XDR::xdr_ops inet_ops =
 
 
 SLONG INET_remote_buffer;
-static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
+static GlobalPtr<Mutex> init_mutex;
 static volatile bool INET_initialized = false;
 static volatile bool INET_shutting_down = false;
 static Firebird::GlobalPtr<Select> INET_select;
 static rem_port* inet_async_receive = NULL;
 
 
-static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
-static Firebird::GlobalPtr<PortsCleanup>	inet_ports;
+static GlobalPtr<Mutex> port_mutex;
+static GlobalPtr<PortsCleanup>	inet_ports;
 
 
 rem_port* INET_analyze(ClntAuthBlock* cBlock,
-					   const Firebird::PathName& file_name,
+					   const PathName& file_name,
 					   const TEXT* node_name,
 					   bool uv_flag,
 					   ClumpletReader &dpb)
@@ -551,17 +551,22 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
-	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, 64000);
+	ClumpletWriter user_id(ClumpletReader::UnTagged, 64000);
 	if (cBlock)
 	{
 		cBlock->extractDataFromPluginTo(user_id);
 	}
 
-	Firebird::string buffer;
+	string buffer;
 	int eff_gid;
 	int eff_uid;
 
 	ISC_get_user(&buffer, &eff_uid, &eff_gid);
+#ifdef WIN_NT
+	// WNET and XNET lowercase user names (as it's always case-insensitive in Windows)
+	// so let's be consistent and use the same trick for INET as well
+	buffer.lower();
+#endif
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);
@@ -631,10 +636,10 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	case op_response:
 		try
 		{
-			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
+			LocalStatus warning;		// Ignore connect warnings for a while
 			REMOTE_check_response(&warning, rdb, packet, false);
 		}
-		catch(const Firebird::Exception&)
+		catch(const Exception&)
 		{
 			disconnect(port);
 			delete rdb;
@@ -655,7 +660,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	// once we've decided on a protocol, concatenate the version
 	// string to reflect it...
-	Firebird::string temp;
+	string temp;
 	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
@@ -678,7 +683,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 rem_port* INET_connect(const TEXT* name,
 					   PACKET* packet,
 					   USHORT flag,
-					   Firebird::ClumpletReader* dpb)
+					   ClumpletReader* dpb)
 {
 /**************************************
  *
@@ -711,14 +716,14 @@ rem_port* INET_connect(const TEXT* name,
 	rem_port* const port = alloc_port(NULL);
 	REMOTE_get_timeout_params(port, dpb);
 
-	Firebird::string host;
-	Firebird::string protocol;
+	string host;
+	string protocol;
 
 	if (name)
 	{
 		host = name;
 		const size_t pos = host.find("/");
-		if (pos != Firebird::string::npos)
+		if (pos != string::npos)
 		{
 			protocol = host.substr(pos + 1);
 			host = host.substr(0, pos);
@@ -1010,7 +1015,7 @@ rem_port* INET_connect(const TEXT* name,
 		}
 
 #ifdef WIN_NT
-		Firebird::MutexLockGuard forkGuard(forkMutex);
+		MutexLockGuard forkGuard(forkMutex);
 		if (!forkThreadStarted)
 		{
 			forkThreadStarted = true;
@@ -1022,7 +1027,7 @@ rem_port* INET_connect(const TEXT* name,
 		forkSockets->add(s);
 		SetEvent(forkEvent);
 #else
-		Firebird::MutexLockGuard guard(waitThreadMutex);
+		MutexLockGuard guard(waitThreadMutex);
 		if (! procCount++) {
 			Thread::start(waitThread, 0, THREAD_medium);
 		}
@@ -1032,7 +1037,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 
 #ifdef WIN_NT
-	Firebird::MutexLockGuard forkGuard(forkMutex);
+	MutexLockGuard forkGuard(forkMutex);
 	if (forkThreadStarted)
 	{
 		SetEvent(forkEvent);
@@ -1126,13 +1131,13 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
  **************************************/
 	// Default account to "guest" (in theory all packets contain a name)
 
-	Firebird::string name("guest");
+	string user_name("guest"), host_name;
 
-	// Pick up account, if given
+	// Pick up account and host name, if given
 
-	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
-								cnct->p_cnct_user_id.cstr_address,
-								cnct->p_cnct_user_id.cstr_length);
+	ClumpletReader id(ClumpletReader::UnTagged,
+					  cnct->p_cnct_user_id.cstr_address,
+					  cnct->p_cnct_user_id.cstr_length);
 
 	bool user_verification = false;
 	for (id.rewind(); !id.isEof(); id.moveNext())
@@ -1140,14 +1145,11 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		switch (id.getClumpTag())
 		{
 		case CNCT_user:
-			id.getString(name);
+			id.getString(user_name);
 			break;
 
-		case CNCT_passwd:
-			//id.getString(password); obsolete
-			break;
-
-		case CNCT_group: // obsolete
+		case CNCT_host:
+			id.getString(host_name);
 			break;
 
 			// this case indicates that the client has requested that
@@ -1155,6 +1157,9 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 			// the security database
 		case CNCT_user_verification:
 			user_verification = true;
+			break;
+
+		default:
 			break;
 		}
 	}
@@ -1179,7 +1184,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		// is activated for the release version.
 		// 1995-February-27 David Schnepper
 
-		Firebird::PathName home;
+		PathName home;
 		if (fb_utils::readenv("ISC_INET_SERVER_HOME", home))
 		{
 			if (chdir(home.c_str()))
@@ -1191,9 +1196,10 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	} // end scope
 #endif // !WIN_NT
 
-	// store user identity in port_user_name
-	port->port_user_name = name;
+	// store user identity
+	port->port_login = port->port_user_name = user_name;
 
+	port->port_peer_name = host_name;
 	port->port_protocol_str = REMOTE_make_string("TCPv4");
 
 	struct sockaddr_in address;
@@ -1203,7 +1209,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	int status = getpeername(port->port_handle, (struct sockaddr *) &address, &l);
 	if (status == 0)
 	{
-		Firebird::string addr_str;
+		string addr_str;
 		const UCHAR* ip = (UCHAR*) &address.sin_addr;
 		addr_str.printf(
 			"%d.%d.%d.%d",
@@ -1234,7 +1240,7 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 
 	if (!INET_initialized)
 	{
-		Firebird::MutexLockGuard guard(init_mutex);
+		MutexLockGuard guard(init_mutex);
 		if (!INET_initialized)
 		{
 #ifdef WIN_NT
@@ -1300,7 +1306,7 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 
 	if (parent && !(parent->port_server_flags & SRVR_thread_per_port))
 	{
-		Firebird::MutexLockGuard guard(port_mutex);
+		MutexLockGuard guard(port_mutex);
 		port->linkParent(parent);
 	}
 
@@ -1565,7 +1571,7 @@ static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
 	{
 		int rc = wait(0);
 
-		Firebird::MutexLockGuard guard(waitThreadMutex);
+		MutexLockGuard guard(waitThreadMutex);
 		if (rc > 0) {
 			--procCount;
 		}
@@ -1608,7 +1614,7 @@ static void disconnect(rem_port* const port)
 		shutdown(port->port_handle, 2);
 	}
 
-	Firebird::MutexLockGuard guard(port_mutex);
+	MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
 
 	if (port->port_async)
@@ -1751,7 +1757,7 @@ static int fork(SOCKET old_handle, USHORT flag)
 		return 0;
 	}
 
-	Firebird::string cmdLine;
+	string cmdLine;
 	cmdLine.printf("%s -i -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, new_handle, GetCurrentProcessId());
 
 	STARTUPINFO start_crud;
@@ -1795,7 +1801,7 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 		{
 			SOCKET s = 0;
 			{	// scope
-				Firebird::MutexLockGuard forkGuard(forkMutex);
+				MutexLockGuard forkGuard(forkMutex);
 
 				if (!forkSockets || forkSockets->getCount() == 0)
 					break;
@@ -1865,7 +1871,7 @@ static in_addr get_bind_address()
  *	Return local address to bind sockets to.
  *
  **************************************/
-	static Firebird::InitMutex<GetAddress> instance;
+	static InitMutex<GetAddress> instance;
 
 	instance.init();
 
@@ -2124,7 +2130,7 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
  *
  **************************************/
 
-	Firebird::MutexLockGuard guard(port_mutex);
+	MutexLockGuard guard(port_mutex);
 
 	for (port = main_port; port; port = port->port_next)
 	{
@@ -2192,7 +2198,7 @@ static bool select_wait( rem_port* main_port, Select* selct)
 		}
 
 		{ // port_mutex scope
-			Firebird::MutexLockGuard guard(port_mutex);
+			MutexLockGuard guard(port_mutex);
 			for (rem_port* port = main_port; port; port = port->port_next)
 			{
 				if (port->port_state == rem_port::PENDING &&
@@ -2291,7 +2297,7 @@ static bool select_wait( rem_port* main_port, Select* selct)
 				// they can be used in select_port()
 				if (selct->getCount() == 0)
 				{
-					Firebird::MutexLockGuard guard(port_mutex);
+					MutexLockGuard guard(port_mutex);
 					for (rem_port* port = main_port; port; port = port->port_next)
 					{
 						selct->unset(port->port_handle);
@@ -2668,9 +2674,9 @@ static bool_t inet_read( XDR* xdrs)
 
 static rem_port* inet_try_connect(PACKET* packet,
 								  Rdb* rdb,
-								  const Firebird::PathName& file_name,
+								  const PathName& file_name,
 								  const TEXT* node_name,
-								  Firebird::ClumpletReader& dpb)
+								  ClumpletReader& dpb)
 {
 /**************************************
  *

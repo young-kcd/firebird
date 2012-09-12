@@ -47,61 +47,89 @@ IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
 
 
-const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
-								isc_dpb_user_name,
-								isc_dpb_auth_block,
-								isc_dpb_password,
-								isc_dpb_password_enc,
-								isc_dpb_trusted_auth,
-								isc_dpb_auth_plugin_name,
-								isc_dpb_auth_plugin_list,
-								isc_dpb_specific_auth_data,
-								isc_dpb_address_path,
-								isc_dpb_process_id,
-								isc_dpb_process_name,
-								isc_dpb_encrypt_key};
+const ParametersSet dpbParam =
+{
+	isc_dpb_dummy_packet_interval,
+	isc_dpb_user_name,
+	isc_dpb_auth_block,
+	isc_dpb_password,
+	isc_dpb_password_enc,
+	isc_dpb_trusted_auth,
+	isc_dpb_auth_plugin_name,
+	isc_dpb_auth_plugin_list,
+	isc_dpb_specific_auth_data,
+	isc_dpb_address_path,
+	isc_dpb_process_id,
+	isc_dpb_process_name,
+	isc_dpb_encrypt_key,
+	isc_dpb_client_version,
+	isc_dpb_remote_protocol,
+	isc_dpb_host_name,
+	isc_dpb_os_user
+};
 
-const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
-								isc_spb_user_name,
-								isc_spb_auth_block,
-								isc_spb_password,
-								isc_spb_password_enc,
-								isc_spb_trusted_auth,
-								isc_spb_auth_plugin_name,
-								isc_spb_auth_plugin_list,
-								isc_spb_specific_auth_data,
-								isc_spb_address_path,
-								isc_spb_process_id,
-								isc_spb_process_name,
-								0};
+const ParametersSet spbParam =
+{
+	isc_spb_dummy_packet_interval,
+	isc_spb_user_name,
+	isc_spb_auth_block,
+	isc_spb_password,
+	isc_spb_password_enc,
+	isc_spb_trusted_auth,
+	isc_spb_auth_plugin_name,
+	isc_spb_auth_plugin_list,
+	isc_spb_specific_auth_data,
+	isc_spb_address_path,
+	isc_spb_process_id,
+	isc_spb_process_name,
+	0,
+	isc_spb_client_version,
+	isc_spb_remote_protocol,
+	isc_spb_host_name,
+	isc_spb_os_user
+};
 
-const ParametersSet spbStartParam = {0,
-									 0,
-									 isc_spb_auth_block,
-									 0,
-									 0,
-									 isc_spb_trusted_auth,
-									 isc_spb_auth_plugin_name,
-									 isc_spb_auth_plugin_list,
-									 isc_spb_specific_auth_data,
-									 0,
-									 0,
-									 0,
-									 0};	// Need new parameter here
+const ParametersSet spbStartParam =
+{
+	0,
+	0,
+	isc_spb_auth_block,
+	0,
+	0,
+	isc_spb_trusted_auth,
+	isc_spb_auth_plugin_name,
+	isc_spb_auth_plugin_list,
+	isc_spb_specific_auth_data,
+	0,
+	0,
+	0,
+	0,	// Need new parameter here
+	0,
+	0,
+	0,
+	0
+};
 
-const ParametersSet spbInfoParam = {0,
-									0,
-									isc_info_svc_auth_block,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0,
-									0};
+const ParametersSet spbInfoParam =
+{
+	0,
+	0,
+	isc_info_svc_auth_block,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0
+};
 
 
 const SLONG DUMMY_INTERVAL		= 60;	// seconds

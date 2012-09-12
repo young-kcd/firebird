@@ -152,7 +152,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	case WM_INITDIALOG:
 		{
 			char szText[BUFFER_MEDIUM];
-			lstrcpy(szText, GDS_VERSION);
+			lstrcpy(szText, FB_VERSION);
 			SetDlgItemText(hDlg, IDC_STAT1, szText);
 
 			if (usServerFlags & (SRVR_inet | SRVR_wnet))

@@ -2758,7 +2758,7 @@ static void show_versions()
  *	Show the version for QLI and all databases.
  *
  **************************************/
-	ERRQ_msg_put(133, GDS_VERSION);	// Msg133 QLI, version %s
+	ERRQ_msg_put(133, FB_VERSION);	// Msg133 QLI, version %s
 
 	for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 	{

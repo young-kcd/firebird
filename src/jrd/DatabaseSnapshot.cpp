@@ -1014,6 +1014,14 @@ bool DatabaseSnapshot::putAttachment(thread_db* /*tdbb*/, const Jrd::Attachment*
 	// garbage collection flag
 	temp = (attachment->att_flags & ATT_no_cleanup) ? 0 : 1;
 	record.storeInteger(f_mon_att_gc, temp);
+	// client library version
+	record.storeString(f_mon_att_client_version, attachment->att_client_version);
+	// remote protocol version
+	record.storeString(f_mon_att_remote_version, attachment->att_remote_protocol);
+	// remote host name
+	record.storeString(f_mon_att_remote_host, attachment->att_remote_host);
+	// OS user name
+	record.storeString(f_mon_att_remote_os_user, attachment->att_remote_os_user);
 
 	// statistics
 	record.storeGlobalId(f_mon_att_stat_id, getGlobalId(stat_id));

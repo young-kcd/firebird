@@ -269,7 +269,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 					exit(FINI_OK);
 
 				case 'Z':
-					printf("Firebird TCP/IP server version %s\n", GDS_VERSION);
+					printf("Firebird TCP/IP server version %s\n", FB_VERSION);
 					exit(FINI_OK);
 
 				default:

@@ -279,7 +279,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		ERRQ_msg_put(24);	// Msg24 Welcome to QLI Query Language Interpreter
 
 	if (version_flag)
-		ERRQ_msg_put(25, SafeArg() << GDS_VERSION);	// Msg25 qli version %s
+		ERRQ_msg_put(25, SafeArg() << FB_VERSION);	// Msg25 qli version %s
 
 	if (application_file)
 		LEX_push_file(application_file, true);

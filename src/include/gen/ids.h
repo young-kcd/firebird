@@ -498,6 +498,10 @@
 	const USHORT  f_mon_att_gc = 11;
 	const USHORT  f_mon_att_remote_process = 12;
 	const USHORT  f_mon_att_stat_id = 13;
+	const USHORT  f_mon_att_client_version = 14;
+	const USHORT  f_mon_att_remote_version = 15;
+	const USHORT  f_mon_att_remote_host = 16;
+	const USHORT  f_mon_att_remote_os_user = 17;
 
 
 // Relation 35 (MON$TRANSACTIONS)
