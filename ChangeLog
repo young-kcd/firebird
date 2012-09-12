@@ -1,3 +1,11 @@
+ 2012-09-11 14:46  dimitr 
+   M src/misc/writeBuildNum.sh
+Bumped the version number.
+
+ 2012-09-11 13:47  dimitr 
+   M src/jrd/vio.cpp
+Fixed CORE-3924: Bugcheck 291 (cannot find record back version) if GTT is modified concurrently using at least one read-committed read-only transaction.
+
  2012-09-05 19:31  hvlad 
    M src/jrd/validation.cpp
 Fixed bug CORE-3916 : gfix & "Index x is corrupt (missing entries) in table ..." all indexes on large tables
