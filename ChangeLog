@@ -1,3 +1,47 @@
+ 2012-09-12 07:45  dimitr 
+   M src/alice/alice.cpp
+   M src/burp/burp.cpp
+   M src/burp/restore.epp
+   M src/gpre/gpre.cpp
+   M src/include/consts_pub.h
+   M src/include/gen/ids.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/fields.h
+   M src/jrd/jrd.cpp
+   M src/jrd/license.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/jrd/svc.cpp
+   M src/qli/dtr.cpp
+   M src/qli/show.epp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/property.cpp
+   M src/remote/server/os/win32/window.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/cache.cpp
+   M src/utilities/drop.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/ibmgr/ibmgr.cpp
+   M src/utilities/relay.cpp
+Implemented:
+CORE-2780: Include client library version and protocol version in mon$attachments
+CORE-2187: Return the Hostname in mon$attachments
+CORE-3779: Report OS user name in MON$ATTACHMENTS
++ some cleanup.
+
+ 2012-09-12 05:26  dimitr 
+   M src/jrd/vio.cpp
+Fixed CORE-3924: Bugcheck 291 (cannot find record back version) if GTT is modified concurrently using at least one read-committed read-only transaction.
+
  2012-09-11 15:17  dimitr 
    M src/jrd/types.h
 Implemented CORE-675: Add missing entries to RDB$TYPES.
