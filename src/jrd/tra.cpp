@@ -3433,12 +3433,12 @@ void TraceSweepEvent::endSweepRelation(jrd_rel* relation)
 	if (m_base_stats.getValue(RuntimeStatistics::RECORD_SEQ_READS) ==
 		tran->tra_stats.getValue(RuntimeStatistics::RECORD_SEQ_READS) &&
 
-		m_base_stats.getValue(RuntimeStatistics::RECORD_BACKOUTS) == 
+		m_base_stats.getValue(RuntimeStatistics::RECORD_BACKOUTS) ==
 		tran->tra_stats.getValue(RuntimeStatistics::RECORD_BACKOUTS) &&
-	
-		m_base_stats.getValue(RuntimeStatistics::RECORD_PURGES) == 
+
+		m_base_stats.getValue(RuntimeStatistics::RECORD_PURGES) ==
 		tran->tra_stats.getValue(RuntimeStatistics::RECORD_PURGES) &&
-	
+
 		m_base_stats.getValue(RuntimeStatistics::RECORD_EXPUNGES) ==
 		tran->tra_stats.getValue(RuntimeStatistics::RECORD_EXPUNGES) )
 	{
