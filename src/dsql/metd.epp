@@ -775,38 +775,6 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const MetaName& domain_name
 }
 
 
-bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
-{
-/**************************************
- *
- *  M E T D _ g e t _ e x c e p t i o n
- *
- **************************************
- *
- * Functional description
- *  Look up an exception.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	validateTransaction(transaction);
-
-	bool found = false;
-
-	AutoCacheRequest handle(tdbb, irq_exception, IRQ_REQUESTS);
-
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-		X IN RDB$EXCEPTIONS WITH
-		X.RDB$EXCEPTION_NAME EQ name->str_data;
-	{
-		found = true;
-	}
-	END_FOR
-
-	return found;
-}
-
-
 dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
 	const QualifiedName& name)
 {

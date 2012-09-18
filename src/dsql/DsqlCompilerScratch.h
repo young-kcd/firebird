@@ -171,7 +171,19 @@ public:
 	void genParameters(Firebird::Array<ParameterClause>& parameters,
 		Firebird::Array<ParameterClause>& returns);
 
+	// Get rid of any predefined contexts created for a view or trigger definition.
+	// Also reset hidden variables.
 	void resetContextStack()
+	{
+		context->clear();
+		contextNumber = 0;
+		derivedContextNumber = 0;
+
+		hiddenVarsNumber = 0;
+		hiddenVariables.clear();
+	}
+
+	void resetTriggerContextStack()
 	{
 		context->clear();
 		contextNumber = 0;

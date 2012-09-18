@@ -294,7 +294,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 	ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
 {
 	// Get the table node and set up correct context.
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 
 	// Save the size of the field if it is specified.
 	dsc saveDesc;
@@ -364,7 +364,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 			field->fld_sub_type = desc.dsc_sub_type;
 	}
 
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 
 	// Generate the source text.
 	source = clause->source;
@@ -935,7 +935,7 @@ TypeClause::TypeClause(MemoryPool& pool, dsql_fld* aLegacyField, const MetaName&
 
 void TypeClause::resolve(DsqlCompilerScratch* dsqlScratch, bool modifying)
 {
-	DDL_resolve_intl_type2(dsqlScratch, legacyField,
+	DDL_resolve_intl_type(dsqlScratch, legacyField,
 		(collate.isEmpty() ? NULL : collate), modifying);
 
 	setup(dsqlScratch);
@@ -3194,7 +3194,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 		// fields to that context but prevent relations referenced in
 		// the trigger actions from referencing the predefined "1" context.
 		if (dsqlScratch->contextNumber)
-			dsqlScratch->resetContextStack();
+			dsqlScratch->resetTriggerContextStack();
 
 		if (relationName.hasData())
 		{
@@ -5995,7 +5995,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	// place holder to avoid resolving fields to that context but prevent relations referenced
 	// in the trigger actions from referencing the predefined "1" context.
 
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 
 	// CVC: I thought I could disable the OLD context here to avoid "ambiguous field name"
 	// errors in pre_store and pre_modify triggers. Also, what sense can I make from NEW in
@@ -6026,7 +6026,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 
 	dsqlScratch->appendUChar(blr_eoc);	// end of the blr
 
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 
 	// Move the blr to the constraint blrWriter.
 	blrWriter.getBlrData().join(dsqlScratch->getBlrData());
@@ -7454,7 +7454,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	// context number since view contexts start at 1 (except for computed fields) -- note that
 	// calling PASS1_rse directly rather than PASS1_statement saves the context stack.
 
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 	++dsqlScratch->contextNumber;
 	RseNode* rse = PASS1_rse(dsqlScratch, selectExpr, NULL);
 
@@ -7972,7 +7972,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		createCheckTrigger(tdbb, dsqlScratch, items);
 	}
 
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name);
 
@@ -8008,7 +8008,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	dsqlScratch->appendUChar(blr_begin);
 
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 
 	++dsqlScratch->contextNumber;	// OLD context
 
@@ -8089,7 +8089,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 	dsqlScratch->appendUChar(blr_end);	// of begin
 	dsqlScratch->appendUChar(blr_eoc);
 
-	DDL_reset_context_stack(dsqlScratch);
+	dsqlScratch->resetContextStack();
 
 	TriggerDefinition trigger(pool);
 	trigger.systemFlag = fb_sysflag_view_check;

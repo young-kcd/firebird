@@ -60,7 +60,6 @@ USHORT METD_get_col_default(Jrd::jrd_tra*, const char*, const char*, bool*, UCHA
 Jrd::dsql_str* METD_get_default_charset(Jrd::jrd_tra*);
 bool METD_get_domain(Jrd::jrd_tra*, class Jrd::dsql_fld*, const Firebird::MetaName& name);
 USHORT METD_get_domain_default(Jrd::jrd_tra*, const Firebird::MetaName&, bool*, UCHAR*, USHORT);
-bool METD_get_exception(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
 	const Firebird::QualifiedName&);
 void METD_get_primary_key(Jrd::jrd_tra*, const Firebird::MetaName&,

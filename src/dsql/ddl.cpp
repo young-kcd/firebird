@@ -125,24 +125,12 @@ bool DDL_ids(const DsqlCompilerScratch* scratch)
 }
 
 
-//
-// See the next function for description. This is only a
-// wrapper that sets the last parameter to false to indicate
-// we are creating a field, not modifying one.
-//
 void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
-	const MetaName& collation_name)
-{
-	DDL_resolve_intl_type2(dsqlScratch, field, collation_name, false);
-}
-
-
-void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 	const MetaName& collation_name, bool modifying)
 {
 /**************************************
  *
- *  D D L _ r e s o l v e _ i n t l _ t y p e 2
+ *  D D L _ r e s o l v e _ i n t l _ t y p e
  *
  **************************************
  *
@@ -286,9 +274,6 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 	if (modifying)
 	{
-#ifdef DEV_BUILD
-		const dsql_rel* relation = dsqlScratch->relation;
-#endif
 		const dsql_fld* afield = field->fld_next;
 		USHORT bpc = 0;
 
@@ -297,7 +282,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 			// The first test is redundant.
 			if (afield != field && afield->fld_relation && afield->fld_name == field->fld_name)
 			{
-				fb_assert(afield->fld_relation == relation || !relation);
+				fb_assert(afield->fld_relation == dsqlScratch->relation || !dsqlScratch->relation);
 				break;
 			}
 
@@ -464,30 +449,6 @@ static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
 		field->fld_length = (USHORT) field_length;
 	}
 
-}
-
-
-void DDL_reset_context_stack(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	D D L _ r e s e t _ c o n t e x t _ s t a c k
- *
- **************************************
- *
- * Function
- *	Get rid of any predefined contexts created
- *	for a view or trigger definition.
- *	Also reset hidden variables.
- *
- **************************************/
-
-	dsqlScratch->context->clear();
-	dsqlScratch->contextNumber = 0;
-	dsqlScratch->derivedContextNumber = 0;
-
-	dsqlScratch->hiddenVarsNumber = 0;
-	dsqlScratch->hiddenVariables.clear();
 }
 
 

@@ -643,7 +643,7 @@ without specifying a character set.', NULL);
 ('tra_num_exc', 'bump_transaction_id', 'tra.cpp', NULL, 0, 544, NULL, 'Transactions count exceeded. Perform backup and restore to make database operable again', NULL, NULL);
 ('field_disappeared', 'EVL_assign_to', 'evl.cpp', NULL, 0, 545, NULL, 'Column has been unexpectedly deleted', NULL, NULL);
 ('met_wrong_gtt_scope', 'store_dependencies', 'met.e', NULL, 0, 546, NULL, '@1 cannot depend on @2', NULL, NULL);
-('subtype_for_internal_use', 'DDL_resolve_intl_type2', 'DSQL/ddl.cpp', NULL, 0, 547, NULL, 'Blob sub_types bigger than 1 (text) are for internal use only', NULL, NULL);
+('subtype_for_internal_use', 'DDL_resolve_intl_type', 'DSQL/ddl.cpp', NULL, 0, 547, NULL, 'Blob sub_types bigger than 1 (text) are for internal use only', NULL, NULL);
 ('illegal_prc_type', 'par_procedure', 'par.cpp', NULL, 0, 548, NULL, 'Procedure @1 is not selectable (it does not contain a SUSPEND statement)', NULL, NULL);
 ('invalid_sort_datatype', 'gen_sort', 'opt.cpp', NULL, 0, 549, NULL, 'Datatype @1 is not supported for sorting operation', NULL, NULL);
 ('collation_name', 'check_dependencies', 'dfw.e', NULL, 0, 550, NULL, 'COLLATION @1', NULL, NULL);
