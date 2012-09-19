@@ -1,3 +1,14 @@
+ 2012-09-18 16:01  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ddl.cpp
+   M src/dsql/ddl_proto.h
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/jrd/irq.h
+   M src/msgs/messages2.sql
+Cleanup.
+
  2012-09-16 16:09  asfernandes 
    M src/jrd/tra.cpp
 Misc.
