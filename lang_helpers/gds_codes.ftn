@@ -1502,6 +1502,8 @@ C --
       PARAMETER (GDS__no_providers                     = 335545044)
       INTEGER*4 GDS__null_spb                        
       PARAMETER (GDS__null_spb                         = 335545045)
+      INTEGER*4 GDS__max_args_exceeded               
+      PARAMETER (GDS__max_args_exceeded                = 335545046)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -758,6 +758,7 @@ const
 	gds_decrypt_error                    = 335545043;
 	gds_no_providers                     = 335545044;
 	gds_null_spb                         = 335545045;
+	gds_max_args_exceeded                = 335545046;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

@@ -747,6 +747,7 @@ static const struct {
 	{"decrypt_error", 335545043},
 	{"no_providers", 335545044},
 	{"null_spb", 335545045},
+	{"max_args_exceeded", 335545046},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

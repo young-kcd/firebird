@@ -10123,6 +10123,12 @@ void SysFuncCallNode::setParameterName(dsql_par* parameter) const
 
 void SysFuncCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	if (args->items.getCount() > MAX_UCHAR)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_max_args_exceeded) << Arg::Num(MAX_UCHAR) << function->name);
+	}
+
 	dsqlScratch->appendUChar(blr_sys_function);
 	dsqlScratch->appendMetaString(function->name.c_str());
 	dsqlScratch->appendUChar(args->items.getCount());
