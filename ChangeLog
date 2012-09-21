@@ -1,3 +1,17 @@
+ 2012-09-20 15:53  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/ExprNodes.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-3929 - Error "attempted update of read-only column" when trying select minvalue from list with more than 255 elements.
+
  2012-09-18 16:01  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DsqlCompilerScratch.h
