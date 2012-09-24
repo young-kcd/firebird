@@ -9042,7 +9042,8 @@ SubQueryNode::SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDs
 	  dsqlRse(aDsqlRse),
 	  value1(aValue1),
 	  value2(aValue2),
-	  rsb(NULL)
+	  rsb(NULL),
+	  parentForNode(NULL)
 {
 	addChildNode(dsqlRse, rse);
 	addChildNode(value1, value1);
@@ -9060,7 +9061,12 @@ DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 		node->value1 = PAR_parse_value(tdbb, csb);
 
 	if (blrOp == blr_via)
+	{
 		node->value2 = PAR_parse_value(tdbb, csb);
+
+		if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
+			node->parentForNode = csb->csb_currentForNode;
+	}
 
 	return node;
 }
@@ -9381,6 +9387,9 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	try
 	{
+		StableCursorSavePoint savePoint(tdbb, request->req_transaction, 
+			blrOp == blr_via && parentForNode == NULL);
+
 		rsb->open(tdbb);
 
 		SLONG count = 0;

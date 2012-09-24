@@ -113,13 +113,14 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 
 enum UndoDataRet
 {
-	udExists,
-	udNotExists,
-	udForceBack,
-	udNone
+	udExists,		// record data was restored from undo-log
+	udForceBack,	// force read first back version
+	udForceTwice,	// force read second back version
+	udNone			// record was not changed under current savepoint, use it as is
 };
 
-static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_param* rpb);
+static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, 
+	record_param* rpb, MemoryPool* pool);
 
 static void invalidate_cursor_records(jrd_tra*, record_param*);
 static void list_staying(thread_db*, record_param*, RecordStack&);
@@ -606,18 +607,20 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 	}
 
 	rpb->rpb_stream_flags &= ~RPB_s_undo_data;
-	bool forceBack = false;
+	int forceBack = 0;
 
 	if (state == tra_us && !(transaction->tra_flags & TRA_system))
 	{
-		switch (get_undo_data(tdbb, transaction, rpb))
+		switch (get_undo_data(tdbb, transaction, rpb, pool))
 		{
 			case udExists:
 				return true;
-			case udNotExists:
-				return false;
 			case udForceBack:
-				forceBack = true; // fall thru
+				forceBack = 1;
+				break;
+			case udForceTwice:
+				forceBack = 2;
+				break;
 			case udNone:
 				break;
 		}
@@ -732,10 +735,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 		}
 
+		fb_assert(!forceBack || state == tra_us);
 		if (state == tra_us && forceBack)
 		{
 			state = tra_active;
-			forceBack = false;
+			forceBack--;
 		}
 
 		switch (state)
@@ -950,19 +954,26 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 #endif
 
-			if (state == tra_us && !(transaction->tra_flags & TRA_system))
+			if (!(rpb->rpb_flags & rpb_chained) && !(transaction->tra_flags & TRA_system))
 			{
-				switch (get_undo_data(tdbb, transaction, rpb))
+				fb_assert(forceBack == 0);
+				forceBack = 0;
+				switch (get_undo_data(tdbb, transaction, rpb, pool))
 				{
 					case udExists:
 						return true;
-					case udNotExists:
-						return false;
 					case udForceBack:
-						forceBack = true; // fall
+						forceBack = 1;
+						break;
+					case udForceTwice:
+						forceBack = 2;
+						break;
 					case udNone:
 						break;
 				}
+
+				if (forceBack)
+					break;
 			}
 
 			if (rpb->rpb_flags & rpb_deleted)
@@ -1041,7 +1052,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			if (!DPM_get(tdbb, rpb, LCK_read)) {
 				return false;
 			}
-		}
+		} // switch (state)
 
 		state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
@@ -4555,7 +4566,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 }
 
 
-static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_param* rpb)
+static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, 
+								 record_param* rpb, MemoryPool* pool)
 /**********************************************************
  *
  *  g e t _ u n d o _ d a t a
@@ -4564,29 +4576,34 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_p
  *
  * This is helper routine for the VIO_chase_record_version. It is used to make
  * cursor stable - i.e. cursor should ignore changes made to the record by the
- * inner code. Of course, it is called only when record version was created by
- * current transaction: rpb->rpb_transaction_nr == transaction->tra_number.
+ * inner code. Of course, it is called only when primary record version was 
+ * created by current transaction: 
+ *	rpb->rpb_transaction_nr == transaction->tra_number.
  *
  * Possible cases and actions:
  *
  * - If record was not changed under current savepoint, return udNone.
- *		VIO_chase_record_version should continue own processing.
+ *	 VIO_chase_record_version should continue own processing.
  *
- * - If record was added under current savepoint return udNotExists.
- *		VIO_chase_record_version should return false.
+ * If record was changed under current savepoint, we should read its previous 
+ * version:
  *
- * If record was modified or deleted under current savepoint, we should read
- * its previous version:
- * - If previous version is present at undo-log, copy it into rpb and return
- *	 udExists.
- *		VIO_chase_record_version should return true.
- * - If previous version is not present at undo-log, return udForceBack.
- *		VIO_chase_record_version should continue own processing and read back
- *		version from disk.
+ * - If previous version data is present at undo-log (after update_in_place, 
+ *	 for ex.), copy it into rpb and return udExists.
+ *	 VIO_chase_record_version should return true.
  *
- * If record version was restored from undo log (or record was just added and
- * have no backversions) mark rpb with RPB_s_undo_data to let caller know that
- * page already released.
+ * - If record was inserted or updated and then deleted under current savepoint
+ *	 we should undo two last actions (delete and insert\update), therefore return
+ *	 udForceTwice.
+ *	 VIO_chase_record_version should continue and read second available back 
+ *	 version from disk.
+ *
+ * - Else we need to undo just a last action, so return udForceBack.
+ *	 VIO_chase_record_version should continue and read first available back 
+ *	 version from disk.
+ *
+ * If record version was restored from undo log mark rpb with RPB_s_undo_data 
+ * to let caller know that data page is already released.
  *
  **********************************************************/
 {
@@ -4603,23 +4620,28 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_p
 			if (!RecordBitmap::test(action->vct_records, recno))
 				return udNone;
 
-			if (!action->vct_undo || !action->vct_undo->locate(recno))
-			{
-				if ((rpb->rpb_flags & rpb_deleted) || rpb->rpb_b_page)
-					return udForceBack;
+			UndoItem* undo = NULL;
+			if (action->vct_undo && action->vct_undo->locate(recno))
+				undo = &action->vct_undo->current();
 
-				rpb->rpb_stream_flags |= RPB_s_undo_data;
-				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				return udNotExists;
+			if (!undo)
+				return udForceBack;
+
+			if (undo->getLength() == 0) 
+			{
+				if (undo->getFlags() & REC_new_version)
+					return udForceTwice;
+
+				return udForceBack;
 			}
 
 			rpb->rpb_stream_flags |= RPB_s_undo_data;
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
-			if (action->vct_undo->current().getFlags() & REC_new_version)
-				return udNotExists;
+			Record* record = undo->setupRecord(transaction);
 
-			Record* record = action->vct_undo->current().setupRecord(transaction);
+			if (!rpb->rpb_record)
+				VIO_record(tdbb, rpb, record->rec_format, pool);
 
 			memcpy(&rpb->rpb_record->rec_format, &record->rec_format,
 				sizeof(Record) - ((UCHAR*) &rpb->rpb_record->rec_format - (UCHAR*) rpb->rpb_record) +
@@ -5856,4 +5878,43 @@ AutoSavePoint::~AutoSavePoint()
 		++transaction->tra_save_point->sav_verb_count;
 
 	VIO_verb_cleanup(tdbb, transaction);
+}
+
+
+
+/// class StableCursorSavePoint
+
+StableCursorSavePoint::StableCursorSavePoint(thread_db* tdbb, jrd_tra* transaction, bool start) :
+  m_tdbb(tdbb),
+  m_tran(transaction),
+  m_number(0)
+{
+	if (!start)
+		return;
+
+	if (m_tran == m_tdbb->getAttachment()->getSysTransaction())
+		return;
+
+	const Savepoint* save_point = m_tran->tra_save_point;
+	if (!save_point)
+		return;
+
+	VIO_start_save_point(m_tdbb, m_tran);
+	m_number = m_tran->tra_save_point->sav_number;
+}
+
+
+  void StableCursorSavePoint::release()
+{
+	if (!m_number)
+		return;
+
+	for (const Savepoint* save_point = m_tran->tra_save_point;
+			save_point && m_number <= save_point->sav_number;
+			save_point = m_tran->tra_save_point)
+	{
+		VIO_verb_cleanup(m_tdbb, m_tran);
+	}
+
+	m_number = 0;
 }

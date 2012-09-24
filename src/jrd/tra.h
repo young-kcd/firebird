@@ -564,6 +564,11 @@ public:
 		return flags;
 	}
 
+	bool getLength() const
+	{
+		return length;
+	}
+
 private:
 	SINT64 number;
 	UCHAR flags;

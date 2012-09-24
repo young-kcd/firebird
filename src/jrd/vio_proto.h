@@ -82,6 +82,24 @@ namespace Jrd
 		jrd_tra* transaction;
 		bool released;
 	};
+
+	class StableCursorSavePoint
+	{
+	public:
+		StableCursorSavePoint(thread_db* tdbb, jrd_tra* transaction, bool start);
+
+		~StableCursorSavePoint()
+		{
+			release();
+		}
+
+		void release();
+
+	private:
+		thread_db* m_tdbb;
+		jrd_tra* m_tran;
+		SLONG m_number;
+	};
 }
 
 #endif // JRD_VIO_PROTO_H

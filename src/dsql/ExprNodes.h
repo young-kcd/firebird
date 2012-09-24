@@ -1341,6 +1341,7 @@ public:
 	NestConst<ValueExprNode> value1;
 	NestConst<ValueExprNode> value2;
 	NestConst<RecordSource> rsb;
+	NestConst<StmtNode> parentForNode;
 };
 
 

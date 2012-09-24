@@ -77,6 +77,7 @@ class Collation;
 struct index_desc;
 struct IndexDescAlloc;
 class Format;
+class ForNode;
 class Cursor;
 class DeclareSubFuncNode;
 class DeclareSubProcNode;
@@ -432,6 +433,7 @@ class CompilerScratch : public pool_alloc<type_csb>
 		csb_domain_validation(domain_validation),
 		subFunctions(p),
 		subProcedures(p),
+		csb_currentForNode(NULL),
 		csb_rpt(p, len)
 	{
 		csb_dbg_info = FB_NEW(p) Firebird::DbgInfo(p);
@@ -527,6 +529,8 @@ public:
 
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, DeclareSubFuncNode*> > subFunctions;
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, DeclareSubProcNode*> > subProcedures;
+
+	ForNode*	csb_currentForNode;
 
 	struct csb_repeat
 	{

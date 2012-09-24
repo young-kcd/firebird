@@ -711,6 +711,9 @@ DmlNode* CompoundStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 {
 	CompoundStmtNode* node = FB_NEW(pool) CompoundStmtNode(pool);
 
+	if (csb->csb_currentForNode)
+		csb->csb_currentForNode->parBlrBeginCnt++;
+
 	while (csb->csb_blr_reader.peekByte() != blr_end)
 		node->statements.add(PAR_parse_stmt(tdbb, csb));
 
@@ -4240,6 +4243,9 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 		node->stall = PAR_parse_stmt(tdbb, csb);
 
+	ForNode* saveForNode = csb->csb_currentForNode;
+	csb->csb_currentForNode = node;
+
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_scrollable)
@@ -4249,7 +4255,11 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	else
 		node->rse = PAR_rse(tdbb, csb, blrOp);
 
+	fb_assert(node->parBlrBeginCnt == 0);
+
 	node->statement = PAR_parse_stmt(tdbb, csb);
+
+	csb->csb_currentForNode = saveForNode;
 
 	return node;
 }

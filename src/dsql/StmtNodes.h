@@ -860,7 +860,8 @@ public:
 		  stall(NULL),
 		  rse(NULL),
 		  statement(NULL),
-		  cursor(NULL)
+		  cursor(NULL),
+		  parBlrBeginCnt(0)
 	{
 	}
 
@@ -885,6 +886,7 @@ public:
 	NestConst<RseNode> rse;
 	NestConst<StmtNode> statement;
 	NestConst<Cursor> cursor;
+	int parBlrBeginCnt;
 };
 
 

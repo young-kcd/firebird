@@ -22,6 +22,7 @@
 #include "../common/classes/VaryStr.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
 #include "../common/quad.h"
@@ -1635,7 +1636,8 @@ RseBoolNode::RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsql
 	  blrOp(aBlrOp),
 	  dsqlRse(aDsqlRse),
 	  rse(NULL),
-	  rsb(NULL)
+	  rsb(NULL),
+	  parentForNode(NULL)
 {
 	addChildNode(dsqlRse, rse);
 }
@@ -1644,6 +1646,10 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 {
 	RseBoolNode* node = FB_NEW(pool) RseBoolNode(pool, blrOp);
 	node->rse = PAR_rse(tdbb, csb);
+
+	if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
+		node->parentForNode = csb->csb_currentForNode;
+
 	return node;
 }
 
@@ -1814,6 +1820,9 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 			return impure->vlu_misc.vlu_short != 0;
 		}
 	}
+
+	StableCursorSavePoint savePoint(tdbb, request->req_transaction, 
+		parentForNode == NULL);
 
 	rsb->open(tdbb);
 	bool value = rsb->getRecord(tdbb);
