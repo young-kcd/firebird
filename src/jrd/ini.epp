@@ -792,12 +792,15 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 
 		dsql_intlsym* csSymbol = FB_NEW(database->dbb_pool) dsql_intlsym(database->dbb_pool);
 		csSymbol->intlsym_name = csDef->name;
-		csSymbol->intlsym_flags = 0;
 		csSymbol->intlsym_charset_id = csDef->id;
 		csSymbol->intlsym_collate_id = 0;
 		csSymbol->intlsym_ttype =
 			INTL_CS_COLL_TO_TTYPE(csSymbol->intlsym_charset_id, csSymbol->intlsym_collate_id);
 		csSymbol->intlsym_bytes_per_char = csDef->maxBytes;
+
+		// Mark the charset as invalid to reload it ASAP. This is done because we cannot know here
+		// if the user has altered its default collation.
+		csSymbol->intlsym_flags = INTLSYM_dropped;
 
 		database->dbb_charsets.put(csDef->name, csSymbol);
 		database->dbb_charsets_by_id.put(csSymbol->intlsym_charset_id, csSymbol);
