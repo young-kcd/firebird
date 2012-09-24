@@ -2182,14 +2182,14 @@ bool RseNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 	return visitor.visit(dsqlWhere) | visitor.visit(dsqlSelectList) | visitor.visit(dsqlStreams);
 }
 
-bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& /*visitor*/)
+bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 {
-	return false;
+	return (flags & FLAG_DSQL_COMPARATIVE) && RecordSourceNode::dsqlInvalidReferenceFinder(visitor);
 }
 
-bool RseNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
+bool RseNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
 {
-	return true;
+	return !(flags & FLAG_DSQL_COMPARATIVE) || RecordSourceNode::dsqlSubSelectFinder(visitor);
 }
 
 bool RseNode::dsqlFieldFinder(FieldFinder& visitor)

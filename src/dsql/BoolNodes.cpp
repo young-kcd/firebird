@@ -1324,6 +1324,7 @@ BoolExprNode* ComparativeBoolNode::createRseNode(DsqlCompilerScratch* dsqlScratc
 	const DsqlContextStack::iterator baseUnion(dsqlScratch->unionContext);
 
 	RseNode* rse = PASS1_rse(dsqlScratch, select_expr, NULL);
+	rse->flags |= RseNode::FLAG_DSQL_COMPARATIVE;
 
 	// Create a conjunct to be injected.
 

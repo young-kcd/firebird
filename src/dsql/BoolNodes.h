@@ -179,7 +179,6 @@ public:
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{
-		fb_assert(blrOp != blr_any && blrOp != blr_ansi_any && blrOp != blr_ansi_all);
 		return visitor.ignoreSubSelects ? false : BoolExprNode::dsqlAggregateFinder(visitor);
 	}
 

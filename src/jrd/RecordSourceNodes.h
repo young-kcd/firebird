@@ -572,10 +572,11 @@ private:
 class RseNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>
 {
 public:
-	static const unsigned FLAG_VARIANT		= 0x1;	// variant (not invariant?)
-	static const unsigned FLAG_SINGULAR		= 0x2;	// singleton select
-	static const unsigned FLAG_WRITELOCK	= 0x4;	// locked for write
-	static const unsigned FLAG_SCROLLABLE	= 0x8;	// scrollable cursor
+	static const unsigned FLAG_VARIANT			= 0x01;	// variant (not invariant?)
+	static const unsigned FLAG_SINGULAR			= 0x02;	// singleton select
+	static const unsigned FLAG_WRITELOCK		= 0x04;	// locked for write
+	static const unsigned FLAG_SCROLLABLE		= 0x08;	// scrollable cursor
+	static const unsigned FLAG_DSQL_COMPARATIVE	= 0x10;	// transformed from DSQL ComparativeBoolNode
 
 	explicit RseNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>(pool),
