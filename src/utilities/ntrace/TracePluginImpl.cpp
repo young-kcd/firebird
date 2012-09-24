@@ -1974,6 +1974,9 @@ void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStat
 void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep,
 	ntrace_process_state_t sweep_state)
 {
+	if (!config.log_sweep)
+		return;
+
 	if (sweep_state == process_state_started ||
 		sweep_state == process_state_finished)
 	{
