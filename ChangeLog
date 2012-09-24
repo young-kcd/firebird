@@ -1,3 +1,10 @@
+ 2012-09-24 01:40  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+Fixed assert reported by Vlad more some related problem.
+
  2012-09-20 15:53  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
