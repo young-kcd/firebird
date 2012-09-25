@@ -1,3 +1,7 @@
+ 2012-09-24 07:07  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Fixed bug CORE-3934 : Value of log_sweep parameter in trace configuration is ignored by trace plugin (assumed always true)
+
  2012-09-11 14:46  dimitr 
    M src/misc/writeBuildNum.sh
 Bumped the version number.
