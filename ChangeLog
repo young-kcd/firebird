@@ -1,3 +1,27 @@
+ 2012-09-24 16:14  asfernandes 
+   M src/jrd/ini.epp
+Fixed a problem when the default collation is changed.
+
+ 2012-09-24 14:26  hvlad 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/jrd/exe.h
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Additional patch for improvement CORE-3362 : Cursors should ignore changes made by the same statement.
+- SubQueryNode (sub-select's) and RseBoolNode (exists(), in\any\all) now knows if it is a part of some outer select (ForNode) or it is a standalone statement. 
+- VIO\get_undo_data was reworked to better fit undo-log implementation, corresponding changes in VIO_chase_record_version also done
+- AV in VIO\get_undo_data was fixed
+
+ 2012-09-24 07:07  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Fixed bug CORE-3934 : Value of log_sweep parameter in trace configuration is ignored by trace plugin (assumed always true)
+
  2012-09-24 01:40  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/dsql/BoolNodes.h
