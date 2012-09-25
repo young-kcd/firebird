@@ -1,3 +1,7 @@
+ 2012-09-24 13:55  hvlad 
+   M src/common/classes/TempFile.cpp
+Backport fix for bug CORE-2966 : Wrong results or unexpected errors while sorting a large data set
+
  2012-08-29 13:31  alexpeshkoff 
    M src/jrd/ThreadData.cpp
 Backported fix for CORE-3740: SELECT using IN list with >413 elements causes crash (actually code from 2.5 is backported)
