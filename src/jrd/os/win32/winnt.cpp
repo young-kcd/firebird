@@ -1009,7 +1009,7 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 	DWORD dwFileSizeHigh;
 	const DWORD dwFileSizeLow = GetFileSize(hFile, &dwFileSizeHigh);
 
-	if (dwFileSizeLow == (DWORD) -1) {
+	if ((dwFileSizeLow == INVALID_FILE_SIZE) && (GetLastError() != NO_ERROR)) {
 		nt_error("GetFileSize", file, isc_io_access_err, 0);
 	}
 
