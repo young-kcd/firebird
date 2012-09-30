@@ -266,7 +266,7 @@ public:
 		: slct_time(0), slct_count(0), slct_poll(*getDefaultMemoryPool())
 	{ }
 
-	Select(Firebird::MemoryPool& pool)
+	explicit Select(Firebird::MemoryPool& pool)
 		: slct_time(0), slct_count(0), slct_poll(pool)
 	{ }
 #else
@@ -276,7 +276,7 @@ public:
 		memset(&slct_fdset, 0, sizeof slct_fdset);
 	}
 
-	Select(Firebird::MemoryPool& /*pool*/)
+	explicit Select(Firebird::MemoryPool& /*pool*/)
 		: slct_time(0), slct_count(0), slct_width(0)
 	{
 		memset(&slct_fdset, 0, sizeof slct_fdset);
