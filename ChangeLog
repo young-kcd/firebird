@@ -1,3 +1,11 @@
+ 2012-09-30 01:50  robocop 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/dsql.h
+   M src/jrd/SimilarToMatcher.h
+   M src/remote/inet.cpp
+Misc.
+
  2012-09-28 08:13  hvlad 
    M src/jrd/os/win32/winnt.cpp
 Fixed bug CORE-3940 : I/O error during "GetFileSize" operation for file XXXX
