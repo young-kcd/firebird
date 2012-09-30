@@ -1118,8 +1118,7 @@ public:
 			// Absense of it with DB_KEY seems more a bug than feature.
 			return RDB_RECORD_VERSION_NAME;
 		}
-		else
-			return (rdb ? RDB_DB_KEY_NAME : DB_KEY_NAME);
+		return (rdb ? RDB_DB_KEY_NAME : DB_KEY_NAME);
 	}
 
 private:

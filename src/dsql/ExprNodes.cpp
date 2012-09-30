@@ -8031,6 +8031,7 @@ void RecordKeyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 void RecordKeyNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	fb_assert(blrOp == blr_dbkey || blrOp == blr_record_version2);
+	fb_assert(dsqlRelation);
 
 	// Fix for bug 10072 check that the target is a relation
 	dsql_rel* relation = dsqlRelation->dsqlContext->ctx_relation;
@@ -8100,23 +8101,25 @@ void RecordKeyNode::findDependentFromStreams(const OptimizerRetrieval* optRet, S
 
 void RecordKeyNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
-	if (blrOp == blr_dbkey)
+	switch (blrOp)
 	{
+	case blr_dbkey:
 		desc->dsc_dtype = dtype_dbkey;
 		desc->dsc_length = type_lengths[dtype_dbkey];
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
-	}
-	else if (blrOp == blr_record_version)
-	{
+		break;
+	case blr_record_version:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_binary;
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
-	}
-	else if (blrOp == blr_record_version2)
+		break;
+	case blr_record_version2:
 		desc->makeLong(0);
+		break;
+	}
 }
 
 ValueExprNode* RecordKeyNode::copy(thread_db* tdbb, NodeCopier& copier) const

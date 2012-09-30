@@ -286,7 +286,7 @@ private:
 			template <typename T2>
 			inline void push(T2 node)
 			{
-				// If the limit is reach, resize.
+				// If the limit is reached, resize.
 				if (++back == end)
 				{
 					unsigned newSize = size + INCREASE_FACTOR;
@@ -1330,7 +1330,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 
 	SimpleStack<Scope> scopeStack;
 
-	// Add special node to return without needing additional comparations after popping
+	// Add special node to return without needing additional comparison after popping
 	// the stack on each return.
 	Node nodeRet(opRet);
 	scopeStack.push(&nodeRet);

@@ -732,14 +732,13 @@ public:
 		return *this;
 	}
 
-	Firebird::string getObjectName()
+	Firebird::string getObjectName() const
 	{
 		if (ctx_relation)
 			return ctx_relation->rel_name.c_str();
-		else if (ctx_procedure)
+		if (ctx_procedure)
 			return ctx_procedure->prc_name.toString();
-		else
-			return "";
+		return "";
 	}
 
 	bool getImplicitJoinField(const Firebird::MetaName& name, NestConst<ValueExprNode>& node);
