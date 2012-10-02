@@ -1,3 +1,7 @@
+ 2012-10-01 07:41  hvlad 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Missed include
+
  2012-09-30 01:50  robocop 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
