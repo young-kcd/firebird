@@ -28,7 +28,9 @@
 
 #include "firebird.h"
 #include <signal.h>
+#ifdef WIN_NT
 #include <io.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
