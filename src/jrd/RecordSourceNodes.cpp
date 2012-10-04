@@ -2217,9 +2217,7 @@ bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 	if (!o)
 		return false;
 
-	fb_assert(dsqlContext && o->dsqlContext);
-
-	return dsqlContext == o->dsqlContext;
+	return dsqlContext && dsqlContext == o->dsqlContext;
 }
 
 // Make up join node and mark relations as "possibly NULL" if they are in outer joins (inOuterJoin).
