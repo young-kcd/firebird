@@ -1194,9 +1194,9 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	const bool isNumericSort = numericSort == "1";
 	if (isNumericSort)
 	{
-		icu->ucolSetAttribute(compareCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
 		icu->ucolSetAttribute(partialCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
 		icu->ucolSetAttribute(sortCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
+		tt->texttype_flags = TEXTTYPE_UNSORTED_UNIQUE;
 	}
 
 	USet* contractions = icu->usetOpen(0, 0);
