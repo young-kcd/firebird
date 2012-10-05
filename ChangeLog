@@ -1,3 +1,7 @@
+ 2012-10-04 17:19  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed assertion when subquery is used in group by.
+
  2012-10-03 09:19  alexpeshkoff 
    M src/utilities/fbsvcmgr/fbsvcmgr.cpp
 misc
