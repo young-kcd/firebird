@@ -1,3 +1,7 @@
+ 2012-10-05 19:02  asfernandes 
+   M src/common/unicode_util.cpp
+Fixed CORE-3947 - Wrong results when the column with collation using option (NUMERIC-SORT=1) is in where clause.
+
  2012-10-04 17:19  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Fixed assertion when subquery is used in group by.
