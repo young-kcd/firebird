@@ -1,3 +1,7 @@
+ 2012-10-08 21:52  hvlad 
+   M src/common/classes/semaphore.cpp
+Fix compilation
+
  2012-10-05 19:02  asfernandes 
    M src/common/unicode_util.cpp
 Fixed CORE-3947 - Wrong results when the column with collation using option (NUMERIC-SORT=1) is in where clause.
