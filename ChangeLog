@@ -1,3 +1,7 @@
+ 2012-10-08 17:57  hvlad 
+   M src/common/classes/semaphore.cpp
+Fix compilation
+
  2012-09-30 00:23  robocop 
    M src/remote/inet.cpp
 Misc.
