@@ -44,22 +44,25 @@
 #include <unicode/uchar.h>
 #include <unicode/ucol.h>
 
+// The next major ICU version after 4.8 is 49.
+#define ICU_NEW_VERSION_MEANING	49
+
 
 using namespace Firebird;
 
 namespace {
 #if defined(WIN_NT)
-const char* const inTemplate = "icuin%d%d.dll";
-const char* const ucTemplate = "icuuc%d%d.dll";
+const char* const inTemplate = "icuin%s.dll";
+const char* const ucTemplate = "icuuc%s.dll";
 #elif defined(DARWIN)
 const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
 const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
 #elif defined(HPUX)
-const char* const inTemplate = "libicui18n.sl.%d%d";
-const char* const ucTemplate = "libicuuc.sl.%d%d";
+const char* const inTemplate = "libicui18n.sl.%s";
+const char* const ucTemplate = "libicuuc.sl.%s";
 #else
-const char* const inTemplate = "libicui18n.so.%d%d";
-const char* const ucTemplate = "libicuuc.so.%d%d";
+const char* const inTemplate = "libicui18n.so.%s";
+const char* const ucTemplate = "libicuuc.so.%s";
 #endif
 
 // encapsulate ICU library
@@ -81,7 +84,7 @@ public:
 		// ICU has several schemas for entries names
 		const char* patterns[] =
 		{
-			"%s_%d_%d", "%s_%d%d", "%s", NULL
+			"%s_%d", "%s_%d_%d", "%s_%d%d", "%s", NULL
 		};
 
 		string symbol;
@@ -107,9 +110,16 @@ public:
 
 namespace Jrd {
 
-
+#if U_ICU_VERSION_MAJOR_NUM >= ICU_NEW_VERSION_MEANING
+const char* const UnicodeUtil::DEFAULT_ICU_VERSION = STRINGIZE(U_ICU_VERSION_MAJOR_NUM);
+#else
 const char* const UnicodeUtil::DEFAULT_ICU_VERSION =
 	STRINGIZE(U_ICU_VERSION_MAJOR_NUM)"."STRINGIZE(U_ICU_VERSION_MINOR_NUM);
+#endif
+
+
+static void formatFilename(PathName& filename, const char* templateName,
+	int majorVersion, int minorVersion);
 
 
 // encapsulate ICU collations libraries
@@ -182,7 +192,7 @@ private:
 		: BaseICU(aMajorVersion, aMinorVersion)
 	{
 		PathName filename;
-		filename.printf(ucTemplate, aMajorVersion, aMinorVersion);
+		formatFilename(filename, ucTemplate, aMajorVersion, aMinorVersion);
 
 		module = ModuleLoader::fixAndLoadModule(filename);
 		if (!module)
@@ -276,6 +286,19 @@ public:
 static const char* const COLL_30_VERSION = "41.128.4.4";	// ICU 3.0 collator version
 
 static GlobalPtr<UnicodeUtil::ICUModules> icuModules;
+
+
+static void formatFilename(PathName& filename, const char* templateName,
+	int majorVersion, int minorVersion)
+{
+	string s;
+	if (majorVersion >= ICU_NEW_VERSION_MEANING)
+		s.printf("%d", majorVersion);
+	else
+		s.printf("%d%d", majorVersion, minorVersion);
+
+	filename.printf(templateName, s.c_str());
+}
 
 
 static void getVersions(const string& configInfo, ObjectsArray<string>& versions)
@@ -882,22 +905,28 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")
-		version.printf("%d.%d", U_ICU_VERSION_MAJOR_NUM, U_ICU_VERSION_MINOR_NUM);
+		version = DEFAULT_ICU_VERSION;
 
 	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
 		int majorVersion, minorVersion;
+		int n = sscanf((*i == "default" ? version : *i).c_str(), "%d.%d",
+			&majorVersion, &minorVersion);
 
-		if (*i == "default")
-		{
-			majorVersion = U_ICU_VERSION_MAJOR_NUM;
-			minorVersion = U_ICU_VERSION_MINOR_NUM;
-		}
-		else if (sscanf(i->c_str(), "%d.%d", &majorVersion, &minorVersion) != 2)
+		if (n == 1)
+			minorVersion = 0;
+		else if (n != 2)
 			continue;
 
 		string configVersion;
-		configVersion.printf("%d.%d", majorVersion, minorVersion);
+
+		if (majorVersion >= ICU_NEW_VERSION_MEANING)
+		{
+			minorVersion = 0;
+			configVersion.printf("%d", majorVersion);
+		}
+		else
+			configVersion.printf("%d.%d", majorVersion, minorVersion);
 
 		if (version != configVersion)
 			continue;
@@ -909,7 +938,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			return icu;
 
 		PathName filename;
-		filename.printf(ucTemplate, majorVersion, minorVersion);
+		formatFilename(filename, ucTemplate, majorVersion, minorVersion);
 
 		icu = FB_NEW(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
 
@@ -922,7 +951,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			continue;
 		}
 
-		filename.printf(inTemplate, majorVersion, minorVersion);
+		formatFilename(filename, inTemplate, majorVersion, minorVersion);
 
 		icu->inModule = ModuleLoader::fixAndLoadModule(filename);
 
