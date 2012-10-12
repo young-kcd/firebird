@@ -97,7 +97,7 @@ printf ("Turning forced writes off\n");
 sprintf (cmd, "gfix -write async %s", Db_name);
 if (system (cmd))
     {
-    printf ("Couldn't turn forced writed off\n");
+    printf ("Couldn't turn forced writes off\n");
     exit (FINI_ERROR);
     }
 
