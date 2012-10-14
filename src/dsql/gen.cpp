@@ -178,7 +178,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 			// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
 			// Note that the field may be enclosed by an alias.
 
-			dsql_nod* val = node;
+			dsql_nod* val = node->nod_arg[e_derived_field_value];
 
 			while (val->nod_type == nod_alias)
 				val = val->nod_arg[e_alias_value];
