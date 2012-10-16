@@ -119,7 +119,7 @@ enum UndoDataRet
 	udNone			// record was not changed under current savepoint, use it as is
 };
 
-static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, 
+static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 	record_param* rpb, MemoryPool* pool);
 
 static void invalidate_cursor_records(jrd_tra*, record_param*);
@@ -4566,7 +4566,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 }
 
 
-static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, 
+static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 								 record_param* rpb, MemoryPool* pool)
 /**********************************************************
  *
@@ -4576,8 +4576,8 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
  *
  * This is helper routine for the VIO_chase_record_version. It is used to make
  * cursor stable - i.e. cursor should ignore changes made to the record by the
- * inner code. Of course, it is called only when primary record version was 
- * created by current transaction: 
+ * inner code. Of course, it is called only when primary record version was
+ * created by current transaction:
  *	rpb->rpb_transaction_nr == transaction->tra_number.
  *
  * Possible cases and actions:
@@ -4585,24 +4585,24 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
  * - If record was not changed under current savepoint, return udNone.
  *	 VIO_chase_record_version should continue own processing.
  *
- * If record was changed under current savepoint, we should read its previous 
+ * If record was changed under current savepoint, we should read its previous
  * version:
  *
- * - If previous version data is present at undo-log (after update_in_place, 
+ * - If previous version data is present at undo-log (after update_in_place,
  *	 for ex.), copy it into rpb and return udExists.
  *	 VIO_chase_record_version should return true.
  *
  * - If record was inserted or updated and then deleted under current savepoint
  *	 we should undo two last actions (delete and insert\update), therefore return
  *	 udForceTwice.
- *	 VIO_chase_record_version should continue and read second available back 
+ *	 VIO_chase_record_version should continue and read second available back
  *	 version from disk.
  *
  * - Else we need to undo just a last action, so return udForceBack.
- *	 VIO_chase_record_version should continue and read first available back 
+ *	 VIO_chase_record_version should continue and read first available back
  *	 version from disk.
  *
- * If record version was restored from undo log mark rpb with RPB_s_undo_data 
+ * If record version was restored from undo log mark rpb with RPB_s_undo_data
  * to let caller know that data page is already released.
  *
  **********************************************************/
@@ -4627,7 +4627,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 			if (!undo)
 				return udForceBack;
 
-			if (undo->getLength() == 0) 
+			if (undo->getLength() == 0)
 			{
 				if (undo->getFlags() & REC_new_version)
 					return udForceTwice;
@@ -5881,13 +5881,12 @@ AutoSavePoint::~AutoSavePoint()
 }
 
 
-
 /// class StableCursorSavePoint
 
-StableCursorSavePoint::StableCursorSavePoint(thread_db* tdbb, jrd_tra* transaction, bool start) :
-  m_tdbb(tdbb),
-  m_tran(transaction),
-  m_number(0)
+StableCursorSavePoint::StableCursorSavePoint(thread_db* tdbb, jrd_tra* transaction, bool start)
+	: m_tdbb(tdbb),
+	  m_tran(transaction),
+	  m_number(0)
 {
 	if (!start)
 		return;
@@ -5904,14 +5903,14 @@ StableCursorSavePoint::StableCursorSavePoint(thread_db* tdbb, jrd_tra* transacti
 }
 
 
-  void StableCursorSavePoint::release()
+void StableCursorSavePoint::release()
 {
 	if (!m_number)
 		return;
 
 	for (const Savepoint* save_point = m_tran->tra_save_point;
-			save_point && m_number <= save_point->sav_number;
-			save_point = m_tran->tra_save_point)
+		 save_point && m_number <= save_point->sav_number;
+		 save_point = m_tran->tra_save_point)
 	{
 		VIO_verb_cleanup(m_tdbb, m_tran);
 	}

@@ -8103,22 +8103,24 @@ void RecordKeyNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* 
 {
 	switch (blrOp)
 	{
-	case blr_dbkey:
-		desc->dsc_dtype = dtype_dbkey;
-		desc->dsc_length = type_lengths[dtype_dbkey];
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		break;
-	case blr_record_version:
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		break;
-	case blr_record_version2:
-		desc->makeLong(0);
-		break;
+		case blr_dbkey:
+			desc->dsc_dtype = dtype_dbkey;
+			desc->dsc_length = type_lengths[dtype_dbkey];
+			desc->dsc_scale = 0;
+			desc->dsc_flags = 0;
+			break;
+
+		case blr_record_version:
+			desc->dsc_dtype = dtype_text;
+			desc->dsc_ttype() = ttype_binary;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			desc->dsc_flags = 0;
+			break;
+
+		case blr_record_version2:
+			desc->makeLong(0);
+			break;
 	}
 }
 
@@ -9390,7 +9392,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	try
 	{
-		StableCursorSavePoint savePoint(tdbb, request->req_transaction, 
+		StableCursorSavePoint savePoint(tdbb, request->req_transaction,
 			blrOp == blr_via && parentForNode == NULL);
 
 		rsb->open(tdbb);

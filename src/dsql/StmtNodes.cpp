@@ -4243,8 +4243,7 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 		node->stall = PAR_parse_stmt(tdbb, csb);
 
-	ForNode* saveForNode = csb->csb_currentForNode;
-	csb->csb_currentForNode = node;
+	AutoSetRestore<ForNode*> autoCurrentForNode(&csb->csb_currentForNode, node);
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
@@ -4258,8 +4257,6 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	fb_assert(node->parBlrBeginCnt == 0);
 
 	node->statement = PAR_parse_stmt(tdbb, csb);
-
-	csb->csb_currentForNode = saveForNode;
 
 	return node;
 }

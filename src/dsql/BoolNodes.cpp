@@ -1821,7 +1821,7 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 	}
 
-	StableCursorSavePoint savePoint(tdbb, request->req_transaction, 
+	StableCursorSavePoint savePoint(tdbb, request->req_transaction,
 		parentForNode == NULL);
 
 	rsb->open(tdbb);
