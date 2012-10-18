@@ -1086,7 +1086,7 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 	const char* addWhereClause = NULL;
 	Arg::StatusVector status;
 
-	if (objType == ddl_unknown)
+	if (objType == obj_parameter)
 	{
 		fb_assert(subName.hasData());
 
@@ -1118,11 +1118,11 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 		switch (result)
 		{
 			case 1:
-				objType = ddl_procedure;
+				objType = obj_procedure;
 				break;
 
 			case 2:
-				objType = ddl_udf;
+				objType = obj_udf;
 				break;
 
 			default:
@@ -1138,17 +1138,17 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 
 	switch (objType)
 	{
-		case ddl_database:
+		case obj_database:
 			tableClause = "rdb$database";
 			break;
 
-		case ddl_domain:
+		case obj_field:
 			tableClause = "rdb$fields";
 			columnClause = "rdb$field_name";
 			status << Arg::Gds(isc_dyn_domain_not_found);
 			break;
 
-		case ddl_relation:
+		case obj_relation:
 			if (subName.hasData())
 			{
 				tableClause = "rdb$relation_fields";
@@ -1165,14 +1165,14 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 			columnClause = "rdb$relation_name";
 			break;
 
-		case ddl_view:
+		case obj_view:
 			tableClause = "rdb$relations";
 			columnClause = "rdb$relation_name";
 			status << Arg::Gds(isc_dyn_view_not_found) << Arg::Str(objName);
 			addWhereClause = "rdb$view_blr is not null";
 			break;
 
-		case ddl_procedure:
+		case obj_procedure:
 			if (subName.hasData())
 			{
 				tableClause = "rdb$procedure_parameters";
@@ -1190,13 +1190,13 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 			columnClause = "rdb$procedure_name";
 			break;
 
-		case ddl_trigger:
+		case obj_trigger:
 			tableClause = "rdb$triggers";
 			columnClause = "rdb$trigger_name";
 			status << Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_udf:
+		case obj_udf:
 			if (subName.hasData())
 			{
 				tableClause = "rdb$function_arguments";
@@ -1214,55 +1214,55 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 			columnClause = "rdb$function_name";
 			break;
 
-		case ddl_blob_filter:
+		case obj_blob_filter:
 			tableClause = "rdb$filters";
 			columnClause = "rdb$function_name";
 			status << Arg::Gds(isc_dyn_filter_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_exception:
+		case obj_exception:
 			tableClause = "rdb$exceptions";
 			columnClause = "rdb$exception_name";
 			status << Arg::Gds(isc_dyn_exception_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_generator:
+		case obj_generator:
 			tableClause = "rdb$generators";
 			columnClause = "rdb$generator_name";
 			status << Arg::Gds(isc_dyn_gen_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_index:
+		case obj_index:
 			tableClause = "rdb$indices";
 			columnClause = "rdb$index_name";
 			status << Arg::Gds(isc_dyn_index_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_role:
+		case obj_sql_role:
 			tableClause = "rdb$roles";
 			columnClause = "rdb$role_name";
 			status << Arg::Gds(isc_dyn_role_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_charset:
+		case obj_charset:
 			tableClause = "rdb$character_sets";
 			columnClause = "rdb$character_set_name";
 			status << Arg::Gds(isc_dyn_charset_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_collation:
+		case obj_collation:
 			tableClause = "rdb$collations";
 			columnClause = "rdb$collation_name";
 			status << Arg::Gds(isc_dyn_collation_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_package:
+		case obj_package_header:
 			tableClause = "rdb$packages";
 			columnClause = "rdb$package_name";
 			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_schema:
+		case obj_schema:
 			tableClause = "rdb$schemas";
 			columnClause = "rdb$schema_name";
 			status << Arg::Gds(isc_dyn_schema_not_found) << Arg::Str(objName);

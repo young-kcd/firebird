@@ -4343,27 +4343,27 @@ comment
 %type <intVal> ddl_type0
 ddl_type0
 	: DATABASE
-		{ $$ = ddl_database; }
+		{ $$ = obj_database; }
 	;
 
 %type <intVal> ddl_type1
 ddl_type1
-	: DOMAIN				{ $$ = ddl_domain; }
-	| TABLE					{ $$ = ddl_relation; }
-	| VIEW					{ $$ = ddl_view; }
-	| PROCEDURE				{ $$ = ddl_procedure; }
-	| TRIGGER				{ $$ = ddl_trigger; }
-	| EXTERNAL FUNCTION		{ $$ = ddl_udf; }
-	| FUNCTION				{ $$ = ddl_udf; }
-	| FILTER				{ $$ = ddl_blob_filter; }
-	| EXCEPTION				{ $$ = ddl_exception; }
-	| GENERATOR				{ $$ = ddl_generator; }
-	| SEQUENCE				{ $$ = ddl_generator; }
-	| INDEX					{ $$ = ddl_index; }
-	| ROLE					{ $$ = ddl_role; }
-	| CHARACTER SET			{ $$ = ddl_charset; }
-	| COLLATION				{ $$ = ddl_collation; }
-	| PACKAGE				{ $$ = ddl_package; }
+	: DOMAIN				{ $$ = obj_field; }
+	| TABLE					{ $$ = obj_relation; }
+	| VIEW					{ $$ = obj_view; }
+	| PROCEDURE				{ $$ = obj_procedure; }
+	| TRIGGER				{ $$ = obj_trigger; }
+	| EXTERNAL FUNCTION		{ $$ = obj_udf; }
+	| FUNCTION				{ $$ = obj_udf; }
+	| FILTER				{ $$ = obj_blob_filter; }
+	| EXCEPTION				{ $$ = obj_exception; }
+	| GENERATOR				{ $$ = obj_generator; }
+	| SEQUENCE				{ $$ = obj_generator; }
+	| INDEX					{ $$ = obj_index; }
+	| ROLE					{ $$ = obj_sql_role; }
+	| CHARACTER SET			{ $$ = obj_charset; }
+	| COLLATION				{ $$ = obj_collation; }
+	| PACKAGE				{ $$ = obj_package_header; }
 	/***
 	| SECURITY CLASS		{ $$ = ddl_sec_class; }
 	***/
@@ -4371,15 +4371,15 @@ ddl_type1
 
 %type <intVal> ddl_type2
 ddl_type2
-	: COLUMN					{ $$ = ddl_relation; }
+	: COLUMN					{ $$ = obj_relation; }
 	| ddl_param_opt PARAMETER	{ $$ = $1; }
 	;
 
 %type <intVal> ddl_param_opt
 ddl_param_opt
-	:			{ $$ = ddl_unknown; }
-	| PROCEDURE	{ $$ = ddl_procedure; }
-	| FUNCTION	{ $$ = ddl_udf; }
+	:			{ $$ = obj_parameter; }
+	| PROCEDURE	{ $$ = obj_procedure; }
+	| FUNCTION	{ $$ = obj_udf; }
 	;
 
 %type <legacyStr> ddl_subname
