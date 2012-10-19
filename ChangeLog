@@ -1,3 +1,10 @@
+ 2012-10-18 15:49  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/dsql.h
+   M src/dsql/parse.y
+   M src/jrd/obj.h
+Small cleanup on COMMENT ON constants.
+
  2012-10-16 00:51  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/dsql/ExprNodes.cpp
