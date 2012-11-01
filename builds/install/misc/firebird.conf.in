@@ -609,7 +609,7 @@
 
 
 # ===========================
-# SuperServer Engine Settings
+# Engine Settings
 # ===========================
 #
 # ----------------------------
@@ -625,36 +625,6 @@
 #
 #CpuAffinityMask = 0
 
-
-# ----------------------------
-# Settings for the thread scheduler	 (Windows Only)
-#
-# If you have problems with computer response time, running firebird
-# on workstation, turn off thread scheduler.
-#
-# Type: boolean
-#
-#UsePriorityScheduler = 1
-
-#
-# The wait time, in milli-seconds (ms), before the priority of:
-#	- an active thread is reduced to 'Low', or
-#	- an inactive thread is increased to 'High'
-#
-# Note: The default value was chosen based on experiments on Intel
-# PIII/P4 processors.  It should be increased for using in the computer
-# with lower speed processors.
-#
-# Type: integer
-#
-#PrioritySwitchDelay = 100
-
-#
-# Number of additional 'intervals' given to a 'High' priority thread.
-#
-# Type: integer
-#
-#PriorityBoost = 5
 
 # ----------------------------
 # Garbage collection policy
