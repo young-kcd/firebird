@@ -36,6 +36,7 @@ darwin_setup_framework:
 	ln -s ../../../../../../bin $(FB_FW)/Resources/English.lproj/var/bin
 	ln -s ../../../../../../UDF $(FB_FW)/Resources/English.lproj/var/UDF
 	ln -s ../../../../../../intl $(FB_FW)/Resources/English.lproj/var/intl
+	ln -s ../../../../../../plugins $(FB_FW)/Resources/English.lproj/var/plugins
 	ln -s ../../../../../../security2.fdb \
 				$(FB_FW)/Resources/English.lproj/var/security2.fdb
 	ln -s ../../../../../../help $(FB_FW)/Resources/English.lproj/var/help
@@ -66,6 +67,9 @@ darwin_finish_cs_framework:
 	cp ../builds/install/misc/fbintl.conf \
 		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.conf
 	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl
+	mkdir -p $(FB_FW)/Resources/English.lproj/var/plugins
+	cp ../gen/firebird/plugins/libfbtrace.dylib \
+		$(FB_FW)/Resources/English.lproj/var/plugins/libfbtrace.dylib
 	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
 	cp ../gen/firebird/security2.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/doc
@@ -132,6 +136,9 @@ darwin_finish_ss_framework:
 	cp ../builds/install/misc/fbintl.conf \
 		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.conf
 	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl
+	mkdir -p $(FB_FW)/Resources/English.lproj/var/plugins
+	cp ../gen/firebird/plugins/libfbtrace.dylib \
+		$(FB_FW)/Resources/English.lproj/var/plugins/libfbtrace.dylib
 	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
 	cp ../gen/firebird/security2.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/doc
