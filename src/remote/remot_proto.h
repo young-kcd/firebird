@@ -64,5 +64,6 @@ void		REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed
 void		REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet, bool checkKeys = false);
 
 #define HANDSHAKE_DEBUG(A)
+#define WIRECRYPT_DEBUG(A)
 
 #endif // REMOTE_REMOT_PROTO_H

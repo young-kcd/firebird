@@ -4638,13 +4638,6 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 
 	// We have a local connection string. If it's a file on a network share,
 	// try to connect to the corresponding host remotely.
-
-	if (port)
-	{
-		cBlock.tryNewKeys(port);
-		return port;
-	}
-
 #ifdef WIN_NT
 	PathName expanded_name = file_name;
 	ISC_expand_share(expanded_name);
@@ -4697,10 +4690,6 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 		}
 	}
 
-	if (port)
-	{
-		cBlock.tryNewKeys(port);
-	}
 	return port;
 }
 
@@ -5504,7 +5493,6 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 			// OK to use plugin
 			cBlock.resetDataFromPlugin();
 			int authRc = cBlock.plugins.plugin()->authenticate(&s, &cBlock);
-			cBlock.tryNewKeys(port);
 
 			switch (authRc)
 			{
@@ -5589,13 +5577,16 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 				CSTRING* tmpKeys = REMOTE_dup_string(&packet->p_crypt.p_key);
 				// it was start crypt packet, receive next one
 				receive_response(status, rdb, packet);
-				// now try to start crypt
+				// add received keys to the list of known
 				if (tmpKeys)
 				{
 					port->addServerKeys(tmpKeys);
 					REMOTE_free_string(tmpKeys);
 				}
 			}
+
+			// try to start crypt
+			cBlock.tryNewKeys(port);
 			return;
 
 		default:
@@ -5604,6 +5595,9 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 			// successfully attached
 			HANDSHAKE_DEBUG(fprintf(stderr, "RR: OK!\n"));
 			rdb->rdb_id = packet->p_resp.p_resp_object;
+
+			// try to start crypt
+			cBlock.tryNewKeys(port);
 			return;
 		}
 
@@ -5638,7 +5632,6 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 		{
 			break;
 		}
-		cBlock.tryNewKeys(port);
 
 		// send answer (may be empty) to server
 		if (port->port_protocol >= PROTOCOL_VERSION13)

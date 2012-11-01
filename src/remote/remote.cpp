@@ -1219,6 +1219,13 @@ void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool ch
 	Firebird::status_exception::raise(vector);
 }
 
+static void setCStr(CSTRING& to, const char* from)
+{
+	to.cstr_address = reinterpret_cast<UCHAR*>(const_cast<char*>(from));
+	to.cstr_length = strlen(from);
+	to.cstr_allocated = 0;
+}
+
 void rem_port::addServerKeys(CSTRING* passedStr)
 {
 	Firebird::ClumpletReader newKeys(Firebird::ClumpletReader::UnTagged,
@@ -1239,14 +1246,6 @@ void rem_port::addServerKeys(CSTRING* passedStr)
 		key.plugins += ' ';
 		key.plugins.insert(0, " ");
 
-		for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
-		{
-			if (tryKeyType(key, port_crypt_keys[k]))
-			{
-				return;
-			}
-		}
-
 		port_known_server_keys.add(key);
 	}
 }
@@ -1263,13 +1262,6 @@ bool rem_port::tryNewKey(InternalCryptKey* cryptKey)
 
 	port_crypt_keys.push(cryptKey);
 	return false;
-}
-
-static void setCStr(CSTRING& to, const char* from)
-{
-	to.cstr_address = reinterpret_cast<UCHAR*>(const_cast<char*>(from));
-	to.cstr_length = strlen(from);
-	to.cstr_allocated = 0;
 }
 
 bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptKey)
