@@ -49,7 +49,7 @@ FBTRACE_UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACE
 
 
 FBTRACE_OTHER_Sources = $(OS_SPECIFIC_Sources) $(TRACE_OS_Sources) \
-	jrd/isc.cpp jrd/isc_file.cpp jrd/isc_sync.cpp jrd/CharSet.cpp jrd/TextType.cpp \
+	jrd/isc.cpp jrd/isc_file.cpp jrd/CharSet.cpp jrd/TextType.cpp \
 	jrd/IntlUtil.cpp jrd/unicode_util.cpp common/classes/ClumpletReader.cpp common/utils.cpp
 
 FBTRACE_OTHER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACE_OTHER_Sources))))
