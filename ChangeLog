@@ -1,3 +1,7 @@
+ 2012-10-31 14:16  dimitr 
+   M src/jrd/vio.cpp
+Avoid a sweep pass for temporary tables, as the sweeper always sees those tables as empty, but even setting them up as empty has a non-zero cost.
+
  2012-10-14 17:39  dimitr 
    M src/dsql/gen.cpp
 Fixed the backporting bug introduced while fixing CORE-3902.
