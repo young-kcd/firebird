@@ -53,7 +53,6 @@
 #include <sys/pstat.h>
 #endif
 
-//#include "../common/classes/timestamp.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/isc.h"
@@ -71,6 +70,7 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/StatusArg.h"
+#include "../common/classes/RefMutex.h"
 
 static int process_id;
 
@@ -169,18 +169,166 @@ static GlobalPtr<Mutex> openFdInit;
 namespace {
 
 #ifdef USE_FCNTL
-	struct CountedRWLock
-	{
-		RWLock rwlock;
-		AtomicCounter cnt;
-	};
+class CountedRWLock
+{
+public:
+	CountedRWLock()
+		: sharedAccessCounter(0)
+	{ }
+	RWLock rwlock;
+	AtomicCounter cnt;
+	Mutex sharedAccessMutex;
+	int sharedAccessCounter;
+};
 
-	typedef GenericMap<Pair<Left<string, CountedRWLock> > > RWLocks;
+class DevNode
+{
+public:
+	DevNode()
+		: f_dev(0), f_ino(0)
+	{ }
+
+	DevNode(dev_t d, ino_t i)
+		: f_dev(d), f_ino(i)
+	{ }
+
+	DevNode(const DevNode& v)
+		: f_dev(v.f_dev), f_ino(v.f_ino)
+	{ }
+
+	dev_t	f_dev;
+	ino_t	f_ino;
+
+	bool operator==(const DevNode& v) const
+	{
+		return f_dev == v.f_dev && f_ino == v.f_ino;
+	}
+
+	bool operator>(const DevNode& v) const
+	{
+		return f_dev > v.f_dev ? true :
+			   f_dev < v.f_dev ? false :
+			   f_ino > v.f_ino;
+	}
+
+	const DevNode& operator=(const DevNode& v)
+	{
+		f_dev = v.f_dev;
+		f_ino = v.f_ino;
+		return *this;
+	}
+};
+
+class CountedFd
+{
+public:
+	CountedFd(int f)
+		: fd(f), useCount(0)
+	{ }
+
+	~CountedFd()
+	{
+		fb_assert(useCount == 0);
+	}
+
+	int fd;
+	int useCount;
+
+private:
+	CountedFd(const CountedFd&);
+	const CountedFd& operator=(const CountedFd&);
+};
+
+
+	typedef GenericMap<Pair<Left<string, CountedRWLock*> > > RWLocks;
 	GlobalPtr<RWLocks> rwlocks;
 	GlobalPtr<Mutex> rwlocksMutex;
 
+	typedef GenericMap<Pair<NonPooled<DevNode, CountedFd*> > > FdNodes;
+	GlobalPtr<FdNodes> fdNodes;
+	GlobalPtr<Mutex> fdNodesMutex;
+
+	DevNode getNode(const char* name)
+	{
+		struct stat statistics;
+		if (stat(name, &statistics) != 0)
+		{
+			if (errno == ENOENT)
+			{
+				//file not found
+				return DevNode();
+			}
+
+			system_call_failed::raise("stat");
+		}
+
+		return DevNode(statistics.st_dev, statistics.st_ino);
+	}
+
+	DevNode getNode(int fd)
+	{
+		struct stat statistics;
+		if (fstat(fd, &statistics) != 0)
+		{
+			system_call_failed::raise("stat");
+		}
+
+		return DevNode(statistics.st_dev, statistics.st_ino);
+	}
+
+	int openFile(const char* fileName)
+	{
+		MutexLockGuard g(fdNodesMutex);
+
+		DevNode id(getNode(fileName));
+		CountedFd** cFd = NULL;
+		if (id.f_ino)
+		{
+			cFd = fdNodes->get(id);
+		}
+
+		if (!cFd)
+		{
+			int fd = os_utils::openCreateSharedFile(fileName, 0);
+			CountedFd* newFile = FB_NEW(*getDefaultMemoryPool()) CountedFd(fd);
+			cFd = fdNodes->put(getNode(fd));
+			fb_assert(cFd);
+			*cFd = newFile;
+		}
+
+		++((*cFd)->useCount);
+
+		return (*cFd)->fd;
+	}
+
+	void closeFile(int fd)
+	{
+		MutexLockGuard g(fdNodesMutex);
+
+		CountedFd** cFd = fdNodes->get(getNode(fd));
+		fb_assert(cFd);
+
+		if (--((*cFd)->useCount) == 0)
+		{
+			DevNode id(getNode(fd));
+			close((*cFd)->fd);
+			delete *cFd;
+			fdNodes->remove(id);
+		}
+	}
+
 	const char* NAME = "fcntl";
 #else
+	int openFile(const char* fileName)
+	{
+		return os_utils::openCreateSharedFile(fileName, 0);
+	}
+
+	void closeFile(int fd)
+	{
+		close(fd);
+	}
+
 	const char* NAME = "flock";
 #endif // USE_FCNTL
 
@@ -195,7 +343,7 @@ namespace {
 		FileLock(int pFd, DtorMode pMode = CLOSED, int s = 0)
 			: level(LCK_NONE), fd(pFd), dtorMode(pMode)
 #ifdef USE_FCNTL
-			, start(s), rwlock(getRw())
+			, start(s), rwcl(getRw())
 #endif
 		{ }
 
@@ -203,34 +351,57 @@ namespace {
 		{
 			if (dtorMode != LOCKED)
 			{
+				unlock();
+
 #ifdef USE_FCNTL
 				MutexLockGuard g(rwlocksMutex);
 #ifdef DEBUG_RWLOCKS
-				fprintf(stderr, "\n-- %p\n", rwlock);
+				fprintf(stderr, "\n-- %p\n", rwcl);
 #endif
-				if (--(rwlock->cnt) == 0)
+				if (--(rwcl->cnt) == 0)
 				{
-					unlock();
 #ifdef DEBUG_RWLOCKS
-					fprintf(stderr, "\nremove %p\n", rwlock);
+					fprintf(stderr, "\nremove %p\n", rwcl);
 #endif
 					rwlocks->remove(getLockId());
+					delete rwcl;
 				}
-#else
+#else /* USE_FCNTL */
 				unlock();
-#endif
+#endif /* USE_FCNTL */
 			}
 			else
 			{
 #ifdef DEBUG_RWLOCKS
-				fprintf(stderr, "\nlocked %p\n", rwlock);
+				fprintf(stderr, "\n~leave locked %p\n", rwcl);
 #endif
 			}
 
 			if (dtorMode == CLOSED)
 			{
-				close(fd);
+				closeFile(fd);
 			}
+		}
+
+		void rwUnlock()
+		{
+#ifdef USE_FCNTL
+			fb_assert(level != LCK_NONE);
+
+			try
+			{
+				if (level == LCK_SHARED)
+					rwcl->rwlock.endRead();
+				else
+					rwcl->rwlock.endWrite();
+			}
+			catch(const Exception& ex)
+			{
+				iscLogException("rwlock end-operation error", ex);
+			}
+#endif /* USE_FCNTL */
+
+			level = LCK_NONE;
 		}
 
 		// unlocking can only put error into log file - we can't throw in dtors
@@ -242,37 +413,39 @@ namespace {
 			}
 
 #ifdef USE_FCNTL
+			// For shared lock we must take into an account reenterability
+			MutexEnsureUnlock guard(rwcl->sharedAccessMutex);
+			if (level == LCK_SHARED)
+			{
+				guard.enter();
+
+				fb_assert(rwcl->sharedAccessCounter > 0);
+				if (--(rwcl->sharedAccessCounter) > 0)
+				{
+					// counter is non-zero - we must keep file lock
+					rwUnlock();
+					return;
+				}
+			}
+
 			struct flock lock;
 			lock.l_type = F_UNLCK;
 			lock.l_whence = SEEK_SET;
 			lock.l_start = start;
 			lock.l_len = 1;
-			if (fcntl(fd, F_SETLK, &lock) == 0)
+
+			if (fcntl(fd, F_SETLK, &lock) != 0)
 			{
-				try
-				{
-					if (level == LCK_SHARED)
-						rwlock->rwlock.endRead();
-					else
-						rwlock->rwlock.endWrite();
-				}
-				catch(const Exception& ex)
-				{
-					iscLogException("Unlock error", ex);
-					return;
-				}
 #else
-			if (flock(fd, LOCK_UN) == 0)
+			if (flock(fd, LOCK_UN) != 0)
 			{
 #endif
-				level = LCK_NONE;
-			}
-			else
-			{
 				ISC_STATUS_ARRAY local;
 				error(local, NAME, errno);
 				iscLogStatus("Unlock error", local);
 			}
+
+			rwUnlock();
 		}
 
 		// Main method to lock file
@@ -311,16 +484,16 @@ namespace {
 				switch(mode)
 				{
 				case FLM_TRY_EXCLUSIVE:
-					rc = rwlock->rwlock.tryBeginWrite();
+					rc = rwcl->rwlock.tryBeginWrite();
 					break;
 				case FLM_EXCLUSIVE:
-					rwlock->rwlock.beginWrite();
+					rwcl->rwlock.beginWrite();
 					break;
 				case FLM_TRY_SHARED:
-					rc = rwlock->rwlock.tryBeginRead();
+					rc = rwcl->rwlock.tryBeginRead();
 					break;
 				case FLM_SHARED:
-					rwlock->rwlock.beginRead();
+					rwcl->rwlock.beginRead();
 					break;
 				}
 			}
@@ -330,7 +503,29 @@ namespace {
 			}
 			if (!rc)
 			{
-				return EBUSY;
+				return -1;
+			}
+
+			// For shared lock we must take into an account reenterability
+			MutexEnsureUnlock guard(rwcl->sharedAccessMutex);
+			if (shared)
+			{
+				if (wait)
+				{
+					guard.enter();
+				}
+				else if (!guard.tryEnter())
+				{
+					return -1;
+				}
+
+				fb_assert(rwcl->sharedAccessCounter >= 0);
+				if (rwcl->sharedAccessCounter++ > 0)
+				{
+					// counter is non-zero - we already have file lock
+					level = LCK_SHARED;
+					return 0;
+				}
 			}
 
 			struct flock lock;
@@ -341,12 +536,17 @@ namespace {
 			if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1)
 			{
 				int rc = errno;
+				if ((!wait) && (rc == EACCES || rc == EAGAIN))
+				{
+					rc = -1;
+				}
+
 				try
 				{
 					if (newLevel == LCK_SHARED)
-						rwlock->rwlock.endRead();
+						rwcl->rwlock.endRead();
 					else
-						rwlock->rwlock.endWrite();
+						rwcl->rwlock.endWrite();
 				}
 				catch(const Exception&)
 				{ }
@@ -355,7 +555,13 @@ namespace {
 #else
 			if (flock(fd, (shared ? LOCK_SH : LOCK_EX) | (wait ? 0 : LOCK_NB)))
 			{
-				return errno;
+				int rc = errno;
+				if ((!wait) && (rc == EWOULDBLOCK))
+				{
+					rc = -1;
+				}
+
+				return rc;
 #endif
 			}
 			level = newLevel;
@@ -369,7 +575,10 @@ namespace {
 			int rc = doLock(mode);
 			if (rc != 0)
 			{
-				error(status, NAME, rc);
+				if (rc > 0)
+				{
+					error(status, NAME, rc);
+				}
 				return false;
 			}
 
@@ -390,9 +599,9 @@ namespace {
 			if (level != LCK_NONE)
 			{
 				// was not done in dtor
-				--(rwlock->cnt);
+				--(rwcl->cnt);
 #ifdef DEBUG_RWLOCKS
-				fprintf(stderr, "\n-- %p\n", rwlock);
+				fprintf(stderr, "\n-- %p\n", rwcl);
 #endif
 			}
 #endif
@@ -404,7 +613,7 @@ namespace {
 		DtorMode dtorMode;
 #ifdef USE_FCNTL
 		int start;
-		CountedRWLock* rwlock;	// Due to order of init in ctor rwlock must go after fd & start
+		CountedRWLock* rwcl;	// Due to order of init in ctor rwlock must go after fd & start
 
 		string getLockId()
 		{
@@ -430,21 +639,26 @@ namespace {
 		CountedRWLock* getRw()
 		{
 			string id = getLockId();
+			CountedRWLock* rc = NULL;
 
 			MutexLockGuard g(rwlocksMutex);
-			CountedRWLock* rc = rwlocks->get(id);
+
+			CountedRWLock** got = rwlocks->get(id);
+			if (got)
+			{
+				rc = *got;
+			}
+
 			if (!rc)
 			{
-				rc = rwlocks->put(id);
-#ifdef DEBUG_RWLOCKS
-				fprintf(stderr, "\ncreated %p\n", rc);
-#endif
+				rc = FB_NEW(*getDefaultMemoryPool()) CountedRWLock;
+				CountedRWLock** put = rwlocks->put(id);
+				fb_assert(put);
+				*put = rc;
 			}
 
 			++(rc->cnt);
-#ifdef DEBUG_RWLOCKS
-			fprintf(stderr, "\n++ %p\n", rc);
-#endif
+
 			return rc;
 		}
 #endif
@@ -468,7 +682,7 @@ namespace {
 	class SemTable
 	{
 	public:
-		const static int N_FILES = 8;
+		const static int N_FILES = 128;
 		const static int N_SETS = 256;
 #if defined(DEV_BUILD)
 		const static int SEM_PER_SET = 4;	// force multiple sets allocation
@@ -680,11 +894,11 @@ namespace {
 		{
 		public:
 			StorageGuard()
-				: MutexLockGuard(mutex)
+				: MutexLockGuard(guardMutex)
 			{ }
 
 		private:
-			static GlobalPtr<Mutex> mutex;
+			static GlobalPtr<Mutex> guardMutex;
 		};
 
 		int getNum() const { return fileNum; }
@@ -692,7 +906,7 @@ namespace {
 		static SharedFile* locate(void* s)
 		{
 			const int n = getByAddress((UCHAR*) s);
-			return n >= 0 ? &sharedFiles[n] : 0;
+			return n >= 0 ? sharedFiles[n] : 0;
 		}
 
 #ifdef DEB_EVNT
@@ -719,26 +933,27 @@ namespace {
 			AbsPtr rc;
 			if (n >= 0)
 			{
-				rc.offset = (IPTR)s - (IPTR)(sharedFiles[n].from);
-				rc.fn = sharedFiles[n].fileNum;
+				rc.offset = (IPTR)s - (IPTR)(sharedFiles[n]->from);
+				rc.fn = sharedFiles[n]->fileNum;
 			}
 			return rc;
 		}
 #endif // DEB_EVNT
 
-		static void push(const SharedFile& sf)
+		static void push(SharedFile* sf)
 		{
 			StorageGuard guard;
-			IPC_TRACE(("+add SF with %p %p\n", sf.from, sf.to));
+			IPC_TRACE(("+add SF with %p %p\n", sf->from, sf->to));
 			sharedFiles.push(sf);
 		}
 
 		static void pop()
 		{
 			StorageGuard guard;
-			SharedFile sf = sharedFiles.pop();
-			sf.mutexDestroy();
-			IPC_TRACE(("-pop SF with %p %p\n", sf.from, sf.to));
+			SharedFile* sf = sharedFiles.pop();
+			sf->mutexDestroy();
+			IPC_TRACE(("-pop SF with %p %p\n", sf->from, sf->to));
+			delete sf;
 		}
 
 		static void remove(void* s)
@@ -746,8 +961,9 @@ namespace {
 			StorageGuard guard;
 			int n = getByAddress((UCHAR*) s);
 			if (n >= 0) {
-				IPC_TRACE(("-rem SF with %p %p\n", sharedFiles[n].from, sharedFiles[n].to));
-				sharedFiles[n].mutexDestroy();
+				IPC_TRACE(("-rem SF with %p %p\n", sharedFiles[n]->from, sharedFiles[n]->to));
+				sharedFiles[n]->mutexDestroy();
+				delete sharedFiles[n];
 				sharedFiles.remove(n);
 			}
 			else {
@@ -760,19 +976,19 @@ namespace {
 			StorageGuard guard;
 			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
 			{
-				if (from == sharedFiles[n].from)
+				if (from == sharedFiles[n]->from)
 				{
 					if (mtxPtr)
 					{
 						UCHAR* m = (UCHAR*)(*mtxPtr);
-						if (m >= sharedFiles[n].from && m < sharedFiles[n].to)
+						if (m >= sharedFiles[n]->from && m < sharedFiles[n]->to)
 						{
-							m = to + (m - sharedFiles[n].from);
+							m = to + (m - sharedFiles[n]->from);
 							*mtxPtr = (struct mtx*)m;
 						}
 					}
-					sharedFiles[n].from = to;
-					sharedFiles[n].to = to + newLength;
+					sharedFiles[n]->from = to;
+					sharedFiles[n]->to = to + newLength;
 					return;
 				}
 			}
@@ -788,18 +1004,68 @@ namespace {
 
 		int mutexLock()
 		{
+			try
+			{
+				thrMutex.enter();
+			}
+			catch(const system_call_failed& ex)
+			{
+				return ex.getErrorCode();
+			}
+
 			fb_assert(mutex);
-			return mutex->doLock(FileLock::FLM_EXCLUSIVE);
+			int rc = mutex->doLock(FileLock::FLM_EXCLUSIVE);
+			if (rc)
+			{
+				try
+				{
+					thrMutex.leave();
+				}
+				catch(const Exception& ex)
+				{ }
+			}
+			return rc;
 		}
 
 		int mutexTryLock()
 		{
+			try
+			{
+				if (!thrMutex.tryEnter())
+				{
+					return EBUSY;
+				}
+			}
+			catch(const system_call_failed& ex)
+			{
+				return ex.getErrorCode();
+			}
+
 			fb_assert(mutex);
-			return mutex->doLock(FileLock::FLM_TRY_EXCLUSIVE);
+			int rc = mutex->doLock(FileLock::FLM_TRY_EXCLUSIVE);
+			if (rc)
+			{
+				try
+				{
+					thrMutex.leave();
+				}
+				catch(const Exception& ex)
+				{ }
+			}
+			return rc;
 		}
 
 		int mutexUnlock()
 		{
+			try
+			{
+				thrMutex.leave();
+			}
+			catch(const system_call_failed& ex)
+			{
+				return ex.getErrorCode();
+			}
+
 			fb_assert(mutex);
 			mutex->unlock();
 			return 0;
@@ -812,13 +1078,14 @@ namespace {
 
 #endif // USE_FILELOCKS
 
-		typedef Vector<SharedFile, SemTable::N_FILES> Storage;
+		typedef Vector<SharedFile*, SemTable::N_FILES> Storage;
 
 	private:
 		int fileNum;
 		const UCHAR* from;
 		const UCHAR* to;
 #ifdef USE_FILELOCKS
+		Mutex thrMutex;
 		FileLock* mutex;
 #endif
 		static Storage sharedFiles;
@@ -828,7 +1095,7 @@ namespace {
 			StorageGuard guard;
 			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
 			{
-				if (s >= sharedFiles[n].from && s < sharedFiles[n].to)
+				if (s >= sharedFiles[n]->from && s < sharedFiles[n]->to)
 				{
 					return n;
 				}
@@ -839,7 +1106,7 @@ namespace {
 	};
 
 	SharedFile::Storage SharedFile::sharedFiles;
-	GlobalPtr<Mutex> SharedFile::StorageGuard::mutex;
+	GlobalPtr<Mutex> SharedFile::StorageGuard::guardMutex;
 
 	int idCache[SemTable::N_SETS];
 	GlobalPtr<Mutex> idCacheMutex;
@@ -2085,7 +2352,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #else
 	int
 #endif
-		fd_init = os_utils::openCreateSharedFile(init_filename, 0);
+		fd_init = openFile(init_filename);
 	if (fd_init == -1)
 	{
 		error(status_vector, "open", errno);
@@ -2107,7 +2374,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	{
 		TEXT sem_filename[MAXPATHLEN];
 		gds__prefix_lock(sem_filename, SEM_FILE);
-		const int f = os_utils::openCreateSharedFile(sem_filename, 0);
+		const int f = openFile(sem_filename);
 		if (f == -1)
 		{
 			error(status_vector, "open", errno);
@@ -2137,7 +2404,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif
 
 /* open the file to be inited */
-	const int fd = os_utils::openCreateSharedFile(expanded_filename, 0);
+	const int fd = openFile(expanded_filename);
 	if (fd == -1)
 	{
 		error(status_vector, "open", errno);
@@ -2185,7 +2452,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	class sfHolder
 	{
 	public:
-		explicit sfHolder(const SharedFile& sf) : pop(true)
+		explicit sfHolder(SharedFile* sf) : pop(true)
 		{
 			SharedFile::push(sf);
 		}
@@ -2205,7 +2472,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	private:
 		bool pop;
 	};
-	sfHolder holder(SharedFile(expanded_filename, fd, address, length));
+	sfHolder holder(FB_NEW(*getDefaultMemoryPool())
+					SharedFile(expanded_filename, fd, address, length));
 #endif
 
 
@@ -2833,8 +3101,6 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 	}
 	mutex = *mapped;
 
-	SharedFile::StorageGuard sg;
-
 #ifdef USE_FILELOCKS
 
 	SharedFile* sf = SharedFile::locate(mutex);
@@ -2879,8 +3145,6 @@ void ISC_mutex_fini(struct mtx *mutex)
  **************************************/
 #ifdef USE_FILELOCKS
 
-	SharedFile::StorageGuard sg;
-
 	SharedFile* sf = SharedFile::locate(mutex);
 	if (!sf)
 	{
@@ -2910,8 +3174,6 @@ int ISC_mutex_lock(struct mtx* mutex)
  *
  **************************************/
 #ifdef USE_FILELOCKS
-
-	SharedFile::StorageGuard sg;
 
 	SharedFile* sf = SharedFile::locate(mutex);
 	if (!sf)
@@ -2959,8 +3221,6 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  **************************************/
 #ifdef USE_FILELOCKS
 
-	SharedFile::StorageGuard sg;
-
 	SharedFile* sf = SharedFile::locate(mutex);
 	if (!sf)
 	{
@@ -3006,8 +3266,6 @@ int ISC_mutex_unlock(struct mtx* mutex)
  *
  **************************************/
 #ifdef USE_FILELOCKS
-
-	SharedFile::StorageGuard sg;
 
 	SharedFile* sf = SharedFile::locate(mutex);
 	if (!sf)
@@ -3883,7 +4141,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 	{
 		SharedFile* sf = SharedFile::locate(shmem_data->sh_mem_address);
 
-		FileLock lock(shmem_data->sh_mem_handle);
+		FileLock lock(shmem_data->sh_mem_handle, FileLock::OPENED);
 		lock.setLevel(FileLock::LCK_SHARED);
 		semTable->cleanup(sf->getNum(), lock.doLock(status_vector, FileLock::FLM_TRY_EXCLUSIVE));
 		SharedFile::remove(shmem_data->sh_mem_address);
@@ -3893,7 +4151,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 
 	munmap((char *) shmem_data->sh_mem_address, shmem_data->sh_mem_length_mapped);
 
-	close(shmem_data->sh_mem_handle);
+	closeFile(shmem_data->sh_mem_handle);
 }
 #endif
 
