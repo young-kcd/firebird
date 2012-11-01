@@ -102,7 +102,7 @@
 #endif
 
 #ifdef DEV_BUILD
-#define ASSERT_ACQUIRED fb_assert(sh_mem_header->lhb_active_owner)
+#define ASSERT_ACQUIRED fb_assert(m_sharedMemory->getHeader()->lhb_active_owner)
 #ifdef HAVE_OBJECT_MAP
 #define LOCK_DEBUG_REMAP
 #define DEBUG_REMAP_INTERVAL 5000
@@ -143,7 +143,7 @@ const SLONG HASH_MAX_SLOTS	= 65521;
 const USHORT HISTORY_BLOCKS	= 256;
 
 // SRQ_ABS_PTR uses this macro.
-#define SRQ_BASE                    ((UCHAR*) sh_mem_header)
+#define SRQ_BASE                    ((UCHAR*) m_sharedMemory->getHeader())
 
 static const bool compatibility[LCK_max][LCK_max] =
 {
@@ -213,6 +213,7 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 	  m_sharedFileCreated(false),
 	  m_process(NULL),
 	  m_processOffset(0),
+	  m_sharedMemory(NULL),
 	  m_blockage(false),
 	  m_dbId(getPool(), id),
 	  m_config(conf),
@@ -225,7 +226,10 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 {
 	Arg::StatusVector localStatus;
 	if (!attach_shared_file(localStatus))
+	{
+		iscLogStatus("LockManager::LockManager()", localStatus.value());
 		localStatus.raise();
+	}
 }
 
 
@@ -249,14 +253,14 @@ LockManager::~LockManager()
 
 			// Wakeup the AST thread - it might be blocking
 			(void)  // Ignore errors in dtor()
-			ISC_event_post(&m_process->prc_blocking);
+			m_sharedMemory->eventPost(&m_process->prc_blocking);
 
 			// Wait for the AST thread to finish cleanup or for 5 seconds
 			m_cleanupSemaphore.tryEnter(5);
 		}
 
 #ifdef HAVE_OBJECT_MAP
-		unmapObject(localStatus, &m_process);
+		m_sharedMemory->unmapObject(localStatus, &m_process);
 #else
 		m_process = NULL;
 #endif
@@ -271,11 +275,11 @@ LockManager::~LockManager()
 			purge_process(process);
 		}
 
-		if (sh_mem_header && SRQ_EMPTY(sh_mem_header->lhb_processes))
+		if (m_sharedMemory->getHeader() && SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_processes))
 		{
 			Firebird::PathName name;
 			get_shared_file_name(name);
-			removeMapFile();
+			m_sharedMemory->removeMapFile();
 #ifdef USE_SHMEM_EXT
 			for (ULONG i = 1; i < m_extents.getCount(); ++i)
 			{
@@ -333,11 +337,20 @@ bool LockManager::attach_shared_file(Arg::StatusVector& statusVector)
 	Firebird::PathName name;
 	get_shared_file_name(name);
 
-	if (!mapFile(statusVector, name.c_str(), m_memorySize))
+	try
+	{
+		SharedMemory<lhb>* tmp = FB_NEW(getPool()) SharedMemory<lhb>(name.c_str(), m_memorySize, this);
+		// initialize will reset m_sharedMemory
+		fb_assert(m_sharedMemory == tmp);
+	}
+	catch (const Exception& ex)
+	{
+		statusVector.assign(ex);
 		return false;
+	}
 
-	fb_assert(sh_mem_header->mhb_type == SRAM_LOCK_MANAGER);
-	fb_assert(sh_mem_header->mhb_version == LHB_VERSION);
+	fb_assert(m_sharedMemory->getHeader()->mhb_type == SharedMemoryBase::SRAM_LOCK_MANAGER);
+	fb_assert(m_sharedMemory->getHeader()->mhb_version == LHB_VERSION);
 
 #ifdef USE_SHMEM_EXT
 	m_extents[0] = *this;
@@ -349,9 +362,16 @@ bool LockManager::attach_shared_file(Arg::StatusVector& statusVector)
 
 void LockManager::detach_shared_file(Arg::StatusVector& statusVector)
 {
-	if (sh_mem_header)
+	if (m_sharedMemory.hasData() && m_sharedMemory->getHeader())
 	{
-		unmapFile(statusVector);
+		try
+		{
+			delete m_sharedMemory.release();
+		}
+		catch(const Exception& ex)
+		{
+			statusVector.assign(ex);
+		}
 	}
 }
 
@@ -504,11 +524,11 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		return 0;
 
 	ASSERT_ACQUIRED;
-	++sh_mem_header->lhb_enqs;
+	++(m_sharedMemory->getHeader()->lhb_enqs);
 
 #ifdef VALIDATE_LOCK_TABLE
-	if ((sh_mem_header->lhb_enqs % 50) == 0)
-		validate_lhb(sh_mem_header);
+	if ((m_sharedMemory->getHeader()->lhb_enqs % 50) == 0)
+		validate_lhb(m_sharedMemory->getHeader());
 #endif
 
 	if (prior_request)
@@ -519,7 +539,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	lrq* request;
 
 	ASSERT_ACQUIRED;
-	if (SRQ_EMPTY(sh_mem_header->lhb_free_requests))
+	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_requests))
 	{
 		if (!(request = (lrq*) alloc(sizeof(lrq), &statusVector)))
 		{
@@ -530,7 +550,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	else
 	{
 		ASSERT_ACQUIRED;
-		request = (lrq*) ((UCHAR*) SRQ_NEXT(sh_mem_header->lhb_free_requests) -
+		request = (lrq*) ((UCHAR*) SRQ_NEXT(m_sharedMemory->getHeader()->lhb_free_requests) -
 						 OFFSET(lrq*, lrq_lbl_requests));
 		remove_que(&request->lrq_lbl_requests);
 	}
@@ -558,10 +578,10 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	if (lock)
 	{
 		if (series < LCK_MAX_SERIES) {
-			++sh_mem_header->lhb_operations[series];
+			++(m_sharedMemory->getHeader()->lhb_operations[series]);
 		}
 		else {
-			++sh_mem_header->lhb_operations[0];
+			++(m_sharedMemory->getHeader()->lhb_operations[0]);
 		}
 
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
@@ -585,7 +605,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		// lock table is exhausted: release request gracefully
 		remove_que(&request->lrq_own_requests);
 		request->lrq_type = type_null;
-		insert_tail(&sh_mem_header->lhb_free_requests, &request->lrq_lbl_requests);
+		insert_tail(&m_sharedMemory->getHeader()->lhb_free_requests, &request->lrq_lbl_requests);
 		return 0;
 	}
 
@@ -600,9 +620,9 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		insert_data_que(lock);
 
 	if (series < LCK_MAX_SERIES)
-		++sh_mem_header->lhb_operations[series];
+		++(m_sharedMemory->getHeader()->lhb_operations[series]);
 	else
-		++sh_mem_header->lhb_operations[0];
+		++(m_sharedMemory->getHeader()->lhb_operations[0]);
 
 	lock->lbl_flags = 0;
 	lock->lbl_pending_lrq_count = 0;
@@ -616,7 +636,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 
 	SRQ_INIT(lock->lbl_requests);
 	ASSERT_ACQUIRED;
-	insert_tail(&sh_mem_header->lhb_hash[hash_slot], &lock->lbl_lhb_hash);
+	insert_tail(&m_sharedMemory->getHeader()->lhb_hash[hash_slot], &lock->lbl_lhb_hash);
 	insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 	request->lrq_lock = SRQ_REL_PTR(lock);
 	grant(request, lock);
@@ -655,13 +675,13 @@ bool LockManager::convert(Attachment* attachment,
 	if (!owner->own_count)
 		return false;
 
-	++sh_mem_header->lhb_converts;
+	++(m_sharedMemory->getHeader()->lhb_converts);
 
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
-		++sh_mem_header->lhb_operations[lock->lbl_series];
+		++(m_sharedMemory->getHeader()->lhb_operations[lock->lbl_series]);
 	else
-		++sh_mem_header->lhb_operations[0];
+		++(m_sharedMemory->getHeader()->lhb_operations[0]);
 
 	const bool result =
 		internal_convert(attachment, statusVector, request_offset, type, lck_wait,
@@ -698,7 +718,7 @@ UCHAR LockManager::downgrade(Attachment* attachment,
 	if (!owner->own_count)
 		return LCK_none;
 
-	++sh_mem_header->lhb_downgrades;
+	++(m_sharedMemory->getHeader()->lhb_downgrades);
 
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	UCHAR pending_state = LCK_none;
@@ -761,13 +781,13 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
 	if (!owner->own_count)
 		return false;
 
-	++sh_mem_header->lhb_deqs;
+	++(m_sharedMemory->getHeader()->lhb_deqs);
 
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
-		++sh_mem_header->lhb_operations[lock->lbl_series];
+		++(m_sharedMemory->getHeader()->lhb_operations[lock->lbl_series]);
 	else
-		++sh_mem_header->lhb_operations[0];
+		++(m_sharedMemory->getHeader()->lhb_operations[0]);
 
 	internal_dequeue(request_offset);
 	return true;
@@ -800,7 +820,7 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
 	lrq* request;
 
 	ASSERT_ACQUIRED;
-	if (SRQ_EMPTY(sh_mem_header->lhb_free_requests))
+	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_requests))
 	{
 		if (!(request = (lrq*) alloc(sizeof(lrq), NULL)))
 		{
@@ -810,7 +830,7 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
 	else
 	{
 		ASSERT_ACQUIRED;
-		request = (lrq*) ((UCHAR*) SRQ_NEXT(sh_mem_header->lhb_free_requests) -
+		request = (lrq*) ((UCHAR*) SRQ_NEXT(m_sharedMemory->getHeader()->lhb_free_requests) -
 						 OFFSET(lrq*, lrq_lbl_requests));
 		remove_que(&request->lrq_lbl_requests);
 	}
@@ -888,9 +908,9 @@ SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 
 	LockTableGuard guard(this, DUMMY_OWNER);
 
-	++sh_mem_header->lhb_query_data;
+	++(m_sharedMemory->getHeader()->lhb_query_data);
 
-	const srq& data_header = sh_mem_header->lhb_data[series];
+	const srq& data_header = m_sharedMemory->getHeader()->lhb_data[series];
 	SLONG data = 0, count = 0;
 
 	// Simply walk the lock series data queue forward for the minimum
@@ -977,14 +997,14 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
 	const lrq* const request = get_request(request_offset);
 	guard.setOwner(request->lrq_owner);
 
-	++sh_mem_header->lhb_read_data;
+	++(m_sharedMemory->getHeader()->lhb_read_data);
 
 	const lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	const SLONG data = lock->lbl_data;
 	if (lock->lbl_series < LCK_MAX_SERIES)
-		++sh_mem_header->lhb_operations[lock->lbl_series];
+		++(m_sharedMemory->getHeader()->lhb_operations[lock->lbl_series]);
 	else
-		++sh_mem_header->lhb_operations[0];
+		++(m_sharedMemory->getHeader()->lhb_operations[0]);
 
 	return data;
 }
@@ -1012,12 +1032,12 @@ SLONG LockManager::readData2(USHORT series,
 
 	LockTableGuard guard(this, owner_offset);
 
-	++sh_mem_header->lhb_read_data;
+	++(m_sharedMemory->getHeader()->lhb_read_data);
 
 	if (series < LCK_MAX_SERIES)
-		++sh_mem_header->lhb_operations[series];
+		++(m_sharedMemory->getHeader()->lhb_operations[series]);
 	else
-		++sh_mem_header->lhb_operations[0];
+		++(m_sharedMemory->getHeader()->lhb_operations[0]);
 
 	USHORT junk;
 	const lbl* const lock = find_lock(series, value, length, &junk);
@@ -1045,7 +1065,7 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
 	const lrq* const request = get_request(request_offset);
 	guard.setOwner(request->lrq_owner);
 
-	++sh_mem_header->lhb_write_data;
+	++(m_sharedMemory->getHeader()->lhb_write_data);
 
 	lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	remove_que(&lock->lbl_lhb_data);
@@ -1053,9 +1073,9 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
 		insert_data_que(lock);
 
 	if (lock->lbl_series < LCK_MAX_SERIES)
-		++sh_mem_header->lhb_operations[lock->lbl_series];
+		++(m_sharedMemory->getHeader()->lhb_operations[lock->lbl_series]);
 	else
-		++sh_mem_header->lhb_operations[0];
+		++(m_sharedMemory->getHeader()->lhb_operations[0]);
 
 	return data;
 }
@@ -1082,7 +1102,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	ULONG spins = 0;
 	while (spins++ < spins_to_try)
 	{
-		if (mutexLockCond())
+		if (m_sharedMemory->mutexLockCond())
 		{
 			locked = true;
 			break;
@@ -1094,18 +1114,18 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	// If the spin wait didn't succeed then wait forever
 
 	if (!locked)
-		mutexLock();
+		m_sharedMemory->mutexLock();
 
 	// Check for shared memory state consistency
 
-	while (SRQ_EMPTY(sh_mem_header->lhb_processes))
+	while (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_processes))
 	{
 		if (!m_sharedFileCreated)
 		{
 			Arg::StatusVector localStatus;
 
 			// Someone is going to delete shared file? Reattach.
-			mutexUnlock();
+			m_sharedMemory->mutexUnlock();
 			detach_shared_file(localStatus);
 
 			THD_yield();
@@ -1113,7 +1133,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			if (!attach_shared_file(localStatus))
 				bug(&localStatus, "ISC_map_file failed (reattach shared file)");
 
-			mutexLock();
+			m_sharedMemory->mutexLock();
 		}
 		else
 		{
@@ -1129,23 +1149,23 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 	fb_assert(!m_sharedFileCreated);
 
-	++sh_mem_header->lhb_acquires;
+	++(m_sharedMemory->getHeader()->lhb_acquires);
 	if (m_blockage)
 	{
-		++sh_mem_header->lhb_acquire_blocks;
+		++(m_sharedMemory->getHeader()->lhb_acquire_blocks);
 		m_blockage = false;
 	}
 
 	if (spins > 1)
 	{
-		++sh_mem_header->lhb_acquire_retries;
+		++(m_sharedMemory->getHeader()->lhb_acquire_retries);
 		if (spins < spins_to_try) {
-			++sh_mem_header->lhb_retry_success;
+			++(m_sharedMemory->getHeader()->lhb_retry_success);
 		}
 	}
 
-	const SRQ_PTR prior_active = sh_mem_header->lhb_active_owner;
-	sh_mem_header->lhb_active_owner = owner_offset;
+	const SRQ_PTR prior_active = m_sharedMemory->getHeader()->lhb_active_owner;
+	m_sharedMemory->getHeader()->lhb_active_owner = owner_offset;
 
 	if (owner_offset > 0)
 	{
@@ -1154,7 +1174,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	}
 
 #ifdef USE_SHMEM_EXT
-	while (sh_mem_header->lhb_length > getTotalMapped())
+	while (m_sharedMemory->getHeader()->lhb_length > getTotalMapped())
 	{
 		if (!createExtent())
 		{
@@ -1163,7 +1183,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	}
 #else //USE_SHMEM_EXT
 
-	if (sh_mem_header->lhb_length > sh_mem_length_mapped
+	if (m_sharedMemory->getHeader()->lhb_length > m_sharedMemory->sh_mem_length_mapped
 #ifdef LOCK_DEBUG_REMAP
 		// If we're debugging remaps, force a remap every-so-often.
 		|| ((debug_remap_count++ % DEBUG_REMAP_INTERVAL) == 0 && m_processOffset)
@@ -1171,14 +1191,14 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		)
 	{
 #ifdef HAVE_OBJECT_MAP
-		const ULONG new_length = sh_mem_header->lhb_length;
+		const ULONG new_length = m_sharedMemory->getHeader()->lhb_length;
 
 		Firebird::WriteLockGuard guard(m_remapSync);
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
 		Arg::StatusVector statusVector;
-		if (!remapFile(statusVector, new_length, false))
+		if (!m_sharedMemory->remapFile(statusVector, new_length, false))
 #endif
 		{
 			bug(NULL, "remap failed");
@@ -1195,7 +1215,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	if (prior_active > 0)
 	{
 		post_history(his_active, owner_offset, prior_active, (SRQ_PTR) 0, false);
-		shb* const recover = (shb*) SRQ_ABS_PTR(sh_mem_header->lhb_secondary);
+		shb* const recover = (shb*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_secondary);
 		if (recover->shb_remove_node)
 		{
 			// There was a remove_que operation in progress when the prior_owner died
@@ -1261,18 +1281,18 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
  **************************************/
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	ASSERT_ACQUIRED;
-	ULONG block = sh_mem_header->lhb_used;
+	ULONG block = m_sharedMemory->getHeader()->lhb_used;
 
 	// Make sure we haven't overflowed the lock table.  If so, bump the size of the table.
 
-	if (sh_mem_header->lhb_used + size > sh_mem_header->lhb_length)
+	if (m_sharedMemory->getHeader()->lhb_used + size > m_sharedMemory->getHeader()->lhb_length)
 	{
 #ifdef USE_SHMEM_EXT
 		// round up so next object starts at beginning of next extent
-		block = sh_mem_header->lhb_used = sh_mem_header->lhb_length;
+		block = m_sharedMemory->getHeader()->lhb_used = m_sharedMemory->getHeader()->lhb_length;
 		if (createExtent())
 		{
-			sh_mem_header->lhb_length += m_memorySize;
+			m_sharedMemory->getHeader()->lhb_length += m_memorySize;
 		}
 		else
 #elif (defined HAVE_OBJECT_MAP)
@@ -1280,11 +1300,11 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		const ULONG new_length = sh_mem_length_mapped + m_memorySize;
-		if (remapFile(*statusVector, new_length, true))
+		const ULONG new_length = m_sharedMemory->sh_mem_length_mapped + m_memorySize;
+		if (m_sharedMemory->remapFile(*statusVector, new_length, true))
 		{
 			ASSERT_ACQUIRED;
-			sh_mem_header->lhb_length = sh_mem_length_mapped;
+			m_sharedMemory->getHeader()->lhb_length = m_sharedMemory->sh_mem_length_mapped;
 		}
 		else
 #endif
@@ -1299,7 +1319,7 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 		}
 	}
 
-	sh_mem_header->lhb_used += size;
+	m_sharedMemory->getHeader()->lhb_used += size;
 
 #ifdef DEV_BUILD
 	// This version of alloc() doesn't initialize memory.  To shake out
@@ -1329,7 +1349,7 @@ lbl* LockManager::alloc_lock(USHORT length, Arg::StatusVector& statusVector)
 
 	ASSERT_ACQUIRED;
 	srq* lock_srq;
-	SRQ_LOOP(sh_mem_header->lhb_free_locks, lock_srq)
+	SRQ_LOOP(m_sharedMemory->getHeader()->lhb_free_locks, lock_srq)
 	{
 		lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
 		// Here we use the "first fit" approach which costs us some memory,
@@ -1402,14 +1422,14 @@ void LockManager::blocking_action(Attachment* attachment, SRQ_PTR blocking_owner
 		{
 			request->lrq_flags &= ~LRQ_blocking;
 			request->lrq_flags |= LRQ_blocking_seen;
-			++sh_mem_header->lhb_blocks;
+			++(m_sharedMemory->getHeader()->lhb_blocks);
 			post_history(his_post_ast, blocking_owner_offset,
 						 request->lrq_lock, SRQ_REL_PTR(request), true);
 		}
 		else if (request->lrq_flags & LRQ_repost)
 		{
 			request->lrq_type = type_null;
-			insert_tail(&sh_mem_header->lhb_free_requests, &request->lrq_lbl_requests);
+			insert_tail(&m_sharedMemory->getHeader()->lhb_free_requests, &request->lrq_lbl_requests);
 		}
 
 		if (routine)
@@ -1475,7 +1495,7 @@ void LockManager::blocking_action_thread()
 					break;
 				}
 
-				value = ISC_event_clear(&m_process->prc_blocking);
+				value = m_sharedMemory->eventClear(&m_process->prc_blocking);
 
 				DEBUG_DELAY;
 
@@ -1511,7 +1531,7 @@ void LockManager::blocking_action_thread()
 				}
 			}
 
-			ISC_event_wait(&m_process->prc_blocking, value, 0);
+			m_sharedMemory->eventWait(&m_process->prc_blocking, value, 0);
 		}
 	}
 	catch (const Firebird::Exception& x)
@@ -1550,7 +1570,7 @@ void LockManager::bug_assert(const TEXT* string, ULONG line)
 			__FILE__, line, string);
 
 	// Copy the shared memory so we can examine its state when we crashed
-	LOCK_header_copy = *sh_mem_header;
+	LOCK_header_copy = *m_sharedMemory->getHeader();
 
 	bug(NULL, buffer);	// Never returns
 }
@@ -1596,18 +1616,18 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 		FILE* const fd = fopen(lock_file, "wb");
 		if (fd)
 		{
-			fwrite(sh_mem_header, 1, sh_mem_header->lhb_used, fd);
+			fwrite(m_sharedMemory->getHeader(), 1, m_sharedMemory->getHeader()->lhb_used, fd);
 			fclose(fd);
 		}
 
 		// If the current mutex acquirer is in the same process, release the mutex
 
-		if (sh_mem_header && (sh_mem_header->lhb_active_owner > 0))
+		if (m_sharedMemory->getHeader() && (m_sharedMemory->getHeader()->lhb_active_owner > 0))
 		{
-			const own* const owner = (own*) SRQ_ABS_PTR(sh_mem_header->lhb_active_owner);
+			const own* const owner = (own*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_active_owner);
 			const prc* const process = (prc*) SRQ_ABS_PTR(owner->own_process);
 			if (process->prc_process_id == PID)
-				release_shmem(sh_mem_header->lhb_active_owner);
+				release_shmem(m_sharedMemory->getHeader()->lhb_active_owner);
 		}
 
 		if (statusVector)
@@ -1645,11 +1665,11 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
  *	Create an owner block.
  *
  **************************************/
-	if (sh_mem_header->mhb_type != SRAM_LOCK_MANAGER || sh_mem_header->mhb_version != LHB_VERSION)
+	if (m_sharedMemory->getHeader()->mhb_type != SharedMemoryBase::SRAM_LOCK_MANAGER || m_sharedMemory->getHeader()->mhb_version != LHB_VERSION)
 	{
 		TEXT bug_buffer[BUFFER_TINY];
 		sprintf(bug_buffer, "inconsistent lock table type/version; found %d/%d, expected %d/%d",
-				sh_mem_header->mhb_type, sh_mem_header->mhb_version, SRAM_LOCK_MANAGER, LHB_VERSION);
+				m_sharedMemory->getHeader()->mhb_type, m_sharedMemory->getHeader()->mhb_version, SharedMemoryBase::SRAM_LOCK_MANAGER, LHB_VERSION);
 		bug(&statusVector, bug_buffer);
 		return 0;
 	}
@@ -1667,7 +1687,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	// Look for a previous instance of owner.  If we find one, get rid of it.
 
 	srq* lock_srq;
-	SRQ_LOOP(sh_mem_header->lhb_owners, lock_srq)
+	SRQ_LOOP(m_sharedMemory->getHeader()->lhb_owners, lock_srq)
 	{
 		own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_lhb_owners));
 		if (owner->own_owner_id == owner_id && (UCHAR) owner->own_owner_type == owner_type)
@@ -1680,7 +1700,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	// Allocate an owner block
 
 	own* owner = 0;
-	if (SRQ_EMPTY(sh_mem_header->lhb_free_owners))
+	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_owners))
 	{
 		if (!(owner = (own*) alloc(sizeof(own), &statusVector)))
 		{
@@ -1689,7 +1709,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	}
 	else
 	{
-		owner = (own*) ((UCHAR*) SRQ_NEXT(sh_mem_header->lhb_free_owners) - OFFSET(own*, own_lhb_owners));
+		owner = (own*) ((UCHAR*) SRQ_NEXT(m_sharedMemory->getHeader()->lhb_free_owners) - OFFSET(own*, own_lhb_owners));
 		remove_que(&owner->own_lhb_owners);
 	}
 
@@ -1698,7 +1718,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 		return 0;
 	}
 
-	insert_tail(&sh_mem_header->lhb_owners, &owner->own_lhb_owners);
+	insert_tail(&m_sharedMemory->getHeader()->lhb_owners, &owner->own_lhb_owners);
 
 	prc* const process = (prc*) SRQ_ABS_PTR(owner->own_process);
 	insert_tail(&process->prc_owners, &owner->own_prc_owners);
@@ -1722,7 +1742,7 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
  *
  **************************************/
 	srq* lock_srq;
-	SRQ_LOOP(sh_mem_header->lhb_processes, lock_srq)
+	SRQ_LOOP(m_sharedMemory->getHeader()->lhb_processes, lock_srq)
 	{
 		prc* process = (prc*) ((UCHAR*) lock_srq - OFFSET(prc*, prc_lhb_processes));
 		if (process->prc_process_id == PID)
@@ -1733,14 +1753,14 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 	}
 
 	prc* process = NULL;
-	if (SRQ_EMPTY(sh_mem_header->lhb_free_processes))
+	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_processes))
 	{
 		if (!(process = (prc*) alloc(sizeof(prc), &statusVector)))
 			return false;
 	}
 	else
 	{
-		process = (prc*) ((UCHAR*) SRQ_NEXT(sh_mem_header->lhb_free_processes) -
+		process = (prc*) ((UCHAR*) SRQ_NEXT(m_sharedMemory->getHeader()->lhb_free_processes) -
 					   OFFSET(prc*, prc_lhb_processes));
 		remove_que(&process->prc_lhb_processes);
 	}
@@ -1751,9 +1771,9 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 	SRQ_INIT(process->prc_lhb_processes);
 	process->prc_flags = 0;
 
-	insert_tail(&sh_mem_header->lhb_processes, &process->prc_lhb_processes);
+	insert_tail(&m_sharedMemory->getHeader()->lhb_processes, &process->prc_lhb_processes);
 
-	if (ISC_event_init(&process->prc_blocking) != FB_SUCCESS)
+	if (m_sharedMemory->eventInit(&process->prc_blocking) != FB_SUCCESS)
 	{
 		statusVector << Arg::Gds(isc_lockmanerr);
 		return false;
@@ -1762,7 +1782,7 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 	m_processOffset = SRQ_REL_PTR(process);
 
 #if defined HAVE_OBJECT_MAP
-	m_process = mapObject<prc>(statusVector, m_processOffset);
+	m_process = m_sharedMemory->mapObject<prc>(statusVector, m_processOffset);
 #else
 	m_process = process;
 #endif
@@ -1807,7 +1827,7 @@ void LockManager::deadlock_clear()
  **************************************/
 	ASSERT_ACQUIRED;
 	srq* lock_srq;
-	SRQ_LOOP(sh_mem_header->lhb_owners, lock_srq)
+	SRQ_LOOP(m_sharedMemory->getHeader()->lhb_owners, lock_srq)
 	{
 		own* const owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_lhb_owners));
 
@@ -1841,12 +1861,12 @@ lrq* LockManager::deadlock_scan(own* owner, lrq* request)
 			   SRQ_REL_PTR(request)));
 
 	ASSERT_ACQUIRED;
-	++sh_mem_header->lhb_scans;
+	++(m_sharedMemory->getHeader()->lhb_scans);
 	post_history(his_scan, request->lrq_owner, request->lrq_lock, SRQ_REL_PTR(request), true);
 	deadlock_clear();
 
 #ifdef VALIDATE_LOCK_TABLE
-	validate_lhb(sh_mem_header);
+	validate_lhb(m_sharedMemory->getHeader());
 #endif
 
 	bool maybe_deadlock = false;
@@ -2087,9 +2107,9 @@ lbl* LockManager::find_lock(USHORT series,
 
 	// See if the lock already exists
 
-	const USHORT hash_slot = *slot = (USHORT) (hash_value % sh_mem_header->lhb_hash_slots);
+	const USHORT hash_slot = *slot = (USHORT) (hash_value % m_sharedMemory->getHeader()->lhb_hash_slots);
 	ASSERT_ACQUIRED;
-	srq* const hash_header = &sh_mem_header->lhb_hash[hash_slot];
+	srq* const hash_header = &m_sharedMemory->getHeader()->lhb_hash[hash_slot];
 
 	for (srq* lock_srq = (SRQ) SRQ_ABS_PTR(hash_header->srq_forward);
 		 lock_srq != hash_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
@@ -2229,9 +2249,9 @@ bool LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* lock, 
 
 	post_history(his_deny, request->lrq_owner, request->lrq_lock, SRQ_REL_PTR(request), true);
 	ASSERT_ACQUIRED;
-	++sh_mem_header->lhb_denies;
+	++(m_sharedMemory->getHeader()->lhb_denies);
 	if (lck_wait < 0)
-		++sh_mem_header->lhb_timeouts;
+		++(m_sharedMemory->getHeader()->lhb_timeouts);
 
 	release_request(request);
 
@@ -2269,7 +2289,7 @@ bool LockManager::init_owner_block(Arg::StatusVector& statusVector, own* owner, 
 	owner->own_waits = 0;
 	owner->own_ast_count = 0;
 
-	if (ISC_event_init(&owner->own_wakeup) != FB_SUCCESS)
+	if (m_sharedMemory->eventInit(&owner->own_wakeup) != FB_SUCCESS)
 	{
 		statusVector << Arg::Gds(isc_lockmanerr);
 		return false;
@@ -2279,7 +2299,7 @@ bool LockManager::init_owner_block(Arg::StatusVector& statusVector, own* owner, 
 }
 
 
-bool LockManager::initialize(bool initializeMemory)
+bool LockManager::initialize(SharedMemoryBase* sm, bool initializeMemory)
 {
 /**************************************
  *
@@ -2295,6 +2315,9 @@ bool LockManager::initialize(bool initializeMemory)
 
 	m_sharedFileCreated = initializeMemory;
 
+	// reset m_sharedMemory in advance to be able to use SRQ_BASE macro
+	m_sharedMemory.reset(reinterpret_cast<SharedMemory<lhb>*>(sm));
+
 #ifdef USE_SHMEM_EXT
 	if (m_extents.getCount() == 0)
 	{
@@ -2309,21 +2332,22 @@ bool LockManager::initialize(bool initializeMemory)
 		return true;
 	}
 
-	memset(sh_mem_header, 0, sizeof(lhb));
-	sh_mem_header->mhb_type = SRAM_LOCK_MANAGER;
-	sh_mem_header->mhb_version = LHB_VERSION;
+	lhb* hdr = m_sharedMemory->getHeader();
+	memset(hdr, 0, sizeof(lhb));
+	hdr->mhb_type = SharedMemoryBase::SRAM_LOCK_MANAGER;
+	hdr->mhb_version = LHB_VERSION;
 
-	sh_mem_header->lhb_type = type_lhb;
+	hdr->lhb_type = type_lhb;
 
 	// Mark ourselves as active owner to prevent fb_assert() checks
-	sh_mem_header->lhb_active_owner = DUMMY_OWNER;	// In init of lock system
+	hdr->lhb_active_owner = DUMMY_OWNER;	// In init of lock system
 
-	SRQ_INIT(sh_mem_header->lhb_processes);
-	SRQ_INIT(sh_mem_header->lhb_owners);
-	SRQ_INIT(sh_mem_header->lhb_free_processes);
-	SRQ_INIT(sh_mem_header->lhb_free_owners);
-	SRQ_INIT(sh_mem_header->lhb_free_locks);
-	SRQ_INIT(sh_mem_header->lhb_free_requests);
+	SRQ_INIT(hdr->lhb_processes);
+	SRQ_INIT(hdr->lhb_owners);
+	SRQ_INIT(hdr->lhb_free_processes);
+	SRQ_INIT(hdr->lhb_free_owners);
+	SRQ_INIT(hdr->lhb_free_locks);
+	SRQ_INIT(hdr->lhb_free_requests);
 
 	int hash_slots = m_config->getLockHashSlots();
 	if (hash_slots < HASH_MIN_SLOTS)
@@ -2331,28 +2355,28 @@ bool LockManager::initialize(bool initializeMemory)
 	if (hash_slots > HASH_MAX_SLOTS)
 		hash_slots = HASH_MAX_SLOTS;
 
-	sh_mem_header->lhb_hash_slots = (USHORT) hash_slots;
-	sh_mem_header->lhb_scan_interval = m_config->getDeadlockTimeout();
-	sh_mem_header->lhb_acquire_spins = m_acquireSpins;
+	hdr->lhb_hash_slots = (USHORT) hash_slots;
+	hdr->lhb_scan_interval = m_config->getDeadlockTimeout();
+	hdr->lhb_acquire_spins = m_acquireSpins;
 
 	// Initialize lock series data queues and lock hash chains
 
 	USHORT i;
 	SRQ lock_srq;
-	for (i = 0, lock_srq = sh_mem_header->lhb_data; i < LCK_MAX_SERIES; i++, lock_srq++)
+	for (i = 0, lock_srq = hdr->lhb_data; i < LCK_MAX_SERIES; i++, lock_srq++)
 	{
 		SRQ_INIT((*lock_srq));
 	}
-	for (i = 0, lock_srq = sh_mem_header->lhb_hash; i < sh_mem_header->lhb_hash_slots; i++, lock_srq++)
+	for (i = 0, lock_srq = hdr->lhb_hash; i < hdr->lhb_hash_slots; i++, lock_srq++)
 	{
 		SRQ_INIT((*lock_srq));
 	}
 
 	// Set lock_ordering flag for the first time
 
-	const ULONG length = sizeof(lhb) + (sh_mem_header->lhb_hash_slots * sizeof(sh_mem_header->lhb_hash[0]));
-	sh_mem_header->lhb_length = sh_mem_length_mapped;
-	sh_mem_header->lhb_used = FB_ALIGN(length, FB_ALIGNMENT);
+	const ULONG length = sizeof(lhb) + (hdr->lhb_hash_slots * sizeof(hdr->lhb_hash[0]));
+	hdr->lhb_length = m_sharedMemory->sh_mem_length_mapped;
+	hdr->lhb_used = FB_ALIGN(length, FB_ALIGNMENT);
 
 	shb* secondary_header = (shb*) alloc(sizeof(shb), NULL);
 	if (!secondary_header)
@@ -2361,7 +2385,7 @@ bool LockManager::initialize(bool initializeMemory)
 		exit(STARTUP_ERROR);
 	}
 
-	sh_mem_header->lhb_secondary = SRQ_REL_PTR(secondary_header);
+	hdr->lhb_secondary = SRQ_REL_PTR(secondary_header);
 	secondary_header->shb_type = type_shb;
 	secondary_header->shb_remove_node = 0;
 	secondary_header->shb_insert_que = 0;
@@ -2372,7 +2396,7 @@ bool LockManager::initialize(bool initializeMemory)
 	his* history = NULL;
 	for (USHORT j = 0; j < 2; j++)
 	{
-		SRQ_PTR* prior = (j == 0) ? &sh_mem_header->lhb_history : &secondary_header->shb_history;
+		SRQ_PTR* prior = (j == 0) ? &hdr->lhb_history : &secondary_header->shb_history;
 
 		for (i = 0; i < HISTORY_BLOCKS; i++)
 		{
@@ -2387,11 +2411,11 @@ bool LockManager::initialize(bool initializeMemory)
 			prior = &history->his_next;
 		}
 
-		history->his_next = (j == 0) ? sh_mem_header->lhb_history : secondary_header->shb_history;
+		history->his_next = (j == 0) ? hdr->lhb_history : secondary_header->shb_history;
 	}
 
 	// Done initializing, unmark owner information
-	sh_mem_header->lhb_active_owner = 0;
+	hdr->lhb_active_owner = 0;
 
 	return true;
 }
@@ -2413,7 +2437,7 @@ void LockManager::insert_data_que(lbl* lock)
 
 	if (lock->lbl_series < LCK_MAX_SERIES && lock->lbl_data)
 	{
-		SRQ data_header = &sh_mem_header->lhb_data[lock->lbl_series];
+		SRQ data_header = &m_sharedMemory->getHeader()->lhb_data[lock->lbl_series];
 
 		SRQ lock_srq;
 		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
@@ -2453,7 +2477,7 @@ void LockManager::insert_tail(SRQ lock_srq, SRQ node)
  *
  **************************************/
 	ASSERT_ACQUIRED;
-	shb* const recover = (shb*) SRQ_ABS_PTR(sh_mem_header->lhb_secondary);
+	shb* const recover = (shb*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_secondary);
 	DEBUG_DELAY;
 	recover->shb_insert_que = SRQ_REL_PTR(lock_srq);
 	DEBUG_DELAY;
@@ -2562,9 +2586,9 @@ bool LockManager::internal_convert(Attachment* attachment,
 
 	request->lrq_requested = request->lrq_state;
 	ASSERT_ACQUIRED;
-	++sh_mem_header->lhb_denies;
+	++(m_sharedMemory->getHeader()->lhb_denies);
 	if (lck_wait < 0)
-		++sh_mem_header->lhb_timeouts;
+		++(m_sharedMemory->getHeader()->lhb_timeouts);
 
 	statusVector << Arg::Gds(lck_wait > 0 ? isc_deadlock :
 		(lck_wait < 0 ? isc_lock_timeout : isc_lock_conflict));
@@ -2726,14 +2750,14 @@ void LockManager::post_history(USHORT operation,
 
 	if (old_version)
 	{
-		history = (his*) SRQ_ABS_PTR(sh_mem_header->lhb_history);
+		history = (his*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_history);
 		ASSERT_ACQUIRED;
-		sh_mem_header->lhb_history = history->his_next;
+		m_sharedMemory->getHeader()->lhb_history = history->his_next;
 	}
 	else
 	{
 		ASSERT_ACQUIRED;
-		shb* recover = (shb*) SRQ_ABS_PTR(sh_mem_header->lhb_secondary);
+		shb* recover = (shb*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_secondary);
 		history = (his*) SRQ_ABS_PTR(recover->shb_history);
 		recover->shb_history = history->his_next;
 	}
@@ -2843,9 +2867,9 @@ void LockManager::post_wakeup(own* owner)
 
 	if (owner->own_waits)
 	{
-		++sh_mem_header->lhb_wakeups;
+		++(m_sharedMemory->getHeader()->lhb_wakeups);
 		owner->own_flags |= OWN_wakeup;
-		(void) ISC_event_post(&owner->own_wakeup);
+		(void) m_sharedMemory->eventPost(&owner->own_wakeup);
 	}
 }
 
@@ -2867,7 +2891,7 @@ bool LockManager::probe_processes()
 	bool purged = false;
 
 	SRQ lock_srq;
-	SRQ_LOOP(sh_mem_header->lhb_processes, lock_srq)
+	SRQ_LOOP(m_sharedMemory->getHeader()->lhb_processes, lock_srq)
 	{
 		prc* const process = (prc*) ((UCHAR*) lock_srq - OFFSET(prc*, prc_lhb_processes));
 		if (process->prc_process_id != PID && !ISC_check_process_existence(process->prc_process_id))
@@ -2914,7 +2938,7 @@ void LockManager::purge_owner(SRQ_PTR purging_owner_offset, own* owner)
 		lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		remove_que(&request->lrq_own_blocks);
 		request->lrq_type = type_null;
-		insert_tail(&sh_mem_header->lhb_free_requests, &request->lrq_lbl_requests);
+		insert_tail(&m_sharedMemory->getHeader()->lhb_free_requests, &request->lrq_lbl_requests);
 	}
 
 	// Release owner block
@@ -2922,14 +2946,14 @@ void LockManager::purge_owner(SRQ_PTR purging_owner_offset, own* owner)
 	remove_que(&owner->own_prc_owners);
 
 	remove_que(&owner->own_lhb_owners);
-	insert_tail(&sh_mem_header->lhb_free_owners, &owner->own_lhb_owners);
+	insert_tail(&m_sharedMemory->getHeader()->lhb_free_owners, &owner->own_lhb_owners);
 
 	owner->own_owner_type = 0;
 	owner->own_owner_id = 0;
 	owner->own_process = 0;
 	owner->own_flags = 0;
 
-	ISC_event_fini(&owner->own_wakeup);
+	m_sharedMemory->eventFini(&owner->own_wakeup);
 }
 
 
@@ -2955,12 +2979,12 @@ void LockManager::purge_process(prc* process)
 	}
 
 	remove_que(&process->prc_lhb_processes);
-	insert_tail(&sh_mem_header->lhb_free_processes, &process->prc_lhb_processes);
+	insert_tail(&m_sharedMemory->getHeader()->lhb_free_processes, &process->prc_lhb_processes);
 
 	process->prc_process_id = 0;
 	process->prc_flags = 0;
 
-	ISC_event_fini(&process->prc_blocking);
+	m_sharedMemory->eventFini(&process->prc_blocking);
 }
 
 
@@ -2990,7 +3014,7 @@ void LockManager::remap_local_owners()
 
 		if (owner->own_waits)
 		{
-			if (ISC_event_post(&owner->own_wakeup) != FB_SUCCESS)
+			if (m_sharedMemory->eventPost(&owner->own_wakeup) != FB_SUCCESS)
 			{
 				bug(NULL, "remap failed: ISC_event_post() failed");
 			}
@@ -3026,7 +3050,7 @@ void LockManager::remove_que(SRQ node)
  *
  **************************************/
 	ASSERT_ACQUIRED;
-	shb* recover = (shb*) SRQ_ABS_PTR(sh_mem_header->lhb_secondary);
+	shb* recover = (shb*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_secondary);
 	DEBUG_DELAY;
 	recover->shb_remove_node = SRQ_REL_PTR(node);
 	DEBUG_DELAY;
@@ -3081,26 +3105,26 @@ void LockManager::release_shmem(SRQ_PTR owner_offset)
  *
  **************************************/
 
-	if (!sh_mem_header)
+	if (!m_sharedMemory->getHeader())
 		return;
 
-	if (owner_offset && sh_mem_header->lhb_active_owner != owner_offset)
+	if (owner_offset && m_sharedMemory->getHeader()->lhb_active_owner != owner_offset)
 		bug(NULL, "release when not owner");
 
 #ifdef VALIDATE_LOCK_TABLE
 	// Validate the lock table occasionally (every 500 releases)
-	if ((sh_mem_header->lhb_acquires % (HISTORY_BLOCKS / 2)) == 0)
-		validate_lhb(sh_mem_header);
+	if ((m_sharedMemory->getHeader()->lhb_acquires % (HISTORY_BLOCKS / 2)) == 0)
+		validate_lhb(m_sharedMemory->getHeader());
 #endif
 
-	if (!sh_mem_header->lhb_active_owner)
+	if (!m_sharedMemory->getHeader()->lhb_active_owner)
 		bug(NULL, "release when not active");
 
 	DEBUG_DELAY;
 
-	sh_mem_header->lhb_active_owner = 0;
+	m_sharedMemory->getHeader()->lhb_active_owner = 0;
 
-	mutexUnlock();
+	m_sharedMemory->mutexUnlock();
 
 	DEBUG_DELAY;
 }
@@ -3127,7 +3151,7 @@ void LockManager::release_request(lrq* request)
 	remove_que(&request->lrq_own_requests);
 
 	request->lrq_type = type_null;
-	insert_tail(&sh_mem_header->lhb_free_requests, &request->lrq_lbl_requests);
+	insert_tail(&m_sharedMemory->getHeader()->lhb_free_requests, &request->lrq_lbl_requests);
 	lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 
 	// If the request is marked as blocking, clean it up
@@ -3160,7 +3184,7 @@ void LockManager::release_request(lrq* request)
 		remove_que(&lock->lbl_lhb_data);
 		lock->lbl_type = type_null;
 
-		insert_tail(&sh_mem_header->lhb_free_locks, &lock->lbl_lhb_hash);
+		insert_tail(&m_sharedMemory->getHeader()->lhb_free_locks, &lock->lbl_lhb_hash);
 		return;
 	}
 
@@ -3226,7 +3250,7 @@ bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner)
 
 	DEBUG_DELAY;
 
-	if (ISC_event_post(&process->prc_blocking) == FB_SUCCESS)
+	if (m_sharedMemory->eventPost(&process->prc_blocking) == FB_SUCCESS)
 		return true;
 
 	DEBUG_MSG(1, ("signal_owner - direct delivery failed\n"));
@@ -3294,7 +3318,7 @@ void LockManager::validate_lhb(const lhb* alhb)
 		return;
 
 	CHECK(alhb != NULL);
-	CHECK(alhb->mhb_type == SRAM_LOCK_MANAGER);
+	CHECK(alhb->mhb_type == SharedMemoryBase::SRAM_LOCK_MANAGER);
 	CHECK(alhb->mhb_version == LHB_VERSION);
 
 	CHECK(alhb->lhb_type == type_lhb);
@@ -3474,7 +3498,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 		CHECK(owner->own_owner_type <= 2);
 	}
 
-	CHECK(owner->own_acquire_time <= sh_mem_header->lhb_acquires);
+	CHECK(owner->own_acquire_time <= m_sharedMemory->getHeader()->lhb_acquires);
 
 	// Check that no invalid flag bit is set
 	CHECK(!(owner->own_flags & ~(OWN_scanned | OWN_wakeup | OWN_signaled)));
@@ -3744,8 +3768,8 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
  **************************************/
 	ASSERT_ACQUIRED;
 
-	++sh_mem_header->lhb_waits;
-	const SLONG scan_interval = sh_mem_header->lhb_scan_interval;
+	++(m_sharedMemory->getHeader()->lhb_waits);
+	const SLONG scan_interval = m_sharedMemory->getHeader()->lhb_scan_interval;
 
 	// lrq_count will be off if we wait for a pending request
 	CHECK(!(request->lrq_flags & LRQ_pending));
@@ -3776,7 +3800,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 	if (lck_wait <= 0)
 		request->lrq_flags |= LRQ_wait_timeout;
 
-	SLONG value = ISC_event_clear(&owner->own_wakeup);
+	SLONG value = m_sharedMemory->eventClear(&owner->own_wakeup);
 
 	// Post blockage. If the blocking owner has disappeared, the blockage
 	// may clear spontaneously.
@@ -3841,7 +3865,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 
 				{ // scope
 					Jrd::Attachment::Checkout cout(attachment);
-					ret = ISC_event_wait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
+					ret = m_sharedMemory->eventWait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 					--m_waitingOwners;
 				}
 			}
@@ -3862,12 +3886,12 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 		// ret==FB_SUCCESS --> we were deliberately woken up
 		// ret==FB_FAILURE --> we still don't know why we woke up
 
-		// Only if we came out of the ISC_event_wait() because of a post_wakeup()
+		// Only if we came out of the m_sharedMemory->eventWait() because of a post_wakeup()
 		// by another owner is OWN_wakeup set. This is the only FB_SUCCESS case.
 
 		if (ret == FB_SUCCESS)
 		{
-			value = ISC_event_clear(&owner->own_wakeup);
+			value = m_sharedMemory->eventClear(&owner->own_wakeup);
 		}
 
 		if (owner->own_flags & OWN_wakeup)
@@ -3886,7 +3910,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 		// platforms (eg: SUN4) and remapping notification.
 		// Note: we allow a 1 second leaway on declaring a bogus
 		// wakeup due to timing differences (we use seconds here,
-		// ISC_event_wait() uses finer granularity)
+		// eventWait() uses finer granularity)
 
 		if ((ret != FB_SUCCESS) && (current_time + 1 < timeout))
 			continue;
@@ -3955,7 +3979,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 
 			DEBUG_MSG(0, ("wait_for_request: selecting something for deadlock kill\n"));
 
-			++sh_mem_header->lhb_deadlocks;
+			++(m_sharedMemory->getHeader()->lhb_deadlocks);
 			blocking_request->lrq_flags |= LRQ_rejected;
 			remove_que(&blocking_request->lrq_own_pending);
 			blocking_request->lrq_flags &= ~LRQ_pending;

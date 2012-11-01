@@ -577,7 +577,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 	{
 		// Handle out of memory error, etc
 		delete alloc_table;
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		alloc_table = NULL;
 		last_allocated_page = 0;
 		return false;
@@ -648,7 +648,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 		delete alloc_table;
 		alloc_table = NULL;
 		last_allocated_page = 0;
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		return 0;
 	}
 

@@ -1487,7 +1487,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	catch (const Firebird::Exception& ex)
 	{
 
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		ex.stuff_exception(tdbb->tdbb_status_vector);
 
 		request->adjustCallerStats();
 

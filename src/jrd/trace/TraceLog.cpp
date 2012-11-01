@@ -59,11 +59,15 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	m_fileHandle = -1;
 	m_reader = reader;
 
-	Arg::StatusVector statusVector;
-	if (!mapFile(statusVector, fileName.c_str(), sizeof(TraceLogHeader)))
+	try
 	{
-		iscLogStatus("TraceLog: cannot initialize the shared memory region", statusVector.value());
-		statusVector.raise();
+		m_sharedMemory.reset(FB_NEW(pool)
+			SharedMemory<TraceLogHeader>(fileName.c_str(), sizeof(TraceLogHeader), this));
+	}
+	catch(const Exception& ex)
+	{
+		iscLogException("TraceLog: cannot initialize the shared memory region", ex);
+		throw;
 	}
 
 	char dir[MAXPATHLEN];
@@ -74,7 +78,7 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	if (m_reader)
 		m_fileNum = 0;
 	else
-		m_fileNum = sh_mem_header->writeFileNum;
+		m_fileNum = m_sharedMemory->getHeader()->writeFileNum;
 
 	m_fileHandle = openFile(m_fileNum);
 }
@@ -83,25 +87,21 @@ TraceLog::~TraceLog()
 {
 	::close(m_fileHandle);
 
-	if (m_reader)
-	{
+	if (m_reader) {
 		// indicate reader is gone
-		sh_mem_header->readFileNum = MAX_FILE_NUM;
+		m_sharedMemory->getHeader()->readFileNum = MAX_FILE_NUM;
 
-		for (; m_fileNum <= sh_mem_header->writeFileNum; m_fileNum++)
+		for (; m_fileNum <= m_sharedMemory->getHeader()->writeFileNum; m_fileNum++)
 			removeFile(m_fileNum);
 	}
-	else if (m_fileNum < sh_mem_header->readFileNum) {
+	else if (m_fileNum < m_sharedMemory->getHeader()->readFileNum) {
 		removeFile(m_fileNum);
 	}
 
-	const bool readerDone = (sh_mem_header->readFileNum == MAX_FILE_NUM);
-
-	Arg::StatusVector statusVector;
-	unmapFile(statusVector);
+	const bool readerDone = (m_sharedMemory->getHeader()->readFileNum == MAX_FILE_NUM);
 
 	if (m_reader || readerDone) {
-		unlink(m_baseFileName.c_str());
+		m_sharedMemory->removeMapFile();
 	}
 }
 
@@ -147,8 +147,8 @@ size_t TraceLog::read(void* buf, size_t size)
 				::close(m_fileHandle);
 				removeFile(m_fileNum);
 
-				fb_assert(sh_mem_header->readFileNum == m_fileNum);
-				m_fileNum = ++sh_mem_header->readFileNum;
+				fb_assert(m_sharedMemory->getHeader()->readFileNum == m_fileNum);
+				m_fileNum = ++(m_sharedMemory->getHeader()->readFileNum);
 				m_fileHandle = openFile(m_fileNum);
 			}
 			else
@@ -178,7 +178,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 	fb_assert(!m_reader);
 
 	// if reader already gone, don't write anything
-	if (sh_mem_header->readFileNum == MAX_FILE_NUM)
+	if (m_sharedMemory->getHeader()->readFileNum == MAX_FILE_NUM)
 		return size;
 
 	TraceLogGuard guard(this);
@@ -194,15 +194,15 @@ size_t TraceLog::write(const void* buf, size_t size)
 			// While this instance of writer was idle, new log file was created.
 			// More, if current file was already read by reader, we must delete it.
 			::close(m_fileHandle);
-			if (m_fileNum < sh_mem_header->readFileNum)
+			if (m_fileNum < m_sharedMemory->getHeader()->readFileNum)
 			{
 				removeFile(m_fileNum);
 			}
-			if (m_fileNum == sh_mem_header->writeFileNum)
+			if (m_fileNum == m_sharedMemory->getHeader()->writeFileNum)
 			{
-				++sh_mem_header->writeFileNum;
+				++(m_sharedMemory->getHeader()->writeFileNum);
 			}
-			m_fileNum = sh_mem_header->writeFileNum;
+			m_fileNum = m_sharedMemory->getHeader()->writeFileNum;
 			m_fileHandle = openFile(m_fileNum);
 			continue;
 		}
@@ -216,7 +216,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 		if (writeLeft || (len + toWrite == MAX_LOG_FILE_SIZE))
 		{
 			::close(m_fileHandle);
-			m_fileNum = ++sh_mem_header->writeFileNum;
+			m_fileNum = ++(m_sharedMemory->getHeader()->writeFileNum);
 			m_fileHandle = openFile(m_fileNum);
 		}
 	}
@@ -226,7 +226,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 
 size_t TraceLog::getApproxLogSize() const
 {
-	return (sh_mem_header->writeFileNum - sh_mem_header->readFileNum + 1) *
+	return (m_sharedMemory->getHeader()->writeFileNum - m_sharedMemory->getHeader()->readFileNum + 1) *
 			(MAX_LOG_FILE_SIZE / (1024 * 1024));
 }
 
@@ -241,19 +241,20 @@ void TraceLog::mutexBug(int state, const char* string)
 	exit(FINI_ERROR);
 }
 
-bool TraceLog::initialize(bool initialize)
+bool TraceLog::initialize(SharedMemoryBase* sm, bool initialize)
 {
+	TraceLogHeader* hdr = reinterpret_cast<TraceLogHeader*>(sm->sh_mem_header);
 	if (initialize)
 	{
-		sh_mem_header->mhb_type = SRAM_TRACE_LOG;
-		sh_mem_header->mhb_version = 1;
-		sh_mem_header->readFileNum = 0;
-		sh_mem_header->writeFileNum = 0;
+		hdr->mhb_type = SharedMemoryBase::SRAM_TRACE_LOG;
+		hdr->mhb_version = 1;
+		hdr->readFileNum = 0;
+		hdr->writeFileNum = 0;
 	}
 	else
 	{
-		fb_assert(sh_mem_header->mhb_type == SRAM_TRACE_LOG);
-		fb_assert(sh_mem_header->mhb_version == 1);
+		fb_assert(hdr->mhb_type == SharedMemoryBase::SRAM_TRACE_LOG);
+		fb_assert(hdr->mhb_version == 1);
 	}
 
 	return true;
@@ -261,12 +262,12 @@ bool TraceLog::initialize(bool initialize)
 
 void TraceLog::lock()
 {
-	mutexLock();
+	m_sharedMemory->mutexLock();
 }
 
 void TraceLog::unlock()
 {
-	mutexUnlock();
+	m_sharedMemory->mutexUnlock();
 }
 
 } // namespace Jrd

@@ -38,6 +38,7 @@
 #include "../common/StatusArg.h"
 #include "../common/ThreadStart.h"
 #include "../common/isc_s_proto.h"
+#include "../common/classes/auto.h"
 #ifdef USE_SHMEM_EXT
 #include "../common/classes/objects_array.h"
 #endif
@@ -125,7 +126,7 @@ struct lhb : public Jrd::MemoryHeader
 	ULONG lhb_length;				// Size of lock table
 	ULONG lhb_used;					// Bytes of lock table in use
 	USHORT lhb_hash_slots;			// Number of hash slots allocated
-	struct mtx lhb_mutex;			// Mutex controlling access
+
 	SRQ_PTR lhb_history;
 	ULONG lhb_scan_interval;		// Deadlock scan interval (secs)
 	ULONG lhb_acquire_spins;
@@ -221,7 +222,7 @@ struct prc
 	int prc_process_id;				// Process ID
 	srq prc_lhb_processes;			// Process que
 	srq prc_owners;					// Owners
-	event_t prc_blocking;			// Blocking event block
+	Jrd::event_t prc_blocking;		// Blocking event block
 	USHORT prc_flags;				// Unused. Misc flags
 };
 
@@ -243,7 +244,7 @@ struct own
 	FB_UINT64 own_acquire_time;		// lhb_acquires when owner last tried acquire()
 	USHORT own_waits;				// Number of requests we are waiting on
 	USHORT own_ast_count;			// Number of ASTs being delivered
-	event_t own_wakeup;				// Wakeup event block
+	Jrd::event_t own_wakeup;		// Wakeup event block
 	USHORT own_flags;				// Misc stuff
 };
 
@@ -301,7 +302,7 @@ class Attachment;
 
 class LockManager : private Firebird::RefCounted,
 					public Firebird::GlobalStorage,
-					public SharedMemory<lhb>
+					public IpcObject
 {
 	class LockTableGuard
 	{
@@ -336,8 +337,8 @@ class LockManager : private Firebird::RefCounted,
 
 		void setOwner(SLONG owner)
 		{
-			fb_assert(owner && m_owner && m_owner == m_lm->sh_mem_header->lhb_active_owner);
-			m_owner = m_lm->sh_mem_header->lhb_active_owner = owner;
+			fb_assert(owner && m_owner && m_lm->m_sharedMemory && m_owner == m_lm->m_sharedMemory->getHeader()->lhb_active_owner);
+			m_owner = m_lm->m_sharedMemory->getHeader()->lhb_active_owner = owner;
 		}
 
 	private:
@@ -353,7 +354,7 @@ class LockManager : private Firebird::RefCounted,
 	{
 	public:
 		explicit LockTableCheckout(LockManager* lm)
-			: m_lm(lm), m_owner(m_lm->sh_mem_header->lhb_active_owner)
+			: m_lm(lm), m_owner(m_lm->m_sharedMemory->getHeader()->lhb_active_owner)
 		{
 			m_lm->release_shmem(m_owner);
 			m_lm->m_localMutex.leave();
@@ -474,7 +475,7 @@ private:
 		return 0;
 	}
 
-	bool initialize(bool init);
+	bool initialize(SharedMemoryBase* sm, bool init);
 	void mutexBug(int osErrorCode, const char* text);
 
 	bool m_bugcheck;
@@ -489,6 +490,10 @@ private:
 	Firebird::Semaphore m_cleanupSemaphore;
 	Firebird::Semaphore m_startupSemaphore;
 
+public:
+	Firebird::AutoPtr<SharedMemory<lhb> > m_sharedMemory;
+
+private:
 	bool m_blockage;
 
 	Firebird::string m_dbId;

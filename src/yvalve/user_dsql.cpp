@@ -1042,11 +1042,11 @@ static ISC_STATUS error(const Firebird::Exception& ex)
 {
 	if (UDSQL_error->dsql_user_status)
 	{
-		Firebird::stuff_exception(UDSQL_error->dsql_user_status, ex);
+		ex.stuff_exception(UDSQL_error->dsql_user_status);
 		return UDSQL_error->dsql_user_status[1];
 	}
 
-	Firebird::stuff_exception(UDSQL_error->dsql_status, ex);
+	ex.stuff_exception(UDSQL_error->dsql_status);
 	gds__print_status(UDSQL_error->dsql_status);
 
 	exit(UDSQL_error->dsql_status[1]);

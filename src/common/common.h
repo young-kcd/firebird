@@ -930,6 +930,14 @@ const int HIGH_WORD		= 0;
 #endif
 
 
+// In many cases we need to assign wrong handle value to closed handle
+// Some OSes define it, others - not
+#ifndef WIN_NT
+#ifndef INVALID_HANDLE_VALUE
+#define INVALID_HANDLE_VALUE (-1)
+#endif
+#endif
+
 static const TEXT FB_SHORT_MONTHS[][4] =
 {
 	"Jan", "Feb", "Mar",

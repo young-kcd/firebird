@@ -29,12 +29,13 @@
 #ifndef CLASSES_RWLOCK_H
 #define CLASSES_RWLOCK_H
 
+#include "../common/classes/fb_atomic.h"
+
 #ifdef WIN_NT
 
 #include <windows.h>
 #include <limits.h>
 
-#include "../common/classes/fb_atomic.h"
 #include "../common/classes/locks.h"
 
 
@@ -186,6 +187,11 @@ class RWLock
 {
 private:
 	pthread_rwlock_t lock;
+
+#ifdef DEV_BUILD
+	AtomicCounter lockCounter;
+#endif
+
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
 
@@ -212,14 +218,24 @@ public:
 	explicit RWLock(class MemoryPool&) { init(); }
 	~RWLock()
 	{
+#ifdef DEV_BUILD
+		fb_assert(lockCounter.value() == 0);
+#endif
+
 		if (pthread_rwlock_destroy(&lock))
 			system_call_failed::raise("pthread_rwlock_destroy");
 	}
+
 	void beginRead()
 	{
 		if (pthread_rwlock_rdlock(&lock))
 			system_call_failed::raise("pthread_rwlock_rdlock");
+
+#ifdef DEV_BUILD
+		++lockCounter;
+#endif
 	}
+
 	bool tryBeginRead()
 	{
 		const int code = pthread_rwlock_tryrdlock(&lock);
@@ -227,13 +243,24 @@ public:
 			return false;
 		if (code)
 			system_call_failed::raise("pthread_rwlock_tryrdlock");
+
+#ifdef DEV_BUILD
+		++lockCounter;
+#endif
 		return true;
 	}
+
 	void endRead()
 	{
+#ifdef DEV_BUILD
+		if (lockCounter.exchangeAdd(-1) <= 0)
+			fb_assert(false);
+#endif
+
 		if (pthread_rwlock_unlock(&lock))
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}
+
 	bool tryBeginWrite()
 	{
 		const int code = pthread_rwlock_trywrlock(&lock);
@@ -241,15 +268,30 @@ public:
 			return false;
 		if (code)
 			system_call_failed::raise("pthread_rwlock_trywrlock");
+
+#ifdef DEV_BUILD
+		++lockCounter;
+#endif
 		return true;
 	}
+
 	void beginWrite()
 	{
 		if (pthread_rwlock_wrlock(&lock))
 			system_call_failed::raise("pthread_rwlock_wrlock");
+
+#ifdef DEV_BUILD
+		++lockCounter;
+#endif
 	}
+
 	void endWrite()
 	{
+#ifdef DEV_BUILD
+		if (lockCounter.exchangeAdd(-1) <= 0)
+			fb_assert(false);
+#endif
+
 		if (pthread_rwlock_unlock(&lock))
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}

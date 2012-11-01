@@ -79,7 +79,7 @@ struct prb
 	srq prb_processes;				// Process que owned by header
 	srq prb_sessions;				// Sessions within process
 	SLONG prb_process_id;			// Process id
-	event_t prb_event;				// Event on which to wait
+	Jrd::event_t prb_event;			// Event on which to wait
 	USHORT prb_flags;
 };
 

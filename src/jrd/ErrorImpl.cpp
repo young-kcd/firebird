@@ -89,7 +89,7 @@ void ErrorImpl::statusVectorToError(const ISC_STATUS* vector, Error* error)
 void ErrorImpl::exceptionToError(const Firebird::Exception& ex, Error* error)
 {
 	ISC_STATUS_ARRAY statusVector;
-	Firebird::stuff_exception(statusVector, ex);
+	ex.stuff_exception(statusVector);
 	statusVectorToError(statusVector, error);
 }
 

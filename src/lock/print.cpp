@@ -87,14 +87,15 @@ struct waitque
 
 namespace
 {
-	class sh_mem : public Jrd::SharedMemory<lhb>
+	class sh_mem : public Jrd::IpcObject
 	{
 	public:
-		explicit sh_mem(bool p_consistency)
-		  :	sh_mem_consistency(p_consistency)
+		explicit sh_mem(bool p_consistency, const char* filename)
+		  :	sh_mem_consistency(p_consistency),
+			shared_memory(FB_NEW(*getDefaultMemoryPool()) Jrd::SharedMemory<lhb>(filename, 0, this))
 		{ }
 
-		bool initialize(bool)
+		bool initialize(Jrd::SharedMemoryBase*, bool)
 		{
 			// Initialize a lock table to looking -- i.e. don't do nuthin.
 			return sh_mem_consistency;
@@ -107,6 +108,9 @@ namespace
 
 	private:
 		bool sh_mem_consistency;
+
+	public:
+		Firebird::AutoPtr<Jrd::SharedMemory<lhb> > shared_memory;
 	};
 }
 
@@ -128,13 +132,6 @@ static void prt_html_end(OUTFILE);
 static const TEXT preOwn[] = "own";
 static const TEXT preRequest[] = "request";
 static const TEXT preLock[] = "lock";
-
-#ifdef WIN_NT
-static struct mtx shmemMutex;
-#define MUTEX &shmemMutex
-#else
-#define MUTEX &LOCK_header->lhb_mutex
-#endif
 
 
 class HtmlLink
@@ -309,7 +306,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			switch (c)
 			{
 			case '?':
-				FPRINTF(outfile, usage);
+				FPRINTF(outfile, "%s", usage);
 				exit(FINI_OK);
 				break;
 
@@ -510,31 +507,26 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	else
 	{
 		FPRINTF(outfile, "Please specify either -d <database name> or -f <lock file name>\n\n");
-		FPRINTF(outfile, usage);
+		FPRINTF(outfile, "%s", usage);
 		exit(FINI_OK);
 	}
 
-	Firebird::Arg::StatusVector statusVector;
-	sh_mem shmem_data(sw_consistency);
-
 	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > buffer;
 	lhb* LOCK_header = NULL;
+	Firebird::AutoPtr<sh_mem> shmem_data;
 
 	if (db_file)
 	{
-		if (!shmem_data.mapFile(statusVector, filename.c_str(), 0))
-		{
-			FPRINTF(outfile, "Unable to access lock table.\n");
-			gds__print_status(statusVector.value());
-			exit(FINI_OK);
-		}
-		LOCK_header = shmem_data.sh_mem_header;
+	  try
+	  {
+		shmem_data.reset(FB_NEW(*getDefaultMemoryPool()) sh_mem(sw_consistency, filename.c_str()));
+		LOCK_header = (lhb*) (shmem_data->shared_memory->sh_mem_header);
 
 		// Make sure the lock file is valid - if it's a zero length file we
 		// can't look at the header without causing a BUS error by going
 		// off the end of the mapped region.
 
-		if (shmem_data.sh_mem_length_mapped < sizeof(lhb))
+		if (shmem_data->shared_memory->sh_mem_length_mapped < sizeof(lhb))
 		{
 			// Mapped file is obviously too small to really be a lock file
 			FPRINTF(outfile, "Unable to access lock table - file too small.\n");
@@ -543,11 +535,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 		if (sw_consistency)
 		{
-			shmem_data.mutexLock();
+			shmem_data->shared_memory->mutexLock();
 		}
 
 #ifdef USE_SHMEM_EXT
-		ULONG extentSize = shmem_data.sh_mem_length_mapped;
+		ULONG extentSize = shmem_data->sh_mem_length_mapped;
 		ULONG totalSize = LOCK_header->lhb_length;
 		ULONG extentsCount = totalSize / extentSize + (totalSize % extentSize == 0 ? 0 : 1);
 
@@ -582,11 +574,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 		LOCK_header = (lhb*)(UCHAR*) buffer;
 #elif defined HAVE_OBJECT_MAP
-		if (LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
+		if (LOCK_header->lhb_length > shmem_data->shared_memory->sh_mem_length_mapped)
 		{
 			const ULONG length = LOCK_header->lhb_length;
-			shmem_data.remapFile(statusVector, length, false);
-			LOCK_header = shmem_data.sh_mem_header;
+			Firebird::Arg::StatusVector statusVector;
+			shmem_data->shared_memory->remapFile(statusVector, length, false);
+			LOCK_header = (lhb*)(shmem_data->shared_memory->sh_mem_header);
 		}
 #endif
 
@@ -613,8 +606,19 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header = (lhb*)(UCHAR*) buffer;
 #endif
 
-			shmem_data.mutexUnlock();
+			shmem_data->shared_memory->mutexUnlock();
 		}
+	  }
+	  catch (const Firebird::Exception& ex)
+	  {
+		FPRINTF(outfile, "Unable to access lock table.\n");
+
+		ISC_STATUS_ARRAY status;
+		ex.stuff_exception(status);
+		gds__print_status(status);
+
+		exit(FINI_OK);
+	  }
 	}
 	else if (lock_file)
 	{

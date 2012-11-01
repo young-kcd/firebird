@@ -751,7 +751,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		ex.stuff_exception(tdbb->tdbb_status_vector);
 		dbb->deletePool(val_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		return false;

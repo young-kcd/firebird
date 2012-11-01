@@ -287,17 +287,4 @@ void fatal_exception::raiseFmt(const char* format, ...)
 	throw fatal_exception(buffer);
 }
 
-// ************************** exception handling routines **************************
-
-// Serialize exception into status_vector
-ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex) throw()
-{
-	return ex.stuff_exception(status_vector);
-}
-
-ISC_STATUS stuff_exception(IStatus* status, const Firebird::Exception& ex) throw()
-{
-	return ex.stuffException(status);
-}
-
 }	// namespace Firebird

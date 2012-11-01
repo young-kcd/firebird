@@ -905,7 +905,7 @@ void Statement::close(thread_db* tdbb)
 			if (!doPunt && !wasError)
 			{
 				doPunt = true;
-				stuff_exception(tdbb->tdbb_status_vector, ex);
+				ex.stuff_exception(tdbb->tdbb_status_vector);
 			}
 		}
 		m_active = false;
@@ -929,7 +929,7 @@ void Statement::close(thread_db* tdbb)
 				if (!doPunt && !wasError)
 				{
 					doPunt = true;
-					stuff_exception(tdbb->tdbb_status_vector, ex);
+					ex.stuff_exception(tdbb->tdbb_status_vector);
 				}
 			}
 		}
@@ -944,7 +944,7 @@ void Statement::close(thread_db* tdbb)
 				if (!doPunt && !wasError)
 				{
 					doPunt = true;
-					stuff_exception(tdbb->tdbb_status_vector, ex);
+					ex.stuff_exception(tdbb->tdbb_status_vector);
 				}
 			}
 		}

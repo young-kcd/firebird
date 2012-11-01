@@ -96,42 +96,40 @@ MonitoringData::MonitoringData(const Database* dbb)
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
 	Arg::StatusVector statusVector;
-	mapFile(statusVector, name.c_str(), DEFAULT_SIZE);
-	if (!sh_mem_header)
+	try
 	{
-		iscLogStatus("Cannot initialize the shared memory region", statusVector.value());
-		status_exception::raise(statusVector);
+		shared_memory.reset(FB_NEW(*dbb->dbb_permanent) SharedMemory<MonitoringHeader>(name.c_str(), DEFAULT_SIZE, this));
+	}
+	catch (const Exception& ex)
+	{
+		iscLogException("MonitoringData: Cannot initialize the shared memory region", ex);
+		throw;
 	}
 
-	fb_assert(sh_mem_header->mhb_version == MONITOR_VERSION);
+	fb_assert(shared_memory->getHeader()->mhb_version == MONITOR_VERSION);
 }
 
 
 MonitoringData::~MonitoringData()
 {
-	{ // scope
-		Guard guard(this);
-		cleanup();
+	Guard guard(this);
+	cleanup();
 
-		if (sh_mem_header->used == sizeof(Header))
-			removeMapFile();
-	}
-
-	Arg::StatusVector statusVector;
-	unmapFile(statusVector);
+	if (shared_memory->getHeader()->used == sizeof(Header))
+		shared_memory->removeMapFile();
 }
 
 
 void MonitoringData::acquire()
 {
-	mutexLock();
+	shared_memory->mutexLock();
 
-	if (sh_mem_header->allocated > sh_mem_length_mapped)
+	if (shared_memory->getHeader()->allocated > shared_memory->sh_mem_length_mapped)
 	{
 #ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector statusVector;
-		remapFile(statusVector, sh_mem_header->allocated, false);
-		if (!remapFile(statusVector, sh_mem_header->allocated, false))
+		shared_memory->remapFile(statusVector, shared_memory->getHeader()->allocated, false);
+		if (!shared_memory->remapFile(statusVector, shared_memory->getHeader()->allocated, false))
 		{
 			status_exception::raise(statusVector);
 		}
@@ -144,7 +142,7 @@ void MonitoringData::acquire()
 
 void MonitoringData::release()
 {
-	mutexUnlock();
+	shared_memory->mutexUnlock();
 }
 
 
@@ -159,9 +157,9 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 	// and copy the data there, starting with our own dbb.
 
 	// First pass
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -177,9 +175,9 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 		}
 		else
 		{
-			fb_assert(sh_mem_header->used >= offset + length);
-			memmove(ptr, ptr + length, sh_mem_header->used - offset - length);
-			sh_mem_header->used -= length;
+			fb_assert(shared_memory->getHeader()->used >= offset + length);
+			memmove(ptr, ptr + length, shared_memory->getHeader()->used - offset - length);
+			shared_memory->getHeader()->used -= length;
 		}
 	}
 
@@ -189,14 +187,14 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 
 	fb_assert(self_dbb_offset);
 
-	UCHAR* const ptr = (UCHAR*) sh_mem_header + self_dbb_offset;
+	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + self_dbb_offset;
 	const Element* const element = (Element*) ptr;
 	memcpy(bufferPtr, ptr + sizeof(Element), element->length);
 	bufferPtr += element->length;
 
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -219,13 +217,13 @@ ULONG MonitoringData::setup()
 	ensureSpace(sizeof(Element));
 
 	// Put an up-to-date element at the tail
-	const ULONG offset = sh_mem_header->used;
-	UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+	const ULONG offset = shared_memory->getHeader()->used;
+	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 	Element* const element = (Element*) ptr;
 	element->processId = process_id;
 	element->localId = local_id;
 	element->length = 0;
-	sh_mem_header->used += alignOffset(sizeof(Element));
+	shared_memory->getHeader()->used += alignOffset(sizeof(Element));
 	return offset;
 }
 
@@ -235,30 +233,30 @@ void MonitoringData::write(ULONG offset, ULONG length, const void* buffer)
 	ensureSpace(length);
 
 	// Put an up-to-date element at the tail
-	UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 	Element* const element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
 	ULONG previous = alignOffset(sizeof(Element) + element->length);
 	element->length += length;
 	ULONG current = alignOffset(sizeof(Element) + element->length);
-	sh_mem_header->used += (current - previous);
+	shared_memory->getHeader()->used += (current - previous);
 }
 
 
 void MonitoringData::cleanup()
 {
 	// Remove information about our dbb
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (element->processId == process_id && element->localId == local_id)
 		{
-			fb_assert(sh_mem_header->used >= offset + length);
-			memmove(ptr, ptr + length, sh_mem_header->used - offset - length);
-			sh_mem_header->used -= length;
+			fb_assert(shared_memory->getHeader()->used >= offset + length);
+			memmove(ptr, ptr + length, shared_memory->getHeader()->used - offset - length);
+			shared_memory->getHeader()->used -= length;
 		}
 		else
 		{
@@ -270,19 +268,19 @@ void MonitoringData::cleanup()
 
 void MonitoringData::ensureSpace(ULONG length)
 {
-	ULONG newSize = sh_mem_header->used + length;
+	ULONG newSize = shared_memory->getHeader()->used + length;
 
-	if (newSize > sh_mem_header->allocated)
+	if (newSize > shared_memory->getHeader()->allocated)
 	{
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
 #ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector statusVector;
-		if (!remapFile(statusVector, newSize, true))
+		if (!shared_memory->remapFile(statusVector, newSize, true))
 		{
 			status_exception::raise(statusVector);
 		}
-		sh_mem_header->allocated = sh_mem_length_mapped;
+		shared_memory->getHeader()->allocated = shared_memory->sh_mem_length_mapped;
 #else
 		status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
@@ -299,16 +297,18 @@ void MonitoringData::mutexBug(int osErrorCode, const char* string)
 }
 
 
-bool MonitoringData::initialize(bool initialize)
+bool MonitoringData::initialize(SharedMemoryBase* sm, bool initialize)
 {
 	if (initialize)
 	{
-		// Initialize the shared data header
-		sh_mem_header->mhb_type = SRAM_DATABASE_SNAPSHOT;
-		sh_mem_header->mhb_version = MONITOR_VERSION;
+		MonitoringHeader* header = reinterpret_cast<MonitoringHeader*>(sm->sh_mem_header);
 
-		sh_mem_header->used = alignOffset(sizeof(Header));
-		sh_mem_header->allocated = sh_mem_length_mapped;
+		// Initialize the shared data header
+		header->mhb_type = SharedMemoryBase::SRAM_DATABASE_SNAPSHOT;
+		header->mhb_version = MONITOR_VERSION;
+
+		header->used = alignOffset(sizeof(Header));
+		header->allocated = sm->sh_mem_length_mapped;
 	}
 
 	return true;

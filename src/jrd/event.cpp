@@ -64,7 +64,7 @@
 #define MUTEX		m_mutex
 #endif
 
-#define SRQ_BASE                  ((UCHAR*) sh_mem_header)
+#define SRQ_BASE                  ((UCHAR*) m_sharedMemory->getHeader())
 
 using namespace Firebird;
 
@@ -149,11 +149,11 @@ EventManager::~EventManager()
 	{
 		// Terminate the event watcher thread
 		m_startupSemaphore.tryEnter(5);
-		(void) ISC_event_post(&m_process->prb_event);
+		(void) m_sharedMemory->eventPost(&m_process->prb_event);
 		m_cleanupSemaphore.tryEnter(5);
 
 #ifdef HAVE_OBJECT_MAP
-		unmapObject(localStatus, &m_process);
+		m_sharedMemory->unmapObject(localStatus, &m_process);
 #else
 		m_process = NULL;
 #endif
@@ -165,9 +165,9 @@ EventManager::~EventManager()
 	{
 		delete_process(process_offset);
 	}
-	if (sh_mem_header && SRQ_EMPTY(sh_mem_header->evh_processes))
+	if (m_sharedMemory->getHeader() && SRQ_EMPTY(m_sharedMemory->getHeader()->evh_processes))
 	{
-		removeMapFile();
+		m_sharedMemory->removeMapFile();
 	}
 	release_shmem();
 
@@ -180,26 +180,19 @@ void EventManager::attach_shared_file()
 	Firebird::PathName name;
 	get_shared_file_name(name);
 
-	Arg::StatusVector localStatus;
-	mapFile(localStatus, name.c_str(), m_config->getEventMemSize());
-	if (!sh_mem_header)
-	{
-		localStatus.raise();
-	}
+	SharedMemory<evh>* tmp = FB_NEW(*getDefaultMemoryPool())
+		SharedMemory<evh>(name.c_str(), m_config->getEventMemSize(), this);
 
-	fb_assert(sh_mem_header->mhb_type == SRAM_EVENT_MANAGER);
-	fb_assert(sh_mem_header->mhb_version == EVENT_VERSION);
+	// initialize will reset m_sharedMemory
+	fb_assert(m_sharedMemory == tmp);
+	fb_assert(m_sharedMemory->getHeader()->mhb_type == SharedMemoryBase::SRAM_EVENT_MANAGER);
+	fb_assert(m_sharedMemory->getHeader()->mhb_version == EVENT_VERSION);
 }
 
 
 void EventManager::detach_shared_file()
 {
-	Arg::StatusVector localStatus;
-	if (sh_mem_header)
-	{
-		unmapFile(localStatus);
-		sh_mem_header = NULL;
-	}
+	delete m_sharedMemory.release();
 }
 
 
@@ -291,7 +284,7 @@ SLONG EventManager::queEvents(SLONG session_id,
 	request->req_session = session_id;
 	request->req_process = m_processOffset;
 	request->req_ast = ast;
-	const SLONG id = ++sh_mem_header->evh_request_id;
+	const SLONG id = ++(m_sharedMemory->getHeader()->evh_request_id);
 	request->req_request_id = id;
 
 	const SLONG request_offset = SRQ_REL_PTR(request);
@@ -493,7 +486,7 @@ void EventManager::deliverEvents()
 	{
 		flag = false;
 		srq* event_srq;
-		SRQ_LOOP (sh_mem_header->evh_processes, event_srq)
+		SRQ_LOOP (m_sharedMemory->getHeader()->evh_processes, event_srq)
 		{
 			prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET (prb*, prb_processes));
 			if (process->prb_flags & PRB_wakeup)
@@ -526,22 +519,22 @@ void EventManager::acquire_shmem()
  *
  **************************************/
 
-	mutexLock();
+	m_sharedMemory->mutexLock();
 
 	// Check for shared memory state consistency
 
-	while (SRQ_EMPTY(sh_mem_header->evh_processes))
+	while (SRQ_EMPTY(m_sharedMemory->getHeader()->evh_processes))
 	{
 		if (! m_sharedFileCreated)
 		{
 			// Someone is going to delete shared file? Reattach.
-			mutexUnlock();
+			m_sharedMemory->mutexUnlock();
 			detach_shared_file();
 
 			THD_yield();
 
 			attach_shared_file();
-			mutexLock();
+			m_sharedMemory->mutexLock();
 		}
 		else
 		{
@@ -553,19 +546,19 @@ void EventManager::acquire_shmem()
 	}
 	fb_assert(!m_sharedFileCreated);
 
-	sh_mem_header->evh_current_process = m_processOffset;
+	m_sharedMemory->getHeader()->evh_current_process = m_processOffset;
 
-	if (sh_mem_header->evh_length > sh_mem_length_mapped)
+	if (m_sharedMemory->getHeader()->evh_length > m_sharedMemory->sh_mem_length_mapped)
 	{
-		const ULONG length = sh_mem_header->evh_length;
+		const ULONG length = m_sharedMemory->getHeader()->evh_length;
 
 #ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector localStatus;
-		if (!remapFile(localStatus, length, false))
+		if (!m_sharedMemory->remapFile(localStatus, length, false))
 #endif
 		{
 			release_shmem();
-			gds__log("Event table remap failed");
+			iscLogStatus("Event table remap failed", localStatus.value());
 			exit(FINI_ERROR);
 		}
 	}
@@ -590,7 +583,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	length = FB_ALIGN(length, FB_ALIGNMENT);
 	SRQ_PTR* best = NULL;
 
-	for (SRQ_PTR* ptr = &sh_mem_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+	for (SRQ_PTR* ptr = &m_sharedMemory->getHeader()->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		ptr = &free->frb_next)
 	{
 		const SLONG tail = free->frb_header.hdr_length - length;
@@ -604,19 +597,19 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 #ifdef HAVE_OBJECT_MAP
 	if (!best && !recurse)
 	{
-		const ULONG old_length = sh_mem_length_mapped;
+		const ULONG old_length = m_sharedMemory->sh_mem_length_mapped;
 		const ULONG ev_length = old_length + m_config->getEventMemSize();
 
 		Arg::StatusVector localStatus;
-		if (remapFile(localStatus, ev_length, true))
+		if (m_sharedMemory->remapFile(localStatus, ev_length, true))
 		{
-			free = (frb*) (((UCHAR*) sh_mem_header) + old_length);
+			free = (frb*) (((UCHAR*) m_sharedMemory->getHeader()) + old_length);
 			//free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
-			free->frb_header.hdr_length = sh_mem_length_mapped - old_length;
+			free->frb_header.hdr_length = m_sharedMemory->sh_mem_length_mapped - old_length;
 			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;
 
-			sh_mem_header->evh_length = sh_mem_length_mapped;
+			m_sharedMemory->getHeader()->evh_length = m_sharedMemory->sh_mem_length_mapped;
 
 			free_global(free);
 
@@ -668,20 +661,20 @@ void EventManager::create_process()
 
 	prb* const process = (prb*) alloc_global(type_prb, sizeof(prb), false);
 	process->prb_process_id = PID;
-	insert_tail(&sh_mem_header->evh_processes, &process->prb_processes);
+	insert_tail(&m_sharedMemory->getHeader()->evh_processes, &process->prb_processes);
 	SRQ_INIT(process->prb_sessions);
 
-	if (ISC_event_init(&process->prb_event) != FB_SUCCESS)
+	if (m_sharedMemory->eventInit(&process->prb_event) != FB_SUCCESS)
 	{
 		release_shmem();
-		(Firebird::Arg::Gds(isc_random) << "ISC_event_init() failed").raise();
+		(Firebird::Arg::Gds(isc_random) << "eventInit() failed").raise();
 	}
 
 	m_processOffset = SRQ_REL_PTR(process);
 
 #ifdef HAVE_OBJECT_MAP
 	Arg::StatusVector localStatus;
-	m_process = mapObject<prb>(localStatus, m_processOffset);
+	m_process = m_sharedMemory->mapObject<prb>(localStatus, m_processOffset);
 
 	if (!m_process)
 	{
@@ -739,7 +732,7 @@ void EventManager::delete_process(SLONG process_offset)
 		delete_session(SRQ_REL_PTR(session));
 	}
 
-	ISC_event_fini(&process->prb_event);
+	m_sharedMemory->eventFini(&process->prb_event);
 
 	// Untangle and release process block
 
@@ -974,7 +967,7 @@ evnt* EventManager::find_event(USHORT length, const TEXT* string)
  *
  **************************************/
 	srq* event_srq;
-	SRQ_LOOP(sh_mem_header->evh_events, event_srq)
+	SRQ_LOOP(m_sharedMemory->getHeader()->evh_events, event_srq)
 	{
 		evnt* const event = (evnt*) ((UCHAR*) event_srq - OFFSET(evnt*, evnt_events));
 
@@ -1005,14 +998,14 @@ void EventManager::free_global(frb* block)
 	const SRQ_PTR offset = SRQ_REL_PTR(block);
 	block->frb_header.hdr_type = type_frb;
 
-	for (ptr = &sh_mem_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+	for (ptr = &m_sharedMemory->getHeader()->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
 	{
 		if ((SCHAR *) block < (SCHAR *) free)
 			break;
 	}
 
-	if (offset <= 0 || static_cast<ULONG>(offset) > sh_mem_header->evh_length ||
+	if (offset <= 0 || static_cast<ULONG>(offset) > m_sharedMemory->getHeader()->evh_length ||
 		(prior && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
 	{
 		punt("free_global: bad block");
@@ -1073,7 +1066,7 @@ void EventManager::mutexBug(int osErrorCode, const char* text)
 }
 
 
-bool EventManager::initialize(bool initialize)
+bool EventManager::initialize(SharedMemoryBase* sm, bool init)
 {
 /**************************************
  *
@@ -1086,24 +1079,29 @@ bool EventManager::initialize(bool initialize)
  *
  **************************************/
 
-	m_sharedFileCreated = initialize;
+	m_sharedFileCreated = init;
 
-	if (initialize)
+	// reset m_sharedMemory in advance to be able to use SRQ_BASE macro
+	m_sharedMemory.reset(reinterpret_cast<SharedMemory<evh>*>(sm));
+
+	if (init)
 	{
-		sh_mem_header->evh_length = sh_mem_length_mapped;
-		sh_mem_header->mhb_version = EVENT_VERSION;
-		sh_mem_header->mhb_type = SRAM_EVENT_MANAGER;
-		sh_mem_header->evh_request_id = 0;
+		evh* header = m_sharedMemory->getHeader();
 
-		SRQ_INIT(sh_mem_header->evh_processes);
-		SRQ_INIT(sh_mem_header->evh_events);
+		header->evh_length = sm->sh_mem_length_mapped;
+		header->mhb_version = EVENT_VERSION;
+		header->mhb_type = SharedMemoryBase::SRAM_EVENT_MANAGER;
+		header->evh_request_id = 0;
 
-		frb* const free = (frb*) ((UCHAR*) sh_mem_header + sizeof(evh));
-		free->frb_header.hdr_length = sh_mem_length_mapped - sizeof(evh);
+		SRQ_INIT(header->evh_processes);
+		SRQ_INIT(header->evh_events);
+
+		frb* const free = (frb*) ((UCHAR*) header + sizeof(evh));
+		free->frb_header.hdr_length = sm->sh_mem_length_mapped - sizeof(evh);
 		free->frb_header.hdr_type = type_frb;
 		free->frb_next = 0;
 
-		sh_mem_header->evh_free = (UCHAR*) free - (UCHAR*) sh_mem_header;
+		header->evh_free = (UCHAR*) free - (UCHAR*) header;
 	}
 
 	return true;
@@ -1145,7 +1143,7 @@ evnt* EventManager::make_event(USHORT length, const TEXT* string)
  **************************************/
 	evnt* const event = (evnt*) alloc_global(type_evnt, sizeof(evnt) + length, false);
 
-	insert_tail(&sh_mem_header->evh_events, &event->evnt_events);
+	insert_tail(&m_sharedMemory->getHeader()->evh_events, &event->evnt_events);
 	SRQ_INIT(event->evnt_interests);
 	event->evnt_length = length;
 	memcpy(event->evnt_name, string, length);
@@ -1191,7 +1189,7 @@ bool EventManager::post_process(prb* process)
  **************************************/
 	process->prb_flags &= ~PRB_wakeup;
 	process->prb_flags |= PRB_pending;
-	return ISC_event_post(&process->prb_event) == FB_SUCCESS;
+	return m_sharedMemory->eventPost(&process->prb_event) == FB_SUCCESS;
 }
 
 
@@ -1209,7 +1207,7 @@ void EventManager::probe_processes()
  *
  **************************************/
 	srq* event_srq;
-	SRQ_LOOP(sh_mem_header->evh_processes, event_srq)
+	SRQ_LOOP(m_sharedMemory->getHeader()->evh_processes, event_srq)
 	{
 		prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET(prb*, prb_processes));
 		const SLONG process_offset = SRQ_REL_PTR(process);
@@ -1255,8 +1253,8 @@ void EventManager::release_shmem()
 	validate();
 #endif
 
-	sh_mem_header->evh_current_process = 0;
-	mutexUnlock();
+	m_sharedMemory->getHeader()->evh_current_process = 0;
+	m_sharedMemory->mutexUnlock();
 }
 
 
@@ -1324,7 +1322,7 @@ int EventManager::validate()
 	SRQ_PTR next_free = 0;
 	ULONG offset;
 
-	for (offset = sizeof(evh); offset < sh_mem_header->evh_length;
+	for (offset = sizeof(evh); offset < m_sharedMemory->getHeader()->evh_length;
 		offset += block->frb_header.hdr_length)
 	{
 		const event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
@@ -1344,12 +1342,12 @@ int EventManager::validate()
 		if (block->frb_header.hdr_type == type_frb)
 		{
 			next_free = ((frb*) block)->frb_next;
-			if (next_free >= sh_mem_header->evh_length)
+			if (next_free >= m_sharedMemory->getHeader()->evh_length)
 				punt("bad frb_next");
 		}
 	}
 
-	if (offset != sh_mem_header->evh_length)
+	if (offset != m_sharedMemory->getHeader()->evh_length)
 		punt("bad block length");
 }
 #endif
@@ -1378,7 +1376,7 @@ void EventManager::watcher_thread()
 			prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
 			process->prb_flags &= ~PRB_wakeup;
 
-			const SLONG value = ISC_event_clear(&process->prb_event);
+			const SLONG value = m_sharedMemory->eventClear(&process->prb_event);
 
 			if (process->prb_flags & PRB_pending)
 			{
@@ -1396,7 +1394,7 @@ void EventManager::watcher_thread()
 			if (m_exiting)
 				break;
 
-			(void) ISC_event_wait(&m_process->prb_event, value, 0);
+			(void) m_sharedMemory->eventWait(&m_process->prb_event, value, 0);
 		}
 
 		m_cleanupSemaphore.release();

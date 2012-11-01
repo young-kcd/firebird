@@ -105,6 +105,13 @@ void StatusVector::ImplStatusVector::makePermanent() throw()
 	makePermanentVector(m_status_vector);
 }
 
+void StatusVector::ImplStatusVector::assign(const Exception& ex) throw()
+{
+	clear();
+	ex.stuff_exception(m_status_vector);
+	m_length = fb_utils::statusLength(m_status_vector);
+}
+
 void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
 {
 	ImplStatusVector newVector(getKind(), getCode());

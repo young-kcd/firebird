@@ -4496,7 +4496,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		}
 		catch (const Firebird::Exception& ex)
 		{
-			Firebird::stuff_exception(status_vector, ex);
+			ex.stuff_exception(status_vector);
 			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 
 			if (relation && relation->rel_sweep_count)
@@ -4518,7 +4518,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
 
@@ -4531,7 +4531,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
 

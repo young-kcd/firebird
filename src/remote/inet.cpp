@@ -1622,6 +1622,7 @@ static void disconnect(rem_port* const port)
 		disconnect(port->port_async);
 		port->port_async = NULL;
 	}
+	port->port_context = NULL;
 
 	// If this is a sub-port, unlink it from its parent
 	port->unlinkParent();

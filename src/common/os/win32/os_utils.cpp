@@ -237,7 +237,13 @@ void createLockDirectory(const char* pathname)
 // open (or create if missing) and set appropriate access rights
 int openCreateSharedFile(const char* pathname, int flags)
 {
-	return ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
+	int rc = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
+	if (rc < 0)
+	{
+		(Firebird::Arg::Gds(isc_io_error) << "open" << pathname << Firebird::Arg::Gds(isc_io_open_err)
+			<< strerror(errno)).raise();
+	}
+	return rc;
 }
 
 // set file's last access and modification time to current time

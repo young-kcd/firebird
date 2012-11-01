@@ -39,7 +39,7 @@ struct TraceLogHeader : public MemoryHeader
 	volatile unsigned int writeFileNum;
 };
 
-class TraceLog : public SharedMemory<TraceLogHeader>
+class TraceLog : public IpcObject
 {
 public:
 	TraceLog(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);
@@ -53,7 +53,7 @@ public:
 
 private:
 	void mutexBug(int osErrorCode, const char* text);
-	bool initialize(bool);
+	bool initialize(SharedMemoryBase*, bool);
 
 	void lock();
 	void unlock();
@@ -61,6 +61,7 @@ private:
 	int openFile(int fileNum);
 	int removeFile(int fileNum);
 
+	Firebird::AutoPtr<SharedMemory<TraceLogHeader> > m_sharedMemory;
 	Firebird::PathName m_baseFileName;
 	unsigned int m_fileNum;
 	int m_fileHandle;

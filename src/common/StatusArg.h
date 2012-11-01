@@ -35,6 +35,7 @@ class IStatus;
 class AbstractString;
 class MetaName;
 class QualifiedName;
+class Exception;
 
 namespace Arg {
 
@@ -66,6 +67,7 @@ protected:
 		virtual void clear() throw() { }
 		virtual void makePermanent() throw() { }
 		virtual void append(const StatusVector&) throw() { }
+		virtual void assign(const Exception& ex) throw() { }
 		virtual ISC_STATUS copyTo(ISC_STATUS*) const throw() { return 0; }
 		virtual ISC_STATUS copyTo(IStatus*) const throw() { return 0; }
 
@@ -114,6 +116,7 @@ protected:
 		virtual void clear() throw();
 		virtual void makePermanent() throw();
 		virtual void append(const StatusVector& v) throw();
+		virtual void assign(const Exception& ex) throw();
 		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
 		virtual ISC_STATUS copyTo(IStatus* dest) const throw();
 		virtual void shiftLeft(const Base& arg) throw();
@@ -147,6 +150,7 @@ public:
 	void clear() throw() { implementation->clear(); }
 	void makePermanent() throw() { implementation->makePermanent(); }
 	void append(const StatusVector& v) throw() { implementation->append(v); }
+	void assign(const Exception& ex) throw() { implementation->assign(ex); }
 	void raise() const;
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }
 	ISC_STATUS copyTo(IStatus* dest) const throw() { return implementation->copyTo(dest); }

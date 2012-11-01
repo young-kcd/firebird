@@ -162,27 +162,6 @@ public:
 	}
 
 	static ISC_STATUS badHandle() { return isc_bad_db_handle; }
-
-	// These 2 functions assume rdb_async_lock to be locked
-	//void set_async_vector(ISC_STATUS* userStatus) throw();
-	//void reset_async_vector() throw();
-
-	//ISC_STATUS* get_status_vector() throw();
-
-	/*void set_status_vector(ISC_STATUS* userStatus) throw()
-	{
-		rdb_status_vector = userStatus;
-	}
-
-	void status_assert(ISC_STATUS* userStatus)
-	{
-		fb_assert(rdb_status_vector == userStatus);
-	}
-
-	void save_status_vector(ISC_STATUS*& save) throw()
-	{
-		save = rdb_status_vector;
-	}*/
 };
 
 

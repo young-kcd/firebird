@@ -1086,7 +1086,7 @@ void CCH_fini(thread_db* tdbb)
 		}	// try
 		catch (const Firebird::Exception& ex)
 		{
-			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+			ex.stuff_exception(tdbb->tdbb_status_vector);
 			if (!flush_error)
 				flush_error = true;
 			else
@@ -1534,7 +1534,7 @@ void CCH_init(thread_db* tdbb, ULONG number, bool shared)
 		}
 		catch (const Firebird::Exception& ex)
 		{
-			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+			ex.stuff_exception(tdbb->tdbb_status_vector);
 			// If the buffer control block can't be allocated, memory is
 			// very low. Recalculate the number of buffers to account for
 			// page buffer overhead and reduce that number by a 25% fudge factor.
@@ -2847,7 +2847,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 		return 0;
 	}
@@ -2953,7 +2953,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
 	return 0;
@@ -3068,7 +3068,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 		catch (const Firebird::Exception& ex)
 		{
-			Firebird::stuff_exception(status_vector, ex);
+			ex.stuff_exception(status_vector);
 			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 			// continue execution to clean up
 		}
@@ -3079,7 +3079,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
 
@@ -3091,7 +3091,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
 

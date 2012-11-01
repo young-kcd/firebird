@@ -131,6 +131,11 @@ public:
 		return ptr;
 	}
 
+	const Where* operator->() const
+	{
+		return ptr;
+	}
+
 	Where* release()
 	{
 		Where* tmp = ptr;

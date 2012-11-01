@@ -163,6 +163,13 @@ void createLockDirectory(const char* pathname)
 #define S_IWRITE S_IWUSR
 #endif
 
+static void raiseError(int errCode, const char* filename)
+{
+	(Arg::Gds(isc_io_error) << "open" << filename << Arg::Gds(isc_io_open_err)
+		<< SYS_ERR(errCode)).raise();
+}
+
+
 // open (or create if missing) and set appropriate access rights
 int openCreateSharedFile(const char* pathname, int flags)
 {
@@ -171,35 +178,34 @@ int openCreateSharedFile(const char* pathname, int flags)
 		fd = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
 
-	if (fd >= 0)
+	if (fd < 0)
+		raiseError(fd, pathname);
+
+	// Security check - avoid symbolic links in /tmp.
+	// Malicious user can create a symlink with this name pointing to say
+	// security2.fdb and when the lock file is created the file will be damaged.
+
+	struct stat st;
+	int rc;
+
+	do {
+		rc = fstat(fd, &st);
+	} while (fd != 0 && SYSCALL_INTERRUPTED(errno));
+
+	if (rc != 0)
 	{
-		// Security check - avoid symbolic links in /tmp.
-		// Malicious user can create a symlink with this name pointing to say
-		// security2.fdb and when the lock file is created the file will be damaged.
-
-		struct stat st;
-		int rc;
-
-		do
-		{
-			rc = fstat(fd, &st);
-		} while (fd != 0 && SYSCALL_INTERRUPTED(errno));
-
-		if (rc != 0)
-		{
-			close(fd);
-			return -1;
-		}
-
-		if (S_ISLNK(st.st_mode))
-		{
-			close(fd);
-			errno = ELOOP;
-			return -1;
-		}
-
-		changeFileRights(pathname, 0660);
+		int e = errno;
+		close(fd);
+		raiseError(e, pathname);
 	}
+
+	if (S_ISLNK(st.st_mode))
+	{
+		close(fd);
+		raiseError(ELOOP, pathname);
+	}
+
+	changeFileRights(pathname, 0660);
 
 	return fd;
 }

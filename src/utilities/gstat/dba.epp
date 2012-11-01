@@ -1099,7 +1099,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(status_vector, ex);
+		ex.stuff_exception(status_vector);
 	}
 
 	// free mem

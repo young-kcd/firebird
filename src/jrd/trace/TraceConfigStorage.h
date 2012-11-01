@@ -45,7 +45,7 @@ struct TraceCSHeader : public MemoryHeader
 	char cfg_file_name[MAXPATHLEN];
 };
 
-class ConfigStorage : public Firebird::GlobalStorage, public SharedMemory<TraceCSHeader>
+class ConfigStorage : public Firebird::GlobalStorage, public IpcObject
 {
 public:
 	ConfigStorage();
@@ -58,14 +58,14 @@ public:
 	void updateSession(Firebird::TraceSession& session);
 
 	ULONG getChangeNumber() const
-	{ return sh_mem_header ? sh_mem_header->change_number : 0; }
+	{ return m_sharedMemory && m_sharedMemory->getHeader() ? m_sharedMemory->getHeader()->change_number : 0; }
 
 	void acquire();
 	void release();
 
 private:
 	void mutexBug(int osErrorCode, const char* text);
-	bool initialize(bool);
+	bool initialize(SharedMemoryBase*, bool);
 
 	void checkFile();
 	void touchFile();
@@ -80,7 +80,7 @@ private:
 	private:
 		const char* fileName;
 	};
-	Firebird::RefPtr<TouchFile> timer;
+	Firebird::RefPtr<TouchFile> m_timer;
 
 	void checkDirty()
 	{
@@ -95,7 +95,8 @@ private:
 	{
 		if (!m_dirty)
 		{
-			sh_mem_header->change_number++;
+			if (m_sharedMemory && m_sharedMemory->getHeader())
+				m_sharedMemory->getHeader()->change_number++;
 			m_dirty = true;
 		}
 	}
@@ -116,6 +117,7 @@ private:
 	void putItem(ITEM tag, ULONG len, const void* data);
 	bool getItemLength(ITEM& tag, ULONG& len);
 
+	Firebird::AutoPtr<SharedMemory<TraceCSHeader> > m_sharedMemory;
 	int m_recursive;
 	ThreadId m_mutexTID;
 	int m_cfg_file;

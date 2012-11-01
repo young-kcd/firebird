@@ -784,11 +784,11 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 
 			// Do any necessary cleanup
 			if (!phase) {
-				Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+				ex.stuff_exception(tdbb->tdbb_status_vector);
 				ERR_punt();
 			}
 			else {
-				Firebird::stuff_exception(err_status, ex);
+				ex.stuff_exception(err_status);
 			}
 			phase = 0;
 			more = true;
