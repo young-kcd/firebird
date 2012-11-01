@@ -234,7 +234,6 @@ public:
 	SLONG		att_event_session;			// Event session id, if any
 	SecurityClass*	att_security_class;		// security class for database
 	SecurityClassList*	att_security_classes;	// security classes
-	vcl*		att_counts[DBB_max_count];
 	RuntimeStatistics	att_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_client_charset;			// user's charset specified in dpb

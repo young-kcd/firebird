@@ -1195,19 +1195,19 @@ static USHORT get_counts(thread_db* tdbb, USHORT count_id, CountsBuffer& buffer)
  *	Return operation counts for relation.
  *
  **************************************/
-	const vcl* vector = tdbb->getAttachment()->att_counts[count_id];
-	if (!vector)
-		return 0;
+	const Attachment* const attachment = tdbb->getAttachment();
+	const RuntimeStatistics& stats = attachment->att_stats;
 
 	UCHAR num_buffer[BUFFER_TINY];
 
 	buffer.clear();
 	size_t buffer_length = 0;
 
-	vcl::const_iterator ptr = vector->begin();
-	for (USHORT relation_id = 0; relation_id < vector->count(); ++relation_id)
+	for (RuntimeStatistics::Iterator iter = stats.begin(); iter != stats.end(); ++iter)
 	{
-		const SLONG n = *ptr++;
+		const USHORT relation_id = (*iter).rlc_relation_id;
+		const SINT64 n = (*iter).rlc_counter[count_id];
+
 		if (n)
 		{
 			const USHORT length = INF_convert(n, num_buffer);

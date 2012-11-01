@@ -38,7 +38,6 @@ namespace Jrd {
 }
 
 void	VIO_backout(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
-void	VIO_bump_count(Jrd::thread_db*, Jrd::RelStatType, Jrd::jrd_rel*);
 bool	VIO_chase_record_version(Jrd::thread_db*, Jrd::record_param*,
 									Jrd::jrd_tra*, MemoryPool*, bool);
 void	VIO_copy_record(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);

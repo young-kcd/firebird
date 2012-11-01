@@ -53,6 +53,7 @@ enum RelStatType
 	DBB_backout_count,
 	DBB_purge_count,
 	DBB_expunge_count,
+	DBB_lock_count,
 	DBB_max_count
 };
 
@@ -106,6 +107,7 @@ public:
 		RECORD_BACKOUTS,
 		RECORD_PURGES,
 		RECORD_EXPUNGES,
+		RECORD_LOCKS,
 		SORTS,
 		SORT_GETS,
 		SORT_PUTS,
@@ -167,6 +169,12 @@ public:
 		++allChgNumber;
 	}
 
+	SINT64 getRelValue(const RelStatType index, SLONG relation_id) const
+	{
+		size_t pos;
+		return rel_counts.find(relation_id, pos) ? rel_counts[pos].rlc_counter[index] : 0;
+	}
+
 	void bumpRelValue(const RelStatType index, SLONG relation_id);
 
 	// Calculate difference between counts stored in this object and current
@@ -222,6 +230,50 @@ public:
 	static RuntimeStatistics* getDummy()
 	{
 		return &dummy;
+	}
+
+	class Iterator
+	{
+		friend class RuntimeStatistics;
+
+		explicit Iterator(const RelationCounts* counts)
+			: m_counts(counts)
+		{}
+
+	public:
+		bool operator==(const Iterator& other)
+		{
+			return (m_counts == other.m_counts);
+		}
+
+		bool operator!=(const Iterator& other)
+		{
+			return (m_counts != other.m_counts);
+		}
+
+		Iterator& operator++()
+		{
+			m_counts++;
+			return *this;
+		}
+
+		const RelationCounts& operator*() const
+		{
+			return *m_counts;
+		}
+
+	private:
+		const RelationCounts* m_counts;
+	};
+
+	Iterator begin() const
+	{
+		return Iterator(rel_counts.begin());
+	}
+
+	Iterator end() const
+	{
+		return Iterator(rel_counts.end());
 	}
 
 private:

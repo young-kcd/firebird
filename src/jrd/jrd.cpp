@@ -5863,13 +5863,6 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		}
 	}
 
-	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count;
-		++vector)
-	{
-		delete *vector;
-		*vector = NULL;
-	}
-
 	// Release any validation error vector allocated
 
 	delete attachment->att_val_errors;

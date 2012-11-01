@@ -273,7 +273,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 #endif
 
 	jrd_rel* relation = rpb->rpb_relation;
-	VIO_bump_count(tdbb, DBB_backout_count, relation);
+	tdbb->bumpRelStats(DBB_backout_count, relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_BACKOUTS);
 
 	// If there is data in the record, fetch it now.  If the old version
@@ -495,41 +495,6 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		gc_rec1->rec_flags &= ~REC_gc_active;
 	if (gc_rec2)
 		gc_rec2->rec_flags &= ~REC_gc_active;
-}
-
-
-void VIO_bump_count(thread_db* tdbb, RelStatType count_id, jrd_rel* relation)
-{
-/**************************************
- *
- *	V I O _ b u m p _ c o u n t
- *
- **************************************
- *
- * Functional description
- *	Bump a usage count.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-	CHECK_DBB(dbb);
-
-#ifdef VIO_DEBUG
-	if (debug_flag > DEBUG_TRACE_ALL)
-	{
-		printf("bump_count (count_id %d, table %d)\n", count_id,
-				  relation ? relation->rel_id : 0);
-	}
-#endif
-
-	const USHORT relation_id = relation->rel_id;
-	vcl** ptr = attachment->att_counts + count_id;
-
-	vcl* vector = *ptr = vcl::newVector(*attachment->att_pool, *ptr, relation_id + 1);
-	((*vector)[relation_id])++;
-
-	tdbb->bumpRelStats(count_id, relation_id);
 }
 
 
@@ -1712,7 +1677,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		verb_post(tdbb, transaction, rpb, 0, same_tx, false);
 	}
 
-	VIO_bump_count(tdbb, DBB_delete_count, relation);
+	tdbb->bumpRelStats(DBB_delete_count, relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_DELETES);
 
 	// for an autocommit transaction, mark a commit as necessary
@@ -1989,7 +1954,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 			VIO_data(tdbb, rpb, pool);
 	}
 
-	VIO_bump_count(tdbb, DBB_read_idx_count, rpb->rpb_relation);
+	tdbb->bumpRelStats(DBB_read_idx_count, rpb->rpb_relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_IDX_READS);
 
 	return true;
@@ -2396,7 +2361,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	// If we're the system transaction, modify stuff in place.  This saves
 	// endless grief on cleanup
 
-	VIO_bump_count(tdbb, DBB_update_count, relation);
+	tdbb->bumpRelStats(DBB_update_count, relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_UPDATES);
 
 	if (transaction->tra_flags & TRA_system)
@@ -2806,7 +2771,7 @@ bool VIO_next_record(thread_db* tdbb,
 	}
 #endif
 
-	VIO_bump_count(tdbb, DBB_read_seq_count, rpb->rpb_relation);
+	tdbb->bumpRelStats(DBB_read_seq_count, rpb->rpb_relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_SEQ_READS);
 
 	return true;
@@ -3209,7 +3174,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	}
 #endif
 
-	VIO_bump_count(tdbb, DBB_insert_count, relation);
+	tdbb->bumpRelStats(DBB_insert_count, relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_INSERTS);
 
 	if (!(transaction->tra_flags & TRA_system) &&
@@ -3678,6 +3643,8 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		return true;
 	}
 
+	jrd_rel* relation = org_rpb->rpb_relation;
+
 	transaction->tra_flags |= TRA_write;
 
 	if (!org_rpb->rpb_record)
@@ -3700,7 +3667,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 	new_rpb.rpb_transaction_nr = transaction->tra_number;
 
 	AutoPtr<Record> new_record;
-	const Format* const new_format = MET_current(tdbb, new_rpb.rpb_relation);
+	const Format* const new_format = MET_current(tdbb, relation);
 
 	// If the fetched record is not in the latest format, upgrade it.
 	// To do that, allocate new record buffer and make the new record
@@ -3754,6 +3721,9 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 	if (transaction->tra_flags & TRA_autocommit) {
 		transaction->tra_flags |= TRA_perform_autocommit;
 	}
+
+	tdbb->bumpRelStats(DBB_lock_count, relation->rel_id);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_LOCKS);
 
 	return true;
 }
@@ -4185,7 +4155,8 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 	record_param temp = *rpb;
 	RecordStack empty_staying;
 	garbage_collect(tdbb, &temp, rpb->rpb_page, empty_staying);
-	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation);
+
+	tdbb->bumpRelStats(DBB_expunge_count, rpb->rpb_relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_EXPUNGES);
 }
 
@@ -5434,7 +5405,8 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	staying.push(record);
 	garbage_collect(tdbb, &temp, rpb->rpb_page, staying);
 	gc_rec->rec_flags &= ~REC_gc_active;
-	VIO_bump_count(tdbb, DBB_purge_count, relation);
+	
+	tdbb->bumpRelStats(DBB_purge_count, relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_PURGES);
 
 	return; // true;

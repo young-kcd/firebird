@@ -508,7 +508,7 @@ public:
 	{
 		reqStat->bumpRelValue(index, relation_id);
 		traStat->bumpRelValue(index, relation_id);
-		//attStat->bumpRelValue(index, relation_id);
+		attStat->bumpRelValue(index, relation_id);
 		//dbbStat->bumpRelValue(index, relation_id);
 	}
 
