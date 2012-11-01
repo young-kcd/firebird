@@ -36,6 +36,7 @@ darwin_setup_framework:
 	ln -s ../../../../../../bin $(FB_FW)/Resources/English.lproj/var/bin
 	ln -s ../../../../../../UDF $(FB_FW)/Resources/English.lproj/var/UDF
 	ln -s ../../../../../../intl $(FB_FW)/Resources/English.lproj/var/intl
+	ln -s ../../../../../../plugins $(FB_FW)/Resources/English.lproj/var/plugins
 	ln -s ../../../../../../security2.fdb \
 				$(FB_FW)/Resources/English.lproj/var/security2.fdb
 	ln -s ../../../../../../help $(FB_FW)/Resources/English.lproj/var/help
@@ -66,6 +67,9 @@ darwin_finish_cs_framework:
 	cp ../builds/install/misc/fbintl.conf \
 		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.conf
 	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl
+	mkdir -p $(FB_FW)/Resources/English.lproj/var/plugins
+	cp ../gen/firebird/plugins/libfbtrace.dylib \
+		$(FB_FW)/Resources/English.lproj/var/plugins/libfbtrace.dylib
 	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
 	cp ../gen/firebird/security2.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/doc
@@ -74,11 +78,12 @@ darwin_finish_cs_framework:
 	cp -r ../gen/firebird/examples $(FB_FW)/Resources
 	mkdir -p $(FB_FW)/Resources/bin
 	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
-	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_inet_server $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
@@ -87,6 +92,8 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
+	chmod +x ../builds/install/arch-specific/darwin/changeMultiConnectMode
 	cp ../builds/install/arch-specific/darwin/changeMultiConnectMode \
 			$(FB_FW)/Resources/bin/changeMultiConnectMode.sh
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
@@ -129,6 +136,9 @@ darwin_finish_ss_framework:
 	cp ../builds/install/misc/fbintl.conf \
 		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.conf
 	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl
+	mkdir -p $(FB_FW)/Resources/English.lproj/var/plugins
+	cp ../gen/firebird/plugins/libfbtrace.dylib \
+		$(FB_FW)/Resources/English.lproj/var/plugins/libfbtrace.dylib
 	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
 	cp ../gen/firebird/security2.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/doc
@@ -151,6 +161,7 @@ darwin_finish_ss_framework:
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
