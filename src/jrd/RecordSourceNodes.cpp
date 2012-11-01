@@ -2224,7 +2224,8 @@ bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	// Set up a new (empty) context to process the joins, but ensure
-	// that it includes system (e.g. trigger) contexts (if present).
+	// that it includes system (e.g. trigger) contexts (if present),
+	// as well as any outer (from other levels) contexts.
 
 	DsqlContextStack* const base_context = dsqlScratch->context;
 	DsqlContextStack temp;
@@ -2232,11 +2233,14 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	for (DsqlContextStack::iterator iter(*base_context); iter.hasData(); ++iter)
 	{
-		if (iter.object()->ctx_flags & CTX_system)
+		if ((iter.object()->ctx_flags & CTX_system) ||
+			(iter.object()->ctx_scope_level != dsqlScratch->scopeLevel))
+		{
 			temp.push(iter.object());
+		}
 	}
 
-	size_t systemContexts = temp.getCount();
+	const size_t visibleContexts = temp.getCount();
 
 	RecSourceListNode* fromList = dsqlFrom;
 	RecSourceListNode* streamList = FB_NEW(getPool()) RecSourceListNode(
@@ -2483,7 +2487,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	// Merge the newly created contexts with the original ones
 
-	while (temp.getCount() > systemContexts)
+	while (temp.getCount() > visibleContexts)
 		base_context->push(temp.pop());
 
 	dsqlScratch->context = base_context;
