@@ -1,3 +1,45 @@
+ 2012-11-01 02:02  dimitr 
+   M builds/install/misc/firebird.conf.in
+Misc cleanup.
+
+ 2012-11-01 01:45  dimitr 
+   D src/common/quad.cpp
+   D src/common/quad.h
+   D src/common/quad_proto.h
+Wiped out the code that never worked due to the missing support for native quads.
+
+ 2012-11-01 01:36  dimitr 
+   M builds/mac_os_x/CS/CS.pbproj/project.pbxproj
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc9/common.vcproj
+   M src/common/common.h
+   M src/common/cvt.cpp
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/gpre/cme.cpp
+   M src/isql/isql.epp
+   M src/jrd/align.h
+   M src/jrd/cvt2.cpp
+   M src/jrd/evl.cpp
+Wiped out the code that never worked due to the missing support for native quads.
+
+ 2012-11-01 00:16  dimitr 
+   M src/jrd/Attachment.h
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Wiped out the legacy attachment level counters in favor of the already existing runtime statistics. Introduced a record lock counter (more to follow).
+
+ 2012-10-31 14:20  dimitr 
+   M src/jrd/vio.cpp
+Avoid a sweep pass for temporary tables, as the sweeper always sees those tables as empty, but even setting them up as empty has a non-zero cost.
+
  2012-10-18 15:49  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/dsql.h
