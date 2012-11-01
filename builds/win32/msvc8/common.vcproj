@@ -384,10 +384,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\quad.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\ScanDir.cpp"
 				>
 			</File>
@@ -794,14 +790,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\prett_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\quad.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\quad_proto.h"
 				>
 			</File>
 			<File

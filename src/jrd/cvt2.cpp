@@ -31,7 +31,6 @@
 
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
-#include "../common/quad.h"
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
 #include "../common/gdsassert.h"
@@ -95,6 +94,30 @@ static const BYTE compare_priority[] =
 	dtype_dbkey,				// compares with nothing except itself
 	dtype_boolean				// compares with nothing except itself
 };
+
+static inline SSHORT QUAD_COMPARE(const SQUAD* arg1, const SQUAD* arg2)
+{
+/**************************************
+ *
+ *      Q U A D _ c o m p a r e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Compare two descriptors.  Return (-1, 0, 1) if a<b, a=b, or a>b.
+ *
+ **************************************/
+
+	if (((SLONG *) arg1)[HIGH_WORD] > ((SLONG *) arg2)[HIGH_WORD])
+		return 1;
+	if (((SLONG *) arg1)[HIGH_WORD] < ((SLONG *) arg2)[HIGH_WORD])
+		return -1;
+	if (((ULONG *) arg1)[LOW_WORD] > ((ULONG *) arg2)[LOW_WORD])
+		return 1;
+	if (((ULONG *) arg1)[LOW_WORD] < ((ULONG *) arg2)[LOW_WORD])
+		return -1;
+	return 0;
+}
 
 
 bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* arg2)
@@ -217,7 +240,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			return -1;
 
 		case dtype_quad:
-			return QUAD_COMPARE(*(SQUAD *) p1, *(SQUAD *) p2);
+			return QUAD_COMPARE((SQUAD *) p1, (SQUAD *) p2);
 
 		case dtype_int64:
 			if (*(SINT64 *) p1 == *(SINT64 *) p2)
@@ -456,7 +479,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 				scale = arg1->dsc_scale;
 			const SQUAD temp1 = CVT_get_quad(arg1, scale, ERR_post);
 			const SQUAD temp2 = CVT_get_quad(arg2, scale, ERR_post);
-			return QUAD_COMPARE(temp1, temp2);
+			return QUAD_COMPARE(&temp1, &temp2);
 		}
 
 	case dtype_real:

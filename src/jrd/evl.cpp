@@ -80,7 +80,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/rse.h"
-#include "../common/quad.h"
 #include "../jrd/sort.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"

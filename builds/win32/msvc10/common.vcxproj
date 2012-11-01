@@ -66,7 +66,6 @@
     <ClCompile Include="..\..\..\src\common\os\win32\os_utils.cpp" />
     <ClCompile Include="..\..\..\src\common\os\win32\path_utils.cpp" />
     <ClCompile Include="..\..\..\src\common\pretty.cpp" />
-    <ClCompile Include="..\..\..\src\common\quad.cpp" />
     <ClCompile Include="..\..\..\src\common\ScanDir.cpp" />
     <ClCompile Include="..\..\..\src\common\sdl.cpp" />
     <ClCompile Include="..\..\..\src\common\security.cpp" />
@@ -165,8 +164,6 @@
     <ClInclude Include="..\..\..\src\common\os\os_utils.h" />
     <ClInclude Include="..\..\..\src\common\os\path_utils.h" />
     <ClInclude Include="..\..\..\src\common\prett_proto.h" />
-    <ClInclude Include="..\..\..\src\common\quad.h" />
-    <ClInclude Include="..\..\..\src\common\quad_proto.h" />
     <ClInclude Include="..\..\..\src\common\ScanDir.h" />
     <ClInclude Include="..\..\..\src\common\sdl.h" />
     <ClInclude Include="..\..\..\src\common\sdltable.h" />

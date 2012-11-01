@@ -700,13 +700,6 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			f->fld_scale = field1.fld_scale + field2.fld_scale;
 			f->fld_length = sizeof(SLONG);
 			break;
-#ifdef NATIVE_QUAD
-		case dtype_quad:
-			f->fld_dtype = dtype_quad;
-			f->fld_scale = field1.fld_scale + field2.fld_scale;
-			f->fld_length = sizeof(ISC_QUAD);
-			break;
-#endif
 		case dtype_int64:
 			f->fld_dtype = dtype_int64;
 			f->fld_scale = field1.fld_scale + field2.fld_scale;
@@ -804,13 +797,6 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			f->fld_scale = MIN(field1.fld_scale, field2.fld_scale);
 			f->fld_length = sizeof(SLONG);
 			break;
-#ifdef NATIVE_QUAD
-		case dtype_quad:
-			f->fld_dtype = dtype_quad;
-			f->fld_scale = MIN(field1.fld_scale, field2.fld_scale);
-			f->fld_length = sizeof(ISC_QUAD);
-			break;
-#endif
 		// Begin date/time/timestamp support
 		case dtype_sql_date:
 			f->fld_dtype = dtype_sql_date;

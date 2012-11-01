@@ -916,6 +916,14 @@ void GDS_breakpoint(int);
 #define FB_LONG_DOUBLE_SECOND 1
 #endif
 
+// Used in quad operations
+#ifndef WORDS_BIGENDIAN
+const int LOW_WORD		= 0;
+const int HIGH_WORD		= 1;
+#else
+const int LOW_WORD		= 1;
+const int HIGH_WORD		= 0;
+#endif
 
 #ifndef HAVE_WORKING_VFORK
 #define vfork fork

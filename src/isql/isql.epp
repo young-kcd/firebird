@@ -7386,30 +7386,6 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 			}
 			break;
 
-#ifdef NATIVE_QUAD
-		case SQL_QUAD:
-			if (dscale)
-			{
-				// Handle floating scale and precision
-
-				double numeric = *(SQUAD*) var->sqldata;
-				const double exponent = -dscale;
-				numeric = numeric / pow(10.0, exponent);
-				sprintf(p, "%*.*f ", length, -dscale, numeric);
-				if (List) {
-					isqlGlob.printf("%.*f%s", -dscale, numeric, NEWLINE);
-				}
-			}
-			else
-			{
-				sprintf(p, "%*ld ", length, *(SQUAD*) var->sqldata);
-				if (List) {
-					isqlGlob.printf("%ld%s", *(SQUAD*) var->sqldata, NEWLINE);
-				}
-			}
-			break;
-#endif
-
 		case SQL_FLOAT:
 			{
 				//
@@ -8398,11 +8374,6 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 		case SQL_INT64:
 			disp_length = INT64_LEN;
 			break;
-#ifdef NATIVE_QUAD
-		case SQL_QUAD:
-			disp_length = QUAD_LEN;
-			break;
-#endif
 		case SQL_BOOLEAN:
 			disp_length = BOOLEAN_LEN;
 			break;

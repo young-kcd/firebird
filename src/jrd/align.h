@@ -92,11 +92,7 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] =
 	sizeof(SCHAR),				/* dtype_byte */
 	sizeof(SSHORT),				/* dtype_short */
 	sizeof(SLONG),				/* dtype_long */
-#ifndef NATIVE_QUAD
 	sizeof(SLONG),				/* dtype_quad */
-#else
-	sizeof(SQUAD),				/* dtype_quad */
-#endif
 	sizeof(float),				/* dtype_real */
 	FB_DOUBLE_ALIGN,			/* dtype_double */
 	FB_DOUBLE_ALIGN,			/* dtype_d_float */

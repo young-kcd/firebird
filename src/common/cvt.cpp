@@ -45,7 +45,6 @@
 #include "../common/classes/timestamp.h"
 #include "../common/cvt.h"
 #include "../jrd/intl.h"
-#include "../common/quad.h"
 #include "../jrd/val.h"
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/FpeControl.h"
@@ -144,14 +143,12 @@ static void localError(const Firebird::Arg::StatusVector&);
 class DummyException {};
 
 
-#ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
 static const SQUAD quad_min_int = { 0, SLONG_MIN };
 static const SQUAD quad_max_int = { -1, SLONG_MAX };
 #else
 static const SQUAD quad_min_int = { SLONG_MIN, 0 };
 static const SQUAD quad_max_int = { SLONG_MAX, -1 };
-#endif
 #endif
 
 
@@ -314,7 +311,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
  *      nice, formatted text.
  *
  **************************************/
-#ifndef NATIVE_QUAD
+
 	// For now, this routine does not handle quadwords unless this is
 	// supported by the platform as a native datatype.
 
@@ -323,7 +320,6 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		fb_assert(false);
 		cb->err(Arg::Gds(isc_badblk));	// internal error
 	}
-#endif
 
 	SSHORT pad_count = 0, decimal = 0, neg = 0;
 
@@ -1081,16 +1077,12 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 		break;
 
 	case dtype_quad:
-#ifdef NATIVE_QUAD
-		value = *((SQUAD *) desc->dsc_address);
-#else
 		value = ((SLONG *) desc->dsc_address)[HIGH_WORD];
 		value *= -((double) LONG_MIN_real);
 		if (value < 0)
 			value -= ((ULONG *) desc->dsc_address)[LOW_WORD];
 		else
 			value += ((ULONG *) desc->dsc_address)[LOW_WORD];
-#endif
 		break;
 
 	case dtype_int64:
@@ -2047,7 +2039,7 @@ SSHORT CVT_decompose(const char* string,
  *      or if it is in hexadecimal notation.
  *
  **************************************/
-#ifndef NATIVE_QUAD
+
 	// For now, this routine does not handle quadwords unless this is
 	// supported by the platform as a native datatype.
 
@@ -2056,7 +2048,6 @@ SSHORT CVT_decompose(const char* string,
 		fb_assert(false);
 		err(Arg::Gds(isc_badblk));	// internal error
 	}
-#endif
 
 	dsc errd;
 	MOVE_CLEAR(&errd, sizeof(errd));
@@ -2371,49 +2362,6 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		}
 		break;
 
-	case dtype_real:
-	case dtype_double:
-		if (desc->dsc_dtype == dtype_real)
-			d = *((float*) p);
-		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double*) p);
-
-		if (scale > 0)
-		{
-			do {
-				d /= 10.;
-			} while (--scale);
-		}
-		else if (scale < 0)
-		{
-			do {
-				d *= 10.;
-			} while (++scale);
-		}
-
-		if (d > 0)
-			d += 0.5;
-		else
-			d -= 0.5;
-
-		// make sure the cast will succeed - different machines
-		// do different things if the value is larger than a quad
-		// can hold
-
-		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d)
-		{
-			// If rounding would yield a legitimate value, permit it
-
-			if (d > (double) QUAD_MIN_real - 1.)
-				return QUAD_MIN_int;
-
-			if (d < (double) QUAD_MAX_real + 1.)
-				return QUAD_MAX_int;
-
-			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-		}
-		return QUAD_FROM_DOUBLE(d, err);
-
 	case dtype_varying:
 	case dtype_cstring:
 	case dtype_text:
@@ -2442,39 +2390,11 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	// Last, but not least, adjust for scale
 
-	if (scale == 0)
-		return value;
-
-#ifndef NATIVE_QUAD
-	fb_assert(false);
-	err(Arg::Gds(isc_badblk));	// internal error
-#else
-	if (scale > 0)
+	if (scale != 0)
 	{
-		SLONG fraction = 0;
-		do {
-			if (scale == 1)
-				fraction = value % 10;
-			value /= 10;
-		} while (--scale);
-		if (fraction > 4)
-			value++;
-		// The following 2 lines are correct for platforms where
-		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		// we'll have to change this depending on the platform.
-		else if (fraction < -4)
-			value--;
+		fb_assert(false);
+		err(Arg::Gds(isc_badblk));	// internal error
 	}
-	else
-	{
-		do {
-			if (value > QUAD_LIMIT || value < -QUAD_LIMIT)
-				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-			value *= 10;
-		} while (++scale);
-	}
-#endif
 
 	return value;
 }

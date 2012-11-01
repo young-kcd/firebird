@@ -28,7 +28,6 @@
 #include "../dsql/StmtNodes.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
-#include "../common/quad.h"
 #include "../jrd/tra.h"
 #include "../jrd/Function.h"
 #include "../jrd/SysFunction.h"
@@ -1038,26 +1037,12 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					return;
 
 				case dtype_quad:
-					nodFlags |= FLAG_QUAD;
-					desc->dsc_dtype = dtype_quad;
-					desc->dsc_length = sizeof(SQUAD);
-					if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-						desc->dsc_scale = 0;
-					else
-						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-					nodScale = desc->dsc_scale;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
-#ifdef NATIVE_QUAD
-					return;
-#endif
-				default:
-					fb_assert(false);
-					// FALLINTO
-
 				case dtype_blob:
 				case dtype_array:
 					break;
+
+				default:
+					fb_assert(false);
 			}
 
 			break;
@@ -1309,27 +1294,12 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					return;
 
 				case dtype_quad:
-					nodFlags |= FLAG_QUAD;
-					desc->dsc_dtype = dtype_quad;
-					desc->dsc_length = sizeof(SQUAD);
-					if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-						desc->dsc_scale = 0;
-					else
-						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-					nodScale = desc->dsc_scale;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
-#ifdef NATIVE_QUAD
-					return;
-#endif
-
-				default:
-					fb_assert(false);
-					// FALLINTO
-
 				case dtype_blob:
 				case dtype_array:
 					break;
+
+				default:
+					fb_assert(false);
 			}
 
 			break;
@@ -1567,23 +1537,6 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNo
 		return result;
 	}
 
-	// Handle (oh, ugh) quad arithmetic
-
-	if (node->nodFlags & FLAG_QUAD)
-	{
-		const SQUAD q1 = MOV_get_quad(desc, node->nodScale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nodScale);
-
-		result->dsc_dtype = dtype_quad;
-		result->dsc_length = sizeof(SQUAD);
-		result->dsc_scale = node->nodScale;
-		value->vlu_misc.vlu_quad = (blrOp == blr_subtract) ?
-			QUAD_SUBTRACT(q2, q1, ERR_post) : QUAD_ADD(q1, q2, ERR_post);
-		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
-
-		return result;
-	}
-
 	// Everything else defaults to longword
 
 	// CVC: Maybe we should upgrade the sum to double if it doesn't fit?
@@ -1639,23 +1592,6 @@ dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const ValueExprN
 		result->dsc_scale = 0;
 		result->dsc_sub_type = 0;
 		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_double;
-
-		return result;
-	}
-
-	// Handle (oh, ugh) quad arithmetic
-
-	if (node->nodFlags & FLAG_QUAD)
-	{
-		const SQUAD q1 = MOV_get_quad(desc, node->nodScale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nodScale);
-
-		result->dsc_dtype = dtype_quad;
-		result->dsc_length = sizeof(SQUAD);
-		result->dsc_scale = node->nodScale;
-		value->vlu_misc.vlu_quad = (blrOp == blr_subtract) ?
-			QUAD_SUBTRACT(q2, q1, ERR_post) : QUAD_ADD(q1, q2, ERR_post);
-		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
 
 		return result;
 	}
@@ -1723,22 +1659,6 @@ dsc* ArithmeticNode::multiply(const dsc* desc, impure_value* value) const
 		value->vlu_desc.dsc_length = sizeof(double);
 		value->vlu_desc.dsc_scale = 0;
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_double;
-
-		return &value->vlu_desc;
-	}
-
-	// Handle (oh, ugh) quad arithmetic
-
-	if (nodFlags & FLAG_QUAD)
-	{
-		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-		const SQUAD q1 = MOV_get_quad(desc, nodScale - scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
-		value->vlu_desc.dsc_dtype = dtype_quad;
-		value->vlu_desc.dsc_length = sizeof(SQUAD);
-		value->vlu_desc.dsc_scale = nodScale;
-		value->vlu_misc.vlu_quad = QUAD_MULTIPLY(q1, q2, ERR_post);
-		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
 
 		return &value->vlu_desc;
 	}
@@ -1813,23 +1733,6 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 		value->vlu_desc.dsc_length = sizeof(double);
 		value->vlu_desc.dsc_scale = 0;
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_double;
-
-		return &value->vlu_desc;
-	}
-
-	// Handle (oh, ugh) quad arithmetic
-
-	if (nodFlags & FLAG_QUAD)
-	{
-		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-		const SQUAD q1 = MOV_get_quad(desc, nodScale - scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
-
-		value->vlu_desc.dsc_dtype = dtype_quad;
-		value->vlu_desc.dsc_length = sizeof(SQUAD);
-		value->vlu_desc.dsc_scale = nodScale;
-		value->vlu_misc.vlu_quad = QUAD_MULTIPLY(q1, q2, ERR_post);
-		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
 
 		return &value->vlu_desc;
 	}
@@ -7093,7 +6996,10 @@ void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 void NegateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	arg->getDesc(tdbb, csb, desc);
-	nodFlags = arg->nodFlags & (FLAG_DOUBLE | FLAG_QUAD);
+	nodFlags = arg->nodFlags & FLAG_DOUBLE;
+
+	if (desc->dsc_dtype == dtype_quad)
+		IBERROR(224);	// msg 224 quad word arithmetic not supported
 }
 
 ValueExprNode* NegateNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -7145,11 +7051,6 @@ dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		case DEFAULT_DOUBLE:
 			impure->vlu_misc.vlu_double = -impure->vlu_misc.vlu_double;
-			break;
-
-		case dtype_quad:
-			impure->vlu_misc.vlu_quad =
-				QUAD_NEGATE(impure->vlu_misc.vlu_quad, ERR_post);
 			break;
 
 		case dtype_int64:
@@ -9247,29 +9148,18 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				nodFlags |= FLAG_DOUBLE;
 				return;
 
-			case dtype_quad:
-				desc->dsc_dtype = dtype_quad;
-				desc->dsc_length = sizeof(SQUAD);
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				nodScale = desc->dsc_scale;
-				nodFlags |= FLAG_QUAD;
-#ifdef NATIVE_QUAD
-				return;
-#endif
-
-			default:
-				fb_assert(false);
-				// fall into
-
 			case dtype_sql_time:
 			case dtype_sql_date:
 			case dtype_timestamp:
+			case dtype_quad:
 			case dtype_blob:
 			case dtype_array:
 			case dtype_dbkey:
 				// break to error reporting code
 				break;
+
+			default:
+				fb_assert(false);
 		}
 
 		if (dtype == dtype_quad)

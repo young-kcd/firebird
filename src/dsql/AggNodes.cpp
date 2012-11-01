@@ -968,28 +968,17 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				nodFlags |= FLAG_DOUBLE;
 				return;
 
-			case dtype_quad:
-				desc->dsc_dtype = dtype_quad;
-				desc->dsc_length = sizeof(SQUAD);
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				nodScale = desc->dsc_scale;
-				nodFlags |= FLAG_QUAD;
-#ifdef NATIVE_QUAD
-				return;
-#endif
-
-			default:
-				fb_assert(false);
-				// fall into
-
 			case dtype_sql_time:
 			case dtype_sql_date:
 			case dtype_timestamp:
+			case dtype_quad:
 			case dtype_blob:
 			case dtype_array:
 			case dtype_dbkey:
 				break;	// break to error reporting code
+
+			default:
+				fb_assert(false);
 		}
 	}
 	else
@@ -1026,28 +1015,17 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				nodFlags |= FLAG_DOUBLE;
 				return;
 
-			case dtype_quad:
-				desc->dsc_dtype = dtype_quad;
-				desc->dsc_length = sizeof(SQUAD);
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				nodScale = desc->dsc_scale;
-				nodFlags |= FLAG_QUAD;
-#ifdef NATIVE_QUAD
-				return;
-#endif
-
-			default:
-				fb_assert(false);
-				// fall into
-
 			case dtype_sql_time:
 			case dtype_sql_date:
 			case dtype_timestamp:
+			case dtype_quad:
 			case dtype_blob:
 			case dtype_array:
 			case dtype_dbkey:
 				break;	// break to error reporting code
+
+			default:
+				fb_assert(false);
 		}
 	}
 

@@ -25,7 +25,6 @@
 #include "../dsql/StmtNodes.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
-#include "../common/quad.h"
 #include "../jrd/tra.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/Optimizer.h"

@@ -473,10 +473,9 @@ public:
 	static const unsigned FLAG_ANSI_NOT		= 0x08;	// ANY/ALL predicate is prefixed with a NOT one.
 
 	// Value flags.
-	static const unsigned FLAG_QUAD			= 0x10;	// Compute in quad (default is long).
-	static const unsigned FLAG_DOUBLE		= 0x20;
-	static const unsigned FLAG_DATE			= 0x40;
-	static const unsigned FLAG_VALUE		= 0x80;	// Full value area required in impure space.
+	static const unsigned FLAG_DOUBLE		= 0x10;
+	static const unsigned FLAG_DATE			= 0x20;
+	static const unsigned FLAG_VALUE		= 0x40;	// Full value area required in impure space.
 
 	explicit ExprNode(Type aType, MemoryPool& pool, Kind aKind)
 		: DmlNode(pool, aKind),

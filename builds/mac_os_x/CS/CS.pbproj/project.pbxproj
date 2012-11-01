@@ -5073,21 +5073,6 @@
 			path = qatest.cpp;
 			refType = 4;
 		};
-		F616C6910200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = quad.cpp;
-			refType = 4;
-		};
-		F616C6920200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = quad.h;
-			refType = 4;
-		};
-		F616C6930200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = quad_proto.h;
-			refType = 4;
-		};
 		F616C6940200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = que.h;
