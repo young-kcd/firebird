@@ -1,3 +1,65 @@
+ 2012-11-01 16:19  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-3967: subselect with reference to outer select fails.
+
+ 2012-11-01 14:38  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/server/server.cpp
+Begin wire crypt only after successfull authentication - this helps avoid meaningless message when password is wrong, thanks to Vlad
+
+ 2012-11-01 11:40  alexpeshkoff 
+   M src/burp/std_desc.h
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/classes/auto.h
+   M src/common/classes/rwlock.h
+   M src/common/common.h
+   M src/common/fb_exception.cpp
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+   M src/common/os/posix/os_utils.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/include/fb_exception.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/ErrorImpl.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/event.cpp
+   M src/jrd/event.h
+   M src/jrd/event_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceLog.cpp
+   M src/jrd/trace/TraceLog.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/remote.h
+   M src/utilities/gstat/dba.epp
+   M src/yvalve/user_dsql.cpp
+1. Fixed CORE-3786: Firebird 2.5.1 Hangs on MacOSX 10.7 (Lion) on DB create after reboot.
+2. Cleanup: avoid functional style in stuff exception.
+
+ 2012-11-01 09:13  paulbeach 
+   M builds/posix/postfix.darwin
+Fix problem with Trace not working on MacOS
+
  2012-11-01 02:02  dimitr 
    M builds/install/misc/firebird.conf.in
 Misc cleanup.
