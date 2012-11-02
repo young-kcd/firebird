@@ -112,7 +112,7 @@ api7.c      Demonstrate blob_open, get_segment.
 api8.c      Demonstrate create_blob, put_segment.
 
 api9.c      Demonstrate blob_open2 (using blob filter).
-api9f.c     Filter for api9.c.  (Not part of Windows 3.1 clients)
+api9f.c     Filter for api9.c.
 
 api10.c     Update an array using get_slice/put_slice.
 
@@ -126,8 +126,7 @@ api14.e     Combine the three programming styles in one program.
 
 api15.c	    Construct a database parameter buffer.  db_info calls.
 
-api16.c	    Demonstrate asynchronous event trapping
-            (Not available on Windows 3.1 clients)
+api16.c	    Demonstrate asynchronous event trapping.            
 
 winevent.c  Demonstrate asynchronous event trapping
             (Replacement for api16.c on Windows 3.1 Client)
