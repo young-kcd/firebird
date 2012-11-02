@@ -41,9 +41,9 @@
 #endif
  */
 
-//#if defined(DARWIN)
+#if defined(DARWIN)
 #define USE_FILELOCKS
-//#endif
+#endif
 
 #if defined(FREEBSD)
 #define USE_SYS5SEMAPHORE
