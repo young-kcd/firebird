@@ -1,3 +1,19 @@
+ 2012-11-01 12:03  hvlad 
+   M src/jrd/trace/TraceLog.cpp
+Fixed bug CORE-3969 : Memory leak when doing a lot of iterations FBSVCMGR with action_trace_start, _list and _stop
+
+ 2012-11-01 10:40  alexpeshkoff 
+   M builds/posix/Makefile.in.fbtrace
+Cleanup - avoid unneeded module in trace plugin
+
+ 2012-11-01 09:09  alexpeshkoff 
+   M src/jrd/isc_sync.cpp
+This should finally fix CORE-3786: Firebird 2.5.1 Hangs on MacOSX 10.7 (Lion) on DB create after reboot
+
+ 2012-11-01 09:06  paulbeach 
+   M builds/posix/postfix.darwin
+Fix problem with Trace not working on MacOS
+
  2012-10-31 14:16  dimitr 
    M src/jrd/vio.cpp
 Avoid a sweep pass for temporary tables, as the sweeper always sees those tables as empty, but even setting them up as empty has a non-zero cost.
