@@ -112,7 +112,7 @@ const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 
 // Lock header block -- one per lock file, lives up front
 
-struct lhb : public Jrd::MemoryHeader
+struct lhb : public Firebird::MemoryHeader
 {
 	USHORT lhb_type;				// memory tag - always type_lhb
 	SRQ_PTR lhb_secondary;			// Secondary lock header block
@@ -222,7 +222,7 @@ struct prc
 	int prc_process_id;				// Process ID
 	srq prc_lhb_processes;			// Process que
 	srq prc_owners;					// Owners
-	Jrd::event_t prc_blocking;		// Blocking event block
+	Firebird::event_t prc_blocking;	// Blocking event block
 	USHORT prc_flags;				// Unused. Misc flags
 };
 
@@ -244,7 +244,7 @@ struct own
 	FB_UINT64 own_acquire_time;		// lhb_acquires when owner last tried acquire()
 	USHORT own_waits;				// Number of requests we are waiting on
 	USHORT own_ast_count;			// Number of ASTs being delivered
-	Jrd::event_t own_wakeup;		// Wakeup event block
+	Firebird::event_t own_wakeup;	// Wakeup event block
 	USHORT own_flags;				// Misc stuff
 };
 
@@ -302,7 +302,7 @@ class Attachment;
 
 class LockManager : private Firebird::RefCounted,
 					public Firebird::GlobalStorage,
-					public IpcObject
+					public Firebird::IpcObject
 {
 	class LockTableGuard
 	{
@@ -475,7 +475,7 @@ private:
 		return 0;
 	}
 
-	bool initialize(SharedMemoryBase* sm, bool init);
+	bool initialize(Firebird::SharedMemoryBase* sm, bool init);
 	void mutexBug(int osErrorCode, const char* text);
 
 	bool m_bugcheck;
@@ -491,7 +491,7 @@ private:
 	Firebird::Semaphore m_startupSemaphore;
 
 public:
-	Firebird::AutoPtr<SharedMemory<lhb> > m_sharedMemory;
+	Firebird::AutoPtr<Firebird::SharedMemory<lhb> > m_sharedMemory;
 
 private:
 	bool m_blockage;

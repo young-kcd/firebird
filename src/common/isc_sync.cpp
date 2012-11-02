@@ -142,25 +142,11 @@ static size_t getpagesize()
 using namespace Firebird;
 
 static void		error(Arg::StatusVector&, const TEXT*, ISC_STATUS);
-static bool		event_blocked(const Jrd::event_t* event, const SLONG value);
+static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
 
 static GlobalPtr<Mutex> openFdInit;
-
-namespace Jrd {
-
-class CountedRWLock
-{
-public:
-	CountedRWLock()
-		: sharedAccessCounter(0)
-	{ }
-	RWLock rwlock;
-	AtomicCounter cnt;
-	Mutex sharedAccessMutex;
-	int sharedAccessCounter;
-};
 
 class DevNode
 {
@@ -200,6 +186,20 @@ public:
 	}
 };
 
+namespace Firebird {
+
+class CountedRWLock
+{
+public:
+	CountedRWLock()
+		: sharedAccessCounter(0)
+	{ }
+	RWLock rwlock;
+	AtomicCounter cnt;
+	Mutex sharedAccessMutex;
+	int sharedAccessCounter;
+};
+
 class CountedFd
 {
 public:
@@ -220,11 +220,11 @@ private:
 	const CountedFd& operator=(const CountedFd&);
 };
 
-} // namespace Jrd
+} // namespace Firebird
 
 namespace {
 
-	typedef GenericMap<Pair<Left<string, Jrd::CountedRWLock*> > > RWLocks;
+	typedef GenericMap<Pair<Left<string, Firebird::CountedRWLock*> > > RWLocks;
 	GlobalPtr<RWLocks> rwlocks;
 	GlobalPtr<Mutex> rwlocksMutex;
 #ifdef USE_FCNTL
@@ -236,11 +236,11 @@ namespace {
 	class FileLockHolder
 	{
 	public:
-		FileLockHolder(Jrd::FileLock* l)
+		FileLockHolder(FileLock* l)
 			: lock(l)
 		{
 			Arg::StatusVector status;
-			if (!lock->setlock(status, Jrd::FileLock::FLM_EXCLUSIVE))
+			if (!lock->setlock(status, FileLock::FLM_EXCLUSIVE))
 				status.raise();
 		}
 
@@ -250,10 +250,10 @@ namespace {
 		}
 
 	private:
-		Jrd::FileLock* lock;
+		FileLock* lock;
 	};
 
-	Jrd::DevNode getNode(const char* name)
+	DevNode getNode(const char* name)
 	{
 		struct stat statistics;
 		if (stat(name, &statistics) != 0)
@@ -261,16 +261,16 @@ namespace {
 			if (errno == ENOENT)
 			{
 				//file not found
-				return Jrd::DevNode();
+				return DevNode();
 			}
 
 			system_call_failed::raise("stat");
 		}
 
-		return Jrd::DevNode(statistics.st_dev, statistics.st_ino);
+		return DevNode(statistics.st_dev, statistics.st_ino);
 	}
 
-	Jrd::DevNode getNode(int fd)
+	DevNode getNode(int fd)
 	{
 		struct stat statistics;
 		if (fstat(fd, &statistics) != 0)
@@ -278,15 +278,13 @@ namespace {
 			system_call_failed::raise("stat");
 		}
 
-		return Jrd::DevNode(statistics.st_dev, statistics.st_ino);
+		return DevNode(statistics.st_dev, statistics.st_ino);
 	}
 
 } // anonymous namespace
 
 
-namespace Jrd {
-
-typedef GenericMap<Pair<NonPooled<DevNode, CountedFd*> > > FdNodes;
+typedef GenericMap<Pair<NonPooled<DevNode, Firebird::CountedFd*> > > FdNodes;
 static GlobalPtr<Mutex> fdNodesMutex;
 static GlobalPtr<FdNodes> fdNodes;
 
@@ -882,7 +880,7 @@ namespace {
 	void finiStart(const event_t* event) {}
 	void finiStop(const event_t* event) {}
 
-}
+} // anonymous namespace
 
 bool SharedMemoryBase::getSem5(Sys5Semaphore* sem)
 {
@@ -1055,7 +1053,7 @@ SINT64 curTime()
 	return rc;
 }
 
-} // namespace
+} // anonymous namespace
 
 #endif // USE_SYS5SEMAPHORE
 
@@ -1462,9 +1460,7 @@ int SharedMemoryBase::eventPost(event_t* event)
 
 #endif // OS-dependent choice
 
-}
-
-} // namespace Jrd
+} // anonymous namespace
 
 
 #ifdef UNIX
@@ -1730,8 +1726,6 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 }
 #endif // WIN_NT
 
-
-namespace Jrd {
 
 void SharedMemoryBase::removeMapFile()
 {
@@ -3640,10 +3634,8 @@ void SharedMemoryBase::logError(const char* text, const Arg::StatusVector& statu
 	iscLogStatus(text, status.value());
 }
 
-} // namespace Jrd
 
-
-static bool event_blocked(const Jrd::event_t* event, const SLONG value)
+static bool event_blocked(const event_t* event, const SLONG value)
 {
 /**************************************
  *

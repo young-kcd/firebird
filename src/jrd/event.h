@@ -35,7 +35,7 @@
 
 const int EVENT_VERSION = 4;
 
-class evh : public Jrd::MemoryHeader
+class evh : public Firebird::MemoryHeader
 {
 public:
 	ULONG evh_length;				// Current length of global section
@@ -79,7 +79,7 @@ struct prb
 	srq prb_processes;				// Process que owned by header
 	srq prb_sessions;				// Sessions within process
 	SLONG prb_process_id;			// Process id
-	Jrd::event_t prb_event;			// Event on which to wait
+	Firebird::event_t prb_event;	// Event on which to wait
 	USHORT prb_flags;
 };
 

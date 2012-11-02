@@ -90,7 +90,7 @@
 #define HAVE_SHARED_MUTEX_SECTION
 #endif
 
-namespace Jrd {
+namespace Firebird {
 
 #ifdef USE_SYS5SEMAPHORE
 
@@ -171,21 +171,6 @@ struct event_t
 };
 
 #endif // WIN_NT
-
-} // namespace Jrd
-
-
-#ifdef WIN_NT
-int		ISC_mutex_init(struct mtx*, const TEXT*);
-void	ISC_mutex_fini(struct mtx*);
-int		ISC_mutex_lock(struct mtx*);
-int		ISC_mutex_unlock(struct mtx*);
-#endif
-
-ULONG	ISC_exception_post(ULONG, const TEXT*);
-
-
-namespace Jrd {
 
 class MemoryHeader
 {
@@ -380,6 +365,15 @@ public:
 
 };
 
-} // namespace Jrd
+} // namespace Firebird
+
+#ifdef WIN_NT
+int		ISC_mutex_init(struct mtx*, const TEXT*);
+void	ISC_mutex_fini(struct mtx*);
+int		ISC_mutex_lock(struct mtx*);
+int		ISC_mutex_unlock(struct mtx*);
+#endif
+
+ULONG	ISC_exception_post(ULONG, const TEXT*);
 
 #endif // JRD_ISC_S_PROTO_H

@@ -37,7 +37,7 @@
 
 namespace Jrd {
 
-struct TraceCSHeader : public MemoryHeader
+struct TraceCSHeader : public Firebird::MemoryHeader
 {
 	volatile ULONG change_number;
 	volatile ULONG session_number;
@@ -45,7 +45,7 @@ struct TraceCSHeader : public MemoryHeader
 	char cfg_file_name[MAXPATHLEN];
 };
 
-class ConfigStorage : public Firebird::GlobalStorage, public IpcObject
+class ConfigStorage : public Firebird::GlobalStorage, public Firebird::IpcObject
 {
 public:
 	ConfigStorage();
@@ -65,7 +65,7 @@ public:
 
 private:
 	void mutexBug(int osErrorCode, const char* text);
-	bool initialize(SharedMemoryBase*, bool);
+	bool initialize(Firebird::SharedMemoryBase*, bool);
 
 	void checkFile();
 	void touchFile();
@@ -117,7 +117,7 @@ private:
 	void putItem(ITEM tag, ULONG len, const void* data);
 	bool getItemLength(ITEM& tag, ULONG& len);
 
-	Firebird::AutoPtr<SharedMemory<TraceCSHeader> > m_sharedMemory;
+	Firebird::AutoPtr<Firebird::SharedMemory<TraceCSHeader> > m_sharedMemory;
 	int m_recursive;
 	ThreadId m_mutexTID;
 	int m_cfg_file;

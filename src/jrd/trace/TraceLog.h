@@ -33,13 +33,13 @@
 
 namespace Jrd {
 
-struct TraceLogHeader : public MemoryHeader
+struct TraceLogHeader : public Firebird::MemoryHeader
 {
 	volatile unsigned int readFileNum;
 	volatile unsigned int writeFileNum;
 };
 
-class TraceLog : public IpcObject
+class TraceLog : public Firebird::IpcObject
 {
 public:
 	TraceLog(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);
@@ -53,7 +53,7 @@ public:
 
 private:
 	void mutexBug(int osErrorCode, const char* text);
-	bool initialize(SharedMemoryBase*, bool);
+	bool initialize(Firebird::SharedMemoryBase*, bool);
 
 	void lock();
 	void unlock();
@@ -61,7 +61,7 @@ private:
 	int openFile(int fileNum);
 	int removeFile(int fileNum);
 
-	Firebird::AutoPtr<SharedMemory<TraceLogHeader> > m_sharedMemory;
+	Firebird::AutoPtr<Firebird::SharedMemory<TraceLogHeader> > m_sharedMemory;
 	Firebird::PathName m_baseFileName;
 	unsigned int m_fileNum;
 	int m_fileHandle;

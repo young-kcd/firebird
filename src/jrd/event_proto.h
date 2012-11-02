@@ -38,7 +38,7 @@ namespace Jrd {
 
 class Attachment;
 
-class EventManager : private Firebird::RefCounted, public Firebird::GlobalStorage, public IpcObject
+class EventManager : private Firebird::RefCounted, public Firebird::GlobalStorage, public Firebird::IpcObject
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, EventManager*> > > DbEventMgrMap;
 
@@ -61,7 +61,7 @@ public:
 	void postEvent(USHORT, const TEXT*, USHORT);
 	void deliverEvents();
 
-	bool initialize(SharedMemoryBase*, bool);
+	bool initialize(Firebird::SharedMemoryBase*, bool);
 	void mutexBug(int osErrorCode, const char* text);
 
 private:
@@ -106,7 +106,7 @@ private:
 
 	Firebird::string m_dbId;
 	Firebird::RefPtr<Config> m_config;
-	Firebird::AutoPtr<SharedMemory<evh> > m_sharedMemory;
+	Firebird::AutoPtr<Firebird::SharedMemory<evh> > m_sharedMemory;
 
 	Firebird::Semaphore m_startupSemaphore;
 	Firebird::Semaphore m_cleanupSemaphore;

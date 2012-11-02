@@ -87,15 +87,15 @@ struct waitque
 
 namespace
 {
-	class sh_mem : public Jrd::IpcObject
+	class sh_mem : public Firebird::IpcObject
 	{
 	public:
 		explicit sh_mem(bool p_consistency, const char* filename)
 		  :	sh_mem_consistency(p_consistency),
-			shared_memory(FB_NEW(*getDefaultMemoryPool()) Jrd::SharedMemory<lhb>(filename, 0, this))
+			shared_memory(FB_NEW(*getDefaultMemoryPool()) Firebird::SharedMemory<lhb>(filename, 0, this))
 		{ }
 
-		bool initialize(Jrd::SharedMemoryBase*, bool)
+		bool initialize(Firebird::SharedMemoryBase*, bool)
 		{
 			// Initialize a lock table to looking -- i.e. don't do nuthin.
 			return sh_mem_consistency;
@@ -110,7 +110,7 @@ namespace
 		bool sh_mem_consistency;
 
 	public:
-		Firebird::AutoPtr<Jrd::SharedMemory<lhb> > shared_memory;
+		Firebird::AutoPtr<Firebird::SharedMemory<lhb> > shared_memory;
 	};
 }
 
