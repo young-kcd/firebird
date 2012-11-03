@@ -112,9 +112,9 @@ private:
 	Firebird::Semaphore m_cleanupSemaphore;
 
 #ifdef WIN_NT
-	struct mtx m_mutex;
+	struct Firebird::mtx m_mutex;
 #else
-	struct mtx* m_mutex;
+	struct Firebird::mtx* m_mutex;
 #endif
 
 	bool m_sharedFileCreated;

@@ -3346,7 +3346,7 @@ void SharedMemoryBase::mutexLock()
 {
 #if defined(WIN_NT)
 
-	int state = ISC_mutex_lock(&sh_mem_mutex);
+	int state = ISC_mutex_lock(sh_mem_mutex);
 
 #elif defined(USE_FILELOCKS)
 
@@ -3419,7 +3419,7 @@ bool SharedMemoryBase::mutexLockCond()
 {
 #if defined(WIN_NT)
 
-	return ISC_mutex_lock_cond(&sh_mem_mutex) == 0;
+	return ISC_mutex_lock_cond(sh_mem_mutex) == 0;
 
 #elif defined(USE_FILELOCKS)
 
@@ -3586,6 +3586,7 @@ SharedMemoryBase::~SharedMemoryBase()
 #endif
 
 #ifdef WIN_NT
+	Arg::StatusVector statusVector;
 	CloseHandle(sh_mem_interest);
 	if (!UnmapViewOfFile(sh_mem_header))
 	{

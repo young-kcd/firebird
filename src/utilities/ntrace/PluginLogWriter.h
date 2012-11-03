@@ -80,7 +80,7 @@ private:
 	void lock();
 	void unlock();
 
-	struct mtx m_mutex;
+	struct Firebird::mtx m_mutex;
 
 	class Guard
 	{

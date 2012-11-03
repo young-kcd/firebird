@@ -137,6 +137,8 @@ struct event_t
 #ifdef WIN_NT
 #include <windows.h>
 
+namespace Firebird {
+
 struct FAST_MUTEX_SHARED_SECTION
 {
 	SLONG fInitialized;
@@ -272,7 +274,8 @@ public:
 	Firebird::AutoPtr<FileLock> mainLock;
 #endif
 #ifdef WIN_NT
-	struct mtx sh_mem_mutex;
+	struct mtx sh_mem_winMutex;
+	struct mtx* sh_mem_mutex;
 #endif
 #ifdef HAVE_SHARED_MUTEX_SECTION
 	struct mtx* sh_mem_mutex;
@@ -368,10 +371,10 @@ public:
 } // namespace Firebird
 
 #ifdef WIN_NT
-int		ISC_mutex_init(struct mtx*, const TEXT*);
-void	ISC_mutex_fini(struct mtx*);
-int		ISC_mutex_lock(struct mtx*);
-int		ISC_mutex_unlock(struct mtx*);
+int		ISC_mutex_init(struct Firebird::mtx*, const TEXT*);
+void	ISC_mutex_fini(struct Firebird::mtx*);
+int		ISC_mutex_lock(struct Firebird::mtx*);
+int		ISC_mutex_unlock(struct Firebird::mtx*);
 #endif
 
 ULONG	ISC_exception_post(ULONG, const TEXT*);
