@@ -1,3 +1,27 @@
+ 2012-11-02 16:27  alexpeshkoff 
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/event.h
+   M src/jrd/event_proto.h
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceLog.h
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+Avoid use of namespace Jrd in common file isc_sync
+
+ 2012-11-02 15:39  alexpeshkoff 
+   M src/common/isc_s_proto.h
+Removed debugging
+
+ 2012-11-02 10:58  mapopa 
+   M examples/readme
+Remove Windows 3.1 clients reference from the readme
+
+ 2012-11-02 07:09  mapopa 
+   D builds/old_prefixes
+Remove old makefile area, left over from the InterBase unix build procedures. They have been replaced in src/make.new with an autoconfig version
+
  2012-11-01 16:19  dimitr 
    M src/jrd/RecordSourceNodes.cpp
 Fixed CORE-3967: subselect with reference to outer select fails.
