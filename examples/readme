@@ -129,7 +129,7 @@ api15.c	    Construct a database parameter buffer.  db_info calls.
 api16.c	    Demonstrate asynchronous event trapping.            
 
 winevent.c  Demonstrate asynchronous event trapping
-            (Replacement for api16.c on Windows 3.1 Client)
+            (Replacement for api16.c on Windows Client)
 
 api16t.c    Identical to stat12t, this triggers the event for api16.
 

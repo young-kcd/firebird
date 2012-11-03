@@ -2,7 +2,7 @@
  *  Program type:   API
  *
  *  Description:
- *        If run from a Windows 3.1 Client, the winevent program
+ *        If run from a Windows Client, the winevent program
  *        should be started before running this program and should
  *        be terminated upon the completion of this program.
  *        For other platforms, this program should be run in
