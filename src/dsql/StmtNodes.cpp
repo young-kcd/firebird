@@ -7666,8 +7666,8 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					++matchCount;
 
 					const size_t fieldPos = fieldPtr - fieldsCopy.begin();
-					AssignmentNode* assign = insertStatements[fieldPos]->as<AssignmentNode>();
-					NestConst<ValueExprNode>& expr = assign->asgnFrom;
+					AssignmentNode* assign2 = insertStatements[fieldPos]->as<AssignmentNode>();
+					NestConst<ValueExprNode>& expr = assign2->asgnFrom;
 					ValueExprNode* var = dsqlPassHiddenVariable(dsqlScratch, expr);
 
 					if (var)
@@ -7678,13 +7678,13 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 						list->statements.add(varAssign);
 
-						assign->asgnFrom = expr = var;
+						assign2->asgnFrom = expr = var;
 					}
 					else
 						var = *valuePtr;
 
 					ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-						equality_type, assign->asgnTo, var);
+						equality_type, *fieldPtr, var);
 
 					match = PASS1_compose(match, eqlNode, blr_and);
 				}
