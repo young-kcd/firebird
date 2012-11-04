@@ -1,3 +1,32 @@
+ 2012-11-04 02:28  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Fixed CORE-3966 - Creating a stored procedure with an "update or insert" statement with MATCHING fails.
+
+ 2012-11-04 00:17  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/gen.cpp
+   M src/jrd/ini.epp
+Improvement CORE-3972 - Allow the selection of SQL_INT64, SQL_DATE and SQL_TIME in dialect 1.
+Fix for CORE-3964 - It is not possible to create a ddl-trigger with "any DDL statement" clause.
+
+ 2012-11-03 14:11  mapopa 
+   M examples/api/api16t.c
+   M examples/readme
+Replace Windows 3.1 with just Windows reference in comments and readme
+
+ 2012-11-03 13:45  mapopa 
+   D examples/build_unix/old
+   D examples/build_win32/old
+Remove old examples makefiles from interbase era
+
+ 2012-11-03 10:55  hvlad 
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/jrd/event_proto.h
+   M src/utilities/ntrace/PluginLogWriter.h
+Fixed Windows build after recent Alex's changes
+
  2012-11-02 16:27  alexpeshkoff 
    M src/common/isc_s_proto.h
    M src/common/isc_sync.cpp
