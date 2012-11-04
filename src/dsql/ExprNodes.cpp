@@ -4915,19 +4915,6 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 						// Intercept any reference to a field with datatype that
 						// did not exist prior to V6 and post an error
 
-						if (dsqlScratch->clientDialect <= SQL_DIALECT_V5 && field &&
-							(field->fld_dtype == dtype_sql_date ||
-								field->fld_dtype == dtype_sql_time || field->fld_dtype == dtype_int64))
-						{
-								ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
-										  Arg::Gds(isc_dsql_field_err) <<
-										  Arg::Gds(isc_random) << Arg::Str(field->fld_name) <<
-										  Arg::Gds(isc_sql_dialect_datatype_unsupport) <<
-													Arg::Num(dsqlScratch->clientDialect) <<
-													Arg::Str(DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype))));
-								return NULL;
-						}
-
 						// CVC: Stop here if this is our second or third iteration.
 						// Anyway, we can't report more than one ambiguity to the status vector.
 						// AB: But only if we're on different scope level, because a
@@ -5242,28 +5229,6 @@ void FieldNode::setParameterName(dsql_par* parameter) const
 // Generate blr for a field - field id's are preferred but not for trigger or view blr.
 void FieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	// For older clients - generate an error should they try and
-	// access data types which did not exist in the older dialect.
-	if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
-	{
-		switch (dsqlField->fld_dtype)
-		{
-			case dtype_sql_date:
-			case dtype_sql_time:
-			case dtype_int64:
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-						  Arg::Gds(isc_dsql_datatype_err) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) <<
-								Arg::Num(dsqlScratch->clientDialect) <<
-								Arg::Str(DSC_dtype_tostring(static_cast<UCHAR>(dsqlField->fld_dtype))));
-				break;
-
-			default:
-				// No special action for other data types
-				break;
-		}
-	}
-
 	if (dsqlIndices)
 		dsqlScratch->appendUChar(blr_index);
 

@@ -201,30 +201,6 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 				parameter->par_desc.setTextType(toCharSet);
 		}
 
-		// For older clients - generate an error should they try and
-		// access data types which did not exist in the older dialect
-		if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
-		{
-			switch (parameter->par_desc.dsc_dtype)
-			{
-				// In V6.0 - older clients, which we distinguish by
-				// their use of SQL DIALECT 0 or 1, are forbidden
-				// from selecting values of new datatypes
-				case dtype_sql_date:
-				case dtype_sql_time:
-				case dtype_int64:
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-							  Arg::Gds(isc_dsql_datatype_err) <<
-							  Arg::Gds(isc_sql_dialect_datatype_unsupport) <<
-									Arg::Num(dsqlScratch->clientDialect) <<
-									Arg::Str(DSC_dtype_tostring(parameter->par_desc.dsc_dtype)));
-					break;
-				default:
-					// No special action for other data types
-					break;
-			}
-		}
-
 		if (parameter->par_desc.dsc_dtype == dtype_text && parameter->par_index != 0)
 		{
 			// We should convert par_desc from text to varying so the user can receive it with

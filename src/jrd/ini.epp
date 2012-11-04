@@ -598,9 +598,6 @@ void INI_init(thread_db* tdbb)
 
 			desc->dsc_dtype = gfield->gfld_dtype;
 
-			if (desc->dsc_dtype == dtype_int64 && !(dbb->dbb_flags & DBB_DB_SQL_dialect_3))
-				desc->dsc_dtype = dtype_double;
-
 			if (desc->isText())
 			{
 				if (gfield->gfld_sub_type & dsc_text_type_metadata)
@@ -743,9 +740,6 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 			field->fld_relation = relation;
 
 			field->fld_dtype = gfield->gfld_dtype;
-
-			if (field->fld_dtype == dtype_int64 && !(dbb->dbb_flags & DBB_DB_SQL_dialect_3))
-				field->fld_dtype = dtype_double;
 
 			if (field->fld_dtype == dtype_varying)
 				field->fld_length += sizeof(USHORT);
@@ -1254,14 +1248,8 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest&
 			else if (gfield->gfld_dtype == dtype_long)
 				X.RDB$FIELD_TYPE = (int) blr_long;
 			else
-			{
-				// Workaround to allow fld_counter domain
-				// in dialect 1 databases
-				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-					X.RDB$FIELD_TYPE = (int) blr_int64;
-				else
-					X.RDB$FIELD_TYPE = (int) blr_double;
-			}
+				X.RDB$FIELD_TYPE = (int) blr_int64;
+
 			if ((gfield->gfld_sub_type == dsc_num_type_numeric) ||
 				(gfield->gfld_sub_type == dsc_num_type_decimal))
 			{
