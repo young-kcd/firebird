@@ -369,7 +369,7 @@ int FileLock::getFd()
 int FileLock::setlock(const LockMode mode)
 {
 	bool shared = true, wait = true;
-	switch(mode)
+	switch (mode)
 	{
 		case FLM_TRY_EXCLUSIVE:
 			wait = false;
@@ -398,7 +398,7 @@ int FileLock::setlock(const LockMode mode)
 	bool rc = true;
 	try
 	{
-		switch(mode)
+		switch (mode)
 		{
 		case FLM_TRY_EXCLUSIVE:
 			rc = rwcl->rwlock.tryBeginWrite();
@@ -414,7 +414,7 @@ int FileLock::setlock(const LockMode mode)
 			break;
 		}
 	}
-	catch(const system_call_failed& fail)
+	catch (const system_call_failed& fail)
 	{
 		return fail.getErrorCode();
 	}
@@ -455,7 +455,7 @@ int FileLock::setlock(const LockMode mode)
 	if (fcntl(oFile->fd, wait ? F_SETLKW : F_SETLK, &lock) == -1)
 	{
 		int rc = errno;
-		if ((!wait) && (rc == EACCES || rc == EAGAIN))
+		if (!wait && (rc == EACCES || rc == EAGAIN))
 		{
 			rc = -1;
 		}
@@ -463,7 +463,7 @@ int FileLock::setlock(const LockMode mode)
 	if (flock(oFile->fd, (shared ? LOCK_SH : LOCK_EX) | (wait ? 0 : LOCK_NB)))
 	{
 		int rc = errno;
-		if ((!wait) && (rc == EWOULDBLOCK))
+		if (!wait && (rc == EWOULDBLOCK))
 		{
 			rc = -1;
 		}
@@ -479,7 +479,7 @@ int FileLock::setlock(const LockMode mode)
 			else
 				rwcl->rwlock.endWrite();
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{ }
 
 		return rc;
@@ -514,7 +514,7 @@ void FileLock::rwUnlock()
 		else
 			rwcl->rwlock.endWrite();
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		iscLogException("rwlock end-operation error", ex);
 	}
@@ -897,7 +897,7 @@ bool SharedMemoryBase::getSem5(Sys5Semaphore* sem)
 
 		return true;
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		iscLogException("FileLock ctor failed in getSem5", ex);
 	}
@@ -913,7 +913,7 @@ void SharedMemoryBase::freeSem5(Sys5Semaphore* sem)
 
 		semTable->put(sem);
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		iscLogException("FileLock ctor failed in freeSem5", ex);
 	}
@@ -1280,16 +1280,13 @@ int SharedMemoryBase::eventWait(event_t* event, const SLONG value, const SLONG m
 
 	for (;;)
 	{
-		if (!event_blocked(event, value)) {
+		if (!event_blocked(event, value))
 			return FB_SUCCESS;
-		}
 
 		const DWORD status = WaitForSingleObject(event->event_handle, timeout);
 
 		if (status != WAIT_OBJECT_0)
-		{
 			return FB_FAILURE;
-		}
 	}
 
 #elif defined(USE_SYS5SEMAPHORE)
@@ -3355,7 +3352,7 @@ void SharedMemoryBase::mutexLock()
 	{
 		localMutex.enter();
 	}
-	catch(const system_call_failed& fail)
+	catch (const system_call_failed& fail)
 	{
 		state = fail.getErrorCode();
 	}
@@ -3368,7 +3365,7 @@ void SharedMemoryBase::mutexLock()
 			{
 				localMutex.leave();
 			}
-			catch(const Exception&)
+			catch (const Exception&)
 			{ }
 		}
 	}
@@ -3430,7 +3427,7 @@ bool SharedMemoryBase::mutexLockCond()
 			return false;
 		}
 	}
-	catch(const system_call_failed& fail)
+	catch (const system_call_failed& fail)
 	{
 		int state = fail.getErrorCode();
 		sh_mem_callback->mutexBug(state, "mutexLockCond");
@@ -3444,7 +3441,7 @@ bool SharedMemoryBase::mutexLockCond()
 		{
 			localMutex.leave();
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{ }
 	}
 	return rc;
@@ -3497,7 +3494,7 @@ void SharedMemoryBase::mutexUnlock()
 	{
 		localMutex.leave();
 	}
-	catch(const system_call_failed& fail)
+	catch (const system_call_failed& fail)
 	{
 		state = fail.getErrorCode();
 	}
@@ -3564,7 +3561,7 @@ SharedMemoryBase::~SharedMemoryBase()
 		mainLock->unlock();
 		semTable->cleanup(fileNum, mainLock->setlock(statusVector, FileLock::FLM_TRY_EXCLUSIVE));
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		iscLogException("ISC_unmap_file failed to lock init file", ex);
 	}

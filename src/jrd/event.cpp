@@ -583,8 +583,9 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	length = FB_ALIGN(length, FB_ALIGNMENT);
 	SRQ_PTR* best = NULL;
 
-	for (SRQ_PTR* ptr = &m_sharedMemory->getHeader()->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
-		ptr = &free->frb_next)
+	for (SRQ_PTR* ptr = &m_sharedMemory->getHeader()->evh_free;
+		 (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+		 ptr = &free->frb_next)
 	{
 		const SLONG tail = free->frb_header.hdr_length - length;
 		if (tail >= 0 && (!best || tail < best_tail))
@@ -998,7 +999,8 @@ void EventManager::free_global(frb* block)
 	const SRQ_PTR offset = SRQ_REL_PTR(block);
 	block->frb_header.hdr_type = type_frb;
 
-	for (ptr = &m_sharedMemory->getHeader()->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+	for (ptr = &m_sharedMemory->getHeader()->evh_free;
+		 (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
 	{
 		if ((SCHAR *) block < (SCHAR *) free)

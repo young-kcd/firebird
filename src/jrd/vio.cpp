@@ -5405,7 +5405,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	staying.push(record);
 	garbage_collect(tdbb, &temp, rpb->rpb_page, staying);
 	gc_rec->rec_flags &= ~REC_gc_active;
-	
+
 	tdbb->bumpRelStats(DBB_purge_count, relation->rel_id);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_PURGES);
 

@@ -98,7 +98,8 @@ MonitoringData::MonitoringData(const Database* dbb)
 	Arg::StatusVector statusVector;
 	try
 	{
-		shared_memory.reset(FB_NEW(*dbb->dbb_permanent) SharedMemory<MonitoringHeader>(name.c_str(), DEFAULT_SIZE, this));
+		shared_memory.reset(FB_NEW(*dbb->dbb_permanent) SharedMemory<MonitoringHeader>(
+			name.c_str(), DEFAULT_SIZE, this));
 	}
 	catch (const Exception& ex)
 	{

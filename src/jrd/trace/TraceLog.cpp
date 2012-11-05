@@ -64,7 +64,7 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 		m_sharedMemory.reset(FB_NEW(pool)
 			SharedMemory<TraceLogHeader>(fileName.c_str(), sizeof(TraceLogHeader), this));
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		iscLogException("TraceLog: cannot initialize the shared memory region", ex);
 		throw;
@@ -87,22 +87,21 @@ TraceLog::~TraceLog()
 {
 	::close(m_fileHandle);
 
-	if (m_reader) {
+	if (m_reader)
+	{
 		// indicate reader is gone
 		m_sharedMemory->getHeader()->readFileNum = MAX_FILE_NUM;
 
 		for (; m_fileNum <= m_sharedMemory->getHeader()->writeFileNum; m_fileNum++)
 			removeFile(m_fileNum);
 	}
-	else if (m_fileNum < m_sharedMemory->getHeader()->readFileNum) {
+	else if (m_fileNum < m_sharedMemory->getHeader()->readFileNum)
 		removeFile(m_fileNum);
-	}
 
 	const bool readerDone = (m_sharedMemory->getHeader()->readFileNum == MAX_FILE_NUM);
 
-	if (m_reader || readerDone) {
+	if (m_reader || readerDone)
 		m_sharedMemory->removeMapFile();
-	}
 }
 
 int TraceLog::openFile(int fileNum)

@@ -148,7 +148,8 @@ ConfigStorage::~ConfigStorage()
 		if (m_sharedMemory->getHeader()->cnt_uses == 0)
 		{
 			unlink(m_sharedMemory->getHeader()->cfg_file_name);
-			memset(m_sharedMemory->getHeader()->cfg_file_name, 0, sizeof(m_sharedMemory->getHeader()->cfg_file_name));
+			memset(m_sharedMemory->getHeader()->cfg_file_name, 0,
+				sizeof(m_sharedMemory->getHeader()->cfg_file_name));
 
 			m_sharedMemory->removeMapFile();
 		}
@@ -211,9 +212,8 @@ void ConfigStorage::checkFile()
 	{
 		m_cfg_file = ::open(cfg_file_name, O_RDWR | O_BINARY);
 
-		if (m_cfg_file < 0) {
+		if (m_cfg_file < 0)
 			checkFileError(cfg_file_name, "open", isc_io_open_err);
-		}
 	}
 
 	// put default (audit) trace file contents into storage

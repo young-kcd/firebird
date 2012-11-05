@@ -337,7 +337,8 @@ class LockManager : private Firebird::RefCounted,
 
 		void setOwner(SLONG owner)
 		{
-			fb_assert(owner && m_owner && m_lm->m_sharedMemory && m_owner == m_lm->m_sharedMemory->getHeader()->lhb_active_owner);
+			fb_assert(owner && m_owner && m_lm->m_sharedMemory &&
+				m_owner == m_lm->m_sharedMemory->getHeader()->lhb_active_owner);
 			m_owner = m_lm->m_sharedMemory->getHeader()->lhb_active_owner = owner;
 		}
 

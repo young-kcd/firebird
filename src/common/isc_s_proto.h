@@ -39,7 +39,7 @@
 #if defined(DARWIN) || defined(ANDROID)
 #define USE_FILELOCKS
 #endif
- */
+*/
 
 #if defined(DARWIN)
 #define USE_FILELOCKS
@@ -199,7 +199,7 @@ public:
 	enum LockMode {FLM_EXCLUSIVE, FLM_TRY_EXCLUSIVE, FLM_SHARED, FLM_TRY_SHARED};
 
 	typedef void InitFunction(int fd);
-	FileLock(const char* fileName, InitFunction* init = 0);		// main ctor
+	FileLock(const char* fileName, InitFunction* init = NULL);		// main ctor
 	FileLock(const FileLock* main, int s);	// creates additional lock for existing file
 	~FileLock();
 
@@ -222,10 +222,10 @@ private:
 #ifdef USE_FCNTL
 	int lStart;
 #endif
-	struct CountedRWLock* rwcl;		// Due to order of init in ctor rwcl must go after fd & start
+	class CountedRWLock* rwcl;		// Due to order of init in ctor rwcl must go after fd & start
 
 	Firebird::string getLockId();
-	struct CountedRWLock* getRw();
+	class CountedRWLock* getRw();
 	void rwUnlock();
 };
 

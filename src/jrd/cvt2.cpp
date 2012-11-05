@@ -108,13 +108,13 @@ static inline SSHORT QUAD_COMPARE(const SQUAD* arg1, const SQUAD* arg2)
  *
  **************************************/
 
-	if (((SLONG *) arg1)[HIGH_WORD] > ((SLONG *) arg2)[HIGH_WORD])
+	if (((SLONG*) arg1)[HIGH_WORD] > ((SLONG*) arg2)[HIGH_WORD])
 		return 1;
-	if (((SLONG *) arg1)[HIGH_WORD] < ((SLONG *) arg2)[HIGH_WORD])
+	if (((SLONG*) arg1)[HIGH_WORD] < ((SLONG*) arg2)[HIGH_WORD])
 		return -1;
-	if (((ULONG *) arg1)[LOW_WORD] > ((ULONG *) arg2)[LOW_WORD])
+	if (((ULONG*) arg1)[LOW_WORD] > ((ULONG*) arg2)[LOW_WORD])
 		return 1;
-	if (((ULONG *) arg1)[LOW_WORD] < ((ULONG *) arg2)[LOW_WORD])
+	if (((ULONG*) arg1)[LOW_WORD] < ((ULONG*) arg2)[LOW_WORD])
 		return -1;
 	return 0;
 }

@@ -368,7 +368,7 @@ void LockManager::detach_shared_file(Arg::StatusVector& statusVector)
 		{
 			delete m_sharedMemory.release();
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			statusVector.assign(ex);
 		}
@@ -577,20 +577,16 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	lbl* lock = find_lock(series, value, length, &hash_slot);
 	if (lock)
 	{
-		if (series < LCK_MAX_SERIES) {
+		if (series < LCK_MAX_SERIES)
 			++(m_sharedMemory->getHeader()->lhb_operations[series]);
-		}
-		else {
+		else
 			++(m_sharedMemory->getHeader()->lhb_operations[0]);
-		}
 
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 		request->lrq_data = data;
 
 		if (grant_or_que(attachment, request, lock, lck_wait))
-		{
 			return request_offset;
-		}
 
 		statusVector << Arg::Gds(lck_wait > 0 ? isc_deadlock :
 			(lck_wait < 0 ? isc_lock_timeout : isc_lock_conflict));
@@ -1665,11 +1661,13 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
  *	Create an owner block.
  *
  **************************************/
-	if (m_sharedMemory->getHeader()->mhb_type != SharedMemoryBase::SRAM_LOCK_MANAGER || m_sharedMemory->getHeader()->mhb_version != LHB_VERSION)
+	if (m_sharedMemory->getHeader()->mhb_type != SharedMemoryBase::SRAM_LOCK_MANAGER ||
+		m_sharedMemory->getHeader()->mhb_version != LHB_VERSION)
 	{
 		TEXT bug_buffer[BUFFER_TINY];
 		sprintf(bug_buffer, "inconsistent lock table type/version; found %d/%d, expected %d/%d",
-				m_sharedMemory->getHeader()->mhb_type, m_sharedMemory->getHeader()->mhb_version, SharedMemoryBase::SRAM_LOCK_MANAGER, LHB_VERSION);
+			m_sharedMemory->getHeader()->mhb_type, m_sharedMemory->getHeader()->mhb_version,
+			SharedMemoryBase::SRAM_LOCK_MANAGER, LHB_VERSION);
 		bug(&statusVector, bug_buffer);
 		return 0;
 	}
@@ -1709,7 +1707,8 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	}
 	else
 	{
-		owner = (own*) ((UCHAR*) SRQ_NEXT(m_sharedMemory->getHeader()->lhb_free_owners) - OFFSET(own*, own_lhb_owners));
+		owner = (own*) ((UCHAR*) SRQ_NEXT(m_sharedMemory->getHeader()->lhb_free_owners) -
+			OFFSET(own*, own_lhb_owners));
 		remove_que(&owner->own_lhb_owners);
 	}
 
