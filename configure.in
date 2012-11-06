@@ -815,6 +815,8 @@ dnl AC_CHECK_FUNCS(AO_compare_and_swap_full)
 AC_COMPILE_IFELSE(
 	[AC_LANG_PROGRAM([[#include <atomic_ops.h>]], [[AO_T x; AO_compare_and_swap_full(&x, 0, 0); return 0;]])],
 	AC_DEFINE(HAVE_AO_COMPARE_AND_SWAP_FULL, 1, [Define this if AO_compare_and_swap_full() is defined in atomic_ops.h]))
+
+dnl Check for time function
 AC_SEARCH_LIBS(clock_gettime, rt)
 AC_CHECK_FUNCS(clock_gettime)
 
