@@ -116,6 +116,13 @@ const int UNSIGNED	= 2;
 #define YYREDUCEPOSNFUNC yyReducePosn
 #define YYREDUCEPOSNFUNCARG NULL
 
+
+// ASF: Inherited attributes (aka rule parameters) are executed even when in trial mode, but action
+// rules ({}) are executed only when in full parse mode. NOTRIAL should be used to avoid segfaults
+// due to accessing invalid pointers in parameters (not yet returned from action rules).
+#define NOTRIAL(x) (yytrial ? NULL : (x))
+
+
 inline unsigned trigger_type_suffix(const unsigned slot1, const unsigned slot2, const unsigned slot3)
 {
 	return ((slot1 << 1) | (slot2 << 3) | (slot3 << 5));
@@ -769,35 +776,36 @@ grant
 
 %type grant0(<grantRevokeNode>)
 grant0($node)
-	: privileges(&$node->privileges) ON table_noise symbol_table_name
-			TO non_role_grantee_list(&$node->users) grant_option granted_by
+	: privileges(NOTRIAL(&$node->privileges)) ON table_noise symbol_table_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
 			$node->table = newNode<GranteeClause>(obj_relation, toName($4));
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| execute_privilege(&$node->privileges) ON PROCEDURE simple_proc_name
-			TO non_role_grantee_list(&$node->users) grant_option granted_by
+	| execute_privilege(NOTRIAL(&$node->privileges)) ON PROCEDURE simple_proc_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
 			$node->table = $4;
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| execute_privilege(&$node->privileges) ON FUNCTION simple_UDF_name
-			TO non_role_grantee_list(&$node->users) grant_option granted_by
+	| execute_privilege(NOTRIAL(&$node->privileges)) ON FUNCTION simple_UDF_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
 			$node->table = $4;
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| execute_privilege(&$node->privileges) ON PACKAGE simple_package_name
-			TO non_role_grantee_list(&$node->users) grant_option granted_by
+	| execute_privilege(NOTRIAL(&$node->privileges)) ON PACKAGE simple_package_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
 			$node->table = $4;
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| role_name_list(&$node->roles) TO role_grantee_list(&$node->users) role_admin_option granted_by
+	| role_name_list(NOTRIAL(&$node->roles)) TO role_grantee_list(NOTRIAL(&$node->users))
+			role_admin_option granted_by
 		{
 			$node->grantAdminOption = $4;
 			$node->grantor = $5;
@@ -893,41 +901,42 @@ revoke
 
 %type revoke0(<grantRevokeNode>)
 revoke0($node)
-	: rev_grant_option privileges(&$node->privileges) ON table_noise symbol_table_name
-			FROM non_role_grantee_list(&$node->users) granted_by
+	: rev_grant_option privileges(NOTRIAL(&$node->privileges)) ON table_noise symbol_table_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
 			$node->table = newNode<GranteeClause>(obj_relation, toName($5));
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
 
-	| rev_grant_option execute_privilege(&$node->privileges) ON PROCEDURE simple_proc_name
-			FROM non_role_grantee_list(&$node->users) granted_by
+	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON PROCEDURE simple_proc_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
 			$node->table = $5;
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
-	| rev_grant_option execute_privilege(&$node->privileges) ON FUNCTION simple_UDF_name
-			FROM non_role_grantee_list(&$node->users) granted_by
+	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON FUNCTION simple_UDF_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
 			$node->table = $5;
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
-	| rev_grant_option execute_privilege(&$node->privileges) ON PACKAGE simple_package_name
-			FROM non_role_grantee_list(&$node->users) granted_by
+	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON PACKAGE simple_package_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
 			$node->table = $5;
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
-	| rev_admin_option role_name_list(&$node->roles) FROM role_grantee_list(&$node->users) granted_by
+	| rev_admin_option role_name_list(NOTRIAL(&$node->roles))
+			FROM role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
 			$node->grantAdminOption = $1;
 			$node->grantor = $5;
 		}
-	| ALL ON ALL FROM non_role_grantee_list(&$node->users)
+	| ALL ON ALL FROM non_role_grantee_list(NOTRIAL(&$node->users))
 	;
 
 %type <boolVal> rev_grant_option
@@ -1020,7 +1029,7 @@ declare_clause
 udf_decl_clause
 	: symbol_UDF_name
 			{ $$ = newNode<CreateAlterFunctionNode>(toName($1)); }
-		arg_desc_list1(&$2->parameters)
+		arg_desc_list1(NOTRIAL(&$2->parameters))
 		RETURNS return_value1($2)
 		ENTRY_POINT sql_string MODULE_NAME sql_string
 			{
@@ -1288,7 +1297,7 @@ shadow_clause
 		 		$$->files.add(newNode<DbFileClause>(toPathName($4)));
 		 		$$->files.front()->length = $5;
 	 		}
-		sec_shadow_files(&$6->files)
+		sec_shadow_files(NOTRIAL(&$6->files))
 		 	{ $$ = $6; }
 	;
 
@@ -1690,7 +1699,7 @@ column_def($relationNode)
 				clause->domain = toName($2);
 				$relationNode->clauses.add(clause);
 			}
-		column_constraint_clause($<addColumnClause>4) collate_clause
+		column_constraint_clause(NOTRIAL($<addColumnClause>4)) collate_clause
 			{ $<addColumnClause>4->collate = toName($6); }
 	| column_def_name data_type_or_domain identity_clause
 			{
@@ -1700,7 +1709,7 @@ column_def($relationNode)
 				clause->identity = true;
 				$relationNode->clauses.add(clause);
 			}
-		column_constraint_clause($<addColumnClause>4) collate_clause
+		column_constraint_clause(NOTRIAL($<addColumnClause>4)) collate_clause
 			{ $<addColumnClause>4->collate = toName($6); }
 	| column_def_name non_array_type def_computed
 		{
@@ -1899,7 +1908,10 @@ column_constraint($addColumnClause)
 %type table_constraint_definition(<relationNode>)
 table_constraint_definition($relationNode)
 	: constraint_name_opt table_constraint($relationNode)
-		{ static_cast<RelationNode::AddConstraintClause*>($relationNode->clauses.back().getObject())->name = toName($1); }
+		{
+			static_cast<RelationNode::AddConstraintClause*>(
+				$relationNode->clauses.back().getObject())->name = toName($1);
+		}
 	;
 
 %type <legacyStr> constraint_name_opt
@@ -2047,7 +2059,7 @@ procedure_clause
 procedure_clause_start
 	: symbol_procedure_name
 			{ $$ = newNode<CreateAlterProcedureNode>(toName($1)); }
-		input_parameters(&$2->parameters) output_parameters(&$2->returns)
+		input_parameters(NOTRIAL(&$2->parameters)) output_parameters(NOTRIAL(&$2->returns))
 			{ $$ = $2; }
 	;
 
@@ -2152,7 +2164,7 @@ function_clause
 function_clause_start
 	: symbol_UDF_name
 			{ $$ = newNode<CreateAlterFunctionNode>(toName($1)); }
-		input_parameters(&$2->parameters)
+		input_parameters(NOTRIAL(&$2->parameters))
 		RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
 		domain_or_non_array_type collate_clause deterministic_opt
 			{
@@ -2249,13 +2261,9 @@ package_items
 %type <packageItem> package_item
 package_item
 	: FUNCTION function_clause_start ';'
-		{
-			$$ = CreateAlterPackageNode::Item::create($2);
-		}
+		{ $$ = CreateAlterPackageNode::Item::create($2); }
 	| PROCEDURE procedure_clause_start ';'
-		{
-			$$ = CreateAlterPackageNode::Item::create($2);
-		}
+		{ $$ = CreateAlterPackageNode::Item::create($2); }
 	;
 
 %type <createAlterPackageNode> alter_package_clause
@@ -2323,13 +2331,9 @@ package_body_items
 %type <packageItem> package_body_item
 package_body_item
 	: FUNCTION function_clause ';'
-		{
-			$$ = CreateAlterPackageNode::Item::create($2);
-		}
+		{ $$ = CreateAlterPackageNode::Item::create($2); }
 	| PROCEDURE procedure_clause ';'
-		{
-			$$ = CreateAlterPackageNode::Item::create($2);
-		}
+		{ $$ = CreateAlterPackageNode::Item::create($2); }
 	;
 
 
@@ -2363,8 +2367,8 @@ local_declaration
 		}
 	| DECLARE PROCEDURE symbol_procedure_name
 			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
-			input_parameters(&$<execBlockNode>4->parameters)
-			output_parameters(&$<execBlockNode>4->returns) AS
+			input_parameters(NOTRIAL(&$<execBlockNode>4->parameters))
+			output_parameters(NOTRIAL(&$<execBlockNode>4->returns)) AS
 			local_declaration_list
 			full_proc_block
 		{
@@ -2380,7 +2384,7 @@ local_declaration
 		}
 	| DECLARE FUNCTION symbol_UDF_name
 			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
-			input_parameters(&$<execBlockNode>4->parameters)
+			input_parameters(NOTRIAL(&$<execBlockNode>4->parameters))
 			RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
 			domain_or_non_array_type collate_clause deterministic_opt AS
 			local_declaration_list
@@ -2648,7 +2652,7 @@ not_named_param($execStatementNode)
 
 %type exec_stmt_options(<execStatementNode>)
 exec_stmt_options($execStatementNode)
-	:
+	: // nothing
 	| exec_stmt_options_list($execStatementNode)
 	;
 
@@ -2813,7 +2817,7 @@ excp_hndl_statements
 excp_hndl_statement
 	: WHEN
 			{ $<errorHandlerNode>$ = newNode<ErrorHandlerNode>(); }
-		errors(&$<errorHandlerNode>2->conditions) DO proc_block
+		errors(NOTRIAL(&$<errorHandlerNode>2->conditions)) DO proc_block
 			{
 				ErrorHandlerNode* node = $<errorHandlerNode>2;
 				node->action = $5;
@@ -2941,8 +2945,8 @@ proc_outputs_opt
 exec_block
 	: EXECUTE BLOCK
 			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
-			block_input_params(&$3->parameters)
-			output_parameters(&$3->returns) AS
+			block_input_params(NOTRIAL(&$3->parameters))
+			output_parameters(NOTRIAL(&$3->returns)) AS
 			local_declaration_list
 			full_proc_block
 		{
@@ -2955,7 +2959,7 @@ exec_block
 
 %type block_input_params(<parametersClause>)
 block_input_params($parameters)
-	:
+	: // nothing
 	| '(' block_parameters($parameters) ')'
 	;
 
@@ -3535,7 +3539,7 @@ alter_db($alterDatabaseNode)
 
 %type db_alter_clause(<alterDatabaseNode>)
 db_alter_clause($alterDatabaseNode)
-	: ADD db_file_list(&$alterDatabaseNode->files)
+	: ADD db_file_list(NOTRIAL(&$alterDatabaseNode->files))
 	| ADD KW_DIFFERENCE KW_FILE sql_string
 		{ $alterDatabaseNode->differenceFile = toPathName($4); }
 	| DROP KW_DIFFERENCE KW_FILE
@@ -5006,13 +5010,14 @@ rows_clause
 // IBO hack: replace column_parens_opt by ins_column_parens_opt.
 %type <storeNode> insert
 insert
-	: insert_start ins_column_parens_opt(&$1->dsqlFields) VALUES '(' value_list ')' returning_clause
+	: insert_start ins_column_parens_opt(NOTRIAL(&$1->dsqlFields)) VALUES '(' value_list ')'
+			returning_clause
 		{
 			StoreNode* node = $$ = $1;
 			node->dsqlValues = $5;
 			node->dsqlReturning = $7;
 		}
-	| insert_start ins_column_parens_opt(&$1->dsqlFields) select_expr returning_clause
+	| insert_start ins_column_parens_opt(NOTRIAL(&$1->dsqlFields)) select_expr returning_clause
 		{
 			StoreNode* node = $$ = $1;
 			node->dsqlRse = $3;
@@ -5067,14 +5072,14 @@ merge_when_clause($mergeNode)
 merge_when_matched_clause($mergeNode)
 	: WHEN MATCHED
 			{ $<mergeMatchedClause>$ = &$mergeNode->whenMatched.add(); }
-		merge_update_specification($<mergeMatchedClause>3)
+		merge_update_specification(NOTRIAL($<mergeMatchedClause>3))
 	;
 
 %type merge_when_not_matched_clause(<mergeNode>)
 merge_when_not_matched_clause($mergeNode)
 	: WHEN NOT MATCHED
 			{ $<mergeNotMatchedClause>$ = &$mergeNode->whenNotMatched.add(); }
-		merge_insert_specification($<mergeNotMatchedClause>4)
+		merge_insert_specification(NOTRIAL($<mergeNotMatchedClause>4))
 	;
 
 %type merge_update_specification(<mergeMatchedClause>)
@@ -5093,9 +5098,10 @@ merge_update_specification($mergeMatchedClause)
 
 %type merge_insert_specification(<mergeNotMatchedClause>)
 merge_insert_specification($mergeNotMatchedClause)
-	: THEN INSERT ins_column_parens_opt(&$mergeNotMatchedClause->fields) VALUES '(' value_list ')'
+	: THEN INSERT ins_column_parens_opt(NOTRIAL(&$mergeNotMatchedClause->fields))
+			VALUES '(' value_list ')'
 		{ $mergeNotMatchedClause->values = $6; }
-	| AND search_condition THEN INSERT ins_column_parens_opt(&$mergeNotMatchedClause->fields)
+	| AND search_condition THEN INSERT ins_column_parens_opt(NOTRIAL(&$mergeNotMatchedClause->fields))
 			VALUES '(' value_list ')'
 		{
 			$mergeNotMatchedClause->values = $8;
@@ -5188,8 +5194,8 @@ update_or_insert
 				UpdateOrInsertNode* node = $$ = newNode<UpdateOrInsertNode>();
 				node->relation = $5;
 			}
-		ins_column_parens_opt(&$6->fields)
-		VALUES '(' value_list ')' update_or_insert_matching_opt(&$6->matching) returning_clause
+		ins_column_parens_opt(NOTRIAL(&$6->fields)) VALUES '(' value_list ')'
+				update_or_insert_matching_opt(NOTRIAL(&$6->matching)) returning_clause
 			{
 				UpdateOrInsertNode* node = $$ = $6;
 				node->values = $10;
@@ -5783,7 +5789,7 @@ timestamp_precision_opt
 array_element
 	: column_name '[' value_list ']'
 		{
-			ArrayNode* node = newNode<ArrayNode>(ExprNode::as<FieldNode>($1));
+			ArrayNode* node = newNode<ArrayNode>($1);
 			node->field->dsqlIndices = $3;
 			$$ = node;
 		}
@@ -6374,7 +6380,8 @@ case_specification
 simple_case
 	: CASE case_operand
 			{ $$ = newNode<DecodeNode>($2, newNode<ValueListNode>(0u), newNode<ValueListNode>(0u)); }
-		simple_when_clause($3->conditions, $3->values) else_case_result_opt END
+		simple_when_clause(NOTRIAL($3->conditions), NOTRIAL($3->values))
+		else_case_result_opt END
 			{
 				DecodeNode* node = $$ = $3;
 				node->label = "CASE";
