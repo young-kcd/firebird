@@ -75,6 +75,7 @@ static bool couldBeDate(const dsc desc);
 static SINT64 getDayFraction(const dsc* d);
 static SINT64 getTimeStampToIscTicks(const dsc* d);
 static bool isDateAndTime(const dsc& d1, const dsc& d2);
+static void setParameterInfo(dsql_par* parameter, const dsql_ctx* context);
 
 
 //--------------------
@@ -5211,19 +5212,7 @@ ValueExprNode* FieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
 void FieldNode::setParameterName(dsql_par* parameter) const
 {
 	parameter->par_name = parameter->par_alias = dsqlField->fld_name.c_str();
-
-	if (dsqlContext->ctx_relation)
-	{
-		parameter->par_rel_name = dsqlContext->ctx_relation->rel_name.c_str();
-		parameter->par_owner_name = dsqlContext->ctx_relation->rel_owner.c_str();
-	}
-	else if (dsqlContext->ctx_procedure)
-	{
-		parameter->par_rel_name = dsqlContext->ctx_procedure->prc_name.identifier.c_str();
-		parameter->par_owner_name = dsqlContext->ctx_procedure->prc_owner.c_str();
-	}
-
-	parameter->par_rel_alias = dsqlContext->ctx_alias.c_str();
+	setParameterInfo(parameter, dsqlContext);
 }
 
 // Generate blr for a field - field id's are preferred but not for trigger or view blr.
@@ -6612,21 +6601,7 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 	if (nameAlias)
 		parameter->par_name = parameter->par_alias = nameAlias;
 
-	if (context)
-	{
-		if (context->ctx_relation)
-		{
-			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
-			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
-		}
-		else if (context->ctx_procedure)
-		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
-			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
-		}
-
-		parameter->par_rel_alias = context->ctx_alias.c_str();
-	}
+	setParameterInfo(parameter, context);
 }
 
 void DsqlMapNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -6777,22 +6752,7 @@ void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 		dbKeyNode->setParameterName(parameter);
 
 	parameter->par_alias = name;
-
-	if (context)
-	{
-		if (context->ctx_relation)
-		{
-			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
-			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
-		}
-		else if (context->ctx_procedure)
-		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
-			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
-		}
-
-		parameter->par_rel_alias = context->ctx_alias.c_str();
-	}
+	setParameterInfo(parameter, context);
 }
 
 void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -7867,24 +7827,7 @@ ValueExprNode* RecordKeyNode::dsqlFieldRemapper(FieldRemapper& visitor)
 void RecordKeyNode::setParameterName(dsql_par* parameter) const
 {
 	parameter->par_name = parameter->par_alias = getAlias(false);
-
-	dsql_ctx* context = dsqlRelation->dsqlContext;
-
-	if (context)
-	{
-		if (context->ctx_relation)
-		{
-			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
-			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
-		}
-		else if (context->ctx_procedure)
-		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
-			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
-		}
-
-		parameter->par_rel_alias = context->ctx_alias.c_str();
-	}
+	setParameterInfo(parameter, dsqlRelation->dsqlContext);
 }
 
 void RecordKeyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -11408,6 +11351,25 @@ static bool isDateAndTime(const dsc& d1, const dsc& d2)
 {
 	return ((d1.dsc_dtype == dtype_sql_time && d2.dsc_dtype == dtype_sql_date) ||
 		(d2.dsc_dtype == dtype_sql_time && d1.dsc_dtype == dtype_sql_date));
+}
+
+static void setParameterInfo(dsql_par* parameter, const dsql_ctx* context)
+{
+	if (!context)
+		return;
+
+	if (context->ctx_relation)
+	{
+		parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
+		parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
+	}
+	else if (context->ctx_procedure)
+	{
+		parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
+		parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
+	}
+
+	parameter->par_rel_alias = context->ctx_alias.c_str();
 }
 
 
