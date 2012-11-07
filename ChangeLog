@@ -1,3 +1,7 @@
+ 2012-11-06 10:45  alexpeshkoff 
+   M configure.in
+Fixed CORE-3970: Trace uses impresice timer in POSIX
+
  2012-11-01 12:03  hvlad 
    M src/jrd/trace/TraceLog.cpp
 Fixed bug CORE-3969 : Memory leak when doing a lot of iterations FBSVCMGR with action_trace_start, _list and _stop
