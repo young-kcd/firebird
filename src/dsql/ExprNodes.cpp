@@ -6443,11 +6443,7 @@ ValueExprNode* DsqlAliasNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 void DsqlAliasNode::setParameterName(dsql_par* parameter) const
 {
-	const ValueExprNode* exprNode;
-
-	if ((exprNode = value->as<RecordKeyNode>()) || (exprNode = value->as<FieldNode>()))
-		exprNode->setParameterName(parameter);
-
+	value->setParameterName(parameter);
 	parameter->par_alias = name;
 }
 
