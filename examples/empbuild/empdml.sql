@@ -30,15 +30,17 @@ INSERT INTO country (country, currency) VALUES ('England',     'Pound');
 INSERT INTO country (country, currency) VALUES ('Canada',      'CdnDlr');
 INSERT INTO country (country, currency) VALUES ('Switzerland', 'SFranc');
 INSERT INTO country (country, currency) VALUES ('Japan',       'Yen');
-INSERT INTO country (country, currency) VALUES ('Italy',       'Lira');
-INSERT INTO country (country, currency) VALUES ('France',      'FFranc');
-INSERT INTO country (country, currency) VALUES ('Germany',     'D-Mark');
+INSERT INTO country (country, currency) VALUES ('Italy',       'Euro');
+INSERT INTO country (country, currency) VALUES ('France',      'Euro');
+INSERT INTO country (country, currency) VALUES ('Germany',     'Euro');
 INSERT INTO country (country, currency) VALUES ('Australia',   'ADollar');
 INSERT INTO country (country, currency) VALUES ('Hong Kong',   'HKDollar');
-INSERT INTO country (country, currency) VALUES ('Netherlands', 'Guilder');
-INSERT INTO country (country, currency) VALUES ('Belgium',     'BFranc');
-INSERT INTO country (country, currency) VALUES ('Austria',     'Schilling');
+INSERT INTO country (country, currency) VALUES ('Netherlands', 'Euro');
+INSERT INTO country (country, currency) VALUES ('Belgium',     'Euro');
+INSERT INTO country (country, currency) VALUES ('Austria',     'Euro');
 INSERT INTO country (country, currency) VALUES ('Fiji',        'FDollar');
+INSERT INTO country (country, currency) VALUES ('Russia',      'Ruble');
+INSERT INTO country (country, currency) VALUES ('Romania',     'RLeu');
 
 COMMIT;
 
@@ -288,11 +290,11 @@ INSERT INTO job
 
 INSERT INTO job
 (job_code, job_grade, job_country, job_title, min_salary, max_salary) VALUES
-('SRep',  4, 'Italy', 'Sales Representative',   33600000, 168000000) /* lira */;
+('SRep',  4, 'Italy', 'Sales Representative',   33600000, 168000000) /* Euro */;
 
 INSERT INTO job
 (job_code, job_grade, job_country, job_title, min_salary, max_salary) VALUES
-('SRep',  4, 'France', 'Sales Representative',  118200, 591000) /* FFranc */;
+('SRep',  4, 'France', 'Sales Representative',  118200, 591000) /* Euro */;
 
 
 COMMIT;
