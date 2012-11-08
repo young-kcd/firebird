@@ -1,3 +1,11 @@
+ 2012-11-07 15:46  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-3973 - Original table name and column name and owner missing from SQLDA for aliased column in grouped query.
+
+ 2012-11-07 15:46  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Refactor duplicated code.
+
  2012-11-07 00:43  asfernandes 
    M src/dsql/parse.y
 Fixed CORE-3965 - Creating a procedure containing "case when" expression leads to a server crash.
