@@ -290,11 +290,11 @@ INSERT INTO job
 
 INSERT INTO job
 (job_code, job_grade, job_country, job_title, min_salary, max_salary) VALUES
-('SRep',  4, 'Italy', 'Sales Representative',   33600000, 168000000) /* Euro */;
+('SRep',  4, 'Italy', 'Sales Representative',   20000, 100000) /* Euro */;
 
 INSERT INTO job
 (job_code, job_grade, job_country, job_title, min_salary, max_salary) VALUES
-('SRep',  4, 'France', 'Sales Representative',  118200, 591000) /* Euro */;
+('SRep',  4, 'France', 'Sales Representative',  20000, 100000) /* Euro */;
 
 
 COMMIT;
