@@ -1,3 +1,15 @@
+ 2012-11-08 23:07  mapopa 
+   M examples/empbuild/empdml.sql
+adjust salaries to the Euro
+
+ 2012-11-08 20:35  mapopa 
+   M examples/empbuild/empdml.sql
+Update the countries with current currencies in example database
+
+ 2012-11-08 06:09  alexpeshkoff 
+   M examples/api/api2.c
+make example posix 2008 compatible - thanks to marius
+
  2012-11-07 15:46  asfernandes 
    M src/dsql/ExprNodes.cpp
 Fixed CORE-3973 - Original table name and column name and owner missing from SQLDA for aliased column in grouped query.
