@@ -246,7 +246,7 @@ INSERT INTO job
 
 INSERT INTO job
 (job_code, job_grade, job_country, job_title, min_salary, max_salary) VALUES
-('Eng',   4, 'England', 'Engineer',               20100,  43550) /* pounds */;
+('Eng',   4, 'England', 'Engineer',               20100,  43550) /* Pounds */;
 
 INSERT INTO job
 (job_code, job_grade, job_country, job_title, min_salary, max_salary) VALUES
