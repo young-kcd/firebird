@@ -1,3 +1,20 @@
+ 2012-11-09 14:56  mapopa 
+   M examples/empbuild/empdml.sql
+   M examples/empbuild/intldml.sql
+Update salaries and the currency in the intl version for employee db
+
+ 2012-11-09 14:37  mapopa 
+   M examples/empbuild/intlbld.sql
+use dialect 3
+
+ 2012-11-09 14:28  mapopa 
+   M examples/empbuild/employe2.sql
+update currency cross rates to current ones
+
+ 2012-11-09 13:35  alexpeshkoff 
+   M examples/api/api2.c
+Make example runnable with dialect-3 employee database
+
  2012-11-08 23:07  mapopa 
    M examples/empbuild/empdml.sql
 adjust salaries to the Euro
