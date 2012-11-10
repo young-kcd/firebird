@@ -1,3 +1,7 @@
+ 2012-11-09 13:34  alexpeshkoff 
+   M examples/api/api2.c
+Make test runnable with dialect-3 employee database
+
  2012-11-08 06:11  alexpeshkoff 
    M examples/api/api2.c
 make example posix 2008 compatible - thanks to marius
