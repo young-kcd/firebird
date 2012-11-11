@@ -222,7 +222,7 @@ public:
 class CountedFd
 {
 public:
-	CountedFd(int f)
+	explicit CountedFd(int f)
 		: fd(f), useCount(0)
 	{ }
 
