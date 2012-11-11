@@ -3215,7 +3215,6 @@ void JRequest::receive(IStatus* user_status, int level, unsigned int msg_type,
 		check_database(tdbb);
 
 		jrd_req* request = verify_request_synchronization(getHandle(), level);
-		check_transaction(tdbb, request->req_transaction);
 
 		try
 		{
@@ -3535,7 +3534,6 @@ void JRequest::send(IStatus* user_status, int level, unsigned int msg_type,
 		check_database(tdbb);
 
 		jrd_req* request = verify_request_synchronization(getHandle(), level);
-		check_transaction(tdbb, request->req_transaction);
 
 		try
 		{
@@ -3769,7 +3767,6 @@ void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, i
 		check_database(tdbb);
 
 		jrd_req* request = getHandle()->getRequest(tdbb, level);
-		check_transaction(tdbb, request->req_transaction);
 
 		try
 		{
@@ -3832,7 +3829,6 @@ void JRequest::start(IStatus* user_status, Firebird::ITransaction* tra, int leve
 		check_database(tdbb);
 
 		jrd_req* request = getHandle()->getRequest(tdbb, level);
-		check_transaction(tdbb, request->req_transaction);
 
 		try
 		{
@@ -6932,6 +6928,8 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
  *	Get a record from the host program.
  *
  **************************************/
+	check_transaction(tdbb, request->req_transaction);
+
 	EXE_receive(tdbb, request, msg_type, msg_length, msg, true);
 
 	check_autocommit(request, tdbb);
@@ -6956,6 +6954,8 @@ void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_leng
  *	Get a record from the host program.
  *
  **************************************/
+	check_transaction(tdbb, request->req_transaction);
+
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
 	check_autocommit(request, tdbb);
@@ -6980,6 +6980,8 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *	Get a record from the host program.
  *
  **************************************/
+	check_transaction(tdbb, transaction);
+
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 
@@ -7070,6 +7072,8 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
+	check_transaction(tdbb, transaction);
+
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
