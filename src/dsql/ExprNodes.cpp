@@ -11349,6 +11349,7 @@ static bool isDateAndTime(const dsc& d1, const dsc& d2)
 		(d2.dsc_dtype == dtype_sql_time && d1.dsc_dtype == dtype_sql_date));
 }
 
+// Set parameter info based on a context.
 static void setParameterInfo(dsql_par* parameter, const dsql_ctx* context)
 {
 	if (!context)
