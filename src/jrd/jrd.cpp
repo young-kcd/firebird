@@ -2930,7 +2930,6 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		try
 		{
 			check_database(tdbb);
-			check_transaction(tdbb, request->req_transaction);
 
 			JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level
 #ifdef SCROLLABLE_CURSORS
@@ -3481,7 +3480,6 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 		try
 		{
 			check_database(tdbb);
-			check_transaction(tdbb, request->req_transaction);
 
 			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
@@ -3540,7 +3538,6 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status, jrd_req** req_handle, jrd_tra** tr
 		try
 		{
 			check_database(tdbb);
-			check_transaction(tdbb, request->req_transaction);
 
 			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
@@ -6690,6 +6687,8 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
  *	Get a record from the host program.
  *
  **************************************/
+	check_transaction(tdbb, request->req_transaction);
+
 	verify_request_synchronization(request, level);
 
 #ifdef SCROLLABLE_CURSORS
@@ -6741,6 +6740,7 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, SSH
  *	Get a record from the host program.
  *
  **************************************/
+	check_transaction(tdbb, transaction);
 
 	if (level)
 		request = CMP_clone_request(tdbb, request, level, false);
@@ -6837,7 +6837,7 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-	///jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
+	check_transaction(tdbb, transaction);
 
 	if (level)
 		request = CMP_clone_request(tdbb, request, level, false);
