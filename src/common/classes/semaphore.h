@@ -91,8 +91,8 @@ public:
 
 #ifdef DARWIN
 
-// Mach semaphore
-#define COMMON_CLASSES_SEMAPHORE_MACH
+// dispatch semaphore
+#define COMMON_CLASSES_SEMAPHORE_DISPATCH
 #include <dispatch/dispatch.h>
 
 namespace Firebird

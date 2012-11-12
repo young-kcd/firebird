@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Client/Server Common Code
- *	MODULE:			locks.cpp
- *	DESCRIPTION:	Darwin specific semaphore support
+ *	MODULE:			semaphore.cpp
+ *	DESCRIPTION:	Semaphore support
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -66,7 +66,7 @@ static timespec getCurrentTime()
 
 namespace Firebird {
 
-#ifdef COMMON_CLASSES_SEMAPHORE_MACH
+#ifdef COMMON_CLASSES_SEMAPHORE_DISPATCH
 
 	void SignalSafeSemaphore::init()
 	{
@@ -82,8 +82,7 @@ namespace Firebird {
 		dispatch_release(semaphore);
 	}
 
-#endif  // COMMON_CLASSES_SEMAPHORE_MACH
-
+#endif  // COMMON_CLASSES_SEMAPHORE_DISPATCH
 
 
 #ifdef COMMON_CLASSES_SEMAPHORE_POSIX_RT
@@ -281,9 +280,10 @@ static const char* semName = "/firebird_temp_sem";
 		}
 
 		timespec timeout = getCurrentTime();
-		nanoseconds += timeout.tv_nsec;
-		timeout.tv_sec += nanoseconds / 1000000000l;
-		timeout.tv_nsec = nanoseconds % 1000000000l;
+		timeout.tv_sec += milliseconds / 1000;
+		timeout.tv_nsec += (milliseconds % 1000) * 1000000;
+		timeout.tv_sec += (timeout.tv_nsec / 1000000000l);
+		timeout.tv_nsec %= 1000000000l;
 		err = pthread_cond_timedwait(&cv, &mu, &timeout);
 
 		mtxUnlock();
