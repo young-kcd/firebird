@@ -1,3 +1,11 @@
+ 2012-11-11 15:26  dimitr 
+   M src/jrd/jrd.cpp
+Fixed CORE-3977: DELETE FROM MON$STATEMENTS does not interrupt a longish fetch.
+
+ 2012-11-11 06:25  robocop 
+   M src/jrd/isc_sync.cpp
+Misc.
+
  2012-11-09 13:34  alexpeshkoff 
    M examples/api/api2.c
 Make test runnable with dialect-3 employee database
