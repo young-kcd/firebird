@@ -1,3 +1,11 @@
+ 2012-11-11 18:19  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Misc.
+
+ 2012-11-11 15:33  dimitr 
+   M src/jrd/jrd.cpp
+Fixed CORE-3977: DELETE FROM MON$STATEMENTS does not interrupt a longish fetch.
+
  2012-11-09 14:56  mapopa 
    M examples/empbuild/empdml.sql
    M examples/empbuild/intldml.sql
