@@ -3932,11 +3932,23 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
 				AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
 
-				// ASF: If the view field doesn't reference an item of a stream, evaluate it
-				// based on the view dbkey - CORE-1245.
-				if (sub->nod_type != nod_field &&
-					sub->nod_type != nod_map &&
-					sub->nod_type != nod_dbkey)
+				// ASF: If the view field doesn't reference any of the view streams,
+				// evaluate it based on the view dbkey - CORE-1245.
+				Firebird::SortedArray<int> streams;
+				OPT_get_expression_streams(sub, streams);
+				bool view_refs = false;
+				for (size_t i = 0; i < streams.getCount(); i++)
+				{
+					const CompilerScratch::csb_repeat* const sub_tail = &csb->csb_rpt[streams[i]];
+
+					if (sub_tail->csb_view && sub_tail->csb_view_stream == csb->csb_view_stream)
+					{
+						view_refs = true;
+						break;
+					}
+				}
+
+				if (!view_refs)
 				{
 					NodeStack stack;
 					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, true);
