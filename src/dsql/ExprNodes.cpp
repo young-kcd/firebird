@@ -5536,13 +5536,23 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
 		AutoSetRestore<StreamType> autoViewStream(&csb->csb_view_stream, stream);
 
-		// ASF: If the view field doesn't reference an item of a stream, evaluate it
-		// based on the view dbkey - CORE-1245.
-		RecordKeyNode* recNode;
+		// ASF: If the view field doesn't reference any of the view streams,
+		// evaluate it based on the view dbkey - CORE-1245.
+		SortedStreamList streams;
+		sub->jrdStreamsCollector(streams);
+		bool view_refs = false;
+		for (size_t i = 0; i < streams.getCount(); i++)
+		{
+			const CompilerScratch::csb_repeat* const sub_tail = &csb->csb_rpt[streams[i]];
 
-		if (!sub->is<FieldNode>() &&
-			(!(recNode = sub->as<RecordKeyNode>()) ||
-			 (recNode->blrOp != blr_dbkey && recNode->blrOp != blr_record_version2)))
+			if (sub_tail->csb_view && sub_tail->csb_view_stream == csb->csb_view_stream)
+			{
+				view_refs = true;
+				break;
+			}
+		}
+
+		if (!view_refs)
 		{
 			ValueExprNodeStack stack;
 			CMP_expand_view_nodes(tdbb, csb, stream, stack, blr_dbkey, true);
