@@ -1,3 +1,11 @@
+ 2012-11-14 08:14  dimitr 
+   M src/jrd/cmp.cpp
+A more generic solution for CORE-1245: Incorrect column values with outer joins and views. It also fixes CORE-3981: Sub-optimal predicate checking while selecting from a view.
+
+ 2012-11-13 09:38  dimitr 
+   M src/jrd/tra.cpp
+Fixed CORE-3978: Invalid transaction counters may be reported in firebird.log during the sweep.
+
  2012-11-11 15:26  dimitr 
    M src/jrd/jrd.cpp
 Fixed CORE-3977: DELETE FROM MON$STATEMENTS does not interrupt a longish fetch.
