@@ -1,3 +1,16 @@
+ 2012-11-14 08:24  dimitr 
+   M src/dsql/ExprNodes.cpp
+A more generic solution for CORE-1245: Incorrect column values with outer joins and views. It also fixes CORE-3981: Sub-optimal predicate checking while selecting from a view.
+
+ 2012-11-13 09:42  dimitr 
+   M src/jrd/tra.cpp
+Fixed CORE-3978: Invalid transaction counters may be reported in firebird.log during the sweep.
+
+ 2012-11-12 08:51  alexpeshkoff 
+   M src/common/classes/semaphore.cpp
+   M src/common/classes/semaphore.h
+Misc
+
  2012-11-11 18:19  asfernandes 
    M src/dsql/ExprNodes.cpp
 Misc.
