@@ -31,12 +31,18 @@ namespace Jrd {
 
 class InAutonomousTransactionNode : public StmtNode
 {
+	struct Impure
+	{
+		SLONG traNumber;
+		SLONG savNumber;
+	};
+
 public:
 	explicit InAutonomousTransactionNode(MemoryPool& pool)
 		: StmtNode(pool),
 		  dsqlAction(NULL),
 		  action(NULL),
-		  savNumberOffset(0)
+		  impureOffset(0)
 	{
 	}
 
@@ -56,7 +62,7 @@ public:
 public:
 	dsql_nod* dsqlAction;
 	jrd_nod* action;
-	SLONG savNumberOffset;
+	SLONG impureOffset;
 };
 
 

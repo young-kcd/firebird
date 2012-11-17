@@ -123,7 +123,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass1(thread_db* tdbb,
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	savNumberOffset = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(Impure));
 	action = CMP_pass2(tdbb, csb, action, node);
 	return this;
 }
@@ -131,25 +131,33 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 
 jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 {
-	SLONG* savNumber = (SLONG*) ((char*) request + savNumberOffset);
+	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
+
+	Impure* const impure = (Impure*) ((UCHAR*) request + impureOffset);
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
-		fb_assert(tdbb->getTransaction() == request->req_transaction);
+		jrd_tra* const org_transaction = request->req_transaction;
+		fb_assert(tdbb->getTransaction() == org_transaction);
 
-		request->req_auto_trans.push(request->req_transaction);
-		request->req_transaction = TRA_start(tdbb, request->req_transaction->tra_flags,
-											 request->req_transaction->tra_lock_timeout,
-											 request->req_transaction);
-		tdbb->setTransaction(request->req_transaction);
+		jrd_tra* const transaction = TRA_start(tdbb, org_transaction->tra_flags,
+											   org_transaction->tra_lock_timeout,
+											   org_transaction);
 
-		VIO_start_save_point(tdbb, request->req_transaction);
-		*savNumber = request->req_transaction->tra_save_point->sav_number;
+		TRA_attach_request(transaction, request);
+		tdbb->setTransaction(transaction);
 
-		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+		request->req_auto_trans.push(org_transaction);
+		impure->traNumber = transaction->tra_number;
+
+		VIO_start_save_point(tdbb, transaction);
+		impure->savNumber = transaction->tra_save_point->sav_number;
+
+		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_start);
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
 		}
 
 		return action;
@@ -157,12 +165,17 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 
 	jrd_tra* transaction = request->req_transaction;
 	fb_assert(transaction);
-	fb_assert(transaction != tdbb->getDatabase()->dbb_sys_trans);
+	fb_assert(transaction != dbb->dbb_sys_trans);
+
+	if (!impure->traNumber)
+		return node->nod_parent;
+
+	fb_assert(transaction->tra_number == impure->traNumber);
 
 	switch (request->req_operation)
 	{
 	case jrd_req::req_return:
-		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
 			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
@@ -187,7 +200,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		{
 			try
 			{
-				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+				if (!(attachment->att_flags & ATT_no_db_triggers))
 				{
 					// run ON TRANSACTION COMMIT triggers
 					EXE_execute_db_triggers(tdbb, transaction,
@@ -215,7 +228,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		{
 			ThreadStatusGuard temp_status(tdbb);
 
-			if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+			if (!(attachment->att_flags & ATT_no_db_triggers))
 			{
 				try
 				{
@@ -225,10 +238,8 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 				}
 				catch (const Firebird::Exception&)
 				{
-					if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
-					{
+					if (dbb->dbb_flags & DBB_bugcheck)
 						throw;
-					}
 				}
 			}
 
@@ -239,7 +250,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 
 				// undo all savepoints up to our one
 				for (const Savepoint* save_point = transaction->tra_save_point;
-					save_point && *savNumber <= save_point->sav_number;
+					save_point && impure->savNumber <= save_point->sav_number;
 					save_point = transaction->tra_save_point)
 				{
 					++transaction->tra_save_point->sav_verb_count;
@@ -250,10 +261,8 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 			}
 			catch (const Firebird::Exception&)
 			{
-				if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
-				{
+				if (dbb->dbb_flags & DBB_bugcheck)
 					throw;
-				}
 			}
 		}
 		break;
@@ -262,8 +271,11 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		fb_assert(false);
 	}
 
-	request->req_transaction = request->req_auto_trans.pop();
-	tdbb->setTransaction(request->req_transaction);
+	impure->traNumber = impure->savNumber = 0;
+	transaction = request->req_auto_trans.pop();
+
+	TRA_attach_request(transaction, request);
+	tdbb->setTransaction(transaction);
 
 	return node->nod_parent;
 }
