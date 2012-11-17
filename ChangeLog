@@ -1,3 +1,7 @@
+ 2012-11-16 14:03  alexpeshkoff 
+   M src/msgs/messages2.sql
+Use correct default password in examples
+
  2012-11-14 08:24  dimitr 
    M src/dsql/ExprNodes.cpp
 A more generic solution for CORE-1245: Incorrect column values with outer joins and views. It also fixes CORE-3981: Sub-optimal predicate checking while selecting from a view.
