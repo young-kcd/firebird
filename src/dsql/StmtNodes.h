@@ -710,11 +710,17 @@ public:
 
 class InAutonomousTransactionNode : public TypedNode<StmtNode, StmtNode::TYPE_IN_AUTO_TRANS>
 {
+	struct Impure
+	{
+		TraNumber traNumber;
+		SLONG savNumber;
+	};
+
 public:
 	explicit InAutonomousTransactionNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_IN_AUTO_TRANS>(pool),
 		  action(NULL),
-		  savNumberOffset(0)
+		  impureOffset(0)
 	{
 	}
 
@@ -730,7 +736,7 @@ public:
 
 public:
 	NestConst<StmtNode> action;
-	SLONG savNumberOffset;
+	SLONG impureOffset;
 };
 
 
