@@ -99,12 +99,11 @@ TraceLog::~TraceLog()
 
 	const bool readerDone = (m_base->readFileNum == MAX_FILE_NUM);
 
+	ISC_mutex_fini(m_mutex);
+	m_mutex = NULL;
+
 	ISC_STATUS_ARRAY status;
 	ISC_unmap_file(status, &m_handle);
-#ifdef WIN_NT
-	ISC_mutex_fini(&m_winMutex);
-	m_mutex = NULL;
-#endif
 
 	if (m_reader || readerDone) {
 		unlink(m_baseFileName.c_str());
