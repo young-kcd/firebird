@@ -3410,7 +3410,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 {
 	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
- 
+
 	Impure* const impure = request->getImpure<Impure>(impureOffset);
 
 	if (request->req_operation == jrd_req::req_evaluate)
