@@ -1,3 +1,8 @@
+ 2012-11-17 15:17  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+Fixed CORE-3979: Server crashes while unwinding changes in an autonomous transaction.
+
  2012-11-14 08:14  dimitr 
    M src/jrd/cmp.cpp
 A more generic solution for CORE-1245: Incorrect column values with outer joins and views. It also fixes CORE-3981: Sub-optimal predicate checking while selecting from a view.
