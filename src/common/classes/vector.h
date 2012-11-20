@@ -58,6 +58,7 @@ public:
 	T* end() { return data + count; }
 	const T* begin() const { return data; }
 	const T* end() const { return data + count; }
+	bool hasData() const { return (count != 0); }
 	size_t getCount() const { return count; }
 	size_t getCapacity() const { return Capacity; }
 	void clear() { count = 0; }
