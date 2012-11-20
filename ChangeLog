@@ -1,3 +1,7 @@
+ 2012-11-19 23:32  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Misc.
+
  2012-11-17 15:31  dimitr 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
