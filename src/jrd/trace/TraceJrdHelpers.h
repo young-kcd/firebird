@@ -48,7 +48,7 @@ public:
 			return;
 
 		m_start_clock = fb_utils::query_performance_counter();
-		MemoryPool* pool = MemoryPool::getContextPool();
+		MemoryPool* pool = m_transaction->tra_pool;
 		m_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, m_transaction->tra_stats);
 	}
 
@@ -116,7 +116,7 @@ public:
 		fb_assert(!m_request->req_fetch_baseline);
 		m_request->req_fetch_baseline = NULL;
 
-		MemoryPool* pool = MemoryPool::getContextPool();
+		MemoryPool* pool = m_request->req_pool;
 		m_request->req_fetch_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, m_request->req_stats);
 	}
 
@@ -248,7 +248,7 @@ public:
 		fb_assert(!m_request->req_fetch_baseline);
 		m_request->req_fetch_baseline = NULL;
 
-		MemoryPool* pool = MemoryPool::getContextPool();
+		MemoryPool* pool = m_request->req_pool;
 		m_request->req_fetch_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, m_request->req_stats);
 		m_start_clock = fb_utils::query_performance_counter();
 	}
@@ -374,7 +374,7 @@ public:
 		fb_assert(!m_request->req_fetch_baseline);
 		m_request->req_fetch_baseline = NULL;
 
-		MemoryPool* pool = MemoryPool::getContextPool();
+		MemoryPool* pool = m_request->req_pool;
 		m_request->req_fetch_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, m_request->req_stats);
 
 		m_start_clock = fb_utils::query_performance_counter();
