@@ -148,7 +148,7 @@ static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, NodeStack&);
 static bool pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_vec*, USHORT, USHORT,
-	SecurityClass::flags_t, jrd_rel*, USHORT);
+	SecurityClass::flags_t, jrd_rel*, USHORT, USHORT);
 static void pass2_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static jrd_nod* pass2_union(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass2_validation(thread_db*, CompilerScratch*, const Item&);
@@ -3941,7 +3941,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				{
 					const CompilerScratch::csb_repeat* const sub_tail = &csb->csb_rpt[streams[i]];
 
-					if (sub_tail->csb_view && sub_tail->csb_view_stream == csb->csb_view_stream)
+					if (sub_tail->csb_view && sub_tail->csb_view_stream == stream)
 					{
 						view_refs = true;
 						break;
@@ -4351,19 +4351,20 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	USHORT parent_stream = 0;
+	USHORT parent_stream;
 
 	for (;;) {
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		const USHORT stream = new_stream;
 
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+		jrd_rel* const relation = tail->csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent) {
 			parent = tail->csb_view;
+			parent_stream = tail->csb_view_stream;
 		}
 
 		post_trigger_access(csb, relation, ExternalAccess::exa_delete, view);
@@ -4394,9 +4395,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// get the source relation, either a table or yet another view
 
-		jrd_nod* source =
-			pass1_update(tdbb, csb, relation, trigger, stream, new_stream,
-						 priv, parent, parent_stream);
+		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream, new_stream,
+									   priv, parent, parent_stream, parent_stream);
 
 		if (!source) {
 
@@ -4410,7 +4410,7 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// remap the source stream
 
-		UCHAR* map = csb->csb_rpt[stream].csb_map;
+		UCHAR* map = tail->csb_map;
 
 		if (trigger) {
 
@@ -4530,7 +4530,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	USHORT parent_stream = 0;
+	USHORT parent_stream, parent_new_stream;
 
 	// to support nested views, loop until we hit a table or
 	// a view with user-defined triggers (which means no update)
@@ -4539,13 +4539,17 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		USHORT stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[new_stream];
-		tail->csb_flags |= csb_modify;
+		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* const new_tail = &csb->csb_rpt[new_stream];
+		new_tail->csb_flags |= csb_modify;
 
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+		jrd_rel* const relation = tail->csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent) {
-			parent = tail->csb_view;
+			fb_assert(tail->csb_view == new_tail->csb_view);
+			parent = new_tail->csb_view;
+			parent_stream = tail->csb_view_stream;
+			parent_new_stream = new_tail->csb_view_stream;
 		}
 
 		post_trigger_access(csb, relation, ExternalAccess::exa_update, view);
@@ -4572,8 +4576,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// get the source relation, either a table or yet another view
 
-		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream,
-									   new_stream, priv, parent, parent_stream);
+		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream, new_stream, priv,
+									   parent, parent_stream, parent_new_stream);
 
 		if (!source) {
 
@@ -4594,10 +4598,11 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		parent = relation;
 		parent_stream = stream;
+		parent_new_stream = new_stream;
 
 		// remap the source stream
 
-		UCHAR* map = csb->csb_rpt[stream].csb_map;
+		UCHAR* map = tail->csb_map;
 
 		stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
 		stream = map[stream];
@@ -4866,6 +4871,16 @@ static void pass1_source(thread_db*			tdbb,
 
 	stack.push(source);
 
+	jrd_rel* const parent_view = csb->csb_view;
+	const USHORT view_stream = csb->csb_view_stream;
+
+	const USHORT stream = (USHORT)(IPTR) source->nod_arg[STREAM_INDEX(source)];
+	fb_assert(stream <= MAX_STREAMS);
+	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
+	element->csb_view = parent_view;
+	fb_assert(view_stream <= MAX_STREAMS);
+	element->csb_view_stream = (UCHAR) view_stream;
+
 	// special case: procedure
 
 	if (source->nod_type == nod_procedure) {
@@ -4874,16 +4889,7 @@ static void pass1_source(thread_db*			tdbb,
 			MET_lookup_procedure_id(tdbb, (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
 		post_procedure_access(tdbb, csb, procedure);
 		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->prc_id);
-
-		jrd_rel* const parent_view = csb->csb_view;
-		const USHORT view_stream = csb->csb_view_stream;
 		source->nod_arg[e_prc_view] = (jrd_nod*) parent_view;
-
-		const USHORT stream = (USHORT)(IPTR) source->nod_arg[e_prc_stream];
-		CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
-		element->csb_view = parent_view;
-		fb_assert(view_stream <= MAX_STREAMS);
-		element->csb_view_stream = (UCHAR) view_stream;
 
 		if (parent_view)
 		{
@@ -4895,6 +4901,7 @@ static void pass1_source(thread_db*			tdbb,
 					Firebird::string(csb->csb_pool, ctx[pos]->vcx_context_name);
 			}
 		}
+
 		return;
 	}
 
@@ -4908,7 +4915,6 @@ static void pass1_source(thread_db*			tdbb,
 	// special case: group-by/global aggregates
 
 	if (source->nod_type == nod_aggregate) {
-		fb_assert((int) (IPTR) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		CMP_pass1(tdbb, csb, source);
 		return;
 	}
@@ -4917,18 +4923,9 @@ static void pass1_source(thread_db*			tdbb,
 	// prepare to check protection of relation when a field in the stream of the
 	// relation is accessed.
 
-	jrd_rel* const parent_view = csb->csb_view;
-	const USHORT view_stream = csb->csb_view_stream;
-
 	jrd_rel* view = (jrd_rel*) source->nod_arg[e_rel_relation];
 	CMP_post_resource(&csb->csb_resources, view, Resource::rsc_relation, view->rel_id);
 	source->nod_arg[e_rel_view] = (jrd_nod*) parent_view;
-
-	const USHORT stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
-	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
-	element->csb_view = parent_view;
-	fb_assert(view_stream <= MAX_STREAMS);
-	element->csb_view_stream = (UCHAR) view_stream;
 
 	// in the case where there is a parent view, find the context name
 
@@ -5065,7 +5062,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	USHORT parent_stream = 0;
+	USHORT parent_stream;
 
 	// to support nested views, loop until we hit a table or
 	// a view with user-defined triggers (which means no update)
@@ -5073,13 +5070,14 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	for (;;) {
 		const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+		jrd_rel* const relation = tail->csb_relation;
 		view = (relation->rel_view_rse) ? relation : view;
 		if (!parent) {
 			parent = tail->csb_view;
+			parent_stream = tail->csb_view_stream;
 		}
 
 		post_trigger_access(csb, relation, ExternalAccess::exa_insert, view);
@@ -5098,8 +5096,8 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// get the source relation, either a table or yet another view
 
-		jrd_nod* source =
-			 pass1_update(tdbb, csb, relation, trigger, stream, stream, priv, parent, parent_stream);
+		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream, stream,
+									   priv, parent, parent_stream, parent_stream);
 
 		if (!source) {
 
@@ -5174,7 +5172,8 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 							USHORT update_stream,
 							SecurityClass::flags_t priv,
 							jrd_rel* view,
-							USHORT view_stream)
+							USHORT view_stream,
+							USHORT view_update_stream)
 {
 /**************************************
  *
@@ -5206,8 +5205,13 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 	fb_assert(view_stream <= MAX_STREAMS);
 	CMP_csb_element(csb, stream)->csb_view = view;
 	CMP_csb_element(csb, stream)->csb_view_stream = (UCHAR) view_stream;
-	CMP_csb_element(csb, update_stream)->csb_view = view;
-	CMP_csb_element(csb, update_stream)->csb_view_stream = (UCHAR) view_stream;
+
+	if (stream != update_stream)
+	{
+		fb_assert(view_update_stream <= MAX_STREAMS);
+		CMP_csb_element(csb, update_stream)->csb_view = view;
+		CMP_csb_element(csb, update_stream)->csb_view_stream = (UCHAR) view_update_stream;
+	}
 
 	// if we're not a view, everything's cool
 
