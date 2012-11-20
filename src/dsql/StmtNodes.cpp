@@ -84,7 +84,7 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamTy
 	StreamType newStream, bool remap);
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
 	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
-	jrd_rel* view, StreamType viewStream);
+	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream);
 static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<ValidateInfo>& validations);
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
@@ -2019,21 +2019,24 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	StreamType parentStream = 0;
+	StreamType parentStream;
 
 	for (;;)
 	{
 		StreamType newStream = node->stream;
 		const StreamType stream = newStream;
 
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_erase;
 
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+		jrd_rel* const relation = tail->csb_relation;
 		view = relation->rel_view_rse ? relation : view;
 
 		if (!parent)
+		{
 			parent = tail->csb_view;
+			parentStream = tail->csb_view_stream;
+		}
 
 		postTriggerAccess(csb, relation, ExternalAccess::exa_delete, view);
 
@@ -2062,8 +2065,8 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 
 		// Get the source relation, either a table or yet another view.
 
-		RelationSourceNode* source = pass1Update(tdbb, csb, relation, trigger, stream,
-			newStream, priv, parent, parentStream);
+		RelationSourceNode* source = pass1Update(tdbb, csb, relation, trigger, stream, newStream,
+												 priv, parent, parentStream, parentStream);
 
 		if (!source)
 			return;	// no source means we're done
@@ -2073,7 +2076,7 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 
 		// Remap the source stream.
 
-		StreamType* map = csb->csb_rpt[stream].csb_map;
+		StreamType* map = tail->csb_map;
 
 		if (trigger)
 		{
@@ -5533,7 +5536,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	StreamType parentStream = 0;
+	StreamType parentStream, parentNewStream;
 
 	// To support nested views, loop until we hit a table or a view with user-defined triggers
 	// (which means no update).
@@ -5543,14 +5546,20 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 		StreamType stream = node->orgStream;
 		StreamType newStream = node->newStream;
 
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[newStream];
-		tail->csb_flags |= csb_modify;
+		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* const new_tail = &csb->csb_rpt[newStream];
+		new_tail->csb_flags |= csb_modify;
 
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+		jrd_rel* const relation = tail->csb_relation;
 		view = relation->rel_view_rse ? relation : view;
 
 		if (!parent)
-			parent = tail->csb_view;
+		{
+			fb_assert(tail->csb_view == new_tail->csb_view);
+			parent = new_tail->csb_view;
+			parentStream = tail->csb_view_stream;
+			parentNewStream = new_tail->csb_view_stream;
+		}
 
 		postTriggerAccess(csb, relation, ExternalAccess::exa_update, view);
 
@@ -5573,8 +5582,8 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 
 		// Get the source relation, either a table or yet another view.
 
-		RelationSourceNode* source = pass1Update(tdbb, csb, relation, trigger, stream,
-			newStream, priv, parent, parentStream);
+		RelationSourceNode* source = pass1Update(tdbb, csb, relation, trigger, stream, newStream,
+												 priv, parent, parentStream, parentNewStream);
 
 		if (!source)
 		{
@@ -5590,10 +5599,11 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 
 		parent = relation;
 		parentStream = stream;
+		parentNewStream = newStream;
 
 		// Remap the source stream.
 
-		StreamType* map = csb->csb_rpt[stream].csb_map;
+		StreamType* map = tail->csb_map;
 
 		stream = source->getStream();
 		stream = map[stream];
@@ -6298,7 +6308,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 	jrd_rel* parent = NULL;
 	jrd_rel* view = NULL;
-	StreamType parentStream = 0;
+	StreamType parentStream;
 
 	// To support nested views, loop until we hit a table or a view with user-defined triggers
 	// (which means no update).
@@ -6308,14 +6318,17 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 		RelationSourceNode* relSource = node->relationSource;
 		const StreamType stream = relSource->getStream();
 
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
+		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
 
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+		jrd_rel* const relation = tail->csb_relation;
 		view = relation->rel_view_rse ? relation : view;
 
 		if (!parent)
+		{
 			parent = tail->csb_view;
+			parentStream = tail->csb_view_stream;
+		}
 
 		postTriggerAccess(csb, relation, ExternalAccess::exa_insert, view);
 
@@ -6333,8 +6346,8 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 		// Get the source relation, either a table or yet another view.
 
-		relSource = pass1Update(tdbb, csb, relation, trigger, stream, stream, priv,
-			parent, parentStream);
+		relSource = pass1Update(tdbb, csb, relation, trigger, stream, stream,
+								priv, parent, parentStream, parentStream);
 
 		if (!relSource)
 		{
@@ -8601,7 +8614,7 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamTy
 // If it's a simple relation, return NULL.
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
 	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
-	jrd_rel* view, StreamType viewStream)
+	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream)
 {
 	SET_TDBB(tdbb);
 
@@ -8620,8 +8633,13 @@ static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jr
 	fb_assert(viewStream <= MAX_STREAMS);
 	CMP_csb_element(csb, stream)->csb_view = view;
 	CMP_csb_element(csb, stream)->csb_view_stream = viewStream;
-	CMP_csb_element(csb, updateStream)->csb_view = view;
-	CMP_csb_element(csb, updateStream)->csb_view_stream = viewStream;
+
+	if (stream != updateStream)
+	{
+		fb_assert(viewUpdateStream <= MAX_STREAMS);
+		CMP_csb_element(csb, updateStream)->csb_view = view;
+		CMP_csb_element(csb, updateStream)->csb_view_stream = viewUpdateStream;
+	}
 
 	// if we're not a view, everything's cool
 

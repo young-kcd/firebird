@@ -1455,6 +1455,15 @@ void AggregateSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 
 	fb_assert(stream <= MAX_STREAMS);
 	pass1(tdbb, csb);
+
+	jrd_rel* const parentView = csb->csb_view;
+	const StreamType viewStream = csb->csb_view_stream;
+
+	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
+	element->csb_view = parentView;
+	fb_assert(viewStream <= MAX_STREAMS);
+	element->csb_view_stream = viewStream;
+
 }
 
 RecordSourceNode* AggregateSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -1748,6 +1757,14 @@ void UnionSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode
 		doPass1(tdbb, csb, ptr->getAddress());
 		doPass1(tdbb, csb, ptr2->getAddress());
 	}
+
+	jrd_rel* const parentView = csb->csb_view;
+	const StreamType viewStream = csb->csb_view_stream;
+
+	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
+	element->csb_view = parentView;
+	fb_assert(viewStream <= MAX_STREAMS);
+	element->csb_view_stream = viewStream;
 }
 
 // Process a union clause of a RseNode.
@@ -2042,6 +2059,19 @@ void WindowSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNod
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
 	pass1(tdbb, csb);
+
+	jrd_rel* const parentView = csb->csb_view;
+	const StreamType viewStream = csb->csb_view_stream;
+	fb_assert(viewStream <= MAX_STREAMS);
+
+	for (ObjectsArray<Partition>::iterator partition = partitions.begin();
+		 partition != partitions.end();
+		 ++partition)
+	{
+		CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, partition->stream);
+		element->csb_view = parentView;
+		element->csb_view_stream = viewStream;
+	}
 }
 
 RecordSourceNode* WindowSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)

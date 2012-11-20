@@ -5540,12 +5540,13 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// evaluate it based on the view dbkey - CORE-1245.
 		SortedStreamList streams;
 		sub->jrdStreamsCollector(streams);
+
 		bool view_refs = false;
 		for (size_t i = 0; i < streams.getCount(); i++)
 		{
 			const CompilerScratch::csb_repeat* const sub_tail = &csb->csb_rpt[streams[i]];
 
-			if (sub_tail->csb_view && sub_tail->csb_view_stream == csb->csb_view_stream)
+			if (sub_tail->csb_view && sub_tail->csb_view_stream == stream)
 			{
 				view_refs = true;
 				break;
