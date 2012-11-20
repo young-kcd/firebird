@@ -791,15 +791,10 @@ void* MemoryPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 	if (size == DEFAULT_ALLOCATION)
 	{
 		MutexLockGuard guard(*cache_mutex);
-		void* result = NULL;
-		if (extents_cache.getCount())
+		if (extents_cache.hasData())
 		{
 			// Use most recently used object to encourage caching
-			result = extents_cache[extents_cache.getCount() - 1];
-			extents_cache.shrink(extents_cache.getCount() - 1);
-		}
-		if (result) {
-			return result;
+			return extents_cache.pop();
 		}
 	}
 #endif
@@ -897,7 +892,7 @@ void MemoryPool::releaseRaw(void *block, size_t size) throw ()
 		MutexLockGuard guard(*cache_mutex);
 		if (extents_cache.getCount() < extents_cache.getCapacity())
 		{
-			extents_cache.add(block);
+			extents_cache.push(block);
 			return;
 		}
 	}
