@@ -249,7 +249,7 @@ MemoryPool::~MemoryPool(void)
 	for (MemSmallHunk* hunk; hunk = smallHunks;)
 	{
 		smallHunks = hunk->nextHunk;
-		releaseRaw (hunk, minAllocation);
+		releaseRaw(hunk, minAllocation);
 	}
 
 	for (MemBigHunk* hunk; hunk = bigHunks;)
@@ -424,7 +424,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (OOM_EXCEPTION)
 
 	// Didn't find existing space -- allocate new hunk
 
-	size_t hunkLength = sizeof (MemBigHunk) + sizeof(MemBigHeader) + length;
+	size_t hunkLength = sizeof(MemBigHunk) + sizeof(MemBigHeader) + length;
 	size_t freeSpace = 0;
 
 	// If the hunk size is sufficient below minAllocation, allocate extra space
@@ -487,8 +487,8 @@ void* MemoryPool::allocate(size_t size
 #ifdef DEBUG_GDS_ALLOC
 	memory->fileName = fileName;
 	memory->lineNumber = line;
-	memset (&memory->body, INIT_BYTE, size);
-	memset (&memory->body + size, GUARD_BYTE, memory->length - size - OFFSET(MemBlock*,body));
+	memset(&memory->body, INIT_BYTE, size);
+	memset(&memory->body + size, GUARD_BYTE, memory->length - size - OFFSET(MemBlock*,body));
 #endif
 
 	++blocksAllocated;
@@ -509,7 +509,7 @@ void MemoryPool::release(void* object) throw ()
 
 #ifdef USE_VALGRIND
 		// Synchronize delayed free queue using pool mutex
-		MutexLockGuard guard (pool->mutex, "MemoryPool::deallocate USE_VALGRIND");
+		MutexLockGuard guard(pool->mutex, "MemoryPool::deallocate USE_VALGRIND");
 
 		// Notify Valgrind that block is freed from the pool
 		VALGRIND_MEMPOOL_FREE(pool, object);
@@ -584,7 +584,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 	if (length <= threshold)
 	{
 #ifdef MEM_DEBUG
-		memset (&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
+		memset(&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
 #endif
 
 		if (threadShared)
@@ -611,17 +611,17 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 	MutexLockGuard guard(mutex, "MemoryPool::release");
 
 #ifdef MEM_DEBUG
-	memset (&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
+	memset(&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
 #endif
 
-	MemFreeBlock *freeBlock = (MemFreeBlock*) ((UCHAR*) block - sizeof (MemBigHeader));
+	MemFreeBlock *freeBlock = (MemFreeBlock*) ((UCHAR*) block - sizeof(MemBigHeader));
 	block->pool = NULL;
 
 	if (freeBlock->next && !freeBlock->next->memHeader.pool)
 	{
-		MemFreeBlock *next = (MemFreeBlock*) (freeBlock->next);
-		remove (next);
-		freeBlock->memHeader.length += next->memHeader.length + sizeof (MemBigHeader);
+		MemFreeBlock *next = (MemFreeBlock*) freeBlock->next;
+		remove(next);
+		freeBlock->memHeader.length += next->memHeader.length + sizeof(MemBigHeader);
 
 		if (freeBlock->next = next->next)
 			freeBlock->next->prior = freeBlock;
@@ -629,9 +629,9 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 
 	if (freeBlock->prior && !freeBlock->prior->memHeader.pool)
 	{
-		MemFreeBlock *prior = (MemFreeBlock*) (freeBlock->prior);
-		remove (prior);
-		prior->memHeader.length += freeBlock->memHeader.length + sizeof (MemBigHeader);
+		MemFreeBlock *prior = (MemFreeBlock*) freeBlock->prior;
+		remove(prior);
+		prior->memHeader.length += freeBlock->memHeader.length + sizeof(MemBigHeader);
 
 		if (prior->next = freeBlock->next)
 			prior->next->prior = prior;
@@ -658,7 +658,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 		corrupt("can't find big hunk");
 	}
 
-	insert (freeBlock);
+	insert(freeBlock);
 }
 
 void MemoryPool::corrupt(const char* text) throw ()
@@ -774,10 +774,10 @@ size_t get_page_size()
 
 inline size_t get_map_page_size()
 {
-	if (! map_page_size)
+	if (!map_page_size)
 	{
 		MutexLockGuard guard(*cache_mutex);
-		if (! map_page_size)
+		if (!map_page_size)
 			map_page_size = get_page_size();
 	}
 	return map_page_size;
@@ -852,7 +852,7 @@ void MemoryPool::validateFreeList(void) throw ()
 	for (block = freeBlocks.nextLarger; block != &freeBlocks;  block = block->nextLarger)
 	{
 		if (block->memHeader.length <= len)
-			corrupt ("bad free list\n");
+			corrupt("bad free list\n");
 		len = block->memHeader.length;
 		++count;
 	}
@@ -862,7 +862,7 @@ void MemoryPool::validateFreeList(void) throw ()
 	for (block = freeBlocks.priorSmaller; block != &freeBlocks; block = block->priorSmaller)
 	{
 		if (block->memHeader.length >= len)
-			corrupt ("bad free list\n");
+			corrupt("bad free list\n");
 		len = block->memHeader.length;
 	}
 }
@@ -874,13 +874,13 @@ void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 	if (neighbor = block->prior)
 	{
 		if ((UCHAR*) &neighbor->memHeader + neighbor->memHeader.length != (UCHAR*) block)
-			corrupt ("bad neighbors");
+			corrupt("bad neighbors");
 	}
 
 	if (neighbor = block->next)
 	{
 		if ((UCHAR*) &block->memHeader + block->memHeader.length != (UCHAR*) neighbor)
-			corrupt ("bad neighbors");
+			corrupt("bad neighbors");
 	}
 }
 
@@ -959,7 +959,7 @@ void MemoryPool::releaseRaw(void *block, size_t size) throw ()
 	if (munmap(block, size))
 #endif
 #endif // WIN_NT
-		corrupt ("OS memory deallocation error");
+		corrupt("OS memory deallocation error");
 }
 
 void MemoryPool::globalFree(void* block) throw ()
@@ -978,7 +978,7 @@ void* MemoryPool::calloc(size_t size
 					 , fileName, line
 #endif
 									 );
-	memset (block, 0, size);
+	memset(block, 0, size);
 
 	return block;
 }
@@ -1046,7 +1046,7 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 	MutexLockGuard guard(mutex, "MemoryPool::print_contents");
 
 	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld\n",
-		this, (long)used_memory.value(), (long)mapped_memory.value());
+		this, (long) used_memory.value(), (long) mapped_memory.value());
 
 	if (!used_only)
 	{
@@ -1057,14 +1057,14 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 	// Print small hunks
 	for (MemSmallHunk* hunk = smallHunks; hunk; hunk = hunk->nextHunk)
 	{
-		int l = ROUNDUP(sizeof (MemSmallHunk), sizeof (double));
+		int l = ROUNDUP(sizeof(MemSmallHunk), sizeof(double));
 		UCHAR* ptr = ((UCHAR*) hunk) + l;
 		size_t used = hunk->length - hunk->spaceRemaining;
 		fprintf(file, "\nSmall hunk %p size=%ld used=%ld remain=%ld\n",
 				hunk, hunk->length, used, hunk->spaceRemaining);
 		while (ptr < hunk->memory)
 		{
-			MemHeader* m = (MemHeader*)ptr;
+			MemHeader* m = (MemHeader*) ptr;
 			print_block(m->fileName != NULL, file, m, used_only, filter_path, filter_len);
 			ptr += m->length;
 		}
@@ -1100,7 +1100,7 @@ MemoryPool* MemoryPool::getContextPool()
 MemoryPool& AutoStorage::getAutoMemoryPool()
 {
 	MemoryPool* p = MemoryPool::getContextPool();
-	if (! p)
+	if (!p)
 	{
 		p = getDefaultMemoryPool();
 	}
