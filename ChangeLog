@@ -1,3 +1,15 @@
+ 2012-11-20 12:23  hvlad 
+   M src/jrd/vio.cpp
+Make sure relation's flags are loaded from disk before analyze them
+
+ 2012-11-20 10:15  dimitr 
+   M src/jrd/cmp.cpp
+Additional fixes for CORE-3981 (Sub-optimal predicate checking while selecting from a view) that also resolve the regression CORE-3986 (GSEC couldn't change user password after fix for CORE-3981).
+
+ 2012-11-20 09:32  hvlad 
+   M src/jrd/trace/TraceJrdHelpers.h
+FIxed bug CORE-3988 : Engine crashed when trace or audit is active
+
  2012-11-19 08:41  hvlad 
    M src/jrd/trace/TraceLog.cpp
 Make previous fix for CORE-3969 platform independent.
