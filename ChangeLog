@@ -1,3 +1,29 @@
+ 2012-11-20 17:12  dimitr 
+   M src/common/classes/alloc.cpp
+Misc.
+
+ 2012-11-20 16:34  dimitr 
+   M src/common/classes/alloc.cpp
+Misc.
+
+ 2012-11-20 16:32  dimitr 
+   M src/common/classes/vector.h
+Better sync with Firebird::Array.
+
+ 2012-11-20 12:23  hvlad 
+   M src/jrd/vio.cpp
+Make sure relation's flags are loaded from disk before analyze them
+
+ 2012-11-20 10:39  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/RecordSourceNodes.cpp
+Additional fixes for CORE-3981 (Sub-optimal predicate checking while selecting from a view) that also resolve the regression CORE-3986 (GSEC couldn't change user password after fix for CORE-3981).
+
+ 2012-11-20 10:00  hvlad 
+   M src/jrd/trace/TraceJrdHelpers.h
+Fixed bug CORE-3988 : Engine crashed when trace or audit is active
+
  2012-11-19 23:32  asfernandes 
    M src/dsql/StmtNodes.cpp
 Misc.
