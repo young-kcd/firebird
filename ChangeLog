@@ -1,3 +1,7 @@
+ 2012-11-21 14:51  mapopa 
+   M configure.in
+Fix echo in configure : Firebird3 package
+
  2012-11-20 17:12  dimitr 
    M src/common/classes/alloc.cpp
 Misc.
