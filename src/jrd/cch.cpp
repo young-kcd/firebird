@@ -374,9 +374,6 @@ int CCH_down_grade_dbb(void* ast_object)
 	{
 		Database::SyncGuard dsGuard(dbb, true);
 
-		if (dbb->dbb_flags & DBB_not_in_use)
-			return 0;
-
 		Lock* const lock = dbb->dbb_lock;
 
 		// Since this routine will be called asynchronously,

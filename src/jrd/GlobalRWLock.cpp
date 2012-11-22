@@ -61,8 +61,7 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 
-		// do nothing if dbb is shutting down
-		if (!(dbb->dbb_flags & DBB_not_in_use))
+		if (globalRWLock->cachedLock)
 			globalRWLock->blockingAstHandler(tdbb);
 	}
 	catch (const Firebird::Exception&)

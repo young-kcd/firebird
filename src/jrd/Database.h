@@ -106,8 +106,7 @@ const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
 const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
-const ULONG DBB_destroying			= 0x100000L;	// database destructor is called
-const ULONG DBB_monitor_locking		= 0x200000L;	// monitoring lock is being acquired
+const ULONG DBB_monitor_locking		= 0x100000L;	// monitoring lock is being acquired
 
 //
 // dbb_ast_flags
@@ -197,7 +196,7 @@ public:
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
 			}
 
-			if (ast && dbb->dbb_flags & DBB_destroying)
+			if (ast && dbb->dbb_flags & DBB_not_in_use)
 			{
 				sync.unlock();
 				sync.release();

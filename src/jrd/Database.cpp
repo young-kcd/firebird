@@ -91,8 +91,6 @@ namespace Jrd
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
 
-		dbb_flags |= DBB_destroying;
-
 		Checkout dcoHolder(this);
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
