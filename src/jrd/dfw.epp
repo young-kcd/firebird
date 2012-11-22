@@ -4795,7 +4795,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	bid blob_id;
 	blob_id.clear();
 
-	USHORT type = 0;
+	ISC_UINT64 type = 0;
 
 	AutoCacheRequest handle(tdbb, irq_c_trigger, IRQ_REQUESTS);
 
@@ -4804,19 +4804,24 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 			X.RDB$TRIGGER_NAME EQ work->dfw_name.c_str()
 	{
 		blob_id = X.RDB$TRIGGER_BLR;
-		type = (USHORT) X.RDB$TRIGGER_TYPE;
+		type = (ISC_UINT64) X.RDB$TRIGGER_TYPE;
 		relation = MET_lookup_relation(tdbb, X.RDB$RELATION_NAME);
 	}
 	END_FOR
 
 	// get any dependencies now by parsing the blr
 
-	if ((relation || (type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB) && !blob_id.isEmpty())
+	if ((relation || (type & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML) && !blob_id.isEmpty())
 	{
 		JrdStatement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
 		MemoryPool* new_pool = attachment->createPool();
-		const USHORT par_flags = (USHORT) (type & 1) ? csb_pre_trigger : csb_post_trigger;
+		USHORT par_flags;
+
+		if ((type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DML)
+			par_flags = (USHORT) ((type & 1) ? csb_pre_trigger : csb_post_trigger);
+		else
+			par_flags = 0;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 		const Firebird::MetaName depName(work->dfw_name);
