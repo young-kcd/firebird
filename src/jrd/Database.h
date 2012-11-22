@@ -424,6 +424,8 @@ public:
 
 	Firebird::Array<MemoryPool*> dbb_pools;		// pools
 
+	Firebird::Array<void*> dbb_sort_buffers;	// sort buffers ready for reuse
+	
 	Firebird::Array<jrd_req*> dbb_internal;		// internal requests
 	Firebird::Array<jrd_req*> dbb_dyn_req;		// internal dyn requests
 
@@ -501,6 +503,7 @@ private:
 		dbb_encrypt_key(*p),
 		dbb_permanent(p),
 		dbb_pools(*p, 4),
+		dbb_sort_buffers(*p),
 		dbb_internal(*p),
 		dbb_dyn_req(*p),
 		dbb_stats(*p),

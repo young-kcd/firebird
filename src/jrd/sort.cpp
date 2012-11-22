@@ -83,10 +83,12 @@ SortOwner::~SortOwner()
 // hardware memory page size to account for memory allocator
 // overhead. On most platorms, this saves 4KB to 8KB per sort
 // buffer from being allocated but not used.
+//
+// dimitr:	this comment is outdated since FB 1.5, where max buffer size
+//			of (128KB - overhead) has been replaced with exact 128KB.
 
-const ULONG SORT_BUFFER_CHUNK_SIZE	= 4096;
-const ULONG MIN_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 4;
-const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
+const ULONG MIN_SORT_BUFFER_SIZE = 1024 * 16;	// 16KB
+const ULONG MAX_SORT_BUFFER_SIZE = 1024 * 128;	// 128KB
 
 // the size of sr_bckptr (everything before sort_record) in bytes
 #define SIZEOF_SR_BCKPTR OFFSET(sr*, sr_sort_record)
@@ -156,6 +158,75 @@ static void check_file(const sort_context*, const run_control*);
 #endif
 
 static const char* const SCRATCH = "fb_sort_";
+
+
+inline void allocBuffer(sort_context* scb)
+{
+#ifdef DEBUG_MERGE
+	// To debug the merge algorithm, force the in-memory pool to be VERY small
+	scb->scb_size_memory = 2000;
+	scb->scb_memory = (SORTP*) scb->scb_owner->getPool().allocate(scb->scb_size_memory);
+	return;
+#endif
+
+	Database* const dbb = scb->scb_dbb;
+
+	if (dbb->dbb_sort_buffers.hasData())
+	{
+		// The sort buffer cache has at least one big block, let's use it
+		scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;
+		scb->scb_memory = (SORTP*) dbb->dbb_sort_buffers.pop();
+	}
+	else
+	{
+		// Try to get a big chunk of memory, if we can't try smaller and
+		// smaller chunks until we can get the memory. If we get down to
+		// too small a chunk - punt and report not enough memory.
+		//
+		// At the first attempt, allocate from the permanent pool in order
+		// to have the big block being cached for later reuse. If unsuccessful,
+		// switch to the sort owner pool.
+
+		MemoryPool* pool = dbb->dbb_permanent;
+
+		for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;
+			scb->scb_size_memory >= MIN_SORT_BUFFER_SIZE;
+			scb->scb_size_memory /= 2)
+		{
+			try
+			{
+				scb->scb_memory = (SORTP*) pool->allocate(scb->scb_size_memory);
+				break;
+			}
+			catch (const BadAlloc&)
+			{
+				// not enough memory, retry with a smaller buffer
+				pool = &scb->scb_owner->getPool();
+			}
+		}
+
+		if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
+			BadAlloc::raise();
+	}
+}
+
+inline void releaseBuffer(sort_context* scb)
+{
+	// Here we cache blocks to be reused later, but only the biggest ones.
+
+	const size_t MAX_CACHED_SORT_BUFFERS = 8; // 1MB
+
+	if (scb->scb_size_memory == MAX_SORT_BUFFER_SIZE)
+	{
+		Database* const dbb = scb->scb_dbb;
+
+		if (dbb->dbb_sort_buffers.getCount() < MAX_CACHED_SORT_BUFFERS)
+			dbb->dbb_sort_buffers.push(scb->scb_memory);
+	}
+	else
+		delete scb->scb_memory;
+}
+
 
 #ifdef SCROLLABLE_CURSORS
 #ifdef WORDS_BIGENDIAN
@@ -540,7 +611,7 @@ void SORT_fini(sort_context* scb)
 		// If runs are allocated and not in the big block, release them.
 		// Then release the big block.
 
-		delete scb->scb_memory;
+		releaseBuffer(scb);
 
 		// Clean up the runs that were used
 
@@ -795,33 +866,8 @@ sort_context* SORT_init(Database* dbb,
 		scb->scb_unique_length = ROUNDUP(p->skd_offset + p->skd_length, sizeof(SLONG)) >> SHIFTLONG;
 
 		// Next, try to allocate a "big block". How big? Big enough!
-#ifdef DEBUG_MERGE
-		// To debug the merge algorithm, force the in-memory pool to be VERY small
-		scb->scb_size_memory = 2000;
-		scb->scb_memory = (SORTP*) pool.allocate(scb->scb_size_memory);
-#else
-		// Try to get a big chunk of memory, if we can't try smaller and
-		// smaller chunks until we can get the memory. If we get down to
-		// too small a chunk - punt and report not enough memory.
 
-		for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;
-			scb->scb_size_memory >= MIN_SORT_BUFFER_SIZE;
-			scb->scb_size_memory -= SORT_BUFFER_CHUNK_SIZE)
-		{
-			try
-			{
-				scb->scb_memory = (SORTP*) pool.allocate(scb->scb_size_memory);
-				break;
-			}
-			catch (const BadAlloc&)
-			{} // not enough memory, let's allocate smaller buffer
-		}
-
-		if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
-		{
-			BadAlloc::raise();
-		}
-#endif // DEBUG_MERGE
+		allocBuffer(scb);
 
 		scb->scb_end_memory = (SORTP*) ((BLOB_PTR*) scb->scb_memory + scb->scb_size_memory);
 		scb->scb_first_pointer = (sort_record**) scb->scb_memory;
@@ -1887,15 +1933,15 @@ static void init(sort_context* scb)
 	if (scb->scb_size_memory <= MAX_SORT_BUFFER_SIZE && scb->scb_runs &&
 		scb->scb_runs->run_depth == MAX_MERGE_LEVEL)
 	{
-		const ULONG mem_size = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
-		void* const mem = scb->scb_owner->getPool().allocate_nothrow(mem_size);
-
-		if (mem)
+		try
 		{
-			scb->scb_owner->getPool().deallocate(scb->scb_memory);
+			const ULONG mem_size = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
+			void* const mem = scb->scb_owner->getPool().allocate(mem_size);
 
-			scb->scb_memory = (SORTP*) mem;
+			releaseBuffer(scb);
+
 			scb->scb_size_memory = mem_size;
+			scb->scb_memory = (SORTP*) mem;
 
 			scb->scb_end_memory = (SORTP*) ((BLOB_PTR*) scb->scb_memory + scb->scb_size_memory);
 			scb->scb_first_pointer = (sort_record**) scb->scb_memory;
@@ -1903,6 +1949,8 @@ static void init(sort_context* scb)
 			for (run_control *run = scb->scb_runs; run; run = run->run_next)
 				run->run_depth--;
 		}
+		catch (const Exception&)
+		{} // no-op
 	}
 
 	scb->scb_next_pointer = scb->scb_first_pointer;
