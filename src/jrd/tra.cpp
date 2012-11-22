@@ -1673,25 +1673,16 @@ void TRA_sweep(thread_db* tdbb)
 
 	if (VIO_sweep(tdbb, transaction, &traceSweep))
 	{
-		const ULONG base = transaction->tra_oldest & ~TRA_MASK;
-		TraNumber active = transaction->tra_oldest;
-		for (; active < transaction->tra_top; active++)
-		{
-			if (transaction->tra_flags & TRA_read_committed)
-			{
-				if (TPC_cache_state(tdbb, active) == tra_limbo)
-					break;
-			}
-			else
-			{
-				const ULONG byte = TRANS_OFFSET(active - base);
-				const USHORT shift = TRANS_SHIFT(active);
-				if (((transaction->tra_transactions[byte] >> shift) & TRA_MASK) == tra_limbo)
-				{
-					break;
-				}
-			}
-		}
+		// At this point, we know that no record versions belonging to dead
+		// transactions remain anymore. However, there may still be limbo
+		// transactions, so we need to find the oldest one between tra_oldest and tra_top.
+		// As our transaction is read-committed (see sweep_tpb), we have to scan
+		// the global TIP cache.
+
+		const TraNumber oldest_limbo =
+			TPC_find_limbo(tdbb, transaction->tra_oldest, transaction->tra_top - 1);
+
+		const TraNumber active = oldest_limbo ? oldest_limbo : transaction->tra_top;
 
 		// Flush page buffers to insure that no dangling records from
 		// dead transactions are left on-disk. This must be done before
@@ -1709,7 +1700,7 @@ void TRA_sweep(thread_db* tdbb)
 		if (header->hdr_oldest_transaction < --transaction_oldest_active)
 		{
 			CCH_MARK_MUST_WRITE(tdbb, &window);
-			header->hdr_oldest_transaction = MIN(active, (ULONG) transaction_oldest_active);
+			header->hdr_oldest_transaction = MIN(active, transaction_oldest_active);
 		}
 
 		traceSweep.update(header);

@@ -78,9 +78,9 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
 
 	// if the transaction is older than the oldest
 	// transaction in our tip cache, it must be committed
-	// hvlad: system transaction always committed too
+	// hvlad: system transaction is always committed too
 
-	TxPage* tip_cache = m_cache[m_cache.getCount() - 1];
+	TxPage* tip_cache = m_cache.front();
 	if (number < tip_cache->tpc_base || number == 0)
 		return tra_committed;
 
@@ -104,6 +104,73 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
 	// Cover all possibilities by returning active
 
 	return tra_active;
+}
+
+
+TraNumber TipCache::findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber)
+{
+/**************************************
+ *
+ *	T P C _ f i n d _ l i m b o
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return the oldest limbo transaction in the given boundaries.
+ *  If not found, return zero.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+	CHECK_DBB(dbb);
+
+	fb_assert(minNumber <= maxNumber);
+
+	// Ensure that the TIP cache is extended to fit the requested transactions
+
+	initializeTpc(tdbb, maxNumber);
+
+	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::findLimbo");
+
+	// All transactions older than the oldest in our TIP cache
+	// are known to be committed, so there's no point looking at them
+
+	TxPage* tip_cache = m_cache.front();
+
+	if (maxNumber < tip_cache->tpc_base)
+		return 0;
+
+	if (minNumber < tip_cache->tpc_base)
+		minNumber = tip_cache->tpc_base;
+
+	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
+	const ULONG base = minNumber - minNumber % trans_per_tip;
+
+	// Scan the TIP cache and return the first (i.e. oldest) limbo transaction
+
+	size_t pos;
+	if (m_cache.find(base, pos))
+	{
+		for (TraNumber number = minNumber;
+			pos < m_cache.getCount() && number <= maxNumber;
+			pos++)
+		{
+			tip_cache = m_cache[pos];
+
+			fb_assert(number >= tip_cache->tpc_base);
+			fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
+
+			for (; number < (tip_cache->tpc_base + trans_per_tip) &&
+				number <= maxNumber;
+				number++)
+			{
+				if (TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number) == tra_limbo)
+					return number;
+			}
+		}
+	}
+
+	return 0;
 }
 
 
@@ -136,7 +203,7 @@ void TipCache::initializeTpc(thread_db* tdbb, TraNumber number)
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
 
-	const TxPage* tip_cache = m_cache[m_cache.getCount() - 1];
+	const TxPage* tip_cache = m_cache.back();
 
 	fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 	if (number < (tip_cache->tpc_base + trans_per_tip))
@@ -174,7 +241,7 @@ void TipCache::setState(TraNumber number, SSHORT state)
 
 	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::setState");
 
-	size_t pos = 0;
+	size_t pos;
 	if (m_cache.find(base, pos))
 	{
 		TxPage* tip_cache = m_cache[pos];
@@ -231,7 +298,7 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 	// transaction in our tip cache, it must be committed
 	// hvlad: system transaction always committed too
 
-	TxPage* tip_cache = m_cache[0];
+	TxPage* tip_cache = m_cache.front();
 	if (number < tip_cache->tpc_base || number == 0)
 		return tra_committed;
 
@@ -319,7 +386,7 @@ void TipCache::updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence)
 
 	while (m_cache.hasData())
 	{
-		tip_cache = m_cache[0];
+		tip_cache = m_cache.front();
 
 		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		if (m_dbb->dbb_oldest_transaction >= (tip_cache->tpc_base + trans_per_tip))
@@ -426,7 +493,7 @@ TraNumber TipCache::cacheTransactions(thread_db* tdbb, TraNumber oldest)
 
 	while (m_cache.hasData())
 	{
-		TxPage* tip_cache = m_cache[0];
+		TxPage* tip_cache = m_cache.front();
 
 		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		if ((tip_cache->tpc_base + trans_per_tip) < hdr_oldest)
@@ -447,13 +514,7 @@ void TipCache::clearCache()
 	fb_assert(m_sync.ourExclusiveLock());
 
 	while (m_cache.hasData())
-	{
-		const size_t pos = m_cache.getCount() - 1;
-		TxPage* tip_page = m_cache[pos];
-
-		m_cache.remove(pos);
-		delete tip_page;
-	}
+		delete m_cache.pop();
 }
 
 
@@ -485,7 +546,7 @@ int TipCache::extendCache(thread_db* tdbb, TraNumber number)
 	sync.lock(SYNC_SHARED);
 
 	fb_assert(m_cache.hasData());
-	TxPage* tip_cache = m_cache[m_cache.getCount() - 1];
+	TxPage* tip_cache = m_cache.back();
 
 	if (tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip)
 	{

@@ -42,17 +42,18 @@ public:
 	explicit TipCache(Database* dbb);
 	~TipCache();
 
-	int		cacheState(thread_db*, TraNumber number);
-	void	initializeTpc(thread_db*, TraNumber number);
-	void	setState(TraNumber number, SSHORT state);
-	int		snapshotState(thread_db*, TraNumber number);
-	void	updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence);
+	int cacheState(thread_db*, TraNumber number);
+	TraNumber findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber);
+	void initializeTpc(thread_db*, TraNumber number);
+	void setState(TraNumber number, SSHORT state);
+	int snapshotState(thread_db*, TraNumber number);
+	void updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence);
 
 private:
 	class TxPage : public pool_alloc_rpt<SCHAR, type_tpc>
 	{
 	public:
-		TraNumber tpc_base;				// id of first transaction in this block
+		TraNumber tpc_base;			// id of first transaction in this block
 		UCHAR tpc_transactions[1];	// two bits per transaction
 
 		static const TraNumber generate(const void*, const TxPage* item)
@@ -75,6 +76,11 @@ private:
 inline int TPC_cache_state(thread_db* tdbb, TraNumber number)
 {
 	 return tdbb->getDatabase()->dbb_tip_cache->cacheState(tdbb, number);
+}
+
+inline TraNumber TPC_find_limbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber)
+{
+	 return tdbb->getDatabase()->dbb_tip_cache->findLimbo(tdbb, minNumber, maxNumber);
 }
 
 inline void TPC_initialize_tpc(thread_db* tdbb, TraNumber number)
