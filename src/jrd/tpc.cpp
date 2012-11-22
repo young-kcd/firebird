@@ -100,6 +100,63 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 }
 
 
+SLONG TPC_find_limbo(Jrd::thread_db* tdbb, SLONG min_number, SLONG max_number)
+{
+/**************************************
+ *
+ *	T P C _ f i n d _ l i m b o
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return the oldest limbo transaction in the given boundaries.
+ *  If not found, return zero.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+	CHECK_DBB(dbb);
+
+	fb_assert((ULONG) min_number <= (ULONG) max_number);
+
+	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
+
+	// Ensure that the TIP cache is extended to fit the requested transactions
+
+	TPC_initialize_tpc(tdbb, max_number);
+	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
+
+	// All transactions older than the oldest in our TIP cache
+	// are known to be committed, so there's no point looking at them
+
+	if ((ULONG) max_number < (ULONG) tip_cache->tpc_base)
+		return 0;
+
+	if ((ULONG) min_number < (ULONG) tip_cache->tpc_base)
+		min_number = tip_cache->tpc_base;
+
+	// Scan the TIP cache and return the first (i.e. oldest) limbo transaction
+
+	for (ULONG number = min_number;
+		tip_cache && number <= (ULONG) max_number;
+		tip_cache = tip_cache->tpc_next)
+	{
+		if (number >= (ULONG) tip_cache->tpc_base)
+		{
+			for (; number < (ULONG) (tip_cache->tpc_base + trans_per_tip) &&
+				number <= (ULONG) max_number;
+				number++)
+			{
+				if (TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number) == tra_limbo)
+					return number;
+			}
+		}
+	}
+
+	return 0;
+}
+
+
 void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 {
 /**************************************
