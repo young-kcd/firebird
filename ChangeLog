@@ -1,3 +1,14 @@
+ 2012-11-22 17:17  dimitr 
+   M src/jrd/tpc.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/tra.cpp
+Implemented CORE-3994: Improve the limbo transactions scan at the end of the sweep.
+Also, fixed the mistake in the refactored code (see the first change in the diff).
+
+ 2012-11-22 13:55  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-3992 - No records in the table rdb$dependencies for ddl trigger.
+
  2012-11-21 14:51  mapopa 
    M configure.in
 Fix echo in configure : Firebird3 package
