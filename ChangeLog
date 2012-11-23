@@ -1,3 +1,23 @@
+ 2012-11-22 14:05  dimitr 
+   M src/jrd/tpc.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/tra.cpp
+Implemented CORE-3994: Improve the limbo transactions scan at the end of the sweep.
+
+ 2012-11-22 12:45  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/cch.cpp
+Backported (from trunk) more reliable AST handling during the database cleanup.
+
+ 2012-11-22 09:46  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/sort.cpp
+Simplest possible fix for CORE-3989: Bad performance / slow response when many concurrent sorts are executed. It's mostly targeted at SC/CS architectures, as one can hardly have really concurrent sorts in v2.x SS. FB3 is likely to have a more complex solution.
+
  2012-11-20 12:23  hvlad 
    M src/jrd/vio.cpp
 Make sure relation's flags are loaded from disk before analyze them
