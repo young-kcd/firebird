@@ -283,7 +283,7 @@ void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& va
 	// ASF: Input parameters don't come necessarily in ascending or descending order,
 	// so I changed the code to use a SortedArray.
 
-	SortedArray<const dsql_par*, EmptyStorage<const dsql_par*>, const dsql_par*,
+	SortedArray<const dsql_par*, InlineStorage<const dsql_par*, 16>, const dsql_par*,
 		DefaultKeyValue<const dsql_par*>, ParamCmp> params;
 
 	for (size_t i = 0; i < dsqlMsg->msg_parameters.getCount(); ++i)
