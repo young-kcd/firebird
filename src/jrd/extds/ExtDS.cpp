@@ -1394,7 +1394,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 		extBlob->open(tdbb, *m_transaction, src, NULL);
 
 		jrd_req* request = tdbb->getRequest();
-		const UCHAR bpb[] = {isc_bpb_version1, isc_bpb_storage, isc_bpb_storage_temp};
+		const UCHAR bpb[] = {isc_bpb_version1, isc_bpb_storage, 1, isc_bpb_storage_temp};
 		bid* localBlobID = (bid*) dst.dsc_address;
 		destBlob = blb::create2(tdbb, request->req_transaction, localBlobID, sizeof(bpb), bpb);
 
