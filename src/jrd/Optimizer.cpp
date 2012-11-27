@@ -1029,7 +1029,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	}
 }
 
-ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, StreamType stream, SLONG* position) const
+ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, SLONG* position) const
 {
 /**************************************
  *
@@ -1058,12 +1058,12 @@ ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, StreamType st
 
 	if (concatNode)
 	{
-		ValueExprNode* dbkey_temp = findDbKey(concatNode->arg1, stream, position);
+		ValueExprNode* dbkey_temp = findDbKey(concatNode->arg1, position);
 
 		if (dbkey_temp)
 			return dbkey_temp;
 
-		dbkey_temp = findDbKey(concatNode->arg2, stream, position);
+		dbkey_temp = findDbKey(concatNode->arg2, position);
 
 		if (dbkey_temp)
 			return dbkey_temp;
@@ -2021,12 +2021,13 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	SLONG n = 0;
 	if (dbkey->is<ConcatenateNode>())
 	{
-		dbkey = findDbKey(dbkey, stream, &n);
+		dbkey = findDbKey(dbkey, &n);
 		if (!dbkey)
 			return NULL;
 	}
 
 	// Make sure we have the correct stream
+
 	keyNode = dbkey->as<RecordKeyNode>();
 	fb_assert(keyNode && keyNode->blrOp == blr_dbkey);
 
@@ -2035,12 +2036,15 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	// If this is a dbkey for the appropriate stream, it's invertable
 
+	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
+
 	InversionCandidate* const invCandidate = FB_NEW(pool) InversionCandidate(pool);
-	invCandidate->indexes = 0;
-	invCandidate->selectivity = 1 / csb->csb_rpt[stream].csb_cardinality;
-	invCandidate->cost = 0;
 	invCandidate->unique = true;
+	invCandidate->selectivity = cardinality ? 1 / cardinality : DEFAULT_SELECTIVITY;
+	invCandidate->cost = 1;
 	invCandidate->matches.add(boolean);
+	boolean->findDependentFromStreams(this, &invCandidate->dependentFromStreams);
+	invCandidate->dependencies = (int) invCandidate->dependentFromStreams.getCount();
 
 	if (createIndexScanNodes)
 	{

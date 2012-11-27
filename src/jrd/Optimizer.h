@@ -180,7 +180,7 @@ protected:
 	InversionCandidate* matchDbKey(BoolExprNode* boolean) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
 		BoolExprNode* boolean, USHORT scope) const;
-	ValueExprNode* findDbKey(ValueExprNode* dbkey, StreamType stream, SLONG* position) const;
+	ValueExprNode* findDbKey(ValueExprNode* dbkey, SLONG* position) const;
 
 #ifdef OPT_DEBUG_RETRIEVAL
 	void printCandidate(const InversionCandidate* candidate) const;
