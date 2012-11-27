@@ -29,6 +29,19 @@
 #include "../dsql/sqlda_pub.h"
 #include "../dsql/dsql_proto.h"
 
+namespace 
+{
+	class ParamCmp
+	{
+	public:
+		static int greaterThan(const Jrd::dsql_par* p1, const Jrd::dsql_par* p2)
+		{
+			return p1->par_index > p2->par_index;
+		}
+	};
+}
+
+
 namespace Jrd {
 
 
@@ -100,21 +113,19 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 	// To generate correct BLR we must walk params in ascending par_index order.
 	// So store all params in array in an ascending par_index order despite of
 	// order in linked list.
+	// ASF: Input parameters don't come necessarily in ascending or descending order,
+	// so I changed the code to use a SortedArray.
 
-	Firebird::HalfStaticArray<const dsql_par*, 16> params;
-	USHORT first_index = 0;
+	Firebird::SortedArray<const dsql_par*, 
+		Firebird::InlineStorage<const dsql_par*, 16>, 
+		const dsql_par*,
+		Firebird::DefaultKeyValue<const dsql_par*>, 
+		ParamCmp> params;
+
 	for (const dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next)
 	{
 		if (par->par_index)
-		{
-			if (!first_index)
-				first_index = par->par_index;
-
-			if (first_index > par->par_index)
-				params.insert(0, par);
-			else
-				params.add(par);
-		}
+			params.add(par);
 	}
 
 	size_t msgLength = 0;
