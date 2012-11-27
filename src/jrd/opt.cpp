@@ -114,7 +114,6 @@ static bool expression_contains_stream(CompilerScratch*, const jrd_nod*, UCHAR, 
 static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, const UCHAR*,
 	const jrd_nod*, double, double);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
-static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
 static USHORT find_order(thread_db*, OptimizerBlk*, const UCHAR*, const jrd_nod*);
 static void find_rsbs(RecordSource*, StreamStack*, RsbStack*);
 static void find_used_streams(const RecordSource*, UCHAR*, bool = false);
@@ -1054,7 +1053,7 @@ jrd_nod* OPT_make_dbkey(OptimizerBlk* opt, jrd_nod* boolean, USHORT stream)
 
 	if (dbkey->nod_type == nod_concatenate)
 	{
-		dbkey = find_dbkey(dbkey, stream, &n);
+		dbkey = OPT_find_dbkey(dbkey, stream, &n);
 		if (!dbkey) {
 			return NULL;
 		}
@@ -3536,43 +3535,6 @@ static void find_index_relationship_streams(thread_db* tdbb,
 }
 
 
-static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
-{
-/**************************************
- *
- *	f i n d _ d b k e y
- *
- **************************************
- *
- * Functional description
- *	Search a dbkey (possibly a concatenated one) for
- *	a dbkey for specified stream.
- *
- **************************************/
-	DEV_BLKCHK(dbkey, type_nod);
-	if (dbkey->nod_type == nod_dbkey)
-	{
-		if ((USHORT)(IPTR) dbkey->nod_arg[0] == stream)
-			return dbkey;
-
-		*position = *position + 1;
-		return NULL;
-	}
-
-	if (dbkey->nod_type == nod_concatenate)
-	{
-        jrd_nod** ptr = dbkey->nod_arg;
-		for (const jrd_nod* const* const end = ptr + dbkey->nod_count; ptr < end; ptr++)
-		{
-			jrd_nod* dbkey_temp = find_dbkey(*ptr, stream, position);
-			if (dbkey_temp)
-				return dbkey_temp;
-		}
-	}
-	return NULL;
-}
-
-
 static USHORT find_order(thread_db* tdbb,
 						 OptimizerBlk* opt,
 						 const UCHAR* streams, const jrd_nod* plan_node)
@@ -5271,7 +5233,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	for (; tail < opt_end; tail++)
 	{
 		jrd_nod* node = tail->opt_conjunct_node;
-		if (!relation->rel_file && !relation->isVirtual()) {
+		if (!ods11orHigher && !relation->rel_file && !relation->isVirtual()) {
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&

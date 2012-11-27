@@ -699,6 +699,46 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 }
 
 
+jrd_nod* OPT_find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
+{
+/**************************************
+ *
+ *	f i n d _ d b k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Search a dbkey (possibly a concatenated one) for
+ *	a dbkey for specified stream.
+ *
+ **************************************/
+	DEV_BLKCHK(dbkey, type_nod);
+
+	if (dbkey->nod_type == nod_dbkey)
+	{
+		if ((USHORT)(IPTR) dbkey->nod_arg[0] == stream)
+			return dbkey;
+
+		*position = *position + 1;
+		return NULL;
+	}
+
+	if (dbkey->nod_type == nod_concatenate)
+	{
+        jrd_nod** ptr = dbkey->nod_arg;
+		for (const jrd_nod* const* const end = ptr + dbkey->nod_count; ptr < end; ptr++)
+		{
+			jrd_nod* dbkey_temp = OPT_find_dbkey(*ptr, stream, position);
+
+			if (dbkey_temp)
+				return dbkey_temp;
+		}
+	}
+
+	return NULL;
+}
+
+
 void OPT_get_expression_streams(const jrd_nod* node, Firebird::SortedArray<int>& streams)
 {
 /**************************************
@@ -1467,7 +1507,20 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 					optimizer->opt_conjuncts.end();
 
 	InversionCandidateList inversions;
-	inversions.shrink(0);
+	InversionCandidate* invCandidate = NULL;
+
+	// Check for any DB_KEY comparisons
+	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+	{
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type == nod_eql))
+		{
+			invCandidate = matchDbKey(node);
+
+			if (invCandidate)
+				inversions.add(invCandidate);
+		}
+	}
 
 	// First, handle "AND" comparisons (all nodes except nod_or)
 	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
@@ -1485,7 +1538,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	}
 
 	// Second, handle "OR" comparisons
-	InversionCandidate* invCandidate = NULL;
 	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 	{
 		jrd_nod* const node = tail->opt_conjunct_node;
@@ -2792,6 +2844,81 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 	}
 
 	return (count >= 1);
+}
+
+InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
+{
+/**************************************
+ *
+ *	m a t c h D b K e y
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(boolean->nod_type == nod_eql);
+
+	jrd_nod* dbkey = boolean->nod_arg[0];
+	jrd_nod* value = boolean->nod_arg[1];
+
+	// Find the side of the equality that is potentially a dbkey.  If
+	// neither, make the obvious deduction
+
+	if (dbkey->nod_type != nod_dbkey && dbkey->nod_type != nod_concatenate)
+	{
+		if (value->nod_type != nod_dbkey && value->nod_type != nod_concatenate)
+			return NULL;
+
+		dbkey = value;
+		value = boolean->nod_arg[0];
+	}
+
+	// If the value isn't computable, this has been a waste of time
+
+	if (!OPT_computable(csb, value, stream, false, false))
+		return NULL;
+
+	// If this is a concatenation, find an appropriate dbkey
+
+	SLONG n = 0;
+	if (dbkey->nod_type == nod_concatenate)
+	{
+		dbkey = OPT_find_dbkey(dbkey, stream, &n);
+
+		if (!dbkey)
+			return NULL;
+	}
+
+	// Make sure we have the correct stream
+
+	if ((USHORT)(IPTR) dbkey->nod_arg[0] != stream)
+		return NULL;
+
+	// If this is a dbkey for the appropriate stream, it's invertable
+
+	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
+
+	InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	invCandidate->unique = true;
+	invCandidate->selectivity = cardinality ? 1 / cardinality : DEFAULT_SELECTIVITY;
+	invCandidate->cost = 1;
+	invCandidate->matches.add(boolean);
+	findDependentFromStreams(boolean, &invCandidate->dependentFromStreams);
+	invCandidate->dependencies = invCandidate->dependentFromStreams.getCount();
+
+	if (createIndexScanNodes)
+	{
+		jrd_nod* const inversion = PAR_make_node(tdbb, 2);
+		inversion->nod_count = 1;
+		inversion->nod_type = nod_bit_dbkey;
+		inversion->nod_arg[0] = value;
+		inversion->nod_arg[1] = (jrd_nod*) (IPTR) n;
+		inversion->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
+		invCandidate->inversion = inversion;
+	}
+
+	return invCandidate;
 }
 
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
