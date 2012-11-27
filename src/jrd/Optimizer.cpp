@@ -523,10 +523,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 				invCandidate = matchDbKey(node);
 
 				if (invCandidate)
-				{
-					invCandidate->boolean = node;
 					inversions.add(invCandidate);
-				}
 			}
 		}
 
