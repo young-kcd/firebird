@@ -1,3 +1,20 @@
+ 2012-11-27 17:36  dimitr 
+   M src/jrd/Optimizer.cpp
+A few additional adjustments for CORE-1295: Bad optimization of queries with DB_KEY.
+
+ 2012-11-27 17:22  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+A few additional adjustments for CORE-1295: Bad optimization of queries with DB_KEY.
+
+ 2012-11-27 11:16  hvlad 
+   M src/jrd/extds/ExtDS.cpp
+Make BPB correctly
+
+ 2012-11-27 11:08  hvlad 
+   M src/jrd/PreparedStatement.cpp
+Use InlineStorage to avoid (costly) memory allocation.
+
  2012-11-22 17:17  dimitr 
    M src/jrd/tpc.cpp
    M src/jrd/tpc_proto.h
