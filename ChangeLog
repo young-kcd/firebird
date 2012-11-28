@@ -1,3 +1,18 @@
+ 2012-11-27 17:37  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Backported CORE-1295: Bad optimization of queries with DB_KEY.
+
+ 2012-11-27 11:12  hvlad 
+   M src/jrd/PreparedStatement.cpp
+Backport change from trunk. 
+It fixes bug CORE-3998 : Parametrized execute statement fails
+
+ 2012-11-27 11:10  hvlad 
+   M src/jrd/extds/ExtDS.cpp
+Make BPB correctly
+
  2012-11-22 14:05  dimitr 
    M src/jrd/tpc.cpp
    M src/jrd/tpc_proto.h
