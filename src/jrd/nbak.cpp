@@ -258,23 +258,23 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		{
 			struct stat st;
 			PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			char* func = NULL;
+			const char* func = NULL;
 			while (!func && fstat(pageSpace->file->fil_desc, &st) != 0)
 			{
-				if (errno != EINTR) 
+				if (errno != EINTR)
 					func = "fstat";
 			}
 			while (!func && fchown(diff_file->fil_desc, st.st_uid, st.st_gid) != 0)
 			{
-				if (errno != EINTR) 
+				if (errno != EINTR)
 					func = "fchown";
 			}
 			while (!func && fchmod(diff_file->fil_desc, st.st_mode) != 0)
 			{
-				if (errno != EINTR) 
+				if (errno != EINTR)
 					func = "fchmod";
 			}
-			if (func) 
+			if (func)
 			{
 				stateGuard.setSuccess();
 				Firebird::system_call_failed::raise(func);
