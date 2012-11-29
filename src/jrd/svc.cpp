@@ -2539,6 +2539,7 @@ bool Service::actionNeedsArg(UCHAR action)
 	{
 	case isc_action_svc_get_fb_log:
 	case isc_action_svc_trace_list:
+	case isc_action_svc_display_user_adm:
 		return false;
 	}
 	return true;
