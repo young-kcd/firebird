@@ -1,3 +1,7 @@
+ 2012-11-29 14:53  asfernandes 
+   M src/jrd/svc.cpp
+Fixed gsec's display command.
+
  2012-11-27 17:36  dimitr 
    M src/jrd/Optimizer.cpp
 A few additional adjustments for CORE-1295: Bad optimization of queries with DB_KEY.
