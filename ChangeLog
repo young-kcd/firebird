@@ -1,3 +1,7 @@
+ 2012-11-29 14:37  alexpeshkoff 
+   M src/jrd/nbak.cpp
+avoid const warnings
+
  2012-11-27 17:37  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
