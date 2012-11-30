@@ -2120,7 +2120,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	//rpb.getWindow(tdbb).win_flags = 0; redundant.
 
 	rpb.rpb_relation = blob->blb_relation;
-	rpb.rpb_transaction_nr = blob->blb_transaction->tra_number;
+	rpb.rpb_transaction_nr = tdbb->getTransaction()->tra_number;
 
 	blh* header = (blh*) locate_space(tdbb,
 								&rpb,
