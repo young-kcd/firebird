@@ -1,3 +1,7 @@
+ 2012-11-30 08:01  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-4002 : Error message "index unexpectedly deleted" in database trigger on commit transaction
+
  2012-11-29 14:53  asfernandes 
    M src/jrd/svc.cpp
 Fixed gsec's display command.
