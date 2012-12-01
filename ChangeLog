@@ -1,3 +1,7 @@
+ 2012-11-30 08:12  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-4002 : Error message "index unexpectedly deleted" in database trigger on commit transaction
+
  2012-11-29 14:37  alexpeshkoff 
    M src/jrd/nbak.cpp
 avoid const warnings
