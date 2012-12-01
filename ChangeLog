@@ -1,3 +1,7 @@
+ 2012-11-30 08:17  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-4002 : Error message "index unexpectedly deleted" in database trigger on commit transaction
+
  2012-09-28 08:14  hvlad 
    M src/jrd/os/win32/winnt.cpp
 Fixed bug CORE-3940 : I/O error during "GetFileSize" operation for file XXXX
