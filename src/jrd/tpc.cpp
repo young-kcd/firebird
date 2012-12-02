@@ -152,17 +152,16 @@ TraNumber TipCache::findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber ma
 	if (m_cache.find(base, pos))
 	{
 		for (TraNumber number = minNumber;
-			pos < m_cache.getCount() && number <= maxNumber;
-			pos++)
+			 pos < m_cache.getCount() && number <= maxNumber;
+			 pos++)
 		{
 			tip_cache = m_cache[pos];
 
 			fb_assert(number >= tip_cache->tpc_base);
 			fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 
-			for (; number < (tip_cache->tpc_base + trans_per_tip) &&
-				number <= maxNumber;
-				number++)
+			for (; number < (tip_cache->tpc_base + trans_per_tip) && number <= maxNumber;
+				 number++)
 			{
 				if (TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number) == tra_limbo)
 					return number;

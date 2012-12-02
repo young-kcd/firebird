@@ -333,7 +333,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (OOM_EXCEPTION)
 		{
 			if (length <= hunk->spaceRemaining)
 			{
-				MemBlock *block = (MemBlock*) hunk->memory;
+				MemBlock* block = (MemBlock*) hunk->memory;
 				hunk->memory += length;
 				hunk->spaceRemaining -= length;
 				block->length = length;
@@ -560,7 +560,7 @@ void MemoryPool::release(void* object) throw ()
 	}
 }
 
-void MemoryPool::releaseBlock(MemBlock *block) throw ()
+void MemoryPool::releaseBlock(MemBlock* block) throw ()
 {
 	if (!freeObjects)
 		return;
@@ -614,12 +614,12 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 	memset(&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
 #endif
 
-	MemFreeBlock *freeBlock = (MemFreeBlock*) ((UCHAR*) block - sizeof(MemBigHeader));
+	MemFreeBlock* freeBlock = (MemFreeBlock*) ((UCHAR*) block - sizeof(MemBigHeader));
 	block->pool = NULL;
 
 	if (freeBlock->next && !freeBlock->next->memHeader.pool)
 	{
-		MemFreeBlock *next = (MemFreeBlock*) freeBlock->next;
+		MemFreeBlock* next = (MemFreeBlock*) freeBlock->next;
 		remove(next);
 		freeBlock->memHeader.length += next->memHeader.length + sizeof(MemBigHeader);
 
@@ -629,7 +629,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 
 	if (freeBlock->prior && !freeBlock->prior->memHeader.pool)
 	{
-		MemFreeBlock *prior = (MemFreeBlock*) freeBlock->prior;
+		MemFreeBlock* prior = (MemFreeBlock*) freeBlock->prior;
 		remove(prior);
 		prior->memHeader.length += freeBlock->memHeader.length + sizeof(MemBigHeader);
 
@@ -644,7 +644,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 
 	if (freeBlock->prior == NULL && freeBlock->next == NULL)
 	{
-		for (MemBigHunk **ptr = &bigHunks, *hunk; hunk = *ptr; ptr = &hunk->nextHunk)
+		for (MemBigHunk** ptr = &bigHunks, *hunk; hunk = *ptr; ptr = &hunk->nextHunk)
 		{
 			if (&hunk->blocks == freeBlock)
 			{
@@ -692,7 +692,7 @@ void MemoryPool::remove(MemFreeBlock* block) throw ()
 
 	// We're in the primary list.  If we have twin, move him in
 
-	MemFreeBlock *twin = block->nextTwin;
+	MemFreeBlock* twin = block->nextTwin;
 
 	if (twin != block)
 	{
@@ -720,7 +720,7 @@ void MemoryPool::insert(MemFreeBlock* freeBlock) throw ()
 
 	// Start by finding insertion point
 
-	MemFreeBlock *block;
+	MemFreeBlock* block;
 
 	for (block = freeBlocks.nextLarger;
 		 block != &freeBlocks && freeBlock->memHeader.length >= block->memHeader.length;
@@ -847,7 +847,7 @@ void MemoryPool::validateFreeList(void) throw ()
 {
 	size_t len = 0;
 	int count = 0;
-	MemFreeBlock *block;
+	MemFreeBlock* block;
 
 	for (block = freeBlocks.nextLarger; block != &freeBlocks;  block = block->nextLarger)
 	{
@@ -869,7 +869,7 @@ void MemoryPool::validateFreeList(void) throw ()
 
 void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 {
-	MemBigObject *neighbor;
+	MemBigObject* neighbor;
 
 	if (neighbor = block->prior)
 	{
@@ -884,7 +884,7 @@ void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 	}
 }
 
-void MemoryPool::releaseRaw(void *block, size_t size) throw ()
+void MemoryPool::releaseRaw(void* block, size_t size) throw ()
 {
 #ifndef USE_VALGRIND
 	if (size == DEFAULT_ALLOCATION)
@@ -973,7 +973,7 @@ void* MemoryPool::calloc(size_t size
 #endif
 ) throw (OOM_EXCEPTION)
 {
-	void *block = allocate((int) size
+	void* block = allocate((int) size
 #ifdef DEBUG_GDS_ALLOC
 					 , fileName, line
 #endif
@@ -1103,9 +1103,9 @@ MemoryPool& AutoStorage::getAutoMemoryPool()
 	if (!p)
 	{
 		p = getDefaultMemoryPool();
+		fb_assert(p);
 	}
 
-	fb_assert(p);
 	return *p;
 }
 
