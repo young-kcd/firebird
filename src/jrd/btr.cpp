@@ -6731,13 +6731,7 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 		// Until deletion of duplicate nodes becomes efficient, limit
 		// leaf level traversal by rescheduling.
 		if (--tdbb->tdbb_quantum < 0)
-		{
-			if (JRD_reschedule(tdbb, 0, false))
-			{
-				CCH_RELEASE(tdbb, window);
-				ERR_punt();
-			}
-		}
+			JRD_reschedule(tdbb, 0, true);
 	}
 
 	// If we've needed to search thru a significant number of pages, warn the
