@@ -206,7 +206,12 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 		if (VIO_get(tdbb, rpb, request->req_transaction, request->req_pool))
 		{
 			temporary_key value;
-			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, idx, &value,	0, false);
+
+			const idx_e result =
+				BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, idx, &value, 0, false);
+
+			if (result != idx_e_ok)
+				ERR_duplicate_error(result, rpb->rpb_relation, idx->idx_id);
 
 			if (!compareKeys(idx, key.key_data, key.key_length, &value, 0))
 			{
