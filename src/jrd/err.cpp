@@ -133,7 +133,8 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	const Arg::StatusVector org_status(tdbb->tdbb_status_vector);
+	if (code == idx_e_conversion)
+		ERR_punt();
 
 	MetaName index, constraint;
 	if (!idx_name)
@@ -162,10 +163,6 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 	case idx_e_keytoobig:
 		ERR_post(Arg::Gds(isc_imp_exc) <<
 				 Arg::Gds(isc_keytoobig) << Arg::Str(index));
-		break;
-
-	case idx_e_conversion:
-		org_status.raise();
 		break;
 
 	case idx_e_foreign_target_doesnt_exist:
