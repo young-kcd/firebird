@@ -62,7 +62,7 @@ static void expand_index(WIN *);
 static btree_exp* find_current(exp_index_buf*, Ods::btree_page*, const UCHAR*);
 static bool find_saved_node(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN*, UCHAR**);
 static UCHAR* get_position(thread_db*, RecordSource*, IRSB_NAV, WIN *, rse_get_mode, btree_exp**);
-static bool get_record(thread_db* tdbb, RecordSource*, IRSB_NAV, record_param*, temporary_key*, bool);
+static bool get_record(thread_db* tdbb, RecordSource*, IRSB_NAV, record_param*, temporary_key*);
 static void init_fetch(IRSB_NAV);
 static UCHAR* nav_open(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN *, rse_get_mode); //, btree_exp**);
 static void set_page(IRSB_NAV impure, WIN* window);
@@ -418,7 +418,7 @@ bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
 
 		CCH_RELEASE(tdbb, &window);
 
-		if (get_record(tdbb, rsb, impure, rpb, &key, false)) {
+		if (get_record(tdbb, rsb, impure, rpb, &key)) {
 			return true;
 		}
 
@@ -876,7 +876,7 @@ static UCHAR* get_position(thread_db* tdbb,
 
 
 static bool get_record(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure,
-						record_param* rpb, temporary_key* key, bool inhibit_cleanup)
+					   record_param* rpb, temporary_key* key)
 {
 /**************************************
  *
@@ -892,66 +892,36 @@ static bool get_record(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure,
 	jrd_req* request = tdbb->getRequest();
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
-	ULONG old_att_flags = 0;
-	bool result = false;
-
-	try {
-
-		if (inhibit_cleanup)
-		{
-			// Inhibit garbage collection & other housekeeping -
-			// to prevent a deadlock when we visit the record.
-			// There are cases when we are called here and have a window locked
-			// HACK for bug 7041
-
-			old_att_flags = (tdbb->getAttachment()->att_flags & ATT_no_cleanup);
-			tdbb->getAttachment()->att_flags |= ATT_no_cleanup;	// HACK
-		}
-
 #ifdef SCROLLABLE_CURSORS
-		// the attempt to get a record, whether successful or not, takes
-		// us off bof or eof (otherwise we will keep trying to retrieve
-		// the first record)
+	// the attempt to get a record, whether successful or not, takes
+	// us off bof or eof (otherwise we will keep trying to retrieve
+	// the first record)
 
-		impure->irsb_flags &= ~(irsb_bof | irsb_eof);
+	impure->irsb_flags &= ~(irsb_bof | irsb_eof);
 #endif
 
-		result = VIO_get(tdbb, rpb, request->req_transaction, request->req_pool);
+	if (!VIO_get(tdbb, rpb, request->req_transaction, request->req_pool))
+		return false;
 
-		temporary_key value;
-		if (result)
-		{
-			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record,
-					reinterpret_cast<index_desc*>((SCHAR*) impure +
-						(IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]),
-					&value,	0, false);
-			if (compare_keys(idx, key->key_data, key->key_length, &value, 0)) {
-				result = false;
-			}
-			else
-			{
-				// mark in the navigational bitmap that we have visited this record
-				RBM_SET(tdbb->getDefaultPool(), &impure->irsb_nav_records_visited,
-					rpb->rpb_number.getValue());
-			}
-		}
+	temporary_key value;
 
-		if (inhibit_cleanup)
-		{
-			tdbb->getAttachment()->att_flags &= ~ATT_no_cleanup;
-			tdbb->getAttachment()->att_flags |= old_att_flags;
-		}
+	const idx_e result =
+		BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record,
+				reinterpret_cast<index_desc*>((SCHAR*) impure +
+					(IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]),
+				&value, 0, false);
 
-	}	// try
-	catch (const Firebird::Exception&)
-	{
-		// Cleanup the HACK should there be an error
-		tdbb->getAttachment()->att_flags &= ~ATT_no_cleanup;
-		tdbb->getAttachment()->att_flags |= old_att_flags;
-		throw;
-	}
+	if (result != idx_e_ok)
+		ERR_duplicate_error(result, rpb->rpb_relation, idx->idx_id);
 
-	return result;
+	if (compare_keys(idx, key->key_data, key->key_length, &value, 0))
+		return false;
+
+	// mark in the navigational bitmap that we have visited this record
+	RBM_SET(tdbb->getDefaultPool(), &impure->irsb_nav_records_visited,
+		rpb->rpb_number.getValue());
+
+	return true;
 }
 
 

@@ -745,7 +745,13 @@ void IDX_garbage_collect(thread_db*			tdbb,
 			for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1)
 			{
 				Record* rec1 = stack1.object();
-				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0, false);
+
+				idx_e result = BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0, false);
+				if (result != idx_e_ok)
+				{
+					CCH_RELEASE(tdbb, &window);
+					ERR_duplicate_error(result, rpb->rpb_relation, idx.idx_id);
+				}
 
 				// Cancel index if there are duplicates in the remaining records
 
@@ -753,7 +759,14 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				for (++stack2; stack2.hasData(); ++stack2)
 				{
 					Record* rec2 = stack2.object();
-					BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
+
+					result = BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
+					if (result != idx_e_ok)
+					{
+						CCH_RELEASE(tdbb, &window);
+						ERR_duplicate_error(result, rpb->rpb_relation, idx.idx_id);
+					}
+
 					if (key_equal(&key1, &key2))
 						break;
 				}
@@ -766,7 +779,14 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				for (; stack3.hasData(); ++stack3)
 				{
 					Record* rec3 = stack3.object();
-					BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0, false);
+
+					result = BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0, false);
+					if (result != idx_e_ok)
+					{
+						CCH_RELEASE(tdbb, &window);
+						ERR_duplicate_error(result, rpb->rpb_relation, idx.idx_id);
+					}
+
 					if (key_equal(&key1, &key2))
 						break;
 				}
@@ -829,13 +849,14 @@ idx_e IDX_modify(thread_db* tdbb,
 	{
 		*bad_index = idx.idx_id;
 		*bad_relation = new_rpb->rpb_relation;
-		if ( (error_code =
-			BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, 0, false)) )
+		if ((error_code =
+				BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, 0, false)) ||
+			(error_code =
+				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, 0, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
-		BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, 0, false);
 		if (!key_equal(&key1, &key2))
 		{
 			if (( error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
@@ -1587,7 +1608,7 @@ static idx_e insert_key(thread_db* tdbb,
 		result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 		CCH_RELEASE(tdbb, window_ptr);
 		idx->idx_flags &= ~idx_unique;
-		if (null_state == idx_nulls_none)
+		if (result == idx_e_ok && null_state == idx_nulls_none)
 		{
 			result = check_foreign_key(tdbb, record, insertion->iib_relation,
 									   transaction, idx, bad_relation, bad_index);
