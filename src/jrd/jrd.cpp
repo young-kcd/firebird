@@ -4358,7 +4358,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	try {
-		tdbb->checkCancelState(punt);
+		tdbb->checkCancelState(true);
 	}
 	catch (const status_exception& ex)
 	{
