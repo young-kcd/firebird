@@ -2451,6 +2451,8 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 #endif
 	}
 
+	tdbb->tdbb_flags |= TDBB_cache_unwound;
+
 	if (punt) {
 		ERR_punt();
 	}
@@ -5255,6 +5257,11 @@ static SSHORT latch_bdb(thread_db* tdbb,
 		return -1;
 	}
 
+	if (tdbb->tdbb_latch_count == 0) {
+		tdbb->tdbb_flags &= ~TDBB_cache_unwound;
+	}
+	fb_assert(!(tdbb->tdbb_flags & TDBB_cache_unwound));
+
 	//LATCH_MUTEX_ACQUIRE;
 
 	// Handle the easy case first, no users of the buffer.
@@ -6026,6 +6033,18 @@ static void release_bdb(thread_db* tdbb,
  *	If rel_mark_latch is true, the value of downgrade_latch is ignored.
  *
  **************************************/
+
+	if (tdbb->tdbb_latch_count == 0)
+	{
+		// hvlad: the only legal case when thread holds no latches but someone
+		// tried to release latch is when CCH_unwind was called (and released
+		// all latches) but caller is unaware about it. See CORE-3034, for example.
+		// Else is it bug and it should be BUGCHECK'ed.
+
+		fb_assert(tdbb->tdbb_flags & TDBB_cache_unwound);
+		return;
+	}
+	fb_assert(!(tdbb->tdbb_flags & TDBB_cache_unwound));
 
 	//LATCH_MUTEX_ACQUIRE;
 

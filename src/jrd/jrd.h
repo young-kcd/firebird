@@ -800,6 +800,7 @@ const USHORT TDBB_verb_cleanup			= 256;	// verb cleanup is in progress
 const USHORT TDBB_use_db_page_space		= 512;	// use database (not temporary) page space in GTT operations
 const USHORT TDBB_detaching				= 1024;	// detach is in progress
 const USHORT TDBB_wait_cancel_disable	= 2048;	// don't cancel current waiting operation
+const USHORT TDBB_cache_unwound			= 4096;	// page cache was unwound 
 
 
 class ThreadContextHolder
