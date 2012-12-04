@@ -1,3 +1,20 @@
+ 2012-12-03 11:04  dimitr 
+   M src/jrd/btr.cpp
+Yet another complementary bugfix for CORE-4004 that avoids an index root page remaining locked after cooperative GC has been terminated by user.
+
+ 2012-12-03 10:47  dimitr 
+   M src/jrd/err.cpp
+Complementary patch to the prior one. It avoids unnecessary operations (system table lookups) if we don't need index or constraint names to be reported in the error message.
+
+ 2012-12-03 10:44  dimitr 
+   M src/jrd/idx.cpp
+   M src/jrd/nav.cpp
+Fixed one part of CORE-4004: Sometimes long-running operations cannot be interrupted by asynchronous shutdown / cancellation requests. It's definitely not a good idea to ignore errors coming from inside BTR_key().
+
+ 2012-12-03 10:33  dimitr 
+   M src/jrd/jrd.cpp
+Fixed the partially disabled interruptions, accidentally broken with CORE-3323 in v2.5.1.
+
  2012-11-30 08:12  hvlad 
    M src/jrd/dpm.epp
 Fixed bug CORE-4002 : Error message "index unexpectedly deleted" in database trigger on commit transaction
