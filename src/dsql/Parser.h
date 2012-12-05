@@ -79,7 +79,6 @@ private:
 	{
 		// This is, in fact, parser state. Not used in lexer itself
 		dsql_fld* g_field;
-		FieldNode* g_field_name;
 		int dsql_debug;
 
 		// Actual lexer state begins from here

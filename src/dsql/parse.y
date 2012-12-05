@@ -1776,7 +1776,6 @@ collate_clause
 column_def_name
 	: simple_column_name
 		{
-			lex.g_field_name = $1;
 			lex.g_field = make_field ($1);
 			$$ = lex.g_field;
 		}
@@ -1873,7 +1872,7 @@ column_constraint($addColumnClause)
 			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_FK;
 
-			constraint.columns.add(lex.g_field_name->dsqlName);
+			constraint.columns.add($addColumnClause->field->fld_name);
 			constraint.refRelation = toName($2);
 			constraint.refAction = $4;
 
@@ -3459,7 +3458,6 @@ alter_data_type_or_domain
 alter_col_name
 	: simple_column_name
 		{
-			lex.g_field_name = $1;
 			lex.g_field = make_field ($1);
 			$$ = lex.g_field;
 		}
