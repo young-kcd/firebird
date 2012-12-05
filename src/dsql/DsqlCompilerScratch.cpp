@@ -38,203 +38,203 @@ using namespace Jrd;
 
 // Write out field data type.
 // Taking special care to declare international text.
-void DsqlCompilerScratch::putDtype(const dsql_fld* field, bool useSubType)
+void DsqlCompilerScratch::putDtype(const TypeClause* field, bool useSubType)
 {
 #ifdef DEV_BUILD
 	// Check if the field describes a known datatype
 
-	if (field->fld_dtype > FB_NELEM(blr_dtypes) || !blr_dtypes[field->fld_dtype])
+	if (field->dtype > FB_NELEM(blr_dtypes) || !blr_dtypes[field->dtype])
 	{
 		SCHAR buffer[100];
 
-		sprintf(buffer, "Invalid dtype %d in BlockNode::putDtype", field->fld_dtype);
+		sprintf(buffer, "Invalid dtype %d in BlockNode::putDtype", field->dtype);
 		ERRD_bugcheck(buffer);
 	}
 #endif
 
-	if (field->fld_not_nullable)
+	if (field->notNull)
 		appendUChar(blr_not_nullable);
 
-	if (field->fld_type_of_name.hasData())
+	if (field->typeOfName.hasData())
 	{
-		if (field->fld_type_of_table.hasData())
+		if (field->typeOfTable.hasData())
 		{
-			if (field->fld_explicit_collation)
+			if (field->explicitCollation)
 			{
 				appendUChar(blr_column_name2);
-				appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(field->fld_type_of_table.c_str());
-				appendMetaString(field->fld_type_of_name.c_str());
-				appendUShort(field->fld_ttype);
+				appendUChar(field->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(field->typeOfTable.c_str());
+				appendMetaString(field->typeOfName.c_str());
+				appendUShort(field->textType);
 			}
 			else
 			{
 				appendUChar(blr_column_name);
-				appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(field->fld_type_of_table.c_str());
-				appendMetaString(field->fld_type_of_name.c_str());
+				appendUChar(field->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(field->typeOfTable.c_str());
+				appendMetaString(field->typeOfName.c_str());
 			}
 		}
 		else
 		{
-			if (field->fld_explicit_collation)
+			if (field->explicitCollation)
 			{
 				appendUChar(blr_domain_name2);
-				appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(field->fld_type_of_name.c_str());
-				appendUShort(field->fld_ttype);
+				appendUChar(field->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(field->typeOfName.c_str());
+				appendUShort(field->textType);
 			}
 			else
 			{
 				appendUChar(blr_domain_name);
-				appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(field->fld_type_of_name.c_str());
+				appendUChar(field->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(field->typeOfName.c_str());
 			}
 		}
 
 		return;
 	}
 
-	switch (field->fld_dtype)
+	switch (field->dtype)
 	{
 		case dtype_cstring:
 		case dtype_text:
 		case dtype_varying:
 		case dtype_blob:
 			if (!useSubType)
-				appendUChar(blr_dtypes[field->fld_dtype]);
-			else if (field->fld_dtype == dtype_varying)
+				appendUChar(blr_dtypes[field->dtype]);
+			else if (field->dtype == dtype_varying)
 			{
 				appendUChar(blr_varying2);
-				appendUShort(field->fld_ttype);
+				appendUShort(field->textType);
 			}
-			else if (field->fld_dtype == dtype_cstring)
+			else if (field->dtype == dtype_cstring)
 			{
 				appendUChar(blr_cstring2);
-				appendUShort(field->fld_ttype);
+				appendUShort(field->textType);
 			}
-			else if (field->fld_dtype == dtype_blob)
+			else if (field->dtype == dtype_blob)
 			{
 				appendUChar(blr_blob2);
-				appendUShort(field->fld_sub_type);
-				appendUShort(field->fld_ttype);
+				appendUShort(field->subType);
+				appendUShort(field->textType);
 			}
 			else
 			{
 				appendUChar(blr_text2);
-				appendUShort(field->fld_ttype);
+				appendUShort(field->textType);
 			}
 
-			if (field->fld_dtype == dtype_varying)
-				appendUShort(field->fld_length - sizeof(USHORT));
-			else if (field->fld_dtype != dtype_blob)
-				appendUShort(field->fld_length);
+			if (field->dtype == dtype_varying)
+				appendUShort(field->length - sizeof(USHORT));
+			else if (field->dtype != dtype_blob)
+				appendUShort(field->length);
 			break;
 
 		default:
-			appendUChar(blr_dtypes[field->fld_dtype]);
-			if (DTYPE_IS_EXACT(field->fld_dtype) || (dtype_quad == field->fld_dtype))
-				appendUChar(field->fld_scale);
+			appendUChar(blr_dtypes[field->dtype]);
+			if (DTYPE_IS_EXACT(field->dtype) || (dtype_quad == field->dtype))
+				appendUChar(field->scale);
 			break;
 	}
 }
 
-void DsqlCompilerScratch::putType(const TypeClause& type, bool useSubType)
+void DsqlCompilerScratch::putType(const TypeClause* type, bool useSubType)
 {
 #ifdef DEV_BUILD
 	// Check if the field describes a known datatype
-	if (type.type > FB_NELEM(blr_dtypes) || !blr_dtypes[type.type])
+	if (type->dtype > FB_NELEM(blr_dtypes) || !blr_dtypes[type->dtype])
 	{
 		SCHAR buffer[100];
 
-		sprintf(buffer, "Invalid dtype %d in put_dtype", type.type);
+		sprintf(buffer, "Invalid dtype %d in put_dtype", type->dtype);
 		ERRD_bugcheck(buffer);
 	}
 #endif
 
-	if (type.notNull)
+	if (type->notNull)
 		appendUChar(blr_not_nullable);
 
-	if (type.typeOfName.hasData())
+	if (type->typeOfName.hasData())
 	{
-		if (type.typeOfTable.hasData())
+		if (type->typeOfTable.hasData())
 		{
-			if (type.collateSpecified)
+			if (type->collate.hasData())
 			{
 				appendUChar(blr_column_name2);
-				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(type.typeOfTable.c_str());
-				appendMetaString(type.typeOfName.c_str());
-				appendUShort(type.textType);
+				appendUChar(type->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type->typeOfTable.c_str());
+				appendMetaString(type->typeOfName.c_str());
+				appendUShort(type->textType);
 			}
 			else
 			{
 				appendUChar(blr_column_name);
-				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(type.typeOfTable.c_str());
-				appendMetaString(type.typeOfName.c_str());
+				appendUChar(type->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type->typeOfTable.c_str());
+				appendMetaString(type->typeOfName.c_str());
 			}
 		}
 		else
 		{
-			if (type.collateSpecified)
+			if (type->collate.hasData())
 			{
 				appendUChar(blr_domain_name2);
-				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(type.typeOfName.c_str());
-				appendUShort(type.textType);
+				appendUChar(type->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type->typeOfName.c_str());
+				appendUShort(type->textType);
 			}
 			else
 			{
 				appendUChar(blr_domain_name);
-				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(type.typeOfName.c_str());
+				appendUChar(type->fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type->typeOfName.c_str());
 			}
 		}
 
 		return;
 	}
 
-	switch (type.type)
+	switch (type->dtype)
 	{
 		case dtype_cstring:
 		case dtype_text:
 		case dtype_varying:
 		case dtype_blob:
 			if (!useSubType)
-				appendUChar(blr_dtypes[type.type]);
-			else if (type.type == dtype_varying)
+				appendUChar(blr_dtypes[type->dtype]);
+			else if (type->dtype == dtype_varying)
 			{
 				appendUChar(blr_varying2);
-				appendUShort(type.textType);
+				appendUShort(type->textType);
 			}
-			else if (type.type == dtype_cstring)
+			else if (type->dtype == dtype_cstring)
 			{
 				appendUChar(blr_cstring2);
-				appendUShort(type.textType);
+				appendUShort(type->textType);
 			}
-			else if (type.type == dtype_blob)
+			else if (type->dtype == dtype_blob)
 			{
 				appendUChar(blr_blob2);
-				appendUShort(type.subType);
-				appendUShort(type.textType);
+				appendUShort(type->subType);
+				appendUShort(type->textType);
 			}
 			else
 			{
 				appendUChar(blr_text2);
-				appendUShort(type.textType);
+				appendUShort(type->textType);
 			}
 
-			if (type.type == dtype_varying)
-				appendUShort(type.length - sizeof(USHORT));
-			else if (type.type != dtype_blob)
-				appendUShort(type.length);
+			if (type->dtype == dtype_varying)
+				appendUShort(type->length - sizeof(USHORT));
+			else if (type->dtype != dtype_blob)
+				appendUShort(type->length);
 			break;
 
 		default:
-			appendUChar(blr_dtypes[type.type]);
-			if (DTYPE_IS_EXACT(type.type) || dtype_quad == type.type)
-				appendUChar(type.scale);
+			appendUChar(blr_dtypes[type->dtype]);
+			if (DTYPE_IS_EXACT(type->dtype) || dtype_quad == type->dtype)
+				appendUChar(type->scale);
 			break;
 	}
 }
@@ -253,11 +253,11 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 
 		putDebugSrcInfo(parameter->line, parameter->column);
 
-		const DeclareVariableNode* varNode;
+		DeclareVariableNode* varNode;
 
 		if ((varNode = parameter->as<DeclareVariableNode>()))
 		{
-			dsql_fld* field = varNode->dsqlDef->legacyField;
+			dsql_fld* field = varNode->dsqlDef->type;
 			const NestConst<StmtNode>* rest = ptr;
 
 			while (++rest != end)
@@ -266,7 +266,7 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 
 				if ((varNode2 = (*rest)->as<DeclareVariableNode>()))
 				{
-					dsql_fld* rest_field = varNode2->dsqlDef->legacyField;
+					const dsql_fld* rest_field = varNode2->dsqlDef->type;
 
 					if (field->fld_name == rest_field->fld_name)
 					{
@@ -279,7 +279,7 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 			dsql_var* variable = makeVariable(field, field->fld_name.c_str(), dsql_var::TYPE_LOCAL,
 				0, 0, locals);
 
-			putLocalVariable(variable, varNode, varNode->dsqlDef->collate);
+			putLocalVariable(variable, varNode, varNode->dsqlDef->type->collate);
 
 			// Some field attributes are calculated inside putLocalVariable(), so we reinitialize
 			// the descriptor.
@@ -309,10 +309,10 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 	appendUShort(variable->number);
 	DDL_resolve_intl_type(this, field, collationName);
 
-	//const USHORT dtype = field->fld_dtype;
+	//const USHORT dtype = field->dtype;
 
 	putDtype(field, true);
-	//field->fld_dtype = dtype;
+	//field->dtype = dtype;
 
 	// Check for a default value, borrowed from define_domain
 	NestConst<ValueSourceClause> node = hostParam ? hostParam->dsqlDef->defaultClause : NULL;
@@ -331,7 +331,7 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 		appendUChar(blr_variable);
 		appendUShort(variable->number);
 	}
-	else if (node || (!field->fld_full_domain && !field->fld_not_nullable))
+	else if (node || (!field->fullDomain && !field->notNull))
 	{
 		appendUChar(blr_assignment);
 
@@ -349,8 +349,8 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVari
 		appendUShort(variable->number);
 	}
 
-	if (variable->name.hasData())	// Not a function return value
-		putDebugVariable(variable->number, variable->name);
+	if (variable->field->fld_name.hasData())	// Not a function return value
+		putDebugVariable(variable->number, variable->field->fld_name);
 
 	++hiddenVarsNumber;
 }
@@ -369,7 +369,6 @@ dsql_var* DsqlCompilerScratch::makeVariable(dsql_fld* field, const char* name,
 	dsqlVar->msgItem = itemNumber;
 	dsqlVar->number = localNumber;
 	dsqlVar->field = field;
-	dsqlVar->name = name;
 
 	if (field)
 		MAKE_desc_from_field(&dsqlVar->desc, field);
@@ -394,7 +393,7 @@ dsql_var* DsqlCompilerScratch::resolveVariable(const MetaName& varName)
 	{
 		const dsql_var* variable = *i;
 
-		if (variable->name == varName)
+		if (variable->field->fld_name == varName.c_str())
 			return *i;
 	}
 
@@ -446,8 +445,8 @@ void DsqlCompilerScratch::genReturn(bool eosFlag)
 	}
 }
 
-void DsqlCompilerScratch::genParameters(Array<ParameterClause>& parameters,
-	Array<ParameterClause>& returns)
+void DsqlCompilerScratch::genParameters(Array<NestConst<ParameterClause> >& parameters,
+	Array<NestConst<ParameterClause> >& returns)
 {
 	if (parameters.hasData())
 	{
@@ -458,15 +457,15 @@ void DsqlCompilerScratch::genParameters(Array<ParameterClause>& parameters,
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
-			ParameterClause& parameter = parameters[i];
-			putDebugArgument(fb_dbg_arg_input, i, parameter.name.c_str());
-			putType(parameter, true);
+			ParameterClause* parameter = parameters[i];
+			putDebugArgument(fb_dbg_arg_input, i, parameter->name.c_str());
+			putType(parameter->type, true);
 
 			// Add slot for null flag (parameter2).
 			appendUChar(blr_short);
 			appendUChar(0);
 
-			makeVariable(parameter.legacyField, parameter.name.c_str(),
+			makeVariable(parameter->type, parameter->name.c_str(),
 				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
 		}
 	}
@@ -480,15 +479,15 @@ void DsqlCompilerScratch::genParameters(Array<ParameterClause>& parameters,
 	{
 		for (size_t i = 0; i < returns.getCount(); ++i)
 		{
-			ParameterClause& parameter = returns[i];
-			putDebugArgument(fb_dbg_arg_output, i, parameter.name.c_str());
-			putType(parameter, true);
+			ParameterClause* parameter = returns[i];
+			putDebugArgument(fb_dbg_arg_output, i, parameter->name.c_str());
+			putType(parameter->type, true);
 
 			// Add slot for null flag (parameter2).
 			appendUChar(blr_short);
 			appendUChar(0);
 
-			makeVariable(parameter.legacyField, parameter.name.c_str(),
+			makeVariable(parameter->type, parameter->name.c_str(),
 				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
 		}
 	}

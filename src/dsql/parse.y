@@ -636,7 +636,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::DbFileClause* dbFileClause;
 	Firebird::Array<NestConst<Jrd::DbFileClause> >* dbFilesClause;
 	Jrd::ExternalClause* externalClause;
-	Firebird::Array<Jrd::ParameterClause>* parametersClause;
+	Firebird::Array<NestConst<Jrd::ParameterClause> >* parametersClause;
 	Jrd::Node* node;
 	Jrd::ExprNode* exprNode;
 	Jrd::ValueExprNode* valueExprNode;
@@ -1043,11 +1043,11 @@ udf_decl_clause
 udf_data_type
 	: simple_type
 	| BLOB
-		{ lex.g_field->fld_dtype = dtype_blob; }
+		{ lex.g_field->dtype = dtype_blob; }
 	| CSTRING '(' pos_short_integer ')' charset_clause
 		{
-			lex.g_field->fld_dtype = dtype_cstring;
-			lex.g_field->fld_character_length = (USHORT) $3;
+			lex.g_field->dtype = dtype_cstring;
+			lex.g_field->charLength = (USHORT) $3;
 		}
 	;
 
@@ -1068,8 +1068,8 @@ arg_desc_list($parameters)
 arg_desc($parameters)
 	: init_data_type udf_data_type param_mechanism
 		{
-			$parameters->add(ParameterClause(getPool(), $1, NULL, NULL, NULL));
-			$parameters->back().udfMechanism = $3;
+			$parameters->add(newNode<ParameterClause>($1, MetaName()));
+			$parameters->back()->udfMechanism = $3;
 		}
 	;
 
@@ -1091,8 +1091,8 @@ return_value1($function)
 return_value($function)
 	: init_data_type udf_data_type return_mechanism
 		{
-			$function->returnType = ParameterClause(getPool(), $1, NULL, NULL, NULL);
-			$function->returnType.udfMechanism = $3;
+			$function->returnType = newNode<ParameterClause>($1, MetaName());
+			$function->returnType->udfMechanism = $3;
 		}
 	| PARAMETER pos_short_integer
 		{ $function->udfReturnPos = $2; }
@@ -1340,12 +1340,12 @@ domain_clause
 	: column_def_name as_opt data_type domain_default_opt
 			{
 				$<createDomainNode>$ = newNode<CreateDomainNode>(
-					ParameterClause(getPool(), (dsql_fld*) $1, "", $4, NULL));
+					newNode<ParameterClause>((dsql_fld*) $1, MetaName(), $4));
 			}
 		domain_constraints_opt($5) collate_clause
 			{
 				$$ = $5;
-				$$->nameType.collate = toName($7);
+				$$->nameType->type->collate = toName($7);
 			}
 	;
 
@@ -1737,7 +1737,7 @@ identity_clause
 def_computed
 	: computed_clause '(' value ')'
 		{
-			lex.g_field->fld_flags |= FLD_computed;
+			lex.g_field->flags |= FLD_computed;
 			ValueSourceClause* clause = newNode<ValueSourceClause>();
 			clause->value = $3;
 			clause->source = toString(makeParseStr(YYPOSNARG(2), YYPOSNARG(4)));
@@ -1798,20 +1798,20 @@ data_type_descriptor
 		{ $$ = $1; }
 	| KW_TYPE OF column_def_name
 		{
-			$3->fld_type_of_name = $3->fld_name;
+			$3->typeOfName = $3->fld_name;
 			$$ = $3;
 		}
 	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 		{
 			lex.g_field = make_field(NULL);
-			lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
-			lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
+			lex.g_field->typeOfTable = ((dsql_str*) $4)->str_data;
+			lex.g_field->typeOfName = ((dsql_str*) $6)->str_data;
 			$$ = lex.g_field;
 		}
 	| column_def_name
 		{
-			$1->fld_type_of_name = $1->fld_name;
-			$1->fld_full_domain = true;
+			$1->typeOfName = $1->fld_name;
+			$1->fullDomain = true;
 			$$ = $1;
 		}
 	;
@@ -2104,7 +2104,7 @@ input_proc_parameters($parameters)
 %type input_proc_parameter(<parametersClause>)
 input_proc_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause default_par_opt
-		{ $parameters->add(ParameterClause(getPool(), $1, toName($3), $4, NULL)); }
+		{ $parameters->add(newNode<ParameterClause>($1, toName($3), $4)); }
 	;
 
 %type output_proc_parameters(<parametersClause>)
@@ -2116,7 +2116,7 @@ output_proc_parameters($parameters)
 %type output_proc_parameter(<parametersClause>)
 output_proc_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause
-		{ $parameters->add(ParameterClause(getPool(), $1, toName($3), NULL, NULL)); }
+		{ $parameters->add(newNode<ParameterClause>($1, toName($3))); }
 	;
 
 %type <valueSourceClause> default_par_opt
@@ -2169,7 +2169,7 @@ function_clause_start
 		domain_or_non_array_type collate_clause deterministic_opt
 			{
 				$$ = $2;
-				$$->returnType = ParameterClause(getPool(), $<legacyField>5, toName($7), NULL, NULL);
+				$$->returnType = newNode<ParameterClause>($<legacyField>5, toName($7));
 				$$->deterministic = $8;
 			}
 	;
@@ -2378,7 +2378,7 @@ local_declaration
 			node->dsqlBlock->body = $9;
 
 			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
-				node->dsqlBlock->parameters[i].parameterExpr = make_parameter();
+				node->dsqlBlock->parameters[i]->parameterExpr = make_parameter();
 
 			$$ = node;
 		}
@@ -2397,10 +2397,9 @@ local_declaration
 			node->dsqlBlock->body = $13;
 
 			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
-				node->dsqlBlock->parameters[i].parameterExpr = make_parameter();
+				node->dsqlBlock->parameters[i]->parameterExpr = make_parameter();
 
-			node->dsqlBlock->returns.add(ParameterClause(getPool(), $<legacyField>7,
-				toName($9), NULL, NULL));
+			node->dsqlBlock->returns.add(newNode<ParameterClause>($<legacyField>7, toName($9)));
 
 			$$ = node;
 		}
@@ -2417,7 +2416,7 @@ var_declaration_item
 	: column_def_name domain_or_non_array_type collate_clause default_par_opt
 		{
 			DeclareVariableNode* node = newNode<DeclareVariableNode>();
-			node->dsqlDef = FB_NEW(getPool()) ParameterClause(getPool(), $1, toName($3), $4, NULL);
+			node->dsqlDef = newNode<ParameterClause>($1, toName($3), $4);
 			$$ = node;
 		}
 	;
@@ -2972,7 +2971,7 @@ block_parameters($parameters)
 %type block_parameter(<parametersClause>)
 block_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause '=' parameter
-		{ $parameters->add(ParameterClause(getPool(), $1, toName($3), NULL, $5)); }
+		{ $parameters->add(newNode<ParameterClause>($1, toName($3), (ValueSourceClause*) NULL, $5)); }
 	;
 
 // CREATE VIEW
@@ -3285,7 +3284,8 @@ alter_domain_op($alterDomainNode)
 		{
 			//// FIXME: ALTER DOMAIN doesn't support collations, and altered domain's
 			//// collation is always lost.
-			TypeClause* type = newNode<TypeClause>($2, MetaName());
+			dsql_fld* type = $2;
+			type->collate = "";
 			setClause($alterDomainNode->type, "DOMAIN TYPE", type);
 		}
 	;
@@ -3665,7 +3665,7 @@ data_type
 domain_or_non_array_type
 	: domain_or_non_array_type_name
 	| domain_or_non_array_type_name NOT KW_NULL
-		{ lex.g_field->fld_not_nullable = true; }
+		{ lex.g_field->notNull = true; }
 	;
 
 domain_or_non_array_type_name
@@ -3675,16 +3675,16 @@ domain_or_non_array_type_name
 
 domain_type
 	: KW_TYPE OF symbol_column_name
-		{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
+		{ lex.g_field->typeOfName = ((dsql_str*) $3)->str_data; }
 	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 		{
-			lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
-			lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
+			lex.g_field->typeOfName = ((dsql_str*) $6)->str_data;
+			lex.g_field->typeOfTable = ((dsql_str*) $4)->str_data;
 		}
 	| symbol_column_name
 		{
-			lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
-			lex.g_field->fld_full_domain = true;
+			lex.g_field->typeOfName = ((dsql_str*) $1)->str_data;
+			lex.g_field->fullDomain = true;
 		}
 	;
 
@@ -3696,15 +3696,15 @@ non_array_type
 array_type
 	: non_charset_simple_type '[' array_spec ']'
 		{
-			lex.g_field->fld_ranges = $3;
-			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->items.getCount() / 2;
-			lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
+			lex.g_field->ranges = $3;
+			lex.g_field->dimensions = lex.g_field->ranges->items.getCount() / 2;
+			lex.g_field->elementDtype = lex.g_field->dtype;
 		}
 	| character_type '[' array_spec ']' charset_clause
 		{
-			lex.g_field->fld_ranges = $3;
-			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->items.getCount() / 2;
-			lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
+			lex.g_field->ranges = $3;
+			lex.g_field->dimensions = lex.g_field->ranges->items.getCount() / 2;
+			lex.g_field->elementDtype = lex.g_field->dtype;
 		}
 	;
 
@@ -3750,18 +3750,18 @@ non_charset_simple_type
 					Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 																Arg::Str("BIGINT"));
 			}
-			lex.g_field->fld_dtype = dtype_int64;
-			lex.g_field->fld_length = sizeof (SINT64);
+			lex.g_field->dtype = dtype_int64;
+			lex.g_field->length = sizeof(SINT64);
 		}
 	| integer_keyword
 		{
-			lex.g_field->fld_dtype = dtype_long;
-			lex.g_field->fld_length = sizeof (SLONG);
+			lex.g_field->dtype = dtype_long;
+			lex.g_field->length = sizeof(SLONG);
 		}
 	| SMALLINT
 		{
-			lex.g_field->fld_dtype = dtype_short;
-			lex.g_field->fld_length = sizeof (SSHORT);
+			lex.g_field->dtype = dtype_short;
+			lex.g_field->length = sizeof(SSHORT);
 		}
 	| DATE
 		{
@@ -3771,15 +3771,15 @@ non_charset_simple_type
 				// Post warning saying that DATE is equivalent to TIMESTAMP
 				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(301) <<
 								  Arg::Warning(isc_dtype_renamed));
-				lex.g_field->fld_dtype = dtype_timestamp;
-				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
+				lex.g_field->dtype = dtype_timestamp;
+				lex.g_field->length = sizeof(GDS_TIMESTAMP);
 			}
 			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 				yyabandon (-104, isc_transitional_date);
 			else
 			{
-				lex.g_field->fld_dtype = dtype_sql_date;
-				lex.g_field->fld_length = sizeof (ULONG);
+				lex.g_field->dtype = dtype_sql_date;
+				lex.g_field->length = sizeof(ULONG);
 			}
 		}
 	| TIME
@@ -3796,18 +3796,18 @@ non_charset_simple_type
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 																		  Arg::Str("TIME"));
 			}
-			lex.g_field->fld_dtype = dtype_sql_time;
-			lex.g_field->fld_length = sizeof (SLONG);
+			lex.g_field->dtype = dtype_sql_time;
+			lex.g_field->length = sizeof(SLONG);
 		}
 	| TIMESTAMP
 		{
-			lex.g_field->fld_dtype = dtype_timestamp;
-			lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
+			lex.g_field->dtype = dtype_timestamp;
+			lex.g_field->length = sizeof(GDS_TIMESTAMP);
 		}
 	| KW_BOOLEAN
 		{
-			lex.g_field->fld_dtype = dtype_boolean;
-			lex.g_field->fld_length = sizeof(UCHAR);
+			lex.g_field->dtype = dtype_boolean;
+			lex.g_field->length = sizeof(UCHAR);
 		}
 	;
 
@@ -3822,51 +3822,51 @@ integer_keyword
 blob_type
 	: BLOB blob_subtype blob_segsize charset_clause
 		{
-			lex.g_field->fld_dtype = dtype_blob;
-			lex.g_field->fld_length = sizeof(ISC_QUAD);
+			lex.g_field->dtype = dtype_blob;
+			lex.g_field->length = sizeof(ISC_QUAD);
 		}
 	| BLOB '(' unsigned_short_integer ')'
 		{
-			lex.g_field->fld_dtype = dtype_blob;
-			lex.g_field->fld_length = sizeof(ISC_QUAD);
-			lex.g_field->fld_seg_length = (USHORT) $3;
-			lex.g_field->fld_sub_type = 0;
+			lex.g_field->dtype = dtype_blob;
+			lex.g_field->length = sizeof(ISC_QUAD);
+			lex.g_field->segLength = (USHORT) $3;
+			lex.g_field->subType = 0;
 		}
 	| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
 		{
-			lex.g_field->fld_dtype = dtype_blob;
-			lex.g_field->fld_length = sizeof(ISC_QUAD);
-			lex.g_field->fld_seg_length = (USHORT) $3;
-			lex.g_field->fld_sub_type = (USHORT) $5;
+			lex.g_field->dtype = dtype_blob;
+			lex.g_field->length = sizeof(ISC_QUAD);
+			lex.g_field->segLength = (USHORT) $3;
+			lex.g_field->subType = (USHORT) $5;
 		}
 	| BLOB '(' ',' signed_short_integer ')'
 		{
-			lex.g_field->fld_dtype = dtype_blob;
-			lex.g_field->fld_length = sizeof(ISC_QUAD);
-			lex.g_field->fld_seg_length = 80;
-			lex.g_field->fld_sub_type = (USHORT) $4;
+			lex.g_field->dtype = dtype_blob;
+			lex.g_field->length = sizeof(ISC_QUAD);
+			lex.g_field->segLength = 80;
+			lex.g_field->subType = (USHORT) $4;
 		}
 	;
 
 blob_segsize
 	: // nothing
-		{ lex.g_field->fld_seg_length = (USHORT) 80; }
+		{ lex.g_field->segLength = (USHORT) 80; }
 	| SEGMENT KW_SIZE unsigned_short_integer
-		{ lex.g_field->fld_seg_length = (USHORT) $3; }
+		{ lex.g_field->segLength = (USHORT) $3; }
 	;
 
 blob_subtype
 	: // nothing
-		{ lex.g_field->fld_sub_type = (USHORT) 0; }
+		{ lex.g_field->subType = (USHORT) 0; }
 	| SUB_TYPE signed_short_integer
-		{ lex.g_field->fld_sub_type = (USHORT) $2; }
+		{ lex.g_field->subType = (USHORT) $2; }
 	| SUB_TYPE symbol_blob_subtype_name
-		{ lex.g_field->fld_sub_type_name = (dsql_str*) $2; }
+		{ lex.g_field->subTypeName = toName($2); }
 	;
 
 charset_clause
 	: // nothing
-	| CHARACTER SET symbol_character_set_name	{ lex.g_field->fld_character_set = (dsql_str*) $3; }
+	| CHARACTER SET symbol_character_set_name	{ lex.g_field->charSet = toString($3); }
 	;
 
 
@@ -3876,39 +3876,39 @@ charset_clause
 national_character_type
 	: national_character_keyword '(' pos_short_integer ')'
 		{
-			lex.g_field->fld_dtype = dtype_text;
-			lex.g_field->fld_character_length = (USHORT) $3;
-			lex.g_field->fld_flags |= FLD_national;
+			lex.g_field->dtype = dtype_text;
+			lex.g_field->charLength = (USHORT) $3;
+			lex.g_field->flags |= FLD_national;
 		}
 	| national_character_keyword
 		{
-			lex.g_field->fld_dtype = dtype_text;
-			lex.g_field->fld_character_length = 1;
-			lex.g_field->fld_flags |= FLD_national;
+			lex.g_field->dtype = dtype_text;
+			lex.g_field->charLength = 1;
+			lex.g_field->flags |= FLD_national;
 		}
 	| national_character_keyword VARYING '(' pos_short_integer ')'
 		{
-			lex.g_field->fld_dtype = dtype_varying;
-			lex.g_field->fld_character_length = (USHORT) $4;
-			lex.g_field->fld_flags |= FLD_national;
+			lex.g_field->dtype = dtype_varying;
+			lex.g_field->charLength = (USHORT) $4;
+			lex.g_field->flags |= FLD_national;
 		}
 	;
 
 character_type
 	: character_keyword '(' pos_short_integer ')'
 		{
-			lex.g_field->fld_dtype = dtype_text;
-			lex.g_field->fld_character_length = (USHORT) $3;
+			lex.g_field->dtype = dtype_text;
+			lex.g_field->charLength = (USHORT) $3;
 		}
 	| character_keyword
 		{
-			lex.g_field->fld_dtype = dtype_text;
-			lex.g_field->fld_character_length = 1;
+			lex.g_field->dtype = dtype_text;
+			lex.g_field->charLength = 1;
 		}
 	| varying_keyword '(' pos_short_integer ')'
 		{
-			lex.g_field->fld_dtype = dtype_varying;
-			lex.g_field->fld_character_length = (USHORT) $3;
+			lex.g_field->dtype = dtype_varying;
+			lex.g_field->charLength = (USHORT) $3;
 		}
 	;
 
@@ -3934,14 +3934,14 @@ national_character_keyword
 
 numeric_type
 	: KW_NUMERIC prec_scale
-		{ lex.g_field->fld_sub_type = dsc_num_type_numeric; }
+		{ lex.g_field->subType = dsc_num_type_numeric; }
 	| decimal_keyword prec_scale
 		{
-			lex.g_field->fld_sub_type = dsc_num_type_decimal;
-			if (lex.g_field->fld_dtype == dtype_short)
+			lex.g_field->subType = dsc_num_type_decimal;
+			if (lex.g_field->dtype == dtype_short)
 			{
-				lex.g_field->fld_dtype = dtype_long;
-				lex.g_field->fld_length = sizeof (SLONG);
+				lex.g_field->dtype = dtype_long;
+				lex.g_field->length = sizeof(SLONG);
 			}
 		}
 	;
@@ -3949,9 +3949,9 @@ numeric_type
 prec_scale
 	: // nothing
 		{
-			lex.g_field->fld_dtype = dtype_long;
-			lex.g_field->fld_length = sizeof (SLONG);
-			lex.g_field->fld_precision = 9;
+			lex.g_field->dtype = dtype_long;
+			lex.g_field->length = sizeof(SLONG);
+			lex.g_field->precision = 9;
 		}
 	| '(' signed_long_integer ')'
 		{
@@ -3967,8 +3967,8 @@ prec_scale
 				}
 				if (client_dialect <= SQL_DIALECT_V5)
 				{
-					lex.g_field->fld_dtype = dtype_double;
-					lex.g_field->fld_length = sizeof (double);
+					lex.g_field->dtype = dtype_double;
+					lex.g_field->length = sizeof(double);
 				}
 				else
 				{
@@ -3978,24 +3978,24 @@ prec_scale
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
 					}
-					lex.g_field->fld_dtype = dtype_int64;
-					lex.g_field->fld_length = sizeof (SINT64);
+					lex.g_field->dtype = dtype_int64;
+					lex.g_field->length = sizeof(SINT64);
 				}
 			}
 			else
 			{
 				if ($2 < 5)
 				{
-					lex.g_field->fld_dtype = dtype_short;
-					lex.g_field->fld_length = sizeof (SSHORT);
+					lex.g_field->dtype = dtype_short;
+					lex.g_field->length = sizeof(SSHORT);
 				}
 				else
 				{
-					lex.g_field->fld_dtype = dtype_long;
-					lex.g_field->fld_length = sizeof (SLONG);
+					lex.g_field->dtype = dtype_long;
+					lex.g_field->length = sizeof(SLONG);
 				}
 			}
-			lex.g_field->fld_precision = (USHORT) $2;
+			lex.g_field->precision = (USHORT) $2;
 		}
 	| '(' signed_long_integer ',' signed_long_integer ')'
 		{
@@ -4013,8 +4013,8 @@ prec_scale
 				}
 				if (client_dialect <= SQL_DIALECT_V5)
 				{
-					lex.g_field->fld_dtype = dtype_double;
-					lex.g_field->fld_length = sizeof (double);
+					lex.g_field->dtype = dtype_double;
+					lex.g_field->length = sizeof(double);
 				}
 				else
 				{
@@ -4025,25 +4025,25 @@ prec_scale
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
 					}
 					// client_dialect >= SQL_DIALECT_V6
-					lex.g_field->fld_dtype = dtype_int64;
-					lex.g_field->fld_length = sizeof (SINT64);
+					lex.g_field->dtype = dtype_int64;
+					lex.g_field->length = sizeof(SINT64);
 				}
 			}
 			else
 			{
 				if ($2 < 5)
 				{
-					lex.g_field->fld_dtype = dtype_short;
-					lex.g_field->fld_length = sizeof (SSHORT);
+					lex.g_field->dtype = dtype_short;
+					lex.g_field->length = sizeof(SSHORT);
 				}
 				else
 				{
-					lex.g_field->fld_dtype = dtype_long;
-					lex.g_field->fld_length = sizeof (SLONG);
+					lex.g_field->dtype = dtype_long;
+					lex.g_field->length = sizeof(SLONG);
 				}
 			}
-			lex.g_field->fld_precision = (USHORT) $2;
-			lex.g_field->fld_scale = - (SSHORT) $4;
+			lex.g_field->precision = (USHORT) $2;
+			lex.g_field->scale = - (SSHORT) $4;
 		}
 	;
 
@@ -4060,29 +4060,29 @@ float_type
 		{
 			if ($2 > 7)
 			{
-				lex.g_field->fld_dtype = dtype_double;
-				lex.g_field->fld_length = sizeof(double);
+				lex.g_field->dtype = dtype_double;
+				lex.g_field->length = sizeof(double);
 			}
 			else
 			{
-				lex.g_field->fld_dtype = dtype_real;
-				lex.g_field->fld_length = sizeof(float);
+				lex.g_field->dtype = dtype_real;
+				lex.g_field->length = sizeof(float);
 			}
 		}
 	| KW_LONG KW_FLOAT precision_opt
 		{
-			lex.g_field->fld_dtype = dtype_double;
-			lex.g_field->fld_length = sizeof(double);
+			lex.g_field->dtype = dtype_double;
+			lex.g_field->length = sizeof(double);
 		}
 	| REAL
 		{
-			lex.g_field->fld_dtype = dtype_real;
-			lex.g_field->fld_length = sizeof(float);
+			lex.g_field->dtype = dtype_real;
+			lex.g_field->length = sizeof(float);
 		}
 	| KW_DOUBLE PRECISION
 		{
-			lex.g_field->fld_dtype = dtype_double;
-			lex.g_field->fld_length = sizeof(double);
+			lex.g_field->dtype = dtype_double;
+			lex.g_field->length = sizeof(double);
 		}
 	;
 
@@ -6516,8 +6516,8 @@ null_value
 	| UNKNOWN
 		{
 			dsql_fld* field = make_field(NULL);
-			field->fld_dtype = dtype_boolean;
-			field->fld_length = sizeof(UCHAR);
+			field->dtype = dtype_boolean;
+			field->length = sizeof(UCHAR);
 
 			CastNode* castNode = newNode<CastNode>(newNode<NullNode>(), field);
 			castNode->dsqlAlias = "CONSTANT";
@@ -6980,9 +6980,9 @@ static dsql_fld* make_field(FieldNode* field_name)
 	}
 	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
 	field->fld_name = field_name->dsqlName.c_str();
-	field->fld_explicit_collation = false;
-	field->fld_not_nullable = false;
-	field->fld_full_domain = false;
+	field->explicitCollation = false;
+	field->notNull = false;
+	field->fullDomain = false;
 
 	return field;
 }
@@ -7186,7 +7186,7 @@ int Parser::yylexAux()
 		mark.pos = lex.last_token - lex.start;
 
 		char* buffer = string;
-		size_t buffer_len = sizeof (string);
+		size_t buffer_len = sizeof(string);
 		const char* buffer_end = buffer + buffer_len - 1;
 		char* p;
 		for (p = buffer; ; ++p)

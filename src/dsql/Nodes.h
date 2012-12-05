@@ -257,7 +257,7 @@ protected:
 	void executeDdlTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName);
 	void storeGlobalField(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName& name,
-		const TypeClause& field,
+		const TypeClause* field,
 		const Firebird::string& computedSource = "",
 		const BlrWriter::BlrData& computedValue = BlrWriter::BlrData());
 

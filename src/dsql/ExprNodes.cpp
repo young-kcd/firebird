@@ -2553,7 +2553,7 @@ bool CastNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
 		{
 			parameter->par_node = source;
 			MAKE_desc_from_field(&parameter->par_desc, dsqlField);
-			if (!dsqlField->fld_full_domain)
+			if (!dsqlField->fullDomain)
 				parameter->par_desc.setNullable(true);
 			return true;
 		}
@@ -2941,7 +2941,7 @@ ValueExprNode* CollateNode::pass1Collate(DsqlCompilerScratch* dsqlScratch, Value
 		(input->nodDesc.dsc_dtype == dtype_blob && input->nodDesc.dsc_sub_type == isc_blob_text))
 	{
 		assignFieldDtypeFromDsc(field, &input->nodDesc);
-		field->fld_character_length = 0;
+		field->charLength = 0;
 	}
 	else
 	{
@@ -2962,24 +2962,24 @@ void CollateNode::assignFieldDtypeFromDsc(dsql_fld* field, const dsc* desc)
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	field->fld_dtype = desc->dsc_dtype;
-	field->fld_scale = desc->dsc_scale;
-	field->fld_sub_type = desc->dsc_sub_type;
-	field->fld_length = desc->dsc_length;
+	field->dtype = desc->dsc_dtype;
+	field->scale = desc->dsc_scale;
+	field->subType = desc->dsc_sub_type;
+	field->length = desc->dsc_length;
 
 	if (desc->dsc_dtype <= dtype_any_text)
 	{
-		field->fld_collation_id = DSC_GET_COLLATE(desc);
-		field->fld_character_set_id = DSC_GET_CHARSET(desc);
+		field->collationId = DSC_GET_COLLATE(desc);
+		field->charSetId = DSC_GET_CHARSET(desc);
 	}
 	else if (desc->dsc_dtype == dtype_blob)
 	{
-		field->fld_character_set_id = desc->dsc_scale;
-		field->fld_collation_id = desc->dsc_flags >> 8;
+		field->charSetId = desc->dsc_scale;
+		field->collationId = desc->dsc_flags >> 8;
 	}
 
 	if (desc->dsc_flags & DSC_nullable)
-		field->fld_flags |= FLD_nullable;
+		field->flags |= FLD_nullable;
 }
 
 
@@ -11198,8 +11198,8 @@ bool VariableNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) cons
 	if (!o)
 		return false;
 
-	if (dsqlVar->name != o->dsqlVar->name ||
-		dsqlVar->field != o->dsqlVar->field ||
+	if (dsqlVar->field != o->dsqlVar->field ||
+		dsqlVar->field->fld_name != o->dsqlVar->field->fld_name ||
 		dsqlVar->number != o->dsqlVar->number ||
 		dsqlVar->msgItem != o->dsqlVar->msgItem ||
 		dsqlVar->msgNumber != o->dsqlVar->msgNumber)

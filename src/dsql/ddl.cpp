@@ -144,7 +144,7 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
  *  If the field is being created, it will pick the db-wide charset
  *  and collation if not specified. If the field is being modified,
  *  since we don't allow changes to those attributes, we'll go and
- *  calculate the correct old lenth from the field itself so DYN
+ *  calculate the correct old length from the field itself so DYN
  *  can validate the change properly.
  *
  *	For International text fields, this is a good time to calculate
@@ -153,33 +153,33 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
  *
  **************************************/
 
-	if (field->fld_type_of_name.hasData())
+	if (field->typeOfName.hasData())
 	{
-		if (field->fld_type_of_table.hasData())
+		if (field->typeOfTable.hasData())
 		{
 			dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch,
-				field->fld_type_of_table.c_str());
+				field->typeOfTable.c_str());
 			const dsql_fld* fld = NULL;
 
 			if (relation)
 			{
-				const MetaName fieldName(field->fld_type_of_name);
+				const MetaName fieldName(field->typeOfName);
 
 				for (fld = relation->rel_fields; fld; fld = fld->fld_next)
 				{
 					if (fieldName == fld->fld_name)
 					{
-						field->fld_dimensions = fld->fld_dimensions;
-						field->fld_source = fld->fld_source;
-						field->fld_length = fld->fld_length;
-						field->fld_scale = fld->fld_scale;
-						field->fld_sub_type = fld->fld_sub_type;
-						field->fld_character_set_id = fld->fld_character_set_id;
-						field->fld_collation_id = fld->fld_collation_id;
-						field->fld_character_length = fld->fld_character_length;
-						field->fld_flags = fld->fld_flags;
-						field->fld_dtype = fld->fld_dtype;
-						field->fld_seg_length = fld->fld_seg_length;
+						field->dimensions = fld->dimensions;
+						field->fieldSource = fld->fieldSource;
+						field->length = fld->length;
+						field->scale = fld->scale;
+						field->subType = fld->subType;
+						field->charSetId = fld->charSetId;
+						field->collationId = fld->collationId;
+						field->charLength = fld->charLength;
+						field->flags = fld->flags;
+						field->dtype = fld->dtype;
+						field->segLength = fld->segLength;
 						break;
 					}
 				}
@@ -189,20 +189,20 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 			{
 				// column @1 does not exist in table/view @2
 				post_607(Arg::Gds(isc_dyn_column_does_not_exist) <<
-						 		Arg::Str(field->fld_type_of_name) <<
-								field->fld_type_of_table);
+						 		Arg::Str(field->typeOfName) <<
+								field->typeOfTable);
 			}
 		}
 		else
 		{
-			if (!METD_get_domain(dsqlScratch->getTransaction(), field, field->fld_type_of_name))
+			if (!METD_get_domain(dsqlScratch->getTransaction(), field, field->typeOfName))
 			{
 				// Specified domain or source field does not exist
-				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->fld_type_of_name));
+				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->typeOfName));
 			}
 		}
 
-		if (field->fld_dimensions != 0)
+		if (field->dimensions != 0)
 		{
 			ERRD_post(Arg::Gds(isc_wish_list) <<
 				Arg::Gds(isc_random) <<
@@ -210,9 +210,9 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		}
 	}
 
-	if ((field->fld_dtype > dtype_any_text) && field->fld_dtype != dtype_blob)
+	if ((field->dtype > dtype_any_text) && field->dtype != dtype_blob)
 	{
-		if (field->fld_character_set || collation_name.hasData() || field->fld_flags & FLD_national)
+		if (field->charSet.hasData() || collation_name.hasData() || field->flags & FLD_national)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) << Arg::Gds(isc_collation_requires_text));
@@ -220,51 +220,51 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		return;
 	}
 
-	if (field->fld_dtype == dtype_blob)
+	if (field->dtype == dtype_blob)
 	{
-		if (field->fld_sub_type_name)
+		if (field->subTypeName.hasData())
 		{
 			SSHORT blob_sub_type;
-			if (!METD_get_type(dsqlScratch->getTransaction(), field->fld_sub_type_name->str_data,
+			if (!METD_get_type(dsqlScratch->getTransaction(), field->subTypeName,
 					"RDB$FIELD_SUB_TYPE", &blob_sub_type))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 						  Arg::Gds(isc_dsql_datatype_err) <<
 						  Arg::Gds(isc_dsql_blob_type_unknown) <<
-						  		Arg::Str(field->fld_sub_type_name->str_data));
+						  		Arg::Str(field->subTypeName));
 			}
-			field->fld_sub_type = blob_sub_type;
+			field->subType = blob_sub_type;
 		}
 
-		if (field->fld_sub_type > isc_blob_text)
+		if (field->subType > isc_blob_text)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
 					  Arg::Gds(isc_subtype_for_internal_use));
 		}
 
-		if (field->fld_character_set && (field->fld_sub_type == isc_blob_untyped))
-			field->fld_sub_type = isc_blob_text;
+		if (field->charSet.hasData() && (field->subType == isc_blob_untyped))
+			field->subType = isc_blob_text;
 
-		if (field->fld_character_set && (field->fld_sub_type != isc_blob_text))
+		if (field->charSet.hasData() && (field->subType != isc_blob_text))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_requires_text));
 		}
 
-		if (collation_name.hasData() && (field->fld_sub_type != isc_blob_text))
+		if (collation_name.hasData() && (field->subType != isc_blob_text))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_requires_text));
 		}
 
-		if (field->fld_sub_type != isc_blob_text)
+		if (field->subType != isc_blob_text)
 			return;
 	}
 
-	if (field->fld_character_set_id != 0 && collation_name.isEmpty())
+	if (field->charSetId != 0 && collation_name.isEmpty())
 	{
 		// This field has already been resolved once, and the collation
 		// hasn't changed.  Therefore, no need to do it again.
@@ -291,68 +291,65 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 		if (afield)
 		{
-			field->fld_character_set_id = afield->fld_character_set_id;
-			bpc = METD_get_charset_bpc(dsqlScratch->getTransaction(), field->fld_character_set_id);
-			field->fld_collation_id = afield->fld_collation_id;
-			field->fld_ttype = afield->fld_ttype;
+			field->charSetId = afield->charSetId;
+			bpc = METD_get_charset_bpc(dsqlScratch->getTransaction(), field->charSetId);
+			field->collationId = afield->collationId;
+			field->textType = afield->textType;
 
-			if (afield->fld_flags & FLD_national)
-				field->fld_flags |= FLD_national;
+			if (afield->flags & FLD_national)
+				field->flags |= FLD_national;
 			else
-				field->fld_flags &= ~FLD_national;
+				field->flags &= ~FLD_national;
 
-			assign_field_length (field, bpc);
+			assign_field_length(field, bpc);
 			return;
 		}
 	}
 
-	if (!(field->fld_character_set || field->fld_character_set_id ||	// set if a domain
-		(field->fld_flags & FLD_national)))
+	if (!(field->charSet.hasData() || field->charSetId ||	// set if a domain
+		(field->flags & FLD_national)))
 	{
 		// Attach the database default character set, if not otherwise specified
 
-		const dsql_str* dfl_charset = NULL;
+		MetaName defaultCharSet = NULL;
 
 		if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL)
-			dfl_charset = METD_get_default_charset(dsqlScratch->getTransaction());
+			defaultCharSet = METD_get_default_charset(dsqlScratch->getTransaction());
 		else
 		{
 			USHORT charSet = dsqlScratch->getAttachment()->dbb_attachment->att_charset;
 			if (charSet != CS_NONE)
-			{
-				MetaName charSetName = METD_get_charset_name(dsqlScratch->getTransaction(), charSet);
-				dfl_charset = MAKE_string(charSetName.c_str(), charSetName.length());
-			}
+				defaultCharSet = METD_get_charset_name(dsqlScratch->getTransaction(), charSet);
 		}
 
-		if (dfl_charset)
-			field->fld_character_set = dfl_charset;
+		if (defaultCharSet.hasData())
+			field->charSet = defaultCharSet;
 		else
 		{
 			// If field is not specified with NATIONAL, or CHARACTER SET
 			// treat it as a single-byte-per-character field of character set NONE.
 			assign_field_length(field, 1);
-			field->fld_ttype = 0;
+			field->textType = 0;
 
 			if (collation_name.isEmpty())
 				return;
 		}
 	}
 
-	const char* charset_name = NULL;
+	MetaName charset_name = NULL;
 
-	if (field->fld_flags & FLD_national)
+	if (field->flags & FLD_national)
 		charset_name = NATIONAL_CHARACTER_SET;
-	else if (field->fld_character_set)
-		charset_name = field->fld_character_set->str_data;
+	else if (field->charSet.hasData())
+		charset_name = field->charSet;
 
 	// Find an intlsym for any specified character set name & collation name
 	const dsql_intlsym* resolved_type = NULL;
 
-	if (charset_name)
+	if (charset_name.hasData())
 	{
 		const dsql_intlsym* resolved_charset =
-			METD_get_charset(dsqlScratch->getTransaction(), (USHORT) strlen(charset_name), charset_name);
+			METD_get_charset(dsqlScratch->getTransaction(), (USHORT) charset_name.length(), charset_name.c_str());
 
 		// Error code -204 (IBM's DB2 manual) is close enough
 		if (!resolved_charset)
@@ -363,25 +360,25 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
                       Arg::Gds(isc_charset_not_found) << Arg::Str(charset_name));
 		}
 
-		field->fld_character_set_id = resolved_charset->intlsym_charset_id;
+		field->charSetId = resolved_charset->intlsym_charset_id;
 		resolved_type = resolved_charset;
 	}
 
 	if (collation_name.hasData())
 	{
 		const dsql_intlsym* resolved_collation = METD_get_collation(dsqlScratch->getTransaction(),
-			collation_name, field->fld_character_set_id);
+			collation_name, field->charSetId);
 
 		if (!resolved_collation)
 		{
 			MetaName charSetName;
 
-			if (charset_name)
+			if (charset_name.hasData())
 				charSetName = charset_name;
 			else
 			{
 				charSetName = METD_get_charset_name(dsqlScratch->getTransaction(),
-					field->fld_character_set_id);
+					field->charSetId);
 			}
 
 			// Specified collation not found
@@ -395,22 +392,22 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 		resolved_type = resolved_collation;
 
-		if ((field->fld_character_set_id != resolved_type->intlsym_charset_id) &&
-			(field->fld_character_set_id != ttype_dynamic))
+		if ((field->charSetId != resolved_type->intlsym_charset_id) &&
+			(field->charSetId != ttype_dynamic))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_not_for_charset) << collation_name);
 		}
 
-		field->fld_explicit_collation = true;
+		field->explicitCollation = true;
 	}
 
-	assign_field_length (field, resolved_type->intlsym_bytes_per_char);
+	assign_field_length(field, resolved_type->intlsym_bytes_per_char);
 
-	field->fld_ttype = resolved_type->intlsym_ttype;
-	field->fld_character_set_id = resolved_type->intlsym_charset_id;
-	field->fld_collation_id = resolved_type->intlsym_collate_id;
+	field->textType = resolved_type->intlsym_ttype;
+	field->charSetId = resolved_type->intlsym_charset_id;
+	field->collationId = resolved_type->intlsym_collate_id;
 }
 
 
@@ -432,13 +429,13 @@ static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
  *
  **************************************/
 
-	if (field->fld_character_length)
+	if (field->charLength)
 	{
-		ULONG field_length = (ULONG) bytes_per_char * field->fld_character_length;
+		ULONG field_length = (ULONG) bytes_per_char * field->charLength;
 
-		if (field->fld_dtype == dtype_varying) {
+		if (field->dtype == dtype_varying)
 			field_length += sizeof(USHORT);
-		}
+
 		if (field_length > MAX_COLUMN_SIZE)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
@@ -446,7 +443,8 @@ static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
                       Arg::Gds(isc_imp_exc) <<
 					  Arg::Gds(isc_field_name) << Arg::Str(field->fld_name));
 		}
-		field->fld_length = (USHORT) field_length;
+
+		field->length = (USHORT) field_length;
 	}
 
 }

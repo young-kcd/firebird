@@ -159,17 +159,18 @@ public:
 		return statement;
 	}
 
-	void putDtype(const dsql_fld* field, bool useSubType);
-	void putType(const TypeClause& type, bool useSubType);
+	void putDtype(const TypeClause* field, bool useSubType);
+	void putType(const TypeClause* type, bool useSubType);
 	void putLocalVariables(CompoundStmtNode* parameters, USHORT locals);
 	void putLocalVariable(dsql_var* variable, const DeclareVariableNode* hostParam,
 		const Firebird::MetaName& collationName);
-	dsql_var* makeVariable(dsql_fld*, const char*, const dsql_var::Type type, USHORT, USHORT, USHORT);
+	dsql_var* makeVariable(dsql_fld*, const char*, const dsql_var::Type type, USHORT,
+		USHORT, USHORT);
 	dsql_var* resolveVariable(const Firebird::MetaName& varName);
 	void genReturn(bool eosFlag = false);
 
-	void genParameters(Firebird::Array<ParameterClause>& parameters,
-		Firebird::Array<ParameterClause>& returns);
+	void genParameters(Firebird::Array<NestConst<ParameterClause> >& parameters,
+		Firebird::Array<NestConst<ParameterClause> >& returns);
 
 	// Get rid of any predefined contexts created for a view or trigger definition.
 	// Also reset hidden variables.

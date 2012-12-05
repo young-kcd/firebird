@@ -39,6 +39,7 @@
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Attachment.h"
 #include "../dsql/BlrWriter.h"
+#include "../dsql/ddl_proto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
@@ -148,7 +149,7 @@ public:
 
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
 	Attachment*		dbb_attachment;
-	dsql_str*		dbb_dfl_charset;
+	Firebird::MetaName dbb_dfl_charset;
 	bool			dbb_no_charset;
 	bool			dbb_read_only;
 	USHORT			dbb_db_SQL_dialect;
@@ -163,7 +164,8 @@ public:
 		  dbb_collations(p),
 		  dbb_charsets_by_id(p),
 		  dbb_cursors(p),
-		  dbb_pool(p)
+		  dbb_pool(p),
+		  dbb_dfl_charset(p)
 	{}
 
 	~dsql_dbb();
@@ -207,69 +209,101 @@ enum rel_flags_vals {
 	REL_creating		= 16 // we are creating the bare relation in memory
 };
 
-class dsql_fld : public pool_alloc<dsql_type_fld>
+class TypeClause
 {
 public:
-	explicit dsql_fld(MemoryPool& p)
-		: fld_next(NULL),
-		  fld_relation(NULL),
-		  fld_procedure(NULL),
-		  fld_ranges(NULL),
-		  fld_character_set(NULL),
-		  fld_sub_type_name(NULL),
-		  fld_flags(0),
-		  fld_id(0),
-		  fld_dtype(0),
-		  fld_length(0),
-		  fld_element_dtype(0),
-		  fld_element_length(0),
-		  fld_scale(0),
-		  fld_sub_type(0),
-		  fld_precision(0),
-		  fld_character_length(0),
-		  fld_seg_length(0),
-		  fld_dimensions(0),
-		  fld_character_set_id(0),
-		  fld_collation_id(0),
-		  fld_ttype(0),
-		  fld_type_of_name(p),
-		  fld_type_of_table(p),
-		  fld_explicit_collation(false),
-		  fld_not_nullable(false),
-		  fld_full_domain(false),
-		  fld_name(p),
-		  fld_source(p)
+	TypeClause(MemoryPool& pool, const Firebird::MetaName& aCollate)
+		: dtype(dtype_unknown),
+		  length(0),
+		  scale(0),
+		  subType(0),
+		  segLength(0),
+		  precision(0),
+		  charLength(0),
+		  charSetId(0),
+		  collationId(0),
+		  textType(0),
+		  fullDomain(false),
+		  notNull(false),
+		  fieldSource(pool),
+		  typeOfTable(pool),
+		  typeOfName(pool),
+		  collate(pool, aCollate),
+		  charSet(pool),
+		  subTypeName(NULL),
+		  flags(0),
+		  elementDtype(0),
+		  elementLength(0),
+		  dimensions(0),
+		  ranges(NULL),
+		  explicitCollation(false)
 	{
 	}
 
+	virtual ~TypeClause()
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text) const
+	{
+		text.printf("typeOfTable: '%s'  typeOfName: '%s'  notNull: %d  fieldSource: '%s'",
+			typeOfTable.c_str(), typeOfName.c_str(), notNull, fieldSource.c_str());
+	}
+
+public:
+	USHORT dtype;
+	FLD_LENGTH length;
+	SSHORT scale;
+	SSHORT subType;
+	USHORT segLength;					// Segment length for blobs
+	USHORT precision;					// Precision for exact numeric types
+	USHORT charLength;					// Length of field in characters
+	SSHORT charSetId;
+	SSHORT collationId;
+	SSHORT textType;
+	bool fullDomain;					// Domain name without TYPE OF prefix
+	bool notNull;						// NOT NULL was explicit specified
+	Firebird::MetaName fieldSource;
+	Firebird::MetaName typeOfTable;		// TYPE OF table name
+	Firebird::MetaName typeOfName;		// TYPE OF
+	Firebird::MetaName collate;
+	Firebird::MetaName charSet;		// empty means not specified
+	Firebird::MetaName subTypeName;	// Subtype name for later resolution
+	USHORT flags;
+	USHORT elementDtype;			// Data type of array element
+	USHORT elementLength;			// Length of array element
+	SSHORT dimensions;				// Non-zero means array
+	ValueListNode* ranges;			// ranges for multi dimension array
+	bool explicitCollation;			// COLLATE was explicit specified
+};
+
+class dsql_fld : public TypeClause
+{
+public:
+	explicit dsql_fld(MemoryPool& p)
+		: TypeClause(p, NULL),
+		  fld_next(NULL),
+		  fld_relation(NULL),
+		  fld_procedure(NULL),
+		  fld_id(0),
+		  fld_name(p)
+	{
+	}
+
+public:
+	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false)
+	{
+		DDL_resolve_intl_type(dsqlScratch, this,
+			(collate.isEmpty() ? NULL : collate), modifying);
+	}
+
+public:
 	dsql_fld*	fld_next;				// Next field in relation
 	dsql_rel*	fld_relation;			// Parent relation
 	dsql_prc*	fld_procedure;			// Parent procedure
-	ValueListNode*	fld_ranges;			// ranges for multi dimension array
-	const dsql_str*	fld_character_set;	// null means not specified
-	dsql_str*	fld_sub_type_name;		// Subtype name for later resolution
-	USHORT		fld_flags;
 	USHORT		fld_id;					// Field in in database
-	USHORT		fld_dtype;				// Data type of field
-	FLD_LENGTH	fld_length;				// Length of field
-	USHORT		fld_element_dtype;		// Data type of array element
-	USHORT		fld_element_length;		// Length of array element
-	SSHORT		fld_scale;				// Scale factor of field
-	SSHORT		fld_sub_type;			// Subtype for text & blob fields
-	USHORT		fld_precision;			// Precision for exact numeric types
-	USHORT		fld_character_length;	// length of field in characters
-	USHORT		fld_seg_length;			// Segment length for blobs
-	SSHORT		fld_dimensions;			// Non-zero means array
-	SSHORT		fld_character_set_id;	// ID of field's character set
-	SSHORT		fld_collation_id;		// ID of field's collation
-	SSHORT		fld_ttype;				// ID of field's language_driver
-	Firebird::string fld_type_of_name;	// TYPE OF
-	Firebird::string fld_type_of_table;	// TYPE OF table name
-	bool		fld_explicit_collation;	// COLLATE was explicit specified
-	bool		fld_not_nullable;		// NOT NULL was explicit specified
-	bool		fld_full_domain;		// Domain name without TYPE OF prefix
-	Firebird::string fld_name;
-	Firebird::MetaName fld_source;
+	Firebird::MetaName fld_name;
 };
 
 // values used in fld_flags
@@ -357,7 +391,6 @@ public:
 public:
 	explicit dsql_var(MemoryPool& p)
 		: PermanentStorage(p),
-		  name(p),
 		  field(NULL),
 		  type(TYPE_INPUT),
 		  msgNumber(0),
@@ -367,7 +400,6 @@ public:
 		desc.clear();
 	}
 
-	Firebird::MetaName name;
 	dsql_fld* field;	// Field on which variable is based
 	Type type;			// Input, output, local or hidden variable
 	USHORT msgNumber;	// Message number containing variable

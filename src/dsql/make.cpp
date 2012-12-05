@@ -359,16 +359,16 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	DEV_BLKCHK(field, dsql_type_fld);
 
 	desc->clear();
-	desc->dsc_dtype = static_cast<UCHAR>(field->fld_dtype);
-	desc->dsc_scale = static_cast<SCHAR>(field->fld_scale);
-	desc->dsc_sub_type = field->fld_sub_type;
-	desc->dsc_length = field->fld_length;
-	desc->dsc_flags = (field->fld_flags & FLD_nullable) ? DSC_nullable : 0;
+	desc->dsc_dtype = static_cast<UCHAR>(field->dtype);
+	desc->dsc_scale = static_cast<SCHAR>(field->scale);
+	desc->dsc_sub_type = field->subType;
+	desc->dsc_length = field->length;
+	desc->dsc_flags = (field->flags & FLD_nullable) ? DSC_nullable : 0;
 
 	if (desc->isText() || desc->isBlob())
 	{
 		desc->setTextType(INTL_CS_COLL_TO_TTYPE(
-			field->fld_character_set_id, field->fld_collation_id));
+			field->charSetId, field->collationId));
 	}
 }
 
@@ -426,23 +426,23 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 	FieldNode* const node = FB_NEW(*tdbb->getDefaultPool()) FieldNode(
 		*tdbb->getDefaultPool(), context, field, indices);
 
-	if (field->fld_dimensions)
+	if (field->dimensions)
 	{
 		if (indices)
 		{
 			MAKE_desc_from_field(&node->nodDesc, field);
-			node->nodDesc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
-			node->nodDesc.dsc_length = field->fld_element_length;
+			node->nodDesc.dsc_dtype = static_cast<UCHAR>(field->elementDtype);
+			node->nodDesc.dsc_length = field->elementLength;
 
-			// node->nodDesc.dsc_scale = field->fld_scale;
-			// node->nodDesc.dsc_sub_type = field->fld_sub_type;
+			// node->nodDesc.dsc_scale = field->scale;
+			// node->nodDesc.dsc_sub_type = field->subType;
 		}
 		else
 		{
 			node->nodDesc.dsc_dtype = dtype_array;
 			node->nodDesc.dsc_length = sizeof(ISC_QUAD);
-			node->nodDesc.dsc_scale = static_cast<SCHAR>(field->fld_scale);
-			node->nodDesc.dsc_sub_type = field->fld_sub_type;
+			node->nodDesc.dsc_scale = static_cast<SCHAR>(field->scale);
+			node->nodDesc.dsc_sub_type = field->subType;
 		}
 	}
 	else
@@ -456,12 +456,12 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 		MAKE_desc_from_field(&node->nodDesc, field);
 	}
 
-	if ((field->fld_flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))
+	if ((field->flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))
 		node->nodDesc.dsc_flags |= DSC_nullable;
 
 	// UNICODE_FSS_HACK
 	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-	if ((field->fld_flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
+	if ((field->flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
 		INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
 	{
 		USHORT adjust = 0;

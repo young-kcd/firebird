@@ -733,21 +733,21 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 
 			field->fld_name = names[fld[RFLD_F_NAME]];
-			field->fld_source = names[gfield->gfld_name];
-			field->fld_length = gfield->gfld_length;
-			field->fld_scale = 0;
-			field->fld_sub_type = gfield->gfld_sub_type;
+			field->fieldSource = names[gfield->gfld_name];
+			field->length = gfield->gfld_length;
+			field->scale = 0;
+			field->subType = gfield->gfld_sub_type;
 			field->fld_relation = relation;
 
-			field->fld_dtype = gfield->gfld_dtype;
+			field->dtype = gfield->gfld_dtype;
 
-			if (field->fld_dtype == dtype_varying)
-				field->fld_length += sizeof(USHORT);
-			else if (field->fld_dtype == dtype_blob)
+			if (field->dtype == dtype_varying)
+				field->length += sizeof(USHORT);
+			else if (field->dtype == dtype_blob)
 			{
-				field->fld_seg_length = 80;
+				field->segLength = 80;
 				if (gfield->gfld_sub_type == isc_blob_text)
-					field->fld_character_set_id = CS_METADATA;
+					field->charSetId = CS_METADATA;
 			}
 
 			if (DTYPE_IS_TEXT(gfield->gfld_dtype))
@@ -755,21 +755,21 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 				switch (gfield->gfld_sub_type)
 				{
 					case dsc_text_type_metadata:
-						field->fld_character_set_id = CS_METADATA;
+						field->charSetId = CS_METADATA;
 						break;
 					case dsc_text_type_ascii:
-						field->fld_character_set_id = CS_ASCII;
+						field->charSetId = CS_ASCII;
 						break;
 					case dsc_text_type_fixed:
-						field->fld_character_set_id = CS_BINARY;
+						field->charSetId = CS_BINARY;
 						break;
 				}
 			}
 
 			if (gfield->gfld_nullable)
-				field->fld_flags |= FLD_nullable;
+				field->flags |= FLD_nullable;
 
-			field->fld_flags |= FLD_system;
+			field->flags |= FLD_system;
 		}
 
 		database->dbb_relations.put(relation->rel_name, relation);

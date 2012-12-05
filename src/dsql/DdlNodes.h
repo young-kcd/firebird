@@ -116,54 +116,18 @@ public:
 };
 
 
-class TypeClause
-{
-public:
-	TypeClause(MemoryPool& pool, dsql_fld* aField, const Firebird::MetaName& aCollate);
-	virtual ~TypeClause() {}
-
-public:
-	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false);
-	void setup(DsqlCompilerScratch* dsqlScratch);
-
-public:
-	virtual void print(Firebird::string& text) const;
-
-public:
-	USHORT type;
-	FLD_LENGTH length;
-	SSHORT scale;
-	SSHORT subType;
-	USHORT segLength;
-	USHORT precision;
-	USHORT charLength;
-	SSHORT charSetId;
-	SSHORT collationId;
-	SSHORT textType;
-	bool collateSpecified;
-	bool fullDomain;
-	bool notNull;
-	Firebird::MetaName fieldSource;
-	Firebird::MetaName typeOfTable;
-	Firebird::MetaName typeOfName;
-
-public:
-	dsql_fld* legacyField;
-	Firebird::MetaName collate;
-};
-
-
-class ParameterClause : public TypeClause
+class ParameterClause
 {
 public:
 	ParameterClause(MemoryPool& pool, dsql_fld* field, const Firebird::MetaName& aCollate,
-		ValueSourceClause* aDefaultClause, ValueExprNode* aParameterExpr);
+		ValueSourceClause* aDefaultClause = NULL, ValueExprNode* aParameterExpr = NULL);
 
 public:
 	void print(Firebird::string& text) const;
 
 public:
 	Firebird::MetaName name;
+	NestConst<dsql_fld> type;
 	NestConst<ValueSourceClause> defaultClause;
 	NestConst<ValueExprNode> parameterExpr;
 	Nullable<int> udfMechanism;
@@ -296,7 +260,7 @@ public:
 		  external(NULL),
 		  deterministic(false),
 		  parameters(pool),
-		  returnType(pool, NULL, NULL, NULL, NULL),
+		  returnType(NULL),
 		  localDeclList(NULL),
 		  source(pool),
 		  body(NULL),
@@ -335,7 +299,7 @@ private:
 		bool secondPass, bool runTriggers);
 
 	void storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		unsigned pos, ParameterClause& parameter, const bid* comment);
+		unsigned pos, ParameterClause* parameter, const bid* comment);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
 
@@ -345,8 +309,8 @@ public:
 	bool alter;
 	NestConst<ExternalClause> external;
 	bool deterministic;
-	Firebird::Array<ParameterClause> parameters;
-	ParameterClause returnType;
+	Firebird::Array<NestConst<ParameterClause> > parameters;
+	NestConst<ParameterClause> returnType;
 	NestConst<CompoundStmtNode> localDeclList;
 	Firebird::string source;
 	NestConst<StmtNode> body;
@@ -464,7 +428,7 @@ private:
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		bool secondPass, bool runTriggers);
 	void storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		USHORT type, unsigned pos, ParameterClause& parameter, const bid* comment);
+		USHORT parameterType, unsigned pos, ParameterClause* parameter, const bid* comment);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
 
@@ -473,8 +437,8 @@ public:
 	bool create;
 	bool alter;
 	NestConst<ExternalClause> external;
-	Firebird::Array<ParameterClause> parameters;
-	Firebird::Array<ParameterClause> returns;
+	Firebird::Array<NestConst<ParameterClause> > parameters;
+	Firebird::Array<NestConst<ParameterClause> > returns;
 	Firebird::string source;
 	NestConst<CompoundStmtNode> localDeclList;
 	NestConst<StmtNode> body;
@@ -770,7 +734,7 @@ public:
 class CreateDomainNode : public DdlNode
 {
 public:
-	CreateDomainNode(MemoryPool& p, const ParameterClause& aNameType)
+	CreateDomainNode(MemoryPool& p, ParameterClause* aNameType)
 		: DdlNode(p),
 		  nameType(aNameType),
 		  notNull(false),
@@ -785,11 +749,11 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_create_domain_failed) << nameType.name;
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_domain_failed) << nameType->name;
 	}
 
 public:
-	ParameterClause nameType;
+	NestConst<ParameterClause> nameType;
 	bool notNull;
 	NestConst<BoolSourceClause> check;
 };
@@ -836,7 +800,7 @@ public:
 	NestConst<BoolSourceClause> setConstraint;
 	NestConst<ValueSourceClause> setDefault;
 	Firebird::MetaName renameTo;
-	Firebird::AutoPtr<TypeClause> type;
+	Firebird::AutoPtr<dsql_fld> type;
 	Nullable<bool> notNullFlag;	// true = NOT NULL / false = NULL
 };
 

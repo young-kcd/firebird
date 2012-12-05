@@ -2810,22 +2810,22 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, ExprNode* in
 					dsql_fld* field = castNode->dsqlField;
 					// Copy the descriptor to a field, because the gen_cast
 					// uses a dsql field type.
-					field->fld_dtype = desc.dsc_dtype;
-					field->fld_scale = desc.dsc_scale;
-					field->fld_sub_type = desc.dsc_sub_type;
-					field->fld_length = desc.dsc_length;
-					field->fld_flags = (desc.dsc_flags & DSC_nullable) ? FLD_nullable : 0;
+					field->dtype = desc.dsc_dtype;
+					field->scale = desc.dsc_scale;
+					field->subType = desc.dsc_sub_type;
+					field->length = desc.dsc_length;
+					field->flags = (desc.dsc_flags & DSC_nullable) ? FLD_nullable : 0;
 
 					if (desc.dsc_dtype <= dtype_any_text)
 					{
-						field->fld_ttype = desc.dsc_sub_type;
-						field->fld_character_set_id = INTL_GET_CHARSET(&desc);
-						field->fld_collation_id = INTL_GET_COLLATE(&desc);
+						field->textType = desc.dsc_sub_type;
+						field->charSetId = INTL_GET_CHARSET(&desc);
+						field->collationId = INTL_GET_COLLATE(&desc);
 					}
 					else if (desc.dsc_dtype == dtype_blob)
 					{
-						field->fld_character_set_id = desc.dsc_scale;
-						field->fld_collation_id = desc.dsc_flags >> 8;
+						field->charSetId = desc.dsc_scale;
+						field->collationId = desc.dsc_flags >> 8;
 					}
 
 					// Finally copy the descriptors to the root nodes and swap

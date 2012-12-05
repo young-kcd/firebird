@@ -1399,11 +1399,13 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	dsqlFunction->udf_flags = UDF_subfunc;
 	dsqlFunction->udf_name.identifier = name;
 
-	const Array<ParameterClause>& paramArray = dsqlBlock->parameters;
+	const Array<NestConst<ParameterClause> >& paramArray = dsqlBlock->parameters;
 	bool defaultFound = false;
 
-	for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+	for (const NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
 	{
+		const ParameterClause* param = *i;
+
 		if (param->defaultClause)
 			defaultFound = true;
 		else if (defaultFound)
@@ -1441,12 +1443,13 @@ void DeclareSubFuncNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 }
 
 void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
-	Array<ParameterClause>& paramArray)
+	Array<NestConst<ParameterClause> >& paramArray)
 {
 	dsqlScratch->appendUShort(USHORT(paramArray.getCount()));
 
-	for (ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+	for (NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
 	{
+		ParameterClause* param = *i;
 		dsqlScratch->appendNullString(param->name.c_str());
 
 		if (param->defaultClause)
@@ -1659,16 +1662,18 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 
 	if (dsqlBlock->parameters.hasData())
 	{
-		const Array<ParameterClause>& paramArray = dsqlBlock->parameters;
+		Array<NestConst<ParameterClause> >& paramArray = dsqlBlock->parameters;
 
-		dsqlProcedure->prc_inputs = paramArray.begin()->legacyField;
+		dsqlProcedure->prc_inputs = paramArray.front()->type;
 
-		for (const ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+		for (const NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
 		{
+			const ParameterClause* param = *i;
+
 			if (param->defaultClause)
 			{
 				if (dsqlProcedure->prc_def_count == 0)
-					dsqlProcedure->prc_def_count = paramArray.end() - param;
+					dsqlProcedure->prc_def_count = paramArray.end() - i;
 			}
 			else if (dsqlProcedure->prc_def_count != 0)
 			{
@@ -1681,7 +1686,7 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	}
 
 	if (dsqlBlock->returns.hasData())
-		dsqlProcedure->prc_outputs = dsqlBlock->returns.begin()->legacyField;
+		dsqlProcedure->prc_outputs = dsqlBlock->returns.front()->type;
 
 	dsqlScratch->putSubProcedure(dsqlProcedure);
 
@@ -1711,12 +1716,13 @@ void DeclareSubProcNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 }
 
 void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
-	Array<ParameterClause>& paramArray)
+	Array<NestConst<ParameterClause> >& paramArray)
 {
 	dsqlScratch->appendUShort(USHORT(paramArray.getCount()));
 
-	for (ParameterClause* param = paramArray.begin(); param != paramArray.end(); ++param)
+	for (NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
 	{
+		ParameterClause* param = *i;
 		dsqlScratch->appendNullString(param->name.c_str());
 
 		if (param->defaultClause)
@@ -3665,45 +3671,45 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
 
-	for (ParameterClause* param = parameters.begin(); param != parameters.end(); ++param)
+	for (NestConst<ParameterClause>* param = parameters.begin(); param != parameters.end(); ++param)
 	{
 		PsqlChanger changer(dsqlScratch, false);
 
 		node->parameters.add(*param);
-		ParameterClause& newParam = node->parameters.back();
+		ParameterClause* newParam = node->parameters.back();
 
-		newParam.parameterExpr = doDsqlPass(dsqlScratch, newParam.parameterExpr);
+		newParam->parameterExpr = doDsqlPass(dsqlScratch, newParam->parameterExpr);
 
-		if (newParam.defaultClause)
-			newParam.defaultClause->value = doDsqlPass(dsqlScratch, newParam.defaultClause->value);
+		if (newParam->defaultClause)
+			newParam->defaultClause->value = doDsqlPass(dsqlScratch, newParam->defaultClause->value);
 
-		newParam.resolve(dsqlScratch);
-		newParam.legacyField->fld_id = param - parameters.begin();
+		newParam->type->resolve(dsqlScratch);
+		newParam->type->fld_id = param - parameters.begin();
 
 		{ // scope
-			ValueExprNode* temp = newParam.parameterExpr;
+			ValueExprNode* temp = newParam->parameterExpr;
 
 			// Initialize this stack variable, and make it look like a node
 			dsc desc_node;
 
-			newParam.legacyField->fld_flags |= FLD_nullable;
-			MAKE_desc_from_field(&desc_node, newParam.legacyField);
+			newParam->type->flags |= FLD_nullable;
+			MAKE_desc_from_field(&desc_node, newParam->type);
 			PASS1_set_parameter_type(dsqlScratch, temp, &desc_node, false);
 		} // end scope
 
 		if (param != parameters.begin())
-			node->parameters.end()[-2].legacyField->fld_next = newParam.legacyField;
+			node->parameters.end()[-2]->type->fld_next = newParam->type;
 	}
 
 	node->returns = returns;
 
 	for (size_t i = 0; i < node->returns.getCount(); ++i)
 	{
-		node->returns[i].resolve(dsqlScratch);
-		node->returns[i].legacyField->fld_id = i;
+		node->returns[i]->type->resolve(dsqlScratch);
+		node->returns[i]->type->fld_id = i;
 
 		if (i != 0)
-			node->returns[i - 1].legacyField->fld_next = node->returns[i].legacyField;
+			node->returns[i - 1]->type->fld_next = node->returns[i]->type;
 	}
 
 	node->localDeclList = localDeclList;
@@ -3718,20 +3724,20 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		// Hand-made PASS1_check_unique_fields_names for arrays of ParameterClause
 
-		Array<ParameterClause> params(parameters);
+		Array<NestConst<ParameterClause> > params(parameters);
 		params.add(returns.begin(), returns.getCount());
 
 		for (size_t i = 0; i < params.getCount(); ++i)
 		{
-			ParameterClause& parameter = params[i];
+			ParameterClause* parameter = params[i];
 
 			size_t pos;
-			if (!names.find(parameter.name.c_str(), pos))
-				names.insert(pos, parameter.name.c_str());
+			if (!names.find(parameter->name.c_str(), pos))
+				names.insert(pos, parameter->name.c_str());
 			else
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-						  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter.name));
+						  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter->name));
 			}
 		}
 
@@ -3749,10 +3755,10 @@ void ExecBlockNode::print(string& text) const
 
 	for (size_t i = 0; i < returns.getCount(); ++i)
 	{
-		const ParameterClause& parameter = returns[i];
+		const ParameterClause* parameter = returns[i];
 
 		string s;
-		parameter.print(s);
+		parameter->print(s);
 		text += "    " + s + "\n";
 	}
 
@@ -3782,9 +3788,9 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		// Now do the input parameters.
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
-			ParameterClause& parameter = parameters[i];
+			ParameterClause* parameter = parameters[i];
 
-			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+			dsqlScratch->makeVariable(parameter->type, parameter->name.c_str(),
 				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), i);
 		}
 
@@ -3793,9 +3799,9 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		// Now do the output parameters.
 		for (size_t i = 0; i < returns.getCount(); ++i)
 		{
-			ParameterClause& parameter = returns[i];
+			ParameterClause* parameter = returns[i];
 
-			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+			dsqlScratch->makeVariable(parameter->type, parameter->name.c_str(),
 				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), parameters.getCount() + i);
 		}
 	}
@@ -3860,9 +3866,9 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		for (unsigned i = 0; i < returnsPos; ++i)
 		{
 			const dsql_var* variable = dsqlScratch->variables[i];
-			const dsql_fld* field = variable->field;
+			const TypeClause* field = variable->field;
 
-			if (field->fld_full_domain || field->fld_not_nullable)
+			if (field->fullDomain || field->notNull)
 			{
 				dsqlScratch->appendUChar(blr_assignment);
 				dsqlScratch->appendUChar(blr_parameter2);
@@ -7792,7 +7798,7 @@ static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields)
 	for (dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		// CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list.
-		if (field->fld_flags & FLD_computed)
+		if (field->flags & FLD_computed)
 			continue;
 
 		FieldNode* fieldNode = FB_NEW(pool) FieldNode(pool);

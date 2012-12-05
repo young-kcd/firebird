@@ -414,7 +414,7 @@ private:
 		Firebird::Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount = NULL);
 
 	void genParameters(DsqlCompilerScratch* dsqlScratch,
-		Firebird::Array<ParameterClause>& paramArray);
+		Firebird::Array<NestConst<ParameterClause> >& paramArray);
 
 public:
 	Firebird::MetaName name;
@@ -461,7 +461,7 @@ private:
 		Firebird::Array<NestConst<Parameter> >& paramArray, USHORT* defaultCount = NULL);
 
 	void genParameters(DsqlCompilerScratch* dsqlScratch,
-		Firebird::Array<ParameterClause>& paramArray);
+		Firebird::Array<NestConst<ParameterClause> >& paramArray);
 
 public:
 	Firebird::MetaName name;
@@ -789,8 +789,8 @@ private:
 	static void revertParametersOrder(Firebird::Array<dsql_par*>& parameters);
 
 public:
-	Firebird::Array<ParameterClause> parameters;
-	Firebird::Array<ParameterClause> returns;
+	Firebird::Array<NestConst<ParameterClause> > parameters;
+	Firebird::Array<NestConst<ParameterClause> > returns;
 	NestConst<CompoundStmtNode> localDeclList;
 	NestConst<StmtNode> body;
 };

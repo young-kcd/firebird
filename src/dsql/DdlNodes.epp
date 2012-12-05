@@ -110,7 +110,7 @@ static rel_t relationType(SSHORT relationTypeNull, SSHORT relationType);
 static void saveField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, const MetaName& fieldName);
 static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	const MetaName& relationName, bool view, bool creating);
-static void updateRdbFields(const TypeClause& type,
+static void updateRdbFields(const TypeClause* type,
 	SSHORT& fieldType,
 	SSHORT& fieldLength,
 	SSHORT& fieldSubTypeNull, SSHORT& fieldSubType,
@@ -282,9 +282,9 @@ static void clearPermanentField(dsql_rel* relation, bool permanent)
 	if (relation && relation->rel_fields && permanent)
 	{
 		relation->rel_fields->fld_procedure = NULL;
-		relation->rel_fields->fld_ranges = NULL;
-		relation->rel_fields->fld_character_set = NULL;
-		relation->rel_fields->fld_sub_type_name = NULL;
+		relation->rel_fields->ranges = NULL;
+		relation->rel_fields->charSet = NULL;
+		relation->rel_fields->subTypeName = NULL;
 		relation->rel_fields->fld_relation = relation;
 	}
 }
@@ -300,19 +300,19 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 	dsc saveDesc;
 	saveDesc.dsc_dtype = 0;
 
-	if (field && field->fld_dtype)
+	if (field && field->dtype)
 	{
-		fb_assert(field->fld_dtype <= MAX_UCHAR);
-		saveDesc.dsc_dtype = (UCHAR) field->fld_dtype;
-		saveDesc.dsc_length = field->fld_length;
-		fb_assert(field->fld_scale <= MAX_SCHAR);
-		saveDesc.dsc_scale = (SCHAR) field->fld_scale;
-		saveDesc.dsc_sub_type = field->fld_sub_type;
+		fb_assert(field->dtype <= MAX_UCHAR);
+		saveDesc.dsc_dtype = (UCHAR) field->dtype;
+		saveDesc.dsc_length = field->length;
+		fb_assert(field->scale <= MAX_SCHAR);
+		saveDesc.dsc_scale = (SCHAR) field->scale;
+		saveDesc.dsc_sub_type = field->subType;
 
-		field->fld_dtype = 0;
-		field->fld_length = 0;
-		field->fld_scale = 0;
-		field->fld_sub_type = 0;
+		field->dtype = 0;
+		field->length = 0;
+		field->scale = 0;
+		field->subType = 0;
 	}
 
 	PASS1_make_context(dsqlScratch, relation);
@@ -336,32 +336,32 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 	if (saveDesc.dsc_dtype)
 	{
 		// Restore the field size/type overrides.
-		field->fld_dtype = saveDesc.dsc_dtype;
-		field->fld_length = saveDesc.dsc_length;
-		field->fld_scale = saveDesc.dsc_scale;
+		field->dtype = saveDesc.dsc_dtype;
+		field->length = saveDesc.dsc_length;
+		field->scale = saveDesc.dsc_scale;
 
-		if (field->fld_dtype <= dtype_any_text)
+		if (field->dtype <= dtype_any_text)
 		{
-			field->fld_character_set_id = DSC_GET_CHARSET(&saveDesc);
-			field->fld_collation_id = DSC_GET_COLLATE(&saveDesc);
+			field->charSetId = DSC_GET_CHARSET(&saveDesc);
+			field->collationId = DSC_GET_COLLATE(&saveDesc);
 		}
 		else
-			field->fld_sub_type = saveDesc.dsc_sub_type;
+			field->subType = saveDesc.dsc_sub_type;
 	}
 	else if (field)
 	{
 		// Use size calculated.
-		field->fld_dtype = desc.dsc_dtype;
-		field->fld_length = desc.dsc_length;
-		field->fld_scale = desc.dsc_scale;
+		field->dtype = desc.dsc_dtype;
+		field->length = desc.dsc_length;
+		field->scale = desc.dsc_scale;
 
-		if (field->fld_dtype <= dtype_any_text)
+		if (field->dtype <= dtype_any_text)
 		{
-			field->fld_character_set_id = DSC_GET_CHARSET(&desc);
-			field->fld_collation_id = DSC_GET_COLLATE(&desc);
+			field->charSetId = DSC_GET_CHARSET(&desc);
+			field->collationId = DSC_GET_COLLATE(&desc);
 		}
 		else
-			field->fld_sub_type = desc.dsc_sub_type;
+			field->subType = desc.dsc_sub_type;
 	}
 
 	dsqlScratch->resetContextStack();
@@ -652,7 +652,7 @@ static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 }
 
 // Update RDB$FIELDS received by reference.
-static void updateRdbFields(const TypeClause& type,
+static void updateRdbFields(const TypeClause* type,
 	SSHORT& fieldType,
 	SSHORT& fieldLength,
 	SSHORT& fieldSubTypeNull, SSHORT& fieldSubType,
@@ -667,73 +667,73 @@ static void updateRdbFields(const TypeClause& type,
 	fieldSubTypeNull = fieldScaleNull = characterSetIdNull = characterLengthNull =
 		fieldPrecisionNull = collationIdNull = segmentLengthNull = TRUE;
 
-	if (type.type == dtype_blob)
+	if (type->dtype == dtype_blob)
 	{
 		fieldSubTypeNull = FALSE;
-		fieldSubType = type.subType;
+		fieldSubType = type->subType;
 
 		fieldScaleNull = FALSE;
 		fieldScale = 0;
 
-		if (type.subType == isc_blob_text)
+		if (type->subType == isc_blob_text)
 		{
 			characterSetIdNull = FALSE;
-			characterSetId = type.charSetId;
+			characterSetId = type->charSetId;
 
 			collationIdNull = FALSE;
-			collationId = type.collationId;
+			collationId = type->collationId;
 		}
 
-		if (type.segLength != 0)
+		if (type->segLength != 0)
 		{
 			segmentLengthNull = FALSE;
-			segmentLength = type.segLength;
+			segmentLength = type->segLength;
 		}
 	}
-	else if (type.type <= dtype_any_text)
+	else if (type->dtype <= dtype_any_text)
 	{
 		fieldSubTypeNull = FALSE;
-		fieldSubType = type.subType;
+		fieldSubType = type->subType;
 
 		fieldScaleNull = FALSE;
 		fieldScale = 0;
 
-		if (type.charLength != 0)
+		if (type->charLength != 0)
 		{
 			characterLengthNull = FALSE;
-			characterLength = type.charLength;
+			characterLength = type->charLength;
 		}
 
 		characterSetIdNull = FALSE;
-		characterSetId = type.charSetId;
+		characterSetId = type->charSetId;
 
 		collationIdNull = FALSE;
-		collationId = type.collationId;
+		collationId = type->collationId;
 	}
 	else
 	{
 		fieldScaleNull = FALSE;
-		fieldScale = type.scale;
+		fieldScale = type->scale;
 
-		if (DTYPE_IS_EXACT(type.type))
+		if (DTYPE_IS_EXACT(type->dtype))
 		{
 			fieldPrecisionNull = FALSE;
-			fieldPrecision = type.precision;
+			fieldPrecision = type->precision;
 
 			fieldSubTypeNull = FALSE;
-			fieldSubType = type.subType;
+			fieldSubType = type->subType;
 		}
 	}
 
-	if (type.type == dtype_varying)
+	if (type->dtype == dtype_varying)
 	{
-		fb_assert(type.length <= MAX_SSHORT);
-		fieldLength = (SSHORT) (type.length - sizeof(USHORT));
+		fb_assert(type->length <= MAX_SSHORT);
+		fieldLength = (SSHORT) (type->length - sizeof(USHORT));
 	}
 	else
-		fieldLength = type.length;
+		fieldLength = type->length;
 
-	fieldType = blr_dtypes[type.type];
+	fieldType = blr_dtypes[type->dtype];
 }
 
 
@@ -817,12 +817,12 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 }
 
 void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& name,
-	const TypeClause& field, const string& computedSource, const BlrWriter::BlrData& computedValue)
+	const TypeClause* field, const string& computedSource, const BlrWriter::BlrData& computedValue)
 {
 	Attachment* const attachment = transaction->tra_attachment;
 	const string& userName = attachment->att_user->usr_user_name;
 
-	const ValueListNode* elements = field.legacyField->fld_ranges;
+	const ValueListNode* elements = field->ranges;
 	const USHORT dims = elements ? elements->items.getCount() / 2 : 0;
 
 	if (dims > MAX_ARRAY_DIMENSIONS)
@@ -924,69 +924,20 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 //----------------------
 
 
-TypeClause::TypeClause(MemoryPool& pool, dsql_fld* aLegacyField, const MetaName& aCollate)
-	: fieldSource(pool),
-	  typeOfTable(pool),
-	  typeOfName(pool),
-	  legacyField(aLegacyField),
-	  collate(pool, aCollate)
-{
-}
-
-void TypeClause::resolve(DsqlCompilerScratch* dsqlScratch, bool modifying)
-{
-	DDL_resolve_intl_type(dsqlScratch, legacyField,
-		(collate.isEmpty() ? NULL : collate), modifying);
-
-	setup(dsqlScratch);
-}
-
-void TypeClause::setup(DsqlCompilerScratch* /*dsqlScratch*/)
-{
-	type = legacyField->fld_dtype;
-	length = legacyField->fld_length;
-	scale = legacyField->fld_scale;
-	subType = legacyField->fld_sub_type;
-	segLength = legacyField->fld_seg_length;
-	precision = legacyField->fld_precision;
-	charLength = legacyField->fld_character_length;
-	charSetId = legacyField->fld_character_set_id;
-	collationId = legacyField->fld_collation_id;
-	collateSpecified = collate.hasData();
-	textType = legacyField->fld_ttype;
-	fullDomain = legacyField->fld_full_domain;
-	notNull = legacyField->fld_not_nullable;
-	fieldSource = legacyField->fld_source;
-
-	if (legacyField->fld_type_of_table.hasData())
-		typeOfTable = legacyField->fld_type_of_table.c_str();
-
-	typeOfName = legacyField->fld_type_of_name;
-}
-
-void TypeClause::print(string& text) const
-{
-	text.printf("typeOfTable: '%s'  typeOfName: '%s'  notNull: %d  fieldSource: '%s'",
-		typeOfTable.c_str(), typeOfName.c_str(), notNull, fieldSource.c_str());
-}
-
-
-//----------------------
-
-
 ParameterClause::ParameterClause(MemoryPool& pool, dsql_fld* field, const MetaName& aCollate,
 			ValueSourceClause* aDefaultClause, ValueExprNode* aParameterExpr)
-	: TypeClause(pool, field, aCollate),
-	  name(pool, field ? field->fld_name : ""),
+	: name(pool, field ? field->fld_name : ""),
+	  type(field),
 	  defaultClause(aDefaultClause),
 	  parameterExpr(aParameterExpr)
 {
+	type->collate = aCollate;
 }
 
 void ParameterClause::print(string& text) const
 {
 	string s;
-	TypeClause::print(s);
+	type->print(s);
 	text.printf("name: '%s'  %s", name.c_str(), s.c_str());
 }
 
@@ -1320,10 +1271,10 @@ void CreateAlterFunctionNode::print(string& text) const
 
 	for (size_t i = 0; i < parameters.getCount(); ++i)
 	{
-		const ParameterClause& parameter = parameters[i];
+		const ParameterClause* parameter = parameters[i];
 
 		string s;
-		parameter.print(s);
+		parameter->print(s);
 		text += "    " + s + "\n";
 	}
 }
@@ -1341,8 +1292,8 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
-			ParameterClause& parameter = parameters[i];
-			names.add(parameter.name);
+			ParameterClause* parameter = parameters[i];
+			names.add(parameter->name);
 		}
 
 		const NestConst<StmtNode>* ptr = variables->statements.begin();
@@ -1352,7 +1303,7 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			if (varNode)
 			{
-				const dsql_fld* field = varNode->dsqlDef->legacyField;
+				const dsql_fld* field = varNode->dsqlDef->type;
 				DEV_BLKCHK(field, dsql_type_fld);
 
 				if (names.exist(field->fld_name))
@@ -1373,12 +1324,12 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// compile default expressions
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 	{
-		ParameterClause& parameter = parameters[i];
+		ParameterClause* parameter = parameters[i];
 
-		if (parameter.defaultClause)
+		if (parameter->defaultClause)
 		{
 			hasDefaultParams = true;
-			parameter.defaultClause->value = doDsqlPass(dsqlScratch, parameter.defaultClause->value);
+			parameter->defaultClause->value = doDsqlPass(dsqlScratch, parameter->defaultClause->value);
 		}
 		else if (hasDefaultParams)
 		{
@@ -1390,10 +1341,10 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
-		parameters[i].resolve(dsqlScratch);
+		parameters[i]->type->resolve(dsqlScratch);
 
-	if (returnType.legacyField)
-		returnType.resolve(dsqlScratch);
+	if (returnType->type)
+		returnType->type->resolve(dsqlScratch);
 
 	return DdlNode::dsqlPass(dsqlScratch);
 }
@@ -1578,17 +1529,17 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 					FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
 
-					dsql_fld* field = returnType.legacyField;
+					dsql_fld* field = returnType->type;
 
 					if (field)
 					{
 						// CVC: This is case of "returns <type> [by value|reference]".
 						// Some data types can not be returned as value.
 
-						if (returnType.udfMechanism.value == FUN_value &&
-							(field->fld_dtype == dtype_text || field->fld_dtype == dtype_varying ||
-							 field->fld_dtype == dtype_cstring || field->fld_dtype == dtype_blob ||
-							 field->fld_dtype == dtype_timestamp))
+						if (returnType->udfMechanism.value == FUN_value &&
+							(field->dtype == dtype_text || field->dtype == dtype_varying ||
+							 field->dtype == dtype_cstring || field->dtype == dtype_blob ||
+							 field->dtype == dtype_timestamp))
 						{
 							// Return mode by value not allowed for this data type.
 							status_exception::raise(
@@ -1600,7 +1551,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 						// For functions returning a blob, coerce return argument position to
 						// be the last parameter.
 
-						if (field->fld_dtype == dtype_blob)
+						if (field->dtype == dtype_blob)
 						{
 							const size_t blobPosition = parameters.getCount() + 1;
 							if (blobPosition > MAX_UDF_ARGUMENTS)
@@ -1638,8 +1589,8 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 						// We'll verify that SCALAR_ARRAY can't be used as a return type.
 						// The support for SCALAR_ARRAY is only for input parameters.
 
-						if (parameters[udfReturnPos - 1].udfMechanism.specified &&
-							parameters[udfReturnPos - 1].udfMechanism.value == FUN_scalar_array)
+						if (parameters[udfReturnPos - 1]->udfMechanism.specified &&
+							parameters[udfReturnPos - 1]->udfMechanism.value == FUN_scalar_array)
 						{
 							status_exception::raise(
 								Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
@@ -1715,16 +1666,16 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		// and insert the new ones
 
-		if (returnType.legacyField)
+		if (returnType->type)
 			storeArgument(tdbb, dsqlScratch, transaction, 0, returnType, NULL);
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
-			ParameterClause& parameter = parameters[i];
+			ParameterClause* parameter = parameters[i];
 			bid comment;
 
 			// Find the original comment to recreate in the new parameter.
-			if (!comments.get(parameter.name, comment))
+			if (!comments.get(parameter->name, comment))
 				comment.clear();
 
 			storeArgument(tdbb, dsqlScratch, transaction, i + 1, parameter, &comment);
@@ -1735,10 +1686,11 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 }
 
 void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, unsigned pos, ParameterClause& parameter,
+	jrd_tra* transaction, unsigned pos, ParameterClause* parameter,
 	const bid* comment)
 {
 	Attachment* const attachment = transaction->getAttachment();
+	TypeClause* type = parameter->type;
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_func_args2, DYN_REQUESTS);
 
@@ -1748,8 +1700,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		ARG.RDB$FUNCTION_NAME.NULL = FALSE;
 		strcpy(ARG.RDB$FUNCTION_NAME, name.c_str());
 
-		ARG.RDB$ARGUMENT_NAME.NULL = (SSHORT) parameter.name.isEmpty();
-		strcpy(ARG.RDB$ARGUMENT_NAME, parameter.name.c_str());
+		ARG.RDB$ARGUMENT_NAME.NULL = (SSHORT) parameter->name.isEmpty();
+		strcpy(ARG.RDB$ARGUMENT_NAME, parameter->name.c_str());
 
 		ARG.RDB$PACKAGE_NAME.NULL = (SSHORT) package.isEmpty();
 		strcpy(ARG.RDB$PACKAGE_NAME, package.c_str());
@@ -1776,21 +1728,21 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		ARG.RDB$COLLATION_ID.NULL = TRUE;
 
 		ARG.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
-		ARG.RDB$ARGUMENT_MECHANISM = (USHORT) (parameter.fullDomain || parameter.typeOfName.isEmpty() ?
+		ARG.RDB$ARGUMENT_MECHANISM = (USHORT) (type->fullDomain || type->typeOfName.isEmpty() ?
 			prm_mech_normal : prm_mech_type_of);
 
-		if (parameter.notNull)
+		if (type->notNull)
 		{
 			ARG.RDB$NULL_FLAG.NULL = FALSE;
 			ARG.RDB$NULL_FLAG = TRUE;
 		}
 
-		if (parameter.typeOfTable.isEmpty())
+		if (type->typeOfTable.isEmpty())
 		{
-			if (parameter.typeOfName.hasData())
+			if (type->typeOfName.hasData())
 			{
 				ARG.RDB$FIELD_SOURCE.NULL = FALSE;
-				strcpy(ARG.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
+				strcpy(ARG.RDB$FIELD_SOURCE, type->typeOfName.c_str());
 			}
 			else
 			{
@@ -1800,7 +1752,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 
 					ARG.RDB$FIELD_TYPE.NULL = FALSE;
 					ARG.RDB$FIELD_LENGTH.NULL = FALSE;
-					updateRdbFields(parameter,
+					updateRdbFields(type,
 						ARG.RDB$FIELD_TYPE,
 						ARG.RDB$FIELD_LENGTH,
 						ARG.RDB$FIELD_SUB_TYPE.NULL, ARG.RDB$FIELD_SUB_TYPE,
@@ -1814,7 +1766,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 				else
 				{
 					MetaName fieldName;
-					storeGlobalField(tdbb, transaction, fieldName, parameter);
+					storeGlobalField(tdbb, transaction, fieldName, type);
 
 					ARG.RDB$FIELD_SOURCE.NULL = FALSE;
 					strcpy(ARG.RDB$FIELD_SOURCE, fieldName.c_str());
@@ -1824,35 +1776,35 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		else
 		{
 			ARG.RDB$RELATION_NAME.NULL = FALSE;
-			strcpy(ARG.RDB$RELATION_NAME, parameter.typeOfTable.c_str());
+			strcpy(ARG.RDB$RELATION_NAME, type->typeOfTable.c_str());
 
 			ARG.RDB$FIELD_NAME.NULL = FALSE;
-			strcpy(ARG.RDB$FIELD_NAME, parameter.typeOfName.c_str());
+			strcpy(ARG.RDB$FIELD_NAME, type->typeOfName.c_str());
 
 			ARG.RDB$FIELD_SOURCE.NULL = FALSE;
-			strcpy(ARG.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
+			strcpy(ARG.RDB$FIELD_SOURCE, type->fieldSource.c_str());
 		}
 
 		// ASF: If we used a collate with a domain or table.column type, write it
 		// into RDB$FUNCTION_ARGUMENTS.
 
-		if (parameter.collateSpecified && parameter.typeOfName.hasData())
+		if (type->collate.hasData() && type->typeOfName.hasData())
 		{
 			ARG.RDB$COLLATION_ID.NULL = FALSE;
-			ARG.RDB$COLLATION_ID = parameter.collationId;
+			ARG.RDB$COLLATION_ID = type->collationId;
 		}
 
 		// ASF: I moved this block to write defaults on RDB$FUNCTION_ARGUMENTS.
 		// It was writing in RDB$FIELDS, but that would require special support
 		// for packaged functions signature verification.
 
-		if (parameter.defaultClause)
+		if (parameter->defaultClause)
 		{
 			ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
 			ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
 
 			attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE,
-				parameter.defaultClause->source);
+				parameter->defaultClause->source);
 
 			dsqlScratch->getBlrData().clear();
 
@@ -1861,7 +1813,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 			else
 				dsqlScratch->appendUChar(blr_version5);
 
-			GEN_expr(dsqlScratch, parameter.defaultClause->value);
+			GEN_expr(dsqlScratch, parameter->defaultClause->value);
 
 			dsqlScratch->appendUChar(blr_eoc);
 
@@ -1874,17 +1826,17 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 			ARG.RDB$MECHANISM.NULL = FALSE;
 
 			if (pos == 0 &&	// CVC: This is case of "returns <type> [by value|reference]"
-				parameter.legacyField->fld_dtype == dtype_blob)
+				type->dtype == dtype_blob)
 			{
 				// CVC: I need to test returning blobs by descriptor before allowing the
 				// change there. For now, I ignore the return type specification.
-				const bool freeIt = parameter.udfMechanism.value < 0;
+				const bool freeIt = parameter->udfMechanism.value < 0;
 				ARG.RDB$MECHANISM = (SSHORT) ((freeIt ? -1 : 1) * FUN_blob_struct);
 				// If we have the FREE_IT set then the blob has to be freed on return.
 			}
-			else if (parameter.udfMechanism.specified)
-				ARG.RDB$MECHANISM = (SSHORT) parameter.udfMechanism.value;
-			else if (parameter.legacyField->fld_dtype == dtype_blob)
+			else if (parameter->udfMechanism.specified)
+				ARG.RDB$MECHANISM = (SSHORT) parameter->udfMechanism.value;
+			else if (type->dtype == dtype_blob)
 				ARG.RDB$MECHANISM = (SSHORT) FUN_blob_struct;
 			else
 				ARG.RDB$MECHANISM = (SSHORT) FUN_reference;
@@ -1920,7 +1872,7 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 
 		dsqlScratch->appendUChar(blr_begin);
 
-		Array<ParameterClause> returns;
+		Array<NestConst<ParameterClause> > returns;
 		returns.add(returnType);
 		dsqlScratch->genParameters(parameters, returns);
 
@@ -1934,9 +1886,9 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
-			ParameterClause& parameter = parameters[i];
+			ParameterClause* parameter = parameters[i];
 
-			if (parameter.fullDomain || parameter.notNull)
+			if (parameter->type->fullDomain || parameter->type->notNull)
 			{
 				// ASF: To validate input parameters we need only to read its value.
 				// Assigning it to null is an easy way to do this.
@@ -2221,10 +2173,10 @@ void CreateAlterProcedureNode::print(string& text) const
 
 	for (size_t i = 0; i < parameters.getCount(); ++i)
 	{
-		const ParameterClause& parameter = parameters[i];
+		const ParameterClause* parameter = parameters[i];
 
 		string s;
-		parameter.print(s);
+		parameter->print(s);
 		text += "    " + s + "\n";
 	}
 
@@ -2232,10 +2184,10 @@ void CreateAlterProcedureNode::print(string& text) const
 
 	for (size_t i = 0; i < returns.getCount(); ++i)
 	{
-		const ParameterClause& parameter = returns[i];
+		const ParameterClause* parameter = returns[i];
 
 		string s;
-		parameter.print(s);
+		parameter->print(s);
 		text += "    " + s + "\n";
 	}
 }
@@ -2253,14 +2205,14 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
-			ParameterClause& parameter = parameters[i];
-			names.add(parameter.name);
+			ParameterClause* parameter = parameters[i];
+			names.add(parameter->name);
 		}
 
 		for (size_t i = 0; i < returns.getCount(); ++i)
 		{
-			ParameterClause& parameter = returns[i];
-			names.add(parameter.name);
+			ParameterClause* parameter = returns[i];
+			names.add(parameter->name);
 		}
 
 		const NestConst<StmtNode>* ptr = variables->statements.begin();
@@ -2270,7 +2222,7 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			if (varNode)
 			{
-				const dsql_fld* field = varNode->dsqlDef->legacyField;
+				const dsql_fld* field = varNode->dsqlDef->type;
 				DEV_BLKCHK(field, dsql_type_fld);
 
 				if (names.exist(field->fld_name))
@@ -2291,12 +2243,12 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// compile default expressions
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 	{
-		ParameterClause& parameter = parameters[i];
+		ParameterClause* parameter = parameters[i];
 
-		if (parameter.defaultClause)
+		if (parameter->defaultClause)
 		{
 			hasDefaultParams = true;
-			parameter.defaultClause->value = doDsqlPass(dsqlScratch, parameter.defaultClause->value);
+			parameter->defaultClause->value = doDsqlPass(dsqlScratch, parameter->defaultClause->value);
 		}
 		else if (hasDefaultParams)
 		{
@@ -2308,10 +2260,10 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
-		parameters[i].resolve(dsqlScratch);
+		parameters[i]->type->resolve(dsqlScratch);
 
 	for (unsigned i = 0; i < returns.getCount(); ++i)
-		returns[i].resolve(dsqlScratch);
+		returns[i]->type->resolve(dsqlScratch);
 
 	return DdlNode::dsqlPass(dsqlScratch);
 }
@@ -2546,11 +2498,11 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
-			ParameterClause& parameter = parameters[i];
+			ParameterClause* parameter = parameters[i];
 			bid comment;
 
 			// Find the original comment to recreate in the new parameter.
-			if (!comments.get(parameter.name, comment))
+			if (!comments.get(parameter->name, comment))
 				comment.clear();
 
 			storeParameter(tdbb, dsqlScratch, transaction, 0, i, parameter, &comment);
@@ -2558,11 +2510,11 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 		for (size_t i = 0; i < returns.getCount(); ++i)
 		{
-			ParameterClause& parameter = returns[i];
+			ParameterClause* parameter = returns[i];
 			bid comment;
 
 			// Find the original comment to recreate in the new parameter.
-			if (!comments.get(parameter.name, comment))
+			if (!comments.get(parameter->name, comment))
 				comment.clear();
 
 			storeParameter(tdbb, dsqlScratch, transaction, 1, i, parameter, &comment);
@@ -2596,10 +2548,11 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 }
 
 void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, USHORT type, unsigned pos, ParameterClause& parameter,
+	jrd_tra* transaction, USHORT parameterType, unsigned pos, ParameterClause* parameter,
 	const bid* comment)
 {
 	Attachment* const attachment = transaction->getAttachment();
+	TypeClause* type = parameter->type;
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_prms4, DYN_REQUESTS);
 
@@ -2607,7 +2560,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 		PRM IN RDB$PROCEDURE_PARAMETERS
 	{
 		PRM.RDB$PARAMETER_NAME.NULL = FALSE;
-		strcpy(PRM.RDB$PARAMETER_NAME, parameter.name.c_str());
+		strcpy(PRM.RDB$PARAMETER_NAME, parameter->name.c_str());
 
 		PRM.RDB$PROCEDURE_NAME.NULL = FALSE;
 		strcpy(PRM.RDB$PROCEDURE_NAME, name.c_str());
@@ -2627,57 +2580,57 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 		PRM.RDB$PARAMETER_NUMBER = pos;
 
 		PRM.RDB$PARAMETER_TYPE.NULL = FALSE;
-		PRM.RDB$PARAMETER_TYPE = type;
+		PRM.RDB$PARAMETER_TYPE = parameterType;
 
 		PRM.RDB$PARAMETER_MECHANISM.NULL = FALSE;
-		PRM.RDB$PARAMETER_MECHANISM = (USHORT) (parameter.fullDomain || parameter.typeOfName.isEmpty() ?
+		PRM.RDB$PARAMETER_MECHANISM = (USHORT) (type->fullDomain || type->typeOfName.isEmpty() ?
 			prm_mech_normal : prm_mech_type_of);
 
-		PRM.RDB$NULL_FLAG.NULL = !parameter.notNull;
-		PRM.RDB$NULL_FLAG = parameter.notNull;
+		PRM.RDB$NULL_FLAG.NULL = !type->notNull;
+		PRM.RDB$NULL_FLAG = type->notNull;
 
-		PRM.RDB$RELATION_NAME.NULL = parameter.typeOfTable.isEmpty();
-		PRM.RDB$FIELD_NAME.NULL = PRM.RDB$RELATION_NAME.NULL || parameter.typeOfName.isEmpty();
+		PRM.RDB$RELATION_NAME.NULL = type->typeOfTable.isEmpty();
+		PRM.RDB$FIELD_NAME.NULL = PRM.RDB$RELATION_NAME.NULL || type->typeOfName.isEmpty();
 
 		PRM.RDB$FIELD_SOURCE.NULL = FALSE;
 
 		if (PRM.RDB$RELATION_NAME.NULL)
 		{
-			if (parameter.typeOfName.hasData())
-				strcpy(PRM.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
+			if (type->typeOfName.hasData())
+				strcpy(PRM.RDB$FIELD_SOURCE, type->typeOfName.c_str());
 			else
 			{
 				MetaName fieldName;
-				storeGlobalField(tdbb, transaction, fieldName, parameter);
+				storeGlobalField(tdbb, transaction, fieldName, type);
 				strcpy(PRM.RDB$FIELD_SOURCE, fieldName.c_str());
 			}
 		}
 		else
 		{
-			strcpy(PRM.RDB$RELATION_NAME, parameter.typeOfTable.c_str());
-			strcpy(PRM.RDB$FIELD_NAME, parameter.typeOfName.c_str());
-			strcpy(PRM.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
+			strcpy(PRM.RDB$RELATION_NAME, type->typeOfTable.c_str());
+			strcpy(PRM.RDB$FIELD_NAME, type->typeOfName.c_str());
+			strcpy(PRM.RDB$FIELD_SOURCE, type->fieldSource.c_str());
 		}
 
 		// ASF: If we used a collate with a domain or table.column type, write it
 		// in RDB$PROCEDURE_PARAMETERS.
 
-		PRM.RDB$COLLATION_ID.NULL = !(parameter.collateSpecified && parameter.typeOfName.hasData());
+		PRM.RDB$COLLATION_ID.NULL = !(type->collate.hasData() && type->typeOfName.hasData());
 
 		if (!PRM.RDB$COLLATION_ID.NULL)
-			PRM.RDB$COLLATION_ID = parameter.collationId;
+			PRM.RDB$COLLATION_ID = type->collationId;
 
 		// ASF: I moved this block to write defaults on RDB$PROCEDURE_PARAMETERS.
 		// It was writing in RDB$FIELDS, but that would require special support
 		// for packaged procedures signature verification.
 
-		PRM.RDB$DEFAULT_VALUE.NULL = !parameter.defaultClause;
-		PRM.RDB$DEFAULT_SOURCE.NULL = !parameter.defaultClause;
+		PRM.RDB$DEFAULT_VALUE.NULL = !parameter->defaultClause;
+		PRM.RDB$DEFAULT_SOURCE.NULL = !parameter->defaultClause;
 
-		if (parameter.defaultClause)
+		if (parameter->defaultClause)
 		{
 			attachment->storeMetaDataBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE,
-				parameter.defaultClause->source);
+				parameter->defaultClause->source);
 
 			dsqlScratch->getBlrData().clear();
 
@@ -2686,7 +2639,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 			else
 				dsqlScratch->appendUChar(blr_version5);
 
-			GEN_expr(dsqlScratch, parameter.defaultClause->value);
+			GEN_expr(dsqlScratch, parameter->defaultClause->value);
 
 			dsqlScratch->appendUChar(blr_eoc);
 
@@ -2738,9 +2691,9 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 	{
-		ParameterClause& parameter = parameters[i];
+		ParameterClause* parameter = parameters[i];
 
-		if (parameter.fullDomain || parameter.notNull)
+		if (parameter->type->fullDomain || parameter->type->notNull)
 		{
 			// ASF: To validate an input parameter we need only to read its value.
 			// Assigning it to null is an easy way to do this.
@@ -3762,7 +3715,7 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 void CreateDomainNode::print(string& text) const
 {
 	string nameTypeStr;
-	nameType.print(nameTypeStr);
+	nameType->print(nameTypeStr);
 
 	text =
 		"CreateDomainNode\n"
@@ -3773,56 +3726,57 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->tra_attachment;
+	dsql_fld* type = nameType->type;
 
-	if (fb_utils::implicit_domain(nameType.name.c_str()))
+	if (fb_utils::implicit_domain(nameType->name.c_str()))
 	{
 		status_exception::raise(
 			Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-			Arg::Gds(isc_dsql_implicit_domain_name) << nameType.name);
+			Arg::Gds(isc_dsql_implicit_domain_name) << nameType->name);
 	}
 
-	const ValueListNode* elements = nameType.legacyField->fld_ranges;
+	const ValueListNode* elements = type->ranges;
 	const USHORT dims = elements ? elements->items.getCount() / 2 : 0;
 
-	if (nameType.defaultClause && dims != 0)
+	if (nameType->defaultClause && dims != 0)
 	{
 		// Default value is not allowed for array type in domain %s
-		status_exception::raise(Arg::PrivateDyn(226) << nameType.name);
+		status_exception::raise(Arg::PrivateDyn(226) << nameType->name);
 	}
 
-	nameType.resolve(dsqlScratch);
+	type->resolve(dsqlScratch);
 
-	dsqlScratch->domainValue.dsc_dtype = nameType.type;
-	dsqlScratch->domainValue.dsc_length = nameType.length;
-	dsqlScratch->domainValue.dsc_scale = nameType.scale;
+	dsqlScratch->domainValue.dsc_dtype = type->dtype;
+	dsqlScratch->domainValue.dsc_length = type->length;
+	dsqlScratch->domainValue.dsc_scale = type->scale;
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-		DDL_TRIGGER_CREATE_DOMAIN, nameType.name);
+		DDL_TRIGGER_CREATE_DOMAIN, nameType->name);
 
-	storeGlobalField(tdbb, transaction, nameType.name, nameType);
+	storeGlobalField(tdbb, transaction, nameType->name, type);
 
-	if (nameType.defaultClause || check || notNull)
+	if (nameType->defaultClause || check || notNull)
 	{
 		AutoCacheRequest request(tdbb, drq_m_fld, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			FLD IN RDB$FIELDS
-			WITH FLD.RDB$FIELD_NAME EQ nameType.name.c_str()
+			WITH FLD.RDB$FIELD_NAME EQ nameType->name.c_str()
 		{
 			MODIFY FLD
-				if (nameType.defaultClause)
+				if (nameType->defaultClause)
 				{
 					FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
 					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE,
-						nameType.defaultClause->source);
+						nameType->defaultClause->source);
 
 					dsqlScratch->getBlrData().clear();
 					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
 
-					ValueExprNode* node = doDsqlPass(dsqlScratch, nameType.defaultClause->value);
+					ValueExprNode* node = doDsqlPass(dsqlScratch, nameType->defaultClause->value);
 
 					GEN_expr(dsqlScratch, node);
 
@@ -3872,7 +3826,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_CREATE_DOMAIN, nameType.name);
+		DDL_TRIGGER_CREATE_DOMAIN, nameType->name);
 
 	savePoint.release();	// everything is ok
 }
@@ -4338,9 +4292,9 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 						Arg::Gds(isc_dsql_domain_not_found) << name);
 				}
 
-				dsqlScratch->domainValue.dsc_dtype = localField.fld_dtype;
-				dsqlScratch->domainValue.dsc_length = localField.fld_length;
-				dsqlScratch->domainValue.dsc_scale = localField.fld_scale;
+				dsqlScratch->domainValue.dsc_dtype = localField.dtype;
+				dsqlScratch->domainValue.dsc_length = localField.length;
+				dsqlScratch->domainValue.dsc_scale = localField.scale;
 
 				FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
 				attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE,
@@ -4424,7 +4378,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 					origDom.dyn_dtype = blr_blob;
 
 				USHORT typeLength = type->length;
-				switch (type->type)
+				switch (type->dtype)
 				{
 					case dtype_varying:
 						typeLength -= sizeof(USHORT);
@@ -4439,12 +4393,12 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 						break;
 				}
 
-				DSC_make_descriptor(&newDom.dyn_dsc, blr_dtypes[type->type], type->scale,
+				DSC_make_descriptor(&newDom.dyn_dsc, blr_dtypes[type->dtype], type->scale,
 					typeLength, type->subType, type->charSetId, type->collationId);
 
 				newDom.dyn_fld_name = name;
 				newDom.dyn_charbytelen = typeLength;
-				newDom.dyn_dtype = blr_dtypes[type->type];
+				newDom.dyn_dtype = blr_dtypes[type->dtype];
 				newDom.dyn_precision = type->precision;
 				newDom.dyn_sub_type = type->subType;
 				newDom.dyn_charlen = type->charLength;
@@ -4486,7 +4440,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				END_FOR
 
 				// Update RDB$FIELDS
-				updateRdbFields(*type,
+				updateRdbFields(type,
 					FLD.RDB$FIELD_TYPE,
 					FLD.RDB$FIELD_LENGTH,
 					FLD.RDB$FIELD_SUB_TYPE.NULL, FLD.RDB$FIELD_SUB_TYPE,
@@ -5448,25 +5402,24 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 			if (clause->computed)
 			{
-				field->fld_flags |= FLD_computed;
+				field->flags |= FLD_computed;
 
 				defineComputed(dsqlScratch, dsqlNode, field, clause->computed,
 					computedSource, computedValue);
 			}
 
-			TypeClause fieldType(*tdbb->getDefaultPool(), field, clause->collate);
-			fieldType.resolve(dsqlScratch);
+			field->collate = clause->collate;
+			field->resolve(dsqlScratch);
 
 			// Generate a domain.
-			storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, fieldType,
+			storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, field,
 				computedSource, computedValue);
 		}
 
 		if ((relation->rel_flags & REL_external) &&
-			(field->fld_dtype == dtype_blob || field->fld_dtype == dtype_array ||
-				field->fld_dimensions))
+			(field->dtype == dtype_blob || field->dtype == dtype_array || field->dimensions))
 		{
-			const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
+			const char* typeName = (field->dtype == dtype_blob ? "BLOB" : "ARRAY");
 
 			status_exception::raise(
 				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
@@ -5512,7 +5465,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		fieldDefinition.defaultValue = defaultValue;
 
 		if (clause->collate.hasData())
-			fieldDefinition.collationId = field->fld_collation_id;
+			fieldDefinition.collationId = field->collationId;
 
 		fieldDefinition.store(tdbb, transaction);
 
@@ -7004,34 +6957,32 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					// Case b1: Internal domain -> internal domain.
 					// Case b2: Domain -> internal domain.
 
-					TypeClause type(*tdbb->getDefaultPool(), field, NULL);
-
 					// If COMPUTED was specified but the type wasn't, we use the type of
 					// the computed expression.
-					if (clause->computed && field->fld_dtype == dtype_unknown)
+					if (clause->computed && field->dtype == dtype_unknown)
 					{
 						dsc desc;
 						MAKE_desc(dsqlScratch, &desc, clause->computed->value);
 
-						field->fld_dtype = desc.dsc_dtype;
-						field->fld_length = desc.dsc_length;
-						field->fld_scale = desc.dsc_scale;
+						field->dtype = desc.dsc_dtype;
+						field->length = desc.dsc_length;
+						field->scale = desc.dsc_scale;
 
-						if (field->fld_dtype <= dtype_any_text)
+						if (field->dtype <= dtype_any_text)
 						{
-							field->fld_character_set_id = DSC_GET_CHARSET(&desc);
-							field->fld_collation_id = DSC_GET_COLLATE(&desc);
+							field->charSetId = DSC_GET_CHARSET(&desc);
+							field->collationId = DSC_GET_COLLATE(&desc);
 						}
 						else
-							field->fld_sub_type = desc.dsc_sub_type;
+							field->subType = desc.dsc_sub_type;
 					}
 
-					type.resolve(dsqlScratch, true);
+					field->resolve(dsqlScratch, true);
 
 					if (wasInternalDomain)	// Case b1: Internal domain -> internal domain.
 					{
 						MODIFY FLD
-							updateRdbFields(type,
+							updateRdbFields(field,
 								FLD.RDB$FIELD_TYPE,
 								FLD.RDB$FIELD_LENGTH,
 								FLD.RDB$FIELD_SUB_TYPE.NULL, FLD.RDB$FIELD_SUB_TYPE,
@@ -7046,7 +6997,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 						newDom.dyn_fld_source = origDom.dyn_fld_source;
 					}
 					else	// Case b2: Domain -> internal domain.
-						storeGlobalField(tdbb, transaction, newDomainName, type);
+						storeGlobalField(tdbb, transaction, newDomainName, field);
 				}
 
 				if (!clause->computed && !isView)
@@ -7772,14 +7723,13 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		// but if alter view is going to work, maybe we need here the context type and package, too.
 		if (field)
 		{
-			TypeClause fieldType(*tdbb->getDefaultPool(), field, NULL);
-			fieldType.resolve(dsqlScratch);
+			field->resolve(dsqlScratch);
 
 			fieldDefinition.viewContext = context->ctx_context;
 			fieldDefinition.baseField = field->fld_name;
 
-			if (field->fld_dtype <= dtype_any_text)
-				fieldDefinition.collationId = field->fld_collation_id;
+			if (field->dtype <= dtype_any_text)
+				fieldDefinition.collationId = field->collationId;
 
 			if (relField)	// modifying a view
 			{
@@ -7821,27 +7771,24 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			MAKE_desc(dsqlScratch, &desc, fieldNode);
 
 			dsql_fld newField(*tdbb->getDefaultPool());
-			newField.fld_dtype = desc.dsc_dtype;
-			newField.fld_length = desc.dsc_length;
-			newField.fld_scale = desc.dsc_scale;
+			newField.dtype = desc.dsc_dtype;
+			newField.length = desc.dsc_length;
+			newField.scale = desc.dsc_scale;
 
 			if (desc.isText() || (desc.isBlob() && desc.getBlobSubType() == isc_blob_text))
 			{
-				newField.fld_character_set_id = desc.getCharSet();
-				newField.fld_collation_id = desc.getCollation();
+				newField.charSetId = desc.getCharSet();
+				newField.collationId = desc.getCollation();
 			}
 
 			if (desc.isText())
 			{
-				newField.fld_character_length = newField.fld_length;
-				newField.fld_length *= METD_get_charset_bpc(
-					dsqlScratch->getTransaction(), newField.fld_character_set_id);
+				newField.charLength = newField.length;
+				newField.length *= METD_get_charset_bpc(
+					dsqlScratch->getTransaction(), newField.charSetId);
 			}
 			else
-				newField.fld_sub_type = desc.dsc_sub_type;
-
-			TypeClause fieldType(*tdbb->getDefaultPool(), &newField, NULL);
-			fieldType.setup(dsqlScratch);
+				newField.subType = desc.dsc_sub_type;
 
 			if (relField)	// modifying a view
 			{
@@ -7863,7 +7810,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 						fieldDefinition.fieldSource = FLD.RDB$FIELD_NAME;
 
 						MODIFY FLD
-							updateRdbFields(fieldType,
+							updateRdbFields(&newField,
 								FLD.RDB$FIELD_TYPE,
 								FLD.RDB$FIELD_LENGTH,
 								FLD.RDB$FIELD_SUB_TYPE.NULL, FLD.RDB$FIELD_SUB_TYPE,
@@ -7884,7 +7831,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 				if (fieldDefinition.fieldSource.isEmpty())
 				{
-					storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, fieldType,
+					storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, &newField,
 						"", dsqlScratch->getBlrData());
 				}
 
@@ -7892,7 +7839,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			}
 			else
 			{
-				storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, fieldType,
+				storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, &newField,
 					"", dsqlScratch->getBlrData());
 
 				fieldDefinition.store(tdbb, transaction);
@@ -8034,7 +7981,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 	// to restore after the condition processing.
 
 	dsql_fld* field = newContext->ctx_relation->rel_fields;
-	ObjectsArray<string> savedNames;
+	ObjectsArray<MetaName> savedNames;
 
 	// ASF: rel_fields entries are in reverse order.
 	for (NestConst<ValueExprNode>* ptr = items->items.end();
@@ -8055,13 +8002,13 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 		dsql_fld* queryField = fieldNode->dsqlField;
 
 		field->fld_name = queryField->fld_name;
-		field->fld_dtype = queryField->fld_dtype;
-		field->fld_scale = queryField->fld_scale;
-		field->fld_sub_type = queryField->fld_sub_type;
-		field->fld_length = queryField->fld_length;
-		field->fld_flags = queryField->fld_flags;
-		field->fld_character_set_id = queryField->fld_character_set_id;
-		field->fld_collation_id = queryField->fld_collation_id;
+		field->dtype = queryField->dtype;
+		field->scale = queryField->scale;
+		field->subType = queryField->subType;
+		field->length = queryField->length;
+		field->flags = queryField->flags;
+		field->charSetId = queryField->charSetId;
+		field->collationId = queryField->collationId;
 	}
 
 	dsqlScratch->appendUChar(blr_if);
@@ -8073,7 +8020,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	field = newContext->ctx_relation->rel_fields;
 
-	for (ObjectsArray<string>::iterator i = savedNames.begin(); i != savedNames.end(); ++i)
+	for (ObjectsArray<MetaName>::iterator i = savedNames.begin(); i != savedNames.end(); ++i)
 	{
 		field->fld_name = *i;
 		field = field->fld_next;

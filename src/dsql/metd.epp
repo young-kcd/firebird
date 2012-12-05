@@ -71,7 +71,7 @@ static const UCHAR blr_bpb[] =
 	isc_bpb_target_type, 1, isc_blob_blr
 };
 
-static void convert_dtype(dsql_fld*, SSHORT);
+static void convert_dtype(TypeClause*, SSHORT);
 static void free_relation(dsql_rel*);
 
 namespace
@@ -573,7 +573,7 @@ MetaName METD_get_charset_name(jrd_tra* transaction, SSHORT charset_id)
 }
 
 
-dsql_str* METD_get_default_charset(jrd_tra* transaction)
+MetaName METD_get_default_charset(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -593,7 +593,7 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
 	if (dbb->dbb_no_charset)
 		return NULL;
 
-	if (dbb->dbb_dfl_charset)
+	if (dbb->dbb_dfl_charset.hasData())
 		return dbb->dbb_dfl_charset;
 
 	// Now see if it is in the database
@@ -607,21 +607,18 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
 		// Terminate ASCIIZ string on first trailing blank
 		fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
 		const USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
-		dbb->dbb_dfl_charset = FB_NEW_RPT(dbb->dbb_pool, length) dsql_str;
-		dbb->dbb_dfl_charset->str_length = length;
-		dbb->dbb_dfl_charset->str_charset = NULL;
-		memcpy(dbb->dbb_dfl_charset->str_data, DBB.RDB$CHARACTER_SET_NAME, length);
+		dbb->dbb_dfl_charset = DBB.RDB$CHARACTER_SET_NAME;
 	}
 	END_FOR
 
-	if (!dbb->dbb_dfl_charset)
+	if (dbb->dbb_dfl_charset.isEmpty())
 		dbb->dbb_no_charset = true;
 
 	return dbb->dbb_dfl_charset;
 }
 
 
-bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const MetaName& name) // UTF-8
+bool METD_get_domain(jrd_tra* transaction, TypeClause* field, const MetaName& name) // UTF-8
 {
 /**************************************
  *
@@ -645,34 +642,34 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const MetaName& name
 		FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name.c_str()
 	{
 		found = true;
-		field->fld_length = FLX.RDB$FIELD_LENGTH;
-		field->fld_scale = FLX.RDB$FIELD_SCALE;
-		field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
-		field->fld_dimensions = FLX.RDB$DIMENSIONS.NULL ? 0 : FLX.RDB$DIMENSIONS;
+		field->length = FLX.RDB$FIELD_LENGTH;
+		field->scale = FLX.RDB$FIELD_SCALE;
+		field->subType = FLX.RDB$FIELD_SUB_TYPE;
+		field->dimensions = FLX.RDB$DIMENSIONS.NULL ? 0 : FLX.RDB$DIMENSIONS;
 
-		field->fld_character_set_id = 0;
+		field->charSetId = 0;
 		if (!FLX.RDB$CHARACTER_SET_ID.NULL)
-			field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
-		field->fld_collation_id = 0;
+			field->charSetId = FLX.RDB$CHARACTER_SET_ID;
+		field->collationId = 0;
 		if (!FLX.RDB$COLLATION_ID.NULL)
-			field->fld_collation_id = FLX.RDB$COLLATION_ID;
-		field->fld_character_length = 0;
+			field->collationId = FLX.RDB$COLLATION_ID;
+		field->charLength = 0;
 		if (!FLX.RDB$CHARACTER_LENGTH.NULL)
-			field->fld_character_length = FLX.RDB$CHARACTER_LENGTH;
+			field->charLength = FLX.RDB$CHARACTER_LENGTH;
 
 		if (!FLX.RDB$COMPUTED_BLR.NULL)
-			field->fld_flags |= FLD_computed;
+			field->flags |= FLD_computed;
 
 		if (FLX.RDB$NULL_FLAG.NULL || !FLX.RDB$NULL_FLAG)
-			field->fld_flags |= FLD_nullable;
+			field->flags |= FLD_nullable;
 
 		if (FLX.RDB$SYSTEM_FLAG == 1)
-			field->fld_flags |= FLD_system;
+			field->flags |= FLD_system;
 
 		convert_dtype(field, FLX.RDB$FIELD_TYPE);
 
 		if (FLX.RDB$FIELD_TYPE == blr_blob) {
-			field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
+			field->segLength = FLX.RDB$SEGMENT_LENGTH;
 		}
 	}
 	END_FOR
@@ -1221,45 +1218,45 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			// get parameter information
 
 			parameter->fld_name = PR.RDB$PARAMETER_NAME;
-			parameter->fld_source = PR.RDB$FIELD_SOURCE;
+			parameter->fieldSource = PR.RDB$FIELD_SOURCE;
 
 			parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
-			parameter->fld_length = FLD.RDB$FIELD_LENGTH;
-			parameter->fld_scale = FLD.RDB$FIELD_SCALE;
-			parameter->fld_sub_type = FLD.RDB$FIELD_SUB_TYPE;
+			parameter->length = FLD.RDB$FIELD_LENGTH;
+			parameter->scale = FLD.RDB$FIELD_SCALE;
+			parameter->subType = FLD.RDB$FIELD_SUB_TYPE;
 			parameter->fld_procedure = procedure;
 
 			if (!FLD.RDB$CHARACTER_SET_ID.NULL)
-				parameter->fld_character_set_id = FLD.RDB$CHARACTER_SET_ID;
+				parameter->charSetId = FLD.RDB$CHARACTER_SET_ID;
 
 			if (!pr_collation_id_null)
-				parameter->fld_collation_id = pr_collation_id;
+				parameter->collationId = pr_collation_id;
 			else if (!FLD.RDB$COLLATION_ID.NULL)
-				parameter->fld_collation_id = FLD.RDB$COLLATION_ID;
+				parameter->collationId = FLD.RDB$COLLATION_ID;
 
 			convert_dtype(parameter, FLD.RDB$FIELD_TYPE);
 
 			if (!pr_null_flag_null)
 			{
 				if (!pr_null_flag)
-					parameter->fld_flags |= FLD_nullable;
+					parameter->flags |= FLD_nullable;
 			}
 			else if (!FLD.RDB$NULL_FLAG || pr_type_of)
-				parameter->fld_flags |= FLD_nullable;
+				parameter->flags |= FLD_nullable;
 
 			if (FLD.RDB$FIELD_TYPE == blr_blob)
-				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;
+				parameter->segLength = FLD.RDB$SEGMENT_LENGTH;
 
 			if (!PR.RDB$FIELD_NAME.NULL)
 			{
 				fb_utils::exact_name(PR.RDB$FIELD_NAME);
-				parameter->fld_type_of_name = PR.RDB$FIELD_NAME;
+				parameter->typeOfName = PR.RDB$FIELD_NAME;
 			}
 
 			if (!PR.RDB$RELATION_NAME.NULL)
 			{
 				fb_utils::exact_name(PR.RDB$RELATION_NAME);
-				parameter->fld_type_of_table = PR.RDB$RELATION_NAME;
+				parameter->typeOfTable = PR.RDB$RELATION_NAME;
 			}
 
 			if (type == 0 &&
@@ -1430,45 +1427,45 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 			// get field information
 
 			field->fld_name = RFR.RDB$FIELD_NAME;
-			field->fld_source = RFR.RDB$FIELD_SOURCE;
-			field->fld_length = FLX.RDB$FIELD_LENGTH;
-			field->fld_scale = FLX.RDB$FIELD_SCALE;
-			field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
+			field->fieldSource = RFR.RDB$FIELD_SOURCE;
+			field->length = FLX.RDB$FIELD_LENGTH;
+			field->scale = FLX.RDB$FIELD_SCALE;
+			field->subType = FLX.RDB$FIELD_SUB_TYPE;
 			field->fld_relation = relation;
 
 			if (!FLX.RDB$COMPUTED_BLR.NULL)
-				field->fld_flags |= FLD_computed;
+				field->flags |= FLD_computed;
 
 			convert_dtype(field, FLX.RDB$FIELD_TYPE);
 
 			if (FLX.RDB$FIELD_TYPE == blr_blob) {
-				field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
+				field->segLength = FLX.RDB$SEGMENT_LENGTH;
 			}
 
 			if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS)
 			{
-				field->fld_element_dtype = field->fld_dtype;
-				field->fld_element_length = field->fld_length;
-				field->fld_dtype = dtype_array;
-				field->fld_length = sizeof(ISC_QUAD);
-				field->fld_dimensions = FLX.RDB$DIMENSIONS;
+				field->elementDtype = field->dtype;
+				field->elementLength = field->length;
+				field->dtype = dtype_array;
+				field->length = sizeof(ISC_QUAD);
+				field->dimensions = FLX.RDB$DIMENSIONS;
 			}
 
 			if (!FLX.RDB$CHARACTER_SET_ID.NULL)
-				field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
+				field->charSetId = FLX.RDB$CHARACTER_SET_ID;
 
 			if (!RFR.RDB$COLLATION_ID.NULL)
-				field->fld_collation_id = RFR.RDB$COLLATION_ID;
+				field->collationId = RFR.RDB$COLLATION_ID;
 			else if (!FLX.RDB$COLLATION_ID.NULL)
-				field->fld_collation_id = FLX.RDB$COLLATION_ID;
+				field->collationId = FLX.RDB$COLLATION_ID;
 
 			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG) || (relation->rel_flags & REL_view))
 			{
-				field->fld_flags |= FLD_nullable;
+				field->flags |= FLD_nullable;
 			}
 
 			if (RFR.RDB$SYSTEM_FLAG == 1 || FLX.RDB$SYSTEM_FLAG == 1)
-				field->fld_flags |= FLD_system;
+				field->flags |= FLD_system;
 		}
 	}
 	END_FOR
@@ -1701,7 +1698,7 @@ dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsql
 }
 
 
-static void convert_dtype(dsql_fld* field, SSHORT field_type)
+static void convert_dtype(TypeClause* field, SSHORT field_type)
 {
 /**************************************
  *
@@ -1720,21 +1717,21 @@ static void convert_dtype(dsql_fld* field, SSHORT field_type)
 	switch (field_type)
 	{
 	case blr_text:
-		field->fld_dtype = dtype_text;
+		field->dtype = dtype_text;
 		break;
 	case blr_varying:
-		field->fld_dtype = dtype_varying;
-		field->fld_length += sizeof(USHORT);
+		field->dtype = dtype_varying;
+		field->length += sizeof(USHORT);
 		break;
 	case blr_blob:
-		field->fld_dtype = dtype_blob;
-		field->fld_length = type_lengths[field->fld_dtype];
+		field->dtype = dtype_blob;
+		field->length = type_lengths[field->dtype];
 		break;
 	default:
-		field->fld_dtype = gds_cvt_blr_dtype[field_type];
-		field->fld_length = type_lengths[field->fld_dtype];
+		field->dtype = gds_cvt_blr_dtype[field_type];
+		field->length = type_lengths[field->dtype];
 
-		fb_assert(field->fld_dtype != dtype_unknown);
+		fb_assert(field->dtype != dtype_unknown);
 	}
 }
 
