@@ -1,3 +1,8 @@
+ 2012-12-05 14:31  asfernandes 
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+Get rid of g_field_name hack.
+
  2012-12-05 02:07  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DdlNodes.h
