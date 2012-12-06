@@ -78,8 +78,6 @@ void ProcedureScan::open(thread_db* tdbb) const
 
 	if (m_sourceList)
 	{
-		enum jrd_req::req_s saved_state = request->req_operation;
-
 		const NestConst<ValueExprNode>* const sourceEnd = m_sourceList->items.end();
 		const NestConst<ValueExprNode>* sourcePtr = m_sourceList->items.begin();
 		const NestConst<ValueExprNode>* targetPtr = m_targetList->items.begin();
@@ -87,7 +85,6 @@ void ProcedureScan::open(thread_db* tdbb) const
 		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
 			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
 
-		request->req_operation = saved_state;
 		iml = m_message->format->fmt_length;
 		im = request->getImpure<UCHAR>(m_message->impureOffset);
 	}

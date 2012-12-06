@@ -378,7 +378,10 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 const StmtNode* AssignmentNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
+	{
 		EXE_assignment(tdbb, this);
+		request->req_operation = jrd_req::req_return;
+	}
 
 	return parentStmt;
 }
@@ -884,9 +887,12 @@ void ContinueLeaveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
-	request->req_operation = jrd_req::req_unwind;
-	request->req_label = labelNumber;
-	request->req_flags |= (blrOp == blr_continue_loop ? req_continue_loop : req_leave);
+	if (request->req_operation == jrd_req::req_evaluate) 
+	{
+		request->req_operation = jrd_req::req_unwind;
+		request->req_label = labelNumber;
+		request->req_flags |= (blrOp == blr_continue_loop ? req_continue_loop : req_leave);
+	}
 	return parentStmt;
 }
 
@@ -1841,25 +1847,28 @@ DeclareVariableNode* DeclareVariableNode::pass2(thread_db* /*tdbb*/, CompilerScr
 
 const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
-	impure_value* variable = request->getImpure<impure_value>(impureOffset);
-	variable->vlu_desc = varDesc;
-	variable->vlu_desc.dsc_flags = 0;
-
-	if (variable->vlu_desc.dsc_dtype <= dtype_varying)
+	if (request->req_operation == jrd_req::req_evaluate) 
 	{
-		if (!variable->vlu_string)
+		impure_value* variable = request->getImpure<impure_value>(impureOffset);
+		variable->vlu_desc = varDesc;
+		variable->vlu_desc.dsc_flags = 0;
+
+		if (variable->vlu_desc.dsc_dtype <= dtype_varying)
 		{
-			const USHORT len = variable->vlu_desc.dsc_length;
-			variable->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), len) VaryingString();
-			variable->vlu_string->str_length = len;
+			if (!variable->vlu_string)
+			{
+				const USHORT len = variable->vlu_desc.dsc_length;
+				variable->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), len) VaryingString();
+				variable->vlu_string->str_length = len;
+			}
+
+			variable->vlu_desc.dsc_address = variable->vlu_string->str_data;
 		}
+		else
+			variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
 
-		variable->vlu_desc.dsc_address = variable->vlu_string->str_data;
+		request->req_operation = jrd_req::req_return;
 	}
-	else
-		variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
-
-	request->req_operation = jrd_req::req_return;
 
 	return parentStmt;
 }
@@ -2693,12 +2702,12 @@ ExecProcedureNode* ExecProcedureNode::pass2(thread_db* tdbb, CompilerScratch* cs
 
 const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_unwind)
-		return parentStmt;
+	if (request->req_operation == jrd_req::req_evaluate) 
+	{
+		executeProcedure(tdbb, request);
+		request->req_operation = jrd_req::req_return;
+	}
 
-	executeProcedure(tdbb, request);
-
-	request->req_operation = jrd_req::req_return;
 	return parentStmt;
 }
 
@@ -5990,21 +5999,23 @@ PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
-	jrd_tra* transaction = request->req_transaction;
+	if (request->req_operation == jrd_req::req_evaluate) 
+	{
+		jrd_tra* transaction = request->req_transaction;
 
-	DeferredWork* work = DFW_post_work(transaction, dfw_post_event,
-		EVL_expr(tdbb, request, event), 0);
+		DeferredWork* work = DFW_post_work(transaction, dfw_post_event,
+			EVL_expr(tdbb, request, event), 0);
 
-	if (argument)
-		DFW_post_work_arg(transaction, work, EVL_expr(tdbb, request, argument), 0);
+		if (argument)
+			DFW_post_work_arg(transaction, work, EVL_expr(tdbb, request, argument), 0);
 
-	// For an autocommit transaction, events can be posted without any updates.
+		// For an autocommit transaction, events can be posted without any updates.
 
-	if (transaction->tra_flags & TRA_autocommit)
-		transaction->tra_flags |= TRA_perform_autocommit;
+		if (transaction->tra_flags & TRA_autocommit)
+			transaction->tra_flags |= TRA_perform_autocommit;
 
-	if (request->req_operation == jrd_req::req_evaluate)
 		request->req_operation = jrd_req::req_return;
+	}
 
 	return parentStmt;
 }
@@ -6857,9 +6868,9 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				BUGCHECK(232);
 				break;
 		}
-	}
 
-	request->req_operation = jrd_req::req_return;
+		request->req_operation = jrd_req::req_return;
+	}
 
 	return parentStmt;
 }
@@ -7231,18 +7242,19 @@ const StmtNode* StallNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSta
 {
 	switch (request->req_operation)
 	{
-		case jrd_req::req_sync:
-			return parentStmt;
+		case jrd_req::req_evaluate:
+		case jrd_req::req_return:
+			request->req_message = this;
+			request->req_operation = jrd_req::req_return;
+			request->req_flags |= req_stall;
+			return this;
 
 		case jrd_req::req_proceed:
 			request->req_operation = jrd_req::req_return;
 			return parentStmt;
 
 		default:
-			request->req_message = this;
-			request->req_operation = jrd_req::req_return;
-			request->req_flags |= req_stall;
-			return this;
+			return parentStmt;
 	}
 }
 
@@ -7445,6 +7457,8 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 				// Start a save point.
 				if (transaction != sysTransaction)
 					VIO_start_save_point(tdbb, transaction);
+
+				request->req_operation = jrd_req::req_return;
 			}
 			break;
 
@@ -7461,11 +7475,16 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 						++transaction->tra_save_point->sav_verb_count;
 					EXE_verb_cleanup(tdbb, transaction);
 				}
+
+				if (request->req_operation == jrd_req::req_evaluate)
+					request->req_operation = jrd_req::req_return;
 			}
 			break;
+
+		default:
+			fb_assert(false);
 	}
 
-	request->req_operation = jrd_req::req_return;
 	return parentStmt;
 }
 

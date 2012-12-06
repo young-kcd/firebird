@@ -216,8 +216,6 @@ void EXE_assignment(thread_db* tdbb, const AssignmentNode* node)
 
 	EXE_assignment(tdbb, node->asgnTo, from_desc, (request->req_flags & req_null),
 		node->missing, node->missing2);
-
-	request->req_operation = jrd_req::req_return;
 }
 
 // Perform an assignment.
@@ -231,8 +229,6 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* source, const ValueExp
 	dsc* from_desc = EVL_expr(tdbb, request, source);
 
 	EXE_assignment(tdbb, target, from_desc, (request->req_flags & req_null), NULL, NULL);
-
-	request->req_operation = jrd_req::req_return;
 }
 
 // Perform an assignment.
@@ -1470,13 +1466,16 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			goto end;
 		}
 
-		if (request->req_operation == jrd_req::req_evaluate && (--tdbb->tdbb_quantum < 0))
-			JRD_reschedule(tdbb, 0, true);
-
-		if (request->req_operation == jrd_req::req_evaluate && node->hasLineColumn)
+		if (request->req_operation == jrd_req::req_evaluate)
 		{
-			request->req_src_line = node->line;
-			request->req_src_column = node->column;
+			if (--tdbb->tdbb_quantum < 0)
+				JRD_reschedule(tdbb, 0, true);
+
+			if (node->hasLineColumn)
+			{
+				request->req_src_line = node->line;
+				request->req_src_column = node->column;
+			}
 		}
 
 		node = node->execute(tdbb, request, &exeState);
