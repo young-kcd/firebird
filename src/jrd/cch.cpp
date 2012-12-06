@@ -2285,6 +2285,8 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 	}
 	***/
 
+	tdbb->tdbb_flags |= TDBB_cache_unwound;
+ 
 	if (punt)
 		ERR_punt();
 }
@@ -5286,7 +5288,9 @@ void BufferDesc::release(thread_db* tdbb)
 
 	fb_assert(!(bdb_flags & BDB_marked) || bdb_writers > 1);
 
-	tdbb->clearBdb(this);
+	if (!tdbb->clearBdb(this))
+		return;
+
 	--bdb_use_count;
 
 	if (bdb_writers)
@@ -5319,8 +5323,11 @@ void BufferDesc::unLockIO(thread_db* tdbb)
 	fb_assert(bdb_io && bdb_io == tdbb);
 	fb_assert(bdb_io_locks > 0);
 
+	if (!bdb_io->clearBdb(this))
+		return;
+
 	--bdb_use_count;
-	bdb_io->clearBdb(this);
+
 	if (--bdb_io_locks == 0)
 		bdb_io = NULL;
 

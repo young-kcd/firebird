@@ -33,7 +33,7 @@
 
 #include "../common/gdsassert.h"
 #include "../common/dsc.h"
-#include "../jrd/btn.h"
+#include "../jrd/err_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/val.h"
@@ -384,6 +384,22 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 
 
 // Thread specific database block
+
+// tdbb_flags
+
+const USHORT TDBB_sweeper				= 1;	// Thread sweeper or garbage collector
+const USHORT TDBB_no_cache_unwind		= 2;	// Don't unwind page buffer cache
+const USHORT TDBB_backup_write_locked	= 4;    // BackupManager has write lock on LCK_backup_database
+const USHORT TDBB_stack_trace_done		= 8;	// PSQL stack trace is added into status-vector
+const USHORT TDBB_shutdown_manager		= 16;	// Server shutdown thread
+const USHORT TDBB_dont_post_dfw			= 32;	// dont post DFW tasks as deferred work is performed now
+const USHORT TDBB_sys_error				= 64;	// error shouldn't be handled by the looper
+const USHORT TDBB_verb_cleanup			= 128;	// verb cleanup is in progress
+const USHORT TDBB_use_db_page_space		= 256;	// use database (not temporary) page space in GTT operations
+const USHORT TDBB_detaching				= 512;	// detach is in progress
+const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
+const USHORT TDBB_cache_unwound			= 2048;	// page cache was unwound 
+
 class thread_db : public ThreadData
 {
 private:
@@ -516,6 +532,11 @@ public:
 
 	void registerBdb(BufferDesc* bdb)
 	{
+		if (tdbb_bdbs.isEmpty()) {
+			tdbb_flags &= ~TDBB_cache_unwound;
+		}
+		fb_assert(!(tdbb_flags & TDBB_cache_unwound));
+
 		size_t pos;
 		if (tdbb_bdbs.find(NULL, pos))
 			tdbb_bdbs[pos] = bdb;
@@ -523,35 +544,47 @@ public:
 			tdbb_bdbs.add(bdb);
 	}
 
-	void clearBdb(BufferDesc* bdb)
+	bool clearBdb(BufferDesc* bdb)
 	{
-		size_t pos;
-		if (tdbb_bdbs.find(bdb, pos))
+		if (tdbb_bdbs.isEmpty())
 		{
-			tdbb_bdbs[pos] = NULL;
+			// hvlad: the only legal case when thread holds no latches but someone
+			// tried to release latch is when CCH_unwind was called (and released
+			// all latches) but caller is unaware about it. See CORE-3034, for example.
+			// Else is it bug and it should be BUGCHECK'ed.
+ 
+			if (tdbb_flags & TDBB_cache_unwound)
+				return false;
+		}
+		fb_assert(!(tdbb_flags & TDBB_cache_unwound));
 
-			if (pos == tdbb_bdbs.getCount() - 1)
+		size_t pos;
+		if (!tdbb_bdbs.find(bdb, pos))
+			BUGCHECK(300);	// can't find shared latch
+
+		tdbb_bdbs[pos] = NULL;
+
+		if (pos == tdbb_bdbs.getCount() - 1)
+		{
+			while (true)
 			{
-				while (true)
+				if (tdbb_bdbs[pos] != NULL)
 				{
-					if (tdbb_bdbs[pos] != NULL)
-					{
-						tdbb_bdbs.shrink(pos + 1);
-						break;
-					}
-
-					if (pos == 0)
-					{
-						tdbb_bdbs.shrink(0);
-						break;
-					}
-
-					--pos;
+					tdbb_bdbs.shrink(pos + 1);
+					break;
 				}
+
+				if (pos == 0)
+				{
+					tdbb_bdbs.shrink(0);
+					break;
+				}
+
+				--pos;
 			}
 		}
-		else
-			fb_assert(false);
+
+		return true;
 	}
 
 	void activate()
@@ -602,20 +635,6 @@ public:
 		priorThread = nextThread = NULL;
 	}
 };
-
-// tdbb_flags
-
-const USHORT TDBB_sweeper				= 1;	// Thread sweeper or garbage collector
-const USHORT TDBB_no_cache_unwind		= 2;	// Don't unwind page buffer cache
-const USHORT TDBB_backup_write_locked	= 4;    // BackupManager has write lock on LCK_backup_database
-const USHORT TDBB_stack_trace_done		= 8;	// PSQL stack trace is added into status-vector
-const USHORT TDBB_shutdown_manager		= 16;	// Server shutdown thread
-const USHORT TDBB_dont_post_dfw			= 32;	// dont post DFW tasks as deferred work is performed now
-const USHORT TDBB_sys_error				= 64;	// error shouldn't be handled by the looper
-const USHORT TDBB_verb_cleanup			= 128;	// verb cleanup is in progress
-const USHORT TDBB_use_db_page_space		= 256;	// use database (not temporary) page space in GTT operations
-const USHORT TDBB_detaching				= 512;	// detach is in progress
-const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
 
 
 class ThreadContextHolder
