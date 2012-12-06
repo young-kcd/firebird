@@ -2816,15 +2816,12 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 	impure->irsb_req_handle = proc_request;
 	if (inputs)
 	{
-		enum jrd_req::req_s saved_state = request->req_operation;
-
 		jrd_nod** ptr = inputs->nod_arg;
 		for (const jrd_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
 		{
 			EXE_assignment(tdbb, *ptr);
 		}
 
-		request->req_operation = saved_state;
 		jrd_nod* in_message = (jrd_nod*) rsb->rsb_arg[RSB_PRC_in_msg];
 		const Format* format = (Format*) in_message->nod_arg[e_msg_format];
 		iml = format->fmt_length;
