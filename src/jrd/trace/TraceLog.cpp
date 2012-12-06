@@ -247,6 +247,7 @@ bool TraceLog::initialize(SharedMemoryBase* sm, bool initialize)
 	{
 		hdr->mhb_type = SharedMemoryBase::SRAM_TRACE_LOG;
 		hdr->mhb_version = 1;
+		hdr->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
 		hdr->readFileNum = 0;
 		hdr->writeFileNum = 0;
 	}

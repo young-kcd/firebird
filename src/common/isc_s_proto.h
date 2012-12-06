@@ -32,6 +32,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/timestamp.h"
 
 // Firebird platform-specific synchronization data structures
 
@@ -179,6 +180,7 @@ class MemoryHeader
 public:
 	USHORT mhb_type;
 	USHORT mhb_version;
+	GDS_TIMESTAMP mhb_timestamp;
 #ifdef HAVE_SHARED_MUTEX_SECTION
 	struct mtx mhb_mutex;
 #endif

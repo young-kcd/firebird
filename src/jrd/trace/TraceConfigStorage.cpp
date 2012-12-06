@@ -176,6 +176,7 @@ bool ConfigStorage::initialize(SharedMemoryBase* sm, bool init)
 	{
 		header->mhb_type = SharedMemoryBase::SRAM_TRACE_CONFIG;
 		header->mhb_version = 1;
+		header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
 		header->change_number = 0;
 		header->session_number = 1;
 		header->cnt_uses = 0;

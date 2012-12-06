@@ -2335,6 +2335,7 @@ bool LockManager::initialize(SharedMemoryBase* sm, bool initializeMemory)
 	memset(hdr, 0, sizeof(lhb));
 	hdr->mhb_type = SharedMemoryBase::SRAM_LOCK_MANAGER;
 	hdr->mhb_version = LHB_VERSION;
+	hdr->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
 
 	hdr->lhb_type = type_lhb;
 

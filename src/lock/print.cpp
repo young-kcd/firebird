@@ -85,6 +85,8 @@ struct waitque
 	SRQ_PTR waitque_entry[30];
 };
 
+using namespace Firebird;
+
 namespace
 {
 	class sh_mem : public Firebird::IpcObject
@@ -738,11 +740,20 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	// Print lock header block
 	prt_html_begin(outfile);
 
+	struct tm times;
+	TimeStamp(LOCK_header->mhb_timestamp).decode(&times);
+
 	FPRINTF(outfile, "LOCK_HEADER BLOCK\n");
+
 	FPRINTF(outfile,
-			"\tVersion: %d, Active owner: %s, Length: %6"SLONGFORMAT
-			", Used: %6"SLONGFORMAT"\n",
-			LOCK_header->mhb_version, (const TEXT*)HtmlLink(preOwn, LOCK_header->lhb_active_owner),
+			"\tVersion: %d, Creation timestamp: %04d-%02d-%02d %02d:%02d:%02d\n",
+			LOCK_header->mhb_version,
+			times.tm_year + 1900, times.tm_mon + 1, times.tm_mday,
+			times.tm_hour, times.tm_min, times.tm_sec);
+
+	FPRINTF(outfile,
+			"\tActive owner: %s, Length: %6"SLONGFORMAT", Used: %6"SLONGFORMAT"\n",
+			(const TEXT*)HtmlLink(preOwn, LOCK_header->lhb_active_owner),
 			LOCK_header->lhb_length, LOCK_header->lhb_used);
 
 	FPRINTF(outfile,

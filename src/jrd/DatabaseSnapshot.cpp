@@ -307,6 +307,7 @@ bool MonitoringData::initialize(SharedMemoryBase* sm, bool initialize)
 		// Initialize the shared data header
 		header->mhb_type = SharedMemoryBase::SRAM_DATABASE_SNAPSHOT;
 		header->mhb_version = MONITOR_VERSION;
+		header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
 
 		header->used = alignOffset(sizeof(Header));
 		header->allocated = sm->sh_mem_length_mapped;
