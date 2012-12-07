@@ -1,3 +1,29 @@
+ 2012-12-07 01:22  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-4006 - Using a result from a procedure in a substring expression leads to server crash.
+
+ 2012-12-06 14:51  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.h
+Front ported fix for CORE-3034 (Bugche?\209?\129k 300 (can't find shared latch))
+
+ 2012-12-06 12:09  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+Another bunch of changes for CORE-4004: Sometimes long-running operations cannot be interrupted by asynchronous shutdown / cancellation requests. The looper nodes should never ignore req_unwind and transform it to something else.
+Review and testing would be appreciated, especially in regard to EXE_assignment.
+
+ 2012-12-06 08:13  dimitr 
+   M src/common/isc_s_proto.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/event.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceLog.cpp
+   M src/lock/lock.cpp
+   M src/lock/print.cpp
+Added the initialization timestamp to shmem regions. Modified the lock print output to report this timestamp. This is useful to know as all the counters inside the lock table are incremental and a baseline is required to make any time-based estimations.
+
  2012-12-05 14:31  asfernandes 
    M src/dsql/Parser.h
    M src/dsql/parse.y
