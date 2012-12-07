@@ -5348,6 +5348,7 @@ void FieldNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	else
 	{
 		*desc = format->fmt_desc[fieldId];
+		desc->dsc_address = NULL;
 
 		// Fix UNICODE_FSS wrong length used in system tables.
 		jrd_rel* relation = csb->csb_rpt[fieldStream].csb_relation;
