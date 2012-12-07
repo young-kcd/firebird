@@ -1,3 +1,9 @@
+ 2012-12-06 11:43  dimitr 
+   M src/jrd/exe.cpp
+   M src/jrd/rse.cpp
+Another bunch of changes for CORE-4004: Sometimes long-running operations cannot be interrupted by asynchronous shutdown / cancellation requests. The looper nodes should never ignore req_unwind and transform it to something else.
+Review and testing would be appreciated, especially in regard to EXE_assignment.
+
  2012-12-04 10:28  hvlad 
    M src/jrd/cch.cpp
    M src/jrd/jrd.cpp
