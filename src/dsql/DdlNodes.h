@@ -214,13 +214,12 @@ class CommentOnNode : public DdlNode
 public:
 	CommentOnNode(MemoryPool& pool, int aObjType,
 				const Firebird::MetaName& aObjName, const Firebird::MetaName& aSubName,
-				const Firebird::string& aText, const char* aTextCharSet)
+				const IntlString* aText)
 		: DdlNode(pool),
 		  objType(aObjType),
 		  objName(pool, aObjName),
 		  subName(pool, aSubName),
-		  text(pool, aText),
-		  textCharSet(aTextCharSet)
+		  text(aText)
 	{
 	}
 
@@ -244,8 +243,7 @@ private:
 	int objType;
 	Firebird::MetaName objName;
 	Firebird::MetaName subName;
-	Firebird::string text;
-	const char* textCharSet;
+	const IntlString* text;
 };
 
 

@@ -2593,7 +2593,7 @@ named_param($execStatementNode)
 				$execStatementNode->inputNames = FB_NEW(getPool()) EDS::ParamNames(getPool());
 
 			$execStatementNode->inputNames->add(
-				FB_NEW(getPool()) string(getPool(), toString((dsql_str*) $1)));
+				FB_NEW(getPool()) string(getPool(), toString($1)));
 
 			if (!$execStatementNode->inputs)
 				$execStatementNode->inputs = newNode<ValueListNode>($3);
@@ -2812,13 +2812,13 @@ err($exceptionArray)
 		{
 			ExceptionItem& item = $exceptionArray->add();
 			item.type = ExceptionItem::GDS_CODE;
-			item.name = toName($2).c_str();
+			item.name = toString($2);
 		}
 	| EXCEPTION symbol_exception_name
 		{
 			ExceptionItem& item = $exceptionArray->add();
 			item.type = ExceptionItem::XCP_CODE;
-			item.name = toName($2).c_str();
+			item.name = toString($2);
 		}
 	| ANY
 		{
@@ -3453,11 +3453,11 @@ alter_sequence_clause
 	: symbol_generator_name RESTART WITH signed_long_integer
 		{ $$ = newNode<SetGeneratorNode>(toName($1), MAKE_const_slong($4)); }
 	| symbol_generator_name RESTART WITH NUMBER64BIT
-		{ $$ = newNode<SetGeneratorNode>(toName($1), MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)); }
+		{ $$ = newNode<SetGeneratorNode>(toName($1), MAKE_constant($4, CONSTANT_SINT64)); }
 	| symbol_generator_name RESTART WITH '-' NUMBER64BIT
 		{
 			$$ = newNode<SetGeneratorNode>(toName($1),
-				newNode<NegateNode>(MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)));
+				newNode<NegateNode>(MAKE_constant($5, CONSTANT_SINT64)));
 		}
 	;
 
@@ -3654,18 +3654,18 @@ domain_type
 	: KW_TYPE OF symbol_column_name
 		{
 			$$ = newNode<dsql_fld>();
-			$$->typeOfName = $3->str_data;
+			$$->typeOfName = toName($3);
 		}
 	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 		{
 			$$ = newNode<dsql_fld>();
-			$$->typeOfName = $6->str_data;
-			$$->typeOfTable = $4->str_data;
+			$$->typeOfName = toName($6);
+			$$->typeOfTable = toName($4);
 		}
 	| symbol_column_name
 		{
 			$$ = newNode<dsql_fld>();
-			$$->typeOfName = $1->str_data;
+			$$->typeOfName = toName($1);
 			$$->fullDomain = true;
 		}
 	;
@@ -3776,7 +3776,7 @@ non_charset_simple_type
 				$$->length = sizeof(GDS_TIMESTAMP);
 			}
 			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-				yyabandon (-104, isc_transitional_date);
+				yyabandon(-104, isc_transitional_date);
 			else
 			{
 				$$->dtype = dtype_sql_date;
@@ -4147,12 +4147,12 @@ set_generator
 	| SET GENERATOR symbol_generator_name TO NUMBER64BIT
 		{
 			$$ = newNode<SetGeneratorNode>(toName($3),
-				MAKE_constant((dsql_str*) $5, CONSTANT_SINT64));
+				MAKE_constant($5, CONSTANT_SINT64));
 		}
 	| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
 		{
 			$$ = newNode<SetGeneratorNode>(toName($3),
-				newNode<NegateNode>(MAKE_constant((dsql_str*) $6, CONSTANT_SINT64)));
+				newNode<NegateNode>(MAKE_constant($6, CONSTANT_SINT64)));
 		}
 	;
 
@@ -4375,20 +4375,11 @@ set_statistics
 %type <ddlNode> comment
 comment
 	: COMMENT ON ddl_type0 IS ddl_desc
-		{
-			$$ = newNode<CommentOnNode>($3,
-				"", "", ($5 ? toString($5) : ""), ($5 ? $5->str_charset : NULL));
-		}
+		{ $$ = newNode<CommentOnNode>($3, "", "", $5); }
 	| COMMENT ON ddl_type1 symbol_ddl_name IS ddl_desc
-		{
-			$$ = newNode<CommentOnNode>($3,
-				toName($4), "", ($6 ? toString($6) : ""), ($6 ? $6->str_charset : NULL));
-		}
+		{ $$ = newNode<CommentOnNode>($3, toName($4), "", $6); }
 	| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
-		{
-			$$ = newNode<CommentOnNode>($3,
-				toName($4), toName($5), ($7 ? toString($7) : ""), ($7 ? $7->str_charset : NULL));
-		}
+		{ $$ = newNode<CommentOnNode>($3, toName($4), toName($5), $7); }
 	;
 
 %type <intVal> ddl_type0
@@ -4438,10 +4429,10 @@ ddl_subname
 	: '.' symbol_ddl_name	{ $$ = $2; }
 	;
 
-%type <legacyStr> ddl_desc
+%type <intlStringPtr> ddl_desc
 ddl_desc
-    : sql_string
-	| KW_NULL		{ $$ = NULL; }
+    : sql_string	{ $$ = newNode<IntlString>($1); }
+	| KW_NULL		{ $$ = newNode<IntlString>((dsql_str*) NULL); }
 	;
 
 
@@ -4525,7 +4516,7 @@ with_item
 		{
 			$$ = $5;
 			$$->dsqlFlags |= RecordSourceNode::DFLAG_DERIVED;
-			$$->alias = toString((dsql_str*) $1);
+			$$->alias = toString($1);
 			$$->columns = $2;
 		}
 	;
@@ -4691,7 +4682,7 @@ derived_table
 		{
 			$$ = $2;
 			$$->dsqlFlags |= RecordSourceNode::DFLAG_DERIVED;
-			$$->alias = toString((dsql_str*) $5);
+			$$->alias = toString($5);
 			$$->columns = $6;
 		}
 	;
@@ -4796,7 +4787,7 @@ table_proc
 		{
 			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(QualifiedName(toName($1)));
 			node->sourceList = $2;
-			node->alias = toString((dsql_str*) $4);
+			node->alias = toString($4);
 			$$ = node;
 		}
 	| symbol_procedure_name table_proc_inputs
@@ -4810,7 +4801,7 @@ table_proc
 			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(
 				QualifiedName(toName($3), toName($1)));
 			node->sourceList = $4;
-			node->alias = toString((dsql_str*) $6);
+			node->alias = toString($6);
 			$$ = node;
 		}
 	| symbol_package_name '.' symbol_procedure_name table_proc_inputs
@@ -4834,7 +4825,7 @@ table_name
 	| symbol_table_name as_noise symbol_table_alias_name
 		{
 			RelationSourceNode* node = newNode<RelationSourceNode>(toName($1));
-			node->alias = toString((dsql_str*) $3);
+			node->alias = toString($3);
 			$$ = node;
 		}
 	;
@@ -5875,18 +5866,18 @@ constant
 
 %type <valueExprNode> u_numeric_constant
 u_numeric_constant
-	: NUMERIC			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
+	: NUMERIC			{ $$ = MAKE_constant($1, CONSTANT_STRING); }
 	| NUMBER			{ $$ = MAKE_const_slong($1); }
-	| FLOAT_NUMBER		{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_DOUBLE); }
-	| NUMBER64BIT		{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
-	| SCALEDINT			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
+	| FLOAT_NUMBER		{ $$ = MAKE_constant($1, CONSTANT_DOUBLE); }
+	| NUMBER64BIT		{ $$ = MAKE_constant($1, CONSTANT_SINT64); }
+	| SCALEDINT			{ $$ = MAKE_constant($1, CONSTANT_SINT64); }
 	;
 
 %type <valueExprNode> u_constant
 u_constant
 	: u_numeric_constant
 	| sql_string
-		{ $$ = MAKE_str_constant ($1, lex.att_charset); }
+		{ $$ = MAKE_str_constant($1, lex.att_charset); }
 	| DATE STRING
 		{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
@@ -5901,7 +5892,7 @@ u_constant
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
-			$$ = MAKE_constant ($2, CONSTANT_DATE);
+			$$ = MAKE_constant($2, CONSTANT_DATE);
 		}
 	| TIME STRING
 		{
@@ -5917,10 +5908,10 @@ u_constant
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
-			$$ = MAKE_constant ($2, CONSTANT_TIME);
+			$$ = MAKE_constant($2, CONSTANT_TIME);
 		}
 	| TIMESTAMP STRING
-		{ $$ = MAKE_constant ($2, CONSTANT_TIMESTAMP); }
+		{ $$ = MAKE_constant($2, CONSTANT_TIMESTAMP); }
 		;
 
 %type <valueExprNode> boolean_literal

@@ -1019,14 +1019,14 @@ void CommentOnNode::print(string& text) const
 		"  objType: %s\n"
 		"  objName: %s\n"
 		"  text: %s\n",
-		objType, objName.c_str(), text.c_str());
+		objType, objName.c_str(), this->text->getString().c_str());
 }
 
 // select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
 // gives the list of objects that accept descriptions. At FB2 time, the only
 // subobjects with descriptions are relation's fields and procedure's parameters.
 // In FB3 we added function's arguments.
-void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/,
+void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->tra_attachment;
@@ -1225,8 +1225,8 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*
 	}
 
 	Nullable<string> description;
-	if (!text.isEmpty())
-		description = attachment->stringToMetaCharSet(tdbb, text, textCharSet);
+	if (!text->isEmpty())
+		description = text->toUtf8(dsqlScratch);
 
 	PreparedStatement::Builder sql;
 	sql << "update" << tableClause << "set rdb$description =" << description;

@@ -879,16 +879,26 @@ class IntlString
 {
 public:
 	explicit IntlString(const dsql_str* str)
-		: charset(str->str_charset ? str->str_charset : ""),
-		  s(str->str_data, str->str_length)
+		: charset(str && str->str_charset ? str->str_charset : ""),
+		  s((str ? str->str_data : NULL), (str ? str->str_length : 0))
 	{ }
 
 	IntlString(Firebird::MemoryPool& p, const dsql_str* str)
-		: charset(p, str->str_charset ? str->str_charset : ""),
-		  s(p, str->str_data, str->str_length)
+		: charset(p, str && str->str_charset ? str->str_charset : ""),
+		  s(p, (str ? str->str_data : NULL), (str ? str->str_length : 0))
 	{ }
 
 	Firebird::string toUtf8(DsqlCompilerScratch*) const;
+
+	const Firebird::MetaName& getCharSet() const
+	{
+		return charset;
+	}
+
+	const Firebird::string& getString() const
+	{
+		return s;
+	}
 
 	bool hasData() const
 	{
