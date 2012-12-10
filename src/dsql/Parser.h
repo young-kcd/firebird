@@ -35,7 +35,6 @@
 #include "../common/classes/Nullable.h"
 #include "../common/classes/stack.h"
 
-#define _yacc_defines_keywords
 #include "gen/parse.h"
 
 namespace Jrd {
@@ -117,6 +116,9 @@ private:
 	};
 
 public:
+	static const int MAX_TOKEN_LEN = 256;
+
+public:
 	Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
 		const TEXT* string, size_t length, SSHORT characterSet);
 	~Parser();
@@ -192,7 +194,27 @@ private:
 		return static_cast<T*>(node);
 	}
 
+	void yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* termVals,
+		int termNo, int stkPos, int yychar, YYPOSN& yyposn, void*);
+
+	int yylex();
+	int yylexAux();
+
+	void yyerror(const TEXT* error_string);
+	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
+
+	void check_bound(const char* const to, const char* const string);
+	void check_copy_incr(char*& to, const char ch, const char* const string);
+
+	void yyabandon(SLONG, ISC_STATUS);
+
+	Firebird::MetaName toName(dsql_str* str);
+	Firebird::PathName toPathName(dsql_str* str);
+	Firebird::string toString(dsql_str* str);
+
 	void transformString(const char* start, unsigned length, Firebird::string& dest);
+	dsql_str* makeParseStr(const Position& p1, const Position& p2);
+	ParameterNode* make_parameter();
 
 	// Set the value of a clause, checking if it was already specified.
 
@@ -276,21 +298,6 @@ private:
 	int yylex1();
 	int yyexpand();
 // end - defined in btyacc_fb.ske
-
-// start - defined in parse.y
-private:
-	void yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* termVals,
-		int termNo, int stkPos, int yychar, YYPOSN& yyposn, void*);
-
-	int yylex();
-	int yylexAux();
-
-	void yyerror(const TEXT* error_string);
-	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
-
-	dsql_str* makeParseStr(const Position& p1, const Position& p2);
-	ParameterNode* make_parameter();
-// end - defined in parse.y
 
 private:
 	Firebird::string compilingText;
