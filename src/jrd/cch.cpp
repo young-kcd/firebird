@@ -2524,6 +2524,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 	{
 		page = (pag*) spare_buffer.getBuffer(dbb->dbb_page_size);
 		memcpy(page, bdb->bdb_buffer, HDR_SIZE);
+		memset((UCHAR*) page + HDR_SIZE, 0, dbb->dbb_page_size - HDR_SIZE);
 		old_buffer = bdb->bdb_buffer;
 		bdb->bdb_buffer = page;
 	}
