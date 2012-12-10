@@ -136,7 +136,6 @@ const int MAX_TOKEN_LEN = 256;
 using namespace Jrd;
 using namespace Firebird;
 
-static dsql_fld* make_field(FieldNode*);
 static Firebird::MetaName toName(dsql_str* str);
 static Firebird::PathName toPathName(dsql_str* str);
 static Firebird::string toString(dsql_str* str);
@@ -1040,14 +1039,20 @@ udf_decl_clause
 			}
 	;
 
+%type <legacyField> udf_data_type
 udf_data_type
 	: simple_type
 	| BLOB
-		{ lex.g_field->dtype = dtype_blob; }
+		{
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_blob;
+		}
 	| CSTRING '(' pos_short_integer ')' charset_clause
 		{
-			lex.g_field->dtype = dtype_cstring;
-			lex.g_field->charLength = (USHORT) $3;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_cstring;
+			$$->charLength = (USHORT) $3;
+			$$->charSet = toString($5);
 		}
 	;
 
@@ -1066,10 +1071,10 @@ arg_desc_list($parameters)
 
 %type arg_desc(<parametersClause>)
 arg_desc($parameters)
-	: init_data_type udf_data_type param_mechanism
+	: udf_data_type param_mechanism
 		{
 			$parameters->add(newNode<ParameterClause>($1, MetaName()));
-			$parameters->back()->udfMechanism = $3;
+			$parameters->back()->udfMechanism = $2;
 		}
 	;
 
@@ -1089,10 +1094,10 @@ return_value1($function)
 
 %type return_value(<createAlterFunctionNode>)
 return_value($function)
-	: init_data_type udf_data_type return_mechanism
+	: udf_data_type return_mechanism
 		{
 			$function->returnType = newNode<ParameterClause>($1, MetaName());
-			$function->returnType->udfMechanism = $3;
+			$function->returnType->udfMechanism = $2;
 		}
 	| PARAMETER pos_short_integer
 		{ $function->udfReturnPos = $2; }
@@ -1337,10 +1342,11 @@ db_file_list($dbFilesClause)
 
 %type <createDomainNode> domain_clause
 domain_clause
-	: column_def_name as_opt data_type domain_default_opt
+	: symbol_column_name as_opt data_type domain_default_opt
 			{
+				$3->fld_name = toName($1);
 				$<createDomainNode>$ = newNode<CreateDomainNode>(
-					newNode<ParameterClause>((dsql_fld*) $1, MetaName(), $4));
+					newNode<ParameterClause>($3, MetaName(), $4));
 			}
 		domain_constraints_opt($5) collate_clause
 			{
@@ -1690,40 +1696,45 @@ table_element($createRelationNode)
 
 %type column_def(<relationNode>)
 column_def($relationNode)
-	: column_def_name data_type_or_domain domain_default_opt
+	: symbol_column_name data_type_or_domain domain_default_opt
 			{
 				RelationNode::AddColumnClause* clause = $<addColumnClause>$ =
 					newNode<RelationNode::AddColumnClause>();
-				clause->field = $1;
+				clause->field = $2;
+				clause->field->fld_name = toName($1);
 				clause->defaultValue = $3;
-				clause->domain = toName($2);
 				$relationNode->clauses.add(clause);
 			}
 		column_constraint_clause(NOTRIAL($<addColumnClause>4)) collate_clause
 			{ $<addColumnClause>4->collate = toName($6); }
-	| column_def_name data_type_or_domain identity_clause
+	| symbol_column_name data_type_or_domain identity_clause
 			{
 				RelationNode::AddColumnClause* clause = $<addColumnClause>$ =
 					newNode<RelationNode::AddColumnClause>();
-				clause->field = $1;
+				clause->field = $2;
+				clause->field->fld_name = toName($1);
 				clause->identity = true;
 				$relationNode->clauses.add(clause);
 			}
 		column_constraint_clause(NOTRIAL($<addColumnClause>4)) collate_clause
 			{ $<addColumnClause>4->collate = toName($6); }
-	| column_def_name non_array_type def_computed
+	| symbol_column_name non_array_type def_computed
 		{
 			RelationNode::AddColumnClause* clause = newNode<RelationNode::AddColumnClause>();
-			clause->field = $1;
+			clause->field = $2;
+			clause->field->fld_name = toName($1);
 			clause->computed = $3;
 			$relationNode->clauses.add(clause);
+			clause->field->flags |= FLD_computed;
 		}
-	| column_def_name def_computed
+	| symbol_column_name def_computed
 		{
 			RelationNode::AddColumnClause* clause = newNode<RelationNode::AddColumnClause>();
-			clause->field = $1;
+			clause->field = newNode<dsql_fld>();
+			clause->field->fld_name = toName($1);
 			clause->computed = $2;
 			$relationNode->clauses.add(clause);
+			clause->field->flags |= FLD_computed;
 		}
 	;
 
@@ -1737,7 +1748,6 @@ identity_clause
 def_computed
 	: computed_clause '(' value ')'
 		{
-			lex.g_field->flags |= FLD_computed;
 			ValueSourceClause* clause = newNode<ValueSourceClause>();
 			clause->value = $3;
 			clause->source = toString(makeParseStr(YYPOSNARG(2), YYPOSNARG(4)));
@@ -1759,10 +1769,14 @@ computed_by
 	| COMPUTED
 	;
 
-%type <legacyStr> data_type_or_domain
+%type <legacyField> data_type_or_domain
 data_type_or_domain
-	: data_type				{ $$ = NULL; }
+	: data_type
 	| symbol_column_name
+		{
+			$$ = newNode<dsql_fld>();
+			$$->typeOfName = toName($1);
+		}
 	;
 
 %type <legacyStr> collate_clause
@@ -1772,55 +1786,25 @@ collate_clause
 	;
 
 
-%type <legacyField> column_def_name
-column_def_name
-	: simple_column_name
-		{
-			lex.g_field = make_field ($1);
-			$$ = lex.g_field;
-		}
-	;
-
-%type <legacyField> simple_column_def_name
-simple_column_def_name
-	: simple_column_name
-		{
-			lex.g_field = make_field ($1);
-			$$ = lex.g_field;
-		}
-	;
-
-
 %type <legacyField> data_type_descriptor
 data_type_descriptor
-	: init_data_type data_type
-		{ $$ = $1; }
-	| KW_TYPE OF column_def_name
+	: data_type
+	| KW_TYPE OF symbol_column_name
 		{
-			$3->typeOfName = $3->fld_name;
-			$$ = $3;
+			$$ = newNode<dsql_fld>();
+			$$->typeOfName = toName($3);
 		}
 	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 		{
-			lex.g_field = make_field(NULL);
-			lex.g_field->typeOfTable = ((dsql_str*) $4)->str_data;
-			lex.g_field->typeOfName = ((dsql_str*) $6)->str_data;
-			$$ = lex.g_field;
+			$$ = newNode<dsql_fld>();
+			$$->typeOfTable = $4->str_data;
+			$$->typeOfName = $6->str_data;
 		}
-	| column_def_name
+	| symbol_column_name
 		{
-			$1->typeOfName = $1->fld_name;
-			$1->fullDomain = true;
-			$$ = $1;
-		}
-	;
-
-%type <legacyField> init_data_type
-init_data_type
-	:
-		{
-			lex.g_field = make_field(NULL);
-			$$ = lex.g_field;
+			$$ = newNode<dsql_fld>();
+			$$->typeOfName = toName($1);
+			$$->fullDomain = true;
 		}
 	;
 
@@ -2102,8 +2086,8 @@ input_proc_parameters($parameters)
 
 %type input_proc_parameter(<parametersClause>)
 input_proc_parameter($parameters)
-	: simple_column_def_name domain_or_non_array_type collate_clause default_par_opt
-		{ $parameters->add(newNode<ParameterClause>($1, toName($3), $4)); }
+	: column_domain_or_non_array_type collate_clause default_par_opt
+		{ $parameters->add(newNode<ParameterClause>($1, toName($2), $3)); }
 	;
 
 %type output_proc_parameters(<parametersClause>)
@@ -2114,8 +2098,17 @@ output_proc_parameters($parameters)
 
 %type output_proc_parameter(<parametersClause>)
 output_proc_parameter($parameters)
-	: simple_column_def_name domain_or_non_array_type collate_clause
-		{ $parameters->add(newNode<ParameterClause>($1, toName($3))); }
+	: column_domain_or_non_array_type collate_clause
+		{ $parameters->add(newNode<ParameterClause>($1, toName($2))); }
+	;
+
+%type <legacyField> column_domain_or_non_array_type
+column_domain_or_non_array_type
+	: symbol_column_name domain_or_non_array_type
+		{
+			$$ = $2;
+			$$->fld_name = toName($1);
+		}
 	;
 
 %type <valueSourceClause> default_par_opt
@@ -2164,12 +2157,11 @@ function_clause_start
 	: symbol_UDF_name
 			{ $$ = newNode<CreateAlterFunctionNode>(toName($1)); }
 		input_parameters(NOTRIAL(&$2->parameters))
-		RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
-		domain_or_non_array_type collate_clause deterministic_opt
+		RETURNS domain_or_non_array_type collate_clause deterministic_opt
 			{
 				$$ = $2;
-				$$->returnType = newNode<ParameterClause>($<legacyField>5, toName($7));
-				$$->deterministic = $8;
+				$$->returnType = newNode<ParameterClause>($5, toName($6));
+				$$->deterministic = $7;
 			}
 	;
 
@@ -2384,21 +2376,20 @@ local_declaration
 	| DECLARE FUNCTION symbol_UDF_name
 			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
 			input_parameters(NOTRIAL(&$<execBlockNode>4->parameters))
-			RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
-			domain_or_non_array_type collate_clause deterministic_opt AS
+			RETURNS domain_or_non_array_type collate_clause deterministic_opt AS
 			local_declaration_list
 			full_proc_block
 		{
 			DeclareSubFuncNode* node = newNode<DeclareSubFuncNode>(toName($3));
-			node->dsqlDeterministic = $10;
+			node->dsqlDeterministic = $9;
 			node->dsqlBlock = $<execBlockNode>4;
-			node->dsqlBlock->localDeclList = $12;
-			node->dsqlBlock->body = $13;
+			node->dsqlBlock->localDeclList = $11;
+			node->dsqlBlock->body = $12;
 
 			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
 				node->dsqlBlock->parameters[i]->parameterExpr = make_parameter();
 
-			node->dsqlBlock->returns.add(newNode<ParameterClause>($<legacyField>7, toName($9)));
+			node->dsqlBlock->returns.add(newNode<ParameterClause>($<legacyField>7, toName($8)));
 
 			$$ = node;
 		}
@@ -2412,10 +2403,10 @@ local_declaration_item
 
 %type <stmtNode> var_declaration_item
 var_declaration_item
-	: column_def_name domain_or_non_array_type collate_clause default_par_opt
+	: column_domain_or_non_array_type collate_clause default_par_opt
 		{
 			DeclareVariableNode* node = newNode<DeclareVariableNode>();
-			node->dsqlDef = newNode<ParameterClause>($1, toName($3), $4);
+			node->dsqlDef = newNode<ParameterClause>($1, toName($2), $3);
 			$$ = node;
 		}
 	;
@@ -2969,8 +2960,8 @@ block_parameters($parameters)
 
 %type block_parameter(<parametersClause>)
 block_parameter($parameters)
-	: simple_column_def_name domain_or_non_array_type collate_clause '=' parameter
-		{ $parameters->add(newNode<ParameterClause>($1, toName($3), (ValueSourceClause*) NULL, $5)); }
+	: column_domain_or_non_array_type collate_clause '=' parameter
+		{ $parameters->add(newNode<ParameterClause>($1, toName($2), (ValueSourceClause*) NULL, $4)); }
 	;
 
 // CREATE VIEW
@@ -3279,7 +3270,7 @@ alter_domain_op($alterDomainNode)
 		{ setClause($alterDomainNode->notNullFlag, "[NOT] NULL", true); }
 	| TO symbol_column_name
 		{ setClause($alterDomainNode->renameTo, "DOMAIN NAME", toName($2)); }
-	| KW_TYPE init_data_type non_array_type
+	| KW_TYPE non_array_type
 		{
 			//// FIXME: ALTER DOMAIN doesn't support collations, and altered domain's
 			//// collation is always lost.
@@ -3340,38 +3331,44 @@ alter_op($relationNode)
 			clause->notNullFlag = true;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt alter_col_name KW_TYPE alter_data_type_or_domain
+	| col_opt symbol_column_name KW_TYPE alter_data_type_or_domain
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = $2;
-			clause->domain = toName($4);
+			clause->field = $4;
+			clause->field->fld_name = toName($2);
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt alter_col_name KW_TYPE non_array_type def_computed
+	| col_opt symbol_column_name KW_TYPE non_array_type def_computed
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = $2;
+			clause->field = newNode<dsql_fld>();
+			clause->field->fld_name = toName($2);
 			clause->computed = $5;
 			$relationNode->clauses.add(clause);
+			clause->field->flags |= FLD_computed;
 		}
-	| col_opt alter_col_name def_computed
+	| col_opt symbol_column_name def_computed
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = $2;
+			clause->field = newNode<dsql_fld>();
+			clause->field->fld_name = toName($2);
 			clause->computed = $3;
 			$relationNode->clauses.add(clause);
+			clause->field->flags |= FLD_computed;
 		}
-	| col_opt alter_col_name SET domain_default
+	| col_opt symbol_column_name SET domain_default
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = $2;
+			clause->field = newNode<dsql_fld>();
+			clause->field->fld_name = toName($2);
 			clause->defaultValue = $4;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt alter_col_name DROP DEFAULT
+	| col_opt symbol_column_name DROP DEFAULT
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = $2;
+			clause->field = newNode<dsql_fld>();
+			clause->field->fld_name = toName($2);
 			clause->dropDefault = true;
 			$relationNode->clauses.add(clause);
 		}
@@ -3448,18 +3445,13 @@ col_opt
 	| ALTER COLUMN
 	;
 
-%type <legacyStr> alter_data_type_or_domain
+%type <legacyField> alter_data_type_or_domain
 alter_data_type_or_domain
-	: non_array_type		{ $$ = NULL; }
+	: non_array_type
 	| symbol_column_name
-	;
-
-%type <legacyField> alter_col_name
-alter_col_name
-	: simple_column_name
 		{
-			lex.g_field = make_field ($1);
-			$$ = lex.g_field;
+			$$ = newNode<dsql_fld>();
+			$$->typeOfName = toName($1);
 		}
 	;
 
@@ -3655,54 +3647,71 @@ drop_clause
 
 // these are the allowable datatypes
 
+%type <legacyField> data_type
 data_type
 	: non_array_type
 	| array_type
 	;
 
+%type <legacyField> domain_or_non_array_type
 domain_or_non_array_type
 	: domain_or_non_array_type_name
 	| domain_or_non_array_type_name NOT KW_NULL
-		{ lex.g_field->notNull = true; }
+		{
+			$$ = $1;
+			$$->notNull = true;
+		}
 	;
 
+%type <legacyField> domain_or_non_array_type_name
 domain_or_non_array_type_name
 	: non_array_type
 	| domain_type
 	;
 
+%type <legacyField> domain_type
 domain_type
 	: KW_TYPE OF symbol_column_name
-		{ lex.g_field->typeOfName = ((dsql_str*) $3)->str_data; }
+		{
+			$$ = newNode<dsql_fld>();
+			$$->typeOfName = $3->str_data;
+		}
 	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 		{
-			lex.g_field->typeOfName = ((dsql_str*) $6)->str_data;
-			lex.g_field->typeOfTable = ((dsql_str*) $4)->str_data;
+			$$ = newNode<dsql_fld>();
+			$$->typeOfName = $6->str_data;
+			$$->typeOfTable = $4->str_data;
 		}
 	| symbol_column_name
 		{
-			lex.g_field->typeOfName = ((dsql_str*) $1)->str_data;
-			lex.g_field->fullDomain = true;
+			$$ = newNode<dsql_fld>();
+			$$->typeOfName = $1->str_data;
+			$$->fullDomain = true;
 		}
 	;
 
+%type <legacyField> non_array_type
 non_array_type
 	: simple_type
 	| blob_type
 	;
 
+%type <legacyField> array_type
 array_type
 	: non_charset_simple_type '[' array_spec ']'
 		{
-			lex.g_field->ranges = $3;
-			lex.g_field->dimensions = lex.g_field->ranges->items.getCount() / 2;
-			lex.g_field->elementDtype = lex.g_field->dtype;
+			$1->ranges = $3;
+			$1->dimensions = $1->ranges->items.getCount() / 2;
+			$1->elementDtype = $1->dtype;
+			$$ = $1;
 		}
 	| character_type '[' array_spec ']' charset_clause
 		{
-			lex.g_field->ranges = $3;
-			lex.g_field->dimensions = lex.g_field->ranges->items.getCount() / 2;
-			lex.g_field->elementDtype = lex.g_field->dtype;
+			$1->ranges = $3;
+			$1->dimensions = $1->ranges->items.getCount() / 2;
+			$1->elementDtype = $1->dtype;
+			$1->charSet = toString($5);
+			$$ = $1;
 		}
 	;
 
@@ -3725,63 +3734,79 @@ array_range
  		{ $$ = newNode<ValueListNode>(MAKE_const_slong($1))->add(MAKE_const_slong($3)); }
 	;
 
+%type <legacyField> simple_type
 simple_type
 	: non_charset_simple_type
 	| character_type charset_clause
+		{
+			$$ = $1;
+			$$->charSet = toString($2);
+		}
 	;
 
+%type <legacyField> non_charset_simple_type
 non_charset_simple_type
 	: national_character_type
 	| numeric_type
 	| float_type
 	| BIGINT
 		{
+			$$ = newNode<dsql_fld>();
+
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 																	Arg::Str("BIGINT"));
 			}
+
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 																Arg::Str("BIGINT"));
 			}
-			lex.g_field->dtype = dtype_int64;
-			lex.g_field->length = sizeof(SINT64);
+
+			$$->dtype = dtype_int64;
+			$$->length = sizeof(SINT64);
 		}
 	| integer_keyword
 		{
-			lex.g_field->dtype = dtype_long;
-			lex.g_field->length = sizeof(SLONG);
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_long;
+			$$->length = sizeof(SLONG);
 		}
 	| SMALLINT
 		{
-			lex.g_field->dtype = dtype_short;
-			lex.g_field->length = sizeof(SSHORT);
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_short;
+			$$->length = sizeof(SSHORT);
 		}
 	| DATE
 		{
+			$$ = newNode<dsql_fld>();
 			stmt_ambiguous = true;
+
 			if (client_dialect <= SQL_DIALECT_V5)
 			{
 				// Post warning saying that DATE is equivalent to TIMESTAMP
 				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(301) <<
 								  Arg::Warning(isc_dtype_renamed));
-				lex.g_field->dtype = dtype_timestamp;
-				lex.g_field->length = sizeof(GDS_TIMESTAMP);
+				$$->dtype = dtype_timestamp;
+				$$->length = sizeof(GDS_TIMESTAMP);
 			}
 			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 				yyabandon (-104, isc_transitional_date);
 			else
 			{
-				lex.g_field->dtype = dtype_sql_date;
-				lex.g_field->length = sizeof(ULONG);
+				$$->dtype = dtype_sql_date;
+				$$->length = sizeof(ULONG);
 			}
 		}
 	| TIME
 		{
+			$$ = newNode<dsql_fld>();
+
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -3794,18 +3819,20 @@ non_charset_simple_type
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 																		  Arg::Str("TIME"));
 			}
-			lex.g_field->dtype = dtype_sql_time;
-			lex.g_field->length = sizeof(SLONG);
+			$$->dtype = dtype_sql_time;
+			$$->length = sizeof(SLONG);
 		}
 	| TIMESTAMP
 		{
-			lex.g_field->dtype = dtype_timestamp;
-			lex.g_field->length = sizeof(GDS_TIMESTAMP);
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_timestamp;
+			$$->length = sizeof(GDS_TIMESTAMP);
 		}
 	| KW_BOOLEAN
 		{
-			lex.g_field->dtype = dtype_boolean;
-			lex.g_field->length = sizeof(UCHAR);
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_boolean;
+			$$->length = sizeof(UCHAR);
 		}
 	;
 
@@ -3817,96 +3844,112 @@ integer_keyword
 
 // allow a blob to be specified with any combination of segment length and subtype
 
+%type <legacyField> blob_type
 blob_type
-	: BLOB blob_subtype blob_segsize charset_clause
+	: BLOB { $$ = newNode<dsql_fld>(); } blob_subtype(NOTRIAL($2)) blob_segsize charset_clause
 		{
-			lex.g_field->dtype = dtype_blob;
-			lex.g_field->length = sizeof(ISC_QUAD);
+			$$ = $2;
+			$$->dtype = dtype_blob;
+			$$->length = sizeof(ISC_QUAD);
+			$$->segLength = $4;
+			$$->charSet = toString($5);
 		}
 	| BLOB '(' unsigned_short_integer ')'
 		{
-			lex.g_field->dtype = dtype_blob;
-			lex.g_field->length = sizeof(ISC_QUAD);
-			lex.g_field->segLength = (USHORT) $3;
-			lex.g_field->subType = 0;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_blob;
+			$$->length = sizeof(ISC_QUAD);
+			$$->segLength = (USHORT) $3;
+			$$->subType = 0;
 		}
 	| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
 		{
-			lex.g_field->dtype = dtype_blob;
-			lex.g_field->length = sizeof(ISC_QUAD);
-			lex.g_field->segLength = (USHORT) $3;
-			lex.g_field->subType = (USHORT) $5;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_blob;
+			$$->length = sizeof(ISC_QUAD);
+			$$->segLength = (USHORT) $3;
+			$$->subType = (USHORT) $5;
 		}
 	| BLOB '(' ',' signed_short_integer ')'
 		{
-			lex.g_field->dtype = dtype_blob;
-			lex.g_field->length = sizeof(ISC_QUAD);
-			lex.g_field->segLength = 80;
-			lex.g_field->subType = (USHORT) $4;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_blob;
+			$$->length = sizeof(ISC_QUAD);
+			$$->segLength = 80;
+			$$->subType = (USHORT) $4;
 		}
 	;
 
+%type <uintVal> blob_segsize
 blob_segsize
-	: // nothing
-		{ lex.g_field->segLength = (USHORT) 80; }
-	| SEGMENT KW_SIZE unsigned_short_integer
-		{ lex.g_field->segLength = (USHORT) $3; }
+	: /* nothing */								{ $$ = (USHORT) 80; }
+	| SEGMENT KW_SIZE unsigned_short_integer	{ $$ = (USHORT) $3; }
 	;
 
-blob_subtype
+%type blob_subtype(<legacyField>)
+blob_subtype($field)
 	: // nothing
-		{ lex.g_field->subType = (USHORT) 0; }
+		{ $field->subType = (USHORT) 0; }
 	| SUB_TYPE signed_short_integer
-		{ lex.g_field->subType = (USHORT) $2; }
+		{ $field->subType = (USHORT) $2; }
 	| SUB_TYPE symbol_blob_subtype_name
-		{ lex.g_field->subTypeName = toName($2); }
+		{ $field->subTypeName = toName($2); }
 	;
 
+%type <legacyStr> charset_clause
 charset_clause
-	: // nothing
-	| CHARACTER SET symbol_character_set_name	{ lex.g_field->charSet = toString($3); }
+	: /* nothing */								{ $$ = NULL; }
+	| CHARACTER SET symbol_character_set_name	{ $$ = $3; }
 	;
 
 
 // character type
 
 
+%type <legacyField> national_character_type
 national_character_type
 	: national_character_keyword '(' pos_short_integer ')'
 		{
-			lex.g_field->dtype = dtype_text;
-			lex.g_field->charLength = (USHORT) $3;
-			lex.g_field->flags |= FLD_national;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_text;
+			$$->charLength = (USHORT) $3;
+			$$->flags |= FLD_national;
 		}
 	| national_character_keyword
 		{
-			lex.g_field->dtype = dtype_text;
-			lex.g_field->charLength = 1;
-			lex.g_field->flags |= FLD_national;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_text;
+			$$->charLength = 1;
+			$$->flags |= FLD_national;
 		}
 	| national_character_keyword VARYING '(' pos_short_integer ')'
 		{
-			lex.g_field->dtype = dtype_varying;
-			lex.g_field->charLength = (USHORT) $4;
-			lex.g_field->flags |= FLD_national;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_varying;
+			$$->charLength = (USHORT) $4;
+			$$->flags |= FLD_national;
 		}
 	;
 
+%type <legacyField> character_type
 character_type
 	: character_keyword '(' pos_short_integer ')'
 		{
-			lex.g_field->dtype = dtype_text;
-			lex.g_field->charLength = (USHORT) $3;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_text;
+			$$->charLength = (USHORT) $3;
 		}
 	| character_keyword
 		{
-			lex.g_field->dtype = dtype_text;
-			lex.g_field->charLength = 1;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_text;
+			$$->charLength = 1;
 		}
 	| varying_keyword '(' pos_short_integer ')'
 		{
-			lex.g_field->dtype = dtype_varying;
-			lex.g_field->charLength = (USHORT) $3;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_varying;
+			$$->charLength = (USHORT) $3;
 		}
 	;
 
@@ -3930,31 +3973,42 @@ national_character_keyword
 
 // numeric type
 
+%type <legacyField> numeric_type
 numeric_type
 	: KW_NUMERIC prec_scale
-		{ lex.g_field->subType = dsc_num_type_numeric; }
+		{
+			$$ = $2;
+			$$->subType = dsc_num_type_numeric;
+		}
 	| decimal_keyword prec_scale
 		{
-			lex.g_field->subType = dsc_num_type_decimal;
-			if (lex.g_field->dtype == dtype_short)
+			$$ = $2;
+			$$->subType = dsc_num_type_decimal;
+
+			if ($$->dtype == dtype_short)
 			{
-				lex.g_field->dtype = dtype_long;
-				lex.g_field->length = sizeof(SLONG);
+				$$->dtype = dtype_long;
+				$$->length = sizeof(SLONG);
 			}
 		}
 	;
 
+%type <legacyField> prec_scale
 prec_scale
 	: // nothing
 		{
-			lex.g_field->dtype = dtype_long;
-			lex.g_field->length = sizeof(SLONG);
-			lex.g_field->precision = 9;
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_long;
+			$$->length = sizeof(SLONG);
+			$$->precision = 9;
 		}
 	| '(' signed_long_integer ')'
 		{
+			$$ = newNode<dsql_fld>();
+
 			if ($2 < 1 || $2 > 18)
 				yyabandon(-842, isc_precision_err);	// Precision must be between 1 and 18.
+
 			if ($2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
@@ -3963,10 +4017,11 @@ prec_scale
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
 							  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
 				}
+
 				if (client_dialect <= SQL_DIALECT_V5)
 				{
-					lex.g_field->dtype = dtype_double;
-					lex.g_field->length = sizeof(double);
+					$$->dtype = dtype_double;
+					$$->length = sizeof(double);
 				}
 				else
 				{
@@ -3976,31 +4031,37 @@ prec_scale
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
 					}
-					lex.g_field->dtype = dtype_int64;
-					lex.g_field->length = sizeof(SINT64);
+
+					$$->dtype = dtype_int64;
+					$$->length = sizeof(SINT64);
 				}
 			}
 			else
 			{
 				if ($2 < 5)
 				{
-					lex.g_field->dtype = dtype_short;
-					lex.g_field->length = sizeof(SSHORT);
+					$$->dtype = dtype_short;
+					$$->length = sizeof(SSHORT);
 				}
 				else
 				{
-					lex.g_field->dtype = dtype_long;
-					lex.g_field->length = sizeof(SLONG);
+					$$->dtype = dtype_long;
+					$$->length = sizeof(SLONG);
 				}
 			}
-			lex.g_field->precision = (USHORT) $2;
+
+			$$->precision = (USHORT) $2;
 		}
 	| '(' signed_long_integer ',' signed_long_integer ')'
 		{
+			$$ = newNode<dsql_fld>();
+
 			if ($2 < 1 || $2 > 18)
 				yyabandon (-842, isc_precision_err);	// Precision should be between 1 and 18
+
 			if ($4 > $2 || $4 < 0)
 				yyabandon (-842, isc_scale_nogt);	// Scale must be between 0 and precision
+
 			if ($2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
@@ -4009,10 +4070,11 @@ prec_scale
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
 							  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
 				}
+
 				if (client_dialect <= SQL_DIALECT_V5)
 				{
-					lex.g_field->dtype = dtype_double;
-					lex.g_field->length = sizeof(double);
+					$$->dtype = dtype_double;
+					$$->length = sizeof(double);
 				}
 				else
 				{
@@ -4023,25 +4085,26 @@ prec_scale
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
 					}
 					// client_dialect >= SQL_DIALECT_V6
-					lex.g_field->dtype = dtype_int64;
-					lex.g_field->length = sizeof(SINT64);
+					$$->dtype = dtype_int64;
+					$$->length = sizeof(SINT64);
 				}
 			}
 			else
 			{
 				if ($2 < 5)
 				{
-					lex.g_field->dtype = dtype_short;
-					lex.g_field->length = sizeof(SSHORT);
+					$$->dtype = dtype_short;
+					$$->length = sizeof(SSHORT);
 				}
 				else
 				{
-					lex.g_field->dtype = dtype_long;
-					lex.g_field->length = sizeof(SLONG);
+					$$->dtype = dtype_long;
+					$$->length = sizeof(SLONG);
 				}
 			}
-			lex.g_field->precision = (USHORT) $2;
-			lex.g_field->scale = - (SSHORT) $4;
+
+			$$->precision = (USHORT) $2;
+			$$->scale = - (SSHORT) $4;
 		}
 	;
 
@@ -4053,34 +4116,40 @@ decimal_keyword
 
 // floating point type
 
+%type <legacyField> float_type
 float_type
 	: KW_FLOAT precision_opt
 		{
+			$$ = newNode<dsql_fld>();
+
 			if ($2 > 7)
 			{
-				lex.g_field->dtype = dtype_double;
-				lex.g_field->length = sizeof(double);
+				$$->dtype = dtype_double;
+				$$->length = sizeof(double);
 			}
 			else
 			{
-				lex.g_field->dtype = dtype_real;
-				lex.g_field->length = sizeof(float);
+				$$->dtype = dtype_real;
+				$$->length = sizeof(float);
 			}
 		}
 	| KW_LONG KW_FLOAT precision_opt
 		{
-			lex.g_field->dtype = dtype_double;
-			lex.g_field->length = sizeof(double);
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_double;
+			$$->length = sizeof(double);
 		}
 	| REAL
 		{
-			lex.g_field->dtype = dtype_real;
-			lex.g_field->length = sizeof(float);
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_real;
+			$$->length = sizeof(float);
 		}
 	| KW_DOUBLE PRECISION
 		{
-			lex.g_field->dtype = dtype_double;
-			lex.g_field->length = sizeof(double);
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_double;
+			$$->length = sizeof(double);
 		}
 	;
 
@@ -6513,7 +6582,7 @@ null_value
 		{ $$ = newNode<NullNode>(); }
 	| UNKNOWN
 		{
-			dsql_fld* field = make_field(NULL);
+			dsql_fld* field = newNode<dsql_fld>();
 			field->dtype = dtype_boolean;
 			field->length = sizeof(UCHAR);
 
@@ -6954,35 +7023,6 @@ dsql_str* Parser::makeParseStr(const Position& p1, const Position& p2)
 	transformString(start, end - start, str);
 
 	return MAKE_string(str.c_str(), str.length());
-}
-
-
-static dsql_fld* make_field(FieldNode* field_name)
-{
-/**************************************
- *
- *	m a k e _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Make a field block of given name.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	if (field_name == NULL)
-	{
-		dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
-		return field;
-	}
-	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
-	field->fld_name = field_name->dsqlName.c_str();
-	field->explicitCollation = false;
-	field->notNull = false;
-	field->fullDomain = false;
-
-	return field;
 }
 
 

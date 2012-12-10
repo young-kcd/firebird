@@ -78,7 +78,6 @@ private:
 	struct LexerState
 	{
 		// This is, in fact, parser state. Not used in lexer itself
-		dsql_fld* g_field;
 		int dsql_debug;
 
 		// Actual lexer state begins from here

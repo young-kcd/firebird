@@ -1149,7 +1149,6 @@ public:
 			  defaultValue(NULL),
 			  constraints(p),
 			  collate(p),
-			  domain(p),
 			  computed(NULL),
 			  identity(false)
 		{
@@ -1159,7 +1158,6 @@ public:
 		NestConst<ValueSourceClause> defaultValue;
 		Firebird::ObjectsArray<AddConstraintClause> constraints;
 		Firebird::MetaName collate;
-		Firebird::MetaName domain;
 		NestConst<ValueSourceClause> computed;
 		bool identity;
 	};
@@ -1208,7 +1206,6 @@ public:
 		explicit AlterColTypeClause(MemoryPool& p)
 			: Clause(p, TYPE_ALTER_COL_TYPE),
 			  field(NULL),
-			  domain(p),
 			  defaultValue(NULL),
 			  dropDefault(false),
 			  computed(NULL)
@@ -1216,7 +1213,6 @@ public:
 		}
 
 		dsql_fld* field;
-		Firebird::MetaName domain;
 		NestConst<ValueSourceClause> defaultValue;
 		bool dropDefault;
 		NestConst<ValueSourceClause> computed;

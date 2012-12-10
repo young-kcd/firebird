@@ -5381,19 +5381,19 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (position >= 0)
 			fieldDefinition.position = position;
 
-		if (clause->domain.hasData())
+		if (field->typeOfName.hasData())
 		{
 			// Get the domain information.
-			if (!METD_get_domain(transaction, field, clause->domain))
+			if (!METD_get_domain(transaction, field, field->typeOfName))
 			{
 				// Specified domain or source field does not exist
 				status_exception::raise(
 					Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					Arg::Gds(isc_dsql_command_err) <<
-					Arg::Gds(isc_dsql_domain_not_found) << clause->domain);
+					Arg::Gds(isc_dsql_domain_not_found) << field->typeOfName);
 			}
 
-			fieldDefinition.fieldSource = clause->domain;
+			fieldDefinition.fieldSource = field->typeOfName;
 		}
 		else
 		{
@@ -6066,13 +6066,13 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 			}
 			else
 			{
-				if (!clause->domain.hasData())
+				if (!clause->field->typeOfName.hasData())
 					break;
 
 				// case: (1-b): Domain name is available. Column level default
 				// is not declared. So get the domain default.
 				const USHORT defaultLen = METD_get_domain_default(dsqlScratch->getTransaction(),
-					clause->domain, &foundDefault, defaultVal, sizeof(defaultVal));
+					clause->field->typeOfName, &foundDefault, defaultVal, sizeof(defaultVal));
 
 				searchForDefault = false;
 
@@ -6918,12 +6918,12 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				MetaName newDomainName;
 				dyn_fld newDom;
 
-				if (clause->domain.hasData())
+				if (field->typeOfName.hasData())
 				{
 					// Case a1: Internal domain -> domain.
 					// Case a2: Domain -> domain.
 
-					newDomainName = clause->domain;
+					newDomainName = field->typeOfName;
 
 					if (fb_utils::implicit_domain(newDomainName.c_str()))
 					{
