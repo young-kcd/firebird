@@ -289,9 +289,9 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 #ifdef SUPPORT_RAW_DEVICES
 	// The following lines (taken from PAG_format_header) are needed to identify
 	// this file in raw_devices_validate_database as a valid database attachment.
-	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*) header->hdr_creation_date = TimeStamp::getCurrentTimeStamp().value();
 	// should we include milliseconds or not?
-	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
+	//TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 
 	header->hdr_ods_version        = ODS_VERSION | ODS_FIREBIRD_FLAG;
 	DbImplementation::current.store(header);
@@ -429,7 +429,7 @@ static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 	PageSpace* pageSpaceTemp = dbb->dbb_page_manager.addPageSpace(pageSpaceID);
 	if (!pageSpaceTemp->file)
 	{
-		Firebird::PathName file_name = TempFile::create(SCRATCH);
+		PathName file_name = TempFile::create(SCRATCH);
 		pageSpaceTemp->file = PIO_create(dbb, file_name, true, true);
 		PAG_format_pip(tdbb, *pageSpaceTemp);
 	}
@@ -612,7 +612,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									{
 										CCH_RELEASE(tdbb, window);
 									}
-									catch (Firebird::status_exception)
+									catch (const status_exception&)
 									{
 										// forget about this page as if we never tried to fake it
 										CCH_forget_page(tdbb, window);
@@ -842,9 +842,9 @@ void PAG_format_header(thread_db* tdbb)
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn = 0;
-	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*) header->hdr_creation_date = TimeStamp::getCurrentTimeStamp().value();
 	// should we include milliseconds or not?
-	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
+	//TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_ods_version = ODS_VERSION | ODS_FIREBIRD_FLAG;
@@ -1098,7 +1098,7 @@ void PAG_header(thread_db* tdbb, bool info)
 	}
 
 	}	// try
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		CCH_RELEASE(tdbb, &window);
 		throw;
@@ -1139,7 +1139,7 @@ void PAG_header_init(thread_db* tdbb)
 	// sector for raw disk access.
 
 	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
-	SCHAR* temp_page = (SCHAR*) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
+	SCHAR* const temp_page = (SCHAR*) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
 
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 	const header_page* header = (header_page*) temp_page;
@@ -1258,11 +1258,9 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 	// and set up to release it in case of error. Align
 	// the temporary page buffer for raw disk access.
 
-	SCHAR* const temp_buffer = FB_NEW(*getDefaultMemoryPool()) SCHAR[dbb->dbb_page_size + MIN_PAGE_SIZE];
-	SCHAR* temp_page =
-		(SCHAR*) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) & ~((U_IPTR) MIN_PAGE_SIZE - 1));
-
-	try {
+	Array<SCHAR> temp;
+	SCHAR* const temp_page = (SCHAR*)
+		FB_ALIGN((IPTR) temp.getBuffer(dbb->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
 
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* file = pageSpace->file;
@@ -1378,14 +1376,6 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 		}
 		file->fil_min_page = last_page + 1;
 		file->fil_sequence = sequence++;
-	}
-
-	delete[] temp_buffer;
-	}	// try
-	catch (const Firebird::Exception&)
-	{
-		delete[] temp_buffer;
-		throw;
 	}
 }
 
@@ -1724,7 +1714,7 @@ static int blocking_ast_attachment(void* ast_object)
 
 		LCK_release(tdbb, attachment->att_id_lock);
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{} // no-op
 
 	return 0;
@@ -2062,7 +2052,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 				PIO_extend(dbb, file, extPages, dbb->dbb_page_size);
 				break;
 			}
-			catch (Firebird::status_exception)
+			catch (const status_exception&)
 			{
 				if (extPages > reqPages)
 				{
@@ -2206,7 +2196,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *********************************************/
 	fb_assert(cb);
 
-	Firebird::Array<BYTE> temp;
+	Array<UCHAR> temp;
 	page_inv_page* pip = (Ods::page_inv_page*) // can't reinterpret_cast<> here
 		FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
 
