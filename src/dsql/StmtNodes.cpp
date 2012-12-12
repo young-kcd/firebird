@@ -3433,6 +3433,10 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
+		// Force unconditional reschedule. It prevents new transactions being
+		// started after an attachment or a database shutdown has been initiated.
+		JRD_reschedule(tdbb, 0, true);
+
 		jrd_tra* const org_transaction = request->req_transaction;
 		fb_assert(tdbb->getTransaction() == org_transaction);
 
