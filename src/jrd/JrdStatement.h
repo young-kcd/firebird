@@ -77,7 +77,7 @@ public:
 	Firebird::MetaName triggerName;		// name of request (trigger), if any
 	JrdStatement* parentStatement;		// Sub routine's parent statement
 	Firebird::Array<JrdStatement*> subStatements;	// Array of subroutines' statements
-	const DmlNode* topNode;				// top of execution tree
+	const StmtNode* topNode;			// top of execution tree
 	Firebird::Array<const RecordSource*> fors;	// record sources
 	Firebird::Array<ULONG*> invariants;	// pointer to nodes invariant offsets
 	Firebird::RefStrPtr sqlText;		// SQL text (encoded in the metadata charset)

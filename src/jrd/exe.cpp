@@ -192,8 +192,8 @@ void StatusXcp::as_sqlstate(char* sqlstate) const
 }
 
 static void execute_ext_procedure(thread_db* tdbb, jrd_req* request);
-static void execute_looper(thread_db*, jrd_req*, jrd_tra*, jrd_req::req_s);
-static void looper_seh(thread_db*, jrd_req*);
+static void execute_looper(thread_db*, jrd_req*, jrd_tra*, const StmtNode*, jrd_req::req_s);
+static void looper_seh(thread_db*, jrd_req*, const StmtNode*);
 static void release_blobs(thread_db*, jrd_req*);
 static void release_proc_save_points(jrd_req*);
 static void trigger_failure(thread_db*, jrd_req*);
@@ -631,11 +631,11 @@ void EXE_receive(thread_db* tdbb,
 		(statement->function && statement->function->fun_external);
 
 	if (external)
-		execute_looper(tdbb, request, transaction, jrd_req::req_sync);
+		execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_sync);
 	else
 	{
 		if (StmtNode::is<StallNode>(request->req_message))
-			execute_looper(tdbb, request, transaction, jrd_req::req_sync);
+			execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_sync);
 
 		if (!(request->req_flags & req_active) || request->req_operation != jrd_req::req_send)
 			ERR_post(Arg::Gds(isc_req_sync));
@@ -680,7 +680,7 @@ void EXE_receive(thread_db* tdbb,
 	}
 
 	if (!external)
-		execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
+		execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
 
 	}	//try
 	catch (const Firebird::Exception&)
@@ -768,9 +768,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 	if (external)
 	{
-		fb_assert(statement->topNode->kind == DmlNode::KIND_STATEMENT);
-		const CompoundStmtNode* list = StmtNode::as<CompoundStmtNode>(
-			static_cast<const StmtNode*>(statement->topNode));
+		const CompoundStmtNode* list = StmtNode::as<CompoundStmtNode>(statement->topNode);
 		fb_assert(list);
 
 		message = list->statements[e_extrout_input_message]->as<MessageNode>();
@@ -857,7 +855,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	}
 
 	if (!external)
-		execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
+		execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
 }
 
 
@@ -903,15 +901,10 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	TRA_post_resources(tdbb, transaction, statement->resources);
 
-	Lock* lock = transaction->tra_cancel_lock;
-	if (lock && lock->lck_logical == LCK_none)
-		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
-
 	TRA_attach_request(transaction, request);
 	request->req_flags &= req_in_use;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
-	request->req_operation = jrd_req::req_evaluate;
 
 	// set up to count records affected by request
 
@@ -944,26 +937,12 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	if (statement->sqlText)
 		tdbb->bumpStats(RuntimeStatistics::STMT_EXECUTES);
 
-	// Start a save point if not in middle of one
-	if (transaction && (transaction != attachment->getSysTransaction())) {
-		VIO_start_save_point(tdbb, transaction);
-	}
-
 	request->req_src_line = 0;
 	request->req_src_column = 0;
 
-	looper_seh(tdbb, request);
-
-	// If any requested modify/delete/insert ops have completed, forget them
-
-	if (transaction && (transaction != attachment->getSysTransaction()) &&
-		transaction->tra_save_point && !(transaction->tra_save_point->sav_flags & SAV_user) &&
-	    !transaction->tra_save_point->sav_verb_count)
-	{
-		// Forget about any undo for this verb
-
-		VIO_verb_cleanup(tdbb, transaction);
-	}
+	execute_looper(tdbb, request, transaction,
+				   request->getStatement()->topNode,
+				   jrd_req::req_evaluate);
 }
 
 
@@ -1041,9 +1020,7 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 {
 	const JrdStatement* statement = request->getStatement();
 
-	fb_assert(statement->topNode->kind == DmlNode::KIND_STATEMENT);
-	const CompoundStmtNode* extStmts = StmtNode::as<CompoundStmtNode>(
-		static_cast<const StmtNode*>(statement->topNode));
+	const CompoundStmtNode* extStmts = StmtNode::as<CompoundStmtNode>(statement->topNode);
 	fb_assert(extStmts);
 
 	switch (request->req_operation)
@@ -1147,7 +1124,9 @@ static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
 
 static void execute_looper(thread_db* tdbb,
 						   jrd_req* request,
-						   jrd_tra* transaction, jrd_req::req_s next_state)
+						   jrd_tra* transaction,
+						   const StmtNode* node,
+						   jrd_req::req_s next_state)
 {
 /**************************************
  *
@@ -1163,7 +1142,13 @@ static void execute_looper(thread_db* tdbb,
 	DEV_BLKCHK(request, type_req);
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	// Ensure the cancellation lock can be triggered
+
+	Lock* const lock = transaction->tra_cancel_lock;
+	if (lock && lock->lck_logical == LCK_none)
+		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	// Start a save point
 
@@ -1176,17 +1161,17 @@ static void execute_looper(thread_db* tdbb,
 	request->req_flags &= ~req_stall;
 	request->req_operation = next_state;
 
-	EXE_looper(tdbb, request, request->req_next);
+	looper_seh(tdbb, request, node);
 
 	// If any requested modify/delete/insert ops have completed, forget them
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
 		if (transaction && (transaction != attachment->getSysTransaction()) &&
-			transaction->tra_save_point && !transaction->tra_save_point->sav_verb_count)
+			transaction->tra_save_point &&
+			!transaction->tra_save_point->sav_verb_count)
 		{
 			// Forget about any undo for this verb
-
 			VIO_verb_cleanup(tdbb, transaction);
 		}
 	}
@@ -1608,7 +1593,7 @@ end:
 
 
 // Start looper under Windows SEH (Structured Exception Handling) control
-static void looper_seh(thread_db* tdbb, jrd_req* request)
+static void looper_seh(thread_db* tdbb, jrd_req* request, const StmtNode* node)
 {
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
@@ -1622,7 +1607,7 @@ static void looper_seh(thread_db* tdbb, jrd_req* request)
 	// of handling signals use this stuff?
 	// (see jrd/ibsetjmp.h for implementation of these macros)
 
-	EXE_looper(tdbb, request, static_cast<const StmtNode*>(request->getStatement()->topNode));
+	EXE_looper(tdbb, request, node);
 
 #ifdef WIN_NT
 	END_CHECK_FOR_EXCEPTIONS(NULL);
