@@ -190,14 +190,14 @@ void StatusXcp::as_sqlstate(char* sqlstate) const
 
 static void cleanup_rpb(thread_db*, record_param*);
 static jrd_nod* erase(thread_db*, jrd_nod*, SSHORT);
-static void execute_looper(thread_db*, jrd_req*, jrd_tra*, jrd_req::req_s);
+static void execute_looper(thread_db*, jrd_req*, jrd_tra*, jrd_nod*, jrd_req::req_s);
 static void exec_sql(thread_db*, jrd_req*, DSC *);
 static void execute_procedure(thread_db*, jrd_nod*);
 static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
 static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
 	jrd_req::req_ta, SSHORT);
 static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&, bool = false);
-static void looper_seh(thread_db*, jrd_req*);
+static void looper_seh(thread_db*, jrd_req*, jrd_nod*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
 static void release_blobs(thread_db*, jrd_req*);
@@ -720,7 +720,7 @@ void EXE_receive(thread_db*		tdbb,
 		|| request->req_flags & req_fetch_required
 #endif
 		)
-		execute_looper(tdbb, request, transaction, jrd_req::req_sync);
+		execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_sync);
 
 	if (!(request->req_flags & req_active) || request->req_operation != jrd_req::req_send)
 	{
@@ -767,7 +767,7 @@ void EXE_receive(thread_db*		tdbb,
 		}
 	}
 
-	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
+	execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
 
 	}	//try
 	catch (const Firebird::Exception&)
@@ -968,7 +968,7 @@ void EXE_send(thread_db*		tdbb,
 		}
 	}
 
-	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
+	execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
 
 #ifdef SCROLLABLE_CURSORS
 	if (save_next) {
@@ -1016,15 +1016,10 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	TRA_post_resources(tdbb, transaction, request->req_resources);
 
-	Lock* lock = transaction->tra_cancel_lock;
-	if (lock && lock->lck_logical == LCK_none)
-		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
-
 	TRA_attach_request(transaction, request);
 	request->req_flags &= REQ_FLAGS_INIT_MASK;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
-	request->req_operation = jrd_req::req_evaluate;
 
 /* set up to count records affected by request */
 
@@ -1058,26 +1053,10 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 		tdbb->bumpStats(RuntimeStatistics::STMT_EXECUTES);
 	}
 
-	// Start a save point if not in middle of one
-	if (transaction && (transaction != dbb->dbb_sys_trans)) {
-		VIO_start_save_point(tdbb, transaction);
-	}
-
 	request->req_src_line = 0;
 	request->req_src_column = 0;
 
-	looper_seh(tdbb, request); //, request->req_top_node);
-
-	// If any requested modify/delete/insert ops have completed, forget them
-
-	if (transaction && (transaction != dbb->dbb_sys_trans) && transaction->tra_save_point &&
-	    !(transaction->tra_save_point->sav_flags & SAV_user) &&
-	    !transaction->tra_save_point->sav_verb_count)
-	{
-		// Forget about any undo for this verb
-
-		VIO_verb_cleanup(tdbb, transaction);
-	}
+	execute_looper(tdbb, request, transaction, request->req_top_node, jrd_req::req_evaluate);
 }
 
 
@@ -1376,7 +1355,9 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 static void execute_looper(thread_db* tdbb,
 						   jrd_req* request,
-						   jrd_tra* transaction, jrd_req::req_s next_state)
+						   jrd_tra* transaction,
+						   jrd_nod* node,
+						   jrd_req::req_s next_state)
 {
 /**************************************
  *
@@ -1392,9 +1373,15 @@ static void execute_looper(thread_db* tdbb,
 	DEV_BLKCHK(request, type_req);
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
-/* Start a save point */
+	// Ensure the cancellation lock can be triggered
+
+	Lock* const lock = transaction->tra_cancel_lock;
+	if (lock && lock->lck_logical == LCK_none)
+		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+
+	// Start a save point
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
@@ -1405,17 +1392,17 @@ static void execute_looper(thread_db* tdbb,
 	request->req_flags &= ~req_stall;
 	request->req_operation = next_state;
 
-	EXE_looper(tdbb, request, request->req_next);
+	looper_seh(tdbb, request, node);
 
-/* If any requested modify/delete/insert ops have completed, forget them */
+	// If any requested modify/delete/insert ops have completed, forget them
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
-		if (transaction && (transaction != dbb->dbb_sys_trans) && transaction->tra_save_point &&
+		if (transaction && (transaction != dbb->dbb_sys_trans) &&
+			transaction->tra_save_point &&
 			!transaction->tra_save_point->sav_verb_count)
 		{
-			/* Forget about any undo for this verb */
-
+			// Forget about any undo for this verb
 			VIO_verb_cleanup(tdbb, transaction);
 		}
 	}
@@ -2938,7 +2925,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 
 // Start looper under Windows SEH (Structured Exception Handling) control
-static void looper_seh(thread_db* tdbb, jrd_req* request)
+static void looper_seh(thread_db* tdbb, jrd_req* request, jrd_nod* node)
 {
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
@@ -2952,7 +2939,7 @@ static void looper_seh(thread_db* tdbb, jrd_req* request)
 	// of handling signals use this stuff?
 	// (see jrd/ibsetjmp.h for implementation of these macros)
 
-	EXE_looper(tdbb, request, request->req_top_node);
+	EXE_looper(tdbb, request, node);
 
 #ifdef WIN_NT
 	END_CHECK_FOR_EXCEPTIONS(NULL);
