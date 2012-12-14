@@ -1,3 +1,15 @@
+ 2012-12-13 18:31  dimitr 
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/exe.cpp
+1) Encapsulated the remaining external looper calls inside a SEH block. It allows to catch async exceptions coming while result set is being fetched. No performance penalty has been noticed.
+2) Slightly refactored the looper call chain to avoid code duplication.
+3) Fixed CORE-4010: Fetch cannot be subsequently interrupted via DELETE FROM MON$STATEMENTS.
+
+ 2012-12-13 14:40  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Darwin port
+
  2012-12-12 08:32  dimitr 
    M src/jrd/pag.cpp
 Misc.
