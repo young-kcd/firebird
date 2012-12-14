@@ -99,6 +99,7 @@ case "$1" in
 		[ $RETVAL -eq 0 ] && echo "$FULLNAME is running (pid $pid)" || echo "$FULLNAME is dead but pid file exists"
 	else
 		echo "$FULLNAME is stopped"
+        RETVAL=3
 	fi
 	;;
   restart|reload)
