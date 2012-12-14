@@ -83,8 +83,7 @@ dnl Test for special ar options?
 AR_OPT_CHECK=false
 
 case "$target" in
-  i*86-*-darwin*)
-dnl    MAKEFILE_PREFIX=darwin_i386
+  x*64-*-darwin*)
     MAKEFILE_PREFIX=darwin_x86_64
     MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
@@ -94,7 +93,20 @@ dnl    MAKEFILE_PREFIX=darwin_i386
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     CPU_TYPE=x86_64
-	EXPORT_SYMBOLS_STYLE=darwin
+    EXPORT_SYMBOLS_STYLE=darwin
+    ;;
+
+  i*86-*-darwin*)
+    MAKEFILE_PREFIX=darwin_i386
+    MAKEFILE_POSTFIX=darwin
+    PLATFORM=DARWIN
+    INSTALL_PREFIX=darwin
+    AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
+	XE_APPEND(-framework CoreFoundation,LIBS)
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=dylib
+    CPU_TYPE=i386
+    EXPORT_SYMBOLS_STYLE=darwin
     ;;
 
   powerpc-*-darwin*)
