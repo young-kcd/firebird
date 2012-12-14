@@ -307,12 +307,12 @@ class LockManager : private Firebird::RefCounted,
 	class LockTableGuard
 	{
 	public:
-		explicit LockTableGuard(LockManager* lm, SRQ_PTR owner = 0)
+		explicit LockTableGuard(LockManager* lm, const char* f, SRQ_PTR owner = 0)
 			: m_lm(lm), m_owner(owner)
 		{
-			if (!m_lm->m_localMutex.tryEnter())
+			if (!m_lm->m_localMutex.tryEnter(f))
 			{
-				m_lm->m_localMutex.enter();
+				m_lm->m_localMutex.enter(f);
 				m_lm->m_blockage = true;
 			}
 
@@ -354,8 +354,14 @@ class LockManager : private Firebird::RefCounted,
 	class LockTableCheckout
 	{
 	public:
-		explicit LockTableCheckout(LockManager* lm)
+		LockTableCheckout(LockManager* lm, const char* f)
 			: m_lm(lm), m_owner(m_lm->m_sharedMemory->getHeader()->lhb_active_owner)
+#ifdef DEV_BUILD
+			  , from(f)
+#define FB_LOCKED_FROM from
+#else
+#define FB_LOCKED_FROM NULL
+#endif
 		{
 			m_lm->release_shmem(m_owner);
 			m_lm->m_localMutex.leave();
@@ -365,9 +371,9 @@ class LockManager : private Firebird::RefCounted,
 		{
 			try
 			{
-				if (!m_lm->m_localMutex.tryEnter())
+				if (!m_lm->m_localMutex.tryEnter(FB_LOCKED_FROM))
 				{
-					m_lm->m_localMutex.enter();
+					m_lm->m_localMutex.enter(FB_LOCKED_FROM);
 					m_lm->m_blockage = true;
 				}
 
@@ -386,7 +392,11 @@ class LockManager : private Firebird::RefCounted,
 
 		LockManager* m_lm;
 		const SRQ_PTR m_owner;
+#ifdef DEV_BUILD
+		const char* from;
+#endif
 	};
+#undef FB_LOCKED_FROM
 
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
 

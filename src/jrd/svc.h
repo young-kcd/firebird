@@ -323,7 +323,7 @@ private:
 	class ExistenceGuard
 	{
 	public:
-		explicit ExistenceGuard(Service* svc);
+		explicit ExistenceGuard(Service* svc, const char* from);
 		~ExistenceGuard();
 		void release();
 

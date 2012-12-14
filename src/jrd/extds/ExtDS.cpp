@@ -104,7 +104,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 {
 	if (!m_initialized)
 	{
-		MutexLockGuard guard(m_mutex);
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 		if (!m_initialized)
 		{
 			m_initialized = true;
@@ -185,7 +185,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
 
 	{ // m_mutex scope
-		MutexLockGuard guard(m_mutex);
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 		Connection** conn_ptr = m_connections.begin();
 		Connection** end = m_connections.end();
@@ -215,7 +215,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	}
 
 	{ // m_mutex scope
-		MutexLockGuard guard(m_mutex);
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 		m_connections.add(conn);
 	}
 
@@ -227,7 +227,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool /*inPool*/)
 {
 	{ // m_mutex scope
-		MutexLockGuard guard(m_mutex);
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 		conn.m_boundAtt = NULL;
 
@@ -247,7 +247,7 @@ void Provider::clearConnections(thread_db* tdbb)
 {
 	fb_assert(!tdbb || !tdbb->getDatabase());
 
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 	Connection** ptr = m_connections.begin();
 	Connection** end = m_connections.end();
@@ -265,7 +265,7 @@ void Provider::cancelConnections(thread_db* tdbb)
 {
 	fb_assert(!tdbb || !tdbb->getDatabase());
 
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 	Connection** ptr = m_connections.begin();
 	Connection** end = m_connections.end();
@@ -1574,7 +1574,7 @@ void Statement::unBindFromRequest()
 
 //  EngineCallbackGuard
 
-void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
+void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* from)
 {
 	m_tdbb = tdbb;
 	m_mutex = conn.isConnected() ? &conn.m_mutex : &conn.m_provider.m_mutex;
@@ -1601,7 +1601,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 	}
 
 	if (m_mutex) {
-		m_mutex->enter();
+		m_mutex->enter(from);
 	}
 }
 
@@ -1617,7 +1617,7 @@ EngineCallbackGuard::~EngineCallbackGuard()
 
 		if (attachment)
 		{
-			attachment->att_interface->getMutex()->enter();
+			attachment->att_interface->getMutex()->enter(FB_FUNCTION);
 			attachment->att_ext_connection = m_saveConnection;
 		}
 

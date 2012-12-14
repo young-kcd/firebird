@@ -54,7 +54,7 @@ void ConfigCache::checkLoadConfig()
 		return;
 	}
 
-	Firebird::WriteLockGuard guard(rwLock);
+	Firebird::WriteLockGuard guard(rwLock, "ConfigCache::checkLoadConfig");
 
 	// may be someone already reloaded?
 	newTime = getTime();

@@ -818,7 +818,7 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 			xdrs->x_handy = 0;
 		}
 		rem_port* port = (rem_port*) xdrs->x_public;
-		Firebird::RefMutexGuard queGuard(*port->port_que_sync);
+		Firebird::RefMutexGuard queGuard(*port->port_que_sync, FB_FUNCTION);
 		if (port->port_qoffset >= port->port_queue.getCount())
 		{
 			port->port_flags |= PORT_partial_data;
@@ -837,7 +837,7 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 
 void PortsCleanup::registerPort(rem_port* port)
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	if (!m_ports)
 	{
 		Firebird::MemoryPool& pool = *getDefaultMemoryPool();
@@ -849,7 +849,7 @@ void PortsCleanup::registerPort(rem_port* port)
 
 void PortsCleanup::unRegisterPort(rem_port* port)
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 	if (m_ports)
 	{
@@ -863,7 +863,7 @@ void PortsCleanup::unRegisterPort(rem_port* port)
 
 void PortsCleanup::closePorts()
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 	if (m_ports)
 	{

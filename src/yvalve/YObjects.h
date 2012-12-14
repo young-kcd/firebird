@@ -78,14 +78,14 @@ public:
 
 	void add(T* obj)
 	{
-		Firebird::MutexLockGuard guard(mtx);
+		Firebird::MutexLockGuard guard(mtx, FB_FUNCTION);
 
 		array.add(obj);
 	}
 
 	void remove(T* obj)
 	{
-		Firebird::MutexLockGuard guard(mtx);
+		Firebird::MutexLockGuard guard(mtx, FB_FUNCTION);
 		size_t pos;
 
 		if (array.find(obj, pos))
@@ -94,7 +94,7 @@ public:
 
 	void destroy()
 	{
-		Firebird::MutexLockGuard guard(mtx);
+		Firebird::MutexLockGuard guard(mtx, FB_FUNCTION);
 		size_t i;
 
 		while ((i = array.getCount()) > 0)

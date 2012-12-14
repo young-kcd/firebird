@@ -462,7 +462,7 @@ const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
 void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 {
 	fb_assert(bufSize >= RESULT_SIZE);
-	Firebird::MutexLockGuard guard(cryptMutex);
+	Firebird::MutexLockGuard guard(cryptMutex, "ENC_crypt");
 
 	int t;
 	int num_iter, salt_size;

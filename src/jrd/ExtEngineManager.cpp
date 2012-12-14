@@ -72,6 +72,7 @@ public:
 		  attInUse(attachment->att_in_use),
 		  traInUse(transaction ? transaction->tra_in_use : false)
 	{
+		// !!!!!  needs async lock to be safe
 		attachment->att_in_use = true;
 
 		if (transaction)
@@ -97,6 +98,7 @@ public:
 		  traInUse(transaction ? transaction->tra_in_use : false)
 	{
 		attachment->att_charset = aCharSet;
+		// !!!!!  needs async lock to be safe
 		attachment->att_in_use = true;
 
 		if (transaction)
@@ -119,6 +121,7 @@ public:
 			transaction->tra_caller_name = callerName;
 		}
 
+		// !!!!!  needs async lock to be safe
 		attachment->att_in_use = attInUse;
 		attachment->att_charset = charSet;
 	}
@@ -134,7 +137,7 @@ private:
 		Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE];
 
 		{	// scope
-			Attachment::Checkout attCout(attachment);
+			Attachment::Checkout attCout(attachment, FB_FUNCTION);
 
 			obj->getCharSet(RaiseError(), attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
 			charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
@@ -313,7 +316,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* o
 			CallerName(obj_udf, udf->getName().identifier) :
 			CallerName(obj_package_header, udf->getName().package)));
 
-	Attachment::Checkout attCout(tdbb->getAttachment());
+	Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 	function->execute(RaiseError(), attInfo->context, inMsg, outMsg);
 }
@@ -366,7 +369,7 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, UCHAR* inMsg, UCHAR* out
 
 	charSet = attachment->att_charset;
 
-	Attachment::Checkout attCout(attachment);
+	Attachment::Checkout attCout(attachment, FB_FUNCTION);
 
 	resultSet = procedure->procedure->open(RaiseError(), attInfo->context, inMsg, outMsg);
 }
@@ -377,7 +380,7 @@ ExtEngineManager::ResultSet::~ResultSet()
 	if (resultSet)
 	{
 		fb_assert(attachment == JRD_get_thread_data()->getAttachment());
-		Attachment::Checkout attCout(attachment);
+		Attachment::Checkout attCout(attachment, FB_FUNCTION);
 		resultSet->dispose(LogError());
 	}
 }
@@ -397,7 +400,7 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 			CallerName(obj_package_header, procedure->prc->getName().package)));
 
 	fb_assert(attachment == tdbb->getAttachment());
-	Attachment::Checkout attCout(attachment);
+	Attachment::Checkout attCout(attachment, FB_FUNCTION);
 	return resultSet->fetch(RaiseError());
 }
 
@@ -441,7 +444,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 	if (newRpb)
 		setValues(tdbb, newMsg, newRpb);
 
-	Attachment::Checkout attCout(tdbb->getAttachment());
+	Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 	trigger->execute(RaiseError(), attInfo->context, action,
 		(oldRpb ? oldMsg.begin() : NULL), (newRpb ? newMsg.begin() : NULL));
@@ -566,14 +569,14 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 	Array<ExternalEngine*> enginesCopy;
 
 	{	// scope
-		ReadLockGuard readGuard(enginesLock);
+		ReadLockGuard readGuard(enginesLock, FB_FUNCTION);
 
 		EnginesMap::Accessor accessor(&engines);
 		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 			enginesCopy.add(accessor.current()->second);
 	}
 
-	Attachment::Checkout attCout(attachment, true);
+	Attachment::Checkout attCout(attachment, FB_FUNCTION, true);
 
 	for (Array<ExternalEngine*>::iterator i = enginesCopy.begin(); i != enginesCopy.end(); ++i)
 	{
@@ -651,7 +654,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	ExternalFunction* externalFunction;
 
 	{	// scope
-		Attachment::Checkout attCout(tdbb->getAttachment());
+		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 		externalFunction = attInfo->engine->makeFunction(RaiseError(), attInfo->context, metadata,
 			inBlr, outBlr);
@@ -671,7 +674,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	}
 	catch (...)
 	{
-		Attachment::Checkout attCout(tdbb->getAttachment());
+		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 		externalFunction->dispose(LogError());
 		throw;
 	}
@@ -730,7 +733,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	ExternalProcedure* externalProcedure;
 
 	{	// scope
-		Attachment::Checkout attCout(tdbb->getAttachment());
+		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 		externalProcedure = attInfo->engine->makeProcedure(RaiseError(), attInfo->context, metadata,
 			inBlr, outBlr);
@@ -750,7 +753,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	}
 	catch (...)
 	{
-		Attachment::Checkout attCout(tdbb->getAttachment());
+		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 		externalProcedure->dispose(LogError());
 		throw;
 	}
@@ -807,7 +810,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	ExternalTrigger* externalTrigger;
 
 	{	// scope
-		Attachment::Checkout attCout(tdbb->getAttachment());
+		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 		externalTrigger = attInfo->engine->makeTrigger(RaiseError(), attInfo->context, metadata);
 
@@ -825,7 +828,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	}
 	catch (...)
 	{
-		Attachment::Checkout attCout(tdbb->getAttachment());
+		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 		externalTrigger->dispose(LogError());
 		throw;
 	}
@@ -834,13 +837,13 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 
 ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& name)
 {
-	ReadLockGuard readGuard(enginesLock);
+	ReadLockGuard readGuard(enginesLock, FB_FUNCTION);
 	ExternalEngine* engine = NULL;
 
 	if (!engines.get(name, engine))
 	{
 		readGuard.release();
-		WriteLockGuard writeGuard(enginesLock);
+		WriteLockGuard writeGuard(enginesLock, FB_FUNCTION);
 
 		if (!engines.get(name, engine))
 		{
@@ -854,12 +857,12 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 				try
 				{
-					Attachment::Checkout attCout(tdbb->getAttachment());
+					Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 					engine = engineControl.plugin();
 					if (engine)
 					{
-						Attachment::SyncGuard attGuard(tdbb->getAttachment());
+						Attachment::SyncGuard attGuard(tdbb->getAttachment(), FB_FUNCTION);
 
 						key = EngineAttachment(engine, tdbb->getAttachment());
 						attInfo = FB_NEW(getPool()) EngineAttachmentInfo();
@@ -916,12 +919,12 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 	EngineAttachment key(engine, tdbb->getAttachment());
 	EngineAttachmentInfo* attInfo = NULL;
 
-	ReadLockGuard readGuard(&enginesLock);
+	ReadLockGuard readGuard(&enginesLock, FB_FUNCTION);
 
 	if (!enginesAttachments.get(key, attInfo) && !closing)
 	{
 		readGuard.release();
-		WriteLockGuard writeGuard(enginesLock);
+		WriteLockGuard writeGuard(enginesLock, FB_FUNCTION);
 
 		if (!enginesAttachments.get(key, attInfo))
 		{
@@ -934,7 +937,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 			enginesAttachments.put(key, attInfo);
 
 			ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-			Attachment::Checkout attCout(tdbb->getAttachment());
+			Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 			engine->openAttachment(LogError(), attInfo->context);
 		}
 
@@ -944,7 +947,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 	if (closing && attInfo)
 	{
 		readGuard.release();
-		WriteLockGuard writeGuard(enginesLock);
+		WriteLockGuard writeGuard(enginesLock, FB_FUNCTION);
 		enginesAttachments.remove(key);
 	}
 

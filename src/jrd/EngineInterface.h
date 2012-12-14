@@ -312,6 +312,10 @@ public:
 
 	Firebird::Mutex* getMutex(bool useAsync = false)
 	{
+		if (useAsync)
+		{
+			fb_assert(!mainMutex.locked());
+		}
 		return useAsync ? &asyncMutex : &mainMutex;
 	}
 
@@ -325,6 +329,9 @@ public:
 
 	JTransaction* getTransactionInterface(Firebird::IStatus* status, Firebird::ITransaction* tra);
 	jrd_tra* getEngineTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);
+
+	void manualLock(ULONG& flags);
+	void manualUnlock(ULONG& flags);
 
 private:
 	Attachment* att;

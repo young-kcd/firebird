@@ -176,7 +176,7 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 		UpgradeKey key(target->vTab, toUpgrade->getModule(), upgradeInfo->clientModule);
 
 		{ // sync scope
-			ReadLockGuard sync(mapLock);
+			ReadLockGuard sync(mapLock, FB_FUNCTION);
 			if (functionMap->get(key, newTab))
 			{
 				target->vTab = newTab;
@@ -184,7 +184,7 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 			}
 		}
 
-		WriteLockGuard sync(mapLock);
+		WriteLockGuard sync(mapLock, FB_FUNCTION);
 
 		if (!functionMap->get(key, newTab))
 		{
@@ -220,7 +220,7 @@ void releaseUpgradeTabs(IPluginModule* module)
 {
 	HalfStaticArray<UpgradeKey, 16> removeList;
 
-	WriteLockGuard sync(mapLock);
+	WriteLockGuard sync(mapLock, FB_FUNCTION);
 
 	GenericMap<FunctionPair>::Accessor scan(&functionMap);
 
@@ -381,7 +381,7 @@ private:
 
 	ThreadBuffer* getThreadBuffer(ThreadId thr)
 	{
-		Firebird::MutexLockGuard guard(mutex);
+		Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 
 		size_t p = position(thr);
 		if (p < processBuffer.getCount())
@@ -396,7 +396,7 @@ private:
 
 	void cleanup()
 	{
-		Firebird::MutexLockGuard guard(mutex);
+		Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 
 		size_t p = position(getThreadId());
 		if (p >= processBuffer.getCount())
@@ -467,12 +467,12 @@ struct TimerEntry
 typedef SortedArray<TimerEntry, InlineStorage<TimerEntry, 64>, TimerDelay, TimerEntry> TimerQueue;
 GlobalPtr<TimerQueue> timerQueue;
 
-InitMutex<TimerEntry> timerHolder;
+InitMutex<TimerEntry> timerHolder("TimerHolder");
 
 void TimerEntry::cleanup()
 {
 	{
-		MutexLockGuard guard(timerAccess);
+		MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
 		stopTimerThread.setValue(1);
 		timerWakeup->release();
@@ -483,7 +483,7 @@ void TimerEntry::cleanup()
 	{
 		ITimer* timer = NULL;
 		{
-			MutexLockGuard guard(timerAccess);
+			MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
 			TimerEntry* e = timerQueue->end();
 			timer = (--e)->timer;
@@ -521,7 +521,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 		TimerDelay microSeconds = 0;
 
 		{
-			MutexLockGuard guard(timerAccess);
+			MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
 			const TimerDelay cur = curTime();
 
@@ -534,7 +534,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 					timerQueue->remove((size_t) 0);
 
 					// We must leave timerAccess mutex here to avoid deadlocks
-					MutexUnlockGuard ug(timerAccess);
+					MutexUnlockGuard ug(timerAccess, FB_FUNCTION);
 
 					e.timer->handler();
 					e.timer->release();
@@ -568,14 +568,14 @@ public:
 	// ITimerControl implementation
 	void FB_CARG start(ITimer* timer, TimerDelay microSeconds)
 	{
-		MutexLockGuard guard(timerAccess);
+		MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
 		if (stopTimerThread.value() != 0)
 		{
 			// Ignore an attempt to start timer - anyway thread to make it fire is down
 
 			// We must leave timerAccess mutex here to avoid deadlocks
-			MutexUnlockGuard ug(timerAccess);
+			MutexUnlockGuard ug(timerAccess, FB_FUNCTION);
 
 			timer->addRef();
 			timer->release();
@@ -604,7 +604,7 @@ public:
 
 	void FB_CARG stop(ITimer* timer)
 	{
-		MutexLockGuard guard(timerAccess);
+		MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
 		TimerEntry* curTimer = getTimer(timer);
 		if (curTimer)

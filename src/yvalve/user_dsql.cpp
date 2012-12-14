@@ -179,7 +179,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_declare(ISC_STATUS*	user_status,
 			return s;
 		}
 
-		Firebird::WriteLockGuard guard(global_sync);
+		Firebird::WriteLockGuard guard(global_sync, FB_FUNCTION);
 		statement->stmt_cursor = insert_name(cursor, &cursor_names, statement);
 
 		return s;
@@ -586,7 +586,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 	// If a new statement was allocated, add it to the symbol table and insert it
 	// into the list of statements
 
-	Firebird::WriteLockGuard guard(global_sync);
+	Firebird::WriteLockGuard guard(global_sync, FB_FUNCTION);
 
 	if (!statement)
 	{
@@ -652,7 +652,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status, const SCH
 
 		// remove the statement from the symbol tables
 
-		Firebird::WriteLockGuard guard(global_sync);
+		Firebird::WriteLockGuard guard(global_sync, FB_FUNCTION);
 
 		if (statement->stmt_stmt)
 			remove_name(statement->stmt_stmt, &statement_names);
@@ -970,7 +970,7 @@ static void cleanup(void*)
 	UDSQL_error = NULL;
 
 	{ // scope
-		Firebird::WriteLockGuard guard(global_sync);
+		Firebird::WriteLockGuard guard(global_sync, FB_FUNCTION);
 
 		free_all_databases(databases);
 		free_all_statements(statements);
@@ -995,7 +995,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* /*dummy*/)
 	// for each of the statements in this database, remove it
 	// from the local list and from the hash table
 
-	Firebird::WriteLockGuard guard(global_sync);
+	Firebird::WriteLockGuard guard(global_sync, FB_FUNCTION);
 
 	dsql_stmt** stmt_ptr = &statements;
 	dsql_stmt* p;
@@ -1115,7 +1115,7 @@ static void init(FB_API_HANDLE* db_handle)
 	dsql_dbb* dbb;
 
 	{ // scope
-		Firebird::ReadLockGuard guard(global_sync);
+		Firebird::ReadLockGuard guard(global_sync, FB_FUNCTION);
 
 		for (dbb = databases; dbb; dbb = dbb->dbb_next)
 		{
@@ -1134,7 +1134,7 @@ static void init(FB_API_HANDLE* db_handle)
 		return;					// Not a great error handler
 	}
 
-	Firebird::WriteLockGuard guard(global_sync);
+	Firebird::WriteLockGuard guard(global_sync, FB_FUNCTION);
 
 	dbb->dbb_next = databases;
 	databases = dbb;
@@ -1188,7 +1188,7 @@ static dsql_name* lookup_name(const TEXT* name, dsql_name* list)
  *
  **************************************/
 
-	Firebird::ReadLockGuard guard(global_sync);
+	Firebird::ReadLockGuard guard(global_sync, FB_FUNCTION);
 
 	const USHORT l = name_length(name);
 	for (; list; list = list->name_next)

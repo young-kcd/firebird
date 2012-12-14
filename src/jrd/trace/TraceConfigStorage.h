@@ -45,7 +45,7 @@ struct TraceCSHeader : public Firebird::MemoryHeader
 	char cfg_file_name[MAXPATHLEN];
 };
 
-class ConfigStorage : public Firebird::GlobalStorage, public Firebird::IpcObject
+class ConfigStorage : public Firebird::GlobalStorage, public Firebird::IpcObject, public Firebird::Reasons
 {
 public:
 	ConfigStorage();
@@ -146,7 +146,7 @@ public:
 	{
 		if (!storage)
 		{
-			Firebird::MutexLockGuard guard(initMtx);
+			Firebird::MutexLockGuard guard(initMtx, FB_FUNCTION);
 			if (!storage)
 			{
 				storage = new ConfigStorage;

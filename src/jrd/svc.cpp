@@ -132,13 +132,13 @@ namespace {
 		explicit ThreadIdHolder(Jrd::Service::StatusStringsHelper& p)
 			: strHelper(&p)
 		{
-			MutexLockGuard guard(strHelper->mtx);
+			MutexLockGuard guard(strHelper->mtx, FB_FUNCTION);
 			strHelper->workerThread = getThreadId();
 		}
 
 		~ThreadIdHolder()
 		{
-			MutexLockGuard guard(strHelper->mtx);
+			MutexLockGuard guard(strHelper->mtx, FB_FUNCTION);
 			strHelper->workerThread = 0;
 		}
 
@@ -185,10 +185,10 @@ namespace {
 
 using namespace Jrd;
 
-Service::ExistenceGuard::ExistenceGuard(Service* s)
+Service::ExistenceGuard::ExistenceGuard(Service* s, const char* from)
 	: svc(s), locked(false)
 {
-	MutexLockGuard guard(globalServicesMutex);
+	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
 	if (! svc->locateInAllServices())
 	{
@@ -204,7 +204,7 @@ Service::ExistenceGuard::ExistenceGuard(Service* s)
 
 	// Appears we have correct handle, lock it to make sure service exists
 	// for our lifetime
-	svc->svc_existence_lock.enter();
+	svc->svc_existence_lock.enter(from);
 	fb_assert(!svc->svc_current_guard);
 	svc->svc_current_guard = this;
 	locked = true;
@@ -426,7 +426,7 @@ void Service::started()
 {
 	if (!(svc_flags & SVC_evnt_fired))
 	{
-		MutexLockGuard guard(globalServicesMutex);
+		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 		svc_flags |= SVC_evnt_fired;
 		svcStart.release();
 	}
@@ -478,7 +478,7 @@ void Service::putBytes(const UCHAR* bytes, size_t len)
 void Service::makePermanentStatusVector() throw()
 {
 	// This mutex avoids modification of workerThread
-	MutexLockGuard guard(svc_thread_strings.mtx);
+	MutexLockGuard guard(svc_thread_strings.mtx, FB_FUNCTION);
 
 	if (svc_thread_strings.workerThread)
 	{
@@ -717,7 +717,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 	{	// scope
 		// Account service block in global array
-		MutexLockGuard guard(globalServicesMutex);
+		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 		checkForShutdown();
 		allServices->add(this);
 	}
@@ -888,7 +888,7 @@ static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
 
 void Service::detach()
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, FB_FUNCTION);
 
 	// save it cause after call to finish() we can't access class members any more
 	const bool localDoShutdown = svc_do_shutdown;
@@ -923,7 +923,7 @@ Service::~Service()
 
 void Service::removeFromAllServices()
 {
-	MutexLockGuard guard(globalServicesMutex);
+	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
 	size_t pos;
 	if (locateInAllServices(&pos))
@@ -938,7 +938,7 @@ void Service::removeFromAllServices()
 
 bool Service::locateInAllServices(size_t* posPtr)
 {
-	MutexLockGuard guard(globalServicesMutex);
+	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 	AllServices& all(allServices);
 
 	for (size_t pos = 0; pos < all.getCount(); ++pos)
@@ -959,7 +959,7 @@ bool Service::locateInAllServices(size_t* posPtr)
 
 ULONG Service::totalCount()
 {
-	MutexLockGuard guard(globalServicesMutex);
+	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 	AllServices& all(allServices);
 	ULONG cnt = 0;
 
@@ -978,7 +978,7 @@ bool Service::checkForShutdown()
 {
 	if (svcShutdown)
 	{
-		MutexLockGuard guard(globalServicesMutex);
+		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
 		if (svc_flags & SVC_shutdown)
 		{
@@ -998,7 +998,7 @@ void Service::shutdownServices()
 {
 	svcShutdown = true;
 
-	MutexLockGuard guard(globalServicesMutex);
+	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 	AllServices& all(allServices);
 
 	unsigned int pos;
@@ -1018,7 +1018,7 @@ void Service::shutdownServices()
 		{
 			globalServicesMutex->leave();
 			THD_sleep(1);
-			globalServicesMutex->enter();
+			globalServicesMutex->enter(FB_FUNCTION);
 			pos = 0;
 			continue;
 		}
@@ -1036,7 +1036,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 						   USHORT buffer_length,
 						   UCHAR* info)
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, FB_FUNCTION);
 
 	UCHAR item;
 	UCHAR buffer[MAXPATHLEN];
@@ -1558,7 +1558,7 @@ void Service::query(USHORT			send_item_length,
 					USHORT			buffer_length,
 					UCHAR*			info)
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, FB_FUNCTION);
 
 	UCHAR item, *p;
 	UCHAR buffer[256];
@@ -1941,7 +1941,7 @@ void Service::query(USHORT			send_item_length,
 
 void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, FB_FUNCTION);
 
 	ThreadIdHolder holdId(svc_thread_strings);
 
@@ -1975,7 +1975,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	}
 
 	{ // scope for locked globalServicesMutex
-		MutexLockGuard guard(globalServicesMutex);
+		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
 		if (svc_flags & SVC_thd_running) {
 			status_exception::raise(Arg::Gds(isc_svc_in_use) << Arg::Str(serv->serv_name));
@@ -2074,7 +2074,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	if (serv->serv_thd)
 	{
 		{	// scope
-			MutexLockGuard guard(globalServicesMutex);
+			MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 			svc_flags &= ~SVC_evnt_fired;
 			svc_flags |= SVC_thd_running;
 
@@ -2289,7 +2289,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 	*return_length = 0;
 
 	{	// scope
-		MutexLockGuard guard(globalServicesMutex);
+		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 		svc_flags &= ~SVC_timeout;
 	}
 
@@ -2331,7 +2331,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 #endif
 		if (timeout && elapsed_time >= timeout)
 		{
-			MutexLockGuard guard(globalServicesMutex);
+			MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 			svc_flags |= SVC_timeout;
 			break;
 		}
@@ -2366,7 +2366,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 ULONG Service::put(const UCHAR* buffer, ULONG length)
 {
-	MutexLockGuard guard(svc_stdin_mutex);
+	MutexLockGuard guard(svc_stdin_mutex, FB_FUNCTION);
 
 	// check length correctness
 	if (length > svc_stdin_size_requested && length > svc_stdin_preload_requested)
@@ -2419,7 +2419,7 @@ ULONG Service::put(const UCHAR* buffer, ULONG length)
 ULONG Service::getBytes(UCHAR* buffer, ULONG size)
 {
 	{	// Guard scope
-		MutexLockGuard guard(svc_stdin_mutex);
+		MutexLockGuard guard(svc_stdin_mutex, FB_FUNCTION);
 
 		if (svc_flags & SVC_detached)			// no more data for this service please
 		{
@@ -2461,7 +2461,7 @@ void Service::finish(USHORT flag)
 {
 	if (flag == SVC_finished || flag == SVC_detached)
 	{
-		MutexLockGuard guard(globalServicesMutex);
+		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
 		svc_flags |= flag;
 		if (! (svc_flags & SVC_thd_running))
@@ -2480,7 +2480,7 @@ void Service::finish(USHORT flag)
 
 			// if service waits for data from us - return EOF
 			{	// guard scope
-				MutexLockGuard guard(svc_stdin_mutex);
+				MutexLockGuard guard(svc_stdin_mutex, FB_FUNCTION);
 
 				if (svc_stdin_size_requested)
 				{

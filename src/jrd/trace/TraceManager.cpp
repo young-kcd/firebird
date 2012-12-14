@@ -151,7 +151,7 @@ void TraceManager::load_plugins()
 	if (init_factories)
 		return;
 
-	MutexLockGuard guard(init_factories_mtx);
+	MutexLockGuard guard(init_factories_mtx, FB_FUNCTION);
 	if (init_factories)
 		return;
 
@@ -175,7 +175,7 @@ void TraceManager::shutdown()
 {
 	if (init_factories)
 	{
-		MutexLockGuard guard(init_factories_mtx);
+		MutexLockGuard guard(init_factories_mtx, FB_FUNCTION);
 
 		if (init_factories)
 		{

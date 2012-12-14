@@ -1005,13 +1005,13 @@ public:
 
 	bool haveRecvData()
 	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync);
+		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
 		return ((port_receive.x_handy > 0) || (port_qoffset < port_queue.getCount()));
 	}
 
 	void clearRecvQue()
 	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync);
+		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
 		port_queue.clear();
 		port_qoffset = 0;
 		port_receive.x_private = port_receive.x_base;

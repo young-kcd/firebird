@@ -153,14 +153,24 @@ class InitMutex
 {
 private:
 	volatile bool flag;
+#ifdef DEV_BUILD
+	const char* from;
+#endif
 public:
-	InitMutex()
-		: flag(false) { }
+	explicit InitMutex(const char* f)
+		: flag(false)
+#ifdef DEV_BUILD
+			  , from(f)
+#define FB_LOCKED_FROM from
+#else
+#define FB_LOCKED_FROM NULL
+#endif
+	{ }
 	void init()
 	{
 		if (!flag)
 		{
-			MutexLockGuard guard(*StaticMutex::mutex);
+			MutexLockGuard guard(*StaticMutex::mutex, FB_LOCKED_FROM);
 			if (!flag)
 			{
 				C::init();
@@ -172,7 +182,7 @@ public:
 	{
 		if (flag)
 		{
-			MutexLockGuard guard(*StaticMutex::mutex);
+			MutexLockGuard guard(*StaticMutex::mutex, FB_LOCKED_FROM);
 			if (flag)
 			{
 				C::cleanup();
@@ -181,6 +191,7 @@ public:
 		}
 	}
 };
+#undef FB_LOCKED_FROM
 
 // InitInstance - allocate instance of class T on first request.
 
@@ -200,7 +211,7 @@ public:
 	{
 		if (!flag)
 		{
-			MutexLockGuard guard(*StaticMutex::mutex);
+			MutexLockGuard guard(*StaticMutex::mutex, "InitInstance");
 			if (!flag)
 			{
 				instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
@@ -215,7 +226,7 @@ public:
 
 	void dtor()
 	{
-		MutexLockGuard guard(*StaticMutex::mutex);
+		MutexLockGuard guard(*StaticMutex::mutex, "InitInstance - dtor");
 		flag = false;
 		delete instance;
 		instance = NULL;

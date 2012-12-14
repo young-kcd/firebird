@@ -361,7 +361,7 @@ bool expandDatabaseName(const Firebird::PathName& alias,
 		(Arg::Gds(isc_random) << "Server misconfigured - contact administrator please").raise();
 	}
 
-	ReadLockGuard guard(aliasesConf().rwLock);
+	ReadLockGuard guard(aliasesConf().rwLock, "expandDatabaseName");
 
 	// First of all check in aliases.conf
 	if (resolveAlias(alias, file, config))

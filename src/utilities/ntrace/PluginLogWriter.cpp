@@ -36,7 +36,7 @@ using namespace Firebird;
 void strerror_r(int err, char* buf, size_t bufSize)
 {
 	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 	strncpy(buf, strerror(err), bufSize);
 }
 #endif

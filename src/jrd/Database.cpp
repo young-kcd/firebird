@@ -90,8 +90,7 @@ namespace Jrd
 		delete dbb_backup_manager;
 		delete dbb_crypto_manager;
 
-		//Checkout dcoHolder(this);
-
+		fb_assert(!locked());
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
 		LockManager::destroy(dbb_lock_mgr);
@@ -183,7 +182,7 @@ namespace Jrd
 
 		try
 		{
-			AsyncContextHolder tdbb(dbb);
+			AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 			SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::blockingAstSharedCounter");
 

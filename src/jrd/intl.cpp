@@ -346,7 +346,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	}
 
 	Jrd::Attachment* att = tdbb->getAttachment();
-	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx); // do we need it ?
+	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx, FB_FUNCTION); // do we need it ?
 
 	Collation* to_delete = NULL;
 
@@ -1391,7 +1391,7 @@ static int blocking_ast_collation(void* ast_object)
 		Database* const dbb = tt->existenceLock->lck_dbb;
 		Jrd::Attachment* const att = tt->existenceLock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
 
 		tt->obsolete = true;
 		LCK_release(tdbb, tt->existenceLock);

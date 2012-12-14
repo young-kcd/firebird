@@ -130,7 +130,7 @@ static FB_API_HANDLE makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >
 {
 	static ULONG sequenceNumber = 0;
 
-	WriteLockGuard sync(handleMappingLock);
+	WriteLockGuard sync(handleMappingLock, FB_FUNCTION);
 	ULONG handle = 0;
 
 	// Loop until we find an empty handle slot. This is to care of case when counter rolls over.
@@ -154,7 +154,7 @@ static void removeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, 
 {
 	if (handle)
 	{
-		WriteLockGuard sync(handleMappingLock);
+		WriteLockGuard sync(handleMappingLock, FB_FUNCTION);
 		bool removed = map->remove(handle);
 
 		fb_assert(removed);
@@ -167,7 +167,7 @@ template <typename T>
 static RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > > >& map,
 	FB_API_HANDLE* handle)
 {
-	ReadLockGuard sync(handleMappingLock);
+	ReadLockGuard sync(handleMappingLock, FB_FUNCTION);
 
 	T** obj = map->get(*handle);
 
@@ -210,10 +210,9 @@ namespace {
 				const ISC_STATUS* vector = e.value();
 
 				if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
-					strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
+					strcpy(buffer, "Unknown failure in shutdown thread in shutdownSemaphore->enter()");
 
-				gds__log("%s", buffer);
-				exit(0);
+				fb_utils::logAndDie(buffer);
 			}
 
 			if (!killed)
@@ -519,7 +518,7 @@ namespace Why
 	public:
 		static void add(FB_SHUTDOWN_CALLBACK cb, const int m, void* a)
 		{
-			MutexLockGuard guard(shutdownCallbackMutex);
+			MutexLockGuard guard(shutdownCallbackMutex, FB_FUNCTION);
 
 			for (ShutChain* chain = list; chain; chain = chain->next)
 			{
@@ -540,7 +539,7 @@ namespace Why
 		static int run(const int m, const int reason)
 		{
 			int rc = FB_SUCCESS;
-			MutexLockGuard guard(shutdownCallbackMutex);
+			MutexLockGuard guard(shutdownCallbackMutex, FB_FUNCTION);
 
 			for (ShutChain* chain = list; chain; chain = chain->next)
 			{
@@ -644,13 +643,13 @@ namespace Why
 			fini();
 		}
 
-		void init(typename Y::NextInterface* nxt)
+		void init(typename Y::NextInterface* nxt, bool cancelOp = false)
 		{
 			signalInit();
 
 			if (ref)
 			{
-				MutexLockGuard guard(ref->enterMutex);
+				MutexLockGuard guard(ref->enterMutex, FB_FUNCTION);
 				++ref->enterCount;
 			}
 			else
@@ -658,7 +657,7 @@ namespace Why
 				++dispCounter;
 			}
 
-			if (shutdownStarted)
+			if (shutdownStarted && !cancelOp)
 			{
 				fini();
 				Arg::Gds(isc_att_shutdown).raise();
@@ -673,7 +672,7 @@ namespace Why
 
 			if (ref)
 			{
-				MutexLockGuard guard(ref->enterMutex);
+				MutexLockGuard guard(ref->enterMutex, FB_FUNCTION);
 				--ref->enterCount;
 			}
 			else
@@ -700,7 +699,7 @@ namespace Why
 		: ref(aAttachment), nextRef(NULL)
 	{
 		aStatus->init();
-		init(aAttachment->next);
+		init(aAttachment->next, checkAttachment > 1);
 
 		if (checkAttachment && !(nextRef.hasData()))
 		{
@@ -739,7 +738,7 @@ namespace Why
 			aStatus->init();
 			signalInit();
 
-			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
+			static InitMutex<BuiltinRegister> registerBuiltinPlugins("RegisterBuiltinPlugins");
 			registerBuiltinPlugins.init();
 
 			if (!shutdownMode)
@@ -4444,10 +4443,10 @@ void YAttachment::cancelOperation(IStatus* status, int option)
 {
 	try
 	{
-		YEntry<YAttachment> entry(status, this);
+		YEntry<YAttachment> entry(status, this, 2);
 
 		// Mutex will be locked here for a really long time.
-		MutexLockGuard guard(enterMutex);
+		MutexLockGuard guard(enterMutex, FB_FUNCTION);
 
 		if (enterCount > 1 || option != fb_cancel_raise)
 			entry.next()->cancelOperation(status, option);
@@ -5025,7 +5024,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		DispatcherEntry entry(userStatus, true);
 
 		static GlobalPtr<Mutex> singleShutdown;
-		MutexLockGuard guard(singleShutdown);
+		MutexLockGuard guard(singleShutdown, FB_FUNCTION);
 
 		if (shutdownStarted)
 			return;
@@ -5093,7 +5092,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 
 			Stack<YService*, 64> svcStack;
 			{
-				WriteLockGuard sync(handleMappingLock);
+				WriteLockGuard sync(handleMappingLock, FB_FUNCTION);
 				GenericMap<Pair<NonPooled<FB_API_HANDLE, YService*> > >::Accessor accessor(&services);
 
 				if (accessor.getFirst())
@@ -5124,7 +5123,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 
 			Stack<YAttachment*, 64> attStack;
 			{
-				WriteLockGuard sync(handleMappingLock);
+				WriteLockGuard sync(handleMappingLock, FB_FUNCTION);
 				GenericMap<Pair<NonPooled<FB_API_HANDLE, YAttachment*> > >::Accessor accessor(&attachments);
 
 				if (accessor.getFirst())

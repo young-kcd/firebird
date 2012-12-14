@@ -106,7 +106,7 @@ void syncSignalsSet(void* arg)
 	sigjmp_buf* const sigenv = static_cast<sigjmp_buf*>(arg);
 	TLS_SET(sigjmpPtr, sigenv);
 
-	Firebird::MutexLockGuard g(syncEnterMutex);
+	Firebird::MutexLockGuard g(syncEnterMutex, "syncSignalsSet");
 
 	if (syncEnterCounter++ == 0)
 	{
@@ -132,7 +132,7 @@ void syncSignalsReset()
  *
  **************************************/
 
-	Firebird::MutexLockGuard g(syncEnterMutex);
+	Firebird::MutexLockGuard g(syncEnterMutex, "syncSignalsReset");
 
 	fb_assert(syncEnterCounter > 0);
 

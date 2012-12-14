@@ -776,7 +776,7 @@ inline size_t get_map_page_size()
 {
 	if (!map_page_size)
 	{
-		MutexLockGuard guard(*cache_mutex);
+		MutexLockGuard guard(*cache_mutex, "get_map_page_size");
 		if (!map_page_size)
 			map_page_size = get_page_size();
 	}
@@ -790,7 +790,7 @@ void* MemoryPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 #ifndef USE_VALGRIND
 	if (size == DEFAULT_ALLOCATION)
 	{
-		MutexLockGuard guard(*cache_mutex);
+		MutexLockGuard guard(*cache_mutex, "MemoryPool::allocRaw");
 		if (extents_cache.hasData())
 		{
 			// Use most recently used object to encourage caching
@@ -889,7 +889,7 @@ void MemoryPool::releaseRaw(void* block, size_t size) throw ()
 #ifndef USE_VALGRIND
 	if (size == DEFAULT_ALLOCATION)
 	{
-		MutexLockGuard guard(*cache_mutex);
+		MutexLockGuard guard(*cache_mutex, "MemoryPool::releaseRaw");
 		if (extents_cache.getCount() < extents_cache.getCapacity())
 		{
 			extents_cache.push(block);
@@ -910,7 +910,7 @@ void MemoryPool::releaseRaw(void* block, size_t size) throw ()
 	if (pool_destroying)
 	{
 		// Synchronize delayed free queue using extents mutex
-		MutexLockGuard guard(*cache_mutex);
+		MutexLockGuard guard(*cache_mutex, "MemoryPool::releaseRaw");
 
 		// Extend circular buffer if possible
 		if (delayedExtentCount < FB_NELEM(delayedExtents))

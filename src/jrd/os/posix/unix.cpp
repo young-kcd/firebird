@@ -323,7 +323,7 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 
 	// Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this is a no-op.
 #ifndef SUPERSERVER_V2
-	MutexLockGuard guard(main_file->fil_mutex);
+	MutexLockGuard guard(main_file->fil_mutex, FB_FUNCTION);
 
 	///Database::Checkout dcoHolder(dbb);
 

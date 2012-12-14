@@ -73,6 +73,18 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 	if (!attachment)
 		return;
 
+	fb_assert(attachment->att_interface);
+	if (attachment->att_interface)
+	{
+		JAttachment* jAtt = attachment->att_interface;
+
+		// break link between attachment and interface
+		jAtt->cancel();
+		attachment->att_interface = NULL;
+
+		jAtt->manualUnlock(attachment->att_flags);
+	}
+
 	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_tra* sysTransaction = attachment->getSysTransaction();

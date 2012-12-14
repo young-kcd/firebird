@@ -195,7 +195,7 @@ namespace Jrd
 	// flag 'udf' means pass name-path through UdfDirectoryList
 	Module Module::lookupModule(const char* name)
 	{
-		Firebird::MutexLockGuard lg(modulesMutex);
+		Firebird::MutexLockGuard lg(modulesMutex, FB_FUNCTION);
 
 		Firebird::PathName initialModule;
 		terminate_at_space(initialModule, name);
@@ -276,7 +276,7 @@ namespace Jrd
 	{
 		delete handle;
 
-		Firebird::MutexLockGuard lg(modulesMutex);
+		Firebird::MutexLockGuard lg(modulesMutex, FB_FUNCTION);
 
 		for (size_t m = 0; m < loadedModules().getCount(); m++)
 		{

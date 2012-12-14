@@ -441,25 +441,25 @@ public:
 class EngineCallbackGuard
 {
 public:
-	EngineCallbackGuard(Jrd::thread_db* tdbb, Connection& conn)
+	EngineCallbackGuard(Jrd::thread_db* tdbb, Connection& conn, const char* from)
 	{
-		init(tdbb, conn);
+		init(tdbb, conn, from);
 	}
 
-	EngineCallbackGuard(Jrd::thread_db* tdbb, Transaction& tran)
+	EngineCallbackGuard(Jrd::thread_db* tdbb, Transaction& tran, const char* from)
 	{
-		init(tdbb, *tran.getConnection());
+		init(tdbb, *tran.getConnection(), from);
 	}
 
-	EngineCallbackGuard(Jrd::thread_db* tdbb, Statement& stmt)
+	EngineCallbackGuard(Jrd::thread_db* tdbb, Statement& stmt, const char* from)
 	{
-		init(tdbb, *stmt.getConnection());
+		init(tdbb, *stmt.getConnection(), from);
 	}
 
 	~EngineCallbackGuard();
 
 private:
-	void init(Jrd::thread_db* tdbb, Connection& conn);
+	void init(Jrd::thread_db* tdbb, Connection& conn, const char* from);
 
 	Jrd::thread_db* m_tdbb;
 	Firebird::Mutex* m_mutex;

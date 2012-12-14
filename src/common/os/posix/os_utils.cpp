@@ -68,7 +68,7 @@ static GlobalPtr<Mutex> grMutex;
 // Return user group id if user group name found, otherwise return 0.
 SLONG get_user_group_id(const TEXT* user_group_name)
 {
-	MutexLockGuard guard(grMutex);
+	MutexLockGuard guard(grMutex, "get_user_group_id");
 
 	const struct group* user_group = getgrnam(user_group_name);
 	return user_group ? user_group->gr_gid : -1;
@@ -79,7 +79,7 @@ static GlobalPtr<Mutex> pwMutex;
 // Return user id if user found, otherwise return -1.
 SLONG get_user_id(const TEXT* user_name)
 {
-	MutexLockGuard guard(pwMutex);
+	MutexLockGuard guard(pwMutex, "get_user_id");
 
 	const struct passwd* user = getpwnam(user_name);
 	return user ? user->pw_uid : -1;
@@ -88,7 +88,7 @@ SLONG get_user_id(const TEXT* user_name)
 // Fills the buffer with home directory if user found
 bool get_user_home(int user_id, PathName& homeDir)
 {
-	MutexLockGuard guard(pwMutex);
+	MutexLockGuard guard(pwMutex, "get_user_home");
 
 	const struct passwd* user = getpwuid(user_id);
 	if (user)

@@ -209,7 +209,7 @@ typedef void* UDF_ARG;
 template <typename T>
 T CALL_UDF(Jrd::Attachment* att, int (*entrypoint)(), UDF_ARG* args)
 {
-	Jrd::Attachment::Checkout attCout(att);
+	Jrd::Attachment::Checkout attCout(att, FB_FUNCTION);
 	return ((T (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(entrypoint)) (args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
 }
 
@@ -780,7 +780,7 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment());
+	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
 	return blob->BLB_lseek(mode, offset);
 }
@@ -800,7 +800,7 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment());
+	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
 	blob->BLB_put_segment(tdbb, buffer, length);
 }
@@ -824,7 +824,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment());
+	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
 	*return_length = blob->BLB_get_segment(tdbb, buffer, length);
 

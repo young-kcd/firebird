@@ -166,6 +166,8 @@ namespace fb_utils
 	// generate random string in BASE64 representation
 	void random64(Firebird::string& randomValue, size_t length);
 
+	void logAndDie(const char* text);
+
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

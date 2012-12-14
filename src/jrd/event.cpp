@@ -83,7 +83,7 @@ void EventManager::init(Attachment* attachment)
 	{
 		const string id = dbb->getUniqueFileId();
 
-		MutexLockGuard guard(g_mapMutex);
+		MutexLockGuard guard(g_mapMutex, FB_FUNCTION);
 
 		if (!g_emMap->get(id, eventMgr))
 		{
@@ -112,7 +112,7 @@ void EventManager::destroy(EventManager* eventMgr)
 	{
 		const Firebird::string id = eventMgr->m_dbId;
 
-		Firebird::MutexLockGuard guard(g_mapMutex);
+		Firebird::MutexLockGuard guard(g_mapMutex, FB_FUNCTION);
 
 		if (!eventMgr->release())
 		{
@@ -622,8 +622,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	if (!best)
 	{
 		release_shmem();
-		gds__log("Event table space exhausted");
-		exit(FINI_ERROR);
+		fb_utils::logAndDie("Event table space exhausted");
 	}
 
 	free = (frb*) SRQ_ABS_PTR(*best);
@@ -1172,10 +1171,7 @@ void EventManager::mutex_bugcheck(const TEXT* string, int mutex_state)
 	TEXT msg[BUFFER_TINY];
 
 	sprintf(msg, "EVENT: %s error, status = %d", string, mutex_state);
-	gds__log(msg);
-
-	fprintf(stderr, "%s\n", msg);
-	exit(FINI_ERROR);
+	fb_utils::logAndDie(msg);
 }
 
 

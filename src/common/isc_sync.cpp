@@ -295,7 +295,7 @@ FileLock::FileLock(const char* fileName, InitFunction* init)
 #endif
 	  rwcl(NULL)
 {
-	MutexLockGuard g(fdNodesMutex);
+	MutexLockGuard g(fdNodesMutex, FB_FUNCTION);
 
 	DevNode id(getNode(fileName));
 
@@ -331,7 +331,7 @@ FileLock::FileLock(const FileLock* main, int s)
 	: level(LCK_NONE), oFile(main->oFile),
 	  lStart(s), rwcl(getRw())
 {
-	MutexLockGuard g(fdNodesMutex);
+	MutexLockGuard g(fdNodesMutex, FB_FUNCTION);
 	++(oFile->useCount);
 }
 #endif
@@ -341,7 +341,7 @@ FileLock::~FileLock()
 	unlock();
 
 	{ // guard scope
-		MutexLockGuard g(rwlocksMutex);
+		MutexLockGuard g(rwlocksMutex, FB_FUNCTION);
 
 		if (--(rwcl->cnt) == 0)
 		{
@@ -350,7 +350,7 @@ FileLock::~FileLock()
 		}
 	}
 	{ // guard scope
-		MutexLockGuard g(fdNodesMutex);
+		MutexLockGuard g(fdNodesMutex, FB_FUNCTION);
 
 		if (--(oFile->useCount) == 0)
 		{
@@ -401,16 +401,16 @@ int FileLock::setlock(const LockMode mode)
 		switch (mode)
 		{
 		case FLM_TRY_EXCLUSIVE:
-			rc = rwcl->rwlock.tryBeginWrite();
+			rc = rwcl->rwlock.tryBeginWrite(FB_FUNCTION);
 			break;
 		case FLM_EXCLUSIVE:
-			rwcl->rwlock.beginWrite();
+			rwcl->rwlock.beginWrite(FB_FUNCTION);
 			break;
 		case FLM_TRY_SHARED:
-			rc = rwcl->rwlock.tryBeginRead();
+			rc = rwcl->rwlock.tryBeginRead(FB_FUNCTION);
 			break;
 		case FLM_SHARED:
-			rwcl->rwlock.beginRead();
+			rwcl->rwlock.beginRead(FB_FUNCTION);
 			break;
 		}
 	}
@@ -424,7 +424,7 @@ int FileLock::setlock(const LockMode mode)
 	}
 
 	// For shared lock we must take into an account reenterability
-	MutexEnsureUnlock guard(rwcl->sharedAccessMutex);
+	MutexEnsureUnlock guard(rwcl->sharedAccessMutex, FB_FUNCTION);
 	if (shared)
 	{
 		if (wait)
@@ -530,7 +530,7 @@ void FileLock::unlock()
 	}
 
 	// For shared lock we must take into an account reenterability
-	MutexEnsureUnlock guard(rwcl->sharedAccessMutex);
+	MutexEnsureUnlock guard(rwcl->sharedAccessMutex, FB_FUNCTION);
 	if (level == LCK_SHARED)
 	{
 		guard.enter();
@@ -600,7 +600,7 @@ CountedRWLock* FileLock::getRw()
 	string id = getLockId();
 	CountedRWLock* rc = NULL;
 
-	MutexLockGuard g(rwlocksMutex);
+	MutexLockGuard g(rwlocksMutex, FB_FUNCTION);
 
 	CountedRWLock** got = rwlocks->get(id);
 	if (got)
@@ -840,7 +840,7 @@ namespace {
 
 	void initCache()
 	{
-		MutexLockGuard guard(idCacheMutex);
+		MutexLockGuard guard(idCacheMutex, FB_FUNCTION);
 		memset(idCache, 0xff, sizeof idCache);
 	}
 
@@ -853,7 +853,7 @@ namespace {
 			filesTable[fNum - 1].name[0] = 0;
 		}
 
-		MutexLockGuard guard(idCacheMutex);
+		MutexLockGuard guard(idCacheMutex, FB_FUNCTION);
 		for (int n = 0; n < lastSet; ++n)
 		{
 			if (set[n].fileNum == fNum)
@@ -921,7 +921,7 @@ void SharedMemoryBase::freeSem5(Sys5Semaphore* sem)
 
 int Sys5Semaphore::getId()
 {
-	MutexLockGuard guard(idCacheMutex);
+	MutexLockGuard guard(idCacheMutex, FB_FUNCTION);
 	fb_assert(semSet >= 0 && semSet < SemTable::N_SETS);
 
 	int id = idCache[semSet];
@@ -1008,7 +1008,7 @@ void addTimer(Sys5Semaphore* sem, int microSeconds)
 {
 	TimerEntry* newTimer = new TimerEntry(sem->getId(), sem->semNum);
 	{
-		MutexLockGuard guard(timerAccess);
+		MutexLockGuard guard(timerAccess, FB_FUNCTION);
 		timerQueue->push(newTimer);
 	}
 	TimerInterfacePtr()->start(newTimer, microSeconds);
@@ -1020,7 +1020,7 @@ void delTimer(Sys5Semaphore* sem)
 	TimerEntry** t;
 
 	{
-		MutexLockGuard guard(timerAccess);
+		MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
 		for (t = timerQueue->begin(); t < timerQueue->end(); ++t)
 		{
@@ -1803,7 +1803,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	const bool trunc_flag = (length != 0);
 
 	// open the init lock file
-	MutexLockGuard guard(openFdInit);
+	MutexLockGuard guard(openFdInit, FB_FUNCTION);
 
 	initFile.reset(FB_NEW(*getDefaultMemoryPool()) FileLock(init_filename));
 

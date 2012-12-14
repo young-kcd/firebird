@@ -168,7 +168,7 @@ Firebird::GlobalPtr<Firebird::Mutex> LockManager::g_mapMutex;
 
 LockManager* LockManager::create(const Firebird::string& id, RefPtr<Config> conf)
 {
-	Firebird::MutexLockGuard guard(g_mapMutex);
+	Firebird::MutexLockGuard guard(g_mapMutex, FB_FUNCTION);
 
 	LockManager* lockMgr = NULL;
 	if (!g_lmMap->get(id, lockMgr))
@@ -194,7 +194,7 @@ void LockManager::destroy(LockManager* lockMgr)
 	{
 		const Firebird::string id = lockMgr->m_dbId;
 
-		Firebird::MutexLockGuard guard(g_mapMutex);
+		Firebird::MutexLockGuard guard(g_mapMutex, FB_FUNCTION);
 
 		if (!lockMgr->release())
 		{
@@ -238,7 +238,7 @@ LockManager::~LockManager()
 	const SRQ_PTR process_offset = m_processOffset;
 
 	{ // guardian's scope
-		LockTableGuard guard(this);
+		LockTableGuard guard(this, FB_FUNCTION);
 		m_processOffset = 0;
 	}
 
@@ -267,7 +267,7 @@ LockManager::~LockManager()
 	}
 
 	{ // guardian's scope
-		LockTableGuard guard(this, DUMMY_OWNER);
+		LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 		if (process_offset)
 		{
@@ -416,7 +416,7 @@ bool LockManager::initializeOwner(Arg::StatusVector& statusVector,
 
 	if (owner_offset)
 	{
-		LockTableGuard guard(this, owner_offset);
+		LockTableGuard guard(this, FB_FUNCTION, owner_offset);
 
 		// If everything is already initialized, just bump the use count
 
@@ -425,7 +425,7 @@ bool LockManager::initializeOwner(Arg::StatusVector& statusVector,
 		return true;
 	}
 
-	LockTableGuard guard(this, DUMMY_OWNER);
+	LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 	owner_offset = create_owner(statusVector, owner_id, owner_type);
 
@@ -456,7 +456,7 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
 	if (!owner_offset)
 		return;
 
-	LockTableGuard guard(this, owner_offset);
+	LockTableGuard guard(this, FB_FUNCTION, owner_offset);
 
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
@@ -468,8 +468,8 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
 	while (owner->own_ast_count)
 	{
 		{ // checkout scope
-			LockTableCheckout checkout(this);
-			Jrd::Attachment::Checkout cout(attachment, true);
+			LockTableCheckout checkout(this, FB_FUNCTION);
+			Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION, true);
 			THREAD_SLEEP(10);
 		}
 
@@ -517,7 +517,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	if (!owner_offset)
 		return 0;
 
-	LockTableGuard guard(this, owner_offset);
+	LockTableGuard guard(this, FB_FUNCTION, owner_offset);
 
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
@@ -661,7 +661,7 @@ bool LockManager::convert(Attachment* attachment,
  **************************************/
 	LOCK_TRACE(("LM::convert (%d, %d)\n", type, lck_wait));
 
-	LockTableGuard guard(this, DUMMY_OWNER);
+	LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 	lrq* const request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
@@ -704,7 +704,7 @@ UCHAR LockManager::downgrade(Attachment* attachment,
  **************************************/
 	LOCK_TRACE(("LM::downgrade (%ld)\n", request_offset));
 
-	LockTableGuard guard(this, DUMMY_OWNER);
+	LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 	lrq* const request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
@@ -767,7 +767,7 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LM::dequeue (%ld)\n", request_offset));
 
-	LockTableGuard guard(this, DUMMY_OWNER);
+	LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 	lrq* const request = get_request(request_offset);
 	const SRQ_PTR owner_offset = request->lrq_owner;
@@ -809,7 +809,7 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
 	if (!owner_offset)
 		return;
 
-	LockTableGuard guard(this, owner_offset);
+	LockTableGuard guard(this, FB_FUNCTION, owner_offset);
 
 	// Allocate or reuse a lock request block
 
@@ -870,7 +870,7 @@ bool LockManager::cancelWait(SRQ_PTR owner_offset)
 	if (!owner_offset)
 		return false;
 
-	LockTableGuard guard(this, owner_offset);
+	LockTableGuard guard(this, FB_FUNCTION, owner_offset);
 
 	own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
@@ -902,7 +902,7 @@ SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 
 	LOCK_TRACE(("LM::queryData (%ld)\n", owner_offset));
 
-	LockTableGuard guard(this, DUMMY_OWNER);
+	LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 	++(m_sharedMemory->getHeader()->lhb_query_data);
 
@@ -988,7 +988,7 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LM::readData (%ld)\n", request_offset));
 
-	LockTableGuard guard(this, DUMMY_OWNER);
+	LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 	const lrq* const request = get_request(request_offset);
 	guard.setOwner(request->lrq_owner);
@@ -1026,7 +1026,7 @@ SLONG LockManager::readData2(USHORT series,
 	if (!owner_offset)
 		return 0;
 
-	LockTableGuard guard(this, owner_offset);
+	LockTableGuard guard(this, FB_FUNCTION, owner_offset);
 
 	++(m_sharedMemory->getHeader()->lhb_read_data);
 
@@ -1056,7 +1056,7 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
  **************************************/
 	LOCK_TRACE(("LM::writeData (%ld)\n", request_offset));
 
-	LockTableGuard guard(this, DUMMY_OWNER);
+	LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 	const lrq* const request = get_request(request_offset);
 	guard.setOwner(request->lrq_owner);
@@ -1189,7 +1189,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #ifdef HAVE_OBJECT_MAP
 		const ULONG new_length = m_sharedMemory->getHeader()->lhb_length;
 
-		Firebird::WriteLockGuard guard(m_remapSync);
+		Firebird::WriteLockGuard guard(m_remapSync, FB_FUNCTION);
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
@@ -1292,7 +1292,7 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 		}
 		else
 #elif (defined HAVE_OBJECT_MAP)
-		Firebird::WriteLockGuard guard(m_remapSync);
+		Firebird::WriteLockGuard guard(m_remapSync, FB_FUNCTION);
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
@@ -1433,8 +1433,8 @@ void LockManager::blocking_action(Attachment* attachment, SRQ_PTR blocking_owner
 			owner->own_ast_count++;
 
 			{ // checkout scope
-				LockTableCheckout checkout(this);
-				Jrd::Attachment::Checkout cout(attachment, true);
+				LockTableCheckout checkout(this, FB_FUNCTION);
+				Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION, true);
 				(*routine)(arg);
 			}
 
@@ -1479,7 +1479,7 @@ void LockManager::blocking_action_thread()
 			SLONG value;
 
 			{ // guardian's scope
-				LockTableGuard guard(this, DUMMY_OWNER);
+				LockTableGuard guard(this, FB_FUNCTION, DUMMY_OWNER);
 
 				// See if the main thread has requested us to go away
 				if (!m_processOffset || m_process->prc_process_id != PID)
@@ -1591,13 +1591,15 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 #else
 	sprintf(s, "Fatal lock manager error: %s, errno: %d", string, ERRNO);
 #endif
-	gds__log(s);
-	fprintf(stderr, "%s\n", s);
 
 #if !(defined WIN_NT)
 	// The strerror() function returns the appropriate description string,
 	// or an unknown error message if the error code is unknown.
-	fprintf(stderr, "--%s\n", strerror(errno));
+	if (errno)
+	{
+		strcat(s, "\n--");
+		strcat(s, strerror(errno));
+	}
 #endif
 
 	if (!m_bugcheck)
@@ -1636,14 +1638,15 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 #ifdef DEV_BUILD
    /* In the worst case this code makes it possible to attach live process
 	* and see shared memory data.
-	fprintf(stderr, "Attach to pid=%d\n", getpid());
+	if (isatty(2))
+		fprintf(stderr, "Attach to pid=%d\n", getpid());
+	else
+		gds__log("Attach to pid=%d\n", getpid());
 	sleep(120);
 	*/
-	// Make a core drop - we want to LOOK at this failure!
-	abort();
 #endif
 
-	exit(FINI_ERROR);
+	fb_utils::logAndDie(s);
 }
 
 
@@ -2381,8 +2384,7 @@ bool LockManager::initialize(SharedMemoryBase* sm, bool initializeMemory)
 	shb* secondary_header = (shb*) alloc(sizeof(shb), NULL);
 	if (!secondary_header)
 	{
-		gds__log("Fatal lock manager error: lock manager out of room");
-		exit(STARTUP_ERROR);
+		fb_utils::logAndDie("Fatal lock manager error: lock manager out of room");
 	}
 
 	hdr->lhb_secondary = SRQ_REL_PTR(secondary_header);
@@ -2402,8 +2404,7 @@ bool LockManager::initialize(SharedMemoryBase* sm, bool initializeMemory)
 		{
 			if (!(history = (his*) alloc(sizeof(his), NULL)))
 			{
-				gds__log("Fatal lock manager error: lock manager out of room");
-				exit(STARTUP_ERROR);
+				fb_utils::logAndDie("Fatal lock manager error: lock manager out of room");
 			}
 			*prior = SRQ_REL_PTR(history);
 			history->his_type = type_his;
@@ -3855,16 +3856,16 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 			// semaphore looks 'un-poked'
 
 			{ // checkout scope
-				LockTableCheckout checkout(this);
+				LockTableCheckout checkout(this, FB_FUNCTION);
 
 				{ // scope
-					Firebird::ReadLockGuard guard(m_remapSync);
+					Firebird::ReadLockGuard guard(m_remapSync, FB_FUNCTION);
 					owner = (own*) SRQ_ABS_PTR(owner_offset);
 					++m_waitingOwners;
 				}
 
 				{ // scope
-					Jrd::Attachment::Checkout cout(attachment);
+					Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION);
 					ret = m_sharedMemory->eventWait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 					--m_waitingOwners;
 				}

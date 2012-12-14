@@ -31,6 +31,7 @@
 
 #include "firebird.h"
 #include "../common/gdsassert.h"
+#include "../common/classes/Reasons.h"
 
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
@@ -70,19 +71,18 @@ private:
 	static tTryEnterCriticalSection* m_funct;
 };
 
-class Mutex
+class Mutex : public Reasons
 {
 protected:
 	CRITICAL_SECTION spinlock;
 #ifdef DEV_BUILD
-	const char* reason;
 	int lockCount;
 #endif
 
 public:
 	Mutex()
 #ifdef DEV_BUILD
-		: reason(NULL), lockCount(0)
+		: lockCount(0)
 #endif
 	{
 		InitializeCriticalSection(&spinlock);
@@ -105,34 +105,25 @@ public:
 		DeleteCriticalSection(&spinlock);
 	}
 
-#ifdef DEV_BUILD
 	void enter(const char* aReason)
 	{
 		EnterCriticalSection(&spinlock);
-		reason = aReason;
-		lockCount++;
-	}
-#endif
-
-	void enter()
-	{
-		EnterCriticalSection(&spinlock);
+		reason(aReason);
 #ifdef DEV_BUILD
-		reason = "<..unspecified..>";
 		lockCount++;
 #endif
 	}
 
-	bool tryEnter()
+	bool tryEnter(const char* aReason)
 	{
 		const bool ret = TryEnterCS::tryEnter(&spinlock);
-#ifdef DEV_BUILD
 		if (ret)
 		{
-			reason = "<..unspecified..>";
+			reason(aReason);
+#ifdef DEV_BUILD
 			lockCount++;
-		}
 #endif
+		}
 		return ret;
 	}
 
@@ -154,7 +145,7 @@ public:
 #ifdef DEV_BUILD
 		// first of all try to enter the mutex
 		// this will help to make sure it's not locked by other thread
-		if (!tryEnter())
+		if (!tryEnter("assertLocked()"))
 		{
 			fb_assert(false);
 		}
@@ -189,14 +180,13 @@ public:
 #else //WIN_NT
 
 // Pthreads version of the class
-class Mutex
+class Mutex : public Reasons
 {
 friend class Condition;
 private:
 	pthread_mutex_t mlock;
 	static pthread_mutexattr_t attr;
 #ifdef DEV_BUILD
-	const char* reason;
 	int lockCount;
 #endif
 
@@ -204,7 +194,6 @@ private:
 	void init()
 	{
 #ifdef DEV_BUILD
-		reason = NULL;
 		lockCount = 0;
 #endif
 		int rc = pthread_mutex_init(&mlock, &attr);
@@ -224,29 +213,18 @@ public:
 			system_call_failed::raise("pthread_mutex_destroy", rc);
 	}
 
-#ifdef DEV_BUILD
 	void enter(const char* aReason)
 	{
 		int rc = pthread_mutex_lock(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_lock", rc);
-		reason = aReason;
-		++lockCount;
-	}
-#endif
-
-	void enter()
-	{
-		int rc = pthread_mutex_lock(&mlock);
-		if (rc)
-			system_call_failed::raise("pthread_mutex_lock", rc);
+		reason(aReason);
 #ifdef DEV_BUILD
-		reason = "<..unspecified..>";
 		++lockCount;
 #endif
 	}
 
-	bool tryEnter()
+	bool tryEnter(const char* aReason)
 	{
 		int rc = pthread_mutex_trylock(&mlock);
 		if (rc == EBUSY)
@@ -254,7 +232,7 @@ public:
 		if (rc)
 			system_call_failed::raise("pthread_mutex_trylock", rc);
 #ifdef DEV_BUILD
-		reason = "<..unspecified..>";
+		reason(aReason);
 		++lockCount;
 #endif
 		return true;
@@ -276,19 +254,28 @@ public:
 		}
 	}
 
+#ifdef DEV_BUILD
+	bool locked()
+	{
+		// first of all try to enter the mutex
+		// this will help to make sure it's not locked by other thread
+		if (!tryEnter("assertLocked()"))
+		{
+			return false;
+		}
+		// make sure mutex was already locked prior assertLocked
+		bool rc = lockCount > 1;
+		// leave to release lock, done by us in tryEnter
+		leave();
+
+		return rc;
+	}
+#endif
+
 	void assertLocked()
 	{
 #ifdef DEV_BUILD
-		// first of all try to enter the mutex
-		// this will help to make sure it's not locked by other thread
-		if (!tryEnter())
-		{
-			fb_assert(false);
-		}
-		// make sure mutex was already locked prior assertLocked
-		fb_assert(lockCount > 1);
-		// leave to release lock, done by us in tryEnter
-		leave();
+		fb_assert(locked());
 #endif
 	}
 
@@ -346,18 +333,7 @@ public:
 	MutexLockGuard(Mutex& aLock, const char* aReason)
 		: lock(&aLock)
 	{
-#ifdef DEV_BUILD
 		lock->enter(aReason);
-#else
-		(void) aReason;	// warning
-		lock->enter();
-#endif
-	}
-
-	explicit MutexLockGuard(Mutex& aLock)
-		: lock(&aLock)
-	{
-		lock->enter();
 	}
 
 	~MutexLockGuard()
@@ -383,22 +359,29 @@ private:
 class MutexUnlockGuard
 {
 public:
-	explicit MutexUnlockGuard(Mutex& aLock)
+	explicit MutexUnlockGuard(Mutex& aLock, const char* aReason)
 		: lock(&aLock)
+#ifdef DEV_BUILD
+			, saveReason(aReason)
+#endif
+	{
+		lock->leave();
+	}
+
+	~MutexUnlockGuard()
 	{
 		try
 		{
-			lock->leave();
+#ifdef DEV_BUILD
+			lock->enter(saveReason);
+#else
+			lock->enter(NULL);
+#endif
 		}
 		catch (const Exception&)
 		{
 			DtorException::devHalt();
 		}
-	}
-
-	~MutexUnlockGuard()
-	{
-		lock->enter();
 	}
 
 private:
@@ -407,15 +390,18 @@ private:
 	MutexUnlockGuard& operator=(const MutexUnlockGuard&);
 
 	Mutex* lock;
+#ifdef DEV_BUILD
+	const char* saveReason;
+#endif
 };
 
 
 class MutexCheckoutGuard
 {
 public:
-	MutexCheckoutGuard(Mutex& mtxCout, Mutex& mtxLock) :
-		unlock(mtxCout),
-		lock(mtxLock)
+	MutexCheckoutGuard(Mutex& mtxCout, Mutex& mtxLock, const char* aReason) :
+		unlock(mtxCout, aReason),
+		lock(mtxLock, aReason)
 	{
 	}
 

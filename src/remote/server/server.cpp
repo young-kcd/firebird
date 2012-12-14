@@ -156,7 +156,7 @@ public:
 			return false;
 		}
 
-		MutexLockGuard guard(fullAccess);
+		MutexLockGuard guard(fullAccess, FB_FUNCTION);
 		const time_t t = time(0);
 
 		size_t pos;
@@ -208,7 +208,7 @@ public:
 			return;
 		}
 
-		MutexLockGuard guard(fullAccess);
+		MutexLockGuard guard(fullAccess, FB_FUNCTION);
 
 		size_t pos;
 		if (find(login, pos))
@@ -628,7 +628,7 @@ public:
 			return;
 		}
 
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		PACKET packet;
 		packet.p_operation = op_event;
@@ -1091,7 +1091,7 @@ static void free_request(server_req_t* request)
  * Functional description
  *
  **************************************/
-	MutexLockGuard queGuard(request_que_mutex);
+	MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 
 	request->req_port = 0;
 	request->req_next = free_requests;
@@ -1112,7 +1112,7 @@ static server_req_t* alloc_request()
  *	if empty - allocate the new one.
  *
  **************************************/
-	MutexEnsureUnlock queGuard(request_que_mutex);
+	MutexEnsureUnlock queGuard(request_que_mutex, FB_FUNCTION);
 	queGuard.enter();
 
 	server_req_t* request = free_requests;
@@ -1181,7 +1181,7 @@ static bool link_request(rem_port* port, server_req_t* request)
 	server_req_t* queue;
 
 	{	// request_que_mutex scope
-		MutexLockGuard queGuard(request_que_mutex);
+		MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 
 		bool active = true;
 		queue = active_requests;
@@ -1309,11 +1309,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						continue;
 					}
 					dataSize -= asyncSize;
-					RefMutexGuard queGuard(*port->port_que_sync);
+					RefMutexGuard queGuard(*port->port_que_sync, FB_FUNCTION);
 					memcpy(port->port_queue.add().getBuffer(dataSize), buffer + asyncSize, dataSize);
 				}
 
-				RefMutexEnsureUnlock portGuard(*port->port_sync);
+				RefMutexEnsureUnlock portGuard(*port->port_sync, FB_FUNCTION);
 				const bool portLocked = portGuard.tryEnter();
 				// Handle bytes received only if port is currently idle and has no requests
 				// queued or if it is disconnect (dataSize == 0). Else let loopThread
@@ -1328,7 +1328,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						fb_assert(portLocked);
 						fb_assert(port->port_requests_queued.value() == 0);
 
-						RefMutexGuard queGuard(*port->port_que_sync);
+						RefMutexGuard queGuard(*port->port_que_sync, FB_FUNCTION);
 
 						const rem_port::RecvQueState recvState = port->getRecvState();
 						port->receive(&request->req_receive);
@@ -1717,7 +1717,7 @@ static void append_request_chain(server_req_t* request, server_req_t** que_inst)
  *	Return count of pending requests.
  *
  **************************************/
-	MutexLockGuard queGuard(request_que_mutex);
+	MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 
 	while (*que_inst)
 		que_inst = &(*que_inst)->req_chain;
@@ -1740,7 +1740,7 @@ static void append_request_next(server_req_t* request, server_req_t** que_inst)
  *	Return count of pending requests.
  *
  **************************************/
-	MutexLockGuard queGuard(request_que_mutex);
+	MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 
 	while (*que_inst)
 		que_inst = &(*que_inst)->req_next;
@@ -3896,7 +3896,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
  *	sent.
  *
  **************************************/
-	RefMutexGuard portGuard(*port->port_sync);
+	RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 	DecrementRequestsQueued dec(port);
 
 	try
@@ -5382,7 +5382,7 @@ void set_server(rem_port* port, USHORT flags)
  *	create it.
  *
  **************************************/
-	MutexLockGuard srvrGuard(servers_mutex);
+	MutexLockGuard srvrGuard(servers_mutex, FB_FUNCTION);
 	srvr* server;
 
 	for (server = servers; server; server = server->srvr_next)
@@ -5563,7 +5563,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 	while (!Worker::isShuttingDown())
 	{
-		MutexEnsureUnlock reqQueGuard(request_que_mutex);
+		MutexEnsureUnlock reqQueGuard(request_que_mutex, FB_FUNCTION);
 		reqQueGuard.enter();
 		server_req_t* request = request_que;
 		if (request)
@@ -5594,7 +5594,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				// and unsplice
 
 				{ // scope
-					MutexLockGuard queGuard(request_que_mutex);
+					MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 					request->req_next = active_requests;
 					active_requests = request;
 					ports_active++;
@@ -5602,9 +5602,9 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 				// Validate port.  If it looks ok, process request
 
-				RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync);
+				RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync, FB_FUNCTION);
 				{ // port_sync scope
-					RefMutexGuard portGuard(*request->req_port->port_sync);
+					RefMutexGuard portGuard(*request->req_port->port_sync, FB_FUNCTION);
 
 					if (request->req_port->port_state == rem_port::DISCONNECTED ||
 						!process_packet(request->req_port, &request->req_send, &request->req_receive, &port))
@@ -5660,7 +5660,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				}
 
 				{ // request_que_mutex scope
-					MutexLockGuard queGuard(request_que_mutex);
+					MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 
 					// Take request out of list of active requests
 
@@ -5789,7 +5789,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 
 	{ // scope for guard
 		static GlobalPtr<Mutex> mutex;
-		MutexLockGuard guard(mutex);
+		MutexLockGuard guard(mutex, FB_FUNCTION);
 
 		port_async_receive->clearRecvQue();
 		port_async_receive->port_receive.x_handy = 0;
@@ -5909,13 +5909,13 @@ Worker::Worker()
 	m_tid = getThreadId();
 #endif
 
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	insert(m_active);
 }
 
 Worker::~Worker()
 {
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	remove();
 	--m_cntAll;
 }
@@ -5926,7 +5926,7 @@ bool Worker::wait(int timeout)
 	if (m_sem.tryEnter(timeout))
 		return true;
 
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	if (m_sem.tryEnter(0))
 		return true;
 
@@ -5939,14 +5939,14 @@ void Worker::setState(const bool active)
 	if (m_active == active)
 		return;
 
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	remove();
 	insert(active);
 }
 
 bool Worker::wakeUp()
 {
-	MutexLockGuard reqQueGuard(request_que_mutex);
+	MutexLockGuard reqQueGuard(request_que_mutex, FB_FUNCTION);
 
 #ifdef _DEBUG
 	int cnt = 0;
@@ -5963,7 +5963,7 @@ bool Worker::wakeUp()
 	if (!ports_pending)
 		return true;
 
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 	if (m_idleWorkers)
 	{
@@ -5981,7 +5981,7 @@ bool Worker::wakeUp()
 
 void Worker::wakeUpAll()
 {
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	for (Worker* thd = m_idleWorkers; thd; thd = thd->m_next)
 		thd->m_sem.release();
 }
@@ -6037,7 +6037,7 @@ void Worker::start(USHORT flags)
 		if (isShuttingDown())
 			return;
 
-		MutexLockGuard guard(m_mutex);
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 		try
 		{
 			Thread::start(loopThread, (void*)(IPTR) flags, THREAD_medium);
@@ -6055,7 +6055,7 @@ void Worker::start(USHORT flags)
 
 void Worker::shutdown()
 {
-	MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	if (shutting_down)
 	{
 		return;
@@ -6073,10 +6073,10 @@ void Worker::shutdown()
 		}
 		catch (const Exception&)
 		{
-			m_mutex->enter();
+			m_mutex->enter(FB_FUNCTION);
 			throw;
 		}
-		m_mutex->enter();
+		m_mutex->enter(FB_FUNCTION);
 	}
 }
 

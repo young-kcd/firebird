@@ -1720,7 +1720,7 @@ private:
 
 	void convert(AbstractString& str, iconv_t id)
 	{
-		MutexLockGuard g(mtx);
+		MutexLockGuard g(mtx, "IConv::convert");
 
 		const size_t outlength = str.length() * 4;
 		size_t outsize = outlength;

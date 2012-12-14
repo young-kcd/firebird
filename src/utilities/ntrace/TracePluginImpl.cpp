@@ -235,7 +235,7 @@ void TracePluginImpl::logRecordConn(const char* action, TraceDatabaseConnection*
 	while (true)
 	{
 		{
-			ReadLockGuard lock(connectionsLock);
+			ReadLockGuard lock(connectionsLock, FB_FUNCTION);
 			ConnectionsTree::Accessor accessor(&connections);
 			if (accessor.locate(conn_id))
 			{
@@ -260,7 +260,7 @@ void TracePluginImpl::logRecordConn(const char* action, TraceDatabaseConnection*
 	// don't keep failed connection
 	if (!conn_id)
 	{
-		WriteLockGuard lock(connectionsLock);
+		WriteLockGuard lock(connectionsLock, FB_FUNCTION);
 		ConnectionsTree::Accessor accessor(&connections);
 		if (accessor.locate(conn_id))
 		{
@@ -281,7 +281,7 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceDatabaseConnection
 	{
 		// Lookup transaction description
 		{
-			ReadLockGuard lock(transactionsLock);
+			ReadLockGuard lock(transactionsLock, FB_FUNCTION);
 			TransactionsTree::Accessor accessor(&transactions);
 			if (accessor.locate(tra_id))
 			{
@@ -331,7 +331,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceDatabaseConnection*
 	{
 		// Lookup description for statement
 		{
-			ReadLockGuard lock(statementsLock);
+			ReadLockGuard lock(statementsLock, FB_FUNCTION);
 
 			StatementsTree::Accessor accessor(&statements);
 			if (accessor.locate(stmt_id))
@@ -367,7 +367,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceDatabaseConnection*
 	// don't need to keep failed statement
 	if (!stmt_id)
 	{
-		WriteLockGuard lock(statementsLock);
+		WriteLockGuard lock(statementsLock, FB_FUNCTION);
 		StatementsTree::Accessor accessor(&statements);
 		if (accessor.locate(stmt_id))
 		{
@@ -399,7 +399,7 @@ void TracePluginImpl::logRecordServ(const char* action, TraceServiceConnection* 
 	{
 		// Lookup service description
 		{
-			ReadLockGuard lock(servicesLock);
+			ReadLockGuard lock(servicesLock, FB_FUNCTION);
 
 			ServicesTree::Accessor accessor(&services);
 			if (accessor.locate(svc_id))
@@ -993,7 +993,7 @@ void TracePluginImpl::register_connection(TraceDatabaseConnection* connection)
 
 	// Adjust the list of connections
 	{
-		WriteLockGuard lock(connectionsLock);
+		WriteLockGuard lock(connectionsLock, FB_FUNCTION);
 		connections.add(conn_data);
 	}
 }
@@ -1033,7 +1033,7 @@ void TracePluginImpl::log_event_detach(TraceDatabaseConnection* connection, ntra
 	}
 
 	// Get rid of connection descriptor
-	WriteLockGuard lock(connectionsLock);
+	WriteLockGuard lock(connectionsLock, FB_FUNCTION);
 	if (connections.locate(connection->getConnectionID()))
 	{
 		connections.current().deallocate_references();
@@ -1095,7 +1095,7 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 
 	// Remember transaction
 	{
-		WriteLockGuard lock(transactionsLock);
+		WriteLockGuard lock(transactionsLock, FB_FUNCTION);
 		transactions.add(trans_data);
 	}
 }
@@ -1168,7 +1168,7 @@ void TracePluginImpl::log_event_transaction_end(TraceDatabaseConnection* connect
 	if (!retain_context)
 	{
 		// Forget about the transaction
-		WriteLockGuard lock(transactionsLock);
+		WriteLockGuard lock(transactionsLock, FB_FUNCTION);
 		if (transactions.locate(transaction->getTransactionID()))
 		{
 			transactions.current().deallocate_references();
@@ -1338,7 +1338,7 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 
 	// Remember statement
 	{
-		WriteLockGuard lock(statementsLock);
+		WriteLockGuard lock(statementsLock, FB_FUNCTION);
 		statements.add(stmt_data);
 	}
 }
@@ -1381,7 +1381,7 @@ void TracePluginImpl::log_event_dsql_free(TraceDatabaseConnection* connection,
 
 	if (option == DSQL_drop)
 	{
-		WriteLockGuard lock(statementsLock);
+		WriteLockGuard lock(statementsLock, FB_FUNCTION);
 		if (statements.locate(statement->getStmtID()))
 		{
 			delete statements.current().description;
@@ -1482,7 +1482,7 @@ void TracePluginImpl::register_blr_statement(TraceBLRStatement* statement)
 	StatementData stmt_data;
 	stmt_data.id = statement->getStmtID();
 	stmt_data.description = description;
-	WriteLockGuard lock(statementsLock);
+	WriteLockGuard lock(statementsLock, FB_FUNCTION);
 
 	statements.add(stmt_data);
 }
@@ -1494,7 +1494,7 @@ void TracePluginImpl::log_event_blr_compile(TraceDatabaseConnection* connection,
 	if (config.log_blr_requests)
 	{
 		{
-			ReadLockGuard lock(statementsLock);
+			ReadLockGuard lock(statementsLock, FB_FUNCTION);
 			StatementsTree::Accessor accessor(&statements);
 			if (accessor.locate(statement->getStmtID()))
 				return;
@@ -1655,7 +1655,7 @@ void TracePluginImpl::register_service(TraceServiceConnection* service)
 
 	// Adjust the list of services
 	{
-		WriteLockGuard lock(servicesLock);
+		WriteLockGuard lock(servicesLock, FB_FUNCTION);
 		services.add(serv_data);
 	}
 }
@@ -1663,7 +1663,7 @@ void TracePluginImpl::register_service(TraceServiceConnection* service)
 
 bool TracePluginImpl::checkServiceFilter(TraceServiceConnection* service, bool started)
 {
-	ReadLockGuard lock(servicesLock);
+	ReadLockGuard lock(servicesLock, FB_FUNCTION);
 
 	ServiceData* data = NULL;
 	ServicesTree::Accessor accessor(&services);
@@ -1841,7 +1841,7 @@ void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service,
 
 	// Get rid of connection descriptor
 	{
-		WriteLockGuard lock(servicesLock);
+		WriteLockGuard lock(servicesLock, FB_FUNCTION);
 		if (services.locate(service->getServiceID()))
 		{
 			services.current().deallocate_references();

@@ -4307,10 +4307,10 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		RefPtr<SysAttachment> jAtt(new SysAttachment(attachment));
 		attachment->att_interface = jAtt;
 		attachment->att_filename = dbb->dbb_filename;
-		attachment->att_flags = ATT_garbage_collector;
+		attachment->att_flags |= ATT_garbage_collector;
 		attachment->att_user = &user;
 
-		BackgroundContextHolder tdbb(dbb, attachment, status_vector);
+		BackgroundContextHolder tdbb(dbb, attachment, status_vector, FB_FUNCTION);
 		tdbb->tdbb_quantum = SWEEP_QUANTUM;
 		tdbb->tdbb_flags = TDBB_sweeper;
 
@@ -4357,7 +4357,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 				if (dbb->dbb_flags & DBB_suspend_bgio)
 				{
-					Attachment::Checkout cout(attachment);
+					Attachment::Checkout cout(attachment, FB_FUNCTION);
 					dbb->dbb_gc_sem.tryEnter(10);
 					continue;
 				}
@@ -4493,7 +4493,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					}
 
 					dbb->dbb_flags &= ~DBB_gc_active;
-					Attachment::Checkout cout(attachment);
+					Attachment::Checkout cout(attachment, FB_FUNCTION);
 					dbb->dbb_gc_sem.tryEnter(10);
 				}
 			}

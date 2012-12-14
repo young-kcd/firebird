@@ -183,7 +183,7 @@ void FB_CARG DTransaction::getInfo(IStatus* status,
 	{
 		status->init();
 
-		ReadLockGuard guard(rwLock);
+		ReadLockGuard guard(rwLock, FB_FUNCTION);
 
 		for (unsigned int i = 0; i < sub.getCount(); ++i)
 		{
@@ -223,7 +223,7 @@ void FB_CARG DTransaction::prepare(IStatus* status,
 	{
 		status->init();
 
-		WriteLockGuard guard(rwLock);
+		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 		if (limbo)
 			return;
@@ -270,7 +270,7 @@ void FB_CARG DTransaction::commit(IStatus* status)
 		}
 
 		{	// guard scope
-			WriteLockGuard guard(rwLock);
+			WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 			for (unsigned int i = 0; i < sub.getCount(); ++i)
 			{
@@ -302,7 +302,7 @@ void FB_CARG DTransaction::commitRetaining(IStatus* status)
 	{
 		status->init();
 
-		WriteLockGuard guard(rwLock);
+		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 		for (unsigned int i = 0; i < sub.getCount(); ++i)
 		{
@@ -329,7 +329,7 @@ void FB_CARG DTransaction::rollback(IStatus* status)
 		status->init();
 
 		{	// guard scope
-			WriteLockGuard guard(rwLock);
+			WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 			for (unsigned int i = 0; i < sub.getCount(); ++i)
 			{
@@ -358,7 +358,7 @@ void FB_CARG DTransaction::rollbackRetaining(IStatus* status)
 	{
 		status->init();
 
-		WriteLockGuard guard(rwLock);
+		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 		for (unsigned int i = 0; i < sub.getCount(); ++i)
 		{
@@ -384,7 +384,7 @@ void FB_CARG DTransaction::disconnect(IStatus* status)
 	{
 		status->init();
 
-		WriteLockGuard guard(rwLock);
+		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 		if (!limbo)
 			status_exception::raise(Arg::Gds(isc_no_recon));
@@ -417,7 +417,7 @@ DTransaction* FB_CARG DTransaction::join(IStatus* status, ITransaction* transact
 	{
 		status->init();
 
-		WriteLockGuard guard(rwLock);
+		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 		// reserve array element to make sure we have a place for copy of transaction
 		size_t pos = sub.add(NULL);
@@ -447,7 +447,7 @@ ITransaction* FB_CARG DTransaction::validate(IStatus* status, IAttachment* attac
 	{
 		status->init();
 
-		ReadLockGuard guard(rwLock);
+		ReadLockGuard guard(rwLock, FB_FUNCTION);
 
 		for (unsigned int i = 0; i < sub.getCount(); ++i)
 		{
@@ -473,7 +473,7 @@ DTransaction* FB_CARG DTransaction::enterDtc(IStatus* status)
 	{
 		status->init();
 
-		WriteLockGuard guard(rwLock);
+		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 		RefPtr<DTransaction> traCopy(new DTransaction(sub));
 		sub.clear();

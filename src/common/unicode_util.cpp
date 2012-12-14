@@ -931,7 +931,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		if (version != configVersion)
 			continue;
 
-		ReadLockGuard readGuard(icuModules->lock);
+		ReadLockGuard readGuard(icuModules->lock, "UnicodeUtil::loadICU");
 
 		ICU* icu;
 		if (icuModules->modules.get(version, icu))
@@ -1024,7 +1024,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		// RWLock don't allow lock upgrade (read->write) so we
 		// release read and acquire a write lock.
 		readGuard.release();
-		WriteLockGuard writeGuard(icuModules->lock);
+		WriteLockGuard writeGuard(icuModules->lock, "UnicodeUtil::loadICU");
 
 		// In this small amount of time, one may already loaded the
 		// same version, so within the write lock we verify again.
@@ -1050,7 +1050,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 		return *convIcu;
 	}
 
-	MutexLockGuard g(convIcuMutex);
+	MutexLockGuard g(convIcuMutex, "UnicodeUtil::getConversionICU");
 
 	if (convIcu)
 	{

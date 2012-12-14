@@ -122,7 +122,7 @@ public:
 	class SyncGuard
 	{
 	public:
-		explicit SyncGuard(Attachment* att, bool optional = false)
+		explicit SyncGuard(Attachment* att, const char* f, bool optional = false)
 			: m_mutex(NULL)
 		{
 			if (att && att->att_interface)
@@ -131,7 +131,7 @@ public:
 			fb_assert(optional || m_mutex);
 
 			if (m_mutex)
-				m_mutex->enter();
+				m_mutex->enter(f);
 		}
 
 		~SyncGuard()
@@ -151,25 +151,29 @@ public:
 	class Checkout
 	{
 	public:
-		explicit Checkout(Attachment* att, bool optional = false)
-			: m_mutex(NULL)
+		Checkout(Attachment* att, const char* f, bool optional = false)
+#ifdef DEV_BUILD
+			: from(f)
+#define FB_LOCKED_FROM from
+#else
+#define FB_LOCKED_FROM NULL
+#endif
 		{
 			if (att && att->att_interface)
 			{
 				m_ref = att->att_interface;
-				m_mutex = att->att_interface->getMutex();
 			}
 
-			fb_assert(optional || m_mutex);
+			fb_assert(optional || m_ref.hasData());
 
-			if (m_mutex)
-				m_mutex->leave();
+			if (m_ref.hasData())
+				m_ref->getMutex()->leave();
 		}
 
 		~Checkout()
 		{
-			if (m_mutex)
-				m_mutex->enter();
+			if (m_ref.hasData())
+				m_ref->getMutex()->enter(FB_LOCKED_FROM);
 		}
 
 	private:
@@ -177,20 +181,23 @@ public:
 		Checkout(const Checkout&);
 		Checkout& operator=(const Checkout&);
 
-		Firebird::Mutex* m_mutex;
 		Firebird::RefPtr<JAttachment> m_ref;
+#ifdef DEV_BUILD
+		const char* from;
+#endif
 	};
+#undef FB_LOCKED_FROM
 
 	class CheckoutLockGuard
 	{
 	public:
-		CheckoutLockGuard(Attachment* att, Firebird::Mutex& mutex, bool optional = false)
+		CheckoutLockGuard(Attachment* att, Firebird::Mutex& mutex, const char* f, bool optional = false)
 			: m_mutex(mutex)
 		{
-			if (!m_mutex.tryEnter())
+			if (!m_mutex.tryEnter(f))
 			{
-				Checkout attCout(att, optional);
-				m_mutex.enter();
+				Checkout attCout(att, f, optional);
+				m_mutex.enter(f);
 			}
 		}
 
@@ -337,6 +344,8 @@ public:
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
 	void backupStateReadUnLock(thread_db* tdbb);
 
+	bool cancelRaise();
+
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
@@ -345,21 +354,24 @@ private:
 
 // Attachment flags
 
-const ULONG ATT_no_cleanup			= 0x0001L;	// Don't expunge, purge, or garbage collect
-const ULONG ATT_shutdown			= 0x0002L;	// attachment has been shutdown
-const ULONG ATT_purge_error			= 0x0004L;	// trouble happened in purge attachment, att_mutex remains locked
-const ULONG ATT_shutdown_manager	= 0x0008L;	// attachment requesting shutdown
-const ULONG ATT_exclusive			= 0x0010L;	// attachment wants exclusive database access
-const ULONG ATT_attach_pending		= 0x0020L;	// Indicate attachment is only pending
-const ULONG ATT_exclusive_pending	= 0x0040L;	// Indicate exclusive attachment pending
-const ULONG ATT_gbak_attachment		= 0x0080L;	// Indicate GBAK attachment
-const ULONG ATT_notify_gc			= 0x0100L;	// Notify garbage collector to expunge, purge ..
-const ULONG ATT_garbage_collector	= 0x0200L;	// I'm a garbage collector
-const ULONG ATT_cancel_raise		= 0x0400L;	// Cancel currently running operation
-const ULONG ATT_cancel_disable		= 0x0800L;	// Disable cancel operations
-const ULONG ATT_gfix_attachment		= 0x1000L;	// Indicate a GFIX attachment
-const ULONG ATT_gstat_attachment	= 0x2000L;	// Indicate a GSTAT attachment
-const ULONG ATT_no_db_triggers		= 0x4000L;	// Don't execute database triggers
+const ULONG ATT_no_cleanup			= 0x00001L;	// Don't expunge, purge, or garbage collect
+const ULONG ATT_shutdown			= 0x00002L;	// attachment has been shutdown
+const ULONG ATT_purge_error			= 0x00004L;	// trouble happened in purge attachment, att_mutex remains locked
+const ULONG ATT_shutdown_manager	= 0x00008L;	// attachment requesting shutdown
+const ULONG ATT_exclusive			= 0x00010L;	// attachment wants exclusive database access
+const ULONG ATT_attach_pending		= 0x00020L;	// Indicate attachment is only pending
+const ULONG ATT_exclusive_pending	= 0x00040L;	// Indicate exclusive attachment pending
+const ULONG ATT_gbak_attachment		= 0x00080L;	// Indicate GBAK attachment
+const ULONG ATT_notify_gc			= 0x00100L;	// Notify garbage collector to expunge, purge ..
+const ULONG ATT_garbage_collector	= 0x00200L;	// I'm a garbage collector
+const ULONG ATT_cancel_raise		= 0x00400L;	// Cancel currently running operation
+const ULONG ATT_cancel_disable		= 0x00800L;	// Disable cancel operations
+const ULONG ATT_gfix_attachment		= 0x01000L;	// Indicate a GFIX attachment
+const ULONG ATT_gstat_attachment	= 0x02000L;	// Indicate a GSTAT attachment
+const ULONG ATT_no_db_triggers		= 0x04000L;	// Don't execute database triggers
+const ULONG ATT_manual_lock			= 0x08000L;	// Was locked manually
+const ULONG ATT_terminate			= 0x10000L;	// Terminate currently running operation
+const ULONG ATT_protected			= 0x20000L;	// Ignore termination flag when disconnecting
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
@@ -377,6 +389,14 @@ inline jrd_tra* Attachment::getSysTransaction()
 inline void Attachment::setSysTransaction(jrd_tra* trans)
 {
 	att_sys_transaction = trans;
+}
+
+inline bool Attachment::cancelRaise()
+{
+	return att_flags & ATT_protected ? false :
+		   att_flags & ATT_terminate ? true :
+		   att_flags & ATT_cancel_disable ? false :
+		   att_flags & ATT_cancel_raise ? true : false;
 }
 
 } // namespace Jrd

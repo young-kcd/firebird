@@ -40,20 +40,20 @@ namespace Firebird
 	// This class is useful if mutex can be "deleted" by the
 	// code between enter and leave calls
 
-	class RefMutex : public RefCounted
+	class RefMutex : public RefCounted, public Mutex
 	{
 	public:
 		RefMutex() {}
-		explicit RefMutex(MemoryPool& pool) : mutex(pool) {}
-
-		void enter()
+		explicit RefMutex(MemoryPool& pool) : Mutex(pool) {}
+/* !!!!!
+		void enter(const char* f)
 		{
-			mutex.enter();
+			mutex.enter(f);
 		}
 
-		bool tryEnter()
+		bool tryEnter(const char* f)
 		{
-			return mutex.tryEnter();
+			return mutex.tryEnter(f);
 		}
 
 		void leave()
@@ -63,16 +63,17 @@ namespace Firebird
 
 	private:
 		Mutex mutex;
+ */
 	};
 
 	// RAII holder
 	class RefMutexGuard : public Reference
 	{
 	public:
-		explicit RefMutexGuard(RefMutex& alock)
+		RefMutexGuard(RefMutex& alock, const char* f)
 			: Reference(alock), lock(&alock)
 		{
-			lock->enter();
+			lock->enter(f);
 		}
 
 		~RefMutexGuard()
@@ -123,11 +124,16 @@ namespace Firebird
 	class EnsureUnlock
 	{
 	public:
-		explicit EnsureUnlock(Mtx& mutex)
+		EnsureUnlock(Mtx& mutex, const char* f)
+			: m_mutex(&mutex), m_locked(0)
+#ifdef DEV_BUILD
+			  , from(f)
+#define FB_LOCKED_FROM from
+#else
+#define FB_LOCKED_FROM NULL
+#endif
 		{
-			m_mutex = &mutex;
 			RefCounted::addRef(m_mutex);
-			m_locked = 0;
 		}
 
 		~EnsureUnlock()
@@ -139,13 +145,13 @@ namespace Firebird
 
 		void enter()
 		{
-			m_mutex->enter();
+			m_mutex->enter(FB_LOCKED_FROM);
 			m_locked++;
 		}
 
 		bool tryEnter()
 		{
-			if (m_mutex->tryEnter())
+			if (m_mutex->tryEnter(FB_LOCKED_FROM))
 			{
 				m_locked++;
 				return true;
@@ -162,7 +168,11 @@ namespace Firebird
 	private:
 		Mtx* m_mutex;
 		int m_locked;
+#ifdef DEV_BUILD
+		const char* from;
+#endif
 	};
+#undef FB_LOCKED_FROM
 
 	typedef EnsureUnlock<Mutex, NotRefCounted<Mutex> > MutexEnsureUnlock;
 	typedef EnsureUnlock<RefMutex> RefMutexEnsureUnlock;

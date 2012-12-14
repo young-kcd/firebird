@@ -159,7 +159,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 
 		LocalStatus status;
 		{
-			EngineCallbackGuard guard(tdbb, *this);
+			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 			Firebird::RefPtr<JProvider> jInstance(JProvider::getInstance());
 			jInstance->setDbCryptCallback(&status, tdbb->getAttachment()->att_crypt_callback);
 			m_attachment = jInstance->attachDatabase(&status, m_dbName.c_str(),
@@ -189,7 +189,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 		m_attachment = NULL;
 
 		{	// scope
-			EngineCallbackGuard guard(tdbb, *this);
+			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 			att->detach(&status);
 		}
 
@@ -274,7 +274,7 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 	{
 		JAttachment* att = m_IntConnection.getJrdAtt();
 
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		IntStatus s(status);
 		m_transaction = att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer());
 
@@ -302,7 +302,7 @@ void InternalTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool ret
 	else
 	{
 		IntStatus s(status);
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (retain)
 			m_transaction->commitRetaining(&s);
 		else
@@ -323,7 +323,7 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db* tdbb, bool r
 	else
 	{
 		IntStatus s(status);
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (retain)
 			m_transaction->rollbackRetaining(&s);
 		else
@@ -367,7 +367,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	if (!m_request)
 	{
 		fb_assert(!m_allocated);
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_request = att->allocateStatement(&status);
 		m_allocated = (m_request != NULL);
 	}
@@ -376,7 +376,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		raise(status, tdbb, "jrd8_allocate_statement", &sql);
 
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		CallerName save_caller_name(tran->getHandle()->tra_caller_name);
 
@@ -493,7 +493,7 @@ void InternalStatement::doExecute(thread_db* tdbb)
 
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		InternalMessageBuffer inMsgBuffer(m_inBlr.getCount(), m_inBlr.begin(),
 										  m_in_buffer.getCount(), m_in_buffer.begin());
@@ -514,7 +514,7 @@ void InternalStatement::doOpen(thread_db* tdbb)
 
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		InternalMessageBuffer inMsgBuffer(m_inBlr.getCount(), m_inBlr.begin(),
 										  m_in_buffer.getCount(), m_in_buffer.begin());
@@ -532,7 +532,7 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 	LocalStatus status;
 	int res = 0;
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		InternalMessageBuffer msgBuffer(m_outBlr.getCount(), m_outBlr.begin(),
 										m_out_buffer.getCount(),m_out_buffer.begin());
 
@@ -550,7 +550,7 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 {
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		if (m_request)
 			m_request->free(&status, drop ? DSQL_drop : DSQL_close);
@@ -617,7 +617,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, m_connection);
+		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 
 		USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
@@ -642,7 +642,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, m_connection);
+		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 
 		const USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
@@ -664,7 +664,7 @@ USHORT InternalBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 	USHORT result = 0;
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, m_connection);
+		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 		result = m_blob->getSegment(&status, len, buff);
 	}
 
@@ -689,7 +689,7 @@ void InternalBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, m_connection);
+		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 		m_blob->putSegment(&status, len, buff);
 	}
 
@@ -702,7 +702,7 @@ void InternalBlob::close(thread_db* tdbb)
 	fb_assert(m_blob);
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, m_connection);
+		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 		m_blob->close(&status);
 	}
 
@@ -720,7 +720,7 @@ void InternalBlob::cancel(thread_db* tdbb)
 
 	LocalStatus status;
 	{
-		EngineCallbackGuard guard(tdbb, m_connection);
+		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 		m_blob->cancel(&status);
 	}
 

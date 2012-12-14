@@ -190,7 +190,7 @@ namespace Jrd {
 
 	void CryptoManager::loadPlugin(const char* pluginName)
 	{
-		MutexLockGuard guard(pluginLoadMtx);
+		MutexLockGuard guard(pluginLoadMtx, FB_FUNCTION);
 
 		if (cryptPlugin)
 		{
@@ -293,7 +293,7 @@ namespace Jrd {
 
 	void CryptoManager::blockingAstChangeCryptState()
 	{
-		AsyncContextHolder tdbb(&dbb);
+		AsyncContextHolder tdbb(&dbb, FB_FUNCTION);
 
 		fb_assert(stateLock);
 		LCK_release(tdbb, stateLock);
@@ -353,7 +353,7 @@ namespace Jrd {
 			attachment->att_filename = dbb.dbb_filename;
 			attachment->att_user = &user;
 
-			BackgroundContextHolder tdbb(&dbb, attachment, status_vector);
+			BackgroundContextHolder tdbb(&dbb, attachment, status_vector, FB_FUNCTION);
 			tdbb->tdbb_quantum = SWEEP_QUANTUM;
 
 			ULONG lastPage = getLastPage(tdbb);
@@ -483,7 +483,7 @@ namespace Jrd {
 					attachment->att_filename = dbb.dbb_filename;
 					attachment->att_user = &user;
 
-					BackgroundContextHolder tdbb(&dbb, attachment, sv);
+					BackgroundContextHolder tdbb(&dbb, attachment, sv, FB_FUNCTION);
 
 					// Lock crypt state
 					takeStateLock(tdbb);
@@ -616,7 +616,7 @@ namespace Jrd {
 
 	void CryptoManager::KeyHolderPlugins::attach(Attachment* att, Config* config)
 	{
-		MutexLockGuard g(holdersMutex);
+		MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
 		for (GetPlugins<IKeyHolderPlugin> keyControl(PluginType::KeyHolder,
 			FB_KEYHOLDER_PLUGIN_VERSION, upInfo, config); keyControl.hasData(); keyControl.next())
@@ -655,7 +655,7 @@ namespace Jrd {
 
 	void CryptoManager::KeyHolderPlugins::detach(Attachment* att)
 	{
-		MutexLockGuard g(holdersMutex);
+		MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
 		unsigned i = knownHolders.getCount();
 		while (i--)
@@ -669,7 +669,7 @@ namespace Jrd {
 
 	void CryptoManager::KeyHolderPlugins::init(IDbCryptPlugin* crypt)
 	{
-		MutexLockGuard g(holdersMutex);
+		MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
 		Firebird::HalfStaticArray<Firebird::IKeyHolderPlugin*, 64> holdersVector;
 		unsigned int length = knownHolders.getCount();

@@ -531,7 +531,7 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 	size_t n = entryPoint->find('!');
 	*entryPoint = (n == string::npos ? *entryPoint : entryPoint->substr(0, n));
 
-	MutexLockGuard guard(modulesMutex);
+	MutexLockGuard guard(modulesMutex, FB_FUNCTION);
 
 	if (modules->exist(*moduleName))
 		return;
@@ -570,7 +570,7 @@ template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* 
 	SharedObjType* sharedObj, ExternalContext* context, NodeType* nodes,
 	SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName)
 {
-	MutexLockGuard guard(childrenMutex);
+	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
 
 	if (!sharedObjs.exist(sharedObj))
 		sharedObjs.add(sharedObj);
@@ -646,7 +646,7 @@ void FB_CALL Engine::openAttachment(Error* /*error*/, ExternalContext* /*context
 
 void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 {
-	MutexLockGuard guard(childrenMutex);
+	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
 
 	for (SortedArray<SharedFunction*>::iterator i = functions.begin(); i != functions.end(); ++i)
 	{

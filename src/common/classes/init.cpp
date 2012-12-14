@@ -137,7 +137,7 @@ namespace Firebird
 	InstanceControl::InstanceList::InstanceList(DtorPriority p)
 		: priority(p)
 	{
-		MutexLockGuard guard(*StaticMutex::mutex);
+		MutexLockGuard guard(*StaticMutex::mutex, "InstanceControl::InstanceList::InstanceList");
 		next = instanceList;
 		instanceList = this;
 	}

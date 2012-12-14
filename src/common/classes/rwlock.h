@@ -30,6 +30,7 @@
 #define CLASSES_RWLOCK_H
 
 #include "../common/classes/fb_atomic.h"
+#include "../common/classes/Reasons.h"
 
 #ifdef WIN_NT
 
@@ -46,7 +47,7 @@ const int LOCK_WRITER_OFFSET = 50000;
 
 // Should work pretty fast if atomic operations are native.
 // This is not the case for Win95
-class RWLock
+class RWLock : public Reasons
 {
 private:
 	AtomicCounter lock; // This is the actual lock
@@ -104,37 +105,43 @@ public:
 			}
 		}
 	}
-	bool tryBeginRead()
+	bool tryBeginRead(const char* aReason)
 	{
 		if (lock.value() < 0)
 			return false;
 		if (++lock > 0)
+		{
+			reason(aReason);
 			return true;
+		}
 		// We stepped on writer's toes. Fix our mistake
 		if (--lock == 0)
 			unblockWaiting();
 		return false;
 	}
-	bool tryBeginWrite()
+	bool tryBeginWrite(const char* aReason)
 	{
 		if (lock.value())
 			return false;
 		if (lock.exchangeAdd(-LOCK_WRITER_OFFSET) == 0)
+		{
+			reason(aReason);
 			return true;
+		}
 		// We stepped on somebody's toes. Fix our mistake
 		if (lock.exchangeAdd(LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();
 		return false;
 	}
-	void beginRead()
+	void beginRead(const char* aReason)
 	{
-		if (!tryBeginRead())
+		if (!tryBeginRead(aReason))
 		{
 			{ // scope block
 				MutexLockGuard guard(blockedReadersLock);
 				++blockedReaders;
 			}
-			while (!tryBeginRead())
+			while (!tryBeginRead(aReason))
 			{
 				if (WaitForSingleObject(readers_semaphore, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
@@ -145,12 +152,12 @@ public:
 			}
 		}
 	}
-	void beginWrite()
+	void beginWrite(const char* aReason)
 	{
-		if (!tryBeginWrite())
+		if (!tryBeginWrite(aReason))
 		{
 			++blockedWriters;
-			while (!tryBeginWrite())
+			while (!tryBeginWrite(aReason))
 			{
 				if (WaitForSingleObject(writers_event, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
@@ -183,7 +190,7 @@ namespace Firebird
 
 class MemoryPool;
 
-class RWLock
+class RWLock : public Reasons
 {
 private:
 	pthread_rwlock_t lock;
@@ -226,7 +233,7 @@ public:
 			system_call_failed::raise("pthread_rwlock_destroy");
 	}
 
-	void beginRead()
+	void beginRead(const char* aReason)
 	{
 		if (pthread_rwlock_rdlock(&lock))
 			system_call_failed::raise("pthread_rwlock_rdlock");
@@ -234,9 +241,10 @@ public:
 #ifdef DEV_BUILD
 		++lockCounter;
 #endif
+		reason(aReason);
 	}
 
-	bool tryBeginRead()
+	bool tryBeginRead(const char* aReason)
 	{
 		const int code = pthread_rwlock_tryrdlock(&lock);
 		if (code == EBUSY)
@@ -247,6 +255,7 @@ public:
 #ifdef DEV_BUILD
 		++lockCounter;
 #endif
+		reason(aReason);
 		return true;
 	}
 
@@ -261,7 +270,7 @@ public:
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}
 
-	bool tryBeginWrite()
+	bool tryBeginWrite(const char* aReason)
 	{
 		const int code = pthread_rwlock_trywrlock(&lock);
 		if (code == EBUSY)
@@ -272,10 +281,11 @@ public:
 #ifdef DEV_BUILD
 		++lockCounter;
 #endif
+		reason(aReason);
 		return true;
 	}
 
-	void beginWrite()
+	void beginWrite(const char* aReason)
 	{
 		if (pthread_rwlock_wrlock(&lock))
 			system_call_failed::raise("pthread_rwlock_wrlock");
@@ -283,6 +293,7 @@ public:
 #ifdef DEV_BUILD
 		++lockCounter;
 #endif
+		reason(aReason);
 	}
 
 	void endWrite()
@@ -307,17 +318,17 @@ namespace Firebird {
 class ReadLockGuard
 {
 public:
-	explicit ReadLockGuard(RWLock& alock)
+	explicit ReadLockGuard(RWLock& alock, const char* aReason)
 		: lock(&alock)
 	{
-		lock->beginRead();
+		lock->beginRead(aReason);
 	}
 
-	explicit ReadLockGuard(RWLock* alock)
+	explicit ReadLockGuard(RWLock* alock, const char* aReason)
 		: lock(alock)
 	{
 		if (lock)
-			lock->beginRead();
+			lock->beginRead(aReason);
 	}
 
 	~ReadLockGuard()
@@ -344,17 +355,17 @@ private:
 class WriteLockGuard
 {
 public:
-	explicit WriteLockGuard(RWLock& alock)
+	explicit WriteLockGuard(RWLock& alock, const char* aReason)
 		: lock(&alock)
 	{
-		lock->beginWrite();
+		lock->beginWrite(aReason);
 	}
 
-	explicit WriteLockGuard(RWLock* alock)
+	explicit WriteLockGuard(RWLock* alock, const char* aReason)
 		: lock(alock)
 	{
 		if (lock)
-			lock->beginWrite();
+			lock->beginWrite(aReason);
 	}
 
 	~WriteLockGuard()

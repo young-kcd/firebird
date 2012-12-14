@@ -46,6 +46,7 @@
 #include "../jrd/constants.h"
 #include "../jrd/inf_pub.h"
 #include "../common/os/path_utils.h"
+#include "../common/os/fbsyslog.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -1219,6 +1220,17 @@ void random64(Firebird::string& randomValue, size_t length)
 	Firebird::GenerateRandomBytes(binRand.getBuffer(length), length);
 	base64(randomValue, binRand);
 	randomValue.resize(length, '$');
+}
+
+void logAndDie(const char* text)
+{
+	gds__log(text);
+	Firebird::Syslog::Record(Firebird::Syslog::Error, text);
+#ifdef WIN_NT
+	exit(3);
+#else
+	abort();
+#endif
 }
 
 } // namespace fb_utils

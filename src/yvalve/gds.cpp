@@ -1322,7 +1322,7 @@ int API_ROUTINE gds__msg_close(void *handle)
 
 	gds_msg* messageL = static_cast<gds_msg*>(handle);
 
-	Firebird::MutexLockGuard guard(global_msg_mutex);
+	Firebird::MutexLockGuard guard(global_msg_mutex, "gds__msg_close");
 
 	if (!messageL)
 	{
@@ -1450,7 +1450,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		int status = -1;
 		gds_msg* messageL = (gds_msg*) handle;
 
-		Firebird::MutexLockGuard guard(global_msg_mutex);
+		Firebird::MutexLockGuard guard(global_msg_mutex, "gds__msg_lookup");
 
 		if (!messageL && !(messageL = global_default_msg))
 		{
@@ -2131,7 +2131,7 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 	gds_alloc_flag_unfreed((void *) clean);
 #endif
 
-	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
+	Firebird::MutexLockGuard guard(cleanup_handlers_mutex, "gds__register_cleanup");
 	clean->clean_next = cleanup_handlers;
 	cleanup_handlers = clean;
 }
@@ -2445,7 +2445,7 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  *	Unregister a cleanup handler.
  *
  **************************************/
-	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
+	Firebird::MutexLockGuard guard(cleanup_handlers_mutex, "gds__unregister_cleanup");
 
 	clean_t* clean;
 	for (clean_t** clean_ptr = &cleanup_handlers; clean = *clean_ptr; clean_ptr = &clean->clean_next)
@@ -3627,7 +3627,7 @@ void gds__cleanup()
 
 	gds__msg_close(NULL);
 
-	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
+	Firebird::MutexLockGuard guard(cleanup_handlers_mutex, "gds__cleanup");
 
 	Firebird::InstanceControl::registerGdsCleanup(0);
 
@@ -3862,7 +3862,7 @@ public:
 	}
 };
 
-static Firebird::InitMutex<InitPrefix> initPrefix;
+static Firebird::InitMutex<InitPrefix> initPrefix("InitPrefix");
 
 void GDS_init_prefix()
 {

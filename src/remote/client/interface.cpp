@@ -681,8 +681,7 @@ IAttachment* Provider::attach(IStatus* status, const char* filename, unsigned in
 			return NULL;
 		}
 
-		RefMutexGuard portGuard(*port->port_sync);
-		//Rdb* rdb = port->port_context;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
 		// the DPB so the server can pay attention to it.  Note: allocation code must
@@ -765,7 +764,7 @@ void Blob::getInfo(IStatus* status,
 		Rdb* rdb = blob->rbl_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		info(status, rdb, op_info_blob, blob->rbl_id, 0,
 			 itemsLength, items, 0, 0, bufferLength, buffer);
@@ -805,7 +804,7 @@ void Blob::cancel(IStatus* status)
 
 		rem_port* port = rdb->rdb_port;
 
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 		release_object(status, rdb, op_cancel_blob, blob->rbl_id);
 		release_blob(blob);
 		blob = NULL;
@@ -837,7 +836,7 @@ void Events::cancel(IStatus* status)
 		CHECK_HANDLE(rvnt, isc_bad_events_handle);
 		Rdb* rdb = rvnt->rvnt_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Tell the remote server to cancel it and delete it from the list
 		send_cancel_event(rvnt);
@@ -870,7 +869,7 @@ void Blob::close(IStatus* status)
 		Rdb* rdb = blob->rbl_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		if ((blob->rbl_flags & Rbl::CREATE) && blob->rbl_ptr != blob->rbl_buffer)
 		{
@@ -910,7 +909,7 @@ void Transaction::commit(IStatus* status)
 		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		release_object(status, rdb, op_commit, transaction->rtr_id);
 		REMOTE_cleanup_transaction(transaction);
@@ -944,7 +943,7 @@ void Transaction::commitRetaining(IStatus* status)
 		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		release_object(status, rdb, op_commit_retaining, transaction->rtr_id);
 	}
@@ -1030,7 +1029,7 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* status,
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Parse the request in case blr_d_float must be converted to blr_double
 
@@ -1116,7 +1115,7 @@ IBlob* Attachment::createBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* b
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
@@ -1205,7 +1204,7 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 			return NULL;
 		}
 
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 		Rdb* rdb = port->port_context;
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
@@ -1288,7 +1287,7 @@ void Attachment::getInfo(IStatus* status,
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		UCHAR* temp_buffer = temp.getBuffer(buffer_length);
 
@@ -1329,7 +1328,7 @@ void Attachment::executeDyn(IStatus* status, ITransaction* apiTra, unsigned int 
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
@@ -1371,7 +1370,7 @@ void Attachment::detach(IStatus* status)
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		bool networkError = false;
 
@@ -1451,7 +1450,7 @@ void Attachment::dropDatabase(IStatus* status)
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		try
 		{
@@ -1510,7 +1509,7 @@ Firebird::IStatement* Attachment::allocateStatement(IStatus* status)
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rsr* statement = NULL;
 		if (rdb->rdb_port->port_flags & PORT_lazy)
@@ -1591,7 +1590,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = NULL;
 		Transaction* rt = remAtt->remoteTransactionInterface(apiTra);
@@ -1763,7 +1762,7 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
 		const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
@@ -1951,7 +1950,7 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 		unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
 		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// On first fetch, clear the end-of-stream flag & reset the message buffers
 
@@ -2199,7 +2198,7 @@ void Statement::free(IStatus* status, unsigned int option)
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		fb_assert(statement->haveException() == 0);
 		statement->clearException();
@@ -2288,7 +2287,7 @@ void Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = NULL;
 		if (apiTra)
@@ -2435,7 +2434,7 @@ void Statement::setCursorName(IStatus* status, const char* cursor)
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
 
@@ -2512,7 +2511,7 @@ void Statement::getInfo(IStatus* status,
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
 
@@ -2544,7 +2543,7 @@ unsigned Statement::getType(IStatus* status)
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
 
@@ -2570,7 +2569,7 @@ const char* Statement::getPlan(IStatus* status, bool detailed)
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
 
@@ -2596,7 +2595,7 @@ const IParametersMetadata* Statement::getInputParameters(IStatus* status)
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
 
@@ -2622,7 +2621,7 @@ const IParametersMetadata* Statement::getOutputParameters(IStatus* status)
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
 
@@ -2648,7 +2647,7 @@ ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
 
@@ -2690,7 +2689,7 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 		Rdb* rdb = blob->rbl_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Build the primary packet to get the operation started.
 
@@ -2908,7 +2907,7 @@ int Attachment::getSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* array_
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
@@ -2982,7 +2981,7 @@ IBlob* Attachment::openBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
@@ -3051,7 +3050,7 @@ void Transaction::prepare(IStatus* status, unsigned int msg_length, const unsign
 		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_prepare2;
@@ -3097,7 +3096,7 @@ void Blob::putSegment(IStatus* status, unsigned int segment_length, const void* 
 		Rdb* rdb = blob->rbl_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Handle a blob that has been opened rather than created (this should yield an error)
 
@@ -3167,7 +3166,7 @@ void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
@@ -3242,7 +3241,7 @@ Firebird::IEvents* Attachment::queEvents(IStatus* status, Firebird::IEventCallba
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		PACKET* packet = &rdb->rdb_packet;
 
@@ -3332,7 +3331,7 @@ void Request::receive(IStatus* status, int level, unsigned int msg_type,
 		Rdb* rdb = request->rrq_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 
@@ -3480,7 +3479,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* status,
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_reconnect;
@@ -3524,7 +3523,7 @@ void Request::free(IStatus* status)
 		Rdb* rdb = rq->rrq_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		release_object(status, rdb, op_release, rq->rrq_id);
 		release_request(rq);
@@ -3563,7 +3562,7 @@ void Request::getInfo(IStatus* status, int level,
 		Rdb* rdb = request->rrq_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Check for buffered message.  If there is, report on it locally.
 		const Rrq::rrq_repeat* tail= request->rrq_rpt.begin();
@@ -3652,7 +3651,7 @@ void Transaction::rollbackRetaining(IStatus* status)
 		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		release_object(status, rdb, op_rollback_retaining, transaction->rtr_id);
 	}
@@ -3684,7 +3683,7 @@ void Transaction::rollback(IStatus* status)
 		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		release_object(status, rdb, op_rollback, transaction->rtr_id);
 
@@ -3741,7 +3740,7 @@ int Blob::seek(IStatus* status, int mode, int offset)
 		Rdb* rdb = blob->rbl_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_seek_blob;
@@ -3796,7 +3795,7 @@ void Request::send(IStatus* status, int level, unsigned int msg_type,
 		Rdb* rdb = request->rrq_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		if (msg_type > request->rrq_max_msg)
 		{
@@ -3855,7 +3854,7 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 
 		rem_port* port = analyze_service(expanded_name, user_verification, newSpb, loopback);
 
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 		Rdb* rdb = port->port_context;
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
@@ -3939,7 +3938,7 @@ void Service::detach(IStatus* status)
 
 		CHECK_HANDLE(rdb, isc_bad_svc_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		release_object(status, rdb, op_service_detach, rdb->rdb_id);
 		disconnect(port);
@@ -3976,7 +3975,7 @@ void Service::query(IStatus* status,
 
 		CHECK_HANDLE(rdb, isc_bad_svc_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		ClntAuthBlock cBlock(NULL);
 		cBlock.loadServiceDataFrom(port);
@@ -4014,7 +4013,7 @@ void Service::start(IStatus* status,
 
 		CHECK_HANDLE(rdb, isc_bad_svc_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		svcstart(status, rdb, op_service_start, rdb->rdb_id, 0, spbLength, spb);
 	}
@@ -4052,7 +4051,7 @@ void Request::startAndSend(IStatus* status, Firebird::ITransaction* apiTra, int 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		if (msg_type > request->rrq_max_msg)
 		{
@@ -4130,7 +4129,7 @@ void Request::start(IStatus* status, Firebird::ITransaction* apiTra, int level)
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		if (transaction->rtr_rdb != rdb)
 		{
@@ -4185,7 +4184,7 @@ Firebird::ITransaction* Attachment::startTransaction(IStatus* status, unsigned i
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		if (tpbLength < 0 || (tpbLength > 0 && !tpb))
 		{
@@ -4234,7 +4233,7 @@ void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
@@ -4343,7 +4342,7 @@ void Transaction::getInfo(IStatus* status,
 		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		fb_utils::getDbPathInfo(itemsLength, items, bufferLength, buffer,
 			newItemsBuffer, remAtt->getDbPath());
@@ -4380,7 +4379,7 @@ void Request::unwind(IStatus* status, int level)
 		Rdb* rdb = request->rrq_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 	}
 	catch (const Exception& ex)
 	{
@@ -4407,7 +4406,7 @@ void Attachment::ping(IStatus* status)
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync);
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Make sure protocol support action
 
@@ -5225,7 +5224,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		rem_port* stuff = NULL;
 		P_OP operation = op_void;
 		{	// scope
-			RefMutexGuard portGuard(*port->port_sync);
+			RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 			stuff = port->receive(&packet);
 
 			operation = packet.p_operation;
@@ -5249,7 +5248,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 
 			Rvnt* event = NULL;
 			{	// scope
-				RefMutexGuard portGuard(*port->port_sync);
+				RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 				event = find_event(port, pevent->p_event_rid);
 			}
 
@@ -6501,7 +6500,7 @@ static void send_packet(rem_port* port, PACKET* packet)
  *
  **************************************/
 
-	RefMutexGuard guard(*port->port_write_sync);
+	RefMutexGuard guard(*port->port_write_sync, FB_FUNCTION);
 
 	// Send packets that were deferred
 
@@ -6547,7 +6546,7 @@ static void send_partial_packet(rem_port* port, PACKET* packet)
  *
  **************************************/
 
-	RefMutexGuard guard(*port->port_write_sync);
+	RefMutexGuard guard(*port->port_write_sync, FB_FUNCTION);
 
 	// Send packets that were deferred
 
@@ -6707,6 +6706,7 @@ void Attachment::cancelOperation(IStatus* status, int kind)
  *	Asynchronously cancel requests, running with db_handle on remote server.
  *
  **************************************/
+
 	try {
 		reset(status);
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
@@ -6723,7 +6723,7 @@ void Attachment::cancelOperation(IStatus* status, int kind)
 			unsupported();
 		}
 
-		MutexEnsureUnlock guard(rdb->rdb_async_lock);	// This is async operation
+		MutexEnsureUnlock guard(rdb->rdb_async_lock, FB_FUNCTION);	// This is async operation
 		if (!guard.tryEnter())
 		{
 			Arg::Gds(isc_async_active).raise();

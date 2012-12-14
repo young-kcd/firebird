@@ -702,14 +702,14 @@ void TRA_invalidate(thread_db* tdbb, ULONG mask)
 	Database* database = tdbb->getDatabase();
 	Jrd::Attachment* currAttach = tdbb->getAttachment();
 
-	Jrd::Attachment::Checkout cout(currAttach, true);
+	Jrd::Attachment::Checkout cout(currAttach, FB_FUNCTION, true);
 
 	SyncLockGuard dbbSync(&database->dbb_sync, SYNC_SHARED, "TRA_invalidate");
 
 	Jrd::Attachment* attachment = database->dbb_attachments;
 	while (attachment)
 	{
-		Jrd::Attachment::SyncGuard attGuard(attachment);
+		Jrd::Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
 
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
 			 transaction = transaction->tra_next)
@@ -1386,7 +1386,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 		return;
 
 	{ //scope
-		Database::Checkout dcoHolder(dbb);
+		Database::Checkout dcoHolder(dbb, FB_FUNCTION);
 		THREAD_YIELD();
 	}
 	tip = reinterpret_cast<tx_inv_page*>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
@@ -1843,7 +1843,7 @@ static int blocking_ast_transaction(void* ast_object)
 		Database* const dbb = transaction->tra_cancel_lock->lck_dbb;
 		Jrd::Attachment* const att = transaction->tra_cancel_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
 
 		if (transaction->tra_cancel_lock)
 			LCK_release(tdbb, transaction->tra_cancel_lock);

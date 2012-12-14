@@ -161,10 +161,7 @@ void ConfigStorage::mutexBug(int state, const TEXT* string)
 	TEXT msg[BUFFER_TINY];
 
 	sprintf(msg, "ConfigStorage: mutex %s error, status = %d", string, state);
-	gds__log(msg);
-
-	fprintf(stderr, "%s\n", msg);
-	exit(FINI_ERROR);
+	fb_utils::logAndDie(msg);
 }
 
 bool ConfigStorage::initialize(SharedMemoryBase* sm, bool init)

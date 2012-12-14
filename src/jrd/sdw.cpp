@@ -1189,7 +1189,7 @@ static int blocking_ast_shadowing(void* ast_object)
 
 	try
 	{
-		AsyncContextHolder tdbb(dbb);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 		SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "blocking_ast_shadowing");
 

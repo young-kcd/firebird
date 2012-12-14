@@ -108,7 +108,7 @@ void NBackupStateLock::blockingAstHandler(thread_db* tdbb)
 		backup_manager->beginFlush();
 		NBAK_TRACE_AST( ("backup_manager->beginFlush()") );
 
-		Firebird::MutexUnlockGuard counterGuard(counterMutex);
+		Firebird::MutexUnlockGuard counterGuard(counterMutex, FB_FUNCTION);
 		CCH_flush_ast(tdbb);
 		NBAK_TRACE_AST(("database FLUSHED"));
 	}

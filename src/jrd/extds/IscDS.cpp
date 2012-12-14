@@ -117,7 +117,7 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_iscProvider.isc_attach_database(status, m_dbName.length(), m_dbName.c_str(),
 			&m_handle, m_dpb.getBufferLength(),
 			reinterpret_cast<const char*>(m_dpb.getBuffer()));
@@ -128,7 +128,7 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 
 	char buff[16];
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		const char info[] = {isc_info_db_sql_dialect, isc_info_end};
 		m_iscProvider.isc_database_info(status, &m_handle, sizeof(info), info, sizeof(buff), buff);
@@ -180,7 +180,7 @@ void IscConnection::doDetach(thread_db* tdbb)
 	ISC_STATUS_ARRAY status = {0};
 	if (m_handle)
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		FB_API_HANDLE h = m_handle;
 		m_handle = 0;
@@ -195,6 +195,7 @@ void IscConnection::doDetach(thread_db* tdbb)
 bool IscConnection::cancelExecution(thread_db* /*tdbb*/)
 {
 	ISC_STATUS_ARRAY status = {0, 0, 0};
+
 	if (m_handle)
 	{
 		m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_raise);
@@ -250,7 +251,7 @@ void IscTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, Firebird::Clum
 	fb_assert(!m_handle);
 	FB_API_HANDLE& db_handle = m_iscConnection.getAPIHandle();
 
-	EngineCallbackGuard guard(tdbb, *this);
+	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 	m_iscProvider.isc_start_transaction(status, &m_handle, 1, &db_handle,
 		tpb.getBufferLength(), tpb.getBuffer());
 }
@@ -261,7 +262,7 @@ void IscTransaction::doPrepare(ISC_STATUS* /*status*/, thread_db* /*tdbb*/, int 
 
 void IscTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool retain)
 {
-	EngineCallbackGuard guard(tdbb, *this);
+	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 	if (retain)
 		m_iscProvider.isc_commit_retaining(status, &m_handle);
 	else
@@ -272,7 +273,7 @@ void IscTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool retain)
 
 void IscTransaction::doRollback(ISC_STATUS* status, thread_db* tdbb, bool retain)
 {
-	EngineCallbackGuard guard(tdbb, *this);
+	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 	if (retain)
 		m_iscProvider.isc_rollback_retaining(status, &m_handle);
 	else
@@ -323,7 +324,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	const char* sWhereError = NULL;
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		if (!m_handle)
 		{
@@ -356,7 +357,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_out_xsqlda->sqln = n;
 		m_out_xsqlda->version = 1;
 
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (m_iscProvider.isc_dsql_describe(status, &m_handle, 1, m_out_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe";
@@ -378,7 +379,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (m_iscProvider.isc_dsql_describe_bind(status, &m_handle, 1, m_in_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe_bind";
@@ -398,7 +399,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_in_xsqlda->sqln = n;
 		m_in_xsqlda->version = 1;
 
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (m_iscProvider.isc_dsql_describe_bind(status, &m_handle, 1, m_in_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe_bind";
@@ -415,7 +416,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	const char stmt_info[] = {isc_info_sql_stmt_type};
 	char info_buff[16];
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (m_iscProvider.isc_dsql_sql_info(status, &m_handle, sizeof(stmt_info), stmt_info,
 			sizeof(info_buff), info_buff))
 		{
@@ -435,7 +436,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		const int len = m_iscProvider.isc_vax_integer(&info_buff[1], 2);
 		const int stmt_type = m_iscProvider.isc_vax_integer(&info_buff[3], len);
 
@@ -460,7 +461,7 @@ void IscStatement::doExecute(thread_db* tdbb)
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_iscProvider.isc_dsql_execute2(status, &h_tran, &m_handle, 1, m_in_xsqlda, m_out_xsqlda);
 	}
 	if (status[1]) {
@@ -473,7 +474,7 @@ void IscStatement::doOpen(thread_db* tdbb)
 	FB_API_HANDLE& h_tran = getIscTransaction()->getAPIHandle();
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_iscProvider.isc_dsql_execute(status, &h_tran, &m_handle, 1, m_in_xsqlda);
 	}
 	if (status[1]) {
@@ -485,7 +486,7 @@ bool IscStatement::doFetch(thread_db* tdbb)
 {
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		const ISC_STATUS res = m_iscProvider.isc_dsql_fetch(status, &m_handle, 1, m_out_xsqlda);
 		if (res == 100) {
 			return false;
@@ -502,7 +503,7 @@ void IscStatement::doClose(thread_db* tdbb, bool drop)
 	fb_assert(m_handle);
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this);
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_iscProvider.isc_dsql_free_statement(status, &m_handle, drop ? DSQL_drop : DSQL_close);
 		m_allocated = (m_handle != 0);
 	}
@@ -561,7 +562,7 @@ void IscBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, const UC
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection);
+		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
 
 		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const ISC_UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
@@ -585,7 +586,7 @@ void IscBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const UCharB
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection);
+		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
 
 		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const char* bpb_buff = bpb ? reinterpret_cast<const char*>(bpb->begin()) : NULL;
@@ -607,7 +608,7 @@ USHORT IscBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 	USHORT result = 0;
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection);
+		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
 		m_iscProvider.isc_get_segment(status, &m_handle, &result, len, reinterpret_cast<SCHAR*>(buff));
 	}
 	switch (status[1])
@@ -631,7 +632,7 @@ void IscBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection);
+		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
 		m_iscProvider.isc_put_segment(status, &m_handle, len, reinterpret_cast<const SCHAR*>(buff));
 	}
 	if (status[1]) {
@@ -644,7 +645,7 @@ void IscBlob::close(thread_db* tdbb)
 	fb_assert(m_handle);
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection);
+		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
 		m_iscProvider.isc_close_blob(status, &m_handle);
 	}
 	if (status[1]) {
@@ -661,7 +662,7 @@ void IscBlob::cancel(thread_db* tdbb)
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection);
+		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
 		m_iscProvider.isc_cancel_blob(status, &m_handle);
 	}
 	if (status[1]) {

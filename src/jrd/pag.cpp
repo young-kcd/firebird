@@ -1704,7 +1704,7 @@ static int blocking_ast_attachment(void* ast_object)
 	{
 		Database* const dbb = attachment->att_database;
 
-		AsyncContextHolder tdbb(dbb, attachment);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment);
 
 		attachment->att_flags |= ATT_shutdown;
 		attachment->cancelExternalConnection(tdbb);

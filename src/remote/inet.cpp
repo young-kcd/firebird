@@ -1015,7 +1015,7 @@ rem_port* INET_connect(const TEXT* name,
 		}
 
 #ifdef WIN_NT
-		MutexLockGuard forkGuard(forkMutex);
+		MutexLockGuard forkGuard(forkMutex, FB_FUNCTION);
 		if (!forkThreadStarted)
 		{
 			forkThreadStarted = true;
@@ -1027,7 +1027,7 @@ rem_port* INET_connect(const TEXT* name,
 		forkSockets->add(s);
 		SetEvent(forkEvent);
 #else
-		MutexLockGuard guard(waitThreadMutex);
+		MutexLockGuard guard(waitThreadMutex, FB_FUNCTION);
 		if (! procCount++) {
 			Thread::start(waitThread, 0, THREAD_medium);
 		}
@@ -1037,7 +1037,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 
 #ifdef WIN_NT
-	MutexLockGuard forkGuard(forkMutex);
+	MutexLockGuard forkGuard(forkMutex, FB_FUNCTION);
 	if (forkThreadStarted)
 	{
 		SetEvent(forkEvent);
@@ -1240,7 +1240,7 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 
 	if (!INET_initialized)
 	{
-		MutexLockGuard guard(init_mutex);
+		MutexLockGuard guard(init_mutex, FB_FUNCTION);
 		if (!INET_initialized)
 		{
 #ifdef WIN_NT
@@ -1306,7 +1306,7 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 
 	if (parent && !(parent->port_server_flags & SRVR_thread_per_port))
 	{
-		MutexLockGuard guard(port_mutex);
+		MutexLockGuard guard(port_mutex, FB_FUNCTION);
 		port->linkParent(parent);
 	}
 
@@ -1571,7 +1571,7 @@ static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
 	{
 		int rc = wait(0);
 
-		MutexLockGuard guard(waitThreadMutex);
+		MutexLockGuard guard(waitThreadMutex, FB_FUNCTION);
 		if (rc > 0) {
 			--procCount;
 		}
@@ -1614,7 +1614,7 @@ static void disconnect(rem_port* const port)
 		shutdown(port->port_handle, 2);
 	}
 
-	MutexLockGuard guard(port_mutex);
+	MutexLockGuard guard(port_mutex, FB_FUNCTION);
 	port->port_state = rem_port::DISCONNECTED;
 
 	if (port->port_async)
@@ -1802,7 +1802,7 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 		{
 			SOCKET s = 0;
 			{	// scope
-				MutexLockGuard forkGuard(forkMutex);
+				MutexLockGuard forkGuard(forkMutex, FB_FUNCTION);
 
 				if (!forkSockets || forkSockets->getCount() == 0)
 					break;
@@ -1872,7 +1872,7 @@ static in_addr get_bind_address()
  *	Return local address to bind sockets to.
  *
  **************************************/
-	static InitMutex<GetAddress> instance;
+	static InitMutex<GetAddress> instance(FB_FUNCTION);
 
 	instance.init();
 
@@ -2131,7 +2131,7 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
  *
  **************************************/
 
-	MutexLockGuard guard(port_mutex);
+	MutexLockGuard guard(port_mutex, FB_FUNCTION);
 
 	for (port = main_port; port; port = port->port_next)
 	{
@@ -2199,7 +2199,7 @@ static bool select_wait( rem_port* main_port, Select* selct)
 		}
 
 		{ // port_mutex scope
-			MutexLockGuard guard(port_mutex);
+			MutexLockGuard guard(port_mutex, FB_FUNCTION);
 			for (rem_port* port = main_port; port; port = port->port_next)
 			{
 				if (port->port_state == rem_port::PENDING &&
@@ -2298,7 +2298,7 @@ static bool select_wait( rem_port* main_port, Select* selct)
 				// they can be used in select_port()
 				if (selct->getCount() == 0)
 				{
-					MutexLockGuard guard(port_mutex);
+					MutexLockGuard guard(port_mutex, FB_FUNCTION);
 					for (rem_port* port = main_port; port; port = port->port_next)
 					{
 						selct->unset(port->port_handle);

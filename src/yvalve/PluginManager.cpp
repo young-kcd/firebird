@@ -562,7 +562,7 @@ namespace
 
 		~PluginsMap()
 		{
-			MutexLockGuard g(mutex);
+			MutexLockGuard g(mutex, FB_FUNCTION);
 
 			destroyingPluginsMap = true;
 			// unload plugins
@@ -618,7 +618,7 @@ namespace
 
 	int FB_CARG ConfiguredPlugin::release()
 	{
-		MutexLockGuard g(plugins->mutex);
+		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 		if (--refCounter == 0)
 		{
@@ -709,7 +709,7 @@ namespace
 			currentPlugin = NULL;
 		}
 
-		MutexLockGuard g(plugins->mutex);
+		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 		while (namesList.hasData())
 		{
@@ -839,7 +839,7 @@ namespace Firebird {
 
 PluginManager::PluginManager()
 {
-	MutexLockGuard g(plugins->mutex);
+	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 	if (!builtin)
 	{
@@ -852,7 +852,7 @@ PluginManager::PluginManager()
 
 void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, const char* defaultName, IPluginFactory* factory)
 {
-	MutexLockGuard g(plugins->mutex);
+	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 	if (!current)
 	{
@@ -878,7 +878,7 @@ void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, co
 
 void FB_CARG PluginManager::registerModule(IPluginModule* cleanup)
 {
-	MutexLockGuard g(plugins->mutex);
+	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 	if (!current)
 	{
@@ -893,7 +893,7 @@ void FB_CARG PluginManager::registerModule(IPluginModule* cleanup)
 void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 {
 	{	// guard scope
-		MutexLockGuard g(plugins->mutex);
+		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 		modules->resetCleanup(cleanup);
 	}
 
@@ -910,7 +910,7 @@ IPluginSet* FB_CARG PluginManager::getPlugins(IStatus* status, unsigned int inte
 {
 	try
 	{
-		MutexLockGuard g(plugins->mutex);
+		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 		IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, ui, firebirdConf);
 		rc->addRef();
@@ -926,7 +926,7 @@ IPluginSet* FB_CARG PluginManager::getPlugins(IStatus* status, unsigned int inte
 
 void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 {
-	MutexLockGuard g(plugins->mutex);
+	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 	IRefCounted* parent = plugin->getOwner();
 
@@ -968,7 +968,7 @@ void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 	Semaphore* semPtr = NULL;
 
 	{ // guard scope
-		MutexLockGuard g(plugins->mutex);
+		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 		if (byTypeCounters->get(typeThatMustGoAway).counter > 0)
 		{

@@ -63,7 +63,7 @@ void SyncObject::lock(Sync* sync, SyncType type)
 			}
 		}
 
-		mutex.enter();
+		mutex.enter(FB_FUNCTION);
 		++waiters;
 
 		//while (true)
@@ -110,7 +110,7 @@ void SyncObject::lock(Sync* sync, SyncType type)
 			}
 		}
 
-		mutex.enter();
+		mutex.enter(FB_FUNCTION);
 		++waiters;
 
 		while (!waitingThreads)
@@ -320,7 +320,7 @@ ThreadSync* SyncObject::grantThread(ThreadSync* thread)
 
 void SyncObject::grantLocks()
 {
-	MutexLockGuard guard(mutex);
+	MutexLockGuard guard(mutex, "SyncObject::grantLocks");
 	fb_assert((waiters && waitingThreads) || (!waiters && !waitingThreads));
 
 	ThreadSync* thread = waitingThreads;

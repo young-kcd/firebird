@@ -124,7 +124,7 @@ namespace {
 		}
 		~SignalMutex()
 		{
-			Firebird::MutexLockGuard guard(mutex);
+			Firebird::MutexLockGuard guard(mutex, "~SignalMutex()");
 			sigActive = false;
 
 			for (SIG sig = signals; sig;)
@@ -198,7 +198,7 @@ static bool isc_signal2(int signal_number, FPTR_VOID handler, void* arg, ULONG f
 
 	SIG sig;
 
-	Firebird::MutexLockGuard guard(sigMutex->mutex);
+	Firebird::MutexLockGuard guard(sigMutex->mutex, "isc_signal2");
 
 	// See if this signal has ever been cared about before
 
@@ -279,7 +279,7 @@ void ISC_signal_cancel(int signal_number, FPTR_VOID_PTR handler, void* arg)
 	SIG sig;
 	volatile SIG* ptr;
 
-	Firebird::MutexLockGuard guard(sigMutex->mutex);
+	Firebird::MutexLockGuard guard(sigMutex->mutex, "ISC_signal_cancel");
 
 	for (ptr = &signals; sig = *ptr;) {
 		if (sig->sig_signal == signal_number &&

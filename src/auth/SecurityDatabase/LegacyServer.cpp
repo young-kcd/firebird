@@ -175,7 +175,7 @@ void SecurityDatabase::fini()
 	isc_db_handle tmp = 0;
 
 	{ // scope
-		MutexLockGuard guard(mutex);
+		MutexLockGuard guard(mutex, FB_FUNCTION);
 
 		if (lookup_req)
 		{
@@ -208,7 +208,7 @@ bool SecurityDatabase::lookup_user(const char* user_name, char* pwd)
 	strncpy(uname, user_name, sizeof uname);
 	uname[sizeof uname - 1] = 0;
 
-	MutexLockGuard guard(mutex);
+	MutexLockGuard guard(mutex, FB_FUNCTION);
 
 	// Attach database and compile request
 
@@ -390,7 +390,7 @@ void FB_CARG SecurityDatabase::handler()
 {
 	try
 	{
-		MutexLockGuard g(instancesMutex);
+		MutexLockGuard g(instancesMutex, FB_FUNCTION);
 
 		fini();
 		InstancesArray& curInstances(instances);
@@ -419,7 +419,7 @@ int SecurityDatabase::shutdown(const int, const int, void*)
 {
 	try
 	{
-		MutexLockGuard g(instancesMutex);
+		MutexLockGuard g(instancesMutex, FB_FUNCTION);
 		InstancesArray& curInstances(instances);
 		for (unsigned int i = 0; i < curInstances.getCount(); ++i)
 		{
@@ -478,7 +478,7 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 		SecurityDatabase* instance = NULL;
 
 		{ // guard scope
-			MutexLockGuard g(instancesMutex);
+			MutexLockGuard g(instancesMutex, FB_FUNCTION);
 			InstancesArray& curInstances(instances);
 			for (unsigned int i = 0; i < curInstances.getCount(); ++i)
 			{

@@ -231,7 +231,7 @@ int CCH_down_grade_dbb(void* ast_object)
 	{
 		Lock* const lock = dbb->dbb_lock;
 
-		AsyncContextHolder tdbb(dbb, lock->getLockAttachment());
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock->getLockAttachment());
 
 		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
 
@@ -285,8 +285,11 @@ int CCH_down_grade_dbb(void* ast_object)
 		if (lock->lck_physical == LCK_EX) {
 			LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);	// This lets waiting cache manager in first
 		}
-		else {
+		else if (lock->lck_physical == LCK_PW) {
 			LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
+		}
+		else {
+			fb_assert(lock->lck_physical == 0);
 		}
 
 		dbb->dbb_ast_flags &= ~DBB_blocking;
@@ -476,7 +479,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 			THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
 		}
 
-		if (tdbb->getAttachment()->att_flags & ATT_cancel_raise)
+		if (tdbb->getAttachment()->cancelRaise())
 		{
 			if (JRD_reschedule(tdbb, 0, false))
 			{
@@ -1034,7 +1037,7 @@ void CCH_fini(thread_db* tdbb)
 			bcb->bcb_flags &= ~BCB_cache_reader;
 			dbb->dbb_reader_sem.release();
 			{ // scope
-				Database::Checkout dcoHolder(dbb);
+				Database::Checkout dcoHolder(dbb, FB_FUNCTION);
 				dbb->dbb_reader_fini.enter();
 			}
 		}
@@ -1597,7 +1600,7 @@ void CCH_init2(thread_db* tdbb)
 	}
 
 	{ // scope
-		Database::Checkout dcoHolder(dbb);
+		Database::Checkout dcoHolder(dbb, FB_FUNCTION);
 		dbb->dbb_reader_init.enter();
 	}
 #endif
@@ -2547,7 +2550,7 @@ static int blocking_ast_bdb(void* ast_object)
 		Database* const dbb = bcb->bcb_database;
 		fb_assert(dbb);
 
-		AsyncContextHolder tdbb(dbb);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 		// Do some fancy footwork to make sure that pages are
 		// not removed from the btc tree at AST level. Then
@@ -2874,7 +2877,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 		if (dbb->dbb_flags & DBB_suspend_bgio)
 		{
-			Database::Checkout dcoHolder(dbb);
+			Database::Checkout dcoHolder(dbb, FB_FUNCTION);
 			dbb->dbb_reader_sem.tryEnter(10);
 			continue;
 		}
@@ -2941,7 +2944,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 		else
 		{
 			bcb->bcb_flags &= ~BCB_reader_active;
-			Database::Checkout dcoHolder(dbb);
+			Database::Checkout dcoHolder(dbb, FB_FUNCTION);
 			dbb->dbb_reader_sem.tryEnter(10);
 		}
 		bcb = dbb->dbb_bcb;
@@ -2993,7 +2996,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_user = &user;
 
-		BackgroundContextHolder tdbb(dbb, attachment, status_vector);
+		BackgroundContextHolder tdbb(dbb, attachment, status_vector, FB_FUNCTION);
 
 		try
 		{
@@ -3019,7 +3022,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 				if (dbb->dbb_flags & DBB_suspend_bgio)
 				{
-					Attachment::Checkout cout(attachment);
+					Attachment::Checkout cout(attachment, FB_FUNCTION);
 					bcb->bcb_writer_sem.tryEnter(10);
 					continue;
 				}
@@ -3064,7 +3067,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				else
 				{
 					bcb->bcb_flags &= ~BCB_writer_active;
-					Attachment::Checkout cout(attachment);
+					Attachment::Checkout cout(attachment, FB_FUNCTION);
 					bcb->bcb_writer_sem.tryEnter(10);
 				}
 			}

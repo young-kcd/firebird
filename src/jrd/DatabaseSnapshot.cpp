@@ -25,6 +25,7 @@
 
 #include "../common/classes/auto.h"
 #include "../common/classes/locks.h"
+#include "../common/classes/fb_string.h"
 
 #include "../common/gdsassert.h"
 #include "../jrd/jrd.h"
@@ -289,12 +290,11 @@ void MonitoringData::ensureSpace(ULONG length)
 }
 
 
-void MonitoringData::mutexBug(int osErrorCode, const char* string)
+void MonitoringData::mutexBug(int osErrorCode, const char* s)
 {
-	gds__log("MONITOR: mutex %s error, status = %d", string, osErrorCode);
-
-	//fprintf(stderr, "%s\n", msg);
-	exit(FINI_ERROR);
+	string msg;
+	msg.printf("MONITOR: mutex %s error, status = %d", s, osErrorCode);
+	fb_utils::logAndDie(msg.c_str());
 }
 
 
@@ -359,7 +359,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 			if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 			{
-				AsyncContextHolder tdbb(dbb);
+				AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 				// Write the data to the shared memory
 				try
@@ -758,11 +758,11 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	Attachment* const old_attachment = tdbb->getAttachment();
 	try
 	{
-		Attachment::Checkout attCout(old_attachment, true);
+		Attachment::Checkout attCout(old_attachment, FB_FUNCTION, true);
 
 		for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 		{
-			Attachment::SyncGuard attGuard(attachment);
+			Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
 			tdbb->setAttachment(attachment);
 			dumpAttachment(tdbb, attachment, writer);
 		}
@@ -771,7 +771,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_SHARED, "DatabaseSnapshot::dumpData");
 			for (Attachment* attachment = dbb->dbb_sys_attachments; attachment; attachment = attachment->att_next)
 			{
-				Attachment::SyncGuard attGuard(attachment);
+				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
 				tdbb->setAttachment(attachment);
 				dumpAttachment(tdbb, attachment, writer);
 			}

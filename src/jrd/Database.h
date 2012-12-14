@@ -208,7 +208,7 @@ const ULONG DBB_not_in_use			= 0x800L;	// Database to be ignored while attaching
 const ULONG DBB_sweep_in_progress	= 0x1000L;	// A database sweep operation is in progress
 const ULONG DBB_security_db			= 0x2000L;	// ISC security database
 const ULONG DBB_suspend_bgio		= 0x4000L;	// Suspend I/O by background threads
-const ULONG DBB_being_opened		= 0x8000L;	// database is being attached to
+const ULONG DBB_new					= 0x8000L;	// Database object is just created
 const ULONG DBB_gc_cooperative		= 0x10000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x20000L;	// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache			= 0x40000L;	// Not using file system cache
@@ -334,7 +334,7 @@ public:
 	ExtEngineManager dbb_extManager;	// external engine manager
 
 	Firebird::SyncObject	dbb_flush_count_mutex;
-
+	Firebird::RWLock		dbb_ast_lock;		// avoids delivering AST to going away database
 	Firebird::AtomicCounter dbb_ast_flags;		// flags modified at AST level
 	Firebird::AtomicCounter dbb_flags;
 	USHORT dbb_ods_version;				// major ODS version number
@@ -397,6 +397,14 @@ public:
 
 	// returns an unique ID string for a database file
 	Firebird::string getUniqueFileId() const;
+
+#ifdef DEV_BUILD
+	// returns true if main lock is in exclusive state
+	bool locked() const
+	{
+		return dbb_sync.ourExclusiveLock();
+	}
+#endif
 
 	MemoryPool* createPool()
 	{

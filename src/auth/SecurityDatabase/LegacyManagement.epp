@@ -319,7 +319,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 		fb_utils::init_status(isc_status);
 		st->init();
 
-		Firebird::MutexLockGuard guard(execLineMutex);
+		Firebird::MutexLockGuard guard(execLineMutex, FB_FUNCTION);
 
 		SCHAR encrypted1[MAX_LEGACY_PASSWORD_LENGTH + 2];
 		Firebird::string encrypted2;

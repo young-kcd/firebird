@@ -2428,7 +2428,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const MetaName& name)
 		if (relation)
 		{
 			if (relation->rel_flags & REL_deleting)
-				Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex);
+				Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex, FB_FUNCTION);
 
 			if (!(relation->rel_flags & REL_deleted))
 			{
@@ -2525,7 +2525,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 	if (vector && (id < (SLONG) vector->count()) && (relation = (*vector)[id]))
 	{
 		if (relation->rel_flags & REL_deleting)
-			Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex);
+			Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex, FB_FUNCTION);
 
 		if (relation->rel_flags & REL_deleted)
 			return return_deleted ? relation : NULL;
@@ -3885,7 +3885,7 @@ static int blocking_ast_dsql_cache(void* ast_object)
 		Database* const dbb = item->lock->lck_dbb;
 		Jrd::Attachment* const att = item->lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
 
 		item->obsolete = true;
 		item->locked = false;
@@ -3953,7 +3953,7 @@ static int blocking_ast_procedure(void* ast_object)
 		Database* const dbb = procedure->prc_existence_lock->lck_dbb;
 		Jrd::Attachment* const att = procedure->prc_existence_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
 
 		if (procedure->prc_existence_lock)
 			LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3990,7 +3990,7 @@ static int blocking_ast_relation(void* ast_object)
 		Database* const dbb = relation->rel_existence_lock->lck_dbb;
 		Jrd::Attachment* const att = relation->rel_existence_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
 
 		if (relation->rel_use_count)
 			relation->rel_flags |= REL_blocking;
@@ -4018,7 +4018,7 @@ static int partners_ast_relation(void* ast_object)
 		Database* const dbb = relation->rel_partners_lock->lck_dbb;
 		Jrd::Attachment* const att = relation->rel_partners_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
 
 		LCK_release(tdbb, relation->rel_partners_lock);
 		relation->rel_flags |= REL_check_partners;
@@ -4039,7 +4039,7 @@ static int rescan_ast_relation(void* ast_object)
 		Database* const dbb = relation->rel_rescan_lock->lck_dbb;
 		Jrd::Attachment* const att = relation->rel_rescan_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
 
 		LCK_release(tdbb, relation->rel_rescan_lock);
 		relation->rel_flags &= ~REL_scanned;

@@ -532,7 +532,7 @@ const char *Config::getUdfAccess()
 		return value;
 	}
 
-	Firebird::MutexLockGuard guard(udfMutex);
+	Firebird::MutexLockGuard guard(udfMutex, "Config::getUdfAccess");
 
 	if (value)
 	{

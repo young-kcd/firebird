@@ -890,10 +890,10 @@ namespace Jrd {
 		public Jrd::Attachment::SyncGuard
 	{
 	public:
-		explicit BackgroundContextHolder(Database* dbb, Jrd::Attachment* att, ISC_STATUS* status)
+		BackgroundContextHolder(Database* dbb, Jrd::Attachment* att, ISC_STATUS* status, const char* f)
 			: ThreadContextHolder(dbb, att, status),
 			  DatabaseContextHolder(operator thread_db*()),
-			  Jrd::Attachment::SyncGuard(att)
+			  Jrd::Attachment::SyncGuard(att, f)
 		{}
 
 	private:
@@ -903,13 +903,14 @@ namespace Jrd {
 	};
 
 	class AsyncContextHolder : public ThreadContextHolder, public DatabaseContextHolder,
-		public Jrd::Attachment::SyncGuard
+		public Firebird::ReadLockGuard, public Jrd::Attachment::SyncGuard
 	{
 	public:
-		explicit AsyncContextHolder(Database* dbb, Jrd::Attachment* att = NULL)
+		AsyncContextHolder(Database* dbb, const char* f, Jrd::Attachment* att = NULL)
 			: ThreadContextHolder(dbb, att),
 			  DatabaseContextHolder(operator thread_db*()),
-			  Jrd::Attachment::SyncGuard(att, true)
+			  Firebird::ReadLockGuard(dbb->dbb_ast_lock, f),
+			  Jrd::Attachment::SyncGuard(att, f, true)
 		{
 			if (dbb->dbb_flags & DBB_not_in_use)
 			{
