@@ -634,7 +634,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						continue;
 					}
 					dataSize -= asyncSize;
-					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
+					Firebird::RefMutexGuard queGuard(*port->port_que_sync, "SRVR_multi_thread 1");
 					memcpy(port->port_queue.add().getBuffer(dataSize), buffer + asyncSize, dataSize);
 				}
 
@@ -653,7 +653,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						fb_assert(portLocked);
 						fb_assert(port->port_requests_queued.value() == 0);
 
-						Firebird::RefMutexGuard queGuard(*port->port_que_sync);
+						Firebird::RefMutexGuard queGuard(*port->port_que_sync, "SRVR_multi_thread 2");
 
 						const rem_port::RecvQueState recvState = port->getRecvState();
 						port->receive(&request->req_receive);
@@ -3285,7 +3285,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
  *	sent.
  *
  **************************************/
-	Firebird::RefMutexGuard portGuard(*port->port_sync);
+	Firebird::RefMutexGuard portGuard(*port->port_sync, "process_packet");
 	DecrementRequestsQueued dec(port);
 
 	try
@@ -4666,7 +4666,7 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 		return;
 	}
 
-	Firebird::RefMutexGuard portGuard(*port->port_sync);
+	Firebird::RefMutexGuard portGuard(*port->port_sync, "server_ast");
 
 	PACKET packet;
 	packet.p_operation = op_event;
@@ -5206,7 +5206,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 				Firebird::RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync);
 				{ // port_sync scope
-					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync);
+					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync, "loopThread");
 
 					if (request->req_port->port_state == rem_port::DISCONNECTED ||
 						!process_packet(request->req_port, &request->req_send, &request->req_receive, &port))

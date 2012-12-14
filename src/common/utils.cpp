@@ -45,6 +45,7 @@
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
 #include "../jrd/os/path_utils.h"
+#include "../jrd/os/fbsyslog.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -1014,6 +1015,17 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 	s += name;
 	gds__prefix(tmp, s.c_str());
 	return tmp;
+}
+
+void logAndDie(const char* text)
+{
+	gds__log(text);
+	Firebird::Syslog::Record(Firebird::Syslog::Error, text);
+#ifdef WIN_NT
+	exit(3);
+#else
+	abort();
+#endif
 }
 
 } // namespace fb_utils

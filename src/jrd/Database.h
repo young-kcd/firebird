@@ -102,7 +102,7 @@ const ULONG DBB_lck_init_done		= 0x1000L;	// LCK_init() called for the database
 const ULONG DBB_sweep_in_progress	= 0x2000L;	// A database sweep operation is in progress
 const ULONG DBB_security_db			= 0x4000L;	// ISC security database
 const ULONG DBB_suspend_bgio		= 0x8000L;	// Suspend I/O by background threads
-const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
+const ULONG DBB_new					= 0x10000L;	// Database object is just created
 const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
@@ -129,6 +129,9 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 	{
 	public:
 		Sync() : threadId(0), isAst(false)
+#ifdef DEV_BUILD
+			, lockCount(0)
+#endif
 		{}
 
 		void lock(bool ast = false)
@@ -139,6 +142,9 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 			--waiters;
 			threadId = getThreadId();
 			isAst = ast;
+#ifdef DEV_BUILD
+			++lockCount;
+#endif
 		}
 
 		void unlock()
@@ -146,6 +152,10 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 			ThreadPriorityScheduler::exit();
 			isAst = false;
 			threadId = 0;
+#ifdef DEV_BUILD
+			fb_assert(lockCount > 0);
+			--lockCount;
+#endif
 			syncMutex.leave();
 		}
 
@@ -153,6 +163,17 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		{
 			return (waiters.value() > 0);
 		}
+
+#ifdef DEV_BUILD
+		bool locked() const
+		{
+			if (!syncMutex.tryEnter())
+				return false;
+			bool rc = lockCount > 0;
+			syncMutex.leave();
+			return rc;
+		}
+#endif
 
 	private:
 		~Sync()
@@ -167,10 +188,16 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		Sync(const Sync&);
 		Sync& operator=(const Sync&);
 
-		Firebird::Mutex syncMutex;
+#ifdef DEV_BUILD
+		mutable
+#endif
+			Firebird::Mutex syncMutex;
 		Firebird::AtomicCounter waiters;
 		FB_THREAD_ID threadId;
 		bool isAst;
+#ifdef DEV_BUILD
+		int lockCount;
+#endif
 	};
 
 public:
@@ -357,6 +384,7 @@ public:
 		{
 			return false;
 		}
+		mutex()->release();
 
 		return TypedHandle<type_dbb>::checkHandle();
 	}
@@ -486,6 +514,9 @@ public:
 	MemoryPool* createPool()
 	{
 		MemoryPool* const pool = MemoryPool::createPool(dbb_permanent, dbb_memory_stats);
+
+		fb_assert(locked() || dbb_flags & DBB_new);
+
 		dbb_pools.add(pool);
 		return pool;
 	}
@@ -538,6 +569,13 @@ public:
 	{
 		return dbb_shared_counter.generate(tdbb, SharedCounter::STATEMENT_ID_SPACE);
 	}
+
+#ifdef DEV_BUILD
+	bool locked() const
+	{
+		return dbb_sync->locked();
+	}
+#endif
 
 private:
 

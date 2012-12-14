@@ -170,10 +170,7 @@ void ConfigStorage::checkMutex(const TEXT* string, int state)
 		TEXT msg[BUFFER_TINY];
 
 		sprintf(msg, "ConfigStorage: mutex %s error, status = %d", string, state);
-		gds__log(msg);
-
-		fprintf(stderr, "%s\n", msg);
-		exit(FINI_ERROR);
+		fb_utils::logAndDie(msg);
 	}
 }
 

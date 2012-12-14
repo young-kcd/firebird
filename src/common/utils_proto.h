@@ -137,6 +137,8 @@ namespace fb_utils
 	// Add appropriate file prefix.
 	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
 
+	void logAndDie(const char* text);
+
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

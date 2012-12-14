@@ -1639,13 +1639,15 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 #else
 	sprintf(s, "Fatal lock manager error: %s, errno: %d", string, ERRNO);
 #endif
-	gds__log(s);
-	fprintf(stderr, "%s\n", s);
 
 #if !(defined WIN_NT)
 	// The strerror() function returns the appropriate description string,
 	// or an unknown error message if the error code is unknown.
-	fprintf(stderr, "--%s\n", strerror(errno));
+	if (errno)
+	{
+		strcat(s, "\n--");
+		strcat(s, strerror(errno));
+	}
 #endif
 
 	if (!m_bugcheck)
@@ -1689,15 +1691,16 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 
 #ifdef DEV_BUILD
    /* In the worst case this code makes it possible to attach live process
-	* and see shared memory data.
-	fprintf(stderr, "Attach to pid=%d\n", getpid());
+	* and see shared memory data. */
+	if (isatty(2))
+		fprintf(stderr, "Attach to pid=%d\n", getpid());
+	else
+		gds__log("Attach to pid=%d\n", getpid());
 	sleep(120);
-	*/
-	// Make a core drop - we want to LOOK at this failure!
-	abort();
+	/**/
 #endif
 
-	exit(FINI_ERROR);
+	fb_utils::logAndDie(s);
 }
 
 
@@ -2476,8 +2479,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 	shb* secondary_header = (shb*) alloc(sizeof(shb), NULL);
 	if (!secondary_header)
 	{
-		gds__log("Fatal lock manager error: lock manager out of room");
-		exit(STARTUP_ERROR);
+		fb_utils::logAndDie("Fatal lock manager error: lock manager out of room");
 	}
 
 	m_header->lhb_secondary = SRQ_REL_PTR(secondary_header);
@@ -2497,8 +2499,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 		{
 			if (!(history = (his*) alloc(sizeof(his), NULL)))
 			{
-				gds__log("Fatal lock manager error: lock manager out of room");
-				exit(STARTUP_ERROR);
+				fb_utils::logAndDie("Fatal lock manager error: lock manager out of room");
 			}
 			*prior = SRQ_REL_PTR(history);
 			history->his_type = type_his;

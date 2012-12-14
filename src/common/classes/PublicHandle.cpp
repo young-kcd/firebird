@@ -21,6 +21,7 @@
  */
 
 #include "firebird.h"
+#include "gen/iberror.h"
 #include "../jrd/gdsassert.h"
 #include "rwlock.h"
 #include "PublicHandle.h"
@@ -31,6 +32,7 @@ namespace Firebird
 	GlobalPtr<RWLock> PublicHandle::sync;
 
 	PublicHandle::PublicHandle()
+		: RefPtr<ExistenceMutex>(FB_NEW(*getDefaultMemoryPool()) ExistenceMutex)
 	{
 		WriteLockGuard guard(sync);
 
@@ -48,6 +50,8 @@ namespace Firebird
 	{
 		WriteLockGuard guard(sync);
 
+		mutex()->objectExists = false;
+
 		size_t pos;
 		if (handles->find(this, pos))
 		{
@@ -59,15 +63,82 @@ namespace Firebird
 		}
 	}
 
-	bool PublicHandle::isKnownHandle() const
+	ExistenceMutex* PublicHandle::isKnownHandle() const
 	{
 		if (!this)
 		{
-			return false;
+			return NULL;
 		}
 
 		ReadLockGuard guard(sync);
-		return handles->exist(this);
+		if (handles->exist(this))
+		{
+			mutex()->addRef();
+			return mutex();
+		}
+
+		return NULL;
 	}
 
-} // namespace
+	bool PublicHandle::executeWithLock(ExecuteWithLock* operation)
+	{
+		ReadLockGuard guard(sync);
+		if (handles->exist(this))
+		{
+			operation->execute();
+			return true;
+		}
+		return false;
+	}
+
+	PublicHandleHolder::PublicHandleHolder()
+		: mutex(NULL)
+	{ }
+
+	PublicHandleHolder::PublicHandleHolder(PublicHandle* handle, const char* from)
+		: mutex(NULL)
+	{
+		if (!hold(handle, from))
+		{
+			fb_assert(false);
+			(Arg::Gds(isc_random) << "Public object unexpectedly lost").raise();
+		}
+	}
+
+	bool PublicHandleHolder::hold(PublicHandle* handle, const char* from)
+	{
+		mutex = handle->isKnownHandle();
+		if (mutex)
+		{
+			mutex->enter(from);
+			if (mutex->objectExists)
+			{
+				return true;
+			}
+			destroy();
+			mutex = NULL;
+		}
+		return false;
+	}
+
+	PublicHandleHolder::~PublicHandleHolder()
+	{
+		if (mutex)
+		{
+			destroy();
+		}
+	}
+
+	void PublicHandleHolder::destroy()
+	{
+		try
+		{
+			mutex->leave();
+		}
+		catch (const Firebird::Exception&)
+		{
+			DtorException::devHalt();
+		}
+		mutex->release();
+	}
+} // namespace Firebird

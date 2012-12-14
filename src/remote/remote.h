@@ -812,13 +812,13 @@ public:
 #ifdef REM_SERVER
 	bool haveRecvData()
 	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync);
+		Firebird::RefMutexGuard queGuard(*port_que_sync, "rem_port::haveRecvData()");
 		return ((port_receive.x_handy > 0) || (port_qoffset < port_queue.getCount()));
 	}
 
 	void clearRecvQue()
 	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync);
+		Firebird::RefMutexGuard queGuard(*port_que_sync, "rem_port::clearRecvQue()");
 		port_queue.clear();
 		port_qoffset = 0;
 		port_receive.x_private = port_receive.x_base;

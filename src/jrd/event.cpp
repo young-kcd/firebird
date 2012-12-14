@@ -598,8 +598,7 @@ evh* EventManager::acquire_shmem()
 		if (!header)
 		{
 			release_shmem();
-			gds__log("Event table remap failed");
-			exit(FINI_ERROR);
+			fb_utils::logAndDie("Event table remap failed");
 		}
 
 		m_header = header;
@@ -671,8 +670,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	if (!best)
 	{
 		release_shmem();
-		gds__log("Event table space exhausted");
-		exit(FINI_ERROR);
+		fb_utils::logAndDie("Event table space exhausted");
 	}
 
 	free = (frb*) SRQ_ABS_PTR(*best);
@@ -1244,10 +1242,7 @@ void EventManager::mutex_bugcheck(const TEXT* string, int mutex_state)
 	TEXT msg[BUFFER_TINY];
 
 	sprintf(msg, "EVENT: %s error, status = %d", string, mutex_state);
-	gds__log(msg);
-
-	fprintf(stderr, "%s\n", msg);
-	exit(FINI_ERROR);
+	fb_utils::logAndDie(msg);
 }
 
 

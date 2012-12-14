@@ -43,6 +43,7 @@
 #include "../../jrd/os/path_utils.h"
 #include "../../jrd/os/os_utils.h"
 #include "../../jrd/trace/TraceLog.h"
+#include "../common/utils_proto.h"
 
 using namespace Firebird;
 
@@ -242,10 +243,7 @@ void TraceLog::checkMutex(const TEXT* string, int state)
 		TEXT msg[BUFFER_TINY];
 
 		sprintf(msg, "TraceLog: mutex %s error, status = %d", string, state);
-		gds__log(msg);
-
-		fprintf(stderr, "%s\n", msg);
-		exit(FINI_ERROR);
+		fb_utils::logAndDie(msg);
 	}
 }
 

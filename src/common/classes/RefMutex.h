@@ -46,14 +46,20 @@ namespace Firebird
 		RefMutex() {}
 		explicit RefMutex(MemoryPool& pool) : mutex(pool) {}
 
-		void enter()
+		void enter(const char* f)
 		{
 			mutex.enter();
+			setFrom(f);
 		}
 
-		bool tryEnter()
+		bool tryEnter(const char* f)
 		{
-			return mutex.tryEnter();
+			bool rc = mutex.tryEnter();
+			if (rc)
+			{
+				setFrom(f);
+			}
+			return rc;
 		}
 
 		void leave()
@@ -63,16 +69,27 @@ namespace Firebird
 
 	private:
 		Mutex mutex;
+#ifdef DEV_BUILD
+		const char* from[8];
+		unsigned frIndex;
+		void setFrom(const char* fr)
+		{
+			frIndex %= FB_NELEM(from);
+			from[frIndex++] = fr;
+		}
+#else
+		void setFrom(const char*) { }
+#endif
 	};
 
 	// RAII holder
 	class RefMutexGuard : public Reference
 	{
 	public:
-		explicit RefMutexGuard(RefMutex& alock)
+		RefMutexGuard(RefMutex& alock, const char* f)
 			: Reference(alock), lock(&alock)
 		{
-			lock->enter();
+			lock->enter(f);
 		}
 
 		~RefMutexGuard()
@@ -102,6 +119,16 @@ namespace Firebird
 		{
 			return object->release();
 		}
+
+		static void enter(T* object, const char* f)
+		{
+			object->enter(f);
+		}
+
+		static bool tryEnter(T* object, const char* f)
+		{
+			return object->tryEnter(f);
+		}
 	};
 
 	template <typename T>
@@ -117,6 +144,16 @@ namespace Firebird
 		{
 			return 0;
 		}
+
+		static void enter(T* object, const char*)
+		{
+			object->enter();
+		}
+
+		static bool tryEnter(T* object, const char*)
+		{
+			return object->tryEnter();
+		}
 	};
 
 	template <typename Mtx, typename RefCounted = DefaultRefCounted<Mtx> >
@@ -124,10 +161,9 @@ namespace Firebird
 	{
 	public:
 		explicit EnsureUnlock(Mtx& mutex)
+			: m_mutex(&mutex), m_locked(0)
 		{
-			m_mutex = &mutex;
 			RefCounted::addRef(m_mutex);
-			m_locked = 0;
 		}
 
 		~EnsureUnlock()
@@ -139,13 +175,13 @@ namespace Firebird
 
 		void enter()
 		{
-			m_mutex->enter();
+			RefCounted::enter(m_mutex, "EnsureUnlock");
 			m_locked++;
 		}
 
 		bool tryEnter()
 		{
-			if (m_mutex->tryEnter())
+			if (RefCounted::tryEnter(m_mutex, "EnsureUnlock::tryEnter"))
 			{
 				m_locked++;
 				return true;

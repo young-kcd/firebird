@@ -70,7 +70,6 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/StatusArg.h"
-#include "../common/classes/RefMutex.h"
 
 static int process_id;
 

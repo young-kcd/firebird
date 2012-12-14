@@ -261,7 +261,8 @@ VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Source
 FBCOMMON_ClientFiles = fb_exception.cpp thd.cpp classes/MetaName.cpp StatusHolder.cpp classes/init.cpp StatusArg.cpp
 FBCOMMON_ServerFiles = utils.cpp
 
-FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles))))
+FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles)))) \
+		$(addprefix $(OBJ)/jrd/, $(addsuffix .o, $(basename fbsyslog.cpp)))
 FBCOMMON_ServerObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ServerFiles))))
 
 FBCOMMON_Objects = $(FBCOMMON_ClientObjects) $(FBCOMMON_ServerObjects)
@@ -284,7 +285,7 @@ CLUMPLETS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLUMPLETS_
 # Platform Manager
 
 # just in case if make.platform defined some files
-OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp os_utils.cpp
+OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp guid.cpp os_utils.cpp
 
 OS_SPECIFIC_Sources = $(addprefix jrd/, $(OS_SPECIFIC_Files)) common/dllinst.cpp
 ifneq ($(strip @BINRELOC_CFLAGS@),)

@@ -940,8 +940,7 @@ namespace
 				{
 					strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
 				}
-				gds__log("%s", buffer);
-				exit(0);
+				fb_utils::logAndDie(buffer);
 			}
 
 			if (! killed)

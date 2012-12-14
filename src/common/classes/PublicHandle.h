@@ -25,22 +25,58 @@
 
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
+#include "../common/classes/RefMutex.h"
 
 namespace Firebird
 {
 	class RWLock;
 
-	class PublicHandle
+	class ExecuteWithLock
+	{
+	public:
+		virtual void execute() = 0;
+	};
+
+	class ExistenceMutex : public RefMutex
+	{
+	public:
+		bool objectExists;
+
+		ExistenceMutex()
+			: RefMutex(), objectExists(true)
+		{ }
+	};
+
+	class PublicHandle : public RefPtr<ExistenceMutex>
 	{
 	public:
 		PublicHandle();
 		~PublicHandle();
 
-		bool isKnownHandle() const;
+		ExistenceMutex* isKnownHandle() const;
+		ExistenceMutex* mutex() const
+		{
+			return (ExistenceMutex*)(*const_cast<PublicHandle*>(this));
+		}
+		bool executeWithLock(ExecuteWithLock* operation);
 
 	private:
 		static GlobalPtr<Array<const void*> > handles;
 		static GlobalPtr<RWLock> sync;
+	};
+
+	class PublicHandleHolder
+	{
+	public:
+		PublicHandleHolder();
+		PublicHandleHolder(PublicHandle*, const char* from);
+		~PublicHandleHolder();
+
+		bool hold(PublicHandle* handle, const char* from);
+
+	private:
+		ExistenceMutex* mutex;
+		void destroy();
 	};
 
 } // namespace

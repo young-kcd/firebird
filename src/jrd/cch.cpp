@@ -439,8 +439,11 @@ int CCH_down_grade_dbb(void* ast_object)
 		if (lock->lck_physical == LCK_EX) {
 			LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);	// This lets waiting cache manager in first
 		}
-		else {
+		else if (lock->lck_physical == LCK_PW) {
 			LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
+		}
+		else {
+			fb_assert(lock->lck_physical == 0);
 		}
 
 		dbb->dbb_ast_flags &= ~DBB_blocking;
@@ -631,7 +634,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 			THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
 		}
 
-		if (tdbb->getAttachment()->att_flags & ATT_cancel_raise)
+		if (tdbb->getAttachment()->cancelRaise())
 		{
 			if (JRD_reschedule(tdbb, 0, false))
 			{
@@ -4023,6 +4026,8 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
+
+	PublicHandleHolder attHolder(attachment, "cache_reader()");
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
 	// This try block is specifically to protect the LCK_init call: if
@@ -4185,6 +4190,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
+	PublicHandleHolder attHolder(attachment, "cache_writer()");
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
 	// This try block is specifically to protect the LCK_init call: if

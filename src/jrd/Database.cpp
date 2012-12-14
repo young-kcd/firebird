@@ -91,7 +91,7 @@ namespace Jrd
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
 
-		Checkout dcoHolder(this);
+		fb_assert(!locked());
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
 		LockManager::destroy(dbb_lock_mgr);
@@ -102,6 +102,8 @@ namespace Jrd
 	{
 		if (pool)
 		{
+			fb_assert(locked() || dbb_flags & DBB_not_in_use);
+
 			size_t pos;
 			if (dbb_pools.find(pool, pos))
 			{

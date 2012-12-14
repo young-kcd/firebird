@@ -712,7 +712,7 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 			xdrs->x_handy = 0;
 		}
 		rem_port* port = (rem_port*) xdrs->x_public;
-		Firebird::RefMutexGuard queGuard(*port->port_que_sync);
+		Firebird::RefMutexGuard queGuard(*port->port_que_sync, "REMOTE_getbytes");
 		if (port->port_qoffset >= port->port_queue.getCount())
 		{
 			port->port_flags |= PORT_partial_data;

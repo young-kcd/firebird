@@ -4028,7 +4028,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		Attachment* const attachment = Attachment::create(dbb);
 		tdbb->setAttachment(attachment);
 		attachment->att_filename = dbb->dbb_filename;
-		attachment->att_flags = ATT_garbage_collector;
+		attachment->att_flags |= ATT_garbage_collector;
 
 		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 
@@ -4285,6 +4285,7 @@ gc_exit:
 		Attachment* const attachment = tdbb->getAttachment();
 		if (attachment)
 		{
+			PublicHandleHolder attHolder(attachment, "garbage_collector()");
 			LCK_fini(tdbb, LCK_OWNER_attachment);
 			Attachment::destroy(attachment);	// no need saving warning error strings here
 			tdbb->setAttachment(NULL);
