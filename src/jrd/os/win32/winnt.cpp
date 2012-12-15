@@ -72,9 +72,9 @@ public:
 		if (m_lock)
 		{
 			if (m_exclusive)
-				m_lock->beginWrite();
+				m_lock->beginWrite(FB_FUNCTION);
 			else
-				m_lock->beginRead();
+				m_lock->beginRead(FB_FUNCTION);
 		}
 	}
 
@@ -123,7 +123,7 @@ struct AdjustFsCache
 	static void init() { adjustFileSystemCacheSize(); }
 };
 
-static InitMutex<AdjustFsCache> adjustFsCacheOnce;
+static InitMutex<AdjustFsCache> adjustFsCacheOnce("AdjustFsCacheOnce");
 
 inline static DWORD getShareFlags(const bool shared_access, bool temporary = false)
 {

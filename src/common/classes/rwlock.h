@@ -98,7 +98,7 @@ public:
 				system_call_failed::raise("SetEvent");
 		}
 		else if (blockedReaders) {
-			MutexLockGuard guard(blockedReadersLock);
+			MutexLockGuard guard(blockedReadersLock, "RWLock::unblockWaiting");
 			if (blockedReaders && !ReleaseSemaphore(readers_semaphore, blockedReaders, NULL))
 			{
 				system_call_failed::raise("ReleaseSemaphore");
@@ -138,7 +138,7 @@ public:
 		if (!tryBeginRead(aReason))
 		{
 			{ // scope block
-				MutexLockGuard guard(blockedReadersLock);
+				MutexLockGuard guard(blockedReadersLock, "RWLock::beginRead");
 				++blockedReaders;
 			}
 			while (!tryBeginRead(aReason))
@@ -147,7 +147,7 @@ public:
 					system_call_failed::raise("WaitForSingleObject");
 			}
 			{ // scope block
-				MutexLockGuard guard(blockedReadersLock);
+				MutexLockGuard guard(blockedReadersLock, "RWLock::beginRead");
 				--blockedReaders;
 			}
 		}

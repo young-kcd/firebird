@@ -229,7 +229,7 @@ namespace
 		}
 	};
 
-	Firebird::InitMutex<SignalInit> signalInit;
+	Firebird::InitMutex<SignalInit> signalInit("SignalInit");
 } // anonymous namespace
 
 void ISC_signal_init()

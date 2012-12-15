@@ -98,7 +98,7 @@ public:
 				system_call_failed::raise("ResetEvent(BROADCAST)");
 		}
 
-		m.enter();
+		m.enter("Condition::wait");
 	}
 
 	void notifyOne()

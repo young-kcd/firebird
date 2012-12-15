@@ -89,7 +89,7 @@ public:
 	}
 	explicit Mutex(MemoryPool&)
 #ifdef DEV_BUILD
-		: reason(NULL), lockCount(0)
+		: lockCount(0)
 #endif
 	{
 		InitializeCriticalSection(&spinlock);
@@ -140,19 +140,28 @@ public:
 		LeaveCriticalSection(&spinlock);
 	}
 
-	void assertLocked()
-	{
 #ifdef DEV_BUILD
+	bool locked()
+	{
 		// first of all try to enter the mutex
 		// this will help to make sure it's not locked by other thread
 		if (!tryEnter("assertLocked()"))
 		{
-			fb_assert(false);
+			return false;
 		}
 		// make sure mutex was already locked prior assertLocked
-		fb_assert(lockCount > 1);
+		bool rc = lockCount > 1;
 		// leave to release lock, done by us in tryEnter
 		leave();
+
+		return rc;
+	}
+#endif
+
+	void assertLocked()
+	{
+#ifdef DEV_BUILD
+		fb_assert(locked());
 #endif
 	}
 
