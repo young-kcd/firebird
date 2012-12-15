@@ -1,3 +1,7 @@
+ 2012-12-14 10:11  makowski 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+Fixed CORE-4011: /etc/init.d/ script for Mageia and RedHat RH #886578
+
  2012-11-30 08:17  hvlad 
    M src/jrd/dpm.epp
 Fixed bug CORE-4002 : Error message "index unexpectedly deleted" in database trigger on commit transaction
