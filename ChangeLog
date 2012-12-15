@@ -1,3 +1,94 @@
+ 2012-12-14 17:59  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   A src/common/classes/Reasons.h
+   M src/common/classes/RefMutex.h
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/alloc.cpp
+   M src/common/classes/init.cpp
+   M src/common/classes/init.h
+   M src/common/classes/locks.h
+   M src/common/classes/rwlock.h
+   M src/common/config/ConfigCache.cpp
+   M src/common/config/config.cpp
+   M src/common/db_alias.cpp
+   M src/common/enc.cpp
+   M src/common/isc_file.cpp
+   M src/common/isc_sync.cpp
+   M src/common/os/posix/SyncSignals.cpp
+   M src/common/os/posix/isc_ipc.cpp
+   M src/common/os/posix/os_utils.cpp
+   M src/common/unicode_util.cpp
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/Function.epp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/TempSpace.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/event.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/flu.cpp
+   M src/jrd/fun.epp
+   M src/jrd/idx.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceLog.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/ntrace/PluginLogWriter.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/os/win32/FileObject.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/gds.cpp
+   M src/yvalve/user_dsql.cpp
+   M src/yvalve/why.cpp
+Work in progress (committed due to SF upgrade). Checked only on SS.
+1. Frontported fix for CORE-3935 and CORE-3993.
+2. Added debugging support for mutexes and rwlocks in Vulcan style.
+Unfortunately after last 'svn up' build asserts in JrdStatement:71.
+
+ 2012-12-14 17:39  alexpeshkoff 
+   M configure.in
+Try to make Darwin port happy
+
+ 2012-12-14 10:01  makowski 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+Fixed CORE-4011: /etc/init.d/ script for Mageia and RedHat RH #886578
+
  2012-12-13 18:31  dimitr 
    M src/jrd/JrdStatement.cpp
    M src/jrd/JrdStatement.h
