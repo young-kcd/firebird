@@ -962,7 +962,7 @@ static void cleanup_comm(XCC xcc)
 
 static void cleanup_mapping(XPM xpm)
 {
-	MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 	// if this was the last area for this map, unmap it
 	xpm->xpm_count--;
@@ -1035,7 +1035,7 @@ static rem_port* connect_client(PACKET* packet)
 
 	if (!xnet_initialized)
 	{
-		MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 		if (!xnet_initialized)
 		{
 			xnet_initialized = true;
@@ -1050,7 +1050,7 @@ static rem_port* connect_client(PACKET* packet)
 	XNET_RESPONSE response;
 
 	{ // xnet_mutex scope
-		MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 		// First, try to connect using default kernel namespace.
 		// This should work on Win9X, NT4 and on later OS when server is running
@@ -1085,7 +1085,7 @@ static rem_port* connect_client(PACKET* packet)
 	DWORD err = WaitForSingleObject(xnet_connect_mutex, timeout);
 
 	{ // xnet_mutex scope
-		MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 		if (err != WAIT_OBJECT_0)
 		{
@@ -1111,7 +1111,7 @@ static rem_port* connect_client(PACKET* packet)
 	err = WaitForSingleObject(xnet_response_event, timeout);
 
 	{ // xnet_mutex scope
-		MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 		if (err != WAIT_OBJECT_0)
 		{
@@ -1153,7 +1153,7 @@ static rem_port* connect_client(PACKET* packet)
 	try {
 
 		{ // xnet_mutex scope
-			MutexLockGuard guard(xnet_mutex);
+			MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 			// see if area is already mapped for this client
 
@@ -1604,7 +1604,7 @@ static void server_shutdown(rem_port* port)
 
 		// mark all mapped areas connected to the process with pid == dead_proc_id
 
-		MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next)
 		{
@@ -2000,7 +2000,7 @@ void release_all()
 
 	connect_fini();
 
-	MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 	// release all map stuff left not released by broken ports
 
@@ -2096,7 +2096,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 	}
 	xpm->xpm_flags = 0;
 
-	MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 	xpm->xpm_next = global_client_maps;
 	global_client_maps = xpm;
@@ -2225,7 +2225,7 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 	XPM xpm = NULL;
 	ULONG free_slot = 0, free_map = 0;
 
-	MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
 	// go through list of maps
 

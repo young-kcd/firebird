@@ -493,7 +493,7 @@ static rem_port* alloc_port( rem_port* parent)
 
 	if (!wnet_initialized)
 	{
-		MutexLockGuard guard(init_mutex);
+		MutexLockGuard guard(init_mutex, FB_FUNCTION);
 		if (!wnet_initialized)
 		{
 			wnet_initialized = true;
