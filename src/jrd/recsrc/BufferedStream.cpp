@@ -143,13 +143,14 @@ void BufferedStream::close(thread_db* tdbb) const
 
 bool BufferedStream::getRecord(thread_db* tdbb) const
 {
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
-	{
 		return false;
-	}
 
 	Record* const buffer_record = impure->irsb_buffer->getTempRecord();
 
@@ -221,9 +222,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 	{
 		// Read the record from the buffer
 		if (!impure->irsb_buffer->fetch(impure->irsb_position, buffer_record))
-		{
 			return false;
-		}
 
 		// Assign fields back to their original streams
 		for (size_t i = 0; i < m_map.getCount(); i++)

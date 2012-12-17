@@ -65,7 +65,18 @@ namespace Jrd
 		}
 
 	private:
-		bool reschedule(thread_db* tdbb) const;
+		bool validate(thread_db* tdbb) const
+		{
+			const jrd_req* const request = tdbb->getRequest();
+
+			if (request->req_flags & req_abort)
+				return false;
+
+			if (!request->req_transaction)
+				return false;
+
+			return true;		
+		}
 
 		ULONG m_impure;
 		const RecordSource* const m_top;

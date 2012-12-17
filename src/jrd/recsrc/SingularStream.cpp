@@ -67,18 +67,17 @@ void SingularStream::close(thread_db* tdbb) const
 
 bool SingularStream::getRecord(thread_db* tdbb) const
 {
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
-	{
 		return false;
-	}
 
 	if (impure->irsb_flags & irsb_singular_processed)
-	{
 		return false;
-	}
 
 	if (m_next->getRecord(tdbb))
 	{

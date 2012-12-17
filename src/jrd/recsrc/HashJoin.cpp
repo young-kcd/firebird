@@ -234,13 +234,14 @@ void HashJoin::close(thread_db* tdbb) const
 
 bool HashJoin::getRecord(thread_db* tdbb) const
 {
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
-	{
 		return false;
-	}
 
 	while (true)
 	{
@@ -249,9 +250,7 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 			// Fetch the record from the leading stream
 
 			if (!m_leader->getRecord(tdbb))
-			{
 				return false;
-			}
 
 			// Hash the comparison keys
 
@@ -261,9 +260,7 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 			// Setup the hash table for the iteration through collisions.
 
 			if (!impure->irsb_hash_table->setup(hash_slot))
-			{
 				continue;
-			}
 
 			impure->irsb_flags &= ~irsb_mustread;
 			impure->irsb_flags |= irsb_first;
@@ -293,9 +290,7 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 		// Ensure that the comparison keys are really equal
 
 		if (compareKeys(tdbb, request))
-		{
 			break;
-		}
 	}
 
 	return true;

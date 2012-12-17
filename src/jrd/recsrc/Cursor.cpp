@@ -79,10 +79,8 @@ void Cursor::close(thread_db* tdbb) const
 
 bool Cursor::fetchNext(thread_db* tdbb) const
 {
-	if (!reschedule(tdbb))
-	{
+	if (!validate(tdbb))
 		return false;
-	}
 
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -142,10 +140,8 @@ bool Cursor::fetchPrior(thread_db* tdbb) const
 		status_exception::raise(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("PRIOR"));
 	}
 
-	if (!reschedule(tdbb))
-	{
+	if (!validate(tdbb))
 		return false;
-	}
 
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -217,10 +213,8 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset) const
 		status_exception::raise(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("ABSOLUTE"));
 	}
 
-	if (!reschedule(tdbb))
-	{
+	if (!validate(tdbb))
 		return false;
-	}
 
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -262,10 +256,8 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 		status_exception::raise(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("RELATIVE"));
 	}
 
-	if (!reschedule(tdbb))
-	{
+	if (!validate(tdbb))
 		return false;
-	}
 
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -302,28 +294,6 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 	request->req_records_selected++;
 	request->req_records_affected.bumpFetched();
 	impure->irsb_state = POSITIONED;
-
-	return true;
-}
-
-bool Cursor::reschedule(thread_db* tdbb) const
-{
-	if (--tdbb->tdbb_quantum < 0)
-	{
-		JRD_reschedule(tdbb, 0, true);
-	}
-
-	jrd_req* const request = tdbb->getRequest();
-
-	if (request->req_flags & req_abort)
-	{
-		return false;
-	}
-
-	if (!request->req_transaction)
-	{
-		return false;
-	}
 
 	return true;
 }

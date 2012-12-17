@@ -90,6 +90,9 @@ void ExternalTableScan::close(thread_db* tdbb) const
 
 bool ExternalTableScan::getRecord(thread_db* tdbb) const
 {
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = request->getImpure<Impure>(m_impure);

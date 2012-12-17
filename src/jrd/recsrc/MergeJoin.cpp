@@ -127,20 +127,19 @@ void MergeJoin::close(thread_db* tdbb) const
 
 bool MergeJoin::getRecord(thread_db* tdbb) const
 {
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
-	{
 		return false;
-	}
 
 	// If there is a record group already formed, fetch the next combination
 
 	if (fetchRecord(tdbb, m_args.getCount() - 1))
-	{
 		return true;
-	}
 
 	// Assuming we are done with the current value group, advance each
 	// stream one record. If any comes up dry, we're done.
@@ -230,23 +229,18 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 
 					const SLONG record = getRecord(tdbb, i);
 					if (record < 0)
-					{
 						return false;
-					}
+
 					sort_rsb->mapData(tdbb, request, getData(tdbb, mfb, record));
 				}
 
 				if (recycle)
-				{
 					break;
-				}
 			}
 		}
 
 		if (!recycle)
-		{
 			break;
-		}
 	}
 
 	// finally compute equality group for each stream in sort/merge
@@ -282,9 +276,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 			}
 
 			if (!equal)
-			{
 				break;
-			}
 
 			tail->irsb_mrg_equal_end = record;
 		}
@@ -323,15 +315,11 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 			for (; stack.hasData(); ++stack)
 			{
 				if (stack.object() == tail2)
-				{
 					break;
-				}
 			}
 
 			if (stack.hasData())
-			{
 				continue;
-			}
 
 			MergeFile* const mfb = &tail2->irsb_mrg_file;
 			ULONG blocks = mfb->mfb_equal_records / mfb->mfb_blocking_factor;

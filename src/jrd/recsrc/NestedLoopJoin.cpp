@@ -90,13 +90,14 @@ void NestedLoopJoin::close(thread_db* tdbb) const
 
 bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 {
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
-	{
 		return false;
-	}
 
 	if (m_outerJoin)
 	{
@@ -116,9 +117,7 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 			if (impure->irsb_flags & irsb_mustread)
 			{
 				if (!outer->getRecord(tdbb))
-				{
 					return false;
-				}
 
 				if (m_boolean && !m_boolean->execute(tdbb, request))
 				{

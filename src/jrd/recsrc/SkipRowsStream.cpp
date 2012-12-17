@@ -82,22 +82,21 @@ void SkipRowsStream::close(thread_db* tdbb) const
 
 bool SkipRowsStream::getRecord(thread_db* tdbb) const
 {
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
-	{
 		return false;
-	}
 
 	while (impure->irsb_count > 1)
 	{
 		impure->irsb_count--;
 
 		if (!m_next->getRecord(tdbb))
-		{
 			return false;
-		}
 	}
 
 	impure->irsb_count--;
