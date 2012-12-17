@@ -68,8 +68,9 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 		makeSubRoutines(tdbb, this, csb, csb->subProcedures);
 		makeSubRoutines(tdbb, this, csb, csb->subFunctions);
 
-		fb_assert(csb->csb_node->kind == DmlNode::KIND_STATEMENT);
-		topNode = static_cast<StmtNode*>(csb->csb_node);
+		topNode = (csb->csb_node->kind == DmlNode::KIND_STATEMENT) ?
+			static_cast<StmtNode*>(csb->csb_node) : NULL;
+
 		accessList = csb->csb_access;
 		externalList = csb->csb_external;
 		mapFieldInfo.takeOwnership(csb->csb_map_field_info);
