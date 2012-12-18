@@ -90,6 +90,13 @@ namespace Jrd
 		delete dbb_backup_manager;
 		delete dbb_crypto_manager;
 
+		while (dbb_active_threads)
+		{
+			thread_db* tdbb = dbb_active_threads;
+			tdbb->deactivate();
+			tdbb->setDatabase(NULL);
+		}
+
 		fb_assert(!locked());
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.

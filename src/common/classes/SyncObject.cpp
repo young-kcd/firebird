@@ -39,7 +39,7 @@
 namespace Firebird {
 
 
-void SyncObject::lock(Sync* sync, SyncType type)
+void SyncObject::lock(Sync* sync, SyncType type, const char* from)
 {
 	ThreadSync* thread = NULL;
 
@@ -59,6 +59,10 @@ void SyncObject::lock(Sync* sync, SyncType type)
 			if (lockState.compareExchange(oldState, newState))
 			{
 				WaitForFlushCache();
+#ifdef DEV_BUILD
+				MutexLockGuard g(mutex, FB_FUNCTION);
+				reason(from);
+#endif
 				return;
 			}
 		}
@@ -77,6 +81,7 @@ void SyncObject::lock(Sync* sync, SyncType type)
 			if (lockState.compareExchange(oldState, newState))
 			{
 				--waiters;
+				reason(from);
 				mutex.leave();
 				return;
 			}
@@ -93,6 +98,7 @@ void SyncObject::lock(Sync* sync, SyncType type)
 		if (thread == exclusiveThread)
 		{
 			++monitorCount;
+			reason(from);
 			return;
 		}
 
@@ -106,6 +112,7 @@ void SyncObject::lock(Sync* sync, SyncType type)
 			{
 				exclusiveThread = thread;
 				WaitForFlushCache();
+				reason(from);
 				return;
 			}
 		}
@@ -124,15 +131,20 @@ void SyncObject::lock(Sync* sync, SyncType type)
 				exclusiveThread = thread;
 				--waiters;
 				mutex.leave();
+				reason(from);
 				return;
 			}
 		}
 	}
 
 	wait(type, thread, sync);
+#ifdef DEV_BUILD
+	MutexLockGuard g(mutex, FB_FUNCTION);
+	reason(from);
+#endif
 }
 
-bool SyncObject::lockConditional(SyncType type)
+bool SyncObject::lockConditional(SyncType type, const char* from)
 {
 	if (waitingThreads)
 		return false;
@@ -149,6 +161,10 @@ bool SyncObject::lockConditional(SyncType type)
 			if (lockState.compareExchange(oldState, newState))
 			{
 				WaitForFlushCache();
+#ifdef DEV_BUILD
+				MutexLockGuard g(mutex, FB_FUNCTION);
+				reason(from);
+#endif
 				return true;
 			}
 		}
@@ -161,6 +177,7 @@ bool SyncObject::lockConditional(SyncType type)
 		if (thread == exclusiveThread)
 		{
 			++monitorCount;
+			reason(from);
 			return true;
 		}
 
@@ -174,6 +191,7 @@ bool SyncObject::lockConditional(SyncType type)
 			{
 				WaitForFlushCache();
 				exclusiveThread = thread;
+				reason(from);
 				return true;
 			}
 		}

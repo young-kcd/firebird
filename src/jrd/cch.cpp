@@ -301,7 +301,7 @@ int CCH_down_grade_dbb(void* ast_object)
 }
 
 
-bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
+bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag, Firebird::Sync* guard)
 {
 /**************************************
  *
@@ -323,7 +323,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	if (dbb->dbb_config->getSharedCache() && !dbb->dbb_config->getSharedDatabase())
 	{
-		if (!CCH_exclusive_attachment(tdbb, level, wait_flag))
+		if (!CCH_exclusive_attachment(tdbb, level, wait_flag, guard))
 			return false;
 	}
 
@@ -365,7 +365,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 }
 
 
-bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
+bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, Sync* exGuard)
 {
 /**************************************
  *
@@ -387,6 +387,8 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 	const bool exLock = dbb->dbb_sync.ourExclusiveLock();
 	if (!exLock)
 		dsGuard.lock(SYNC_SHARED);
+	else
+		fb_assert(exGuard);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if (attachment->att_flags & ATT_exclusive)
@@ -475,7 +477,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 		if (remaining > CCH_EXCLUSIVE_RETRY_INTERVAL)
 		{
-			SyncUnlockGuard unlock(dsGuard);
+			SyncUnlockGuard unlock(exLock ? (*exGuard) : dsGuard);
 			THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
 		}
 
@@ -5238,7 +5240,7 @@ void BufferControl::destroy(BufferControl* bcb)
 
 void BufferDesc::addRef(thread_db* tdbb, SyncType syncType)
 {
-	bdb_syncPage.lock(NULL, syncType);
+	bdb_syncPage.lock(NULL, syncType, FB_FUNCTION);
 
 	++bdb_use_count;
 
@@ -5254,7 +5256,7 @@ void BufferDesc::addRef(thread_db* tdbb, SyncType syncType)
 
 bool BufferDesc::addRefConditional(thread_db* tdbb, SyncType syncType)
 {
-	if (!bdb_syncPage.lockConditional(syncType))
+	if (!bdb_syncPage.lockConditional(syncType, FB_FUNCTION))
 		return false;
 
 	++bdb_use_count;
@@ -5311,7 +5313,7 @@ void BufferDesc::release(thread_db* tdbb)
 
 void BufferDesc::lockIO(thread_db* tdbb)
 {
-	bdb_syncIO.lock(NULL, SYNC_EXCLUSIVE);
+	bdb_syncIO.lock(NULL, SYNC_EXCLUSIVE, FB_FUNCTION);
 
 	fb_assert(!bdb_io_locks && bdb_io != tdbb || bdb_io_locks && bdb_io == tdbb);
 

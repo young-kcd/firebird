@@ -902,15 +902,11 @@ namespace Jrd {
 		BackgroundContextHolder& operator=(const BackgroundContextHolder&);
 	};
 
-	class AsyncContextHolder : public ThreadContextHolder, public DatabaseContextHolder,
-		public Firebird::ReadLockGuard, public Jrd::Attachment::SyncGuard
+	class AstLockHolder : public Firebird::ReadLockGuard
 	{
 	public:
-		AsyncContextHolder(Database* dbb, const char* f, Jrd::Attachment* att = NULL)
-			: ThreadContextHolder(dbb, att),
-			  DatabaseContextHolder(operator thread_db*()),
-			  Firebird::ReadLockGuard(dbb->dbb_ast_lock, f),
-			  Jrd::Attachment::SyncGuard(att, f, true)
+		AstLockHolder(Database* dbb, const char* f)
+			: Firebird::ReadLockGuard(dbb->dbb_ast_lock, f)
 		{
 			if (dbb->dbb_flags & DBB_not_in_use)
 			{
@@ -918,6 +914,18 @@ namespace Jrd {
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_unavailable));
 			}
 		}
+	};
+
+	class AsyncContextHolder : public AstLockHolder, public Jrd::Attachment::SyncGuard,
+		public ThreadContextHolder, public DatabaseContextHolder
+	{
+	public:
+		AsyncContextHolder(Database* dbb, const char* f, Jrd::Attachment* att = NULL)
+			: AstLockHolder(dbb, f),
+			  Jrd::Attachment::SyncGuard(att, f, true),
+			  ThreadContextHolder(dbb, att),
+			  DatabaseContextHolder(operator thread_db*())
+		{ }
 
 	private:
 		// copying is prohibited

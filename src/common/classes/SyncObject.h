@@ -34,6 +34,7 @@
 
 #include "../../common/classes/fb_atomic.h"
 #include "../../common/classes/locks.h"
+#include "../../common/classes/Reasons.h"
 
 namespace Firebird {
 
@@ -49,7 +50,7 @@ enum SyncType {
 class Sync;
 class ThreadSync;
 
-class SyncObject
+class SyncObject : public Reasons
 {
 public:
 	SyncObject()
@@ -64,8 +65,8 @@ public:
 	{
 	}
 
-	void lock(Sync* sync, SyncType type);
-	bool lockConditional(SyncType type);
+	void lock(Sync* sync, SyncType type, const char* from);
+	bool lockConditional(SyncType type, const char* from);
 
 	void unlock(Sync* sync, SyncType type);
 	void unlock();
@@ -140,7 +141,7 @@ public:
 	void lock(SyncType type)
 	{
 		request = type;
-		syncObject->lock(this, type);
+		syncObject->lock(this, type, where);
 		state = type;
 	}
 

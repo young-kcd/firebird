@@ -28,6 +28,10 @@ namespace Ods {
 	struct pag;
 }
 
+namespace Firebird {
+	class Sync;
+}
+
 enum LockState {
 	lsLatchTimeout = -2,	// was -2		*** now unused ***
 	lsLockTimeout,			// was -1
@@ -39,8 +43,8 @@ enum LockState {
 void		CCH_shutdown_database(Jrd::Database*);
 
 int			CCH_down_grade_dbb(void*);
-bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT);
-bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);
+bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT, Firebird::Sync*);
+bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT, Firebird::Sync*);
 void		CCH_expand(Jrd::thread_db*, ULONG);
 Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, int);
 Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, int, SCHAR, int, const bool);

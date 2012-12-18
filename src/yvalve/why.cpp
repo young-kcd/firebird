@@ -643,7 +643,7 @@ namespace Why
 			fini();
 		}
 
-		void init(typename Y::NextInterface* nxt, bool cancelOp = false)
+		void init(typename Y::NextInterface* nxt)
 		{
 			signalInit();
 
@@ -657,7 +657,7 @@ namespace Why
 				++dispCounter;
 			}
 
-			if (shutdownStarted && !cancelOp)
+			if (shutdownStarted)
 			{
 				fini();
 				Arg::Gds(isc_att_shutdown).raise();
@@ -699,7 +699,7 @@ namespace Why
 		: ref(aAttachment), nextRef(NULL)
 	{
 		aStatus->init();
-		init(aAttachment->next, checkAttachment > 1);
+		init(aAttachment->next);
 
 		if (checkAttachment && !(nextRef.hasData()))
 		{
@@ -4443,7 +4443,7 @@ void YAttachment::cancelOperation(IStatus* status, int option)
 {
 	try
 	{
-		YEntry<YAttachment> entry(status, this, 2);
+		YEntry<YAttachment> entry(status, this);
 
 		// Mutex will be locked here for a really long time.
 		MutexLockGuard guard(enterMutex, FB_FUNCTION);

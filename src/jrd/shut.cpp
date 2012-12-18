@@ -61,7 +61,7 @@ const bool IGNORE_SAME_MODE = false;
 static void bad_mode();
 static void same_mode();
 static void check_backup_state(thread_db*);
-static bool notify_shutdown(thread_db*, SSHORT, SSHORT);
+static bool notify_shutdown(thread_db*, SSHORT, SSHORT, Sync*);
 static void shutdown(thread_db*, SSHORT);
 
 
@@ -130,7 +130,7 @@ void SHUT_blocking_ast(thread_db* tdbb)
 }
 
 
-void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
+void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 {
 /**************************************
  *
@@ -213,7 +213,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	// Database is being shutdown. First notification gives shutdown type and delay in seconds.
 
-	bool exclusive = notify_shutdown(tdbb, flag, delay);
+	bool exclusive = notify_shutdown(tdbb, flag, delay, guard);
 	bool successful = exclusive;
 
 	// Try to get exclusive database lock periodically up to specified delay. If we
@@ -235,7 +235,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 				break;
 			}
 
-			if (--timeout && CCH_exclusive(tdbb, LCK_PW, -1))
+			if (--timeout && CCH_exclusive(tdbb, LCK_PW, -1, guard))
 			{
 				exclusive = true;
 				break;
@@ -246,16 +246,16 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	if (!exclusive && !successful &&
 		(timeout > 0 || flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction)))
 	{
-		notify_shutdown(tdbb, 0, -1);	// Tell everyone we're giving up
+		notify_shutdown(tdbb, 0, -1, guard);	// Tell everyone we're giving up
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		ERR_post(Arg::Gds(isc_shutfail));
 	}
 
-	if (!exclusive && !notify_shutdown(tdbb, shut_mode | isc_dpb_shut_force, 0))
+	if (!exclusive && !notify_shutdown(tdbb, shut_mode | isc_dpb_shut_force, 0, guard))
 	{
-		if (!CCH_exclusive(tdbb, LCK_PW, LCK_WAIT))
+		if (!CCH_exclusive(tdbb, LCK_PW, LCK_WAIT, guard))
 		{
-			notify_shutdown(tdbb, 0, -1);	// Tell everyone we're giving up
+			notify_shutdown(tdbb, 0, -1, guard);	// Tell everyone we're giving up
 			attachment->att_flags &= ~ATT_shutdown_manager;
 			ERR_post(Arg::Gds(isc_shutfail));
 		}
@@ -308,7 +308,7 @@ void SHUT_init(thread_db* tdbb)
 }
 
 
-void SHUT_online(thread_db* tdbb, SSHORT flag)
+void SHUT_online(thread_db* tdbb, SSHORT flag, Sync* guard)
 {
 /**************************************
  *
@@ -411,7 +411,7 @@ void SHUT_online(thread_db* tdbb, SSHORT flag)
 
 	// Notify existing database clients that a currently scheduled shutdown is cancelled
 
-	if (notify_shutdown(tdbb, shut_mode, -1))
+	if (notify_shutdown(tdbb, shut_mode, -1, guard))
 		CCH_release_exclusive(tdbb);
 }
 
@@ -445,7 +445,7 @@ static void check_backup_state(thread_db* tdbb)
 }
 
 
-static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay)
+static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 {
 /**************************************
  *
@@ -474,7 +474,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	// Send blocking ASTs to other database users
 
-	return CCH_exclusive(tdbb, LCK_PW, -1);
+	return CCH_exclusive(tdbb, LCK_PW, -1, guard);
 }
 
 

@@ -1107,7 +1107,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 		return true;
 
 	case 3:
-		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, NULL))
 			return true;
 
 		ERR_post(Arg::Gds(isc_no_meta_update) <<

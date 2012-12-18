@@ -1504,7 +1504,7 @@ void Lock::setLockAttachment(Jrd::Attachment* attachment)
 	if (lck_attachment)
 	{
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
-		fb_assert(lck_attachment->att_flags != 0xDEADBEEF);
+		fb_assert(lck_attachment->att_flags != 0xEEEEEEEE);
 
 		if (lck_prior)
 		{
