@@ -95,6 +95,7 @@
 
 #ifdef WIN_NT
 #include <process.h>
+#include <io.h>
 #define MUTEX		&m_shmemMutex
 #define MUTEX_PTR   NULL
 #else
@@ -1692,12 +1693,12 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 #ifdef DEV_BUILD
    /* In the worst case this code makes it possible to attach live process
 	* and see shared memory data. */
-	if (isatty(2))
+	if (isatty(fileno(stderr)))
 		fprintf(stderr, "Attach to pid=%d\n", getpid());
 	else
 		gds__log("Attach to pid=%d\n", getpid());
-	sleep(120);
-	/**/
+
+	THREAD_SLEEP(120);
 #endif
 
 	fb_utils::logAndDie(s);
