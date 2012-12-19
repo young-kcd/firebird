@@ -4271,6 +4271,11 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 	if (wait == LCK_NO_WAIT)
 	{
 		bdb->release(tdbb);
+		if (!bdb->bdb_use_count && (bdb->bdb_ast_flags & BDB_blocking))
+		{
+			PAGE_LOCK_RE_POST(tdbb, bcb, bdb->bdb_lock);
+		}
+
 		return lsLockTimeout;
 	}
 
