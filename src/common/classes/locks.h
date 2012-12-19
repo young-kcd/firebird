@@ -408,9 +408,9 @@ private:
 class MutexCheckoutGuard
 {
 public:
-	MutexCheckoutGuard(Mutex& mtxCout, Mutex& mtxLock, const char* aReason) :
-		unlock(mtxCout, aReason),
-		lock(mtxLock, aReason)
+	MutexCheckoutGuard(Mutex& mtxCout, Mutex& mtxLock, const char* aReason)
+		: unlock(mtxCout, aReason),
+		  lock(mtxLock, aReason)
 	{
 	}
 

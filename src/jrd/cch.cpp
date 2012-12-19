@@ -2291,7 +2291,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 	***/
 
 	tdbb->tdbb_flags |= TDBB_cache_unwound;
- 
+
 	if (punt)
 		ERR_punt();
 }

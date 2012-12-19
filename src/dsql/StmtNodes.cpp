@@ -887,7 +887,7 @@ void ContinueLeaveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate) 
+	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		request->req_operation = jrd_req::req_unwind;
 		request->req_label = labelNumber;
@@ -1847,7 +1847,7 @@ DeclareVariableNode* DeclareVariableNode::pass2(thread_db* /*tdbb*/, CompilerScr
 
 const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate) 
+	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		impure_value* variable = request->getImpure<impure_value>(impureOffset);
 		variable->vlu_desc = varDesc;
@@ -2702,7 +2702,7 @@ ExecProcedureNode* ExecProcedureNode::pass2(thread_db* tdbb, CompilerScratch* cs
 
 const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate) 
+	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		executeProcedure(tdbb, request);
 		request->req_operation = jrd_req::req_return;
@@ -6003,7 +6003,7 @@ PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
-	if (request->req_operation == jrd_req::req_evaluate) 
+	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		jrd_tra* transaction = request->req_transaction;
 

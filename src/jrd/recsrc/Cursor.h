@@ -75,7 +75,7 @@ namespace Jrd
 			if (!request->req_transaction)
 				return false;
 
-			return true;		
+			return true;
 		}
 
 		ULONG m_impure;

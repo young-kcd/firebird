@@ -398,7 +398,7 @@ const USHORT TDBB_verb_cleanup			= 128;	// verb cleanup is in progress
 const USHORT TDBB_use_db_page_space		= 256;	// use database (not temporary) page space in GTT operations
 const USHORT TDBB_detaching				= 512;	// detach is in progress
 const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
-const USHORT TDBB_cache_unwound			= 2048;	// page cache was unwound 
+const USHORT TDBB_cache_unwound			= 2048;	// page cache was unwound
 
 class thread_db : public ThreadData
 {
@@ -552,7 +552,7 @@ public:
 			// tried to release latch is when CCH_unwind was called (and released
 			// all latches) but caller is unaware about it. See CORE-3034, for example.
 			// Else is it bug and it should be BUGCHECK'ed.
- 
+
 			if (tdbb_flags & TDBB_cache_unwound)
 				return false;
 		}
