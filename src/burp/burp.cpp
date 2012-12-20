@@ -1845,7 +1845,8 @@ static gbak_action open_files(const TEXT* file1,
 			}
 			if (fil->fil_name == "stdout")
 			{
-				if (tdgbl->action->act_total >= 2 || fil->fil_next || sw_verbose)
+				if (tdgbl->action->act_total >= 2 || fil->fil_next ||
+					(sw_verbose && tdgbl->sw_redirect == NOREDIRECT))
 				{
 					BURP_error(266, true);
 					// msg 266 standard output is not supported when using split operation or in verbose mode
@@ -2168,23 +2169,21 @@ static void burp_output(bool err, const SCHAR* format, ...)
 
 	if (tdgbl->sw_redirect != NOOUTPUT && format[0] != '\0')
 	{
+		va_start(arglist, format);
 		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL)
 		{
-			va_start(arglist, format);
 			vfprintf(tdgbl->output_file, format, arglist);
-			va_end(arglist);
 		}
 		else
 		{
-			va_start(arglist, format);
 			Firebird::string buf;
 			buf.vprintf(format, arglist);
-			va_end(arglist);
 			if (err)
 				tdgbl->uSvc->outputError(buf.c_str());
 			else
 				tdgbl->uSvc->outputVerbose(buf.c_str());
 		}
+		va_end(arglist);
 	}
 }
 
