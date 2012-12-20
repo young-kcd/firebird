@@ -918,7 +918,7 @@ Fixed CORE-3064: Using the procedure alias inside an explicit plan crashes the s
    M src/jrd/cch.cpp
    M src/jrd/jrd.cpp
    M src/jrd/jrd.h
-Backported fix for bug CORE-3034 : Bugcheсk 300 (can't find shared latch)
+Backported fix for bug CORE-3034 : Bugche?\209?\129k 300 (can't find shared latch)
 
  2010-07-01 14:00  hvlad 
    M src/jrd/LocksCache.h
@@ -12457,7 +12457,7 @@ Fixed CORE-1253 - LIST(DISTINCT) concatenate VARCHAR values as CHAR
 
  2007-05-09 15:23  asfernandes 
    M doc/sql.extensions/README.list
-Updated LIST documentation - thanks to Maycon Ferraça
+Updated LIST documentation - thanks to Maycon Ferra?\195?\167a
 
  2007-05-09 02:03  asfernandes 
    M src/burp/burp.cpp
@@ -14408,7 +14408,7 @@ Patch by Damyan Ivanov - accept localhost connections without /etc/host.equiv
 
  2007-03-22 13:07  asfernandes 
    M doc/sql.extensions/README.context_variables2
-Document the new context variable - thanks to Maicon Ferraça
+Document the new context variable - thanks to Maicon Ferra?\195?\167a
 
  2007-03-22 12:53  dimitr 
    M src/dsql/pass1.cpp
@@ -16085,7 +16085,7 @@ Misc.
 
  2006-12-14 10:30  asfernandes 
    M doc/sql.extensions/README.returning
-Correction - thanks to Maycon Ferraça
+Correction - thanks to Maycon Ferra?\195?\167a
 
  2006-12-14 09:14  dimitr 
    A doc/README.monitoring_tables
@@ -17529,7 +17529,7 @@ Fixed the project files.
 
  2006-10-10 03:53  asfernandes 
    M src/jrd/jrd.cpp
-Fix problem reported by Carsten Schäfer in fbdevel of incorrect server start when using connection pooling
+Fix problem reported by Carsten Sch?\195?\164fer in fbdevel of incorrect server start when using connection pooling
 
  2006-10-10 03:39  asfernandes 
    M src/jrd/os/posix/isc_ipc.cpp
@@ -17878,7 +17878,7 @@ MERGE statement
 
  2006-09-13 12:59  asfernandes 
    M src/dsql/pass1.cpp
-Fix the problem with CAST and parameters reported by Maycon Ferraça in fb-devel
+Fix the problem with CAST and parameters reported by Maycon Ferra?\195?\167a in fb-devel
 
  2006-09-12 16:31  asfernandes 
    M src/jrd/opt.cpp
