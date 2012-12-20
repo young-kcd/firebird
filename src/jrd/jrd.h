@@ -96,9 +96,10 @@
 
 #include "../jrd/RuntimeStatistics.h"
 #include "../jrd/Database.h"
+#include "../jrd/lck.h"
 
 // Error codes
-#include "../include/gen/iberror.h"
+#include "gen/iberror.h"
 
 class str;
 struct dsc;
@@ -121,7 +122,6 @@ class Attachment;
 class jrd_tra;
 class jrd_req;
 class JrdStatement;
-class Lock;
 class jrd_file;
 class Format;
 class BufferDesc;
@@ -920,10 +920,10 @@ namespace Jrd {
 		public ThreadContextHolder, public DatabaseContextHolder
 	{
 	public:
-		AsyncContextHolder(Database* dbb, const char* f, Jrd::Attachment* att = NULL)
+		AsyncContextHolder(Database* dbb, const char* f, Lock* lck = NULL)
 			: AstLockHolder(dbb, f),
-			  Jrd::Attachment::SyncGuard(att, f, true),
-			  ThreadContextHolder(dbb, att),
+			  Jrd::Attachment::SyncGuard(lck ? lck->getLockAttachment() : NULL, f, true),
+			  ThreadContextHolder(dbb, lck ? lck->getLockAttachment() : NULL),
 			  DatabaseContextHolder(operator thread_db*())
 		{ }
 

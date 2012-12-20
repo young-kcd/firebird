@@ -1389,9 +1389,8 @@ static int blocking_ast_collation(void* ast_object)
 	try
 	{
 		Database* const dbb = tt->existenceLock->lck_dbb;
-		Jrd::Attachment* const att = tt->existenceLock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, tt->existenceLock);
 
 		tt->obsolete = true;
 		LCK_release(tdbb, tt->existenceLock);

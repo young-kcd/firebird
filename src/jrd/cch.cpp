@@ -231,7 +231,7 @@ int CCH_down_grade_dbb(void* ast_object)
 	{
 		Lock* const lock = dbb->dbb_lock;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock->getLockAttachment());
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock);
 
 		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
 

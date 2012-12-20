@@ -1410,9 +1410,8 @@ static int index_block_flush(void* ast_object)
 	{
 		Lock* const lock = index_block->idb_lock;
 		Database* const dbb = lock->lck_dbb;
-		Jrd::Attachment* const att = lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock);
 
 		release_index_block(tdbb, index_block);
 	}

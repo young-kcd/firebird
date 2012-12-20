@@ -122,22 +122,12 @@ public:
 	class SyncGuard
 	{
 	public:
-		explicit SyncGuard(Attachment* att, const char* f, bool optional = false)
-			: m_mutex(NULL)
-		{
-			if (att && att->att_interface)
-				m_mutex = att->att_interface->getMutex();
-
-			fb_assert(optional || m_mutex);
-
-			if (m_mutex)
-				m_mutex->enter(f);
-		}
+		SyncGuard(Attachment* att, const char* f, bool optional = false);
 
 		~SyncGuard()
 		{
-			if (m_mutex)
-				m_mutex->leave();
+			if (jAtt)
+				jAtt->getMutex()->leave();
 		}
 
 	private:
@@ -145,7 +135,7 @@ public:
 		SyncGuard(const SyncGuard&);
 		SyncGuard& operator=(const SyncGuard&);
 
-		Firebird::Mutex* m_mutex;
+		JAttachment* jAtt;
 	};
 
 	class Checkout

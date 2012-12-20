@@ -1841,15 +1841,15 @@ static int blocking_ast_transaction(void* ast_object)
 	try
 	{
 		Database* const dbb = transaction->tra_cancel_lock->lck_dbb;
-		Jrd::Attachment* const att = transaction->tra_cancel_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, transaction->tra_cancel_lock);
 
 		if (transaction->tra_cancel_lock)
 			LCK_release(tdbb, transaction->tra_cancel_lock);
 
 		transaction->tra_flags |= TRA_cancel_request;
 
+		Jrd::Attachment* const att = tdbb->getAttachment();
 		att->cancelExternalConnection(tdbb);
 		LCK_cancel_wait(att);
 	}

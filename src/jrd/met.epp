@@ -3883,9 +3883,8 @@ static int blocking_ast_dsql_cache(void* ast_object)
 	try
 	{
 		Database* const dbb = item->lock->lck_dbb;
-		Jrd::Attachment* const att = item->lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, item->lock);
 
 		item->obsolete = true;
 		item->locked = false;
@@ -3951,9 +3950,8 @@ static int blocking_ast_procedure(void* ast_object)
 	try
 	{
 		Database* const dbb = procedure->prc_existence_lock->lck_dbb;
-		Jrd::Attachment* const att = procedure->prc_existence_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, procedure->prc_existence_lock);
 
 		if (procedure->prc_existence_lock)
 			LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3988,9 +3986,8 @@ static int blocking_ast_relation(void* ast_object)
 	try
 	{
 		Database* const dbb = relation->rel_existence_lock->lck_dbb;
-		Jrd::Attachment* const att = relation->rel_existence_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, relation->rel_existence_lock);
 
 		if (relation->rel_use_count)
 			relation->rel_flags |= REL_blocking;
@@ -4016,9 +4013,8 @@ static int partners_ast_relation(void* ast_object)
 	try
 	{
 		Database* const dbb = relation->rel_partners_lock->lck_dbb;
-		Jrd::Attachment* const att = relation->rel_partners_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, relation->rel_partners_lock);
 
 		LCK_release(tdbb, relation->rel_partners_lock);
 		relation->rel_flags |= REL_check_partners;
@@ -4037,9 +4033,8 @@ static int rescan_ast_relation(void* ast_object)
 	try
 	{
 		Database* const dbb = relation->rel_rescan_lock->lck_dbb;
-		Jrd::Attachment* const att = relation->rel_rescan_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, relation->rel_rescan_lock);
 
 		LCK_release(tdbb, relation->rel_rescan_lock);
 		relation->rel_flags &= ~REL_scanned;

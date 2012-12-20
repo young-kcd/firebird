@@ -548,3 +548,19 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 			(*itr)->release(tdbb);
 	}
 }
+
+Jrd::Attachment::SyncGuard::SyncGuard(Attachment* att, const char* f, bool optional)
+	: jAtt(att ? att->att_interface : NULL)
+{
+	fb_assert(optional || jAtt);
+
+	if (jAtt)
+	{
+		jAtt->getMutex()->enter(f);
+		if (!jAtt->getHandle())
+		{
+			jAtt->getMutex()->leave();
+			Arg::Gds(isc_att_shutdown).raise();
+		}
+	}
+}

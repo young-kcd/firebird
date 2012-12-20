@@ -516,9 +516,8 @@ int Function::blockingAst(void* ast_object)
 	try
 	{
 		Database* const dbb = function->fun_existence_lock->lck_dbb;
-		Jrd::Attachment* const att = function->fun_existence_lock->getLockAttachment();
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, att);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, function->fun_existence_lock);
 
 		LCK_release(tdbb, function->fun_existence_lock);
 		function->fun_flags |= FUN_obsolete;
