@@ -33,7 +33,7 @@
 
 // __func__ is according to C99, but let's better define it for better flexibility
 // For example, MSVC 2005 does not support __func__
-#if defined _MSC_VER && (_MSC_VER <= 1400)
+#if defined _MSC_VER && (_MSC_VER <= 1600)
 #define FB_FUNCTION __FUNCTION__
 #else
 #define FB_FUNCTION __func__
