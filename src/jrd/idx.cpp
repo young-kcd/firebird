@@ -820,19 +820,19 @@ idx_e IDX_modify(thread_db* tdbb,
 	{
 		*bad_index = idx.idx_id;
 		*bad_relation = new_rpb->rpb_relation;
-		if ( (error_code =
+		if ((error_code =
 				BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, 0, false)) ||
 			(error_code =
-				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, 0, false)) )
+				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, 0, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
 		if (!key_equal(&key1, &key2))
 		{
-			if (( error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
+			if ((error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
 										  transaction, &window, &insertion, bad_relation,
-										  bad_index)) )
+										  bad_index)))
 			{
 				return error_code;
 			}

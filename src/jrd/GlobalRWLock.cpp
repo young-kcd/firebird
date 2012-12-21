@@ -91,7 +91,8 @@ void GlobalRWLock::shutdownLock()
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	Attachment::CheckoutLockGuard counterGuard(tdbb->getAttachment(), counterMutex, FB_FUNCTION, true);
+	Attachment::CheckoutLockGuard counterGuard(tdbb->getAttachment(), counterMutex,
+		FB_FUNCTION, true);
 
 	COS_TRACE(("(%p)->shutdownLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));

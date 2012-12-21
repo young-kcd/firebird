@@ -551,7 +551,7 @@ public:
 			// hvlad: the only legal case when thread holds no latches but someone
 			// tried to release latch is when CCH_unwind was called (and released
 			// all latches) but caller is unaware about it. See CORE-3034, for example.
-			// Else is it bug and it should be BUGCHECK'ed.
+			// Else it is bug and should be BUGCHECK'ed.
 
 			if (tdbb_flags & TDBB_cache_unwound)
 				return false;

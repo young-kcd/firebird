@@ -2282,7 +2282,8 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 #endif
 
 			// Unless we're already attached, do some initialization
-			JAttachment* jAtt = init(tdbb, expanded_name, is_alias ? org_filename : expanded_name, config, false, options);
+			JAttachment* jAtt = init(tdbb, expanded_name, (is_alias ? org_filename : expanded_name),
+				config, false, options);
 
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
@@ -5514,8 +5515,7 @@ static JAttachment* init(thread_db* tdbb,
  **************************************
  *
  * Functional description
- *	Initialize for database access.  First call from both CREATE and
- *	ATTACH.
+ *	Initialize for database access.  First call from both CREATE and ATTACH.
  *	Upon entry mutex db_init_mutex must be locked.
  *
  **************************************/
@@ -6689,7 +6689,7 @@ static void terminate_attachment(thread_db* tdbb, Attachment* attachment)
  *
  * Functional description
  *	Set terminate flag on attachment and
- *	call trrwuired subsytems to help wakeup it.
+ *	call required subsytems to help wakeup it.
  *
  **************************************/
 	attachment->att_flags |= ATT_terminate;
