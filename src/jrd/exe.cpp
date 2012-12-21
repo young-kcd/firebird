@@ -1169,6 +1169,7 @@ static void execute_looper(thread_db* tdbb,
 	{
 		if (transaction && (transaction != attachment->getSysTransaction()) &&
 			transaction->tra_save_point &&
+			!(transaction->tra_save_point->sav_flags & SAV_user) &&
 			!transaction->tra_save_point->sav_verb_count)
 		{
 			// Forget about any undo for this verb
