@@ -382,15 +382,18 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 	const int CCH_EXCLUSIVE_RETRY_INTERVAL = 1;	// retry interval in seconds
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
+
 	Sync dsGuard(&dbb->dbb_sync, "CCH_exclusive_attachment");
+
 	const bool exLock = dbb->dbb_sync.ourExclusiveLock();
 	if (!exLock)
 		dsGuard.lock(SYNC_SHARED);
 	else
 		fb_assert(exGuard);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
 	if (attachment->att_flags & ATT_exclusive)
 		return true;
 
@@ -418,80 +421,75 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 
 	for (SLONG remaining = timeout; remaining > 0; remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)
 	{
-		if (tdbb->getAttachment()->att_flags & ATT_shutdown) {
-			break;
-		}
-
-		bool found = false;
-		for (attachment = tdbb->getAttachment()->att_next; attachment;
-			attachment = attachment->att_next)
+		try
 		{
-			if (attachment->att_flags & ATT_shutdown) {
-				continue;
-			}
+			tdbb->checkCancelState(true);
 
-			if (level == LCK_none)
+			bool found = false;
+			for (Jrd::Attachment* other_attachment = attachment->att_next; other_attachment;
+				other_attachment = other_attachment->att_next)
 			{
-				// Wait for other attachments requesting exclusive access
-				if (attachment->att_flags & (ATT_exclusive | ATT_exclusive_pending))
-				{
-					found = true;
-					break;
-				}
-				// Forbid multiple attachments in single-user maintenance mode
-				if (attachment != tdbb->getAttachment() && (dbb->dbb_ast_flags & DBB_shutdown_single) )
-				{
-					found = true;
-					break;
-				}
-			}
-			else
-			{
-				// Requesting exclusive database access
-				found = true;
-				if (attachment->att_flags & ATT_exclusive_pending)
-				{
-					tdbb->getAttachment()->att_flags &= ~ATT_exclusive_pending;
+				if (other_attachment->att_flags & ATT_shutdown)
+					continue;
 
-					if (wait_flag == LCK_WAIT) {
-						ERR_post(Arg::Gds(isc_deadlock));
+				if (level == LCK_none)
+				{
+					// Wait for other attachments requesting exclusive access
+					if (other_attachment->att_flags & (ATT_exclusive | ATT_exclusive_pending))
+					{
+						found = true;
+						break;
 					}
-					else {
+					// Forbid multiple attachments in single-user maintenance mode
+					if (other_attachment != attachment &&
+						(dbb->dbb_ast_flags & DBB_shutdown_single))
+					{
+						found = true;
+						break;
+					}
+				}
+				else
+				{
+					// Requesting exclusive database access
+					found = true;
+					if (other_attachment->att_flags & ATT_exclusive_pending)
+					{
+						if (wait_flag == LCK_WAIT)
+							ERR_post(Arg::Gds(isc_deadlock));
+
+						attachment->att_flags &= ~ATT_exclusive_pending;
 						return false;
 					}
+					break;
 				}
-				break;
 			}
-		}
 
-		if (!found)
-		{
-			tdbb->getAttachment()->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
-			if (level != LCK_none) {
-				tdbb->getAttachment()->att_flags |= ATT_exclusive;
-			}
-			return true;
-		}
-
-		// Our thread needs to sleep for CCH_EXCLUSIVE_RETRY_INTERVAL seconds.
-
-		if (remaining > CCH_EXCLUSIVE_RETRY_INTERVAL)
-		{
-			SyncUnlockGuard unlock(exLock ? (*exGuard) : dsGuard);
-			THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
-		}
-
-		if (tdbb->getAttachment()->cancelRaise())
-		{
-			if (JRD_reschedule(tdbb, 0, false))
+			if (!found)
 			{
-				tdbb->getAttachment()->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
-				ERR_punt();
+				if (level != LCK_none)
+					attachment->att_flags |= ATT_exclusive;
+
+				attachment->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
+				return true;
 			}
+
+			// Our thread needs to sleep for CCH_EXCLUSIVE_RETRY_INTERVAL seconds.
+
+			if (remaining > CCH_EXCLUSIVE_RETRY_INTERVAL)
+			{
+				SyncUnlockGuard unlock(exLock ? (*exGuard) : dsGuard);
+				THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
+			}
+
+		} // try
+		catch (const Exception&)
+		{
+			attachment->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
+			throw;
 		}
 	}
 
-	tdbb->getAttachment()->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
+	attachment->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
 	return false;
 }
 
