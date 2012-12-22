@@ -341,8 +341,6 @@ public:
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
 	void backupStateReadUnLock(thread_db* tdbb);
 
-	bool cancelRaise();
-
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
@@ -377,21 +375,11 @@ const ULONG ATT_gfix_attachment		= 0x4000;	// Indicate a GFIX attachment
 const ULONG ATT_gstat_attachment	= 0x8000;	// Indicate a GSTAT attachment
 const ULONG ATT_no_db_triggers		= 0x10000;	// Don't execute database triggers
 const ULONG ATT_manual_lock			= 0x20000;	// Was locked manually
-const ULONG ATT_terminate			= 0x40000;	// Terminate currently running operation
-const ULONG ATT_protected			= 0x80000;	// Ignore termination flag when disconnecting
 
 
 inline bool Attachment::locksmith() const
 {
 	return att_user && att_user->locksmith();
-}
-
-inline bool Attachment::cancelRaise()
-{
-	return att_flags & ATT_protected ? false :
-		   att_flags & ATT_terminate ? true :
-		   att_flags & ATT_cancel_disable ? false :
-		   att_flags & ATT_cancel_raise ? true : false;
 }
 
 

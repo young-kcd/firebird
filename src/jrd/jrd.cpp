@@ -2365,7 +2365,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb, CHECK_DISCONNECT);
 
-		attachment->att_flags |= ATT_protected;
 		purge_attachment(tdbb, attachment, false);
 		*handle = NULL;
 	}
@@ -2443,7 +2442,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 				// Forced release of all transactions
 				purge_transactions(tdbb, attachment, true, attachment->att_flags);
 
-				attachment->att_flags |= ATT_protected;
+				tdbb->tdbb_flags |= TDBB_detaching;
 
 				// Here we have database locked in exclusive mode.
 				// Just mark the header page with an 0 ods version so that no other
@@ -6583,7 +6582,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 					tdbb->setAttachment(attachment);
 					tdbb->setDatabase(attachment->att_database);
 
-					attachment->att_flags |= ATT_terminate;
+					attachment->att_flags |= ATT_shutdown;
 					attachment->cancelExternalConnection(tdbb);
 					LCK_cancel_wait(attachment);
 				}
@@ -6611,7 +6610,6 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 				try
 				{
 					// purge attachment, rollback any open transactions
-					attachment->att_flags |= ATT_protected;
 					purge_attachment(tdbb, attachment, true);
 				}
 				catch (const Exception& ex)
@@ -6673,7 +6671,8 @@ bool thread_db::checkCancelState(bool punt)
 		// when executing in the context of an internal request or
 		// the system transaction.
 
-		if (attachment->cancelRaise())
+		if ((attachment->att_flags & ATT_cancel_raise) &&
+			!(attachment->att_flags & ATT_cancel_disable))
 		{
 			if ((!request ||
 				 !(request->req_flags & (req_internal | req_sys_trigger))) &&
