@@ -5114,7 +5114,7 @@ static void init(thread_db* tdbb,
 		dbb->dbb_filename = expanded_filename;
 		tdbb->setDatabase(dbb);
 
-		dbb->dbb_flags |= (DBB_exclusive | DBB_new);
+		dbb->dbb_flags |= (DBB_exclusive | DBB_new | options.dpb_flags);
 		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 		dbb->dbb_bufferpool = dbb->createPool();
 
