@@ -65,11 +65,6 @@ namespace Firebird
 
 	ExistenceMutex* PublicHandle::isKnownHandle() const
 	{
-		if (!this)
-		{
-			return NULL;
-		}
-
 		ReadLockGuard guard(sync);
 		if (handles->exist(this))
 		{

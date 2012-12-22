@@ -380,10 +380,9 @@ public:
 
 	bool checkHandle() const
 	{
-		if (!isKnownHandle())
-		{
+		if (!this || !isKnownHandle())
 			return false;
-		}
+
 		mutex()->release();
 
 		return TypedHandle<type_dbb>::checkHandle();
