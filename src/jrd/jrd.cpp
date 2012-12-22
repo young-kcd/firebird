@@ -559,7 +559,6 @@ namespace {
 	const unsigned CHECK_DISCONNECT = 2;
 }
 static void			check_database(thread_db* tdbb, unsigned flags = 0);
-static void			check_transaction(thread_db*, jrd_tra*);
 static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
@@ -1616,11 +1615,7 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Attachment** handle, USH
 
 				case fb_cancel_raise:
 					if (!(attachment->att_flags & ATT_cancel_disable))
-					{
-						attachment->att_flags |= ATT_cancel_raise;
-						attachment->cancelExternalConnection(tdbb);
-						LCK_cancel_wait(attachment);
-					}
+						attachment->signalCancel(tdbb);
 					break;
 
 				default:
@@ -3193,7 +3188,6 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 		try
 		{
 			check_database(tdbb);
-			check_transaction(tdbb, request->req_transaction);
 
 			verify_request_synchronization(request, level);
 
@@ -4472,29 +4466,6 @@ static void check_database(thread_db* tdbb, unsigned flags)
 }
 
 
-static void check_transaction(thread_db* tdbb, jrd_tra* transaction)
-{
-/**************************************
- *
- *	c h e c k _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Check transaction for not being interrupted
- *  in the meantime.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	if (transaction && (transaction->tra_flags & TRA_cancel_request))
-	{
-		transaction->tra_flags &= ~TRA_cancel_request;
-		status_exception::raise(Arg::Gds(isc_cancelled));
-	}
-}
-
-
 static void commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag)
 {
 /**************************************
@@ -5112,7 +5083,6 @@ static void init(thread_db* tdbb,
 
 		dbb = Database::create();
 		dbb->dbb_filename = expanded_filename;
-		tdbb->setDatabase(dbb);
 
 		dbb->dbb_flags |= (DBB_exclusive | DBB_new | options.dpb_flags);
 		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
@@ -5381,6 +5351,9 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
 
+	if (attachment->att_cancel_lock)
+		LCK_release(tdbb, attachment->att_cancel_lock);
+
 #ifndef SUPERSERVER
 	if (attachment->att_temp_pg_lock)
 		LCK_release(tdbb, attachment->att_temp_pg_lock);
@@ -5595,11 +5568,24 @@ PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, MemoryPool& poo
 	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text);
 }
 
-void Attachment::cancelExternalConnection(thread_db* tdbb)
+void Attachment::signalCancel(thread_db* tdbb)
 {
-	if (att_ext_connection) {
+	att_flags |= ATT_cancel_raise;
+
+	if (att_ext_connection)
 		att_ext_connection->cancelExecution(tdbb);
-	}
+
+	LCK_cancel_wait(this);
+}
+
+void Attachment::signalShutdown(thread_db* tdbb)
+{
+	att_flags |= ATT_shutdown;
+
+	if (att_ext_connection)
+		att_ext_connection->cancelExecution(tdbb);
+
+	LCK_cancel_wait(this);
 }
 
 
@@ -6582,9 +6568,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 					tdbb->setAttachment(attachment);
 					tdbb->setDatabase(attachment->att_database);
 
-					attachment->att_flags |= ATT_shutdown;
-					attachment->cancelExternalConnection(tdbb);
-					LCK_cancel_wait(attachment);
+					attachment->signalShutdown(tdbb);
 				}
 
 			private:
@@ -6685,17 +6669,6 @@ bool thread_db::checkCancelState(bool punt)
 				status_exception::raise(Arg::Gds(isc_cancelled));
 			}
 		}
-	}
-
-	// Handle request cancellation
-
-	if (transaction && (transaction->tra_flags & TRA_cancel_request))
-	{
-		if (!punt) 
-			return true;
-
-		transaction->tra_flags &= ~TRA_cancel_request;
-		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
 	// Check the thread state for already posted system errors. If any still persists,
@@ -6814,8 +6787,6 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
  *	Get a record from the host program.
  *
  **************************************/
-	check_transaction(tdbb, request->req_transaction);
-
 	verify_request_synchronization(request, level);
 
 #ifdef SCROLLABLE_CURSORS
@@ -6867,8 +6838,6 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, SSH
  *	Get a record from the host program.
  *
  **************************************/
-	check_transaction(tdbb, transaction);
-
 	if (level)
 		request = CMP_clone_request(tdbb, request, level, false);
 
@@ -6964,8 +6933,6 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-	check_transaction(tdbb, transaction);
-
 	if (level)
 		request = CMP_clone_request(tdbb, request, level, false);
 

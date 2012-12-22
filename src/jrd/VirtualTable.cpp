@@ -79,8 +79,8 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	}
 	else if (relation->rel_id == rel_mon_statements)
 	{
-		// Get transaction id
-		if (!EVL_field(relation, rpb->rpb_record, f_mon_stmt_tra_id, &desc))
+		// Get attachment id
+		if (!EVL_field(relation, rpb->rpb_record, f_mon_stmt_att_id, &desc))
 			return;
 		lock_type = LCK_cancel;
 	}

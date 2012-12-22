@@ -89,7 +89,6 @@ using namespace Firebird;
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> > > RelationLockTypeMap;
 
 
-static int blocking_ast_transaction(void*);
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);
 #else
@@ -1175,9 +1174,6 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, TraceTransac
 
 	// Release the locks associated with the transaction
 
-	if (transaction->tra_cancel_lock)
-		LCK_release(tdbb, transaction->tra_cancel_lock);
-
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector)
 	{
@@ -1955,48 +1951,6 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
 	}
 
 	return state;
-}
-
-
-static int blocking_ast_transaction(void* ast_object)
-{
-/**************************************
- *
- *	b l o c k i n g _ a s t _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Mark the transaction to cancel its active requests.
- *
- **************************************/
-	jrd_tra* transaction = static_cast<jrd_tra*>(ast_object);
-
-	try
-	{
-		Database* dbb = transaction->tra_cancel_lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		Attachment* att = transaction->tra_cancel_lock->lck_attachment;
-		tdbb->setAttachment(att);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-
-		if (transaction->tra_cancel_lock)
-			LCK_release(tdbb, transaction->tra_cancel_lock);
-
-		transaction->tra_flags |= TRA_cancel_request;
-
-		att->cancelExternalConnection(tdbb);
-		LCK_cancel_wait(att);
-	}
-	catch (const Firebird::Exception&)
-	{} // no-op
-
-	return 0;
 }
 
 
@@ -3546,19 +3500,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		VIO_start_save_point(tdbb, trans);
 		trans->tra_save_point->sav_flags |= SAV_trans_level;
 	}
-
-	// Allocate the cancellation lock
-
-	lock = FB_NEW_RPT(*trans->tra_pool, sizeof(SLONG)) Lock();
-	trans->tra_cancel_lock = lock;
-	lock->lck_type = LCK_cancel;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_length = sizeof(SLONG);
-	lock->lck_key.lck_long = trans->tra_number;
-	lock->lck_dbb = dbb;
-	lock->lck_ast = blocking_ast_transaction;
-	lock->lck_object = trans;
 
 	// if the user asked us to restart all requests in this attachment,
 	// do so now using the new transaction

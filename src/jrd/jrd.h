@@ -293,6 +293,7 @@ public:
 	sort_context*	att_active_sorts;		// Active sorts
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	SLONG		att_attachment_id;			// Attachment ID
+	Lock*		att_cancel_lock;			// lock to cancel the active request
 	const ULONG	att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	ULONG		att_backup_state_counter;	// Counter of backup state locks for attachment
@@ -334,7 +335,8 @@ public:
 	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
 
-	void cancelExternalConnection(thread_db* tdbb);
+	void signalCancel(thread_db* tdbb);
+	void signalShutdown(thread_db* tdbb);
 
 	bool backupStateWriteLock(thread_db* tdbb, SSHORT wait);
 	void backupStateWriteUnLock(thread_db* tdbb);
