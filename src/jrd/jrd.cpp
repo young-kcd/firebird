@@ -4405,8 +4405,10 @@ static void check_database(thread_db* tdbb, unsigned flags)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->getDatabase();
-	Attachment* attachment = tdbb->getAttachment();
+	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
+
+	// Validate handle by proving its existence in the attachment list
 
 	if (!(flags & CHECK_ASYNC))
 	{
@@ -4419,41 +4421,52 @@ static void check_database(thread_db* tdbb, unsigned flags)
 			status_exception::raise(Arg::Gds(isc_bad_db_handle));
 	}
 
-	if (!(flags & CHECK_DISCONNECT))
+	// No further checks for the disconnecting calls
+
+	if (flags & CHECK_DISCONNECT)
+		return;
+
+	// Test for persistent errors
+
+	if (dbb->dbb_flags & DBB_bugcheck)
 	{
-		if (dbb->dbb_flags & DBB_bugcheck)
-		{
-			static const char string[] = "can't continue after bugcheck";
-			status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
-		}
+		static const char string[] = "can't continue after bugcheck";
+		status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
+	}
 
-		if ((attachment->att_flags & ATT_shutdown) ||
-			((dbb->dbb_ast_flags & DBB_shutdown) &&
-				((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
+	if ((attachment->att_flags & ATT_shutdown) ||
+		((dbb->dbb_ast_flags & DBB_shutdown) &&
+			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
+	{
+		if (dbb->dbb_ast_flags & DBB_shutdown)
 		{
-			if (dbb->dbb_ast_flags & DBB_shutdown)
-			{
-				const PathName& filename = attachment->att_filename;
-				status_exception::raise(Arg::Gds(isc_shutdown) << Arg::Str(filename));
-			}
-			else
-			{
-				status_exception::raise(Arg::Gds(isc_att_shutdown));
-			}
+			const PathName& filename = attachment->att_filename;
+			status_exception::raise(Arg::Gds(isc_shutdown) << Arg::Str(filename));
 		}
+		else
+		{
+			status_exception::raise(Arg::Gds(isc_att_shutdown));
+		}
+	}
 
-		if ((!(flags & CHECK_ASYNC)) && (attachment->att_flags & ATT_cancel_raise) &&
-			!(attachment->att_flags & ATT_cancel_disable))
-		{
-			attachment->att_flags &= ~ATT_cancel_raise;
-			status_exception::raise(Arg::Gds(isc_cancelled));
-		}
+	// No further checks for the async calls
+
+	if (flags & CHECK_ASYNC)
+		return;
+
+	// Test for temporary errors
+
+	if ((attachment->att_flags & ATT_cancel_raise) &&
+		!(attachment->att_flags & ATT_cancel_disable))
+	{
+		attachment->att_flags &= ~ATT_cancel_raise;
+		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
 	// Enable signal handler for the monitoring stuff.
 	// See also comments in JRD_reshedule.
 
-	if (dbb->dbb_ast_flags & DBB_monitor_off && !(flags & CHECK_ASYNC))
+	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		dbb->dbb_flags |= DBB_monitor_locking;
