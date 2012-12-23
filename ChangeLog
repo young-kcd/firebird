@@ -1,3 +1,29 @@
+ 2012-12-22 16:56  dimitr 
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/pag.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+Moved the statement cancellation logic from the transaction level to the attachment level. It reuses the already existing ATT_cancel_raise handling and simplifies the code.
+Also, encapsulated the shutdown/cancellation signaling code.
+
+ 2012-12-22 15:02  dimitr 
+   M src/jrd/jrd.cpp
+Fixed the missing dbb flags, especially DBB_security_db.
+
+ 2012-12-22 12:55  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+We don't need the new flags for these tasks.
+
+ 2012-12-22 12:30  dimitr 
+   M src/common/classes/PublicHandle.cpp
+   M src/jrd/Database.h
+Fixed the crash that appears after PublicHandle became an inherited class (thus containing vtable).
+
  2012-12-20 15:28  alexpeshkoff 
    M src/burp/burp.cpp
 Backported fix for CORE-3995: Slight problem with GBAK parameter checking
