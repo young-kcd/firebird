@@ -1146,7 +1146,7 @@ static void execute_looper(thread_db* tdbb,
 
 	// Ensure the cancellation lock can be triggered
 
-	Lock* const lock = transaction->tra_cancel_lock;
+	Lock* const lock = attachment->att_cancel_lock;
 	if (lock && lock->lck_logical == LCK_none)
 		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 

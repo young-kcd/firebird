@@ -109,7 +109,8 @@ using namespace Firebird;
 
 static void add_clump(thread_db* tdbb, USHORT type, USHORT len, const UCHAR* entry, ClumpOper mode);
 static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID);
-static int blocking_ast_attachment(void*);
+static int blocking_ast_shutdown_attachment(void*);
+static int blocking_ast_cancel_attachment(void*);
 static void find_clump_space(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, const UCHAR*);
 static bool find_type(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, UCHAR**, const UCHAR**);
 
@@ -764,11 +765,18 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 
 	// Take out lock on attachment id
 
-	Lock* const lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
-		Lock(tdbb, sizeof(SLONG), LCK_attachment, attachment, blocking_ast_attachment);
+	Lock* lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
+		Lock(tdbb, sizeof(SLONG), LCK_attachment, attachment, blocking_ast_shutdown_attachment);
 	attachment->att_id_lock = lock;
 	lock->lck_key.lck_long = attachment->att_attachment_id;
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
+
+	// Allocate the cancellation lock
+
+	lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
+		Lock(tdbb, sizeof(SLONG), LCK_cancel, attachment, blocking_ast_cancel_attachment);
+	attachment->att_cancel_lock = lock;
+	lock->lck_key.lck_long = attachment->att_attachment_id;
 
 	return attachment->att_attachment_id;
 }
@@ -1696,7 +1704,7 @@ void PAG_sweep_interval(thread_db* tdbb, SLONG interval)
 }
 
 
-static int blocking_ast_attachment(void* ast_object)
+static int blocking_ast_shutdown_attachment(void* ast_object)
 {
 	Jrd::Attachment* const attachment = static_cast<Jrd::Attachment*>(ast_object);
 
@@ -1706,13 +1714,32 @@ static int blocking_ast_attachment(void* ast_object)
 
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_id_lock);
 
-		attachment->att_flags |= ATT_shutdown;
-		attachment->cancelExternalConnection(tdbb);
-		LCK_cancel_wait(attachment);
+		attachment->signalShutdown(tdbb);
 
 		JRD_shutdown_attachments(dbb);
 
 		LCK_release(tdbb, attachment->att_id_lock);
+	}
+	catch (const Exception&)
+	{} // no-op
+
+	return 0;
+}
+
+
+static int blocking_ast_cancel_attachment(void* ast_object)
+{
+	Jrd::Attachment* const attachment = static_cast<Jrd::Attachment*>(ast_object);
+
+	try
+	{
+		Database* const dbb = attachment->att_database;
+
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_cancel_lock);
+
+		attachment->signalCancel(tdbb);
+
+		LCK_release(tdbb, attachment->att_cancel_lock);
 	}
 	catch (const Exception&)
 	{} // no-op

@@ -796,12 +796,7 @@ private:
 	UserId m_id;
 };
 
-namespace {
-	const unsigned CHECK_ASYNC = 1;
-	const unsigned CHECK_DISCONNECT = 2;
-}
-static void			check_database(thread_db* tdbb, unsigned flags = 0);
-static void			check_transaction(thread_db*, jrd_tra*);
+static void			check_database(thread_db* tdbb, bool async = false);
 static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Jrd::Attachment*, const DatabaseOptions*);
@@ -832,7 +827,6 @@ static bool		unlink_database(Database*);
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(string&);
 static void		purge_attachment(thread_db*, Jrd::Attachment*, const bool);
-static void		terminate_attachment(thread_db* tdbb, Attachment* attachment);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const RefPtr<Config>*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
@@ -2617,7 +2611,6 @@ void JAttachment::freeEngineData(IStatus* user_status)
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION, AttachmentHolder::ATT_LOCK_ASYNC);
-		check_database(tdbb, CHECK_DISCONNECT);
 
 		try
 		{
@@ -2625,7 +2618,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 			if (attachment->att_in_use)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
-			terminate_attachment(tdbb, attachment);
+			attachment->signalShutdown(tdbb);
 			purge_attachment(tdbb, attachment, false);
 
 			att = NULL;
@@ -2719,7 +2712,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 				// Forced release of all transactions
 				purge_transactions(tdbb, attachment, true, attachment->att_flags);
 
-				attachment->att_flags |= ATT_cancel_disable;
+				tdbb->tdbb_flags |= TDBB_detaching;
 
 				// Here we have database locked in exclusive mode.
 				// Just mark the header page with an 0 ods version so that no other
@@ -4683,7 +4676,7 @@ void JAttachment::ping(IStatus* user_status)
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		check_database(tdbb);
+		check_database(tdbb, true);
 	}
 	catch (const Exception& ex)
 	{
@@ -4869,7 +4862,7 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 }
 
 
-static void check_database(thread_db* tdbb, unsigned flags)
+static void check_database(thread_db* tdbb, bool async)
 {
 /**************************************
  *
@@ -4883,45 +4876,50 @@ static void check_database(thread_db* tdbb, unsigned flags)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Database* const dbb = tdbb->getDatabase();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
-	if (!(flags & CHECK_DISCONNECT))
+	// Test for persistent errors
+
+	if (dbb->dbb_flags & DBB_bugcheck)
 	{
-		if (dbb->dbb_flags & DBB_bugcheck)
-		{
-			static const char string[] = "can't continue after bugcheck";
-			status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
-		}
+		static const char string[] = "can't continue after bugcheck";
+		status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
+	}
 
-		if ((attachment->att_flags & ATT_shutdown) ||
-			((dbb->dbb_ast_flags & DBB_shutdown) &&
-				((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
+	if ((attachment->att_flags & ATT_shutdown) ||
+		((dbb->dbb_ast_flags & DBB_shutdown) &&
+			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
+	{
+		if (dbb->dbb_ast_flags & DBB_shutdown)
 		{
-			if (dbb->dbb_ast_flags & DBB_shutdown)
-			{
-				const PathName& filename = attachment->att_filename;
-				status_exception::raise(Arg::Gds(isc_shutdown) << Arg::Str(filename));
-			}
-			else
-			{
-				status_exception::raise(Arg::Gds(isc_att_shutdown));
-			}
+			const PathName& filename = attachment->att_filename;
+			status_exception::raise(Arg::Gds(isc_shutdown) << Arg::Str(filename));
 		}
+		else
+		{
+			status_exception::raise(Arg::Gds(isc_att_shutdown));
+		}
+	}
 
-		// do not use cancelRaise() here - we do not care about internal flags
-		if ((!(flags & CHECK_ASYNC)) && (attachment->att_flags & ATT_cancel_raise)
-			&& !(attachment->att_flags & ATT_cancel_disable))
-		{
-			attachment->att_flags &= ~ATT_cancel_raise;
-			status_exception::raise(Arg::Gds(isc_cancelled));
-		}
+	// No further checks for the async calls
+
+	if (async)
+		return;
+
+	// Test for temporary errors
+
+	if ((attachment->att_flags & ATT_cancel_raise)
+		&& !(attachment->att_flags & ATT_cancel_disable))
+	{
+		attachment->att_flags &= ~ATT_cancel_raise;
+		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
 	// Enable signal handler for the monitoring stuff.
 	// See also comments in JRD_reshedule.
 
-	if (dbb->dbb_ast_flags & DBB_monitor_off && !(flags & CHECK_ASYNC))
+	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
 		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "check_database");
 
@@ -4933,29 +4931,6 @@ static void check_database(thread_db* tdbb, unsigned flags)
 			if (dbb->dbb_ast_flags & DBB_monitor_off)
 				LCK_release(tdbb, dbb->dbb_monitor_lock);
 		}
-	}
-}
-
-
-static void check_transaction(thread_db* tdbb, jrd_tra* transaction)
-{
-/**************************************
- *
- *	c h e c k _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Check transaction for not being interrupted
- *  in the meantime.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	if (transaction && (transaction->tra_flags & TRA_cancel_request))
-	{
-		transaction->tra_flags &= ~TRA_cancel_request;
-		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 }
 
@@ -6291,8 +6266,6 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 		THD_sleep(1);
 	}
 
-	attachment->att_flags |= ATT_protected;
-
 	Database* const dbb = attachment->att_database;
 
 	tdbb->tdbb_flags |= TDBB_detaching;
@@ -6679,25 +6652,6 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus
 }
 
 
-static void terminate_attachment(thread_db* tdbb, Attachment* attachment)
-{
-/********************************************
- *
- *	t e r m i n a t e _ a t t a c h m e n t
- *
- ********************************************
- *
- * Functional description
- *	Set terminate flag on attachment and
- *	call required subsytems to help wakeup it.
- *
- **************************************/
-	attachment->att_flags |= ATT_terminate;
-	attachment->cancelExternalConnection(tdbb);
-	LCK_cancel_wait(attachment);
-}
-
-
 namespace
 {
 
@@ -6739,7 +6693,7 @@ namespace
 				tdbb->setAttachment(attachment);
 				tdbb->setDatabase(attachment->att_database);
 
-				terminate_attachment(tdbb, attachment);
+				attachment->signalShutdown(tdbb);
 			}
 		}
 
@@ -6945,7 +6899,8 @@ bool thread_db::checkCancelState(bool punt)
 		// when executing in the context of an internal request or
 		// the system transaction.
 
-		if (attachment->cancelRaise())
+		if ((attachment->att_flags & ATT_cancel_raise) &&
+			!(attachment->att_flags & ATT_cancel_disable))
 		{
 			if ((!request ||
 					!(request->getStatement()->flags &
@@ -6959,22 +6914,7 @@ bool thread_db::checkCancelState(bool punt)
 				attachment->att_flags &= ~ATT_cancel_raise;
 				status_exception::raise(Arg::Gds(isc_cancelled));
 			}
-/*			fprintf(stderr, "req %p flags %x tra %p flags %x\n", request, request ? (request->getStatement()->flags &
-                        (JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) : 0,
-                        transaction, transaction ? (transaction->tra_flags & TRA_system) : 0);
-            abort(); */
 		}
-	}
-
-	// Handle request cancellation
-
-	if (transaction && (transaction->tra_flags & TRA_cancel_request))
-	{
-		if (!punt)
-			return true;
-
-		transaction->tra_flags &= ~TRA_cancel_request;
-		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
 	// Check the thread state for already posted system errors. If any still persists,
@@ -7057,8 +6997,6 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
  *	Get a record from the host program.
  *
  **************************************/
-	check_transaction(tdbb, request->req_transaction);
-
 	EXE_receive(tdbb, request, msg_type, msg_length, msg, true);
 
 	check_autocommit(request, tdbb);
@@ -7083,8 +7021,6 @@ void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_leng
  *	Get a record from the host program.
  *
  **************************************/
-	check_transaction(tdbb, request->req_transaction);
-
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
 	check_autocommit(request, tdbb);
@@ -7109,8 +7045,6 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *	Get a record from the host program.
  *
  **************************************/
-	check_transaction(tdbb, transaction);
-
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 
@@ -7201,8 +7135,6 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-	check_transaction(tdbb, transaction);
-
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
@@ -7462,11 +7394,7 @@ void JRD_cancel_operation(thread_db* tdbb, Jrd::Attachment* attachment, int opti
 
 	case fb_cancel_raise:
 		if (!(attachment->att_flags & ATT_cancel_disable))
-		{
-			attachment->att_flags |= ATT_cancel_raise;
-			attachment->cancelExternalConnection(tdbb);
-			LCK_cancel_wait(attachment);
-		}
+			attachment->signalCancel(tdbb);
 		break;
 
 	default:

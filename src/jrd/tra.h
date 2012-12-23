@@ -245,7 +245,6 @@ public:
 	BlobIndexTree* tra_blobs;			// pointer to actual list of active blobs
 	ArrayField*	tra_arrays;				// Linked list of active arrays
 	Lock*		tra_lock;				// lock for transaction
-	Lock*		tra_cancel_lock;		// lock to cancel the active request
 	vec<Lock*>*		tra_relation_locks;	// locks for relations
 	UInt32Bitmap*	tra_commit_sub_trans;	// commited sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
@@ -360,9 +359,8 @@ const ULONG TRA_perform_autocommit	= 0x1000L;	// indicates autocommit is necessa
 const ULONG TRA_rec_version			= 0x2000L;	// don't wait for uncommitted versions
 const ULONG TRA_restart_requests	= 0x4000L;	// restart all requests in attachment
 const ULONG TRA_no_auto_undo		= 0x8000L;	// don't start a savepoint in TRA_start
-const ULONG TRA_cancel_request		= 0x10000L;	// cancel active request, if any
-const ULONG TRA_precommitted		= 0x20000L;	// transaction committed at startup
-const ULONG TRA_own_interface		= 0x40000L;	// tra_interface was created for internal needs
+const ULONG TRA_precommitted		= 0x10000L;	// transaction committed at startup
+const ULONG TRA_own_interface		= 0x20000L;	// tra_interface was created for internal needs
 
 // flags derived from TPB, see also transaction_options() at tra.cpp
 const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed |

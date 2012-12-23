@@ -353,11 +353,25 @@ void Jrd::Attachment::storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction,
 }
 
 
-void Jrd::Attachment::cancelExternalConnection(thread_db* tdbb)
+void Jrd::Attachment::signalCancel(thread_db* tdbb)
 {
-	if (att_ext_connection) {
+	att_flags |= ATT_cancel_raise;
+
+	if (att_ext_connection)
 		att_ext_connection->cancelExecution(tdbb);
-	}
+
+	LCK_cancel_wait(this);
+}
+
+
+void Jrd::Attachment::signalShutdown(thread_db* tdbb)
+{
+	att_flags |= ATT_shutdown;
+
+	if (att_ext_connection)
+		att_ext_connection->cancelExecution(tdbb);
+
+	LCK_cancel_wait(this);
 }
 
 
@@ -530,6 +544,9 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 
 	if (att_id_lock)
 		LCK_release(tdbb, att_id_lock);
+
+	if (att_cancel_lock)
+		LCK_release(tdbb, att_cancel_lock);
 
 	if (att_temp_pg_lock)
 		LCK_release(tdbb, att_temp_pg_lock);

@@ -84,7 +84,6 @@ using namespace Firebird;
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> > > RelationLockTypeMap;
 
 
-static int blocking_ast_transaction(void*);
 #ifdef SUPERSERVER_V2
 static TraNumber bump_transaction_id(thread_db*, WIN*);
 #else
@@ -1101,9 +1100,6 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 	// Release the locks associated with the transaction
 
-	if (transaction->tra_cancel_lock)
-		LCK_release(tdbb, transaction->tra_cancel_lock);
-
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector)
 	{
@@ -1821,42 +1817,6 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 	}
 
 	return state;
-}
-
-
-static int blocking_ast_transaction(void* ast_object)
-{
-/**************************************
- *
- *	b l o c k i n g _ a s t _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Mark the transaction to cancel its active requests.
- *
- **************************************/
-	jrd_tra* const transaction = static_cast<jrd_tra*>(ast_object);
-
-	try
-	{
-		Database* const dbb = transaction->tra_cancel_lock->lck_dbb;
-
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, transaction->tra_cancel_lock);
-
-		if (transaction->tra_cancel_lock)
-			LCK_release(tdbb, transaction->tra_cancel_lock);
-
-		transaction->tra_flags |= TRA_cancel_request;
-
-		Jrd::Attachment* const att = tdbb->getAttachment();
-		att->cancelExternalConnection(tdbb);
-		LCK_cancel_wait(att);
-	}
-	catch (const Firebird::Exception&)
-	{} // no-op
-
-	return 0;
 }
 
 
@@ -3263,13 +3223,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		VIO_start_save_point(tdbb, trans);
 		trans->tra_save_point->sav_flags |= SAV_trans_level;
 	}
-
-	// Allocate the cancellation lock
-
-	lock = FB_NEW_RPT(*trans->tra_pool, 0)
-		Lock(tdbb, sizeof(SLONG), LCK_cancel, trans, blocking_ast_transaction);
-	trans->tra_cancel_lock = lock;
-	lock->lck_key.lck_long = trans->tra_number;
 
 	// if the user asked us to restart all requests in this attachment,
 	// do so now using the new transaction

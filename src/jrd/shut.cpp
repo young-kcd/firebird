@@ -516,11 +516,7 @@ static void shutdown(thread_db* tdbb, SSHORT flag)
 	for (Jrd::Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		if (!(attachment->att_flags & ATT_shutdown_manager))
-		{
-			attachment->att_flags |= ATT_shutdown;
-			attachment->cancelExternalConnection(tdbb);
-			LCK_cancel_wait(attachment);
-		}
+			attachment->signalShutdown(tdbb);
 	}
 
 	JRD_shutdown_attachments(dbb);

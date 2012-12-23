@@ -225,6 +225,7 @@ public:
 	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	SLONG		att_attachment_id;			// Attachment ID
+	Lock*		att_cancel_lock;			// Lock to cancel the active request
 	const ULONG	att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	ULONG		att_backup_state_counter;	// Counter of backup state locks for attachment
@@ -326,15 +327,15 @@ public:
 	void storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
 		const Firebird::ByteChunk& chunk);
 
-	void cancelExternalConnection(thread_db* tdbb);
+	void signalCancel(thread_db* tdbb);
+	void signalShutdown(thread_db* tdbb);
+
 	void detachLocksFromAttachment();
 
 	bool backupStateWriteLock(thread_db* tdbb, SSHORT wait);
 	void backupStateWriteUnLock(thread_db* tdbb);
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
 	void backupStateReadUnLock(thread_db* tdbb);
-
-	bool cancelRaise();
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
@@ -360,8 +361,6 @@ const ULONG ATT_gfix_attachment		= 0x01000L;	// Indicate a GFIX attachment
 const ULONG ATT_gstat_attachment	= 0x02000L;	// Indicate a GSTAT attachment
 const ULONG ATT_no_db_triggers		= 0x04000L;	// Don't execute database triggers
 const ULONG ATT_manual_lock			= 0x08000L;	// Was locked manually
-const ULONG ATT_terminate			= 0x10000L;	// Terminate currently running operation
-const ULONG ATT_protected			= 0x20000L;	// Ignore termination flag when disconnecting
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
@@ -379,14 +378,6 @@ inline jrd_tra* Attachment::getSysTransaction()
 inline void Attachment::setSysTransaction(jrd_tra* trans)
 {
 	att_sys_transaction = trans;
-}
-
-inline bool Attachment::cancelRaise()
-{
-	return att_flags & ATT_protected ? false :
-		   att_flags & ATT_terminate ? true :
-		   att_flags & ATT_cancel_disable ? false :
-		   att_flags & ATT_cancel_raise ? true : false;
 }
 
 } // namespace Jrd
