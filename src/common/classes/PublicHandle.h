@@ -61,7 +61,7 @@ namespace Firebird
 		bool executeWithLock(ExecuteWithLock* operation);
 
 	private:
-		static GlobalPtr<Array<const void*> > handles;
+		static GlobalPtr<SortedArray<const void*> > handles;
 		static GlobalPtr<RWLock> sync;
 	};
 

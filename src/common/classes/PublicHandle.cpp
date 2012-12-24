@@ -28,7 +28,7 @@
 
 namespace Firebird
 {
-	GlobalPtr<Array<const void*> > PublicHandle::handles;
+	GlobalPtr<SortedArray<const void*> > PublicHandle::handles;
 	GlobalPtr<RWLock> PublicHandle::sync;
 
 	PublicHandle::PublicHandle()
