@@ -1,3 +1,8 @@
+ 2012-12-24 14:26  dimitr 
+   M src/common/classes/PublicHandle.cpp
+   M src/common/classes/PublicHandle.h
+Favor quick search over quick add/remove. This is more important in our code, especially in the debug build.
+
  2012-12-23 06:52  dimitr 
    M src/jrd/jrd.cpp
 Corrected the check_database() logic.
