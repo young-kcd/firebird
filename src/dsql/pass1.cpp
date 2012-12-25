@@ -178,7 +178,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-static dsql_str* pass1_alias_concat(const dsql_str*, const char*);
+static string pass1_alias_concat(const string&, const string&);
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
 static ValueListNode* pass1_expand_select_list(DsqlCompilerScratch*, ValueListNode*, RecSourceListNode*);
 static ValueListNode* pass1_group_by_list(DsqlCompilerScratch*, ValueListNode*, ValueListNode*);
@@ -440,35 +440,35 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 	context->ctx_in_outer_join = dsqlScratch->inOuterJoin;
 
 	// find the context alias name, if it exists.
-	const char* string = NULL;
+	string str;
 
 	if ((procNode = relationNode->as<ProcedureSourceNode>()))
-		string = procNode->alias.nullStr();
+		str = procNode->alias;
 	else if ((relNode = relationNode->as<RelationSourceNode>()))
-		string = relNode->alias.nullStr();
+		str = relNode->alias;
 	else if ((selNode = relationNode->as<SelectExprNode>()))
 	{
-		string = selNode->alias.nullStr();
+		str = selNode->alias;
 		// ASF: In the case of a UNION contained in a CTE, selNode->querySpec will be a
 		// UnionSourceNode instead of a RseNode. Since ctx_rse is a RseNode and is always accessed
 		// as one, I'll leave this assignment here. It will be set in PASS1_derived_table anyway.
 		///context->ctx_rse = selNode->querySpec;
 	}
 
-	if (string)
-		context->ctx_internal_alias = string;
+	if (str.hasData())
+		context->ctx_internal_alias = str;
 
-	if (dsqlScratch->aliasRelationPrefix && !selNode)
+	if (dsqlScratch->aliasRelationPrefix.hasData() && !selNode)
 	{
-		if (string)
-			string = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, string)->str_data;
+		if (str.hasData())
+			str = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, str);
 		else
-			string = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, relation_name.c_str())->str_data;
+			str = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, relation_name.c_str());
 	}
 
-	if (string)
+	if (str.hasData())
 	{
-		context->ctx_alias = string;
+		context->ctx_alias = str;
 
 		// check to make sure the context is not already used at this same
 		// query level (if there are no subqueries, this checks that the
@@ -964,7 +964,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 
 	// Save some values to restore after rse process.
 	DsqlContextStack* const req_base = dsqlScratch->context;
-	dsql_str* const aliasRelationPrefix = dsqlScratch->aliasRelationPrefix;
+	string aliasRelationPrefix = dsqlScratch->aliasRelationPrefix;
 
 	// Change context, because when we are processing the derived table rse
 	// it may not reference to other streams in the same scope_level.
@@ -986,7 +986,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		baseContext = temp.object();
 
 	dsqlScratch->context = &temp;
-	dsqlScratch->aliasRelationPrefix = pass1_alias_concat(aliasRelationPrefix, alias.nullStr());
+	dsqlScratch->aliasRelationPrefix = pass1_alias_concat(aliasRelationPrefix, alias);
 
 	RecordSourceNode* query = input->querySpec;
 	UnionSourceNode* unionQuery = query->as<UnionSourceNode>();
@@ -1264,7 +1264,6 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		map_context->ctx_recursive = recursive_map_ctx;
 	}
 
-	delete dsqlScratch->aliasRelationPrefix;
 	// Restore our original values.
 	dsqlScratch->context = req_base;
 	dsqlScratch->aliasRelationPrefix = aliasRelationPrefix;
@@ -1504,7 +1503,6 @@ USHORT PASS1_label(DsqlCompilerScratch* dsqlScratch, bool breakContinue, MetaNam
 
 	// look for a label, if specified
 
-	const dsql_str* string = NULL;
 	USHORT position = 0;
 
 	if (label)
@@ -1554,8 +1552,8 @@ USHORT PASS1_label(DsqlCompilerScratch* dsqlScratch, bool breakContinue, MetaNam
 			// ERROR: Label %s already exists in the current scope
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_dsql_command_err) <<
-					  Arg::Gds(isc_dsql_invalid_label) << Arg::Str(string->str_data) <<
-														  Arg::Str("already exists"));
+					  Arg::Gds(isc_dsql_invalid_label) << *label <<
+					  Arg::Str("already exists"));
 		}
 		else
 		{
@@ -1782,46 +1780,21 @@ RecordSourceNode* PASS1_relation(DsqlCompilerScratch* dsqlScratch, RecordSourceN
 }
 
 
-/**
-
- 	pass1_alias_concat
-
-    @brief	Concatenate 2 input strings together for
-	a new alias string.
-	Note: Both input params can be empty.
-
-
-    @param input1
-    @param input2
-
- **/
-static dsql_str* pass1_alias_concat(const dsql_str* input1, const char* input2)
+// Concatenate 2 input strings together for	a new alias string
+// Note: Both input params can be empty.
+static string pass1_alias_concat(const string& input1, const string& input2)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	string output;
 
-	DEV_BLKCHK(input1, dsql_type_str);
-	DEV_BLKCHK(input2, dsql_type_str);
+	if (input1.hasData())
+		output.append(input1);
 
-	int length = (input1 ? input1->str_length : 0);
-
-	if (input1 && input1->str_length && input2)
-		++length; // Room for space character.
-
-	if (input2)
-		length += strlen(input2);
-
-	dsql_str* output = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_str;
-	output->str_length = length;
-	TEXT* ptr = output->str_data;
-
-	if (input1)
-		strcat(ptr, input1->str_data);
-
-	if (input1 && input1->str_length && input2)
-		strcat(ptr, " ");
-
-	if (input2)
-		strcat(ptr, input2);
+	if (input2.hasData())
+	{
+		if (output.hasData())
+			output.append(" ");
+		output.append(input2);
+	}
 
 	return output;
 }

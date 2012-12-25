@@ -25,6 +25,7 @@
 #include "../dsql/Parser.h"
 #include "../dsql/chars.h"
 #include "../jrd/jrd.h"
+#include "../jrd/DataTypeUtil.h"
 #include "../yvalve/keywords.h"
 
 using namespace Firebird;
@@ -37,7 +38,7 @@ namespace
 
 	struct KeywordVersion
 	{
-		KeywordVersion(int aKeyword, dsql_str* aStr, USHORT aVersion)
+		KeywordVersion(int aKeyword, MetaName* aStr, USHORT aVersion)
 			: keyword(aKeyword),
 			  str(aStr),
 			  version(aVersion)
@@ -45,26 +46,20 @@ namespace
 		}
 
 		int keyword;
-		dsql_str* str;
+		MetaName* str;
 		USHORT version;
 	};
 
-	class KeywordsMap : public GenericMap<Pair<Left<string, KeywordVersion> > >
+	class KeywordsMap : public GenericMap<Pair<Left<MetaName, KeywordVersion> > >
 	{
 	public:
 		explicit KeywordsMap(MemoryPool& pool)
-			: GenericMap<Pair<Left<string, KeywordVersion> > >(pool)
+			: GenericMap<Pair<Left<MetaName, KeywordVersion> > >(pool)
 		{
 			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 			{
-				size_t len = strlen(token->tok_string);
-				dsql_str* str = FB_NEW_RPT(pool, len) dsql_str;
-				str->str_length = len;
-				strncpy(str->str_data, token->tok_string, len);
-				//str->str_data[str->str_length] = 0; Is it necessary?
-
-				put(string(token->tok_string, len),
-					KeywordVersion(token->tok_ident, str, token->tok_version));
+				MetaName* str = FB_NEW(pool) MetaName(token->tok_string);
+				put(*str, KeywordVersion(token->tok_ident, str, token->tok_version));
 			}
 		}
 
@@ -80,9 +75,11 @@ namespace
 }
 
 
-Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
-			const TEXT* string, size_t length, SSHORT characterSet)
+Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
+			USHORT aDbDialect, USHORT aParserVersion, const TEXT* string, size_t length,
+			SSHORT characterSet)
 	: PermanentStorage(pool),
+	  scratch(aScratch),
 	  compilingText(pool, string, length),
 	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
@@ -156,30 +153,6 @@ dsql_req* Parser::parse()
 }
 
 
-MetaName Parser::toName(dsql_str* str)
-{
-	if (!str)
-		return "";
-
-	if (str->str_length > MAX_SQL_IDENTIFIER_LEN)
-		yyabandon(-104, isc_dyn_name_longer);
-
-	return MetaName(str->str_data);
-}
-
-
-PathName Parser::toPathName(dsql_str* str)
-{
-	return PathName(str->str_data);
-}
-
-
-string Parser::toString(dsql_str* str)
-{
-	return string(str ? str->str_data : "");
-}
-
-
 // Transform strings (or substrings) prefixed with introducer (_charset) to ASCII equivalent.
 void Parser::transformString(const char* start, unsigned length, string& dest)
 {
@@ -195,7 +168,7 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 
 	SortedArray<StrMark> introducedMarks;
 
-	GenericMap<NonPooled<dsql_str*, StrMark> >::ConstAccessor accessor(&strMarks);
+	GenericMap<NonPooled<IntlString*, StrMark> >::ConstAccessor accessor(&strMarks);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
 		const StrMark& mark = accessor.current()->second;
@@ -214,16 +187,16 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 			buffer.add(' ');	// fix _charset'' becoming invalid syntax _charsetX''
 
 		const size_t count = buffer.getCount();
-		const size_t newSize = count + 2 + mark.str->str_length * 2 + 1;
+		const size_t newSize = count + 2 + mark.str->getString().length() * 2 + 1;
 		buffer.grow(newSize);
 		char* p = buffer.begin() + count;
 
 		*p++ = 'X';
 		*p++ = '\'';
 
-		const char* s2 = mark.str->str_data;
+		const char* s2 = mark.str->getString().c_str();
 
-		for (const char* end = s2 + mark.str->str_length; s2 < end; ++s2)
+		for (const char* end = s2 + mark.str->getString().length(); s2 < end; ++s2)
 		{
 			*p++ = HEX_DIGITS[UCHAR(*s2) >> 4];
 			*p++ = HEX_DIGITS[UCHAR(*s2) & 0xF];
@@ -243,7 +216,7 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 
 
 // Make a substring from the command text being parsed.
-dsql_str* Parser::makeParseStr(const Position& p1, const Position& p2)
+string Parser::makeParseStr(const Position& p1, const Position& p2)
 {
 	const char* start = p1.firstPos;
 	const char* end = p2.lastPos;
@@ -251,7 +224,12 @@ dsql_str* Parser::makeParseStr(const Position& p1, const Position& p2)
 	string str;
 	transformString(start, end - start, str);
 
-	return MAKE_string(str.c_str(), str.length());
+	string ret;
+
+	if (DataTypeUtil::convertToUTF8(str, ret))
+		return ret;
+	else
+		return str;
 }
 
 
@@ -394,6 +372,9 @@ int Parser::yylex()
 
 int Parser::yylexAux()
 {
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	SSHORT c = lex.ptr[-1];
 	UCHAR tok_class = classes(c);
 	char string[MAX_TOKEN_LEN];
@@ -416,12 +397,14 @@ int Parser::yylexAux()
 		}
 
 		check_bound(p, string);
+
+		if (p - string > MAX_SQL_IDENTIFIER_LEN)
+			yyabandon(-104, isc_dyn_name_longer);
+
 		*p = 0;
 
-		// make a string value to hold the name, the name
-		// is resolved in pass1_constant
-
-		yylval.textPtr = MAKE_string(string, p - string)->str_data;
+		// make a string value to hold the name, the name is resolved in pass1_constant.
+		yylval.metaNamePtr = FB_NEW(pool) MetaName(pool, string, p - string);
 
 		return INTRODUCER;
 	}
@@ -509,26 +492,23 @@ int Parser::yylexAux()
 					yyabandon(-104, isc_dyn_zero_len_id);
 				}
 
-				thread_db* tdbb = JRD_get_thread_data();
 				Attachment* attachment = tdbb->getAttachment();
 				MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
 
-				yylval.legacyStr = MAKE_string(name.c_str(), name.length());
+				yylval.metaNamePtr = FB_NEW(pool) MetaName(pool, name);
 
-				dsql_str* delimited_id_str = yylval.legacyStr;
-				delimited_id_str->type = dsql_str::TYPE_DELIMITED;
 				if (buffer != string)
 					gds__free (buffer);
 
 				return SYMBOL;
 			}
 		}
-		yylval.legacyStr = MAKE_string(buffer, p - buffer);
+		yylval.intlStringPtr = newIntlString(Firebird::string(buffer, p - buffer));
 		if (buffer != string)
 			gds__free (buffer);
 
 		mark.length = lex.ptr - lex.last_token;
-		mark.str = yylval.legacyStr;
+		mark.str = yylval.intlStringPtr;
 		strMarks.put(mark.str, mark);
 
 		return STRING;
@@ -649,10 +629,7 @@ int Parser::yylexAux()
 					byte = c;
 			}
 
-			dsql_str* string = MAKE_string(temp.c_str(), temp.length());
-			string->type = dsql_str::TYPE_HEXA;
-			string->str_charset = "BINARY";
-			yylval.legacyStr = string;
+			yylval.intlStringPtr = newIntlString(temp, "BINARY");
 
 			return STRING;
 		}  // if (!hexerror)...
@@ -691,12 +668,13 @@ int Parser::yylexAux()
 		{
 			if (*lex.ptr == endChar && *++lex.ptr == '\'')
 			{
-				yylval.legacyStr = MAKE_string(lex.last_token + 3, lex.ptr - lex.last_token - 4);
-				yylval.legacyStr->type = dsql_str::TYPE_ALTERNATE;
-				lex.ptr++;
+				yylval.intlStringPtr = newIntlString(
+					Firebird::string(lex.last_token + 3, lex.ptr - lex.last_token - 4));
+
+				++lex.ptr;
 
 				mark.length = lex.ptr - lex.last_token;
-				mark.str = yylval.legacyStr;
+				mark.str = yylval.intlStringPtr;
 				strMarks.put(mark.str, mark);
 
 				return STRING;
@@ -781,7 +759,7 @@ int Parser::yylexAux()
 					p++;
 				}
 
-				yylval.legacyStr = MAKE_string(cbuff, strlen(cbuff));
+				yylval.stringPtr = newString(cbuff);
 				return NUMBER64BIT;
 			}
 			else
@@ -929,7 +907,8 @@ int Parser::yylexAux()
 
 			if (have_exp_digit)
 			{
-				yylval.legacyStr = MAKE_string(lex.last_token, lex.ptr - lex.last_token);
+				yylval.stringPtr = newString(
+					Firebird::string(lex.last_token, lex.ptr - lex.last_token));
 				lex.last_token_bk = lex.last_token;
 				lex.line_start_bk = lex.line_start;
 				lex.lines_bk = lex.lines;
@@ -970,7 +949,7 @@ int Parser::yylexAux()
 						ERRD_post_warning(Arg::Warning(isc_dsql_warning_number_ambiguous1));
 					}
 
-					yylval.legacyStr = MAKE_string(lex.last_token, lex.ptr - lex.last_token);
+					yylval.stringPtr = newString(Firebird::string(lex.last_token, lex.ptr - lex.last_token));
 
 					lex.last_token_bk = lex.last_token;
 					lex.line_start_bk = lex.line_start;
@@ -1013,23 +992,23 @@ int Parser::yylexAux()
 		check_bound(p, string);
 		*p = 0;
 
-		Firebird::string str(string, p - string);
+		if (p > &string[MAX_SQL_IDENTIFIER_LEN])
+			yyabandon(-104, isc_dyn_name_longer);
+
+		MetaName str(string, p - string);
 		KeywordVersion* keyVer = keywordsMap->get(str);
 
 		if (keyVer && parser_version >= keyVer->version &&
 			(keyVer->keyword != COMMENT || lex.prev_keyword == -1))
 		{
-			yylval.legacyStr = keyVer->str;
+			yylval.metaNamePtr = keyVer->str;
 			lex.last_token_bk = lex.last_token;
 			lex.line_start_bk = lex.line_start;
 			lex.lines_bk = lex.lines;
 			return keyVer->keyword;
 		}
 
-		if (p > &string[MAX_SQL_IDENTIFIER_LEN])
-			yyabandon(-104, isc_dyn_name_longer);
-
-		yylval.legacyStr = MAKE_string(string, p - string);
+		yylval.metaNamePtr = FB_NEW(pool) MetaName(pool, str);
 		lex.last_token_bk = lex.last_token;
 		lex.line_start_bk = lex.line_start;
 		lex.lines_bk = lex.lines;
@@ -1038,12 +1017,12 @@ int Parser::yylexAux()
 
 	// Must be punctuation -- test for double character punctuation
 
-	if (lex.last_token + 1 < lex.end)
+	if (lex.last_token + 1 < lex.end && !isspace(UCHAR(lex.last_token[1])))
 	{
 		Firebird::string str(lex.last_token, 2);
 		KeywordVersion* keyVer = keywordsMap->get(str);
 
-		if (keyVer && parser_version >= keyVer->version)
+		if (keyVer && keyVer && parser_version >= keyVer->version)
 		{
 			++lex.ptr;
 			return keyVer->keyword;

@@ -159,8 +159,7 @@ namespace
 
 			oldContext->ctx_alias = oldContext->ctx_internal_alias = OLD_CONTEXT;
 
-			newContext->ctx_alias = newContext->ctx_internal_alias =
-				MAKE_cstring(NEW_CONTEXT)->str_data;
+			newContext->ctx_alias = newContext->ctx_internal_alias = NEW_CONTEXT;
 			newContext->ctx_flags |= CTX_returning;
 			scratch->context->push(newContext);
 		}
@@ -2926,7 +2925,7 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 						{
 							if (code == blr_exec_stmt_in_params2)
 							{
-								string name;
+								MetaName name;
 
 								if (PAR_name(csb, name))
 								{
@@ -2935,7 +2934,7 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 									if (!node->inputNames)
 										node->inputNames = FB_NEW (pool) EDS::ParamNames(pool);
 
-									string* newName = FB_NEW (pool) string(pool, name);
+									MetaName* newName = FB_NEW (pool) MetaName(pool, name);
 									node->inputNames->add(newName);
 								}
 							}
@@ -2988,7 +2987,7 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		for (size_t i = 0; i != count; ++i)
 		{
-			const string* name = (*node->inputNames)[i];
+			const MetaName* name = (*node->inputNames)[i];
 
 			size_t pos;
 			if (names.find(name->c_str(), pos))
@@ -3119,7 +3118,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 				dsqlScratch->appendUChar(blr_exec_stmt_in_params);
 
 			NestConst<ValueExprNode>* ptr = inputs->items.begin();
-			string* const* name = inputNames ? inputNames->begin() : NULL;
+			MetaName* const* name = inputNames ? inputNames->begin() : NULL;
 
 			for (const NestConst<ValueExprNode>* end = inputs->items.end(); ptr != end; ++ptr, ++name)
 			{
@@ -3215,7 +3214,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		stmt->bindToRequest(request, stmtPtr);
 		stmt->setCallerPrivileges(useCallerPrivs);
 
-		const string* const* inpNames = inputNames ? inputNames->begin() : NULL;
+		const MetaName* const* inpNames = inputNames ? inputNames->begin() : NULL;
 		stmt->prepare(tdbb, tran, sSql, inputNames != NULL);
 
 		if (stmt->isSelectable())
@@ -6248,7 +6247,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		// marks it with CTX_null so all fields be resolved to NULL constant.
 		dsql_ctx* old_context = FB_NEW(dsqlScratch->getPool()) dsql_ctx(dsqlScratch->getPool());
 		*old_context = *context;
-		old_context->ctx_alias = old_context->ctx_internal_alias = MAKE_cstring(OLD_CONTEXT)->str_data;
+		old_context->ctx_alias = old_context->ctx_internal_alias = OLD_CONTEXT;
 		old_context->ctx_flags |= CTX_system | CTX_null | CTX_returning;
 		dsqlScratch->context->push(old_context);
 
@@ -6256,7 +6255,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		dsql_ctx* new_context = FB_NEW(dsqlScratch->getPool()) dsql_ctx(dsqlScratch->getPool());
 		*new_context = *context;
 		new_context->ctx_scope_level = ++dsqlScratch->scopeLevel;
-		new_context->ctx_alias = new_context->ctx_internal_alias = MAKE_cstring(NEW_CONTEXT)->str_data;
+		new_context->ctx_alias = new_context->ctx_internal_alias = NEW_CONTEXT;
 		new_context->ctx_flags |= CTX_system | CTX_returning;
 		dsqlScratch->context->push(new_context);
 	}

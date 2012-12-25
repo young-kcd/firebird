@@ -34,8 +34,8 @@ namespace Jrd {
 	class dsql_msg;
 	class dsql_par;
 	class dsql_req;
-	class dsql_str;
 	class DsqlCompilerScratch;
+	class IntlString;
 	class ExprNode;
 	class FieldNode;
 	class LiteralNode;
@@ -45,7 +45,6 @@ namespace Jrd {
 
 // Parameters to MAKE_constant
 	enum dsql_constant_type {
-		CONSTANT_STRING		= 0, // stored as a string
 		CONSTANT_DOUBLE		= 1, // stored as a string
 		CONSTANT_DATE		= 2, // stored as a SLONG
 		CONSTANT_TIME		= 3, // stored as a ULONG
@@ -57,9 +56,8 @@ namespace Jrd {
 
 
 Jrd::LiteralNode* MAKE_const_slong(SLONG);
-Jrd::ValueExprNode* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
-Jrd::LiteralNode* MAKE_str_constant(Jrd::dsql_str*, SSHORT);
-Jrd::dsql_str* MAKE_cstring(const char*);
+Jrd::ValueExprNode* MAKE_constant(const Firebird::string&, Jrd::dsql_constant_type);
+Jrd::LiteralNode* MAKE_str_constant(const Jrd::IntlString*, SSHORT);
 void MAKE_desc(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueExprNode*);
 void MAKE_desc_from_field(dsc*, const Jrd::dsql_fld*);
 void MAKE_desc_from_list(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueListNode*, const TEXT*);
@@ -67,7 +65,5 @@ Jrd::FieldNode* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::ValueListNode*);
 Jrd::FieldNode* MAKE_field_name(const char*);
 Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg*, bool, bool, USHORT, const Jrd::ValueExprNode*);
 void MAKE_parameter_names(Jrd::dsql_par*, const Jrd::ValueExprNode*);
-Jrd::dsql_str* MAKE_string(const char*, int);
-Jrd::dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
 
 #endif // DSQL_MAKE_PROTO_H

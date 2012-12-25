@@ -85,7 +85,6 @@ namespace Jrd
 	class dsql_ctx;
 	class dsql_msg;
 	class dsql_par;
-	class dsql_str;
 	class dsql_map;
 	class dsql_intlsym;
 
@@ -106,25 +105,6 @@ namespace Firebird
 #include "../common/dsc.h"
 
 namespace Jrd {
-
-//! generic data type used to store strings
-class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
-{
-public:
-	enum Type
-	{
-		TYPE_SIMPLE = 0,	// '...'
-		TYPE_ALTERNATE,		// q'{...}'
-		TYPE_HEXA,			// x'...'
-		TYPE_DELIMITED		// "..."
-	};
-
-public:
-	const char* str_charset;	// ASCIIZ Character set identifier for string
-	Type	type;
-	ULONG	str_length;		// length of string in BYTES
-	char	str_data[2];	// one for ALLOC and one for the NULL
-};
 
 // blocks used to cache metadata
 
@@ -878,14 +858,25 @@ typedef Firebird::SortedArray<const char*,
 class IntlString
 {
 public:
-	explicit IntlString(const dsql_str* str)
-		: charset(str && str->str_charset ? str->str_charset : ""),
-		  s((str ? str->str_data : NULL), (str ? str->str_length : 0))
+	IntlString(Firebird::MemoryPool& p, const Firebird::string& str,
+		const Firebird::MetaName& cs = NULL)
+		: charset(p, cs),
+		  s(p, str)
 	{ }
 
-	IntlString(Firebird::MemoryPool& p, const dsql_str* str)
-		: charset(p, str && str->str_charset ? str->str_charset : ""),
-		  s(p, (str ? str->str_data : NULL), (str ? str->str_length : 0))
+	IntlString(const Firebird::string& str, const Firebird::MetaName& cs = NULL)
+		: charset(cs),
+		  s(str)
+	{ }
+
+	IntlString(Firebird::MemoryPool& p, const IntlString& o)
+		: charset(p, o.charset),
+		  s(p, o.s)
+	{ }
+
+	IntlString(Firebird::MemoryPool& p)
+		: charset(p),
+		  s(p)
 	{ }
 
 	Firebird::string toUtf8(DsqlCompilerScratch*) const;
@@ -893,6 +884,11 @@ public:
 	const Firebird::MetaName& getCharSet() const
 	{
 		return charset;
+	}
+
+	void setCharSet(const Firebird::MetaName& value)
+	{
+		charset = value;
 	}
 
 	const Firebird::string& getString() const

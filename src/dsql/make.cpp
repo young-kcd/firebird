@@ -92,7 +92,7 @@ LiteralNode* MAKE_const_slong(SLONG value)
     @param numeric_flag
 
  **/
-ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
+ValueExprNode* MAKE_constant(const string& str, dsql_constant_type numeric_flag)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -101,8 +101,6 @@ ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag
 	switch (numeric_flag)
 	{
 	case CONSTANT_DOUBLE:
-		DEV_BLKCHK(constant, dsql_type_str);
-
 		// This is a numeric value which is transported to the engine as
 		// a string.  The engine will convert it. Use dtype_double so that
 		// the engine can distinguish it from an actual string.
@@ -111,12 +109,11 @@ ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag
 
 		literal->litDesc.dsc_dtype = dtype_double;
 		// Scale has no use for double
-		literal->litDesc.dsc_scale = static_cast<signed char>(constant->str_length);
+		literal->litDesc.dsc_scale = static_cast<signed char>(str.length());
 		literal->litDesc.dsc_sub_type = 0;
 		literal->litDesc.dsc_length = sizeof(double);
-		literal->litDesc.dsc_address = (UCHAR*) constant->str_data;
+		literal->litDesc.dsc_address = (UCHAR*) str.c_str();
 		literal->litDesc.dsc_ttype() = ttype_ascii;
-		literal->dsqlStr = constant;
 		break;
 
 	case CONSTANT_SINT64:
@@ -143,14 +140,14 @@ ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag
 			// And, they will fit in a SINT64 without overflow.
 
 			SINT64 value = 0;
-			const UCHAR* p = reinterpret_cast<const UCHAR*>(constant->str_data);
+			const UCHAR* p = reinterpret_cast<const UCHAR*>(str.c_str());
 
 			if (*p == 'X')
 			{
 				// oh no, a hex string!
 				++p; // skip the 'X' part.
 				UCHAR byte = 0;
-				bool nibble = ((strlen(constant->str_data) - 1) & 1);
+				bool nibble = ((str.length() - 1) & 1);
 				SSHORT c;
 
 				// hex string is already upper-cased
@@ -242,8 +239,8 @@ ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag
 			tmp.dsc_scale = 0;
 			tmp.dsc_flags = 0;
 			tmp.dsc_ttype() = ttype_ascii;
-			tmp.dsc_length = static_cast<USHORT>(constant->str_length);
-			tmp.dsc_address = (UCHAR*) constant->str_data;
+			tmp.dsc_length = static_cast<USHORT>(str.length());
+			tmp.dsc_address = (UCHAR*) str.c_str();
 
 			// Now invoke the string_to_date/time/timestamp routines
 
@@ -252,24 +249,11 @@ ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag
 		}
 
 	case CONSTANT_BOOLEAN:
-		DEV_BLKCHK(constant, dsql_type_str);
-
-		literal->litDesc.makeBoolean((UCHAR*) constant->str_data);
-		literal->dsqlStr = constant;
+		literal->litDesc.makeBoolean((UCHAR*) str.c_str());
 		break;
 
 	default:
-		fb_assert(numeric_flag == CONSTANT_STRING);
-		DEV_BLKCHK(constant, dsql_type_str);
-
-		literal->litDesc.dsc_dtype = dtype_text;
-		literal->litDesc.dsc_sub_type = 0;
-		literal->litDesc.dsc_scale = 0;
-		literal->litDesc.dsc_length = static_cast<USHORT>(constant->str_length);
-		literal->litDesc.dsc_address = (UCHAR*) constant->str_data;
-		literal->litDesc.dsc_ttype() = ttype_dynamic;
-		// carry a pointer to the constant to resolve character set in pass1
-		literal->dsqlStr = constant;
+		fb_assert(false);
 		break;
 	}
 
@@ -289,40 +273,23 @@ ValueExprNode* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag
     @param character_set
 
  **/
-LiteralNode* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
+LiteralNode* MAKE_str_constant(const IntlString* constant, SSHORT character_set)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	DEV_BLKCHK(constant, dsql_type_str);
+	const string& str = constant->getString();
 
 	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
 	literal->litDesc.dsc_dtype = dtype_text;
 	literal->litDesc.dsc_sub_type = 0;
 	literal->litDesc.dsc_scale = 0;
-	literal->litDesc.dsc_length = static_cast<USHORT>(constant->str_length);
-	literal->litDesc.dsc_address = (UCHAR*) constant->str_data;
+	literal->litDesc.dsc_length = static_cast<USHORT>(str.length());
+	literal->litDesc.dsc_address = (UCHAR*) str.c_str();
 	literal->litDesc.dsc_ttype() = character_set;
 
 	literal->dsqlStr = constant;
 
 	return literal;
-}
-
-
-/**
-
- 	MAKE_cstring
-
-    @brief	Make a string node for a string whose
- 	length is not known, but is null-terminated.
-
-
-    @param str
-
- **/
-dsql_str* MAKE_cstring(const char* str)
-{
-	return MAKE_string(str, strlen(str));
 }
 
 
@@ -576,50 +543,6 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 	return parameter;
 }
-
-/**
-
- 	MAKE_string
-
-    @brief	Generalized routine for making a string block.
-
-
-    @param str
-    @param length
-
- **/
-dsql_str* MAKE_string(const char* str, int length)
-{
-	fb_assert(length >= 0);
-	return MAKE_tagged_string(str, length, NULL);
-}
-
-
-/**
-
- 	MAKE_tagged_string
-
-    @brief	Generalized routine for making a string block.
- 	Which is tagged with a character set descriptor.
-
-
-    @param str_
-    @param length
-    @param charset
-
- **/
-dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* charset)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	dsql_str* string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_str;
-	string->str_charset = charset;
-	string->str_length  = length;
-	memcpy(string->str_data, strvar, length);
-
-	return string;
-}
-
 
 /**
 

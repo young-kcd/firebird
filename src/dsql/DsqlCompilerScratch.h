@@ -95,7 +95,7 @@ public:
 		  errorHandlers(0),
 		  clientDialect(0),
 		  inOuterJoin(0),
-		  aliasRelationPrefix(NULL),
+		  aliasRelationPrefix(p),
 		  package(p),
 		  currCtes(p),
 		  recursiveCtx(0),
@@ -311,7 +311,7 @@ public:
 	USHORT errorHandlers;				// count of active error handlers
 	USHORT clientDialect;				// dialect passed into the API call
 	USHORT inOuterJoin;					// processing inside outer-join part
-	dsql_str* aliasRelationPrefix;		// prefix for every relation-alias.
+	Firebird::string aliasRelationPrefix;	// prefix for every relation-alias.
 	Firebird::MetaName package;			// package being defined
 	Firebird::Stack<SelectExprNode*> currCtes;	// current processing CTE's
 	class dsql_ctx* recursiveCtx;		// context of recursive CTE

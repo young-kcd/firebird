@@ -1019,7 +1019,7 @@ void CommentOnNode::print(string& text) const
 		"  objType: %s\n"
 		"  objName: %s\n"
 		"  text: %s\n",
-		objType, objName.c_str(), this->text->getString().c_str());
+		objType, objName.c_str(), this->text.c_str());
 }
 
 // select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
@@ -1225,8 +1225,8 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	}
 
 	Nullable<string> description;
-	if (!text->isEmpty())
-		description = text->toUtf8(dsqlScratch);
+	if (text.hasData())
+		description = text;
 
 	PreparedStatement::Builder sql;
 	sql << "update" << tableClause << "set rdb$description =" << description;
@@ -6397,7 +6397,7 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 			REL.RDB$EXTERNAL_FILE.NULL = FALSE;
 			strcpy(REL.RDB$EXTERNAL_FILE, externalFile->c_str());
 
-			if (ISC_check_if_remote(*externalFile, false))
+			if (ISC_check_if_remote(externalFile->c_str(), false))
 				status_exception::raise(Arg::PrivateDyn(163));
 
 			// Check for any path, present in filename.
@@ -6405,7 +6405,7 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 			// that's why no expand_filename required.
 
 			PathName path, file;
-			PathUtils::splitLastComponent(path, file, *externalFile);
+			PathUtils::splitLastComponent(path, file, externalFile->c_str());
 
 			if (path.hasData())	// path component present in filename
 			{
@@ -8763,7 +8763,7 @@ void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 		}
 
 		defineFile(tdbb, transaction, number, manual && first, conditional && first,
-			start, file->name, file->start, file->length);
+			start, file->name.c_str(), file->start, file->length);
 	}
 
 	savePoint.release();	// everything is ok
@@ -9080,7 +9080,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			status_exception::raise(Arg::PrivateDyn(250));
 		}
 
-		userData->pass.set(password->toUtf8(dsqlScratch).c_str());
+		userData->pass.set(password->c_str());
 		userData->pass.setEntered(1);
 	}
 
@@ -9898,12 +9898,12 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScra
 
 				start = MAX(start, file->start);
 				defineFile(tdbb, transaction, 0, false, false, dbAlloc,
-					file->name, start, file->length);
+					file->name.c_str(), start, file->length);
 				start += file->length;
 			}
 
 			if (differenceFile.hasData())
-				defineDifference(tdbb, transaction, differenceFile);
+				defineDifference(tdbb, transaction, differenceFile.c_str());
 
 			if (setDefaultCharSet.hasData())
 			{

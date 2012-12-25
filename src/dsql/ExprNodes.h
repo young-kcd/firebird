@@ -752,7 +752,7 @@ public:
 	}
 
 public:
-	dsql_str* dsqlStr;
+	const IntlString* dsqlStr;
 	dsc litDesc;
 };
 

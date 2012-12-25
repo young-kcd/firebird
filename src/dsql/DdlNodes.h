@@ -78,7 +78,7 @@ public:
 	{
 	}
 
-	explicit DbFileClause(MemoryPool& p, const Firebird::PathName& aName)
+	explicit DbFileClause(MemoryPool& p, const Firebird::string& aName)
 		: name(p, aName),
 		  start(0),
 		  length(0)
@@ -86,9 +86,9 @@ public:
 	}
 
 public:
-	Firebird::PathName name;	// File name
-	SLONG start;				// Starting page
-	SLONG length;				// File length in pages
+	Firebird::string name;	// File name
+	SLONG start;			// Starting page
+	SLONG length;			// File length in pages
 };
 
 
@@ -214,12 +214,12 @@ class CommentOnNode : public DdlNode
 public:
 	CommentOnNode(MemoryPool& pool, int aObjType,
 				const Firebird::MetaName& aObjName, const Firebird::MetaName& aSubName,
-				const IntlString* aText)
+				const Firebird::string aText)
 		: DdlNode(pool),
 		  objType(aObjType),
 		  objName(pool, aObjName),
 		  subName(pool, aSubName),
-		  text(aText)
+		  text(pool, aText)
 	{
 	}
 
@@ -243,7 +243,7 @@ private:
 	int objType;
 	Firebird::MetaName objName;
 	Firebird::MetaName subName;
-	const IntlString* text;
+	Firebird::string text;
 };
 
 
@@ -1283,7 +1283,7 @@ class CreateRelationNode : public RelationNode
 {
 public:
 	CreateRelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode,
-				const Firebird::PathName* aExternalFile = NULL)
+				const Firebird::string* aExternalFile = NULL)
 		: RelationNode(p, aDsqlNode),
 		  externalFile(aExternalFile),
 		  relationType(rel_persistent)
@@ -1304,7 +1304,7 @@ private:
 	const Firebird::ObjectsArray<Firebird::MetaName>* findPkColumns();
 
 public:
-	const Firebird::PathName* externalFile;
+	const Firebird::string* externalFile;
 	rel_t relationType;
 };
 
@@ -1775,7 +1775,11 @@ public:
 	CreateAlterUserNode(MemoryPool& p, bool creating, const Firebird::MetaName& aName)
 		: DdlNode(p),
 		  isCreating(creating),
-		  name(p, aName)
+		  name(p, aName),
+		  password(NULL),
+		  firstName(NULL),
+		  middleName(NULL),
+		  lastName(NULL)
 	{
 	}
 
@@ -1793,7 +1797,7 @@ protected:
 public:
 	const bool isCreating;
 	const Firebird::MetaName name;
-	const IntlString* password;
+	const Firebird::string* password;
 	const Firebird::string* firstName;
 	const Firebird::string* middleName;
 	const Firebird::string* lastName;
@@ -1949,7 +1953,7 @@ public:
 	bool create;	// Is the node created with a CREATE DATABASE command?
 	SLONG createLength;
 	unsigned clauses;
-	Firebird::PathName differenceFile;
+	Firebird::string differenceFile;
 	Firebird::MetaName setDefaultCharSet;
 	Firebird::MetaName setDefaultCollation;
 	Firebird::Array<NestConst<DbFileClause> > files;

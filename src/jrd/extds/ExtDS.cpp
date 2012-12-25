@@ -833,7 +833,7 @@ void Statement::prepare(thread_db* tdbb, Transaction* tran, const string& sql, b
 }
 
 void Statement::execute(thread_db* tdbb, Transaction* tran,
-	const string* const* in_names, const ValueListNode* in_params,
+	const MetaName* const* in_names, const ValueListNode* in_params,
 	const ValueListNode* out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
@@ -847,7 +847,7 @@ void Statement::execute(thread_db* tdbb, Transaction* tran,
 }
 
 void Statement::open(thread_db* tdbb, Transaction* tran,
-	const string* const* in_names, const ValueListNode* in_params, bool singleton)
+	const MetaName* const* in_names, const ValueListNode* in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -1161,7 +1161,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				if (n >= m_sqlParamNames.getCount())
 				{
 					n = m_sqlParamNames.getCount();
-					m_sqlParamNames.add(FB_NEW(getPool()) string(getPool(), ident));
+					m_sqlParamNames.add(FB_NEW(getPool()) MetaName(getPool(), ident));
 				}
 				m_sqlParamsMap.add(m_sqlParamNames[n]);
 			}
@@ -1215,7 +1215,7 @@ void Statement::preprocess(const string& sql, string& ret)
 	return;
 }
 
-void Statement::setInParams(thread_db* tdbb, const string* const* names,
+void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 	const ValueListNode* params)
 {
 	const size_t count = params ? params->items.getCount() : 0;
@@ -1238,7 +1238,7 @@ void Statement::setInParams(thread_db* tdbb, const string* const* names,
 
 		for (unsigned int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
 		{
-			const string* sqlName = m_sqlParamsMap[sqlNum];
+			const MetaName* sqlName = m_sqlParamsMap[sqlNum];
 
 			unsigned int num = 0;
 			for (; num < count; num++)
@@ -1262,7 +1262,7 @@ void Statement::setInParams(thread_db* tdbb, const string* const* names,
 		doSetInParams(tdbb, count, names, (params ? params->items.begin() : NULL));
 }
 
-void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const string* const* /*names*/,
+void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaName* const* /*names*/,
 	const NestConst<ValueExprNode>* params)
 {
 	if (count != getInputs())
@@ -1473,7 +1473,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 
 void Statement::clearNames()
 {
-	string** s = m_sqlParamNames.begin(), **end = m_sqlParamNames.end();
+	MetaName** s = m_sqlParamNames.begin(), **end = m_sqlParamNames.end();
 	for (; s < end; s++)
 	{
 		delete *s;

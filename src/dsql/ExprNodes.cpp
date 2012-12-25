@@ -6260,18 +6260,16 @@ ValueExprNode* LiteralNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	constant->dsqlStr = dsqlStr;
 	constant->litDesc = litDesc;
 
-	const dsql_str* string = constant->dsqlStr;
-
-	if (string && string->str_charset)
+	if (dsqlStr && dsqlStr->getCharSet().hasData())
 	{
 		const dsql_intlsym* resolved = METD_get_charset(dsqlScratch->getTransaction(),
-			strlen(string->str_charset), string->str_charset);
+			dsqlStr->getCharSet().length(), dsqlStr->getCharSet().c_str());
 
 		if (!resolved)
 		{
 			// character set name is not defined
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-					  Arg::Gds(isc_charset_not_found) << Arg::Str(string->str_charset));
+					  Arg::Gds(isc_charset_not_found) << dsqlStr->getCharSet());
 		}
 
 		constant->litDesc.setTextType(resolved->intlsym_ttype);
@@ -6300,7 +6298,7 @@ ValueExprNode* LiteralNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	CharSet* charSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&constant->litDesc));
 
-	if (!charSet->wellFormed(string->str_length, constant->litDesc.dsc_address, NULL))
+	if (!charSet->wellFormed(dsqlStr->getString().length(), constant->litDesc.dsc_address, NULL))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  Arg::Gds(isc_malformed_string));
@@ -6308,7 +6306,7 @@ ValueExprNode* LiteralNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	else
 	{
 		constant->litDesc.dsc_length =
-			charSet->length(string->str_length, constant->litDesc.dsc_address, true) *
+			charSet->length(dsqlStr->getString().length(), constant->litDesc.dsc_address, true) *
 			charSet->maxBytesPerChar();
 	}
 
@@ -6331,7 +6329,7 @@ bool LiteralNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
 void LiteralNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	if (litDesc.dsc_dtype == dtype_text)
-		litDesc.dsc_length = dsqlStr->str_length;
+		litDesc.dsc_length = dsqlStr->getString().length();
 
 	genConstant(dsqlScratch, &litDesc, false);
 }
@@ -6398,7 +6396,7 @@ bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const USHORT len = (litDesc.dsc_dtype == dtype_text) ?
-		dsqlStr->str_length : litDesc.dsc_length;
+		(USHORT) dsqlStr->getString().length() : litDesc.dsc_length;
 	return memcmp(litDesc.dsc_address, o->litDesc.dsc_address, len) == 0;
 }
 

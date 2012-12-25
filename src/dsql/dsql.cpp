@@ -1589,7 +1589,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	{
 		// Parse the SQL statement.  If it croaks, return
 
-		Parser parser(*tdbb->getDefaultPool(), clientDialect,
+		Parser parser(*tdbb->getDefaultPool(), scratch, clientDialect,
 			scratch->getAttachment()->dbb_db_SQL_dialect, parserVersion, text, textLength,
 			tdbb->getAttachment()->att_charset);
 

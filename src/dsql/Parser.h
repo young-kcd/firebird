@@ -112,15 +112,16 @@ private:
 		bool introduced;
 		unsigned pos;
 		unsigned length;
-		dsql_str* str;
+		IntlString* str;
 	};
 
 public:
 	static const int MAX_TOKEN_LEN = 256;
 
 public:
-	Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
-		const TEXT* string, size_t length, SSHORT characterSet);
+	Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
+		USHORT aDbDialect, USHORT aParserVersion, const TEXT* string, size_t length,
+		SSHORT characterSet);
 	~Parser();
 
 public:
@@ -134,6 +135,16 @@ public:
 	bool isStmtAmbiguous() const
 	{
 		return stmt_ambiguous;
+	}
+
+	Firebird::string* newString(const Firebird::string& s)
+	{
+		return FB_NEW(getPool()) Firebird::string(getPool(), s);
+	}
+
+	IntlString* newIntlString(const Firebird::string& s, const char* charSet = NULL)
+	{
+		return FB_NEW(getPool()) IntlString(getPool(), s, charSet);
 	}
 
 	// newNode overloads
@@ -208,12 +219,13 @@ private:
 
 	void yyabandon(SLONG, ISC_STATUS);
 
-	Firebird::MetaName toName(dsql_str* str);
-	Firebird::PathName toPathName(dsql_str* str);
-	Firebird::string toString(dsql_str* str);
+	Firebird::MetaName optName(Firebird::MetaName* name)
+	{
+		return (name ? *name : Firebird::MetaName());
+	}
 
 	void transformString(const char* start, unsigned length, Firebird::string& dest);
-	dsql_str* makeParseStr(const Position& p1, const Position& p2);
+	Firebird::string makeParseStr(const Position& p1, const Position& p2);
 	ParameterNode* make_parameter();
 
 	// Set the value of a clause, checking if it was already specified.
@@ -300,13 +312,14 @@ private:
 // end - defined in btyacc_fb.ske
 
 private:
+	DsqlCompilerScratch* scratch;
 	Firebird::string compilingText;
 	USHORT client_dialect;
 	USHORT db_dialect;
 	USHORT parser_version;
 
 	Firebird::string transformedString;
-	Firebird::GenericMap<Firebird::NonPooled<dsql_str*, StrMark> > strMarks;
+	Firebird::GenericMap<Firebird::NonPooled<IntlString*, StrMark> > strMarks;
 	bool stmt_ambiguous;
 	dsql_req* DSQL_parse;
 

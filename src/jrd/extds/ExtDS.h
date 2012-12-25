@@ -292,7 +292,7 @@ protected:
 };
 
 
-typedef Firebird::Array<Firebird::string*> ParamNames;
+typedef Firebird::Array<Firebird::MetaName*> ParamNames;
 
 class Statement : public Firebird::PermanentStorage
 {
@@ -314,10 +314,10 @@ public:
 
 	void prepare(Jrd::thread_db* tdbb, Transaction* tran, const Firebird::string& sql, bool named);
 	void execute(Jrd::thread_db* tdbb, Transaction* tran,
-		const Firebird::string* const* in_names, const Jrd::ValueListNode* in_params,
+		const Firebird::MetaName* const* in_names, const Jrd::ValueListNode* in_params,
 		const Jrd::ValueListNode* out_params);
 	void open(Jrd::thread_db* tdbb, Transaction* tran,
-		const Firebird::string* const* in_names, const Jrd::ValueListNode* in_params, bool singleton);
+		const Firebird::MetaName* const* in_names, const Jrd::ValueListNode* in_params, bool singleton);
 	bool fetch(Jrd::thread_db* tdbb, const Jrd::ValueListNode* out_params);
 	void close(Jrd::thread_db* tdbb);
 	void deallocate(Jrd::thread_db* tdbb);
@@ -354,12 +354,12 @@ protected:
 	virtual bool doFetch(Jrd::thread_db* tdbb) = 0;
 	virtual void doClose(Jrd::thread_db* tdbb, bool drop) = 0;
 
-	void setInParams(Jrd::thread_db* tdbb, const Firebird::string* const* names,
+	void setInParams(Jrd::thread_db* tdbb, const Firebird::MetaName* const* names,
 		const Jrd::ValueListNode* params);
 	virtual void getOutParams(Jrd::thread_db* tdbb, const Jrd::ValueListNode* params);
 
-	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count, const Firebird::string* const* names,
-		const NestConst<Jrd::ValueExprNode>* params);
+	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count,
+		const Firebird::MetaName* const* names, const NestConst<Jrd::ValueExprNode>* params);
 
 	virtual void putExtBlob(Jrd::thread_db* tdbb, dsc& src, dsc& dst);
 	virtual void getExtBlob(Jrd::thread_db* tdbb, const dsc& src, dsc& dst);
