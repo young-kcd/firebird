@@ -1377,9 +1377,12 @@ static void execute_looper(thread_db* tdbb,
 
 	// Ensure the cancellation lock can be triggered
 
-	Lock* const lock = transaction->tra_attachment->att_cancel_lock;
-	if (lock && lock->lck_logical == LCK_none)
-		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+	if (transaction && (transaction != dbb->dbb_sys_trans))
+	{
+		Lock* const lock = transaction->tra_attachment->att_cancel_lock;
+		if (lock && lock->lck_logical == LCK_none)
+			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+	}
 
 	// Start a save point
 
