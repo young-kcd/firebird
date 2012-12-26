@@ -1,3 +1,26 @@
+ 2012-12-25 17:34  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Parser.cpp
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/metd_proto.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/yvalve/keywords.cpp
+Get rid of dsql_str and fix metadata strings.
+
  2012-12-23 07:10  dimitr 
    M src/jrd/Attachment.cpp
    M src/jrd/Attachment.h
