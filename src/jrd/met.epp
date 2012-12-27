@@ -4186,12 +4186,7 @@ static int blocking_ast_dsql_cache(void* ast_object)
 	try
 	{
 		Database* dbb = item->lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(item->lock->lck_attachment);
+		AstContextHolder tdbb(dbb, item->lock->lck_attachment);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
@@ -4259,17 +4254,12 @@ static int blocking_ast_procedure(void* ast_object)
 
 	try
 	{
-		Database* dbb = procedure->prc_existence_lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(procedure->prc_existence_lock->lck_attachment);
-
-		Jrd::ContextPoolHolder context(tdbb, 0);
-
 		if (procedure->prc_existence_lock) {
+			Database* dbb = procedure->prc_existence_lock->lck_dbb;
+			AstContextHolder tdbb(dbb, procedure->prc_existence_lock->lck_attachment);
+
+			Jrd::ContextPoolHolder context(tdbb, 0);
+
 			LCK_release(tdbb, procedure->prc_existence_lock);
 		}
 		procedure->prc_flags |= PRC_obsolete;
@@ -4302,12 +4292,7 @@ static int blocking_ast_relation(void* ast_object)
 	try
 	{
 		Database* dbb = relation->rel_existence_lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(relation->rel_existence_lock->lck_attachment);
+		AstContextHolder tdbb(dbb, relation->rel_existence_lock->lck_attachment);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
@@ -4335,12 +4320,7 @@ static int partners_ast_relation(void* ast_object)
 	try
 	{
 		Database* dbb = relation->rel_partners_lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(relation->rel_partners_lock->lck_attachment);
+		AstContextHolder tdbb(dbb, relation->rel_partners_lock->lck_attachment);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
 

@@ -1174,14 +1174,11 @@ static int blocking_ast_shadowing(void* ast_object)
 
 	try
 	{
-		Database::SyncGuard dsGuard(new_dbb, true);
-
-		Lock* lock = new_dbb->dbb_shadow_lock;
-
 		// Since this routine will be called asynchronously,
 		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(new_dbb);
+		AstContextHolder tdbb(new_dbb);
+
+		Lock* lock = new_dbb->dbb_shadow_lock;
 
 		new_dbb->dbb_ast_flags |= DBB_get_shadows;
 		if (LCK_read_data(tdbb, lock) & SDW_rollover)

@@ -372,15 +372,11 @@ int CCH_down_grade_dbb(void* ast_object)
 
 	try
 	{
-		Database::SyncGuard dsGuard(dbb, true);
-
 		Lock* const lock = dbb->dbb_lock;
 
 		// Since this routine will be called asynchronously,
 		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(lock->lck_attachment);
+		AstContextHolder tdbb(dbb, lock->lck_attachment);
 
 		dbb->dbb_ast_flags |= DBB_blocking;
 
@@ -2733,12 +2729,9 @@ static int blocking_ast_bdb(void* ast_object)
 	{
 		Database* dbb = bdb->bdb_dbb;
 
-		Database::SyncGuard dsGuard(dbb, true);
-
 		// Since this routine will be called asynchronously,
 		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
+		AstContextHolder tdbb(dbb);
 
 		// Do some fancy footwork to make sure that pages are
 		// not removed from the btc tree at AST level. Then

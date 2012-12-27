@@ -2038,11 +2038,7 @@ static int blocking_ast_shutdown_attachment(void* ast_object)
 	try
 	{
 		Database* const dbb = attachment->att_database;
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(attachment);
+		AstContextHolder tdbb(dbb, attachment);
 
 		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 

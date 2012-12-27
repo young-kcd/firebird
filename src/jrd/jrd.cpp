@@ -2390,6 +2390,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		Attachment* const attachment = *handle;
 		AttachmentHolder attHolder(tdbb, attachment, "GDS_DROP_DATABASE");
+		MutexEnsureUnlock astGuard(attachment->mutex()->astMutex);
 
 		try
 		{
@@ -2456,6 +2457,11 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 					TraceConnectionImpl conn(attachment);
 					attachment->att_trace_manager->event_detach(&conn, true);
 				}
+			}
+
+			{ // scope - take ast lock here
+				MutexLockGuard astGuard(attachment->mutex()->astMutex);
+				DatabaseContextHolder dbbHolder(tdbb);
 
 				// Unlink attachment from database
 				release_attachment(tdbb, attachment);
@@ -5428,7 +5434,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 			break;
 		}
 	}
-	Attachment::destroy(attachment);	// string were re-saved in the beginning of this function,
+	Attachment::destroy(attachment);	// strings were re-saved in the beginning of this function,
 										// keep that in sync please
 	tdbb->setAttachment(NULL);
 }
@@ -5455,12 +5461,13 @@ void Attachment::destroy(Attachment* const attachment)
 		}
 
 		Database* const dbb = attachment->att_database;
+		fb_assert(dbb->locked());
 		MemoryPool* const pool = attachment->att_pool;
 		Firebird::MemoryStats temp_stats;
 		pool->setStatsGroup(temp_stats);
+
 		delete attachment;
 
-		Database::SyncGuard sync(dbb);
 		dbb->deletePool(pool);
 	}
 }
@@ -6238,18 +6245,23 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 		attachment->att_trace_manager->event_detach(&conn, false);
 	}
 
-	// Unlink attachment from database
+	fb_assert(dbb->locked());
+	Database::Checkout dcoHolder(dbb);
 
-	release_attachment(tdbb, attachment);
+	{ // scope - take ast lock here
+		MutexLockGuard astGuard(attachment->mutex()->astMutex);
+		DatabaseContextHolder dbbHolder(tdbb);
+
+		// Unlink attachment from database
+		release_attachment(tdbb, attachment);
+	}
 
 	// If there are still attachments, do a partial shutdown
 
 	if (dbb->checkHandle())
 	{
-		fb_assert(dbb->locked());
 		if (!dbb->dbb_attachments)
 		{
-			Database::Checkout dcoHolder(dbb);
 			if (unlink_database(dbb))		// remove from linked list
 			{
 				shutdown_database(dbb, true);
@@ -6492,26 +6504,27 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 			}
 		}
 
-		Database::SyncGuard syncGuard(dbb);
-
 		try
 		{
 			ThreadStatusGuard temp_status(tdbb);
 
 			if (attachment)
 			{
+				// no matter that noone has access to this attachment
+				// we need to care about lock ordering in unwind too 
+				// cause we may have locks and therefore AST calls
+				RefPtr<ExistenceMutex> attExistenceMutex(attachment->mutex());
+				MutexLockGuard astGuard(attachment->mutex()->astMutex);
+				Database::SyncGuard syncGuard(dbb);
+
 				release_attachment(tdbb, attachment);
 			}
 
-			if (dbb->checkHandle())
+			if (!dbb->dbb_attachments)	// small SS optimization - full check in unlink_database()
 			{
-				if (!dbb->dbb_attachments)
+				if (unlink_database(dbb))		// remove from linked list
 				{
-					Database::Checkout dcoHolder(dbb);
-					if (unlink_database(dbb))		// remove from linked list
-					{
-						shutdown_database(dbb, true);
-					}
+					shutdown_database(dbb, true);
 				}
 			}
 		}
@@ -6649,7 +6662,7 @@ bool thread_db::checkCancelState(bool punt)
 		{
 			if (database->dbb_ast_flags & DBB_shutdown)
 			{
-				if (!punt) 
+				if (!punt)
 					return true;
 
 				status_exception::raise(Arg::Gds(isc_shutdown) <<
@@ -6657,7 +6670,7 @@ bool thread_db::checkCancelState(bool punt)
 			}
 			else if (!(tdbb_flags & TDBB_shutdown_manager))
 			{
-				if (!punt) 
+				if (!punt)
 					return true;
 
 				status_exception::raise(Arg::Gds(isc_att_shutdown));
@@ -7298,4 +7311,48 @@ void JRD_shutdown_attachments(const Database* dbb)
 	}
 	catch (const Exception&)
 	{} // no-op
+}
+
+
+AstContextHolder::AstContextHolder(Database* dbb, Attachment* attachment)
+	: ThreadContextHolder(),
+	  AstAttachmentHolder(attachment),
+	  Database::SyncGuard(dbb, true)
+{
+	operator thread_db*()->setDatabase(dbb);
+	operator thread_db*()->setAttachment(attachment);
+}
+
+
+AstAttachmentHolder::AstAttachmentHolder(Attachment* attachment)
+	: mtx(attachment->isKnownHandle())
+{
+	if (attachment)
+	{
+		if (mtx)
+		{
+			mtx->astMutex.enter();
+			if (mtx->objectExists)
+			{
+				return;
+			}
+			destroy();
+		}
+
+		Arg::Gds(isc_att_shutdown).raise();
+	}
+}
+
+
+void AstAttachmentHolder::destroy()
+{
+	try
+	{
+		mtx->astMutex.leave();
+	}
+	catch (const Firebird::Exception&)
+	{
+		DtorException::devHalt();
+	}
+	mtx->release();
 }

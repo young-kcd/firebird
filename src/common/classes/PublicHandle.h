@@ -40,6 +40,7 @@ namespace Firebird
 	class ExistenceMutex : public RefMutex
 	{
 	public:
+		Mutex astMutex;
 		bool objectExists;
 
 		ExistenceMutex()

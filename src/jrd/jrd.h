@@ -857,6 +857,39 @@ private:
 };
 
 
+// AST attachment holder - controls AST mutex in attachment block
+
+class AstAttachmentHolder
+{
+public:
+	AstAttachmentHolder(Attachment* attachment);
+
+	~AstAttachmentHolder()
+	{
+		if (mtx)
+		{
+			destroy();
+		}
+	}
+
+private:
+	Firebird::ExistenceMutex* mtx;
+
+	void destroy();
+};
+
+// AST routines context helper
+
+class AstContextHolder :
+	public ThreadContextHolder,		// creates thread_db block for AST routine
+	public AstAttachmentHolder,		// controls AST mutex in attachment block
+	public Database::SyncGuard		// controls dbb_sync mutex
+{
+public:
+	AstContextHolder(Database* dbb, Attachment* attachment = NULL);
+};
+
+
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {

@@ -358,12 +358,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	try
 	{
 		Lock* const lock = dbb->dbb_monitor_lock;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(lock->lck_dbb);
-		tdbb->setAttachment(lock->lck_attachment);
+		AstContextHolder tdbb(dbb, lock->lck_attachment);
 
 		ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 

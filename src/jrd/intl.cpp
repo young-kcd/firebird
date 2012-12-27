@@ -1306,12 +1306,7 @@ static int blocking_ast_collation(void* ast_object)
 	try
 	{
 		Database* dbb = tt->existenceLock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(tt->existenceLock->lck_attachment);
+		AstContextHolder tdbb(dbb, tt->existenceLock->lck_attachment);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
 

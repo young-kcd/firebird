@@ -1535,12 +1535,7 @@ static int index_block_flush(void* ast_object)
 	{
 		Lock* lock = index_block->idb_lock;
 		Database* dbb = lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(lock->lck_attachment);
+		AstContextHolder tdbb(dbb, lock->lck_attachment);
 
 		release_index_block(tdbb, index_block);
 	}

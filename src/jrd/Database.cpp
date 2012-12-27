@@ -190,11 +190,7 @@ namespace Jrd
 
 		try
 		{
-			Database::SyncGuard dsGuard(dbb, true);
-
-			ThreadContextHolder tdbb;
-			tdbb->setDatabase(dbb);
-			// tdbb->setAttachment(counter->lock->lck_attachment);
+			AstContextHolder tdbb(dbb);
 
 			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 

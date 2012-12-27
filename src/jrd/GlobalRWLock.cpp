@@ -56,10 +56,7 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 			return 0;
 
 		Database* dbb = globalRWLock->cachedLock->lck_dbb;
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
+		AstContextHolder tdbb(dbb);
 
 		if (globalRWLock->cachedLock)
 			globalRWLock->blockingAstHandler(tdbb);
