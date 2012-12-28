@@ -556,7 +556,6 @@ private:
 
 namespace {
 	const unsigned CHECK_ASYNC = 1;
-	const unsigned CHECK_DISCONNECT = 2;
 }
 static void			check_database(thread_db* tdbb, unsigned flags = 0);
 static void			commit(thread_db*, jrd_tra*, const bool);
@@ -2358,7 +2357,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 		AttachmentHolder attHolder(tdbb, attachment, "GDS_DETACH");
 
 		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb, CHECK_DISCONNECT);
 
 		purge_attachment(tdbb, attachment, false);
 		*handle = NULL;
@@ -2398,7 +2396,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 			{	// scope
 				DatabaseContextHolder dbbHolder(tdbb);
-				check_database(tdbb, CHECK_DISCONNECT);
+				check_database(tdbb);
 
 				const PathName& file_name = attachment->att_filename;
 
@@ -4413,24 +4411,6 @@ static void check_database(thread_db* tdbb, unsigned flags)
 
 	Database* const dbb = tdbb->getDatabase();
 	Attachment* const attachment = tdbb->getAttachment();
-
-	// Validate handle by proving its existence in the attachment list
-
-	if (!(flags & CHECK_ASYNC))
-	{
-		fb_assert(dbb->locked());
-		const Attachment* attach = dbb->dbb_attachments;
-		while (attach && attach != attachment)
-			attach = attach->att_next;
-
-		if (!attach)
-			status_exception::raise(Arg::Gds(isc_bad_db_handle));
-	}
-
-	// No further checks for the disconnecting calls
-
-	if (flags & CHECK_DISCONNECT)
-		return;
 
 	// Test for persistent errors
 
