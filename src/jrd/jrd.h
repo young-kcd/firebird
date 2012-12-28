@@ -887,6 +887,7 @@ class AstContextHolder :
 {
 public:
 	AstContextHolder(Database* dbb, Attachment* attachment = NULL);
+	AstContextHolder(ISC_STATUS* status, Attachment* attachment);
 };
 
 

@@ -555,7 +555,7 @@ private:
 };
 
 namespace {
-	const unsigned CHECK_ASYNC = 1;
+	const unsigned CHECK_PERSISTENT_ONLY = 1;
 }
 static void			check_database(thread_db* tdbb, unsigned flags = 0);
 static void			commit(thread_db*, jrd_tra*, const bool);
@@ -1583,57 +1583,33 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Attachment** handle, USH
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
+		AstContextHolder tdbb(user_status, *handle);
+		check_database(tdbb, CHECK_PERSISTENT_ONLY);
 
-		class CancelOperation : public ExecuteWithLock
+		Attachment* attachment = tdbb->getAttachment();
+		switch (option)
 		{
-		public:
-			CancelOperation(thread_db* arg, Attachment* att, USHORT opt)
-				: tdbb(arg), attachment(att), option(opt)
-			{ }
+		case fb_cancel_disable:
+			attachment->att_flags |= ATT_cancel_disable;
+			attachment->att_flags &= ~ATT_cancel_raise;
+			break;
 
-			void execute()
+		case fb_cancel_enable:
+			if (attachment->att_flags & ATT_cancel_disable)
 			{
-				tdbb->setDatabase(attachment->att_database);
-
-				switch (option)
-				{
-				case fb_cancel_disable:
-					attachment->att_flags |= ATT_cancel_disable;
-					attachment->att_flags &= ~ATT_cancel_raise;
-					break;
-
-				case fb_cancel_enable:
-					if (attachment->att_flags & ATT_cancel_disable)
-					{
-						// avoid leaving ATT_cancel_raise set when cleaning ATT_cancel_disable
-						// to avoid unexpected CANCEL (though it should not be set, but...)
-						attachment->att_flags &= ~(ATT_cancel_disable | ATT_cancel_raise);
-					}
-					break;
-
-				case fb_cancel_raise:
-					if (!(attachment->att_flags & ATT_cancel_disable))
-						attachment->signalCancel(tdbb);
-					break;
-
-				default:
-					fb_assert(false);
-				}
+				// avoid leaving ATT_cancel_raise set when cleaning ATT_cancel_disable
+				// to avoid unexpected CANCEL (though it should not be set, but...)
+				attachment->att_flags &= ~(ATT_cancel_disable | ATT_cancel_raise);
 			}
+			break;
 
-		private:
-			thread_db* tdbb;
-			Attachment* attachment;
-			USHORT option;
-		};
+		case fb_cancel_raise:
+			if (!(attachment->att_flags & ATT_cancel_disable))
+				attachment->signalCancel(tdbb);
+			break;
 
-		Attachment* const attachment = *handle;
-		CancelOperation cancelOperation(tdbb, attachment, option);
-
-		if (!attachment->executeWithLock(&cancelOperation))
-		{
-			Arg::Gds(isc_bad_db_handle).raise();
+		default:
+			fb_assert(false);
 		}
 	}
 	catch (const Exception& ex)
@@ -4426,7 +4402,12 @@ static void check_database(thread_db* tdbb, unsigned flags)
 	{
 		if (dbb->dbb_ast_flags & DBB_shutdown)
 		{
-			const PathName& filename = attachment->att_filename;
+			const char* filename = attachment->att_filename.c_str();
+			if (!filename)
+			{
+				// In async call attachment might be not complete, i.e. no filename
+				filename = "Unknown";
+			}
 			status_exception::raise(Arg::Gds(isc_shutdown) << Arg::Str(filename));
 		}
 		else
@@ -4437,7 +4418,7 @@ static void check_database(thread_db* tdbb, unsigned flags)
 
 	// No further checks for the async calls
 
-	if (flags & CHECK_ASYNC)
+	if (flags & CHECK_PERSISTENT_ONLY)
 		return;
 
 	// Test for temporary errors
@@ -5168,8 +5149,6 @@ static Attachment* create_attachment(const PathName& alias_name,
 	Database::SyncGuard dbbGuard(dbb);
 
 	Attachment* attachment = Attachment::create(dbb);
-	attachment->att_next = dbb->dbb_attachments;
-	dbb->dbb_attachments = attachment;
 
 	attachment->att_filename = alias_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
@@ -5177,6 +5156,9 @@ static Attachment* create_attachment(const PathName& alias_name,
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
+
+	attachment->att_next = dbb->dbb_attachments;
+	dbb->dbb_attachments = attachment;
 
 	return attachment;
 }
@@ -7209,34 +7191,9 @@ ISC_STATUS GDS_PING(ISC_STATUS* user_status, Attachment** db_handle)
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
+		AstContextHolder tdbb(user_status, *db_handle);
 
-		class Ping : public ExecuteWithLock
-		{
-		public:
-			Ping(thread_db* arg, Attachment* att)
-				: tdbb(arg), attachment(att)
-			{ }
-
-			void execute()
-			{
-				tdbb->setDatabase(attachment->att_database);
-				tdbb->setAttachment(attachment);
-				check_database(tdbb, CHECK_ASYNC);
-			}
-
-		private:
-			thread_db* tdbb;
-			Attachment* attachment;
-		};
-
-		Attachment* const attachment = *db_handle;
-		Ping ping(tdbb, attachment);
-
-		if (!attachment->executeWithLock(&ping))
-		{
-			Arg::Gds(isc_bad_db_handle).raise();
-		}
+		check_database(tdbb, CHECK_PERSISTENT_ONLY);
 	}
 	catch (const Exception& ex)
 	{
@@ -7312,6 +7269,16 @@ AstContextHolder::AstContextHolder(Database* dbb, Attachment* attachment)
 }
 
 
+AstContextHolder::AstContextHolder(ISC_STATUS* status, Attachment* attachment)
+	: ThreadContextHolder(status),
+	  AstAttachmentHolder(attachment),
+	  Database::SyncGuard(attachment->att_database, true)
+{
+	operator thread_db*()->setDatabase(attachment->att_database);
+	operator thread_db*()->setAttachment(attachment);
+}
+
+
 AstAttachmentHolder::AstAttachmentHolder(Attachment* attachment)
 	: mtx(attachment->isKnownHandle())
 {
@@ -7327,7 +7294,7 @@ AstAttachmentHolder::AstAttachmentHolder(Attachment* attachment)
 			destroy();
 		}
 
-		Arg::Gds(isc_att_shutdown).raise();
+		Arg::Gds(isc_bad_db_handle).raise();
 	}
 }
 
