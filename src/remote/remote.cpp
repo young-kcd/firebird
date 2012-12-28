@@ -779,6 +779,11 @@ void PortsCleanup::unRegisterPort(rem_port* port)
 
 void PortsCleanup::closePorts()
 {
+	if (!this)
+	{
+		return;
+	}
+
 	Firebird::MutexLockGuard guard(m_mutex);
 
 	if (m_ports)
