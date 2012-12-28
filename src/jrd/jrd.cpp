@@ -5414,6 +5414,14 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 			break;
 		}
 	}
+
+	// avoid dropped attachment in system transaction
+
+	if (dbb->dbb_sys_trans->tra_attachment == attachment)
+	{
+		dbb->dbb_sys_trans->tra_attachment = dbb->dbb_attachments;
+	}
+
 	Attachment::destroy(attachment);	// strings were re-saved in the beginning of this function,
 										// keep that in sync please
 	tdbb->setAttachment(NULL);
