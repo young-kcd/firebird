@@ -380,7 +380,7 @@ public:
 
 	bool checkHandle() const
 	{
-		if (!this || !isKnownHandle())
+		if (!isKnownHandle())
 			return false;
 
 		mutex()->release();
