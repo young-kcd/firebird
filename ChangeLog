@@ -1,3 +1,18 @@
+ 2012-12-27 13:26  alexpeshkoff 
+   M src/common/classes/PublicHandle.h
+   M src/jrd/Database.cpp
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/idx.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+Fixed CORE-3944: SuperClassic crashes when running script that delete attachments and move database to offline
+
  2012-12-26 10:27  dimitr 
    M src/jrd/exe.cpp
 Easy fix for the crash reported by Alex privately. More generic solution is desirable.
