@@ -50,21 +50,29 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HA
 		return true;
 	}
 
-	Firebird::string sql;
+	Firebird::string userName(io_user_data->user_name);
+	for (unsigned i = 0; i < userName.length(); ++i)
+	{
+		if (userName[i] == '"')
+		{
+			userName.insert(i++, 1, '"');
+		}
+	}
 
+	Firebird::string sql;
 	sql.printf(io_user_data->admin ? "GRANT %s TO \"%s\"" : "REVOKE %s FROM \"%s\"", 
-			"RDB$ADMIN", io_user_data->user_name);
+			"RDB$ADMIN", userName.c_str());
 	isc_dsql_execute_immediate(isc_status, &DB, &trans, sql.length(), sql.c_str(), SQL_DIALECT_V6, NULL);
 
 	if (isc_status[1] && io_user_data->admin == 0)
 	{
 		isc_req_handle request = 0;
 		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) R IN RDB$USER_PRIVILEGES
-				WITH R.RDB$USER EQ io_user_data->user_name 
+				WITH R.RDB$USER EQ io_user_data->user_name
 				 AND R.RDB$RELATION_NAME EQ 'RDB$ADMIN'
 				 AND R.RDB$PRIVILEGE EQ 'M'
-			sql.printf("REVOKE RDB$ADMIN FROM \"%s\" GRANTED BY \"%s\"", 
-				io_user_data->user_name, R.RDB$GRANTOR);
+			sql.printf("REVOKE RDB$ADMIN FROM \"%s\" GRANTED BY \"%s\"",
+				userName.c_str(), R.RDB$GRANTOR);
 		END_FOR
 		if (request)
 		{
