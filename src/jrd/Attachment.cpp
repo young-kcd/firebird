@@ -566,8 +566,7 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 	}
 }
 
-Jrd::Attachment::SyncGuard::SyncGuard(Attachment* att, const char* f, bool optional)
-	: jAtt(att ? att->att_interface : NULL)
+void Jrd::Attachment::SyncGuard::init(const char* f, bool optional)
 {
 	fb_assert(optional || jAtt);
 

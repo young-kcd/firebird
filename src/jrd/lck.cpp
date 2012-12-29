@@ -1484,12 +1484,11 @@ Lock::Lock(thread_db* tdbb, USHORT length, lck_t type, void* object, lock_ast_t 
 
 void Lock::setLockAttachment(Jrd::Attachment* attachment)
 {
-	if (lck_attachment == attachment)
+	Attachment* att = lck_attachment ? lck_attachment->getHandle() : NULL;
+	if (att == attachment)
 		return;
 
-	Database* dbb = attachment ? attachment->att_database :
-		(lck_attachment ? lck_attachment->att_database : NULL);
-
+	Database* dbb = attachment ? attachment->att_database : att ? att->att_database : NULL;
 	fb_assert(dbb);
 	if (!dbb)
 		return;
@@ -1501,10 +1500,10 @@ void Lock::setLockAttachment(Jrd::Attachment* attachment)
 	fb_assert(!lck_attachment ? !lck_prior && !lck_next : true);
 
 	// Delist in old attachment
-	if (lck_attachment)
+	if (att)
 	{
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
-		fb_assert(lck_attachment->att_flags != 0xEEEEEEEE);
+		fb_assert(att->att_flags != 0xEEEEEEEE);
 
 		if (lck_prior)
 		{
@@ -1513,8 +1512,8 @@ void Lock::setLockAttachment(Jrd::Attachment* attachment)
 		}
 		else
 		{
-			fb_assert(lck_attachment->att_long_locks == this);
-			lck_attachment->att_long_locks = lck_next;
+			fb_assert(att->att_long_locks == this);
+			att->att_long_locks = lck_next;
 		}
 
 		if (lck_next)
@@ -1532,7 +1531,7 @@ void Lock::setLockAttachment(Jrd::Attachment* attachment)
 	if (attachment)
 	{
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
-		fb_assert(attachment->att_flags != 0xDEADBEEF);
+		fb_assert(attachment->att_flags != 0xEEEEEEEE);
 
 		lck_next = attachment->att_long_locks;
 		lck_prior = NULL;
@@ -1542,7 +1541,7 @@ void Lock::setLockAttachment(Jrd::Attachment* attachment)
 			lck_next->lck_prior = this;
 	}
 
-	lck_attachment = attachment;
+	lck_attachment = attachment ? attachment->att_interface : NULL;
 }
 
 Lock* Lock::detach()

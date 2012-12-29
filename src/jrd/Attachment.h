@@ -122,7 +122,17 @@ public:
 	class SyncGuard
 	{
 	public:
-		SyncGuard(Attachment* att, const char* f, bool optional = false);
+		SyncGuard(JAttachment* ja, const char* f, bool optional = false)
+			: jAtt(ja)
+		{
+			init(f, optional);
+		}
+
+		SyncGuard(Attachment* att, const char* f, bool optional = false)
+			: jAtt(att ? att->att_interface : NULL)
+		{
+			init(f, optional);
+		}
 
 		~SyncGuard()
 		{
@@ -135,7 +145,9 @@ public:
 		SyncGuard(const SyncGuard&);
 		SyncGuard& operator=(const SyncGuard&);
 
-		JAttachment* jAtt;
+		void init(const char* f, bool optional);
+
+		Firebird::RefPtr<JAttachment> jAtt;
 	};
 
 	class Checkout
