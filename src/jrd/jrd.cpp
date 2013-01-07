@@ -4909,8 +4909,8 @@ static void check_database(thread_db* tdbb, bool async)
 
 	// Test for temporary errors
 
-	if ((attachment->att_flags & ATT_cancel_raise)
-		&& !(attachment->att_flags & ATT_cancel_disable))
+	if ((attachment->att_flags & ATT_cancel_raise) &&
+		!(attachment->att_flags & ATT_cancel_disable))
 	{
 		attachment->att_flags &= ~ATT_cancel_raise;
 		status_exception::raise(Arg::Gds(isc_cancelled));
@@ -6654,7 +6654,6 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus
 
 namespace
 {
-
 	class AttQueue : public HalfStaticArray<JAttachment*, 128>
 	{
 	public:
