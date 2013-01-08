@@ -3217,7 +3217,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 	DPM_scan_pages(tdbb);
 
-	// hvlad: restore tdbb->getTransaction() since it can be used later
+	// hvlad: restore tdbb->transaction since it can be used later
 	tdbb->setTransaction(transaction);
 
 	record_param rpb;
