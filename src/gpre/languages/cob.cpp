@@ -613,7 +613,7 @@ void COB_action(const act* action, int /*column*/)
 	if ((action->act_flags & ACT_sql) && action->act_whenever)
 		gen_whenever(action->act_whenever);
 	else
-		fprintf(gpreGlob.out_file, names[COLUMN]);
+		fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -944,7 +944,7 @@ static void gen_at_end( const act* action)
 
 	const gpre_req* request = action->act_request;
 	printa(names[COLUMN], false, "IF %s = 0 THEN", gen_name(s, request->req_eof, true));
-	fprintf(gpreGlob.out_file, names[COLUMN]);
+	fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -2754,7 +2754,7 @@ static TEXT* gen_name(TEXT* const string, const ref* reference, bool as_blob)
 static void gen_on_error() // const act* action)
 {
 	printa(names[COLUMN], false, "IF %s (2) NOT = 0 THEN", names[isc_status_pos]);
-	fprintf(gpreGlob.out_file, names[COLUMN]);
+	fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -2954,7 +2954,7 @@ static void gen_ready( const act* action)
 		set_sqlcode(action);
 	}
 
-	fprintf(gpreGlob.out_file, names[COLUMN]);
+	fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -3791,7 +3791,7 @@ static void make_array_declaration( ref* reference)
 		}
 	}
 
-	printa(space, false, string1);
+	printa(space, false, "%s", string1);
 }
 
 
