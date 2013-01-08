@@ -199,7 +199,7 @@ public:
 	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
-#define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 7)
+#define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 6)
 
 }	// namespace Firebird
 
