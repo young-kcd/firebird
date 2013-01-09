@@ -1,3 +1,27 @@
+ 2013-01-08 16:03  alexpeshkoff 
+   M src/gpre/languages/cob.cpp
+warnings
+
+ 2013-01-08 15:47  alexpeshkoff 
+   A src/misc/checkIface
+Script to check correctness of FB_XX_VERSION constants in h-files
+
+ 2013-01-08 15:23  alexpeshkoff 
+   M src/misc/src_bundle.sh
+misc
+
+ 2013-01-08 15:03  alexpeshkoff 
+   M src/include/firebird/ExternalEngine.h
+misc
+
+ 2013-01-08 10:53  alexpeshkoff 
+   M src/alice/tdr.cpp
+Frontported postfix for CORE-3612 - send errors to stderr
+
+ 2013-01-08 10:51  alexpeshkoff 
+   M src/jrd/vio.cpp
+comment
+
  2013-01-07 01:15  asfernandes 
    M src/jrd/cch.cpp
    M src/jrd/jrd.cpp
