@@ -1,3 +1,9 @@
+ 2013-01-08 13:47  paul_reeves 
+   M src/utilities/fbcpl/ctrlpan.cpp
+   M src/utilities/fbcpl/ctrlpan.h
+Fix for CORE-4020
+Instantiate cpl applet methods with LPARAM instead of long.
+
  2012-12-29 11:16  alexpeshkoff 
    M src/utilities/gsec/security.epp
 Backported fix for CORE-3932: can create but cant delete user with username containing double quotes with gsec
