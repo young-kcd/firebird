@@ -47,7 +47,9 @@ set /A FBBUILD_PACKAGE_NUMBER+=1
 
 ::If a suffix is defined (usually for an RC) ensure it is prefixed correctly.
 if defined FBBUILD_FILENAME_SUFFIX (
-if not %FBBUILD_FILENAME_SUFFIX:~0,1% == _ (set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
+if not "%FBBUILD_FILENAME_SUFFIX:~0,1%"=="_" (
+(set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
+)
 )
 
 :: See what we have on the command line
