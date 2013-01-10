@@ -22,7 +22,7 @@ CControlPanel::~CControlPanel()
 
 // static member functions (callbacks)
 LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg,
-                                       LONG lParam1, LONG lParam2)
+                                       LPARAM lParam1, LPARAM lParam2)
 {
 
 
