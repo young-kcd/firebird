@@ -1,3 +1,8 @@
+ 2013-01-10 15:03  paul_reeves 
+   M builds/install/arch-specific/win32/After_Installation.url
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+Misc
+
  2013-01-08 13:47  paul_reeves 
    M src/utilities/fbcpl/ctrlpan.cpp
    M src/utilities/fbcpl/ctrlpan.h
