@@ -1,3 +1,13 @@
+ 2013-01-10 15:01  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+Improve check for FBBUILD_FILENAME_SUFFIX env var
+
+ 2013-01-10 14:59  paul_reeves 
+   M src/utilities/fbcpl/ctrlpan.cpp
+   M src/utilities/fbcpl/ctrlpan.h
+Backport fix for CORE-4020
+Instantiate cpl applet methods with LPARAM instead of long.
+
  2012-12-14 10:11  makowski 
    M builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
 Fixed CORE-4011: /etc/init.d/ script for Mageia and RedHat RH #886578
