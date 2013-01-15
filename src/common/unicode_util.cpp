@@ -430,6 +430,7 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 
 		bool error;
 		U16_APPEND(dst, n, dstLen, c, error);
+		(void) error;
 	}
 
 	return n * sizeof(*dst);
@@ -497,6 +498,7 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 
 		bool error;
 		U16_APPEND(dst, n, dstLen, c, error);
+		(void) error;
 	}
 
 	return n * sizeof(*dst);
