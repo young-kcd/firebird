@@ -2353,7 +2353,7 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 	if (DTYPE_IS_TEXT(target.dsc_dtype))
 	{
 		// should we also check for the INTL stuff here?
-		return (DTYPE_IS_TEXT(source.dsc_dtype));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_dbkey);
 	}
 	else if (target.dsc_dtype == dtype_int64)
 	{
