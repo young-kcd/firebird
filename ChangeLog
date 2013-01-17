@@ -1,3 +1,7 @@
+ 2013-01-16 17:02  dimitr 
+   M src/jrd/btr.cpp
+Simplest fix for CORE-4038: Broken optimization for the stored dbkeys.
+
  2013-01-10 15:03  paul_reeves 
    M builds/install/arch-specific/win32/After_Installation.url
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
