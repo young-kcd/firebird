@@ -1,3 +1,7 @@
+ 2013-01-16 17:08  dimitr 
+   M src/jrd/btr.cpp
+Simplest fix for CORE-4038: Broken optimization for the stored dbkeys.
+
  2013-01-15 11:39  alexpeshkoff 
    M src/common/unicode_util.cpp
 warning
