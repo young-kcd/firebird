@@ -202,31 +202,23 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 
 public:
 
-	class SyncGuard
+	class SyncGuard : public Firebird::ExecuteWithLock
 	{
 	public:
-		explicit SyncGuard(Database* dbb, bool ast = false)
-			: sync(*dbb->dbb_sync)
+		explicit SyncGuard(Database* aDbb, bool isAst = false)
+			: dbb(aDbb), ast(isAst), sync(NULL)
 		{
-			if (!dbb->checkHandle())
+			if (!dbb->executeWithLock(this))
 			{
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
 			}
 
-			sync.addRef();
-			sync.lock(ast);
-
-			if (!dbb->checkHandle())
-			{
-				sync.unlock();
-				sync.release();
-				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
-			}
+			fb_assert(sync);
 
 			if (ast && dbb->dbb_flags & DBB_not_in_use)
 			{
-				sync.unlock();
-				sync.release();
+				sync->unlock();
+				sync->release();
 				Firebird::LongJump::raise();
 			}
 		}
@@ -235,13 +227,20 @@ public:
 		{
 			try
 			{
-				sync.unlock();
+				sync->unlock();
 			}
 			catch (const Firebird::Exception&)
 			{
 				DtorException::devHalt();
 			}
-			sync.release();
+			sync->release();
+		}
+
+		void execute()
+		{
+			sync = dbb->dbb_sync;
+			sync->addRef();
+			sync->lock(ast);
 		}
 
 	private:
@@ -249,7 +248,9 @@ public:
 		SyncGuard(const SyncGuard&);
 		SyncGuard& operator=(const SyncGuard&);
 
-		Sync& sync;
+		Database* const dbb;
+		const bool ast;
+		Sync* sync;
 	};
 
 	class Checkout
