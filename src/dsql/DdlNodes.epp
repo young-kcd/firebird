@@ -3416,7 +3416,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
 		}
 
-		if (specificAttributes.hasData())
+		if (specificAttributes.hasData() && forCharSetId != attachment->att_charset)
 		{
 			UCharBuffer temp;
 			ULONG size = specificAttributes.getCount() * cs->maxBytesPerChar();
