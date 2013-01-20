@@ -383,7 +383,7 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 			// Specified collation not found
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-					  Arg::Gds(isc_dsql_datatype_err) <<
+					  ///Arg::Gds(isc_dsql_datatype_err) <<	// (too large status vector)
                       Arg::Gds(isc_collation_not_found) << collation_name << charSetName);
 		}
 
