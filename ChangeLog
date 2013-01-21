@@ -1,3 +1,11 @@
+ 2013-01-20 19:55  asfernandes 
+   M src/dsql/ddl.cpp
+Fixed truncated error message for wrong CREATE COLLATION.
+
+ 2013-01-20 15:11  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed a problem with CREATE COLLATION.
+
  2013-01-16 17:08  dimitr 
    M src/jrd/btr.cpp
 Simplest fix for CORE-4038: Broken optimization for the stored dbkeys.
