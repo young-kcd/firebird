@@ -3672,7 +3672,7 @@ const StmtNode* InitVariableNode::execute(thread_db* tdbb, jrd_req* request, Exe
 
 ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
 
 	if (returns.hasData())
 		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
@@ -3818,7 +3818,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
 
 	dsqlScratch->appendUChar(blr_begin);
 
@@ -6967,7 +6967,7 @@ void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GenericMap<NonPooled<dsql_par*, dsql_ctx*> > paramContexts(*getDefaultMemoryPool());
 	dsql_ctx* context;
 
-	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT_UPD && !rse->dsqlDistinct)
+	if (dsqlForUpdate && !rse->dsqlDistinct)
 	{
 		RecSourceListNode* streamList = rse->dsqlStreams;
 		NestConst<RecordSourceNode>* ptr2 = streamList->items.begin();
@@ -6995,8 +6995,7 @@ void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 					parameter->par_desc.dsc_ttype() = ttype_binary;
 					parameter->par_desc.dsc_length = relation->rel_dbkey_length;
 
-					// Set up record version - for post v33 databases.
-
+					// Set up record version.
 					parameter = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
 					parameter->par_rec_version_relname = relation->rel_name;
 					paramContexts.put(parameter, context);
@@ -7280,7 +7279,7 @@ DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
 
 	if (dsqlScratch->flags & (DsqlCompilerScratch::FLAG_TRIGGER | DsqlCompilerScratch::FLAG_FUNCTION))
 	{
@@ -8170,7 +8169,7 @@ static RseNode* dsqlPassCursorReference(DsqlCompilerScratch* dsqlScratch, const 
 
 	// Lookup parent dsqlScratch
 
-	dsql_req* const* symbol = dsqlScratch->getAttachment()->dbb_cursors.get(cursor.c_str());
+	dsql_req* const* const symbol = dsqlScratch->getAttachment()->dbb_cursors.get(cursor.c_str());
 
 	if (!symbol)
 	{
@@ -8184,21 +8183,22 @@ static RseNode* dsqlPassCursorReference(DsqlCompilerScratch* dsqlScratch, const 
 
 	// Verify that the cursor is appropriate and updatable
 
+	dsql_par* source = dsqlFindDbKey(parent, relation_name);
 	dsql_par* rv_source = dsqlFindRecordVersion(parent, relation_name);
 
-	dsql_par* source;
-	if (parent->getStatement()->getType() != DsqlCompiledStatement::TYPE_SELECT_UPD ||
-		!rv_source || !(source = dsqlFindDbKey(parent, relation_name)))
+	if (!source || !rv_source)
 	{
 		// cursor is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
 				  Arg::Gds(isc_dsql_cursor_update_err) << cursor);
 	}
 
-	dsqlScratch->getStatement()->setParentRequest(parent);
-	dsqlScratch->getStatement()->setParentDbKey(source);
-	dsqlScratch->getStatement()->setParentRecVersion(rv_source);
-	parent->cursors.add(dsqlScratch->getStatement());
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+
+	statement->setParentRequest(parent);
+	statement->setParentDbKey(source);
+	statement->setParentRecVersion(rv_source);
+	parent->cursors.add(statement);
 
 	// Build record selection expression
 
@@ -8211,37 +8211,32 @@ static RseNode* dsqlPassCursorReference(DsqlCompilerScratch* dsqlScratch, const 
 	RecordKeyNode* dbKeyNode = FB_NEW(pool) RecordKeyNode(pool, blr_dbkey);
 	dbKeyNode->dsqlRelation = relation_node;
 
-	dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
-		false, false, 0, NULL);
-	dsqlScratch->getStatement()->setDbKey(parameter);
+	dsql_par* parameter = MAKE_parameter(statement->getSendMsg(), false, false, 0, NULL);
+	statement->setDbKey(parameter);
 
 	ParameterNode* paramNode = FB_NEW(pool) ParameterNode(pool);
 	paramNode->dsqlParameterIndex = parameter->par_index;
 	paramNode->dsqlParameter = parameter;
 	parameter->par_desc = source->par_desc;
 
-	rse->dsqlWhere = FB_NEW(pool) ComparativeBoolNode(pool, blr_eql, dbKeyNode, paramNode);
+	ComparativeBoolNode* eqlNode1 =
+		FB_NEW(pool) ComparativeBoolNode(pool, blr_eql, dbKeyNode, paramNode);
 
-	// record version will be set only for V4 - for the parent select cursor
-	if (rv_source)
-	{
-		dbKeyNode = FB_NEW(pool) RecordKeyNode(pool, blr_record_version);
-		dbKeyNode->dsqlRelation = relation_node;
+	dbKeyNode = FB_NEW(pool) RecordKeyNode(pool, blr_record_version);
+	dbKeyNode->dsqlRelation = relation_node;
 
-		parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
-			false, false, 0, NULL);
-		dsqlScratch->getStatement()->setRecVersion(parameter);
+	parameter = MAKE_parameter(statement->getSendMsg(), false, false, 0, NULL);
+	statement->setRecVersion(parameter);
 
-		paramNode = FB_NEW(pool) ParameterNode(pool);
-		paramNode->dsqlParameterIndex = parameter->par_index;
-		paramNode->dsqlParameter = parameter;
-		parameter->par_desc = rv_source->par_desc;
+	paramNode = FB_NEW(pool) ParameterNode(pool);
+	paramNode->dsqlParameterIndex = parameter->par_index;
+	paramNode->dsqlParameter = parameter;
+	parameter->par_desc = rv_source->par_desc;
 
-		ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool, blr_eql,
-			dbKeyNode, paramNode);
+	ComparativeBoolNode* eqlNode2 =
+		FB_NEW(pool) ComparativeBoolNode(pool, blr_eql, dbKeyNode, paramNode);
 
-		rse->dsqlWhere = PASS1_compose(rse->dsqlWhere, eqlNode, blr_and);
-	}
+	rse->dsqlWhere = PASS1_compose(eqlNode1, eqlNode2, blr_and);
 
 	return rse;
 }
