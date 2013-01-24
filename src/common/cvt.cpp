@@ -1286,6 +1286,21 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 	}
 
+	// Special optimization case: RDB$DB_KEY is binary compatible with CHAR(8) OCTETS
+
+	if ((from->dsc_dtype == dtype_text &&
+		to->dsc_dtype == dtype_dbkey &&
+		from->dsc_ttype() == ttype_binary &&
+		from->dsc_length == to->dsc_length) ||
+		(to->dsc_dtype == dtype_text &&
+		from->dsc_dtype == dtype_dbkey &&
+		to->dsc_ttype() == ttype_binary &&
+		from->dsc_length == to->dsc_length))
+	{
+		memcpy(p, q, length);
+		return;
+	}
+
 	// Do data type by data type conversions.  Not all are supported,
 	// and some will drop out for additional handling.
 
