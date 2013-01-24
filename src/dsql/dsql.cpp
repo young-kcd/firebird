@@ -281,7 +281,7 @@ ISC_STATUS DsqlDmlRequest::fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* 
 		return 100;
 	}
 
-	map_in_out(this, true, message, 0, blr, msgLength, msgBuffer);
+	map_in_out(this, true, message, 0, NULL, msgLength, msgBuffer);
 
 	trace.fetch(false, res_successful);
 	return FB_SUCCESS;
@@ -859,7 +859,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, msgBuffer);
 
 		if (outMsgLength)
-			map_in_out(this, true, message, 0, outBlr, outMsgLength, outMsg);
+			map_in_out(this, true, message, 0, NULL, outMsgLength, outMsg);
 
 		// if this is a singleton select, make sure there's in fact one record
 
@@ -1484,7 +1484,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 		// blr_text/blr_varying (i.e. with the connection charset). I'm reseting the charset
 		// here at the server as a way to make older (and not yet changed) client work
 		// correctly.
-		if (desc.isText())
+		if (desc.isText() && desc.getTextType() == ttype_dynamic)
 			desc.setTextType(ttype_none);
 
 		request->req_user_descs.put(parameter, desc);
