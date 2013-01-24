@@ -2482,8 +2482,11 @@ static USHORT parse_blr(USHORT blr_length,
 		// blr_text/blr_varying (i.e. with the connection charset). I'm reseting the charset
 		// here at the server as a way to make older (and not yet changed) client work
 		// correctly.
-		if (parameter->par_user_desc.isText())
+		if (parameter->par_user_desc.isText() &&
+			parameter->par_user_desc.getTextType() == ttype_dynamic)
+		{
 			parameter->par_user_desc.setTextType(ttype_none);
+		}
 
 		dsql_par* null = parameter->par_null;
 		if (null)
