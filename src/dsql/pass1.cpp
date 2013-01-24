@@ -4118,11 +4118,10 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 
 	// Verify that the cursor is appropriate and updatable
 
+	dsql_par* source = find_dbkey(parent, relation_name);
 	dsql_par* rv_source = find_record_version(parent, relation_name);
 
-	dsql_par* source;
-	if (parent->req_type != REQ_SELECT_UPD || !(source = find_dbkey(parent, relation_name)) ||
-		!rv_source)
+	if (!source || !rv_source)
 	{
 		// cursor is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
@@ -4142,12 +4141,12 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 	rse->nod_arg[e_rse_streams] = temp;
 	dsql_nod* relation_node = pass1_relation(statement, relation_name);
 	temp->nod_arg[0] = relation_node;
-	dsql_nod* node = MAKE_node(nod_eql, 2);
-	rse->nod_arg[e_rse_boolean] = node;
-	node->nod_arg[0] = temp = MAKE_node(nod_dbkey, 1);
+
+	dsql_nod* node1 = MAKE_node(nod_eql, 2);
+	node1->nod_arg[0] = temp = MAKE_node(nod_dbkey, 1);
 	temp->nod_arg[0] = relation_node;
 
-	node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
+	node1->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 	temp->nod_count = 0;
 	dsql_par* parameter = statement->req_dbkey =
 		MAKE_parameter(statement->req_send, false, false, 0, NULL);
@@ -4155,22 +4154,19 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 	parameter->par_desc = source->par_desc;
 
-	// record version will be set only for V4 - for the parent select cursor
-	if (rv_source)
-	{
-		node = MAKE_node(nod_eql, 2);
-		node->nod_arg[0] = temp = MAKE_node(nod_rec_version, 1);
-		temp->nod_arg[0] = relation_node;
-		node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
-		temp->nod_count = 0;
-		parameter = statement->req_rec_version =
-			MAKE_parameter(statement->req_send, false, false, 0, NULL);
-		temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-		temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
-		parameter->par_desc = rv_source->par_desc;
+	dsql_nod* node2 = MAKE_node(nod_eql, 2);
+	node2->nod_arg[0] = temp = MAKE_node(nod_rec_version, 1);
+	temp->nod_arg[0] = relation_node;
 
-		rse->nod_arg[e_rse_boolean] = compose(rse->nod_arg[e_rse_boolean], node, nod_and);
-	}
+	node2->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
+	temp->nod_count = 0;
+	parameter = statement->req_rec_version =
+		MAKE_parameter(statement->req_send, false, false, 0, NULL);
+	temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
+	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+	parameter->par_desc = rv_source->par_desc;
+
+	rse->nod_arg[e_rse_boolean] = compose(node1, node2, nod_and);
 
 	return rse;
 }

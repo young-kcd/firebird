@@ -2579,10 +2579,10 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 
 	// Save DBKEYs for possible update later
 
-	list = rse->nod_arg[e_rse_streams];
-
-	if (!rse->nod_arg[e_rse_reduced])
+	if (statement->req_type == REQ_SELECT_UPD && !rse->nod_arg[e_rse_reduced])
 	{
+		list = rse->nod_arg[e_rse_streams];
+
 		dsql_nod* const* ptr2 = list->nod_arg;
 		for (const dsql_nod* const* const end2 = ptr2 + list->nod_count; ptr2 < end2; ptr2++)
 		{
@@ -2590,7 +2590,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 			if (item && item->nod_type == nod_relation)
 			{
 				context = (dsql_ctx*) item->nod_arg[e_rel_context];
-				if (relation = context->ctx_relation)
+				if ( (relation = context->ctx_relation) )
 				{
 					// Set up dbkey
 					dsql_par* parameter = MAKE_parameter(statement->req_receive, false, false, 0, NULL);
@@ -2599,8 +2599,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 					parameter->par_desc.dsc_ttype() = ttype_binary;
 					parameter->par_desc.dsc_length = relation->rel_dbkey_length;
 
-					// Set up record version - for post v33 databases
-
+					// Set up record version
 					parameter = MAKE_parameter(statement->req_receive, false, false, 0, NULL);
 					parameter->par_rec_version_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
@@ -2690,13 +2689,13 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 			GEN_expr(statement, parameter->par_node);
 			gen_parameter(statement, parameter);
 		}
-		if (context = parameter->par_dbkey_ctx) {
+		if ( (context = parameter->par_dbkey_ctx) ) {
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_dbkey);
 			stuff_context(statement, context);
 			gen_parameter(statement, parameter);
 		}
-		if (context = parameter->par_rec_version_ctx) {
+		if ( (context = parameter->par_rec_version_ctx) ) {
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_record_version);
 			stuff_context(statement, context);
