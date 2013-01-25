@@ -767,6 +767,7 @@ Statement::Statement(Connection& conn) :
 	m_sql(getPool()),
 	m_singleton(false),
 	m_active(false),
+	m_fetched(false),
 	m_error(false),
 	m_allocated(false),
 	m_stmt_selectable(false),
@@ -841,6 +842,7 @@ void Statement::execute(thread_db* tdbb, Transaction* tran,
 	fb_assert(!m_active);
 
 	m_transaction = tran;
+
 	setInParams(tdbb, in_names, in_params);
 	doExecute(tdbb);
 	getOutParams(tdbb, out_params);
@@ -858,7 +860,9 @@ void Statement::open(thread_db* tdbb, Transaction* tran,
 
 	setInParams(tdbb, in_names, in_params);
 	doOpen(tdbb);
+
 	m_active = true;
+	m_fetched = false;
 }
 
 bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
@@ -869,6 +873,8 @@ bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
 
 	if (!doFetch(tdbb))
 		return false;
+
+	m_fetched = true;
 
 	getOutParams(tdbb, out_params);
 

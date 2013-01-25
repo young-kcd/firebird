@@ -531,10 +531,17 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 {
 	LocalStatus status;
 	int res = 0;
+
+	// This allows the second and subsequent fetches to skip BLR parsing.
+	// We don't need that as all our messages are in the same format.
+	const ULONG blr_length = m_fetched ? 0 : m_outBlr.getCount();
+	const UCHAR* const blr = m_fetched ? NULL : m_outBlr.begin();
+
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		InternalMessageBuffer msgBuffer(m_outBlr.getCount(), m_outBlr.begin(),
-										m_out_buffer.getCount(),m_out_buffer.begin());
+
+		InternalMessageBuffer msgBuffer(blr_length, blr,
+										m_out_buffer.getCount(), m_out_buffer.begin());
 
 		res = m_request->fetch(&status, &msgBuffer);
 	}
