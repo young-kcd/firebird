@@ -1369,7 +1369,8 @@ static void stuff_stack_trace(const jrd_req* request)
 			if (req->req_src_line)
 			{
 				Firebird::string src_info;
-				src_info.printf(" line: %u, col: %u", req->req_src_line, req->req_src_column);
+				src_info.printf(" line: %"ULONGFORMAT", col: %"ULONGFORMAT,
+								req->req_src_line, req->req_src_column);
 
 				if (sTrace.length() + src_info.length() > MAX_STACK_TRACE)
 					break;
