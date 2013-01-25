@@ -117,21 +117,13 @@ public:
 		appendString(verb, name.c_str(), static_cast<USHORT>(name.length()));
 	}
 
-	void appendNumber(UCHAR verb, SSHORT number);
-	void appendUShortWithLength(USHORT val);
-	void appendULongWithLength(ULONG val);
-
-	void beginBlr(UCHAR verb);
-	void endBlr();
-
 	void beginDebug();
 	void endDebug();
-	void putDebugSrcInfo(USHORT, USHORT);
+	void putDebugSrcInfo(ULONG, ULONG);
 	void putDebugVariable(USHORT, const Firebird::MetaName&);
 	void putDebugArgument(UCHAR, USHORT, const TEXT*);
 	void putDebugSubFunction(DeclareSubFuncNode* subFuncNode);
 	void putDebugSubProcedure(DeclareSubProcNode* subProcNode);
-	void appendDebugInfo();
 
 	BlrData& getBlrData() { return blrData; }
 	DebugData& getDebugData() { return debugData; }

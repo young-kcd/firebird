@@ -33,18 +33,18 @@ namespace Firebird {
 class MapBlrToSrcItem
 {
 public:
-	USHORT mbs_offset;
-	USHORT mbs_src_line;
-	USHORT mbs_src_col;
+	ULONG mbs_offset;
+	ULONG mbs_src_line;
+	ULONG mbs_src_col;
 
-	static USHORT generate(const void*, const MapBlrToSrcItem& Item)
+	static ULONG generate(const void*, const MapBlrToSrcItem& Item)
 	{ return Item.mbs_offset; }
 };
 
 typedef Firebird::SortedArray<
 	MapBlrToSrcItem,
 	Firebird::EmptyStorage<MapBlrToSrcItem>,
-	USHORT,
+	ULONG,
 	MapBlrToSrcItem> MapBlrToSrc;
 
 typedef GenericMap<Pair<Right<USHORT, MetaName> > > MapVarIndexToName;

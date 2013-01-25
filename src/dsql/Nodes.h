@@ -167,8 +167,8 @@ public:
 	}
 
 public:
-	USHORT line;
-	USHORT column;
+	ULONG line;
+	ULONG column;
 };
 
 

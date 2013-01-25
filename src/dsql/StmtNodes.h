@@ -949,7 +949,7 @@ public:
 class LineColumnNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>
 {
 public:
-	explicit LineColumnNode(MemoryPool& pool, USHORT aLine, USHORT aColumn, StmtNode* aStatement)
+	explicit LineColumnNode(MemoryPool& pool, ULONG aLine, ULONG aColumn, StmtNode* aStatement)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>(pool),
 		  statement(aStatement)
 	{

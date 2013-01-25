@@ -1561,7 +1561,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 
-	const USHORT blr_offset = csb->csb_blr_reader.getOffset();
+	const ULONG blr_offset = csb->csb_blr_reader.getOffset();
 	const SSHORT blr_operator = csb->csb_blr_reader.getByte();
 
 	if (blr_operator < 0 || blr_operator >= FB_NELEM(blr_parsers))

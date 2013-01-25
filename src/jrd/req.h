@@ -291,8 +291,8 @@ public:
 	jrd_req* req_proc_caller;	// Procedure's caller request
 	const ValueListNode* req_proc_inputs;	// and its node with input parameters
 
-	USHORT	req_src_line;
-	USHORT	req_src_column;
+	ULONG req_src_line;
+	ULONG req_src_column;
 
 	dsc*			req_domain_validation;	// Current VALUE for constraint validation
 	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions

@@ -1534,12 +1534,11 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	bool isInternalRequest)
 {
 	if (text && textLength == 0)
-	{
-		size_t sqlLength = strlen(text);
-		if (sqlLength > MAX_USHORT)
-			sqlLength = MAX_USHORT;
-		textLength = static_cast<USHORT>(sqlLength);
-	}
+		textLength = static_cast<ULONG>(strlen(text));
+
+	// just a safety check
+	const ULONG MAX_SQL_LENGTH = 10 * 1024 * 1024; // 10 MB
+	textLength = MIN(textLength, MAX_SQL_LENGTH);
 
 	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text);
 
@@ -1548,7 +1547,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_wish_list));
 	}
-
 
 	if (!text || textLength == 0)
 	{

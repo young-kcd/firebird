@@ -45,10 +45,10 @@ private:
 	// User-defined text position type.
 	struct Position
 	{
-		USHORT firstLine;
-		USHORT firstColumn;
-		USHORT lastLine;
-		USHORT lastColumn;
+		ULONG firstLine;
+		ULONG firstColumn;
+		ULONG lastLine;
+		ULONG lastColumn;
 		const char* firstPos;
 		const char* lastPos;
 	};
@@ -88,8 +88,8 @@ private:
 		const TEXT* line_start;
 		const TEXT* last_token_bk;
 		const TEXT* line_start_bk;
-		SSHORT lines, att_charset;
-		SSHORT lines_bk;
+		SSHORT att_charset;
+		SLONG lines, lines_bk;
 		int prev_keyword;
 		USHORT param_number;
 	};
@@ -188,8 +188,8 @@ public:
 private:
 	template <typename T> T* setupNode(Node* node)
 	{
-		node->line = (USHORT) lex.lines_bk;
-		node->column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
+		node->line = (ULONG) lex.lines_bk;
+		node->column = (ULONG) (lex.last_token_bk - lex.line_start_bk + 1);
 		return static_cast<T*>(node);
 	}
 

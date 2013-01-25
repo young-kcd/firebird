@@ -1348,14 +1348,14 @@ ISC_STATUS filter_debug_info(USHORT action, BlobControl* control)
 	}
 
 	string_put(control, "BLR to Source mapping:");
-	str.printf("%10s %6s %6s", "BLR offset", "Line", "Column");
+	str.printf("%10s %10s %10s", "BLR offset", "Line", "Column");
 	string_put(control, str.c_str());
 	str.replace(str.begin(), str.end(), str.length(), '-');
 	string_put(control, str.c_str());
 
 	for (const MapBlrToSrcItem* i = dbgInfo.blrToSrc.begin(); i < dbgInfo.blrToSrc.end(); i++)
 	{
-		str.printf("%10d %6d %6d", i->mbs_offset, i->mbs_src_line, i->mbs_src_col);
+		str.printf("%10d %10d %10d", i->mbs_offset, i->mbs_src_line, i->mbs_src_col);
 		string_put(control, str.c_str());
 	}
 

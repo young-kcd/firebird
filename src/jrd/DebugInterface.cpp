@@ -72,12 +72,18 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 				MapBlrToSrcItem i;
 				i.mbs_src_line = *data++;
 				i.mbs_src_line |= *data++ << 8;
+				i.mbs_src_line |= *data++ << 16;
+				i.mbs_src_line |= *data++ << 24;
 
 				i.mbs_src_col = *data++;
 				i.mbs_src_col |= *data++ << 8;
+				i.mbs_src_col |= *data++ << 16;
+				i.mbs_src_col |= *data++ << 24;
 
 				i.mbs_offset = *data++;
 				i.mbs_offset |= *data++ << 8;
+				i.mbs_offset |= *data++ << 16;
+				i.mbs_offset |= *data++ << 24;
 
 				dbgInfo.blrToSrc.add(i);
 			}

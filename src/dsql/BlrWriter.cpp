@@ -55,70 +55,17 @@ void BlrWriter::appendString(UCHAR verb, const char* string, USHORT length)
 		appendBytes(reinterpret_cast<const UCHAR*>(string), length);
 }
 
-// Input
-//   blr_ptr: current position of blr being generated
-//   verb: blr byte of which number is an argument
-//   number: value to be written to blr
-// Function
-//   Write out a numeric valued attribute.
-void BlrWriter::appendNumber(UCHAR verb, SSHORT number)
-{
-	if (verb)
-		appendUChar(verb);
-
-	appendUShortWithLength(number);
-}
-
-void BlrWriter::appendUShortWithLength(USHORT val)
-{
-	// append an USHORT value, prepended with the USHORT length of an USHORT
-	appendUShort(2);
-	appendUShort(val);
-}
-
-void BlrWriter::appendULongWithLength(ULONG val)
-{
-	// append an ULONG value, prepended with the USHORT length of an ULONG
-	appendUShort(4);
-	appendULong(val);
-}
-
-// Write out a string of blr as part of a ddl string, as in a view or computed field definition.
-void BlrWriter::beginBlr(UCHAR verb)
-{
-	if (verb)
-		appendUChar(verb);
-
-	baseOffset = blrData.getCount();
-
-	// put in a place marker for the size of the blr, since it is unknown
-	appendUShort(0);
-	appendUChar(isVersion4() ? blr_version4 : blr_version5);
-}
-
-// Complete the stuffing of a piece of blr by going back and inserting the length.
-void BlrWriter::endBlr()
-{
-	appendUChar(blr_eoc);
-
-	// go back and stuff in the proper length
-
-	UCHAR* blr_base = &blrData[baseOffset];
-	const ULONG length = (blrData.getCount() - baseOffset) - 2;
-
-	if (length > 0xFFFF)
-		ERRD_post(Arg::Gds(isc_too_big_blr) << Arg::Num(length) << Arg::Num(0xFFFF));
-
-	*blr_base++ = (UCHAR) length;
-	*blr_base = (UCHAR) (length >> 8);
-}
-
 void BlrWriter::beginDebug()
 {
 	fb_assert(debugData.isEmpty());
 
+	// Version 2 replaces 16-bit values inside the
+	// fb_dbg_map_src2blr tag with 32-bit ones.
+	// Also, it introduces some new tags.
+	const UCHAR CURRENT_DEBUG_INFO_VERSION = 2;
+
 	debugData.add(fb_dbg_version);
-	debugData.add(1);
+	debugData.add(CURRENT_DEBUG_INFO_VERSION);
 }
 
 void BlrWriter::endDebug()
@@ -126,19 +73,25 @@ void BlrWriter::endDebug()
 	debugData.add(fb_dbg_end);
 }
 
-void BlrWriter::putDebugSrcInfo(USHORT line, USHORT col)
+void BlrWriter::putDebugSrcInfo(ULONG line, ULONG col)
 {
 	debugData.add(fb_dbg_map_src2blr);
 
 	debugData.add(line);
 	debugData.add(line >> 8);
+	debugData.add(line >> 16);
+	debugData.add(line >> 24);
 
 	debugData.add(col);
 	debugData.add(col >> 8);
+	debugData.add(col >> 16);
+	debugData.add(col >> 24);
 
-	ULONG offset = (blrData.getCount() - baseOffset);
+	const ULONG offset = (blrData.getCount() - baseOffset);
 	debugData.add(offset);
 	debugData.add(offset >> 8);
+	debugData.add(offset >> 16);
+	debugData.add(offset >> 24);
 }
 
 void BlrWriter::putDebugVariable(USHORT number, const MetaName& name)
@@ -204,25 +157,12 @@ void BlrWriter::putDebugSubProcedure(DeclareSubProcNode* subProcNode)
 	debugData.add(reinterpret_cast<const UCHAR*>(name.c_str()), len);
 
 	HalfStaticArray<UCHAR, 128>& subDebugData = subProcNode->blockScratch->debugData;
-	debugData.add(UCHAR(subDebugData.getCount()));
-	debugData.add(UCHAR(subDebugData.getCount() >> 8));
-	debugData.add(UCHAR(subDebugData.getCount() >> 16));
-	debugData.add(UCHAR(subDebugData.getCount() >> 24));
-	debugData.add(subDebugData.begin(), ULONG(subDebugData.getCount()));
+	const ULONG count = ULONG(subDebugData.getCount());
+	debugData.add(UCHAR(count));
+	debugData.add(UCHAR(count >> 8));
+	debugData.add(UCHAR(count >> 16));
+	debugData.add(UCHAR(count >> 24));
+	debugData.add(subDebugData.begin(), count);
 }
-
-void BlrWriter::appendDebugInfo()
-{
-	endDebug();
-
-	const size_t len = blrData.getCount() + debugData.getCount();
-	if (len + 4 < MAX_USHORT)
-	{
-		appendUChar(isc_dyn_debug_info);
-		appendUShort(debugData.getCount());
-		appendBytes(debugData.begin(), debugData.getCount());
-	}
-}
-
 
 }	// namespace Jrd
