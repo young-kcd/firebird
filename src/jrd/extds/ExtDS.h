@@ -390,6 +390,9 @@ protected:
 	// set in open()
 	bool	m_active;
 
+	// set in fetch()
+	bool	m_fetched;
+
 	// if statement executed in autonomous transaction, it must be rolled back,
 	// so track the error condition of a statement
 	bool	m_error;

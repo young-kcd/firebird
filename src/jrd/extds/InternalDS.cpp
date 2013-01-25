@@ -469,10 +469,15 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 {
 	ISC_STATUS_ARRAY status = {0};
 	ISC_STATUS res = 0;
+
+	// This allows the second and subsequent fetches to skip BLR parsing.
+	// We don't need that as all our messages are in the same format.
+	const USHORT blr_length = m_fetched ? 0 : m_outBlr.getCount();
+	const SCHAR* const blr = m_fetched ? NULL : reinterpret_cast<const SCHAR*>(m_outBlr.begin());
+
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		res = jrd8_fetch(status, &m_request,
-			m_outBlr.getCount(), reinterpret_cast<const SCHAR*>(m_outBlr.begin()), 0,
+		res = jrd8_fetch(status, &m_request, blr_length, blr, 0,
 			m_out_buffer.getCount(), (SCHAR*) m_out_buffer.begin());
 	}
 	if (status[1]) {
