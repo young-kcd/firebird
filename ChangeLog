@@ -1,3 +1,9 @@
+ 2013-01-25 12:37  dimitr 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+Slightly optimized fetches for internal EXECUTE STATEMENT.
+
  2013-01-24 16:47  dimitr 
    M src/dsql/dsql.cpp
 Slightly improved the condition for the Adriano's backward compatibility workaround, this optimizes METD_move() into a plain memcpy() for strings with an explicitly declared charset.
