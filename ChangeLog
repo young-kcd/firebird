@@ -1,3 +1,29 @@
+ 2013-01-25 13:01  dimitr 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+Slightly optimized fetches for internal EXECUTE STATEMENT.
+
+ 2013-01-25 12:34  dimitr 
+   M src/jrd/exe.cpp
+Misc.
+
+ 2013-01-25 12:34  dimitr 
+   M src/dsql/BlrWriter.cpp
+   M src/dsql/BlrWriter.h
+   M src/dsql/Nodes.h
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.cpp
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/DebugInterface.h
+   M src/jrd/filters.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/req.h
+More work towards unlimited SQL/BLR lengths.
+
  2013-01-24 16:52  dimitr 
    M src/dsql/dsql.cpp
 Slightly improved the condition for the Adriano's backward compatibility workaround, this optimizes METD_move() into a plain memcpy() for strings with an explicitly declared charset.
