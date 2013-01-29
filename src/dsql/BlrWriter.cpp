@@ -28,6 +28,7 @@
 #include "../dsql/StmtNodes.h"
 #include "../dsql/dsql.h"
 #include "../jrd/blr.h"
+#include "../jrd/DebugInterface.h"
 #include "../dsql/errd_proto.h"
 
 using namespace Firebird;
@@ -59,13 +60,8 @@ void BlrWriter::beginDebug()
 {
 	fb_assert(debugData.isEmpty());
 
-	// Version 2 replaces 16-bit values inside the
-	// fb_dbg_map_src2blr tag with 32-bit ones.
-	// Also, it introduces some new tags.
-	const UCHAR CURRENT_DEBUG_INFO_VERSION = 2;
-
 	debugData.add(fb_dbg_version);
-	debugData.add(CURRENT_DEBUG_INFO_VERSION);
+	debugData.add(CURRENT_DBG_INFO_VERSION);
 }
 
 void BlrWriter::endDebug()

@@ -28,8 +28,6 @@
 using namespace Jrd;
 using namespace Firebird;
 
-const UCHAR CURRENT_DBG_INFO_VERSION = UCHAR(1);
-
 void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, DbgInfo& dbgInfo)
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
