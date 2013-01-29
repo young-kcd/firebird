@@ -41,6 +41,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/par_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/Function.h"
 #include "../common/isc_proto.h"
@@ -408,16 +409,140 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 //---------------------
 
 
-ExtEngineManager::Trigger::Trigger(thread_db* tdbb, ExtEngineManager* aExtManager,
-			ExternalEngine* aEngine, RoutineMetadata* aMetadata, ExternalTrigger* aTrigger,
-			const Jrd::Trigger* aTrg)
+ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineManager* aExtManager,
+			ExternalEngine* aEngine, RoutineMetadata* aMetadata, TriggerMessage& fieldsMsg,
+			ExternalTrigger* aTrigger, const Jrd::Trigger* aTrg)
 	: extManager(aExtManager),
 	  engine(aEngine),
 	  metadata(aMetadata),
 	  trigger(aTrigger),
 	  trg(aTrg),
+	  fieldsPos(pool),
 	  database(tdbb->getDatabase())
 {
+	dsc shortDesc;
+	shortDesc.makeShort(0);
+
+	jrd_rel* relation = trg->relation;
+
+	if (relation)
+	{
+		bool blrPresent = fieldsMsg.blr.hasData();
+		Format* relFormat = relation->rel_current_format;
+		GenericMap<Left<MetaName, USHORT> > fieldsMap;
+
+		for (size_t i = 0; i < relation->rel_fields->count(); ++i)
+		{
+			jrd_fld* field = (*relation->rel_fields)[i];
+			if (!field)
+				continue;
+
+			fieldsMap.put(field->fld_name, (USHORT) i);
+		}
+
+		BlrReader reader(fieldsMsg.blr.begin(), fieldsMsg.blr.getCount());
+		ULONG offset = 0;
+		USHORT maxAlignment = 0;
+		USHORT count;
+
+		if (blrPresent)
+		{
+			reader.checkByte(blr_version5);
+			reader.checkByte(blr_begin);
+			reader.checkByte(blr_message);
+			reader.getByte();	// message number: ignore it
+			count = reader.getWord();
+
+			if (count != 2 * fieldsMsg.names.getCount())
+			{
+				status_exception::raise(
+					Arg::Gds(isc_ee_blr_mismatch_names_count) <<
+					Arg::Num(fieldsMsg.names.getCount()) <<
+					Arg::Num(count));
+			}
+		}
+		else
+			count = fieldsMap.count() * 2;
+
+		format.reset(Format::newFormat(pool, count));
+
+		for (unsigned i = 0; i < count / 2; ++i)
+		{
+			dsc* desc = &format->fmt_desc[i * 2];
+
+			if (blrPresent)
+			{
+				USHORT pos;
+
+				if (!fieldsMap.get(fieldsMsg.names[i], pos))
+				{
+					status_exception::raise(
+						Arg::Gds(isc_ee_blr_mismatch_name_not_found) <<
+						Arg::Str(fieldsMsg.names[i]));
+				}
+
+				fieldsPos.add(pos);
+				PAR_datatype(tdbb, reader, desc);
+			}
+			else
+			{
+				fieldsPos.add(i);
+				*desc = relFormat->fmt_desc[i];
+			}
+
+			USHORT align = type_alignments[desc->dsc_dtype];
+			maxAlignment = MAX(maxAlignment, align);
+
+			offset = FB_ALIGN(offset, align);
+			desc->dsc_address = (UCHAR*) offset;
+			offset += desc->dsc_length;
+
+			const dsc* fieldDesc = &relFormat->fmt_desc[i];
+
+			if (desc->isText() && desc->getCharSet() == CS_NONE)
+				desc->setTextType(fieldDesc->getTextType());
+			desc->setNullable(fieldDesc->isNullable());
+
+			++desc;
+
+			if (blrPresent)
+			{
+				PAR_datatype(tdbb, reader, desc);
+
+				if (!DSC_EQUIV(desc, &shortDesc, false))
+				{
+					status_exception::raise(
+						Arg::Gds(isc_ee_blr_mismatch_null) <<
+						Arg::Num(i * 2 + 1));
+				}
+			}
+			else
+				*desc = shortDesc;
+
+			align = type_alignments[desc->dsc_dtype];
+			maxAlignment = MAX(maxAlignment, align);
+
+			offset = FB_ALIGN(offset, align);
+			desc->dsc_address = (UCHAR*) offset;
+			offset += desc->dsc_length;
+		}
+
+		if (blrPresent)
+		{
+			reader.checkByte(blr_end);
+			reader.checkByte(blr_eoc);
+
+			if (offset != fieldsMsg.bufferLength)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_ee_blr_mismatch_length) <<
+					Arg::Num(fieldsMsg.bufferLength) <<
+					Arg::Num(offset));
+			}
+		}
+
+		format->fmt_length = FB_ALIGN(offset, maxAlignment);
+	}
 }
 
 
@@ -444,85 +569,73 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 	if (newRpb)
 		setValues(tdbb, newMsg, newRpb);
 
-	Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+	{	// scope
+		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-	trigger->execute(RaiseError(), attInfo->context, action,
-		(oldRpb ? oldMsg.begin() : NULL), (newRpb ? newMsg.begin() : NULL));
+		trigger->execute(RaiseError(), attInfo->context, action,
+			(oldRpb ? oldMsg.begin() : NULL), (newRpb ? newMsg.begin() : NULL));
+	}
 
 	if (newRpb)
 	{
+		// Move data back from the message to the record.
+
 		Record* record = newRpb->rpb_record;
-		const Format* format = record->rec_format;
-		const UCHAR* msg = newMsg.begin();
-		unsigned pos = 0;
+		UCHAR* p = newMsg.begin();
 
-		for (unsigned i = 0; i < format->fmt_count; ++i)
+		for (unsigned i = 0; i < format->fmt_count / 2; ++i)
 		{
-			if (format->fmt_desc[i].dsc_dtype == dtype_unknown)
-				continue;
+			USHORT fieldPos = fieldsPos[i];
 
-			dsc desc;
-			bool readonly = !EVL_field(newRpb->rpb_relation, record, i, &desc) &&
-				desc.dsc_address && !(desc.dsc_flags & DSC_null);
-
-			unsigned align = type_alignments[desc.dsc_dtype];
-			if (align)
-				pos = FB_ALIGN(pos, align);
-
-			const unsigned dataPos = pos;
-			pos += desc.dsc_length;
-
-			align = type_alignments[dtype_short];
-			if (align)
-				pos = FB_ALIGN(pos, align);
+			dsc target;
+			bool readonly = !EVL_field(newRpb->rpb_relation, record, fieldPos, &target) &&
+				target.dsc_address && !(target.dsc_flags & DSC_null);
 
 			if (!readonly)
 			{
-				if (*(USHORT*) &msg[pos])
-					SET_NULL(record, i);
-				else
-				{
-					memcpy(desc.dsc_address, msg + dataPos, desc.dsc_length);
-					CLEAR_NULL(record, i);
-				}
-			}
+				SSHORT* nullSource = (SSHORT*) (p + (IPTR) format->fmt_desc[i * 2 + 1].dsc_address);
 
-			pos += sizeof(USHORT);
+				if (*nullSource == 0)
+				{
+					dsc source = format->fmt_desc[i * 2];
+					source.dsc_address += (IPTR) p;
+					MOV_move(tdbb, &source, &target);
+					CLEAR_NULL(record, fieldPos);
+				}
+				else
+					SET_NULL(record, fieldPos);
+			}
 		}
 	}
 }
 
 
-void ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, Array<UCHAR>& msgBuffer,
+void ExtEngineManager::Trigger::setValues(thread_db* tdbb, Array<UCHAR>& msgBuffer,
 	record_param* rpb) const
 {
 	if (!rpb || !rpb->rpb_record)
 		return;
 
-	Record* record = rpb->rpb_record;
-	const Format* format = record->rec_format;
+	UCHAR* p = msgBuffer.getBuffer(format->fmt_length);
+	///memset(p, 0, format->fmt_length);
 
-	for (unsigned i = 0; i < format->fmt_count; ++i)
+	for (unsigned i = 0; i < format->fmt_count / 2; ++i)
 	{
-		if (format->fmt_desc[i].dsc_dtype == dtype_unknown)
-			continue;
+		USHORT fieldPos = fieldsPos[i];
 
-		dsc desc;
-		EVL_field(rpb->rpb_relation, record, i, &desc);
+		dsc source;
+		EVL_field(rpb->rpb_relation, rpb->rpb_record, fieldPos, &source);
 		// CVC: I'm not sure why it's not important to check EVL_field's result.
 
-		unsigned align = type_alignments[desc.dsc_dtype];
-		if (align)
-			msgBuffer.resize(FB_ALIGN(msgBuffer.getCount(), align));
+		SSHORT* nullTarget = (SSHORT*) (p + (IPTR) format->fmt_desc[i * 2 + 1].dsc_address);
+		*nullTarget = (source.dsc_flags & DSC_null) != 0 ? -1 : 0;
 
-		msgBuffer.add(desc.dsc_address, desc.dsc_length);
-
-		align = type_alignments[dtype_short];
-		if (align)
-			msgBuffer.resize(FB_ALIGN(msgBuffer.getCount(), align));
-
-		USHORT nullFlag = (desc.dsc_flags & DSC_null) != 0;
-		msgBuffer.add((UCHAR*) &nullFlag, sizeof(nullFlag));
+		if (*nullTarget == 0)
+		{
+			dsc target = format->fmt_desc[i * 2];
+			target.dsc_address += (IPTR) p;
+			MOV_move(tdbb, &source, &target);
+		}
 	}
 }
 
@@ -598,7 +711,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 
 ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, const Jrd::Function* udf,
 	const MetaName& engine, const string& entryPoint, const string& body,
-	BlrMessage* inBlr, BlrMessage* outBlr)
+	RoutineMessage* inMsg, RoutineMessage* outMsg)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -657,7 +770,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 		externalFunction = attInfo->engine->makeFunction(RaiseError(), attInfo->context, metadata,
-			inBlr, outBlr);
+			inMsg, outMsg);
 
 		if (!externalFunction)
 		{
@@ -683,7 +796,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, const jrd_prc* prc,
 	const MetaName& engine, const string& entryPoint, const string& body,
-	BlrMessage* inBlr, BlrMessage* outBlr)
+	RoutineMessage* inMsg, RoutineMessage* outMsg)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -736,7 +849,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
 		externalProcedure = attInfo->engine->makeProcedure(RaiseError(), attInfo->context, metadata,
-			inBlr, outBlr);
+			inMsg, outMsg);
 
 		if (!externalProcedure)
 		{
@@ -761,7 +874,8 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 
 
 ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
-	const MetaName& engine, const string& entryPoint, const string& body, ExternalTrigger::Type type)
+	const MetaName& engine, const string& entryPoint, const string& body,
+	ExternalTrigger::Type type)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -807,12 +921,14 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 		}
 	}
 
+	TriggerMessage fieldsMsg(pool);
 	ExternalTrigger* externalTrigger;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		externalTrigger = attInfo->engine->makeTrigger(RaiseError(), attInfo->context, metadata);
+		externalTrigger = attInfo->engine->makeTrigger(RaiseError(), attInfo->context, metadata,
+			&fieldsMsg);
 
 		if (!externalTrigger)
 		{
@@ -823,8 +939,8 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 
 	try
 	{
-		return FB_NEW(getPool()) Trigger(tdbb, this, attInfo->engine, metadata.release(),
-			externalTrigger, trg);
+		return FB_NEW(getPool()) Trigger(tdbb, pool, this, attInfo->engine, metadata.release(),
+			fieldsMsg, externalTrigger, trg);
 	}
 	catch (...)
 	{

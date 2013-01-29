@@ -747,6 +747,8 @@ static const struct {
 	{335545044, -902}, /* 724 no_providers */
 	{335545045, -104}, /* 725 null_spb */
 	{335545046, -833}, /* 726 max_args_exceeded */
+	{335545047, -901}, /* 727 ee_blr_mismatch_names_count */
+	{335545048, -901}, /* 728 ee_blr_mismatch_name_not_found */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

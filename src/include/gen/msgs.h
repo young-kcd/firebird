@@ -751,6 +751,8 @@ Data source : @4"},		/* eds_statement */
 	{335545044, "No providers loaded"},		/* no_providers */
 	{335545045, "NULL data with non-zero SPB length"},		/* null_spb */
 	{335545046, "Maximum (@1) number of arguments exceeded for function @2"},		/* max_args_exceeded */
+	{335545047, "External BLR message mismatch: names count = @1, blr count = @2"},		/* ee_blr_mismatch_names_count */
+	{335545048, "External BLR message mismatch: name @1 not found"},		/* ee_blr_mismatch_name_not_found */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

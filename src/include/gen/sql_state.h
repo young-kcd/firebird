@@ -747,6 +747,8 @@ static const struct {
 	{335545044, "39000"}, // 724 no_providers
 	{335545045, "42818"}, // 725 null_spb
 	{335545046, "42000"}, // 726 max_args_exceeded
+	{335545047, "42000"}, // 727 ee_blr_mismatch_names_count
+	{335545048, "42000"}, // 728 ee_blr_mismatch_name_not_found
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

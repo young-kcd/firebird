@@ -662,7 +662,7 @@ create procedure gen_rows (
 FB_UDR_BEGIN_PROCEDURE(gen_rows)
 	FB_UDR_EXECUTE_DYNAMIC_PROCEDURE
 	{
-		MessageImpl inMessage(2, inMsg);
+		MessageImpl inMessage(2, in);
 		ParamDesc<ISC_LONG> startDesc(inMessage);
 		ParamDesc<ISC_LONG> endDesc(inMessage);
 
@@ -795,7 +795,6 @@ FB_UDR_BEGIN_PROCEDURE(inc)
 FB_UDR_END_PROCEDURE
 
 
-//// TODO: Rework triggers.
 /***
 Sample usage:
 
@@ -827,6 +826,11 @@ insert into replicate_config (name, data_source)
 create trigger persons_replicate
     after insert on persons
     external name 'udrcpp_example!replicate!ds1'
+    engine udr;
+
+create trigger persons_replicate2
+    after insert on persons
+    external name 'udrcpp_example!replicate_persons!ds1'
     engine udr;
 ***/
 FB_UDR_BEGIN_TRIGGER(replicate)
@@ -863,7 +867,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		unsigned fieldsCount = fields->getCount(status);
 		ThrowError::check(status->get());
 
-		MessageImpl message(fieldsCount, newMsg);
+		MessageImpl message(fieldsCount, newFields);
 
 		ISC_STATUS_ARRAY statusVector = {0};
 		isc_db_handle dbHandle = getIscDbHandle(context);
@@ -905,11 +909,11 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		const char* table = metadata->getTriggerTable(status);
 		ThrowError::check(status->get());
 
-		// Skip the first exclamation point, separing the module name and entry point.
+		// Skip the first exclamation point, separating the module name and entry point.
 		const char* info = strchr(metadata->getEntryPoint(status), '!');
 		ThrowError::check(status->get());
 
-		// Skip the second exclamation point, separing the entry point and the misc info (config).
+		// Skip the second exclamation point, separating the entry point and the misc info (config).
 		if (info)
 			info = strchr(info + 1, '!');
 
@@ -1046,7 +1050,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 					break;
 
 				case SQL_FLOAT:
-					var->sqltype = SQL_DOUBLE | (var->sqltype & 1);
+					var->sqltype = SQL_DOUBLE;
 					var->sqllen = sizeof(double);
 					// fall into
 
@@ -1069,8 +1073,155 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			}
 
 			var->sqltype |= 1;
-			var->sqlind = new short;
-			*reinterpret_cast<short*>(var->sqlind) = -1;
+			var->sqlind = new short(-1);
+		}
+
+		delete [] outSqlDa->sqlvar[0].sqldata;
+		delete [] reinterpret_cast<char*>(outSqlDa);
+
+		initialized = true;
+	}
+
+	bool initialized;
+	XSQLDA* inSqlDa;
+	isc_stmt_handle stmtHandle;
+FB_UDR_END_TRIGGER
+
+
+FB_UDR_BEGIN_TRIGGER(replicate_persons)
+	FB_UDR_TRIGGER(replicate_persons)()
+		: initialized(false)
+	{
+	}
+
+	~FB_UDR_TRIGGER(replicate_persons)()
+	{
+		if (!initialized)
+			return;
+
+		delete [] reinterpret_cast<char*>(inSqlDa);
+
+		ISC_STATUS_ARRAY statusVector = {0};
+		isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_drop);
+	}
+
+	FB_UDR_EXECUTE_MESSAGE_TRIGGER(
+		(FB_INTEGER, id, "ID")
+		(FB_VARCHAR(60 * 4), address, "ADDRESS")
+		(FB_VARCHAR(60 * 4), name, "NAME")
+		(FB_BLOB, info, "INFO")
+	)
+	{
+		inSqlDa->sqlvar[0].sqldata = reinterpret_cast<char*>(&newFields->id);
+		inSqlDa->sqlvar[0].sqlind = &newFields->idNull;
+
+		inSqlDa->sqlvar[1].sqldata = reinterpret_cast<char*>(&newFields->name.length);
+		inSqlDa->sqlvar[1].sqlind = &newFields->nameNull;
+
+		inSqlDa->sqlvar[2].sqldata = reinterpret_cast<char*>(&newFields->address.length);
+		inSqlDa->sqlvar[2].sqlind = &newFields->addressNull;
+
+		inSqlDa->sqlvar[3].sqldata = reinterpret_cast<char*>(&newFields->info);
+		inSqlDa->sqlvar[3].sqlind = &newFields->infoNull;
+
+		ISC_STATUS_ARRAY statusVector = {0};
+		isc_db_handle dbHandle = getIscDbHandle(context);
+		isc_tr_handle trHandle = getIscTrHandle(context);
+
+		ThrowError::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+			inSqlDa), statusVector);
+	}
+
+	FB_UDR_INITIALIZE
+	{
+		ISC_STATUS_ARRAY statusVector = {0};
+		isc_db_handle dbHandle = getIscDbHandle(context);
+		isc_tr_handle trHandle = getIscTrHandle(context);
+
+		stmtHandle = 0;
+		ThrowError::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
+		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
+			"select data_source from replicate_config where name = ?",
+			SQL_DIALECT_CURRENT, NULL), statusVector);
+
+		AutoDispose<IStatus> status(master->getStatus());
+
+		const char* table = metadata->getTriggerTable(status);
+		ThrowError::check(status->get());
+
+		// Skip the first exclamation point, separating the module name and entry point.
+		const char* info = strchr(metadata->getEntryPoint(status), '!');
+		ThrowError::check(status->get());
+
+		// Skip the second exclamation point, separating the entry point and the misc info (config).
+		if (info)
+			info = strchr(info + 1, '!');
+
+		if (info)
+			++info;
+		else
+			info = "";
+
+		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
+		inSqlDa->version = SQLDA_VERSION1;
+		inSqlDa->sqln = 1;
+		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+			statusVector);
+		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
+		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
+		*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
+
+		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
+		outSqlDa->version = SQLDA_VERSION1;
+		outSqlDa->sqln = 1;
+		ThrowError::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
+			statusVector);
+		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
+		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
+
+		ThrowError::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+			inSqlDa, outSqlDa), statusVector);
+		ThrowError::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+
+		delete [] inSqlDa->sqlvar[0].sqldata;
+		delete [] reinterpret_cast<char*>(inSqlDa);
+		inSqlDa = NULL;
+
+		const IParametersMetadata* fields = metadata->getTriggerFields(status);
+		ThrowError::check(status->get());
+
+		unsigned count = fields->getCount(status);
+		ThrowError::check(status->get());
+
+		char buffer[65536];
+		strcpy(buffer,
+			"execute block (\n"
+			"    id type of column PERSONS.ID = ?,\n"
+			"    name type of column PERSONS.NAME = ?,\n"
+			"    address type of column PERSONS.ADDRESS = ?,\n"
+			"    info type of column PERSONS.INFO = ?\n"
+			")"
+			"as\n"
+			"begin\n"
+			"    execute statement ('insert into persons (id, name, address, info)\n"
+			"        values (?, ?, ?, ?)') (:id, :name, :address, :info)\n"
+			"        on external data source '");
+		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
+		strcat(buffer, "';\nend");
+
+		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
+			SQL_DIALECT_CURRENT, NULL), statusVector);
+
+		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(4))]);
+		inSqlDa->version = SQLDA_VERSION1;
+		inSqlDa->sqln = 4;
+		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+			statusVector);
+
+		for (unsigned i = 0; i < 4; ++i)
+		{
+			XSQLVAR* var = &inSqlDa->sqlvar[i];
+			var->sqltype |= 1;
 		}
 
 		delete [] outSqlDa->sqlvar[0].sqldata;

@@ -38,12 +38,21 @@ namespace Firebird {
 class ExternalEngine;
 
 
-struct BlrMessage
+class IRoutineMessage : public IVersioned
 {
-	const unsigned char* blr;
-	unsigned int blrLength;
-	unsigned int bufferLength;
+public:
+	virtual void FB_CARG set(const unsigned char* blr, unsigned blrLength, unsigned bufferLength) = 0;
 };
+#define FB_ROUTINE_MESSAGE_VERSION (FB_VERSIONED_VERSION + 1)
+
+
+class ITriggerMessage : public IVersioned
+{
+public:
+	virtual void FB_CARG set(const unsigned char* blr, unsigned blrLength, unsigned bufferLength,
+		const char** names, unsigned count) = 0;
+};
+#define FB_TRIGGER_MESSAGE_VERSION (FB_VERSIONED_VERSION + 1)
 
 
 // Connection to current database in external engine.
@@ -193,11 +202,11 @@ public:
 	// Called when engine wants to load object in the cache. Objects are disposed when
 	// going out of the cache.
 	virtual ExternalFunction* FB_CALL makeFunction(Error* error, ExternalContext* context,
-		const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr) = 0;
+		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg) = 0;
 	virtual ExternalProcedure* FB_CALL makeProcedure(Error* error, ExternalContext* context,
-		const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr) = 0;
+		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg) = 0;
 	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
-		const IRoutineMetadata* metadata) = 0;
+		const IRoutineMetadata* metadata, ITriggerMessage* triggerMsg) = 0;
 };
 #define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 6)
 

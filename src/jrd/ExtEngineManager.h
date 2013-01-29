@@ -52,6 +52,58 @@ struct impure_value;
 struct record_param;
 
 
+class RoutineMessage :
+	public Firebird::VersionedIface<Firebird::IRoutineMessage, FB_ROUTINE_MESSAGE_VERSION>,
+	public Firebird::PermanentStorage
+{
+public:
+	explicit RoutineMessage(MemoryPool& pool)
+		: PermanentStorage(pool),
+		  blr(pool),
+		  bufferLength(0)
+	{
+	}
+
+	virtual void FB_CARG set(const unsigned char* aBlr, unsigned aBlrLength, unsigned aBufferLength)
+	{
+		blr.assign(aBlr, aBlrLength);
+		bufferLength = aBufferLength;
+	}
+
+public:
+	Firebird::Array<UCHAR> blr;
+	unsigned bufferLength;
+};
+
+class TriggerMessage :
+	public Firebird::VersionedIface<Firebird::ITriggerMessage, FB_TRIGGER_MESSAGE_VERSION>,
+	public Firebird::PermanentStorage
+{
+public:
+	explicit TriggerMessage(MemoryPool& pool)
+		: PermanentStorage(pool),
+		  names(pool),
+		  blr(pool),
+		  bufferLength(0)
+	{
+	}
+
+	virtual void FB_CARG set(const unsigned char* aBlr, unsigned aBlrLength, unsigned aBufferLength,
+		const char** aNames, unsigned aCount)
+	{
+		blr.assign(aBlr, aBlrLength);
+		bufferLength = aBufferLength;
+
+		for (unsigned i = 0; i < aCount; ++i)
+			names.add(aNames[i]);
+	}
+
+public:
+	Firebird::ObjectsArray<Firebird::string> names;
+	Firebird::Array<UCHAR> blr;
+	unsigned bufferLength;
+};
+
 class ExtEngineManager : public Firebird::PermanentStorage
 {
 private:
@@ -59,8 +111,9 @@ private:
 	template <typename T> class ContextManager;
 	class TransactionImpl;
 
-	class RoutineMetadata : public Firebird::VersionedIface<Firebird::IRoutineMetadata, FB_ROUTINE_METADATA_VERSION>,
-							public Firebird::PermanentStorage
+	class RoutineMetadata :
+		public Firebird::VersionedIface<Firebird::IRoutineMetadata, FB_ROUTINE_METADATA_VERSION>,
+		public Firebird::PermanentStorage
 	{
 	public:
 		explicit RoutineMetadata(MemoryPool& pool)
@@ -264,11 +317,9 @@ public:
 	class Trigger
 	{
 	public:
-		Trigger(thread_db* tdbb, ExtEngineManager* aExtManager,
-			Firebird::ExternalEngine* aEngine,
-			RoutineMetadata* aMetadata,
-			Firebird::ExternalTrigger* aTrigger,
-			const Jrd::Trigger* aTrg);
+		Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineManager* aExtManager,
+			Firebird::ExternalEngine* aEngine, RoutineMetadata* aMetadata, TriggerMessage& fieldsMsg,
+			Firebird::ExternalTrigger* aTrigger, const Jrd::Trigger* aTrg);
 		~Trigger();
 
 		void execute(thread_db* tdbb, Firebird::ExternalTrigger::Action action,
@@ -280,8 +331,10 @@ public:
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;
 		Firebird::AutoPtr<RoutineMetadata> metadata;
+		Firebird::AutoPtr<Format> format;
 		Firebird::ExternalTrigger* trigger;
 		const Jrd::Trigger* trg;
+		Firebird::Array<USHORT> fieldsPos;
 		Database* database;
 	};
 
@@ -303,10 +356,10 @@ public:
 
 	Function* makeFunction(thread_db* tdbb, const Jrd::Function* udf,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-		const Firebird::string& body, Firebird::BlrMessage* inBlr, Firebird::BlrMessage* outBlr);
+		const Firebird::string& body, RoutineMessage* inMsg, RoutineMessage* outMsg);
 	Procedure* makeProcedure(thread_db* tdbb, const jrd_prc* prc,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-		const Firebird::string& body, Firebird::BlrMessage* inBlr, Firebird::BlrMessage* outBlr);
+		const Firebird::string& body, RoutineMessage* inMsg, RoutineMessage* outMsg);
 	Trigger* makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body, Firebird::ExternalTrigger::Type type);

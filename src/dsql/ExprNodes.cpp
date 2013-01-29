@@ -10764,11 +10764,11 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				dsc* const srcDesc = EVL_expr(tdbb, request, *sourcePtr);
 				if (srcDesc && !(request->req_flags & req_null))
 				{
-					*nullPtr = FALSE;
+					*nullPtr = 0;
 					MOV_move(tdbb, srcDesc, &argDesc);
 				}
 				else
-					*nullPtr = TRUE;
+					*nullPtr = -1;
 			}
 		}
 

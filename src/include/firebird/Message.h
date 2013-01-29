@@ -30,54 +30,66 @@
 #include <string.h>
 
 #define FB_MESSAGE(name, fields)	\
-	FB_MESSAGE_I(name, FB_BOOST_PP_CAT(FB_MESSAGE_X fields, 0))
+	struct name	\
+	{	\
+		FB_MESSAGE_I(name, 2, FB_BOOST_PP_CAT(FB_MESSAGE_X fields, 0))	\
+	}
 
 #define FB_MESSAGE_X(x, y) ((x, y)) FB_MESSAGE_Y
 #define FB_MESSAGE_Y(x, y) ((x, y)) FB_MESSAGE_X
 #define FB_MESSAGE_X0
 #define FB_MESSAGE_Y0
 
-#define FB_MESSAGE_I(name, fields)	\
+#define FB_TRIGGER_MESSAGE(name, fields)	\
 	struct name	\
 	{	\
-		static const unsigned char* getBlr(unsigned* length)	\
-		{	\
-			static const unsigned char blr[] = {	\
-				blr_version5,	\
-				blr_begin,	\
-				blr_message, 0,	\
-					(2 * (FB_BOOST_PP_SEQ_SIZE(fields))) & 0xFF,	\
-					(2 * (FB_BOOST_PP_SEQ_SIZE(fields))) >> 8,	\
-				FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_BLR, _, fields)	\
-				blr_end,	\
-				blr_eoc	\
-			};	\
-			*length = sizeof(blr);	\
-			return blr;	\
-		}	\
-		\
-		static unsigned getSize()	\
-		{	\
-			return (unsigned)(size_t) (&((name*) 0)->FB_BOOST_PP_CAT(	\
-				FB_BOOST_PP_TUPLE_ELEM(2, 1,	\
-					FB_BOOST_PP_SEQ_ELEM(FB_BOOST_PP_DEC(FB_BOOST_PP_SEQ_SIZE(fields)), fields)),	\
-				Null) - 0) + sizeof(ISC_SHORT);	\
-		}	\
-		\
-		void clear()	\
-		{	\
-			memset(this, 0, sizeof(*this));	\
-		}	\
-		\
-		FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_FIELD, _, fields)	\
+		FB_MESSAGE_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_X fields, 0))	\
+		FB_TRIGGER_MESSAGE_NAMES_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_NAMES_X fields, 0))	\
 	}
 
+#define FB_TRIGGER_MESSAGE_X(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_Y
+#define FB_TRIGGER_MESSAGE_Y(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_X
+#define FB_TRIGGER_MESSAGE_X0
+#define FB_TRIGGER_MESSAGE_Y0
+
+#define FB_MESSAGE_I(name, size, fields)	\
+	static const unsigned char* getBlr(unsigned* length)	\
+	{	\
+		static const unsigned char blr[] = {	\
+			blr_version5,	\
+			blr_begin,	\
+			blr_message, 0,	\
+				(2 * (FB_BOOST_PP_SEQ_SIZE(fields))) & 0xFF,	\
+				(2 * (FB_BOOST_PP_SEQ_SIZE(fields))) >> 8,	\
+			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_BLR, size, fields)	\
+			blr_end,	\
+			blr_eoc	\
+		};	\
+		*length = sizeof(blr);	\
+		return blr;	\
+	}	\
+	\
+	static unsigned getSize()	\
+	{	\
+		return (unsigned)(size_t) (&((name*) 0)->FB_BOOST_PP_CAT(	\
+			FB_BOOST_PP_TUPLE_ELEM(size, 1,	\
+				FB_BOOST_PP_SEQ_ELEM(FB_BOOST_PP_DEC(FB_BOOST_PP_SEQ_SIZE(fields)), fields)),	\
+			Null) - 0) + sizeof(ISC_SHORT);	\
+	}	\
+	\
+	void clear()	\
+	{	\
+		memset(this, 0, sizeof(*this));	\
+	}	\
+	\
+	FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_FIELD, size, fields)
+
 #define FB_MESSAGE_FIELD(r, _, i, xy)	\
-	FB_BOOST_PP_CAT(FB_TYPE_, FB_BOOST_PP_TUPLE_ELEM(2, 0, xy)) FB_BOOST_PP_TUPLE_ELEM(2, 1, xy);	\
-	ISC_SHORT FB_BOOST_PP_CAT(FB_BOOST_PP_TUPLE_ELEM(2, 1, xy), Null);
+	FB_BOOST_PP_CAT(FB_TYPE_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy)) FB_BOOST_PP_TUPLE_ELEM(_, 1, xy);	\
+	ISC_SHORT FB_BOOST_PP_CAT(FB_BOOST_PP_TUPLE_ELEM(_, 1, xy), Null);
 
 #define FB_MESSAGE_BLR(r, _, i, xy)	\
-	FB_BOOST_PP_CAT(FB_BLR_, FB_BOOST_PP_TUPLE_ELEM(2, 0, xy)),	\
+	FB_BOOST_PP_CAT(FB_BLR_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy)),	\
 	FB_BLR_FB_SMALLINT,
 
 #define FB_BLR_FB_SCALED_SMALLINT(scale)	blr_short, (scale)
@@ -125,6 +137,44 @@
 			desc.bufferLength = getSize();	\
 		}	\
 	}
+
+#define FB_TRIGGER_MESSAGE_DESC(name, fields)	\
+	FB_TRIGGER_MESSAGE(name, fields);	\
+	struct name##Desc : public name	\
+	{	\
+		::Firebird::FbMessage desc;	\
+		\
+		name##Desc()	\
+		{	\
+			desc.blr = getBlr(&desc.blrLength);	\
+			desc.buffer = (unsigned char*) this;	\
+			desc.bufferLength = getSize();	\
+		}	\
+	}
+
+#define FB_TRIGGER_MESSAGE_NAMES(name, fields)	\
+	FB_TRIGGER_MESSAGE_NAMES_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_NAMES_X fields, 0))
+
+#define FB_TRIGGER_MESSAGE_NAMES_X(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_NAMES_Y
+#define FB_TRIGGER_MESSAGE_NAMES_Y(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_NAMES_X
+#define FB_TRIGGER_MESSAGE_NAMES_X0
+#define FB_TRIGGER_MESSAGE_NAMES_Y0
+
+#define FB_TRIGGER_MESSAGE_NAMES_I(name, size, fields)	\
+	static const char** getNames(unsigned* count)	\
+	{	\
+		*count = FB_BOOST_PP_SEQ_SIZE(fields);	\
+		\
+		static const char* names[] = {	\
+			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_TRIGGER_MESSAGE_NAME, size, fields)	\
+			NULL	\
+		};	\
+		\
+		return names;	\
+	}
+
+#define FB_TRIGGER_MESSAGE_NAME(r, _, i, xy)	\
+	FB_BOOST_PP_TUPLE_ELEM(_, 2, xy),
 
 
 namespace Firebird {

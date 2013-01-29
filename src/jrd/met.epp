@@ -2975,15 +2975,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			}
 			END_FOR
 
-			BlrMessage inBlr;
-			inBlr.blr = NULL;
-			inBlr.blrLength = 0;
-			inBlr.bufferLength = 0;
-
-			BlrMessage outBlr;
-			outBlr.blr = NULL;
-			outBlr.blrLength = 0;
-			outBlr.bufferLength = 0;
+			RoutineMessage inMsg(*tdbb->getDefaultPool());
+			RoutineMessage outMsg(*tdbb->getDefaultPool());
 
 			const bool external = !P.RDB$ENGINE_NAME.NULL;	// ODS_12_0
 
@@ -3004,7 +2997,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 				procedure->setExternal(dbb->dbb_extManager.makeProcedure(
 					tdbb, procedure, P.RDB$ENGINE_NAME,
-					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin(), &inBlr, &outBlr));
+					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin(), &inMsg, &outMsg));
 			}
 
 			Array<NestConst<Parameter> >& paramArray = procedure->getOutputFields();
@@ -3055,7 +3048,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				{
 					MET_parse_routine_blr(tdbb, procedure,
 						(P.RDB$PROCEDURE_BLR.NULL ? NULL : &P.RDB$PROCEDURE_BLR), csb, external,
-						inBlr, outBlr);
+						inMsg, outMsg);
 				}
 				catch (const Exception&)
 				{
@@ -4304,7 +4297,7 @@ static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const Meta
 
 // Generate BLR message for external procedures
 static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& blr, UCHAR message,
-	UCHAR message2, const Array<NestConst<Parameter> >& parameters, const BlrMessage& extBlr,
+	UCHAR message2, const Array<NestConst<Parameter> >& parameters, const RoutineMessage& extMsg,
 	UCharBuffer& appendBlr)
 {
 	const size_t prevAppendBlrSize = appendBlr.getCount();
@@ -4315,9 +4308,9 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 	dsc shortDesc;
 	shortDesc.makeShort(0);
 
-	if (extBlr.blr)
+	if (extMsg.blr.hasData())
 	{
-		BlrReader reader(extBlr.blr, extBlr.blrLength);
+		BlrReader reader(extMsg.blr.begin(), extMsg.blr.getCount());
 
 		reader.checkByte(blr_version5);
 		reader.checkByte(blr_begin);
@@ -4372,11 +4365,11 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 		reader.checkByte(blr_end);
 		reader.checkByte(blr_eoc);
 
-		if (offset != extBlr.bufferLength)
+		if (offset != extMsg.bufferLength)
 		{
 			status_exception::raise(
 				Arg::Gds(isc_ee_blr_mismatch_length) <<
-				Arg::Num(extBlr.bufferLength) <<
+				Arg::Num(extMsg.bufferLength) <<
 				Arg::Num(offset));
 		}
 	}
@@ -4458,8 +4451,8 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 
 
 // Parse routine BLR.
-void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id,
-	CompilerScratch* csb, bool external, const BlrMessage& extInBlr, const BlrMessage& extOutBlr)
+void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id, CompilerScratch* csb,
+	bool external, const RoutineMessage& extInMsg, const RoutineMessage& extOutMsg)
 {
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -4477,9 +4470,9 @@ void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id,
 		UCharBuffer appendBlr;
 
 		bool genExtIn = gen_ext_message(tdbb, csb, tmp, e_extrout_input_message,
-			e_extrout_input_message2, routine->getInputFields(), extInBlr, appendBlr);
+			e_extrout_input_message2, routine->getInputFields(), extInMsg, appendBlr);
 		bool genExtOut = gen_ext_message(tdbb, csb, tmp, e_extrout_output_message,
-			e_extrout_output_message2, routine->getOutputFields(), extOutBlr, appendBlr);
+			e_extrout_output_message2, routine->getOutputFields(), extOutMsg, appendBlr);
 
 		dsc shortDesc;
 		shortDesc.makeShort(0);

@@ -40,7 +40,7 @@ class FunctionFactory
 {
 public:
 	virtual void setup(Error* error, ExternalContext* context, const IRoutineMetadata* metadata,
-		BlrMessage* inBlr, BlrMessage* outBlr) = 0;
+		IRoutineMessage* in, IRoutineMessage* out) = 0;
 	virtual ExternalFunction* FB_CALL newItem(Error* error, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
@@ -49,7 +49,7 @@ class ProcedureFactory
 {
 public:
 	virtual void setup(Error* error, ExternalContext* context, const IRoutineMetadata* metadata,
-		BlrMessage* inBlr, BlrMessage* outBlr) = 0;
+		IRoutineMessage* in, IRoutineMessage* out) = 0;
 	virtual ExternalProcedure* FB_CALL newItem(Error* error, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
@@ -57,7 +57,8 @@ public:
 class TriggerFactory
 {
 public:
-	virtual void setup(Error* error, ExternalContext* context, const IRoutineMetadata* metadata) = 0;
+	virtual void setup(Error* error, ExternalContext* context, const IRoutineMetadata* metadata,
+		ITriggerMessage* fields) = 0;
 	virtual ExternalTrigger* FB_CALL newItem(Error* error, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };

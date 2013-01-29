@@ -748,6 +748,8 @@ static const struct {
 	{"no_providers", 335545044},
 	{"null_spb", 335545045},
 	{"max_args_exceeded", 335545046},
+	{"ee_blr_mismatch_names_count", 335545047},
+	{"ee_blr_mismatch_name_not_found", 335545048},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

@@ -5651,7 +5651,7 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 					try
 					{
-						BlrMessage dummy;
+						RoutineMessage dummy(*csb_pool);
 						MET_parse_routine_blr(tdbb, function, &FUN.RDB$FUNCTION_BLR, csb, false,
 							dummy, dummy);
 

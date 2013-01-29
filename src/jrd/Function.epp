@@ -374,15 +374,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->fun_external = NULL;
 			function->setStatement(NULL);
 
-			BlrMessage inBlr;
-			inBlr.blr = NULL;
-			inBlr.blrLength = 0;
-			inBlr.bufferLength = 0;
-
-			BlrMessage outBlr;
-			outBlr.blr = NULL;
-			outBlr.blrLength = 0;
-			outBlr.bufferLength = 0;
+			RoutineMessage inMsg(*attachment->att_pool);
+			RoutineMessage outMsg(*attachment->att_pool);
 
 			if (!X.RDB$ENGINE_NAME.NULL || !X.RDB$FUNCTION_BLR.NULL)
 			{
@@ -403,7 +396,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					function->fun_external =
 						dbb->dbb_extManager.makeFunction(tdbb, function, X.RDB$ENGINE_NAME,
 						(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin(),
-						&inBlr, &outBlr);
+						&inMsg, &outMsg);
 
 					if (!function->fun_external)
 						function->setDefined(false);
@@ -422,7 +415,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					try
 					{
 						MET_parse_routine_blr(tdbb, function, &X.RDB$FUNCTION_BLR, csb,
-							!X.RDB$ENGINE_NAME.NULL, inBlr, outBlr);
+							!X.RDB$ENGINE_NAME.NULL, inMsg, outMsg);
 					}
 					catch (const Exception&)
 					{

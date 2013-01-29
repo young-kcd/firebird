@@ -104,8 +104,8 @@ void			MET_par_messages(Jrd::thread_db*, const UCHAR* const, ULONG,
 Jrd::DmlNode*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
 							   Jrd::JrdStatement**, bool, bool);
 void		MET_parse_routine_blr(Jrd::thread_db*, Jrd::Routine*, Jrd::bid*, Jrd::CompilerScratch*,
-								  bool, const Firebird::BlrMessage& extInBlr,
-								  const Firebird::BlrMessage& extOutBlr);
+								  bool, const Jrd::RoutineMessage& extInMsg,
+								  const Jrd::RoutineMessage& extOutMsg);
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);

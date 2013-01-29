@@ -834,6 +834,8 @@ Data source : @4', NULL, NULL)
 ('no_providers', NULL, 'why.cpp', NULL, 0, 724, NULL, 'No providers loaded', NULL, NULL);
 ('null_spb', NULL, 'why.cpp', NULL, 0, 725, NULL, 'NULL data with non-zero SPB length', NULL, NULL);
 ('max_args_exceeded', NULL, 'ExprNodes.cpp', NULL, 0, 726, NULL, 'Maximum (@1) number of arguments exceeded for function @2', NULL, NULL)
+('ee_blr_mismatch_names_count', NULL, 'ExtEngineManager.cpp', NULL, 0, 727, NULL, 'External BLR message mismatch: names count = @1, blr count = @2', NULL, NULL)
+('ee_blr_mismatch_name_not_found', NULL, 'ExtEngineManager.cpp', NULL, 0, 728, NULL, 'External BLR message mismatch: name @1 not found', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

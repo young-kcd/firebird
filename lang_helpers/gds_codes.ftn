@@ -1504,6 +1504,10 @@ C --
       PARAMETER (GDS__null_spb                         = 335545045)
       INTEGER*4 GDS__max_args_exceeded               
       PARAMETER (GDS__max_args_exceeded                = 335545046)
+      INTEGER*4 GDS__ee_blr_mismatch_names_count     
+      PARAMETER (GDS__ee_blr_mismatch_names_count      = 335545047)
+      INTEGER*4 GDS__ee_blr_mismatch_name_not_found  
+      PARAMETER (GDS__ee_blr_mismatch_name_not_found   = 335545048)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
