@@ -1,3 +1,30 @@
+ 2013-01-29 01:21  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/ExprNodes.cpp
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/Message.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/dfw.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/plugins/udr_engine/UdrEngine.cpp
+Migrate external triggers to the new message-based style.
+
  2013-01-25 13:01  dimitr 
    M src/jrd/extds/ExtDS.cpp
    M src/jrd/extds/ExtDS.h
