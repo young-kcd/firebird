@@ -214,6 +214,7 @@ public:
 			}
 
 			fb_assert(sync);
+			sync->lock(ast);
 
 			if (ast && dbb->dbb_flags & DBB_not_in_use)
 			{
@@ -240,7 +241,6 @@ public:
 		{
 			sync = dbb->dbb_sync;
 			sync->addRef();
-			sync->lock(ast);
 		}
 
 	private:
