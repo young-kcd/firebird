@@ -1,3 +1,9 @@
+ 2013-01-29 15:09  dimitr 
+   M src/dsql/BlrWriter.cpp
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/DebugInterface.h
+Fixed inconsistency in the debug info version.
+
  2013-01-29 01:21  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M lang_helpers/gds_codes.ftn
