@@ -1,3 +1,7 @@
+ 2013-01-30 11:23  dimitr 
+   M src/jrd/Database.h
+Fixed the recently introduced deadlock. This is the simplest possible patch, other solutions are possible.
+
  2013-01-25 12:37  dimitr 
    M src/jrd/extds/ExtDS.cpp
    M src/jrd/extds/ExtDS.h
