@@ -1,3 +1,7 @@
+ 2013-01-31 00:33  asfernandes 
+   M src/common/cvt.cpp
+Misc.
+
  2013-01-29 15:09  dimitr 
    M src/dsql/BlrWriter.cpp
    M src/jrd/DebugInterface.cpp
