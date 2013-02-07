@@ -451,7 +451,7 @@ job_grade, job_country, hire_date, salary, phone_ext) VALUES
 INSERT INTO employee (emp_no, first_name, last_name, dept_no, job_code,
 job_grade, job_country, hire_date, salary, phone_ext) VALUES
 (121, 'Roberto', 'Ferrari', '125', 'SRep',  4, 'Italy', '07/12/93',
-90000000, '1');
+30000, '1');
 
 INSERT INTO employee (emp_no, first_name, last_name, dept_no, job_code,
 job_grade, job_country, hire_date, salary, phone_ext) VALUES
@@ -459,7 +459,7 @@ job_grade, job_country, hire_date, salary, phone_ext) VALUES
 
 INSERT INTO employee (emp_no, first_name, last_name, dept_no, job_code,
 job_grade, job_country, hire_date, salary, phone_ext) VALUES
-(134, 'Jacques', 'Glon', '123', 'SRep',  4, 'France', '08/23/93', 355000, null);
+(134, 'Jacques', 'Glon', '123', 'SRep',  4, 'France', '08/23/93', 35000, null);
 
 INSERT INTO employee (emp_no, first_name, last_name, dept_no, job_code,
 job_grade, job_country, hire_date, salary, phone_ext) VALUES
