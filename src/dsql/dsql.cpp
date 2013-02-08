@@ -1273,7 +1273,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
     @param parameters
 
  **/
-static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* const blr,
+static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	const ULONG msg_length, const Array<dsql_par*>& parameters_list)
 {
 	HalfStaticArray<const dsql_par*, 16> parameters;
