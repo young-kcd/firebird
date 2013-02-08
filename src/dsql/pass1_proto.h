@@ -44,7 +44,6 @@ Jrd::DeclareCursorNode* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Fireb
 Jrd::RseNode* PASS1_derived_table(Jrd::DsqlCompilerScratch*, Jrd::SelectExprNode*, const char*);
 void PASS1_expand_select_node(Jrd::DsqlCompilerScratch*, Jrd::ExprNode*, Jrd::ValueListNode*, bool);
 void PASS1_field_unknown(const TEXT*, const TEXT*, const Jrd::ExprNode*);
-USHORT PASS1_label(Jrd::DsqlCompilerScratch*, bool, Firebird::MetaName*);
 void PASS1_limit(Jrd::DsqlCompilerScratch*, NestConst<Jrd::ValueExprNode>,
 	NestConst<Jrd::ValueExprNode>, Jrd::RseNode*);
 Jrd::ValueExprNode* PASS1_lookup_alias(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&,

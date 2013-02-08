@@ -73,6 +73,7 @@ static ValueListNode* dsqlPassArray(DsqlCompilerScratch*, ValueListNode*);
 static dsql_ctx* dsqlPassCursorContext(DsqlCompilerScratch*, const MetaName&, const RelationSourceNode*);
 static RseNode* dsqlPassCursorReference(DsqlCompilerScratch*, const MetaName&, RelationSourceNode*);
 static VariableNode* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, ValueExprNode* expr);
+static USHORT dsqlPassLabel(DsqlCompilerScratch* dsqlScratch, bool breakContinue, MetaName* label);
 static StmtNode* dsqlProcessReturning(DsqlCompilerScratch*, ReturningClause*, StmtNode*);
 static void dsqlSetParameterName(ExprNode*, const ValueExprNode*, const dsql_rel*);
 static void dsqlSetParametersName(CompoundStmtNode*, const RecordSourceNode*);
@@ -868,7 +869,7 @@ ContinueLeaveNode* ContinueLeaveNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			Arg::Gds(isc_random) << cmd);
 	}
 
-	labelNumber = PASS1_label(dsqlScratch, true, dsqlLabelName);
+	labelNumber = dsqlPassLabel(dsqlScratch, true, dsqlLabelName);
 
 	return this;
 }
@@ -3005,7 +3006,7 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (innerStmt)
 	{
 		++dsqlScratch->loopLevel;
-		node->dsqlLabelNumber = PASS1_label(dsqlScratch, false, dsqlLabelName);
+		node->dsqlLabelNumber = dsqlPassLabel(dsqlScratch, false, dsqlLabelName);
 		node->innerStmt = innerStmt->dsqlPass(dsqlScratch);
 		--dsqlScratch->loopLevel;
 		dsqlScratch->labels.pop();
@@ -4316,7 +4317,7 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		// CVC: Let's add the ability to BREAK the for_select same as the while,
 		// but only if the command is FOR SELECT, otherwise we have singular SELECT
 		++dsqlScratch->loopLevel;
-		node->dsqlLabelNumber = PASS1_label(dsqlScratch, false, dsqlLabelName);
+		node->dsqlLabelNumber = dsqlPassLabel(dsqlScratch, false, dsqlLabelName);
 		node->statement = statement->dsqlPass(dsqlScratch);
 		--dsqlScratch->loopLevel;
 		dsqlScratch->labels.pop();
@@ -4647,7 +4648,7 @@ LoopNode* LoopNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// CVC: Loop numbers should be incremented before analyzing the body
 	// to preserve nesting <==> increasing level number.
 	++dsqlScratch->loopLevel;
-	node->dsqlLabelNumber = PASS1_label(dsqlScratch, false, dsqlLabelName);
+	node->dsqlLabelNumber = dsqlPassLabel(dsqlScratch, false, dsqlLabelName);
 	node->statement = statement->dsqlPass(dsqlScratch);
 	--dsqlScratch->loopLevel;
 	dsqlScratch->labels.pop();
@@ -8272,6 +8273,76 @@ static VariableNode* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, Va
 	varNode->nodDesc = varNode->dsqlVar->desc;
 
 	return varNode;
+}
+
+// Process loop interruption.
+static USHORT dsqlPassLabel(DsqlCompilerScratch* dsqlScratch, bool breakContinue, MetaName* label)
+{
+	// look for a label, if specified
+
+	USHORT position = 0;
+
+	if (label)
+	{
+		int index = dsqlScratch->loopLevel;
+
+		for (Stack<MetaName*>::iterator stack(dsqlScratch->labels); stack.hasData(); ++stack)
+		{
+			const MetaName* obj = stack.object();
+			if (obj && *label == *obj)
+			{
+				position = index;
+				break;
+			}
+
+			--index;
+		}
+	}
+
+	USHORT number = 0;
+
+	if (breakContinue)
+	{
+		if (position > 0)
+		{
+			// break/continue the specified loop
+			number = position;
+		}
+		else if (label)
+		{
+			// ERROR: Label %s is not found in the current scope
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  Arg::Gds(isc_dsql_command_err) <<
+					  Arg::Gds(isc_dsql_invalid_label) << *label <<
+														  Arg::Str("is not found"));
+		}
+		else
+		{
+			// break/continue the current loop
+			number = dsqlScratch->loopLevel;
+		}
+	}
+	else
+	{
+		if (position > 0)
+		{
+			// ERROR: Label %s already exists in the current scope
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  Arg::Gds(isc_dsql_command_err) <<
+					  Arg::Gds(isc_dsql_invalid_label) << *label <<
+					  Arg::Str("already exists"));
+		}
+		else
+		{
+			// store label name, if specified
+			dsqlScratch->labels.push(label);
+			number = dsqlScratch->loopLevel;
+		}
+	}
+
+	fb_assert(number > 0 && number <= dsqlScratch->loopLevel);
+
+	return number;
 }
 
 // Compile a RETURNING clause (nod_returning or not).
