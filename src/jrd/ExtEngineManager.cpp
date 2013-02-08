@@ -482,7 +482,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 				}
 
 				fieldsPos.add(pos);
-				PAR_datatype(tdbb, reader, desc);
+				PAR_datatype(reader, desc);
 			}
 			else
 			{
@@ -507,7 +507,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 
 			if (blrPresent)
 			{
-				PAR_datatype(tdbb, reader, desc);
+				PAR_datatype(reader, desc);
 
 				if (!DSC_EQUIV(desc, &shortDesc, false))
 				{

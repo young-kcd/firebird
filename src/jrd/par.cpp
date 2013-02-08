@@ -307,7 +307,7 @@ void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, UL
 
 
 // Parse a BLR datatype. Return the alignment requirements of the datatype.
-USHORT PAR_datatype(thread_db* /*tdbb*/, BlrReader& blrReader, dsc* desc)
+USHORT PAR_datatype(BlrReader& blrReader, dsc* desc)
 {
 	desc->clear();
 
@@ -565,7 +565,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 
 		default:
 			csb->csb_blr_reader.seekBackward(1);
-			PAR_datatype(tdbb, csb->csb_blr_reader, desc);
+			PAR_datatype(csb->csb_blr_reader, desc);
 			break;
 	}
 

@@ -4327,7 +4327,7 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 		for (unsigned i = 0; i < count / 2; ++i)
 		{
 			dsc desc;
-			PAR_datatype(tdbb, reader, &desc);
+			PAR_datatype(reader, &desc);
 			PreparedStatement::generateBlr(&desc, appendBlr);
 
 			if (desc.dsc_dtype >= dtype_aligned)
@@ -4343,7 +4343,7 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 
 			messageNeeded |= !DSC_EQUIV(&desc, prmDesc, false);
 
-			PAR_datatype(tdbb, reader, &desc);
+			PAR_datatype(reader, &desc);
 
 			if (!DSC_EQUIV(&desc, &shortDesc, false))
 			{

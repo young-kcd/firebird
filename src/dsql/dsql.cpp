@@ -61,6 +61,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/opt_proto.h"
+#include "../jrd/par_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/trace/TraceManager.h"
@@ -1272,7 +1273,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
     @param parameters
 
  **/
-static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
+static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* const blr,
 	const ULONG msg_length, const Array<dsql_par*>& parameters_list)
 {
 	HalfStaticArray<const dsql_par*, 16> parameters;
@@ -1296,7 +1297,10 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	if (blr_length == 0)
 		return parameters.getCount();
 
-	if (*blr != blr_version4 && *blr != blr_version5)
+	BlrReader blrReader(blr, blr_length);
+
+	UCHAR version = blrReader.getByte();
+	if (version != blr_version4 && version != blr_version5)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err)
@@ -1306,9 +1310,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 				  );
 	}
 
-	blr++;						// skip the blr_version
-
-	if (*blr++ != blr_begin || *blr++ != blr_message)
+	if (blrReader.getByte() != blr_begin || blrReader.getByte() != blr_message)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err)
@@ -1318,10 +1320,8 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 				  );
 	}
 
-	++blr;						// skip the message number
-	USHORT count = *blr++;
-	count += (*blr++) << 8;
-	count /= 2;
+	blrReader.getByte();	// skip the message number
+	USHORT count = blrReader.getWord() / 2;
 
 	if (count != parameters.getCount())
 	{
@@ -1338,111 +1338,14 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	for (USHORT index = 1; index <= count; index++)
 	{
 		dsc desc;
-		desc.dsc_scale = 0;
-		desc.dsc_sub_type = 0;
-		desc.dsc_flags = 0;
+		USHORT align;
 
-		switch (*blr++)
+		try
 		{
-		case blr_text:
-			desc.dsc_dtype = dtype_text;
-			desc.dsc_sub_type = ttype_dynamic;
-			desc.dsc_length = *blr++;
-			desc.dsc_length += (*blr++) << 8;
-			break;
-
-		case blr_varying:
-			desc.dsc_dtype = dtype_varying;
-			desc.dsc_sub_type = ttype_dynamic;
-			desc.dsc_length = *blr++ + sizeof(USHORT);
-			desc.dsc_length += (*blr++) << 8;
-			break;
-
-		case blr_text2:
-			desc.dsc_dtype = dtype_text;
-			desc.dsc_sub_type = *blr++;
-			desc.dsc_sub_type += (*blr++) << 8;
-			desc.dsc_length = *blr++;
-			desc.dsc_length += (*blr++) << 8;
-			break;
-
-		case blr_varying2:
-			desc.dsc_dtype = dtype_varying;
-			desc.dsc_sub_type = *blr++;
-			desc.dsc_sub_type += (*blr++) << 8;
-			desc.dsc_length = *blr++ + sizeof(USHORT);
-			desc.dsc_length += (*blr++) << 8;
-			break;
-
-		case blr_short:
-			desc.dsc_dtype = dtype_short;
-			desc.dsc_length = sizeof(SSHORT);
-			desc.dsc_scale = *blr++;
-			break;
-
-		case blr_long:
-			desc.dsc_dtype = dtype_long;
-			desc.dsc_length = sizeof(SLONG);
-			desc.dsc_scale = *blr++;
-			break;
-
-		case blr_int64:
-			desc.dsc_dtype = dtype_int64;
-			desc.dsc_length = sizeof(SINT64);
-			desc.dsc_scale = *blr++;
-			break;
-
-		case blr_quad:
-			desc.dsc_dtype = dtype_quad;
-			desc.dsc_length = sizeof(SLONG) * 2;
-			desc.dsc_scale = *blr++;
-			break;
-
-		case blr_float:
-			desc.dsc_dtype = dtype_real;
-			desc.dsc_length = sizeof(float);
-			break;
-
-		case blr_double:
-		case blr_d_float:
-			desc.dsc_dtype = dtype_double;
-			desc.dsc_length = sizeof(double);
-			break;
-
-		case blr_timestamp:
-			desc.dsc_dtype = dtype_timestamp;
-			desc.dsc_length = sizeof(SLONG) * 2;
-			break;
-
-		case blr_sql_date:
-			desc.dsc_dtype = dtype_sql_date;
-			desc.dsc_length = sizeof(SLONG);
-			break;
-
-		case blr_sql_time:
-			desc.dsc_dtype = dtype_sql_time;
-			desc.dsc_length = sizeof(SLONG);
-			break;
-
-		case blr_blob2:
-			{
-				desc.dsc_dtype = dtype_blob;
-				desc.dsc_length = sizeof(ISC_QUAD);
-				desc.dsc_sub_type = *blr++;
-				desc.dsc_sub_type += (*blr++) << 8;
-
-				USHORT textType = *blr++;
-				textType += (*blr++) << 8;
-				desc.setTextType(textType);
-			}
-			break;
-
-		case blr_bool:
-			desc.dsc_dtype = dtype_boolean;
-			desc.dsc_length = sizeof(UCHAR);
-			break;
-
-		default:
+			align = PAR_datatype(blrReader, &desc);
+		}
+		catch (status_exception&)
+		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 					  Arg::Gds(isc_dsql_sqlda_err)
 #ifdef DEV_BUILD
@@ -1451,14 +1354,13 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 					  );
 		}
 
-		USHORT align = type_alignments[desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
 
 		desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc.dsc_length;
 
-		if (*blr++ != blr_short || *blr++ != 0)
+		if (blrReader.getByte() != blr_short || blrReader.getByte() != 0)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 					  Arg::Gds(isc_dsql_sqlda_err)
@@ -1502,7 +1404,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 		}
 	}
 
-	if (*blr++ != (UCHAR) blr_end || offset != msg_length)
+	if (blrReader.getByte() != (UCHAR) blr_end || offset != msg_length)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err)
