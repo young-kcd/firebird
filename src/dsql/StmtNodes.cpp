@@ -6904,6 +6904,7 @@ DmlNode* SelectNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 SelectNode* SelectNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	SelectNode* node = FB_NEW(getPool()) SelectNode(getPool());
+	node->dsqlForUpdate = dsqlForUpdate;
 
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 	node->dsqlRse = PASS1_rse(dsqlScratch, dsqlExpr, dsqlWithLock);
