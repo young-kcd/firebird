@@ -112,13 +112,6 @@ public:
 	}
 };
 
-// Aligns tail in *_rpt structures when later too active casts are used
-#if defined(RISC_ALIGNMENT) && (SIZEOF_VOID_P < FB_DOUBLE_ALIGN)
-#define RPT_ALIGN(rpt) union { rpt; SINT64 dummy; }
-#else
-#define RPT_ALIGN(rpt) rpt
-#endif
-
 } // namespace Firebird
 
 #endif // CLASSES_ALIGN_H
