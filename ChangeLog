@@ -1,3 +1,11 @@
+ 2013-02-09 05:47  dimitr 
+   M src/common/classes/Aligner.h
+Cleanup.
+
+ 2013-02-09 01:51  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Fix SELECT FOR UPDATE problem related to r57615 change.
+
  2013-02-08 01:50  asfernandes 
    M src/dsql/dsql.cpp
 Misc.
