@@ -212,7 +212,7 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 	if ((field->dtype > dtype_any_text) && field->dtype != dtype_blob)
 	{
-		if (field->charSet.hasData() || collation_name.hasData() || field->flags & FLD_national)
+		if (field->charSet.hasData() || collation_name.hasData() || (field->flags & FLD_national))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) << Arg::Gds(isc_collation_requires_text));
@@ -271,7 +271,6 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		return;
 	}
 
-
 	if (modifying)
 	{
 		const dsql_fld* afield = field->fld_next;
@@ -311,7 +310,7 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 	{
 		// Attach the database default character set, if not otherwise specified
 
-		MetaName defaultCharSet = NULL;
+		MetaName defaultCharSet;
 
 		if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL)
 			defaultCharSet = METD_get_default_charset(dsqlScratch->getTransaction());
@@ -336,7 +335,7 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		}
 	}
 
-	MetaName charset_name = NULL;
+	MetaName charset_name;
 
 	if (field->flags & FLD_national)
 		charset_name = NATIONAL_CHARACTER_SET;

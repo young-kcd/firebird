@@ -274,8 +274,7 @@ public:
 public:
 	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false)
 	{
-		DDL_resolve_intl_type(dsqlScratch, this,
-			(collate.isEmpty() ? NULL : collate), modifying);
+		DDL_resolve_intl_type(dsqlScratch, this, collate, modifying);
 	}
 
 public:
