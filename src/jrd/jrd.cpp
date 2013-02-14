@@ -1871,7 +1871,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	bool is_alias = false;
 
 #ifdef WIN_NT
-	// In windows expanded filename depend upon file existence
+	// In windows expanded filename depends upon file existence
 	// Therefore have to keep lock longer
 	guardDbInit.enter();
 #endif

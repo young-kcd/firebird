@@ -862,7 +862,7 @@ private:
 class AstAttachmentHolder
 {
 public:
-	AstAttachmentHolder(Attachment* attachment);
+	explicit AstAttachmentHolder(Attachment* attachment);
 
 	~AstAttachmentHolder()
 	{
@@ -886,7 +886,7 @@ class AstContextHolder :
 	public Database::SyncGuard		// controls dbb_sync mutex
 {
 public:
-	AstContextHolder(Database* dbb, Attachment* attachment = NULL);
+	explicit AstContextHolder(Database* dbb, Attachment* attachment = NULL);
 	AstContextHolder(ISC_STATUS* status, Attachment* attachment);
 };
 
