@@ -589,10 +589,10 @@ FB_UDR_BEGIN_FUNCTION(wait_event)
 		isc_db_handle dbHandle = getIscDbHandle(context);
 		ISC_ULONG counter = 0;
 
-		ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
+		StatusException::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
 			statusVector);
 		isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
-		ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
+		StatusException::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
 			statusVector);
 		isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
 
@@ -616,13 +616,13 @@ create function sum_args (
 FB_UDR_BEGIN_FUNCTION(sum_args)
 	FB_UDR_EXECUTE_DYNAMIC_FUNCTION
 	{
-		AutoDispose<IStatus> status(master->getStatus());
+		///AutoDispose<IStatus> status(master->getStatus());
 
 		const IParametersMetadata* params = metadata->getInputParameters(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		unsigned count = params->getCount(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		MessageImpl inMessage(count, in);
 
@@ -859,13 +859,13 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 
 	FB_UDR_EXECUTE_DYNAMIC_TRIGGER
 	{
-		AutoDispose<IStatus> status(master->getStatus());
+		///AutoDispose<IStatus> status(master->getStatus());
 
 		const IParametersMetadata* fields = metadata->getTriggerFields(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		unsigned fieldsCount = fields->getCount(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		MessageImpl message(fieldsCount, newFields);
 
@@ -888,7 +888,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			}
 		}
 
-		ThrowError::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+		StatusException::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
 			inSqlDa), statusVector);
 	}
 
@@ -899,19 +899,19 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		isc_tr_handle trHandle = getIscTrHandle(context);
 
 		stmtHandle = 0;
-		ThrowError::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
-		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
+		StatusException::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
+		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), statusVector);
 
-		AutoDispose<IStatus> status(master->getStatus());
+		///AutoDispose<IStatus> status(master->getStatus());
 
 		const char* table = metadata->getTriggerTable(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		// Skip the first exclamation point, separating the module name and entry point.
 		const char* info = strchr(metadata->getEntryPoint(status), '!');
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		// Skip the second exclamation point, separating the entry point and the misc info (config).
 		if (info)
@@ -925,7 +925,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 1;
-		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
 			statusVector);
 		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
 		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
@@ -934,24 +934,24 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		outSqlDa->version = SQLDA_VERSION1;
 		outSqlDa->sqln = 1;
-		ThrowError::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
+		StatusException::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
 			statusVector);
 		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
 		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
 
-		ThrowError::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+		StatusException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
 			inSqlDa, outSqlDa), statusVector);
-		ThrowError::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+		StatusException::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
 
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
 		inSqlDa = NULL;
 
 		const IParametersMetadata* fields = metadata->getTriggerFields(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		unsigned count = fields->getCount(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		char buffer[65536];
 		strcpy(buffer, "execute block (\n");
@@ -962,7 +962,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 				strcat(buffer, ",\n");
 
 			const char* name = fields->getField(status, i);
-			ThrowError::check(status->get());
+			StatusException::check(status->get());
 
 			strcat(buffer, "    p");
 			sprintf(buffer + strlen(buffer), "%d type of column \"%s\".\"%s\" = ?", i, table, name);
@@ -983,7 +983,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 				strcat(buffer, ", ");
 
 			const char* name = fields->getField(status, i);
-			ThrowError::check(status->get());
+			StatusException::check(status->get());
 
 			strcat(buffer, "\"");
 			strcat(buffer, name);
@@ -1013,13 +1013,13 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
+		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
 			SQL_DIALECT_CURRENT, NULL), statusVector);
 
 		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(count))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = count;
-		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
 			statusVector);
 
 		for (unsigned i = 0; i < count; ++i)
@@ -1128,7 +1128,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		isc_db_handle dbHandle = getIscDbHandle(context);
 		isc_tr_handle trHandle = getIscTrHandle(context);
 
-		ThrowError::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+		StatusException::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
 			inSqlDa), statusVector);
 	}
 
@@ -1139,19 +1139,19 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		isc_tr_handle trHandle = getIscTrHandle(context);
 
 		stmtHandle = 0;
-		ThrowError::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
-		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
+		StatusException::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
+		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), statusVector);
 
-		AutoDispose<IStatus> status(master->getStatus());
+		///AutoDispose<IStatus> status(master->getStatus());
 
 		const char* table = metadata->getTriggerTable(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		// Skip the first exclamation point, separating the module name and entry point.
 		const char* info = strchr(metadata->getEntryPoint(status), '!');
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		// Skip the second exclamation point, separating the entry point and the misc info (config).
 		if (info)
@@ -1165,7 +1165,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 1;
-		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
 			statusVector);
 		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
 		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
@@ -1174,24 +1174,24 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		outSqlDa->version = SQLDA_VERSION1;
 		outSqlDa->sqln = 1;
-		ThrowError::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
+		StatusException::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
 			statusVector);
 		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
 		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
 
-		ThrowError::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+		StatusException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
 			inSqlDa, outSqlDa), statusVector);
-		ThrowError::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+		StatusException::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
 
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
 		inSqlDa = NULL;
 
 		const IParametersMetadata* fields = metadata->getTriggerFields(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		unsigned count = fields->getCount(status);
-		ThrowError::check(status->get());
+		StatusException::check(status->get());
 
 		char buffer[65536];
 		strcpy(buffer,
@@ -1209,13 +1209,13 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
+		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
 			SQL_DIALECT_CURRENT, NULL), statusVector);
 
 		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(4))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 4;
-		ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
 			statusVector);
 
 		for (unsigned i = 0; i < 4; ++i)

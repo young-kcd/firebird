@@ -53,7 +53,7 @@ namespace Firebird
 	class FB_UDR_FUNCTION(name) : public ::Firebird::Udr::Function<FB_UDR_FUNCTION(name)>	\
 	{	\
 	public:	\
-		void initialize(::Firebird::Error* error, void*)	\
+		void initialize(::Firebird::IStatus* /*status*/, void*)	\
 		{	\
 		}
 
@@ -85,17 +85,17 @@ namespace Firebird
 	FB_UDR_EXECUTE__FUNCTION
 
 #define FB_UDR_EXECUTE__FUNCTION	\
-	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
+	virtual void FB_CALL execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
 		void* in, void* out)	\
 	{	\
 		try	\
 		{	\
-			internalExecute(error, context, (InMessage*) in, (OutMessage*) out);	\
+			internalExecute(status, context, (InMessage*) in, (OutMessage*) out);	\
 		}	\
 		FB_UDR__CATCH	\
 	}	\
 	\
-	void internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
+	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
 		InMessage* in, OutMessage* out)
 
 
@@ -109,7 +109,7 @@ namespace Firebird
 	public:	\
 		typedef FB_UDR_PROCEDURE(name) This;	\
 		\
-		void initialize(::Firebird::Error* error, void*)	\
+		void initialize(::Firebird::IStatus* /*status*/, void*)	\
 		{	\
 		}
 
@@ -150,12 +150,12 @@ namespace Firebird
 	FB_UDR_EXECUTE__PROCEDURE
 
 #define FB_UDR_EXECUTE__PROCEDURE	\
-	virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::Error* error, \
+	virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::IStatus* status, \
 		::Firebird::ExternalContext* context, void* in, void* out)	\
 	{	\
 		try	\
 		{	\
-			return new ResultSet(error, context, this, (InMessage*) in, (OutMessage*) out);	\
+			return new ResultSet(status, context, this, (InMessage*) in, (OutMessage*) out);	\
 		}	\
 		FB_UDR__CATCH	\
 		\
@@ -165,24 +165,24 @@ namespace Firebird
 	class ResultSet : public ::Firebird::Udr::ResultSet<ResultSet, This, InMessage, OutMessage>	\
 	{	\
 	public:	\
-		ResultSet(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+		ResultSet(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
 				This* const procedure, InMessage* const in, OutMessage* const out)	\
 			: ::Firebird::Udr::ResultSet<ResultSet, This, InMessage, OutMessage>(	\
 					context, procedure, in, out)
 
 #define FB_UDR_FETCH_PROCEDURE	\
-	virtual bool FB_CALL fetch(::Firebird::Error* error)	\
+	virtual bool FB_CALL fetch(::Firebird::IStatus* status)	\
 	{	\
 		try	\
 		{	\
-			return internalFetch(error);	\
+			return internalFetch(status);	\
 		}	\
 		FB_UDR__CATCH	\
 		\
 		return 0;	\
 	}	\
 	\
-	bool internalFetch(::Firebird::Error* error)
+	bool internalFetch(::Firebird::IStatus* status)
 
 
 #define FB_UDR_BEGIN_TRIGGER(name)	\
@@ -194,7 +194,7 @@ namespace Firebird
 	{	\
 	public:	\
 		\
-		void initialize(::Firebird::Error* error, void*)	\
+		void initialize(::Firebird::IStatus* /*status*/, void*)	\
 		{	\
 		}
 
@@ -214,161 +214,53 @@ namespace Firebird
 	FB_UDR_EXECUTE__TRIGGER
 
 #define FB_UDR_EXECUTE__TRIGGER	\
-	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+	virtual void FB_CALL execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
 		::Firebird::ExternalTrigger::Action action, void* oldFields, void* newFields)	\
 	{	\
 		try	\
 		{	\
-			internalExecute(error, context, action, (FieldsMessage*) oldFields, (FieldsMessage*) newFields);	\
+			internalExecute(status, context, action, (FieldsMessage*) oldFields, (FieldsMessage*) newFields);	\
 		}	\
 		FB_UDR__CATCH	\
 	}	\
 	\
-	void internalExecute(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
 		::Firebird::ExternalTrigger::Action action, FieldsMessage* oldFields, FieldsMessage* newFields)
 
 
 #define FB_UDR_INITIALIZE	\
-	void initialize(::Firebird::Error* error, ExternalContext* context)	\
+	void initialize(::Firebird::IStatus* status, ExternalContext* context)	\
 	{	\
 		try	\
 		{	\
-			internalInitialize(error, context);	\
+			internalInitialize(status, context);	\
 		}	\
 		FB_UDR__CATCH	\
 	}	\
 	\
-	void internalInitialize(::Firebird::Error* error, ::Firebird::ExternalContext* context)
+	void internalInitialize(::Firebird::IStatus* status, ::Firebird::ExternalContext* context)
 
 
 #define FB_UDR__CATCH	\
-	catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
+	catch (const ::Firebird::Udr::StatusException& e)	\
 	{	\
-		e.stuff(error);	\
+		e.stuff(status);	\
 	}	\
 	catch (...)	\
 	{	\
-		const char exceptionText[] = "Unrecognized C++ exception";	\
-		\
-		error->addCode(isc_arg_gds);	\
-		error->addCode(isc_random);	\
-		error->addString(exceptionText, sizeof(exceptionText) - 1);	\
+		ISC_STATUS statusVector[] = {	\
+			isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) "Unrecognized C++ exception",	\
+			isc_arg_end};	\
+		status->set(statusVector);	\
 	}
 
 
-class ThrowError : public Error
+class StatusException
 {
-private:
-	struct Info
-	{
-		Info()
-			: next(FB_NULL),
-			  str(FB_NULL)
-		{
-		}
-
-		~Info()
-		{
-			if (str)
-				delete [] str;
-		}
-
-		static void free(Info* info)
-		{
-			while (info)
-			{
-				Info* p = info;
-				info = info->next;
-				delete p;
-			}
-		}
-
-		enum { TYPE_CODE, TYPE_STR } type;
-
-		Info* next;
-		int32 code;
-		char* str;
-		int strLength;
-	};
-
 public:
-	class Exception
+	StatusException(const ISC_STATUS* vector)
 	{
-	public:
-		explicit Exception(Info* aInfo)
-			: info(aInfo)
-		{
-		}
-
-		Exception(const Exception& e)
-			: info(FB_NULL)
-		{
-			Info* end = FB_NULL;
-
-			for (const Info* p = e.info; p; p = p->next)
-			{
-				Info* newInfo = new Info;
-				newInfo->type = p->type;
-				newInfo->code = p->code;
-
-				if (p->str)
-				{
-					newInfo->str = new char[p->strLength];
-					memcpy(newInfo->str, p->str, p->strLength);
-					newInfo->strLength = p->strLength;
-				}
-
-				if (end)
-					end->next = newInfo;
-
-				end = newInfo;
-
-				if (!info)
-					info = newInfo;
-			}
-		}
-
-		~Exception()
-		{
-			Info::free(info);
-		}
-
-	public:
-		void stuff(Error* error) const
-		{
-			for (const Info* p = info; p; p = p->next)
-			{
-				if (p->type == Info::TYPE_CODE)
-					error->addCode(p->code);
-				else if (p->type == Info::TYPE_STR)
-					error->addString(p->str, p->strLength);
-			}
-		}
-
-	private:
-		Info* info;
-	};
-
-public:
-	ThrowError()
-		: start(FB_NULL),
-		  end(FB_NULL)
-	{
-	}
-
-	virtual ~ThrowError()
-	{
-		raise();
-		Info::free(start);
-	}
-
-public:
-	static void check(ISC_STATUS status, const ISC_STATUS* vector)
-	{
-		if (status == 0)
-			return;
-
-		ThrowError error;
+		ISC_STATUS* p = statusVector;
 
 		while (*vector != isc_arg_end)
 		{
@@ -381,84 +273,122 @@ public:
 				case isc_arg_vms:
 				case isc_arg_unix:
 				case isc_arg_win32:
-					error.addCode(*vector++);
-					error.addCode(*vector++);
+					*p++ = *vector++;
+					*p++ = *vector++;
 					break;
 
 				case isc_arg_string:
-					error.addString((const char*) vector[1], strlen((const char*) vector[1]));
-					vector += 2;
+					*p++ = *vector++;
+					*p++ = *vector++;
 					break;
 
 				case isc_arg_cstring:
-					error.addString((const char*) vector[2], vector[1]);
-					vector += 3;
+					*p++ = *vector++;
+					*p++ = *vector++;
+					*p++ = *vector++;
 					break;
 
 				default:
 					return;
 			}
 		}
+
+		*p = isc_arg_end;
 	}
 
+public:
 	static void check(const ISC_STATUS* vector)
 	{
-		check(vector[1], vector);
+		if (vector[1])
+			throw StatusException(vector);
+	}
+
+	static void check(ISC_STATUS status, const ISC_STATUS* vector)
+	{
+		if (status == 0)
+			return;
+
+		check(vector);
 	}
 
 public:
-	inline operator Firebird::Error* ()
+	const ISC_STATUS* getStatusVector() const
 	{
-		return this;
+		return statusVector;
 	}
 
-public:
-	virtual bool FB_CALL addCode(Firebird::int32 code)
+	void stuff(IStatus* status) const
 	{
-		Info* info = new Info;
-		info->type = Info::TYPE_CODE;
-		info->code = code;
-
-		if (end)
-			end->next = info;
-
-		end = info;
-
-		if (!start)
-			start = info;
-
-		return true;
-	}
-
-	virtual bool FB_CALL addString(const char* str, uint strLength)
-	{
-		Info* info = new Info;
-		info->type = Info::TYPE_STR;
-		info->str = new char[strLength];
-		memcpy(info->str, str, strLength);
-		info->strLength = strLength;
-
-		if (end)
-			end->next = info;
-
-		end = info;
-
-		if (!start)
-			start = info;
-
-		return true;
+		status->set(statusVector);
 	}
 
 private:
-	void raise()
+	ISC_STATUS_ARRAY statusVector;
+};
+
+class StatusImpl : public IStatus
+{
+public:
+	StatusImpl(IMaster* master)
+		: delegate(master->getStatus()),
+		  success(true)
 	{
-		if (start)
-			throw Exception(start);
 	}
 
-protected:
-	Info* start;
-	Info* end;
+	virtual int FB_CARG getVersion()
+	{
+		return FB_STATUS_VERSION;
+	}
+
+	virtual IPluginModule* FB_CARG getModule()
+	{
+		return NULL;
+	}
+
+	virtual void FB_CARG dispose()
+	{
+		delegate->dispose();
+		delete this;
+	}
+
+	virtual void FB_CARG set(unsigned int length, const ISC_STATUS* value)
+	{
+		delegate->set(length, value);
+		success = delegate->isSuccess();
+	}
+
+	virtual void FB_CARG set(const ISC_STATUS* value)
+	{
+		delegate->set(value);
+		success = delegate->isSuccess();
+	}
+
+	virtual void FB_CARG init()
+	{
+		delegate->init();
+		success = true;
+	}
+
+	virtual const ISC_STATUS* FB_CARG get() const
+	{
+		return delegate->get();
+	}
+
+	virtual int FB_CARG isSuccess() const
+	{
+		return success;
+	}
+
+public:
+	void check()
+	{
+		if (!success)
+			StatusException::check(delegate->get());
+	}
+
+private:
+	IStatus* delegate;
+	bool success;
 };
 
 
@@ -470,19 +400,33 @@ class Helper
 public:
 	static isc_db_handle getIscDbHandle(ExternalContext* context)
 	{
-		ISC_STATUS_ARRAY status = {0};
+		StatusImpl status(context->getMaster());
+
+		IAttachment* attachment = context->getAttachment(&status);
+		status.check();
+
+		ISC_STATUS_ARRAY statusVector = {0};
 		isc_db_handle handle = 0;
-		fb_get_database_handle(status, &handle, context->getAttachment(ThrowError()));
-		ThrowError::check(status);
+
+		fb_get_database_handle(statusVector, &handle, attachment);
+		StatusException::check(statusVector);
+
 		return handle;
 	}
 
 	static isc_tr_handle getIscTrHandle(ExternalContext* context)
 	{
-		ISC_STATUS_ARRAY status = {0};
+		StatusImpl status(context->getMaster());
+
+		ITransaction* transaction = context->getTransaction(&status);
+		status.check();
+
+		ISC_STATUS_ARRAY statusVector = {0};
 		isc_tr_handle handle = 0;
-		fb_get_transaction_handle(status, &handle, context->getTransaction(ThrowError()));
-		ThrowError::check(status);
+
+		fb_get_transaction_handle(statusVector, &handle, transaction);
+		StatusException::check(statusVector);
+
 		return handle;
 	}
 };
@@ -492,7 +436,7 @@ template <typename This, typename Procedure, typename InMessage, typename OutMes
 class ResultSet : public ExternalResultSet, public Helper
 {
 public:
-	ResultSet(Firebird::ExternalContext* aContext, Procedure* aProcedure,
+	ResultSet(ExternalContext* aContext, Procedure* aProcedure,
 				InMessage* aIn, OutMessage* aOut)
 		: context(aContext),
 		  procedure(aProcedure),
@@ -502,13 +446,13 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
+	virtual void FB_CALL dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
 protected:
-	Firebird::ExternalContext* const context;
+	ExternalContext* const context;
 	Procedure* const procedure;
 	InMessage* const in;
 	OutMessage* const out;
@@ -531,12 +475,12 @@ template <typename This>
 class Function : public ExternalFunction, public Helper
 {
 public:
-	virtual void FB_CALL dispose(Error* /*error*/)
+	virtual void FB_CALL dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/,
+	virtual void FB_CALL getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
@@ -562,12 +506,12 @@ template <typename This>
 class Procedure : public ExternalProcedure, public Helper
 {
 public:
-	virtual void FB_CALL dispose(Error* /*error*/)
+	virtual void FB_CALL dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/,
+	virtual void FB_CALL getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
@@ -593,12 +537,12 @@ template <typename This>
 class Trigger : public ExternalTrigger, public Helper
 {
 public:
-	virtual void FB_CALL dispose(Error* /*error*/)
+	virtual void FB_CALL dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/,
+	virtual void FB_CALL getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
@@ -628,18 +572,18 @@ public:
 		fbUdrRegFunction(name, this);
 	}
 
-	virtual void setup(Error* /*error*/, ExternalContext* /*context*/,
+	virtual void setup(IStatus* /*status*/, ExternalContext* /*context*/,
 		const IRoutineMetadata* /*metadata*/, IRoutineMessage* in, IRoutineMessage* out)
 	{
 		setBlr(in, (typename T::InMessage*) 0);
 		setBlr(out, (typename T::OutMessage*) 0);
 	}
 
-	virtual ExternalFunction* FB_CALL newItem(Error* error, ExternalContext* context,
+	virtual ExternalFunction* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
 		T* obj = new(metadata) Routine<T>;
-		obj->initialize(error, context);
+		obj->initialize(status, context);
 		return obj;
 	}
 
@@ -665,18 +609,18 @@ public:
 		fbUdrRegProcedure(name, this);
 	}
 
-	virtual void setup(Error* /*error*/, ExternalContext* /*context*/,
+	virtual void setup(IStatus* /*status*/, ExternalContext* /*context*/,
 		const IRoutineMetadata* /*metadata*/, IRoutineMessage* in, IRoutineMessage* out)
 	{
 		setBlr(in, (typename T::InMessage*) 0);
 		setBlr(out, (typename T::OutMessage*) 0);
 	}
 
-	virtual ExternalProcedure* FB_CALL newItem(Error* error, ExternalContext* context,
+	virtual ExternalProcedure* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
 		T* obj = new(metadata) Routine<T>;
-		obj->initialize(error, context);
+		obj->initialize(status, context);
 		return obj;
 	}
 
@@ -702,17 +646,17 @@ public:
 		fbUdrRegTrigger(name, this);
 	}
 
-	virtual void setup(Error* /*error*/, ExternalContext* /*context*/,
+	virtual void setup(IStatus* /*status*/, ExternalContext* /*context*/,
 		const IRoutineMetadata* /*metadata*/, ITriggerMessage* fields)
 	{
 		setBlr(fields, (typename T::FieldsMessage*) 0);
 	}
 
-	virtual ExternalTrigger* FB_CALL newItem(Error* error, ExternalContext* context,
+	virtual ExternalTrigger* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
 		T* obj = new(metadata) Routine<T>;
-		obj->initialize(error, context);
+		obj->initialize(status, context);
 		return obj;
 	}
 

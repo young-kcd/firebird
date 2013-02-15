@@ -61,20 +61,12 @@ typedef void* Handle;
 #endif
 
 
-class Error
-{
-public:
-	virtual bool FB_CALL addCode(int32 code) = 0;
-	virtual bool FB_CALL addString(const char* str, uint strLength) = 0;
-};
-
-
 // Interface used in cases which an instance is created by one layer and released by another one.
 class Disposable
 {
 public:
 	// Disposes the object.
-	virtual void FB_CALL dispose(Error* error) = 0;
+	virtual void FB_CALL dispose() = 0;
 };
 
 

@@ -64,15 +64,18 @@ public:
 class ExternalContext
 {
 public:
+	// Gets the IMaster associated with this context.
+	virtual IMaster* FB_CALL getMaster() = 0;
+
 	// Gets the ExternalEngine associated with this context.
-	virtual ExternalEngine* FB_CALL getEngine(Error* error) = 0;
+	virtual ExternalEngine* FB_CALL getEngine(IStatus* status) = 0;
 
 	// Gets the Attachment associated with this context.
-	virtual IAttachment* FB_CALL getAttachment(Error* error) = 0;
+	virtual IAttachment* FB_CALL getAttachment(IStatus* status) = 0;
 
 	// Obtained transaction is valid only before control is returned to the engine
 	// or in ExternalResultSet::fetch calls of correspondent ExternalProcedure::open.
-	virtual ITransaction* FB_CALL getTransaction(Error* error) = 0;
+	virtual ITransaction* FB_CALL getTransaction(IStatus* status) = 0;
 
 	virtual const char* FB_CALL getUserName() = 0;
 	virtual const char* FB_CALL getDatabaseName() = 0;
@@ -95,7 +98,7 @@ public:
 class ExternalResultSet : public Disposable
 {
 public:
-	virtual bool FB_CALL fetch(Error* error) = 0;
+	virtual bool FB_CALL fetch(IStatus* status) = 0;
 };
 
 
@@ -105,10 +108,10 @@ public:
 	// This method is called just before execute and informs the engine our requested character
 	// set for data exchange inside that method.
 	// During this call, the context uses the character set obtained from ExternalEngine::getCharSet.
-	virtual void FB_CALL getCharSet(Error* error, ExternalContext* context,
+	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize) = 0;
 
-	virtual void FB_CALL execute(Error* error, ExternalContext* context,
+	virtual void FB_CALL execute(IStatus* status, ExternalContext* context,
 		void* inMsg, void* outMsg) = 0;
 };
 
@@ -119,13 +122,13 @@ public:
 	// This method is called just before open and informs the engine our requested character
 	// set for data exchange inside that method and ExternalResultSet::fetch.
 	// During this call, the context uses the character set obtained from ExternalEngine::getCharSet.
-	virtual void FB_CALL getCharSet(Error* error, ExternalContext* context,
+	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize) = 0;
 
 	// Returns a ExternalResultSet for selectable procedures.
 	// Returning NULL results in a result set of one record.
 	// Procedures without output parameters should return NULL.
-	virtual ExternalResultSet* FB_CALL open(Error* error, ExternalContext* context,
+	virtual ExternalResultSet* FB_CALL open(IStatus* status, ExternalContext* context,
 		void* inMsg, void* outMsg) = 0;
 };
 
@@ -157,10 +160,10 @@ public:
 	// This method is called just before execute and informs the engine our requested character
 	// set for data exchange inside that method.
 	// During this call, the context uses the character set obtained from ExternalEngine::getCharSet.
-	virtual void FB_CALL getCharSet(Error* error, ExternalContext* context,
+	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize) = 0;
 
-	virtual void FB_CALL execute(Error* error, ExternalContext* context,
+	virtual void FB_CALL execute(IStatus* status, ExternalContext* context,
 		Action action, void* oldMsg, void* newMsg) = 0;
 };
 
@@ -190,22 +193,22 @@ public:
 	// The requested character set for data exchange inside methods of this interface should
 	// be copied to charSet parameter.
 	// During this call, the context uses the UTF-8 character set.
-	virtual void FB_CALL open(Error* error, ExternalContext* context,
+	virtual void FB_CALL open(IStatus* status, ExternalContext* context,
 		Utf8* charSet, uint charSetSize) = 0;
 
 	// Attachment is being opened.
-	virtual void FB_CALL openAttachment(Error* error, ExternalContext* context) = 0;
+	virtual void FB_CALL openAttachment(IStatus* status, ExternalContext* context) = 0;
 
 	// Attachment is being closed.
-	virtual void FB_CALL closeAttachment(Error* error, ExternalContext* context) = 0;
+	virtual void FB_CALL closeAttachment(IStatus* status, ExternalContext* context) = 0;
 
 	// Called when engine wants to load object in the cache. Objects are disposed when
 	// going out of the cache.
-	virtual ExternalFunction* FB_CALL makeFunction(Error* error, ExternalContext* context,
+	virtual ExternalFunction* FB_CALL makeFunction(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg) = 0;
-	virtual ExternalProcedure* FB_CALL makeProcedure(Error* error, ExternalContext* context,
+	virtual ExternalProcedure* FB_CALL makeProcedure(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg) = 0;
-	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
+	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, ITriggerMessage* triggerMsg) = 0;
 };
 #define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 6)

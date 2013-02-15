@@ -39,27 +39,27 @@ namespace Firebird
 class FunctionFactory
 {
 public:
-	virtual void setup(Error* error, ExternalContext* context, const IRoutineMetadata* metadata,
+	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IRoutineMessage* in, IRoutineMessage* out) = 0;
-	virtual ExternalFunction* FB_CALL newItem(Error* error, ExternalContext* context,
+	virtual ExternalFunction* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
 
 class ProcedureFactory
 {
 public:
-	virtual void setup(Error* error, ExternalContext* context, const IRoutineMetadata* metadata,
+	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IRoutineMessage* in, IRoutineMessage* out) = 0;
-	virtual ExternalProcedure* FB_CALL newItem(Error* error, ExternalContext* context,
+	virtual ExternalProcedure* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
 
 class TriggerFactory
 {
 public:
-	virtual void setup(Error* error, ExternalContext* context, const IRoutineMetadata* metadata,
+	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		ITriggerMessage* fields) = 0;
-	virtual ExternalTrigger* FB_CALL newItem(Error* error, ExternalContext* context,
+	virtual ExternalTrigger* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
 

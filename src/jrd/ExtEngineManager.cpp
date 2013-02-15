@@ -25,7 +25,6 @@
 #include "iberror.h"
 #include "inf_pub.h"
 #include "../jrd/ExtEngineManager.h"
-#include "../jrd/ErrorImpl.h"
 #include "../dsql/sqlda_pub.h"
 #include "../common/dsc.h"
 #include "../jrd/align.h"
@@ -140,7 +139,9 @@ private:
 		{	// scope
 			Attachment::Checkout attCout(attachment, FB_FUNCTION);
 
-			obj->getCharSet(RaiseError(), attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
+			LocalStatus status;
+			obj->getCharSet(&status, attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
+			status.check();
 			charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
 		}
 
@@ -235,17 +236,23 @@ void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 	}
 }
 
-ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(Error* /*error*/)
+IMaster* ExtEngineManager::ExternalContextImpl::getMaster()
+{
+	MasterInterfacePtr master;
+	return master;
+}
+
+ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(IStatus* /*status*/)
 {
 	return engine;
 }
 
-Firebird::IAttachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachment(Error* /*error*/)
+Firebird::IAttachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachment(IStatus* /*status*/)
 {
 	return externalAttachment;
 }
 
-Firebird::ITransaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransaction(Error* /*error*/)
+Firebird::ITransaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransaction(IStatus* /*status*/)
 {
 	return externalTransaction;
 }
@@ -305,7 +312,7 @@ ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtMana
 ExtEngineManager::Function::~Function()
 {
 	//Database::Checkout dcoHolder(database);
-	function->dispose(LogError());
+	function->dispose();
 }
 
 
@@ -319,7 +326,9 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* o
 
 	Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-	function->execute(RaiseError(), attInfo->context, inMsg, outMsg);
+	LocalStatus status;
+	function->execute(&status, attInfo->context, inMsg, outMsg);
+	status.check();
 }
 
 
@@ -342,7 +351,7 @@ ExtEngineManager::Procedure::Procedure(thread_db* tdbb, ExtEngineManager* aExtMa
 ExtEngineManager::Procedure::~Procedure()
 {
 	//Database::Checkout dcoHolder(database);
-	procedure->dispose(LogError());
+	procedure->dispose();
 }
 
 
@@ -372,7 +381,9 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, UCHAR* inMsg, UCHAR* out
 
 	Attachment::Checkout attCout(attachment, FB_FUNCTION);
 
-	resultSet = procedure->procedure->open(RaiseError(), attInfo->context, inMsg, outMsg);
+	LocalStatus status;
+	resultSet = procedure->procedure->open(&status, attInfo->context, inMsg, outMsg);
+	status.check();
 }
 
 
@@ -382,7 +393,7 @@ ExtEngineManager::ResultSet::~ResultSet()
 	{
 		fb_assert(attachment == JRD_get_thread_data()->getAttachment());
 		Attachment::Checkout attCout(attachment, FB_FUNCTION);
-		resultSet->dispose(LogError());
+		resultSet->dispose();
 	}
 }
 
@@ -402,7 +413,12 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 
 	fb_assert(attachment == tdbb->getAttachment());
 	Attachment::Checkout attCout(attachment, FB_FUNCTION);
-	return resultSet->fetch(RaiseError());
+
+	LocalStatus status;
+	bool ret = resultSet->fetch(&status);
+	status.check();
+
+	return ret;
 }
 
 
@@ -572,8 +588,10 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		trigger->execute(RaiseError(), attInfo->context, action,
+		LocalStatus status;
+		trigger->execute(&status, attInfo->context, action,
 			(oldRpb ? oldMsg.begin() : NULL), (newRpb ? newMsg.begin() : NULL));
+		status.check();
 	}
 
 	if (newRpb)
@@ -700,7 +718,8 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 		{
 			{	// scope
 				ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-				engine->closeAttachment(LogError(), attInfo->context);
+				LocalStatus status;
+				engine->closeAttachment(&status, attInfo->context);	//// FIXME: log status
 			}
 
 			delete attInfo;
@@ -769,14 +788,15 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		externalFunction = attInfo->engine->makeFunction(RaiseError(), attInfo->context, metadata,
+		LocalStatus status;
+		externalFunction = attInfo->engine->makeFunction(&status, attInfo->context, metadata,
 			inMsg, outMsg);
+		status.check();
 
 		if (!externalFunction)
 		{
 			status_exception::raise(
-				Arg::Gds(isc_eem_func_not_returned) <<
-					udf->getName().toString() << engine);
+				Arg::Gds(isc_eem_func_not_returned) << udf->getName().toString() << engine);
 		}
 	}
 
@@ -788,7 +808,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	catch (...)
 	{
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
-		externalFunction->dispose(LogError());
+		externalFunction->dispose();
 		throw;
 	}
 }
@@ -848,8 +868,10 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		externalProcedure = attInfo->engine->makeProcedure(RaiseError(), attInfo->context, metadata,
+		LocalStatus status;
+		externalProcedure = attInfo->engine->makeProcedure(&status, attInfo->context, metadata,
 			inMsg, outMsg);
+		status.check();
 
 		if (!externalProcedure)
 		{
@@ -867,7 +889,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	catch (...)
 	{
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
-		externalProcedure->dispose(LogError());
+		externalProcedure->dispose();
 		throw;
 	}
 }
@@ -927,8 +949,10 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		externalTrigger = attInfo->engine->makeTrigger(RaiseError(), attInfo->context, metadata,
+		LocalStatus status;
+		externalTrigger = attInfo->engine->makeTrigger(&status, attInfo->context, metadata,
 			&fieldsMsg);
+		status.check();
 
 		if (!externalTrigger)
 		{
@@ -945,7 +969,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	catch (...)
 	{
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
-		externalTrigger->dispose(LogError());
+		externalTrigger->dispose();
 		throw;
 	}
 }
@@ -988,7 +1012,8 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 						setupAdminCharSet(tdbb, engine, attInfo);
 
 						ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-						engine->openAttachment(LogError(), attInfo->context);
+						LocalStatus status;
+						engine->openAttachment(&status, attInfo->context);	//// FIXME: log status
 					}
 				}
 				catch (...)
@@ -1054,7 +1079,8 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 
 			ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 			Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
-			engine->openAttachment(LogError(), attInfo->context);
+			LocalStatus status;
+			engine->openAttachment(&status, attInfo->context);	//// FIXME: log status
 		}
 
 		return attInfo;
@@ -1077,8 +1103,11 @@ void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, ExternalEngine* engine
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, CS_UTF8);
 
 	Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
-	engine->open(RaiseError(), attInfo->context, charSetName,
-		MAX_SQL_IDENTIFIER_LEN);
+
+	LocalStatus status;
+	engine->open(&status, attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
+	status.check();
+
 	charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
 
 	if (!MET_get_char_coll_subtype(tdbb, &attInfo->adminCharSet,

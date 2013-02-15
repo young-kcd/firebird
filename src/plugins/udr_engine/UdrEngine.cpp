@@ -134,7 +134,7 @@ public:
 public:
 	void loadModule(const IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint);
 	template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* getChild(
-		Error* error, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
+		IStatus* status, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
 		SharedObjType* sharedObj, ExternalContext* context, NodeType* nodes,
 		SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName);
 	template <typename ObjType> void deleteChildren(
@@ -144,23 +144,23 @@ public:
 		const string& entryPoint);
 
 private:
-	template <typename T, typename T2> T2* getNode(Error* error, T* nodes,
+	template <typename T, typename T2> T2* getNode(IStatus* status, T* nodes,
 		const PathName& moduleName, ExternalContext* context, const IRoutineMetadata* metadata,
 		const string& entryPoint);
 
 public:
-	virtual void FB_CALL open(Error* error, ExternalContext* context, Utf8* name, uint nameSize);
-	virtual void FB_CALL openAttachment(Error* error, ExternalContext* context);
-	virtual void FB_CALL closeAttachment(Error* error, ExternalContext* context);
-	virtual ExternalFunction* FB_CALL makeFunction(Error* error, ExternalContext* context,
+	virtual void FB_CALL open(IStatus* status, ExternalContext* context, Utf8* name, uint nameSize);
+	virtual void FB_CALL openAttachment(IStatus* status, ExternalContext* context);
+	virtual void FB_CALL closeAttachment(IStatus* status, ExternalContext* context);
+	virtual ExternalFunction* FB_CALL makeFunction(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg);
-	virtual ExternalProcedure* FB_CALL makeProcedure(Error* error, ExternalContext* context,
+	virtual ExternalProcedure* FB_CALL makeProcedure(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg);
-	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
+	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, ITriggerMessage* fieldsMsg);
 
 public:
-	virtual void FB_CALL dispose(Error* error);
+	virtual void FB_CALL dispose();
 
 private:
 	Mutex childrenMutex;
@@ -206,7 +206,7 @@ static TriggerNode* registeredTriggers = NULL;
 class SharedFunction : public ExternalFunction
 {
 public:
-	SharedFunction(Error* error, Engine* aEngine, ExternalContext* context,
+	SharedFunction(IStatus* status, Engine* aEngine, ExternalContext* context,
 				const IRoutineMetadata* aMetadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
 		: engine(aEngine),
 		  metadata(aMetadata),
@@ -217,7 +217,7 @@ public:
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
 		FunctionNode* node = engine->findNode<FunctionNode>(registeredFunctions, moduleName, entryPoint);
-		node->factory->setup(error, context, metadata, inMsg, outMsg);
+		node->factory->setup(status, context, metadata, inMsg, outMsg);
 	}
 
 	virtual ~SharedFunction()
@@ -226,36 +226,36 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
+	virtual void FB_CALL dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CALL getCharSet(Error* error, ExternalContext* context,
+	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
 		try
 		{
-			ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(error,
+			ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
 				children, this, context, registeredFunctions, engine->functions, moduleName);
 			if (function)
-				function->getCharSet(error, context, name, nameSize);
+				function->getCharSet(status, context, name, nameSize);
 		}
-		catch (const ThrowError::Exception& e)
+		catch (const StatusException& e)
 		{
-			e.stuff(error);
+			e.stuff(status);
 		}
 	}
 
-	virtual void FB_CALL execute(Error* error, ExternalContext* context, void* inMsg, void* outMsg)
+	virtual void FB_CALL execute(IStatus* status, ExternalContext* context, void* inMsg, void* outMsg)
 	{
-		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(error,
+		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
 			children, this, context, registeredFunctions, engine->functions, moduleName);
 		if (function)
-			function->execute(error, context, inMsg, outMsg);
+			function->execute(status, context, inMsg, outMsg);
 	}
 
 public:
@@ -274,7 +274,7 @@ public:
 class SharedProcedure : public ExternalProcedure
 {
 public:
-	SharedProcedure(Error* error, Engine* aEngine, ExternalContext* context,
+	SharedProcedure(IStatus* status, Engine* aEngine, ExternalContext* context,
 				const IRoutineMetadata* aMetadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
 		: engine(aEngine),
 		  metadata(aMetadata),
@@ -285,7 +285,7 @@ public:
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
 		ProcedureNode* node = engine->findNode<ProcedureNode>(registeredProcedures, moduleName, entryPoint);
-		node->factory->setup(error, context, metadata, inMsg, outMsg);
+		node->factory->setup(status, context, metadata, inMsg, outMsg);
 	}
 
 	virtual ~SharedProcedure()
@@ -294,42 +294,42 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
+	virtual void FB_CALL dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CALL getCharSet(Error* error, ExternalContext* context,
+	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
 		try
 		{
-			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(error,
+			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
 			if (procedure)
-				procedure->getCharSet(error, context, name, nameSize);
+				procedure->getCharSet(status, context, name, nameSize);
 		}
-		catch (const ThrowError::Exception& e)
+		catch (const StatusException& e)
 		{
-			e.stuff(error);
+			e.stuff(status);
 		}
 	}
 
-	virtual ExternalResultSet* FB_CALL open(Error* error, ExternalContext* context,
+	virtual ExternalResultSet* FB_CALL open(IStatus* status, ExternalContext* context,
 		void* inMsg, void* outMsg)
 	{
 		try
 		{
-			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(error,
+			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
-			return procedure ? procedure->open(error, context, inMsg, outMsg) : NULL;
+			return procedure ? procedure->open(status, context, inMsg, outMsg) : NULL;
 		}
-		catch (const ThrowError::Exception& e)
+		catch (const StatusException& e)
 		{
-			e.stuff(error);
+			e.stuff(status);
 			return NULL;
 		}
 	}
@@ -350,7 +350,7 @@ public:
 class SharedTrigger : public ExternalTrigger
 {
 public:
-	SharedTrigger(Error* error, Engine* aEngine, ExternalContext* context,
+	SharedTrigger(IStatus* status, Engine* aEngine, ExternalContext* context,
 				const IRoutineMetadata* aMetadata, ITriggerMessage* fieldsMsg)
 		: engine(aEngine),
 		  metadata(aMetadata),
@@ -361,7 +361,7 @@ public:
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
 		TriggerNode* node = engine->findNode<TriggerNode>(registeredTriggers, moduleName, entryPoint);
-		node->factory->setup(error, context, metadata, fieldsMsg);
+		node->factory->setup(status, context, metadata, fieldsMsg);
 	}
 
 	virtual ~SharedTrigger()
@@ -370,37 +370,37 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
+	virtual void FB_CALL dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CALL getCharSet(Error* error, ExternalContext* context,
+	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
 		try
 		{
-			ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(error,
+			ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
 				children, this, context, registeredTriggers, engine->triggers, moduleName);
 			if (trigger)
-				trigger->getCharSet(error, context, name, nameSize);
+				trigger->getCharSet(status, context, name, nameSize);
 		}
-		catch (const ThrowError::Exception& e)
+		catch (const StatusException& e)
 		{
-			e.stuff(error);
+			e.stuff(status);
 		}
 	}
 
-	virtual void FB_CALL execute(Error* error, ExternalContext* context,
+	virtual void FB_CALL execute(IStatus* status, ExternalContext* context,
 		ExternalTrigger::Action action, void* oldMsg, void* newMsg)
 	{
-		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(error,
+		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
 			children, this, context, registeredTriggers, engine->triggers, moduleName);
 		if (trigger)
-			trigger->execute(error, context, action, oldMsg, newMsg);
+			trigger->execute(status, context, action, oldMsg, newMsg);
 	}
 
 public:
@@ -497,7 +497,7 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 {
 	LocalStatus status;
 	const string str(metadata->getEntryPoint(&status));
-	ThrowError::check(status.get());
+	StatusException::check(status.get());
 
 	const size_t pos = str.find('!');
 	if (pos == string::npos)
@@ -509,7 +509,7 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 			isc_arg_end
 		};
 
-		ThrowError::check(statusVector);
+		StatusException::check(statusVector);
 	}
 
 	*moduleName = PathName(str.substr(0, pos).c_str());
@@ -523,7 +523,7 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 			isc_arg_end
 		};
 
-		ThrowError::check(statusVector);
+		StatusException::check(statusVector);
 	}
 
 	*entryPoint = str.substr(pos + 1);
@@ -559,14 +559,14 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 				isc_arg_end
 			};
 
-			ThrowError::check(statusVector);
+			StatusException::check(statusVector);
 		}
 	}
 }
 
 
 template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* Engine::getChild(
-	Error* error, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
+	IStatus* status, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
 	SharedObjType* sharedObj, ExternalContext* context, NodeType* nodes,
 	SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName)
 {
@@ -578,7 +578,7 @@ template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* 
 	ObjType* obj;
 	if (!children.get(context, obj))
 	{
-		obj = getNode<NodeType, ObjType>(error, nodes, moduleName, context, sharedObj->metadata,
+		obj = getNode<NodeType, ObjType>(status, nodes, moduleName, context, sharedObj->metadata,
 			sharedObj->entryPoint);
 
 		if (obj)
@@ -618,33 +618,33 @@ template <typename T> T* Engine::findNode(T* nodes, const PathName& moduleName,
 		isc_arg_end
 	};
 
-	ThrowError::check(statusVector);
+	StatusException::check(statusVector);
 
 	return NULL;
 }
 
 
-template <typename T, typename T2> T2* Engine::getNode(Error* error, T* nodes,
+template <typename T, typename T2> T2* Engine::getNode(IStatus* status, T* nodes,
 		const PathName& moduleName, ExternalContext* context, const IRoutineMetadata* metadata,
 		const string& entryPoint)
 {
 	T* node = findNode<T>(nodes, moduleName, entryPoint);
-	return node->factory->newItem(error, context, metadata);
+	return node->factory->newItem(status, context, metadata);
 }
 
 
-void FB_CALL Engine::open(Error* /*error*/, ExternalContext* /*context*/, Utf8* name, uint nameSize)
+void FB_CALL Engine::open(IStatus* /*status*/, ExternalContext* /*context*/, Utf8* name, uint nameSize)
 {
 	strncpy(name, "UTF-8", nameSize);
 }
 
 
-void FB_CALL Engine::openAttachment(Error* /*error*/, ExternalContext* /*context*/)
+void FB_CALL Engine::openAttachment(IStatus* /*status*/, ExternalContext* /*context*/)
 {
 }
 
 
-void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
+void FB_CALL Engine::closeAttachment(IStatus* status, ExternalContext* context)
 {
 	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
 
@@ -653,7 +653,7 @@ void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 		ExternalFunction* function;
 		if ((*i)->children.get(context, function))
 		{
-			function->dispose(error);
+			function->dispose();
 			(*i)->children.remove(context);
 		}
 	}
@@ -663,7 +663,7 @@ void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 		ExternalProcedure* procedure;
 		if ((*i)->children.get(context, procedure))
 		{
-			procedure->dispose(error);
+			procedure->dispose();
 			(*i)->children.remove(context);
 		}
 	}
@@ -673,59 +673,59 @@ void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 		ExternalTrigger* trigger;
 		if ((*i)->children.get(context, trigger))
 		{
-			trigger->dispose(error);
+			trigger->dispose();
 			(*i)->children.remove(context);
 		}
 	}
 }
 
 
-ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* context,
+ExternalFunction* FB_CALL Engine::makeFunction(IStatus* status, ExternalContext* context,
 	const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
 {
 	try
 	{
-		return new SharedFunction(error, this, context, metadata, inMsg, outMsg);
+		return new SharedFunction(status, this, context, metadata, inMsg, outMsg);
 	}
-	catch (const ThrowError::Exception& e)
+	catch (const StatusException& e)
 	{
-		e.stuff(error);
+		e.stuff(status);
 		return NULL;
 	}
 }
 
 
-ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* context,
+ExternalProcedure* FB_CALL Engine::makeProcedure(IStatus* status, ExternalContext* context,
 	const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
 {
 	try
 	{
-		return new SharedProcedure(error, this, context, metadata, inMsg, outMsg);
+		return new SharedProcedure(status, this, context, metadata, inMsg, outMsg);
 	}
-	catch (const ThrowError::Exception& e)
+	catch (const StatusException& e)
 	{
-		e.stuff(error);
+		e.stuff(status);
 		return NULL;
 	}
 }
 
 
-ExternalTrigger* FB_CALL Engine::makeTrigger(Error* error, ExternalContext* context,
+ExternalTrigger* FB_CALL Engine::makeTrigger(IStatus* status, ExternalContext* context,
 	const IRoutineMetadata* metadata, ITriggerMessage* fieldsMsg)
 {
 	try
 	{
-		return new SharedTrigger(error, this, context, metadata, fieldsMsg);
+		return new SharedTrigger(status, this, context, metadata, fieldsMsg);
 	}
-	catch (const ThrowError::Exception& e)
+	catch (const StatusException& e)
 	{
-		e.stuff(error);
+		e.stuff(status);
 		return NULL;
 	}
 }
 
 
-void FB_CALL Engine::dispose(Error* /*error*/)
+void FB_CALL Engine::dispose()
 {
 	delete this;
 }
@@ -733,25 +733,6 @@ void FB_CALL Engine::dispose(Error* /*error*/)
 
 //--------------------------------------
 
-
-/***
-class ExternalEngineFactoryImpl : public ExternalEngineFactory
-{
-public:
-	virtual ExternalEngine* FB_CALL createEngine(Error* error, int *version*,
-		const char* name)
-	{
-		if (strcmp(name, "UDR") == 0)
-			return new Engine();
-
-		const char* const msg = "Engine not implemented";
-
-		error->addCode(isc_arg_gds);
-		error->addCode(isc_random);
-		error->addString(msg, strlen(msg));
-		return NULL;
-	}
-***/
 
 class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {

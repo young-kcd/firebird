@@ -29,7 +29,6 @@
 #include "../dsql/sqlda_pub.h"
 #include "../yvalve/why_proto.h"
 
-#include "../jrd/ErrorImpl.h"
 #include "../common/os/path_utils.h"
 #include "../jrd/err_proto.h"
 #include "../common/isc_proto.h"

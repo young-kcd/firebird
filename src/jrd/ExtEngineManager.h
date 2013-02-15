@@ -198,9 +198,10 @@ private:
 		void releaseTransaction();
 		void setTransaction(thread_db* tdbb);
 
-		virtual Firebird::ExternalEngine* FB_CALL getEngine(Firebird::Error* error);
-		virtual Firebird::IAttachment* FB_CALL getAttachment(Firebird::Error* error);
-		virtual Firebird::ITransaction* FB_CALL getTransaction(Firebird::Error* error);
+		virtual Firebird::IMaster* FB_CALL getMaster();
+		virtual Firebird::ExternalEngine* FB_CALL getEngine(Firebird::IStatus* status);
+		virtual Firebird::IAttachment* FB_CALL getAttachment(Firebird::IStatus* status);
+		virtual Firebird::ITransaction* FB_CALL getTransaction(Firebird::IStatus* status);
 		virtual const char* FB_CALL getUserName();
 		virtual const char* FB_CALL getDatabaseName();
 		virtual const Firebird::Utf8* FB_CALL getClientCharSet();
