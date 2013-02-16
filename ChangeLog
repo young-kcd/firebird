@@ -1,3 +1,17 @@
+ 2013-02-15 02:48  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/FirebirdApi.h
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   D src/jrd/ErrorImpl.cpp
+   D src/jrd/ErrorImpl.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/yvalve/PluginManager.cpp
+Unifying the external engines API with the new ones.
+
  2013-02-11 01:57  asfernandes 
    M src/dsql/ddl.cpp
    M src/dsql/dsql.h
