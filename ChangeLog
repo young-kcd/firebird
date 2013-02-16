@@ -1,3 +1,7 @@
+ 2013-02-15 08:49  hvlad 
+   M src/jrd/sort.cpp
+Fixed bug CORE-4051 : Memory leak when sorting big records
+
  2013-01-10 15:01  paul_reeves 
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
 Improve check for FBBUILD_FILENAME_SUFFIX env var
