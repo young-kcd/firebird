@@ -45,6 +45,7 @@
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
 #include "../jrd/inf_pub.h"
+#include "../jrd/align.h"
 #include "../common/os/path_utils.h"
 #include "../common/os/fbsyslog.h"
 
@@ -1231,6 +1232,111 @@ void logAndDie(const char* text)
 #else
 	abort();
 #endif
+}
+
+unsigned sqlTypeToDsc(unsigned runOffset, unsigned sqlType, unsigned sqlLength,
+	unsigned* dtype, unsigned* len, unsigned* offset, unsigned* nullOffset)
+{
+	sqlType &= ~1;
+	unsigned dscType;
+
+	switch (sqlType)
+	{
+	case SQL_VARYING:
+		dscType = dtype_varying;
+		break;
+
+	case SQL_TEXT:
+		dscType = dtype_text;
+		break;
+
+	case SQL_DOUBLE:
+		dscType = dtype_double;
+		break;
+
+	case SQL_FLOAT:
+		dscType = dtype_real;
+		break;
+
+	case SQL_D_FLOAT:
+		dscType = dtype_d_float;
+		break;
+
+	case SQL_TYPE_DATE:
+		dscType = dtype_sql_date;
+		break;
+
+	case SQL_TYPE_TIME:
+		dscType = dtype_sql_time;
+		break;
+
+	case SQL_TIMESTAMP:
+		dscType = dtype_timestamp;
+		break;
+
+	case SQL_BLOB:
+		dscType = dtype_blob;
+		break;
+
+	case SQL_ARRAY:
+		dscType = dtype_array;
+		break;
+
+	case SQL_LONG:
+		dscType = dtype_long;
+		break;
+
+	case SQL_SHORT:
+		dscType = dtype_short;
+		break;
+
+	case SQL_INT64:
+		dscType = dtype_int64;
+		break;
+
+	case SQL_QUAD:
+		dscType = dtype_quad;
+		break;
+
+	case SQL_BOOLEAN:
+		dscType = dtype_boolean;
+		break;
+
+	case SQL_NULL:
+		dscType = dtype_text;
+		break;
+
+	default:
+		fb_assert(false);
+		// keep old yvalve logic
+		dscType = sqlType;
+		break;
+	}
+
+	if (dtype)
+	{
+		*dtype = dscType;
+	}
+
+	if (sqlType == SQL_VARYING)
+		sqlLength += sizeof(USHORT);
+	if (len)
+		*len = sqlLength;
+
+	unsigned align = type_alignments[dscType % FB_NELEM(type_alignments)];
+	if (align)
+		runOffset = FB_ALIGN(runOffset, align);
+	if (offset)
+		*offset = runOffset;
+
+	runOffset += sqlLength;
+	align = type_alignments[dtype_short];
+	if (align)
+		runOffset = FB_ALIGN(runOffset, align);
+	if(nullOffset)
+		*nullOffset = runOffset;
+
+	return runOffset + sizeof(SSHORT);
 }
 
 } // namespace fb_utils

@@ -92,10 +92,10 @@ typedef char FB_SQLSTATE_STRING[FB_SQLSTATE_SIZE];
  */
 
 #if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
-typedef	int		ISC_LONG;
+typedef	int				ISC_LONG;
 typedef	unsigned int	ISC_ULONG;
 #else
-typedef	signed long	ISC_LONG;
+typedef	signed long		ISC_LONG;
 typedef	unsigned long	ISC_ULONG;
 #endif
 
@@ -103,7 +103,11 @@ typedef	signed short	ISC_SHORT;
 typedef	unsigned short	ISC_USHORT;
 
 typedef	unsigned char	ISC_UCHAR;
-typedef char		ISC_SCHAR;
+typedef char			ISC_SCHAR;
+
+typedef ISC_UCHAR		FB_BOOLEAN;
+#define	FB_FALSE		'\0'
+#define	FB_TRUE			'\1'
 
 /*******************************************************************/
 /* 64 bit Integers                                                 */

@@ -70,6 +70,8 @@
 #include "../auth/trusted/AuthSspi.h"
 #include "../plugins/crypt/arc4/Arc4.h"
 
+#include "BlrFromMessage.h"
+
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -105,12 +107,27 @@ namespace {
 
 	// Success vector for general use
 	const ISC_STATUS success_vector[] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+
+	void handle_error(ISC_STATUS code)
+	{
+		Arg::Gds(code).raise();
+	}
+
+	template <typename T>
+	inline void CHECK_HANDLE(T* blk, ISC_STATUS error)
+	{
+		if (!blk || !blk->checkHandle())
+		{
+			handle_error(error);
+		}
+	}
 }
 
 namespace Remote {
 
 // Provider stuff
 class Attachment;
+class Statement;
 
 class Blob : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
 {
@@ -215,41 +232,96 @@ int Transaction::release()
 	return 0;
 }
 
+class ResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSET_VERSION>
+{
+public:
+	// IResultSet implementation
+	virtual int FB_CARG release();
+	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, unsigned char* message);
+	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status);
+	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
+	virtual void FB_CARG close(IStatus* status);
+
+	ResultSet(Statement* s, IMessageMetadata* outFmt)
+		: stmt(s), outputFormat(outFmt), tmpStatement(false)
+	{ }
+
+private:
+	void releaseWithStatement();
+
+	Statement* stmt;
+	RefPtr<IMessageMetadata> outputFormat;
+
+public:
+	bool tmpStatement;
+};
+
+int ResultSet::release()
+{
+	if (--refCounter != 0)
+		return 1;
+
+	if (stmt)
+	{
+		LocalStatus status;
+		close(&status);
+	}
+	else
+		delete this;
+
+	return 0;
+}
+
 class Statement : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
 	// IStatement implementation
 	virtual int FB_CARG release();
-	virtual void FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
-							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-							   unsigned int flags);
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
 	virtual unsigned FB_CARG getType(IStatus* status);
-	virtual const char* FB_CARG getPlan(IStatus* status, bool detailed);
-	virtual const Firebird::IParametersMetadata* FB_CARG getInputParameters(IStatus* status);
-	virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(IStatus* status);
+	virtual const char* FB_CARG getPlan(IStatus* status, FB_BOOLEAN detailed);
+	virtual Firebird::IMessageMetadata* FB_CARG getInputMetadata(IStatus* status);
+	virtual Firebird::IMessageMetadata* FB_CARG getOutputMetadata(IStatus* status);
 	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status);
+	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
+		FbMessage* inMsgBuffer, FbMessage* outMsgBuffer);
+	virtual ResultSet* FB_CARG openCursor(IStatus* status, ITransaction* tra,
+		FbMessage* inMsgBuffer, IMessageMetadata* outFormat);
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
-	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
-										unsigned int in_msg_type, const FbMessage* inMsgBuffer,
-										const FbMessage* outMsgBuffer);
-	virtual int FB_CARG fetch(IStatus* status, const FbMessage* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG free(IStatus* status, unsigned int option);
+	virtual void FB_CARG free(IStatus* status);
 
 public:
-	Statement(Rsr* handle, Attachment* a)
+	Statement(Rsr* handle, Attachment* a, unsigned aDialect)
 		: metadata(getPool(), this),
 		  remAtt(a),
-		  statement(handle)
+		  statement(handle),
+		  dialect(aDialect)
 	{
+	}
+
+	Rsr* getStatement()
+	{
+		return statement;
+	}
+
+	void parseMetadata(Array<UCHAR>& buffer)
+	{
+		metadata.clear();
+		metadata.parse(buffer.getCount(), buffer.begin());
+	}
+
+	unsigned getDialect()
+	{
+		return dialect;
 	}
 
 private:
 	StatementMetadata metadata;
 	Attachment* remAtt;
 	Rsr* statement;
+	unsigned dialect;
 };
 
 int Statement::release()
@@ -260,7 +332,7 @@ int Statement::release()
 	if (statement)
 	{
 		LocalStatus status;
-		free(&status, DSQL_drop);
+		free(&status);
 	}
 	else
 		delete this;
@@ -355,7 +427,6 @@ public:
 	virtual Firebird::ITransaction* FB_CARG startTransaction(IStatus* status,
 		unsigned int tpbLength, const unsigned char* tpb);
 	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id);
-	virtual Firebird::IStatement* FB_CARG allocateStatement(IStatus* status);
 	virtual Firebird::IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blr_length, const unsigned char* blr);
 	virtual void FB_CARG transactRequest(IStatus* status, ITransaction* transaction,
 								 unsigned int blr_length, const unsigned char* blr,
@@ -375,10 +446,13 @@ public:
 						  int sliceLength, unsigned char* slice);
 	virtual void FB_CARG executeDyn(IStatus* status, ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
-	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* transaction,
-								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int in_msg_type, const FbMessage* inMsgBuffer,
-								 const FbMessage* outMsgBuffer);
+	virtual Statement* FB_CARG prepare(IStatus* status, ITransaction* transaction,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, unsigned int flags);
+	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in, FbMessage *out);
+	virtual Firebird::IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in,
+		Firebird::IMessageMetadata* out);
 	virtual Firebird::IEvents* FB_CARG queEvents(IStatus* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(IStatus* status, int option);
@@ -403,6 +477,7 @@ public:
 
 	Rtr* remoteTransaction(ITransaction* apiTra);
 	Transaction* remoteTransactionInterface(ITransaction* apiTra);
+	Statement* createStatement(IStatus* status, unsigned dialect);
 
 private:
 	Rdb* rdb;
@@ -574,10 +649,8 @@ static void disconnect(rem_port*);
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
-static int fetch_blob(IStatus*, Rsr*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
-static void handle_error(ISC_STATUS);
 static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 	const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*, ClntAuthBlock* cBlock = NULL);
 static void init(IStatus*, ClntAuthBlock&, rem_port*, P_OP, PathName&,
@@ -614,15 +687,6 @@ static void authReceiveResponse(ClntAuthBlock& authItr, rem_port* port, Rdb* rdb
 	IStatus* status, PACKET* packet, bool checkKeys);
 
 static AtomicCounter remote_event_id;
-
-template <typename T>
-inline static void CHECK_HANDLE(T* blk, ISC_STATUS error)
-{
-	if (!blk || !blk->checkHandle())
-	{
-		handle_error (error);
-	}
-}
 
 inline static void reset(IStatus* status) throw()
 {
@@ -1491,71 +1555,8 @@ void Attachment::dropDatabase(IStatus* status)
 }
 
 
-Firebird::IStatement* Attachment::allocateStatement(IStatus* status)
-{
-/**************************************
- *
- *	d s q l _ a l l o c a t e _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Allocate a statement handle.
- *
- **************************************/
-	try
-	{
-		reset(status);
-
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		Rsr* statement = NULL;
-		if (rdb->rdb_port->port_flags & PORT_lazy)
-		{
-			statement = new Rsr;
-			statement->rsr_rdb = rdb;
-			statement->rsr_id = INVALID_OBJECT;
-			statement->rsr_flags.set(Rsr::LAZY);
-		}
-		else
-		{
-			PACKET* packet = &rdb->rdb_packet;
-			packet->p_operation = op_allocate_statement;
-			packet->p_rlse.p_rlse_object = rdb->rdb_id;
-
-			send_and_receive(status, rdb, packet);
-
-			// Allocate SQL request block
-
-			statement = new Rsr;
-			statement->rsr_rdb = rdb;
-			statement->rsr_id = packet->p_resp.p_resp_object;
-
-			// register the object
-
-			SET_OBJECT(rdb, statement, statement->rsr_id);
-		}
-
-		statement->rsr_next = rdb->rdb_sql_requests;
-		rdb->rdb_sql_requests = statement;
-
-		Firebird::IStatement* s = new Statement(statement, this);
-		s->addRef();
-		return s;
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-	return NULL;
-}
-
-
 Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransaction* apiTra,
-						unsigned int in_msg_type, const FbMessage* inMsgBuffer,
-						const FbMessage* outMsgBuffer)
+	FbMessage* inMsgBuffer, FbMessage* outMsgBuffer)
 {
 /**************************************
  *
@@ -1579,14 +1580,16 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
-		unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
-		const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
+		BlrFromMessage inBlr(inMsgBuffer, dialect);
+		unsigned in_blr_length = inBlr.getLength();
+		const unsigned char* in_blr = inBlr.getBytes();
 		//unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
 		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
 
-		unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
-		const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
-		unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
+		BlrFromMessage outBlr(outMsgBuffer, dialect);
+		unsigned out_blr_length = outBlr.getLength();
+		const unsigned char* out_blr = outBlr.getBytes();
+		unsigned out_msg_length = outBlr.getMsgLength();
 		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 		rem_port* port = rdb->rdb_port;
@@ -1678,24 +1681,13 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		sqldata->p_sqldata_transaction = transaction ? transaction->rtr_id : 0;
 		sqldata->p_sqldata_blr.cstr_length = in_blr_length;
 		sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(in_blr); // safe, see protocol.cpp and server.cpp
-		sqldata->p_sqldata_message_number = in_msg_type;
+		sqldata->p_sqldata_message_number = 0;
 		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
 		sqldata->p_sqldata_out_blr.cstr_length = out_blr_length;
 		sqldata->p_sqldata_out_blr.cstr_address = const_cast<UCHAR*>(out_blr);
 		sqldata->p_sqldata_out_message_number = 0;	// out_msg_type
 
-		if (out_msg_length || !statement->rsr_flags.test(Rsr::DEFER_EXECUTE))
-		{
-			send_packet(port, packet);
-		}
-		else
-		{
-			send_partial_packet(port, packet);
-			defer_packet(port, packet, true);
-
-			message->msg_address = NULL;
-			return apiTra;
-		}
+		send_packet(port, packet);
 
 		// Set up the response packet.  We may receive an SQL response followed
 		// by a normal response packet or simply a response packet.
@@ -1740,10 +1732,153 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 }
 
 
-Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransaction* apiTra,
-						unsigned int length, const char* string, unsigned int dialect,
-						unsigned int in_msg_type, const FbMessage* inMsgBuffer,
-						const FbMessage* outMsgBuffer)
+ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra,
+	FbMessage* inMsgBuffer, IMessageMetadata* outFormat)
+{
+/**************************************
+ *
+ *	d s q l _ e x e c u t e 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	Execute a non-SELECT dynamic SQL statement.
+ *
+ **************************************/
+
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+
+		BlrFromMessage inBlr(inMsgBuffer, dialect);
+		unsigned in_blr_length = inBlr.getLength();
+		const unsigned char* in_blr = inBlr.getBytes();
+		//unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
+		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+
+		BlrFromMessage outBlr(outFormat, dialect);
+		unsigned out_blr_length = outBlr.getLength();
+		const unsigned char* out_blr = outBlr.getBytes();
+
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		Rtr* transaction = NULL;
+		Transaction* rt = remAtt->remoteTransactionInterface(apiTra);
+		if (rt)
+		{
+			transaction = rt->getTransaction();
+			CHECK_HANDLE(transaction, isc_bad_trans_handle);
+		}
+
+		// 24-Mar-2004 Nickolay Samofatov
+		// Unconditionally deallocate existing formats that are left from
+		// previous executions (possibly with different statement if
+		// isc_dsql_prepare is called multiple times).
+		// This should cure SF#919246
+		delete statement->rsr_bind_format;
+		statement->rsr_bind_format = NULL;
+		if (port->port_statement)
+		{
+			delete port->port_statement->rsr_select_format;
+			port->port_statement->rsr_select_format = NULL;
+		}
+
+		// Parse the blr describing the message, if there is any.
+
+		if (in_blr_length)
+		{
+			RMessage* message = PARSE_messages(in_blr, in_blr_length);
+			if (message != (RMessage*) - 1)
+			{
+				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
+				delete message;
+			}
+		}
+
+		RMessage* message = NULL;
+		if (!statement->rsr_buffer)
+		{
+			statement->rsr_buffer = message = new RMessage(0);
+			statement->rsr_message = message;
+
+			message->msg_next = message;
+
+			statement->rsr_fmt_length = 0;
+		}
+		else {
+			message = statement->rsr_message = statement->rsr_buffer;
+		}
+
+		message->msg_address = const_cast<UCHAR*>(in_msg);
+		statement->rsr_flags.clear(Rsr::FETCHED);
+		statement->rsr_format = statement->rsr_bind_format;
+		statement->clearException();
+
+		// set up the packet for the other guy...
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_execute;
+		P_SQLDATA* sqldata = &packet->p_sqldata;
+		sqldata->p_sqldata_statement = statement->rsr_id;
+		sqldata->p_sqldata_transaction = transaction ? transaction->rtr_id : 0;
+		sqldata->p_sqldata_blr.cstr_length = in_blr_length;
+		sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(in_blr); // safe, see protocol.cpp and server.cpp
+		sqldata->p_sqldata_message_number = 0;
+		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
+		sqldata->p_sqldata_out_blr.cstr_length = out_blr_length;
+		sqldata->p_sqldata_out_blr.cstr_address = const_cast<UCHAR*>(out_blr);
+		sqldata->p_sqldata_out_message_number = 0;	// out_msg_type
+
+		send_partial_packet(port, packet);
+		defer_packet(port, packet, true);
+		message->msg_address = NULL;
+
+		ResultSet* rs = new ResultSet(this, outFormat);
+		rs->addRef();
+		return rs;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return NULL;
+}
+
+
+IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transaction,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in,
+		IMessageMetadata* out)
+{
+	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
+		IStatement::PREPARE_PREFETCH_METADATA);
+	if (!status->isSuccess())
+	{
+		return NULL;
+	}
+
+	ResultSet* rc = stmt->openCursor(status, transaction, in, out);
+	if (!status->isSuccess())
+	{
+		stmt->release();
+		return NULL;
+	}
+
+	rc->tmpStatement = true;
+	return rc;
+}
+
+
+ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
+	unsigned int length, const char* string, unsigned int dialect,
+	FbMessage* inMsgBuffer, FbMessage* outMsgBuffer)
 {
 /**************************************
  *
@@ -1764,14 +1899,16 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
-		const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
-		unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
+		BlrFromMessage inBlr(inMsgBuffer, dialect);
+		unsigned in_blr_length = inBlr.getLength();
+		const unsigned char* in_blr = inBlr.getBytes();
+		unsigned in_msg_length = inBlr.getMsgLength();
 		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
 
-		unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
-		const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
-		unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
+		BlrFromMessage outBlr(outMsgBuffer, dialect);
+		unsigned out_blr_length = outBlr.getLength();
+		const unsigned char* out_blr = outBlr.getBytes();
+		unsigned out_msg_length = outBlr.getMsgLength();
 		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 		Rtr* transaction = NULL;
@@ -1868,7 +2005,7 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 		ex_now->p_sqlst_buffer_length = 0;
 		ex_now->p_sqlst_blr.cstr_length = in_blr_length;
 		ex_now->p_sqlst_blr.cstr_address = const_cast<UCHAR*>(in_blr);
-		ex_now->p_sqlst_message_number = in_msg_type;
+		ex_now->p_sqlst_message_number = 0;
 		ex_now->p_sqlst_messages = (in_msg_length && statement->rsr_bind_format) ? 1 : 0;
 		ex_now->p_sqlst_out_blr.cstr_length = out_blr_length;
 		ex_now->p_sqlst_out_blr.cstr_address = const_cast<unsigned char*>(out_blr);
@@ -1920,7 +2057,445 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 }
 
 
-int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
+void Statement::free(IStatus* status)
+{
+/**************************************
+ *
+ *	d s q l _ f r e e _ s t a t e m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release request for a Dynamic SQL statement
+ *
+ **************************************/
+
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		fb_assert(statement->haveException() == 0);
+		statement->clearException();
+
+		if (statement->rsr_flags.test(Rsr::LAZY))
+		{
+			release_sql_request(statement);
+			statement = NULL;
+			release();
+
+			return;
+		}
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_free_statement;
+		P_SQLFREE* free_stmt = &packet->p_sqlfree;
+		free_stmt->p_sqlfree_statement = statement->rsr_id;
+		free_stmt->p_sqlfree_option = DSQL_drop;
+
+		if (rdb->rdb_port->port_flags & PORT_lazy)
+		{
+			defer_packet(rdb->rdb_port, packet);
+			packet->p_resp.p_resp_object = statement->rsr_id;
+		}
+		else
+		{
+			send_and_receive(status, rdb, packet);
+		}
+
+		if (packet->p_resp.p_resp_object == INVALID_OBJECT)
+		{
+			release_sql_request(statement);
+			statement = NULL;
+			release();
+		}
+		else
+		{
+			statement->rsr_flags.clear(Rsr::FETCHED);
+			statement->rsr_rtr = NULL;
+
+			clear_queue(rdb->rdb_port);
+			REMOTE_reset_statement(statement);
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+Statement* Attachment::createStatement(IStatus* status, unsigned dialect)
+{
+	reset(status);
+
+	Rsr* statement = NULL;
+	if (rdb->rdb_port->port_flags & PORT_lazy)
+	{
+		statement = new Rsr;
+		statement->rsr_rdb = rdb;
+		statement->rsr_id = INVALID_OBJECT;
+		statement->rsr_flags.set(Rsr::LAZY);
+	}
+	else
+	{
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_allocate_statement;
+		packet->p_rlse.p_rlse_object = rdb->rdb_id;
+
+		send_and_receive(status, rdb, packet);
+
+		// Allocate SQL request block
+
+		statement = new Rsr;
+		statement->rsr_rdb = rdb;
+		statement->rsr_id = packet->p_resp.p_resp_object;
+
+		// register the object
+
+		SET_OBJECT(rdb, statement, statement->rsr_id);
+	}
+
+	statement->rsr_next = rdb->rdb_sql_requests;
+	rdb->rdb_sql_requests = statement;
+
+	Statement* s = new Statement(statement, this, dialect);
+	s->addRef();
+	return s;
+}
+
+
+Statement* Attachment::prepare(IStatus* status, ITransaction* apiTra,
+	unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags)
+{
+/**************************************
+ *
+ *	d s q l _ p r e p a r e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Prepare a dynamic SQL statement for execution.
+ *
+ **************************************/
+
+	Statement* stmt = NULL;
+
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		Rtr* transaction = NULL;
+		if (apiTra)
+		{
+			transaction = remoteTransaction(apiTra);
+			CHECK_HANDLE(transaction, isc_bad_trans_handle);
+		}
+
+		if (!stmtLength)
+		{
+			size_t sql_length = strlen(sqlStmt);
+			if (sql_length > MAX_USHORT)
+				sql_length = MAX_USHORT;
+			stmtLength = static_cast<USHORT>(sql_length);
+		}
+
+		if (dialect > 10)
+		{
+			// dimitr: adjust dialect received after
+			//		   a multi-hop transmission to be
+			//		   redirected in its original value.
+			dialect /= 10;
+		}
+
+		// create new statement
+
+		stmt = createStatement(status, dialect);
+		Rsr* statement = stmt->getStatement();
+
+		// reset current statement
+
+		clear_queue(rdb->rdb_port);
+		REMOTE_reset_statement(statement);
+
+		// set up the packet for the other guy...
+
+		PACKET* packet = &rdb->rdb_packet;
+
+		if (statement->rsr_flags.test(Rsr::LAZY))
+		{
+			packet->p_operation = op_allocate_statement;
+			packet->p_rlse.p_rlse_object = rdb->rdb_id;
+
+			send_partial_packet(rdb->rdb_port, packet);
+		}
+
+		Array<UCHAR> items, buffer;
+		buffer.resize(StatementMetadata::buildInfoItems(items, flags));
+
+		packet->p_operation = op_prepare_statement;
+		P_SQLST* prepare = &packet->p_sqlst;
+		prepare->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
+		prepare->p_sqlst_statement = statement->rsr_id;
+		prepare->p_sqlst_SQL_dialect = dialect;
+		prepare->p_sqlst_SQL_str.cstr_length = stmtLength;
+		prepare->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(sqlStmt);
+		prepare->p_sqlst_items.cstr_length = items.getCount();
+		prepare->p_sqlst_items.cstr_address = items.begin();
+		prepare->p_sqlst_buffer_length = buffer.getCount();
+
+		send_packet(rdb->rdb_port, packet);
+
+		statement->rsr_flags.clear(Rsr::DEFER_EXECUTE);
+
+		// Set up for the response packet.
+
+		if (statement->rsr_flags.test(Rsr::LAZY))
+		{
+			receive_response(status, rdb, packet);
+
+			statement->rsr_id = packet->p_resp.p_resp_object;
+			SET_OBJECT(rdb, statement, statement->rsr_id);
+
+			statement->rsr_flags.clear(Rsr::LAZY);
+		}
+
+		P_RESP* response = &packet->p_resp;
+		CSTRING temp = response->p_resp_data;
+		response->p_resp_data.cstr_allocated = buffer.getCount();
+		response->p_resp_data.cstr_address = buffer.begin();
+
+		try
+		{
+			receive_response(status, rdb, packet);
+			stmt->parseMetadata(buffer);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+
+		if (rdb->rdb_port->port_flags & PORT_lazy)
+		{
+			if (response->p_resp_object & STMT_DEFER_EXECUTE) {
+				statement->rsr_flags.set(Rsr::DEFER_EXECUTE);
+			}
+		}
+		else
+		{
+			if (response->p_resp_object)
+				fb_assert(false);
+		}
+		response->p_resp_data = temp;
+
+		if (status->isSuccess())
+		{
+			return stmt;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	// free statement in case of error
+	if (stmt)
+	{
+		stmt->release();
+	}
+	return NULL;
+}
+
+
+void Statement::getInfo(IStatus* status,
+						unsigned int itemsLength, const unsigned char* items,
+						unsigned int bufferLength, unsigned char* buffer)
+{
+/**************************************
+ *
+ *	d s q l _ s q l _ i n f o
+ *
+ **************************************
+ *
+ * Functional description
+ *	Provide information on sql object.
+ *
+ **************************************/
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		statement->raiseException();
+
+		if (!metadata.fillFromCache(itemsLength, items, bufferLength, buffer))
+		{
+			info(status, rdb, op_info_sql, statement->rsr_id, 0,
+				 itemsLength, items, 0, 0, bufferLength, buffer);
+
+			metadata.parse(bufferLength, buffer);
+		}
+
+		statement->raiseException();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+unsigned Statement::getType(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		statement->raiseException();
+
+		return metadata.getType();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+const char* Statement::getPlan(IStatus* status, FB_BOOLEAN detailed)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		statement->raiseException();
+
+		return metadata.getPlan(detailed);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+IMessageMetadata* Statement::getInputMetadata(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		statement->raiseException();
+
+		return metadata.getInputMetadata();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+IMessageMetadata* Statement::getOutputMetadata(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		statement->raiseException();
+
+		return metadata.getOutputMetadata();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		statement->raiseException();
+
+		return metadata.getAffectedRecords();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+FB_BOOLEAN ResultSet::fetch(IStatus* status, unsigned char* buffer)
 {
 /**************************************
  *
@@ -1939,16 +2514,22 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 
 		// Check and validate handles, etc.
 
+		if (!isc_dsql_cursor_err)
+		{
+			Arg::Gds(isc_bad_req_handle).raise();
+		}
+		Rsr* statement = stmt->getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 
-		unsigned blr_length = msgBuffer ? msgBuffer->blrLength : 0;
-		const unsigned char* blr = msgBuffer ? msgBuffer->blr : NULL;
-		unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
-		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
+		BlrFromMessage outBlr(outputFormat, stmt->getDialect());
+		unsigned blr_length = outBlr.getLength();
+		const unsigned char* blr = outBlr.getBytes();
+		unsigned msg_length = outBlr.getMsgLength();
+		unsigned char* msg = buffer;
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
@@ -2006,11 +2587,6 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 				statement->rsr_select_format = statement->rsr_user_select_format;
 			}
 		}
-
-		if (statement->rsr_flags.test(Rsr::BLOB)) {
-			return fetch_blob(status, statement, blr_length, blr, msg_length, msg);
-		}
-
 
 		if (!statement->rsr_buffer)
 		{
@@ -2127,7 +2703,7 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 				//statement->rsr_flags.clear(Rsr::EOF_SET);
 				statement->rsr_flags.set(Rsr::PAST_EOF);
 
-				return 100;
+				return FB_FALSE;
 			}
 
 			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
@@ -2141,7 +2717,7 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 				statement->rsr_flags.clear(Rsr::STREAM_ERR);
 
 				// hvlad: prevent subsequent fetches
-				statement->rsr_flags.set(Rsr::EOF_SET | Rsr::PAST_EOF);
+				statement->rsr_flags.set(Rsr::EOF_SET);
 				statement->raiseException();
 			}
 		}
@@ -2165,238 +2741,13 @@ int Statement::fetch(IStatus* status, const FbMessage* msgBuffer)
 		}
 
 		message->msg_address = NULL;
+		return FB_TRUE;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
-	return 0;
-}
-
-
-void Statement::free(IStatus* status, unsigned int option)
-{
-/**************************************
- *
- *	d s q l _ f r e e _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Release request for a Dynamic SQL statement
- *
- **************************************/
-
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-
-		Rdb* rdb = statement->rsr_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		fb_assert(statement->haveException() == 0);
-		statement->clearException();
-
-		if (statement->rsr_flags.test(Rsr::LAZY))
-		{
-			if (option == DSQL_drop)
-			{
-				release_sql_request(statement);
-				statement = NULL;
-				release();
-			}
-			else
-			{
-				statement->rsr_flags.clear(Rsr::FETCHED);
-				statement->rsr_rtr = NULL;
-
-				clear_queue(rdb->rdb_port);
-				REMOTE_reset_statement(statement);
-			}
-
-			return;
-		}
-
-		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = op_free_statement;
-		P_SQLFREE* free_stmt = &packet->p_sqlfree;
-		free_stmt->p_sqlfree_statement = statement->rsr_id;
-		free_stmt->p_sqlfree_option = option;
-
-		if (rdb->rdb_port->port_flags & PORT_lazy)
-		{
-			defer_packet(rdb->rdb_port, packet);
-			packet->p_resp.p_resp_object = statement->rsr_id;
-		}
-		else
-		{
-			send_and_receive(status, rdb, packet);
-		}
-
-		if (packet->p_resp.p_resp_object == INVALID_OBJECT)
-		{
-			release_sql_request(statement);
-			statement = NULL;
-			release();
-		}
-		else
-		{
-			statement->rsr_flags.clear(Rsr::FETCHED);
-			statement->rsr_rtr = NULL;
-
-			clear_queue(rdb->rdb_port);
-			REMOTE_reset_statement(statement);
-		}
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-}
-
-
-void Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
-						unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-						unsigned int flags)
-{
-/**************************************
- *
- *	d s q l _ p r e p a r e
- *
- **************************************
- *
- * Functional description
- *	Prepare a dynamic SQL statement for execution.
- *
- **************************************/
-
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-
-		Rdb* rdb = statement->rsr_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		Rtr* transaction = NULL;
-		if (apiTra)
-		{
-			transaction = remAtt->remoteTransaction(apiTra);
-			CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		}
-
-		if (!stmtLength)
-		{
-			size_t sql_length = strlen(sqlStmt);
-			if (sql_length > MAX_USHORT)
-				sql_length = MAX_USHORT;
-			stmtLength = static_cast<USHORT>(sql_length);
-		}
-
-		if (dialect > 10)
-		{
-			// dimitr: adjust dialect received after
-			//		   a multi-hop transmission to be
-			//		   redirected in its original value.
-			dialect /= 10;
-		}
-
-		// reset current statement
-
-		clear_queue(rdb->rdb_port);
-
-		REMOTE_reset_statement(statement);
-
-		// set up the packet for the other guy...
-
-		PACKET* packet = &rdb->rdb_packet;
-
-		if (statement->rsr_flags.test(Rsr::LAZY))
-		{
-			packet->p_operation = op_allocate_statement;
-			packet->p_rlse.p_rlse_object = rdb->rdb_id;
-
-			send_partial_packet(rdb->rdb_port, packet);
-		}
-
-		Array<UCHAR> items, buffer;
-		buffer.resize(StatementMetadata::buildInfoItems(items, flags));
-
-		packet->p_operation = op_prepare_statement;
-		P_SQLST* prepare = &packet->p_sqlst;
-		prepare->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
-		prepare->p_sqlst_statement = statement->rsr_id;
-		prepare->p_sqlst_SQL_dialect = dialect;
-		prepare->p_sqlst_SQL_str.cstr_length = stmtLength;
-		prepare->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(sqlStmt);
-		prepare->p_sqlst_items.cstr_length = items.getCount();
-		prepare->p_sqlst_items.cstr_address = items.begin();
-		prepare->p_sqlst_buffer_length = buffer.getCount();
-
-		send_packet(rdb->rdb_port, packet);
-
-		statement->rsr_flags.clear(Rsr::BLOB | Rsr::DEFER_EXECUTE);
-
-		// Set up for the response packet.
-
-		if (statement->rsr_flags.test(Rsr::LAZY))
-		{
-			receive_response(status, rdb, packet);
-
-			statement->rsr_id = packet->p_resp.p_resp_object;
-			SET_OBJECT(rdb, statement, statement->rsr_id);
-
-			statement->rsr_flags.clear(Rsr::LAZY);
-		}
-
-		P_RESP* response = &packet->p_resp;
-		CSTRING temp = response->p_resp_data;
-		response->p_resp_data.cstr_allocated = buffer.getCount();
-		response->p_resp_data.cstr_address = buffer.begin();
-
-		try
-		{
-			receive_response(status, rdb, packet);
-			metadata.clear();
-			metadata.parse(buffer.getCount(), buffer.begin());
-		}
-		catch (const Exception& ex)
-		{
-			ex.stuffException(status);
-		}
-
-		if (rdb->rdb_port->port_flags & PORT_lazy)
-		{
-			if (response->p_resp_object & STMT_BLOB) {
-				statement->rsr_flags.set(Rsr::BLOB);
-			}
-			if (response->p_resp_object & STMT_DEFER_EXECUTE) {
-				statement->rsr_flags.set(Rsr::DEFER_EXECUTE);
-			}
-		}
-		else
-		{
-			if (response->p_resp_object)
-				statement->rsr_flags.set(Rsr::BLOB);
-		}
-
-		response->p_resp_data = temp;
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
+	return FB_FALSE;
 }
 
 
@@ -2431,18 +2782,13 @@ void Statement::setCursorName(IStatus* status, const char* cursor)
 
 		// Check and validate handles, etc.
 
+		Rsr* statement = getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		statement->raiseException();
-
-		if (!cursor)
-		{
-			// Return CURSOR unknown error
-			Arg::Gds(isc_dsql_cursor_err).raise();
-		}
 
 		// set up the packet for the other guy...
 
@@ -2488,42 +2834,110 @@ void Statement::setCursorName(IStatus* status, const char* cursor)
 }
 
 
-void Statement::getInfo(IStatus* status,
-						unsigned int itemsLength, const unsigned char* items,
-						unsigned int bufferLength, unsigned char* buffer)
+FB_BOOLEAN ResultSet::isEof(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		if (!stmt)
+		{
+			Arg::Gds(isc_dsql_cursor_err).raise();
+		}
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		return statement->rsr_flags.test(Rsr::EOF_SET) ? FB_TRUE : FB_FALSE;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return FB_FALSE;
+}
+
+
+IMessageMetadata* ResultSet::getMetadata(IStatus* status)
+{
+	if (!outputFormat)
+	{
+		status->set(Arg::Gds(isc_no_output_format).value());
+		return NULL;
+	}
+
+	reset(status);
+
+	outputFormat->addRef();
+	return outputFormat;
+}
+
+void ResultSet::close(IStatus* status)
 {
 /**************************************
  *
- *	d s q l _ s q l _ i n f o
+ *	d s q l _ f r e e _ s t a t e m e n t
  *
  **************************************
  *
  * Functional description
- *	Provide information on sql object.
+ *	Close SQL cursor
  *
  **************************************/
+
 	try
 	{
 		reset(status);
 
 		// Check and validate handles, etc.
 
+		if (!stmt)
+		{
+			Arg::Gds(isc_dsql_cursor_err).raise();
+		}
+		Rsr* statement = stmt->getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 		Rdb* rdb = statement->rsr_rdb;
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		statement->raiseException();
+		fb_assert(statement->haveException() == 0);
+		statement->clearException();
 
-		if (!metadata.fillFromCache(itemsLength, items, bufferLength, buffer))
+		if (statement->rsr_flags.test(Rsr::LAZY))
 		{
-			info(status, rdb, op_info_sql, statement->rsr_id, 0,
-				 itemsLength, items, 0, 0, bufferLength, buffer);
+			statement->rsr_flags.clear(Rsr::FETCHED);
+			statement->rsr_rtr = NULL;
 
-			metadata.parse(bufferLength, buffer);
+			clear_queue(rdb->rdb_port);
+			REMOTE_reset_statement(statement);
+
+			releaseWithStatement();
 		}
 
-		statement->raiseException();
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_free_statement;
+		P_SQLFREE* free_stmt = &packet->p_sqlfree;
+		free_stmt->p_sqlfree_statement = statement->rsr_id;
+		free_stmt->p_sqlfree_option = DSQL_close;
+
+		if (rdb->rdb_port->port_flags & PORT_lazy)
+		{
+			defer_packet(rdb->rdb_port, packet);
+			packet->p_resp.p_resp_object = statement->rsr_id;
+		}
+		else
+		{
+			send_and_receive(status, rdb, packet);
+		}
+
+		statement->rsr_flags.clear(Rsr::FETCHED);
+		statement->rsr_rtr = NULL;
+		clear_queue(rdb->rdb_port);
+		REMOTE_reset_statement(statement);
+
+		releaseWithStatement();
 	}
 	catch (const Exception& ex)
 	{
@@ -2532,133 +2946,14 @@ void Statement::getInfo(IStatus* status,
 }
 
 
-unsigned Statement::getType(IStatus* status)
+void ResultSet::releaseWithStatement()
 {
-	try
+	if (tmpStatement)
 	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-		Rdb* rdb = statement->rsr_rdb;
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		statement->raiseException();
-
-		return metadata.getType();
+		stmt->release();
 	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	return 0;
-}
-
-
-const char* Statement::getPlan(IStatus* status, bool detailed)
-{
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-		Rdb* rdb = statement->rsr_rdb;
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		statement->raiseException();
-
-		return metadata.getPlan(detailed);
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	return NULL;
-}
-
-
-const IParametersMetadata* Statement::getInputParameters(IStatus* status)
-{
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-		Rdb* rdb = statement->rsr_rdb;
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		statement->raiseException();
-
-		return metadata.getInputParameters();
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	return NULL;
-}
-
-
-const IParametersMetadata* Statement::getOutputParameters(IStatus* status)
-{
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-		Rdb* rdb = statement->rsr_rdb;
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		statement->raiseException();
-
-		return metadata.getOutputParameters();
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	return NULL;
-}
-
-
-ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
-{
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-		Rdb* rdb = statement->rsr_rdb;
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		statement->raiseException();
-
-		return metadata.getAffectedRecords();
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	return 0;
+	stmt = NULL;
+	release();
 }
 
 
@@ -5278,61 +5573,6 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 }
 
 
-static int fetch_blob(IStatus* status,
-					   Rsr* statement,
-					   USHORT blr_length,
-					   const UCHAR* blr,
-					   USHORT /*msg_length*/,
-					   UCHAR* msg)
-{
-/**************************************
- *
- *	f e t c h _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor.
- *
- **************************************/
-	Rdb* rdb = statement->rsr_rdb;
-
-	rem_port* port = rdb->rdb_port;
-	PACKET* packet = &rdb->rdb_packet;
-	packet->p_operation = op_fetch;
-	P_SQLDATA* sqldata = &packet->p_sqldata;
-	sqldata->p_sqldata_statement = statement->rsr_id;
-	sqldata->p_sqldata_blr.cstr_length = blr_length;
-	sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(blr);
-	sqldata->p_sqldata_message_number = 0;	// msg_type
-	sqldata->p_sqldata_messages = (statement->rsr_select_format) ? 1 : 0;
-
-	send_packet(port, packet);
-
-	// Swallow up data.
-
-	RMessage* message = statement->rsr_buffer;
-	message->msg_address = msg;
-	try
-	{
-		receive_packet(port, packet);
-	}
-	catch(const Exception&)
-	{
-		message->msg_address = NULL;
-		throw;
-	}
-	message->msg_address = NULL;
-
-	if (packet->p_operation == op_fetch_response)
-		receive_response(status, rdb, packet);
-	else
- 		REMOTE_check_response(status, rdb, packet);
-
-	return packet->p_sqldata.p_sqldata_status;
-}
-
-
 static Rvnt* find_event( rem_port* port, SLONG id)
 {
 /*************************************
@@ -5381,25 +5621,6 @@ static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
 	}
 
 	return dpb.find(par.user_name);
-}
-
-
-static void handle_error(ISC_STATUS code)
-{
-/**************************************
- *
- *	h a n d l e _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	An invalid handle has been passed in.  If there is a user status
- *	vector, make it reflect the error.  If not, emulate the routine
- *	"error" and abort.
- *
- **************************************/
-
-	Arg::Gds(code).raise();
 }
 
 

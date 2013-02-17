@@ -44,35 +44,37 @@ unsigned int secDbKey = INIT_KEY;
 
 const unsigned int SZ_LOGIN = 31;
 const unsigned int SZ_NAME = 31;
+typedef Field<Varying> Varfield;
+typedef Field<Text> Name;
 
-template <short N>
-void setField(Field<VarChar<N> >& to, Auth::ICharUserField* from)
+void setField(Name& to, Auth::ICharUserField* from)
 {
 	if (from->entered())
 	{
-		to() = from->get();
-		to.null() = 0;
+		to = from->get();
 	}
 	else
 	{
-		to.null() = -1;
+		to.null = FB_TRUE;
 	}
 }
 
-// Domains
-typedef Field<VarChar<SZ_LOGIN> > Login;
-typedef Field<VarChar<Auth::RemotePassword::SRP_VERIFIER_SIZE> > Verifier;
-typedef Field<VarChar<Auth::RemotePassword::SRP_SALT_SIZE> > Salt;
-typedef Field<VarChar<SZ_NAME> > Name;
 
-void allocField(Firebird::AutoPtr<Name>& field, Message& up, Auth::ICharUserField* value, Firebird::string& update, const char* name)
+void allocField(Auth::ICharUserField* value, Firebird::string& update, const char* name)
+{
+	if (value->entered() || value->specified())
+	{
+		update += ' ';
+		update += name;
+		update += "=?,";
+	}
+}
+
+void allocField(Firebird::AutoPtr<Name>& field, Message& up, Auth::ICharUserField* value, const char* name)
 {
 	if (value->entered() || value->specified())
 	{
 		field = new Name(up);
-		update += ' ';
-		update += name;
-		update += "=?,";
 	}
 }
 
@@ -82,22 +84,24 @@ void assignField(Firebird::AutoPtr<Name>& field, Auth::ICharUserField* name)
 	{
 		if (name->entered())
 		{
-			(*field)() = name->get();
-			field->null() = 0;
+			*field = name->get();
+			field->null = FB_FALSE;
 		}
 		else
 		{
 			fb_assert(name->specified());
-			field->null() = -1;
+			field->null = FB_TRUE;
 		}
 	}
 }
 
-template <short N>
-void listField(Auth::ICharUserField* to, Field<VarChar<N> >& from)
+void listField(Auth::ICharUserField* to, Name& from)
 {
-	to->set(from().data);
-	to->setEntered(from.null() == 0 ? 1 : 0);
+	to->setEntered(from.null ? 0 : 1);
+	if (!from.null)
+	{
+		to->set(from);
+	}
 }
 
 }
@@ -137,27 +141,18 @@ public:
 
 		Firebird::LocalStatus s;
 		Firebird::RefPtr<Firebird::ITransaction> ddlTran(att->startTransaction(&s, 0, NULL));
-		if (!s.isSuccess())
-		{
-			Firebird::status_exception::raise(s.get());
-		}
+		
 
 		try
 		{
 			for (const char** sql = script; *sql; ++sql)
 			{
-				att->execute(&s, ddlTran, 0, *sql, 3, 0, NULL, NULL);
-				if (!s.isSuccess())
-				{
-					Firebird::status_exception::raise(s.get());
-				}
+				att->execute(&s, ddlTran, 0, *sql, 3, NULL, NULL);
+				check(&s);
 			}
 
 			ddlTran->commit(&s);
-			if (!s.isSuccess())
-			{
-				Firebird::status_exception::raise(s.get());
-			}
+			check(&s);
 		}
 		catch (const Firebird::Exception&)
 		{
@@ -218,16 +213,10 @@ public:
 
 			Firebird::DispatcherPtr p;
 			att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
-			if (!status->isSuccess())
-			{
-				Firebird::status_exception::raise(status->get());
-			}
+			check(status);
 
 			tra = att->startTransaction(status, 0, NULL);
-			if (!status->isSuccess())
-			{
-				Firebird::status_exception::raise(status->get());
-			}
+			check(status);
 		}
 		catch (const Firebird::Exception& ex)
 		{
@@ -266,11 +255,8 @@ public:
 					Firebird::string sql;
 					sql.printf("ALTER ROLE RDB$ADMIN %s AUTO ADMIN MAPPING",
 						user->operation() == MAP_SET_OPER ? "SET" : "DROP");
-					att->execute(status, tra, sql.length(), sql.c_str(), 3, 0, NULL, NULL);
-					if (!status->isSuccess())
-					{
-						Firebird::status_exception::raise(status->get());
-					}
+					att->execute(status, tra, sql.length(), sql.c_str(), 3, NULL, NULL);
+					check(status);
 				}
 				break;
 
@@ -280,109 +266,53 @@ public:
 						"INSERT INTO plg$srp_view(PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST) "
 						"VALUES(?, ?, ?, ?, ?, ?)";
 
-					Message add;
-					Login login(add);
-					Verifier verifier(add);
-					Salt slt(add);
-					Name first(add), middle(add), last(add);
-
-					setField(login, user->userName());
-					setField(first, user->firstName());
-					setField(middle, user->middleName());
-					setField(last, user->lastName());
-
-#if SRP_DEBUG > 1
-					Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
-#else
-					Firebird::BigInteger salt;
-					salt.random(RemotePassword::SRP_SALT_SIZE);
-#endif
-					Firebird::UCharBuffer s;
-					salt.getBytes(s);
-					slt().set(s.getCount(), s.begin());
-					slt.null() = 0;
-
-					dumpIt("salt", s);
-#if SRP_DEBUG > 0
-					fprintf(stderr, ">%s< >%s<\n", user->userName()->get(), user->password()->get());
-#endif
-					Firebird::string s1;
-					salt.getText(s1);
-					server.computeVerifier(user->userName()->get(), s1, user->password()->get()).getBytes(s);
-					dumpIt("verifier", s);
-					verifier().set(s.getCount(), s.begin());
-					verifier.null() = 0;
-
-					for (unsigned repeat = 0; ; ++repeat)
+					Firebird::IStatement* stmt = NULL;
+					try
 					{
-						att->execute(status, tra, 0, insert, 3, 0, &add, NULL);
-						if (status->isSuccess() || repeat > 0)
+						for (unsigned repeat = 0; ; ++repeat)
 						{
-							break;
-						}
-
-						const ISC_STATUS* v = status->get();
-						while (v[0] == isc_arg_gds)
-						{
-							if (v[1] == isc_dsql_relation_err)
+							stmt = att->prepare(status, tra, 0, insert, 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+							if (status->isSuccess())
 							{
-								prepareDataStructures();
-								tra->commit(status);
-								if (!status->isSuccess())
-								{
-									Firebird::status_exception::raise(status->get());
-								}
-								tra = att->startTransaction(status, 0, NULL);
-								if (!status->isSuccess())
-								{
-									Firebird::status_exception::raise(status->get());
-								}
 								break;
 							}
-							do
+							else if (repeat > 0)
 							{
-								v += 2;
-							} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
+								Firebird::status_exception::raise(status->get());
+							}
+
+							const ISC_STATUS* v = status->get();
+							while (v[0] == isc_arg_gds)
+							{
+								if (v[1] == isc_dsql_relation_err)
+								{
+									prepareDataStructures();
+									tra->commit(status);
+									check(status);
+									tra = att->startTransaction(status, 0, NULL);
+									check(status);
+									break;
+								}
+								do
+								{
+									v += 2;
+								} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
+							}
 						}
-					}
-					if (!status->isSuccess())
-					{
-						Firebird::status_exception::raise(status->get());
-					}
-				}
-				break;
 
-			case MOD_OPER:
-				{
-					Message up;
+						fb_assert(stmt);
 
-					Firebird::string update = "UPDATE plg$srp_view SET ";
+						Meta im(stmt, false);
+						Message add(im);
+						Name login(add);
+						Varfield verifier(add), slt(add);
+						Name first(add), middle(add), last(add);
 
-					Firebird::AutoPtr<Verifier> verifier;
-					Firebird::AutoPtr<Salt> slt;
-					if (user->password()->entered())
-					{
-						verifier = new Verifier(up);
-						slt = new Salt(up);
-						update += "PLG$VERIFIER=?,PLG$SALT=?,";
-					}
+						setField(login, user->userName());
+						setField(first, user->firstName());
+						setField(middle, user->middleName());
+						setField(last, user->lastName());
 
-					Firebird::AutoPtr<Name> first, middle, last;
-					allocField(first, up, user->firstName(), update, "PLG$FIRST");
-					allocField(middle, up, user->middleName(), update, "PLG$MIDDLE");
-					allocField(last, up, user->lastName(), update, "PLG$LAST");
-
-					if (update[update.length() - 1] != ',')
-					{
-						return 0;
-					}
-					update.rtrim(",");
-
-					update += " WHERE PLG$USER_NAME=?";
-					Login login(up);
-
-					if (verifier.hasData())
-					{
 #if SRP_DEBUG > 1
 						Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
 #else
@@ -391,8 +321,7 @@ public:
 #endif
 						Firebird::UCharBuffer s;
 						salt.getBytes(s);
-						(*slt)().set(s.getCount(), s.begin());
-						slt->null() = 0;
+						slt.set(s.getCount(), s.begin());
 
 						dumpIt("salt", s);
 #if SRP_DEBUG > 0
@@ -402,44 +331,146 @@ public:
 						salt.getText(s1);
 						server.computeVerifier(user->userName()->get(), s1, user->password()->get()).getBytes(s);
 						dumpIt("verifier", s);
-						(*verifier)().set(s.getCount(), s.begin());
-						verifier->null() = 0;
+						verifier.set(s.getCount(), s.begin());
+
+						stmt->execute(status, tra, &add, NULL);
+						check(status);
+
+						stmt->free(status);
+						check(status);
+					}
+					catch (const Firebird::Exception&)
+					{
+						if (stmt)
+						{
+							stmt->release();
+						}
+						throw;
+					}
+				}
+				break;
+
+			case MOD_OPER:
+				{
+					Firebird::string update = "UPDATE plg$srp_view SET ";
+
+					Firebird::AutoPtr<Varfield> verifier, slt;
+					if (user->password()->entered())
+					{
+						update += "PLG$VERIFIER=?,PLG$SALT=?,";
 					}
 
-					assignField(first, user->firstName());
-					assignField(middle, user->middleName());
-					assignField(last, user->lastName());
-					setField(login, user->userName());
+					Firebird::AutoPtr<Name> first, middle, last;
+					allocField(user->firstName(), update, "PLG$FIRST");
+					allocField(user->middleName(), update, "PLG$MIDDLE");
+					allocField(user->lastName(), update, "PLG$LAST");
 
-					att->execute(status, tra, 0, update.c_str(), 3, 0, &up, NULL);
-					if (!status->isSuccess())
+					if (update[update.length() - 1] != ',')
 					{
-						Firebird::status_exception::raise(status->get());
+						return 0;
 					}
+					update.rtrim(",");
+					update += " WHERE PLG$USER_NAME=?";
 
-					if (!checkCount(status, &upCount, isc_info_update_count))
+					Firebird::IStatement* stmt = NULL;
+					try
 					{
-						return -1;
+						stmt = att->prepare(status, tra, 0, update.c_str(), 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+						check(status);
+
+						Meta im(stmt, false);
+						Message up(im);
+
+						if (user->password()->entered())
+						{
+							verifier = new Varfield(up);
+							slt = new Varfield(up);
+#if SRP_DEBUG > 1
+							Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
+#else
+							Firebird::BigInteger salt;
+							salt.random(RemotePassword::SRP_SALT_SIZE);
+#endif
+							Firebird::UCharBuffer s;
+							salt.getBytes(s);
+							slt->set(s.getCount(), s.begin());
+
+							dumpIt("salt", s);
+#if SRP_DEBUG > 0
+							fprintf(stderr, ">%s< >%s<\n", user->userName()->get(), user->password()->get());
+#endif
+							Firebird::string s1;
+							salt.getText(s1);
+							server.computeVerifier(user->userName()->get(), s1, user->password()->get()).getBytes(s);
+							dumpIt("verifier", s);
+							verifier->set(s.getCount(), s.begin());
+						}
+
+						allocField(first, up, user->firstName(), "PLG$FIRST");
+						allocField(middle, up, user->middleName(), "PLG$MIDDLE");
+						allocField(last, up, user->lastName(), "PLG$LAST");
+
+						Name login(up);
+
+						assignField(first, user->firstName());
+						assignField(middle, user->middleName());
+						assignField(last, user->lastName());
+						setField(login, user->userName());
+
+						stmt->execute(status, tra, &up, NULL);
+						check(status);
+
+						if (!checkCount(status, &upCount, isc_info_update_count))
+						{
+							return -1;
+						}
+
+						stmt->free(status);
+						check(status);
+					}
+					catch (const Firebird::Exception&)
+					{
+						if (stmt)
+						{
+							stmt->release();
+						}
+						throw;
 					}
 				}
 				break;
 
 			case DEL_OPER:
 				{
-					Message dl;
 					const char* del = "DELETE FROM plg$srp_view WHERE PLG$USER_NAME=?";
-					Login login(dl);
-					setField(login, user->userName());
-
-					att->execute(status, tra, 0, del, 3, 0, &dl, NULL);
-					if (!status->isSuccess())
+					Firebird::IStatement* stmt = NULL;
+					try
 					{
-						Firebird::status_exception::raise(status->get());
+						stmt = att->prepare(status, tra, 0, del, 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+						check(status);
+
+						Meta im(stmt, false);
+						Message dl(im);
+						Name login(dl);
+						setField(login, user->userName());
+
+						stmt->execute(status, tra, &dl, NULL);
+						check(status);
+
+						if (!checkCount(status, &delCount, isc_info_delete_count))
+						{
+							return -1;
+						}
+
+						stmt->free(status);
+						check(status);
 					}
-
-					if (!checkCount(status, &delCount, isc_info_delete_count))
+					catch (const Firebird::Exception&)
 					{
-						return -1;
+						if (stmt)
+						{
+							stmt->release();
+						}
+						throw;
 					}
 				}
 				break;
@@ -452,75 +483,62 @@ public:
 					user->groupName()->setEntered(0);
 					user->password()->setEntered(0);
 
-					Message di;
 					Firebird::string disp =	"SELECT PLG$USER_NAME, PLG$FIRST, PLG$MIDDLE, PLG$LAST, "
 											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN 0 ELSE 1 END "
 											"FROM PLG$SRP_VIEW LEFT JOIN RDB$USER_PRIVILEGES "
 											"	ON PLG$SRP_VIEW.PLG$USER_NAME = RDB$USER_PRIVILEGES.RDB$USER "
 											"		AND RDB$RELATION_NAME = 'RDB$ADMIN' "
 											"		AND RDB$PRIVILEGE = 'M' ";
-					Firebird::AutoPtr<Message> par;
 					if (user->userName()->entered())
 					{
-						par = new Message;
-						Login login(*par);
-						setField(login, user->userName());
 						disp += " WHERE PLG$USER_NAME = ?";
 					}
 
-					Login login(di);
-					Name first(di), middle(di), last(di);
-					Field<SLONG> admin(di);
-					di.ready();
-
-					Firebird::RefPtr<Firebird::IStatement> stmt;
+					Firebird::IStatement* stmt = NULL;
+					Firebird::IResultSet* rs = NULL;
 					try
 					{
-						stmt = att->allocateStatement(status);
-						if (!status->isSuccess())
+						stmt = att->prepare(status, tra, 0, disp.c_str(), 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+						check(status);
+
+						Meta om(stmt, true);
+						Message di(om);
+						Name login(di);
+						Name first(di), middle(di), last(di);
+						Field<SLONG> admin(di);
+
+						Firebird::AutoPtr<Message> par;
+						if (user->userName()->entered())
 						{
-							Firebird::status_exception::raise(status->get());
+							Meta im(stmt, false);
+							par = new Message(im);
+							Name login(*par);
+							setField(login, user->userName());
 						}
-						stmt->prepare(status, tra, disp.length(), disp.c_str(), 3,
-									  Firebird::IStatement::PREPARE_PREFETCH_NONE);
-						if (!status->isSuccess())
+
+						rs = stmt->openCursor(status, tra, par, om);
+						check(status);
+
+						while (rs->fetch(status, di.buffer))
 						{
-							Firebird::status_exception::raise(status->get());
-						}
-						stmt->execute(status, tra, 0, par, NULL);
-						if (!status->isSuccess())
-						{
-							Firebird::status_exception::raise(status->get());
-						}
-						while (stmt->fetch(status, &di) == 0)
-						{
-							if (!status->isSuccess())
-							{
-								Firebird::status_exception::raise(status->get());
-							}
+							check(status);
 
 							listField(user->userName(), login);
 							listField(user->firstName(), first);
 							listField(user->middleName(), middle);
 							listField(user->lastName(), last);
-							user->admin()->set(admin());
+							user->admin()->set(admin);
 
 							callback->list(user);
 						}
-						if (!status->isSuccess())
-						{
-							Firebird::status_exception::raise(status->get());
-						}
+						check(status);
 
-						stmt->free(status, DSQL_drop);
-						if (!status->isSuccess())
-						{
-							Firebird::status_exception::raise(status->get());
-						}
+						stmt->free(status);
+						check(status);
 					}
 					catch (const Firebird::Exception&)
 					{
-						if (stmt.hasData())
+						if (stmt)
 						{
 							stmt->release();
 						}
@@ -609,10 +627,7 @@ private:
 	{
 		unsigned char buffer[100];
 		att->getInfo(status, 1, &item, sizeof(buffer), buffer);
-		if (!status->isSuccess())
-		{
-			Firebird::status_exception::raise(status->get());
-		}
+		check(status);
 
 		if (gds__vax_integer(buffer + 1, 2) != 6)
 		{
@@ -623,6 +638,14 @@ private:
 		int oldCount = *count;
 		*count = newCount;
 		return newCount == oldCount + 1;
+	}
+
+	void check(Firebird::IStatus* status)
+	{
+		if (!status->isSuccess())
+		{
+			Firebird::status_exception::raise(status->get());
+		}
 	}
 };
 

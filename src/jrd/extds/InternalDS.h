@@ -147,8 +147,8 @@ protected:
 	InternalTransaction* m_intTransaction;
 
 	Jrd::JStatement* m_request;
-	Firebird::UCharBuffer m_inBlr;
-	Firebird::UCharBuffer m_outBlr;
+	Jrd::JResultSet* m_cursor;
+	Firebird::RefPtr<Firebird::MsgMetadata> m_inMetadata, m_outMetadata;
 };
 
 

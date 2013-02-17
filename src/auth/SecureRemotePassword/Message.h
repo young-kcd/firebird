@@ -1,157 +1,265 @@
-#include "../jrd/align.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/auto.h"
+#include "../common/StatusHolder.h"
+#include "../common/MsgMetadata.h"
+
+
+// This class helps to work with metadata iface
+class Meta : public Firebird::RefPtr<Firebird::IMessageMetadata>
+{
+public:
+	explicit Meta(Firebird::IStatement* stmt, bool out)
+	{
+		Firebird::LocalStatus s;
+		Firebird::IMessageMetadata* m = out ? stmt->getOutputMetadata(&s) : stmt->getInputMetadata(&s);
+		if (!s.isSuccess())
+		{
+			Firebird::status_exception::raise(s.get());
+		}
+		*((Firebird::RefPtr<Firebird::IMessageMetadata>*)this) = m;
+		m->release();		// reference added by function returning iface
+	}
+};
+
 
 // This class helps to fill FbMessage with correct values
 class Message : public Firebird::FbMessage, public Firebird::GlobalStorage
 {
 public:
-	Message()
-		: blrBuf(getPool()), dataBuf(getPool())
+	Message(Firebird::IMessageMetadata* aMeta)
+		: dataBuf(getPool()), fieldCount(0)
 	{
-		blrLength = 0;
-		blr = NULL;
-		bufferLength = 0;
-		buffer = NULL;
+		Firebird::LocalStatus st;
+		metadata = aMeta;
+		buffer = dataBuf.getBuffer(metadata->getMessageLength(&st));
+		check(&st);
+		metadata->addRef();
+	}
 
-		// start message BLR
-		blrBuf.add(blr_version5);
-		blrBuf.add(blr_begin);
-		blrBuf.add(blr_message);
-		blrBuf.add(0);
-		countOffset = blrBuf.getCount();
-		blrBuf.add(0);
-		blrBuf.add(0);
-
-		varCount = 0;
+	~Message()
+	{
+		metadata->release();
 	}
 
 	template <typename T>
-	unsigned genBlr()
+	static bool checkType(unsigned t, unsigned sz)
 	{
-		// for special types call type-specific BLR generator
-		// for generic types use specialization of whole call
-		return T::genBlr(blrBuf);
+		return T::unknownDataType();
 	}
 
 	template <typename T>
-	void add(unsigned& pos, unsigned& null)
+	unsigned add(unsigned& t, unsigned& sz)
 	{
-		if (blr)
+		Firebird::LocalStatus st;
+
+		unsigned l = metadata->getCount(&st);
+		check(&st);
+		if (fieldCount >= metadata->getMessageLength(&st))
 		{
-			(Firebird::Arg::Gds(isc_random) << "This is already constructed message").raise();
+			(Firebird::Arg::Gds(isc_random) <<
+				"Attempt to add to the message more variables then possible").raise();
 		}
 
-		// generate code for variable
-		unsigned align = genBlr<T>();
-		if (align)
+		t = metadata->getType(&st, fieldCount);
+		check(&st);
+		sz = metadata->getLength(&st, fieldCount);
+		check(&st);
+		if (!checkType<T>(t, sz))
 		{
-			bufferLength = FB_ALIGN(bufferLength, align);
+			(Firebird::Arg::Gds(isc_random) << "Incompatible data type").raise();
 		}
-		pos = bufferLength;
-		bufferLength += sizeof(T);
 
-		// generate code for null flag
-		blrBuf.add(blr_short);
-		blrBuf.add(0);
-		align = type_alignments[dtype_short];
-		if (align)
+		return fieldCount++;
+	}
+
+	static void check(Firebird::IStatus* status)
+	{
+		if (!status->isSuccess())
 		{
-			bufferLength = FB_ALIGN(bufferLength, align);
+			Firebird::status_exception::raise(status->get());
 		}
-		null = bufferLength;
-		bufferLength += sizeof(short);
-
-		++varCount;
-	}
-
-	void ready()
-	{
-		if (blr)
-			return;
-
-		// Adjust number of variables
-		blrBuf[countOffset] = (varCount * 2) & 0xFF;
-		blrBuf[countOffset + 1] = ((varCount * 2) >> 8) & 0xFF;
-
-		// Complete blr
-		blrBuf.add(blr_end);
-		blrBuf.add(blr_eoc);
-		blrLength = blrBuf.getCount();
-		blr = blrBuf.begin();
-
-		// Allocate buffer
-		buffer = dataBuf.getBuffer(bufferLength);
-	}
-
-	Firebird::UCharBuffer blrBuf, dataBuf;
-	unsigned countOffset, varCount;
-};
-
-template <>
-unsigned Message::genBlr<SLONG>()
-{
-	blrBuf.add(blr_long);
-	blrBuf.add(0);		// scale
-	return type_alignments[dtype_long];
-}
-
-// With template magic, we make the fields strongly-typed.
-template <class T>
-class Field
-{
-public:
-	explicit Field(Message& m)
-		: msg(m), pos(~0), nullPos(~0)
-	{
-		msg.add<T>(pos, nullPos);
-	}
-
-	T& operator()()
-	{
-		msg.ready();
-		return *(T*) (msg.buffer + pos);
-	}
-
-	short& null()
-	{
-		msg.ready();
-		return *(short*) (msg.buffer + nullPos);
 	}
 
 private:
-	Message& msg;
-	unsigned pos, nullPos;
+	Firebird::UCharBuffer dataBuf;
+	unsigned fieldCount;
 };
 
-template <short N>
-class VarChar
+template <>
+bool Message::checkType<SLONG>(unsigned t, unsigned sz)
+{
+	return t == SQL_LONG && sz == sizeof(SLONG);
+}
+
+
+// With template magic, we make the fields strongly-typed.
+template <typename T>
+class Field
 {
 public:
-	short len;
-	char data[N];		// This guarantees N > 0
-
-	static unsigned genBlr(Firebird::UCharBuffer& blr)
+	class Null
 	{
-		blr.add(blr_varying);
-		blr.add(N & 0xFF);
-		blr.add((N >> 8) & 0xFF);
-		return type_alignments[dtype_varying];
+	public:
+		Null()
+			: ptr(NULL)
+		{ }
+
+		void linkMessage(short* p)
+		{
+			ptr = p;
+			*ptr = -1;	// mark as null initially
+		}
+
+		operator FB_BOOLEAN() const
+		{
+			return (*ptr) ? FB_TRUE : FB_FALSE;
+		}
+
+		FB_BOOLEAN operator=(FB_BOOLEAN val)
+		{
+			*ptr = val ? -1 : 0;
+			return val;
+		}
+
+	private:
+		short* ptr;
+	};
+
+	explicit Field(Message& m)
+		: ptr(NULL), type(0), size(0)
+	{
+		unsigned ind = m.add<T>(type, size);
+
+		Firebird::LocalStatus st;
+		unsigned tmp = m.metadata->getOffset(&st, ind);
+		Message::check(&st);
+		ptr = (T*)(m.buffer + tmp);
+
+		tmp = m.metadata->getNullOffset(&st, ind);
+		Message::check(&st);
+		null.linkMessage((short*)(m.buffer + tmp));
 	}
 
-	const VarChar& operator=(const char* str)
+	operator T()
 	{
-		strncpy(data, str, N);
-		len = strlen(str);
-		if (len > N)
-			len = N;
-		return *this;
+		return *ptr;
 	}
 
-	void set(unsigned short l, void* bytes)
+	T operator= (T newVal)
 	{
-		if (l > (unsigned short) N)
-			l = N;
-		memcpy(data, bytes, l);
-		len = l;
+		*ptr = newVal;
+		null = FB_FALSE;
+		return newVal;
 	}
+
+	operator const char*()
+	{
+		if (!charBuffer)
+		{
+			charBuffer.reset(FB_NEW(*getDefaultMemoryPool()) char[size + 1]);
+		}
+
+		getStrValue(charBuffer);
+		return charBuffer;
+	}
+
+	const char* operator= (const char* newVal)
+	{
+		setStrValue(newVal, strlen(newVal));
+		null = FB_FALSE;
+		return newVal;
+	}
+
+	void set(unsigned length, const void* newVal)
+	{
+		setStrValue(newVal, length);
+		null = FB_FALSE;
+	}
+
+private:
+	void getStrValue(char* to)
+	{
+		T::incompatibleDataType();
+		//(Firebird::Arg::Gds(isc_random) << "Incompatible data type").raise();
+	}
+
+	void setStrValue(const void* from, unsigned len)
+	{
+		T::incompatibleDataType();
+		//(Firebird::Arg::Gds(isc_random) << "Incompatible data type").raise();
+	}
+
+	T* ptr;
+	Firebird::AutoPtr<char, Firebird::ArrayDelete<char> > charBuffer;
+
+public:
+	Null null;
+	unsigned type, size;
 };
+
+struct Varying
+{
+	short len;
+	char data[1];
+};
+
+template <>
+bool Message::checkType<Varying>(unsigned t, unsigned /*sz*/)
+{
+	return t == SQL_VARYING;
+}
+
+template<>
+void Field<Varying>::getStrValue(char* to)
+{
+	unsigned len = ptr->len;
+	if (len > size)
+		len = size;
+	memcpy(to, ptr->data, len);
+	to[len] = 0;
+}
+
+template<>
+void Field<Varying>::setStrValue(const void* from, unsigned len)
+{
+	if (len > size)
+		len = size;
+	memcpy(ptr->data, from, len);
+	ptr->len = len;
+}
+
+struct Text
+{
+	char data[1];
+};
+
+template <>
+bool Message::checkType<Text>(unsigned t, unsigned /*sz*/)
+{
+	return t == SQL_TEXT;
+}
+
+template<>
+void Field<Text>::getStrValue(char* to)
+{
+	memcpy(to, ptr->data, size);
+	to[size] = 0;
+	unsigned len = size;
+	while(len--)
+	{
+		if (to[len] == ' ')
+			to[len] = 0;
+		else
+			break;
+	}
+}
+
+template<>
+void Field<Text>::setStrValue(const void* from, unsigned len)
+{
+	if (len > size)
+		len = size;
+	memcpy(ptr->data, from, len);
+	if (len < size)
+		memset(&ptr->data[len], ' ', size - len);
+}

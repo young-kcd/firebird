@@ -61,7 +61,6 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/opt_proto.h"
-#include "../jrd/par_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/trace/TraceManager.h"
@@ -81,9 +80,9 @@ using namespace Firebird;
 static void		close_cursor(thread_db*, dsql_req*);
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
-static void		map_in_out(dsql_req*, bool, const dsql_msg*, ULONG, const UCHAR*, ULONG, UCHAR*,
+static void		map_in_out(dsql_req*, bool, const dsql_msg*, IMessageMetadata*, UCHAR*,
 	const UCHAR* = 0);
-static USHORT	parse_blr(dsql_req*, ULONG, const UCHAR*, const ULONG, const Array<dsql_par*>&);
+static USHORT	parse_metadata(dsql_req*, IMessageMetadata*, const Array<dsql_par*>&);
 static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
 static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
@@ -91,6 +90,7 @@ static void		release_statement(DsqlCompiledStatement* statement);
 static void		sql_info(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
 static UCHAR*	var_info(const dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
+static void		check(IStatus*);
 
 static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 {
@@ -128,49 +128,13 @@ dsql_dbb::~dsql_dbb()
 }
 
 
-/**
-
- 	DSQL_allocate_statement
-
-    @brief	Allocate a statement handle.
-
-
-    @param tdbb
-    @param attachment
-
- **/
-dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
-{
-	SET_TDBB(tdbb);
-
-	dsql_dbb* const database = init(tdbb, attachment);
-	Jrd::ContextPoolHolder context(tdbb, database->createPool());
-
-	// allocate the request block
-
-	MemoryPool& pool = *tdbb->getDefaultPool();
-
-	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
-	DsqlCompilerScratch* scratch = FB_NEW(pool) DsqlCompilerScratch(pool, database,
-		NULL, statement);
-
-	dsql_req* const request = FB_NEW(pool) DsqlDmlRequest(pool, NULL);
-	request->req_dbb = database;
-	request->req_transaction = scratch->getTransaction();
-	request->statement = scratch->getStatement();
-
-	return request;
-}
-
-
 // Execute a non-SELECT dynamic SQL statement.
 void DSQL_execute(thread_db* tdbb,
 				  jrd_tra** tra_handle,
 				  dsql_req* request,
-				  ULONG in_blr_length, const UCHAR* in_blr,
-				  USHORT in_msg_type, ULONG in_msg_length, const UCHAR* in_msg,
-				  ULONG out_blr_length, const UCHAR* const out_blr,
-				  ULONG out_msg_length, UCHAR* out_msg)
+				  bool flOpenCursor,
+				  IMessageMetadata* in_meta, const UCHAR* in_msg,
+				  IMessageMetadata* out_meta, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
 
@@ -184,9 +148,6 @@ void DSQL_execute(thread_db* tdbb,
 		          Arg::Gds(isc_bad_req_handle));
 	}
 
-	if ((SSHORT) in_msg_type == -1)
-		request->req_flags |= dsql_req::FLAG_EMBEDDED;
-
 	// Only allow NULL trans_handle if we're starting a transaction
 
 	if (!*tra_handle && statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS)
@@ -194,6 +155,10 @@ void DSQL_execute(thread_db* tdbb,
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_bad_trans_handle));
 	}
+
+	// A select with a non zero output length is a singleton select
+	const bool singleton =
+		((statement->getType() == DsqlCompiledStatement::TYPE_SELECT) && out_msg);
 
 	// If the request is a SELECT or blob statement then this is an open.
 	// Make sure the cursor is not already open.
@@ -205,19 +170,22 @@ void DSQL_execute(thread_db* tdbb,
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 					  Arg::Gds(isc_dsql_cursor_open_err));
 		}
+		if (!(flOpenCursor || singleton))
+		{
+			(Arg::Gds(isc_random) << "Can not execute select statement").raise();
+		}
 	}
-
-	// A select with a non zero output length is a singleton select
-	const bool singleton =
-		(statement->getType() == DsqlCompiledStatement::TYPE_SELECT && out_msg_length != 0);
+	else if (flOpenCursor)
+	{
+		if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+					  Arg::Gds(isc_dsql_cursor_open_err));
+		}
+	}
 
 	request->req_transaction = *tra_handle;
-
-	if (!(request->req_flags & dsql_req::FLAG_EMBEDDED))
-	{
-		request->execute(tdbb, tra_handle, in_blr_length, in_blr, in_msg_length, in_msg,
-			out_blr_length, out_blr, out_msg_length, out_msg, singleton);
-	}
+	request->execute(tdbb, tra_handle, in_meta, in_msg, out_meta, out_msg, singleton);
 
 	// If the output message length is zero on a TYPE_SELECT then we must
 	// be doing an OPEN cursor operation.
@@ -227,15 +195,19 @@ void DSQL_execute(thread_db* tdbb,
 
 	if (reqTypeWithCursor(statement->getType()) && !singleton)
 	{
+		fb_assert(flOpenCursor);
 		request->req_flags |= dsql_req::FLAG_OPENED_CURSOR;
 		TRA_link_cursor(request->req_transaction, request);
+	}
+	else
+	{
+		fb_assert(!flOpenCursor);
 	}
 }
 
 
 // Fetch next record from a dynamic SQL cursor.
-ISC_STATUS DsqlDmlRequest::fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
-	ULONG msgLength, UCHAR* msgBuffer)
+bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 {
 	SET_TDBB(tdbb);
 
@@ -260,14 +232,7 @@ ISC_STATUS DsqlDmlRequest::fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* 
 	Jrd::Attachment* att = req_dbb->dbb_attachment;
 	TraceDSQLFetch trace(att, this);
 
-	// Insure that the blr for the message is parsed, regardless of
-	// whether anything is found by the call to receive.
-
-	if (blrLength)
-		parse_blr(this, blrLength, blr, msgLength, message->msg_parameters);
-
 	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
-
 	JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
 
 	const dsql_par* const eof = statement->getEof();
@@ -279,13 +244,13 @@ ISC_STATUS DsqlDmlRequest::fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* 
 	if (eofReached)
 	{
 		trace.fetch(true, res_successful);
-		return 100;
+		return false;
 	}
 
-	map_in_out(this, true, message, 0, NULL, msgLength, msgBuffer);
+	map_in_out(this, true, message, NULL, msgBuffer);
 
 	trace.fetch(false, res_successful);
-	return FB_SUCCESS;
+	return true;
 }
 
 
@@ -314,12 +279,12 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 		// Release everything associated with the request
 		dsql_req::destroy(tdbb, request, true);
 	}
-	else if (option & DSQL_unprepare)
+/*	else if (option & DSQL_unprepare)
 	{
 		// Release everything but the request itself
 		dsql_req::destroy(tdbb, request, false);
 	}
-	else if (option & DSQL_close)
+*/	else if (option & DSQL_close)
 	{
 		// Just close the cursor associated with the request
 		if (reqTypeWithCursor(statement->getType()))
@@ -355,39 +320,15 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
     @param buffer
 
  **/
-void DSQL_prepare(thread_db* tdbb,
-				  jrd_tra* transaction,
-				  dsql_req** req_handle,
-				  ULONG length, const TEXT* string, USHORT dialect,
-				  ULONG item_length, const UCHAR* items,
-				  ULONG buffer_length, UCHAR* buffer,
-				  bool isInternalRequest)
+dsql_req* DSQL_prepare(thread_db* tdbb,
+					   Attachment* attachment, jrd_tra* transaction,
+					   ULONG length, const TEXT* string, USHORT dialect,
+					   Array<UCHAR>* items, Array<UCHAR>* buffer,
+					   bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
 
-	dsql_req* const old_request = *req_handle;
-
-	if (!old_request)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-		          Arg::Gds(isc_bad_req_handle));
-	}
-
-	dsql_dbb* database = old_request->req_dbb;
-	if (!database)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-                  Arg::Gds(isc_bad_req_handle));
-	}
-
-	// check to see if old request has an open cursor
-
-	if (old_request && (old_request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-519) <<
-				  Arg::Gds(isc_dsql_open_cursor_request));
-	}
-
+	dsql_dbb* database = init(tdbb, attachment);
 	dsql_req* request = NULL;
 
 	try
@@ -424,13 +365,7 @@ void DSQL_prepare(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		// Allocate a new request block and then prepare the request.  We want to
-		// keep the old request around, as is, until we know that we are able
-		// to prepare the new one.
-		// It would be really *nice* to know *why* we want to
-		// keep the old request around -- 1994-October-27 David Schnepper
-		// Because that's the client's allocated statement handle and we
-		// don't want to trash the context in it -- 2001-Oct-27 Ann Harrison
+		// Allocate a new request block and then prepare the request.
 
 		request = prepareRequest(tdbb, database, transaction, length, string, dialect, parser_version,
 			isInternalRequest);
@@ -438,24 +373,20 @@ void DSQL_prepare(thread_db* tdbb,
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
 		const DsqlCompiledStatement* statement = request->getStatement();
-
 		if (statement->getType() == DsqlCompiledStatement::TYPE_CREATE_DB)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-530) <<
 					  Arg::Gds(isc_dsql_crdb_prepare_err));
 		}
 
-		// Now that we know that the new request exists, zap the old one.
-
+		if (items && buffer)
 		{
-			Jrd::ContextPoolHolder context(tdbb, &old_request->getPool());
-			dsql_req::destroy(tdbb, old_request, true);
+			Jrd::ContextPoolHolder context(tdbb, &request->getPool());
+			sql_info(tdbb, request, items->getCount(), items->begin(),
+				buffer->getCount(), buffer->begin());
 		}
 
-		*req_handle = request;
-
-		Jrd::ContextPoolHolder context(tdbb, &request->getPool());
-		sql_info(tdbb, request, item_length, items, buffer_length, buffer);
+		return request;
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -625,8 +556,8 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 // Common part of prepare and execute a statement.
 void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra** tra_handle,
 	ULONG length, const TEXT* string, USHORT dialect,
-	ULONG in_blr_length, const UCHAR* in_blr, ULONG in_msg_length, const UCHAR* in_msg,
-	ULONG out_blr_length, const UCHAR* out_blr, ULONG out_msg_length, UCHAR* out_msg,
+	Firebird::IMessageMetadata* in_meta, const UCHAR* in_msg,
+	Firebird::IMessageMetadata* out_meta, UCHAR* out_msg,
 	bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
@@ -685,12 +616,11 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 
 		// A select with a non zero output length is a singleton select
 		const bool singleton =
-			(statement->getType() == DsqlCompiledStatement::TYPE_SELECT && out_msg_length != 0);
+			((statement->getType() == DsqlCompiledStatement::TYPE_SELECT) && out_msg);
 
 		request->req_transaction = *tra_handle;
 
-		request->execute(tdbb, tra_handle, in_blr_length, in_blr, in_msg_length, in_msg,
-			out_blr_length, out_blr, out_msg_length, out_msg, singleton);
+		request->execute(tdbb, tra_handle, in_meta, in_msg, out_meta, out_msg, singleton);
 
 		dsql_req::destroy(tdbb, request, true);
 	}
@@ -799,15 +729,15 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 // Execute a dynamic SQL statement.
 void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
 	// If there is no data required, just start the request
 
 	const dsql_msg* message = statement->getSendMsg();
 	if (message)
-		map_in_out(this, false, message, inBlrLength, inBlr, inMsgLength, NULL, inMsg);
+		map_in_out(this, false, message, inMetadata, NULL, inMsg);
 
 	// we need to map_in_out before tracing of execution start to let trace
 	// manager know statement parameters values
@@ -837,19 +767,20 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 
 	message = statement->getReceiveMsg();
 
-	if ((outMsgLength && message) || isBlock)
+	if (outMetadata && message)
+		parse_metadata(this, outMetadata, message->msg_parameters);
+
+	if ((outMsg && message) || isBlock)
 	{
 		UCHAR temp_buffer[FB_DOUBLE_ALIGN * 2];
 		dsql_msg temp_msg(*getDefaultMemoryPool());
 
-		// Insure that the blr for the message is parsed, regardless of
+		// Insure that the metadata for the message is parsed, regardless of
 		// whether anything is found by the call to receive.
 
 		UCHAR* msgBuffer = req_msg_buffers[message->msg_buffer_number];
 
-		if (outMsgLength && outBlrLength)
-			parse_blr(this, outBlrLength, outBlr, outMsgLength, message->msg_parameters);
-		else if (!outMsgLength && isBlock)
+		if (!outMetadata && isBlock)
 		{
 			message = &temp_msg;
 			temp_msg.msg_number = 1;
@@ -859,8 +790,8 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 
 		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, msgBuffer);
 
-		if (outMsgLength)
-			map_in_out(this, true, message, 0, NULL, outMsgLength, outMsg);
+		if (outMsg)
+			map_in_out(this, true, message, NULL, outMsg);
 
 		// if this is a singleton select, make sure there's in fact one record
 
@@ -963,8 +894,8 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 // Execute a dynamic SQL statement.
 void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
 	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
@@ -995,8 +926,8 @@ void DsqlTransactionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scra
 
 // Execute a dynamic SQL statement.
 void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-	ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
 	node->execute(tdbb, this, traHandle);
@@ -1047,7 +978,6 @@ static ULONG get_request_info(thread_db* tdbb, dsql_req* request, ULONG buffer_l
 static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 {
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
 
 	if (attachment->att_dsql_instance)
 		return attachment->att_dsql_instance;
@@ -1059,6 +989,7 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	INI_init_dsql(tdbb, database);
 
+	Database* const dbb = tdbb->getDatabase();
 	database->dbb_db_SQL_dialect =
 		(dbb->dbb_flags & DBB_DB_SQL_dialect_3) ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
@@ -1084,21 +1015,19 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 
 
     @param request
+    @param toExternal
     @param message
-    @param blr_length
-    @param blr
-    @param msg_length
+    @param meta
     @param dsql_msg_buf
     @param in_dsql_msg_buf
 
  **/
 static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* message,
-	ULONG blr_length, const UCHAR* blr, ULONG msg_length, UCHAR* dsql_msg_buf,
-	const UCHAR* in_dsql_msg_buf)
+	IMessageMetadata* meta, UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	USHORT count = parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
+	USHORT count = parse_metadata(request, meta, message->msg_parameters);
 
 	bool err = false;
 
@@ -1114,9 +1043,9 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 			if (!request->req_user_descs.get(parameter, desc))
 				desc.clear();
 
-			ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
+			//ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
 
-			if (length > msg_length || !desc.dsc_dtype)
+			if (/*length > msg_length || */!desc.dsc_dtype)
 			{
 				err = true;
 				break;
@@ -1133,13 +1062,13 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 					userNullDesc.clear();
 
 				const ULONG null_offset = (IPTR) userNullDesc.dsc_address;
-				length = null_offset + sizeof(SSHORT);
+/*				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 				{
 					err = true;
 					break;
 				}
-
+ */
 				dsc nullDesc = null_ind->par_desc;
 				nullDesc.dsc_address = msgBuffer + (IPTR) nullDesc.dsc_address;
 
@@ -1262,19 +1191,18 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 
 /**
 
- 	parse_blr
+ 	parse_metadata
 
-    @brief	Parse the message of a blr request.
+    @brief	Parse the message of a request.
 
 
-    @param blr_length
-    @param blr
-    @param msg_length
-    @param parameters
+    @param request
+    @param meta
+    @param parameters_list
 
  **/
-static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
-	const ULONG msg_length, const Array<dsql_par*>& parameters_list)
+static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
+	const Array<dsql_par*>& parameters_list)
 {
 	HalfStaticArray<const dsql_par*, 16> parameters;
 
@@ -1291,37 +1219,15 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 		}
 	}
 
-	// If there's no blr length, then the format of the current message buffer
+	// If there's no metadata, then the format of the current message buffer
 	// is identical to the format of the previous one.
 
-	if (blr_length == 0)
+	if (!meta)
 		return parameters.getCount();
 
-	BlrReader blrReader(blr, blr_length);
-
-	UCHAR version = blrReader.getByte();
-	if (version != blr_version4 && version != blr_version5)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << "Wrong BLR version"
-#endif
-				  );
-	}
-
-	if (blrReader.getByte() != blr_begin || blrReader.getByte() != blr_message)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << "Missing blr_begin / blr_message"
-#endif
-				  );
-	}
-
-	blrReader.getByte();	// skip the message number
-	USHORT count = blrReader.getWord() / 2;
+	LocalStatus st;
+	unsigned count = meta->getCount(&st);
+	check(&st);
 
 	if (count != parameters.getCount())
 	{
@@ -1333,51 +1239,34 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 				  );
 	}
 
-	ULONG offset = 0;
+	unsigned offset = 0;
 
-	for (USHORT index = 1; index <= count; index++)
+	for (USHORT index = 0; index < count; index++)
 	{
+		unsigned sqlType = meta->getType(&st, index);
+		check(&st);
+		unsigned sqlLength = meta->getLength(&st, index);
+		check(&st);
+
 		dsc desc;
-		USHORT align;
+		desc.dsc_flags = 0;
 
-		try
-		{
-			align = PAR_datatype(blrReader, &desc);
-		}
-		catch (status_exception&)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-					  << Arg::Gds(isc_random) << "Wrong BLR type"
-#endif
-					  );
-		}
+		unsigned dataOffset, nullOffset, dtype, dlength;
+		offset = fb_utils::sqlTypeToDsc(offset, sqlType, sqlLength,
+			&dtype, &dlength, &dataOffset, &nullOffset);
+		desc.dsc_dtype = dtype;
+		desc.dsc_length = dlength;
 
-		if (align)
-			offset = FB_ALIGN(offset, align);
+		desc.dsc_scale = meta->getScale(&st, index);
+		check(&st);
+		desc.dsc_sub_type = meta->getSubType(&st, index);
+		check(&st);
+		unsigned textType = meta->getCharset(&st, index);
+		check(&st);
+		desc.setTextType(textType);
+		desc.dsc_address = (UCHAR*)(IPTR) dataOffset;
 
-		desc.dsc_address = (UCHAR*)(IPTR) offset;
-		offset += desc.dsc_length;
-
-		if (blrReader.getByte() != blr_short || blrReader.getByte() != 0)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-					  << Arg::Gds(isc_random) << "Wrong BLR type for NULL indicator"
-#endif
-					  );
-		}
-
-		align = type_alignments[dtype_short];
-		if (align)
-			offset = FB_ALIGN(offset, align);
-
-		const ULONG null_offset = offset;
-		offset += sizeof(SSHORT);
-
-		const dsql_par* const parameter = parameters[index - 1];
+		const dsql_par* const parameter = parameters[index];
 		fb_assert(parameter);
 
 		// ASF: Older than 2.5 engine hasn't validating strings in DSQL. After this has been
@@ -1398,23 +1287,23 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 			desc.dsc_dtype = dtype_short;
 			desc.dsc_scale = 0;
 			desc.dsc_length = sizeof(SSHORT);
-			desc.dsc_address = (UCHAR*)(IPTR) null_offset;
+			desc.dsc_address = (UCHAR*)(IPTR) nullOffset;
 
 			request->req_user_descs.put(null, desc);
 		}
 	}
 
-	if (blrReader.getByte() != (UCHAR) blr_end || offset != msg_length)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << (offset != msg_length ? "Invalid message length" : "Missing blr_end")
-#endif
-				  );
-	}
-
 	return count;
+}
+
+
+// raise error if one present
+static void check(IStatus* st)
+{
+	if (!st->isSuccess())
+	{
+		ERRD_post(Arg::StatusVector(st->get()));
+	}
 }
 
 
@@ -1659,15 +1548,14 @@ void dsql_req::setCursor(thread_db* /*tdbb*/, const TEXT* /*name*/)
 		Arg::Gds(isc_req_sync));
 }
 
-ISC_STATUS dsql_req::fetch(thread_db* /*tdbb*/, ULONG /*blrLength*/, const UCHAR* /*blr*/,
-	ULONG /*msgLength*/, UCHAR* /*msgBuffer*/)
+bool dsql_req::fetch(thread_db* /*tdbb*/, UCHAR* /*msgBuffer*/)
 {
 	status_exception::raise(
 		Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 		Arg::Gds(isc_dsql_sqlda_err) <<
 		Arg::Gds(isc_req_sync));
 
-	return 0;	// avoid warning
+	return false;	// avoid warning
 }
 
 // Release a dynamic request.

@@ -141,7 +141,7 @@ const int INVALID_OBJECT = MAX_USHORT;
 
 // Statement flags
 
-const USHORT STMT_BLOB			= 1;
+//const USHORT STMT_BLOB			= 1;
 const USHORT STMT_NO_BATCH		= 2;
 const USHORT STMT_DEFER_EXECUTE	= 4;
 

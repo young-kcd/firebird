@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:		Firebird interface.
- *	MODULE:			ImplementHelper.cpp
- *	DESCRIPTION:	Tools to help create interfaces.
+ *	PROGRAM:		FB interfaces.
+ *	MODULE:			InternalMessageBuffer.h
+ *	DESCRIPTION:	Old=>new message style converter.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -17,7 +17,7 @@
  *  The Original Code was created by Alex Peshkov
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2010 Alex Peshkov <peshkoff at mail.ru>
+ *  Copyright (c) 2013 Alex Peshkov <peshkoff at mail.ru>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
@@ -26,31 +26,23 @@
  *
  */
 
-#include "firebird.h"
-#include "../common/classes/ImplementHelper.h"
+#ifndef FB_COMMON_CLASSES_INTERNAL_MESSAGE_BUFFER
+#define FB_COMMON_CLASSES_INTERNAL_MESSAGE_BUFFER
 
-namespace
+#include "firebird/Provider.h"
+
+namespace Firebird {
+
+// Provides compatibility with ISC API
+class InternalMessageBuffer : public FbMessage
 {
-	Firebird::IMaster* cached = NULL;
-}
+public:
+	InternalMessageBuffer(unsigned aBlrLength, const unsigned char* aBlr,
+		unsigned aBufferLength, unsigned char* aBuffer);
+	InternalMessageBuffer(IMessageMetadata* aMetadata, unsigned char* aBuffer);
+	~InternalMessageBuffer();
+};
 
-namespace Firebird
-{
-	UnloadDetector myModule;
+} // namespace Firebird
 
-	void CachedMasterInterface::set(IMaster* master)
-	{
-		fb_assert(master);
-		fb_assert(!cached);
-		cached = master;
-	}
-
-	IMaster* CachedMasterInterface::getMasterInterface()
-	{
-		if (!cached)
-		{
-			cached = fb_get_master_interface();
-		}
-		return cached;
-	}
-}
+#endif // FB_COMMON_CLASSES_INTERNAL_MESSAGE_BUFFER

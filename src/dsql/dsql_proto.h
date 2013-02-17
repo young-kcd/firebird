@@ -25,7 +25,7 @@
 #ifndef DSQL_DSQL_PROTO_H
 #define DSQL_DSQL_PROTO_H
 
-#include "../common/classes/fb_string.h"
+#include "../common/classes/array.h"
 
 namespace Jrd {
 	class Attachment;
@@ -33,25 +33,18 @@ namespace Jrd {
 	class dsql_req;
 }
 
-Jrd::dsql_req* DSQL_allocate_statement(Jrd::thread_db*, Jrd::Attachment*);
-void DSQL_execute(Jrd::thread_db*,  Jrd::jrd_tra**, Jrd::dsql_req*,
-				  ULONG, const UCHAR*,
-				  USHORT, ULONG, const UCHAR*,
-				  ULONG, const UCHAR*,
-				  ULONG, UCHAR*);
+namespace Firebird {
+	class IMessageMetadata;
+}
+
+void DSQL_execute(Jrd::thread_db*, Jrd::jrd_tra**, Jrd::dsql_req*, bool,
+				  Firebird::IMessageMetadata*, const UCHAR*, Firebird::IMessageMetadata*, UCHAR*);
 void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
-							ULONG, const TEXT*, USHORT,
-							ULONG, const UCHAR*,
-							ULONG, const UCHAR*,
-							ULONG, const UCHAR*,
-							ULONG, UCHAR*,
-							bool);
+							ULONG, const TEXT*, USHORT, Firebird::IMessageMetadata*, const UCHAR*,
+							Firebird::IMessageMetadata*, UCHAR*, bool);
 void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
-void DSQL_prepare(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::dsql_req**,
-				  ULONG, const TEXT*, USHORT,
-				  ULONG, const UCHAR*,
-				  ULONG, UCHAR*,
-				  bool);
+Jrd::dsql_req* DSQL_prepare(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra*, ULONG, const TEXT*,
+							USHORT, Firebird::Array<UCHAR>*, Firebird::Array<UCHAR>*, bool);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
 				   ULONG, const UCHAR*, ULONG, UCHAR*);
 

@@ -45,25 +45,6 @@ namespace Firebird
 	public:
 		RefMutex() {}
 		explicit RefMutex(MemoryPool& pool) : Mutex(pool) {}
-/* !!!!!
-		void enter(const char* f)
-		{
-			mutex.enter(f);
-		}
-
-		bool tryEnter(const char* f)
-		{
-			return mutex.tryEnter(f);
-		}
-
-		void leave()
-		{
-			mutex.leave();
-		}
-
-	private:
-		Mutex mutex;
- */
 	};
 
 	// RAII holder

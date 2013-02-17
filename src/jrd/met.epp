@@ -134,6 +134,94 @@ static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*,
 static bool verify_TRG_ignore_perm(thread_db*, const MetaName&);
 
 
+// generate BLR for descriptor
+static void generateBlr(const dsc* desc, UCharBuffer& blr)
+{
+	USHORT length = 0;
+
+	switch (desc->dsc_dtype)
+	{
+	case dtype_text:
+		blr.add(blr_text2);
+		blr.add(desc->dsc_ttype());
+		blr.add(desc->dsc_ttype() >> 8);
+		length = desc->dsc_length;
+		blr.add(length);
+		blr.add(length >> 8);
+		break;
+
+	case dtype_varying:
+		blr.add(blr_varying2);
+		blr.add(desc->dsc_ttype());
+		blr.add(desc->dsc_ttype() >> 8);
+		fb_assert(desc->dsc_length >= sizeof(USHORT));
+		length = desc->dsc_length - sizeof(USHORT);
+		blr.add(length);
+		blr.add(length >> 8);
+		break;
+
+	case dtype_short:
+		blr.add(blr_short);
+		blr.add(desc->dsc_scale);
+		break;
+
+	case dtype_long:
+		blr.add(blr_long);
+		blr.add(desc->dsc_scale);
+		break;
+
+	case dtype_quad:
+		blr.add(blr_quad);
+		blr.add(desc->dsc_scale);
+		break;
+
+	case dtype_int64:
+		blr.add(blr_int64);
+		blr.add(desc->dsc_scale);
+		break;
+
+	case dtype_real:
+		blr.add(blr_float);
+		break;
+
+	case dtype_double:
+		blr.add(blr_double);
+		break;
+
+	case dtype_sql_date:
+		blr.add(blr_sql_date);
+		break;
+
+	case dtype_sql_time:
+		blr.add(blr_sql_time);
+		break;
+
+	case dtype_timestamp:
+		blr.add(blr_timestamp);
+		break;
+
+	case dtype_array:
+		blr.add(blr_quad);
+		blr.add(0);
+		break;
+
+	case dtype_blob:
+		blr.add(blr_blob2);
+		blr.add(desc->dsc_sub_type);
+		blr.add(desc->dsc_sub_type >> 8);
+		blr.add(desc->getTextType());
+		blr.add(desc->getTextType() >> 8);
+		break;
+
+	case dtype_boolean:
+		blr.add(blr_bool);
+		break;
+
+	default:
+		fb_assert(false);
+	}
+}
+
 
 // Decompile all triggers from vector
 static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
@@ -4328,7 +4416,7 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 		{
 			dsc desc;
 			PAR_datatype(reader, &desc);
-			PreparedStatement::generateBlr(&desc, appendBlr);
+			generateBlr(&desc, appendBlr);
 
 			if (desc.dsc_dtype >= dtype_aligned)
 				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
@@ -4352,7 +4440,7 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 					Arg::Num(i * 2 + 1));
 			}
 
-			PreparedStatement::generateBlr(&desc, appendBlr);
+			generateBlr(&desc, appendBlr);
 
 			if (desc.dsc_dtype >= dtype_aligned)
 				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
@@ -4405,7 +4493,7 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 		const dsc* desc = &parameter->prm_desc;
 
 		if (parameter->prm_mechanism == prm_mech_type_of)
-			PreparedStatement::generateBlr(desc, blr);
+			generateBlr(desc, blr);
 		else
 		{
 			fb_assert(parameter->prm_mechanism == prm_mech_normal);
@@ -4438,7 +4526,7 @@ static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& 
 
 		offset += desc->dsc_length;
 
-		PreparedStatement::generateBlr(&shortDesc, blr);	// null flag
+		generateBlr(&shortDesc, blr);	// null flag
 
 		offset = FB_ALIGN(offset, sizeof(SSHORT)) + shortDesc.dsc_length;
 	}
@@ -4476,7 +4564,7 @@ void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id, Comp
 
 		dsc shortDesc;
 		shortDesc.makeShort(0);
-		PreparedStatement::generateBlr(&shortDesc, tmp);	// end flag for the output message
+		generateBlr(&shortDesc, tmp);	// end flag for the output message
 
 		tmp.join(appendBlr);
 

@@ -236,6 +236,38 @@ namespace Firebird
 			}
 			inherited::shrink(newCount);
 		}
+		void grow(size_t newCount)
+		{
+			size_t oldCount = getCount();
+			inherited::grow(newCount);
+			for (size_t i = oldCount; i < newCount; i++) {
+				inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool());
+			}
+		}
+		void resize(const size_t newCount, const T& val)
+		{
+			if (newCount > getCount())
+			{
+				size_t oldCount = getCount();
+				inherited::grow(newCount);
+				for (size_t i = oldCount; i < newCount; i++) {
+					inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool(), val);
+				}
+			}
+			else {
+				shrink(newCount);
+			}
+		}
+		void resize(const size_t newCount)
+		{
+			if (newCount > getCount())
+			{
+				grow(newCount);
+			}
+			else {
+				shrink(newCount);
+			}
+		}
 		iterator begin()
 		{
 			return iterator(this, 0);

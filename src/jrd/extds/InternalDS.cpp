@@ -31,6 +31,7 @@
 #include "../common/dsc.h"
 #include "../../dsql/dsql.h"
 #include "../../dsql/sqlda_pub.h"
+#include "../common/classes/InternalMessageBuffer.h"
 
 #include "../blb_proto.h"
 #include "../evl_proto.h"
@@ -167,7 +168,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		}
 
 		if (!status.isSuccess())
-			raise(status, tdbb, "attach");
+			raise(status, tdbb, "JProvider::attach");
 	}
 
 	m_sqlDialect = (m_attachment->getHandle()->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ?
@@ -201,7 +202,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 		if (!status.isSuccess())
 		{
 			m_attachment = att;
-			raise(status, tdbb, "detach");
+			raise(status, tdbb, "JAttachment::detach");
 		}
 	}
 
@@ -345,8 +346,9 @@ InternalStatement::InternalStatement(InternalConnection& conn) :
 	m_intConnection(conn),
 	m_intTransaction(0),
 	m_request(0),
-	m_inBlr(getPool()),
-	m_outBlr(getPool())
+	m_cursor(0),
+	m_inMetadata(new MsgMetadata),
+	m_outMetadata(new MsgMetadata)
 {
 }
 
@@ -356,24 +358,19 @@ InternalStatement::~InternalStatement()
 
 void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 {
-	m_inBlr.clear();
-	m_outBlr.clear();
+	m_inMetadata->items.clear();
+	m_outMetadata->items.clear();
 
 	JAttachment* att = m_intConnection.getJrdAtt();
 	JTransaction* tran = getIntTransaction()->getJrdTran();
 
 	LocalStatus status;
 
-	if (!m_request)
+	if (m_request)
 	{
+		doClose(tdbb, true);
 		fb_assert(!m_allocated);
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		m_request = att->allocateStatement(&status);
-		m_allocated = (m_request != NULL);
 	}
-
-	if (!status.isSuccess())
-		raise(status, tdbb, "jrd8_allocate_statement", &sql);
 
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
@@ -410,13 +407,14 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 				tran->getHandle()->tra_caller_name = CallerName();
 		}
 
-		m_request->prepare(&status, tran, sql.length(), sql.c_str(), m_connection.getSqlDialect(), 0);
+		m_request = att->prepare(&status, tran, sql.length(), sql.c_str(), m_connection.getSqlDialect(), 0);
+		m_allocated = (m_request != NULL);
 
 		tran->getHandle()->tra_caller_name = save_caller_name;
 	}
 
 	if (!status.isSuccess())
-		raise(status, tdbb, "jrd8_prepare", &sql);
+		raise(status, tdbb, "JAttachment::prepare", &sql);
 
 	const DsqlCompiledStatement* statement = m_request->getHandle()->getStatement();
 
@@ -425,8 +423,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		try
 		{
 			PreparedStatement::parseDsqlMessage(statement->getSendMsg(), m_inDescs,
-				m_inBlr, m_in_buffer);
-			m_inputs = m_inDescs.getCount() / 2;
+				m_inMetadata, m_in_buffer);
+			m_inputs = m_inMetadata->items.getCount();
 		}
 		catch (const Exception&)
 		{
@@ -441,8 +439,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		try
 		{
 			PreparedStatement::parseDsqlMessage(statement->getReceiveMsg(), m_outDescs,
-				m_outBlr, m_out_buffer);
-			m_outputs = m_outDescs.getCount() / 2;
+				m_outMetadata, m_out_buffer);
+			m_outputs = m_outMetadata->items.getCount();
 		}
 		catch (const Exception&)
 		{
@@ -469,7 +467,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
 	case DsqlCompiledStatement::TYPE_CREATE_DB:
 		status.set(Arg::Gds(isc_eds_expl_tran_ctrl).value());
-		raise(status, tdbb, "jrd8_prepare", &sql);
+		raise(status, tdbb, "JAttachment::prepare", &sql);
 		break;
 
 	case DsqlCompiledStatement::TYPE_INSERT:
@@ -495,16 +493,16 @@ void InternalStatement::doExecute(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
-		InternalMessageBuffer inMsgBuffer(m_inBlr.getCount(), m_inBlr.begin(),
-										  m_in_buffer.getCount(), m_in_buffer.begin());
-		InternalMessageBuffer outMsgBuffer(m_outBlr.getCount(), m_outBlr.begin(),
-										   m_out_buffer.getCount(),m_out_buffer.begin());
+		fb_assert(m_inMetadata->length == m_in_buffer.getCount());
+		InternalMessageBuffer inMsg(m_inMetadata, m_in_buffer.begin());
+		fb_assert(m_outMetadata->length == m_out_buffer.getCount());
+		InternalMessageBuffer outMsg(m_outMetadata, m_out_buffer.begin());
 
-		m_request->execute(&status, transaction, 0, &inMsgBuffer, &outMsgBuffer);
+		m_request->execute(&status, transaction, &inMsg, &outMsg);
 	}
 
 	if (!status.isSuccess())
-		raise(status, tdbb, "jrd8_execute");
+		raise(status, tdbb, "JStatement::execute");
 }
 
 
@@ -516,40 +514,40 @@ void InternalStatement::doOpen(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
-		InternalMessageBuffer inMsgBuffer(m_inBlr.getCount(), m_inBlr.begin(),
-										  m_in_buffer.getCount(), m_in_buffer.begin());
+		if (m_cursor)
+		{
+			m_cursor->close(&status);
+			m_cursor = NULL;
+		}
 
-		m_request->execute(&status, transaction, 0, &inMsgBuffer, NULL);
+		fb_assert(m_inMetadata->length == m_in_buffer.getCount());
+		InternalMessageBuffer inMsg(m_inMetadata, m_in_buffer.begin());
+
+		m_cursor = m_request->openCursor(&status, transaction, &inMsg, m_outMetadata);
 	}
 
 	if (!status.isSuccess())
-		raise(status, tdbb, "jrd8_execute");
+		raise(status, tdbb, "JStatement::open");
 }
 
 
 bool InternalStatement::doFetch(thread_db* tdbb)
 {
 	LocalStatus status;
-	int res = 0;
-
-	// This allows the second and subsequent fetches to skip BLR parsing.
-	// We don't need that as all our messages are in the same format.
-	const ULONG blr_length = m_fetched ? 0 : m_outBlr.getCount();
-	const UCHAR* const blr = m_fetched ? NULL : m_outBlr.begin();
+	bool res = true;
 
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
-		InternalMessageBuffer msgBuffer(blr_length, blr,
-										m_out_buffer.getCount(), m_out_buffer.begin());
-
-		res = m_request->fetch(&status, &msgBuffer);
+		fb_assert(m_outMetadata->length == m_out_buffer.getCount());
+		fb_assert(m_cursor);
+		res = m_cursor->fetch(&status, m_out_buffer.begin());
 	}
 
 	if (!status.isSuccess())
-		raise(status, tdbb, "jrd8_fetch");
+		raise(status, tdbb, "JResultSet::fetch");
 
-	return (res != 100);
+	return res;
 }
 
 
@@ -559,21 +557,28 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
-		if (m_request)
-			m_request->free(&status, drop ? DSQL_drop : DSQL_close);
+		if (m_cursor)
+			m_cursor->close(&status);
+
+		m_cursor = NULL;
+		if (!status.isSuccess())
+		{
+			raise(status, tdbb, "JResultSet::close");
+		}
 
 		if (drop)
 		{
+			if (m_request)
+				m_request->free(&status);
+
 			m_allocated = false;
 			m_request = NULL;
-		}
-	}
 
-	if (!status.isSuccess())
-	{
-		m_allocated = false;
-		m_request = NULL;
-		raise(status, tdbb, "jrd8_free_statement");
+			if (!status.isSuccess())
+			{
+				raise(status, tdbb, "JStatement::free");
+			}
+		}
 	}
 }
 
@@ -633,7 +638,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 	}
 
 	if (!status.isSuccess())
-		m_connection.raise(status, tdbb, "jrd8_open_blob2");
+		m_connection.raise(status, tdbb, "JAttachment::openBlob");
 
 	fb_assert(m_blob);
 }
@@ -659,7 +664,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 	}
 
 	if (!status.isSuccess())
-		m_connection.raise(status, tdbb, "jrd8_create_blob2");
+		m_connection.raise(status, tdbb, "JAttachment::createBlob");
 
 	fb_assert(m_blob);
 }
@@ -684,7 +689,7 @@ USHORT InternalBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 	case 0:
 		break;
 	default:
-		m_connection.raise(status, tdbb, "jrd8_get_segment");
+		m_connection.raise(status, tdbb, "JBlob::getSegment");
 	}
 
 	return result;
@@ -701,7 +706,7 @@ void InternalBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 	}
 
 	if (!status.isSuccess())
-		m_connection.raise(status, tdbb, "jrd8_put_segment");
+		m_connection.raise(status, tdbb, "JBlob::putSegment");
 }
 
 void InternalBlob::close(thread_db* tdbb)
@@ -714,7 +719,7 @@ void InternalBlob::close(thread_db* tdbb)
 	}
 
 	if (!status.isSuccess())
-		m_connection.raise(status, tdbb, "jrd8_close_blob");
+		m_connection.raise(status, tdbb, "JBlob::close");
 
 	fb_assert(!m_blob);
 }
@@ -732,7 +737,7 @@ void InternalBlob::cancel(thread_db* tdbb)
 	}
 
 	if (!status.isSuccess())
-		m_connection.raise(status, tdbb, "jrd8_cancel_blob");
+		m_connection.raise(status, tdbb, "JBlob::cancel");
 
 	fb_assert(!m_blob);
 }

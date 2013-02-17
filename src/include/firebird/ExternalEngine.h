@@ -175,9 +175,9 @@ public:
 	virtual const char* FB_CARG getName(IStatus* status) const = 0;
 	virtual const char* FB_CARG getEntryPoint(IStatus* status) const = 0;
 	virtual const char* FB_CARG getBody(IStatus* status) const = 0;
-	virtual const IParametersMetadata* FB_CARG getInputParameters(IStatus* status) const = 0;
-	virtual const IParametersMetadata* FB_CARG getOutputParameters(IStatus* status) const = 0;
-	virtual const IParametersMetadata* FB_CARG getTriggerFields(IStatus* status) const = 0;
+	virtual IMessageMetadata* FB_CARG getInputMetadata(IStatus* status) const = 0;
+	virtual IMessageMetadata* FB_CARG getOutputMetadata(IStatus* status) const = 0;
+	virtual const IMessageMetadata* FB_CARG getTriggerFields(IStatus* status) const = 0;
 	virtual const char* FB_CARG getTriggerTable(IStatus* status) const = 0;
 	virtual ExternalTrigger::Type FB_CARG getTriggerType(IStatus* status) const = 0;
 };

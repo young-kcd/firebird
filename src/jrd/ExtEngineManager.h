@@ -147,22 +147,22 @@ private:
 			return body.c_str();
 		}
 
-		virtual const Firebird::IParametersMetadata* FB_CARG getInputParameters(
+		virtual Firebird::IMessageMetadata* FB_CARG getInputMetadata(
 			Firebird::IStatus* /*status*/) const
 		{
-			return inputParameters;
+			return getMetadata(inputParameters);
 		}
 
-		virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(
+		virtual Firebird::IMessageMetadata* FB_CARG getOutputMetadata(
 			Firebird::IStatus* /*status*/) const
 		{
-			return outputParameters;
+			return getMetadata(outputParameters);
 		}
 
-		virtual const Firebird::IParametersMetadata* FB_CARG getTriggerFields(
+		virtual Firebird::IMessageMetadata* FB_CARG getTriggerFields(
 			Firebird::IStatus* /*status*/) const
 		{
-			return triggerFields;
+			return getMetadata(triggerFields);
 		}
 
 		virtual const char* FB_CARG getTriggerTable(Firebird::IStatus* /*status*/) const
@@ -180,11 +180,19 @@ private:
 		Firebird::MetaName name;
 		Firebird::string entryPoint;
 		Firebird::string body;
-		Firebird::AutoPtr<Firebird::StatementMetadata::Parameters> inputParameters;
-		Firebird::AutoPtr<Firebird::StatementMetadata::Parameters> outputParameters;
-		Firebird::AutoPtr<Firebird::StatementMetadata::Parameters> triggerFields;
+		Firebird::RefPtr<Firebird::MsgMetadata> inputParameters;
+		Firebird::RefPtr<Firebird::MsgMetadata> outputParameters;
+		Firebird::RefPtr<Firebird::MsgMetadata> triggerFields;
 		Firebird::MetaName triggerTable;
 		Firebird::ExternalTrigger::Type triggerType;
+
+	private:
+		static Firebird::IMessageMetadata* getMetadata(const Firebird::IMessageMetadata* par)
+		{
+			Firebird::IMessageMetadata* rc = const_cast<Firebird::IMessageMetadata*>(par);
+			rc->addRef();
+			return rc;
+		}
 	};
 
 	class ExternalContextImpl : public Firebird::ExternalContext

@@ -74,6 +74,7 @@
 #include "../common/isc_f_proto.h"
 #include "../auth/SecurityDatabase/LegacyHash.h"
 #include "../common/enc_proto.h"
+#include "../common/classes/InternalMessageBuffer.h"
 
 using namespace Firebird;
 
@@ -1652,6 +1653,20 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 }
 
 
+void Rsr::checkIface()
+{
+	if (!rsr_iface)
+		Arg::Gds(isc_unprepared_stmt).raise();
+}
+
+
+void Rsr::checkCursor()
+{
+	if (!rsr_cursor)
+		Arg::Gds(isc_cursor_not_open).raise();
+}
+
+
 static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACKET* send)
 {
 /**************************************
@@ -1673,30 +1688,25 @@ static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACK
 		return port->send_response(send, 0, 0, &status_vector, true);
 	}
 
-	ServStatement iface(rdb->rdb_iface->allocateStatement(&status_vector));
-
 	OBJCT object = 0;
-	if (status_vector.isSuccess())
+	// Allocate SQL request block
+
+	Rsr* statement = new Rsr;
+	statement->rsr_rdb = rdb;
+	statement->rsr_iface = NULL;
+
+	if (statement->rsr_id = port->get_id(statement))
 	{
-		// Allocate SQL request block
+		object = statement->rsr_id;
+		statement->rsr_next = rdb->rdb_sql_requests;
+		rdb->rdb_sql_requests = statement;
+	}
+	else
+	{
+		delete statement;
 
-		Rsr* statement = new Rsr;
-		statement->rsr_rdb = rdb;
-		statement->rsr_iface = iface;
-		if (statement->rsr_id = port->get_id(statement))
-		{
-			object = statement->rsr_id;
-			statement->rsr_next = rdb->rdb_sql_requests;
-			rdb->rdb_sql_requests = statement;
-		}
-		else
-		{
-			statement->rsr_iface->free(&status_vector, DSQL_drop);
-			delete statement;
-
-			status_vector.init();
-			(Arg::Gds(isc_too_many_handles)).copyTo(&status_vector);
-		}
+		status_vector.init();
+		(Arg::Gds(isc_too_many_handles)).copyTo(&status_vector);
 	}
 
 	return port->send_response(send, object, 0, &status_vector, true);
@@ -2137,6 +2147,8 @@ static USHORT check_statement_type( Rsr* statement)
 	USHORT ret = 0;
 	bool done = false;
 
+	statement->checkIface();
+
 	statement->rsr_iface->getInfo(&local_status, sizeof(sql_info), sql_info, sizeof(buffer), buffer);
 
 	if (local_status.isSuccess())
@@ -2152,7 +2164,7 @@ static USHORT check_statement_type( Rsr* statement)
 				{
 				case isc_info_sql_stmt_get_segment:
 				case isc_info_sql_stmt_put_segment:
-					ret |= STMT_BLOB;
+					fb_assert(false);
 					break;
 				case isc_info_sql_stmt_select:
 				case isc_info_sql_stmt_select_for_upd:
@@ -2596,12 +2608,33 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 
 	getHandle(statement, free_stmt->p_sqlfree_statement);
 
-	statement->rsr_iface->free(&status_vector, free_stmt->p_sqlfree_option);
+	if (free_stmt->p_sqlfree_option & (DSQL_drop | DSQL_unprepare | DSQL_close))
+	{
+		if (statement->rsr_cursor)
+		{
+			statement->rsr_cursor->close(&status_vector);
+			if (!status_vector.isSuccess())
+			{
+				return this->send_response(sendL, 0, 0, &status_vector, true);
+			}
+			statement->rsr_cursor = NULL;
+		}
+	}
 
-	if (!status_vector.isSuccess())
-		return this->send_response(sendL, 0, 0, &status_vector, true);
+	if (free_stmt->p_sqlfree_option & (DSQL_drop | DSQL_unprepare))
+	{
+		if (statement->rsr_iface)
+		{
+			statement->rsr_iface->free(&status_vector);
+			if (!status_vector.isSuccess())
+			{
+				return this->send_response(sendL, 0, 0, &status_vector, true);
+			}
+			statement->rsr_iface = NULL;
+		}
+	}
 
-	if (free_stmt->p_sqlfree_option == DSQL_drop)
+	if (free_stmt->p_sqlfree_option & DSQL_drop)
 	{
 		release_sql_request(statement);
 		statement = NULL;
@@ -2615,7 +2648,6 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 	}
 
 	const USHORT object = statement ? statement->rsr_id : INVALID_OBJECT;
-
 	return this->send_response(sendL, object, 0, &status_vector, true);
 }
 
@@ -2701,6 +2733,9 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	if (exnow->p_sqlst_transaction) {
 		getHandle(transaction, exnow->p_sqlst_transaction);
 	}
+	ITransaction* tra = NULL;
+	if (transaction)
+		tra = transaction->rtr_iface;
 
 	USHORT in_msg_length = 0, out_msg_length = 0;
 	UCHAR* in_msg = NULL;
@@ -2709,9 +2744,16 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	UCHAR* out_blr;
 	if (op == op_exec_immediate2)
 	{
+		in_msg_type = exnow->p_sqlst_message_number;
+		if ((SSHORT)in_msg_type == -1)
+		{
+			return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
+				 0, &status_vector, false);
+		}
+
 		in_blr_length = exnow->p_sqlst_blr.cstr_length;
 		in_blr = exnow->p_sqlst_blr.cstr_address;
-		in_msg_type = exnow->p_sqlst_message_number;
+
 		if (this->port_statement->rsr_bind_format)
 		{
 			in_msg_length = this->port_statement->rsr_bind_format->fmt_length;
@@ -2742,10 +2784,6 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		in_msg_type = 0;
 	}
 
-	ITransaction* tra = NULL;
-	if (transaction)
-		tra = transaction->rtr_iface;
-
 	// Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
 	// be a way to send the parser version to DSQL so that the parser can compare the keyword
 	// version to the parser version.  To accomplish this, the parser version is combined with
@@ -2772,7 +2810,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		exnow->p_sqlst_SQL_str.cstr_length,
 		reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
 		exnow->p_sqlst_SQL_dialect * 10 + PARSER_VERSION,
-		in_msg_type, &iMsgBuffer, &oMsgBuffer);
+		&iMsgBuffer, &oMsgBuffer);
 
 	if (op == op_exec_immediate2)
 	{
@@ -2825,13 +2863,23 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		getHandle(transaction, sqldata->p_sqldata_transaction);
 	}
 
+	LocalStatus status_vector;
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
+	USHORT out_msg_type = (op == op_execute2) ? sqldata->p_sqldata_out_message_number : 0;
+	const bool defer = this->haveRecvData();
+
+	if ((SSHORT)out_msg_type == -1)
+	{
+		return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
+			0, &status_vector, defer);
+	}
+	statement->checkIface();
 
 	USHORT in_msg_length = 0, out_msg_length = 0;
 	UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
-	USHORT out_msg_type, out_blr_length;
+	USHORT out_blr_length;
 	UCHAR* out_blr;
 
 	if (statement->rsr_format)
@@ -2845,7 +2893,6 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	{
 		out_blr_length = sqldata->p_sqldata_out_blr.cstr_length;
 		out_blr = sqldata->p_sqldata_out_blr.cstr_address;
-		out_msg_type = sqldata->p_sqldata_out_message_number;
 		if (this->port_statement->rsr_select_format)
 		{
 			out_msg_length = this->port_statement->rsr_select_format->fmt_length;
@@ -2864,13 +2911,43 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	if (transaction)
 		tra = transaction->rtr_iface;
 
-	LocalStatus status_vector;
+	if (statement->rsr_cursor)
+	{
+		 Arg::Gds(isc_dsql_cursor_open_err).raise();
+	}
+
 	InternalMessageBuffer iMsgBuffer(sqldata->p_sqldata_blr.cstr_length,
 		sqldata->p_sqldata_blr.cstr_address, in_msg_length, in_msg);
 	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr, out_msg_length, out_msg);
+	ITransaction* newTra = tra;
 
-	ITransaction* newTra = statement->rsr_iface->execute(&status_vector, tra,
-		sqldata->p_sqldata_message_number, &iMsgBuffer, &oMsgBuffer);
+	unsigned type = statement->rsr_iface->getType(&status_vector);
+	if (!status_vector.isSuccess())
+	{
+		status_exception::raise(status_vector.get());
+	}
+
+	if ((type == isc_info_sql_stmt_select || type == isc_info_sql_stmt_select_for_upd) &&
+		out_msg_length == 0)
+	{
+		if (out_blr_length)
+		{
+			statement->rsr_cursor = statement->rsr_iface->openCursor(&status_vector, tra,
+				&iMsgBuffer, oMsgBuffer.metadata);
+		}
+		else	// delay execution till first fetch (with output format)
+		{
+			statement->rsr_par_metadata = iMsgBuffer.metadata;
+			statement->rsr_parameters.assign(iMsgBuffer.buffer, in_msg_length);
+			statement->rsr_transaction = tra;
+			return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
+				0, &status_vector, defer);
+		}
+	}
+	else
+	{
+		newTra = statement->rsr_iface->execute(&status_vector, tra, &iMsgBuffer, &oMsgBuffer);
+	}
 
 	if (op == op_execute2)
 	{
@@ -2900,8 +2977,6 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		statement->rsr_rtr = transaction;
 	}
 
-	const bool defer = this->haveRecvData();
-
 	return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
 		0, &status_vector, defer);
 }
@@ -2919,13 +2994,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
  *	Fetch next record from a dynamic SQL cursor.
  *
  *****************************************/
+	LocalStatus status_vector;
 	Rsr* statement;
-
 	getHandle(statement, sqldata->p_sqldata_statement);
-
-	if (statement->rsr_flags.test(Rsr::BLOB)) {
-		return this->fetch_blob(sqldata, sendL);
-	}
 
 	USHORT msg_length;
 	if (statement->rsr_format) {
@@ -2957,6 +3028,44 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		}
 	}
 
+	// If required, call delayed open()
+
+	if (!statement->rsr_par_metadata)
+	{
+		statement->checkCursor();
+	}
+	else
+	{
+		if (statement->rsr_cursor)
+		{
+			Arg::Gds(isc_dsql_cursor_open_err).raise();
+		}
+
+		InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
+			sqldata->p_sqldata_blr.cstr_address, msg_length, NULL);
+
+		if (!msgBuffer.metadata)
+		{
+			Arg::Gds(isc_dsql_cursor_open_err).raise();
+		}
+
+		FbMessage inMsgBuffer;
+		inMsgBuffer.buffer = statement->rsr_parameters.begin();
+		inMsgBuffer.metadata = statement->rsr_par_metadata;
+
+		statement->rsr_cursor = statement->rsr_iface->openCursor(&status_vector, statement->rsr_transaction,
+			&inMsgBuffer, msgBuffer.metadata);
+		if (!status_vector.isSuccess())
+		{
+			status_exception::raise(status_vector.get());
+		}
+
+		statement->rsr_par_metadata = NULL;
+		statement->rsr_parameters.clear();
+		statement->rsr_transaction = NULL;
+	}
+
+
 	// Get ready to ship the data out
 
 	P_SQLDATA* response = &sendL->p_sqldata;
@@ -2968,8 +3077,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	// Check to see if any messages are already sitting around
 
-	LocalStatus status_vector;
-	ISC_STATUS s = 0;
+	bool rc = true;
 
 	while (true)
 	{
@@ -2978,7 +3086,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting)
 		{
 			statement->rsr_flags.clear(Rsr::EOF_SET);
-			s = 100;
+			rc = false;
 			count2 = 0;
 			break;
 		}
@@ -3003,20 +3111,17 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		{
 			fb_assert(statement->rsr_msgs_waiting == 0);
 
-			InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
-				sqldata->p_sqldata_blr.cstr_address, msg_length, message->msg_buffer);
-			s = statement->rsr_iface->fetch(&status_vector, &msgBuffer);
+			rc = statement->rsr_cursor->fetch(&status_vector, message->msg_buffer);
 
 			statement->rsr_flags.set(Rsr::FETCHED);
-			if (s)
+			if (!status_vector.isSuccess())
 			{
-				if (s == 100 || s == 101)
-				{
-					count2 = 0;
-					break;
-				}
-
 				return this->send_response(sendL, 0, 0, &status_vector, false);
+			}
+			if (!rc)
+			{
+				count2 = 0;
+				break;
 			}
 
 			message->msg_address = message->msg_buffer;
@@ -3043,7 +3148,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			break;
 	}
 
-	response->p_sqldata_status = s;
+	response->p_sqldata_status = rc ? 0 : 100;
 	response->p_sqldata_messages = 0;
 
 	// hvlad: message->msg_address not used in xdr_protocol because of
@@ -3086,25 +3191,20 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			next = message;
 		}
 
-		InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
-			sqldata->p_sqldata_blr.cstr_address, msg_length, message->msg_buffer);
-		s = statement->rsr_iface->fetch(&status_vector, &msgBuffer);
-
-		if (s)
+		rc = statement->rsr_cursor->fetch(&status_vector, message->msg_buffer);
+		if (!status_vector.isSuccess())
 		{
-			if (!status_vector.isSuccess())
+			// If already have an error queued, don't overwrite it
+			if (!statement->rsr_flags.test(Rsr::STREAM_ERR))
 			{
-				// If already have an error queued, don't overwrite it
-				if (!statement->rsr_flags.test(Rsr::STREAM_ERR))
-				{
-					statement->rsr_flags.set(Rsr::STREAM_ERR);
-					statement->saveException(status_vector.get(), true);
-				}
+				statement->rsr_flags.set(Rsr::STREAM_ERR);
+				statement->saveException(status_vector.get(), true);
 			}
-
-			if (s == 100)
-				statement->rsr_flags.set(Rsr::EOF_SET);
-
+			break;
+		}
+		if (!rc)
+		{
+			statement->rsr_flags.set(Rsr::EOF_SET);
 			break;
 		}
 
@@ -3114,60 +3214,6 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	}
 
 	return TRUE;
-}
-
-
-ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
-{
-/*****************************************
- *
- *	f e t c h _ b l o b
- *
- *****************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor.
- *
- *****************************************/
-	Rsr* statement;
-
-	getHandle(statement, sqldata->p_sqldata_statement);
-
-	USHORT msg_length;
-	if (statement->rsr_format)
-		msg_length = statement->rsr_format->fmt_length;
-	else
-		msg_length = 0;
-
-	RMessage* message = statement->rsr_message;
-	if (message != NULL)
-		statement->rsr_buffer = message;
-
-	// Get ready to ship the data out
-
-	P_SQLDATA* response = &sendL->p_sqldata;
-	sendL->p_operation = op_fetch_response;
-	response->p_sqldata_statement = sqldata->p_sqldata_statement;
-	response->p_sqldata_status = 0;
-	response->p_sqldata_messages = 1;
-	message = statement->rsr_buffer;
-
-	LocalStatus status_vector;
-	InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
-		sqldata->p_sqldata_blr.cstr_address, msg_length, message->msg_buffer);
-	ISC_STATUS s = statement->rsr_iface->fetch(&status_vector, &msgBuffer);
-
-	if (status_vector.isSuccess() || status_vector.get()[1] == isc_segment ||
-		status_vector.get()[1] == isc_segstr_eof)
-	{
-		message->msg_address = message->msg_buffer;
-		response->p_sqldata_status = s;
-		response->p_sqldata_messages = (status_vector.get()[1] == isc_segstr_eof) ? 0 : 1;
-		this->send_partial(sendL);
-		message->msg_address = NULL;
-	}
-
-	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
 
 
@@ -3583,6 +3629,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	case op_info_sql:
 		getHandle(statement, stuff->p_info_object);
+		statement->checkIface();
 
 		statement->rsr_iface->getInfo(&status_vector, info_len, info_buffer,
 			stuff->p_info_buffer_length, buffer);
@@ -3813,13 +3860,32 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	LocalStatus status_vector;
 
-	statement->rsr_iface->prepare(&status_vector,
+	if (statement->rsr_iface)
+	{
+		statement->rsr_iface->free(&status_vector);
+		if (!status_vector.isSuccess())
+			return this->send_response(sendL, 0, 0, &status_vector, false);
+	}
+
+	Rdb* rdb = statement->rsr_rdb;
+	if (bad_db(&status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, &status_vector, true);
+	}
+
+	statement->rsr_iface = rdb->rdb_iface->prepare(&status_vector,
 		iface, prepareL->p_sqlst_SQL_str.cstr_length,
 		reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
 		prepareL->p_sqlst_SQL_dialect * 10 + PARSER_VERSION, flags);
-
 	if (!status_vector.isSuccess())
 		return this->send_response(sendL, 0, 0, &status_vector, false);
+
+	if (statement->rsr_cursor_name.hasData())
+	{
+		statement->rsr_iface->setCursorName(&status_vector, statement->rsr_cursor_name.c_str());
+		if (!status_vector.isSuccess())
+			return this->send_response(sendL, 0, 0, &status_vector, false);
+	}
 
 	LocalStatus s2;
 	statement->rsr_iface->getInfo(&s2, infoLength, info, prepareL->p_sqlst_buffer_length, buffer);
@@ -3828,11 +3894,8 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	REMOTE_reset_statement(statement);
 
-	statement->rsr_flags.clear(Rsr::BLOB | Rsr::NO_BATCH | Rsr::DEFER_EXECUTE);
+	statement->rsr_flags.clear(Rsr::NO_BATCH | Rsr::DEFER_EXECUTE);
 	USHORT state = check_statement_type(statement);
-	if (state & STMT_BLOB) {
-		statement->rsr_flags.set(Rsr::BLOB);
-	}
 	if (state & STMT_NO_BATCH) {
 		statement->rsr_flags.set(Rsr::NO_BATCH);
 	}
@@ -3840,7 +3903,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 		statement->rsr_flags.set(Rsr::DEFER_EXECUTE);
 	}
 	if (!(port_flags & PORT_lazy)) {
-		state = (state & STMT_BLOB) ? 1 : 0;
+		state = 0;
 	}
 
 	// Send a response that includes the info requested
@@ -5275,11 +5338,16 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
  *****************************************/
 	Rsr* statement;
 	LocalStatus status_vector;
+	const char* name = reinterpret_cast<const char*>(sqlcur->p_sqlcur_cursor_name.cstr_address);
 
 	getHandle(statement, sqlcur->p_sqlcur_statement);
 
-	statement->rsr_iface->setCursorName(&status_vector,
-		reinterpret_cast<const char*>(sqlcur->p_sqlcur_cursor_name.cstr_address));
+	statement->rsr_cursor_name = name;
+
+	if (statement->rsr_iface)
+	{
+		statement->rsr_iface->setCursorName(&status_vector, name);
+	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }

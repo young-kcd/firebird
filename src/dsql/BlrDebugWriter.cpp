@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * Adriano dos Santos Fernandes - refactored from others modules.
+ * Alex Peshkov
  */
 
 #include "firebird.h"
@@ -24,7 +25,7 @@
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
-#include "../dsql/BlrWriter.h"
+#include "../dsql/BlrDebugWriter.h"
 #include "../dsql/StmtNodes.h"
 #include "../dsql/dsql.h"
 #include "../jrd/blr.h"
@@ -35,28 +36,12 @@ using namespace Firebird;
 
 namespace Jrd {
 
-
-// Write out a string valued attribute.
-void BlrWriter::appendString(UCHAR verb, const char* string, USHORT length)
+void BlrDebugWriter::raiseError(const Arg::StatusVector& vector)
 {
-	// TMN: Doesn't this look pretty awkward? If we are given
-	// a verb, the length is a ushort, else it's uchar.
-	if (verb)
-	{
-		appendUChar(verb);
-		appendUShort(length);
-	}
-	else
-	{
-		fb_assert(length <= MAX_UCHAR);
-		appendUChar(length);
-	}
-
-	if (string)
-		appendBytes(reinterpret_cast<const UCHAR*>(string), length);
+	ERRD_post(vector);
 }
 
-void BlrWriter::beginDebug()
+void BlrDebugWriter::beginDebug()
 {
 	fb_assert(debugData.isEmpty());
 
@@ -64,12 +49,12 @@ void BlrWriter::beginDebug()
 	debugData.add(CURRENT_DBG_INFO_VERSION);
 }
 
-void BlrWriter::endDebug()
+void BlrDebugWriter::endDebug()
 {
 	debugData.add(fb_dbg_end);
 }
 
-void BlrWriter::putDebugSrcInfo(ULONG line, ULONG col)
+void BlrDebugWriter::putDebugSrcInfo(ULONG line, ULONG col)
 {
 	debugData.add(fb_dbg_map_src2blr);
 
@@ -83,14 +68,14 @@ void BlrWriter::putDebugSrcInfo(ULONG line, ULONG col)
 	debugData.add(col >> 16);
 	debugData.add(col >> 24);
 
-	const ULONG offset = (blrData.getCount() - baseOffset);
+	const ULONG offset = (getBlrData().getCount() - getBaseOffset());
 	debugData.add(offset);
 	debugData.add(offset >> 8);
 	debugData.add(offset >> 16);
 	debugData.add(offset >> 24);
 }
 
-void BlrWriter::putDebugVariable(USHORT number, const MetaName& name)
+void BlrDebugWriter::putDebugVariable(USHORT number, const MetaName& name)
 {
 	debugData.add(fb_dbg_map_varname);
 
@@ -103,7 +88,7 @@ void BlrWriter::putDebugVariable(USHORT number, const MetaName& name)
 	debugData.add(reinterpret_cast<const UCHAR*>(name.c_str()), len);
 }
 
-void BlrWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* name)
+void BlrDebugWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* name)
 {
 	fb_assert(name);
 
@@ -121,7 +106,7 @@ void BlrWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* name)
 	debugData.add(reinterpret_cast<const UCHAR*>(name), len);
 }
 
-void BlrWriter::putDebugSubFunction(DeclareSubFuncNode* subFuncNode)
+void BlrDebugWriter::putDebugSubFunction(DeclareSubFuncNode* subFuncNode)
 {
 	debugData.add(fb_dbg_subfunc);
 
@@ -141,7 +126,7 @@ void BlrWriter::putDebugSubFunction(DeclareSubFuncNode* subFuncNode)
 	debugData.add(subDebugData.begin(), count);
 }
 
-void BlrWriter::putDebugSubProcedure(DeclareSubProcNode* subProcNode)
+void BlrDebugWriter::putDebugSubProcedure(DeclareSubProcNode* subProcNode)
 {
 	debugData.add(fb_dbg_subproc);
 

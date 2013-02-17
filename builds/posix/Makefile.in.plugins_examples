@@ -52,7 +52,8 @@ LINK_PLUGIN_SYMBOLS = $(call LIB_LINK_MAPFILE,../$(PLUGIN_VERS))
 
 .PHONY: all udrcpp_example dc_example kh_example
 
-all: udrcpp_example dc_example kh_example
+#all: udrcpp_example dc_example kh_example
+all: dc_example kh_example
 
 
 UDR_Objects = $(call makeObjects,../examples/udr,UdrCppExample.cpp)

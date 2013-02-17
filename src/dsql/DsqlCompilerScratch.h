@@ -24,7 +24,7 @@
 
 #include "../jrd/jrd.h"
 #include "../dsql/dsql.h"
-#include "../dsql/BlrWriter.h"
+#include "../dsql/BlrDebugWriter.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
@@ -46,7 +46,7 @@ class WithClause;
 
 
 // DSQL Compiler scratch block - may be discarded after compilation in the future.
-class DsqlCompilerScratch : public BlrWriter
+class DsqlCompilerScratch : public BlrDebugWriter
 {
 public:
 	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x0001;
@@ -67,7 +67,7 @@ public:
 public:
 	DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
 				DsqlCompiledStatement* aStatement)
-		: BlrWriter(p),
+		: BlrDebugWriter(p),
 		  dbb(aDbb),
 		  transaction(aTransaction),
 		  statement(aStatement),

@@ -1508,6 +1508,12 @@ C --
       PARAMETER (GDS__ee_blr_mismatch_names_count      = 335545047)
       INTEGER*4 GDS__ee_blr_mismatch_name_not_found  
       PARAMETER (GDS__ee_blr_mismatch_name_not_found   = 335545048)
+      INTEGER*4 GDS__bad_result_set                  
+      PARAMETER (GDS__bad_result_set                   = 335545049)
+      INTEGER*4 GDS__wrong_message_length            
+      PARAMETER (GDS__wrong_message_length             = 335545050)
+      INTEGER*4 GDS__no_output_format                
+      PARAMETER (GDS__no_output_format                 = 335545051)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

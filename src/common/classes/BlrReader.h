@@ -20,12 +20,12 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_BLR_READER_H
-#define JRD_BLR_READER_H
+#ifndef COMMON_CLASSES_BLR_READER_H
+#define COMMON_CLASSES_BLR_READER_H
 
 #include "iberror.h"
 
-namespace Jrd {
+namespace Firebird {
 
 
 class BlrReader
@@ -156,4 +156,4 @@ private:
 
 }	// namespace
 
-#endif	// JRD_BLR_READER_H
+#endif	// COMMON_CLASSES_BLR_READER_H

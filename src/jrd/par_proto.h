@@ -53,7 +53,7 @@ void PAR_validation_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR* blr,
 StreamType		PAR_context(Jrd::CompilerScratch*, SSHORT*);
 void			PAR_dependency(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, StreamType stream,
 	SSHORT id, const Firebird::MetaName& field_name);
-USHORT			PAR_datatype(Jrd::BlrReader&, dsc*);
+USHORT			PAR_datatype(Firebird::BlrReader&, dsc*);
 USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, Jrd::ItemInfo* = NULL);
 void			PAR_error(Jrd::CompilerScratch*, const Firebird::Arg::StatusVector&, bool isSyntaxError = true);
 SSHORT			PAR_find_proc_field(const Jrd::jrd_prc*, const Firebird::MetaName&);

@@ -35,16 +35,8 @@ namespace Firebird {
 
 // This interfaces are implemented by yvalve code and by each of providers.
 
-class IAttachment;	// Forward
-class ICryptKeyCallback;	// From Crypt.h
-
-struct FbMessage
-{
-	const unsigned char* blr;
-	unsigned char* buffer;
-	unsigned int blrLength;
-	unsigned int bufferLength;
-};
+class IAttachment;				// Forward
+class ICryptKeyCallback;		// From Crypt.h
 
 class IEventCallback : public IVersioned
 {
@@ -96,7 +88,9 @@ public:
 };
 #define FB_TRANSACTION_VERSION (FB_REFCOUNTED_VERSION + 10)
 
-class IParametersMetadata : public IVersioned
+class ICoerceMetadata;			// Forward
+
+class IMessageMetadata : public IRefCounted
 {
 public:
 	virtual unsigned FB_CARG getCount(IStatus* status) const = 0;
@@ -105,12 +99,45 @@ public:
 	virtual const char* FB_CARG getOwner(IStatus* status, unsigned index) const = 0;
 	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getType(IStatus* status, unsigned index) const = 0;
-	virtual bool FB_CARG isNullable(IStatus* status, unsigned index) const = 0;
+	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getScale(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getCharset(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index) const = 0;
+
+	virtual ICoerceMetadata* FB_CARG coerce(IStatus* status) const = 0;
+	virtual unsigned FB_CARG getMessageLength(IStatus* status) const = 0;
 };
-#define FB_PARAMETERS_METADATA_VERSION (FB_VERSIONED_VERSION + 10)
+#define FB_MESSAGE_METADATA_VERSION (FB_REFCOUNTED_VERSION + 15)
+
+struct FbMessage
+{
+	unsigned char* buffer;
+	IMessageMetadata* metadata;
+};
+
+class ICoerceMetadata : public IRefCounted
+{
+	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type) = 0;
+	virtual void FB_CARG setSubType(IStatus* status, unsigned index, unsigned subType) = 0;
+	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length) = 0;
+	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale) = 0;
+
+	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
+};
+#define FB_COERCE_METADATA_VERSION (FB_REFCOUNTED_VERSION + 5)
+
+class IResultSet : public IRefCounted
+{
+public:
+	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, unsigned char* message) = 0;
+	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status) = 0;
+	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
+	virtual void FB_CARG close(IStatus* status) = 0;
+};
+#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 4)
 
 class IStatement : public IRefCounted
 {
@@ -129,25 +156,22 @@ public:
 		PREPARE_PREFETCH_METADATA | PREPARE_PREFETCH_LEGACY_PLAN | PREPARE_PREFETCH_DETAILED_PLAN |
 		PREPARE_PREFETCH_AFFECTED_RECORDS;
 
-	virtual void FB_CARG prepare(IStatus* status, ITransaction* tra,
-								 unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-								 unsigned int flags) = 0;
 	virtual void FB_CARG getInfo(IStatus* status,
 								 unsigned int itemsLength, const unsigned char* items,
 								 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual unsigned FB_CARG getType(IStatus* status) = 0;
-	virtual const char* FB_CARG getPlan(IStatus* status, bool detailed) = 0;
-	virtual const IParametersMetadata* FB_CARG getInputParameters(IStatus* status) = 0;
-	virtual const IParametersMetadata* FB_CARG getOutputParameters(IStatus* status) = 0;
+	virtual const char* FB_CARG getPlan(IStatus* status, FB_BOOLEAN detailed) = 0;
 	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status) = 0;
+	virtual IMessageMetadata* FB_CARG getInputMetadata(IStatus* status) = 0;
+	virtual IMessageMetadata* FB_CARG getOutputMetadata(IStatus* status) = 0;
+	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
+		FbMessage *in, FbMessage *out) = 0;
+	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
+		FbMessage *in, IMessageMetadata* out) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
-	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
-										  unsigned int inMsgType, const FbMessage* inMsgBuffer,
-										  const FbMessage* outMsgBuffer) = 0;
-	virtual int FB_CARG fetch(IStatus* status, const FbMessage* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG free(IStatus* status, unsigned int option) = 0;
+	virtual void FB_CARG free(IStatus* status) = 0;
 };
-#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 12)
+#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 10)
 
 class IRequest : public IRefCounted
 {
@@ -182,7 +206,6 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
 	virtual ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id) = 0;
-	virtual IStatement* FB_CARG allocateStatement(IStatus* status) = 0;
 	virtual IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blrLength, const unsigned char* blr) = 0;
 	virtual void FB_CARG transactRequest(IStatus* status, ITransaction* transaction,
 								 unsigned int blrLength, const unsigned char* blr,
@@ -202,10 +225,12 @@ public:
 						  int sliceLength, unsigned char* slice) = 0;
 	virtual void FB_CARG executeDyn(IStatus* status, ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn) = 0;
+	virtual IStatement* FB_CARG prepare(IStatus* status, ITransaction* tra,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, unsigned int flags) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
-								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int inMsgType, const FbMessage* inMsgBuffer,
-								 const FbMessage* outMsgBuffer) = 0;
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in, FbMessage *out) = 0;
+	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in, IMessageMetadata* out) = 0;
 	virtual IEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;
@@ -213,7 +238,7 @@ public:
 	virtual void FB_CARG detach(IStatus* status) = 0;
 	virtual void FB_CARG dropDatabase(IStatus* status) = 0;
 };
-#define FB_ATTACHMENT_VERSION (FB_REFCOUNTED_VERSION + 17)
+#define FB_ATTACHMENT_VERSION (FB_REFCOUNTED_VERSION + 18)
 
 class IService : public IRefCounted
 {

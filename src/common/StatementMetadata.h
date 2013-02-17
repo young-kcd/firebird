@@ -18,6 +18,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ *		Alex Peshkov
  *
  */
 
@@ -30,7 +31,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../common/MsgMetadata.h"
 
 namespace Firebird {
 
@@ -39,153 +40,23 @@ namespace Firebird {
 class StatementMetadata : public PermanentStorage
 {
 public:
-	class Parameters : public VersionedIface<IParametersMetadata, FB_PARAMETERS_METADATA_VERSION>,
-					   public PermanentStorage
+	class Parameters : public MsgMetadata
 	{
 	public:
-		struct Item : public PermanentStorage
-		{
-			explicit Item(MemoryPool& pool)
-				: PermanentStorage(pool),
-				  field(pool),
-				  relation(pool),
-				  owner(pool),
-				  alias(pool),
-				  type(0),
-				  subType(0),
-				  length(0),
-				  scale(0),
-				  nullable(false),
-				  finished(false)
-			{
-			}
+		Parameters()
+			: MsgMetadata(), fetched(false)
+		{ }
 
-			string field;
-			string relation;
-			string owner;
-			string alias;
-			unsigned type;
-			unsigned subType;
-			unsigned length;
-			unsigned scale;
-			bool nullable;
-			bool finished;
-		};
-
-	public:
-		explicit Parameters(MemoryPool& pool)
-			: PermanentStorage(pool),
-			  items(pool),
-			  fetched(false)
-		{
-		}
-
-		virtual unsigned FB_CARG getCount(IStatus* /*status*/) const
-		{
-			return (unsigned) items.getCount();
-		}
-
-		virtual const char* FB_CARG getField(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].field.c_str();
-
-			raiseIndexError(status, index, "getField");
-			return NULL;
-		}
-
-		virtual const char* FB_CARG getRelation(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].relation.c_str();
-
-			raiseIndexError(status, index, "getRelation");
-			return NULL;
-		}
-
-		virtual const char* FB_CARG getOwner(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].owner.c_str();
-
-			raiseIndexError(status, index, "getOwner");
-			return NULL;
-		}
-
-		virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].alias.c_str();
-
-			raiseIndexError(status, index, "getAlias");
-			return NULL;
-		}
-
-		virtual unsigned FB_CARG getType(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].type;
-
-			raiseIndexError(status, index, "getType");
-			return 0;
-		}
-
-		virtual bool FB_CARG isNullable(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].nullable;
-
-			raiseIndexError(status, index, "isNullable");
-			return false;
-		}
-
-		virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].subType;
-
-			raiseIndexError(status, index, "getSubType");
-			return 0;
-		}
-
-		virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].length;
-
-			raiseIndexError(status, index, "getLength");
-			return 0;
-		}
-
-		virtual unsigned FB_CARG getScale(IStatus* status, unsigned index) const
-		{
-			if (index < items.getCount())
-				return items[index].scale;
-
-			raiseIndexError(status, index, "getScale");
-			return 0;
-		}
-
-	private:
-		void raiseIndexError(IStatus* status, unsigned index, const char* method) const
-		{
-			status->set((Arg::Gds(isc_invalid_index_val) <<
-				Arg::Num(index) << (string("IParametersMetadata::") + method)).value());
-		}
-
-	public:
-		ObjectsArray<Item> items;
 		bool fetched;
 	};
 
-public:
 	StatementMetadata(MemoryPool& pool, IStatement* aStatement)
 		: PermanentStorage(pool),
 		  statement(aStatement),
 		  legacyPlan(pool),
 		  detailedPlan(pool),
-		  inputParameters(pool),
-		  outputParameters(pool)
+		  inputParameters(new Parameters),
+		  outputParameters(new Parameters)
 	{
 	}
 
@@ -194,8 +65,8 @@ public:
 
 	unsigned getType();
 	const char* getPlan(bool detailed);
-	const IParametersMetadata* getInputParameters();
-	const IParametersMetadata* getOutputParameters();
+	IMessageMetadata* getInputMetadata();
+	IMessageMetadata* getOutputMetadata();
 	ISC_UINT64 getAffectedRecords();
 
 	void clear();
@@ -210,7 +81,7 @@ private:
 	IStatement* statement;
 	Nullable<unsigned> type;
 	string legacyPlan, detailedPlan;
-	Parameters inputParameters, outputParameters;
+	RefPtr<Parameters> inputParameters, outputParameters;
 };
 
 

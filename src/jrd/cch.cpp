@@ -1408,8 +1408,6 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 	WIN temp = *window;
 	window->win_page = PageNumber(window->win_page.getPageSpaceID(), page);
 
-	volatile PageNumber pg = window->win_page;
-
 	// This prevents a deadlock with the precedence queue, as shown by
 	// mwrite mwrite1 2 mwrite2 2 test.fdb
 

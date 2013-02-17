@@ -735,6 +735,9 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-833, '42', '000', 0, 726, 'max_args_exceeded', NULL, NULL)
 (-901, '42', '000', 0, 727, 'ee_blr_mismatch_names_count', NULL, NULL)
 (-901, '42', '000', 0, 728, 'ee_blr_mismatch_name_not_found', NULL, NULL)
+(-901, '26', '000', 0, 729, 'bad_result_set', NULL, NULL)
+(-804, '07', '000', 0, 730, 'wrong_message_length', NULL, NULL)
+(-804, '07', '000', 0, 731, 'no_output_format', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

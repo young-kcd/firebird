@@ -92,7 +92,7 @@ static void checkViewDependency(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName);
 static void clearPermanentField(dsql_rel* relation, bool permanent);
 static void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relation,
-	dsql_fld* field, ValueSourceClause* clause, string& source, BlrWriter::BlrData& value);
+	dsql_fld* field, ValueSourceClause* clause, string& source, BlrDebugWriter::BlrData& value);
 static void deleteKeyConstraint(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& constraintName, const MetaName& indexName);
 static void defineFile(thread_db* tdbb, jrd_tra* transaction, SLONG shadowNumber, bool manualShadow,
@@ -291,7 +291,7 @@ static void clearPermanentField(dsql_rel* relation, bool permanent)
 
 // Define a COMPUTED BY clause, for a field or an index.
 void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relation, dsql_fld* field,
-	ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
+	ValueSourceClause* clause, string& source, BlrDebugWriter::BlrData& value)
 {
 	// Get the table node and set up correct context.
 	dsqlScratch->resetContextStack();
@@ -817,7 +817,7 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 }
 
 void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& name,
-	const TypeClause* field, const string& computedSource, const BlrWriter::BlrData& computedValue)
+	const TypeClause* field, const string& computedSource, const BlrDebugWriter::BlrData& computedValue)
 {
 	Attachment* const attachment = transaction->tra_attachment;
 	const string& userName = attachment->att_user->usr_user_name;
@@ -5398,7 +5398,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		else
 		{
 			string computedSource;
-			BlrWriter::BlrData computedValue;
+			BlrDebugWriter::BlrData computedValue;
 
 			if (clause->computed)
 			{
@@ -5447,7 +5447,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				fb_sysflag_identity_generator);
 		}
 
-		BlrWriter::BlrData defaultValue;
+		BlrDebugWriter::BlrData defaultValue;
 
 		if (clause->defaultValue)
 		{
@@ -5490,7 +5490,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 // Define a DEFAULT clause. Return true for DEFAULT NULL.
 bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
-	dsql_fld* /*field*/, ValueSourceClause* clause, string& source, BlrWriter::BlrData& value)
+	dsql_fld* /*field*/, ValueSourceClause* clause, string& source, BlrDebugWriter::BlrData& value)
 {
 	ValueExprNode* input = doDsqlPass(dsqlScratch, clause->value);
 
@@ -6240,7 +6240,7 @@ void RelationNode::defineUpdateCascadeTrigger(DsqlCompilerScratch* dsqlScratch,
 
 // Common code factored out.
 void RelationNode::generateUnnamedTriggerBeginning(Constraint& constraint, bool onUpdate,
-	BlrWriter& blrWriter)
+	BlrDebugWriter& blrWriter)
 {
 	// For ON UPDATE TRIGGER only: generate the trigger firing condition:
 	// If prim_key.old_value != prim_key.new value.
@@ -6275,7 +6275,7 @@ void RelationNode::generateUnnamedTriggerBeginning(Constraint& constraint, bool 
 //     blr_version4 blr_literal ..... blr_eoc.
 // Strip the blr_version4 and blr_eoc verbs and stuff the remaining blr in the blr stream in the
 // statement.
-void RelationNode::stuffDefaultBlr(const ByteChunk& defaultBlr, BlrWriter& blrWriter)
+void RelationNode::stuffDefaultBlr(const ByteChunk& defaultBlr, BlrDebugWriter& blrWriter)
 {
 	fb_assert(defaultBlr.length > 2 && defaultBlr.data[defaultBlr.length - 1] == blr_eoc);
 	fb_assert(*defaultBlr.data == blr_version4 || *defaultBlr.data == blr_version5);
@@ -6286,7 +6286,7 @@ void RelationNode::stuffDefaultBlr(const ByteChunk& defaultBlr, BlrWriter& blrWr
 // Generate blr to express: foreign_key == primary_key
 // ie., for_key.column_1 = prim_key.column_1 and
 //      for_key.column_2 = prim_key.column_2 and ....  so on.
-void RelationNode::stuffMatchingBlr(Constraint& constraint, BlrWriter& blrWriter)
+void RelationNode::stuffMatchingBlr(Constraint& constraint, BlrDebugWriter& blrWriter)
 {
 	// count of foreign key columns
 	fb_assert(constraint.refColumns.getCount() == constraint.columns.getCount());
@@ -6319,7 +6319,7 @@ void RelationNode::stuffMatchingBlr(Constraint& constraint, BlrWriter& blrWriter
 
 // Generate blr to express: if (old.primary_key != new.primary_key).
 // Do a column by column comparison.
-void RelationNode::stuffTriggerFiringCondition(const Constraint& constraint, BlrWriter& blrWriter)
+void RelationNode::stuffTriggerFiringCondition(const Constraint& constraint, BlrDebugWriter& blrWriter)
 {
 	blrWriter.appendUChar(blr_if);
 
@@ -6842,7 +6842,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			const bool wasInternalDomain = fb_utils::implicit_domain(origDom.dyn_fld_source.c_str()) &&
 				RFR.RDB$BASE_FIELD.NULL;
 			string computedSource;
-			BlrWriter::BlrData computedValue;
+			BlrDebugWriter::BlrData computedValue;
 
 			if (clause->computed)
 			{
@@ -6872,7 +6872,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					}
 
 					string defaultSource;
-					BlrWriter::BlrData defaultValue;
+					BlrDebugWriter::BlrData defaultValue;
 
 					defineDefault(tdbb, dsqlScratch, field, clause->defaultValue,
 						defaultSource, defaultValue);
@@ -8423,7 +8423,7 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	else if (computed)
 	{
 		string computedSource;
-		BlrWriter::BlrData computedValue;
+		BlrDebugWriter::BlrData computedValue;
 
 		defineComputed(dsqlScratch, relation, NULL, computed, computedSource, computedValue);
 

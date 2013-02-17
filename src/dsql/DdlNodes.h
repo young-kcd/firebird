@@ -27,7 +27,7 @@
 #include "../jrd/dyn.h"
 #include "../jrd/msg_encode.h"
 #include "../dsql/make_proto.h"
-#include "../dsql/BlrWriter.h"
+#include "../dsql/BlrDebugWriter.h"
 #include "../dsql/Nodes.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ByteChunk.h"
@@ -1012,11 +1012,11 @@ public:
 		enum Type { TYPE_CHECK, TYPE_NOT_NULL, TYPE_PK, TYPE_UNIQUE, TYPE_FK };
 
 		// Specialized BlrWriter for constraints.
-		class BlrWriter : public Jrd::BlrWriter
+		class BlrWriter : public Jrd::BlrDebugWriter
 		{
 		public:
 			explicit BlrWriter(MemoryPool& p)
-				: Jrd::BlrWriter(p),
+				: Jrd::BlrDebugWriter(p),
 				  dsqlScratch(NULL)
 			{
 			}
@@ -1250,7 +1250,7 @@ protected:
 		AddColumnClause* clause, SSHORT position,
 		const Firebird::ObjectsArray<Firebird::MetaName>* pkcols);
 	bool defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
-		ValueSourceClause* clause, Firebird::string& source, BlrWriter::BlrData& value);
+		ValueSourceClause* clause, Firebird::string& source, BlrDebugWriter::BlrData& value);
 	void makeConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		AddConstraintClause* clause, Firebird::ObjectsArray<Constraint>& constraints,
 		bool* notNull = NULL);
@@ -1267,10 +1267,10 @@ protected:
 	void defineDeleteCascadeTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint);
 	void defineUpdateCascadeTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint);
 	void generateUnnamedTriggerBeginning(Constraint& constraint, bool onUpdate,
-		BlrWriter& blrWriter);
-	void stuffDefaultBlr(const Firebird::ByteChunk& defaultBlr, BlrWriter& blrWriter);
-	void stuffMatchingBlr(Constraint& constraint, BlrWriter& blrWriter);
-	void stuffTriggerFiringCondition(const Constraint& constraint, BlrWriter& blrWriter);
+		BlrDebugWriter& blrWriter);
+	void stuffDefaultBlr(const Firebird::ByteChunk& defaultBlr, BlrDebugWriter& blrWriter);
+	void stuffMatchingBlr(Constraint& constraint, BlrDebugWriter& blrWriter);
+	void stuffTriggerFiringCondition(const Constraint& constraint, BlrDebugWriter& blrWriter);
 
 public:
 	NestConst<RelationSourceNode> dsqlNode;

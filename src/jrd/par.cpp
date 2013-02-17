@@ -62,7 +62,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/SysFunction.h"
-#include "../jrd/BlrReader.h"
+#include "../common/classes/BlrReader.h"
 #include "../jrd/Function.h"
 #include "../jrd/Attachment.h"
 #include "../dsql/BoolNodes.h"

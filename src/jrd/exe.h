@@ -49,7 +49,7 @@
 #include "../jrd/sort.h"
 
 #include "../jrd/DebugInterface.h"
-#include "../jrd/BlrReader.h"
+#include "../common/classes/BlrReader.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/Visitors.h"
 
@@ -495,7 +495,7 @@ public:
 	Firebird::string csb_dump;
 #endif
 
-	BlrReader		csb_blr_reader;
+	Firebird::BlrReader	csb_blr_reader;
 	DmlNode*		csb_node;
 	ExternalAccessList csb_external;			// Access to outside procedures/triggers to be checked
 	AccessItemList	csb_access;					// Access items to be checked

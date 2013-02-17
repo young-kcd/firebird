@@ -192,7 +192,7 @@ int JStatement::release()
 	if (statement)
 	{
 		LocalStatus status;
-		freeEngineData(&status, DSQL_drop);
+		freeEngineData(&status);
 	}
 	if (!statement)
 	{
@@ -869,7 +869,7 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 }
 
 
-static ISC_STATUS successful_completion(Firebird::IStatus* s, ISC_STATUS return_code = FB_SUCCESS)
+static void successful_completion(IStatus* s)
 {
 	fb_assert(s);
 
@@ -890,13 +890,11 @@ static ISC_STATUS successful_completion(Firebird::IStatus* s, ISC_STATUS return_
 			s->init();
 		//}
 	}
-
-	return return_code;
 }
 
 
 // Stuff exception transliterated to the client charset.
-ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird::IStatus* vector,
+ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus* vector,
 	const char* func) throw()
 {
 	ex.stuffException(vector);
@@ -1009,7 +1007,7 @@ const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 
 
-static void trace_warning(thread_db* tdbb, Firebird::IStatus* userStatus, const char* func)
+static void trace_warning(thread_db* tdbb, IStatus* userStatus, const char* func)
 {
 	Jrd::Attachment* att = tdbb->getAttachment();
 	if (!att)
@@ -3050,7 +3048,7 @@ void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* ar
 }
 
 
-JEvents* JAttachment::queEvents(IStatus* user_status, Firebird::IEventCallback* callback,
+JEvents* JAttachment::queEvents(IStatus* user_status, IEventCallback* callback,
 	unsigned int length, const unsigned char* events)
 {
 /**************************************
@@ -3647,7 +3645,7 @@ void JService::start(IStatus* user_status, unsigned int spbLength, const unsigne
 }
 
 
-void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, int level,
+void JRequest::startAndSend(IStatus* user_status, ITransaction* tra, int level,
 	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3707,7 +3705,7 @@ void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, i
 }
 
 
-void JRequest::start(IStatus* user_status, Firebird::ITransaction* tra, int level)
+void JRequest::start(IStatus* user_status, ITransaction* tra, int level)
 {
 /**************************************
  *
@@ -4117,41 +4115,6 @@ void JRequest::unwind(IStatus* user_status, int level)
 }
 
 
-JStatement* JAttachment::allocateStatement(IStatus* user_status)
-{
-	dsql_req* stmt = NULL;
-
-	try
-	{
-		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		check_database(tdbb);
-
-		try
-		{
-			stmt = DSQL_allocate_statement(tdbb, getHandle());
-		}
-		catch (const Exception& ex)
-		{
-			transliterateException(tdbb, ex, user_status, "JAttachment::allocateStatement");
-			return NULL;
-		}
-		trace_warning(tdbb, user_status, "JAttachment::allocateStatement");
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return NULL;
-	}
-
-	successful_completion(user_status);
-
-	JStatement* js = new JStatement(stmt, this);
-	stmt->req_interface = js;
-	js->addRef();
-	return js;
-}
-
-
 void SysAttachment::initDone()
 {
 	Jrd::Attachment* attachment = getHandle();
@@ -4187,9 +4150,10 @@ void SysAttachment::destroy(Attachment* attachment)
 }
 
 
-JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
-	unsigned int in_msg_type, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
+JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
+	FbMessage* inMessage, FbMessage* outMessage)
 {
+
 	JTransaction* jt = apiTra ? getAttachment()->getTransactionInterface(user_status, apiTra) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
@@ -4204,18 +4168,9 @@ JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* 
 
 		try
 		{
-			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
-			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
-			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
-			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
-
-			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
-			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
-			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
-			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
-
-			DSQL_execute(tdbb, &tra, getHandle(), in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
-						 out_blr_length, out_blr, out_msg_length, out_msg);
+			DSQL_execute(tdbb, &tra, getHandle(), false,
+				inMessage ? inMessage->metadata : NULL, inMessage ? inMessage->buffer : 0,
+				outMessage ? outMessage->metadata : NULL, outMessage ? outMessage->buffer : 0);
 
 			if (jt && !tra)
 			{
@@ -4254,10 +4209,70 @@ JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* 
 }
 
 
-JTransaction* JAttachment::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
+JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* transaction,
+	FbMessage *in, IMessageMetadata* out)
+{
+	JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
+	jrd_tra* tra = jt ? jt->getHandle() : NULL;
+	JResultSet* rs = NULL;
+
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+
+		if (tra)
+			validateHandle(tdbb, tra);
+
+		check_database(tdbb);
+
+		try
+		{
+			DSQL_execute(tdbb, &tra, getHandle(), true,
+				in ? in->metadata : NULL, in ? in->buffer : NULL,
+				out, NULL);
+
+			rs = new JResultSet(this);
+			rs->addRef();
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JStatement::execute");
+			return NULL;
+		}
+		trace_warning(tdbb, user_status, "JStatement::execute");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return NULL;
+	}
+
+	successful_completion(user_status);
+	return rs;
+}
+
+
+IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
-	unsigned int /*in_msg_type*/, const FbMessage* inMsgBuffer,
-	const FbMessage* outMsgBuffer)
+	FbMessage* inMessage, IMessageMetadata* out)
+{
+	IStatement* tmpStatement = prepare(user_status, apiTra,
+    	length, string, dialect, IStatement::PREPARE_PREFETCH_METADATA);
+	if (!user_status->isSuccess())
+	{
+		return NULL;
+	}
+
+	IResultSet* rs = tmpStatement->openCursor(user_status, apiTra, inMessage, out);
+
+	tmpStatement->release();
+	return rs;
+}
+
+
+ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
+	unsigned int length, const char* string, unsigned int dialect,
+	FbMessage* inMessage, FbMessage* outMessage)
 {
 	JTransaction* jt = apiTra ? getTransactionInterface(user_status, apiTra) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
@@ -4273,19 +4288,10 @@ JTransaction* JAttachment::execute(IStatus* user_status, Firebird::ITransaction*
 
 		try
 		{
-			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
-			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
-			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
-			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
-
-			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
-			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
-			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
-			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
-
 			DSQL_execute_immediate(tdbb, getHandle(), &tra, length, string, dialect,
-				in_blr_length, in_blr, in_msg_length, in_msg,
-				out_blr_length, out_blr, out_msg_length, out_msg, false);
+				inMessage ? inMessage->metadata : NULL, inMessage ? inMessage->buffer : 0,
+				outMessage ? outMessage->metadata : NULL, outMessage ? outMessage->buffer : 0,
+				false);
 
 			if (jt && !tra)
 			{
@@ -4324,24 +4330,24 @@ JTransaction* JAttachment::execute(IStatus* user_status, Firebird::ITransaction*
 }
 
 
-int JStatement::fetch(IStatus* user_status, const FbMessage* msgBuffer)
+FB_BOOLEAN JResultSet::fetch(IStatus* user_status, unsigned char* buffer)
 {
-	int return_code = 0;
+	bool hasMessage = false;
 
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		validateHandle(tdbb, getHandle()->req_transaction);
+		dsql_req* req = getStatement()->getHandle();
+		validateHandle(tdbb, req->req_transaction);
 		check_database(tdbb);
 
 		try
 		{
-			unsigned blr_length = msgBuffer ? msgBuffer->blrLength : 0;
-			const unsigned char* blr = msgBuffer ? msgBuffer->blr : NULL;
-			unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
-			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
-
-			return_code = getHandle()->fetch(tdbb, blr_length, blr, msg_length, msg);
+			hasMessage = req->fetch(tdbb, buffer);
+			if (!hasMessage)
+			{
+				eof = true;
+			}
 		}
 		catch (const Exception& ex)
 		{
@@ -4356,13 +4362,32 @@ int JStatement::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 		return 0;
 	}
 
-	successful_completion(user_status, return_code);
+	successful_completion(user_status);
 
-	return return_code;
+	return hasMessage ? FB_TRUE : FB_FALSE;
 }
 
 
-void JStatement::freeEngineData(IStatus* user_status, unsigned int option)
+int JResultSet::release()
+{
+	if (--refCounter != 0)
+		return 1;
+
+	if (statement)
+	{
+		LocalStatus status;
+		freeEngineData(&status);
+	}
+	if (!statement)
+	{
+		delete this;
+	}
+
+	return 0;
+}
+
+
+void JResultSet::freeEngineData(IStatus* user_status)
 {
 	try
 	{
@@ -4371,11 +4396,8 @@ void JStatement::freeEngineData(IStatus* user_status, unsigned int option)
 
 		try
 		{
-			DSQL_free_statement(tdbb, getHandle(), option);
-			if (option == DSQL_drop)
-			{
-				statement = NULL;
-			}
+			DSQL_free_statement(tdbb, getHandle(), DSQL_close);
+			statement = NULL;
 		}
 		catch (const Exception& ex)
 		{
@@ -4393,48 +4415,45 @@ void JStatement::freeEngineData(IStatus* user_status, unsigned int option)
 }
 
 
-void JStatement::free(IStatus* user_status, unsigned int option)
+FB_BOOLEAN JResultSet::isEof(IStatus* user_status)
 {
-	freeEngineData(user_status, option);
-	if (user_status->isSuccess() && option == DSQL_drop)
+	return eof ? FB_TRUE : FB_FALSE;
+}
+
+
+IMessageMetadata* JResultSet::getMetadata(IStatus* user_status)
+{
+	return statement->getOutputMetadata(user_status);
+}
+
+
+void JResultSet::close(IStatus* user_status)
+{
+	freeEngineData(user_status);
+	if (user_status->isSuccess())
 	{
 		release();
 	}
 }
 
 
-void JStatement::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
-						 unsigned int stmtLength, const char* sqlStmt,
-						 unsigned int dialect, unsigned int flags)
+void JStatement::freeEngineData(IStatus* user_status)
 {
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-
-		jrd_tra* tra = apiTra ? getAttachment()->getEngineTransaction(user_status, apiTra) : NULL;
-
-		if (tra)
-			validateHandle(tdbb, tra);
-
 		check_database(tdbb);
 
 		try
 		{
-			Array<UCHAR> items, buffer;
-			buffer.resize(StatementMetadata::buildInfoItems(items, flags));
-
-			DSQL_prepare(tdbb, tra, &statement, stmtLength, sqlStmt, dialect,
-				items.getCount(), items.begin(), buffer.getCount(), buffer.begin(), false);
-
-			metadata.clear();
-			metadata.parse(buffer.getCount(), buffer.begin());
+			DSQL_free_statement(tdbb, getHandle(), DSQL_drop);
+			statement = NULL;
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status, "JStatement::prepare");
+			transliterateException(tdbb, ex, user_status, "JStatement::freeEngineData");
 			return;
 		}
-		trace_warning(tdbb, user_status, "JStatement::prepare");
 	}
 	catch (const Exception& ex)
 	{
@@ -4443,6 +4462,73 @@ void JStatement::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
 	}
 
 	successful_completion(user_status);
+}
+
+
+void JStatement::free(IStatus* user_status)
+{
+	freeEngineData(user_status);
+	if (user_status->isSuccess())
+	{
+		release();
+	}
+}
+
+
+JStatement* JAttachment::prepare(IStatus* user_status, ITransaction* apiTra,
+	unsigned int stmtLength, const char* sqlStmt,
+	unsigned int dialect, unsigned int flags)
+{
+	JStatement* rc = NULL;
+
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+
+		jrd_tra* tra = apiTra ? getEngineTransaction(user_status, apiTra) : NULL;
+
+		if (tra)
+			validateHandle(tdbb, tra);
+
+		check_database(tdbb);
+		dsql_req* statement = NULL;
+
+		try
+		{
+			Array<UCHAR> items, buffer;
+			StatementMetadata::buildInfoItems(items, flags);
+
+			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect,
+				&items, &buffer, false);
+			rc = new JStatement(statement, this, buffer);
+			statement->req_interface = rc;
+			rc->addRef();
+
+			trace_warning(tdbb, user_status, "JStatement::prepare");
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JStatement::prepare");
+			if (statement)
+			{
+				try
+				{
+					DSQL_free_statement(tdbb, statement, DSQL_drop);
+				}
+				catch (const Exception&)
+				{ }
+			}
+			return NULL;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return NULL;
+	}
+
+	successful_completion(user_status);
+	return rc;
 }
 
 
@@ -4477,7 +4563,7 @@ unsigned JStatement::getType(IStatus* userStatus)
 }
 
 
-const char* JStatement::getPlan(IStatus* userStatus, bool detailed)
+const char* JStatement::getPlan(IStatus* userStatus, FB_BOOLEAN detailed)
 {
 	const char* ret = NULL;
 
@@ -4508,9 +4594,9 @@ const char* JStatement::getPlan(IStatus* userStatus, bool detailed)
 	return ret;
 }
 
-const IParametersMetadata* JStatement::getInputParameters(IStatus* userStatus)
+IMessageMetadata* JStatement::getInputMetadata(IStatus* userStatus)
 {
-	const IParametersMetadata* ret = NULL;
+	IMessageMetadata* ret = NULL;
 
 	try
 	{
@@ -4519,14 +4605,14 @@ const IParametersMetadata* JStatement::getInputParameters(IStatus* userStatus)
 
 		try
 		{
-			ret = metadata.getInputParameters();
+			ret = metadata.getInputMetadata();
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, userStatus, "JStatement::getInputParameters");
+			transliterateException(tdbb, ex, userStatus, "JStatement::getInputMetadata");
 			return ret;
 		}
-		trace_warning(tdbb, userStatus, "JStatement::getInputParameters");
+		trace_warning(tdbb, userStatus, "JStatement::getInputMetadata");
 	}
 	catch (const Exception& ex)
 	{
@@ -4540,9 +4626,9 @@ const IParametersMetadata* JStatement::getInputParameters(IStatus* userStatus)
 }
 
 
-const IParametersMetadata* JStatement::getOutputParameters(IStatus* userStatus)
+IMessageMetadata* JStatement::getOutputMetadata(IStatus* userStatus)
 {
-	const IParametersMetadata* ret = NULL;
+	IMessageMetadata* ret = NULL;
 
 	try
 	{
@@ -4551,14 +4637,14 @@ const IParametersMetadata* JStatement::getOutputParameters(IStatus* userStatus)
 
 		try
 		{
-			ret = metadata.getOutputParameters();
+			ret = metadata.getOutputMetadata();
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, userStatus, "JStatement::getOutputParameters");
+			transliterateException(tdbb, ex, userStatus, "JStatement::getOutputMetadata");
 			return ret;
 		}
-		trace_warning(tdbb, userStatus, "JStatement::getOutputParameters");
+		trace_warning(tdbb, userStatus, "JStatement::getOutputMetadata");
 	}
 	catch (const Exception& ex)
 	{
@@ -5454,7 +5540,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 }
 
 
-static void handle_error(Firebird::IStatus* user_status, ISC_STATUS code)
+static void handle_error(IStatus* user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -6123,7 +6209,7 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 }
 
 
-void JTransaction::freeEngineData(Firebird::IStatus* user_status)
+void JTransaction::freeEngineData(IStatus* user_status)
 {
 /**************************************
  *
@@ -6597,7 +6683,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 	}
 }
 
-static void unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
+static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb)
 {
 	transliterateException(tdbb, ex, userStatus, NULL);

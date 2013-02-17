@@ -836,6 +836,9 @@ Data source : @4', NULL, NULL)
 ('max_args_exceeded', NULL, 'ExprNodes.cpp', NULL, 0, 726, NULL, 'Maximum (@1) number of arguments exceeded for function @2', NULL, NULL)
 ('ee_blr_mismatch_names_count', NULL, 'ExtEngineManager.cpp', NULL, 0, 727, NULL, 'External BLR message mismatch: names count = @1, blr count = @2', NULL, NULL)
 ('ee_blr_mismatch_name_not_found', NULL, 'ExtEngineManager.cpp', NULL, 0, 728, NULL, 'External BLR message mismatch: name @1 not found', NULL, NULL)
+('bad_result_set', NULL, 'why.cpp', NULL, 0, 729, NULL, 'Invalid resultset interface', NULL, NULL);
+('wrong_message_length', NULL, 'why.cpp', NULL, 0, 730, NULL, 'Message length passed from user application does not match set of columns', NULL, NULL);
+('no_output_format', NULL, 'why.cpp', NULL, 0, 731, NULL, 'Resultset is missing output format information', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

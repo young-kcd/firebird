@@ -18,14 +18,18 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ *		Alex Peshkoff
  *
  */
 
+
+#include "firebird.h"
 #include "../common/StatementMetadata.h"
 #include "memory_routines.h"
 #include "../common/StatusHolder.h"
 #include "../jrd/inf_pub.h"
 #include "../yvalve/gds_proto.h"
+#include "../common/utils_proto.h"
 
 namespace Firebird {
 
@@ -151,21 +155,23 @@ const char* StatementMetadata::getPlan(bool detailed)
 }
 
 // Get statement input parameters.
-const IParametersMetadata* StatementMetadata::getInputParameters()
+IMessageMetadata* StatementMetadata::getInputMetadata()
 {
-	if (!inputParameters.fetched)
-		fetchParameters(isc_info_sql_bind, &inputParameters);
+	if (!inputParameters->fetched)
+		fetchParameters(isc_info_sql_bind, inputParameters);
 
-	return &inputParameters;
+	inputParameters->addRef();
+	return inputParameters;
 }
 
 // Get statement output parameters.
-const IParametersMetadata* StatementMetadata::getOutputParameters()
+IMessageMetadata* StatementMetadata::getOutputMetadata()
 {
-	if (!outputParameters.fetched)
-		fetchParameters(isc_info_sql_select, &outputParameters);
+	if (!outputParameters->fetched)
+		fetchParameters(isc_info_sql_select, outputParameters);
 
-	return &outputParameters;
+	outputParameters->addRef();
+	return outputParameters;
 }
 
 // Get number of records affected by the statement execution.
@@ -201,9 +207,9 @@ void StatementMetadata::clear()
 {
 	type.specified = false;
 	legacyPlan = detailedPlan = "";
-	inputParameters.items.clear();
-	outputParameters.items.clear();
-	inputParameters.fetched = outputParameters.fetched = false;
+	inputParameters->items.clear();
+	outputParameters->items.clear();
+	inputParameters->fetched = outputParameters->fetched = false;
 }
 
 // Parse an info response buffer.
@@ -231,11 +237,11 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 			}
 
 			case isc_info_sql_select:
-				parameters = &outputParameters;
+				parameters = outputParameters;
 				break;
 
 			case isc_info_sql_bind:
-				parameters = &inputParameters;
+				parameters = inputParameters;
 				break;
 
 			case isc_info_sql_num_variables:
@@ -323,6 +329,26 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 					}
 				}
 
+				if (parameters->fetched)
+				{
+					unsigned off = 0;
+					for (unsigned n = 0; n < parameters->items.getCount(); ++n)
+					{
+						Parameters::Item* param = &parameters->items[n];
+						if (!param->finished)
+						{
+							parameters->fetched = false;
+							break;
+						}
+						off = fb_utils::sqlTypeToDsc(off, param->type, param->length,
+							NULL /*dtype*/, NULL /*length*/, &param->offset, &param->nullInd);
+					}
+					if (parameters->fetched)
+					{
+						parameters->length = off;
+					}
+				}
+
 				break;
 			}
 
@@ -340,18 +366,18 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 	// or we'll need extra info calls (done by methods of this class) to parse only the info we
 	// can understand.
 
-	for (ObjectsArray<Parameters::Item>::iterator i = inputParameters.items.begin();
-		 i != inputParameters.items.end() && inputParameters.fetched;
+	for (ObjectsArray<Parameters::Item>::iterator i = inputParameters->items.begin();
+		 i != inputParameters->items.end() && inputParameters->fetched;
 		 ++i)
 	{
-		inputParameters.fetched = i->finished;
+		inputParameters->fetched = i->finished;
 	}
 
-	for (ObjectsArray<Parameters::Item>::iterator i = outputParameters.items.begin();
-		 i != outputParameters.items.end() && outputParameters.fetched;
+	for (ObjectsArray<Parameters::Item>::iterator i = outputParameters->items.begin();
+		 i != outputParameters->items.end() && outputParameters->fetched;
 		 ++i)
 	{
-		outputParameters.fetched = i->finished;
+		outputParameters->fetched = i->finished;
 	}
 }
 

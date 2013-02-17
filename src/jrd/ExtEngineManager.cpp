@@ -510,7 +510,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 			maxAlignment = MAX(maxAlignment, align);
 
 			offset = FB_ALIGN(offset, align);
-			desc->dsc_address = (UCHAR*) offset;
+			desc->dsc_address = (UCHAR*) (IPTR) offset;
 			offset += desc->dsc_length;
 
 			const dsc* fieldDesc = &relFormat->fmt_desc[i];
@@ -539,7 +539,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 			maxAlignment = MAX(maxAlignment, align);
 
 			offset = FB_ALIGN(offset, align);
-			desc->dsc_address = (UCHAR*) offset;
+			desc->dsc_address = (UCHAR*) (IPTR) offset;
 			offset += desc->dsc_length;
 		}
 
@@ -749,8 +749,8 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	metadata->name = udf->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-	metadata->inputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
-	metadata->outputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
+	metadata->inputParameters = new MsgMetadata;
+	metadata->outputParameters = new MsgMetadata;
 
 	for (Array<NestConst<Parameter> >::const_iterator i = udf->getInputFields().begin();
 		 i != udf->getInputFields().end();
@@ -835,8 +835,8 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	metadata->name = prc->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-	metadata->inputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
-	metadata->outputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
+	metadata->inputParameters = new MsgMetadata;
+	metadata->outputParameters = new MsgMetadata;
 
 	const Array<NestConst<Parameter> >* parameters[] = {
 		&prc->getInputFields(), &prc->getOutputFields()};
@@ -920,7 +920,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	if (relation)
 	{
 		metadata->triggerTable = relation->rel_name;
-		metadata->triggerFields = FB_NEW(pool) StatementMetadata::Parameters(pool);
+		metadata->triggerFields = new MsgMetadata;
 
 		Format* relFormat = relation->rel_current_format;
 

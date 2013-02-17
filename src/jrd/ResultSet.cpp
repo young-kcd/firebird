@@ -40,7 +40,7 @@ ResultSet::ResultSet(thread_db* tdbb, PreparedStatement* aStmt, jrd_tra* aTransa
 	  transaction(aTransaction),
 	  firstFetchDone(false)
 {
-	stmt->execute(tdbb, transaction);
+	stmt->open(tdbb, transaction);
 	stmt->resultSet = this;
 }
 
@@ -69,10 +69,7 @@ bool ResultSet::fetch(thread_db* tdbb)
 
 	memset(stmt->outMessage.begin(), 0, stmt->outMessage.getCount());
 
-	ISC_STATUS status = stmt->request->fetch(tdbb, stmt->outBlr.getCount(), stmt->outBlr.begin(),
-		/*0,*/ stmt->outMessage.getCount(), stmt->outMessage.begin());
-
-	if (status == 100)
+	if (!stmt->request->fetch(tdbb, stmt->outMessage.begin()))
 		return false;
 
 	if (stmt->builder)

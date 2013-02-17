@@ -45,6 +45,96 @@ namespace
 			return p1->par_index > p2->par_index;
 		}
 	};
+
+	void dscToMetaitem(const dsc* desc, MsgMetadata::Item& item)
+	{
+		item.finished = true;
+		switch (desc->dsc_dtype)
+		{
+		case dtype_text:
+			item.type = SQL_TEXT;
+			item.charset = desc->dsc_ttype();
+			item.length = desc->dsc_length;
+			break;
+
+		case dtype_varying:
+			item.type = SQL_VARYING;
+			item.charset = desc->dsc_ttype();
+			fb_assert(desc->dsc_length >= sizeof(USHORT));
+			item.length = desc->dsc_length - sizeof(USHORT);
+			break;
+
+		case dtype_short:
+			item.type = SQL_SHORT;
+			item.scale = desc->dsc_scale;
+			item.length = sizeof(SSHORT);
+			break;
+
+		case dtype_long:
+			item.type = SQL_LONG;
+			item.scale = desc->dsc_scale;
+			item.length = sizeof(SLONG);
+			break;
+
+		case dtype_quad:
+			item.type = SQL_QUAD;
+			item.scale = desc->dsc_scale;
+			item.length = sizeof(SLONG) * 2;
+			break;
+
+		case dtype_int64:
+			item.type = SQL_INT64;
+			item.scale = desc->dsc_scale;
+			item.length = sizeof(SINT64);
+			break;
+
+		case dtype_real:
+			item.type = SQL_FLOAT;
+			item.length = sizeof(float);
+			break;
+
+		case dtype_double:
+			item.type = SQL_DOUBLE;
+			item.length = sizeof(double);
+			break;
+
+		case dtype_sql_date:
+			item.type = SQL_TYPE_DATE;
+			item.length = sizeof(SLONG);
+			break;
+
+		case dtype_sql_time:
+			item.type = SQL_TYPE_TIME;
+			item.length = sizeof(SLONG);
+			break;
+
+		case dtype_timestamp:
+			item.type = SQL_TIMESTAMP;
+			item.length = sizeof(SLONG) * 2;
+			break;
+
+		case dtype_array:
+			item.type = SQL_ARRAY;
+			item.length = sizeof(ISC_QUAD);
+			break;
+
+		case dtype_blob:
+			item.type = SQL_BLOB;
+			item.length = sizeof(ISC_QUAD);
+			item.subType = desc->dsc_sub_type;
+			item.charset = desc->getTextType();
+			break;
+
+		case dtype_boolean:
+			item.type = SQL_BOOLEAN;
+			item.length = sizeof(UCHAR);
+			break;
+
+		default:
+			item.finished = false;
+			fb_assert(false);
+		}
+	}
 }
 
 
@@ -146,8 +236,8 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 	  builder(NULL),
 	  inValues(pool),
 	  outValues(pool),
-	  inBlr(pool),
-	  outBlr(pool),
+	  inMetadata(new Firebird::MsgMetadata),
+	  outMetadata(new Firebird::MsgMetadata),
 	  inMessage(pool),
 	  outMessage(pool),
 	  resultSet(NULL)
@@ -163,8 +253,8 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 	  builder(&aBuilder),
 	  inValues(pool),
 	  outValues(pool),
-	  inBlr(pool),
-	  outBlr(pool),
+	  inMetadata(new Firebird::MsgMetadata),
+	  outMetadata(new Firebird::MsgMetadata),
 	  inMessage(pool),
 	  outMessage(pool),
 	  resultSet(NULL)
@@ -190,27 +280,30 @@ void PreparedStatement::init(thread_db* tdbb, Attachment* attachment, jrd_tra* t
 	AutoSetRestore<SSHORT> autoAttCharset(&attachment->att_charset,
 		(isInternalRequest ? CS_METADATA : attachment->att_charset));
 
-	request = DSQL_allocate_statement(tdbb, attachment);
+	request = NULL;
 	try
 	{
 		const Database& dbb = *tdbb->getDatabase();
 		const int dialect = isInternalRequest || (dbb.dbb_flags & DBB_DB_SQL_dialect_3) ?
 			SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
-		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
-			0, NULL, 0, NULL, isInternalRequest);
+		request = DSQL_prepare(tdbb, attachment, transaction, text.length(), text.c_str(), dialect,
+			NULL, NULL, isInternalRequest);
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
 		if (statement->getSendMsg())
-			parseDsqlMessage(statement->getSendMsg(), inValues, inBlr, inMessage);
+			parseDsqlMessage(statement->getSendMsg(), inValues, inMetadata, inMessage);
 
 		if (statement->getReceiveMsg())
-			parseDsqlMessage(statement->getReceiveMsg(), outValues, outBlr, outMessage);
+			parseDsqlMessage(statement->getReceiveMsg(), outValues, outMetadata, outMessage);
 	}
 	catch (const Exception&)
 	{
-		DSQL_free_statement(tdbb, request, DSQL_drop);
+		if (request)
+		{
+			DSQL_free_statement(tdbb, request, DSQL_drop);
+		}
 		throw;
 	}
 }
@@ -243,8 +336,18 @@ void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 	if (builder)
 		builder->moveToStatement(tdbb, this);
 
-	DSQL_execute(tdbb, &transaction, request, inBlr.getCount(), inBlr.begin(), 0,
-		inMessage.getCount(), inMessage.begin(), 0, NULL, /*0,*/ 0, NULL);
+	DSQL_execute(tdbb, &transaction, request, false, inMetadata, inMessage.begin(), NULL, NULL);
+}
+
+
+void PreparedStatement::open(thread_db* tdbb, jrd_tra* transaction)
+{
+	fb_assert(resultSet == NULL);
+
+	if (builder)
+		builder->moveToStatement(tdbb, this);
+
+	DSQL_execute(tdbb, &transaction, request, true, inMetadata, inMessage.begin(), outMetadata, NULL);
 }
 
 
@@ -273,15 +376,16 @@ int PreparedStatement::getResultCount() const
 
 
 void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& values,
-	UCharBuffer& blr, UCharBuffer& msg)
+	MsgMetadata* msgMetadata, UCharBuffer& msg)
 {
 	// hvlad: Parameters in dsqlMsg->msg_parameters almost always linked in descending
 	// order by par_index. The only known exception is EXECUTE BLOCK statement.
-	// To generate correct BLR we must walk params in ascending par_index order.
+	// To generate correct metadata we must walk params in ascending par_index order.
 	// So store all params in array in an ascending par_index order despite of
 	// order in linked list.
 	// ASF: Input parameters don't come necessarily in ascending or descending order,
 	// so I changed the code to use a SortedArray.
+	// AP: removed assertions for correct parameters order - useless with SortedArray.
 
 	SortedArray<const dsql_par*, InlineStorage<const dsql_par*, 16>, const dsql_par*,
 		DefaultKeyValue<const dsql_par*>, ParamCmp> params;
@@ -293,160 +397,31 @@ void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& va
 			params.add(par);
 	}
 
-	size_t msgLength = 0;
 	size_t paramCount = params.getCount();
+	values.resize(paramCount * 2);
+	msgMetadata->items.resize(paramCount);
 
 	for (size_t i = 0; i < paramCount; ++i)
 	{
-		const dsql_par* par = params[i];
-
-#ifdef DEV_BUILD
-		// Verify that par_index is in ascending order
-		if (i < paramCount - 1)
-		{
-			fb_assert(par->par_index < params[i + 1]->par_index);
-		}
-#endif
-
-		if (type_alignments[par->par_desc.dsc_dtype])
-			msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
-		msgLength += par->par_desc.dsc_length;
-
-		// NULL flag
-		msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
-		msgLength += sizeof(SSHORT);
+		dscToMetaitem(&params[i]->par_desc, msgMetadata->items[i]);
 	}
+	msgMetadata->makeOffsets();
+	msg.resize(msgMetadata->length);
 
-	paramCount *= 2;
-
-	blr.add(blr_version5);
-	blr.add(blr_begin);
-	blr.add(blr_message);
-	blr.add(0);
-	blr.add(paramCount);
-	blr.add(paramCount >> 8);
-
-	values.resize(paramCount);
-	msg.resize(msgLength);
-
-	msgLength = 0;
 	dsc* value = values.begin();
-
-	for (size_t i = 0; i < paramCount / 2; ++i)
+	for (size_t i = 0; i < paramCount; ++i)
 	{
-		const dsql_par* par = params[i];
-
-		if (type_alignments[par->par_desc.dsc_dtype])
-			msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
-		*value = par->par_desc;
-		value->dsc_address = msg.begin() + msgLength;
-		msgLength += par->par_desc.dsc_length;
-
-		generateBlr(value, blr);
+		// value
+		*value = params[i]->par_desc;
+		value->dsc_address = msg.begin() + msgMetadata->items[i].offset;
 		++value;
 
-		// Calculate the NULL indicator offset
-		if (type_alignments[dtype_short])
-			msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
+		// NULL indicator
 		value->makeShort(0);
-		value->dsc_address = msg.begin() + msgLength;
+		value->dsc_address = msg.begin() + msgMetadata->items[i].nullInd;
 		// set NULL indicator value
 		*((SSHORT*) value->dsc_address) = -1;
-		msgLength += sizeof(SSHORT);
-
-		// Generate BLR for the NULL indicator
-		generateBlr(value, blr);
 		++value;
-	}
-
-	blr.add(blr_end);
-}
-
-
-void PreparedStatement::generateBlr(const dsc* desc, UCharBuffer& blr)
-{
-	USHORT length = 0;
-
-	switch (desc->dsc_dtype)
-	{
-	case dtype_text:
-		blr.add(blr_text2);
-		blr.add(desc->dsc_ttype());
-		blr.add(desc->dsc_ttype() >> 8);
-		length = desc->dsc_length;
-		blr.add(length);
-		blr.add(length >> 8);
-		break;
-
-	case dtype_varying:
-		blr.add(blr_varying2);
-		blr.add(desc->dsc_ttype());
-		blr.add(desc->dsc_ttype() >> 8);
-		fb_assert(desc->dsc_length >= sizeof(USHORT));
-		length = desc->dsc_length - sizeof(USHORT);
-		blr.add(length);
-		blr.add(length >> 8);
-		break;
-
-	case dtype_short:
-		blr.add(blr_short);
-		blr.add(desc->dsc_scale);
-		break;
-
-	case dtype_long:
-		blr.add(blr_long);
-		blr.add(desc->dsc_scale);
-		break;
-
-	case dtype_quad:
-		blr.add(blr_quad);
-		blr.add(desc->dsc_scale);
-		break;
-
-	case dtype_int64:
-		blr.add(blr_int64);
-		blr.add(desc->dsc_scale);
-		break;
-
-	case dtype_real:
-		blr.add(blr_float);
-		break;
-
-	case dtype_double:
-		blr.add(blr_double);
-		break;
-
-	case dtype_sql_date:
-		blr.add(blr_sql_date);
-		break;
-
-	case dtype_sql_time:
-		blr.add(blr_sql_time);
-		break;
-
-	case dtype_timestamp:
-		blr.add(blr_timestamp);
-		break;
-
-	case dtype_array:
-		blr.add(blr_quad);
-		blr.add(0);
-		break;
-
-	case dtype_blob:
-		blr.add(blr_blob2);
-		blr.add(desc->dsc_sub_type);
-		blr.add(desc->dsc_sub_type >> 8);
-		blr.add(desc->getTextType());
-		blr.add(desc->getTextType() >> 8);
-		break;
-
-	case dtype_boolean:
-		blr.add(blr_bool);
-		break;
-
-	default:
-		fb_assert(false);
 	}
 }
 

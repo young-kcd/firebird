@@ -1441,7 +1441,7 @@ void DeclareSubFuncNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	genParameters(dsqlScratch, dsqlBlock->parameters);
 	genParameters(dsqlScratch, dsqlBlock->returns);
 
-	BlrWriter::BlrData& blrData = blockScratch->getBlrData();
+	BlrDebugWriter::BlrData& blrData = blockScratch->getBlrData();
 	dsqlScratch->appendULong(ULONG(blrData.getCount()));
 	dsqlScratch->appendBytes(blrData.begin(), blrData.getCount());
 
@@ -1714,7 +1714,7 @@ void DeclareSubProcNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	genParameters(dsqlScratch, dsqlBlock->parameters);
 	genParameters(dsqlScratch, dsqlBlock->returns);
 
-	BlrWriter::BlrData& blrData = blockScratch->getBlrData();
+	BlrDebugWriter::BlrData& blrData = blockScratch->getBlrData();
 	dsqlScratch->appendULong(ULONG(blrData.getCount()));
 	dsqlScratch->appendBytes(blrData.begin(), blrData.getCount());
 

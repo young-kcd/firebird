@@ -58,6 +58,7 @@
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
 #include "../jrd/event_proto.h"
+#include "../jrd/ExtEngineManager.h"
 #include "../lock/lock_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/SyncObject.h"

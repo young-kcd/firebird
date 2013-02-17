@@ -49,7 +49,7 @@
 #include "../jrd/constants.h"
 #include "../jrd/status.h"
 #include "../common/os/os_utils.h"
-#include "../jrd/BlrReader.h"
+#include "../common/classes/BlrReader.h"
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/locks.h"
@@ -132,7 +132,7 @@ const SLONG GENERIC_SQLCODE		= -999;
 #include "../common/classes/MsgPrint.h"
 
 using Firebird::TimeStamp;
-using Jrd::BlrReader;
+using Firebird::BlrReader;
 
 // This structure is used to parse the firebird.msg file.
 struct gds_msg

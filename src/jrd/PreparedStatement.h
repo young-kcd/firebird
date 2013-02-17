@@ -25,6 +25,7 @@
 
 #include "firebird.h"
 #include "../common/dsc.h"
+#include "../common/MsgMetadata.h"
 #include "../jrd/intl.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -340,6 +341,7 @@ public:
 	}
 
 	void execute(thread_db* tdbb, jrd_tra* transaction);
+	void open(thread_db* tdbb, jrd_tra* transaction);
 	ResultSet* executeQuery(thread_db* tdbb, jrd_tra* transaction);
 	unsigned executeUpdate(thread_db* tdbb, jrd_tra* transaction);
 
@@ -351,14 +353,13 @@ public:
 	}
 
 	static void parseDsqlMessage(const dsql_msg* dsqlMsg, Firebird::Array<dsc>& values,
-		Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg);
-	static void generateBlr(const dsc* desc, Firebird::UCharBuffer& blr);
+		Firebird::MsgMetadata* msgMetadata, Firebird::UCharBuffer& msg);
 
 private:
 	const Builder* builder;
 	dsql_req* request;
 	Firebird::Array<dsc> inValues, outValues;
-	Firebird::UCharBuffer inBlr, outBlr;
+	Firebird::RefPtr<Firebird::MsgMetadata> inMetadata, outMetadata;
 	Firebird::UCharBuffer inMessage, outMessage;
 	ResultSet* resultSet;
 };

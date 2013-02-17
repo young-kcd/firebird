@@ -168,7 +168,7 @@ enum SubRoutineType
 // UDF Arguments are numbered from 0 to MAX_UDF_ARGUMENTS --
 // argument 0 is reserved for the return-type of the UDF
 
-const int MAX_UDF_ARGUMENTS	= 10;
+const unsigned MAX_UDF_ARGUMENTS	= 10;
 
 // Maximum length of single line returned from pretty printer
 const int PRETTY_BUFFER_SIZE = 1024;

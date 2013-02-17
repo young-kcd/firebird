@@ -168,6 +168,9 @@ namespace fb_utils
 
 	void logAndDie(const char* text);
 
+	// Returns next offset value
+	unsigned sqlTypeToDsc(unsigned prevOffset, unsigned sqlType, unsigned sqlLength,
+		unsigned* dtype, unsigned* len, unsigned* offset, unsigned* nullOffset);
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

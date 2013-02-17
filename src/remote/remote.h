@@ -98,6 +98,7 @@ typedef Firebird::RefPtr<Firebird::IAttachment> ServAttachment;
 typedef Firebird::RefPtr<Firebird::IBlob> ServBlob;
 typedef Firebird::RefPtr<Firebird::ITransaction> ServTransaction;
 typedef Firebird::RefPtr<Firebird::IStatement> ServStatement;
+typedef Firebird::RefPtr<Firebird::IResultSet> ServCursor;
 typedef Firebird::RefPtr<Firebird::IRequest> ServRequest;
 typedef Firebird::RefPtr<Firebird::IEvents> ServEvents;
 typedef Firebird::RefPtr<Firebird::IService> ServService;
@@ -416,6 +417,7 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	Rdb*			rsr_rdb;
 	Rtr*			rsr_rtr;
 	ServStatement	rsr_iface;
+	ServCursor		rsr_cursor;
 	rem_fmt*		rsr_bind_format;		// Format of bind message
 	rem_fmt*		rsr_select_format;		// Format of select message
 	rem_fmt*		rsr_user_select_format; // Format of user's select message
@@ -432,12 +434,17 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	USHORT			rsr_reorder_level; 	// Trigger pipelining at this level
 	USHORT			rsr_batch_count; 	// Count of batches in pipeline
 
+	Firebird::RefPtr<Firebird::IMessageMetadata> rsr_par_metadata;
+	Firebird::UCharBuffer rsr_parameters;
+	Firebird::RefPtr<Firebird::ITransaction> rsr_transaction;
+	Firebird::string rsr_cursor_name;
+
 public:
 	// Values for rsr_flags.
 	enum {
 		FETCHED = 1,		// Cleared by execute, set by fetch
 		EOF_SET = 2,		// End-of-stream encountered
-		BLOB = 4,			// Statement relates to blob op
+		//BLOB = 4,			// Statement relates to blob op
 		NO_BATCH = 8,		// Do not batch fetch rows
 		STREAM_ERR = 16,	// There is an error pending in the batched rows
 		LAZY = 32,			// To be allocated at the first reference
@@ -447,11 +454,12 @@ public:
 
 public:
 	Rsr() :
-		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_iface(NULL),
+		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_iface(NULL), rsr_cursor(NULL),
 		rsr_bind_format(0), rsr_select_format(0), rsr_user_select_format(0),
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
-		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0)
+		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0),
+		rsr_parameters(getPool()), rsr_cursor_name(getPool())
 		{ }
 
 	void saveException(const ISC_STATUS* status, bool overwrite);
@@ -462,6 +470,8 @@ public:
 	void releaseException();
 
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
+	void checkIface();
+	void checkCursor();
 };
 
 
@@ -1066,7 +1076,6 @@ public:
 	ISC_STATUS	execute_immediate(P_OP, P_SQLST*, PACKET*);
 	ISC_STATUS	execute_statement(P_OP, P_SQLDATA*, PACKET*);
 	ISC_STATUS	fetch(P_SQLDATA*, PACKET*);
-	ISC_STATUS	fetch_blob(P_SQLDATA*, PACKET*);
 	ISC_STATUS	get_segment(P_SGMT*, PACKET*);
 	ISC_STATUS	get_slice(P_SLC*, PACKET*);
 	void		info(P_OP, P_INFO*, PACKET*);

@@ -98,10 +98,13 @@ public:
 	RefCntIface() : refCounter(0) { }
 
 #ifdef DEV_BUILD
+protected:
 	~RefCntIface()
 	{
 		fb_assert(refCounter.value() == 0);
 	}
+
+public:
 #endif
 
 	void FB_CARG addRef()
@@ -321,6 +324,7 @@ public:
 	}
 };
 
+
 // Helps to create update information
 template <typename M = DefaultMissingEntrypoint>
 class MakeUpgradeInfo
@@ -342,22 +346,6 @@ private:
 	struct UpgradeInfo ui;
 };
 
-
-class InternalMessageBuffer : public FbMessage
-{
-public:
-	InternalMessageBuffer(unsigned aBlrLength, const unsigned char* aBlr,
-		unsigned aBufferLength, unsigned char* aBuffer)
-	{
-		blrLength = aBlrLength;
-		blr = aBlr;
-		bufferLength = aBufferLength;
-		buffer = aBuffer;
-	}
-};
-
-
 } // namespace Firebird
-
 
 #endif // FB_COMMON_CLASSES_IMPLEMENT_HELPER

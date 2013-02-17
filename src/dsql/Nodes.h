@@ -259,7 +259,7 @@ protected:
 	void storeGlobalField(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName& name,
 		const TypeClause* field,
 		const Firebird::string& computedSource = "",
-		const BlrWriter::BlrData& computedValue = BlrWriter::BlrData());
+		const BlrDebugWriter::BlrData& computedValue = BlrDebugWriter::BlrData());
 
 protected:
 	// Prefix DDL exceptions. To be implemented in each command.

@@ -753,6 +753,9 @@ Data source : @4"},		/* eds_statement */
 	{335545046, "Maximum (@1) number of arguments exceeded for function @2"},		/* max_args_exceeded */
 	{335545047, "External BLR message mismatch: names count = @1, blr count = @2"},		/* ee_blr_mismatch_names_count */
 	{335545048, "External BLR message mismatch: name @1 not found"},		/* ee_blr_mismatch_name_not_found */
+	{335545049, "Invalid resultset interface"},		/* bad_result_set */
+	{335545050, "Message length passed from user application does not match set of columns"},		/* wrong_message_length */
+	{335545051, "Resultset is missing output format information"},		/* no_output_format */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

@@ -38,13 +38,14 @@
 #include "../jrd/ntrace.h"
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Attachment.h"
-#include "../dsql/BlrWriter.h"
+#include "../dsql/BlrDebugWriter.h"
 #include "../dsql/ddl_proto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/auto.h"
+#include "../common/classes/NestConst.h"
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -519,7 +520,6 @@ class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
 	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
-	static const unsigned FLAG_EMBEDDED			= 0x02;
 
 public:
 	explicit dsql_req(MemoryPool& pool);
@@ -544,14 +544,13 @@ public:
 		ntrace_result_t* traceResult) = 0;
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton) = 0;
 
 	virtual void setCursor(thread_db* tdbb, const TEXT* name);
 
-	virtual ISC_STATUS fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
-		ULONG msgLength, UCHAR* msgBuffer);
+	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
 
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
@@ -604,14 +603,13 @@ public:
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton);
 
 	virtual void setCursor(thread_db* tdbb, const TEXT* name);
 
-	virtual ISC_STATUS fetch(thread_db* tdbb, ULONG blrLength, const UCHAR* blr,
-		ULONG msgLength, UCHAR* msgBuffer);
+	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
 
 private:
 	NestConst<StmtNode> node;
@@ -631,8 +629,8 @@ public:
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton);
 
 private:
@@ -654,8 +652,8 @@ public:
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		ULONG inBlrLength, const UCHAR* inBlr, ULONG inMsgLength, const UCHAR* inMsg,
-		ULONG outBlrLength, const UCHAR* const outBlr, ULONG outMsgLength, UCHAR* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton);
 
 private:

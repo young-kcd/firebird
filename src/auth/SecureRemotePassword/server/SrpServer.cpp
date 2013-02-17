@@ -147,15 +147,8 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			}
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: started transaction\n"));
 
-			stmt = att->allocateStatement(status);
-			if (!status->isSuccess())
-			{
-				status_exception::raise(status->get());
-			}
-
 			const char* sql = "SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ?";
-			stmt->prepare(status, tra, 0, sql, 3, 0);
-
+			stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
 			if (!status->isSuccess())
 			{
 				const ISC_STATUS* v = status->get();
@@ -176,25 +169,29 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 				status_exception::raise(status->get());
 			}
 
-			Message par;
-			Field<VarChar<SZ_LOGIN> > login(par);
-			login() = account.c_str();
-			login.null() = 0;
+			Meta im(stmt, false);
+			Message par(im);
+			Field<Text> login(par);
+			login = account.c_str();
+
+			Meta om(stmt, true);
+			Message dat(om);
+			if (!status->isSuccess())
+			{
+				status_exception::raise(status->get());
+			}
+			Field<Varying> verify(dat);
+			Field<Varying> slt(dat);
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: Ready to run statement with login '%s'\n", account.c_str()));
 
-			Message dat;
-			Field <VarChar<RemotePassword::SRP_VERIFIER_SIZE> > verify(dat);
-			Field <VarChar<RemotePassword::SRP_SALT_SIZE> > slt(dat);
-			dat.ready();
-
-			stmt->execute(status, tra, 0, &par, &dat);
+			stmt->execute(status, tra, &par, &dat);
 			if (!status->isSuccess())
 			{
 				status_exception::raise(status->get());
 			}
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: Executed statement\n"));
 
-			stmt->free(status, DSQL_drop);
+			stmt->free(status);
 			if (!status->isSuccess())
 			{
 				status_exception::raise(status->get());
@@ -208,7 +205,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			}
 			tra = NULL;
 
-			att->detach(status);		// It will close statement
+			att->detach(status);
 			if (!status->isSuccess())
 			{
 				status_exception::raise(status->get());
@@ -217,10 +214,10 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 			server = new RemotePassword;
 
-			verifier.assign(reinterpret_cast<UCHAR*>(verify().data), RemotePassword::SRP_VERIFIER_SIZE);
+			verifier.assign(reinterpret_cast<const UCHAR*>((const char*)verify), RemotePassword::SRP_VERIFIER_SIZE);
 			dumpIt("Srv: verifier", verifier);
 			UCharBuffer s;
-			s.assign(reinterpret_cast<UCHAR*>(slt().data), RemotePassword::SRP_SALT_SIZE);
+			s.assign(reinterpret_cast<const UCHAR*>((const char*)slt), RemotePassword::SRP_SALT_SIZE);
 			BigInteger(s).getText(salt);
 			dumpIt("Srv: salt", salt);
 			server->genServerKey(serverPubKey, verifier);
@@ -277,7 +274,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 	{
 		if (stmt)
 		{
-			stmt->free(status, DSQL_drop);
+			stmt->free(status);
 		}
 		if (tra)
 		{

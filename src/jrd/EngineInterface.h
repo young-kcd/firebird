@@ -39,6 +39,7 @@ class Attachment;
 class Service;
 
 // forward declarations
+class JStatement;
 class JAttachment;
 class JProvider;
 
@@ -137,33 +138,64 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
+class JResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSET_VERSION>
+{
+public:
+	// IResultSet implementation
+	virtual int FB_CARG release();
+	virtual FB_BOOLEAN FB_CARG fetch(Firebird::IStatus* status, unsigned char* message);
+	virtual FB_BOOLEAN FB_CARG isEof(Firebird::IStatus* status);
+	virtual Firebird::IMessageMetadata* FB_CARG getMetadata(Firebird::IStatus* status);
+	virtual void FB_CARG close(Firebird::IStatus* status);
+
+public:
+	JResultSet(JStatement* aStatement)
+		: statement(aStatement), eof(false)
+	{
+	}
+
+	JStatement* getStatement()
+	{
+		return statement;
+	}
+
+	JAttachment* getAttachment();
+
+	// Change after adding separate handle for cursor in dsql
+	dsql_req* getHandle();
+
+private:
+	Firebird::RefPtr<JStatement> statement;
+	bool eof;
+
+	void freeEngineData(Firebird::IStatus* status);
+};
+
 class JStatement : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
 	// IStatement implementation
 	virtual int FB_CARG release();
-	void FB_CARG prepare(Firebird::IStatus* status, Firebird::ITransaction* tra,
-						 unsigned int stmtLength, const char* sqlStmt,
-						 unsigned int dialect, unsigned int flags);
 	virtual void FB_CARG getInfo(Firebird::IStatus* status,
 								 unsigned int itemsLength, const unsigned char* items,
 								 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
-	virtual JTransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* tra,
-										unsigned int in_msg_type, const Firebird::FbMessage* inMsgBuffer,
-										const Firebird::FbMessage* outMsgBuffer);
-	virtual int FB_CARG fetch(Firebird::IStatus* status, const Firebird::FbMessage* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG free(Firebird::IStatus* status, unsigned int option);
+	virtual void FB_CARG free(Firebird::IStatus* status);
 	virtual ISC_UINT64 FB_CARG getAffectedRecords(Firebird::IStatus* userStatus);
-	virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(Firebird::IStatus* userStatus);
-	virtual const Firebird::IParametersMetadata* FB_CARG getInputParameters(Firebird::IStatus* userStatus);
+	virtual Firebird::IMessageMetadata* FB_CARG getOutputMetadata(Firebird::IStatus* userStatus);
+	virtual Firebird::IMessageMetadata* FB_CARG getInputMetadata(Firebird::IStatus* userStatus);
 	virtual unsigned FB_CARG getType(Firebird::IStatus* status);
-    virtual const char* FB_CARG getPlan(Firebird::IStatus* status, bool detailed);
+    virtual const char* FB_CARG getPlan(Firebird::IStatus* status, FB_BOOLEAN detailed);
+	virtual JTransaction* FB_CARG execute(Firebird::IStatus* status,
+		Firebird::ITransaction* transaction, Firebird::FbMessage *in, Firebird::FbMessage *out);
+	virtual JResultSet* FB_CARG openCursor(Firebird::IStatus* status,
+		Firebird::ITransaction* transaction, Firebird::FbMessage *in, Firebird::IMessageMetadata* out);
+	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
 
 public:
-	JStatement(dsql_req* handle, JAttachment* ja)
-		: statement(handle), jAtt(ja), metadata(getPool(), this)
+	JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta)
+		: statement(handle), jAtt(ja), metadata(getPool(), this), esql(false)
 	{
+		metadata.parse(meta.getCount(), meta.begin());
 	}
 
 	JAttachment* getAttachment()
@@ -180,9 +212,21 @@ private:
 	dsql_req* statement;
 	Firebird::RefPtr<JAttachment> jAtt;
 	Firebird::StatementMetadata metadata;
+	bool esql;
 
-	void freeEngineData(Firebird::IStatus* status, unsigned int option);
+	void freeEngineData(Firebird::IStatus* status);
 };
+
+inline JAttachment* JResultSet::getAttachment()
+{
+	return statement->getAttachment();
+}
+
+// Change after adding separate handle for cursor in dsql
+inline dsql_req* JResultSet::getHandle()
+{
+	return statement->getHandle();
+}
 
 class JRequest : public Firebird::RefCntIface<Firebird::IRequest, FB_REQUEST_VERSION>
 {
@@ -266,7 +310,6 @@ public:
 	virtual JTransaction* FB_CARG startTransaction(Firebird::IStatus* status,
 		unsigned int tpbLength, const unsigned char* tpb);
 	virtual JTransaction* FB_CARG reconnectTransaction(Firebird::IStatus* status, unsigned int length, const unsigned char* id);
-	virtual JStatement* FB_CARG allocateStatement(Firebird::IStatus* status);
 	virtual JRequest* FB_CARG compileRequest(Firebird::IStatus* status, unsigned int blr_length, const unsigned char* blr);
 	virtual void FB_CARG transactRequest(Firebird::IStatus* status, Firebird::ITransaction* transaction,
 								 unsigned int blr_length, const unsigned char* blr,
@@ -286,10 +329,14 @@ public:
 						  int sliceLength, unsigned char* slice);
 	virtual void FB_CARG executeDyn(Firebird::IStatus* status, Firebird::ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
-	virtual JTransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
-								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int in_msg_type, const Firebird::FbMessage* inMsgBuffer,
-								 const Firebird::FbMessage* outMsgBuffer);
+	virtual JStatement* FB_CARG prepare(Firebird::IStatus* status, Firebird::ITransaction* tra,
+		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags);
+	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status,
+		Firebird::ITransaction* transaction, unsigned int stmtLength, const char* sqlStmt,
+		unsigned int dialect, Firebird::FbMessage *in, Firebird::FbMessage *out);
+	virtual Firebird::IResultSet* FB_CARG openCursor(Firebird::IStatus* status,
+		Firebird::ITransaction* transaction, unsigned int stmtLength, const char* sqlStmt,
+		unsigned int dialect, Firebird::FbMessage *in, Firebird::IMessageMetadata* out);
 	virtual JEvents* FB_CARG queEvents(Firebird::IStatus* status, Firebird::IEventCallback* callback,
 											unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(Firebird::IStatus* status, int option);

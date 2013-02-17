@@ -18,31 +18,26 @@
  * Adriano dos Santos Fernandes - refactored from others modules.
  */
 
-#ifndef DSQL_BLR_WRITER_H
-#define DSQL_BLR_WRITER_H
+#ifndef COMMON_CLASSES_BLR_WRITER_H
+#define COMMON_CLASSES_BLR_WRITER_H
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
+#include "../common/StatusArg.h"
 
-namespace Jrd {
-
-class DeclareSubFuncNode;
-class DeclareSubProcNode;
-
+namespace Firebird {
 
 // BLR/DYN writer.
 class BlrWriter : public Firebird::PermanentStorage
 {
 public:
 	typedef Firebird::HalfStaticArray<UCHAR, 1024> BlrData;
-	typedef Firebird::HalfStaticArray<UCHAR, 128> DebugData;
 
 	explicit BlrWriter(MemoryPool& p)
 		: PermanentStorage(p),
 		  blrData(p),
-		  debugData(p),
 		  baseOffset(0)
 	{
 	}
@@ -117,29 +112,28 @@ public:
 		appendString(verb, name.c_str(), static_cast<USHORT>(name.length()));
 	}
 
-	void beginDebug();
-	void endDebug();
-	void putDebugSrcInfo(ULONG, ULONG);
-	void putDebugVariable(USHORT, const Firebird::MetaName&);
-	void putDebugArgument(UCHAR, USHORT, const TEXT*);
-	void putDebugSubFunction(DeclareSubFuncNode* subFuncNode);
-	void putDebugSubProcedure(DeclareSubProcNode* subProcNode);
+	void appendNumber(UCHAR verb, SSHORT number);
+	void appendUShortWithLength(USHORT val);
+	void appendULongWithLength(ULONG val);
+	void appendVersion();
+
+	void beginBlr(UCHAR verb);
+	void endBlr();
 
 	BlrData& getBlrData() { return blrData; }
-	DebugData& getDebugData() { return debugData; }
 
 	ULONG getBaseOffset() const { return baseOffset; }
 	void setBaseOffset(ULONG value) { baseOffset = value; }
 
 	virtual bool isVersion4() = 0;
+	virtual void raiseError(const Arg::StatusVector& vector);
 
 private:
 	BlrData blrData;
-	DebugData debugData;
 	ULONG baseOffset;					// place to go back and stuff in blr length
 };
 
 
 } // namespace
 
-#endif // DSQL_BLR_WRITER_H
+#endif // COMMON_CLASSES_BLR_WRITER_H
