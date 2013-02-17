@@ -279,12 +279,14 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 		// Release everything associated with the request
 		dsql_req::destroy(tdbb, request, true);
 	}
-/*	else if (option & DSQL_unprepare)
+	/*
+	else if (option & DSQL_unprepare)
 	{
 		// Release everything but the request itself
 		dsql_req::destroy(tdbb, request, false);
 	}
-*/	else if (option & DSQL_close)
+	*/
+	else if (option & DSQL_close)
 	{
 		// Just close the cursor associated with the request
 		if (reqTypeWithCursor(statement->getType()))
@@ -1062,13 +1064,16 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 					userNullDesc.clear();
 
 				const ULONG null_offset = (IPTR) userNullDesc.dsc_address;
-/*				length = null_offset + sizeof(SSHORT);
+
+				/*
+				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 				{
 					err = true;
 					break;
 				}
- */
+				*/
+
 				dsc nullDesc = null_ind->par_desc;
 				nullDesc.dsc_address = msgBuffer + (IPTR) nullDesc.dsc_address;
 

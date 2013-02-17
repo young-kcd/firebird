@@ -141,84 +141,84 @@ static void generateBlr(const dsc* desc, UCharBuffer& blr)
 
 	switch (desc->dsc_dtype)
 	{
-	case dtype_text:
-		blr.add(blr_text2);
-		blr.add(desc->dsc_ttype());
-		blr.add(desc->dsc_ttype() >> 8);
-		length = desc->dsc_length;
-		blr.add(length);
-		blr.add(length >> 8);
-		break;
+		case dtype_text:
+			blr.add(blr_text2);
+			blr.add(desc->dsc_ttype());
+			blr.add(desc->dsc_ttype() >> 8);
+			length = desc->dsc_length;
+			blr.add(length);
+			blr.add(length >> 8);
+			break;
 
-	case dtype_varying:
-		blr.add(blr_varying2);
-		blr.add(desc->dsc_ttype());
-		blr.add(desc->dsc_ttype() >> 8);
-		fb_assert(desc->dsc_length >= sizeof(USHORT));
-		length = desc->dsc_length - sizeof(USHORT);
-		blr.add(length);
-		blr.add(length >> 8);
-		break;
+		case dtype_varying:
+			blr.add(blr_varying2);
+			blr.add(desc->dsc_ttype());
+			blr.add(desc->dsc_ttype() >> 8);
+			fb_assert(desc->dsc_length >= sizeof(USHORT));
+			length = desc->dsc_length - sizeof(USHORT);
+			blr.add(length);
+			blr.add(length >> 8);
+			break;
 
-	case dtype_short:
-		blr.add(blr_short);
-		blr.add(desc->dsc_scale);
-		break;
+		case dtype_short:
+			blr.add(blr_short);
+			blr.add(desc->dsc_scale);
+			break;
 
-	case dtype_long:
-		blr.add(blr_long);
-		blr.add(desc->dsc_scale);
-		break;
+		case dtype_long:
+			blr.add(blr_long);
+			blr.add(desc->dsc_scale);
+			break;
 
-	case dtype_quad:
-		blr.add(blr_quad);
-		blr.add(desc->dsc_scale);
-		break;
+		case dtype_quad:
+			blr.add(blr_quad);
+			blr.add(desc->dsc_scale);
+			break;
 
-	case dtype_int64:
-		blr.add(blr_int64);
-		blr.add(desc->dsc_scale);
-		break;
+		case dtype_int64:
+			blr.add(blr_int64);
+			blr.add(desc->dsc_scale);
+			break;
 
-	case dtype_real:
-		blr.add(blr_float);
-		break;
+		case dtype_real:
+			blr.add(blr_float);
+			break;
 
-	case dtype_double:
-		blr.add(blr_double);
-		break;
+		case dtype_double:
+			blr.add(blr_double);
+			break;
 
-	case dtype_sql_date:
-		blr.add(blr_sql_date);
-		break;
+		case dtype_sql_date:
+			blr.add(blr_sql_date);
+			break;
 
-	case dtype_sql_time:
-		blr.add(blr_sql_time);
-		break;
+		case dtype_sql_time:
+			blr.add(blr_sql_time);
+			break;
 
-	case dtype_timestamp:
-		blr.add(blr_timestamp);
-		break;
+		case dtype_timestamp:
+			blr.add(blr_timestamp);
+			break;
 
-	case dtype_array:
-		blr.add(blr_quad);
-		blr.add(0);
-		break;
+		case dtype_array:
+			blr.add(blr_quad);
+			blr.add(0);
+			break;
 
-	case dtype_blob:
-		blr.add(blr_blob2);
-		blr.add(desc->dsc_sub_type);
-		blr.add(desc->dsc_sub_type >> 8);
-		blr.add(desc->getTextType());
-		blr.add(desc->getTextType() >> 8);
-		break;
+		case dtype_blob:
+			blr.add(blr_blob2);
+			blr.add(desc->dsc_sub_type);
+			blr.add(desc->dsc_sub_type >> 8);
+			blr.add(desc->getTextType());
+			blr.add(desc->getTextType() >> 8);
+			break;
 
-	case dtype_boolean:
-		blr.add(blr_bool);
-		break;
+		case dtype_boolean:
+			blr.add(blr_bool);
+			break;
 
-	default:
-		fb_assert(false);
+		default:
+			fb_assert(false);
 	}
 }
 

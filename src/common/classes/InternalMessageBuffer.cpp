@@ -162,12 +162,10 @@ MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr,
 			break;
 
 		case blr_blob2:
-			{
-				item->type = SQL_BLOB;
-				item->length = sizeof(ISC_QUAD);
-				item->subType = rdr.getWord();
-				item->charset = rdr.getWord();
-			}
+			item->type = SQL_BLOB;
+			item->length = sizeof(ISC_QUAD);
+			item->subType = rdr.getWord();
+			item->charset = rdr.getWord();
 			break;
 
 		case blr_bool:

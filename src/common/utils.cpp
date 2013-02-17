@@ -1333,7 +1333,7 @@ unsigned sqlTypeToDsc(unsigned runOffset, unsigned sqlType, unsigned sqlLength,
 	align = type_alignments[dtype_short];
 	if (align)
 		runOffset = FB_ALIGN(runOffset, align);
-	if(nullOffset)
+	if (nullOffset)
 		*nullOffset = runOffset;
 
 	return runOffset + sizeof(SSHORT);

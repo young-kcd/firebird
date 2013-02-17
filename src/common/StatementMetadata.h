@@ -44,8 +44,10 @@ public:
 	{
 	public:
 		Parameters()
-			: MsgMetadata(), fetched(false)
-		{ }
+			: MsgMetadata(),
+			  fetched(false)
+		{
+		}
 
 		bool fetched;
 	};

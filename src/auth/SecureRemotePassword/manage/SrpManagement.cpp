@@ -141,7 +141,6 @@ public:
 
 		Firebird::LocalStatus s;
 		Firebird::RefPtr<Firebird::ITransaction> ddlTran(att->startTransaction(&s, 0, NULL));
-		
 
 		try
 		{
@@ -293,6 +292,7 @@ public:
 									check(status);
 									break;
 								}
+
 								do
 								{
 									v += 2;

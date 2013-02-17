@@ -214,10 +214,10 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 			server = new RemotePassword;
 
-			verifier.assign(reinterpret_cast<const UCHAR*>((const char*)verify), RemotePassword::SRP_VERIFIER_SIZE);
+			verifier.assign(reinterpret_cast<const UCHAR*>((const char*) verify), RemotePassword::SRP_VERIFIER_SIZE);
 			dumpIt("Srv: verifier", verifier);
 			UCharBuffer s;
-			s.assign(reinterpret_cast<const UCHAR*>((const char*)slt), RemotePassword::SRP_SALT_SIZE);
+			s.assign(reinterpret_cast<const UCHAR*>((const char*) slt), RemotePassword::SRP_SALT_SIZE);
 			BigInteger(s).getText(salt);
 			dumpIt("Srv: salt", salt);
 			server->genServerKey(serverPubKey, verifier);

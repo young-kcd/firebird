@@ -30,7 +30,7 @@ namespace Jrd {
 class DeclareSubFuncNode;
 class DeclareSubProcNode;
 
-// BLR/DYN writer with debug info support.
+// BLR writer with debug info support.
 class BlrDebugWriter : public Firebird::BlrWriter
 {
 public:

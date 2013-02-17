@@ -165,9 +165,9 @@ public:
 	virtual IMessageMetadata* FB_CARG getInputMetadata(IStatus* status) = 0;
 	virtual IMessageMetadata* FB_CARG getOutputMetadata(IStatus* status) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
-		FbMessage *in, FbMessage *out) = 0;
+		FbMessage* in, FbMessage* out) = 0;
 	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
-		FbMessage *in, IMessageMetadata* out) = 0;
+		FbMessage* in, IMessageMetadata* out) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG free(IStatus* status) = 0;
 };

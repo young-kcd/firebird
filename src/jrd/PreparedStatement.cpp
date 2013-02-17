@@ -46,93 +46,94 @@ namespace
 		}
 	};
 
-	void dscToMetaitem(const dsc* desc, MsgMetadata::Item& item)
+	void dscToMetaItem(const dsc* desc, MsgMetadata::Item& item)
 	{
 		item.finished = true;
+
 		switch (desc->dsc_dtype)
 		{
-		case dtype_text:
-			item.type = SQL_TEXT;
-			item.charset = desc->dsc_ttype();
-			item.length = desc->dsc_length;
-			break;
+			case dtype_text:
+				item.type = SQL_TEXT;
+				item.charset = desc->dsc_ttype();
+				item.length = desc->dsc_length;
+				break;
 
-		case dtype_varying:
-			item.type = SQL_VARYING;
-			item.charset = desc->dsc_ttype();
-			fb_assert(desc->dsc_length >= sizeof(USHORT));
-			item.length = desc->dsc_length - sizeof(USHORT);
-			break;
+			case dtype_varying:
+				item.type = SQL_VARYING;
+				item.charset = desc->dsc_ttype();
+				fb_assert(desc->dsc_length >= sizeof(USHORT));
+				item.length = desc->dsc_length - sizeof(USHORT);
+				break;
 
-		case dtype_short:
-			item.type = SQL_SHORT;
-			item.scale = desc->dsc_scale;
-			item.length = sizeof(SSHORT);
-			break;
+			case dtype_short:
+				item.type = SQL_SHORT;
+				item.scale = desc->dsc_scale;
+				item.length = sizeof(SSHORT);
+				break;
 
-		case dtype_long:
-			item.type = SQL_LONG;
-			item.scale = desc->dsc_scale;
-			item.length = sizeof(SLONG);
-			break;
+			case dtype_long:
+				item.type = SQL_LONG;
+				item.scale = desc->dsc_scale;
+				item.length = sizeof(SLONG);
+				break;
 
-		case dtype_quad:
-			item.type = SQL_QUAD;
-			item.scale = desc->dsc_scale;
-			item.length = sizeof(SLONG) * 2;
-			break;
+			case dtype_quad:
+				item.type = SQL_QUAD;
+				item.scale = desc->dsc_scale;
+				item.length = sizeof(SLONG) * 2;
+				break;
 
-		case dtype_int64:
-			item.type = SQL_INT64;
-			item.scale = desc->dsc_scale;
-			item.length = sizeof(SINT64);
-			break;
+			case dtype_int64:
+				item.type = SQL_INT64;
+				item.scale = desc->dsc_scale;
+				item.length = sizeof(SINT64);
+				break;
 
-		case dtype_real:
-			item.type = SQL_FLOAT;
-			item.length = sizeof(float);
-			break;
+			case dtype_real:
+				item.type = SQL_FLOAT;
+				item.length = sizeof(float);
+				break;
 
-		case dtype_double:
-			item.type = SQL_DOUBLE;
-			item.length = sizeof(double);
-			break;
+			case dtype_double:
+				item.type = SQL_DOUBLE;
+				item.length = sizeof(double);
+				break;
 
-		case dtype_sql_date:
-			item.type = SQL_TYPE_DATE;
-			item.length = sizeof(SLONG);
-			break;
+			case dtype_sql_date:
+				item.type = SQL_TYPE_DATE;
+				item.length = sizeof(SLONG);
+				break;
 
-		case dtype_sql_time:
-			item.type = SQL_TYPE_TIME;
-			item.length = sizeof(SLONG);
-			break;
+			case dtype_sql_time:
+				item.type = SQL_TYPE_TIME;
+				item.length = sizeof(SLONG);
+				break;
 
-		case dtype_timestamp:
-			item.type = SQL_TIMESTAMP;
-			item.length = sizeof(SLONG) * 2;
-			break;
+			case dtype_timestamp:
+				item.type = SQL_TIMESTAMP;
+				item.length = sizeof(SLONG) * 2;
+				break;
 
-		case dtype_array:
-			item.type = SQL_ARRAY;
-			item.length = sizeof(ISC_QUAD);
-			break;
+			case dtype_array:
+				item.type = SQL_ARRAY;
+				item.length = sizeof(ISC_QUAD);
+				break;
 
-		case dtype_blob:
-			item.type = SQL_BLOB;
-			item.length = sizeof(ISC_QUAD);
-			item.subType = desc->dsc_sub_type;
-			item.charset = desc->getTextType();
-			break;
+			case dtype_blob:
+				item.type = SQL_BLOB;
+				item.length = sizeof(ISC_QUAD);
+				item.subType = desc->dsc_sub_type;
+				item.charset = desc->getTextType();
+				break;
 
-		case dtype_boolean:
-			item.type = SQL_BOOLEAN;
-			item.length = sizeof(UCHAR);
-			break;
+			case dtype_boolean:
+				item.type = SQL_BOOLEAN;
+				item.length = sizeof(UCHAR);
+				break;
 
-		default:
-			item.finished = false;
-			fb_assert(false);
+			default:
+				item.finished = false;
+				fb_assert(false);
 		}
 	}
 }
@@ -402,13 +403,13 @@ void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& va
 	msgMetadata->items.resize(paramCount);
 
 	for (size_t i = 0; i < paramCount; ++i)
-	{
-		dscToMetaitem(&params[i]->par_desc, msgMetadata->items[i]);
-	}
+		dscToMetaItem(&params[i]->par_desc, msgMetadata->items[i]);
+
 	msgMetadata->makeOffsets();
 	msg.resize(msgMetadata->length);
 
 	dsc* value = values.begin();
+
 	for (size_t i = 0; i < paramCount; ++i)
 	{
 		// value

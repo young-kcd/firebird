@@ -4153,7 +4153,6 @@ void SysAttachment::destroy(Attachment* attachment)
 JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 	FbMessage* inMessage, FbMessage* outMessage)
 {
-
 	JTransaction* jt = apiTra ? getAttachment()->getTransactionInterface(user_status, apiTra) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
@@ -4169,8 +4168,8 @@ JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 		try
 		{
 			DSQL_execute(tdbb, &tra, getHandle(), false,
-				inMessage ? inMessage->metadata : NULL, inMessage ? inMessage->buffer : 0,
-				outMessage ? outMessage->metadata : NULL, outMessage ? outMessage->buffer : 0);
+				(inMessage ? inMessage->metadata : NULL), (inMessage ? inMessage->buffer : NULL),
+				(outMessage ? outMessage->metadata : NULL), (outMessage ? outMessage->buffer : NULL));
 
 			if (jt && !tra)
 			{
@@ -4228,7 +4227,7 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 		try
 		{
 			DSQL_execute(tdbb, &tra, getHandle(), true,
-				in ? in->metadata : NULL, in ? in->buffer : NULL,
+				(in ? in->metadata : NULL), (in ? in->buffer : NULL),
 				out, NULL);
 
 			rs = new JResultSet(this);
@@ -4236,10 +4235,10 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status, "JStatement::execute");
+			transliterateException(tdbb, ex, user_status, "JStatement::openCursor");
 			return NULL;
 		}
-		trace_warning(tdbb, user_status, "JStatement::execute");
+		trace_warning(tdbb, user_status, "JStatement::openCursor");
 	}
 	catch (const Exception& ex)
 	{
@@ -4289,8 +4288,8 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 		try
 		{
 			DSQL_execute_immediate(tdbb, getHandle(), &tra, length, string, dialect,
-				inMessage ? inMessage->metadata : NULL, inMessage ? inMessage->buffer : 0,
-				outMessage ? outMessage->metadata : NULL, outMessage ? outMessage->buffer : 0,
+				(inMessage ? inMessage->metadata : NULL), (inMessage ? inMessage->buffer : NULL),
+				(outMessage ? outMessage->metadata : NULL), (outMessage ? outMessage->buffer : NULL),
 				false);
 
 			if (jt && !tra)
@@ -4354,7 +4353,7 @@ FB_BOOLEAN JResultSet::fetch(IStatus* user_status, unsigned char* buffer)
 			transliterateException(tdbb, ex, user_status, "JStatement::fetch");
 			return 0;
 		}
-		trace_warning(tdbb, user_status, "JStatement::fetch");
+		trace_warning(tdbb, user_status, "JResultSet::fetch");
 	}
 	catch (const Exception& ex)
 	{
@@ -4401,7 +4400,7 @@ void JResultSet::freeEngineData(IStatus* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status, "JStatement::freeEngineData");
+			transliterateException(tdbb, ex, user_status, "JResultSet::freeEngineData");
 			return;
 		}
 	}

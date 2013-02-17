@@ -16,7 +16,7 @@ public:
 		{
 			Firebird::status_exception::raise(s.get());
 		}
-		*((Firebird::RefPtr<Firebird::IMessageMetadata>*)this) = m;
+		*((Firebird::RefPtr<Firebird::IMessageMetadata>*) this) = m;
 		m->release();		// reference added by function returning iface
 	}
 };
@@ -57,7 +57,7 @@ public:
 		if (fieldCount >= metadata->getMessageLength(&st))
 		{
 			(Firebird::Arg::Gds(isc_random) <<
-				"Attempt to add to the message more variables then possible").raise();
+				"Attempt to add to the message more variables than possible").raise();
 		}
 
 		t = metadata->getType(&st, fieldCount);
@@ -245,7 +245,7 @@ void Field<Text>::getStrValue(char* to)
 	memcpy(to, ptr->data, size);
 	to[size] = 0;
 	unsigned len = size;
-	while(len--)
+	while (len--)
 	{
 		if (to[len] == ' ')
 			to[len] = 0;

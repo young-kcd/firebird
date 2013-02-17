@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "firebird.h"
 #include "../common/StatementMetadata.h"
 #include "memory_routines.h"
@@ -332,21 +331,23 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 				if (parameters->fetched)
 				{
 					unsigned off = 0;
+
 					for (unsigned n = 0; n < parameters->items.getCount(); ++n)
 					{
 						Parameters::Item* param = &parameters->items[n];
+
 						if (!param->finished)
 						{
 							parameters->fetched = false;
 							break;
 						}
+
 						off = fb_utils::sqlTypeToDsc(off, param->type, param->length,
 							NULL /*dtype*/, NULL /*length*/, &param->offset, &param->nullInd);
 					}
+
 					if (parameters->fetched)
-					{
 						parameters->length = off;
-					}
 				}
 
 				break;
