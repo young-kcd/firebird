@@ -372,6 +372,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\MsgMetadata.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\os\win32\os_utils.cpp"
 				>
 			</File>
@@ -460,6 +464,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\BlrWriter.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletReader.cpp"
 				>
 			</File>
@@ -481,6 +489,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\init.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\InternalMessageBuffer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\InternalMessageBuffer.h"
 				>
 			</File>
 			<File
@@ -562,6 +578,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\BigInteger.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\BlrReader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\BlrWriter.h"
 				>
 			</File>
 			<File
@@ -758,6 +782,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\os\mod_loader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\MsgMetadata.h"
 				>
 			</File>
 			<File
