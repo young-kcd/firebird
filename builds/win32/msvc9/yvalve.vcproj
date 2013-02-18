@@ -365,6 +365,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\remote\client\BlrFromMessage.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\yvalve\gds_proto.h"
 				>
 			</File>
@@ -424,6 +428,10 @@
 		<Filter
 			Name="Remote client"
 			>
+			<File
+				RelativePath="..\..\..\src\remote\client\BlrFromMessage.cpp"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\remote\client\interface.cpp"
 				>

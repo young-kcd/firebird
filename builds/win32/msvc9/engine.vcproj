@@ -392,10 +392,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ErrorImpl.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\event.cpp"
 				>
 			</File>
@@ -876,11 +872,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\BlrReader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\BlrWriter.h"
+				RelativePath="..\..\..\src\dsql\BlrDebugWriter.h"
 				>
 			</File>
 			<File
@@ -1029,10 +1021,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\errd_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ErrorImpl.h"
 				>
 			</File>
 			<File
@@ -1640,7 +1628,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\BlrWriter.cpp"
+				RelativePath="..\..\..\src\dsql\BlrDebugWriter.cpp"
 				>
 			</File>
 			<File
