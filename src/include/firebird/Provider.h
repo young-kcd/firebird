@@ -120,6 +120,7 @@ struct FbMessage
 
 class ICoerceMetadata : public IRefCounted
 {
+public:
 	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type) = 0;
 	virtual void FB_CARG setSubType(IStatus* status, unsigned index, unsigned subType) = 0;
 	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length) = 0;

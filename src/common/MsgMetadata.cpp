@@ -87,6 +87,11 @@ public:
 	{
 		MutexLockGuard g(mtx, FB_FUNCTION);
 
+		if (metadataError(status, "getMetadata"))
+		{
+			return NULL;
+		}
+
 		msgMetadata->makeOffsets();
 		IMessageMetadata* rc = msgMetadata;
 		rc->addRef();
@@ -98,7 +103,7 @@ private:
 	RefPtr<MsgMetadata> msgMetadata;
 	Mutex mtx;
 
-	bool indexError(IStatus* status, unsigned index, const char* functionName)
+	bool metadataError(IStatus* status, const char* functionName)
 	{
 		if (!msgMetadata)
 		{
@@ -107,7 +112,17 @@ private:
 			return true;
 		}
 
-		if (index < msgMetadata->items.getCount())
+		return false;
+	}
+
+	bool indexError(IStatus* status, unsigned index, const char* functionName)
+	{
+		if (metadataError(status, functionName))
+		{
+			return true;
+		}
+
+		if (index >= msgMetadata->items.getCount())
 		{
 			status->set((Arg::Gds(isc_invalid_index_val) <<
 				Arg::Num(index) << (string("ICoerceMetadata::") + functionName)).value());
