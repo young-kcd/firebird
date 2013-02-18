@@ -1935,7 +1935,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 {
 	StatusVector status(userStatus);
 
-	if (((SSHORT)inMsgType) == -1)	// dirty hack to support old esql code
+	if (((SSHORT) inMsgType) == -1)	// dirty hack to support old esql code
 	{
 		return status[1];
 	}
@@ -2344,11 +2344,11 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 		}
 		else if (option & DSQL_close)
 		{
-			// Release everything but the request itself
+			// Only close the cursor
 			statement->closeCursor(&status);
 		}
 
-/*
+		/*
 		statement->closeCursor(&status);
 		statement->closeStatement(&status);
 
@@ -2358,7 +2358,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 			statement->release();
 			*stmtHandle = 0;
 		}
-*/
+		*/
 	}
 	catch (const Exception& e)
 	{
@@ -4473,6 +4473,7 @@ YStatement* YAttachment::prepare(IStatus* status, ITransaction* transaction,
 	{
 		e.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -4668,7 +4669,9 @@ IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 		if (transaction)
 			getNextTransaction(status, transaction, trans);
 
-		rs = entry.next()->openCursor(status, trans, length, string, dialect, inMsgBuffer, outFormat);
+		rs = entry.next()->openCursor(status, trans, length, string, dialect,
+			inMsgBuffer, outFormat);
+
 		return new YResultSet(this, rs);
 	}
 	catch (const Exception& e)

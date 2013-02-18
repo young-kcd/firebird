@@ -2869,7 +2869,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	USHORT out_msg_type = (op == op_execute2) ? sqldata->p_sqldata_out_message_number : 0;
 	const bool defer = this->haveRecvData();
 
-	if ((SSHORT)out_msg_type == -1)
+	if ((SSHORT) out_msg_type == -1)
 	{
 		return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
 			0, &status_vector, defer);
