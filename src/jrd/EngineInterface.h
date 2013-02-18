@@ -193,7 +193,7 @@ public:
 
 public:
 	JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta)
-		: statement(handle), jAtt(ja), metadata(getPool(), this), esql(false)
+		: statement(handle), jAtt(ja), metadata(getPool(), this)
 	{
 		metadata.parse(meta.getCount(), meta.begin());
 	}
@@ -212,7 +212,6 @@ private:
 	dsql_req* statement;
 	Firebird::RefPtr<JAttachment> jAtt;
 	Firebird::StatementMetadata metadata;
-	bool esql;
 
 	void freeEngineData(Firebird::IStatus* status);
 };
