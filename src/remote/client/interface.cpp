@@ -449,9 +449,9 @@ public:
 	virtual Statement* FB_CARG prepare(IStatus* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, unsigned int flags);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in, FbMessage *out);
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage* in, FbMessage* out);
 	virtual Firebird::IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage* in,
 		Firebird::IMessageMetadata* out);
 	virtual Firebird::IEvents* FB_CARG queEvents(IStatus* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events);
@@ -1796,7 +1796,7 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		if (in_blr_length)
 		{
 			RMessage* message = PARSE_messages(in_blr, in_blr_length);
-			if (message != (RMessage*) - 1)
+			if (message != (RMessage*) -1)
 			{
 				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
 				delete message;
@@ -1854,7 +1854,7 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 
 
 IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in,
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage* in,
 		IMessageMetadata* out)
 {
 	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
