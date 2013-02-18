@@ -1,3 +1,99 @@
+ 2013-02-17 23:06  asfernandes 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/common/StatementMetadata.cpp
+   M src/common/StatementMetadata.h
+   M src/common/classes/InternalMessageBuffer.cpp
+   M src/common/utils.cpp
+   M src/dsql/BlrDebugWriter.h
+   M src/dsql/dsql.cpp
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/PreparedStatement.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+Misc.
+
+ 2013-02-17 12:08  alexpeshkoff 
+   M builds/posix/Makefile.in.plugins_examples
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   A src/common/MsgMetadata.cpp
+   A src/common/MsgMetadata.h
+   M src/common/StatementMetadata.cpp
+   M src/common/StatementMetadata.h
+   A src/common/classes/BlrReader.h (from /firebird/trunk/src/jrd/BlrReader.h:57662)
+   A src/common/classes/BlrWriter.cpp (from /firebird/trunk/src/dsql/BlrWriter.cpp:57597)
+   A src/common/classes/BlrWriter.h (from /firebird/trunk/src/dsql/BlrWriter.h:57597)
+   M src/common/classes/ImplementHelper.cpp
+   M src/common/classes/ImplementHelper.h
+   A src/common/classes/InternalMessageBuffer.cpp
+   A src/common/classes/InternalMessageBuffer.h
+   M src/common/classes/RefMutex.h
+   M src/common/classes/objects_array.h
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   A src/dsql/BlrDebugWriter.cpp
+   A src/dsql/BlrDebugWriter.h
+   D src/dsql/BlrWriter.cpp
+   D src/dsql/BlrWriter.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/dsql_proto.h
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/Provider.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/include/types_pub.h
+   D src/jrd/BlrReader.h
+   M src/jrd/Database.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/PreparedStatement.cpp
+   M src/jrd/PreparedStatement.h
+   M src/jrd/ResultSet.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/constants.h
+   M src/jrd/exe.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/val.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   A src/remote/client/BlrFromMessage.cpp
+   A src/remote/client/BlrFromMessage.h
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.h
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/gds.cpp
+   M src/yvalve/why.cpp
+Modified IStatement interface in our API:
+1. Never allocate empty statement - always use att->prepare() to create statement interface
+2. Separated IStatement into 2 parts - statement itself and resultset.
+3. Added stmt->openCursor() (and att->openCursor() for unprepared statements) to create IResultSet.
+4. Always use IMessageMetadata (former IParametersMetadata) to pass message fromat info from client,
+   therefore avoiding need in BLR generation in client applications.
+
  2013-02-15 02:48  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M src/include/FirebirdApi.h
