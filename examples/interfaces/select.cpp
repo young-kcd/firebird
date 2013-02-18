@@ -124,7 +124,7 @@ int main()
 				fields[j].length = meta->getLength(st, j);
 				check(st, "getLength");
 				fields[j].offset = meta->getOffset(st, j);
-				check(st, "getLength");
+				check(st, "getOffset");
 			}
 		}
 
