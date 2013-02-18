@@ -1760,8 +1760,22 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		BlrFromMessage inBlr(inMsgBuffer, dialect);
 		unsigned in_blr_length = inBlr.getLength();
 		const unsigned char* in_blr = inBlr.getBytes();
-		//unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
 		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+
+		RefPtr<IMessageMetadata> defaultOutputFormat;
+		if (!outFormat)
+		{
+			defaultOutputFormat = this->getOutputMetadata(status);
+			if (!status->isSuccess())
+			{
+				return NULL;
+			}
+			if (defaultOutputFormat)
+			{
+				defaultOutputFormat->release();
+				outFormat = defaultOutputFormat;
+			}
+		}
 
 		BlrFromMessage outBlr(outFormat, dialect);
 		unsigned out_blr_length = outBlr.getLength();

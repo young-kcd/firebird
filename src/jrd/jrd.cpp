@@ -4226,6 +4226,17 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 
 		try
 		{
+			RefPtr<IMessageMetadata> defaultOut;
+			if (!out)
+			{
+				defaultOut = metadata.getOutputMetadata();
+				if (defaultOut)
+				{
+					defaultOut->release();
+					out = defaultOut;
+				}
+			}
+
 			DSQL_execute(tdbb, &tra, getHandle(), true,
 				(in ? in->metadata : NULL), (in ? in->buffer : NULL),
 				out, NULL);
