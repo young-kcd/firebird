@@ -4266,8 +4266,8 @@ IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	FbMessage* inMessage, IMessageMetadata* out)
 {
-	IStatement* tmpStatement = prepare(user_status, apiTra,
-    	length, string, dialect, IStatement::PREPARE_PREFETCH_METADATA);
+	IStatement* tmpStatement = prepare(user_status, apiTra, length, string, dialect,
+		out ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS);
 	if (!user_status->isSuccess())
 	{
 		return NULL;
