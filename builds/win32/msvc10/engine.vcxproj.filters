@@ -117,9 +117,6 @@
     <ClCompile Include="..\..\..\src\dsql\AggNodes.cpp">
       <Filter>DSQL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\dsql\BlrWriter.cpp">
-      <Filter>DSQL</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\dsql\BoolNodes.cpp">
       <Filter>DSQL</Filter>
     </ClCompile>
@@ -241,9 +238,6 @@
       <Filter>JRD files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\err.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\ErrorImpl.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\event.cpp">
@@ -453,6 +447,9 @@
     <ClCompile Include="..\..\..\src\jrd\CryptoManager.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\dsql\BlrDebugWriter.cpp">
+      <Filter>DSQL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
@@ -465,9 +462,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\AggNodes.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\dsql\BlrWriter.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\BoolNodes.h">
@@ -611,9 +605,6 @@
     <ClInclude Include="..\..\..\src\jrd\blr.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\BlrReader.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\btn.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -678,9 +669,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\err_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\ErrorImpl.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\EngineInterface.h">
@@ -981,6 +969,12 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\CryptoManager.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\include\gen\iberror.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\dsql\BlrDebugWriter.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

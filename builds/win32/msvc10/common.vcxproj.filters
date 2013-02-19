@@ -60,9 +60,6 @@
     <ClCompile Include="..\..\..\src\common\pretty.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\quad.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\common\ScanDir.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -201,6 +198,18 @@
     <ClCompile Include="..\..\..\src\common\classes\NoThrowTimeStamp.cpp">
       <Filter>classes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\classes\BlrWriter.cpp">
+      <Filter>classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common\classes\InternalMessageBuffer.cpp">
+      <Filter>classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common\IntlParametersBlock.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common\MsgMetadata.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common\xdr_proto.h">
@@ -261,12 +270,6 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\prett_proto.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\quad.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\quad_proto.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\ScanDir.h">
@@ -501,6 +504,21 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\NoThrowTimeStamp.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\classes\BlrReader.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\classes\BlrWriter.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\classes\InternalMessageBuffer.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\IntlParametersBlock.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\MsgMetadata.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

@@ -34,7 +34,7 @@
     <ClCompile Include="..\..\..\gen\jrd\scl.cpp" />
     <ClCompile Include="..\..\..\gen\utilities\gstat\dba.cpp" />
     <ClCompile Include="..\..\..\src\dsql\AggNodes.cpp" />
-    <ClCompile Include="..\..\..\src\dsql\BlrWriter.cpp" />
+    <ClCompile Include="..\..\..\src\dsql\BlrDebugWriter.cpp" />
     <ClCompile Include="..\..\..\src\dsql\BoolNodes.cpp" />
     <ClCompile Include="..\..\..\src\dsql\ddl.cpp" />
     <ClCompile Include="..\..\..\src\dsql\dsql.cpp" />
@@ -68,7 +68,6 @@
     <ClCompile Include="..\..\..\src\jrd\DataTypeUtil.cpp" />
     <ClCompile Include="..\..\..\src\jrd\DebugInterface.cpp" />
     <ClCompile Include="..\..\..\src\jrd\err.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\ErrorImpl.cpp" />
     <ClCompile Include="..\..\..\src\jrd\event.cpp" />
     <ClCompile Include="..\..\..\src\jrd\evl.cpp" />
     <ClCompile Include="..\..\..\src\jrd\exe.cpp" />
@@ -159,7 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\dsql\AggNodes.h" />
-    <ClInclude Include="..\..\..\src\dsql\BlrWriter.h" />
+    <ClInclude Include="..\..\..\src\dsql\BlrDebugWriter.h" />
     <ClInclude Include="..\..\..\src\dsql\BoolNodes.h" />
     <ClInclude Include="..\..\..\src\dsql\chars.h" />
     <ClInclude Include="..\..\..\src\dsql\DdlNodes.h" />
@@ -186,6 +185,7 @@
     <ClInclude Include="..\..\..\src\dsql\utld_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\Visitors.h" />
     <ClInclude Include="..\..\..\src\dsql\WinNodes.h" />
+    <ClInclude Include="..\..\..\src\include\gen\iberror.h" />
     <ClInclude Include="..\..\..\src\jrd\acl.h" />
     <ClInclude Include="..\..\..\src\jrd\align.h" />
     <ClInclude Include="..\..\..\src\jrd\Attachment.h" />
@@ -195,7 +195,6 @@
     <ClInclude Include="..\..\..\src\jrd\blob_filter.h" />
     <ClInclude Include="..\..\..\src\jrd\blp.h" />
     <ClInclude Include="..\..\..\src\jrd\blr.h" />
-    <ClInclude Include="..\..\..\src\jrd\BlrReader.h" />
     <ClInclude Include="..\..\..\src\jrd\btn.h" />
     <ClInclude Include="..\..\..\src\jrd\btr.h" />
     <ClInclude Include="..\..\..\src\jrd\btr_proto.h" />
@@ -218,7 +217,6 @@
     <ClInclude Include="..\..\..\src\jrd\drq.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn_ut_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\ErrorImpl.h" />
     <ClInclude Include="..\..\..\src\jrd\EngineInterface.h" />
     <ClInclude Include="..\..\..\src\jrd\err_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\event.h" />
