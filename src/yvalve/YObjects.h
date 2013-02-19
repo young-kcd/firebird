@@ -325,6 +325,7 @@ public:
 		Firebird::FbMessage* in, Firebird::IMessageMetadata* out);
 	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
 	virtual void FB_CARG free(Firebird::IStatus* status);
+	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
 
 public:
 	Firebird::Mutex cursorMutex;

@@ -151,11 +151,17 @@ public:
 	static const unsigned PREPARE_PREFETCH_LEGACY_PLAN			= 0x08;
 	static const unsigned PREPARE_PREFETCH_DETAILED_PLAN		= 0x10;
 	static const unsigned PREPARE_PREFETCH_AFFECTED_RECORDS		= 0x20;	// not used yet
+	static const unsigned PREPARE_PREFETCH_FLAGS				= 0x40;
 	static const unsigned PREPARE_PREFETCH_METADATA =
-		PREPARE_PREFETCH_TYPE | PREPARE_PREFETCH_INPUT_PARAMETERS | PREPARE_PREFETCH_OUTPUT_PARAMETERS;
+		PREPARE_PREFETCH_TYPE | PREPARE_PREFETCH_FLAGS |
+		PREPARE_PREFETCH_INPUT_PARAMETERS | PREPARE_PREFETCH_OUTPUT_PARAMETERS;
 	static const unsigned PREPARE_PREFETCH_ALL =
 		PREPARE_PREFETCH_METADATA | PREPARE_PREFETCH_LEGACY_PLAN | PREPARE_PREFETCH_DETAILED_PLAN |
 		PREPARE_PREFETCH_AFFECTED_RECORDS;
+
+	// Statement flags.
+	static const unsigned STATEMENT_HAS_CURSOR 					= 0x01;
+	static const unsigned STATEMENT_REPEAT_EXECUTE			 	= 0x02;
 
 	virtual void FB_CARG getInfo(IStatus* status,
 								 unsigned int itemsLength, const unsigned char* items,
@@ -171,8 +177,9 @@ public:
 		FbMessage* in, IMessageMetadata* out) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG free(IStatus* status) = 0;
+	virtual unsigned FB_CARG getFlags(IStatus* status) = 0;
 };
-#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 10)
+#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 11)
 
 class IRequest : public IRefCounted
 {

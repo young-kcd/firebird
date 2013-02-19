@@ -2921,14 +2921,13 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr, out_msg_length, out_msg);
 	ITransaction* newTra = tra;
 
-	unsigned type = statement->rsr_iface->getType(&status_vector);
+	unsigned flags = statement->rsr_iface->getFlags(&status_vector);
 	if (!status_vector.isSuccess())
 	{
 		status_exception::raise(status_vector.get());
 	}
 
-	if ((type == isc_info_sql_stmt_select || type == isc_info_sql_stmt_select_for_upd) &&
-		out_msg_length == 0)
+	if ((flags & IStatement::STATEMENT_HAS_CURSOR) && (out_msg_length == 0))
 	{
 		if (out_blr_length)
 		{

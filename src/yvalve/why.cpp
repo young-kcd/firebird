@@ -1961,14 +1961,13 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			 Arg::Gds(isc_dsql_cursor_open_err)).raise();
 		}
 
-		unsigned type = statement->statement->getType(&status);
+		unsigned flags = statement->statement->getFlags(&status);
 		if (!status.isSuccess())
 		{
 			return status[1];
 		}
 
-		if ((type == isc_info_sql_stmt_select || type == isc_info_sql_stmt_select_for_upd) &&
-			outMsgLength == 0)
+		if ((flags & IStatement::STATEMENT_HAS_CURSOR) && (outMsgLength == 0))
 		{
 			if (outBlrLength)
 			{
@@ -3843,6 +3842,22 @@ unsigned YStatement::getType(IStatus* status)
 		YEntry<YStatement> entry(status, this);
 
 		return entry.next()->getType(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+unsigned YStatement::getFlags(IStatus* status)
+{
+	try
+	{
+		YEntry<YStatement> entry(status, this);
+
+		return entry.next()->getFlags(status);
 	}
 	catch (const Exception& e)
 	{

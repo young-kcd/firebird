@@ -66,6 +66,7 @@ public:
 	static unsigned buildInfoFlags(unsigned itemsLength, const UCHAR* items);
 
 	unsigned getType();
+	unsigned getFlags();
 	const char* getPlan(bool detailed);
 	IMessageMetadata* getInputMetadata();
 	IMessageMetadata* getOutputMetadata();
@@ -81,7 +82,7 @@ private:
 
 private:
 	IStatement* statement;
-	Nullable<unsigned> type;
+	Nullable<unsigned> type, flags;
 	string legacyPlan, detailedPlan;
 	RefPtr<Parameters> inputParameters, outputParameters;
 };

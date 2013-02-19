@@ -390,6 +390,7 @@ enum info_db_provider
 #define isc_info_sql_batch_fetch	  24
 #define isc_info_sql_relation_alias		25
 #define isc_info_sql_explain_plan		26
+#define isc_info_sql_stmt_flags         27
 
 /*********************************/
 /* SQL information return values */

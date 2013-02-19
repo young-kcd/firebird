@@ -291,6 +291,7 @@ public:
 		FbMessage* inMsgBuffer, IMessageMetadata* outFormat);
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual void FB_CARG free(IStatus* status);
+	virtual unsigned FB_CARG getFlags(IStatus* status);
 
 public:
 	Statement(Rsr* handle, Attachment* a, unsigned aDialect)
@@ -2395,6 +2396,32 @@ unsigned Statement::getType(IStatus* status)
 		statement->raiseException();
 
 		return metadata.getType();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+unsigned Statement::getFlags(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		statement->raiseException();
+
+		return metadata.getFlags();
 	}
 	catch (const Exception& ex)
 	{

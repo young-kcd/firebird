@@ -190,6 +190,7 @@ public:
 	virtual JResultSet* FB_CARG openCursor(Firebird::IStatus* status,
 		Firebird::ITransaction* transaction, Firebird::FbMessage* in, Firebird::IMessageMetadata* out);
 	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
+	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
 
 public:
 	JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta)

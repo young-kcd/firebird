@@ -64,6 +64,9 @@ unsigned StatementMetadata::buildInfoItems(Array<UCHAR>& items, unsigned flags)
 	if (flags & IStatement::PREPARE_PREFETCH_TYPE)
 		items.add(isc_info_sql_stmt_type);
 
+	if (flags & IStatement::PREPARE_PREFETCH_FLAGS)
+		items.add(isc_info_sql_stmt_flags);
+
 	if (flags & IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS)
 	{
 		items.add(isc_info_sql_bind);
@@ -98,6 +101,10 @@ unsigned StatementMetadata::buildInfoFlags(unsigned itemsLength, const UCHAR* it
 		{
 			case isc_info_sql_stmt_type:
 				flags |= IStatement::PREPARE_PREFETCH_TYPE;
+				break;
+
+			case isc_info_sql_stmt_flags:
+				flags |= IStatement::PREPARE_PREFETCH_FLAGS;
 				break;
 
 			case isc_info_sql_get_plan:
@@ -135,6 +142,21 @@ unsigned StatementMetadata::getType()
 	}
 
 	return type.value;
+}
+
+unsigned StatementMetadata::getFlags()
+{
+	if (!flags.specified)
+	{
+		UCHAR info[] = {isc_info_sql_stmt_flags};
+		UCHAR result[16];
+
+		getAndParse(sizeof(info), info, sizeof(result), result);
+
+		fb_assert(flags.specified);
+	}
+
+	return flags.value;
 }
 
 // Get statement plan.
@@ -225,6 +247,10 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 		{
 			case isc_info_sql_stmt_type:
 				type = getNumericInfo(&buffer);
+				break;
+
+			case isc_info_sql_stmt_flags:
+				flags = getNumericInfo(&buffer);
 				break;
 
 			case isc_info_sql_get_plan:

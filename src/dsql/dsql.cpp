@@ -1713,6 +1713,7 @@ static void sql_info(thread_db* tdbb,
 	{
 		ULONG length;
 		USHORT number;
+		ULONG value;
 		const UCHAR item = *items++;
 
 		switch (item)
@@ -1728,6 +1729,26 @@ static void sql_info(thread_db* tdbb,
 				return;
 			}
 			*info++ = item;
+			break;
+
+		case isc_info_sql_stmt_flags:
+			value = IStatement::STATEMENT_REPEAT_EXECUTE;
+			switch (statement->getType())
+			{
+			case DsqlCompiledStatement::TYPE_CREATE_DB:
+			case DsqlCompiledStatement::TYPE_DDL:
+				value &= ~IStatement::STATEMENT_REPEAT_EXECUTE;
+				break;
+			case DsqlCompiledStatement::TYPE_SELECT:
+			case DsqlCompiledStatement::TYPE_SELECT_UPD:
+			case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
+				value |= IStatement::STATEMENT_HAS_CURSOR;
+				break;
+			}
+			length = put_vax_long(buffer, value);
+			info = put_item(item, length, buffer, info, end_info);
+			if (!info)
+				return;
 			break;
 
 		case isc_info_sql_stmt_type:

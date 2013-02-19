@@ -4573,6 +4573,37 @@ unsigned JStatement::getType(IStatus* userStatus)
 }
 
 
+unsigned JStatement::getFlags(IStatus* userStatus)
+{
+	unsigned ret = 0;
+
+	try
+	{
+		EngineContextHolder tdbb(userStatus, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			ret = metadata.getFlags();
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, userStatus, "JStatement::getFlags");
+			return ret;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(userStatus);
+		return ret;
+	}
+
+	successful_completion(userStatus);
+
+	return ret;
+}
+
+
 const char* JStatement::getPlan(IStatus* userStatus, FB_BOOLEAN detailed)
 {
 	const char* ret = NULL;
