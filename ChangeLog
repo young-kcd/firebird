@@ -1,3 +1,48 @@
+ 2013-02-18 15:28  asfernandes 
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Misc.
+
+ 2013-02-18 13:53  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+Make openCursor() use default output format when none is given explicitly
+
+ 2013-02-18 11:42  alexpeshkoff 
+   M examples/interfaces/select.cpp
+misc
+
+ 2013-02-18 11:07  alexpeshkoff 
+   A examples/interfaces
+   A examples/interfaces/select.cpp
+A sample of using OO API
+
+ 2013-02-18 11:06  alexpeshkoff 
+   M src/common/MsgMetadata.cpp
+   M src/include/firebird/Provider.h
+A number of fixes related with ICoerceMetadata interface - thanks to Adriano
+
+ 2013-02-18 08:27  hvlad 
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/yvalve.vcproj
+Update MSVC9 build
+
+ 2013-02-18 08:23  hvlad 
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/yvalve.vcproj
+Update MSVC8 build
+
+ 2013-02-18 07:54  alexpeshkoff 
+   M src/jrd/EngineInterface.h
+Cleanup - thanks to Adriano
+
+ 2013-02-18 02:14  asfernandes 
+   M src/remote/client/interface.cpp
+Misc.
+
  2013-02-17 23:06  asfernandes 
    M src/auth/SecureRemotePassword/Message.h
    M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
