@@ -212,9 +212,12 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
-	virtual ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id) = 0;
-	virtual IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blrLength, const unsigned char* blr) = 0;
+	virtual ITransaction* FB_CARG startTransaction(IStatus* status,
+		unsigned int tpbLength, const unsigned char* tpb) = 0;
+	virtual ITransaction* FB_CARG reconnectTransaction(IStatus* status,
+		unsigned int length, const unsigned char* id) = 0;
+	virtual IRequest* FB_CARG compileRequest(IStatus* status,
+		unsigned int blrLength, const unsigned char* blr) = 0;
 	virtual void FB_CARG transactRequest(IStatus* status, ITransaction* transaction,
 								 unsigned int blrLength, const unsigned char* blr,
 								 unsigned int inMsgLength, const unsigned char* inMsg,
@@ -236,9 +239,11 @@ public:
 	virtual IStatement* FB_CARG prepare(IStatus* status, ITransaction* tra,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, unsigned int flags) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in, FbMessage *out) = 0;
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
+		FbMessage* in, FbMessage* out) = 0;
 	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage *in, IMessageMetadata* out) = 0;
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
+		FbMessage* in, IMessageMetadata* out) = 0;
 	virtual IEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;
