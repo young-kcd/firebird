@@ -53,6 +53,7 @@ public:
 	{
 		fb_assert(len % sizeof(C) == 0);
 #ifdef RISC_ALIGNMENT
+		fb_assert(sizeof(C) == 2 || sizeof(C) == 4 || sizeof(C) == 8 || sizeof(C) == 16);
 		if ((IPTR) userBuffer & (sizeof(C) - 1))
 		{
 			bPointer = localBuffer.getBuffer(len / sizeof(C) + (bSize % sizeof(C) ? 1 : 0));
@@ -95,6 +96,7 @@ public:
 	{
 		fb_assert(len % sizeof(C) == 0);
 #ifdef RISC_ALIGNMENT
+		fb_assert(sizeof(C) == 2 || sizeof(C) == 4 || sizeof(C) == 8 || sizeof(C) == 16);
 		if ((IPTR) buf & (sizeof(C) - 1))
 		{
 			C* tempPointer = localBuffer.getBuffer(len / sizeof(C) + (len % sizeof(C) ? 1 : 0));
