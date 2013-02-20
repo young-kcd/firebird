@@ -1,3 +1,31 @@
+ 2013-02-19 12:03  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+Do not prefetch unneeded information in IAttachment::openCursor()
+
+ 2013-02-19 11:50  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc10/yvalve.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj.filters
+Update MSVC10 build
+
+ 2013-02-19 11:20  alexpeshkoff 
+   M src/common/StatementMetadata.cpp
+   M src/common/StatementMetadata.h
+   M src/dsql/dsql.cpp
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/inf_pub.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Add IStatement::getFlags() to help user make a solution what to do with SQL statement
+
  2013-02-18 15:28  asfernandes 
    M src/remote/server/server.cpp
    M src/yvalve/YObjects.h
