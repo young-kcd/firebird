@@ -88,7 +88,7 @@ public:
 };
 #define FB_TRANSACTION_VERSION (FB_REFCOUNTED_VERSION + 10)
 
-class ICoerceMetadata;			// Forward
+class IMetadataBuilder;			// Forward
 
 class IMessageMetadata : public IRefCounted
 {
@@ -107,7 +107,7 @@ public:
 	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index) const = 0;
 
-	virtual ICoerceMetadata* FB_CARG coerce(IStatus* status) const = 0;
+	virtual IMetadataBuilder* FB_CARG getBuilder(IStatus* status) const = 0;
 	virtual unsigned FB_CARG getMessageLength(IStatus* status) const = 0;
 };
 #define FB_MESSAGE_METADATA_VERSION (FB_REFCOUNTED_VERSION + 15)
@@ -118,7 +118,7 @@ struct FbMessage
 	IMessageMetadata* metadata;
 };
 
-class ICoerceMetadata : public IRefCounted
+class IMetadataBuilder : public IRefCounted
 {
 public:
 	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type) = 0;
@@ -128,7 +128,7 @@ public:
 
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 };
-#define FB_COERCE_METADATA_VERSION (FB_REFCOUNTED_VERSION + 5)
+#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 5)
 
 class IResultSet : public IRefCounted
 {

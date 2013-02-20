@@ -34,6 +34,7 @@
 
 #include "../yvalve/MasterImplementation.h"
 #include "../common/classes/init.h"
+#include "../common/MsgMetadata.h"
 #include "../common/StatusHolder.h"
 #include "../yvalve/PluginManager.h"
 #include "../common/classes/GenericMap.h"
@@ -244,6 +245,21 @@ int FB_CARG MasterImplementation::same(IVersioned* first, IVersioned* second)
 	CVirtualClass* i1 = (CVirtualClass*) first;
 	CVirtualClass* i2 = (CVirtualClass*) second;
 	return i1->vTab == i2->vTab ? 1 : 0;
+}
+
+IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsigned fieldCount)
+{
+	MsgMetadata* msgMetadata = new MsgMetadata;
+	msgMetadata->items.grow(fieldCount);
+
+	for (ObjectsArray<MsgMetadata::Item>::iterator i = msgMetadata->items.begin();
+		 i != msgMetadata->items.end();
+		 ++i)
+	{
+		i->finished = true;
+	}
+
+	return msgMetadata->getBuilder(status);
 }
 
 } // namespace Why

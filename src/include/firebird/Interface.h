@@ -92,6 +92,7 @@ class ITimerControl;
 class IAttachment;
 class ITransaction;
 class IDtc;
+class IMetadataBuilder;
 
 struct UpgradeInfo
 {
@@ -116,8 +117,10 @@ public:
 
 	// This function is required to compare interfaces based on vtables of them
 	virtual int FB_CARG same(IVersioned* first, IVersioned* second) = 0;
+
+	virtual IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount) = 0;
 };
-#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 10)
+#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 11)
 
 } // namespace Firebird
 

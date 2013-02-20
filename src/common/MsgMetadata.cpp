@@ -30,10 +30,10 @@ using namespace Firebird;
 
 namespace {
 
-class CoerceMetadata : public RefCntIface<ICoerceMetadata, FB_COERCE_METADATA_VERSION>
+class MetadataBuilder : public RefCntIface<IMetadataBuilder, FB_METADATA_BUILDER_VERSION>
 {
 public:
-	CoerceMetadata(const MsgMetadata* from)
+	MetadataBuilder(const MsgMetadata* from)
 		: msgMetadata(new MsgMetadata)
 	{
 		msgMetadata->items = from->items;
@@ -50,7 +50,7 @@ public:
 		return 0;
 	}
 
-	// ICoerceMetadata implementation
+	// IMetadataBuilder implementation
 	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type)
 	{
 		MutexLockGuard g(mtx, FB_FUNCTION);
@@ -108,7 +108,7 @@ private:
 		if (!msgMetadata)
 		{
 			status->set((Arg::Gds(isc_random) <<
-				(string("Coerce interface is already inactive: ICoerceMetadata::") + functionName)).value());
+				(string("MetadataBuilder interface is already inactive: IMetadataBuilder::") + functionName)).value());
 			return true;
 		}
 
@@ -125,7 +125,7 @@ private:
 		if (index >= msgMetadata->items.getCount())
 		{
 			status->set((Arg::Gds(isc_invalid_index_val) <<
-				Arg::Num(index) << (string("ICoerceMetadata::") + functionName)).value());
+				Arg::Num(index) << (string("IMetadataBuilder::") + functionName)).value());
 			return true;
 		}
 
@@ -157,9 +157,9 @@ void MsgMetadata::makeOffsets()
 }
 
 
-ICoerceMetadata* MsgMetadata::coerce(IStatus* status) const
+IMetadataBuilder* MsgMetadata::getBuilder(IStatus* status) const
 {
-	ICoerceMetadata* rc = new CoerceMetadata(this);
+	IMetadataBuilder* rc = new MetadataBuilder(this);
 	rc->addRef();
 	return rc;
 }

@@ -219,7 +219,7 @@ public:
 		return 0;
 	}
 
-	virtual ICoerceMetadata* FB_CARG coerce(IStatus* status) const;
+	virtual IMetadataBuilder* FB_CARG getBuilder(IStatus* status) const;
 
 	virtual unsigned FB_CARG getMessageLength(IStatus* /*status*/) const
 	{

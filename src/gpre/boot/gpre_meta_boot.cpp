@@ -749,6 +749,12 @@ public:
 	{
 		return 0;
 	}
+
+	virtual IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount)
+	{
+		fb_assert(false);
+		return NULL;
+	}
 };
 
 

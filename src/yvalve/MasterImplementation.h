@@ -66,6 +66,7 @@ namespace Why
 			Firebird::ITransaction* transaction);
 		Dtc* FB_CARG getDtc();
 		int FB_CARG same(IVersioned* first, IVersioned* second);
+		Firebird::IMetadataBuilder* getMetadataBuilder(Firebird::IStatus* status, unsigned fieldCount);
 	};
 
 	void shutdownTimers();
