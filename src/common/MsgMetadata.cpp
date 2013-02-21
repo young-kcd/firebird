@@ -172,7 +172,7 @@ private:
 
 		if (index >= msgMetadata->items.getCount())
 		{
-			(Arg::Gds(isc_invalid_index_val) << Arg::Num(index) << (string("IMetadataBuilder::") + 
+			(Arg::Gds(isc_invalid_index_val) << Arg::Num(index) << (string("IMetadataBuilder::") +
 				functionName)).raise();
 		}
 	}

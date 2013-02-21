@@ -1873,7 +1873,7 @@ IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transa
 		IMessageMetadata* out)
 {
 	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
-		out ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS);
+		(out ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
 	if (!status->isSuccess())
 	{
 		return NULL;
