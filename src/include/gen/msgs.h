@@ -756,6 +756,7 @@ Data source : @4"},		/* eds_statement */
 	{335545049, "Invalid resultset interface"},		/* bad_result_set */
 	{335545050, "Message length passed from user application does not match set of columns"},		/* wrong_message_length */
 	{335545051, "Resultset is missing output format information"},		/* no_output_format */
+	{335545052, "Message metadata not ready - item @1 is not finished"},		/* item_finish */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

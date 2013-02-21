@@ -25,6 +25,7 @@
 #include "firebird.h"
 #include "../common/MsgMetadata.h"
 #include "../common/utils_proto.h"
+#include "../jrd/align.h"
 
 using namespace Firebird;
 
@@ -53,83 +54,127 @@ public:
 	// IMetadataBuilder implementation
 	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type)
 	{
-		MutexLockGuard g(mtx, FB_FUNCTION);
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
 
-		if (!indexError(status, index, "setType"))
+			indexError(index, "setType");
 			msgMetadata->items[index].type = type;
+			if (!msgMetadata->items[index].length)
+			{
+				unsigned dtype;
+				fb_utils::sqlTypeToDsc(0, type, 0, &dtype, NULL, NULL, NULL);
+				if (dtype < DTYPE_TYPE_MAX)
+					msgMetadata->items[index].length = type_lengths[dtype];
+			}
+
+			// Setting type & length is enough for an item to be ready for use
+			if (msgMetadata->items[index].length)
+				msgMetadata->items[index].finished = true;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 	}
 
 	virtual void FB_CARG setSubType(IStatus* status, unsigned index, unsigned subType)
 	{
-		MutexLockGuard g(mtx, FB_FUNCTION);
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
 
-		if (!indexError(status, index, "setSubType"))
+			indexError(index, "setSubType");
 			msgMetadata->items[index].subType = subType;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 	}
 
 	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length)
 	{
-		MutexLockGuard g(mtx, FB_FUNCTION);
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
 
-		if (!indexError(status, index, "setLength"))
+			indexError(index, "setLength");
 			msgMetadata->items[index].length = length;
+
+			// Setting type & length is enough for an item to be ready for use
+			if (msgMetadata->items[index].type)
+				msgMetadata->items[index].finished = true;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 	}
 
 	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale)
 	{
-		MutexLockGuard g(mtx, FB_FUNCTION);
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
 
-		if (!indexError(status, index, "setScale"))
+			indexError(index, "setScale");
 			msgMetadata->items[index].scale = scale;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 	}
 
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status)
 	{
-		MutexLockGuard g(mtx, FB_FUNCTION);
-
-		if (metadataError(status, "getMetadata"))
+		try
 		{
-			return NULL;
-		}
+			MutexLockGuard g(mtx, FB_FUNCTION);
 
-		msgMetadata->makeOffsets();
-		IMessageMetadata* rc = msgMetadata;
-		rc->addRef();
-		msgMetadata = NULL;
-		return rc;
+			metadataError("getMetadata");
+
+			unsigned i = msgMetadata->makeOffsets();
+			if (i != ~0u)
+			{
+				(Arg::Gds(isc_item_finish) << Arg::Num(i)).raise();
+			}
+
+			IMessageMetadata* rc = msgMetadata;
+			rc->addRef();
+			msgMetadata = NULL;
+			return rc;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+		return NULL;
 	}
 
 private:
 	RefPtr<MsgMetadata> msgMetadata;
 	Mutex mtx;
 
-	bool metadataError(IStatus* status, const char* functionName)
+	void metadataError(const char* functionName)
 	{
 		if (!msgMetadata)
 		{
-			status->set((Arg::Gds(isc_random) <<
-				(string("MetadataBuilder interface is already inactive: IMetadataBuilder::") + functionName)).value());
-			return true;
+			(Arg::Gds(isc_random) << (string("MetadataBuilder interface is already inactive: "
+				"IMetadataBuilder::") + functionName)).raise();
 		}
-
-		return false;
 	}
 
-	bool indexError(IStatus* status, unsigned index, const char* functionName)
+	void indexError(unsigned index, const char* functionName)
 	{
-		if (metadataError(status, functionName))
-		{
-			return true;
-		}
+		metadataError(functionName);
 
 		if (index >= msgMetadata->items.getCount())
 		{
-			status->set((Arg::Gds(isc_invalid_index_val) <<
-				Arg::Num(index) << (string("IMetadataBuilder::") + functionName)).value());
-			return true;
+			(Arg::Gds(isc_invalid_index_val) << Arg::Num(index) << (string("IMetadataBuilder::") + 
+				functionName)).raise();
 		}
-
-		return false;
 	}
 };
 
@@ -139,7 +184,8 @@ private:
 namespace Firebird {
 
 
-void MsgMetadata::makeOffsets()
+// returns ~0 on success or index of not finished item
+unsigned MsgMetadata::makeOffsets()
 {
 	length = 0;
 
@@ -149,11 +195,13 @@ void MsgMetadata::makeOffsets()
 		if (!param->finished)
 		{
 			length = 0;
-			return;
+			return n;
 		}
 		length = fb_utils::sqlTypeToDsc(length, param->type, param->length,
 			NULL /*dtype*/, NULL /*length*/, &param->offset, &param->nullInd);
 	}
+
+	return ~0;
 }
 
 

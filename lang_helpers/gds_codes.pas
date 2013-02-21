@@ -764,6 +764,7 @@ const
 	gds_bad_result_set                   = 335545049;
 	gds_wrong_message_length             = 335545050;
 	gds_no_output_format                 = 335545051;
+	gds_item_finish                      = 335545052;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

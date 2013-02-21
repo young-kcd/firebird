@@ -227,7 +227,7 @@ public:
 	}
 
 public:
-	void makeOffsets();
+	unsigned makeOffsets();
 
 private:
 	void raiseIndexError(IStatus* status, unsigned index, const char* method) const

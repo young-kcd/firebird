@@ -839,6 +839,7 @@ Data source : @4', NULL, NULL)
 ('bad_result_set', NULL, 'why.cpp', NULL, 0, 729, NULL, 'Invalid resultset interface', NULL, NULL);
 ('wrong_message_length', NULL, 'why.cpp', NULL, 0, 730, NULL, 'Message length passed from user application does not match set of columns', NULL, NULL);
 ('no_output_format', NULL, 'why.cpp', NULL, 0, 731, NULL, 'Resultset is missing output format information', NULL, NULL);
+('item_finish', NULL, 'MsgMetadata.cpp', NULL, 0, 732, NULL, 'Message metadata not ready - item @1 is not finished', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

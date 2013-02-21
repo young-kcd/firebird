@@ -752,6 +752,7 @@ static const struct {
 	{335545049, "26000"}, // 729 bad_result_set
 	{335545050, "07000"}, // 730 wrong_message_length
 	{335545051, "07000"}, // 731 no_output_format
+	{335545052, "HY021"}, // 732 item_finish
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

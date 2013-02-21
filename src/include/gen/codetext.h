@@ -753,6 +753,7 @@ static const struct {
 	{"bad_result_set", 335545049},
 	{"wrong_message_length", 335545050},
 	{"no_output_format", 335545051},
+	{"item_finish", 335545052},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

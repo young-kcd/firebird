@@ -59,7 +59,7 @@ int main()
 	IStatement* stmt = NULL;
 	IResultSet* curs = NULL;
 	IMessageMetadata* meta = NULL;
-	ICoerceMetadata* coerce = NULL;
+	IMetadataBuilder* builder = NULL;
 
 	try
 	{
@@ -83,8 +83,8 @@ int main()
 		// get list of columns
 		meta = stmt->getOutputMetadata(st);
 		check(st, "getOutputMetadata");
-		coerce = meta->coerce(st);
-		check(st, "coerce");
+		builder = meta->getBuilder(st);
+		check(st, "getBuilder");
 		unsigned cols = meta->getCount(st);
 		check(st, "getCount");
 
@@ -105,7 +105,7 @@ int main()
 
 			if (t == SQL_VARYING || t == SQL_TEXT)
 			{
-				coerce->setType(st, j, SQL_TEXT);
+				builder->setType(st, j, SQL_TEXT);
 				check(st, "setType");
 				fields[j].name = meta->getField(st, j);
 				check(st, "getField");
@@ -113,7 +113,7 @@ int main()
 		}
 
 		meta->release();
-		meta = coerce->getMetadata(st);
+		meta = builder->getMetadata(st);
 		check(st, "getMetadata");
 
 		// now we may also get offsets info
@@ -128,8 +128,8 @@ int main()
 			}
 		}
 
-		coerce->release();
-		coerce = NULL;
+		builder->release();
+		builder = NULL;
 
 		// open cursor
 		curs = stmt->openCursor(st, tra, NULL, meta);
@@ -187,8 +187,8 @@ int main()
 	// release interfaces after error caught
 	if (meta)
 		meta->release();
-	if (coerce)
-		coerce->release();
+	if (builder)
+		builder->release();
 	if (curs)
 		curs->release();
 	if (stmt)

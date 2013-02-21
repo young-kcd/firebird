@@ -1514,6 +1514,8 @@ C --
       PARAMETER (GDS__wrong_message_length             = 335545050)
       INTEGER*4 GDS__no_output_format                
       PARAMETER (GDS__no_output_format                 = 335545051)
+      INTEGER*4 GDS__item_finish                     
+      PARAMETER (GDS__item_finish                      = 335545052)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
