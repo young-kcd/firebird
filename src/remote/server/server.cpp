@@ -2927,7 +2927,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		status_exception::raise(status_vector.get());
 	}
 
-	if ((flags & IStatement::STATEMENT_HAS_CURSOR) && (out_msg_length == 0))
+	if ((flags & IStatement::FLAG_HAS_CURSOR) && (out_msg_length == 0))
 	{
 		if (out_blr_length)
 		{

@@ -1732,17 +1732,17 @@ static void sql_info(thread_db* tdbb,
 			break;
 
 		case isc_info_sql_stmt_flags:
-			value = IStatement::STATEMENT_REPEAT_EXECUTE;
+			value = IStatement::FLAG_REPEAT_EXECUTE;
 			switch (statement->getType())
 			{
 			case DsqlCompiledStatement::TYPE_CREATE_DB:
 			case DsqlCompiledStatement::TYPE_DDL:
-				value &= ~IStatement::STATEMENT_REPEAT_EXECUTE;
+				value &= ~IStatement::FLAG_REPEAT_EXECUTE;
 				break;
 			case DsqlCompiledStatement::TYPE_SELECT:
 			case DsqlCompiledStatement::TYPE_SELECT_UPD:
 			case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
-				value |= IStatement::STATEMENT_HAS_CURSOR;
+				value |= IStatement::FLAG_HAS_CURSOR;
 				break;
 			}
 			length = put_vax_long(buffer, value);

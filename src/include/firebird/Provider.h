@@ -160,8 +160,8 @@ public:
 		PREPARE_PREFETCH_AFFECTED_RECORDS;
 
 	// Statement flags.
-	static const unsigned STATEMENT_HAS_CURSOR 					= 0x01;
-	static const unsigned STATEMENT_REPEAT_EXECUTE			 	= 0x02;
+	static const unsigned FLAG_HAS_CURSOR	 					= 0x01;
+	static const unsigned FLAG_REPEAT_EXECUTE				 	= 0x02;
 
 	virtual void FB_CARG getInfo(IStatus* status,
 								 unsigned int itemsLength, const unsigned char* items,

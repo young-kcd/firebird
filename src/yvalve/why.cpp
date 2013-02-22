@@ -1967,7 +1967,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			return status[1];
 		}
 
-		if ((flags & IStatement::STATEMENT_HAS_CURSOR) && (outMsgLength == 0))
+		if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
 		{
 			if (outBlrLength)
 			{
