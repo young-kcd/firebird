@@ -252,13 +252,6 @@ IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsi
 	MsgMetadata* msgMetadata = new MsgMetadata;
 	msgMetadata->items.grow(fieldCount);
 
-	for (ObjectsArray<MsgMetadata::Item>::iterator i = msgMetadata->items.begin();
-		 i != msgMetadata->items.end();
-		 ++i)
-	{
-		i->finished = true;
-	}
-
 	return msgMetadata->getBuilder(status);
 }
 
