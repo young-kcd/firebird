@@ -1,3 +1,14 @@
+ 2013-02-22 07:24  alexpeshkoff 
+   M src/dsql/dsql.cpp
+   M src/include/firebird/Provider.h
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Better names for statement's flags
+
+ 2013-02-22 07:01  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+More on IMetadataBuilder
+
  2013-02-21 23:25  asfernandes 
    M src/common/MsgMetadata.cpp
    M src/jrd/jrd.cpp
