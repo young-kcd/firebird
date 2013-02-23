@@ -1977,7 +1977,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			else	// delay execution till first fetch (with output format)
 			{
 				statement->parMetadata = inMsgBuffer.metadata;
-				statement->parameters.assign(inMsgBuffer.buffer, inMsgLength);
+				statement->parameters.assign(static_cast<UCHAR*>(inMsgBuffer.buffer), inMsgLength);
 				statement->transaction = transaction;
 				return 0;
 			}
@@ -4068,7 +4068,7 @@ void YStatement::setCursorName(IStatus* status, const char* name)
 	}
 }
 
-FB_BOOLEAN YResultSet::fetch(IStatus* status, unsigned char* buffer)
+FB_BOOLEAN YResultSet::fetch(IStatus* status, void* buffer)
 {
 	try
 	{

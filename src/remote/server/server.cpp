@@ -2937,7 +2937,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		else	// delay execution till first fetch (with output format)
 		{
 			statement->rsr_par_metadata = iMsgBuffer.metadata;
-			statement->rsr_parameters.assign(iMsgBuffer.buffer, in_msg_length);
+			statement->rsr_parameters.assign(static_cast<UCHAR*>(iMsgBuffer.buffer), in_msg_length);
 			statement->rsr_transaction = tra;
 			return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
 				0, &status_vector, defer);

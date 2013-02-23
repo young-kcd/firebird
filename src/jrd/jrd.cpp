@@ -4340,7 +4340,7 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-FB_BOOLEAN JResultSet::fetch(IStatus* user_status, unsigned char* buffer)
+FB_BOOLEAN JResultSet::fetch(IStatus* user_status, void* buffer)
 {
 	bool hasMessage = false;
 

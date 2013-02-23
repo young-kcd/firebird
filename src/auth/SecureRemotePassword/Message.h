@@ -133,11 +133,11 @@ public:
 		Firebird::LocalStatus st;
 		unsigned tmp = m.metadata->getOffset(&st, ind);
 		Message::check(&st);
-		ptr = (T*)(m.buffer + tmp);
+		ptr = (T*) (static_cast<UCHAR*>(m.buffer) + tmp);
 
 		tmp = m.metadata->getNullOffset(&st, ind);
 		Message::check(&st);
-		null.linkMessage((short*)(m.buffer + tmp));
+		null.linkMessage((short*) (static_cast<UCHAR*>(m.buffer) + tmp));
 	}
 
 	operator T()

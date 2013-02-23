@@ -38,10 +38,10 @@ namespace Firebird {
 }
 
 void DSQL_execute(Jrd::thread_db*, Jrd::jrd_tra**, Jrd::dsql_req*, bool,
-				  Firebird::IMessageMetadata*, const UCHAR*, Firebird::IMessageMetadata*, UCHAR*);
+				  Firebird::IMessageMetadata*, const void*, Firebird::IMessageMetadata*, void*);
 void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
-							ULONG, const TEXT*, USHORT, Firebird::IMessageMetadata*, const UCHAR*,
-							Firebird::IMessageMetadata*, UCHAR*, bool);
+							ULONG, const TEXT*, USHORT, Firebird::IMessageMetadata*, const void*,
+							Firebird::IMessageMetadata*, void*, bool);
 void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
 Jrd::dsql_req* DSQL_prepare(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra*, ULONG, const TEXT*,
 							USHORT, Firebird::Array<UCHAR>*, Firebird::Array<UCHAR>*, bool);

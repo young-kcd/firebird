@@ -237,7 +237,7 @@ class ResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSE
 public:
 	// IResultSet implementation
 	virtual int FB_CARG release();
-	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, unsigned char* message);
+	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, void* message);
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status);
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
 	virtual void FB_CARG close(IStatus* status);
@@ -1583,15 +1583,15 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 
 		BlrFromMessage inBlr(inMsgBuffer, dialect);
 		unsigned in_blr_length = inBlr.getLength();
-		const unsigned char* in_blr = inBlr.getBytes();
+		const UCHAR* in_blr = inBlr.getBytes();
 		//unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
-		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+		UCHAR* in_msg = inMsgBuffer ? static_cast<UCHAR*>(inMsgBuffer->buffer) : NULL;
 
 		BlrFromMessage outBlr(outMsgBuffer, dialect);
 		unsigned out_blr_length = outBlr.getLength();
-		const unsigned char* out_blr = outBlr.getBytes();
+		const UCHAR* out_blr = outBlr.getBytes();
 		unsigned out_msg_length = outBlr.getMsgLength();
-		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
+		UCHAR* out_msg = outMsgBuffer ? static_cast<UCHAR*>(outMsgBuffer->buffer) : NULL;
 
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
@@ -1760,8 +1760,8 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 
 		BlrFromMessage inBlr(inMsgBuffer, dialect);
 		unsigned in_blr_length = inBlr.getLength();
-		const unsigned char* in_blr = inBlr.getBytes();
-		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+		const UCHAR* in_blr = inBlr.getBytes();
+		UCHAR* in_msg = inMsgBuffer ? static_cast<UCHAR*>(inMsgBuffer->buffer) : NULL;
 
 		RefPtr<IMessageMetadata> defaultOutputFormat;
 		if (!outFormat)
@@ -1916,15 +1916,15 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 
 		BlrFromMessage inBlr(inMsgBuffer, dialect);
 		unsigned in_blr_length = inBlr.getLength();
-		const unsigned char* in_blr = inBlr.getBytes();
+		const UCHAR* in_blr = inBlr.getBytes();
 		unsigned in_msg_length = inBlr.getMsgLength();
-		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+		UCHAR* in_msg = inMsgBuffer ? static_cast<UCHAR*>(inMsgBuffer->buffer) : NULL;
 
 		BlrFromMessage outBlr(outMsgBuffer, dialect);
 		unsigned out_blr_length = outBlr.getLength();
-		const unsigned char* out_blr = outBlr.getBytes();
+		const UCHAR* out_blr = outBlr.getBytes();
 		unsigned out_msg_length = outBlr.getMsgLength();
-		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
+		UCHAR* out_msg = outMsgBuffer ? static_cast<UCHAR*>(outMsgBuffer->buffer) : NULL;
 
 		Rtr* transaction = NULL;
 		Transaction* rt = remoteTransactionInterface(apiTra);
@@ -2536,7 +2536,7 @@ ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
 }
 
 
-FB_BOOLEAN ResultSet::fetch(IStatus* status, unsigned char* buffer)
+FB_BOOLEAN ResultSet::fetch(IStatus* status, void* buffer)
 {
 /**************************************
  *
@@ -2568,9 +2568,9 @@ FB_BOOLEAN ResultSet::fetch(IStatus* status, unsigned char* buffer)
 
 		BlrFromMessage outBlr(outputFormat, stmt->getDialect());
 		unsigned blr_length = outBlr.getLength();
-		const unsigned char* blr = outBlr.getBytes();
+		const UCHAR* blr = outBlr.getBytes();
 		unsigned msg_length = outBlr.getMsgLength();
-		unsigned char* msg = buffer;
+		UCHAR* msg = static_cast<UCHAR*>(buffer);
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 

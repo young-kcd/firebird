@@ -143,7 +143,7 @@ class JResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTS
 public:
 	// IResultSet implementation
 	virtual int FB_CARG release();
-	virtual FB_BOOLEAN FB_CARG fetch(Firebird::IStatus* status, unsigned char* message);
+	virtual FB_BOOLEAN FB_CARG fetch(Firebird::IStatus* status, void* message);
 	virtual FB_BOOLEAN FB_CARG isEof(Firebird::IStatus* status);
 	virtual Firebird::IMessageMetadata* FB_CARG getMetadata(Firebird::IStatus* status);
 	virtual void FB_CARG close(Firebird::IStatus* status);

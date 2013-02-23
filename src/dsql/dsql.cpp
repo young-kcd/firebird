@@ -80,8 +80,8 @@ using namespace Firebird;
 static void		close_cursor(thread_db*, dsql_req*);
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
-static void		map_in_out(dsql_req*, bool, const dsql_msg*, IMessageMetadata*, UCHAR*,
-	const UCHAR* = 0);
+static void		map_in_out(dsql_req*, bool, const dsql_msg*, IMessageMetadata*, void*,
+	const void* = NULL);
 static USHORT	parse_metadata(dsql_req*, IMessageMetadata*, const Array<dsql_par*>&);
 static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
 static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
@@ -133,8 +133,8 @@ void DSQL_execute(thread_db* tdbb,
 				  jrd_tra** tra_handle,
 				  dsql_req* request,
 				  bool flOpenCursor,
-				  IMessageMetadata* in_meta, const UCHAR* in_msg,
-				  IMessageMetadata* out_meta, UCHAR* out_msg)
+				  IMessageMetadata* in_meta, const void* in_msg,
+				  IMessageMetadata* out_meta, void* out_msg)
 {
 	SET_TDBB(tdbb);
 
@@ -207,7 +207,7 @@ void DSQL_execute(thread_db* tdbb,
 
 
 // Fetch next record from a dynamic SQL cursor.
-bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
+bool DsqlDmlRequest::fetch(thread_db* tdbb, void* msgBuffer)
 {
 	SET_TDBB(tdbb);
 
@@ -558,8 +558,8 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 // Common part of prepare and execute a statement.
 void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra** tra_handle,
 	ULONG length, const TEXT* string, USHORT dialect,
-	Firebird::IMessageMetadata* in_meta, const UCHAR* in_msg,
-	Firebird::IMessageMetadata* out_meta, UCHAR* out_msg,
+	Firebird::IMessageMetadata* in_meta, const void* in_msg,
+	Firebird::IMessageMetadata* out_meta, void* out_msg,
 	bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
@@ -731,8 +731,8 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 // Execute a dynamic SQL statement.
 void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	Firebird::IMessageMetadata* inMetadata, const void* inMsg,
+	Firebird::IMessageMetadata* outMetadata, void* outMsg,
 	bool singleton)
 {
 	// If there is no data required, just start the request
@@ -896,8 +896,8 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 // Execute a dynamic SQL statement.
 void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	Firebird::IMessageMetadata* inMetadata, const void* inMsg,
+	Firebird::IMessageMetadata* outMetadata, void* outMsg,
 	bool singleton)
 {
 	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
@@ -928,8 +928,8 @@ void DsqlTransactionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scra
 
 // Execute a dynamic SQL statement.
 void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	Firebird::IMessageMetadata* inMetadata, const void* inMsg,
+	Firebird::IMessageMetadata* outMetadata, void* outMsg,
 	bool singleton)
 {
 	node->execute(tdbb, this, traHandle);
@@ -1025,7 +1025,7 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 
  **/
 static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* message,
-	IMessageMetadata* meta, UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf)
+	IMessageMetadata* meta, void* dsql_msg_buf, const void* in_dsql_msg_buf)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -1079,13 +1079,14 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 
 				if (toExternal)
 				{
-					flag = reinterpret_cast<SSHORT*>(dsql_msg_buf + null_offset);
+					flag = reinterpret_cast<SSHORT*>(static_cast<UCHAR*>(dsql_msg_buf) + null_offset);
 					*flag = *reinterpret_cast<const SSHORT*>(nullDesc.dsc_address);
 				}
 				else
 				{
 					flag = reinterpret_cast<SSHORT*>(nullDesc.dsc_address);
-					*flag = *reinterpret_cast<const SSHORT*>(in_dsql_msg_buf + null_offset);
+					*flag = *reinterpret_cast<const SSHORT*>(
+						static_cast<const UCHAR*>(in_dsql_msg_buf) + null_offset);
 				}
 			}
 
@@ -1094,7 +1095,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 
 			if (toExternal)
 			{
-				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
+				desc.dsc_address = static_cast<UCHAR*>(dsql_msg_buf) + (IPTR) desc.dsc_address;
 
 				if (!flag || *flag >= 0)
 					MOVD_move(tdbb, &parDesc, &desc);
@@ -1106,7 +1107,8 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				if (!(parDesc.dsc_flags & DSC_null))
 				{
 					// Safe cast because desc is used as source only.
-					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
+					desc.dsc_address = static_cast<UCHAR*>(const_cast<void*>(in_dsql_msg_buf)) +
+						(IPTR) desc.dsc_address;
 					MOVD_move(tdbb, &desc, &parDesc);
 				}
 			}
@@ -1553,7 +1555,7 @@ void dsql_req::setCursor(thread_db* /*tdbb*/, const TEXT* /*name*/)
 		Arg::Gds(isc_req_sync));
 }
 
-bool dsql_req::fetch(thread_db* /*tdbb*/, UCHAR* /*msgBuffer*/)
+bool dsql_req::fetch(thread_db* /*tdbb*/, void* /*msgBuffer*/)
 {
 	status_exception::raise(
 		Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<

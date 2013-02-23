@@ -114,7 +114,7 @@ public:
 
 struct FbMessage
 {
-	unsigned char* buffer;
+	void* buffer;
 	IMessageMetadata* metadata;
 };
 
@@ -133,7 +133,7 @@ public:
 class IResultSet : public IRefCounted
 {
 public:
-	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, unsigned char* message) = 0;
+	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, void* message) = 0;
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status) = 0;
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 	virtual void FB_CARG close(IStatus* status) = 0;
