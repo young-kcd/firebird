@@ -544,13 +544,13 @@ public:
 		ntrace_result_t* traceResult) = 0;
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const void* inMsg,
-		Firebird::IMessageMetadata* outMetadata, void* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton) = 0;
 
 	virtual void setCursor(thread_db* tdbb, const TEXT* name);
 
-	virtual bool fetch(thread_db* tdbb, void* buffer);
+	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
 
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
@@ -603,13 +603,13 @@ public:
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const void* inMsg,
-		Firebird::IMessageMetadata* outMetadata, void* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton);
 
 	virtual void setCursor(thread_db* tdbb, const TEXT* name);
 
-	virtual bool fetch(thread_db* tdbb, void* buffer);
+	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
 
 private:
 	NestConst<StmtNode> node;
@@ -629,8 +629,8 @@ public:
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const void* inMsg,
-		Firebird::IMessageMetadata* outMetadata, void* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton);
 
 private:
@@ -652,8 +652,8 @@ public:
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const void* inMsg,
-		Firebird::IMessageMetadata* outMetadata, void* outMsg,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton);
 
 private:

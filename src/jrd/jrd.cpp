@@ -4168,8 +4168,10 @@ JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 		try
 		{
 			DSQL_execute(tdbb, &tra, getHandle(), false,
-				(inMessage ? inMessage->metadata : NULL), (inMessage ? inMessage->buffer : NULL),
-				(outMessage ? outMessage->metadata : NULL), (outMessage ? outMessage->buffer : NULL));
+				(inMessage ? inMessage->metadata : NULL),
+				(inMessage ? static_cast<UCHAR*>(inMessage->buffer) : NULL),
+				(outMessage ? outMessage->metadata : NULL),
+				(outMessage ? static_cast<UCHAR*>(outMessage->buffer) : NULL));
 
 			if (jt && !tra)
 			{
@@ -4238,7 +4240,7 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 			}
 
 			DSQL_execute(tdbb, &tra, getHandle(), true,
-				(in ? in->metadata : NULL), (in ? in->buffer : NULL),
+				(in ? in->metadata : NULL), (in ? static_cast<UCHAR*>(in->buffer) : NULL),
 				out, NULL);
 
 			rs = new JResultSet(this);
@@ -4299,8 +4301,10 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 		try
 		{
 			DSQL_execute_immediate(tdbb, getHandle(), &tra, length, string, dialect,
-				(inMessage ? inMessage->metadata : NULL), (inMessage ? inMessage->buffer : NULL),
-				(outMessage ? outMessage->metadata : NULL), (outMessage ? outMessage->buffer : NULL),
+				(inMessage ? inMessage->metadata : NULL),
+				(inMessage ? static_cast<UCHAR*>(inMessage->buffer) : NULL),
+				(outMessage ? outMessage->metadata : NULL),
+				(outMessage ? static_cast<UCHAR*>(outMessage->buffer) : NULL),
 				false);
 
 			if (jt && !tra)
@@ -4353,7 +4357,7 @@ FB_BOOLEAN JResultSet::fetch(IStatus* user_status, void* buffer)
 
 		try
 		{
-			hasMessage = req->fetch(tdbb, buffer);
+			hasMessage = req->fetch(tdbb, static_cast<UCHAR*>(buffer));
 			if (!hasMessage)
 			{
 				eof = true;
