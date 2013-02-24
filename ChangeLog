@@ -1,3 +1,17 @@
+ 2013-02-23 03:09  asfernandes 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/dsql_proto.h
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Change message buffers type to void*. It adds some casts, but avoid them in users' code.
+
  2013-02-22 07:24  alexpeshkoff 
    M src/dsql/dsql.cpp
    M src/include/firebird/Provider.h
