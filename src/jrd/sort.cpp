@@ -1511,6 +1511,11 @@ void Sort::mergeRuns(USHORT n)
 		}
 
 		run->run_buff_cache = false;
+		if (run->run_buff_alloc)
+		{
+			delete[] run->run_buffer;
+			run->run_buff_alloc = false;
+		}
 		run->run_buffer = NULL;
 
 		// Add run descriptor to list of unused run descriptor blocks
@@ -1520,11 +1525,7 @@ void Sort::mergeRuns(USHORT n)
 	}
 
 	m_free_runs = run->run_next;
-	if (run->run_buff_alloc)
-	{
-		delete[] run->run_buffer;
-		run->run_buff_alloc = false;
-	}
+
 	temp_run.run_header.rmh_type = RMH_TYPE_RUN;
 	temp_run.run_depth = run->run_depth;
 	temp_run.run_buff_cache = false;
