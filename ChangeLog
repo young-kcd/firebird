@@ -1,3 +1,10 @@
+ 2013-02-24 16:26  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/dsql_proto.h
+   M src/jrd/jrd.cpp
+Revert change of messages to void* in DSQL internals.
+
  2013-02-23 03:09  asfernandes 
    M src/auth/SecureRemotePassword/Message.h
    M src/dsql/dsql.cpp
