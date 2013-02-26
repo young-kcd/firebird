@@ -322,6 +322,8 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	const Attachment *attachment = tdbb->getAttachment();
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
+	// Don't forget to set SQL dialect if role is present in DPB.
+
 	const string& attUser = attachment->att_user->usr_user_name;
 	const string& attRole = attachment->att_user->usr_sql_role_name;
 
@@ -330,7 +332,28 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 		(role.isEmpty() || role == attRole))
 	{
 		dpb.insertString(isc_dpb_trusted_auth, attUser);
-		dpb.insertString(isc_dpb_trusted_role, attRole);
+
+		// We have exactly one role which could be trusted.
+		// Note: it will be changed in fb3 !
+		if (attachment->att_user->usr_flags & USR_trole)
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
+			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+		}
+		// If there is granted role - just use it.
+		else if (attRole.hasData() && attRole != NULL_ROLE)
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
+			dpb.insertString(isc_dpb_sql_role_name, attRole);
+		}
+		// If application requested some role when current connection was 
+		// established - use it, as that role could be successfully granted 
+		// at external database.
+		else if (attachment->att_requested_role.hasData())
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
+    		dpb.insertString(isc_dpb_sql_role_name, attachment->att_requested_role);
+		}
 	}
 	else
 	{
@@ -340,7 +363,10 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 		if (!pwd.isEmpty()) {
 			dpb.insertString(isc_dpb_password, pwd);
 		}
-		if (!role.isEmpty()) {
+
+		if (!role.isEmpty()) 
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
 			dpb.insertString(isc_dpb_sql_role_name, role);
 		}
 	}
