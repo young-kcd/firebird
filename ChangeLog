@@ -1,3 +1,12 @@
+ 2013-02-25 10:14  hvlad 
+   M src/jrd/sort.cpp
+Ported fix for bug CORE-4051 : Memory leak when sorting big records
+
+ 2013-02-25 02:54  asfernandes 
+   M src/jrd/constants.h
+   M src/jrd/fun.epp
+Improvement CORE-4047 - Increase number of input parameters for External Functions (UDFs) to 15.
+
  2013-02-24 16:26  asfernandes 
    M src/dsql/dsql.cpp
    M src/dsql/dsql.h
