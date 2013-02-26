@@ -498,7 +498,8 @@ void InternalStatement::doExecute(thread_db* tdbb)
 		fb_assert(m_outMetadata->length == m_out_buffer.getCount());
 		InternalMessageBuffer outMsg(m_outMetadata, m_out_buffer.begin());
 
-		m_request->execute(&status, transaction, &inMsg, &outMsg);
+		m_request->execute(&status, transaction,
+			inMsg.metadata, inMsg.buffer, outMsg.metadata, outMsg.buffer);
 	}
 
 	if (!status.isSuccess())
@@ -523,7 +524,8 @@ void InternalStatement::doOpen(thread_db* tdbb)
 		fb_assert(m_inMetadata->length == m_in_buffer.getCount());
 		InternalMessageBuffer inMsg(m_inMetadata, m_in_buffer.begin());
 
-		m_cursor = m_request->openCursor(&status, transaction, &inMsg, m_outMetadata);
+		m_cursor = m_request->openCursor(&status, transaction,
+			inMsg.metadata, inMsg.buffer, m_outMetadata);
 	}
 
 	if (!status.isSuccess())

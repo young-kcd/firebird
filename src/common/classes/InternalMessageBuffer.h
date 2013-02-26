@@ -33,14 +33,17 @@
 
 namespace Firebird {
 
-// Provides compatibility with ISC API
-class InternalMessageBuffer : public FbMessage
+class InternalMessageBuffer
 {
 public:
 	InternalMessageBuffer(unsigned aBlrLength, const unsigned char* aBlr,
 		unsigned aBufferLength, unsigned char* aBuffer);
 	InternalMessageBuffer(IMessageMetadata* aMetadata, unsigned char* aBuffer);
 	~InternalMessageBuffer();
+
+public:
+	Firebird::IMessageMetadata* metadata;
+	UCHAR* buffer;
 };
 
 } // namespace Firebird

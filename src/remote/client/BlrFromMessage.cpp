@@ -49,13 +49,6 @@ void checkStatus(IStatus* st)
 namespace Remote
 {
 
-BlrFromMessage::BlrFromMessage(FbMessage* msg, unsigned aDialect)
-	: BlrWriter(*getDefaultMemoryPool()),
-	  expectedMessageLength(0), dialect(aDialect)
-{
-	buildBlr(msg ? msg->metadata : NULL);
-}
-
 BlrFromMessage::BlrFromMessage(IMessageMetadata* metadata, unsigned aDialect)
 	: BlrWriter(*getDefaultMemoryPool()),
 	  expectedMessageLength(0), dialect(aDialect)

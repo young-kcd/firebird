@@ -146,7 +146,7 @@ public:
 		{
 			for (const char** sql = script; *sql; ++sql)
 			{
-				att->execute(&s, ddlTran, 0, *sql, 3, NULL, NULL);
+				att->execute(&s, ddlTran, 0, *sql, 3, NULL, NULL, NULL, NULL);
 				check(&s);
 			}
 
@@ -254,7 +254,7 @@ public:
 					Firebird::string sql;
 					sql.printf("ALTER ROLE RDB$ADMIN %s AUTO ADMIN MAPPING",
 						user->operation() == MAP_SET_OPER ? "SET" : "DROP");
-					att->execute(status, tra, sql.length(), sql.c_str(), 3, NULL, NULL);
+					att->execute(status, tra, sql.length(), sql.c_str(), 3, NULL, NULL, NULL, NULL);
 					check(status);
 				}
 				break;
@@ -333,7 +333,7 @@ public:
 						dumpIt("verifier", s);
 						verifier.set(s.getCount(), s.begin());
 
-						stmt->execute(status, tra, &add, NULL);
+						stmt->execute(status, tra, add.metadata, add.buffer, NULL, NULL);
 						check(status);
 
 						stmt->free(status);
@@ -417,7 +417,7 @@ public:
 						assignField(last, user->lastName());
 						setField(login, user->userName());
 
-						stmt->execute(status, tra, &up, NULL);
+						stmt->execute(status, tra, up.metadata, up.buffer, NULL, NULL);
 						check(status);
 
 						if (!checkCount(status, &upCount, isc_info_update_count))
@@ -453,7 +453,7 @@ public:
 						Name login(dl);
 						setField(login, user->userName());
 
-						stmt->execute(status, tra, &dl, NULL);
+						stmt->execute(status, tra, dl.metadata, dl.buffer, NULL, NULL);
 						check(status);
 
 						if (!checkCount(status, &delCount, isc_info_delete_count))
@@ -516,7 +516,7 @@ public:
 							setField(login, user->userName());
 						}
 
-						rs = stmt->openCursor(status, tra, par, om);
+						rs = stmt->openCursor(status, tra, par->metadata, par->buffer, om);
 						check(status);
 
 						while (rs->fetch(status, di.buffer))

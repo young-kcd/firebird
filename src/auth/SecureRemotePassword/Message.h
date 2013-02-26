@@ -22,8 +22,8 @@ public:
 };
 
 
-// This class helps to fill FbMessage with correct values
-class Message : public Firebird::FbMessage, public Firebird::GlobalStorage
+// This class helps to fill message with correct values
+class Message : public Firebird::GlobalStorage
 {
 public:
 	Message(Firebird::IMessageMetadata* aMeta)
@@ -80,6 +80,10 @@ public:
 		}
 	}
 
+public:
+	Firebird::IMessageMetadata* metadata;
+	UCHAR* buffer;
+
 private:
 	Firebird::UCharBuffer dataBuf;
 	unsigned fieldCount;
@@ -133,11 +137,11 @@ public:
 		Firebird::LocalStatus st;
 		unsigned tmp = m.metadata->getOffset(&st, ind);
 		Message::check(&st);
-		ptr = (T*) (static_cast<UCHAR*>(m.buffer) + tmp);
+		ptr = (T*) (m.buffer + tmp);
 
 		tmp = m.metadata->getNullOffset(&st, ind);
 		Message::check(&st);
-		null.linkMessage((short*) (static_cast<UCHAR*>(m.buffer) + tmp));
+		null.linkMessage((short*) (m.buffer + tmp));
 	}
 
 	operator T()

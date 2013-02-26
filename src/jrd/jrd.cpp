@@ -4151,7 +4151,7 @@ void SysAttachment::destroy(Attachment* attachment)
 
 
 JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
-	FbMessage* inMessage, FbMessage* outMessage)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 	JTransaction* jt = apiTra ? getAttachment()->getTransactionInterface(user_status, apiTra) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
@@ -4168,10 +4168,8 @@ JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 		try
 		{
 			DSQL_execute(tdbb, &tra, getHandle(), false,
-				(inMessage ? inMessage->metadata : NULL),
-				(inMessage ? static_cast<UCHAR*>(inMessage->buffer) : NULL),
-				(outMessage ? outMessage->metadata : NULL),
-				(outMessage ? static_cast<UCHAR*>(outMessage->buffer) : NULL));
+				inMetadata, static_cast<UCHAR*>(inBuffer),
+				outMetadata, static_cast<UCHAR*>(outBuffer));
 
 			if (jt && !tra)
 			{
@@ -4211,7 +4209,7 @@ JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 
 
 JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* transaction,
-	FbMessage *in, IMessageMetadata* out)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
@@ -4229,19 +4227,18 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 		try
 		{
 			RefPtr<IMessageMetadata> defaultOut;
-			if (!out)
+			if (!outMetadata)
 			{
 				defaultOut = metadata.getOutputMetadata();
 				if (defaultOut)
 				{
 					defaultOut->release();
-					out = defaultOut;
+					outMetadata = defaultOut;
 				}
 			}
 
 			DSQL_execute(tdbb, &tra, getHandle(), true,
-				(in ? in->metadata : NULL), (in ? static_cast<UCHAR*>(in->buffer) : NULL),
-				out, NULL);
+				inMetadata, static_cast<UCHAR*>(inBuffer), outMetadata, NULL);
 
 			rs = new JResultSet(this);
 			rs->addRef();
@@ -4266,16 +4263,17 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 
 IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
-	FbMessage* inMessage, IMessageMetadata* out)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	IStatement* tmpStatement = prepare(user_status, apiTra, length, string, dialect,
-		(out ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
+		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
 	if (!user_status->isSuccess())
 	{
 		return NULL;
 	}
 
-	IResultSet* rs = tmpStatement->openCursor(user_status, apiTra, inMessage, out);
+	IResultSet* rs = tmpStatement->openCursor(user_status, apiTra,
+		inMetadata, inBuffer, outMetadata);
 
 	tmpStatement->release();
 	return rs;
@@ -4284,7 +4282,7 @@ IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 
 ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
-	FbMessage* inMessage, FbMessage* outMessage)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 	JTransaction* jt = apiTra ? getTransactionInterface(user_status, apiTra) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
@@ -4301,10 +4299,8 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 		try
 		{
 			DSQL_execute_immediate(tdbb, getHandle(), &tra, length, string, dialect,
-				(inMessage ? inMessage->metadata : NULL),
-				(inMessage ? static_cast<UCHAR*>(inMessage->buffer) : NULL),
-				(outMessage ? outMessage->metadata : NULL),
-				(outMessage ? static_cast<UCHAR*>(outMessage->buffer) : NULL),
+				inMetadata, static_cast<UCHAR*>(inBuffer),
+				outMetadata, static_cast<UCHAR*>(outBuffer),
 				false);
 
 			if (jt && !tra)

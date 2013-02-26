@@ -2810,7 +2810,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		exnow->p_sqlst_SQL_str.cstr_length,
 		reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
 		exnow->p_sqlst_SQL_dialect * 10 + PARSER_VERSION,
-		&iMsgBuffer, &oMsgBuffer);
+		iMsgBuffer.metadata, iMsgBuffer.buffer, oMsgBuffer.metadata, oMsgBuffer.buffer);
 
 	if (op == op_exec_immediate2)
 	{
@@ -2932,7 +2932,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		if (out_blr_length)
 		{
 			statement->rsr_cursor = statement->rsr_iface->openCursor(&status_vector, tra,
-				&iMsgBuffer, oMsgBuffer.metadata);
+				iMsgBuffer.metadata, iMsgBuffer.buffer, oMsgBuffer.metadata);
 		}
 		else	// delay execution till first fetch (with output format)
 		{
@@ -2945,7 +2945,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	}
 	else
 	{
-		newTra = statement->rsr_iface->execute(&status_vector, tra, &iMsgBuffer, &oMsgBuffer);
+		newTra = statement->rsr_iface->execute(&status_vector, tra,
+			iMsgBuffer.metadata, iMsgBuffer.buffer, oMsgBuffer.metadata, oMsgBuffer.buffer);
 	}
 
 	if (op == op_execute2)
@@ -3048,12 +3049,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			Arg::Gds(isc_dsql_cursor_open_err).raise();
 		}
 
-		FbMessage inMsgBuffer;
-		inMsgBuffer.buffer = statement->rsr_parameters.begin();
-		inMsgBuffer.metadata = statement->rsr_par_metadata;
-
 		statement->rsr_cursor = statement->rsr_iface->openCursor(&status_vector, statement->rsr_transaction,
-			&inMsgBuffer, msgBuffer.metadata);
+			statement->rsr_par_metadata, statement->rsr_parameters.begin(), msgBuffer.metadata);
+
 		if (!status_vector.isSuccess())
 		{
 			status_exception::raise(status_vector.get());

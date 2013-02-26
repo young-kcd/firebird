@@ -186,9 +186,11 @@ public:
 	virtual unsigned FB_CARG getType(Firebird::IStatus* status);
     virtual const char* FB_CARG getPlan(Firebird::IStatus* status, FB_BOOLEAN detailed);
 	virtual JTransaction* FB_CARG execute(Firebird::IStatus* status,
-		Firebird::ITransaction* transaction, Firebird::FbMessage* in, Firebird::FbMessage* out);
+		Firebird::ITransaction* transaction, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	virtual JResultSet* FB_CARG openCursor(Firebird::IStatus* status,
-		Firebird::ITransaction* transaction, Firebird::FbMessage* in, Firebird::IMessageMetadata* out);
+		Firebird::ITransaction* transaction, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata);
 	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
 	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
 
@@ -333,10 +335,12 @@ public:
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags);
 	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status,
 		Firebird::ITransaction* transaction, unsigned int stmtLength, const char* sqlStmt,
-		unsigned int dialect, Firebird::FbMessage* in, Firebird::FbMessage* out);
+		unsigned int dialect, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	virtual Firebird::IResultSet* FB_CARG openCursor(Firebird::IStatus* status,
 		Firebird::ITransaction* transaction, unsigned int stmtLength, const char* sqlStmt,
-		unsigned int dialect, Firebird::FbMessage* in, Firebird::IMessageMetadata* out);
+		unsigned int dialect, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata);
 	virtual JEvents* FB_CARG queEvents(Firebird::IStatus* status, Firebird::IEventCallback* callback,
 											unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(Firebird::IStatus* status, int option);

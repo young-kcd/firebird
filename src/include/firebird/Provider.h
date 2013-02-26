@@ -112,12 +112,6 @@ public:
 };
 #define FB_MESSAGE_METADATA_VERSION (FB_REFCOUNTED_VERSION + 15)
 
-struct FbMessage
-{
-	void* buffer;
-	IMessageMetadata* metadata;
-};
-
 class IMetadataBuilder : public IRefCounted
 {
 public:
@@ -172,9 +166,9 @@ public:
 	virtual IMessageMetadata* FB_CARG getInputMetadata(IStatus* status) = 0;
 	virtual IMessageMetadata* FB_CARG getOutputMetadata(IStatus* status) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
-		FbMessage* in, FbMessage* out) = 0;
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
 	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
-		FbMessage* in, IMessageMetadata* out) = 0;
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG free(IStatus* status) = 0;
 	virtual unsigned FB_CARG getFlags(IStatus* status) = 0;
@@ -240,10 +234,10 @@ public:
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, unsigned int flags) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
-		FbMessage* in, FbMessage* out) = 0;
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
 	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
-		FbMessage* in, IMessageMetadata* out) = 0;
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
 	virtual IEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;

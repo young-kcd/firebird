@@ -37,7 +37,6 @@ namespace Remote {
 class BlrFromMessage : public Firebird::BlrWriter
 {
 public:
-	BlrFromMessage(Firebird::FbMessage* msg, unsigned dialect);
 	BlrFromMessage(Firebird::IMessageMetadata* metadata, unsigned dialect);
 
 	unsigned getLength();

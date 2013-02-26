@@ -184,7 +184,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			Field<Varying> slt(dat);
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: Ready to run statement with login '%s'\n", account.c_str()));
 
-			stmt->execute(status, tra, &par, &dat);
+			stmt->execute(status, tra, par.metadata, par.buffer, dat.metadata, dat.buffer);
 			if (!status->isSuccess())
 			{
 				status_exception::raise(status->get());

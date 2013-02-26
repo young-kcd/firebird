@@ -320,9 +320,10 @@ public:
 	virtual Firebird::IMessageMetadata* FB_CARG getInputMetadata(Firebird::IStatus* status);
 	virtual Firebird::IMessageMetadata* FB_CARG getOutputMetadata(Firebird::IStatus* status);
 	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
-		Firebird::FbMessage* in, Firebird::FbMessage *out);
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	virtual Firebird::IResultSet* FB_CARG openCursor(Firebird::IStatus* status, Firebird::ITransaction* transaction,
-		Firebird::FbMessage* in, Firebird::IMessageMetadata* out);
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata);
 	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
 	virtual void FB_CARG free(Firebird::IStatus* status);
 	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
@@ -389,9 +390,12 @@ public:
 	virtual YStatement* FB_CARG prepare(Firebird::IStatus* status, Firebird::ITransaction* tra,
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags);
 	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, Firebird::FbMessage* in, Firebird::FbMessage* out);
+		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	virtual Firebird::IResultSet* FB_CARG openCursor(Firebird::IStatus* status, Firebird::ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, Firebird::FbMessage* in, Firebird::IMessageMetadata* out);
+		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata);
 	virtual YEvents* FB_CARG queEvents(Firebird::IStatus* status, Firebird::IEventCallback* callback,
 		unsigned int length, const unsigned char* eventsData);
 	virtual void FB_CARG cancelOperation(Firebird::IStatus* status, int option);

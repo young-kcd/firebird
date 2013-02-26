@@ -286,9 +286,10 @@ public:
 	virtual Firebird::IMessageMetadata* FB_CARG getOutputMetadata(IStatus* status);
 	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status);
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
-		FbMessage* inMsgBuffer, FbMessage* outMsgBuffer);
+		IMessageMetadata* inMetadata, void* inBuffer,
+		IMessageMetadata* outMetadata, void* outBuffer);
 	virtual ResultSet* FB_CARG openCursor(IStatus* status, ITransaction* tra,
-		FbMessage* inMsgBuffer, IMessageMetadata* outFormat);
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat);
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual void FB_CARG free(IStatus* status);
 	virtual unsigned FB_CARG getFlags(IStatus* status);
@@ -450,10 +451,11 @@ public:
 	virtual Statement* FB_CARG prepare(IStatus* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, unsigned int flags);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage* in, FbMessage* out);
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer);
 	virtual Firebird::IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage* in,
-		Firebird::IMessageMetadata* out);
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
+		IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata);
 	virtual Firebird::IEvents* FB_CARG queEvents(IStatus* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(IStatus* status, int option);
@@ -1557,7 +1559,7 @@ void Attachment::dropDatabase(IStatus* status)
 
 
 Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransaction* apiTra,
-	FbMessage* inMsgBuffer, FbMessage* outMsgBuffer)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 /**************************************
  *
@@ -1581,17 +1583,17 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
-		BlrFromMessage inBlr(inMsgBuffer, dialect);
+		BlrFromMessage inBlr(inMetadata, dialect);
 		unsigned in_blr_length = inBlr.getLength();
 		const UCHAR* in_blr = inBlr.getBytes();
 		//unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
-		UCHAR* in_msg = inMsgBuffer ? static_cast<UCHAR*>(inMsgBuffer->buffer) : NULL;
+		UCHAR* in_msg = static_cast<UCHAR*>(inBuffer);
 
-		BlrFromMessage outBlr(outMsgBuffer, dialect);
+		BlrFromMessage outBlr(outMetadata, dialect);
 		unsigned out_blr_length = outBlr.getLength();
 		const UCHAR* out_blr = outBlr.getBytes();
 		unsigned out_msg_length = outBlr.getMsgLength();
-		UCHAR* out_msg = outMsgBuffer ? static_cast<UCHAR*>(outMsgBuffer->buffer) : NULL;
+		UCHAR* out_msg = static_cast<UCHAR*>(outBuffer);
 
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
@@ -1734,7 +1736,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 
 
 ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra,
-	FbMessage* inMsgBuffer, IMessageMetadata* outFormat)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat)
 {
 /**************************************
  *
@@ -1758,10 +1760,10 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
-		BlrFromMessage inBlr(inMsgBuffer, dialect);
+		BlrFromMessage inBlr(inMetadata, dialect);
 		unsigned in_blr_length = inBlr.getLength();
 		const UCHAR* in_blr = inBlr.getBytes();
-		UCHAR* in_msg = inMsgBuffer ? static_cast<UCHAR*>(inMsgBuffer->buffer) : NULL;
+		UCHAR* in_msg = static_cast<UCHAR*>(inBuffer);
 
 		RefPtr<IMessageMetadata> defaultOutputFormat;
 		if (!outFormat)
@@ -1869,17 +1871,17 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 
 
 IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transaction,
-		unsigned int stmtLength, const char* sqlStmt, unsigned dialect, FbMessage* in,
-		IMessageMetadata* out)
+		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
-		(out ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
+		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
 	if (!status->isSuccess())
 	{
 		return NULL;
 	}
 
-	ResultSet* rc = stmt->openCursor(status, transaction, in, out);
+	ResultSet* rc = stmt->openCursor(status, transaction, inMetadata, inBuffer, outMetadata);
 	if (!status->isSuccess())
 	{
 		stmt->release();
@@ -1893,7 +1895,7 @@ IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transa
 
 ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
-	FbMessage* inMsgBuffer, FbMessage* outMsgBuffer)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 /**************************************
  *
@@ -1914,17 +1916,17 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		BlrFromMessage inBlr(inMsgBuffer, dialect);
+		BlrFromMessage inBlr(inMetadata, dialect);
 		unsigned in_blr_length = inBlr.getLength();
 		const UCHAR* in_blr = inBlr.getBytes();
 		unsigned in_msg_length = inBlr.getMsgLength();
-		UCHAR* in_msg = inMsgBuffer ? static_cast<UCHAR*>(inMsgBuffer->buffer) : NULL;
+		UCHAR* in_msg = static_cast<UCHAR*>(inBuffer);
 
-		BlrFromMessage outBlr(outMsgBuffer, dialect);
+		BlrFromMessage outBlr(outMetadata, dialect);
 		unsigned out_blr_length = outBlr.getLength();
 		const UCHAR* out_blr = outBlr.getBytes();
 		unsigned out_msg_length = outBlr.getMsgLength();
-		UCHAR* out_msg = outMsgBuffer ? static_cast<UCHAR*>(outMsgBuffer->buffer) : NULL;
+		UCHAR* out_msg = static_cast<UCHAR*>(outBuffer);
 
 		Rtr* transaction = NULL;
 		Transaction* rt = remoteTransactionInterface(apiTra);

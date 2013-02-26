@@ -1972,7 +1972,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			if (outBlrLength)
 			{
 				statement->cursor = statement->statement->openCursor(&status, transaction,
-					&inMsgBuffer, outMsgBuffer.metadata);
+					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
 			}
 			else	// delay execution till first fetch (with output format)
 			{
@@ -1985,7 +1985,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		else
 		{
 			ITransaction* newTrans = statement->statement->execute(&status, transaction,
-				&inMsgBuffer, &outMsgBuffer);
+				inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata, outMsgBuffer.buffer);
 
 			if (status.isSuccess())
 			{
@@ -2194,7 +2194,8 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
 		ITransaction* newTrans = attachment->execute(&status, transaction, stmtLength, sqlStmt,
-			dialect, &inMsgBuffer, &outMsgBuffer);
+			dialect, inMsgBuffer.metadata, inMsgBuffer.buffer,
+			outMsgBuffer.metadata, outMsgBuffer.buffer);
 
 		if (status.isSuccess())
 		{
@@ -2287,12 +2288,9 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 				 Arg::Gds(isc_dsql_cursor_open_err)).raise();
 			}
 
-			FbMessage inMsgBuffer;
-			inMsgBuffer.buffer = statement->parameters.begin();
-			inMsgBuffer.metadata = statement->parMetadata;
-
 			statement->cursor = statement->statement->openCursor(&status, statement->transaction,
-				&inMsgBuffer, msgBuffer.metadata);
+				statement->parMetadata, statement->parameters.begin(), msgBuffer.metadata);
+
 			if (!status.isSuccess())
 			{
 				return status[1];
@@ -3932,7 +3930,7 @@ FB_UINT64 YStatement::getAffectedRecords(IStatus* status)
 }
 
 ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
-	FbMessage* inMsgBuffer, FbMessage* outMsgBuffer)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 	try
 	{
@@ -3942,7 +3940,8 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 		if (transaction)
 			attachment->getNextTransaction(status, transaction, trans);
 
-		ITransaction* newTrans = entry.next()->execute(status, trans, inMsgBuffer, outMsgBuffer);
+		ITransaction* newTrans = entry.next()->execute(status, trans, inMetadata, inBuffer,
+			outMetadata, outBuffer);
 
 		if (newTrans)
 		{
@@ -3962,8 +3961,8 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 	return NULL;
 }
 
-IResultSet* YStatement::openCursor(Firebird::IStatus* status, ITransaction* transaction, FbMessage *in,
-	IMessageMetadata* outFormat)
+IResultSet* YStatement::openCursor(Firebird::IStatus* status, ITransaction* transaction,
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	try
 	{
@@ -3973,7 +3972,7 @@ IResultSet* YStatement::openCursor(Firebird::IStatus* status, ITransaction* tran
 		if (transaction)
 			attachment->getNextTransaction(status, transaction, trans);
 
-		IResultSet* rs = entry.next()->openCursor(status, trans, in, outFormat);
+		IResultSet* rs = entry.next()->openCursor(status, trans, inMetadata, inBuffer, outMetadata);
 		if (!status->isSuccess())
 		{
 			return NULL;
@@ -4673,7 +4672,7 @@ void YAttachment::executeDyn(IStatus* status, ITransaction* transaction, unsigne
 
 IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect,
-	FbMessage* inMsgBuffer, IMessageMetadata* outFormat)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	IResultSet* rs = NULL;
 	try
@@ -4685,7 +4684,7 @@ IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 			getNextTransaction(status, transaction, trans);
 
 		rs = entry.next()->openCursor(status, trans, length, string, dialect,
-			inMsgBuffer, outFormat);
+			inMetadata, inBuffer, outMetadata);
 
 		return new YResultSet(this, rs);
 	}
@@ -4701,7 +4700,7 @@ IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 
 ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect,
-	FbMessage* inMsgBuffer, FbMessage* outMsgBuffer)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 	try
 	{
@@ -4712,7 +4711,7 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 			getNextTransaction(status, transaction, trans);
 
 		ITransaction* newTrans = entry.next()->execute(status, trans, length, string, dialect,
-			inMsgBuffer, outMsgBuffer);
+			inMetadata, inBuffer, outMetadata, outBuffer);
 
 		if (newTrans)
 		{
