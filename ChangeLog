@@ -1,3 +1,7 @@
+ 2013-02-25 10:05  hvlad 
+   M src/jrd/sort.cpp
+Ported fix for bug CORE-4051 : Memory leak when sorting big records
+
  2013-02-14 04:29  robocop 
    M src/jrd/jrd.cpp
    M src/jrd/jrd.h
