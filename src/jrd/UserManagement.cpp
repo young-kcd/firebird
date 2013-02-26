@@ -46,6 +46,8 @@ UserManagement::UserManagement(jrd_tra* tra)
 	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
 	dpb.insertString(isc_dpb_trusted_auth, att->att_user->usr_user_name);
+
+	bool dpbHasRole = true;
 	if (att->att_user->usr_flags & USR_trole)
 	{
 		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
@@ -57,6 +59,14 @@ UserManagement::UserManagement(jrd_tra* tra)
 	else if (att->att_requested_role.hasData())
     {
     	dpb.insertString(isc_dpb_sql_role_name, att->att_requested_role);
+	}
+	else
+	{
+		dpbHasRole = false;
+	}
+	if (dpbHasRole)
+	{
+		dpb.insertByte(isc_dpb_sql_dialect, 0);
 	}
 
 	if (isc_attach_database(status, 0, securityDatabaseName, &database,
