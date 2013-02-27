@@ -1484,7 +1484,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	MemoryPool* const pool = outer ? outer->tra_pool : attachment->createPool();
+	MemoryPool* const pool = outer ? outer->getAutonomousPool() : attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
 	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
@@ -1539,7 +1539,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	MemoryPool* const pool = outer ? outer->tra_pool : attachment->createPool();
+	MemoryPool* const pool = outer ? outer->getAutonomousPool() : attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
 	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
@@ -3271,6 +3271,11 @@ jrd_tra::~jrd_tra()
 		tra_interface->setHandle(NULL);
 		tra_interface->release();
 	}
+
+	if (tra_autonomous_pool)
+	{
+		MemoryPool::deletePool(tra_autonomous_pool);
+	}
 }
 
 
@@ -3301,6 +3306,36 @@ UserManagement* jrd_tra::getUserManagement()
 		tra_user_management = FB_NEW(*tra_pool) UserManagement(this);
 	}
 	return tra_user_management;
+}
+
+
+MemoryPool* jrd_tra::getAutonomousPool()
+{
+	if (!tra_autonomous_pool)
+	{
+		MemoryPool* pool = tra_pool;
+		jrd_tra* outer = tra_outer;
+		while (outer)
+		{
+			pool = outer->tra_pool;
+			outer = outer->tra_outer;
+		}
+		tra_autonomous_pool = MemoryPool::createPool(pool, tra_memory_stats);
+		tra_autonomous_cnt = 0;
+	}
+
+	return tra_autonomous_pool;
+}
+
+
+void jrd_tra::releaseAutonomousPool(MemoryPool* toRelease)
+{
+	fb_assert(tra_autonomous_pool == toRelease);
+	if (++tra_autonomous_cnt > TRA_AUTONOMOUS_PER_POOL)
+	{
+		MemoryPool::deletePool(tra_autonomous_pool);
+		tra_autonomous_pool = NULL;
+	}
 }
 
 
