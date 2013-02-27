@@ -129,11 +129,12 @@ public:
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
-		tra_user_management(NULL)
+		tra_user_management(NULL),
+		tra_autonomous_pool(NULL),
+		tra_autonomous_cnt(0)
 	{
 		if (outer)
 		{
-			fb_assert(p == outer->tra_pool);
 			tra_arrays = outer->tra_arrays;
 			tra_blobs = outer->tra_blobs;
 		}
@@ -162,7 +163,10 @@ public:
 		{
 			if (transaction->tra_outer)
 			{
+				jrd_tra* outer = transaction->tra_outer;
+				MemoryPool* const pool = transaction->tra_pool;
 				delete transaction;
+				outer->releaseAutonomousPool(pool);
 			}
 			else
 			{
@@ -223,8 +227,14 @@ private:
 
 	Record* tra_undo_record;	// temporary record used for the undo purposes
 	UserManagement* tra_user_management;
+	MemoryPool* tra_autonomous_pool;
+	USHORT tra_autonomous_cnt;
+	static const USHORT TRA_AUTONOMOUS_PER_POOL = 64;
 
 public:
+	MemoryPool* getAutonomousPool();
+	void releaseAutonomousPool(MemoryPool* toRelease);
+
 	SSHORT getLockWait() const
 	{
 		return -tra_lock_timeout;
