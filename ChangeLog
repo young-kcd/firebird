@@ -1,3 +1,11 @@
+ 2013-02-26 11:58  alexpeshkoff 
+   M src/jrd/UserManagement.cpp
+Fixed CORE-4055: Dialect is not set in internal connections to security database
+
+ 2013-02-26 11:13  hvlad 
+   M src/jrd/extds/ExtDS.cpp
+Fixed bug CORE-4054 : role not passed on external execute stmt
+
  2013-02-25 10:05  hvlad 
    M src/jrd/sort.cpp
 Ported fix for bug CORE-4051 : Memory leak when sorting big records
