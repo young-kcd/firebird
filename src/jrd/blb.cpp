@@ -268,6 +268,8 @@ blb* BLB_create2(thread_db* tdbb,
  *      Basically BLB_create() with BPB structure.
  *
  **************************************/
+	transaction = transaction->getOuter();
+
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
@@ -282,6 +284,7 @@ blb* BLB_create2(thread_db* tdbb,
 						   reinterpret_cast<USHORT*>(&from_charset),	// safe - alignment not changed
 						   reinterpret_cast<USHORT*>(&to_charset),		// safe - alignment not changed
 						   NULL, NULL, NULL, NULL);
+
 	blb* blob = allocate_blob(tdbb, transaction);
 
 	if (type & isc_bpb_type_stream)
@@ -541,6 +544,8 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
  *      Get array blob and array descriptor.
  *
  **************************************/
+	transaction = transaction->getOuter();
+
 	SET_TDBB(tdbb);
 
 	blb* blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
@@ -818,6 +823,8 @@ SLONG BLB_get_slice(thread_db* tdbb,
  *      Fetch a slice of an array.
  *
  **************************************/
+	transaction = transaction->getOuter();
+
 	SET_TDBB(tdbb);
     //Database* database = GET_DBB();
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
@@ -1069,6 +1076,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 
 	CLEAR_NULL(record, id);
 	jrd_tra* transaction = request->req_transaction;
+	transaction = transaction->getOuter();
 
 	// If the target is a view, this must be from a view update trigger.
 	// Just pass the blob id thru.
@@ -1268,6 +1276,8 @@ blb* BLB_open2(thread_db* tdbb,
  *      Basically BLB_open() with BPB structure.
  *
  **************************************/
+	transaction = transaction->getOuter();
+
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
@@ -1650,6 +1660,8 @@ void BLB_put_slice(	thread_db*	tdbb,
  *      Put a slice of an array.
  *
  **************************************/
+	transaction = transaction->getOuter();
+
 	SET_TDBB(tdbb);
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
@@ -1819,6 +1831,7 @@ void BLB_scalar(thread_db*		tdbb,
  * Functional description
  *
  **************************************/
+	transaction = transaction->getOuter();
 
 	SLONG stuff[IAD_LEN(16) / 4];
 
@@ -1867,6 +1880,7 @@ static ArrayField* alloc_array(jrd_tra* transaction, Ods::InternalArrayDesc* pro
  *      Allocate an array block based on a prototype array descriptor.
  *
  **************************************/
+	fb_assert(!transaction->tra_outer);
 
 	// Compute size and allocate block
 
@@ -1904,13 +1918,10 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
  *      Create a shiney, new, empty blob.
  *
  **************************************/
+	fb_assert(!transaction->tra_outer);
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-
-	// If we are in an autonomous transaction, link the blob on the transaction started by the user.
-	while (transaction->tra_outer)
-		transaction = transaction->tra_outer;
 
 	// Create a blob large enough to hold a single data page.
 
@@ -1959,7 +1970,11 @@ static ISC_STATUS blob_filter(USHORT	action,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	jrd_tra* const transaction = reinterpret_cast<jrd_tra*>(control->ctl_internal[1]);
+	jrd_tra* transaction = reinterpret_cast<jrd_tra*>(control->ctl_internal[1]);
+	if (transaction)
+	{
+		transaction = transaction->getOuter();
+	}
 	bid* blob_id = reinterpret_cast<bid*>(control->ctl_internal[2]);
 
 #ifdef DEV_BUILD
@@ -2492,6 +2507,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 
 	jrd_req* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
+	transaction = transaction->getOuter();
 
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
@@ -2598,6 +2614,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 
 	jrd_req* request = tdbb->getRequest();
 	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
+	transaction = transaction->getOuter();
 
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(fromDesc, &blobAsText, bpb);

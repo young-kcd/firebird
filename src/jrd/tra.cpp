@@ -3539,6 +3539,10 @@ jrd_tra::~jrd_tra()
 	{
 		delete tra_blob_space;
 	}
+	else
+	{
+		fb_assert(!tra_arrays);
+	}
 
 	DFW_delete_deferred(this, -1);
 
@@ -3556,6 +3560,19 @@ UserManagement* jrd_tra::getUserManagement()
 		tra_user_management = FB_NEW(*tra_pool) UserManagement(this);
 	}
 	return tra_user_management;
+}
+
+
+jrd_tra* jrd_tra::getOuter()
+{
+	jrd_tra* tra = this;
+
+	while (tra->tra_outer)
+	{
+		tra = tra->tra_outer;
+	}
+
+	return tra;
 }
 
 
