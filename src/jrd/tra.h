@@ -155,7 +155,8 @@ public:
 		tra_pool(p),
 		tra_memory_stats(parent_stats),
 		tra_blobs_tree(p),
-		tra_blobs(&tra_blobs_tree),
+		tra_blobs(outer ? outer->tra_blobs : &tra_blobs_tree),
+		tra_arrays(NULL),
 		tra_deferred_job(NULL),
 		tra_resources(*p),
 		tra_context_vars(*p),
@@ -176,12 +177,6 @@ public:
 		tra_autonomous_pool(NULL),
 		tra_autonomous_cnt(0)
 	{
-		if (outer)
-		{
-			tra_arrays = outer->tra_arrays;
-			tra_blobs = outer->tra_blobs;
-		}
-
 		tra_transactions.resize(length);
 	}
 
@@ -297,6 +292,7 @@ private:
 public:
 	MemoryPool* getAutonomousPool();
 	void releaseAutonomousPool(MemoryPool* toRelease);
+	jrd_tra* getOuter();
 
 	SSHORT getLockWait() const
 	{
@@ -310,6 +306,7 @@ public:
 
 		if (!tra_blob_space)
 		{
+			fb_assert(!tra_outer);
 			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
 		}
 

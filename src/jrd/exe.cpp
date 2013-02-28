@@ -1636,6 +1636,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 	if (transaction)
 	{
 		DEV_BLKCHK(transaction, type_tra);
+		transaction = transaction->getOuter();
 
 		// Release blobs bound to this request
 
