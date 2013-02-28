@@ -1,3 +1,8 @@
+ 2013-02-27 14:49  alexpeshkoff 
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+Backported fix for CORE-3908: Engine leaks memory and crashes when lot of autonomous transactions have been started and finished
+
  2013-02-26 11:58  alexpeshkoff 
    M src/jrd/UserManagement.cpp
 Fixed CORE-4055: Dialect is not set in internal connections to security database
