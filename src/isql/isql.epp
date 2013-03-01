@@ -4148,27 +4148,6 @@ static void do_isql()
 
 	M__trans = 0;
 
-	// File used to edit sessions
-	{ // scope
-		const Firebird::PathName filename = TempFile::create(SCRATCH);
-		const char* Tmpfile = filename.c_str();
-		FILE* f = fopen(Tmpfile, "w+"); // It was w+b
-#ifdef UNIX
-		unlink(Tmpfile);
-#endif
-		if (f)
-			Filelist->Ofp().init(f, Tmpfile, Tmpfile);
-		else
-		{
-			// If we can't open a temp file then bail
-
-			IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << Tmpfile);
-			STDERROUT(errbuf);
-			Exit_value = FINI_ERROR;
-			return;
-		}
-	}
-
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 	_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
@@ -4360,9 +4339,9 @@ static void do_isql()
 	gds_trans = 0;
 
 	InputDevices::indev& Ofp = Filelist->Ofp();
-	// Should have a valid Temp file pointer
-	fb_assert(Ofp.indev_fpointer);
-	Ofp.drop();
+	// Does it have a valid Temp file pointer?
+	if (Ofp.indev_fpointer)
+		Ofp.drop();
 
 	if (global_sqlda)
 		ISQL_FREE(global_sqlda);
@@ -4478,6 +4457,25 @@ static processing_state edit(const TEXT* const* cmd)
 		Filelist->insertIfp();
 		// Close the file, edit it, then reopen and read from the top
 		InputDevices::indev& Ofp = Filelist->Ofp();
+
+		if (!Ofp.indev_fpointer)
+		{
+			// File used to edit sessions
+			const Firebird::PathName filename = TempFile::create(SCRATCH);
+			const char* Tmpfile = filename.c_str();
+			FILE* f = fopen(Tmpfile, "w+"); // It was w+b
+			if (f)
+				Ofp.init(f, Tmpfile, Tmpfile);
+			else
+			{
+				// If we can't open a temp file then bail
+				TEXT errbuf[MSG_LENGTH];
+				IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << Tmpfile);
+				STDERROUT(errbuf);
+				return ps_ERR;
+			}
+		}
+
 		Ofp.close();
 		PathName tmpfile = Ofp.fileName(false);
 		gds__edit(tmpfile.c_str(), 0);
@@ -4619,7 +4617,8 @@ static processing_state escape(const TEXT* cmd)
 	//_flushall();
 	// Save Ofp position in case it's being used as input. See EDIT command.
 	fpos_t OfpPos = 0;
-	Filelist->Ofp().getPos(&OfpPos);
+	if (Ofp.indev_fpointer)
+		Filelist->Ofp().getPos(&OfpPos);
 	fflush(NULL); // Flush only output buffers.
 	const char* emptyCmd = "%ComSpec%";
 #else
@@ -4635,7 +4634,7 @@ static processing_state escape(const TEXT* cmd)
 #ifdef WIN_NT
 	// If we are reading from the temp file, restore the read position because
 	// it's opened in r+ mode in this case, that's R/W.
-	if (Filelist->sameInputAndOutput())
+	if (Ofp.indev_fpointer && Filelist->sameInputAndOutput())
 		Filelist->Ofp().setPos(&OfpPos);
 #endif
 
@@ -5485,8 +5484,9 @@ static processing_state get_statement(TEXT* const statement,
 
 			// If this is not tmpfile, close it
 
-			if (!Filelist->sameInputAndOutput())
-				Filelist->Ifp().close();
+			if (Filelist->Ofp().indev_fpointer)
+				if (!Filelist->sameInputAndOutput())
+					Filelist->Ifp().close();
 
 			// Reset to previous after other input
 
