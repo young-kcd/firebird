@@ -35,6 +35,8 @@
 // Do not confuse this "Ofp" with the user defined redirection of isql output to a file.
 // The logic could be simpler but changing Borland code is tricky here.
 
+#include "../common/classes/array.h"
+
 class InputDevices
 {
 public:
@@ -78,12 +80,24 @@ public:
 	void saveCommand(const char* statement, const char* term);
 	bool readingStdin() const;
 	void gotoEof();
+	void commandsToFile(FILE* fpointer);
 
 private:
 	size_t m_count;
 	indev* m_head;
 	indev m_ifp;
 	indev m_ofp;
+
+	class Command : public Firebird::GlobalStorage
+	{
+	public:
+		Command(const char* statement, const char* term);
+		void toFile(FILE* fpointer);
+	private:
+		Firebird::string m_statement;
+	};
+
+	Firebird::HalfStaticArray<Command*, 32> commands;
 };
 
 
@@ -100,12 +114,12 @@ inline void InputDevices::indev::close()
 
 
 inline InputDevices::InputDevices()
-	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, "")
+	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, ""), commands(*getDefaultMemoryPool())
 {
 }
 
-inline InputDevices::InputDevices(Firebird::MemoryPool&)
-	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, "")
+inline InputDevices::InputDevices(Firebird::MemoryPool& p)
+	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, ""), commands(p)
 {
 }
 

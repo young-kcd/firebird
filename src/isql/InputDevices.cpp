@@ -226,11 +226,18 @@ void InputDevices::saveCommand(const char* statement, const char* term)
 	if (m_ifp.indev_fpointer == stdin)
 	{
 		FILE* f = m_ofp.indev_fpointer;
-		fb_assert(f);
-		fputs(statement, f);
-		fputs(term, f);
-		// Add newline to make the file more readable.
-		fputc('\n', f);
+		if (f)
+		{
+			fputs(statement, f);
+			fputs(term, f);
+			// Add newline to make the file more readable.
+			fputc('\n', f);
+		}
+		else
+		{
+			Command* command = new Command(statement, term);
+			commands.add(command);
+		}
 	}
 }
 
@@ -249,3 +256,27 @@ void InputDevices::gotoEof()
 		fseek(m_ifp.indev_fpointer, 0, SEEK_END);
 }
 
+InputDevices::Command::Command(const char* statement, const char* term)
+	: m_statement(getPool())
+{
+	m_statement = statement;
+	m_statement += term;
+}
+
+void InputDevices::Command::toFile(FILE* f)
+{
+	fputs(m_statement.c_str(), f);
+	// Add newline to make the file more readable.
+	fputc('\n', f);
+}
+
+void InputDevices::commandsToFile(FILE* f)
+{
+	for (unsigned n = 0; n < commands.getCount(); ++n)
+	{
+		commands[n]->toFile(f);
+		delete commands[n];
+	}
+
+	commands.clear();
+}
