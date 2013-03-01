@@ -1,3 +1,34 @@
+ 2013-02-28 16:23  alexpeshkoff 
+   M src/jrd/blb.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+Postfix for CORE-3908: Engine leaks memory and crashes when lot of autonomous transactions have been started and finished
+
+ 2013-02-27 14:49  alexpeshkoff 
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+Fixed CORE-3908: Engine leaks memory and crashes when lot of autonomous transactions have been started and finished
+
+ 2013-02-26 03:42  asfernandes 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/common/classes/InternalMessageBuffer.h
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/BlrFromMessage.cpp
+   M src/remote/client/BlrFromMessage.h
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Remove FbMessage struct from the API.
+This struct lost its main value (group various blr-related properties in a single parameter).
+And since openCursor/fetch already split the message/buffer, it does not make sense anymore to have it.
+
  2013-02-25 10:14  hvlad 
    M src/jrd/sort.cpp
 Ported fix for bug CORE-4051 : Memory leak when sorting big records
