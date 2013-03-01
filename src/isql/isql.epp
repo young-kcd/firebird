@@ -4465,7 +4465,10 @@ static processing_state edit(const TEXT* const* cmd)
 			const char* Tmpfile = filename.c_str();
 			FILE* f = fopen(Tmpfile, "w+"); // It was w+b
 			if (f)
+			{
 				Ofp.init(f, Tmpfile, Tmpfile);
+				Filelist->commandsToFile(f);
+			}
 			else
 			{
 				// If we can't open a temp file then bail
