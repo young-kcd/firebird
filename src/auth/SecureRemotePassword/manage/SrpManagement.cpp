@@ -516,7 +516,7 @@ public:
 							setField(login, user->userName());
 						}
 
-						rs = stmt->openCursor(status, tra, par->metadata, par->buffer, om);
+						rs = stmt->openCursor(status, tra, par ? par->metadata : NULL, par ? par->buffer : NULL, om);
 						check(status);
 
 						while (rs->fetch(status, di.buffer))
