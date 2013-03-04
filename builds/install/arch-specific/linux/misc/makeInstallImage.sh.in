@@ -143,7 +143,6 @@ copyFiles() {
 		makeDirs @FB_MISCDIR@/upgrade/$i
 	done
 
-    makeDirs @libdir@
     makeDirs /usr/include
 
 	#bin
@@ -317,13 +316,6 @@ copyFiles() {
 
 	chown root:root ${TargetDir}@FB_CONFDIR@/*License.txt
 	chmod 0444 ${TargetDir}@FB_CONFDIR@/*License.txt
-
-# Create links from @libdir@ to install area.
-    origDir=`pwd`
-    cd $BuiltFBDir/lib
-	Libraries=`echo libfb*.so* libib_util.so`
-    cd $origDir
-    linkFiles "@FB_LIBDIR@" "$Libraries" "${TargetDir}@libdir@" "${TargetDir}@FB_LIBDIR@"
 
 # link include files to /usr/include
 	linkFiles "@FB_INCDIR@" "iberror.h ibase.h ib_util.h" "${TargetDir}/usr/include" "${TargetDir}@FB_INCDIR@"

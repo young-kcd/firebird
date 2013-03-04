@@ -46,16 +46,19 @@ fixFilePermissions
 # Install script in /etc/init.d (exact location is distro dependent)
 installInitdScript
 
-# Create libgds.so links
-createLinksForBackCompatibility
-
 # Prepare for uninstall
 buildUninstallFile
+
+# Create links to libraries in system lib directory
+createLinksInSystemLib
+
+# Create libgds.so links
+createLinksForBackCompatibility
 
 # Update the /etc/inetd.conf or xinetd entry
 updateInetdServiceEntry
 
-# Change sysdba password (use embedded access)
+# Add sysdba and set password (use embedded access)
 setDBAPassword
 
 # Get inetd to reread new init files.

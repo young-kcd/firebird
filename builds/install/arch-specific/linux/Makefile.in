@@ -118,11 +118,6 @@ buildDebugInfo: buildRoot
             objcopy --strip-debug --strip-unneeded $${FIL}; \
         fi; \
     done
-# Work around GDB 6.0 bug
-#	mkdir -p $(GEN_ROOT)/$(DebugDir)@libdir@/.debug
-#	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
-#       ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)@libdir@/.debug; \
-#   done
 
 # Use this line if you don't want to use separate debug info
 #buildImageDir: buildRoot

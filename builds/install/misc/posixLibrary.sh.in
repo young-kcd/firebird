@@ -42,6 +42,7 @@ Add2Path() {
 Answer=""
 OrigPasswd=""
 TmpFile=""
+MANIFEST_TXT=""
 SecurityDatabase=security3.fdb
 DefaultLibrary=libfbclient
 UninstallScript=FirebirdUninstall.sh
@@ -71,7 +72,7 @@ MakeTemp() {
 AskQuestion() {
     Test=$1
     DefaultAns=$2
-    echo -n "${1}"
+    echo -n "$Test"
     Answer="$DefaultAns"
     read Answer
 
@@ -203,7 +204,7 @@ removeInetdServiceEntry() {
 
 checkIfServerRunning() {
 
-	checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
+	checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fbserver|fbguard|fb_smp_server|firebird)\b[[:space:]]" |grep -v grep`
     if [ ! -z "$checkString" ]
 	then
 		serverMode=super
@@ -218,7 +219,7 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
-    checkString=`ps -ef$psOptions | egrep "\b(firebird)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(firebird)\b[[:space:]]" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird server seems to be running."
@@ -226,7 +227,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_smp_server)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fb_smp_server)\b[[:space:]]" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird SuperClassic server seems to be running."
@@ -234,7 +235,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fbserver|fbguard)\b[[:space:]]" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
@@ -242,7 +243,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fb_inet_server|gds_pipe)\b[[:space:]]" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -303,7 +304,7 @@ askForOrigDBAPassword() {
 getNewDBAPasswordFromUser()
 {
 	AskQuestion "Please enter new password for SYSDBA user: "
-	echo $Answer
+	NewPasswd=$Answer
 }
 
 
@@ -324,7 +325,7 @@ askUserForNewDBAPassword() {
     NewPasswd=""
     while [ -z "$NewPasswd" ]
     do
-        NewPasswd=`getNewDBAPasswordFromUser`
+        getNewDBAPasswordFromUser
         if [ ! -z "$NewPasswd" ]
         then
             if ! runSilent "@FB_BINDIR@/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
@@ -452,10 +453,12 @@ changeDBAPassword() {
 
 setDBAPassword() {
     if [ -z "$InteractiveInstall" ]
-      then
+	then
         passwd=`createNewPassword`
-      else
-        passwd=`getNewDBAPasswordFromUser`
+    else
+    	NewPasswd=""
+        getNewDBAPasswordFromUser
+        passwd=$NewPasswd
     fi
 
     if [ ! -z "$passwd" ]
@@ -481,6 +484,7 @@ buildUninstallFile() {
     fi
 
 	cp manifest.txt @FB_MISCDIR@
+	MANIFEST_TXT=@FB_MISCDIR@/manifest.txt
 
 	cp -r scripts @FB_MISCDIR@
 	[ -f scripts/tarMainUninstall.sh ] && cp scripts/tarMainUninstall.sh @FB_SBINDIR@/$UninstallScript
@@ -508,18 +512,26 @@ removeIfOnlyAlink() {
 safeLink() {
 	Source=$1
 	Target=$2
-	
-	removeIfOnlyAlink $Target
-    if [ ! -e $Target ]
-    then
-        ln -s $Source $Target
+	Manifest=$3
+
+	if [ $Source != $Target ]
+	then
+		removeIfOnlyAlink $Target
+    	if [ ! -e $Target ]
+	    then
+    		ln -s $Source $Target
+    		if [ -f "$Manifest" ]
+    		then
+    			echo $Target >>$Manifest
+    		fi
+    	fi
     fi
 }
 
 
 #------------------------------------------------------------------------
 #  createLinksForBackCompatibility
-#  Create links for back compatibility to InterBase and Firebird1.0 
+#  Create links for back compatibility to InterBase and Firebird1.0
 #  linked systems.
 
 createLinksForBackCompatibility() {
@@ -529,19 +541,42 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  MOD 7-Nov-2002.
 
    	newLibrary=@FB_LIBDIR@/$DefaultLibrary.@SHRLIB_EXT@
-	safeLink $newLibrary @libdir@/libgds.@SHRLIB_EXT@
-	safeLink $newLibrary @libdir@/libgds.@SHRLIB_EXT@.0
+	LibDir=`CorrectLibDir @libdir@`
+	safeLink $newLibrary $LibDir/libgds.@SHRLIB_EXT@
+	safeLink $newLibrary $LibDir/libgds.@SHRLIB_EXT@.0
 }
 
 
 #------------------------------------------------------------------------
+#  createLinksInSystemLib
+#  Create links to firebird client library in system directory.
+
+createLinksInSystemLib() {
+	LibDir=`CorrectLibDir @libdir@`
+
+    origDirLinksInSystemLib=`pwd`
+    cd @FB_LIBDIR@
+	Libraries=`echo libfbclient.@SHRLIB_EXT@* libib_util.@SHRLIB_EXT@`
+
+	cd /
+	for l in $Libraries
+	do
+		safeLink @FB_LIBDIR@/$l .$LibDir/$l ${MANIFEST_TXT}
+	done
+
+    cd $origDirLinksInSystemLib
+}
+
+#------------------------------------------------------------------------
 #  removeLinksForBackCompatibility
-#  Remove links for back compatibility to InterBase and Firebird1.0 
+#  Remove links for back compatibility to InterBase and Firebird1.0
 #  linked systems.
 
 removeLinksForBackCompatibility() {
-    removeIfOnlyAlink @libdir@/libgds.@SHRLIB_EXT@
-    removeIfOnlyAlink @libdir@/libgds.@SHRLIB_EXT@.0
+	LibDir=`CorrectLibDir @libdir@`
+
+    removeIfOnlyAlink $LibDir/libgds.@SHRLIB_EXT@
+    removeIfOnlyAlink $LibDir/libgds.@SHRLIB_EXT@.0
 }
 
 
@@ -692,7 +727,7 @@ removeInstalledFiles() {
     fi
 
     origDir=`pwd`
-    
+
     cd /
 
     for i in `cat $manifestFile`
