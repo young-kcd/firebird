@@ -196,7 +196,11 @@ dnl CPU_TYPE=ppc64
 	if test -L /usr/lib64; then
 		libdir=/usr/lib
 	else
-		libdir=/usr/lib64
+		if test -e /usr/lib64; then
+			libdir=/usr/lib64
+		else
+			libdir=/usr/lib
+		fi
 	fi
     CPU_TYPE=amd64
 	RPM64='()(64bit)'
