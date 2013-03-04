@@ -262,7 +262,7 @@ const Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, StreamType strea
 		}
 		else if (tail->csb_procedure)
 		{
-			tail->csb_format = tail->csb_procedure->prc_format;
+			tail->csb_format = tail->csb_procedure->prc_record_format;
 		}
 		else
 		{

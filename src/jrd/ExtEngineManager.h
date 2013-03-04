@@ -52,29 +52,6 @@ struct impure_value;
 struct record_param;
 
 
-class RoutineMessage :
-	public Firebird::VersionedIface<Firebird::IRoutineMessage, FB_ROUTINE_MESSAGE_VERSION>,
-	public Firebird::PermanentStorage
-{
-public:
-	explicit RoutineMessage(MemoryPool& pool)
-		: PermanentStorage(pool),
-		  blr(pool),
-		  bufferLength(0)
-	{
-	}
-
-	virtual void FB_CARG set(const unsigned char* aBlr, unsigned aBlrLength, unsigned aBufferLength)
-	{
-		blr.assign(aBlr, aBlrLength);
-		bufferLength = aBufferLength;
-	}
-
-public:
-	Firebird::Array<UCHAR> blr;
-	unsigned bufferLength;
-};
-
 class TriggerMessage :
 	public Firebird::VersionedIface<Firebird::ITriggerMessage, FB_TRIGGER_MESSAGE_VERSION>,
 	public Firebird::PermanentStorage
@@ -180,9 +157,9 @@ private:
 		Firebird::MetaName name;
 		Firebird::string entryPoint;
 		Firebird::string body;
-		Firebird::RefPtr<Firebird::MsgMetadata> inputParameters;
-		Firebird::RefPtr<Firebird::MsgMetadata> outputParameters;
-		Firebird::RefPtr<Firebird::MsgMetadata> triggerFields;
+		Firebird::RefPtr<Firebird::IMessageMetadata> inputParameters;
+		Firebird::RefPtr<Firebird::IMessageMetadata> outputParameters;
+		Firebird::RefPtr<Firebird::IMessageMetadata> triggerFields;
 		Firebird::MetaName triggerTable;
 		Firebird::ExternalTrigger::Type triggerType;
 
@@ -363,12 +340,12 @@ public:
 public:
 	void closeAttachment(thread_db* tdbb, Attachment* attachment);
 
-	Function* makeFunction(thread_db* tdbb, const Jrd::Function* udf,
+	void makeFunction(thread_db* tdbb, Jrd::Function* udf,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-		const Firebird::string& body, RoutineMessage* inMsg, RoutineMessage* outMsg);
-	Procedure* makeProcedure(thread_db* tdbb, const jrd_prc* prc,
+		const Firebird::string& body);
+	void makeProcedure(thread_db* tdbb, jrd_prc* prc,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-		const Firebird::string& body, RoutineMessage* inMsg, RoutineMessage* outMsg);
+		const Firebird::string& body);
 	Trigger* makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body, Firebird::ExternalTrigger::Type type);

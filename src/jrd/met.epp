@@ -134,95 +134,6 @@ static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*,
 static bool verify_TRG_ignore_perm(thread_db*, const MetaName&);
 
 
-// generate BLR for descriptor
-static void generateBlr(const dsc* desc, UCharBuffer& blr)
-{
-	USHORT length = 0;
-
-	switch (desc->dsc_dtype)
-	{
-		case dtype_text:
-			blr.add(blr_text2);
-			blr.add(desc->dsc_ttype());
-			blr.add(desc->dsc_ttype() >> 8);
-			length = desc->dsc_length;
-			blr.add(length);
-			blr.add(length >> 8);
-			break;
-
-		case dtype_varying:
-			blr.add(blr_varying2);
-			blr.add(desc->dsc_ttype());
-			blr.add(desc->dsc_ttype() >> 8);
-			fb_assert(desc->dsc_length >= sizeof(USHORT));
-			length = desc->dsc_length - sizeof(USHORT);
-			blr.add(length);
-			blr.add(length >> 8);
-			break;
-
-		case dtype_short:
-			blr.add(blr_short);
-			blr.add(desc->dsc_scale);
-			break;
-
-		case dtype_long:
-			blr.add(blr_long);
-			blr.add(desc->dsc_scale);
-			break;
-
-		case dtype_quad:
-			blr.add(blr_quad);
-			blr.add(desc->dsc_scale);
-			break;
-
-		case dtype_int64:
-			blr.add(blr_int64);
-			blr.add(desc->dsc_scale);
-			break;
-
-		case dtype_real:
-			blr.add(blr_float);
-			break;
-
-		case dtype_double:
-			blr.add(blr_double);
-			break;
-
-		case dtype_sql_date:
-			blr.add(blr_sql_date);
-			break;
-
-		case dtype_sql_time:
-			blr.add(blr_sql_time);
-			break;
-
-		case dtype_timestamp:
-			blr.add(blr_timestamp);
-			break;
-
-		case dtype_array:
-			blr.add(blr_quad);
-			blr.add(0);
-			break;
-
-		case dtype_blob:
-			blr.add(blr_blob2);
-			blr.add(desc->dsc_sub_type);
-			blr.add(desc->dsc_sub_type >> 8);
-			blr.add(desc->getTextType());
-			blr.add(desc->getTextType() >> 8);
-			break;
-
-		case dtype_boolean:
-			blr.add(blr_bool);
-			break;
-
-		default:
-			fb_assert(false);
-	}
-}
-
-
 // Decompile all triggers from vector
 static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 {
@@ -3063,9 +2974,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			}
 			END_FOR
 
-			RoutineMessage inMsg(*tdbb->getDefaultPool());
-			RoutineMessage outMsg(*tdbb->getDefaultPool());
-
 			const bool external = !P.RDB$ENGINE_NAME.NULL;	// ODS_12_0
 
 			if (external)
@@ -3083,9 +2991,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				else
 					body.getBuffer(1)[0] = '\0';
 
-				procedure->setExternal(dbb->dbb_extManager.makeProcedure(
-					tdbb, procedure, P.RDB$ENGINE_NAME,
-					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin(), &inMsg, &outMsg));
+				dbb->dbb_extManager.makeProcedure(tdbb, procedure, P.RDB$ENGINE_NAME,
+					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin());
 			}
 
 			Array<NestConst<Parameter> >& paramArray = procedure->getOutputFields();
@@ -3094,7 +3001,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			{
 				Format* format = Format::newFormat(
 					*dbb->dbb_permanent, procedure->getOutputFields().getCount());
-				procedure->prc_format = format;
+				procedure->prc_record_format = format;
 				ULONG length = FLAG_BYTES(format->fmt_count);
 				Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 				Array<NestConst<Parameter> >::iterator ptr, end;
@@ -3116,27 +3023,23 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				format->fmt_length = length;
 			}
 
-			prc_t prc_type = prc_legacy;
+			procedure->prc_type = P.RDB$PROCEDURE_TYPE.NULL ?
+				prc_legacy : (prc_t) P.RDB$PROCEDURE_TYPE;
 
-			MemoryPool* csb_pool = attachment->createPool();
+			if (!external)
+			{
+				MemoryPool* csb_pool = attachment->createPool();
 
-			{ // scope
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 				CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-
-				if (!P.RDB$PROCEDURE_TYPE.NULL)
-					prc_type = (prc_t) P.RDB$PROCEDURE_TYPE;
 
 				if (!P.RDB$DEBUG_INFO.NULL)
 					DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, *csb->csb_dbg_info);
 
-				procedure->prc_type = prc_type;
-
 				try
 				{
 					MET_parse_routine_blr(tdbb, procedure,
-						(P.RDB$PROCEDURE_BLR.NULL ? NULL : &P.RDB$PROCEDURE_BLR), csb, external,
-						inMsg, outMsg);
+						(P.RDB$PROCEDURE_BLR.NULL ? NULL : &P.RDB$PROCEDURE_BLR), csb);
 				}
 				catch (const Exception&)
 				{
@@ -3155,14 +3058,16 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				{
 					MessageNode* node = csb->csb_rpt[i].csb_message;
 
+					/***
 					if (node)
 					{
 						if (node->messageNumber == 1)
 							procedure->prc_output_msg = node;
 					}
+					***/
 				}
 				delete csb;
-			} // scope
+			}
 
 			if (P.RDB$VALID_BLR.NULL || P.RDB$VALID_BLR == FALSE)
 				valid_blr = false;
@@ -3391,10 +3296,10 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 
 	if (!procedure->prc_use_count)
 	{
-		if (procedure->prc_format)
+		if (procedure->prc_record_format)
 		{
-			delete procedure->prc_format;
-			procedure->prc_format = NULL;
+			delete procedure->prc_record_format;
+			procedure->prc_record_format = NULL;
 		}
 	}
 
@@ -4383,271 +4288,15 @@ static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const Meta
 }
 
 
-// Generate BLR message for external procedures
-static bool gen_ext_message(thread_db* tdbb, CompilerScratch* csb, UCharBuffer& blr, UCHAR message,
-	UCHAR message2, const Array<NestConst<Parameter> >& parameters, const RoutineMessage& extMsg,
-	UCharBuffer& appendBlr)
-{
-	const size_t prevAppendBlrSize = appendBlr.getCount();
-	bool messageNeeded = false;
-	size_t count = 0;
-	ULONG offset = 0;
-
-	dsc shortDesc;
-	shortDesc.makeShort(0);
-
-	if (extMsg.blr.hasData())
-	{
-		BlrReader reader(extMsg.blr.begin(), extMsg.blr.getCount());
-
-		reader.checkByte(blr_version5);
-		reader.checkByte(blr_begin);
-		reader.checkByte(blr_message);
-		reader.getByte();	// message number: ignore it
-		fb_assert(parameters.getCount() * 2 <= MAX_USHORT);
-		count = reader.checkWord(parameters.getCount() * 2);
-
-		appendBlr.add(blr_message);
-		appendBlr.add(message2);
-		appendBlr.add(UCHAR(count));	// parameters (with nulls)
-		appendBlr.add(UCHAR(count >> 8));
-
-		for (unsigned i = 0; i < count / 2; ++i)
-		{
-			dsc desc;
-			PAR_datatype(reader, &desc);
-			generateBlr(&desc, appendBlr);
-
-			if (desc.dsc_dtype >= dtype_aligned)
-				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
-
-			offset += desc.dsc_length;
-
-			const dsc* prmDesc = &parameters[i]->prm_desc;
-
-			if (desc.isText() && desc.getCharSet() == CS_NONE)
-				desc.setTextType(prmDesc->getTextType());
-			desc.setNullable(prmDesc->isNullable());
-
-			messageNeeded |= !DSC_EQUIV(&desc, prmDesc, false);
-
-			PAR_datatype(reader, &desc);
-
-			if (!DSC_EQUIV(&desc, &shortDesc, false))
-			{
-				status_exception::raise(
-					Arg::Gds(isc_ee_blr_mismatch_null) <<
-					Arg::Num(i * 2 + 1));
-			}
-
-			generateBlr(&desc, appendBlr);
-
-			if (desc.dsc_dtype >= dtype_aligned)
-				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
-
-			offset += desc.dsc_length;
-
-			messageNeeded |= !DSC_EQUIV(&desc, &shortDesc, false);
-		}
-
-		reader.checkByte(blr_end);
-		reader.checkByte(blr_eoc);
-
-		if (offset != extMsg.bufferLength)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_ee_blr_mismatch_length) <<
-				Arg::Num(extMsg.bufferLength) <<
-				Arg::Num(offset));
-		}
-	}
-
-	if (messageNeeded)
-		csb->csb_message_pad.put(message2, count);	// Mark the message as possibly needing pad.
-	else
-	{
-		// The external and internal messages are compatible, so there is no need to create a new one.
-		appendBlr.shrink(prevAppendBlrSize);
-		appendBlr.add(blr_begin);
-		appendBlr.add(blr_end);
-	}
-
-	// Input message is 0 and output message is 1. Output message need the eof (+1) field.
-	count = parameters.getCount() * 2 + message;
-	fb_assert(count <= MAX_USHORT);
-
-	blr.add(blr_message);	// e_extrout_input_message, e_extrout_output_message
-	blr.add(message);
-	blr.add(UCHAR(count));	// parameters (with nulls)
-	blr.add(UCHAR(count >> 8));
-
-	offset = 0;
-
-	for (const NestConst<Parameter>* i = parameters.begin(); i != parameters.end(); ++i)
-	{
-		const Parameter* parameter = *i;
-
-		if (!parameter->prm_nullable)
-			blr.add(blr_not_nullable);
-
-		const dsc* desc = &parameter->prm_desc;
-
-		if (parameter->prm_mechanism == prm_mech_type_of)
-			generateBlr(desc, blr);
-		else
-		{
-			fb_assert(parameter->prm_mechanism == prm_mech_normal);
-
-			bool isText = parameter->prm_desc.isText() ||
-				(parameter->prm_desc.isBlob() &&
-					parameter->prm_desc.getBlobSubType() == isc_blob_text);
-
-			if (isText)
-				blr.add(blr_domain_name2);
-			else
-				blr.add(blr_domain_name);
-
-			blr.add(blr_domain_full);
-
-			fb_assert(parameter->prm_field_source.length() <= MAX_UCHAR);
-			blr.add(parameter->prm_field_source.length());
-			blr.push(reinterpret_cast<const UCHAR*>(parameter->prm_field_source.c_str()),
-				parameter->prm_field_source.length());
-
-			if (isText)
-			{
-				blr.add(parameter->prm_desc.getTextType());
-				blr.add(parameter->prm_desc.getTextType() >> 8);
-			}
-		}
-
-		if (desc->dsc_dtype >= dtype_aligned)
-			offset = FB_ALIGN(offset, type_alignments[desc->dsc_dtype]);
-
-		offset += desc->dsc_length;
-
-		generateBlr(&shortDesc, blr);	// null flag
-
-		offset = FB_ALIGN(offset, sizeof(SSHORT)) + shortDesc.dsc_length;
-	}
-
-	if (!messageNeeded)
-		csb->csb_message_pad.put(message, count);	// Mark the message as possibly needing pad.
-
-	return messageNeeded;
-}
-
-
 // Parse routine BLR.
-void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id, CompilerScratch* csb,
-	bool external, const RoutineMessage& extInMsg, const RoutineMessage& extOutMsg)
+void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	UCharBuffer tmp;
 
-	if (external || !blob_id)
-	{
-		tmp.add(blr_version5);
-		tmp.add(blr_begin);
-
-		// ASF: Generate nodes even when they could be avoided, because we will use hardcoded
-		// message and statement numbers. See e_extrout_*.
-
-		UCharBuffer appendBlr;
-
-		bool genExtIn = gen_ext_message(tdbb, csb, tmp, e_extrout_input_message,
-			e_extrout_input_message2, routine->getInputFields(), extInMsg, appendBlr);
-		bool genExtOut = gen_ext_message(tdbb, csb, tmp, e_extrout_output_message,
-			e_extrout_output_message2, routine->getOutputFields(), extOutMsg, appendBlr);
-
-		dsc shortDesc;
-		shortDesc.makeShort(0);
-		generateBlr(&shortDesc, tmp);	// end flag for the output message
-
-		tmp.join(appendBlr);
-
-		tmp.add(blr_begin);	// e_extrout_input_assign
-
-		fb_assert(routine->getInputFields().getCount() < MAX_USHORT / 2);
-		for (size_t i = 0; i < routine->getInputFields().getCount(); ++i)
-		{
-			const Parameter* parameter = routine->getInputFields()[i];
-
-			if (genExtIn || parameter->prm_mechanism != prm_mech_type_of || !parameter->prm_nullable)
-			{
-				tmp.add(blr_assignment);
-
-				tmp.add(blr_parameter2);
-				tmp.add(e_extrout_input_message);
-				tmp.add(UCHAR(i * 2));
-				tmp.add(UCHAR((i * 2) >> 8));
-				tmp.add(UCHAR((i * 2) + 1));	// null indicator
-				tmp.add(UCHAR(((i * 2) + 1) >> 8));
-
-				if (genExtIn)
-				{
-					tmp.add(blr_parameter2);
-					tmp.add(e_extrout_input_message2);
-					tmp.add(UCHAR(i * 2));
-					tmp.add(UCHAR((i * 2) >> 8));
-					tmp.add(UCHAR((i * 2) + 1));	// null indicator
-					tmp.add(UCHAR(((i * 2) + 1) >> 8));
-				}
-				else
-					tmp.add(blr_null);
-			}
-		}
-
-		tmp.add(blr_end);
-
-		tmp.add(blr_begin);	// e_extrout_output_assign
-
-		fb_assert(routine->getOutputFields().getCount() < MAX_USHORT / 2);
-		for (size_t i = 0; i < routine->getOutputFields().getCount(); ++i)
-		{
-			const Parameter* parameter = routine->getOutputFields()[i];
-
-			if (genExtOut || parameter->prm_mechanism != prm_mech_type_of || !parameter->prm_nullable)
-			{
-				tmp.add(blr_assignment);
-
-				if (genExtOut)
-				{
-					tmp.add(blr_parameter2);
-					tmp.add(e_extrout_output_message2);
-					tmp.add(UCHAR(i * 2));
-					tmp.add(UCHAR((i * 2) >> 8));
-					tmp.add(UCHAR((i * 2) + 1));	// null indicator
-					tmp.add(UCHAR(((i * 2) + 1) >> 8));
-
-					tmp.add(blr_parameter2);
-					tmp.add(e_extrout_output_message);
-					tmp.add(UCHAR(i * 2));
-					tmp.add(UCHAR((i * 2) >> 8));
-					tmp.add(UCHAR((i * 2) + 1));	// null indicator
-					tmp.add(UCHAR(((i * 2) + 1) >> 8));
-				}
-				else
-				{
-					tmp.add(blr_parameter2);
-					tmp.add(e_extrout_output_message);
-					tmp.add(UCHAR(i * 2));
-					tmp.add(UCHAR((i * 2) >> 8));
-					tmp.add(UCHAR((i * 2) + 1));	// null indicator
-					tmp.add(UCHAR(((i * 2) + 1) >> 8));
-					tmp.add(blr_null);
-				}
-			}
-		}
-
-		tmp.add(blr_end);
-
-		tmp.add(blr_end);
-		tmp.add(blr_eoc);
-	}
-	else
+	if (blob_id)
 	{
 		blb* blob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
 		ULONG length = blob->blb_length + 10;
@@ -4662,7 +4311,7 @@ void MET_parse_routine_blr(thread_db* tdbb, Routine* routine, bid* blob_id, Comp
 	PAR_blr(tdbb, NULL, tmp.begin(), (ULONG) tmp.getCount(), NULL, &csb, &statement, false, 0);
 	routine->setStatement(statement);
 
-	if (!external && !blob_id)
+	if (!blob_id)
 		routine->setImplemented(false);
 }
 

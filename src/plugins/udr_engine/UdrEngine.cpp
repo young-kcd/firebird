@@ -153,9 +153,9 @@ public:
 	virtual void FB_CALL openAttachment(IStatus* status, ExternalContext* context);
 	virtual void FB_CALL closeAttachment(IStatus* status, ExternalContext* context);
 	virtual ExternalFunction* FB_CALL makeFunction(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg);
+		const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
 	virtual ExternalProcedure* FB_CALL makeProcedure(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg);
+		const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
 	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, ITriggerMessage* fieldsMsg);
 
@@ -207,7 +207,8 @@ class SharedFunction : public ExternalFunction
 {
 public:
 	SharedFunction(IStatus* status, Engine* aEngine, ExternalContext* context,
-				const IRoutineMetadata* aMetadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
+				const IRoutineMetadata* aMetadata,
+				IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -216,8 +217,9 @@ public:
 		  children(*getDefaultMemoryPool())
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
-		FunctionNode* node = engine->findNode<FunctionNode>(registeredFunctions, moduleName, entryPoint);
-		node->factory->setup(status, context, metadata, inMsg, outMsg);
+		FunctionNode* node = engine->findNode<FunctionNode>(
+			registeredFunctions, moduleName, entryPoint);
+		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
 	virtual ~SharedFunction()
@@ -275,7 +277,8 @@ class SharedProcedure : public ExternalProcedure
 {
 public:
 	SharedProcedure(IStatus* status, Engine* aEngine, ExternalContext* context,
-				const IRoutineMetadata* aMetadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
+				const IRoutineMetadata* aMetadata,
+				IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -284,8 +287,9 @@ public:
 		  children(*getDefaultMemoryPool())
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
-		ProcedureNode* node = engine->findNode<ProcedureNode>(registeredProcedures, moduleName, entryPoint);
-		node->factory->setup(status, context, metadata, inMsg, outMsg);
+		ProcedureNode* node = engine->findNode<ProcedureNode>(
+			registeredProcedures, moduleName, entryPoint);
+		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
 	virtual ~SharedProcedure()
@@ -681,11 +685,11 @@ void FB_CALL Engine::closeAttachment(IStatus* status, ExternalContext* context)
 
 
 ExternalFunction* FB_CALL Engine::makeFunction(IStatus* status, ExternalContext* context,
-	const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
+	const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
 	try
 	{
-		return new SharedFunction(status, this, context, metadata, inMsg, outMsg);
+		return new SharedFunction(status, this, context, metadata, inBuilder, outBuilder);
 	}
 	catch (const StatusException& e)
 	{
@@ -696,11 +700,11 @@ ExternalFunction* FB_CALL Engine::makeFunction(IStatus* status, ExternalContext*
 
 
 ExternalProcedure* FB_CALL Engine::makeProcedure(IStatus* status, ExternalContext* context,
-	const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg)
+	const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
 	try
 	{
-		return new SharedProcedure(status, this, context, metadata, inMsg, outMsg);
+		return new SharedProcedure(status, this, context, metadata, inBuilder, outBuilder);
 	}
 	catch (const StatusException& e)
 	{

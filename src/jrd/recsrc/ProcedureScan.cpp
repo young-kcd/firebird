@@ -42,7 +42,7 @@ using namespace Jrd;
 ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
 							 const jrd_prc* procedure, const ValueListNode* sourceList,
 							 const ValueListNode* targetList, MessageNode* message)
-	: RecordStream(csb, stream, procedure->prc_format), m_name(csb->csb_pool, name),
+	: RecordStream(csb, stream, procedure->prc_record_format), m_name(csb->csb_pool, name),
 	  m_procedure(procedure), m_sourceList(sourceList), m_targetList(targetList), m_message(message)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
@@ -71,22 +71,22 @@ void ProcedureScan::open(thread_db* tdbb) const
 	rpb->rpb_record = NULL;
 
 	ULONG iml;
-	const UCHAR* im;
-
-	jrd_req* const proc_request = m_procedure->getStatement()->findRequest(tdbb);
-	impure->irsb_req_handle = proc_request;
+	UCHAR* im;
 
 	if (m_sourceList)
 	{
+		iml = m_message->format->fmt_length;
+		im = request->getImpure<UCHAR>(m_message->impureOffset);
+
+		// We must clear messages of external procedures.
+		memset(im, 0, iml);
+
 		const NestConst<ValueExprNode>* const sourceEnd = m_sourceList->items.end();
 		const NestConst<ValueExprNode>* sourcePtr = m_sourceList->items.begin();
 		const NestConst<ValueExprNode>* targetPtr = m_targetList->items.begin();
 
 		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
 			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
-
-		iml = m_message->format->fmt_length;
-		im = request->getImpure<UCHAR>(m_message->impureOffset);
 	}
 	else
 	{
@@ -94,33 +94,55 @@ void ProcedureScan::open(thread_db* tdbb) const
 		im = NULL;
 	}
 
-	// req_proc_fetch flag used only when fetching rows, so
-	// is set at end of open()
-
-	proc_request->req_flags &= ~req_proc_fetch;
-
-	try
+	if (m_procedure->getExternal())
 	{
-		proc_request->req_timestamp = request->req_timestamp;
+		///const Format* const msg_format = m_procedure->prc_output_msg->format;
+		const Format* const msg_format = m_procedure->getOutputFormat();
+		const ULONG oml = msg_format->fmt_length;
+		UCHAR* om = impure->irsb_message;
 
-		TraceProcExecute trace(tdbb, proc_request, request, m_targetList);
+		if (!om)
+			om = impure->irsb_message = FB_NEW(*tdbb->getDefaultPool()) UCHAR[oml];
 
-		EXE_start(tdbb, proc_request, request->req_transaction);
+		// We must clear messages of external procedures.
+		memset(om, 0, oml);
 
-		if (iml)
+		ExtEngineManager::ResultSet* rs = impure->irsb_ext_resultset =
+			m_procedure->getExternal()->open(tdbb, im, om);
+	}
+	else
+	{
+		jrd_req* const proc_request = m_procedure->getStatement()->findRequest(tdbb);
+		impure->irsb_req_handle = proc_request;
+
+		// req_proc_fetch flag used only when fetching rows, so
+		// is set at end of open()
+
+		proc_request->req_flags &= ~req_proc_fetch;
+
+		try
 		{
-			EXE_send(tdbb, proc_request, 0, iml, im);
+			proc_request->req_timestamp = request->req_timestamp;
+
+			TraceProcExecute trace(tdbb, proc_request, request, m_targetList);
+
+			EXE_start(tdbb, proc_request, request->req_transaction);
+
+			if (iml)
+			{
+				EXE_send(tdbb, proc_request, 0, iml, im);
+			}
+
+			trace.finish(true, res_successful);
+		}
+		catch (const Firebird::Exception&)
+		{
+			close(tdbb);
+			throw;
 		}
 
-		trace.finish(true, res_successful);
+		proc_request->req_flags |= req_proc_fetch;
 	}
-	catch (const Firebird::Exception&)
-	{
-		close(tdbb);
-		throw;
-	}
-
-	proc_request->req_flags |= req_proc_fetch;
 }
 
 void ProcedureScan::close(thread_db* tdbb) const
@@ -135,14 +157,22 @@ void ProcedureScan::close(thread_db* tdbb) const
 	{
 		impure->irsb_flags &= ~irsb_open;
 
-		jrd_req* const proc_request = impure->irsb_req_handle;
-
-		if (proc_request)
+		if (m_procedure->getExternal())
 		{
-			EXE_unwind(tdbb, proc_request);
-			proc_request->req_flags &= ~req_in_use;
-			impure->irsb_req_handle = NULL;
-			proc_request->req_attachment = NULL;
+			delete impure->irsb_ext_resultset;
+			impure->irsb_ext_resultset = NULL;
+		}
+		else
+		{
+			jrd_req* const proc_request = impure->irsb_req_handle;
+
+			if (proc_request)
+			{
+				EXE_unwind(tdbb, proc_request);
+				proc_request->req_flags &= ~req_in_use;
+				impure->irsb_req_handle = NULL;
+				proc_request->req_attachment = NULL;
+			}
 		}
 
 		delete [] impure->irsb_message;
@@ -165,9 +195,9 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 		return false;
 	}
 
-	jrd_req* const proc_request = impure->irsb_req_handle;
 	const Format* const rec_format = m_format;
-	const Format* const msg_format = m_procedure->prc_output_msg->format;
+	///const Format* const msg_format = m_procedure->prc_output_msg->format;
+	const Format* const msg_format = m_procedure->getOutputFormat();
 	const ULONG oml = msg_format->fmt_length;
 	UCHAR* om = impure->irsb_message;
 
@@ -186,30 +216,44 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	else
 		record = rpb->rpb_record;
 
-	TraceProcFetch trace(tdbb, proc_request);
-
-	try
+	if (m_procedure->getExternal())
 	{
-		EXE_receive(tdbb, proc_request, 1, oml, om);
+		fb_assert(impure->irsb_ext_resultset);
 
-		dsc desc = msg_format->fmt_desc[msg_format->fmt_count - 1];
-		desc.dsc_address = (UCHAR*) (om + (IPTR) desc.dsc_address);
-		SSHORT eos;
-		dsc eos_desc;
-		eos_desc.makeShort(0, &eos);
-		MOV_move(tdbb, &desc, &eos_desc);
-
-		if (!eos)
-		{
-			trace.fetch(true, res_successful);
+		if (!impure->irsb_ext_resultset->fetch(tdbb))
 			return false;
-		}
 	}
-	catch (const Firebird::Exception&)
+	else
 	{
-		trace.fetch(true, res_failed);
-		close(tdbb);
-		throw;
+		jrd_req* const proc_request = impure->irsb_req_handle;
+
+		TraceProcFetch trace(tdbb, proc_request);
+
+		try
+		{
+			EXE_receive(tdbb, proc_request, 1, oml, om);
+
+			dsc desc = msg_format->fmt_desc[msg_format->fmt_count - 1];
+			desc.dsc_address = (UCHAR*) (om + (IPTR) desc.dsc_address);
+			SSHORT eos;
+			dsc eos_desc;
+			eos_desc.makeShort(0, &eos);
+			MOV_move(tdbb, &desc, &eos_desc);
+
+			if (!eos)
+			{
+				trace.fetch(true, res_successful);
+				return false;
+			}
+		}
+		catch (const Firebird::Exception&)
+		{
+			trace.fetch(true, res_failed);
+			close(tdbb);
+			throw;
+		}
+
+		trace.fetch(false, res_successful);
 	}
 
 	for (unsigned i = 0; i < rec_format->fmt_count; i++)
@@ -218,7 +262,6 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 					 om, &rec_format->fmt_desc[i], i, record);
 	}
 
-	trace.fetch(false, res_successful);
 	return true;
 }
 
@@ -267,8 +310,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 	dsc desc2;
 	desc2.makeShort(0, &indicator);
 
-	dsc desc1;
-	desc1 = *flag_desc;
+	dsc desc1 = *flag_desc;
 	desc1.dsc_address = const_cast<UCHAR*>(msg) + (IPTR) flag_desc->dsc_address;
 
 	MOV_move(tdbb, &desc1, &desc2);

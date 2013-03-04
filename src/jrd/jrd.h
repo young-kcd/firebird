@@ -229,8 +229,8 @@ class jrd_prc : public Routine
 {
 public:
 	USHORT prc_flags;
-	const MessageNode* prc_output_msg;
-	const Format*	prc_format;
+	///const MessageNode* prc_output_msg;
+	const Format*	prc_record_format;
 	prc_t		prc_type;					// procedure type
 	USHORT prc_use_count;					// requests compiled with procedure
 	SSHORT prc_int_use_count;				// number of procedures compiled with procedure, set and
@@ -250,8 +250,8 @@ public:
 	explicit jrd_prc(MemoryPool& p)
 		: Routine(p),
 		  prc_flags(0),
-		  prc_output_msg(NULL),
-		  prc_format(NULL),
+		  ///prc_output_msg(NULL),
+		  prc_record_format(NULL),
 		  prc_type(prc_legacy),
 		  prc_use_count(0),
 		  prc_int_use_count(0),

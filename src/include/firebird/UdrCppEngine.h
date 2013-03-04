@@ -61,10 +61,10 @@ namespace Firebird
 	};
 
 #define FB_UDR_EXECUTE_DYNAMIC_FUNCTION	\
-	typedef void* InMessage;	\
-	typedef void* OutMessage;	\
+	FB_UDR__DYNAMIC_TYPE(InMessage);	\
+	FB_UDR__DYNAMIC_TYPE(OutMessage);	\
 	\
-	FB_UDR_EXECUTE__FUNCTION
+	FB_UDR__EXECUTE_FUNCTION
 
 #define FB_UDR_EXECUTE_MESSAGE_FUNCTION(inputs, output)	\
 	FB_MESSAGE(InMessage,	\
@@ -74,29 +74,29 @@ namespace Firebird
 		output	\
 	);	\
 	\
-	FB_UDR_EXECUTE__FUNCTION
+	FB_UDR__EXECUTE_FUNCTION
 
 #define FB_UDR_EXECUTE_MESSAGE_FUNCTION_OUT(outputs)	\
-	typedef void* InMessage;	\
+	FB_UDR__DYNAMIC_TYPE(InMessage);	\
 	FB_MESSAGE(OutMessage,	\
 		outputs	\
 	);	\
 	\
-	FB_UDR_EXECUTE__FUNCTION
+	FB_UDR__EXECUTE_FUNCTION
 
-#define FB_UDR_EXECUTE__FUNCTION	\
+#define FB_UDR__EXECUTE_FUNCTION	\
 	virtual void FB_CALL execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
 		void* in, void* out)	\
 	{	\
 		try	\
 		{	\
-			internalExecute(status, context, (InMessage*) in, (OutMessage*) out);	\
+			internalExecute(status, context, (InMessage::Type*) in, (OutMessage::Type*) out);	\
 		}	\
 		FB_UDR__CATCH	\
 	}	\
 	\
 	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
-		InMessage* in, OutMessage* out)
+		InMessage::Type* in, OutMessage::Type* out)
 
 
 #define FB_UDR_BEGIN_PROCEDURE(name)	\
@@ -118,10 +118,10 @@ namespace Firebird
 	};
 
 #define FB_UDR_EXECUTE_DYNAMIC_PROCEDURE	\
-	typedef void* InMessage;	\
-	typedef void* OutMessage;	\
+	FB_UDR__DYNAMIC_TYPE(InMessage);	\
+	FB_UDR__DYNAMIC_TYPE(OutMessage);	\
 	\
-	FB_UDR_EXECUTE__PROCEDURE
+	FB_UDR__EXECUTE_PROCEDURE
 
 #define FB_UDR_EXECUTE_MESSAGE_PROCEDURE(inputs, outputs)	\
 	FB_MESSAGE(InMessage,	\
@@ -131,31 +131,31 @@ namespace Firebird
 		outputs	\
 	);	\
 	\
-	FB_UDR_EXECUTE__PROCEDURE
+	FB_UDR__EXECUTE_PROCEDURE
 
 #define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_IN(inputs)	\
 	FB_MESSAGE(InMessage,	\
 		inputs	\
 	);	\
-	typedef void* OutMessage;	\
+	FB_UDR__DYNAMIC_TYPE(OutMessage);	\
 	\
-	FB_UDR_EXECUTE__PROCEDURE
+	FB_UDR__EXECUTE_PROCEDURE
 
 #define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_OUT(outputs)	\
-	typedef void* InMessage;	\
+	FB_UDR__DYNAMIC_TYPE(InMessage);	\
 	FB_MESSAGE(OutMessage,	\
 		outputs	\
 	);	\
 	\
-	FB_UDR_EXECUTE__PROCEDURE
+	FB_UDR__EXECUTE_PROCEDURE
 
-#define FB_UDR_EXECUTE__PROCEDURE	\
+#define FB_UDR__EXECUTE_PROCEDURE	\
 	virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::IStatus* status, \
 		::Firebird::ExternalContext* context, void* in, void* out)	\
 	{	\
 		try	\
 		{	\
-			return new ResultSet(status, context, this, (InMessage*) in, (OutMessage*) out);	\
+			return new ResultSet(status, context, this, (InMessage::Type*) in, (OutMessage::Type*) out);	\
 		}	\
 		FB_UDR__CATCH	\
 		\
@@ -166,7 +166,7 @@ namespace Firebird
 	{	\
 	public:	\
 		ResultSet(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
-				This* const procedure, InMessage* const in, OutMessage* const out)	\
+				This* const procedure, InMessage::Type* const in, OutMessage::Type* const out)	\
 			: ::Firebird::Udr::ResultSet<ResultSet, This, InMessage, OutMessage>(	\
 					context, procedure, in, out)
 
@@ -204,16 +204,16 @@ namespace Firebird
 #define FB_UDR_EXECUTE_DYNAMIC_TRIGGER	\
 	typedef void* FieldsMessage;	\
 	\
-	FB_UDR_EXECUTE__TRIGGER
+	FB_UDR__EXECUTE_TRIGGER
 
 #define FB_UDR_EXECUTE_MESSAGE_TRIGGER(fields)	\
 	FB_TRIGGER_MESSAGE(FieldsMessage,	\
 		fields	\
 	);	\
 	\
-	FB_UDR_EXECUTE__TRIGGER
+	FB_UDR__EXECUTE_TRIGGER
 
-#define FB_UDR_EXECUTE__TRIGGER	\
+#define FB_UDR__EXECUTE_TRIGGER	\
 	virtual void FB_CALL execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
 		::Firebird::ExternalTrigger::Action action, void* oldFields, void* newFields)	\
 	{	\
@@ -239,6 +239,14 @@ namespace Firebird
 	}	\
 	\
 	void internalInitialize(::Firebird::IStatus* status, ::Firebird::ExternalContext* context)
+
+
+#define FB_UDR__DYNAMIC_TYPE(name)	\
+	struct name	\
+	{	\
+		typedef unsigned char Type;	\
+		static void setup(::Firebird::IStatus*, ::Firebird::IMetadataBuilder*) {}	\
+	}
 
 
 #define FB_UDR__CATCH	\
@@ -437,7 +445,7 @@ class ResultSet : public ExternalResultSet, public Helper
 {
 public:
 	ResultSet(ExternalContext* aContext, Procedure* aProcedure,
-				InMessage* aIn, OutMessage* aOut)
+				typename InMessage::Type* aIn, typename OutMessage::Type* aOut)
 		: context(aContext),
 		  procedure(aProcedure),
 		  in(aIn),
@@ -454,8 +462,8 @@ public:
 protected:
 	ExternalContext* const context;
 	Procedure* const procedure;
-	InMessage* const in;
-	OutMessage* const out;
+	typename InMessage::Type* const in;
+	typename OutMessage::Type* const out;
 };
 
 
@@ -572,11 +580,11 @@ public:
 		fbUdrRegFunction(name, this);
 	}
 
-	virtual void setup(IStatus* /*status*/, ExternalContext* /*context*/,
-		const IRoutineMetadata* /*metadata*/, IRoutineMessage* in, IRoutineMessage* out)
+	virtual void setup(IStatus* status, ExternalContext* /*context*/,
+		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
-		setBlr(in, (typename T::InMessage*) 0);
-		setBlr(out, (typename T::OutMessage*) 0);
+		T::InMessage::setup(status, in);
+		T::OutMessage::setup(status, out);
 	}
 
 	virtual ExternalFunction* FB_CALL newItem(IStatus* status, ExternalContext* context,
@@ -585,18 +593,6 @@ public:
 		T* obj = new(metadata) Routine<T>;
 		obj->initialize(status, context);
 		return obj;
-	}
-
-private:
-	template <typename MessageType> void setBlr(IRoutineMessage* blrMessage, MessageType*)
-	{
-		unsigned blrLength;
-		const unsigned char* blr = MessageType::getBlr(&blrLength);
-		blrMessage->set(blr, blrLength, MessageType::getSize());
-	}
-
-	void setBlr(IRoutineMessage* /*blrMessage*/, void**)
-	{
 	}
 };
 
@@ -609,11 +605,11 @@ public:
 		fbUdrRegProcedure(name, this);
 	}
 
-	virtual void setup(IStatus* /*status*/, ExternalContext* /*context*/,
-		const IRoutineMetadata* /*metadata*/, IRoutineMessage* in, IRoutineMessage* out)
+	virtual void setup(IStatus* status, ExternalContext* /*context*/,
+		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
-		setBlr(in, (typename T::InMessage*) 0);
-		setBlr(out, (typename T::OutMessage*) 0);
+		T::InMessage::setup(status, in);
+		T::OutMessage::setup(status, out);
 	}
 
 	virtual ExternalProcedure* FB_CALL newItem(IStatus* status, ExternalContext* context,
@@ -622,18 +618,6 @@ public:
 		T* obj = new(metadata) Routine<T>;
 		obj->initialize(status, context);
 		return obj;
-	}
-
-private:
-	template <typename MessageType> void setBlr(IRoutineMessage* blrMessage, MessageType*)
-	{
-		unsigned blrLength;
-		const unsigned char* blr = MessageType::getBlr(&blrLength);
-		blrMessage->set(blr, blrLength, MessageType::getSize());
-	}
-
-	void setBlr(IRoutineMessage* /*blrMessage*/, void**)
-	{
 	}
 };
 
@@ -646,10 +630,10 @@ public:
 		fbUdrRegTrigger(name, this);
 	}
 
-	virtual void setup(IStatus* /*status*/, ExternalContext* /*context*/,
+	virtual void setup(IStatus* status, ExternalContext* /*context*/,
 		const IRoutineMetadata* /*metadata*/, ITriggerMessage* fields)
 	{
-		setBlr(fields, (typename T::FieldsMessage*) 0);
+		T::FieldsMessage::setup(status, fields);
 	}
 
 	virtual ExternalTrigger* FB_CALL newItem(IStatus* status, ExternalContext* context,
@@ -658,20 +642,6 @@ public:
 		T* obj = new(metadata) Routine<T>;
 		obj->initialize(status, context);
 		return obj;
-	}
-
-private:
-	template <typename MessageType> void setBlr(ITriggerMessage* blrMessage, MessageType*)
-	{
-		unsigned blrLength, namesCount;
-		const unsigned char* blr = MessageType::getBlr(&blrLength);
-		const char** names = MessageType::getNames(&namesCount);
-
-		blrMessage->set(blr, blrLength, MessageType::getSize(), names, namesCount);
-	}
-
-	void setBlr(ITriggerMessage* /*blrMessage*/, void**)
-	{
 	}
 };
 

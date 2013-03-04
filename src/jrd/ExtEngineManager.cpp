@@ -58,7 +58,51 @@ using namespace Firebird;
 
 namespace Jrd {
 
-MakeUpgradeInfo<> upInfo;
+static MakeUpgradeInfo<> upInfo;
+
+
+static Format* createFormat(MemoryPool& pool, IMessageMetadata* params)
+{
+	LocalStatus status;
+
+	unsigned count = params->getCount(&status);
+	status.check();
+
+	Format* format = Format::newFormat(pool, count * 2);
+	unsigned runOffset = 0;
+
+	dsc* desc = format->fmt_desc.begin();
+
+	for (unsigned i = 0; i < count; ++i)
+	{
+		unsigned descOffset, nullOffset, descDtype, descLength;
+
+		runOffset = fb_utils::sqlTypeToDsc(runOffset, params->getType(&status, i),
+			params->getLength(&status, i), &descDtype, &descLength,
+			&descOffset, &nullOffset);
+		status.check();
+
+		desc->clear();
+		desc->dsc_dtype = descDtype;
+		desc->dsc_length = descLength;
+		desc->dsc_scale = params->getScale(&status, i);
+		desc->dsc_sub_type = params->getSubType(&status, i);
+		desc->setTextType(params->getCharset(&status, i));
+		desc->dsc_address = (UCHAR*)(IPTR) descOffset;
+		desc->dsc_flags = (params->isNullable(&status, i) ? DSC_nullable : 0);
+
+		++desc;
+		desc->makeShort(0, (SSHORT*)(IPTR) nullOffset);
+		status.check();
+
+		++desc;
+	}
+
+	format->fmt_length = runOffset;
+
+	return format;
+}
+
 
 template <typename T> class ExtEngineManager::ContextManager
 {
@@ -728,9 +772,8 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 }
 
 
-ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, const Jrd::Function* udf,
-	const MetaName& engine, const string& entryPoint, const string& body,
-	RoutineMessage* inMsg, RoutineMessage* outMsg)
+void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
+	const MetaName& engine, const string& entryPoint, const string& body)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -749,8 +792,12 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	metadata->name = udf->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-	metadata->inputParameters = new MsgMetadata;
-	metadata->outputParameters = new MsgMetadata;
+
+	MsgMetadata* inMsg = new MsgMetadata;
+	metadata->inputParameters = inMsg;
+
+	MsgMetadata* outMsg = new MsgMetadata;
+	metadata->outputParameters = outMsg;
 
 	for (Array<NestConst<Parameter> >::const_iterator i = udf->getInputFields().begin();
 		 i != udf->getInputFields().end();
@@ -759,13 +806,14 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
 		(*i)->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
 
-		StatementMetadata::Parameters::Item& item = metadata->inputParameters->items.add();
+		StatementMetadata::Parameters::Item& item = inMsg->items.add();
 		item.field = (*i)->prm_name.c_str();
 		item.type = sqlType;
 		item.subType = sqlSubType;
 		item.length = sqlLen;
 		item.scale = sqlScale;
 		item.nullable = (*i)->prm_nullable;
+		item.finished = true;
 	}
 
 	{	// scope
@@ -774,23 +822,33 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
 		i->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
 
-		StatementMetadata::Parameters::Item& item = metadata->outputParameters->items.add();
+		StatementMetadata::Parameters::Item& item = outMsg->items.add();
 		item.field = i->prm_name.c_str();
 		item.type = sqlType;
 		item.subType = sqlSubType;
 		item.length = sqlLen;
 		item.scale = sqlScale;
 		item.nullable = i->prm_nullable;
+		item.finished = true;
 	}
+
+	LocalStatus status;
+
+	RefPtr<IMetadataBuilder> inBuilder(metadata->inputParameters->getBuilder(&status));
+	inBuilder->release();
+	status.check();
+
+	RefPtr<IMetadataBuilder> outBuilder(metadata->outputParameters->getBuilder(&status));
+	outBuilder->release();
+	status.check();
 
 	ExternalFunction* externalFunction;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		LocalStatus status;
 		externalFunction = attInfo->engine->makeFunction(&status, attInfo->context, metadata,
-			inMsg, outMsg);
+			inBuilder, outBuilder);
 		status.check();
 
 		if (!externalFunction)
@@ -798,12 +856,21 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 			status_exception::raise(
 				Arg::Gds(isc_eem_func_not_returned) << udf->getName().toString() << engine);
 		}
+
+		metadata->inputParameters = inBuilder->getMetadata(&status);
+		status.check();
+
+		metadata->outputParameters = outBuilder->getMetadata(&status);
+		status.check();
 	}
 
 	try
 	{
-		return FB_NEW(getPool()) Function(tdbb, this, attInfo->engine, metadata.release(),
-			externalFunction, udf);
+		udf->setInputFormat(createFormat(pool, metadata->inputParameters));
+		udf->setOutputFormat(createFormat(pool, metadata->outputParameters));
+
+		udf->fun_external = FB_NEW(getPool()) Function(tdbb, this, attInfo->engine,
+			metadata.release(), externalFunction, udf);
 	}
 	catch (...)
 	{
@@ -814,9 +881,8 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 }
 
 
-ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, const jrd_prc* prc,
-	const MetaName& engine, const string& entryPoint, const string& body,
-	RoutineMessage* inMsg, RoutineMessage* outMsg)
+void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
+	const MetaName& engine, const string& entryPoint, const string& body)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -835,8 +901,12 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	metadata->name = prc->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-	metadata->inputParameters = new MsgMetadata;
-	metadata->outputParameters = new MsgMetadata;
+
+	MsgMetadata* inMsg = new MsgMetadata;
+	metadata->inputParameters = inMsg;
+
+	MsgMetadata* outMsg = new MsgMetadata;
+	metadata->outputParameters = outMsg;
 
 	const Array<NestConst<Parameter> >* parameters[] = {
 		&prc->getInputFields(), &prc->getOutputFields()};
@@ -851,8 +921,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 			(*j)->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
 
 			StatementMetadata::Parameters::Item& item = i == 1 ?
-				metadata->outputParameters->items.add() :
-				metadata->inputParameters->items.add();
+				outMsg->items.add() : inMsg->items.add();
 
 			item.field = (*j)->prm_name.c_str();
 			item.type = sqlType;
@@ -860,17 +929,27 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 			item.length = sqlLen;
 			item.scale = sqlScale;
 			item.nullable = (*j)->prm_nullable;
+			item.finished = true;
 		}
 	}
+
+	LocalStatus status;
+
+	RefPtr<IMetadataBuilder> inBuilder(metadata->inputParameters->getBuilder(&status));
+	inBuilder->release();
+	status.check();
+
+	RefPtr<IMetadataBuilder> outBuilder(metadata->outputParameters->getBuilder(&status));
+	outBuilder->release();
+	status.check();
 
 	ExternalProcedure* externalProcedure;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		LocalStatus status;
 		externalProcedure = attInfo->engine->makeProcedure(&status, attInfo->context, metadata,
-			inMsg, outMsg);
+			inBuilder, outBuilder);
 		status.check();
 
 		if (!externalProcedure)
@@ -879,12 +958,21 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 				Arg::Gds(isc_eem_proc_not_returned) <<
 					prc->getName().toString() << engine);
 		}
+
+		metadata->inputParameters = inBuilder->getMetadata(&status);
+		status.check();
+
+		metadata->outputParameters = outBuilder->getMetadata(&status);
+		status.check();
 	}
 
 	try
 	{
-		return FB_NEW(getPool()) Procedure(tdbb, this, attInfo->engine, metadata.release(),
-			externalProcedure, prc);
+		prc->setInputFormat(createFormat(pool, metadata->inputParameters));
+		prc->setOutputFormat(createFormat(pool, metadata->outputParameters));
+
+		prc->setExternal(FB_NEW(getPool()) Procedure(tdbb, this, attInfo->engine,
+			metadata.release(), externalProcedure, prc));
 	}
 	catch (...)
 	{
@@ -920,7 +1008,9 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	if (relation)
 	{
 		metadata->triggerTable = relation->rel_name;
-		metadata->triggerFields = new MsgMetadata;
+
+		MsgMetadata* fieldsMsg = new MsgMetadata;
+		metadata->triggerFields = fieldsMsg;
 
 		Format* relFormat = relation->rel_current_format;
 
@@ -933,7 +1023,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 			SLONG sqlLen, sqlSubType, sqlScale, sqlType;
 			relFormat->fmt_desc[i].getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
 
-			StatementMetadata::Parameters::Item& item = metadata->triggerFields->items.add();
+			StatementMetadata::Parameters::Item& item = fieldsMsg->items.add();
 			item.field = field->fld_name.c_str();
 			item.type = sqlType;
 			item.subType = sqlSubType;

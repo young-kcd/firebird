@@ -24,16 +24,14 @@
 #define FIREBIRD_MESSAGE_H
 
 #include "ibase.h"
-#include "firebird/impl/boost/preprocessor/seq/for_each_i.hpp"
+#include "./Provider.h"
+#include "./impl/boost/preprocessor/seq/for_each_i.hpp"
 #include <assert.h>
 #include <time.h>
 #include <string.h>
 
 #define FB_MESSAGE(name, fields)	\
-	struct name	\
-	{	\
-		FB_MESSAGE_I(name, 2, FB_BOOST_PP_CAT(FB_MESSAGE_X fields, 0))	\
-	}
+	FB_MESSAGE_I(name, 2, FB_BOOST_PP_CAT(FB_MESSAGE_X fields, 0))
 
 #define FB_MESSAGE_X(x, y) ((x, y)) FB_MESSAGE_Y
 #define FB_MESSAGE_Y(x, y) ((x, y)) FB_MESSAGE_X
@@ -53,60 +51,135 @@
 #define FB_TRIGGER_MESSAGE_Y0
 
 #define FB_MESSAGE_I(name, size, fields)	\
-	static const unsigned char* getBlr(unsigned* length)	\
+	struct name	\
 	{	\
-		static const unsigned char blr[] = {	\
-			blr_version5,	\
-			blr_begin,	\
-			blr_message, 0,	\
-				(2 * (FB_BOOST_PP_SEQ_SIZE(fields))) & 0xFF,	\
-				(2 * (FB_BOOST_PP_SEQ_SIZE(fields))) >> 8,	\
-			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_BLR, size, fields)	\
-			blr_end,	\
-			blr_eoc	\
+		struct Type	\
+		{	\
+			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_FIELD, size, fields)	\
 		};	\
-		*length = sizeof(blr);	\
-		return blr;	\
-	}	\
-	\
-	static unsigned getSize()	\
-	{	\
-		return (unsigned)(size_t) (&((name*) 0)->FB_BOOST_PP_CAT(	\
-			FB_BOOST_PP_TUPLE_ELEM(size, 1,	\
-				FB_BOOST_PP_SEQ_ELEM(FB_BOOST_PP_DEC(FB_BOOST_PP_SEQ_SIZE(fields)), fields)),	\
-			Null) - 0) + sizeof(ISC_SHORT);	\
-	}	\
-	\
-	void clear()	\
-	{	\
-		memset(this, 0, sizeof(*this));	\
-	}	\
-	\
-	FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_FIELD, size, fields)
+		\
+		static void setup(IStatus* status, ::Firebird::IMetadataBuilder* builder)	\
+		{	\
+			unsigned index = 0;	\
+			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_META, size, fields)	\
+		}	\
+		\
+		name(::Firebird::IMaster* master)	\
+			: desc(master, FB_BOOST_PP_SEQ_SIZE(fields), &setup)	\
+		{	\
+		}	\
+		\
+		::Firebird::IMessageMetadata* getMetadata() const	\
+		{	\
+			return desc.getMetadata();	\
+		}	\
+		\
+		void clear()	\
+		{	\
+			memset(&data, 0, sizeof(data));	\
+		}	\
+		\
+		Type* getData()	\
+		{	\
+			return &data;	\
+		}	\
+		\
+		const Type* getData() const	\
+		{	\
+			return &data;	\
+		}	\
+		\
+		Type* operator ->()	\
+		{	\
+			return getData();	\
+		}	\
+		\
+		const Type* operator ->() const	\
+		{	\
+			return getData();	\
+		}	\
+		\
+		Type data;	\
+		::Firebird::MessageDesc desc;	\
+	}
 
 #define FB_MESSAGE_FIELD(r, _, i, xy)	\
 	FB_BOOST_PP_CAT(FB_TYPE_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy)) FB_BOOST_PP_TUPLE_ELEM(_, 1, xy);	\
 	ISC_SHORT FB_BOOST_PP_CAT(FB_BOOST_PP_TUPLE_ELEM(_, 1, xy), Null);
 
-#define FB_MESSAGE_BLR(r, _, i, xy)	\
-	FB_BOOST_PP_CAT(FB_BLR_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy)),	\
-	FB_BLR_FB_SMALLINT,
+#define FB_MESSAGE_META(r, _, i, xy)	\
+	FB_BOOST_PP_CAT(FB_META_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy))
 
-#define FB_BLR_FB_SCALED_SMALLINT(scale)	blr_short, (scale)
-#define FB_BLR_FB_SCALED_INTEGER(scale)		blr_long, (scale)
-#define FB_BLR_FB_SCALED_BIGINT(scale)		blr_int64, (scale)
-#define FB_BLR_FB_SMALLINT					FB_BLR_FB_SCALED_SMALLINT(0)
-#define FB_BLR_FB_INTEGER					FB_BLR_FB_SCALED_INTEGER(0)
-#define FB_BLR_FB_BIGINT					FB_BLR_FB_SCALED_BIGINT(0)
-#define FB_BLR_FB_FLOAT						blr_float
-#define FB_BLR_FB_DOUBLE					blr_double
-#define FB_BLR_FB_BLOB						blr_blob2, 0, 0, 0, 0
-#define FB_BLR_FB_BOOLEAN					blr_bool
-#define FB_BLR_FB_DATE						blr_sql_date
-#define FB_BLR_FB_TIME						blr_sql_time
-#define FB_BLR_FB_TIMESTAMP					blr_timestamp
-#define FB_BLR_FB_CHAR(len)					blr_text2, 0, 0, (len) & 0xFF, (len) >> 8
-#define FB_BLR_FB_VARCHAR(len)				blr_varying2, 0, 0, (len) & 0xFF, (len) >> 8
+// Types - metadata
+
+#define FB_META_FB_SCALED_SMALLINT(scale)	\
+	builder->setType(status, index, SQL_SHORT);	\
+	builder->setLength(status, index, sizeof(ISC_SHORT));	\
+	builder->setScale(status, index, scale);	\
+	++index;
+
+#define FB_META_FB_SCALED_INTEGER(scale)	\
+	builder->setType(status, index, SQL_LONG);	\
+	builder->setLength(status, index, sizeof(ISC_LONG));	\
+	builder->setScale(status, index, scale);	\
+	++index;
+
+#define FB_META_FB_SCALED_BIGINT(scale)	\
+	builder->setType(status, index, SQL_INT64);	\
+	builder->setLength(status, index, sizeof(ISC_INT64));	\
+	builder->setScale(status, index, scale);	\
+	++index;
+
+#define FB_META_FB_FLOAT	\
+	builder->setType(status, index, SQL_FLOAT);	\
+	builder->setLength(status, index, sizeof(float));	\
+	++index;
+
+#define FB_META_FB_DOUBLE	\
+	builder->setType(status, index, SQL_DOUBLE);	\
+	builder->setLength(status, index, sizeof(double));	\
+	++index;
+
+#define FB_META_FB_BLOB	\
+	builder->setType(status, index, SQL_BLOB);	\
+	builder->setLength(status, index, sizeof(ISC_QUAD));	\
+	++index;
+
+#define FB_META_FB_BOOLEAN	\
+	builder->setType(status, index, SQL_BOOLEAN);	\
+	builder->setLength(status, index, sizeof(ISC_BOOLEAN));	\
+	++index;
+
+#define FB_META_FB_DATE	\
+	builder->setType(status, index, SQL_DATE);	\
+	builder->setLength(status, index, sizeof(FbDate));	\
+	++index;
+
+#define FB_META_FB_TIME	\
+	builder->setType(status, index, SQL_TIME);	\
+	builder->setLength(status, index, sizeof(FbTime));	\
+	++index;
+
+#define FB_META_FB_TIMESTAMP	\
+	builder->setType(status, index, SQL_TIMESTAMP);	\
+	builder->setLength(status, index, sizeof(FbTimestamp));	\
+	++index;
+
+#define FB_META_FB_CHAR(len)	\
+	builder->setType(status, index, SQL_TEXT);	\
+	builder->setLength(status, index, len);	\
+	++index;
+
+#define FB_META_FB_VARCHAR(len)	\
+	builder->setType(status, index, SQL_VARYING);	\
+	builder->setLength(status, index, len);	\
+	++index;
+
+#define FB_META_FB_SMALLINT				FB_META_FB_SCALED_SMALLINT(0)
+#define FB_META_FB_INTEGER				FB_META_FB_SCALED_INTEGER(0)
+#define FB_META_FB_BIGINT				FB_META_FB_SCALED_BIGINT(0)
+
+// Types - struct
 
 #define FB_TYPE_FB_SCALED_SMALLINT(x)	ISC_SHORT
 #define FB_TYPE_FB_SCALED_INTEGER(x)	ISC_LONG
@@ -320,6 +393,36 @@ class FbTimestamp
 public:
 	FbDate date;
 	FbTime time;
+};
+
+class MessageDesc
+{
+public:
+	MessageDesc(IMaster* master, unsigned count, void (*setup)(IStatus*, IMetadataBuilder*))
+	{
+		IStatus* status = master->getStatus();
+		IMetadataBuilder* builder = master->getMetadataBuilder(status, count);
+
+		setup(status, builder);
+
+		metadata = builder->getMetadata(status);
+
+		builder->release();
+		status->dispose();
+	}
+
+	~MessageDesc()
+	{
+		metadata->release();
+	}
+
+	IMessageMetadata* getMetadata() const
+	{
+		return metadata;
+	}
+
+private:
+	IMessageMetadata* metadata;
 };
 
 

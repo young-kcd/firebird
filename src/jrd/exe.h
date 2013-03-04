@@ -130,14 +130,6 @@ struct impure_agg_sort
 };
 
 
-// index (in CompoundStmtNode) for external routine blr
-const int e_extrout_input_message	= 0;
-const int e_extrout_output_message	= 1;
-const int e_extrout_input_message2	= 2;
-const int e_extrout_output_message2	= 3;
-const int e_extrout_input_assign	= 4;
-const int e_extrout_output_assign	= 5;
-
 // Request resources
 
 struct Resource

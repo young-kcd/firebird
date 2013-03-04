@@ -117,451 +117,6 @@ static IMaster* master = fb_get_master_interface();
 //------------------------------------------------------------------------------
 
 
-class MessageImpl;
-
-class ParamDescBase
-{
-public:
-	ParamDescBase()
-		: pos(0),
-		  nullPos(0)
-	{
-	}
-
-	unsigned pos;
-	unsigned nullPos;
-};
-
-template <class T>
-class ParamDesc : public ParamDescBase
-{
-};
-
-template <>
-class ParamDesc<void*> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message, const Firebird::IParametersMetadata* aParams);
-
-	unsigned align(unsigned size, unsigned aIndex)
-	{
-		index = aIndex;
-
-		AutoDispose<IStatus> status(master->getStatus());
-
-		switch ((type = params->getType(status, index)))
-		{
-			case SQL_SHORT:
-				size = FB_ALIGN(size, sizeof(ISC_SHORT));
-				break;
-
-			case SQL_LONG:
-				size = FB_ALIGN(size, sizeof(ISC_LONG));
-				break;
-
-			case SQL_INT64:
-				size = FB_ALIGN(size, sizeof(ISC_INT64));
-				break;
-
-			case SQL_FLOAT:
-				size = FB_ALIGN(size, sizeof(float));
-				break;
-
-			case SQL_DOUBLE:
-				size = FB_ALIGN(size, sizeof(double));
-				break;
-
-			case SQL_BLOB:
-				size = FB_ALIGN(size, sizeof(ISC_QUAD));
-				break;
-
-			case SQL_TEXT:
-			case SQL_VARYING:
-				size = FB_ALIGN(size, sizeof(ISC_USHORT));
-				break;
-
-			default:
-				assert(false);
-				break;
-		}
-
-		return size;
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		AutoDispose<IStatus> status(master->getStatus());
-		unsigned ret;
-
-		switch (type)
-		{
-			case SQL_SHORT:
-			{
-				unsigned scale = params->getScale(status, index);
-				*blr++ = blr_short;
-				*blr++ = scale;
-				ret = sizeof(ISC_SHORT);
-				break;
-			}
-
-			case SQL_LONG:
-			{
-				unsigned scale = params->getScale(status, index);
-				*blr++ = blr_long;
-				*blr++ = scale;
-				ret = sizeof(ISC_LONG);
-				break;
-			}
-
-			case SQL_INT64:
-			{
-				unsigned scale = params->getScale(status, index);
-				*blr++ = blr_int64;
-				*blr++ = scale;
-				ret = sizeof(ISC_INT64);
-				break;
-			}
-
-			case SQL_FLOAT:
-				*blr++ = blr_float;
-				ret = sizeof(float);
-				break;
-
-			case SQL_DOUBLE:
-				*blr++ = blr_double;
-				ret = sizeof(double);
-				break;
-
-			case SQL_BLOB:
-				*blr++ = blr_blob2;
-				*blr++ = 0;
-				*blr++ = 0;
-				*blr++ = 0;
-				*blr++ = 0;
-				ret = sizeof(ISC_QUAD);
-				break;
-
-			case SQL_TEXT:
-			case SQL_VARYING:
-			{
-				unsigned length = params->getLength(status, index);
-				*blr++ = blr_varying;
-				*blr++ = length & 0xFF;
-				*blr++ = (length >> 8) & 0xFF;
-				ret = sizeof(ISC_USHORT) + length;
-				break;
-			}
-
-			default:
-				assert(false);
-				ret = 0;
-				break;
-		}
-
-		return ret;
-	}
-
-	unsigned getType() const
-	{
-		return type;
-	}
-
-private:
-	const Firebird::IParametersMetadata* params;
-	unsigned type;
-	unsigned index;
-};
-
-class MessageImpl : public Firebird::FbMessage
-{
-public:
-	MessageImpl(unsigned aItemCount, void* aBuffer = NULL)
-		: itemCount(aItemCount * 2),
-		  freeBuffer(!aBuffer),
-		  items(0)
-	{
-		static const ISC_UCHAR HEADER[] = {
-			blr_version5,
-			blr_begin,
-			blr_message, 0, 0, 0
-		};
-
-		blrLength = 0;
-		blr = blrPos = new ISC_UCHAR[sizeof(HEADER) + 10 * itemCount + 2];
-		bufferLength = 0;
-		buffer = static_cast<ISC_UCHAR*>(aBuffer);
-
-		memcpy(blrPos, HEADER, sizeof(HEADER));
-		blrPos += sizeof(HEADER);
-	}
-
-	~MessageImpl()
-	{
-		if (freeBuffer && buffer)
-			delete [] buffer;
-
-		if (blr)
-			delete [] blr;
-	}
-
-	template <typename T>
-	void add(ParamDesc<T>& paramDesc)
-	{
-		if (items >= itemCount)
-			return;	// return an error, this is already constructed message
-
-		bufferLength = paramDesc.align(bufferLength, items / 2);
-		paramDesc.pos = bufferLength;
-		bufferLength += paramDesc.addBlr(blrPos);
-
-		bufferLength = FB_ALIGN(bufferLength, sizeof(ISC_SHORT));
-		paramDesc.nullPos = bufferLength;
-		bufferLength += sizeof(ISC_SHORT);
-
-		*blrPos++ = blr_short;
-		*blrPos++ = 0;
-
-		items += 2;
-
-		if (items == itemCount)
-		{
-			*blrPos++ = blr_end;
-			*blrPos++ = blr_eoc;
-
-			blrLength = blrPos - blr;
-
-			ISC_UCHAR* blrStart = blrPos - blrLength;
-			blrStart[4] = items & 0xFF;
-			blrStart[5] = (items >> 8) & 0xFF;
-
-			if (!buffer)
-			{
-				buffer = new ISC_UCHAR[bufferLength];
-				memset(buffer, 0, bufferLength);
-			}
-		}
-	}
-
-	bool isNull(const ParamDescBase& index)
-	{
-		return *(ISC_SHORT*) (buffer + index.nullPos);
-	}
-
-	void setNull(const ParamDescBase& index, bool null)
-	{
-		*(ISC_SHORT*) (buffer + index.nullPos) = (ISC_SHORT) null;
-	}
-
-	template <typename T> T& operator [](const ParamDesc<T>& index)
-	{
-		return *(T*) (buffer + index.pos);
-	}
-
-	void* operator [](const ParamDesc<void*>& index)
-	{
-		return buffer + index.pos;
-	}
-
-public:
-	unsigned itemCount;
-	bool freeBuffer;
-	unsigned items;
-	ISC_UCHAR* blrPos;
-};
-
-template <>
-class ParamDesc<ISC_SHORT> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message, ISC_UCHAR aScale = 0)
-		: scale(aScale)
-	{
-		message.add(*this);
-	}
-
-	unsigned align(unsigned size, unsigned /*index*/)
-	{
-		return FB_ALIGN(size, sizeof(ISC_SHORT));
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		*blr++ = blr_short;
-		*blr++ = scale;
-		return sizeof(ISC_SHORT);
-	}
-
-private:
-	ISC_UCHAR scale;
-};
-
-template <>
-class ParamDesc<ISC_LONG> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message, ISC_UCHAR aScale = 0)
-		: scale(aScale)
-	{
-		message.add(*this);
-	}
-
-	unsigned align(unsigned size, unsigned /*index*/)
-	{
-		return FB_ALIGN(size, sizeof(ISC_LONG));
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		*blr++ = blr_long;
-		*blr++ = scale;
-		return sizeof(ISC_LONG);
-	}
-
-private:
-	ISC_UCHAR scale;
-};
-
-template <>
-class ParamDesc<ISC_INT64> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message, ISC_UCHAR aScale = 0)
-		: scale(aScale)
-	{
-		message.add(*this);
-	}
-
-	unsigned align(unsigned size, unsigned /*index*/)
-	{
-		return FB_ALIGN(size, sizeof(ISC_INT64));
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		*blr++ = blr_int64;
-		*blr++ = scale;
-		return sizeof(ISC_INT64);
-	}
-
-private:
-	ISC_UCHAR scale;
-};
-
-template <>
-class ParamDesc<float> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message)
-	{
-		message.add(*this);
-	}
-
-	unsigned align(unsigned size, unsigned /*index*/)
-	{
-		return FB_ALIGN(size, sizeof(float));
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		*blr++ = blr_float;
-		return sizeof(float);
-	}
-};
-
-template <>
-class ParamDesc<double> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message)
-	{
-		message.add(*this);
-	}
-
-	unsigned align(unsigned size, unsigned /*index*/)
-	{
-		return FB_ALIGN(size, sizeof(double));
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		*blr++ = blr_double;
-		return sizeof(double);
-	}
-};
-
-template <>
-class ParamDesc<ISC_QUAD> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message)
-	{
-		message.add(*this);
-	}
-
-	unsigned align(unsigned size, unsigned /*index*/)
-	{
-		return FB_ALIGN(size, sizeof(ISC_QUAD));
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		*blr++ = blr_blob2;
-		*blr++ = 0;
-		*blr++ = 0;
-		*blr++ = 0;
-		*blr++ = 0;
-		return sizeof(ISC_QUAD);
-	}
-};
-
-struct FbString
-{
-	ISC_USHORT length;
-	char str[1];
-};
-
-template <>
-class ParamDesc<FbString> : public ParamDescBase
-{
-public:
-	ParamDesc(MessageImpl& message, ISC_USHORT aLength)
-		: length(aLength)
-	{
-		message.add(*this);
-	}
-
-	unsigned align(unsigned size, unsigned /*index*/)
-	{
-		return FB_ALIGN(size, sizeof(ISC_USHORT));
-	}
-
-	unsigned addBlr(ISC_UCHAR*& blr)
-	{
-		*blr++ = blr_varying;
-		*blr++ = length & 0xFF;
-		*blr++ = (length >> 8) & 0xFF;
-		return sizeof(ISC_USHORT) + length;
-	}
-
-private:
-	ISC_USHORT length;
-};
-
-//// TODO: boolean, date, time, timestamp
-
-//--------------------------------------
-
-inline ParamDesc<void*>::ParamDesc(MessageImpl& message, const Firebird::IParametersMetadata* aParams)
-	: params(aParams),
-	  type(0)
-{
-	message.add(*this);
-}
-
-
-//------------------------------------------------------------------------------
-
-
 /***
 create function wait_event (
     event_name varchar(31) character set utf8 not null
@@ -614,37 +169,65 @@ create function sum_args (
     engine udr;
 ***/
 FB_UDR_BEGIN_FUNCTION(sum_args)
+	// This function requires the INTEGER parameters and return value, otherwise it will crash.
+	// Metadata is inspected dynamically (in execute). This is not the fastest method.
 	FB_UDR_EXECUTE_DYNAMIC_FUNCTION
 	{
-		///AutoDispose<IStatus> status(master->getStatus());
+		// Get input and output metadata.
 
-		const IParametersMetadata* params = metadata->getInputParameters(status);
+		IMessageMetadata* inMetadata = metadata->getInputMetadata(status);
 		StatusException::check(status->get());
 
-		unsigned count = params->getCount(status);
+		IMessageMetadata* outMetadata = metadata->getOutputMetadata(status);
 		StatusException::check(status->get());
 
-		MessageImpl inMessage(count, in);
+		// Get count of input parameters.
+		unsigned inCount = inMetadata->getCount(status);
+		StatusException::check(status->get());
 
-		MessageImpl outMessage(1, out);
-		ParamDesc<ISC_LONG> retDesc(outMessage);
+		// Get null offset of the return value.
 
-		int ret = 0;
+		unsigned outNullOffset = outMetadata->getNullOffset(status, 0);
+		StatusException::check(status->get());
 
-		for (unsigned i = 0; i < count; ++i)
+		// By default, the return value is NOT NULL.
+		///*(ISC_SHORT*) (out + outNullOffset) = FB_FALSE;
+
+		// Get offset of the return value.
+		unsigned outOffset = outMetadata->getOffset(status, 0);
+		StatusException::check(status->get());
+
+		// Get a reference to the return value.
+		ISC_LONG& ret = *(ISC_LONG*) (out + outOffset);
+
+		// By default, the return value is 0.
+		///ret = 0;
+
+		for (unsigned i = 0; i < inCount; ++i)
 		{
-			ParamDesc<ISC_LONG> numDesc(inMessage);
+			// Get null offset of the i-th input parameter.
+			unsigned nullOffset = inMetadata->getNullOffset(status, i);
+			StatusException::check(status->get());
 
-			if (inMessage.isNull(numDesc))
+			// If the i-th input parameter is NULL, set the output to NULL and finish.
+			if (*(ISC_SHORT*) (in + nullOffset))
 			{
-				outMessage.setNull(retDesc, true);
-				return;
+				*(ISC_SHORT*) (out + outNullOffset) = FB_TRUE;
+				// Important: we should not return without release the metadata objects.
+				break;
 			}
-			else
-				ret += inMessage[numDesc];
+
+			// Get the offset of the i-th input parameter.
+			unsigned offset = inMetadata->getOffset(status, i);
+			StatusException::check(status->get());
+
+			// Read the i-th input parameter value and sum it in the referenced return value.
+			ret += *(ISC_LONG*) (in + offset);
 		}
 
-		outMessage[retDesc] = ret;
+		// Release refcounted objects.
+		inMetadata->release();
+		outMetadata->release();
 	}
 FB_UDR_END_FUNCTION
 
@@ -660,14 +243,42 @@ create procedure gen_rows (
     engine udr;
 ***/
 FB_UDR_BEGIN_PROCEDURE(gen_rows)
+	// Procedure variables.
+	unsigned inOffsetStart, inOffsetEnd, outOffset;
+
+	/*** Procedure destructor.
+	~FB_UDR_PROCEDURE(gen_rows)()
+	{
+	}
+	***/
+
+	// Get offsets once per procedure.
+	FB_UDR_INITIALIZE
+	{
+		IMessageMetadata* inMetadata = metadata->getInputMetadata(status);
+		StatusException::check(status->get());
+
+		inOffsetStart = inMetadata->getOffset(status, 0);
+		StatusException::check(status->get());
+
+		inOffsetEnd = inMetadata->getOffset(status, 1);
+		StatusException::check(status->get());
+
+		inMetadata->release();
+
+		IMessageMetadata* outMetadata = metadata->getOutputMetadata(status);
+		StatusException::check(status->get());
+
+		outOffset = outMetadata->getOffset(status, 0);
+		StatusException::check(status->get());
+
+		outMetadata->release();
+	}
+
 	FB_UDR_EXECUTE_DYNAMIC_PROCEDURE
 	{
-		MessageImpl inMessage(2, in);
-		ParamDesc<ISC_LONG> startDesc(inMessage);
-		ParamDesc<ISC_LONG> endDesc(inMessage);
-
-		counter = inMessage[startDesc];
-		end = inMessage[endDesc];
+		counter = *(ISC_LONG*) (in + procedure->inOffsetStart);
+		end = *(ISC_LONG*) (in + procedure->inOffsetEnd);
 	}
 
 	FB_UDR_FETCH_PROCEDURE
@@ -675,14 +286,18 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 		if (counter > end)
 			return false;
 
-		MessageImpl outMessage(1, out);
-		ParamDesc<ISC_LONG> retDesc(outMessage);
-
-		outMessage[retDesc] = counter++;
+		*(ISC_LONG*) (out + procedure->outOffset) = counter++;
 
 		return true;
 	}
 
+	/*** ResultSet destructor.
+	~ResultSet()
+	{
+	}
+	***/
+
+	// ResultSet variables.
 	ISC_LONG counter;
 	ISC_LONG end;
 FB_UDR_END_PROCEDURE
@@ -795,6 +410,7 @@ FB_UDR_BEGIN_PROCEDURE(inc)
 FB_UDR_END_PROCEDURE
 
 
+#if 0	//// FIXME:
 /***
 Sample usage:
 
@@ -1234,3 +850,4 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	XSQLDA* inSqlDa;
 	isc_stmt_handle stmtHandle;
 FB_UDR_END_TRIGGER
+#endif

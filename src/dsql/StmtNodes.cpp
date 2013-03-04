@@ -1564,7 +1564,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 			PAR_error(csb, Arg::Gds(isc_prc_out_param_mismatch) << name);
 
 		Format* format = Format::newFormat(pool, paramArray.getCount());
-		subProc->prc_format = format;
+		subProc->prc_record_format = format;
 		format->fmt_length = FLAG_BYTES(format->fmt_count);
 
 		for (USHORT i = 0; i < count - 1u; i += 2u)
@@ -1754,7 +1754,7 @@ DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* 
 	}
 
 	fb_assert(subCsb->csb_rpt.getCount() >= 2);
-	routine->prc_output_msg = subCsb->csb_rpt[1].csb_message;
+	///routine->prc_output_msg = subCsb->csb_rpt[1].csb_message;
 
 	return this;
 }
@@ -2717,16 +2717,6 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	if (inputSources)
-	{
-		const NestConst<ValueExprNode>* const sourceEnd = inputSources->items.end();
-		const NestConst<ValueExprNode>* sourcePtr = inputSources->items.begin();
-		const NestConst<ValueExprNode>* targetPtr = inputTargets->items.begin();
-
-		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
-			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
-	}
-
 	ULONG inMsgLength = 0;
 	UCHAR* inMsg = NULL;
 
@@ -2739,6 +2729,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	const Format* format = NULL;
 	ULONG outMsgLength = 0;
 	UCHAR* outMsg = NULL;
+	Array<UCHAR> tempBuffer;
 
 	if (outputMessage)
 	{
@@ -2746,40 +2737,43 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 		outMsgLength = format->fmt_length;
 		outMsg = request->getImpure<UCHAR>(outputMessage->impureOffset);
 	}
-
-	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
-
-	// trace procedure execution start
-	TraceProcExecute trace(tdbb, procRequest, request, inputTargets);
-
-	Array<UCHAR> tempBuffer;
-
-	if (!outputMessage)
+	else
 	{
-		format = procedure->prc_output_msg->format;
+		///format = procedure->prc_output_msg->format;
+		format = procedure->getOutputFormat();
 		outMsgLength = format->fmt_length;
 		outMsg = tempBuffer.getBuffer(outMsgLength + FB_DOUBLE_ALIGN - 1);
 		outMsg = (UCHAR*) FB_ALIGN((U_IPTR) outMsg, FB_DOUBLE_ALIGN);
 	}
 
-	// Catch errors so we can unwind cleanly.
-
-	try
+	if (procedure->getExternal())
 	{
-		Jrd::ContextPoolHolder context(tdbb, procRequest->req_pool);	// Save the old pool.
+		// We must clear messages of external procedures.
+		memset(inMsg, 0, inMsgLength);
+		memset(outMsg, 0, outMsgLength);
+	}
 
-		jrd_tra* transaction = request->req_transaction;
-		const SLONG savePointNumber = transaction->tra_save_point ?
-			transaction->tra_save_point->sav_number : 0;
+	if (inputSources)
+	{
+		const NestConst<ValueExprNode>* const sourceEnd = inputSources->items.end();
+		const NestConst<ValueExprNode>* sourcePtr = inputSources->items.begin();
+		const NestConst<ValueExprNode>* targetPtr = inputTargets->items.begin();
 
-		procRequest->req_timestamp = request->req_timestamp;
+		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
+			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
+	}
 
-		EXE_start(tdbb, procRequest, transaction);
+	jrd_tra* transaction = request->req_transaction;
+	const SLONG savePointNumber = transaction->tra_save_point ?
+		transaction->tra_save_point->sav_number : 0;
 
-		if (inputMessage)
-			EXE_send(tdbb, procRequest, 0, inMsgLength, inMsg);
-
-		EXE_receive(tdbb, procRequest, 1, outMsgLength, outMsg);
+	if (procedure->getExternal())
+	{
+		{	// scope
+			AutoPtr<ExtEngineManager::ResultSet> resultSet(procedure->getExternal()->open(
+				tdbb, inMsg, outMsg));
+			resultSet->fetch(tdbb);
+		}
 
 		// Clean up all savepoints started during execution of the procedure.
 
@@ -2793,24 +2787,63 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 			}
 		}
 	}
-	catch (const Exception& ex)
+	else
 	{
-		const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
-		trace.finish(false, noPriv ? res_unauthorized : res_failed);
+		jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
 
-		tdbb->setRequest(request);
+		// trace procedure execution start
+		TraceProcExecute trace(tdbb, procRequest, request, inputTargets);
+
+		// Catch errors so we can unwind cleanly.
+
+		try
+		{
+			Jrd::ContextPoolHolder context(tdbb, procRequest->req_pool);	// Save the old pool.
+
+			procRequest->req_timestamp = request->req_timestamp;
+
+			EXE_start(tdbb, procRequest, transaction);
+
+			if (inputMessage)
+				EXE_send(tdbb, procRequest, 0, inMsgLength, inMsg);
+
+			EXE_receive(tdbb, procRequest, 1, outMsgLength, outMsg);
+
+			// Clean up all savepoints started during execution of the procedure.
+
+			if (transaction != attachment->getSysTransaction())
+			{
+				for (const Savepoint* savePoint = transaction->tra_save_point;
+					 savePoint && savePointNumber < savePoint->sav_number;
+					 savePoint = transaction->tra_save_point)
+				{
+					VIO_verb_cleanup(tdbb, transaction);
+				}
+			}
+		}
+		catch (const Exception& ex)
+		{
+			const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
+			trace.finish(false, noPriv ? res_unauthorized : res_failed);
+
+			tdbb->setRequest(request);
+			EXE_unwind(tdbb, procRequest);
+			procRequest->req_attachment = NULL;
+			procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
+			procRequest->req_timestamp.invalidate();
+			throw;
+		}
+
+		// trace procedure execution finish
+		trace.finish(false, res_successful);
+
 		EXE_unwind(tdbb, procRequest);
+		tdbb->setRequest(request);
+
 		procRequest->req_attachment = NULL;
 		procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
 		procRequest->req_timestamp.invalidate();
-		throw;
 	}
-
-	// trace procedure execution finish
-	trace.finish(false, res_successful);
-
-	EXE_unwind(tdbb, procRequest);
-	tdbb->setRequest(request);
 
 	if (outputSources)
 	{
@@ -2821,10 +2854,6 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
 			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
 	}
-
-	procRequest->req_attachment = NULL;
-	procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
-	procRequest->req_timestamp.invalidate();
 }
 
 

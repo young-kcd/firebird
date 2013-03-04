@@ -38,14 +38,6 @@ namespace Firebird {
 class ExternalEngine;
 
 
-class IRoutineMessage : public IVersioned
-{
-public:
-	virtual void FB_CARG set(const unsigned char* blr, unsigned blrLength, unsigned bufferLength) = 0;
-};
-#define FB_ROUTINE_MESSAGE_VERSION (FB_VERSIONED_VERSION + 1)
-
-
 class ITriggerMessage : public IVersioned
 {
 public:
@@ -205,9 +197,11 @@ public:
 	// Called when engine wants to load object in the cache. Objects are disposed when
 	// going out of the cache.
 	virtual ExternalFunction* FB_CALL makeFunction(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg) = 0;
+		const IRoutineMetadata* metadata,
+		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
 	virtual ExternalProcedure* FB_CALL makeProcedure(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, IRoutineMessage* inMsg, IRoutineMessage* outMsg) = 0;
+		const IRoutineMetadata* metadata,
+		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
 	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, ITriggerMessage* triggerMsg) = 0;
 };

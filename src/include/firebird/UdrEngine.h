@@ -40,7 +40,7 @@ class FunctionFactory
 {
 public:
 	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
-		IRoutineMessage* in, IRoutineMessage* out) = 0;
+		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
 	virtual ExternalFunction* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
@@ -49,7 +49,7 @@ class ProcedureFactory
 {
 public:
 	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
-		IRoutineMessage* in, IRoutineMessage* out) = 0;
+		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
 	virtual ExternalProcedure* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
