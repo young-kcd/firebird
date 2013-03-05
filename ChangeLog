@@ -1,3 +1,7 @@
+ 2013-03-04 15:18  alexpeshkoff 
+   M configure.in
+Minimum fix for CORE-4031: make install wrong under Debian Ubuntu 64
+
  2013-03-01 13:50  alexpeshkoff 
    M src/isql/InputDevices.cpp
    M src/isql/InputDevices.h
