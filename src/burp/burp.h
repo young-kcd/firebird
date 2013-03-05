@@ -806,7 +806,7 @@ class burp_fil
 public:
 	burp_fil*	fil_next;
 	Firebird::PathName	fil_name;
-	ULONG		fil_length;
+	FB_UINT64	fil_length;
 	DESC		fil_fd;
 	USHORT		fil_seq;
 	SIZE_CODE	fil_size_code;
@@ -836,7 +836,7 @@ struct burp_act
 
 const size_t ACT_LEN = sizeof(burp_act);
 
-const ULONG MAX_LENGTH = ~0;	// Keep in sync with burp_fil.fil_length
+const ULONG MAX_LENGTH = ~FB_CONST64(0);	// Keep in sync with burp_fil.fil_length
 
 // This structure has been cloned from spit.cpp
 
@@ -861,7 +861,7 @@ static const char HDR_SPLIT_TAG5[]	= "InterBase/gsplit, ";
 static const char HDR_SPLIT_TAG6[]	= "InterBase/gbak,   ";
 // CVC: Don't convert to const char* or you will have to fix the sizeof()'s!!!
 #define HDR_SPLIT_TAG HDR_SPLIT_TAG6
-const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes
+const FB_UINT64 MIN_SPLIT_SIZE	= FB_CONST64(2048);		// bytes
 
 // Global switches and data
 

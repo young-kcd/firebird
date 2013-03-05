@@ -531,7 +531,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const ULONG size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
-	ULONG left = size_to_write;
+	FB_UINT64 left = size_to_write;
 
 	if (tdgbl->stdIoMode && tdgbl->uSvc->isService())
 	{
@@ -570,10 +570,17 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 				}
 			}
 
-			const size_t nBytesToWrite =
+			FB_UINT64 longBytesToWrite =
 				(tdgbl->action->act_action == ACT_backup_split &&
 						tdgbl->action->act_file->fil_length < left) ?
 			 			tdgbl->action->act_file->fil_length : left;
+
+			if (longBytesToWrite > MAX_ULONG)
+			{
+				longBytesToWrite = 0xFFFF0000u;		// rounding such block to 64K appears OK
+			}
+
+			const size_t nBytesToWrite = size_t(longBytesToWrite);
 
 #ifndef WIN_NT
 			cnt = write(tdgbl->file_desc, ptr, nBytesToWrite);
@@ -630,7 +637,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 							// msg 272 Warning -- free disk space exhausted for file %s,
 							// the rest of the bytes (%d) will be written to file %s
 							tdgbl->action->act_file->fil_next->fil_length +=
-							tdgbl->action->act_file->fil_length;
+								tdgbl->action->act_file->fil_length;
 							tdgbl->action->act_file = tdgbl->action->act_file->fil_next;
 							tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
 						}

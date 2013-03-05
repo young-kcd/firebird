@@ -760,13 +760,18 @@ void add_files(BurpGlobals* tdgbl, const char* file_name)
 
 	// store the RDB$FILES records
 
-	SLONG start = 201; // Magic number, can be taken from some constant?
+	FB_UINT64 start = FB_CONST64(201); // Magic number, can be taken from some constant?
 	SLONG count = 0;
+	const char* prev_file_name = NULL;
 
 	for (burp_fil* file = tdgbl->gbl_sw_files; file; file = file->fil_next)
 	{
 		if (file->fil_name != file_name)
 		{
+			if (start > MAX_ULONG)
+			{
+				BURP_error(262, true, prev_file_name ? prev_file_name : file->fil_name.c_str());
+			}
 			count++;
 			STORE (REQUEST_HANDLE req_handle1)
 				X IN RDB$FILES
@@ -780,7 +785,7 @@ void add_files(BurpGlobals* tdgbl, const char* file_name)
 			BURP_verbose (57, SafeArg() << file->fil_name.c_str() << start);
 			// msg 57 adding file %s, starting at page %ld
 		}
-		else if (((SLONG) file->fil_length) >= start - 1)
+		else if (file->fil_length >= start - 1)
 			file->fil_length -= start - 1;
 		else
 		{
@@ -790,6 +795,7 @@ void add_files(BurpGlobals* tdgbl, const char* file_name)
 		}
 
 		start += file->fil_length;
+		prev_file_name = file->fil_name.c_str();
 	}
 
 	if (count)

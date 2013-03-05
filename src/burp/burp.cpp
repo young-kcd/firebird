@@ -111,7 +111,7 @@ static void burp_output(bool err, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
 static void burp_usage(const Switches& switches);
 static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::string& sw);
 
-// fil.fil_length is ULONG
+// fil.fil_length is FB_UINT64
 const ULONG KBYTE	= 1024;
 const ULONG MBYTE	= KBYTE * KBYTE;
 const ULONG GBYTE	= MBYTE * KBYTE;
@@ -1829,11 +1829,8 @@ static gbak_action open_files(const TEXT* file1,
 				fb_assert(FALSE);
 				break;
 			}
-			// CVC: Check for overflow: 4g is already out of bounds.
-			if (fsize > FB_UINT64(MAX_ULONG))
-				BURP_error(262, true, fil->fil_name.c_str());
 
-			fil->fil_length = static_cast<ULONG>(fsize);
+			fil->fil_length = fsize;
 
 			if ((fil->fil_seq = ++tdgbl->action->act_total) >= 2)
 			{
@@ -2253,9 +2250,9 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
  *	restoring to multiple files
  *
  **********************************************/
-	const ULONG overflow = MAX_ULONG / 10 - 1;
+	const FB_UINT64 overflow = MAX_UINT64 / 10 - 1;
 	UCHAR c;
-	ULONG size = 0;
+	FB_UINT64 size = 0;
 	bool digit = false;
 
 	file->fil_size_code = size_n;
