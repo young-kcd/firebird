@@ -1,3 +1,41 @@
+ 2013-03-04 15:29  alexpeshkoff 
+   M builds/install/arch-specific/linux/Makefile.in
+   M builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+   M builds/install/arch-specific/linux/misc/postinstall.sh.in
+   M builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
+   M builds/install/misc/posixLibrary.sh.in
+   M configure.in
+Fixed CORE-4031: make install wrong under Debian Ubuntu 64 (and fixed some unrelated bugs in linux install)
+
+ 2013-03-04 12:13  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+Fixed segfault in user manager
+
+ 2013-03-04 01:42  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/Message.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+Fixing FB_MESSAGE macro and external functions and procedures.
+Isolate external routines them from request-based ones.
+
  2013-03-01 13:50  alexpeshkoff 
    M src/isql/InputDevices.cpp
    M src/isql/InputDevices.h
