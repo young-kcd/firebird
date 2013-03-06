@@ -1,3 +1,10 @@
+ 2013-03-05 12:53  alexpeshkoff 
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/mvol.cpp
+   M src/burp/restore.epp
+Fixed CORE-3575:Support of backup volumes with size more than 4Gb
+
  2013-03-04 15:29  alexpeshkoff 
    M builds/install/arch-specific/linux/Makefile.in
    M builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
