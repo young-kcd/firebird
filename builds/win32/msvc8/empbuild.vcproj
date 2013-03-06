@@ -48,7 +48,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;WIN32"
+				PreprocessorDefinitions="NDEBUG;_CONSOLE;WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -125,7 +125,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;WIN32"
+				PreprocessorDefinitions="NDEBUG;_CONSOLE;WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -196,7 +196,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -269,7 +269,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool

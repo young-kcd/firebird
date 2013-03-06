@@ -25,6 +25,7 @@
 		WarningLevel="3"
 		SuppressStartupBanner="true"
 		DebugInformationFormat="3"
+		PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS"
 		CompileAs="0"
 		UseFullPaths="false"
 	/>

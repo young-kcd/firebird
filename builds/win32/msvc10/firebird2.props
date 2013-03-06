@@ -26,6 +26,7 @@
       <CompileAs>Default</CompileAs>
       <UseFullPaths>false</UseFullPaths>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
