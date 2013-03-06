@@ -1252,7 +1252,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		case CNCT_group:
 			{
 				const size_t length = id.getClumpLength();
-				if (length != 0)
+				if (length <= sizeof(eff_gid) && length > 0)
 				{
 					eff_gid = 0;
 					memcpy(&eff_gid, id.getBytes(), length);
