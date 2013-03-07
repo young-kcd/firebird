@@ -848,7 +848,7 @@ Data source : @4"},		/* eds_statement */
 	{336068817, "Cannot change datatype for @1.  Conversion from base type @2 to @3 is not supported."},		/* dyn_invalid_dtype_conversion */
 	{336068818, "Cannot change datatype for column @1 from a character type to a non-character type."},		/* dyn_dtype_conv_invalid */
 	{336068820, "Zero length identifiers are not allowed"},		/* dyn_zero_len_id */
-	{336068822, "Generator @1 not found"},		/* dyn_gen_not_found */
+	{336068822, "Sequence @1 not found"},		/* dyn_gen_not_found */
 	{336068829, "Maximum number of collations per character set exceeded"},		/* max_coll_per_charset */
 	{336068830, "Invalid collation attributes"},		/* invalid_coll_attr */
 	{336068840, "@1 cannot reference @2"},		/* dyn_wrong_gtt_scope */
