@@ -4620,7 +4620,7 @@ static processing_state escape(const TEXT* cmd)
 	//_flushall();
 	// Save Ofp position in case it's being used as input. See EDIT command.
 	fpos_t OfpPos = 0;
-	if (Ofp.indev_fpointer)
+	if (Filelist->Ofp().indev_fpointer)
 		Filelist->Ofp().getPos(&OfpPos);
 	fflush(NULL); // Flush only output buffers.
 	const char* emptyCmd = "%ComSpec%";
@@ -4632,12 +4632,12 @@ static processing_state escape(const TEXT* cmd)
 	if (!*shellcmd)
 		shellcmd = emptyCmd;
 
-	int rc  = system(shellcmd);
+	const int rc = system(shellcmd);
 
 #ifdef WIN_NT
 	// If we are reading from the temp file, restore the read position because
 	// it's opened in r+ mode in this case, that's R/W.
-	if (Ofp.indev_fpointer && Filelist->sameInputAndOutput())
+	if (Filelist->Ofp().indev_fpointer && Filelist->sameInputAndOutput())
 		Filelist->Ofp().setPos(&OfpPos);
 #endif
 
