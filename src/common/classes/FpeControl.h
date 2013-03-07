@@ -82,7 +82,9 @@ public:
 	static void maskAll() throw()
 	{
 		_clearfp(); // always call _clearfp() before setting control word
-		_controlfp(_CW_DEFAULT, _MCW_EM);
+
+		Mask cw;
+		__control87_2(_CW_DEFAULT, _MCW_EM, &cw, NULL);
 	}
 
 private:
@@ -96,13 +98,15 @@ private:
 
 	static void getCurrentMask(Mask& m) throw()
 	{
-		m = _controlfp(0, 0);
+		__control87_2(0, 0, &m, NULL);
 	}
 
 	void restoreMask() throw()
 	{
 		_clearfp(); // always call _clearfp() before setting control word
-		_controlfp(savedMask, _MCW_EM); // restore saved
+
+		Mask cw;
+		__control87_2(savedMask, _MCW_EM, &cw, NULL); // restore saved
 	}
 
 #elif defined(HAVE_FEGETENV)
