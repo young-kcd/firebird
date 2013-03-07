@@ -683,7 +683,7 @@ using namespace Firebird;
 	Jrd::dsql_req* dsqlReq;
 }
 
-/*** TYPES ***/
+%include types.y
 
 %%
 
