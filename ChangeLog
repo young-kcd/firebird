@@ -1,3 +1,14 @@
+ 2013-03-06 14:30  dimitr 
+   M builds/win32/msvc8/firebird2.vsprops
+   M builds/win32/msvc9/btyacc.vcproj
+   M builds/win32/msvc9/firebird2.vsprops
+   M extern/icu/source/allinone/firebird2intl.vsprops
+An ultimate solution for the CRT warnings targeted at both native and external (ICU, BTYACC) modules. Inspired by the ICU-only patch contributed by Dmitry Kovalenko.
+
+ 2013-03-06 11:33  alexpeshkoff 
+   M src/remote/inet.cpp
+Fixed CORE-4058
+
  2013-03-04 15:18  alexpeshkoff 
    M configure.in
 Minimum fix for CORE-4031: make install wrong under Debian Ubuntu 64
