@@ -58,7 +58,7 @@ using namespace Jrd;
 
 // privileges given to the owner of a relation
 
-const SecurityClass::flags_t OWNER_PRIVS = SCL_control | SCL_read | SCL_write | SCL_delete | SCL_protect;
+const SecurityClass::flags_t OWNER_PRIVS = SCL_control | SCL_drop | SCL_alter;
 
 inline void CHECK_AND_MOVE(Acl& to, UCHAR from)
 {
@@ -118,11 +118,30 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 
 	SecurityClass::flags_t priv = OWNER_PRIVS;
 
-	if (id == obj_procedure ||
-		id == obj_udf ||
-		id == obj_package_header)
+	switch (id)
 	{
-		priv |= SCL_execute;
+		case obj_relation:
+			priv |= SCL_references;
+		case obj_view:
+			priv |= SCL_select | SCL_insert | SCL_update | SCL_delete;
+			break;
+
+		case obj_procedure:
+		case obj_udf:
+		case obj_package_header:
+			priv |= SCL_execute;
+			break;
+
+		case obj_field:
+		case obj_exception:
+		case obj_generator:
+		case obj_charset:
+		case obj_collation:
+			priv |= SCL_usage;
+			break;
+			
+		default:
+			break;
 	}
 
 	grant_user(acl, owner, obj_user, priv);
@@ -843,22 +862,25 @@ static SecurityClass::flags_t trans_sql_priv(const TEXT* privileges)
 	switch (UPPER7(privileges[0]))
 	{
 	case 'S':
-		priv |= SCL_read;
+		priv |= SCL_select;
 		break;
 	case 'I':
-		priv |= SCL_sql_insert;
+		priv |= SCL_insert;
 		break;
 	case 'U':
-		priv |= SCL_sql_update;
+		priv |= SCL_update;
 		break;
 	case 'D':
-		priv |= SCL_sql_delete;
+		priv |= SCL_delete;
 		break;
 	case 'R':
-		priv |= SCL_sql_references;
+		priv |= SCL_references;
 		break;
 	case 'X':
 		priv |= SCL_execute;
+		break;
+	case 'G':
+		priv |= SCL_usage;
 		break;
 	}
 
@@ -993,44 +1015,49 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
 						privilege |= SCL_control;
 						break;
 
-					case priv_read:
-						privilege |= SCL_read;
+					case priv_select:
+						privilege |= SCL_select;
 						break;
 
-					case priv_write:
-						privilege |= SCL_write;
-						break;
-
-					case priv_sql_insert:
-						privilege |= SCL_sql_insert;
-						break;
-
-					case priv_sql_delete:
-						privilege |= SCL_sql_delete;
-						break;
-
-					case priv_sql_references:
-						privilege |= SCL_sql_references;
-						break;
-
-					case priv_sql_update:
-						privilege |= SCL_sql_update;
+					case priv_insert:
+						privilege |= SCL_insert;
 						break;
 
 					case priv_delete:
 						privilege |= SCL_delete;
 						break;
 
-					case priv_grant:
-						privilege |= SCL_grant;
+					case priv_references:
+						privilege |= SCL_references;
 						break;
 
-					case priv_protect:
-						privilege |= SCL_protect;
+					case priv_update:
+						privilege |= SCL_update;
+						break;
+
+					case priv_drop:
+						privilege |= SCL_drop;
+						break;
+
+					case priv_alter:
+						privilege |= SCL_alter;
 						break;
 
 					case priv_execute:
 						privilege |= SCL_execute;
+						break;
+
+					case priv_usage:
+						privilege |= SCL_usage;
+						break;
+
+					case priv_write:
+						// unused, but supported for backward compatibility
+						privilege |= SCL_insert | SCL_update | SCL_delete;
+						break;
+
+					case priv_grant:
+						// unused
 						break;
 
 					default:

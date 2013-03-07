@@ -80,9 +80,24 @@ struct filter_tmp
 const char* const WILD_CARD_UIC = "(*.*)";
 
 // TXNN: Used on filter of internal data structure to text
-static const TEXT acl_privs[] = "?CGDRWPIEUTX??";
+static const TEXT* acl_privs[priv_max] =
+{
+	"?",
+	"control",
+	"grant",
+	"drop",
+	"select",
+	"write",
+	"alter",
+	"insert",
+	"delete",
+	"update",
+	"references",
+	"execute",
+	"usage"
+};
 
-static const TEXT acl_ids[][16] =
+static const TEXT* acl_ids[id_max] =
 {
 	"?: ",
 	"group: ",
@@ -95,7 +110,9 @@ static const TEXT acl_ids[][16] =
 	"all views",
 	"trigger: ",
 	"procedure: ",
-	"role: "
+	"role: ",
+	"package: ",
+	"function: "
 };
 
 // TXNN: Used on filter of internal data structure to text
@@ -188,8 +205,19 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 				sprintf(out, "privileges: (");
 				while (*out)
 					++out;
-				while (c = *p++)
-					*out++ = acl_privs[c];
+				if ((c = *p++) != 0)
+				{
+					sprintf(out, "%s", acl_privs[c]);
+					while (*out)
+						++out;
+
+					while ((c = *p++) != 0)
+					{
+						sprintf(out, ", %s", acl_privs[c]);
+						while (*out)
+							++out;
+					}
+				}
 				*out++ = ')';
 				*out = 0;
 				string_put(control, line);

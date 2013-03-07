@@ -5455,29 +5455,29 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		if (!csb->csb_validate_expr)
 		{
 			CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-				SCL_sql_update, SCL_object_table, relation->rel_name);
+				SCL_update, SCL_object_table, relation->rel_name);
 			CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-				SCL_sql_update, SCL_object_column, field->fld_name, relation->rel_name);
+				SCL_update, SCL_object_column, field->fld_name, relation->rel_name);
 		}
 	}
 	else if (tail->csb_flags & csb_erase)
 	{
 		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-			SCL_sql_delete, SCL_object_table, relation->rel_name);
+			SCL_delete, SCL_object_table, relation->rel_name);
 	}
 	else if (tail->csb_flags & csb_store)
 	{
 		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-			SCL_sql_insert, SCL_object_table, relation->rel_name);
+			SCL_insert, SCL_object_table, relation->rel_name);
 		CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-			SCL_sql_insert, SCL_object_column, field->fld_name, relation->rel_name);
+			SCL_insert, SCL_object_column, field->fld_name, relation->rel_name);
 	}
 	else
 	{
 		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-			SCL_read, SCL_object_table, relation->rel_name);
+			SCL_select, SCL_object_table, relation->rel_name);
 		CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-			SCL_read, SCL_object_column, field->fld_name, relation->rel_name);
+			SCL_select, SCL_object_column, field->fld_name, relation->rel_name);
 	}
 
 	ValueExprNode* sub;
@@ -5670,12 +5670,13 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<GenIdNode> regGenIdNode(blr_gen_id);
 
-GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1, const MetaName& aName, ValueExprNode* aArg)
+GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
+					 const Firebird::MetaName& name,
+					 ValueExprNode* aArg)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>(pool),
 	  dialect1(aDialect1),
-	  name(pool, aName),
-	  arg(aArg),
-	  id(0)
+	  generator(pool, name),
+	  arg(aArg)
 {
 	addChildNode(arg, arg);
 }
@@ -5685,34 +5686,34 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	MetaName name;
 	PAR_name(csb, name);
 
-	const SLONG id = MET_lookup_generator(tdbb, name);
-	if (id < 0)
+	GenIdNode* const node =
+		FB_NEW(pool) GenIdNode(pool, (csb->blrVersion == 4), name, PAR_parse_value(tdbb, csb));
+
+	if (!MET_load_generator(tdbb, node->generator))
 		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 
 	if (csb->csb_g_flags & csb_get_dependencies)
 	{
 		CompilerScratch::Dependency dependency(obj_generator);
-		dependency.number = id;
+		dependency.number = node->generator.id;
 		csb->csb_dependencies.push(dependency);
 	}
-
-	GenIdNode* node = FB_NEW(pool) GenIdNode(pool, (csb->blrVersion == 4), name);
-	node->id = id;
-	node->arg = PAR_parse_value(tdbb, csb);
 
 	return node;
 }
 
 void GenIdNode::print(string& text) const
 {
-	text.printf("GenIdNode %s (%d)", name.c_str(), (dialect1 ? 1 : 3));
+	text.printf("GenIdNode %s (%d)", generator.name.c_str(), (dialect1 ? 1 : 3));
 	ExprNode::print(text);
 }
 
 ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW(getPool()) GenIdNode(getPool(), dialect1, name,
-		doDsqlPass(dsqlScratch, arg));
+	GenIdNode* const node = FB_NEW(getPool())
+		GenIdNode(getPool(), dialect1, generator.name, doDsqlPass(dsqlScratch, arg));
+	node->generator = generator;
+	return node;
 }
 
 void GenIdNode::setParameterName(dsql_par* parameter) const
@@ -5729,7 +5730,7 @@ bool GenIdNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 void GenIdNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_gen_id);
-	dsqlScratch->appendNullString(name.c_str());
+	dsqlScratch->appendNullString(generator.name.c_str());
 	GEN_expr(dsqlScratch, arg);
 }
 
@@ -5756,10 +5757,10 @@ void GenIdNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc
 
 ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	GenIdNode* node = FB_NEW(*tdbb->getDefaultPool()) GenIdNode(*tdbb->getDefaultPool(),
-		dialect1, name);
-	node->id = id;
-	node->arg = copier.copy(tdbb, arg);
+	GenIdNode* const node = FB_NEW(*tdbb->getDefaultPool())
+		GenIdNode(*tdbb->getDefaultPool(), dialect1,
+				  generator.name, copier.copy(tdbb, arg));
+	node->generator = generator;
 	return node;
 }
 
@@ -5771,13 +5772,23 @@ bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	const GenIdNode* o = other->as<GenIdNode>();
 	fb_assert(o);
 
-	return dialect1 == o->dialect1 && name == o->name;
+	return dialect1 == o->dialect1 && generator.name == o->generator.name;
 }
 
 bool GenIdNode::sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* other)
 {
 	GenIdNode* otherNode = other->as<GenIdNode>();
-	return otherNode && dialect1 == otherNode->dialect1 && id == otherNode->id;
+	return otherNode && dialect1 == otherNode->dialect1 && generator.id == otherNode->generator.id;
+}
+
+ValueExprNode* GenIdNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	ValueExprNode::pass1(tdbb, csb);
+
+	CMP_post_access(tdbb, csb, generator.secName, 0,
+					SCL_usage, SCL_object_generator, generator.name);
+
+	return this;
 }
 
 ValueExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -5796,21 +5807,17 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 	request->req_flags &= ~req_null;
 
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	const dsc* value = EVL_expr(tdbb, request, arg);
+	const dsc* const value = EVL_expr(tdbb, request, arg);
 
 	if (request->req_flags & req_null)
 		return NULL;
 
+	const SINT64 new_val = DPM_gen_id(tdbb, generator.id, false, MOV_get_int64(value, 0));
+
 	if (dialect1)
-	{
-		SLONG temp = (SLONG) DPM_gen_id(tdbb, id, false, MOV_get_int64(value, 0));
-		impure->make_long(temp);
-	}
+		impure->make_long((SLONG) new_val);
 	else
-	{
-		SINT64 temp = DPM_gen_id(tdbb, id, false, MOV_get_int64(value, 0));
-		impure->make_int64(temp);
-	}
+		impure->make_int64(new_val);
 
 	return &impure->vlu_desc;
 }

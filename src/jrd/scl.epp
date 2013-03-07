@@ -85,17 +85,16 @@ namespace
 
 	const P_NAMES p_names[] =
 	{
-		{ SCL_protect, priv_protect, "protect" },
-		{ SCL_control, priv_control, "control" },
-		{ SCL_delete, priv_delete, "delete" },
-		{ SCL_sql_insert, priv_sql_insert, "insert/write" },
-		{ SCL_sql_update, priv_sql_update, "update/write" },
-		{ SCL_sql_delete, priv_sql_delete, "delete/write" },
-		{ SCL_write, priv_write, "write" },
-		{ SCL_read, priv_read, "read/select" },
-		{ SCL_grant, priv_grant, "grant" },
-		{ SCL_sql_references, priv_sql_references, "references" },
-		{ SCL_execute, priv_execute, "execute" },
+		{ SCL_alter, priv_alter, "ALTER" },
+		{ SCL_control, priv_control, "CONTROL" },
+		{ SCL_drop, priv_drop, "DROP" },
+		{ SCL_insert, priv_insert, "INSERT" },
+		{ SCL_update, priv_update, "UPDATE" },
+		{ SCL_delete, priv_delete, "DELETE" },
+		{ SCL_select, priv_select, "SELECT" },
+		{ SCL_references, priv_references, "REFERENCES" },
+		{ SCL_execute, priv_execute, "EXECUTE" },
+		{ SCL_usage, priv_usage, "USAGE" },
 		{ 0, 0, "" }
 	};
 
@@ -200,7 +199,7 @@ void SCL_check_access(thread_db* tdbb,
 	// Allow the database owner to back up a database even if he does not have
 	// read access to all the tables in the database
 
-	if ((attachment.att_flags & ATT_gbak_attachment) && (mask & SCL_read))
+	if ((attachment.att_flags & ATT_gbak_attachment) && (mask & SCL_select))
 	{
 		return;
 	}
@@ -291,7 +290,7 @@ void SCL_check_charset(thread_db* tdbb, const MetaName& name, SecurityClass::fla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_charset, name, mask, SCL_object_charset, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_charset, name);
 }
 
 
@@ -322,7 +321,7 @@ void SCL_check_collation(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_collation, name, mask, SCL_object_collation, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_collation, name);
 }
 
 
@@ -353,7 +352,7 @@ void SCL_check_domain(thread_db* tdbb, const MetaName& name, SecurityClass::flag
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_domain, name, mask, SCL_object_domain, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_domain, name);
 }
 
 
@@ -384,7 +383,7 @@ void SCL_check_exception(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_exception, name, mask, SCL_object_exception, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_exception, name);
 }
 
 
@@ -415,7 +414,7 @@ void SCL_check_generator(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_generator, name, mask, SCL_object_generator, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_generator, name);
 }
 
 
@@ -789,10 +788,10 @@ SecurityClass::flags_t SCL_get_mask(thread_db* tdbb, const TEXT* relation_name, 
 		}
 	}
 
-	return access & (SCL_read | SCL_write | SCL_delete | SCL_control |
-					 SCL_grant | SCL_sql_insert | SCL_sql_update |
-					 SCL_sql_delete | SCL_protect | SCL_sql_references |
-					 SCL_execute);
+	return access & (SCL_select | SCL_drop | SCL_control |
+					 SCL_insert | SCL_update |
+					 SCL_delete | SCL_alter | SCL_references |
+					 SCL_execute | SCL_usage);
 }
 
 
@@ -1167,7 +1166,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	jrd_tra* sysTransaction = attachment->getSysTransaction();
 
-	SecurityClass::flags_t privileges = SCL_scanned;
+	SecurityClass::flags_t privileges = 0;
 
 	AutoCacheRequest request(tdbb, irq_l_security, IRQ_REQUESTS);
 
@@ -1375,47 +1374,52 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 						privilege |= SCL_control;
 						break;
 
-					case priv_read:
-						// Note that READ access must imply REFERENCES
+					case priv_select:
+						// Note that SELECT access must imply REFERENCES
 						// access for upward compatibility of existing
 						// security classes
-						privilege |= SCL_read | SCL_sql_references;
+						privilege |= SCL_select | SCL_references;
 						break;
 
-					case priv_write:
-						privilege |= SCL_write | SCL_sql_insert | SCL_sql_update | SCL_sql_delete;
-						break;
-
-					case priv_sql_insert:
-						privilege |= SCL_sql_insert;
-						break;
-
-					case priv_sql_delete:
-						privilege |= SCL_sql_delete;
-						break;
-
-					case priv_sql_references:
-						privilege |= SCL_sql_references;
-						break;
-
-					case priv_sql_update:
-						privilege |= SCL_sql_update;
+					case priv_insert:
+						privilege |= SCL_insert;
 						break;
 
 					case priv_delete:
 						privilege |= SCL_delete;
 						break;
 
-					case priv_grant:
-						privilege |= SCL_grant;
+					case priv_references:
+						privilege |= SCL_references;
 						break;
 
-					case priv_protect:
-						privilege |= SCL_protect;
+					case priv_update:
+						privilege |= SCL_update;
+						break;
+
+					case priv_drop:
+						privilege |= SCL_drop;
+						break;
+
+					case priv_alter:
+						privilege |= SCL_alter;
 						break;
 
 					case priv_execute:
 						privilege |= SCL_execute;
+						break;
+
+					case priv_usage:
+						privilege |= SCL_usage;
+						break;
+
+					case priv_write:
+						// unused, but supported for backward compatibility
+						privilege |= SCL_insert | SCL_update | SCL_delete;
+						break;
+
+					case priv_grant:
+						// unused
 						break;
 
 					default:

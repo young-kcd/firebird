@@ -66,7 +66,8 @@ enum irq_type_t
 	irq_s_deps,				// store RDB$DEPENDENCIES
 	irq_d_deps,				// delete RDB$DEPENDENCIES
 	irq_r_fld_dim,			// read RDB$FIELD_DIMENSIONS
-	irq_r_gen_id,			// read RDB$GENERATORS, lookup by name.
+	irq_l_gen_id,			// lookup generator
+	irq_r_gen_id,			// read generator
 	irq_ch_f_dpd,			// check object field dependencies
 	irq_ch_dpd,				// check object dependencies
 	irq_ch_cmp_dpd,			// check computed field dependencies

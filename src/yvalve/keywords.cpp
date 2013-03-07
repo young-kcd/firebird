@@ -412,6 +412,7 @@ static const TOK tokens[] =
 	{UPDATE, "UPDATE", 1, false},
 	{UPDATING, "UPDATING", 2, true},
 	{KW_UPPER, "UPPER", 1, false},
+	{USAGE, "USAGE", 2, true},
 	{USER, "USER", 1, false},
 	{USING, "USING", 2, false},
 	{UUID_TO_CHAR, "UUID_TO_CHAR", 2, false},

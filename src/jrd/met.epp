@@ -1882,16 +1882,16 @@ void MET_lookup_exception(thread_db* tdbb,
 }
 
 
-SLONG MET_lookup_exception_number(thread_db* tdbb, const MetaName& name)
+bool MET_load_exception(thread_db* tdbb, ExceptionItem& item)
 {
 /**************************************
  *
- *      M E T _ l o o k u p _ e x c e p t i o n _ n u m b e r
+ *      M E T _ l o a d _ e x c e p t i o n
  *
  **************************************
  *
  * Functional description
- *      Lookup exception by name and return its number.
+ *      Lookup exception by name and fill the passed instance.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -1901,16 +1901,18 @@ SLONG MET_lookup_exception_number(thread_db* tdbb, const MetaName& name)
 
 	AutoCacheRequest request(tdbb, irq_l_except_no, IRQ_REQUESTS);
 
-	SLONG number = 0;
-
 	FOR(REQUEST_HANDLE request)
-		X IN RDB$EXCEPTIONS WITH X.RDB$EXCEPTION_NAME = name.c_str()
+		X IN RDB$EXCEPTIONS WITH X.RDB$EXCEPTION_NAME = item.name.c_str()
 	{
-		number = X.RDB$EXCEPTION_NUMBER;
+		item.type = ExceptionItem::XCP_CODE;
+		item.code = X.RDB$EXCEPTION_NUMBER;
+		item.secName = X.RDB$SECURITY_CLASS;
+
+		return true;
 	}
 	END_FOR
 
-	return number;
+	return false;
 }
 
 
@@ -2021,7 +2023,42 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 }
 
 
-SLONG MET_lookup_generator(thread_db* tdbb, const Firebird::MetaName& name)
+bool MET_load_generator(thread_db* tdbb, GeneratorItem& item)
+{
+/**************************************
+ *
+ *      M E T _ l o a d _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Lookup generator ID by its name and load its metadata into the passed object.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+
+	if (item.name == "RDB$GENERATORS")
+	{
+		item.id = 0;
+		return true;
+	}
+
+	AutoCacheRequest request(tdbb, irq_r_gen_id, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_NAME EQ item.name.c_str()
+	{
+		item.id = X.RDB$GENERATOR_ID;
+		item.secName = X.RDB$SECURITY_CLASS;
+		return true;
+	}
+	END_FOR
+
+	return false;
+}
+
+SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name)
 {
 /**************************************
  *
@@ -2031,7 +2068,6 @@ SLONG MET_lookup_generator(thread_db* tdbb, const Firebird::MetaName& name)
  *
  * Functional description
  *      Lookup generator ID by its name.
- *      If the name is not found, return -1.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -2040,21 +2076,19 @@ SLONG MET_lookup_generator(thread_db* tdbb, const Firebird::MetaName& name)
 	if (name == "RDB$GENERATORS")
 		return 0;
 
-	SLONG gen_id = -1;
-
-	AutoCacheRequest request(tdbb, irq_r_gen_id, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_l_gen_id, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_NAME EQ name.c_str()
 	{
-		gen_id = X.RDB$GENERATOR_ID;
+		return X.RDB$GENERATOR_ID;
 	}
 	END_FOR
 
-	return gen_id;
+	return -1;
 }
 
-void MET_lookup_generator_id (thread_db* tdbb, SLONG gen_id, MetaName& name)
+void MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name)
 {
 /**************************************
  *

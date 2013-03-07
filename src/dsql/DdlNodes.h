@@ -29,6 +29,7 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/BlrDebugWriter.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/Nullable.h"
@@ -902,21 +903,55 @@ typedef RecreateNode<CreateAlterExceptionNode, DropExceptionNode, isc_dsql_recre
 	RecreateExceptionNode;
 
 
-class CreateSequenceNode : public DdlNode
+class CreateAlterSequenceNode : public DdlNode
 {
 public:
-	CreateSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName)
+	CreateAlterSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName, const ValueExprNode* val)
 		: DdlNode(pool),
+		  create(true),
+		  alter(false),
+		  legacy(false),
 		  name(pool, aName)
 	{
+		bool negate = false;
+		const NegateNode* negation = val->as<NegateNode>();
+		while (negation)
+		{
+			negate = !negate;
+			val = negation->arg;
+			negation = ExprNode::as<NegateNode>(val);
+		}
+
+		const LiteralNode* const lit = val->as<LiteralNode>();
+		fb_assert(lit);
+
+		if (lit->litDesc.dsc_dtype == dtype_int64)
+			value = *(SINT64*) lit->litDesc.dsc_address;
+		else if (lit->litDesc.dsc_dtype == dtype_long)
+			value = *(SLONG*) lit->litDesc.dsc_address;
+		else
+			fb_assert(false);
+
+		if (negate)
+		{
+			fb_assert(value != MIN_SINT64);
+			value = -value;
+		}
 	}
 
-	static void store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
+	static SSHORT store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
 		fb_sysflag sysFlag);
 
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		dsqlScratch->getStatement()->setType(
+			legacy ? DsqlCompiledStatement::TYPE_SET_GENERATOR : DsqlCompiledStatement::TYPE_DDL);
+		return this;
+	}
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -924,8 +959,16 @@ protected:
 		statusVector << Firebird::Arg::Gds(isc_dsql_create_sequence_failed) << name;
 	}
 
+private:
+	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
 public:
+	bool create;
+	bool alter;
+	bool legacy;
 	Firebird::MetaName name;
+	SINT64 value;
 };
 
 
@@ -958,7 +1001,7 @@ public:
 };
 
 
-typedef RecreateNode<CreateSequenceNode, DropSequenceNode, isc_dsql_recreate_sequence_failed>
+typedef RecreateNode<CreateAlterSequenceNode, DropSequenceNode, isc_dsql_recreate_sequence_failed>
 	RecreateSequenceNode;
 
 
@@ -1840,7 +1883,7 @@ public:
 		  isGrant(aIsGrant),
 		  privileges(p),
 		  roles(p),
-		  table(NULL),
+		  object(NULL),
 		  users(p),
 		  grantAdminOption(NULL),
 		  grantor(NULL)
@@ -1860,7 +1903,7 @@ protected:
 
 private:
 	void modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option, const GranteeClause* user);
-	void grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* table,
+	void grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* object,
 		const GranteeClause* userNod, const char* privs, const Firebird::MetaName& field, int options);
 	static void checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction, const char* grantor,
 		const char* privilege, const Firebird::MetaName& relationName,
@@ -1885,6 +1928,7 @@ private:
 			case 'D': return "Delete";
 			case 'S': return "Select";
 			case 'X': return "Execute";
+			case 'G': return "Usage";
 			case 'M': return "Role";
 			case 'R': return "Reference";
 		}
@@ -1896,7 +1940,7 @@ public:
 	bool isGrant;
 	Firebird::Array<PrivilegeClause> privileges;
 	Firebird::Array<GranteeClause> roles;
-	NestConst<GranteeClause> table;
+	NestConst<GranteeClause> object;
 	Firebird::Array<GranteeClause> users;
 	bool grantAdminOption;
 	NestConst<Firebird::MetaName> grantor;

@@ -73,7 +73,7 @@ static void add_index_set(thread_db*);
 static void add_security_to_sys_obj(thread_db*, const MetaName&, USHORT, const MetaName&,
 	USHORT = 0, const UCHAR* = NULL);
 static void add_security_to_sys_rel(thread_db*, const MetaName&,
-	const TEXT*, const USHORT, const UCHAR*, const bool);
+	const TEXT*, const USHORT, const UCHAR*);
 static void store_generator(thread_db*, const gen*, AutoRequest&, const MetaName&);
 static void store_global_field(thread_db*, const gfld*, AutoRequest&, const MetaName&);
 static void store_intlnames(thread_db*, const MetaName&);
@@ -436,7 +436,16 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 
 	DFW_perform_system_work(tdbb);
 
+	const size_t ownerNameLength = ownerName.length();
+	fb_assert(ownerNameLength <= MAX_UCHAR);
+
 	// Add security for the non-relation system metadata objects
+
+	const UCHAR NON_REL_OWNER_ACL[] =
+		{ACL_priv_list, priv_control, priv_alter, priv_drop, priv_usage, ACL_end};
+
+	const UCHAR NON_REL_PUBLIC_ACL[] =
+		{ACL_priv_list, priv_usage, ACL_end};
 
 	UCHAR buffer[FB_MAX_ACL_SIZE];
 	UCHAR* acl = buffer;
@@ -444,22 +453,21 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	*acl++ = ACL_id_list;
 	*acl++ = id_person;
 
-	USHORT length = ownerName.length();
-	fb_assert(length <= MAX_UCHAR);
-	*acl++ = (UCHAR) length;
-	memcpy(acl, ownerName.c_str(), length);
-	acl += length;
+	*acl++ = (UCHAR) ownerNameLength;
+	memcpy(acl, ownerName.c_str(), ownerNameLength);
+	acl += ownerNameLength;
 
 	*acl++ = ACL_end;
-	*acl++ = ACL_priv_list;
-	*acl++ = priv_protect;
-	*acl++ = priv_control;
-	*acl++ = priv_delete;
-	*acl++ = priv_write;
-	*acl++ = priv_read;
+
+	memcpy(acl, NON_REL_OWNER_ACL, sizeof(NON_REL_OWNER_ACL));
+	acl += sizeof(NON_REL_OWNER_ACL);
+
+	*acl++ = ACL_id_list;
 	*acl++ = ACL_end;
-	*acl++ = ACL_end;
-	length = acl - buffer;
+	memcpy(acl, NON_REL_PUBLIC_ACL, sizeof(NON_REL_PUBLIC_ACL));
+	acl += sizeof(NON_REL_PUBLIC_ACL);
+
+	USHORT length = acl - buffer;
 
 	for (const gfld* gfield = gfields; gfield->gfld_name; gfield++)
 	{
@@ -487,22 +495,40 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 		add_security_to_sys_obj(tdbb, ownerName, obj_collation, collation->name, length, buffer);
 	}
 
-	// Add security on RDB$ROLES system table
+	// Add security on system tables
 
-	acl--; // go before the last ACL_end, it's to be overwritten
+	const UCHAR REL_OWNER_ACL[] =
+		{ACL_priv_list, priv_control, priv_alter, priv_drop,
+		 priv_select, priv_insert, priv_update, priv_delete, ACL_end};
+
+	const UCHAR REL_PUBLIC_ACL[] =
+		{ACL_priv_list, priv_select, ACL_end};
+
+	acl = buffer;
+	*acl++ = ACL_version;
+	*acl++ = ACL_id_list;
+	*acl++ = id_person;
+
+	*acl++ = (UCHAR) ownerNameLength;
+	memcpy(acl, ownerName.c_str(), ownerNameLength);
+	acl += ownerNameLength;
+
+	*acl++ = ACL_end;
+
+	memcpy(acl, REL_OWNER_ACL, sizeof(REL_OWNER_ACL));
+	acl += sizeof(REL_OWNER_ACL);
 
 	*acl++ = ACL_id_list;
 	*acl++ = ACL_end;
-	*acl++ = ACL_priv_list;
-	*acl++ = priv_read;
-	*acl++ = ACL_end;
-	*acl++ = ACL_end;
+	memcpy(acl, REL_PUBLIC_ACL, sizeof(REL_PUBLIC_ACL));
+	acl += sizeof(REL_PUBLIC_ACL);
+
 	length = acl - buffer;
 
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$ROLES", length, buffer, true);
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", length, buffer, true);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$ROLES", length, buffer);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", length, buffer);
 	// DFW writes here
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", length, buffer, true);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", length, buffer);
 }
 
 
@@ -918,8 +944,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 									const Firebird::MetaName&	user_name,
 									const TEXT*	rel_name,
 									const USHORT	acl_length,
-									const UCHAR*	acl,
-									const bool		pub_select)
+									const UCHAR*	acl)
 {
 /**************************************
  *
@@ -991,7 +1016,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	handle1.reset();
 
-	for (int cnt = 0; cnt < (pub_select ? 6 : 5); cnt++)
+	for (int cnt = 0; cnt < 6; cnt++)
 	{
 		STORE(REQUEST_HANDLE handle1) PRIV IN RDB$USER_PRIVILEGES
 			switch (cnt)

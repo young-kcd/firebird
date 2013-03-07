@@ -38,17 +38,19 @@ const int ACL_priv_list	= 2;
 
 const int priv_end			= 0;
 const int priv_control		= 1;		// Control over ACL
-const int priv_grant		= 2;		// Grant subset of rights to others
-const int priv_delete		= 3;		// Delete object
-const int priv_read			= 4;		// Read object
-const int priv_write		= 5;		// Write object
-const int priv_protect		= 6;		// Change protection
-const int priv_sql_insert	= 7;		// SQL insertion
-const int priv_sql_delete	= 8;		// SQL deletion
-const int priv_sql_update	= 9;		// SQL update
-const int priv_sql_references	= 10;	// SQL references for foreign key
-const int priv_execute		= 11;		// Execute (procedure)
-const int priv_max			= 12;
+const int priv_grant		= 2;		// Unused
+const int priv_drop			= 3;		// Drop object
+const int priv_select		= 4;		// SELECT
+const int priv_write		= 5;		// Unused
+const int priv_alter		= 6;		// Alter object
+const int priv_insert		= 7;		// INSERT
+const int priv_delete		= 8;		// DELETE
+const int priv_update		= 9;		// UPDATE
+const int priv_references	= 10;		// REFERENCES for foreign key
+const int priv_execute		= 11;		// EXECUTE (procedure, function, package)
+// New in FB3
+const int priv_usage		= 12;		// USAGE (domain, exception, sequence, collation)
+const int priv_max			= 13;
 
 // Identification criterias
 
@@ -67,13 +69,7 @@ const int id_sql_role		= 11;		// SQL role
 // New in FB3
 const int id_package		= 12;		// Package name
 const int id_function		= 13;		// Function name
-const int id_schema			= 14;		// Schema name
-const int id_generator		= 15;
-const int id_domain			= 16;		// global field (domain)
-const int id_charset		= 17;
-const int id_collation		= 18;
-const int id_exception		= 19;
-const int id_max			= 20;
+const int id_max			= 14;
 
 /* Format of access control list:
 

@@ -4843,28 +4843,77 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 //----------------------
 
 
-void CreateSequenceNode::print(string& text) const
+void CreateAlterSequenceNode::print(string& text) const
 {
 	text.printf(
-		"CreateSequenceNode\n"
+		"CreateAlterSequenceNode\n"
 		"  name: %s\n",
 		name.c_str());
 }
 
-void CreateSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+void CreateAlterSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	fb_assert(create || alter);
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
-	store(tdbb, transaction, name, fb_sysflag_user);
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
+	if (alter)
+	{
+		if (!executeAlter(tdbb, dsqlScratch, transaction))
+		{
+			if (create)	// create or alter
+				executeCreate(tdbb, dsqlScratch, transaction);
+			else
+			{
+				// msg 214: "Sequence not found"
+				status_exception::raise(Arg::PrivateDyn(214) << name);
+			}
+		}
+	}
+	else
+		executeCreate(tdbb, dsqlScratch, transaction);
 
 	savePoint.release();	// everything is ok
+
 }
 
-void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const MetaName& name,
+void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
+{
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
+
+	const SSHORT id = store(tdbb, transaction, name, fb_sysflag_user);
+	fb_assert(id > 0);
+
+	// the store() call above has caused the DFW item to be posted,
+	// so we just adjust the cached generator value
+	transaction->getGenIdCache()->put(id, value);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
+}
+
+bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
+{
+	const SLONG id = MET_lookup_generator(tdbb, name);
+	if (id < 0)
+		return false;
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
+
+	transaction->getGenIdCache()->put(id, value);
+	dsc desc;
+	desc.makeText((USHORT) name.length(), ttype_metadata, (UCHAR*) name.c_str());
+	DFW_post_work(transaction, dfw_set_generator, &desc, id);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_SEQUENCE, name);
+	
+	return true;
+}
+
+SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const MetaName& name,
 	fb_sysflag sysFlag)
 {
 	Attachment* const attachment = transaction->tra_attachment;
@@ -4874,6 +4923,7 @@ void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const Meta
 
 	AutoCacheRequest request(tdbb, drq_s_gens, DYN_REQUESTS);
 	int faults = 0;
+	SSHORT storedId = -1;
 
 	while (true)
 	{
@@ -4897,6 +4947,7 @@ void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const Meta
 			}
 			END_STORE
 
+			storedId = id;
 			break;
 		}
 		catch (const status_exception& ex)
@@ -4912,6 +4963,8 @@ void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const Meta
 	}
 
 	storePrivileges(tdbb, transaction, name, obj_generator, USAGE_PRIVILEGES);
+	
+	return storedId;
 }
 
 
@@ -5443,7 +5496,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
 
-			CreateSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
+			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
 				fb_sysflag_identity_generator);
 		}
 
@@ -5744,7 +5797,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 				// Check that we have references permissions on the table and
 				// fields that the index:referredIndexName is on.
-				SCL_check_index(tdbb, referredIndexName, 0, SCL_sql_references);
+				SCL_check_index(tdbb, referredIndexName, 0, SCL_references);
 
 				break;
 			}
@@ -7557,7 +7610,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			// circumvent DYN.
 			priv = SCL_get_mask(tdbb, PREL.RDB$RELATION_NAME, "");
 
-			if (!(priv & SCL_read))
+			if (!(priv & SCL_select))
 			{
 				// msg 32: no permission for %s access to %s %s
 				status_exception::raise(
@@ -9202,7 +9255,7 @@ void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	const GranteeClause* usersPtr;
 	const GranteeClause* usersEnd;
 
-	if (!isGrant && roles.isEmpty() && privileges.isEmpty() && !table)	// REVOKE ALL ON ALL
+	if (!isGrant && roles.isEmpty() && privileges.isEmpty() && !object)	// REVOKE ALL ON ALL
 	{
 		usersEnd = users.end();
 		for (usersPtr = users.begin(); usersPtr != usersEnd; ++usersPtr)
@@ -9247,7 +9300,7 @@ void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 	for (PrivilegeClause* i = privileges.begin(); i != privileges.end(); ++i)
 	{
 		if (i->first == 'A')
-			grantRevoke(tdbb, transaction, table, user, "A", NULL, option);
+			grantRevoke(tdbb, transaction, object, user, "A", NULL, option);
 		else if (i->second)
 		{
 			char privs0[2] = {i->first, '\0'};
@@ -9256,7 +9309,7 @@ void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 
 			for (NestConst<ValueExprNode>* ptr = fields->items.begin(); ptr != fields->items.end(); ++ptr)
 			{
-				grantRevoke(tdbb, transaction, table, user, privs0,
+				grantRevoke(tdbb, transaction, object, user, privs0,
 					(*ptr)->as<FieldNode>()->dsqlName, option);
 			}
 		}
@@ -9265,11 +9318,11 @@ void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 	}
 
 	if (privs.hasData())
-		grantRevoke(tdbb, transaction, table, user, privs.c_str(), NULL, option);
+		grantRevoke(tdbb, transaction, object, user, privs.c_str(), NULL, option);
 }
 
 // Execute SQL grant/revoke operation.
-void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* table,
+void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* object,
 	const GranteeClause* userNod, const char* privs,
 	const MetaName& field, int options)
 {
@@ -9364,26 +9417,25 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		return;
 	}
 
-	SSHORT objType = table->first;
+	const SSHORT objType = object->first;
+	const MetaName objName(object->second);
 
 	char privileges[16];
 	strcpy(privileges, privs);
 	if (strcmp(privileges, "A") == 0)
 		strcpy(privileges, ALL_PRIVILEGES);
 
-	MetaName object(table->second);
-
-	if (objType == obj_sql_role && object == NULL_ROLE)
+	if (objType == obj_sql_role && objName == NULL_ROLE)
 	{
 		if (isGrant)
 		{
 			// msg 195: keyword NONE could not be used as SQL role name.
-			status_exception::raise(Arg::PrivateDyn(195) << object.c_str());
+			status_exception::raise(Arg::PrivateDyn(195) << objName.c_str());
 		}
 		else
 		{
 			///CVC: Make this a warning in the future.
-			///DYN_error_punt(false, 195, object.c_str());
+			///DYN_error_punt(false, 195, objName.c_str());
 		}
 	}
 
@@ -9401,7 +9453,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 				PRIV IN RDB$USER_PRIVILEGES
-				WITH PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+				WITH PRIV.RDB$RELATION_NAME EQ objName.c_str() AND
 					 PRIV.RDB$OBJECT_TYPE = objType AND
 					 PRIV.RDB$PRIVILEGE EQ priv AND
 					 PRIV.RDB$USER = user.c_str() AND
@@ -9425,7 +9477,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 
 			if (objType == obj_sql_role)
 			{
-				checkGrantorCanGrantRole(tdbb, transaction, grantorRevoker, object);
+				checkGrantorCanGrantRole(tdbb, transaction, grantorRevoker, objName);
 
 				if (userType == obj_sql_role)
 				{
@@ -9451,12 +9503,12 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				{
 					// Relation or view because we cannot distinguish at this point.
 					checkGrantorCanGrant(tdbb, transaction,
-						tdbb->getAttachment()->att_user->usr_user_name.c_str(), priv, object,
+						tdbb->getAttachment()->att_user->usr_user_name.c_str(), priv, objName,
 						field, true);
 				}
 			}
 
-			storePrivilege(tdbb, transaction, object, user, field, pr, userType, objType,
+			storePrivilege(tdbb, transaction, objName, user, field, pr, userType, objType,
 				options, grantorRevoker);
 		}
 	}
@@ -9473,7 +9525,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			{
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 					PRIV IN RDB$USER_PRIVILEGES
-					WITH PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+					WITH PRIV.RDB$RELATION_NAME EQ objName.c_str() AND
 						 PRIV.RDB$OBJECT_TYPE = objType AND
 						 PRIV.RDB$PRIVILEGE EQ priv AND
 						 PRIV.RDB$USER = user.c_str() AND
@@ -9495,7 +9547,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 					PRIV IN RDB$USER_PRIVILEGES
 					WITH PRIV.RDB$PRIVILEGE EQ priv AND
-						 PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+						 PRIV.RDB$RELATION_NAME EQ objName.c_str() AND
 						 PRIV.RDB$OBJECT_TYPE = objType AND
 						 PRIV.RDB$USER EQ user.c_str() AND
 						 PRIV.RDB$USER_TYPE = userType
@@ -9521,7 +9573,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				// rdb$user_privileges which disallows the table from being updated. It would have
 				// to be changed such that only the grant_option field can be updated.
 
-				storePrivilege(tdbb, transaction, object, user, field, pr, userType, objType,
+				storePrivilege(tdbb, transaction, objName, user, field, pr, userType, objType,
 					0, grantorRevoker);
 			}
 
@@ -9529,7 +9581,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			{
 				// msg 246: @1 is not grantor of @2 on @3 to @4.
 				status_exception::raise(Arg::PrivateDyn(246) <<
-					grantorRevoker.c_str() << privilegeName(priv[0]) << object.c_str() <<
+					grantorRevoker.c_str() << privilegeName(priv[0]) << objName.c_str() <<
 					user.c_str());
 			}
 
@@ -9538,7 +9590,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				// msg 247: Warning: @1 on @2 is not granted to @3.
 				ERR_post_warning(
 					Arg::Warning(isc_dyn_miss_priv_warning) <<
-					Arg::Str(privilegeName(priv[0])) << Arg::Str(object) << Arg::Str(user));
+					Arg::Str(privilegeName(priv[0])) << Arg::Str(objName) << Arg::Str(user));
 			}
 		}
 	}

@@ -60,20 +60,18 @@ typedef Firebird::BePlusTree<
 > SecurityClassList;
 
 
-const SecurityClass::flags_t SCL_read			= 1;		// Read access
-const SecurityClass::flags_t SCL_write			= 2;		// Write access
-const SecurityClass::flags_t SCL_delete			= 4;		// Delete access
-const SecurityClass::flags_t SCL_control		= 8;		// Control access
-const SecurityClass::flags_t SCL_grant			= 16;		// Grant privileges
-const SecurityClass::flags_t SCL_exists			= 32;		// At least ACL exists
-const SecurityClass::flags_t SCL_scanned		= 64;		// But we did look
-const SecurityClass::flags_t SCL_protect		= 128;		// Change protection
-const SecurityClass::flags_t SCL_corrupt		= 256;		// ACL does look too good
-const SecurityClass::flags_t SCL_sql_insert		= 512;
-const SecurityClass::flags_t SCL_sql_delete		= 1024;
-const SecurityClass::flags_t SCL_sql_update		= 2048;
-const SecurityClass::flags_t SCL_sql_references	= 4096;
-const SecurityClass::flags_t SCL_execute		= 8192;
+const SecurityClass::flags_t SCL_select			= 1;		// SELECT access
+const SecurityClass::flags_t SCL_drop			= 2;		// DROP access
+const SecurityClass::flags_t SCL_control		= 4;		// Control access
+const SecurityClass::flags_t SCL_exists			= 8;		// At least ACL exists
+const SecurityClass::flags_t SCL_alter			= 16;		// ALTER access
+const SecurityClass::flags_t SCL_corrupt		= 32;		// ACL does look too good
+const SecurityClass::flags_t SCL_insert			= 64;		// INSERT access
+const SecurityClass::flags_t SCL_delete			= 128;		// DELETE access
+const SecurityClass::flags_t SCL_update			= 256;		// UPDATE access
+const SecurityClass::flags_t SCL_references		= 512;		// REFERENCES access
+const SecurityClass::flags_t SCL_execute		= 1024;		// EXECUTE access
+const SecurityClass::flags_t SCL_usage			= 2048;		// USAGE access
 
 
 

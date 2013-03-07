@@ -380,9 +380,8 @@ static bool modify_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool create_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool set_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool modify_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -413,7 +412,6 @@ static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& fieldName);
 static void check_dependencies(thread_db*, const TEXT*, const TEXT*, const TEXT*, int, jrd_tra*);
 static void check_filename(const Firebird::string&, bool);
-static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
@@ -482,9 +480,8 @@ static const deferred_task task_table[] =
 	{ dfw_create_collation, create_collation },
 	{ dfw_delete_collation, delete_collation },
 	{ dfw_delete_exception, delete_exception },
-	{ dfw_create_generator, create_generator },
+	{ dfw_set_generator, set_generator },
 	{ dfw_delete_generator, delete_generator },
-	{ dfw_modify_generator, modify_generator },
 	{ dfw_create_function, create_function },
 	{ dfw_delete_function, delete_function },
 	{ dfw_modify_function, modify_function },
@@ -2102,23 +2099,6 @@ static void check_filename(const Firebird::string& name, bool shareExpand)
 }
 
 
-static void check_system_generator(const TEXT* gen_name, const dfw_t action)
-{
-	// CVC: Replace this with a call to SCL when we have ACL's for gens.
-	for (const gen* generator = generators; generator->gen_name; generator++)
-	{
-		if (!strcmp(generator->gen_name, gen_name)) // did we find a sys gen?
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(action == dfw_delete_generator ? isc_no_delete : isc_no_update) <<
-												   // Msg353: can not delete   Msg520: can not update
-					 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
-					 Arg::Gds(isc_random) << Arg::Str("This is a system generator."));
-		}
-	}
-}
-
-
 static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 {
 /**************************************
@@ -2191,7 +2171,7 @@ static bool compute_security(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 			FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 				WITH X.RDB$SECURITY_CLASS EQ work->dfw_name.c_str()
 			{
-				tdbb->getAttachment()->att_security_class = s_class;
+				attachment->att_security_class = s_class;
 			}
 			END_FOR
 		}
@@ -2680,7 +2660,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					relation->rel_owner_name != partner_relation->rel_owner_name)
 				{
 					SCL_check_index(tdbb, partner_relation->rel_name,
-									idx.idx_id + 1, SCL_sql_references);
+									idx.idx_id + 1, SCL_references);
 				}
 */
 			}
@@ -3123,19 +3103,19 @@ static bool delete_exception(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 }
 
 
-static bool create_generator(thread_db* tdbb,
-							 SSHORT phase,
-							 DeferredWork* work,
-							 jrd_tra* transaction)
+static bool set_generator(thread_db* tdbb,
+						  SSHORT phase,
+						  DeferredWork* work,
+						  jrd_tra* transaction)
 {
 /**************************************
  *
- *	c r e a t e _ g e n e r a t o r
+ *	s e t _ g e n e r a t o r
  *
  **************************************
  *
  * Functional description
- *	Initialize the generator after creation.
+ *	Set the generator to the given value.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -3186,47 +3166,11 @@ static bool delete_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 	switch (phase)
 	{
 	case 1:
-		check_system_generator(gen_name, dfw_delete_generator);
 		check_dependencies(tdbb, gen_name, NULL, NULL, obj_generator, transaction);
 		break;
 	}
 
 	return false;
-}
-
-
-static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
-{
-/**************************************
- *
- *	m o d i f y _ g e n e r a t o r
- *
- **************************************
- *
- * Functional description
- *	Check if it is allowable to modify
- *	a generator's information in rdb$generators.
- * CVC: For now, the function always forbids this operation.
- * This has nothing to do with gen_id or set generator.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	const char* gen_name = work->dfw_name.c_str();
-
-	switch (phase)
-	{
-	case 1:
-		check_system_generator(gen_name, dfw_modify_generator);
-		if (work->dfw_id) // != 0 means not only the desc was changed.
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
-					 Arg::Gds(isc_random) << Arg::Str("Only can modify description for user generators."));
-		break;
-	}
-
-	return false;
-
 }
 
 

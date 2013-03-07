@@ -559,6 +559,7 @@ using namespace Firebird;
 %token <metaNamePtr> KW_FALSE
 %token <metaNamePtr> KW_TRUE
 %token <metaNamePtr> UNKNOWN
+%token <metaNamePtr> USAGE
 %token <metaNamePtr> RDB_RECORD_VERSION
 
 // precedence declarations for expression evaluation
@@ -643,7 +644,8 @@ using namespace Firebird;
 	Jrd::CreateAlterTriggerNode* createAlterTriggerNode;
 	Jrd::CreateAlterPackageNode* createAlterPackageNode;
 	Jrd::CreateFilterNode::NameNumber* filterNameNumber;
-	Jrd::CreateSequenceNode* createSequenceNode;
+	Jrd::CreateAlterExceptionNode* createAlterExceptionNode;
+	Jrd::CreateAlterSequenceNode* createAlterSequenceNode;
 	Jrd::CreateShadowNode* createShadowNode;
 	Firebird::Array<Jrd::CreateAlterPackageNode::Item>* packageItems;
 	Jrd::ExceptionArray* exceptionArray;
@@ -701,16 +703,13 @@ statement
 
 %type <stmtNode> dml_statement
 dml_statement
-	// ASF: ALTER SEQUENCE is defined here cause it's treated as DML.
-	: ALTER SEQUENCE alter_sequence_clause		{ $$ = $3; }
-	| delete									{ $$ = $1; }
+	: delete									{ $$ = $1; }
 	| insert									{ $$ = $1; }
 	| merge										{ $$ = $1; }
 	| exec_procedure							{ $$ = $1; }
 	| exec_block								{ $$ = $1; }
 	| savepoint									{ $$ = $1; }
 	| select									{ $$ = $1; }
-	| set_generator								{ $$ = $1; }
 	| update									{ $$ = $1; }
 	| update_or_insert							{ $$ = $1; }
 	;
@@ -752,28 +751,70 @@ grant0($node)
 	: privileges(NOTRIAL(&$node->privileges)) ON table_noise symbol_table_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
-			$node->table = newNode<GranteeClause>(obj_relation, *$4);
+			$node->object = newNode<GranteeClause>(obj_relation, *$4);
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| execute_privilege(NOTRIAL(&$node->privileges)) ON PROCEDURE simple_proc_name
+	| execute_privilege(NOTRIAL(&$node->privileges)) ON PROCEDURE symbol_procedure_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
-			$node->table = $4;
+			$node->object = newNode<GranteeClause>(obj_procedure, *$4);
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| execute_privilege(NOTRIAL(&$node->privileges)) ON FUNCTION simple_UDF_name
+	| execute_privilege(NOTRIAL(&$node->privileges)) ON FUNCTION symbol_UDF_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
-			$node->table = $4;
+			$node->object = newNode<GranteeClause>(obj_udf, *$4);
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| execute_privilege(NOTRIAL(&$node->privileges)) ON PACKAGE simple_package_name
+	| execute_privilege(NOTRIAL(&$node->privileges)) ON PACKAGE symbol_package_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
-			$node->table = $4;
+			$node->object = newNode<GranteeClause>(obj_package_header, *$4);
+			$node->grantAdminOption = $7;
+			$node->grantor = $8;
+		}
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON DOMAIN symbol_domain_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_field, *$4);
+			$node->grantAdminOption = $7;
+			$node->grantor = $8;
+		}
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON EXCEPTION symbol_exception_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_exception, *$4);
+			$node->grantAdminOption = $7;
+			$node->grantor = $8;
+		}
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON GENERATOR symbol_generator_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_generator, *$4);
+			$node->grantAdminOption = $7;
+			$node->grantor = $8;
+		}
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON SEQUENCE symbol_generator_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_generator, *$4);
+			$node->grantAdminOption = $7;
+			$node->grantor = $8;
+		}
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON CHARACTER SET symbol_character_set_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_charset, *$5);
+			$node->grantAdminOption = $8;
+			$node->grantor = $9;
+		}
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON COLLATION symbol_collation_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_collation, *$4);
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
@@ -806,6 +847,11 @@ privilege_list($privilegeArray)
 %type execute_privilege(<privilegeArray>)
 execute_privilege($privilegeArray)
 	: EXECUTE						{ $privilegeArray->add(PrivilegeClause('X', NULL)); }
+	;
+
+%type usage_privilege(<privilegeArray>)
+usage_privilege($privilegeArray)
+	: USAGE							{ $privilegeArray->add(PrivilegeClause('G', NULL)); }
 	;
 
 %type privilege(<privilegeArray>)
@@ -846,21 +892,6 @@ grantor
 	| USER symbol_user_name		{ $$ = $2; }
 	;
 
-%type <granteeClause> simple_package_name
-simple_package_name
-	: symbol_package_name	{ $$ = newNode<GranteeClause>(obj_package_header, *$1); }
-	;
-
-%type <granteeClause> simple_proc_name
-simple_proc_name
-	: symbol_procedure_name	{ $$ = newNode<GranteeClause>(obj_procedure, *$1); }
-	;
-
-%type <granteeClause> simple_UDF_name
-simple_UDF_name
-	: symbol_UDF_name		{ $$ = newNode<GranteeClause>(obj_udf, *$1); }
-	;
-
 
 // REVOKE statement
 
@@ -877,29 +908,71 @@ revoke0($node)
 	: rev_grant_option privileges(NOTRIAL(&$node->privileges)) ON table_noise symbol_table_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
-			$node->table = newNode<GranteeClause>(obj_relation, *$5);
+			$node->object = newNode<GranteeClause>(obj_relation, *$5);
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
 
-	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON PROCEDURE simple_proc_name
+	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON PROCEDURE symbol_procedure_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
-			$node->table = $5;
+			$node->object = newNode<GranteeClause>(obj_procedure, *$5);
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
-	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON FUNCTION simple_UDF_name
+	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON FUNCTION symbol_UDF_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
-			$node->table = $5;
+			$node->object = newNode<GranteeClause>(obj_udf, *$5);
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
-	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON PACKAGE simple_package_name
+	| rev_grant_option execute_privilege(NOTRIAL(&$node->privileges)) ON PACKAGE symbol_package_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
-			$node->table = $5;
+			$node->object = newNode<GranteeClause>(obj_package_header, *$5);
+			$node->grantAdminOption = $1;
+			$node->grantor = $8;
+		}
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON DOMAIN symbol_domain_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_field, *$5);
+			$node->grantAdminOption = $1;
+			$node->grantor = $8;
+		}
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON EXCEPTION symbol_exception_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_exception, *$5);
+			$node->grantAdminOption = $1;
+			$node->grantor = $8;
+		}
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON GENERATOR symbol_generator_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_generator, *$5);
+			$node->grantAdminOption = $1;
+			$node->grantor = $8;
+		}
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON SEQUENCE symbol_generator_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_generator, *$5);
+			$node->grantAdminOption = $1;
+			$node->grantor = $8;
+		}
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON CHARACTER SET symbol_character_set_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_charset, *$6);
+			$node->grantAdminOption = $1;
+			$node->grantor = $9;
+		}
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON COLLATION symbol_collation_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_collation, *$5);
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
@@ -1165,20 +1238,20 @@ recreate_clause
 		{ $$ = newNode<RecreateProcedureNode>($2); }
 	| FUNCTION function_clause
 		{ $$ = newNode<RecreateFunctionNode>($2); }
-	| TABLE rtable_clause
-		{ $$ = $2; }
-	| GLOBAL TEMPORARY TABLE gtt_recreate_clause
-		{ $$ = $4; }
-	| VIEW rview_clause
-		{ $$ = $2; }
+	| TABLE table_clause
+		{ $$ = newNode<RecreateTableNode>($2); }
+	| GLOBAL TEMPORARY TABLE gtt_table_clause
+		{ $$ = newNode<RecreateTableNode>($4); }
+	| VIEW view_clause
+		{ $$ = newNode<RecreateViewNode>($2); }
 	| TRIGGER trigger_clause
 		{ $$ = newNode<RecreateTriggerNode>($2); }
 	| PACKAGE package_clause
 		{ $$ = newNode<RecreatePackageNode>($2); }
 	| PACKAGE BODY package_body_clause
 		{ $$ = newNode<RecreatePackageBodyNode>($3); }
-	| EXCEPTION rexception_clause
-		{ $$ = $2; }
+	| EXCEPTION exception_clause
+		{ $$ = newNode<RecreateExceptionNode>($2); }
 	| GENERATOR generator_clause
 		{ $$ = newNode<RecreateSequenceNode>($2); }
 	| SEQUENCE generator_clause
@@ -1198,29 +1271,21 @@ replace_clause
 	| PACKAGE replace_package_clause		{ $$ = $2; }
 	| VIEW replace_view_clause				{ $$ = $2; }
 	| EXCEPTION replace_exception_clause	{ $$ = $2; }
+	| GENERATOR replace_sequence_clause		{ $$ = $2; }
+	| SEQUENCE replace_sequence_clause		{ $$ = $2; }
 	;
 
 
 // CREATE EXCEPTION
 // ASF: The charset from sql_string is discarded because the database column uses NONE.
 
-%type <ddlNode>	exception_clause
+%type <createAlterExceptionNode> exception_clause
 exception_clause
 	: symbol_exception_name sql_string
 		{ $$ = newNode<CreateAlterExceptionNode>(*$1, $2->getString()); }
 	;
 
-%type <ddlNode> rexception_clause
-rexception_clause
-	: symbol_exception_name sql_string
-		{
-			CreateAlterExceptionNode* createNode = newNode<CreateAlterExceptionNode>(*$1,
-				$2->getString());
-			$$ = newNode<RecreateExceptionNode>(createNode);
-		}
-	;
-
-%type <ddlNode> replace_exception_clause
+%type <createAlterExceptionNode> replace_exception_clause
 replace_exception_clause
 	: symbol_exception_name sql_string
 		{
@@ -1230,7 +1295,7 @@ replace_exception_clause
 		}
 	;
 
-%type <ddlNode> alter_exception_clause
+%type <createAlterExceptionNode> alter_exception_clause
 alter_exception_clause
 	: symbol_exception_name sql_string
 		{
@@ -1390,9 +1455,61 @@ check_constraint
 
 // CREATE SEQUENCE/GENERATOR
 
-%type <createSequenceNode> generator_clause
+%type <createAlterSequenceNode> generator_clause
 generator_clause
-	: symbol_generator_name		{ $$ = newNode<CreateSequenceNode>(*$1); }
+	: symbol_generator_name start_with_opt
+		{ $$ = newNode<CreateAlterSequenceNode>(*$1, $2); }
+	;
+
+%type <createAlterSequenceNode> replace_sequence_clause
+replace_sequence_clause
+	: symbol_generator_name start_with_opt
+		{
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2);
+			node->alter = true;
+			$$ = node;
+		}
+	;
+
+%type <createAlterSequenceNode> alter_sequence_clause
+alter_sequence_clause
+	: symbol_generator_name RESTART WITH sequence_value
+		{
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $4);
+			node->create = false;
+			node->alter = true;
+			$$ = node;
+		}
+	;
+
+%type <createAlterSequenceNode> set_generator_clause
+set_generator_clause
+	: SET GENERATOR symbol_generator_name TO sequence_value
+		{
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $5);
+			node->create = false;
+			node->alter = true;
+			node->legacy = true;
+			$$ = node;
+		}
+	;
+
+%type <valueExprNode> start_with_opt
+start_with_opt
+	: START WITH sequence_value
+		{ $$ = $3; }
+	|
+		{ $$ = MAKE_const_slong(0); }
+	;
+
+%type <valueExprNode> sequence_value
+sequence_value
+	: signed_long_integer
+		{ $$ = MAKE_const_slong($1); }
+	| NUMBER64BIT
+		{ $$ = MAKE_constant(*$1, CONSTANT_SINT64); }
+	| '-' NUMBER64BIT
+		{ $$ = newNode<NegateNode>(MAKE_constant(*$2, CONSTANT_SINT64)); }
 	;
 
 
@@ -1614,12 +1731,6 @@ table_clause
 			{ $$ = $3; }
 	;
 
-%type <ddlNode> rtable_clause
-rtable_clause
-	: table_clause
-		{ $$ = newNode<RecreateTableNode>($1); }
-	;
-
 %type <createRelationNode> gtt_table_clause
 gtt_table_clause
 	: simple_table_name
@@ -1629,12 +1740,6 @@ gtt_table_clause
 				$$ = $2;
 				$$->relationType = static_cast<rel_t>($6);
 			}
-	;
-
-%type <ddlNode> gtt_recreate_clause
-gtt_recreate_clause
-	: gtt_table_clause
-		{ $$ = newNode<RecreateTableNode>($1); }
 	;
 
 %type <intVal> gtt_scope
@@ -2958,12 +3063,6 @@ view_clause
 		}
 	;
 
-%type <ddlNode> rview_clause
-rview_clause
-	: view_clause
-		{ $$ = newNode<RecreateViewNode>($1); }
-	;
-
 %type <ddlNode> replace_view_clause
 replace_view_clause
 	: view_clause
@@ -3193,6 +3292,7 @@ trigger_position
 %type <ddlNode> alter
 alter
 	: ALTER alter_clause	{ $$ = $2; }
+	| set_generator_clause	{ $$ = $1; }
 	;
 
 %type <ddlNode> alter_clause
@@ -3217,6 +3317,7 @@ alter_clause
 	| ROLE alter_role_clause				{ $$ = $2; }
 	| USER alter_user_clause				{ $$ = $2; }
 	| CHARACTER SET alter_charset_clause	{ $$ = $3; }
+	| SEQUENCE alter_sequence_clause		{ $$ = $2; }
 	;
 
 %type <alterDomainNode> alter_domain
@@ -3447,19 +3548,6 @@ drop_behaviour
 alter_index_clause
 	: symbol_index_name ACTIVE		{ $$ = newNode<AlterIndexNode>(*$1, true); }
 	| symbol_index_name INACTIVE	{ $$ = newNode<AlterIndexNode>(*$1, false); }
-	;
-
-%type <stmtNode> alter_sequence_clause
-alter_sequence_clause
-	: symbol_generator_name RESTART WITH signed_long_integer
-		{ $$ = newNode<SetGeneratorNode>(*$1, MAKE_const_slong($4)); }
-	| symbol_generator_name RESTART WITH NUMBER64BIT
-		{ $$ = newNode<SetGeneratorNode>(*$1, MAKE_constant(*$4, CONSTANT_SINT64)); }
-	| symbol_generator_name RESTART WITH '-' NUMBER64BIT
-		{
-			$$ = newNode<SetGeneratorNode>(*$1,
-				newNode<NegateNode>(MAKE_constant(*$5, CONSTANT_SINT64)));
-		}
 	;
 
 %type <ddlNode>	alter_udf_clause
@@ -4141,20 +4229,6 @@ float_type
 precision_opt
 	: /* nothing */					{ $$ = 0; }
 	| '(' nonneg_short_integer ')'	{ $$ = $2; }
-	;
-
-
-%type <stmtNode> set_generator
-set_generator
-	: SET GENERATOR symbol_generator_name TO signed_long_integer
-		{ $$ = newNode<SetGeneratorNode>(*$3, MAKE_const_slong($5)); }
-	| SET GENERATOR symbol_generator_name TO NUMBER64BIT
-		{ $$ = newNode<SetGeneratorNode>(*$3, MAKE_constant(*$5, CONSTANT_SINT64)); }
-	| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
-		{
-			$$ = newNode<SetGeneratorNode>(*$3,
-				newNode<NegateNode>(MAKE_constant(*$6, CONSTANT_SINT64)));
-		}
 	;
 
 
@@ -6925,6 +6999,7 @@ non_reserved_word
 	| LEAD
 	| RANK
 	| ROW_NUMBER
+	| USAGE
 	;
 
 %%

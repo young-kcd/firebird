@@ -2059,10 +2059,10 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 		// access on the base table. If field-level select privileges are implemented, this needs
 		// to be enhanced.
 
-		SecurityClass::flags_t priv = SCL_sql_delete;
+		SecurityClass::flags_t priv = SCL_delete;
 
 		if (parent)
-			priv |= SCL_read;
+			priv |= SCL_select;
 
 		const trig_vec* trigger = relation->rel_pre_erase ?
 			relation->rel_pre_erase : relation->rel_post_erase;
@@ -2325,9 +2325,8 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 			case blr_exception:
 			{
-				item.type = ExceptionItem::XCP_CODE;
 				PAR_name(csb, item.name);
-				if (!(item.code = MET_lookup_exception_number(tdbb, item.name)))
+				if (!MET_load_exception(tdbb, item))
 					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item.name);
 
 				CompilerScratch::Dependency dependency(obj_exception);
@@ -3989,34 +3988,33 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	// Don't create ExceptionItem if blr_raise is used.
 	if (codeType != blr_raise)
 	{
-		node->exception = FB_NEW(pool) ExceptionItem(pool);
+		ExceptionItem* const item = FB_NEW(pool) ExceptionItem(pool);
 
 		switch (codeType)
 		{
 			case blr_sql_code:
-				node->exception->type = ExceptionItem::SQL_CODE;
-				node->exception->code = (SSHORT) csb->csb_blr_reader.getWord();
+				item->type = ExceptionItem::SQL_CODE;
+				item->code = (SSHORT) csb->csb_blr_reader.getWord();
 				break;
 
 			case blr_gds_code:
-				node->exception->type = ExceptionItem::GDS_CODE;
-				PAR_name(csb, node->exception->name);
-				node->exception->name.lower();
-				if (!(node->exception->code = PAR_symbol_to_gdscode(node->exception->name)))
-					PAR_error(csb, Arg::Gds(isc_codnotdef) << node->exception->name);
+				item->type = ExceptionItem::GDS_CODE;
+				PAR_name(csb, item->name);
+				item->name.lower();
+				if (!(item->code = PAR_symbol_to_gdscode(item->name)))
+					PAR_error(csb, Arg::Gds(isc_codnotdef) << item->name);
 				break;
 
 			case blr_exception:
 			case blr_exception_msg:
 			case blr_exception_params:
 				{
-					node->exception->type = ExceptionItem::XCP_CODE;
-					PAR_name(csb, node->exception->name);
-					if (!(node->exception->code = MET_lookup_exception_number(tdbb, node->exception->name)))
-						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << node->exception->name);
+					PAR_name(csb, item->name);
+					if (!MET_load_exception(tdbb, *item))
+						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item->name);
 
 					CompilerScratch::Dependency dependency(obj_exception);
-					dependency.number = node->exception->code;
+					dependency.number = item->code;
 					csb->csb_dependencies.push(dependency);
 				}
 				break;
@@ -4025,6 +4023,8 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 				fb_assert(false);
 				break;
 		}
+
+		node->exception = item;
 	}
 
 	if (type == blr_exception_params)
@@ -4097,6 +4097,13 @@ ExceptionNode* ExceptionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	doPass1(tdbb, csb, messageExpr.getAddress());
 	doPass1(tdbb, csb, parameters.getAddress());
+
+	if (exception)
+	{
+		CMP_post_access(tdbb, csb, exception->secName, 0,
+						SCL_usage, SCL_object_exception, exception->name);
+	}
+
 	return this;
 }
 
@@ -5615,10 +5622,10 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 		// access on the base table. If field-level select privileges are implemented, this needs
 		// to be enhanced.
 
-		SecurityClass::flags_t priv = SCL_sql_update;
+		SecurityClass::flags_t priv = SCL_update;
 
 		if (parent)
-			priv |= SCL_read;
+			priv |= SCL_select;
 
 		const trig_vec* trigger = (relation->rel_pre_modify) ?
 			relation->rel_pre_modify : relation->rel_post_modify;
@@ -6389,10 +6396,10 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 		// access on the base table. If field-level select privileges are implemented, this needs
 		// to be enhanced.
 
-		SecurityClass::flags_t priv = SCL_sql_insert;
+		SecurityClass::flags_t priv = SCL_insert;
 
 		if (parent)
-			priv |= SCL_read;
+			priv |= SCL_select;
 
 		// Get the source relation, either a table or yet another view.
 
@@ -6520,7 +6527,9 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 
 			stack.push(assign);
 
-			if ((*ptr1)->fld_generator_name.hasData())
+			const MetaName& generatorName = (*ptr1)->fld_generator_name;
+
+			if (generatorName.hasData())
 			{
 				// Make a gen_id(<generator name>, 1) expression.
 
@@ -6528,10 +6537,11 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 				SLONG* increment = FB_NEW(csb->csb_pool) SLONG(1);
 				literal->litDesc.makeLong(0, increment);
 
-				GenIdNode* genNode = FB_NEW(csb->csb_pool) GenIdNode(csb->csb_pool,
-					(csb->blrVersion == 4), (*ptr1)->fld_generator_name);
-				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name);
-				genNode->arg = literal;
+				GenIdNode* const genNode = FB_NEW(csb->csb_pool)
+					GenIdNode(csb->csb_pool, (csb->blrVersion == 4), generatorName, literal);
+
+				if (!MET_load_generator(tdbb, genNode->generator))
+					PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(generatorName));
 
 				assign->asgnFrom = genNode;
 			}
@@ -7163,10 +7173,9 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 	MetaName name;
 	PAR_name(csb, name);
 
-	SetGeneratorNode* node = FB_NEW(pool) SetGeneratorNode(pool, name);
+	SetGeneratorNode* const node = FB_NEW(pool) SetGeneratorNode(pool, name);
 
-	node->genId = MET_lookup_generator(tdbb, name);
-	if (node->genId < 0)
+	if (!MET_load_generator(tdbb, node->generator))
 		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 
 	node->value = PAR_parse_value(tdbb, csb);
@@ -7176,8 +7185,9 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 SetGeneratorNode* SetGeneratorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	SetGeneratorNode* node = FB_NEW(getPool()) SetGeneratorNode(getPool(), name,
-		doDsqlPass(dsqlScratch, value));
+	SetGeneratorNode* node = FB_NEW(getPool())
+		SetGeneratorNode(getPool(), generator.name, doDsqlPass(dsqlScratch, value));
+	node->generator = generator;
 
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_GENERATOR);
 
@@ -7192,13 +7202,17 @@ void SetGeneratorNode::print(string& text) const
 void SetGeneratorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_set_generator);
-	dsqlScratch->appendNullString(name.c_str());
+	dsqlScratch->appendNullString(generator.name.c_str());
 	GEN_expr(dsqlScratch, value);
 }
 
 SetGeneratorNode* SetGeneratorNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	doPass1(tdbb, csb, value.getAddress());
+
+	CMP_post_access(tdbb, csb, generator.secName, 0,
+					SCL_usage, SCL_object_generator, generator.name);
+
 	return this;
 }
 
@@ -7212,19 +7226,16 @@ const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, Exe
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
-		jrd_tra* transaction = request->req_transaction;
-
-		MetaName genName;
-		MET_lookup_generator_id(tdbb, genId, genName);
+		jrd_tra* const transaction = request->req_transaction;
 
 		DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_BEFORE,
-			DDL_TRIGGER_ALTER_SEQUENCE, genName, *request->getStatement()->sqlText);
+			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, *request->getStatement()->sqlText);
 
-		dsc* desc = EVL_expr(tdbb, request, value);
-		DPM_gen_id(tdbb, genId, true, MOV_get_int64(desc, 0));
+		dsc* const desc = EVL_expr(tdbb, request, value);
+		DPM_gen_id(tdbb, generator.id, true, MOV_get_int64(desc, 0));
 
 		DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_AFTER,
-			DDL_TRIGGER_ALTER_SEQUENCE, genName, *request->getStatement()->sqlText);
+			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, *request->getStatement()->sqlText);
 
 		request->req_operation = jrd_req::req_return;
 	}

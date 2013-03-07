@@ -1483,6 +1483,27 @@ public:
 };
 
 
+class GeneratorItem
+{
+public:
+	GeneratorItem(Firebird::MemoryPool& pool, const Firebird::MetaName& name)
+		: id(0), name(pool, name), secName(pool)
+	{}
+
+	GeneratorItem& operator=(const GeneratorItem& other)
+	{
+		id = other.id;
+		name = other.name;
+		secName = other.secName;
+		return *this;
+	}
+
+	SLONG id;
+	Firebird::MetaName name;
+	Firebird::MetaName secName;
+};
+
+
 } // namespace
 
 #endif // DSQL_NODES_H

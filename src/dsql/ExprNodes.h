@@ -37,7 +37,6 @@ class RecordSource;
 class RelationSourceNode;
 class ValueListNode;
 
-
 class ArithmeticNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC>
 {
 public:
@@ -658,8 +657,9 @@ public:
 class GenIdNode : public TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>
 {
 public:
-	GenIdNode(MemoryPool& pool, bool aDialect1, const Firebird::MetaName& aName,
-		ValueExprNode* aArg = NULL);
+	GenIdNode(MemoryPool& pool, bool aDialect1,
+			  const Firebird::MetaName& name,
+			  ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -680,14 +680,14 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/;
+	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	bool dialect1;
-	Firebird::MetaName name;
+	GeneratorItem generator;
 	NestConst<ValueExprNode> arg;
-	SLONG id;
 };
 
 

@@ -37,6 +37,7 @@ class ExecBlockNode;
 class PlanNode;
 class RelationSourceNode;
 class SelectNode;
+class GeneratorItem;
 
 typedef Firebird::Pair<
 	Firebird::NonPooled<NestConst<ValueListNode>, NestConst<ValueListNode> > > ReturningClause;
@@ -57,23 +58,24 @@ public:
 		: PermanentStorage(pool),
 		  type(o.type),
 		  code(o.code),
-		  name(pool, o.name)
+		  name(pool, o.name),
+		  secName(pool, o.secName)
 	{
 	}
 
 	explicit ExceptionItem(MemoryPool& pool)
 		: PermanentStorage(pool),
-		  type(Type(0)),
 		  code(0),
-		  name(pool)
+		  name(pool),
+		  secName(pool)
 	{
 	}
 
 	ExceptionItem& operator =(const ExceptionItem& o)
 	{
-		type = o.type;
 		code = o.code;
 		name = o.name;
+		secName = o.secName;
 		return *this;
 	}
 
@@ -83,6 +85,7 @@ public:
 	// while there are system exceptions with 32 chars. The parser always expects metanames, but
 	// I'm following the legacy code and making this a string.
 	Firebird::string name;
+	Firebird::MetaName secName;
 };
 
 typedef Firebird::ObjectsArray<ExceptionItem> ExceptionArray;
@@ -1312,11 +1315,9 @@ public:
 class SetGeneratorNode : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>
 {
 public:
-	SetGeneratorNode(MemoryPool& pool, const Firebird::MetaName& aName, ValueExprNode* aValue = NULL)
+	SetGeneratorNode(MemoryPool& pool, const Firebird::MetaName& name, ValueExprNode* aValue = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>(pool),
-		  name(aName),
-		  value(aValue),
-		  genId(0)
+		  generator(pool, name), value(aValue)
 	{
 	}
 
@@ -1331,9 +1332,8 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	Firebird::MetaName name;
+	GeneratorItem generator;
 	NestConst<ValueExprNode> value;
-	USHORT genId;
 };
 
 

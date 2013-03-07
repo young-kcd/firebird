@@ -31,8 +31,8 @@
 #include "../common/dsc.h"
 
 const char* const ALL_PRIVILEGES = "SIUDR";	// all applicable grant/revoke privileges
-const char* const EXEC_PRIVILEGES = "X";	// execute privilege for procedures, functions and packages
-const char* const USAGE_PRIVILEGES = "S";	// usage privilege, currently equal to the select one
+const char* const EXEC_PRIVILEGES = "X";	// execute privilege
+const char* const USAGE_PRIVILEGES = "G";	// usage privilege
 
 const int DYN_MSG_FAC		= 8;
 

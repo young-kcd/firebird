@@ -658,7 +658,7 @@ void RelationSourceNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) cons
 	{
 		CMP_post_access(tdbb, csb, relation->rel_security_name,
 			(tail->csb_view) ? tail->csb_view->rel_id : (view ? view->rel_id : 0),
-			SCL_read, SCL_object_table, relation->rel_name);
+			SCL_select, SCL_object_table, relation->rel_name);
 	}
 }
 

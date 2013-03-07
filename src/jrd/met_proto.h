@@ -44,6 +44,7 @@ namespace Jrd {
 	class Shadow;
 	class DeferredWork;
 	struct FieldInfo;
+	class ExceptionItem;
 }
 
 struct SubtypeInfo
@@ -83,13 +84,14 @@ ULONG		MET_get_rel_flags_from_TYPE(USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_db_triggers(Jrd::thread_db*, int);
 void		MET_load_ddl_triggers(Jrd::thread_db* tdbb);
+bool		MET_load_exception(Jrd::thread_db*, Jrd::ExceptionItem&);
 void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, Jrd::trig_vec**);
 void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Firebird::MetaName& constraint, const Firebird::MetaName& index_name);
 void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Firebird::MetaName&, Firebird::MetaName&, const Firebird::MetaName&);
 void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Firebird::MetaName&, /* OUT */ Firebird::string*);
-SLONG		MET_lookup_exception_number(Jrd::thread_db*, const Firebird::MetaName&);
 int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&);
 Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);
+bool		MET_load_generator(Jrd::thread_db*, Jrd::GeneratorItem&);
 SLONG		MET_lookup_generator(Jrd::thread_db*, const Firebird::MetaName&);
 void		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Firebird::MetaName&);
 void		MET_lookup_index(Jrd::thread_db*, Firebird::MetaName&, const Firebird::MetaName&, USHORT);
