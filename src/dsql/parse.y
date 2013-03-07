@@ -1486,7 +1486,7 @@ alter_sequence_clause
 set_generator_clause
 	: SET GENERATOR symbol_generator_name TO sequence_value
 		{
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $5);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$3, $5);
 			node->create = false;
 			node->alter = true;
 			node->legacy = true;
