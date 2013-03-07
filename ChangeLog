@@ -1,3 +1,14 @@
+ 2013-03-06 14:30  dimitr 
+   M builds/win32/msvc10/btyacc.vcxproj
+   M builds/win32/msvc10/firebird2.props
+   M builds/win32/msvc8/empbuild.vcproj
+   M builds/win32/msvc8/firebird2.vsprops
+   M builds/win32/msvc9/empbuild.vcproj
+   M builds/win32/msvc9/firebird2.vsprops
+   M extern/icu/source/allinone/firebird2intl.props
+   M extern/icu/source/allinone/firebird2intl.vsprops
+An ultimate solution for the CRT warnings targeted at both native and external (ICU, BTYACC) modules. Inspired by the ICU-only patch contributed by Dmitry Kovalenko.
+
  2013-03-05 12:53  alexpeshkoff 
    M src/burp/burp.cpp
    M src/burp/burp.h
