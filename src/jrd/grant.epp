@@ -139,7 +139,7 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 		case obj_collation:
 			priv |= SCL_usage;
 			break;
-			
+
 		default:
 			break;
 	}

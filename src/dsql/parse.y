@@ -1496,10 +1496,10 @@ set_generator_clause
 
 %type <valueExprNode> start_with_opt
 start_with_opt
-	: START WITH sequence_value
-		{ $$ = $3; }
-	|
+	: // nothing
 		{ $$ = MAKE_const_slong(0); }
+	| START WITH sequence_value
+		{ $$ = $3; }
 	;
 
 %type <valueExprNode> sequence_value

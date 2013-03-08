@@ -37,6 +37,7 @@ class RecordSource;
 class RelationSourceNode;
 class ValueListNode;
 
+
 class ArithmeticNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC>
 {
 public:

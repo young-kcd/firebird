@@ -5757,9 +5757,8 @@ void GenIdNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc
 
 ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	GenIdNode* const node = FB_NEW(*tdbb->getDefaultPool())
-		GenIdNode(*tdbb->getDefaultPool(), dialect1,
-				  generator.name, copier.copy(tdbb, arg));
+	GenIdNode* const node = FB_NEW(*tdbb->getDefaultPool()) GenIdNode(
+		*tdbb->getDefaultPool(), dialect1, generator.name, copier.copy(tdbb, arg));
 	node->generator = generator;
 	return node;
 }

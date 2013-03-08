@@ -498,7 +498,8 @@ public:
 					Firebird::IResultSet* rs = NULL;
 					try
 					{
-						stmt = att->prepare(status, tra, 0, disp.c_str(), 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+						stmt = att->prepare(status, tra, 0, disp.c_str(), 3,
+							Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 						check(status);
 
 						Meta om(stmt, true);
@@ -516,7 +517,8 @@ public:
 							setField(login, user->userName());
 						}
 
-						rs = stmt->openCursor(status, tra, par ? par->metadata : NULL, par ? par->buffer : NULL, om);
+						rs = stmt->openCursor(status, tra, (par ? par->metadata : NULL),
+							(par ? par->buffer : NULL), om);
 						check(status);
 
 						while (rs->fetch(status, di.buffer))

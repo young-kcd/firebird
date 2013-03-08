@@ -4909,7 +4909,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 	DFW_post_work(transaction, dfw_set_generator, &desc, id);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_SEQUENCE, name);
-	
+
 	return true;
 }
 
@@ -4963,7 +4963,7 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 	}
 
 	storePrivileges(tdbb, transaction, name, obj_generator, USAGE_PRIVILEGES);
-	
+
 	return storedId;
 }
 
