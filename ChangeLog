@@ -1,3 +1,13 @@
+ 2013-03-07 12:11  hvlad 
+   M src/common/classes/FpeControl.h
+Fixed the way floating point exceptions are masked. 
+This is quick and incomplete solution for the CORE-4043 (FBCLIENT.DLL forces Delphi to ignore EZeroDivide exceptions). 
+Complete solution should be MT-safe and sooner of all requires FP-exception handling code in the engine.
+
+ 2013-03-07 05:32  dimitr 
+   M src/isql/isql.epp
+Fixed Windows build. Thanks to Dmitry Kovalenko.
+
  2013-03-06 14:30  dimitr 
    M builds/win32/msvc8/firebird2.vsprops
    M builds/win32/msvc9/btyacc.vcproj
