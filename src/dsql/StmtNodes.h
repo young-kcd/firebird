@@ -1325,8 +1325,13 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text) const;
-	virtual SetGeneratorNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+
+	// DSQL support is implemented in CreateAlterSequenceNode.
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	{
+		fb_assert(false);
+	}
+
 	virtual SetGeneratorNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SetGeneratorNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;

@@ -7183,27 +7183,9 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 	return node;
 }
 
-SetGeneratorNode* SetGeneratorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
-{
-	SetGeneratorNode* node = FB_NEW(getPool())
-		SetGeneratorNode(getPool(), generator.name, doDsqlPass(dsqlScratch, value));
-	node->generator = generator;
-
-	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_GENERATOR);
-
-	return node;
-}
-
 void SetGeneratorNode::print(string& text) const
 {
 	text = "SetGeneratorNode";
-}
-
-void SetGeneratorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
-{
-	dsqlScratch->appendUChar(blr_set_generator);
-	dsqlScratch->appendNullString(generator.name.c_str());
-	GEN_expr(dsqlScratch, value);
 }
 
 SetGeneratorNode* SetGeneratorNode::pass1(thread_db* tdbb, CompilerScratch* csb)
