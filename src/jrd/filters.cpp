@@ -137,7 +137,9 @@ static const TEXT dtypes[DTYPE_TYPE_MAX][36] =
 	"TIMESTAMP",
 	"BLOB",
 	"ARRAY",
-	"BIGINT"
+	"BIGINT",
+	"DBKEY",	// internal
+	"BOOLEAN"
 };
 
 
