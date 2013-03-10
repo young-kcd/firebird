@@ -83,8 +83,12 @@ public:
 	{
 		_clearfp(); // always call _clearfp() before setting control word
 
+#ifdef AMD64
+		_controlfp(_CW_DEFAULT, _MCW_EM);
+#else
 		Mask cw;
 		__control87_2(_CW_DEFAULT, _MCW_EM, &cw, NULL);
+#endif
 	}
 
 private:
@@ -98,15 +102,23 @@ private:
 
 	static void getCurrentMask(Mask& m) throw()
 	{
+#ifdef AMD64
+		m = _controlfp(0, 0);
+#else
 		__control87_2(0, 0, &m, NULL);
+#endif
 	}
 
 	void restoreMask() throw()
 	{
 		_clearfp(); // always call _clearfp() before setting control word
 
+#ifdef AMD64
+		_controlfp(savedMask, _MCW_EM); // restore saved
+#else
 		Mask cw;
 		__control87_2(savedMask, _MCW_EM, &cw, NULL); // restore saved
+#endif
 	}
 
 #elif defined(HAVE_FEGETENV)
