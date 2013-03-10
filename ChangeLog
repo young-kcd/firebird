@@ -1,3 +1,7 @@
+ 2013-03-09 22:00  asfernandes 
+   M src/jrd/filters.cpp
+Add missing entries.
+
  2013-03-08 15:31  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
