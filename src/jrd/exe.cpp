@@ -971,9 +971,6 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 		release_blobs(tdbb, request);
 	}
 
-	delete request->resultSet;
-	request->resultSet = NULL;
-
 	request->req_sorts.unlinkAll();
 
 	if (request->req_proc_sav_point && (request->req_flags & req_proc_fetch))

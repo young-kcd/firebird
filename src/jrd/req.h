@@ -35,7 +35,6 @@
 #include "../jrd/Attachment.h"
 #include "../jrd/JrdStatement.h"
 #include "../jrd/RecordNumber.h"
-#include "../jrd/ExtEngineManager.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
@@ -296,7 +295,6 @@ public:
 
 	dsc*			req_domain_validation;	// Current VALUE for constraint validation
 	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
-	ExtEngineManager::ResultSet* resultSet;	// external procedure result set
 	SortOwner req_sorts;
 	Firebird::Array<record_param> req_rpb;	// record parameter blocks
 	Firebird::Array<UCHAR> impureArea;		// impure area
