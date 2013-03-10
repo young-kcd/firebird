@@ -1461,25 +1461,49 @@ generator_clause
 		{ $$ = newNode<CreateAlterSequenceNode>(*$1, $2); }
 	;
 
+%type <valueExprNode> start_with_opt
+start_with_opt
+	: // nothing
+		{ $$ = MAKE_const_slong(0); }
+	| START WITH sequence_value
+		{ $$ = $3; }
+	;
+
 %type <createAlterSequenceNode> replace_sequence_clause
 replace_sequence_clause
-	: symbol_generator_name start_with_opt
+	: symbol_generator_name replace_sequence_options
 		{
 			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2);
 			node->alter = true;
 			$$ = node;
 		}
 	;
+	
+%type <valueExprNode> replace_sequence_options
+replace_sequence_options
+	: RESTART
+		{ $$ = MAKE_const_slong(0); }
+	| START WITH sequence_value
+		{ $$ = $3; }
+	;
 
 %type <createAlterSequenceNode> alter_sequence_clause
 alter_sequence_clause
-	: symbol_generator_name RESTART WITH sequence_value
+	: symbol_generator_name RESTART restart_value_opt
 		{
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $4);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $3);
 			node->create = false;
 			node->alter = true;
 			$$ = node;
 		}
+	;
+
+%type <valueExprNode> restart_value_opt
+restart_value_opt
+	: // nothing
+		{ $$ = MAKE_const_slong(0); }
+	| WITH sequence_value
+		{ $$ = $2; }
 	;
 
 %type <createAlterSequenceNode> set_generator_clause
@@ -1492,14 +1516,6 @@ set_generator_clause
 			node->legacy = true;
 			$$ = node;
 		}
-	;
-
-%type <valueExprNode> start_with_opt
-start_with_opt
-	: // nothing
-		{ $$ = MAKE_const_slong(0); }
-	| START WITH sequence_value
-		{ $$ = $3; }
 	;
 
 %type <valueExprNode> sequence_value
