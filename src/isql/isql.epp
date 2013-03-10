@@ -5487,9 +5487,8 @@ static processing_state get_statement(TEXT* const statement,
 
 			// If this is not tmpfile, close it
 
-			if (Filelist->Ofp().indev_fpointer)
-				if (!Filelist->sameInputAndOutput())
-					Filelist->Ifp().close();
+			if (Filelist->Ofp().indev_fpointer && !Filelist->sameInputAndOutput())
+				Filelist->Ifp().close();
 
 			// Reset to previous after other input
 
