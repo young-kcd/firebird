@@ -99,14 +99,12 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 		DPM_create_relation_pages(tdbb, this, newPages);
 
 #ifdef VIO_DEBUG
-		if (debug_flag > DEBUG_WRITES)
-		{
-			printf("jrd_rel::getPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
-				newPages->rel_instance_id,
-				newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
-				newPages->rel_index_root,
-				newPages);
-		}
+		VIO_trace(DEBUG_WRITES,
+			"jrd_rel::getPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+			newPages->rel_instance_id,
+			newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
+			newPages->rel_index_root,
+			newPages);
 #endif
 
 		// create indexes
@@ -136,15 +134,13 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, idxTran, selectivity);
 
 #ifdef VIO_DEBUG
-			if (debug_flag > DEBUG_WRITES)
-			{
-				printf("jrd_rel::getPages inst %"ULONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
-					newPages->rel_instance_id,
-					newPages->rel_index_root,
-					idx->idx_id,
-					idx->idx_root,
-					newPages);
-			}
+			VIO_trace(DEBUG_WRITES,
+				"jrd_rel::getPages inst %"ULONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
+				newPages->rel_instance_id,
+				newPages->rel_index_root,
+				idx->idx_id,
+				idx->idx_root,
+				newPages);
 #endif
 		}
 
@@ -176,14 +172,12 @@ bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
 		return false;
 
 #ifdef VIO_DEBUG
-	if (debug_flag > DEBUG_WRITES)
-	{
-		printf("jrd_rel::delPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
-			pages->rel_instance_id,
-			pages->rel_pages ? (*pages->rel_pages)[0] : 0,
-			pages->rel_index_root,
-			pages);
-	}
+	VIO_trace(DEBUG_WRITES,
+		"jrd_rel::delPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+		pages->rel_instance_id,
+		pages->rel_pages ? (*pages->rel_pages)[0] : 0,
+		pages->rel_index_root,
+		pages);
 #endif
 
 	size_t pos;

@@ -78,9 +78,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/nbak.h"
 #include "../jrd/tra.h"
-#ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
-#endif
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
@@ -699,10 +697,11 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	{
 		CCH_RELEASE(tdbb, &pip_window);
 		CCH_precedence(tdbb, window, pip_window.win_page);
+
 #ifdef VIO_DEBUG
-		if (debug_flag > DEBUG_WRITES_INFO)
-			printf("\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
-					  window->win_page.getPageNum());
+		VIO_trace(DEBUG_WRITES_INFO,
+			"\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
+			window->win_page.getPageNum());
 #endif
 		return new_page;
 	}
@@ -1456,8 +1455,8 @@ void PAG_release_page(thread_db* tdbb, const PageNumber& number, const PageNumbe
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
-	if (debug_flag > DEBUG_WRITES_INFO)
-		printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number.getPageNum());
+	VIO_trace(DEBUG_WRITES_INFO,
+		"\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number.getPageNum());
 #endif
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
