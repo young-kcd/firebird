@@ -882,8 +882,9 @@ public:
 	// used in cmp.cpp/pass1
 	jrd_rel*	csb_view;
 	USHORT		csb_view_stream;
-	bool		csb_validate_expr;
 	USHORT		csb_remap_variable;
+	bool		csb_validate_expr;
+	bool		csb_returning_expr;				// Parse RETURNING clause in UPDATE statement
 
 	struct csb_repeat
 	{

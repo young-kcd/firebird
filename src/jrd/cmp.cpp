@@ -3663,6 +3663,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		csb->csb_validate_expr || node->nod_type == nod_validate);
 
 	jrd_rel* const view = csb->csb_view;
+	jrd_nod* modReturning = NULL;
 
 	// if there is processing to be done before sub expressions, do it here
 
@@ -3837,16 +3838,18 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			if (tail->csb_flags & csb_modify)
 			{
-				if (!csb->csb_validate_expr) {
+				if (!csb->csb_validate_expr)
+				{
+					SecurityClass::flags_t priv = csb->csb_returning_expr ?
+						SCL_read : SCL_sql_update;
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id :
 										(view ? view->rel_id : 0),
-									SCL_sql_update, object_table,
-									relation->rel_name);
+									priv, object_table, relation->rel_name);
 					CMP_post_access(tdbb, csb, field->fld_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id :
 										(view ? view->rel_id : 0),
-									SCL_sql_update, object_column,
+									priv, object_column,
 									field->fld_name, relation->rel_name);
 				}
 			}
@@ -4031,6 +4034,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_modify:
 		pass1_modify(tdbb, csb, node);
+		modReturning = node->nod_arg[e_mod_statement2];
+		node->nod_arg[e_mod_statement2] = NULL;			// Therefore skip std access check
 		break;
 
 	case nod_erase:
@@ -4316,6 +4321,13 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		default:
 			ERR_post(Arg::Gds(isc_read_only_field));
 		}
+	}
+
+	if (modReturning)
+	{
+		fb_assert(node->nod_type == nod_modify);
+		AutoSetRestore<bool> autoReturningExpr(&csb->csb_returning_expr, true);
+		node->nod_arg[e_mod_statement2] = CMP_pass1(tdbb, csb, modReturning);
 	}
 
 	return node;
