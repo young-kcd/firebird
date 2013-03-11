@@ -5573,10 +5573,12 @@ ModifyNode* ModifyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	pass1Modify(tdbb, csb, this);
 
 	doPass1(tdbb, csb, statement.getAddress());
-	doPass1(tdbb, csb, statement2.getAddress());
 	doPass1(tdbb, csb, subMod.getAddress());
 	pass1Validations(tdbb, csb, validations);
 	doPass1(tdbb, csb, mapView.getAddress());
+
+	AutoSetRestore<bool> autoReturningExpr(&csb->csb_returning_expr, true);
+	doPass1(tdbb, csb, statement2.getAddress());
 
 	return this;
 }

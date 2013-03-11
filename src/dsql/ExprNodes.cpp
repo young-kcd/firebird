@@ -5454,10 +5454,12 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	{
 		if (!csb->csb_validate_expr)
 		{
+			SecurityClass::flags_t priv = csb->csb_returning_expr ?
+				SCL_select : SCL_update;
 			CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-				SCL_update, SCL_object_table, relation->rel_name);
+				priv, SCL_object_table, relation->rel_name);
 			CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-				SCL_update, SCL_object_column, field->fld_name, relation->rel_name);
+				priv, SCL_object_column, field->fld_name, relation->rel_name);
 		}
 	}
 	else if (tail->csb_flags & csb_erase)

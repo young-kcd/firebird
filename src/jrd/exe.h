@@ -516,8 +516,9 @@ public:
 	jrd_rel*	csb_view;
 	StreamType	csb_view_stream;
 	unsigned	blrVersion;
-	bool		csb_validate_expr;
 	USHORT		csb_remap_variable;
+	bool		csb_validate_expr;
+	bool		csb_returning_expr;
 
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, DeclareSubFuncNode*> > subFunctions;
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, DeclareSubProcNode*> > subProcedures;
