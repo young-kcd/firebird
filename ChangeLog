@@ -1,3 +1,7 @@
+ 2013-03-10 08:35  hvlad 
+   M src/common/classes/FpeControl.h
+Restore previous code for Win64 platform as it missed __control87_2() routine.
+
  2013-03-07 12:11  hvlad 
    M src/common/classes/FpeControl.h
 Fixed the way floating point exceptions are masked. 
