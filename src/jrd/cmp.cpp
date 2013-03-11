@@ -91,6 +91,7 @@
 #include "../jrd/ini.h"
 
 #include "../common/utils_proto.h"
+#include "../common/classes/auto.h"
 
 /* Firebird provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
@@ -124,6 +125,7 @@ const int MAX_RECURSION		= 128;
 const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
 
 using namespace Jrd;
+using Firebird::AutoSetRestore;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
@@ -3339,6 +3341,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 		return node;
 
 	validate_expr = validate_expr || (node->nod_type == nod_validate);
+	jrd_nod* modReturning = NULL;
 
 	// if there is processing to be done before sub expressions, do it here
 
@@ -3519,15 +3522,17 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 			if (tail->csb_flags & csb_modify) {
 				if (!validate_expr) {
+					SecurityClass::flags_t priv = csb->csb_returning_expr ?
+						SCL_read : SCL_sql_update;
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
-									SCL_sql_update, object_table,
+									priv, object_table,
 									relation->rel_name);
 					CMP_post_access(tdbb, csb, field->fld_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
-									SCL_sql_update, object_column,
+									priv, object_column,
 									field->fld_name, relation->rel_name);
 				}
 			}
@@ -3642,6 +3647,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	case nod_modify:
 		pass1_modify(tdbb, csb, node);
+		modReturning = node->nod_arg[e_mod_statement2];
+		node->nod_arg[e_mod_statement2] = NULL;			// Therefore skip std access check
 		break;
 
 	case nod_erase:
@@ -3882,7 +3889,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_src_info:
 		node->nod_arg[e_src_info_node] = 
 			pass1(tdbb, csb, node->nod_arg[e_src_info_node], view, view_stream, validate_expr);
-		return node;		
+		return node;
 
 	default:
 		break;
@@ -3927,6 +3934,13 @@ static jrd_nod* pass1(thread_db* tdbb,
 				ERR_post(isc_read_only_field, isc_arg_end);
 			}
 		}
+	}
+
+	if (modReturning)
+	{
+		fb_assert(node->nod_type == nod_modify);
+		AutoSetRestore<bool> autoReturningExpr(&csb->csb_returning_expr, true);
+		node->nod_arg[e_mod_statement2] = pass1(tdbb, csb, modReturning, view, view_stream, validate_expr);
 	}
 
 	return node;

@@ -804,6 +804,7 @@ public:
 	MapFieldInfo		csb_map_field_info;		// Map field name to field info
 	MapItemInfo			csb_map_item_info;		// Map item to item info
 	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
+	bool				csb_returning_expr;		// Csb is used to parse RETURNING clause in UPDATE statement
 
 	struct csb_repeat
 	{
