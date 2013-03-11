@@ -1,3 +1,31 @@
+ 2013-03-10 20:38  asfernandes 
+   M src/jrd/exe.cpp
+   M src/jrd/req.h
+Cleanup.
+
+ 2013-03-10 15:39  asfernandes 
+   M src/jrd/dpm.epp
+Misc.
+
+ 2013-03-10 14:48  hvlad 
+   M src/jrd/Relation.cpp
+   M src/jrd/dpm.epp
+   M src/jrd/jrd.h
+   M src/jrd/pag.cpp
+   M src/jrd/vio.cpp
+   M src/jrd/vio_debug.h
+Make tracing VIO works and more easy to use:
+- log into file instead of console
+- rebuild only small set of affected modules when VIO_DEBUG is changed
+
+ 2013-03-10 07:03  dimitr 
+   M src/dsql/parse.y
+Misc syntax adjustments suggested by Adriano.
+
+ 2013-03-10 00:55  asfernandes 
+   M src/isql/isql.epp
+Misc.
+
  2013-03-09 22:00  asfernandes 
    M src/jrd/filters.cpp
 Add missing entries.
