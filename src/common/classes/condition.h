@@ -61,15 +61,25 @@ private:
 									 FALSE, // non-signaled initially
     	                             NULL); // unnamed
 
+		if (!events[SIGNAL])
+			system_call_failed::raise("CreateEvent(SIGNAL)");
+
 		// Create a manual-reset event.
 		events[BROADCAST] = CreateEvent(NULL,  // no security
     	                                TRUE,  // manual-reset
     	                                FALSE, // non-signaled initially
     	                                NULL); // unnamed
 
-		if (!events[SIGNAL] || !events[BROADCAST])
-			system_call_failed::raise("CreateCondition(Event)");
+		if (!events[BROADCAST])
+		{
+			CloseHandle(events[SIGNAL]);
+			system_call_failed::raise("CreateEvent(BROADCAST)");
+		}
 	}
+
+	// Forbid copying
+	Condition(const Condition&);
+	Condition& operator=(const Condition&);
 
 public:
 	Condition()	{ init(); }
@@ -144,6 +154,10 @@ private:
 			system_call_failed::raise("pthread_cond_init", err);
 		}
 	}
+
+	// Forbid copying
+	Condition(const Condition&);
+	Condition& operator=(const Condition&);
 
 public:
 	Condition() { init(); }

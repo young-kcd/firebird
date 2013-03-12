@@ -167,6 +167,11 @@ public:
 
 public:
 	static void initMutexes() { }
+
+private:
+	// Forbid copying
+	Mutex(const Mutex&);
+	Mutex& operator=(const Mutex&);
 };
 
 class Spinlock : public Mutex
@@ -290,6 +295,11 @@ public:
 
 public:
 	static void initMutexes();
+
+private:
+	// Forbid copying
+	Mutex(const Mutex&);
+	Mutex& operator=(const Mutex&);
 };
 
 #ifdef NOT_USED_OR_REPLACED		// we do not use spinlocks currently
@@ -327,6 +337,11 @@ public:
 		if (pthread_spin_unlock(&spinlock))
 			system_call_failed::raise("pthread_spin_unlock");
 	}
+
+private:
+	// Forbid copying
+	Spinlock(const Spinlock&);
+	Spinlock& operator=(const Spinlock&);
 };
 #else
 typedef Mutex Spinlock;
@@ -415,6 +430,10 @@ public:
 	}
 
 private:
+	// Forbid copying
+	MutexCheckoutGuard(const MutexCheckoutGuard&);
+	MutexCheckoutGuard& operator=(const MutexCheckoutGuard&);
+
 	MutexUnlockGuard unlock;
 	MutexLockGuard	lock;
 };

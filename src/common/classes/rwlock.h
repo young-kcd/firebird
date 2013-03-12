@@ -72,8 +72,9 @@ private:
 			system_call_failed::raise("CreateEvent");
 	}
 
-	// Forbid copy constructor
-	RWLock(const RWLock& source);
+	// Forbid copying
+	RWLock(const RWLock&);
+	RWLock& operator=(const RWLock&);
 
 public:
 	RWLock() { init(); }
@@ -199,8 +200,9 @@ private:
 	AtomicCounter lockCounter;
 #endif
 
-	// Forbid copy constructor
-	RWLock(const RWLock& source);
+	// Forbid copying
+	RWLock(const RWLock&);
+	RWLock& operator=(const RWLock&);
 
 	void init()
 	{
@@ -346,8 +348,10 @@ public:
 	}
 
 private:
-	// Forbid copy constructor
-	ReadLockGuard(const ReadLockGuard& source);
+	// Forbid copying
+	ReadLockGuard(const ReadLockGuard&);
+	ReadLockGuard& operator=(const ReadLockGuard&);
+
 	RWLock* lock;
 };
 
@@ -383,8 +387,10 @@ public:
 	}
 
 private:
-	// Forbid copy constructor
-	WriteLockGuard(const WriteLockGuard& source);
+	// Forbid copying
+	WriteLockGuard(const WriteLockGuard&);
+	WriteLockGuard& operator=(const WriteLockGuard&);
+
 	RWLock* lock;
 };
 

@@ -53,6 +53,10 @@ private:
 			system_call_failed::raise("CreateSemaphore");
 	}
 
+	// Forbid copying
+	Semaphore(const Semaphore&);
+	Semaphore& operator=(const Semaphore&);
+
 public:
 	Semaphore() { init(); }
 	explicit Semaphore(MemoryPool&) { init(); }
@@ -107,6 +111,10 @@ private:
 
 	void init();
 
+	// Forbid copying
+	SignalSafeSemaphore(const SignalSafeSemaphore&);
+	SignalSafeSemaphore& operator=(const SignalSafeSemaphore&);
+
 public:
 	SignalSafeSemaphore() { init(); }
 	explicit SignalSafeSemaphore(MemoryPool&) { init(); }
@@ -156,6 +164,10 @@ private:
 #endif // WORKING_SEM_INIT
 
 	void init();
+
+	// Forbid copying
+	SignalSafeSemaphore(const SignalSafeSemaphore&);
+	SignalSafeSemaphore& operator=(const SignalSafeSemaphore&);
 
 public:
 	SignalSafeSemaphore() { init(); }
@@ -220,6 +232,10 @@ private:
 	void init();
 	void mtxLock();
 	void mtxUnlock();
+
+	// Forbid copying
+	Semaphore(const Semaphore&);
+	Semaphore& operator=(const Semaphore&);
 
 public:
 	Semaphore() { init(); }
