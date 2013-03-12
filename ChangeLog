@@ -1,3 +1,9 @@
+ 2013-03-11 15:43  alexpeshkoff 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.h
+Fixed CORE-3360: update ... returning ... raises -551 (no perm to update) for a column present only in the returning clause
+
  2013-03-10 20:38  asfernandes 
    M src/jrd/exe.cpp
    M src/jrd/req.h
