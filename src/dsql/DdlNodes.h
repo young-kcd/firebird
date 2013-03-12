@@ -913,30 +913,7 @@ public:
 		  legacy(false),
 		  name(pool, aName)
 	{
-		bool negate = false;
-		const NegateNode* negation = val->as<NegateNode>();
-		while (negation)
-		{
-			negate = !negate;
-			val = negation->arg;
-			negation = ExprNode::as<NegateNode>(val);
-		}
-
-		const LiteralNode* const lit = val->as<LiteralNode>();
-		fb_assert(lit);
-
-		if (lit->litDesc.dsc_dtype == dtype_int64)
-			value = *(SINT64*) lit->litDesc.dsc_address;
-		else if (lit->litDesc.dsc_dtype == dtype_long)
-			value = *(SLONG*) lit->litDesc.dsc_address;
-		else
-			fb_assert(false);
-
-		if (negate)
-		{
-			fb_assert(value != MIN_SINT64);
-			value = -value;
-		}
+		initValue(val);
 	}
 
 	static SSHORT store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
@@ -962,6 +939,8 @@ protected:
 private:
 	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+	void initValue(const ValueExprNode* val);
 
 public:
 	bool create;
