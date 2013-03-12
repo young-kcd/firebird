@@ -535,6 +535,9 @@ public:
 						}
 						check(status);
 
+						rs->close(status);
+						check(status);
+
 						stmt->free(status);
 						check(status);
 					}
