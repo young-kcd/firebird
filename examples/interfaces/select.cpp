@@ -132,7 +132,7 @@ int main()
 		builder = NULL;
 
 		// open cursor
-		curs = stmt->openCursor(st, tra, NULL, meta);
+		curs = stmt->openCursor(st, tra, NULL, NULL, meta);
 		check(st, "openCursor");
 
 		// allocate output buffer
