@@ -1,3 +1,8 @@
+ 2013-03-11 15:44  alexpeshkoff 
+   M src/jrd/cmp.cpp
+   M src/jrd/exe.h
+Bacported fix for CORE-3360: update ... returning ... raises -551 (no perm to update) for a column present only in the returning clause
+
  2013-03-10 08:35  hvlad 
    M src/common/classes/FpeControl.h
 Restore previous code for Win64 platform as it missed __control87_2() routine.
