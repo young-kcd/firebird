@@ -1843,7 +1843,7 @@ static gbak_action open_files(const TEXT* file1,
 			if (fil->fil_name == "stdout")
 			{
 				if (tdgbl->action->act_total >= 2 || fil->fil_next ||
-					(sw_verbose && tdgbl->sw_redirect == NOREDIRECT))
+					(sw_verbose && tdgbl->sw_redirect == NOREDIRECT && tdgbl->uSvc->isService()))
 				{
 					BURP_error(266, true);
 					// msg 266 standard output is not supported when using split operation or in verbose mode
