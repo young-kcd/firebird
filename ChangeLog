@@ -1,3 +1,7 @@
+ 2013-03-12 11:44  alexpeshkoff 
+   M src/burp/burp.cpp
+New fix for CORE-3995: Slight problem with GBAK parameter checking
+
  2013-03-11 15:44  alexpeshkoff 
    M src/jrd/cmp.cpp
    M src/jrd/exe.h
