@@ -1,3 +1,27 @@
+ 2013-03-12 12:37  alexpeshkoff 
+   M examples/interfaces/select.cpp
+fixed sample
+
+ 2013-03-12 11:43  alexpeshkoff 
+   M src/burp/burp.cpp
+New fix for CORE-3995: Slight problem with GBAK parameter checking
+
+ 2013-03-12 10:26  dimitr 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Correction.
+
+ 2013-03-12 09:52  dimitr 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+For the consistency sake, let's explicitly release the result set.
+
+ 2013-03-12 09:39  dimitr 
+   M src/common/classes/condition.h
+   M src/common/classes/locks.h
+   M src/common/classes/rwlock.h
+   M src/common/classes/semaphore.h
+Disallowed default copying and assignment in sync wrappers. Fixed a theoretically possible handle leak in the condition class. Thanks to Dmitry Kovalenko.
+
  2013-03-11 15:43  alexpeshkoff 
    M src/dsql/ExprNodes.cpp
    M src/dsql/StmtNodes.cpp
