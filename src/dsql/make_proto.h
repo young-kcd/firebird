@@ -56,7 +56,7 @@ namespace Jrd {
 
 
 Jrd::LiteralNode* MAKE_const_slong(SLONG);
-Jrd::ValueExprNode* MAKE_constant(const Firebird::string&, Jrd::dsql_constant_type);
+Jrd::ValueExprNode* MAKE_constant(const char*, Jrd::dsql_constant_type);
 Jrd::LiteralNode* MAKE_str_constant(const Jrd::IntlString*, SSHORT);
 void MAKE_desc(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueExprNode*);
 void MAKE_desc_from_field(dsc*, const Jrd::dsql_fld*);

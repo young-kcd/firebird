@@ -92,7 +92,7 @@ LiteralNode* MAKE_const_slong(SLONG value)
     @param numeric_flag
 
  **/
-ValueExprNode* MAKE_constant(const string& str, dsql_constant_type numeric_flag)
+ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -109,10 +109,10 @@ ValueExprNode* MAKE_constant(const string& str, dsql_constant_type numeric_flag)
 
 		literal->litDesc.dsc_dtype = dtype_double;
 		// Scale has no use for double
-		literal->litDesc.dsc_scale = static_cast<signed char>(str.length());
+		literal->litDesc.dsc_scale = static_cast<signed char>(strlen(str));
 		literal->litDesc.dsc_sub_type = 0;
 		literal->litDesc.dsc_length = sizeof(double);
-		literal->litDesc.dsc_address = (UCHAR*) str.c_str();
+		literal->litDesc.dsc_address = (UCHAR*) str;
 		literal->litDesc.dsc_ttype() = ttype_ascii;
 		break;
 
@@ -140,14 +140,14 @@ ValueExprNode* MAKE_constant(const string& str, dsql_constant_type numeric_flag)
 			// And, they will fit in a SINT64 without overflow.
 
 			SINT64 value = 0;
-			const UCHAR* p = reinterpret_cast<const UCHAR*>(str.c_str());
+			const UCHAR* p = reinterpret_cast<const UCHAR*>(str);
 
 			if (*p == 'X')
 			{
 				// oh no, a hex string!
 				++p; // skip the 'X' part.
 				UCHAR byte = 0;
-				bool nibble = ((str.length() - 1) & 1);
+				bool nibble = ((strlen(str) - 1) & 1);
 				SSHORT c;
 
 				// hex string is already upper-cased
@@ -239,8 +239,8 @@ ValueExprNode* MAKE_constant(const string& str, dsql_constant_type numeric_flag)
 			tmp.dsc_scale = 0;
 			tmp.dsc_flags = 0;
 			tmp.dsc_ttype() = ttype_ascii;
-			tmp.dsc_length = static_cast<USHORT>(str.length());
-			tmp.dsc_address = (UCHAR*) str.c_str();
+			tmp.dsc_length = static_cast<USHORT>(strlen(str));
+			tmp.dsc_address = (UCHAR*) str;
 
 			// Now invoke the string_to_date/time/timestamp routines
 
@@ -249,7 +249,7 @@ ValueExprNode* MAKE_constant(const string& str, dsql_constant_type numeric_flag)
 		}
 
 	case CONSTANT_BOOLEAN:
-		literal->litDesc.makeBoolean((UCHAR*) str.c_str());
+		literal->litDesc.makeBoolean((UCHAR*) str);
 		break;
 
 	default:

@@ -1523,9 +1523,9 @@ sequence_value
 	: signed_long_integer
 		{ $$ = MAKE_const_slong($1); }
 	| NUMBER64BIT
-		{ $$ = MAKE_constant(*$1, CONSTANT_SINT64); }
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_SINT64); }
 	| '-' NUMBER64BIT
-		{ $$ = newNode<NegateNode>(MAKE_constant(*$2, CONSTANT_SINT64)); }
+		{ $$ = newNode<NegateNode>(MAKE_constant($2->c_str(), CONSTANT_SINT64)); }
 	;
 
 
@@ -5959,9 +5959,9 @@ constant
 %type <valueExprNode> u_numeric_constant
 u_numeric_constant
 	: NUMBER			{ $$ = MAKE_const_slong($1); }
-	| FLOAT_NUMBER		{ $$ = MAKE_constant(*$1, CONSTANT_DOUBLE); }
-	| NUMBER64BIT		{ $$ = MAKE_constant(*$1, CONSTANT_SINT64); }
-	| SCALEDINT			{ $$ = MAKE_constant(*$1, CONSTANT_SINT64); }
+	| FLOAT_NUMBER		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DOUBLE); }
+	| NUMBER64BIT		{ $$ = MAKE_constant($1->c_str(), CONSTANT_SINT64); }
+	| SCALEDINT			{ $$ = MAKE_constant($1->c_str(), CONSTANT_SINT64); }
 	;
 
 %type <valueExprNode> u_constant
@@ -5983,7 +5983,7 @@ u_constant
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
-			$$ = MAKE_constant($2->getString(), CONSTANT_DATE);
+			$$ = MAKE_constant($2->getString().c_str(), CONSTANT_DATE);
 		}
 	| TIME STRING
 		{
@@ -5999,10 +5999,10 @@ u_constant
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
-			$$ = MAKE_constant($2->getString(), CONSTANT_TIME);
+			$$ = MAKE_constant($2->getString().c_str(), CONSTANT_TIME);
 		}
 	| TIMESTAMP STRING
-		{ $$ = MAKE_constant($2->getString(), CONSTANT_TIMESTAMP); }
+		{ $$ = MAKE_constant($2->getString().c_str(), CONSTANT_TIMESTAMP); }
 		;
 
 %type <valueExprNode> boolean_literal
