@@ -1,3 +1,9 @@
+ 2013-03-13 02:15  asfernandes 
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/parse.y
+Fixed CORE-4061 - isql does not insert boolean values correctly, always shown as False.
+
  2013-03-12 12:37  alexpeshkoff 
    M examples/interfaces/select.cpp
 fixed sample
