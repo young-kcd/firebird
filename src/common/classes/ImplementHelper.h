@@ -346,6 +346,36 @@ private:
 	struct UpgradeInfo ui;
 };
 
+
+// debugger for reference counters
+
+#ifdef DEV_BUILD
+#define FB_CAT2(a, b) a##b
+#define FB_CAT1(a, b) FB_CAT2(a, b)
+#define FB_RefDeb(c, p, l) Firebird::ReferenceCounterDebugger FB_CAT1(refCntDbg_, l)(c, p)
+#define RefDeb(c, p) FB_RefDeb(c, p, __LINE__)
+
+enum DebugEvent
+{ DEB_RLS_JATT, DEB_RLS_YATT, MaxDebugEvent };
+
+class ReferenceCounterDebugger
+{
+public:
+	ReferenceCounterDebugger(DebugEvent code, const char* p);
+	~ReferenceCounterDebugger();
+	static ReferenceCounterDebugger* get(DebugEvent code);
+
+	const char* rcd_point;
+	ReferenceCounterDebugger* rcd_prev;
+	DebugEvent rcd_code;
+};
+
+extern IDebug* getImpDebug();
+
+#else
+#define RefDeb(c, p)
+#endif
+
 } // namespace Firebird
 
 #endif // FB_COMMON_CLASSES_IMPLEMENT_HELPER

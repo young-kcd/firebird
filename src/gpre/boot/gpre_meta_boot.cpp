@@ -755,6 +755,11 @@ public:
 		fb_assert(false);
 		return NULL;
 	}
+
+	virtual IDebug* getDebug()
+	{
+		return NULL;
+	}
 };
 
 

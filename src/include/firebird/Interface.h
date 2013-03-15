@@ -93,6 +93,7 @@ class IAttachment;
 class ITransaction;
 class IDtc;
 class IMetadataBuilder;
+class IDebug;
 
 struct UpgradeInfo
 {
@@ -112,15 +113,16 @@ public:
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
 	virtual ITimerControl* FB_CARG getTimerControl() = 0;
 	virtual IDtc* FB_CARG getDtc() = 0;
-	virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
-	virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
+	virtual IAttachment* FB_CARG registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
+	virtual ITransaction* FB_CARG registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
 
 	// This function is required to compare interfaces based on vtables of them
 	virtual int FB_CARG same(IVersioned* first, IVersioned* second) = 0;
 
-	virtual IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount) = 0;
+	virtual IMetadataBuilder* FB_CARG getMetadataBuilder(IStatus* status, unsigned fieldCount) = 0;
+	virtual Firebird::IDebug* FB_CARG getDebug() = 0;
 };
-#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 11)
+#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 12)
 
 } // namespace Firebird
 

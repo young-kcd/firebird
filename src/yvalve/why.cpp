@@ -118,7 +118,7 @@ public:
 		  cursor(NULL), userHandle(NULL)
 	{ }
 
-	FB_API_HANDLE getHandle();
+	FB_API_HANDLE& getHandle();
 	void closeCursor(Why::StatusVector* status);
 	void closeStatement(Why::StatusVector* status);
 
@@ -174,11 +174,14 @@ inline ULONG FB_API_HANDLE_TO_ULONG(FB_API_HANDLE h) { return reinterpret_cast<U
 
 
 template <typename T>
-FB_API_HANDLE makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, T* obj)
+void makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, T* obj, FB_API_HANDLE& h)
 {
 	static ULONG sequenceNumber = 0;
 
 	WriteLockGuard sync(handleMappingLock, FB_FUNCTION);
+	if (h)		// Avoid 2 different handles for same object
+		return;
+
 	ULONG handle = 0;
 
 	// Loop until we find an empty handle slot. This is to care of case when counter rolls over.
@@ -194,7 +197,7 @@ FB_API_HANDLE makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, 
 			handle = ++sequenceNumber;
 	} while (map->put(ULONG_TO_FB_API_HANDLE(handle), obj));
 
-	return ULONG_TO_FB_API_HANDLE(handle);
+	h = ULONG_TO_FB_API_HANDLE(handle);
 }
 
 template <typename T>
@@ -225,10 +228,10 @@ RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, T*>
 	return RefPtr<T>(*obj);
 }
 
-FB_API_HANDLE IscStatement::getHandle()
+FB_API_HANDLE& IscStatement::getHandle()
 {
 	if (!handle)
-		handle = makeHandle(&statements, this);
+		makeHandle(&statements, this, handle);
 	return handle;
 }
 
@@ -720,6 +723,7 @@ namespace Why
 
 		void fini()
 		{
+			RefDeb(DEB_RLS_JATT, "YEntry::fini");
 			nextRef = NULL;
 
 			if (ref)
@@ -3499,7 +3503,7 @@ YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCall
 FB_API_HANDLE& YEvents::getHandle()
 {
 	if (!handle)
-		handle = makeHandle(&events, this);
+		makeHandle(&events, this, handle);
 	return handle;
 }
 
@@ -3544,7 +3548,7 @@ YRequest::YRequest(YAttachment* aAttachment, IRequest* aNext)
 FB_API_HANDLE& YRequest::getHandle()
 {
 	if (!handle)
-		handle = makeHandle(&requests, this);
+		makeHandle(&requests, this, handle);
 	return handle;
 }
 
@@ -3684,7 +3688,7 @@ YBlob::YBlob(YAttachment* aAttachment, YTransaction* aTransaction, IBlob* aNext)
 FB_API_HANDLE& YBlob::getHandle()
 {
 	if (!handle)
-		handle = makeHandle(&blobs, this);
+		makeHandle(&blobs, this, handle);
 	return handle;
 }
 
@@ -4149,7 +4153,7 @@ YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
 FB_API_HANDLE& YTransaction::getHandle()
 {
 	if (!handle)
-		handle = makeHandle(&transactions, this);
+		makeHandle(&transactions, this, handle);
 	return handle;
 }
 
@@ -4401,12 +4405,12 @@ YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathNam
 	  cleanupHandlers(getPool())
 {
 	provider->addRef();
+	makeHandle(&attachments, this, handle);
 }
 
 FB_API_HANDLE& YAttachment::getHandle()
 {
-	if (!handle)
-		handle = makeHandle(&attachments, this);
+	fb_assert(handle);
 	return handle;
 }
 
@@ -4958,6 +4962,7 @@ YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
 	  utf8Connection(utf8)
 {
 	this->addRef();		// from YHelper
+	makeHandle(&services, this, handle);
 }
 
 YService::YService(const char* svcName, unsigned int spbLength, const unsigned char* spb,
@@ -4973,6 +4978,7 @@ YService::YService(const char* svcName, unsigned int spbLength, const unsigned c
 {
 	attachName.assign(svcName);
 	this->addRef();		// from YHelper
+	makeHandle(&services, this, handle);
 
 	if (attachSpb->find(isc_spb_auth_block))
 		authBlock.add(attachSpb->getBytes(), attachSpb->getClumpLength());
@@ -4980,8 +4986,7 @@ YService::YService(const char* svcName, unsigned int spbLength, const unsigned c
 
 FB_API_HANDLE& YService::getHandle()
 {
-	if (!handle)
-		handle = makeHandle(&services, this);
+	fb_assert(handle);
 	return handle;
 }
 

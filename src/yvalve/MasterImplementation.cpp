@@ -255,6 +255,15 @@ IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsi
 	return msgMetadata->getBuilder(status);
 }
 
+IDebug* FB_CARG MasterImplementation::getDebug()
+{
+#ifdef DEV_BUILD
+	return getImpDebug();
+#else
+	return NULL;
+#endif
+}
+
 } // namespace Why
 
 //

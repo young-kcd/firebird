@@ -146,7 +146,9 @@ public:
 
 	void destroy2()
 	{
+		RefDeb(Firebird::DEB_RLS_JATT, "YValve");
 		next = NULL;
+		RefDeb(Firebird::DEB_RLS_YATT, "destroy2");
 		release();
 	}
 

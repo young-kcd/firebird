@@ -751,6 +751,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 			enginesCopy.add(accessor.current()->second);
 	}
 
+	RefDeb(DEB_RLS_JATT, "ExtEngineManager::closeAttachment");
 	Attachment::Checkout attCout(attachment, FB_FUNCTION, true);
 
 	for (Array<ExternalEngine*>::iterator i = enginesCopy.begin(); i != enginesCopy.end(); ++i)

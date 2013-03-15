@@ -171,6 +171,8 @@ int JTransaction::release()
 	if (--refCounter != 0)
 		return 1;
 
+	RefDeb(DEB_RLS_JATT, "JTransaction::release");
+
 	if (transaction)
 	{
 		LocalStatus status;
@@ -261,10 +263,21 @@ void JAttachment::manualUnlock(ULONG& flags)
 	}
 }
 
+//#define DEBUG_ATT_COUNTERS
+
 int JAttachment::release()
 {
+#ifdef DEBUG_ATT_COUNTERS
+	int x = --refCounter;
+	ReferenceCounterDebugger* my = ReferenceCounterDebugger::get(DEB_RLS_JATT);
+	const char* point = my ? my->rcd_point : " <Unknown> ";
+	fprintf(stderr, "Release from <%s> att %p cnt=%d\n", point, this, x);
+	if (x != 0)
+		return 1;
+#else
 	if (--refCounter != 0)
 		return 1;
+#endif
 
 	if (att)
 	{
@@ -2588,6 +2601,7 @@ void JAttachment::detach(IStatus* user_status)
 	freeEngineData(user_status);
 	if (user_status->isSuccess())
 	{
+		RefDeb(DEB_RLS_JATT, "JAttachment::detach");
 		release();
 	}
 }
@@ -6789,6 +6803,7 @@ namespace
 
 		~AttQueue()
 		{
+			RefDeb(DEB_RLS_JATT, FB_FUNCTION);
 			// Release interfaces
 			while (hasData())
 			{

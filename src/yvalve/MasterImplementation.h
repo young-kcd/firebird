@@ -60,13 +60,14 @@ namespace Why
 									 Firebird::UpgradeInfo* upgradeInfo);
 		const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
 		Firebird::ITimerControl* FB_CARG getTimerControl();
-		Firebird::IAttachment* registerAttachment(Firebird::IProvider* provider,
+		Firebird::IAttachment* FB_CARG registerAttachment(Firebird::IProvider* provider,
 			Firebird::IAttachment* attachment);
-		Firebird::ITransaction* registerTransaction(Firebird::IAttachment* attachment,
+		Firebird::ITransaction* FB_CARG registerTransaction(Firebird::IAttachment* attachment,
 			Firebird::ITransaction* transaction);
 		Dtc* FB_CARG getDtc();
 		int FB_CARG same(IVersioned* first, IVersioned* second);
-		Firebird::IMetadataBuilder* getMetadataBuilder(Firebird::IStatus* status, unsigned fieldCount);
+		Firebird::IMetadataBuilder* FB_CARG getMetadataBuilder(Firebird::IStatus* status, unsigned fieldCount);
+		Firebird::IDebug* FB_CARG getDebug();
 	};
 
 	void shutdownTimers();
