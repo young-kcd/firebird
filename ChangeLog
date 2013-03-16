@@ -1,3 +1,19 @@
+ 2013-03-15 16:37  alexpeshkoff 
+   M src/common/classes/ImplementHelper.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/firebird/Interface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+1. Fixed broken by me a few time ago server shutdown.
+2. Implemented prototype of TLS-based debugging helper holding information about 'What does firebird do now?"
+   Currently it's more or less ready for use with JAttachment::release().
+
  2013-03-13 02:15  asfernandes 
    M src/dsql/make.cpp
    M src/dsql/make_proto.h
