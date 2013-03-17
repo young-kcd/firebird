@@ -1474,46 +1474,6 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 }
 
 
-void TRA_shutdown_attachment(thread_db* tdbb, Attachment* attachment)
-{
-/**************************************
- *
- *	T R A _ s h u t d o w n _ a t t a c h m e n t
- *
- **************************************
- *
- * Functional description
- *	Release locks associated with transactions for attachment.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	for (jrd_tra* transaction = attachment->att_transactions; transaction;
-		 transaction = transaction->tra_next)
-	{
-		// Release the relation locks associated with the transaction
-
-		vec<Lock*>* vector = transaction->tra_relation_locks;
-		if (vector)
-		{
-			vec<Lock*>::iterator lock = vector->begin();
-			for (ULONG i = 0; i < vector->count(); ++i, ++lock)
-			{
-				if (*lock)
-					LCK_release(tdbb, *lock);
-			}
-		}
-
-		// Release transaction lock itself
-
-		++transaction->tra_use_count;
-		if (transaction->tra_lock)
-			LCK_release(tdbb, transaction->tra_lock);
-		--transaction->tra_use_count;
-	}
-}
-
-
 int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
 {
 /**************************************

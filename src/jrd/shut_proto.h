@@ -28,7 +28,7 @@ namespace Jrd {
 	class Database;
 }
 
-bool		SHUT_blocking_ast(Jrd::thread_db*);
+void		SHUT_blocking_ast(Jrd::thread_db*, bool);
 void		SHUT_database(Jrd::thread_db*, SSHORT, SSHORT);
 void		SHUT_init(Jrd::thread_db*);
 void        SHUT_online(Jrd::thread_db*, SSHORT);

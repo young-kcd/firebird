@@ -5900,8 +5900,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 			}
 #endif
 
-			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
-				!((dbb->dbb_ast_flags & DBB_shutdown) && (dbb->dbb_ast_flags & DBB_shutdown_locks)))
+			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)))
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
