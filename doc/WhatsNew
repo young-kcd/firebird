@@ -1,4 +1,14 @@
   ***************************
+  * v2.1.5 Security Update 1
+  ***************************
+
+    * Bugfix CORE-4058
+        Remote stack buffer overflow in Firebird SQL Server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
+  ***************************
   * v2.1.5
   ***************************
 
