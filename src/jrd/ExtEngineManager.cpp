@@ -662,10 +662,10 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 					dsc source = format->fmt_desc[i * 2];
 					source.dsc_address += (IPTR) p;
 					MOV_move(tdbb, &source, &target);
-					CLEAR_NULL(record, fieldPos);
+					record->clearNull(fieldPos);
 				}
 				else
-					SET_NULL(record, fieldPos);
+					record->setNull(fieldPos);
 			}
 		}
 	}

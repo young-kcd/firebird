@@ -1077,7 +1077,7 @@ void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_r
 
 		for (USHORT i = 0; i < new_record->rec_format->fmt_count; i++)
 		{
-			CLEAR_NULL(new_record, i);
+			new_record->clearNull(i);
 
 			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc))
 			{
@@ -1087,7 +1087,7 @@ void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_r
 				}
 				else
 				{
-					SET_NULL(new_record, i);
+					new_record->setNull(i);
 
 					if (new_desc.dsc_dtype)
 					{
@@ -5400,7 +5400,7 @@ static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, 
 	dsc desc2;
 	desc2.makeShort(0, &value);
 	MOV_move(tdbb, &desc2, &desc1);
-	CLEAR_NULL(record, field_id);
+	record->clearNull(field_id);
 	return value;
 }
 
@@ -5427,7 +5427,7 @@ static void set_security_class(thread_db* tdbb, Record* record, USHORT field_id)
 		dsc desc2;
 		desc2.makeText((USHORT) name.length(), CS_ASCII, (UCHAR*) name.c_str());
 		MOV_move(tdbb, &desc2, &desc1);
-		CLEAR_NULL(record, field_id);
+		record->clearNull(field_id);
 	}
 }
 
@@ -5453,7 +5453,7 @@ static void set_system_flag(thread_db* tdbb, Record* record, USHORT field_id, SS
 	dsc desc2;
 	desc2.makeShort(0, &flag);
 	MOV_move(tdbb, &desc2, &desc1);
-	CLEAR_NULL(record, field_id);
+	record->clearNull(field_id);
 }
 
 

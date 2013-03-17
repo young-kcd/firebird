@@ -165,11 +165,11 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 				desc = aggNode->winPass(tdbb, request, &window);
 
 				if (!desc)
-					SET_NULL(record, id);
+					record->setNull(id);
 				else
 				{
 					MOV_move(tdbb, desc, EVL_assign_to(tdbb, *target));
-					CLEAR_NULL(record, id);
+					record->clearNull(id);
 				}
 			}
 		}
@@ -499,11 +499,11 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 				desc = aggNode->execute(tdbb, request);
 				if (!desc || !desc->dsc_dtype)
-					SET_NULL(record, id);
+					record->setNull(id);
 				else
 				{
 					MOV_move(tdbb, desc, EVL_assign_to(tdbb, *target));
-					CLEAR_NULL(record, id);
+					record->clearNull(id);
 				}
 			}
 		}

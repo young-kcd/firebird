@@ -503,7 +503,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		if (buffer)
 		{
 			record = buffer->getTempRecord();
-			clearRecord(record);
+			record->nullify();
 		}
 		else
 		{
@@ -608,17 +608,6 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, i
 	snapshot.add(data);
 
 	return buffer;
-}
-
-
-void DataDump::clearRecord(Record* record)
-{
-	fb_assert(record);
-
-	// Initialize all fields to NULLs
-	memset(record->rec_data, 0, record->rec_length);
-	const size_t null_bytes = (record->rec_format->fmt_count + 7u) >> 3;
-	memset(record->rec_data, 0xFF, null_bytes);
 }
 
 
@@ -728,7 +717,7 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 		}
 	}
 
-	CLEAR_NULL(record, field.id);
+	record->clearNull(field.id);
 }
 
 

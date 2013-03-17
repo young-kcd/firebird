@@ -414,9 +414,9 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 		Record* record = request->req_rpb[toField->fieldStream].rpb_record;
 
 		if (null)
-			SET_NULL(record, toField->fieldId);
+			record->setNull(toField->fieldId);
 		else
-			CLEAR_NULL(record, toField->fieldId);
+			record->clearNull(toField->fieldId);
 	}
 	else if (toParam && toParam->argFlag)
 	{
@@ -1072,7 +1072,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
 	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
 
-	Record* null_rec = NULL;
+	AutoPtr<Record> null_rec;
 
 	if (!old_rec && !new_rec)
 	{
@@ -1086,11 +1086,8 @@ void EXE_execute_triggers(thread_db* tdbb,
 		null_rec = FB_NEW_RPT(record->rec_pool, record->rec_length) Record(record->rec_pool);
 		null_rec->rec_length = record->rec_length;
 		null_rec->rec_format = record->rec_format;
-		// zero the record buffer
-		memset(null_rec->rec_data, 0, record->rec_length);
 		// initialize all fields to missing
-		const SSHORT n = (record->rec_format->fmt_count + 7) >> 3;
-		memset(null_rec->rec_data, 0xFF, n);
+		null_rec->nullify();
 	}
 
 	const Firebird::TimeStamp timestamp =
@@ -1171,14 +1168,12 @@ void EXE_execute_triggers(thread_db* tdbb,
 			}
 		}
 
-		delete null_rec;
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
 		}
 	}
 	catch (const Firebird::Exception&)
 	{
-		delete null_rec;
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
 		}

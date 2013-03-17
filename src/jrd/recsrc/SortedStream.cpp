@@ -316,7 +316,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 
 	for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 	{
-		const UCHAR flag = *(data + item->flagOffset);
+		const bool flag = (*(data + item->flagOffset) == TRUE);
 		from = item->desc;
 		from.dsc_address = data + (IPTR) from.dsc_address;
 
@@ -373,12 +373,12 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 
 		if (flag)
 		{
-			SET_NULL(record, id);
+			record->setNull(id);
 		}
 		else
 		{
 			MOV_move(tdbb, &from, &to);
-			CLEAR_NULL(record, id);
+			record->clearNull(id);
 		}
 	}
 }

@@ -190,7 +190,6 @@ public:
 		ULONG sizeLimit;
 	};
 
-	void clearRecord(Record*);
 	void putField(thread_db*, Record*, const DumpField&, int);
 
 private:

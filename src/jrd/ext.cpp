@@ -385,7 +385,7 @@ bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 	{
 	    const jrd_fld* field = *itr;
 
-		SET_NULL(record, i);
+		record->setNull(i);
 
 		if (!desc_ptr->dsc_length || !field)
 			continue;
@@ -401,7 +401,7 @@ bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 				continue;
 		}
 
-		CLEAR_NULL(record, i);
+		record->clearNull(i);
 	}
 
 	return true;
@@ -489,7 +489,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	for (USHORT i = 0; i < format->fmt_count; ++i, ++field_ptr, ++desc_ptr)
 	{
 		const jrd_fld* field = *field_ptr;
-		if (field && !field->fld_computation && desc_ptr->dsc_length && TEST_NULL(record, i))
+		if (field && !field->fld_computation && desc_ptr->dsc_length && record->isNull(i))
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
 			LiteralNode* literal = ExprNode::as<LiteralNode>(field->fld_missing_value);

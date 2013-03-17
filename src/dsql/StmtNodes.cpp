@@ -6758,13 +6758,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 	// bug with incorrect blob sharing during insertion in
 	// a stored procedure.
 
-	memset(record->rec_data, 0, rpb->rpb_length);
-
-	// Initialize all fields to missing
-
-	SSHORT n = (format->fmt_count + 7) >> 3;
-	if (n)
-		memset(record->rec_data, 0xFF, n);
+	record->nullify();
 
 	return statement;
 }
@@ -8580,7 +8574,7 @@ static void cleanupRpb(thread_db* tdbb, record_param* rpb)
 
 		UCHAR* const p = record->rec_data + (IPTR) desc->dsc_address;
 
-		if (TEST_NULL(record, n))
+		if (record->isNull(n))
 		{
 			USHORT length = desc->dsc_length;
 

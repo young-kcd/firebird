@@ -375,7 +375,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 	desc->dsc_address = record->rec_data + (IPTR) desc->dsc_address;
 
-	if (TEST_NULL(record, id))
+	if (record->isNull(id))
 	{
 		desc->dsc_flags |= DSC_null;
 		return false;

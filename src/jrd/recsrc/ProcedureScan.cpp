@@ -317,7 +317,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 
 	if (indicator)
 	{
-		SET_NULL(record, to_id);
+		record->setNull(to_id);
 		const USHORT l = to_desc->dsc_length;
 		UCHAR* const p = record->rec_data + (IPTR) to_desc->dsc_address;
 		switch (to_desc->dsc_dtype)
@@ -358,7 +358,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 	}
 	else
 	{
-		CLEAR_NULL(record, to_id);
+		record->clearNull(to_id);
 		desc1 = *from_desc;
 		desc1.dsc_address = const_cast<UCHAR*>(msg) + (IPTR) desc1.dsc_address;
 		desc2 = *to_desc;

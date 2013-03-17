@@ -132,10 +132,6 @@ const USHORT RPB_s_no_data		= 0x04;	// nobody is going to access the data
 const USHORT RPB_s_undo_data	= 0x08;	// data got from undo log
 const USHORT RPB_s_sweeper		= 0x10;	// garbage collector - skip swept pages
 
-#define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
-#define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
-#define TEST_NULL(record, id)	record->rec_data [id >> 3] &   (1 << (id & 7))
-
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records
 
@@ -165,6 +161,29 @@ public:
 		double rec_dummy;			// this is to force next field to a double boundary
 		UCHAR rec_data[1];			// THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY
 	};
+
+	void setNull(USHORT id)
+	{
+		rec_data[id >> 3] |= (1 << (id & 7));
+	}
+
+	void clearNull(USHORT id)
+	{
+		rec_data[id >> 3] &= ~(1 << (id & 7));
+	}
+
+	bool isNull(USHORT id)
+	{
+		return ((rec_data[id >> 3] & (1 << (id & 7))) != 0);
+	}
+
+	void nullify()
+	{
+		// Zero the record buffer and initialize all fields to NULLs
+		const size_t null_bytes = (rec_format->fmt_count + 7) >> 3;
+		memset(rec_data, 0xFF, null_bytes);
+		memset(rec_data + null_bytes, 0, rec_length - null_bytes);
+	}
 };
 
 // rec_flags

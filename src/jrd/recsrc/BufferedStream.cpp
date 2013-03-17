@@ -172,7 +172,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 
 			record_param* const rpb = &request->req_rpb[map.map_stream];
 
-			CLEAR_NULL(buffer_record, i);
+			buffer_record->clearNull(i);
 
 			dsc to;
 			if (!EVL_field(NULL, buffer_record, (USHORT) i, &to))
@@ -193,7 +193,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 					}
 					else
 					{
-						SET_NULL(buffer_record, i);
+						buffer_record->setNull(i);
 					}
 				}
 				break;
@@ -237,7 +237,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 			if (!EVL_field(NULL, buffer_record, (USHORT) i, &from))
 			{
 				fb_assert(map.map_type == FieldMap::REGULAR_FIELD);
-				SET_NULL(record, map.map_id);
+				record->setNull(map.map_id);
 				continue;
 			}
 
@@ -251,7 +251,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 						record->rec_format = record->rec_fmt_bk;
 					}
 
-					CLEAR_NULL(record, map.map_id);
+					record->clearNull(map.map_id);
 
 					dsc to;
 					if (!EVL_field(NULL, record, map.map_id, &to))

@@ -1056,12 +1056,12 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 
 	if ((request->req_flags & req_null) || source->isEmpty())
 	{
-		SET_NULL(record, id);
+		record->setNull(id);
 		destination->clear();
 		return;
 	}
 
-	CLEAR_NULL(record, id);
+	record->clearNull(id);
 	jrd_tra* transaction = request->req_transaction;
 	transaction = transaction->getOuter();
 

@@ -227,7 +227,7 @@ void UserManagement::Display::list(Auth::IUser* u)
 void UserManagement::list(Auth::IUser* u)
 {
 	Record* record = buffer->getTempRecord();
-	clearRecord(record);
+	record->nullify();
 
 	int attachment_charset = ttype_none;
 
