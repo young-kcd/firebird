@@ -37,7 +37,7 @@ Firebird::IMaster* cached = NULL;
 #ifdef DEV_BUILD
 typedef Firebird::ReferenceCounterDebugger* ReferenceCounterDebuggerPtr;
 TLS_DECLARE(ReferenceCounterDebuggerPtr*, debugArray);
-#endif //DEV_BUILD
+#endif // DEV_BUILD
 }
 
 namespace Firebird

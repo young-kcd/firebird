@@ -127,7 +127,7 @@ void SHUT_blocking_ast(thread_db* tdbb, bool ast)
 
 		return;
 	}
-	
+
 	if ((flag & isc_dpb_shut_force) && !delay)
 	{
 		shutdown(tdbb, flag, ast);

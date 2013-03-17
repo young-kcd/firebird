@@ -4781,6 +4781,7 @@ bool CreateAlterExceptionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 	return modified;
 }
 
+
 //----------------------
 
 
