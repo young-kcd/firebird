@@ -89,7 +89,7 @@ static bool get_header(WIN*, SSHORT, record_param*);
 static pointer_page* get_pointer_page(thread_db*, jrd_rel*, RelationPages*, WIN*, USHORT, USHORT);
 static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static void mark_full(thread_db*, record_param*);
-static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, USHORT);
+static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, ULONG);
 
 
 PAG DPM_allocate(thread_db* tdbb, WIN* window)
@@ -353,7 +353,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 
 	record_param temp = *org_rpb;
 	DataComprControl dcc(*tdbb->getDefaultPool());
-	const USHORT size = SQZ_length((SCHAR*) new_rpb->rpb_address, (int) new_rpb->rpb_length, &dcc);
+	const ULONG size = SQZ_length((SCHAR*) new_rpb->rpb_address, new_rpb->rpb_length, &dcc);
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write))
 	{
@@ -2031,7 +2031,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 #endif
 
 	DataComprControl dcc(*tdbb->getDefaultPool());
-	const USHORT size = SQZ_length((SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
+	const ULONG size = SQZ_length((SCHAR*) rpb->rpb_address, rpb->rpb_length, &dcc);
 
 	// If the record isn't going to fit on a page, even if fragmented,
 	// handle it a little differently.
@@ -2049,7 +2049,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 
 	// Accomodate max record size i.e. 64K
 	const SLONG length = RHD_SIZE + size + fill;
-	rhd* header = locate_space(tdbb, rpb, (SSHORT)length, stack, NULL, type);
+	rhd* header = locate_space(tdbb, rpb, (SSHORT) length, stack, NULL, type);
 
 	header->rhd_flags = rpb->rpb_flags;
 	header->rhd_transaction = rpb->rpb_transaction_nr;
@@ -2154,8 +2154,8 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	rpb.rpb_relation = blob->blb_relation;
 	rpb.rpb_transaction_nr = tdbb->getTransaction()->tra_number;
 
-	blh* header = (blh*) locate_space(tdbb, &rpb, (SSHORT)(BLH_SIZE + length),
-										stack, record, DPM_other);
+	blh* header = (blh*) locate_space(tdbb, &rpb, (SSHORT) (BLH_SIZE + length),
+									  stack, record, DPM_other);
 	header->blh_flags = rhd_blob;
 
 	if (blob->blb_flags & BLB_stream) {
@@ -2295,7 +2295,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
 	DataComprControl dcc(*tdbb->getDefaultPool());
-	const USHORT size = SQZ_length((SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
+	const ULONG size = SQZ_length((SCHAR*) rpb->rpb_address, rpb->rpb_length, &dcc);
 
 	// It is critical that the record be padded, if necessary, to the length of
 	// a fragmented record header.  Compute the amount of fill required.
@@ -3280,7 +3280,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 
 static void store_big_record(thread_db* tdbb, record_param* rpb,
 							 PageStack& stack,
-							 DataComprControl* dcc, USHORT size)
+							 DataComprControl* dcc, ULONG size)
 {
 /**************************************
  *
@@ -3390,7 +3390,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	// What's left fits on a page.  Luckily, we don't have to store it ourselves.
 
 	size = SQZ_length((SCHAR*) rpb->rpb_address, in - (SCHAR*) rpb->rpb_address, dcc);
-	rhdf* header = (rhdf*)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack, NULL, DPM_other);
+	rhdf* header = (rhdf*) locate_space(tdbb, rpb, (SSHORT) (RHDF_SIZE + size), stack, NULL, DPM_other);
 
 	header->rhdf_flags = rhd_incomplete | rhd_large | rpb->rpb_flags;
 	header->rhdf_transaction = rpb->rpb_transaction_nr;

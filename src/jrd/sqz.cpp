@@ -418,7 +418,7 @@ void SQZ_fast(const DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 }
 
 
-USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
+ULONG SQZ_length(const SCHAR* data, ULONG length, DataComprControl* dcc)
 {
 /**************************************
  *
@@ -431,8 +431,6 @@ USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
  *	the control string for subsequent compression.
  *
  **************************************/
-
- 	fb_assert(length >= 0);
 
 	// allocate buffer big enough for worst case
 	SCHAR* control = dcc->getBuffer((length + 1) / 2, false);
