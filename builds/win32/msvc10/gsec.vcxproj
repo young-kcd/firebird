@@ -181,7 +181,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\utilities\gsec\gsec.h" />
-    <ClInclude Include="..\..\..\src\utilities\gsec\secur_proto.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">

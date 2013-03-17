@@ -173,7 +173,6 @@
     <ClInclude Include="..\..\..\src\dsql\make_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\metd_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\movd_proto.h" />
-    <ClInclude Include="..\..\..\src\dsql\node.h" />
     <ClInclude Include="..\..\..\src\dsql\Nodes.h" />
     <ClInclude Include="..\..\..\src\dsql\PackageNodes.h" />
     <ClInclude Include="..\..\..\src\dsql\Parser.h" />

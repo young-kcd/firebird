@@ -205,9 +205,6 @@
     <ClCompile Include="..\..\..\src\plugins\udr_engine\UdrEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\include\FirebirdUdr.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\src\jrd</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\src\jrd</AdditionalIncludeDirectories>

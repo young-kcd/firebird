@@ -506,9 +506,6 @@
     <ClInclude Include="..\..\..\src\dsql\movd_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\dsql\node.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\Nodes.h">
       <Filter>Header files</Filter>
     </ClInclude>

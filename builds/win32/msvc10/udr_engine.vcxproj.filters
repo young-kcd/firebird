@@ -19,11 +19,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\include\FirebirdUdr.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
       <Filter>Resource files</Filter>
     </ResourceCompile>
