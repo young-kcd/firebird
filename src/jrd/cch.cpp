@@ -239,13 +239,17 @@ int CCH_down_grade_dbb(void* ast_object)
 
 		// Process the database shutdown request, if any
 
-		SHUT_blocking_ast(tdbb);
+		SHUT_blocking_ast(tdbb, true);
 
 		// If we are already shared, there is nothing more we can do.
 		// If any case, the other guy probably wants exclusive access,
 		// and we can't give it anyway
 
-		if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
+		if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR))
+		{
+			// Fake conversion to the same level as we already own.
+			// This trick re-enables the AST delivery.
+			LCK_convert(tdbb, lock, lock->lck_logical, LCK_NO_WAIT);
 			return 0;
 		}
 
@@ -399,8 +403,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 
 	attachment->att_flags |= (level == LCK_none) ? ATT_attach_pending : ATT_exclusive_pending;
 
-	const SLONG timeout = (SLONG) (wait_flag < 0) ?
-		-wait_flag : ((wait_flag == LCK_WAIT) ? 1L << 30 : CCH_EXCLUSIVE_RETRY_INTERVAL);
+	const SLONG timeout = (wait_flag == LCK_WAIT) ? 1L << 30 : -wait_flag;
 
 	// If requesting exclusive database access, then re-position attachment as the
 	// youngest so that pending attachments may pass.
@@ -419,7 +422,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 		dbb->dbb_attachments = attachment;
 	}
 
-	for (SLONG remaining = timeout; remaining > 0; remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)
+	for (SLONG remaining = timeout; remaining >= 0; remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)
 	{
 		try
 		{
@@ -475,7 +478,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 
 			// Our thread needs to sleep for CCH_EXCLUSIVE_RETRY_INTERVAL seconds.
 
-			if (remaining > CCH_EXCLUSIVE_RETRY_INTERVAL)
+			if (remaining >= CCH_EXCLUSIVE_RETRY_INTERVAL)
 			{
 				SyncUnlockGuard unlock(exLock ? (*exGuard) : dsGuard);
 				THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
