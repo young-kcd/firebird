@@ -233,7 +233,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 	// haven't gotten it report shutdown error for weaker forms. For forced shutdown
 	// keep notifying until successful.
 
-	USHORT timeout = delay;
+	SSHORT timeout = delay ? delay - 1 : 0;
 
 	if (!exclusive)
 	{
