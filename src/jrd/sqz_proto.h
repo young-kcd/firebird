@@ -39,7 +39,7 @@ SCHAR*	SQZ_decompress(const SCHAR*, USHORT, SCHAR*, const SCHAR* const);
 USHORT	SQZ_differences(const SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
 USHORT	SQZ_no_differences(SCHAR* const, int);
 void	SQZ_fast(Jrd::DataComprControl*, const SCHAR*, SCHAR*);
-USHORT	SQZ_length(Jrd::thread_db*, const SCHAR*, int, Jrd::DataComprControl*);
+ULONG	SQZ_length(Jrd::thread_db*, const SCHAR*, ULONG, Jrd::DataComprControl*);
 
 #endif // JRD_SQZ_PROTO_H
 

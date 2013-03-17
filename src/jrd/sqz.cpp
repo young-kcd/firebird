@@ -419,7 +419,7 @@ void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 }
 
 
-USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprControl* dcc)
+ULONG SQZ_length(thread_db* tdbb, const SCHAR* data, ULONG length, DataComprControl* dcc)
 {
 /**************************************
  *

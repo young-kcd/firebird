@@ -89,7 +89,7 @@ static pointer_page* get_pointer_page(thread_db*, jrd_rel*, RelationPages*, WIN 
 static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static void mark_full(thread_db*, record_param*);
 static void release_dcc(DataComprControl*);
-static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, USHORT);
+static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, ULONG);
 
 
 PAG DPM_allocate(thread_db* tdbb, WIN* window)
@@ -346,8 +346,8 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 
 	record_param temp = *org_rpb;
 	DataComprControl dcc;
-	const USHORT size =
-		SQZ_length(tdbb, (SCHAR*) new_rpb->rpb_address, (int) new_rpb->rpb_length,
+	const ULONG size =
+		SQZ_length(tdbb, (SCHAR*) new_rpb->rpb_address, new_rpb->rpb_length,
 				   &dcc);
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write)) {
@@ -1999,8 +1999,8 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 #endif
 
 	DataComprControl dcc;
-	const USHORT size =
-		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
+	const ULONG size =
+		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, rpb->rpb_length, &dcc);
 
 /* If the record isn't going to fit on a page, even if fragmented,
    handle it a little differently. */
@@ -2265,8 +2265,8 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
 	DataComprControl dcc;
-	const USHORT size =
-		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
+	const ULONG size =
+		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, rpb->rpb_length, &dcc);
 
 /* It is critical that the record be padded, if necessary, to the length of
    a fragmented record header.  Compute the amount of fill required.  */
@@ -3242,7 +3242,7 @@ static void release_dcc( DataComprControl* dcc)
 
 static void store_big_record(thread_db* tdbb, record_param* rpb,
 							 PageStack& stack, 
-							 DataComprControl* head_dcc, USHORT size)
+							 DataComprControl* head_dcc, ULONG size)
 {
 /**************************************
  *
