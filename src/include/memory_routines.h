@@ -6,7 +6,7 @@
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ * of the License at http://www.firebirdsql.org/index.php?op=doc&id=ipl
  *
  * Software distributed under the License is distributed on an
  * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
@@ -48,6 +48,8 @@ inline void copy_fromptr(T& to, const void* from)
 }
 
 
+
+
 inline USHORT get_short(const UCHAR* p)
 {
 /**************************************
@@ -61,9 +63,24 @@ inline USHORT get_short(const UCHAR* p)
  *    from two chars
  *
  **************************************/
+#ifndef WORDS_BIGENDIAN
+	// little-endian
 	USHORT temp;
 	memcpy(&temp, p, sizeof(USHORT));
 	return temp;
+#else
+	// big-endian
+	union
+	{
+		USHORT n;
+		UCHAR c[2];
+	} temp;
+
+	temp.c[0] = p[0];
+	temp.c[1] = p[1];
+
+	return temp.n;
+#endif
 }
 
 inline SLONG get_long(const UCHAR* p)
@@ -79,9 +96,26 @@ inline SLONG get_long(const UCHAR* p)
  *    from four chars
  *
  **************************************/
+#ifndef WORDS_BIGENDIAN
+  // little-endian
 	SLONG temp;
 	memcpy(&temp, p, sizeof(SLONG));
 	return temp;
+#else
+	// big-endian
+	union
+	{
+		SLONG n;
+		UCHAR c[4];
+	} temp;
+
+	temp.c[0] = p[0];
+	temp.c[1] = p[1];
+	temp.c[2] = p[2];
+	temp.c[3] = p[3];
+
+	return temp.n;
+#endif
 }
 
 inline void put_short(UCHAR* p, USHORT value)
@@ -97,7 +131,22 @@ inline void put_short(UCHAR* p, USHORT value)
  *    two chars
  *
  **************************************/
+#ifndef WORDS_BIGENDIAN
+	// little-endian
 	memcpy(p, &value, sizeof(USHORT));
+#else
+  // big-endian
+	union
+	{
+		USHORT n;
+		UCHAR c[2];
+	} temp;
+
+	temp.n = value;
+
+	p[0] = temp.c[0];
+	p[1] = temp.c[1];
+#endif
 }
 
 inline void put_long(UCHAR* p, SLONG value)
@@ -113,10 +162,27 @@ inline void put_long(UCHAR* p, SLONG value)
  *    four chars
  *
  **************************************/
+#ifndef WORDS_BIGENDIAN
+	// little-endian
 	memcpy(p, &value, sizeof(SLONG));
+#else
+	// big-endian
+	union
+	{
+		SLONG n;
+		UCHAR c[4];
+	} temp;
+
+	temp.n = value;
+
+	p[0] = temp.c[0];
+	p[1] = temp.c[1];
+	p[2] = temp.c[2];
+	p[3] = temp.c[3];
+#endif
 }
 
-inline UCHAR put_vax_short(UCHAR* p, SSHORT value)
+inline void put_vax_short(UCHAR* p, SSHORT value)
 {
 /**************************************
  *
@@ -145,11 +211,9 @@ inline UCHAR put_vax_short(UCHAR* p, SSHORT value)
 	p[0] = temp.c[1];
 	p[1] = temp.c[0];
 #endif
-
-	return sizeof(value);
 }
 
-inline UCHAR put_vax_long(UCHAR* p, SLONG value)
+inline void put_vax_long(UCHAR* p, SLONG value)
 {
 /**************************************
  *
@@ -180,11 +244,9 @@ inline UCHAR put_vax_long(UCHAR* p, SLONG value)
 	p[2] = temp.c[1];
 	p[3] = temp.c[0];
 #endif
-
-	return sizeof(value);
 }
 
-inline UCHAR put_vax_int64(UCHAR* p, SINT64 value)
+inline void put_vax_int64(UCHAR* p, SINT64 value)
 {
 /**************************************
  *
@@ -219,8 +281,6 @@ inline UCHAR put_vax_int64(UCHAR* p, SINT64 value)
 	p[6] = temp.c[1];
 	p[7] = temp.c[0];
 #endif
-
-	return sizeof(value);
 }
 
 #endif // MEMORY_ROUTINES_H

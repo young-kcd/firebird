@@ -34,18 +34,15 @@
 #include <signal.h>
 #endif
 
-#include "../common/os/SyncSignals.h"
-
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
 					sigjmp_buf sigenv; \
 					int sig; \
-					if (!Config::getBugcheckAbort()) \
-					{ \
+					if (!Config::getBugcheckAbort()) { \
 						if (sig = sigsetjmp(sigenv, 1)) \
 					    	ISC_exception_post(sig, err); \
-						Firebird::syncSignalsSet(&sigenv); \
+						Firebird::sync_signals_set(&sigenv); \
 					}
-#define END_CHECK_FOR_EXCEPTIONS(err)   if (!Config::getBugcheckAbort()) Firebird::syncSignalsReset(); }
+#define END_CHECK_FOR_EXCEPTIONS(err)   if (!Config::getBugcheckAbort()) Firebird::sync_signals_reset(); }
 
 #endif // UNIX
 

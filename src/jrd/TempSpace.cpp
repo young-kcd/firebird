@@ -25,11 +25,11 @@
 #include "iberror.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../common/gdsassert.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/os/path_utils.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/os/path_utils.h"
 
 #include "../jrd/TempSpace.h"
 
@@ -37,7 +37,7 @@ using Firebird::TempFile;
 
 // Static definitions/initializations
 
-const size_t MIN_TEMP_BLOCK_SIZE = 64 * 1024;
+const size_t MIN_TEMP_BLOCK_SIZE	= 64 * 1024;
 
 Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
@@ -107,7 +107,7 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynam
 {
 	if (!tempDirs)
 	{
-		Firebird::MutexLockGuard guard(initMutex, FB_FUNCTION);
+		Firebird::MutexLockGuard guard(initMutex);
 		if (!tempDirs)
 		{
 			MemoryPool& def_pool = *getDefaultMemoryPool();
@@ -498,7 +498,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 
 		return;
 	}
-
+	
 	if (freeSegments.locate(Firebird::locLess, position))
 	{
 		// Check the prior segment for being adjacent

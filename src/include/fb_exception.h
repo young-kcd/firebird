@@ -32,22 +32,14 @@
 
 #include <stddef.h>
 #include <string.h>
-
-#ifndef ANDROID
-#define USE_SYSTEM_NEW
-#endif
-
-#ifdef USE_SYSTEM_NEW
 #include <new>
-#endif
-
 #include "fb_types.h"
 #include "../common/StatusArg.h"
 #include "../common/thd.h"
+#include "../jrd/common.h"
 
-namespace Firebird
-{
-class IStatus;
+namespace Firebird {
+
 class MemoryPool;
 
 class Exception
@@ -55,9 +47,8 @@ class Exception
 protected:
 	Exception() throw() { }
 public:
-	ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
 	virtual ~Exception() throw();
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw() = 0;
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw() = 0;
 	virtual const char* what() const throw() = 0;
 };
 
@@ -65,31 +56,20 @@ public:
 class LongJump : public Exception
 {
 public:
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw();
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
 	LongJump() throw() : Exception() { }
 };
 
 // Used in MemoryPool
-#ifdef USE_SYSTEM_NEW
-
 class BadAlloc : public std::bad_alloc, public Exception
 {
 public:
-	BadAlloc() throw() : std::bad_alloc(), Exception() { }
-#else	// USE_SYSTEM_NEW
-
-class BadAlloc : public Exception
-{
-public:
-	BadAlloc() throw() : Exception() { }
-#endif	// USE_SYSTEM_NEW
-
-public:
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw();
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
+	BadAlloc() throw() : std::bad_alloc(), Exception() { }
 };
 
 // Main exception class in firebird
@@ -99,7 +79,7 @@ public:
 	status_exception(const ISC_STATUS *status_vector) throw();
 	virtual ~status_exception() throw();
 
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw();
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
 	virtual const char* what() const throw();
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
@@ -162,9 +142,18 @@ public:
 };
 
 
+// Serialize exception into status_vector
+ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex) throw();
+
 // Put status vector strings into strings buffer
-void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, ThreadId thr = getThreadId()) throw();
-void makePermanentVector(ISC_STATUS* v, ThreadId thr = getThreadId()) throw();
+void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID thr = getThreadId()) throw();
+void makePermanentVector(ISC_STATUS* v, FB_THREAD_ID thr = getThreadId()) throw();
+
+// Catch synchronous exceptions in UNIX
+#ifdef UNIX
+void sync_signals_set(void*);
+void sync_signals_reset();
+#endif
 
 }	// namespace Firebird
 

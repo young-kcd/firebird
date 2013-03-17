@@ -36,6 +36,11 @@
 #include "../jrd/sbm.h"
 #include "../jrd/lck.h"
 
+// 64 turns out not to be enough indexes
+// #define MAX_IDX		 64		// that should be plenty of indexes
+
+#define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
+
 struct dsc;
 
 namespace Jrd {
@@ -43,7 +48,7 @@ namespace Jrd {
 class jrd_rel;
 class jrd_tra;
 template <typename T> class vec;
-class JrdStatement;
+class jrd_req;
 struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
@@ -58,7 +63,7 @@ enum idx_null_state {
 
 struct index_desc
 {
-	ULONG	idx_root;						// Index root
+	SLONG	idx_root;						// Index root
 	float	idx_selectivity;				// selectivity of index
 	USHORT	idx_id;
 	UCHAR	idx_flags;
@@ -69,9 +74,9 @@ struct index_desc
 	vec<int>*	idx_foreign_primaries;		// ids for primary/unique indexes with partners
 	vec<int>*	idx_foreign_relations;		// ids for foreign key partner relations
 	vec<int>*	idx_foreign_indexes;		// ids for foreign key partner indexes
-	ValueExprNode* idx_expression;			// node tree for indexed expresssion
+	jrd_nod* idx_expression;				// node tree for indexed expresssion
 	dsc		idx_expression_desc;			// descriptor for expression result
-	JrdStatement* idx_expression_statement;	// stored statement for expression evaluation
+	jrd_req* idx_expression_request;		// stored request for expression evaluation
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat
 	{
@@ -96,21 +101,20 @@ const USHORT idx_invalid = USHORT(~0);		// Applies to idx_id as special value
 
 const int idx_numeric		= 0;
 const int idx_string		= 1;
-// value of 2 was used in ODS < 10
+const int idx_timestamp1	= 2;
 const int idx_byte_array	= 3;
 const int idx_metadata		= 4;
 const int idx_sql_date		= 5;
 const int idx_sql_time		= 6;
-const int idx_timestamp		= 7;
+const int idx_timestamp2	= 7;
 const int idx_numeric2		= 8;	// Introduced for 64-bit Integer support
-const int idx_boolean		= 9;
 
 				   // idx_itype space for future expansion
 const int idx_first_intl_string	= 64;	// .. MAX (short) Range of computed key strings
 
 const int idx_offset_intl_range	= (0x7FFF + idx_first_intl_string);
 
-// these flags must match the irt_flags (see ods.h)
+// these flags must match the irt_flags
 
 const int idx_unique		= 1;
 const int idx_descending	= 2;
@@ -118,6 +122,7 @@ const int idx_in_progress	= 4;
 const int idx_foreign		= 8;
 const int idx_primary		= 16;
 const int idx_expressn		= 32;
+const int idx_complete_segs	= 64;
 
 // these flags are for idx_runtime_flags
 
@@ -125,14 +130,17 @@ const int idx_plan_dont_use	= 1;	// index is not mentioned in user-specified acc
 const int idx_plan_navigate	= 2;	// plan specifies index to be used for ordering
 const int idx_used 			= 4;	// index was in fact selected for retrieval
 const int idx_navigate		= 8;	// index was in fact selected for navigation
-const int idx_marker		= 16;	// marker used in procedure sort_indices
+const int idx_plan_missing	= 16;	// index mentioned in missing clause
+const int idx_plan_starts	= 32;	// index mentioned in starts clause
+const int idx_used_with_and	= 64;	// marker used in procedure sort_indices
+const int idx_marker		= 128;	// marker used in procedure sort_indices
 
 // Index insertion block -- parameter block for index insertions
 
 struct index_insertion
 {
 	RecordNumber iib_number;		// record number (or lower level page)
-	ULONG iib_sibling;				// right sibling page
+	SLONG iib_sibling;				// right sibling page
 	index_desc*	iib_descriptor;		// index descriptor
 	jrd_rel*	iib_relation;		// relation block
 	temporary_key*	iib_key;		// varying string for insertion
@@ -190,7 +198,7 @@ const int ISR_null		= 2;	// Record consists of NULL values only
 
 // Index retrieval block -- hold stuff for index retrieval
 
-class IndexRetrieval : public pool_alloc_rpt<ValueExprNode*, type_irb>
+class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 {
 public:
 	index_desc irb_desc;		// Index descriptor
@@ -200,7 +208,7 @@ public:
 	USHORT irb_lower_count;		// Number of segments for retrieval
 	USHORT irb_upper_count;		// Number of segments for retrieval
 	temporary_key*	irb_key;	// key for equality retrieval
-	ValueExprNode* irb_value[1];
+	jrd_nod* irb_value[1];
 };
 
 // Flag values for irb_generic
@@ -213,6 +221,16 @@ const int irb_descending	= 16;			// Base index uses descending order
 const int irb_exclude_lower	= 32;			// exclude lower bound keys while scanning index
 const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning index
 
+// macros used to manipulate btree nodes
+#define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
+
+#define NEXT_NODE(node)	(btree_nod*)(node->btn_data + node->btn_length)
+#define NEXT_NODE_RECNR(node)	(btree_nod*)(node->btn_data + node->btn_length + sizeof(SLONG))
+
+//#define LAST_NODE(page)	(btree_nod*) ((UCHAR*) page + page->btr_length)
+
+//#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
+
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
 class BtrPageGCLock : public Lock
@@ -222,7 +240,7 @@ class BtrPageGCLock : public Lock
 	// as second long needed for 8-byte key already "allocated" by compiler
 	// because of alignment rules. Anyway, to be formally correct, let introduce
 	// 4-byte field for guarantee we have space for lock key.
-	ULONG unused;
+	SLONG unused;
 
 public:
 	explicit BtrPageGCLock(thread_db* tdbb);

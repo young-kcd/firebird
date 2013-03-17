@@ -61,12 +61,12 @@ public:
 	MetaName(const char* s) { assign(s); }
 	MetaName(const char* s, size_t l) { assign(s, l); }
 	MetaName(const MetaName& m) { set(m); }
-	MetaName(const AbstractString& s) { assign(s.c_str(), s.length()); }
+	MetaName(const string& s) { assign(s.c_str(), s.length()); }
 	explicit MetaName(MemoryPool&) { init(); count = 0; }
 	MetaName(MemoryPool&, const char* s) { assign(s); }
 	MetaName(MemoryPool&, const char* s, size_t l) { assign(s, l); }
 	MetaName(MemoryPool&, const MetaName& m) { set(m); }
-	MetaName(MemoryPool&, const AbstractString& s) { assign(s.c_str(), s.length()); }
+	MetaName(MemoryPool&, const string& s) { assign(s.c_str(), s.length()); }
 
 	MetaName& assign(const char* s, size_t l);
 	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
@@ -77,12 +77,8 @@ public:
 
 	size_t length() const { return count; }
 	const char* c_str() const { return data; }
-	const char* nullStr() const { return (count == 0 ? NULL : data); }
 	bool isEmpty() const { return count == 0; }
 	bool hasData() const { return count != 0; }
-
-	const char* begin() const { return data; }
-	const char* end() const { return data + count; }
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
@@ -100,11 +96,24 @@ public:
 	void upper7();
 	void lower7();
 	void printf(const char*, ...);
-	size_t copyTo(char* to, size_t toSize) const;
 
 protected:
 	static void adjustLength(const char* const s, size_t& l);
 };
+
+// This class & macro are used to simplify calls from GDML
+class LoopMetaName : public Firebird::MetaName
+{
+	bool flag;
+	char* target;
+public:
+	LoopMetaName(char* s) : Firebird::MetaName(s),
+		flag(true), target(s) { }
+	~LoopMetaName() { strcpy(target, c_str()); }
+	operator bool() const { return flag; }
+	void stop() { flag = false; }
+};
+#define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())
 
 typedef Pair<Full<MetaName, MetaName> > MetaNamePair;
 

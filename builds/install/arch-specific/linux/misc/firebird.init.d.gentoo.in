@@ -50,19 +50,19 @@ if [ ! -x $GUARDIAN ]; then
 	GUARDIAN=@FB_SBINDIR@/fbguard
 fi
 
-start(){
+start() {
 	ebegin "Starting $FULLNAME"
 	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $GUARDIAN -- $FB_OPTS
 	eend $?
 }
 
-stop(){
+stop() {
 	ebegin "Stopping $FULLNAME"
 	start-stop-daemon --stop --pidfile $pidfile --oknodo
 	eend $?
 }
 
-restart(){
+restart() {
 	svc_stop
 	sleep 1
 	svc_start

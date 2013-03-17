@@ -32,7 +32,7 @@ export PidDir
 #------------------------------------------------------------------------
 # Get correct options & misc.
 
-psOptions=aww
+psOptions=-efaww
 export psOptions
 mktOptions=-q
 export mktOptions
@@ -48,12 +48,12 @@ TryAddGroup() {
 
 	AdditionalParameter=$1
 	testStr=`grep firebird /etc/group`
-
+	
     if [ -z "$testStr" ]
       then
         groupadd $AdditionalParameter firebird
     fi
-
+	
 }
 
 
@@ -61,11 +61,11 @@ TryAddUser() {
 
 	AdditionalParameter=$1
 	testStr=`grep firebird /etc/passwd`
-
+	
     if [ -z "$testStr" ]
       then
-        useradd $AdditionalParameter -d @FB_CONFDIR@ -s /sbin/nologin \
-            -c "Firebird Database Owner" -g firebird firebird
+        useradd $AdditionalParameter -d @FB_CONFDIR@ -s /bin/false \
+            -c "Firebird Database Owner" -g firebird firebird 
     fi
 
 }
@@ -153,7 +153,7 @@ getInitScriptLocation() {
 #  stop super server if it is running
 
 stopSuperServerIfRunning() {
-	checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
+	checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then
@@ -166,7 +166,7 @@ stopSuperServerIfRunning() {
 			do
        	    	$init_d stop
 				sleep 1
-				checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
+				checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
 				if [ -z "$checkString" ]
 				then
 					return
@@ -178,40 +178,35 @@ stopSuperServerIfRunning() {
 }
 
 #------------------------------------------------------------------------
-#  Create new password string - this routine is used only in
-#  silent mode of the install script.
+#  Generate new sysdba password - this routine is used only in the 
+#  rpm file not in the install script.
 
-createNewPassword() {
+generateNewDBAPassword() {
     # openssl generates random data.
 	openssl </dev/null >/dev/null 2&>/dev/null
     if [ $? -eq 0 ]
     then
-        # We generate 40 random chars, strip any '/''s and get the first 20
-        NewPasswd=`openssl rand -base64 40 | tr -d '/' | cut -c1-20`
+        # We generate 20 random chars, strip any '/''s and get the first 8
+        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
     fi
 
-	# If openssl is missing...
-	if [ -z "$NewPasswd" ]
-	then
-		NewPasswd=`dd if=/dev/urandom bs=10 count=1 2>/dev/null | od -x | head -n 1 | tr -d ' ' | cut -c8-27`
-	fi
+    # mkpasswd is a bit of a hassle, but check to see if it's there
+    if [ -z "$NewPasswd" ]
+    then
+        if [ -f /usr/bin/mkpasswd ]
+        then
+            NewPasswd=`/usr/bin/mkpasswd -l 8`
+        fi
+    fi
 
-	# On some systems even this routines may be missing. So if
+	# On some systems the mkpasswd program doesn't appear and on others
+	# there is another mkpasswd which does a different operation.  So if
 	# the specific one isn't available then keep the original password.
     if [ -z "$NewPasswd" ]
     then
         NewPasswd="masterkey"
     fi
 
-	echo "$NewPasswd"
-}
-
-#------------------------------------------------------------------------
-#  Generate new sysdba password - this routine is used only in
-#  silent mode of the install script.
-
-generateNewDBAPassword() {
-	NewPasswd=`createNewPassword`
     writeNewPassword $NewPasswd
 }
 
@@ -302,7 +297,7 @@ EOF
         initScript=/etc/rc.d/init.d/firebird
     fi
 
-
+	
 	if [ "$initScript" ]
 	then
 	    # Install the firebird init.d script
@@ -325,13 +320,13 @@ EOF
     	elif [ -x /sbin/insserv ]
 	    then
     	    /sbin/insserv /etc/init.d/firebird
-
+	
 		# One more way to register service - used in Knoppix (& Debian ?)
     	elif [ -x /usr/sbin/update-rc.d ]
 	    then
 			/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 20 0 1 6 .
 	    fi
-
+	
     	# More SuSE - rc.config fillup
 	    if [ -f /etc/rc.config ]
     	then
@@ -343,7 +338,7 @@ EOF
     	then
         	cp @FB_MISCDIR@/rc.config.firebird /etc/sysconfig/firebird
 	    fi
-
+	
 	else
 		echo "Couldn't autodetect linux type. You must select"
 		echo "the most appropriate startup script in @FB_MISCDIR@"
@@ -374,19 +369,15 @@ startService() {
     then
 		"$InitFile" start
 
-		checkString=`ps -eaf | egrep "\b(firebird)\b" |grep -v grep`
+		checkString=`ps -eaf | egrep "\b(fbserver|fb_smp_server)\b" |grep -v grep`
 		if [ -z "$checkString" ]
 		then
-			# server didn't start - wait a bit and recheck
-			sleep 2
+			# server didn't start - possible reason bad shell /bin/false for user "firebird"
+			echo
+			echo Fixing firebird\'s shell to /bin/sh
+			echo
+			usermod -s /bin/sh firebird
 			"$InitFile" start
-
-			checkString=`ps -eaf | egrep "\b(firebird)\b" |grep -v grep`
-			if [ -z "$checkString" ]
-			then
-				echo "Looks like standalone server failed to start"
-				echo "Trying to continue anyway..."
-			fi
 		fi
 	fi
 }
@@ -402,7 +393,7 @@ removeServiceAutostart() {
 		if [ -x /sbin/insserv ]; then
 			/sbin/insserv /etc/init.d/
 		fi
-
+     
 		if [ -x /sbin/chkconfig ]; then
 			/sbin/chkconfig --del firebird
 		fi
@@ -416,41 +407,15 @@ removeServiceAutostart() {
 		then
 			rm -f /usr/sbin/rcfirebird
 		fi
-
+        
 		# Remove initd script
-		rm -f $InitFile
-	fi
-}
+		if [ -e /etc/init.d/firebird ]; then
+			rm -f /etc/init.d/firebird
+		fi
 
-#------------------------------------------------------------------------
-# Returns TRUE if SA server is installed
-
-isStandaloneServerInstalled() {
-	InitFile=`getInitScriptLocation`
-	if [ -f "$InitFile" ]; then
-		return 0
-	fi
-	return 1
-}
-
-#------------------------------------------------------------------------
-# Corrects build-time "libdir" value
-
-CorrectLibDir() {
-	ld=${1}
-	l=/usr/lib
-	l64=/usr/lib64
-
-	if [ "$ld" = "$l64" ]
-	then
-		if [ -d "$l" ]
-		then
-			if [ ! -d "$l64" ]
-			then
-				ld="$l"
-			fi
+		if [ -e /etc/rc.d/init.d/firebird ]; then
+			rm -f /etc/rc.d/init.d/firebird
 		fi
 	fi
-
-	echo "$ld"
 }
+

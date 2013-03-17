@@ -190,12 +190,6 @@ namespace Firebird
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
-		T& insert(size_t index)
-		{
-			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
-			inherited::insert(index, dataL);
-			return *dataL;
-		}
 		size_t add(const T& item)
 		{
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
@@ -235,38 +229,6 @@ namespace Firebird
 				delete getPointer(i);
 			}
 			inherited::shrink(newCount);
-		}
-		void grow(size_t newCount)
-		{
-			size_t oldCount = getCount();
-			inherited::grow(newCount);
-			for (size_t i = oldCount; i < newCount; i++) {
-				inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool());
-			}
-		}
-		void resize(const size_t newCount, const T& val)
-		{
-			if (newCount > getCount())
-			{
-				size_t oldCount = getCount();
-				inherited::grow(newCount);
-				for (size_t i = oldCount; i < newCount; i++) {
-					inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool(), val);
-				}
-			}
-			else {
-				shrink(newCount);
-			}
-		}
-		void resize(const size_t newCount)
-		{
-			if (newCount > getCount())
-			{
-				grow(newCount);
-			}
-			else {
-				shrink(newCount);
-			}
 		}
 		iterator begin()
 		{
@@ -316,11 +278,6 @@ namespace Firebird
 
 		size_t getCount() const {return inherited::getCount();}
 		size_t getCapacity() const {return inherited::getCapacity();}
-
-		bool hasData() const
-		{
-			return getCount() != 0;
-		}
 
 		bool isEmpty() const
 		{
@@ -393,9 +350,7 @@ namespace Firebird
 		explicit SortedObjectsArray(MemoryPool& p) :
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
-				ObjectCmp> >(p)
-		{ }
-
+				ObjectCmp> >(p) { }
 		bool find(const ObjectKey& item, size_t& pos) const
 		{
 			const ObjectKey* const pItem = &item;
@@ -403,13 +358,11 @@ namespace Firebird
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
-
 		bool exist(const ObjectKey& item) const
 		{
-			size_t pos;	// ignored
+			size_t pos;
 			return find(item, pos);
 		}
-
 		size_t add(const ObjectValue& item)
 		{
 			return inherited::add(item);

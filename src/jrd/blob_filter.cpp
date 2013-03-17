@@ -27,19 +27,21 @@
 #include <stdio.h>
 
 #include "../common/config/config.h"
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ibase.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/tra.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/blf_proto.h"
 #include "../jrd/filte_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
-#include "../common/isc_s_proto.h"
+#include "../jrd/isc_s_proto.h"
 #include "gen/iberror.h"
 
 using namespace Jrd;
@@ -59,8 +61,7 @@ static const FPTR_BFILTER_CALLBACK filters[] =
 	filter_runtime,
 	filter_format,
 	filter_trans,
-	filter_trans,				// should be filter_external_file
-	filter_debug_info
+	filter_trans				// should be filter_external_file
 };
 
 
@@ -70,7 +71,7 @@ static void open_blob(thread_db*, jrd_tra*, BlobControl**, bid*,
 					  USHORT, BlobFilter*);
 
 
-void BLF_close_blob(thread_db* /*tdbb*/, BlobControl** filter_handle)
+void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
 {
 /**************************************
  *
@@ -146,11 +147,11 @@ void BLF_create_blob(thread_db* tdbb,
 }
 
 
-ISC_STATUS BLF_get_segment(thread_db* /*tdbb*/,
+ISC_STATUS BLF_get_segment(thread_db* tdbb,
 						   BlobControl** filter_handle,
 						   USHORT* length,
 						   USHORT buffer_length,
-						   void* buffer)
+						   UCHAR* buffer)
 {
 /**************************************
  *
@@ -167,7 +168,7 @@ ISC_STATUS BLF_get_segment(thread_db* /*tdbb*/,
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
-	control->ctl_buffer = static_cast<UCHAR*>(buffer);
+	control->ctl_buffer = buffer;
 	control->ctl_buffer_length = buffer_length;
 
 	ISC_STATUS status;
@@ -219,9 +220,8 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 		result->blf_from = from;
 		result->blf_to = to;
 		result->blf_filter = filters[from];
-		result->blf_exception_message.printf("Exception occurred in system provided internal "
-				"filters for filtering internal subtype %d to text.",
-			from);
+		result->blf_exception_message.printf("Exception occurred in system provided internal filters for filtering internal subtype %d to text.",
+				from);
 		return result;
 	}
 
@@ -257,10 +257,10 @@ void BLF_open_blob(thread_db* tdbb,
 }
 
 
-void BLF_put_segment(thread_db* /*tdbb*/,
+void BLF_put_segment(thread_db* tdbb,
 					 BlobControl** filter_handle,
 					 USHORT length,
-					 const void* buffer)
+					 const UCHAR* buffer)
 {
 /**************************************
  *
@@ -281,7 +281,7 @@ void BLF_put_segment(thread_db* /*tdbb*/,
 	// If the filter is ill behaved, it won't respect the constness
 	// even though it's job is to process the buffer and write the
 	// result.
-	control->ctl_buffer = static_cast<UCHAR*>(const_cast<void*>(buffer));
+	control->ctl_buffer = const_cast<UCHAR*>(buffer);
 	control->ctl_buffer_length = length;
 
 	ISC_STATUS status;
@@ -304,7 +304,7 @@ void BLF_put_segment(thread_db* /*tdbb*/,
 
 // SEH moved to separate function to avoid conflicts
 // with destructor of BlobControl
-inline void initializeFilter(thread_db* /*tdbb*/,
+inline void initializeFilter(thread_db *tdbb,
 							 ISC_STATUS &status,
 							 BlobControl* control,
 							 BlobFilter* filter,

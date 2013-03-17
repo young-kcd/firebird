@@ -30,7 +30,7 @@
 #ifndef CLASSES_TREE_H
 #define CLASSES_TREE_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include <string.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h> // XPG: prototypes for malloc/free have to be in stdlib.h (EKU)

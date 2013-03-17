@@ -24,7 +24,7 @@
 #ifndef BURP_BURP_PROTO_H
 #define BURP_BURP_PROTO_H
 
-#include "../common/ThreadData.h"
+#include "../jrd/ThreadData.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/UtilSvc.h"
 
@@ -48,3 +48,4 @@ void	BURP_verbose(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_verbose(USHORT, const char* str);
 
 #endif	//  BURP_BURP_PROTO_H
+

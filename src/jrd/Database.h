@@ -32,8 +32,9 @@
 
 #include "firebird.h"
 #include "../jrd/cch.h"
-#include "../common/gdsassert.h"
-#include "../common/dsc.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/common.h"
+#include "../jrd/dsc.h"
 #include "../jrd/btn.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/val.h"
@@ -50,145 +51,34 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
+#include "../common/classes/PublicHandle.h"
 #include "../common/classes/semaphore.h"
 #include "../common/utils_proto.h"
+#include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/RandomGenerator.h"
-#include "../common/os/guid.h"
+#include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
+#include "../jrd/os/thd_priority.h"
 #include "../jrd/event_proto.h"
-#include "../jrd/ExtEngineManager.h"
 #include "../lock/lock_proto.h"
-#include "../common/config/config.h"
-#include "../common/classes/SyncObject.h"
-#include "../common/classes/Synchronize.h"
-#include "fb_types.h"
+
+class CharSetContainer;
 
 namespace Jrd
 {
-template <typename T> class vec;
-class jrd_rel;
-class Shadow;
-class BlobFilter;
-class TipCache;
-class BackupManager;
-class ExternalFileDirectoryList;
-class MonitoringData;
-class GarbageCollector;
-class CryptoManager;
+	class Trigger;
+	template <typename T> class vec;
+	class jrd_prc;
+	class jrd_rel;
+	class Shadow;
+	class BlobFilter;
+	class TxPageCache;
+	class BackupManager;
+	class vcl;
 
-// general purpose vector
-template <class T, BlockType TYPE = type_vec>
-class vec_base : protected pool_alloc<TYPE>
-{
-public:
-	typedef typename Firebird::Array<T>::iterator iterator;
-	typedef typename Firebird::Array<T>::const_iterator const_iterator;
-
-	/*
-	static vec_base* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW(p) vec_base<T, TYPE>(p, len);
-	}
-
-	static vec_base* newVector(MemoryPool& p, const vec_base& base)
-	{
-		return FB_NEW(p) vec_base<T, TYPE>(p, base);
-	}
-	*/
-
-	size_t count() const { return v.getCount(); }
-	T& operator[](size_t index) { return v[index]; }
-	const T& operator[](size_t index) const { return v[index]; }
-
-	iterator begin() { return v.begin(); }
-	iterator end() { return v.end(); }
-
-	const_iterator begin() const { return v.begin(); }
-	const_iterator end() const { return v.end(); }
-
-	void clear() { v.clear(); }
-
-	T* memPtr() { return &v[0]; }
-
-	void resize(size_t n, T val = T()) { v.resize(n, val); }
-
-	void operator delete(void* mem) { MemoryPool::globalFree(mem); }
-
-protected:
-	vec_base(MemoryPool& p, int len)
-		: v(p, len)
-	{
-		v.resize(len);
-	}
-
-	vec_base(MemoryPool& p, const vec_base& base)
-		: v(p)
-	{
-		v = base.v;
-	}
-
-private:
-	Firebird::Array<T> v;
-};
-
-template <typename T>
-class vec : public vec_base<T, type_vec>
-{
-public:
-	static vec* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW(p) vec<T>(p, len);
-	}
-
-	static vec* newVector(MemoryPool& p, const vec& base)
-	{
-		return FB_NEW(p) vec<T>(p, base);
-	}
-
-	static vec* newVector(MemoryPool& p, vec* base, int len)
-	{
-		if (!base)
-			base = FB_NEW(p) vec<T>(p, len);
-		else if (len > (int) base->count())
-			base->resize(len);
-		return base;
-	}
-
-private:
-	vec(MemoryPool& p, int len) : vec_base<T, type_vec>(p, len) {}
-	vec(MemoryPool& p, const vec& base) : vec_base<T, type_vec>(p, base) {}
-};
-
-class vcl : public vec_base<ULONG, type_vcl>
-{
-public:
-	static vcl* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW(p) vcl(p, len);
-	}
-
-	static vcl* newVector(MemoryPool& p, const vcl& base)
-	{
-		return FB_NEW(p) vcl(p, base);
-	}
-
-	static vcl* newVector(MemoryPool& p, vcl* base, int len)
-	{
-		if (!base)
-			base = FB_NEW(p) vcl(p, len);
-		else if (len > (int) base->count())
-			base->resize(len);
-		return base;
-	}
-
-private:
-	vcl(MemoryPool& p, int len) : vec_base<ULONG, type_vcl>(p, len) {}
-	vcl(MemoryPool& p, const vcl& base) : vec_base<ULONG, type_vcl>(p, base) {}
-};
-
-typedef vec<TraNumber> TransactionsVector;
+	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 
 //
@@ -197,22 +87,27 @@ typedef vec<TraNumber> TransactionsVector;
 const ULONG DBB_damaged				= 0x1L;
 const ULONG DBB_exclusive			= 0x2L;		// Database is accessed in exclusive mode
 const ULONG DBB_bugcheck			= 0x4L;		// Bugcheck has occurred
+#ifdef GARBAGE_THREAD
 const ULONG DBB_garbage_collector	= 0x8L;		// garbage collector thread exists
 const ULONG DBB_gc_active			= 0x10L;	// ... and is actively working.
 const ULONG DBB_gc_pending			= 0x20L;	// garbage collection requested
+#endif
 const ULONG DBB_force_write			= 0x40L;	// Database is forced write
 const ULONG DBB_no_reserve			= 0x80L;	// No reserve space for versions
 const ULONG DBB_DB_SQL_dialect_3	= 0x100L;	// database SQL dialect 3
 const ULONG DBB_read_only			= 0x200L;	// DB is ReadOnly (RO). If not set, DB is RW
 const ULONG DBB_being_opened_read_only	= 0x400L;	// DB is being opened RO. If unset, opened as RW
 const ULONG DBB_not_in_use			= 0x800L;	// Database to be ignored while attaching
-const ULONG DBB_sweep_in_progress	= 0x1000L;	// A database sweep operation is in progress
-const ULONG DBB_security_db			= 0x2000L;	// ISC security database
-const ULONG DBB_suspend_bgio		= 0x4000L;	// Suspend I/O by background threads
-const ULONG DBB_new					= 0x8000L;	// Database object is just created
-const ULONG DBB_gc_cooperative		= 0x10000L;	// cooperative garbage collection
-const ULONG DBB_gc_background		= 0x20000L;	// background garbage collection by gc_thread
-const ULONG DBB_no_fs_cache			= 0x40000L;	// Not using file system cache
+const ULONG DBB_lck_init_done		= 0x1000L;	// LCK_init() called for the database
+const ULONG DBB_sweep_in_progress	= 0x2000L;	// A database sweep operation is in progress
+const ULONG DBB_security_db			= 0x4000L;	// ISC security database
+const ULONG DBB_suspend_bgio		= 0x8000L;	// Suspend I/O by background threads
+const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
+const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
+const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
+const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
+const ULONG DBB_destroying			= 0x100000L;	// database destructor is called
+const ULONG DBB_monitor_locking		= 0x200000L;	// monitoring lock is being acquired
 
 //
 // dbb_ast_flags
@@ -224,25 +119,180 @@ const ULONG DBB_shutdown			= 0x8L;		// Database is shutdown
 const ULONG DBB_shut_attach			= 0x10L;	// no new attachments accepted
 const ULONG DBB_shut_tran			= 0x20L;	// no new transactions accepted
 const ULONG DBB_shut_force			= 0x40L;	// forced shutdown in progress
-const ULONG DBB_shutdown_full		= 0x80L;	// Database fully shut down
-const ULONG DBB_shutdown_single		= 0x100L;	// Database is in single-user maintenance mode
-const ULONG DBB_monitor_off			= 0x200L;	// Database has the monitoring lock released
+const ULONG DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
+const ULONG DBB_shutdown_full		= 0x100L;	// Database fully shut down
+const ULONG DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
+const ULONG DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
 
-class Database : public pool_alloc<type_dbb>
+class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 {
+	class Sync : public Firebird::RefCounted
+	{
+	public:
+		Sync() : threadId(0), isAst(false)
+		{}
+
+		void lock(bool ast = false)
+		{
+			ThreadPriorityScheduler::enter();
+			++waiters;
+			syncMutex.enter();
+			--waiters;
+			threadId = getThreadId();
+			isAst = ast;
+		}
+
+		void unlock()
+		{
+			ThreadPriorityScheduler::exit();
+			isAst = false;
+			threadId = 0;
+			syncMutex.leave();
+		}
+
+		bool hasContention() const
+		{
+			return (waiters.value() > 0);
+		}
+
+	private:
+		~Sync()
+		{
+			if (threadId)
+			{
+				syncMutex.leave();
+			}
+		}
+
+		// copying is prohibited
+		Sync(const Sync&);
+		Sync& operator=(const Sync&);
+
+		Firebird::Mutex syncMutex;
+		Firebird::AtomicCounter waiters;
+		FB_THREAD_ID threadId;
+		bool isAst;
+	};
+
 public:
+
+	class SyncGuard
+	{
+	public:
+		explicit SyncGuard(Database* dbb, bool ast = false)
+			: sync(*dbb->dbb_sync)
+		{
+			if (!dbb->checkHandle())
+			{
+				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
+			}
+
+			sync.addRef();
+			sync.lock(ast);
+
+			if (!dbb->checkHandle())
+			{
+				sync.unlock();
+				sync.release();
+				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
+			}
+
+			if (ast && dbb->dbb_flags & DBB_destroying)
+			{
+				sync.unlock();
+				sync.release();
+				Firebird::LongJump::raise();
+			}
+		}
+
+		~SyncGuard()
+		{
+			try
+			{
+				sync.unlock();
+			}
+			catch (const Firebird::Exception&)
+			{
+				DtorException::devHalt();
+			}
+			sync.release();
+		}
+
+	private:
+		// copying is prohibited
+		SyncGuard(const SyncGuard&);
+		SyncGuard& operator=(const SyncGuard&);
+
+		Sync& sync;
+	};
+
+	class Checkout
+	{
+	public:
+		explicit Checkout(Database* dbb)
+			: sync(*dbb->dbb_sync)
+		{
+			sync.unlock();
+		}
+
+		~Checkout()
+		{
+			sync.lock();
+		}
+
+	private:
+		// copying is prohibited
+		Checkout(const Checkout&);
+		Checkout& operator=(const Checkout&);
+
+		Sync& sync;
+	};
+
+	class CheckoutLockGuard
+	{
+	public:
+		CheckoutLockGuard(Database* dbb, Firebird::Mutex& m)
+			: mutex(m)
+		{
+			if (!mutex.tryEnter())
+			{
+				Checkout dcoHolder(dbb);
+				mutex.enter();
+			}
+		}
+
+		~CheckoutLockGuard()
+		{
+			try {
+				mutex.leave();
+			}
+			catch (const Firebird::Exception&)
+			{
+				DtorException::devHalt();
+			}
+		}
+
+	private:
+		// copying is prohibited
+		CheckoutLockGuard(const CheckoutLockGuard&);
+		CheckoutLockGuard& operator=(const CheckoutLockGuard&);
+
+		Firebird::Mutex& mutex;
+	};
+
 	class SharedCounter
 	{
 		static const ULONG DEFAULT_CACHE_SIZE = 16;
 
 		struct ValueCache
 		{
-			Lock* lock;			// lock which holds shared counter value
-			SLONG curVal;		// current value of shared counter lock
-			SLONG maxVal;		// maximum cached value of shared counter lock
+			Lock* lock;
+			SLONG curVal;
+			SLONG maxVal;
 		};
 
 	public:
+
 		enum
 		{
 			ATTACHMENT_ID_SPACE = 0,
@@ -258,10 +308,13 @@ public:
 		void shutdown(thread_db* tdbb);
 
 	private:
+
 		static int blockingAst(void* arg);
 
 		ValueCache m_counters[TOTAL_ITEMS];
 	};
+
+	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
 	static Database* create()
 	{
@@ -299,51 +352,63 @@ public:
 		return fb_utils::genUniqueId();
 	}
 
-	Firebird::SyncObject	dbb_sync;
-	Firebird::SyncObject	dbb_sys_attach;		// syncronize operations with dbb_sys_attachments
-	Firebird::SyncObject	dbb_lck_sync;		// syncronize operations with att_long_locks at different attachments
+	bool checkHandle() const
+	{
+		if (!isKnownHandle())
+		{
+			return false;
+		}
 
-	MemoryPool* dbb_permanent;
+		return TypedHandle<type_dbb>::checkHandle();
+	}
+
+	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive
 
 	LockManager*	dbb_lock_mgr;
 	EventManager*	dbb_event_mgr;
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
-	Attachment* dbb_sys_attachments;	// System attachments
 	BufferControl*	dbb_bcb;			// Buffer control block
+	vec<jrd_rel*>*	dbb_relations;		// relation vector
+	vec<jrd_prc*>*	dbb_procedures;		// scanned procedures
 	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
-
-	Firebird::SyncObject	dbb_sh_counter_sync;
-
-	Firebird::SyncObject	dbb_shadow_sync;
+	jrd_tra*	dbb_sys_trans;			// system transaction
 	Shadow*		dbb_shadow;				// shadow control block
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
-
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
 	Lock*		dbb_monitor_lock;		// lock for monitoring purposes
 	PageManager dbb_page_manager;
 	vcl*		dbb_t_pages;			// pages number for transactions
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
+	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
 
-	Firebird::SyncObject	dbb_mon_sync;			// syncronize operations with dbb_monitor_lock
-	MonitoringData*			dbb_monitoring_data;	// monitoring data
+	DatabaseSnapshot::SharedData*	dbb_monitoring_data;	// monitoring data
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
-	ExtEngineManager dbb_extManager;	// external engine manager
 
-	Firebird::SyncObject	dbb_flush_count_mutex;
-	Firebird::RWLock		dbb_ast_lock;		// avoids delivering AST to going away database
-	Firebird::AtomicCounter dbb_ast_flags;		// flags modified at AST level
-	Firebird::AtomicCounter dbb_flags;
+	Firebird::Mutex dbb_meta_mutex;		// Mutex to protect metadata changes while dbb_sync is unlocked
+	Firebird::Mutex dbb_cmp_clone_mutex;
+	Firebird::Mutex dbb_exe_clone_mutex;
+	Firebird::Mutex dbb_flush_count_mutex;
+	Firebird::Mutex dbb_dyn_mutex;
+	Firebird::Mutex dbb_sys_dfw_mutex;
+
+	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
+
+	ULONG dbb_ast_flags;				// flags modified at AST level
+	ULONG dbb_flags;
 	USHORT dbb_ods_version;				// major ODS version number
 	USHORT dbb_minor_version;			// minor ODS version number
+	USHORT dbb_minor_original;			// minor ODS version at creation
 	USHORT dbb_page_size;				// page size
 	USHORT dbb_dp_per_pp;				// data pages per pointer page
 	USHORT dbb_max_records;				// max record per data page
 	USHORT dbb_max_idx;					// max number of indexes on a root page
+	USHORT dbb_max_sys_rel;				// max id of system relation
+	USHORT dbb_use_count;				// active count of threads
 
 #ifdef SUPERSERVER_V2
 	USHORT dbb_prefetch_sequence;		// sequence to pace frequency of prefetch requests
@@ -352,46 +417,64 @@ public:
 
 	Firebird::PathName dbb_filename;	// filename string
 	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
+	Firebird::string dbb_encrypt_key;	// encryption key
 
-	Firebird::SyncObject			dbb_pools_sync;
-	Firebird::Array<MemoryPool*>	dbb_pools;		// pools
+	MemoryPool* dbb_permanent;
+	MemoryPool* dbb_bufferpool;
 
-	Firebird::SyncObject				dbb_threads_sync;
-	thread_db*							dbb_active_threads;
+	Firebird::Array<MemoryPool*> dbb_pools;		// pools
 
-	TraNumber dbb_oldest_active;		// Cached "oldest active" transaction
-	TraNumber dbb_oldest_transaction;	// Cached "oldest interesting" transaction
-	TraNumber dbb_oldest_snapshot;		// Cached "oldest snapshot" of all active transactions
-	TraNumber dbb_next_transaction;		// Next transaction id used by NETWARE
+	Firebird::Array<jrd_req*> dbb_internal;		// internal requests
+	Firebird::Array<jrd_req*> dbb_dyn_req;		// internal dyn requests
+
+	SLONG dbb_oldest_active;			// Cached "oldest active" transaction
+	SLONG dbb_oldest_transaction;		// Cached "oldest interesting" transaction
+	SLONG dbb_oldest_snapshot;			// Cached "oldest snapshot" of all active transactions
+	SLONG dbb_next_transaction;			// Next transaction id used by NETWARE
 	SLONG dbb_attachment_id;			// Next attachment id for ReadOnly DB's
+	SLONG dbb_page_incarnation;			// Cache page incarnation counter
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
-	GarbageCollector*	dbb_garbage_collector;	// GarbageCollector class
+	Firebird::Semaphore dbb_writer_sem;	// Wake up cache writer
+	Firebird::Semaphore dbb_writer_init;// Cache writer initialization
+	Firebird::Semaphore dbb_writer_fini;// Cache writer finalization
+#ifdef SUPERSERVER_V2
+	// the code in cch.cpp is not tested for semaphore instead event !!!
+	Firebird::Semaphore dbb_reader_sem;	// Wake up cache reader
+	Firebird::Semaphore dbb_reader_init;// Cache reader initialization
+	Firebird::Semaphore dbb_reader_fini;// Cache reader finalization
+#endif
+
+#ifdef GARBAGE_THREAD
 	Firebird::Semaphore dbb_gc_sem;		// Event to wake up garbage collector
 	Firebird::Semaphore dbb_gc_init;	// Event for initialization garbage collector
 	Firebird::Semaphore dbb_gc_fini;	// Event for finalization garbage collector
+#endif
 
 	Firebird::MemoryStats dbb_memory_stats;
 
 	RuntimeStatistics dbb_stats;
-	TraNumber	dbb_last_header_write;	// Transaction id of last header page physical write
+	SLONG dbb_last_header_write;		// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
-	ULONG dbb_sweep_interval;			// Transactions between sweep
+	SLONG dbb_sweep_interval;			// Transactions between sweep
 	const ULONG dbb_lock_owner_id;		// ID for the lock manager
 	SLONG dbb_lock_owner_handle;		// Handle for the lock manager
 
 	USHORT unflushed_writes;			// unflushed writes
 	time_t last_flushed_write;			// last flushed write time
 
-	TipCache*		dbb_tip_cache;		// cache of latest known state of all transactions in system
-	TransactionsVector*	dbb_pc_transactions;				// active precommitted transactions
-	BackupManager*	dbb_backup_manager;						// physical backup manager
-	Firebird::TimeStamp dbb_creation_date; 					// creation date
-	ExternalFileDirectoryList* dbb_external_file_directory_list;
-	Firebird::RefPtr<Config> dbb_config;
+	crypt_routine dbb_encrypt;			// External encryption routine
+	crypt_routine dbb_decrypt;			// External decryption routine
+
+	Firebird::Array<CharSetContainer*>		dbb_charsets;	// intl character set descriptions
+	TxPageCache*	dbb_tip_cache;		// cache of latest known state of all transactions in system
+	vcl*		dbb_pc_transactions;	// active precommitted transactions
+	BackupManager*	dbb_backup_manager;	// physical backup manager
+	Firebird::TimeStamp dbb_creation_date; // creation date
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, UserFunction*> > > dbb_functions;	// User defined functions
 
 	SharedCounter dbb_shared_counter;
-	CryptoManager* dbb_crypto_manager;
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -399,19 +482,9 @@ public:
 	// returns an unique ID string for a database file
 	Firebird::string getUniqueFileId() const;
 
-#ifdef DEV_BUILD
-	// returns true if main lock is in exclusive state
-	bool locked() const
-	{
-		return dbb_sync.ourExclusiveLock();
-	}
-#endif
-
 	MemoryPool* createPool()
 	{
 		MemoryPool* const pool = MemoryPool::createPool(dbb_permanent, dbb_memory_stats);
-
-		Firebird::SyncLockGuard guard(&dbb_pools_sync, Firebird::SYNC_EXCLUSIVE, "Database::createPool");
 		dbb_pools.add(pool);
 		return pool;
 	}
@@ -420,25 +493,35 @@ public:
 
 private:
 	explicit Database(MemoryPool* p)
-	:	dbb_permanent(p),
-		dbb_page_manager(this, *p),
+	:	dbb_sync(FB_NEW(*getDefaultMemoryPool()) Sync),
+		dbb_page_manager(*p),
 		dbb_modules(*p),
-		dbb_extManager(*p),
 		dbb_filename(*p),
 		dbb_database_name(*p),
+		dbb_encrypt_key(*p),
+		dbb_permanent(p),
 		dbb_pools(*p, 4),
+		dbb_internal(*p),
+		dbb_dyn_req(*p),
 		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
-		dbb_tip_cache(NULL),
+		dbb_charsets(*p),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
-		dbb_external_file_directory_list(NULL)
+		dbb_functions(*p)
 	{
 		dbb_pools.add(p);
+		dbb_internal.grow(irq_MAX);
+		dbb_dyn_req.grow(drq_MAX);
 	}
 
 	~Database();
 
 public:
+	// temporary measure to avoid unstable state of lock file -
+	// this is anyway called in ~Database(), and in theory should be private
+	void releaseIntlObjects();			// defined in intl.cpp
+	void destroyIntlObjects();			// defined in intl.cpp
+
 	SLONG generateAttachmentId(thread_db* tdbb)
 	{
 		return dbb_shared_counter.generate(tdbb, SharedCounter::ATTACHMENT_ID_SPACE, 1);
@@ -454,18 +537,7 @@ public:
 		return dbb_shared_counter.generate(tdbb, SharedCounter::STATEMENT_ID_SPACE);
 	}
 
-	USHORT getMaxIndexKeyLength() const
-	{
-		return dbb_page_size / 4;
-	}
-
-	bool readOnly() const
-	{
-		return (dbb_flags & DBB_read_only) != 0;
-	}
-
 private:
-	static int blockingAstSharedCounter(void*);
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database

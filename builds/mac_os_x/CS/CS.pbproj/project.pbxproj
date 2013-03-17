@@ -1951,6 +1951,11 @@
 			path = autoconfig_msvc.h;
 			refType = 4;
 		};
+		F616C4560200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = blrtable.h;
+			refType = 4;
+		};
 		F616C4580200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = codetext.h;
@@ -3796,6 +3801,16 @@
 			path = blr.h;
 			refType = 4;
 		};
+		F616C5820200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = blrtable.cpp;
+			refType = 4;
+		};
+		F616C5830200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = blrtable.h;
+			refType = 4;
+		};
 		F616C5860200B0CF01EF0ADE = {
 			children = (
 				F616C5870200B0CF01EF0ADE,
@@ -4269,6 +4284,11 @@
 		F616C5E20200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = fun_proto.h;
+			refType = 4;
+		};
+		F616C5E30200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = functions.cpp;
 			refType = 4;
 		};
 		F616C5E40200B0CF01EF0ADE = {
@@ -5073,6 +5093,21 @@
 			path = qatest.cpp;
 			refType = 4;
 		};
+		F616C6910200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = quad.cpp;
+			refType = 4;
+		};
+		F616C6920200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = quad.h;
+			refType = 4;
+		};
+		F616C6930200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = quad_proto.h;
+			refType = 4;
+		};
 		F616C6940200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = que.h;
@@ -5411,6 +5446,11 @@
 		F616C6DA0200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = tpc.cpp;
+			refType = 4;
+		};
+		F616C6DB0200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = tpc.h;
 			refType = 4;
 		};
 		F616C6DC0200B0D001EF0ADE = {
@@ -7456,6 +7496,11 @@
 		F616C9250200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = example.mak;
+			refType = 4;
+		};
+		F616C9260200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = functions.c;
 			refType = 4;
 		};
 		F616C9270200B0D001EF0ADE = {

@@ -23,8 +23,6 @@
 #ifndef JRD_VIO_DEBUG_H
 #define JRD_VIO_DEBUG_H
 
-//#define VIO_DEBUG
-
 const int DEBUG_WRITES			= 1;
 const int DEBUG_WRITES_INFO		= 2;
 const int DEBUG_READS			= 3;
@@ -34,9 +32,7 @@ const int DEBUG_TRACE_INFO		= 6;
 const int DEBUG_TRACE_ALL		= 7;
 const int DEBUG_TRACE_ALL_INFO	= 8;
 
-// defined at vio.cpp
-extern int vio_debug_flag;
-void VIO_trace(int level, const char* format, ...);
+static int debug_flag;
 
 #endif /* JRD_VIO_DEBUG_H */
 

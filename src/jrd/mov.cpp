@@ -27,12 +27,12 @@
  */
 
 #include "firebird.h"
-#include "../common/gdsassert.h"
+#include "../jrd/common.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
 #include "../jrd/blb_proto.h"
-#include "../jrd/blb.h"
 #include "../jrd/cvt_proto.h"
 #include "../common/cvt.h"
 #include "../jrd/cvt2_proto.h"
@@ -133,13 +133,6 @@ void MOV_double_to_date(double real, SLONG fixed[2])
 }
 
 
-// Get the value of a boolean descriptor.
-bool MOV_get_boolean(const dsc* desc)
-{
-	return CVT_get_boolean(desc, ERR_post);
-}
-
-
 double MOV_get_double(const dsc* desc)
 {
 /**************************************
@@ -193,30 +186,53 @@ SINT64 MOV_get_int64(const dsc* desc, SSHORT scale)
 }
 
 
-void MOV_get_metaname(const dsc* desc, MetaName& name)
+void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 {
 /**************************************
  *
- *	M O V _ g e t _ m e t a n a m e
+ *	M O V _ g e t _ m e t a d a t a _ s t r
  *
  **************************************
  *
  * Functional description
  *	Copy string, which will afterward's
  *	be treated as a metadata name value,
- *	to the user-supplied object.
+ *	to the user-supplied buffer.
  *
  **************************************/
-	USHORT ttype;
-	UCHAR* ptr = NULL;
+	USHORT dummy_type;
+	UCHAR *ptr;
 
-	const USHORT length = CVT_get_string_ptr(desc, &ttype, &ptr, NULL, 0);
+	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr, NULL, 0);
 
-	fb_assert(length && ptr);
-	fb_assert(length <= MAX_SQL_IDENTIFIER_LEN);
-	fb_assert(ttype == ttype_metadata);
+#ifdef DEV_BUILD
+	if ((dummy_type != ttype_metadata) &&
+		(dummy_type != ttype_none) && (dummy_type != ttype_ascii))
+	{
+		ERR_bugcheck_msg("Expected METADATA name");
+	}
+#endif
 
-	name.assign(reinterpret_cast<char*>(ptr), length);
+	length = ptr ? MIN(length, buffer_length - 1) : 0;
+	memcpy(buffer, ptr, length);
+	buffer[length] = 0;
+}
+
+
+void MOV_get_name(const dsc* desc, TEXT* string)
+{
+/**************************************
+ *
+ *	M O V _ g e t _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get a name (max length 31, blank terminated) from a descriptor.
+ *
+ **************************************/
+
+	CVT2_get_name(desc, string);
 }
 
 
@@ -390,7 +406,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		Firebird::UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(desc, &temp, bpb);
 
-		Jrd::blb* blob = Jrd::blb::open2(tdbb, tdbb->getRequest()->req_transaction,
+		Jrd::blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<Jrd::bid*>(desc->dsc_address), bpb.getCount(), bpb.begin());
 
 		ULONG size;
@@ -407,28 +423,16 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 
 		*address = buffer.getBuffer(size);
 
-		size = blob->BLB_get_data(tdbb, *address, size, true);
+		size = BLB_get_data(tdbb, blob, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
-		{
 			ERR_post(Arg::Gds(isc_arith_except) <<
 					 Arg::Gds(isc_blob_truncation));
-		}
 
 		return size;
 	}
 
 	return CVT2_make_string2(desc, ttype, address, buffer);
-}
-
-
-Firebird::string MOV_make_string2(Jrd::thread_db* tdbb, const dsc* desc, USHORT ttype, bool limit)
-{
-	Jrd::MoveBuffer buffer;
-	UCHAR* ptr;
-	int len = MOV_make_string2(tdbb, desc, ttype, &ptr, buffer, limit);
-
-	return string((const char*) ptr, len);
 }
 
 
@@ -445,8 +449,11 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
  *
  **************************************/
 
-	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) || DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
-		Jrd::blb::move(tdbb, from, to, NULL);
+	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) ||
+		DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
+	{
+		BLB_move(tdbb, from, to, NULL);
+	}
 	else
 		CVT_move(from, to);
 }

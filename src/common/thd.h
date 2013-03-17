@@ -34,17 +34,7 @@
 void	THD_sleep(ULONG);
 void	THD_yield();
 
-#ifdef WIN_NT
-#include <windows.h>
-typedef DWORD ThreadId;
-#endif
-
-#ifdef USE_POSIX_THREADS
-#include "fb_pthread.h"
-typedef pthread_t ThreadId;
-#endif
-
 // thread ID
-ThreadId getThreadId() throw();
+FB_THREAD_ID getThreadId() throw();
 
 #endif // JRD_THD_H

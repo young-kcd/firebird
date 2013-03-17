@@ -26,11 +26,14 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <conio.h>
+#include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/servi_proto.h"
 #include "../utilities/install/registry.h"
 #include "../common/config/config.h"
+
+#define REMOTE_EXECUTABLE ((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
 
 static void svc_query(const char*, const char*, SC_HANDLE manager);
 static USHORT svc_query_ex(SC_HANDLE manager);
@@ -98,6 +101,18 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if ((*p) == '\\')
 			break;
 	}
+
+	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
+	// There is always an additional '\' OR a ':'.
+	while (p != directory)
+	{
+		--p;
+
+		if ((*p) == '\\' || (*p) == ':')
+			break;
+	}
+
+	// Truncate directory path
 	*p = '\0';
 
 	TEXT full_username[128];
@@ -162,6 +177,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				case 'C':
 					sw_arch = ARCH_CS;
+					break;
+
+				case 'M':
+					sw_arch = ARCH_SCS;
 					break;
 
 				case 'L':
@@ -327,13 +346,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	else
 		switches.printf("-s %s", instance);
 
-	if (sw_arch == ARCH_SS)
+    if (sw_arch == ARCH_SCS)
 		switches += " -m";
 
 	switch (sw_command)
 	{
 		case COMMAND_INSTALL:
-			// First, lets do the guardian, if it has been specified
+			/* First, lets do the guardian, if it has been specified */
 			if (sw_guardian)
 			{
 				status = SERVICES_install(manager,
@@ -364,11 +383,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					printf("Service \"%s\" successfully created.\n", guard_display_name.c_str());
 				}
 
-				// Set sw_startup to manual in preparation for install the service
+				/* Set sw_startup to manual in preparation for install the service */
 				sw_startup = STARTUP_DEMAND;
 			}
 
-			// do the install of the server
+			/* do the install of the server */
 			status = SERVICES_install(manager,
 									  remote_service_name.c_str(),
 									  remote_display_name.c_str(),
@@ -452,7 +471,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			break;
 
 		case COMMAND_START:
-			// Test for use of the guardian. If so, start the guardian else start the server
+			/* Test for use of the guardian. If so, start the guardian else start the server */
 			service = OpenService(manager, guard_service_name.c_str(), SERVICE_START);
 			if (service)
 			{
@@ -481,7 +500,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			break;
 
 		case COMMAND_STOP:
-			// Test for use of the guardian. If so, stop the guardian else stop the server
+			/* Test for use of the guardian. If so, stop the guardian else stop the server */
 			service = OpenService(manager, guard_service_name.c_str(), SERVICE_STOP);
 			if (service)
 			{
@@ -743,7 +762,7 @@ static void usage_exit()
  *
  **************************************/
 	printf("\nUsage:\n");
-	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
+	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] | -m[ultithreaded] ]\n");
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
 	printf("                    [ -l[ogin] username [password] ]\n");
@@ -754,7 +773,7 @@ static void usage_exit()
 	printf("          sto[p]    [ -n[ame] instance ]\n");
 	printf("          q[uery]\n");
 	printf("          r[emove]  [ -n[ame] instance ]\n\n");
-	printf("  This utility should be located and run from the root directory\n");
+	printf("  This utility should be located and run from the 'bin' directory\n");
 	printf("  of your Firebird installation.\n\n");
 	printf("  '*' denotes the default values\n");
 	printf("  '-z' can be used with any other option, prints version\n");

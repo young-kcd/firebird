@@ -23,17 +23,17 @@
 #ifndef MSG_ENCODE_H
 #define MSG_ENCODE_H
 
-const ISC_STATUS ISC_MASK	= 0x14000000;	// Defines the code as a valid ISC code
-const ISC_STATUS FAC_MASK	= 0x00FF0000;	// Specifies the facility where the code is located
-const ISC_STATUS CODE_MASK	= 0x0000FFFF;	// Specifies the code in the message file
-const ISC_STATUS CLASS_MASK	= 0xF0000000;	// Defines the code as warning, error, info, or other
+const ISC_STATUS ISC_MASK	= 0x14000000;	/* Defines the code as a valid ISC code */
+const ISC_STATUS FAC_MASK	= 0x00FF0000;	/* Specifies the facility where the code is located */
+const ISC_STATUS CODE_MASK	= 0x0000FFFF;	/* Specifies the code in the message file */
+const ISC_STATUS CLASS_MASK	= 0xF0000000;	/* Defines the code as warning, error, info, or other */
 
-// The following definitions can be used to specify the context in
-// which a status code is used.
-
-//#define CLASS_ERROR		0L		// Code represents an error
-//#define CLASS_WARNING		1L		// Code represents a warning
-//#define CLASS_INFO		2L		// Code represents an information msg
+/* The following definitions can be used to specify the context in
+ * which a status code is used.
+ */
+//#define CLASS_ERROR		0L		/* Code represents an error */
+//#define CLASS_WARNING		1L	/* Code represents a warning */
+//#define CLASS_INFO		2L		/* Code represents an information msg */
 
 //#define MAKE_ERROR(code)	(code | (CLASS_ERROR & 0x3L) << 30)
 //#define MAKE_WARNING(code)	(code | (CLASS_WARNING & 0x3L) << 30)

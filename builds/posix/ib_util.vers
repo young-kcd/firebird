@@ -24,5 +24,12 @@
 #   Adriano dos Santos Fernandes
 #
 
-ib_util_malloc
-ib_util_init
+
+{
+global:
+	ib_util_malloc;
+	ib_util_init;
+
+local:
+	*;
+};

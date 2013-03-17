@@ -26,6 +26,7 @@
 #include <sys/param.h>
 #include <signal.h>
 
+#include "../jrd/common.h"
 #include "../jrd/license.h"
 
 #include <stdlib.h>
@@ -86,7 +87,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				switch (UPPER(c))
 				{
 				case 'Z':
-					printf("Firebird relay version %s\n", FB_VERSION);
+					printf("Firebird relay version %s\n", GDS_VERSION);
 					exit(FINI_OK);
 				}
 		}

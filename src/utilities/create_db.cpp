@@ -2,6 +2,7 @@
 #include "firebird.h"
 
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 #include "../common/classes/ClumpletWriter.h"
 #include <stdio.h>
 

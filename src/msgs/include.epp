@@ -23,10 +23,11 @@
 
 #include "firebird.h"
 #include <stdio.h>
+#include "../jrd/common.h"
 
 DATABASE DB = "msg.fdb";
 
-FILE* output;
+FILE *output;
 
 static bool check_option(const SCHAR*, SSHORT *, SCHAR **);
 static void define_format(const SCHAR*, SCHAR*);

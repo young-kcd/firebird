@@ -24,10 +24,14 @@
 #ifndef ISQL_ISQL_PROTO_H
 #define ISQL_ISQL_PROTO_H
 
+#include "../common/classes/SafeArg.h"
+
 void	ISQL_array_dimensions(const TEXT*);
+TEXT*	ISQL_blankterm2(const TEXT* input, TEXT* output);
 //void	ISQL_build_table_list(void**, FILE*, FILE*, FILE*);
 //void	ISQL_build_view_list(void**, FILE*, FILE*, FILE*);
 //int	ISQL_commit_work(int, FILE*, FILE*, FILE*);
+void	ISQL_copy_SQL_id(const TEXT*, TEXT*, TEXT);
 // CVC: Not found, probably in some lost GUI-related file.
 //int		ISQL_create_database(TEXT*,
 //								SCHAR**,
@@ -54,13 +58,22 @@ SSHORT	ISQL_init(FILE*, FILE*);
 bool	ISQL_is_domain(const TEXT*);
 #endif
 int		ISQL_main(int, char**);
-bool	ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldScale);
+void	ISQL_make_upper(TEXT*);
+void	ISQL_msg_get(USHORT number, TEXT* msg,
+					 const MsgFormat::SafeArg& args = MsgFormat::SafeArg());
+void	ISQL_msg_get(USHORT number, USHORT size, TEXT* msg,
+					 const MsgFormat::SafeArg& args = MsgFormat::SafeArg());
 void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, FB_API_HANDLE);
+void	ISQL_printf(FILE*, const char*);
+void	ISQL_printf2(FILE*, const char*, ...);
 //void	ISQL_query_database(SSHORT*, FILE*, FILE*, FILE*);
+void	ISQL_remove_and_unescape_quotes(TEXT* string, const char quote);
 //void	ISQL_reset_settings();
 void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
 //int	ISQL_sql_statement(TEXT*, FILE*, FILE*, FILE*);
+void	ISQL_truncate_term(TEXT*, USHORT);
 //void	ISQL_win_err(const char*);
 processing_state ISQL_print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE, int subtype);
 
 #endif // ISQL_ISQL_PROTO_H
+

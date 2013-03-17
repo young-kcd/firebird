@@ -40,29 +40,36 @@ if [ $RunUser = firebird ]; then
 	addFirebirdUser
 fi
 
+# Create the fbmgr shell script.
+if [ -x @FB_SBINDIR@/fbmgr.bin ]; then
+	cat > @FB_SBINDIR@/fbmgr <<EOF
+#!/bin/sh
+FIREBIRD=@FB_CONFDIR@
+export FIREBIRD
+exec @FB_SBINDIR@/fbmgr.bin \$@
+EOF
+fi
+
 # Update ownership and SUID bits for files.
 fixFilePermissions
 
 # Install script in /etc/init.d (exact location is distro dependent)
-installInitdScript
-
-# Prepare for uninstall
-buildUninstallFile
-
-# Create links to libraries in system lib directory
-createLinksInSystemLib
+installInitdScript @FIREBIRD_ARCH_TYPE@
 
 # Create libgds.so links
 createLinksForBackCompatibility
 
+# Prepare for uninstall
+buildUninstallFile
+
 # Update the /etc/inetd.conf or xinetd entry
 updateInetdServiceEntry
-
-# Add sysdba and set password (use embedded access)
-setDBAPassword
 
 # Get inetd to reread new init files.
 resetInetdServer
 
-# start the RDBMS server
-startService
+# start the db server so we can change the password
+startService @FIREBIRD_ARCH_TYPE@
+
+# Change sysdba password
+changeDBAPassword

@@ -23,7 +23,7 @@
 #ifndef JRD_RPB_CHAIN_H
 #define JRD_RPB_CHAIN_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include <string.h>
 
 #include "../common/classes/array.h"

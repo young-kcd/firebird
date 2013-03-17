@@ -31,6 +31,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
@@ -47,23 +48,23 @@
 #include "../jrd/lck.h"
 #include "../jrd/rse.h"
 #include "../jrd/cch.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/sort_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
-#include "../jrd/Collation.h"
 
 
 using namespace Jrd;
@@ -150,12 +151,12 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 				CMP_post_access(tdbb, csb,
 								referenced_relation->rel_security_name,
 								(view ? view->rel_id : 0),
-								SCL_references, SCL_object_table,
+								SCL_sql_references, "TABLE",
 								referenced_relation->rel_name);
 				CMP_post_access(tdbb, csb,
 								referenced_field->fld_security_name, 0,
-								SCL_references, SCL_object_column,
-								referenced_field->fld_name, referenced_relation->rel_name);
+								SCL_sql_references, "COLUMN",
+								referenced_field->fld_name);
 			}
 
 			CCH_RELEASE(tdbb, &referenced_window);
@@ -232,7 +233,6 @@ void IDX_create_index(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	if (relation->rel_file)
 	{
@@ -261,6 +261,7 @@ void IDX_create_index(thread_db* tdbb,
 	primary.rpb_number.setValue(BOF_NUMBER);
 	//primary.getWindow(tdbb).win_flags = secondary.getWindow(tdbb).win_flags = 0; redundant
 
+	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
 	const bool isDescending = (idx->idx_flags & idx_descending);
 	const bool isPrimary = (idx->idx_flags & idx_primary);
 
@@ -273,10 +274,13 @@ void IDX_create_index(thread_db* tdbb,
 	// Note that this is necessary only for single-segment ascending indexes
 	// and only for ODS11 and higher.
 
-	const int nullIndLen = !isDescending && (idx->idx_count == 1) ? 1 : 0;
+	const int nullIndLen = isODS11 && !isDescending && (idx->idx_count == 1) ? 1 : 0;
 	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SINT64));
 
-	if (key_length >= dbb->getMaxIndexKeyLength())
+	const USHORT max_key_size =
+		isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
+
+	if (key_length >= max_key_size)
 	{
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_keytoobig) << Arg::Str(index_name));
@@ -308,11 +312,13 @@ void IDX_create_index(thread_db* tdbb,
 	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
-	AutoPtr<Sort> scb(FB_NEW(transaction->tra_sorts.getPool())
-		Sort(attachment, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
-				  2, 1, key_desc, callback, callback_arg));
+	sort_context* sort_handle =
+		SORT_init(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
+				  2, 1, key_desc, callback, callback_arg);
 
-	jrd_rel* partner_relation = NULL;
+	try {
+
+	jrd_rel* partner_relation = 0;
 	USHORT partner_index_id = 0;
 	if (idx->idx_flags & idx_foreign)
 	{
@@ -329,10 +335,11 @@ void IDX_create_index(thread_db* tdbb,
 
 	// Unless this is the only attachment or a database restore, worry about
 	// preserving the page working sets of other attachments.
+	Attachment* attachment = tdbb->getAttachment();
 	if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 	{
 		if (attachment->att_flags & ATT_gbak_attachment ||
-			DPM_data_pages(tdbb, relation) > dbb->dbb_bcb->bcb_count)
+			DPM_data_pages(tdbb, relation) > (SLONG) dbb->dbb_bcb->bcb_count)
 		{
 			primary.getWindow(tdbb).win_flags = secondary.getWindow(tdbb).win_flags = WIN_large_scan;
 			primary.rpb_org_scans = secondary.rpb_org_scans = relation->rel_scan_count++;
@@ -341,7 +348,11 @@ void IDX_create_index(thread_db* tdbb,
 
 	// Loop thru the relation computing index keys.  If there are old versions, find them, too.
 	temporary_key key;
-	while (DPM_next(tdbb, &primary, LCK_read, false))
+	while (DPM_next(tdbb, &primary, LCK_read,
+#ifdef SCROLLABLE_CURSORS
+		false,
+#endif
+		false))
 	{
 		if (!VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
@@ -443,12 +454,11 @@ void IDX_create_index(thread_db* tdbb,
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-
 				ERR_post(Arg::Gds(isc_key_too_big));
 			}
 
 			UCHAR* p;
-			scb->put(tdbb, reinterpret_cast<ULONG**>(&p));
+			SORT_put(tdbb, sort_handle, reinterpret_cast<ULONG**>(&p));
 
 			// try to catch duplicates early
 
@@ -495,20 +505,30 @@ void IDX_create_index(thread_db* tdbb,
 	if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
 
-	scb->sort(tdbb);
+	SORT_sort(tdbb, sort_handle);
 
 	if (ifl_data.ifl_duplicates > 0) {
 		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
 
-	BTR_create(tdbb, relation, idx, key_length, scb, selectivity);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		SORT_fini(sort_handle);
+		ERR_punt();
+	}
+
+	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
 
 	if (ifl_data.ifl_duplicates > 0)
 	{
+		// we don't need SORT_fini() here, as it's called inside BTR_create()
 		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
 
-	if ((relation->rel_flags & REL_temp_conn) && (relation->getPages(tdbb)->rel_instance_id != 0))
+	if ((relation->rel_flags & REL_temp_conn) &&
+		(relation->getPages(tdbb)->rel_instance_id != 0))
 	{
 		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, idx->idx_id);
 		if (idx_lock)
@@ -539,7 +559,7 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	IndexBlock* index_block = FB_NEW(*relation->rel_pool) IndexBlock();
+	IndexBlock* index_block = FB_NEW(*dbb->dbb_permanent) IndexBlock();
 	index_block->idb_id = id;
 
 	// link the block in with the relation linked list
@@ -551,10 +571,16 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	// any modification to the index so that the cached information
 	// about the index will be discarded
 
-	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0)
-		Lock(tdbb, sizeof(SLONG), LCK_expression, index_block, index_block_flush);
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
 	index_block->idb_lock = lock;
+	lock->lck_parent = dbb->dbb_lock;
+	lock->lck_dbb = dbb;
 	lock->lck_key.lck_long = (relation->rel_id << 16) | index_block->idb_id;
+	lock->lck_length = sizeof(lock->lck_key.lck_long);
+	lock->lck_type = LCK_expression;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_ast = index_block_flush;
+	lock->lck_object = index_block;
 
 	return index_block;
 }
@@ -609,7 +635,7 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
  *
  **************************************/
 	SET_TDBB(tdbb);
-
+	
 	fb_assert(relPages->rel_index_root);
 
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
@@ -680,7 +706,10 @@ idx_e IDX_erase(thread_db* tdbb, record_param* rpb,
 }
 
 
-void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going, RecordStack& staying)
+void IDX_garbage_collect(thread_db*			tdbb,
+						 record_param*		rpb,
+						 RecordStack& going,
+						 RecordStack& staying)
 {
 /**************************************
  *
@@ -716,13 +745,7 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 			for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1)
 			{
 				Record* rec1 = stack1.object();
-
-				idx_e result = BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0, false);
-				if (result != idx_e_ok)
-				{
-					CCH_RELEASE(tdbb, &window);
-					ERR_duplicate_error(result, rpb->rpb_relation, idx.idx_id);
-				}
+				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0, false);
 
 				// Cancel index if there are duplicates in the remaining records
 
@@ -730,14 +753,7 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 				for (++stack2; stack2.hasData(); ++stack2)
 				{
 					Record* rec2 = stack2.object();
-
-					result = BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
-					if (result != idx_e_ok)
-					{
-						CCH_RELEASE(tdbb, &window);
-						ERR_duplicate_error(result, rpb->rpb_relation, idx.idx_id);
-					}
-
+					BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
 					if (key_equal(&key1, &key2))
 						break;
 				}
@@ -750,14 +766,7 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 				for (; stack3.hasData(); ++stack3)
 				{
 					Record* rec3 = stack3.object();
-
-					result = BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0, false);
-					if (result != idx_e_ok)
-					{
-						CCH_RELEASE(tdbb, &window);
-						ERR_duplicate_error(result, rpb->rpb_relation, idx.idx_id);
-					}
-
+					BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0, false);
 					if (key_equal(&key1, &key2))
 						break;
 				}
@@ -820,19 +829,18 @@ idx_e IDX_modify(thread_db* tdbb,
 	{
 		*bad_index = idx.idx_id;
 		*bad_relation = new_rpb->rpb_relation;
-		if ((error_code =
-				BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, 0, false)) ||
-			(error_code =
-				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, 0, false)))
+		if ( (error_code =
+			BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, 0, false)) )
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
+		BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, 0, false);
 		if (!key_equal(&key1, &key2))
 		{
-			if ((error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
+			if (( error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
 										  transaction, &window, &insertion, bad_relation,
-										  bad_index)))
+										  bad_index)) )
 			{
 				return error_code;
 			}
@@ -1010,31 +1018,65 @@ static idx_e check_duplicates(thread_db* tdbb,
 
 	idx_e result = idx_e_ok;
 	index_desc* insertion_idx = insertion->iib_descriptor;
-	record_param rpb;
+	record_param rpb, old_rpb;
 	rpb.rpb_relation = insertion->iib_relation;
 	rpb.rpb_record = NULL;
+	// rpb.getWindow(tdbb).win_flags = 0; redundant.
+
+	old_rpb.rpb_relation = insertion->iib_relation;
+	old_rpb.rpb_record = NULL;
 
 	jrd_rel* const relation_1 = insertion->iib_relation;
 	Firebird::HalfStaticArray<UCHAR, 256> tmp;
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
-	fb_assert(tdbb->tdbb_status_vector[1] == 0);
+	ThreadStatusGuard local_status(tdbb);
 
 	if (accessor.getFirst())
 	do {
-		bool rec_tx_active;
+		bool has_old_values;
 		const bool is_fk = (record_idx->idx_flags & idx_foreign) != 0;
 
 		rpb.rpb_number.setValue(accessor.current());
 
 		if (rpb.rpb_number != insertion->iib_number &&
-			VIO_get_current(tdbb, &rpb, insertion->iib_transaction, tdbb->getDefaultPool(),
-							is_fk, rec_tx_active) )
+			VIO_get_current(tdbb, /*&old_rpb,*/ &rpb, insertion->iib_transaction, tdbb->getDefaultPool(),
+							is_fk, has_old_values) )
 		{
-			// hvlad: if record's transaction is still active, we should consider
-			// it as present and prevent duplicates
+			// dimitr: we shouldn't ignore status exceptions which take place
+			//		   inside the lock manager. Namely, they are: isc_deadlock,
+			//		   isc_lock_conflict, isc_lock_timeout. Otherwise we may
+			//		   have logically corrupted database as a result. If any
+			//		   of the mentioned errors appeared, it means that there's
+			//		   an active transaction out there which has modified our
+			//		   record. For "nowait" transaction, it means we have
+			//		   an update conflict.
+			//
+			// was: if (rpb.rpb_flags & rpb_deleted) {
+			//
+			// P.S. I think the check for a status vector should be enough,
+			//      but for sure let's keep the old one as well.
+			//														2003.05.27
 
-			if ((rpb.rpb_flags & rpb_deleted) || rec_tx_active)
+			const bool lock_error =
+				(tdbb->tdbb_status_vector[1] == isc_deadlock ||
+				tdbb->tdbb_status_vector[1] == isc_lock_conflict ||
+				tdbb->tdbb_status_vector[1] == isc_lock_timeout);
+			// the above errors are not thrown but returned silently
+
+			if (lock_error)
+			{
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+			}
+
+			if (rpb.rpb_flags & rpb_deleted || lock_error)
+			{
+				result = idx_e_duplicate;
+				break;
+			}
+
+			const bool has_cur_values = !(rpb.rpb_flags & rpb_deleted);
+			if (!has_cur_values && !has_old_values)
 			{
 				result = idx_e_duplicate;
 				break;
@@ -1056,18 +1098,46 @@ static idx_e check_duplicates(thread_db* tdbb,
 
 				desc1 = *desc_idx;
 				const USHORT idx_dsc_length = record_idx->idx_expression_desc.dsc_length;
-				desc1.dsc_address = tmp.getBuffer(idx_dsc_length + FB_DOUBLE_ALIGN);
-				desc1.dsc_address = (UCHAR*) FB_ALIGN((U_IPTR) desc1.dsc_address, FB_DOUBLE_ALIGN);
+				desc1.dsc_address = tmp.getBuffer(idx_dsc_length);
 				fb_assert(desc_idx->dsc_length <= idx_dsc_length);
 				memmove(desc1.dsc_address, desc_idx->dsc_address, desc_idx->dsc_length);
 
 				bool flag_rec = false;
-				const dsc* desc_rec = BTR_eval_expression(tdbb, insertion_idx, rpb.rpb_record, flag_rec);
+				const dsc* desc_rec = has_cur_values ?
+					BTR_eval_expression(tdbb, insertion_idx, rpb.rpb_record, flag_rec) : NULL;
 
-				if (flag_rec && flag_idx && (MOV_compare(desc_rec, &desc1) == 0))
+				const bool equal_cur = has_cur_values && flag_rec && flag_idx &&
+					(MOV_compare(desc_rec, &desc1) == 0);
+
+				if (!is_fk && equal_cur)
 				{
 					result = idx_e_duplicate;
 					break;
+				}
+
+				if (has_old_values)
+				{
+					desc_rec = BTR_eval_expression(tdbb, insertion_idx, old_rpb.rpb_record, flag_rec);
+
+					const bool equal_old = flag_rec && flag_idx &&
+						(MOV_compare(desc_rec, &desc1) == 0);
+
+					if (is_fk)
+					{
+						if (equal_cur && equal_old)
+						{
+							result = idx_e_duplicate;
+							break;
+						}
+					}
+					else
+					{
+						if (equal_cur || equal_old)
+						{
+							result = idx_e_duplicate;
+							break;
+						}
+					}
 				}
 			}
 			else
@@ -1076,19 +1146,48 @@ static idx_e check_duplicates(thread_db* tdbb,
 				USHORT i;
 				for (i = 0; i < insertion_idx->idx_count; i++)
 				{
-					USHORT field_id = insertion_idx->idx_rpt[i].idx_field;
-					// In order to "map a null to a default" value (in EVL_field()),
-					// the relation block is referenced.
-					// Reference: Bug 10116, 10424
-					const bool flag_rec = EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
-
-					field_id = record_idx->idx_rpt[i].idx_field;
+					bool flag_cur = false;
+					USHORT field_id = record_idx->idx_rpt[i].idx_field;
 					const bool flag_idx = EVL_field(relation_2, record, field_id, &desc2);
 
-					if (flag_rec != flag_idx || (flag_rec && (MOV_compare(&desc1, &desc2) != 0) ))
+					if (has_cur_values)
+					{
+						field_id = insertion_idx->idx_rpt[i].idx_field;
+						// In order to "map a null to a default" value (in EVL_field()),
+						// the relation block is referenced.
+						// Reference: Bug 10116, 10424
+						flag_cur = EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
+					}
+
+					const bool not_equal_cur = !has_cur_values ||
+						has_cur_values &&
+							( (flag_cur != flag_idx) || (flag_cur && (MOV_compare(&desc1, &desc2) != 0)) );
+
+					if ((is_fk || !has_old_values) && not_equal_cur)
 						break;
 
-					all_nulls = all_nulls && !flag_rec && !flag_idx;
+					if (has_old_values)
+					{
+						field_id = insertion_idx->idx_rpt[i].idx_field;
+						const bool flag_old =
+							EVL_field(relation_1, old_rpb.rpb_record, field_id, &desc1);
+
+						const bool not_equal_old =
+							(flag_old != flag_idx || (flag_cur && (MOV_compare(&desc1, &desc2) != 0)) );
+
+						if (is_fk)
+						{
+							if (not_equal_cur || not_equal_old)
+								break;
+						}
+						else
+						{
+							if (not_equal_cur && not_equal_old)
+								break;
+						}
+					}
+
+					all_nulls = all_nulls && !flag_cur && !flag_idx;
 				}
 
 				if (i >= insertion_idx->idx_count && !all_nulls)
@@ -1101,6 +1200,11 @@ static idx_e check_duplicates(thread_db* tdbb,
 	} while (accessor.getNext());
 
 	delete rpb.rpb_record;
+	delete old_rpb.rpb_record;
+
+	if (local_status[1]) {
+		local_status.copyToOriginal();
+	}
 
 	return result;
 }
@@ -1404,14 +1508,18 @@ static int index_block_flush(void* ast_object)
  *	out and release the lock.
  *
  **************************************/
-	IndexBlock* const index_block = static_cast<IndexBlock*>(ast_object);
+	IndexBlock* index_block = static_cast<IndexBlock*>(ast_object);
 
 	try
 	{
-		Lock* const lock = index_block->idb_lock;
-		Database* const dbb = lock->lck_dbb;
+		Lock* lock = index_block->idb_lock;
+		Database* dbb = lock->lck_dbb;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock);
+		Database::SyncGuard dsGuard(dbb, true);
+
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(lock->lck_attachment);
 
 		release_index_block(tdbb, index_block);
 	}
@@ -1479,7 +1587,7 @@ static idx_e insert_key(thread_db* tdbb,
 		result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 		CCH_RELEASE(tdbb, window_ptr);
 		idx->idx_flags &= ~idx_unique;
-		if (result == idx_e_ok && null_state == idx_nulls_none)
+		if (null_state == idx_nulls_none)
 		{
 			result = check_foreign_key(tdbb, record, insertion->iib_relation,
 									   transaction, idx, bad_relation, bad_index);
@@ -1579,10 +1687,12 @@ static void release_index_block(thread_db* tdbb, IndexBlock* index_block)
  *	Release index block structure.
  *
  **************************************/
-	if (index_block->idb_expression_statement)
-		index_block->idb_expression_statement->release(tdbb);
+	if (index_block->idb_expression_request)
+	{
+		CMP_release(tdbb, index_block->idb_expression_request);
+	}
 
-	index_block->idb_expression_statement = NULL;
+	index_block->idb_expression_request = NULL;
 	index_block->idb_expression = NULL;
 	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(dsc));
 

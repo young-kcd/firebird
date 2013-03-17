@@ -35,13 +35,13 @@
 #define DNOLEN      3
 
 
-int getins (char *, int);
+int getline (char *, int);
 int cleanup (void);
 
 
 
-isc_db_handle    DB = 0;                /* database handle */
-isc_tr_handle    trans = 0;             /* transaction handle */
+isc_db_handle    DB = NULL;             /* database handle */
+isc_tr_handle    trans = NULL;          /* transaction handle */
 ISC_STATUS_ARRAY status;                /* status vector */
 char             Db_name[128];
 
@@ -50,7 +50,7 @@ int main (int argc, char** argv)
     int                 n = 0;
     char                exec_str[MAXLEN];
     char                prep_str[MAXLEN];
-    isc_stmt_handle     double_budget = 0;    /* statement handle */
+    isc_stmt_handle     double_budget = NULL;    /* statement handle */
 
     if (argc > 1)
         strcpy(Db_name, argv[1]);
@@ -83,7 +83,7 @@ int main (int argc, char** argv)
     }
 
     /* Prepare the statement. */
-    if (isc_dsql_prepare(status, &trans, &double_budget, 0, prep_str, 3, NULL))
+    if (isc_dsql_prepare(status, &trans, &double_budget, 0, prep_str, 1, NULL))
     {
         ERREXIT(status, 1)
     }
@@ -95,11 +95,11 @@ int main (int argc, char** argv)
      *  use 'execute immediate'.
      */
     
-    while (getins(exec_str, n++))
+    while (getline(exec_str, n++))
     {
         printf("\nExecuting statement:\n%d:\t%s;\n", n, exec_str);
 
-        if (isc_dsql_execute_immediate(status, &DB, &trans, 0, exec_str, 3, NULL))
+        if (isc_dsql_execute_immediate(status, &DB, &trans, 0, exec_str, 1, NULL))
         {
             ERREXIT(status, 1)
         }
@@ -110,7 +110,7 @@ int main (int argc, char** argv)
      */
     printf("\nExecuting a prepared statement:\n\t%s;\n\n", prep_str);
 
-    if (isc_dsql_execute(status, &trans, &double_budget, 3, NULL))
+    if (isc_dsql_execute(status, &trans, &double_budget, 1, NULL))
     {
         ERREXIT(status, 1)
     }
@@ -137,7 +137,7 @@ int main (int argc, char** argv)
  *  Construct an 'insert' statement from the supplied parameters.
  */
 
-int getins (char* line, int line_no)
+int getline (char* line, int line_no)
 {
     static char * Dept_data[] =
         {
