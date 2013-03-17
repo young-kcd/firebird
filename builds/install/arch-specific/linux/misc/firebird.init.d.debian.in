@@ -1,11 +1,11 @@
 #!/bin/sh
 
-# chkconfig: 345 80 20
+# chkconfig: 345 20 80
 # description: Start/Stop firebird database server
 #
 # This file belongs in /etc/init.d where it will be run
 # on system startup and shutdown to start the background
-# Firebird database server daemon 
+# Firebird/interbase database server daemon 
 
 ### BEGIN INIT INFO
 # Provides:          firebird
@@ -13,10 +13,10 @@
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start firebird server
+# Short-Description: Start firebird super-server
 # Description:       Start the firebird guardian process (fbguard)
 #                    which starts the actual firebird server process
-#                    (firebird) and makes sure there is always firebird
+#                    (fbserver) and makes sure there is always fbserver
 #                    running
 ### END INIT INFO
 
@@ -26,44 +26,26 @@
 # Source function library.
 #. /etc/rc.d/init.d/functions
 
-FIREBIRD=@FB_CONFDIR@
+
+FIREBIRD=@prefix@
 FBRunUser=firebird
-
-makeFbDir() {
-	mDir=${1}
-	mode=${2}
-	if [ ! -d $mDir ]; then
-		rm -rf $mDir
-		mkdir $mDir
-		if [ "$mode" ]; then
-			chmod $mode $mDir
-		fi
-	fi
-	chown $FBRunUser:$FBRunUser $mDir
-}
-runDir=/var/run/firebird
-makeFbDir $runDir
-lockDir=/tmp/firebird
-makeFbDir $lockDir 0770
-
-pidfile="$runDir/`basename $0`.pid"
-FB_OPTS="-pidfile $pidfile -daemon -forever"
+pidfile=/var/run/firebird/`basename $0`.pid
+FB_OPTS="-pidfile $pidfile -start -forever"
 export FIREBIRD
 
 ISC_USER=
 ISC_PASSWORD=
 export ISC_USER ISC_PASSWORD
 
-GUARDIAN=$FIREBIRD/bin/fbguard
-if [ ! -x $GUARDIAN ]; then
-	GUARDIAN=@FB_SBINDIR@/fbguard
-fi
+# Check the file is there and is executable.
+MANAGER=$FIREBIRD/bin/fbmgr.bin
+[ -x $MANAGER ] || exit 0
 
 # See how we were called.
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-	start-stop-daemon --start --quiet --oknodo --chuid $FBRunUser --exec $GUARDIAN -- $FB_OPTS
+	start-stop-daemon --start --quiet --oknodo --chuid $FBRunUser --exec $MANAGER -- $FB_OPTS
 	RETVAL=$?
 	;;
   stop)
@@ -83,7 +65,6 @@ case "$1" in
   	echo -n "Forcibly killing Firebird server..."
 	killall fbguard
 	killall fbserver
-	killall fb_smp_server
 	echo "done."
 	RETVAL=0
 	;;
@@ -93,3 +74,4 @@ case "$1" in
 esac
 
 exit $RETVAL
+

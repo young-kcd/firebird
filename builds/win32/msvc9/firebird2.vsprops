@@ -7,25 +7,21 @@
 	IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 	>
 	<Tool
-		Name="VCBscMakeTool"
-		OutputFile="$(IntDir)/$(ProjectName).bsc"
-	/>
-	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalOptions="/EHsc-"
 		OmitFramePointers="true"
-		AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/libtommath"
+		AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 		ExceptionHandling="0"
 		RuntimeTypeInfo="false"
 		PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch"
 		AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/"
 		ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/"
 		ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/"
-		BrowseInformation="1"
+		BrowseInformation="0"
+		BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 		WarningLevel="3"
 		SuppressStartupBanner="true"
 		DebugInformationFormat="3"
-		PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS"
 		CompileAs="0"
 		UseFullPaths="false"
 	/>
@@ -36,7 +32,6 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
-		LinkIncremental="1"
 		SuppressStartupBanner="true"
 		GenerateDebugInformation="true"
 		ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"

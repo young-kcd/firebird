@@ -31,6 +31,8 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: changegdslibrarycompatibleLink.sh.in,v 1.2.2.3 2008-12-25 12:26:50 alexpeshkoff Exp $
+# 
 
 
 # This script allows the user to change the link on classic for the 
@@ -76,6 +78,9 @@ printStatus() {
     
 
 
+
+    FBRootDir=@prefix@
+    FBBin=$FBRootDir/bin
 
     quitIfRealFile @libdir@/libgds.sl
     quitIfRealFile @libdir@/libgds.sl.0

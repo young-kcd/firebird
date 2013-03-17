@@ -24,20 +24,18 @@
 #ifndef DSQL_GEN_PROTO_H
 #define DSQL_GEN_PROTO_H
 
-namespace Jrd
+void	GEN_expr(dsql_req*, dsql_nod*);
+void	GEN_port(dsql_req*, dsql_msg*);
+void	GEN_request(dsql_req*, dsql_nod*);
+void	GEN_return(dsql_req*, const dsql_nod*, bool);
+void	GEN_start_transaction(dsql_req*, const dsql_nod*);
+void	GEN_statement(dsql_req*, dsql_nod*);
+
+inline UCHAR stuff(dsql_req* request, const UCHAR byte)
 {
-	class ExprNode;
-	class ValueListNode;
+	request->req_blr_data.add(byte);
+	return byte;
 }
 
-void	GEN_descriptor(Jrd::DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool texttype);
-void	GEN_expr(Jrd::DsqlCompilerScratch*, Jrd::ExprNode*);
-void	GEN_hidden_variables(Jrd::DsqlCompilerScratch* dsqlScratch);
-void	GEN_parameter(Jrd::DsqlCompilerScratch*, const Jrd::dsql_par*);
-void	GEN_port(Jrd::DsqlCompilerScratch*, Jrd::dsql_msg*);
-void	GEN_request(Jrd::DsqlCompilerScratch*, Jrd::DmlNode*);
-void	GEN_rse(Jrd::DsqlCompilerScratch*, Jrd::RseNode*);
-void	GEN_sort(Jrd::DsqlCompilerScratch*, Jrd::ValueListNode*);
-void	GEN_stuff_context(Jrd::DsqlCompilerScratch*, const Jrd::dsql_ctx*);
-
 #endif //  DSQL_GEN_PROTO_H
+

@@ -27,6 +27,8 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in,v 1.3.2.5 2008-12-26 13:47:36 alexpeshkoff Exp $
+#
 ROOT=..
 
 
@@ -73,14 +75,14 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 # This means something like: FirebirdCS-2.0.0-1.i386.tar
 
-TarDir= Firebird-$(Version).$(CpuType)
-TarFile=Firebird-$(Version).$(CpuType).tar
+TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
+TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar
 TgzFile=$(TarFile).gz
-DepotFile=Firebird-$(Version).$(CpuType).depot
-RPMFile=Firebird-$(Version).$(CpuType).rpm
-#DebugDir=Firebird-debuginfo-$(Version).$(CpuType)
-#DebugFile=Firebird-debuginfo-$(Version).$(CpuType).tar
-psfFile=firebird.psf
+DepotFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).depot
+RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
+#DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
+#DebugFile=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType).tar
+psfFile=firebird$(ArchPrefix).psf
 
 PkgSrcDir=$(InstallRoot)/$(ArchType)
 ScriptDir=$(GEN_ROOT)/install/scripts/
@@ -128,4 +130,4 @@ buildTarDir: buildImageDir
 	(cd $(GEN_ROOT)/buildroot; cp manifest.txt ../$(TarDir)/manifest.txt )
 
 install: buildTarDir
-	(cd $(GEN_ROOT)/$(TarDir); FIREBIRD= FIREBIRD_LOCK= ./install.sh)
+	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)

@@ -29,118 +29,40 @@
 #define JRD_INTL_CLASSES_H
 
 #include "firebird.h"
-
-#include "../common/intlobj_new.h"
+#include "../jrd/jrd.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
-#include "../common/unicode_util.h"
-#include "../common/CsConvert.h"
-#include "../common/CharSet.h"
-#include "../common/TextType.h"
+#include "../jrd/unicode_util.h"
+
+typedef SSHORT CHARSET_ID;
+typedef SSHORT COLLATE_ID;
+typedef USHORT TTYPE_ID;
 
 namespace Jrd {
 
-class PatternMatcher
-{
+class LikeObject {
 public:
-	PatternMatcher(MemoryPool& aPool, TextType* aTextType)
-		: pool(aPool),
-		  textType(aTextType)
-	{
-	}
-
-	virtual ~PatternMatcher()
-	{
-	}
-
 	virtual void reset() = 0;
-	virtual bool process(const UCHAR*, SLONG) = 0;
+	virtual bool process(thread_db*, TextType*, const UCHAR*, SLONG) = 0;
 	virtual bool result() = 0;
-
-protected:
-	MemoryPool& pool;
-	TextType* textType;
+	virtual ~LikeObject() {}
 };
 
-class BaseSubstringSimilarMatcher : public PatternMatcher
-{
+class ContainsObject {
 public:
-	BaseSubstringSimilarMatcher(MemoryPool& pool, TextType* ttype)
-		: PatternMatcher(pool, ttype)
-	{
-	}
-
-	virtual void getResultInfo(unsigned* start, unsigned* length) = 0;
+	virtual void reset() = 0;
+	virtual bool process(Jrd::thread_db*, Jrd::TextType*, const UCHAR*, SLONG) = 0;
+	virtual bool result() = 0;
+	virtual ~ContainsObject() {}
 };
 
-class NullStrConverter
-{
-public:
-	NullStrConverter(MemoryPool& /*pool*/, const TextType* /*obj*/, const UCHAR* /*str*/, SLONG /*len*/)
-	{
-	}
-};
+} //namespace Jrd
 
-template <typename PrevConverter = NullStrConverter>
-class UpcaseConverter : public PrevConverter
-{
-public:
-	UpcaseConverter(MemoryPool& pool, TextType* obj, const UCHAR*& str, SLONG& len)
-		: PrevConverter(pool, obj, str, len)
-	{
-		if (len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[len];
-		else
-			out_str = tempBuffer;
-		obj->str_to_upper(len, str, len, out_str);
-		str = out_str;
-	}
 
-	~UpcaseConverter()
-	{
-		if (out_str != tempBuffer)
-			delete[] out_str;
-	}
-
-private:
-	UCHAR tempBuffer[100];
-	UCHAR* out_str;
-};
-
-template <typename PrevConverter = NullStrConverter>
-class CanonicalConverter : public PrevConverter
-{
-public:
-	CanonicalConverter(MemoryPool& pool, TextType* obj, const UCHAR*& str, SLONG& len)
-		: PrevConverter(pool, obj, str, len)
-	{
-		const SLONG out_len = len / obj->getCharSet()->minBytesPerChar() * obj->getCanonicalWidth();
-
-		if (out_len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[out_len];
-		else
-			out_str = tempBuffer;
-
-		if (str)
-		{
-			len = obj->canonical(len, str, out_len, out_str) * obj->getCanonicalWidth();
-			str = out_str;
-		}
-		else
-			len = 0;
-	}
-
-	~CanonicalConverter()
-	{
-		if (out_str != tempBuffer)
-			delete[] out_str;
-	}
-
-private:
-	UCHAR tempBuffer[100];
-	UCHAR* out_str;
-};
-
-} // namespace Jrd
+#include "../jrd/CsConvert.h"
+#include "../jrd/CharSet.h"
+#include "../jrd/TextType.h"
+#include "../jrd/Collation.h"
 
 
 #endif	// JRD_INTL_CLASSES_H

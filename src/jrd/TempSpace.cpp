@@ -22,24 +22,20 @@
 
 #include "firebird.h"
 
-#include "iberror.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../common/gdsassert.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/os/path_utils.h"
+#include "../jrd/os/path_utils.h"
 
 #include "../jrd/TempSpace.h"
 
-using Firebird::TempFile;
-
 // Static definitions/initializations
 
-const size_t MIN_TEMP_BLOCK_SIZE = 64 * 1024;
+const size_t MIN_TEMP_BLOCK_SIZE	= 64 * 1024;
 
-Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
+Firebird::Mutex TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
 size_t TempSpace::minBlockSize = 0;
 offset_t TempSpace::globalCacheUsage = 0;
@@ -107,7 +103,7 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynam
 {
 	if (!tempDirs)
 	{
-		Firebird::MutexLockGuard guard(initMutex, FB_FUNCTION);
+		Firebird::MutexLockGuard guard(initMutex);
 		if (!tempDirs)
 		{
 			MemoryPool& def_pool = *getDefaultMemoryPool();
@@ -160,11 +156,12 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 		// search for the first needed block
 		Block* block = findBlock(offset);
 
-		UCHAR* p = static_cast<UCHAR*>(buffer);
+		char* p = static_cast<char*>(buffer);
 		size_t l = length;
 
 		// read data from the block chain
-		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
+		for (Block* itr = block; itr && l;
+			itr = itr->next, offset = 0)
 		{
 			const size_t n = itr->read(offset, p, l);
 			p += n;
@@ -196,13 +193,14 @@ size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
 	if (length)
 	{
 		// search for the first needed block
-		Block* const block = findBlock(offset);
+		Block* block = findBlock(offset);
 
-		const UCHAR* p = static_cast<const UCHAR*>(buffer);
+		const char* p = static_cast<const char*>(buffer);
 		size_t l = length;
 
 		// write data to as many blocks as necessary
-		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
+		for (Block* itr = block; itr && l;
+			itr = itr->next, offset = 0)
 		{
 			const size_t n = itr->write(offset, p, l);
 			p += n;
@@ -280,7 +278,7 @@ void TempSpace::extend(size_t size)
 			try
 			{
 				// allocate block in virtual memory
-				block = FB_NEW(pool) MemoryBlock(FB_NEW(pool) UCHAR[size], tail, size);
+				block = FB_NEW(pool) MemoryBlock(FB_NEW(pool) char[size], tail, size);
 				localCacheUsage += size;
 				globalCacheUsage += size;
 			}
@@ -293,8 +291,7 @@ void TempSpace::extend(size_t size)
 		if (!block)
 		{
 			// allocate block in the temp file
-			TempFile* const file = setupFile(size);
-			fb_assert(file);
+			TempFile* file = setupFile(size);
 			if (tail && tail->sameFile(file))
 			{
 				fb_assert(!initialSize);
@@ -372,15 +369,16 @@ TempFile* TempSpace::setupFile(size_t size)
 
 	for (size_t i = 0; i < tempDirs->getCount(); i++)
 	{
-		TempFile* file = NULL;
-
 		Firebird::PathName directory = (*tempDirs)[i];
 		PathUtils::ensureSeparator(directory);
+
+		TempFile* file = NULL;
 
 		for (size_t j = 0; j < tempFiles.getCount(); j++)
 		{
 			Firebird::PathName dirname, filename;
-			PathUtils::splitLastComponent(dirname, filename, tempFiles[j]->getName());
+			PathUtils::splitLastComponent(dirname, filename,
+										  tempFiles[j]->getName());
 			PathUtils::ensureSeparator(dirname);
 			if (!directory.compare(dirname))
 			{
@@ -399,7 +397,7 @@ TempFile* TempSpace::setupFile(size_t size)
 
 			file->extend(size);
 		}
-		catch (const Firebird::system_error& ex)
+		catch (const Firebird::system_call_failed& ex)
 		{
 			ex.stuff_exception(status_vector);
 			continue;
@@ -409,10 +407,8 @@ TempFile* TempSpace::setupFile(size_t size)
 	}
 
 	// no room in all directories
-	Firebird::Arg::Gds status(isc_out_of_temp_space);
-	status.append(Firebird::Arg::StatusVector(status_vector));
-	iscLogStatus(NULL, status.value());
-	status.raise();
+	gds__log_status("No free space found in temporary directories", status_vector);
+	Firebird::status_exception::raise(status_vector);
 
 	return NULL; // compiler silencer
 }
@@ -440,7 +436,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 	}
 
 	// If we didn't find any space, allocate it at the end of the file
-	if (!best)
+	if (!best) 
 	{
 		extend(size);
 		return getSize() - size;
@@ -466,7 +462,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 //
 // TempSpace::releaseSpace
 //
-// Return previously allocated segment back into not used segments list and
+// Return previously allocated segment back into not used segments list and 
 // join it with adjacent segments if found
 //
 
@@ -498,7 +494,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 
 		return;
 	}
-
+	
 	if (freeSegments.locate(Firebird::locLess, position))
 	{
 		// Check the prior segment for being adjacent
@@ -519,7 +515,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 // Return contiguous chunk of memory if present at given location
 //
 
-UCHAR* TempSpace::inMemory(offset_t begin, size_t size) const
+char* TempSpace::inMemory(offset_t begin, size_t size) const
 {
 	const Block* block = findBlock(begin);
 	return block ? block->inMemory(begin, size) : NULL;
@@ -528,29 +524,29 @@ UCHAR* TempSpace::inMemory(offset_t begin, size_t size) const
 //
 // TempSpace::findMemory
 //
-// Return contiguous chunk of memory and adjust starting offset
+// Return contiguous chunk of memory and adjust starting offset 
 // of search range if found
 //
 
-UCHAR* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
+char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 {
 	offset_t local_offset = begin;
 	const offset_t save_begin = begin;
 	const Block* block = findBlock(local_offset);
-
 	while (block && (begin + size <= end))
 	{
-		UCHAR* const mem = block->inMemory(local_offset, size);
-		if (mem)
+		char* mem = block->inMemory(local_offset, size);
+		if (mem) 
 		{
 			return mem;
 		}
-
-		begin += block->size - local_offset;
-		local_offset = 0;
-		block = block->next;
+		else 
+		{
+			begin += block->size - local_offset;
+			local_offset = 0;
+			block = block->next;
+		}
 	}
-
 	begin = save_begin;
 	return NULL;
 }
@@ -565,7 +561,7 @@ UCHAR* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 bool TempSpace::validate(offset_t& free) const
 {
 	free = 0;
-	FreeSegmentTree::ConstAccessor accessor(&freeSegments);
+	FreeSegmentTree::Accessor accessor(const_cast<FreeSegmentTree*>(&freeSegments));
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
 		const offset_t size = accessor.current().size;
@@ -584,11 +580,11 @@ bool TempSpace::validate(offset_t& free) const
 //
 // TempSpace::allocateBatch
 //
-// Allocate up to 'count' contiguous chunks of memory available in free
+// Allocate up to 'count' contiguous chunks of memory available in free 
 // segments if any. Adjust size of chunks between minSize and maxSize
-// accordingly to available free space (assuming all of the free space
+// accordingly to available free space (assuming all of the free space 
 // is in memory blocks). Algorithm is very simple and can be improved in future
-//
+// 
 
 size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Segments& segments)
 {
@@ -602,7 +598,7 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 	freeMem = MIN(freeMem / count, maxSize);
 	freeMem = MAX(freeMem, minSize);
 	freeMem = MIN(freeMem, minBlockSize);
-	freeMem &= ~(FB_ALIGNMENT - 1);
+	freeMem &= ~(ALIGNMENT - 1);
 
 	bool is_positioned = freeSegments.getFirst();
 	while (segments.getCount() < count && is_positioned)
@@ -611,14 +607,14 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 		offset_t freeSeek = freeSpace->position;
 		const offset_t freeEnd = freeSpace->position + freeSpace->size;
 
-		UCHAR* const mem = findMemory(freeSeek, freeEnd, freeMem);
+		char* const mem = findMemory(freeSeek, freeEnd, freeMem);
 
 		if (mem)
 		{
 			fb_assert(freeSeek + freeMem <= freeEnd);
 #ifdef DEV_BUILD
 			offset_t seek1 = freeSeek;
-			UCHAR* const p = findMemory(seek1, freeEnd, freeMem);
+			char* const p = findMemory(seek1, freeEnd, freeMem);
 			fb_assert(p == mem);
 			fb_assert(seek1 == freeSeek);
 #endif

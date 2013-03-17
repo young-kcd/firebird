@@ -25,7 +25,7 @@
  *
  *
  */
-
+ 
 #include "firebird.h"
 
 #include <stdarg.h>
@@ -49,15 +49,7 @@ namespace Firebird {
 		return *this;
 	}
 
-	char* MetaName::getBuffer(const size_t l)
-	{
-		fb_assert (l < MAX_SQL_IDENTIFIER_SIZE);
-		init();
-		count = l;
-		return data;
-	}
-
-	int MetaName::compare(const char* s, size_t l) const
+	int MetaName::compare(const char* s, size_t l) const 
 	{
 		if (s)
 		{
@@ -91,7 +83,7 @@ namespace Firebird {
 
 	void MetaName::upper7()
 	{
-		for (char* p = data; *p; p++)
+		for (char* p = data; *p; p++) 
 		{
 			*p = UPPER7(*p);
 		}
@@ -99,7 +91,7 @@ namespace Firebird {
 
 	void MetaName::lower7()
 	{
-		for (char* p = data; *p; p++)
+		for (char* p = data; *p; p++) 
 		{
 			*p = LOWWER7(*p);
 		}
@@ -120,17 +112,13 @@ namespace Firebird {
 		va_end(params);
 	}
 
-	size_t MetaName::copyTo(char* to, size_t toSize) const
+	char* MetaName::getBuffer(size_t l) 
 	{
-		fb_assert(to);
-		fb_assert(toSize);
-		if (--toSize > length())
-		{
-			toSize = length();
-		}
-		memcpy(to, c_str(), toSize);
-		to[toSize] = 0;
-		return toSize;
+		fb_assert (l < MAX_SQL_IDENTIFIER_SIZE);
+		init();
+		count = l;
+		return data;
 	}
 
 } // namespace Firebird
+

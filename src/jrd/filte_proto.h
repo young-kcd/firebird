@@ -26,7 +26,6 @@
 
 ISC_STATUS filter_acl(USHORT, Jrd::BlobControl*);
 ISC_STATUS filter_blr(USHORT, Jrd::BlobControl*);
-ISC_STATUS filter_debug_info(USHORT, Jrd::BlobControl*);
 ISC_STATUS filter_format(USHORT, Jrd::BlobControl*);
 ISC_STATUS filter_runtime(USHORT, Jrd::BlobControl*);
 ISC_STATUS filter_text(USHORT, Jrd::BlobControl*);

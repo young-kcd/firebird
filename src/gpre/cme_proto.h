@@ -24,14 +24,10 @@
 #ifndef GPRE_CME_PROTO_H
 #define GPRE_CME_PROTO_H
 
-void	CME_expr(gpre_nod*, gpre_req*);
+void	CME_expr(GPRE_NOD, gpre_req*);
 void	CME_get_dtype(const gpre_nod*, gpre_fld*);
 void	CME_relation(gpre_ctx*, gpre_req*);
 void	CME_rse(gpre_rse*, gpre_req*);
 
-inline void	CME_rse(gpre_nod* node, gpre_req* request)
-{
-	CME_rse((gpre_rse*) node, request);
-}
-
 #endif // GPRE_CME_PROTO_H
+

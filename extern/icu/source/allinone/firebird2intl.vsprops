@@ -12,6 +12,5 @@
 		DisableLanguageExtensions="true"
 		WarningLevel="3"
 		DebugInformationFormat="3"
-		PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS"
 	/>
 </VisualStudioPropertySheet>

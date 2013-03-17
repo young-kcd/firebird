@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		msg_encode.h
+ *	MODULE:		msg_encode.h	
  *	DESCRIPTION:	Message encoding definition file
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,17 +23,17 @@
 #ifndef MSG_ENCODE_H
 #define MSG_ENCODE_H
 
-const ISC_STATUS ISC_MASK	= 0x14000000;	// Defines the code as a valid ISC code
-const ISC_STATUS FAC_MASK	= 0x00FF0000;	// Specifies the facility where the code is located
-const ISC_STATUS CODE_MASK	= 0x0000FFFF;	// Specifies the code in the message file
-const ISC_STATUS CLASS_MASK	= 0xF0000000;	// Defines the code as warning, error, info, or other
+const ISC_STATUS ISC_MASK	= 0x14000000;	/* Defines the code as a valid ISC code */
+const ISC_STATUS FAC_MASK	= 0x00FF0000;	/* Specifies the facility where the code is located */
+const ISC_STATUS CODE_MASK	= 0x0000FFFF;	/* Specifies the code in the message file */
+const ISC_STATUS CLASS_MASK	= 0xF0000000;	/* Defines the code as warning, error, info, or other */
 
-// The following definitions can be used to specify the context in
-// which a status code is used.
-
-//#define CLASS_ERROR		0L		// Code represents an error
-//#define CLASS_WARNING		1L		// Code represents a warning
-//#define CLASS_INFO		2L		// Code represents an information msg
+/* The following definitions can be used to specify the context in
+ * which a status code is used.
+ */
+//#define CLASS_ERROR		0L		/* Code represents an error */
+//#define CLASS_WARNING		1L	/* Code represents a warning */
+//#define CLASS_INFO		2L		/* Code represents an information msg */
 
 //#define MAKE_ERROR(code)	(code | (CLASS_ERROR & 0x3L) << 30)
 //#define MAKE_WARNING(code)	(code | (CLASS_WARNING & 0x3L) << 30)
@@ -44,24 +44,12 @@ const ISC_STATUS CLASS_MASK	= 0xF0000000;	// Defines the code as warning, error,
  * since gds__decode returns the error code, facility, and error type
  * from a given error message */
 
-inline ISC_STATUS ENCODE_ISC_MSG(ISC_STATUS code, USHORT facility)
-{
-	return ((ISC_STATUS(facility & 0x1F) << 16) | (code & 0x3FFF) | ISC_MASK);
-}
+#define ENCODE_ISC_MSG(code, facility)	((facility & 0x1F) << 16) | \
+			                ((code & 0x3FFF) << 0) | \
+	       				(ISC_MASK)
 
-inline USHORT GET_FACILITY(ISC_STATUS code)
-{
-	return (code & FAC_MASK) >> 16;
-}
-
-inline USHORT GET_CLASS(ISC_STATUS code)
-{
-	return (code & CLASS_MASK) >> 30;
-}
-
-inline ISC_STATUS GET_CODE(ISC_STATUS code)
-{
-	return (code & CODE_MASK);
-}
+#define GET_FACILITY(code)		(code & FAC_MASK) >> 16
+#define GET_CLASS(code)			(code & CLASS_MASK) >> 30
+#define GET_CODE(code)			(code & CODE_MASK) >> 0
 
 #endif // MSG_ENCODE_H

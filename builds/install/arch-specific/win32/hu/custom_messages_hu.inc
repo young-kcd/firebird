@@ -15,7 +15,6 @@ hu.UseApplicationTaskMsg=&Programként
 hu.TaskGroupDescription=A Firebird Adatbázisszerver futtatása:
 hu.UseServiceTask=&Szolgáltatásként
 hu.AutoStartTask=A &Firebird Adatbázisszerver automatikus indítása minden rendszerindításkor
-hu.SuperClassicTask="Use SuperClassic?"
 hu.CopyFbClientToSysTask=Másodpéldány a &Firebird kliens könyvtárról a <system> mappába
 hu.CopyFbClientAsGds32Task=Másodpéldány a kliens könyvtárból, az ö&rökölt programok támogatására (GDS32.DLL)
 hu.InstallCPLAppletTask=Firebird &Vezérlõpult Program telepítése
@@ -45,7 +44,7 @@ hu.InstalledProducts=Az újratelepítési vizsgálat az mutatja, hogy %s létezõ Fire
 hu.InstalledProdCountSingular=található
 hu.InstalledProdCountPlural=találhatóak
 
-hu.FbRunning1=Egy létezõ Firebird Adatbázisszerver %s már fut.
+hu.FbRunning1=Egy létezõ %s Adatbázisszerver már fut.
 hu.FbRunning2= A folytatás elõtt Önnek be kell zárnia a futó alkalmazást,
 hu.FbRunning3=          vagy le kell állítani szolgáltatást.
 
@@ -71,8 +70,5 @@ hu.RunISQL=A parancssoros Interaktív SQL eszköz futtatása
 
 hu.ReadmeFile=olvass_el.txt
 hu.InstallationReadmeFile=telepitesi_segedlet.txt
-
-hu.RunCS=Hagyományos Szerver futtatása 
-hu.RunSC=Szuper Hagyományos Szerver futtatása 
-hu.RunSS=Szuper Szerver futtatása 
+;hu.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 

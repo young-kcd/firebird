@@ -15,7 +15,6 @@ es.UseApplicationTaskMsg=¿Ejecutar como una &Aplicación?
 es.TaskGroupDescription=Ejecutar el servidor Firebird como:
 es.UseServiceTask=¿Ejecutar como un &Servicio?
 es.AutoStartTask=¿Iniciar &Firebird automáticamente cada vez que se inicia el sistema?
-es.SuperClassicTask="Use SuperClassic?"
 es.CopyFbClientToSysTask=¿Copiar la librería &cliente de Firebird al directorio <system>?
 es.CopyFbClientAsGds32Task=¿Copiar librería cliente como GDS32.DLL para soporte de ap&licaciones antiguas?
 es.InstallCPLAppletTask=¿Instalar el Applet del &Panel de Control?
@@ -44,7 +43,7 @@ es.InstalledProducts=El análisis de pre-instalación indica que se ha(n) encontra
 es.InstalledProdCountSingular=versión
 es.InstalledProdCountPlural=versiones
 
-es.FbRunning1=Una instancia del servidor Firebird %s se está ejecutando.
+es.FbRunning1=Una instancia del servidor %s se está ejecutando.
 es.FbRunning2= Debe cerrar esta aplicación o detener el servicio
 es.FbRunning3=             antes de continuar.
 
@@ -70,8 +69,5 @@ es.RunISQL=Ejecutar la herramienta SQL interactiva por línea de comandos
 
 es.ReadmeFile=leame.txt
 es.InstallationReadmeFile=leame_instalacion.txt
-
-es.RunCS=Ejecutar Firebird Classic server
-es.RunSC=Ejecutar Firebird SuperClassic server
-es.RunSS=Ejecutar Firebird SuperServer
+;es.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 

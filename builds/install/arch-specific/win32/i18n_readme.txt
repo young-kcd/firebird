@@ -9,12 +9,12 @@ documentatation i18n should be available separately. I18n is a
 good thing, but bloating the installer with large amounts of translated
 documentation is not desirable. 
 
-The current version of InnoSetup used by Firebird $MAJOR.$MINOR - 5.4.2 - provides 
+The current version of InnoSetup used by Firebird 2.0 - 5.2.3 - provides 
 generic support for the following languages:
 
 	Basque, BrazilianPortuguese, Catalan, Czech, Danish, Dutch, Finnish, French,
-	German, Hebrew, Hungarian, Italian, Japanese, Norwegian, Polish, Portuguese, 
-	Russian, Slovak, Slovenian, and Spanish	
+	German, Hebrew, Hungarian, Italian, Norwegian, Polish, Portuguese, Russian,
+	Slovak, Slovenian, and Spanish	
 
 In addition, the InnoSetup user community has made other language packs
 available for download. See here for details:
@@ -41,7 +41,6 @@ o The Win32 install files are located in install\arch-specific\win32.
 
     Firebird 1.5  - firebird2\src
     Firebird 2.n  - firebird2\builds
-    Firebird 3.n  - firebird2\builds
 
 o You can use a tool such as TortoiseSVN to checkout the Win32 install 
   kit. Just open the SVN checkout dialogue and enter something similar 

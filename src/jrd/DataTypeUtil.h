@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:
+ *	PROGRAM:	
  *	MODULE:		DataTypeUtil.h
  *	DESCRIPTION:	Data Type Utility functions
  *
@@ -27,9 +27,6 @@
 #ifndef JRD_DATATYPEUTIL_H
 #define JRD_DATATYPEUTIL_H
 
-#include "../intl/charsets.h"
-#include "../common/classes/fb_string.h"
-
 struct dsc;
 
 class DataTypeUtilBase
@@ -40,18 +37,16 @@ public:
 public:
 	static SSHORT getResultBlobSubType(const dsc* value1, const dsc* value2);
 	static USHORT getResultTextType(const dsc* value1, const dsc* value2);
+	static void makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args);
 
 public:
-	void makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args);
 	ULONG convertLength(ULONG len, USHORT srcCharSet, USHORT dstCharSet);
 	ULONG convertLength(const dsc* src, const dsc* dst);
 	ULONG fixLength(const dsc* desc, ULONG length);
 
 	void makeConcatenate(dsc* result, const dsc* value1, const dsc* value2);
 	void makeSubstr(dsc* result, const dsc* value, const dsc* offset, const dsc* length);
-
-private:
-	bool makeBlobOrText(dsc* result, const dsc* arg, bool force);
+	void makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args);
 
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet) = 0;
@@ -74,10 +69,6 @@ public:
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet);
 	virtual USHORT getDialect() const;
-
-public:
-	static bool convertToUTF8(const Firebird::string& src, Firebird::string& dst,
-		CHARSET_ID charset = CS_dynamic);
 
 private:
 	thread_db* tdbb;

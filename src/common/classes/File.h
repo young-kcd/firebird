@@ -25,14 +25,13 @@
 
 #include "../common/classes/array.h"
 
-#if !defined(SOLARIS) && !defined(AIX)
+#ifndef SOLARIS
 typedef FB_UINT64 offset_t;
 #endif
 
 namespace Firebird {
 
-class File
-{
+class File {
 public:
 	virtual ~File() {}
 
@@ -58,8 +57,8 @@ public:
 	const char* getBuffer() const { return buffer.begin(); }
 	size_t getSize() const { return buffer.getCount(); }
 
-private:
-	Firebird::Array<char> buffer;
+	private:
+		Firebird::Array<char> buffer;
 };
 
 } // namespace

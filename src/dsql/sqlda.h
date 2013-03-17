@@ -24,9 +24,7 @@
 #ifndef DSQL_SQLDA_H
 #define DSQL_SQLDA_H
 
-#include "../common/classes/array.h"
-
-// SQLDA dialects
+// SQLDA dialects 
 
 const USHORT DIALECT_sqlda	= 0;
 const USHORT DIALECT_xsqlda	= 1;
@@ -52,6 +50,32 @@ struct SQLDA
 
 #define SQLDA_LENGTH(n)		(sizeof (SQLDA) + (n - 1) * sizeof (SQLVAR))
 
+// Structure to support conversion of SQLDA's to messages 
+
+struct sqlda_sup
+{
+	struct dasup_clause
+	{
+		SCHAR*	dasup_blr;
+		SCHAR*	dasup_msg;
+		USHORT	dasup_blr_length;
+		USHORT	dasup_blr_buf_len;
+		USHORT	dasup_msg_buf_len;
+
+		SCHAR*	dasup_info_buf;
+		USHORT	dasup_info_len;
+	} dasup_clauses[2];
+
+	USHORT	dasup_dialect;		// Dialect associated with statement 
+	USHORT	dasup_stmt_type;	// Type of statement 
+
+};
+
+// enum would be troblesome here
+const USHORT DASUP_CLAUSE_select	= 0;
+const USHORT DASUP_CLAUSE_bind		= 1;
+
 #include "../dsql/sqlda_pub.h"
 
 #endif // DSQL_SQLDA_H
+

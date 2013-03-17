@@ -15,7 +15,6 @@ ba.UseApplicationTaskMsg=Pokreni kao &Application?
 ba.TaskGroupDescription=Pokreni Firebird server kao:
 ba.UseServiceTask=Pokreni kao &Service?
 ba.AutoStartTask=Pokreni &Firebird automatski uvijek kad upalite raèunar?
-ba.SuperClassicTask="Use SuperClassic?"
 ba.CopyFbClientToSysTask=Kopiraj &Firebird client biblioteku (library) u folder <system>?
 ba.CopyFbClientAsGds32Task=Generiši client biblioteku (library) kao GDS32.DLL za podršku starim-postojeæim (&legacy) programima?
 ba.InstallCPLAppletTask="Instaliraj Control &Panel Applet?"
@@ -45,7 +44,7 @@ ba.InstalledProducts='Pre-instalaciona analiza pokazuje da %s postojeæi Firebird
 ba.InstalledProdCountSingular=verzija ima
 ba.InstalledProdCountPlural=verzije imaju
 
-ba.FbRunning1=Postojeæi Firebird %s Server je pokrenut.
+ba.FbRunning1=Postojeæi %s Server je pokrenut.
 ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti
 ba.FbRunning3=         service prije nastavka.
 
@@ -72,8 +71,5 @@ ba.RunISQL=Pokreni command-line bazirani Interactive SQL alat
 
 ba.ReadmeFile=ProcitajMe.txt
 ba.InstallationReadmeFile=Instalacija_ProcitajMe.txt
-
-ba.RunCS=Pokreni Firebird Classic server
-ba.RunSC=Pokreni Firebird SuperClassic server
-ba.RunSS=Pokreni Firebird SuperServer
+;ba.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 

@@ -208,6 +208,8 @@ case $platform in
         C_FLAGS="-w -threads";export C_FLAGS
         CXXFLAGS="$CXXFLAGS -I/usr/local/include/g++ -threads"; export CXXFLAGS
         LDFLAGS="$LDFLAGS -R/usr/local/lib -threads "; export LDFLAGS
+	  # 64bit Sparc
+	  #LDFLAGS="$LDFLAGS -R/usr/local/lib/sparcv9 -threads "; export LDFLAGS
         RELEASE_CXXFLAGS=-O
         RELEASE_CFLAGS=-O3
 	GENCCODE_ASSEMBLY=-a sun

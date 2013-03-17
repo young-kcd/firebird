@@ -17,11 +17,12 @@ CControlPanel::~CControlPanel()
 {
 }
 
-//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////              
 // Callback function (exported)
 
 // static member functions (callbacks)
-LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg, LONG lParam1, LONG lParam2)
+LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg,
+                                       LONG lParam1, LONG lParam2)
 {
 
 
@@ -29,8 +30,7 @@ LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg, LONG lParam1, L
     CControlPanel* pCtrl = m_pThis;
     ASSERT(pCtrl);
 
-    switch (uMsg)
-    {
+    switch (uMsg) {
     case CPL_DBLCLK:
         return pCtrl->OnDblclk(hwndCPl, lParam1, lParam2);
 
@@ -65,7 +65,7 @@ LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg, LONG lParam1, L
 /////////////////////////////////////////////////////////////////////////////////////////
 // Default command handlers
 
-LONG CControlPanel::OnDblclk(HWND /*hwndCPl*/, UINT /*uAppNum*/, LONG /*lData*/)
+LONG CControlPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData) 
 {
     // Show the dialog
     return 0; // OK
@@ -86,7 +86,7 @@ LONG CControlPanel::OnInit()
     return 1; // OK
 }
 
-LONG CControlPanel::OnInquire(UINT /*uAppNum*/, NEWCPLINFO* pInfo)
+LONG CControlPanel::OnInquire(UINT uAppNum, NEWCPLINFO* pInfo) 
 {
     // Fill in the data
     pInfo->dwSize = sizeof(NEWCPLINFO); // important
@@ -100,12 +100,12 @@ LONG CControlPanel::OnInquire(UINT /*uAppNum*/, NEWCPLINFO* pInfo)
     return 0; // OK (don't send CPL_INQUIRE msg)
 }
 
-LONG CControlPanel::OnSelect(UINT /*uAppNum*/, LONG /*lData*/)
+LONG CControlPanel::OnSelect(UINT uAppNum, LONG lData) 
 {
     return 1; // not handled
 }
 
-LONG CControlPanel::OnStop(UINT /*uAppNum*/, LONG /*lData*/)
+LONG CControlPanel::OnStop(UINT uAppNum, LONG lData) 
 {
     return 1; // not handled
 }

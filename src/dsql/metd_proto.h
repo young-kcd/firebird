@@ -30,46 +30,40 @@
 #include "../common/classes/MetaName.h"
 #include "../common/classes/fb_pair.h"
 
+typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
+typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
+
 // forward declarations
-namespace Jrd {
-	typedef Firebird::GenericMap<Firebird::MetaNamePair> MetaNamePairMap;
+class dsql_req;
+class dsql_str;
 
-	class dsql_req;
-	class DsqlCompilerScratch;
-	class jrd_tra;
-	class dsql_intlsym;
-	class dsql_fld;
-	class dsql_udf;
-	class dsql_prc;
-	class dsql_rel;
-	class FieldNode;
-};
+void METD_drop_collation(dsql_req*, const dsql_str*);
+void METD_drop_function(dsql_req*, const dsql_str*);
+void METD_drop_procedure(dsql_req*, const dsql_str*);
+void METD_drop_relation(dsql_req*, const dsql_str*);
 
-void METD_drop_charset(Jrd::jrd_tra*, const Firebird::MetaName&);
-void METD_drop_collation(Jrd::jrd_tra*, const Firebird::MetaName&);
-void METD_drop_function(Jrd::jrd_tra*, const Firebird::QualifiedName&);
-void METD_drop_procedure(Jrd::jrd_tra*, const Firebird::QualifiedName&);
-void METD_drop_relation(Jrd::jrd_tra*, const Firebird::MetaName&);
-
-Jrd::dsql_intlsym* METD_get_charset(Jrd::jrd_tra*, USHORT, const char* name);
-USHORT METD_get_charset_bpc(Jrd::jrd_tra*, SSHORT);
-Firebird::MetaName METD_get_charset_name(Jrd::jrd_tra*, SSHORT);
-Jrd::dsql_intlsym* METD_get_collation(Jrd::jrd_tra*, const Firebird::MetaName&, USHORT charset_id);
-USHORT METD_get_col_default(Jrd::jrd_tra*, const char*, const char*, bool*, UCHAR*, USHORT);
-Firebird::MetaName METD_get_default_charset(Jrd::jrd_tra*);
-bool METD_get_domain(Jrd::jrd_tra*, class Jrd::TypeClause*, const Firebird::MetaName& name);
-USHORT METD_get_domain_default(Jrd::jrd_tra*, const Firebird::MetaName&, bool*, UCHAR*, USHORT);
-Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
-	const Firebird::QualifiedName&);
-void METD_get_primary_key(Jrd::jrd_tra*, const Firebird::MetaName&,
-	Firebird::Array<NestConst<Jrd::FieldNode> >&);
-Jrd::dsql_prc* METD_get_procedure(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
-	const Firebird::QualifiedName&);
-Jrd::dsql_rel* METD_get_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Firebird::MetaName&);
-bool METD_get_type(Jrd::jrd_tra*, const Firebird::MetaName&, const char*, SSHORT*);
-Jrd::dsql_rel* METD_get_view_base(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const char* view_name,
-	Jrd::MetaNamePairMap& fields);
-Jrd::dsql_rel* METD_get_view_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const char* view_name,
-	const char* relation_or_alias);
+dsql_intlsym*  METD_get_charset(dsql_req*, USHORT, const char* name); // UTF-8
+USHORT   METD_get_charset_bpc(dsql_req*, SSHORT);
+Firebird::MetaName METD_get_charset_name (dsql_req*, SSHORT);
+dsql_intlsym* METD_get_collation(dsql_req*, const dsql_str*, USHORT charset_id);
+USHORT   METD_get_col_default(dsql_req*, const char*, const char*, bool*, TEXT*, USHORT);
+dsql_str*      METD_get_default_charset(dsql_req*);
+USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name); // UTF-8
+USHORT   METD_get_domain_default(dsql_req*, const TEXT*, bool*, TEXT*, USHORT);
+bool METD_get_exception(dsql_req*, const dsql_str*);
+dsql_udf*      METD_get_function(dsql_req*, const dsql_str*);
+dsql_nod* METD_get_primary_key(dsql_req*, const dsql_str*);
+dsql_prc* METD_get_procedure(dsql_req*, const dsql_str*);
+dsql_rel* METD_get_relation(dsql_req*, const dsql_str*);
+bool   METD_get_trigger(dsql_req*, const dsql_str*, dsql_str**, USHORT*);
+bool   METD_get_type(dsql_req*, const dsql_str*, char*, SSHORT*);
+dsql_rel* METD_get_view_base(dsql_req*   request,
+							 const char* view_name,	// UTF-8
+							 MetaNamePairMap& fields);
+dsql_rel* METD_get_view_relation(dsql_req*   request,
+								const char* view_name,         // UTF-8
+								const char* relation_or_alias, // UTF-8
+								USHORT      level);
 
 #endif // DSQL_METD_PROTO_H
+
