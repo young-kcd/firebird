@@ -93,6 +93,8 @@ public:
                     "msvcr80.dll",
 #elif _MSC_VER == 1500
                     "msvcr90.dll",
+#elif _MSC_VER == 1600
+                    "msvcr100.dll",
 #else
                     #error Specify CRT DLL name here !
 #endif
