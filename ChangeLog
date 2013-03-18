@@ -1,3 +1,52 @@
+ 2013-03-17 20:36  asfernandes 
+   M src/common/classes/ImplementHelper.cpp
+   M src/dsql/DdlNodes.epp
+   M src/jrd/shut.cpp
+Misc.
+
+ 2013-03-17 17:35  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/vio.cpp
+Small refactoring.
+
+ 2013-03-17 17:09  dimitr 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc10/gsec.vcxproj
+   M builds/win32/msvc10/gsec.vcxproj.filters
+   M builds/win32/msvc10/intl.vcxproj
+   M builds/win32/msvc10/intl.vcxproj.filters
+   M builds/win32/msvc10/udr_engine.vcxproj
+   M builds/win32/msvc10/udr_engine.vcxproj.filters
+Cleanup. MSVC10 does not like references to non-existing files. As for INTL, I see no sense in seeing all the charsets/collations in the IDE.
+
+ 2013-03-17 14:39  dimitr 
+   M src/jrd/dpm.epp
+Fixed CORE-4036: Bugcheck or database corruption when attempting to store long incompressible data into a table.
+
+ 2013-03-17 12:20  dimitr 
+   M src/jrd/shut.cpp
+A bit more precise timeout accounting.
+
+ 2013-03-17 12:14  dimitr 
+   M src/jrd/cch.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/shut_proto.h
+Completed refactoring of the database shutdown. Fixed a few remaining bugs there. Fixed timeout accounting in SS as well as CORE-3817: Forced database shutdown does not work if non-zero delay was specified.
+
  2013-03-15 16:37  alexpeshkoff 
    M src/common/classes/ImplementHelper.cpp
    M src/common/classes/ImplementHelper.h
