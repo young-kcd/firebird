@@ -111,7 +111,17 @@ public:
 		return ptr;
 	}
 
+	Where* get()
+	{
+		return ptr;
+	}
+
 	operator const Where*() const
+	{
+		return ptr;
+	}
+
+	const Where* get() const
 	{
 		return ptr;
 	}

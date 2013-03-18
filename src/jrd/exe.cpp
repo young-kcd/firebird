@@ -1112,7 +1112,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 				if (trigger->req_rpb.getCount() > 0)
 				{
-					trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec;
+					trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec.get();
 
 					if (old_rec && trigger_action != jrd_req::req_trigger_insert)
 					{
@@ -1124,7 +1124,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 				}
 
 				if (trigger->req_rpb.getCount() > 1)
-					trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
+					trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec.get();
 
 				if (new_rec && !(which_trig == StmtNode::PRE_TRIG &&
 					trigger_action == jrd_req::req_trigger_insert))
