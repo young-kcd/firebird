@@ -44,10 +44,10 @@ public:
 		LONG digest[5];				// message digest
 		LONG count_lo, count_hi;	// 64-bit bit count
 		UCHAR data[BLOCK_SIZE];		// SHA data buffer
-		unsigned int local;			// unprocessed amount in data
+		size_t local;			// unprocessed amount in data
 	};
 
-	void process(unsigned int length, const void* bytes);
+	void process(size_t length, const void* bytes);
 
 	void process(const UCharBuffer& bytes)
 	{

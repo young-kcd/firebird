@@ -26,7 +26,7 @@ namespace
 typedef Sha1::ShaInfo SHA_INFO;
 
 void sha_init(SHA_INFO *);
-void sha_update(SHA_INFO *, const BYTE *, unsigned int);
+void sha_update(SHA_INFO *, const BYTE *, size_t);
 void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 
 #define SHA_VERSION 1
@@ -257,7 +257,7 @@ void sha_init(SHA_INFO *sha_info)
 
 // update the SHA digest
 
-void sha_update(SHA_INFO *sha_info, const BYTE *buffer, unsigned int count)
+void sha_update(SHA_INFO *sha_info, const BYTE *buffer, size_t count)
 {
 	const Sha1::LONG clo = T32(sha_info->count_lo + ((Sha1::LONG) count << 3));
 	if (clo < sha_info->count_lo) {
@@ -267,7 +267,7 @@ void sha_update(SHA_INFO *sha_info, const BYTE *buffer, unsigned int count)
 	sha_info->count_hi += (Sha1::LONG) count >> 29;
 	if (sha_info->local)
 	{
-		unsigned int i = SHA_BLOCKSIZE - sha_info->local;
+		size_t i = SHA_BLOCKSIZE - sha_info->local;
 		if (i > count) {
 			i = count;
 		}
@@ -361,7 +361,7 @@ namespace Firebird {
 		reset();
 	}
 
-	void Sha1::process(unsigned int length, const void* bytes)
+	void Sha1::process(size_t length, const void* bytes)
 	{
 		sha_update(&handle, static_cast<const unsigned char*>(bytes), length);
 	}
