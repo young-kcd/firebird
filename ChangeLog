@@ -1,3 +1,9 @@
+ 2013-03-17 14:41  dimitr 
+   M src/jrd/dpm.epp
+   M src/jrd/sqz.cpp
+   M src/jrd/sqz_proto.h
+Fixed CORE-4036: Bugcheck or database corruption when attempting to store long incompressible data into a table.
+
  2013-03-11 15:44  alexpeshkoff 
    M src/common/classes/auto.h
    M src/jrd/cmp.cpp
