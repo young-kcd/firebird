@@ -1,3 +1,13 @@
+ 2013-03-18 13:10  dimitr 
+   M src/common/sha.cpp
+   M src/common/sha.h
+Warnings.
+
+ 2013-03-18 10:50  alexpeshkoff 
+   M src/common/classes/auto.h
+   M src/jrd/exe.cpp
+Ugly fix for CORE-4066, but looks like here g++ is too strong in type correctness.
+
  2013-03-17 20:36  asfernandes 
    M src/common/classes/ImplementHelper.cpp
    M src/dsql/DdlNodes.epp
