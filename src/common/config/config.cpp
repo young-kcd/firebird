@@ -170,7 +170,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp, Win_Sspi, Legacy_Auth"},
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Srp"},
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
-	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(root)/security3.fdb"},	// security database name
+	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(root)security3.fdb"},	// security database name
 	{TYPE_BOOLEAN,		"SharedCache",				(ConfigValue) true},
 	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false},
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
