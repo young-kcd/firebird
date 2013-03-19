@@ -727,13 +727,13 @@ public:
 		return NULL;
 	}
 
-	virtual IAttachment* registerAttachment(IProvider* /*provider*/, IAttachment* /*attachment*/)
+	virtual IAttachment* FB_CARG registerAttachment(IProvider* /*provider*/, IAttachment* /*attachment*/)
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual ITransaction* registerTransaction(IAttachment* /*attachment*/, ITransaction* /*transaction*/)
+	virtual ITransaction* FB_CARG registerTransaction(IAttachment* /*attachment*/, ITransaction* /*transaction*/)
 	{
 		fb_assert(false);
 		return NULL;
@@ -750,13 +750,13 @@ public:
 		return 0;
 	}
 
-	virtual IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount)
+	virtual IMetadataBuilder* FB_CARG getMetadataBuilder(IStatus* status, unsigned fieldCount)
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IDebug* getDebug()
+	virtual IDebug* FB_CARG getDebug()
 	{
 		return NULL;
 	}
