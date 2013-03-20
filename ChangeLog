@@ -1,3 +1,11 @@
+ 2013-03-19 11:29  hvlad 
+   M src/gpre/boot/gpre_meta_boot.cpp
+Fixed boot build
+
+ 2013-03-19 07:24  alexpeshkoff 
+   M src/common/config/config.cpp
+Improvement from Dmitry Kovalenko
+
  2013-03-18 13:10  dimitr 
    M src/common/sha.cpp
    M src/common/sha.h
