@@ -436,7 +436,6 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	while (!server_shutdown)
 	{
 		rem_port* port = NULL;
-		bool wnet_down = false;
 
 		try
 		{
@@ -446,23 +445,24 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		{
 			ISC_STATUS_ARRAY status_vector;
 			ex.stuff_exception(status_vector);
-			wnet_down = (status_vector[1] == isc_net_server_shutdown);
 
-			if (!wnet_down)
-				iscLogException("WNET_connect", ex);
+			if (status_vector[1] == isc_net_server_shutdown)
+				break;
+
+			iscLogException("WNET_connect", ex);
 		}
 
-		if (!port && wnet_down)
-			break;
-
-		try
+		if (port)
 		{
-			Thread::start(process_connection_thread, port, THREAD_medium);
-		}
-		catch (const Exception&)
-		{
-			gds__log("WNET: can't start worker thread, connection terminated");
-			port->disconnect(NULL, NULL);
+			try
+			{
+				Thread::start(process_connection_thread, port, THREAD_medium);
+			}
+			catch (const Exception&)
+			{
+				gds__log("WNET: can't start worker thread, connection terminated");
+				port->disconnect(NULL, NULL);
+			}
 		}
 	}
 
@@ -487,7 +487,6 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	while (!server_shutdown)
 	{
 		rem_port* port = NULL;
-		bool xnet_down = false;
 
 		try
 		{
@@ -496,25 +495,25 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		catch (const Exception& ex)
 		{
 			ISC_STATUS_ARRAY status_vector;
-
 			ex.stuff_exception(status_vector);
-			xnet_down  = (status_vector[1] == isc_net_server_shutdown);
 
-			if (!xnet_down)
-				iscLogException("XNET_connect", ex);
+			if (status_vector[1] == isc_net_server_shutdown)
+				break;
+
+			iscLogException("XNET_connect", ex);
 		}
 
-		if (!port && xnet_down)
-			break;
-
-		try
+		if (port) 
 		{
-			Thread::start(process_connection_thread, port, THREAD_medium);
-		}
-		catch (const Exception&)
-		{
-			gds__log("XNET: can't start worker thread, connection terminated");
-			port->disconnect(NULL, NULL);
+			try
+			{
+				Thread::start(process_connection_thread, port, THREAD_medium);
+			}
+			catch (const Exception&)
+			{
+				gds__log("XNET: can't start worker thread, connection terminated");
+				port->disconnect(NULL, NULL);
+			}
 		}
 	}
 
