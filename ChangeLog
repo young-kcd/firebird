@@ -1,3 +1,7 @@
+ 2013-03-20 13:13  hvlad 
+   M src/remote/server/os/win32/srvr_w32.cpp
+Fixed AV in remote server code reported by Dmitry Kovalenko in fb-devel
+
  2013-03-19 11:29  hvlad 
    M src/gpre/boot/gpre_meta_boot.cpp
 Fixed boot build
