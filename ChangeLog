@@ -1,3 +1,7 @@
+ 2013-03-21 08:23  hvlad 
+   M src/jrd/dpm.epp
+Optimization: delay clearing of page_full flag until page have at least 25% of free space. It saves few costly mark_full() calls when space is actively allocated and reclaimed in highly concurrent environment and reduces PP contention.
+
  2013-03-20 13:13  hvlad 
    M src/remote/server/os/win32/srvr_w32.cpp
 Fixed AV in remote server code reported by Dmitry Kovalenko in fb-devel
