@@ -133,6 +133,7 @@ public:
 			{
 				++this->refCounter;		// to be decremented in destroy()
 				++this->refCounter;		// to avoid recursion
+				next->release();		// reference normally released by detach/rollback/free etc.
 				impl->destroy();		// destroy() must call release()
 				--this->refCounter;
 			}

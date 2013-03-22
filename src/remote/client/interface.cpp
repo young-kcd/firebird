@@ -36,7 +36,7 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "../common/gdsassert.h"
-#include "../jrd/jrd_proto.h"
+#include "../common/isc_proto.h"
 #include <stdarg.h>
 
 #ifndef NO_NFS
@@ -149,6 +149,8 @@ public:
 	{ }
 
 private:
+	void freeClientData(IStatus* status, bool force = false);
+
 	Rbl* blob;
 };
 
@@ -162,10 +164,9 @@ int Blob::release()
 	if (blob)
 	{
 		LocalStatus status;
-		cancel(&status);
+		freeClientData(&status, true);
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -212,6 +213,8 @@ private:
 		  transaction(from->transaction)
 	{ }
 
+	void freeClientData(IStatus* status, bool force = false);
+
 	Attachment* remAtt;
 	Rtr* transaction;
 };
@@ -224,10 +227,9 @@ int Transaction::release()
 	if (transaction)
 	{
 		LocalStatus status;
-		rollback(&status);	// ASF: Is this correct for reconnected transactions?
+		freeClientData(&status, true);	// ASF: Rollback - is this correct for reconnected transactions?
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -247,7 +249,8 @@ public:
 	{ }
 
 private:
-	void releaseWithStatement();
+	void releaseStatement();
+	void freeClientData(IStatus* status, bool force = false);
 
 	Statement* stmt;
 	RefPtr<IMessageMetadata> outputFormat;
@@ -264,10 +267,9 @@ int ResultSet::release()
 	if (stmt)
 	{
 		LocalStatus status;
-		close(&status);
+		freeClientData(&status, true);
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -320,6 +322,8 @@ public:
 	}
 
 private:
+	void freeClientData(IStatus* status, bool force = false);
+
 	StatementMetadata metadata;
 	Attachment* remAtt;
 	Rsr* statement;
@@ -334,10 +338,9 @@ int Statement::release()
 	if (statement)
 	{
 		LocalStatus status;
-		free(&status);
+		freeClientData(&status, true);
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -366,6 +369,8 @@ public:
 	{ }
 
 private:
+	void freeClientData(IStatus* status, bool force = false);
+
 	Attachment* remAtt;
 	Rrq* rq;
 };
@@ -378,10 +383,9 @@ int Request::release()
 	if (rq)
 	{
 		LocalStatus status;
-		free(&status);
+		freeClientData(&status, true);
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -397,6 +401,8 @@ public:
 	Events(Rvnt* handle) : rvnt(handle) { }
 
 private:
+	void freeClientData(IStatus* status, bool force = false);
+
 	Rvnt* rvnt;
 };
 
@@ -408,10 +414,9 @@ int Events::release()
 	if (rvnt)
 	{
 		LocalStatus status;
-		cancel(&status);
+		freeClientData(&status, true);
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -483,6 +488,8 @@ public:
 	Statement* createStatement(IStatus* status, unsigned dialect);
 
 private:
+	void freeClientData(IStatus* status, bool force = false);
+
 	Rdb* rdb;
 	const PathName dbPath;
 };
@@ -495,10 +502,9 @@ int Attachment::release()
 	if (rdb)
 	{
 		LocalStatus status;
-		detach(&status);
+		freeClientData(&status, true);
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -520,6 +526,8 @@ public:
 	Service(Rdb* handle) : rdb(handle) { }
 
 private:
+	void freeClientData(IStatus* status, bool force = false);
+
 	Rdb* rdb;
 };
 
@@ -531,10 +539,9 @@ int Service::release()
 	if (rdb)
 	{
 		LocalStatus status;
-		detach(&status);
+		freeClientData(&status, true);
 	}
-	else
-		delete this;
+	delete this;
 
 	return 0;
 }
@@ -843,7 +850,7 @@ void Blob::getInfo(IStatus* status,
 }
 
 
-void Blob::cancel(IStatus* status)
+void Blob::freeClientData(IStatus* status, bool force)
 {
 /**************************************
  *
@@ -857,8 +864,6 @@ void Blob::cancel(IStatus* status)
  **************************************/
 	try
 	{
-		reset(status);
-
 		if (!blob)
 		{
 			return;
@@ -872,10 +877,75 @@ void Blob::cancel(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-		release_object(status, rdb, op_cancel_blob, blob->rbl_id);
+		try
+		{
+			release_object(status, rdb, op_cancel_blob, blob->rbl_id);
+		}
+		catch (const Exception& ex)
+		{
+			if (!force)
+				throw;
+		}
 		release_blob(blob);
 		blob = NULL;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Blob::cancel(IStatus* status)
+{
+/**************************************
+ *
+ *	g d s _ c a n c e l _ b l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Abort a partially completed blob.
+ *
+ **************************************/
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
+	{
 		release();
+	}
+}
+
+
+void Events::freeClientData(IStatus* status, bool force)
+{
+/**************************************
+ *
+ *	g d s _ $ c a n c e l _ e v e n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cancel an outstanding event.
+ *
+ **************************************/
+	try
+	{
+		CHECK_HANDLE(rvnt, isc_bad_events_handle);
+		Rdb* rdb = rvnt->rvnt_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		try
+		{
+			// Tell the remote server to cancel it and delete it from the list
+			send_cancel_event(rvnt);
+		}
+		catch (const Exception& ex)
+		{
+			if (!force)
+				throw;
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -896,21 +966,11 @@ void Events::cancel(IStatus* status)
  *	Cancel an outstanding event.
  *
  **************************************/
-	try
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
 	{
-		reset(status);
-
-		CHECK_HANDLE(rvnt, isc_bad_events_handle);
-		Rdb* rdb = rvnt->rvnt_rdb;
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		// Tell the remote server to cancel it and delete it from the list
-		send_cancel_event(rvnt);
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
+		release();
 	}
 }
 
@@ -1419,7 +1479,7 @@ void Attachment::executeDyn(IStatus* status, ITransaction* apiTra, unsigned int 
 }
 
 
-void Attachment::detach(IStatus* status)
+void Attachment::freeClientData(IStatus* status, bool force)
 {
 /**************************************
  *
@@ -1433,13 +1493,9 @@ void Attachment::detach(IStatus* status)
  **************************************/
 	try
 	{
-		reset(status);
-
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		bool networkError = false;
 
 		try
 		{
@@ -1455,12 +1511,11 @@ void Attachment::detach(IStatus* status)
 			// scream.  By the way, we should probably create an entry in the log
 			// telling the user that an unrecoverable network error occurred and that
 			// if there was any uncommitted work, its gone......  Oh well....
-			if (ex.value()[1] != isc_network_error)
+			ex.stuffException(status);
+			if ((status->get()[1] != isc_network_error) && (!force))
 			{
-				ex.stuffException(status);
 				return;
 			}
-			networkError = true;
 		}
 
 		while (rdb->rdb_events)
@@ -1482,19 +1537,40 @@ void Attachment::detach(IStatus* status)
 		// free the packet and disconnect the port. Put something into firebird.log
 		// informing the user of the following.
 
-		if (networkError)
+		if (!status->isSuccess())
 		{
-			gds__log("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
-					"database. \n\tUncommitted work may have been lost");
+			iscLogStatus("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
+					"database.\n\tUncommitted work may have been lost.", status->get());
+			reset(status);
 		}
 
 		disconnect(port);
 		rdb = NULL;
-		release();
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
+	}
+}
+
+
+void Attachment::detach(IStatus* status)
+{
+/**************************************
+ *
+ *	g d s _ d e t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close down a database.
+ *
+ **************************************/
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
+	{
+		release();
 	}
 }
 
@@ -2074,7 +2150,7 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 }
 
 
-void Statement::free(IStatus* status)
+void Statement::freeClientData(IStatus* status, bool force)
 {
 /**************************************
  *
@@ -2089,9 +2165,12 @@ void Statement::free(IStatus* status)
 
 	try
 	{
-		reset(status);
-
 		// Check and validate handles, etc.
+
+		if (!statement)
+		{
+			return;
+		}
 
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 
@@ -2107,7 +2186,6 @@ void Statement::free(IStatus* status)
 		{
 			release_sql_request(statement);
 			statement = NULL;
-			release();
 
 			return;
 		}
@@ -2125,14 +2203,20 @@ void Statement::free(IStatus* status)
 		}
 		else
 		{
-			send_and_receive(status, rdb, packet);
+			try
+			{
+				send_and_receive(status, rdb, packet);
+			}
+			catch (const Exception& ex)
+			{
+				if (!force)
+					throw;
+			}
 		}
 
 		if (packet->p_resp.p_resp_object == INVALID_OBJECT)
 		{
 			release_sql_request(statement);
-			statement = NULL;
-			release();
 		}
 		else
 		{
@@ -2142,10 +2226,33 @@ void Statement::free(IStatus* status)
 			clear_queue(rdb->rdb_port);
 			REMOTE_reset_statement(statement);
 		}
+		statement = NULL;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
+	}
+}
+
+
+void Statement::free(IStatus* status)
+{
+/**************************************
+ *
+ *	d s q l _ f r e e _ s t a t e m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release request for a Dynamic SQL statement
+ *
+ **************************************/
+
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
+	{
+		release();
 	}
 }
 
@@ -2916,7 +3023,7 @@ IMessageMetadata* ResultSet::getMetadata(IStatus* status)
 	return outputFormat;
 }
 
-void ResultSet::close(IStatus* status)
+void ResultSet::freeClientData(IStatus* status, bool force)
 {
 /**************************************
  *
@@ -2931,8 +3038,6 @@ void ResultSet::close(IStatus* status)
 
 	try
 	{
-		reset(status);
-
 		// Check and validate handles, etc.
 
 		if (!stmt)
@@ -2956,7 +3061,8 @@ void ResultSet::close(IStatus* status)
 			clear_queue(rdb->rdb_port);
 			REMOTE_reset_statement(statement);
 
-			releaseWithStatement();
+			releaseStatement();
+			return;
 		}
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -2972,15 +3078,22 @@ void ResultSet::close(IStatus* status)
 		}
 		else
 		{
-			send_and_receive(status, rdb, packet);
+			try
+			{
+				send_and_receive(status, rdb, packet);
+			}
+			catch (const Exception& ex)
+			{
+				if (!force)
+					throw;
+			}
 		}
 
 		statement->rsr_flags.clear(Rsr::FETCHED);
 		statement->rsr_rtr = NULL;
 		clear_queue(rdb->rdb_port);
 		REMOTE_reset_statement(statement);
-
-		releaseWithStatement();
+		releaseStatement();
 	}
 	catch (const Exception& ex)
 	{
@@ -2989,14 +3102,35 @@ void ResultSet::close(IStatus* status)
 }
 
 
-void ResultSet::releaseWithStatement()
+void ResultSet::close(IStatus* status)
+{
+/**************************************
+ *
+ *	d s q l _ f r e e _ s t a t e m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close SQL cursor
+ *
+ **************************************/
+
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
+	{
+		release();
+	}
+}
+
+
+void ResultSet::releaseStatement()
 {
 	if (tmpStatement)
 	{
 		stmt->release();
 	}
 	stmt = NULL;
-	release();
 }
 
 
@@ -3840,7 +3974,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* status,
 }
 
 
-void Request::free(IStatus* status)
+void Request::freeClientData(IStatus* status, bool force)
 {
 /**************************************
  *
@@ -3854,8 +3988,6 @@ void Request::free(IStatus* status)
  **************************************/
 	try
 	{
-		reset(status);
-
 		CHECK_HANDLE(rq, isc_bad_req_handle);
 
 		Rdb* rdb = rq->rrq_rdb;
@@ -3863,14 +3995,42 @@ void Request::free(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		release_object(status, rdb, op_release, rq->rrq_id);
+		try
+		{
+			release_object(status, rdb, op_release, rq->rrq_id);
+		}
+		catch (const Exception& ex)
+		{
+			if (!force)
+				throw;
+		}
 		release_request(rq);
 		rq = NULL;
-		release();
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
+	}
+}
+
+
+void Request::free(IStatus* status)
+{
+/**************************************
+ *
+ *	g d s _ r e l e a s e _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release a request.
+ *
+ **************************************/
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
+	{
+		release();
 	}
 }
 
@@ -4000,7 +4160,7 @@ void Transaction::rollbackRetaining(IStatus* status)
 }
 
 
-void Transaction::rollback(IStatus* status)
+void Transaction::freeClientData(IStatus* status, bool force)
 {
 /**************************************
  *
@@ -4014,8 +4174,6 @@ void Transaction::rollback(IStatus* status)
  **************************************/
 	try
 	{
-		reset(status);
-
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		Rdb* rdb = transaction->rtr_rdb;
@@ -4023,16 +4181,44 @@ void Transaction::rollback(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		release_object(status, rdb, op_rollback, transaction->rtr_id);
+		try
+		{
+			release_object(status, rdb, op_rollback, transaction->rtr_id);
+		}
+		catch (const Exception& ex)
+		{
+			if (!force)
+				throw;
+		}
 
 		REMOTE_cleanup_transaction(transaction);
 		release_transaction(transaction);
 		transaction = NULL;
-		release();
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
+	}
+}
+
+
+void Transaction::rollback(IStatus* status)
+{
+/**************************************
+ *
+ *	g d s _ r o l l b a c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Abort a transaction.
+ *
+ **************************************/
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
+	{
+		release();
 	}
 }
 
@@ -4256,7 +4442,7 @@ Firebird::IService* Loopback::attachServiceManager(IStatus* status, const char* 
 }
 
 
-void Service::detach(IStatus* status)
+void Service::freeClientData(IStatus* status, bool force)
 {
 /**************************************
  *
@@ -4278,14 +4464,42 @@ void Service::detach(IStatus* status)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		release_object(status, rdb, op_service_detach, rdb->rdb_id);
+		try
+		{
+			release_object(status, rdb, op_service_detach, rdb->rdb_id);
+		}
+		catch (const Exception& ex)
+		{
+			if (!force)
+				throw;
+		}
 		disconnect(port);
 		rdb = NULL;
-		release();
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
+	}
+}
+
+
+void Service::detach(IStatus* status)
+{
+/**************************************
+ *
+ *	g d s _ s e r v i c e _ d e t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close down a connection to a Firebird service.
+ *
+ **************************************/
+	reset(status);
+	freeClientData(status);
+	if (status->isSuccess())
+	{
+		release();
 	}
 }
 
