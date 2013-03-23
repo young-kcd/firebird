@@ -97,7 +97,6 @@ class BufferControl : public pool_alloc<type_bcb>
 		bcb_free_minimum = 0;
 		bcb_count = 0;
 		bcb_inuse = 0;
-		bcb_checkpoint = 0;
 		bcb_prec_walk_mark = 0;
 		bcb_page_size = 0;
 		bcb_page_incarnation = 0;
@@ -134,7 +133,6 @@ public:
 	SSHORT		bcb_free_minimum;	// Threshold to activate cache writer
 	ULONG		bcb_count;			// Number of buffers allocated
 	ULONG		bcb_inuse;			// Number of buffers in use
-	ULONG		bcb_checkpoint;		// Count of buffers to checkpoint
 	ULONG		bcb_prec_walk_mark;	// mark value used in precedence graph walk
 	ULONG		bcb_page_size;		// Database page size in bytes
 	ULONG		bcb_page_incarnation;	// Cache page incarnation counter
@@ -272,7 +270,7 @@ const int BDB_read_pending 		= 0x0200;	// read is pending
 const int BDB_free_pending 		= 0x0400;	// buffer being freed for reuse
 const int BDB_not_valid			= 0x0800;	// i/o error invalidated buffer
 const int BDB_db_dirty 			= 0x1000;	// page must be written to database
-const int BDB_checkpoint		= 0x2000;	// page must be written by next checkpoint
+//const int BDB_checkpoint		= 0x2000;	// page must be written by next checkpoint
 const int BDB_prefetch			= 0x4000;	// page has been prefetched but not yet referenced
 const int BDB_no_blocking_ast	= 0x8000;	// No blocking AST registered with page lock
 const int BDB_lru_chained		= 0x10000;	// buffer is in pending LRU chain

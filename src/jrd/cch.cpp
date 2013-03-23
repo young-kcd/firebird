@@ -77,7 +77,6 @@ using namespace Firebird;
 IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #endif
 
-#define CACHE_WRITER
 
 #ifdef SUPERSERVER_V2
 #define CACHE_READER
@@ -129,9 +128,7 @@ static void prefetch_init(Prefetch*, thread_db*);
 static void prefetch_io(Prefetch*, ISC_STATUS *);
 static void prefetch_prologue(Prefetch*, SLONG *);
 #endif
-#ifdef CACHE_WRITER
 static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM);
-#endif
 static void check_precedence(thread_db*, WIN*, PageNumber);
 static void clear_precedence(thread_db*, BufferDesc*);
 static BufferDesc* dealloc_bdb(BufferDesc*);
@@ -1046,8 +1043,6 @@ void CCH_fini(thread_db* tdbb)
 		}
 #endif
 
-#ifdef CACHE_WRITER
-
 		// Wait for cache writer startup to complete.
 		while (bcb->bcb_flags & BCB_writer_start)
 		{
@@ -1062,7 +1057,6 @@ void CCH_fini(thread_db* tdbb)
 			bcb->bcb_writer_sem.release(); // Wake up running thread
 			bcb->bcb_writer_fini.enter();
 		}
-#endif
 
 		// close the database file and all associated shadow files
 
@@ -1606,7 +1600,6 @@ void CCH_init2(thread_db* tdbb)
 	}
 #endif
 
-#ifdef CACHE_WRITER
 	if (!(dbb->dbb_flags & (DBB_read_only | DBB_security_db)))
 	{
 		// writer startup in progress
@@ -1624,7 +1617,6 @@ void CCH_init2(thread_db* tdbb)
 
 		bcb->bcb_writer_init.enter();
 	}
-#endif
 }
 
 
@@ -2052,8 +2044,9 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 
 				// hvlad: we want to make it least recently used, not most recently used
 				//recentlyUsed(bdb);
-#ifdef CACHE_WRITER
-				if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
+
+				if ((bcb->bcb_flags & BCB_cache_writer) && 
+					(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) )
 				{
 					//if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty)
 					//{
@@ -2062,12 +2055,11 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 					//}
 
 					bcb->bcb_flags |= BCB_free_pending;
-					if (bcb->bcb_flags & BCB_cache_writer && !(bcb->bcb_flags & BCB_writer_active))
+					if (!(bcb->bcb_flags & BCB_writer_active))
 					{
 						bcb->bcb_writer_sem.release();
 					}
 				}
-#endif
 			}
 		}
 	}
@@ -2968,8 +2960,6 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 #endif
 
 
-#ifdef CACHE_WRITER
-
 static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
@@ -3048,7 +3038,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				// If there's more work to do voluntarily ask to be rescheduled.
 				// Otherwise, wait for event notification.
 
-				if ((bcb->bcb_flags & BCB_free_pending) || bcb->bcb_checkpoint || dbb->dbb_flush_cycle)
+				if ((bcb->bcb_flags & BCB_free_pending) || dbb->dbb_flush_cycle)
 				{
 					JRD_reschedule(tdbb, 0, true);
 				}
@@ -3104,7 +3094,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 	return 0;
 }
-#endif
 
 
 static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
@@ -3911,11 +3900,11 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			}
 #endif
 
-#ifdef CACHE_WRITER
-			if (oldest->bdb_flags & (BDB_dirty | BDB_db_dirty))
+			if ((bcb->bcb_flags & BCB_cache_writer) && 
+				(oldest->bdb_flags & (BDB_dirty | BDB_db_dirty)) )
 			{
 				bcb->bcb_flags |= BCB_free_pending;
-				if ((bcb->bcb_flags & BCB_cache_writer) && !(bcb->bcb_flags & BCB_writer_active))
+				if (!(bcb->bcb_flags & BCB_writer_active))
 				{
 					bcb->bcb_writer_sem.release();
 				}
@@ -3928,7 +3917,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 					continue;
 				}
 			}
-#endif
+
 			BufferDesc* bdb = oldest;
 
 			// hvlad: we already have bcb_lruSync here
@@ -5081,14 +5070,8 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 			}
 		}
 
-		if (result)
-		{
-#ifdef CACHE_WRITER
-			if (bdb->bdb_flags & BDB_checkpoint) {
-				--dbb->dbb_bcb->bcb_checkpoint;
-			}
-#endif
-			bdb->bdb_flags &= ~(BDB_db_dirty | BDB_checkpoint);
+		if (result) {
+			bdb->bdb_flags &= ~BDB_db_dirty;
 		}
 	}
 
