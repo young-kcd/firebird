@@ -9944,7 +9944,7 @@ void AlterDatabaseNode::print(string& text) const
 		"AlterDatabaseNode\n");
 }
 
-void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/,
+void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
 	if (!tdbb->getAttachment()->locksmith())
@@ -9993,13 +9993,8 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScra
 
 			if (!DBB.RDB$CHARACTER_SET_NAME.NULL && setDefaultCollation.hasData())
 			{
-				string sql;
-				sql.printf("alter character set \"%s\" set default collation \"%s\"",
-					PreparedStatement::escapeName(DBB.RDB$CHARACTER_SET_NAME).c_str(),
-					PreparedStatement::escapeName(setDefaultCollation).c_str());
-
-				AutoPtr<PreparedStatement> ps(attachment->prepareStatement(tdbb, transaction, sql));
-				ps->execute(tdbb, transaction);
+				AlterCharSetNode alterCharSetNode(getPool(), setDefaultCharSet, setDefaultCollation);
+				alterCharSetNode.execute(tdbb, dsqlScratch, transaction);
 			}
 
 			if (clauses & CLAUSE_BEGIN_BACKUP)
