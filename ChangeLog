@@ -1,3 +1,12 @@
+ 2013-03-22 14:29  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/yvalve/YObjects.h
+Fixed CORE-3269: When server gets unavailbale, client does not perform detach correctly
+
+ 2013-03-22 14:03  alexpeshkoff 
+   M src/common/config/config.cpp
+Rolled back my change - it breaks setting FIREBIRD in environment without "/" in the end
+
  2013-03-21 08:23  hvlad 
    M src/jrd/dpm.epp
 Optimization: delay clearing of page_full flag until page have at least 25% of free space. It saves few costly mark_full() calls when space is actively allocated and reclaimed in highly concurrent environment and reduces PP contention.
