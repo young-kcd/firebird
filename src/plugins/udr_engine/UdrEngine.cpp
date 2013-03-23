@@ -157,7 +157,7 @@ public:
 	virtual ExternalProcedure* FB_CALL makeProcedure(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
 	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, ITriggerMessage* fieldsMsg);
+		const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder);
 
 public:
 	virtual void FB_CALL dispose();
@@ -355,7 +355,7 @@ class SharedTrigger : public ExternalTrigger
 {
 public:
 	SharedTrigger(IStatus* status, Engine* aEngine, ExternalContext* context,
-				const IRoutineMetadata* aMetadata, ITriggerMessage* fieldsMsg)
+				const IRoutineMetadata* aMetadata, IMetadataBuilder* fieldsBuilder)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -365,7 +365,7 @@ public:
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
 		TriggerNode* node = engine->findNode<TriggerNode>(registeredTriggers, moduleName, entryPoint);
-		node->factory->setup(status, context, metadata, fieldsMsg);
+		node->factory->setup(status, context, metadata, fieldsBuilder);
 	}
 
 	virtual ~SharedTrigger()
@@ -715,11 +715,11 @@ ExternalProcedure* FB_CALL Engine::makeProcedure(IStatus* status, ExternalContex
 
 
 ExternalTrigger* FB_CALL Engine::makeTrigger(IStatus* status, ExternalContext* context,
-	const IRoutineMetadata* metadata, ITriggerMessage* fieldsMsg)
+	const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 {
 	try
 	{
-		return new SharedTrigger(status, this, context, metadata, fieldsMsg);
+		return new SharedTrigger(status, this, context, metadata, fieldsBuilder);
 	}
 	catch (const StatusException& e)
 	{

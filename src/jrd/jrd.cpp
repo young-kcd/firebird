@@ -654,7 +654,7 @@ void Trigger::compile(thread_db* tdbb)
 	if (extTrigger)
 		return;
 
-	extTrigger = dbb->dbb_extManager.makeTrigger(tdbb, this, engine, entryPoint, extBody.c_str(),
+	dbb->dbb_extManager.makeTrigger(tdbb, this, engine, entryPoint, extBody.c_str(),
 		(relation ?
 			(type & 1 ? ExternalTrigger::TYPE_BEFORE : ExternalTrigger::TYPE_AFTER) :
 			Firebird::ExternalTrigger::TYPE_DATABASE));

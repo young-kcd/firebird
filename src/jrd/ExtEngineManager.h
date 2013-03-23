@@ -52,35 +52,6 @@ struct impure_value;
 struct record_param;
 
 
-class TriggerMessage :
-	public Firebird::VersionedIface<Firebird::ITriggerMessage, FB_TRIGGER_MESSAGE_VERSION>,
-	public Firebird::PermanentStorage
-{
-public:
-	explicit TriggerMessage(MemoryPool& pool)
-		: PermanentStorage(pool),
-		  names(pool),
-		  blr(pool),
-		  bufferLength(0)
-	{
-	}
-
-	virtual void FB_CARG set(const unsigned char* aBlr, unsigned aBlrLength, unsigned aBufferLength,
-		const char** aNames, unsigned aCount)
-	{
-		blr.assign(aBlr, aBlrLength);
-		bufferLength = aBufferLength;
-
-		for (unsigned i = 0; i < aCount; ++i)
-			names.add(aNames[i]);
-	}
-
-public:
-	Firebird::ObjectsArray<Firebird::string> names;
-	Firebird::Array<UCHAR> blr;
-	unsigned bufferLength;
-};
-
 class ExtEngineManager : public Firebird::PermanentStorage
 {
 private:
@@ -136,7 +107,7 @@ private:
 			return getMetadata(outputParameters);
 		}
 
-		virtual Firebird::IMessageMetadata* FB_CARG getTriggerFields(
+		virtual Firebird::IMessageMetadata* FB_CARG getTriggerMetadata(
 			Firebird::IStatus* /*status*/) const
 		{
 			return getMetadata(triggerFields);
@@ -304,7 +275,7 @@ public:
 	{
 	public:
 		Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineManager* aExtManager,
-			Firebird::ExternalEngine* aEngine, RoutineMetadata* aMetadata, TriggerMessage& fieldsMsg,
+			Firebird::ExternalEngine* aEngine, RoutineMetadata* aMetadata,
 			Firebird::ExternalTrigger* aTrigger, const Jrd::Trigger* aTrg);
 		~Trigger();
 
@@ -346,7 +317,7 @@ public:
 	void makeProcedure(thread_db* tdbb, jrd_prc* prc,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body);
-	Trigger* makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
+	void makeTrigger(thread_db* tdbb, Jrd::Trigger* trg,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body, Firebird::ExternalTrigger::Type type);
 

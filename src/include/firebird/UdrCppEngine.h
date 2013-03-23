@@ -202,7 +202,7 @@ namespace Firebird
 	};
 
 #define FB_UDR_EXECUTE_DYNAMIC_TRIGGER	\
-	typedef void* FieldsMessage;	\
+	FB_UDR__DYNAMIC_TYPE(FieldsMessage);	\
 	\
 	FB_UDR__EXECUTE_TRIGGER
 
@@ -219,13 +219,15 @@ namespace Firebird
 	{	\
 		try	\
 		{	\
-			internalExecute(status, context, action, (FieldsMessage*) oldFields, (FieldsMessage*) newFields);	\
+			internalExecute(status, context, action,	\
+				(FieldsMessage::Type*) oldFields, (FieldsMessage::Type*) newFields);	\
 		}	\
 		FB_UDR__CATCH	\
 	}	\
 	\
 	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
-		::Firebird::ExternalTrigger::Action action, FieldsMessage* oldFields, FieldsMessage* newFields)
+		::Firebird::ExternalTrigger::Action action, \
+		FieldsMessage::Type* oldFields, FieldsMessage::Type* newFields)
 
 
 #define FB_UDR_INITIALIZE	\
@@ -631,7 +633,7 @@ public:
 	}
 
 	virtual void setup(IStatus* status, ExternalContext* /*context*/,
-		const IRoutineMetadata* /*metadata*/, ITriggerMessage* fields)
+		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* fields)
 	{
 		T::FieldsMessage::setup(status, fields);
 	}

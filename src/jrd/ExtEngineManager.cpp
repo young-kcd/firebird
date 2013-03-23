@@ -61,6 +61,7 @@ namespace Jrd {
 static MakeUpgradeInfo<> upInfo;
 
 
+// Create a Format based on a IMessageMetadata.
 static Format* createFormat(MemoryPool& pool, IMessageMetadata* params)
 {
 	LocalStatus status;
@@ -227,11 +228,22 @@ ExtEngineManager::ExternalContextImpl::ExternalContextImpl(thread_db* tdbb,
 	//// TODO: admin rights
 
 	clientCharSet = INTL_charset_lookup(tdbb, internalAttachment->att_client_charset)->getName();
+
+	internalAttachment->att_interface->addRef();
+
+	externalAttachment = MasterInterfacePtr()->registerAttachment(JProvider::getInstance(),
+		internalAttachment->att_interface);
 }
 
 ExtEngineManager::ExternalContextImpl::~ExternalContextImpl()
 {
 	releaseTransaction();
+
+	if (externalAttachment)
+	{
+		externalAttachment->release();
+		externalAttachment = NULL;
+	}
 }
 
 void ExtEngineManager::ExternalContextImpl::releaseTransaction()
@@ -240,12 +252,6 @@ void ExtEngineManager::ExternalContextImpl::releaseTransaction()
 	{
 		externalTransaction->release();
 		externalTransaction = NULL;
-	}
-
-	if (externalAttachment)
-	{
-		externalAttachment->release();
-		externalAttachment = NULL;
 	}
 
 	internalTransaction = NULL;
@@ -259,23 +265,13 @@ void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 		return;
 
 	releaseTransaction();
-	fb_assert(!externalAttachment && !externalTransaction);
-
-	MasterInterfacePtr master;
-
-	if (internalAttachment)
-	{
-		internalAttachment->att_interface->addRef();
-
-		externalAttachment = master->registerAttachment(JProvider::getInstance(),
-			internalAttachment->att_interface);
-	}
+	fb_assert(!externalTransaction);
 
 	if ((internalTransaction = newTransaction))
 	{
 		internalTransaction->getInterface()->addRef();
 
-		externalTransaction = master->registerTransaction(externalAttachment,
+		externalTransaction = MasterInterfacePtr()->registerTransaction(externalAttachment,
 			internalTransaction->getInterface());
 	}
 }
@@ -470,7 +466,7 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 
 
 ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineManager* aExtManager,
-			ExternalEngine* aEngine, RoutineMetadata* aMetadata, TriggerMessage& fieldsMsg,
+			ExternalEngine* aEngine, RoutineMetadata* aMetadata,
 			ExternalTrigger* aTrigger, const Jrd::Trigger* aTrg)
 	: extManager(aExtManager),
 	  engine(aEngine),
@@ -487,121 +483,10 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 
 	if (relation)
 	{
-		bool blrPresent = fieldsMsg.blr.hasData();
-		Format* relFormat = relation->rel_current_format;
-		GenericMap<Left<MetaName, USHORT> > fieldsMap;
+		format = createFormat(pool, metadata->triggerFields);
 
-		for (size_t i = 0; i < relation->rel_fields->count(); ++i)
-		{
-			jrd_fld* field = (*relation->rel_fields)[i];
-			if (!field)
-				continue;
-
-			fieldsMap.put(field->fld_name, (USHORT) i);
-		}
-
-		BlrReader reader(fieldsMsg.blr.begin(), fieldsMsg.blr.getCount());
-		ULONG offset = 0;
-		USHORT maxAlignment = 0;
-		USHORT count;
-
-		if (blrPresent)
-		{
-			reader.checkByte(blr_version5);
-			reader.checkByte(blr_begin);
-			reader.checkByte(blr_message);
-			reader.getByte();	// message number: ignore it
-			count = reader.getWord();
-
-			if (count != 2 * fieldsMsg.names.getCount())
-			{
-				status_exception::raise(
-					Arg::Gds(isc_ee_blr_mismatch_names_count) <<
-					Arg::Num(fieldsMsg.names.getCount()) <<
-					Arg::Num(count));
-			}
-		}
-		else
-			count = fieldsMap.count() * 2;
-
-		format.reset(Format::newFormat(pool, count));
-
-		for (unsigned i = 0; i < count / 2; ++i)
-		{
-			dsc* desc = &format->fmt_desc[i * 2];
-
-			if (blrPresent)
-			{
-				USHORT pos;
-
-				if (!fieldsMap.get(fieldsMsg.names[i], pos))
-				{
-					status_exception::raise(
-						Arg::Gds(isc_ee_blr_mismatch_name_not_found) <<
-						Arg::Str(fieldsMsg.names[i]));
-				}
-
-				fieldsPos.add(pos);
-				PAR_datatype(reader, desc);
-			}
-			else
-			{
-				fieldsPos.add(i);
-				*desc = relFormat->fmt_desc[i];
-			}
-
-			USHORT align = type_alignments[desc->dsc_dtype];
-			maxAlignment = MAX(maxAlignment, align);
-
-			offset = FB_ALIGN(offset, align);
-			desc->dsc_address = (UCHAR*) (IPTR) offset;
-			offset += desc->dsc_length;
-
-			const dsc* fieldDesc = &relFormat->fmt_desc[i];
-
-			if (desc->isText() && desc->getCharSet() == CS_NONE)
-				desc->setTextType(fieldDesc->getTextType());
-			desc->setNullable(fieldDesc->isNullable());
-
-			++desc;
-
-			if (blrPresent)
-			{
-				PAR_datatype(reader, desc);
-
-				if (!DSC_EQUIV(desc, &shortDesc, false))
-				{
-					status_exception::raise(
-						Arg::Gds(isc_ee_blr_mismatch_null) <<
-						Arg::Num(i * 2 + 1));
-				}
-			}
-			else
-				*desc = shortDesc;
-
-			align = type_alignments[desc->dsc_dtype];
-			maxAlignment = MAX(maxAlignment, align);
-
-			offset = FB_ALIGN(offset, align);
-			desc->dsc_address = (UCHAR*) (IPTR) offset;
-			offset += desc->dsc_length;
-		}
-
-		if (blrPresent)
-		{
-			reader.checkByte(blr_end);
-			reader.checkByte(blr_eoc);
-
-			if (offset != fieldsMsg.bufferLength)
-			{
-				status_exception::raise(
-					Arg::Gds(isc_ee_blr_mismatch_length) <<
-					Arg::Num(fieldsMsg.bufferLength) <<
-					Arg::Num(offset));
-			}
-		}
-
-		format->fmt_length = FB_ALIGN(offset, maxAlignment);
+		for (unsigned i = 0; i < format->fmt_count / 2; ++i)
+			fieldsPos.add(i);
 	}
 }
 
@@ -836,12 +721,12 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
 	LocalStatus status;
 
 	RefPtr<IMetadataBuilder> inBuilder(metadata->inputParameters->getBuilder(&status));
-	inBuilder->release();
 	status.check();
+	inBuilder->release();
 
 	RefPtr<IMetadataBuilder> outBuilder(metadata->outputParameters->getBuilder(&status));
-	outBuilder->release();
 	status.check();
+	outBuilder->release();
 
 	ExternalFunction* externalFunction;
 
@@ -937,12 +822,12 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
 	LocalStatus status;
 
 	RefPtr<IMetadataBuilder> inBuilder(metadata->inputParameters->getBuilder(&status));
-	inBuilder->release();
 	status.check();
+	inBuilder->release();
 
 	RefPtr<IMetadataBuilder> outBuilder(metadata->outputParameters->getBuilder(&status));
-	outBuilder->release();
 	status.check();
+	outBuilder->release();
 
 	ExternalProcedure* externalProcedure;
 
@@ -984,7 +869,7 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
 }
 
 
-ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
+void ExtEngineManager::makeTrigger(thread_db* tdbb, Jrd::Trigger* trg,
 	const MetaName& engine, const string& entryPoint, const string& body,
 	ExternalTrigger::Type type)
 {
@@ -1031,10 +916,20 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 			item.length = sqlLen;
 			item.scale = sqlScale;
 			item.nullable = !field->fld_not_null;
+			item.finished = true;
 		}
 	}
 
-	TriggerMessage fieldsMsg(pool);
+	LocalStatus status;
+
+	RefPtr<IMetadataBuilder> fieldsBuilder(relation ?
+		metadata->triggerFields->getBuilder(&status) : NULL);
+	if (relation)
+	{
+		status.check();
+		fieldsBuilder->release();
+	}
+
 	ExternalTrigger* externalTrigger;
 
 	{	// scope
@@ -1042,7 +937,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 
 		LocalStatus status;
 		externalTrigger = attInfo->engine->makeTrigger(&status, attInfo->context, metadata,
-			&fieldsMsg);
+			fieldsBuilder);
 		status.check();
 
 		if (!externalTrigger)
@@ -1050,12 +945,18 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 			status_exception::raise(
 				Arg::Gds(isc_eem_trig_not_returned) << trg->name << engine);
 		}
+
+		if (relation)
+		{
+			metadata->triggerFields = fieldsBuilder->getMetadata(&status);
+			status.check();
+		}
 	}
 
 	try
 	{
-		return FB_NEW(getPool()) Trigger(tdbb, pool, this, attInfo->engine, metadata.release(),
-			fieldsMsg, externalTrigger, trg);
+		trg->extTrigger = FB_NEW(getPool()) Trigger(tdbb, pool, this, attInfo->engine,
+			metadata.release(), externalTrigger, trg);
 	}
 	catch (...)
 	{

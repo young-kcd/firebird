@@ -38,15 +38,6 @@ namespace Firebird {
 class ExternalEngine;
 
 
-class ITriggerMessage : public IVersioned
-{
-public:
-	virtual void FB_CARG set(const unsigned char* blr, unsigned blrLength, unsigned bufferLength,
-		const char** names, unsigned count) = 0;
-};
-#define FB_TRIGGER_MESSAGE_VERSION (FB_VERSIONED_VERSION + 1)
-
-
 // Connection to current database in external engine.
 // Context passed to ExternalEngine has SYSDBA privileges.
 // Context passed to ExternalFunction, ExternalProcedure and ExternalTrigger
@@ -169,7 +160,7 @@ public:
 	virtual const char* FB_CARG getBody(IStatus* status) const = 0;
 	virtual IMessageMetadata* FB_CARG getInputMetadata(IStatus* status) const = 0;
 	virtual IMessageMetadata* FB_CARG getOutputMetadata(IStatus* status) const = 0;
-	virtual const IMessageMetadata* FB_CARG getTriggerFields(IStatus* status) const = 0;
+	virtual IMessageMetadata* FB_CARG getTriggerMetadata(IStatus* status) const = 0;
 	virtual const char* FB_CARG getTriggerTable(IStatus* status) const = 0;
 	virtual ExternalTrigger::Type FB_CARG getTriggerType(IStatus* status) const = 0;
 };
@@ -203,7 +194,7 @@ public:
 		const IRoutineMetadata* metadata,
 		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
 	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, ITriggerMessage* triggerMsg) = 0;
+		const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) = 0;
 };
 #define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 6)
 

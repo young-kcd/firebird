@@ -58,7 +58,7 @@ class TriggerFactory
 {
 public:
 	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
-		ITriggerMessage* fields) = 0;
+		IMetadataBuilder* fieldsBuilder) = 0;
 	virtual ExternalTrigger* FB_CALL newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };

@@ -410,7 +410,6 @@ FB_UDR_BEGIN_PROCEDURE(inc)
 FB_UDR_END_PROCEDURE
 
 
-#if 0	//// FIXME:
 /***
 Sample usage:
 
@@ -460,52 +459,20 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		if (!initialized)
 			return;
 
-		for (int i = 0; i < inSqlDa->sqln; ++i)
-		{
-			XSQLVAR* var = &inSqlDa->sqlvar[i];
-			delete [] var->sqldata;
-			delete var->sqlind;
-		}
+		StatusImpl status(master);
 
-		delete [] reinterpret_cast<char*>(inSqlDa);
-
-		ISC_STATUS_ARRAY statusVector = {0};
-		isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_drop);
+		triggerMetadata->release();
+		stmt->free(&status);
 	}
 
 	FB_UDR_EXECUTE_DYNAMIC_TRIGGER
 	{
-		///AutoDispose<IStatus> status(master->getStatus());
-
-		const IParametersMetadata* fields = metadata->getTriggerFields(status);
+		ITransaction* transaction = context->getTransaction(status);
 		StatusException::check(status->get());
 
-		unsigned fieldsCount = fields->getCount(status);
+		// This will not work if the table has computed fields.
+		stmt->execute(status, transaction, triggerMetadata, newFields, NULL, NULL);
 		StatusException::check(status->get());
-
-		MessageImpl message(fieldsCount, newFields);
-
-		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(context);
-		isc_tr_handle trHandle = getIscTrHandle(context);
-
-		for (unsigned i = 1; i <= fieldsCount; ++i)
-		{
-			ParamDesc<void*> field(message, fields);
-
-			XSQLVAR* var = &inSqlDa->sqlvar[i - 1];
-
-			if (message.isNull(field))
-				*var->sqlind = -1;
-			else
-			{
-				*var->sqlind = 0;
-				memcpy(var->sqldata, message[field], var->sqllen);
-			}
-		}
-
-		StatusException::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
-			inSqlDa), statusVector);
 	}
 
 	FB_UDR_INITIALIZE
@@ -514,8 +481,9 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		isc_db_handle dbHandle = getIscDbHandle(context);
 		isc_tr_handle trHandle = getIscTrHandle(context);
 
-		stmtHandle = 0;
-		StatusException::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
+		isc_stmt_handle stmtHandle = 0;
+		StatusException::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle),
+			statusVector);
 		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), statusVector);
@@ -538,11 +506,11 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		else
 			info = "";
 
-		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
+		XSQLDA* inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 1;
-		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
-			statusVector);
+		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle,
+			SQL_DIALECT_CURRENT, inSqlDa), statusVector);
 		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
 		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
 		*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
@@ -550,23 +518,23 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		outSqlDa->version = SQLDA_VERSION1;
 		outSqlDa->sqln = 1;
-		StatusException::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
-			statusVector);
+		StatusException::check(isc_dsql_describe(statusVector, &stmtHandle,
+			SQL_DIALECT_CURRENT, outSqlDa), statusVector);
 		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
 		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
 
-		StatusException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
-			inSqlDa, outSqlDa), statusVector);
-		StatusException::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+		StatusException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle,
+			SQL_DIALECT_CURRENT, inSqlDa, outSqlDa), statusVector);
+		StatusException::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare),
+			statusVector);
 
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
-		inSqlDa = NULL;
 
-		const IParametersMetadata* fields = metadata->getTriggerFields(status);
+		triggerMetadata = metadata->getTriggerMetadata(status);
 		StatusException::check(status->get());
 
-		unsigned count = fields->getCount(status);
+		unsigned count = triggerMetadata->getCount(status);
 		StatusException::check(status->get());
 
 		char buffer[65536];
@@ -577,7 +545,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			if (i > 0)
 				strcat(buffer, ",\n");
 
-			const char* name = fields->getField(status, i);
+			const char* name = triggerMetadata->getField(status, i);
 			StatusException::check(status->get());
 
 			strcat(buffer, "    p");
@@ -598,7 +566,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			if (i > 0)
 				strcat(buffer, ", ");
 
-			const char* name = fields->getField(status, i);
+			const char* name = triggerMetadata->getField(status, i);
 			StatusException::check(status->get());
 
 			strcat(buffer, "\"");
@@ -629,68 +597,13 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
-			SQL_DIALECT_CURRENT, NULL), statusVector);
+		IAttachment* attachment = context->getAttachment(status);
+		StatusException::check(status->get());
 
-		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(count))]);
-		inSqlDa->version = SQLDA_VERSION1;
-		inSqlDa->sqln = count;
-		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
-			statusVector);
+		ITransaction* transaction = context->getTransaction(status);
+		StatusException::check(status->get());
 
-		for (unsigned i = 0; i < count; ++i)
-		{
-			XSQLVAR* var = &inSqlDa->sqlvar[i];
-
-			switch (var->sqltype & ~1)
-			{
-				case SQL_TEXT:
-					var->sqldata = new char[var->sqllen];
-					break;
-
-				case SQL_VARYING:
-					var->sqldata = new char[var->sqllen];
-					var->sqllen += sizeof(short);
-					break;
-
-				case SQL_SHORT:
-					var->sqldata = new char[sizeof(short)];
-					break;
-
-				case SQL_LONG:
-					var->sqldata = new char[sizeof(int32)];
-					break;
-
-				case SQL_INT64:
-					var->sqldata = new char[sizeof(int64)];
-					break;
-
-				case SQL_FLOAT:
-					var->sqltype = SQL_DOUBLE;
-					var->sqllen = sizeof(double);
-					// fall into
-
-				case SQL_DOUBLE:
-					var->sqldata = new char[sizeof(double)];
-					break;
-
-				case SQL_TYPE_DATE:
-					var->sqldata = new char[sizeof(ISC_DATE)];
-					break;
-
-				//// TODO: SQL_TIMESTAMP, SQL_TYPE_TIME
-
-				case SQL_BLOB:
-					var->sqldata = new char[sizeof(ISC_QUAD)];
-					break;
-
-				default:
-					assert(false);
-			}
-
-			var->sqltype |= 1;
-			var->sqlind = new short(-1);
-		}
+		stmt = attachment->prepare(status, transaction, 0, buffer, 3, 0);
 
 		delete [] outSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(outSqlDa);
@@ -699,11 +612,12 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 	}
 
 	bool initialized;
-	XSQLDA* inSqlDa;
-	isc_stmt_handle stmtHandle;
+	IMessageMetadata* triggerMetadata;
+	IStatement* stmt;
 FB_UDR_END_TRIGGER
 
 
+#if 0	//// FIXME:
 FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	FB_UDR_TRIGGER(replicate_persons)()
 		: initialized(false)
