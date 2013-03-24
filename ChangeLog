@@ -1,3 +1,8 @@
+ 2013-03-23 02:14  asfernandes 
+   M src/jrd/constants.h
+   M src/jrd/fun.epp
+Improvement CORE-4047 - Increase number of input parameters for External Functions (UDFs) to 15.
+
  2013-03-17 14:40  dimitr 
    M src/jrd/dpm.epp
    M src/jrd/sqz.cpp
