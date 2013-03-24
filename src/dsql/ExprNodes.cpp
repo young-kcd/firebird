@@ -9415,8 +9415,14 @@ void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 	MAKE_desc(dsqlScratch, &desc1, expr);
 	MAKE_desc(dsqlScratch, &desc2, start);
-	if (length && length->is<LiteralNode>())
+
+	if (length)
+	{
 		MAKE_desc(dsqlScratch, &desc3, length);
+
+		if (!length->is<LiteralNode>())
+			desc3.dsc_address = NULL;
+	}
 
 	DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
 }
