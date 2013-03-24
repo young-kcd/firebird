@@ -1,3 +1,26 @@
+ 2013-03-23 21:12  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/jrd.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+Work in progress fixing external triggers.
+
+ 2013-03-23 20:41  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4067 - Problem with "CREATE DATABASE ... COLLATION ..." and 1 dialect.
+
+ 2013-03-23 13:58  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+Cleanup:
+- removed never used bcb_checkpoint and BDB_checkpoint
+- removed conditional compilation for CACHE_WRITER as it is already ruled by flag BCB_cache_writer at almost all places
+- added necessary checks for BCB_cache_writer when it was missed
+
  2013-03-22 14:29  alexpeshkoff 
    M src/remote/client/interface.cpp
    M src/yvalve/YObjects.h
