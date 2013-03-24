@@ -822,8 +822,10 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 				dstTables->items.pop();
 			}
 		}
-		else if (!(*pDstTable)->is<SelectExprNode>())
-			fb_assert(false);
+		else
+		{
+			fb_assert((*pDstTable)->is<SelectExprNode>());
+		}
 	}
 
 	if (found)

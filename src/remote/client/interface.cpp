@@ -2421,8 +2421,7 @@ Statement* Attachment::prepare(IStatus* status, ITransaction* apiTra,
 		}
 		else
 		{
-			if (response->p_resp_object)
-				fb_assert(false);
+			fb_assert(!response->p_resp_object);
 		}
 		response->p_resp_data = temp;
 
