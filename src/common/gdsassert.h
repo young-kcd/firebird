@@ -35,41 +35,38 @@
 #include <unistd.h>		// isatty()
 #endif
 
-#define FB_ASSERT_FAILURE_STRING	"Assertion (%s) failure: %s %"LINEFORMAT"\n"
+inline void fb_assert_impl(const char* msg, const char* file, int line, bool do_abort)
+{
+	const char* const ASSERT_FAILURE_STRING = "Assertion (%s) failure: %s %"LINEFORMAT"\n";
+
+	if (isatty(2))
+		fprintf(stderr, ASSERT_FAILURE_STRING, msg, file, line);
+	else
+		gds__log(ASSERT_FAILURE_STRING, msg, msg, line);
+
+	if (do_abort)
+		abort();
+}
 
 #if !defined(fb_assert)
-#define fb_assert_continue(ex)	\
-	do	\
-	{	\
-		if (!(ex))	\
-		{	\
-			if (isatty(2))	\
-				fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
-			else	\
-				gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
-		}	\
-	} while (false)
 
-#define fb_assert(ex)	\
-	do	\
-	{	\
-		if (!(ex))	\
-		{	\
-			if (isatty(2))	\
-				fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
-			else	\
-				gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
-			abort();	\
-		}	\
-	} while (false)
-#endif
+#define fb_assert(ex) \
+	((void) ( !(ex) && (fb_assert_impl(#ex, __FILE__, __LINE__, true), 1) ))
+
+#define fb_assert_continue(ex) \
+	((void) ( !(ex) && (fb_assert_impl(#ex, __FILE__, __LINE__, false), 1) ))
+
+#endif	// fb_assert
 
 #else	// DEV_BUILD
 
-#define fb_assert(ex)				// nothing
-#define fb_assert_continue(ex)		// nothing
+#define fb_assert(ex) \
+	((void) 0)
 
-#endif // DEV_BUILD
+#define fb_assert_continue(ex) \
+	((void) 0)
+
+#endif	// DEV_BUILD
 
 namespace DtorException {
 	inline void devHalt()
