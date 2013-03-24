@@ -6667,6 +6667,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 			PathName secureDb;
 			if (auth.getInfo(&name, NULL, &secureDb))
 			{
+				ISC_systemToUtf8(name);
+
 				if (secureDb.hasData())
 				{
 					if (config && (secureDb != (*config)->getSecurityDatabase()))
@@ -6677,7 +6679,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 				else
 				{
 					auth.moveNext();
-					auth.getInfo(&trusted_role, NULL, NULL);
+					if (auth.getInfo(&trusted_role, NULL, NULL))
+						ISC_systemToUtf8(trusted_role);
 				}
 			}
 		}
@@ -6691,10 +6694,13 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 			}
 		}
 
+		ISC_utf8ToSystem(name);
+		name.upper();
+		ISC_systemToUtf8(name);
+
 		// if the name from the user database is defined as SYSDBA,
 		// we define that user id as having system privileges
 
-		name.upper();
 		if (name == SYSDBA_USER_NAME)
 		{
 			wheel = true;
