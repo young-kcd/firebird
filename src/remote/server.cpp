@@ -53,6 +53,7 @@
 #endif
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
@@ -1171,7 +1172,14 @@ static void attach_database2(rem_port* port,
 		bool wheel = false;
 		if (authSspi->getLogin(trustedUserName, wheel))
 		{
+			ISC_systemToUtf8(trustedUserName);
+			ISC_escape(trustedUserName);
+
+			if (!dpb_buffer.find(isc_dpb_utf8_filename))
+				ISC_utf8ToSystem(trustedUserName);
+
 			dpb_buffer.insertString(isc_dpb_trusted_auth, trustedUserName);
+
 			if (wheel && !dpb_buffer.find(isc_dpb_sql_role_name))
 			{
 				dpb_buffer.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
@@ -1184,8 +1192,16 @@ static void attach_database2(rem_port* port,
 	rem_str* string = port->port_user_name;
 	if (string)
 	{
+		Firebird::string sysUserName(string->str_data, string->str_length);
+
+		ISC_systemToUtf8(sysUserName);
+		ISC_escape(sysUserName);
+
+		if (!dpb_buffer.find(isc_dpb_utf8_filename))
+			ISC_utf8ToSystem(sysUserName);
+
 		dpb_buffer.setCurOffset(dpb_buffer.getBufferLength());
-		dpb_buffer.insertString(isc_dpb_sys_user_name, string->str_data, string->str_length);
+		dpb_buffer.insertString(isc_dpb_sys_user_name, sysUserName);
 	}
 
 	// Now insert additional clumplets into dpb
@@ -4797,7 +4813,14 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		bool wheel = false;
 		if (authSspi->getLogin(trustedUserName, wheel))
 		{
+			ISC_systemToUtf8(trustedUserName);
+			ISC_escape(trustedUserName);
+
+			if (!spb.find(isc_dpb_utf8_filename))
+				ISC_utf8ToSystem(trustedUserName);
+
 			spb.insertString(isc_spb_trusted_auth, trustedUserName);
+
 			if (wheel && !spb.find(isc_spb_sql_role_name))
 			{
 				spb.insertString(isc_spb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
@@ -4810,6 +4833,14 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	const rem_str* string = port_user_name;
 	if (string)
 	{
+		Firebird::string sysUserName(string->str_data, string->str_length);
+
+		ISC_systemToUtf8(sysUserName);
+		ISC_escape(sysUserName);
+
+		if (!spb.find(isc_dpb_utf8_filename))
+			ISC_utf8ToSystem(sysUserName);
+
 		spb.setCurOffset(spb.getBufferLength());
 		spb.insertString(isc_spb_sys_user_name, string->str_data, string->str_length);
 	}

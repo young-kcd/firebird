@@ -6368,9 +6368,13 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	bool wheel = true;
 #else
 	bool wheel = false;
+
 	if (options.dpb_trusted_login.hasData())
 	{
 		name = options.dpb_trusted_login;
+		ISC_utf8ToSystem(name);
+		name.upper();
+		ISC_systemToUtf8(name);
 	}
 	else
 	{
@@ -6381,19 +6385,28 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 			string s(options.dpb_sys_user_name);
 			ISC_utf8ToSystem(s);
 			wheel = ISC_get_user(&name, &id, &group, s.nullStr());
+			name.upper();
 			ISC_systemToUtf8(name);
 		}
 
 		if (options.dpb_user_name.hasData() || (id == -1))
 		{
+			name = options.dpb_user_name;
+
+			if (name.hasData())
+			{
+				ISC_utf8ToSystem(name);
+				name.upper();
+				ISC_systemToUtf8(name);
+			}
+
 			const string remote = options.dpb_network_protocol +
 				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
 				options.dpb_remote_address;
 
 			SecurityDatabase::initialize();
 			user.usr_fini_sec_db = true;
-			SecurityDatabase::verifyUser(name,
-										 options.dpb_user_name.nullStr(),
+			SecurityDatabase::verifyUser(name.nullStr(),
 										 options.dpb_password.nullStr(),
 										 options.dpb_password_enc.nullStr(),
 										 &id, &group, &node_id, remote);
@@ -6403,7 +6416,6 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	// if the name from the user database is defined as SYSDBA,
 	// we define that user id as having system privileges
 
-	name.upper();
 	if (name == SYSDBA_USER_NAME)
 	{
 		wheel = true;

@@ -50,6 +50,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/thread_proto.h"
@@ -871,15 +872,22 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnouser));
 				}
 
-				string name; // unused after retrieved
+				string name = options.spb_user_name;
 				int id, group, node_id;
+
+				if (name.hasData())
+				{
+					ISC_utf8ToSystem(name);
+					name.upper();
+					ISC_systemToUtf8(name);
+				}
 
 				const string remote = options.spb_network_protocol +
 					(options.spb_network_protocol.isEmpty() ||
 						options.spb_remote_address.isEmpty() ? "" : "/") +
 					options.spb_remote_address;
 
-				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
+				SecurityDatabase::verifyUser(name.nullStr(),
 						                     options.spb_password.nullStr(),
 											 options.spb_password_enc.nullStr(),
 											 &id, &group, &node_id, remote);

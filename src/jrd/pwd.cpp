@@ -443,8 +443,7 @@ int SecurityDatabase::onShutdown(const int, const int, void* me)
 	return FB_SUCCESS;
 }
 
-void SecurityDatabase::verifyUser(string& name,
-								  const TEXT* user_name,
+void SecurityDatabase::verifyUser(const TEXT* user_name,
 								  const TEXT* password,
 								  const TEXT* password_enc,
 								  int* uid,
@@ -452,17 +451,8 @@ void SecurityDatabase::verifyUser(string& name,
 								  int* node_id,
 								  const string& remoteId)
 {
-	if (user_name)
-	{
-		name = user_name;
-		for (unsigned int n = 0; n < name.length(); ++n)
-		{
-			name[n] = UPPER7(name[n]);
-		}
-	}
-
 #ifndef EMBEDDED
-	else
+	if (!user_name)
 	{
 		remoteFailedLogins().loginFail(remoteId);
 		status_exception::raise(Arg::Gds(isc_login));
@@ -487,7 +477,7 @@ void SecurityDatabase::verifyUser(string& name,
 	// that means the current context must be saved and restored.
 
 	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
-	const bool found = instance->lookupUser(name.c_str(), uid, gid, pw1);
+	const bool found = instance->lookupUser(user_name, uid, gid, pw1);
 	pw1[MAX_PASSWORD_LENGTH] = 0;
 	string storedHash(pw1, MAX_PASSWORD_LENGTH);
 	storedHash.rtrim();
@@ -499,7 +489,7 @@ void SecurityDatabase::verifyUser(string& name,
 
 	if ((!password && !password_enc) || (password && password_enc) || !found)
 	{
-		usernameFailedLogins().loginFail(name);
+		usernameFailedLogins().loginFail(user_name);
 		remoteFailedLogins().loginFail(remoteId);
 		status_exception::raise(Arg::Gds(isc_login));
 	}
@@ -512,7 +502,7 @@ void SecurityDatabase::verifyUser(string& name,
 	}
 
 	string newHash;
-	hash(newHash, name, password_enc, storedHash);
+	hash(newHash, user_name, password_enc, storedHash);
 	if (newHash != storedHash)
 	{
 		bool legacyHash = Config::getLegacyHash();
@@ -526,13 +516,13 @@ void SecurityDatabase::verifyUser(string& name,
 		}
 		if (! legacyHash)
 		{
-			usernameFailedLogins().loginFail(name);
+			usernameFailedLogins().loginFail(user_name);
 			remoteFailedLogins().loginFail(remoteId);
 			status_exception::raise(Arg::Gds(isc_login));
 		}
 	}
 
-	usernameFailedLogins().loginSuccess(name);
+	usernameFailedLogins().loginSuccess(user_name);
 	remoteFailedLogins().loginSuccess(remoteId);
 #endif
 
