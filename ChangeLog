@@ -1,3 +1,24 @@
+ 2013-03-24 16:16  dimitr 
+   M src/jrd/jrd.cpp
+The minimal patch for CORE-1604 (Error at database creation by user with non-ascii name) and CORE-3243 (CURRENT_USER and MON$USER don't work properly) that seems to work for the trusted authentication, but [at least] the legacy auth module has to be reviewed as it seems to deal with the user name "as is", without checking whether it arrived in UTF8 or not.
+
+ 2013-03-24 15:55  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed problem reported in fb-devel: FB3 vs FB2.5: Different result for SUBSTRING('test' FROM 1 FOR NULL).
+
+ 2013-03-24 07:14  dimitr 
+   M extern/icu/source/allinone/firebird2intl.props
+Enabled multi-threaded compilation for ICU.
+
+ 2013-03-24 06:38  dimitr 
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/remote/client/interface.cpp
+Misc.
+
+ 2013-03-24 06:19  dimitr 
+   M src/common/gdsassert.h
+A more clever implementation of the assertion macros. It suppresses С4390 warnings and pleases the /W4 warning level at the same time, without any need for the new macros.
+
  2013-03-23 21:12  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M src/include/firebird/ExternalEngine.h
