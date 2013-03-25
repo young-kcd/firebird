@@ -1988,7 +1988,8 @@ static UCHAR* var_info(const dsql_msg* message,
 			SLONG sql_len, sql_sub_type, sql_scale, sql_type;
 			param->par_desc.getSqlInfo(&sql_len, &sql_sub_type, &sql_scale, &sql_type);
 
-			if (input_message && param->par_desc.dsc_dtype == dtype_text &&
+			if (input_message &&
+				(param->par_desc.dsc_dtype == dtype_text || param->par_is_text) &&
 				(param->par_desc.dsc_flags & DSC_null))
 			{
 				sql_type = SQL_NULL;
