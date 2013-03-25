@@ -85,7 +85,7 @@ namespace Firebird
 	FB_UDR__EXECUTE_FUNCTION
 
 #define FB_UDR__EXECUTE_FUNCTION	\
-	virtual void FB_CALL execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
+	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
 		void* in, void* out)	\
 	{	\
 		try	\
@@ -150,7 +150,7 @@ namespace Firebird
 	FB_UDR__EXECUTE_PROCEDURE
 
 #define FB_UDR__EXECUTE_PROCEDURE	\
-	virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::IStatus* status, \
+	virtual ::Firebird::ExternalResultSet* FB_CARG open(::Firebird::IStatus* status, \
 		::Firebird::ExternalContext* context, void* in, void* out)	\
 	{	\
 		try	\
@@ -171,7 +171,7 @@ namespace Firebird
 					context, procedure, in, out)
 
 #define FB_UDR_FETCH_PROCEDURE	\
-	virtual bool FB_CALL fetch(::Firebird::IStatus* status)	\
+	virtual bool FB_CARG fetch(::Firebird::IStatus* status)	\
 	{	\
 		try	\
 		{	\
@@ -214,7 +214,7 @@ namespace Firebird
 	FB_UDR__EXECUTE_TRIGGER
 
 #define FB_UDR__EXECUTE_TRIGGER	\
-	virtual void FB_CALL execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
+	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
 		::Firebird::ExternalTrigger::Action action, void* oldFields, void* newFields)	\
 	{	\
 		try	\
@@ -456,7 +456,7 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose()
+	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
 	}
@@ -485,12 +485,12 @@ template <typename This>
 class Function : public ExternalFunction, public Helper
 {
 public:
-	virtual void FB_CALL dispose()
+	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CALL getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
+	virtual void FB_CARG getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
@@ -516,12 +516,12 @@ template <typename This>
 class Procedure : public ExternalProcedure, public Helper
 {
 public:
-	virtual void FB_CALL dispose()
+	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CALL getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
+	virtual void FB_CARG getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
@@ -547,12 +547,12 @@ template <typename This>
 class Trigger : public ExternalTrigger, public Helper
 {
 public:
-	virtual void FB_CALL dispose()
+	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CALL getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
+	virtual void FB_CARG getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
@@ -589,7 +589,7 @@ public:
 		T::OutMessage::setup(status, out);
 	}
 
-	virtual ExternalFunction* FB_CALL newItem(IStatus* status, ExternalContext* context,
+	virtual ExternalFunction* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
 		T* obj = new(metadata) Routine<T>;
@@ -614,7 +614,7 @@ public:
 		T::OutMessage::setup(status, out);
 	}
 
-	virtual ExternalProcedure* FB_CALL newItem(IStatus* status, ExternalContext* context,
+	virtual ExternalProcedure* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
 		T* obj = new(metadata) Routine<T>;
@@ -638,7 +638,7 @@ public:
 		T::FieldsMessage::setup(status, fields);
 	}
 
-	virtual ExternalTrigger* FB_CALL newItem(IStatus* status, ExternalContext* context,
+	virtual ExternalTrigger* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
 		T* obj = new(metadata) Routine<T>;

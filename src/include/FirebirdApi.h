@@ -29,12 +29,6 @@
 #ifndef FIREBIRD_API_H
 #define FIREBIRD_API_H
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#	define FB_CALL __stdcall
-#else
-#	define FB_CALL
-#endif
-
 #define FB_NULL	0L
 
 
@@ -59,15 +53,6 @@ typedef unsigned int Handle;
 #else
 typedef void* Handle;
 #endif
-
-
-// Interface used in cases which an instance is created by one layer and released by another one.
-class Disposable
-{
-public:
-	// Disposes the object.
-	virtual void FB_CALL dispose() = 0;
-};
 
 
 }	// namespace Firebird

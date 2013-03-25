@@ -149,18 +149,18 @@ private:
 		const string& entryPoint);
 
 public:
-	virtual void FB_CALL open(IStatus* status, ExternalContext* context, Utf8* name, uint nameSize);
-	virtual void FB_CALL openAttachment(IStatus* status, ExternalContext* context);
-	virtual void FB_CALL closeAttachment(IStatus* status, ExternalContext* context);
-	virtual ExternalFunction* FB_CALL makeFunction(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG open(IStatus* status, ExternalContext* context, Utf8* name, uint nameSize);
+	virtual void FB_CARG openAttachment(IStatus* status, ExternalContext* context);
+	virtual void FB_CARG closeAttachment(IStatus* status, ExternalContext* context);
+	virtual ExternalFunction* FB_CARG makeFunction(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
-	virtual ExternalProcedure* FB_CALL makeProcedure(IStatus* status, ExternalContext* context,
+	virtual ExternalProcedure* FB_CARG makeProcedure(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
-	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
+	virtual ExternalTrigger* FB_CARG makeTrigger(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder);
 
 public:
-	virtual void FB_CALL dispose();
+	virtual void FB_CARG dispose();
 
 private:
 	Mutex childrenMutex;
@@ -203,7 +203,7 @@ static TriggerNode* registeredTriggers = NULL;
 //--------------------------------------
 
 
-class SharedFunction : public ExternalFunction
+class SharedFunction : public DisposeIface<ExternalFunction, FB_EXTERNAL_FUNCTION_VERSION>
 {
 public:
 	SharedFunction(IStatus* status, Engine* aEngine, ExternalContext* context,
@@ -228,13 +228,13 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose()
+	virtual void FB_CARG dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
@@ -252,7 +252,7 @@ public:
 		}
 	}
 
-	virtual void FB_CALL execute(IStatus* status, ExternalContext* context, void* inMsg, void* outMsg)
+	virtual void FB_CARG execute(IStatus* status, ExternalContext* context, void* inMsg, void* outMsg)
 	{
 		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
 			children, this, context, registeredFunctions, engine->functions, moduleName);
@@ -273,7 +273,7 @@ public:
 //--------------------------------------
 
 
-class SharedProcedure : public ExternalProcedure
+class SharedProcedure : public DisposeIface<ExternalProcedure, FB_EXTERNAL_PROCEDURE_VERSION>
 {
 public:
 	SharedProcedure(IStatus* status, Engine* aEngine, ExternalContext* context,
@@ -298,13 +298,13 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose()
+	virtual void FB_CARG dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
@@ -322,7 +322,7 @@ public:
 		}
 	}
 
-	virtual ExternalResultSet* FB_CALL open(IStatus* status, ExternalContext* context,
+	virtual ExternalResultSet* FB_CARG open(IStatus* status, ExternalContext* context,
 		void* inMsg, void* outMsg)
 	{
 		try
@@ -351,7 +351,7 @@ public:
 //--------------------------------------
 
 
-class SharedTrigger : public ExternalTrigger
+class SharedTrigger : public DisposeIface<ExternalTrigger, FB_EXTERNAL_TRIGGER_VERSION>
 {
 public:
 	SharedTrigger(IStatus* status, Engine* aEngine, ExternalContext* context,
@@ -374,13 +374,13 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose()
+	virtual void FB_CARG dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
@@ -398,7 +398,7 @@ public:
 		}
 	}
 
-	virtual void FB_CALL execute(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG execute(IStatus* status, ExternalContext* context,
 		ExternalTrigger::Action action, void* oldMsg, void* newMsg)
 	{
 		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
@@ -637,18 +637,18 @@ template <typename T, typename T2> T2* Engine::getNode(IStatus* status, T* nodes
 }
 
 
-void FB_CALL Engine::open(IStatus* /*status*/, ExternalContext* /*context*/, Utf8* name, uint nameSize)
+void FB_CARG Engine::open(IStatus* /*status*/, ExternalContext* /*context*/, Utf8* name, uint nameSize)
 {
 	strncpy(name, "UTF-8", nameSize);
 }
 
 
-void FB_CALL Engine::openAttachment(IStatus* /*status*/, ExternalContext* /*context*/)
+void FB_CARG Engine::openAttachment(IStatus* /*status*/, ExternalContext* /*context*/)
 {
 }
 
 
-void FB_CALL Engine::closeAttachment(IStatus* status, ExternalContext* context)
+void FB_CARG Engine::closeAttachment(IStatus* status, ExternalContext* context)
 {
 	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
 
@@ -684,7 +684,7 @@ void FB_CALL Engine::closeAttachment(IStatus* status, ExternalContext* context)
 }
 
 
-ExternalFunction* FB_CALL Engine::makeFunction(IStatus* status, ExternalContext* context,
+ExternalFunction* FB_CARG Engine::makeFunction(IStatus* status, ExternalContext* context,
 	const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
 	try
@@ -699,7 +699,7 @@ ExternalFunction* FB_CALL Engine::makeFunction(IStatus* status, ExternalContext*
 }
 
 
-ExternalProcedure* FB_CALL Engine::makeProcedure(IStatus* status, ExternalContext* context,
+ExternalProcedure* FB_CARG Engine::makeProcedure(IStatus* status, ExternalContext* context,
 	const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
 	try
@@ -714,7 +714,7 @@ ExternalProcedure* FB_CALL Engine::makeProcedure(IStatus* status, ExternalContex
 }
 
 
-ExternalTrigger* FB_CALL Engine::makeTrigger(IStatus* status, ExternalContext* context,
+ExternalTrigger* FB_CARG Engine::makeTrigger(IStatus* status, ExternalContext* context,
 	const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 {
 	try
@@ -729,7 +729,7 @@ ExternalTrigger* FB_CALL Engine::makeTrigger(IStatus* status, ExternalContext* c
 }
 
 
-void FB_CALL Engine::dispose()
+void FB_CARG Engine::dispose()
 {
 	delete this;
 }

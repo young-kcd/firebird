@@ -48,75 +48,81 @@ class ExternalContext
 {
 public:
 	// Gets the IMaster associated with this context.
-	virtual IMaster* FB_CALL getMaster() = 0;
+	virtual IMaster* FB_CARG getMaster() = 0;
 
 	// Gets the ExternalEngine associated with this context.
-	virtual ExternalEngine* FB_CALL getEngine(IStatus* status) = 0;
+	virtual ExternalEngine* FB_CARG getEngine(IStatus* status) = 0;
 
 	// Gets the Attachment associated with this context.
-	virtual IAttachment* FB_CALL getAttachment(IStatus* status) = 0;
+	virtual IAttachment* FB_CARG getAttachment(IStatus* status) = 0;
 
 	// Obtained transaction is valid only before control is returned to the engine
 	// or in ExternalResultSet::fetch calls of correspondent ExternalProcedure::open.
-	virtual ITransaction* FB_CALL getTransaction(IStatus* status) = 0;
+	virtual ITransaction* FB_CARG getTransaction(IStatus* status) = 0;
 
-	virtual const char* FB_CALL getUserName() = 0;
-	virtual const char* FB_CALL getDatabaseName() = 0;
+	virtual const char* FB_CARG getUserName() = 0;
+	virtual const char* FB_CARG getDatabaseName() = 0;
 
 	// Get user attachment character set.
-	virtual const Utf8* FB_CALL getClientCharSet() = 0;
+	virtual const Utf8* FB_CARG getClientCharSet() = 0;
 
 	// Misc info associated with a context. The pointers are never accessed or freed by Firebird.
 
 	// Obtains an unique (across all contexts) code to associate plugin and/or user information.
-	virtual int FB_CALL obtainInfoCode() = 0;
+	virtual int FB_CARG obtainInfoCode() = 0;
 	// Gets a value associated with this code or FB_NULL if no value was set.
-	virtual void* FB_CALL getInfo(int code) = 0;
+	virtual void* FB_CARG getInfo(int code) = 0;
 	// Sets a value associated with this code and returns the last value.
-	virtual void* FB_CALL setInfo(int code, void* value) = 0;
+	virtual void* FB_CARG setInfo(int code, void* value) = 0;
 };
 
 
 // To return set of rows in selectable procedures.
-class ExternalResultSet : public Disposable
+class ExternalResultSet : public IDisposable
 {
 public:
-	virtual bool FB_CALL fetch(IStatus* status) = 0;
+	virtual bool FB_CARG fetch(IStatus* status) = 0;
 };
 
+#define FB_EXTERNAL_RESULT_SET_VERSION (FB_DISPOSABLE_VERSION + 1)
 
-class ExternalFunction : public Disposable
+
+class ExternalFunction : public IDisposable
 {
 public:
 	// This method is called just before execute and informs the engine our requested character
 	// set for data exchange inside that method.
 	// During this call, the context uses the character set obtained from ExternalEngine::getCharSet.
-	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize) = 0;
 
-	virtual void FB_CALL execute(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG execute(IStatus* status, ExternalContext* context,
 		void* inMsg, void* outMsg) = 0;
 };
 
+#define FB_EXTERNAL_FUNCTION_VERSION (FB_DISPOSABLE_VERSION + 2)
 
-class ExternalProcedure : public Disposable
+
+class ExternalProcedure : public IDisposable
 {
 public:
 	// This method is called just before open and informs the engine our requested character
 	// set for data exchange inside that method and ExternalResultSet::fetch.
 	// During this call, the context uses the character set obtained from ExternalEngine::getCharSet.
-	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize) = 0;
 
 	// Returns a ExternalResultSet for selectable procedures.
 	// Returning NULL results in a result set of one record.
 	// Procedures without output parameters should return NULL.
-	virtual ExternalResultSet* FB_CALL open(IStatus* status, ExternalContext* context,
+	virtual ExternalResultSet* FB_CARG open(IStatus* status, ExternalContext* context,
 		void* inMsg, void* outMsg) = 0;
 };
 
+#define FB_EXTERNAL_PROCEDURE_VERSION (FB_DISPOSABLE_VERSION + 2)
 
-class ExternalTrigger : public Disposable
+
+class ExternalTrigger : public IDisposable
 {
 public:
 	enum Type
@@ -143,12 +149,14 @@ public:
 	// This method is called just before execute and informs the engine our requested character
 	// set for data exchange inside that method.
 	// During this call, the context uses the character set obtained from ExternalEngine::getCharSet.
-	virtual void FB_CALL getCharSet(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
 		Utf8* name, uint nameSize) = 0;
 
-	virtual void FB_CALL execute(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG execute(IStatus* status, ExternalContext* context,
 		Action action, void* oldMsg, void* newMsg) = 0;
 };
+
+#define FB_EXTERNAL_TRIGGER_VERSION (FB_DISPOSABLE_VERSION + 2)
 
 
 class IRoutineMetadata : public IVersioned
@@ -176,24 +184,24 @@ public:
 	// The requested character set for data exchange inside methods of this interface should
 	// be copied to charSet parameter.
 	// During this call, the context uses the UTF-8 character set.
-	virtual void FB_CALL open(IStatus* status, ExternalContext* context,
+	virtual void FB_CARG open(IStatus* status, ExternalContext* context,
 		Utf8* charSet, uint charSetSize) = 0;
 
 	// Attachment is being opened.
-	virtual void FB_CALL openAttachment(IStatus* status, ExternalContext* context) = 0;
+	virtual void FB_CARG openAttachment(IStatus* status, ExternalContext* context) = 0;
 
 	// Attachment is being closed.
-	virtual void FB_CALL closeAttachment(IStatus* status, ExternalContext* context) = 0;
+	virtual void FB_CARG closeAttachment(IStatus* status, ExternalContext* context) = 0;
 
 	// Called when engine wants to load object in the cache. Objects are disposed when
 	// going out of the cache.
-	virtual ExternalFunction* FB_CALL makeFunction(IStatus* status, ExternalContext* context,
+	virtual ExternalFunction* FB_CARG makeFunction(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata,
 		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
-	virtual ExternalProcedure* FB_CALL makeProcedure(IStatus* status, ExternalContext* context,
+	virtual ExternalProcedure* FB_CARG makeProcedure(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata,
 		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
-	virtual ExternalTrigger* FB_CALL makeTrigger(IStatus* status, ExternalContext* context,
+	virtual ExternalTrigger* FB_CARG makeTrigger(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) = 0;
 };
 #define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 6)

@@ -41,7 +41,7 @@ class FunctionFactory
 public:
 	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
-	virtual ExternalFunction* FB_CALL newItem(IStatus* status, ExternalContext* context,
+	virtual ExternalFunction* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
 
@@ -50,7 +50,7 @@ class ProcedureFactory
 public:
 	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
-	virtual ExternalProcedure* FB_CALL newItem(IStatus* status, ExternalContext* context,
+	virtual ExternalProcedure* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
 
@@ -59,7 +59,7 @@ class TriggerFactory
 public:
 	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IMetadataBuilder* fieldsBuilder) = 0;
-	virtual ExternalTrigger* FB_CALL newItem(IStatus* status, ExternalContext* context,
+	virtual ExternalTrigger* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
 

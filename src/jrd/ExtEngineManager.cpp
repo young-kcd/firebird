@@ -287,45 +287,45 @@ ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(IStatus* /*stat
 	return engine;
 }
 
-Firebird::IAttachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachment(IStatus* /*status*/)
+Firebird::IAttachment* FB_CARG ExtEngineManager::ExternalContextImpl::getAttachment(IStatus* /*status*/)
 {
 	return externalAttachment;
 }
 
-Firebird::ITransaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransaction(IStatus* /*status*/)
+Firebird::ITransaction* FB_CARG ExtEngineManager::ExternalContextImpl::getTransaction(IStatus* /*status*/)
 {
 	return externalTransaction;
 }
 
-const char* FB_CALL ExtEngineManager::ExternalContextImpl::getUserName()
+const char* FB_CARG ExtEngineManager::ExternalContextImpl::getUserName()
 {
 	return internalAttachment->att_user->usr_user_name.c_str();
 }
 
-const char* FB_CALL ExtEngineManager::ExternalContextImpl::getDatabaseName()
+const char* FB_CARG ExtEngineManager::ExternalContextImpl::getDatabaseName()
 {
 	return internalAttachment->att_database->dbb_database_name.c_str();
 }
 
-const Utf8* FB_CALL ExtEngineManager::ExternalContextImpl::getClientCharSet()
+const Utf8* FB_CARG ExtEngineManager::ExternalContextImpl::getClientCharSet()
 {
 	return clientCharSet.c_str();
 }
 
-int FB_CALL ExtEngineManager::ExternalContextImpl::obtainInfoCode()
+int FB_CARG ExtEngineManager::ExternalContextImpl::obtainInfoCode()
 {
 	static AtomicCounter counter;
 	return ++counter;
 }
 
-void* FB_CALL ExtEngineManager::ExternalContextImpl::getInfo(int code)
+void* FB_CARG ExtEngineManager::ExternalContextImpl::getInfo(int code)
 {
 	void* value = NULL;
 	miscInfo.get(code, value);
 	return value;
 }
 
-void* FB_CALL ExtEngineManager::ExternalContextImpl::setInfo(int code, void* value)
+void* FB_CARG ExtEngineManager::ExternalContextImpl::setInfo(int code, void* value)
 {
 	void* oldValue = getInfo(code);
 	miscInfo.put(code, value);
