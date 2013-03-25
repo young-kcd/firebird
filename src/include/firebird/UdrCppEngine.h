@@ -456,6 +456,16 @@ public:
 	}
 
 public:
+	virtual int FB_CARG getVersion()
+	{
+		return FB_EXTERNAL_RESULT_SET_VERSION;
+	}
+
+	virtual IPluginModule* FB_CARG getModule()
+	{
+		return NULL;
+	}
+
 	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
@@ -485,6 +495,16 @@ template <typename This>
 class Function : public ExternalFunction, public Helper
 {
 public:
+	virtual int FB_CARG getVersion()
+	{
+		return FB_EXTERNAL_FUNCTION_VERSION;
+	}
+
+	virtual IPluginModule* FB_CARG getModule()
+	{
+		return NULL;
+	}
+
 	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
@@ -516,6 +536,16 @@ template <typename This>
 class Procedure : public ExternalProcedure, public Helper
 {
 public:
+	virtual int FB_CARG getVersion()
+	{
+		return FB_EXTERNAL_PROCEDURE_VERSION;
+	}
+
+	virtual IPluginModule* FB_CARG getModule()
+	{
+		return NULL;
+	}
+
 	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
@@ -547,6 +577,16 @@ template <typename This>
 class Trigger : public ExternalTrigger, public Helper
 {
 public:
+	virtual int FB_CARG getVersion()
+	{
+		return FB_EXTERNAL_TRIGGER_VERSION;
+	}
+
+	virtual IPluginModule* FB_CARG getModule()
+	{
+		return NULL;
+	}
+
 	virtual void FB_CARG dispose()
 	{
 		delete static_cast<This*>(this);
