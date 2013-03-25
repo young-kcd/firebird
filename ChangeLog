@@ -1,3 +1,11 @@
+ 2013-03-24 15:36  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_pwd.h
+   M src/jrd/pwd.cpp
+   M src/jrd/svc.cpp
+   M src/remote/server.cpp
+Fixed CORE-1604 (Error at database creation by user with non-ascii name) and CORE-3243 (CURRENT_USER and MON$USER don't work properly).
+
  2013-03-23 02:14  asfernandes 
    M src/jrd/constants.h
    M src/jrd/fun.epp
