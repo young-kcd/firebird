@@ -1,3 +1,28 @@
+ 2013-03-25 15:59  asfernandes 
+   M src/include/firebird/UdrCppEngine.h
+Work in progress standardizing the external engines API.
+
+ 2013-03-25 15:34  asfernandes 
+   M src/include/FirebirdApi.h
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+Work in progress standardizing the external engines API.
+
+ 2013-03-25 11:07  mapopa 
+   A configure.ac
+   D configure.in
+recent version of autoconf/automake/libtool  complain about the firebird
+scripts aclocal: warning: autoconf input should be named 'configure.ac', not
+'configure.in'
+
+ 2013-03-25 01:25  asfernandes 
+   M src/dsql/dsql.cpp
+Fixed problem reported in fb-devel: FB3 and SQL_NULL.
+
  2013-03-24 16:16  dimitr 
    M src/jrd/jrd.cpp
 The minimal patch for CORE-1604 (Error at database creation by user with non-ascii name) and CORE-3243 (CURRENT_USER and MON$USER don't work properly) that seems to work for the trusted authentication, but [at least] the legacy auth module has to be reviewed as it seems to deal with the user name "as is", without checking whether it arrived in UTF8 or not.
