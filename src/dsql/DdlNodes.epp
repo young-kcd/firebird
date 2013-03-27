@@ -1343,7 +1343,7 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 		parameters[i]->type->resolve(dsqlScratch);
 
-	if (returnType->type)
+	if (returnType && returnType->type)
 		returnType->type->resolve(dsqlScratch);
 
 	return DdlNode::dsqlPass(dsqlScratch);
@@ -1529,7 +1529,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 					FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
 
-					dsql_fld* field = returnType->type;
+					dsql_fld* field = returnType ? returnType->type : NULL;
 
 					if (field)
 					{
@@ -1666,7 +1666,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		// and insert the new ones
 
-		if (returnType->type)
+		if (returnType && returnType->type)
 			storeArgument(tdbb, dsqlScratch, transaction, 0, returnType, NULL);
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
