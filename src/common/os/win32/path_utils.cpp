@@ -142,22 +142,36 @@ void PathUtils::ensureSeparator(Firebird::PathName& in_out)
 		in_out += PathUtils::dir_sep;
 }
 
+static bool hasDriveLetter(const Firebird::PathName& path)
+{
+	return path.length() > 2 && path[1] == ':' &&
+		(('A' <= path[0] && path[0] <= 'Z') ||
+		 ('a' <= path[0] && path[0] <= 'z'));
+}
+
 bool PathUtils::isRelative(const Firebird::PathName& path)
 {
 	if (path.length() > 0)
 	{
-		char ds = path[0];
-		if (path.length() > 2) {
-			if (path[1] == ':' &&
-				(('A' <= path[0] && path[0] <= 'Z') ||
-				 ('a' <= path[0] && path[0] <= 'z')))
-			{
-				ds = path[2];
-			}
-		}
+		char ds = hasDriveLetter(path) ? path[0] : path[2];
 		return ds != PathUtils::dir_sep && ds != '/';
 	}
 	return true;
+}
+
+void PathUtils::splitPrefix(Firebird::PathName& path, Firebird::PathName& prefix)
+{
+	prefix.erase();
+	if (hasDriveLetter(path))
+	{
+		prefix = path.substr(0, 2);
+		path.erase(0, 2);
+	}
+	if (path[0] == PathUtils::dir_sep || path[0] == '/')
+	{
+		prefix += path[0];
+		path.erase(0, 1);
+	}
 }
 
 // This function can be made to return something util if we consider junctions (since w2k)
