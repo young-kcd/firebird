@@ -25,6 +25,7 @@
 #include "firebird.h"
 #include "../common/MsgMetadata.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/MetaName.h"
 #include "../jrd/align.h"
 
 using namespace Firebird;
@@ -182,6 +183,25 @@ private:
 
 
 namespace Firebird {
+
+
+// Add an item based on a descriptor.
+void MsgMetadata::addItem(const MetaName& name, bool nullable, const dsc& desc)
+{
+	Item& item = items.add();
+	item.field = name.c_str();
+	item.nullable = nullable;
+
+	SLONG sqlLen, sqlSubType, sqlScale, sqlType;
+	desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+
+	item.type = sqlType;
+	item.subType = sqlSubType;
+	item.length = sqlLen;
+	item.scale = sqlScale;
+
+	item.finished = true;
+}
 
 
 // returns ~0 on success or index of not finished item

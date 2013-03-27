@@ -30,6 +30,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/dsc.h"
 
 namespace Firebird {
 
@@ -227,6 +228,7 @@ public:
 	}
 
 public:
+	void addItem(const MetaName& name, bool nullable, const dsc& desc);
 	unsigned makeOffsets();
 
 private:

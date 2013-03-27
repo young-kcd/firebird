@@ -24,10 +24,14 @@
 #include "../common/classes/array.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/QualifiedName.h"
+#include "../common/classes/NestConst.h"
+#include "../common/MsgMetadata.h"
 
 namespace Jrd
 {
 	class JrdStatement;
+	class Format;
 	class Parameter;
 
 	class Routine : public Firebird::PermanentStorage
@@ -54,6 +58,11 @@ namespace Jrd
 		virtual ~Routine()
 		{
 		}
+
+	public:
+		static Firebird::MsgMetadata* createMetadata(
+			const Firebird::Array<NestConst<Parameter> >& parameters);
+		static Format* createFormat(MemoryPool& pool, Firebird::IMessageMetadata* params);
 
 	public:
 		USHORT getId() const

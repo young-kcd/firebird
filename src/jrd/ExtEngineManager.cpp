@@ -61,50 +61,6 @@ namespace Jrd {
 static MakeUpgradeInfo<> upInfo;
 
 
-// Create a Format based on a IMessageMetadata.
-static Format* createFormat(MemoryPool& pool, IMessageMetadata* params)
-{
-	LocalStatus status;
-
-	unsigned count = params->getCount(&status);
-	status.check();
-
-	Format* format = Format::newFormat(pool, count * 2);
-	unsigned runOffset = 0;
-
-	dsc* desc = format->fmt_desc.begin();
-
-	for (unsigned i = 0; i < count; ++i)
-	{
-		unsigned descOffset, nullOffset, descDtype, descLength;
-
-		runOffset = fb_utils::sqlTypeToDsc(runOffset, params->getType(&status, i),
-			params->getLength(&status, i), &descDtype, &descLength,
-			&descOffset, &nullOffset);
-		status.check();
-
-		desc->clear();
-		desc->dsc_dtype = descDtype;
-		desc->dsc_length = descLength;
-		desc->dsc_scale = params->getScale(&status, i);
-		desc->dsc_sub_type = params->getSubType(&status, i);
-		desc->setTextType(params->getCharset(&status, i));
-		desc->dsc_address = (UCHAR*)(IPTR) descOffset;
-		desc->dsc_flags = (params->isNullable(&status, i) ? DSC_nullable : 0);
-
-		++desc;
-		desc->makeShort(0, (SSHORT*)(IPTR) nullOffset);
-		status.check();
-
-		++desc;
-	}
-
-	format->fmt_length = runOffset;
-
-	return format;
-}
-
-
 template <typename T> class ExtEngineManager::ContextManager
 {
 public:
@@ -483,7 +439,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 
 	if (relation)
 	{
-		format = createFormat(pool, metadata->triggerFields);
+		format = Routine::createFormat(pool, metadata->triggerFields);
 
 		for (unsigned i = 0; i < format->fmt_count / 2; ++i)
 			fieldsPos.add(i);
@@ -678,45 +634,8 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
 	metadata->name = udf->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-
-	MsgMetadata* inMsg = new MsgMetadata;
-	metadata->inputParameters = inMsg;
-
-	MsgMetadata* outMsg = new MsgMetadata;
-	metadata->outputParameters = outMsg;
-
-	for (Array<NestConst<Parameter> >::const_iterator i = udf->getInputFields().begin();
-		 i != udf->getInputFields().end();
-		 ++i)
-	{
-		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
-		(*i)->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
-
-		StatementMetadata::Parameters::Item& item = inMsg->items.add();
-		item.field = (*i)->prm_name.c_str();
-		item.type = sqlType;
-		item.subType = sqlSubType;
-		item.length = sqlLen;
-		item.scale = sqlScale;
-		item.nullable = (*i)->prm_nullable;
-		item.finished = true;
-	}
-
-	{	// scope
-		const Parameter* i = udf->getOutputFields()[0];
-
-		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
-		i->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
-
-		StatementMetadata::Parameters::Item& item = outMsg->items.add();
-		item.field = i->prm_name.c_str();
-		item.type = sqlType;
-		item.subType = sqlSubType;
-		item.length = sqlLen;
-		item.scale = sqlScale;
-		item.nullable = i->prm_nullable;
-		item.finished = true;
-	}
+	metadata->inputParameters = Routine::createMetadata(udf->getInputFields());
+	metadata->outputParameters = Routine::createMetadata(udf->getOutputFields());
 
 	LocalStatus status;
 
@@ -752,8 +671,8 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
 
 	try
 	{
-		udf->setInputFormat(createFormat(pool, metadata->inputParameters));
-		udf->setOutputFormat(createFormat(pool, metadata->outputParameters));
+		udf->setInputFormat(Routine::createFormat(pool, metadata->inputParameters));
+		udf->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters));
 
 		udf->fun_external = FB_NEW(getPool()) Function(tdbb, this, attInfo->engine,
 			metadata.release(), externalFunction, udf);
@@ -787,37 +706,8 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
 	metadata->name = prc->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-
-	MsgMetadata* inMsg = new MsgMetadata;
-	metadata->inputParameters = inMsg;
-
-	MsgMetadata* outMsg = new MsgMetadata;
-	metadata->outputParameters = outMsg;
-
-	const Array<NestConst<Parameter> >* parameters[] = {
-		&prc->getInputFields(), &prc->getOutputFields()};
-
-	for (unsigned i = 0; i < 2; ++i)
-	{
-		for (Array<NestConst<Parameter> >::const_iterator j = parameters[i]->begin();
-			 j != parameters[i]->end();
-			 ++j)
-		{
-			SLONG sqlLen, sqlSubType, sqlScale, sqlType;
-			(*j)->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
-
-			StatementMetadata::Parameters::Item& item = i == 1 ?
-				outMsg->items.add() : inMsg->items.add();
-
-			item.field = (*j)->prm_name.c_str();
-			item.type = sqlType;
-			item.subType = sqlSubType;
-			item.length = sqlLen;
-			item.scale = sqlScale;
-			item.nullable = (*j)->prm_nullable;
-			item.finished = true;
-		}
-	}
+	metadata->inputParameters = Routine::createMetadata(prc->getInputFields());
+	metadata->outputParameters = Routine::createMetadata(prc->getOutputFields());
 
 	LocalStatus status;
 
@@ -854,8 +744,8 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
 
 	try
 	{
-		prc->setInputFormat(createFormat(pool, metadata->inputParameters));
-		prc->setOutputFormat(createFormat(pool, metadata->outputParameters));
+		prc->setInputFormat(Routine::createFormat(pool, metadata->inputParameters));
+		prc->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters));
 
 		prc->setExternal(FB_NEW(getPool()) Procedure(tdbb, this, attInfo->engine,
 			metadata.release(), externalProcedure, prc));
@@ -903,20 +793,8 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, Jrd::Trigger* trg,
 		for (size_t i = 0; i < relation->rel_fields->count(); ++i)
 		{
 			jrd_fld* field = (*relation->rel_fields)[i];
-			if (!field)
-				continue;
-
-			SLONG sqlLen, sqlSubType, sqlScale, sqlType;
-			relFormat->fmt_desc[i].getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
-
-			StatementMetadata::Parameters::Item& item = fieldsMsg->items.add();
-			item.field = field->fld_name.c_str();
-			item.type = sqlType;
-			item.subType = sqlSubType;
-			item.length = sqlLen;
-			item.scale = sqlScale;
-			item.nullable = !field->fld_not_null;
-			item.finished = true;
+			if (field)
+				fieldsMsg->addItem(field->fld_name, !field->fld_not_null, relFormat->fmt_desc[i]);
 		}
 	}
 
