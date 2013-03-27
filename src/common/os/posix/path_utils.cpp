@@ -118,6 +118,16 @@ void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName&
 	file.append(orgPath, pos + 1, orgPath.length() - pos - 1);
 }
 
+void PathUtils::splitPrefix(Firebird::PathName& path, Firebird::PathName& prefix)
+{
+	prefix.erase();
+	while (path[0] == dir_sep)
+	{
+		prefix = dir_sep;
+		path.erase(0, 1);
+	}
+}
+
 void PathUtils::concatPath(Firebird::PathName& result,
 		const Firebird::PathName& first,
 		const Firebird::PathName& second)

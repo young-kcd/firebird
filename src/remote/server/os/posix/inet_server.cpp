@@ -39,6 +39,7 @@
 #include "../jrd/ibase.h"
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
+#include "../common/os/fbsyslog.h"
 #include <sys/param.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -156,6 +157,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
  *	Run the server with apollo mailboxes.
  *
  **************************************/
+  try
+  {
 	RemPortPtr port;
 
 // 01 Sept 2003, Nickolay Samofatov
@@ -339,6 +342,13 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		divorce_terminal(mask);
 	}
 
+	// check firebird.conf presence - must be for server
+	if (Config::missFirebirdConf())
+	{
+		Firebird::Syslog::Record(Firebird::Syslog::Error, "Missing master config file firebird.conf");
+		exit(STARTUP_ERROR);
+	}
+
 	if (super || standaloneClassic)
 	{
 		try
@@ -424,6 +434,21 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	fb_shutdown(10000, fb_shutrsn_exit_called);
 
 	return FINI_OK;
+  }
+  catch(const Firebird::Exception& ex)
+  {
+    ISC_STATUS_ARRAY status;
+    ex.stuff_exception(status);
+
+    char s[100];
+    const ISC_STATUS* st = status;
+    fb_interpret(s, sizeof(s), &st);
+
+    Firebird::Syslog::Record(Firebird::Syslog::Error, "Firebird startup error");
+    Firebird::Syslog::Record(Firebird::Syslog::Error, s);
+
+  	exit(STARTUP_ERROR);
+  }
 }
 
 } // extern "C"

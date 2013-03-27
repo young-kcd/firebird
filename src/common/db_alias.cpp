@@ -198,7 +198,7 @@ namespace
 			}
 			databases.clear();
 
-			ConfigFile aliasConfig(fileName, ConfigFile::HAS_SUB_CONF);
+			ConfigFile aliasConfig(getFileName(), ConfigFile::HAS_SUB_CONF, this);
 			const ConfigFile::Parameters& params = aliasConfig.getParameters();
 
 			for (n = 0; n < params.getCount(); ++n)

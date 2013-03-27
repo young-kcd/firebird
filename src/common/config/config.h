@@ -185,9 +185,9 @@ public:
 	Config(const ConfigFile& file, const Config& base);		// use to build db-specific config
 	~Config();
 
-	// Check for errors in .conf file
+	// Check for missing firebird.conf
 
-	static const char* getMessage();
+	static bool missFirebirdConf();
 
 	// Interface to support command line root specification.
 	// This ugly solution was required to make it possible to specify root

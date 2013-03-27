@@ -206,10 +206,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		return STARTUP_ERROR; // see /common/common.h
 	}
 
-	// Check for errors/missing firebird.conf
-	const char* anyError = Config::getMessage();
-	if (anyError)
+	// Check for missing firebird.conf
+	if (Config::missFirebirdConf())
 	{
+		const char* anyError = "Missing master config file firebird.conf";
 		Syslog::Record(Syslog::Error, anyError);
 		MessageBox(NULL, anyError, "Firebird server failure",
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);

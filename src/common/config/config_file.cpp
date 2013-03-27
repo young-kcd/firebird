@@ -26,7 +26,9 @@
 #include "../common/classes/auto.h"
 #include "../common/config/config_file.h"
 #include "../common/config/config.h"
+#include "../common/config/ConfigCache.h"
 #include "../common/os/path_utils.h"
+#include "../common/ScanDir.h"
 #include <stdio.h>
 
 #ifdef HAVE_STDLIB_H
@@ -37,16 +39,36 @@ using namespace Firebird;
 
 namespace {
 
+bool hasWildCards(const PathName& s)
+{
+	return s.find_first_of("?*") != PathName::npos;
+}
+
+void strip2slashes(ConfigFile::String& to)
+{
+	// strip double slashes
+	char sep2[3];
+	sep2[0] = PathUtils::dir_sep;
+	sep2[1] = sep2[0];
+	sep2[2] = 0;
+
+	size_t pos = 0;
+	while((pos = to.find(sep2, pos)) != PathName::npos)
+	{
+		to.erase(pos, 1);
+	}
+}
+
 class MainStream : public ConfigFile::Stream
 {
 public:
-	MainStream(const char* fname, PathName& errString)
-		: file(fopen(fname, "rt")), l(0)
+	MainStream(const char* fname)
+		: file(fopen(fname, "rt")), fileName(fname), l(0)
 	{
 		if (!file)
 		{
 			// config file does not exist
-			errString.printf("Missing configuration file: %s", fname);
+			(Arg::Gds(isc_miss_config) << fname << Arg::OsError()).raise();
 		}
 	}
 
@@ -65,7 +87,10 @@ public:
 			{
 				return false;
 			}
-			input.LoadFromFile(file);
+			if (!input.LoadFromFile(file))
+			{
+				return false;
+			}
 			++l;
 			input.alltrim(" \t\r");
 		} while (input.isEmpty() || input[0] == '#');
@@ -74,8 +99,19 @@ public:
 		return true;
 	}
 
+	bool active()
+	{
+		return file.hasData();
+	}
+
+	const char* getFileName() const
+	{
+		return fileName.c_str();
+	}
+
 private:
 	AutoPtr<FILE, FileClose> file;
+	Firebird::PathName fileName;
 	unsigned int l;
 };
 
@@ -125,6 +161,11 @@ public:
 		return true;
 	}
 
+	const char* getFileName() const
+	{
+		return NULL;
+	}
+
 private:
 	const char* s;
 	unsigned int l;
@@ -133,8 +174,8 @@ private:
 class SubStream : public ConfigFile::Stream
 {
 public:
-	SubStream()
-		: cnt(0)
+	SubStream(const char* fName)
+		: fileName(fName), cnt(0)
 	{ }
 
 	bool getLine(ConfigFile::String& input, unsigned int& line)
@@ -157,65 +198,71 @@ public:
 		data.push(Line(input, line));
 	}
 
+	const char* getFileName() const
+	{
+		return fileName;
+	}
+
 private:
 	typedef Pair<Left<ConfigFile::String, unsigned int> > Line;
 	ObjectsArray<Line> data;
+	const char* fileName;
 	size_t cnt;
 };
 
 } // anonymous namespace
 
 
-ConfigFile::ConfigFile(const Firebird::PathName& file, USHORT fl)
+ConfigFile::ConfigFile(const Firebird::PathName& file, USHORT fl, ConfigCache* cache)
 	: AutoStorage(),
-	  configFile(getPool(), file),
 	  parameters(getPool()),
 	  flags(fl),
-	  lastMessage(getPool())
+	  includeLimit(0),
+	  filesCache(cache)
 {
-	MainStream s(configFile.c_str(), lastMessage);
+	MainStream s(file.c_str());
 	parse(&s);
 }
 
-ConfigFile::ConfigFile(const char* file, USHORT fl)
+ConfigFile::ConfigFile(const char* file, USHORT fl, ConfigCache* cache)
 	: AutoStorage(),
-	  configFile(getPool(), String(file)),
 	  parameters(getPool()),
 	  flags(fl),
-	  lastMessage(getPool())
+	  includeLimit(0),
+	  filesCache(cache)
 {
-	MainStream s(configFile.c_str(), lastMessage);
+	MainStream s(file);
 	parse(&s);
 }
 
 ConfigFile::ConfigFile(UseText, const char* configText, USHORT fl)
 	: AutoStorage(),
-	  configFile(getPool()),
 	  parameters(getPool()),
 	  flags(fl),
-	  lastMessage(getPool())
+	  includeLimit(0),
+	  filesCache(NULL)
 {
 	TextStream s(configText);
 	parse(&s);
 }
 
-ConfigFile::ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl)
+ConfigFile::ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl, ConfigCache* cache)
 	: AutoStorage(p),
-	  configFile(getPool(), file),
 	  parameters(getPool()),
 	  flags(fl),
-	  lastMessage(getPool())
+	  includeLimit(0),
+	  filesCache(cache)
 {
-	MainStream s(configFile.c_str(), lastMessage);
+	MainStream s(file.c_str());
 	parse(&s);
 }
 
-ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file)
+ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl)
 	: AutoStorage(p),
-	  configFile(getPool(), file),
 	  parameters(getPool()),
 	  flags(fl),
-	  lastMessage(getPool())
+	  includeLimit(0),
+	  filesCache(NULL)
 {
 	parse(s);
 }
@@ -229,12 +276,14 @@ ConfigFile::Stream::~Stream()
  *	Parse line, taking quotes into account
  */
 
-ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, String& value)
+ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& input, KeyType& key, String& value)
 {
 	int inString = 0;
 	String::size_type valStart = 0;
 	String::size_type eol = String::npos;
 	bool hasSub = false;
+	const char* include = "include";
+	const unsigned incLen = strlen(include);
 
 	for (String::size_type n = 0; n < input.length(); ++n)
 	{
@@ -271,6 +320,22 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, St
 
 		case ' ':
 		case '\t':
+			if (n == incLen && key.isEmpty())
+			{
+				KeyType inc = input.substr(0, n).ToNoCaseString();
+				if (inc == include)
+				{
+					value = input.substr(n);
+					value.alltrim(" \t\r");
+
+					if (!macroParse(value, fileName))
+					{
+						return LINE_BAD;
+					}
+					return LINE_INCLUDE;
+				}
+			}
+			// fall down ...
 		case '\r':
 			break;
 
@@ -317,7 +382,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, St
 	}
 
 	// Now expand macros in value
-	if (!macroParse(value))
+	if (!macroParse(value, fileName))
 	{
 		return LINE_BAD;
 	}
@@ -330,7 +395,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, St
  *	Substitute macro values in a string
  */
 
-bool ConfigFile::macroParse(String& value) const
+bool ConfigFile::macroParse(String& value, const char* fileName) const
 {
 	String::size_type subFrom;
 
@@ -341,7 +406,7 @@ bool ConfigFile::macroParse(String& value) const
 		{
 			String macro;
 			String m = value.substr(subFrom + 2, subTo - (subFrom + 2));
-			if (! translate(m, macro))
+			if (! translate(fileName, m, macro))
 			{
 				return false;
 			}
@@ -353,6 +418,7 @@ bool ConfigFile::macroParse(String& value) const
 		}
 	}
 
+	strip2slashes(value);
 	return true;
 }
 
@@ -361,7 +427,7 @@ bool ConfigFile::macroParse(String& value) const
  *	Find macro value
  */
 
-bool ConfigFile::translate(const String& from, String& to) const
+bool ConfigFile::translate(const char* fileName, const String& from, String& to) const
 {
 	if (from == "root")
 	{
@@ -373,28 +439,28 @@ bool ConfigFile::translate(const String& from, String& to) const
 	}
 	else if (from == "this")
 	{
-		if (configFile.isEmpty())
+		if (!fileName)
 		{
 			return false;
 		}
 
-		PathName tempPath = configFile;
+		PathName tempPath(fileName);
 
 #ifdef UNIX
 		if (PathUtils::isSymLink(tempPath))
 		{
 			// If $(this) is a symlink, expand it.
 			TEXT temp[MAXPATHLEN];
-			const int n = readlink(configFile.c_str(), temp, sizeof(temp));
+			const int n = readlink(fileName, temp, sizeof(temp));
 
-			if (n != -1 && n < sizeof(temp))
+			if (n != -1 && unsigned(n) < sizeof(temp))
 			{
 				tempPath = temp;
 
 				if (PathUtils::isRelative(tempPath))
 				{
 					PathName parent;
-					PathUtils::splitLastComponent(parent, tempPath, configFile);
+					PathUtils::splitLastComponent(parent, tempPath, fileName);
 					PathUtils::concatPath(tempPath, parent, temp);
 				}
 			}
@@ -460,10 +526,9 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name, cons
  *	Take into an account fault line
  */
 
-void ConfigFile::badLine(const String& line)
+void ConfigFile::badLine(const char* fileName, const String& line)
 {
-	lastMessage.printf("%s: illegal line <%s>",
-		(configFile.hasData() ? configFile.c_str() : "Passed text"), line.c_str());
+	(Arg::Gds(isc_conf_line) << (fileName ? fileName : "Passed text") << line).raise();
 }
 
 /******************************************************************************
@@ -476,26 +541,31 @@ void ConfigFile::parse(Stream* stream)
 	String inputLine;
 	Parameter* previous = NULL;
 	unsigned int line;
+	const char* streamName = stream->getFileName();
 
 	while (stream->getLine(inputLine, line))
 	{
 		Parameter current;
 		current.line = line;
 
-		switch (parseLine(inputLine, current.name, current.value))
+		switch (parseLine(streamName, inputLine, current.name, current.value))
 		{
 		case LINE_BAD:
-			badLine(inputLine);
+			badLine(streamName, inputLine);
 			return;
 
 		case LINE_REGULAR:
 			if (current.name.isEmpty())
 			{
-				badLine(inputLine);
+				badLine(streamName, inputLine);
 				return;
 			}
 
 			previous = &parameters[parameters.add(current)];
+			break;
+
+		case LINE_INCLUDE:
+			include(streamName, current.value.ToPathName());
 			break;
 
 		case LINE_START_SUB:
@@ -506,7 +576,7 @@ void ConfigFile::parse(Stream* stream)
 			}
 
 			{ // subconf scope
-				SubStream subStream;
+				SubStream subStream(stream->getFileName());
 				while (stream->getLine(inputLine, line))
 				{
 					if (inputLine[0] == '}')
@@ -515,7 +585,7 @@ void ConfigFile::parse(Stream* stream)
 						s.ltrim(" \t\r");
 						if (s.hasData() && s[0] != '#')
 						{
-							badLine(s);
+							badLine(streamName, s);
 							return;
 						}
 						break;
@@ -523,20 +593,128 @@ void ConfigFile::parse(Stream* stream)
 					subStream.putLine(inputLine, line);
 				}
 
-				previous->sub = FB_NEW(getPool()) ConfigFile(getPool(), &subStream,
-															 flags & ~HAS_SUB_CONF, configFile);
+				previous->sub = FB_NEW(getPool())
+					ConfigFile(getPool(), &subStream, flags & ~HAS_SUB_CONF);
 			}
 			break;
 		}
 	}
 }
 
+//#define DEBUG_INCLUDES
+
 /******************************************************************************
  *
- *	Check for parse/load error
+ *	Parse include operator
  */
 
-const char* ConfigFile::getMessage() const
+void ConfigFile::include(const char* currentFileName, const PathName& parPath)
 {
-	return lastMessage.nullStr();
+	// We should better limit include depth
+	AutoSetRestore<unsigned> depth(&includeLimit, includeLimit + 1);
+	if (includeLimit > INCLUDE_LIMIT)
+	{
+		(Arg::Gds(isc_conf_include) << currentFileName << parPath << Arg::Gds(isc_include_depth)).raise();
+	}
+
+	// for relative paths first of all prepend with current path (i.e. path of current conf file)
+	PathName path;
+	if (PathUtils::isRelative(parPath))
+	{
+		PathName curPath;
+		PathUtils::splitLastComponent(curPath, path /*dummy*/, currentFileName);
+		PathUtils::concatPath(path, curPath, parPath);
+	}
+	else
+	{
+		path = parPath;
+	}
+
+	// split path into components
+	PathName pathPrefix;
+	PathUtils::splitPrefix(path, pathPrefix);
+	PathName savedPath(path);		// Expect no *? in prefix
+	FilesArray components;
+	while (path.hasData())
+	{
+		PathName cur, tmp;
+		PathUtils::splitLastComponent(tmp, cur, path);
+
+#ifdef DEBUG_INCLUDES
+		fprintf(stderr, "include: path=%s cur=%s tmp=%s\n", path.c_str(), cur.c_str(), tmp.c_str());
+#endif
+
+		components.push(cur);
+		path = tmp;
+	}
+
+	// analyze components for wildcards
+	if (!wildCards(currentFileName, pathPrefix, components))
+	{
+		// no matches found - check for presence of wild symbols in path
+		if (!hasWildCards(savedPath))
+		{
+			(Arg::Gds(isc_conf_include) << currentFileName << parPath << Arg::Gds(isc_include_miss)).raise();
+		}
+	}
+}
+
+/******************************************************************************
+ *
+ *	Parse wildcards
+ *		- calls parse for found files
+ *		- fills filesCache
+ *		- returns true if some match was found
+ */
+
+bool ConfigFile::wildCards(const char* currentFileName, const PathName& pathPrefix, FilesArray& components)
+{
+	// Any change in directory can cause config change
+	PathName prefix(pathPrefix);
+	if(!pathPrefix.hasData())
+		prefix = ".";
+
+	bool found = false;
+	PathName next(components.pop());
+
+#ifdef DEBUG_INCLUDES
+	fprintf(stderr, "wildCards: prefix=%s next=%s left=%d\n",
+		prefix.c_str(), next.c_str(), components.getCount());
+#endif
+
+	ScanDir list(prefix.c_str(), next.c_str());
+	while (list.next())
+	{
+		PathName name;
+		const PathName fileName = list.getFileName();
+		if (fileName == ".")
+			continue;
+		if (fileName[0] == '.' && next[0] != '.')
+			continue;
+		PathUtils::concatPath(name, pathPrefix, fileName);
+
+#ifdef DEBUG_INCLUDES
+		fprintf(stderr, "in Scan: name=%s pathPrefix=%s list.fileName=%s\n",
+			name.c_str(), pathPrefix.c_str(), fileName.c_str());
+#endif
+
+		if (filesCache)
+			filesCache->addFile(name);
+
+		if (components.hasData())	// should be directory
+		{
+			found = found || wildCards(currentFileName, name, components);
+		}
+		else
+		{
+			MainStream include(name.c_str());
+			if (include.active())
+			{
+				found = true;
+				parse(&include);
+			}
+		}
+	}
+
+	return found;
 }

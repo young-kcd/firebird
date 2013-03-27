@@ -788,6 +788,11 @@ const ISC_STATUS isc_bad_result_set                   = 335545049L;
 const ISC_STATUS isc_wrong_message_length             = 335545050L;
 const ISC_STATUS isc_no_output_format                 = 335545051L;
 const ISC_STATUS isc_item_finish                      = 335545052L;
+const ISC_STATUS isc_miss_config                      = 335545053L;
+const ISC_STATUS isc_conf_line                        = 335545054L;
+const ISC_STATUS isc_conf_include                     = 335545055L;
+const ISC_STATUS isc_include_depth                    = 335545056L;
+const ISC_STATUS isc_include_miss                     = 335545057L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1232,7 +1237,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1176;
+const ISC_STATUS isc_err_max                          = 1181;
 
 #else /* c definitions */
 
@@ -1990,6 +1995,11 @@ const ISC_STATUS isc_err_max                          = 1176;
 #define isc_wrong_message_length             335545050L
 #define isc_no_output_format                 335545051L
 #define isc_item_finish                      335545052L
+#define isc_miss_config                      335545053L
+#define isc_conf_line                        335545054L
+#define isc_conf_include                     335545055L
+#define isc_include_depth                    335545056L
+#define isc_include_miss                     335545057L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2434,7 +2444,7 @@ const ISC_STATUS isc_err_max                          = 1176;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1176
+#define isc_err_max                          1181
 
 #endif
 

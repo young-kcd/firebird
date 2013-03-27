@@ -753,6 +753,11 @@ static const struct {
 	{335545050, -804}, /* 730 wrong_message_length */
 	{335545051, -804}, /* 731 no_output_format */
 	{335545052, -804}, /* 732 item_finish */
+	{335545053, -902}, /* 733 miss_config */
+	{335545054, -902}, /* 734 conf_line */
+	{335545055, -902}, /* 735 conf_include */
+	{335545056, -902}, /* 736 include_depth */
+	{335545057, -902}, /* 737 include_miss */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

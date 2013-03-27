@@ -45,14 +45,24 @@ class ConfigImpl : public Firebird::PermanentStorage
 {
 public:
 	explicit ConfigImpl(Firebird::MemoryPool& p)
-		: Firebird::PermanentStorage(p), confMessage(getPool())
+		: Firebird::PermanentStorage(p), missConf(false)
 	{
-		ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE));
-		defaultConfig = new Config(file);
-
-		if (file.getMessage())
+		try
 		{
-			confMessage = file.getMessage();
+			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE));
+			defaultConfig = new Config(file);
+		}
+		catch (const Firebird::status_exception& ex)
+		{
+			if (ex.value()[1] != isc_miss_config)
+			{
+				throw;
+			}
+
+			missConf = true;
+
+			ConfigFile file(ConfigFile::USE_TEXT, "");
+			defaultConfig = new Config(file);
 		}
 	}
 
@@ -66,9 +76,9 @@ public:
 		return defaultConfig;
 	}
 
-	const char* getMessage()
+	bool missFirebirdConf()
 	{
-		return confMessage.nullStr();
+		return missConf;
 	}
 
 private:
@@ -77,7 +87,7 @@ private:
     ConfigImpl(const ConfigImpl&);
     void operator=(const ConfigImpl&);
 
-	Firebird::string confMessage;
+	bool missConf;
 };
 
 /******************************************************************************
@@ -196,7 +206,7 @@ Config::Config(const ConfigFile& file)
 		if (entries[i].data_type == TYPE_STRING && values[i])
 		{
 			ConfigFile::String expand((const char*)values[i]);
-			if (file.macroParse(expand) && expand != (const char*) values[i])
+			if (file.macroParse(expand, NULL) && expand != (const char*) values[i])
 			{
 				ConfigFile::String& saved(tempStrings.add());
 				saved = expand;
@@ -313,9 +323,9 @@ const Firebird::RefPtr<Config> Config::getDefaultConfig()
 	return firebirdConf().getDefaultConfig();
 }
 
-const char* Config::getMessage()
+bool Config::missFirebirdConf()
 {
-	return firebirdConf().getMessage();
+	return firebirdConf().missFirebirdConf();
 }
 
 const char* Config::getInstallDirectory()

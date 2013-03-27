@@ -28,6 +28,8 @@
 #include "../common/config/ConfigCache.h"
 #include "../common/config/config_file.h"
 
+#include "gen/iberror.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -37,38 +39,49 @@
 #include <errno.h>
 #endif
 
-ConfigCache::ConfigCache(Firebird::MemoryPool& p, const Firebird::PathName& fName)
-	: PermanentStorage(p), fileName(getPool(), fName), fileTime(0)
-{
-}
+using namespace Firebird;
+
+ConfigCache::ConfigCache(MemoryPool& p, const PathName& fName)
+	: PermanentStorage(p), files(FB_NEW(getPool()) ConfigCache::File(getPool(), fName))
+{ }
 
 ConfigCache::~ConfigCache()
 {
+	delete files;
 }
 
 void ConfigCache::checkLoadConfig()
 {
-	time_t newTime = getTime();
-	if (fileTime == newTime)
-	{
-		return;
+	{	// scope
+		ReadLockGuard guard(rwLock, "ConfigCache::checkLoadConfig");
+		if (files->checkLoadConfig(false))
+		{
+			return;
+		}
 	}
 
-	Firebird::WriteLockGuard guard(rwLock, "ConfigCache::checkLoadConfig");
-
+	WriteLockGuard guard(rwLock, "ConfigCache::checkLoadConfig");
 	// may be someone already reloaded?
-	newTime = getTime();
-	if (fileTime == newTime)
+	if (files->checkLoadConfig(true))
 	{
 		return;
 	}
 
-	fileTime = newTime;
-
+	files->trim();
 	loadConfig();
 }
 
-time_t ConfigCache::getTime()
+void ConfigCache::addFile(const Firebird::PathName& fName)
+{
+	files->add(fName);
+}
+
+Firebird::PathName ConfigCache::getFileName()
+{
+	return files->fileName;
+}
+
+time_t ConfigCache::File::getTime()
 {
 	struct stat st;
 	if (stat(fileName.c_str(), &st) != 0)
@@ -78,7 +91,58 @@ time_t ConfigCache::getTime()
 			// config file is missing, but this is not our problem
 			return 0;
 		}
-		Firebird::system_call_failed::raise("stat");
+		system_call_failed::raise("stat");
 	}
 	return st.st_mtime;
+}
+
+ConfigCache::File::File(MemoryPool& p, const PathName& fName)
+	: PermanentStorage(p), fileName(getPool(), fName), fileTime(0), next(NULL)
+{ }
+
+ConfigCache::File::~File()
+{
+	delete next;
+}
+
+bool ConfigCache::File::checkLoadConfig(bool set)
+{
+	time_t newTime = getTime();
+	if (fileTime == newTime)
+	{
+		return next ? next->checkLoadConfig(set) : true;
+	}
+
+	if (set)
+	{
+		fileTime = newTime;
+		if (next)
+		{
+			next->checkLoadConfig(set);
+		}
+	}
+	return false;
+}
+
+void ConfigCache::File::add(const PathName& fName)
+{
+	if (fName == fileName)
+	{
+		return;
+	}
+
+	if (next)
+	{
+		next->add(fName);
+	}
+	else
+	{
+		next = FB_NEW(getPool()) ConfigCache::File(getPool(), fName);
+	}
+}
+
+void ConfigCache::File::trim()
+{
+	delete next;
+	next = NULL;
 }

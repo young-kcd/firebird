@@ -147,6 +147,13 @@ public:
 	static void splitLastComponent(Firebird::PathName&, Firebird::PathName&,
 									const Firebird::PathName&);
 
+	/**	splitPrefix takes a path as the first argument, splits OS-dependent prefix
+		from it (something like C:\, D: or \ in windows or / in posix),
+		and returns stripped path inplace, i.e. as first argument.
+		Prefix is returned as the second argument.
+	**/
+	static void splitPrefix(Firebird::PathName& path, Firebird::PathName& prefix);
+
 	/** This is the factory method for allocating dir_iterator objects.
 		It takes a reference to a memory pool to use for all heap allocations,
 		and the path of the directory to iterate (in that order).  It is the

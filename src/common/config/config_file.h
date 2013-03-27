@@ -46,6 +46,8 @@
 	(common/config/config.cpp) and server-side alias manager (common/db_alias.cpp).
 **/
 
+class ConfigCache;
+
 class ConfigFile : public Firebird::AutoStorage, public Firebird::RefCounted
 {
 public:
@@ -65,6 +67,7 @@ public:
 	public:
 		virtual ~Stream();
 		virtual bool getLine(String&, unsigned int&) = 0;
+		virtual const char* getFileName() const = 0;
 	};
 
 	struct Parameter : public AutoStorage
@@ -90,15 +93,16 @@ public:
 
     typedef Firebird::SortedObjectsArray<Parameter, Firebird::InlineStorage<Parameter*, 100>,
 										 KeyType, Parameter> Parameters;
+	typedef Firebird::ObjectsArray<Firebird::PathName> FilesArray;
 
-	ConfigFile(const Firebird::PathName& file, USHORT fl = 0);
-	ConfigFile(const char* file, USHORT fl = 0);
+	ConfigFile(const Firebird::PathName& file, USHORT fl = 0, ConfigCache* cache = NULL);
+	ConfigFile(const char* file, USHORT fl = 0, ConfigCache* cache = NULL);
 	ConfigFile(UseText, const char* configText, USHORT fl = 0);
 
-	ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl = 0);
+	ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl = 0, ConfigCache* cache = NULL);
 
 private:
-	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file);
+	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl);
 
 public:
 	// key and value management
@@ -111,26 +115,25 @@ public:
 		return parameters;
 	}
 
-	// was there some error parsing config file?
-	const char* getMessage() const;
-
 	// Substitute macro values in a string
-	bool macroParse(String& value) const;
+	bool macroParse(String& value, const char* fileName) const;
 
 private:
-	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB};
+	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB, LINE_INCLUDE};
 
-    Firebird::PathName configFile;
     Parameters parameters;
 	USHORT flags;
-	USHORT badLinesCount;
-	Firebird::PathName lastMessage;
+	unsigned includeLimit;
+	ConfigCache* filesCache;
+	static const unsigned INCLUDE_LIMIT = 64;
 
 	// utilities
 	void parse(Stream* stream);
-	LineType parseLine(const String& input, KeyType& key, String& value);
-	bool translate(const String& from, String& to) const;
-	void badLine(const String& line);
+	LineType parseLine(const char* fileName, const String& input, KeyType& key, String& value);
+	bool translate(const char* fileName, const String& from, String& to) const;
+	void badLine(const char* fileName, const String& line);
+	void include(const char* currentFileName, const Firebird::PathName& path);
+	bool wildCards(const char* currentFileName, const Firebird::PathName& pathPrefix, FilesArray& components);
 };
 
 #endif	// CONFIG_CONFIG_FILE_H

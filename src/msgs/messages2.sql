@@ -840,6 +840,11 @@ Data source : @4', NULL, NULL)
 ('wrong_message_length', NULL, 'why.cpp', NULL, 0, 730, NULL, 'Message length passed from user application does not match set of columns', NULL, NULL);
 ('no_output_format', NULL, 'why.cpp', NULL, 0, 731, NULL, 'Resultset is missing output format information', NULL, NULL);
 ('item_finish', NULL, 'MsgMetadata.cpp', NULL, 0, 732, NULL, 'Message metadata not ready - item @1 is not finished', NULL, NULL);
+('miss_config', NULL, 'config_file.cpp', NULL, 0, 733, NULL, 'Missing configuration file: @1', NULL, NULL);
+('conf_line', NULL, 'config_file.cpp', NULL, 0, 734, NULL, '@1: illegal line <@2>', NULL, NULL);
+('conf_include', NULL, 'config_file.cpp', NULL, 0, 735, NULL, 'Invalid include operator in @1 for <@2>', NULL, NULL);
+('include_depth', NULL, 'config_file.cpp', NULL, 0, 736, NULL, 'Include depth too big', NULL, NULL);
+('include_miss', NULL, 'config_file.cpp', NULL, 0, 737, NULL, 'File to include not found', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

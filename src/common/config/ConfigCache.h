@@ -39,19 +39,35 @@ public:
 	virtual ~ConfigCache();
 
 	void checkLoadConfig();
+	void addFile(const Firebird::PathName& fName);
+	Firebird::PathName getFileName();
 
 protected:
 	virtual void loadConfig() = 0;
 
 private:
-	time_t getTime();
+	class File : public Firebird::PermanentStorage
+	{
+	public:
+		File(Firebird::MemoryPool& p, const Firebird::PathName& fName);
+		~File();
+
+		bool checkLoadConfig(bool set);
+		void add(const Firebird::PathName& fName);
+		void trim();
+
+	public:
+		Firebird::PathName fileName;
+
+	private:
+		volatile time_t fileTime;
+		File* next;
+		time_t getTime();
+	};
+	File* files;
 
 public:
 	Firebird::RWLock rwLock;
-	Firebird::PathName fileName;
-
-private:
-	volatile time_t fileTime;
 };
 
 #endif // COMMON_CONFIG_CASHE_H
