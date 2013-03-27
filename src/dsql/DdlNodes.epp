@@ -5814,11 +5814,11 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				definition.refRelation = constraint.refRelation;
 				definition.refColumns = constraint.refColumns;
 
-				MetaName indexName(constraint.index->name);
-				CreateIndexNode::store(tdbb, transaction, indexName, definition, &referredIndexName);
+				CreateIndexNode::store(tdbb, transaction, constraint.index->name,
+					definition, &referredIndexName);
 
 				CRT.RDB$INDEX_NAME.NULL = FALSE;
-				strcpy(CRT.RDB$INDEX_NAME, indexName.c_str());
+				strcpy(CRT.RDB$INDEX_NAME, constraint.index->name.c_str());
 
 				checkForeignKeyTempScope(tdbb, transaction, name, referredIndexName);
 

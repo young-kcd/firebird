@@ -1078,7 +1078,7 @@ public:
 		Constraint::Type type;
 		Firebird::MetaName name;
 		Firebird::ObjectsArray<Firebird::MetaName> columns;
-		const IndexConstraintClause* index;
+		NestConst<IndexConstraintClause> index;
 		Firebird::MetaName refRelation;
 		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
 		const char* refUpdateAction;
