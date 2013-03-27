@@ -62,7 +62,7 @@ namespace Jrd
 	public:
 		static Firebird::MsgMetadata* createMetadata(
 			const Firebird::Array<NestConst<Parameter> >& parameters);
-		static Format* createFormat(MemoryPool& pool, Firebird::IMessageMetadata* params);
+		static Format* createFormat(MemoryPool& pool, Firebird::IMessageMetadata* params, bool addEof);
 
 	public:
 		USHORT getId() const

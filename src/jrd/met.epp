@@ -3062,45 +3062,64 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			if (!external)
 			{
-				MemoryPool* csb_pool = attachment->createPool();
-
-				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-				CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-
-				if (!P.RDB$DEBUG_INFO.NULL)
-					DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, *csb->csb_dbg_info);
-
-				try
+				if (!P.RDB$PROCEDURE_BLR.NULL)
 				{
-					MET_parse_routine_blr(tdbb, procedure,
-						(P.RDB$PROCEDURE_BLR.NULL ? NULL : &P.RDB$PROCEDURE_BLR), csb);
-				}
-				catch (const Exception&)
-				{
-					delete csb;
+					MemoryPool* csb_pool = attachment->createPool();
 
-					if (procedure->getStatement())
-						procedure->releaseStatement(tdbb);
-					else
-						attachment->deletePool(csb_pool);
+					Jrd::ContextPoolHolder context(tdbb, csb_pool);
+					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
-					ERR_post(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(procedure->getName().toString()));
-				}
+					if (!P.RDB$DEBUG_INFO.NULL)
+						DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, *csb->csb_dbg_info);
 
-				procedure->getStatement()->procedure = procedure;
-				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
-				{
-					MessageNode* node = csb->csb_rpt[i].csb_message;
-
-					/***
-					if (node)
+					try
 					{
-						if (node->messageNumber == 1)
-							procedure->prc_output_msg = node;
+						MET_parse_routine_blr(tdbb, procedure,
+							(P.RDB$PROCEDURE_BLR.NULL ? NULL : &P.RDB$PROCEDURE_BLR), csb);
 					}
-					***/
+					catch (const Exception&)
+					{
+						delete csb;
+
+						if (procedure->getStatement())
+							procedure->releaseStatement(tdbb);
+						else
+							attachment->deletePool(csb_pool);
+
+						ERR_post(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(procedure->getName().toString()));
+					}
+
+					procedure->getStatement()->procedure = procedure;
+					for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
+					{
+						MessageNode* node = csb->csb_rpt[i].csb_message;
+
+						/***
+						if (node)
+						{
+							if (node->messageNumber == 1)
+								procedure->prc_output_msg = node;
+						}
+						***/
+					}
+					delete csb;
 				}
-				delete csb;
+				else
+				{
+					RefPtr<MsgMetadata> inputMetadata(
+						Routine::createMetadata(procedure->getInputFields()));
+					inputMetadata->release();
+					procedure->setInputFormat(
+						Routine::createFormat(procedure->getPool(), inputMetadata, false));
+
+					RefPtr<MsgMetadata> outputMetadata(
+						Routine::createMetadata(procedure->getOutputFields()));
+					outputMetadata->release();
+					procedure->setOutputFormat(
+						Routine::createFormat(procedure->getPool(), outputMetadata, true));
+
+					procedure->setImplemented(false);
+				}
 			}
 
 			if (P.RDB$VALID_BLR.NULL || P.RDB$VALID_BLR == FALSE)

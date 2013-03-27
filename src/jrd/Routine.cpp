@@ -48,14 +48,14 @@ MsgMetadata* Routine::createMetadata(const Array<NestConst<Parameter> >& paramet
 }
 
 // Create a Format based on an IMessageMetadata.
-Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params)
+Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params, bool addEof)
 {
 	LocalStatus status;
 
 	unsigned count = params->getCount(&status);
 	status.check();
 
-	Format* format = Format::newFormat(pool, count * 2);
+	Format* format = Format::newFormat(pool, count * 2 + (addEof ? 1 : 0));
 	unsigned runOffset = 0;
 
 	dsc* desc = format->fmt_desc.begin();
@@ -83,6 +83,13 @@ Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params)
 		status.check();
 
 		++desc;
+	}
+
+	if (addEof)
+	{
+		// Next item is aligned on USHORT, so as the previous one.
+		desc->makeShort(0, (SSHORT*)(IPTR) runOffset);
+		runOffset += sizeof(USHORT);
 	}
 
 	format->fmt_length = runOffset;

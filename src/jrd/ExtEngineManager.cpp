@@ -439,7 +439,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 
 	if (relation)
 	{
-		format = Routine::createFormat(pool, metadata->triggerFields);
+		format = Routine::createFormat(pool, metadata->triggerFields, false);
 
 		for (unsigned i = 0; i < format->fmt_count / 2; ++i)
 			fieldsPos.add(i);
@@ -671,8 +671,8 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
 
 	try
 	{
-		udf->setInputFormat(Routine::createFormat(pool, metadata->inputParameters));
-		udf->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters));
+		udf->setInputFormat(Routine::createFormat(pool, metadata->inputParameters, false));
+		udf->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters, false));
 
 		udf->fun_external = FB_NEW(getPool()) Function(tdbb, this, attInfo->engine,
 			metadata.release(), externalFunction, udf);
@@ -744,8 +744,8 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
 
 	try
 	{
-		prc->setInputFormat(Routine::createFormat(pool, metadata->inputParameters));
-		prc->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters));
+		prc->setInputFormat(Routine::createFormat(pool, metadata->inputParameters, false));
+		prc->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters, false));
 
 		prc->setExternal(FB_NEW(getPool()) Procedure(tdbb, this, attInfo->engine,
 			metadata.release(), externalProcedure, prc));
