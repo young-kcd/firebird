@@ -1,3 +1,58 @@
+ 2013-03-27 16:09  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4071 - external function declaration with "returns parameter" crashes the server.
+
+ 2013-03-27 15:54  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Fixed CORE-4070 - NOT-NULL-column can be used as primary key and filled with NULL-values.
+
+ 2013-03-27 12:32  alexpeshkoff 
+   M src/common/os/win32/path_utils.cpp
+Aproximate change for windows - not checked
+
+ 2013-03-27 11:45  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/config/ConfigCache.cpp
+   M src/common/config/ConfigCache.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/common/db_alias.cpp
+   M src/common/os/path_utils.h
+   M src/common/os/posix/path_utils.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/utilities/ntrace/TraceConfiguration.cpp
+Added operator include to config files
+
+ 2013-03-27 01:34  asfernandes 
+   M builds/posix/Makefile.in.plugins_examples
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/Function.epp
+   M src/jrd/Routine.cpp
+   M src/jrd/Routine.h
+   M src/jrd/met.epp
+Fixed CORE-4068 - create package fails on creating header as soon as there is at least 1 procedure name.
+
+ 2013-03-27 01:34  asfernandes 
+   M src/common/MsgMetadata.cpp
+   M src/common/MsgMetadata.h
+   M src/jrd/ExtEngineManager.cpp
+   A src/jrd/Routine.cpp
+   M src/jrd/Routine.h
+Refactor.
+
  2013-03-25 15:59  asfernandes 
    M src/include/firebird/UdrCppEngine.h
 Work in progress standardizing the external engines API.
