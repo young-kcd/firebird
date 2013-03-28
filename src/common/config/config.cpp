@@ -49,7 +49,8 @@ public:
 	{
 		try
 		{
-			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE));
+			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE),
+				ConfigFile::ERROR_WHEN_MISS);
 			defaultConfig = new Config(file);
 		}
 		catch (const Firebird::status_exception& ex)
@@ -237,22 +238,22 @@ void Config::loadValues(const ConfigFile& file)
 	for (int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		const ConfigEntry& entry = entries[i];
-		const ConfigFile::String value = getValue(file, entry.key);
+		const ConfigFile::Parameter* par = file.findParameter(entry.key);
 
-		if (value.length())
+		if (par)
 		{
 			// Assign the actual value
 
 			switch (entry.data_type)
 			{
 			case TYPE_BOOLEAN:
-				values[i] = (ConfigValue) asBoolean(value);
+				values[i] = (ConfigValue) par->asBoolean();
 				break;
 			case TYPE_INTEGER:
-				values[i] = (ConfigValue) asInteger(value);
+				values[i] = (ConfigValue) par->asInteger();
 				break;
 			case TYPE_STRING:
-				values[i] = (ConfigValue) asString(value);
+				values[i] = (ConfigValue) par->value.c_str();
 				break;
 			//case TYPE_STRING_VECTOR:
 			//	break;
@@ -289,29 +290,6 @@ Config::~Config()
 	}
 }
 
-ConfigFile::String Config::getValue(const ConfigFile& file, ConfigName key)
-{
-	const ConfigFile::Parameter* p = file.findParameter(key);
-	return p ? p->value : "";
-}
-
-int Config::asInteger(const ConfigFile::String &value)
-{
-	return atoi(value.data());
-}
-
-bool Config::asBoolean(const ConfigFile::String &value)
-{
-	return (atoi(value.data()) != 0) ||
-		value.equalsNoCase("true") ||
-		value.equalsNoCase("yes") ||
-		value.equalsNoCase("y");
-}
-
-const char* Config::asString(const ConfigFile::String &value)
-{
-	return value.c_str();
-}
 
 /******************************************************************************
  *
@@ -358,6 +336,7 @@ const char* Config::getRootDirectory()
 	return rootDetector().getRootDirectory();;
 }
 
+
 unsigned int Config::getKeyByName(ConfigName nm)
 {
 	ConfigFile::KeyType name(nm);
@@ -372,11 +351,11 @@ unsigned int Config::getKeyByName(ConfigName nm)
 	return ~0;
 }
 
-int Config::getInt(unsigned int key) const
+SINT64 Config::getInt(unsigned int key) const
 {
 	if (key >= MAX_CONFIG_KEY)
 		return 0;
-	return get<int>(static_cast<ConfigKey>(key));
+	return get<SINT64>(static_cast<ConfigKey>(key));
 }
 
 const char* Config::getString(unsigned int key) const
@@ -386,14 +365,22 @@ const char* Config::getString(unsigned int key) const
 	return get<const char*>(static_cast<ConfigKey>(key));
 }
 
+bool Config::getBoolean(unsigned int key) const
+{
+	if (key >= MAX_CONFIG_KEY)
+		return false;
+	return get<bool>(static_cast<ConfigKey>(key));
+}
+
+
 int Config::getTempBlockSize()
 {
 	return (int) getDefaultConfig()->values[KEY_TEMP_BLOCK_SIZE];
 }
 
-int Config::getTempCacheLimit()
+FB_UINT64 Config::getTempCacheLimit()
 {
-	int v = (int) getDefaultConfig()->values[KEY_TEMP_CACHE_LIMIT];
+	SINT64 v = (SINT64) getDefaultConfig()->values[KEY_TEMP_CACHE_LIMIT];
 	if (v < 0)
 	{
 		v = getSharedDatabase() ? 8388608 : 67108864;	// bytes
@@ -632,9 +619,9 @@ bool Config::getRelaxedAliasChecking()
 	return (bool) getDefaultConfig()->values[KEY_RELAXED_ALIAS_CHECKING];
 }
 
-int Config::getFileSystemCacheSize()
+FB_UINT64 Config::getFileSystemCacheSize()
 {
-	return (int) getDefaultConfig()->values[KEY_FILESYSTEM_CACHE_SIZE];
+	return (FB_UINT64)(SINT64) getDefaultConfig()->values[KEY_FILESYSTEM_CACHE_SIZE];
 }
 
 const char *Config::getAuditTraceConfigFile()
@@ -642,9 +629,9 @@ const char *Config::getAuditTraceConfigFile()
 	return (const char*) getDefaultConfig()->values[KEY_TRACE_CONFIG];
 }
 
-int Config::getMaxUserTraceLogSize()
+FB_UINT64 Config::getMaxUserTraceLogSize()
 {
-	return (int) getDefaultConfig()->values[KEY_MAX_TRACELOG_SIZE];
+	return (FB_UINT64)(SINT64) getDefaultConfig()->values[KEY_MAX_TRACELOG_SIZE];
 }
 
 bool Config::getSharedCache()
@@ -697,7 +684,7 @@ unsigned int FB_CARG FirebirdConf::getKey(const char* name)
 	return Config::getKeyByName(name);
 }
 
-int FB_CARG FirebirdConf::asInteger(unsigned int key)
+ISC_INT64 FB_CARG FirebirdConf::asInteger(unsigned int key)
 {
 	return config->getInt(key);
 }
@@ -705,6 +692,11 @@ int FB_CARG FirebirdConf::asInteger(unsigned int key)
 const char* FB_CARG FirebirdConf::asString(unsigned int key)
 {
 	return config->getString(key);
+}
+
+FB_BOOLEAN FB_CARG FirebirdConf::asBoolean(unsigned int key)
+{
+	return config->getBoolean(key);
 }
 
 int FB_CARG FirebirdConf::release()

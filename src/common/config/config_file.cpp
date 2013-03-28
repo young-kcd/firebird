@@ -62,10 +62,10 @@ void strip2slashes(ConfigFile::String& to)
 class MainStream : public ConfigFile::Stream
 {
 public:
-	MainStream(const char* fname)
+	MainStream(const char* fname, bool errorWhenMissing)
 		: file(fopen(fname, "rt")), fileName(fname), l(0)
 	{
-		if (!file)
+		if (errorWhenMissing && !file)
 		{
 			// config file does not exist
 			(Arg::Gds(isc_miss_config) << fname << Arg::OsError()).raise();
@@ -220,7 +220,7 @@ ConfigFile::ConfigFile(const Firebird::PathName& file, USHORT fl, ConfigCache* c
 	  includeLimit(0),
 	  filesCache(cache)
 {
-	MainStream s(file.c_str());
+	MainStream s(file.c_str(), flags & ERROR_WHEN_MISS);
 	parse(&s);
 }
 
@@ -231,7 +231,7 @@ ConfigFile::ConfigFile(const char* file, USHORT fl, ConfigCache* cache)
 	  includeLimit(0),
 	  filesCache(cache)
 {
-	MainStream s(file);
+	MainStream s(file, flags & ERROR_WHEN_MISS);
 	parse(&s);
 }
 
@@ -253,7 +253,7 @@ ConfigFile::ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl,
 	  includeLimit(0),
 	  filesCache(cache)
 {
-	MainStream s(file.c_str());
+	MainStream s(file.c_str(), flags & ERROR_WHEN_MISS);
 	parse(&s);
 }
 
@@ -707,7 +707,7 @@ bool ConfigFile::wildCards(const char* currentFileName, const PathName& pathPref
 		}
 		else
 		{
-			MainStream include(name.c_str());
+			MainStream include(name.c_str(), false);
 			if (include.active())
 			{
 				found = true;
@@ -717,4 +717,87 @@ bool ConfigFile::wildCards(const char* currentFileName, const PathName& pathPref
 	}
 
 	return found;
+}
+
+/******************************************************************************
+ *
+ *	Return parameter value as 64-bit integer
+ *		- takes into an account k, m and g multipliers
+ */
+
+SINT64 ConfigFile::Parameter::asInteger() const
+{
+	if (value.isEmpty())
+		return 0;
+
+	SINT64 ret = 0;
+	int sign = 1;
+	int state = 1; // 1 - sign, 2 - numbers, 3 - multiplier
+
+	Firebird::string trimmed = value;
+	trimmed.trim(" \t");
+
+	if (trimmed.isEmpty())
+		return 0;
+
+	const char* ch = trimmed.c_str();
+	for (; *ch; ch++)
+		switch (*ch)
+		{
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			if (state > 2)
+				return 0;
+			state = 2;
+
+			ret = ret * 10 + (*ch - '0');
+			break;
+
+		case '-':
+			if (state > 1)
+				return 0;
+
+			sign = -sign;
+			break;
+
+		case ' ': case '\t':
+			break;
+
+		case 'k': case 'K':
+			if (state != 2)
+				return 0;
+			state = 3;
+
+			ret = ret * 1024;
+			break;
+
+		case 'm': case 'M':
+			if (state != 2)
+				return 0;
+			state = 3;
+
+			ret = ret * 1024 * 1024;
+			break;
+
+		case 'g': case 'G':
+			if (state != 2)
+				return 0;
+			state = 3;
+
+			ret = ret * 1024 * 1024 * 1024;
+			break;
+
+		default:
+			return 0;
+		};
+
+	return sign * ret;
+}
+
+bool ConfigFile::Parameter::asBoolean() const
+{
+	return (atoi(value.c_str()) != 0) ||
+		value.equalsNoCase("true") ||
+		value.equalsNoCase("yes") ||
+		value.equalsNoCase("y");
 }

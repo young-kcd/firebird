@@ -163,12 +163,6 @@ private:
 		ConfigValue default_value;
 	};
 
-	static ConfigFile::String getValue(const ConfigFile&, ConfigName);
-
-	static int asInteger(const ConfigFile::String&);
-	static bool asBoolean(const ConfigFile::String&);
-	static const char* asString(const ConfigFile::String&);
-
 	void loadValues(const ConfigFile& file);
 
 	template <typename T> T get(Config::ConfigKey key) const
@@ -203,8 +197,9 @@ public:
 	// reports key to be used by the following functions
 	static unsigned int getKeyByName(ConfigName name);
 	// helpers to build interface for firebird.conf file
-	int getInt(unsigned int key) const;
+	SINT64 getInt(unsigned int key) const;
 	const char* getString(unsigned int key) const;
+	bool getBoolean(unsigned int key) const;
 
 	// Static functions apply to instance-wide values,
 	// non-static may be specified per database.
@@ -219,7 +214,7 @@ public:
 	static int getTempBlockSize();
 
 	// Caching limit for the temporary data
-	static int getTempCacheLimit();
+	static FB_UINT64 getTempCacheLimit();
 
 	// Whether remote (NFS) files can be opened
 	static bool getRemoteFileOpenAbility();
@@ -321,13 +316,13 @@ public:
 
 	int getFileSystemCacheThreshold() const;
 
-	static int getFileSystemCacheSize();
+	static FB_UINT64 getFileSystemCacheSize();
 
 	static bool getRelaxedAliasChecking();
 
 	static const char* getAuditTraceConfigFile();
 
-	static int getMaxUserTraceLogSize();
+	static FB_UINT64 getMaxUserTraceLogSize();
 
 	static bool getSharedCache();
 
@@ -352,8 +347,9 @@ public:
 
 	// IFirebirdConf implementation
 	unsigned int FB_CARG getKey(const char* name);
-	int FB_CARG asInteger(unsigned int key);
+	ISC_INT64 FB_CARG asInteger(unsigned int key);
 	const char* FB_CARG asString(unsigned int key);
+	FB_BOOLEAN FB_CARG asBoolean(unsigned int key);
 
 	int FB_CARG release();
 

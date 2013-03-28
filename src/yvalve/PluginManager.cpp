@@ -142,6 +142,16 @@ namespace
 			return par ? par->value.nullStr() : NULL;
 		}
 
+		FB_BOOLEAN FB_CARG getBoolValue()
+		{
+			return par ? par->asBoolean() : 0;
+		}
+
+		ISC_INT64 FB_CARG getIntValue()
+		{
+			return par ? par->asInteger() : 0;
+		}
+
 		IConfig* FB_CARG getSubConfig();
 
 		int FB_CARG release()

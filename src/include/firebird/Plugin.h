@@ -106,8 +106,10 @@ public:
 	virtual const char* FB_CARG getName() = 0;
 	virtual const char* FB_CARG getValue() = 0;
 	virtual IConfig* FB_CARG getSubConfig() = 0;
+	virtual ISC_INT64 FB_CARG getIntValue() = 0;
+	virtual FB_BOOLEAN FB_CARG getBoolValue() = 0;
 };
-#define FB_CONFIG_PARAMETER_VERSION (FB_REFCOUNTED_VERSION + 3)
+#define FB_CONFIG_PARAMETER_VERSION (FB_REFCOUNTED_VERSION + 5)
 
 // Generic form of access to configuration file - find specific entry in it
 class IConfig : public IRefCounted
@@ -127,12 +129,14 @@ public:
 	// Value ~0 means name is invalid
 	// Keys are stable: one can use once obtained key in other instances of this interface
 	virtual unsigned int FB_CARG getKey(const char* name) = 0;
-	// Use to access integer and boolean values
-	virtual int FB_CARG asInteger(unsigned int key) = 0;
+	// Use to access integer values
+	virtual ISC_INT64 FB_CARG asInteger(unsigned int key) = 0;
 	// Use to access string values
 	virtual const char* FB_CARG asString(unsigned int key) = 0;
+	// Use to access boolean values
+	virtual FB_BOOLEAN FB_CARG asBoolean(unsigned int key) = 0;
 };
-#define FB_FIREBIRD_CONF_VERSION (FB_REFCOUNTED_VERSION + 3)
+#define FB_FIREBIRD_CONF_VERSION (FB_REFCOUNTED_VERSION + 4)
 
 // This interface is passed to plugin's factory as it's single parameter
 // and contains methods to access specific plugin's configuration data
