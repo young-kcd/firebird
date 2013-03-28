@@ -121,7 +121,7 @@ void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName&
 void PathUtils::splitPrefix(Firebird::PathName& path, Firebird::PathName& prefix)
 {
 	prefix.erase();
-	while (path[0] == dir_sep)
+	while (path.hasData() && path[0] == dir_sep)
 	{
 		prefix = dir_sep;
 		path.erase(0, 1);

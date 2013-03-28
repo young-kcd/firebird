@@ -167,7 +167,7 @@ void PathUtils::splitPrefix(Firebird::PathName& path, Firebird::PathName& prefix
 		prefix = path.substr(0, 2);
 		path.erase(0, 2);
 	}
-	if (path[0] == PathUtils::dir_sep || path[0] == '/')
+	if (path.hasData() && (path[0] == PathUtils::dir_sep || path[0] == '/'))
 	{
 		prefix += path[0];
 		path.erase(0, 1);
