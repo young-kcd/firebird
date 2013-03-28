@@ -549,30 +549,6 @@ int ISQL_main(int argc, char* argv[])
  *	ISQL_main isolates this from main for PC Clients.
  *
  **************************************/
-#ifdef MU_ISQL
-	// This is code for QA Test bed Multiuser environment.
-	// Setup multi-user test environment.
-	if (qa_mu_environment())
-	{
-		// Initialize multi-user test manager only if in that
-		// environment.
-		if (!qa_mu_init(argc, argv, 1))
-		{
-			// Some problem in initializing multi-user test
-			// environment.
-			qa_mu_cleanup();
-			exit(1);
-		}
-		else
-		{
-			// When invoked by MU, additional command-line argument
-			// was added at tail. ISQL is not interested in it so
-			// remove it.
-			argv[argc - 1] = NULL;
-			argc--;
-		}
-	}
-#endif	// MU_ISQL
 
 	setlocale(LC_CTYPE, "");
 
@@ -650,13 +626,6 @@ int ISQL_main(int argc, char* argv[])
 		// Exit_value = FINI_OK;
 		break;
 	}
-#ifdef MU_ISQL
-	// This is code for QA Test bed Multiuser environment.
-	// Do multi-user cleanup if running in multi-user domain.
-	// qa_mu_cleanup() is NOP in non-multi-user domain.
-	qa_mu_cleanup();
-#endif	// MU_ISQL
-
 #ifdef DEBUG_GDS_ALLOC
 	// As ISQL can run under windows, all memory should be freed before
 	// returning.  In debug mode this call will report unfreed blocks.
@@ -4668,9 +4637,6 @@ static processing_state frontend(const TEXT* statement)
 		enum front_commands
 		{
 			show, add, copy,
-#ifdef MU_ISQL
-			pause,
-#endif
 			blobview, output, shell, set, create, drop, connect,
 			edit, input, quit, exit, help,
 #ifdef DEV_BUILD
@@ -4688,9 +4654,6 @@ static processing_state frontend(const TEXT* statement)
 		{FrontOptions::show, "SHOW", 0},
 		{FrontOptions::add, "ADD", 0},
 		{FrontOptions::copy, "COPY", 0},
-#ifdef MU_ISQL
-		{FrontOptions::pause, "PAUSE", 0},
-#endif
 		{FrontOptions::blobview, "BLOBVIEW", 0},
 		{FrontOptions::blobview, "BLOBDUMP", 0},
 		//{FrontOptions::output, "OUT", },
@@ -4802,19 +4765,6 @@ static processing_state frontend(const TEXT* statement)
 		if (gds_trans)
 			commit_trans(&gds_trans);
 		break;
-
-#ifdef MU_ISQL
-	// This is code for QA Test bed Multiuser environment.
-	case FrontOptions::pause:
-		if (qa_mu_environment())
-		{
-			qa_mu_pause();
-			ret = SKIP;
-		}
-		else
-			ret = CONT;
-		break;
-#endif	// MU_ISQL
 
 	case FrontOptions::blobview:
 		ret = blobedit(parms[0], lparms);
