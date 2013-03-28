@@ -128,6 +128,7 @@
     <ClCompile Include="..\..\..\src\jrd\Relation.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ResultSet.cpp" />
     <ClCompile Include="..\..\..\src\jrd\rlck.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\Routine.cpp" />
     <ClCompile Include="..\..\..\src\jrd\rpb_chain.cpp" />
     <ClCompile Include="..\..\..\src\jrd\RuntimeStatistics.cpp" />
     <ClCompile Include="..\..\..\src\jrd\sdw.cpp" />

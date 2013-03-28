@@ -524,6 +524,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Routine.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\rpb_chain.cpp"
 				>
 			</File>

@@ -450,6 +450,9 @@
     <ClCompile Include="..\..\..\src\dsql\BlrDebugWriter.cpp">
       <Filter>DSQL</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\Routine.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
