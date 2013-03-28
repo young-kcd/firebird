@@ -5,11 +5,8 @@
 #
 # Example Database:
 #
-#employee.fdb = @FB_SAMPLEDBDIR@/employee.fdb
-#employee = @FB_SAMPLEDBDIR@/employee.fdb
-# TODO: When added appropriate feature to config - use $(SAMPLEDBDIR) instead
-employee.fdb = $(root)/examples/empbuild/employee.fdb
-employee = $(root)/examples/empbuild/employee.fdb
+employee.fdb = $(dir_sampledb)/employee.fdb
+employee = $(dir_sampledb)/employee.fdb
 
 #
 # Live Databases:

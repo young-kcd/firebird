@@ -138,6 +138,7 @@ private:
 	void badLine(const char* fileName, const String& line);
 	void include(const char* currentFileName, const Firebird::PathName& path);
 	bool wildCards(const char* currentFileName, const Firebird::PathName& pathPrefix, FilesArray& components);
+	bool substituteStandardDir(const String& from, String& to) const;
 };
 
 #endif	// CONFIG_CONFIG_FILE_H

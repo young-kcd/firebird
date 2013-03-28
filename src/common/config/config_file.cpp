@@ -29,6 +29,7 @@
 #include "../common/config/ConfigCache.h"
 #include "../common/os/path_utils.h"
 #include "../common/ScanDir.h"
+#include "../common/utils_proto.h"
 #include <stdio.h>
 
 #ifdef HAVE_STDLIB_H
@@ -471,18 +472,51 @@ bool ConfigFile::translate(const char* fileName, const String& from, String& to)
 		PathUtils::splitLastComponent(path, file, tempPath);
 		to = path.ToString();
 	}
-	/* ToDo - implement this feature
-	else if (!substituteOneOfStandardFirebirdDirs(from, to))
-	{
-		return false;
-	}
-	*/
-	else
+	else if (!substituteStandardDir(from, to))
 	{
 		return false;
 	}
 
 	return true;
+}
+
+/******************************************************************************
+ *
+ *	Return parameter value as boolean
+ */
+
+bool ConfigFile::substituteStandardDir(const String& from, String& to) const
+{
+	using namespace fb_utils;
+
+	struct Dir {
+		FB_DIR code;
+		const char* name;
+	} dirs[] = {
+#define NMDIR(a) {a, #a},
+		NMDIR(FB_DIR_CONF)
+		NMDIR(FB_DIR_SECDB)
+		NMDIR(FB_DIR_PLUGINS)
+		NMDIR(FB_DIR_UDF)
+		NMDIR(FB_DIR_SAMPLE)
+		NMDIR(FB_DIR_SAMPLEDB)
+		NMDIR(FB_DIR_INTL)
+		NMDIR(FB_DIR_MSG)
+#undef NMDIR
+		{FB_DIR_LAST, NULL}
+	};
+
+	for (const Dir* d = dirs; d->name; ++d)
+	{
+		const char* target = &(d->name[3]);		// skip FB_
+		if (from.equalsNoCase(target))
+		{
+			to = getPrefix(d->code, "").c_str();
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /******************************************************************************
@@ -793,6 +827,11 @@ SINT64 ConfigFile::Parameter::asInteger() const
 
 	return sign * ret;
 }
+
+/******************************************************************************
+ *
+ *	Return parameter value as boolean
+ */
 
 bool ConfigFile::Parameter::asBoolean() const
 {
