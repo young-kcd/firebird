@@ -153,10 +153,7 @@ bool PathUtils::isRelative(const Firebird::PathName& path)
 {
 	if (path.length() > 0)
 	{
-		if (hasDriveLetter(path))
-			return false;
-
-		const char ds = path[0];
+		const char ds = hasDriveLetter(path) ? path[2] : path[0];
 		return ds != PathUtils::dir_sep && ds != '/';
 	}
 	return true;
