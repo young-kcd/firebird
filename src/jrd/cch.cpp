@@ -575,7 +575,7 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, int wait)
 		if (!wait)
 		{
 			BackupManager::StateReadGuard::unlock(tdbb);
-			bdb->release(tdbb);
+			bdb->release(tdbb, true);
 			return NULL;
 		}
 
@@ -977,7 +977,7 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
 
 	if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
-		bdb->release(tdbb);
+		bdb->release(tdbb, true);
 }
 
 
@@ -2064,13 +2064,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 		}
 	}
 
-	bdb->release(tdbb);
-
-	if (!bdb->bdb_use_count && (bdb->bdb_ast_flags & BDB_blocking))
-	{
-		PAGE_LOCK_RE_POST(tdbb, bcb, bdb->bdb_lock);
-	}
-
+	bdb->release(tdbb, true);
 	window->win_bdb = NULL;
 }
 
@@ -2228,7 +2222,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 					bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
 				}
 
-				bdb->release(tdbb);
+				bdb->release(tdbb, false);
 			}
 		}
 	}
@@ -2677,19 +2671,14 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 					CCH_unwind(tdbb, true);
 				}
 
-				bdb->release(tdbb);
-
 				// re-post the lock only if it was really written
-				if ((bdb->bdb_ast_flags & BDB_blocking) && !(bdb->bdb_flags & BDB_dirty))
-				{
-					PAGE_LOCK_RE_POST(tdbb, bcb, bdb->bdb_lock);
-				}
+				bdb->release(tdbb, !(bdb->bdb_flags & BDB_dirty));
 
 				flush.remove(ptr);
 			}
 			else
 			{
-				bdb->release(tdbb);
+				bdb->release(tdbb, false);
 				ptr++;
 			}
 		}
@@ -2741,7 +2730,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 				BUGCHECK(210);	// msg 210 page in use during flush
 			}
 			PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-			bdb->release(tdbb);
+			bdb->release(tdbb, false);
 		}
 	}
 
@@ -2775,7 +2764,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 						CCH_unwind(tdbb, true);
 					}
 				}
-				bdb->release(tdbb);
+				bdb->release(tdbb, false);
 
 				if (release_flag)
 				{
@@ -2790,7 +2779,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 			}
 			else
 			{
-				bdb->release(tdbb);
+				bdb->release(tdbb, false);
 				ptr++;
 			}
 		}
@@ -3359,7 +3348,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	{
 		bdb->bdb_ast_flags &= ~BDB_blocking;
 		LCK_downgrade(tdbb, lock);
-		bdb->release(tdbb);
+		bdb->release(tdbb, false);
 		return; // true;
 	}
 
@@ -3415,7 +3404,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 		if (in_use)
 		{
-			bdb->release(tdbb);
+			bdb->release(tdbb, false);
 			return; // false;
 		}
 
@@ -3487,7 +3476,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	} // syncPrec scope
 
 	bdb->bdb_flags &= ~BDB_not_valid;
-	bdb->release(tdbb);
+	bdb->release(tdbb, false);
 
 	return; // true;
 }
@@ -3672,7 +3661,7 @@ static LatchState latch_buffer(thread_db* tdbb, Sync &bcbSync, BufferDesc *bdb,
 			tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 			return lsOk;
 		}
-		bdb->release(tdbb);
+		bdb->release(tdbb, false);
 	}
 	return lsPageChanged; // try again
 }
@@ -3876,13 +3865,13 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 
 			if ((oldest->bdb_flags & BDB_free_pending) || !writeable(oldest))
 			{
-				oldest->release(tdbb);
+				oldest->release(tdbb, true);
 				continue;
 			}
 
 			if (oldest->bdb_flags & BDB_lru_chained)
 			{
-				oldest->release(tdbb);
+				oldest->release(tdbb, true);
 				continue;
 			}
 
@@ -3910,7 +3899,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				}
 				if (walk)
 				{
-					oldest->release(tdbb);
+					oldest->release(tdbb, true);
 					if (!--walk)
 						break;
 
@@ -3948,7 +3937,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 					QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
 					bcbSync.unlock();
 
-					bdb->release(tdbb);
+					bdb->release(tdbb, true);
 					CCH_unwind(tdbb, true);
 				}
 			}
@@ -4226,7 +4215,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
 		{
 			fb_utils::init_status(status);
-			bdb->release(tdbb);
+			bdb->release(tdbb, false);
 			return lsLockTimeout;
 		}
 
@@ -4258,11 +4247,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	if (wait == LCK_NO_WAIT)
 	{
-		bdb->release(tdbb);
-		if (!bdb->bdb_use_count && (bdb->bdb_ast_flags & BDB_blocking))
-		{
-			PAGE_LOCK_RE_POST(tdbb, bcb, bdb->bdb_lock);
-		}
+		bdb->release(tdbb, true);
 
 		return lsLockTimeout;
 	}
@@ -4275,7 +4260,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 	if ((wait < 0) && (status[1] == isc_lock_timeout))
 	{
 		fb_utils::init_status(status);
-		bdb->release(tdbb);
+		bdb->release(tdbb, false);
 		return lsLockTimeout;
 	}
 
@@ -5275,7 +5260,7 @@ void BufferDesc::downgrade(SyncType syncType)
 }
 
 
-void BufferDesc::release(thread_db* tdbb)
+void BufferDesc::release(thread_db* tdbb, bool repost)
 {
 	//const SyncType oldState = bdb_syncPage.getState(); Unfinished logic here???
 
@@ -5295,6 +5280,11 @@ void BufferDesc::release(thread_db* tdbb)
 	}
 	else
 		bdb_syncPage.unlock(NULL, SYNC_SHARED);
+
+	if (repost && !bdb_use_count && (bdb_ast_flags & BDB_blocking))
+	{
+		PAGE_LOCK_RE_POST(tdbb, bdb_bcb, bdb_lock);
+	}
 }
 
 
