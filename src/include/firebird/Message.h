@@ -58,7 +58,7 @@
 			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_FIELD, size, fields)	\
 		};	\
 		\
-		static void setup(IStatus* status, ::Firebird::IMetadataBuilder* builder)	\
+		static void setup(::Firebird::IStatus* status, ::Firebird::IMetadataBuilder* builder)	\
 		{	\
 			unsigned index = 0;	\
 			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_META, size, fields)	\
