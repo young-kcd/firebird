@@ -116,10 +116,9 @@
 #define isc_dpb_remote_protocol			  81
 #define isc_dpb_host_name				  82
 #define isc_dpb_os_user					  83
-// This 3 will not be used in protocol 13, therefore may be reused
-#define isc_dpb_specific_auth_data		  isc_dpb_trusted_auth
-#define isc_dpb_auth_plugin_list		  isc_dpb_password
-#define isc_dpb_auth_plugin_name		  isc_dpb_password_enc
+#define isc_dpb_specific_auth_data		  84
+#define isc_dpb_auth_plugin_list		  85
+#define isc_dpb_auth_plugin_name		  86
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
