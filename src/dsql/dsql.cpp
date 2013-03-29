@@ -201,7 +201,7 @@ void DSQL_execute(thread_db* tdbb,
 	}
 	else
 	{
-		fb_assert(!flOpenCursor);
+		///fb_assert(!flOpenCursor);
 	}
 }
 
