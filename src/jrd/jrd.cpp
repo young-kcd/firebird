@@ -6391,10 +6391,9 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 		if (options.dpb_user_name.hasData() || (id == -1))
 		{
-			name = options.dpb_user_name;
-
-			if (name.hasData())
+			if (name.empty() && options.dpb_user_name.hasData())
 			{
+				name = options.dpb_user_name;
 				ISC_utf8ToSystem(name);
 				name.upper();
 				ISC_systemToUtf8(name);
