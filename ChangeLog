@@ -1,3 +1,66 @@
+ 2013-03-28 16:52  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+Refactor a bit
+
+ 2013-03-28 15:35  alexpeshkoff 
+   M builds/install/misc/aliases.conf.in
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+Added macros for main firebird directories to config files
+
+ 2013-03-28 13:55  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+Make default firebird.conf better readable. No need in conversion tables any more.
+
+ 2013-03-28 13:43  alexpeshkoff 
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/include/firebird/Plugin.h
+   M src/yvalve/PluginManager.cpp
+Fixed problems when config file is missing
+Make config manager and it's external interfaces work with 64-bit integers
+Added support for boolean values (like 'true' & 'yes') to external config interfaces
+Added support for kmg multipliers to config manager
+
+ 2013-03-28 13:15  hvlad 
+   M src/common/os/win32/path_utils.cpp
+Well, there is a case where relative path could contain drive letter, for ex. C:xxx\yyy\zzz.
+Correct first version of code.
+
+ 2013-03-28 12:46  mapopa 
+   M src/isql/isql.epp
+MUISQL (QA Test bed Multiuser environment) target is not builded anymore from Firebird 1.x ages 
+
+ 2013-03-28 12:09  hvlad 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+Update Windows build
+
+ 2013-03-28 12:04  hvlad 
+   M src/common/os/win32/path_utils.cpp
+If path contains drive letter - it is definitely not relative path
+
+ 2013-03-28 10:15  mapopa 
+   M doc/license/IDPL.txt
+   M doc/license/README.license.usage.txt
+Fix licenses urls , sourcecode tree is moved to SVN from CVS 
+
+ 2013-03-28 09:32  mapopa 
+   M builds/make.new/config/install-sh
+   M extern/editline/configure
+update config files after fixing recent version of autoconf/automake/libtool complain about the firebird
+scripts aclocal: warning: autoconf input should be named 'configure.ac', not 'configure.in'
+
+ 2013-03-28 07:24  alexpeshkoff 
+   M src/common/os/posix/path_utils.cpp
+   M src/common/os/win32/path_utils.cpp
+Fixed case with empty path - thanks to Dmitry Kovalenko
+
  2013-03-27 16:09  asfernandes 
    M src/dsql/DdlNodes.epp
 Fixed CORE-4071 - external function declaration with "returns parameter" crashes the server.
