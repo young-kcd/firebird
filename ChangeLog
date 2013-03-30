@@ -1,3 +1,16 @@
+ 2013-03-29 23:25  asfernandes 
+   M src/dsql/dsql.cpp
+Make it work as before, although I think openCursor should fail with DDL statements.
+Please check CursorTest.cpp (ddlFetch) in fbstuff.
+
+ 2013-03-29 23:25  asfernandes 
+   M src/include/firebird/Message.h
+Correction.
+
+ 2013-03-29 07:39  alexpeshkoff 
+   M src/include/consts_pub.h
+Avoid reusing old dpb codes as it was suggested some time ago in devel - looks like we have enough of them
+
  2013-03-28 16:52  hvlad 
    M src/jrd/cch.cpp
    M src/jrd/cch.h
