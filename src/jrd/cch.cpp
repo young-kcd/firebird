@@ -77,7 +77,6 @@ using namespace Firebird;
 IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #endif
 
-
 #ifdef SUPERSERVER_V2
 #define CACHE_READER
 #endif
@@ -2045,7 +2044,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 				// hvlad: we want to make it least recently used, not most recently used
 				//recentlyUsed(bdb);
 
-				if ((bcb->bcb_flags & BCB_cache_writer) && 
+				if ((bcb->bcb_flags & BCB_cache_writer) &&
 					(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) )
 				{
 					//if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty)
@@ -3889,7 +3888,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			}
 #endif
 
-			if ((bcb->bcb_flags & BCB_cache_writer) && 
+			if ((bcb->bcb_flags & BCB_cache_writer) &&
 				(oldest->bdb_flags & (BDB_dirty | BDB_db_dirty)) )
 			{
 				bcb->bcb_flags |= BCB_free_pending;

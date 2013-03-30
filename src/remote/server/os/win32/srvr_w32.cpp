@@ -503,7 +503,7 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			iscLogException("XNET_connect", ex);
 		}
 
-		if (port) 
+		if (port)
 		{
 			try
 			{

@@ -622,7 +622,7 @@ public:
 		fbUdrRegFunction(name, this);
 	}
 
-	virtual void setup(IStatus* status, ExternalContext* /*context*/,
+	virtual void FB_CARG setup(IStatus* status, ExternalContext* /*context*/,
 		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
 		T::InMessage::setup(status, in);
@@ -647,7 +647,7 @@ public:
 		fbUdrRegProcedure(name, this);
 	}
 
-	virtual void setup(IStatus* status, ExternalContext* /*context*/,
+	virtual void FB_CARG setup(IStatus* status, ExternalContext* /*context*/,
 		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
 		T::InMessage::setup(status, in);
@@ -672,7 +672,7 @@ public:
 		fbUdrRegTrigger(name, this);
 	}
 
-	virtual void setup(IStatus* status, ExternalContext* /*context*/,
+	virtual void FB_CARG setup(IStatus* status, ExternalContext* /*context*/,
 		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* fields)
 	{
 		T::FieldsMessage::setup(status, fields);

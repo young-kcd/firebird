@@ -917,6 +917,46 @@ void Blob::cancel(IStatus* status)
 }
 
 
+void Blob::close(IStatus* status)
+{
+/**************************************
+ *
+ *	g d s _ c l o s e _ b l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close a completed blob.
+ *
+ **************************************/
+	try
+	{
+		reset(status);
+
+		CHECK_HANDLE(blob, isc_bad_segstr_handle);
+
+		Rdb* rdb = blob->rbl_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		if ((blob->rbl_flags & Rbl::CREATE) && blob->rbl_ptr != blob->rbl_buffer)
+		{
+			send_blob(status, blob, 0, NULL);
+		}
+
+		release_object(status, rdb, op_close_blob, blob->rbl_id);
+		release_blob(blob);
+		blob = NULL;
+		release();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
 void Events::freeClientData(IStatus* status, bool force)
 {
 /**************************************
@@ -971,46 +1011,6 @@ void Events::cancel(IStatus* status)
 	if (status->isSuccess())
 	{
 		release();
-	}
-}
-
-
-void Blob::close(IStatus* status)
-{
-/**************************************
- *
- *	g d s _ c l o s e _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Close a completed blob.
- *
- **************************************/
-	try
-	{
-		reset(status);
-
-		CHECK_HANDLE(blob, isc_bad_segstr_handle);
-
-		Rdb* rdb = blob->rbl_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		if ((blob->rbl_flags & Rbl::CREATE) && blob->rbl_ptr != blob->rbl_buffer)
-		{
-			send_blob(status, blob, 0, NULL);
-		}
-
-		release_object(status, rdb, op_close_blob, blob->rbl_id);
-		release_blob(blob);
-		blob = NULL;
-		release();
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
 	}
 }
 

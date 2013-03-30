@@ -157,9 +157,9 @@ int CLIB_ROUTINE main( int argc, char** argv)
  *	Run the server with apollo mailboxes.
  *
  **************************************/
-  try
-  {
-	RemPortPtr port;
+	try
+	{
+		RemPortPtr port;
 
 // 01 Sept 2003, Nickolay Samofatov
 // In GCC version 3.1-3.3 we need to install special error handler
@@ -169,286 +169,289 @@ int CLIB_ROUTINE main( int argc, char** argv)
 //    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
 //#endif
 
-	// We should support 3 modes:
-	// 1. Standalone single-process listener (like SS).
-	// 2. Standalone listener, forking on each packet accepted (look -s switch in CS).
-	// 3. Process spawned by (x)inetd (like CS).
-	bool classic = false;
-	bool standaloneClassic = false;
-	bool super = false;
+		// We should support 3 modes:
+		// 1. Standalone single-process listener (like SS).
+		// 2. Standalone listener, forking on each packet accepted (look -s switch in CS).
+		// 3. Process spawned by (x)inetd (like CS).
+		bool classic = false;
+		bool standaloneClassic = false;
+		bool super = false;
 
-	// It's very easy to detect that we are spawned - just check fd 0 to be a socket.
-	const int channel = 0;
-	struct stat stat0;
-	if (fstat(channel, &stat0) == 0 && S_ISSOCK(stat0.st_mode))
-	{
-		// classic server mode
-		classic = true;
-	}
+		// It's very easy to detect that we are spawned - just check fd 0 to be a socket.
+		const int channel = 0;
+		struct stat stat0;
+		if (fstat(channel, &stat0) == 0 && S_ISSOCK(stat0.st_mode))
+		{
+			// classic server mode
+			classic = true;
+		}
 
-	const TEXT* const* const end = argc + argv;
-	argv++;
-	bool debug = false;
-	USHORT INET_SERVER_flag = 0;
-	protocol[0] = 0;
+		const TEXT* const* const end = argc + argv;
+		argv++;
+		bool debug = false;
+		USHORT INET_SERVER_flag = 0;
+		protocol[0] = 0;
 
-	bool done = false;
+		bool done = false;
 
-	while (argv < end)
-	{
-		TEXT c;
-		const TEXT* p = *argv++;
-		if (*p++ == '-')
-			while (c = *p++)
+		while (argv < end)
+		{
+			TEXT c;
+			const TEXT* p = *argv++;
+
+			if (*p++ == '-')
 			{
-				switch (UPPER(c))
+				while (c = *p++)
 				{
-				case 'D':
-					debug = true;
-					break;
+					switch (UPPER(c))
+					{
+					case 'D':
+						debug = true;
+						break;
 
-				case 'S':
-					if (!classic)
-					{
-						standaloneClassic = true;
-					}
-					break;
-
-				case 'I':
-					if (!classic)
-					{
-						standaloneClassic = false;
-					}
-					break;
-
-				case 'E':
-					if (argv < end)
-					{
-						if (ISC_set_prefix(p, *argv) == -1)
-							printf("Invalid argument Ignored\n");
-						else
-							argv++;	// do not skip next argument if this one is invalid
-					}
-					else
-					{
-						printf("Missing argument, switch -E ignored\n");
-					}
-					done = true;
-					break;
-
-				case 'P':
-					if (argv < end)
-					{
+					case 'S':
 						if (!classic)
 						{
-							fb_utils::snprintf(protocol, sizeof(protocol), "/%s", *argv++);
+							standaloneClassic = true;
+						}
+						break;
+
+					case 'I':
+						if (!classic)
+						{
+							standaloneClassic = false;
+						}
+						break;
+
+					case 'E':
+						if (argv < end)
+						{
+							if (ISC_set_prefix(p, *argv) == -1)
+								printf("Invalid argument Ignored\n");
+							else
+								argv++;	// do not skip next argument if this one is invalid
 						}
 						else
 						{
-							gds__log("Switch -P ignored in CS mode\n");
+							printf("Missing argument, switch -E ignored\n");
 						}
+						done = true;
+						break;
+
+					case 'P':
+						if (argv < end)
+						{
+							if (!classic)
+							{
+								fb_utils::snprintf(protocol, sizeof(protocol), "/%s", *argv++);
+							}
+							else
+							{
+								gds__log("Switch -P ignored in CS mode\n");
+							}
+						}
+						else
+						{
+							printf("Missing argument, switch -P ignored\n");
+						}
+						break;
+
+		            case 'H':
+					case '?':
+						printf("Firebird TCP/IP server options are:\n");
+						printf("  -d        : debug on\n");
+						printf("  -s        : standalone - true\n");
+						printf("  -i        : standalone - false\n");
+						printf("  -p <port> : specify port to listen on\n");
+						printf("  -z        : print version and exit\n");
+						printf("  -h|?      : print this help\n");
+		                printf("\n");
+		                printf("  (The following -e options used to be -h options)\n");
+						printf("  -e <firebird_root_dir>   : set firebird_root path\n");
+						printf("  -el <firebird_lock_dir>  : set runtime firebird_lock dir\n");
+						printf("  -em <firebird_msg_dir>   : set firebird_msg dir path\n");
+
+						exit(FINI_OK);
+
+					case 'Z':
+						printf("Firebird TCP/IP server version %s\n", FB_VERSION);
+						exit(FINI_OK);
+
+					default:
+						printf("Unknown switch '%c', ignored\n", c);
+						break;
 					}
-					else
-					{
-						printf("Missing argument, switch -P ignored\n");
-					}
-					break;
-
-                case 'H':
-				case '?':
-					printf("Firebird TCP/IP server options are:\n");
-					printf("  -d        : debug on\n");
-					printf("  -s        : standalone - true\n");
-					printf("  -i        : standalone - false\n");
-					printf("  -p <port> : specify port to listen on\n");
-					printf("  -z        : print version and exit\n");
-					printf("  -h|?      : print this help\n");
-                    printf("\n");
-                    printf("  (The following -e options used to be -h options)\n");
-					printf("  -e <firebird_root_dir>   : set firebird_root path\n");
-					printf("  -el <firebird_lock_dir>  : set runtime firebird_lock dir\n");
-					printf("  -em <firebird_msg_dir>   : set firebird_msg dir path\n");
-
-					exit(FINI_OK);
-
-				case 'Z':
-					printf("Firebird TCP/IP server version %s\n", FB_VERSION);
-					exit(FINI_OK);
-
-				default:
-					printf("Unknown switch '%c', ignored\n", c);
-					break;
+					if (done)
+						break;
 				}
-				if (done)
-					break;
 			}
-	}
+		}
 
-	if (!(classic || standaloneClassic))
-	{
-		INET_SERVER_flag |= SRVR_multi_client;
-		super = true;
-	}
-	if (debug)
-	{
-		INET_SERVER_flag |= SRVR_debug;
-	}
+		if (!(classic || standaloneClassic))
+		{
+			INET_SERVER_flag |= SRVR_multi_client;
+			super = true;
+		}
+		if (debug)
+		{
+			INET_SERVER_flag |= SRVR_debug;
+		}
 
-	// activate paths set with -e family of switches
-	ISC_set_prefix(0, 0);
+		// activate paths set with -e family of switches
+		ISC_set_prefix(0, 0);
 
-	// ignore some signals
-	set_signal(SIGPIPE, signal_handler);
-	set_signal(SIGUSR1, signal_handler);
-	set_signal(SIGUSR2, signal_handler);
+		// ignore some signals
+		set_signal(SIGPIPE, signal_handler);
+		set_signal(SIGUSR1, signal_handler);
+		set_signal(SIGUSR2, signal_handler);
 
-	// First of all change directory to tmp
-	if (chdir(TEMP_DIR))
-	{
-		// error on changing the directory
-		gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
-	}
+		// First of all change directory to tmp
+		if (chdir(TEMP_DIR))
+		{
+			// error on changing the directory
+			gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
+		}
 
 #ifdef FB_RAISE_LIMITS
 
 #ifdef RLIMIT_NPROC
-	raiseLimit(RLIMIT_NPROC);
+		raiseLimit(RLIMIT_NPROC);
 #endif
 
 #if !(defined(DEV_BUILD))
-	if (Config::getBugcheckAbort())
+		if (Config::getBugcheckAbort())
 #endif
-	{
-		// try to force core files creation
-		raiseLimit(RLIMIT_CORE);
-	}
+		{
+			// try to force core files creation
+			raiseLimit(RLIMIT_CORE);
+		}
 
 #if (defined SOLARIS || defined HPUX || defined LINUX)
-	if (super)
-	{
-		// Increase max open files to hard limit for Unix
-		// platforms which are known to have low soft limits.
+		if (super)
+		{
+			// Increase max open files to hard limit for Unix
+			// platforms which are known to have low soft limits.
 
-		raiseLimit(RLIMIT_NOFILE);
-	}
+			raiseLimit(RLIMIT_NOFILE);
+		}
 #endif // Unix platforms
 
 #endif // FB_RAISE_LIMITS
 
-	if (!(debug || classic))
-	{
-		int mask = 0; // FD_ZERO(&mask);
-		mask |= 1 << 2; // FD_SET(2, &mask);
-		divorce_terminal(mask);
-	}
-
-	// check firebird.conf presence - must be for server
-	if (Config::missFirebirdConf())
-	{
-		Firebird::Syslog::Record(Firebird::Syslog::Error, "Missing master config file firebird.conf");
-		exit(STARTUP_ERROR);
-	}
-
-	if (super || standaloneClassic)
-	{
-		try
+		if (!(debug || classic))
 		{
-			port = INET_connect(protocol, 0, INET_SERVER_flag, 0);
+			int mask = 0; // FD_ZERO(&mask);
+			mask |= 1 << 2; // FD_SET(2, &mask);
+			divorce_terminal(mask);
 		}
-		catch (const Firebird::Exception& ex)
+
+		// check firebird.conf presence - must be for server
+		if (Config::missFirebirdConf())
 		{
-			iscLogException("startup:INET_connect:", ex);
-			ISC_STATUS_ARRAY status_vector;
-			ex.stuff_exception(status_vector);
-			gds__print_status(status_vector);
+			Firebird::Syslog::Record(Firebird::Syslog::Error, "Missing master config file firebird.conf");
 			exit(STARTUP_ERROR);
 		}
-	}
 
-	if (classic)
-	{
-		port = INET_server(channel);
-		if (!port)
+		if (super || standaloneClassic)
 		{
-			fprintf(stderr, "fbserver: Unable to start INET_server\n");
-			exit(STARTUP_ERROR);
+			try
+			{
+				port = INET_connect(protocol, 0, INET_SERVER_flag, 0);
+			}
+			catch (const Firebird::Exception& ex)
+			{
+				iscLogException("startup:INET_connect:", ex);
+				ISC_STATUS_ARRAY status_vector;
+				ex.stuff_exception(status_vector);
+				gds__print_status(status_vector);
+				exit(STARTUP_ERROR);
+			}
 		}
-	}
 
-	{ // scope for interface ptr
-		Firebird::PluginManagerInterfacePtr pi;
-		Auth::registerLegacyServer(pi);
-		Auth::registerSrpServer(pi);
+		if (classic)
+		{
+			port = INET_server(channel);
+			if (!port)
+			{
+				fprintf(stderr, "fbserver: Unable to start INET_server\n");
+				exit(STARTUP_ERROR);
+			}
+		}
+
+		{ // scope for interface ptr
+			Firebird::PluginManagerInterfacePtr pi;
+			Auth::registerLegacyServer(pi);
+			Auth::registerSrpServer(pi);
 #ifdef TRUSTED_AUTH
-		Auth::registerTrustedServer(pi);
+			Auth::registerTrustedServer(pi);
 #endif
-	}
-
-	if (super)
-	{
-		// Server tries to attach to security2.fdb to make sure everything is OK
-		// This code fixes bug# 8429 + all other bug of that kind - from
-		// now on the server exits if it cannot attach to the database
-		// (wrong or no license, not enough memory, etc.
-
-		ISC_STATUS_ARRAY status;
-		isc_db_handle db_handle = 0L;
-
-		const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
-		const char* path = defConf->getSecurityDatabase();
-		const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1, isc_dpb_address_path, 0};
-
-		isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
-		if (status[0] == 1 && status[1] > 0)
-		{
-			logSecurityDatabaseError(path, status);
 		}
 
-		isc_detach_database(status, &db_handle);
-		if (status[0] == 1 && status[1] > 0)
+		if (super)
 		{
-			logSecurityDatabaseError(path, status);
-		}
-	} // end scope
+			// Server tries to attach to security2.fdb to make sure everything is OK
+			// This code fixes bug# 8429 + all other bug of that kind - from
+			// now on the server exits if it cannot attach to the database
+			// (wrong or no license, not enough memory, etc.
 
-	fb_shutdown_callback(NULL, closePort, fb_shut_exit, port);
+			ISC_STATUS_ARRAY status;
+			isc_db_handle db_handle = 0L;
 
-	SRVR_multi_thread(port, INET_SERVER_flag);
+			const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
+			const char* path = defConf->getSecurityDatabase();
+			const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1, isc_dpb_address_path, 0};
+
+			isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
+			if (status[0] == 1 && status[1] > 0)
+			{
+				logSecurityDatabaseError(path, status);
+			}
+
+			isc_detach_database(status, &db_handle);
+			if (status[0] == 1 && status[1] > 0)
+			{
+				logSecurityDatabaseError(path, status);
+			}
+		} // end scope
+
+		fb_shutdown_callback(NULL, closePort, fb_shut_exit, port);
+
+		SRVR_multi_thread(port, INET_SERVER_flag);
 
 #ifdef DEBUG_GDS_ALLOC
-	// In Debug mode - this will report all server-side memory leaks due to remote access
+		// In Debug mode - this will report all server-side memory leaks due to remote access
 
-	//gds_alloc_report(0, __FILE__, __LINE__);
-	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "memdebug.log");
-	FILE* file = fopen(name.c_str(), "w+t");
-	if (file)
-	{
-	  fprintf(file, "Global memory pool allocated objects\n");
-	  getDefaultMemoryPool()->print_contents(file);
-	  fclose(file);
-	}
+		//gds_alloc_report(0, __FILE__, __LINE__);
+		Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "memdebug.log");
+		FILE* file = fopen(name.c_str(), "w+t");
+		if (file)
+		{
+			fprintf(file, "Global memory pool allocated objects\n");
+			getDefaultMemoryPool()->print_contents(file);
+			fclose(file);
+		}
 #endif
 
-	// perform atexit shutdown here when all globals in embedded library are active
-	// also sync with possibly already running shutdown in dedicated thread
-	fb_shutdown(10000, fb_shutrsn_exit_called);
+		// perform atexit shutdown here when all globals in embedded library are active
+		// also sync with possibly already running shutdown in dedicated thread
+		fb_shutdown(10000, fb_shutrsn_exit_called);
 
-	return FINI_OK;
-  }
-  catch(const Firebird::Exception& ex)
-  {
-    ISC_STATUS_ARRAY status;
-    ex.stuff_exception(status);
+		return FINI_OK;
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ISC_STATUS_ARRAY status;
+		ex.stuff_exception(status);
 
-    char s[100];
-    const ISC_STATUS* st = status;
-    fb_interpret(s, sizeof(s), &st);
+		char s[100];
+		const ISC_STATUS* st = status;
+		fb_interpret(s, sizeof(s), &st);
 
-    Firebird::Syslog::Record(Firebird::Syslog::Error, "Firebird startup error");
-    Firebird::Syslog::Record(Firebird::Syslog::Error, s);
+		Firebird::Syslog::Record(Firebird::Syslog::Error, "Firebird startup error");
+		Firebird::Syslog::Record(Firebird::Syslog::Error, s);
 
-  	exit(STARTUP_ERROR);
-  }
+		exit(STARTUP_ERROR);
+	}
 }
 
 } // extern "C"

@@ -39,7 +39,7 @@ namespace Firebird
 class FunctionFactory
 {
 public:
-	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
+	virtual void FB_CARG setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
 	virtual ExternalFunction* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
@@ -48,7 +48,7 @@ public:
 class ProcedureFactory
 {
 public:
-	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
+	virtual void FB_CARG setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
 	virtual ExternalProcedure* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
@@ -57,7 +57,7 @@ public:
 class TriggerFactory
 {
 public:
-	virtual void setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
+	virtual void FB_CARG setup(IStatus* status, ExternalContext* context, const IRoutineMetadata* metadata,
 		IMetadataBuilder* fieldsBuilder) = 0;
 	virtual ExternalTrigger* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
