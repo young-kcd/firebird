@@ -1,3 +1,7 @@
+ 2013-03-29 12:11  dimitr 
+   M src/jrd/jrd.cpp
+Fixed the error I introduced recently.
+
  2013-03-24 15:36  dimitr 
    M src/jrd/jrd.cpp
    M src/jrd/jrd_pwd.h
