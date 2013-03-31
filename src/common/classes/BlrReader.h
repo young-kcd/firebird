@@ -51,6 +51,11 @@ public:
 	}
 
 public:
+	unsigned getLength() const
+	{
+		return (unsigned) (end - start);
+	}
+
 	const UCHAR* getPos() const
 	{
 		fb_assert(pos);

@@ -5595,7 +5595,7 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 					try
 					{
-						MET_parse_routine_blr(tdbb, function, &FUN.RDB$FUNCTION_BLR, csb);
+						function->parseBlr(tdbb, csb, &FUN.RDB$FUNCTION_BLR);
 						valid_blr = true;
 					}
 					catch (const Firebird::Exception&)

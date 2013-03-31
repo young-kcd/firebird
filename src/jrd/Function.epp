@@ -408,7 +408,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 					try
 					{
-						MET_parse_routine_blr(tdbb, function, &X.RDB$FUNCTION_BLR, csb);
+						function->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR);
 					}
 					catch (const Exception&)
 					{

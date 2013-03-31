@@ -1295,7 +1295,7 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 		node->blrLength = reader.getLong();
 		node->blrStart = reader.getPos();
 
-		MET_par_messages(tdbb, reader.getPos(), node->blrLength, subFunc, subCsb);
+		subFunc->parseMessages(tdbb, subCsb, BlrReader(reader.getPos(), node->blrLength));
 
 		USHORT count = subFunc->getInputFormat() ? subFunc->getInputFormat()->fmt_count : 0;
 		if (subFunc->getInputFields().getCount() * 2 != count)
@@ -1545,7 +1545,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 		node->blrLength = reader.getLong();
 		node->blrStart = reader.getPos();
 
-		MET_par_messages(tdbb, reader.getPos(), node->blrLength, subProc, subCsb);
+		subProc->parseMessages(tdbb, subCsb, BlrReader(reader.getPos(), node->blrLength));
 
 		USHORT count = subProc->getInputFormat() ? subProc->getInputFormat()->fmt_count : 0;
 		if (subProc->getInputFields().getCount() * 2 != count)

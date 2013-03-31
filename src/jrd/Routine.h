@@ -23,6 +23,7 @@
 
 #include "../common/classes/array.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/BlrReader.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/QualifiedName.h"
 #include "../common/classes/NestConst.h"
@@ -30,6 +31,8 @@
 
 namespace Jrd
 {
+	class thread_db;
+	class CompilerScratch;
 	class JrdStatement;
 	class Format;
 	class Parameter;
@@ -105,6 +108,9 @@ namespace Jrd
 
 		const Firebird::Array<NestConst<Parameter> >& getOutputFields() const { return outputFields; }
 		Firebird::Array<NestConst<Parameter> >& getOutputFields() { return outputFields; }
+
+		void parseBlr(thread_db* tdbb, CompilerScratch* csb, bid* blob_id);
+		void parseMessages(thread_db* tdbb, CompilerScratch* csb, Firebird::BlrReader blrReader);
 
 	public:
 		virtual int getObjectType() const = 0;
