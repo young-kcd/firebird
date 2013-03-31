@@ -1,3 +1,14 @@
+ 2013-03-30 02:31  asfernandes 
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/jrd/cch.cpp
+   M src/jrd/dpm.epp
+   M src/jrd/met.epp
+   M src/remote/client/interface.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+Misc.
+
  2013-03-29 23:25  asfernandes 
    M src/dsql/dsql.cpp
 Make it work as before, although I think openCursor should fail with DDL statements.
