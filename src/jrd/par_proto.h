@@ -47,9 +47,8 @@ Jrd::ValueListNode*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR, USHO
 Jrd::ValueListNode*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*);
 Jrd::DmlNode* PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG blr_length,
 	Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::JrdStatement**, const bool, USHORT);
-void PAR_validation_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR* blr,
-	ULONG blr_length, Jrd::CompilerScratch*, Jrd::CompilerScratch**, USHORT,
-	Jrd::BoolExprNode**, Jrd::StmtNode**);
+Jrd::BoolExprNode* PAR_validation_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR* blr,
+	ULONG blr_length, Jrd::CompilerScratch*, Jrd::CompilerScratch**, USHORT);
 StreamType		PAR_context(Jrd::CompilerScratch*, SSHORT*);
 void			PAR_dependency(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, StreamType stream,
 	SSHORT id, const Firebird::MetaName& field_name);

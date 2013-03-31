@@ -299,9 +299,7 @@ class jrd_fld : public pool_alloc<type_fld>
 {
 public:
 	BoolExprNode*	fld_validation;		// validation clause, if any
-	StmtNode*		fld_validation_stmt;	// validation clause, if any - StmtExprNode fragment
 	BoolExprNode*	fld_not_null;		// if field cannot be NULL
-	StmtNode*		fld_not_null_stmt;	// if field cannot be NULL - StmtExprNode fragment
 	ValueExprNode*	fld_missing_value;	// missing value, if any
 	ValueExprNode*	fld_computation;	// computation for virtual field
 	ValueExprNode*	fld_source;			// source for view fields

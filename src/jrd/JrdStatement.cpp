@@ -227,8 +227,6 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 			csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
-			fieldInfo.validationStmt = NodeCopier::copy(tdbb, csb, fieldInfo.validationStmt, localMap);
-
 			if (fieldInfo.validationExpr)
 			{
 				NodeCopier copier(csb, localMap);
@@ -236,7 +234,6 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 			}
 
 			DmlNode::doPass1(tdbb, csb, fieldInfo.defaultValue.getAddress());
-			DmlNode::doPass1(tdbb, csb, fieldInfo.validationStmt.getAddress());
 			DmlNode::doPass1(tdbb, csb, fieldInfo.validationExpr.getAddress());
 		}
 
@@ -250,7 +247,6 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 		{
 			FieldInfo& fieldInfo = accessor.current()->second;
 			ExprNode::doPass2(tdbb, csb, fieldInfo.defaultValue.getAddress());
-			StmtNode::doPass2(tdbb, csb, fieldInfo.validationStmt.getAddress(), NULL);
 			ExprNode::doPass2(tdbb, csb, fieldInfo.validationExpr.getAddress());
 		}
 

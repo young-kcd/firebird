@@ -122,8 +122,7 @@ static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
 static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
-static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name,
-	BoolExprNode** expr, StmtNode** stmt);
+static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, JrdStatement*, blb*, bid*,
 	const TEXT*, FB_UINT64, bool, USHORT, const MetaName&, const string&,
@@ -228,15 +227,11 @@ void MET_get_domain(thread_db* tdbb, const MetaName& name, dsc* desc, FieldInfo*
 						fieldInfo->defaultValue = parse_field_default_blr(tdbb, &FLD.RDB$DEFAULT_VALUE);
 
 					if (FLD.RDB$VALIDATION_BLR.NULL)
-					{
 						fieldInfo->validationExpr = NULL;
-						fieldInfo->validationStmt = NULL;
-					}
 					else
 					{
-						parse_field_validation_blr(tdbb, &FLD.RDB$VALIDATION_BLR, name,
-							fieldInfo->validationExpr.getAddress(),
-							fieldInfo->validationStmt.getAddress());
+						fieldInfo->validationExpr = parse_field_validation_blr(tdbb,
+							&FLD.RDB$VALIDATION_BLR, name);
 					}
 				}
 				catch (const Exception&)
@@ -320,15 +315,11 @@ MetaName MET_get_relation_field(thread_db* tdbb,
 						fieldInfo->defaultValue = NULL;
 
 					if (FLD.RDB$VALIDATION_BLR.NULL)
-					{
 						fieldInfo->validationExpr = NULL;
-						fieldInfo->validationStmt = NULL;
-					}
 					else
 					{
-						parse_field_validation_blr(tdbb, &FLD.RDB$VALIDATION_BLR, RFL.RDB$FIELD_SOURCE,
-							fieldInfo->validationExpr.getAddress(),
-							fieldInfo->validationStmt.getAddress());
+						fieldInfo->validationExpr = parse_field_validation_blr(tdbb,
+							&FLD.RDB$VALIDATION_BLR, RFL.RDB$FIELD_SOURCE);
 					}
 				}
 				catch (const Exception&)
@@ -2650,7 +2641,7 @@ DmlNode* MET_parse_blob(thread_db*	tdbb,
 	{
 		// The set of MET parse functions needs a rework.
 		// For now, our caller chain is not interested in the returned node.
-		PAR_validation_blr(tdbb, relation, temp, length, NULL, csb_ptr, 0, NULL, NULL);
+		PAR_validation_blr(tdbb, relation, temp, length, NULL, csb_ptr, 0);
 	}
 	else
 		node = PAR_blr(tdbb, relation, temp, length, NULL, csb_ptr, statementPtr, trigger, 0);
@@ -3697,14 +3688,14 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				// Because a VIEW can't have a validation section i ignored the whole call.
 				if (!csb)
 				{
-					PAR_validation_blr(tdbb, relation, p, length, csb, NULL, csb_validation,
-						&field->fld_validation, &field->fld_validation_stmt);
+					field->fld_validation = PAR_validation_blr(tdbb, relation, p, length, csb,
+						NULL, csb_validation);
 				}
 				break;
 
 			case RSR_field_not_null:
-				PAR_validation_blr(tdbb, relation, p, length, csb, NULL, csb_validation,
-					&field->fld_not_null, &field->fld_not_null_stmt);
+				field->fld_not_null = PAR_validation_blr(tdbb, relation, p, length, csb,
+					NULL, csb_validation);
 				break;
 
 			case RSR_security_class:
@@ -4321,8 +4312,7 @@ static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 
 
 // Parses validation BLR for a field.
-static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name,
-	BoolExprNode** expr, StmtNode** stmt)
+static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name)
 {
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -4335,10 +4325,13 @@ static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const Meta
 
 	length = blob->BLB_get_data(tdbb, temp.getBuffer(length), length);
 
-	PAR_validation_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, 0, expr, stmt);
+	BoolExprNode* expr = PAR_validation_blr(tdbb, NULL,
+		temp.begin(), length, NULL, &csb, 0);
 
 	csb->csb_blr_reader = BlrReader();
 	delete csb;
+
+	return expr;
 }
 
 

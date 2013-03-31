@@ -225,9 +225,8 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 
 // PAR_blr equivalent for validation expressions.
 // Validation expressions are boolean expressions, but may be prefixed with a blr_stmt_expr.
-void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, USHORT flags,
-	BoolExprNode** resultExpr, StmtNode** resultStmt)
+BoolExprNode* PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, USHORT flags)
 {
 	SET_TDBB(tdbb);
 
@@ -298,11 +297,7 @@ void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, UL
 	else
 		delete csb;
 
-	if (resultExpr)
-		*resultExpr = expr;
-
-	if (resultStmt)
-		*resultStmt = stmt;
+	return expr;
 }
 
 

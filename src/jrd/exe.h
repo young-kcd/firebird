@@ -323,13 +323,12 @@ struct Item
 struct FieldInfo
 {
 	FieldInfo()
-		: nullable(false), defaultValue(NULL), validationExpr(NULL), validationStmt(NULL)
+		: nullable(false), defaultValue(NULL), validationExpr(NULL)
 	{}
 
 	bool nullable;
 	NestConst<ValueExprNode> defaultValue;
 	NestConst<BoolExprNode> validationExpr;
-	NestConst<StmtNode> validationStmt;
 };
 
 struct ItemInfo

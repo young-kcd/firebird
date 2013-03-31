@@ -93,7 +93,6 @@ typedef Firebird::ObjectsArray<ExceptionItem> ExceptionArray;
 
 struct ValidateInfo
 {
-	NestConst<StmtNode> stmt;
 	NestConst<BoolExprNode> boolean;
 	NestConst<ValueExprNode> value;
 };

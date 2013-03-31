@@ -537,9 +537,6 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		request->req_domain_validation = desc;
 		const USHORT flags = request->req_flags;
 
-		if (fieldInfo.validationStmt)
-			EXE_looper(tdbb, request, fieldInfo.validationStmt.getObject(), true);
-
 		if (!fieldInfo.validationExpr->execute(tdbb, request) && !(request->req_flags & req_null))
 		{
 			const USHORT length = desc_is_null ? 0 :

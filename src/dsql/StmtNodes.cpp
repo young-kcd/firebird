@@ -5715,7 +5715,6 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	for (Array<ValidateInfo>::iterator i = validations.begin(); i != validations.end(); ++i)
 	{
-		doPass2(tdbb, csb, i->stmt.getAddress(), this);
 		ExprNode::doPass2(tdbb, csb, i->boolean.getAddress());
 		ExprNode::doPass2(tdbb, csb, i->value.getAddress());
 	}
@@ -6577,7 +6576,6 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	for (Array<ValidateInfo>::iterator i = validations.begin(); i != validations.end(); ++i)
 	{
-		doPass2(tdbb, csb, i->stmt.getAddress(), this);
 		ExprNode::doPass2(tdbb, csb, i->boolean.getAddress());
 		ExprNode::doPass2(tdbb, csb, i->value.getAddress());
 	}
@@ -8627,7 +8625,6 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++fieldId)
 	{
 		BoolExprNode* validation;
-		StmtNode* validationStmt;
 
 		if (*ptr1 && (validation = (*ptr1)->fld_validation))
 		{
@@ -8636,13 +8633,9 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 
 			RemapFieldNodeCopier copier(csb, map, fieldId);
 
-			if ((validationStmt = (*ptr1)->fld_validation_stmt))
-				validationStmt = copier.copy(tdbb, validationStmt);
-
 			validation = copier.copy(tdbb, validation);
 
 			ValidateInfo validate;
-			validate.stmt = validationStmt;
 			validate.boolean = validation;
 			validate.value = PAR_gen_field(tdbb, stream, fieldId);
 			validations.add(validate);
@@ -8655,13 +8648,9 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 
 			RemapFieldNodeCopier copier(csb, map, fieldId);
 
-			if ((validationStmt = (*ptr1)->fld_not_null_stmt))
-				validationStmt = copier.copy(tdbb, validationStmt);
-
 			validation = copier.copy(tdbb, validation);
 
 			ValidateInfo validate;
-			validate.stmt = validationStmt;
 			validate.boolean = validation;
 			validate.value = PAR_gen_field(tdbb, stream, fieldId);
 			validations.add(validate);
@@ -8809,7 +8798,6 @@ static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<Valida
 
 	for (Array<ValidateInfo>::iterator i = validations.begin(); i != validations.end(); ++i)
 	{
-		DmlNode::doPass1(tdbb, csb, i->stmt.getAddress());
 		DmlNode::doPass1(tdbb, csb, i->boolean.getAddress());
 		DmlNode::doPass1(tdbb, csb, i->value.getAddress());
 	}
@@ -8891,9 +8879,6 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 	for (Array<ValidateInfo>::const_iterator i = validations.begin(); i != end; ++i)
 	{
 		jrd_req* request = tdbb->getRequest();
-
-		if (i->stmt)
-			EXE_looper(tdbb, request, i->stmt.getObject(), true);
 
 		if (!i->boolean->execute(tdbb, request) && !(request->req_flags & req_null))
 		{
