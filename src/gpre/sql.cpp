@@ -4773,13 +4773,6 @@ static bool check_filename(const TEXT* name)
 		if (p[0] == ':' && p[1] == ':')
 			return false;
 	}
-
-	// CVC: what's this crap? It's totally useless! Maybe a copy/paste?
-	//TEXT file_name[256];
-	//l = MIN(l, sizeof(file_name) - 1);
-	//strncpy(file_name, name, l);
-	//file_name[l] = '\0';
-
 	return true;
 }
 
