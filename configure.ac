@@ -764,14 +764,6 @@ AC_SEARCH_LIBS(gethostbyname,nsl)
 AC_SEARCH_LIBS(connect,socket)
 AC_CHECK_FUNCS(strcasecmp stricmp)
 AC_CHECK_FUNCS(strncasecmp strnicmp)
-if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
-  dnl EKU: On SINIX-Z strcasecmp is in libresolv.
-  dnl CVC: Maybe other platforms need this, too? Otherwise, delete the block.
-  AC_CHECK_LIB(resolv, strcasecmp,
-    [XE_APPEND(-lresolv,LIBS)
-     unset ac_cv_func_strcasecmp
-     AC_CHECK_FUNCS(strcasecmp)],, $LIBS)
-fi
 AC_SEARCH_LIBS(dirname, gen)
 AC_CHECK_FUNCS(dirname)
 AC_CHECK_FUNCS(sigaction setitimer)
