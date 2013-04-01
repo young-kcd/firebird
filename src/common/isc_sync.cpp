@@ -105,10 +105,6 @@ static int process_id;
 //#define SHMEM_DELTA	(1 << 22)
 //#endif
 
-//#ifndef SIGURG
-//#define SIGURG		SIGINT
-//#endif
-
 #endif // UNIX
 
 #ifdef HAVE_SYS_PARAM_H

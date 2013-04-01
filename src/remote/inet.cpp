@@ -157,11 +157,6 @@ static void SOCLOSE(SOCKET& socket)
 	}
 }
 
-// Can't find were it's used.
-//#ifndef SIGURG
-//#define SIGURG	SIGINT
-//#endif
-
 #ifndef ENOBUFS
 #define ENOBUFS	0
 #endif
