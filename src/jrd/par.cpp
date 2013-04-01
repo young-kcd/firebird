@@ -279,12 +279,11 @@ BoolExprNode* PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR
 
 	getBlrVersion(csb);
 
-	StmtNode* stmt = NULL;
-
 	if (csb->csb_blr_reader.peekByte() == blr_stmt_expr)
 	{
+		// Parse it and ignore. This legacy and broken verb is transformed while parsing expressions.
 		csb->csb_blr_reader.getByte();
-		stmt = PAR_parse_stmt(tdbb, csb);
+		PAR_parse_stmt(tdbb, csb);
 	}
 
 	BoolExprNode* expr = PAR_parse_boolean(tdbb, csb);
