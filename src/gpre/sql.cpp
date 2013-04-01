@@ -47,10 +47,6 @@
 #include "../common/utils_proto.h"
 
 
-#ifdef FLINT_CACHE
-const int MIN_CACHE_BUFFERS	= 250;
-const int DEF_CACHE_BUFFERS	= 1000;
-#endif
 const int DEFAULT_BLOB_SEGMENT_LENGTH	= 80;	// bytes
 
 static act* act_alter();
@@ -103,9 +99,6 @@ static act* act_whenever();
 
 static bool			check_filename(const TEXT *);
 static void			connect_opts(const TEXT**, const TEXT**, const TEXT**, const TEXT**, USHORT*);
-#ifdef FLINT_CACHE
-static gpre_file*	define_cache();
-#endif
 static gpre_file*	define_file();
 static gpre_file*	define_log_file();
 static gpre_dbb*	dup_dbb(const gpre_dbb*);
@@ -1133,15 +1126,8 @@ static act* act_alter_database()
 				; // ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
 				; // ignore DROP CASCADE database->dbb_flags |= DBB_cascade;
-#ifdef FLINT_CACHE
-			else if (MSC_match(KW_CACHE))
-				; // ignore DROP CACHE database->dbb_flags |= DBB_drop_cache;
-			else
-				PAR_error("only log or cache can be dropped");
-#else
 			else
 				PAR_error("only log file can be dropped");
-#endif // FLINT_CACHE
 		}
 		else if (MSC_match(KW_ADD))
 		{
@@ -1184,10 +1170,6 @@ static act* act_alter_database()
 					database->dbb_logfiles = define_log_file();
 				}
 			}
-#ifdef FLINT_CACHE
-			else if (MSC_match(KW_CACHE))
-				database->dbb_cache_file = define_cache();
-#endif // FLINT_CACHE
 		}
 		else if (MSC_match(KW_SET))
 		{
@@ -4848,46 +4830,6 @@ static void connect_opts(const TEXT** user,
 	}
 
 }
-
-#ifdef FLINT_CACHE
-//____________________________________________________________
-//
-//		Add a shared cache to an existing database.
-//
-
-static gpre_file* define_cache()
-{
-	gpre_file* file = (gpre_file*) MSC_alloc(FIL_LEN);
-	if (isQuoted(gpreGlob.token_global.tok_type))
-	{
-		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
-		file->fil_name = string;
-		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
-		PAR_get_token();
-	}
-	else
-		CPR_s_error("<quoted filename>");
-	if (!check_filename(file->fil_name))
-		PAR_error("node name not permitted");	// a node name is not permitted in a shared cache file name
-
-	if (MSC_match(KW_LENGTH))
-	{
-		file->fil_length = EXP_ULONG_ordinal(true);
-		if (file->fil_length < MIN_CACHE_BUFFERS)
-		{
-			TEXT err_string[ERROR_LENGTH];
-			sprintf(err_string, "Minimum of %d cache pages required", MIN_CACHE_BUFFERS);
-			PAR_error(err_string);
-		}
-		MSC_match(KW_PAGES);
-	}
-	else
-		file->fil_length = DEF_CACHE_BUFFERS;	// default cache buffers
-
-	return file;
-}
-#endif
-
 //____________________________________________________________
 //
 //		Add a new file to an existing database.
@@ -6304,15 +6246,8 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				; // Ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
 				; // ignore DROP CASCADE database->dbb_flags |= DBB_cascade;
-#ifdef FLINT_CACHE
-			else if (MSC_match(KW_CACHE))
-				; // ignore DROP CACHE database->dbb_flags |= DBB_drop_cache;
-			else
-				PAR_error("only log files or shared cache can be dropped");	// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
-#else
 			else
 				PAR_error("only log files can be dropped");	// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
-#endif // FLINT_CACHE
 
 			//else if (MSC_match (KW_DESCRIP))
 			//	database->dbb_flags	|= DBB_null_description;
@@ -6387,10 +6322,6 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				database->dbb_logfiles = define_log_file();
 			}
 		}
-#ifdef FLINT_CACHE
-		else if (MSC_match(KW_CACHE))
-			database->dbb_cache_file = define_cache();
-#endif // FLINT_CACHE
 		else
 			break;
 	}

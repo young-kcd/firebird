@@ -837,9 +837,6 @@ struct gpre_dbb
 	int dbb_buffercount;
 	ULONG dbb_length;				// Length of database in pages, if known
 	gpre_file* dbb_logfiles;
-#ifdef FLINT_CACHE // In practice, never used.
-	gpre_file* dbb_cache_file;
-#endif
 	gpre_file* dbb_files;
 };
 
