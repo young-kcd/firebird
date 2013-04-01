@@ -1,3 +1,26 @@
+ 2013-03-31 18:23  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/Relation.h
+   M src/jrd/evl.cpp
+   M src/jrd/exe.h
+   M src/jrd/met.epp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+Cleanup.
+
+ 2013-03-31 15:55  asfernandes 
+   M src/common/classes/BlrReader.h
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/Function.epp
+   M src/jrd/Routine.cpp
+   M src/jrd/Routine.h
+   M src/jrd/dfw.epp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+Refactor.
+
  2013-03-30 02:31  asfernandes 
    M src/include/firebird/UdrCppEngine.h
    M src/include/firebird/UdrEngine.h
