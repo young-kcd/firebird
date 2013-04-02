@@ -1,3 +1,30 @@
+ 2013-04-01 21:54  mapopa 
+   M configure.ac
+Remove absolete sinixz check
+
+ 2013-04-01 21:40  mapopa 
+   M src/common/isc_sync.cpp
+   M src/remote/inet.cpp
+SIGURG is not used , cleanup commented code 
+
+ 2013-04-01 18:37  mapopa 
+   M src/gpre/sql.cpp
+Cleanup commented code , was a wrong copy paste 
+
+ 2013-04-01 17:54  mapopa 
+   M doc/emacros-cross_ref.html
+   M src/gpre/gpre.h
+   M src/gpre/sql.cpp
+FLINT_CACHE was never used , dead leftover from ib 4.0 product years http://sourceforge.net/mailarchive/message.php?msg_id=5975155 (FLINSTONE is gone)
+
+ 2013-04-01 16:04  mapopa 
+   M doc/emacros-cross_ref.html
+Cleanup reference
+
+ 2013-04-01 15:37  asfernandes 
+   M src/jrd/par.cpp
+Misc.
+
  2013-03-31 18:23  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
