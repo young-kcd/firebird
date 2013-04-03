@@ -221,7 +221,10 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 		fb_assert(impure->irsb_ext_resultset);
 
 		if (!impure->irsb_ext_resultset->fetch(tdbb))
+		{
+			rpb->rpb_number.setValid(false);
 			return false;
+		}
 	}
 	else
 	{
@@ -243,6 +246,7 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 			if (!eos)
 			{
 				trace.fetch(true, res_successful);
+				rpb->rpb_number.setValid(false);
 				return false;
 			}
 		}
@@ -262,6 +266,7 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 					 om, &rec_format->fmt_desc[i], i, record);
 	}
 
+	rpb->rpb_number.setValid(true);
 	return true;
 }
 
