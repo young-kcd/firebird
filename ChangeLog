@@ -1,3 +1,7 @@
+ 2013-04-03 15:27  asfernandes 
+   M src/jrd/recsrc/ProcedureScan.cpp
+Fixed CORE-4073 - Constant columns getting empty value with subselect from procedure.
+
  2013-04-01 21:54  mapopa 
    M configure.ac
 Remove absolete sinixz check
