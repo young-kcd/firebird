@@ -60,6 +60,7 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
+#include "../jrd/EngineInterface.h"
 
 #include "../common/classes/DbImplementation.h"
 
@@ -637,6 +638,8 @@ unsigned int Service::getAuthBlock(const unsigned char** bytes)
 
 void Service::fillDpb(ClumpletWriter& dpb)
 {
+	const char* providers = "Providers=" CURRENT_ENGINE;
+	dpb.insertString(isc_dpb_config, providers, strlen(providers));
 	if (svc_address_path.hasData())
 	{
 		dpb.insertString(isc_dpb_address_path, svc_address_path);
@@ -684,14 +687,19 @@ namespace
 		val |= QUOTED_FILENAME_SUPPORT;
 #endif // WIN_NT
 
-		if (Config::getMultiClientServer())
+		Firebird::MasterInterfacePtr master;
+		switch (master->serverMode(-1))
 		{
+		case 1:		// super
 			val |= MULTI_CLIENT_SUPPORT;
-		}
-		else
-		{
+			break;
+		case 0:		// classic
 			val |= NO_SERVER_SHUTDOWN_SUPPORT;
+			break;
+		default:	// none-server mode
+			break;
 		}
+
 		return val;
 	}
 }

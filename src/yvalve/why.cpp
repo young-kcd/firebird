@@ -4884,8 +4884,18 @@ static IService* getServiceManagerByName(IProvider** provider, IStatus* status,
 	const char* serviceName, unsigned int spbLength, const unsigned char* spb,
 	Firebird::ICryptKeyCallback* cryptCallback)
 {
+	RefPtr<Config> config(Config::getDefaultConfig());
+
+	ClumpletReader readSpb(ClumpletReader::spbList, spb, spbLength);
+	if (readSpb.find(isc_spb_config))
+	{
+		string spb_config;
+		readSpb.getString(spb_config);
+		Config::merge(config, &spb_config);
+	}
+
 	for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-			FB_PROVIDER_VERSION, upInfo);
+			FB_PROVIDER_VERSION, upInfo, config);
 		 providerIterator.hasData();
 		 providerIterator.next())
 	{
@@ -5211,6 +5221,13 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 			expandedFilename = orgFilename;
 		}
 
+		if (newDpb.find(isc_dpb_config))
+		{
+			string dpb_config;
+			newDpb.getString(dpb_config);
+			Config::merge(config, &dpb_config);
+		}
+
 		// Convert to UTF8
 		ISC_systemToUtf8(orgFilename);
 		ISC_systemToUtf8(expandedFilename);
@@ -5249,7 +5266,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 				{
 	            	// Now we can expand, the file exists
 					ISC_utf8ToSystem(orgFilename);
-					if (expandDatabaseName(orgFilename, expandedFilename, &config))
+					if (expandDatabaseName(orgFilename, expandedFilename, NULL))
 					{
 						expandedFilename = orgFilename;
 					}

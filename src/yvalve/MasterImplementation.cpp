@@ -264,6 +264,14 @@ IDebug* FB_CARG MasterImplementation::getDebug()
 #endif
 }
 
+int FB_CARG MasterImplementation::serverMode(int mode)
+{
+	static int currentMode = -1;
+	if (mode >= 0)
+		currentMode = mode;
+	return currentMode;
+}
+
 } // namespace Why
 
 //

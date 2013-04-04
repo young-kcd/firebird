@@ -73,7 +73,7 @@ static void		disconnect(rem_port*);
 static void		exit_handler(void*);
 #endif
 static void		force_close(rem_port*);
-static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
+static rem_str*		make_pipe_name(const RefPtr<Config>&, const TEXT*, const TEXT*, const TEXT*);
 static rem_port*	receive(rem_port*, PACKET*);
 static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
@@ -104,7 +104,8 @@ static xdr_t::xdr_ops wnet_ops =
 rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 					   const PathName& file_name,
 					   const TEXT* node_name,
-					   bool uv_flag)
+					   bool uv_flag,
+					   RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -181,7 +182,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	rem_port* port = NULL;
 	try
 	{
-		port = WNET_connect(node_name, packet, 0);
+		port = WNET_connect(node_name, packet, 0, config);
 	}
 	catch (const Exception&)
 	{
@@ -260,7 +261,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 }
 
 
-rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
+rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -275,9 +276,13 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
  *
  **************************************/
 	rem_port* const port = alloc_port(0);
+	if (config)
+	{
+		port->port_config = *config;
+	}
 
 	delete port->port_connection;
-	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
+	port->port_connection = make_pipe_name(port->getPortConfig(), name, SERVER_PIPE_SUFFIX, 0);
 
 	// If we're a host, just make the connection
 
@@ -412,7 +417,7 @@ rem_port* WNET_reconnect(HANDLE handle)
 	rem_port* const port = alloc_port(0);
 
 	delete port->port_connection;
-	port->port_connection = make_pipe_name(NULL, SERVER_PIPE_SUFFIX, 0);
+	port->port_connection = make_pipe_name(port->getPortConfig(), NULL, SERVER_PIPE_SUFFIX, 0);
 
 	port->port_pipe = handle;
 	port->port_server_flags |= SRVR_server;
@@ -582,7 +587,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 	port->port_async = new_port;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
-	new_port->port_connection = make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
+	new_port->port_connection = make_pipe_name(port->getPortConfig(), port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
 	while (true)
 	{
@@ -631,7 +636,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	TEXT str_pid[32];
 	wnet_make_file_name(str_pid, server_pid);
 	new_port->port_connection =
-		make_pipe_name(vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
+		make_pipe_name(vport->getPortConfig(), vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
 	new_port->port_pipe =
 		CreateNamedPipe(new_port->port_connection->str_data,
@@ -791,7 +796,7 @@ static void exit_handler(void* main_port)
 #endif
 
 
-static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name,  const TEXT* str_pid)
+static rem_str* make_pipe_name(RefPtr<Config>& config, const TEXT* connect_name, const TEXT* suffix_name,  const TEXT* str_pid)
 {
 /**************************************
  *
@@ -820,7 +825,7 @@ static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name
 	switch (*p)
 	{
 	case 0:
-		protocol = Config::getRemoteServiceName();
+		protocol = config->getRemoteServiceName();
 		break;
 	case '@':
 		protocol = p + 1;
@@ -836,7 +841,7 @@ static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name
 	buffer += '\\';
 	buffer += PIPE_PREFIX;
 	buffer += '\\';
-	const char *pipe_name = Config::getRemotePipeName();
+	const char *pipe_name = config->getRemotePipeName();
 	buffer += pipe_name;
 	buffer += '\\';
 	buffer += suffix_name;

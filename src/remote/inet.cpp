@@ -447,7 +447,8 @@ static rem_port*		inet_try_connect(	PACKET*,
 									Rdb*,
 									const PathName&,
 									const TEXT*,
-									ClumpletReader&);
+									ClumpletReader&,
+									RefPtr<Config>*);
 static bool_t	inet_write(XDR*); //, int);
 
 #ifdef DEBUG
@@ -521,7 +522,8 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 					   const PathName& file_name,
 					   const TEXT* node_name,
 					   bool uv_flag,
-					   ClumpletReader &dpb)
+					   ClumpletReader &dpb,
+					   RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -604,7 +606,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	// Try connection using first set of protocols
 
-	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb);
+	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config);
 
 	P_ACPT* accept = NULL;
 	switch (packet->p_operation)
@@ -623,7 +625,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	case op_accept:
 		if (cBlock)
 		{
-			cBlock->reset(&file_name);
+			cBlock->resetClnt(&file_name);
 		}
 		accept = &packet->p_acpt;
 		break;
@@ -678,7 +680,8 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 rem_port* INET_connect(const TEXT* name,
 					   PACKET* packet,
 					   USHORT flag,
-					   ClumpletReader* dpb)
+					   ClumpletReader* dpb,
+					   RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -709,6 +712,10 @@ rem_port* INET_connect(const TEXT* name,
 #endif
 
 	rem_port* const port = alloc_port(NULL);
+	if (config)
+	{
+		port->port_config = *config;
+	}
 	REMOTE_get_timeout_params(port, dpb);
 
 	string host;
@@ -736,12 +743,12 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (protocol.isEmpty())
 	{
-		const unsigned short port2 = Config::getRemoteServicePort();
+		const unsigned short port2 = port->getPortConfig()->getRemoteServicePort();
 		if (port2) {
 			protocol.printf("%hu", port2);
 		}
 		else {
-			protocol = Config::getRemoteServiceName();
+			protocol = port->getPortConfig()->getRemoteServiceName();
 		}
 	}
 
@@ -1462,7 +1469,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	address.sin_family = AF_INET;
 	in_addr bind_addr = get_bind_address();
 	memcpy(&address.sin_addr, &bind_addr, sizeof(address.sin_addr));
-	address.sin_port = htons(Config::getRemoteAuxPort());
+	address.sin_port = htons(port->getPortConfig()->getRemoteAuxPort());
 
 	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
 	if (n == INVALID_SOCKET)
@@ -2672,7 +2679,8 @@ static rem_port* inet_try_connect(PACKET* packet,
 								  Rdb* rdb,
 								  const PathName& file_name,
 								  const TEXT* node_name,
-								  ClumpletReader& dpb)
+								  ClumpletReader& dpb,
+								  RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -2702,7 +2710,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	rem_port* port = NULL;
 	try
 	{
-		port = INET_connect(node_name, packet, FALSE, &dpb);
+		port = INET_connect(node_name, packet, FALSE, &dpb, config);
 	}
 	catch (const Exception&)
 	{
@@ -3203,7 +3211,7 @@ static bool setNoNagleOption(rem_port* port)
  *		in case of unexpected error
  *
  **************************************/
-	if (Config::getTcpNoNagle())
+	if (port->getPortConfig()->getTcpNoNagle())
 	{
 		int optval = TRUE;
 		int n = setsockopt(port->port_handle, IPPROTO_TCP, TCP_NODELAY,

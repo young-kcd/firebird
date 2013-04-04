@@ -333,7 +333,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 #else
 					false,
 #endif
-					serverName.c_str());
+					serverName.c_str(),
+					!databaseNameEntered);
 		if (! sHandle)
 		{
 			GSEC_print(GsecMsg101); // use gsec -? to get help

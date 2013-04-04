@@ -113,7 +113,7 @@ struct ParametersSet
 		  plugin_name, plugin_list, specific_data,
 		  address_path, process_id, process_name,
 		  encrypt_key, client_version, remote_protocol,
-		  host_name, os_user;
+		  host_name, os_user, config_text;
 };
 
 extern const ParametersSet dpbParam, spbParam, spbStartParam, spbInfoParam;
@@ -639,6 +639,8 @@ private:
 	// These two are legacy encrypted password, trusted auth data and so on - what plugin needs
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time
+	Firebird::string dpbConfig;				// Used to recreate config with new filename
+	Firebird::RefPtr<Config> config;		// Used to get plugins list and pass to port
 	unsigned nextKey;						// First key to be analyzed
 
 	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over encrypted wire
@@ -648,7 +650,7 @@ public:
 	bool authComplete;						// Set as response from client that authentication accepted
 	bool firstTime;							// Invoked first time after reset
 
-	explicit ClntAuthBlock(const Firebird::PathName* fileName);
+	ClntAuthBlock(const Firebird::PathName* fileName, Firebird::ClumpletReader* dpb, const ParametersSet* tags);
 
 	~ClntAuthBlock()
 	{
@@ -660,15 +662,16 @@ public:
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& dpb, const ParametersSet* tags, int protocol);
 	void extractDataFromPluginTo(CSTRING* to);
 	void extractDataFromPluginTo(P_AUTH_CONT* to);
-	void load(Firebird::ClumpletReader& dpb, const ParametersSet*);
+	void loadClnt(Firebird::ClumpletReader& dpb, const ParametersSet*);
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);
-	void reset(const Firebird::PathName* fileName);
+	void resetClnt(const Firebird::PathName* fileName);
 	bool checkPluginName(Firebird::PathName& nameToCheck);
 	void saveServiceDataTo(rem_port*);
 	void loadServiceDataFrom(rem_port*);
 	Firebird::PathName getPluginName();
 	void tryNewKeys(rem_port*);
 	void releaseKeys(unsigned from);
+	Firebird::RefPtr<Config>* getConfig();
 
 	// Auth::IClientBlock implementation
 	int FB_CARG release();
@@ -873,6 +876,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	OBJCT			port_last_object_id;	// cached last id
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	size_t			port_qoffset;			// current packet in the queue
+	Firebird::RefPtr<Config> port_config;	// connection-specific configuration info
 
 	// Authentication and crypt stuff
 	ServerAuthBase*							port_srv_auth;
@@ -934,8 +938,8 @@ private:		// this is refCounted object
 
 public:
 	void linkParent(rem_port* const parent);
-
 	void unlinkParent();
+	const Firebird::RefPtr<Config>& getPortConfig() const;
 
 	template <typename T>
 	void getHandle(T*& blk, OBJCT id)

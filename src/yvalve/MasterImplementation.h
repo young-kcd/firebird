@@ -68,6 +68,7 @@ namespace Why
 		int FB_CARG same(IVersioned* first, IVersioned* second);
 		Firebird::IMetadataBuilder* FB_CARG getMetadataBuilder(Firebird::IStatus* status, unsigned fieldCount);
 		Firebird::IDebug* FB_CARG getDebug();
+		int FB_CARG serverMode(int mode);
 	};
 
 	void shutdownTimers();

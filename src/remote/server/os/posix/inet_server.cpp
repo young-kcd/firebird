@@ -292,6 +292,11 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			INET_SERVER_flag |= SRVR_multi_client;
 			super = true;
 		}
+		{	// scope
+			Firebird::MasterInterfacePtr master;
+			master->serverMode(super ? 1 : 0);
+		}
+
 		if (debug)
 		{
 			INET_SERVER_flag |= SRVR_debug;
@@ -356,7 +361,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		{
 			try
 			{
-				port = INET_connect(protocol, 0, INET_SERVER_flag, 0);
+				port = INET_connect(protocol, 0, INET_SERVER_flag, 0, NULL);
 			}
 			catch (const Firebird::Exception& ex)
 			{

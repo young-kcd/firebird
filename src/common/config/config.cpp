@@ -28,6 +28,7 @@
 #include "../common/classes/init.h"
 #include "../common/dllinst.h"
 #include "../common/os/fbsyslog.h"
+#include "../jrd/EngineInterface.h"
 #include "firebird/Plugin.h"
 
 #ifdef HAVE_STDLIB_H
@@ -72,7 +73,7 @@ public:
 		defaultConfig = newConfig;
 	}
  */
-	Firebird::RefPtr<Config> getDefaultConfig() const
+	const Firebird::RefPtr<Config>& getDefaultConfig() const
 	{
 		return defaultConfig;
 	}
@@ -176,7 +177,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
 	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
 	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 0},		// percent
-	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote, Engine12, Loopback"},
+	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote, " CURRENT_ENGINE ", Loopback"},
 	{TYPE_STRING,		"AuthServer",				(ConfigValue) "Srp, Win_Sspi"},
 	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp, Win_Sspi, Legacy_Auth"},
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Srp"},
@@ -197,7 +198,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 Config::Config(const ConfigFile& file)
 {
 	// Array to save string temporarily
-	// Will be finally save by loadValues() in the end of ctor
+	// Will be finally saved by loadValues() in the end of ctor
 	Firebird::ObjectsArray<ConfigFile::String> tempStrings(getPool());
 
 	// Iterate through the known configuration entries
@@ -229,6 +230,15 @@ Config::Config(const ConfigFile& file, const Config& base)
 	}
 
 	loadValues(file);
+}
+
+void Config::merge(Firebird::RefPtr<Config>& config, const Firebird::string* dpbConfig)
+{
+	if (dpbConfig && dpbConfig->hasData())
+	{
+		ConfigFile txtStream(ConfigFile::USE_TEXT, dpbConfig->c_str());
+		config = new Config(txtStream, *(config.hasData() ? config : getDefaultConfig()));
+	}
 }
 
 void Config::loadValues(const ConfigFile& file)
@@ -296,7 +306,7 @@ Config::~Config()
  *	Public interface
  */
 
-const Firebird::RefPtr<Config> Config::getDefaultConfig()
+const Firebird::RefPtr<Config>& Config::getDefaultConfig()
 {
 	return firebirdConf().getDefaultConfig();
 }
@@ -413,9 +423,9 @@ int Config::getTcpRemoteBufferSize()
 	return rc;
 }
 
-bool Config::getTcpNoNagle()
+bool Config::getTcpNoNagle() const
 {
-	return (bool) getDefaultConfig()->values[KEY_TCP_NO_NAGLE];
+	return get<bool>(KEY_TCP_NO_NAGLE);
 }
 
 int Config::getDefaultDbCachePages() const
@@ -428,14 +438,14 @@ int Config::getDefaultDbCachePages() const
 	return rc;
 }
 
-int Config::getConnectionTimeout()
+int Config::getConnectionTimeout() const
 {
-	return (int) getDefaultConfig()->values[KEY_CONNECTION_TIMEOUT];
+	return get<int>(KEY_CONNECTION_TIMEOUT);
 }
 
-int Config::getDummyPacketInterval()
+int Config::getDummyPacketInterval() const
 {
-	return (int) getDefaultConfig()->values[KEY_DUMMY_PACKET_INTERVAL];
+	return get<int>(KEY_DUMMY_PACKET_INTERVAL);
 }
 
 int Config::getLockMemSize() const
@@ -463,24 +473,24 @@ int Config::getDeadlockTimeout() const
 	return get<int>(KEY_DEADLOCK_TIMEOUT);
 }
 
-const char *Config::getRemoteServiceName()
+const char *Config::getRemoteServiceName() const
 {
-	return (const char*) getDefaultConfig()->values[KEY_REMOTE_SERVICE_NAME];
+	return get<const char*>(KEY_REMOTE_SERVICE_NAME);
 }
 
-unsigned short Config::getRemoteServicePort()
+unsigned short Config::getRemoteServicePort() const
 {
-	return (unsigned short) getDefaultConfig()->values[KEY_REMOTE_SERVICE_PORT];
+	return get<unsigned short>(KEY_REMOTE_SERVICE_PORT);
 }
 
-const char *Config::getRemotePipeName()
+const char *Config::getRemotePipeName() const
 {
-	return (const char*) getDefaultConfig()->values[KEY_REMOTE_PIPE_NAME];
+	return get<const char*>(KEY_REMOTE_PIPE_NAME);
 }
 
-const char *Config::getIpcName()
+const char *Config::getIpcName() const
 {
-	return (const char*) getDefaultConfig()->values[KEY_IPC_NAME];
+	return get<const char*>(KEY_IPC_NAME);
 }
 
 int Config::getMaxUnflushedWrites() const
@@ -498,9 +508,9 @@ int Config::getProcessPriorityLevel()
 	return (int) getDefaultConfig()->values[KEY_PROCESS_PRIORITY_LEVEL];
 }
 
-int Config::getRemoteAuxPort()
+int Config::getRemoteAuxPort() const
 {
-	return (int) getDefaultConfig()->values[KEY_REMOTE_AUX_PORT];
+	return get<int>(KEY_REMOTE_AUX_PORT);
 }
 
 const char *Config::getRemoteBindAddress()
@@ -644,17 +654,6 @@ bool Config::getSharedDatabase()
 	return (bool) getDefaultConfig()->values[KEY_SHARED_DATABASE];
 }
 
-bool Config::getMultiClientServer()
-{
-	// AP - absolutely wrong for superclassic assumption
-	// should be set by server in case of 'super' mode in it
-#ifdef SUPERSERVER
-	return true;
-#else
-	return false;
-#endif
-}
-
 const char* Config::getPlugins(unsigned int type) const
 {
 	switch (type)
@@ -715,8 +714,8 @@ const char* Config::getSecurityDatabase() const
 	return get<const char*>(KEY_SECURITY_DATABASE);
 }
 
-const char* Config::getWireCrypt(WireCryptMode wcMode)
+const char* Config::getWireCrypt(WireCryptMode wcMode) const
 {
-	const char* rc = getDefaultConfig()->get<const char*>(KEY_WIRE_CRYPT);
+	const char* rc = get<const char*>(KEY_WIRE_CRYPT);
 	return rc ? rc : wcMode == WC_CLIENT ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
 }

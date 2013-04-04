@@ -760,6 +760,11 @@ public:
 	{
 		return NULL;
 	}
+
+	virtual int FB_CARG serverMode(int mode)
+	{
+		return -1;
+	}
 };
 
 

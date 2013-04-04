@@ -32,6 +32,8 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../auth/SecureRemotePassword/Message.h"
 
+#include "../jrd/EngineInterface.h"
+
 using namespace Firebird;
 
 namespace {
@@ -122,6 +124,8 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			dpb.insertByte(isc_dpb_sec_attach, TRUE);
 			const char* str = "SYSDBA";
 			dpb.insertString(isc_dpb_user_name, str, strlen(str));
+			const char* providers = "Providers=" CURRENT_ENGINE;
+			dpb.insertString(isc_dpb_config, providers, strlen(providers));
 
 			DispatcherPtr p;
 

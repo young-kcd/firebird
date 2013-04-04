@@ -192,7 +192,10 @@ public:
 	static const Firebird::PathName* getCommandLineRootDirectory();
 
 	// Master config - needed to provide per-database config
-	static const Firebird::RefPtr<Config> getDefaultConfig();
+	static const Firebird::RefPtr<Config>& getDefaultConfig();
+
+	// Merge config entries from DPB into existing config
+	static void merge(Firebird::RefPtr<Config>& config, const Firebird::string* dpbConfig);
 
 	// reports key to be used by the following functions
 	static unsigned int getKeyByName(ConfigName name);
@@ -229,16 +232,16 @@ public:
 	static int getTcpRemoteBufferSize();
 
 	// Disable Nagle algorithm
-	static bool getTcpNoNagle();
+	bool getTcpNoNagle() const;
 
 	// Default database cache size
 	int getDefaultDbCachePages() const;
 
 	// Connection timeout
-	static int getConnectionTimeout();
+	int getConnectionTimeout() const;
 
 	// Dummy packet interval
-	static int getDummyPacketInterval();
+	int getDummyPacketInterval() const;
 
 	// Lock manager memory size
 	int getLockMemSize() const;
@@ -256,16 +259,16 @@ public:
 	int getDeadlockTimeout() const;
 
 	// Service name for remote protocols
-	static const char* getRemoteServiceName();
+	const char* getRemoteServiceName() const;
 
 	// Service port for INET
-	static unsigned short getRemoteServicePort();
+	unsigned short getRemoteServicePort() const;
 
 	// Pipe name for WNET
-	static const char* getRemotePipeName();
+	const char* getRemotePipeName() const;
 
 	// Name for IPC-related objects
-	static const char* getIpcName();
+	const char* getIpcName() const;
 
 	// Unflushed writes number
 	int getMaxUnflushedWrites() const;
@@ -277,7 +280,7 @@ public:
 	static int getProcessPriorityLevel();
 
 	// Port for event processing
-	static int getRemoteAuxPort();
+	int getRemoteAuxPort() const;
 
 	// Server binding NIC address
 	static const char* getRemoteBindAddress();
@@ -328,13 +331,11 @@ public:
 
 	static bool getSharedDatabase();
 
-	static bool getMultiClientServer();
-
 	const char* getPlugins(unsigned int type) const;
 
 	const char* getSecurityDatabase() const;
 
-	static const char* getWireCrypt(WireCryptMode wcMode);
+	const char* getWireCrypt(WireCryptMode wcMode) const;
 };
 
 // Implementation of interface to access master configuration file

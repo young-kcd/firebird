@@ -650,7 +650,7 @@ static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
 static rem_port* analyze(ClntAuthBlock&, PathName&, bool, ClumpletReader&, PathName&, bool);
-static rem_port* analyze_service(PathName&, bool, ClumpletReader&, bool);
+static rem_port* analyze_service(ClntAuthBlock&, PathName&, bool, ClumpletReader&, bool);
 static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
 static void clear_queue(rem_port*);
@@ -746,7 +746,7 @@ IAttachment* Provider::attach(IStatus* status, const char* filename, unsigned in
 		PathName expanded_name(filename);
 		PathName node_name;
 
-		ClntAuthBlock cBlock(&expanded_name);
+		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
 		rem_port* port = analyze(cBlock, expanded_name, user_verification, newDpb, node_name, loopback);
 
 		if (!port)
@@ -1322,7 +1322,7 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 		PathName expanded_name(filename);
 		PathName node_name;
 
-		ClntAuthBlock cBlock(&expanded_name);
+		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
 		rem_port* port = analyze(cBlock, expanded_name, user_verification, newDpb, node_name, loopback);
 
 		if (!port)
@@ -4375,7 +4375,9 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 		ClumpletWriter newSpb(ClumpletReader::spbList, MAX_DPB_SIZE, spb, spbLength);
 		const bool user_verification = get_new_dpb(newSpb, spbParam);
 
-		rem_port* port = analyze_service(expanded_name, user_verification, newSpb, loopback);
+		ClntAuthBlock cBlock(NULL, &newSpb, &spbParam);
+		cBlock.loadClnt(newSpb, &spbParam);
+		rem_port* port = analyze_service(cBlock, expanded_name, user_verification, newSpb, loopback);
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 		Rdb* rdb = port->port_context;
@@ -4386,8 +4388,6 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 
 		add_other_params(port, newSpb, spbParam);
 
-		ClntAuthBlock cBlock(NULL);
-		cBlock.load(newSpb, &spbParam);
 		IntlSpb intl;
 		init(status, cBlock, port, op_service_attach, expanded_name, newSpb, intl, cryptCallback);
 
@@ -4528,7 +4528,7 @@ void Service::query(IStatus* status,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		ClntAuthBlock cBlock(NULL);
+		ClntAuthBlock cBlock(NULL, NULL, NULL);
 		cBlock.loadServiceDataFrom(port);
 
 		info(status, rdb, op_service_info, rdb->rdb_id, 0,
@@ -5146,7 +5146,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 	// Analyze the file name to see if a remote connection is required.  If not,
 	// quietly (sic) return.
 
-	cBlock.load(dpb, &dpbParam);
+	cBlock.loadClnt(dpb, &dpbParam);
 	authenticateStep0(cBlock);
 
 	rem_port* port = NULL;
@@ -5154,7 +5154,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 #ifdef WIN_NT
 	if (ISC_analyze_protocol(PROTOCOL_XNET, file_name, node_name))
 	{
-		port = XNET_analyze(&cBlock, file_name, uv_flag);
+		port = XNET_analyze(&cBlock, file_name, uv_flag, cBlock.getConfig());
 	}
 	else if (ISC_analyze_protocol(PROTOCOL_WNET, file_name, node_name) ||
 		ISC_analyze_pclan(file_name, node_name))
@@ -5167,7 +5167,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 			ISC_utf8ToSystem(node_name);
 		}
 
-		port = WNET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag);
+		port = WNET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag, cBlock.getConfig());
 	}
 	else
 #endif
@@ -5183,7 +5183,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 			ISC_utf8ToSystem(node_name);
 		}
 
-		port = INET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag, dpb);
+		port = INET_analyze(&cBlock, file_name, node_name.c_str(), uv_flag, dpb, cBlock.getConfig());
 	}
 
 	// We have a local connection string. If it's a file on a network share,
@@ -5197,7 +5197,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 		ISC_unescape(node_name);
 		ISC_utf8ToSystem(node_name);
 
-		port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag);
+		port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag, cBlock.getConfig());
 	}
 #endif
 
@@ -5210,7 +5210,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 			ISC_unescape(node_name);
 			ISC_utf8ToSystem(node_name);
 
-			port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag, dpb);
+			port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), uv_flag, dpb, cBlock.getConfig());
 		}
 	}
 #endif
@@ -5225,17 +5225,17 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 #ifdef WIN_NT
 			if (!port)
 			{
-				port = XNET_analyze(&cBlock, file_name, uv_flag);
+				port = XNET_analyze(&cBlock, file_name, uv_flag, cBlock.getConfig());
 			}
 
 			if (!port)
 			{
-				port = WNET_analyze(&cBlock, file_name, WNET_LOCALHOST, uv_flag);
+				port = WNET_analyze(&cBlock, file_name, WNET_LOCALHOST, uv_flag, cBlock.getConfig());
 			}
 #endif
 			if (!port)
 			{
-				port = INET_analyze(&cBlock, file_name, INET_LOCALHOST, uv_flag, dpb);
+				port = INET_analyze(&cBlock, file_name, INET_LOCALHOST, uv_flag, dpb, cBlock.getConfig());
 			}
 		}
 	}
@@ -5244,7 +5244,8 @@ static rem_port* analyze(ClntAuthBlock& cBlock,
 }
 
 
-static rem_port* analyze_service(PathName& service_name,
+static rem_port* analyze_service(ClntAuthBlock& cBlock,
+								 PathName& service_name,
 								 bool uv_flag,
 								 ClumpletReader& spb,
 								 bool loopback)
@@ -5272,7 +5273,7 @@ static rem_port* analyze_service(PathName& service_name,
 #if defined(WIN_NT)
 	if (ISC_analyze_protocol(PROTOCOL_XNET, service_name, node_name))
 	{
-		return XNET_analyze(NULL, service_name, uv_flag);
+		return XNET_analyze(NULL, service_name, uv_flag, cBlock.getConfig());
 	}
 
 	if (ISC_analyze_protocol(PROTOCOL_WNET, service_name, node_name) ||
@@ -5282,7 +5283,7 @@ static rem_port* analyze_service(PathName& service_name,
 		{
 			node_name = WNET_LOCALHOST;
 		}
-		return WNET_analyze(NULL, service_name, node_name.c_str(), uv_flag);
+		return WNET_analyze(NULL, service_name, node_name.c_str(), uv_flag, cBlock.getConfig());
 	}
 #endif
 
@@ -5293,7 +5294,7 @@ static rem_port* analyze_service(PathName& service_name,
 		{
 			node_name = INET_LOCALHOST;
 		}
-		return INET_analyze(NULL, service_name, node_name.c_str(), uv_flag, spb);
+		return INET_analyze(NULL, service_name, node_name.c_str(), uv_flag, spb, cBlock.getConfig());
 	}
 
 	rem_port* port = NULL;
@@ -5309,17 +5310,17 @@ static rem_port* analyze_service(PathName& service_name,
 #if defined(WIN_NT)
 			if (!port)
 			{
-				port = XNET_analyze(NULL, service_name, uv_flag);
+				port = XNET_analyze(NULL, service_name, uv_flag, cBlock.getConfig());
 			}
 
 			if (!port)
 			{
-				port = WNET_analyze(NULL, service_name, WNET_LOCALHOST, uv_flag);
+				port = WNET_analyze(NULL, service_name, WNET_LOCALHOST, uv_flag, cBlock.getConfig());
 			}
 #endif
 			if (!port)
 			{
-				port = INET_analyze(NULL, service_name, INET_LOCALHOST, uv_flag, spb);
+				port = INET_analyze(NULL, service_name, INET_LOCALHOST, uv_flag, spb, cBlock.getConfig());
 			}
 		}
 	}
@@ -7102,7 +7103,7 @@ static void svcstart(IStatus*	status,
 		IntlSpbStart().fromUtf8(send, 0);
 	}
 
-	ClntAuthBlock cBlock(NULL);
+	ClntAuthBlock cBlock(NULL, NULL, NULL);
 	cBlock.loadServiceDataFrom(rdb->rdb_port);
 	HANDSHAKE_DEBUG(fprintf(stderr, "start calls authFillParametersBlock\n"));
 	authFillParametersBlock(cBlock, send, &spbStartParam, rdb->rdb_port);
@@ -7249,14 +7250,19 @@ static void cleanDpb(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 
 } //namespace Remote
 
-ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName)
+ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::ClumpletReader* dpb,
+							 const ParametersSet* tags)
 	: pluginList(getPool()), userName(getPool()), password(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
-	  hasCryptKey(false),
+	  cryptKeys(getPool()), dpbConfig(getPool()), hasCryptKey(false),
 	  plugins(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo),
 	  authComplete(false), firstTime(true)
 {
-	reset(fileName);
+	if (dpb && tags && dpb->find(tags->config_text))
+	{
+		dpb->getString(dpbConfig);
+	}
+	resetClnt(fileName);
 }
 
 void ClntAuthBlock::resetDataFromPlugin()
@@ -7317,7 +7323,7 @@ static inline void makeUtfString(bool uft8Convert, Firebird::string& s)
 	ISC_unescape(s);
 }
 
-void ClntAuthBlock::load(Firebird::ClumpletReader& dpb, const ParametersSet* tags)
+void ClntAuthBlock::loadClnt(Firebird::ClumpletReader& dpb, const ParametersSet* tags)
 {
 	bool uft8Convert = !dpb.find(isc_dpb_utf8_filename);
 

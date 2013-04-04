@@ -1890,6 +1890,9 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 		case isc_dpb_user_name:
 		case isc_dpb_password:
 		case isc_dpb_password_enc:
+
+		// remove client's config information
+		case isc_dpb_config:
 			pb->deleteClumplet();
 			break;
 
@@ -1973,7 +1976,8 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 		send->p_resp.p_resp_data.cstr_address = buffer;
 
 		// To be retrieved via an overloaded class member once our ports become real classes
-		const int aux_port_id = (port->port_type == rem_port::INET) ? Config::getRemoteAuxPort() : 0;
+		const int aux_port_id = (port->port_type == rem_port::INET) ?
+			Config::getDefaultConfig()->getRemoteAuxPort() : 0;
 		GlobalPortLock auxPortLock(aux_port_id);
 
 		rem_port* const aux_port = port->request(send);
@@ -5091,10 +5095,6 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
     // Now insert additional clumplets into spb
 	addClumplets(spb, spbParam, this);
 
-	// See if user has specified parameters relevent to the connection,
-	// they will be stuffed in the SPB if so.
-	REMOTE_get_timeout_params(this, spb);
-
 	// Get ready to cache old-style auth parameters
 	ClumpletWriter* cache = NULL;
 	if (!authenticated)
@@ -5120,6 +5120,9 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		// remove trusted auth & trusted role if present (security measure)
 		case isc_spb_trusted_role:
 		case isc_spb_trusted_auth:
+
+		// remove user config info (security measure)
+		case isc_spb_config:
 			spb->deleteClumplet();
 			break;
 
@@ -5128,6 +5131,10 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 			break;
 		}
 	}
+
+	// See if user has specified parameters relevent to the connection,
+	// they will be stuffed in the SPB if so.
+	REMOTE_get_timeout_params(this, spb);
 
 	if (!authenticated)
 	{
@@ -6369,7 +6376,7 @@ void SrvAuthBlock::createPluginsItr()
 	Remote::ParsedList fromClient;
 	REMOTE_parseList(fromClient, pluginList);
 
-	RefPtr<Config> myConfig = REMOTE_get_config(dbPath.hasData() ? &dbPath : NULL);
+	RefPtr<Config> myConfig = REMOTE_get_config(dbPath.hasData() ? &dbPath : NULL, NULL);
 	Remote::ParsedList onServer;
 	REMOTE_parseList(onServer, myConfig->getPlugins(PluginType::AuthServer));
 
@@ -6426,7 +6433,7 @@ void SrvAuthBlock::createPluginsItr()
 	REMOTE_makeList(pluginList, final);
 
 	plugins = new AuthServerPlugins(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, upInfo,
-								myConfig, pluginList.c_str());
+									myConfig, pluginList.c_str());
 }
 
 void SrvAuthBlock::reset()

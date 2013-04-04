@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "../common/utils_proto.h"
+#include "../jrd/EngineInterface.h"
 
 using namespace Firebird;
 
@@ -196,7 +197,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		return 0;
 	}
 
-	return attachRemoteServiceManager(status, username, password, trusted, service);
+	return attachRemoteServiceManager(status, username, password, trusted, service, true);
 }
 
 
@@ -218,7 +219,8 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password,
 							  bool trusted,
-							  const TEXT* server)
+							  const TEXT* server,
+							  bool forceLoopback)
 {
 	char service[SERVICE_SIZE];
 
@@ -241,6 +243,10 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	else if (trusted)
 	{
 		stuffSpb(spb, isc_spb_trusted_auth, "");
+	}
+	if ((!server[0]) && forceLoopback && (!Config::getSharedDatabase()))
+	{	// local connection & force   & superserver
+		stuffSpb(spb, isc_spb_config, "Providers=Loopback," CURRENT_ENGINE);
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));

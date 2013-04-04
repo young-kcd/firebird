@@ -28,6 +28,8 @@
 #include "../common/StatementMetadata.h"
 #include "../common/classes/RefCounted.h"
 
+#define CURRENT_ENGINE "Engine12"
+
 namespace Jrd {
 
 // Engine objects used by interface objects

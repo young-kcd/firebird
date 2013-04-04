@@ -355,7 +355,7 @@ static Static<EngineFactory> engineFactory;
 void registerEngine(IPluginManager* iPlugin)
 {
 	myModule->setCleanup(shutdownBeforeUnload);
-	iPlugin->registerPluginFactory(PluginType::Provider, "Engine12", &engineFactory);
+	iPlugin->registerPluginFactory(PluginType::Provider, CURRENT_ENGINE, &engineFactory);
 	myModule->registerMe();
 }
 
@@ -739,6 +739,7 @@ public:
 	string	dpb_trusted_login;
 	PathName	dpb_remote_process;
 	PathName	dpb_org_filename;
+	string	dpb_config;
 
 public:
 	DatabaseOptions()
@@ -1281,12 +1282,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 				if (options.dpb_set_page_buffers)
 				{
-#ifdef SHARED_METADATA_CACHE
 					// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
 					// cause other flags is UserId can be set only when DB is opened.
 					// No idea how to test for other cases before init is complete.
-					if (userId.locksmith())
-#endif
+					if (config->getSharedDatabase() ? userId.locksmith() : true)
 						dbb->dbb_page_buffers = options.dpb_page_buffers;
 				}
 
@@ -5585,6 +5584,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 				ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
 			break;
 
+		case isc_dpb_config:
+			getString(rdr, dpb_config);
+			break;
+
 		default:
 			break;
 		}
@@ -5681,6 +5684,13 @@ static JAttachment* init(thread_db* tdbb,
 						tdbb->setDatabase(dbb);
 						jAtt = create_attachment(alias_name, dbb, options);
 						tdbb->setAttachment(jAtt->getHandle());
+
+						if (options.dpb_config.hasData())
+						{
+							ERR_post_warning(Arg::Warning(isc_random) <<
+								"Secondary attachment - config data from DPB ignored");
+						}
+
 						return jAtt;
 					}
 
@@ -5689,6 +5699,8 @@ static JAttachment* init(thread_db* tdbb,
 				}
 			}
 		}
+
+		Config::merge(config, &options.dpb_config);
 
 		dbb = Database::create();
 		dbb->dbb_config = config;

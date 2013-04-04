@@ -119,6 +119,7 @@
 #define isc_dpb_specific_auth_data		  84
 #define isc_dpb_auth_plugin_list		  85
 #define isc_dpb_auth_plugin_name		  86
+#define isc_dpb_config					  87
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -280,6 +281,7 @@
 #define isc_spb_remote_protocol           120
 #define isc_spb_host_name                 121
 #define isc_spb_os_user                   122
+#define isc_spb_config					  123
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
 #define isc_spb_dummy_packet_interval     isc_dpb_dummy_packet_interval

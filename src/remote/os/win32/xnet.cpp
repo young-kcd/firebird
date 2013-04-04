@@ -61,7 +61,7 @@ static rem_port* aux_request(rem_port*, PACKET*);
 static void cleanup_comm(XCC);
 static void cleanup_mapping(XPM);
 static void cleanup_port(rem_port*);
-static rem_port* connect_client(PACKET*);
+static rem_port* connect_client(PACKET*, const Firebird::RefPtr<Config>*);
 static rem_port* connect_server(USHORT);
 static void disconnect(rem_port*);
 static void force_close(rem_port*);
@@ -189,7 +189,10 @@ static void xnet_log_error(const char* err_msg)
 #define ERR_STR(str) (str)
 #endif
 
-rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv_flag)
+rem_port* XNET_analyze(ClntAuthBlock* cBlock,
+					   const PathName& file_name,
+					   bool uv_flag,
+					   RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -264,7 +267,7 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 	rem_port* port = NULL;
 	try
 	{
-		port = XNET_connect(packet, 0);
+		port = XNET_connect(packet, 0, config);
 	}
 	catch (const Exception&)
 	{
@@ -345,7 +348,8 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock, const PathName& file_name, bool uv
 
 
 rem_port* XNET_connect(PACKET* packet,
-					   USHORT flag)
+					   USHORT flag,
+					   Firebird::RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -366,7 +370,7 @@ rem_port* XNET_connect(PACKET* packet,
 
 	if (packet)
 	{
-		return connect_client(packet);
+		return connect_client(packet, config);
 	}
 
 	return connect_server(flag);
@@ -392,7 +396,7 @@ rem_port* XNET_reconnect(ULONG client_pid)
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0)
 	{
-		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
+		fb_utils::copy_terminate(xnet_endpoint, Config::getDefaultConfig()->getIpcName(), sizeof(xnet_endpoint));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 
@@ -1020,7 +1024,7 @@ static void raise_lostconn_or_syserror(const char* msg)
 }
 
 
-static rem_port* connect_client(PACKET* packet)
+static rem_port* connect_client(PACKET* packet, Firebird::RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -1032,6 +1036,8 @@ static rem_port* connect_client(PACKET* packet)
  *	Establish a client side part of the connection
  *
  **************************************/
+
+	Firebird::RefPtr<Config>& conf(config ? *config : Config::getDefaultConfig());
 
 	if (!xnet_initialized)
 	{
@@ -1055,7 +1061,7 @@ static rem_port* connect_client(PACKET* packet)
 		// First, try to connect using default kernel namespace.
 		// This should work on Win9X, NT4 and on later OS when server is running
 		// under restricted account in the same session as the client
-		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
+		fb_utils::copy_terminate(xnet_endpoint, conf->getIpcName(), sizeof(xnet_endpoint));
 
 		try
 		{
@@ -1066,7 +1072,7 @@ static rem_port* connect_client(PACKET* packet)
 			// The client may not have permissions to create global objects,
 			// but still be able to connect to a local server that has such permissions.
 			// This is why we try to connect using Global\ namespace unconditionally
-			fb_utils::snprintf(xnet_endpoint, sizeof(xnet_endpoint), "Global\\%s", Config::getIpcName());
+			fb_utils::snprintf(xnet_endpoint, sizeof(xnet_endpoint), "Global\\%s", conf->getIpcName());
 
 			if (!connect_init()) {
 				return NULL;
@@ -1078,7 +1084,7 @@ static rem_port* connect_client(PACKET* packet)
 	Arg::StatusVector temp;
 	temp << Arg::Gds(isc_net_read_err);
 
-	static const int timeout = Config::getConnectionTimeout() * 1000;
+	static const int timeout = conf->getConnectionTimeout() * 1000;
 
 	// waiting for XNET connect lock to release
 
@@ -1281,6 +1287,10 @@ static rem_port* connect_client(PACKET* packet)
 		port->port_xcc = xcc;
 		xnet_ports->registerPort(port);
 		send_full(port, packet);
+		if (config)
+		{
+			port->port_config = *config;
+		}
 
 		return port;
 	}
@@ -2126,7 +2136,7 @@ static bool server_init(USHORT flag)
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0)
 	{
-		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(name_buffer));
+		fb_utils::copy_terminate(xnet_endpoint, Config::getDefaultConfig()->getIpcName(), sizeof(name_buffer));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 

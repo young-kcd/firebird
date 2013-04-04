@@ -75,8 +75,4 @@
 #define TRUSTED_AUTH
 #endif
 
-#if defined(SUPERSERVER)
-#define SHARED_METADATA_CACHE
-#endif
-
 #endif // INCLUDE_Firebird_H

@@ -25,6 +25,8 @@
 #define REMOTE_INET_PROTO_H
 
 #include "../common/classes/fb_string.h"
+#include "../common/classes/RefCounted.h"
+#include "../common/config/config.h"
 
 namespace Firebird
 {
@@ -32,8 +34,9 @@ namespace Firebird
 }
 
 rem_port*	INET_analyze(ClntAuthBlock*, const Firebird::PathName&, const TEXT*,
-						 bool, Firebird::ClumpletReader&);
-rem_port*	INET_connect(const TEXT*, struct packet*, USHORT, Firebird::ClumpletReader*);
+						 bool, Firebird::ClumpletReader&, Firebird::RefPtr<Config>*);
+rem_port*	INET_connect(const TEXT*, struct packet*, USHORT, Firebird::ClumpletReader*,
+						 Firebird::RefPtr<Config>*);
 rem_port*	INET_reconnect(SOCKET);
 rem_port*	INET_server(SOCKET);
 void		setStopMainThread(FPTR_INT func);

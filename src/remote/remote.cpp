@@ -65,7 +65,8 @@ const ParametersSet dpbParam =
 	isc_dpb_client_version,
 	isc_dpb_remote_protocol,
 	isc_dpb_host_name,
-	isc_dpb_os_user
+	isc_dpb_os_user,
+	isc_dpb_config
 };
 
 const ParametersSet spbParam =
@@ -86,7 +87,8 @@ const ParametersSet spbParam =
 	isc_spb_client_version,
 	isc_spb_remote_protocol,
 	isc_spb_host_name,
-	isc_spb_os_user
+	isc_spb_os_user,
+	isc_spb_config
 };
 
 const ParametersSet spbStartParam =
@@ -107,6 +109,7 @@ const ParametersSet spbStartParam =
 	0,
 	0,
 	0,
+	0,
 	0
 };
 
@@ -115,6 +118,7 @@ const ParametersSet spbInfoParam =
 	0,
 	0,
 	isc_info_svc_auth_block,
+	0,
 	0,
 	0,
 	0,
@@ -438,10 +442,10 @@ void REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb)
 	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
 
 	port->port_connect_timeout =
-		pb && pb->find(isc_dpb_connect_timeout) ? pb->getInt() : Config::getConnectionTimeout();
+		pb && pb->find(isc_dpb_connect_timeout) ? pb->getInt() : port->getPortConfig()->getConnectionTimeout();
 
 	port->port_flags |= PORT_dummy_pckt_set;
-	port->port_dummy_packet_interval = Config::getDummyPacketInterval();
+	port->port_dummy_packet_interval = port->getPortConfig()->getDummyPacketInterval();
 	if (port->port_dummy_packet_interval < 0)
 		port->port_dummy_packet_interval = DUMMY_INTERVAL;
 
@@ -682,8 +686,14 @@ void rem_port::linkParent(rem_port* const parent)
 	this->port_next = parent->port_clients;
 	this->port_server = parent->port_server;
 	this->port_server_flags = parent->port_server_flags;
+	this->port_config = parent->port_config;
 
 	parent->port_clients = parent->port_next = this;
+}
+
+const Firebird::RefPtr<Config>& rem_port::getPortConfig() const
+{
+	return port_config.hasData() ? port_config : Config::getDefaultConfig();
 }
 
 void rem_port::unlinkParent()
@@ -1063,14 +1073,20 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	}
 }
 
-void ClntAuthBlock::reset(const Firebird::PathName* fileName)
+void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName)
 {
 	dataForPlugin.clear();
 	dataFromPlugin.clear();
 	authComplete = false;
 	firstTime = true;
-	pluginList = REMOTE_get_config(fileName)->getPlugins(Firebird::PluginType::AuthClient);
+	config = REMOTE_get_config(fileName, &dpbConfig);
+	pluginList = config->getPlugins(Firebird::PluginType::AuthClient);
 	plugins.set(pluginList.c_str());
+}
+
+Firebird::RefPtr<Config>* ClntAuthBlock::getConfig()
+{
+	return config.hasData() ? &config : NULL;
 }
 
 void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char* data)
@@ -1079,16 +1095,20 @@ void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char*
 	HANDSHAKE_DEBUG(fprintf(stderr, "Cln: accepted data for plugin length=%d\n", length));
 }
 
-Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName)
+Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
+	const Firebird::string* dpb_config)
 {
+	Firebird::RefPtr<Config> rc = Config::getDefaultConfig();
+
 	if (dbName)
 	{
-		Firebird::RefPtr<Config> rc;
 		Firebird::PathName dummy;
 		expandDatabaseName(*dbName, dummy, &rc);
-		return rc;
 	}
-	return Config::getDefaultConfig();
+
+	Config::merge(rc, dpb_config);
+
+	return rc;
 }
 
 void REMOTE_parseList(Remote::ParsedList& parsed, Firebird::PathName list)
@@ -1276,7 +1296,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 		return false;
 	}
 
-	if (Config::getWireCrypt(WC_CLIENT) == WIRE_CRYPT_DISABLED)
+	if (getPortConfig()->getWireCrypt(WC_CLIENT) == WIRE_CRYPT_DISABLED)
 	{
 		port_crypt_complete = true;
 		return true;
@@ -1285,7 +1305,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 	// we got correct key's type pair
 	// check what about crypt plugin for it
 	Remote::ParsedList clientPlugins;
-	REMOTE_parseList(clientPlugins, Config::getDefaultConfig()->getPlugins(Firebird::PluginType::WireCrypt));
+	REMOTE_parseList(clientPlugins, getPortConfig()->getPlugins(Firebird::PluginType::WireCrypt));
 	for (unsigned n = 0; n < clientPlugins.getCount(); ++n)
 	{
 		Firebird::PathName p(clientPlugins[n]);
