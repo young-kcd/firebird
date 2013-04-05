@@ -245,6 +245,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 	}
 
+	{
+		Firebird::MasterInterfacePtr master;
+		master->serverMode(server_flag & SRVR_multi_client ? 1 : 0);
+	}
+
 	TEXT mutex_name[MAXPATHLEN];
 	fb_utils::snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
 	fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
@@ -390,7 +395,7 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		rem_port* port = NULL;
 		try
 		{
-			port = INET_connect(protocol_inet, NULL, server_flag, 0);
+			port = INET_connect(protocol_inet, NULL, server_flag, 0, NULL);
 		}
 		catch (const Exception& ex)
 		{
@@ -439,7 +444,7 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 
 		try
 		{
-			port = WNET_connect(protocol_wnet, NULL, server_flag);
+			port = WNET_connect(protocol_wnet, NULL, server_flag, NULL);
 		}
 		catch (const Exception& ex)
 		{
@@ -490,7 +495,7 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 
 		try
 		{
-			port = XNET_connect(NULL, server_flag);
+			port = XNET_connect(NULL, server_flag, NULL);
 		}
 		catch (const Exception& ex)
 		{

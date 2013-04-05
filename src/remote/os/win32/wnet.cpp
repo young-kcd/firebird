@@ -212,7 +212,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	case op_accept:
 		if (cBlock)
 		{
-			cBlock->reset(&file_name);
+			cBlock->resetClnt(&file_name);
 		}
 		accept = &packet->p_acpt;
 		break;
@@ -796,7 +796,7 @@ static void exit_handler(void* main_port)
 #endif
 
 
-static rem_str* make_pipe_name(RefPtr<Config>& config, const TEXT* connect_name, const TEXT* suffix_name,  const TEXT* str_pid)
+static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect_name, const TEXT* suffix_name,  const TEXT* str_pid)
 {
 /**************************************
  *

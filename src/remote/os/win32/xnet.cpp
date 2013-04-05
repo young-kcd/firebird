@@ -297,7 +297,7 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock,
 	case op_accept:
 		if (cBlock)
 		{
-			cBlock->reset(&file_name);
+			cBlock->resetClnt(&file_name);
 		}
 		accept = &packet->p_acpt;
 		break;
@@ -1024,7 +1024,7 @@ static void raise_lostconn_or_syserror(const char* msg)
 }
 
 
-static rem_port* connect_client(PACKET* packet, Firebird::RefPtr<Config>* config)
+static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -1037,7 +1037,7 @@ static rem_port* connect_client(PACKET* packet, Firebird::RefPtr<Config>* config
  *
  **************************************/
 
-	Firebird::RefPtr<Config>& conf(config ? *config : Config::getDefaultConfig());
+	const Firebird::RefPtr<Config>& conf(config ? *config : Config::getDefaultConfig());
 
 	if (!xnet_initialized)
 	{
