@@ -1,3 +1,35 @@
+ 2013-04-04 13:17  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/common/call_service.cpp
+   M src/common/call_service.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/consts_pub.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/inet_proto.h
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/wnet_proto.h
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet_proto.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/why.cpp
+Added support for changing configuration (client and embedded) from API
+
  2013-04-03 15:27  asfernandes 
    M src/jrd/recsrc/ProcedureScan.cpp
 Fixed CORE-4073 - Constant columns getting empty value with subselect from procedure.
