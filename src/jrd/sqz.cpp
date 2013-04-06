@@ -31,8 +31,8 @@
 using namespace Jrd;
 
 
-Compressor::Compressor(size_t length, const UCHAR* data)
-	: m_control(getPool()), m_length(0)
+Compressor::Compressor(MemoryPool& pool, size_t length, const UCHAR* data)
+	: m_control(pool), m_length(0)
 {
 	UCHAR* control = m_control.getBuffer((length + 1) / 2, false);
 	const UCHAR* const end = data + length;

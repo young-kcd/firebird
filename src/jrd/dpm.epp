@@ -314,7 +314,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 #endif
 
 	record_param temp = *org_rpb;
-	const Compressor dcc(new_rpb->rpb_length, new_rpb->rpb_address);
+	const Compressor dcc(*tdbb->getDefaultPool(), new_rpb->rpb_length, new_rpb->rpb_address);
 	const ULONG size = (ULONG) dcc.getPackedLength();
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write))
@@ -1892,7 +1892,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 		rpb->rpb_f_line, rpb->rpb_flags);
 #endif
 
-	const Compressor dcc(rpb->rpb_length, rpb->rpb_address);
+	const Compressor dcc(*tdbb->getDefaultPool(), rpb->rpb_length, rpb->rpb_address);
 	const ULONG size = (ULONG) dcc.getPackedLength();
 
 	// If the record isn't going to fit on a page, even if fragmented,
@@ -2110,7 +2110,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 	CCH_tra_precedence(tdbb, &rpb->getWindow(tdbb), rpb->rpb_transaction_nr);
 	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
-	const Compressor dcc(rpb->rpb_length, rpb->rpb_address);
+	const Compressor dcc(*tdbb->getDefaultPool(), rpb->rpb_length, rpb->rpb_address);
 	const ULONG size = (ULONG) dcc.getPackedLength();
 
 	// It is critical that the record be padded, if necessary, to the length of
@@ -3304,7 +3304,7 @@ static void store_big_record(thread_db* tdbb,
 
 	// What's left fits on a page.  Luckily, we don't have to store it ourselves.
 
-	const Compressor dcc(in - rpb->rpb_address, rpb->rpb_address);
+	const Compressor dcc(*tdbb->getDefaultPool(), in - rpb->rpb_address, rpb->rpb_address);
 	size = (ULONG) dcc.getPackedLength();
 	rhdf* header = (rhdf*) locate_space(tdbb, rpb, (SSHORT) (RHDF_SIZE + size), stack, NULL, type);
 

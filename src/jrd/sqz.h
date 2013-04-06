@@ -29,10 +29,10 @@
 
 namespace Jrd
 {
-	class Compressor : public Firebird::AutoStorage
+	class Compressor
 	{
 	public:
-		Compressor(size_t length, const UCHAR* data);
+		Compressor(MemoryPool& pool, size_t length, const UCHAR* data);
 
 		size_t getPackedLength() const
 		{
