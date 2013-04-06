@@ -1,3 +1,9 @@
+ 2013-04-05 07:48  hvlad 
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+Fixed Windows build
+
  2013-04-04 13:17  alexpeshkoff 
    M builds/install/misc/firebird.conf.in
    M src/auth/SecureRemotePassword/server/SrpServer.cpp
