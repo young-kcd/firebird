@@ -2732,7 +2732,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	return port;
 }
 
-static bool_t inet_write( XDR* xdrs /*, bool_t end_flag*/)
+static bool_t inet_write( XDR* xdrs )
 {
 /**************************************
  *
@@ -2742,9 +2742,6 @@ static bool_t inet_write( XDR* xdrs /*, bool_t end_flag*/)
  *
  * Functional description
  *	Write a buffer full of data.
- *  Obsolete: If the end_flag isn't set, indicate
- *	that the buffer is a fragment, and reset the XDR for another buffer
- *	load.
  *
  **************************************/
 	// Encode the data portion of the packet
@@ -2755,8 +2752,6 @@ static bool_t inet_write( XDR* xdrs /*, bool_t end_flag*/)
 
 	// Send data in manageable hunks.  If a packet is partial, indicate
 	// that with a negative length.  A positive length marks the end.
-
-	//p = xdrs->x_base; redundant
 
 	while (length)
 	{
