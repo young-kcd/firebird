@@ -2767,56 +2767,6 @@ static bool_t inet_write( XDR* xdrs )
 
 	return TRUE;
 
-#ifdef PIGGYBACK
-	// CVC: Screwed logic here: if I initialize l2 to zero, nothing useful executes.
-	SCHAR aux_buffer[BUFFER_SIZE];
-	SSHORT l2 = 0;
-#error Assign l2 some meaningful value before running this.
-	// If the other end has not piggy-backed the next packet, we're done.
-
-	if (!l2)
-		return TRUE;
-
-	// We've got a piggy-backed response.  If the packet is partial,
-	// send an ACK for part we did receive.
-
-	char* p2 = aux_buffer;
-
-	while (l2 < 0)
-	{
-		if (!packet_send(port, 0, 0))
-			return FALSE;
-		p2 -= l2;
-		length = aux_buffer + sizeof(aux_buffer) - p2;
-		if (!packet_receive(port, p2, length, &l2))
-		{
-			p2 += l2;
-			continue;
-		}
-	}
-
-	length = p2 - aux_buffer + l2;
-
-	// Now we're got a encode glump ready to stuff into the read buffer.
-	// Unfortunately, if we just add it to the read buffer, we will shortly
-	// overflow the buffer.  To avoid this, "scrumpf down" the active bits
-	// in the read buffer, then add out stuff at the end.
-
-	xdrs = &port->port_receive;
-	p2 = xdrs->x_base;
-
-	if (xdrs->x_handy && p2 != xdrs->x_private) {
-		memmove(p2, xdrs->x_private, xdrs->x_handy);
-	}
-
-	p2 += xdrs->x_handy;
-
-	xdrs->x_private = xdrs->x_base;
-
-	// xdrs->x_handy += JAP_decode (aux_buffer, length, p2);
-
-	return TRUE;
-#endif
 }
 
 #ifdef DEBUG
