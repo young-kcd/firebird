@@ -598,7 +598,8 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, int wait)
 	bdb->bdb_flags |= (BDB_writer | BDB_faked);
 	bdb->bdb_scan_count = 0;
 
-	lock_buffer(tdbb, bdb, LCK_WAIT, pag_undefined);
+	if (!(bcb->bcb_flags & BCB_exclusive))
+		lock_buffer(tdbb, bdb, LCK_WAIT, pag_undefined);
 
 	MOVE_CLEAR(bdb->bdb_buffer, (SLONG) dbb->dbb_page_size);
 	window->win_buffer = bdb->bdb_buffer;
@@ -728,7 +729,8 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
+	BufferControl* const bcb = dbb->dbb_bcb;
 
 	// if there has been a shadow added recently, go out and
 	// find it before we grant any more write locks
@@ -754,6 +756,9 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 
 	window->win_bdb = bdb;
 	window->win_buffer = bdb->bdb_buffer;
+
+	if (bcb->bcb_flags & BCB_exclusive)
+		return (bdb->bdb_flags & BDB_read_pending) ? lsLocked : lsLockedHavePage;
 
 	// lock_buffer returns 0 or 1 or -1.
 	const LockState lock_result = lock_buffer(tdbb, bdb, wait, page_type);
@@ -4147,14 +4152,9 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
  *	   -1 => timeout on lock occurred, see input parameter 'wait'.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
-
-	BufferControl *bcb = bdb->bdb_bcb;
-
-	if (bcb->bcb_flags & BCB_exclusive) {
-		return ((bdb->bdb_flags & BDB_read_pending) ? lsLocked : lsLockedHavePage);
-	}
+	BufferControl* const bcb = bdb->bdb_bcb;
+	fb_assert(!(bcb->bcb_flags & BCB_exclusive));
 
 	const USHORT lock_type = (bdb->bdb_flags & (BDB_dirty | BDB_writer)) ? LCK_write : LCK_read;
 
