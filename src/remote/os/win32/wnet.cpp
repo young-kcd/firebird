@@ -587,7 +587,8 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 	port->port_async = new_port;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
-	new_port->port_connection = make_pipe_name(port->getPortConfig(), port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
+	new_port->port_connection = make_pipe_name(port->getPortConfig(),
+		port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
 	while (true)
 	{
@@ -635,8 +636,8 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 
 	TEXT str_pid[32];
 	wnet_make_file_name(str_pid, server_pid);
-	new_port->port_connection =
-		make_pipe_name(vport->getPortConfig(), vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
+	new_port->port_connection = make_pipe_name(vport->getPortConfig(),
+		vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
 	new_port->port_pipe =
 		CreateNamedPipe(new_port->port_connection->str_data,
@@ -796,7 +797,8 @@ static void exit_handler(void* main_port)
 #endif
 
 
-static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect_name, const TEXT* suffix_name,  const TEXT* str_pid)
+static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect_name,
+	const TEXT* suffix_name, const TEXT* str_pid)
 {
 /**************************************
  *

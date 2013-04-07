@@ -20,7 +20,7 @@
 # value.
 #
 # Please note, by default a number of the values are specified in **Bytes** (Not KB).
-# You may add obvious abbreviations k, m and g in the end of a numver to specify
+# You may add obvious abbreviations k, m and g in the end of a number to specify
 # kilobytes, megabytes and gigabytes.
 #
 # There are three types of configuration values: integer, boolean and string.

@@ -2732,7 +2732,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	return port;
 }
 
-static bool_t inet_write( XDR* xdrs )
+static bool_t inet_write(XDR* xdrs)
 {
 /**************************************
  *

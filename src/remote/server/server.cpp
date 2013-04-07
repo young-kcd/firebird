@@ -5132,7 +5132,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		}
 	}
 
-	// See if user has specified parameters relevent to the connection,
+	// See if user has specified parameters relevant to the connection,
 	// they will be stuffed in the SPB if so.
 	REMOTE_get_timeout_params(this, spb);
 

@@ -396,7 +396,8 @@ rem_port* XNET_reconnect(ULONG client_pid)
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0)
 	{
-		fb_utils::copy_terminate(xnet_endpoint, Config::getDefaultConfig()->getIpcName(), sizeof(xnet_endpoint));
+		fb_utils::copy_terminate(xnet_endpoint, Config::getDefaultConfig()->getIpcName(),
+			sizeof(xnet_endpoint));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 
@@ -2136,7 +2137,8 @@ static bool server_init(USHORT flag)
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0)
 	{
-		fb_utils::copy_terminate(xnet_endpoint, Config::getDefaultConfig()->getIpcName(), sizeof(name_buffer));
+		fb_utils::copy_terminate(xnet_endpoint, Config::getDefaultConfig()->getIpcName(),
+			sizeof(name_buffer));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 
