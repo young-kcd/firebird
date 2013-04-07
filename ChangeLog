@@ -1,3 +1,18 @@
+ 2013-04-06 17:58  mapopa 
+   M doc/emacros-cross_ref.html
+   M src/remote/inet.cpp
+Remove unused and broken code defined with PIGGYBACK
+
+ 2013-04-06 17:46  mapopa 
+   M src/remote/inet.cpp
+Cleanup comments and unused code 
+
+ 2013-04-06 09:12  dimitr 
+   M src/jrd/dpm.epp
+   M src/jrd/sqz.cpp
+   M src/jrd/sqz.h
+Pass the pool explicitly, it saves us one TLS access per record.
+
  2013-04-05 07:48  hvlad 
    M src/remote/os/win32/wnet.cpp
    M src/remote/os/win32/xnet.cpp
