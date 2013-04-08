@@ -1,3 +1,18 @@
+ 2013-04-07 23:48  asfernandes 
+   M builds/install/misc/firebird.conf.in
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Misc.
+
+ 2013-04-07 07:55  dimitr 
+   M src/jrd/cch.cpp
+Avoid calling lock_buffer() for the SS setup.
+
  2013-04-06 17:58  mapopa 
    M doc/emacros-cross_ref.html
    M src/remote/inet.cpp
