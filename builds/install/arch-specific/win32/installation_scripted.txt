@@ -398,7 +398,7 @@ Parameters specific to Firebird uninstalls
   the uninstallation process has completed:
 
     firebird.conf
-    aliases.conf
+    databases.conf
     firebird.log
     security3.fdb
 	fbtrace.conf

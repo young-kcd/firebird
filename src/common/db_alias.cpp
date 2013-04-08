@@ -54,7 +54,7 @@ namespace
 	};
 	InitInstance<DatabaseDirectoryList> databaseDirectoryList;
 
-	const char* const ALIAS_FILE = "aliases.conf";
+	const char* const ALIAS_FILE = "databases.conf";
 
 	void replace_dir_sep(PathName& s)
 	{
@@ -272,8 +272,8 @@ static inline bool hasSeparator(const PathName& name)
 	return false;
 }
 
-// Search for 'alias' in aliases.conf, return its value in 'file' if found. Else set file to alias.
-// Returns true if alias is found in aliases.conf.
+// Search for 'alias' in databases.conf, return its value in 'file' if found. Else set file to alias.
+// Returns true if alias is found in databases.conf.
 static bool resolveAlias(const PathName& alias, PathName& file, RefPtr<Config>* config)
 {
 	PathName correctedAlias = alias;
@@ -346,7 +346,7 @@ static bool setPath(const PathName& filename, PathName& expandedName)
 }
 
 // Full processing of database name
-// Returns true if alias was found in aliases.conf
+// Returns true if alias was found in databases.conf
 bool expandDatabaseName(const Firebird::PathName& alias,
 						Firebird::PathName& file,
 						Firebird::RefPtr<Config>* config)
@@ -357,13 +357,13 @@ bool expandDatabaseName(const Firebird::PathName& alias,
 	}
 	catch (const fatal_exception& ex)
 	{
-		gds__log("File aliases.conf contains bad data: %s", ex.what());
+		gds__log("File databases.conf contains bad data: %s", ex.what());
 		(Arg::Gds(isc_random) << "Server misconfigured - contact administrator please").raise();
 	}
 
 	ReadLockGuard guard(aliasesConf().rwLock, "expandDatabaseName");
 
-	// First of all check in aliases.conf
+	// First of all check in databases.conf
 	if (resolveAlias(alias, file, config))
 	{
 		return true;
@@ -390,7 +390,7 @@ bool expandDatabaseName(const Firebird::PathName& alias,
 		}
 	}
 
-	// Search for correct config in aliases.conf
+	// Search for correct config in databases.conf
 	if (config)
 	{
 		DbName* db = aliasesConf().dbHash.lookup(file);

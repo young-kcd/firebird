@@ -81,7 +81,7 @@ Uninstallation
       instclient.exe remove <libname>
 
   - Delete installation directory. You may wish to keep the log file, security
-    database, firebird.conf and aliases.conf.
+    database, firebird.conf and databases.conf.
 
 
 

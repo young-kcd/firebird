@@ -105,8 +105,8 @@ darwin_finish_cs_framework:
 	cp ../builds/install/arch-specific/darwin/Readme.txt \
 			$(FB_FW)/Resources/Readme.txt
 	cp ../gen/install/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
-	cp ../builds/install/arch-specific/darwin/aliases.conf.in \
-			$(FB_FW)/Resources/English.lproj/var/aliases.conf
+	cp ../builds/install/arch-specific/darwin/databases.conf.in \
+			$(FB_FW)/Resources/English.lproj/var/databases.conf
 	cp ../src/utilities/ntrace/fbtrace.conf \
 			$(FB_FW)/Resources/English.lproj/var/fbtrace.conf
 
@@ -171,8 +171,8 @@ darwin_finish_ss_framework:
 	cp ../builds/install/arch-specific/darwin/Readme.txt \
 			$(FB_FW)/Resources/Readme.txt
 	cp ../gen/install/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
-	cp ../builds/install/arch-specific/darwin/aliases.conf.in \
-			$(FB_FW)/Resources/English.lproj/var/aliases.conf
+	cp ../builds/install/arch-specific/darwin/databases.conf.in \
+			$(FB_FW)/Resources/English.lproj/var/databases.conf
 	cp ../src/utilities/ntrace/fbtrace.conf \
 			$(FB_FW)/Resources/English.lproj/var/fbtrace.conf
 darwin_postbuild_target: package

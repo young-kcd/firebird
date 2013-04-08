@@ -130,7 +130,7 @@ o If Firebird is running as an application (instead of
 o Uninstallation leaves five files in the install
   directory:
 
-  - aliases.conf
+  - databases.conf
   - firebird.conf
   - fbtrace.conf
   - firebird.log

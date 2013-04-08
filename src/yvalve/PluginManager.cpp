@@ -395,7 +395,7 @@ namespace
 	PluginModule* builtin = NULL;
 
 	// Provides most of configuration services for plugins,
-	// except per-database configuration in aliases.conf
+	// except per-database configuration in databases.conf
 	class ConfiguredPlugin : public RefCntIface<ITimer, FB_TIMER_VERSION>
 	{
 	public:
@@ -472,7 +472,7 @@ namespace
 		PathName plugName;
 	};
 
-	// Provides per-database configuration from aliases.conf.
+	// Provides per-database configuration from databases.conf.
 	class FactoryParameter : public RefCntIface<IPluginConfig, FB_PLUGIN_CONFIG_VERSION>
 	{
 	public:

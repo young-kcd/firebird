@@ -441,15 +441,15 @@ endlocal
 :ALIAS_CONF
 :: Generate a sample aliases file
 ::===============================
-@echo   Creating sample aliases.conf
-@echo # > %FB_OUTPUT_DIR%\aliases.conf
-@echo # List of known database aliases >> %FB_OUTPUT_DIR%\aliases.conf
-@echo # ------------------------------ >> %FB_OUTPUT_DIR%\aliases.conf
-@echo # >> %FB_OUTPUT_DIR%\aliases.conf
-@echo # Examples: >> %FB_OUTPUT_DIR%\aliases.conf
-@echo # >> %FB_OUTPUT_DIR%\aliases.conf
-@echo #   dummy = c:\data\dummy.fdb >> %FB_OUTPUT_DIR%\aliases.conf
-@echo #  >> %FB_OUTPUT_DIR%\aliases.conf
+@echo   Creating sample databases.conf
+@echo # > %FB_OUTPUT_DIR%\databases.conf
+@echo # List of known database aliases >> %FB_OUTPUT_DIR%\databases.conf
+@echo # ------------------------------ >> %FB_OUTPUT_DIR%\databases.conf
+@echo # >> %FB_OUTPUT_DIR%\databases.conf
+@echo # Examples: >> %FB_OUTPUT_DIR%\databases.conf
+@echo # >> %FB_OUTPUT_DIR%\databases.conf
+@echo #   dummy = c:\data\dummy.fdb >> %FB_OUTPUT_DIR%\databases.conf
+@echo #  >> %FB_OUTPUT_DIR%\databases.conf
 
 ::End of ALIAS_CONF
 ::-----------------
@@ -585,7 +585,7 @@ set FBBUILD_EMB_PACK_ROOT=%FB_ROOT_PATH%\builds\emb_pack_%FB_TARGET_PLATFORM%
 @mkdir %FBBUILD_EMB_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_EMB_PACK_ROOT%\ > nul
 
-for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %FB_OUTPUT_DIR%\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul)
+for %%v in (databases.conf firebird.conf firebird.msg) do (	@copy /Y %FB_OUTPUT_DIR%\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul)
 
 for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 

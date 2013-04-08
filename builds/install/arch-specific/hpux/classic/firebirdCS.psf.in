@@ -27,7 +27,7 @@ fileset
 tag main
 file -u 0660 -g firebird -o firebird buildroot@prefix@/security2.fdb @prefix@/security2.fdb
 file -u 0644 -g firebird -o firebird buildroot@prefix@/firebird.conf @prefix@/firebird.conf
-file -u 0644 -g firebird -o firebird buildroot@prefix@/aliases.conf @prefix@/aliases.conf
+file -u 0644 -g firebird -o firebird buildroot@prefix@/databases.conf @prefix@/databases.conf
 file -u 0644 -g firebird -o firebird buildroot@prefix@/WhatsNew @prefix@/WhatsNew
 end
 #

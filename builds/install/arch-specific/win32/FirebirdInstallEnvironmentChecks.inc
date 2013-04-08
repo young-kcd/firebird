@@ -736,7 +736,7 @@ if UsingWinNT then
 else
   SharedFileArray[26].Filename := ExpandConstant('{sys}')+'FIREBI~1.CPL';
 
-SharedFileArray[27].Filename := ExpandConstant('{app}')+'aliases.conf';
+SharedFileArray[27].Filename := ExpandConstant('{app}')+'databases.conf';
 SharedFileArray[28].Filename := ExpandConstant('{app}')+'firebird.conf';
 SharedFileArray[29].Filename := ExpandConstant('{app}')+'firebird.log';
 SharedFileArray[30].Filename := ExpandConstant('{app}')+'security3.fdb';

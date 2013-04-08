@@ -169,7 +169,7 @@ copyFiles() {
 
 # Miscellaneous config and stratup files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
-    cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
+    cp $BuildRootDir/gen/install/misc/databases.conf $DestDir/
 
 
 # Create links from /usr/lib to install area.

@@ -240,10 +240,10 @@ if test -f /tmp/fb-security-database-update2.fdb; then
 	rm -f /tmp/fb-security-database-update2.fdb
 fi
 
-#Install the saved aliases.conf, if any
-echo "Install the saved aliases.conf file"
-if test -f /tmp/fb-aliases.conf; then
-	mv -f /tmp/fb-aliases.conf "$FB_RES/English.lproj/var/aliases.conf"
+#Install the saved databases.conf, if any
+echo "Install the saved databases.conf file"
+if test -f /tmp/fb-databases.conf; then
+	mv -f /tmp/fb-databases.conf "$FB_RES/English.lproj/var/databases.conf"
 fi
 
 #Install the saved UDF libraries, if any

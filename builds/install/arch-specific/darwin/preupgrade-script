@@ -18,8 +18,8 @@ fi
 if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/security2.fdb"; then
 	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/security2.fdb" /tmp/fb-security-database-update2.fdb
 fi
-if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf"; then
-	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf" /tmp/fb-aliases.conf
+if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/databases.conf"; then
+	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/databases.conf" /tmp/fb-databases.conf
 fi
 
 for i in /Library/Frameworks/Firebird.framework/Resources/English.lproj/var/UDF/*;do

@@ -197,14 +197,14 @@ cp ${SQLEXTENSIONS}	$DestDir/doc/sql.extensions || exit
 
 cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf.sample || exit
 
-echo "#" >> $DestDir/aliases.conf.sample
-echo "# List of known database aliases" >> $DestDir/aliases.conf.sample
-echo "# ------------------------------" >> $DestDir/aliases.conf.sample
-echo "#" >> $DestDir/aliases.conf.sample
-echo "# Examples:" >> $DestDir/aliases.conf.sample
-echo "#" >> $DestDir/aliases.conf.sample
-echo "# employee = /$DestDir/examples/employee.fdb" >> $DestDir/aliases.conf.sample
-echo "#" >> $DestDir/aliases.conf.sample
+echo "#" >> $DestDir/databases.conf.sample
+echo "# List of known database aliases" >> $DestDir/databases.conf.sample
+echo "# ------------------------------" >> $DestDir/databases.conf.sample
+echo "#" >> $DestDir/databases.conf.sample
+echo "# Examples:" >> $DestDir/databases.conf.sample
+echo "#" >> $DestDir/databases.conf.sample
+echo "# employee = /$DestDir/examples/employee.fdb" >> $DestDir/databases.conf.sample
+echo "#" >> $DestDir/databases.conf.sample
 
 
 echo Setting ownership and permissions on installed files
@@ -284,7 +284,7 @@ chmod ug=rw,o= examples/*.fdb || exit
 chmod ug=rw,o= help/*.fdb || exit
 
 # install the samples if they don't exist
-[ -f aliases.conf ] || install -o firebird -g firebird -m 440 aliases.conf.sample aliases.conf
+[ -f databases.conf ] || install -o firebird -g firebird -m 440 databases.conf.sample databases.conf
 [ -f firebird.conf ] || install -o firebird -g firebird -m 440 firebird.conf.sample firebird.conf
 [ -f security2.fdb ] || install -o firebird -g firebird -m 660 security2.fdb.sample security2.fdb
 

@@ -301,7 +301,7 @@ copyFiles() {
 
 	#conf
     cp $BuiltFBDir/firebird.conf ${TargetDir}@FB_CONFDIR@
-    cp $BuiltFBDir/aliases.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuiltFBDir/databases.conf ${TargetDir}@FB_CONFDIR@
     cp $BuiltFBDir/fbtrace.conf ${TargetDir}@FB_CONFDIR@
 
 	chown root:wheel ${TargetDir}@FB_CONFDIR@/*.conf

@@ -206,7 +206,7 @@ copyFiles() {
 
 #   Misc config files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/
-    cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
+    cp $BuildRootDir/gen/install/misc/databases.conf $DestDir/
     cp $BuildRootDir/gen/install/misc/fbintl.conf $DestDir/intl/
 
 #   Create links from @libdir@ to install area.

@@ -494,7 +494,7 @@ Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.defau
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
 Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf.default; Components: ServerComponent;
 Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist; check: NofbtraceConfExists;
-Source: {#FilesDir}\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
+Source: {#FilesDir}\databases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\security3.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\firebird.log; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall skipifsourcedoesntexist external dontcopy
@@ -665,7 +665,7 @@ Var
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
                                 // user config files - firebird.conf, firebird.log,
-                                // aliases.conf, fbtrace.conf and the security database.
+                                // databases.conf, fbtrace.conf and the security database.
 
   SYSDBAName: String;           // Name of SYSDBA
   SYSDBAPassword: String;       // SYSDBA password
@@ -1056,7 +1056,7 @@ begin
       //Manually set the sharedfile count of these files.
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log', false);
-      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\databases.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security3.fdb', false);
       end;
@@ -1168,9 +1168,9 @@ begin
         if CleanUninstall then
           DeleteFile(GetAppPath+'\firebird.log');
 
-      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf') then
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\databases.conf') then
         if CleanUninstall then
-          DeleteFile(GetAppPath+'\aliases.conf');
+          DeleteFile(GetAppPath+'\databases.conf');
 
       if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf') then
         if CleanUninstall then
