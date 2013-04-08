@@ -422,7 +422,8 @@ public:
 
 						if (!checkCount(status, &upCount, isc_info_update_count))
 						{
-							return -1;
+							stmt->release();
+							return GsecMsg22;
 						}
 
 						stmt->free(status);
@@ -458,7 +459,8 @@ public:
 
 						if (!checkCount(status, &delCount, isc_info_delete_count))
 						{
-							return -1;
+							stmt->release();
+							return GsecMsg22;
 						}
 
 						stmt->free(status);
