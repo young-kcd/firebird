@@ -16,7 +16,7 @@ Last Update: Mar 21 2010<br>
 Authors: Blas Rodriguez Somoza (blas at puertareal dot com), Dmitry Sibiryakov (aafemt at mail dot ru)<br>
 
 <h3>0.-Introduction</h3>
-<p>The MSYS/MINGW build was started with 1.5 beta 4.<p>
+<p>The MSYS/MINGW build was started with 1.5.x<p>
 <p>The only difference between the msvc build and the mingw build, is that the later one does not support the MS SEH exception handling. This means that some exceptions will not be catched and thus FB will abort.The sources using this exception handling are jrd/blob_filter.cpp, jrd/exe.cpp and jrd/fun.epp.</p>
 <p>This port is not maintained anymore.</p>
 
@@ -32,7 +32,7 @@ Authors: Blas Rodriguez Somoza (blas at puertareal dot com), Dmitry Sibiryakov (
 <p>The following packages from <a href="http://www.mingw.org">http://www.mingw.org</a> are needed</p>
 <p>MinGW
 <ul>
-<li>GCC 3.4.5 is recommended. 4.2.1 and 4.4.0 are crap.</li>
+<li>GCC 4.7.2 or better</li>
 </ul>
 </p>
 <p>MSYS
@@ -58,7 +58,7 @@ Authors: Blas Rodriguez Somoza (blas at puertareal dot com), Dmitry Sibiryakov (
 
 <ol>
 <li>Start msys with the icon.</li>
-<li>Go to the firebird2 root directory. For instance, if your root is d:\cvs\firebird you must do cd /d/cvs/firebird2.</li>
+<li>Go to the firebird2 root directory. For instance, if your root is d:\svn\firebird you must do cd /d/svn/firebird2.</li>
 <li>Start configure with the switches to get super/classic and production/development build, for instance:<br>
 autogen.sh --enable-superserver<br>
 The valid switches for autogen are<br>
@@ -93,7 +93,7 @@ warning: too many arguments for format</p>
 <p>AUTOGEN<p>
 <p>The autogen script creates an output file in the same directory where it is executed with the name config.out. If the autogen fails look at config.out first.</p>
 
-<p>Some permission problems, most probably related with the CVS client, has been reported. If the autogen gives a permission related error, like<br><br>
+<p>Some permission problems, most probably related with the svn client, has been reported. If the autogen gives a permission related error, like<br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;autom4te: cannot open configure: Permission denied<br><br>
 execute in the same directory:<br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&gt;chmod -R +uw *</p>
