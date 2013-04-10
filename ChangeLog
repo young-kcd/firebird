@@ -1,3 +1,45 @@
+ 2013-04-09 20:09  mapopa 
+   M doc/README.build.mingw.html
+Cleanup mingw build instructions , todo add up to date instructions with ming-w64 http://mingw-w64.sourceforge.net/ used for qt , boost ... http://qt-project.org/wiki/MinGW
+
+ 2013-04-09 15:34  mapopa 
+   M doc/README.build.msvc.html
+Update VisualStudio 20xx building notes README 
+
+ 2013-04-08 16:28  alexpeshkoff 
+   M builds/install/arch-specific/aix/classic/makeInstallImage.sh.in
+   M builds/install/arch-specific/darwin/install-script
+   M builds/install/arch-specific/darwin/preupgrade-script
+   M builds/install/arch-specific/freebsd/install.sh.in
+   M builds/install/arch-specific/hpux/classic/firebirdCS.psf.in
+   M builds/install/arch-specific/hpux/classic/makeinstallImage.sh.in
+   M builds/install/arch-specific/hpux/misc/createaliasDB.sh.in
+   M builds/install/arch-specific/hpux/super/makeinstallImage.sh.in
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+   M builds/install/arch-specific/netbsd/install.sh.in
+   M builds/install/arch-specific/solaris/CS/prototype.in
+   M builds/install/arch-specific/solaris/SS/prototype.in
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/installation_scripted.txt
+   D builds/install/misc/aliases.conf.in
+   M builds/install/misc/createAliasDB.sh.in
+   A builds/install/misc/databases.conf.in (from /firebird/trunk/builds/install/misc/aliases.conf.in:57903)
+   M builds/install/misc/firebird.conf.in
+   M builds/posix/postfix.darwin
+   M configure.ac
+   M doc/README.raw_devices
+   M doc/install_windows_manually.txt
+   M src/common/db_alias.cpp
+   M src/yvalve/PluginManager.cpp
+Renamed aliases.conf to databases.conf as suggested by Dmitry
+
+ 2013-04-08 15:05  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+Fixed leak, found by Claudio. Fixed diagnostics.
+
  2013-04-07 23:48  asfernandes 
    M builds/install/misc/firebird.conf.in
    M src/remote/inet.cpp
