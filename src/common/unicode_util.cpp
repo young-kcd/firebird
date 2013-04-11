@@ -43,6 +43,11 @@
 #include <unicode/utrans.h>
 #include <unicode/uchar.h>
 #include <unicode/ucol.h>
+#include <unicode/uvernum.h>
+
+#if U_ICU_VERSION_MAJOR_NUM >= 51
+#	include <unicode/utf_old.h>
+#endif
 
 // The next major ICU version after 4.8 is 49.
 #define ICU_NEW_VERSION_MEANING	49
