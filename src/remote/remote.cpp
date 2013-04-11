@@ -1003,7 +1003,7 @@ bool REMOTE_legacy_auth(const char* nm, int p)
 	}
 
 	const char* legacyAuth = "LEGACY_AUTH";
-	if (fb_utils::stricmp(legacyAuth, nm) == 0 && p < PROTOCOL_VERSION11)
+	if (fb_utils::stricmp(legacyAuth, nm) == 0 && p < PROTOCOL_VERSION13)
 	{
 		return true;
 	}

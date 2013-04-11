@@ -663,7 +663,7 @@ public:
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& dpb, const ParametersSet* tags, int protocol);
 	void extractDataFromPluginTo(CSTRING* to);
 	void extractDataFromPluginTo(P_AUTH_CONT* to);
-	void loadClnt(Firebird::ClumpletReader& dpb, const ParametersSet*);
+	void loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*);
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);
 	void resetClnt(const Firebird::PathName* fileName);
 	bool checkPluginName(Firebird::PathName& nameToCheck);

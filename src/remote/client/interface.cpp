@@ -655,7 +655,7 @@ namespace Remote {
 static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
-static rem_port* analyze(ClntAuthBlock&, PathName&, bool, ClumpletReader&, PathName&, bool);
+static rem_port* analyze(ClntAuthBlock&, PathName&, bool, ClumpletWriter&, PathName&, bool);
 static rem_port* analyze_service(ClntAuthBlock&, PathName&, bool, ClumpletReader&, bool);
 static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
@@ -5202,7 +5202,7 @@ static void authenticateStep0(ClntAuthBlock& wire)
 static rem_port* analyze(ClntAuthBlock& cBlock,
 						 PathName& file_name,
 						 bool uv_flag,
-						 ClumpletReader& dpb,
+						 ClumpletWriter& dpb,
 						 PathName& node_name,
 						 bool loopback)
 {
@@ -7404,7 +7404,7 @@ static inline void makeUtfString(bool uft8Convert, Firebird::string& s)
 	ISC_unescape(s);
 }
 
-void ClntAuthBlock::loadClnt(Firebird::ClumpletReader& dpb, const ParametersSet* tags)
+void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 {
 	bool uft8Convert = !dpb.find(isc_dpb_utf8_filename);
 
@@ -7422,6 +7422,7 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletReader& dpb, const ParametersSet*
 		{
 			makeUtfString(uft8Convert, password);
 			dpb.getString(password);
+			dpb.deleteClumplet();
 			HANDSHAKE_DEBUG(fprintf(stderr, "Loaded from PB password = %s\n", password.c_str()));
 		}
 		else if (t == tags->encrypt_key)
