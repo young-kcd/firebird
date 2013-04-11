@@ -31,8 +31,6 @@
 // Functions below need to have C++ linkage to avoid name clash with
 // standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
-bool_t	xdr_bool(XDR*, int*);
-bool_t	xdr_bytes(XDR*, SCHAR**, u_int*, u_int);
 bool_t	xdr_datum(XDR*, const dsc*, UCHAR*);
 bool_t	xdr_double(XDR*, double*);
 bool_t	xdr_enum(XDR*, xdr_op*);
