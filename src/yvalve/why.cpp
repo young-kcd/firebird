@@ -5081,10 +5081,7 @@ void YService::detach(IStatus* status)
 void YService::populateSpb(ClumpletWriter& spb, UCHAR tag)
 {
 	if (attachSpb)
-	{
-		if (attachSpb->find(isc_spb_auth_block))
-			attachSpb->deleteClumplet();
-	}
+		attachSpb->deleteWithTag(isc_spb_auth_block);
 	else
 		attachSpb = FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList, MAX_DPB_SIZE);
 
