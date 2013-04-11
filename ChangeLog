@@ -1,3 +1,8 @@
+ 2013-04-10 11:32  mapopa 
+   M doc/cleaning-todo.txt
+   M doc/emacros-cross_ref.html
+Update cleaning todo for 3.x , remove already cleaned work done in 1.5.x,2.x
+
  2013-04-09 20:09  mapopa 
    M doc/README.build.mingw.html
 Cleanup mingw build instructions , todo add up to date instructions with ming-w64 http://mingw-w64.sourceforge.net/ used for qt , boost ... http://qt-project.org/wiki/MinGW
