@@ -374,57 +374,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->fun_external = NULL;
 			function->setStatement(NULL);
 
-			if (!X.RDB$ENGINE_NAME.NULL)
-			{
-				HalfStaticArray<UCHAR, 512> body;
-
-				if (!X.RDB$FUNCTION_SOURCE.NULL)
-				{
-					blb* const blob = blb::open(tdbb, sysTransaction, &X.RDB$FUNCTION_SOURCE);
-					const ULONG len = blob->BLB_get_data(tdbb,
-						body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
-					body[MIN(blob->blb_length, len)] = 0;
-				}
-				else
-					body.getBuffer(1)[0] = 0;
-
-				dbb->dbb_extManager.makeFunction(tdbb, function, X.RDB$ENGINE_NAME,
-					(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
-
-				if (!function->fun_external)
-					function->setDefined(false);
-			}
-			else if (!X.RDB$FUNCTION_BLR.NULL)
-			{
-				MemoryPool* const csb_pool = attachment->createPool();
-				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-
-				try
-				{
-					AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
-
-					if (!X.RDB$DEBUG_INFO.NULL)
-						DBG_parse_debug_info(tdbb, &X.RDB$DEBUG_INFO, *csb->csb_dbg_info);
-
-					try
-					{
-						function->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR);
-					}
-					catch (const Exception&)
-					{
-						const string name = function->getName().toString();
-						status_exception::raise(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name));
-					}
-				}
-				catch (const Exception&)
-				{
-					attachment->deletePool(csb_pool);
-					throw;
-				}
-
-				function->getStatement()->function = function;
-			}
-			else if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
+			if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
 			{
 				function->fun_entrypoint =
 					Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
@@ -439,6 +389,59 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				if (!function->fun_entrypoint)
 					function->setDefined(false);
+			}
+			else if (!X.RDB$ENGINE_NAME.NULL || !X.RDB$FUNCTION_BLR.NULL)
+			{
+				MemoryPool* const csb_pool = attachment->createPool();
+				Jrd::ContextPoolHolder context(tdbb, csb_pool);
+
+				try
+				{
+					AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
+
+					if (!X.RDB$ENGINE_NAME.NULL)
+					{
+						HalfStaticArray<UCHAR, 512> body;
+
+						if (!X.RDB$FUNCTION_SOURCE.NULL)
+						{
+							blb* const blob = blb::open(tdbb, sysTransaction, &X.RDB$FUNCTION_SOURCE);
+							const ULONG len = blob->BLB_get_data(tdbb,
+								body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
+							body[MIN(blob->blb_length, len)] = 0;
+						}
+						else
+							body.getBuffer(1)[0] = 0;
+
+						dbb->dbb_extManager.makeFunction(tdbb, csb, function, X.RDB$ENGINE_NAME,
+							(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
+
+						if (!function->fun_external)
+							function->setDefined(false);
+					}
+					else if (!X.RDB$FUNCTION_BLR.NULL)
+					{
+						if (!X.RDB$DEBUG_INFO.NULL)
+							DBG_parse_debug_info(tdbb, &X.RDB$DEBUG_INFO, *csb->csb_dbg_info);
+
+						try
+						{
+							function->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR);
+						}
+						catch (const Exception&)
+						{
+							const string name = function->getName().toString();
+							status_exception::raise(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name));
+						}
+					}
+				}
+				catch (const Exception&)
+				{
+					attachment->deletePool(csb_pool);
+					throw;
+				}
+
+				function->getStatement()->function = function;
 			}
 			else
 			{

@@ -10671,10 +10671,7 @@ ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 			CMP_impure(csb, function->getInputFormat()->fmt_length);
 		}
 
-		if (function->fun_external)
-			fb_assert(function->getOutputFormat()->fmt_count == 2);
-		else
-			fb_assert(function->getOutputFormat()->fmt_count == 3);
+		fb_assert(function->getOutputFormat()->fmt_count == 3);
 
 		fb_assert(function->getOutputFormat()->fmt_length);
 		CMP_impure(csb, function->getOutputFormat()->fmt_length);
@@ -10763,13 +10760,6 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		UCHAR* const inMsg = (UCHAR*) FB_ALIGN((IPTR) impure + sizeof(impure_value), FB_ALIGNMENT);
 		UCHAR* const outMsg = (UCHAR*) FB_ALIGN((IPTR) inMsg + inMsgLength, FB_ALIGNMENT);
 
-		if (function->fun_external)
-		{
-			// We must clear messages of external functions.
-			memset(inMsg, 0, inMsgLength);
-			memset(outMsg, 0, outMsgLength);
-		}
-
 		if (function->fun_inputs != 0)
 		{
 			const NestConst<ValueExprNode>* const sourceEnd = args->items.end();
@@ -10801,9 +10791,27 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		const SLONG savePointNumber = transaction->tra_save_point ?
 			transaction->tra_save_point->sav_number : 0;
 
-		if (function->fun_external)
+		jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
+
+		// trace function execution start
+		//// TODO: TraceProcExecute trace(tdbb, funcRequest, request, inputTargets);
+
+		// Catch errors so we can unwind cleanly.
+
+		try
 		{
-			function->fun_external->execute(tdbb, inMsg, outMsg);
+			Jrd::ContextPoolHolder context(tdbb, funcRequest->req_pool);	// Save the old pool.
+
+			funcRequest->req_timestamp = request->req_timestamp;
+
+			EXE_start(tdbb, funcRequest, transaction);
+
+			if (inMsgLength != 0)
+				EXE_send(tdbb, funcRequest, 0, inMsgLength, inMsg);
+
+			EXE_receive(tdbb, funcRequest, 1, outMsgLength, outMsg);
+
+			// Clean up all savepoints started during execution of the procedure.
 
 			if (transaction != attachment->getSysTransaction())
 			{
@@ -10815,64 +10823,29 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				}
 			}
 		}
-		else
+		catch (const Exception& ex)
 		{
-			jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
+			/*** TODO:
+			const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
+			trace.finish(false, noPriv ? res_unauthorized : res_failed);
+			***/
 
-			// trace function execution start
-			//// TODO: TraceProcExecute trace(tdbb, funcRequest, request, inputTargets);
-
-			// Catch errors so we can unwind cleanly.
-
-			try
-			{
-				Jrd::ContextPoolHolder context(tdbb, funcRequest->req_pool);	// Save the old pool.
-
-				funcRequest->req_timestamp = request->req_timestamp;
-
-				EXE_start(tdbb, funcRequest, transaction);
-
-				if (inMsgLength != 0)
-					EXE_send(tdbb, funcRequest, 0, inMsgLength, inMsg);
-
-				EXE_receive(tdbb, funcRequest, 1, outMsgLength, outMsg);
-
-				// Clean up all savepoints started during execution of the procedure.
-
-				if (transaction != attachment->getSysTransaction())
-				{
-					for (const Savepoint* savePoint = transaction->tra_save_point;
-						 savePoint && savePointNumber < savePoint->sav_number;
-						 savePoint = transaction->tra_save_point)
-					{
-						VIO_verb_cleanup(tdbb, transaction);
-					}
-				}
-			}
-			catch (const Exception& ex)
-			{
-				/*** TODO:
-				const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
-				trace.finish(false, noPriv ? res_unauthorized : res_failed);
-				***/
-
-				tdbb->setRequest(request);
-				EXE_unwind(tdbb, funcRequest);
-				funcRequest->req_attachment = NULL;
-				funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
-				funcRequest->req_timestamp.invalidate();
-				throw;
-			}
-
-			//// TODO: trace.finish(false, res_successful);
-
-			EXE_unwind(tdbb, funcRequest);
 			tdbb->setRequest(request);
-
+			EXE_unwind(tdbb, funcRequest);
 			funcRequest->req_attachment = NULL;
 			funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
 			funcRequest->req_timestamp.invalidate();
+			throw;
 		}
+
+		//// TODO: trace.finish(false, res_successful);
+
+		EXE_unwind(tdbb, funcRequest);
+		tdbb->setRequest(request);
+
+		funcRequest->req_attachment = NULL;
+		funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
+		funcRequest->req_timestamp.invalidate();
 
 		const dsc* fmtDesc = function->getOutputFormat()->fmt_desc.begin();
 		const ULONG nullOffset = (IPTR) fmtDesc[1].dsc_address;

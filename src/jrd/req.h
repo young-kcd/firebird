@@ -238,6 +238,7 @@ public:
 		  req_base_stats(*req_pool),
 		  req_ext_stmt(NULL),
 		  req_cursors(*req_pool),
+		  req_ext_resultset(NULL),
 		  req_domain_validation(NULL),
 		  req_auto_trans(*req_pool),
 		  req_sorts(*req_pool),
@@ -298,6 +299,7 @@ public:
 	const StmtNode*	req_next;			// next node for execution
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
 	Firebird::Array<const Cursor*>	req_cursors;	// named cursors
+	ExtEngineManager::ResultSet*	req_ext_resultset;	// external result set
 	USHORT		req_label;				// label for leave
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list

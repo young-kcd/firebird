@@ -190,8 +190,7 @@ FB_UDR_BEGIN_FUNCTION(sum_args)
 		unsigned outNullOffset = outMetadata->getNullOffset(status, 0);
 		StatusException::check(status->get());
 
-		// By default, the return value is NOT NULL.
-		///*(ISC_SHORT*) (out + outNullOffset) = FB_FALSE;
+		*(ISC_SHORT*) (out + outNullOffset) = FB_FALSE;
 
 		// Get offset of the return value.
 		unsigned outOffset = outMetadata->getOffset(status, 0);
@@ -244,7 +243,7 @@ create procedure gen_rows (
 ***/
 FB_UDR_BEGIN_PROCEDURE(gen_rows)
 	// Procedure variables.
-	unsigned inOffsetStart, inOffsetEnd, outOffset;
+	unsigned inOffsetStart, inOffsetEnd, outNullOffset, outOffset;
 
 	/*** Procedure destructor.
 	~FB_UDR_PROCEDURE(gen_rows)()
@@ -269,6 +268,9 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 		IMessageMetadata* outMetadata = metadata->getOutputMetadata(status);
 		StatusException::check(status->get());
 
+		outNullOffset = outMetadata->getNullOffset(status, 0);
+		StatusException::check(status->get());
+
 		outOffset = outMetadata->getOffset(status, 0);
 		StatusException::check(status->get());
 
@@ -279,6 +281,8 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 	{
 		counter = *(ISC_LONG*) (in + procedure->inOffsetStart);
 		end = *(ISC_LONG*) (in + procedure->inOffsetEnd);
+
+		*(ISC_SHORT*) (out + procedure->outNullOffset) = FB_FALSE;
 	}
 
 	FB_UDR_FETCH_PROCEDURE
@@ -320,6 +324,7 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows2)
 	,
 		(FB_INTEGER, result))
 	{
+		out->resultNull = FB_FALSE;
 		out->result = in->start - 1;
 	}
 

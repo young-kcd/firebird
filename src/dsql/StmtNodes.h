@@ -1067,6 +1067,11 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
+	void setup(thread_db* tdbb, CompilerScratch* csb, USHORT message, USHORT count);
+
+	virtual USHORT setupDesc(thread_db* tdbb, CompilerScratch* csb, USHORT index,
+		dsc* desc, ItemInfo* itemInfo);
+
 	virtual void print(Firebird::string& text) const;
 	virtual MessageNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);

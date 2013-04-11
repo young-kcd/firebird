@@ -3001,25 +3001,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			const bool external = !P.RDB$ENGINE_NAME.NULL;	// ODS_12_0
 
-			if (external)
-			{
-				HalfStaticArray<char, 512> body;
-
-				if (!P.RDB$PROCEDURE_SOURCE.NULL)
-				{
-					blb* blob = blb::open(tdbb, attachment->getSysTransaction(),
-						&P.RDB$PROCEDURE_SOURCE);
-					ULONG len = blob->BLB_get_data(tdbb,
-						(UCHAR*) body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
-					body.begin()[MIN(blob->blb_length, len)] = '\0';
-				}
-				else
-					body.getBuffer(1)[0] = '\0';
-
-				dbb->dbb_extManager.makeProcedure(tdbb, procedure, P.RDB$ENGINE_NAME,
-					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin());
-			}
-
 			Array<NestConst<Parameter> >& paramArray = procedure->getOutputFields();
 
 			if (paramArray.hasData() && paramArray[0])
@@ -3051,67 +3032,83 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			procedure->prc_type = P.RDB$PROCEDURE_TYPE.NULL ?
 				prc_legacy : (prc_t) P.RDB$PROCEDURE_TYPE;
 
-			if (!external)
+			if (external || !P.RDB$PROCEDURE_BLR.NULL)
 			{
-				if (!P.RDB$PROCEDURE_BLR.NULL)
+				MemoryPool* csb_pool = attachment->createPool();
+
+				Jrd::ContextPoolHolder context(tdbb, csb_pool);
+				CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+
+				if (!P.RDB$DEBUG_INFO.NULL)
+					DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, *csb->csb_dbg_info);
+
+				try
 				{
-					MemoryPool* csb_pool = attachment->createPool();
-
-					Jrd::ContextPoolHolder context(tdbb, csb_pool);
-					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-
-					if (!P.RDB$DEBUG_INFO.NULL)
-						DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, *csb->csb_dbg_info);
-
-					try
+					if (external)
 					{
-						procedure->parseBlr(tdbb, csb, &P.RDB$PROCEDURE_BLR);
-					}
-					catch (const Exception&)
-					{
-						delete csb;
+						HalfStaticArray<char, 512> body;
 
-						if (procedure->getStatement())
-							procedure->releaseStatement(tdbb);
-						else
-							attachment->deletePool(csb_pool);
-
-						ERR_post(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(procedure->getName().toString()));
-					}
-
-					procedure->getStatement()->procedure = procedure;
-
-					for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
-					{
-						MessageNode* node = csb->csb_rpt[i].csb_message;
-
-						/***
-						if (node)
+						if (!P.RDB$PROCEDURE_SOURCE.NULL)
 						{
-							if (node->messageNumber == 1)
-								procedure->prc_output_msg = node;
+							blb* blob = blb::open(tdbb, attachment->getSysTransaction(),
+								&P.RDB$PROCEDURE_SOURCE);
+							ULONG len = blob->BLB_get_data(tdbb,
+								(UCHAR*) body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
+							body.begin()[MIN(blob->blb_length, len)] = '\0';
 						}
-						***/
+						else
+							body.getBuffer(1)[0] = '\0';
+
+						dbb->dbb_extManager.makeProcedure(tdbb, csb, procedure, P.RDB$ENGINE_NAME,
+							(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin());
 					}
-
-					delete csb;
+					else
+						procedure->parseBlr(tdbb, csb, &P.RDB$PROCEDURE_BLR);
 				}
-				else
+				catch (const Exception&)
 				{
-					RefPtr<MsgMetadata> inputMetadata(
-						Routine::createMetadata(procedure->getInputFields()));
-					inputMetadata->release();
-					procedure->setInputFormat(
-						Routine::createFormat(procedure->getPool(), inputMetadata, false));
+					delete csb;
 
-					RefPtr<MsgMetadata> outputMetadata(
-						Routine::createMetadata(procedure->getOutputFields()));
-					outputMetadata->release();
-					procedure->setOutputFormat(
-						Routine::createFormat(procedure->getPool(), outputMetadata, true));
+					if (procedure->getStatement())
+						procedure->releaseStatement(tdbb);
+					else
+						attachment->deletePool(csb_pool);
 
-					procedure->setImplemented(false);
+					ERR_post(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(procedure->getName().toString()));
 				}
+
+				procedure->getStatement()->procedure = procedure;
+
+				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
+				{
+					MessageNode* node = csb->csb_rpt[i].csb_message;
+
+					/***
+					if (node)
+					{
+						if (node->messageNumber == 1)
+							procedure->prc_output_msg = node;
+					}
+					***/
+				}
+
+				delete csb;
+			}
+			else
+			{
+				RefPtr<MsgMetadata> inputMetadata(
+					Routine::createMetadata(procedure->getInputFields()));
+				inputMetadata->release();
+				procedure->setInputFormat(
+					Routine::createFormat(procedure->getPool(), inputMetadata, false));
+
+				RefPtr<MsgMetadata> outputMetadata(
+					Routine::createMetadata(procedure->getOutputFields()));
+				outputMetadata->release();
+				procedure->setOutputFormat(
+					Routine::createFormat(procedure->getPool(), outputMetadata, true));
+
+				procedure->setImplemented(false);
 			}
 
 			if (P.RDB$VALID_BLR.NULL || P.RDB$VALID_BLR == FALSE)

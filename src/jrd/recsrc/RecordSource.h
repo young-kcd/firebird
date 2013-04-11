@@ -285,7 +285,6 @@ namespace Jrd
 		struct Impure : public RecordSource::Impure
 		{
 			jrd_req* irsb_req_handle;
-			ExtEngineManager::ResultSet* irsb_ext_resultset;
 			UCHAR* irsb_message;
 		};
 

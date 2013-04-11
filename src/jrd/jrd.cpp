@@ -586,78 +586,77 @@ void Trigger::compile(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* const att = tdbb->getAttachment();
 
-	if (engine.isEmpty() && !extTrigger)
+	if (extTrigger)
+		return;
+
+	if (!statement /*&& !compile_in_progress*/)
 	{
-		if (!statement /*&& !compile_in_progress*/)
+		if (statement)
+			return;
+
+		compile_in_progress = true;
+		// Allocate statement memory pool
+		MemoryPool* new_pool = att->createPool();
+		// Trigger request is not compiled yet. Lets do it now
+		USHORT par_flags = (USHORT) (flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
+		if (type & 1)
+			par_flags |= csb_pre_trigger;
+		else
+			par_flags |= csb_post_trigger;
+
+		CompilerScratch* csb = NULL;
+		try
 		{
-			if (statement)
-				return;
+			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			compile_in_progress = true;
-			// Allocate statement memory pool
-			MemoryPool* new_pool = att->createPool();
-			// Trigger request is not compiled yet. Lets do it now
-			USHORT par_flags = (USHORT) (flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
-			if (type & 1)
-				par_flags |= csb_pre_trigger;
-			else
-				par_flags |= csb_post_trigger;
+			csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+			csb->csb_g_flags |= par_flags;
 
-			CompilerScratch* csb = NULL;
-			try {
-				Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-				csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-				csb->csb_g_flags |= par_flags;
-
+			if (engine.isEmpty())
+			{
 				if (!dbg_blob_id.isEmpty())
 					DBG_parse_debug_info(tdbb, &dbg_blob_id, *csb->csb_dbg_info);
 
 				PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &statement,
 					(relation ? true : false), par_flags);
-
-				delete csb;
 			}
-			catch (const Exception&)
+			else
 			{
-				compile_in_progress = false;
-				delete csb;
-				csb = NULL;
-
-				if (statement)
-				{
-					statement->release(tdbb);
-					statement = NULL;
-				}
-				else
-					att->deletePool(new_pool);
-
-				throw;
+				dbb->dbb_extManager.makeTrigger(tdbb, csb, this, engine, entryPoint, extBody.c_str(),
+					(relation ?
+						(type & 1 ? ExternalTrigger::TYPE_BEFORE : ExternalTrigger::TYPE_AFTER) :
+						Firebird::ExternalTrigger::TYPE_DATABASE));
 			}
 
-			statement->triggerName = name;
-
-			if (sys_trigger)
-				statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;
-
-			if (flags & TRG_ignore_perm)
-				statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
-
+			delete csb;
+		}
+		catch (const Exception&)
+		{
 			compile_in_progress = false;
+			delete csb;
+			csb = NULL;
+
+			if (statement)
+			{
+				statement->release(tdbb);
+				statement = NULL;
+			}
+			else
+				att->deletePool(new_pool);
+
+			throw;
 		}
 
-		return;
+		statement->triggerName = name;
+
+		if (sys_trigger)
+			statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;
+
+		if (flags & TRG_ignore_perm)
+			statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
+
+		compile_in_progress = false;
 	}
-
-	// external trigger
-
-	if (extTrigger)
-		return;
-
-	dbb->dbb_extManager.makeTrigger(tdbb, this, engine, entryPoint, extBody.c_str(),
-		(relation ?
-			(type & 1 ? ExternalTrigger::TYPE_BEFORE : ExternalTrigger::TYPE_AFTER) :
-			Firebird::ExternalTrigger::TYPE_DATABASE));
 }
 
 void Trigger::release(thread_db* tdbb)

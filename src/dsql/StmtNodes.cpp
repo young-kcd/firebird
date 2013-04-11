@@ -2745,13 +2745,6 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 		outMsg = (UCHAR*) FB_ALIGN((U_IPTR) outMsg, FB_DOUBLE_ALIGN);
 	}
 
-	if (procedure->getExternal())
-	{
-		// We must clear messages of external procedures.
-		memset(inMsg, 0, inMsgLength);
-		memset(outMsg, 0, outMsgLength);
-	}
-
 	if (inputSources)
 	{
 		const NestConst<ValueExprNode>* const sourceEnd = inputSources->items.end();
@@ -2766,13 +2759,25 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	const SLONG savePointNumber = transaction->tra_save_point ?
 		transaction->tra_save_point->sav_number : 0;
 
-	if (procedure->getExternal())
+	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
+
+	// trace procedure execution start
+	TraceProcExecute trace(tdbb, procRequest, request, inputTargets);
+
+	// Catch errors so we can unwind cleanly.
+
+	try
 	{
-		{	// scope
-			AutoPtr<ExtEngineManager::ResultSet> resultSet(procedure->getExternal()->open(
-				tdbb, inMsg, outMsg));
-			resultSet->fetch(tdbb);
-		}
+		Jrd::ContextPoolHolder context(tdbb, procRequest->req_pool);	// Save the old pool.
+
+		procRequest->req_timestamp = request->req_timestamp;
+
+		EXE_start(tdbb, procRequest, transaction);
+
+		if (inputMessage)
+			EXE_send(tdbb, procRequest, 0, inMsgLength, inMsg);
+
+		EXE_receive(tdbb, procRequest, 1, outMsgLength, outMsg);
 
 		// Clean up all savepoints started during execution of the procedure.
 
@@ -2786,63 +2791,28 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 			}
 		}
 	}
-	else
+	catch (const Exception& ex)
 	{
-		jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
+		const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
+		trace.finish(false, noPriv ? res_unauthorized : res_failed);
 
-		// trace procedure execution start
-		TraceProcExecute trace(tdbb, procRequest, request, inputTargets);
-
-		// Catch errors so we can unwind cleanly.
-
-		try
-		{
-			Jrd::ContextPoolHolder context(tdbb, procRequest->req_pool);	// Save the old pool.
-
-			procRequest->req_timestamp = request->req_timestamp;
-
-			EXE_start(tdbb, procRequest, transaction);
-
-			if (inputMessage)
-				EXE_send(tdbb, procRequest, 0, inMsgLength, inMsg);
-
-			EXE_receive(tdbb, procRequest, 1, outMsgLength, outMsg);
-
-			// Clean up all savepoints started during execution of the procedure.
-
-			if (transaction != attachment->getSysTransaction())
-			{
-				for (const Savepoint* savePoint = transaction->tra_save_point;
-					 savePoint && savePointNumber < savePoint->sav_number;
-					 savePoint = transaction->tra_save_point)
-				{
-					VIO_verb_cleanup(tdbb, transaction);
-				}
-			}
-		}
-		catch (const Exception& ex)
-		{
-			const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
-			trace.finish(false, noPriv ? res_unauthorized : res_failed);
-
-			tdbb->setRequest(request);
-			EXE_unwind(tdbb, procRequest);
-			procRequest->req_attachment = NULL;
-			procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
-			procRequest->req_timestamp.invalidate();
-			throw;
-		}
-
-		// trace procedure execution finish
-		trace.finish(false, res_successful);
-
-		EXE_unwind(tdbb, procRequest);
 		tdbb->setRequest(request);
-
+		EXE_unwind(tdbb, procRequest);
 		procRequest->req_attachment = NULL;
 		procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
 		procRequest->req_timestamp.invalidate();
+		throw;
 	}
+
+	// trace procedure execution finish
+	trace.finish(false, res_successful);
+
+	EXE_unwind(tdbb, procRequest);
+	tdbb->setRequest(request);
+
+	procRequest->req_attachment = NULL;
+	procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
+	procRequest->req_timestamp.invalidate();
 
 	if (outputSources)
 	{
@@ -5193,35 +5163,43 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 {
 	MessageNode* node = FB_NEW(pool) MessageNode(pool);
 
-	// Get message number, register it in the compiler scratch block, and
+	// Parse the BLR and finish the node creation.
+	USHORT message = csb->csb_blr_reader.getByte();
+	USHORT count = csb->csb_blr_reader.getWord();
+	node->setup(tdbb, csb, message, count);
+
+	return node;
+}
+
+void MessageNode::setup(thread_db* tdbb, CompilerScratch* csb, USHORT message, USHORT count)
+{
+	// Register message number in the compiler scratch block, and
 	// allocate a node to represent the message.
 
-	USHORT n = csb->csb_blr_reader.getByte();
-	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
+	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, message);
 
-	tail->csb_message = node;
-	node->messageNumber = n;
+	tail->csb_message = this;
+	messageNumber = message;
 
-	if (n > csb->csb_msg_number)
-		csb->csb_msg_number = n;
+	if (message > csb->csb_msg_number)
+		csb->csb_msg_number = message;
 
 	USHORT padField;
-	bool shouldPad = csb->csb_message_pad.get(node->messageNumber, padField);
+	bool shouldPad = csb->csb_message_pad.get(messageNumber, padField);
 
 	// Get the number of parameters in the message and prepare to fill out the format block.
 
-	n = csb->csb_blr_reader.getWord();
-	node->format = Format::newFormat(*tdbb->getDefaultPool(), n);
+	format = Format::newFormat(*tdbb->getDefaultPool(), count);
 	USHORT maxAlignment = 0;
 	ULONG offset = 0;
 
 	Format::fmt_desc_iterator desc, end;
 	USHORT index = 0;
 
-	for (desc = node->format->fmt_desc.begin(), end = desc + n; desc < end; ++desc, ++index)
+	for (desc = format->fmt_desc.begin(), end = desc + count; desc < end; ++desc, ++index)
 	{
 		ItemInfo itemInfo;
-		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
+		const USHORT alignment = setupDesc(tdbb, csb, index, &*desc, &itemInfo);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
 
@@ -5248,9 +5226,13 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (offset > MAX_MESSAGE_SIZE)
 		PAR_error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
-	node->format->fmt_length = offset;
+	format->fmt_length = offset;
+}
 
-	return node;
+USHORT MessageNode::setupDesc(thread_db* tdbb, CompilerScratch* csb, USHORT /*index*/,
+	dsc* desc, ItemInfo* itemInfo)
+{
+	return PAR_desc(tdbb, csb, desc, itemInfo);
 }
 
 MessageNode* MessageNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)

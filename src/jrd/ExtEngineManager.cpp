@@ -34,7 +34,9 @@
 #include "../jrd/status.h"
 #include "../jrd/tra.h"
 #include "../jrd/ibase.h"
+#include "../dsql/StmtNodes.h"
 #include "../common/os/path_utils.h"
+#include "../jrd/cmp_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
@@ -54,6 +56,405 @@
 #include "../common/classes/GetPlugins.h"
 
 using namespace Firebird;
+using namespace Jrd;
+
+
+namespace
+{
+	// External message node.
+	class ExtMessageNode : public MessageNode
+	{
+	public:
+		ExtMessageNode(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, USHORT message,
+				Array<NestConst<Parameter> >& aParameters, const Format* aFormat)
+			: MessageNode(pool),
+			  parameters(aParameters),
+			  format(aFormat),
+			  isSpecial(pool)
+		{
+			setup(tdbb, csb, message, format->fmt_count);
+		}
+
+		virtual USHORT setupDesc(thread_db* tdbb, CompilerScratch* csb, USHORT index,
+			dsc* desc, ItemInfo* itemInfo)
+		{
+			*desc = format->fmt_desc[index];
+
+			if (index % 2 == 0 && index / 2 < parameters.getCount())
+			{
+				const Parameter* param = parameters[index / 2];
+
+				if (param->prm_mechanism != prm_mech_type_of &&
+					!fb_utils::implicit_domain(param->prm_field_source.c_str()))
+				{
+					MetaNamePair namePair(param->prm_field_source, "");
+
+					FieldInfo fieldInfo;
+					bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
+					MET_get_domain(tdbb, param->prm_field_source, desc, (exist ? NULL : &fieldInfo));
+
+					if (!exist)
+						csb->csb_map_field_info.put(namePair, fieldInfo);
+
+					itemInfo->field = namePair;
+					itemInfo->nullable = fieldInfo.nullable;
+					itemInfo->fullDomain = true;
+				}
+
+				itemInfo->name = param->prm_name;
+
+				if (!param->prm_nullable)
+					itemInfo->nullable = false;
+
+				isSpecial.getBuffer(index / 2 + 1)[index / 2] = itemInfo->isSpecial();
+			}
+
+			return type_alignments[desc->dsc_dtype];
+		}
+
+		virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+		{
+			if (request->req_operation == jrd_req::req_evaluate)
+			{
+				// Clear the message. This is important for external routines.
+				UCHAR* msg = request->getImpure<UCHAR>(impureOffset);
+				memset(msg, 0, format->fmt_length);
+			}
+
+			return MessageNode::execute(tdbb, request, exeState);
+		}
+
+	public:
+		Array<NestConst<Parameter> >& parameters;
+		const Format* format;
+		Array<bool> isSpecial;
+	};
+
+	// Initialize output parameters with their domains default value or NULL.
+	// Kind of blr_init_variable, but for parameters.
+	class ExtInitParameterNode : public TypedNode<StmtNode, StmtNode::TYPE_EXT_INIT_PARAMETER>
+	{
+	public:
+		ExtInitParameterNode(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+				ExtMessageNode* aMessage, USHORT aArgNumber)
+			: TypedNode<StmtNode, StmtNode::TYPE_EXT_INIT_PARAMETER>(pool),
+			  message(aMessage),
+			  argNumber(aArgNumber)
+		{
+			Parameter* parameter = message->parameters[argNumber / 2];
+
+			if (parameter->prm_mechanism == prm_mech_type_of ||
+				fb_utils::implicit_domain(parameter->prm_field_source.c_str()) ||
+				!parameter->prm_default_value)
+			{
+				defaultValueNode = NULL;
+			}
+			else
+				defaultValueNode = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
+		}
+
+		void print(string& text) const
+		{
+			text = "ExtInitParameterNode";
+		}
+
+		void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
+		{
+		}
+
+		ExtInitParameterNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+		{
+			doPass1(tdbb, csb, &defaultValueNode);
+			return this;
+		}
+
+		ExtInitParameterNode* pass2(thread_db* tdbb, CompilerScratch* csb)
+		{
+			ExprNode::doPass2(tdbb, csb, &defaultValueNode);
+			return this;
+		}
+
+		const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+		{
+			if (request->req_operation == jrd_req::req_evaluate)
+			{
+				dsc* defaultDesc = NULL;
+
+				if (defaultValueNode)
+				{
+					defaultDesc = EVL_expr(tdbb, request, defaultValueNode);
+
+					if (request->req_flags & req_null)
+						defaultDesc = NULL;
+				}
+
+				if (defaultDesc)
+				{
+					// Initialize the value. The null flag is already initialized to not-null
+					// by the ExtMessageNode.
+
+					dsc desc = message->format->fmt_desc[argNumber];
+					desc.dsc_address = request->getImpure<UCHAR>(
+						message->impureOffset + (IPTR) desc.dsc_address);
+
+					MOV_move(tdbb, defaultDesc, &desc);
+				}
+				else
+				{
+					SSHORT tempValue = -1;
+					dsc temp;
+					temp.makeShort(0, &tempValue);
+
+					dsc desc = message->format->fmt_desc[argNumber + 1];
+					desc.dsc_address = request->getImpure<UCHAR>(
+						message->impureOffset + (IPTR) desc.dsc_address);
+
+					MOV_move(tdbb, &temp, &desc);
+				}
+
+				request->req_operation = jrd_req::req_return;
+			}
+
+			return parentStmt;
+		}
+
+		private:
+			ExtMessageNode* message;
+			USHORT argNumber;
+			ValueExprNode* defaultValueNode;
+	};
+
+	// External output parameters initialization.
+	class ExtInitOutputNode : public CompoundStmtNode
+	{
+	public:
+		ExtInitOutputNode(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+				ExtMessageNode* message)
+			: CompoundStmtNode(pool)
+		{
+			for (USHORT i = 0; i < message->format->fmt_count; i += 2)
+			{
+				if (i + 1 >= message->format->fmt_count)
+					continue;
+
+				ExtInitParameterNode* init = FB_NEW(pool) ExtInitParameterNode(
+					tdbb, pool, csb, message, i);
+				statements.add(init);
+			}
+		}
+	};
+
+	// External parameters validation.
+	class ExtValidationNode : public CompoundStmtNode
+	{
+	public:
+		ExtValidationNode(MemoryPool& pool, ExtMessageNode* message, bool procedure, bool input)
+			: CompoundStmtNode(pool)
+		{
+			for (USHORT i = 0; i < message->format->fmt_count; i += 2)
+			{
+				if (i + 1 >= message->format->fmt_count || !message->isSpecial[i / 2])
+					continue;
+
+				ParameterNode* flag = FB_NEW(pool) ParameterNode(pool);
+				flag->message = message;
+				flag->argNumber = i + 1;
+
+				ParameterNode* param = FB_NEW(pool) ParameterNode(pool);
+				param->message = message;
+				param->argNumber = i;
+				param->argFlag = flag;
+
+				AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
+				assign->asgnFrom = param;
+				statements.add(assign);
+
+				// It's sufficient to assign input parameters to NULL, but output parameters
+				// need to be assigned to themselves to validate correctly.
+				if (input)
+					assign->asgnTo = FB_NEW(pool) NullNode(pool);
+				else
+				{
+					flag = FB_NEW(pool) ParameterNode(pool);
+					flag->message = message;
+					flag->argNumber = i + 1;
+
+					param = FB_NEW(pool) ParameterNode(pool);
+					param->message = message;
+					param->argNumber = i;
+					param->argFlag = flag;
+
+					assign->asgnTo = param;
+				}
+			}
+
+			// A stall is required to read req_proc_fetch state correctly.
+			if (procedure)
+				statements.add(FB_NEW(pool) StallNode(pool));
+		}
+	};
+
+	// External function node.
+	class ExtFunctionNode : public SuspendNode
+	{
+	public:
+		ExtFunctionNode(MemoryPool& pool, const ReceiveNode* aReceiveNode,
+				const ExtEngineManager::Function* aFunction)
+			: SuspendNode(pool),
+			  receiveNode(aReceiveNode),
+			  function(aFunction)
+		{
+		}
+
+		virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+		{
+			if (request->req_operation == jrd_req::req_evaluate)
+			{
+				UCHAR* inMsg = receiveNode ?
+					request->getImpure<UCHAR>(receiveNode->message->impureOffset) : NULL;
+				UCHAR* outMsg = request->getImpure<UCHAR>(message->impureOffset);
+
+				function->execute(tdbb, inMsg, outMsg);
+			}
+
+			return SuspendNode::execute(tdbb, request, exeState);
+		}
+
+	private:
+		const ReceiveNode* receiveNode;
+		const ExtEngineManager::Function* function;
+	};
+
+	// External procedure node.
+	class ExtProcedureNode : public SuspendNode
+	{
+	public:
+		ExtProcedureNode(MemoryPool& pool, const ReceiveNode* aReceiveNode,
+				const ExtEngineManager::Procedure* aProcedure)
+			: SuspendNode(pool),
+			  receiveNode(aReceiveNode),
+			  procedure(aProcedure)
+		{
+		}
+
+		virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+		{
+			ExtEngineManager::ResultSet*& resultSet = request->req_ext_resultset;
+			UCHAR* inMsg = receiveNode ?
+				request->getImpure<UCHAR>(receiveNode->message->impureOffset) : NULL;
+			UCHAR* outMsg = request->getImpure<UCHAR>(message->impureOffset);
+			USHORT* eof = (USHORT*) (outMsg + (IPTR) message->format->fmt_desc.back().dsc_address);
+
+			switch (request->req_operation)
+			{
+				case jrd_req::req_evaluate:
+					fb_assert(!resultSet && *eof == 0);
+					resultSet = procedure->open(tdbb, inMsg, outMsg);
+
+					if (resultSet)
+						*eof = -1;
+					else
+					{
+						if (!(request->req_flags & req_proc_fetch))
+						{
+							request->req_operation = jrd_req::req_evaluate;
+							return statement;
+						}
+					}
+
+					request->req_operation = jrd_req::req_return;
+					// fall into
+
+				case jrd_req::req_return:
+					if (*eof == 0)
+					{
+						fb_assert(!resultSet);
+						return parentStmt;
+					}
+
+					fb_assert(resultSet);
+
+					if (!resultSet->fetch(tdbb) || !(request->req_flags & req_proc_fetch))
+					{
+						*eof = 0;
+						delete resultSet;
+						resultSet = NULL;
+					}
+
+					break;
+
+				case jrd_req::req_proceed:
+					request->req_operation = jrd_req::req_evaluate;
+					return statement;
+
+				case jrd_req::req_unwind:
+					delete resultSet;
+					resultSet = NULL;
+					break;
+			}
+
+			return SuspendNode::execute(tdbb, request, exeState);
+		}
+
+	private:
+		const ReceiveNode* receiveNode;
+		const ExtEngineManager::Procedure* procedure;
+	};
+
+	// External trigger node.
+	class ExtTriggerNode : public TypedNode<StmtNode, StmtNode::TYPE_EXT_TRIGGER>
+	{
+	public:
+		ExtTriggerNode(MemoryPool& pool, const ExtEngineManager::Trigger* aTrigger)
+			: TypedNode<StmtNode, StmtNode::TYPE_EXT_TRIGGER>(pool),
+			  trigger(aTrigger)
+		{
+		}
+
+		void print(string& text) const
+		{
+			text = "ExtTriggerNode";
+		}
+
+		void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
+		{
+		}
+
+		ExtTriggerNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+		{
+			return this;
+		}
+
+		ExtTriggerNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+		{
+			return this;
+		}
+
+		const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+		{
+			if (request->req_operation == jrd_req::req_evaluate)
+			{
+				trigger->execute(tdbb, (ExternalTrigger::Action) request->req_trigger_action,
+					getRpb(request, 0), getRpb(request, 1));
+
+				request->req_operation = jrd_req::req_return;
+			}
+
+			return parentStmt;
+		}
+
+	private:
+		static record_param* getRpb(jrd_req* request, USHORT n)
+		{
+			return request->req_rpb.getCount() > n && request->req_rpb[n].rpb_number.isValid() ?
+				&request->req_rpb[n] : NULL;
+		}
+	
+
+	private:
+		const ExtEngineManager::Trigger* trigger;
+	};
+}
 
 
 namespace Jrd {
@@ -614,7 +1015,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 }
 
 
-void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
+void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::Function* udf,
 	const MetaName& engine, const string& entryPoint, const string& body)
 {
 	string entryPointTrimmed = entryPoint;
@@ -669,13 +1070,52 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
 		status.check();
 	}
 
+	udf->setInputFormat(Routine::createFormat(pool, metadata->inputParameters, false));
+	udf->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters, true));
+
 	try
 	{
-		udf->setInputFormat(Routine::createFormat(pool, metadata->inputParameters, false));
-		udf->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters, false));
-
 		udf->fun_external = FB_NEW(getPool()) Function(tdbb, this, attInfo->engine,
 			metadata.release(), externalFunction, udf);
+
+		CompoundStmtNode* mainNode = FB_NEW(getPool()) CompoundStmtNode(getPool());
+
+		ExtMessageNode* inMessageNode = udf->getInputFields().hasData() ?
+			FB_NEW(getPool()) ExtMessageNode(tdbb, getPool(), csb, 0,
+				udf->getInputFields(), udf->getInputFormat()) :
+			NULL;
+		if (inMessageNode)
+			mainNode->statements.add(inMessageNode);
+
+		ExtMessageNode* outMessageNode = FB_NEW(getPool()) ExtMessageNode(tdbb, getPool(), csb, 1,
+			udf->getOutputFields(), udf->getOutputFormat());
+		mainNode->statements.add(outMessageNode);
+
+		ExtInitOutputNode* initOutputNode = FB_NEW(getPool()) ExtInitOutputNode(
+			tdbb, getPool(), csb, outMessageNode);
+		mainNode->statements.add(initOutputNode);
+
+		ReceiveNode* receiveNode = inMessageNode ?
+			FB_NEW(getPool()) ReceiveNode(getPool()) : NULL;
+
+		if (inMessageNode)
+		{
+			receiveNode->message = inMessageNode;
+			receiveNode->statement = FB_NEW(getPool()) ExtValidationNode(
+				getPool(), inMessageNode, false, true);
+			mainNode->statements.add(receiveNode);
+		}
+
+		ExtFunctionNode* extFunctionNode = FB_NEW(getPool()) ExtFunctionNode(getPool(),
+			receiveNode, udf->fun_external);
+		mainNode->statements.add(extFunctionNode);
+		extFunctionNode->message = outMessageNode;
+		extFunctionNode->statement = FB_NEW(getPool()) ExtValidationNode(
+			getPool(), outMessageNode, false, false);
+
+		JrdStatement* statement = udf->getStatement();
+		PAR_preparsed_node(tdbb, NULL, mainNode, NULL, &csb, &statement, false, 0);
+		udf->setStatement(statement);
 	}
 	catch (...)
 	{
@@ -686,7 +1126,7 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, Jrd::Function* udf,
 }
 
 
-void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
+void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_prc* prc,
 	const MetaName& engine, const string& entryPoint, const string& body)
 {
 	string entryPointTrimmed = entryPoint;
@@ -742,13 +1182,52 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
 		status.check();
 	}
 
+	prc->setInputFormat(Routine::createFormat(pool, metadata->inputParameters, false));
+	prc->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters, true));
+
 	try
 	{
-		prc->setInputFormat(Routine::createFormat(pool, metadata->inputParameters, false));
-		prc->setOutputFormat(Routine::createFormat(pool, metadata->outputParameters, false));
-
 		prc->setExternal(FB_NEW(getPool()) Procedure(tdbb, this, attInfo->engine,
 			metadata.release(), externalProcedure, prc));
+
+		CompoundStmtNode* mainNode = FB_NEW(getPool()) CompoundStmtNode(getPool());
+
+		ExtMessageNode* inMessageNode = prc->getInputFields().hasData() ?
+			FB_NEW(getPool()) ExtMessageNode(tdbb, getPool(), csb, 0,
+				prc->getInputFields(), prc->getInputFormat()) :
+			NULL;
+		if (inMessageNode)
+			mainNode->statements.add(inMessageNode);
+
+		ExtMessageNode* outMessageNode = FB_NEW(getPool()) ExtMessageNode(tdbb, getPool(), csb, 1,
+			prc->getOutputFields(), prc->getOutputFormat());
+		mainNode->statements.add(outMessageNode);
+
+		ExtInitOutputNode* initOutputNode = FB_NEW(getPool()) ExtInitOutputNode(
+			tdbb, getPool(), csb, outMessageNode);
+		mainNode->statements.add(initOutputNode);
+
+		ReceiveNode* receiveNode = inMessageNode ?
+			FB_NEW(getPool()) ReceiveNode(getPool()) : NULL;
+
+		if (inMessageNode)
+		{
+			receiveNode->message = inMessageNode;
+			receiveNode->statement = FB_NEW(getPool()) ExtValidationNode(
+				getPool(), inMessageNode, true, true);
+			mainNode->statements.add(receiveNode);
+		}
+
+		ExtProcedureNode* extProcedureNode = FB_NEW(getPool()) ExtProcedureNode(getPool(),
+			receiveNode, prc->getExternal());
+		mainNode->statements.add(extProcedureNode);
+		extProcedureNode->message = outMessageNode;
+		extProcedureNode->statement = FB_NEW(getPool()) ExtValidationNode(
+			getPool(), outMessageNode, true, false);
+
+		JrdStatement* statement = prc->getStatement();
+		PAR_preparsed_node(tdbb, NULL, mainNode, NULL, &csb, &statement, false, 0);
+		prc->setStatement(statement);
 	}
 	catch (...)
 	{
@@ -759,7 +1238,7 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, jrd_prc* prc,
 }
 
 
-void ExtEngineManager::makeTrigger(thread_db* tdbb, Jrd::Trigger* trg,
+void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::Trigger* trg,
 	const MetaName& engine, const string& entryPoint, const string& body,
 	ExternalTrigger::Type type)
 {
@@ -835,6 +1314,14 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, Jrd::Trigger* trg,
 	{
 		trg->extTrigger = FB_NEW(getPool()) Trigger(tdbb, pool, this, attInfo->engine,
 			metadata.release(), externalTrigger, trg);
+
+		CompoundStmtNode* mainNode = FB_NEW(getPool()) CompoundStmtNode(getPool());
+
+		ExtTriggerNode* extTriggerNode = FB_NEW(getPool()) ExtTriggerNode(getPool(),
+			trg->extTrigger);
+		mainNode->statements.add(extTriggerNode);
+
+		PAR_preparsed_node(tdbb, trg->relation, mainNode, NULL, &csb, &trg->statement, true, 0);
 	}
 	catch (...)
 	{

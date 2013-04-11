@@ -79,6 +79,8 @@ using namespace Firebird;
 static NodeParseFunc blr_parsers[256] = {NULL};
 
 
+static CompilerScratch* par_start(thread_db* tdbb, jrd_rel* relation, CompilerScratch* view_csb,
+	CompilerScratch** csb_ptr, const bool trigger, USHORT flags);
 static void par_error(BlrReader& blrReader, const Arg::StatusVector& v, bool isSyntaxError = true);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
 static void getBlrVersion(CompilerScratch* csb);
@@ -134,19 +136,11 @@ namespace
 }	// namespace
 
 
-// Parse blr, returning a compiler scratch block with the results.
-// Caller must do pool handling.
-DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
-	const bool trigger, USHORT flags)
+// Common start for PAR_blr and PAR_preparsed_node. Returns the possibily created csb.
+static CompilerScratch* par_start(thread_db* tdbb, jrd_rel* relation, CompilerScratch* view_csb,
+	CompilerScratch** csb_ptr, const bool trigger, USHORT flags)
 {
 	SET_TDBB(tdbb);
-
-#ifdef CMP_DEBUG
-	cmp_trace("BLR code given for JRD parsing:");
-	// CVC: Couldn't find isc_trace_printer, so changed it to gds__trace_printer.
-	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
-#endif
 
 	CompilerScratch* csb;
 	if (!(csb_ptr && (csb = *csb_ptr)))
@@ -183,8 +177,6 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		t1->csb_flags = csb_used | csb_active;
 	}
 
-	csb->csb_blr_reader = BlrReader(blr, blr_length);
-
 	if (view_csb)
 	{
 		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
@@ -203,6 +195,26 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		csb->csb_n_stream = view_csb->csb_n_stream;
 	}
 
+	return csb;
+}
+
+
+// Parse blr, returning a compiler scratch block with the results.
+// Caller must do pool handling.
+DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
+	const bool trigger, USHORT flags)
+{
+#ifdef CMP_DEBUG
+	cmp_trace("BLR code given for JRD parsing:");
+	// CVC: Couldn't find isc_trace_printer, so changed it to gds__trace_printer.
+	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
+#endif
+
+	CompilerScratch* csb = par_start(tdbb, relation, view_csb, csb_ptr, trigger, flags);
+
+	csb->csb_blr_reader = BlrReader(blr, blr_length);
+
 	getBlrVersion(csb);
 
 	DmlNode* node = PAR_parse_node(tdbb, csb);
@@ -220,6 +232,27 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		delete csb;
 
 	return node;
+}
+
+
+// Finish parse of memory nodes, returning a compiler scratch block with the results.
+// Caller must do pool handling.
+void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
+	const bool trigger, USHORT flags)
+{
+	CompilerScratch* csb = par_start(tdbb, relation, view_csb, csb_ptr, trigger, flags);
+
+	csb->blrVersion = 5;	// blr_version5
+	csb->csb_node = node;
+
+	if (statementPtr)
+		*statementPtr = JrdStatement::makeStatement(tdbb, csb, true);
+
+	if (csb_ptr)
+		*csb_ptr = csb;
+	else
+		delete csb;
 }
 
 

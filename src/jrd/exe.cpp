@@ -955,6 +955,9 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 					(*ptr)->close(tdbb);
 				}
 
+				if (request->req_ext_resultset)
+					delete request->req_ext_resultset;
+
 				while (request->req_ext_stmt)
 					request->req_ext_stmt->close(tdbb);
 			}
@@ -1099,72 +1102,62 @@ void EXE_execute_triggers(thread_db* tdbb,
 		{
 			ptr->compile(tdbb);
 
-			if (ptr->extTrigger)
-			{
-				//// TODO: trace stuff
+			jrd_req* trigger = ptr->statement->findRequest(tdbb);
 
-				ptr->extTrigger->execute(tdbb, (Firebird::ExternalTrigger::Action) trigger_action,
-					old_rpb, new_rpb);
-			}
-			else
+			if (trigger->req_rpb.getCount() > 0)
 			{
-				jrd_req* trigger = ptr->statement->findRequest(tdbb);
+				trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec.get();
 
-				if (trigger->req_rpb.getCount() > 0)
+				if (old_rec && trigger_action != jrd_req::req_trigger_insert)
 				{
-					trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec.get();
+					trigger->req_rpb[0].rpb_number = old_rpb->rpb_number;
+					trigger->req_rpb[0].rpb_number.setValid(true);
+				}
+				else
+					trigger->req_rpb[0].rpb_number.setValid(false);
+			}
 
-					if (old_rec && trigger_action != jrd_req::req_trigger_insert)
-					{
-						trigger->req_rpb[0].rpb_number = old_rpb->rpb_number;
-						trigger->req_rpb[0].rpb_number.setValid(true);
-					}
-					else
-						trigger->req_rpb[0].rpb_number.setValid(false);
+			if (trigger->req_rpb.getCount() > 1)
+				trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec.get();
+
+			if (new_rec && !(which_trig == StmtNode::PRE_TRIG &&
+				trigger_action == jrd_req::req_trigger_insert))
+			{
+				if (which_trig == StmtNode::PRE_TRIG &&
+					trigger_action == jrd_req::req_trigger_update)
+				{
+					new_rpb->rpb_number = old_rpb->rpb_number;
 				}
 
 				if (trigger->req_rpb.getCount() > 1)
-					trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec.get();
-
-				if (new_rec && !(which_trig == StmtNode::PRE_TRIG &&
-					trigger_action == jrd_req::req_trigger_insert))
 				{
-					if (which_trig == StmtNode::PRE_TRIG &&
-						trigger_action == jrd_req::req_trigger_update)
-					{
-						new_rpb->rpb_number = old_rpb->rpb_number;
-					}
-
-					if (trigger->req_rpb.getCount() > 1)
-					{
-						trigger->req_rpb[1].rpb_number = new_rpb->rpb_number;
-						trigger->req_rpb[1].rpb_number.setValid(true);
-					}
+					trigger->req_rpb[1].rpb_number = new_rpb->rpb_number;
+					trigger->req_rpb[1].rpb_number.setValid(true);
 				}
-				else if (trigger->req_rpb.getCount() > 1)
-					trigger->req_rpb[1].rpb_number.setValid(false);
+			}
+			else if (trigger->req_rpb.getCount() > 1)
+				trigger->req_rpb[1].rpb_number.setValid(false);
 
-				trigger->req_timestamp = timestamp;
-				trigger->req_trigger_action = trigger_action;
+			trigger->req_timestamp = timestamp;
+			trigger->req_trigger_action = trigger_action;
 
-				TraceTrigExecute trace(tdbb, trigger, which_trig);
+			TraceTrigExecute trace(tdbb, trigger, which_trig);
 
-				EXE_start(tdbb, trigger, transaction);
+			EXE_start(tdbb, trigger, transaction);
 
-				const bool ok = (trigger->req_operation != jrd_req::req_unwind);
-				trace.finish(ok ? res_successful : res_failed);
+			const bool ok = (trigger->req_operation != jrd_req::req_unwind);
+			trace.finish(ok ? res_successful : res_failed);
 
-				EXE_unwind(tdbb, trigger);
+			EXE_unwind(tdbb, trigger);
 
-				trigger->req_attachment = NULL;
-				trigger->req_flags &= ~req_in_use;
-				trigger->req_timestamp.invalidate();
+			trigger->req_attachment = NULL;
+			trigger->req_flags &= ~req_in_use;
+			trigger->req_timestamp.invalidate();
 
-				if (!ok)
-				{
-					trigger_failure(tdbb, trigger);
-					break;
-				}
+			if (!ok)
+			{
+				trigger_failure(tdbb, trigger);
+				break;
 			}
 		}
 

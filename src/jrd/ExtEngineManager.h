@@ -43,6 +43,7 @@ class thread_db;
 class jrd_prc;
 class jrd_tra;
 class Attachment;
+class CompilerScratch;
 class Database;
 class Format;
 class Trigger;
@@ -311,13 +312,13 @@ public:
 public:
 	void closeAttachment(thread_db* tdbb, Attachment* attachment);
 
-	void makeFunction(thread_db* tdbb, Jrd::Function* udf,
+	void makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::Function* udf,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body);
-	void makeProcedure(thread_db* tdbb, jrd_prc* prc,
+	void makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_prc* prc,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body);
-	void makeTrigger(thread_db* tdbb, Jrd::Trigger* trg,
+	void makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::Trigger* trg,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body, Firebird::ExternalTrigger::Type type);
 
