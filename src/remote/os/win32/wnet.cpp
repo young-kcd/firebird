@@ -138,10 +138,12 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 
 	ISC_get_user(&buffer, 0, 0);
 	buffer.lower();
+	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);
 	buffer.lower();
+	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_host, buffer);
 
 	if (uv_flag) {
@@ -153,14 +155,14 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	P_CNCT* const cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
-	cnct->p_cnct_cversion = CONNECT_VERSION2;
+	cnct->p_cnct_cversion = CONNECT_VERSION3;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
+	cnct->p_cnct_file.cstr_length = (ULONG) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// If we want user verification, we can't speak anything less than version 7
 
-	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = (ULONG) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try[] =
@@ -470,13 +472,7 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
 
 	port->port_login = port->port_user_name = user_name;
 	port->port_peer_name = host_name;
-
-	// NS: Put in connection address. I have no good idea where to get an
-	// address of the remote end of named pipe so let's live without it for now
-	port->port_protocol_str = REMOTE_make_string("WNET");
-
-	// dimitr: let's use the passed host name as the address
-	port->port_address_str = REMOTE_make_string(host_name.c_str());
+	port->port_protocol_id = "WNET";
 
 	return true;
 }
@@ -577,7 +573,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 	if (response->p_resp_data.cstr_length)
 	{
 		// Avoid B.O.
-		size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
+		const size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
 		memcpy(str_pid, response->p_resp_data.cstr_address, len);
 		str_pid[len] = 0;
 		p = str_pid;
@@ -657,7 +653,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	}
 
 	P_RESP* response = &packet->p_resp;
-	response->p_resp_data.cstr_length = (USHORT) strlen(str_pid);
+	response->p_resp_data.cstr_length = (ULONG) strlen(str_pid);
 	memcpy(response->p_resp_data.cstr_address, str_pid, response->p_resp_data.cstr_length);
 
 	return new_port;

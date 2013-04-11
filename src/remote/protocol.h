@@ -45,8 +45,8 @@ namespace Firebird {
 // The protocol is defined blocks, rather than messages, to
 // separate the protocol from the transport layer.
 
-// p_cnct_version
-const USHORT CONNECT_VERSION2	= 2;
+// p_cnct_cversion
+const USHORT CONNECT_VERSION3	= 3;
 
 // Protocol 10 includes support for warnings and removes the requirement for
 // encoding and decoding status codes
@@ -288,8 +288,8 @@ enum P_OP
 
 typedef struct cstring
 {
-	USHORT	cstr_length;
-	USHORT	cstr_allocated;
+	ULONG	cstr_length;
+	ULONG	cstr_allocated;
 	UCHAR*	cstr_address;
 } CSTRING;
 
@@ -301,8 +301,8 @@ typedef struct cstring
 // in the case of send/batch commands.
 typedef struct cstring_const
 {
-	USHORT	cstr_length;
-	USHORT	cstr_allocated;
+	ULONG	cstr_length;
+	ULONG	cstr_allocated;
 	const UCHAR*	cstr_address;
 } CSTRING_CONST;
 
@@ -318,7 +318,6 @@ typedef struct p_malloc
 	P_OP	p_operation;	// Operation/packet type
 	ULONG	p_allocated;	// Memory length
 	UCHAR*	p_address;		// Memory address
-//	UCHAR*	p_xdrvar;  		// XDR variable
 } P_MALLOC;
 
 #endif	// DEBUG_XDR_MEMORY
@@ -459,8 +458,6 @@ typedef struct p_trrq
     OBJCT	p_trrq_database;		// Database object id
     OBJCT	p_trrq_transaction;		// Transaction object id
     CSTRING	p_trrq_blr;				// Message blr
-    USHORT	p_trrq_in_msg_length;
-    USHORT	p_trrq_out_msg_length;
     USHORT	p_trrq_messages;		// Number of messages
 } P_TRRQ;
 
@@ -495,7 +492,7 @@ typedef struct p_info
     USHORT	p_info_incarnation;			// Incarnation of object
     CSTRING_CONST	p_info_items;		// Information
     CSTRING_CONST	p_info_recv_items;	// Receive information
-    USHORT	p_info_buffer_length;		// Target buffer length
+    ULONG	p_info_buffer_length;		// Target buffer length
 } P_INFO;
 
 // Event request block
@@ -568,7 +565,7 @@ typedef struct p_sqlst
     OBJCT	p_sqlst_statement;			// statement object
     USHORT	p_sqlst_SQL_dialect;		// the SQL dialect
     CSTRING_CONST	p_sqlst_SQL_str;	// statement to be prepared
-    USHORT	p_sqlst_buffer_length;		// Target buffer length
+    ULONG	p_sqlst_buffer_length;		// Target buffer length
     CSTRING_CONST	p_sqlst_items;		// Information
     // This should be CSTRING_CONST
     CSTRING	p_sqlst_blr;				// blr describing message
@@ -629,7 +626,7 @@ struct p_authenticate
     CSTRING_CONST	p_auth_dpb;				// Database parameter block w/ user credentials
 	CSTRING			p_auth_items;			// Information
 	CSTRING			p_auth_recv_items;		// Receive information
-	USHORT			p_auth_buffer_length;	// Target buffer length
+	USHORT			p_auth_buffer_length;	// Target buffer length (transmitted but not used)
 };
 
 typedef struct p_cancel_op

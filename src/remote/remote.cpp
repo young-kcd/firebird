@@ -186,9 +186,9 @@ void REMOTE_cleanup_transaction( Rtr* transaction)
 }
 
 
-ULONG REMOTE_compute_batch_size(rem_port* port,
-								USHORT buffer_used, P_OP op_code,
-								const rem_fmt* format)
+USHORT REMOTE_compute_batch_size(rem_port* port,
+								 USHORT buffer_used, P_OP op_code,
+								 const rem_fmt* format)
 {
 /**************************************
  *
@@ -312,7 +312,8 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 	}
 #endif
 
-	return result;
+	fb_assert(result <= MAX_USHORT);
+	return static_cast<USHORT>(result);
 }
 
 
@@ -472,7 +473,7 @@ rem_str* REMOTE_make_string(const SCHAR* input)
  *	address of new string.
  *
  **************************************/
-	const USHORT length = strlen(input);
+	const USHORT length = static_cast<USHORT>(strlen(input));
 	rem_str* string = FB_NEW_RPT(*getDefaultMemoryPool(), length) rem_str;
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("REMOTE_make_string        allocate string  %x\n", string);
@@ -835,7 +836,7 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 			return FALSE;
 		}
 
-		xdrs->x_handy = port->port_queue[port->port_qoffset].getCount();
+		xdrs->x_handy = (int) port->port_queue[port->port_qoffset].getCount();
 		fb_assert(xdrs->x_handy <= port->port_buff_size);
 		memcpy(xdrs->x_base, port->port_queue[port->port_qoffset].begin(), xdrs->x_handy);
 		++port->port_qoffset;
@@ -907,8 +908,6 @@ rem_port::~rem_port()
 	delete port_version;
 	delete port_connection;
 	delete port_host;
-	delete port_protocol_str;
-	delete port_address_str;
 	delete port_server_crypt_callback;
 
 #ifdef DEBUG_XDR_MEMORY
@@ -985,20 +984,11 @@ void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
 
 Firebird::string rem_port::getRemoteId() const
 {
-	Firebird::string id;
+	fb_assert(port_protocol_id.hasData());
+	Firebird::string id = port_protocol_id;
 
-	if (port_protocol_str)
-	{
-		id.append(port_protocol_str->str_data, port_protocol_str->str_length);
-	}
-	if (port_protocol_str && port_address_str)
-	{
-		id += '/';
-	}
-	if (port_address_str)
-	{
-		id.append(port_address_str->str_data, port_address_str->str_length);
-	}
+	if (port_address.hasData())
+		id += Firebird::string("/") + port_address;
 
 	return id;
 }
@@ -1051,14 +1041,14 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	// and we have no ways to override this limit cause it can be sent to any version server.
 	// Therefore divide data into 254-byte parts, leaving first byte for the number of that part.
 	// This appears more reliable than put them in strict order.
-	unsigned int remaining = dataFromPlugin.getCount();
+	size_t remaining = dataFromPlugin.getCount();
 	fb_assert(remaining <= 254u * 256u); // paranoid check => 65024
 	UCHAR part = 0;
 	UCHAR buffer[255];
 	const UCHAR* ptr = dataFromPlugin.begin();
 	while (remaining > 0)
 	{
-		unsigned int step = remaining;
+		size_t step = remaining;
 		if (step > 254)
 			step = 254;
 		remaining -= step;
@@ -1242,7 +1232,7 @@ void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool ch
 static void setCStr(CSTRING& to, const char* from)
 {
 	to.cstr_address = reinterpret_cast<UCHAR*>(const_cast<char*>(from));
-	to.cstr_length = strlen(from);
+	to.cstr_length = (ULONG) strlen(from);
 	to.cstr_allocated = 0;
 }
 

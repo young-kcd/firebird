@@ -112,6 +112,18 @@ static bool_t xdr_trrq_message(XDR*, USHORT);
 
 #include "../common/xdr_proto.h"
 
+inline void fixupLength(const XDR* xdrs, ULONG& length)
+{
+	// If the short (16-bit) value >= 32KB is being transmitted,
+	// it gets expanded to long (32-bit) with a sign bit propagated.
+	// In order to avoid troubles when reading such a value as long,
+	// let's detect and fix unexpected overflows. Here we assume
+	// that real longs will never have the highest 16 bits set.
+
+	if (xdrs->x_op == XDR_DECODE && length >> 16 == (ULONG) 0xFFFF)
+		length &= (ULONG) 0xFFFF;
+}
+
 
 #ifdef DEBUG
 static ULONG xdr_save_size = 0;
@@ -199,7 +211,6 @@ void xdr_debug_memory(XDR* xdrs,
 							packet->p_malloc[j].p_operation = op_void;
 							packet->p_malloc[j].p_allocated = NULL;
 							packet->p_malloc[j].p_address = 0;
-							//  packet->p_malloc [j].p_xdrvar = 0;
 							return;
 						}
 					}
@@ -212,7 +223,6 @@ void xdr_debug_memory(XDR* xdrs,
 							packet->p_malloc[j].p_operation = packet->p_operation;
 							packet->p_malloc[j].p_allocated = length;
 							packet->p_malloc[j].p_address = address;
-							//  packet->p_malloc [j].p_xdrvar = xdrvar;
 							return;
 						}
 					}
@@ -479,7 +489,9 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_cstring_const, info->p_info_items);
 		if (p->p_operation == op_service_info)
 			MAP(xdr_cstring_const, info->p_info_recv_items);
-		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_buffer_length));
+		MAP(xdr_long, reinterpret_cast<SLONG&>(info->p_info_buffer_length));
+		// p_info_buffer_length was USHORT in older versions
+		fixupLength(xdrs, info->p_info_buffer_length);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -656,7 +668,9 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_SQL_dialect));
 		MAP(xdr_cstring_const, prep_stmt->p_sqlst_SQL_str);
 		MAP(xdr_cstring_const, prep_stmt->p_sqlst_items);
-		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_buffer_length));
+		MAP(xdr_long, reinterpret_cast<SLONG&>(prep_stmt->p_sqlst_buffer_length));
+		// p_sqlst_buffer_length was USHORT in older versions
+		fixupLength(xdrs, prep_stmt->p_sqlst_buffer_length);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -964,10 +978,13 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 	SCHAR trash[4];
 	static const SCHAR filler[4] = { 0, 0, 0, 0 };
 
-	if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&cstring->cstr_length)))
+	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&cstring->cstr_length)))
 	{
 		return FALSE;
 	}
+
+	// string length was USHORT in older versions
+	fixupLength(xdrs, cstring->cstr_length);
 
 	switch (xdrs->x_op)
 	{
@@ -1087,10 +1104,13 @@ static bool_t xdr_longs( XDR* xdrs, CSTRING* cstring)
  *	Pass a vector of longs.
  *
  **************************************/
-	if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&cstring->cstr_length)))
+	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&cstring->cstr_length)))
 	{
 		return FALSE;
 	}
+
+	// string length was USHORT in older versions
+	fixupLength(xdrs, cstring->cstr_length);
 
 	// Handle operation specific stuff, particularly memory allocation/deallocation
 
@@ -1109,10 +1129,10 @@ static bool_t xdr_longs( XDR* xdrs, CSTRING* cstring)
 		return TRUE;
 	}
 
-	const ULONG n = cstring->cstr_length / sizeof(SLONG);
+	const size_t n = cstring->cstr_length / sizeof(SLONG);
 
 	SLONG* next = (SLONG*) cstring->cstr_address;
-	for (const SLONG* const end = next + (int) n; next < end; next++)
+	for (const SLONG* const end = next + n; next < end; next++)
 	{
 		if (!xdr_long(xdrs, next))
 			return FALSE;
@@ -1411,7 +1431,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	if (!message || statement->rsr_format->fmt_length > statement->rsr_fmt_length)
 	{
 		RMessage* const org_message = message;
-		const USHORT org_length = message ? statement->rsr_fmt_length : 0;
+		const ULONG org_length = message ? statement->rsr_fmt_length : 0;
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
 		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;

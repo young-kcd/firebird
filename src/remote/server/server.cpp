@@ -310,7 +310,7 @@ public:
 				u.push(0);
 				ENC_crypt(pwt, sizeof pwt, reinterpret_cast<TEXT*>(u.begin()),
 					Auth::LEGACY_PASSWORD_SALT);
-				unsigned l = strlen(&pwt[2]);
+				const size_t l = strlen(&pwt[2]);
 				memcpy(u.getBuffer(l), &pwt[2], l);
 				HANDSHAKE_DEBUG(fprintf(stderr, "CALLED des locally\n"));
 			}
@@ -1500,6 +1500,15 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		return false;
 	}
 
+	// Starting with CONNECT_VERSION3, strings inside the op_connect packet are UTF8 encoded
+
+	if (connect->p_cnct_cversion >= CONNECT_VERSION3)
+	{
+		ISC_utf8ToSystem(port->port_login);
+		ISC_utf8ToSystem(port->port_user_name);
+		ISC_utf8ToSystem(port->port_peer_name);
+	}
+
 	// Select the most appropriate protocol (this will get smarter)
 	P_ARCH architecture = arch_generic;
 	USHORT version = 0;
@@ -1782,16 +1791,12 @@ static void addClumplets(ClumpletWriter* dpb_buffer,
 	}
 
 	ClumpletWriter address_record(ClumpletReader::UnTagged, MAX_UCHAR - 2);
-	if (port->port_protocol_str)
-	{
-		address_record.insertString(isc_dpb_addr_protocol,
-			port->port_protocol_str->str_data, port->port_protocol_str->str_length);
-	}
-	if (port->port_address_str)
-	{
-		address_record.insertString(isc_dpb_addr_endpoint,
-			port->port_address_str->str_data, port->port_address_str->str_length);
-	}
+
+	if (port->port_protocol_id.hasData())
+		address_record.insertString(isc_dpb_addr_protocol, port->port_protocol_id);
+
+	if (port->port_address.hasData())
+		address_record.insertString(isc_dpb_addr_endpoint, port->port_address);
 
 	// We always insert remote address descriptor as a first element
 	// of appropriate clumplet so user cannot fake it and engine may somewhat trust it.
@@ -1831,11 +1836,41 @@ static void addClumplets(ClumpletWriter* dpb_buffer,
 
 	dpb_buffer->deleteWithTag(par.host_name);
 	if (port->port_peer_name.hasData())
-		dpb_buffer->insertString(par.host_name, port->port_peer_name);
+	{
+		try
+		{
+			string peerName(port->port_peer_name);
+
+			ISC_systemToUtf8(peerName);
+			ISC_escape(peerName);
+
+			if (!dpb_buffer->find(isc_dpb_utf8_filename))
+				ISC_utf8ToSystem(peerName);
+
+			dpb_buffer->insertString(par.host_name, peerName);
+		}
+		catch (const Exception&)
+		{} // no-op
+	}
 
 	dpb_buffer->deleteWithTag(par.os_user);
 	if (port->port_user_name.hasData())
-		dpb_buffer->insertString(par.os_user, port->port_user_name);
+	{
+		try
+		{
+			string userName(port->port_user_name);
+
+			ISC_systemToUtf8(userName);
+			ISC_escape(userName);
+
+			if (!dpb_buffer->find(isc_dpb_utf8_filename))
+				ISC_utf8ToSystem(userName);
+
+			dpb_buffer->insertString(par.os_user, userName);
+		}
+		catch (const Exception&)
+		{} // no-op
+	}
 }
 
 
@@ -1910,7 +1945,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 	REMOTE_get_timeout_params(authPort, pb);
 
 	const UCHAR* dpb = pb->getBuffer();
-	unsigned int dl = pb->getBufferLength();
+	unsigned int dl = (ULONG) pb->getBufferLength();
 
 	if (!authPort->port_server_crypt_callback)
 	{
@@ -1939,7 +1974,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 		}
 	}
 
-	CSTRING* s = &send->p_resp.p_resp_data;
+	CSTRING* const s = &send->p_resp.p_resp_data;
 	authPort->port_srv_auth_block->extractNewKeys(s);
 	authPort->send_response(send, 0, s->cstr_length, &status_vector, false);
 }
@@ -1982,7 +2017,8 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 
 		rem_port* const aux_port = port->request(send);
 
-		port->send_response(send, rdb->rdb_id, send->p_resp.p_resp_data.cstr_length, &status_vector, false);
+		port->send_response(send, rdb->rdb_id, send->p_resp.p_resp_data.cstr_length,
+							&status_vector, false);
 
 		if (!status_vector.isSuccess())
 		{
@@ -2215,7 +2251,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	}
 
 	const UCHAR* blr = compileL->p_cmpl_blr.cstr_address;
-	const USHORT blr_length = compileL->p_cmpl_blr.cstr_length;
+	const ULONG blr_length = compileL->p_cmpl_blr.cstr_length;
 
 	ServRequest iface(rdb->rdb_iface->compileRequest(&status_vector, blr_length, blr));
 
@@ -2298,7 +2334,7 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 	}
 
 	const UCHAR* blr = ddlL->p_ddl_blr.cstr_address;
-	const USHORT blr_length = ddlL->p_ddl_blr.cstr_length;
+	const ULONG blr_length = ddlL->p_ddl_blr.cstr_length;
 
 	rdb->rdb_iface->executeDyn(&status_vector, transaction->rtr_iface, blr_length, blr);
 
@@ -2724,7 +2760,6 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
  *
  *****************************************/
 	Rtr* transaction = NULL;
-	USHORT in_blr_length, in_msg_type, out_blr_length;
 	LocalStatus status_vector;
 
 	Rdb* rdb = this->port_context;
@@ -2741,11 +2776,14 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	if (transaction)
 		tra = transaction->rtr_iface;
 
-	USHORT in_msg_length = 0, out_msg_length = 0;
+	ULONG in_msg_length = 0, out_msg_length = 0;
+	ULONG in_blr_length = 0, out_blr_length = 0;
 	UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
 	UCHAR* in_blr;
 	UCHAR* out_blr;
+	USHORT in_msg_type;
+
 	if (op == op_exec_immediate2)
 	{
 		in_msg_type = exnow->p_sqlst_message_number;
@@ -2880,10 +2918,10 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	}
 	statement->checkIface();
 
-	USHORT in_msg_length = 0, out_msg_length = 0;
+	ULONG in_msg_length = 0, out_msg_length = 0;
 	UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
-	USHORT out_blr_length;
+	ULONG out_blr_length;
 	UCHAR* out_blr;
 
 	if (statement->rsr_format)
@@ -3002,13 +3040,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
 
-	USHORT msg_length;
-	if (statement->rsr_format) {
-		msg_length = statement->rsr_format->fmt_length;
-	}
-	else {
-		msg_length = 0;
-	}
+	const ULONG msg_length = statement->rsr_format ? statement->rsr_format->fmt_length : 0;
+
 	USHORT count = statement->rsr_flags.test(Rsr::NO_BATCH) ? 1 : sqldata->p_sqldata_messages;
 	USHORT count2 = statement->rsr_flags.test(Rsr::NO_BATCH) ? 0 : count;
 
@@ -3340,7 +3373,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 		}
 	}
 
-	const ISC_STATUS status = this->send_response(sendL, (OBJCT) state, (USHORT) (p - buffer),
+	const ISC_STATUS status = this->send_response(sendL, (OBJCT) state, (ULONG) (p - buffer),
 		&status_vector, false);
 
 #ifdef DEBUG_REMOTE_MEMORY
@@ -3444,8 +3477,8 @@ public:
 		memset(buffer, 0, bufferLength);
 
 		rdb->rdb_svc->svc_iface->query(&status_vector,
-									   sendItems.getBufferLength(), sendItems.getBuffer(),
-									   receiveItems.getCount(), receiveItems.begin(),
+									   (ULONG) sendItems.getBufferLength(), sendItems.getBuffer(),
+									   (ULONG) receiveItems.getCount(), receiveItems.begin(),
 									   bufferLength, buffer);
 
 		SSHORT skip_len = 0;
@@ -3508,13 +3541,12 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	HalfStaticArray<UCHAR, 1024> info;
 	UCHAR* info_buffer = NULL;
-	USHORT info_len;
+	ULONG info_len;
 	HalfStaticArray<UCHAR, 1024> temp;
-	UCHAR* temp_buffer = 0;
+	UCHAR* temp_buffer = NULL;
+
 	if (op == op_info_database)
 	{
-		info_len = 0;
-		info_buffer = 0;
 		temp_buffer = temp.getBuffer(stuff->p_info_buffer_length);
 	}
 	else
@@ -3536,7 +3568,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	Rsr* statement;
 	Svc* service;
 
-	USHORT info_db_len = 0;
+	ULONG info_db_len = 0;
 	bool needRunningService = false;
 
 	switch (op)
@@ -3639,16 +3671,16 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	// Send a response that includes the segment.
 
-	USHORT response_len = info_db_len ? info_db_len : stuff->p_info_buffer_length;
+	ULONG response_len = info_db_len ? info_db_len : stuff->p_info_buffer_length;
 
-	SSHORT skip_len = 0;
+	SLONG skip_len = 0;
 	if (buffer && *buffer == isc_info_length)
 	{
 		skip_len = gds__vax_integer(buffer + 1, 2);
 		const SLONG val = gds__vax_integer(buffer + 3, skip_len);
 		fb_assert(val >= 0);
 		skip_len += 3;
-		if (val && ULONG(val) < ULONG(response_len))
+		if (val && (ULONG) val < response_len)
 			response_len = val;
 	}
 
@@ -3733,7 +3765,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 	}
 
-	USHORT bpb_length = 0;
+	ULONG bpb_length = 0;
 	const UCHAR* bpb = NULL;
 
 	if (op == op_open_blob2 || op == op_create_blob2)
@@ -3827,7 +3859,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	getHandle(statement, prepareL->p_sqlst_statement);
 
 	HalfStaticArray<UCHAR, 1024> local_buffer, info_buffer;
-	unsigned int infoLength = prepareL->p_sqlst_items.cstr_length;
+	ULONG infoLength = prepareL->p_sqlst_items.cstr_length;
 	UCHAR* const info = info_buffer.getBuffer(infoLength + 1);
 	UCHAR* const buffer = local_buffer.getBuffer(prepareL->p_sqlst_buffer_length);
 
@@ -3909,16 +3941,16 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	// Send a response that includes the info requested
 
-	USHORT response_len = prepareL->p_sqlst_buffer_length;
-	SSHORT skip_len = 0;
+	ULONG response_len = prepareL->p_sqlst_buffer_length;
+	SLONG skip_len = 0;
 	if (*buffer == isc_info_length)
 	{
 		skip_len = gds__vax_integer(buffer + 1, 2);
 		const SLONG val = gds__vax_integer(buffer + 3, skip_len);
+		fb_assert(val >= 0);
 		skip_len += 3;
-		if (val && val <= response_len) {
+		if (val && (ULONG) val < response_len)
 			response_len = val;
-		}
 	}
 
 	sendL->p_resp.p_resp_data.cstr_address = buffer + skip_len;
@@ -4341,7 +4373,7 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 	getHandle(blob, segment->p_sgmt_blob);
 
 	const UCHAR* p = segment->p_sgmt_segment.cstr_address;
-	USHORT length = segment->p_sgmt_segment.cstr_length;
+	ULONG length = segment->p_sgmt_segment.cstr_length;
 
 	// Do the signal segment version.  If it failed, just pass on the bad news.
 
@@ -4496,7 +4528,7 @@ ISC_STATUS rem_port::receive_after_start(P_DATA* data, PACKET* sendL, IStatus* s
 	const rem_fmt* format = tail->rrq_format;
 
 	data->p_data_message_number = msg_number;
-	data->p_data_messages = (USHORT) REMOTE_compute_batch_size(this,
+	data->p_data_messages = REMOTE_compute_batch_size(this,
 		(USHORT) xdr_protocol_overhead(op_response_piggyback), op_send, format);
 
 	return this->receive_msg(data, sendL);
@@ -4900,7 +4932,7 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 
 ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 							OBJCT	object,
-							USHORT	length,
+							ULONG	length,
 							const ISC_STATUS* status_vector,
 							bool defer_flag)
 {
@@ -5154,7 +5186,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	if (status_vector.isSuccess())
 	{
 		ServService iface(provider->attachServiceManager(&status_vector, service_name,
-			spb->getBufferLength(), spb->getBuffer()));
+			(ULONG) spb->getBufferLength(), spb->getBuffer()));
 
 		if (status_vector.isSuccess())
 		{
@@ -5173,7 +5205,8 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	}
 
 	return this->send_response(sendL, 0,
-		(authenticated ? sendL->p_resp.p_resp_data.cstr_length : 0), &status_vector, false);
+		(authenticated ? sendL->p_resp.p_resp_data.cstr_length : 0),
+		&status_vector, false);
 }
 
 
@@ -5232,7 +5265,7 @@ public:
 		}
 		authBlock->store(startPb, isc_spb_auth_block);
 
-		rdb->rdb_svc->svc_iface->start(&status_vector, startPb->getBufferLength(), startPb->getBuffer());
+		rdb->rdb_svc->svc_iface->start(&status_vector, (ULONG) startPb->getBufferLength(), startPb->getBuffer());
 		rdb->rdb_svc->svc_auth = Svc::SVCAUTH_TEMP;
 
 		authPort->port_srv_auth_block->extractNewKeys(&send->p_resp.p_resp_data);
@@ -5920,13 +5953,13 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 
 	UCHAR* blr = trrq->p_trrq_blr.cstr_address;
-	const USHORT blr_length = trrq->p_trrq_blr.cstr_length;
+	const ULONG blr_length = trrq->p_trrq_blr.cstr_length;
 	Rpr* procedure = this->port_rpr;
 	UCHAR* in_msg = (procedure->rpr_in_msg) ? procedure->rpr_in_msg->msg_address : NULL;
-	const USHORT in_msg_length =
+	const ULONG in_msg_length =
 		(procedure->rpr_in_format) ? procedure->rpr_in_format->fmt_length : 0;
 	UCHAR* out_msg = (procedure->rpr_out_msg) ? procedure->rpr_out_msg->msg_address : NULL;
-	const USHORT out_msg_length =
+	const ULONG out_msg_length =
 		(procedure->rpr_out_format) ? procedure->rpr_out_format->fmt_length : 0;
 
 	rdb->rdb_iface->transactRequest(&status_vector, transaction->rtr_iface,
@@ -6161,7 +6194,7 @@ static int shut_server(const int, const int, void*)
 void SrvAuthBlock::extractDataFromPluginTo(cstring* to)
 {
 	to->cstr_allocated = 0;
-	to->cstr_length = dataFromPlugin.getCount();
+	to->cstr_length = (ULONG) dataFromPlugin.getCount();
 	to->cstr_address = dataFromPlugin.begin();
 }
 
@@ -6304,7 +6337,7 @@ void SrvAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 
 void SrvAuthBlock::extractPluginName(cstring* to)
 {
-	to->cstr_length = pluginName.length();
+	to->cstr_length = (ULONG) pluginName.length();
 	to->cstr_address = (UCHAR*)(pluginName.c_str());
 	to->cstr_allocated = 0;
 }
@@ -6325,7 +6358,7 @@ const char* SrvAuthBlock::getLogin()
 
 const unsigned char* SrvAuthBlock::getData(unsigned int* length)
 {
-	*length = dataForPlugin.getCount();
+	*length = (ULONG) dataForPlugin.getCount();
 	return *length ? dataForPlugin.begin() : NULL;
 }
 
@@ -6463,7 +6496,7 @@ bool SrvAuthBlock::extractNewKeys(CSTRING* to)
 			lastExtractedKeys.insertPath(TAG_KEY_PLUGINS, plugins);
 		}
 	}
-	to->cstr_length = lastExtractedKeys.getBufferLength();
+	to->cstr_length = (ULONG) lastExtractedKeys.getBufferLength();
 	to->cstr_address = const_cast<UCHAR*>(lastExtractedKeys.getBuffer());
 	to->cstr_allocated = 0;
 

@@ -106,8 +106,8 @@ const int INET_RETRY_CALL = 5;
 #include "../remote/remot_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
+#include "../common/isc_f_proto.h"
 #include "../common/os/isc_i_proto.h"
-
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -564,10 +564,12 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	// so let's be consistent and use the same trick for INET as well
 	buffer.lower();
 #endif
+	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);
 	buffer.lower();
+	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_host, buffer);
 
 	if ((eff_uid == -1) || uv_flag) {
@@ -587,7 +589,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	P_CNCT*	cnct = &packet->p_cnct;
 
-	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = (ULONG) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try[] =
@@ -1200,9 +1202,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 	// store user identity
 	port->port_login = port->port_user_name = user_name;
-
 	port->port_peer_name = host_name;
-	port->port_protocol_str = REMOTE_make_string("TCPv4");
+	port->port_protocol_id = "TCPv4";
 
 	struct sockaddr_in address;
 	socklen_t l = sizeof(address);
@@ -1211,15 +1212,13 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	int status = getpeername(port->port_handle, (struct sockaddr *) &address, &l);
 	if (status == 0)
 	{
-		string addr_str;
 		const UCHAR* ip = (UCHAR*) &address.sin_addr;
-		addr_str.printf(
+		port->port_address.printf(
 			"%d.%d.%d.%d",
 			static_cast<int>(ip[0]),
 			static_cast<int>(ip[1]),
 			static_cast<int>(ip[2]),
 			static_cast<int>(ip[3]) );
-		port->port_address_str = REMOTE_make_string(addr_str.c_str());
 	}
 
 	return true;
@@ -1525,7 +1524,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	}
 	memcpy(&address.sin_addr, &port_address.sin_addr, sizeof(address.sin_addr));
 
-	response->p_resp_data.cstr_length = sizeof(address);
+	response->p_resp_data.cstr_length = (ULONG) sizeof(address);
 	memcpy(response->p_resp_data.cstr_address, &address, sizeof(address));
 
 	return new_port;
@@ -2699,9 +2698,9 @@ static rem_port* inet_try_connect(PACKET* packet,
 	P_CNCT* cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
-	cnct->p_cnct_cversion = CONNECT_VERSION2;
+	cnct->p_cnct_cversion = CONNECT_VERSION3;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
+	cnct->p_cnct_file.cstr_length = (ULONG) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// If we can't talk to a server, punt.  Let somebody else generate

@@ -269,8 +269,8 @@ struct rem_str : public pool_alloc_rpt<SCHAR>
 
 struct rem_fmt : public Firebird::GlobalStorage
 {
-	USHORT		fmt_length;
-	USHORT		fmt_net_length;
+	ULONG		fmt_length;
+	ULONG		fmt_net_length;
 	Firebird::Array<dsc> fmt_desc;
 
 public:
@@ -427,7 +427,7 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	Firebird::StatusHolder* rsr_status;		// saved status for buffered errors
 	USHORT			rsr_id;
 	RFlags<USHORT>	rsr_flags;
-	USHORT			rsr_fmt_length;
+	ULONG			rsr_fmt_length;
 
 	ULONG			rsr_rows_pending;	// How many rows are pending
 	USHORT			rsr_msgs_waiting; 	// count of full rsr_messages
@@ -828,7 +828,6 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 		DISCONNECTED	// port is disconnected
 	}				port_state;
 
-	//P_ARCH		port_client_arch;	// so we can tell arch of client
 	rem_port*		port_clients;		// client ports
 	rem_port*		port_next;			// next client port
 	rem_port*		port_parent;		// parent port (for client ports)
@@ -842,7 +841,6 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	SLONG			port_connect_timeout;   // Connection timeout value
 	SLONG			port_dummy_packet_interval; // keep alive dummy packet interval
 	SLONG			port_dummy_timeout;	// time remaining until keepalive packet
-	//ISC_STATUS*		port_status_vector;
 	SOCKET			port_handle;		// handle for INET socket
 	SOCKET			port_channel;		// handle for connection (from by OS)
 	struct linger	port_linger;		// linger value as defined by SO_LINGER
@@ -866,8 +864,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Firebird::string port_password;
 	Firebird::string port_user_name;
 	Firebird::string port_peer_name;
-	rem_str*		port_protocol_str;		// String containing protocol name for this port
-	rem_str*		port_address_str;		// Protocol-specific address string for the port
+	Firebird::string port_protocol_id;		// String containing protocol name for this port
+	Firebird::string port_address;			// Protocol-specific address string for the port
 	Rpr*			port_rpr;				// port stored procedure reference
 	Rsr*			port_statement;			// Statement for execute immediate
 	rmtque*			port_receive_rmtque;	// for client, responses waiting
@@ -902,12 +900,12 @@ public:
 		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0),
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
-		port_type(t), port_state(PENDING), //port_client_arch(arch_generic),
-		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
+		port_type(t), port_state(PENDING), port_clients(0), port_next(0),
+		port_parent(0), port_async(0), port_async_receive(0),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
-		port_dummy_timeout(0), /*port_status_vector(0),*/ port_handle(INVALID_SOCKET),
-		port_channel(INVALID_SOCKET), port_context(0), port_events_thread(0), port_events_shutdown(0),
+		port_dummy_timeout(0), port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET), port_context(0),
+		port_events_thread(0), port_events_shutdown(0),
 #ifdef WIN_NT
 		port_pipe(INVALID_HANDLE_VALUE), port_event(INVALID_HANDLE_VALUE),
 #endif
@@ -917,7 +915,8 @@ public:
 		port_objects(getPool()), port_version(0), port_host(0),
 		port_connection(0), port_login(getPool()), port_password(getPool()),
 		port_user_name(getPool()), port_peer_name(getPool()),
-		port_protocol_str(0), port_address_str(0), port_rpr(0), port_statement(0), port_receive_rmtque(0),
+		port_protocol_id(getPool()), port_address(getPool()),
+		port_rpr(0), port_statement(0), port_receive_rmtque(0),
 		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0),
 		port_queue(getPool()), port_qoffset(0),
 		port_srv_auth(NULL), port_srv_auth_block(NULL),
@@ -1094,8 +1093,8 @@ public:
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
-	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*, bool);
-	ISC_STATUS	send_response(PACKET* p, OBJCT obj, USHORT length, Firebird::IStatus* status, bool defer_flag)
+	ISC_STATUS	send_response(PACKET*, OBJCT, ULONG, const ISC_STATUS*, bool);
+	ISC_STATUS	send_response(PACKET* p, OBJCT obj, ULONG length, Firebird::IStatus* status, bool defer_flag)
 	{
 		return send_response(p, obj, length, status->get(), defer_flag);
 	}

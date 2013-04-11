@@ -225,10 +225,12 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock,
 
 	ISC_get_user(&buffer, 0, 0);
 	buffer.lower();
+	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);
 	buffer.lower();
+	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_host, buffer);
 
 	if (uv_flag) {
@@ -240,12 +242,12 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock,
 	P_CNCT* cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
-	cnct->p_cnct_cversion = CONNECT_VERSION2;
+	cnct->p_cnct_cversion = CONNECT_VERSION3;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
+	cnct->p_cnct_file.cstr_length = (ULONG) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
-	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = (ULONG) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try[] =
@@ -601,9 +603,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 	port->port_login = port->port_user_name = user_name;
 	port->port_peer_name = host_name;
-
-	port->port_protocol_str = REMOTE_make_string("XNET");
-	port->port_address_str = REMOTE_make_string(host_name.c_str());
+	port->port_protocol_id = "XNET";
 
 	return true;
 }

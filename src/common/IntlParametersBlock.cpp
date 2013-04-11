@@ -167,6 +167,8 @@ IntlParametersBlock::TagType IntlDpb::checkTag(UCHAR tag)
 	case isc_dpb_working_directory:
 	case isc_dpb_set_db_charset:
 	case isc_dpb_process_name:
+	case isc_dpb_host_name:
+	case isc_dpb_os_user:
 		return TAG_STRING;
 	}
 

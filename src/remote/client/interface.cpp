@@ -121,6 +121,12 @@ namespace {
 			handle_error(error);
 		}
 	}
+
+	inline void CHECK_LENGTH(rem_port* port, size_t length)
+	{
+		if (length > MAX_USHORT && port->port_protocol < PROTOCOL_VERSION13)
+			status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+	}
 }
 
 namespace Remote {
@@ -313,7 +319,7 @@ public:
 	void parseMetadata(Array<UCHAR>& buffer)
 	{
 		metadata.clear();
-		metadata.parse(buffer.getCount(), buffer.begin());
+		metadata.parse((ULONG) buffer.getCount(), buffer.begin());
 	}
 
 	unsigned getDialect()
@@ -873,10 +879,9 @@ void Blob::freeClientData(IStatus* status, bool force)
 
 		Rdb* rdb = blob->rbl_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
-
 		rem_port* port = rdb->rdb_port;
-
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
 		try
 		{
 			release_object(status, rdb, op_cancel_blob, blob->rbl_id);
@@ -1158,6 +1163,10 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* status,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
+		// Validate data length
+
+		CHECK_LENGTH(port, blr_length);
+
 		// Parse the request in case blr_d_float must be converted to blr_double
 
 		const UCHAR* new_blr = blr;
@@ -1246,6 +1255,10 @@ IBlob* Attachment::createBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* b
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
+
+		// Validate data length
+
+		CHECK_LENGTH(port, bpb_length);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_create_blob2;
@@ -1460,6 +1473,10 @@ void Attachment::executeDyn(IStatus* status, ITransaction* apiTra, unsigned int 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
+		// Validate data length
+
+		CHECK_LENGTH(port, length);
+
 		// Make up a packet for the remote guy
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -1660,16 +1677,16 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
 		BlrFromMessage inBlr(inMetadata, dialect);
-		unsigned in_blr_length = inBlr.getLength();
-		const UCHAR* in_blr = inBlr.getBytes();
-		//unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
-		UCHAR* in_msg = static_cast<UCHAR*>(inBuffer);
+		const unsigned int in_blr_length = inBlr.getLength();
+		const UCHAR* const in_blr = inBlr.getBytes();
+		const unsigned int in_msg_length = inBlr.getMsgLength();
+		UCHAR* const in_msg = static_cast<UCHAR*>(inBuffer);
 
 		BlrFromMessage outBlr(outMetadata, dialect);
-		unsigned out_blr_length = outBlr.getLength();
-		const UCHAR* out_blr = outBlr.getBytes();
-		unsigned out_msg_length = outBlr.getMsgLength();
-		UCHAR* out_msg = static_cast<UCHAR*>(outBuffer);
+		const unsigned int out_blr_length = outBlr.getLength();
+		const UCHAR* const out_blr = outBlr.getBytes();
+		const unsigned int out_msg_length = outBlr.getMsgLength();
+		UCHAR* const out_msg = static_cast<UCHAR*>(outBuffer);
 
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
@@ -1681,6 +1698,13 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 			transaction = rt->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
+
+		// Validate data length
+
+		CHECK_LENGTH(port, in_blr_length);
+		CHECK_LENGTH(port, in_msg_length);
+		CHECK_LENGTH(port, out_blr_length);
+		CHECK_LENGTH(port, out_msg_length);
 
 		// 24-Mar-2004 Nickolay Samofatov
 		// Unconditionally deallocate existing formats that are left from
@@ -1837,9 +1861,10 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
 		BlrFromMessage inBlr(inMetadata, dialect);
-		unsigned in_blr_length = inBlr.getLength();
-		const UCHAR* in_blr = inBlr.getBytes();
-		UCHAR* in_msg = static_cast<UCHAR*>(inBuffer);
+		const unsigned int in_blr_length = inBlr.getLength();
+		const UCHAR* const in_blr = inBlr.getBytes();
+		const unsigned int in_msg_length = inBlr.getMsgLength();
+		UCHAR* const in_msg = static_cast<UCHAR*>(inBuffer);
 
 		RefPtr<IMessageMetadata> defaultOutputFormat;
 		if (!outFormat)
@@ -1857,8 +1882,8 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		}
 
 		BlrFromMessage outBlr(outFormat, dialect);
-		unsigned out_blr_length = outBlr.getLength();
-		const unsigned char* out_blr = outBlr.getBytes();
+		const unsigned int out_blr_length = outBlr.getLength();
+		const UCHAR* const out_blr = outBlr.getBytes();
 
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
@@ -1870,6 +1895,12 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 			transaction = rt->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
+
+		// Validate data length
+
+		CHECK_LENGTH(port, in_blr_length);
+		CHECK_LENGTH(port, in_msg_length);
+		CHECK_LENGTH(port, out_blr_length);
 
 		// 24-Mar-2004 Nickolay Samofatov
 		// Unconditionally deallocate existing formats that are left from
@@ -1970,7 +2001,7 @@ IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transa
 
 
 ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
-	unsigned int length, const char* string, unsigned int dialect,
+	unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 /**************************************
@@ -1989,20 +2020,21 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 		// Check and validate handles, etc.
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		BlrFromMessage inBlr(inMetadata, dialect);
-		unsigned in_blr_length = inBlr.getLength();
-		const UCHAR* in_blr = inBlr.getBytes();
-		unsigned in_msg_length = inBlr.getMsgLength();
-		UCHAR* in_msg = static_cast<UCHAR*>(inBuffer);
+		const unsigned int in_blr_length = inBlr.getLength();
+		const UCHAR* const in_blr = inBlr.getBytes();
+		const unsigned int in_msg_length = inBlr.getMsgLength();
+		UCHAR* const in_msg = static_cast<UCHAR*>(inBuffer);
 
 		BlrFromMessage outBlr(outMetadata, dialect);
-		unsigned out_blr_length = outBlr.getLength();
-		const UCHAR* out_blr = outBlr.getBytes();
-		unsigned out_msg_length = outBlr.getMsgLength();
-		UCHAR* out_msg = static_cast<UCHAR*>(outBuffer);
+		const unsigned int out_blr_length = outBlr.getLength();
+		const UCHAR* const out_blr = outBlr.getBytes();
+		const unsigned int out_msg_length = outBlr.getMsgLength();
+		UCHAR* const out_msg = static_cast<UCHAR*>(outBuffer);
+
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = NULL;
 		Transaction* rt = remoteTransactionInterface(apiTra);
@@ -2012,13 +2044,19 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
-		if (!length)
-		{
-			size_t sql_length = strlen(string);
-			if (sql_length > MAX_USHORT)
-				sql_length = MAX_USHORT;
-			length = static_cast<USHORT>(sql_length);
-		}
+		// Validate data length
+
+		CHECK_LENGTH(port, in_blr_length);
+		CHECK_LENGTH(port, in_msg_length);
+		CHECK_LENGTH(port, out_blr_length);
+		CHECK_LENGTH(port, out_msg_length);
+
+		if (sqlStmt && !stmtLength)
+			stmtLength = static_cast<ULONG>(strlen(sqlStmt));
+
+		// Validate string length
+
+		CHECK_LENGTH(port, stmtLength);
 
 		if (dialect > 10)
 		{
@@ -2092,8 +2130,8 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 		P_SQLST* ex_now = &packet->p_sqlst;
 		ex_now->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
 		ex_now->p_sqlst_SQL_dialect = dialect;
-		ex_now->p_sqlst_SQL_str.cstr_length = length;
-		ex_now->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(string);
+		ex_now->p_sqlst_SQL_str.cstr_length = stmtLength;
+		ex_now->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(sqlStmt);
 		ex_now->p_sqlst_items.cstr_length = 0;
 		ex_now->p_sqlst_buffer_length = 0;
 		ex_now->p_sqlst_blr.cstr_length = in_blr_length;
@@ -2330,13 +2368,12 @@ Statement* Attachment::prepare(IStatus* status, ITransaction* apiTra,
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
-		if (!stmtLength)
-		{
-			size_t sql_length = strlen(sqlStmt);
-			if (sql_length > MAX_USHORT)
-				sql_length = MAX_USHORT;
-			stmtLength = static_cast<USHORT>(sql_length);
-		}
+		if (sqlStmt && !stmtLength)
+			stmtLength = static_cast<ULONG>(strlen(sqlStmt));
+
+		// Validate string length
+
+		CHECK_LENGTH(port, stmtLength);
 
 		if (dialect > 10)
 		{
@@ -2371,6 +2408,11 @@ Statement* Attachment::prepare(IStatus* status, ITransaction* apiTra,
 		Array<UCHAR> items, buffer;
 		buffer.resize(StatementMetadata::buildInfoItems(items, flags));
 
+		// Validate data length
+
+		CHECK_LENGTH(port, items.getCount());
+		CHECK_LENGTH(port, buffer.getCount());
+
 		packet->p_operation = op_prepare_statement;
 		P_SQLST* prepare = &packet->p_sqlst;
 		prepare->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
@@ -2378,9 +2420,9 @@ Statement* Attachment::prepare(IStatus* status, ITransaction* apiTra,
 		prepare->p_sqlst_SQL_dialect = dialect;
 		prepare->p_sqlst_SQL_str.cstr_length = stmtLength;
 		prepare->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(sqlStmt);
-		prepare->p_sqlst_items.cstr_length = items.getCount();
+		prepare->p_sqlst_items.cstr_length = (ULONG) items.getCount();
 		prepare->p_sqlst_items.cstr_address = items.begin();
-		prepare->p_sqlst_buffer_length = buffer.getCount();
+		prepare->p_sqlst_buffer_length = (ULONG) buffer.getCount();
 
 		send_packet(rdb->rdb_port, packet);
 
@@ -2400,7 +2442,7 @@ Statement* Attachment::prepare(IStatus* status, ITransaction* apiTra,
 
 		P_RESP* response = &packet->p_resp;
 		CSTRING temp = response->p_resp_data;
-		response->p_resp_data.cstr_allocated = buffer.getCount();
+		response->p_resp_data.cstr_allocated = (ULONG) buffer.getCount();
 		response->p_resp_data.cstr_address = buffer.begin();
 
 		try
@@ -2672,15 +2714,20 @@ FB_BOOLEAN ResultSet::fetch(IStatus* status, void* buffer)
 
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
 
 		BlrFromMessage outBlr(outputFormat, stmt->getDialect());
-		unsigned blr_length = outBlr.getLength();
+		unsigned int blr_length = outBlr.getLength();
 		const UCHAR* blr = outBlr.getBytes();
-		unsigned msg_length = outBlr.getMsgLength();
+		const unsigned int msg_length = outBlr.getMsgLength();
 		UCHAR* msg = static_cast<UCHAR*>(buffer);
 
+		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Validate data length
+
+		CHECK_LENGTH(port, blr_length);
+		CHECK_LENGTH(port, msg_length);
 
 		// On first fetch, clear the end-of-stream flag & reset the message buffers
 
@@ -2784,8 +2831,7 @@ FB_BOOLEAN ResultSet::fetch(IStatus* status, void* buffer)
 			if (statement->rsr_select_format)
 			{
 				sqldata->p_sqldata_messages =
-					static_cast<USHORT>(REMOTE_compute_batch_size(port,
-						0, op_fetch_response, statement->rsr_select_format));
+					REMOTE_compute_batch_size(port, 0, op_fetch_response, statement->rsr_select_format);
 				sqldata->p_sqldata_messages *= 4;
 
 				// Reorder data when the local buffer is half empty
@@ -2955,7 +3001,7 @@ void Statement::setCursorName(IStatus* status, const char* cursor)
 		P_SQLCUR* sqlcur = &packet->p_sqlcur;
 		sqlcur->p_sqlcur_statement = statement->rsr_id;
 
-		const USHORT name_l = strlen(cursor);
+		const ULONG name_l = static_cast<ULONG>(strlen(cursor));
 		sqlcur->p_sqlcur_cursor_name.cstr_length = name_l + 1;
 		sqlcur->p_sqlcur_cursor_name.cstr_address = reinterpret_cast<const UCHAR*>(cursor);
 		sqlcur->p_sqlcur_type = 0;	// type
@@ -3330,7 +3376,7 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 				throw;
 			}
 
-			blob->rbl_length = response->p_resp_data.cstr_length;
+			blob->rbl_length = (USHORT) response->p_resp_data.cstr_length;
 			blob->rbl_ptr = blob->rbl_buffer;
 			blob->rbl_flags &= ~Rbl::SEGMENT;
 			if (response->p_resp_object == 1)
@@ -3382,6 +3428,11 @@ int Attachment::getSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* array_
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
+
+		// Validate data length
+
+		CHECK_LENGTH(port, sdl_length);
+		CHECK_LENGTH(port, param_length);
 
 		// Parse the sdl in case blr_d_float must be converted to blr_double
 
@@ -3457,6 +3508,10 @@ IBlob* Attachment::openBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
+		// Validate data length
+
+		CHECK_LENGTH(port, bpb_length);
+
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_open_blob2;
 		P_BLOB* p_blob = &packet->p_blob;
@@ -3522,6 +3577,10 @@ void Transaction::prepare(IStatus* status, unsigned int msg_length, const unsign
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Validate data length
+
+		CHECK_LENGTH(port, msg_length);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_prepare2;
@@ -3642,6 +3701,11 @@ void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
+		// Validate data length
+
+		CHECK_LENGTH(port, sdl_length);
+		CHECK_LENGTH(port, param_length);
+
 		// Parse the sdl in case blr_d_float must be converted to blr_double
 
 		const UCHAR* new_sdl = sdl;
@@ -3713,6 +3777,10 @@ Firebird::IEvents* Attachment::queEvents(IStatus* status, Firebird::IEventCallba
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Validate data length
+
+		CHECK_LENGTH(port, length);
 
 		PACKET* packet = &rdb->rdb_packet;
 
@@ -3853,8 +3921,7 @@ void Request::receive(IStatus* status, int level, unsigned int msg_type,
 			// is the same for each batch (June 1996), perhaps in the future it
 			// could dynamically adjust batching sizes based on fetch patterns
 
-			data->p_data_messages =
-				static_cast<USHORT>(REMOTE_compute_batch_size(port, 0, op_send, tail->rrq_format));
+			data->p_data_messages = REMOTE_compute_batch_size(port, 0, op_send, tail->rrq_format);
 			tail->rrq_reorder_level = 2 * data->p_data_messages;
 			data->p_data_messages *= 4;
 			tail->rrq_rows_pending += data->p_data_messages;
@@ -3951,6 +4018,10 @@ Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* status,
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Validate data length
+
+		CHECK_LENGTH(port, length);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_reconnect;
@@ -4742,6 +4813,10 @@ Firebird::ITransaction* Attachment::startTransaction(IStatus* status, unsigned i
 			status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 		}
 
+		// Validate data length
+
+		CHECK_LENGTH(port, tpbLength);
+
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_transaction;
 		P_STTR* trans = &packet->p_sttr;
@@ -4766,7 +4841,7 @@ Firebird::ITransaction* Attachment::startTransaction(IStatus* status, unsigned i
 void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 								  unsigned int blr_length, const unsigned char* blr,
 								  unsigned int in_msg_length, const unsigned char* in_msg,
-								  unsigned int /*out_msg_length*/, unsigned char* out_msg)
+								  unsigned int out_msg_length, unsigned char* out_msg)
 {
 /**************************************
  *
@@ -4788,6 +4863,12 @@ void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 
 		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
+
+		// Validate data length
+
+		CHECK_LENGTH(port, blr_length);
+		CHECK_LENGTH(port, in_msg_length);
+		CHECK_LENGTH(port, out_msg_length);
 
 		Rpr* procedure = port->port_rpr;
 		if (!procedure) {
@@ -5040,7 +5121,7 @@ static void add_other_params(rem_port* port, ClumpletWriter& dpb, const Paramete
 
 		if (!dpb.find(par.process_name))
 		{
-			PathName path = fb_utils::get_process_name();
+			PathName path(fb_utils::get_process_name());
 
 			ISC_systemToUtf8(path);
 			ISC_escape(path);
@@ -5809,7 +5890,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				// Call the asynchronous event routine associated
 				// with this event
 
-				USHORT length = pevent->p_event_items.cstr_length;
+				const ULONG length = pevent->p_event_items.cstr_length;
 				if (length <= event->rvnt_length)
 				{
 					event->rvnt_callback->eventCallbackFunction(length, pevent->p_event_items.cstr_address);
@@ -6170,9 +6251,9 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 		// Make attach packet
 		P_ATCH* attach = &packet->p_atch;
 		packet->p_operation = op;
-		attach->p_atch_file.cstr_length = file_name.length();
+		attach->p_atch_file.cstr_length = (ULONG) file_name.length();
 		attach->p_atch_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
-		attach->p_atch_dpb.cstr_length = dpb.getBufferLength();
+		attach->p_atch_dpb.cstr_length = (ULONG) dpb.getBufferLength();
 		attach->p_atch_dpb.cstr_address = dpb.getBuffer();
 
 		send_packet(port, packet);
@@ -7114,9 +7195,9 @@ static void svcstart(IStatus*	status,
 	P_INFO* information = &packet->p_info;
 	information->p_info_object = object;
 	information->p_info_incarnation = incarnation;
-	information->p_info_items.cstr_length = send.getBufferLength();
+	information->p_info_items.cstr_length = (ULONG) send.getBufferLength();
 	information->p_info_items.cstr_address = send.getBuffer();
-	information->p_info_buffer_length = send.getBufferLength();
+	information->p_info_buffer_length = (ULONG) send.getBufferLength();
 
 	send_packet(rdb->rdb_port, packet);
 
@@ -7353,7 +7434,7 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletReader& dpb, const ParametersSet*
 
 void ClntAuthBlock::extractDataFromPluginTo(CSTRING* to)
 {
-	to->cstr_length = dataFromPlugin.getCount();
+	to->cstr_length = (ULONG) dataFromPlugin.getCount();
 	to->cstr_address = dataFromPlugin.begin();
 	to->cstr_allocated = 0;
 }
@@ -7363,7 +7444,7 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 	extractDataFromPluginTo(&to->p_data);
 
 	PathName pluginName = getPluginName();
-	to->p_name.cstr_length = pluginName.length();
+	to->p_name.cstr_length = (ULONG) pluginName.length();
 	to->p_name.cstr_address = (UCHAR*) pluginName.c_str();
 	to->p_name.cstr_allocated = 0;
 
@@ -7372,7 +7453,7 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 
 	if (firstTime)
 	{
-		to->p_list.cstr_length = pluginList.length();
+		to->p_list.cstr_length = (ULONG) pluginList.length();
 		to->p_list.cstr_address = (UCHAR*) pluginList.c_str();
 		to->p_list.cstr_allocated = 0;
 		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo added plugin list (%d len) to packet\n",
@@ -7397,7 +7478,7 @@ const char* ClntAuthBlock::getPassword()
 
 const unsigned char* ClntAuthBlock::getData(unsigned int* length)
 {
-	*length = dataForPlugin.getCount();
+	*length = (ULONG) dataForPlugin.getCount();
 	return *length ? dataForPlugin.begin() : NULL;
 }
 
