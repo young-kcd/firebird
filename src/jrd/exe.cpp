@@ -1237,7 +1237,7 @@ static void stuff_stack_trace(const jrd_req* request)
 }
 
 
-const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* node, bool stmtExpr)
+const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* node)
 {
 /**************************************
  *
@@ -1268,13 +1268,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	tdbb->setRequest(request);
 	tdbb->setTransaction(request->req_transaction);
 
-	if (!stmtExpr)
-	{
-	    fb_assert(request->req_caller == NULL);
-		request->req_caller = exeState.oldRequest;
-	}
-	else
-		request->req_operation = jrd_req::req_evaluate;
+    fb_assert(request->req_caller == NULL);
+	request->req_caller = exeState.oldRequest;
 
 	const SLONG save_point_number = (request->req_transaction->tra_save_point) ?
 		request->req_transaction->tra_save_point->sav_number : 0;
@@ -1285,8 +1280,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	const JrdStatement* statement = request->getStatement();
 
-	while (node && !(request->req_flags & req_stall) &&
-		   (!stmtExpr || request->req_operation == jrd_req::req_evaluate))
+	while (node && !(request->req_flags & req_stall))
 	{
 	try {
 		if (request->req_operation == jrd_req::req_evaluate)
@@ -1369,7 +1363,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	// request unless we are in the middle of processing an
 	// asynchronous message
 
-	if (!stmtExpr && !node)
+	if (!node)
 	{
 		// Close active cursors
 		for (const Cursor* const* ptr = request->req_cursors.begin();
@@ -1388,11 +1382,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	tdbb->setTransaction(exeState.oldTransaction);
 	tdbb->setRequest(exeState.oldRequest);
 
-	if (!stmtExpr)
-	{
-		fb_assert(request->req_caller == exeState.oldRequest);
-		request->req_caller = NULL;
-	}
+	fb_assert(request->req_caller == exeState.oldRequest);
+	request->req_caller = NULL;
 
 	// Ensure the transaction hasn't disappeared in the meantime
 	fb_assert(request->req_transaction);

@@ -8372,52 +8372,30 @@ DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 void StmtExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	fb_assert(false);
-
-	expr->getDesc(tdbb, csb, desc);
 }
 
 ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	fb_assert(false);
-
-	StmtExprNode* node = FB_NEW(*tdbb->getDefaultPool()) StmtExprNode(*tdbb->getDefaultPool());
-	node->stmt = copier.copy(tdbb, stmt);
-	node->expr = copier.copy(tdbb, expr);
-	return node;
+	return NULL;
 }
 
 ValueExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(false);
-
-	doPass1(tdbb, csb, stmt.getAddress());
-	return ValueExprNode::pass1(tdbb, csb);
+	return NULL;
 }
 
 ValueExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(false);
-
-	StmtNode::doPass2(tdbb, csb, stmt.getAddress(), NULL);
-
-	ValueExprNode::pass2(tdbb, csb);
-
-	dsc desc;
-	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-	return this;
+	return NULL;
 }
 
 dsc* StmtExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	fb_assert(false);
-
-	EXE_looper(tdbb, request, stmt.getObject(), true);
-
-	dsc* desc = EVL_expr(tdbb, request, expr);
-
-	return (request->req_flags & req_null) ? NULL : desc;
+	return NULL;
 }
 
 
