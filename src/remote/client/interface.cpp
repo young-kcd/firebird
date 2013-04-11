@@ -2571,7 +2571,26 @@ unsigned Statement::getFlags(IStatus* status)
 
 		statement->raiseException();
 
-		return metadata.getFlags();
+		if (port->port_protocol >= PROTOCOL_VERSION13)
+		{
+			// we are in luck - use flags from server
+			return metadata.getFlags();
+		}
+
+		// Need to guess flags based on statement type
+		unsigned value = IStatement::FLAG_REPEAT_EXECUTE;
+		switch (metadata.getType())
+		{
+		case isc_info_sql_stmt_ddl:
+			value &= ~IStatement::FLAG_REPEAT_EXECUTE;
+			break;
+		case isc_info_sql_stmt_select:
+		case isc_info_sql_stmt_select_for_upd:
+			value |= IStatement::FLAG_HAS_CURSOR;
+			break;
+		}
+
+		return value;
 	}
 	catch (const Exception& ex)
 	{
