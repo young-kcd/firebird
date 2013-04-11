@@ -1268,7 +1268,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	tdbb->setRequest(request);
 	tdbb->setTransaction(request->req_transaction);
 
-    fb_assert(request->req_caller == NULL);
+	fb_assert(request->req_caller == NULL);
 	request->req_caller = exeState.oldRequest;
 
 	const SLONG save_point_number = (request->req_transaction->tra_save_point) ?
