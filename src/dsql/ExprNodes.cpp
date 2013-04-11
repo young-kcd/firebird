@@ -11192,7 +11192,7 @@ ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	VariableNode* node = FB_NEW(getPool()) VariableNode(getPool());
 	node->dsqlName = dsqlName;
-	node->dsqlVar = dsqlScratch->resolveVariable(dsqlName);
+	node->dsqlVar = dsqlVar ? dsqlVar.getObject() : dsqlScratch->resolveVariable(dsqlName);
 
 	if (!node->dsqlVar)
 		PASS1_field_unknown(NULL, dsqlName.c_str(), this);
