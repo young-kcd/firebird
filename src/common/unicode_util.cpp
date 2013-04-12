@@ -43,7 +43,7 @@
 #include <unicode/utrans.h>
 #include <unicode/uchar.h>
 #include <unicode/ucol.h>
-#include <unicode/uvernum.h>
+#include <unicode/uversion.h>
 
 #if U_ICU_VERSION_MAJOR_NUM >= 51
 #	include <unicode/utf_old.h>
