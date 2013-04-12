@@ -1608,7 +1608,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 						{
 							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
 									Arg::Gds(isc_trunc_limits) <<
-										Arg::Num(to->dsc_length) << Arg::Num(from->dsc_length));
+										Arg::Num(to->getStringLength()) << Arg::Num(from->getStringLength()));
 						}
 					} while (--l);
 				}
