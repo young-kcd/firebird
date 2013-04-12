@@ -154,6 +154,7 @@ FB_UDR_BEGIN_FUNCTION(wait_event)
 		isc_free((char*) eveBuffer);
 		isc_free((char*) eveResult);
 
+		out->resultNull = FB_FALSE;
 		out->result = counter;
 	}
 FB_UDR_END_FUNCTION
@@ -381,6 +382,8 @@ FB_UDR_BEGIN_PROCEDURE(inc)
 		n3(procedure->n1),	// n3 will start with the next value for n1 of the last execution
 		n4(0)
 	{
+		out->n0Null = out->n1Null = out->n2Null = out->n3Null = out->n4Null = FB_FALSE;
+
 		out->n0 = 0;
 
 		// In the execute method, the procedure scope must be accessed using the 'procedure' pointer.
