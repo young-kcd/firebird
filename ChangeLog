@@ -1,3 +1,78 @@
+ 2013-04-11 16:09  asfernandes 
+   M src/jrd/exe.cpp
+Misc.
+
+ 2013-04-11 16:04  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe_proto.h
+Cleanup.
+
+ 2013-04-11 15:44  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/exe.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/req.h
+Revert external routines to request-based (*) code, but now using a totally different internal approach.
+* This is not ideal IMO, but much more easier to currently support stack traces, and domain's defaults and validations.
+
+ 2013-04-11 14:28  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Fixed regression in protocol < 13 introduced when adding statement flags
+
+ 2013-04-11 13:35  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+Fixed security issue - plain password remained in DPB
+
+ 2013-04-11 11:40  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed regression, found by Adriano - fbtcs does not work
+
+ 2013-04-11 10:13  dimitr 
+   M src/common/xdr.cpp
+   M src/common/xdr_proto.h
+Cleanup.
+
+ 2013-04-11 10:07  dimitr 
+   M src/common/IntlParametersBlock.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/parse_proto.h
+   M src/remote/parser.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Finished the 16-bit -> 32-bit conversion for SQL/BLR/buffer/message sizes, this time in the remote provider. The server has been proven to be able to create a procedure longer than 64KB in length and execute it, but more testing is required.
+A major battle against 64-bit build warnings were performed.
+Additionally, fixed CORE-3943. It does affect compatibility with older servers, but at the minor level.
+
+ 2013-04-11 01:17  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-4081 - Built-in functions and subselect no longer supported in "update or insert" value list.
+
+ 2013-04-11 01:03  asfernandes 
+   M src/common/unicode_util.cpp
+Apply patch by Treeve Jelbert to build against ICU 5.11.
+
  2013-04-10 11:32  mapopa 
    M doc/cleaning-todo.txt
    M doc/emacros-cross_ref.html
