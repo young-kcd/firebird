@@ -1442,27 +1442,11 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		{
 		case dtype_dbkey:
 			{
-				UCHAR* ptr = NULL;
-				USHORT l = 0;
+				USHORT l = to->getStringLength();
+				UCHAR* ptr = to->dsc_address;
 
-				switch(to->dsc_dtype)
-				{
-				case dtype_text:
-					ptr = to->dsc_address;
-					l = to->dsc_length;
-					break;
-				case dtype_cstring:
-					ptr = to->dsc_address;
-					l = to->dsc_length - 1;
-					break;
-				case dtype_varying:
-					ptr = to->dsc_address + sizeof(USHORT);
-					l = to->dsc_length - sizeof(USHORT);
-					break;
-				default:
-					fb_assert(false);
-					break;
-				}
+				if (to->dsc_dtype == dtype_varying)
+					ptr += sizeof(USHORT);
 
 				if (l < from->dsc_length)
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
