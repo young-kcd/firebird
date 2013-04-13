@@ -213,3 +213,43 @@ Firebird 2.5
     SOURCE *
     TWO_PHASE *
     UUID_TO_CHAR *
+
+
+Firebird 3.0
+------------
+
+  Added as reserved words:
+
+    DETERMINISTIC
+    OVER
+    RETURN
+    SCROLL
+    SQLSTATE
+
+  Added as non-reserved words:
+
+    ABSOLUTE
+    ACOSH *
+    ASINH *
+    ATANH *
+    BODY *
+    CONTINUE
+    DDL *
+    DECRYPT *
+    DENSE_RANK
+    ENCRYPT *
+    ENGINE *
+    FIRST_VALUE
+    IDENTITY
+    LAST_VALUE
+    LAG
+    LEAD
+    NAME
+    NTH_VALUE
+    PACKAGE *
+    PARTITION
+    PRIOR
+    RANK
+    RELATIVE
+    ROW_NUMBER
+    USAGE
