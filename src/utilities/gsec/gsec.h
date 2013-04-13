@@ -62,7 +62,7 @@ namespace Auth
 	class UserData;
 }
 
-class tsec : public ThreadData
+class tsec : public Firebird::ThreadData
 {
 public:
 	explicit tsec(Firebird::UtilSvc* uf)

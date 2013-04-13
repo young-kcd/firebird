@@ -38,18 +38,17 @@
 
 // Thread specific data
 
+namespace Firebird {
+
 class ThreadData
 {
 public:
 	enum ThreadDataType {
 		tddGBL = 1,		// used by backup/restore
-		//tddSQL = 2,	// used by DSQL, obsolete
-		tddDBB = 3,		// used in engine
-		//tddRDB = 4,	// used in remote interface, obsolete
-		tddDBA = 5,		// used in gstat utility
-		//tddIDB = 6,	// used by interprocess server, obsolete
-		tddALICE = 7,	// used by gfix
-		tddSEC = 8		// used by gsec
+		tddDBB = 2,		// used in engine
+		tddDBA = 3,		// used in gstat utility
+		tddALICE = 4,	// used by gfix
+		tddSEC = 5		// used by gsec
 	};
 
 private:
@@ -70,6 +69,8 @@ public:
 	void			putSpecific();
 	static void		restoreSpecific();
 };
+
+} // namespace Firebird
 
 // Thread entry point definitions might much better look in ThreadStart.h,
 // but due to need to have them in utilities declarations, and no need in

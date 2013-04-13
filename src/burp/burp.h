@@ -865,7 +865,7 @@ const FB_UINT64 MIN_SPLIT_SIZE	= FB_CONST64(2048);		// bytes
 
 // Global switches and data
 
-class BurpGlobals : public ThreadData
+class BurpGlobals : public Firebird::ThreadData
 {
 public:
 	explicit BurpGlobals(Firebird::UtilSvc* us)

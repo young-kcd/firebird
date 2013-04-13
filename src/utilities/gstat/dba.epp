@@ -68,6 +68,7 @@ using MsgFormat::SafeArg;
 #include <io.h>
 #endif
 
+using namespace Firebird;
 using namespace Jrd;
 using namespace Ods;
 

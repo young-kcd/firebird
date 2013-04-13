@@ -79,9 +79,6 @@
 // Thread data block / IPC related data blocks
 #include "../common/ThreadData.h"
 
-// recursive mutexes
-#include "../common/thd.h"
-
 // Definition of block types for data allocation in JRD
 #include "../include/fb_blk.h"
 
@@ -99,10 +96,7 @@
 // Error codes
 #include "gen/iberror.h"
 
-class str;
 struct dsc;
-struct thread;
-struct mod;
 
 namespace EDS {
 	class Connection;
@@ -398,7 +392,7 @@ const USHORT TDBB_detaching				= 512;	// detach is in progress
 const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
 const USHORT TDBB_cache_unwound			= 2048;	// page cache was unwound
 
-class thread_db : public ThreadData
+class thread_db : public Firebird::ThreadData
 {
 private:
 	MemoryPool*	defaultPool;
@@ -665,7 +659,7 @@ public:
 		{
 			externStatus->set(context.tdbb_status_vector);
 		}
-		ThreadData::restoreSpecific();
+		Firebird::ThreadData::restoreSpecific();
 	}
 
 	thread_db* operator->()
@@ -789,8 +783,8 @@ typedef Firebird::HalfStaticArray<UCHAR, 256> MoveBuffer;
 
 inline Jrd::thread_db* JRD_get_thread_data()
 {
-	ThreadData* p1 = ThreadData::getSpecific();
-	if (p1 && p1->getType() == ThreadData::tddDBB)
+	Firebird::ThreadData* p1 = Firebird::ThreadData::getSpecific();
+	if (p1 && p1->getType() == Firebird::ThreadData::tddDBB)
 	{
 		Jrd::thread_db* p2 = (Jrd::thread_db*) p1;
 		if (p2->getDatabase() && !p2->getDatabase()->checkHandle())
@@ -803,7 +797,7 @@ inline Jrd::thread_db* JRD_get_thread_data()
 
 inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
 {
-	fb_assert(tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
+	fb_assert(tdbb && (tdbb->getType() == Firebird::ThreadData::tddDBB) &&
 		(!tdbb->getDatabase() || tdbb->getDatabase()->checkHandle()));
 }
 
@@ -816,7 +810,7 @@ inline void CHECK_DBB(const Jrd::Database* dbb)
 
 inline Jrd::thread_db* JRD_get_thread_data()
 {
-	return (Jrd::thread_db*) ThreadData::getSpecific();
+	return (Jrd::thread_db*) Firebird::ThreadData::getSpecific();
 }
 
 inline void CHECK_DBB(const Jrd::Database*)

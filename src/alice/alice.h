@@ -136,7 +136,7 @@ enum tdr_state_vals {
 
 // Global data
 
-class AliceGlobals : public ThreadData
+class AliceGlobals : public Firebird::ThreadData
 {
 private:
 	MemoryPool* ALICE_default_pool;

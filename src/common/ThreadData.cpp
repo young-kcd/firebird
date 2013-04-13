@@ -57,6 +57,8 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
 
+using namespace Firebird;
+
 namespace {
 
 TLS_DECLARE (ThreadData*, tData);
@@ -66,33 +68,12 @@ TLS_DECLARE (ThreadData*, tData);
 
 ThreadData* ThreadData::getSpecific()
 {
-/**************************************
- *
- *	T H D _ g e t _ s p e c i f i c
- *
- **************************************
- *
- * Functional description
- * Gets thread specific data and returns
- * a pointer to it.
- *
- **************************************/
 	return TLS_GET(tData);
 }
 
 
 void ThreadData::putSpecific()
 {
-/**************************************
- *
- *	T H D _ p u t _ s p e c i f i c
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
 	threadDataPriorContext = TLS_GET(tData);
 	TLS_SET(tData, this);
 }
@@ -100,16 +81,6 @@ void ThreadData::putSpecific()
 
 void ThreadData::restoreSpecific()
 {
-/**************************************
- *
- *	T H D _ r e s t o r e _ s p e c i f i c
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 	ThreadData* current_context = getSpecific();
-
 	TLS_SET(tData, current_context->threadDataPriorContext);
 }
