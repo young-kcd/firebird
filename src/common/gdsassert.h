@@ -42,7 +42,7 @@ inline void fb_assert_impl(const char* msg, const char* file, int line, bool do_
 	if (isatty(2))
 		fprintf(stderr, ASSERT_FAILURE_STRING, msg, file, line);
 	else
-		gds__log(ASSERT_FAILURE_STRING, msg, msg, line);
+		gds__log(ASSERT_FAILURE_STRING, msg, file, line);
 
 	if (do_abort)
 		abort();
