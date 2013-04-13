@@ -1,3 +1,15 @@
+ 2013-04-12 17:59  dimitr 
+   M src/common/cvt.cpp
+Fixed CORE-4082: Wrong error message.
+
+ 2013-04-12 15:20  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+Corrections.
+
+ 2013-04-12 00:24  asfernandes 
+   M src/common/unicode_util.cpp
+Fix build with ICU 3.0.
+
  2013-04-11 16:09  asfernandes 
    M src/jrd/exe.cpp
 Misc.
