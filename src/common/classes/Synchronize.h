@@ -34,7 +34,7 @@
 
 #include "../common/classes/SyncObject.h"
 
-#ifndef _WIN32
+#ifndef WIN_NT
 #include "fb_pthread.h"
 #endif
 
@@ -56,9 +56,8 @@ protected:
 	bool shutdownInProgress;
 	bool sleeping;
 	volatile bool wakeup;
-	///SINT64 waitTime;
 
-#ifdef _WIN32
+#ifdef WIN_NT
 	void* evnt;
 #else
 	pthread_cond_t condition;
@@ -84,11 +83,8 @@ public:
 
 	const char* getWhere() const;
 
-	static void validateLocks();
-
 private:
 	void grantLock(SyncObject* lock);
-	void init(const char* description);
 
 	static void setThread(ThreadSync* thread);
 

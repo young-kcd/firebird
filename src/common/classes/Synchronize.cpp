@@ -56,7 +56,7 @@ Synchronize::Synchronize()
 	  sleeping(false),
 	  wakeup(false)
 {
-#ifdef _WIN32
+#ifdef WIN_NT
 	evnt = CreateEvent(NULL, false, false, NULL);
 #else
 	int ret = pthread_mutex_init(&mutex, NULL);
@@ -66,7 +66,7 @@ Synchronize::Synchronize()
 
 Synchronize::~Synchronize()
 {
-#ifdef _WIN32
+#ifdef WIN_NT
 	CloseHandle(evnt);
 #else
 	int ret = pthread_mutex_destroy(&mutex);
@@ -78,9 +78,9 @@ void Synchronize::sleep()
 {
 	sleeping = true;
 
-#ifdef _WIN32
+#ifdef WIN_NT
 
-#ifdef _DEBUG
+#ifdef DEV_BUILD
 	for (;;)
 	{
 		const int n = WaitForSingleObject(evnt, 10000);
@@ -88,7 +88,7 @@ void Synchronize::sleep()
 			break;
 	}
 #else
-	sleep (INFINITE);
+	sleep(INFINITE);
 #endif
 
 #else
@@ -112,7 +112,7 @@ bool Synchronize::sleep(int milliseconds)
 {
 	sleeping = true;
 
-#ifdef _WIN32
+#ifdef WIN_NT
 	const int n = WaitForSingleObject(evnt, milliseconds);
 	sleeping = false;
 
@@ -159,7 +159,7 @@ bool Synchronize::sleep(int milliseconds)
 
 void Synchronize::wake()
 {
-#ifdef _WIN32
+#ifdef WIN_NT
 	SetEvent(evnt);
 #else
 	int ret = pthread_mutex_lock(&mutex);
@@ -187,20 +187,11 @@ void Synchronize::shutdown()
 TLS_DECLARE(ThreadSync*, threadIndex);
 
 ThreadSync::ThreadSync(const char* desc)
+	: threadId(getCurrentThreadId()), nextWaiting(NULL), prevWaiting(NULL),
+	  lockType(SYNC_NONE), lockGranted(false), lockPending(NULL), locks(NULL),
+	  description(desc)
 {
-	init(desc);
 	setThread(this);
-}
-
-void ThreadSync::init(const char* desc)
-{
-	description = desc;
-	threadId = getCurrentThreadId();
-	prevWaiting = nextWaiting = NULL;
-	lockType = SYNC_NONE;
-	lockGranted = false;
-	lockPending = NULL;
-	locks = NULL;
 }
 
 ThreadSync::~ThreadSync()
@@ -208,12 +199,10 @@ ThreadSync::~ThreadSync()
 	setThread(NULL);
 }
 
-
 ThreadSync* ThreadSync::findThread()
 {
 	return TLS_GET(threadIndex);
 }
-
 
 ThreadSync* ThreadSync::getThread(const char* desc)
 {
@@ -238,7 +227,6 @@ ThreadId ThreadSync::getCurrentThreadId()
 	return getThreadId();
 }
 
-
 const char* ThreadSync::getWhere() const
 {
 	if (lockPending && lockPending->where)
@@ -246,21 +234,6 @@ const char* ThreadSync::getWhere() const
 
 	return "";
 }
-
-
-void ThreadSync::validateLocks()
-{
-	ThreadSync* thread = getThread("ThreadSync::validateLocks");
-
-	// hvlad: not worked, probably we should implement it at some day
-	if (thread->locks)
-	{
-		SYNC_LOG_DEBUG("thread %d has active locks:\n", thread->threadId);
-		for (Sync* sync = thread->locks; sync; sync = sync->prior)
-			SYNC_LOG_DEBUG("   %s\n", sync->where);
-	}
-}
-
 
 void ThreadSync::grantLock(SyncObject* lock)
 {
