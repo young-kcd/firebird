@@ -127,8 +127,14 @@ public:
 class IResultSet : public IRefCounted
 {
 public:
-	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, void* message) = 0;
+	virtual FB_BOOLEAN FB_CARG fetchNext(IStatus* status, void* message) = 0;
+	virtual FB_BOOLEAN FB_CARG fetchPrior(IStatus* status, void* message) = 0;
+	virtual FB_BOOLEAN FB_CARG fetchFirst(IStatus* status, void* message) = 0;
+	virtual FB_BOOLEAN FB_CARG fetchLast(IStatus* status, void* message) = 0;
+	virtual FB_BOOLEAN FB_CARG fetchAbsolute(IStatus* status, unsigned int position, void* message) = 0;
+	virtual FB_BOOLEAN FB_CARG fetchRelative(IStatus* status, int offset, void* message) = 0;
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status) = 0;
+	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status) = 0;
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 	virtual void FB_CARG close(IStatus* status) = 0;
 };

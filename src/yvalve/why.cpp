@@ -2305,7 +2305,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 			statement->transaction = NULL;
 		}
 
-		if (!statement->cursor->fetch(&status, reinterpret_cast<unsigned char*>(msg)))
+		if (!statement->cursor->fetchNext(&status, reinterpret_cast<unsigned char*>(msg)))
 		{
 			return status.isSuccess() ? 100 : status[1];
 		}
@@ -4071,13 +4071,93 @@ void YStatement::setCursorName(IStatus* status, const char* name)
 	}
 }
 
-FB_BOOLEAN YResultSet::fetch(IStatus* status, void* buffer)
+FB_BOOLEAN YResultSet::fetchNext(IStatus* status, void* buffer)
 {
 	try
 	{
 		YEntry<YResultSet> entry(status, this);
 
-		return entry.next()->fetch(status, buffer);
+		return entry.next()->fetchNext(status, buffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return FB_FALSE;
+}
+
+FB_BOOLEAN YResultSet::fetchPrior(IStatus* status, void* buffer)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this);
+
+		return entry.next()->fetchPrior(status, buffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return FB_FALSE;
+}
+
+FB_BOOLEAN YResultSet::fetchFirst(IStatus* status, void* buffer)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this);
+
+		return entry.next()->fetchFirst(status, buffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return FB_FALSE;
+}
+
+FB_BOOLEAN YResultSet::fetchLast(IStatus* status, void* buffer)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this);
+
+		return entry.next()->fetchLast(status, buffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return FB_FALSE;
+}
+
+FB_BOOLEAN YResultSet::fetchAbsolute(IStatus* status, unsigned int position, void* buffer)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this);
+
+		return entry.next()->fetchAbsolute(status, position, buffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return FB_FALSE;
+}
+
+FB_BOOLEAN YResultSet::fetchRelative(IStatus* status, int offset, void* buffer)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this);
+
+		return entry.next()->fetchRelative(status, offset, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -4094,6 +4174,22 @@ FB_BOOLEAN YResultSet::isEof(IStatus* status)
 		YEntry<YResultSet> entry(status, this);
 
 		return entry.next()->isEof(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return FB_FALSE;
+}
+
+FB_BOOLEAN YResultSet::isBof(IStatus* status)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this);
+
+		return entry.next()->isBof(status);
 	}
 	catch (const Exception& e)
 	{

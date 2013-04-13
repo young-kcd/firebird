@@ -4352,7 +4352,7 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-FB_BOOLEAN JResultSet::fetch(IStatus* user_status, void* buffer)
+FB_BOOLEAN JResultSet::fetchNext(IStatus* user_status, void* buffer)
 {
 	bool hasMessage = false;
 
@@ -4389,6 +4389,90 @@ FB_BOOLEAN JResultSet::fetch(IStatus* user_status, void* buffer)
 	return hasMessage ? FB_TRUE : FB_FALSE;
 }
 
+FB_BOOLEAN JResultSet::fetchPrior(IStatus* user_status, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	successful_completion(user_status);
+
+	return FB_TRUE;
+}
+
+FB_BOOLEAN JResultSet::fetchFirst(IStatus* user_status, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	successful_completion(user_status);
+
+	return FB_TRUE;
+}
+
+FB_BOOLEAN JResultSet::fetchLast(IStatus* user_status, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	successful_completion(user_status);
+
+	return FB_TRUE;
+}
+
+FB_BOOLEAN JResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	successful_completion(user_status);
+
+	return FB_TRUE;
+}
+
+FB_BOOLEAN JResultSet::fetchRelative(IStatus* user_status, int offset, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	successful_completion(user_status);
+
+	return FB_TRUE;
+}
 
 int JResultSet::release()
 {
@@ -4440,6 +4524,24 @@ void JResultSet::freeEngineData(IStatus* user_status)
 FB_BOOLEAN JResultSet::isEof(IStatus* user_status)
 {
 	return eof ? FB_TRUE : FB_FALSE;
+}
+
+
+FB_BOOLEAN JResultSet::isBof(IStatus* user_status)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	successful_completion(user_status);
+
+	return FB_TRUE;
 }
 
 

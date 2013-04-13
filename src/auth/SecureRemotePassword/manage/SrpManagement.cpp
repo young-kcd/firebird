@@ -523,7 +523,7 @@ public:
 							(par ? par->buffer : NULL), om);
 						check(status);
 
-						while (rs->fetch(status, di.buffer))
+						while (rs->fetchNext(status, di.buffer))
 						{
 							check(status);
 

@@ -145,8 +145,14 @@ class JResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTS
 public:
 	// IResultSet implementation
 	virtual int FB_CARG release();
-	virtual FB_BOOLEAN FB_CARG fetch(Firebird::IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchNext(Firebird::IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchPrior(Firebird::IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchFirst(Firebird::IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchLast(Firebird::IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchAbsolute(Firebird::IStatus* status, unsigned int position, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchRelative(Firebird::IStatus* status, int offset, void* message);
 	virtual FB_BOOLEAN FB_CARG isEof(Firebird::IStatus* status);
+	virtual FB_BOOLEAN FB_CARG isBof(Firebird::IStatus* status);
 	virtual Firebird::IMessageMetadata* FB_CARG getMetadata(Firebird::IStatus* status);
 	virtual void FB_CARG close(Firebird::IStatus* status);
 

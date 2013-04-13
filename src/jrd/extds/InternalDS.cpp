@@ -543,7 +543,7 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 
 		fb_assert(m_outMetadata->length == m_out_buffer.getCount());
 		fb_assert(m_cursor);
-		res = m_cursor->fetch(&status, m_out_buffer.begin());
+		res = m_cursor->fetchNext(&status, m_out_buffer.begin());
 	}
 
 	if (!status.isSuccess())

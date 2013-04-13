@@ -245,8 +245,14 @@ class ResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSE
 public:
 	// IResultSet implementation
 	virtual int FB_CARG release();
-	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchNext(IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchPrior(IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchFirst(IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchLast(IStatus* status, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchAbsolute(IStatus* status, unsigned int position, void* message);
+	virtual FB_BOOLEAN FB_CARG fetchRelative(IStatus* status, int offset, void* message);
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status);
+	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status);
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
 	virtual void FB_CARG close(IStatus* status);
 
@@ -886,7 +892,7 @@ void Blob::freeClientData(IStatus* status, bool force)
 		{
 			release_object(status, rdb, op_cancel_blob, blob->rbl_id);
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
 			if (!force)
 				throw;
@@ -986,7 +992,7 @@ void Events::freeClientData(IStatus* status, bool force)
 			// Tell the remote server to cancel it and delete it from the list
 			send_cancel_event(rvnt);
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
 			if (!force)
 				throw;
@@ -2245,7 +2251,7 @@ void Statement::freeClientData(IStatus* status, bool force)
 			{
 				send_and_receive(status, rdb, packet);
 			}
-			catch (const Exception& ex)
+			catch (const Exception&)
 			{
 				if (!force)
 					throw;
@@ -2705,7 +2711,7 @@ ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
 }
 
 
-FB_BOOLEAN ResultSet::fetch(IStatus* status, void* buffer)
+FB_BOOLEAN ResultSet::fetchNext(IStatus* status, void* buffer)
 {
 /**************************************
  *
@@ -2965,6 +2971,86 @@ FB_BOOLEAN ResultSet::fetch(IStatus* status, void* buffer)
 }
 
 
+FB_BOOLEAN ResultSet::fetchPrior(IStatus* user_status, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	return FB_TRUE;
+}
+
+
+FB_BOOLEAN ResultSet::fetchFirst(IStatus* user_status, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	return FB_TRUE;
+}
+
+
+FB_BOOLEAN ResultSet::fetchLast(IStatus* user_status, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	return FB_TRUE;
+}
+
+
+FB_BOOLEAN ResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	return FB_TRUE;
+}
+
+
+FB_BOOLEAN ResultSet::fetchRelative(IStatus* user_status, int offset, void* buffer)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return FB_FALSE;
+	}
+
+	return FB_TRUE;
+}
+
+
 void Statement::setCursorName(IStatus* status, const char* cursor)
 {
 /*****************************************
@@ -3069,6 +3155,21 @@ FB_BOOLEAN ResultSet::isEof(IStatus* status)
 	{
 		ex.stuffException(status);
 	}
+	return FB_FALSE;
+}
+
+
+FB_BOOLEAN ResultSet::isBof(IStatus* status)
+{
+	try
+	{
+		status_exception::raise(Arg::Gds(isc_wish_list));
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
 	return FB_FALSE;
 }
 

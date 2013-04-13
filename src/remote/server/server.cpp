@@ -3145,7 +3145,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		{
 			fb_assert(statement->rsr_msgs_waiting == 0);
 
-			rc = statement->rsr_cursor->fetch(&status_vector, message->msg_buffer);
+			rc = statement->rsr_cursor->fetchNext(&status_vector, message->msg_buffer);
 
 			statement->rsr_flags.set(Rsr::FETCHED);
 			if (!status_vector.isSuccess())
@@ -3225,7 +3225,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			next = message;
 		}
 
-		rc = statement->rsr_cursor->fetch(&status_vector, message->msg_buffer);
+		rc = statement->rsr_cursor->fetchNext(&status_vector, message->msg_buffer);
 		if (!status_vector.isSuccess())
 		{
 			// If already have an error queued, don't overwrite it
