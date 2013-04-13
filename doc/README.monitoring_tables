@@ -71,11 +71,12 @@ Monitoring tables
       - MON$RESERVE_SPACE (reserve space flag)
       - MON$CREATION_DATE (creation date/time)
       - MON$PAGES (number of pages allocated on disk)
+      - MON$STAT_ID (statistics ID)
       - MON$BACKUP_STATE (current physical backup state)
           0: normal
           1: stalled
           2: merge
-      - MON$STAT_ID (statistics ID)
+      - MON$CRYPT_PAGE (number of page being encrypted)
 
     MON$ATTACHMENTS (connected attachments)
       - MON$ATTACHMENT_ID (attachment ID)
@@ -94,6 +95,10 @@ Monitoring tables
       - MON$TIMESTAMP (connection date/time)
       - MON$GARBAGE_COLLECTION (garbage collection flag)
       - MON$STAT_ID (statistics ID)
+      - MON$CLIENT_VERSION (version of the client library)
+      - MON$REMOTE_VERSION (version of the remote protocol)
+      - MON$REMOTE_HOST (remote host name)
+      - MON$REMOTE_OS_USER (remote OS user name)
 
     MON$TRANSACTIONS (started transactions)
       - MON$TRANSACTION_ID (transaction ID)
@@ -140,6 +145,7 @@ Monitoring tables
       - MON$SOURCE_LINE (SQL source line number)
       - MON$SOURCE_COLUMN (SQL source column number)
       - MON$STAT_ID (statistics ID)
+      - MON$PACKAGE_NAME (PSQL object package name)
 
     MON$IO_STATS (I/O statistics)
       - MON$STAT_ID (statistics ID)

@@ -46,6 +46,20 @@ Example:
     select acos(x) from y;
 
 
+-----
+ACOSH
+-----
+
+Function:
+    Returns the hyperbolic arc cosine of a number (expressed in radians).
+
+Format:
+    ACOSH( <number> )
+
+Example:
+    select acosh(x) from y;
+
+
 ----------
 ASCII_CHAR
 ----------
@@ -100,6 +114,20 @@ Example:
     select asin(x) from y;
 
 
+-----
+ASINH
+-----
+
+Function:
+    Returns the hyperbolic arc sine of a number (expressed in radians).
+
+Format:
+    ASINH( <number> )
+
+Example:
+    select asinh(x) from y;
+
+
 ----
 ATAN
 ----
@@ -132,6 +160,20 @@ Notes:
 
 Example:
     select atan2(x, y) from z;
+
+
+-----
+ATANH
+-----
+
+Function:
+    Returns the hyperbolic arc tangent of a number (expressed in radians).
+
+Format:
+    ATANH( <number> )
+
+Example:
+    select atanh(x) from y;
 
 
 -------
