@@ -1,3 +1,53 @@
+ 2013-04-13 16:31  dimitr 
+   M src/common/classes/Synchronize.cpp
+   M src/common/classes/Synchronize.h
+Misc and small cleanup.
+
+ 2013-04-13 15:07  dimitr 
+   M src/alice/alice.h
+   M src/burp/burp.h
+   M src/common/ThreadData.cpp
+   M src/common/ThreadData.h
+   M src/jrd/jrd.h
+   M src/utilities/gsec/gsec.h
+   M src/utilities/gstat/dba.epp
+Moved ThreadData into the namespace + small cleanup.
+
+ 2013-04-13 13:20  dimitr 
+   M src/common/gdsassert.h
+Fixed typo, thanks to Claudio.
+
+ 2013-04-13 07:11  dimitr 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Add interface support for scrollable DSQL cursors. Implementation will follow later.
+
+ 2013-04-13 07:09  dimitr 
+   M doc/README.incompatibilities.txt
+Updated docs.
+
+ 2013-04-13 06:50  dimitr 
+   M doc/sql.extensions/README.keywords
+Updated docs.
+
+ 2013-04-13 05:58  dimitr 
+   M doc/README.monitoring_tables
+   M doc/WhatsNew
+   M doc/sql.extensions/README.builtin_functions.txt
+   M doc/sql.extensions/README.cursors
+The initial list of changes for Alpha.
+
+ 2013-04-13 05:11  dimitr 
+   M src/common/cvt.cpp
+Misc.
+
  2013-04-12 17:59  dimitr 
    M src/common/cvt.cpp
 Fixed CORE-4082: Wrong error message.
