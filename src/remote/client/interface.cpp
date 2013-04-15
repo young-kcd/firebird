@@ -2730,9 +2730,9 @@ FB_BOOLEAN ResultSet::fetchNext(IStatus* status, void* buffer)
 
 		// Check and validate handles, etc.
 
-		if (!isc_dsql_cursor_err)
+		if (!stmt)
 		{
-			Arg::Gds(isc_bad_req_handle).raise();
+			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
 		}
 		Rsr* statement = stmt->getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
