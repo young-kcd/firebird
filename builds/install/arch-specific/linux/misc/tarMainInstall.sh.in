@@ -49,7 +49,7 @@ fi
 # Here we are installing from a install tar.gz file
 
 if [ -e scripts ]; then
-	MANIFEXT_TXT=`pwd`/manifest.txt
+	MANIFEST_TXT=`pwd`/manifest.txt
     displayMessage "Extracting install data"
     runAndCheckExit "./scripts/preinstall.sh"
     runAndCheckExit "./scripts/tarinstall.sh"
