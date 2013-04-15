@@ -26,7 +26,7 @@
 # There are three types of configuration values: integer, boolean and string.
 #
 # Integer
-# --------
+# -------
 # Integers is what they sound like, an integral value. Examples:
 #   1
 #   42
@@ -53,6 +53,35 @@
 # isc_dpb_config parameter in DPB (isc_spb_config for services).
 # Notice that per-database entries also may be tuned using DPB in case of
 # embedded engine when attaching to database first time.
+#
+# Macro substitution
+# ------------------
+# There is a number of predefined macro commands, that can be used in config
+# files where directory name is needed. They are available using $(name) syntax.
+# The complete list of the as follows:
+#	root - root directory of firebird instance
+#	install - directory where firebird is installed
+#	this - directory where current configuration file is located
+#	dir_conf - directory where firebird.conf and databases.conf are located
+#	dir_secdb - directory where default security database is located
+#	dir_plugins - directory where plugins are located
+#	dir_udf - directory where UDFs are located by default
+#	dir_sample - directory where samples are located
+#	dir_sampledb - directory where sample DB (employee.fdb) is located
+#	dir_intl - directory where international modules are located
+#	dir_msg - directory where messages file (firebird.msg) is located
+#
+#
+# Includes
+# --------
+# One can include one config file into another one.
+# When relative path is used, it's treated relative to current config file.
+# I.e. when
+#	include some_file.conf
+# is used in /opt/config/master.conf, we include /opt/config/some_file.conf.
+# Traditional wildcards * and ? may be used in icnlude operator. In this case
+# all matching files will be included in undefined order. Example:
+#	include $(dir_plugins)/config/*.conf
 #
 # Portions of this file have been reproduced/made available with the
 # permission of Ann Harrison @ IBPhoenix.
