@@ -450,7 +450,10 @@ int Config::getDummyPacketInterval() const
 
 int Config::getLockMemSize() const
 {
-	return get<int>(KEY_LOCK_MEM_SIZE);
+	int size = get<int>(KEY_LOCK_MEM_SIZE);
+	if (size < 64 * 1024)
+		size = 64 * 1024;
+	return size;
 }
 
 int Config::getLockHashSlots() const

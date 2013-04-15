@@ -795,7 +795,9 @@ SINT64 ConfigFile::Parameter::asInteger() const
 			break;
 
 		case ' ': case '\t':
-			break;
+			if (state == 1)
+				break;
+			return 0;
 
 		case 'k': case 'K':
 			if (state != 2)
