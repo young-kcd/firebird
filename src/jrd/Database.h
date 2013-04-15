@@ -263,6 +263,42 @@ public:
 		ValueCache m_counters[TOTAL_ITEMS];
 	};
 
+	class ExistenceRefMutex : public Firebird::RefCounted
+	{
+	public:
+		ExistenceRefMutex()
+			: exist(true)
+		{ }
+
+		~ExistenceRefMutex()
+		{ }
+
+	public:
+		void destroy()
+		{
+			exist = false;
+		}
+
+		bool doesExist()
+		{
+			return exist;
+		}
+
+		void enter()
+		{
+			mutex.enter("ExistenceRefMutex::enter()");
+		}
+
+		void leave()
+		{
+			mutex.leave();
+		}
+
+	private:
+		Firebird::Mutex mutex;
+		bool exist;
+	};
+
 	static Database* create()
 	{
 		Firebird::MemoryStats temp_stats;
@@ -392,6 +428,7 @@ public:
 
 	SharedCounter dbb_shared_counter;
 	CryptoManager* dbb_crypto_manager;
+	Firebird::RefPtr<ExistenceRefMutex> dbb_init_fini;
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -431,7 +468,8 @@ private:
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_tip_cache(NULL),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
-		dbb_external_file_directory_list(NULL)
+		dbb_external_file_directory_list(NULL),
+		dbb_init_fini(FB_NEW(*getDefaultMemoryPool()) ExistenceRefMutex())
 	{
 		dbb_pools.add(p);
 	}
