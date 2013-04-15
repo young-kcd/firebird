@@ -340,6 +340,42 @@ public:
 		ValueCache m_counters[TOTAL_ITEMS];
 	};
 
+	class ExistenceRefMutex : public Firebird::RefCounted
+	{
+	public:
+		ExistenceRefMutex()
+			: exist(true)
+		{ }
+
+		~ExistenceRefMutex()
+		{ }
+
+	public:
+		void destroy()
+		{
+			exist = false;
+		}
+
+		bool doesExist()
+		{
+			return exist;
+		}
+
+		void enter()
+		{
+			mutex.enter();
+		}
+
+		void leave()
+		{
+			mutex.leave();
+		}
+
+	private:
+		Firebird::Mutex mutex;
+		bool exist;
+	};
+
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
 	static Database* create()
@@ -451,7 +487,7 @@ public:
 	Firebird::Array<MemoryPool*> dbb_pools;		// pools
 
 	Firebird::Array<void*> dbb_sort_buffers;	// sort buffers ready for reuse
-	
+
 	Firebird::Array<jrd_req*> dbb_internal;		// internal requests
 	Firebird::Array<jrd_req*> dbb_dyn_req;		// internal dyn requests
 
@@ -503,6 +539,7 @@ public:
 		Firebird::MetaName, UserFunction*> > > dbb_functions;	// User defined functions
 
 	SharedCounter dbb_shared_counter;
+	Firebird::RefPtr<ExistenceRefMutex> dbb_init_fini;
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -539,7 +576,8 @@ private:
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_charsets(*p),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
-		dbb_functions(*p)
+		dbb_functions(*p),
+		dbb_init_fini(FB_NEW(*getDefaultMemoryPool()) ExistenceRefMutex())
 	{
 		dbb_pools.add(p);
 		dbb_internal.grow(irq_MAX);

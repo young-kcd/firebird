@@ -154,6 +154,11 @@ namespace Firebird
 			return ptr ? true : false;
 		}*/
 
+		bool hasData() const
+		{
+			return ptr ? true : false;
+		}
+
 		bool operator !() const
 		{
 			return !ptr;

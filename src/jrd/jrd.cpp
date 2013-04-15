@@ -158,6 +158,53 @@ namespace
 	// Flag engineShuttingDown guarantees that no new attachment is created after setting it.
 	GlobalPtr<Mutex> databases_mutex;
 
+	// Holder for per-database init/fini mutex
+	class RefMutexUnlock
+	{
+	public:
+		RefMutexUnlock()
+			: entered(false)
+		{ }
+
+		RefMutexUnlock(Database::ExistenceRefMutex* p)
+			: ref(p), entered(false)
+		{ }
+
+		void enter()
+		{
+			fb_assert(ref);
+			ref->enter();
+			entered = true;
+		}
+
+		void operator=(RefPtr<Database::ExistenceRefMutex>& to)
+		{
+			if (ref == to)
+			{
+				return;
+			}
+
+			if (entered)
+			{
+				ref->leave();
+				entered = false;
+			}
+			ref = to;
+		}
+
+		~RefMutexUnlock()
+		{
+			if (entered)
+			{
+				ref->leave();
+			}
+		}
+
+	private:
+		RefPtr<Database::ExistenceRefMutex> ref;
+		bool entered;
+	};
+
 	// We have 2 more related types of mutexes in database and attachment.
 	// Attachment is using reference counted mutex in PublicHandle, also making it possible
 	// to check does object still exist after locking a mutex. This makes great use when
@@ -581,14 +628,14 @@ static ISC_STATUS	unwindAttach(const Exception& ex,
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
 #endif
 
-static void		init(thread_db*, const PathName&, const PathName&, bool, const DatabaseOptions&);
+static void		init(thread_db*, const PathName&, const PathName&, bool, const DatabaseOptions&,
+					RefMutexUnlock&);
 static Attachment* create_attachment(const PathName&, Database*, const DatabaseOptions&);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		release_attachment(thread_db*, Attachment*);
 static void		detachLocksFromAttachment(Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
-static void		shutdown_database(Database*, const bool);
-static bool		unlink_database(Database*);
+static bool		shutdown_database(Database*, const bool);
 static void		strip_quotes(string&);
 static void		purge_attachment(thread_db*, Attachment*, const bool);
 static void		getUserInfo(UserId&, const DatabaseOptions&);
@@ -920,7 +967,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 #endif
 
 	// Unless we're already attached, do some initialization
-	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, true, options);
+	RefMutexUnlock initMutexHolder;
+	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, true, options, initMutexHolder);
 	dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 	attachment = tdbb->getAttachment();
@@ -1964,7 +2012,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 #endif
 
 	// Unless we're already attached, do some initialization
-	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, false, options);
+	RefMutexUnlock initMutexHolder;
+	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, false, options, initMutexHolder);
 	dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 	attachment = tdbb->getAttachment();
@@ -2442,16 +2491,13 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 				*handle = 0;
 			}
 
-			// This point on database is useless
-			// mark the dbb unusable and remove it from linked list
-			if (unlink_database(dbb))
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			const jrd_file* file = pageSpace->file;
+			const Shadow* shadow = dbb->dbb_shadow;
+
+			if (shutdown_database(dbb, false))
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
-				const Shadow* shadow = dbb->dbb_shadow;
-
-				shutdown_database(dbb, false);
-
+				// This point on database is useless
 				// drop the files here
 				bool err = drop_files(file);
 				for (; shadow; shadow = shadow->sdw_next)
@@ -4997,7 +5043,8 @@ static void init(thread_db* tdbb,
 				 const PathName& expanded_filename,
 				 const PathName& alias_name,
 				 bool attach_flag,		// only for SS
-				 const DatabaseOptions& options)
+				 const DatabaseOptions& options,
+				 RefMutexUnlock& init_fini_guard)
 {
 /**************************************
  *
@@ -5030,7 +5077,7 @@ static void init(thread_db* tdbb,
 	Database* dbb = NULL;
 
 	{	// scope
-		MutexLockGuard guard(databases_mutex);
+		MutexLockGuard listGuard(databases_mutex);
 
 		// make sure that no new attachments arrive after shutdown started
 		if (engineShuttingDown)
@@ -5038,26 +5085,48 @@ static void init(thread_db* tdbb,
 			Arg::Gds(isc_att_shutdown).raise();
 		}
 
-		// Check to see if the database is already actively attached
+		// Check to see if the database is already attached
 #ifdef SUPERSERVER
-		for (dbb = databases; dbb; dbb = dbb->dbb_next)
+		dbb = databases;
+		while (dbb)
 		{
 			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
 				(dbb->dbb_filename == expanded_filename))
 			{
 				if (attach_flag)
 				{
-					Database::SyncGuard dbbGuard(dbb);
-					fb_assert(!(dbb->dbb_flags & DBB_new));
+					init_fini_guard = dbb->dbb_init_fini;
 
-					tdbb->setDatabase(dbb);
-					tdbb->setAttachment(create_attachment(alias_name, dbb, options));
-					return;
+					{	// scope
+						MutexUnlockGuard listUnlock(databases_mutex);
+
+						// after unlocking databases_mutex we loose control over dbb
+						// as long as dbb_init_fini is not locked and activity of it is not checked
+						init_fini_guard.enter();
+						if (dbb->dbb_init_fini->doesExist())
+						{
+							Database::SyncGuard dbbGuard(dbb);
+							fb_assert(!(dbb->dbb_flags & DBB_new));
+
+							tdbb->setDatabase(dbb);
+							tdbb->setAttachment(create_attachment(alias_name, dbb, options));
+
+							return;
+						}
+					}
+
+					// If we reached this point this means that found dbb was removed
+					// Forget about it and repeat search
+					init_fini_guard = NULL;
+					dbb = databases;
+					continue;
 				}
 
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
 			}
+
+			dbb = dbb->dbb_next;
 		}
 #endif
 
@@ -5067,6 +5136,10 @@ static void init(thread_db* tdbb,
 		dbb->dbb_flags |= (DBB_exclusive | DBB_new | options.dpb_flags);
 		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 		dbb->dbb_bufferpool = dbb->createPool();
+
+		// safely take init lock on just created database
+		init_fini_guard = dbb->dbb_init_fini;
+		init_fini_guard.enter();
 
 		dbb->dbb_next = databases;
 		databases = dbb;
@@ -5654,7 +5727,7 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
 }
 
 
-static void shutdown_database(Database* dbb, const bool release_pools)
+static bool shutdown_database(Database* dbb, const bool release_pools)
 {
 /**************************************
  *
@@ -5668,12 +5741,23 @@ static void shutdown_database(Database* dbb, const bool release_pools)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	fb_assert(!dbb->locked());
+
+	// take fini lock first
+	RefMutexUnlock u(dbb->dbb_init_fini);
+	u.enter();
+
+	if (dbb->dbb_attachments)
+	{
+		return false;
+	}
+
+	// Deactivate dbb_init_fini lock
+	// Since that moment dbb becomes not reusable
+	dbb->dbb_init_fini->destroy();
+
 	{	//scope
-		// This lock is actually not needed cause database is already not accessible
-		// by others (no attachments, removed from linked list, ASTs disabled).
-		// But a lot of functions called here suppose that lock is present and try
-		// to checkout from it sometimes. Therefore:
-		Database::SyncGuard	syncGuard(dbb);
+		Database::SyncGuard	syncGuard1(dbb);
 
 		// Shutdown file and/or remote connection
 
@@ -5747,53 +5831,34 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		}
 	}
 
+	{ // scope
+		MutexLockGuard listGuard2(databases_mutex);
+
+		Database** d_ptr;
+		for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
+		{
+			if (*d_ptr == dbb)
+			{
+				fb_assert(!dbb->locked());
+
+				Database::SyncGuard syncGuard2(dbb);
+				fb_assert(!dbb->dbb_attachments)
+
+				*d_ptr = dbb->dbb_next;
+				dbb->dbb_flags |= DBB_not_in_use;
+
+				break;
+			}
+		}
+	}
+
 	if (release_pools)
 	{
 		tdbb->setDatabase(NULL);
 		Database::destroy(dbb);
 	}
-}
 
-
-static bool unlink_database(Database* dbb)
-{
-/**************************************
- *
- *	u n l i n k _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Take locks and remove database from linked list.
- *	Never take databases_mutex after dbb_sync!
- *
- **************************************/
-	fb_assert(!dbb->locked());
-	MutexLockGuard listGuard(databases_mutex);
-
-	Database** d_ptr;
-	for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
-	{
-		if (*d_ptr == dbb)
-		{
-			fb_assert(!dbb->locked());
-			Database::SyncGuard guard(dbb);
-			if (dbb->dbb_attachments)
-			{
-				// appears someone wants to reuse database
-				// stop dropping it
-				return false;
-			}
-
-			*d_ptr = dbb->dbb_next;
-			dbb->dbb_flags |= DBB_not_in_use;
-			return true;
-		}
-	}
-
-	// appears someone already dropped database
-	// stop dropping it
-	return false;
+	return true;
 }
 
 
@@ -6225,16 +6290,11 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 		release_attachment(tdbb, attachment);
 	}
 
-	// If there are still attachments, do a partial shutdown
-
 	if (dbb->checkHandle())
 	{
 		if (!dbb->dbb_attachments)
 		{
-			if (unlink_database(dbb))		// remove from linked list
-			{
-				shutdown_database(dbb, true);
-			}
+			shutdown_database(dbb, true);
 		}
 	}
 }
@@ -6500,12 +6560,9 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 				release_attachment(tdbb, attachment);
 			}
 
-			if (!dbb->dbb_attachments)	// small SS optimization - full check in unlink_database()
+			if (!dbb->dbb_attachments)	// small SS optimization - full check in shutdown_database()
 			{
-				if (unlink_database(dbb))		// remove from linked list
-				{
-					shutdown_database(dbb, true);
-				}
+				shutdown_database(dbb, true);
 			}
 		}
 		catch (const Exception&)
