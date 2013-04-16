@@ -1,3 +1,10 @@
+ 2013-04-15 16:54  alexpeshkoff 
+   M src/common/classes/RefCounted.h
+   M src/common/classes/locks.h
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+Postfix for CORE-3935 and CORE-3993: avoid opening same database file twice
+
  2013-03-29 12:11  dimitr 
    M src/jrd/jrd.cpp
 Fixed the error I introduced recently.
