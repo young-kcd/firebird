@@ -345,6 +345,8 @@
 
     * New feature CORE-726
         Boolean data type
+      See also:
+        /doc/README.data_types
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
