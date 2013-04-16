@@ -7297,17 +7297,20 @@ static void svcstart(IStatus*	status,
  **************************************/
 
 	// Get ready for multi-hop auth
+	ClntAuthBlock cBlock(NULL, NULL, NULL);
+	cBlock.loadServiceDataFrom(rdb->rdb_port);
+
 	ClumpletWriter send(ClumpletReader::SpbStart, MAX_DPB_SIZE, items, item_length);
 	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION13)
 	{
 		// This is FB < 3.0. Lets convert the UTF8 strings to the OS codepage.
 		IntlSpbStart().fromUtf8(send, 0);
 	}
-
-	ClntAuthBlock cBlock(NULL, NULL, NULL);
-	cBlock.loadServiceDataFrom(rdb->rdb_port);
-	HANDSHAKE_DEBUG(fprintf(stderr, "start calls authFillParametersBlock\n"));
-	authFillParametersBlock(cBlock, send, &spbStartParam, rdb->rdb_port);
+	else
+	{
+		HANDSHAKE_DEBUG(fprintf(stderr, "start calls authFillParametersBlock\n"));
+		authFillParametersBlock(cBlock, send, &spbStartParam, rdb->rdb_port);
+	}
 
 	// Build the primary packet to get the operation started.
 	PACKET* packet = &rdb->rdb_packet;
