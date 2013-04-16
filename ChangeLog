@@ -1,3 +1,26 @@
+ 2013-04-15 16:51  alexpeshkoff 
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+Postfix for CORE-3935 and CORE-3993: avoid opening same database file twice
+
+ 2013-04-15 15:58  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Fixed a bug in one of my recent commits - thanks to Claudio
+
+ 2013-04-15 12:10  alexpeshkoff 
+   M builds/install/misc/databases.conf.in
+   M builds/install/misc/firebird.conf.in
+Documented configuration file changes in distributed .conf files
+
+ 2013-04-15 11:07  alexpeshkoff 
+   M src/common/config/config.cpp
+   M src/common/config/config_file.cpp
+Make numbers parser behave traditionally - no spaces inside the number
+
+ 2013-04-15 06:54  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
+Misc
+
  2013-04-13 16:31  dimitr 
    M src/common/classes/Synchronize.cpp
    M src/common/classes/Synchronize.h
