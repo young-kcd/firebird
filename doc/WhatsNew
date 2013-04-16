@@ -5,12 +5,12 @@
     * Improvement CORE-3972
         Allow selection of SQL_INT64, SQL_DATE and SQL_TIME in dialect 1
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3919
         Improve SIMILAR TO performance
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3879
         Make FB_LOCK_PRINT a bit more handy
@@ -32,7 +32,7 @@
     * Improvement CORE-3639
         Allow the use of multiple WHEN MATCHED / NOT MATCHED clauses in MERGE, as per the SQL 2008 specification
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3594
         Include expected and actual string lenght into error message for sqlcode -802
@@ -47,12 +47,12 @@
     * Improvement CORE-3546
         Aliases for the RETURNING clause
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3343
         Support for the RETURNING clause in positioned (WHERE CURRENT OF) UPDATE and DELETE statements
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3251
         Use SSL/TLS support for both encryption and user authentication
@@ -62,12 +62,12 @@
     * Improvement CORE-3234
         Support for text BLOBs >= 32K as first argument for TRIM()
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3085
         Add clause ALTER DOMAIN <name> [NOT] NULL
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3076
         Better performance for (table.field = :param or :param = -1) in the WHERE clause
@@ -77,14 +77,14 @@
     * Improvement CORE-3057
         Allow the usage of blobs in COMPUTED BY expressions
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3020
         Add RETURNING ... INTO ... clause to the MERGE statement
       See also:
         /doc/sql.extensions/README.returning
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-2868
         Increase trigger and stored procedure body size above 32KB
@@ -113,7 +113,7 @@
     * Improvement CORE-2724
         Validate or transform string of DML queries so that engine internals don't receive malformed strings
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-2712
         Do not print "invalid request BLR" for par.cpp errors with valid BLR
@@ -123,13 +123,13 @@
     * Improvement CORE-2697
         Support the "? in SELECT some_col FROM some_table" subqueries
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-2575
         Make ISQL "input" command open relative filenames based on the directory
         of last opened (and not closed) input file
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-2565
         Many hardcoded messages in Trace Manager
@@ -171,12 +171,12 @@
     * Improvement CORE-2006
         SUBSTRING with regular expression (SIMILAR TO) capability
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-2005
         Support SQL 2008 syntax for MERGE statement with DELETE extension
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-1906
         Allow interactive arguments (seconds and intervals) of fb_lock_print to be 32-bit integers
@@ -201,7 +201,7 @@
     * Improvement CORE-1180
         DDL syntax to change (not) nullable state of columns
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-1117
         Remove or extend limit of command text length (64K)
@@ -213,7 +213,7 @@
     * Improvement CORE-832
         Add support for parameterized exceptions
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-800
         Easy metadata extract improvements
@@ -233,7 +233,7 @@
     * New feature CORE-3626
         Subfunctions in PSQL and EXECUTE BLOCK
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-3364
         Blob filter to translate internal debug info into text representation
@@ -248,12 +248,12 @@
     * New feature CORE-3291
         New pseudocolumn to get number of transaction that created this record version
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-3018
         RECREATE and CREATE OR ALTER SEQUENCE/GENERATOR statements
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * New feature CORE-2884
@@ -264,7 +264,7 @@
     * New feature CORE-2777
         Make possible to alter the default database character set without manual update of system table
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-2744
         Inverse hyperbolic trigonometric functions as native functions
@@ -276,7 +276,7 @@
     * New feature CORE-2700
         C++ API supporting functions, triggers and stored procedures
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-2639
         Pseudo-table with list of users, available for management to current user
@@ -288,21 +288,21 @@
       See also:
         /doc/sql.extensions/README.alternate_string_quoting.txt
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-2312
         PSQL packages
       See also:
         /doc/sql.extensions/README.packages.txt
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-2310
         DDL triggers
       See also:
         /doc/sql.extensions/README.ddl_triggers.txt
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-2047
         User-defined PSQL functions
@@ -319,24 +319,24 @@
       See also:
         /doc/sql.extensions/README.identity_columns.txt
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-1288
         Subprocedures in PSQL and EXECUTE BLOCK
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-1209
         CONTINUE statement
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-816
         Stored procedures, triggers and functions in Java
       See also:
         /doc/README.external_routines.txt
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-775
         True SMP support for SuperServer
@@ -346,7 +346,7 @@
     * New feature CORE-726
         Boolean data type
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-685
         Location of user lists (DB permission)
