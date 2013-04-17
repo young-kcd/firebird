@@ -274,6 +274,7 @@ int CCH_down_grade_dbb(void* ast_object)
 		if (bcb && bcb->bcb_count)
 		{
 			const bcb_repeat* tail = bcb->bcb_rpt;
+			fb_assert(tail);			// once I've got here with NULL. AP.
 			for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; ++tail)
 			{
 				PAGE_LOCK_ASSERT(tdbb, bcb, tail->bcb_bdb->bdb_lock);
@@ -1083,6 +1084,7 @@ void CCH_fini(thread_db* tdbb)
 
 		delete[] bcb->bcb_rpt;
 		bcb->bcb_rpt = NULL; // Just in case we exit with failure
+		bcb->bcb_count = 0;
 
 		while (bcb->bcb_memory.hasData())
 			bcb->bcb_bufferpool->deallocate(bcb->bcb_memory.pop());

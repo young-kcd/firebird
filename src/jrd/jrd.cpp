@@ -401,7 +401,7 @@ namespace
 			entered = true;
 		}
 
-		void operator=(RefPtr<Database::ExistenceRefMutex>& to)
+		void operator=(Database::ExistenceRefMutex* to)
 		{
 			if (ref == to)
 			{
@@ -414,6 +414,16 @@ namespace
 				entered = false;
 			}
 			ref = to;
+		}
+
+		Database::ExistenceRefMutex* operator->()
+		{
+			return ref;
+		}
+
+		bool operator!()
+		{
+			return !ref;
 		}
 
 		~RefMutexUnlock()
@@ -928,14 +938,14 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 }
 
 
-static void successful_completion(IStatus* s)
+static void successful_completion(IStatus* s, ISC_STATUS acceptCode = 0)
 {
 	fb_assert(s);
 
 	const ISC_STATUS* status = s->get();
 
 	// This assert validates whether we really have a successful status vector
-	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS);
+	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS || status[1] == acceptCode);
 
 	// Clear the status vector if it doesn't contain a warning
 	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || status[2] != isc_arg_warning)
@@ -1253,9 +1263,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 #endif
 
 			// Unless we're already attached, do some initialization
-			RefMutexUnlock initMutexHolder;
+			RefMutexUnlock initGuard;
 			JAttachment* jAtt = init(tdbb, expanded_name, is_alias ? org_filename : expanded_name,
-				config, true, options, initMutexHolder);
+				config, true, options, initGuard);
 
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
@@ -2332,9 +2342,9 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 #endif
 
 			// Unless we're already attached, do some initialization
-			RefMutexUnlock initMutexHolder;
+			RefMutexUnlock initGuard;
 			JAttachment* jAtt = init(tdbb, expanded_name, (is_alias ? org_filename : expanded_name),
-				config, false, options, initMutexHolder);
+				config, false, options, initGuard);
 
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
@@ -2832,7 +2842,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 		return;
 	}
 
-	successful_completion(user_status);
+	successful_completion(user_status, isc_drdb_completed_with_errs);
 }
 
 
@@ -5773,7 +5783,7 @@ static JAttachment* init(thread_db* tdbb,
 						 RefPtr<Config> config,
 						 bool attach_flag,		// only for shared cache
 						 const DatabaseOptions& options,
-						 RefMutexUnlock& init_fini_guard)
+						 RefMutexUnlock& initGuard)
 {
 /**************************************
  *
@@ -5825,15 +5835,15 @@ static JAttachment* init(thread_db* tdbb,
 				{
 					if (attach_flag)
 					{
-						init_fini_guard = dbb->dbb_init_fini;
+						initGuard = dbb->dbb_init_fini;
 
 						{   // scope
 							MutexUnlockGuard listUnlock(databases_mutex, FB_FUNCTION);
 
 							// after unlocking databases_mutex we loose control over dbb
 							// as long as dbb_init_fini is not locked and activity of it is not checked
-							init_fini_guard.enter();
-							if (dbb->dbb_init_fini->doesExist())
+							initGuard.enter();
+							if (initGuard->doesExist())
 							{
 								Sync dbbGuard(&dbb->dbb_sync, FB_FUNCTION);
 								dbbGuard.lock(SYNC_EXCLUSIVE);
@@ -5856,7 +5866,7 @@ static JAttachment* init(thread_db* tdbb,
 
 						// If we reached this point this means that found dbb was removed
 						// Forget about it and repeat search
-						init_fini_guard = NULL;
+						initGuard = NULL;
 						dbb = databases;
 						continue;
 					}
@@ -5876,8 +5886,8 @@ static JAttachment* init(thread_db* tdbb,
 		dbb->dbb_filename = expanded_name;
 
 		// safely take init lock on just created database
-		init_fini_guard = dbb->dbb_init_fini;
-		init_fini_guard.enter();
+		initGuard = dbb->dbb_init_fini;
+		initGuard.enter();
 
 		dbb->dbb_next = databases;
 		databases = dbb;
@@ -6265,11 +6275,42 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	fb_assert(!dbb->locked());
+	RefMutexUnlock finiGuard;
 
-	// take fini lock first
-	RefMutexUnlock u(dbb->dbb_init_fini);
-	u.enter();
+	{ // scope
+		MutexLockGuard listGuard1(databases_mutex, FB_FUNCTION);
+
+		Database** d_ptr;
+		for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
+		{
+			if (*d_ptr == dbb)
+			{
+				finiGuard = dbb->dbb_init_fini;
+
+				{	// scope
+					MutexUnlockGuard listUnlock(databases_mutex, FB_FUNCTION);
+
+					// after unlocking databases_mutex we loose control over dbb
+					// as long as dbb_init_fini is not locked and activity of it is not checked
+					finiGuard.enter();
+					if (finiGuard->doesExist())
+					{
+						break;
+					}
+
+					// database to shutdown does not exist
+					// looks like somebody else took care to destroy it
+					return false;
+				}
+			}
+		}
+
+		// Check - may be database already missing in linked list
+		if (!finiGuard)
+		{
+			return false;
+		}
+	}
 
 	if (dbb->dbb_attachments)
 	{
@@ -6279,6 +6320,8 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 	// Deactivate dbb_init_fini lock
 	// Since that moment dbb becomes not reusable
 	dbb->dbb_init_fini->destroy();
+
+	fb_assert(!dbb->locked());
 
 	// Shutdown file and/or remote connection
 
@@ -6316,7 +6359,7 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 	LCK_fini(tdbb, LCK_OWNER_database);
 
 	{ // scope
-		MutexLockGuard listGuard(databases_mutex, FB_FUNCTION);
+		MutexLockGuard listGuard2(databases_mutex, FB_FUNCTION);
 
 		Database** d_ptr;
 		for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
@@ -6686,13 +6729,7 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 	guard.leave();
 
 	// If there are still attachments, do a partial shutdown
-	if (dbb->checkHandle())
-	{
-		if (!dbb->dbb_attachments)
-		{
-			shutdown_database(dbb, true);
-		}
-	}
+	shutdown_database(dbb, true);
 }
 
 
@@ -6956,10 +6993,7 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStat
 				release_attachment(tdbb, attachment);
 			}
 
-			if (!dbb->dbb_attachments)
-			{
-				shutdown_database(dbb, true);
-			}
+			shutdown_database(dbb, true);
 		}
 		catch (const Exception&)
 		{
