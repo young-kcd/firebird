@@ -2247,7 +2247,9 @@ bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 	if (!o)
 		return false;
 
-	return dsqlContext && dsqlContext == o->dsqlContext;
+	// ASF: Commented-out code "Fixed assertion when subquery is used in group by" to make
+	// CORE-4084 work again.
+	return /***dsqlContext &&***/ dsqlContext == o->dsqlContext;
 }
 
 // Make up join node and mark relations as "possibly NULL" if they are in outer joins (inOuterJoin).
