@@ -1,3 +1,16 @@
+ 2013-04-16 16:13  asfernandes 
+   M doc/WhatsNew
+   M doc/sql.extensions/README.data_types
+Document CORE-726 - Boolean data type.
+
+ 2013-04-16 16:13  asfernandes 
+   M doc/WhatsNew
+Replace my e-mail.
+
+ 2013-04-16 08:54  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Fixed assertion in services when talking to pre-FB3 server
+
  2013-04-15 16:51  alexpeshkoff 
    M src/jrd/Database.h
    M src/jrd/jrd.cpp
