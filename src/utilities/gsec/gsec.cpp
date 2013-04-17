@@ -180,7 +180,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	}
 	user_data->database.set(databaseName.c_str());
 
-	Auth::IManagement* manager = NULL;
+	Firebird::RefPtr<Auth::IManagement> manager;
 	ISC_STATUS_ARRAY status;
 
 	if (!useServices)
@@ -302,7 +302,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 				{
 					GSEC_error_redirect((Firebird::Arg::Gds(isc_random) << "Missing management plugin").value(), GsecMsg15);
 				}
-				manager->addRef();
 
 				GsecInfo info(user_data->trustedUser.get(), user_data->role.get(),
 							  user_data->trustedRole && !user_data->role.entered(),
@@ -490,10 +489,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 		uSvc->setServiceStatus(status);
 	}
 
-	if (manager)
-	{
-		manager->release();
-	}
 	if (sHandle)
 	{
 		ISC_STATUS_ARRAY status;

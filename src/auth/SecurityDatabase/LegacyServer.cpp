@@ -459,8 +459,7 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 	{
 		PathName secDbName;
 		{ // config scope
-			RefPtr<IFirebirdConf> config(iParameter->getFirebirdConf());
-			config->release();
+			RefPtr<IFirebirdConf> config(REF_NO_INCR, iParameter->getFirebirdConf());
 
 			if (secDbKey == INIT_KEY)
 			{

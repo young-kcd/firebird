@@ -343,7 +343,7 @@ static const char* semName = "/firebird_temp_sem";
 
 			if (err != 0)
 			{
-				system_call_failed::raise("pthread_cond_broadcast", err);
+				system_call_failed::raise("pthread_cond_signal", err);
 			}
 		}
 	}

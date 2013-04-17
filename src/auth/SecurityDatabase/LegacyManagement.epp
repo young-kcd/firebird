@@ -124,10 +124,8 @@ static unsigned int secDbKey = INIT_KEY;
 namespace Auth {
 
 SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IPluginConfig* par)
-	: config(par->getFirebirdConf()), database(0), transaction(0)
-{
-	config->release();
-}
+	: config(Firebird::REF_NO_INCR, par->getFirebirdConf()), database(0), transaction(0)
+{ }
 
 void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo* logonInfo)
 {

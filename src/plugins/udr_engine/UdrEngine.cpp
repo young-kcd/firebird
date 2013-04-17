@@ -86,19 +86,18 @@ public:
 		  procedures(getPool()),
 		  triggers(getPool())
 	{
-		IConfig* defaultConfig = par->getDefaultConfig();
+		RefPtr<IConfig> defaultConfig(REF_NO_INCR, par->getDefaultConfig());
 
 		if (defaultConfig)
 		{
 			// this plugin is not ready to support different configurations
 			// therefore keep legacy approach
 
-			IConfigEntry* icp = NULL;
+			RefPtr<IConfigEntry> icp;
 
-			for (int n = 0; (icp = defaultConfig->findPos("path", n)); ++n)
+			for (int n = 0; icp.assignRefNoIncr(defaultConfig->findPos("path", n)); ++n)
 			{
 				PathName newPath(icp->getValue());
-				icp->release();
 
 				bool found = false;
 
@@ -116,8 +115,6 @@ public:
 					paths->add(newPath);
 				}
 			}
-
-			defaultConfig->release();
 		}
 	}
 

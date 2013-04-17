@@ -112,10 +112,8 @@ class SrpManagement : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VER
 {
 public:
 	explicit SrpManagement(Firebird::IPluginConfig* par)
-		: config(par->getFirebirdConf()), upCount(0), delCount(0)
-	{
-		config->release();
-	}
+		: config(Firebird::REF_NO_INCR, par->getFirebirdConf()), upCount(0), delCount(0)
+	{ }
 
 	void prepareDataStructures()
 	{
@@ -519,7 +517,7 @@ public:
 							setField(login, user->userName());
 						}
 
-						rs = stmt->openCursor(status, tra, (par ? par->metadata : NULL),
+						rs = stmt->openCursor(status, tra, (par ? par->getMetadata() : NULL),
 							(par ? par->buffer : NULL), om);
 						check(status);
 

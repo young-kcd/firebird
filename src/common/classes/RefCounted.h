@@ -84,6 +84,8 @@ namespace Firebird
 		RefCounted& r;
 	};
 
+	enum NoIncrement {REF_NO_INCR};
+
 	// controls reference counter of the object where points
 	template <typename T>
 	class RefPtr
@@ -100,6 +102,11 @@ namespace Firebird
 			}
 		}
 
+		// This special form of ctor is used to create refcounted ptr from interface,
+		// returned by a function (which increments counter on return)
+		RefPtr(NoIncrement x, T* p) : ptr(p)
+		{ }
+
 		RefPtr(const RefPtr& r) : ptr(r.ptr)
 		{
 			if (ptr)
@@ -114,6 +121,13 @@ namespace Firebird
 			{
 				ptr->release();
 			}
+		}
+
+		T* assignRefNoIncr(T* p)
+		{
+			assign(NULL);
+			ptr = p;
+			return ptr;
 		}
 
 		T* operator=(T* p)
@@ -172,6 +186,11 @@ namespace Firebird
 		bool operator !=(const RefPtr& r) const
 		{
 			return ptr != r.ptr;
+		}
+
+		T* getPtr()
+		{
+			return ptr;
 		}
 
 	private:

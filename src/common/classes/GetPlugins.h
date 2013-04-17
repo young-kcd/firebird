@@ -46,9 +46,9 @@ public:
 		  pluginSet(NULL), currentPlugin(NULL)
 	{
 		LocalStatus status;
-		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
+		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : Config::getDefaultConfig()->getPlugins(interfaceType)),
-			desiredVersion, ui, NULL);
+			desiredVersion, ui, NULL));
 
 		if (!pluginSet)
 		{
@@ -56,7 +56,6 @@ public:
 			status_exception::raise(status.get());
 		}
 
-		pluginSet->release();
 		getPlugin();
 	}
 
@@ -66,9 +65,9 @@ public:
 		  pluginSet(NULL), currentPlugin(NULL)
 	{
 		LocalStatus status;
-		pluginSet = pluginInterface->getPlugins(&status, interfaceType,
+		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
-			desiredVersion, ui, new FirebirdConf(knownConfig));
+			desiredVersion, ui, new FirebirdConf(knownConfig)));
 
 		if (!pluginSet)
 		{
@@ -76,7 +75,6 @@ public:
 			status_exception::raise(status.get());
 		}
 
-		pluginSet->release();
 		getPlugin();
 	}
 

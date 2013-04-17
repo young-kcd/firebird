@@ -4298,10 +4298,9 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 			RefPtr<IMessageMetadata> defaultOut;
 			if (!outMetadata)
 			{
-				defaultOut = metadata.getOutputMetadata();
+				defaultOut.assignRefNoIncr(metadata.getOutputMetadata());
 				if (defaultOut)
 				{
-					defaultOut->release();
 					outMetadata = defaultOut;
 				}
 			}
@@ -6983,8 +6982,8 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStat
 		try
 		{
 			// A number of holders to make Attachment::destroy() happy
-			RefPtr<JAttachment> jAtt(attachment->att_interface);
-			jAtt->release();		// See also addRef() in create_attachment()
+			// See also addRef() in create_attachment()
+			RefPtr<JAttachment> jAtt(REF_NO_INCR, attachment->att_interface);
 
 			ThreadStatusGuard temp_status(tdbb);
 

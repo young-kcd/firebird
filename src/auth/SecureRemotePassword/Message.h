@@ -16,8 +16,7 @@ public:
 		{
 			Firebird::status_exception::raise(s.get());
 		}
-		*((Firebird::RefPtr<Firebird::IMessageMetadata>*) this) = m;
-		m->release();		// reference added by function returning iface
+		dynamic_cast<Firebird::RefPtr<Firebird::IMessageMetadata>*>(this)->assignRefNoIncr(m);
 	}
 };
 
@@ -30,16 +29,13 @@ public:
 		: dataBuf(getPool()), fieldCount(0)
 	{
 		Firebird::LocalStatus st;
-		metadata = aMeta;
-		buffer = dataBuf.getBuffer(metadata->getMessageLength(&st));
+		buffer = dataBuf.getBuffer(aMeta->getMessageLength(&st));
 		check(&st);
-		metadata->addRef();
+		metadata = aMeta;
 	}
 
 	~Message()
-	{
-		metadata->release();
-	}
+	{ }
 
 	template <typename T>
 	static bool checkType(unsigned t, unsigned sz)
@@ -80,8 +76,14 @@ public:
 		}
 	}
 
+	// makes it possible to use metadata in ?: operator
+	Firebird::IMessageMetadata* getMetadata()
+	{
+		return metadata;
+	}
+
 public:
-	Firebird::IMessageMetadata* metadata;
+	Firebird::RefPtr<Firebird::IMessageMetadata> metadata;
 	UCHAR* buffer;
 
 private:

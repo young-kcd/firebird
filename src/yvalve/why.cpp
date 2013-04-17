@@ -1832,9 +1832,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		statement->checkPrepared();
 
-		RefPtr<IMessageMetadata> columns(statement->statement->next->getOutputMetadata(&status));
+		RefPtr<IMessageMetadata> columns(REF_NO_INCR, statement->statement->next->getOutputMetadata(&status));
 		status.check();
-		columns->release();
 
 		sqldaDescribeParameters(sqlda, columns);
 	}
@@ -1859,9 +1858,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* userStatus, FB_API_HAN
 
 		statement->checkPrepared();
 
-		RefPtr<IMessageMetadata> parameters(statement->statement->next->getInputMetadata(&status));
+		RefPtr<IMessageMetadata> parameters(REF_NO_INCR, statement->statement->next->getInputMetadata(&status));
 		status.check();
-		parameters->release();
 
 		sqldaDescribeParameters(sqlda, parameters);
 	}
@@ -2348,18 +2346,6 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 			// Only close the cursor
 			statement->closeCursor(&status);
 		}
-
-		/*
-		statement->closeCursor(&status);
-		statement->closeStatement(&status);
-
-		if (option & DSQL_drop)
-		{
-			// Release everything
-			statement->release();
-			*stmtHandle = 0;
-		}
-		*/
 	}
 	catch (const Exception& e)
 	{
@@ -2425,10 +2411,9 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 		{
 			StatusVector tempStatus(NULL);
 
-			RefPtr<IMessageMetadata> parameters(statement->statement->next->
-				getOutputMetadata(&tempStatus));
+			RefPtr<IMessageMetadata> parameters(REF_NO_INCR,
+				statement->statement->next->getOutputMetadata(&tempStatus));
 			tempStatus.check();
-			parameters->release();
 
 			sqldaDescribeParameters(sqlda, parameters);
 		}

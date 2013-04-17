@@ -1040,13 +1040,11 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 
 	LocalStatus status;
 
-	RefPtr<IMetadataBuilder> inBuilder(metadata->inputParameters->getBuilder(&status));
+	RefPtr<IMetadataBuilder> inBuilder(REF_NO_INCR, metadata->inputParameters->getBuilder(&status));
 	status.check();
-	inBuilder->release();
 
-	RefPtr<IMetadataBuilder> outBuilder(metadata->outputParameters->getBuilder(&status));
+	RefPtr<IMetadataBuilder> outBuilder(REF_NO_INCR, metadata->outputParameters->getBuilder(&status));
 	status.check();
-	outBuilder->release();
 
 	ExternalFunction* externalFunction;
 
@@ -1151,13 +1149,11 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 
 	LocalStatus status;
 
-	RefPtr<IMetadataBuilder> inBuilder(metadata->inputParameters->getBuilder(&status));
+	RefPtr<IMetadataBuilder> inBuilder(REF_NO_INCR, metadata->inputParameters->getBuilder(&status));
 	status.check();
-	inBuilder->release();
 
-	RefPtr<IMetadataBuilder> outBuilder(metadata->outputParameters->getBuilder(&status));
+	RefPtr<IMetadataBuilder> outBuilder(REF_NO_INCR, metadata->outputParameters->getBuilder(&status));
 	status.check();
-	outBuilder->release();
 
 	ExternalProcedure* externalProcedure;
 
@@ -1279,12 +1275,11 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 
 	LocalStatus status;
 
-	RefPtr<IMetadataBuilder> fieldsBuilder(relation ?
+	RefPtr<IMetadataBuilder> fieldsBuilder(REF_NO_INCR, relation ?
 		metadata->triggerFields->getBuilder(&status) : NULL);
 	if (relation)
 	{
 		status.check();
-		fieldsBuilder->release();
 	}
 
 	ExternalTrigger* externalTrigger;

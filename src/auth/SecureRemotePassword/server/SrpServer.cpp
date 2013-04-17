@@ -57,10 +57,8 @@ public:
 		: server(NULL), data(getPool()), account(getPool()),
 		  clientPubKey(getPool()), serverPubKey(getPool()),
 		  verifier(getPool()), salt(getPool()), sessionKey(getPool()),
-		  config(par->getFirebirdConf()), secDbName(NULL)
-	{
-		config->release();
-	}
+		  config(REF_NO_INCR, par->getFirebirdConf()), secDbName(NULL)
+	{ }
 
 	// IServer implementation
 	int FB_CARG authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);

@@ -1875,14 +1875,13 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		RefPtr<IMessageMetadata> defaultOutputFormat;
 		if (!outFormat)
 		{
-			defaultOutputFormat = this->getOutputMetadata(status);
+			defaultOutputFormat.assignRefNoIncr(this->getOutputMetadata(status));
 			if (!status->isSuccess())
 			{
 				return NULL;
 			}
 			if (defaultOutputFormat)
 			{
-				defaultOutputFormat->release();
 				outFormat = defaultOutputFormat;
 			}
 		}
