@@ -177,7 +177,7 @@ namespace
 			entered = true;
 		}
 
-		void operator=(RefPtr<Database::ExistenceRefMutex>& to)
+		void operator=(Database::ExistenceRefMutex* to)
 		{
 			if (ref == to)
 			{
@@ -190,6 +190,16 @@ namespace
 				entered = false;
 			}
 			ref = to;
+		}
+
+		Database::ExistenceRefMutex* operator->()
+		{
+			return ref;
+		}
+
+		bool operator!()
+		{
+			return !ref;
 		}
 
 		~RefMutexUnlock()
@@ -678,7 +688,7 @@ static ISC_STATUS successful_completion(ISC_STATUS* status, ISC_STATUS return_co
 	fb_assert(status);
 
 	// This assert validates whether we really have a successful status vector
-	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS);
+	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS || status[1] == return_code);
 
 	// Clear the status vector if it doesn't contain a warning
 	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || status[2] != isc_arg_warning)
@@ -967,8 +977,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 #endif
 
 	// Unless we're already attached, do some initialization
-	RefMutexUnlock initMutexHolder;
-	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, true, options, initMutexHolder);
+	RefMutexUnlock initGuard;
+	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, true, options, initGuard);
 	dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 	attachment = tdbb->getAttachment();
@@ -2012,8 +2022,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 #endif
 
 	// Unless we're already attached, do some initialization
-	RefMutexUnlock initMutexHolder;
-	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, false, options, initMutexHolder);
+	RefMutexUnlock initGuard;
+	init(tdbb, expanded_name, is_alias ? file_name : expanded_name, false, options, initGuard);
 	dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 	attachment = tdbb->getAttachment();
@@ -2523,7 +2533,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		return ex.stuff_exception(user_status);
 	}
 
-	return successful_completion(user_status);
+	return successful_completion(user_status, isc_drdb_completed_with_errs);
 }
 
 
@@ -5044,7 +5054,7 @@ static void init(thread_db* tdbb,
 				 const PathName& alias_name,
 				 bool attach_flag,		// only for SS
 				 const DatabaseOptions& options,
-				 RefMutexUnlock& init_fini_guard)
+				 RefMutexUnlock& initGuard)
 {
 /**************************************
  *
@@ -5095,15 +5105,15 @@ static void init(thread_db* tdbb,
 			{
 				if (attach_flag)
 				{
-					init_fini_guard = dbb->dbb_init_fini;
+					initGuard = dbb->dbb_init_fini;
 
 					{	// scope
 						MutexUnlockGuard listUnlock(databases_mutex);
 
 						// after unlocking databases_mutex we loose control over dbb
 						// as long as dbb_init_fini is not locked and activity of it is not checked
-						init_fini_guard.enter();
-						if (dbb->dbb_init_fini->doesExist())
+						initGuard.enter();
+						if (initGuard->doesExist())
 						{
 							Database::SyncGuard dbbGuard(dbb);
 							fb_assert(!(dbb->dbb_flags & DBB_new));
@@ -5117,7 +5127,7 @@ static void init(thread_db* tdbb,
 
 					// If we reached this point this means that found dbb was removed
 					// Forget about it and repeat search
-					init_fini_guard = NULL;
+					initGuard = NULL;
 					dbb = databases;
 					continue;
 				}
@@ -5138,8 +5148,8 @@ static void init(thread_db* tdbb,
 		dbb->dbb_bufferpool = dbb->createPool();
 
 		// safely take init lock on just created database
-		init_fini_guard = dbb->dbb_init_fini;
-		init_fini_guard.enter();
+		initGuard = dbb->dbb_init_fini;
+		initGuard.enter();
 
 		dbb->dbb_next = databases;
 		databases = dbb;
@@ -5741,11 +5751,42 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	fb_assert(!dbb->locked());
+	RefMutexUnlock finiGuard;
 
-	// take fini lock first
-	RefMutexUnlock u(dbb->dbb_init_fini);
-	u.enter();
+	{ // scope
+		MutexLockGuard listGuard1(databases_mutex);
+
+		Database** d_ptr;
+		for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
+		{
+			if (*d_ptr == dbb)
+			{
+				finiGuard = dbb->dbb_init_fini;
+
+				{	// scope
+					MutexUnlockGuard listUnlock(databases_mutex);
+
+					// after unlocking databases_mutex we loose control over dbb
+					// as long as dbb_init_fini is not locked and activity of it is not checked
+					finiGuard.enter();
+					if (finiGuard->doesExist())
+					{
+						break;
+					}
+
+					// database to shutdown does not exist
+					// looks like somebody else took care to destroy it
+					return false;
+				}
+			}
+		}
+
+		// Check - may be database already missing in linked list
+		if (!finiGuard)
+		{
+			return false;
+		}
+	}
 
 	if (dbb->dbb_attachments)
 	{
@@ -5755,6 +5796,8 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 	// Deactivate dbb_init_fini lock
 	// Since that moment dbb becomes not reusable
 	dbb->dbb_init_fini->destroy();
+
+	fb_assert(!dbb->locked());
 
 	{	//scope
 		Database::SyncGuard	syncGuard1(dbb);
@@ -6290,13 +6333,7 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 		release_attachment(tdbb, attachment);
 	}
 
-	if (dbb->checkHandle())
-	{
-		if (!dbb->dbb_attachments)
-		{
-			shutdown_database(dbb, true);
-		}
-	}
+	shutdown_database(dbb, true);
 }
 
 
@@ -6560,10 +6597,7 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 				release_attachment(tdbb, attachment);
 			}
 
-			if (!dbb->dbb_attachments)	// small SS optimization - full check in shutdown_database()
-			{
-				shutdown_database(dbb, true);
-			}
+			shutdown_database(dbb, true);
 		}
 		catch (const Exception&)
 		{
@@ -7326,8 +7360,22 @@ void JRD_shutdown_attachments(const Database* dbb)
 }
 
 
+AttachmentNotNull::AttachmentNotNull(Attachment* attachment)
+{
+	if (!attachment)
+	{
+		Arg::Gds(isc_bad_db_handle).raise();
+	}
+}
+
+
+AttachmentNotNull::AttachmentNotNull()
+{ }
+
+
 AstContextHolder::AstContextHolder(Database* dbb, Attachment* attachment)
-	: ThreadContextHolder(),
+	: AttachmentNotNull(),
+	  ThreadContextHolder(),
 	  AstAttachmentHolder(attachment),
 	  Database::SyncGuard(dbb, true)
 {
@@ -7337,7 +7385,8 @@ AstContextHolder::AstContextHolder(Database* dbb, Attachment* attachment)
 
 
 AstContextHolder::AstContextHolder(ISC_STATUS* status, Attachment* attachment)
-	: ThreadContextHolder(status),
+	: AttachmentNotNull(attachment),
+	  ThreadContextHolder(status),
 	  AstAttachmentHolder(attachment),
 	  Database::SyncGuard(attachment->att_database, true)
 {

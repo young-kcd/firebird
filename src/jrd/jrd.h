@@ -878,9 +878,22 @@ private:
 	void destroy();
 };
 
+
+// Checks that passed pointer is not NULL
+
+class AttachmentNotNull
+{
+public:
+	AttachmentNotNull(Attachment* attachment);
+	AttachmentNotNull();
+};
+
+
+
 // AST routines context helper
 
 class AstContextHolder :
+	public AttachmentNotNull,		// when needed checks NULL pointer passed
 	public ThreadContextHolder,		// creates thread_db block for AST routine
 	public AstAttachmentHolder,		// controls AST mutex in attachment block
 	public Database::SyncGuard		// controls dbb_sync mutex
