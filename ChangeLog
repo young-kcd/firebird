@@ -1,3 +1,8 @@
+ 2013-04-17 08:04  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+Fixes related with CORE-3993
+
  2013-04-15 16:54  alexpeshkoff 
    M src/common/classes/RefCounted.h
    M src/common/classes/locks.h
