@@ -1,3 +1,31 @@
+ 2013-04-17 15:54  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-4084 - GROUP BY fails if subselect-column is involved.
+
+ 2013-04-17 11:16  alexpeshkoff 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/RefCounted.h
+   M src/common/classes/semaphore.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/Function.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/yvalve/why.cpp
+Avoid extra atomic operations when assigning pointer to the object with pre-incremented counter (like returned from the function) to reference-counted pointer holder
+
+ 2013-04-17 08:04  alexpeshkoff 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Fixes related with CORE-3993
+
  2013-04-16 16:13  asfernandes 
    M doc/WhatsNew
    M doc/sql.extensions/README.data_types
