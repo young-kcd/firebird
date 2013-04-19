@@ -1,3 +1,7 @@
+ 2013-04-18 13:51  alexpeshkoff 
+   A doc/README.plugins.html
+First draft of plugins readme file
+
  2013-04-17 15:54  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Fixed CORE-4084 - GROUP BY fails if subselect-column is involved.
