@@ -155,17 +155,3 @@ void ConditionalStream::nullRecords(thread_db* tdbb) const
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 	impure->irsb_next->nullRecords(tdbb);
 }
-
-void ConditionalStream::saveRecords(thread_db* tdbb) const
-{
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = request->getImpure<Impure>(m_impure);
-	impure->irsb_next->saveRecords(tdbb);
-}
-
-void ConditionalStream::restoreRecords(thread_db* tdbb) const
-{
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = request->getImpure<Impure>(m_impure);
-	impure->irsb_next->restoreRecords(tdbb);
-}

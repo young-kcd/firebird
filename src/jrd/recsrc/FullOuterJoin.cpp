@@ -157,15 +157,3 @@ void FullOuterJoin::nullRecords(thread_db* tdbb) const
 	m_arg1->nullRecords(tdbb);
 	m_arg2->nullRecords(tdbb);
 }
-
-void FullOuterJoin::saveRecords(thread_db* tdbb) const
-{
-	m_arg1->saveRecords(tdbb);
-	m_arg2->saveRecords(tdbb);
-}
-
-void FullOuterJoin::restoreRecords(thread_db* tdbb) const
-{
-	m_arg1->restoreRecords(tdbb);
-	m_arg2->restoreRecords(tdbb);
-}

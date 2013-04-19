@@ -132,13 +132,3 @@ void LockedStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
-
-void LockedStream::saveRecords(thread_db* tdbb) const
-{
-	m_next->saveRecords(tdbb);
-}
-
-void LockedStream::restoreRecords(thread_db* tdbb) const
-{
-	m_next->restoreRecords(tdbb);
-}

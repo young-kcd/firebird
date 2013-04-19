@@ -50,7 +50,6 @@ class jrd_rel;
 class jrd_prc;
 class Record;
 class ValueListNode;
-class SaveRecordParam;
 template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
@@ -64,7 +63,7 @@ struct record_param
 {
 	record_param()
 		: rpb_transaction_nr(0), rpb_relation(0), rpb_record(NULL), rpb_prior(NULL),
-		  rpb_copy(NULL), rpb_undo(NULL), rpb_format_number(0),
+		  rpb_undo(NULL), rpb_format_number(0),
 		  rpb_page(0), rpb_line(0),
 		  rpb_f_page(0), rpb_f_line(0),
 		  rpb_b_page(0), rpb_b_line(0),
@@ -79,7 +78,6 @@ struct record_param
 	jrd_rel*	rpb_relation;		// relation of record
 	Record*		rpb_record;			// final record block
 	Record*		rpb_prior;			// prior record block if this is a delta record
-	SaveRecordParam*	rpb_copy;	// record_param copy for singleton verification
 	Record*		rpb_undo;			// our first version of data if this is a second modification
 	USHORT rpb_format_number;		// format number in relation
 
@@ -191,14 +189,6 @@ public:
 const UCHAR REC_same_tx		= 1;	// record inserted/updated and deleted by same tx
 const UCHAR REC_gc_active	= 2;	// relation garbage collect record block in use
 const UCHAR REC_new_version	= 4;	// savepoint created new record version and deleted it
-
-// save record_param block
-
-class SaveRecordParam : public pool_alloc<type_srpb>
-{
-public:
-	record_param srpb_rpb[1];		// record parameter blocks
-};
 
 // List of active blobs controlled by request
 

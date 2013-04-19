@@ -133,16 +133,6 @@ void FilteredStream::nullRecords(thread_db* tdbb) const
 	m_next->nullRecords(tdbb);
 }
 
-void FilteredStream::saveRecords(thread_db* tdbb) const
-{
-	m_next->saveRecords(tdbb);
-}
-
-void FilteredStream::restoreRecords(thread_db* tdbb) const
-{
-	m_next->restoreRecords(tdbb);
-}
-
 bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();

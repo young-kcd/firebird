@@ -406,22 +406,6 @@ void MergeJoin::nullRecords(thread_db* tdbb) const
 	}
 }
 
-void MergeJoin::saveRecords(thread_db* tdbb) const
-{
-	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
-		m_args[i]->saveRecords(tdbb);
-	}
-}
-
-void MergeJoin::restoreRecords(thread_db* tdbb) const
-{
-	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
-		m_args[i]->restoreRecords(tdbb);
-	}
-}
-
 int MergeJoin::compare(thread_db* tdbb, const NestValueArray* node1,
 	const NestValueArray* node2) const
 {

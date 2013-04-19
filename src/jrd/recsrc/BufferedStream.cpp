@@ -325,16 +325,6 @@ void BufferedStream::nullRecords(thread_db* tdbb) const
 	m_next->nullRecords(tdbb);
 }
 
-void BufferedStream::saveRecords(thread_db* tdbb) const
-{
-	m_next->saveRecords(tdbb);
-}
-
-void BufferedStream::restoreRecords(thread_db* tdbb) const
-{
-	m_next->restoreRecords(tdbb);
-}
-
 void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position) const
 {
 	jrd_req* const request = tdbb->getRequest();

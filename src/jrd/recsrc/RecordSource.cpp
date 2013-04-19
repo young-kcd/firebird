@@ -136,83 +136,6 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 	}
 }
 
-void RecordSource::saveRecord(thread_db* tdbb, record_param* rpb)
-{
-	MemoryPool* const pool = tdbb->getDefaultPool();
-
-	SaveRecordParam* rpb_copy = rpb->rpb_copy;
-	if (rpb_copy)
-	{
-		delete rpb_copy->srpb_rpb->rpb_record;
-	}
-	else
-	{
-		rpb->rpb_copy = rpb_copy = FB_NEW(*pool) SaveRecordParam();
-	}
-
-	memcpy(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
-
-	Record* const record = rpb->rpb_record;
-
-	if (record)
-	{
-		const USHORT size = record->rec_length;
-		Record* rec_copy = FB_NEW_RPT(*pool, size) Record(*pool);
-		rpb_copy->srpb_rpb->rpb_record = rec_copy;
-
-		rec_copy->rec_length = size;
-		rec_copy->rec_format = record->rec_format;
-		rec_copy->rec_number = record->rec_number;
-		memcpy(rec_copy->rec_data, record->rec_data, size);
-	}
-	else
-	{
-		rpb_copy->srpb_rpb->rpb_record = NULL;
-	}
-}
-
-void RecordSource::restoreRecord(thread_db* tdbb, record_param* rpb)
-{
-	MemoryPool* const pool = tdbb->getDefaultPool();
-
-	SaveRecordParam* rpb_copy = rpb->rpb_copy;
-	if (rpb_copy)
-	{
-		Record* record = rpb->rpb_record;
-		Record* const rec_copy = rpb_copy->srpb_rpb->rpb_record;
-
-		if (rec_copy)
-		{
-			if (!record)
-				BUGCHECK(284);	// msg 284 cannot restore singleton select data
-
-			const USHORT size = rec_copy->rec_length;
-			if (size > record->rec_length)
-			{
-				// hvlad: saved copy of record has longer format, reallocate
-				// given record to make enough space for saved data
-				record = VIO_record(tdbb, rpb, rec_copy->rec_format, pool);
-			}
-			else
-			{
-				record->rec_length = size;
-				record->rec_format = rec_copy->rec_format;
-			}
-			record->rec_number = rec_copy->rec_number;
-			memcpy(record->rec_data, rec_copy->rec_data, size);
-
-			delete rec_copy;
-		}
-
-		memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
-
-		rpb->rpb_record = record;
-
-		delete rpb_copy;
-		rpb->rpb_copy = NULL;
-	}
-}
-
 RecordSource::~RecordSource()
 {
 }
@@ -305,16 +228,4 @@ void RecordStream::nullRecords(thread_db* tdbb) const
 	}
 
 	record->rec_format = NULL;
-}
-
-void RecordStream::saveRecords(thread_db* tdbb) const
-{
-	jrd_req* const request = tdbb->getRequest();
-	saveRecord(tdbb, &request->req_rpb[m_stream]);
-}
-
-void RecordStream::restoreRecords(thread_db* tdbb) const
-{
-	jrd_req* const request = tdbb->getRequest();
-	restoreRecord(tdbb, &request->req_rpb[m_stream]);
 }

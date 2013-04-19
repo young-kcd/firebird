@@ -149,16 +149,6 @@ void SortedStream::nullRecords(thread_db* tdbb) const
 	m_next->nullRecords(tdbb);
 }
 
-void SortedStream::saveRecords(thread_db* tdbb) const
-{
-	m_next->saveRecords(tdbb);
-}
-
-void SortedStream::restoreRecords(thread_db* tdbb) const
-{
-	m_next->restoreRecords(tdbb);
-}
-
 Sort* SortedStream::init(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();

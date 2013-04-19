@@ -143,13 +143,3 @@ void SkipRowsStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
-
-void SkipRowsStream::saveRecords(thread_db* tdbb) const
-{
-	m_next->saveRecords(tdbb);
-}
-
-void SkipRowsStream::restoreRecords(thread_db* tdbb) const
-{
-	m_next->restoreRecords(tdbb);
-}

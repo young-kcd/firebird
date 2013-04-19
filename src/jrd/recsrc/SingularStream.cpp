@@ -21,6 +21,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/vio_proto.h"
 
 #include "RecordSource.h"
 
@@ -32,9 +33,11 @@ using namespace Jrd;
 // ------------------------------
 
 SingularStream::SingularStream(CompilerScratch* csb, RecordSource* next)
-	: m_next(next)
+	: m_next(next), m_streams(csb->csb_pool)
 {
 	fb_assert(m_next);
+
+	m_next->findUsedStreams(m_streams);
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
@@ -81,17 +84,55 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 
 	if (m_next->getRecord(tdbb))
 	{
-		saveRecords(tdbb);
+		const size_t streamCount = m_streams.getCount();
+		MemoryPool& pool = *tdbb->getDefaultPool();
+		HalfStaticArray<record_param, 16> rpbs(pool, streamCount);
 
-		if (m_next->getRecord(tdbb))
+		for (size_t i = 0; i < streamCount; i++)
 		{
-			status_exception::raise(Arg::Gds(isc_sing_select_err));
+			rpbs.add(request->req_rpb[m_streams[i]]);
+			record_param& rpb = rpbs.back();
+			Record* const orgRecord = rpb.rpb_record;
+
+			if (orgRecord)
+			{
+				const USHORT recordSize = orgRecord->rec_length;
+				Record* const newRecord = FB_NEW_RPT(pool, recordSize) Record(pool);
+				memcpy(&newRecord->rec_format, &orgRecord->rec_format,
+					   sizeof(Record) - OFFSET(Record*, rec_format) + recordSize);
+				rpb.rpb_record = newRecord;
+			}
 		}
 
-		restoreRecords(tdbb);
+		if (m_next->getRecord(tdbb))
+			status_exception::raise(Arg::Gds(isc_sing_select_err));
+
+		for (size_t i = 0; i < streamCount; i++)
+		{
+			record_param& rpb = request->req_rpb[m_streams[i]];
+			Record* orgRecord = rpb.rpb_record;
+			rpb = rpbs.pop();
+			const AutoPtr<Record> newRecord(rpb.rpb_record);
+
+			if (newRecord)
+			{
+				if (!orgRecord)
+					BUGCHECK(284);	// msg 284 cannot restore singleton select data
+
+				const USHORT recordSize = newRecord->rec_length;
+				if (recordSize > orgRecord->rec_length)
+				{
+					// hvlad: saved copy of record has longer format, reallocate
+					// given record to make enough space for saved data
+					orgRecord = VIO_record(tdbb, &rpb, newRecord->rec_format, &pool);
+				}
+				memcpy(&orgRecord->rec_format, &newRecord->rec_format,
+					   sizeof(Record) - OFFSET(Record*, rec_format) + recordSize);
+				rpb.rpb_record = orgRecord;
+			}
+		}
 
 		impure->irsb_flags |= irsb_singular_processed;
-
 		return true;
 	}
 
@@ -136,14 +177,4 @@ void SingularStream::invalidateRecords(jrd_req* request) const
 void SingularStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
-}
-
-void SingularStream::saveRecords(thread_db* tdbb) const
-{
-	m_next->saveRecords(tdbb);
-}
-
-void SingularStream::restoreRecords(thread_db* tdbb) const
-{
-	m_next->restoreRecords(tdbb);
 }

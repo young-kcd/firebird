@@ -372,24 +372,6 @@ void HashJoin::nullRecords(thread_db* tdbb) const
 	}
 }
 
-void HashJoin::saveRecords(thread_db* tdbb) const
-{
-	m_leader->saveRecords(tdbb);
-	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
-		m_args[i]->saveRecords(tdbb);
-	}
-}
-
-void HashJoin::restoreRecords(thread_db* tdbb) const
-{
-	m_leader->restoreRecords(tdbb);
-	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
-		m_args[i]->restoreRecords(tdbb);
-	}
-}
-
 size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 	const NestValueArray* keys) const
 {

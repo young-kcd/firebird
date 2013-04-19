@@ -64,8 +64,6 @@ namespace
 
 		void findUsedStreams(StreamList& streams, bool expandAll) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 		void locate(thread_db* tdbb, FB_UINT64 position) const
 		{
@@ -122,8 +120,6 @@ namespace
 
 		void findUsedStreams(StreamList& streams, bool expandAll) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		int compareKeys(thread_db* tdbb, jrd_req* request, DscNull* outerValues) const;
@@ -213,16 +209,6 @@ namespace
 	void BufferedStreamWindow::nullRecords(thread_db* tdbb) const
 	{
 		m_next->nullRecords(tdbb);
-	}
-
-	void BufferedStreamWindow::saveRecords(thread_db* tdbb) const
-	{
-		m_next->saveRecords(tdbb);
-	}
-
-	void BufferedStreamWindow::restoreRecords(thread_db* tdbb) const
-	{
-		m_next->restoreRecords(tdbb);
 	}
 
 #ifdef NOT_USED_OR_REPLACED
@@ -401,18 +387,6 @@ namespace
 	{
 		m_outer->nullRecords(tdbb);
 		m_inner->nullRecords(tdbb);
-	}
-
-	void WindowJoin::saveRecords(thread_db* tdbb) const
-	{
-		m_outer->saveRecords(tdbb);
-		m_inner->saveRecords(tdbb);
-	}
-
-	void WindowJoin::restoreRecords(thread_db* tdbb) const
-	{
-		m_outer->restoreRecords(tdbb);
-		m_inner->restoreRecords(tdbb);
 	}
 
 	int WindowJoin::compareKeys(thread_db* tdbb, jrd_req* request, DscNull* outerValues) const
@@ -616,14 +590,4 @@ void WindowedStream::findUsedStreams(StreamList& streams, bool expandAll) const
 void WindowedStream::nullRecords(thread_db* tdbb) const
 {
 	m_joinedStream->nullRecords(tdbb);
-}
-
-void WindowedStream::saveRecords(thread_db* tdbb) const
-{
-	m_joinedStream->saveRecords(tdbb);
-}
-
-void WindowedStream::restoreRecords(thread_db* tdbb) const
-{
-	m_joinedStream->restoreRecords(tdbb);
 }

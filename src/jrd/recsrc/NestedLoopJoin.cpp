@@ -276,22 +276,6 @@ void NestedLoopJoin::nullRecords(thread_db* tdbb) const
 	}
 }
 
-void NestedLoopJoin::saveRecords(thread_db* tdbb) const
-{
-	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
-		m_args[i]->saveRecords(tdbb);
-	}
-}
-
-void NestedLoopJoin::restoreRecords(thread_db* tdbb) const
-{
-	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
-		m_args[i]->restoreRecords(tdbb);
-	}
-}
-
 bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n) const
 {
 	const RecordSource* const arg = m_args[n];

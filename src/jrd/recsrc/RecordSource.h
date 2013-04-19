@@ -69,8 +69,6 @@ namespace Jrd
 
 		virtual void findUsedStreams(StreamList& streams, bool expandAll = false) const = 0;
 		virtual void nullRecords(thread_db* tdbb) const = 0;
-		virtual void saveRecords(thread_db* tdbb) const = 0;
-		virtual void restoreRecords(thread_db* tdbb) const = 0;
 
 		virtual void setAnyBoolean(BoolExprNode* /*anyBoolean*/, bool /*ansiAny*/, bool /*ansiNot*/)
 		{
@@ -129,8 +127,6 @@ namespace Jrd
 
 		virtual void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		virtual void nullRecords(thread_db* tdbb) const;
-		virtual void saveRecords(thread_db* tdbb) const;
-		virtual void restoreRecords(thread_db* tdbb) const;
 
 	protected:
 		const StreamType m_stream;
@@ -337,11 +333,10 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		NestConst<RecordSource> m_next;
+		StreamList m_streams;
 	};
 
 	class LockedStream : public RecordSource
@@ -364,8 +359,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		NestConst<RecordSource> m_next;
@@ -396,8 +389,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		NestConst<RecordSource> m_next;
@@ -429,8 +420,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		NestConst<RecordSource> m_next;
@@ -457,8 +446,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
 		{
@@ -552,8 +539,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 		USHORT getLength() const
 		{
@@ -671,8 +656,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		NestConst<BufferedStream> m_next;
@@ -733,8 +716,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 		void locate(thread_db* tdbb, FB_UINT64 position) const;
 		FB_UINT64 getCount(jrd_req* request) const;
@@ -776,8 +757,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		bool fetchRecord(thread_db*, size_t) const;
@@ -809,8 +788,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		NestConst<RecordSource> m_arg1;
@@ -845,8 +822,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
@@ -913,8 +888,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		int compare(thread_db* tdbb, const NestValueArray* node1,
@@ -1033,8 +1006,6 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
-		void saveRecords(thread_db* tdbb) const;
-		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		NestConst<RecordSource> m_first;
