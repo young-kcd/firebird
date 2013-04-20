@@ -1,3 +1,22 @@
+ 2013-04-19 09:22  dimitr 
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/ConditionalStream.cpp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/FirstRowsStream.cpp
+   M src/jrd/recsrc/FullOuterJoin.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/LockedStream.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/SingularStream.cpp
+   M src/jrd/recsrc/SkipRowsStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/req.h
+Refactoring: isolated the singularity checking logic and simplified the whole RSB beast.
+
  2013-04-18 13:51  alexpeshkoff 
    A doc/README.plugins.html
 First draft of plugins readme file
