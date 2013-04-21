@@ -17,13 +17,13 @@
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Firebird plugins.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Since version 3 firebird
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Since version 3, Firebird
 supports plugins architecture. This means that for a number of
-predefined points in firebird code user can write his own fragment of
+predefined points in Firebird code, user can write his own fragment of
 code which will be executed when needed. Plugin is not necessarily
-always written be user - firebird already has a number of plugins
-which are it's native part. Moreover, as you will see later, some
-core parts of firebird are implemented as plugins. </FONT>
+always written be user - Firebird already has a number of plugins
+which are its native part. Moreover, as you will see later, some
+core parts of Firebird are implemented as plugins. </FONT>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -39,7 +39,7 @@ related but different things. Plugin is used to name:</FONT></P>
 	library may contain code for more than one plugin;</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>plugin's factory - an
 	object created by that code (pure virtual C++ class), creating
-	plugin instances on firebird request;</FONT></P>
+	plugin instances on Firebird request;</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>instance of plugin,
 	created by factory.</FONT></P>
 </UL>
@@ -49,12 +49,12 @@ clarified explicitly.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>One should not expect that
-firebird plugin architecture will make it possible to create any kind
+Firebird plugin architecture will make it possible to create any kind
 of plugin you want. To be able to have plugin (for example)
-encrypting database on the disk firebird code should be prepared for
+encrypting database on the disk, Firebird code should be prepared for
 it – must have a point from which plugin is called. I.e. each
 version has a fixed set of plugins which are supported. To add one
-more type first of all firebird code should be modified. What DOES
+more type, first of all Firebird code should be modified. What DOES
 our plugin architecture – it helps to make both adding new types of
 plugins and writing plugin code simple and as universal between
 plugins as possible.</FONT></P>
@@ -71,7 +71,7 @@ set of plugin types:</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ExternalEngine
 	controls use of various engines, see README.external_routines;</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>Trace plugin is known
-	from firebird 2.5, but a way how it interacts with engine was
+	from Firebird 2.5, but a way how it interacts with engine was
 	changed to match new generic rules; </FONT>
 	</P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>encrypting plugins
@@ -87,8 +87,8 @@ set of plugin types:</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Plugins are using a set of
-special firebird interfaces (see README.interfaces about interfaces
-in firebird). All plugin-specific interfaces are reference counted,
+special Firebird interfaces (see README.interfaces about interfaces
+in Firebird). All plugin-specific interfaces are reference counted,
 i.e. have explicitly controlled lifetime. Interfaces are declared in
 Plugin.h include file. There is a simple example of writing plugin
 module – DbCrypt_example. It does not perform any actual encryption
@@ -105,14 +105,14 @@ short list of plugin features:</FONT></P>
 	attention to word “reasonable” - asking a question from plugin
 	at server's console is hardly good idea;</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>it's OK to use
-	firebird API calls in your plugin if needed (for example, default
-	authentication server and user manager are using firebird database
+	Firebird API calls in your plugin if needed (for example, default
+	authentication server and user manager are using Firebird database
 	to store accounts);</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>additionally firebird
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>additionally Firebird
 	provides a set of interfaces, helping you to configure your plugins
 	(certainly,  you are not forced to use them – plugin is generic
 	code, which may use any way of providing configuration information,
-	but with standard tools you get common for the rest of firebird
+	but with standard tools you get common for the rest of Firebird
 	configuration style and sooner of all save you efforts).</FONT></P>
 </UL>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -142,7 +142,7 @@ complicated.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>As it was already
-mentioned single plugin module may implement more than single plugin.
+mentioned, single plugin module may implement more than single plugin.
 Moreover, single plugin may have at the same time more than one
 configuration – and for each configuration separate plugin's
 factory is created. Each of this 3 objects (module – implementation
@@ -151,7 +151,7 @@ dynamic library. Plugin implementation's name is one given to it by
 plugin developer and hard-coded inside module. Factory's name by
 default equals to plugin implementation's name (and it's factory name
 which is actually used in firebird.conf). Certainly in typical
-trivial case module contains one plugin, and that plugin works with
+trivial case, module contains one plugin, and that plugin works with
 only one configuration, and all 3 names are equal, and no more
 configuration is needed – for example libEngine12.so or
 Engine12.dll contains implementation of provider Engine12, and
@@ -159,7 +159,7 @@ nothing else except record </FONT>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Providers = Engine12</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>in firebird.conf is needed
-to load it. But if you have something complex – file  hwill help
+to load it. But if you have something complex – file  will help
 you to have such plugin factories which you really want.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -180,14 +180,14 @@ name of config record to be used</I></FONT></P>
  		## name of a file, containing plugin's configuration</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>}</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>i.e. when plugin PlugName
-is needed firebird loads library LibName, finds in it plugin
+is needed Firebird loads library LibName, finds in it plugin
 registered with name RegName and passes it configuration from config
 record ConfName or config file ConfFile (config record is used if
-bith are given). Each parameter in this record may be missing, in
+both are given). Each parameter in this record may be missing, in
 that case the default PlugName is used. The only exception is
-ConfigFile – by default file with same name as module's dynamic
+ConfigFile – by default, file with same name as module's dynamic
 library but .conf extension is used. ConfigFile is expected to have
-format Key=Value (like other firebird configuration files), same
+format Key=Value (like other Firebird configuration files), same
 format is used for plugin record:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>Config = ConfName</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
@@ -203,8 +203,8 @@ vendor and others – from another one (and have different licenses
 for appropriate client parts), but each vendor calls his plugin
 BestCrypt. Certainly, first of all you have to rename libraries to
 something like WC1 and WC2 – one can't have 2 files with same name
-in one directory. But after it modules stop to load automatically –
-they are not named BestCrypt any more. To fix it plugins.conf should
+in one directory. But after it, modules stop to load automatically –
+they are not named BestCrypt any more. To fix it, plugins.conf should
 contain something like this:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>Plugin = WC1</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
@@ -227,7 +227,7 @@ automatically select appropriate plugin to talk to client.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Another sample may be
-found in distributed with firebird plugins.conf. One of standard
+found in distributed with Firebird plugins.conf. One of standard
 plugins, UDR, is written to use non-default configuration. Therefore
 module name and one configuration parameter are given explicitly.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -241,7 +241,7 @@ with such names. How do they work?</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>A. That are so-called
 'built-in' plugins. They are built into fbclient library, and
 therefore are always present. Arrival of such plugins is due to old
-ability to distribute windows firebird client as single dll. It was
+ability to distribute windows Firebird client as single dll. It was
 decided to keep such feature at least for a case when standard set of
 plugins is used.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -250,7 +250,7 @@ plugins is used.</FONT></P>
 and Arc4 plugins mean?</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>A. Srp implements Secure
 Remote Passwords protocol which is default way of authenticating
-users in firebird 3. It has efficient password’s length equal to 20
+users in Firebird 3. It has efficient password’s length equal to 20
 bytes, resistant to most of attacks (including man in the middle) and
 does not require exchanging any keys between client and server to
 work. Arc4 means Alleged RC4 - an implementation of RC4 cypher. The

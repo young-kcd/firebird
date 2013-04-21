@@ -79,7 +79,7 @@
 # I.e. when
 #	include some_file.conf
 # is used in /opt/config/master.conf, we include /opt/config/some_file.conf.
-# Traditional wildcards * and ? may be used in icnlude operator. In this case
+# Traditional wildcards * and ? may be used in include operator. In this case
 # all matching files will be included in undefined order. Example:
 #	include $(dir_plugins)/config/*.conf
 #

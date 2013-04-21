@@ -55,7 +55,7 @@ BOOLEAN (FB 3.0)
     2. CREATE TABLE TABLE1 (FIELD1 BOOLEAN);
 
   Note(s):
-    1. Quote from the SQL-99 specification:
+    1. Quote from the SQL-2008 specification:
 
        The data type boolean comprises the distinct truth values TRUE and FALSE. Unless prohibited
        by a NOT NULL constraint, the boolean data type also supports the truth value UNKNOWN as the

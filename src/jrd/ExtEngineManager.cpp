@@ -449,7 +449,7 @@ namespace
 			return request->req_rpb.getCount() > n && request->req_rpb[n].rpb_number.isValid() ?
 				&request->req_rpb[n] : NULL;
 		}
-	
+
 
 	private:
 		const ExtEngineManager::Trigger* trigger;

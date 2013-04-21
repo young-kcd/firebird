@@ -831,7 +831,7 @@ inline Jrd::Database* GET_DBB()
 /*-------------------------------------------------------------------------*
  * macros used to set thread_db and Database pointers when there are not set already *
  *-------------------------------------------------------------------------*/
-inline void SET_TDBB(Jrd::thread_db* &tdbb)
+inline void SET_TDBB(Jrd::thread_db*& tdbb)
 {
 	if (tdbb == NULL) {
 		tdbb = JRD_get_thread_data();
@@ -839,7 +839,7 @@ inline void SET_TDBB(Jrd::thread_db* &tdbb)
 	CHECK_TDBB(tdbb);
 }
 
-inline void SET_DBB(Jrd::Database* &dbb)
+inline void SET_DBB(Jrd::Database*& dbb)
 {
 	if (dbb == NULL) {
 		dbb = GET_DBB();
