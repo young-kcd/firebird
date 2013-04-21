@@ -138,7 +138,7 @@ public:
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 	virtual void FB_CARG close(IStatus* status) = 0;
 };
-#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 4)
+#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 10)
 
 class IStatement : public IRefCounted
 {
