@@ -16,7 +16,7 @@ public:
 		{
 			Firebird::status_exception::raise(s.get());
 		}
-		dynamic_cast<Firebird::RefPtr<Firebird::IMessageMetadata>*>(this)->assignRefNoIncr(m);
+		assignRefNoIncr(m);
 	}
 };
 
