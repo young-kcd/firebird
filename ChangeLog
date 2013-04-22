@@ -1,3 +1,18 @@
+ 2013-04-21 02:09  asfernandes 
+   M builds/install/misc/firebird.conf.in
+   M doc/README.build.mingw.html
+   M doc/README.build.msvc.html
+   M doc/README.plugins.html
+   M doc/sql.extensions/README.data_types
+   M src/common/cvt.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/jrd.h
+Misc.
+
+ 2013-04-21 01:52  asfernandes 
+   M src/include/firebird/Provider.h
+Correction.
+
  2013-04-19 09:22  dimitr 
    M src/jrd/recsrc/BufferedStream.cpp
    M src/jrd/recsrc/ConditionalStream.cpp
