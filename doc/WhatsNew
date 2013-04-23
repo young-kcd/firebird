@@ -230,6 +230,12 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * New feature CORE-4089
+        Runtime architecture configuration
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * New feature CORE-3626
         Subfunctions in PSQL and EXECUTE BLOCK
       Contributor(s):
