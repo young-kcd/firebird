@@ -6197,8 +6197,8 @@ window_function
 		{ $$ = newNode<FirstValueWinNode>($3); }
 	| LAST_VALUE '(' value ')'
 		{ $$ = newNode<LastValueWinNode>($3); }
-	| NTH_VALUE '(' value ',' value ')'
-		{ $$ = newNode<NthValueWinNode>($3, $5); }
+	| NTH_VALUE '(' value ',' value ')' nth_from
+		{ $$ = newNode<NthValueWinNode>($3, $5, $7); }
 	| LAG '(' value ',' value ',' value ')'
 		{ $$ = newNode<LagWinNode>($3, $5, $7); }
 	| LAG '(' value ',' value ')'
@@ -6211,6 +6211,13 @@ window_function
 		{ $$ = newNode<LeadWinNode>($3, $5, newNode<NullNode>()); }
 	| LEAD '(' value ')'
 		{ $$ = newNode<LeadWinNode>($3, MAKE_const_slong(1), newNode<NullNode>()); }
+	;
+
+%type <valueExprNode> nth_from
+nth_from
+	: /* nothing */	{ $$ = MAKE_const_slong(NthValueWinNode::FROM_FIRST); }
+	| FROM FIRST	{ $$ = MAKE_const_slong(NthValueWinNode::FROM_FIRST); }
+	| FROM LAST		{ $$ = MAKE_const_slong(NthValueWinNode::FROM_LAST); }
 	;
 
 %type <aggNode> aggregate_window_function

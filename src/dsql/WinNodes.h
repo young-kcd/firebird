@@ -152,7 +152,15 @@ protected:
 class NthValueWinNode : public WinFuncNode
 {
 public:
-	explicit NthValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRow = NULL);
+	enum
+	{
+		FROM_FIRST = 0,
+		FROM_LAST
+	};
+
+public:
+	explicit NthValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL,
+		ValueExprNode* aRow = NULL, ValueExprNode* aFrom = NULL);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -176,6 +184,7 @@ protected:
 
 private:
 	NestConst<ValueExprNode> row;
+	NestConst<ValueExprNode> from;
 };
 
 // LAG/LEAD function.

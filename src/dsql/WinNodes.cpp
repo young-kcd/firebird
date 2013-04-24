@@ -413,17 +413,21 @@ AggNode* LastValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 
 static WinFuncNode::Register<NthValueWinNode> nthValueWinInfo("NTH_VALUE");
 
-NthValueWinNode::NthValueWinNode(MemoryPool& pool, ValueExprNode* aArg, ValueExprNode* aRow)
+NthValueWinNode::NthValueWinNode(MemoryPool& pool, ValueExprNode* aArg, ValueExprNode* aRow,
+			ValueExprNode* aFrom)
 	: WinFuncNode(pool, nthValueWinInfo, aArg),
-	  row(aRow)
+	  row(aRow),
+	  from(aFrom)
 {
 	addChildNode(row, row);
+	addChildNode(from, from);
 }
 
 void NthValueWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
 {
 	arg = PAR_parse_value(tdbb, csb);
 	row = PAR_parse_value(tdbb, csb);
+	from = PAR_parse_value(tdbb, csb);
 }
 
 void NthValueWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -442,6 +446,7 @@ ValueExprNode* NthValueWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	NthValueWinNode* node = FB_NEW(*tdbb->getDefaultPool()) NthValueWinNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
 	node->row = copier.copy(tdbb, row);
+	node->from = copier.copy(tdbb, from);
 	return node;
 }
 
@@ -475,10 +480,18 @@ dsc* NthValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* 
 			Arg::Num(2) << Arg::Str(aggInfo.name));
 	}
 
-	if (records > ++impure->vlu_misc.vlu_int64)
-		return NULL;
+	desc = EVL_expr(tdbb, request, from);
+	SLONG fromPos = desc ? MOV_get_long(desc, 0) : FROM_FIRST;
 
-	records -= impure->vlu_misc.vlu_int64;
+	if (fromPos == FROM_FIRST)
+	{
+		if (records > ++impure->vlu_misc.vlu_int64)
+			return NULL;
+
+		records -= impure->vlu_misc.vlu_int64;
+	}
+	else
+		records = impure->vlu_misc.vlu_int64 - records + 1;
 
 	if (!window->move(records))
 	{
@@ -496,7 +509,7 @@ dsc* NthValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* 
 AggNode* NthValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
 	return FB_NEW(getPool()) NthValueWinNode(getPool(),
-		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, row));
+		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, row), doDsqlPass(dsqlScratch, from));
 }
 
 
