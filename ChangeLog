@@ -1,3 +1,11 @@
+ 2013-04-23 17:32  dimitr 
+   M builds/win32/make_all.bat
+Added databases.conf to the Windows kits.
+
+ 2013-04-23 17:26  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
  2013-04-22 09:43  alexpeshkoff 
    M src/auth/SecureRemotePassword/Message.h
 Cleanup
