@@ -1,3 +1,9 @@
+ 2013-04-24 15:31  asfernandes 
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/parse.y
+Added FROM FIRST/LAST clause to NTH_VALUE (CORE-3621).
+
  2013-04-23 17:32  dimitr 
    M builds/win32/make_all.bat
 Added databases.conf to the Windows kits.
