@@ -241,6 +241,27 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
+    * New feature CORE-3621
+        Window functions: NTH_VALUE
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * New feature CORE-3620
+        Window functions: LAST_VALUE
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * New feature CORE-3619
+        Window functions: FIRST_VALUE
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * New feature CORE-3364
         Blob filter to translate internal debug info into text representation
       Contributor(s):
@@ -266,6 +287,27 @@
         New object rights for enhanced security
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * New feature CORE-2869
+        Window functions: LAG and LEAD
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * New feature CORE-2830
+        Window functions: DENSE_RANK, RANK and ROW_NUMBER
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * New feature CORE-2823
+        Window functions: ORDER BY clause
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * New feature CORE-2777
         Make possible to alter the default database character set without manual update of system table
@@ -307,6 +349,20 @@
         DDL triggers
       See also:
         /doc/sql.extensions/README.ddl_triggers.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * New feature CORE-2133
+        Window functions: PARTITION BY clause
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * New feature CORE-2090
+        Window functions: Support OVER () clause with current aggregate functions
+      See also:
+        /doc/sql.extensions/README.window_functions.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
