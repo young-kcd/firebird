@@ -1,3 +1,8 @@
+ 2013-04-25 16:30  asfernandes 
+   M doc/WhatsNew
+   A doc/sql.extensions/README.window_functions.txt
+Document window functions: CORE-2090, CORE-2133, CORE-2823, CORE-2830, CORE-2869, CORE-3619, CORE-3620, CORE-3621.
+
  2013-04-24 15:31  asfernandes 
    M src/dsql/WinNodes.cpp
    M src/dsql/WinNodes.h
