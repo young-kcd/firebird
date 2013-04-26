@@ -24,7 +24,7 @@ MERGE statement
 
 	<merge when matched> ::=
 		WHEN MATCHED [ AND <condition> ] THEN
-			UPDATE SET <assignment list>
+			{ UPDATE SET <assignment list> | DELETE }
 
 	<merge when not matched> ::=
 		WHEN NOT MATCHED [ AND <condition> ] THEN

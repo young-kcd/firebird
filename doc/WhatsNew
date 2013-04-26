@@ -31,6 +31,8 @@
 
     * Improvement CORE-3639
         Allow the use of multiple WHEN MATCHED / NOT MATCHED clauses in MERGE, as per the SQL 2008 specification
+      See also:
+        /doc/README.merge.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
@@ -82,7 +84,7 @@
     * Improvement CORE-3020
         Add RETURNING ... INTO ... clause to the MERGE statement
       See also:
-        /doc/sql.extensions/README.returning
+        /doc/sql.extensions/README.returning, /doc/README.merge.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
@@ -175,6 +177,8 @@
 
     * Improvement CORE-2005
         Support SQL 2008 syntax for MERGE statement with DELETE extension
+      See also:
+        /doc/README.merge.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 

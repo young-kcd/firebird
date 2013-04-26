@@ -17,6 +17,7 @@ RETURNING clause
     UPDATE OR INSERT INTO ... VALUES (...) ... [RETURNING <column_list> [INTO <variable_list>]]
     UPDATE ... [RETURNING <column_list> [INTO <variable_list>]]
     DELETE FROM ... [RETURNING <column_list> [INTO <variable_list>]]
+    MERGE INTO ... [RETURNING <column_list> [INTO <variable_list>]]
 
   Scope:
     DSQL, PSQL
