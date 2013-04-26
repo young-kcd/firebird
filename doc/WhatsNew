@@ -48,11 +48,15 @@
 
     * Improvement CORE-3546
         Aliases for the RETURNING clause
+      See also:
+        /doc/sql.extensions/README.returning
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3343
         Support for the RETURNING clause in positioned (WHERE CURRENT OF) UPDATE and DELETE statements
+      See also:
+        /doc/sql.extensions/README.returning
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
@@ -123,7 +127,7 @@
         Claudio Valderrama C. <cvalde at usa.net>
 
     * Improvement CORE-2697
-        Support the "? in SELECT some_col FROM some_table" subqueries
+        Support the "? in (SELECT some_col FROM some_table)" subqueries
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
@@ -277,7 +281,8 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * New feature CORE-3291
-        New pseudocolumn to get number of transaction that created this record version
+        New pseudocolumn (RDB$RECORD_VERSION) to get number of the transaction
+        that created a record version
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
