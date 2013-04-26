@@ -55,8 +55,9 @@ namespace Firebird
 
 		void reason(const char* fr)
 		{
+			from[frIndex % FB_NELEM(from)] = fr;
+			frIndex++;
 			frIndex %= FB_NELEM(from);
-			from[frIndex++] = fr;
 		}
 
 private:
