@@ -1,3 +1,18 @@
+ 2013-04-26 15:59  alexpeshkoff 
+   M src/common/classes/Reasons.h
+Make it resistant to races (avoid violating array boundaries)
+
+ 2013-04-26 15:52  asfernandes 
+   M doc/WhatsNew
+   M doc/sql.extensions/README.returning
+Docs.
+
+ 2013-04-26 15:29  asfernandes 
+   M doc/WhatsNew
+   M doc/sql.extensions/README.merge.txt
+   M doc/sql.extensions/README.returning
+Finish MERGE improvements documentation (CORE-2005, CORE-3020, CORE-3639).
+
  2013-04-25 16:30  asfernandes 
    M doc/WhatsNew
    A doc/sql.extensions/README.window_functions.txt
