@@ -1801,7 +1801,7 @@ static void conversion_error(const dsc* desc, FPTR_ERROR err)
  *
  **************************************/
 	const char* p;
-	TEXT s[40];
+	TEXT s[130];
 
 	if (desc->dsc_dtype == dtype_blob)
 		p = "BLOB";
@@ -2314,7 +2314,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		u = -n;
 	}
 
-    UCHAR temp[32];
+    UCHAR temp[128];
     UCHAR* p = temp;
 
 	do {
