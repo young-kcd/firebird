@@ -2140,10 +2140,10 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 			gen_retrieval(tdbb, opt, stream_i.stream_num, NULL, false, true, NULL);
 	}
 
-	stream_i.stream_rsb = gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
+	RecordSource* const innerRsb = gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
 
 	RecordSource* const rsb1 = FB_NEW(*tdbb->getDefaultPool())
-		NestedLoopJoin(csb, stream_o.stream_rsb, stream_i.stream_rsb, boolean, false, false);
+		NestedLoopJoin(csb, stream_o.stream_rsb, innerRsb, boolean, false, false);
 
 	for (size_t i = 0; i < opt->opt_conjuncts.getCount(); i++)
 	{
@@ -2173,10 +2173,10 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 			gen_retrieval(tdbb, opt, stream_o.stream_num, NULL, false, false, NULL);
 	}
 
-	stream_o.stream_rsb = gen_residual_boolean(tdbb, opt, stream_o.stream_rsb);
+	RecordSource* const outerRsb = gen_residual_boolean(tdbb, opt, stream_o.stream_rsb);
 
 	RecordSource* const rsb2 = FB_NEW(*tdbb->getDefaultPool())
-		NestedLoopJoin(csb, stream_i.stream_rsb, stream_o.stream_rsb, NULL, false, true);
+		NestedLoopJoin(csb, stream_i.stream_rsb, outerRsb, NULL, false, true);
 
 	return FB_NEW(*tdbb->getDefaultPool()) FullOuterJoin(csb, rsb1, rsb2);
 }
