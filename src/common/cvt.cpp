@@ -343,28 +343,24 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		u = -n;
 	}
 
-    UCHAR temp[32];
-    UCHAR* p = temp;
+    string temp;
 
 	do {
-		*p++ = (UCHAR) (u % 10) + '0';
+		temp += (u % 10) + '0';
 		u /= 10;
 	} while (u);
 
-	SSHORT l = p - temp;
+	SSHORT l = (SSHORT) temp.length();
 
 	// if scale < 0, we need at least abs(scale)+1 digits, so add
 	// any leading zeroes required.
 	while (l + scale <= 0)
 	{
-		*p++ = '0';
+		temp += '0';
 		l++;
 	}
 	// postassertion: l+scale > 0
 	fb_assert(l + scale > 0);
-
-	// CVC: also, we'll check for buffer overflow directly.
-	fb_assert(temp + sizeof(temp) >= p);
 
 	// Compute the total length of the field formatted.  Make sure it
 	// fits.  Keep in mind that routine handles both string and varying
@@ -379,6 +375,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	    CVT_conversion_error(from, cb->err);
 	}
 
+	const UCHAR* p = (UCHAR*) temp.c_str() + temp.length();
 	UCHAR* q = (to->dsc_dtype == dtype_varying) ? to->dsc_address + sizeof(USHORT) : to->dsc_address;
 	const UCHAR* start = q;
 
@@ -1739,7 +1736,7 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		try
 	    {
 			const char* p;
-			VaryStr<41> s;
+			VaryStr<128> s;
 			const USHORT length =
 				CVT_make_string(desc, ttype_ascii, &p, &s, sizeof(s) - 1, localError);
 			message.assign(p, length);
