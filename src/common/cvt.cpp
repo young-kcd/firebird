@@ -1760,7 +1760,7 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 			const char* p;
 			VaryStr<128> s;
 			const USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, &s, sizeof(s) - 1, localError);
+				CVT_make_string(desc, ttype_ascii, &p, &s, sizeof(s), localError);
 			message.assign(p, length);
 		}
 		/*
