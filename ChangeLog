@@ -1,3 +1,15 @@
+ 2013-04-28 14:11  dimitr 
+   M src/common/cvt.cpp
+Corrected the target buffer length.
+
+ 2013-04-28 13:40  dimitr 
+   M src/common/cvt.cpp
+Simple fix for CORE-4093: Server crashes while converting an overscaled numeric to a string. It assumes the resulting string being limited in length by the scale (value <= 128). A more generic solution (e.g. disallow overflowing scales) would be appreciated for the trunk.
+
+ 2013-04-28 11:52  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4091 (Incorrect full join result with ROW_NUMBER() Function in CTE) and one part of CORE-4083 (full outer join in subrequest with coalesce).
+
  2013-04-26 15:59  alexpeshkoff 
    M src/common/classes/Reasons.h
 Make it resistant to races (avoid violating array boundaries)
