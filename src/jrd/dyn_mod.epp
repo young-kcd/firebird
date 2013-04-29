@@ -1494,7 +1494,7 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 					else
 						PRM.RDB$DESCRIPTION.NULL = TRUE;
 
-					fb_assert(**ptr == isc_dyn_end)
+					fb_assert(**ptr == isc_dyn_end);
 				END_MODIFY
 			}
 			else
@@ -3752,7 +3752,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			break;
 
 		default:
-			fb_assert(FALSE);
+			fb_assert(false);
 			return 87;			/* MODIFY RDB$FIELDS FAILED */
 		}
 		break;
@@ -3924,13 +3924,13 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			break;
 
 		default:
-			fb_assert(FALSE);
+			fb_assert(false);
 			return 87;			/* MODIFY RDB$FIELDS FAILED */
 		}
 		break;
 
 	default:
-		fb_assert(FALSE);
+		fb_assert(false);
 		return 87;				/* MODIFY RDB$FIELDS FAILED */
 	}
 	return FB_SUCCESS;

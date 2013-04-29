@@ -185,7 +185,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 		}
 	}
 
-	fb_assert(!m_attachment)
+	fb_assert(!m_attachment);
 }
 
 bool InternalConnection::cancelExecution(thread_db* tdbb)

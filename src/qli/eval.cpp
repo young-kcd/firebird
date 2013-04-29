@@ -624,7 +624,7 @@ static dsc* execute_concatenate( qli_nod* node, const dsc* value1, const dsc* va
 	TEXT* p = avary->vary_string;
 	length1 = MIN(length1, desc->dsc_length - 2);
 	length2 = MAX(MIN(length2, desc->dsc_length - 2 - length1), 0);
-	fb_assert(static_cast<ULONG>(length1) + length2 <= MAX_USHORT - 2)
+	fb_assert(static_cast<ULONG>(length1) + length2 <= MAX_USHORT - 2);
 
 	if (length1)
 	{

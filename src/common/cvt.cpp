@@ -1542,7 +1542,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				// multibyte character sets which use a zero
 				// byte to represent end-of-string
 
-				fb_assert(to->dsc_length > 0)
+				fb_assert(to->dsc_length > 0);
 				length = MIN(length, ULONG(to->dsc_length - 1));
 				cb->validateData(toCharset, length, q);
 				toLength = length;

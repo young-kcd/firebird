@@ -2256,7 +2256,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 
 	window->win_bdb = NULL;
 
-	fb_assert(bdb->bdb_use_count ? true : !(bdb->bdb_flags & BDB_marked))
+	fb_assert(bdb->bdb_use_count ? true : !(bdb->bdb_flags & BDB_marked));
 }
 
 
@@ -4957,7 +4957,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 				bdb->bdb_page = page;
 
-				fb_assert((bdb->bdb_flags & (BDB_dirty | BDB_marked)) == 0)
+				fb_assert((bdb->bdb_flags & (BDB_dirty | BDB_marked)) == 0);
 
 				bdb->bdb_flags = BDB_read_pending;
 				bdb->bdb_scan_count = 0;

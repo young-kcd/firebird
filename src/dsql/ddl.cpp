@@ -4286,7 +4286,7 @@ static void delete_procedure (CompiledStatement* statement, dsql_nod* node, bool
  *
  **************************************/
 	const dsql_str* string = (dsql_str*) node->nod_arg[e_prc_name];
-	fb_assert (string);
+	fb_assert(string);
 	if (node->nod_type == nod_redef_procedure || silent_deletion) {
 		dsql_prc* procedure = METD_get_procedure (statement, string);
 		if (!procedure) {
@@ -4318,14 +4318,14 @@ static void delete_relation_view (CompiledStatement* statement, dsql_nod* node, 
 
 	if (node->nod_type == nod_redef_relation) {
 		dsql_nod* relation_node = node->nod_arg[e_alt_name];
-		fb_assert (relation_node);
+		fb_assert(relation_node);
 		string = (dsql_str*) relation_node->nod_arg[e_rln_name];
 	}
 	else {
 		string = (dsql_str*) node->nod_arg[e_alt_name];
 	}
 
-	fb_assert (string);
+	fb_assert(string);
 
 	const dsql_rel* relation = METD_get_relation (statement, string->str_data);
 
@@ -5038,7 +5038,7 @@ static void make_index_trg_ref_int(	CompiledStatement*    statement,
  *
  *****************************************************/
 
-	fb_assert(element->nod_type == nod_foreign)
+	fb_assert(element->nod_type == nod_foreign);
 
 	// for_rel_name_str is the name of the relation
 	// on which the ddl operation is being done,
@@ -5102,7 +5102,7 @@ static void make_index_trg_ref_int(	CompiledStatement*    statement,
 				statement->append_uchar(isc_dyn_foreign_key_none);
 				break;
 			default:
-				fb_assert(0);
+				fb_assert(false);
 				statement->append_uchar(isc_dyn_foreign_key_none);	// just in case
 				break;
 			}
@@ -5137,7 +5137,7 @@ static void make_index_trg_ref_int(	CompiledStatement*    statement,
 				statement->append_uchar(isc_dyn_foreign_key_none);
 				break;
 			default:
-				fb_assert(0);
+				fb_assert(false);
 				statement->append_uchar(isc_dyn_foreign_key_none);	// just in case
 				break;
 				// Error

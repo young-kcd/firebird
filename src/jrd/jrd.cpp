@@ -5885,7 +5885,7 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 				fb_assert(!dbb->locked());
 
 				Database::SyncGuard syncGuard2(dbb);
-				fb_assert(!dbb->dbb_attachments)
+				fb_assert(!dbb->dbb_attachments);
 
 				*d_ptr = dbb->dbb_next;
 				dbb->dbb_flags |= DBB_not_in_use;
