@@ -72,6 +72,8 @@
 
     * Improvement CORE-3085
         Add clause ALTER DOMAIN <name> [NOT] NULL
+      See also:
+        /doc/sql.extensions/README.ddl.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
@@ -208,6 +210,8 @@
 
     * Improvement CORE-1180
         DDL syntax to change (not) nullable state of columns
+      See also:
+        /doc/sql.extensions/README.ddl.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 

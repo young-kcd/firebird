@@ -350,3 +350,18 @@ Database:  employee
 SQL> REVOKE ALL ON ALL FROM USER guest;
 SQL>
 
+
+11) Syntax for change nullability of a field or domain
+(Adriano dos Santos Fernandes)
+
+Nullability of a table field or a domain can now be changed with the ALTER command. Syntax:
+
+ALTER TABLE <table name> ALTER <field name> [NOT] NULL
+
+ALTER DOMAIN <domain name> [NOT] NULL
+
+A change in a table from NULL to NOT NULL is subject to a full data validation on the table.
+A change in a domain changes and validates all the tables using the domain.
+
+An explicity NOT NULL on a field depending on a domain prevails over the domain. In this case,
+changing the domain to nullable does not automatically change the field to nullable.
