@@ -2161,10 +2161,12 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 	if (!hasOuterRsb)
 		csb->csb_rpt[stream_o.stream_num].deactivate();
 
+	boolean = NULL;
+
 	if (!hasInnerRsb)
 	{
 		stream_i.stream_rsb =
-			gen_retrieval(tdbb, opt, stream_i.stream_num, NULL, false, false, NULL);
+			gen_retrieval(tdbb, opt, stream_i.stream_num, NULL, true, false, &boolean);
 	}
 
 	if (!hasOuterRsb)
@@ -2176,7 +2178,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 	RecordSource* const outerRsb = gen_residual_boolean(tdbb, opt, stream_o.stream_rsb);
 
 	RecordSource* const rsb2 = FB_NEW(*tdbb->getDefaultPool())
-		NestedLoopJoin(csb, stream_i.stream_rsb, outerRsb, NULL, false, true);
+		NestedLoopJoin(csb, stream_i.stream_rsb, outerRsb, boolean, false, true);
 
 	return FB_NEW(*tdbb->getDefaultPool()) FullOuterJoin(csb, rsb1, rsb2);
 }
