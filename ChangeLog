@@ -1,3 +1,20 @@
+ 2013-04-29 10:05  dimitr 
+   M builds/win32/make_all.bat
+Totally misc.
+
+ 2013-04-29 10:04  dimitr 
+   M src/alice/alice.h
+   M src/common/cvt.cpp
+   M src/dsql/ddl.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/dyn_mod.epp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/qli/eval.cpp
+   M src/qli/lex.cpp
+Misc.
+
  2013-04-28 14:10  dimitr 
    M src/common/cvt.cpp
 Corrected the target buffer length.
