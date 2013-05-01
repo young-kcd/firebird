@@ -1,3 +1,7 @@
+ 2013-04-30 15:27  dimitr 
+   M src/jrd/opt.cpp
+One more bugfix for full outer joins.
+
  2013-04-29 15:54  asfernandes 
    M doc/WhatsNew
    M doc/sql.extensions/README.ddl.txt
