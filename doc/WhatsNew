@@ -2,6 +2,386 @@
   * v3.0 Alpha 1
   **************
 
+    * Bugfix CORE-4074
+        Computed by columns and POSITION function
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4027
+        Creating table with computed fields containing "SELECT FIRST" produces corrupted result
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4018
+        Using system domain in procedures arguments/returns cause the SP to be unchangeable
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3973
+        Original table name and column name and owner missing from SQLDA for aliased column in grouped query
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3947
+        Wrong results when the column with collation using option (NUMERIC-SORT=1) is in WHERE clause
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3941
+        Memory alignment problem with unique expression index
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3929
+        Invalid error "attempted update of read-only column" when selecting MINVALUE from list with more than 255 elements
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3894
+        Wrong numbers in error message for decreasing char/varchar columns
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3874
+        Computed column appears in non-existant rows of left join
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3820
+        RDB$TYPES contains duplicate character sets
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3754
+        SIMILAR TO works wrongly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3737
+        EXECUTE BLOCK parameters definitions are not respected and may cause wrong behavior related to character sets
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3735
+        Unprivileged user can delete from RDB$DATABASE, RDB$COLLATIONS, RDB$CHARACTER_SETS
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3718
+        Client library hangs after unsuccessful connection to remote auxiliary (events) port
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3694
+        Internal consistency check in query with grouping by subquery+stored procedure+aggregate
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3672
+        Computed index by SUBSTRING function for long columns
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3638
+        Introduce FR_CA_CI_AI collation and change FR_FR and FR_FR_CI_AI to be identical to FR_CA and FR_CA_CI_AI respectively
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3575
+        Support of backup volumes with size more than 4GB
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3545
+        Inconsistent domain's constraint validation in PSQL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3476
+        LIST function wrongly concatenates binary blobs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3475
+        Parameters inside the CAST function are described as not nullable
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3431
+        ISQL pads UTF-8 data incorrectly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3416
+        Inserting Kase into a CHARACTER SET ASCII column succeeds
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3401
+        Collation errors with [type of] <domain>, type of column
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3373
+        It is possible to store string with lenght 31 chars into column VARCHAR(25)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3338
+        Regression: code changes disabled support for expression indexes with COALESCE, CASE and DECODE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3317
+        Success of deleting rows depending on order of row insertion
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-3310
+        RDB$GET_CONTEXT and BETWEEN in views
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3269
+        When server gets unavailbale, client does not perform detach correctly
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3260
+        Interlock.h not portable
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3250
+        Cannot start firebird server under any username other than "root", "firebird" , "interbas"or "interbase"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3239
+        UTF8 UNICODE_CI collate can not be used in compound index
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3204
+        Constraint violation error of CAST is not raised inside views
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3201
+        ATAN2 returns incorrect value for (0, 0)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3174
+        Expression index with TRIM may lead to incorrect indexed lookup
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3114
+        Attempt to drop non-existing generator produces bad error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3056
+        Problems may happen when issuing DDL commands in the same transaction after CREATE COLLATION was issued
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3055
+        Variable/argument name could be absent or be wrong in error messages when more than 256 variables are used
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3052
+        Wrong resultset for comparisons involving multiple index segments
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-3047
+        Wrong logic is used to resolve EXECUTE BLOCK parameters collations
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2988
+        Concurrent transaction number not reported if lock timeout occurs
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sf.net>
+
+    * Bugfix CORE-2957
+        COUNT(*) from a big table returns negative result
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2952
+        Case-sensitive character class names in SIMILAR TO
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
+    * Bugfix CORE-2932
+        Wrong field position after ALTER POSITION
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2922
+        Character set used in constants is not registered as a dependency
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2913
+        COLLATE expressions are applied incorrectly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2798
+        Incomplete plan output (lack of view names) when selecting from views containing procedures inside
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2796
+        DB_KEY is always zero for external tables
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2788
+        ISQL extracts the array dimensions after the character set name
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-2784
+        Guardian creates more and more threads each time FBServer dies
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-2740
+        GBAK restores invalid views without any warning to the user
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-2699
+        Common table expression context could be used with parameters
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2696
+        ALTER TABLE command can add a field which has NOT NULL definition
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2678
+        Full outer join cannot use available indices (very slow execution)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2606
+        Multibyte CHAR value requested as VARCHAR is returned with padded spaces
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2547
+        Utilities need to honor their minimum number of characters to recognize an option
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-2545
+        Lack of several validations in GBAK
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-2543
+        NBACKUP may hide the real cause of failure
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-2508
+        Tricky index names can defeat the parsing logic when generating a human readable plan
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2484
+        Success message when connecting to tiny trash database file
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-2431
+        String values in error messages are not converted to connection charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2238
+        UTF8 and large varchar fields, IS DISTINCT FROM causes error "Implementation limit exceeded"
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2204
+        Constraints on SP output parameters are checked even when the SP returns zero rows
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2155
+        Join of SP with view or table may fail with error "No current record for fetch operation"
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1748
+        Unrestorable backup
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-1712
+        Buffer overflow in conversion
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-1620
+        Incorrect error message (column number) if the empty SQL string is prepared
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1605
+        Bugcheck 232 (invalid operation) for an aggregated query
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-1595
+        Tray icon of Firebird Guardian disappears after Windows Explorer crash
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+
+    * Bugfix CORE-1550
+        Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1518
+        Adding a non-null restricted column to a populated table renders the table inconsistent
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-1355
+        Zero is displayed instead of NULL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-1188
+        STARTING WITH :param (empty string) doesn't work if using index with many fields
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-634
+        Bad treatment of FIRST/SKIP in sub-selects
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-304
+        Metadata security hole - any user can alter/drop generators and exceptions
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-92
+        Infinite insertion cycle
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * Improvement CORE-3972
         Allow selection of SQL_INT64, SQL_DATE and SQL_TIME in dialect 1
       Contributor(s):
