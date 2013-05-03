@@ -3223,7 +3223,7 @@ static void store_big_record(thread_db* tdbb,
 	const UCHAR* in = rpb->rpb_address + rpb->rpb_length;
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	PageNumber prior(relPages->rel_pg_space_id, 0);
-	SCHAR count = 0;
+	signed char count = 0;
 	const USHORT max_data = dbb->dbb_page_size - (sizeof(data_page) + RHDF_SIZE);
 
 	// Fill up data pages tail first until what's left fits on a single page.
@@ -3264,7 +3264,7 @@ static void store_big_record(thread_db* tdbb,
 				continue;
 			}
 
-			if ((count = *--control) < 0)
+			if ((count = (signed char) *--control) < 0)
 			{
 				*--out = in[-1];
 				*--out = (UCHAR) count;
