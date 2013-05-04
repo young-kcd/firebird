@@ -351,7 +351,7 @@ SQL> REVOKE ALL ON ALL FROM USER guest;
 SQL>
 
 
-11) Syntax for change nullability of a field or domain
+13) Syntax for change nullability of a field or domain
 (Adriano dos Santos Fernandes)
 
 Nullability of a table field or a domain can now be changed with the ALTER command. Syntax:
