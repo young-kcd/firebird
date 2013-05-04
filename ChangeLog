@@ -1,3 +1,15 @@
+ 2013-05-03 15:01  dimitr 
+   M src/jrd/btr.cpp
+Misc.
+
+ 2013-05-03 13:29  dimitr 
+   M src/jrd/dpm.epp
+Correction as per Claudio's request.
+
+ 2013-05-03 13:12  dimitr 
+   M doc/WhatsNew
+Documented bugfixes.
+
  2013-04-30 15:27  dimitr 
    M src/jrd/opt.cpp
 One more bugfix for full outer joins.
