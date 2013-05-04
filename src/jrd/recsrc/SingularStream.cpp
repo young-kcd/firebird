@@ -111,7 +111,7 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 		{
 			record_param& rpb = request->req_rpb[m_streams[i]];
 			Record* orgRecord = rpb.rpb_record;
-			rpb = rpbs.pop();
+			rpb = rpbs[i];
 			const AutoPtr<Record> newRecord(rpb.rpb_record);
 
 			if (newRecord)
