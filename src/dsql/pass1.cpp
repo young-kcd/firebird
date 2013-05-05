@@ -1052,8 +1052,6 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		else
 			rse = PASS1_rse(dsqlScratch, input, false);
 
-		USHORT minOuterJoin = MAX_USHORT;
-
 		// Finish off by cleaning up contexts and put them into derivedContext
 		// so create view (ddl) can deal with it.
 		// Also add the used contexts into the childs stack.
@@ -1065,23 +1063,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 			context->ctx_childs_derived_table.push(childCtx);
 
 			// Collect contexts that will be used for blr_derived_expr generation.
-			// We want all child contexts with minimum ctx_in_outer_join.
-			if (childCtx->ctx_in_outer_join <= minOuterJoin)
-			{
-				DsqlContextStack contexts;
-				pass1_expand_contexts(contexts, childCtx);
-
-				for (DsqlContextStack::iterator i(contexts); i.hasData(); ++i)
-				{
-					if (i.object()->ctx_in_outer_join < minOuterJoin)
-					{
-						minOuterJoin = i.object()->ctx_in_outer_join;
-						context->ctx_main_derived_contexts.clear();
-					}
-
-					context->ctx_main_derived_contexts.push(i.object());
-				}
-			}
+			pass1_expand_contexts(context->ctx_main_derived_contexts, childCtx);
 		}
 
 		while (temp.hasData())
