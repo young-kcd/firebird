@@ -1,3 +1,11 @@
+ 2013-05-04 18:10  asfernandes 
+   M doc/sql.extensions/README.ddl.txt
+Correction.
+
+ 2013-05-04 16:19  dimitr 
+   M src/jrd/recsrc/SingularStream.cpp
+Fixed bug in my recent refactoring, thanks to Adriano.
+
  2013-05-03 15:01  dimitr 
    M src/jrd/btr.cpp
 Misc.
