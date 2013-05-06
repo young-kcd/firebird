@@ -1166,24 +1166,15 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull, descending, keyType);
 
-				if (temp.key_length)
+				const UCHAR* q = temp.key_data;
+				for (USHORT l = temp.key_length; l; --l, --stuff_count)
 				{
-					const UCHAR* q = temp.key_data;
-					for (USHORT l = temp.key_length; l; --l, --stuff_count)
+					if (stuff_count == 0)
 					{
-						if (stuff_count == 0)
-						{
-							*p++ = idx->idx_count - n;
-							stuff_count = STUFF_COUNT;
-						}
-						*p++ = *q++;
+						*p++ = idx->idx_count - n;
+						stuff_count = STUFF_COUNT;
 					}
-				}
-				else
-				{
-					fb_assert(stuff_count == 0);
-					*p++ = idx->idx_count - n;
-					stuff_count = STUFF_COUNT;
+					*p++ = *q++;
 				}
 			}
 
@@ -1428,7 +1419,8 @@ idx_e BTR_make_key(thread_db* tdbb,
 		// Make a compound key
 		UCHAR* p = key->key_data;
 		SSHORT stuff_count = 0;
-		temp.key_flags |= key_empty;
+		bool is_key_empty = true;
+		USHORT prior_length = 0;
 		USHORT n = 0;
 		for (; n < count; n++, tail++)
 		{
@@ -1441,28 +1433,26 @@ idx_e BTR_make_key(thread_db* tdbb,
 			if (isNull)
 				key->key_nulls |= 1 << n;
 
+			temp.key_flags |= key_empty;
+
 			compress(tdbb, desc, &temp, tail->idx_itype, isNull, descending,
 				(n == count - 1 ?
 					keyType : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 
-			if (temp.key_length)
+			if (!(temp.key_flags & key_empty))
+				is_key_empty = false;
+
+			prior_length = (p - key->key_data);
+
+			const UCHAR* q = temp.key_data;
+			for (USHORT l = temp.key_length; l; --l, --stuff_count)
 			{
-				const UCHAR* q = temp.key_data;
-				for (USHORT l = temp.key_length; l; --l, --stuff_count)
+				if (stuff_count == 0)
 				{
-					if (stuff_count == 0)
-					{
-						*p++ = idx->idx_count - n;
-						stuff_count = STUFF_COUNT;
-					}
-					*p++ = *q++;
+					*p++ = idx->idx_count - n;
+					stuff_count = STUFF_COUNT;
 				}
-			}
-			else
-			{
-				fb_assert(stuff_count == 0);
-				*p++ = idx->idx_count - n;
-				stuff_count = STUFF_COUNT;
+				*p++ = *q++;
 			}
 		}
 
@@ -1475,8 +1465,15 @@ idx_e BTR_make_key(thread_db* tdbb,
 				*p++ = 0;
 		}
 
-		key->key_length = (p - key->key_data);
-		if (temp.key_flags & key_empty)
+		// dimitr:	If the search is fuzzy and the last segment is empty,
+		//			then skip it for the lookup purposes. It enforces
+		//			the rule that every string starts with an empty string.
+		if (fuzzy && (temp.key_flags & key_empty))
+			key->key_length = prior_length;
+		else
+			key->key_length = (p - key->key_data);
+
+		if (is_key_empty)
 		{
 			key->key_flags |= key_empty;
 			if (fuzzy)
@@ -1551,24 +1548,15 @@ void BTR_make_null_key(thread_db* tdbb, const index_desc* idx, temporary_key* ke
 
 			compress(tdbb, &null_desc, &temp, tail->idx_itype, true, descending, false);
 
-			if (temp.key_length)
+			const UCHAR* q = temp.key_data;
+			for (USHORT l = temp.key_length; l; --l, --stuff_count)
 			{
-				const UCHAR* q = temp.key_data;
-				for (USHORT l = temp.key_length; l; --l, --stuff_count)
+				if (stuff_count == 0)
 				{
-					if (stuff_count == 0)
-					{
-						*p++ = idx->idx_count - n;
-						stuff_count = STUFF_COUNT;
-					}
-					*p++ = *q++;
+					*p++ = idx->idx_count - n;
+					stuff_count = STUFF_COUNT;
 				}
-			}
-			else
-			{
-				fb_assert(stuff_count == 0);
-				*p++ = idx->idx_count - n;
-				stuff_count = STUFF_COUNT;
+				*p++ = *q++;
 			}
 		}
 
@@ -2371,18 +2359,17 @@ static void compress(thread_db* tdbb,
 			// Leave key_empty flag, because the string is an empty string
 			if (descending && ((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
 				*p++ = desc_end_value_prefix;
+
+			*p++ = pad;
 		}
 
 		while (p > key->key_data)
 		{
 			if (*--p != pad)
-			{
-				++p;
 				break;
-			}
 		}
 
-		key->key_length = p - key->key_data;
+		key->key_length = p + 1 - key->key_data;
 		return;
 	}
 
