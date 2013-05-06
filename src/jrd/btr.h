@@ -48,12 +48,6 @@ struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
 
-enum idx_null_state {
-  idx_nulls_none,
-  idx_nulls_some,
-  idx_nulls_all
-};
-
 // Index descriptor block -- used to hold info from index root page
 
 struct index_desc
@@ -145,7 +139,6 @@ struct index_insertion
 // these flags are for the key_flags
 
 const int key_empty		= 1;	// Key contains empty data / empty string
-const int key_all_nulls	= 2;	// All key fields are nulls
 
 // Temporary key block
 
@@ -154,16 +147,8 @@ struct temporary_key
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY + 1];
 	UCHAR key_flags;
-	USHORT key_null_segment;	// index of first encountered null segment.
-		// Evaluated in BTR_key only and used in IDX_create_index for better
-		// error diagnostics
-
-	// AB: I don't see the use of multiplying with 2 anymore.
-	//UCHAR key_data[MAX_KEY * 2];
-		// This needs to be on a SHORT boundary.
-		// This is because key_data is complemented as
-		// (SSHORT *) if value is negative.
-		//  See compress() (JRD/btr.cpp) for more details
+	USHORT key_nulls;	// bitmap of encountered null segments,
+						// USHORT is enought to store MAX_INDEX_SEGMENTS bits
 };
 
 

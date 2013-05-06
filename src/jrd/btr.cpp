@@ -183,7 +183,7 @@ static UCHAR* find_node_start_point(btree_page*, temporary_key*, UCHAR*, USHORT*
 static UCHAR* find_area_start_point(btree_page*, const temporary_key*, UCHAR*,
 									USHORT*, bool, bool, RecordNumber = NO_VALUE);
 
-static ULONG find_page(btree_page*, const temporary_key*, UCHAR, RecordNumber = NO_VALUE,
+static ULONG find_page(btree_page*, const temporary_key*, const index_desc*, RecordNumber = NO_VALUE,
 					   bool = false);
 
 static contents garbage_collect(thread_db*, WIN*, ULONG);
@@ -865,7 +865,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 			while (true)
 			{
 				const temporary_key* tkey = ignoreNulls ? &firstNotNullKey : lower;
-				const ULONG number = find_page(page, tkey, idx->idx_flags,
+				const ULONG number = find_page(page, tkey, idx,
 					NO_VALUE, (retrieval->irb_generic & (irb_starting | irb_partial)));
 				if (number != END_BUCKET)
 				{
@@ -1057,7 +1057,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 
 
 idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx,
-			  temporary_key* key, idx_null_state* null_state, const bool fuzzy, USHORT count)
+			  temporary_key* key, const bool fuzzy, USHORT count)
 {
 /**************************************
  *
@@ -1077,8 +1077,6 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	temp.key_length = 0;
 	DSC desc;
 	DSC* desc_ptr;
-	//SSHORT stuff_count;
-	int missing_unique_segments = 0;
 
 	SET_TDBB(tdbb);
 	const Database* dbb = tdbb->getDatabase();
@@ -1086,8 +1084,13 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 	idx_e result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
-	key->key_flags = key_all_nulls;
-	key->key_null_segment = 0;
+	key->key_flags = 0;
+	key->key_nulls = 0;
+
+	const bool descending = (idx->idx_flags & idx_descending);
+
+	if (!count)
+		count = idx->idx_count;
 
 	try {
 
@@ -1126,17 +1129,12 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				}
 			}
 
-			if (isNull && (idx->idx_flags & idx_unique)) {
-				missing_unique_segments++;
-			}
+			if (isNull)
+				key->key_nulls = 1;
 
 			key->key_flags |= key_empty;
 
-			if (!isNull)
-				key->key_flags &= ~key_all_nulls;
-
-			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
-				(idx->idx_flags & idx_descending), keyType);
+			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull, descending, keyType);
 		}
 		else
 		{
@@ -1145,23 +1143,18 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			temp.key_flags |= key_empty;
 			for (USHORT n = 0; n < count; n++, tail++)
 			{
-				for (; stuff_count; --stuff_count) {
+				for (; stuff_count; --stuff_count)
 					*p++ = 0;
-				}
 
 				desc_ptr = &desc;
 				// In order to "map a null to a default" value (in EVL_field()),
 				// the relation block is referenced.
 				// Reference: Bug 10116, 10424
 				const bool isNull = !EVL_field(relation, record, tail->idx_field, desc_ptr);
-				if (isNull && (idx->idx_flags & idx_unique))
-				{
-					if (missing_unique_segments++ == 0) {
-						key->key_null_segment = n;
-					}
-				}
 
-				if (!isNull)
+				if (isNull)
+					key->key_nulls |= 1 << n;
+				else
 				{
 					if (!(relation->rel_flags & REL_system) &&	// UNICODE_FSS_HACK
 						desc_ptr->dsc_dtype == dtype_text)
@@ -1169,12 +1162,9 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 						// That's necessary for NO-PAD collations.
 						INTL_adjust_text_descriptor(tdbb, desc_ptr);
 					}
-
-					key->key_flags &= ~key_all_nulls;
 				}
 
-				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull,
-					(idx->idx_flags & idx_descending), keyType);
+				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull, descending, keyType);
 
 				if (temp.key_length)
 				{
@@ -1196,25 +1186,18 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					stuff_count = STUFF_COUNT;
 				}
 			}
+
 			key->key_length = (p - key->key_data);
-			if (temp.key_flags & key_empty) {
+
+			if (temp.key_flags & key_empty)
 				key->key_flags |= key_empty;
-			}
 		}
 
-		if (key->key_length >= dbb->getMaxIndexKeyLength()) {
+		if (key->key_length >= dbb->getMaxIndexKeyLength())
 			result = idx_e_keytoobig;
-		}
 
-		if (idx->idx_flags & idx_descending) {
+		if (descending)
 			BTR_complement_key(key);
-		}
-
-		if (null_state)
-		{
-			*null_state = !missing_unique_segments ? idx_nulls_none :
-				(missing_unique_segments == idx->idx_count) ? idx_nulls_all : idx_nulls_some;
-		}
 
 		return result;
 
@@ -1225,12 +1208,6 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		key->key_length = 0;
 		return idx_e_conversion;
 	}
-}
-
-idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx,
-			  temporary_key* key, idx_null_state* null_state, const bool fuzzy)
-{
-	return BTR_key(tdbb, relation, record, idx, key, null_state, fuzzy, idx->idx_count);
 }
 
 
@@ -1421,28 +1398,27 @@ idx_e BTR_make_key(thread_db* tdbb,
 
 	idx_e result = idx_e_ok;
 
-	key->key_flags = key_all_nulls;
-	key->key_null_segment = 0;
+	key->key_flags = 0;
+	key->key_nulls = 0;
+
+	const bool descending = (idx->idx_flags & idx_descending);
 
 	const index_desc::idx_repeat* tail = idx->idx_rpt;
 
 	const USHORT keyType = fuzzy ?
-		INTL_KEY_PARTIAL :
-		((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
+		INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
 
-	// If the index is a single segment index, don't sweat the compound
-	// stuff.
+	// If the index is a single segment index, don't sweat the compound stuff
 	if (idx->idx_count == 1)
 	{
 		bool isNull;
 		const dsc* desc = eval(tdbb, *exprs, &temp_desc, &isNull);
 		key->key_flags |= key_empty;
 
-		if (!isNull)
-			key->key_flags &= ~key_all_nulls;
+		if (isNull)
+			key->key_nulls = 1;
 
-		compress(tdbb, desc, key, tail->idx_itype, isNull,
-			(idx->idx_flags & idx_descending), keyType);
+		compress(tdbb, desc, key, tail->idx_itype, isNull, descending, keyType);
 
 		if (fuzzy && (key->key_flags & key_empty))
 			key->key_length = 0;
@@ -1456,18 +1432,16 @@ idx_e BTR_make_key(thread_db* tdbb,
 		USHORT n = 0;
 		for (; n < count; n++, tail++)
 		{
-			for (; stuff_count; --stuff_count) {
+			for (; stuff_count; --stuff_count)
 				*p++ = 0;
-			}
 
 			bool isNull;
 			const dsc* desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
-			if (!isNull) {
-				key->key_flags &= ~key_all_nulls;
-			}
 
-			compress(tdbb, desc, &temp, tail->idx_itype, isNull,
-				(idx->idx_flags & idx_descending),
+			if (isNull)
+				key->key_nulls |= 1 << n;
+
+			compress(tdbb, desc, &temp, tail->idx_itype, isNull, descending,
 				(n == count - 1 ?
 					keyType : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 
@@ -1513,14 +1487,14 @@ idx_e BTR_make_key(thread_db* tdbb,
 	if (key->key_length >= dbb->getMaxIndexKeyLength())
 		result = idx_e_keytoobig;
 
-	if (idx->idx_flags & idx_descending)
+	if (descending)
 		BTR_complement_key(key);
 
 	return result;
 }
 
 
-void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
+void BTR_make_null_key(thread_db* tdbb, const index_desc* idx, temporary_key* key)
 {
 /**************************************
  *
@@ -1547,19 +1521,21 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 	temp.key_length = 0;
 
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->getDatabase();
 
 	fb_assert(idx != NULL);
 	fb_assert(key != NULL);
 
-	key->key_flags = key_all_nulls;
+	key->key_flags = 0;
+	key->key_nulls = (1 << idx->idx_count) - 1;
 
-	index_desc::idx_repeat* tail = idx->idx_rpt;
+	const bool descending = (idx->idx_flags & idx_descending);
 
-	// If the index is a single segment index, don't sweat the compound
-	// stuff.
-	if ((idx->idx_count == 1) || (idx->idx_flags & idx_expressn)) {
-		compress(tdbb, &null_desc, key, tail->idx_itype, true, (idx->idx_flags & idx_descending), false);
+	const index_desc::idx_repeat* tail = idx->idx_rpt;
+
+	// If the index is a single segment index, don't sweat the compound stuff
+	if ((idx->idx_count == 1) || (idx->idx_flags & idx_expressn))
+	{
+		compress(tdbb, &null_desc, key, tail->idx_itype, true, descending, false);
 	}
 	else
 	{
@@ -1567,14 +1543,13 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 		UCHAR* p = key->key_data;
 		SSHORT stuff_count = 0;
 		temp.key_flags |= key_empty;
+
 		for (USHORT n = 0; n < idx->idx_count; n++, tail++)
 		{
-			for (; stuff_count; --stuff_count) {
+			for (; stuff_count; --stuff_count)
 				*p++ = 0;
-			}
 
-			compress(tdbb, &null_desc, &temp, tail->idx_itype, true,
-				(idx->idx_flags & idx_descending), false);
+			compress(tdbb, &null_desc, &temp, tail->idx_itype, true, descending, false);
 
 			if (temp.key_length)
 			{
@@ -1596,15 +1571,15 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 				stuff_count = STUFF_COUNT;
 			}
 		}
+
 		key->key_length = (p - key->key_data);
-		if (temp.key_flags & key_empty) {
+
+		if (temp.key_flags & key_empty)
 			key->key_flags |= key_empty;
-		}
 	}
 
-	if (idx->idx_flags & idx_descending) {
+	if (descending)
 		BTR_complement_key(key);
-	}
 }
 
 
@@ -2205,7 +2180,7 @@ static ULONG add_node(thread_db* tdbb,
 	ULONG page;
 	while (true)
 	{
-		page = find_page(bucket, insertion->iib_key, insertion->iib_descriptor->idx_flags,
+		page = find_page(bucket, insertion->iib_key, insertion->iib_descriptor,
 						 insertion->iib_number);
 		if (page != END_BUCKET) {
 			break;
@@ -2331,7 +2306,7 @@ static void compress(thread_db* tdbb,
 
 	if (isNull)
 	{
-		UCHAR pad = 0;
+		const UCHAR pad = 0;
 		key->key_flags &= ~key_empty;
 		// AB: NULL should be threated as lowest value possible.
 		//     Therefore don't complement pad when we have an ascending index.
@@ -4192,7 +4167,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 
 
 static ULONG find_page(btree_page* bucket, const temporary_key* key,
-					   UCHAR idx_flags, RecordNumber find_record_number,
+					   const index_desc* idx, RecordNumber find_record_number,
 					   bool retrieval)
 {
 /**************************************
@@ -4212,15 +4187,16 @@ static ULONG find_page(btree_page* bucket, const temporary_key* key,
 
 	const bool leafPage = (bucket->btr_level == 0);
 	bool firstPass = true;
-	const bool descending = (idx_flags & idx_descending);
-	const UCHAR* const endPointer = (UCHAR*)bucket + bucket->btr_length;
-	const bool validateDuplicates =
-		((idx_flags & idx_unique) && !(key->key_flags & key_all_nulls)) ||
-		(idx_flags & idx_primary);
+	const bool descending = (idx->idx_flags & idx_descending);
+	const bool primary = (idx->idx_flags & idx_primary);
+	const bool unique = (idx->idx_flags & idx_unique);
+	const bool key_all_nulls = (key->key_nulls == (1 << idx->idx_count) - 1);
+	const bool validateDuplicates = (unique && !key_all_nulls) || primary;
 
-	if (validateDuplicates) {
+	if (validateDuplicates)
 		find_record_number = NO_VALUE;
-	}
+
+	const UCHAR* const endPointer = (UCHAR*) bucket + bucket->btr_length;
 
 	USHORT prefix = 0;	// last computed prefix against processed node
 
@@ -5020,11 +4996,13 @@ static ULONG insert_node(thread_db* tdbb,
 	btree_page* bucket = (btree_page*) window->win_buffer;
 	temporary_key* key = insertion->iib_key;
 
-	const bool unique = (insertion->iib_descriptor->idx_flags & idx_unique);
-	const bool primary = (insertion->iib_descriptor->idx_flags & idx_primary);
+	const index_desc* const idx = insertion->iib_descriptor;
+	const bool unique = (idx->idx_flags & idx_unique);
+	const bool primary = (idx->idx_flags & idx_primary);
+	const bool key_all_nulls = (key->key_nulls == (1 << idx->idx_count) - 1);
 	const bool leafPage = (bucket->btr_level == 0);
 	// hvlad: don't check unique index if key has only null values
-	const bool validateDuplicates = (unique && !(key->key_flags & key_all_nulls)) || primary;
+	const bool validateDuplicates = (unique && !key_all_nulls) || primary;
 	USHORT prefix = 0;
 	RecordNumber newRecordNumber;
 	if (leafPage) {
@@ -5035,7 +5013,7 @@ static ULONG insert_node(thread_db* tdbb,
 	}
 	// For checking on duplicate nodes we should find the first matching key.
 	UCHAR* pointer = find_node_start_point(bucket, key, 0, &prefix,
-						insertion->iib_descriptor->idx_flags & idx_descending,
+						idx->idx_flags & idx_descending,
 						false, true, validateDuplicates ? NO_VALUE : newRecordNumber);
 	if (!pointer) {
 		return NO_VALUE_PAGE;
@@ -5605,10 +5583,7 @@ static ULONG insert_node(thread_db* tdbb,
 		// place (in order of record numbers).
 
 		temporary_key nullKey;
-		nullKey.key_length = 0;
-		nullKey.key_flags = 0;
-		nullKey.key_null_segment = 0;
-		BTR_make_null_key(tdbb, insertion->iib_descriptor, &nullKey);
+		BTR_make_null_key(tdbb, idx, &nullKey);
 
 		if (new_key->key_length == nullKey.key_length &&
 			memcmp(new_key->key_data, nullKey.key_data, nullKey.key_length) == 0)
@@ -5720,7 +5695,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 
 	while (true)
 	{
-		const ULONG number = find_page(page, insertion->iib_key, idx->idx_flags, insertion->iib_number);
+		const ULONG number = find_page(page, insertion->iib_key, idx, insertion->iib_number);
 
 		// we should always find the node, but let's make sure
 		if (number == END_LEVEL)
@@ -5783,16 +5758,17 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	btree_page* page = (btree_page*) window->win_buffer;
 	temporary_key* key = insertion->iib_key;
 
-	const UCHAR idx_flags = insertion->iib_descriptor->idx_flags;
-	const bool validateDuplicates =
-		((idx_flags & idx_unique) && !(key->key_flags & key_all_nulls)) ||
-		(idx_flags & idx_primary);
+	const index_desc* const idx = insertion->iib_descriptor;
+	const bool primary = (idx->idx_flags & idx_primary);
+	const bool unique = (idx->idx_flags & idx_unique);
+	const bool key_all_nulls = (key->key_nulls == (1 << idx->idx_count) - 1);
+	const bool validateDuplicates = (unique && !key_all_nulls) || primary;
 
 	// Look for the first node with the value to be removed.
 	UCHAR* pointer;
 	USHORT prefix;
 	while (!(pointer = find_node_start_point(page, key, 0, &prefix,
-			insertion->iib_descriptor->idx_flags & idx_descending,
+			idx->idx_flags & idx_descending,
 			false, false,
 			validateDuplicates ? NO_VALUE : insertion->iib_number)))
 	{

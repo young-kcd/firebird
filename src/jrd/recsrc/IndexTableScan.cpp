@@ -211,7 +211,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 			temporary_key value;
 
 			const idx_e result =
-				BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, idx, &value, 0, false);
+				BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, idx, &value, false);
 
 			if (result != idx_e_ok)
 				ERR_duplicate_error(result, rpb->rpb_relation, idx->idx_id);
