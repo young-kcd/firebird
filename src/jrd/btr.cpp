@@ -5561,10 +5561,10 @@ static ULONG insert_node(thread_db* tdbb,
 
 	jumpNodes->clear();
 
-	new_key->key_flags = 0;
+	new_key->key_nulls = 0;
 	if (unique)
 	{
-		// hvlad: it is important to set correct flags for all-NULL's key
+		// hvlad: it is important to set correct bitmap for all-NULL's key
 		// else insert_node() at upper level will validate duplicates and
 		// insert node into the end of duplicates chain instead of correct
 		// place (in order of record numbers).
@@ -5575,7 +5575,7 @@ static ULONG insert_node(thread_db* tdbb,
 		if (new_key->key_length == nullKey.key_length &&
 			memcmp(new_key->key_data, nullKey.key_data, nullKey.key_length) == 0)
 		{
-			new_key->key_flags = nullKey.key_flags;
+			new_key->key_nulls = nullKey.key_nulls;
 		}
 	}
 
