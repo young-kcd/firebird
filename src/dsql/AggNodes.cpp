@@ -150,7 +150,7 @@ bool AggNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 	FieldFinder fieldFinder(visitor.checkScopeLevel, visitor.matchType);
 
 	for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-		found |= visitor.visit((*i)->getExpr());
+		found |= fieldFinder.visit((*i)->getExpr());
 
 	if (!fieldFinder.getField())
 	{
