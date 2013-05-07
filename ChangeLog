@@ -1,3 +1,19 @@
+ 2013-05-06 18:41  dimitr 
+   M src/jrd/btr.cpp
+Postfix for my prior commit.
+
+ 2013-05-06 14:16  dimitr 
+   M src/jrd/btr.cpp
+Rolled back my patch for CORE-2709. Reworked Adriano's solution for CORE-1188, CORE-3052 and CORE-3239. Both changes affect the stored index keys for compound indices, so beware.
+
+ 2013-05-06 12:34  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/btr_proto.h
+   M src/jrd/idx.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+Simplified the code and reworked the NULL validation logic.
+
  2013-05-05 23:01  asfernandes 
    M doc/WhatsNew
 Fixed CORE-4083 - Full outer join in derived table with coalesce (iif).
