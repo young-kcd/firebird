@@ -245,9 +245,6 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 
 		if (parameter->par_index)
 		{
-			if (!first_index)
-				first_index = parameter->par_index;
-
 			// Use descriptor for nulls signaling
 			USHORT null_flag = 0;
 			if (parameter->par_null)
@@ -260,16 +257,14 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 			}
 
 			dsc* desc = NULL;
-			if (first_index > parameter->par_index)
-			{
-				m_descs.insert(0, parameter->par_desc);
-				desc = &m_descs.front();
+
+			const size_t idx = parameter->par_index - 1;
+			if (idx >= m_descs.getCount()) {
+				m_descs.getBuffer(idx + 1);
 			}
-			else
-			{
-				m_descs.add(parameter->par_desc);
-				desc = &m_descs.back();
-			}
+			desc = &m_descs[idx];
+
+			*desc = parameter->par_desc;
 			desc->dsc_flags |= null_flag;
 
 			UCHAR* msgBuffer = m_stmt->req_msg_buffers[parameter->par_message->msg_buffer_number];
