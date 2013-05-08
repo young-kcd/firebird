@@ -1,3 +1,7 @@
+ 2013-05-07 11:36  hvlad 
+   M src/jrd/trace/TraceObjects.cpp
+Fixed bug CORE-4094 : Wrong parameters order in trace output
+
  2013-04-29 10:05  dimitr 
    M builds/win32/make_all.bat
 Totally misc.
