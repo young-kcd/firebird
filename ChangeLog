@@ -1,3 +1,15 @@
+ 2013-05-07 16:02  asfernandes 
+   M src/dsql/AggNodes.cpp
+Fixed crash with CORE-3694 test-case.
+
+ 2013-05-07 11:52  hvlad 
+   M src/common/classes/ClumpletWriter.h
+Enlarge DPB\SPB size limit up to 1MB (as Alex suggested). Former limit (4KB) was too small even to pass contents of standard fbtrace.conf into the trace start service.
+
+ 2013-05-07 11:37  hvlad 
+   M src/jrd/trace/TraceObjects.cpp
+Fixed bug CORE-4094 : Wrong parameters order in trace output
+
  2013-05-06 18:41  dimitr 
    M src/jrd/btr.cpp
 Postfix for my prior commit.
