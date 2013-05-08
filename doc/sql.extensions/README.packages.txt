@@ -40,6 +40,12 @@ Syntax:
         <procedure_impl> ;
 
     <function_impl> ::=
+        FUNCTION <name> [( <parameters> )] RETURNS <type>
+        AS
+        BEGIN
+           ...
+        END
+        |
         FUNCTION <name>  [( <parameters> )] RETURNS <type>
             EXTERNAL NAME '<name>' ENGINE <engine>
 
