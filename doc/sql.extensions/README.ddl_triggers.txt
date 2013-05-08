@@ -101,7 +101,7 @@ Permissions:
 DDL_TRIGGER context namespace:
 	It has been introduced the DDL_TRIGGER context for usage with RDB$GET_CONTEXT. Usage of this
 	namespace is valid only when DDL triggers are running. It's valid to use it in stored
-	procedures called by DDL triggers.
+	procedures and functions called by DDL triggers.
 	The DDL_TRIGGER context works like a stack. Before a DDL trigger is fired, it's pushed on that
 	stack the values relative to the executed command. After the trigger finishes, the value is
 	popped. So in the case of cascade DDL statements, when an user DDL command fires a DDL trigger
