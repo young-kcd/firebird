@@ -2,11 +2,6 @@
   * v3.0 Alpha 1
   **************
 
-    * Bugfix CORE-4083
-        Full outer join in derived table with coalesce (iif)
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at gmail.com>
-
     * Bugfix CORE-4074
         Computed by columns and POSITION function
       Contributor(s):
