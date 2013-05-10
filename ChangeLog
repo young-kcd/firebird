@@ -1,3 +1,7 @@
+ 2013-05-09 01:17  asfernandes 
+   M src/dsql/pass1.cpp
+Backported fix for CORE-4083 - Full outer join in derived table with coalesce (iif).
+
  2013-05-07 11:36  hvlad 
    M src/jrd/trace/TraceObjects.cpp
 Fixed bug CORE-4094 : Wrong parameters order in trace output
