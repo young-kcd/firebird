@@ -558,6 +558,8 @@
 
     * Improvement CORE-2006
         SUBSTRING with regular expression (SIMILAR TO) capability
+      See also:
+        /doc/README.substring_similar.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
