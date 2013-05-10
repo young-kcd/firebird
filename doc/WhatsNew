@@ -606,6 +606,8 @@
 
     * Improvement CORE-832
         Add support for parameterized exceptions
+      See also:
+        /doc/sql.extensions/README.exception_handling
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 

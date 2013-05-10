@@ -85,7 +85,7 @@ Parameterized exceptions (FB 3.0)
     raising the exception.
 
   Author:
-    Adriano dos Santos Fernandes <adrianosf@gmail.com>
+    Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
   Syntax:
     EXCEPTION <name> USING ( <value list> )
