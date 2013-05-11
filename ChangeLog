@@ -1,3 +1,17 @@
+ 2013-05-10 15:48  asfernandes 
+   M doc/WhatsNew
+   M doc/sql.extensions/README.exception_handling
+Document CORE-832 - Add support for parameterized exceptions.
+
+ 2013-05-10 14:47  asfernandes 
+   M doc/WhatsNew
+   A doc/sql.extensions/README.substring_similar.txt
+Document CORE-2006 - Regular expression SUBSTRING.
+
+ 2013-05-09 01:21  asfernandes 
+   M doc/WhatsNew
+Removed from WhatsNew the fix present in 2.5.
+
  2013-05-08 15:47  asfernandes 
    M doc/sql.extensions/README.ddl_triggers.txt
 Misc.
