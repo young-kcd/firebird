@@ -89,7 +89,7 @@ static bool key_equal(const temporary_key*, const temporary_key*);
 static void release_index_block(thread_db*, IndexBlock*);
 static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
 
-inline USHORT getNullSegment(const temporary_key& key)
+static inline USHORT getNullSegment(const temporary_key& key)
 {
 	USHORT nulls = key.key_nulls;
 

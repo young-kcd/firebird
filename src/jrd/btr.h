@@ -148,7 +148,7 @@ struct temporary_key
 	UCHAR key_data[MAX_KEY + 1];
 	UCHAR key_flags;
 	USHORT key_nulls;	// bitmap of encountered null segments,
-						// USHORT is enought to store MAX_INDEX_SEGMENTS bits
+						// USHORT is enough to store MAX_INDEX_SEGMENTS bits
 };
 
 

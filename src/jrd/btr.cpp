@@ -5755,9 +5755,9 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	UCHAR* pointer;
 	USHORT prefix;
 	while (!(pointer = find_node_start_point(page, key, 0, &prefix,
-			idx->idx_flags & idx_descending,
+			(idx->idx_flags & idx_descending),
 			false, false,
-			validateDuplicates ? NO_VALUE : insertion->iib_number)))
+			(validateDuplicates ? NO_VALUE : insertion->iib_number))))
 	{
 		page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_write, pag_index);
 	}

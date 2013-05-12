@@ -259,9 +259,9 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 			dsc* desc = NULL;
 
 			const size_t idx = parameter->par_index - 1;
-			if (idx >= m_descs.getCount()) {
+			if (idx >= m_descs.getCount())
 				m_descs.getBuffer(idx + 1);
-			}
+
 			desc = &m_descs[idx];
 
 			*desc = parameter->par_desc;
