@@ -36,8 +36,8 @@ Syntax:
         END
 
     <package_body_item> ::=
-        <function_impl> ; |
-        <procedure_impl> ;
+        <function_impl> |
+        <procedure_impl>
 
     <function_impl> ::=
         FUNCTION <name> [( <parameters> )] RETURNS <type>
