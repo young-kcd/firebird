@@ -57,6 +57,13 @@ ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name,
 
 void ProcedureScan::open(thread_db* tdbb) const
 {
+	if (!m_procedure->isImplemented())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_proc_pack_not_implemented) <<
+				Arg::Str(m_procedure->getName().identifier) << Arg::Str(m_procedure->getName().package));
+	}
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 

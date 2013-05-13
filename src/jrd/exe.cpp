@@ -860,13 +860,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	JrdStatement* statement = request->getStatement();
 	const jrd_prc* proc = statement->procedure;
 
-	if (proc && !proc->isImplemented())
-	{
-		status_exception::raise(
-			Arg::Gds(isc_proc_pack_not_implemented) <<
-				Arg::Str(proc->getName().identifier) << Arg::Str(proc->getName().package));
-	}
-
 	/* Post resources to transaction block.  In particular, the interest locks
 	on relations/indices are copied to the transaction, which is very
 	important for (short-lived) dynamically compiled requests.  This will

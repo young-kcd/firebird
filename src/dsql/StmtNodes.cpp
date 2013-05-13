@@ -2714,6 +2714,13 @@ const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, Ex
 // End by assigning the output parameters.
 void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) const
 {
+	if (!procedure->isImplemented())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_proc_pack_not_implemented) <<
+				Arg::Str(procedure->getName().identifier) << Arg::Str(procedure->getName().package));
+	}
+
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	ULONG inMsgLength = 0;
