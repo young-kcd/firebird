@@ -30,13 +30,13 @@ begin
 	as
 	begin
 		rdb$set_context('USER_SESSION', 'fb$out.enabled', '1');
-	end;
+	end
 
 	procedure disable
 	as
 	begin
 		rdb$set_context('USER_SESSION', 'fb$out.enabled', null);
-	end;
+	end
 
 	procedure put_line (line fb$out_type)
 	as
@@ -49,14 +49,14 @@ begin
 					values (next value for fb$out_seq, :line);
 			end
 		end
-	end;
+	end
 
 	procedure clear
 	as
 	begin
 		in autonomous transaction do
 			delete from fb$out_table;
-	end;
+	end
 
 	procedure get_lines returns (lines fb$out_type)
 	as
@@ -77,7 +77,7 @@ begin
 		end
 
 		execute procedure clear;
-	end;
+	end
 end!
 
 

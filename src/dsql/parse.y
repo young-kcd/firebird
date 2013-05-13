@@ -2403,8 +2403,7 @@ package_body_clause
 
 %type <packageItems> package_body_items_opt
 package_body_items_opt
-	:
-		{ $$ = newNode<Array<CreateAlterPackageNode::Item> >(); }
+	: /* nothing */			{ $$ = newNode<Array<CreateAlterPackageNode::Item> >(); }
 	| package_body_items
 	;
 
@@ -2424,9 +2423,9 @@ package_body_items
 
 %type <packageItem> package_body_item
 package_body_item
-	: FUNCTION function_clause ';'
+	: FUNCTION function_clause
 		{ $$ = CreateAlterPackageNode::Item::create($2); }
-	| PROCEDURE procedure_clause ';'
+	| PROCEDURE procedure_clause
 		{ $$ = CreateAlterPackageNode::Item::create($2); }
 	;
 
