@@ -634,6 +634,8 @@
 
     * New feature CORE-3626
         Subfunctions in PSQL and EXECUTE BLOCK
+      See also:
+        /doc/sql.extensions/README.subroutines.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
@@ -782,6 +784,8 @@
 
     * New feature CORE-1288
         Subprocedures in PSQL and EXECUTE BLOCK
+      See also:
+        /doc/sql.extensions/README.subroutines.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
