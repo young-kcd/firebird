@@ -1,3 +1,30 @@
+ 2013-05-13 15:56  asfernandes 
+   M doc/WhatsNew
+   A doc/sql.extensions/README.subroutines.txt
+Document subroutines (CORE-1288 and CORE-3626).
+
+ 2013-05-13 15:56  asfernandes 
+   M doc/sql.extensions/README.packages.txt
+Correction.
+
+ 2013-05-13 01:49  asfernandes 
+   M examples/package/fbout-body.sql
+   M src/dsql/parse.y
+Changed package routines syntax to not need (nor accept) a semi-colon after "END".
+
+ 2013-05-13 01:48  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+Fixed crash when calling unimplemented packaged procedures.
+
+ 2013-05-12 02:45  asfernandes 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/idx.cpp
+   M src/jrd/trace/TraceObjects.cpp
+Misc.
+
  2013-05-10 15:48  asfernandes 
    M doc/WhatsNew
    M doc/sql.extensions/README.exception_handling
