@@ -678,6 +678,8 @@
 
     * New feature CORE-3018
         RECREATE and CREATE OR ALTER SEQUENCE/GENERATOR statements
+      See also:
+        /doc/sql.extensions/README.ddl.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
         Dmitry Yemanov <dimitr at firebirdsql.org>

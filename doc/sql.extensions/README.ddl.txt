@@ -374,3 +374,20 @@ Syntax: CONTINUE [<label>];
 
 CONTINUE is a complementary command to BREAK/LEAVE and allows the restart (next iteration) of a
 FOR/WHILE block.
+
+
+15) RECREATE, CREATE OR ALTER and ALTER SEQUENCE statements
+(Adriano dos Santos Fernandes)
+(Dmitry Yemanov)
+
+Syntax present in 3.0:
+
+{ CREATE | RECREATE } { SEQUENCE | GENERATOR } <sequence name> [ START WITH <value> ]
+
+CREATE OR ALTER { SEQUENCE | GENERATOR } <sequence name> { RESTART | START WITH <value> }
+
+ALTER { SEQUENCE | GENERATOR } <sequence name> RESTART [ WITH <value> ]
+
+Syntax present in 2.5 for reference:
+
+ALTER SEQUENCE <sequence name> RESTART WITH <value>
