@@ -365,3 +365,12 @@ A change in a domain changes and validates all the tables using the domain.
 
 An explicity NOT NULL on a field depending on a domain prevails over the domain. In this case,
 changing the domain to nullable does not automatically change the field to nullable.
+
+
+14) CONTINUE statement
+(Adriano dos Santos Fernandes)
+
+Syntax: CONTINUE [<label>];
+
+CONTINUE is a complementary command to BREAK/LEAVE and allows the restart (next iteration) of a
+FOR/WHILE block.

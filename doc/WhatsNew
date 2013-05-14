@@ -791,6 +791,8 @@
 
     * New feature CORE-1209
         CONTINUE statement
+      See also:
+        /doc/sql.extensions/README.ddl.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
