@@ -3338,6 +3338,7 @@ alter_clause
 	| ROLE alter_role_clause				{ $$ = $2; }
 	| USER alter_user_clause				{ $$ = $2; }
 	| CHARACTER SET alter_charset_clause	{ $$ = $3; }
+	| GENERATOR alter_sequence_clause		{ $$ = $2; }
 	| SEQUENCE alter_sequence_clause		{ $$ = $2; }
 	;
 
