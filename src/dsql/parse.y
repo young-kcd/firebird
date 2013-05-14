@@ -2650,7 +2650,7 @@ raise_statement
 
 %type <stmtNode> for_select
 for_select
-	: label_opt FOR select INTO variable_list cursor_def DO proc_block
+	: label_def_opt FOR select INTO variable_list cursor_def DO proc_block
 		{
 			ForNode* node = newNode<ForNode>();
 			node->dsqlLabelName = $1;
@@ -2683,7 +2683,7 @@ exec_into
 
 %type <execStatementNode> for_exec_into
 for_exec_into
-	: label_opt FOR exec_into DO proc_block
+	: label_def_opt FOR exec_into DO proc_block
 		{
 			$$ = $<execStatementNode>3;
 			$$->dsqlLabelName = $1;
@@ -2843,7 +2843,7 @@ variable_list
 
 %type <stmtNode> while
 while
-	: label_opt WHILE '(' search_condition ')' DO proc_block
+	: label_def_opt WHILE '(' search_condition ')' DO proc_block
 		{
 			LoopNode* node = newNode<LoopNode>();
 			node->dsqlLabelName = $1;
@@ -2853,8 +2853,8 @@ while
 		}
 	;
 
-%type <metaNamePtr> label_opt
-label_opt
+%type <metaNamePtr> label_def_opt
+label_def_opt
 	: /* nothing */				{ $$ = NULL; }
 	| symbol_label_name ':'		{ $$ = $1; }
 	;
@@ -2863,7 +2863,7 @@ label_opt
 breakleave
 	: KW_BREAK
 		{ $$ = newNode<ContinueLeaveNode>(blr_leave); }
-	| LEAVE label_opt
+	| LEAVE label_use_opt
 		{
 			ContinueLeaveNode* node = newNode<ContinueLeaveNode>(blr_leave);
 			node->dsqlLabelName = $2;
@@ -2873,12 +2873,18 @@ breakleave
 
 %type <stmtNode> continue
 continue
-	: CONTINUE label_opt
+	: CONTINUE label_use_opt
 		{
 			ContinueLeaveNode* node = newNode<ContinueLeaveNode>(blr_continue_loop);
 			node->dsqlLabelName = $2;
 			$$ = node;
 		}
+	;
+
+%type <metaNamePtr> label_use_opt
+label_use_opt
+	: /* nothing */				{ $$ = NULL; }
+	| symbol_label_name
 	;
 
 %type <declCursorNode> cursor_def
