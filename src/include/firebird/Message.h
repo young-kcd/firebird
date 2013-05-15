@@ -108,72 +108,61 @@
 	ISC_SHORT FB_BOOST_PP_CAT(FB_BOOST_PP_TUPLE_ELEM(_, 1, xy), Null);
 
 #define FB_MESSAGE_META(r, _, i, xy)	\
-	FB_BOOST_PP_CAT(FB_META_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy))
+	FB_BOOST_PP_CAT(FB_META_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy))	\
+	++index;
 
 // Types - metadata
 
 #define FB_META_FB_SCALED_SMALLINT(scale)	\
 	builder->setType(status, index, SQL_SHORT);	\
 	builder->setLength(status, index, sizeof(ISC_SHORT));	\
-	builder->setScale(status, index, scale);	\
-	++index;
+	builder->setScale(status, index, scale);
 
 #define FB_META_FB_SCALED_INTEGER(scale)	\
 	builder->setType(status, index, SQL_LONG);	\
 	builder->setLength(status, index, sizeof(ISC_LONG));	\
-	builder->setScale(status, index, scale);	\
-	++index;
+	builder->setScale(status, index, scale);
 
 #define FB_META_FB_SCALED_BIGINT(scale)	\
 	builder->setType(status, index, SQL_INT64);	\
 	builder->setLength(status, index, sizeof(ISC_INT64));	\
-	builder->setScale(status, index, scale);	\
-	++index;
+	builder->setScale(status, index, scale);
 
 #define FB_META_FB_FLOAT	\
 	builder->setType(status, index, SQL_FLOAT);	\
-	builder->setLength(status, index, sizeof(float));	\
-	++index;
+	builder->setLength(status, index, sizeof(float));
 
 #define FB_META_FB_DOUBLE	\
 	builder->setType(status, index, SQL_DOUBLE);	\
-	builder->setLength(status, index, sizeof(double));	\
-	++index;
+	builder->setLength(status, index, sizeof(double));
 
 #define FB_META_FB_BLOB	\
 	builder->setType(status, index, SQL_BLOB);	\
-	builder->setLength(status, index, sizeof(ISC_QUAD));	\
-	++index;
+	builder->setLength(status, index, sizeof(ISC_QUAD));
 
 #define FB_META_FB_BOOLEAN	\
 	builder->setType(status, index, SQL_BOOLEAN);	\
-	builder->setLength(status, index, sizeof(ISC_BOOLEAN));	\
-	++index;
+	builder->setLength(status, index, sizeof(ISC_BOOLEAN));
 
 #define FB_META_FB_DATE	\
 	builder->setType(status, index, SQL_DATE);	\
-	builder->setLength(status, index, sizeof(FbDate));	\
-	++index;
+	builder->setLength(status, index, sizeof(FbDate));
 
 #define FB_META_FB_TIME	\
 	builder->setType(status, index, SQL_TIME);	\
-	builder->setLength(status, index, sizeof(FbTime));	\
-	++index;
+	builder->setLength(status, index, sizeof(FbTime));
 
 #define FB_META_FB_TIMESTAMP	\
 	builder->setType(status, index, SQL_TIMESTAMP);	\
-	builder->setLength(status, index, sizeof(FbTimestamp));	\
-	++index;
+	builder->setLength(status, index, sizeof(FbTimestamp));
 
 #define FB_META_FB_CHAR(len)	\
 	builder->setType(status, index, SQL_TEXT);	\
-	builder->setLength(status, index, len);	\
-	++index;
+	builder->setLength(status, index, len);
 
 #define FB_META_FB_VARCHAR(len)	\
 	builder->setType(status, index, SQL_VARYING);	\
-	builder->setLength(status, index, len);	\
-	++index;
+	builder->setLength(status, index, len);
 
 #define FB_META_FB_SMALLINT				FB_META_FB_SCALED_SMALLINT(0)
 #define FB_META_FB_INTEGER				FB_META_FB_SCALED_INTEGER(0)
