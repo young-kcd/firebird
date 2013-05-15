@@ -3440,7 +3440,8 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	if (dbb->dbb_sweep_interval &&
 		!(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
-		(trans->tra_oldest_active - trans->tra_oldest > dbb->dbb_sweep_interval) &&
+		(trans->tra_oldest_active > oldest) &&
+		(trans->tra_oldest_active - oldest > dbb->dbb_sweep_interval) &&
 		oldest_state != tra_limbo)
 	{
 		start_sweeper(tdbb);
