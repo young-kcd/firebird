@@ -1,3 +1,29 @@
+ 2013-05-15 15:39  asfernandes 
+   M src/include/firebird/Message.h
+Misc.
+
+ 2013-05-15 14:28  hvlad 
+   M src/jrd/tra.cpp
+Fixed bug CORE-4100 : Automatic sweep could be run when there is no need for it
+
+ 2013-05-14 15:44  asfernandes 
+   M doc/WhatsNew
+   M doc/sql.extensions/README.ddl.txt
+Document CORE-3018 - RECREATE, ALTER and CREATE OR ALTER SEQUENCE/GENERATOR statements.
+
+ 2013-05-14 15:43  asfernandes 
+   M src/dsql/parse.y
+Added ALTER GENERATOR (as ALTER SEQUENCE) for consistency with the others SEQUENCE/GENERATOR commands.
+
+ 2013-05-14 14:53  asfernandes 
+   M doc/WhatsNew
+   M doc/sql.extensions/README.ddl.txt
+Document CORE-1209 - CONTINUE statement.
+
+ 2013-05-14 01:06  asfernandes 
+   M src/dsql/parse.y
+Fixed problem with LEAVE and CONTINUE syntaxes.
+
  2013-05-13 15:56  asfernandes 
    M doc/WhatsNew
    A doc/sql.extensions/README.subroutines.txt
