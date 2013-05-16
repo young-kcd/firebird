@@ -1,3 +1,7 @@
+ 2013-05-15 14:29  hvlad 
+   M src/jrd/tra.cpp
+Fixed bug CORE-4100 : Automatic sweep could be run when there is no need for it
+
  2013-05-09 01:17  asfernandes 
    M src/dsql/pass1.cpp
 Backported fix for CORE-4083 - Full outer join in derived table with coalesce (iif).
