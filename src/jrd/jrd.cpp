@@ -166,7 +166,7 @@ namespace
 			: entered(false)
 		{ }
 
-		RefMutexUnlock(Database::ExistenceRefMutex* p)
+		explicit RefMutexUnlock(Database::ExistenceRefMutex* p)
 			: ref(p), entered(false)
 		{ }
 
@@ -197,7 +197,7 @@ namespace
 			return ref;
 		}
 
-		bool operator!()
+		bool operator!() const
 		{
 			return !ref;
 		}
@@ -5110,8 +5110,8 @@ static void init(thread_db* tdbb,
 					{	// scope
 						MutexUnlockGuard listUnlock(databases_mutex);
 
-						// after unlocking databases_mutex we loose control over dbb
-						// as long as dbb_init_fini is not locked and activity of it is not checked
+						// after unlocking databases_mutex we lose control over dbb
+						// as long as dbb_init_fini is not locked its activity is not checked
 						initGuard.enter();
 						if (initGuard->doesExist())
 						{
@@ -5766,8 +5766,8 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 				{	// scope
 					MutexUnlockGuard listUnlock(databases_mutex);
 
-					// after unlocking databases_mutex we loose control over dbb
-					// as long as dbb_init_fini is not locked and activity of it is not checked
+					// after unlocking databases_mutex we lose control over dbb
+					// as long as dbb_init_fini is not locked and its activity is not checked
 					finiGuard.enter();
 					if (finiGuard->doesExist())
 					{

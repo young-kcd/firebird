@@ -232,9 +232,9 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	// Try to get exclusive database lock periodically up to specified delay. If we
 	// haven't gotten it report shutdown error for weaker forms. For forced shutdown
-	// keep notifying until successful.
+	// keep notifying until success.
 
-	SSHORT timeout = delay ? delay - 1 : 0;
+	SSHORT timeout = delay > 0 ? delay - 1 : 0;
 
 	if (!exclusive)
 	{

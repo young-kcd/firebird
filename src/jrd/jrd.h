@@ -884,7 +884,7 @@ private:
 class AttachmentNotNull
 {
 public:
-	AttachmentNotNull(Attachment* attachment);
+	explicit AttachmentNotNull(Attachment* attachment);
 	AttachmentNotNull();
 };
 
