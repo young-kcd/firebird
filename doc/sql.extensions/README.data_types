@@ -76,7 +76,7 @@ BOOLEAN (FB 3.0)
        others operators, including the new IS operator: "field1 IS FALSE".
 
     6. For compatibility reasons, the names INSERTING, UPDATING and DELETING (which aren't keywords)
-       works (like in 2.5 and previous) as boolean expressions and works as values (column or
+       work (like in 2.5 and previous) as boolean expressions and work as values (column or
        variable) in non-booleans expressions. For example, in:
        SELECT INSERTING, NOT INSERTING FROM TEST WHERE INSERTING AND INSERTING IS TRUE
        the INSERTING's are respectively recognized as value, keyword, keyword and value.
