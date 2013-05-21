@@ -78,7 +78,7 @@ public:
 		return defaultConfig;
 	}
 
-	bool missFirebirdConf()
+	bool missFirebirdConf() const
 	{
 		return missConf;
 	}

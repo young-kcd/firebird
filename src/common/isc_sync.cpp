@@ -199,7 +199,7 @@ public:
 class CountedFd
 {
 public:
-	CountedFd(int f)
+	explicit CountedFd(int f)
 		: fd(f), useCount(0)
 	{ }
 
@@ -232,7 +232,7 @@ namespace {
 	class FileLockHolder
 	{
 	public:
-		FileLockHolder(FileLock* l)
+		explicit FileLockHolder(FileLock* l)
 			: lock(l)
 		{
 			Arg::StatusVector status;

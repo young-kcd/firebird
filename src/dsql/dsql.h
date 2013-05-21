@@ -861,7 +861,7 @@ public:
 		  s(p, str)
 	{ }
 
-	IntlString(const Firebird::string& str, const Firebird::MetaName& cs = NULL)
+	explicit IntlString(const Firebird::string& str, const Firebird::MetaName& cs = NULL)
 		: charset(cs),
 		  s(str)
 	{ }
@@ -871,7 +871,7 @@ public:
 		  s(p, o.s)
 	{ }
 
-	IntlString(Firebird::MemoryPool& p)
+	explicit IntlString(Firebird::MemoryPool& p)
 		: charset(p),
 		  s(p)
 	{ }

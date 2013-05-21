@@ -228,8 +228,8 @@ string Parser::makeParseStr(const Position& p1, const Position& p2)
 
 	if (DataTypeUtil::convertToUTF8(str, ret))
 		return ret;
-	else
-		return str;
+
+	return str;
 }
 
 
@@ -1022,7 +1022,7 @@ int Parser::yylexAux()
 		Firebird::string str(lex.last_token, 2);
 		KeywordVersion* keyVer = keywordsMap->get(str);
 
-		if (keyVer && keyVer && parser_version >= keyVer->version)
+		if (keyVer && parser_version >= keyVer->version)
 		{
 			++lex.ptr;
 			return keyVer->keyword;

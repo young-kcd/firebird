@@ -88,8 +88,8 @@ using namespace Firebird;
 #define QUAD_MIN_real   -9223372036854775808.	// min decimal value of quad
 #define QUAD_MAX_real   9223372036854775807.	// max decimal value of quad
 
-#define QUAD_MIN_int    quad_min_int	// min integer value of quad
-#define QUAD_MAX_int    quad_max_int	// max integer value of quad
+//#define QUAD_MIN_int    quad_min_int	// min integer value of quad
+//#define QUAD_MAX_int    quad_max_int	// max integer value of quad
 
 #ifdef FLT_MAX
 #define FLOAT_MAX FLT_MAX // Approx. 3.4e38 max float (32 bit) value
@@ -113,7 +113,7 @@ using namespace Firebird;
 // NOTE: The syntax for the below line may need modification to ensure
 // the result of 1 << 62 is a quad
 
-#define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
+//#define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
 
 #define TODAY           "TODAY"
@@ -143,13 +143,13 @@ static void localError(const Firebird::Arg::StatusVector&);
 class DummyException {};
 
 
-#ifndef WORDS_BIGENDIAN
-static const SQUAD quad_min_int = { 0, SLONG_MIN };
-static const SQUAD quad_max_int = { -1, SLONG_MAX };
-#else
-static const SQUAD quad_min_int = { SLONG_MIN, 0 };
-static const SQUAD quad_max_int = { SLONG_MAX, -1 };
-#endif
+//#ifndef WORDS_BIGENDIAN
+//static const SQUAD quad_min_int = { 0, SLONG_MIN };
+//static const SQUAD quad_max_int = { -1, SLONG_MAX };
+//#else
+//static const SQUAD quad_min_int = { SLONG_MIN, 0 };
+//static const SQUAD quad_max_int = { SLONG_MAX, -1 };
+//#endif
 
 
 static const double eps_double = 1e-14;

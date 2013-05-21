@@ -94,11 +94,13 @@ public:
 	}
 	void unblockWaiting()
 	{
-		if (blockedWriters.value()) {
+		if (blockedWriters.value())
+		{
 			if (!SetEvent(writers_event))
 				system_call_failed::raise("SetEvent");
 		}
-		else if (blockedReaders) {
+		else if (blockedReaders)
+		{
 			MutexLockGuard guard(blockedReadersLock, "RWLock::unblockWaiting");
 			if (blockedReaders && !ReleaseSemaphore(readers_semaphore, blockedReaders, NULL))
 			{

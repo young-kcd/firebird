@@ -964,7 +964,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 
 	// Save some values to restore after rse process.
 	DsqlContextStack* const req_base = dsqlScratch->context;
-	string aliasRelationPrefix = dsqlScratch->aliasRelationPrefix;
+	const string aliasRelationPrefix = dsqlScratch->aliasRelationPrefix;
 
 	// Change context, because when we are processing the derived table rse
 	// it may not reference to other streams in the same scope_level.

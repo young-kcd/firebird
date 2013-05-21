@@ -100,7 +100,7 @@ public:
 		return true;
 	}
 
-	bool active()
+	bool active() const
 	{
 		return file.hasData();
 	}

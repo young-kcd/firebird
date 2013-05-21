@@ -10801,7 +10801,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				}
 			}
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
 			/*** TODO:
 			const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);

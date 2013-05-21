@@ -38,7 +38,7 @@ public:
 	{ }
 
 	template <typename T>
-	static bool checkType(unsigned t, unsigned sz)
+	static bool checkType(unsigned t, unsigned /*sz*/)
 	{
 		return T::unknownDataType();
 	}
