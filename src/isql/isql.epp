@@ -149,7 +149,7 @@ const size_t MAXCHARSET_SIZE	= 32;	// CHARSET names
 const int SHORT_LEN		= 7;	// NUMERIC (4,2) = -327.68
 const int LONG_LEN		= 12;	// NUMERIC (9,2) = -21474836.48
 const int INT64_LEN		= 21;	// NUMERIC(18,2) = -92233720368547758.08
-const int QUAD_LEN		= 19;
+//const int QUAD_LEN		= 19;
 const int FLOAT_LEN		= 14;	// -1.2345678E+38
 const int DOUBLE_LEN		= 23;	// -1.234567890123456E+300
 const int DATE_LEN		= 11;	// 11 for date only

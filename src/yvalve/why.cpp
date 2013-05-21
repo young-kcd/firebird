@@ -112,7 +112,7 @@ class IscStatement : public RefCounted, public GlobalStorage, public YObject
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_stmt_handle;
 
-	IscStatement(YAttachment* aAttachment)
+	explicit IscStatement(YAttachment* aAttachment)
 		: parameters(getPool()), cursorName(getPool()),
 		  attachment(aAttachment), statement(NULL),
 		  cursor(NULL), userHandle(NULL)
@@ -2261,7 +2261,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 
 // Fetch next record from a dynamic SQL cursor
 ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
-	USHORT blrLength, SCHAR* blr, USHORT msgType, USHORT msgLength, SCHAR* msg)
+	USHORT blrLength, SCHAR* blr, USHORT /*msgType*/, USHORT msgLength, SCHAR* msg)
 {
 	StatusVector status(userStatus);
 
@@ -2303,7 +2303,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 			statement->transaction = NULL;
 		}
 
-		if (!statement->cursor->fetchNext(&status, reinterpret_cast<unsigned char*>(msg)))
+		if (!statement->cursor->fetchNext(&status, reinterpret_cast<UCHAR*>(msg)))
 		{
 			return status.isSuccess() ? 100 : status[1];
 		}

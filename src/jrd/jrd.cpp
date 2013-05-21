@@ -390,7 +390,7 @@ namespace
 			: entered(false)
 		{ }
 
-		RefMutexUnlock(Database::ExistenceRefMutex* p)
+		explicit RefMutexUnlock(Database::ExistenceRefMutex* p)
 			: ref(p), entered(false)
 		{ }
 
@@ -421,7 +421,7 @@ namespace
 			return ref;
 		}
 
-		bool operator!()
+		bool operator!() const
 		{
 			return !ref;
 		}
@@ -2255,7 +2255,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		Firebird::RefPtr<Config> config;
 
 #ifdef WIN_NT
-		// In windows expanded filename depend upon file existence
+		// In windows expanded filename depends upon file existence
 		// Therefore have to keep lock longer
 		guardDbInit.enter();
 #endif
@@ -2328,7 +2328,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		try
 		{
 			// If database to be opened is security database, then only
-			// gsec or SecurityDatabase may open it. This protects from use
+			// gsec or SecurityDatabase can open it. This protects from use
 			// of old gsec to write wrong password hashes into it.
 			if (vdn == VDN_SECURITY && !options.dpb_gsec_attach && !options.dpb_sec_attach)
 			{
@@ -5839,8 +5839,8 @@ static JAttachment* init(thread_db* tdbb,
 						{   // scope
 							MutexUnlockGuard listUnlock(databases_mutex, FB_FUNCTION);
 
-							// after unlocking databases_mutex we loose control over dbb
-							// as long as dbb_init_fini is not locked and activity of it is not checked
+							// after unlocking databases_mutex we lose control over dbb
+							// as long as dbb_init_fini is not locked and its activity is not checked
 							initGuard.enter();
 							if (initGuard->doesExist())
 							{
@@ -6289,8 +6289,8 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 				{	// scope
 					MutexUnlockGuard listUnlock(databases_mutex, FB_FUNCTION);
 
-					// after unlocking databases_mutex we loose control over dbb
-					// as long as dbb_init_fini is not locked and activity of it is not checked
+					// after unlocking databases_mutex we lose control over dbb
+					// as long as dbb_init_fini is not locked and its activity is not checked
 					finiGuard.enter();
 					if (finiGuard->doesExist())
 					{
@@ -7009,7 +7009,7 @@ namespace
 	class AttQueue : public HalfStaticArray<JAttachment*, 128>
 	{
 	public:
-		AttQueue(MemoryPool& p)
+		explicit AttQueue(MemoryPool& p)
 			: HalfStaticArray<JAttachment*, 128>(p)
 		{ }
 
