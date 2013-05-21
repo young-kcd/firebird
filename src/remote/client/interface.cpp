@@ -322,13 +322,13 @@ public:
 		return statement;
 	}
 
-	void parseMetadata(Array<UCHAR>& buffer)
+	void parseMetadata(const Array<UCHAR>& buffer)
 	{
 		metadata.clear();
 		metadata.parse((ULONG) buffer.getCount(), buffer.begin());
 	}
 
-	unsigned getDialect()
+	unsigned getDialect() const
 	{
 		return dialect;
 	}
@@ -3246,7 +3246,7 @@ void ResultSet::freeClientData(IStatus* status, bool force)
 			{
 				send_and_receive(status, rdb, packet);
 			}
-			catch (const Exception& ex)
+			catch (const Exception&)
 			{
 				if (!force)
 					throw;
@@ -4188,7 +4188,7 @@ void Request::freeClientData(IStatus* status, bool force)
 		{
 			release_object(status, rdb, op_release, rq->rrq_id);
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
 			if (!force)
 				throw;
@@ -4374,7 +4374,7 @@ void Transaction::freeClientData(IStatus* status, bool force)
 		{
 			release_object(status, rdb, op_rollback, transaction->rtr_id);
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
 			if (!force)
 				throw;
@@ -4657,7 +4657,7 @@ void Service::freeClientData(IStatus* status, bool force)
 		{
 			release_object(status, rdb, op_service_detach, rdb->rdb_id);
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
 			if (!force)
 				throw;
@@ -6254,7 +6254,7 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 				CSTRING* tmpKeys = REMOTE_dup_string(&packet->p_crypt.p_key);
 				// it was start crypt packet, receive next one
 				receive_response(status, rdb, packet);
-				// add received keys to the list of known
+				// add received keys to the list of known ones
 				if (tmpKeys)
 				{
 					port->addServerKeys(tmpKeys);

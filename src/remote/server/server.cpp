@@ -310,8 +310,8 @@ public:
 				u.push(0);
 				ENC_crypt(pwt, sizeof pwt, reinterpret_cast<TEXT*>(u.begin()),
 					Auth::LEGACY_PASSWORD_SALT);
-				const size_t l = strlen(&pwt[2]);
-				memcpy(u.getBuffer(l), &pwt[2], l);
+				const size_t len = strlen(&pwt[2]);
+				memcpy(u.getBuffer(len), &pwt[2], len);
 				HANDSHAKE_DEBUG(fprintf(stderr, "CALLED des locally\n"));
 			}
 			authPort->port_srv_auth_block->setDataForPlugin(u);

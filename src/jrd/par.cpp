@@ -136,7 +136,7 @@ namespace
 }	// namespace
 
 
-// Common start for PAR_blr and PAR_preparsed_node. Returns the possibily created csb.
+// Common start for PAR_blr and PAR_preparsed_node. Returns the possibly created csb.
 static CompilerScratch* par_start(thread_db* tdbb, jrd_rel* relation, CompilerScratch* view_csb,
 	CompilerScratch** csb_ptr, const bool trigger, USHORT flags)
 {
