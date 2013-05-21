@@ -147,10 +147,10 @@ Syntax:
         ROW_NUMBER()
 
 The rank functions compute the ordinal rank of a row within the window partition. In this category
-is the functions: DENSE_RANK, RANK and ROW_NUMBER.
+are the functions: DENSE_RANK, RANK and ROW_NUMBER.
 
 With these functions, one can create different type of incremental counters. Think about
-SUM(1) OVER (ORDER BY SALARY), these functions does this type of thing, but all of them in different
+SUM(1) OVER (ORDER BY SALARY), these functions do this type of thing, but all of them in different
 ways. Following is an example query, also comparing with the SUM behavior.
 
 select
@@ -223,7 +223,7 @@ NTH_VALUE gets the n-th value, starting from the first (default) or the last rec
 ordered partition. If offset is 1 from first, it's equivalent to FIRST_VALUE. If offset is 1 from
 last, it's equivalent to LAST_VALUE.
 
-LAG and LEAD gets the value within a distance respect to the current row and the offset (which
+LAG and LEAD get the value within a distance respect to the current row and the offset (which
 defaults to 1) passed. In the case the offset points to outside of the partition, the default
 parameter (which defaults to NULL) is returned. LAG looks for a preceding row, and LEAD for a
 following row.
