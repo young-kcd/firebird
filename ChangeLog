@@ -1,3 +1,10 @@
+ 2013-05-20 03:26  robocop 
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/shut.cpp
+Misc.
+
  2013-05-15 14:29  hvlad 
    M src/jrd/tra.cpp
 Fixed bug CORE-4100 : Automatic sweep could be run when there is no need for it
