@@ -279,7 +279,7 @@ public:
 			exist = false;
 		}
 
-		bool doesExist()
+		bool doesExist() const
 		{
 			return exist;
 		}

@@ -780,11 +780,13 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 			tdbb->tdbb_flags &= ~(TDBB_dont_post_dfw | TDBB_use_db_page_space);
 
 			// Do any necessary cleanup
-			if (!phase) {
+			if (!phase)
+			{
 				ex.stuff_exception(tdbb->tdbb_status_vector);
 				ERR_punt();
 			}
-			else {
+			else
+			{
 				ex.stuff_exception(err_status);
 			}
 			phase = 0;

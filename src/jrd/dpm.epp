@@ -744,7 +744,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 
 	if (count && (page->dpg_header.pag_flags & dpg_full))
 	{
-		// hvlad: delay clearing of page_full flag until page have at least 25%
+		// hvlad: delay clearing of page_full flag until page has at least 25%
 		// of free space. It saves few costly mark_full() calls when space is
 		// actively allocated and reclaimed in highly concurrent environment
 		// and reduces PP contention.
