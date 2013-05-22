@@ -64,7 +64,7 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 
 		if (!client)
 		{
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cln SRP1: %s %s\n", cb->getLogin(), cb->getPassword()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Client: SRP1: login=%s password=%s\n", cb->getLogin(), cb->getPassword()));
 			if (!(cb->getLogin() && cb->getPassword()))
 			{
 				return AUTH_CONTINUE;
@@ -77,7 +77,7 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 			return status->isSuccess() ? AUTH_MORE_DATA : AUTH_FAILED;
 		}
 
-		HANDSHAKE_DEBUG(fprintf(stderr, "Cln SRP2\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Client: SRP2\n"));
 		unsigned int length;
 		const unsigned char* saltAndKey = cb->getData(&length);
 		if (length > (RemotePassword::SRP_SALT_SIZE + RemotePassword::SRP_KEY_SIZE + 2) * 2)

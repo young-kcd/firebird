@@ -67,8 +67,11 @@ public:
 	{
 		Firebird::UCharBuffer bytes;
 		data.getBytes(bytes);
-		unsigned int n = (bytes[0] == 0) ? 1u : 0;
-		process(bytes.getCount() - n, bytes.begin() + n);
+		if (bytes.getCount())
+		{
+			unsigned int n = (bytes[0] == 0) ? 1u : 0;
+			process(bytes.getCount() - n, bytes.begin() + n);
+		}
 	}
 };
 

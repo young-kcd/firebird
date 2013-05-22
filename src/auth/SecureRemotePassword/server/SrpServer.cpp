@@ -102,7 +102,8 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 			if (!clientPubKey.hasData())
 			{
-				return AUTH_CONTINUE;
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP: empty pubkey AUTH_MORE_DATA\n"));
+				return AUTH_MORE_DATA;
 			}
 
 			// read salt and verifier from database

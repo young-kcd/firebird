@@ -5296,17 +5296,21 @@ static void add_working_directory(ClumpletWriter& dpb, const PathName& node_name
 }
 
 
-static void authenticateStep0(ClntAuthBlock& wire)
+static void authenticateStep0(ClntAuthBlock& cBlock)
 {
-	for (LocalStatus s; wire.plugins.hasData(); wire.plugins.next())
+	for (LocalStatus s; cBlock.plugins.hasData(); cBlock.plugins.next())
 	{
-		switch(wire.plugins.plugin()->authenticate(&s, &wire))
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authenticateStep0(%s)\n", cBlock.plugins.name()));
+		switch(cBlock.plugins.plugin()->authenticate(&s, &cBlock))
 		{
 		case Auth::AUTH_SUCCESS:
 		case Auth::AUTH_MORE_DATA:
 			return;
 		case Auth::AUTH_FAILED:
-			gds__log_status("Authentication, client plugin:", s.get());
+			if (s.get()[1] != FB_SUCCESS)
+			{
+				gds__log_status("Authentication, client plugin:", s.get());
+			}
 			(Arg::Gds(isc_login)
 #ifdef DEV_BUILD
 								 << Arg::StatusVector(s.get())
@@ -6169,6 +6173,7 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 		{
 			// OK to use plugin
 			cBlock.resetDataFromPlugin();
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock(%s)\n", cBlock.plugins.name()));
 			int authRc = cBlock.plugins.plugin()->authenticate(&s, &cBlock);
 
 			switch (authRc)
@@ -6179,6 +6184,10 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 				cleanDpb(dpb, tags);
 				cBlock.extractDataFromPluginTo(dpb, tags, port->port_protocol);
 				return;
+
+			case Auth::AUTH_CONTINUE:
+				continue;
+
 			case Auth::AUTH_FAILED:
 				HANDSHAKE_DEBUG(fprintf(stderr, "FPB: plugin %s FAILED\n", cBlock.plugins.name()));
 				(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
@@ -6305,6 +6314,7 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 		}
 
 		cBlock.storeDataForPlugin(d->cstr_length, d->cstr_address);
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: receiveResponse: authenticate(%s)\n", cBlock.plugins.name()));
 		if (cBlock.plugins.plugin()->authenticate(&s, &cBlock) == Auth::AUTH_FAILED)
 		{
 			break;
@@ -7455,7 +7465,8 @@ static void cleanDpb(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 
 ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::ClumpletReader* dpb,
 							 const ParametersSet* tags)
-	: pluginList(getPool()), userName(getPool()), password(getPool()),
+	: pluginList(getPool()), serverPluginList(getPool()),
+	  userName(getPool()), password(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
 	  cryptKeys(getPool()), dpbConfig(getPool()), hasCryptKey(false),
 	  plugins(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo),

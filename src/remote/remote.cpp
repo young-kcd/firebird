@@ -1021,6 +1021,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	// Add user login name
 	if (userName.hasData())
 	{
+		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo: userName=%s\n", userName.c_str()));
 		user_id.insertString(CNCT_login, userName);
 	}
 
@@ -1028,6 +1029,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	Firebird::PathName pluginName = getPluginName();
 	if (pluginName.hasData())
 	{
+		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo: pluginName=%s\n", pluginName.c_str()));
 		user_id.insertPath(CNCT_plugin_name, pluginName);
 	}
 
@@ -1063,15 +1065,69 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	}
 }
 
-void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName)
+void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr)
 {
+	if (listStr)
+	{
+		if (dataForPlugin.hasData())
+		{
+			// We should not change plugins iterator now
+			return;
+		}
+
+		Firebird::ClumpletReader srvList(Firebird::ClumpletReader::UnTagged,
+										 listStr->cstr_address, listStr->cstr_length);
+
+		if (srvList.find(TAG_KNOWN_PLUGINS))
+		{
+			srvList.getPath(serverPluginList);
+		}
+	}
+
 	dataForPlugin.clear();
 	dataFromPlugin.clear();
 	authComplete = false;
 	firstTime = true;
 	config = REMOTE_get_config(fileName, &dpbConfig);
 	pluginList = config->getPlugins(Firebird::PluginType::AuthClient);
-	plugins.set(pluginList.c_str());
+
+	Firebird::PathName final;
+	if (serverPluginList.hasData())
+	{
+		Remote::ParsedList onClient, fromServer, merged;
+		REMOTE_parseList(onClient, pluginList);
+		REMOTE_parseList(fromServer, serverPluginList);
+
+		for (unsigned c = 0; c < onClient.getCount(); ++c)
+		{
+			// do not expect too long lists, therefore use double loop
+			for (unsigned s = 0; s < fromServer.getCount(); ++s)
+			{
+				if (onClient[c] == fromServer[s])
+				{
+					merged.push(onClient[c]);
+				}
+			}
+		}
+
+		if (merged.getCount() == 0)
+		{
+			HANDSHAKE_DEBUG(fprintf(stderr, "No matching plugins on client\n"));
+			(Firebird::Arg::Gds(isc_login)
+#ifdef DEV_BUILD
+								<< Firebird::Arg::Gds(isc_random) << "No matching plugins on client"
+#endif
+								).raise();
+		}
+
+		REMOTE_makeList(final, merged);
+	}
+	else
+	{
+		final = pluginList;
+	}
+
+	plugins.set(final.c_str());
 }
 
 Firebird::RefPtr<Config>* ClntAuthBlock::getConfig()
@@ -1243,6 +1299,11 @@ void rem_port::addServerKeys(CSTRING* passedStr)
 
 	for (newKeys.rewind(); !newKeys.isEof(); newKeys.moveNext())
 	{
+		if (newKeys.getClumpTag() == TAG_KNOWN_PLUGINS)
+		{
+			continue;
+		}
+
 		KnownServerKey key;
 		fb_assert(newKeys.getClumpTag() == TAG_KEY_TYPE);
 		newKeys.getPath(key.type);

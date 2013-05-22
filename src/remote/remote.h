@@ -635,6 +635,7 @@ class ClntAuthBlock : public Firebird::StdPlugin<Auth::IClientBlock, FB_AUTH_CLI
 {
 private:
 	Firebird::PathName pluginList;				// To be passed to server
+	Firebird::PathName serverPluginList;		// Received from server
 	Firebird::string userName, password;		// Used by plugin, taken from DPB
 	// These two are legacy encrypted password, trusted auth data and so on - what plugin needs
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
@@ -665,7 +666,7 @@ public:
 	void extractDataFromPluginTo(P_AUTH_CONT* to);
 	void loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*);
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);
-	void resetClnt(const Firebird::PathName* fileName);
+	void resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr = NULL);
 	bool checkPluginName(Firebird::PathName& nameToCheck);
 	void saveServiceDataTo(rem_port*);
 	void loadServiceDataFrom(rem_port*);
@@ -737,7 +738,7 @@ public:
 	void createPluginsItr();
 	void setDataForPlugin(const p_auth_continue* data);
 	void reset();
-	bool extractNewKeys(CSTRING* to);
+	bool extractNewKeys(CSTRING* to, bool flagPlugList = false);
 
 	// Auth::IServerBlock implementation
 	int FB_CARG release();
@@ -771,9 +772,10 @@ private:
 	KnownServerKey& operator=(const KnownServerKey&);
 };
 
-// Tags for server keys clumplet, passed from server to client
+// Tags for clumplets, passed from server to client
 const UCHAR TAG_KEY_TYPE		= 0;
 const UCHAR TAG_KEY_PLUGINS		= 1;
+const UCHAR TAG_KNOWN_PLUGINS	= 2;
 
 // port_flags
 const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic

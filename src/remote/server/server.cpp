@@ -427,7 +427,7 @@ public:
 
 			case Auth::AUTH_FAILED:
 				HANDSHAKE_DEBUG(fprintf(stderr, "No luck today...\n"));
-				isc_print_status(st.get());
+				HANDSHAKE_DEBUG(isc_print_status(st.get()));
 				authServer = NULL;
 				working = false;
 				break;
@@ -1542,6 +1542,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	// We are going to try authentication handshake
 	LocalStatus status;
 	bool returnData = false;
+	//bool returnPlugList = false;
 	if (accepted && version >= PROTOCOL_VERSION13)
 	{
 		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection creates port_srv_auth_block\n"));
@@ -1587,10 +1588,13 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 					case Auth::AUTH_CONTINUE:
 						// try next plugin
 						continue;
+						// First try failed - extractNewKeys will send to client list of known plugins
+						//returnPlugList = true;
+						//break;
 
 					case Auth::AUTH_MORE_DATA:
-						port->port_srv_auth_block->extractDataFromPluginTo(&send->p_acpd.p_acpt_data);
 						port->port_srv_auth_block->extractPluginName(&send->p_acpd.p_acpt_plugin);
+						port->port_srv_auth_block->extractDataFromPluginTo(&send->p_acpd.p_acpt_data);
 						returnData = true;
 						break;
 
@@ -1610,10 +1614,6 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 					}
 					break;
 				}
-				if (!plugins->hasData())
-				{
-					accepted = false;
-				}
 			}
 		}
 	}
@@ -1628,7 +1628,9 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		return false;
 	}
 
-	if (version >= PROTOCOL_VERSION13 && port->port_srv_auth_block->extractNewKeys(&send->p_acpd.p_acpt_keys))
+	// extractNewKeys() will also send to client list of known plugins
+	if (version >= PROTOCOL_VERSION13 &&
+		port->port_srv_auth_block->extractNewKeys(&send->p_acpd.p_acpt_keys, returnData))
 	{
 		returnData = true;
 	}
@@ -6359,6 +6361,10 @@ const char* SrvAuthBlock::getLogin()
 const unsigned char* SrvAuthBlock::getData(unsigned int* length)
 {
 	*length = (ULONG) dataForPlugin.getCount();
+	if (*length && pluginName != plugins->name())
+	{
+		*length = 0;
+	}
 	return *length ? dataForPlugin.begin() : NULL;
 }
 
@@ -6483,7 +6489,7 @@ void SrvAuthBlock::reset()
 	plugins = NULL;
 }
 
-bool SrvAuthBlock::extractNewKeys(CSTRING* to)
+bool SrvAuthBlock::extractNewKeys(CSTRING* to, bool flagPluginsList)
 {
 	lastExtractedKeys.reset();
 	for (unsigned n = 0; n < newKeys.getCount(); ++n)
@@ -6496,6 +6502,12 @@ bool SrvAuthBlock::extractNewKeys(CSTRING* to)
 			lastExtractedKeys.insertPath(TAG_KEY_PLUGINS, plugins);
 		}
 	}
+
+	if (flagPluginsList && dataFromPlugin.getCount() == 0)
+	{
+		lastExtractedKeys.insertPath(TAG_KNOWN_PLUGINS, pluginList);
+	}
+
 	to->cstr_length = (ULONG) lastExtractedKeys.getBufferLength();
 	to->cstr_address = const_cast<UCHAR*>(lastExtractedKeys.getBuffer());
 	to->cstr_allocated = 0;

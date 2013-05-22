@@ -208,6 +208,8 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
 									   packet->p_acpd.p_acpt_data.cstr_address);
 			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
+			port->addServerKeys(&packet->p_acpd.p_acpt_keys);
+			cBlock->resetClnt(&file_name, &packet->p_acpd.p_acpt_keys);
 		}
 		break;
 

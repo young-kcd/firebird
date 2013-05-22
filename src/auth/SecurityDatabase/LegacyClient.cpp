@@ -37,6 +37,7 @@ namespace Auth {
 
 int SecurityDatabaseClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
 {
+	// fprintf(stderr, "Clnt: Legacy: lgn=%s pswd=%s\n", cb->getLogin(), cb->getPassword());
 	if (!(cb->getLogin() && cb->getPassword()))
 	{
 		return AUTH_CONTINUE;

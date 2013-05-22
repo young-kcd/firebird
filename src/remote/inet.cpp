@@ -621,6 +621,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 									   packet->p_acpd.p_acpt_data.cstr_address);
 			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
 			port->addServerKeys(&packet->p_acpd.p_acpt_keys);
+			cBlock->resetClnt(&file_name, &packet->p_acpd.p_acpt_keys);
 		}
 		break;
 
