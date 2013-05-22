@@ -1,3 +1,41 @@
+ 2013-05-21 21:53  robocop 
+   M src/isql/isql.epp
+   M src/jrd/jrd.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2013-05-21 21:49  robocop 
+   M src/jrd/par.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+Misc.
+
+ 2013-05-21 21:47  robocop 
+   M src/jrd/Database.h
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+Misc.
+
+ 2013-05-21 21:46  robocop 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/common/classes/ClumpletWriter.h
+   M src/common/classes/rwlock.h
+   M src/common/config/config.cpp
+   M src/common/config/config_file.cpp
+   M src/common/cvt.cpp
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Parser.cpp
+   M src/dsql/dsql.h
+   M src/dsql/pass1.cpp
+Misc.
+
+ 2013-05-21 21:43  robocop 
+   M doc/sql.extensions/README.substring_similar.txt
+   M doc/sql.extensions/README.window_functions.txt
+Misc.
+
  2013-05-20 03:27  robocop 
    M doc/sql.extensions/README.data_types
 Misc.
