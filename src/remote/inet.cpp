@@ -2918,6 +2918,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		n = recv(port->port_handle, reinterpret_cast<char*>(buffer), buffer_length, 0);
 		inetErrNo = INET_ERRNO;
 
+		// decrypt
 		if (n > 0 && port->port_crypt_plugin)
 		{
 			port->port_crypt_plugin->decrypt(&st, n, buffer, buffer);
