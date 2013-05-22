@@ -1324,6 +1324,17 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, dwError);
 	}
 
+	// decrypt
+	if (port->port_crypt_plugin)
+	{
+		LocalStatus st;
+		port->port_crypt_plugin->decrypt(&st, n, buffer, buffer);
+		if (!st.isSuccess())
+		{
+			status_exception::raise(st.get());
+		}
+	}
+
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("receive", buffer, n);
 #endif
@@ -1348,6 +1359,23 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
  **************************************/
 	const SCHAR* data = buffer;
 	const DWORD length = buffer_length;
+
+	// encrypt
+	HalfStaticArray<char, BUFFER_TINY> b;
+	if (port->port_crypt_plugin && port->port_crypt_complete)
+	{
+		LocalStatus st;
+
+		char* d = b.getBuffer(buffer_length);
+		port->port_crypt_plugin->encrypt(&st, buffer_length, data, d);
+		if (!st.isSuccess())
+		{
+			status_exception::raise(st.get());
+		}
+
+		data = d;
+	}
+
 	OVERLAPPED ovrl = {0};
 	ovrl.hEvent = port->port_event;
 
