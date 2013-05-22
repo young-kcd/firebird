@@ -47,19 +47,25 @@ public:
 class ZeroBuffer
 {
 	static const size_t DEFAULT_SIZE = 1024 * 256;
+	static const size_t SYS_PAGE_SIZE = 1024 * 4;
 
 public:
 	explicit ZeroBuffer(MemoryPool& p, size_t size = DEFAULT_SIZE)
 		: buffer(p)
 	{
-		memset(buffer.getBuffer(size), 0, size);
+		bufSize = size;
+		bufAligned = buffer.getBuffer(bufSize + SYS_PAGE_SIZE);
+		bufAligned = (char*) FB_ALIGN((U_IPTR)bufAligned, SYS_PAGE_SIZE);
+		memset(bufAligned, 0, size);
 	}
 
-	const char* getBuffer() const { return buffer.begin(); }
-	size_t getSize() const { return buffer.getCount(); }
+	const char* getBuffer() const { return bufAligned; }
+	size_t getSize() const { return bufSize; }
 
 private:
 	Firebird::Array<char> buffer;
+	char* bufAligned;
+	size_t bufSize;
 };
 
 } // namespace
