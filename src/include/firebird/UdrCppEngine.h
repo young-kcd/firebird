@@ -61,10 +61,10 @@ namespace Firebird
 	};
 
 #define FB_UDR_EXECUTE_DYNAMIC_FUNCTION	\
-	FB_UDR__DYNAMIC_TYPE(InMessage);	\
-	FB_UDR__DYNAMIC_TYPE(OutMessage);	\
+	FB__UDR_DYNAMIC_TYPE(InMessage);	\
+	FB__UDR_DYNAMIC_TYPE(OutMessage);	\
 	\
-	FB_UDR__EXECUTE_FUNCTION
+	FB__UDR_EXECUTE_FUNCTION
 
 #define FB_UDR_EXECUTE_MESSAGE_FUNCTION(inputs, output)	\
 	FB_MESSAGE(InMessage,	\
@@ -74,17 +74,17 @@ namespace Firebird
 		output	\
 	);	\
 	\
-	FB_UDR__EXECUTE_FUNCTION
+	FB__UDR_EXECUTE_FUNCTION
 
 #define FB_UDR_EXECUTE_MESSAGE_FUNCTION_OUT(outputs)	\
-	FB_UDR__DYNAMIC_TYPE(InMessage);	\
+	FB__UDR_DYNAMIC_TYPE(InMessage);	\
 	FB_MESSAGE(OutMessage,	\
 		outputs	\
 	);	\
 	\
-	FB_UDR__EXECUTE_FUNCTION
+	FB__UDR_EXECUTE_FUNCTION
 
-#define FB_UDR__EXECUTE_FUNCTION	\
+#define FB__UDR_EXECUTE_FUNCTION	\
 	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
 		void* in, void* out)	\
 	{	\
@@ -92,7 +92,7 @@ namespace Firebird
 		{	\
 			internalExecute(status, context, (InMessage::Type*) in, (OutMessage::Type*) out);	\
 		}	\
-		FB_UDR__CATCH	\
+		FB__UDR_CATCH	\
 	}	\
 	\
 	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
@@ -118,10 +118,10 @@ namespace Firebird
 	};
 
 #define FB_UDR_EXECUTE_DYNAMIC_PROCEDURE	\
-	FB_UDR__DYNAMIC_TYPE(InMessage);	\
-	FB_UDR__DYNAMIC_TYPE(OutMessage);	\
+	FB__UDR_DYNAMIC_TYPE(InMessage);	\
+	FB__UDR_DYNAMIC_TYPE(OutMessage);	\
 	\
-	FB_UDR__EXECUTE_PROCEDURE
+	FB__UDR_EXECUTE_PROCEDURE
 
 #define FB_UDR_EXECUTE_MESSAGE_PROCEDURE(inputs, outputs)	\
 	FB_MESSAGE(InMessage,	\
@@ -131,25 +131,25 @@ namespace Firebird
 		outputs	\
 	);	\
 	\
-	FB_UDR__EXECUTE_PROCEDURE
+	FB__UDR_EXECUTE_PROCEDURE
 
 #define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_IN(inputs)	\
 	FB_MESSAGE(InMessage,	\
 		inputs	\
 	);	\
-	FB_UDR__DYNAMIC_TYPE(OutMessage);	\
+	FB__UDR_DYNAMIC_TYPE(OutMessage);	\
 	\
-	FB_UDR__EXECUTE_PROCEDURE
+	FB__UDR_EXECUTE_PROCEDURE
 
 #define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_OUT(outputs)	\
-	FB_UDR__DYNAMIC_TYPE(InMessage);	\
+	FB__UDR_DYNAMIC_TYPE(InMessage);	\
 	FB_MESSAGE(OutMessage,	\
 		outputs	\
 	);	\
 	\
-	FB_UDR__EXECUTE_PROCEDURE
+	FB__UDR_EXECUTE_PROCEDURE
 
-#define FB_UDR__EXECUTE_PROCEDURE	\
+#define FB__UDR_EXECUTE_PROCEDURE	\
 	virtual ::Firebird::ExternalResultSet* FB_CARG open(::Firebird::IStatus* status, \
 		::Firebird::ExternalContext* context, void* in, void* out)	\
 	{	\
@@ -157,7 +157,7 @@ namespace Firebird
 		{	\
 			return new ResultSet(status, context, this, (InMessage::Type*) in, (OutMessage::Type*) out);	\
 		}	\
-		FB_UDR__CATCH	\
+		FB__UDR_CATCH	\
 		\
 		return 0;	\
 	}	\
@@ -177,7 +177,7 @@ namespace Firebird
 		{	\
 			return internalFetch(status);	\
 		}	\
-		FB_UDR__CATCH	\
+		FB__UDR_CATCH	\
 		\
 		return 0;	\
 	}	\
@@ -202,18 +202,18 @@ namespace Firebird
 	};
 
 #define FB_UDR_EXECUTE_DYNAMIC_TRIGGER	\
-	FB_UDR__DYNAMIC_TYPE(FieldsMessage);	\
+	FB__UDR_DYNAMIC_TYPE(FieldsMessage);	\
 	\
-	FB_UDR__EXECUTE_TRIGGER
+	FB__UDR_EXECUTE_TRIGGER
 
 #define FB_UDR_EXECUTE_MESSAGE_TRIGGER(fields)	\
 	FB_TRIGGER_MESSAGE(FieldsMessage,	\
 		fields	\
 	);	\
 	\
-	FB_UDR__EXECUTE_TRIGGER
+	FB__UDR_EXECUTE_TRIGGER
 
-#define FB_UDR__EXECUTE_TRIGGER	\
+#define FB__UDR_EXECUTE_TRIGGER	\
 	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
 		::Firebird::ExternalTrigger::Action action, void* oldFields, void* newFields)	\
 	{	\
@@ -222,7 +222,7 @@ namespace Firebird
 			internalExecute(status, context, action,	\
 				(FieldsMessage::Type*) oldFields, (FieldsMessage::Type*) newFields);	\
 		}	\
-		FB_UDR__CATCH	\
+		FB__UDR_CATCH	\
 	}	\
 	\
 	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
@@ -237,13 +237,13 @@ namespace Firebird
 		{	\
 			internalInitialize(status, context);	\
 		}	\
-		FB_UDR__CATCH	\
+		FB__UDR_CATCH	\
 	}	\
 	\
 	void internalInitialize(::Firebird::IStatus* status, ::Firebird::ExternalContext* context)
 
 
-#define FB_UDR__DYNAMIC_TYPE(name)	\
+#define FB__UDR_DYNAMIC_TYPE(name)	\
 	struct name	\
 	{	\
 		typedef unsigned char Type;	\
@@ -251,7 +251,7 @@ namespace Firebird
 	}
 
 
-#define FB_UDR__CATCH	\
+#define FB__UDR_CATCH	\
 	catch (const ::Firebird::Udr::StatusException& e)	\
 	{	\
 		e.stuff(status);	\

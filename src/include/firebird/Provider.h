@@ -120,9 +120,11 @@ public:
 	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length) = 0;
 	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale) = 0;
 
+	virtual void FB_CARG moveNameToIndex(IStatus* status, const char* name, unsigned index) = 0;
+
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 };
-#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 5)
+#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 6)
 
 class IResultSet : public IRefCounted
 {

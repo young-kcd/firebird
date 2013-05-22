@@ -31,37 +31,36 @@
 #include <string.h>
 
 #define FB_MESSAGE(name, fields)	\
-	FB_MESSAGE_I(name, 2, FB_BOOST_PP_CAT(FB_MESSAGE_X fields, 0))
+	FB__MESSAGE_I(name, 2, FB_BOOST_PP_CAT(FB__MESSAGE_X fields, 0), )
 
-#define FB_MESSAGE_X(x, y) ((x, y)) FB_MESSAGE_Y
-#define FB_MESSAGE_Y(x, y) ((x, y)) FB_MESSAGE_X
-#define FB_MESSAGE_X0
-#define FB_MESSAGE_Y0
+#define FB__MESSAGE_X(x, y) ((x, y)) FB__MESSAGE_Y
+#define FB__MESSAGE_Y(x, y) ((x, y)) FB__MESSAGE_X
+#define FB__MESSAGE_X0
+#define FB__MESSAGE_Y0
 
 #define FB_TRIGGER_MESSAGE(name, fields)	\
-	struct name	\
-	{	\
-		FB_MESSAGE_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_X fields, 0))	\
-		FB_TRIGGER_MESSAGE_NAMES_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_NAMES_X fields, 0))	\
-	}
+	FB__MESSAGE_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_X fields, 0), \
+		FB_TRIGGER_MESSAGE_MOVE_NAMES(name, fields))
 
 #define FB_TRIGGER_MESSAGE_X(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_Y
 #define FB_TRIGGER_MESSAGE_Y(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_X
 #define FB_TRIGGER_MESSAGE_X0
 #define FB_TRIGGER_MESSAGE_Y0
 
-#define FB_MESSAGE_I(name, size, fields)	\
+#define FB__MESSAGE_I(name, size, fields, moveNames)	\
 	struct name	\
 	{	\
 		struct Type	\
 		{	\
-			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_FIELD, size, fields)	\
+			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_FIELD, size, fields)	\
 		};	\
 		\
 		static void setup(::Firebird::IStatus* status, ::Firebird::IMetadataBuilder* builder)	\
 		{	\
 			unsigned index = 0;	\
-			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_MESSAGE_META, size, fields)	\
+			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_META, size, fields)	\
+			\
+			moveNames	\
 		}	\
 		\
 		name(::Firebird::IMaster* master)	\
@@ -103,140 +102,103 @@
 		::Firebird::MessageDesc desc;	\
 	}
 
-#define FB_MESSAGE_FIELD(r, _, i, xy)	\
-	FB_BOOST_PP_CAT(FB_TYPE_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy)) FB_BOOST_PP_TUPLE_ELEM(_, 1, xy);	\
+#define FB__MESSAGE_FIELD(r, _, i, xy)	\
+	FB_BOOST_PP_CAT(FB__TYPE_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy)) FB_BOOST_PP_TUPLE_ELEM(_, 1, xy);	\
 	ISC_SHORT FB_BOOST_PP_CAT(FB_BOOST_PP_TUPLE_ELEM(_, 1, xy), Null);
 
-#define FB_MESSAGE_META(r, _, i, xy)	\
-	FB_BOOST_PP_CAT(FB_META_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy))	\
+#define FB__MESSAGE_META(r, _, i, xy)	\
+	FB_BOOST_PP_CAT(FB__META_, FB_BOOST_PP_TUPLE_ELEM(_, 0, xy))	\
 	++index;
 
 // Types - metadata
 
-#define FB_META_FB_SCALED_SMALLINT(scale)	\
+#define FB__META_FB_SCALED_SMALLINT(scale)	\
 	builder->setType(status, index, SQL_SHORT);	\
 	builder->setLength(status, index, sizeof(ISC_SHORT));	\
 	builder->setScale(status, index, scale);
 
-#define FB_META_FB_SCALED_INTEGER(scale)	\
+#define FB__META_FB_SCALED_INTEGER(scale)	\
 	builder->setType(status, index, SQL_LONG);	\
 	builder->setLength(status, index, sizeof(ISC_LONG));	\
 	builder->setScale(status, index, scale);
 
-#define FB_META_FB_SCALED_BIGINT(scale)	\
+#define FB__META_FB_SCALED_BIGINT(scale)	\
 	builder->setType(status, index, SQL_INT64);	\
 	builder->setLength(status, index, sizeof(ISC_INT64));	\
 	builder->setScale(status, index, scale);
 
-#define FB_META_FB_FLOAT	\
+#define FB__META_FB_FLOAT	\
 	builder->setType(status, index, SQL_FLOAT);	\
 	builder->setLength(status, index, sizeof(float));
 
-#define FB_META_FB_DOUBLE	\
+#define FB__META_FB_DOUBLE	\
 	builder->setType(status, index, SQL_DOUBLE);	\
 	builder->setLength(status, index, sizeof(double));
 
-#define FB_META_FB_BLOB	\
+#define FB__META_FB_BLOB	\
 	builder->setType(status, index, SQL_BLOB);	\
 	builder->setLength(status, index, sizeof(ISC_QUAD));
 
-#define FB_META_FB_BOOLEAN	\
+#define FB__META_FB_BOOLEAN	\
 	builder->setType(status, index, SQL_BOOLEAN);	\
 	builder->setLength(status, index, sizeof(ISC_BOOLEAN));
 
-#define FB_META_FB_DATE	\
+#define FB__META_FB_DATE	\
 	builder->setType(status, index, SQL_DATE);	\
 	builder->setLength(status, index, sizeof(FbDate));
 
-#define FB_META_FB_TIME	\
+#define FB__META_FB_TIME	\
 	builder->setType(status, index, SQL_TIME);	\
 	builder->setLength(status, index, sizeof(FbTime));
 
-#define FB_META_FB_TIMESTAMP	\
+#define FB__META_FB_TIMESTAMP	\
 	builder->setType(status, index, SQL_TIMESTAMP);	\
 	builder->setLength(status, index, sizeof(FbTimestamp));
 
-#define FB_META_FB_CHAR(len)	\
+#define FB__META_FB_CHAR(len)	\
 	builder->setType(status, index, SQL_TEXT);	\
 	builder->setLength(status, index, len);
 
-#define FB_META_FB_VARCHAR(len)	\
+#define FB__META_FB_VARCHAR(len)	\
 	builder->setType(status, index, SQL_VARYING);	\
 	builder->setLength(status, index, len);
 
-#define FB_META_FB_SMALLINT				FB_META_FB_SCALED_SMALLINT(0)
-#define FB_META_FB_INTEGER				FB_META_FB_SCALED_INTEGER(0)
-#define FB_META_FB_BIGINT				FB_META_FB_SCALED_BIGINT(0)
+#define FB__META_FB_SMALLINT			FB__META_FB_SCALED_SMALLINT(0)
+#define FB__META_FB_INTEGER				FB__META_FB_SCALED_INTEGER(0)
+#define FB__META_FB_BIGINT				FB__META_FB_SCALED_BIGINT(0)
 
 // Types - struct
 
-#define FB_TYPE_FB_SCALED_SMALLINT(x)	ISC_SHORT
-#define FB_TYPE_FB_SCALED_INTEGER(x)	ISC_LONG
-#define FB_TYPE_FB_SCALED_BIGINT(x)		ISC_INT64
-#define FB_TYPE_FB_SMALLINT				ISC_SHORT
-#define FB_TYPE_FB_INTEGER				ISC_LONG
-#define FB_TYPE_FB_BIGINT				ISC_INT64
-#define FB_TYPE_FB_FLOAT				float
-#define FB_TYPE_FB_DOUBLE				double
-#define FB_TYPE_FB_BLOB					ISC_QUAD
-#define FB_TYPE_FB_BOOLEAN				ISC_UCHAR
-#define FB_TYPE_FB_DATE					::Firebird::FbDate
-#define FB_TYPE_FB_TIME					::Firebird::FbTime
-#define FB_TYPE_FB_TIMESTAMP			::Firebird::FbTimestamp
-#define FB_TYPE_FB_CHAR(len)			::Firebird::FbChar<(len)>
-#define FB_TYPE_FB_VARCHAR(len)			::Firebird::FbVarChar<(len)>
+#define FB__TYPE_FB_SCALED_SMALLINT(x)	ISC_SHORT
+#define FB__TYPE_FB_SCALED_INTEGER(x)	ISC_LONG
+#define FB__TYPE_FB_SCALED_BIGINT(x)	ISC_INT64
+#define FB__TYPE_FB_SMALLINT			ISC_SHORT
+#define FB__TYPE_FB_INTEGER				ISC_LONG
+#define FB__TYPE_FB_BIGINT				ISC_INT64
+#define FB__TYPE_FB_FLOAT				float
+#define FB__TYPE_FB_DOUBLE				double
+#define FB__TYPE_FB_BLOB				ISC_QUAD
+#define FB__TYPE_FB_BOOLEAN				ISC_UCHAR
+#define FB__TYPE_FB_DATE				::Firebird::FbDate
+#define FB__TYPE_FB_TIME				::Firebird::FbTime
+#define FB__TYPE_FB_TIMESTAMP			::Firebird::FbTimestamp
+#define FB__TYPE_FB_CHAR(len)			::Firebird::FbChar<(len)>
+#define FB__TYPE_FB_VARCHAR(len)		::Firebird::FbVarChar<(len)>
 
-#define FB_MESSAGE_DESC(name, fields)	\
-	FB_MESSAGE(name, fields);	\
-	struct name##Desc : public name	\
-	{	\
-		::Firebird::FbMessage desc;	\
-		\
-		name##Desc()	\
-		{	\
-			desc.blr = getBlr(&desc.blrLength);	\
-			desc.buffer = (unsigned char*) this;	\
-			desc.bufferLength = getSize();	\
-		}	\
-	}
+#define FB_TRIGGER_MESSAGE_MOVE_NAMES(name, fields)	\
+	FB_TRIGGER_MESSAGE_MOVE_NAMES_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_MOVE_NAMES_X fields, 0))
 
-#define FB_TRIGGER_MESSAGE_DESC(name, fields)	\
-	FB_TRIGGER_MESSAGE(name, fields);	\
-	struct name##Desc : public name	\
-	{	\
-		::Firebird::FbMessage desc;	\
-		\
-		name##Desc()	\
-		{	\
-			desc.blr = getBlr(&desc.blrLength);	\
-			desc.buffer = (unsigned char*) this;	\
-			desc.bufferLength = getSize();	\
-		}	\
-	}
+#define FB_TRIGGER_MESSAGE_MOVE_NAMES_X(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_MOVE_NAMES_Y
+#define FB_TRIGGER_MESSAGE_MOVE_NAMES_Y(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_MOVE_NAMES_X
+#define FB_TRIGGER_MESSAGE_MOVE_NAMES_X0
+#define FB_TRIGGER_MESSAGE_MOVE_NAMES_Y0
 
-#define FB_TRIGGER_MESSAGE_NAMES(name, fields)	\
-	FB_TRIGGER_MESSAGE_NAMES_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_NAMES_X fields, 0))
+#define FB_TRIGGER_MESSAGE_MOVE_NAMES_I(name, size, fields)	\
+	index = 0;	\
+	FB_BOOST_PP_SEQ_FOR_EACH_I(FB_TRIGGER_MESSAGE_MOVE_NAME, size, fields)
 
-#define FB_TRIGGER_MESSAGE_NAMES_X(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_NAMES_Y
-#define FB_TRIGGER_MESSAGE_NAMES_Y(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_NAMES_X
-#define FB_TRIGGER_MESSAGE_NAMES_X0
-#define FB_TRIGGER_MESSAGE_NAMES_Y0
-
-#define FB_TRIGGER_MESSAGE_NAMES_I(name, size, fields)	\
-	static const char** getNames(unsigned* count)	\
-	{	\
-		*count = FB_BOOST_PP_SEQ_SIZE(fields);	\
-		\
-		static const char* names[] = {	\
-			FB_BOOST_PP_SEQ_FOR_EACH_I(FB_TRIGGER_MESSAGE_NAME, size, fields)	\
-			NULL	\
-		};	\
-		\
-		return names;	\
-	}
-
-#define FB_TRIGGER_MESSAGE_NAME(r, _, i, xy)	\
-	FB_BOOST_PP_TUPLE_ELEM(_, 2, xy),
+#define FB_TRIGGER_MESSAGE_MOVE_NAME(r, _, i, xy)	\
+	builder->moveNameToIndex(status, FB_BOOST_PP_TUPLE_ELEM(_, 2, xy), index++);
 
 
 namespace Firebird {

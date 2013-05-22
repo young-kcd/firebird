@@ -232,11 +232,9 @@ namespace
 				ExtMessageNode* message)
 			: CompoundStmtNode(pool)
 		{
-			for (USHORT i = 0; i < message->format->fmt_count; i += 2)
+			// Iterate over the format items, except the EOF item.
+			for (USHORT i = 0; i < message->format->fmt_count / 2 * 2; i += 2)
 			{
-				if (i + 1 >= message->format->fmt_count)
-					continue;
-
 				ExtInitParameterNode* init = FB_NEW(pool) ExtInitParameterNode(
 					tdbb, pool, csb, message, i);
 				statements.add(init);
@@ -251,9 +249,10 @@ namespace
 		ExtValidationNode(MemoryPool& pool, ExtMessageNode* message, bool procedure, bool input)
 			: CompoundStmtNode(pool)
 		{
-			for (USHORT i = 0; i < message->format->fmt_count; i += 2)
+			// Iterate over the format items, except the EOF item.
+			for (USHORT i = 0; i < message->format->fmt_count / 2 * 2; i += 2)
 			{
-				if (i + 1 >= message->format->fmt_count || !message->isSpecial[i / 2])
+				if (!message->isSpecial[i / 2])
 					continue;
 
 				ParameterNode* flag = FB_NEW(pool) ParameterNode(pool);
@@ -840,10 +839,31 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 
 	if (relation)
 	{
+		GenericMap<Left<MetaName, USHORT> > fieldsMap;
+
+		for (size_t i = 0; i < relation->rel_fields->count(); ++i)
+		{
+			jrd_fld* field = (*relation->rel_fields)[i];
+			if (field)
+				fieldsMap.put(field->fld_name, (USHORT) i);
+		}
+
 		format = Routine::createFormat(pool, metadata->triggerFields, false);
 
+		LocalStatus status;
+
 		for (unsigned i = 0; i < format->fmt_count / 2; ++i)
-			fieldsPos.add(i);
+		{
+			const char* fieldName = metadata->triggerFields->getField(&status, i);
+			status.check();
+
+			USHORT pos;
+
+			if (!fieldsMap.get(fieldName, pos))
+				fb_assert(false);
+			else
+				fieldsPos.add(pos);
+		}
 	}
 }
 

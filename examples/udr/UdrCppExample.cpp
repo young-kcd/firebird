@@ -611,7 +611,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		ITransaction* transaction = context->getTransaction(status);
 		StatusException::check(status->get());
 
-		stmt = attachment->prepare(status, transaction, 0, buffer, 3, 0);
+		stmt = attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0);
 
 		delete [] outSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(outSqlDa);
@@ -625,7 +625,6 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 FB_UDR_END_TRIGGER
 
 
-#if 0	//// FIXME:
 FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	FB_UDR_TRIGGER(replicate_persons)()
 		: initialized(false)
@@ -637,37 +636,26 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		if (!initialized)
 			return;
 
-		delete [] reinterpret_cast<char*>(inSqlDa);
+		StatusImpl status(master);
 
-		ISC_STATUS_ARRAY statusVector = {0};
-		isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_drop);
+		triggerMetadata->release();
+		stmt->free(&status);
 	}
 
+	// Order of fields does not need to match the fields order in the table, but it should match
+	// the order of fields in the SQL command constructed in the initialization.
 	FB_UDR_EXECUTE_MESSAGE_TRIGGER(
 		(FB_INTEGER, id, "ID")
+		(FB_BLOB, info, "INFO")
 		(FB_VARCHAR(60 * 4), address, "ADDRESS")
 		(FB_VARCHAR(60 * 4), name, "NAME")
-		(FB_BLOB, info, "INFO")
 	)
 	{
-		inSqlDa->sqlvar[0].sqldata = reinterpret_cast<char*>(&newFields->id);
-		inSqlDa->sqlvar[0].sqlind = &newFields->idNull;
+		ITransaction* transaction = context->getTransaction(status);
+		StatusException::check(status->get());
 
-		inSqlDa->sqlvar[1].sqldata = reinterpret_cast<char*>(&newFields->name.length);
-		inSqlDa->sqlvar[1].sqlind = &newFields->nameNull;
-
-		inSqlDa->sqlvar[2].sqldata = reinterpret_cast<char*>(&newFields->address.length);
-		inSqlDa->sqlvar[2].sqlind = &newFields->addressNull;
-
-		inSqlDa->sqlvar[3].sqldata = reinterpret_cast<char*>(&newFields->info);
-		inSqlDa->sqlvar[3].sqlind = &newFields->infoNull;
-
-		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(context);
-		isc_tr_handle trHandle = getIscTrHandle(context);
-
-		StatusException::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
-			inSqlDa), statusVector);
+		stmt->execute(status, transaction, triggerMetadata, newFields, NULL, NULL);
+		StatusException::check(status->get());
 	}
 
 	FB_UDR_INITIALIZE
@@ -676,7 +664,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		isc_db_handle dbHandle = getIscDbHandle(context);
 		isc_tr_handle trHandle = getIscTrHandle(context);
 
-		stmtHandle = 0;
+		isc_stmt_handle stmtHandle = 0;
 		StatusException::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
 		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 			"select data_source from replicate_config where name = ?",
@@ -700,7 +688,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		else
 			info = "";
 
-		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
+		XSQLDA* inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 1;
 		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
@@ -723,21 +711,17 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
-		inSqlDa = NULL;
 
-		const IParametersMetadata* fields = metadata->getTriggerFields(status);
-		StatusException::check(status->get());
-
-		unsigned count = fields->getCount(status);
+		triggerMetadata = metadata->getTriggerMetadata(status);
 		StatusException::check(status->get());
 
 		char buffer[65536];
 		strcpy(buffer,
 			"execute block (\n"
 			"    id type of column PERSONS.ID = ?,\n"
-			"    name type of column PERSONS.NAME = ?,\n"
+			"    info type of column PERSONS.INFO = ?,\n"
 			"    address type of column PERSONS.ADDRESS = ?,\n"
-			"    info type of column PERSONS.INFO = ?\n"
+			"    name type of column PERSONS.NAME = ?\n"
 			")"
 			"as\n"
 			"begin\n"
@@ -747,20 +731,13 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
-			SQL_DIALECT_CURRENT, NULL), statusVector);
+		IAttachment* attachment = context->getAttachment(status);
+		StatusException::check(status->get());
 
-		inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(4))]);
-		inSqlDa->version = SQLDA_VERSION1;
-		inSqlDa->sqln = 4;
-		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
-			statusVector);
+		ITransaction* transaction = context->getTransaction(status);
+		StatusException::check(status->get());
 
-		for (unsigned i = 0; i < 4; ++i)
-		{
-			XSQLVAR* var = &inSqlDa->sqlvar[i];
-			var->sqltype |= 1;
-		}
+		stmt = attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0);
 
 		delete [] outSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(outSqlDa);
@@ -769,7 +746,6 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	}
 
 	bool initialized;
-	XSQLDA* inSqlDa;
-	isc_stmt_handle stmtHandle;
+	IMessageMetadata* triggerMetadata;
+	IStatement* stmt;
 FB_UDR_END_TRIGGER
-#endif

@@ -53,6 +53,7 @@ public:
 	}
 
 	// IMetadataBuilder implementation
+
 	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type)
 	{
 		try
@@ -128,6 +129,35 @@ public:
 		}
 	}
 
+	virtual void FB_CARG moveNameToIndex(IStatus* status, const char* name, unsigned index)
+	{
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
+
+			indexError(index, "moveNameToIndex");
+
+			for (ObjectsArray<MsgMetadata::Item>::iterator i = msgMetadata->items.begin();
+				 i != msgMetadata->items.end();
+				 ++i)
+			{
+				if (i->field == name)
+				{
+					MsgMetadata::Item copy(getPool(), *i);
+					msgMetadata->items.remove(i);
+					msgMetadata->items.insert(index, copy);
+					return;
+				}
+			}
+
+			(Arg::Gds(isc_random) << (string("Name not found in IMetadataBuilder: ") + name)).raise();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status)
 	{
 		try
@@ -162,7 +192,7 @@ private:
 	{
 		if (!msgMetadata)
 		{
-			(Arg::Gds(isc_random) << (string("MetadataBuilder interface is already inactive: "
+			(Arg::Gds(isc_random) << (string("IMetadataBuilder interface is already inactive: "
 				"IMetadataBuilder::") + functionName)).raise();
 		}
 	}
