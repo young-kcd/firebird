@@ -111,9 +111,6 @@ namespace
 }
 
 
-static IMaster* master = fb_get_master_interface();
-
-
 //------------------------------------------------------------------------------
 
 

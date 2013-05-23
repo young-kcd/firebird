@@ -515,9 +515,10 @@ public:
 	{
 	}
 
-	void* operator new(size_t size, const IRoutineMetadata* metadata)
+	void* operator new(size_t size, IMaster* master, const IRoutineMetadata* metadata)
 	{
 		Function* p = reinterpret_cast<Function*>(::new char[size]);
+		p->master = master;
 		p->metadata = metadata;
 		return p;
 	}
@@ -528,6 +529,7 @@ public:
 	}
 
 public:
+	IMaster* master;
 	const IRoutineMetadata* metadata;
 };
 
@@ -556,9 +558,10 @@ public:
 	{
 	}
 
-	void* operator new(size_t size, const IRoutineMetadata* metadata)
+	void* operator new(size_t size, IMaster* master, const IRoutineMetadata* metadata)
 	{
 		Procedure* p = reinterpret_cast<Procedure*>(::new char[size]);
+		p->master = master;
 		p->metadata = metadata;
 		return p;
 	}
@@ -569,6 +572,7 @@ public:
 	}
 
 public:
+	IMaster* master;
 	const IRoutineMetadata* metadata;
 };
 
@@ -597,9 +601,10 @@ public:
 	{
 	}
 
-	void* operator new(size_t size, const IRoutineMetadata* metadata)
+	void* operator new(size_t size, IMaster* master, const IRoutineMetadata* metadata)
 	{
 		Trigger* p = reinterpret_cast<Trigger*>(::new char[size]);
+		p->master = master;
 		p->metadata = metadata;
 		return p;
 	}
@@ -610,6 +615,7 @@ public:
 	}
 
 public:
+	IMaster* master;
 	const IRoutineMetadata* metadata;
 };
 
@@ -632,7 +638,7 @@ public:
 	virtual ExternalFunction* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
-		T* obj = new(metadata) Routine<T>;
+		T* obj = new(context->getMaster(), metadata) Routine<T>;
 		obj->initialize(status, context);
 		return obj;
 	}
@@ -657,7 +663,7 @@ public:
 	virtual ExternalProcedure* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
-		T* obj = new(metadata) Routine<T>;
+		T* obj = new(context->getMaster(), metadata) Routine<T>;
 		obj->initialize(status, context);
 		return obj;
 	}
@@ -681,7 +687,7 @@ public:
 	virtual ExternalTrigger* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
-		T* obj = new(metadata) Routine<T>;
+		T* obj = new(context->getMaster(), metadata) Routine<T>;
 		obj->initialize(status, context);
 		return obj;
 	}
