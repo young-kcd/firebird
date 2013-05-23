@@ -1,3 +1,7 @@
+ 2013-05-22 16:13  hvlad 
+   M src/common/classes/File.h
+Fixed bug CORE-4101 :  firebird.log contains "I/O error during "write" operation" records but database works correctly
+
  2013-05-20 03:26  robocop 
    M src/jrd/Database.h
    M src/jrd/jrd.cpp
