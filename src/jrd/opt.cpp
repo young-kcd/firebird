@@ -4204,7 +4204,39 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 
 	for (NodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1)
 	{
-		jrd_nod* boolean = stack1.object();
+		jrd_nod* const boolean = stack1.object();
+
+		// Handle the "OR" case first
+		if (boolean->nod_type == nod_or)
+		{
+			NodeStack org_stack, new_stack;
+
+			org_stack.push(boolean->nod_arg[0]);
+			org_stack.push(boolean->nod_arg[1]);
+
+			gen_deliver_unmapped(tdbb, &new_stack, map, &org_stack, shellStream);
+
+			if (new_stack.getCount() == 2)
+			{
+				jrd_nod* const deliverNode = PAR_make_node(tdbb, boolean->nod_count);
+				deliverNode->nod_count = boolean->nod_count;
+				deliverNode->nod_type = boolean->nod_type;
+				deliverNode->nod_flags = boolean->nod_flags;
+				deliverNode->nod_impure = boolean->nod_impure;
+
+				deliverNode->nod_arg[1] = new_stack.pop();
+				deliverNode->nod_arg[0] = new_stack.pop();
+
+				deliverStack->push(deliverNode);
+			}
+			else
+			{
+				while (new_stack.hasData())
+					delete new_stack.pop();
+			}
+
+			continue;
+		}
 
 		// Reduce to simple comparisons
 		if (!((boolean->nod_type == nod_eql) ||
@@ -4243,7 +4275,6 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 		bool wrongNode = false;
 		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++)
 		{
-
 			jrd_nod* booleanNode =
 				get_unmapped_node(tdbb, boolean->nod_arg[indexArg], map, shellStream, true);
 
