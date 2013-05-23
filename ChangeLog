@@ -1,3 +1,39 @@
+ 2013-05-22 16:11  hvlad 
+   M src/common/classes/File.h
+Fixed bug CORE-4101 :  firebird.log contains "I/O error during "write" operation" records but database works correctly
+
+ 2013-05-22 15:44  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/common/MsgMetadata.cpp
+   M src/include/firebird/Message.h
+   M src/include/firebird/Provider.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/jrd/ExtEngineManager.cpp
+Improve external triggers messages to work by field name (instead of field order).
+
+ 2013-05-22 12:18  hvlad 
+   M src/remote/os/win32/wnet.cpp
+Path by Alex: wire encryption for WNET
+
+ 2013-05-22 10:52  alexpeshkoff 
+   M src/remote/inet.cpp
+comment
+
+ 2013-05-22 07:31  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecureRemotePassword/srp.h
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Fixed some authentication errors
+
  2013-05-21 21:53  robocop 
    M src/isql/isql.epp
    M src/jrd/jrd.cpp
