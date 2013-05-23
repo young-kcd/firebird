@@ -3477,14 +3477,47 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 {
 	SET_TDBB(tdbb);
 
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	for (BoolExprNodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1)
 	{
-		BoolExprNode* boolean = stack1.object();
+		BoolExprNode* const boolean = stack1.object();
+
+		// Handle the "OR" case first
+
+		BinaryBoolNode* const binaryNode = boolean->as<BinaryBoolNode>();
+		if (binaryNode && binaryNode->blrOp == blr_or)
+		{
+			BoolExprNodeStack orgStack, newStack;
+
+			orgStack.push(binaryNode->arg1);
+			orgStack.push(binaryNode->arg2);
+
+			genDeliverUnmapped(tdbb, &newStack, map, &orgStack, shellStream);
+
+			if (newStack.getCount() == 2)
+			{
+				BoolExprNode* const newArg2 = newStack.pop();
+				BoolExprNode* const newArg1 = newStack.pop();
+
+				BinaryBoolNode* const newBinaryNode =
+					FB_NEW(pool) BinaryBoolNode(pool, blr_or, newArg1, newArg2);
+
+				deliverStack->push(newBinaryNode);
+			}
+			else
+			{
+				while (newStack.hasData())
+					delete newStack.pop();
+			}
+
+			continue;
+		}
 
 		// Reduce to simple comparisons
 
-		ComparativeBoolNode* cmpNode = boolean->as<ComparativeBoolNode>();
-		MissingBoolNode* missingNode = boolean->as<MissingBoolNode>();
+		ComparativeBoolNode* const cmpNode = boolean->as<ComparativeBoolNode>();
+		MissingBoolNode* const missingNode = boolean->as<MissingBoolNode>();
 		HalfStaticArray<ValueExprNode*, 2> children;
 
 		if (cmpNode &&
@@ -3521,8 +3554,8 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 
 		if (cmpNode)
 		{
-			ComparativeBoolNode* newCmpNode = FB_NEW(*tdbb->getDefaultPool()) ComparativeBoolNode(
-				*tdbb->getDefaultPool(), cmpNode->blrOp);
+			ComparativeBoolNode* const newCmpNode =
+				FB_NEW(pool) ComparativeBoolNode(pool, cmpNode->blrOp);
 
 			newChildren.add(newCmpNode->arg1.getAddress());
 			newChildren.add(newCmpNode->arg2.getAddress());
@@ -3531,8 +3564,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 		}
 		else if (missingNode)
 		{
-			MissingBoolNode* newMissingNode = FB_NEW(*tdbb->getDefaultPool()) MissingBoolNode(
-				*tdbb->getDefaultPool());
+			MissingBoolNode* const newMissingNode = FB_NEW(pool) MissingBoolNode(pool);
 
 			newChildren.add(newMissingNode->arg.getAddress());
 
