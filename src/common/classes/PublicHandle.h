@@ -26,6 +26,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
 #include "../common/classes/RefMutex.h"
+#include "../common/classes/fb_atomic.h"
 
 namespace Firebird
 {
@@ -37,14 +38,18 @@ namespace Firebird
 		virtual void execute() = 0;
 	};
 
-	class ExistenceMutex : public RefMutex
+	class ExistenceMutex : public RefMutex	// master reference mutex - controls object existence
+											// together with flag objectExists (a few lines lower)
 	{
 	public:
-		Mutex astMutex;
-		bool objectExists;
-
+		Mutex astMutex;						// Mutex taken when entering AST
+		AtomicCounter astDisabled;			// When >0 - AST returns taking no actions
+											// Incremented/checked with astMutex locked
+											// Atomic is used to decrement asynchronously
+		bool objectExists;					// Main flag, reset when object is destroyed
+											// Modified/checked with base-class mutex locked
 		ExistenceMutex()
-			: RefMutex(), objectExists(true)
+			: objectExists(true)
 		{ }
 	};
 

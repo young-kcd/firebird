@@ -388,6 +388,28 @@ private:
 		thread_db* tdbb;
 	};
 
+	// This holder class disables AST delivery into att for instance's lifetime
+	// Also it guarantees existence mutex to exist for same time
+	class DisableAst
+	{
+	public:
+		DisableAst(Attachment* att)
+			: attExistenceMutex(att->mutex())
+		{
+			MutexLockGuard guard(attExistenceMutex->astMutex);
+			++(attExistenceMutex->astDisabled);
+		}
+
+		~DisableAst()
+		{
+			// hence astDisabled is atomic, no need to lock something in dtor
+			--(attExistenceMutex->astDisabled);
+		}
+
+	private:
+		RefPtr<ExistenceMutex> attExistenceMutex;
+	};
+
 	void validateAccess(const Attachment* attachment)
 	{
 		if (!attachment->locksmith())
@@ -2423,7 +2445,6 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		Attachment* const attachment = *handle;
 		AttachmentHolder attHolder(tdbb, attachment, "GDS_DROP_DATABASE");
-		MutexEnsureUnlock astGuard(attachment->mutex()->astMutex);
 
 		try
 		{
@@ -2492,8 +2513,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 				}
 			}
 
-			{ // scope - take ast lock here
-				MutexLockGuard astGuard(attachment->mutex()->astMutex);
+			DisableAst astGuard(attachment);
+			{ // scope
 				DatabaseContextHolder dbbHolder(tdbb);
 
 				// Unlink attachment from database
@@ -6325,8 +6346,8 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 	fb_assert(dbb->locked());
 	Database::Checkout dcoHolder(dbb);
 
+	DisableAst astGuard(attachment);
 	{ // scope - take ast lock here
-		MutexLockGuard astGuard(attachment->mutex()->astMutex);
 		DatabaseContextHolder dbbHolder(tdbb);
 
 		// Unlink attachment from database
@@ -6590,8 +6611,7 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 				// no matter that noone has access to this attachment
 				// we need to care about lock ordering in unwind too 
 				// cause we may have locks and therefore AST calls
-				RefPtr<ExistenceMutex> attExistenceMutex(attachment->mutex());
-				MutexLockGuard astGuard(attachment->mutex()->astMutex);
+				DisableAst astGuard(attachment);
 				Database::SyncGuard syncGuard(dbb);
 
 				release_attachment(tdbb, attachment);
@@ -7403,7 +7423,7 @@ AstAttachmentHolder::AstAttachmentHolder(Attachment* attachment)
 		if (mtx)
 		{
 			mtx->astMutex.enter();
-			if (mtx->objectExists)
+			if (mtx->objectExists && !mtx->astDisabled.value())
 			{
 				return;
 			}
