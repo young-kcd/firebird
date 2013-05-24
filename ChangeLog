@@ -1,3 +1,12 @@
+ 2013-05-23 11:55  alexpeshkoff 
+   M src/common/classes/PublicHandle.h
+   M src/jrd/jrd.cpp
+CORE-3993: disable AST delivery at final steps of attachemnt destruction
+
+ 2013-05-23 08:25  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4102: Bad optimization of OR predicates applied to unions.
+
  2013-05-22 16:13  hvlad 
    M src/common/classes/File.h
 Fixed bug CORE-4101 :  firebird.log contains "I/O error during "write" operation" records but database works correctly
