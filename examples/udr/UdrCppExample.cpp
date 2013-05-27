@@ -33,22 +33,22 @@ using namespace Firebird::Udr;
 namespace
 {
 	template <typename T>
-	class AutoDispose
+	class Auto
 	{
 	public:
-		AutoDispose<T>(T* aPtr = NULL)
+		Auto<T>(T* aPtr = NULL)
 			: ptr(aPtr)
 		{
 		}
 
-		~AutoDispose()
+		~Auto()
 		{
-			clear();
+			clear(ptr);
 		}
 
-		AutoDispose<T>& operator =(T* aPtr)
+		Auto<T>& operator =(T* aPtr)
 		{
-			clear();
+			clear(ptr);
 			ptr = aPtr;
 			return *this;
 		}
@@ -89,21 +89,27 @@ namespace
 		{
 			if (aPtr != ptr)
 			{
-				clear();
+				clear(ptr);
 				ptr = aPtr;
 			}
 		}
 
 	private:
-		void clear()
+		static void clear(IDisposable* ptr)
 		{
 			if (ptr)
 				ptr->dispose();
 		}
 
+		static void clear(IRefCounted* ptr)
+		{
+			if (ptr)
+				ptr->release();
+		}
+
 		// not implemented
-		AutoDispose<T>(AutoDispose<T>&);
-		void operator =(AutoDispose<T>&);
+		Auto<T>(Auto<T>&);
+		void operator =(Auto<T>&);
 
 	private:
 		T* ptr;
@@ -173,10 +179,10 @@ FB_UDR_BEGIN_FUNCTION(sum_args)
 	{
 		// Get input and output metadata.
 
-		IMessageMetadata* inMetadata = metadata->getInputMetadata(status);
+		Auto<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
 		StatusException::check(status->get());
 
-		IMessageMetadata* outMetadata = metadata->getOutputMetadata(status);
+		Auto<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
 		StatusException::check(status->get());
 
 		// Get count of input parameters.
@@ -221,10 +227,6 @@ FB_UDR_BEGIN_FUNCTION(sum_args)
 			// Read the i-th input parameter value and sum it in the referenced return value.
 			ret += *(ISC_LONG*) (in + offset);
 		}
-
-		// Release refcounted objects.
-		inMetadata->release();
-		outMetadata->release();
 	}
 FB_UDR_END_FUNCTION
 
@@ -252,7 +254,7 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 	// Get offsets once per procedure.
 	FB_UDR_INITIALIZE
 	{
-		IMessageMetadata* inMetadata = metadata->getInputMetadata(status);
+		Auto<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
 		StatusException::check(status->get());
 
 		inOffsetStart = inMetadata->getOffset(status, 0);
@@ -261,9 +263,7 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 		inOffsetEnd = inMetadata->getOffset(status, 1);
 		StatusException::check(status->get());
 
-		inMetadata->release();
-
-		IMessageMetadata* outMetadata = metadata->getOutputMetadata(status);
+		Auto<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
 		StatusException::check(status->get());
 
 		outNullOffset = outMetadata->getNullOffset(status, 0);
@@ -271,8 +271,6 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 
 		outOffset = outMetadata->getOffset(status, 0);
 		StatusException::check(status->get());
-
-		outMetadata->release();
 	}
 
 	FB_UDR_EXECUTE_DYNAMIC_PROCEDURE
@@ -454,6 +452,7 @@ create trigger persons_replicate2
     engine udr;
 ***/
 FB_UDR_BEGIN_TRIGGER(replicate)
+	/***
 	FB_UDR_TRIGGER(replicate)()
 		: initialized(false)
 	{
@@ -463,12 +462,8 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 	{
 		if (!initialized)
 			return;
-
-		StatusImpl status(master);
-
-		triggerMetadata->release();
-		stmt->free(&status);
 	}
+	***/
 
 	FB_UDR_EXECUTE_DYNAMIC_TRIGGER
 	{
@@ -493,7 +488,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), statusVector);
 
-		///AutoDispose<IStatus> status(master->getStatus());
+		///Auto<IStatus> status(master->getStatus());
 
 		const char* table = metadata->getTriggerTable(status);
 		StatusException::check(status->get());
@@ -536,7 +531,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
 
-		triggerMetadata = metadata->getTriggerMetadata(status);
+		triggerMetadata.reset(metadata->getTriggerMetadata(status));
 		StatusException::check(status->get());
 
 		unsigned count = triggerMetadata->getCount(status);
@@ -608,21 +603,22 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		ITransaction* transaction = context->getTransaction(status);
 		StatusException::check(status->get());
 
-		stmt = attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0);
+		stmt.reset(attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0));
 
 		delete [] outSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(outSqlDa);
 
-		initialized = true;
+		///initialized = true;
 	}
 
-	bool initialized;
-	IMessageMetadata* triggerMetadata;
-	IStatement* stmt;
+	///bool initialized;
+	Auto<IMessageMetadata> triggerMetadata;
+	Auto<IStatement> stmt;
 FB_UDR_END_TRIGGER
 
 
 FB_UDR_BEGIN_TRIGGER(replicate_persons)
+	/***
 	FB_UDR_TRIGGER(replicate_persons)()
 		: initialized(false)
 	{
@@ -632,12 +628,8 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	{
 		if (!initialized)
 			return;
-
-		StatusImpl status(master);
-
-		triggerMetadata->release();
-		stmt->free(&status);
 	}
+	***/
 
 	// Order of fields does not need to match the fields order in the table, but it should match
 	// the order of fields in the SQL command constructed in the initialization.
@@ -667,7 +659,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), statusVector);
 
-		///AutoDispose<IStatus> status(master->getStatus());
+		///Auto<IStatus> status(master->getStatus());
 
 		const char* table = metadata->getTriggerTable(status);
 		StatusException::check(status->get());
@@ -709,7 +701,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
 
-		triggerMetadata = metadata->getTriggerMetadata(status);
+		triggerMetadata.reset(metadata->getTriggerMetadata(status));
 		StatusException::check(status->get());
 
 		char buffer[65536];
@@ -734,15 +726,15 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		ITransaction* transaction = context->getTransaction(status);
 		StatusException::check(status->get());
 
-		stmt = attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0);
+		stmt.reset(attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0));
 
 		delete [] outSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(outSqlDa);
 
-		initialized = true;
+		///initialized = true;
 	}
 
-	bool initialized;
-	IMessageMetadata* triggerMetadata;
-	IStatement* stmt;
+	///bool initialized;
+	Auto<IMessageMetadata> triggerMetadata;
+	Auto<IStatement> stmt;
 FB_UDR_END_TRIGGER
