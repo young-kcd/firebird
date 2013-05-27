@@ -776,7 +776,8 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 			++phase;
 			tdbb->tdbb_flags &= ~(TDBB_dont_post_dfw | TDBB_use_db_page_space);
 		}
-		catch (const Firebird::Exception& ex) {
+		catch (const Firebird::Exception& ex)
+		{
 			tdbb->tdbb_flags &= ~(TDBB_dont_post_dfw | TDBB_use_db_page_space);
 
 			// Do any necessary cleanup
@@ -786,9 +787,8 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 				ERR_punt();
 			}
 			else
-			{
 				ex.stuff_exception(err_status);
-			}
+
 			phase = 0;
 			more = true;
 		}
