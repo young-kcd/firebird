@@ -1,3 +1,12 @@
+ 2013-05-27 15:51  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+RAII usage in UdrCpp example.
+
+ 2013-05-27 01:50  asfernandes 
+   M src/common/classes/File.h
+   M src/jrd/dfw.epp
+Misc.
+
  2013-05-23 15:53  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M src/include/firebird/UdrCppEngine.h
