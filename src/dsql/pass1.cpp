@@ -2234,6 +2234,13 @@ static bool aggregate_found2(const CompiledStatement* statement, const dsql_nod*
 			}
 			return aggregate;
 
+		case nod_derived_table:
+			if (!ignore_sub_selects) {
+				aggregate = aggregate_found2(statement, node->nod_arg[e_derived_table_rse], current_level,
+											 deepest_level, ignore_sub_selects);
+			}
+			return aggregate;
+
 		case nod_rse:
 			++*current_level;
 			aggregate |= aggregate_found2(statement, node->nod_arg[e_rse_streams], current_level,
@@ -2303,6 +2310,7 @@ static bool aggregate_found2(const CompiledStatement* statement, const dsql_nod*
 		case nod_join_left:
 		case nod_join_right:
 		case nod_join_full:
+		case nod_union:
 			{
 				const dsql_nod* const* ptr = node->nod_arg;
 				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
@@ -3176,6 +3184,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_join_right:
 		case nod_join_full:
 		case nod_list:
+		case nod_union:
 			{
 				const dsql_nod* const* ptr = node->nod_arg;
 				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
@@ -3208,6 +3217,11 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 										 list, inside_own_map, inside_higher_map);
 			break;
 
+		case nod_derived_table:
+			invalid |= invalid_reference(context, node->nod_arg[e_derived_table_rse],
+										 list, inside_own_map, inside_higher_map);
+			break;
+
 		case nod_relation:
 			{
 				const dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
@@ -3231,7 +3245,6 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_current_role:
 		case nod_internal_info:
 		case nod_dom_value:
-		case nod_derived_table:
 		case nod_plan_expr:
 			return false;
 
@@ -5711,6 +5724,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_join_left:
 		case nod_join_right:
 		case nod_join_full:
+		case nod_union:
 			{
 				const dsql_nod* const* ptr = node->nod_arg;
 				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
@@ -6146,6 +6160,7 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_join_left:
 		case nod_join_right:
 		case nod_join_full:
+		case nod_union:
 			{
 				const dsql_nod* const* ptr = node->nod_arg;
 				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
@@ -10122,6 +10137,7 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 		case nod_join_left:
 		case nod_join_right:
 		case nod_join_full:
+		case nod_union:
 			{
 				dsql_nod** ptr = field->nod_arg;
 				for (const dsql_nod* const* const end = ptr + field->nod_count; ptr < end; ptr++)
