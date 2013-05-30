@@ -1,3 +1,7 @@
+ 2013-05-29 12:28  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-4107: Wrong resultset (subquery + derived table + union).
+
  2013-04-28 13:50  dimitr 
    M src/jrd/cvt.cpp
 Simplified fix for CORE-4093: Server crashes while converting an overscaled numeric to a string.
