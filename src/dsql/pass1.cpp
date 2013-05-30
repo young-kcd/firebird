@@ -1443,7 +1443,7 @@ static ValueListNode* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, Valu
 		if ((field = ExprNode::as<FieldNode>(sub)))
 		{
 			// check for alias or field node
-			if (field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
+			if (selectList && field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
 			{
 				// AB: Check first against the select list for matching column.
 				// When no matches at all are found we go on with our
@@ -2277,7 +2277,7 @@ ValueListNode* PASS1_sort(DsqlCompilerScratch* dsqlScratch, ValueListNode* input
 			ValueExprNode* aliasNode = NULL;
 
 			// check for alias or field node
-			if (field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
+			if (selectList && field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
 			{
 				// AB: Check first against the select list for matching column.
 				// When no matches at all are found we go on with our
