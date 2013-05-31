@@ -1,3 +1,7 @@
+ 2013-05-30 08:20  dimitr 
+   M src/dsql/pass1.cpp
+Fixed regression CORE-4108: Server crashes when executing sql query "delete from mytable order by id desc rows 2".
+
  2013-05-27 15:51  asfernandes 
    M examples/udr/UdrCppExample.cpp
 RAII usage in UdrCpp example.
