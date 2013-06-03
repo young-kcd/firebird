@@ -33,22 +33,64 @@ using namespace Firebird::Udr;
 namespace
 {
 	template <typename T>
-	class Auto
+	class AutoReleaseClear
 	{
 	public:
-		Auto<T>(T* aPtr = NULL)
+		static void clear(T* ptr)
+		{
+			if (ptr)
+				ptr->release();
+		}
+	};
+
+	template <typename T>
+	class AutoDisposeClear
+	{
+	public:
+		static void clear(T* ptr)
+		{
+			if (ptr)
+				ptr->dispose();
+		}
+	};
+
+	template <typename T>
+	class AutoDeleteClear
+	{
+	public:
+		static void clear(T* ptr)
+		{
+			delete ptr;
+		}
+	};
+
+	template <typename T>
+	class AutoArrayDeleteClear
+	{
+	public:
+		static void clear(T* ptr)
+		{
+			delete [] ptr;
+		}
+	};
+
+	template <typename T, typename Clear>
+	class AutoImpl
+	{
+	public:
+		AutoImpl<T, Clear>(T* aPtr = NULL)
 			: ptr(aPtr)
 		{
 		}
 
-		~Auto()
+		~AutoImpl()
 		{
-			clear(ptr);
+			Clear::clear(ptr);
 		}
 
-		Auto<T>& operator =(T* aPtr)
+		AutoImpl<T, Clear>& operator =(T* aPtr)
 		{
-			clear(ptr);
+			Clear::clear(ptr);
 			ptr = aPtr;
 			return *this;
 		}
@@ -89,30 +131,54 @@ namespace
 		{
 			if (aPtr != ptr)
 			{
-				clear(ptr);
+				Clear::clear(ptr);
 				ptr = aPtr;
 			}
 		}
 
 	private:
-		static void clear(IDisposable* ptr)
-		{
-			if (ptr)
-				ptr->dispose();
-		}
-
-		static void clear(IRefCounted* ptr)
-		{
-			if (ptr)
-				ptr->release();
-		}
-
 		// not implemented
-		Auto<T>(Auto<T>&);
-		void operator =(Auto<T>&);
+		AutoImpl<T, Clear>(AutoImpl<T, Clear>&);
+		void operator =(AutoImpl<T, Clear>&);
 
 	private:
 		T* ptr;
+	};
+
+	template <typename T> class AutoDispose : public AutoImpl<T, AutoDisposeClear<T> >
+	{
+	public:
+		AutoDispose(T* ptr = NULL)
+			: AutoImpl<T, AutoDisposeClear<T> >(ptr)
+		{
+		}
+	};
+
+	template <typename T> class AutoRelease : public AutoImpl<T, AutoReleaseClear<T> >
+	{
+	public:
+		AutoRelease(T* ptr = NULL)
+			: AutoImpl<T, AutoReleaseClear<T> >(ptr)
+		{
+		}
+	};
+
+	template <typename T> class AutoDelete : public AutoImpl<T, AutoDeleteClear<T> >
+	{
+	public:
+		AutoDelete(T* ptr = NULL)
+			: AutoImpl<T, AutoDeleteClear<T> >(ptr)
+		{
+		}
+	};
+
+	template <typename T> class AutoArrayDelete : public AutoImpl<T, AutoArrayDeleteClear<T> >
+	{
+	public:
+		AutoArrayDelete(T* ptr = NULL)
+			: AutoImpl<T, AutoArrayDeleteClear<T> >(ptr)
+		{
+		}
 	};
 }
 
@@ -173,32 +239,48 @@ create function sum_args (
     engine udr;
 ***/
 FB_UDR_BEGIN_FUNCTION(sum_args)
+	FB_UDR_INITIALIZE
+	{
+		// Get input metadata.
+		AutoRelease<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
+		StatusException::check(status->get());
+
+		// Get count of input parameters.
+		inCount = inMetadata->getCount(status);
+		StatusException::check(status->get());
+
+		inNullOffsets.reset(new unsigned[inCount]);
+		inOffsets.reset(new unsigned[inCount]);
+
+		for (unsigned i = 0; i < inCount; ++i)
+		{
+			// Get null offset of the i-th input parameter.
+			inNullOffsets[i] = inMetadata->getNullOffset(status, i);
+			StatusException::check(status->get());
+
+			// Get the offset of the i-th input parameter.
+			inOffsets[i] = inMetadata->getOffset(status, i);
+			StatusException::check(status->get());
+		}
+
+		// Get output metadata.
+		AutoRelease<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
+		StatusException::check(status->get());
+
+		// Get null offset of the return value.
+		outNullOffset = outMetadata->getNullOffset(status, 0);
+		StatusException::check(status->get());
+
+		// Get offset of the return value.
+		outOffset = outMetadata->getOffset(status, 0);
+		StatusException::check(status->get());
+	}
+
 	// This function requires the INTEGER parameters and return value, otherwise it will crash.
 	// Metadata is inspected dynamically (in execute). This is not the fastest method.
 	FB_UDR_EXECUTE_DYNAMIC_FUNCTION
 	{
-		// Get input and output metadata.
-
-		Auto<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
-		StatusException::check(status->get());
-
-		Auto<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
-		StatusException::check(status->get());
-
-		// Get count of input parameters.
-		unsigned inCount = inMetadata->getCount(status);
-		StatusException::check(status->get());
-
-		// Get null offset of the return value.
-
-		unsigned outNullOffset = outMetadata->getNullOffset(status, 0);
-		StatusException::check(status->get());
-
 		*(ISC_SHORT*) (out + outNullOffset) = FB_FALSE;
-
-		// Get offset of the return value.
-		unsigned outOffset = outMetadata->getOffset(status, 0);
-		StatusException::check(status->get());
 
 		// Get a reference to the return value.
 		ISC_LONG& ret = *(ISC_LONG*) (out + outOffset);
@@ -208,26 +290,23 @@ FB_UDR_BEGIN_FUNCTION(sum_args)
 
 		for (unsigned i = 0; i < inCount; ++i)
 		{
-			// Get null offset of the i-th input parameter.
-			unsigned nullOffset = inMetadata->getNullOffset(status, i);
-			StatusException::check(status->get());
-
 			// If the i-th input parameter is NULL, set the output to NULL and finish.
-			if (*(ISC_SHORT*) (in + nullOffset))
+			if (*(ISC_SHORT*) (in + inNullOffsets[i]))
 			{
 				*(ISC_SHORT*) (out + outNullOffset) = FB_TRUE;
-				// Important: we should not return without release the metadata objects.
-				break;
+				return;
 			}
 
-			// Get the offset of the i-th input parameter.
-			unsigned offset = inMetadata->getOffset(status, i);
-			StatusException::check(status->get());
-
 			// Read the i-th input parameter value and sum it in the referenced return value.
-			ret += *(ISC_LONG*) (in + offset);
+			ret += *(ISC_LONG*) (in + inOffsets[i]);
 		}
 	}
+
+	unsigned inCount;
+	AutoArrayDelete<unsigned> inNullOffsets;
+	AutoArrayDelete<unsigned> inOffsets;
+	unsigned outNullOffset;
+	unsigned outOffset;
 FB_UDR_END_FUNCTION
 
 
@@ -254,7 +333,7 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 	// Get offsets once per procedure.
 	FB_UDR_INITIALIZE
 	{
-		Auto<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
+		AutoRelease<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
 		StatusException::check(status->get());
 
 		inOffsetStart = inMetadata->getOffset(status, 0);
@@ -263,7 +342,7 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 		inOffsetEnd = inMetadata->getOffset(status, 1);
 		StatusException::check(status->get());
 
-		Auto<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
+		AutoRelease<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
 		StatusException::check(status->get());
 
 		outNullOffset = outMetadata->getNullOffset(status, 0);
@@ -488,8 +567,6 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), statusVector);
 
-		///Auto<IStatus> status(master->getStatus());
-
 		const char* table = metadata->getTriggerTable(status);
 		StatusException::check(status->get());
 
@@ -612,8 +689,8 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 	}
 
 	///bool initialized;
-	Auto<IMessageMetadata> triggerMetadata;
-	Auto<IStatement> stmt;
+	AutoRelease<IMessageMetadata> triggerMetadata;
+	AutoRelease<IStatement> stmt;
 FB_UDR_END_TRIGGER
 
 
@@ -654,12 +731,11 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		isc_tr_handle trHandle = getIscTrHandle(context);
 
 		isc_stmt_handle stmtHandle = 0;
-		StatusException::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
+		StatusException::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle),
+			statusVector);
 		StatusException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 			"select data_source from replicate_config where name = ?",
 			SQL_DIALECT_CURRENT, NULL), statusVector);
-
-		///Auto<IStatus> status(master->getStatus());
 
 		const char* table = metadata->getTriggerTable(status);
 		StatusException::check(status->get());
@@ -680,8 +756,8 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		XSQLDA* inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 1;
-		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
-			statusVector);
+		StatusException::check(isc_dsql_describe_bind(statusVector, &stmtHandle,
+			SQL_DIALECT_CURRENT, inSqlDa), statusVector);
 		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
 		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
 		*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
@@ -689,14 +765,15 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		outSqlDa->version = SQLDA_VERSION1;
 		outSqlDa->sqln = 1;
-		StatusException::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
-			statusVector);
+		StatusException::check(isc_dsql_describe(statusVector, &stmtHandle,
+			SQL_DIALECT_CURRENT, outSqlDa), statusVector);
 		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
 		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
 
-		StatusException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
-			inSqlDa, outSqlDa), statusVector);
-		StatusException::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+		StatusException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle,
+			SQL_DIALECT_CURRENT, inSqlDa, outSqlDa), statusVector);
+		StatusException::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare),
+			statusVector);
 
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
@@ -735,6 +812,6 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	}
 
 	///bool initialized;
-	Auto<IMessageMetadata> triggerMetadata;
-	Auto<IStatement> stmt;
+	AutoRelease<IMessageMetadata> triggerMetadata;
+	AutoRelease<IStatement> stmt;
 FB_UDR_END_TRIGGER
