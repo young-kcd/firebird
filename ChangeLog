@@ -1,3 +1,15 @@
+ 2013-06-03 15:24  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+RAII improvements and better usage of initializer in UDR examples.
+
+ 2013-06-03 11:20  alexpeshkoff 
+   M src/misc/src_bundle.sh
+Fixed after renaming configure.in
+
+ 2013-06-03 08:47  alexpeshkoff 
+   A doc/README.interfaces.html
+First draft interfaces readme
+
  2013-05-30 08:20  dimitr 
    M src/dsql/pass1.cpp
 Fixed regression CORE-4108: Server crashes when executing sql query "delete from mytable order by id desc rows 2".
