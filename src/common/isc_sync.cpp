@@ -3346,7 +3346,7 @@ void SharedMemoryBase::mutexLock()
 	int state = 0;
 	try
 	{
-		localMutex.enter();
+		localMutex.enter(FB_FUNCTION);
 	}
 	catch (const system_call_failed& fail)
 	{
@@ -3418,7 +3418,7 @@ bool SharedMemoryBase::mutexLockCond()
 
 	try
 	{
-		if (!localMutex.tryEnter())
+		if (!localMutex.tryEnter(FB_FUNCTION))
 		{
 			return false;
 		}
