@@ -93,8 +93,8 @@ namespace
 	class StaticConfHolder
 	{
 	public:
-		explicit StaticConfHolder(MemoryPool&)
-			: confFile(FB_NEW(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(),
+		explicit StaticConfHolder(MemoryPool& p)
+			: confFile(FB_NEW(p) ConfigFile(p,
 				fb_utils::getPrefix(fb_utils::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
 		{
 		}
@@ -107,11 +107,11 @@ namespace
 	private:
 		RefPtr<ConfigFile> confFile;
 	};
-	GlobalPtr<StaticConfHolder> pluginsConf;
+	InitInstance<StaticConfHolder> pluginsConf;
 
 	RefPtr<ConfigFile> findConfig(const char* param, const char* pluginName)
 	{
-		ConfigFile* f = pluginsConf->get();
+		ConfigFile* f = pluginsConf().get();
 		if (f)
 		{
 			const ConfigFile::Parameter* plugPar = f->findParameter(param, pluginName);
