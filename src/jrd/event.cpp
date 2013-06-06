@@ -56,14 +56,6 @@
 #include <signal.h>
 #endif
 
-#ifdef WIN_NT
-#include <process.h>
-#include <windows.h>
-#define MUTEX		&m_mutex
-#else
-#define MUTEX		m_mutex
-#endif
-
 #define SRQ_BASE                  ((UCHAR*) m_sharedMemory->getHeader())
 
 using namespace Firebird;
