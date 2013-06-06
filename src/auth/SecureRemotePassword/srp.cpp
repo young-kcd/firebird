@@ -46,16 +46,16 @@ public:
 	}
 
 private:
-	static GlobalPtr<RemoteGroup> group;
+	static InitInstance<RemoteGroup> group;
 
 public:
 	static RemoteGroup* getGroup()
 	{
-		return &group;
+		return &group();
 	}
 };
 
-GlobalPtr<RemoteGroup> RemoteGroup::group;
+InitInstance<RemoteGroup> RemoteGroup::group;
 
 const char* RemotePassword::plugName = "Srp";
 
