@@ -40,51 +40,23 @@ namespace Firebird
 //------------------------------------------------------------------------------
 
 
-#define FB_UDR_FUNCTION(name)	Func##name
-#define FB_UDR_PROCEDURE(name)	Proc##name
-#define FB_UDR_TRIGGER(name)	Trig##name
-
-
 #define FB_UDR_BEGIN_FUNCTION(name)	\
-	class FB_UDR_FUNCTION(name);	\
-	\
-	::Firebird::Udr::FunctionFactoryImpl<FB_UDR_FUNCTION(name)> FuncFactory##name(#name);	\
-	\
-	class FB_UDR_FUNCTION(name) : public ::Firebird::Udr::Function<FB_UDR_FUNCTION(name)>	\
+	namespace Func##name	\
 	{	\
-	public:	\
-		void initialize(::Firebird::IStatus* /*status*/, void*)	\
+		class Impl;	\
+		\
+		static ::Firebird::Udr::FunctionFactoryImpl<Impl> factory(#name);	\
+		\
+		class Impl : public ::Firebird::Udr::Function<Impl>	\
 		{	\
-		}
+		public:	\
+			FB__UDR_COMMON_IMPL
 
 #define FB_UDR_END_FUNCTION	\
-	};
+		};	\
+	}
 
-#define FB_UDR_EXECUTE_DYNAMIC_FUNCTION	\
-	FB__UDR_DYNAMIC_TYPE(InMessage);	\
-	FB__UDR_DYNAMIC_TYPE(OutMessage);	\
-	\
-	FB__UDR_EXECUTE_FUNCTION
-
-#define FB_UDR_EXECUTE_MESSAGE_FUNCTION(inputs, output)	\
-	FB_MESSAGE(InMessage,	\
-		inputs	\
-	);	\
-	FB_MESSAGE(OutMessage,	\
-		output	\
-	);	\
-	\
-	FB__UDR_EXECUTE_FUNCTION
-
-#define FB_UDR_EXECUTE_MESSAGE_FUNCTION_OUT(outputs)	\
-	FB__UDR_DYNAMIC_TYPE(InMessage);	\
-	FB_MESSAGE(OutMessage,	\
-		outputs	\
-	);	\
-	\
-	FB__UDR_EXECUTE_FUNCTION
-
-#define FB__UDR_EXECUTE_FUNCTION	\
+#define FB_UDR_EXECUTE_FUNCTION	\
 	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
 		void* in, void* out)	\
 	{	\
@@ -100,56 +72,23 @@ namespace Firebird
 
 
 #define FB_UDR_BEGIN_PROCEDURE(name)	\
-	class FB_UDR_PROCEDURE(name);	\
-	\
-	::Firebird::Udr::ProcedureFactoryImpl<FB_UDR_PROCEDURE(name)> ProcFactory##name(#name);	\
-	\
-	class FB_UDR_PROCEDURE(name) : public ::Firebird::Udr::Procedure<FB_UDR_PROCEDURE(name)>	\
+	namespace Proc##name	\
 	{	\
-	public:	\
-		typedef FB_UDR_PROCEDURE(name) This;	\
+		class Impl;	\
 		\
-		void initialize(::Firebird::IStatus* /*status*/, void*)	\
+		static ::Firebird::Udr::ProcedureFactoryImpl<Impl> factory(#name);	\
+		\
+		class Impl : public ::Firebird::Udr::Procedure<Impl>	\
 		{	\
-		}
+		public:	\
+			FB__UDR_COMMON_IMPL
 
 #define FB_UDR_END_PROCEDURE	\
+			};	\
 		};	\
-	};
+	}
 
-#define FB_UDR_EXECUTE_DYNAMIC_PROCEDURE	\
-	FB__UDR_DYNAMIC_TYPE(InMessage);	\
-	FB__UDR_DYNAMIC_TYPE(OutMessage);	\
-	\
-	FB__UDR_EXECUTE_PROCEDURE
-
-#define FB_UDR_EXECUTE_MESSAGE_PROCEDURE(inputs, outputs)	\
-	FB_MESSAGE(InMessage,	\
-		inputs	\
-	);	\
-	FB_MESSAGE(OutMessage,	\
-		outputs	\
-	);	\
-	\
-	FB__UDR_EXECUTE_PROCEDURE
-
-#define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_IN(inputs)	\
-	FB_MESSAGE(InMessage,	\
-		inputs	\
-	);	\
-	FB__UDR_DYNAMIC_TYPE(OutMessage);	\
-	\
-	FB__UDR_EXECUTE_PROCEDURE
-
-#define FB_UDR_EXECUTE_MESSAGE_PROCEDURE_OUT(outputs)	\
-	FB__UDR_DYNAMIC_TYPE(InMessage);	\
-	FB_MESSAGE(OutMessage,	\
-		outputs	\
-	);	\
-	\
-	FB__UDR_EXECUTE_PROCEDURE
-
-#define FB__UDR_EXECUTE_PROCEDURE	\
+#define FB_UDR_EXECUTE_PROCEDURE	\
 	virtual ::Firebird::ExternalResultSet* FB_CARG open(::Firebird::IStatus* status, \
 		::Firebird::ExternalContext* context, void* in, void* out)	\
 	{	\
@@ -159,61 +98,49 @@ namespace Firebird
 		}	\
 		FB__UDR_CATCH	\
 		\
-		return 0;	\
+		return NULL;	\
 	}	\
 	\
-	class ResultSet : public ::Firebird::Udr::ResultSet<ResultSet, This, InMessage, OutMessage>	\
+	class ResultSet : public ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage>	\
 	{	\
 	public:	\
 		ResultSet(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
-				This* const procedure, InMessage::Type* const in, OutMessage::Type* const out)	\
-			: ::Firebird::Udr::ResultSet<ResultSet, This, InMessage, OutMessage>(	\
+				Impl* const procedure, InMessage::Type* const in, OutMessage::Type* const out)	\
+			: ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage>(	\
 					context, procedure, in, out)
 
 #define FB_UDR_FETCH_PROCEDURE	\
-	virtual bool FB_CARG fetch(::Firebird::IStatus* status)	\
+	virtual FB_BOOLEAN FB_CARG fetch(::Firebird::IStatus* status)	\
 	{	\
 		try	\
 		{	\
-			return internalFetch(status);	\
+			return (FB_BOOLEAN) internalFetch(status);	\
 		}	\
 		FB__UDR_CATCH	\
 		\
-		return 0;	\
+		return FB_FALSE;	\
 	}	\
 	\
 	bool internalFetch(::Firebird::IStatus* status)
 
 
 #define FB_UDR_BEGIN_TRIGGER(name)	\
-	class FB_UDR_TRIGGER(name);	\
-	\
-	::Firebird::Udr::TriggerFactoryImpl<FB_UDR_TRIGGER(name)> TrigFactory##name(#name);	\
-	\
-	class FB_UDR_TRIGGER(name) : public ::Firebird::Udr::Trigger<FB_UDR_TRIGGER(name)>	\
+	namespace Trig##name	\
 	{	\
-	public:	\
+		class Impl;	\
 		\
-		void initialize(::Firebird::IStatus* /*status*/, void*)	\
+		static ::Firebird::Udr::TriggerFactoryImpl<Impl> factory(#name);	\
+		\
+		class Impl : public ::Firebird::Udr::Trigger<Impl>	\
 		{	\
-		}
+		public:	\
+			FB__UDR_COMMON_IMPL
 
 #define FB_UDR_END_TRIGGER	\
-	};
+		};	\
+	}
 
-#define FB_UDR_EXECUTE_DYNAMIC_TRIGGER	\
-	FB__UDR_DYNAMIC_TYPE(FieldsMessage);	\
-	\
-	FB__UDR_EXECUTE_TRIGGER
-
-#define FB_UDR_EXECUTE_MESSAGE_TRIGGER(fields)	\
-	FB_TRIGGER_MESSAGE(FieldsMessage,	\
-		fields	\
-	);	\
-	\
-	FB__UDR_EXECUTE_TRIGGER
-
-#define FB__UDR_EXECUTE_TRIGGER	\
+#define FB_UDR_EXECUTE_TRIGGER	\
 	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
 		::Firebird::ExternalTrigger::Action action, void* oldFields, void* newFields)	\
 	{	\
@@ -230,26 +157,33 @@ namespace Firebird
 		FieldsMessage::Type* oldFields, FieldsMessage::Type* newFields)
 
 
-#define FB_UDR_INITIALIZE	\
-	void initialize(::Firebird::IStatus* status, ExternalContext* context)	\
+#define FB_UDR_CONSTRUCTOR	\
+	Impl(::Firebird::IStatus* const status, ExternalContext* const context,	\
+			const IRoutineMetadata* const metadata__)	\
+		: master(context->getMaster()),	\
+		  metadata(metadata__)
+
+#define FB_UDR_DESTRUCTOR	\
+	~Impl()
+
+
+#define FB__UDR_COMMON_IMPL	\
+	Impl(const void* const, ExternalContext* const context,	\
+			const IRoutineMetadata* const aMetadata)	\
+		: master(context->getMaster()),	\
+		  metadata(aMetadata)	\
 	{	\
-		try	\
-		{	\
-			internalInitialize(status, context);	\
-		}	\
-		FB__UDR_CATCH	\
 	}	\
 	\
-	void internalInitialize(::Firebird::IStatus* status, ::Firebird::ExternalContext* context)
+	IMaster* master;	\
+	const IRoutineMetadata* metadata;
 
-
-#define FB__UDR_DYNAMIC_TYPE(name)	\
+#define FB__UDR_COMMON_TYPE(name)	\
 	struct name	\
 	{	\
 		typedef unsigned char Type;	\
 		static void setup(::Firebird::IStatus*, ::Firebird::IMetadataBuilder*) {}	\
 	}
-
 
 #define FB__UDR_CATCH	\
 	catch (const ::Firebird::Udr::StatusException& e)	\
@@ -313,12 +247,19 @@ public:
 			throw StatusException(vector);
 	}
 
-	static void check(ISC_STATUS status, const ISC_STATUS* vector)
+	static void checkStatus(ISC_STATUS status, const ISC_STATUS* vector)
 	{
 		if (status == 0)
 			return;
 
 		check(vector);
+	}
+
+	template <typename T>
+	static T check(IStatus* status, T value)
+	{
+		check(status->get());
+		return value;
 	}
 
 public:
@@ -479,22 +420,13 @@ protected:
 };
 
 
-// This class is used to fix an apparent bug with clang, where the object is wrongly initialized
-// and overwrites the members set in the operator new.
-template <typename T>
-class Routine : public T
-{
-public:
-	Routine()
-	{
-	}
-};
-
-
 template <typename This>
 class Function : public ExternalFunction, public Helper
 {
 public:
+	FB__UDR_COMMON_TYPE(InMessage);
+	FB__UDR_COMMON_TYPE(OutMessage);
+
 	virtual int FB_CARG getVersion()
 	{
 		return FB_EXTERNAL_FUNCTION_VERSION;
@@ -514,23 +446,6 @@ public:
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
-
-	void* operator new(size_t size, IMaster* master, const IRoutineMetadata* metadata)
-	{
-		Function* p = reinterpret_cast<Function*>(::new char[size]);
-		p->master = master;
-		p->metadata = metadata;
-		return p;
-	}
-
-	void operator delete(void* p)
-	{
-		::delete [] static_cast<char*>(p);
-	}
-
-public:
-	IMaster* master;
-	const IRoutineMetadata* metadata;
 };
 
 
@@ -538,6 +453,9 @@ template <typename This>
 class Procedure : public ExternalProcedure, public Helper
 {
 public:
+	FB__UDR_COMMON_TYPE(InMessage);
+	FB__UDR_COMMON_TYPE(OutMessage);
+
 	virtual int FB_CARG getVersion()
 	{
 		return FB_EXTERNAL_PROCEDURE_VERSION;
@@ -557,23 +475,6 @@ public:
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
-
-	void* operator new(size_t size, IMaster* master, const IRoutineMetadata* metadata)
-	{
-		Procedure* p = reinterpret_cast<Procedure*>(::new char[size]);
-		p->master = master;
-		p->metadata = metadata;
-		return p;
-	}
-
-	void operator delete(void* p)
-	{
-		::delete [] static_cast<char*>(p);
-	}
-
-public:
-	IMaster* master;
-	const IRoutineMetadata* metadata;
 };
 
 
@@ -581,6 +482,8 @@ template <typename This>
 class Trigger : public ExternalTrigger, public Helper
 {
 public:
+	FB__UDR_COMMON_TYPE(FieldsMessage);
+
 	virtual int FB_CARG getVersion()
 	{
 		return FB_EXTERNAL_TRIGGER_VERSION;
@@ -600,23 +503,6 @@ public:
 		Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
-
-	void* operator new(size_t size, IMaster* master, const IRoutineMetadata* metadata)
-	{
-		Trigger* p = reinterpret_cast<Trigger*>(::new char[size]);
-		p->master = master;
-		p->metadata = metadata;
-		return p;
-	}
-
-	void operator delete(void* p)
-	{
-		::delete [] static_cast<char*>(p);
-	}
-
-public:
-	IMaster* master;
-	const IRoutineMetadata* metadata;
 };
 
 
@@ -638,9 +524,13 @@ public:
 	virtual ExternalFunction* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
-		T* obj = new(context->getMaster(), metadata) Routine<T>;
-		obj->initialize(status, context);
-		return obj;
+		try
+		{
+			return new T(status, context, metadata);
+		}
+		FB__UDR_CATCH
+
+		return NULL;
 	}
 };
 
@@ -663,9 +553,13 @@ public:
 	virtual ExternalProcedure* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
-		T* obj = new(context->getMaster(), metadata) Routine<T>;
-		obj->initialize(status, context);
-		return obj;
+		try
+		{
+			return new T(status, context, metadata);
+		}
+		FB__UDR_CATCH
+
+		return NULL;
 	}
 };
 
@@ -687,9 +581,13 @@ public:
 	virtual ExternalTrigger* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata)
 	{
-		T* obj = new(context->getMaster(), metadata) Routine<T>;
-		obj->initialize(status, context);
-		return obj;
+		try
+		{
+			return new T(status, context, metadata);
+		}
+		FB__UDR_CATCH
+
+		return NULL;
 	}
 };
 

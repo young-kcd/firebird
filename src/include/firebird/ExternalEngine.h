@@ -81,7 +81,7 @@ public:
 class ExternalResultSet : public IDisposable
 {
 public:
-	virtual bool FB_CARG fetch(IStatus* status) = 0;
+	virtual FB_BOOLEAN FB_CARG fetch(IStatus* status) = 0;
 };
 
 #define FB_EXTERNAL_RESULT_SET_VERSION (FB_DISPOSABLE_VERSION + 1)
