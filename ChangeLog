@@ -1,3 +1,26 @@
+ 2013-06-06 16:05  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/UdrCppEngine.h
+UDR C++ interface and examples improvements.
+
+ 2013-06-06 15:07  alexpeshkoff 
+   M src/auth/SecureRemotePassword/srp.cpp
+Fixed one more incorrect GlobalPtr usage
+
+ 2013-06-06 12:29  alexpeshkoff 
+   M src/yvalve/PluginManager.cpp
+Do not use as GlobalPtr class with ctor which needs context pool (i.e. TLS object)
+
+ 2013-06-06 07:32  alexpeshkoff 
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+Fix mac build
+
+ 2013-06-05 12:56  alexpeshkoff 
+   M src/common/isc_sync.cpp
+Fix mac build
+
  2013-06-03 15:24  asfernandes 
    M examples/udr/UdrCppExample.cpp
 RAII improvements and better usage of initializer in UDR examples.
