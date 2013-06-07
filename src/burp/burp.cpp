@@ -1322,15 +1322,17 @@ void BURP_abort()
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	USHORT code = tdgbl->action && tdgbl->action->act_action == ACT_backup_fini ? 351 : 83;
+	// msg 351 Error closing database, but backup file is OK
+	// msg 83 Exiting before completion due to errors
+
+	tdgbl->uSvc->setServiceStatus(burp_msg_fac, code, SafeArg());
+	tdgbl->uSvc->started();
 
 	if (!tdgbl->uSvc->isService())
 	{
-		BURP_print(true, tdgbl->action && tdgbl->action->act_action == ACT_backup_fini ? 351 : 83);
-		// msg 351 Error closing database, but backup file is OK
-		// msg 83 Exiting before completion due to errors
+		BURP_print(true, code);
 	}
-
-	tdgbl->uSvc->started();
 
 	BURP_exit_local(FINI_ERROR, tdgbl);
 }
