@@ -1291,10 +1291,14 @@ void general_on_error()
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	BURP_print_status (true, isc_status);
-
 	if (isc_status[1] == isc_malformed_string)
-		BURP_print(true, 341);	// isc_gbak_invalid_metadata
+	{
+		Firebird::Arg::StatusVector oldVector(isc_status);
+		Firebird::Arg::Gds newVector(isc_gbak_invalid_metadata);
+		newVector.append(oldVector);
+		newVector.copyTo(isc_status);
+	}
+	BURP_print_status (true, isc_status);
 
 	BURP_abort ();
 }
