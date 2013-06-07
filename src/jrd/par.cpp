@@ -2617,7 +2617,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
  **************************************/
 	SET_TDBB(tdbb);
 
-	const USHORT blr_offset = csb->csb_blr_reader.getOffset();
+	const ULONG blr_offset = csb->csb_blr_reader.getOffset();
 	const SSHORT blr_operator = csb->csb_blr_reader.getByte();
 
 	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table)) {
@@ -3418,7 +3418,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	}
 
 	size_t pos = 0;
-	if (csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
+	if (blr_offset <= MAX_USHORT && csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
 	{
 		Firebird::MapBlrToSrcItem& i = csb->csb_dbg_info.blrToSrc[pos];
 		jrd_nod* node_src = PAR_make_node(tdbb, e_src_info_length);
