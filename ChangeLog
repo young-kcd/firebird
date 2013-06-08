@@ -1,3 +1,8 @@
+ 2013-06-07 10:41  alexpeshkoff 
+   M src/burp/burp.cpp
+   M src/burp/restore.epp
+Fixed CORE-3942: Restore from gbak backup using service doesn't report an error
+
  2013-06-06 16:05  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M src/include/firebird/ExternalEngine.h
