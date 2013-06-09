@@ -10,7 +10,7 @@ may appear only in the select list or the order by clause of a query.
 Additional to the OVER clause, Firebird window functions may be partitioned and ordered.
 
 Syntax:
-    <window function> ::= <window function name>([<expr> [, <expr> ...]) OVER (
+    <window function> ::= <window function name>([<expr> [, <expr> ...]]) OVER (
       [PARTITION BY <expr> [, <expr> ...]]
       [ORDER BY <expr> [<direction>] [<nulls placement>] [, <expr> [<direction>] [<nulls placement>] ...]
     )
