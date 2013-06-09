@@ -158,8 +158,8 @@ namespace Firebird
 
 
 #define FB_UDR_CONSTRUCTOR	\
-	Impl(::Firebird::IStatus* const status, ExternalContext* const context,	\
-			const IRoutineMetadata* const metadata__)	\
+	Impl(::Firebird::IStatus* const status, ::Firebird::ExternalContext* const context,	\
+			const ::Firebird::IRoutineMetadata* const metadata__)	\
 		: master(context->getMaster()),	\
 		  metadata(metadata__)
 
@@ -168,15 +168,15 @@ namespace Firebird
 
 
 #define FB__UDR_COMMON_IMPL	\
-	Impl(const void* const, ExternalContext* const context,	\
-			const IRoutineMetadata* const aMetadata)	\
+	Impl(const void* const, ::Firebird::ExternalContext* const context,	\
+			const ::Firebird::IRoutineMetadata* const aMetadata)	\
 		: master(context->getMaster()),	\
 		  metadata(aMetadata)	\
 	{	\
 	}	\
 	\
-	IMaster* master;	\
-	const IRoutineMetadata* metadata;
+	::Firebird::IMaster* master;	\
+	const ::Firebird::IRoutineMetadata* metadata;
 
 #define FB__UDR_COMMON_TYPE(name)	\
 	struct name	\
