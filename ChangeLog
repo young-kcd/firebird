@@ -1,3 +1,11 @@
+ 2013-06-09 02:30  asfernandes 
+   M src/include/firebird/UdrCppEngine.h
+Correct UDR headers for when Firebird namespace is not 'used'.
+
+ 2013-06-09 02:07  asfernandes 
+   M doc/sql.extensions/README.window_functions.txt
+Correction.
+
  2013-06-07 10:41  alexpeshkoff 
    M src/burp/burp.cpp
    M src/burp/restore.epp
