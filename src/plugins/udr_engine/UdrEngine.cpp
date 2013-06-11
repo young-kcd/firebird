@@ -111,9 +111,7 @@ public:
 				}
 
 				if (!found)
-				{
 					paths->add(newPath);
-				}
 			}
 		}
 	}
@@ -125,6 +123,7 @@ public:
 			delete this;
 			return 0;
 		}
+
 		return 1;
 	}
 
@@ -184,9 +183,7 @@ public:
 //--------------------------------------
 
 
-static ModuleLoader::Module* libraryModule = NULL;
-
-static GlobalPtr<PathName> libraryName;
+static AutoPtr<ModuleLoader::Module> libraryModule;
 
 static GlobalPtr<Mutex> modulesMutex;
 static GlobalPtr<ModulesMap> modules;
@@ -219,7 +216,7 @@ public:
 		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
-	virtual ~SharedFunction()
+	~SharedFunction()
 	{
 		engine->deleteChildren(children);
 	}
@@ -289,7 +286,7 @@ public:
 		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
-	virtual ~SharedProcedure()
+	~SharedProcedure()
 	{
 		engine->deleteChildren(children);
 	}
@@ -365,7 +362,7 @@ public:
 		node->factory->setup(status, context, metadata, fieldsBuilder);
 	}
 
-	virtual ~SharedTrigger()
+	~SharedTrigger()
 	{
 		engine->deleteChildren(children);
 	}
@@ -452,42 +449,30 @@ extern "C" void fbUdrRegTrigger(const char* name, TriggerFactory* factory)
 
 ModulesMap::~ModulesMap()
 {
-	FunctionNode* func = registeredFunctions;
-
-	while (func)
+	while (registeredFunctions)
 	{
-		FunctionNode* del = func;
-		func = func->next;
+		FunctionNode* del = registeredFunctions;
+		registeredFunctions = registeredFunctions->next;
 		delete del;
 	}
 
-	ProcedureNode* proc = registeredProcedures;
-
-	while (proc)
+	while (registeredProcedures)
 	{
-		ProcedureNode* del = proc;
-		proc = proc->next;
+		ProcedureNode* del = registeredProcedures;
+		registeredProcedures = registeredProcedures->next;
 		delete del;
 	}
 
-	TriggerNode* trig = registeredTriggers;
-
-	while (trig)
+	while (registeredTriggers)
 	{
-		TriggerNode* del = trig;
-		trig = trig->next;
+		TriggerNode* del = registeredTriggers;
+		registeredTriggers = registeredTriggers->next;
 		delete del;
 	}
-
-	registeredFunctions = NULL;
-	registeredProcedures = NULL;
-	registeredTriggers = NULL;
 
 	Accessor accessor(this);
 	for (bool cont = accessor.getFirst(); cont; cont = accessor.getNext())
 		delete accessor.current()->second;
-
-	delete libraryModule;
 }
 
 
@@ -739,7 +724,7 @@ class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {
 } factory;
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	CachedMasterInterface::set(master);
 
@@ -747,10 +732,10 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 	pi->registerPluginFactory(PluginType::ExternalEngine, "UDR", &factory);
 	myModule->registerMe();
 
-	libraryName->assign("fbclient");
+	PathName libraryName("fbclient");
 	ModuleLoader::doctorModuleExtension(libraryName);
 
-	libraryModule = ModuleLoader::loadModule(libraryName);
+	libraryModule.reset(ModuleLoader::loadModule(libraryName));
 }
 
 
