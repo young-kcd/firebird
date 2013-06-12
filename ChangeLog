@@ -1,3 +1,11 @@
+ 2013-06-11 15:57  asfernandes 
+   M src/plugins/udr_engine/UdrEngine.cpp
+Misc
+
+ 2013-06-11 12:29  alexpeshkoff 
+   A doc/README.providers.html
+More docs
+
  2013-06-09 02:30  asfernandes 
    M src/include/firebird/UdrCppEngine.h
 Correct UDR headers for when Firebird namespace is not 'used'.
