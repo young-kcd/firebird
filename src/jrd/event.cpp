@@ -56,6 +56,10 @@
 #include <signal.h>
 #endif
 
+#ifdef WIN_NT
+#include <process.h>
+#endif
+
 #define SRQ_BASE                  ((UCHAR*) m_sharedMemory->getHeader())
 
 using namespace Firebird;
