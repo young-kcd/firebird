@@ -201,7 +201,8 @@ inline void allocBuffer(sort_context* scb)
 			catch (const BadAlloc&)
 			{
 				// not enough memory, retry with a smaller buffer
-				pool = &scb->scb_owner->getPool();
+				if (scb->scb_owner)
+					pool = &scb->scb_owner->getPool();
 			}
 		}
 
@@ -215,13 +216,12 @@ inline void releaseBuffer(sort_context* scb)
 	// Here we cache blocks to be reused later, but only the biggest ones.
 
 	const size_t MAX_CACHED_SORT_BUFFERS = 8; // 1MB
+	Database* const dbb = scb->scb_dbb;
 
-	if (scb->scb_size_memory == MAX_SORT_BUFFER_SIZE)
+	if (scb->scb_size_memory == MAX_SORT_BUFFER_SIZE && 
+		dbb->dbb_sort_buffers.getCount() < MAX_CACHED_SORT_BUFFERS)
 	{
-		Database* const dbb = scb->scb_dbb;
-
-		if (dbb->dbb_sort_buffers.getCount() < MAX_CACHED_SORT_BUFFERS)
-			dbb->dbb_sort_buffers.push(scb->scb_memory);
+		dbb->dbb_sort_buffers.push(scb->scb_memory);
 	}
 	else
 		delete scb->scb_memory;
@@ -593,7 +593,11 @@ void SORT_fini(sort_context* scb)
 	{
 		// Unlink the sort
 
-		scb->scb_owner->unlinkSort(scb);
+		if (scb->scb_owner)
+		{
+			scb->scb_owner->unlinkSort(scb);
+			scb->scb_owner = NULL;
+		}
 
 		// Loop through the sfb list and close work files
 
