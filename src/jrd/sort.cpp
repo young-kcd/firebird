@@ -201,8 +201,8 @@ inline void allocBuffer(sort_context* scb)
 			catch (const BadAlloc&)
 			{
 				// not enough memory, retry with a smaller buffer
-				if (scb->scb_owner)
-					pool = &scb->scb_owner->getPool();
+				fb_assert(scb->scb_owner != NULL);
+				pool = &scb->scb_owner->getPool();
 			}
 		}
 
@@ -593,11 +593,8 @@ void SORT_fini(sort_context* scb)
 	{
 		// Unlink the sort
 
-		if (scb->scb_owner)
-		{
-			scb->scb_owner->unlinkSort(scb);
-			scb->scb_owner = NULL;
-		}
+		fb_assert(scb->scb_owner != NULL);
+		scb->scb_owner->unlinkSort(scb);
 
 		// Loop through the sfb list and close work files
 
@@ -869,6 +866,11 @@ sort_context* SORT_init(Database* dbb,
 		}
 		scb->scb_unique_length = ROUNDUP(p->skd_offset + p->skd_length, sizeof(SLONG)) >> SHIFTLONG;
 
+		// Link in new sort block
+
+		scb->scb_owner = owner;
+		owner->linkSort(scb);
+
 		// Next, try to allocate a "big block". How big? Big enough!
 
 		allocBuffer(scb);
@@ -883,20 +885,15 @@ sort_context* SORT_init(Database* dbb,
 		// Set up to receive the first record
 
 		init(scb);
-
-		// Link in new sort block
-
-		scb->scb_owner = owner;
-		owner->linkSort(scb);
 	}
 	catch (const BadAlloc&)
 	{
-		delete scb;
+		SORT_fini(scb);
 		Firebird::Arg::Gds(isc_sort_mem_err).raise();
 	}
 	catch (const status_exception& ex)
 	{
-		delete scb;
+		SORT_fini(scb);
 		Firebird::Arg::Gds status(isc_sort_err);
 		status.append(Firebird::Arg::StatusVector(ex.value()));
 		status.raise();
