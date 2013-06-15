@@ -3846,8 +3846,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 		}
 
 	case nod_abort:
-		pass1(tdbb, csb, node->nod_arg[e_xcp_msg], view, view_stream,
-			  validate_expr);
+		node->nod_arg[e_xcp_msg] =
+			pass1(tdbb, csb, node->nod_arg[e_xcp_msg], view, view_stream, validate_expr);
 		break;
 
 	case nod_not:
