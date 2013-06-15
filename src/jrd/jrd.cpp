@@ -5826,6 +5826,13 @@ static JAttachment* init(thread_db* tdbb,
 
 		if (config->getSharedCache())
 		{
+			if (config->getSharedDatabase())
+			{
+				const char* const errorMsg =
+					"SharedDatabase and SharedCache settings cannot be both enabled at once";
+				ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << Arg::Str(errorMsg));
+			}
+
 			dbb = databases;
 			while (dbb)
 			{
