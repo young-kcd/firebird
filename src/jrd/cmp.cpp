@@ -4213,8 +4213,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		}
 
 	case nod_abort:
-		CMP_pass1(tdbb, csb, node->nod_arg[e_xcp_msg]);
-		break;
+		node->nod_arg[e_xcp_msg] = CMP_pass1(tdbb, csb, node->nod_arg[e_xcp_msg]);
+		return node;
 
 	case nod_not:
 		sub = node->nod_arg[0];
