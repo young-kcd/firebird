@@ -3641,7 +3641,7 @@ static LatchState latch_buffer(thread_db* tdbb, Sync &bcbSync, BufferDesc *bdb,
 	if (waitPending)
 	{
 		//--bdb->bdb_use_count;
-		if (wait <= 0) {
+		if (wait == 0) {
 			return lsTimeout;  // go out
 		}
 
@@ -3649,11 +3649,7 @@ static LatchState latch_buffer(thread_db* tdbb, Sync &bcbSync, BufferDesc *bdb,
 	}
 	else
 	{
-		bool latchOk = true;
-		if (wait <= 0)
-			latchOk = bdb->addRefConditional(tdbb, syncType);
-		else
-			bdb->addRef(tdbb, syncType);
+		const bool latchOk = bdb->addRef(tdbb, syncType, wait);
 
 		//--bdb->bdb_use_count;
 
@@ -5211,9 +5207,12 @@ void BufferControl::destroy(BufferControl* bcb)
 }
 
 
-void BufferDesc::addRef(thread_db* tdbb, SyncType syncType)
+bool BufferDesc::addRef(thread_db* tdbb, SyncType syncType, int wait)
 {
-	bdb_syncPage.lock(NULL, syncType, FB_FUNCTION);
+	if (wait == 1)
+		bdb_syncPage.lock(NULL, syncType, FB_FUNCTION);
+	else if (!bdb_syncPage.lock(NULL, syncType, FB_FUNCTION, -wait * 1000))
+		return false;
 
 	++bdb_use_count;
 
@@ -5224,6 +5223,7 @@ void BufferDesc::addRef(thread_db* tdbb, SyncType syncType)
 	}
 
 	tdbb->registerBdb(this);
+	return true;
 }
 
 

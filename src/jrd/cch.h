@@ -198,7 +198,7 @@ public:
 		bdb_prec_walk_mark = 0;
 	}
 
-	void addRef(thread_db* tdbb, Firebird::SyncType syncType);
+	bool addRef(thread_db* tdbb, Firebird::SyncType syncType, int wait = 1);
 	bool addRefConditional(thread_db* tdbb, Firebird::SyncType syncType);
 	void downgrade(Firebird::SyncType syncType);
 	void release(thread_db* tdbb, bool repost);
