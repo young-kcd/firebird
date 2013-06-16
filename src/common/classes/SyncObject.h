@@ -38,7 +38,6 @@
 
 namespace Firebird {
 
-inline void SYNC_LOG_DEBUG(...) {}
 
 enum SyncType {
 	SYNC_NONE,
@@ -65,11 +64,28 @@ public:
 	{
 	}
 
-	void lock(Sync* sync, SyncType type, const char* from);
+	void lock(Sync* sync, SyncType type, const char* from)
+	{
+		const bool ret = lock(sync, type, from, -1);
+		fb_assert(ret);
+	}
+
+	// timeOut is in milliseconds, -1 - wait infinite
+	bool lock(Sync* sync, SyncType type, const char* from, int timeOut);
 	bool lockConditional(SyncType type, const char* from);
 
 	void unlock(Sync* sync, SyncType type);
-	void unlock();
+	void unlock()
+	{
+		if (lockState > 0)
+			unlock(NULL, SYNC_SHARED);
+		else if (lockState == -1)
+			unlock(NULL, SYNC_EXCLUSIVE);
+		else
+		{
+			fb_assert(false);
+		}
+	}
 
 	void downgrade(SyncType type);
 
@@ -97,14 +113,14 @@ public:
 	bool ourExclusiveLock() const;
 
 protected:
-	void wait(SyncType type, ThreadSync* thread, Sync* sync);
+	bool wait(SyncType type, ThreadSync* thread, Sync* sync, int timeOut);
+	ThreadSync* dequeThread(ThreadSync* thread);
 	ThreadSync* grantThread(ThreadSync* thread);
 	void grantLocks();
 	void validate(SyncType lockType) const;
 
 	AtomicCounter lockState;
 	AtomicCounter waiters;
-	//int waiters;
 	int monitorCount;
 	Mutex mutex;
 	ThreadSync* volatile exclusiveThread;
@@ -121,7 +137,6 @@ public:
 		: state(SYNC_NONE),
 		  request(SYNC_NONE),
 		  syncObject(obj),
-		  prior(NULL),
 		  where(fromWhere)
 	{
 		fb_assert(obj);
@@ -183,7 +198,6 @@ protected:
 	SyncType state;
 	SyncType request;
 	SyncObject* syncObject;
-	Sync* prior;	// not used
 	const char* where;
 };
 
@@ -199,7 +213,6 @@ public:
 
 	~SyncLockGuard()
 	{
-		//fb_assert(state != SYNC_NONE);
 		if (state != SYNC_NONE)
 			unlock();
 	}
