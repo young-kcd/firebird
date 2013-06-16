@@ -317,7 +317,8 @@ void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 	bid* blobId, const string& text, USHORT fromCharSet)
 {
 	UCharBuffer bpb;
-	BLB_gen_bpb(isc_blob_text, isc_blob_text, fromCharSet, CS_METADATA, bpb);
+	if (fromCharSet != CS_METADATA)
+		BLB_gen_bpb(isc_blob_text, isc_blob_text, fromCharSet, CS_METADATA, bpb);
 
 	blb* blob = blb::create2(tdbb, transaction, blobId, bpb.getCount(), bpb.begin());
 	try

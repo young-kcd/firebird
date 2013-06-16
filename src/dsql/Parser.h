@@ -313,7 +313,6 @@ private:
 
 private:
 	DsqlCompilerScratch* scratch;
-	Firebird::string compilingText;
 	USHORT client_dialect;
 	USHORT db_dialect;
 	USHORT parser_version;

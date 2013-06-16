@@ -80,7 +80,6 @@ Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDi
 			SSHORT characterSet)
 	: PermanentStorage(pool),
 	  scratch(aScratch),
-	  compilingText(pool, string, length),
 	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
 	  parser_version(aParserVersion),

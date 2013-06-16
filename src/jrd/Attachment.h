@@ -328,14 +328,8 @@ public:
 		const char* charSet = NULL);
 	Firebird::string stringToUserCharSet(thread_db* tdbb, const Firebird::string& str);
 
-	void storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
-		const Firebird::string& text)
-	{
-		storeMetaDataBlob(tdbb, transaction, blobId, text, att_charset);
-	}
-
 	void storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
-		bid* blobId, const Firebird::string& text, USHORT fromCharSet);
+		bid* blobId, const Firebird::string& text, USHORT fromCharSet = CS_METADATA);
 	void storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
 		const Firebird::ByteChunk& chunk);
 
