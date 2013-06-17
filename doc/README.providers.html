@@ -18,10 +18,10 @@
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in"><BR>
 </P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in"><FONT SIZE=4>Providers
-architecture is definitely one of key features of firebird 3. But to
+architecture is definitely one of key features of Firebird 3. But to
 be precise this is far not new feature - providers existed in
-firebird's predecessors long ago, and in 'deeply hidden' form are
-present in any firebird version. Initially providers were introduced
+Firebird's predecessors long ago, and in 'deeply hidden' form are
+present in any Firebird version. Initially providers were introduced
 to deal with a task which is currently well known to be performed by
 ODBC, ADO, BDE, etc. They were needed to make it possible to access
 different database engines using single external interface. But later
@@ -29,7 +29,7 @@ providers architecture (known that time as OSRI - Open Systems
 Relational Interface) also showed itself as very efficient for
 supporting mix of old and new database formats (different major ODS)
 at single server and having mixed connections to local and remote
-databases. Implemented in firebird 3 providers make it possible to
+databases. Implemented in Firebird 3 providers make it possible to
 support all this modes (remote connections, different ODS databases,
 foreign engines) and also providers chaining (when some provider is
 using callback to standard API when performig an operation on
@@ -91,9 +91,9 @@ from 8 to 11) format databases. Removing old ODS support from engine
 helps to make it's code simpler and a bit faster. Taking into an
 account that this faster sometimes takes place in performance
 critical places (like search of a key in an index block) avoiding old
-code and related branches makes firebird work really faster.
+code and related branches makes Firebird work really faster.
 Providers architecture at the same time makes it possible to access
-old databases when changing firebird version.</FONT></P>
+old databases when changing Firebird version.</FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in"><FONT SIZE=4>The
 strong feature of providers architecture is ability for user to add
 his own providers to server and/or client. You may be surprised &ndash;
@@ -132,7 +132,7 @@ BTW, same technique may be used at client too.</FONT></P>
 access foreign DB engines using providers. This looks strange at the
 first glance when a lot of other tools performing this task already
 exist. But let's take into an account ability to access other
-firebird databases using EXECUTE STATEMENT. With provider to ODBC or
+Firebird databases using EXECUTE STATEMENT. With provider to ODBC or
 other common tool to access various data sources it's getting
 possible to directly access from procedures and triggers (using
 mentioned EXECUTE STATEMENT) data from almost any database, at least
@@ -142,10 +142,10 @@ engine if one wants to avoid ODBC layer for some reason. </FONT>
 </P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
 <FONT SIZE=4>Description of how to access databases using providers
-API is present in the interfaces part of firebird examples and
+API is present in the interfaces part of Firebird examples and
 therefore there is no need repeating it here. Moreover, except
 IStatement (interface used for execution of SQL operators) and
-IEvents (works with firebird events) all functions in interfaces are
+IEvents (works with Firebird events) all functions in interfaces are
 similar to old API.</FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in"><BR>
 </P>
@@ -154,10 +154,10 @@ similar to old API.</FONT></P>
 <FONT SIZE=4>Q. Interfaces and providers are probably very good, but
 I have old task written using plain functions API and for a lot of
 reasons I can't rewrite it in the nearest future. Does it mean I have
-problem migrating to firebird 3?</FONT></P>
+problem migrating to Firebird 3?</FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
 <FONT SIZE=4>A. Definitely no problems. Old API is supported for
-backward compatibility in firebird 3 and will be supported in future
+backward compatibility in Firebird 3 and will be supported in future
 versions as long as people need it.</FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
 <FONT SIZE=4>Q. And what about performance when using old API?</FONT></P>

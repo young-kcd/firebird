@@ -20,7 +20,7 @@ oriented API.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Why did we decide to add a
-new API in firebird 3? There was not single reason for it. May be the
+new API in Firebird 3? There was not single reason for it. May be the
 first one is limited to 16 bit size of very many integers (for
 example - message size, SQL operator length, portion of BLOB data) in
 existing API. This probably was enough when that API was introduced &ndash;
@@ -38,7 +38,7 @@ that moment with at the same time great need in 64 bit counters.</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>The second reason is not
 so clear from the first look but it's also important. It comes from
-old times when firebird's predecessor did not support SQL &ndash;
+old times when Firebird's predecessor did not support SQL &ndash;
 another language was used to manage databases (you may get an idea
 what it was reading QLI's help). Data was delivered between client
 and server using messages with format defined at request compilation
@@ -58,7 +58,7 @@ of data and there format making it formally possible to change
 between fetch calls not only location but format too causing need in
 BLR in each message-based fetch call. And to finish with this &ndash;
 changing data format between fetches was broken at network layer in
-pre-firebird times. </FONT>
+pre-Firebird times. </FONT>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -80,18 +80,18 @@ how interfaces help to use messages API easily and comfortably.</FONT></P>
 software it's always desired to avoid loose of performance. And it
 was performance issues that caused the choice of interfaces not
 compatible with COM.  To describe them I need to say a few words
-about providers architecture of firebird. The central part of it is
+about providers architecture of Firebird. The central part of it is
 YValve, which is aimed on dispatching API call to correct provider,
 including old providers that potentially have older interfaces than
 current one. That means that to make sure that provider really has
 some new API method we must (when using COM) call IUnknown method for
 each fetch call. Taken together with the fact that new API calls are
 sometimes added to optimize performance COM-based solution looks bad
-for future firebird versions.</FONT></P>
+for future Firebird versions.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Unlike COM, firebird
-interfaces support multiple versions. Version of firebird interface
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Unlike COM, Firebird
+interfaces support multiple versions. Version of Firebird interface
 is defined in a rather native manner &ndash; it's a total number of
 virtual functions in interface. And version of interface may be
 upgraded! That does not mean that one gets full new functionality:
@@ -114,7 +114,7 @@ use non-COM interfaces it's good to notice that use of reference
 counted interfaces in all cases is often an extra overhead. Some
 interfaces have by definition unlimited lifetime (like IMaster &ndash;
 main interfaces calling which functions one gets access to all the
-rest of firebird API), others &ndash; API strictly defined by
+rest of Firebird API), others &ndash; API strictly defined by
 lifetime of parent interface, and for not multi-threaded things like
 IStatus it's better to have simpler way to destroy it, i.e. dispose()
 function.</FONT></P>
@@ -147,7 +147,7 @@ interface, but this is not a requirement). </SPAN></FONT>
 </P>
 <P LANG="en" STYLE="margin-bottom: 0in"><FONT SIZE=4>To finish with
 general interfaces hierarchy is IProvider, a kind of 'main' plugin in
-firebird API.  IProvider is derived from IPlugin and implemented by
+Firebird API.  IProvider is derived from IPlugin and implemented by
 any provider (i.e. if you want to write your own provider you must
 implement IProvider) and also implemented by YValve. It's
 implementation from YValve which is returned to the user when
@@ -179,7 +179,7 @@ difference with COM approach is that upgrade performed for interface
 only once, after it's creation, but IUnknown methods must be called
 each time we are going to call an interface with unknown version (or
 that version should be stored separately and later checked). For once
-upgraded firebird interface there is absolutely no waste of time when
+upgraded Firebird interface there is absolutely no waste of time when
 performing calls to it during all it's lifetime.</FONT></P>
 <P LANG="en" STYLE="margin-bottom: 0in"><BR>
 </P>
