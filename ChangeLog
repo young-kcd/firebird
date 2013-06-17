@@ -1,3 +1,36 @@
+ 2013-06-16 23:05  asfernandes 
+   M src/dsql/Parser.cpp
+   M src/dsql/Parser.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+Fixed CORE-4119 - Metadata source becomes wrong after twice transliteration to the metadata charset.
+
+ 2013-06-16 21:41  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+Implement wait with timeout for page buffer's latches.
+Note, engine passes timeout as negative seconds, while sync objects works with positive milliseconds.
+
+ 2013-06-16 21:28  hvlad 
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/SyncObject.h
+A cleanup and a few improvements :
+- ability to wait with finite timeout
+- separate counts of waiting readers and writers
+- two interlocked operations are needed when lock granted to a waiting readers (despite of its amount)
+
+ 2013-06-16 21:21  hvlad 
+   M src/common/classes/Synchronize.cpp
+misc
+
+ 2013-06-15 14:12  dimitr 
+   M src/jrd/jrd.cpp
+Protection against the not supported mode. I used a non-translatable error because it might be a temporary measure, time will show.
+
+ 2013-06-15 06:08  dimitr 
+   M src/jrd/event.cpp
+Fixed Windows build.
+
  2013-06-11 15:57  asfernandes 
    M src/plugins/udr_engine/UdrEngine.cpp
 Misc
