@@ -75,6 +75,7 @@ public:
 	bool lockConditional(SyncType type, const char* from);
 
 	void unlock(Sync* sync, SyncType type);
+
 	void unlock()
 	{
 		if (lockState > 0)

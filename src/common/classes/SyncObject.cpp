@@ -38,8 +38,8 @@
 
 namespace Firebird {
 
-const int WRITER_INCR	= 0x00010000L;
-const int READERS_MASK	= 0x0000FFFFL;
+static const int WRITER_INCR	= 0x00010000L;
+static const int READERS_MASK	= 0x0000FFFFL;
 
 bool SyncObject::lock(Sync* sync, SyncType type, const char* from, int timeOut)
 {
@@ -308,7 +308,7 @@ bool SyncObject::wait(SyncType type, ThreadSync* thread, Sync* sync, int timeOut
 		//if (!wakeup)
 		//	stalled(thread);
 
-		if (timeOut != -1) 
+		if (timeOut != -1)
 			timeOut -= wait;
 	}
 
