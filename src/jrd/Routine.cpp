@@ -75,7 +75,7 @@ Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params, bool a
 		desc->dsc_length = descLength;
 		desc->dsc_scale = params->getScale(&status, i);
 		desc->dsc_sub_type = params->getSubType(&status, i);
-		desc->setTextType(params->getCharset(&status, i));
+		desc->setTextType(params->getCharSet(&status, i));
 		desc->dsc_address = (UCHAR*)(IPTR) descOffset;
 		desc->dsc_flags = (params->isNullable(&status, i) ? DSC_nullable : 0);
 

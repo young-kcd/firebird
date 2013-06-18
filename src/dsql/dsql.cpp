@@ -1266,7 +1266,7 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 		check(&st);
 		desc.dsc_sub_type = meta->getSubType(&st, index);
 		check(&st);
-		unsigned textType = meta->getCharset(&st, index);
+		unsigned textType = meta->getCharSet(&st, index);
 		check(&st);
 		desc.setTextType(textType);
 		desc.dsc_address = (UCHAR*)(IPTR) dataOffset;

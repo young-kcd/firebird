@@ -896,7 +896,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 
 		LocalStatus status;
 		trigger->execute(&status, attInfo->context, action,
-			(oldRpb ? oldMsg.begin() : NULL), (newRpb ? newMsg.begin() : NULL));
+			(oldMsg.hasData() ? oldMsg.begin() : NULL), (newMsg.hasData() ? newMsg.begin() : NULL));
 		status.check();
 	}
 
@@ -941,7 +941,7 @@ void ExtEngineManager::Trigger::setValues(thread_db* tdbb, Array<UCHAR>& msgBuff
 		return;
 
 	UCHAR* p = msgBuffer.getBuffer(format->fmt_length);
-	///memset(p, 0, format->fmt_length);
+	memset(p, 0, format->fmt_length);
 
 	for (unsigned i = 0; i < format->fmt_count / 2; ++i)
 	{

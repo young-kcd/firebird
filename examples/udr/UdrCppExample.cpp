@@ -690,7 +690,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	FB_TRIGGER_MESSAGE(FieldsMessage,
 		(FB_INTEGER, id, "ID")
 		(FB_BLOB, info, "INFO")
-		(FB_VARCHAR(60 * 4), address, "ADDRESS")
+		///(FB_VARCHAR(60 * 4), address, "ADDRESS")
 		(FB_VARCHAR(60 * 4), name, "NAME")
 	);
 
@@ -753,13 +753,13 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 			"execute block (\n"
 			"    id type of column PERSONS.ID = ?,\n"
 			"    info type of column PERSONS.INFO = ?,\n"
-			"    address type of column PERSONS.ADDRESS = ?,\n"
+			///"    address type of column PERSONS.ADDRESS = ?,\n"
 			"    name type of column PERSONS.NAME = ?\n"
 			")"
 			"as\n"
 			"begin\n"
-			"    execute statement ('insert into persons (id, name, address, info)\n"
-			"        values (?, ?, ?, ?)') (:id, :name, :address, :info)\n"
+			"    execute statement ('insert into persons (id, name/***, address***/, info)\n"
+			"        values (?, ?/***, ?***/, ?)') (:id, :name/***, :address***/, :info)\n"
 			"        on external data source '");
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");

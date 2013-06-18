@@ -105,14 +105,14 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 		checkStatus(&st);
 		unsigned scale = metadata->getScale(&st, i);
 		checkStatus(&st);
-		unsigned charset = metadata->getCharset(&st, i);
+		unsigned charSet = metadata->getCharSet(&st, i);
 		checkStatus(&st);
 
 		switch (dtype)
 		{
 			case SQL_VARYING:
 				appendUChar(blr_varying2);
-				appendUShort(charset);
+				appendUShort(charSet);
 				appendUShort(len);
 				dtype = dtype_varying;
 				len += sizeof(USHORT);
@@ -120,7 +120,7 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 
 			case SQL_TEXT:
 				appendUChar(blr_text2);
-				appendUShort(charset);
+				appendUShort(charSet);
 				appendUShort(len);
 				dtype = dtype_text;
 				break;
@@ -158,7 +158,7 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 			case SQL_BLOB:
 				appendUChar(blr_blob2);
 				appendUShort(metadata->getSubType(&st, i));
-				appendUShort(charset);
+				appendUShort(charSet);
 				dtype = dtype_blob;
 				break;
 

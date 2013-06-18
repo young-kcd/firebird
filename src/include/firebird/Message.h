@@ -58,9 +58,8 @@
 		static void setup(::Firebird::IStatus* status, ::Firebird::IMetadataBuilder* builder)	\
 		{	\
 			unsigned index = 0;	\
-			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_META, size, fields)	\
-			\
 			moveNames	\
+			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_META, size, fields)	\
 		}	\
 		\
 		name(::Firebird::IMaster* master)	\
@@ -163,6 +162,16 @@
 	builder->setType(status, index, SQL_VARYING);	\
 	builder->setLength(status, index, len);
 
+#define FB__META_FB_INTL_CHAR(len, charSet)	\
+	builder->setType(status, index, SQL_TEXT);	\
+	builder->setLength(status, index, len);	\
+	builder->setCharSet(status, index, charSet);
+
+#define FB__META_FB_INTL_VARCHAR(len, charSet)	\
+	builder->setType(status, index, SQL_VARYING);	\
+	builder->setLength(status, index, len);	\
+	builder->setCharSet(status, index, charSet);
+
 #define FB__META_FB_SMALLINT			FB__META_FB_SCALED_SMALLINT(0)
 #define FB__META_FB_INTEGER				FB__META_FB_SCALED_INTEGER(0)
 #define FB__META_FB_BIGINT				FB__META_FB_SCALED_BIGINT(0)
@@ -194,8 +203,9 @@
 #define FB_TRIGGER_MESSAGE_MOVE_NAMES_Y0
 
 #define FB_TRIGGER_MESSAGE_MOVE_NAMES_I(name, size, fields)	\
-	index = 0;	\
-	FB_BOOST_PP_SEQ_FOR_EACH_I(FB_TRIGGER_MESSAGE_MOVE_NAME, size, fields)
+	FB_BOOST_PP_SEQ_FOR_EACH_I(FB_TRIGGER_MESSAGE_MOVE_NAME, size, fields)	\
+	builder->truncate(status, index);	\
+	index = 0;
 
 #define FB_TRIGGER_MESSAGE_MOVE_NAME(r, _, i, xy)	\
 	builder->moveNameToIndex(status, FB_BOOST_PP_TUPLE_ELEM(_, 2, xy), index++);

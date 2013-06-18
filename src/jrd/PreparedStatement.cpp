@@ -54,13 +54,13 @@ namespace
 		{
 			case dtype_text:
 				item.type = SQL_TEXT;
-				item.charset = desc->dsc_ttype();
+				item.charSet = desc->dsc_ttype();
 				item.length = desc->dsc_length;
 				break;
 
 			case dtype_varying:
 				item.type = SQL_VARYING;
-				item.charset = desc->dsc_ttype();
+				item.charSet = desc->dsc_ttype();
 				fb_assert(desc->dsc_length >= sizeof(USHORT));
 				item.length = desc->dsc_length - sizeof(USHORT);
 				break;
@@ -123,7 +123,7 @@ namespace
 				item.type = SQL_BLOB;
 				item.length = sizeof(ISC_QUAD);
 				item.subType = desc->dsc_sub_type;
-				item.charset = desc->getTextType();
+				item.charSet = desc->getTextType();
 				break;
 
 			case dtype_boolean:

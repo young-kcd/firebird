@@ -103,7 +103,7 @@ public:
 	virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getScale(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getCharset(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index) const = 0;
 
@@ -118,13 +118,15 @@ public:
 	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type) = 0;
 	virtual void FB_CARG setSubType(IStatus* status, unsigned index, unsigned subType) = 0;
 	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length) = 0;
+	virtual void FB_CARG setCharSet(IStatus* status, unsigned index, unsigned charSet) = 0;
 	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale) = 0;
 
+	virtual void FB_CARG truncate(IStatus* status, unsigned count) = 0;
 	virtual void FB_CARG moveNameToIndex(IStatus* status, const char* name, unsigned index) = 0;
 
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 };
-#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 6)
+#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 8)
 
 class IResultSet : public IRefCounted
 {

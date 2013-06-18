@@ -49,7 +49,7 @@ public:
 			  subType(0),
 			  length(0),
 			  scale(0),
-			  charset(0),
+			  charSet(0),
 			  offset(0),
 			  nullInd(0),
 			  nullable(false),
@@ -66,7 +66,7 @@ public:
 			  subType(v.subType),
 			  length(v.length),
 			  scale(v.scale),
-			  charset(v.charset),
+			  charSet(v.charSet),
 			  offset(v.offset),
 			  nullInd(v.nullInd),
 			  nullable(v.nullable),
@@ -82,7 +82,7 @@ public:
 		unsigned subType;
 		unsigned length;
 		unsigned scale;
-		unsigned charset;
+		unsigned charSet;
 		unsigned offset;
 		unsigned nullInd;
 		bool nullable;
@@ -193,12 +193,12 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getCharset(IStatus* status, unsigned index) const
+	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index) const
 	{
 		if (index < items.getCount())
-			return items[index].charset;
+			return items[index].charSet;
 
-		raiseIndexError(status, index, "getCharset");
+		raiseIndexError(status, index, "getCharSet");
 		return 0;
 	}
 

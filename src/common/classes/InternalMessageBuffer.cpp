@@ -89,25 +89,25 @@ MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr,
 		{
 		case blr_text:
 			item->type = SQL_TEXT;
-			item->charset = CS_dynamic;
+			item->charSet = CS_dynamic;
 			item->length = rdr.getWord();
 			break;
 
 		case blr_varying:
 			item->type = SQL_VARYING;
-			item->charset = CS_dynamic;
+			item->charSet = CS_dynamic;
 			item->length = rdr.getWord();
 			break;
 
 		case blr_text2:
 			item->type = SQL_TEXT;
-			item->charset = rdr.getWord();
+			item->charSet = rdr.getWord();
 			item->length = rdr.getWord();
 			break;
 
 		case blr_varying2:
 			item->type = SQL_VARYING;
-			item->charset = rdr.getWord();
+			item->charSet = rdr.getWord();
 			item->length = rdr.getWord();
 			break;
 
@@ -165,7 +165,7 @@ MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr,
 			item->type = SQL_BLOB;
 			item->length = sizeof(ISC_QUAD);
 			item->subType = rdr.getWord();
-			item->charset = rdr.getWord();
+			item->charSet = rdr.getWord();
 			break;
 
 		case blr_bool:

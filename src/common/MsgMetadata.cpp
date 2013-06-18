@@ -114,6 +114,21 @@ public:
 		}
 	}
 
+	virtual void FB_CARG setCharSet(IStatus* status, unsigned index, unsigned charSet)
+	{
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
+
+			indexError(index, "setCharSet");
+			msgMetadata->items[index].charSet = charSet;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
 	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale)
 	{
 		try
@@ -122,6 +137,23 @@ public:
 
 			indexError(index, "setScale");
 			msgMetadata->items[index].scale = scale;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	virtual void FB_CARG truncate(IStatus* status, unsigned count)
+	{
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
+
+			if (count != 0)
+				indexError(count - 1, "truncate");
+
+			msgMetadata->items.shrink(count);
 		}
 		catch (const Exception& ex)
 		{
