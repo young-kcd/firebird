@@ -289,6 +289,8 @@ enum UdfError
 };
 
 
+static void handleUdfException(const Exception& ex);
+static void reRaiseExceptionFromUdf(thread_db* tdbb);
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
@@ -769,6 +771,50 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 }
 
 
+static void handleUdfException(const Exception& ex)
+{
+/****************************************
+ *
+ *	h a n d l e U d f E x c e p t i o n
+ *
+ ****************************************
+ *
+ * Functional description
+ *	When exception happens in UDF we have
+ *	no better choice then store it in
+ *	tdbb_status_vector and raise again
+ *	on return from UDF.
+ *
+ ****************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+	fb_utils::init_status(tdbb->tdbb_status_vector);
+	ex.stuff_exception(tdbb->tdbb_status_vector);
+}
+
+
+static void reRaiseExceptionFromUdf(thread_db* tdbb)
+{
+/*************************************************
+ *
+ *	r e R a i s e E x c e p t i o n F r o m U d f
+ *
+ *************************************************
+ *
+ * Functional description
+ *	When exception happens in UDF we have
+ *	no better choice then store it in
+ *	tdbb_status_vector and raise again
+ *	on return from UDF.
+ *
+ *************************************************/
+	ISC_STATUS* st = tdbb->tdbb_status_vector;
+	if (st[0] == 1 && st[1] != 0)
+	{
+		ERR_punt();
+	}
+}
+
+
 static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
 {
 /**************************************
@@ -781,11 +827,19 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
  *	lseek a blob segement.  Return the offset
  *
  **************************************/
-	// As this is a call-back from a UDF, must reacquire the engine mutex
-	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+	// As this is a call-back from a UDF, must put it under try/catch and reacquire the engine mutex
+	try
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
-	return blob->BLB_lseek(mode, offset);
+		return blob->BLB_lseek(mode, offset);
+	}
+	catch (const Exception& ex)
+	{
+		handleUdfException(ex);
+		return -1;
+	}
 }
 
 
@@ -801,11 +855,18 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
  *	Put segment into a blob.  Return nothing
  *
  **************************************/
-	// As this is a call-back from a UDF, must reacquire the engine mutex
-	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+	// As this is a call-back from a UDF, must put it under try/catch and reacquire the engine mutex
+	try
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
-	blob->BLB_put_segment(tdbb, buffer, length);
+		blob->BLB_put_segment(tdbb, buffer, length);
+	}
+	catch (const Exception& ex)
+	{
+		handleUdfException(ex);
+	}
 }
 
 
@@ -825,19 +886,27 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
  *		-1	-- Current segment is incomplete.
  *
  **************************************/
-	// As this is a call-back from a UDF, must reacquire the engine mutex
-	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+	// As this is a call-back from a UDF, must put it under try/catch and reacquire the engine mutex
+	try
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
-	*return_length = blob->BLB_get_segment(tdbb, buffer, length);
+		*return_length = blob->BLB_get_segment(tdbb, buffer, length);
 
-	if (blob->blb_flags & BLB_eof)
+		if (blob->blb_flags & BLB_eof)
+			return 0;
+
+		if (blob->getFragmentSize())
+			return -1;
+
+		return 1;
+	}
+	catch (const Exception& ex)
+	{
+		handleUdfException(ex);
 		return 0;
-
-	if (blob->getFragmentSize())
-		return -1;
-
-	return 1;
+	}
 }
 
 
@@ -947,6 +1016,9 @@ static void invoke(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* att = tdbb->getAttachment();
+
+	// Get ready to accept exceptions from API called from UDF
+	fb_utils::init_status(tdbb->tdbb_status_vector);
 
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
@@ -1117,6 +1189,8 @@ static void invoke(thread_db* tdbb,
 			result_is_null = true;
 	}
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
+
+	reRaiseExceptionFromUdf(tdbb);
 }
 
 
