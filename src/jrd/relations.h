@@ -312,6 +312,7 @@ RELATION(nam_gens, rel_gens, ODS_8_0, rel_persistent)
 	FIELD(f_gen_desc, nam_description, fld_description, 1, ODS_11_0)
 	FIELD(f_gen_class, nam_class, fld_class, 1, ODS_12_0)
 	FIELD(f_gen_owner, nam_owner, fld_user, 1, ODS_12_0)
+	FIELD(f_gen_init_val, nam_init_val, fld_gen_val, 1, ODS_12_0)
 END_RELATION
 
 // Relation 21 (RDB$FIELD_DIMENSIONS)

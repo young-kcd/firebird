@@ -175,3 +175,4 @@
 	FIELD(fld_remote_ver	, nam_remote_ver	, dtype_varying	, 255						, dsc_text_type_ascii		, NULL		, true)
 	FIELD(fld_host_name		, nam_host_name		, dtype_varying	, 255						, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_os_user		, nam_os_user		, dtype_varying	, 255						, dsc_text_type_metadata	, NULL		, true)
+	FIELD(fld_gen_val		, nam_gen_val		, dtype_int64	, sizeof(SINT64)			, 0							, NULL		, true)

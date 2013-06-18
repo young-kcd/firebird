@@ -494,6 +494,7 @@ enum att_type {
 	att_gen_security_class, // FB3.0, ODS12_0
 	att_gen_owner_name,
 	att_gen_sysflag,
+	att_gen_init_val,
 
 	// Stored procedure attributes
 

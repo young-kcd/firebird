@@ -153,7 +153,7 @@ USHORT	recompute_length(BurpGlobals* tdgbl, burp_rel*);
 bool	restore(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 void	restore_security_class(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 USHORT	get_view_base_relation_count(BurpGlobals* tdgbl, const TEXT*, USHORT, bool* error);
-void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
+void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SINT64 initial_value,
 	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername, fb_sysflag sysFlag);
 void	update_global_field(BurpGlobals* tdgbl);
 void	update_view_dbkey_lengths(BurpGlobals* tdgbl);
@@ -5124,7 +5124,9 @@ bool get_generator(BurpGlobals* tdgbl)
  *	nicely.
  *
  **************************************/
-	SINT64		value = 0;
+	SINT64 value = 0;
+	SINT64 initial_value = 0;
+
 	BASED_ON RDB$GENERATORS.RDB$GENERATOR_NAME name = "";
 	BASED_ON RDB$GENERATORS.RDB$SECURITY_CLASS secclass = "";
 	BASED_ON RDB$GENERATORS.RDB$OWNER_NAME ownername = "";
@@ -5192,6 +5194,13 @@ bool get_generator(BurpGlobals* tdgbl)
 				bad_attribute(scan_next_attr, attribute, 289);
 			break;
 
+		case att_gen_init_val:
+			if (tdgbl->RESTORE_format >= 10)
+				initial_value = (SINT64) get_int64(tdgbl);
+			else
+				bad_attribute(scan_next_attr, attribute, 289);
+			break;
+
 		default:
 			bad_attribute(scan_next_attr, attribute, 289);
 			// msg 289 generator
@@ -5204,7 +5213,7 @@ bool get_generator(BurpGlobals* tdgbl)
 		value = 0;
 	}
 
-	store_blr_gen_id(tdgbl, name, value, descPtr, secPtr, ownerPtr, sysFlag);
+	store_blr_gen_id(tdgbl, name, value, initial_value, descPtr, secPtr, ownerPtr, sysFlag);
 
 	return true;
 }
@@ -7728,7 +7737,7 @@ bool get_relation_data(BurpGlobals* tdgbl)
 
 		case rec_gen_id:
 			gen_id = get_numeric(tdgbl);
-			store_blr_gen_id(tdgbl, name, gen_id, NULL, NULL, NULL, fb_sysflag_user);
+			store_blr_gen_id(tdgbl, name, gen_id, 0, NULL, NULL, NULL, fb_sysflag_user);
 			get_record(&record, tdgbl);
 			break;
 
@@ -10074,7 +10083,7 @@ USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
 }
 
 
-void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
+void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SINT64 initial_value,
 	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername, fb_sysflag sysFlag)
 {
 /**************************************
@@ -10112,6 +10121,8 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
 				strcpy(X.RDB$OWNER_NAME, ownername);
 				X.RDB$OWNER_NAME.NULL = FALSE;
 			}
+			X.RDB$INITIAL_VALUE.NULL = FALSE;
+			X.RDB$INITIAL_VALUE = initial_value;
 		END_STORE;
 		ON_ERROR
 			general_on_error ();

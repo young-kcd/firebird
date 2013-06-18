@@ -1464,7 +1464,7 @@ generator_clause
 %type <valueExprNode> start_with_opt
 start_with_opt
 	: // nothing
-		{ $$ = MAKE_const_slong(0); }
+		{ $$ = NULL; }
 	| START WITH sequence_value
 		{ $$ = $3; }
 	;
@@ -1482,7 +1482,7 @@ replace_sequence_clause
 %type <valueExprNode> replace_sequence_options
 replace_sequence_options
 	: RESTART
-		{ $$ = MAKE_const_slong(0); }
+		{ $$ = NULL; }
 	| START WITH sequence_value
 		{ $$ = $3; }
 	;
@@ -1501,7 +1501,7 @@ alter_sequence_clause
 %type <valueExprNode> restart_value_opt
 restart_value_opt
 	: // nothing
-		{ $$ = MAKE_const_slong(0); }
+		{ $$ = NULL; }
 	| WITH sequence_value
 		{ $$ = $2; }
 	;
