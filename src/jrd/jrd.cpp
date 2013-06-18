@@ -120,7 +120,7 @@
 #include "../jrd/trace/TraceJrdHelpers.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/fb_tls.h"
-#include "../common/classes/ClumpletReader.h"
+#include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/RefMutex.h"
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
@@ -471,6 +471,39 @@ namespace
 	};
 
 	InitMutex<EngineStartup> engineStartup("EngineStartup");
+
+	class OverwriteHolder : public MutexLockGuard
+	{
+	public:
+		OverwriteHolder(Database* to_remove)
+			: MutexLockGuard(databases_mutex, FB_FUNCTION), dbb(to_remove)
+		{
+			for (Database** d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
+			{
+				if (*d_ptr == dbb)
+				{
+					*d_ptr = dbb->dbb_next;
+					dbb->dbb_next = NULL;
+					return;
+				}
+			}
+
+			fb_assert(!dbb);
+			dbb = NULL;
+		}
+
+		~OverwriteHolder()
+		{
+			if (dbb)
+			{
+				dbb->dbb_next = databases;
+				databases = dbb;
+			}
+		}
+
+	private:
+		Database* dbb;
+	};
 
 	inline void validateHandle(thread_db* tdbb, Jrd::Attachment* const attachment)
 	{
@@ -2415,6 +2448,17 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			{
 				if (options.dpb_overwrite)
 				{
+					// isc_dpb_no_db_triggers is required for 2 reasons
+					// - it disables non-DBA attaches with isc_adm_task_denied error
+					// - it disables any user code to be executed when we later lock
+					//   databases_mutex with OverwriteHolder
+					ClumpletWriter dpbWriter(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpb_length);
+					dpbWriter.insertByte(isc_dpb_no_db_triggers, 1);
+					dpb = dpbWriter.getBuffer();
+					dpb_length = dpbWriter.getBufferLength();
+
+					OverwriteHolder overwriteCheckHolder(dbb);
+
 					JAttachment* attachment2 = attachDatabase(user_status, filename, dpb_length, dpb);
 					if (user_status->get()[1] == isc_adm_task_denied)
 					{
