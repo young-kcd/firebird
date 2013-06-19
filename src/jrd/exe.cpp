@@ -1496,9 +1496,6 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 /* Catch errors so we can unwind cleanly */
 
 	try {
-		// Save the old pool
-		Jrd::ContextPoolHolder context(tdbb, proc_request->req_pool);
-
 		jrd_tra* transaction = request->req_transaction;
 		const SLONG save_point_number = transaction->tra_save_point ?
 			transaction->tra_save_point->sav_number : 0;
@@ -1529,11 +1526,9 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		const bool no_priv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
 		trace.finish(false, no_priv ? res_unauthorized : res_failed);
 
-		tdbb->setRequest(request);
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_attachment = NULL;
 		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
-		proc_request->req_timestamp.invalidate();
 		throw;
 	}
 
@@ -1541,7 +1536,8 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	trace.finish(false, res_successful);
 
 	EXE_unwind(tdbb, proc_request);
-	tdbb->setRequest(request);
+	proc_request->req_attachment = NULL;
+	proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 
 	temp = node->nod_arg[e_esp_outputs];
 	if (temp) {
@@ -1552,10 +1548,6 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 			EXE_assignment(tdbb, *ptr);
 		}
 	}
-
-	proc_request->req_attachment = NULL;
-	proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
-	proc_request->req_timestamp.invalidate();
 }
 
 
@@ -1670,14 +1662,15 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	jrd_tra* transaction =
-		(tdbb->getRequest() ? tdbb->getRequest()->req_transaction : tdbb->getTransaction());
+	jrd_req* const request = tdbb->getRequest();
+	jrd_tra* const transaction = request ? request->req_transaction : tdbb->getTransaction();
+
 	trig_vec* vector = *triggers;
 	jrd_req* result = NULL;
 	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
 	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
 
-	Record* null_rec = NULL;
+	AutoPtr<Record> null_rec;
 
 	if (!old_rec && !new_rec)
 	{
@@ -1729,11 +1722,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			else
 				trigger->req_rpb[1].rpb_number.setValid(false);
 
-			if (tdbb->getRequest())
-				trigger->req_timestamp = tdbb->getRequest()->req_timestamp;
-			else
-				trigger->req_timestamp = timestamp;
-
+			trigger->req_timestamp = request ? request->req_timestamp : timestamp;
 			trigger->req_trigger_action = trigger_action;
 
 			TraceTrigExecute trace(tdbb, trigger, which_trig);
@@ -1744,10 +1733,8 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			trace.finish(ok ? res_successful : res_failed);
 
 			EXE_unwind(tdbb, trigger);
-
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
-			trigger->req_timestamp.invalidate();
 
 			if (!ok)
 			{
@@ -1757,7 +1744,6 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			trigger = NULL;
 		}
 
-		delete null_rec;
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
 		}
@@ -1766,13 +1752,21 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		delete null_rec;
+		if (trigger)
+		{
+			EXE_unwind(tdbb, trigger);
+			trigger->req_attachment = NULL;
+			trigger->req_flags &= ~req_in_use;
+		}
+
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
 		}
+
 		if (!trigger) {
-		  throw; // trigger probally fails to compile
+			throw; // trigger probally fails to compile
 		}
+
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return trigger;
 	}
@@ -2801,7 +2795,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 
 		request->adjustCallerStats();
@@ -2815,6 +2808,9 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		// our own savepoints.
 		if (catch_disabled)
 		{
+			tdbb->setTransaction(old_transaction);
+			tdbb->setRequest(old_request);
+
 			if (transaction != dbb->dbb_sys_trans) {
 				for (const Savepoint* save_point = transaction->tra_save_point;
 					((save_point) && (save_point_number <= save_point->sav_number));
@@ -4000,11 +3996,6 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
  **************************************/
 
 	SET_TDBB(tdbb);
-	EXE_unwind(tdbb, trigger);
-
-	trigger->req_attachment = NULL;
-	trigger->req_flags &= ~req_in_use;
-	trigger->req_timestamp.invalidate();
 
 	if (trigger->req_flags & req_leave)
 	{
