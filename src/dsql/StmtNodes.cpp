@@ -2775,8 +2775,6 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 	try
 	{
-		Jrd::ContextPoolHolder context(tdbb, procRequest->req_pool);	// Save the old pool.
-
 		procRequest->req_timestamp = request->req_timestamp;
 
 		EXE_start(tdbb, procRequest, transaction);
@@ -2803,11 +2801,9 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 		const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
 		trace.finish(false, noPriv ? res_unauthorized : res_failed);
 
-		tdbb->setRequest(request);
 		EXE_unwind(tdbb, procRequest);
 		procRequest->req_attachment = NULL;
 		procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
-		procRequest->req_timestamp.invalidate();
 		throw;
 	}
 
@@ -2815,11 +2811,8 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	trace.finish(false, res_successful);
 
 	EXE_unwind(tdbb, procRequest);
-	tdbb->setRequest(request);
-
 	procRequest->req_attachment = NULL;
 	procRequest->req_flags &= ~(req_in_use | req_proc_fetch);
-	procRequest->req_timestamp.invalidate();
 
 	if (outputSources)
 	{

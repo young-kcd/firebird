@@ -1142,10 +1142,8 @@ void EXE_execute_triggers(thread_db* tdbb,
 			trace.finish(ok ? res_successful : res_failed);
 
 			EXE_unwind(tdbb, trigger);
-
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
-			trigger->req_timestamp.invalidate();
 
 			if (!ok)
 			{
@@ -1154,15 +1152,13 @@ void EXE_execute_triggers(thread_db* tdbb,
 			}
 		}
 
-		if (vector != *triggers) {
+		if (vector != *triggers)
 			MET_release_triggers(tdbb, &vector);
-		}
 	}
 	catch (const Firebird::Exception&)
 	{
-		if (vector != *triggers) {
+		if (vector != *triggers)
 			MET_release_triggers(tdbb, &vector);
-		}
 
 		throw;
 	}
@@ -1308,6 +1304,9 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		// our own savepoints.
 		if (exeState.catchDisabled)
 		{
+			tdbb->setTransaction(exeState.oldTransaction);
+			tdbb->setRequest(exeState.oldRequest);
+
 			if (request->req_transaction != sysTransaction)
 			{
 				for (const Savepoint* save_point = request->req_transaction->tra_save_point;
@@ -1552,11 +1551,6 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
  **************************************/
 
 	SET_TDBB(tdbb);
-	EXE_unwind(tdbb, trigger);
-
-	trigger->req_attachment = NULL;
-	trigger->req_flags &= ~req_in_use;
-	trigger->req_timestamp.invalidate();
 
 	if (trigger->req_flags & req_leave)
 	{
