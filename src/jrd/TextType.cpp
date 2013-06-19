@@ -328,19 +328,33 @@ SSHORT TextType::compare(ULONG len1, const UCHAR* str1, ULONG len2, const UCHAR*
 
 ULONG TextType::str_to_upper(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
-	if (tt->texttype_fn_str_to_upper)
-		return (*tt->texttype_fn_str_to_upper)(tt, srcLen, src, dstLen, dst);
+	const ULONG result = tt->texttype_fn_str_to_upper ?
+		(*tt->texttype_fn_str_to_upper)(tt, srcLen, src, dstLen, dst) :
+		Firebird::IntlUtil::toUpper(getCharSet(), srcLen, src, dstLen, dst, NULL);
 
-	return Firebird::IntlUtil::toUpper(getCharSet(), srcLen, src, dstLen, dst, NULL);
+	if (result == INTL_BAD_STR_LENGTH)
+	{
+		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_arith_except) <<
+										  Firebird::Arg::Gds(isc_transliteration_failed));
+	}
+
+	return result;
 }
 
 
 ULONG TextType::str_to_lower(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
-	if (tt->texttype_fn_str_to_lower)
-		return (*tt->texttype_fn_str_to_lower)(tt, srcLen, src, dstLen, dst);
+	const ULONG result = tt->texttype_fn_str_to_lower ?
+		(*tt->texttype_fn_str_to_lower)(tt, srcLen, src, dstLen, dst) :
+		Firebird::IntlUtil::toLower(getCharSet(), srcLen, src, dstLen, dst, NULL);
 
-	return Firebird::IntlUtil::toLower(getCharSet(), srcLen, src, dstLen, dst, NULL);
+	if (result == INTL_BAD_STR_LENGTH)
+	{
+		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_arith_except) <<
+										  Firebird::Arg::Gds(isc_transliteration_failed));
+	}
+
+	return result;
 }
 
 
