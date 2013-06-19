@@ -4243,8 +4243,6 @@ bool get_function(BurpGlobals* tdgbl)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 			X IN RDB$FUNCTIONS
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$ENGINE_NAME.NULL = TRUE;
 			X.RDB$PACKAGE_NAME.NULL = TRUE;
@@ -4255,8 +4253,15 @@ bool get_function(BurpGlobals* tdgbl)
 			X.RDB$DEBUG_INFO.NULL = TRUE;
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
 			X.RDB$OWNER_NAME.NULL = TRUE;
-			X.RDB$LEGACY_FLAG.NULL = TRUE;
-			X.RDB$DETERMINISTIC_FLAG.NULL = TRUE;
+
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$SYSTEM_FLAG = 0;
+
+			X.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
+			X.RDB$DETERMINISTIC_FLAG = 0;
+
+			X.RDB$LEGACY_FLAG.NULL = FALSE;
+			X.RDB$LEGACY_FLAG = 1;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)

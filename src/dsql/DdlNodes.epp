@@ -1450,6 +1450,12 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 					FUN.RDB$OWNER_NAME.NULL = FALSE;
 					strcpy(FUN.RDB$OWNER_NAME, userName.c_str());
 				}
+
+				FUN.RDB$LEGACY_FLAG.NULL = FALSE;
+				FUN.RDB$LEGACY_FLAG = isUdf() ? TRUE : FALSE;
+
+				FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
+				FUN.RDB$RETURN_ARGUMENT = 0;
 			}
 			END_STORE
 
@@ -1510,10 +1516,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 				FUN.RDB$ENGINE_NAME.NULL = TRUE;
 				FUN.RDB$MODULE_NAME.NULL = TRUE;
 				FUN.RDB$ENTRYPOINT.NULL = TRUE;
-				FUN.RDB$FUNCTION_SOURCE.NULL = TRUE;
-
-				FUN.RDB$VALID_BLR.NULL = FALSE;
-				FUN.RDB$VALID_BLR = TRUE;
+				FUN.RDB$VALID_BLR.NULL = TRUE;
 
 				FUN.RDB$FUNCTION_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 				if (!FUN.RDB$FUNCTION_SOURCE.NULL)
@@ -1524,11 +1527,6 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 				if (isUdf())
 				{
-					FUN.RDB$LEGACY_FLAG.NULL = FALSE;
-					FUN.RDB$LEGACY_FLAG = TRUE;
-
-					FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
-
 					dsql_fld* field = returnType ? returnType->type : NULL;
 
 					if (field)
@@ -1601,11 +1599,6 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 						FUN.RDB$RETURN_ARGUMENT = (SSHORT) udfReturnPos;
 					}
 				}
-				else
-				{
-					FUN.RDB$LEGACY_FLAG.NULL = TRUE;
-					FUN.RDB$RETURN_ARGUMENT.NULL = TRUE;
-				}
 			}
 
 			if (external)
@@ -1632,6 +1625,9 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 			{
 				if (secondPass)
 				{
+					FUN.RDB$VALID_BLR.NULL = FALSE;
+					FUN.RDB$VALID_BLR = TRUE;
+
 					FUN.RDB$FUNCTION_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &FUN.RDB$FUNCTION_BLR,
 						dsqlScratch->getBlrData());
@@ -1726,10 +1722,14 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		ARG.RDB$FIELD_SCALE.NULL = TRUE;
 		ARG.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		ARG.RDB$COLLATION_ID.NULL = TRUE;
+		ARG.RDB$ARGUMENT_MECHANISM.NULL = TRUE;
 
-		ARG.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
-		ARG.RDB$ARGUMENT_MECHANISM = (USHORT) (type->fullDomain || type->typeOfName.isEmpty() ?
-			prm_mech_normal : prm_mech_type_of);
+		if (!isUdf())
+		{
+			ARG.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
+			ARG.RDB$ARGUMENT_MECHANISM = (USHORT) (type->fullDomain || type->typeOfName.isEmpty() ?
+				prm_mech_normal : prm_mech_type_of);
+		}
 
 		if (type->notNull)
 		{
@@ -2426,8 +2426,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 				P.RDB$ENGINE_NAME.NULL = TRUE;
 				P.RDB$ENTRYPOINT.NULL = TRUE;
 				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-
-				P.RDB$VALID_BLR = TRUE;
+				P.RDB$VALID_BLR.NULL = TRUE;
 
 				P.RDB$PROCEDURE_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 				if (!P.RDB$PROCEDURE_SOURCE.NULL)
@@ -2465,6 +2464,9 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 			{
 				if (secondPass)
 				{
+					P.RDB$VALID_BLR.NULL = FALSE;
+					P.RDB$VALID_BLR = TRUE;
+
 					P.RDB$PROCEDURE_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &P.RDB$PROCEDURE_BLR,
 						dsqlScratch->getBlrData());
@@ -2966,6 +2968,7 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				TRG.RDB$TRIGGER_SOURCE.NULL = TRUE;
 				TRG.RDB$TRIGGER_BLR.NULL = TRUE;
 				TRG.RDB$DEBUG_INFO.NULL = TRUE;
+				TRG.RDB$VALID_BLR.NULL = TRUE;
 			}
 
 			if (type.specified)
@@ -2989,6 +2992,9 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			}
 			else if (blrData.length > 0)
 			{
+				TRG.RDB$VALID_BLR.NULL = FALSE;
+				TRG.RDB$VALID_BLR = TRUE;
+
 				TRG.RDB$TRIGGER_BLR.NULL = FALSE;
 				attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR, blrData);
 			}
@@ -3004,8 +3010,6 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				TRG.RDB$TRIGGER_SOURCE.NULL = FALSE;
 				attachment->storeMetaDataBlob(tdbb, transaction, &TRG.RDB$TRIGGER_SOURCE, source);
 			}
-
-			TRG.RDB$VALID_BLR = TRUE;
 
 			modified = true;
 		END_MODIFY

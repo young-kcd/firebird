@@ -5798,7 +5798,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 					PRC IN RDB$PROCEDURES WITH
-						PRC.RDB$PROCEDURE_ID EQ work->dfw_id
+						PRC.RDB$PROCEDURE_ID EQ work->dfw_id AND PRC.RDB$PROCEDURE_BLR NOT MISSING
 				{
 					MODIFY PRC USING
 						PRC.RDB$VALID_BLR = valid_blr;
@@ -5928,7 +5928,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 					TRG IN RDB$TRIGGERS WITH
-						TRG.RDB$TRIGGER_NAME EQ work->dfw_name.c_str()
+						TRG.RDB$TRIGGER_NAME EQ work->dfw_name.c_str() AND TRG.RDB$TRIGGER_BLR NOT MISSING
 				{
 					MODIFY TRG USING
 						TRG.RDB$VALID_BLR = valid_blr;
