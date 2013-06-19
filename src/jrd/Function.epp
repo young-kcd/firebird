@@ -469,7 +469,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			AutoRequest request_set_valid;
 
 			FOR(REQUEST_HANDLE request_set_valid)
-				F IN RDB$FUNCTIONS WITH F.RDB$FUNCTION_ID EQ function->getId()
+				F IN RDB$FUNCTIONS WITH
+					F.RDB$FUNCTION_ID EQ function->getId() AND F.RDB$FUNCTION_BLR NOT MISSING
 			{
 				MODIFY F USING
 					F.RDB$VALID_BLR = TRUE;

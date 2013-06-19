@@ -3124,7 +3124,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			AutoRequest request5;
 
 			FOR(REQUEST_HANDLE request5)
-				P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->getId()
+				P IN RDB$PROCEDURES WITH
+					P.RDB$PROCEDURE_ID EQ procedure->getId() AND P.RDB$PROCEDURE_BLR NOT MISSING
 			{
 				MODIFY P USING
 					P.RDB$VALID_BLR = TRUE;
