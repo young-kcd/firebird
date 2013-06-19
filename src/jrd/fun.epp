@@ -781,7 +781,7 @@ static void handleUdfException(const Exception& ex)
  *
  * Functional description
  *	When exception happens in UDF we have
- *	no better choice then store it in
+ *	no better choice than store it in
  *	tdbb_status_vector and raise again
  *	on return from UDF.
  *
@@ -802,7 +802,7 @@ static void reRaiseExceptionFromUdf(thread_db* tdbb)
  *
  * Functional description
  *	When exception happens in UDF we have
- *	no better choice then store it in
+ *	no better choice than store it in
  *	tdbb_status_vector and raise again
  *	on return from UDF.
  *
