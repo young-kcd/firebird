@@ -150,7 +150,7 @@ public:
 	};
 
 	jrd_tra(MemoryPool* p, Firebird::MemoryStats* parent_stats,
-			Attachment* attachment, jrd_tra* outer, size_t length = 0)
+			Attachment* attachment, jrd_tra* outer)
 	:	tra_attachment(attachment),
 		tra_pool(p),
 		tra_memory_stats(parent_stats),
@@ -177,15 +177,14 @@ public:
 		tra_autonomous_pool(NULL),
 		tra_autonomous_cnt(0)
 	{
-		tra_transactions.resize(length);
 	}
 
 	~jrd_tra();
 
-	static jrd_tra* create(MemoryPool* pool, Attachment* attachment, jrd_tra* outer, size_t length = 0)
+	static jrd_tra* create(MemoryPool* pool, Attachment* attachment, jrd_tra* outer)
 	{
 		jrd_tra* const transaction =
-			FB_NEW(*pool) jrd_tra(pool, &attachment->att_memory_stats, attachment, outer, length);
+			FB_NEW(*pool) jrd_tra(pool, &attachment->att_memory_stats, attachment, outer);
 
 		if (!outer)
 		{

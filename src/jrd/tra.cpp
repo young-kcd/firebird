@@ -101,7 +101,7 @@ static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*);
 static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
-static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp);
+static void transaction_start(thread_db* tdbb, jrd_tra* temp);
 
 static const UCHAR sweep_tpb[] =
 {
@@ -1486,20 +1486,18 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	// make up the real transaction block.
 	MemoryPool* const pool = outer ? outer->getAutonomousPool() : attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
-	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
+	jrd_tra* const transaction = jrd_tra::create(pool, attachment, outer);
 
-	temp->tra_flags = flags & TRA_OPTIONS_MASK;
-	temp->tra_lock_timeout = lock_timeout;
+	transaction->tra_flags = flags & TRA_OPTIONS_MASK;
+	transaction->tra_lock_timeout = lock_timeout;
 
-	jrd_tra* transaction = NULL;
 	try
 	{
-		transaction = transaction_start(tdbb, temp);
-		jrd_tra::destroy(NULL, temp);
+		transaction_start(tdbb, transaction);
 	}
 	catch (const Exception&)
 	{
-		jrd_tra::destroy(attachment, temp);
+		jrd_tra::destroy(attachment, transaction);
 		throw;
 	}
 
@@ -1541,18 +1539,16 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	// make up the real transaction block.
 	MemoryPool* const pool = outer ? outer->getAutonomousPool() : attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
-	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
+	jrd_tra* const transaction = jrd_tra::create(pool, attachment, outer);
 
-	jrd_tra* transaction = NULL;
 	try
 	{
-		transaction_options(tdbb, temp, tpb, tpb_length);
-		transaction = transaction_start(tdbb, temp);
-		jrd_tra::destroy(NULL, temp);
+		transaction_options(tdbb, transaction, tpb, tpb_length);
+		transaction_start(tdbb, transaction);
 	}
 	catch (const Exception&)
 	{
-		jrd_tra::destroy(attachment, temp);
+		jrd_tra::destroy(attachment, transaction);
 		throw;
 	}
 
@@ -2942,7 +2938,7 @@ static void transaction_options(thread_db* tdbb,
 }
 
 
-static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
+static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 {
 /**************************************
  *
@@ -3005,15 +3001,12 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	TraNumber base = oldest & ~TRA_MASK;
 
-	const size_t length = (temp->tra_flags & TRA_read_committed) ? 0 : (number - base + TRA_MASK) / 4;
+	if (!(trans->tra_flags & TRA_read_committed))
+	{
+		const size_t length = (number - base + TRA_MASK) / 4;
+		trans->tra_transactions.resize(length);
+	}
 
-	MemoryPool* const pool = tdbb->getDefaultPool();
-	jrd_tra* const trans = jrd_tra::create(pool, attachment, temp->tra_outer, length);
-
-	fb_assert(trans->tra_pool == temp->tra_pool);
-	trans->tra_relation_locks = temp->tra_relation_locks;
-	trans->tra_lock_timeout = temp->tra_lock_timeout;
-	trans->tra_flags = temp->tra_flags;
 	trans->tra_number = number;
 	trans->tra_top = number;
 	trans->tra_oldest = oldest;
@@ -3038,7 +3031,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		if (!dbb->readOnly())
 			CCH_RELEASE(tdbb, &window);
 #endif
-		jrd_tra::destroy(attachment, trans);
 		ERR_post(Arg::Gds(isc_lock_conflict));
 	}
 
@@ -3247,8 +3239,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	if (trans->tra_flags & TRA_precommitted)
 		TRA_precommited(tdbb, 0, trans->tra_number);
-
-	return trans;
 }
 
 
