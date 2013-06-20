@@ -1206,7 +1206,6 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	IDX_E result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 	key->key_flags = key_all_nulls;
 	key->key_null_segment = 0;
@@ -1260,9 +1259,14 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			UCHAR* p = key->key_data;
 			SSHORT stuff_count = 0;
 			temp.key_flags |= key_empty;
-			for (USHORT n = 0; n < idx->idx_count; n++, tail++) {
-				for (; stuff_count; --stuff_count) {
+			for (USHORT n = 0; n < idx->idx_count; n++, tail++)
+			{
+				for (; stuff_count; --stuff_count)
+				{
 					*p++ = 0;
+
+					if (p - key->key_data >= MAX_KEY_LIMIT)
+						return idx_e_keytoobig;
 				}
 
 				desc_ptr = &desc;
@@ -1294,12 +1298,21 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 							 ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 
 				const UCHAR* q = temp.key_data;
-				for (USHORT l = temp.key_length; l; --l, --stuff_count)	{
-					if (stuff_count == 0) {
+				for (USHORT l = temp.key_length; l; --l, --stuff_count)
+				{
+					if (stuff_count == 0)
+					{
 						*p++ = idx->idx_count - n;
 						stuff_count = STUFF_COUNT;
+
+						if (p - key->key_data >= MAX_KEY_LIMIT)
+							return idx_e_keytoobig;
 					}
+
 					*p++ = *q++;
+
+					if (p - key->key_data >= MAX_KEY_LIMIT)
+						return idx_e_keytoobig;
 				}
 			}
 			key->key_length = (p - key->key_data);
@@ -1309,7 +1322,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		}
 
 		if (key->key_length >= MAX_KEY_LIMIT) {
-			result = idx_e_keytoobig;
+			return idx_e_keytoobig;
 		}
 
 		if (idx->idx_flags & idx_descending) {
@@ -1322,14 +1335,14 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				idx_nulls_all : idx_nulls_some;
 		}
 
-		return result;
-
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		key->key_length = 0;
 		return idx_e_conversion;
 	}
+	
+	return idx_e_ok;
 }
 
 
@@ -1614,8 +1627,6 @@ IDX_E BTR_make_key(thread_db* tdbb,
 	fb_assert(exprs != NULL);
 	fb_assert(key != NULL);
 
-	IDX_E result = idx_e_ok;
-
 	key->key_flags = key_all_nulls;
 	key->key_null_segment = 0;
 
@@ -1642,9 +1653,14 @@ IDX_E BTR_make_key(thread_db* tdbb,
 		SSHORT stuff_count = 0;
 		temp.key_flags |= key_empty;
 		USHORT n = 0;
-		for (; n < count; n++, tail++) {
-			for (; stuff_count; --stuff_count) {
+		for (; n < count; n++, tail++)
+		{
+			for (; stuff_count; --stuff_count)
+			{
 				*p++ = 0;
+
+				if (p - key->key_data >= MAX_KEY_LIMIT)
+					return idx_e_keytoobig;
 			}
 			bool isNull;
 			const dsc* desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
@@ -1657,11 +1673,19 @@ IDX_E BTR_make_key(thread_db* tdbb,
 			const UCHAR* q = temp.key_data;
 			for (USHORT l = temp.key_length; l; --l, --stuff_count)
 			{
-				if (stuff_count == 0) {
+				if (stuff_count == 0)
+				{
 					*p++ = idx->idx_count - n;
 					stuff_count = STUFF_COUNT;
+
+					if (p - key->key_data >= MAX_KEY_LIMIT)
+						return idx_e_keytoobig;
 				}
+
 				*p++ = *q++;
+
+				if (p - key->key_data >= MAX_KEY_LIMIT)
+					return idx_e_keytoobig;
 			}
 		}
 
@@ -1669,8 +1693,12 @@ IDX_E BTR_make_key(thread_db* tdbb,
 		// Equality search on first segment (integer) in compound indexes resulted 
 		// in more scans on specific values (2^n, f.e. 131072) than needed.
 		if (!fuzzy && (n != idx->idx_count)) {
-			for (; stuff_count; --stuff_count) {
+			for (; stuff_count; --stuff_count)
+			{
 				*p++ = 0;
+
+				if (p - key->key_data >= MAX_KEY_LIMIT)
+					return idx_e_keytoobig;
 			}
 		}
 
@@ -1684,14 +1712,14 @@ IDX_E BTR_make_key(thread_db* tdbb,
 	}
 
 	if (key->key_length >= MAX_KEY_LIMIT) {
-		result = idx_e_keytoobig;
+		return idx_e_keytoobig;
 	}
 
 	if (idx->idx_flags & idx_descending) {
 		BTR_complement_key(key);
 	}
 
-	return result;
+	return idx_e_ok;
 }
 
 
