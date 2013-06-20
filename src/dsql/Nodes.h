@@ -505,17 +505,17 @@ public:
 
 	template <typename T, typename LegacyType> static T* as(LegacyType* node)
 	{
-		return node ? node->as<T>() : NULL;
+		return node ? node->template as<T>() : NULL;
 	}
 
 	template <typename T, typename LegacyType> static const T* as(const LegacyType* node)
 	{
-		return node ? node->as<T>() : NULL;
+		return node ? node->template as<T>() : NULL;
 	}
 
 	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
 	{
-		return node ? node->is<T>() : false;
+		return node ? node->template is<T>() : false;
 	}
 
 	// Allocate and assign impure space for various nodes.
@@ -1356,17 +1356,17 @@ public:
 
 	template <typename T, typename T2> static T* as(T2* node)
 	{
-		return node ? node->as<T>() : NULL;
+		return node ? node->template as<T>() : NULL;
 	}
 
 	template <typename T, typename T2> static const T* as(const T2* node)
 	{
-		return node ? node->as<T>() : NULL;
+		return node ? node->template as<T>() : NULL;
 	}
 
 	template <typename T, typename T2> static bool is(const T2* node)
 	{
-		return node && node->is<T>();
+		return node && node->template is<T>();
 	}
 
 	// Allocate and assign impure space for various nodes.
