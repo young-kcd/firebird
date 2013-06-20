@@ -4903,6 +4903,32 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	if (legacy)
+	{
+		// The only need for this code is that for the sake of backward compatibility
+		// SET GENERATOR is still described as isc_info_sql_stmt_set_generator and ISQL
+		// treats it as DML thus executing it in a separate transaction. So we need to ensure
+		// that the generator created in another transaction can be found here. This is done
+		// using MET_lookup_generator() which works in the system transaction.
+
+		const SLONG id = MET_lookup_generator(tdbb, name);
+		if (id < 0)
+			return false;
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
+
+		const SINT64 value = valueNode ? getValue() : 0;
+
+		transaction->getGenIdCache()->put(id, value);
+		dsc desc;
+		desc.makeText((USHORT) name.length(), ttype_metadata, (UCHAR*) name.c_str());
+		DFW_post_work(transaction, dfw_set_generator, &desc, id);
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_SEQUENCE, name);
+
+		return true;
+	}
+
 	AutoCacheRequest request(tdbb, drq_l_gens, DYN_REQUESTS);
 
 	bool found = false;
