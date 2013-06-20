@@ -1700,8 +1700,8 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 		{
 			ptr->compile(tdbb);
 			trigger = EXE_find_request(tdbb, ptr->request, false);
-			trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec;
-			trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
+			trigger->req_rpb[0].rpb_record = old_rec ? old_rec : (Record*) null_rec;
+			trigger->req_rpb[1].rpb_record = new_rec ? new_rec : (Record*) null_rec;
 
 			if (old_rec && trigger_action != jrd_req::req_trigger_insert)
 			{
