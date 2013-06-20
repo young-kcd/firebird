@@ -1082,7 +1082,6 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	idx_e result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 	key->key_flags = 0;
 	key->key_nulls = 0;
@@ -1091,6 +1090,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 	if (!count)
 		count = idx->idx_count;
+
+	const USHORT maxKeyLength = dbb->getMaxIndexKeyLength();
 
 	try {
 
@@ -1144,7 +1145,12 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			for (USHORT n = 0; n < count; n++, tail++)
 			{
 				for (; stuff_count; --stuff_count)
+				{
 					*p++ = 0;
+
+					if (p - key->key_data >= maxKeyLength)
+						return idx_e_keytoobig;
+				}
 
 				desc_ptr = &desc;
 				// In order to "map a null to a default" value (in EVL_field()),
@@ -1173,8 +1179,15 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					{
 						*p++ = idx->idx_count - n;
 						stuff_count = STUFF_COUNT;
+
+						if (p - key->key_data >= maxKeyLength)
+							return idx_e_keytoobig;
 					}
+
 					*p++ = *q++;
+
+					if (p - key->key_data >= maxKeyLength)
+						return idx_e_keytoobig;
 				}
 			}
 
@@ -1184,13 +1197,11 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				key->key_flags |= key_empty;
 		}
 
-		if (key->key_length >= dbb->getMaxIndexKeyLength())
-			result = idx_e_keytoobig;
+		if (key->key_length >= maxKeyLength)
+			return idx_e_keytoobig;
 
 		if (descending)
 			BTR_complement_key(key);
-
-		return result;
 
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -1199,6 +1210,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		key->key_length = 0;
 		return idx_e_conversion;
 	}
+
+	return idx_e_ok;
 }
 
 
@@ -1387,8 +1400,6 @@ idx_e BTR_make_key(thread_db* tdbb,
 	fb_assert(exprs != NULL);
 	fb_assert(key != NULL);
 
-	idx_e result = idx_e_ok;
-
 	key->key_flags = 0;
 	key->key_nulls = 0;
 
@@ -1398,6 +1409,8 @@ idx_e BTR_make_key(thread_db* tdbb,
 
 	const USHORT keyType = fuzzy ?
 		INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT);
+
+	const USHORT maxKeyLength = dbb->getMaxIndexKeyLength();
 
 	// If the index is a single segment index, don't sweat the compound stuff
 	if (idx->idx_count == 1)
@@ -1425,7 +1438,12 @@ idx_e BTR_make_key(thread_db* tdbb,
 		for (; n < count; n++, tail++)
 		{
 			for (; stuff_count; --stuff_count)
+			{
 				*p++ = 0;
+
+				if (p - key->key_data >= maxKeyLength)
+					return idx_e_keytoobig;
+			}
 
 			bool isNull;
 			const dsc* desc = eval(tdbb, *exprs++, &temp_desc, &isNull);
@@ -1451,8 +1469,15 @@ idx_e BTR_make_key(thread_db* tdbb,
 				{
 					*p++ = idx->idx_count - n;
 					stuff_count = STUFF_COUNT;
+
+					if (p - key->key_data >= maxKeyLength)
+						return idx_e_keytoobig;
 				}
+
 				*p++ = *q++;
+
+				if (p - key->key_data >= maxKeyLength)
+					return idx_e_keytoobig;
 			}
 		}
 
@@ -1462,7 +1487,12 @@ idx_e BTR_make_key(thread_db* tdbb,
 		if (!fuzzy && (n != idx->idx_count))
 		{
 			for (; stuff_count; --stuff_count)
+			{
 				*p++ = 0;
+
+				if (p - key->key_data >= maxKeyLength)
+					return idx_e_keytoobig;
+			}
 		}
 
 		// dimitr:	If the search is fuzzy and the last segment is empty,
@@ -1481,13 +1511,13 @@ idx_e BTR_make_key(thread_db* tdbb,
 		}
 	}
 
-	if (key->key_length >= dbb->getMaxIndexKeyLength())
-		result = idx_e_keytoobig;
+	if (key->key_length >= maxKeyLength)
+		return idx_e_keytoobig;
 
 	if (descending)
 		BTR_complement_key(key);
 
-	return result;
+	return idx_e_ok;
 }
 
 
