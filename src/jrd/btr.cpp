@@ -1193,7 +1193,6 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	idx_e result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 	key->key_flags = key_all_nulls;
 	key->key_null_segment = 0;
@@ -1251,8 +1250,12 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			temp.key_flags |= key_empty;
 			for (USHORT n = 0; n < count; n++, tail++)
 			{
-				for (; stuff_count; --stuff_count) {
+				for (; stuff_count; --stuff_count)
+				{
 					*p++ = 0;
+
+					if (p - key->key_data >= MAX_KEY_LIMIT)
+						return idx_e_keytoobig;
 				}
 
 				desc_ptr = &desc;
@@ -1292,8 +1295,15 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 						{
 							*p++ = idx->idx_count - n;
 							stuff_count = STUFF_COUNT;
+
+							if (p - key->key_data >= MAX_KEY_LIMIT)
+								return idx_e_keytoobig;
 						}
+
 						*p++ = *q++;
+
+						if (p - key->key_data >= MAX_KEY_LIMIT)
+							return idx_e_keytoobig;
 					}
 				}
 				else if (idx->idx_flags & idx_complete_segs)
@@ -1301,6 +1311,9 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					fb_assert(stuff_count == 0);
 					*p++ = idx->idx_count - n;
 					stuff_count = STUFF_COUNT;
+
+					if (p - key->key_data >= MAX_KEY_LIMIT)
+						return idx_e_keytoobig;
 				}
 			}
 			key->key_length = (p - key->key_data);
@@ -1309,21 +1322,17 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			}
 		}
 
-		if (key->key_length >= MAX_KEY_LIMIT) {
-			result = idx_e_keytoobig;
-		}
+		if (key->key_length >= MAX_KEY_LIMIT)
+			return idx_e_keytoobig;
 
-		if (idx->idx_flags & idx_descending) {
+		if (idx->idx_flags & idx_descending)
 			BTR_complement_key(key);
-		}
 
 		if (null_state)
 		{
 			*null_state = !missing_unique_segments ? idx_nulls_none :
 				(missing_unique_segments == idx->idx_count) ? idx_nulls_all : idx_nulls_some;
 		}
-
-		return result;
 
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -1332,6 +1341,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		key->key_length = 0;
 		return idx_e_conversion;
 	}
+
+	return idx_e_ok;
 }
 
 idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx,
@@ -1625,8 +1636,6 @@ idx_e BTR_make_key(thread_db* tdbb,
 	fb_assert(exprs != NULL);
 	fb_assert(key != NULL);
 
-	idx_e result = idx_e_ok;
-
 	key->key_flags = key_all_nulls;
 	key->key_null_segment = 0;
 
@@ -1657,8 +1666,12 @@ idx_e BTR_make_key(thread_db* tdbb,
 		USHORT n = 0;
 		for (; n < count; n++, tail++)
 		{
-			for (; stuff_count; --stuff_count) {
+			for (; stuff_count; --stuff_count)
+			{
 				*p++ = 0;
+
+				if (p - key->key_data >= MAX_KEY_LIMIT)
+					return idx_e_keytoobig;
 			}
 
 			bool isNull;
@@ -1680,8 +1693,15 @@ idx_e BTR_make_key(thread_db* tdbb,
 					{
 						*p++ = idx->idx_count - n;
 						stuff_count = STUFF_COUNT;
+
+						if (p - key->key_data >= MAX_KEY_LIMIT)
+							return idx_e_keytoobig;
 					}
+
 					*p++ = *q++;
+
+					if (p - key->key_data >= MAX_KEY_LIMIT)
+						return idx_e_keytoobig;
 				}
 			}
 			else if (idx->idx_flags & idx_complete_segs)
@@ -1689,6 +1709,9 @@ idx_e BTR_make_key(thread_db* tdbb,
 				fb_assert(stuff_count == 0);
 				*p++ = idx->idx_count - n;
 				stuff_count = STUFF_COUNT;
+
+				if (p - key->key_data >= MAX_KEY_LIMIT)
+					return idx_e_keytoobig;
 			}
 		}
 
@@ -1697,8 +1720,12 @@ idx_e BTR_make_key(thread_db* tdbb,
 		// in more scans on specific values (2^n, f.e. 131072) than needed.
 		if (!fuzzy && (n != idx->idx_count))
 		{
-			for (; stuff_count; --stuff_count) {
+			for (; stuff_count; --stuff_count)
+			{
 				*p++ = 0;
+
+				if (p - key->key_data >= MAX_KEY_LIMIT)
+					return idx_e_keytoobig;
 			}
 		}
 
@@ -1712,15 +1739,13 @@ idx_e BTR_make_key(thread_db* tdbb,
 		}
 	}
 
-	if (key->key_length >= MAX_KEY_LIMIT) {
-		result = idx_e_keytoobig;
-	}
+	if (key->key_length >= MAX_KEY_LIMIT)
+		return idx_e_keytoobig;
 
-	if (idx->idx_flags & idx_descending) {
+	if (idx->idx_flags & idx_descending)
 		BTR_complement_key(key);
-	}
 
-	return result;
+	return idx_e_ok;
 }
 
 
