@@ -1,3 +1,28 @@
+ 2013-06-20 16:26  dimitr 
+   M src/common/TextType.cpp
+Front ported the error code validation.
+
+ 2013-06-20 15:44  asfernandes 
+   M src/intl/lc_ascii.cpp
+Fixed CORE-2912 - Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
+
+ 2013-06-20 09:16  mapopa 
+   M src/dsql/Nodes.h
+eliminate error: use 'template' keyword to treat 'as' as a dependent template name  http://stackoverflow.com/a/3786481/66242
+
+ 2013-06-20 08:32  dimitr 
+   M src/jrd/build_no.h
+   M src/misc/writeBuildNum.sh
+Getting prepared for Alpha 1.
+
+ 2013-06-20 08:04  dimitr 
+   M src/dsql/DdlNodes.epp
+A somewhat hackery solution that allows ISQL to work with SET GENERATOR as it expects. It fixes the issue reported by Philippe in fb-devel.
+
+ 2013-06-20 06:45  dimitr 
+   M src/jrd/btr.cpp
+Fixed CORE-4127: Server crashes instead of reporting the error "key size exceeds implementation restriction".
+
  2013-06-19 11:46  hvlad 
    M src/jrd/tra.cpp
    M src/jrd/tra.h
