@@ -1,3 +1,11 @@
+ 2013-06-20 16:03  asfernandes 
+   M src/intl/lc_ascii.cpp
+Fixed CORE-2912 - Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
+
+ 2013-06-20 06:39  dimitr 
+   M src/jrd/btr.cpp
+Fixed CORE-4127: Server crashes instead of reporting the error "key size exceeds implementation restriction".
+
  2013-06-15 05:52  dimitr 
    M src/jrd/cmp.cpp
 Fixed CORE-4117: Ignoring computed by field as Exception parameter.
