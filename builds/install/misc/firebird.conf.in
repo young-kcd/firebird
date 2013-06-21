@@ -388,9 +388,12 @@
 # is default one. On windows Sspi is also used when no login/password is given.
 # Client can use legacy authentication to talk to old servers.
 #
-# Per-database & per-connection configurable.
+# Per-database configurable.
 #
 #AuthServer = Srp, Win_Sspi
+#
+# Per-connection and per-database configurable.
+#
 #AuthClient = Srp, Win_Sspi, Legacy_Auth
 
 # UserManager sets plugin used to work with security database. If more than
