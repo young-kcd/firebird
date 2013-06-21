@@ -1,3 +1,28 @@
+ 2013-06-20 15:43  asfernandes 
+   M src/intl/lc_ascii.cpp
+Fixed CORE-2912 - Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
+
+ 2013-06-20 07:41  dimitr 
+   M src/jrd/exe.cpp
+Attempted to please the GCC compiler. If this doesn't help, another solution is to be backported from trunk.
+
+ 2013-06-20 06:11  dimitr 
+   M src/jrd/btr.cpp
+Fixed CORE-4127: Server crashes instead of reporting the error "key size exceeds implementation restriction".
+
+ 2013-06-19 16:18  dimitr 
+   M src/jrd/TextType.cpp
+The first fix for CORE-4123: Firebird crash when executing an stored procedure called by a trigger that converts string to upper.
+Adriano, please review. BTW, I'm far not sure that other TextType members (those calling texttype_fn_* routines from INTL) cannot silently return "special" return codes either.
+
+ 2013-06-19 06:12  dimitr 
+   M src/jrd/exe.cpp
+Attempted to fix a possible crash due to the wrong request pointer remaining in tdbb after sub-request execution. While being there, cleaned up some redundant code.
+
+ 2013-06-18 13:17  alexpeshkoff 
+   M src/jrd/fun.epp
+Backported fix for CORE-4121: Segfault when engine is shutting down inside blob get/put function invoked from UDF
+
  2013-06-15 19:02  hvlad 
    M src/jrd/sort.cpp
 Make code a bit more robust
