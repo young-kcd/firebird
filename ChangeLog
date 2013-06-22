@@ -1,3 +1,15 @@
+ 2013-06-21 16:19  alexpeshkoff 
+   M doc/README.plugins.html
+Avoid bad style - thanks to Mark
+
+ 2013-06-21 16:17  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+Fixed parameter description - thanks to Mark
+
+ 2013-06-21 09:47  mapopa 
+   M src/extlib/fbudf/fbudf.cpp
+place parentheses around the '&&' expression to silence the warning
+
  2013-06-20 16:26  dimitr 
    M src/common/TextType.cpp
 Front ported the error code validation.
