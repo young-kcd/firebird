@@ -1618,6 +1618,14 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 		if (!status.isSuccess())
 			return status[1];
 
+		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpbLength);
+		if (!newDpb.find(isc_dpb_sql_dialect))
+		{
+			newDpb.insertInt(isc_dpb_sql_dialect, 1);	// legacy behavior in legacy interface
+			dpb = newDpb.getBuffer();
+			dpbLength = newDpb.getBufferLength();
+		}
+
 		YAttachment* attachment = dispatcher->createDatabase(&status, pathName.c_str(),
 			dpbLength, reinterpret_cast<const UCHAR*>(dpb));
 		if (!status.isSuccess())

@@ -2405,12 +2405,9 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			switch (options.dpb_sql_dialect)
 			{
-			case 0:
-				// This can be issued by QLI, GDEF and old BDE clients.
-				// In this case assume dialect 1
-				options.dpb_sql_dialect = SQL_DIALECT_V5;
 			case SQL_DIALECT_V5:
 				break;
+			case 0:
 			case SQL_DIALECT_V6:
 				dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
 				break;
