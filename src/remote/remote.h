@@ -581,7 +581,7 @@ class ServerAuthBase
 {
 public:
 	virtual ~ServerAuthBase();
-	virtual bool authenticate(PACKET* send) = 0;
+	virtual bool authenticate(PACKET* send, bool cont = false) = 0;
 };
 
 class ServerCallbackBase
@@ -739,6 +739,7 @@ public:
 	void setDataForPlugin(const p_auth_continue* data);
 	void reset();
 	bool extractNewKeys(CSTRING* to, bool flagPlugList = false);
+	bool hasDataForPlugin();
 
 	// Auth::IServerBlock implementation
 	int FB_CARG release();

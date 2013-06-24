@@ -86,7 +86,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 	{
 		if (!server)
 		{
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP phase1\n"));
 
 			if (!sb->getLogin())
 			{
@@ -102,7 +102,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 			if (!clientPubKey.hasData())
 			{
-				HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP: empty pubkey AUTH_MORE_DATA\n"));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP: empty pubkey AUTH_MORE_DATA\n"));
 				return AUTH_MORE_DATA;
 			}
 
@@ -133,7 +133,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			{
 				status_exception::raise(status->get());
 			}
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: attached sec db %s\n", secDbName));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP: attached sec db %s\n", secDbName));
 
 			const UCHAR tpb[] =
 			{
@@ -148,7 +148,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			{
 				status_exception::raise(status->get());
 			}
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: started transaction\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: started transaction\n"));
 
 			const char* sql = "SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ?";
 			stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
@@ -185,14 +185,14 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			}
 			Field<Varying> verify(dat);
 			Field<Varying> slt(dat);
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: Ready to run statement with login '%s'\n", account.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Ready to run statement with login '%s'\n", account.c_str()));
 
 			stmt->execute(status, tra, par.metadata, par.buffer, dat.metadata, dat.buffer);
 			if (!status->isSuccess())
 			{
 				status_exception::raise(status->get());
 			}
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP1: Executed statement\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Executed statement\n"));
 
 			stmt->free(status);
 			if (!status->isSuccess())
@@ -260,7 +260,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 		unsigned int length;
 		const unsigned char* val = sb->getData(&length);
-		HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP2, data length is %d\n", length));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP: phase2, data length is %d\n", length));
 		string proof;
 		proof.assign(val, length);
 		BigInteger clientProof(proof.c_str());

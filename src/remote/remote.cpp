@@ -1021,7 +1021,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	// Add user login name
 	if (userName.hasData())
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo: userName=%s\n", userName.c_str()));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: userName=%s\n", userName.c_str()));
 		user_id.insertString(CNCT_login, userName);
 	}
 
@@ -1029,7 +1029,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	Firebird::PathName pluginName = getPluginName();
 	if (pluginName.hasData())
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo: pluginName=%s\n", pluginName.c_str()));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: pluginName=%s\n", pluginName.c_str()));
 		user_id.insertPath(CNCT_plugin_name, pluginName);
 	}
 
@@ -1112,7 +1112,7 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 
 		if (merged.getCount() == 0)
 		{
-			HANDSHAKE_DEBUG(fprintf(stderr, "No matching plugins on client\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: No matching plugins on client\n"));
 			(Firebird::Arg::Gds(isc_login)
 #ifdef DEV_BUILD
 								<< Firebird::Arg::Gds(isc_random) << "No matching plugins on client"
@@ -1138,7 +1138,7 @@ Firebird::RefPtr<Config>* ClntAuthBlock::getConfig()
 void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char* data)
 {
 	dataForPlugin.assign(data, length);
-	HANDSHAKE_DEBUG(fprintf(stderr, "Cln: accepted data for plugin length=%d\n", length));
+	HANDSHAKE_DEBUG(fprintf(stderr, "Cli: accepted data for plugin length=%d\n", length));
 }
 
 Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,

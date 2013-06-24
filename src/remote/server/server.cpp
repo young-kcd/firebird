@@ -235,6 +235,7 @@ public:
 		  userName(getPool()),
 		  authServer(NULL),
 		  tags(&aTags),
+		  hopsCount(0),
 		  authPort(port),
 		  dbName(getPool())
 	{
@@ -243,7 +244,7 @@ public:
 			authPort->port_srv_auth_block = new SrvAuthBlock(authPort);
 		}
 
-		HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth()\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth()\n"));
 
 		if (aPb->find(tags->user_name))
 		{
@@ -255,7 +256,7 @@ public:
 				(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "Client error - login does not match").raise();
 			}
 			authPort->port_srv_auth_block->setLogin(userName);
-			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): user name=%s\n", userName.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): user name=%s\n", userName.c_str()));
 		}
 
 		const char* oldPath = authPort->port_srv_auth_block->getPath();
@@ -264,11 +265,11 @@ public:
 			dbName = *aDbName;
 			if (oldPath && dbName != oldPath)
 			{
-				HANDSHAKE_DEBUG(fprintf(stderr, "old='%s' new='%s'\n", oldPath, dbName.c_str()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): old='%s' new='%s'\n", oldPath, dbName.c_str()));
 				(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "Client error - database name does not match").raise();
 			}
 			authPort->port_srv_auth_block->setPath(aDbName);
-			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): db name=%s\n", dbName.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): db name=%s\n", dbName.c_str()));
 		}
 
 		UCharBuffer u;
@@ -279,23 +280,23 @@ public:
 			{
 				aPb->getString(x);
 				authPort->port_srv_auth_block->setPluginName(x);
-				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): plugin name=%s\n", x.c_str()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin name=%s\n", x.c_str()));
 			}
 			if (aPb->find(tags->plugin_list))
 			{
 				aPb->getString(x);
 				authPort->port_srv_auth_block->setPluginList(x);
-				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): plugin list=%s\n", x.c_str()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin list=%s\n", x.c_str()));
 			}
 			if (aPb->find(tags->specific_data))
 			{
 				aPb->getData(u);
 				authPort->port_srv_auth_block->setDataForPlugin(u);
-				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): plugin data is %" SIZEFORMAT " len\n", u.getCount()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin data is %" SIZEFORMAT " len\n", u.getCount()));
 			}
 			else
 			{
-				HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth(): miss data with tag %d\n", tags->specific_data));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): miss data with tag %d\n", tags->specific_data));
 			}
 		}
 		else if (authPort->port_srv_auth_block->getLogin() &&
@@ -312,7 +313,7 @@ public:
 					Auth::LEGACY_PASSWORD_SALT);
 				const size_t len = strlen(&pwt[2]);
 				memcpy(u.getBuffer(len), &pwt[2], len);
-				HANDSHAKE_DEBUG(fprintf(stderr, "CALLED des locally\n"));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): CALLED des locally\n"));
 			}
 			authPort->port_srv_auth_block->setDataForPlugin(u);
 		}
@@ -330,8 +331,18 @@ public:
 	~ServerAuth()
 	{ }
 
-	bool authenticate(PACKET* send)
+	bool authenticate(PACKET* send, bool contAuth = false)
 	{
+#ifdef DEV_BUILD
+		if (++hopsCount > 10)
+#else
+		if (++hopsCount > 100)
+#endif
+		{
+			(Arg::Gds(isc_login) <<
+			 Arg::Gds(isc_random) << "Exceeded authentication exchange limit").raise();
+		}
+
 		if (authPort->port_srv_auth_block->authCompleted())
 		{
 			accept(send, &authPort->port_srv_auth_block->authBlockWriter);
@@ -357,15 +368,18 @@ public:
 
 		while (authItr && working && authItr->hasData())
 		{
-			if (! authServer)
+			if (!authServer)
 			{
 				authServer = authItr->plugin();
 				authPort->port_srv_auth_block->authBlockWriter.setMethod(authItr->name());
 			}
 
-			HANDSHAKE_DEBUG(fprintf(stderr, "ServerAuth calls plug %s\n", authItr->name()));
-			int authResult = authServer->authenticate(&st, authPort->port_srv_auth_block,
-											&authPort->port_srv_auth_block->authBlockWriter);
+			// if we asked for more data but received nothing switch to next plugin
+			bool forceNext = contAuth && (!authPort->port_srv_auth_block->hasDataForPlugin());
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: ServerAuth calls plug %s\n", forceNext ? "forced-NEXT" : authItr->name()));
+			int authResult = forceNext ? Auth::AUTH_CONTINUE : 
+				authServer->authenticate(&st, authPort->port_srv_auth_block,
+					&authPort->port_srv_auth_block->authBlockWriter);
 			authPort->port_srv_auth_block->setPluginName(authItr->name());
 
 			cstring* s;
@@ -373,7 +387,7 @@ public:
 			switch (authResult)
 			{
 			case Auth::AUTH_SUCCESS:
-				HANDSHAKE_DEBUG(fprintf(stderr, "Ahh - success\n"));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: Ahh - success\n"));
 				usernameFailedLogins->loginSuccess(userName);
 				remoteFailedLogins->loginSuccess(authPort->getRemoteId());
 				authServer = NULL;
@@ -382,13 +396,13 @@ public:
 				return true;
 
 			case Auth::AUTH_CONTINUE:
-				HANDSHAKE_DEBUG(fprintf(stderr, "Next plug suggested\n"));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: Next plug suggested\n"));
 				authItr->next();
 				authServer = NULL;
 				continue;
 
 			case Auth::AUTH_MORE_DATA:
-				HANDSHAKE_DEBUG(fprintf(stderr, "plugin wants more data\n"));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: plugin wants more data\n"));
 				if (authPort->port_protocol < PROTOCOL_VERSION11)
 				{
 					authServer = NULL;
@@ -426,7 +440,7 @@ public:
 				return false;
 
 			case Auth::AUTH_FAILED:
-				HANDSHAKE_DEBUG(fprintf(stderr, "No luck today...\n"));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: No luck today - status:\n"));
 				HANDSHAKE_DEBUG(isc_print_status(st.get()));
 				authServer = NULL;
 				working = false;
@@ -460,6 +474,7 @@ private:
 	string userName;
 	Auth::IServer* authServer;
 	const ParametersSet* tags;
+	unsigned int hopsCount;
 
 protected:
 	rem_port* authPort;
@@ -1536,7 +1551,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		}
 	}
 
-	HANDSHAKE_DEBUG(fprintf(stderr, "protoaccept a=%d (v>=13)=%d %d %d\n",
+	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: protoaccept a=%d (v>=13)=%d %d %d\n",
 					accepted, version >= PROTOCOL_VERSION13, version, PROTOCOL_VERSION13));
 
 	// We are going to try authentication handshake
@@ -1545,32 +1560,32 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	//bool returnPlugList = false;
 	if (accepted && version >= PROTOCOL_VERSION13)
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection creates port_srv_auth_block\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: creates port_srv_auth_block\n"));
 		port->port_srv_auth_block = new SrvAuthBlock(port);
 		send->p_acpd.p_acpt_authenticated = 0;
 
 		Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
 									connect->p_cnct_user_id.cstr_address,
 									connect->p_cnct_user_id.cstr_length);
-		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection is going to load data to port_srv_auth_block\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: is going to load data to port_srv_auth_block\n"));
 		port->port_srv_auth_block->load(id);
 		if (port->port_srv_auth_block->getLogin())
 		{
 			port->port_login = port->port_srv_auth_block->getLogin();
 		}
 
-		HANDSHAKE_DEBUG(fprintf(stderr, "accept connection finished with port_srv_auth_block prepare, a=%d\n", accepted));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: finished with port_srv_auth_block prepare, a=%d\n", accepted));
 
 		if (port->port_srv_auth_block->getPluginName())
 		{
 			Firebird::PathName file(connect->p_cnct_file.cstr_address, connect->p_cnct_file.cstr_length);
 			port->port_srv_auth_block->setPath(&file);
-			HANDSHAKE_DEBUG(fprintf(stderr, "accept connection calls createPluginsItr\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: calls createPluginsItr\n"));
 			port->port_srv_auth_block->createPluginsItr();
 
 			if (port->port_srv_auth_block->plugins)		// We have all required data and iterator was created
 			{
-				HANDSHAKE_DEBUG(fprintf(stderr, "call plugin %s\n", port->port_srv_auth_block->getPluginName()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: call plugin %s\n", port->port_srv_auth_block->getPluginName()));
 
 				AuthServerPlugins* const plugins = port->port_srv_auth_block->plugins;
 				for (; plugins->hasData(); plugins->next())
@@ -1640,7 +1655,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	accept->p_acpt_architecture = architecture;
 	accept->p_acpt_type = type;
 
-	HANDSHAKE_DEBUG(fprintf(stderr, "accepted ud=%d v=%x\n", returnData, version));
+	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: accepted ud=%d v=%x\n", returnData, version));
 
 	// and modify the version string to reflect the chosen protocol
 
@@ -4315,9 +4330,9 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
 		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
 	}
 
-	HANDSHAKE_DEBUG(fprintf(stderr, "trusted_auth\n"));
+	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: trusted_auth\n"));
 	port->port_srv_auth_block->setDataForPlugin(p_trau->p_trau_data);
-	if (sa->authenticate(send))
+	if (sa->authenticate(send, true))
 	{
 		delete sa;
 		port->port_srv_auth = NULL;
@@ -4348,9 +4363,9 @@ static void continue_authentication(rem_port* port, const p_auth_continue* p_aut
 		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
 	}
 
-	HANDSHAKE_DEBUG(fprintf(stderr, "continue_authentication\n"));
+	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: continue_authentication\n"));
 	port->port_srv_auth_block->setDataForPlugin(p_auth_c);
-	if (sa->authenticate(send))
+	if (sa->authenticate(send, true))
 	{
 		delete sa;
 		port->port_srv_auth = NULL;
@@ -6239,16 +6254,16 @@ void SrvAuthBlock::load(Firebird::ClumpletReader& id)
 		case CNCT_login:
 			id.getString(userName);
 			userName.upper();
-			HANDSHAKE_DEBUG(fprintf(stderr, "login %s\n", userName.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: AuthBlock: login %s\n", userName.c_str()));
 			break;
 		case CNCT_plugin_name:
 			id.getPath(pluginName);
 			firstTime = false;
-			HANDSHAKE_DEBUG(fprintf(stderr, "plugin %s\n", pluginName.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: AuthBlock: plugin %s\n", pluginName.c_str()));
 			break;
 		case CNCT_plugin_list:
 			id.getPath(pluginList);
-			HANDSHAKE_DEBUG(fprintf(stderr, "plugin list %s\n", pluginList.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: AuthBlock: plugin list %s\n", pluginList.c_str()));
 			break;
 		case CNCT_specific_data:
 			{
@@ -6281,7 +6296,7 @@ void SrvAuthBlock::load(Firebird::ClumpletReader& id)
 		}
 	}
 
-	HANDSHAKE_DEBUG(fprintf(stderr, "data %" SIZEFORMAT "\n", dataForPlugin.getCount()));
+	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: AuthBlock: data %" SIZEFORMAT "\n", dataForPlugin.getCount()));
 }
 
 const char* SrvAuthBlock::getPluginName()
@@ -6319,7 +6334,7 @@ void SrvAuthBlock::setDataForPlugin(const cstring& data)
 void SrvAuthBlock::setDataForPlugin(const p_auth_continue* data)
 {
 	dataForPlugin.assign(data->p_data.cstr_address, data->p_data.cstr_length);
-	HANDSHAKE_DEBUG(fprintf(stderr, "setDataForPlugin=%d firstTime = %d nm=%d ls=%d login='%s'\n",
+	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: setDataForPlugin: %d firstTime = %d nm=%d ls=%d login='%s'\n",
 						 data->p_data.cstr_length, firstTime, data->p_name.cstr_length,
 						 data->p_list.cstr_length, userName.c_str()));
 	if (firstTime)
@@ -6329,6 +6344,11 @@ void SrvAuthBlock::setDataForPlugin(const p_auth_continue* data)
 
 		firstTime = false;
 	}
+}
+
+bool SrvAuthBlock::hasDataForPlugin()
+{
+	return dataForPlugin.hasData();
 }
 
 void SrvAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
@@ -6434,7 +6454,7 @@ void SrvAuthBlock::createPluginsItr()
 
 	if (final.getCount() == 0)
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "No matching plugins on server\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: createPluginsItr: No matching plugins on server\n"));
 		(Arg::Gds(isc_login)
 #ifdef DEV_BUILD
 							<< Arg::Gds(isc_random) << "No matching plugins on server"

@@ -6140,7 +6140,7 @@ static void info(IStatus* status,
 		{
 			// Probably communicate with services auth
 			fb_assert(cBlock);
-			HANDSHAKE_DEBUG(fprintf(stderr, "info() calls authReceiveResponse\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: info() calls authReceiveResponse\n"));
 			authReceiveResponse(*cBlock, rdb->rdb_port, rdb, status, packet, false);
 		}
 		else
@@ -6180,7 +6180,7 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 			{
 			case Auth::AUTH_SUCCESS:
 			case Auth::AUTH_MORE_DATA:
-				HANDSHAKE_DEBUG(fprintf(stderr, "FPB: plugin %s is OK\n", cBlock.plugins.name()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: plugin %s is OK\n", cBlock.plugins.name()));
 				cleanDpb(dpb, tags);
 				cBlock.extractDataFromPluginTo(dpb, tags, port->port_protocol);
 				return;
@@ -6189,12 +6189,12 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 				continue;
 
 			case Auth::AUTH_FAILED:
-				HANDSHAKE_DEBUG(fprintf(stderr, "FPB: plugin %s FAILED\n", cBlock.plugins.name()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: plugin %s FAILED\n", cBlock.plugins.name()));
 				(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
 				break;	// compiler silencer
 			}
 		}
-		HANDSHAKE_DEBUG(fprintf(stderr, "FPB: try next plugin, %s skipped\n", cBlock.plugins.name()));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: try next plugin, %s skipped\n", cBlock.plugins.name()));
 	}
 }
 
@@ -6244,7 +6244,7 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 		switch(packet->p_operation)
 		{
 		case op_trusted_auth:
-			HANDSHAKE_DEBUG(fprintf(stderr, "RR:TA\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: trusted_auth\n"));
 			d = &packet->p_trau.p_trau_data;
 			break;
 
@@ -6252,14 +6252,14 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 			d = &packet->p_auth_cont.p_data;
 			n = &packet->p_auth_cont.p_name;
 			port->addServerKeys(&packet->p_auth_cont.p_keys);
-			HANDSHAKE_DEBUG(fprintf(stderr, "RR:CA d=%d n=%d '%.*s' 0x%x\n", d->cstr_length, n->cstr_length,
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: ont_auth d=%d n=%d '%.*s' 0x%x\n", d->cstr_length, n->cstr_length,
 									n->cstr_length, n->cstr_address, n->cstr_address ? n->cstr_address[0] : 0));
 			break;
 
 		case op_crypt:
 			fb_assert(!checkKeys);
 			{
-				HANDSHAKE_DEBUG(fprintf(stderr, "RR: Crypt answer\n"));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: Crypt answer\n"));
 				CSTRING* tmpKeys = REMOTE_dup_string(&packet->p_crypt.p_key);
 				// it was start crypt packet, receive next one
 				receive_response(status, rdb, packet);
@@ -6276,10 +6276,10 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 			return;
 
 		default:
-			HANDSHAKE_DEBUG(fprintf(stderr, "RR: Default answer\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: Default answer\n"));
 			REMOTE_check_response(status, rdb, packet, checkKeys);
 			// successfully attached
-			HANDSHAKE_DEBUG(fprintf(stderr, "RR: OK!\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: OK!\n"));
 			rdb->rdb_id = packet->p_resp.p_resp_object;
 
 			// try to start crypt
@@ -6372,7 +6372,7 @@ static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op
 
 		const ParametersSet* const ps = (op == op_service_attach ? &spbParam : &dpbParam);
 
-		HANDSHAKE_DEBUG(fprintf(stderr, "init calls authFillParametersBlock\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: init calls authFillParametersBlock\n"));
 		authFillParametersBlock(cBlock, dpb, ps, port);
 
 		port->port_client_crypt_callback = cryptCallback;
@@ -7317,7 +7317,7 @@ static void svcstart(IStatus*	status,
 	}
 	else
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "start calls authFillParametersBlock\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: svcstart calls authFillParametersBlock\n"));
 		authFillParametersBlock(cBlock, send, &spbStartParam, rdb->rdb_port);
 	}
 
@@ -7505,12 +7505,12 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
 			}
 			dpb.insertPath(tags->plugin_list, pluginList);
 			firstTime = false;
-			HANDSHAKE_DEBUG(fprintf(stderr, "first time - added plugName & pluginList\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: first time - added plugName & pluginList\n"));
 		}
 		fb_assert(tags->specific_data);
 		dpb.insertBytes(tags->specific_data, dataFromPlugin.begin(), dataFromPlugin.getCount());
 
-		HANDSHAKE_DEBUG(fprintf(stderr, "Added %" SIZEFORMAT " bytes of spec data with tag %d\n",
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: Added %" SIZEFORMAT " bytes of spec data with tag %d\n",
 								dataFromPlugin.getCount(), tags->specific_data));
 
 		return;
@@ -7548,7 +7548,7 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 		{
 			dpb.getString(userName);
 			makeUtfString(uft8Convert, userName);
-			HANDSHAKE_DEBUG(fprintf(stderr, "Loaded from PB user = %s\n", userName.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB user = %s\n", userName.c_str()));
 			userName.upper();
 		}
 		else if (t == tags->password)
@@ -7556,12 +7556,12 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 			makeUtfString(uft8Convert, password);
 			dpb.getString(password);
 			dpb.deleteClumplet();
-			HANDSHAKE_DEBUG(fprintf(stderr, "Loaded from PB password = %s\n", password.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB password = %s\n", password.c_str()));
 		}
 		else if (t == tags->encrypt_key)
 		{
 			hasCryptKey = true;
-			HANDSHAKE_DEBUG(fprintf(stderr, "PB contains crypt key - need encrypted line to pass\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: PB contains crypt key - need encrypted line to pass\n"));
 		}
 	}
 }
@@ -7579,10 +7579,11 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 
 	PathName pluginName = getPluginName();
 	to->p_name.cstr_length = (ULONG) pluginName.length();
-	to->p_name.cstr_address = (UCHAR*) pluginName.c_str();
-	to->p_name.cstr_allocated = 0;
+	to->p_name.cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[to->p_name.cstr_length];
+	to->p_name.cstr_allocated = to->p_name.cstr_length;
+	memcpy(to->p_name.cstr_address, pluginName.c_str(), to->p_name.cstr_length);
 
-	HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo added plugin name (%d) and data (%d)\n",
+	HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: added plugin name (%d) and data (%d)\n",
 				to->p_name.cstr_length, to->p_data.cstr_length));
 
 	if (firstTime)
@@ -7590,7 +7591,7 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 		to->p_list.cstr_length = (ULONG) pluginList.length();
 		to->p_list.cstr_address = (UCHAR*) pluginList.c_str();
 		to->p_list.cstr_allocated = 0;
-		HANDSHAKE_DEBUG(fprintf(stderr, "extractDataFromPluginTo added plugin list (%d len) to packet\n",
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: added plugin list (%d len) to packet\n",
 								to->p_list.cstr_length));
 		firstTime = false;
 	}
