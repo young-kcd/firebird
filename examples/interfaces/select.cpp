@@ -68,7 +68,7 @@ int main()
 		prov = master->getDispatcher();
 
 		// attach employee db
-		att = prov->attachDatabase(st, "localhost:employee", 0, NULL);
+		att = prov->attachDatabase(st, "employee", 0, NULL);
 		check(st, "attachDatabase");
 
 		// start default transaction
@@ -76,8 +76,9 @@ int main()
 		check(st, "startTransaction");
 
 		// prepare statement
-		stmt = att->prepare(st, tra, 0, "select * from country", 3,
-			IStatement::PREPARE_PREFETCH_METADATA);
+		stmt = att->prepare(st, tra, 0, "select last_name, first_name, phone_ext from phone_list "
+										"where location = 'Monterey' order by last_name, first_name",
+			3, IStatement::PREPARE_PREFETCH_METADATA);
 		check(st, "prepare");
 
 		// get list of columns
@@ -141,7 +142,7 @@ int main()
 		unsigned char* buffer = new unsigned char[l];
 
 		// fetch records from cursor and print them
-		while (curs->fetch(st, buffer))
+		while (curs->fetchNext(st, buffer))
 		{
 			for (unsigned j = 0; j < cols; ++j)
 			{
@@ -153,7 +154,7 @@ int main()
 			}
 			printf("\n");
 		}
-		check(st, "fetch");
+		check(st, "fetchNext");
 
 		// close interfaces
 		curs->close(st);
