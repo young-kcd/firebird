@@ -1,3 +1,7 @@
+ 2013-06-23 18:22  asfernandes 
+   M src/dsql/PackageNodes.epp
+Fixed CORE-4126 - gbak -r fails in restoring all stored procedures/functions in packages.
+
  2013-06-21 16:19  alexpeshkoff 
    M doc/README.plugins.html
 Avoid bad style - thanks to Mark
