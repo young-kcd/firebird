@@ -997,7 +997,11 @@ int main(int ac, char** av)
 
 		if (spbItems.getBufferLength() > 0)
 		{
-			spbItems.insertTag(isc_info_svc_stdin);
+			if (fb_utils::isRunningCheck(spbItems.getBuffer(), spbItems.getBufferLength()))
+			{
+				// running service may request stdin data
+				spbItems.insertTag(isc_info_svc_stdin);
+			}
 
 			// use one second timeout to poll service
 			char send[16];
