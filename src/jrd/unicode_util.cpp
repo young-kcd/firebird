@@ -76,12 +76,16 @@ public:
 		: majorVersion(aMajorVersion),
 		  minorVersion(aMinorVersion),
 		  inModule(NULL),
-		  ucModule(NULL)
+		  ucModule(NULL),
+		  ciAiTrans(NULL)
 	{
 	}
 
 	~ICU()
 	{
+		if (ciAiTrans)
+			utransClose(ciAiTrans);
+
 		delete ucModule;
 		delete inModule;
 	}
@@ -109,6 +113,7 @@ public:
 	ModuleLoader::Module* inModule;
 	ModuleLoader::Module* ucModule;
 	UVersionInfo collVersion;
+	UTransliterator* ciAiTrans;
 
 	void (U_EXPORT2 *uInit)(UErrorCode* status);
 	void (U_EXPORT2 *uVersionToString)(UVersionInfo versionArray, char* versionString);
@@ -140,6 +145,9 @@ public:
 		const UChar* rules,         /* may be Null */
 		int32_t rulesLength,        /* -1 if null-terminated */
 		UParseError* parseError,    /* may be Null */
+		UErrorCode* status);
+	UTransliterator* (U_EXPORT2 *utransClone)(
+		const UTransliterator* trans,
 		UErrorCode* status);
 	void (U_EXPORT2 *utransTransUChars)(
 		const UTransliterator* trans,
@@ -885,6 +893,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		icu->getEntryPoint("ucol_strcoll", icu->inModule, icu->ucolStrColl);
 		icu->getEntryPoint("ucol_getVersion", icu->inModule, icu->ucolGetVersion);
 		icu->getEntryPoint("utrans_open", icu->inModule, icu->utransOpen);
+		icu->getEntryPoint("utrans_clone", icu->inModule, icu->utransClone);
 		icu->getEntryPoint("utrans_close", icu->inModule, icu->utransClose);
 		icu->getEntryPoint("utrans_transUChars", icu->inModule, icu->utransTransUChars);
 
@@ -909,6 +918,15 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 				delete icu;
 				continue;
 			}
+		}
+
+		icu->ciAiTrans = icu->utransOpen("Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC",
+			UTRANS_FORWARD, NULL, 0, NULL, &status);
+		if (!icu->ciAiTrans)
+		{
+			gds__log("utransOpen failed");
+			delete icu;
+			continue;
 		}
 
 		UCollator* collator = icu->ucolOpen("", &status);
@@ -1248,9 +1266,10 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 
 		memcpy(upperStr.getBuffer(srcLen / sizeof(USHORT)), src, srcLen);
 
+		// ASF: We cannot use a single transliterator simultaneously in multiple threads,
+		// but the creation is expensive. It's much faster to clone a pre-created one.
 		UErrorCode errorCode = U_ZERO_ERROR;
-		UTransliterator* trans = icu->utransOpen("Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC",
-			UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
+		UTransliterator* trans = icu->utransClone(icu->ciAiTrans, &errorCode);
 
 		if (errorCode <= 0)
 		{
