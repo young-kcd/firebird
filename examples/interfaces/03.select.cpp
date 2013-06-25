@@ -1,9 +1,16 @@
 /*
  *	PROGRAM:	Object oriented API samples.
- *	MODULE:		select.cpp
+ *	MODULE:		03.select.cpp
  *	DESCRIPTION:	A sample of running SELECT statement without parameters.
  *					Prints string fields in a table, coercing VARCHAR to CHAR.
- *					Run something like this to build: c++ select.cpp -lfbclient
+ *					Learns how to coerce output data in prepared statement
+ *					and execute it.
+ *
+ *					Example for the following interfaces:
+ *
+ *					IStatement - SQL statement execution
+ *					IMessageMetadata - describe input and output data format
+ *					IResultSet - fetch data returned by statement after execution
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -57,9 +64,11 @@ int main()
 	IAttachment* att = NULL;
 	ITransaction* tra = NULL;
 	IStatement* stmt = NULL;
-	IResultSet* curs = NULL;
 	IMessageMetadata* meta = NULL;
 	IMetadataBuilder* builder = NULL;
+
+	// Interface provides access to data returned by SELECT statement
+	IResultSet* curs = NULL;
 
 	try
 	{
@@ -113,9 +122,17 @@ int main()
 			}
 		}
 
+		// release automatically created metadata
+		// metadata is not database object, therefore no specific call to close it
 		meta->release();
+
+		// get metadata with coerced datatypes
 		meta = builder->getMetadata(st);
 		check(st, "getMetadata");
+
+		// builder not needed any more
+		builder->release();
+		builder = NULL;
 
 		// now we may also get offsets info
 		for (unsigned j = 0; j < cols; ++j)
@@ -128,9 +145,6 @@ int main()
 				check(st, "getOffset");
 			}
 		}
-
-		builder->release();
-		builder = NULL;
 
 		// open cursor
 		curs = stmt->openCursor(st, tra, NULL, NULL, meta);

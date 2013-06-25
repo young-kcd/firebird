@@ -1,11 +1,20 @@
 /*
  *	PROGRAM:	Object oriented API samples.
- *	MODULE:		update.cpp
- *	DESCRIPTION:
- *      This program updates departments' budgets, given
- *      the department and the new budget information parameters.
+ *	MODULE:		02.update.cpp
+ *	DESCRIPTION:	Run once prepared statement with parameters
+ *					a few times, committing transaction after each run.
+ *					Learns how to prepare statement, manually define parameters
+ *					for it and execute that statement with different parameters.
  *
- *      Note that all updates are rolled back in this version.
+ *					Example for the following interfaces:
+ *					IAttachment - database attachment
+ *					ITransaction - transaction
+ *					IStatement - SQL statement execution
+ *					IMessageMetadata - describe input and output data format
+ *					IMetadataBuilder - tool to modify/create metadata
+ *					IStatus - return state holder
+ *
+ *					Note that all updates are rolled back in this version. (see *** later)
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -23,6 +32,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *					Alex Peshkov, 2013
  */
 
 #include <stdlib.h>
@@ -62,8 +72,14 @@ int main()
 	IProvider* prov = NULL;
 	IAttachment* att = NULL;
 	ITransaction* tra = NULL;
+
+	// Interface executes prepared SQL statement
 	IStatement* stmt = NULL;
+
+	// Interfaces provides access to format of data in messages
 	IMessageMetadata* meta = NULL;
+
+	// Interface makes it possible to change format of data or define it yourself
 	IMetadataBuilder* builder = NULL;
 
 	const char *updstr =
@@ -88,17 +104,19 @@ int main()
 		check(st, "prepare");
 
 		// build metadata
+		// IMaster creates empty new metadata in builder
 		builder = master->getMetadataBuilder(st, 2);
 		check(st, "getMetadataBuilder");
+		// set required info on fields
 		builder->setType(st, 0, SQL_DOUBLE + 1);
 		check(st, "setType");
 		builder->setType(st, 1, SQL_TEXT + 1);
 		check(st, "setType");
 		builder->setLength(st, 1, 3);
 		check(st, "setLength");
+		// IMetadata should be ready
 		meta = builder->getMetadata(st);
 		check(st, "getMetadata");
-
 		// no need in builder any more
 		builder->release();
 		builder = NULL;
@@ -112,13 +130,13 @@ int main()
 			throw "Input message length too big - can't continue";
 		}
 
-		// parameters
+		// locations of parameters in input message
 		char* dept_no = &buffer[meta->getOffset(st, 1)];
 		check(st, "getOffset");
  		double* percent_inc = (double*)&buffer[meta->getOffset(st, 0)];
 		check(st, "getOffset");
 
-		// null IDs
+		// null IDs (set to NOT NULL)
  		short* flag = (short*)&buffer[meta->getNullOffset(st, 0)];
 		check(st, "getNullOffset");
  		*flag = 0;
@@ -204,7 +222,7 @@ int main()
 
 
 /*
- *  Get the department and percent parameters.
+ *  Get the department and percent parameters for an example to run.
  */
 
 int get_input (char *dept_no, double *percent)

@@ -1,8 +1,16 @@
 /*
  *	PROGRAM:	Object oriented API samples.
- *	MODULE:		create.cpp
+ *	MODULE:		01.create.cpp
  *	DESCRIPTION:	A sample of creating new database and new table in it.
- *					Run something like this to build: c++ create.cpp -lfbclient
+ *
+ *					Example for the following interfaces:
+ *					IMaster - main inteface to access all the rest
+ *					IStatus - returns the status of executed command
+ *					IProvider - main interface to access DB / service
+ *					IAttachment - database attachment interface
+ *					ITransaction - transaction interface
+ *
+ *					Run something like this to build: c++ 01.create.cpp -lfbclient
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -56,8 +64,10 @@ int main()
 	// Declare pointers to required interfaces
 	// IStatus is used to return wide error description to user
 	IStatus* st = NULL;
+
 	// IProvider is needed to start to work with database (or service)
 	IProvider* prov = NULL;
+
 	// IAttachment and ITransaction contain methods to work with database attachment
 	// and transactions
 	IAttachment* att = NULL;
@@ -89,7 +99,7 @@ int main()
 		check(st, "detach");
 		att = NULL;
 
-		// attach employee db
+		// attach it once again
 		att = prov->attachDatabase(st, "fbtests.fdb", 0, NULL);
 		check(st, "attachDatabase");
 		printf("Re-attached database fbtests.fdb\n");
@@ -113,13 +123,14 @@ int main()
 			NULL, NULL, NULL, NULL);	// Input parameters and output data not used
 		check(st, "execute");
 
-		// commit transaction retaining
+		// commit transaction (will close interface)
 		tra->commit(st);
 		check(st, "commit");
 		tra = NULL;
+
 		printf("Record inserted into dates_table\n");
 
-		// close interfaces
+		// detach from database (will close interface)
 		att->detach(st);
 		check(st, "detach");
 		att = NULL;
