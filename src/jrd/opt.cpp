@@ -2371,19 +2371,29 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	if (!rsb)
 	{
-		if (inversion)
+		if (inversion && condition)
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
-
-			if (condition &&
-				condition->computable(csb, INVALID_STREAM, false) &&
+			if (condition->computable(csb, INVALID_STREAM, false) &&
 				!condition->jrdStreamFinder(stream))
 			{
-				RecordSource* const other_rsb =
+				RecordSource* const rsb1 =
 					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);
+				RecordSource* const rsb2 =
+					FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
 
-				rsb = FB_NEW(*tdbb->getDefaultPool()) ConditionalStream(csb, other_rsb, rsb, condition);
+				rsb = FB_NEW(*tdbb->getDefaultPool()) ConditionalStream(csb, rsb1, rsb2, condition);
 			}
+			else
+			{
+				rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);
+
+				if (boolean)
+					csb->csb_rpt[stream].csb_flags |= csb_unmatched;
+			}
+		}
+		else if (inversion)
+		{
+			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
 		}
 		else
 		{
