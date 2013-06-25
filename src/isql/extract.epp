@@ -68,6 +68,7 @@ DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 static bool extract_rel_constraints(const char* relation_name);
 static void get_procedure_args_ods12(const char*);
 static void get_procedure_args_legacy(const char*);
+static void get_function_args_ods12(const char*, USHORT);
 static void list_all_grants();
 static processing_state list_all_grants2(bool, const SCHAR*);
 static void list_all_procs();
@@ -86,6 +87,8 @@ static void list_exceptions();
 static void list_filters();
 static void list_foreign();
 static void list_functions();
+static void list_functions_ods12();
+static void list_functions_legacy();
 static void list_generators();
 static void list_indexes();
 static void list_package_bodies();
@@ -1151,6 +1154,240 @@ static void get_procedure_args_legacy(const char* proc_name)
 }
 
 
+static void get_function_args_ods12(const char* func_name, USHORT out_arg)
+{
+/**************************************
+ *
+ *	g e t _ f u n c t i o n _ a r g s _ o d s 1 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	This function extracts the function parameters and adds it to the
+ *	extract file.
+ *  Make sure to pass here only the names of functions that are global.
+ *
+ **************************************/
+	SCHAR char_sets[95];
+
+	// Pass 0 - inputs, pass 1 - return value
+
+	for (SSHORT pass = 0; pass < 2; pass++)
+	{
+		bool first_time = true;
+
+		FOR ARG IN RDB$FUNCTION_ARGUMENTS CROSS
+			FLD IN RDB$FIELDS WITH
+			ARG.RDB$FUNCTION_NAME = func_name AND
+			ARG.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
+			ARG.RDB$PACKAGE_NAME MISSING
+			SORTED BY ARG.RDB$ARGUMENT_POSITION
+
+			if ((pass == 0 && ARG.RDB$ARGUMENT_POSITION == out_arg) ||
+				(pass != 0 && ARG.RDB$ARGUMENT_POSITION != out_arg))
+			{
+				continue;
+			}
+
+			bool prm_collation_id_null = true;
+			SSHORT prm_collation_id = 0;
+
+			bool prm_default_source_null = true;
+			ISC_QUAD prm_default_source;
+
+			bool prm_null_flag_null = true;
+			bool prm_null_flag;
+
+			prm_mech_t prm_mech = prm_mech_normal;
+
+			prm_collation_id_null = ARG.RDB$COLLATION_ID.NULL;
+			prm_collation_id = ARG.RDB$COLLATION_ID;
+
+			prm_default_source_null = ARG.RDB$DEFAULT_SOURCE.NULL;
+			prm_default_source = ARG.RDB$DEFAULT_SOURCE;
+
+			prm_null_flag_null = ARG.RDB$NULL_FLAG.NULL;
+			prm_null_flag = ARG.RDB$NULL_FLAG;
+
+			if (!ARG.RDB$ARGUMENT_MECHANISM.NULL)
+				prm_mech = (prm_mech_t) ARG.RDB$ARGUMENT_MECHANISM;
+
+			char relationName[BUFFER_LENGTH128] = "";
+			char relationField[BUFFER_LENGTH128] = "";
+
+			if (!ARG.RDB$RELATION_NAME.NULL)
+			{
+				fb_utils::exact_name(ARG.RDB$RELATION_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					IUTILS_copy_SQL_id(ARG.RDB$RELATION_NAME, relationName, DBL_QUOTE);
+				else
+					strcpy(relationName, ARG.RDB$RELATION_NAME);
+			}
+
+			if (!ARG.RDB$FIELD_NAME.NULL)
+			{
+				fb_utils::exact_name(ARG.RDB$FIELD_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					IUTILS_copy_SQL_id(ARG.RDB$FIELD_NAME, relationField, DBL_QUOTE);
+				else
+					strcpy(relationField, ARG.RDB$FIELD_NAME);
+			}
+
+			if (first_time)
+			{
+				first_time = false;
+				if (pass == 0)
+				{
+					// this is the input part
+					isqlGlob.printf("(");
+				}
+				else
+				{
+					// we are in the output part
+					isqlGlob.printf("RETURNS ");
+				}
+			}
+			else
+			{
+				isqlGlob.printf(",%s", NEWLINE);
+			}
+
+			if (pass == 0)
+			{
+				fb_utils::exact_name(ARG.RDB$ARGUMENT_NAME);
+
+				// CVC: Parameter names need check for dialect 3, too.
+
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					IUTILS_copy_SQL_id(ARG.RDB$ARGUMENT_NAME, SQL_identifier, DBL_QUOTE);
+				else
+					strcpy (SQL_identifier, ARG.RDB$ARGUMENT_NAME);
+
+				isqlGlob.printf("%s ", SQL_identifier);
+			}
+
+			const bool basedOnColumn = relationName[0] && relationField[0];
+			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
+				basedOnColumn)
+			{
+				if (prm_mech == prm_mech_type_of)
+					isqlGlob.printf("TYPE OF ");
+
+				if (basedOnColumn)
+					isqlGlob.printf("COLUMN %s.%s", relationName, relationField);
+				else
+				{
+					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					{
+						IUTILS_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+						isqlGlob.prints(SQL_identifier);
+					}
+					else
+						isqlGlob.prints(FLD.RDB$FIELD_NAME);
+				}
+
+				// International character sets
+				// Print only the collation
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
+					!prm_collation_id_null && prm_collation_id)
+				{
+					char_sets[0] = '\0';
+					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, prm_collation_id, true,
+						!prm_null_flag_null && prm_null_flag, char_sets);
+					if (char_sets[0])
+						isqlGlob.prints(char_sets);
+				}
+				else if (!prm_null_flag_null && prm_null_flag)
+					isqlGlob.printf(" NOT NULL");
+
+				if (pass == 0) // input, try to extract default and make Vlad happy.
+				{
+					if (!prm_default_source_null)
+					{
+						isqlGlob.printf(" ");
+						SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
+					}
+				}
+			}
+			else
+			{
+				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+					return; // ps_ERR;
+
+				// Changed this to return RDB$CHARACTER_LENGTH if available
+				// Fix for Bug #122563
+				//   FSG 18.Nov.2000
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+				{
+					if (FLD.RDB$CHARACTER_LENGTH.NULL)
+					{
+						isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
+					}
+					else
+					{
+						isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
+					}
+				}
+
+				// Show international character sets and collations
+				if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
+				{
+					char_sets[0] = 0;
+
+					SSHORT collation = 0;
+
+					if (!prm_collation_id_null)
+						collation = prm_collation_id;
+					else if (!FLD.RDB$COLLATION_ID.NULL)
+						collation = FLD.RDB$COLLATION_ID;
+
+					if (FLD.RDB$CHARACTER_SET_ID.NULL)
+						FLD.RDB$CHARACTER_SET_ID = 0;
+
+					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, collation, false,
+						!prm_null_flag_null && prm_null_flag, char_sets);
+					if (char_sets[0])
+						isqlGlob.prints(char_sets);
+				}
+				else if (!prm_null_flag_null && prm_null_flag)
+					isqlGlob.printf(" NOT NULL");
+
+				if (pass == 0) // input, try to extract default and make Vlad happy.
+				{
+					if (!prm_default_source_null)
+					{
+						isqlGlob.printf(" ");
+						SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
+					}
+					else if (!FLD.RDB$DEFAULT_SOURCE.NULL)
+					{
+						isqlGlob.printf(" ");
+						SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
+					}
+				}
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return;
+		END_ERROR;
+
+		// If there was at least one param, close parens
+
+		if (!first_time)
+		{
+			if (pass == 0)
+				isqlGlob.printf(")%s", NEWLINE);
+			else
+				isqlGlob.printf("%s", NEWLINE);
+		}
+
+	}						// end for ptype
+	isqlGlob.printf("AS %s", NEWLINE);
+}
+
+
 static void list_all_grants()
 {
 /**************************************
@@ -1357,7 +1594,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 
 static void print_proc_prefix(int obj_type)
 {
-	if (obj_type == obj_procedure)
+	if (obj_type == obj_procedure || obj_type == obj_udf)
 		isqlGlob.printf("%sCOMMIT WORK%s%s", NEWLINE, isqlGlob.global_Term, NEWLINE);
 
 	if (obj_type != obj_trigger)
@@ -1370,6 +1607,9 @@ static void print_proc_prefix(int obj_type)
 	{
 	case obj_procedure:
 		legend = "Stored procedures";
+		break;
+	case obj_udf:
+		legend = "Stored functions";
 		break;
 	case obj_trigger:
 		legend = "Triggers only will work for SQL triggers";
@@ -1526,11 +1766,13 @@ static void list_all_procs_legacy()
 
 	FOR PRC IN RDB$PROCEDURES
 		SORTED BY PRC.RDB$PROCEDURE_NAME
+
 		if (header)
 		{
 			print_proc_prefix(obj_procedure);
 			header = false;
 		}
+
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
@@ -2656,6 +2898,26 @@ static void list_functions()
  **************************************
  *
  * Functional description
+ *	List all functions
+ *
+ **************************************/
+
+	list_functions_legacy();
+
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+		list_functions_ods12();
+}
+
+
+static void list_functions_legacy()
+{
+/**************************************
+ *
+ *	l i s t _ f u n c t i o n s _ l e g a c y
+ *
+ **************************************
+ *
+ * Functional description
  *	List all external functions
  *
  *	Parameters:  none
@@ -2672,20 +2934,8 @@ static void list_functions()
 
 	FOR FUN IN RDB$FUNCTIONS
 		WITH FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING
+		AND FUN.RDB$MODULE_NAME NOT MISSING
 		SORTED BY FUN.RDB$FUNCTION_NAME
-
-		if (isqlGlob.major_ods >= ODS_VERSION12)
-		{
-			FOR FUN2 IN RDB$FUNCTIONS
-				WITH FUN2.RDB$FUNCTION_ID = FUN.RDB$FUNCTION_ID
-				AND (FUN2.RDB$PACKAGE_NAME NOT MISSING OR FUN2.RDB$FUNCTION_BLR NOT MISSING)
-				continue;
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg (gds_status);
-				return;
-			END_ERROR;
-		}
 
 		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
 		fb_utils::exact_name(FUN.RDB$MODULE_NAME);
@@ -2863,6 +3113,89 @@ static void list_functions()
 }
 
 
+static void list_functions_ods12()
+{
+	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
+
+	bool header = true;
+	static const char* const create_function	= "CREATE FUNCTION %s ";
+	static const char* const body_function		= "BEGIN END %s%s";
+
+	//  First the dummy functions (without bodies)
+
+	FOR FUN IN RDB$FUNCTIONS
+		WITH (FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING)
+		AND FUN.RDB$PACKAGE_NAME MISSING
+		AND FUN.RDB$MODULE_NAME MISSING
+		SORTED BY FUN.RDB$FUNCTION_NAME
+
+		if (header)
+		{
+			print_proc_prefix(obj_udf);
+			header = false;
+		}
+
+		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		{
+			IUTILS_copy_SQL_id(FUN.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
+			isqlGlob.printf(create_function, SQL_identifier);
+		}
+		else
+		{
+			isqlGlob.printf(create_function, FUN.RDB$FUNCTION_NAME);
+		}
+
+		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, FUN.RDB$RETURN_ARGUMENT);
+
+		isqlGlob.printf(body_function, Procterm, NEWLINE);
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
+
+	// This query gets the function name and the source.  We then nest a query
+	// to retrieve the parameters. Alter is used, because the functions are already there
+	TEXT msg[MSG_LENGTH];
+
+	FOR FUN IN RDB$FUNCTIONS
+		WITH (FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING)
+		AND FUN.RDB$PACKAGE_NAME MISSING
+		SORTED BY FUN.RDB$FUNCTION_NAME
+
+		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		{
+			IUTILS_copy_SQL_id(FUN.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
+			isqlGlob.printf("%sALTER FUNCTION %s ", NEWLINE, SQL_identifier);
+		}
+		else
+			isqlGlob.printf("%sALTER FUNCTION %s ", NEWLINE, FUN.RDB$FUNCTION_NAME);
+		
+		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, FUN.RDB$RETURN_ARGUMENT);
+
+		// Print the function body
+
+		if (!FUN.RDB$FUNCTION_SOURCE.NULL)
+			SHOW_print_metadata_text_blob(isqlGlob.Out, &FUN.RDB$FUNCTION_SOURCE);
+
+		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
+
+	END_FOR
+	ON_ERROR
+		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(gds_status));
+		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
+
+	// Only reset the terminators if there were procs to print
+	if (!header)
+		print_proc_suffix(obj_udf);
+}
 
 
 static void list_generators()
