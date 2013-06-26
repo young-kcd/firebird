@@ -257,6 +257,7 @@ const int NO_SCHEMAS				= 169;		// There are no schemas in this database
 const int MAXROWS_INVALID			= 170;		// Unable to convert @1 to a number for MAXWROWS option
 const int MAXROWS_OUTOF_RANGE		= 171;		// Value @1 for MAXROWS is out of range. Max value is @2
 const int MAXROWS_NEGATIVE			= 172;		// The value (@1) for MAXROWS must be zero or greater
+const int HLP_SETEXPLAIN			= 173;		// Toggle display of query access plan in the explained form
 
 
 // Initialize types

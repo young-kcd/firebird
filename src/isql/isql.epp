@@ -6209,6 +6209,7 @@ static processing_state help(const TEXT* what)
 		HLP_SETNAMES,			//	SET NAMES <csname>		-- set name of runtime character set
 		HLP_SETPLAN,			//	SET PLAN				-- toggle display of query access plan
 		HLP_SETPLANONLY,		//	SET PLANONLY			-- toggle display of query plan without executing
+		HLP_SETEXPLAIN,			//	SET EXPLAIN				-- toggle display of query plan in the explained form
 		HLP_SETSQLDIALECT,		//	SET SQL DIALECT <n>		-- set sql dialect to <n>
 		HLP_SETSTAT,			//	SET STATs				-- toggle display of performance statistics
 		HLP_SETTIME,			//	SET TIME				-- toggle display of timestamp with DATE values
