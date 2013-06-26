@@ -1,3 +1,76 @@
+ 2013-06-26 07:17  alexpeshkoff 
+   M examples/interfaces/04.print_table.cpp
+no more need in plan here
+
+ 2013-06-26 06:57  dimitr 
+   M src/isql/isql.epp
+   M src/isql/isql.h
+Added support for the explained plan.
+
+ 2013-06-26 06:49  dimitr 
+   M src/isql/isql.epp
+Added support for the explained plan.
+
+ 2013-06-26 06:21  dimitr 
+   M src/isql/show.epp
+Fixed CORE-3963: isql doesn't know the difference between UDF's and psql-functions.
+
+ 2013-06-26 02:14  asfernandes 
+   M src/common/unicode_util.cpp
+Rework on CORE-4125 to work with ICU 3.0.
+
+ 2013-06-25 17:46  dimitr 
+   M src/jrd/opt.cpp
+Fixed the issue reported by Alex privately.
+
+ 2013-06-25 13:37  alexpeshkoff 
+   A examples/interfaces/01.create.cpp (from /firebird/trunk/examples/interfaces/create.cpp:58242)
+   A examples/interfaces/02.update.cpp (from /firebird/trunk/examples/interfaces/update.cpp:58244)
+   A examples/interfaces/03.select.cpp (from /firebird/trunk/examples/interfaces/select.cpp:58243)
+   A examples/interfaces/04.print_table.cpp
+   D examples/interfaces/create.cpp
+   D examples/interfaces/select.cpp
+   D examples/interfaces/update.cpp
+Examples reworked, added, commented better
+
+ 2013-06-25 08:58  dimitr 
+   M src/isql/extract.epp
+Fixed CORE-4122: Metadata export with isql (option -ex) does not export functions properly.
+
+ 2013-06-25 02:36  asfernandes 
+   M src/common/unicode_util.cpp
+Fixed CORE-4125 - Using COLLATE UNICODE_CI_AI in WHERE clause (not indexed) is extremely slow.
+
+ 2013-06-24 13:40  alexpeshkoff 
+   A examples/interfaces/update.cpp
+A sample of running prepared update statement multiple times. Based on old sample api3 with appropriate license.
+
+ 2013-06-24 12:36  alexpeshkoff 
+   M examples/interfaces/select.cpp
+Make sample buildable after API changes. Make it look a bit like old sample api3.
+
+ 2013-06-24 12:26  alexpeshkoff 
+   A examples/interfaces/create.cpp
+Example on how to create database and table
+
+ 2013-06-24 12:24  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/yvalve/why.cpp
+Make dialect 3 default when creating database using OO API. Keep legacy behavior in ISC API.
+
+ 2013-06-24 08:39  alexpeshkoff 
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Authentication handshake improvements and fixes. Make debug output better readable.
+
+ 2013-06-24 08:36  alexpeshkoff 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Avoid adding incompatible info item to pure info requests
+
  2013-06-23 18:22  asfernandes 
    M src/dsql/PackageNodes.epp
 Fixed CORE-4126 - gbak -r fails in restoring all stored procedures/functions in packages.
