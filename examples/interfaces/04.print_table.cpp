@@ -89,9 +89,7 @@ int main()
 		// In this sample we have no input parameters and do not coerce anything - just
 		// print what we get from SQL query.
 		const char* sql = "select * from rdb$relations where RDB$RELATION_ID < 3 "
-														 "or RDB$VIEW_SOURCE is not null"
-														" plan (RDB$RELATIONS natural)";
-								// last line is here due to A1 bug
+														 "or RDB$VIEW_SOURCE is not null";
 
 		// Do not use IStatement - just ask attachment to open cursor
 		curs = att->openCursor(st, tra, 0, sql, 3, NULL, NULL, NULL);
