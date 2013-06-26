@@ -1,3 +1,7 @@
+ 2013-06-25 15:35  asfernandes 
+   M src/jrd/unicode_util.cpp
+Backported fix for CORE-4225 - Using COLLATE UNICODE_CI_AI in WHERE clause (not indexed) is extremely slow.
+
  2013-06-20 15:43  asfernandes 
    M src/intl/lc_ascii.cpp
 Fixed CORE-2912 - Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
