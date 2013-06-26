@@ -435,6 +435,7 @@ static bool Docount = false;
 static size_t maxRows = 0;
 static bool Plan = false;
 static bool Planonly = false;
+static bool ExplainPlan = false;
 static bool Heading = true;
 static bool BailOnError = false;
 static int Termlen = 0;
@@ -5013,7 +5014,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 	public:
 		enum set_commands
 		{
-			stat, count, list, plan, planonly, blobdisplay, echo, autoddl,
+			stat, count, list, plan, planonly, explain, blobdisplay, echo, autoddl,
 			width, transaction, terminator, names, time,
 //#ifdef DEV_BUILD
 			sqlda_display,
@@ -5033,6 +5034,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::list, "LIST", 0},
 		{SetOptions::plan, "PLAN", 0},
 		{SetOptions::planonly, "PLANONLY", 0},
+		{SetOptions::explain, "EXPLAIN", 0},
 		{SetOptions::blobdisplay, "BLOBDISPLAY", 4},
 		{SetOptions::echo, "ECHO", 0},
 		{SetOptions::autoddl, "AUTODDL", 4},
@@ -5089,6 +5091,12 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			// turn on plan
 			ret = do_set_command ("ON", &Plan);
 		}
+		break;
+
+	case SetOptions::explain:
+		ret = do_set_command(parms[2], &ExplainPlan);
+		if (ExplainPlan)
+			ret = do_set_command("ON", &Plan);
 		break;
 
 	case SetOptions::blobdisplay:
@@ -6105,6 +6113,7 @@ static processing_state print_sets()
 	print_set("Autocommit DDL:", Autocommit);
 	print_set("Access Plan:", Plan);
 	print_set("Access Plan only:", Planonly);
+	print_set("Explain Access Plan:", ExplainPlan);
 
 	isqlGlob.printf("%-25s", "Display BLOB type:");
 	switch (Doblob)
@@ -8041,7 +8050,8 @@ static void process_plan()
 	// Bug 7565: A plan larger than plan_buffer will not be displayed
 	// Bug 7565: Note also that the plan must fit into Print_Buffer
 
-	const SCHAR plan_info[] = { isc_info_sql_get_plan };
+	SCHAR plan_info[1];
+	plan_info[0] = ExplainPlan ? isc_info_sql_explain_plan : isc_info_sql_get_plan;
 	TEXT plan_buffer[PRINT_BUFFER_LENGTH];
 	memset(plan_buffer, 0, sizeof(plan_buffer));
 	char* planPtr = plan_buffer;
@@ -8060,6 +8070,7 @@ static void process_plan()
 		switch (planPtr[0])
 		{
 		case isc_info_sql_get_plan:
+		case isc_info_sql_explain_plan:
 			{
 				ULONG l = gds__vax_integer(reinterpret_cast<const UCHAR*>(planPtr) + 1, 2);
 				if (l > planSize - 3)
