@@ -2911,6 +2911,7 @@ Fetches = !f', NULL, NULL);
 ('MAXROWS_INVALID', 'newRowCount', 'isql.epp', NULL, 17, 170, NULL, 'Unable to convert @1 to a number for MAXROWS option', NULL, NULL)
 ('MAXROWS_OUTOF_RANGE', 'newRowCount', 'isql.epp', NULL, 17, 171, NULL, 'Value @1 for MAXROWS is out of range. Max value is @2', NULL, NULL)
 ('MAXROWS_NEGATIVE', 'newRowCount', 'isql.epp', NULL, 17, 172, NULL, 'The value (@1) for MAXROWS must be zero or greater', NULL, NULL)
+('HLP_SETEXPLAIN', 'help', 'isql.epp', NULL, 17, 173, NULL, '    SET EXPLAIN            -- toggle display of query access plan in the explained form', NULL, NULL)
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
