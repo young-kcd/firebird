@@ -360,7 +360,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			}
 		}
 
-		if (m_order)
+		if (state != STATE_EOF_FOUND && m_order)
 		{
 			for (ptrValue = m_order->begin(), endValue = m_order->end();
 				 ptrValue != endValue;
