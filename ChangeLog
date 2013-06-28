@@ -1,3 +1,8 @@
+ 2013-06-27 18:25  dimitr 
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Committed the forgotten help text.
+
  2013-06-26 07:17  alexpeshkoff 
    M examples/interfaces/04.print_table.cpp
 no more need in plan here
