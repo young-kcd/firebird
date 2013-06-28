@@ -64,7 +64,8 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 
 		if (!client)
 		{
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: SRP phase1: login=%s password=%s\n", cb->getLogin(), cb->getPassword()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: SRP phase1: login=%s password=%s\n",
+				cb->getLogin(), cb->getPassword()));
 			if (!(cb->getLogin() && cb->getPassword()))
 			{
 				return AUTH_CONTINUE;

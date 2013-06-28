@@ -6180,7 +6180,8 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 			{
 			case Auth::AUTH_SUCCESS:
 			case Auth::AUTH_MORE_DATA:
-				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: plugin %s is OK\n", cBlock.plugins.name()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: plugin %s is OK\n",
+					cBlock.plugins.name()));
 				cleanDpb(dpb, tags);
 				cBlock.extractDataFromPluginTo(dpb, tags, port->port_protocol);
 				return;
@@ -6189,12 +6190,15 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 				continue;
 
 			case Auth::AUTH_FAILED:
-				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: plugin %s FAILED\n", cBlock.plugins.name()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: plugin %s FAILED\n",
+					cBlock.plugins.name()));
 				(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
 				break;	// compiler silencer
 			}
 		}
-		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: try next plugin, %s skipped\n", cBlock.plugins.name()));
+
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: try next plugin, %s skipped\n",
+			cBlock.plugins.name()));
 	}
 }
 
@@ -6252,8 +6256,9 @@ static void authReceiveResponse(ClntAuthBlock& cBlock, rem_port* port, Rdb* rdb,
 			d = &packet->p_auth_cont.p_data;
 			n = &packet->p_auth_cont.p_name;
 			port->addServerKeys(&packet->p_auth_cont.p_keys);
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: ont_auth d=%d n=%d '%.*s' 0x%x\n", d->cstr_length, n->cstr_length,
-									n->cstr_length, n->cstr_address, n->cstr_address ? n->cstr_address[0] : 0));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: ont_auth d=%d n=%d '%.*s' 0x%x\n",
+				d->cstr_length, n->cstr_length,
+				n->cstr_length, n->cstr_address, n->cstr_address ? n->cstr_address[0] : 0));
 			break;
 
 		case op_crypt:
@@ -7505,13 +7510,15 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
 			}
 			dpb.insertPath(tags->plugin_list, pluginList);
 			firstTime = false;
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: first time - added plugName & pluginList\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr,
+				"Cli: extractDataFromPluginTo: first time - added plugName & pluginList\n"));
 		}
 		fb_assert(tags->specific_data);
 		dpb.insertBytes(tags->specific_data, dataFromPlugin.begin(), dataFromPlugin.getCount());
 
-		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: Added %" SIZEFORMAT " bytes of spec data with tag %d\n",
-								dataFromPlugin.getCount(), tags->specific_data));
+		HANDSHAKE_DEBUG(fprintf(stderr,
+			"Cli: extractDataFromPluginTo: Added %" SIZEFORMAT " bytes of spec data with tag %d\n",
+			dataFromPlugin.getCount(), tags->specific_data));
 
 		return;
 	}
@@ -7556,12 +7563,14 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 			makeUtfString(uft8Convert, password);
 			dpb.getString(password);
 			dpb.deleteClumplet();
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB password = %s\n", password.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr,
+				"Cli: loadClnt: Loaded from PB password = %s\n", password.c_str()));
 		}
 		else if (t == tags->encrypt_key)
 		{
 			hasCryptKey = true;
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: PB contains crypt key - need encrypted line to pass\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr,
+				"Cli: loadClnt: PB contains crypt key - need encrypted line to pass\n"));
 		}
 	}
 }
@@ -7591,8 +7600,9 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 		to->p_list.cstr_length = (ULONG) pluginList.length();
 		to->p_list.cstr_address = (UCHAR*) pluginList.c_str();
 		to->p_list.cstr_allocated = 0;
-		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: added plugin list (%d len) to packet\n",
-								to->p_list.cstr_length));
+		HANDSHAKE_DEBUG(fprintf(stderr,
+			"Cli: extractDataFromPluginTo: added plugin list (%d len) to packet\n",
+			to->p_list.cstr_length));
 		firstTime = false;
 	}
 	else

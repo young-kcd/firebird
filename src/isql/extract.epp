@@ -3174,7 +3174,7 @@ static void list_functions_ods12()
 		}
 		else
 			isqlGlob.printf("%sALTER FUNCTION %s ", NEWLINE, FUN.RDB$FUNCTION_NAME);
-		
+
 		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, FUN.RDB$RETURN_ARGUMENT);
 
 		// Print the function body

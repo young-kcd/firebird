@@ -60,6 +60,7 @@ struct MyField
 int main()
 {
 	int rc = 0;
+	char s[100];
 
 	setenv("ISC_USER", "sysdba", 0);
 	setenv("ISC_PASSWORD", "masterkey", 0);
@@ -112,7 +113,7 @@ int main()
 			unsigned sub = meta->getSubType(st, j);
 			check(st, "getSubType");
 
-			switch(t)
+			switch (t)
 			{
 			case SQL_BLOB:
 				if (sub != 1)
@@ -127,7 +128,6 @@ int main()
 
 			default:
 				{
-					char s[100];
 					sprintf(s, "Unknown type %d for %s", t, meta->getField(st, j));
 					throw s;
 				}
@@ -183,7 +183,7 @@ int main()
 		check(st, "detach");
 		att = NULL;
 	}
-	catch(const char* text)
+	catch (const char* text)
 	{
 		rc = 1;
 
@@ -229,7 +229,7 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 
 	// IBlob makes it possible to read/write BLOB data
 	IBlob* blob = NULL;
-	switch(type)
+	switch (type)
 	{
 	// text fields
 	case SQL_TEXT:
@@ -257,7 +257,7 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 		try
 		{
 			// use attachment's method to access BLOB object
-			blob = att->openBlob(st, tra, (ISC_QUAD*)(buf + offset));
+			blob = att->openBlob(st, tra, (ISC_QUAD*) (buf + offset));
 			check(st, "openBlob");
 
 			char segbuf[16];
@@ -279,7 +279,7 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 			blob = NULL;
 			printf("\n");
 		}
-		catch(...)
+		catch (...)
 		{
 			if (blob)
 				blob->release();

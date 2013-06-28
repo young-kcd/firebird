@@ -376,8 +376,9 @@ public:
 
 			// if we asked for more data but received nothing switch to next plugin
 			bool forceNext = contAuth && (!authPort->port_srv_auth_block->hasDataForPlugin());
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: ServerAuth calls plug %s\n", forceNext ? "forced-NEXT" : authItr->name()));
-			int authResult = forceNext ? Auth::AUTH_CONTINUE : 
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: ServerAuth calls plug %s\n",
+				forceNext ? "forced-NEXT" : authItr->name()));
+			int authResult = forceNext ? Auth::AUTH_CONTINUE :
 				authServer->authenticate(&st, authPort->port_srv_auth_block,
 					&authPort->port_srv_auth_block->authBlockWriter);
 			authPort->port_srv_auth_block->setPluginName(authItr->name());
@@ -1567,14 +1568,16 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
 									connect->p_cnct_user_id.cstr_address,
 									connect->p_cnct_user_id.cstr_length);
-		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: is going to load data to port_srv_auth_block\n"));
+		HANDSHAKE_DEBUG(fprintf(stderr,
+			"Srv: accept_connection: is going to load data to port_srv_auth_block\n"));
 		port->port_srv_auth_block->load(id);
 		if (port->port_srv_auth_block->getLogin())
 		{
 			port->port_login = port->port_srv_auth_block->getLogin();
 		}
 
-		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: finished with port_srv_auth_block prepare, a=%d\n", accepted));
+		HANDSHAKE_DEBUG(fprintf(stderr,
+			"Srv: accept_connection: finished with port_srv_auth_block prepare, a=%d\n", accepted));
 
 		if (port->port_srv_auth_block->getPluginName())
 		{
@@ -1585,7 +1588,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 			if (port->port_srv_auth_block->plugins)		// We have all required data and iterator was created
 			{
-				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: call plugin %s\n", port->port_srv_auth_block->getPluginName()));
+				HANDSHAKE_DEBUG(fprintf(stderr,
+					"Srv: accept_connection: call plugin %s\n", port->port_srv_auth_block->getPluginName()));
 
 				AuthServerPlugins* const plugins = port->port_srv_auth_block->plugins;
 				for (; plugins->hasData(); plugins->next())
