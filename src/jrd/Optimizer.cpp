@@ -456,25 +456,49 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		dsc dsc1, dsc2;
 		dsc *desc1 = &dsc1, *desc2 = &dsc2;
 
-		if (node1->nod_type == nod_cast && node2->nod_type == nod_field)
+		if (node1->nod_type == nod_cast)
 		{
+			jrd_nod* const source = node1->nod_arg[e_cast_source];
+
 			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+			CMP_get_desc(tdbb, opt->opt_csb, source, desc2);
 
 			if (DSC_EQUIV(desc1, desc2, true) &&
-				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source], node2, stream))
+				OPT_expression_equal2(tdbb, opt, source, node2, stream))
 			{
 				return true;
 			}
 		}
 
-		if (node1->nod_type == nod_field && node2->nod_type == nod_cast)
+		if (node2->nod_type == nod_cast)
 		{
-			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+			jrd_nod* const source = node2->nod_arg[e_cast_source];
+
+			CMP_get_desc(tdbb, opt->opt_csb, node2, desc1);
+			CMP_get_desc(tdbb, opt->opt_csb, source, desc2);
 
 			if (DSC_EQUIV(desc1, desc2, true) &&
-				OPT_expression_equal2(tdbb, opt, node1, node2->nod_arg[e_cast_source], stream))
+				OPT_expression_equal2(tdbb, opt, source, node1, stream))
+			{
+				return true;
+			}
+		}
+
+		if (node1->nod_type == nod_derived_expr)
+		{
+			jrd_nod* const expression = node1->nod_arg[e_derived_expr_expr];
+
+			if (OPT_expression_equal2(tdbb, opt, expression, node2, stream))
+			{
+				return true;
+			}
+		}
+
+		if (node2->nod_type == nod_derived_expr)
+		{
+			jrd_nod* const expression = node2->nod_arg[e_derived_expr_expr];
+
+			if (OPT_expression_equal2(tdbb, opt, expression, node1, stream))
 			{
 				return true;
 			}
@@ -661,6 +685,14 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			if (node1->nod_arg[e_strlen_type] == node2->nod_arg[e_strlen_type] &&
 				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_strlen_value],
 									  node2->nod_arg[e_strlen_value], stream))
+			{
+				return true;
+			}
+			break;
+
+		case nod_derived_expr:
+			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_derived_expr_expr],
+									  node2->nod_arg[e_derived_expr_expr], stream))
 			{
 				return true;
 			}
