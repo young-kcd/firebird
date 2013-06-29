@@ -1,3 +1,21 @@
+ 2013-06-28 15:55  asfernandes 
+   M src/jrd/recsrc/AggregatedStream.cpp
+Fixed CORE-4131 - Error when processing an empty data set by window function, if reading indexed.
+
+ 2013-06-28 02:03  asfernandes 
+   M examples/interfaces/01.create.cpp
+   M examples/interfaces/02.update.cpp
+   M examples/interfaces/03.select.cpp
+   M examples/interfaces/04.print_table.cpp
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/extlib/fbudf/fbudf.cpp
+   M src/isql/extract.epp
+   M src/isql/show.epp
+   M src/msgs/facilities2.sql
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+Misc.
+
  2013-06-27 18:25  dimitr 
    M src/msgs/facilities2.sql
    M src/msgs/messages2.sql
