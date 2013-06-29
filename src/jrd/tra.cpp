@@ -1604,28 +1604,15 @@ void TRA_sweep(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	// No point trying to sweep a ReadOnly database
-	if (dbb->readOnly())
-		return;
-
-	if (dbb->dbb_flags & DBB_sweep_in_progress)
-		return;
-
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	if (attachment->att_flags & ATT_no_cleanup)
-		return;
-
-	Lock temp_lock(tdbb, 0, LCK_sweep);
-
-	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
+	if (!dbb->allowSweepRun(tdbb))
 	{
-		// clear lock error from status vector
-		fb_utils::init_status(tdbb->tdbb_status_vector);
+		dbb->clearSweepFlags(tdbb);
 		return;
 	}
 
-	dbb->dbb_flags |= DBB_sweep_in_progress;
+	fb_assert(dbb->dbb_flags & DBB_sweep_in_progress);
+
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	jrd_tra* const tdbb_old_trans = tdbb->getTransaction();
 
@@ -1704,11 +1691,9 @@ void TRA_sweep(thread_db* tdbb)
 
 	TRA_commit(tdbb, transaction, false);
 
-	LCK_release(tdbb, &temp_lock);
-	dbb->dbb_flags &= ~DBB_sweep_in_progress;
-
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	tdbb->setTransaction(tdbb_old_trans);
+	dbb->clearSweepFlags(tdbb);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
@@ -1728,10 +1713,9 @@ void TRA_sweep(thread_db* tdbb)
 			}
 		}
 
-		LCK_release(tdbb, &temp_lock);
-		dbb->dbb_flags &= ~DBB_sweep_in_progress;
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		tdbb->setTransaction(tdbb_old_trans);
+		dbb->clearSweepFlags(tdbb);
 
 		throw;
 	}
@@ -2410,19 +2394,8 @@ static void start_sweeper(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	if ((dbb->dbb_flags & DBB_sweep_in_progress) || (dbb->dbb_ast_flags & DBB_shutdown))
+	if (!dbb->allowSweepThread(tdbb))
 		return;
-
-	Lock temp_lock(tdbb, 0, LCK_sweep);
-
-	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
-	{
-		// clear lock error from status vector
-		fb_utils::init_status(tdbb->tdbb_status_vector);
-		return;
-	}
-
-	LCK_release(tdbb, &temp_lock);
 
 	// allocate space for the string and a null at the end
 	const char* pszFilename = tdbb->getAttachment()->att_filename.c_str();
@@ -2436,6 +2409,7 @@ static void start_sweeper(thread_db* tdbb)
 		try
 		{
 			Thread::start(sweep_database, database, THREAD_medium);
+			return;
 		}
 		catch (const Firebird::Exception& ex)
 		{
@@ -2447,6 +2421,7 @@ static void start_sweeper(thread_db* tdbb)
 	{
 		ERR_log(0, 0, "cannot start sweep thread, Out of Memory");
 	}
+	dbb->clearSweepFlags(tdbb);
 }
 
 
@@ -3197,7 +3172,6 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// If the transaction block is getting out of hand, force a sweep
 
 	if (dbb->dbb_sweep_interval &&
-		!(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
 		(trans->tra_oldest_active > oldest) &&
 		(trans->tra_oldest_active - oldest > dbb->dbb_sweep_interval) &&
 		oldest_state != tra_limbo)

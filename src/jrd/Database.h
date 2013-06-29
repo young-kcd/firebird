@@ -213,6 +213,7 @@ const ULONG DBB_new					= 0x8000L;	// Database object is just created
 const ULONG DBB_gc_cooperative		= 0x10000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x20000L;	// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache			= 0x40000L;	// Not using file system cache
+const ULONG DBB_sweep_starting		= 0x80000L;	// Auto-sweep is starting
 
 //
 // dbb_ast_flags
@@ -350,6 +351,7 @@ public:
 	BufferControl*	dbb_bcb;			// Buffer control block
 	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
+	Lock* 		dbb_sweep_lock;			// sweep lock
 
 	Firebird::SyncObject	dbb_sh_counter_sync;
 
@@ -502,8 +504,17 @@ public:
 		return (dbb_flags & DBB_read_only) != 0;
 	}
 
+	// returns true if sweeper thread could start
+	bool allowSweepThread(thread_db* tdbb);
+	// returns true if sweep could run
+	bool allowSweepRun(thread_db* tdbb);
+	// reset sweep flags and release sweep lock
+	void clearSweepFlags(thread_db* tdbb);
+
 private:
-	static int blockingAstSharedCounter(void*);
+	//static int blockingAstSharedCounter(void*);
+	static int blocking_ast_sweep(void* ast_object);
+	Lock* createSweepLock(thread_db* tdbb);
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database
