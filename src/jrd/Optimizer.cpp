@@ -372,11 +372,12 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
 	scratch = NULL;
 	used = false;
 	unique = false;
+	navigated = false;
 }
 
 OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 									   StreamType streamNumber, bool outer,
-									   bool inner, SortNode** sortNode)
+									   bool inner, SortNode* sortNode)
 	: pool(p), alias(p), indexScratches(p), inversionCandidates(p)
 {
 /**************************************
@@ -400,6 +401,7 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 	this->innerFlag = inner;
 	this->outerFlag = outer;
 	this->sort = sortNode;
+	this->navigationCandidate = -1;
 	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[this->stream];
 	relation = csb_tail->csb_relation;
 
@@ -489,7 +491,7 @@ const string& OptimizerRetrieval::getAlias()
 	return alias;
 }
 
-InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
+InversionCandidate* OptimizerRetrieval::generateInversion()
 {
 /**************************************
  *
@@ -542,8 +544,8 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 
 		getInversionCandidates(&inversions, &indexScratches, 1);
 
-		if (sort && rsb)
-			*rsb = generateNavigation();
+		if (sort)
+			analyzeNavigation();
 
 		// Second, handle "OR" comparisons
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
@@ -639,6 +641,8 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		}
 	}
 
+	invCandidate->navigated = (navigationCandidate >= 0);
+
 #ifdef OPT_DEBUG_RETRIEVAL
 	// Debug
 	printFinalCandidate(invCandidate);
@@ -647,11 +651,43 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 	return invCandidate;
 }
 
-IndexTableScan* OptimizerRetrieval::generateNavigation()
+IndexTableScan* OptimizerRetrieval::getNavigation()
 {
 /**************************************
  *
- *	g e n e r a t e N a v i g a t i o n
+ *	g e t N a v i g a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	if (navigationCandidate < 0)
+		return NULL;
+
+	fb_assert(navigationCandidate <= indexScratches.getCount());
+	IndexScratch* const indexScratch = &indexScratches[navigationCandidate];
+
+	// Looks like we can do a navigational walk.  Flag that
+	// we have used this index for navigation, and allocate
+	// a navigational rsb for it.
+	indexScratch->idx->idx_runtime_flags |= idx_navigate;
+
+	const USHORT key_length =
+		ROUNDUP(BTR_key_length(tdbb, relation, indexScratch->idx), sizeof(SLONG));
+
+	indexScratch->utilized = true;
+	InversionNode* const index_node = makeIndexScanNode(indexScratch);
+
+	return FB_NEW(*tdbb->getDefaultPool())
+		IndexTableScan(csb, getAlias(), stream, index_node, key_length);
+}
+
+void OptimizerRetrieval::analyzeNavigation()
+{
+/**************************************
+ *
+ *	a n a l y z e N a v i g a t i o n
  *
  **************************************
  *
@@ -660,22 +696,16 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
  **************************************/
 	fb_assert(sort);
 
-	SortNode* sortPtr = *sort;
-	if (!sortPtr)
-		return NULL;
-
-	size_t i = 0;
-	for (; i < indexScratches.getCount(); ++i)
+	for (size_t i = 0; i < indexScratches.getCount(); ++i)
 	{
-
-		index_desc* idx = indexScratches[i].idx;
+		const index_desc* const idx = indexScratches[i].idx;
 
 		// if the number of fields in the sort is greater than the number of
 		// fields in the index, the index will not be used to optimize the
 		// sort--note that in the case where the first field is unique, this
 		// could be optimized, since the sort will be performed correctly by
 		// navigating on a unique index on the first field--deej
-		if (sortPtr->expressions.getCount() > idx->idx_count)
+		if (sort->expressions.getCount() > idx->idx_count)
 			continue;
 
 		// if the user-specified access plan for this request didn't
@@ -690,7 +720,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		// an expression index
 		if (idx->idx_flags & idx_expressn)
 		{
-			if (sortPtr->expressions.getCount() != 1)
+			if (sort->expressions.getCount() != 1)
 				continue;
 		}
 
@@ -698,12 +728,12 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		// in the exact same order
 
 		bool usableIndex = true;
-		index_desc::idx_repeat* idx_tail = idx->idx_rpt;
-		NestConst<ValueExprNode>* ptr = sortPtr->expressions.begin();
-		const bool* descending = sortPtr->descending.begin();
-		const int* nullOrder = sortPtr->nullOrder.begin();
+		const index_desc::idx_repeat* idx_tail = idx->idx_rpt;
+		NestConst<ValueExprNode>* ptr = sort->expressions.begin();
+		const bool* descending = sort->descending.begin();
+		const int* nullOrder = sort->nullOrder.begin();
 
-		for (const NestConst<ValueExprNode>* const end = sortPtr->expressions.end();
+		for (const NestConst<ValueExprNode>* const end = sort->expressions.end();
 			 ptr != end;
 			 ++ptr, ++descending, ++nullOrder, ++idx_tail)
 		{
@@ -757,7 +787,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 					// ASF: We currently can't use non-unique index for GROUP BY and DISTINCT with
 					// multi-level and insensitive collation. In NAV, keys are verified with memcmp
 					// but there we don't know length of each level.
-					if (sortPtr->unique && (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
+					if (sort->unique && (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
 					{
 						usableIndex = false;
 						break;
@@ -766,62 +796,13 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 			}
 		}
 
-		if (!usableIndex)
+		if (usableIndex)
 		{
-			// We can't use this index, try next one.
-			continue;
+			// Looks like we can do a navigational walk. Remember that.
+			navigationCandidate = static_cast<int>(i);
+			return;
 		}
-
-		// Looks like we can do a navigational walk.  Flag that
-		// we have used this index for navigation, and allocate
-		// a navigational rsb for it.
-		*sort = NULL;
-		idx->idx_runtime_flags |= idx_navigate;
-
-		indexScratches[i].utilized = true;
-		InversionNode* const index_node = makeIndexScanNode(&indexScratches[i]);
-		const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
-		return FB_NEW(*tdbb->getDefaultPool())
-				IndexTableScan(csb, getAlias(), stream, index_node, key_length);
 	}
-
-	return NULL;
-}
-
-InversionCandidate* OptimizerRetrieval::getCost()
-{
-/**************************************
- *
- *	g e t C o s t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	createIndexScanNodes = false;
-	setConjunctionsMatched = false;
-	return generateInversion(NULL);
-}
-
-InversionCandidate* OptimizerRetrieval::getInversion(IndexTableScan** rsb)
-{
-/**************************************
- *
- *	g e t I n v e r s i o n
- *
- **************************************
- *
- * Return an inversionCandidate which
- * contains a created inversion when an
- * index could be used.
- * This function should always return
- * an InversionCandidate;
- *
- **************************************/
-	createIndexScanNodes = true;
-	setConjunctionsMatched = true;
-	return generateInversion(rsb);
 }
 
 void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions,

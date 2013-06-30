@@ -2293,10 +2293,10 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else
 	{
 		// Persistent table
-		IndexTableScan* nav_rsb = NULL;
 		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream,
-											  outer_flag, inner_flag, sort_ptr);
-		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion(&nav_rsb));
+											  outer_flag, inner_flag,
+											  sort_ptr ? *sort_ptr : NULL);
+		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion());
 
 		if (candidate)
 		{
@@ -2304,12 +2304,15 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			condition = candidate->condition;
 		}
 
+		IndexTableScan* const nav_rsb = optimizerRetrieval.getNavigation();
+
 		if (nav_rsb)
 		{
+			if (sort_ptr)
+				*sort_ptr = NULL;
+
 			if (inversion && !condition)
-			{
 				nav_rsb->setInversion(inversion);
-			}
 
 			rsb = nav_rsb;
 		}

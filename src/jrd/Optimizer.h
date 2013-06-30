@@ -147,6 +147,7 @@ public:
 	IndexScratch*	scratch;
 	bool			used;
 	bool			unique;
+	bool			navigated;
 
 	Firebird::Array<BoolExprNode*> matches;
 	SortedStreamList dependentFromStreams;
@@ -159,18 +160,33 @@ class OptimizerRetrieval
 {
 public:
 	OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, StreamType streamNumber,
-		bool outer, bool inner, SortNode** sortNode);
+		bool outer, bool inner, SortNode* sortNode);
 	~OptimizerRetrieval();
 
-	InversionCandidate* getCost();
-	InversionCandidate* getInversion(IndexTableScan** rsb);
+	InversionCandidate* getInversion()
+	{
+		createIndexScanNodes = true;
+		setConjunctionsMatched = true;
+
+		return generateInversion();
+	}
+
+	InversionCandidate* getCost()
+	{
+		createIndexScanNodes = false;
+		setConjunctionsMatched = false;
+
+		return generateInversion();
+	}
+
+	IndexTableScan* getNavigation();
 
 protected:
+	void analyzeNavigation();
 	InversionNode* composeInversion(InversionNode* node1, InversionNode* node2,
 		InversionNode::Type node_type) const;
 	const Firebird::string& getAlias();
-	InversionCandidate* generateInversion(IndexTableScan** rsb);
-	IndexTableScan* generateNavigation();
+	InversionCandidate* generateInversion();
 	void getInversionCandidates(InversionCandidateList* inversions,
 		IndexScratchList* indexScratches, USHORT scope) const;
 	InversionNode* makeIndexNode(const index_desc* idx) const;
@@ -198,7 +214,7 @@ private:
 public:
 	StreamType stream;
 	Firebird::string alias;
-	SortNode** sort;
+	SortNode* sort;
 	jrd_rel* relation;
 	CompilerScratch* csb;
 	Database* database;
@@ -209,6 +225,7 @@ public:
 	bool outerFlag;
 	bool createIndexScanNodes;
 	bool setConjunctionsMatched;
+	int navigationCandidate;
 };
 
 class IndexRelationship
