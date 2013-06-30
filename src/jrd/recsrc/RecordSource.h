@@ -624,6 +624,10 @@ namespace Jrd
 		void init(thread_db* tdbb, CompilerScratch* csb);
 
 		State evaluateGroup(thread_db* tdbb, State state) const;
+		void cacheValues(thread_db* tdbb, jrd_req* request,
+			const NestValueArray* group, unsigned impureOffset) const;
+		bool lookForChange(thread_db* tdbb, jrd_req* request,
+			const NestValueArray* group, unsigned impureOffset) const;
 		void finiDistinct(thread_db* tdbb, jrd_req* request) const;
 
 		NestConst<BaseBufferedStream> m_bufferedStream;

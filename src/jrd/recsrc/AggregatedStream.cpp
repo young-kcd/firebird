@@ -129,7 +129,10 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 		if (impure->pending == 0)
 		{
 			if (impure->state == STATE_PENDING)
-				m_bufferedStream->getRecord(tdbb);
+			{
+				if (!m_bufferedStream->getRecord(tdbb))
+					fb_assert(false);
+			}
 
 			impure->state = evaluateGroup(tdbb, impure->state);
 
@@ -286,7 +289,7 @@ void AggregatedStream::init(thread_db* tdbb, CompilerScratch* csb)
 
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state
 // variable.
-AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, AggregatedStream::State state) const
+AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, State state) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -338,118 +341,16 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			}
 		}
 
-		unsigned impureOffset = 0;
-		const NestConst<ValueExprNode>* ptrValue, *endValue;
-		dsc* desc;
+		cacheValues(tdbb, request, m_group, 0);
 
-		if (m_group)
-		{
-			for (ptrValue = m_group->begin(), endValue = m_group->end();
-				 ptrValue != endValue;
-				 ++ptrValue, ++impureOffset)
-			{
-				const ValueExprNode* from = *ptrValue;
-				impure_value* target = &impure->impureValues[impureOffset];
-
-				desc = EVL_expr(tdbb, request, from);
-
-				if (request->req_flags & req_null)
-					target->vlu_desc.dsc_address = NULL;
-				else
-					EVL_make_value(tdbb, desc, target);
-			}
-		}
-
-		if (state != STATE_EOF_FOUND && m_order)
-		{
-			for (ptrValue = m_order->begin(), endValue = m_order->end();
-				 ptrValue != endValue;
-				 ++ptrValue, ++impureOffset)
-			{
-				const ValueExprNode* from = *ptrValue;
-				impure_value* target = &impure->impureValues[impureOffset];
-
-				desc = EVL_expr(tdbb, request, from);
-
-				if (request->req_flags & req_null)
-					target->vlu_desc.dsc_address = NULL;
-				else
-					EVL_make_value(tdbb, desc, target);
-			}
-		}
+		if (state != STATE_EOF_FOUND)
+			cacheValues(tdbb, request, m_order, (m_group ? m_group->getCount() : 0));
 
 		// Loop thru records until either a value change or EOF
 
-		bool first = true;
-
 		while (state != STATE_EOF_FOUND)
 		{
-			impureOffset = 0;
 			state = STATE_PENDING;
-
-			if (first)
-				first = false;
-			else
-			{
-				// In the case of a group by, look for a change in value of any of
-				// the columns; if we find one, stop aggregating and return what we have.
-
-				if (m_group)
-				{
-					for (ptrValue = m_group->begin(), endValue = m_group->end();
-						 ptrValue != endValue;
-						 ++ptrValue, ++impureOffset)
-					{
-						const ValueExprNode* from = *ptrValue;
-						impure_value* vtemp = &impure->impureValues[impureOffset];
-
-						desc = EVL_expr(tdbb, request, from);
-
-						if (request->req_flags & req_null)
-						{
-							if (vtemp->vlu_desc.dsc_address)
-							{
-								if (m_order)
-									state = STATE_GROUPING;
-								goto break_out;
-							}
-						}
-						else
-						{
-							if (!vtemp->vlu_desc.dsc_address || MOV_compare(&vtemp->vlu_desc, desc) != 0)
-							{
-								if (m_order)
-									state = STATE_GROUPING;
-								goto break_out;
-							}
-						}
-					}
-				}
-
-				if (m_order)
-				{
-					for (ptrValue = m_order->begin(), endValue = m_order->end();
-						 ptrValue != endValue;
-						 ++ptrValue, ++impureOffset)
-					{
-						const ValueExprNode* from = *ptrValue;
-						impure_value* vtemp = &impure->impureValues[impureOffset];
-
-						desc = EVL_expr(tdbb, request, from);
-
-						if (request->req_flags & req_null)
-						{
-							if (vtemp->vlu_desc.dsc_address)
-								goto break_out;
-						}
-						else
-						{
-							if (!vtemp->vlu_desc.dsc_address || MOV_compare(&vtemp->vlu_desc, desc) != 0)
-								goto break_out;
-						}
-					}
-				}
-			}
 
 			// go through and compute all the aggregates on this record
 
@@ -473,14 +374,24 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 					EXE_assignment(tdbb, *source, *target);
 			}
 
-			if (state == STATE_EOF_FOUND)
-				break;
+			if (state != STATE_EOF_FOUND && m_next->getRecord(tdbb))
+			{
+				// In the case of a group by, look for a change in value of any of
+				// the columns; if we find one, stop aggregating and return what we have.
 
-			if (!m_next->getRecord(tdbb))
+				if (lookForChange(tdbb, request, m_group, 0))
+				{
+					if (m_order)
+						state = STATE_GROUPING;
+					break;
+				}
+
+				if (lookForChange(tdbb, request, m_order, (m_group ? m_group->getCount() : 0)))
+					break;
+			}
+			else
 				state = STATE_EOF_FOUND;
 		}
-
-		break_out:
 
 		// Finish up any residual computations and get out
 
@@ -497,7 +408,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				const USHORT id = field->fieldId;
 				Record* record = request->req_rpb[field->fieldStream].rpb_record;
 
-				desc = aggNode->execute(tdbb, request);
+				dsc* desc = aggNode->execute(tdbb, request);
 				if (!desc || !desc->dsc_dtype)
 					record->setNull(id);
 				else
@@ -515,6 +426,61 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 	}
 
 	return state;
+}
+
+// Cache the values of a group/order in the impure.
+inline void AggregatedStream::cacheValues(thread_db* tdbb, jrd_req* request,
+	const NestValueArray* group, unsigned impureOffset) const
+{
+	if (!group)
+		return;
+
+	Impure* const impure = request->getImpure<Impure>(m_impure);
+
+	for (const NestConst<ValueExprNode>* ptrValue = group->begin(), *endValue = group->end();
+		 ptrValue != endValue;
+		 ++ptrValue, ++impureOffset)
+	{
+		const ValueExprNode* from = *ptrValue;
+		impure_value* target = &impure->impureValues[impureOffset];
+
+		dsc* desc = EVL_expr(tdbb, request, from);
+
+		if (request->req_flags & req_null)
+			target->vlu_desc.dsc_address = NULL;
+		else
+			EVL_make_value(tdbb, desc, target);
+	}
+}
+
+// Look for change in the values of a group/order.
+inline bool AggregatedStream::lookForChange(thread_db* tdbb, jrd_req* request,
+	const NestValueArray* group, unsigned impureOffset) const
+{
+	if (!group)
+		return false;
+
+	Impure* const impure = request->getImpure<Impure>(m_impure);
+
+	for (const NestConst<ValueExprNode>* ptrValue = group->begin(), *endValue = group->end();
+		 ptrValue != endValue;
+		 ++ptrValue, ++impureOffset)
+	{
+		const ValueExprNode* from = *ptrValue;
+		impure_value* vtemp = &impure->impureValues[impureOffset];
+
+		dsc* desc = EVL_expr(tdbb, request, from);
+
+		if (request->req_flags & req_null)
+		{
+			if (vtemp->vlu_desc.dsc_address)
+				return true;
+		}
+		else if (!vtemp->vlu_desc.dsc_address || MOV_compare(&vtemp->vlu_desc, desc) != 0)
+			return true;
+	}
+
+	return false;
 }
 
 // Finalize a sort for distinct aggregate
