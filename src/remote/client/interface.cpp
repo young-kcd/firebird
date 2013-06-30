@@ -7560,9 +7560,8 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 		}
 		else if (t == tags->password)
 		{
-			makeUtfString(uft8Convert, password);
 			dpb.getString(password);
-			dpb.deleteClumplet();
+			makeUtfString(uft8Convert, password);
 			HANDSHAKE_DEBUG(fprintf(stderr,
 				"Cli: loadClnt: Loaded from PB password = %s\n", password.c_str()));
 		}
@@ -7573,6 +7572,8 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 				"Cli: loadClnt: PB contains crypt key - need encrypted line to pass\n"));
 		}
 	}
+
+	dpb.deleteWithTag(tags->password);
 }
 
 void ClntAuthBlock::extractDataFromPluginTo(CSTRING* to)
