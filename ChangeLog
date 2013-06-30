@@ -1,3 +1,15 @@
+ 2013-06-29 11:32  hvlad 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+Fixed bug CORE-4134 : Race condition when auto-sweep is started
+
+ 2013-06-29 11:25  hvlad 
+   M src/jrd/jrd.cpp
+Fixed bug CORE-4135 : In SS sweep blocks establishment of concurrent attachments.
+More details in tracker.
+
  2013-06-28 15:55  asfernandes 
    M src/jrd/recsrc/AggregatedStream.cpp
 Fixed CORE-4131 - Error when processing an empty data set by window function, if reading indexed.
