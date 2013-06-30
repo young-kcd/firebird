@@ -1,3 +1,7 @@
+ 2013-06-29 13:47  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-4118: Expression index may be not used for derived fields or view fields. Also, generalized the old trick with CAST in expression indices.
+
  2013-06-26 02:15  asfernandes 
    M src/jrd/unicode_util.cpp
 Rework on CORE-4125 to work with ICU 3.0.
