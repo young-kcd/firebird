@@ -2770,17 +2770,14 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 						CCH_unwind(tdbb, true);
 					}
 				}
-				bdb->release(tdbb, false);
 
+				// release lock before loosing control over bdb, it prevents 
+				// concurrent operations on released lock
 				if (release_flag)
 				{
 					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 				}
-				else	// re-post the lock if it was written
-				if ((bdb->bdb_ast_flags & BDB_blocking) && !(bdb->bdb_flags & BDB_dirty))
-				{
-					PAGE_LOCK_RE_POST(tdbb, bcb, bdb->bdb_lock);
-				}
+				bdb->release(tdbb, !release_flag && !(bdb->bdb_flags & BDB_dirty));
 				flush.remove(ptr);
 			}
 			else
