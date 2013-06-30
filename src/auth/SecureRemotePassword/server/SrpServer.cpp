@@ -121,8 +121,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 			ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 			dpb.insertByte(isc_dpb_sec_attach, TRUE);
-			const char* str = "SYSDBA";
-			dpb.insertString(isc_dpb_user_name, str, strlen(str));
+			dpb.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
 			const char* providers = "Providers=" CURRENT_ENGINE;
 			dpb.insertString(isc_dpb_config, providers, strlen(providers));
 
