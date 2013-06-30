@@ -513,13 +513,21 @@ static void shutdown(thread_db* tdbb, SSHORT flag, bool force)
 
 	if (force)
 	{
+		bool found = false;
 		for (Jrd::Attachment* attachment = dbb->dbb_attachments;
 			attachment; attachment = attachment->att_next)
 		{
 			if (!(attachment->att_flags & ATT_shutdown_manager))
-				attachment->signalShutdown(tdbb);
+			{
+				if (!(attachment->att_flags & ATT_shutdown))
+				{
+					attachment->signalShutdown(tdbb);
+					found = true;
+				}
+			}
 		}
 
-		JRD_shutdown_attachments(dbb);
+		if (found)
+			JRD_shutdown_attachments(dbb);
 	}
 }
