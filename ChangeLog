@@ -1,3 +1,30 @@
+ 2013-06-30 19:21  dimitr 
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+Misc.
+
+ 2013-06-30 19:05  dimitr 
+   M src/remote/client/interface.cpp
+Fixed CORE-4132: gbak requires exclusive access.
+
+ 2013-06-30 17:33  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Slightly refactored the optimizer regarding navigational walks.
+
+ 2013-06-30 15:20  hvlad 
+   M src/jrd/shut.cpp
+Prevent starting a lot of threads when forced shutdown is in progress.
+
+ 2013-06-30 14:02  hvlad 
+   M src/jrd/cch.cpp
+Fixed my bug introduced when porting page cache on fb3
+
+ 2013-06-30 02:15  asfernandes 
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/RecordSource.h
+Refactor AggregatedStream to remove duplicated code and make it easier to understand.
+
  2013-06-29 11:32  hvlad 
    M src/jrd/Database.cpp
    M src/jrd/Database.h
