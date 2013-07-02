@@ -2815,9 +2815,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	}
 
 	if (!(rpb->rpb_stream_flags & RPB_s_undo_data))
-	{
-		VIO_data(tdbb, rpb, tdbb->getRequest()->req_pool);
-	}
+		VIO_data(tdbb, rpb, tdbb->getDefaultPool());
 
 	// If record is present, and the transaction is read committed,
 	// make sure the record has not been updated.  Also, punt after
