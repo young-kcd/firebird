@@ -1148,7 +1148,7 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 			if (strcmp (CST.RDB$DEFAULT_COLLATE_NAME, COL.RDB$COLLATION_NAME) == 0)
 			{
 				if (!collate_only)
-					sprintf (string, " CHARACTER SET%s %s", CST.RDB$CHARACTER_SET_NAME, notNullStr);
+					sprintf (string, " CHARACTER SET %s%s", CST.RDB$CHARACTER_SET_NAME, notNullStr);
 			}
 			else if (collate_only)
 				sprintf (string, "%s COLLATE %s", notNullStr, COL.RDB$COLLATION_NAME);
