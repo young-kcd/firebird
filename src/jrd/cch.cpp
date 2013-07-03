@@ -5163,14 +5163,14 @@ void requeueRecentlyUsed(BufferControl* bcb)
 	BufferDesc* reversed = NULL;
 	BufferDesc* bdb;
 
-	while (bdb = (BufferDesc*) chain)
+	while ( (bdb = (BufferDesc*) chain) )
 	{
 		chain = bdb->bdb_lru_chain;
 		bdb->bdb_lru_chain = reversed;
 		reversed = bdb;
 	}
 
-	while (bdb = reversed)
+	while ( (bdb = reversed) )
 	{
 		reversed = bdb->bdb_lru_chain;
 		QUE_DELETE (bdb->bdb_in_use);
