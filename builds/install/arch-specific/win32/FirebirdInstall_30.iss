@@ -191,6 +191,8 @@
 ;If we are still under development we can ignore some missing files.
 #if GetEnv("FBBUILD_PROD_STATUS") == "DEV"
 #define SkipFileIfDevStatus " skipifsourcedoesntexist "
+#else 
+#define SkipFileIfDevStatus " "
 #endif
 
 ;This location is relative to SourceDir (declared below)
@@ -211,7 +213,9 @@
 #define FB20_cur_ver GetEnv("FBBUILD_FB20_CUR_VER")
 #define FB21_cur_ver GetEnv("FBBUILD_FB21_CUR_VER")
 #define FB25_cur_ver GetEnv("FBBUILD_FB25_CUR_VER")
-#define FB_cur_ver FB25_cur_ver
+#define FB30_cur_ver GetEnv("FBBUILD_FB30_CUR_VER")
+#define FB_cur_ver FB30_cur_ver
+#define FB_last_ver FB25_cur_ver
 
 ; We can save space by shipping a pdb package that just includes
 ; the pdb files. It would then upgrade an existing installation,
@@ -292,8 +296,9 @@ ArchitecturesInstallIn64BitMode=x64
 #endif
 
 ;This feature is incomplete, as more thought is required.
+#define setuplogging
 #ifdef setuplogging
-;New with IS 5.2
+;New with IS 5.2 -let's use it by default until we figure out how and whether it should be used.
 SetupLogging=yes
 #endif
 
@@ -346,6 +351,7 @@ ru.BeveledLabel=Русский
 #endif
 
 #ifdef iss_debug
+; *** Note - this comment section needs revision - only aplicable to ansi installer???
 ; By default, the languages available at runtime depend on the user's
 ; code page. A user with the Western European code page set will not
 ; even see that we support installation with the czech language
@@ -384,6 +390,7 @@ Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponen
 ;Copying of client libs to <sys>
 Name: CopyFbClientToSysTask; Description: {cm:CopyFbClientToSysTask}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;
 Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
+Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ConfigureFirebird;
 
 
 [Run]
@@ -416,7 +423,7 @@ Filename: {app}\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters:
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\firebird.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
-Filename: {app}\gsec.exe; Parameters: "{code:InitSecurityDb} "; StatusMsg: {cm:initSecurityDb}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall runascurrentuser; Check: ConfigureFirebird;
+Filename: {app}\gsec.exe; Parameters: "{code:InitSecurityDb} "; StatusMsg: {cm:initSecurityDb}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Check: ConfigureFirebird;
 
 
 ;This is a preliminary test of jumping to a landing page. In practice, we are going to need to know the users language and the version number they have installed.
@@ -433,10 +440,6 @@ Root: HKLM; Subkey: "SOFTWARE\Firebird Project"; Flags: uninsdeletekeyifempty; C
 ;Clean up Invalid registry entries from previous installs.
 Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 
-;User _may_ be installing over an existing 1.5 install, and it may have been set to run as application on startup
-;so we had better delete this entry unless they have chosen to autostart as application
-; - except that this seems to be broken. Bah!
-;Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Valuetype: none; ValueName: 'Firebird'; ValueData: ''; flags: deletevalue; Check: IsNotAutoStartApp;
 [Icons]
 ;TODO - get correct params for the different server flavours
 Name: {group}\Firebird SuperServer; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
@@ -445,18 +448,6 @@ Name: {group}\Firebird Classic; Filename: {app}\firebird.exe; Parameters: -a; Fl
 Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-#ifdef FB25_FULL_DOCS
-;dummy define. We don't yet have full docs, so lets not create links
-Name: {group}\Firebird {#FB_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
-Name: {group}\Firebird {#FB_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
-#endif
-#define DONT_INCLUDE_FB21_DOCS
-#ifndef DONT_INCLUDE_FB21_DOCS
-; dummy define. for now (beta 1) we include Fb 2.1 docs.
-Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
-Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
-#endif
 Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-2.5-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
@@ -659,8 +650,9 @@ Var
   // They also control whether their associated task checkboxes are displayed
   // during an interactive install
   NoCPL: Boolean;               // pass /nocpl on command-line.
-  NoLegacyClient: Boolean;      // pass /nogds32 on command line.
+  NoGdsClient: Boolean;      // pass /nogds32 on command line.
   CopyFbClient: Boolean;        // pass /copyfbclient on command line.
+  SupportLegacyClientAuth: Boolean;// pass /supportlegacyclients on the command line
 
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
@@ -671,7 +663,8 @@ Var
   SYSDBAPassword: String;       // SYSDBA password
 
 #ifdef setuplogging
-  OkToCopyLog : Boolean;        // Set when installation is complete.
+// Not yet implemented - leave log in %TEMP%
+//  OkToCopyLog : Boolean;        // Set when installation is complete.
 #endif
 
 #include "FirebirdInstallSupportFunctions.inc"
@@ -731,10 +724,13 @@ begin
     NoCPL := True;
 
   if pos('NOGDS32', Uppercase(CommandLine)) > 0 then
-    NoLegacyClient := True;
+    NoGdsClient := True;
 
   if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
+
+  if pos('SUPPORTLEGACYCLIENTAUTH', Uppercase(CommandLine)) > 0 then
+    SupportLegacyClientAuth := True;
 
     cmdParams := TStringList.create;
     for i:=0 to ParamCount do begin
@@ -791,10 +787,11 @@ begin
       +#13, mbError, MB_OK);
 
 #ifdef setuplogging
-  if OkToCopyLog then
-    FileCopy (ExpandConstant ('{log}'), ExpandConstant ('{app}\InstallationLogFile.log'), FALSE);
+// Not yet implemented - leave log in %TEMP%
+//  if OkToCopyLog then
+//    FileCopy (ExpandConstant ('{log}'), ExpandConstant ('{app}\InstallationLogFile.log'), FALSE);
 
-  RestartReplace (ExpandConstant ('{log}'), '');
+//  RestartReplace (ExpandConstant ('{log}'), '');
 #endif /* setuplogging */
 
 end;
@@ -888,17 +885,21 @@ end;
 function GetAdminUserName: String;
 begin
     Result := AdminUserPage.Values[0];
+    if Result = '' then
+      Result := 'SYSDBA';
 end;
 
 
 function GetAdminUserPassword: String;
 begin
     Result := AdminUserPage.Values[1];
+    if Result = '' then
+      Result := 'masterkey';
 end;
 
 function InitSecurityDb(Default: String): String;
 begin
-    Result := ' -add ' + GetAdminUserName + ' -pw ' + GetAdminUserPassword ;
+    Result := ' -add ' + GetAdminUserName + ' -pw ' + GetAdminUserPassword + ' -admin  yes';
 end;
 
 
@@ -995,6 +996,10 @@ begin
 				ReplaceLine(GetAppPath+'\firebird.conf','SharedDatabase = ','SharedDatabase = false','#');
 			end;	
 
+      if IsTaskSelected('EnableLegacyClientAuth') then begin
+				ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Srp, Win_Sspi, Legacy_Auth','#');
+      end;
+
 		end;	
 			
   end;
@@ -1085,7 +1090,7 @@ begin
       end;
 
 #ifdef setuplogging
-      OkToCopyLog := True;
+//      OkToCopyLog := True;
 #endif
 
     end;
@@ -1191,7 +1196,7 @@ end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
-  { If Firebird has already been installed then don't prompt for SYSDBA pw. }
+  { If we are not configuring Firebird then don't prompt for SYSDBA pw. }
   if ( PageID = AdminUserPage.ID ) then
     if not ConfigureFirebird then
       Result := True
