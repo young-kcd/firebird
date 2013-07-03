@@ -833,7 +833,7 @@
 
 
 # SharedCache	SharedDatabase	Mode
-# false			false			Classic with exlusive access	// single attachment only ?
+# false			false			Classic with exclusive access	// single attachment only ?
 # false			true			Classic with shared access		// traditional CS/SC
-# true			false			Super with exlusive access		// traditional SS
+# true			false			Super with exclusive access		// traditional SS
 # true			true			Super with shared access		// 
