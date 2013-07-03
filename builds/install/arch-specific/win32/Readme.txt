@@ -18,7 +18,7 @@ Welcome to Firebird $MAJOR.$MINOR.
 Intended Users
 ==============
 
-This is a pre-alpha version of Firebird.
+This is an alpha version of Firebird.
 
 It is not intended for production use. It is for
 test purposes only.
