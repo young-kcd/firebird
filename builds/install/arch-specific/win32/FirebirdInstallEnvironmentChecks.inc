@@ -41,7 +41,7 @@
     function ShowCopyGds32Task: boolean;
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
-
+		
     function HasWI30: boolean;
     function HasNotWI30: boolean;
 		
@@ -942,14 +942,14 @@ end;
 
 function CopyGds32: boolean;
 begin
-  //Note that we invert the value of NOLEGACYCLIENT so we provide the
+  //Note that we invert the value of NOGDSCLIENT so we provide the
   //correct answer to the question 'Do we copy GDS32 to <sys>' which is
   //the default behaviour.
   result := False;
   if ConfigureFirebird then begin
     //If one of these is false then either the commandline switch was passed
     //or the user unchecked the Copy client as GDS32 box
-    result := ( (not NoLegacyClient) AND (IsTaskSelected('CopyFbClientAsGds32Task') ));
+    result := ( (not NoGdsClient) AND (IsTaskSelected('CopyFbClientAsGds32Task') ));
   end;
 end;
 
@@ -957,7 +957,7 @@ end;
 function ShowCopyGds32Task: boolean;
 begin
   //If NOGDS32 is on the command line then don't offer the task in UI mode.
-  result := ((not NoLegacyClient) and ConfigureFirebird);
+  result := ((not NoGdsClient) and ConfigureFirebird);
 end;
 
 
@@ -976,6 +976,7 @@ begin
   if ConfigureFirebird then
     result := ((not CopyFbClient) and ConfigureFirebird);
 end;
+
 
 function HasWI30: boolean;
 //We need at least Windows Installer 3.0 available if we
@@ -1093,11 +1094,12 @@ begin
 
   //If existing install of the same majorver.minorver is
   //found then we can upgrade it.
+//// **** FIX ME **** Don't use hardcoded constants here. They get overlooked.	
   if ( (ProductsInstalledCount = 1) AND
 #if PlatformTarget == "x64"
-    ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) ) then begin
+    ((ProductsInstalled AND FB30_x64 ) = FB30_x64 ) ) then begin
 #else
-    ((ProductsInstalled AND FB21 ) = FB21 ) ) then begin
+    ((ProductsInstalled AND FB30 ) = FB30 ) ) then begin
 #endif
         result := true;
         exit;
@@ -1119,21 +1121,3 @@ begin
       InstallAndConfigure := InstallAndConfigure - Configure;
 end;
 
-
-
-// Dummy functions to get us started
-{*function UseSSTask: boolean;
-begin
-  result := false
-end;
-
-function UseSCTask: boolean;
-begin
-  result := false
-end;
-
-function UseCSTask: boolean;
-begin
-  result := false
-end;
-*}
