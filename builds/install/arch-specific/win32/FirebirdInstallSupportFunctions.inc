@@ -353,6 +353,12 @@ begin
           FileChanged := true;
           Break;
           end
+        else begin
+          // Otherwise add new line after commented line
+          Lines[i] := Lines[i] + #13#10 + NewLine;
+          FileChanged := true;
+          Break;
+        end
       end
       else begin
         Lines[i] := NewLine;
