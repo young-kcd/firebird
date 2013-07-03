@@ -102,8 +102,6 @@ namespace Jrd
 	{
 		if (pool)
 		{
-			fb_assert(locked() || dbb_flags & DBB_not_in_use);
-
 			size_t pos;
 			if (dbb_pools.find(pool, pos))
 			{

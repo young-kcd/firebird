@@ -5121,8 +5121,7 @@ static void init(thread_db* tdbb,
 		dbb = databases;
 		while (dbb)
 		{
-			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
-				(dbb->dbb_filename == expanded_filename))
+			if (!(dbb->dbb_flags & DBB_bugcheck) && dbb->dbb_filename == expanded_filename)
 			{
 				if (attach_flag)
 				{
@@ -5823,6 +5822,10 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 	{	//scope
 		Database::SyncGuard	syncGuard1(dbb);
 
+		// Disable AST delivery as we're about to release all locks
+
+		dbb->dbb_flags |= DBB_no_ast;
+
 		// Shutdown file and/or remote connection
 
 #ifdef SUPERSERVER_V2
@@ -5903,14 +5906,10 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 		{
 			if (*d_ptr == dbb)
 			{
-				fb_assert(!dbb->locked());
-
-				Database::SyncGuard syncGuard2(dbb);
 				fb_assert(!dbb->dbb_attachments);
 
 				*d_ptr = dbb->dbb_next;
-				dbb->dbb_flags |= DBB_not_in_use;
-
+				dbb->dbb_next = NULL;
 				break;
 			}
 		}
@@ -6029,7 +6028,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 			}
 #endif
 
-			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)))
+			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)))
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
@@ -6656,7 +6655,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 			for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 			{
-				if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
+				if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)) )
 				{
 					Database::SyncGuard dsGuard(dbb);
 					for (Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
