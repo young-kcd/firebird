@@ -3979,6 +3979,19 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				return CMP_pass1(tdbb, csb, sub);	// note: scope of AutoSetRestore
 			}
 
+			jrd_nod* new_node = PAR_make_node(tdbb, e_derived_expr_length);
+			new_node->nod_type = nod_derived_expr;
+			new_node->nod_count = e_derived_expr_count;
+			new_node->nod_arg[e_derived_expr_expr] = sub;
+
+			USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT;
+			*streamList = stream;
+
+			new_node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
+			new_node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) 1;
+
+			sub = new_node;
+
 			return CMP_pass1(tdbb, csb, sub);
 		}
 
