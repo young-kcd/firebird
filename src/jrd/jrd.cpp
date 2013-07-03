@@ -5892,8 +5892,7 @@ static JAttachment* init(thread_db* tdbb,
 			dbb = databases;
 			while (dbb)
 			{
-				if (!(dbb->dbb_flags & (DBB_bugcheck /* | DBB_not_in_use */)) &&
-					(dbb->dbb_filename == expanded_name))
+				if (!(dbb->dbb_flags & DBB_bugcheck) && dbb->dbb_filename == expanded_name)
 				{
 					if (attach_flag)
 					{
@@ -6356,9 +6355,7 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 					// as long as dbb_init_fini is not locked and its activity is not checked
 					finiGuard.enter();
 					if (finiGuard->doesExist())
-					{
 						break;
-					}
 
 					// database to shutdown does not exist
 					// looks like somebody else took care to destroy it
@@ -6369,21 +6366,24 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 
 		// Check - may be database already missing in linked list
 		if (!finiGuard)
-		{
 			return false;
-		}
 	}
 
 	if (dbb->dbb_attachments)
-	{
 		return false;
-	}
 
 	// Deactivate dbb_init_fini lock
 	// Since that moment dbb becomes not reusable
 	dbb->dbb_init_fini->destroy();
 
 	fb_assert(!dbb->locked());
+
+	// Disable AST delivery as we're about to release all locks
+
+	{ // scope
+		WriteLockGuard astGuard(dbb->dbb_ast_lock, FB_FUNCTION);
+		dbb->dbb_flags |= DBB_no_ast;
+	}
 
 	// Shutdown file and/or remote connection
 
@@ -6432,14 +6432,9 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 			if (*d_ptr == dbb)
 			{
 				fb_assert(!dbb->dbb_attachments);
+
 				*d_ptr = dbb->dbb_next;
 				dbb->dbb_next = NULL;
-
-				fb_assert(!dbb->locked());
-
-				WriteLockGuard astGuard(dbb->dbb_ast_lock, FB_FUNCTION);
-				dbb->dbb_flags |= DBB_not_in_use;
-
 				break;
 			}
 		}
@@ -6517,7 +6512,7 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 		{
 			SyncLockGuard dbbGuard(&dbb->dbb_sync, SYNC_SHARED, "JRD_enum_attachments");
 
-			if (!(dbb->dbb_flags & (DBB_bugcheck | /* DBB_not_in_use | */ DBB_security_db)))
+			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)))
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
@@ -7191,7 +7186,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 			for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 			{
-				if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
+				if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)) )
 				{
 					Sync dbbGuard(&dbb->dbb_sync, FB_FUNCTION);
 					dbbGuard.lock(SYNC_EXCLUSIVE);
