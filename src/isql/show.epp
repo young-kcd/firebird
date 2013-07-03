@@ -3293,6 +3293,8 @@ static processing_state show_sys_functions(const SCHAR* msg)
 		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	END_ERROR;
+
+	return SKIP;
 }
 
 
