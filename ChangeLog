@@ -1,3 +1,21 @@
+ 2013-07-03 15:24  asfernandes 
+   M src/isql/show.epp
+Warning.
+
+ 2013-07-03 13:22  dimitr 
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+Better protection against AST delivery during detaching.
+
+ 2013-07-03 11:33  dimitr 
+   M src/jrd/cch.cpp
+Misc.
+
+ 2013-07-03 02:13  asfernandes 
+   M src/isql/isql.epp
+Fixed CORE-4137 - Wrong metadata output script generate by isql / CHARACTER SETISO8859_1 sintaxe error.
+
  2013-07-02 11:27  dimitr 
    M src/jrd/vio.cpp
 Misc.
