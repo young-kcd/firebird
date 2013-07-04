@@ -197,7 +197,6 @@ sed -f  %temp%.\b$3.txt FirebirdInstall_30.iss > FirebirdInstall_%FBBUILD_FILE_I
 :: test for sed in that script.
 @sed /@UDF_COMMENT@/s/@UDF_COMMENT@/#/ < %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >  %FB_OUTPUT_DIR%\firebird.conf
 
-
 set FBBUILD_FB30_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
 set FBBUILD_FB_CUR_VER=%FBBUILD_FB30_CUR_VER%
 set FBBUILD_FB_LAST_VER=%FBBUILD_FB25_CUR_VER%
@@ -438,20 +437,13 @@ endlocal
 @goto :EOF
 
 
-:ALIAS_CONF
-:: Generate a sample aliases file
+:DB_CONF
+:: Generate sample databases file
 ::===============================
 @echo   Creating sample databases.conf
-@echo # > %FB_OUTPUT_DIR%\databases.conf
-@echo # List of known database aliases >> %FB_OUTPUT_DIR%\databases.conf
-@echo # ------------------------------ >> %FB_OUTPUT_DIR%\databases.conf
-@echo # >> %FB_OUTPUT_DIR%\databases.conf
-@echo # Examples: >> %FB_OUTPUT_DIR%\databases.conf
-@echo # >> %FB_OUTPUT_DIR%\databases.conf
-@echo #   dummy = c:\data\dummy.fdb >> %FB_OUTPUT_DIR%\databases.conf
-@echo #  >> %FB_OUTPUT_DIR%\databases.conf
+copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databases.conf > nul
 
-::End of ALIAS_CONF
+::End of DB_CONF
 ::-----------------
 @goto :EOF
 
@@ -833,8 +825,8 @@ if defined WIX (
 @(@call :IBASE_H ) || (@echo Error calling IBASE_H & @goto :EOF)
 @Echo.
 
-@Echo   Writing alias conf
-@(@call :ALIAS_CONF ) || (@echo Error calling ALIAS_CONF & @goto :EOF)
+@Echo   Writing databases conf
+@(@call :DB_CONF ) || (@echo Error calling DB_CONF & @goto :EOF)
 @Echo.
 @Echo   Copying miscellany such as the QLI help database
 @(@call :MISC ) || (@echo Error calling MISC & @goto :EOF)
