@@ -1,3 +1,21 @@
+ 2013-07-03 13:20  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+Better protection against AST delivery during detaching. Second attempt combined with cleanup.
+
+ 2013-07-03 09:23  dimitr 
+   M src/jrd/Database.h
+Better protection against AST delivery during detaching.
+
+ 2013-07-03 06:33  dimitr 
+   M src/jrd/cmp.cpp
+Backported CORE-3874: Computed column appears in non-existant rows of left join.
+
+ 2013-07-03 02:12  asfernandes 
+   M src/isql/isql.epp
+Fixed CORE-4137 - Wrong metadata output script generate by isql / CHARACTER SETISO8859_1 sintaxe error.
+
  2013-06-30 19:13  hvlad 
    M src/jrd/shut.cpp
 Backported from trunk: prevent starting a lot of threads when forced shutdown is in progress.
