@@ -659,14 +659,8 @@ Var
 
 
 function ClassicInstallChosen: Boolean;
-var
-  SelectedComponents: String;
 begin
-  result := false;
-
-  SelectedComponents := WizardSelectedComponents(false);
-  if pos(lowercase('ServerComponent\ClassicServerComponent'),SelectedComponents) >0 then
-    result := true;
+	result := IsTaskSelected('UseClassicServerTask');
 end;
 
 

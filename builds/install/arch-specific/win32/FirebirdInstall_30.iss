@@ -377,6 +377,7 @@ Name: ClientComponent; Description: {cm:ClientComponent}; Types: ServerInstall D
 [Tasks]
 ;Server tasks
 Name: UseClassicServerTask; Description: {cm:RunCS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
+; Let's not suport this out of the box, for the time being at least.
 ;Name: UseSuperClassicTask; Description: {cm:RunSC}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseSuperServerTask; Description: {cm:RunSS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
@@ -390,7 +391,7 @@ Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponen
 ;Copying of client libs to <sys>
 Name: CopyFbClientToSysTask; Description: {cm:CopyFbClientToSysTask}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;
 Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
-Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ConfigureFirebird;
+Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Check: ConfigureFirebird;
 
 
 [Run]
@@ -415,7 +416,9 @@ Filename: {app}\WOW64\instclient.exe; Parameters: "install fbclient"; StatusMsg:
 Filename: {app}\WOW64\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized 32bit; Check: CopyGds32
 #endif
 
-;If on NT/Win2k etc and 'Install and start service' requested
+Filename: {app}\gsec.exe; Parameters: "{code:InitSecurityDb} "; StatusMsg: {cm:initSecurityDb}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Check: ConfigureFirebird;
+
+;If 'Install and start service' requested
 ;First, if installing service we must try and remove remnants of old service. Otherwise the new install will fail and when we start the service the old service will be started.
 Filename: {app}\instsvc.exe; Parameters: "remove "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
@@ -423,7 +426,6 @@ Filename: {app}\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters:
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\firebird.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
-Filename: {app}\gsec.exe; Parameters: "{code:InitSecurityDb} "; StatusMsg: {cm:initSecurityDb}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Check: ConfigureFirebird;
 
 
 ;This is a preliminary test of jumping to a landing page. In practice, we are going to need to know the users language and the version number they have installed.
@@ -442,10 +444,10 @@ Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 
 [Icons]
 ;TODO - get correct params for the different server flavours
-Name: {group}\Firebird SuperServer; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
+Name: {group}\Firebird Server; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Server (without guardian)
 ;Name: {group}\Firebird SuperClassic; Filename: {app}\firebird.exe; Parameters: -a -m; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
-Name: {group}\Firebird Classic; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
-Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Super Server (with guardian)
+;Name: {group}\Firebird Classic; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
+Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-2.5-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver}
@@ -576,9 +578,9 @@ Source: {#FilesDir}\UDF\*.txt; DestDir: {app}\UDF; Components: ServerComponent; 
 Source: {#FilesDir}\plugins\*.dll; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 
 Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
-Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
+;Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
-Source: {#FilesDir}\misc\upgrade\metadata\*.*; DestDir: {app}\misc\upgrade\metadata; Components: ServerComponent; Flags: ignoreversion;
+;Source: {#FilesDir}\misc\upgrade\metadata\*.*; DestDir: {app}\misc\upgrade\metadata; Components: ServerComponent; Flags: ignoreversion;
 
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
 Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
@@ -845,13 +847,19 @@ begin
 end;
 
 
+function ServiceName(Default: String): String;
+begin
+    Result := ' -n DefaultInstance' ;
+end;
+
+
 function ServiceStartFlags(Default: String): String;
 var
   ServerType: String;
   SvcParams: String;
   InstanceName: String;
 begin
-  servertype := '';
+  ServerType := '';
   SvcParams := '';
   if ClassicInstallChosen then
     ServerType := ' -classic '
@@ -863,22 +871,16 @@ begin
   else
     SvcParams := ' -demand ';
 
-  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
-    SvcParams := SvcParams + ServerType + ' -guardian'
-  else
-    SvcParams := SvcParams + ServerType;
+  SvcParams := ServerType + SvcParams;
 
-  InstanceName := ' -n DefaultInstance'
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
+    SvcParams := ServerType + SvcParams +  ' -guardian ';
+  
+  InstanceName := ServiceName('We currently do not support or test for a different instance name');
 
   SvcParams := SvcParams + InstanceName;
 
   Result := SvcParams;
-end;
-
-
-function ServiceName(Default: String): String;
-begin
-    Result := ' -n DefaultInstance' ;
 end;
 
 
@@ -899,7 +901,9 @@ end;
 
 function InitSecurityDb(Default: String): String;
 begin
-    Result := ' -add ' + GetAdminUserName + ' -pw ' + GetAdminUserPassword + ' -admin  yes';
+  if isTaskSelected('EnableLegacyClientAuth') then
+    Result := ' -add ' + GetAdminUserName + ' -pw ' + GetAdminUserPassword + ' -admin yes';
+
 end;
 
 
@@ -929,9 +933,9 @@ begin
     end
   else
     if ClassicInstallChosen then
-      Result := GetAppPath+'\fb_inet_server.exe'
+      Result := GetAppPath+'\firebird.exe -c'
     else
-      Result := GetAppPath+'\fbserver.exe';
+      Result := GetAppPath+'\firebird.exe -s';
 
 
 end;
@@ -981,17 +985,14 @@ begin
       if not IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
 				ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
 
-      // Firstly we need to count how many lines begin with SharedCache and SharedDatabase
-      // If 0 or 1 then proceed to modify else log error in some way.
+      // These attempts to modify firebird.conf may not survice repeated installs.  
 
 			if IsTaskSelected('UseClassicServerTask') OR IsTaskSelected('UseSuperClassicTask') then begin
-        // This will force server to classic, irrespective of whether the existing settings are the default or not.
-				ReplaceLine(GetAppPath+'\firebird.conf','SharedCache = ','SharedCache = false','');
-				ReplaceLine(GetAppPath+'\firebird.conf','SharedDatabase = ','SharedDatabase = true','');
+				ReplaceLine(GetAppPath+'\firebird.conf','SharedCache = ','SharedCache = false','#');
+				ReplaceLine(GetAppPath+'\firebird.conf','SharedDatabase = ','SharedDatabase = true','#');
 			end;	
 
 			if IsTaskSelected('UseSuperServerTask') OR IsTaskSelected('UseSuperClassicTask') then begin
-        // This will not change the settings if they are already commented out. (ie defaults will apply.)
 				ReplaceLine(GetAppPath+'\firebird.conf','SharedCache = ','SharedCache = true','#');
 				ReplaceLine(GetAppPath+'\firebird.conf','SharedDatabase = ','SharedDatabase = false','#');
 			end;	
@@ -1196,13 +1197,17 @@ end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
-  { If we are not configuring Firebird then don't prompt for SYSDBA pw. }
   if ( PageID = AdminUserPage.ID ) then
+    { If we are not configuring Firebird then don't prompt for SYSDBA pw. }
     if not ConfigureFirebird then
       Result := True
-    else
-      Result := False
-      ;
+    else 
+      { If user hasn't selected EnableLegacyClientAuth then don't prompt for SYSDBA pw}
+      if not isTaskSelected('EnableLegacyClientAuth') then
+        Result := True
+      else
+        Result := False
+  ;
 end;
 
 
