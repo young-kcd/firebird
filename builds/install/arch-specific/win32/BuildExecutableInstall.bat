@@ -466,6 +466,9 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 
 
 ::End of MISC
+::-----------------
+@goto :EOF
+
 
 :FB_MSG
 ::=================================================================

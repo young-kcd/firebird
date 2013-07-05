@@ -41,7 +41,7 @@
     function ShowCopyGds32Task: boolean;
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
-		
+
     function HasWI30: boolean;
     function HasNotWI30: boolean;
 		
