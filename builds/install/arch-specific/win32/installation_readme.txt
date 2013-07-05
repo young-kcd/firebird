@@ -1,4 +1,4 @@
-Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha)
+Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha1)
 ========================================================
 
 
@@ -12,7 +12,10 @@ Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha)
 # o Options available are subject to change.           #
 # o Method of library deployment has not been          #
 #   finalized.                                         #
-# o The notes below are not up-to-date.                #
+# o How we will support Legacy Auth is experimental    #
+#   - Adding SYSDBA works                              #
+#   - Modifying SYSDBA from the installer doesn't      #
+# o Don't be surprised to find other anomalies.        #
 #                                                      #
 ############## END NOTE ################################
 

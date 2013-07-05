@@ -53,7 +53,7 @@ if not "%FBBUILD_FILENAME_SUFFIX:~0,1%"=="_" (
 )
 
 :: See what we have on the command line
-::for %%v in ( %1 %2 %3 %4 %5 )  do (
+
 for %%v in ( %* )  do (
 ( if /I "%%v"=="DEBUG" (set FBBUILD_BUILDTYPE=debug) )
   ( if /I "%%v"=="PDB" (set FBBUILD_SHIP_PDB=ship_pdb) )
@@ -62,6 +62,10 @@ for %%v in ( %* )  do (
   ( if /I "%%v"=="EMB" (set FBBUILD_EMB_PACK=1) )
   ( if /I "%%v"=="ALL" ( (set FBBUILD_ZIP_PACK=1) & (set FBBUILD_ISX_PACK=1) & (set FBBUILD_EMB_PACK=1) ) )
 )
+
+:: Note FBBUILD_EMB_PACK appears to no be longer relevant. Before removing the code we will
+:: deprecate it here.
+set FBBUILD_EMB_PACK=0
 
 :: Now check whether we are debugging the InnoSetup script
 
@@ -193,9 +197,9 @@ sed -f  %temp%.\b$3.txt FirebirdInstall_30.iss > FirebirdInstall_%FBBUILD_FILE_I
 :: test for sed in that script.
 @sed /@UDF_COMMENT@/s/@UDF_COMMENT@/#/ < %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >  %FB_OUTPUT_DIR%\firebird.conf
 
-
-set FBBUILD_FB25_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
-set FBBUILD_FB_CUR_VER=%FBBUILD_FB25_CUR_VER%
+set FBBUILD_FB30_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
+set FBBUILD_FB_CUR_VER=%FBBUILD_FB30_CUR_VER%
+set FBBUILD_FB_LAST_VER=%FBBUILD_FB25_CUR_VER%
 
 :: Now set some version strings of our legacy releases.
 :: This helps us copy the correct documentation,
@@ -203,6 +207,7 @@ set FBBUILD_FB_CUR_VER=%FBBUILD_FB25_CUR_VER%
 set FBBUILD_FB15_CUR_VER=1.5.6
 set FBBUILD_FB20_CUR_VER=2.0.7
 set FBBUILD_FB21_CUR_VER=2.1.5
+set FBBUILD_FB25_CUR_VER=2.5.2
 
 :: Now fix up the major.minor version strings in the readme files.
 :: We place output in %FB_GEN_DIR%\readmes
@@ -269,15 +274,9 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
 
 @if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @echo   Copying pdb files...
-  for %%v in ( fbembed firebird fbclient ) do (
-    @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FB_OUTPUT_DIR%\bin > nul
-    @if %ERRORLEVEL% GEQ 1 (
-      call :ERROR Copying %%v.pdb files failed
-      goto :EOF
-    )
-  )
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbserver\firebird.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\yvalve\fbclient.pdb %FB_OUTPUT_DIR%\ > nul
 )
-::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\*.pdb %FB_OUTPUT_DIR%\bin > nul
 
 @echo   Started copying docs...
 @rmdir /S /Q %FB_OUTPUT_DIR%\doc 2>nul
@@ -438,37 +437,24 @@ endlocal
 @goto :EOF
 
 
-:ALIAS_CONF
-:: Generate a sample aliases file
+:DB_CONF
+:: Generate sample databases file
 ::===============================
 @echo   Creating sample databases.conf
-@echo # > %FB_OUTPUT_DIR%\databases.conf
-@echo # List of known database aliases >> %FB_OUTPUT_DIR%\databases.conf
-@echo # ------------------------------ >> %FB_OUTPUT_DIR%\databases.conf
-@echo # >> %FB_OUTPUT_DIR%\databases.conf
-@echo # Examples: >> %FB_OUTPUT_DIR%\databases.conf
-@echo # >> %FB_OUTPUT_DIR%\databases.conf
-@echo #   dummy = c:\data\dummy.fdb >> %FB_OUTPUT_DIR%\databases.conf
-@echo #  >> %FB_OUTPUT_DIR%\databases.conf
+copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databases.conf > nul
 
-::End of ALIAS_CONF
+::End of DB_CONF
 ::-----------------
 @goto :EOF
 
 
-:GBAK_SEC_DB
-::@echo   Let's make sure that we have a backup of the security database handy.
-::======================================================================
-::@copy %FB_ROOT_PATH%\builds\misc\security.gbak %FB_OUTPUT_DIR%\security2.fbk > nul
-::@if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security2.fbk failed ) & (goto :EOF))
-
-::Migration from old security db to new one
-mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
-@copy %FB_ROOT_PATH%\src\misc\upgrade\v2\security_database.* %FB_OUTPUT_DIR%\misc\upgrade\security > nul
-
-::Metadata migration
-mkdir %FB_OUTPUT_DIR%\misc\upgrade\metadata 2>nul
-@copy %FB_ROOT_PATH%\src\misc\upgrade\v2.1\metadata_* %FB_OUTPUT_DIR%\misc\upgrade\metadata > nul
+:MISC
+::==============================================
+:: miscellany that doesn't belong anywhere else
+::==============================================
+::Metadata migration - presumably not needed for 3.0 so disabled for now
+::mkdir %FB_OUTPUT_DIR%\misc\upgrade\metadata 2>nul
+::@copy %FB_ROOT_PATH%\src\misc\upgrade\v2.1\metadata_* %FB_OUTPUT_DIR%\misc\upgrade\metadata > nul
 
 :: Make sure that qli's help.fdb is available
 ::===============================================
@@ -478,8 +464,9 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\metadata 2>nul
     (@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF)))
 )
 
-::End of GBAK_SEC_DB
-::------------------
+
+::End of MISC
+::-----------------
 @goto :EOF
 
 
@@ -841,11 +828,11 @@ if defined WIX (
 @(@call :IBASE_H ) || (@echo Error calling IBASE_H & @goto :EOF)
 @Echo.
 
-@Echo   Writing alias conf
-@(@call :ALIAS_CONF ) || (@echo Error calling ALIAS_CONF & @goto :EOF)
+@Echo   Writing databases conf
+@(@call :DB_CONF ) || (@echo Error calling DB_CONF & @goto :EOF)
 @Echo.
-@Echo   Copying backup of security database
-@(@call :GBAK_SEC_DB ) || (@echo Error calling GBAK_SEC_DB & @goto :EOF)
+@Echo   Copying miscellany such as the QLI help database
+@(@call :MISC ) || (@echo Error calling MISC & @goto :EOF)
 @Echo.
 @Echo   Copying firebird.msg
 @(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
