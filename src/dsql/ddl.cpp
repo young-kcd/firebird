@@ -208,6 +208,9 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 				Arg::Gds(isc_random) <<
 				Arg::Str("Usage of domain or TYPE OF COLUMN of array type in PSQL"));
 		}
+
+		if (field->dtype <= dtype_any_text || field->dtype == dtype_blob)
+			field->charSet = METD_get_charset_name(dsqlScratch->getTransaction(), field->charSetId);
 	}
 
 	if ((field->dtype > dtype_any_text) && field->dtype != dtype_blob)
