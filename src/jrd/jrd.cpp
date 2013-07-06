@@ -1622,22 +1622,19 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			if (options.dpb_verify)
 			{
 				validateAccess(attachment);
-				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL)) {
+				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL))
 					ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_validate));
-				}
 
 				// Can't allow garbage collection during database validation.
 
 				VIO_fini(tdbb);
 
-				if (!VAL_validate(tdbb, options.dpb_verify)) {
+				if (!VAL_validate(tdbb, options.dpb_verify))
 					ERR_punt();
-				}
 			}
 
-			if (options.dpb_journal.hasData()) {
+			if (options.dpb_journal.hasData())
 				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_start_journal));
-			}
 
 			if (options.dpb_wal_action)
 			{
@@ -1685,13 +1682,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			if (options.dpb_set_page_buffers)
 			{
 				if (dbb->dbb_config->getSharedCache())
-				{
 					validateAccess(attachment);
-				}
+
 				if (attachment->locksmith())
-				{
 					PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
-				}
 			}
 
 			if (options.dpb_set_db_readonly)
@@ -1727,9 +1721,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			dbb->dbb_crypto_manager->startCryptThread(tdbb);
 
-			if (options.dpb_dbkey_scope) {
+			if (options.dpb_dbkey_scope)
 				attachment->att_dbkey_trans = TRA_start(tdbb, 0, 0);
-			}
 
 			if (!(attachment->att_flags & ATT_no_db_triggers))
 			{
@@ -1790,7 +1783,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				if (traceManager->needs(TRACE_EVENT_ERROR))
 					traceManager->event_error(&conn, &traceStatus, "JProvider::attachDatabase");
 
-				if (traceManager->needs(TRACE_EVENT_DETACH)) 
+				if (traceManager->needs(TRACE_EVENT_DETACH))
 					traceManager->event_detach(&conn, false);
 			}
 			else

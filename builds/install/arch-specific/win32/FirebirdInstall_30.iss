@@ -874,7 +874,7 @@ begin
   SvcParams := ServerType + SvcParams;
 
   if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
-    SvcParams := ServerType + SvcParams +  ' -guardian ';
+    SvcParams := ServerType + SvcParams + ' -guardian ';
   
   InstanceName := ServiceName('We currently do not support or test for a different instance name');
 
@@ -1001,7 +1001,7 @@ begin
 				ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Srp, Win_Sspi, Legacy_Auth','#');
       end;
 
-		end;	
+	end;	
 			
   end;
 end;

@@ -125,7 +125,7 @@ namespace Jrd
 		Database* dbb = static_cast<Database*>(ast_object);
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
-		if (dbb->dbb_flags & DBB_sweep_starting && !(dbb->dbb_flags &  DBB_sweep_in_progress))
+		if ((dbb->dbb_flags & DBB_sweep_starting) && !(dbb->dbb_flags & DBB_sweep_in_progress))
 		{
 			dbb->dbb_flags &= ~DBB_sweep_starting;
 			LCK_release(tdbb, dbb->dbb_sweep_lock);
@@ -136,7 +136,7 @@ namespace Jrd
 
 	Lock* Database::createSweepLock(thread_db* tdbb)
 	{
-		if (!dbb_sweep_lock) 
+		if (!dbb_sweep_lock)
 		{
 			dbb_sweep_lock = FB_NEW_RPT(*dbb_permanent, 0) Lock(tdbb, 0, LCK_sweep);
 			dbb_sweep_lock->lck_ast = blocking_ast_sweep;
@@ -189,7 +189,7 @@ namespace Jrd
 		while (true)
 		{
 			AtomicCounter::counter_type old = dbb_flags;
-			if ((old & (DBB_sweep_in_progress)) || (dbb_ast_flags & DBB_shutdown))
+			if ((old & DBB_sweep_in_progress) || (dbb_ast_flags & DBB_shutdown))
 				return false;
 
 			if (dbb_flags.compareExchange(old, old | DBB_sweep_in_progress))
@@ -209,9 +209,7 @@ namespace Jrd
 			}
 		}
 		else
-		{
 			dbb_flags &= ~DBB_sweep_starting;
-		}
 
 		return true;
 	}
@@ -221,9 +219,9 @@ namespace Jrd
 		if (!(dbb_flags & (DBB_sweep_starting | DBB_sweep_in_progress)))
 			return;
 
-		if (dbb_sweep_lock) {
+		if (dbb_sweep_lock)
 			LCK_release(tdbb, dbb_sweep_lock);
-		}
+
 		dbb_flags &= ~(DBB_sweep_in_progress | DBB_sweep_starting);
 	}
 

@@ -2295,7 +2295,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		// Persistent table
 		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream,
 											  outer_flag, inner_flag,
-											  sort_ptr ? *sort_ptr : NULL);
+											  (sort_ptr ? *sort_ptr : NULL));
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion());
 
 		if (candidate)

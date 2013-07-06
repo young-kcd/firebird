@@ -2771,7 +2771,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 					}
 				}
 
-				// release lock before loosing control over bdb, it prevents 
+				// release lock before loosing control over bdb, it prevents
 				// concurrent operations on released lock
 				if (release_flag)
 				{
