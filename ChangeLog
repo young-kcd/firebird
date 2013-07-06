@@ -1,3 +1,29 @@
+ 2013-07-05 09:40  paul_reeves 
+   M builds/install/arch-specific/win32/After_Installation.url
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/installation_scripted.txt
+push changes made to windows installer for Alpha1 tag to TRUNK
+
+ 2013-07-05 09:39  paul_reeves 
+   M builds/install/misc/firebird.conf.in
+spelling
+
+ 2013-07-05 09:38  paul_reeves 
+   M src/utilities/fbcpl/ctrlpan.cpp
+   M src/utilities/fbcpl/ctrlpan.h
+Fix for CORE-4020
+Instantiate cpl applet methods with LPARAM instead of long.
+
+ 2013-07-05 02:09  asfernandes 
+   M src/dsql/ddl.cpp
+Fixed CORE-4140 - EXECUTE BLOCK's TYPE OF parameters with NONE charset may have be transformed to the connection charset.
+
  2013-07-03 15:24  asfernandes 
    M src/isql/show.epp
 Warning.
