@@ -363,9 +363,7 @@ void OPT_compute_rse_streams(const RecordSelExpr* rse, UCHAR* streams)
 }
 
 
-bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
-							 const index_desc* idx, jrd_nod* node,
-							 USHORT stream)
+bool OPT_expression_equal(const index_desc* idx, jrd_nod* node, USHORT stream)
 {
 /**************************************
  *
@@ -379,55 +377,29 @@ bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
  **************************************/
 	DEV_BLKCHK(node, type_nod);
 
-	SET_TDBB(tdbb);
-
-	if (idx && idx->idx_expression_request && idx->idx_expression)
+	if (idx && idx->idx_expression)
 	{
 		fb_assert(idx->idx_flags & idx_expressn);
 
-		jrd_req* org_request = tdbb->getRequest();
-		jrd_req* expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
-
-		fb_assert(expr_request->req_caller == NULL);
-		expr_request->req_caller = org_request;
-		tdbb->setRequest(expr_request);
-
-		bool result = false;
-
-		try
+		if (OPT_expression_equal2(idx->idx_expression, node, true))
 		{
-			Jrd::ContextPoolHolder context(tdbb, expr_request->req_pool);
+			SortedStreamList expr_streams, node_streams;
+			OPT_get_expression_streams(idx->idx_expression, expr_streams);
+			OPT_get_expression_streams(node, node_streams);
 
-			expr_request->req_timestamp = expr_request->req_caller ?
-				expr_request->req_caller->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
-
-			result = OPT_expression_equal2(tdbb, opt, idx->idx_expression, node, stream);
+			if (expr_streams.getCount() == 1 && expr_streams[0] == 0 &&
+				node_streams.getCount() == 1 && node_streams[0] == stream)
+			{
+				return true;
+			}
 		}
-		catch (const Firebird::Exception&)
-		{
-			tdbb->setRequest(org_request);
-			expr_request->req_caller = NULL;
-			expr_request->req_flags &= ~req_in_use;
-			expr_request->req_timestamp.invalidate();
-
-			throw;
-		}
-
-		tdbb->setRequest(org_request);
-		expr_request->req_caller = NULL;
-		expr_request->req_flags &= ~req_in_use;
-		expr_request->req_timestamp.invalidate();
-
-		return result;
 	}
 
 	return false;
 }
 
 
-bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
-							  jrd_nod* node1, jrd_nod* node2,
-							  USHORT stream)
+bool OPT_expression_equal2(jrd_nod* node1, jrd_nod* node2, bool ignoreStreams)
 {
 /**************************************
  *
@@ -444,8 +416,6 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 	DEV_BLKCHK(node1, type_nod);
 	DEV_BLKCHK(node2, type_nod);
 
-	SET_TDBB(tdbb);
-
 	if (!node1 || !node2)
 	{
 		BUGCHECK(303);	// msg 303 Invalid expression for evaluation.
@@ -453,42 +423,11 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 	if (node1->nod_type != node2->nod_type)
 	{
-		dsc dsc1, dsc2;
-		dsc *desc1 = &dsc1, *desc2 = &dsc2;
-
-		if (node1->nod_type == nod_cast)
-		{
-			jrd_nod* const source = node1->nod_arg[e_cast_source];
-
-			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-			CMP_get_desc(tdbb, opt->opt_csb, source, desc2);
-
-			if (DSC_EQUIV(desc1, desc2, true) &&
-				OPT_expression_equal2(tdbb, opt, source, node2, stream))
-			{
-				return true;
-			}
-		}
-
-		if (node2->nod_type == nod_cast)
-		{
-			jrd_nod* const source = node2->nod_arg[e_cast_source];
-
-			CMP_get_desc(tdbb, opt->opt_csb, node2, desc1);
-			CMP_get_desc(tdbb, opt->opt_csb, source, desc2);
-
-			if (DSC_EQUIV(desc1, desc2, true) &&
-				OPT_expression_equal2(tdbb, opt, source, node1, stream))
-			{
-				return true;
-			}
-		}
-
 		if (node1->nod_type == nod_derived_expr)
 		{
 			jrd_nod* const expression = node1->nod_arg[e_derived_expr_expr];
 
-			if (OPT_expression_equal2(tdbb, opt, expression, node2, stream))
+			if (OPT_expression_equal2(expression, node2, ignoreStreams))
 			{
 				return true;
 			}
@@ -498,7 +437,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		{
 			jrd_nod* const expression = node2->nod_arg[e_derived_expr_expr];
 
-			if (OPT_expression_equal2(tdbb, opt, expression, node1, stream))
+			if (OPT_expression_equal2(expression, node1, ignoreStreams))
 			{
 				return true;
 			}
@@ -521,8 +460,8 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			// A+B is equivalent to B+A, ditto A*B==B*A
 			// Note: If one expression is A+B+C, but the other is B+C+A we won't
 			// necessarily match them.
-			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[1], stream) &&
-				OPT_expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[0], stream))
+			if (OPT_expression_equal2(node1->nod_arg[0], node2->nod_arg[1], ignoreStreams) &&
+				OPT_expression_equal2(node1->nod_arg[1], node2->nod_arg[0], ignoreStreams))
 			{
 				return true;
 			}
@@ -538,8 +477,8 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_geq:
 		case nod_leq:
 		case nod_lss:
-			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream) &&
-				OPT_expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[1], stream))
+			if (OPT_expression_equal2(node1->nod_arg[0], node2->nod_arg[0], ignoreStreams) &&
+				OPT_expression_equal2(node1->nod_arg[1], node2->nod_arg[1], ignoreStreams))
 			{
 				return true;
 			}
@@ -547,27 +486,25 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_rec_version:
 		case nod_dbkey:
-			if (node1->nod_arg[0] == node2->nod_arg[0])
+			if (ignoreStreams || node1->nod_arg[0] == node2->nod_arg[0])
 			{
 				return true;
 			}
 			break;
 
 		case nod_field:
+			if ((node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) && 
+				(ignoreStreams || (node1->nod_arg[e_fld_stream] == node2->nod_arg[e_fld_stream])))
 			{
-				const USHORT fld_stream = (USHORT)(IPTR) node2->nod_arg[e_fld_stream];
-				if ((node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) && fld_stream == stream)
-				{
-					return true;
-				}
+				return true;
 			}
 			break;
 
 		case nod_function:
 			if (node1->nod_arg[e_fun_function] &&
 				(node1->nod_arg[e_fun_function] == node2->nod_arg[e_fun_function]) &&
-				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_fun_args],
-									  node2->nod_arg[e_fun_args], stream))
+				OPT_expression_equal2(node1->nod_arg[e_fun_args],
+									  node2->nod_arg[e_fun_args], ignoreStreams))
 			{
 				return true;
 			}
@@ -576,8 +513,8 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_sys_function:
 			if (node1->nod_arg[e_sysfun_function] &&
 				(node1->nod_arg[e_sysfun_function] == node2->nod_arg[e_sysfun_function]) &&
-				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_sysfun_args],
-									  node2->nod_arg[e_sysfun_args], stream))
+				OPT_expression_equal2(node1->nod_arg[e_sysfun_args],
+									  node2->nod_arg[e_sysfun_args], ignoreStreams))
 			{
 				return true;
 			}
@@ -585,9 +522,13 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_literal:
 			{
-				const dsc* desc1 = EVL_expr(tdbb, node1);
-				const dsc* desc2 = EVL_expr(tdbb, node2);
-				if (desc1 && desc2 && !MOV_compare(desc1, desc2))
+				const dsc* const desc1 = &((Literal*) node1)->lit_desc;
+				const UCHAR* const ptr1 = desc1->dsc_address;
+
+				const dsc* const desc2 = &((Literal*) node2)->lit_desc;
+				const UCHAR* const ptr2 = desc2->dsc_address;
+
+				if (DSC_EQUIV(desc1, desc2, true) && !memcmp(ptr1, ptr2, desc1->dsc_length))
 				{
 					return true;
 				}
@@ -622,7 +563,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 				}
 				for (int i = 0; i < node1->nod_count; ++i)
 				{
-					if (!OPT_expression_equal2(tdbb, opt, node1->nod_arg[i], node2->nod_arg[i], stream))
+					if (!OPT_expression_equal2(node1->nod_arg[i], node2->nod_arg[i], ignoreStreams))
 					{
 						return false;
 					}
@@ -641,7 +582,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_negate:
 		case nod_internal_info:
-			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
+			if (OPT_expression_equal2(node1->nod_arg[0], node2->nod_arg[0], ignoreStreams))
 			{
 				return true;
 			}
@@ -649,7 +590,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_upcase:
 		case nod_lowcase:
-			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
+			if (OPT_expression_equal2(node1->nod_arg[0], node2->nod_arg[0], ignoreStreams))
 			{
 				return true;
 			}
@@ -657,15 +598,15 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_cast:
 			{
-				dsc dsc1, dsc2;
-				dsc *desc1 = &dsc1, *desc2 = &dsc2;
+				const Format* const format1 = (Format*) node1->nod_arg[e_cast_fmt];
+				const dsc* const desc1 = &format1->fmt_desc[0];
 
-				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
+				const Format* const format2 = (Format*) node2->nod_arg[e_cast_fmt];
+				const dsc* const desc2 = &format2->fmt_desc[0];
 
 				if (DSC_EQUIV(desc1, desc2, true) &&
-					OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
-										  node2->nod_arg[e_cast_source], stream))
+					OPT_expression_equal2(node1->nod_arg[e_cast_source],
+										  node2->nod_arg[e_cast_source], ignoreStreams))
 				{
 					return true;
 				}
@@ -674,8 +615,8 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_extract:
 			if (node1->nod_arg[e_extract_part] == node2->nod_arg[e_extract_part] &&
-				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_extract_value],
-									  node2->nod_arg[e_extract_value], stream))
+				OPT_expression_equal2(node1->nod_arg[e_extract_value],
+									  node2->nod_arg[e_extract_value], ignoreStreams))
 			{
 				return true;
 			}
@@ -683,16 +624,16 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_strlen:
 			if (node1->nod_arg[e_strlen_type] == node2->nod_arg[e_strlen_type] &&
-				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_strlen_value],
-									  node2->nod_arg[e_strlen_value], stream))
+				OPT_expression_equal2(node1->nod_arg[e_strlen_value],
+									  node2->nod_arg[e_strlen_value], ignoreStreams))
 			{
 				return true;
 			}
 			break;
 
 		case nod_derived_expr:
-			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_derived_expr_expr],
-									  node2->nod_arg[e_derived_expr_expr], stream))
+			if (OPT_expression_equal2(node1->nod_arg[e_derived_expr_expr],
+									  node2->nod_arg[e_derived_expr_expr], ignoreStreams))
 			{
 				return true;
 			}
@@ -712,7 +653,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 				while (count--)
 				{
-					if (!OPT_expression_equal2(tdbb, opt, *ptr1++, *ptr2++, stream))
+					if (!OPT_expression_equal2(*ptr1++, *ptr2++, ignoreStreams))
 					{
 						return false;
 					}
@@ -1705,7 +1646,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			jrd_nod* node = *ptr;
 			if (idx->idx_flags & idx_expressn)
 			{
-				if (!OPT_expression_equal(tdbb, optimizer, idx, node, stream))
+				if (!OPT_expression_equal(idx, node, stream))
 				{
 					usableIndex = false;
 					break;
@@ -2627,11 +2568,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 
 	    fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!OPT_expression_equal(tdbb, optimizer, indexScratch->idx, match, stream) ||
+		if (!OPT_expression_equal(indexScratch->idx, match, stream) ||
 			(value && !OPT_computable(optimizer->opt_csb, value, stream, true, false)))
 		{
 			if (boolean->nod_type != nod_starts && value &&
-				OPT_expression_equal(tdbb, optimizer, indexScratch->idx, value, stream) &&
+				OPT_expression_equal(indexScratch->idx, value, stream) &&
 				OPT_computable(optimizer->opt_csb, match, stream, true, false))
 			{
 				match = boolean->nod_arg[1];
@@ -3207,13 +3148,13 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?
 		fb_assert(indexScratch->idx->idx_expression != NULL);
-		if (!(OPT_expression_equal(tdbb, optimizer, indexScratch->idx, field, stream) ||
+		if (!(OPT_expression_equal(indexScratch->idx, field, stream) ||
 			(value && !OPT_computable(optimizer->opt_csb, value, stream, true, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				OPT_expression_equal(tdbb, optimizer, indexScratch->idx, value, stream) &&
+				OPT_expression_equal(indexScratch->idx, value, stream) &&
 				OPT_computable(optimizer->opt_csb, field, stream, true, false))
 			{
 				field = value;

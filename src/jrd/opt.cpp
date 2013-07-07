@@ -4568,7 +4568,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		jrd_nod* node = *ptr;
 		if (idx->idx_flags & idx_expressn)
 		{
-			if (!OPT_expression_equal(tdbb, opt, idx, node, stream))
+			if (!OPT_expression_equal(idx, node, stream))
 				return NULL;
 		}
 		else if (node->nod_type != nod_field ||
@@ -6674,7 +6674,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
 	if (idx->idx_flags & idx_expressn)
 	{
 		fb_assert(idx->idx_expression != NULL);
-		if (!OPT_expression_equal(tdbb, opt, idx, field, stream))
+		if (!OPT_expression_equal(idx, field, stream))
 		{
 			return NULL;
 		}
@@ -6757,10 +6757,10 @@ static jrd_nod* make_starts(thread_db* tdbb,
 	if (idx->idx_flags & idx_expressn)
 	{
 		fb_assert(idx->idx_expression != NULL);
-		if (!(OPT_expression_equal(tdbb, opt, idx, field, stream) &&
+		if (!(OPT_expression_equal(idx, field, stream) &&
 			OPT_computable(opt->opt_csb, value, stream, true, false)))
 		{
-			if (OPT_expression_equal(tdbb, opt, idx, value, stream) &&
+			if (OPT_expression_equal(idx, value, stream) &&
 				OPT_computable(opt->opt_csb, field, stream, true, false))
 			{
 				field = value;
@@ -7078,10 +7078,10 @@ static int match_index(thread_db* tdbb, OptimizerBlk* opt, SSHORT stream, jrd_no
 
 	    fb_assert(idx->idx_expression != NULL);
 
-		if (!OPT_expression_equal(tdbb, opt, idx, match, stream) ||
+		if (!OPT_expression_equal(idx, match, stream) ||
 			(value && !OPT_computable(opt->opt_csb, value, stream, true, false)))
 		{
-			if (value && OPT_expression_equal(tdbb, opt, idx, value, stream) &&
+			if (value && OPT_expression_equal(idx, value, stream) &&
 				OPT_computable(opt->opt_csb, match, stream, true, false))
 			{
 				match = boolean->nod_arg[1];
