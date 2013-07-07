@@ -134,7 +134,7 @@ bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return true;
 }
 
-bool ExprNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/
+bool ExprNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
 	if (other->type != type)
 		return false;
@@ -143,14 +143,14 @@ bool ExprNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode*
 	if (other->jrdChildNodes.getCount() != count)
 		return false;
 
-	NodeRef** j = other->jrdChildNodes.begin();
+	const NodeRef* const* j = other->jrdChildNodes.begin();
 
-	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i, ++j)
+	for (const NodeRef* const* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i, ++j)
 	{
 		if (!**i && !**j)
 			continue;
 
-		if (!**i || !**j || !(*i)->getExpr()->sameAs(tdbb, csb, (*j)->getExpr()))
+		if (!**i || !**j || !(*i)->getExpr()->sameAs((*j)->getExpr(), ignoreStreams))
 			return false;
 	}
 
@@ -1376,23 +1376,29 @@ bool ArithmeticNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return dialect1 == o->dialect1 && blrOp == o->blrOp;
 }
 
-bool ArithmeticNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool ArithmeticNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	ArithmeticNode* otherNode = other->as<ArithmeticNode>();
+	const ArithmeticNode* const otherNode = other->as<ArithmeticNode>();
 
 	if (!otherNode || blrOp != otherNode->blrOp || dialect1 != otherNode->dialect1)
 		return false;
 
-	if (arg1->sameAs(tdbb, csb, otherNode->arg1) && arg2->sameAs(tdbb, csb, otherNode->arg2))
+	if (arg1->sameAs(otherNode->arg1, ignoreStreams) &&
+		arg2->sameAs(otherNode->arg2, ignoreStreams))
+	{
 		return true;
+	}
 
 	if (blrOp == blr_add || blrOp == blr_multiply)
 	{
 		// A + B is equivalent to B + A, ditto for A * B and B * A.
 		// Note: If one expression is A + B + C, but the other is B + C + A we won't
 		// necessarily match them.
-		if (arg1->sameAs(tdbb, csb, otherNode->arg2) && arg2->sameAs(tdbb, csb, otherNode->arg1))
+		if (arg1->sameAs(otherNode->arg2, ignoreStreams) &&
+			arg2->sameAs(otherNode->arg1, ignoreStreams))
+		{
 			return true;
+		}
 	}
 
 	return false;
@@ -2627,30 +2633,15 @@ bool CastNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return dsqlField == o->dsqlField;
 }
 
-bool CastNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool CastNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	FieldNode* fieldNode = other->as<FieldNode>();
-
-	dsc desc1, desc2;
-	getDesc(tdbb, csb, &desc1);
-
-	if (fieldNode)
-	{
-		fieldNode->getDesc(tdbb, csb, &desc2);
-
-		if (DSC_EQUIV(&desc1, &desc2, true) && source->sameAs(tdbb, csb, fieldNode))
-			return true;
-	}
-
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	CastNode* o = other->as<CastNode>();
-	fb_assert(o);
+	const CastNode* const otherNode = other->as<CastNode>();
+	fb_assert(otherNode);
 
-	o->getDesc(tdbb, csb, &desc2);
-
-	return DSC_EQUIV(&desc1, &desc2, true) && source->sameAs(tdbb, csb, o->source);
+	return DSC_EQUIV(&castDesc, &otherNode->castDesc, true);
 }
 
 ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -4326,15 +4317,15 @@ bool ExtractNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrSubOp == o->blrSubOp;
 }
 
-bool ExtractNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool ExtractNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	ExtractNode* o = other->as<ExtractNode>();
-	fb_assert(o);
+	const ExtractNode* const otherNode = other->as<ExtractNode>();
+	fb_assert(otherNode);
 
-	return blrSubOp == o->blrSubOp;
+	return blrSubOp == otherNode->blrSubOp;
 }
 
 ValueExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -5275,36 +5266,16 @@ bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return true;
 }
 
-bool FieldNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/
+bool FieldNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	CastNode* castNode = other->as<CastNode>();
+	if (!ExprNode::sameAs(other, ignoreStreams))
+		return false;
 
-	if (castNode)
-	{
-		dsc desc1, desc2;
-		getDesc(tdbb, csb, &desc1);
-		castNode->getDesc(tdbb, csb, &desc2);
+	const FieldNode* const otherNode = other->as<FieldNode>();
+	fb_assert(otherNode);
 
-		if (DSC_EQUIV(&desc1, &desc2, true) && sameAs(tdbb, csb, castNode->source))
-			return true;
-	}
-
-	const FieldNode* o = other->as<FieldNode>();
-
-	if (o)
-	{
-		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[fieldStream];
-		CompilerScratch::csb_repeat* const other_tail = &csb->csb_rpt[o->fieldStream];
-
-		return fieldId == o->fieldId &&
-			(fieldStream == o->fieldStream ||
-			(tail->csb_relation && other_tail->csb_relation &&
-				tail->csb_relation->rel_id == other_tail->csb_relation->rel_id) ||
-			(tail->csb_procedure && other_tail->csb_procedure &&
-				tail->csb_procedure->getId() == other_tail->csb_procedure->getId()));
-	}
-
-	return false;
+	return fieldId == otherNode->fieldId &&
+		(ignoreStreams || fieldStream == otherNode->fieldStream);
 }
 
 bool FieldNode::computable(CompilerScratch* csb, StreamType stream,
@@ -5776,10 +5747,15 @@ bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return dialect1 == o->dialect1 && generator.name == o->generator.name;
 }
 
-bool GenIdNode::sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* other)
+bool GenIdNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	GenIdNode* otherNode = other->as<GenIdNode>();
-	return otherNode && dialect1 == otherNode->dialect1 && generator.id == otherNode->generator.id;
+	if (!ExprNode::sameAs(other, ignoreStreams))
+		return false;
+
+	const GenIdNode* const otherNode = other->as<GenIdNode>();
+	fb_assert(otherNode);
+
+	return dialect1 == otherNode->dialect1 && generator.id == otherNode->generator.id;
 }
 
 ValueExprNode* GenIdNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -6408,21 +6384,16 @@ bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return memcmp(litDesc.dsc_address, o->litDesc.dsc_address, len) == 0;
 }
 
-bool LiteralNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool LiteralNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	LiteralNode* o = other->as<LiteralNode>();
-	fb_assert(o);
+	const LiteralNode* const otherNode = other->as<LiteralNode>();
+	fb_assert(otherNode);
 
-	dsc desc1, desc2;
-
-	getDesc(tdbb, csb, &desc1);
-	o->getDesc(tdbb, csb, &desc2);
-
-	return DSC_EQUIV(&desc1, &desc2, true) &&
-		memcmp(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length) == 0;
+	return DSC_EQUIV(&litDesc, &otherNode->litDesc, true) &&
+		memcmp(litDesc.dsc_address, otherNode->litDesc.dsc_address, litDesc.dsc_length) == 0;
 }
 
 ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -7975,23 +7946,15 @@ bool RecordKeyNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool RecordKeyNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool RecordKeyNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	RecordKeyNode* o = other->as<RecordKeyNode>();
-	fb_assert(o);
+	const RecordKeyNode* const otherNode = other->as<RecordKeyNode>();
+	fb_assert(otherNode);
 
-	CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[recStream];
-	CompilerScratch::csb_repeat* const other_tail = &csb->csb_rpt[o->recStream];
-
-	return blrOp == o->blrOp &&
-		(recStream == o->recStream ||
-		(tail->csb_relation && other_tail->csb_relation &&
-			tail->csb_relation->rel_id == other_tail->csb_relation->rel_id) ||
-		(tail->csb_procedure && other_tail->csb_procedure &&
-			tail->csb_procedure->getId() == other_tail->csb_procedure->getId()));
+	return blrOp == otherNode->blrOp && (ignoreStreams || recStream == otherNode->recStream);
 }
 
 ValueExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -8494,12 +8457,12 @@ bool StrCaseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool StrCaseNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool StrCaseNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	StrCaseNode* otherNode = other->as<StrCaseNode>();
+	const StrCaseNode* const otherNode = other->as<StrCaseNode>();
 	fb_assert(otherNode);
 
 	return blrOp == otherNode->blrOp;
@@ -8696,15 +8659,15 @@ bool StrLenNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrSubOp == o->blrSubOp;
 }
 
-bool StrLenNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool StrLenNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	StrLenNode* o = other->as<StrLenNode>();
-	fb_assert(o);
+	const StrLenNode* const otherNode = other->as<StrLenNode>();
+	fb_assert(otherNode);
 
-	return blrSubOp == o->blrSubOp;
+	return blrSubOp == otherNode->blrSubOp;
 }
 
 ValueExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -9079,7 +9042,7 @@ ValueExprNode* SubQueryNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool SubQueryNode::sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* /*other*/)
+bool SubQueryNode::sameAs(const ExprNode* /*other*/, bool /*ignoreStreams*/) const
 {
 	return false;
 }
@@ -10005,12 +9968,12 @@ bool SysFuncCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return name == otherNode->name;
 }
 
-bool SysFuncCallNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool SysFuncCallNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	SysFuncCallNode* otherNode = other->as<SysFuncCallNode>();
+	const SysFuncCallNode* const otherNode = other->as<SysFuncCallNode>();
 	fb_assert(otherNode);
 
 	return function && function == otherNode->function;
@@ -10232,15 +10195,15 @@ bool TrimNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return where == o->where;
 }
 
-bool TrimNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool TrimNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	TrimNode* o = other->as<TrimNode>();
-	fb_assert(o);
+	const TrimNode* const otherNode = other->as<TrimNode>();
+	fb_assert(otherNode);
 
-	return where == o->where;
+	return where == otherNode->where;
 }
 
 ValueExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -10588,12 +10551,12 @@ bool UdfCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return name == otherNode->name;
 }
 
-bool UdfCallNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
+bool UdfCallNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(tdbb, csb, other))
+	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	UdfCallNode* otherNode = other->as<UdfCallNode>();
+	const UdfCallNode* const otherNode = other->as<UdfCallNode>();
 	fb_assert(otherNode);
 
 	return function && function == otherNode->function;

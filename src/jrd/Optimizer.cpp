@@ -60,41 +60,21 @@ namespace Jrd {
 
 // Check the index for being an expression one and
 // matching both the given stream and the given expression tree
-bool checkExpressionIndex(thread_db* tdbb, CompilerScratch* csb, const index_desc* idx,
-						  ValueExprNode* node, StreamType stream)
+bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType stream)
 {
-	DEV_BLKCHK(node, type_nod);
+	fb_assert(idx);
 
-	SET_TDBB(tdbb);
-
-	if (idx && idx->idx_expression_statement && idx->idx_expression)
+	if (idx->idx_expression && idx->idx_expression->sameAs(node, true))
 	{
-		SortedStreamList streams;
-		node->jrdStreamsCollector(streams);
+		SortedStreamList exprStreams, nodeStreams;
+		idx->idx_expression->jrdStreamsCollector(exprStreams);
+		node->jrdStreamsCollector(nodeStreams);
 
-		if (streams.getCount() != 1 || streams[0] != stream)
+		if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
+			nodeStreams.getCount() == 1 && nodeStreams[0] == stream)
 		{
-			return false;
+			return true;
 		}
-
-		fb_assert(idx->idx_flags & idx_expressn);
-
-		// We need to copy the expression so that its streams would be
-		// remapped to our csb and thus compared properly
-		//StreamType local_map[JrdStatement::MAP_LENGTH];
-		AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
-		StreamType* map = csb->csb_rpt[stream].csb_map;
-		if (!map)
-		{
-			localMap = FB_NEW(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
-			map = localMap;
-			fb_assert(stream <= MAX_STREAMS);
-			map[0] = stream;
-		}
-
-		// ASF: AutoPtr will delete only the top node.
-		AutoPtr<ExprNode> expression(NodeCopier::copy(tdbb, csb, idx->idx_expression, map));
-		return expression->sameAs(tdbb, csb, node);
 	}
 
 	return false;
@@ -742,7 +722,7 @@ void OptimizerRetrieval::analyzeNavigation()
 
 			if (idx->idx_flags & idx_expressn)
 			{
-				if (!checkExpressionIndex(tdbb, csb, idx, node, stream))
+				if (!checkExpressionIndex(idx, node, stream))
 				{
 					usableIndex = false;
 					break;
@@ -1652,11 +1632,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	    fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!checkExpressionIndex(tdbb, csb, indexScratch->idx, match, stream) ||
+		if (!checkExpressionIndex(indexScratch->idx, match, stream) ||
 			(value && !value->computable(csb, stream, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
-				checkExpressionIndex(tdbb, csb, indexScratch->idx, value, stream) &&
+				checkExpressionIndex(indexScratch->idx, value, stream) &&
 				match->computable(csb, stream, false))
 			{
 				ValueExprNode* temp = match;
@@ -2333,13 +2313,13 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		// we use starting with against it? Is that allowed?
 		fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!(checkExpressionIndex(tdbb, csb, indexScratch->idx, field, stream) ||
+		if (!(checkExpressionIndex(indexScratch->idx, field, stream) ||
 			(value && !value->computable(csb, stream, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				checkExpressionIndex(tdbb, csb, indexScratch->idx, value, stream) &&
+				checkExpressionIndex(indexScratch->idx, value, stream) &&
 				field->computable(csb, stream, false))
 			{
 				field = value;
