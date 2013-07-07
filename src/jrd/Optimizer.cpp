@@ -665,7 +665,7 @@ IndexTableScan* OptimizerRetrieval::getNavigation()
 	if (navigationCandidate < 0)
 		return NULL;
 
-	fb_assert(navigationCandidate <= indexScratches.getCount());
+	fb_assert(navigationCandidate < indexScratches.getCount());
 	IndexScratch* const indexScratch = &indexScratches[navigationCandidate];
 
 	// Looks like we can do a navigational walk.  Flag that
