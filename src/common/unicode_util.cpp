@@ -163,7 +163,8 @@ public:
 			ciAiTransCacheMutex.leave();
 
 			UErrorCode errorCode = U_ZERO_ERROR;
-			ret = utransOpen("Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC",
+			// Fix for CORE-4136. Was "Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC".
+			ret = utransOpen("NFD; [:Nonspacing Mark:] Remove; NFC",
 				UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
 		}
 
@@ -1447,43 +1448,40 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst,
 	const ULONG* exceptions)
 {
+	fb_assert(srcLen % sizeof(*src) == 0);
+
 	HalfStaticArray<USHORT, BUFFER_SMALL / 2> upperStr;
 
-	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-		(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
-		fb_assert(srcLen % sizeof(*src) == 0);
-
-		memcpy(upperStr.getBuffer(srcLen / sizeof(USHORT)), src, srcLen);
-
-		UTransliterator* trans = icu->getCiAiTransliterator();
-
-		if (trans)
-		{
-			const int32_t capacity = upperStr.getCount();
-			int32_t len = srcLen / sizeof(USHORT);
-			int32_t limit = len;
-
-			UErrorCode errorCode = U_ZERO_ERROR;
-			icu->utransTransUChars(trans, reinterpret_cast<UChar*>(upperStr.begin()),
-				&len, capacity, 0, &limit, &errorCode);
-			icu->releaseCiAiTransliterator(trans);
-
-			len *= sizeof(USHORT);
-			if (ULONG(len) > dstLen)
-				len = INTL_BAD_STR_LENGTH;
-
-			srcLen = len;
-			src = upperStr.begin();
-		}
-		else
-			return INTL_BAD_STR_LENGTH;
-	}
-	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
-	{
-		srcLen = utf16UpperCase(srcLen, src,
-			srcLen, upperStr.getBuffer(srcLen / sizeof(USHORT)), exceptions);
+		srcLen = utf16UpperCase(srcLen, src, srcLen,
+			upperStr.getBuffer(srcLen / sizeof(USHORT)), NULL);
 		src = upperStr.begin();
+
+		if (attributes & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+		{
+			UTransliterator* trans = icu->getCiAiTransliterator();
+
+			if (trans)
+			{
+				const int32_t capacity = upperStr.getCount();
+				int32_t len = srcLen / sizeof(USHORT);
+				int32_t limit = len;
+
+				UErrorCode errorCode = U_ZERO_ERROR;
+				icu->utransTransUChars(trans, reinterpret_cast<UChar*>(upperStr.begin()),
+					&len, capacity, 0, &limit, &errorCode);
+				icu->releaseCiAiTransliterator(trans);
+
+				len *= sizeof(USHORT);
+				if (ULONG(len) > dstLen)
+					len = INTL_BAD_STR_LENGTH;
+
+				srcLen = len;
+			}
+			else
+				return INTL_BAD_STR_LENGTH;
+		}
 	}
 
 	// convert UTF-16 to UTF-32
