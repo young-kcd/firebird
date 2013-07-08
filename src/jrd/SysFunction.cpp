@@ -189,6 +189,7 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray
 dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 
 
+// System context function names
 const char
 	RDB_GET_CONTEXT[] = "RDB$GET_CONTEXT",
 	RDB_SET_CONTEXT[] = "RDB$SET_CONTEXT";
@@ -202,19 +203,27 @@ const char
 
 // System context variables names
 const char
+	// SYSTEM namespace: global and database wise items
 	ENGINE_VERSION[] = "ENGINE_VERSION",
+	DATABASE_NAME[] = "DB_NAME",
+	// SYSTEM namespace: connection wise items
+	SESSION_ID_NAME[] = "SESSION_ID",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
 	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
-	DATABASE_NAME[] = "DB_NAME",
-	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
-	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
-	SESSION_ID_NAME[] = "SESSION_ID",
+	CLIENT_PID_NAME[] = "CLIENT_PID",
+	CLIENT_PROCESS_NAME[] = "CLIENT_PROCESS",
 	CURRENT_USER_NAME[] = "CURRENT_USER",
 	CURRENT_ROLE_NAME[] = "CURRENT_ROLE",
-	EVENT_TYPE_NAME[] = "EVENT_TYPE",
-	OBJECT_TYPE_NAME[] = "OBJECT_TYPE",
+	// SYSTEM namespace: transaction wise items
+	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
+	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
+	LOCK_TIMEOUT_NAME[] = "LOCK_TIMEOUT",
+	READ_ONLY_NAME[] = "READ_ONLY",
+	// DDL_TRIGGER namespace
 	DDL_EVENT_NAME[] = "DDL_EVENT",
+	EVENT_TYPE_NAME[] = "EVENT_TYPE",
 	OBJECT_NAME[] = "OBJECT_NAME",
+	OBJECT_TYPE_NAME[] = "OBJECT_TYPE",
 	SQL_TEXT_NAME[] = "SQL_TEXT";
 
 // Isolation values modes
@@ -222,6 +231,11 @@ const char
 	READ_COMMITTED_VALUE[] = "READ COMMITTED",
 	CONSISTENCY_VALUE[] = "CONSISTENCY",
 	SNAPSHOT_VALUE[] = "SNAPSHOT";
+
+// Boolean values
+static const char
+	FALSE_VALUE[] = "FALSE",
+	TRUE_VALUE[] = "TRUE";
 
 
 void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
@@ -2113,6 +2127,10 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	{
 		if (nameStr == ENGINE_VERSION)
 			resultStr.printf("%s.%s.%s", FB_MAJOR_VER, FB_MINOR_VER, FB_REV_NO);
+		else if (nameStr == DATABASE_NAME)
+			resultStr = dbb->dbb_database_name.ToString();
+		else if (nameStr == SESSION_ID_NAME)
+			resultStr.printf("%d", PAG_attachment_id(tdbb));
 		else if (nameStr == NETWORK_PROTOCOL_NAME)
 		{
 			if (attachment->att_network_protocol.isEmpty())
@@ -2127,8 +2145,20 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 
 			resultStr = attachment->att_remote_address;
 		}
-		else if (nameStr == DATABASE_NAME)
-			resultStr = dbb->dbb_database_name.ToString();
+		else if (nameStr == CLIENT_PID_NAME)
+		{
+			if (!attachment->att_remote_pid)
+				return NULL;
+
+			resultStr.printf("%d", attachment->att_remote_pid);
+		}
+		else if (nameStr == CLIENT_PROCESS_NAME)
+		{
+			if (attachment->att_remote_process.isEmpty())
+				return NULL;
+
+			resultStr = attachment->att_remote_process.ToString();
+		}
 		else if (nameStr == CURRENT_USER_NAME)
 		{
 			if (!attachment->att_user || attachment->att_user->usr_user_name.isEmpty())
@@ -2143,8 +2173,6 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 
 			resultStr = attachment->att_user->usr_sql_role_name;
 		}
-		else if (nameStr == SESSION_ID_NAME)
-			resultStr.printf("%d", PAG_attachment_id(tdbb));
 		else if (nameStr == TRANSACTION_ID_NAME)
 			resultStr.printf("%lu", transaction->tra_number);
 		else if (nameStr == ISOLATION_LEVEL_NAME)
@@ -2156,6 +2184,10 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			else
 				resultStr = SNAPSHOT_VALUE;
 		}
+		else if (nameStr == LOCK_TIMEOUT_NAME)
+			resultStr.printf("%d", transaction->tra_lock_timeout);
+		else if (nameStr == READ_ONLY_NAME)
+			resultStr = (transaction->tra_flags & TRA_readonly) ? TRUE_VALUE : FALSE_VALUE;
 		else
 		{
 			// "Context variable %s is not found in namespace %s"
