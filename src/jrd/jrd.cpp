@@ -177,6 +177,15 @@ namespace
 			entered = true;
 		}
 
+		void leave()
+		{
+			if (entered)
+			{
+				ref->leave();
+				entered = false;
+			}
+		}
+
 		void operator=(Database::ExistenceRefMutex* to)
 		{
 			if (ref == to)
@@ -184,11 +193,7 @@ namespace
 				return;
 			}
 
-			if (entered)
-			{
-				ref->leave();
-				entered = false;
-			}
+			leave();
 			ref = to;
 		}
 
@@ -204,10 +209,7 @@ namespace
 
 		~RefMutexUnlock()
 		{
-			if (entered)
-			{
-				ref->leave();
-			}
+			leave();
 		}
 
 	private:
@@ -979,6 +981,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	Database* dbb = NULL;
 	Attachment* attachment = NULL;
+	bool attachTraced = false;
 
 	// Initialize special error handling
 
@@ -1441,6 +1444,18 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	CCH_release_exclusive(tdbb);
 
+	initGuard.leave();
+
+	if (attachment->att_trace_manager->needs().event_attach)
+	{
+		TraceConnectionImpl conn(attachment);
+		attachment->att_trace_manager->event_attach(&conn, false, res_successful);
+	}
+	attachTraced = true;
+
+	// Recover database after crash during backup difference file merge
+	dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
+
 	// if there was an error, the status vector is all set
 
 	if (options.dpb_sweep & isc_dpb_records) {
@@ -1449,15 +1464,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_dbkey_scope) {
 		attachment->att_dbkey_trans = TRA_start(tdbb, 0, 0);
-	}
-
-	// Recover database after crash during backup difference file merge
-	dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
-
-	if (attachment->att_trace_manager->needs().event_attach)
-	{
-		TraceConnectionImpl conn(attachment);
-		attachment->att_trace_manager->event_attach(&conn, false, res_successful);
 	}
 
 	if (!(attachment->att_flags & ATT_no_db_triggers))
@@ -1510,8 +1516,23 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	catch (const Exception& ex)
 	{
 		ex.stuff_exception(user_status);
-		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-			filename, options, false, user_status);
+		if (attachTraced)
+		{
+			TraceManager* traceManager = attachment->att_trace_manager;
+			TraceConnectionImpl conn(attachment);
+			TraceStatusVectorImpl traceStatus(user_status);
+
+			if (traceManager->needs().event_error)
+				traceManager->event_error(&conn, &traceStatus, ENTRYPOINT_NAME(GDS_ATTACH_DATABASE));
+
+			if (traceManager->needs().event_detach) 
+				traceManager->event_detach(&conn, false);
+		}
+		else
+		{
+			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
+				filename, options, false, user_status);
+		}
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
