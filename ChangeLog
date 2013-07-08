@@ -1,3 +1,13 @@
+ 2013-07-07 15:11  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Unfortunately, the only correct way to reference stream internals (e.g. get field descriptors) in node comparison routines is either to compare nodes along with their corresponding CSBs or to compare only nodes and handle streams outside. I'm favoring the latter approach. And no, remapping is a wrong solution either (trunk is to be reworked again in this regard, sigh). This fixes CORE-4139 at the cost of removed CAST vs FIELD comparison trick. Let's see whether somebody is going to be affected.
+
+ 2013-07-07 02:02  asfernandes 
+   M src/jrd/unicode_util.cpp
+Fixed CORE-4136 - Sharp-S character treated incorrectly in UNICODE_CI_AI collation.
+
  2013-07-03 13:20  dimitr 
    M src/jrd/Database.cpp
    M src/jrd/Database.h
