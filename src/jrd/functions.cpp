@@ -65,21 +65,33 @@ static const char
 
 // System variables names
 static const char
+	// global and database wise items
 	ENGINE_VERSION[] = "ENGINE_VERSION",
+	DATABASE_NAME[] = "DB_NAME",
+	// connection wise items
+	SESSION_ID_NAME[] = "SESSION_ID",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
 	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
-	DATABASE_NAME[] = "DB_NAME",
-	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
-	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
-	SESSION_ID_NAME[] = "SESSION_ID",
+	CLIENT_PID_NAME[] = "CLIENT_PID",
+	CLIENT_PROCESS_NAME[] = "CLIENT_PROCESS",
 	CURRENT_USER_NAME[] = "CURRENT_USER",
-	CURRENT_ROLE_NAME[] = "CURRENT_ROLE";
+	CURRENT_ROLE_NAME[] = "CURRENT_ROLE",
+	// transaction wise items
+	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
+	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
+	LOCK_TIMEOUT_NAME[] = "LOCK_TIMEOUT",
+	READ_ONLY_NAME[] = "READ_ONLY";
 
 // Isolation values modes
 static const char
 	READ_COMMITTED_VALUE[] = "READ COMMITTED",
 	CONSISTENCY_VALUE[] = "CONSISTENCY",
 	SNAPSHOT_VALUE[] = "SNAPSHOT";
+
+// Boolean values
+static const char
+	FALSE_VALUE[] = "FALSE",
+	TRUE_VALUE[] = "TRUE";
 
 
 #define FUNCTION(ROUTINE, FUNCTION_NAME, MODULE_NAME, ENTRYPOINT, RET_ARG) \
@@ -197,6 +209,19 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(version);
 		}
 
+		if (name_str == DATABASE_NAME)
+		{
+			return make_result_str(dbb->dbb_database_name.ToString());
+		}
+
+		if (name_str == SESSION_ID_NAME)
+		{
+			Firebird::string session_id;
+			const SLONG att_id = PAG_attachment_id(tdbb);
+			session_id.printf("%d", att_id);
+			return make_result_str(session_id);
+		}
+
 		if (name_str == NETWORK_PROTOCOL_NAME)
 		{
 			if (att->att_network_protocol.isEmpty())
@@ -213,9 +238,22 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_remote_address);
 		}
 
-		if (name_str == DATABASE_NAME)
+		if (name_str == CLIENT_PID_NAME)
 		{
-			return make_result_str(dbb->dbb_database_name.ToString());
+			if (!att->att_remote_pid)
+				return NULL;
+
+			Firebird::string client_pid;
+			client_pid.printf("%d", att->att_remote_pid);
+			return make_result_str(client_pid);
+		}
+
+		if (name_str == CLIENT_PROCESS_NAME)
+		{
+			if (att->att_remote_process.isEmpty())
+				return NULL;
+
+			return make_result_str(att->att_remote_process.ToString());
 		}
 
 		if (name_str == CURRENT_USER_NAME)
@@ -232,14 +270,6 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 				return NULL;
 
 			return make_result_str(att->att_user->usr_sql_role_name);
-		}
-
-		if (name_str == SESSION_ID_NAME)
-		{
-			Firebird::string session_id;
-			const SLONG att_id = PAG_attachment_id(tdbb);
-			session_id.printf("%d", att_id);
-			return make_result_str(session_id);
 		}
 
 		if (name_str == TRANSACTION_ID_NAME)
@@ -261,6 +291,21 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 				isolation = SNAPSHOT_VALUE;
 
 			return make_result_str(isolation, strlen(isolation));
+		}
+
+		if (name_str == LOCK_TIMEOUT_NAME)
+		{
+			Firebird::string lock_timeout;
+			lock_timeout.printf("%d", transaction->tra_lock_timeout);
+			return make_result_str(lock_timeout);
+		}
+
+		if (name_str == READ_ONLY_NAME)
+		{
+			const char* read_only = (transaction->tra_flags & TRA_readonly) ?
+				TRUE_VALUE : FALSE_VALUE;
+
+			return make_result_str(read_only, strlen(read_only));
 		}
 
 		// "Context variable %s is not found in namespace %s"
