@@ -1,3 +1,28 @@
+ 2013-07-07 16:11  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.cpp
+Sync'ed with v2.5 and fixed wrong stream comparison checks.
+
+ 2013-07-07 07:50  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed the assertion, thanks to Adriano.
+
+ 2013-07-07 01:57  asfernandes 
+   M src/common/unicode_util.cpp
+Fixed CORE-4136 - Sharp-S character treated incorrectly in UNICODE_CI_AI collation.
+
+ 2013-07-06 23:11  asfernandes 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M src/jrd/Database.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/opt.cpp
+Misc.
+
  2013-07-05 09:40  paul_reeves 
    M builds/install/arch-specific/win32/After_Installation.url
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
