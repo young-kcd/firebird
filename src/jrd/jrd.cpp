@@ -5884,6 +5884,11 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 			}
 		}
 
+		if (dbb->dbb_sweep_lock)
+		{
+			LCK_release(tdbb, dbb->dbb_sweep_lock);
+		}
+
 		if (dbb->dbb_lock)
 		{
 			LCK_release(tdbb, dbb->dbb_lock);

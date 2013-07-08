@@ -107,7 +107,7 @@ const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
 const ULONG DBB_monitor_locking		= 0x100000L;	// monitoring lock is being acquired
-
+const ULONG DBB_sweep_starting		= 0x200000L;	// Auto-sweep is starting
 //
 // dbb_ast_flags
 //
@@ -436,6 +436,7 @@ public:
 	vec<jrd_prc*>*	dbb_procedures;		// scanned procedures
 	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
+	Lock* 		dbb_sweep_lock;			// sweep lock
 	jrd_tra*	dbb_sys_trans;			// system transaction
 	Shadow*		dbb_shadow;				// shadow control block
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
@@ -614,7 +615,17 @@ public:
 	}
 #endif
 
+	// returns true if sweeper thread could start
+	bool allowSweepThread(thread_db* tdbb);
+	// returns true if sweep could run
+	bool allowSweepRun(thread_db* tdbb);
+	// reset sweep flags and release sweep lock
+	void clearSweepFlags(thread_db* tdbb);
+
 private:
+	//static int blockingAstSharedCounter(void*);
+	static int blocking_ast_sweep(void* ast_object);
+	Lock* createSweepLock(thread_db* tdbb);
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database
