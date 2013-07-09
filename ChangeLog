@@ -1,3 +1,7 @@
+ 2013-07-08 08:37  dimitr 
+   M src/jrd/SysFunction.cpp
+CORE-3704: Add new context variables to the SYSTEM namespace.
+
  2013-07-07 16:11  dimitr 
    M src/dsql/BoolNodes.cpp
    M src/dsql/BoolNodes.h
