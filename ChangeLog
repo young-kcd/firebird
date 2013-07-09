@@ -1,3 +1,18 @@
+ 2013-07-08 14:30  hvlad 
+   M src/jrd/jrd.cpp
+Backport fix for bug CORE-4135 :  In SS sweep blocks establishment of concurrent attachments
+
+ 2013-07-08 14:29  hvlad 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+Backport fix for bug CORE-4134 : Race condition when auto-sweep is started
+
+ 2013-07-08 08:26  dimitr 
+   M src/jrd/functions.cpp
+CORE-3704: Add new context variables to the SYSTEM namespace.
+
  2013-07-07 15:11  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
