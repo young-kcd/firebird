@@ -1042,15 +1042,17 @@ static void check_sorts(RseNode* rse)
 
 		// if there is no projection, then we can make a similar optimization
 		// for sort, except that sort may have fewer fields than group by.
+
 		if (!project && sort && (sort->expressions.getCount() <= group->expressions.getCount()))
 		{
+			const size_t count = sort->expressions.getCount();
 			const NestConst<ValueExprNode>* sort_ptr = sort->expressions.begin();
-			const NestConst<ValueExprNode>* const sort_end = sort->expressions.end();
+			const NestConst<ValueExprNode>* const sort_end = sort_ptr + count;
 
 			for (; sort_ptr != sort_end; ++sort_ptr)
 			{
 				const NestConst<ValueExprNode>* group_ptr = group->expressions.begin();
-				const NestConst<ValueExprNode>* const group_end = group->expressions.end();
+				const NestConst<ValueExprNode>* const group_end = group_ptr + count;
 
 				for (; group_ptr != group_end; ++group_ptr)
 				{
@@ -1083,13 +1085,14 @@ static void check_sorts(RseNode* rse)
 
 	if (sort && project && (sort->expressions.getCount() <= project->expressions.getCount()))
 	{
+		const size_t count = sort->expressions.getCount();
 		const NestConst<ValueExprNode>* sort_ptr = sort->expressions.begin();
-		const NestConst<ValueExprNode>* const sort_end = sort->expressions.end();
+		const NestConst<ValueExprNode>* const sort_end = sort_ptr + count;
 
 		for (; sort_ptr != sort_end; ++sort_ptr)
 		{
 			const NestConst<ValueExprNode>* project_ptr = project->expressions.begin();
-			const NestConst<ValueExprNode>* const project_end = project->expressions.end();
+			const NestConst<ValueExprNode>* const project_end = project_ptr + count;
 
 			for (; project_ptr != project_end; ++project_ptr)
 			{
