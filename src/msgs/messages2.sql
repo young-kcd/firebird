@@ -576,7 +576,7 @@ without specifying a character set.', NULL);
 ('svcnouser', 'SVC_attach', 'svc.c', NULL, 0, 477, NULL, 'user name and password are required while attaching to the services manager', NULL, NULL);
 ('depend_on_uncommitted_rel', 'PAR_make_field', 'par.c', NULL, 0, 478, NULL, 'You created an indirect dependency on uncommitted metadata. You must roll back the current transaction.', NULL, NULL);
 ('svc_name_missing', 'isc_service_attach', 'why.c', NULL, 0, 479, NULL, 'The service name was not specified.', NULL, NULL);
-('too_many_contexts', NULL, 'cmp.c', NULL, 0, 480, NULL, 'Too many Contexts of Relation/Procedure/Views. Maximum allowed is 255', NULL, NULL);
+('too_many_contexts', NULL, 'cmp.c', NULL, 0, 480, NULL, 'Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256', NULL, NULL);
 ('datype_notsup', 'CMP_get_desc', 'cmp.c', NULL, 0, 481, NULL, 'data type not supported for arithmetic', NULL, NULL);
 ('dialect_reset_warning', 'PAG_set_db_SQL_dialect', 'pag.c', NULL, 0, 482, NULL, 'Database dialect being changed from 3 to 1', NULL, NULL);
 ('dialect_not_changed', 'PAG_set_db_sql_dialect', 'pag.c', NULL, 0, 483, NULL, 'Database dialect not changed.', NULL, NULL);
