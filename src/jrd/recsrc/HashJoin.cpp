@@ -97,12 +97,12 @@ public:
 		fb_assert(stream < m_streamCount);
 		fb_assert(slot < m_tableSize);
 
-		CollisionList* collisions = m_collisions[stream * m_streamCount + slot];
+		CollisionList* collisions = m_collisions[stream * m_tableSize + slot];
 
 		if (!collisions)
 		{
 			collisions = FB_NEW(getPool()) CollisionList(getPool());
-			m_collisions[stream * m_streamCount + slot] = collisions;
+			m_collisions[stream * m_tableSize + slot] = collisions;
 		}
 
 		collisions->add(value);
@@ -114,7 +114,7 @@ public:
 
 		for (size_t i = 0; i < m_streamCount; i++)
 		{
-			if (!m_collisions[i * m_streamCount + slot])
+			if (!m_collisions[i * m_tableSize + slot])
 			{
 				return false;
 			}
@@ -137,7 +137,7 @@ public:
 	{
 		fb_assert(stream < m_streamCount);
 
-		CollisionList* const collisions = m_collisions[stream * m_streamCount + m_slot];
+		CollisionList* const collisions = m_collisions[stream * m_tableSize + m_slot];
 		size_t& iterator = m_iterators[stream];
 
 		if (iterator < collisions->getCount())
