@@ -631,10 +631,8 @@ public:
 	void as_sqlstate(char*) const;
 };
 
-// must correspond to the size of RDB$EXCEPTIONS.RDB$MESSAGE
-// minus size of vary::vary_length (USHORT) since RDB$MESSAGE
-// declared as varchar
-const int XCP_MESSAGE_LENGTH = 1023 - sizeof(USHORT);
+// must correspond to the declared size of RDB$EXCEPTIONS.RDB$MESSAGE
+const int XCP_MESSAGE_LENGTH = 1023;
 
 } // namespace Jrd
 

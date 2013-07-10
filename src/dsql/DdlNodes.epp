@@ -4677,6 +4677,9 @@ void CreateAlterExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsq
 {
 	fb_assert(create || alter);
 
+	if (message.length() > XCP_MESSAGE_LENGTH)
+		status_exception::raise(Arg::Gds(isc_dyn_name_longer));
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -4733,7 +4736,6 @@ void CreateAlterExceptionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 				X.RDB$OWNER_NAME.NULL = FALSE;
 				strcpy(X.RDB$OWNER_NAME, userName.c_str());
 
-				fb_assert(message.length() < sizeof(X.RDB$MESSAGE));
 				strcpy(X.RDB$MESSAGE, message.c_str());
 			}
 			END_STORE
@@ -4771,7 +4773,6 @@ bool CreateAlterExceptionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 			DDL_TRIGGER_ALTER_EXCEPTION, name);
 
 		MODIFY X
-			fb_assert(message.length() < sizeof(X.RDB$MESSAGE));
 			strcpy(X.RDB$MESSAGE, message.c_str());
 
 			modified = true;

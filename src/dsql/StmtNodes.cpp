@@ -4127,38 +4127,23 @@ void ExceptionNode::setError(thread_db* tdbb) const
 
 	MetaName exName;
 	MetaName relationName;
-	TEXT message[XCP_MESSAGE_LENGTH + 1];
-	MoveBuffer temp;
-	USHORT length = 0;
+	string message;
 
 	if (messageExpr)
 	{
-		UCHAR* string = NULL;
-
 		// Evaluate exception message and convert it to string.
-		dsc* desc = EVL_expr(tdbb, request, messageExpr);
+		const dsc* const desc = EVL_expr(tdbb, request, messageExpr);
 
 		if (desc && !(request->req_flags & req_null))
 		{
-			length = MOV_make_string2(tdbb, desc, CS_METADATA, &string, temp);
-			length = MIN(length, sizeof(message) - 1);
-
-			/* dimitr: or should we throw an error here, i.e.
-					replace the above assignment with the following lines:
-
-			 if (length > sizeof(message) - 1)
-				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-			*/
-
-			memcpy(message, string, length);
+			MoveBuffer temp;
+			UCHAR* string = NULL;
+			const USHORT length = MOV_make_string2(tdbb, desc, CS_METADATA, &string, temp);
+			message.assign(string, MIN(length, XCP_MESSAGE_LENGTH));
 		}
-		else
-			length = 0;
 	}
 
-	message[length] = 0;
-
-	SLONG xcpCode = exception->code;
+	const SLONG xcpCode = exception->code;
 
 	switch (exception->type)
 	{
@@ -4184,8 +4169,8 @@ void ExceptionNode::setError(thread_db* tdbb) const
 			// Solves SF Bug #494981.
 			MET_lookup_exception(tdbb, xcpCode, exName, &tempStr);
 
-			if (message[0])
-				s = message;
+			if (message.hasData())
+				s = message.c_str();
 			else if (tempStr.hasData())
 				s = tempStr.c_str();
 			else
