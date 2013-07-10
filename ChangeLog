@@ -1,3 +1,11 @@
+ 2013-07-09 16:14  dimitr 
+   M src/jrd/opt.cpp
+Restored (in the modified form) the code wrongly removed three years ago. This acts as a complimentary fix for CORE-4142.
+
+ 2013-07-09 15:18  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4142: Server crashes while preparing a query with DISTINCT and ORDER BY.
+
  2013-07-08 08:37  dimitr 
    M src/jrd/SysFunction.cpp
 CORE-3704: Add new context variables to the SYSTEM namespace.
