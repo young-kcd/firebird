@@ -2484,7 +2484,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_drop_proc_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 980, NULL, 'DROP PROCEDURE @1 failed', NULL, NULL);
 ('dsql_recreate_proc_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 981, NULL, 'RECREATE PROCEDURE @1 failed', NULL, NULL);
 ('dsql_create_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 982, NULL, 'CREATE TRIGGER @1 failed', NULL, NULL);
-('dsql_alter_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 983, NULL, 'ALTER TRIGGER TRIGGER @1 failed', NULL, NULL);
+('dsql_alter_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 983, NULL, 'ALTER TRIGGER @1 failed', NULL, NULL);
 ('dsql_create_alter_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 984, NULL, 'CREATE OR ALTER TRIGGER @1 failed', NULL, NULL);
 ('dsql_drop_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 985, NULL, 'DROP TRIGGER @1 failed', NULL, NULL);
 ('dsql_recreate_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 986, NULL, 'RECREATE TRIGGER @1 failed', NULL, NULL);
