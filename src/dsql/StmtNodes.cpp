@@ -8027,14 +8027,16 @@ static void dsqlFieldAppearsOnce(const Array<NestConst<ValueExprNode> >& values,
 	for (size_t i = 0; i < values.getCount(); ++i)
 	{
 		const FieldNode* field1 = values[i]->as<FieldNode>();
-		fb_assert(field1);
+		if (!field1)
+			continue;
 
 		const MetaName& name1 = field1->dsqlField->fld_name;
 
 		for (size_t j = i + 1; j < values.getCount(); ++j)
 		{
 			const FieldNode* field2 = values[j]->as<FieldNode>();
-			fb_assert(field2);
+			if (!field2)
+				continue;
 
 			const MetaName& name2 = field2->dsqlField->fld_name;
 
