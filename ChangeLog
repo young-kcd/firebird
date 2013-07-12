@@ -1,3 +1,35 @@
+ 2013-07-11 06:00  dimitr 
+   M src/dsql/StmtNodes.cpp
+Fixed assertion/crash appeared in test bugs.core_1910.
+
+ 2013-07-11 02:21  asfernandes 
+   M src/jrd/DataTypeUtil.cpp
+Fix the assertion with Thomas Beckmann test.
+
+ 2013-07-10 19:49  dimitr 
+   M src/jrd/recsrc/HashJoin.cpp
+Fixed hash join of more than two streams.
+
+ 2013-07-10 11:44  dimitr 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.h
+1) Fixed XCP_MESSAGE_LENGTH to represent the real max length. We have the column defined as VARCHAR(1023), so there's no need to subtract the overhead.
+2) Slightly refactored the message buffer management.
+3) Fixed the buffer overrun in the release build.
+
+ 2013-07-10 10:06  dimitr 
+   M src/remote/merge.cpp
+Fixed server crash in both remote server and remote client.
+
+ 2013-07-10 06:55  dimitr 
+   M src/msgs/messages2.sql
+We support 256 contexts now, not 255.
+
+ 2013-07-10 06:21  dimitr 
+   M src/msgs/messages2.sql
+Fixed the error message.
+
  2013-07-09 16:14  dimitr 
    M src/jrd/opt.cpp
 Restored (in the modified form) the code wrongly removed three years ago. This acts as a complimentary fix for CORE-4142.
