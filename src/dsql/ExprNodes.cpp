@@ -2827,6 +2827,11 @@ bool CoalesceNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 void CoalesceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsc desc;
+	make(dsqlScratch, &desc);
+	dsqlScratch->appendUChar(blr_cast);
+	GEN_descriptor(dsqlScratch, &desc, true);
+
 	dsqlScratch->appendUChar(blr_coalesce);
 	dsqlScratch->appendUChar(args->items.getCount());
 
@@ -11016,6 +11021,11 @@ bool ValueIfNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 void ValueIfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsc desc;
+	make(dsqlScratch, &desc);
+	dsqlScratch->appendUChar(blr_cast);
+	GEN_descriptor(dsqlScratch, &desc, true);
+
 	dsqlScratch->appendUChar(blr_value_if);
 	GEN_expr(dsqlScratch, condition);
 	GEN_expr(dsqlScratch, trueValue);
