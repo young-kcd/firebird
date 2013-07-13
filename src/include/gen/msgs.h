@@ -501,7 +501,7 @@ static const struct {
 	{335544797, "user name and password are required while attaching to the services manager"},		/* svcnouser */
 	{335544798, "You created an indirect dependency on uncommitted metadata. You must roll back the current transaction."},		/* depend_on_uncommitted_rel */
 	{335544799, "The service name was not specified."},		/* svc_name_missing */
-	{335544800, "Too many Contexts of Relation/Procedure/Views. Maximum allowed is 255"},		/* too_many_contexts */
+	{335544800, "Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256"},		/* too_many_contexts */
 	{335544801, "data type not supported for arithmetic"},		/* datype_notsup */
 	{335544802, "Database dialect being changed from 3 to 1"},		/* dialect_reset_warning */
 	{335544803, "Database dialect not changed."},		/* dialect_not_changed */
@@ -1055,7 +1055,7 @@ Data source : @4"},		/* eds_statement */
 	{336397268, "DROP PROCEDURE @1 failed"},		/* dsql_drop_proc_failed */
 	{336397269, "RECREATE PROCEDURE @1 failed"},		/* dsql_recreate_proc_failed */
 	{336397270, "CREATE TRIGGER @1 failed"},		/* dsql_create_trigger_failed */
-	{336397271, "ALTER TRIGGER TRIGGER @1 failed"},		/* dsql_alter_trigger_failed */
+	{336397271, "ALTER TRIGGER @1 failed"},		/* dsql_alter_trigger_failed */
 	{336397272, "CREATE OR ALTER TRIGGER @1 failed"},		/* dsql_create_alter_trigger_failed */
 	{336397273, "DROP TRIGGER @1 failed"},		/* dsql_drop_trigger_failed */
 	{336397274, "RECREATE TRIGGER @1 failed"},		/* dsql_recreate_trigger_failed */
