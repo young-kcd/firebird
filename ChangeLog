@@ -1,3 +1,11 @@
+ 2013-07-13 20:50  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed problem with COALESCE and IIF seen by Dmitry. Reintroduce the implicit casts removed in v3.
+
+ 2013-07-13 20:50  asfernandes 
+   M src/include/gen/msgs.h
+Update generated file.
+
  2013-07-11 06:00  dimitr 
    M src/dsql/StmtNodes.cpp
 Fixed assertion/crash appeared in test bugs.core_1910.
