@@ -649,6 +649,7 @@ private:
 	{
 		if (!status->isSuccess())
 		{
+			checkStatusVectorForMissingTable(status->get());
 			Firebird::status_exception::raise(status->get());
 		}
 	}

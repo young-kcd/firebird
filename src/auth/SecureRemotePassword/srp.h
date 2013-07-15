@@ -126,4 +126,7 @@ void static inline dumpIt(const char* /*name*/, const Firebird::UCharBuffer& /*d
 void static inline dumpIt(const char* /*name*/, const Firebird::string& /*str*/) { }
 #endif
 
+
+void checkStatusVectorForMissingTable(const ISC_STATUS* v);
+
 } // namespace Auth

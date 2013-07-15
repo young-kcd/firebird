@@ -153,21 +153,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
 			if (!status->isSuccess())
 			{
-				const ISC_STATUS* v = status->get();
-
-				while (v[0] == isc_arg_gds)
-				{
-					if (v[1] == isc_dsql_relation_err)
-					{
-						Arg::Gds(isc_missing_data_structures).raise();
-					}
-
-					do
-					{
-						v += 2;
-					} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
-				}
-
+				checkStatusVectorForMissingTable(status->get());
 				status_exception::raise(status->get());
 			}
 
