@@ -497,13 +497,13 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_monitor:
 	case LCK_tt_exist:
 	case LCK_shared_counter:
+	case LCK_sweep:
 		handle = *LCK_OWNER_HANDLE_DBB(tdbb);
 		break;
 	case LCK_attachment:
 	case LCK_page_space:
 	case LCK_relation:
 	case LCK_tra:
-	case LCK_sweep:
 	case LCK_update_shadow:
 	case LCK_dsql_cache:
 	case LCK_backup_end:
