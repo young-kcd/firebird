@@ -219,7 +219,6 @@ namespace Jrd
 			: River(csb, NULL, rivers)
 		{
 			const size_t count = rivers.getCount();
-			fb_assert(count);
 
 			if (count == 1)
 			{
