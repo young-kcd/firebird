@@ -518,6 +518,7 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_backup_database:
 	case LCK_monitor:
 	case LCK_shared_counter:
+	case LCK_sweep:
 	case LCK_crypt:
 	case LCK_crypt_status:
 		handle = *LCK_OWNER_HANDLE_DBB(tdbb);
@@ -535,7 +536,6 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_page_space:
 	case LCK_relation:
 	case LCK_tra:
-	case LCK_sweep:
 	case LCK_update_shadow:
 	case LCK_dsql_cache:
 	case LCK_backup_end:
