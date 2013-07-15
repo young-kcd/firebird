@@ -4485,6 +4485,9 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 	if (!transaction->tra_save_point)
 		return udNone;
 
+	if (rpb->rpb_stream_flags & RPB_s_refetch)
+		return udNone;
+
 	VerbAction* action = transaction->tra_save_point->sav_verb_actions;
 
 	for (; action; action = action->vct_next)
