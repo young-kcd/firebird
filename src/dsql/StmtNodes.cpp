@@ -8665,18 +8665,13 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamTy
 			else
 				newId = id;
 
-			ValueExprNode* node = PAR_gen_field(tdbb, newStream, newId);
-			node->getDesc(tdbb, csb, &desc);
-
-			if (!desc.dsc_address)
-			{
-				delete node;
+			const Format* const format = CMP_format(tdbb, csb, newStream);
+			if (newId >= format->fmt_count || !format->fmt_desc[newId].dsc_address)
 				continue;
-			}
 
-			AssignmentNode* assign = FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(
-				*tdbb->getDefaultPool());
-			assign->asgnTo = node;
+			AssignmentNode* const assign =
+				FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(*tdbb->getDefaultPool());
+			assign->asgnTo = PAR_gen_field(tdbb, newStream, newId);
 			assign->asgnFrom = PAR_gen_field(tdbb, orgStream, id);
 
 			stack.push(assign);
