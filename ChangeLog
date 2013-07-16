@@ -1,3 +1,30 @@
+ 2013-07-15 16:51  dimitr 
+   M src/jrd/opt.cpp
+Removed incorrect assertion.
+
+ 2013-07-15 13:51  dimitr 
+   M src/jrd/lck.cpp
+Fixed the sweep lock owner. This is a complementary bugfix for CORE-4134 (Race condition when auto-sweep is started).
+
+ 2013-07-15 13:44  dimitr 
+   M src/jrd/vio.cpp
+A quick fix for the bugcheck appeared in test bugs.core_195.
+
+ 2013-07-15 13:06  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecureRemotePassword/srp.cpp
+   M src/auth/SecureRemotePassword/srp.h
+Enhanced diagnostics in authentication plugin
+
+ 2013-07-15 12:24  alexpeshkoff 
+   M src/jrd/svc.cpp
+Fixed error "All services except for getting server log require switches"
+
+ 2013-07-15 11:56  dimitr 
+   M src/jrd/recsrc/SingularStream.cpp
+Fixed crash appeared in test bugs.core_2291.
+
  2013-07-13 20:50  asfernandes 
    M src/dsql/ExprNodes.cpp
 Fixed problem with COALESCE and IIF seen by Dmitry. Reintroduce the implicit casts removed in v3.
