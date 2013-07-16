@@ -25,6 +25,7 @@
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../jrd/align.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
 #include "../jrd/Function.h"
@@ -1575,10 +1576,15 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 			dsc& fmtDesc = format->fmt_desc[i / 2u];
 			fmtDesc = parameter->prm_desc;
 
-			format->fmt_length = MET_align(&fmtDesc, format->fmt_length);
+			if (fmtDesc.dsc_dtype >= dtype_aligned)
+				format->fmt_length = FB_ALIGN(format->fmt_length, type_alignments[fmtDesc.dsc_dtype]);
+
 			fmtDesc.dsc_address = (UCHAR*)(IPTR) format->fmt_length;
 			format->fmt_length += fmtDesc.dsc_length;
 		}
+
+		if (format->fmt_length > MAX_MESSAGE_SIZE)
+			ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 		DbgInfo* subDbgInfo = NULL;
 		if (csb->csb_dbg_info->subProcs.get(name, subDbgInfo))
