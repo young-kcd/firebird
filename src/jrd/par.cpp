@@ -224,7 +224,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		PAR_syntax_error(csb, "end_of_command");
 
 	if (statementPtr)
-		*statementPtr = JrdStatement::makeStatement(tdbb, csb, true);
+		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
 
 	if (csb_ptr)
 		*csb_ptr = csb;
@@ -247,7 +247,7 @@ void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
 	csb->csb_node = node;
 
 	if (statementPtr)
-		*statementPtr = JrdStatement::makeStatement(tdbb, csb, true);
+		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
 
 	if (csb_ptr)
 		*csb_ptr = csb;
