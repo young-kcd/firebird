@@ -2809,12 +2809,7 @@ DsqlMapNode* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* nod
 
 	MAKE_desc(dsqlScratch, &node->nodDesc, node);
 
-	DsqlMapNode* mapNode = FB_NEW(*tdbb->getDefaultPool()) DsqlMapNode(*tdbb->getDefaultPool(),
-		context, map);
-
-	mapNode->nodDesc = node->nodDesc;
-
-	return mapNode;
+	return FB_NEW(*tdbb->getDefaultPool()) DsqlMapNode(*tdbb->getDefaultPool(), context, map);
 }
 
 
