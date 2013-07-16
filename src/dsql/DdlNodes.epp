@@ -5680,6 +5680,8 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 				Constraint::TYPE_PK : Constraint::TYPE_UNIQUE;
 			constraint.name = clause->name;
 			constraint.index = clause->index;
+			if (constraint.index && constraint.index->name.isEmpty())
+				constraint.index->name = constraint.name;
 			constraint.columns = clause->columns;
 			break;
 		}
@@ -5734,6 +5736,8 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 			// Define the foreign key index and the triggers that may be needed
 			// for referential integrity action.
 			constraint.index = clause->index;
+			if (constraint.index && constraint.index->name.isEmpty())
+				constraint.index->name = constraint.name;
 
 			if (clause->refAction)
 			{
