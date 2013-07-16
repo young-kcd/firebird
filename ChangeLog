@@ -1,3 +1,7 @@
+ 2013-07-15 13:52  dimitr 
+   M src/jrd/lck.cpp
+Fixed the sweep lock owner. This is a complementary bugfix for CORE-4134 (Race condition when auto-sweep is started).
+
  2013-07-08 14:30  hvlad 
    M src/jrd/jrd.cpp
 Backport fix for bug CORE-4135 :  In SS sweep blocks establishment of concurrent attachments
