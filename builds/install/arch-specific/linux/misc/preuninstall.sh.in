@@ -38,5 +38,3 @@ for i in @FB_GUARDDIR@/fb_guard @FB_LOGDIR@/firebird.log @FB_CONFDIR@/SYSDBA.pas
 		rm -f $i
 	fi
 done
-
-rm -f @FB_SBINDIR@/fbmgr

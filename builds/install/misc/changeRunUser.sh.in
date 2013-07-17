@@ -26,7 +26,6 @@
 
 RunUser=firebird
 RunGroup=firebird
-serverMode=classic
 
 checkInstallUser
 checkIfServerRunning
@@ -51,12 +50,11 @@ echo "Updating /etc file(s)"
 updateInetdServiceEntry
 changeInitRunUser $RunUser
 
-# Update ownership and SUID bits for programs.
+# Update ownership and SUID bits for programs
 echo "Updating permissions"
 fixFilePermissions
 
-# Get inetd to reread new init files, start service.
-resetInetdServer
-startService $serverMode
+# Start server again
+startFirebird
 
 echo "Completed."

@@ -1139,7 +1139,7 @@ gen/Release/firebird/bin/postuninstall.sh:builds/install/arch-specific/linux/mis
 gen/Release/firebird/bin/taruninstall.sh:builds/install/arch-specific/linux/misc/taruninstall.sh.in
 gen/Release/firebird/bin/tarMainUninstall.sh:builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
 gen/Release/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
-gen/Release/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in
+gen/Release/firebird/bin/changeServerMode.sh:builds/install/misc/changeServerMode.sh.in
 gen/Release/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
 gen/vers.sh:builds/posix/vers.sh.in
 ])
@@ -1202,7 +1202,7 @@ case "$PLATFORM" in
     gen/install/misc/firebird.init.d.aix:builds/install/arch-specific/aix/misc/firebird.init.d.aix.in
     gen/install/misc/rc.config.firebird.aix:builds/install/arch-specific/aix/misc/rc.config.firebird.aix.in
     gen/firebird/bin/changedbapassword.aix.sh:builds/install/misc/changeDBAPassword.sh.in
-    gen/firebird/bin/changemulticonnectmode.aix.sh:builds/install/misc/changeMultiConnectMode.sh.in
+    gen/firebird/bin/changemulticonnectmode.aix.sh:builds/install/misc/changeServerMode.sh.in
     gen/firebird/bin/changegdslibrarycompatiblelink.aix.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
     gen/firebird/bin/createaliasdb.aix.sh:builds/install/misc/createAliasDB.sh.in
     gen/firebird/bin/aixLibrary.sh:builds/install/arch-specific/aix/misc/aixLibrary.sh.in],
