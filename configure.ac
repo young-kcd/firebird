@@ -1071,14 +1071,14 @@ dnl # output
 	mkdir -p gen/\$fb_tgt/firebird/bin
 	mkdir -p gen/\$fb_tgt/firebird/plugins
 	mkdir -p gen/\$fb_tgt/firebird/examples/api
-	mkdir -p gen/\$fb_tgt/firebird/examples/dyn
-	dnl # mkdir -p gen/\$fb_tgt/firebird/examples/build_unix
-	dnl # mkdir -p gen/\$fb_tgt/firebird/examples/build_win32
+	mkdir -p gen/\$fb_tgt/firebird/examples/dbcrypt
 	mkdir -p gen/\$fb_tgt/firebird/examples/empbuild
 	mkdir -p gen/\$fb_tgt/firebird/examples/include
-	mkdir -p gen/\$fb_tgt/firebird/examples/udr
+	mkdir -p gen/\$fb_tgt/firebird/examples/interfaces
+	mkdir -p gen/\$fb_tgt/firebird/examples/package
 	mkdir -p gen/\$fb_tgt/firebird/examples/stat
 	mkdir -p gen/\$fb_tgt/firebird/examples/udf
+	mkdir -p gen/\$fb_tgt/firebird/examples/udr
 	mkdir -p gen/\$fb_tgt/firebird/lib
 	mkdir -p gen/\$fb_tgt/firebird/misc
 	mkdir -p gen/\$fb_tgt/firebird/help
