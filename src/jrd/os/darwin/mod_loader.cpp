@@ -35,24 +35,20 @@
 #include <dlfcn.h>
 #include <mach-o/dyld.h>
 
-
-static void inline debugPrint(const char* s)
-{
-	//printf("%s\n", s);
-}
-
 /// This is the Darwin implementation of the mod_loader abstraction.
 
-class DarwinModule : public ModuleLoader::Module
+class DlfcnModule : public ModuleLoader::Module
 {
 public:
-	DarwinModule(NSModule ns, void* dl) : nsModule(ns), dlModule(dl) { }
-	~DarwinModule();
-	void* findSymbol(const Firebird::string&);
+	DlfcnModule(void* m) 
+		: module(m)
+	{}
+
+	~DlfcnModule();
+	void *findSymbol (const Firebird::string&);
 
 private:
-	NSModule nsModule;
-	void* dlModule;		// non-NULL means this is dynamic library
+	void *module;
 };
 
 bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
@@ -75,110 +71,46 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 	name += ".dylib";
 }
 
+#ifdef DEV_BUILD
+#define FB_RTLD_MODE RTLD_NOW
+#else
+#define FB_RTLD_MODE RTLD_LAZY
+#endif
+
 ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
-	NSObjectFileImage image;
-
-	/* Create an object file image from the given path */
-	const NSObjectFileImageReturnCode retVal =
-		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
-	switch (retVal)
+	void* module = dlopen(modPath.c_str(), FB_RTLD_MODE);
+	if (module == NULL)
 	{
-	case NSObjectFileImageSuccess:
-		break;
-	case NSObjectFileImageFailure:
-		debugPrint("object file setup failure");
-		return 0;
-	case NSObjectFileImageInappropriateFile:
-		{
-			// try to load as dynamic library
-			void* mod = dlopen(modPath.c_str(), RTLD_LAZY);
-			if (mod)
-				return FB_NEW(*getDefaultMemoryPool()) DarwinModule(NSModule(), mod);
-
-			debugPrint("not a Mach-O MH_BUNDLE file type or dynamic library");
-			return 0;
-		}
-	case NSObjectFileImageArch:
-		debugPrint("no object for this architecture");
-		return 0;
-	case NSObjectFileImageFormat:
-		debugPrint("bad object file format");
-		return 0;
-	case NSObjectFileImageAccess:
-		debugPrint("can't read object file");
-		return 0;
-	default:
-		debugPrint("unknown error from NSCreateObjectFileImageFromFile()");
-		return 0;
+#ifdef DEBUG_LOADER
+	fprintf(stderr, "load error: %s: %s\n", mod_path.c_str(), dlerror());
+#endif // DEBUG_LOADER
+	return 0;
 	}
-
-	/* link the image */
-	NSModule mod_handle = NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
-	NSDestroyObjectFileImage(image);
-
-	if (mod_handle == NULL)
-	{
-		debugPrint("NSLinkModule() failed for dlopen()");
-		// We should really throw an error here.
-		return 0;
-	}
-
-	NSSymbol initSym = NSLookupSymbolInModule(mod_handle, "__init");
-	if (initSym != NULL)
-	{
-		void (*init)();
-		init = ( void (*)()) NSAddressOfSymbol(initSym);
-		init();
-	}
-
-	return FB_NEW(*getDefaultMemoryPool()) DarwinModule(mod_handle, NULL);
+	
+	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
 }
 
-DarwinModule::~DarwinModule()
+
+DlfcnModule::~DlfcnModule()
 {
-	if (dlModule)
+	if (module)
 	{
-		dlclose(dlModule);
-	}
-	else
-	{
-		/* Make sure the fini function gets called, if there is one */
-		NSSymbol symbol = NSLookupSymbolInModule(nsModule, "__fini");
-		if (symbol != NULL)
-		{
-			void (*fini)();
-			fini = (void (*)()) NSAddressOfSymbol(symbol);
-			fini();
-		}
-		NSUnLinkModule(nsModule, 0);
+		dlclose(module);
 	}
 }
 
-void* DarwinModule::findSymbol(const Firebird::string& symName)
+void* DlfcnModule::findSymbol(const Firebird::string& symName)
 {
-	if (dlModule)
+	void *result =dlsym(module, symName.c_str());
+	if (result == NULL)
 	{
-		void* result = dlsym(dlModule, symName.c_str());
-		if (result == NULL)
-		{
-			Firebird::string newSym = '_' + symName;
-			result = dlsym(dlModule, newSym.c_str());
-		}
-		return result;
-	}
+	Firebird::string newSym ='_' + symName;
 
-	NSSymbol symbol = NSLookupSymbolInModule(nsModule, symName.c_str());
-	if (symbol == NULL)
-	{
-		Firebird::string newSym = '_' + symName;
-		symbol = NSLookupSymbolInModule(nsModule, newSym.c_str());
-		if (symbol == NULL)
-		{
-			return NULL;
-		}
+	result = dlsym(module, newSym.c_str());
 	}
+	return result;
 
-	return NSAddressOfSymbol(symbol);
 }
+
 
