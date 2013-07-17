@@ -32,7 +32,7 @@ export PidDir
 #------------------------------------------------------------------------
 # Get correct options & misc.
 
-psOptions=aww
+psOptions=-ajx
 export psOptions
 mktOptions=-q
 export mktOptions
