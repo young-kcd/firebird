@@ -33,14 +33,14 @@
 
 #include "fb_types.h"
 #include "../common/classes/fb_string.h"
-
-#include "../common/config/os/config_root.h"
-#include "../common/os/path_utils.h"
-#include "../common/file_params.h"
+#include "../jrd/os/config_root.h"
+#include "../jrd/os/path_utils.h"
+#include "../jrd/file_params.h"
 
 #include <CoreServices/CoreServices.h>
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
+#include <mach-o/dyld.h>
 
 typedef Firebird::PathName string;
 
@@ -74,7 +74,22 @@ static string getFrameworkFromBundle()
 	return "";
 }
 
+static string getExecutablePath()
+{
+	char file_buff[MAXPATHLEN];
+	uint32_t bufsize = sizeof(file_buff);
+	_NSGetExecutablePath(file_buff, &bufsize);
+	string bin_dir = file_buff;
+	// get rid of the filename
+	int index = bin_dir.rfind(PathUtils::dir_sep);
+	bin_dir = bin_dir.substr(0, index);
+	// go to parent directory
+	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
+	string dir = (index ? bin_dir.substr(0,index) : bin_dir) + PathUtils::dir_sep;
+	return dir;
+}
 
+ 
 void ConfigRoot::osConfigRoot()
 {
 	// Attempt to locate the Firebird.framework bundle
@@ -84,10 +99,14 @@ void ConfigRoot::osConfigRoot()
 		return;
 	}
 
+	root_dir = getExecutablePath();
+	if (root_dir.hasData())
+	{
+		return;
+	}
+
 	// As a last resort get it from the default install directory
-	// this doesn't make much sense because the framework method should
-	// never fail, but what the heck.
-	root_dir = FB_PREFIX;
+	root_dir = FB_PREFIX; 
 }
 
 
@@ -100,8 +119,12 @@ void ConfigRoot::osConfigInstallDir()
 		return;
 	}
 
+	install_dir = getExecutablePath();
+	if (install_dir.hasData())
+	{
+		return;
+	}
+
 	// As a last resort get it from the default install directory
-	// this doesn't make much sense because the framework method should
-	// never fail, but what the heck.
-	install_dir = FB_PREFIX;
+	install_dir = FB_PREFIX; 
 }
