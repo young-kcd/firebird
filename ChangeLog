@@ -1,3 +1,13 @@
+ 2013-07-17 11:45  paulbeach 
+   A builds/install/arch-specific/darwin/embed.Info.plist
+   A builds/install/arch-specific/darwin/embed.darwin
+Add support for embedded mode on MacOSX as an app bundle as well as the existing framework
+
+ 2013-07-17 10:18  paulbeach 
+   M src/jrd/os/darwin/config_root.cpp
+   M src/jrd/os/darwin/mod_loader.cpp
+Update mod_loader to use Posix dl functions rather than deprecated NS functions. Add support for embedded mode on MacOSX as an app bundle as well as the existing framework
+
  2013-07-15 13:52  dimitr 
    M src/jrd/lck.cpp
 Fixed the sweep lock owner. This is a complementary bugfix for CORE-4134 (Race condition when auto-sweep is started).
