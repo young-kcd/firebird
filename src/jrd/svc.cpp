@@ -1299,10 +1299,14 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			if (!ck_space_for_numeric(info, end))
 				return 0;
 			*info++ = item;
-			if (svc_flags & SVC_thd_running)
-				ADD_SPB_NUMERIC(info, TRUE)
-			else
-				ADD_SPB_NUMERIC(info, FALSE)
+			{	// guardian scope
+				MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
+
+				if (svc_flags & SVC_thd_running)
+					ADD_SPB_NUMERIC(info, TRUE)
+				else
+					ADD_SPB_NUMERIC(info, FALSE)
+			}
 
 			break;
 
