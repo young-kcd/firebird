@@ -911,7 +911,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 					const ULONG nameLen; // in bytes, not characters because all functions accept length in bytes
 					const USHORT name[10];
 				} static const classes[] =
-					{	// Names are in utf16 in order not to convert them every time for comparsion and thus save some CPU
+					{	// Names are in utf16 in order not to convert them every time for comparison and thus save some CPU
 						{alNum, 10, {'A','L','N','U','M'}},
 						{alpha, 10, {'A','L','P','H','A'}},
 						{digit, 10, {'D','I','G','I','T'}},
@@ -921,22 +921,31 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 						{whitespace, 20, {'W','H','I','T','E','S','P','A','C','E'}}
 					};
 
-				HalfStaticArray<USHORT, 12> className(len);
+				// Get the exact original substring correspondent to the canonical bytes.
+				HalfStaticArray<UCHAR, 10 * sizeof(ULONG)> classNameStr(
+					len * charSet->maxBytesPerChar());
+				ULONG classNameStrLen = charSet->substring(originalPatternLen, originalPatternStr,
+					classNameStr.getCapacity(), classNameStr.begin(), start - patternStart, len);
 
-				ULONG classNameLen = charSet->getConvToUnicode().convert(len, reinterpret_cast<const UCHAR*>(start),
-					className.getCapacity() * sizeof(USHORT), className.begin());
+				// And then convert it to UTF-16.
+				HalfStaticArray<USHORT, 10 * sizeof(ULONG) / sizeof(USHORT)> classNameUtf16(
+					len * sizeof(ULONG));
+				ULONG classNameUtf16Len = charSet->getConvToUnicode().convert(
+					classNameStrLen, classNameStr.begin(),
+					classNameUtf16.getCapacity() * sizeof(USHORT), classNameUtf16.begin());
 
-				// Bring class name to uppercase for case-insensitivity
-				// Do it in utf16 because original collation can have no uppercase conversion
-				classNameLen = Jrd::UnicodeUtil::utf16UpperCase(classNameLen, className.begin(),
-					className.getCapacity() * sizeof(USHORT), className.begin(), NULL);
+				// Bring class name to uppercase for case-insensitivity.
+				// Do it in UTF-16 because original collation can have no uppercase conversion.
+				classNameUtf16Len = Jrd::UnicodeUtil::utf16UpperCase(
+					classNameUtf16Len, classNameUtf16.begin(),
+					classNameUtf16.getCapacity() * sizeof(USHORT), classNameUtf16.begin(), NULL);
 				int classN;
 
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
 				{
 					INTL_BOOL errorFlag;
 
-					if (Jrd::UnicodeUtil::utf16Compare(classNameLen, className.begin(),
+					if (Jrd::UnicodeUtil::utf16Compare(classNameUtf16Len, classNameUtf16.begin(),
 							classes[classN].nameLen, classes[classN].name, &errorFlag) == 0)
 					{
 						for (const GetCanonicalFunc* func = classes[classN].funcs; *func; ++func)
