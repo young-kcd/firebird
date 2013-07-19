@@ -3792,7 +3792,7 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
 	: YHelper<YStatement, IStatement, FB_STATEMENT_VERSION>(aNext),
-	  attachment(aAttachment), openedCursor(NULL)
+	  attachment(aAttachment), openedCursor(NULL), input(true), output(false)
 {
 	attachment->childStatements.add(this);
 }
@@ -3800,7 +3800,7 @@ YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
 void YStatement::destroy()
 {
 	{	// scope
-		MutexLockGuard guard(cursorMutex, FB_FUNCTION);
+		MutexLockGuard guard(statementMutex, FB_FUNCTION);
 		if (openedCursor)
 		{
 			openedCursor->destroy();
@@ -3878,13 +3878,40 @@ const char* YStatement::getPlan(IStatus* status, FB_BOOLEAN detailed)
 	return NULL;
 }
 
+IMessageMetadata* YMetadata::get(IStatement* next, YStatement* statement)
+{
+	if (!flag)
+	{
+		MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
+		if (!flag)
+		{
+			RefPtr<IMessageMetadata> nextMeta(REF_NO_INCR, statement->getMetadata(input, next));
+			metadata = new MsgMetadata(nextMeta);
+
+			flag = true;
+		}
+	}
+
+	metadata->addRef();
+	return metadata;
+}
+
+IMessageMetadata* YStatement::getMetadata(bool in, IStatement* next)
+{
+	LocalStatus status;
+	IMessageMetadata* rc = in ? next->getInputMetadata(&status) : next->getOutputMetadata(&status);
+	if (!status.isSuccess())
+		status_exception::raise(status.get());
+	return rc;
+}
+
 IMessageMetadata* YStatement::getInputMetadata(IStatus* status)
 {
 	try
 	{
 		YEntry<YStatement> entry(status, this);
 
-		return entry.next()->getInputMetadata(status);
+		return input.get(entry.next(), this);
 	}
 	catch (const Exception& e)
 	{
@@ -3900,7 +3927,7 @@ IMessageMetadata* YStatement::getOutputMetadata(IStatus* status)
 	{
 		YEntry<YStatement> entry(status, this);
 
-		return entry.next()->getOutputMetadata(status);
+		return output.get(entry.next(), this);
 	}
 	catch (const Exception& e)
 	{
@@ -4025,7 +4052,7 @@ YResultSet::YResultSet(YAttachment* aAttachment, YStatement* aStatement, IResult
 	  statement(aStatement)
 {
 	fb_assert(aNext);
-	MutexLockGuard guard(statement->cursorMutex, FB_FUNCTION);
+	MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
 	if (statement->openedCursor)
 	{
 		Arg::Gds(isc_cursor_already_open).raise();
@@ -4037,7 +4064,7 @@ void YResultSet::destroy()
 {
 	if (statement)
 	{
-		MutexLockGuard guard(statement->cursorMutex, FB_FUNCTION);
+		MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
 		fb_assert(statement->openedCursor == this);
 		statement->openedCursor = NULL;
 	}

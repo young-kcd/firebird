@@ -310,7 +310,7 @@ public:
 
 public:
 	Statement(Rsr* handle, Attachment* a, unsigned aDialect)
-		: metadata(getPool(), this),
+		: metadata(getPool(), this, NULL),
 		  remAtt(a),
 		  statement(handle),
 		  dialect(aDialect)

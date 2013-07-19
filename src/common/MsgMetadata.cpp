@@ -26,6 +26,7 @@
 #include "../common/MsgMetadata.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MetaName.h"
+#include "../common/StatusHolder.h"
 #include "../jrd/align.h"
 
 using namespace Firebird;
@@ -241,6 +242,14 @@ private:
 	}
 };
 
+void check(IStatus* status)
+{
+	if (!status->isSuccess())
+	{
+		status_exception::raise(status->get());
+	}
+}
+
 }	// namespace anonymous
 
 
@@ -289,9 +298,65 @@ unsigned MsgMetadata::makeOffsets()
 
 IMetadataBuilder* MsgMetadata::getBuilder(IStatus* status) const
 {
-	IMetadataBuilder* rc = new MetadataBuilder(this);
-	rc->addRef();
-	return rc;
+	try
+	{
+		IMetadataBuilder* rc = new MetadataBuilder(this);
+		rc->addRef();
+		return rc;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return NULL;
+}
+
+
+void MsgMetadata::assign(IMessageMetadata* from)
+{
+	LocalStatus status;
+
+	unsigned count = from->getCount(&status);
+	check(&status);
+	items.resize(count);
+
+	for (unsigned index = 0; index < count; ++index)
+	{
+		items[index].field = from->getField(&status, index);
+		check(&status);
+
+		items[index].relation = from->getRelation(&status, index);
+		check(&status);
+
+		items[index].owner = from->getOwner(&status, index);
+		check(&status);
+
+		items[index].alias = from->getAlias(&status, index);
+		check(&status);
+
+		items[index].type = from->getType(&status, index);
+		check(&status);
+
+		items[index].nullable = from->isNullable(&status, index);
+		check(&status);
+
+		items[index].subType = from->getSubType(&status, index);
+		check(&status);
+
+		items[index].length = from->getLength(&status, index);
+		check(&status);
+
+		items[index].scale = from->getScale(&status, index);
+		check(&status);
+
+		items[index].charSet = from->getCharSet(&status, index);
+		check(&status);
+
+		items[index].finished = true;
+		check(&status);
+	}
+
+	makeOffsets();
 }
 
 

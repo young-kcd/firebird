@@ -32,6 +32,7 @@
 #include "../common/StatusHolder.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../common/MsgMetadata.h"
 
 namespace Firebird
 {
@@ -310,6 +311,21 @@ public:
 	YStatement* statement;
 };
 
+class YMetadata
+{
+public:
+	YMetadata(bool in)
+		: flag(false), input(in)
+	{ }
+
+	Firebird::IMessageMetadata* get(Firebird::IStatement* next, YStatement* statement);
+
+private:
+	Firebird::RefPtr<Firebird::MsgMetadata> metadata;
+	volatile bool flag;
+	bool input;
+};
+
 class YStatement : public YHelper<YStatement, Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
@@ -338,9 +354,14 @@ public:
 	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
 
 public:
-	Firebird::Mutex cursorMutex;
+	Firebird::Mutex statementMutex;
 	YAttachment* attachment;
 	YResultSet* openedCursor;
+
+	Firebird::IMessageMetadata* getMetadata(bool in, Firebird::IStatement* next);
+
+private:
+	YMetadata input, output;
 };
 
 class EnterCount
