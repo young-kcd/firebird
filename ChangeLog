@@ -1,3 +1,94 @@
+ 2013-07-18 16:21  asfernandes 
+   M src/jrd/SimilarToMatcher.h
+Fix old "simplification" that broke SIMILAR TO (bugs.core_0769 test case).
+
+ 2013-07-18 10:13  alexpeshkoff 
+   M src/jrd/svc.cpp
+Avoid races when accessing svc_flags
+
+ 2013-07-18 10:08  alexpeshkoff 
+   M src/common/utils.cpp
+Fixed a bug, related with isc_info_svc_running
+
+ 2013-07-17 13:05  alexpeshkoff 
+   M builds/posix/Makefile.in.examples
+   M configure.ac
+Bring set of examples in posix builds up to date
+
+ 2013-07-17 12:50  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+Put OO API include files into linux packages
+
+ 2013-07-17 12:02  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+   M builds/install/arch-specific/linux/misc/postinstall.sh.in
+   M builds/install/arch-specific/linux/misc/preuninstall.sh.in
+   M builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
+   D builds/install/misc/changeMultiConnectMode.sh.in
+   M builds/install/misc/changeRunUser.sh.in
+   A builds/install/misc/changeServerMode.sh.in (from /firebird/trunk/builds/install/misc/changeMultiConnectMode.sh.in:58348)
+   M builds/install/misc/posixLibrary.sh.in
+   M builds/install/misc/restoreRootRunUser.sh.in
+   M builds/posix/postfix.darwin
+   M configure.ac
+Fixed posix install and management scripts
+
+ 2013-07-17 11:55  alexpeshkoff 
+   M builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
+   M builds/install/arch-specific/freebsd/install.sh.in
+Front-ported changes from 2.5
+
+ 2013-07-17 11:43  paulbeach 
+   A builds/install/arch-specific/darwin/embed.Info.plist
+Add support for embedded mode on MacOSX as an app bundle as well as the existing framework
+
+ 2013-07-17 11:18  paulbeach 
+   M src/common/os/darwin/mod_loader.cpp
+Update mod_loader to use Posix dl functions rather than deprecated NS functions. Add support for embedded mode on MacOSX as an app bundle as well as the existing framework
+
+ 2013-07-17 11:13  paulbeach 
+   M src/common/config/os/darwin/config_root.cpp
+Update mod_loader to use Posix dl functions rather than deprecated NS functions. Add support for embedded mode on MacOSX as an app bundle as well as the existing framework
+
+ 2013-07-17 10:25  paulbeach 
+   A builds/install/arch-specific/darwin/embed.darwin
+Update mod_loader to use Posix dl functions rather than deprecated NS functions. Add support for embedded mode on MacOSX as an app bundle as well as the existing framework
+
+ 2013-07-16 16:18  asfernandes 
+   M src/dsql/pass1.cpp
+Fixed reintrodution of CORE-2660 noted by Dmitry.
+
+ 2013-07-16 10:25  dimitr 
+   M src/dsql/StmtNodes.cpp
+Fixed regression appeared in test functional.view.create_07.
+
+ 2013-07-16 08:32  dimitr 
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/jrd/fun.epp
+Fixed regression appeared in test bugs.core_2582.
+
+ 2013-07-16 07:04  dimitr 
+   M src/jrd/par.cpp
+Fixed regression appeared in test bugs.core_2042. User PSQL routine requests should not be marked as internal.
+
+ 2013-07-16 06:22  dimitr 
+   M src/jrd/recsrc/BufferedStream.cpp
+Misc adjustments.
+
+ 2013-07-16 05:07  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed regression appeared in test bugs.core_0965.
+
+ 2013-07-16 05:05  dimitr 
+   M src/dsql/StmtNodes.cpp
+Misc adjustments.
+
+ 2013-07-16 03:53  dimitr 
+   M src/dsql/DdlNodes.epp
+Fixed regression appeared in test bugs.core_1715.
+
  2013-07-15 16:51  dimitr 
    M src/jrd/opt.cpp
 Removed incorrect assertion.
