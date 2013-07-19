@@ -5076,12 +5076,18 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 	// developed context block.
 	if (isRecursive)
 	{
+		dsql_ctx* const save_recursive_ctx = statement->req_recursive_ctx;
 		statement->req_recursive_ctx = context;
 		statement->req_context = &temp;
 
+		const dsql_str* const* save_cte_alias = statement->req_curr_cte_alias;
 		statement->resetCTEAlias(alias);
 
 		rse = PASS1_rse(statement, input->nod_arg[e_derived_table_rse], NULL);
+
+		if (save_cte_alias)
+			statement->resetCTEAlias(*save_cte_alias);
+		statement->req_recursive_ctx = save_recursive_ctx;
 
 		// Finish off by cleaning up contexts and put them into req_dt_context
 		// so create view (ddl) can deal with it.

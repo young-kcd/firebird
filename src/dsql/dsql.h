@@ -595,11 +595,11 @@ public:
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
 	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
 	USHORT req_recursive_ctx_id;		// id of recursive union stream context
+	const dsql_str* const* req_curr_cte_alias;
 
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
 	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members
-	const dsql_str* const* req_curr_cte_alias;
 
 	bool psql;
 };
