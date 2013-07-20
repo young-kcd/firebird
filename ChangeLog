@@ -1,3 +1,18 @@
+ 2013-07-19 13:51  alexpeshkoff 
+   M src/common/MsgMetadata.cpp
+   M src/common/MsgMetadata.h
+   M src/common/StatementMetadata.h
+   M src/jrd/EngineInterface.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed segfault when releasing IMessageMetadata, reported by Dmitry privately. It was bad idea to return to the user interface created by plugin.
+
+ 2013-07-19 12:09  hvlad 
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/pass1.cpp
+Fixed bug CORE-4005 : wrong error message with recursive CTE
+
  2013-07-18 16:21  asfernandes 
    M src/jrd/SimilarToMatcher.h
 Fix old "simplification" that broke SIMILAR TO (bugs.core_0769 test case).
