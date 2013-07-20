@@ -1,3 +1,8 @@
+ 2013-07-19 08:42  hvlad 
+   M src/dsql/dsql.h
+   M src/dsql/pass1.cpp
+Fixed bug CORE-4005 : wrong error message with recursive CTE
+
  2013-07-17 11:45  paulbeach 
    A builds/install/arch-specific/darwin/embed.Info.plist
    A builds/install/arch-specific/darwin/embed.darwin
