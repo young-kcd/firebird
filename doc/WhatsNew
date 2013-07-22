@@ -1,4 +1,103 @@
   ***************************
+  * v2.1.6
+  ***************************
+
+    * Bugfix CORE-4144
+        Error "context already in use (BLR error)" when preparing a query with UNION
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4127
+        Server crashes instead of reporting the error "key size exceeds implementation restriction"
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4123
+        Server crashes when executing a stored procedure called by a trigger
+        that converts string to uppercase
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4117
+        COMPUTED BY field is evaluated as NULL if used as an exception parameter directly
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4093
+        Server crashes while converting an overscaled numeric to a string
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4058
+        Remote stack buffer overflow in Firebird SQL Server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4051
+        Memory leak when sorting records larger than 32 KB
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4036
+        Bugcheck or database corruption when attempting to store
+        long incompressible data into a table
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4011
+        start stop status undetected for SuperClassic and SuperServer under RH and Mageia
+      Contributor(s):
+        Philippe Makowski <pmakowski at ibphoenix.fr>
+
+    * Bugfix CORE-4002
+        Error message "index unexpectedly deleted" in database trigger on commit transaction
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3940
+        I/O error during "GetFileSize" operation for file XXXX
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3895
+        High memory usage when PSQL code selects from a stored procedure that modified some data
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3875
+        GBAK does not check correctly parameters and backups random database with -B ":"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3859
+        Too many different dynamic events crash the server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3855
+        Blobs, inserted into GLOBAL TEMPORARY TABLE ON COMMIT DELETE ROWS, could be placed
+        into newly allocated pages even if there is enough free place on some existing data page
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3360
+        UPDATE ... RETURNING ... raises -551 (no perm to update) for a column
+        present only in the RETURNING clause
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2966
+        Wrong results or unexpected errors while sorting a large data set
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2912
+        Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
+  ***************************
   * v2.1.5
   ***************************
 
