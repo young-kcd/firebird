@@ -2891,6 +2891,20 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 	if (map_item->nod_type == nod_derived_field) {
 		map_item = map_item->nod_arg[e_alias_value]; 
 	}
+	if (map_item->nod_type == nod_cast) {
+		map_item = map_item->nod_arg[e_cast_source];
+	}
+	fb_assert(map_item->nod_type == nod_map);
+
+	if (map_item->nod_type != nod_map) 
+	{
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+				  isc_arg_gds, isc_dsql_internal_err,
+				  isc_arg_gds, isc_random, isc_arg_string, "gen_union: expected map node",
+				  isc_arg_end);
+
+	}
+
 	dsql_ctx* union_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
 	stuff_context(request, union_context);
 	// secondary context number must be present once in generated blr 
