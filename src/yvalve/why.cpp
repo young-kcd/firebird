@@ -237,17 +237,27 @@ FB_API_HANDLE& IscStatement::getHandle()
 
 //-------------------------------------
 
+const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
+
+class ShutdownInit
+{
+public:
+	explicit ShutdownInit(MemoryPool&)
+	{
+		InstanceControl::registerShutdown(atExitShutdown);
+	}
+
+private:
+	static void atExitShutdown()
+	{
+		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
+	}
+};
+
 #ifdef UNIX
 	int killed;
 	bool procInt, procTerm;
 	SignalSafeSemaphore* shutdownSemaphore = NULL;
-
-	const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
-
-	void atExitShutdown()
-	{
-		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
-	}
 
 	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
 	{
@@ -303,15 +313,14 @@ FB_API_HANDLE& IscStatement::getHandle()
 		handler(SIGTERM);
 	}
 
-	class CtrlCHandler
+	class CtrlCHandler : public ShutdownInit
 	{
 	public:
 		SignalSafeSemaphore semaphore;
 
-		explicit CtrlCHandler(MemoryPool&)
+		explicit CtrlCHandler(MemoryPool& p)
+			: ShutdownInit(p)
 		{
-			InstanceControl::registerShutdown(atExitShutdown);
-
 			Thread::start(shutdownThread, 0, 0, &handle);
 
 			procInt = ISC_signal(SIGINT, handlerInt, 0);
@@ -341,6 +350,8 @@ FB_API_HANDLE& IscStatement::getHandle()
 	{
 #ifdef UNIX
 		static GlobalPtr<CtrlCHandler> ctrlCHandler;
+#else
+		static GlobalPtr<ShutdownInit> shutdownInit;
 #endif // UNIX
 	}
 
