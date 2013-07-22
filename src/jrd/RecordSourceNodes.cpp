@@ -1662,7 +1662,19 @@ void UnionSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (derivedField)
 		mapItem = derivedField->value;
 
-	dsql_ctx* dsqlContext = mapItem->as<DsqlMapNode>()->context;
+	if (mapItem->is<CastNode>())
+		mapItem = mapItem->as<CastNode>()->source;
+
+	DsqlMapNode* mapNode = mapItem->as<DsqlMapNode>();
+	fb_assert(mapNode);
+
+	if (!mapNode) {
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_dsql_internal_err) <<
+				  Arg::Gds(isc_random) << Arg::Str("UnionSourceNode::genBlr: expected DsqlMapNode") );
+	}
+
+	dsql_ctx* dsqlContext = mapNode->context;
 
 	GEN_stuff_context(dsqlScratch, dsqlContext);
 	// secondary context number must be present once in generated blr
