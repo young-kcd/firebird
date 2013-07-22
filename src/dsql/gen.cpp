@@ -3110,6 +3110,19 @@ static void gen_union( CompiledStatement* statement, const dsql_nod* union_node)
 	if (map_item->nod_type == nod_derived_field) {
 		map_item = map_item->nod_arg[e_derived_field_value];
 	}
+	if (map_item->nod_type == nod_cast) {
+		map_item = map_item->nod_arg[e_cast_source];
+	}
+	fb_assert(map_item->nod_type == nod_map);
+
+	if (map_item->nod_type != nod_map) 
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_dsql_internal_err) <<
+				  Arg::Gds(isc_random) << Arg::Str("gen_union: expected map node") );
+	}
+
+
 	dsql_ctx* union_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
 	stuff_context(statement, union_context);
 	// secondary context number must be present once in generated blr
