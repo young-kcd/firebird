@@ -2,6 +2,11 @@
   * v3.0 Alpha 1
   **************
 
+    * Bugfix CORE-4144
+        Error "context already in use (BLR error)" when preparing a query with UNION
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * Bugfix CORE-4137
         Wrong metadata output script generate by ISQL / CHARACTER SETISO8859_1 syntax error
       Contributor(s):
