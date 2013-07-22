@@ -150,6 +150,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-4005
+        Wrong error message with recursive CTE
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-4004
         Sometimes long-running operations cannot be interrupted
         by asynchronous shutdown / cancellation requests
