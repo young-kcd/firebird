@@ -1,3 +1,11 @@
+ 2013-07-22 16:34  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2013-07-22 08:48  hvlad 
+   M src/dsql/gen.cpp
+Backport fix for bug CORE-4144 : Error "context already in use (BLR error)" when preparing a query with UNION 
+
  2013-06-20 16:03  asfernandes 
    M src/intl/lc_ascii.cpp
 Fixed CORE-2912 - Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
