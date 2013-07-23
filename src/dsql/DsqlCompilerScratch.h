@@ -106,9 +106,9 @@ public:
 		  hiddenVariables(p),
 		  variables(p),
 		  outputVariables(p),
+		  currCteAlias(NULL),
 		  ctes(p),
 		  cteAliases(p),
-		  currCteAlias(NULL),
 		  psql(false),
 		  subFunctions(p),
 		  subProcedures(p)
