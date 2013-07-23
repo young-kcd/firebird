@@ -1,3 +1,28 @@
+ 2013-07-22 16:03  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2013-07-22 15:44  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2013-07-22 13:35  hvlad 
+   M src/common/ThreadStart.cpp
+Avoid deadlock on Windows when DLL's is unloaded and fb_shutdown() was not called by application before FreeLibrary().
+This decision is investigated and could be reworked if necessary.
+
+ 2013-07-22 12:27  alexpeshkoff 
+   M src/yvalve/why.cpp
+Make fb_shutdown() automatically invoked in any OS - to be checked by Vlad
+
+ 2013-07-22 09:11  alexpeshkoff 
+   M src/jrd/fields.h
+Fixed bugs.core_1076: priorly user first/second/last names were limited to 32 chars, but now the limit is 31 chars. Restored length to 32.
+
+ 2013-07-22 08:29  hvlad 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed bug CORE-4144 : Error "context already in use (BLR error)" when preparing a query with UNION 
+
  2013-07-19 13:51  alexpeshkoff 
    M src/common/MsgMetadata.cpp
    M src/common/MsgMetadata.h
