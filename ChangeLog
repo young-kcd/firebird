@@ -1,3 +1,20 @@
+ 2013-07-22 16:20  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2013-07-22 16:18  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2013-07-22 07:47  hvlad 
+   M src/dsql/gen.cpp
+Fixed bug CORE-4144 : Error "context already in use (BLR error)" when preparing a query with UNION 
+
+ 2013-07-22 07:36  alexpeshkoff 
+   M builds/posix/Makefile.in.examples
+   M builds/posix/Makefile.in.firebird
+Patch from LO
+
  2013-07-19 08:42  hvlad 
    M src/dsql/dsql.h
    M src/dsql/pass1.cpp
