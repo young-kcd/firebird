@@ -237,17 +237,27 @@ FB_API_HANDLE& IscStatement::getHandle()
 
 //-------------------------------------
 
+const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
+
+class ShutdownInit
+{
+public:
+	explicit ShutdownInit(MemoryPool&)
+	{
+		InstanceControl::registerShutdown(atExitShutdown);
+	}
+
+private:
+	static void atExitShutdown()
+	{
+		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
+	}
+};
+
 #ifdef UNIX
 	int killed;
 	bool procInt, procTerm;
 	SignalSafeSemaphore* shutdownSemaphore = NULL;
-
-	const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
-
-	void atExitShutdown()
-	{
-		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
-	}
 
 	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
 	{
@@ -303,15 +313,14 @@ FB_API_HANDLE& IscStatement::getHandle()
 		handler(SIGTERM);
 	}
 
-	class CtrlCHandler
+	class CtrlCHandler : public ShutdownInit
 	{
 	public:
 		SignalSafeSemaphore semaphore;
 
-		explicit CtrlCHandler(MemoryPool&)
+		explicit CtrlCHandler(MemoryPool& p)
+			: ShutdownInit(p)
 		{
-			InstanceControl::registerShutdown(atExitShutdown);
-
 			Thread::start(shutdownThread, 0, 0, &handle);
 
 			procInt = ISC_signal(SIGINT, handlerInt, 0);
@@ -341,6 +350,8 @@ FB_API_HANDLE& IscStatement::getHandle()
 	{
 #ifdef UNIX
 		static GlobalPtr<CtrlCHandler> ctrlCHandler;
+#else
+		static GlobalPtr<ShutdownInit> shutdownInit;
 #endif // UNIX
 	}
 
@@ -3792,7 +3803,7 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
 	: YHelper<YStatement, IStatement, FB_STATEMENT_VERSION>(aNext),
-	  attachment(aAttachment), openedCursor(NULL)
+	  attachment(aAttachment), openedCursor(NULL), input(true), output(false)
 {
 	attachment->childStatements.add(this);
 }
@@ -3800,7 +3811,7 @@ YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
 void YStatement::destroy()
 {
 	{	// scope
-		MutexLockGuard guard(cursorMutex, FB_FUNCTION);
+		MutexLockGuard guard(statementMutex, FB_FUNCTION);
 		if (openedCursor)
 		{
 			openedCursor->destroy();
@@ -3878,13 +3889,40 @@ const char* YStatement::getPlan(IStatus* status, FB_BOOLEAN detailed)
 	return NULL;
 }
 
+IMessageMetadata* YMetadata::get(IStatement* next, YStatement* statement)
+{
+	if (!flag)
+	{
+		MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
+		if (!flag)
+		{
+			RefPtr<IMessageMetadata> nextMeta(REF_NO_INCR, statement->getMetadata(input, next));
+			metadata = new MsgMetadata(nextMeta);
+
+			flag = true;
+		}
+	}
+
+	metadata->addRef();
+	return metadata;
+}
+
+IMessageMetadata* YStatement::getMetadata(bool in, IStatement* next)
+{
+	LocalStatus status;
+	IMessageMetadata* rc = in ? next->getInputMetadata(&status) : next->getOutputMetadata(&status);
+	if (!status.isSuccess())
+		status_exception::raise(status.get());
+	return rc;
+}
+
 IMessageMetadata* YStatement::getInputMetadata(IStatus* status)
 {
 	try
 	{
 		YEntry<YStatement> entry(status, this);
 
-		return entry.next()->getInputMetadata(status);
+		return input.get(entry.next(), this);
 	}
 	catch (const Exception& e)
 	{
@@ -3900,7 +3938,7 @@ IMessageMetadata* YStatement::getOutputMetadata(IStatus* status)
 	{
 		YEntry<YStatement> entry(status, this);
 
-		return entry.next()->getOutputMetadata(status);
+		return output.get(entry.next(), this);
 	}
 	catch (const Exception& e)
 	{
@@ -4025,7 +4063,7 @@ YResultSet::YResultSet(YAttachment* aAttachment, YStatement* aStatement, IResult
 	  statement(aStatement)
 {
 	fb_assert(aNext);
-	MutexLockGuard guard(statement->cursorMutex, FB_FUNCTION);
+	MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
 	if (statement->openedCursor)
 	{
 		Arg::Gds(isc_cursor_already_open).raise();
@@ -4037,7 +4075,7 @@ void YResultSet::destroy()
 {
 	if (statement)
 	{
-		MutexLockGuard guard(statement->cursorMutex, FB_FUNCTION);
+		MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
 		fb_assert(statement->openedCursor == this);
 		statement->openedCursor = NULL;
 	}

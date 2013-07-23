@@ -507,7 +507,7 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const ISC_LONG& nmonths)
 	}
 	const int ly = times.tm_year + 1900;
 	const bool leap = (ly % 4 == 0 && ly % 100 != 0) || ly % 400 == 0;
-	const int md[] = {31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+	const int md[] = {31, (leap ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 	if (times.tm_mday > md[times.tm_mon])
 		times.tm_mday = md[times.tm_mon];
 	internal::encode_timestamp(&times, v);

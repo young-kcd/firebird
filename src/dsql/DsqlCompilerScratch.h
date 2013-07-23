@@ -323,11 +323,11 @@ public:
 	Firebird::Array<dsql_var*> hiddenVariables;	// hidden variables
 	Firebird::Array<dsql_var*> variables;
 	Firebird::Array<dsql_var*> outputVariables;
+	const Firebird::string* const* currCteAlias;
 
 private:
 	Firebird::HalfStaticArray<SelectExprNode*, 4> ctes; // common table expressions
 	Firebird::HalfStaticArray<const Firebird::string*, 4> cteAliases; // CTE aliases in recursive members
-	const Firebird::string* const* currCteAlias;
 	bool psql;
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, dsql_udf*> > subFunctions;
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, dsql_prc*> > subProcedures;

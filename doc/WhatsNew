@@ -2,6 +2,31 @@
   * v3.0 Alpha 1
   **************
 
+    * Bugfix CORE-4144
+        Error "context already in use (BLR error)" when preparing a query with UNION
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4137
+        Wrong metadata output script generate by ISQL / CHARACTER SETISO8859_1 syntax error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4136
+        Sharp-S character treated incorrectly in UNICODE_CI_AI collation
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4135
+        Sweep blocks establishment of concurrent attachments in SuperServer
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4134
+        Race condition when auto-sweep is started
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * Bugfix CORE-4074
         Computed by columns and POSITION function
       Contributor(s):
@@ -16,6 +41,11 @@
         Using system domain in procedures arguments/returns cause the SP to be unchangeable
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4005
+        Wrong error message with recursive CTE
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
 
     * Bugfix CORE-3973
         Original table name and column name and owner missing from SQLDA for aliased column in grouped query
@@ -406,6 +436,11 @@
         Report OS user name in MON$ATTACHMENTS
       See also:
         /doc/README.monitoring_tables
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-3704
+        Add new context variables to the SYSTEM namespace
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 

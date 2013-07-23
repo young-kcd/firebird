@@ -93,9 +93,9 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
-	chmod +x ../builds/install/arch-specific/darwin/changeMultiConnectMode
-	cp ../builds/install/arch-specific/darwin/changeMultiConnectMode \
-			$(FB_FW)/Resources/bin/changeMultiConnectMode.sh
+	chmod +x ../builds/install/arch-specific/darwin/changeServerMode
+	cp ../builds/install/arch-specific/darwin/changeServerMode \
+			$(FB_FW)/Resources/bin/changeServerMode.sh
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \

@@ -193,16 +193,14 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	{
 		// So convert its character length to max. byte length of the destination charset.
 		const ULONG len = convertLength(result->dsc_length, CS_ASCII, result->getCharSet());
-		fb_assert(len <= MAX_COLUMN_SIZE); // Maybe status_exception::raise?
-		result->dsc_length = len;
 
 		if (anyVarying)
-		{
-			// Adjust for varying, if it's the case.
-			fb_assert(len <= MAX_COLUMN_SIZE - sizeof(USHORT));
 			result->dsc_dtype = dtype_varying;
+
+		result->dsc_length = fixLength(result, len);
+
+		if (anyVarying)
 			result->dsc_length += sizeof(USHORT);
-		}
 	}
 }
 

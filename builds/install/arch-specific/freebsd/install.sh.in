@@ -171,7 +171,7 @@ copyFiles() {
     addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
     addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
     addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuildRootDir/gen/firebird/bin changeMultiConnectMode.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuildRootDir/gen/firebird/bin changeServerMode.sh ${TargetDir}@FB_SBINDIR@
     addLibs $BuiltFBDir/bin changeGdsLibraryCompatibleLink.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/createAliasDB.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/fb_config ${TargetDir}@FB_SBINDIR@

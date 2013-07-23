@@ -118,9 +118,9 @@ void RemotePassword::genServerKey(string& pubkey, const Firebird::UCharBuffer& v
 void RemotePassword::computeScramble()
 {
 	hash.reset();
-	dumpIt("cS: clientPublicKey", clientPublicKey);
+	dumpIt("computeScramble: clientPublicKey", clientPublicKey);
 	hash.processStrippedInt(clientPublicKey);
-	dumpIt("cS: serverPublicKey", serverPublicKey);
+	dumpIt("computeScramble: serverPublicKey", serverPublicKey);
 	hash.processStrippedInt(serverPublicKey);
 	hash.getInt(scramble);
 }
@@ -220,5 +220,21 @@ void dumpIt(const char* name, const BigInteger& bi)
 	dumpIt(name, x);
 }
 #endif
+
+void checkStatusVectorForMissingTable(const ISC_STATUS* v)
+{
+	while (v[0] == isc_arg_gds)
+	{
+		if (v[1] == isc_dsql_relation_err)
+		{
+			Arg::Gds(isc_missing_data_structures).raise();
+		}
+
+		do
+		{
+			v += 2;
+		} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
+	}
+}
 
 } // namespace Auth

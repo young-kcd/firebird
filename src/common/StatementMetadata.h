@@ -40,11 +40,11 @@ namespace Firebird {
 class StatementMetadata : public PermanentStorage
 {
 public:
-	class Parameters : public MsgMetadata
+	class Parameters : public AttMetadata
 	{
 	public:
-		Parameters()
-			: MsgMetadata(),
+		Parameters(IAttachment* att)
+			: AttMetadata(att),
 			  fetched(false)
 		{
 		}
@@ -52,13 +52,13 @@ public:
 		bool fetched;
 	};
 
-	StatementMetadata(MemoryPool& pool, IStatement* aStatement)
+	StatementMetadata(MemoryPool& pool, IStatement* aStatement, IAttachment* att)
 		: PermanentStorage(pool),
 		  statement(aStatement),
 		  legacyPlan(pool),
 		  detailedPlan(pool),
-		  inputParameters(new Parameters),
-		  outputParameters(new Parameters)
+		  inputParameters(new Parameters(att)),
+		  outputParameters(new Parameters(att))
 	{
 	}
 

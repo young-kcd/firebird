@@ -1299,10 +1299,14 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			if (!ck_space_for_numeric(info, end))
 				return 0;
 			*info++ = item;
-			if (svc_flags & SVC_thd_running)
-				ADD_SPB_NUMERIC(info, TRUE)
-			else
-				ADD_SPB_NUMERIC(info, FALSE)
+			{	// guardian scope
+				MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
+
+				if (svc_flags & SVC_thd_running)
+					ADD_SPB_NUMERIC(info, TRUE)
+				else
+					ADD_SPB_NUMERIC(info, FALSE)
+			}
 
 			break;
 
@@ -2546,8 +2550,6 @@ bool Service::actionNeedsArg(UCHAR action)
 	switch (action)
 	{
 	case isc_action_svc_get_fb_log:
-	case isc_action_svc_trace_list:
-	case isc_action_svc_display_user_adm:
 		return false;
 	}
 	return true;
@@ -2562,9 +2564,6 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	spb.rewind();
 	const UCHAR svc_action = spb.getClumpTag();
 	spb.moveNext();
-
-	if (spb.isEof() && actionNeedsArg(svc_action))
-		return false;
 
 	string burp_database, burp_backup;
 	int burp_options = 0;

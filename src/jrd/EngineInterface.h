@@ -203,11 +203,7 @@ public:
 	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
 
 public:
-	JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta)
-		: statement(handle), jAtt(ja), metadata(getPool(), this)
-	{
-		metadata.parse(meta.getCount(), meta.begin());
-	}
+	JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta);
 
 	JAttachment* getAttachment()
 	{
@@ -481,6 +477,12 @@ public:
 private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 };
+
+inline JStatement::JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta)
+	: statement(handle), jAtt(ja), metadata(getPool(), this, ja)
+{
+	metadata.parse(meta.getCount(), meta.begin());
+}
 
 } // namespace Jrd
 

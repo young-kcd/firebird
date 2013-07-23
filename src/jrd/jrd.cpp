@@ -401,6 +401,15 @@ namespace
 			entered = true;
 		}
 
+		void leave()
+		{
+			if (entered)
+			{
+				ref->leave();
+				entered = false;
+			}
+		}
+
 		void operator=(Database::ExistenceRefMutex* to)
 		{
 			if (ref == to)
@@ -408,11 +417,7 @@ namespace
 				return;
 			}
 
-			if (entered)
-			{
-				ref->leave();
-				entered = false;
-			}
+			leave();
 			ref = to;
 		}
 
@@ -428,10 +433,7 @@ namespace
 
 		~RefMutexUnlock()
 		{
-			if (entered)
-			{
-				ref->leave();
-			}
+			leave();
 		}
 
 	private:
@@ -1277,6 +1279,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 		Database* dbb = NULL;
 		Jrd::Attachment* attachment = NULL;
+		bool attachTraced = false;
 
 		// Initialize special error handling
 		try
@@ -1304,9 +1307,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			fb_assert(dbb);
 			attachment = tdbb->getAttachment();
 			fb_assert(attachment);
-
-			Sync dbbGuard(&dbb->dbb_sync, "attachDatabase");
-			dbbGuard.lock(SYNC_EXCLUSIVE);
 
 			if (!(dbb->dbb_flags & DBB_new))
 			{
@@ -1400,8 +1400,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
 				CCH_init2(tdbb);
 
-				dbb->dbb_crypto_manager->startCryptThread(tdbb);
-
 				// Init complete - we can release db_init_mutex
 				dbb->dbb_flags &= ~DBB_new;
 				guardDbInit.leave();
@@ -1422,7 +1420,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				INI_init2(tdbb);
 				PAG_header(tdbb, true);
 				dbb->dbb_crypto_manager->attach(tdbb, attachment);
-				dbb->dbb_crypto_manager->startCryptThread(tdbb);
 			}
 
 			// Attachments to a ReadOnly database need NOT do garbage collection
@@ -1440,7 +1437,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				CCH_expand(tdbb, options.dpb_buffers);
 			}
 
-			if (!options.dpb_verify && CCH_exclusive(tdbb, LCK_PW, LCK_NO_WAIT, &dbbGuard))
+			if (!options.dpb_verify && CCH_exclusive(tdbb, LCK_PW, LCK_NO_WAIT, NULL))
 			{
 				TRA_cleanup(tdbb);
 			}
@@ -1535,11 +1532,11 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			// This pair (SHUT_database/SHUT_online) checks itself for valid user name
 			if (options.dpb_shutdown)
 			{
-				SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay, &dbbGuard);
+				SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay, NULL);
 			}
 			if (options.dpb_online)
 			{
-				SHUT_online(tdbb, options.dpb_online, &dbbGuard);
+				SHUT_online(tdbb, options.dpb_online, NULL);
 			}
 
 			// Check if another attachment has or is requesting exclusive database access.
@@ -1551,9 +1548,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			{
 				bool attachment_succeeded = true;
 				if (dbb->dbb_ast_flags & DBB_shutdown_single)
-					attachment_succeeded = CCH_exclusive_attachment(tdbb, LCK_none, -1, &dbbGuard);
+					attachment_succeeded = CCH_exclusive_attachment(tdbb, LCK_none, -1, NULL);
 				else
-					CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT, &dbbGuard);
+					CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT, NULL);
 
 				if (attachment->att_flags & ATT_shutdown)
 				{
@@ -1596,7 +1593,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 						//   - for SS this code effectively checks that no other attachments are present
 						//     at call point, ATT_exclusive bit is released just before this procedure exits
 						// Things are done this way to handle return to online mode nicely.
-						allow_access = CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, &dbbGuard);
+						allow_access = CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL);
 					}
 				}
 				if (!allow_access)
@@ -1625,22 +1622,19 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			if (options.dpb_verify)
 			{
 				validateAccess(attachment);
-				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, &dbbGuard)) {
+				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL))
 					ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_validate));
-				}
 
 				// Can't allow garbage collection during database validation.
 
 				VIO_fini(tdbb);
 
-				if (!VAL_validate(tdbb, options.dpb_verify)) {
+				if (!VAL_validate(tdbb, options.dpb_verify))
 					ERR_punt();
-				}
 			}
 
-			if (options.dpb_journal.hasData()) {
+			if (options.dpb_journal.hasData())
 				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_start_journal));
-			}
 
 			if (options.dpb_wal_action)
 			{
@@ -1688,19 +1682,16 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			if (options.dpb_set_page_buffers)
 			{
 				if (dbb->dbb_config->getSharedCache())
-				{
 					validateAccess(attachment);
-				}
+
 				if (attachment->locksmith())
-				{
 					PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
-				}
 			}
 
 			if (options.dpb_set_db_readonly)
 			{
 				validateAccess(attachment);
-				if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, &dbbGuard))
+				if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, NULL))
 				{
 					ERR_post(Arg::Gds(isc_lock_timeout) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
@@ -1712,24 +1703,26 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			VIO_init(tdbb);
 			CCH_release_exclusive(tdbb);
 
-			// if there was an error, the status vector is all set
-
-			if (options.dpb_sweep & isc_dpb_records) {
-				TRA_sweep(tdbb);
-			}
-
-			if (options.dpb_dbkey_scope) {
-				attachment->att_dbkey_trans = TRA_start(tdbb, 0, 0);
-			}
-
-			// Recover database after crash during backup difference file merge
-			dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
+			initGuard.leave();
 
 			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
 				attachment->att_trace_manager->event_attach(&conn, false, res_successful);
 			}
+			attachTraced = true;
+
+			// Recover database after crash during backup difference file merge
+			dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
+
+			if (options.dpb_sweep & isc_dpb_records) {
+				TRA_sweep(tdbb);
+			}
+
+			dbb->dbb_crypto_manager->startCryptThread(tdbb);
+
+			if (options.dpb_dbkey_scope)
+				attachment->att_dbkey_trans = TRA_start(tdbb, 0, 0);
 
 			if (!(attachment->att_flags & ATT_no_db_triggers))
 			{
@@ -1781,8 +1774,23 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-				filename, options, false, user_status->get());
+			if (attachTraced)
+			{
+				TraceManager* traceManager = attachment->att_trace_manager;
+				TraceConnectionImpl conn(attachment);
+				TraceStatusVectorImpl traceStatus(user_status->get());
+
+				if (traceManager->needs(TRACE_EVENT_ERROR))
+					traceManager->event_error(&conn, &traceStatus, "JProvider::attachDatabase");
+
+				if (traceManager->needs(TRACE_EVENT_DETACH))
+					traceManager->event_detach(&conn, false);
+			}
+			else
+			{
+				trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
+					filename, options, false, user_status->get());
+			}
 
 			unwindAttach(tdbb, ex, user_status, attachment, dbb);
 		}
@@ -5877,8 +5885,7 @@ static JAttachment* init(thread_db* tdbb,
 			dbb = databases;
 			while (dbb)
 			{
-				if (!(dbb->dbb_flags & (DBB_bugcheck /* | DBB_not_in_use */)) &&
-					(dbb->dbb_filename == expanded_name))
+				if (!(dbb->dbb_flags & DBB_bugcheck) && dbb->dbb_filename == expanded_name)
 				{
 					if (attach_flag)
 					{
@@ -6341,9 +6348,7 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 					// as long as dbb_init_fini is not locked and its activity is not checked
 					finiGuard.enter();
 					if (finiGuard->doesExist())
-					{
 						break;
-					}
 
 					// database to shutdown does not exist
 					// looks like somebody else took care to destroy it
@@ -6354,21 +6359,24 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 
 		// Check - may be database already missing in linked list
 		if (!finiGuard)
-		{
 			return false;
-		}
 	}
 
 	if (dbb->dbb_attachments)
-	{
 		return false;
-	}
 
 	// Deactivate dbb_init_fini lock
 	// Since that moment dbb becomes not reusable
 	dbb->dbb_init_fini->destroy();
 
 	fb_assert(!dbb->locked());
+
+	// Disable AST delivery as we're about to release all locks
+
+	{ // scope
+		WriteLockGuard astGuard(dbb->dbb_ast_lock, FB_FUNCTION);
+		dbb->dbb_flags |= DBB_no_ast;
+	}
 
 	// Shutdown file and/or remote connection
 
@@ -6400,6 +6408,9 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 
 	dbb->dbb_shared_counter.shutdown(tdbb);
 
+	if (dbb->dbb_sweep_lock)
+		LCK_release(tdbb, dbb->dbb_sweep_lock);
+
 	if (dbb->dbb_lock)
 		LCK_release(tdbb, dbb->dbb_lock);
 
@@ -6413,18 +6424,10 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 		{
 			if (*d_ptr == dbb)
 			{
-				Sync dbbGuard(&dbb->dbb_sync, "jrd.cpp:shutdown_database");
-				dbbGuard.lock(SYNC_EXCLUSIVE);
 				fb_assert(!dbb->dbb_attachments);
+
 				*d_ptr = dbb->dbb_next;
 				dbb->dbb_next = NULL;
-				dbbGuard.unlock();
-
-				fb_assert(!dbb->locked());
-
-				WriteLockGuard astGuard(dbb->dbb_ast_lock, FB_FUNCTION);
-				dbb->dbb_flags |= DBB_not_in_use;
-
 				break;
 			}
 		}
@@ -6500,9 +6503,9 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 
 		for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 		{
-			SyncLockGuard guard(&dbb->dbb_sync, SYNC_SHARED, "JRD_enum_attachments");
+			SyncLockGuard dbbGuard(&dbb->dbb_sync, SYNC_SHARED, "JRD_enum_attachments");
 
-			if (!(dbb->dbb_flags & (DBB_bugcheck | /* DBB_not_in_use | */ DBB_security_db)))
+			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)))
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
@@ -7176,7 +7179,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 			for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 			{
-				if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
+				if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)) )
 				{
 					Sync dbbGuard(&dbb->dbb_sync, FB_FUNCTION);
 					dbbGuard.lock(SYNC_EXCLUSIVE);

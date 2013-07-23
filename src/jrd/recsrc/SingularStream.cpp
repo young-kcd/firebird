@@ -119,6 +119,8 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 				if (!orgRecord)
 					BUGCHECK(284);	// msg 284 cannot restore singleton select data
 
+				rpb.rpb_record = orgRecord;
+
 				const USHORT recordSize = newRecord->rec_length;
 				if (recordSize > orgRecord->rec_length)
 				{
@@ -126,9 +128,9 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 					// given record to make enough space for saved data
 					orgRecord = VIO_record(tdbb, &rpb, newRecord->rec_format, &pool);
 				}
+
 				memcpy(&orgRecord->rec_format, &newRecord->rec_format,
 					   sizeof(Record) - OFFSET(Record*, rec_format) + recordSize);
-				rpb.rpb_record = orgRecord;
 			}
 		}
 

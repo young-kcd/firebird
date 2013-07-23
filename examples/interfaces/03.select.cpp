@@ -190,7 +190,7 @@ int main()
 		check(st, "detach");
 		att = NULL;
 	}
-	catch(const char* text)
+	catch (const char* text)
 	{
 		// handle error
 		rc = 1;

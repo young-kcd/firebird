@@ -219,7 +219,6 @@ namespace Jrd
 			: River(csb, NULL, rivers)
 		{
 			const size_t count = rivers.getCount();
-			fb_assert(count);
 
 			if (count == 1)
 			{
@@ -661,21 +660,34 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	for (StreamList::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
 		csb->csb_rpt[*i].activate();
 
+	bool sortCanBeUsed = true;
+	SortNode* const orgSortNode = sort;
+
+	// When DISTINCT and ORDER BY are done on different fields,
+	// and ORDER BY can be mapped to an index, then the records
+	// are returned in the wrong order because DISTINCT sort is
+	// performed after the navigational walk of the index.
+	// For that reason, we need to de-optimize this case so that
+	// ORDER BY does not use an index.
+	if (sort && project)
+	{
+		sort = NULL;
+		sortCanBeUsed = false;
+	}
+
 	// outer joins require some extra processing
 	if (rse->rse_jointype != blr_inner)
 		rsb = gen_outer(tdbb, opt, rse, rivers, &sort);
 	else
 	{
-		bool sort_can_be_used = true;
-		SortNode* const saved_sort_node = sort;
-
 		// AB: If previous rsb's are already on the stack we can't use
 		// a navigational-retrieval for an ORDER BY because the next
 		// streams are JOINed to the previous ones
 		if (rivers.hasData())
 		{
 			sort = NULL;
-			sort_can_be_used = false;
+			sortCanBeUsed = false;
+
 			// AB: We could already have multiple rivers at this
 			// point so try to do some hashing or sort/merging now.
 			while (gen_equi_join(tdbb, opt, rivers))
@@ -706,7 +718,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 			if (dependent_streams.getCount() && free_streams.getCount())
 			{
 				sort = NULL;
-				sort_can_be_used = false;
+				sortCanBeUsed = false;
 			}
 
 			if (dependent_streams.getCount())
@@ -751,15 +763,13 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 		rsb = CrossJoin(csb, rivers).getRecordSource();
 
-		// Assign the sort node back if it wasn't used by the index navigation
-		if (saved_sort_node && !sort_can_be_used)
-		{
-			sort = saved_sort_node;
-		}
-
 		// Pick up any residual boolean that may have fallen thru the cracks
 		rsb = gen_residual_boolean(tdbb, opt, rsb);
 	}
+
+	// Assign the sort node back if it wasn't used by the index navigation
+	if (orgSortNode && !sortCanBeUsed)
+		sort = orgSortNode;
 
 	// if the aggregate was not optimized via an index, get rid of the
 	// sort and flag the fact to the calling routine
@@ -1042,15 +1052,17 @@ static void check_sorts(RseNode* rse)
 
 		// if there is no projection, then we can make a similar optimization
 		// for sort, except that sort may have fewer fields than group by.
+
 		if (!project && sort && (sort->expressions.getCount() <= group->expressions.getCount()))
 		{
+			const size_t count = sort->expressions.getCount();
 			const NestConst<ValueExprNode>* sort_ptr = sort->expressions.begin();
-			const NestConst<ValueExprNode>* const sort_end = sort->expressions.end();
+			const NestConst<ValueExprNode>* const sort_end = sort_ptr + count;
 
 			for (; sort_ptr != sort_end; ++sort_ptr)
 			{
 				const NestConst<ValueExprNode>* group_ptr = group->expressions.begin();
-				const NestConst<ValueExprNode>* const group_end = group->expressions.end();
+				const NestConst<ValueExprNode>* const group_end = group_ptr + count;
 
 				for (; group_ptr != group_end; ++group_ptr)
 				{
@@ -1083,13 +1095,14 @@ static void check_sorts(RseNode* rse)
 
 	if (sort && project && (sort->expressions.getCount() <= project->expressions.getCount()))
 	{
+		const size_t count = sort->expressions.getCount();
 		const NestConst<ValueExprNode>* sort_ptr = sort->expressions.begin();
-		const NestConst<ValueExprNode>* const sort_end = sort->expressions.end();
+		const NestConst<ValueExprNode>* const sort_end = sort_ptr + count;
 
 		for (; sort_ptr != sort_end; ++sort_ptr)
 		{
 			const NestConst<ValueExprNode>* project_ptr = project->expressions.begin();
-			const NestConst<ValueExprNode>* const project_end = project->expressions.end();
+			const NestConst<ValueExprNode>* const project_end = project_ptr + count;
 
 			for (; project_ptr != project_end; ++project_ptr)
 			{
@@ -2293,10 +2306,10 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else
 	{
 		// Persistent table
-		IndexTableScan* nav_rsb = NULL;
 		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream,
-											  outer_flag, inner_flag, sort_ptr);
-		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion(&nav_rsb));
+											  outer_flag, inner_flag,
+											  (sort_ptr ? *sort_ptr : NULL));
+		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion());
 
 		if (candidate)
 		{
@@ -2304,12 +2317,15 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			condition = candidate->condition;
 		}
 
+		IndexTableScan* const nav_rsb = optimizerRetrieval.getNavigation();
+
 		if (nav_rsb)
 		{
+			if (sort_ptr)
+				*sort_ptr = NULL;
+
 			if (inversion && !condition)
-			{
 				nav_rsb->setInversion(inversion);
-			}
 
 			rsb = nav_rsb;
 		}

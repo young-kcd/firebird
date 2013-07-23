@@ -32,7 +32,7 @@ export PidDir
 #------------------------------------------------------------------------
 # Get correct options & misc.
 
-psOptions=aww
+psOptions=-efaww
 export psOptions
 mktOptions=-q
 export mktOptions
@@ -153,7 +153,7 @@ getInitScriptLocation() {
 #  stop super server if it is running
 
 stopSuperServerIfRunning() {
-	checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
+	checkString=`grepProcess "fbserver|fbguard|fb_smp_server|firebird"`
 
     if [ ! -z "$checkString" ]
     then
@@ -166,7 +166,7 @@ stopSuperServerIfRunning() {
 			do
        	    	$init_d stop
 				sleep 1
-				checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
+				checkString=`grepProcess "fbserver|fbguard|fb_smp_server|firebird"`
 				if [ -z "$checkString" ]
 				then
 					return
@@ -238,11 +238,6 @@ changeInitRunUser() {
 # initd script for SuSE >= 7.2 is a part of RPM package
 
 installInitdScript() {
-	Arch=$1
-	if [ "$Arch" != super ]; then
-		return 0
-	fi
-
 	srcScript=""
 	initScript=
 
@@ -364,24 +359,18 @@ EOF
 #  start init.d service
 
 startService() {
-	Arch=$1
-	if [ "$Arch" != super ]; then
-		return 0
-	fi
-
     InitFile=`getInitScriptLocation`
-    if [ -f "$InitFile" ]
-    then
+    if [ -f "$InitFile" ]; then
 		"$InitFile" start
 
-		checkString=`ps -eaf | egrep "\b(firebird)\b" |grep -v grep`
+		checkString=`grepProcess "firebird"`
 		if [ -z "$checkString" ]
 		then
 			# server didn't start - wait a bit and recheck
 			sleep 2
 			"$InitFile" start
 
-			checkString=`ps -eaf | egrep "\b(firebird)\b" |grep -v grep`
+			checkString=`grepProcess "firebird"`
 			if [ -z "$checkString" ]
 			then
 				echo "Looks like standalone server failed to start"
@@ -391,12 +380,12 @@ startService() {
 	fi
 }
 
+
 #------------------------------------------------------------------------
 # If we have right systems remove the service autostart stuff.
 
 removeServiceAutostart() {
-	InitFile=`getInitScriptLocation`
-	if [ -f "$InitFile" ]; then
+	if standaloneServerInstalled; then
 
 		# Unregister using OS command
 		if [ -x /sbin/insserv ]; then
@@ -422,16 +411,18 @@ removeServiceAutostart() {
 	fi
 }
 
+
 #------------------------------------------------------------------------
 # Returns TRUE if SA server is installed
 
-isStandaloneServerInstalled() {
+standaloneServerInstalled() {
 	InitFile=`getInitScriptLocation`
 	if [ -f "$InitFile" ]; then
 		return 0
 	fi
 	return 1
 }
+
 
 #------------------------------------------------------------------------
 # Corrects build-time "libdir" value

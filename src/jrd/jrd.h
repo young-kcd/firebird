@@ -900,7 +900,7 @@ namespace Jrd {
 		AstLockHolder(Database* dbb, const char* f)
 			: Firebird::ReadLockGuard(dbb->dbb_ast_lock, f)
 		{
-			if (dbb->dbb_flags & DBB_not_in_use)
+			if (dbb->dbb_flags & DBB_no_ast)
 			{
 				// usually to be swallowed by the AST, but it allows to skip its execution
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_unavailable));
@@ -918,7 +918,7 @@ namespace Jrd {
 				lck->getLockInterface() : Firebird::RefPtr<JAttachment>(), f, true),
 			  ThreadContextHolder(dbb, lck ? lck->getLockAttachment() : NULL),
 			  DatabaseContextHolder(operator thread_db*())
-		{ }
+		{}
 
 	private:
 		// copying is prohibited

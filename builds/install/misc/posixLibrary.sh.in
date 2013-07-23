@@ -150,7 +150,7 @@ checkInstallUser() {
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
-	pid=`ps -eaf$psOptions | grep inetd | grep -v grep | awk '{print $2}'`
+	pid=`grepProcess "inetd|xinetd" | awk '{print $2}'`
     if [ "$pid" ]
     then
         kill -HUP $pid
@@ -200,17 +200,20 @@ removeInetdServiceEntry() {
 
 
 #------------------------------------------------------------------------
+#  grep process by name
+
+grepProcess() {
+	processList=$1
+	eol=\$
+	ps $psOptions | egrep "\<($processList)($eol|[[:space:]])" | grep -v grep
+}
+
+
+#------------------------------------------------------------------------
 #  check if it is running
 
 checkIfServerRunning() {
 
-	checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fbserver|fbguard|fb_smp_server|firebird)\b[[:space:]]" |grep -v grep`
-    if [ ! -z "$checkString" ]
-	then
-		serverMode=super
-	fi
-
-# have to be root to stop the server
 	if [ "$1" != "install-embedded" ]
     then
     	stopSuperServerIfRunning
@@ -219,7 +222,7 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
-    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(firebird)\b[[:space:]]" |grep -v grep`
+    checkString=`grepProcess "firebird"`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird server seems to be running."
@@ -227,7 +230,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fb_smp_server)\b[[:space:]]" |grep -v grep`
+    checkString=`grepProcess "fb_smp_server"`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird SuperClassic server seems to be running."
@@ -235,7 +238,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fbserver|fbguard)\b[[:space:]]" |grep -v grep`
+    checkString=`grepProcess "fbserver|fbguard"`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
@@ -243,7 +246,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "[[:space:]]\b(fb_inet_server|gds_pipe)\b[[:space:]]" |grep -v grep`
+    checkString=`grepProcess "fb_inet_server|gds_pipe"`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -254,7 +257,7 @@ checkIfServerRunning() {
 
 # The following check for running interbase or firebird 1.0 servers.
 
-    checkString=`ps -ef$psOptions | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+    checkString=`grepProcess "ibserver|ibguard"`
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
@@ -263,7 +266,7 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`grepProcess "gds_inet_server|gds_pipe"`
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Classic server seems to be running." 
@@ -342,7 +345,7 @@ askUserForNewDBAPassword() {
 # Here there are three cases, not found         => add
 #                             found & different => replace
 #                             found & same      => do nothing
-#                             
+#
 
 replaceLineInFile() {
     FileName="$1"
@@ -416,7 +419,7 @@ EOT
     else 
         echo "# generated on `hostname` at time `date`" >> $DBAPasswordFile
     fi
-	
+
 	cat <<EOT >>$DBAPasswordFile
 
 # Your password can be changed to a more suitable one using the
@@ -435,18 +438,6 @@ EOT
     fi
 }
 
-#------------------------------------------------------------------------
-#  Change sysdba password.
-
-changeDBAPassword() {
-    if [ -z "$InteractiveInstall" ]
-      then
-        generateNewDBAPassword
-      else
-        askUserForNewDBAPassword masterkey
-    fi
-}
-
 
 #------------------------------------------------------------------------
 #  Set sysdba password.
@@ -461,7 +452,7 @@ setDBAPassword() {
         passwd=$NewPasswd
     fi
 
-    if [ ! -z "$passwd" ]
+    if [ -z "$passwd" ]
       then
         passwd=masterkey
     fi
@@ -885,7 +876,7 @@ updateXinetdEntry() {
 #  Install differs for each of them.
 
 updateInetdServiceEntry() {
-	if ! isStandaloneServerInstalled
+	if ! standaloneServerInstalled
 	then
 	    if [ -d /etc/xinetd.d ]
     	then
@@ -921,5 +912,17 @@ parseArgs() {
 	if [ $flSilent -eq 0 ]; then
 		InteractiveInstall=1
 		export InteractiveInstall
+	fi
+}
+
+
+#---------------------------------------------------------------------------
+#  depending upon presence of startup script starts super or classic server
+
+startFirebird() {
+	if standaloneServerInstalled; then
+		startService
+	else
+		resetInetdServer
 	fi
 }

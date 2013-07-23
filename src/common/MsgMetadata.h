@@ -96,6 +96,13 @@ public:
 	{
 	}
 
+	MsgMetadata(IMessageMetadata* from)
+		: items(getPool()),
+		  length(0)
+	{
+		assign(from);
+	}
+
 	virtual int FB_CARG release()
 	{
 		if (--refCounter != 0)
@@ -238,11 +245,35 @@ private:
 			Arg::Num(index) << (string("IMessageMetadata::") + method)).value());
 	}
 
+	void assign(IMessageMetadata* from);
+
 public:
 	ObjectsArray<Item> items;
 	unsigned length;
 };
 
+class AttMetadata : public MsgMetadata
+{
+public:
+	AttMetadata(IAttachment* att)
+		: MsgMetadata(),
+		  attachment(att)
+	{ }
+
+	// re-implement here release() present in MsgMetadata to call correct dtor
+	virtual int FB_CARG release()
+	{
+		if (--refCounter != 0)
+		{
+			return 1;
+		}
+
+		delete this;
+		return 0;
+	}
+
+	RefPtr<IAttachment> attachment;
+};
 
 }	// namespace Firebird
 

@@ -120,6 +120,112 @@ namespace Jrd
 		}
 	}
 
+	int Database::blocking_ast_sweep(void* ast_object)
+	{
+		Database* dbb = static_cast<Database*>(ast_object);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
+
+		if ((dbb->dbb_flags & DBB_sweep_starting) && !(dbb->dbb_flags & DBB_sweep_in_progress))
+		{
+			dbb->dbb_flags &= ~DBB_sweep_starting;
+			LCK_release(tdbb, dbb->dbb_sweep_lock);
+		}
+
+		return 0;
+	}
+
+	Lock* Database::createSweepLock(thread_db* tdbb)
+	{
+		if (!dbb_sweep_lock)
+		{
+			dbb_sweep_lock = FB_NEW_RPT(*dbb_permanent, 0) Lock(tdbb, 0, LCK_sweep);
+			dbb_sweep_lock->lck_ast = blocking_ast_sweep;
+			dbb_sweep_lock->lck_object = this;
+		}
+		return dbb_sweep_lock;
+	}
+
+	bool Database::allowSweepThread(thread_db* tdbb)
+	{
+		if (readOnly())
+			return false;
+
+		Jrd::Attachment* const attachment = tdbb->getAttachment();
+		if (attachment->att_flags & ATT_no_cleanup)
+			return false;
+
+		while (true)
+		{
+			AtomicCounter::counter_type old = dbb_flags;
+			if ((old & (DBB_sweep_in_progress | DBB_sweep_starting)) || (dbb_ast_flags & DBB_shutdown))
+				return false;
+
+			if (dbb_flags.compareExchange(old, old | DBB_sweep_starting))
+				break;
+		}
+
+		createSweepLock(tdbb);
+		if (!LCK_lock(tdbb, dbb_sweep_lock, LCK_EX, LCK_NO_WAIT))
+		{
+			// clear lock error from status vector
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+
+			dbb_flags &= ~DBB_sweep_starting;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Database::allowSweepRun(thread_db* tdbb)
+	{
+		if (readOnly())
+			return false;
+
+		Jrd::Attachment* const attachment = tdbb->getAttachment();
+		if (attachment->att_flags & ATT_no_cleanup)
+			return false;
+
+		while (true)
+		{
+			AtomicCounter::counter_type old = dbb_flags;
+			if ((old & DBB_sweep_in_progress) || (dbb_ast_flags & DBB_shutdown))
+				return false;
+
+			if (dbb_flags.compareExchange(old, old | DBB_sweep_in_progress))
+				break;
+		}
+
+		if (!(dbb_flags & DBB_sweep_starting))
+		{
+			createSweepLock(tdbb);
+			if (!LCK_lock(tdbb, dbb_sweep_lock, LCK_EX, -1))
+			{
+				// clear lock error from status vector
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+
+				dbb_flags &= ~DBB_sweep_in_progress;
+				return false;
+			}
+		}
+		else
+			dbb_flags &= ~DBB_sweep_starting;
+
+		return true;
+	}
+
+	void Database::clearSweepFlags(thread_db* tdbb)
+	{
+		if (!(dbb_flags & (DBB_sweep_starting | DBB_sweep_in_progress)))
+			return;
+
+		if (dbb_sweep_lock)
+			LCK_release(tdbb, dbb_sweep_lock);
+
+		dbb_flags &= ~(DBB_sweep_in_progress | DBB_sweep_starting);
+	}
+
+
 	Database::SharedCounter::SharedCounter()
 	{
 		memset(m_counters, 0, sizeof(m_counters));

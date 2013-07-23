@@ -24,21 +24,20 @@
 #= Main ====================================================================
 
 cat <<EOF
-For classic server there are two ways to support multiple connections:
-multiprocess (traditional for FB classic server) and multithread (new for FB 2.5).
+Firebird server may run in 2 different modes - super and classic.
+Super server provides better performance, classic - better availability.
 
-multiprocess mode is specially reliable cause error in one process does not affect others.
-multithread minimizes OS load and should provide better scalability under high loads.
+*** Warning: runuser will be reset to firebird.
 
 EOF
 
-AskQuestion "Which option would you like to choose: multi-(process|thread) [process] " "process"
+AskQuestion "Which option would you like to choose: (super|classic) [super] " "super"
 multiAnswer=$Answer
 
-case $multiAnswer in
-process) 
+case "$multiAnswer" in
+super)
 	;;
-thread) 
+classic)
 	;;
 *)
 	echo "Unknown option $multiAnswer chosen"
@@ -51,13 +50,20 @@ checkIfServerRunning
 removeInetdServiceEntry
 removeServiceAutostart
 
-echo "Starting firebird in multi$multiAnswer mode..."
-if [ $multiAnswer == process ]; then
+echo "Starting firebird in $multiAnswer server mode..."
+fbconf="@FB_CONFDIR@/firebird.conf"
+if [ $multiAnswer == classic ]; then
+	replaceLineInFile $fbconf "SharedCache = false" "^SharedCache"
+	replaceLineInFile $fbconf "SharedDatabase = true" "^SharedDatabase"
+
 	updateInetdServiceEntry
 	resetInetdServer
 else
-	installInitdScript super
-	startService super
+	replaceLineInFile $fbconf "SharedCache = true" "^SharedCache"
+	replaceLineInFile $fbconf "SharedDatabase = false" "^SharedDatabase"
+
+	installInitdScript
+	startService
 fi
 
 echo "Done."

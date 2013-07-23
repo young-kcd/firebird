@@ -1137,13 +1137,13 @@ bool isRunningCheck(const UCHAR* items, unsigned int length)
 		case isc_info_length:
 		case isc_info_flag_end:
 		case isc_info_svc_auth_block:
+		case isc_info_svc_running:
 			break;
 
 		case isc_info_svc_line:
 		case isc_info_svc_to_eof:
 		case isc_info_svc_timeout:
 		case isc_info_svc_limbo_trans:
-		case isc_info_svc_running:
 		case isc_info_svc_get_users:
 		case isc_info_svc_stdin:
 			if (state == S_INF)

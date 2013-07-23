@@ -34,7 +34,6 @@ namespace Firebird {
 class IStatus;
 class AbstractString;
 class MetaName;
-class QualifiedName;
 class Exception;
 
 namespace Arg {
@@ -76,7 +75,6 @@ protected:
 		virtual void shiftLeft(const char*) throw() { }
 		virtual void shiftLeft(const AbstractString&) throw() { }
 		virtual void shiftLeft(const MetaName&) throw() { }
-		virtual void shiftLeft(const QualifiedName&) throw() { }
 
 		virtual bool compare(const StatusVector& /*v*/) const throw() { return false; }
 
@@ -124,7 +122,6 @@ protected:
 		virtual void shiftLeft(const char* text) throw();
 		virtual void shiftLeft(const AbstractString& text) throw();
 		virtual void shiftLeft(const MetaName& text) throw();
-		virtual void shiftLeft(const QualifiedName& text) throw();
 		virtual bool compare(const StatusVector& v) const throw();
 
 		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw() : ImplBase(k, c)
@@ -195,12 +192,6 @@ public:
 		return *this;
 	}
 
-	StatusVector& operator<<(const QualifiedName& text) throw()
-	{
-		implementation->shiftLeft(text);
-		return *this;
-	}
-
 	bool operator==(const StatusVector& arg) const throw()
 	{
 		return implementation->compare(arg);
@@ -233,7 +224,6 @@ public:
 	explicit Str(const char* text) throw();
 	explicit Str(const AbstractString& text) throw();
 	explicit Str(const MetaName& text) throw();
-	explicit Str(const QualifiedName& text) throw();
 };
 
 class Num : public Base

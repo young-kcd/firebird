@@ -25,6 +25,7 @@
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../jrd/align.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
 #include "../jrd/Function.h"
@@ -1575,10 +1576,15 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 			dsc& fmtDesc = format->fmt_desc[i / 2u];
 			fmtDesc = parameter->prm_desc;
 
-			format->fmt_length = MET_align(&fmtDesc, format->fmt_length);
+			if (fmtDesc.dsc_dtype >= dtype_aligned)
+				format->fmt_length = FB_ALIGN(format->fmt_length, type_alignments[fmtDesc.dsc_dtype]);
+
 			fmtDesc.dsc_address = (UCHAR*)(IPTR) format->fmt_length;
 			format->fmt_length += fmtDesc.dsc_length;
 		}
+
+		if (format->fmt_length > MAX_MESSAGE_SIZE)
+			ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 		DbgInfo* subDbgInfo = NULL;
 		if (csb->csb_dbg_info->subProcs.get(name, subDbgInfo))
@@ -4127,38 +4133,23 @@ void ExceptionNode::setError(thread_db* tdbb) const
 
 	MetaName exName;
 	MetaName relationName;
-	TEXT message[XCP_MESSAGE_LENGTH + 1];
-	MoveBuffer temp;
-	USHORT length = 0;
+	string message;
 
 	if (messageExpr)
 	{
-		UCHAR* string = NULL;
-
 		// Evaluate exception message and convert it to string.
-		dsc* desc = EVL_expr(tdbb, request, messageExpr);
+		const dsc* const desc = EVL_expr(tdbb, request, messageExpr);
 
 		if (desc && !(request->req_flags & req_null))
 		{
-			length = MOV_make_string2(tdbb, desc, CS_METADATA, &string, temp);
-			length = MIN(length, sizeof(message) - 1);
-
-			/* dimitr: or should we throw an error here, i.e.
-					replace the above assignment with the following lines:
-
-			 if (length > sizeof(message) - 1)
-				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-			*/
-
-			memcpy(message, string, length);
+			MoveBuffer temp;
+			UCHAR* string = NULL;
+			const USHORT length = MOV_make_string2(tdbb, desc, CS_METADATA, &string, temp);
+			message.assign(string, MIN(length, XCP_MESSAGE_LENGTH));
 		}
-		else
-			length = 0;
 	}
 
-	message[length] = 0;
-
-	SLONG xcpCode = exception->code;
+	const SLONG xcpCode = exception->code;
 
 	switch (exception->type)
 	{
@@ -4184,8 +4175,8 @@ void ExceptionNode::setError(thread_db* tdbb) const
 			// Solves SF Bug #494981.
 			MET_lookup_exception(tdbb, xcpCode, exName, &tempStr);
 
-			if (message[0])
-				s = message;
+			if (message.hasData())
+				s = message.c_str();
 			else if (tempStr.hasData())
 				s = tempStr.c_str();
 			else
@@ -8042,14 +8033,16 @@ static void dsqlFieldAppearsOnce(const Array<NestConst<ValueExprNode> >& values,
 	for (size_t i = 0; i < values.getCount(); ++i)
 	{
 		const FieldNode* field1 = values[i]->as<FieldNode>();
-		fb_assert(field1);
+		if (!field1)
+			continue;
 
 		const MetaName& name1 = field1->dsqlField->fld_name;
 
 		for (size_t j = i + 1; j < values.getCount(); ++j)
 		{
 			const FieldNode* field2 = values[j]->as<FieldNode>();
-			fb_assert(field2);
+			if (!field2)
+				continue;
 
 			const MetaName& name2 = field2->dsqlField->fld_name;
 
@@ -8672,18 +8665,13 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamTy
 			else
 				newId = id;
 
-			ValueExprNode* node = PAR_gen_field(tdbb, newStream, newId);
-			node->getDesc(tdbb, csb, &desc);
-
-			if (!desc.dsc_address)
-			{
-				delete node;
+			const Format* const format = CMP_format(tdbb, csb, newStream);
+			if (newId >= format->fmt_count || !format->fmt_desc[newId].dsc_address)
 				continue;
-			}
 
-			AssignmentNode* assign = FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(
-				*tdbb->getDefaultPool());
-			assign->asgnTo = node;
+			AssignmentNode* const assign =
+				FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(*tdbb->getDefaultPool());
+			assign->asgnTo = PAR_gen_field(tdbb, newStream, newId);
 			assign->asgnFrom = PAR_gen_field(tdbb, orgStream, id);
 
 			stack.push(assign);

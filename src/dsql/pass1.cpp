@@ -1205,12 +1205,18 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 	// developed context block.
 	if (isRecursive)
 	{
+		dsql_ctx* const saveRecursiveCtx = dsqlScratch->recursiveCtx;
 		dsqlScratch->recursiveCtx = context;
 		dsqlScratch->context = &temp;
 
-		dsqlScratch->resetCTEAlias(alias.c_str());
+		const string* const* saveCteAlias = dsqlScratch->currCteAlias;
+		dsqlScratch->resetCTEAlias(alias);
 
 		rse = PASS1_rse(dsqlScratch, input, false);
+
+		if (saveCteAlias)
+			dsqlScratch->resetCTEAlias(**saveCteAlias);
+		dsqlScratch->recursiveCtx = saveRecursiveCtx;
 
 		// Finish off by cleaning up contexts and put them into derivedContext
 		// so create view (ddl) can deal with it.
@@ -2809,12 +2815,7 @@ DsqlMapNode* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* nod
 
 	MAKE_desc(dsqlScratch, &node->nodDesc, node);
 
-	DsqlMapNode* mapNode = FB_NEW(*tdbb->getDefaultPool()) DsqlMapNode(*tdbb->getDefaultPool(),
-		context, map);
-
-	mapNode->nodDesc = node->nodDesc;
-
-	return mapNode;
+	return FB_NEW(*tdbb->getDefaultPool()) DsqlMapNode(*tdbb->getDefaultPool(), context, map);
 }
 
 

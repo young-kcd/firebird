@@ -46,8 +46,8 @@ using namespace Firebird;
 
 static IMaster* master = fb_get_master_interface();
 
-int get_input (char* , double*);
-static const char *Dept_data[] =
+int get_input(char*, double*);
+static const char* Dept_data[] =
      {"622", "100", "116", "900", 0};
 static double Percent_data[] =
     {0.05,  1.00,  0.075,  0.10, 0};
@@ -82,7 +82,7 @@ int main()
 	// Interface makes it possible to change format of data or define it yourself
 	IMetadataBuilder* builder = NULL;
 
-	const char *updstr =
+	const char* updstr =
 	    "UPDATE department SET budget = ? * budget + budget WHERE dept_no = ?";
 
 	try
@@ -133,14 +133,14 @@ int main()
 		// locations of parameters in input message
 		char* dept_no = &buffer[meta->getOffset(st, 1)];
 		check(st, "getOffset");
- 		double* percent_inc = (double*)&buffer[meta->getOffset(st, 0)];
+ 		double* percent_inc = (double*) &buffer[meta->getOffset(st, 0)];
 		check(st, "getOffset");
 
 		// null IDs (set to NOT NULL)
  		short* flag = (short*)&buffer[meta->getNullOffset(st, 0)];
 		check(st, "getNullOffset");
  		*flag = 0;
- 		flag = (short*)&buffer[meta->getNullOffset(st, 1)];
+ 		flag = (short*) &buffer[meta->getNullOffset(st, 1)];
 		check(st, "getNullOffset");
  		*flag = 0;
 
@@ -192,7 +192,7 @@ int main()
 		check(st, "detach");
 		att = NULL;
 	}
-	catch(const char* text)
+	catch (const char* text)
 	{
 		// handle error
 		rc = 1;

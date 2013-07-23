@@ -3293,6 +3293,8 @@ static processing_state show_sys_functions(const SCHAR* msg)
 		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	END_ERROR;
+
+	return SKIP;
 }
 
 
@@ -3356,7 +3358,7 @@ static processing_state show_functions(const SCHAR* funcname)
 
 				}
 
-				if (i == 0 && private_flag || i == 1 && !private_flag)
+				if ((i == 0 && private_flag) || (i == 1 && !private_flag))
 					continue;
 
 				// Strip trailing blanks
@@ -3377,7 +3379,7 @@ static processing_state show_functions(const SCHAR* funcname)
 					}
 					first_dep = false;
 					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
-							 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+						Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
 				END_FOR
 				ON_ERROR
 					ISQL_errmsg (isc_status);
@@ -3457,7 +3459,7 @@ static processing_state show_func(const SCHAR* funcname)
 			fb_utils::exact_name(ARG.RDB$ARGUMENT_NAME);
 
 			isqlGlob.printf("%-33s %s ", ARG.RDB$ARGUMENT_NAME,
-					 (ARG.RDB$ARGUMENT_POSITION == FUN.RDB$RETURN_ARGUMENT ? "OUTPUT" : "INPUT"));
+				(ARG.RDB$ARGUMENT_POSITION == FUN.RDB$RETURN_ARGUMENT ? "OUTPUT" : "INPUT"));
 
 			prm_mech_t mechanism = prm_mech_normal;
 			bool prm_default_source_null = true;

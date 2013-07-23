@@ -40,7 +40,7 @@ if [ $RunUser = firebird ]; then
 	addFirebirdUser
 fi
 
-# Update ownership and SUID bits for files.
+# Update ownership for files.
 fixFilePermissions
 
 # Install script in /etc/init.d (exact location is distro dependent)
@@ -55,14 +55,14 @@ createLinksInSystemLib
 # Create libgds.so links
 createLinksForBackCompatibility
 
-# Update the /etc/inetd.conf or xinetd entry
-updateInetdServiceEntry
+#Update the /etc/inetd.conf or xinetd entry
+#updateInetdServiceEntry
 
 # Add sysdba and set password (use embedded access)
 setDBAPassword
 
 # Get inetd to reread new init files.
-resetInetdServer
+#resetInetdServer
 
 # start the RDBMS server
 startService

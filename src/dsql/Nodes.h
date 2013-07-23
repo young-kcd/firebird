@@ -613,7 +613,7 @@ public:
 	}
 
 	// Determine if two expression trees are the same.
-	virtual bool sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/;
+	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 
 	// See if node is presently computable.
 	// A node is said to be computable, if all the streams involved
@@ -1049,7 +1049,7 @@ public:
 		return false;
 	}
 
-	virtual bool sameAs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, /*const*/ ExprNode* /*other*/) /*const*/
+	virtual bool sameAs(const ExprNode* /*other*/, bool /*ignoreStreams*/) const
 	{
 		return false;
 	}

@@ -84,25 +84,22 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 
 	const size_t count = fields.getCount();
 	Format* const format = Format::newFormat(csb->csb_pool, count);
-	ULONG offset = FLAG_BYTES(count);
+	format->fmt_length = FLAG_BYTES(count);
 
 	for (size_t i = 0; i < count; i++)
 	{
 		dsc& desc = format->fmt_desc[i] = fields[i];
+
 		if (desc.dsc_dtype >= dtype_aligned)
-		{
-			offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
-		}
-		desc.dsc_address = (UCHAR*)(IPTR) offset;
-		offset += desc.dsc_length;
+			format->fmt_length = FB_ALIGN(format->fmt_length, type_alignments[desc.dsc_dtype]);
+
+		desc.dsc_address = (UCHAR*)(IPTR) format->fmt_length;
+		format->fmt_length += desc.dsc_length;
 	}
 
-	if (offset > MAX_MESSAGE_SIZE)
-	{
+	if (format->fmt_length > MAX_MESSAGE_SIZE)
 		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-	}
 
-	format->fmt_length = offset;
 	m_format = format;
 }
 
@@ -338,6 +335,7 @@ void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position) const
 		fb_assert(!(impure->irsb_flags & irsb_mustread));
 	}
 
+	fb_assert(position < getCount(request));
 	impure->irsb_position = position;
 }
 

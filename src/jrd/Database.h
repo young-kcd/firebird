@@ -194,25 +194,26 @@ typedef vec<TraNumber> TransactionsVector;
 //
 // bit values for dbb_flags
 //
-const ULONG DBB_damaged				= 0x1L;
-const ULONG DBB_exclusive			= 0x2L;		// Database is accessed in exclusive mode
-const ULONG DBB_bugcheck			= 0x4L;		// Bugcheck has occurred
-const ULONG DBB_garbage_collector	= 0x8L;		// garbage collector thread exists
-const ULONG DBB_gc_active			= 0x10L;	// ... and is actively working.
-const ULONG DBB_gc_pending			= 0x20L;	// garbage collection requested
-const ULONG DBB_force_write			= 0x40L;	// Database is forced write
-const ULONG DBB_no_reserve			= 0x80L;	// No reserve space for versions
-const ULONG DBB_DB_SQL_dialect_3	= 0x100L;	// database SQL dialect 3
-const ULONG DBB_read_only			= 0x200L;	// DB is ReadOnly (RO). If not set, DB is RW
-const ULONG DBB_being_opened_read_only	= 0x400L;	// DB is being opened RO. If unset, opened as RW
-const ULONG DBB_not_in_use			= 0x800L;	// Database to be ignored while attaching
-const ULONG DBB_sweep_in_progress	= 0x1000L;	// A database sweep operation is in progress
-const ULONG DBB_security_db			= 0x2000L;	// ISC security database
-const ULONG DBB_suspend_bgio		= 0x4000L;	// Suspend I/O by background threads
-const ULONG DBB_new					= 0x8000L;	// Database object is just created
-const ULONG DBB_gc_cooperative		= 0x10000L;	// cooperative garbage collection
-const ULONG DBB_gc_background		= 0x20000L;	// background garbage collection by gc_thread
-const ULONG DBB_no_fs_cache			= 0x40000L;	// Not using file system cache
+const ULONG DBB_damaged					= 0x1L;
+const ULONG DBB_exclusive				= 0x2L;			// Database is accessed in exclusive mode
+const ULONG DBB_bugcheck				= 0x4L;			// Bugcheck has occurred
+const ULONG DBB_garbage_collector		= 0x8L;			// garbage collector thread exists
+const ULONG DBB_gc_active				= 0x10L;		// ... and is actively working.
+const ULONG DBB_gc_pending				= 0x20L;		// garbage collection requested
+const ULONG DBB_force_write				= 0x40L;		// Database is forced write
+const ULONG DBB_no_reserve				= 0x80L;		// No reserve space for versions
+const ULONG DBB_DB_SQL_dialect_3		= 0x100L;		// database SQL dialect 3
+const ULONG DBB_read_only				= 0x200L;		// DB is ReadOnly (RO). If not set, DB is RW
+const ULONG DBB_being_opened_read_only	= 0x400L;		// DB is being opened RO. If unset, opened as RW
+const ULONG DBB_no_ast					= 0x800L;		// AST delivery is prohibited
+const ULONG DBB_sweep_in_progress		= 0x1000L;		// A database sweep operation is in progress
+const ULONG DBB_security_db				= 0x2000L;		// ISC security database
+const ULONG DBB_suspend_bgio			= 0x4000L;		// Suspend I/O by background threads
+const ULONG DBB_new						= 0x8000L;		// Database object is just created
+const ULONG DBB_gc_cooperative			= 0x10000L;		// cooperative garbage collection
+const ULONG DBB_gc_background			= 0x20000L;		// background garbage collection by gc_thread
+const ULONG DBB_no_fs_cache				= 0x40000L;		// Not using file system cache
+const ULONG DBB_sweep_starting			= 0x80000L;		// Auto-sweep is starting
 
 //
 // dbb_ast_flags
@@ -350,6 +351,7 @@ public:
 	BufferControl*	dbb_bcb;			// Buffer control block
 	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
+	Lock* 		dbb_sweep_lock;			// sweep lock
 
 	Firebird::SyncObject	dbb_sh_counter_sync;
 
@@ -502,8 +504,17 @@ public:
 		return (dbb_flags & DBB_read_only) != 0;
 	}
 
+	// returns true if sweeper thread could start
+	bool allowSweepThread(thread_db* tdbb);
+	// returns true if sweep could run
+	bool allowSweepRun(thread_db* tdbb);
+	// reset sweep flags and release sweep lock
+	void clearSweepFlags(thread_db* tdbb);
+
 private:
-	static int blockingAstSharedCounter(void*);
+	//static int blockingAstSharedCounter(void*);
+	static int blocking_ast_sweep(void* ast_object);
+	Lock* createSweepLock(thread_db* tdbb);
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database

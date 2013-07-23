@@ -55,7 +55,7 @@ scriptsDir=@FB_MISCDIR@/scripts
 
 if [ -e $scriptsDir ]
   then
-    displayMessage "Extracting install data"
+    displayMessage "Extracting uninstall data"
 
     runAndCheckExit "$scriptsDir/preuninstall.sh"
     runAndCheckExit "$scriptsDir/postuninstall.sh"

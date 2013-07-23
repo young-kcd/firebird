@@ -328,7 +328,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 	if (!function->fun_entrypoint)
 	{
 		Firebird::status_exception::raise(Arg::Gds(isc_funnotdef) <<
-										  Arg::Str(function->getName()) <<
+										  Arg::Str(function->getName().toString()) <<
 										  Arg::Gds(isc_modnotfound));
 	}
 
@@ -736,13 +736,13 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_udf_fp_overflow) <<
-									Arg::Str(function->getName()));
+									Arg::Str(function->getName().toString()));
 			}
 			else if (isnan(value->vlu_misc.vlu_double))
 			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_udf_fp_nan) <<
-									Arg::Str(function->getName()));
+									Arg::Str(function->getName().toString()));
 			}
 		}
 		request->req_flags &= ~req_null;

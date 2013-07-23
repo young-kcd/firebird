@@ -2815,9 +2815,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	}
 
 	if (!(rpb->rpb_stream_flags & RPB_s_undo_data))
-	{
-		VIO_data(tdbb, rpb, tdbb->getRequest()->req_pool);
-	}
+		VIO_data(tdbb, rpb, tdbb->getDefaultPool());
 
 	// If record is present, and the transaction is read committed,
 	// make sure the record has not been updated.  Also, punt after
@@ -4485,6 +4483,9 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
  **********************************************************/
 {
 	if (!transaction->tra_save_point)
+		return udNone;
+
+	if (rpb->rpb_stream_flags & RPB_s_refetch)
 		return udNone;
 
 	VerbAction* action = transaction->tra_save_point->sav_verb_actions;
