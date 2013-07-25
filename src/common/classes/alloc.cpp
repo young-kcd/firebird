@@ -115,6 +115,45 @@ MemoryPool*		MemoryPool::defaultMemoryManager = NULL;
 MemoryStats*	MemoryPool::default_stats_group = NULL;
 Mutex*			cache_mutex = NULL;
 
+
+
+namespace {
+
+// We cache this amount of extents to avoid memory mapping overhead
+const int MAP_CACHE_SIZE = 16; // == 1 MB
+
+Vector<void*, MAP_CACHE_SIZE> extents_cache;
+
+volatile size_t map_page_size = 0;
+int dev_zero_fd = 0;
+
+#if defined(WIN_NT)
+size_t get_page_size()
+{
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	return info.dwPageSize;
+}
+#else
+size_t get_page_size()
+{
+	return sysconf(_SC_PAGESIZE);
+}
+#endif
+
+inline size_t get_map_page_size()
+{
+	if (!map_page_size)
+	{
+		MutexLockGuard guard(*cache_mutex, "get_map_page_size");
+		if (!map_page_size)
+			map_page_size = get_page_size();
+	}
+	return map_page_size;
+}
+
+}
+
 // Initialize process memory pool (called from InstanceControl).
 
 void MemoryPool::init()
@@ -156,6 +195,9 @@ void MemoryPool::cleanup()
 		default_stats_group->~MemoryStats();
 		default_stats_group = NULL;
 	}
+
+	while (extents_cache.getCount())
+		releaseRaw(extents_cache.pop(), DEFAULT_ALLOCATION, false);
 
 	if (cache_mutex)
 	{
@@ -748,42 +790,6 @@ void MemoryPool::insert(MemFreeBlock* freeBlock) throw ()
 	freeBlock->nextTwin = freeBlock->priorTwin = freeBlock;
 }
 
-namespace {
-
-// We cache this amount of extents to avoid memory mapping overhead
-const int MAP_CACHE_SIZE = 16; // == 1 MB
-
-Vector<void*, MAP_CACHE_SIZE> extents_cache;
-
-volatile size_t map_page_size = 0;
-int dev_zero_fd = 0;
-
-#if defined(WIN_NT)
-size_t get_page_size()
-{
-	SYSTEM_INFO info;
-	GetSystemInfo(&info);
-	return info.dwPageSize;
-}
-#else
-size_t get_page_size()
-{
-	return sysconf(_SC_PAGESIZE);
-}
-#endif
-
-inline size_t get_map_page_size()
-{
-	if (!map_page_size)
-	{
-		MutexLockGuard guard(*cache_mutex, "get_map_page_size");
-		if (!map_page_size)
-			map_page_size = get_page_size();
-	}
-	return map_page_size;
-}
-
-}
 
 void* MemoryPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 {
@@ -884,10 +890,10 @@ void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 	}
 }
 
-void MemoryPool::releaseRaw(void* block, size_t size) throw ()
+void MemoryPool::releaseRaw(void* block, size_t size, bool use_cache) throw ()
 {
 #ifndef USE_VALGRIND
-	if (size == DEFAULT_ALLOCATION)
+	if (use_cache && (size == DEFAULT_ALLOCATION))
 	{
 		MutexLockGuard guard(*cache_mutex, "MemoryPool::releaseRaw");
 		if (extents_cache.getCount() < extents_cache.getCapacity())

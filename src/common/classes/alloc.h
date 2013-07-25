@@ -292,7 +292,7 @@ public:
 	) throw (OOM_EXCEPTION);
 
 protected:
-	void corrupt(const char* text) throw ();
+	static void corrupt(const char* text) throw ();
 
 private:
 	virtual void memoryIsExhausted(void) throw (OOM_EXCEPTION);
@@ -302,7 +302,7 @@ private:
 	void validateFreeList(void) throw ();
 	void validateBigBlock(MemBigObject* block) throw ();
 	static void release(void* block) throw ();
-	void releaseRaw(void *block, size_t size) throw ();
+	static void releaseRaw(void *block, size_t size, bool use_cache = true) throw ();
 
 #ifdef USE_VALGRIND
 	// Circular FIFO buffer of read/write protected blocks pending free operation
