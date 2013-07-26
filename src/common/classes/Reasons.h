@@ -35,6 +35,8 @@
 // For example, MSVC 2005 does not support __func__
 #if defined _MSC_VER && (_MSC_VER <= 1600)
 #define FB_FUNCTION __FUNCTION__
+#elif defined(__GNUC__)
+#define FB_FUNCTION (__FILE__ ": " STRINGIZE(__LINE__) )
 #else
 #define FB_FUNCTION __func__
 #endif
