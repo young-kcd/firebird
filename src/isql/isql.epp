@@ -2077,7 +2077,7 @@ static processing_state add_row(TEXT* tabname)
 			}
 
 			const size_t length = strlen(lastInputLine);
-			if (length > MAX_USHORT - 2)
+			if (length > MAX_SQL_LENGTH)
 			{
 				IUTILS_msg_get(BUFFER_OVERFLOW, msg);
 				STDERROUT(msg);
@@ -3385,7 +3385,7 @@ static bool bulk_insert_retriever(const char* prompt)
 		if (length == 0)
 			rc = true;
 		*/
-		if (length > MAX_USHORT - 2)
+		if (length > MAX_SQL_LENGTH)
 		{
 			TEXT msg[MSG_LENGTH];
 			IUTILS_msg_get(BUFFER_OVERFLOW, msg);
@@ -4158,7 +4158,7 @@ static void do_isql()
 	// code tells us we are done
 
 	Firebird::Array<TEXT> stmt;
-	const size_t stmtLength = MAX_USHORT;
+	const size_t stmtLength = MAX_SQL_LENGTH;
 	TEXT* statement = stmt.getBuffer(stmtLength);
 	processing_state ret;
 

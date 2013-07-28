@@ -68,6 +68,8 @@ const size_t MAX_SQL_IDENTIFIER_LEN = METADATA_IDENTIFIER_CHAR_LEN * METADATA_BY
 const size_t MAX_SQL_IDENTIFIER_SIZE = MAX_SQL_IDENTIFIER_LEN + 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
+const ULONG MAX_SQL_LENGTH = 10 * 1024 * 1024; // 10 MB - just a safety check
+
 const char* const DB_KEY_NAME = "DB_KEY";
 const char* const RDB_DB_KEY_NAME = "RDB$DB_KEY";
 const char* const RDB_RECORD_VERSION_NAME = "RDB$RECORD_VERSION";

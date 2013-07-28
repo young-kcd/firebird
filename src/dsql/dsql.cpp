@@ -1332,8 +1332,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	if (text && textLength == 0)
 		textLength = static_cast<ULONG>(strlen(text));
 
-	// just a safety check
-	const ULONG MAX_SQL_LENGTH = 10 * 1024 * 1024; // 10 MB
 	textLength = MIN(textLength, MAX_SQL_LENGTH);
 
 	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text);
