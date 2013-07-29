@@ -583,31 +583,34 @@ static void set_grantee(int user_type, const char* SQL_identifier, char* user_st
 	switch (user_type)
 	{
 	case obj_view:
-		sprintf (user_string, "VIEW %s", SQL_identifier);
+		sprintf(user_string, "VIEW %s", SQL_identifier);
 		break;
 	case obj_trigger:
-		sprintf (user_string, "TRIGGER %s", SQL_identifier);
+		sprintf(user_string, "TRIGGER %s", SQL_identifier);
 		break;
 	case obj_procedure:
-		sprintf (user_string, "PROCEDURE %s", SQL_identifier);
+		sprintf(user_string, "PROCEDURE %s", SQL_identifier);
+		break;
+	case obj_udf:
+		sprintf(user_string, "FUNCTION %s", SQL_identifier);
 		break;
 	case obj_user:
 		if (strcmp(SQL_identifier, "PUBLIC"))
-			sprintf (user_string, "USER %s", SQL_identifier);
+			sprintf(user_string, "USER %s", SQL_identifier);
 		else
-			strcpy (user_string, SQL_identifier);
+			strcpy(user_string, SQL_identifier);
 		break;
 	case obj_user_group:
-		sprintf (user_string, "GROUP %s", SQL_identifier);
+		sprintf(user_string, "GROUP %s", SQL_identifier);
 		break;
 	case obj_sql_role:
-		sprintf (user_string, "ROLE %s", SQL_identifier);
+		sprintf(user_string, "ROLE %s", SQL_identifier);
 		break;
 	case obj_package_header:
 		sprintf(user_string, "PACKAGE %s", SQL_identifier);
 		break;
 	default:
-		strcpy (user_string, SQL_identifier);
+		strcpy(user_string, SQL_identifier);
 		break;
 	}
 }
@@ -667,7 +670,6 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 	if (obj_type == obj_relation || obj_type == 255)
 	{
-
 		// Find the user specified relation and show its privileges
 
 		FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ object
@@ -712,9 +714,9 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					first = false;
 
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-						IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
 					else
-						strcpy (SQL_identifier, object);
+						strcpy(SQL_identifier, object);
 
 					isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
 						priv_string, col_string,
@@ -746,17 +748,17 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_view:
 				case obj_trigger:
 				case obj_procedure:
+				case obj_udf:
 				case obj_sql_role:
 				case obj_package_header:
 				case obj_user: // Users can be machine\user and need quoting
-					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
-					}
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
 					else
-						strcpy (SQL_identifier, PRV.RDB$USER);
+						strcpy(SQL_identifier, PRV.RDB$USER);
 					break;
 				default:
-					strcpy (SQL_identifier, PRV.RDB$USER);
+					strcpy(SQL_identifier, PRV.RDB$USER);
 					break;
 				}
 
@@ -784,6 +786,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					priv_flags |= priv_REFERENCES;
 					break;
 				case 'X':
+				case 'G':
 					// Execute should not be here -- special handling below
 					break;
 				default:
@@ -799,7 +802,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					fb_utils::exact_name(PRV.RDB$FIELD_NAME);
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
-						IUTILS_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id(PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 						sprintf(col_string, " (%s)", SQL_identifier);
 					}
 					else {
@@ -808,7 +811,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				}
 
 				if (PRV.RDB$GRANT_OPTION)
-					strcpy (with_option, " WITH GRANT OPTION");
+					strcpy(with_option, " WITH GRANT OPTION");
 
 			END_FOR
 			ON_ERROR
@@ -826,9 +829,9 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				first = false;
 
 				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
 				else
-					strcpy (SQL_identifier, object);
+					strcpy(SQL_identifier, object);
 
 				isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
 					priv_string, col_string,
@@ -849,7 +852,6 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	// No relation called "object" was found, try procedure "object"
 	if (obj_type == obj_procedure || obj_type == 255)
 	{
-
 		FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ object
 
 			// Part two is for stored procedures only
@@ -875,32 +877,31 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_view:
 				case obj_trigger:
 				case obj_procedure:
+				case obj_udf:
 				case obj_sql_role:
 				case obj_package_header:
 				case obj_user:
-					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
-					}
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
 					else
-						strcpy (SQL_identifier, PRV.RDB$USER);
+						strcpy(SQL_identifier, PRV.RDB$USER);
 					break;
 				default:
-					strcpy (SQL_identifier, PRV.RDB$USER);
+					strcpy(SQL_identifier, PRV.RDB$USER);
 					break;
 				}
 
 				set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
 
 				if (PRV.RDB$GRANT_OPTION)
-					strcpy (with_option, " WITH GRANT OPTION");
+					strcpy(with_option, " WITH GRANT OPTION");
 				else
 					with_option[0] = '\0';
 
-				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-					IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
-				}
+				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
 				else
-					strcpy (SQL_identifier, object);
+					strcpy(SQL_identifier, object);
 
 				isqlGlob.printf("GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s%s",
 						 SQL_identifier, user_string, with_option,
@@ -908,7 +909,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg(isc_status);
 				return ps_ERR;
 			END_ERROR
 		END_FOR
@@ -944,21 +945,21 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				fb_utils::exact_name(PRV.RDB$RELATION_NAME);
 				strcpy (role_name, PRV.RDB$RELATION_NAME);
 				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					IUTILS_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id(role_name, SQL_identifier, DBL_QUOTE);
 				else
-					strcpy (SQL_identifier, role_name);
+					strcpy(SQL_identifier, role_name);
 
 				fb_utils::exact_name(PRV.RDB$USER);
-				strcpy (user_string, PRV.RDB$USER);
+				strcpy(user_string, PRV.RDB$USER);
 
 				if (PRV.RDB$GRANT_OPTION)
-					strcpy (with_option, " WITH ADMIN OPTION");
+					strcpy(with_option, " WITH ADMIN OPTION");
 				else
 					with_option[0] = '\0';
 
-				sprintf (Print_buffer, "GRANT %s TO %s%s%s%s%s", SQL_identifier,
-						 user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR),
-						 terminator, NEWLINE);
+				sprintf(Print_buffer, "GRANT %s TO %s%s%s%s%s", SQL_identifier,
+						user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR),
+						terminator, NEWLINE);
 
 				if (first && optional_msg)
 					isqlGlob.prints(optional_msg);
@@ -968,7 +969,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg(isc_status);
 				return ps_ERR;
 			END_ERROR;
 
@@ -984,76 +985,291 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 	if (obj_type == obj_package_header || obj_type == 255)
 	{
-		fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
-		if (isqlGlob.major_ods < ODS_VERSION12)
-			return OBJECT_NOT_FOUND;
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FIRST 1 P IN RDB$PACKAGES WITH P.RDB$PACKAGE_NAME EQ object
+				FOR PRV IN RDB$USER_PRIVILEGES CROSS
+					PACK IN RDB$PACKAGES WITH
+					PRV.RDB$OBJECT_TYPE = obj_package_header AND
+					PRV.RDB$RELATION_NAME EQ object AND
+					PACK.RDB$PACKAGE_NAME EQ object AND
+					PRV.RDB$PRIVILEGE EQ 'X' AND
+					PACK.RDB$OWNER_NAME NE PRV.RDB$USER
+					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
 
-		FOR FIRST 1 P IN RDB$PACKAGES WITH P.RDB$PACKAGE_NAME EQ object
-			FOR PRV IN RDB$USER_PRIVILEGES CROSS
-				PACK IN RDB$PACKAGES WITH
-				PRV.RDB$OBJECT_TYPE = obj_package_header AND
-				PRV.RDB$RELATION_NAME EQ object AND
-				PACK.RDB$PACKAGE_NAME EQ object AND
-				PRV.RDB$PRIVILEGE EQ 'X' AND
-				PACK.RDB$OWNER_NAME NE PRV.RDB$USER
-				SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
 
-				if (first && optional_msg)
-					isqlGlob.prints(optional_msg);
+					first = false;
+					fb_utils::exact_name(PRV.RDB$USER);
 
-				first = false;
-				fb_utils::exact_name(PRV.RDB$USER);
-
-				switch (PRV.RDB$USER_TYPE)
-				{
-				case obj_relation:
-				case obj_view:
-				case obj_trigger:
-				case obj_procedure:
-				case obj_sql_role:
-				case obj_package_header:
-				case obj_user:
-					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+					switch (PRV.RDB$USER_TYPE)
+					{
+					case obj_relation:
+					case obj_view:
+					case obj_trigger:
+					case obj_procedure:
+					case obj_udf:
+					case obj_sql_role:
+					case obj_package_header:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					default:
+						strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
 					}
+
+					set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+					if (PRV.RDB$GRANT_OPTION)
+						strcpy(with_option, " WITH GRANT OPTION");
 					else
-						strcpy (SQL_identifier, PRV.RDB$USER);
-					break;
-				default:
-					strcpy (SQL_identifier, PRV.RDB$USER);
-					break;
-				}
+						with_option[0] = '\0';
 
-				set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, object);
 
-				if (PRV.RDB$GRANT_OPTION)
-					strcpy (with_option, " WITH GRANT OPTION");
-				else
-					with_option[0] = '\0';
+					isqlGlob.printf("GRANT EXECUTE ON PACKAGE %s TO %s%s%s%s%s",
+							 SQL_identifier, user_string, with_option,
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
 
-				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-					IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
-				}
-				else
-					strcpy (SQL_identifier, object);
-
-				isqlGlob.printf("GRANT EXECUTE ON PACKAGE %s TO %s%s%s%s%s",
-						 SQL_identifier, user_string, with_option,
-						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
-
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg(isc_status);
 				return ps_ERR;
-			END_ERROR
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		END_ERROR;
+			END_ERROR;
 
-		if (!first)
-			return (SKIP);
+			if (!first)
+				return (SKIP);
+		}
+	}
+
+	if (obj_type == obj_udf || obj_type == 255)
+	{
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FIRST 1 F IN RDB$FUNCTIONS WITH F.RDB$FUNCTION_NAME EQ object
+
+				FOR PRV IN RDB$USER_PRIVILEGES CROSS
+					FUN IN RDB$FUNCTIONS WITH
+					PRV.RDB$OBJECT_TYPE = obj_udf AND
+					PRV.RDB$RELATION_NAME EQ object AND
+					FUN.RDB$FUNCTION_NAME EQ object AND
+					PRV.RDB$PRIVILEGE EQ 'X' AND
+					FUN.RDB$OWNER_NAME NE PRV.RDB$USER
+					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
+
+					first = false;
+					fb_utils::exact_name(PRV.RDB$USER);
+
+					switch (PRV.RDB$USER_TYPE)
+					{
+					case obj_relation:
+					case obj_view:
+					case obj_trigger:
+					case obj_procedure:
+					case obj_udf:
+					case obj_sql_role:
+					case obj_package_header:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					default:
+						strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					}
+
+					set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+					if (PRV.RDB$GRANT_OPTION)
+						strcpy(with_option, " WITH GRANT OPTION");
+					else
+						with_option[0] = '\0';
+
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, object);
+
+					isqlGlob.printf("GRANT EXECUTE ON FUNCTION %s TO %s%s%s%s%s",
+							 SQL_identifier, user_string, with_option,
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ps_ERR;
+			END_ERROR;
+
+			if (!first)
+				return (SKIP);
+		}
+	}
+
+	if (obj_type == obj_generator || obj_type == 255)
+	{
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FIRST 1 G IN RDB$GENERATORS WITH G.RDB$GENERATOR_NAME EQ object
+				FOR PRV IN RDB$USER_PRIVILEGES CROSS
+					GEN IN RDB$GENERATORS WITH
+					PRV.RDB$OBJECT_TYPE = obj_generator AND
+					PRV.RDB$RELATION_NAME EQ object AND
+					GEN.RDB$GENERATOR_NAME EQ object AND
+					PRV.RDB$PRIVILEGE EQ 'G' AND
+					GEN.RDB$OWNER_NAME NE PRV.RDB$USER
+					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
+
+					first = false;
+					fb_utils::exact_name(PRV.RDB$USER);
+
+					switch (PRV.RDB$USER_TYPE)
+					{
+					case obj_relation:
+					case obj_view:
+					case obj_trigger:
+					case obj_procedure:
+					case obj_udf:
+					case obj_sql_role:
+					case obj_package_header:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					default:
+						strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					}
+
+					set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+					if (PRV.RDB$GRANT_OPTION)
+						strcpy(with_option, " WITH GRANT OPTION");
+					else
+						with_option[0] = '\0';
+
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, object);
+
+					isqlGlob.printf("GRANT USAGE ON SEQUENCE %s TO %s%s%s%s%s",
+							 SQL_identifier, user_string, with_option,
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ps_ERR;
+			END_ERROR;
+
+			if (!first)
+				return (SKIP);
+		}
+	}
+
+	if (obj_type == obj_exception || obj_type == 255)
+	{
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FIRST 1 E IN RDB$EXCEPTIONS WITH E.RDB$EXCEPTION_NAME EQ object
+				FOR PRV IN RDB$USER_PRIVILEGES CROSS
+					XCP IN RDB$EXCEPTIONS WITH
+					PRV.RDB$OBJECT_TYPE = obj_generator AND
+					PRV.RDB$RELATION_NAME EQ object AND
+					XCP.RDB$EXCEPTION_NAME EQ object AND
+					PRV.RDB$PRIVILEGE EQ 'G' AND
+					XCP.RDB$OWNER_NAME NE PRV.RDB$USER
+					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
+
+					first = false;
+					fb_utils::exact_name(PRV.RDB$USER);
+
+					switch (PRV.RDB$USER_TYPE)
+					{
+					case obj_relation:
+					case obj_view:
+					case obj_trigger:
+					case obj_procedure:
+					case obj_udf:
+					case obj_sql_role:
+					case obj_package_header:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					default:
+						strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					}
+
+					set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+					if (PRV.RDB$GRANT_OPTION)
+						strcpy(with_option, " WITH GRANT OPTION");
+					else
+						with_option[0] = '\0';
+
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, object);
+
+					isqlGlob.printf("GRANT USAGE ON EXCEPTION %s TO %s%s%s%s%s",
+							 SQL_identifier, user_string, with_option,
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(isc_status);
+					return ps_ERR;
+				END_ERROR
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ps_ERR;
+			END_ERROR;
+
+			if (!first)
+				return (SKIP);
+		}
 	}
 
 	return OBJECT_NOT_FOUND;
@@ -4565,6 +4781,81 @@ static processing_state show_secclass(const char* object, const char* opt)
 		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	END_ERROR
+
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+	{
+		FOR FUN IN RDB$FUNCTIONS
+		CROSS SC IN RDB$SECURITY_CLASSES
+		OVER RDB$SECURITY_CLASS
+		WITH FUN.RDB$FUNCTION_NAME EQ object
+			++count;
+			isqlGlob.printf("Function's sec class %s%s",
+				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+			if (detail)
+			{
+				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+
+		FOR PKG IN RDB$PACKAGES
+		CROSS SC IN RDB$SECURITY_CLASSES
+		OVER RDB$SECURITY_CLASS
+		WITH PKG.RDB$PACKAGE_NAME EQ object
+			++count;
+			isqlGlob.printf("Package's sec class %s%s",
+				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+			if (detail)
+			{
+				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+
+		FOR GEN IN RDB$GENERATORS
+		CROSS SC IN RDB$SECURITY_CLASSES
+		OVER RDB$SECURITY_CLASS
+		WITH GEN.RDB$GENERATOR_NAME EQ object
+			++count;
+			isqlGlob.printf("Sequence's sec class %s%s",
+				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+			if (detail)
+			{
+				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+
+		FOR XCP IN RDB$EXCEPTIONS
+		CROSS SC IN RDB$SECURITY_CLASSES
+		OVER RDB$SECURITY_CLASS
+		WITH XCP.RDB$EXCEPTION_NAME EQ object
+			++count;
+			isqlGlob.printf("Exception's sec class %s%s",
+				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+			if (detail)
+			{
+				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+	}
 
 	return count ? SKIP : OBJECT_NOT_FOUND;
 }

@@ -1586,6 +1586,57 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			ISQL_errmsg(gds_status);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
+
+		FOR FUN IN RDB$FUNCTIONS
+			WITH (FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY FUN.RDB$FUNCTION_NAME
+
+			// Null terminate name string
+			fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+			const processing_state rc =
+				SHOW_grants2(FUN.RDB$FUNCTION_NAME, terminator, obj_udf,
+													first ? banner : 0, mangle);
+			if (rc == SKIP)
+				first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return OBJECT_NOT_FOUND;
+		END_ERROR
+
+		FOR GEN IN RDB$GENERATORS
+			WITH (GEN.RDB$SYSTEM_FLAG NE 1 OR GEN.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY GEN.RDB$GENERATOR_NAME
+
+			// Null terminate name string
+			fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
+			const processing_state rc =
+				SHOW_grants2(GEN.RDB$GENERATOR_NAME, terminator, obj_generator,
+													 first ? banner : 0, mangle);
+			if (rc == SKIP)
+				first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return OBJECT_NOT_FOUND;
+		END_ERROR
+
+		FOR XCP IN RDB$EXCEPTIONS
+			WITH (XCP.RDB$SYSTEM_FLAG NE 1 OR XCP.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY XCP.RDB$EXCEPTION_NAME
+
+			// Null terminate name string
+			fb_utils::exact_name(XCP.RDB$EXCEPTION_NAME);
+			const processing_state rc =
+				SHOW_grants2(XCP.RDB$EXCEPTION_NAME, terminator, obj_generator,
+													 first ? banner : 0, mangle);
+			if (rc == SKIP)
+				first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return OBJECT_NOT_FOUND;
+		END_ERROR
 	}
 
 	return first_role && first ? OBJECT_NOT_FOUND : SKIP;
