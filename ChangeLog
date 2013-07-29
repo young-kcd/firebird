@@ -1,3 +1,9 @@
+ 2013-07-28 01:10  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/isql/isql.epp
+   M src/jrd/constants.h
+Improvement CORE-4148 - Increase ISQL buffer size from 64 KB to 10 MB, as the engine.
+
  2013-07-26 08:49  alexpeshkoff 
    M src/common/classes/Reasons.h
 Better debug info
