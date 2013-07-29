@@ -742,7 +742,7 @@ bool IntlUtil::readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR*
 void IntlUtil::getDefaultCollationAttributes(UCharBuffer& collAttributes, charset& cs)
 {
 	string attributes("ICU-VERSION=");
-	attributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	attributes += Jrd::UnicodeUtil::getDefaultIcuVersion();
 	setupIcuAttributes(&cs, attributes, "", attributes);
 
 	collAttributes.push(reinterpret_cast<const UCHAR*>(attributes.c_str()), attributes.length());

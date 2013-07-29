@@ -115,14 +115,6 @@ public:
 
 namespace Jrd {
 
-#if U_ICU_VERSION_MAJOR_NUM >= ICU_NEW_VERSION_MEANING
-const char* const UnicodeUtil::DEFAULT_ICU_VERSION = STRINGIZE(U_ICU_VERSION_MAJOR_NUM);
-#else
-const char* const UnicodeUtil::DEFAULT_ICU_VERSION =
-	STRINGIZE(U_ICU_VERSION_MAJOR_NUM)"."STRINGIZE(U_ICU_VERSION_MINOR_NUM);
-#endif
-
-
 static void formatFilename(PathName& filename, const char* templateName,
 	int majorVersion, int minorVersion);
 
@@ -287,6 +279,12 @@ public:
 		{
 			delete o;
 			o = NULL;
+		}
+
+		if (o)
+		{
+			o->vMajor = majorVersion;
+			o->vMinor = minorVersion;
 		}
 
 		return o;
@@ -936,8 +934,7 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 	return true;	// well-formed
 }
 
-UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
-	const Firebird::string& configInfo)
+UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& configInfo)
 {
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
@@ -947,7 +944,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")
-		version = DEFAULT_ICU_VERSION;
+		version = UnicodeUtil::getDefaultIcuVersion();
 
 	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
@@ -1130,6 +1127,20 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 
 	// compiler warning silencer
 	return *convIcu;
+}
+
+
+string UnicodeUtil::getDefaultIcuVersion()
+{
+	string rc;
+	UnicodeUtil::ConversionICU& icu(UnicodeUtil::getConversionICU());
+
+	if (icu.vMajor >= ICU_NEW_VERSION_MEANING)
+		rc.printf("%d", icu.vMajor);
+	else
+		rc.printf("%d.%d", icu.vMajor, icu.vMinor);
+
+	return rc;
 }
 
 
