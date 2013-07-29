@@ -120,7 +120,6 @@ public:
 	double selectivity;				// calculated selectivity for this index
 	bool candidate;					// used when deciding which indices to use
 	bool scopeCandidate;			// used when making inversion based on scope
-	bool utilized;					// index is already utilized by some scan
 	int lowerCount;					//
 	int upperCount;					//
 	int nonFullMatchedSegments;		//

@@ -244,7 +244,6 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	selectivity = MAXIMUM_SELECTIVITY;
 	candidate = false;
 	scopeCandidate = false;
-	utilized = false;
 	lowerCount = 0;
 	upperCount = 0;
 	nonFullMatchedSegments = 0;
@@ -294,7 +293,6 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
 	cardinality = scratch.cardinality;
 	candidate = scratch.candidate;
 	scopeCandidate = scratch.scopeCandidate;
-	utilized = scratch.utilized;
 	lowerCount = scratch.lowerCount;
 	upperCount = scratch.upperCount;
 	nonFullMatchedSegments = scratch.nonFullMatchedSegments;
@@ -656,7 +654,6 @@ IndexTableScan* OptimizerRetrieval::getNavigation()
 	const USHORT key_length =
 		ROUNDUP(BTR_key_length(tdbb, relation, indexScratch->idx), sizeof(SLONG));
 
-	indexScratch->utilized = true;
 	InversionNode* const index_node = makeIndexScanNode(indexScratch);
 
 	return FB_NEW(*tdbb->getDefaultPool())
@@ -807,7 +804,6 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	{
 		IndexScratch& scratch = (*fromIndexScratches)[i];
 		scratch.scopeCandidate = false;
-		scratch.utilized = false;
 		scratch.lowerCount = 0;
 		scratch.upperCount = 0;
 		scratch.nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
@@ -1232,16 +1228,21 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// Force to always choose at least one index
 	bool firstCandidate = true;
 
+	const IndexScratch* const navigationIndexScratch =
+		(navigationCandidate >= 0) ? &indexScratches[navigationCandidate] : NULL;
+
 	size_t i = 0;
 	InversionCandidate* invCandidate = NULL;
 	InversionCandidate** inversion = inversions->begin();
 	for (i = 0; i < inversions->getCount(); i++)
 	{
 		inversion[i]->used = false;
-		if (inversion[i]->scratch)
+		const IndexScratch* const indexScratch = inversion[i]->scratch;
+
+		if (indexScratch)
 		{
-			if (inversion[i]->scratch->utilized ||
-				(inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use))
+			if (indexScratch == navigationIndexScratch ||
+			    (indexScratch->idx->idx_runtime_flags & idx_plan_dont_use))
 			{
 				inversion[i]->used = true;
 			}
