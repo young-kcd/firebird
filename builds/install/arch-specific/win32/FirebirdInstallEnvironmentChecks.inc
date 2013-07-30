@@ -921,8 +921,12 @@ end;
 function InstallCPLApplet: boolean;
 begin
   result := False;
+  //For now, cpl applet is broken - it cannot install a service correctly
+  // and it cannot run fb as a multi-client app.
+  #ifdef cplapplet_fixed
   if ( (ConfigureFirebird) AND (not NoCPL) ) then
-     result := IsTaskSelected('InstallCPLAppletTask') ;
+     result := IsTaskSelected('UseSuperServerTask\InstallCPLAppletTask') ;
+  #endif
 end;
 
 
