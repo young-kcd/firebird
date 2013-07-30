@@ -30,6 +30,7 @@
 #include "intlobj_new.h"
 #include "../common/IntlUtil.h"
 #include "../common/os/mod_loader.h"
+#include "../common/classes/fb_string.h"
 #include <unicode/ucnv.h>
 
 struct UCollator;
@@ -118,9 +119,11 @@ public:
                 UErrorCode *err);
 		int8_t (U_EXPORT2* ucnv_getMaxCharSize) (const UConverter *converter);
 		int8_t (U_EXPORT2* ucnv_getMinCharSize) (const UConverter *converter);
+
+		int vMajor, vMinor;
 	};
 
-	static const char* const DEFAULT_ICU_VERSION;
+	static Firebird::string getDefaultIcuVersion();
 
 	class ICUModules;
 	// routines semantically equivalent with intlobj_new.h

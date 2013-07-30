@@ -39,7 +39,7 @@ UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 	IntlUtil::initUtf8Charset(cs);
 
 	string collAttributes("ICU-VERSION=");
-	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	collAttributes += Jrd::UnicodeUtil::getDefaultIcuVersion();
 	IntlUtil::setupIcuAttributes(cs, collAttributes, "", collAttributes);
 
 	UCharBuffer collAttributesBuffer;
