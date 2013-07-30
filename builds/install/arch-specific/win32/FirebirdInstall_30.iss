@@ -395,16 +395,6 @@ Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Componen
 
 
 [Run]
-;#FIXME - how are we installing the runtime?
-#if msvc_version == 8
-
-#endif
-#if msvc_version == 8
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
-#if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
-#endif
-#endif
 
 ;Only register Firebird if we are installing AND configuring
 Filename: {app}\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: ConfigureFirebird;
@@ -416,7 +406,7 @@ Filename: {app}\WOW64\instclient.exe; Parameters: "install fbclient"; StatusMsg:
 Filename: {app}\WOW64\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized 32bit; Check: CopyGds32
 #endif
 
-Filename: {app}\gsec.exe; Parameters: "{code:InitSecurityDb} "; StatusMsg: {cm:initSecurityDb}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Check: ConfigureFirebird;
+Filename: {app}\gsec.exe; Parameters: "{code:InitSecurityDb} "; StatusMsg: {cm:initSecurityDb}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait runhidden; Tasks: EnableLegacyClientAuth; Check: ConfigureFirebird;
 
 ;If 'Install and start service' requested
 ;First, if installing service we must try and remove remnants of old service. Otherwise the new install will fail and when we start the service the old service will be started.
@@ -424,9 +414,7 @@ Filename: {app}\instsvc.exe; Parameters: "remove "; StatusMsg: {cm:instsvcSetup}
 Filename: {app}\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall runascurrentuser; Tasks: UseServiceTask; Check: StartEngine
 ;If 'start as application' requested
-Filename: {code:StartApp|{app}\firebird.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
-
-
+Filename: {code:StartApp|{app}\firebird.exe}; Description: {cm:instappStartQuestion}; Parameters: {code:StartAppParams|' -a -m'}; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
 ;This is a preliminary test of jumping to a landing page. In practice, we are going to need to know the users language and the version number they have installed.
 Filename: "{#MyAppURL}/afterinstall"; Description: "After installation - What Next?"; Flags: postinstall shellexec skipifsilent; Components: ServerComponent DevAdminComponent;
@@ -443,11 +431,10 @@ Root: HKLM; Subkey: "SOFTWARE\Firebird Project"; Flags: uninsdeletekeyifempty; C
 Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 
 [Icons]
-;TODO - get correct params for the different server flavours
-Name: {group}\Firebird Server; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Server (without guardian)
+Name: {group}\Firebird Server; Filename: {app}\firebird.exe; Parameters: {code:StartAppParams|' -a -m'}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Server (without guardian)
 ;Name: {group}\Firebird SuperClassic; Filename: {app}\firebird.exe; Parameters: -a -m; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
 ;Name: {group}\Firebird Classic; Filename: {app}\firebird.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Superserver (without guardian)
-Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Server (with guardian)
+;Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-2.5-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver}
@@ -629,8 +616,6 @@ EnableISX=true
 [Code]
 program Setup;
 
-//Var
-//  ProductVersion = '1.5.0';
 
 // Some global variables are also in FirebirdInstallEnvironmentChecks.inc
 // This is not ideal, but then this scripting environment is not ideal, either.
@@ -651,10 +636,10 @@ Var
   // during a scripted install
   // They also control whether their associated task checkboxes are displayed
   // during an interactive install
-  NoCPL: Boolean;               // pass /nocpl on command-line.
-  NoGdsClient: Boolean;      // pass /nogds32 on command line.
-  CopyFbClient: Boolean;        // pass /copyfbclient on command line.
-  SupportLegacyClientAuth: Boolean;// pass /supportlegacyclients on the command line
+  NoCPL: Boolean;                   // pass /nocpl on command-line.
+  NoGdsClient: Boolean;             // pass /nogds32 on command line.
+  CopyFbClient: Boolean;            // pass /copyfbclient on command line.
+  SupportLegacyClientAuth: Boolean; // pass /supportlegacyclients on the command line
 
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
@@ -910,9 +895,11 @@ end;
 function InstallGuardianIcon(): Boolean;
 begin
   result := false;
-  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
-    if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
-      result := true;
+  // For now we don't use the guardian if running as an application 
+  // so we'll disable this code
+  //if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
+  //  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
+  //    result := true;
 end;
 
 function InstallServerIcon(): Boolean;
@@ -923,21 +910,25 @@ begin
       result := true;
 end;
 
-//#FIXME
 function StartApp(Default: String): String;
 begin
-  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then begin
-    Result := GetAppPath+'\fbguard.exe';
-    if ClassicInstallChosen then
-      Result := Result + ' -c';
-    end
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') 
+    // for the moment at least, we cannot start firebird as an application via the guardian - it doesn't like the -m switch.
+    and not IsTaskSelected('UseApplicationTask') then
+    Result := GetAppPath+'\fbguard.exe'
   else
-    if ClassicInstallChosen then
-      Result := GetAppPath+'\firebird.exe -c'
-    else
-      Result := GetAppPath+'\firebird.exe -s';
+    Result := GetAppPath+'\firebird.exe' ;
+end;
 
+function StartAppParams(Default: String): String;
+begin
+  Result := ' -a ';
 
+// It looks as if firebird.exe must always run with -m if we want to allow 
+// multiple attachments. Not sure how this plays with configuring the engine to run as classic.
+
+//  if IsTaskSelected('SuperClassicTask') then
+    Result := Result + ' -m ';
 end;
 
 function IsNotAutoStartApp: boolean;
@@ -1072,7 +1063,7 @@ begin
       //so that the server or guardian starts evertime they login.
       if (IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
               ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then begin
-        AppStr := StartApp('')+' -a';
+        AppStr := StartApp('')+StartAppParams('');
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
 

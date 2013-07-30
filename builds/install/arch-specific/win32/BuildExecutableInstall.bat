@@ -219,7 +219,7 @@ set FBBUILD_FB25_CUR_VER=2.5.2
 @echo s/\$MAJOR/%FB_MAJOR_VER%/g >  %temp%.\b$4.txt
 @echo s/\$MINOR/%FB_MINOR_VER%/g >> %temp%.\b$4.txt
 @echo s/\$RELEASE/%FB_REV_NO%/g  >> %temp%.\b$4.txt
-@for %%f in (Readme.txt installation_readme.txt) do (
+@for %%f in (Readme.txt installation_readme.txt After_Installation.url) do (
 	@echo   Processing version strings in %%f
 	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
 )
@@ -709,10 +709,11 @@ if NOT DEFINED GNU_TOOLCHAIN (
 @echo       ZIP    Create Zip package.
 @echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
 @echo.
-@echo       EMB    Create Embedded package.
-@echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
-@echo.
-@echo       ALL    Build InnoSetup, Zip and Embedded packages.
+::@echo       EMB    Create Embedded package.
+::@echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
+::@echo.
+::@echo       ALL    Build InnoSetup, Zip and Embedded packages.
+@echo       ALL    Build InnoSetup and Zip packages.
 @echo.
 @echo       HELP   This help screen.
 @echo.
@@ -732,7 +733,8 @@ if NOT DEFINED GNU_TOOLCHAIN (
 @echo     o InnoSetup is needed to create the binary installer. See the header
 @echo       of the .iss file to see which minimum version is required.
 @echo.
-@echo     o 7ZIP is required to create the zip and embedded packages
+::@echo     o 7ZIP is required to create the zip and embedded packages
+@echo     o 7ZIP is required to create the zip package
 @echo.
 @echo     o sed is required for packaging. Use the sed provided by
 @echo       gnuwin32. The cygwin one is not guaranteed to work.
