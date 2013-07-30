@@ -82,8 +82,7 @@ case "$1" in
   shutdown)
   	echo -n "Forcibly killing Firebird server..."
 	killall fbguard
-	killall fbserver
-	killall fb_smp_server
+	killall firebird
 	echo "done."
 	RETVAL=0
 	;;

@@ -76,7 +76,7 @@ if [ ! -x $FBSBIN/fbguard ]; then
 fi
 
 [ -x $FBSBIN/fbguard ] || exit 5
-[ -x $FBSBIN/fbserver ] || [ -x $FBSBIN/fb_smp_server ] || exit 5
+[ -x $FBSBIN/firebird ] || exit 5
 
 # Shell functions sourced from /etc/rc.status:
 #      rc_check         check and set local and overall rc status
