@@ -1,3 +1,35 @@
+ 2013-07-30 06:56  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Sync misc changes related to the windows installer for Alpha 1 to trunk
+
+ 2013-07-29 13:00  alexpeshkoff 
+   M src/common/IntlUtil.cpp
+   M src/common/unicode_util.cpp
+   M src/common/unicode_util.h
+   M src/utilities/ntrace/TraceUnicodeUtils.cpp
+Make firebird use as default ICU present on the host
+
+ 2013-07-29 08:17  dimitr 
+   M src/isql/extract.epp
+   M src/isql/show.epp
+Fixed CORE-4149: New permission types are not displayed by ISQL.
+
+ 2013-07-29 07:23  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+   M builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+Fixed SS startup scripts
+
+ 2013-07-29 06:56  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Fixed the optimization improvement accidentally broken by a recent commit.
+
+ 2013-07-29 04:40  dimitr 
+   M src/isql/isql.epp
+Follow the alphabetical order of options.
+
  2013-07-28 01:10  asfernandes 
    M src/dsql/dsql.cpp
    M src/isql/isql.epp
