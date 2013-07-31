@@ -264,9 +264,7 @@ public:
 	virtual int FB_CARG release()
 	{
 		if (--refCounter != 0)
-		{
 			return 1;
-		}
 
 		delete this;
 		return 0;

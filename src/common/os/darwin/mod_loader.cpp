@@ -40,15 +40,15 @@
 class DlfcnModule : public ModuleLoader::Module
 {
 public:
-	DlfcnModule(void* m) 
+	DlfcnModule(void* m)
 		: module(m)
 	{}
 
 	~DlfcnModule();
-	void *findSymbol (const Firebird::string&);
+	void* findSymbol (const Firebird::string&);
 
 private:
-	void *module;
+	void* module;
 };
 
 bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
@@ -83,11 +83,11 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 	if (module == NULL)
 	{
 #ifdef DEBUG_LOADER
-	fprintf(stderr, "load error: %s: %s\n", mod_path.c_str(), dlerror());
+		fprintf(stderr, "load error: %s: %s\n", mod_path.c_str(), dlerror());
 #endif // DEBUG_LOADER
-	return 0;
+		return 0;
 	}
-	
+
 	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
 }
 
@@ -95,19 +95,16 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 DlfcnModule::~DlfcnModule()
 {
 	if (module)
-	{
 		dlclose(module);
-	}
 }
 
 void* DlfcnModule::findSymbol(const Firebird::string& symName)
 {
-	void *result =dlsym(module, symName.c_str());
+	void* result = dlsym(module, symName.c_str());
 	if (result == NULL)
 	{
-	Firebird::string newSym ='_' + symName;
-
-	result = dlsym(module, newSym.c_str());
+		Firebird::string newSym ='_' + symName;
+		result = dlsym(module, newSym.c_str());
 	}
 	return result;
 
