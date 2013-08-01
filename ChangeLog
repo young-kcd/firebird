@@ -1,3 +1,9 @@
+ 2013-07-31 01:21  asfernandes 
+   M src/common/MsgMetadata.h
+   M src/common/config/os/darwin/config_root.cpp
+   M src/common/os/darwin/mod_loader.cpp
+Misc.
+
  2013-07-30 06:56  paul_reeves 
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
    M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
