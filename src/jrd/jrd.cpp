@@ -6748,6 +6748,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 		// Extra shutdown operations
 		Service::shutdownServices();
+		TraceManager::getStorage()->shutdown();
 	}
 	catch (const Exception&)
 	{

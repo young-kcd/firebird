@@ -85,6 +85,7 @@ ConfigStorage::ConfigStorage() :
 	m_mutexTID(0),
 	m_cfg_file(-1),
 	m_dirty(false),
+	m_shutdown(true),
 	m_touchSemaphore(FB_NEW(*getDefaultMemoryPool()) AnyRef<Semaphore>),
 	m_touchSemRef(*m_touchSemaphore)
 {
@@ -134,15 +135,16 @@ ConfigStorage::ConfigStorage() :
 		if (gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, NULL))
 			gds__log("Trace facility: can't start touch thread");
 		else
-			m_touchStartStop.tryEnter(3);
+		{
+			m_shutdown = false;
+			m_touchStart.tryEnter(3);
+		}
 	}
 }
 
 ConfigStorage::~ConfigStorage()
 {
-	// signal touchThread to finish
-	m_touchSemaphore->Semaphore::release();
-	m_touchStartStop.tryEnter(3);
+	shutdown();
 
 	::close(m_cfg_file);
 	m_cfg_file = -1;
@@ -159,8 +161,24 @@ ConfigStorage::~ConfigStorage()
 		}
 	}
 
+	ISC_mutex_fini(m_mutex);
 	ISC_STATUS_ARRAY status;
 	ISC_unmap_file(status, &m_handle);
+}
+
+
+void ConfigStorage::shutdown()
+{
+	if (!m_shutdown)
+	{
+		m_shutdown = true;
+		m_touchSemaphore->Semaphore::release();
+		m_touchStop.tryEnter(3);
+
+		// allow touch thread to finish its execution completely, including
+		// CRT and system cleanup code
+		THD_sleep(10);
+	}
 }
 
 void ConfigStorage::checkMutex(const TEXT* string, int state)
@@ -318,37 +336,36 @@ THREAD_ENTRY_DECLARE ConfigStorage::touchThread(THREAD_ENTRY_PARAM arg)
 {
 	ConfigStorage* storage = (ConfigStorage*) arg;
 	storage->touchThreadFunc();
-
-	// release start/stop semaphore only here to avoid problems 
-	// with dtors of local varoables in touchThreadFunc()
-	storage->m_touchStartStop.release();
 	return 0;
 }
 
 
 void ConfigStorage::touchThreadFunc()
 {
-	AnyRef<Semaphore>* semaphore = m_touchSemaphore;
-	Reference semRef(*semaphore);
+	{ // "semaphore" scope
+		AnyRef<Semaphore>* semaphore = m_touchSemaphore;
+		Reference semRef(*semaphore);
 
-	m_touchStartStop.release();
+		m_touchStart.release();
 
-	int delay = TOUCH_INTERVAL / 2;
-	while (!semaphore->tryEnter(delay))
-	{
-		StorageGuard guard(this);
-
-		time_t now;
-		time(&now);
-
-		if (!m_base->touch_time || m_base->touch_time < now)
+		int delay = TOUCH_INTERVAL / 2;
+		while (!semaphore->tryEnter(delay))
 		{
-			touchFile();
-			m_base->touch_time = now + TOUCH_INTERVAL;
-		}
+			StorageGuard guard(this);
 
-		delay = difftime(m_base->touch_time, now);
-	} 
+			time_t now;
+			time(&now);
+
+			if (!m_base->touch_time || m_base->touch_time < now)
+			{
+				touchFile();
+				m_base->touch_time = now + TOUCH_INTERVAL;
+			}
+
+			delay = difftime(m_base->touch_time, now);
+		} 
+	} // scope
+	m_touchStop.release();
 }
 
 

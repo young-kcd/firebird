@@ -62,6 +62,8 @@ public:
 	void acquire();
 	void release();
 
+	void shutdown();
+
 private:
 	static void checkMutex(const TEXT*, int);
 	static void initShMem(void*, sh_mem*, bool);
@@ -129,7 +131,9 @@ private:
 	FB_THREAD_ID m_mutexTID;
 	int  m_cfg_file;
 	bool m_dirty;
-	Firebird::Semaphore m_touchStartStop;
+	bool m_shutdown;
+	Firebird::Semaphore m_touchStart;
+	Firebird::Semaphore m_touchStop;
 	Firebird::AnyRef<Firebird::Semaphore>* m_touchSemaphore;
 	Firebird::Reference  m_touchSemRef;
 };
