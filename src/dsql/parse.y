@@ -2127,6 +2127,12 @@ referential_action
 
 %type <createAlterProcedureNode> procedure_clause
 procedure_clause
+	: psql_procedure_clause
+	| external_procedure_clause
+	;
+
+%type <createAlterProcedureNode> psql_procedure_clause
+psql_procedure_clause
 	: procedure_clause_start AS local_declaration_list full_proc_block
 		{
 			$$ = $1;
@@ -2134,7 +2140,11 @@ procedure_clause
 			$$->localDeclList = $3;
 			$$->body = $4;
 		}
-	| procedure_clause_start external_clause external_body_clause_opt
+	;
+
+%type <createAlterProcedureNode> external_procedure_clause
+external_procedure_clause
+	: procedure_clause_start external_clause external_body_clause_opt
 		{
 			$$ = $1;
 			$$->external = $2;
@@ -2241,6 +2251,11 @@ default_par_opt
 
 %type <createAlterFunctionNode> function_clause
 function_clause
+	: psql_function_clause
+	| external_function_clause;
+
+%type <createAlterFunctionNode> psql_function_clause
+psql_function_clause
 	: function_clause_start AS local_declaration_list full_proc_block
 		{
 			$$ = $1;
@@ -2248,7 +2263,11 @@ function_clause
 			$$->localDeclList = $3;
 			$$->body = $4;
 		}
-	| function_clause_start external_clause external_body_clause_opt
+	;
+
+%type <createAlterFunctionNode> external_function_clause
+external_function_clause
+	: function_clause_start external_clause external_body_clause_opt
 		{
 			$$ = $1;
 			$$->external = $2;
@@ -2423,9 +2442,13 @@ package_body_items
 
 %type <packageItem> package_body_item
 package_body_item
-	: FUNCTION function_clause
+	: FUNCTION psql_function_clause
 		{ $$ = CreateAlterPackageNode::Item::create($2); }
-	| PROCEDURE procedure_clause
+	| FUNCTION external_function_clause ';'
+		{ $$ = CreateAlterPackageNode::Item::create($2); }
+	| PROCEDURE psql_procedure_clause
+		{ $$ = CreateAlterPackageNode::Item::create($2); }
+	| PROCEDURE external_procedure_clause ';'
 		{ $$ = CreateAlterPackageNode::Item::create($2); }
 	;
 
