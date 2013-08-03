@@ -1,3 +1,9 @@
+ 2013-08-02 13:45  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+Fixed bug CORE-4143 : Leak memory in fbembed.dll
+
  2013-07-22 16:20  dimitr 
    M doc/WhatsNew
 Updated the docs.
