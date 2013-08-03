@@ -1,3 +1,7 @@
+ 2013-08-02 15:35  asfernandes 
+   M src/dsql/parse.y
+Fixed CORE-4155 - External routines in packages wrong removed the necessity of termination with a semi-colon.
+
  2013-07-31 01:21  asfernandes 
    M src/common/MsgMetadata.h
    M src/common/config/os/darwin/config_root.cpp
