@@ -210,7 +210,7 @@ MemoryPool::MemoryPool(bool shared, int rounding, int cutoff, int minAlloc)
   :	roundingSize(rounding), threshold(cutoff), minAllocation(minAlloc),
 	threadShared(shared), pool_destroying(false), stats(default_stats_group), parent(NULL)
 {
-	size_t vecSize = (cutoff + rounding) / rounding;
+	const size_t vecSize = (cutoff + rounding) / rounding;
 	init(allocRaw(vecSize * sizeof(void*)), vecSize);
 }
 
@@ -218,7 +218,7 @@ MemoryPool::MemoryPool(MemoryPool& p, MemoryStats& s, bool shared, int rounding,
   :	roundingSize(rounding), threshold(cutoff), minAllocation(minAlloc),
 	threadShared(shared), pool_destroying(false), stats(&s), parent(&p)
 {
-	size_t vecSize = (cutoff + rounding) / rounding;
+	const size_t vecSize = (cutoff + rounding) / rounding;
 	init(parent->allocate(vecSize * sizeof(void*)), vecSize);
 }
 
@@ -800,6 +800,7 @@ void* MemoryPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 		if (extents_cache.hasData())
 		{
 			// Use most recently used object to encourage caching
+			increment_mapping(size);
 			return extents_cache.pop();
 		}
 	}
