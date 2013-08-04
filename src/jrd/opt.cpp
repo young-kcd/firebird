@@ -3393,7 +3393,8 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 
 	LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
 	literal->litDesc = *pattern_desc;
-	literal->litDesc.dsc_length = 0;
+	UCHAR* q = literal->litDesc.dsc_address = FB_NEW(csb->csb_pool)
+		UCHAR[literal->litDesc.dsc_length];
 
 	// Set the string length to point till the first wildcard character.
 
@@ -3425,12 +3426,13 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 			break;
 		}
 
-		UCHAR c[sizeof(SLONG)];
-
-		literal->litDesc.dsc_length += patternCharset->substring(pattern_desc->dsc_length,
-			pattern_desc->dsc_address, sizeof(c), c,
+		q += patternCharset->substring(pattern_desc->dsc_length,
+			pattern_desc->dsc_address,
+			literal->litDesc.dsc_length - (q - literal->litDesc.dsc_address), q,
 			(patternPtrStart - patternCanonical.begin()) / canWidth, 1);
 	}
+
+	literal->litDesc.dsc_length = q - literal->litDesc.dsc_address;
 
 	return literal;
 }
