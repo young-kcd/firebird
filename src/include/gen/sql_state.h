@@ -758,6 +758,7 @@ static const struct {
 	{335545055, "XX000"}, // 735 conf_include
 	{335545056, "XX000"}, // 736 include_depth
 	{335545057, "XX000"}, // 737 include_miss
+	{335545058, "28000"}, // 738 protect_ownership
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

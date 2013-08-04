@@ -770,6 +770,7 @@ const
 	gds_conf_include                     = 335545055;
 	gds_include_depth                    = 335545056;
 	gds_include_miss                     = 335545057;
+	gds_protect_ownership                = 335545058;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

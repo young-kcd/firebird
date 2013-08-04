@@ -845,6 +845,7 @@ Data source : @4', NULL, NULL)
 ('conf_include', NULL, 'config_file.cpp', NULL, 0, 735, NULL, 'Invalid include operator in @1 for <@2>', NULL, NULL);
 ('include_depth', NULL, 'config_file.cpp', NULL, 0, 736, NULL, 'Include depth too big', NULL, NULL);
 ('include_miss', NULL, 'config_file.cpp', NULL, 0, 737, NULL, 'File to include not found', NULL, NULL);
+('protect_ownership', 'check_owner', 'vio.cpp', NULL, 0, 738, NULL, 'Only the owner can change the ownership', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

@@ -762,6 +762,7 @@ Data source : @4"},		/* eds_statement */
 	{335545055, "Invalid include operator in @1 for <@2>"},		/* conf_include */
 	{335545056, "Include depth too big"},		/* include_depth */
 	{335545057, "File to include not found"},		/* include_miss */
+	{335545058, "Only the owner can change the ownership"},		/* protect_ownership */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

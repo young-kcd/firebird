@@ -96,6 +96,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
+static void check_owner(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static bool check_user(thread_db*, const dsc*);
 static int check_precommitted(const jrd_tra*, const record_param*);
 static void check_rel_field_class(thread_db*, record_param*, SecurityClass::flags_t, jrd_tra*);
@@ -161,8 +162,9 @@ static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
 static SSHORT set_metadata_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
+static void set_owner_name(thread_db*, Record*, USHORT);
 static void set_security_class(thread_db*, Record*, USHORT);
-static void set_system_flag(thread_db*, Record*, USHORT, SSHORT);
+static void set_system_flag(thread_db*, Record*, USHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, const bool, const bool);
 
@@ -2361,6 +2363,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			EVL_field(0, org_rpb->rpb_record, f_rel_name, &desc1);
 			SCL_check_relation(tdbb, &desc1, SCL_alter);
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_rel_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_rel_owner);
 			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
 			break;
 
@@ -2368,6 +2371,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			if (EVL_field(0, org_rpb->rpb_record, f_pkg_name, &desc1))
 				SCL_check_package(tdbb, &desc1, SCL_alter);
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_pkg_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_pkg_owner);
 			break;
 
 		case rel_procedures:
@@ -2384,6 +2388,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			}
 
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_prc_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_prc_owner);
 
 			if (dfw_should_know(org_rpb, new_rpb, f_prc_desc, true))
 			{
@@ -2407,6 +2412,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			}
 
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_fun_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_fun_owner);
 
 			if (dfw_should_know(org_rpb, new_rpb, f_fun_desc, true))
 			{
@@ -2420,6 +2426,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			EVL_field(0, org_rpb->rpb_record, f_gen_name, &desc1);
 			MOV_get_metaname(&desc1, object_name);
 			SCL_check_generator(tdbb, object_name, SCL_alter);
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_gen_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_gen_owner);
 			break;
 
 		case rel_rfr:
@@ -2479,6 +2487,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 				if ((!rc1 || MOV_get_long(&desc3, 0) == 0) && rc2 && MOV_get_long(&desc4, 0) != 0)
 					DFW_post_work_arg(transaction, dw, &desc2, 0, dfw_arg_field_not_null);
 			}
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_fld_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_fld_owner);
 			break;
 
 		case rel_classes:
@@ -2553,18 +2563,24 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			EVL_field(0, new_rpb->rpb_record, f_cs_cs_name, &desc1);
 			MOV_get_metaname(&desc1, object_name);
 			SCL_check_charset(tdbb, object_name, SCL_alter);
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_cs_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_cs_owner);
 			break;
 
 		case rel_collations:
 			EVL_field(0, new_rpb->rpb_record, f_coll_name, &desc1);
 			MOV_get_metaname(&desc1, object_name);
 			SCL_check_collation(tdbb, object_name, SCL_alter);
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_coll_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_coll_owner);
 			break;
 
 		case rel_exceptions:
 			EVL_field(0, new_rpb->rpb_record, f_xcp_name, &desc1);
 			MOV_get_metaname(&desc1, object_name);
 			SCL_check_exception(tdbb, object_name, SCL_alter);
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_xcp_class);
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_xcp_owner);
 			break;
 
 		default:
@@ -2874,8 +2890,11 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* const request = tdbb->getRequest();
+
 	DeferredWork* work = NULL;
+	MetaName package_name;
+	USHORT object_id;
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
@@ -2896,24 +2915,28 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 			DFW_post_work(transaction, dfw_create_relation, &desc, 0);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(tdbb, rpb->rpb_record, f_rel_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_rel_sys_flag);
+			set_security_class(tdbb, rpb->rpb_record, f_rel_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_rel_owner);
 			break;
 
 		case rel_packages:
-			set_system_flag(tdbb, rpb->rpb_record, f_pkg_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_pkg_sys_flag);
+			set_security_class(tdbb, rpb->rpb_record, f_pkg_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_pkg_owner);
 			break;
 
 		case rel_procedures:
 			EVL_field(0, rpb->rpb_record, f_prc_name, &desc);
+
+			if (EVL_field(0, rpb->rpb_record, f_prc_pkg_name, &desc2))
+				MOV_get_metaname(&desc2, package_name);
+
+			object_id = set_metadata_id(tdbb, rpb->rpb_record,
+										f_prc_id, drq_g_nxt_prc_id, "RDB$PROCEDURES");
+			work = DFW_post_work(transaction, dfw_create_procedure, &desc, object_id, package_name);
+
 			{ // scope
-				MetaName package_name;
-				if (EVL_field(0, rpb->rpb_record, f_prc_pkg_name, &desc2))
-					MOV_get_metaname(&desc2, package_name);
-
-				EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
-				const USHORT id = MOV_get_long(&desc2, 0);
-				work = DFW_post_work(transaction, dfw_create_procedure, &desc, id, package_name);
-
 				bool check_blr = true;
 				if (EVL_field(0, rpb->rpb_record, f_prc_valid_blr, &desc2))
 					check_blr = MOV_get_long(&desc2, 0) != 0;
@@ -2921,22 +2944,23 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				if (check_blr)
 					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);
 			} // scope
-			set_system_flag(tdbb, rpb->rpb_record, f_prc_sys_flag, 0);
+
+			set_system_flag(tdbb, rpb->rpb_record, f_prc_sys_flag);
+			set_security_class(tdbb, rpb->rpb_record, f_prc_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_prc_owner);
 			break;
 
 		case rel_funs:
 			EVL_field(0, rpb->rpb_record, f_fun_name, &desc);
+
+			if (EVL_field(0, rpb->rpb_record, f_fun_pkg_name, &desc2))
+				MOV_get_metaname(&desc2, package_name);
+
+			object_id = set_metadata_id(tdbb, rpb->rpb_record,
+										f_fun_id, drq_g_nxt_fun_id, "RDB$FUNCTIONS");
+			work = DFW_post_work(transaction, dfw_create_function, &desc, object_id, package_name);
+
 			{ // scope
-				MetaName package_name;
-				if (EVL_field(0, rpb->rpb_record, f_fun_pkg_name, &desc2))
-					MOV_get_metaname(&desc2, package_name);
-
-				const USHORT id =
-					set_metadata_id(tdbb, rpb->rpb_record, f_fun_id, drq_g_nxt_fun_id, "RDB$FUNCTIONS");
-				work = DFW_post_work(transaction, dfw_create_function, &desc, id, package_name);
-
-				set_security_class(tdbb, rpb->rpb_record, f_fun_class);
-
 				bool check_blr = true;
 				if (EVL_field(0, rpb->rpb_record, f_fun_valid_blr, &desc2))
 					check_blr = MOV_get_long(&desc2, 0) != 0;
@@ -2944,7 +2968,10 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				if (check_blr)
 					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);
 			} // scope
-			set_system_flag(tdbb, rpb->rpb_record, f_fun_sys_flag, 0);
+
+			set_system_flag(tdbb, rpb->rpb_record, f_fun_sys_flag);
+			set_security_class(tdbb, rpb->rpb_record, f_fun_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_fun_owner);
 			break;
 
 		case rel_indices:
@@ -2959,13 +2986,14 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			else {
 				DFW_post_work(transaction, dfw_create_index, &desc, tdbb->getDatabase()->dbb_max_idx);
 			}
+			set_system_flag(tdbb, rpb->rpb_record, f_idx_sys_flag);
 			break;
 
 		case rel_rfr:
 			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 			SCL_check_relation(tdbb, &desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(tdbb, rpb->rpb_record, f_rfr_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_rfr_sys_flag);
 			break;
 
 		case rel_classes:
@@ -2976,8 +3004,9 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_fields:
 			EVL_field(0, rpb->rpb_record, f_fld_name, &desc);
 			DFW_post_work(transaction, dfw_create_field, &desc, 0);
-			set_system_flag(tdbb, rpb->rpb_record, f_fld_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_fld_sys_flag);
 			set_security_class(tdbb, rpb->rpb_record, f_fld_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_fld_owner);
 			break;
 
 		case rel_files:
@@ -3016,9 +3045,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 
 			// check if this  request go through without checking permissions
-			if (!(request->getStatement()->flags & JrdStatement::FLAG_IGNORE_PERM)) {
+			if (!(request->getStatement()->flags & JrdStatement::FLAG_IGNORE_PERM))
 				SCL_check_relation(tdbb, &desc, SCL_control);
-			}
 
 			if (EVL_field(0, rpb->rpb_record, f_trg_rname, &desc2))
 				DFW_post_work(transaction, dfw_update_format, &desc2, 0);
@@ -3034,16 +3062,14 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				DFW_post_work_arg(transaction, work, &desc2,
 					(USHORT) MOV_get_int64(&desc2, 0), dfw_arg_trg_type);
 			}
-
+			set_system_flag(tdbb, rpb->rpb_record, f_trg_sys_flag);
 			break;
 
 		case rel_priv:
 			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
 			EVL_field(0, rpb->rpb_record, f_prv_o_type, &desc2);
-			{ // scope
-				const USHORT id = MOV_get_long(&desc2, 0);
-				DFW_post_work(transaction, dfw_grant, &desc, id);
-			} // scope
+			object_id = MOV_get_long(&desc2, 0);
+			DFW_post_work(transaction, dfw_grant, &desc, object_id);
 			break;
 
 		case rel_vrel:
@@ -3062,24 +3088,33 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_gens:
 			EVL_field(0, rpb->rpb_record, f_gen_name, &desc);
 			EVL_field(0, rpb->rpb_record, f_gen_id, &desc2);
-			{
-				const USHORT id = MOV_get_long(&desc2, 0);
-				transaction->getGenIdCache()->put(id, 0);
-				DFW_post_work(transaction, dfw_set_generator, &desc, id);
-			}
+			object_id = set_metadata_id(tdbb, rpb->rpb_record,
+										f_gen_id, drq_g_nxt_gen_id, "RDB$GENERATORS");
+			transaction->getGenIdCache()->put(object_id, 0);
+			DFW_post_work(transaction, dfw_set_generator, &desc, object_id);
+			set_system_flag(tdbb, rpb->rpb_record, f_gen_sys_flag);
 			set_security_class(tdbb, rpb->rpb_record, f_gen_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_gen_owner);
 			break;
 
 		case rel_charsets:
+			set_system_flag(tdbb, rpb->rpb_record, f_cs_sys_flag);
 			set_security_class(tdbb, rpb->rpb_record, f_cs_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_cs_owner);
 			break;
 
 		case rel_collations:
+			set_system_flag(tdbb, rpb->rpb_record, f_coll_sys_flag);
 			set_security_class(tdbb, rpb->rpb_record, f_coll_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_coll_owner);
 			break;
 
 		case rel_exceptions:
+			set_metadata_id(tdbb, rpb->rpb_record,
+							f_xcp_number, drq_g_nxt_xcp_id, "RDB$EXCEPTIONS");
+			set_system_flag(tdbb, rpb->rpb_record, f_xcp_sys_flag);
 			set_security_class(tdbb, rpb->rpb_record, f_xcp_class);
+			set_owner_name(tdbb, rpb->rpb_record, f_xcp_owner);
 			break;
 
 		default:    // Shut up compiler warnings
@@ -3785,6 +3820,40 @@ static void check_class(thread_db* tdbb,
 		return;
 
 	DFW_post_work(transaction, dfw_compute_security, &desc2, 0);
+}
+
+
+static void check_owner(thread_db* tdbb,
+						jrd_tra* transaction,
+						record_param* old_rpb, record_param* new_rpb, USHORT id)
+{
+/**************************************
+ *
+ *	c h e c k _ o w n e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	A record in a system relation containing an owner is
+ *	being changed.  Check to see if the owner has changed,
+ *	and if so, validate whether this action is allowed.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	DSC desc1, desc2;
+	EVL_field(0, old_rpb->rpb_record, id, &desc1);
+	EVL_field(0, new_rpb->rpb_record, id, &desc2);
+	if (!MOV_compare(&desc1, &desc2))
+		return;
+
+	const Jrd::Attachment* const attachment = tdbb->getAttachment();
+	const Firebird::MetaName name(attachment->att_user->usr_user_name);
+	desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+	if (!MOV_compare(&desc1, &desc2))
+		return;
+
+	ERR_post(Arg::Gds(isc_protect_ownership));
 }
 
 
@@ -5393,9 +5462,7 @@ static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, 
 	dsc desc1;
 
 	if (EVL_field(0, record, field_id, &desc1))
-	{
 		return MOV_get_long(&desc1, 0);
-	}
 
 	SSHORT value = (SSHORT) DYN_UTIL_gen_unique_id(tdbb, dyn_id, name);
 	dsc desc2;
@@ -5403,6 +5470,32 @@ static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, 
 	MOV_move(tdbb, &desc2, &desc1);
 	record->clearNull(field_id);
 	return value;
+}
+
+
+static void set_owner_name(thread_db* tdbb, Record* record, USHORT field_id)
+{
+/**************************************
+ *
+ *	s e t _ o w n e r _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set the owner name for the metadata object.
+ *
+ **************************************/
+	dsc desc1;
+
+	if (!EVL_field(0, record, field_id, &desc1))
+	{
+		const Jrd::Attachment* const attachment = tdbb->getAttachment();
+		const Firebird::MetaName name(attachment->att_user->usr_user_name);
+		dsc desc2;
+		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+		MOV_move(tdbb, &desc2, &desc1);
+		record->clearNull(field_id);
+	}
 }
 
 
@@ -5433,7 +5526,7 @@ static void set_security_class(thread_db* tdbb, Record* record, USHORT field_id)
 }
 
 
-static void set_system_flag(thread_db* tdbb, Record* record, USHORT field_id, SSHORT flag)
+static void set_system_flag(thread_db* tdbb, Record* record, USHORT field_id)
 {
 /**************************************
  *
@@ -5447,14 +5540,14 @@ static void set_system_flag(thread_db* tdbb, Record* record, USHORT field_id, SS
  **************************************/
 	dsc desc1;
 
-	if (EVL_field(0, record, field_id, &desc1)) {
-		return;
+	if (!EVL_field(0, record, field_id, &desc1))
+	{
+		SSHORT flag = 0;
+		dsc desc2;
+		desc2.makeShort(0, &flag);
+		MOV_move(tdbb, &desc2, &desc1);
+		record->clearNull(field_id);
 	}
-
-	dsc desc2;
-	desc2.makeShort(0, &flag);
-	MOV_move(tdbb, &desc2, &desc1);
-	record->clearNull(field_id);
 }
 
 
