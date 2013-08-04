@@ -375,13 +375,22 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
-		args[0]->makeText(80, ttype_none);
+	{
+		args[0]->makeVarying(80, ttype_none);
+		args[0]->setNullable(true);
+	}
 
 	if (argsCount >= 2 && args[1]->isUnknown())
-		args[1]->makeText(80, ttype_none);
+	{
+		args[1]->makeVarying(80, ttype_none);
+		args[1]->setNullable(true);
+	}
 
 	if (argsCount >= 3 && args[2]->isUnknown())
-		args[2]->makeText(255, ttype_none);
+	{
+		args[2]->makeVarying(255, ttype_none);
+		args[2]->setNullable(true);
+	}
 }
 
 
