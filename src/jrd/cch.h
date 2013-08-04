@@ -82,8 +82,9 @@ struct bcb_repeat
 
 class BufferControl : public pool_alloc<type_bcb>
 {
-	explicit BufferControl(MemoryPool& p)
+	BufferControl(MemoryPool& p, Firebird::MemoryStats& parentStats)
 		: bcb_bufferpool(&p),
+		  bcb_memory_stats(&parentStats),
 		  bcb_memory(p)
 	{
 		bcb_database = NULL;
@@ -107,7 +108,7 @@ class BufferControl : public pool_alloc<type_bcb>
 
 public:
 
-	static BufferControl* create();
+	static BufferControl* create(Database* dbb);
 	static void destroy(BufferControl*);
 
 	Database*	bcb_database;

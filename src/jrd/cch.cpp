@@ -1528,7 +1528,7 @@ void CCH_init(thread_db* tdbb, ULONG number, bool shared)
 	const SLONG count = number;
 
 	// Allocate and initialize buffers control block
-	BufferControl* bcb = BufferControl::create();
+	BufferControl* bcb = BufferControl::create(dbb);
 	while (true)
 	{
 		try
@@ -5184,11 +5184,10 @@ void requeueRecentlyUsed(BufferControl* bcb)
 }
 
 
-BufferControl* BufferControl::create()
+BufferControl* BufferControl::create(Database* dbb)
 {
-	Firebird::MemoryStats temp_stats;
-	MemoryPool* const pool = MemoryPool::createPool(NULL, temp_stats);
-	BufferControl* const bcb = FB_NEW(*pool) BufferControl(*pool);
+	MemoryPool* const pool = dbb->createPool();
+	BufferControl* const bcb = FB_NEW(*pool) BufferControl(*pool, dbb->dbb_memory_stats);
 	pool->setStatsGroup(bcb->bcb_memory_stats);
 	return bcb;
 }
@@ -5196,11 +5195,12 @@ BufferControl* BufferControl::create()
 
 void BufferControl::destroy(BufferControl* bcb)
 {
-	Firebird::MemoryPool *pool = bcb->bcb_bufferpool;
-	Firebird::MemoryStats stats;
-	pool->setStatsGroup(stats);
+	Database* const dbb = bcb->bcb_database;
+	MemoryPool* const pool = bcb->bcb_bufferpool;
+	MemoryStats temp_stats;
+	pool->setStatsGroup(temp_stats);
 	delete bcb;
-	Firebird::MemoryPool::deletePool(pool);
+	dbb->deletePool(pool);
 }
 
 
