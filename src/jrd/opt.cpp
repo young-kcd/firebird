@@ -497,7 +497,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	{
 		RecordSourceNode* node = *ptr;
 
-		//opt->localStreams[0] = 0;
 		opt->localStreams.clear();
 
 		fb_assert(sort == rse->rse_sorted);
@@ -524,9 +523,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 					rsb->findUsedStreams(opt->outerStreams);
 			}
 
-			//const size_t count = opt->localStreams.getCount();
-			//UCHAR* const streams = opt->localStreams + 1;
-			//River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, count, streams);
 			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, opt->localStreams);
 			river->deactivate(csb);
 			rivers.add(river);
@@ -708,9 +704,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 			// no merge is made between a new cross river and the
 			// currently active rivers. Where in the new cross river
 			// a stream depends (index) on the active rivers.
-			//stream_array_t dependent_streams, free_streams;
 			StreamList dependent_streams, free_streams;
-			//dependent_streams[0] = free_streams[0] = 0;
 			find_index_relationship_streams(tdbb, opt, opt->compileStreams, dependent_streams, free_streams);
 
 			// If we have dependent and free streams then we can't rely on
@@ -724,9 +718,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 			if (dependent_streams.getCount())
 			{
 				// copy free streams
-				//for (StreamType i = 0; i <= free_streams.getCount(); i++) {
-				//	opt->compileStreams[i] = free_streams[i];
-				//}
 				opt->compileStreams.assign(free_streams);
 
 				// Make rivers from the dependent streams
@@ -745,9 +736,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 					// Deactivate streams from rivers on stack, because
 					// the remaining streams don't have any indexed relationship with them
 					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
-					{
 						(*iter)->deactivate(csb);
-					}
 				}
 
 				break;
@@ -790,27 +779,19 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		// CVC: I'm not sure how to do this with Array in a clearer way.
 		// Please, once you agree with my changes or fix them, you can delete the comments.
 		// Eliminate any duplicate dbkey streams
-		//const UCHAR* const b_end = opt->beds + opt->beds[0];
 		const StreamType* const b_end = opt->beds.end();
-		//const UCHAR* const k_end = opt->keyStreams + opt->keyStreams[0];
 		const StreamType* const k_end = opt->keyStreams.end();
-		//UCHAR* k = &opt->keyStreams[1];
-		StreamType* k = opt->keyStreams.begin(); // the [1] was because count was [0]
-		//for (const UCHAR* p2 = k; p2 <= k_end; p2++)
-		for (const StreamType* p2 = k; p2 < k_end; ++p2) // changing <= to <
+		StreamType* k = opt->keyStreams.begin();
+		for (const StreamType* p2 = k; p2 < k_end; ++p2)
 		{
-			//const UCHAR* q = &opt->beds[1];
-			const StreamType* q = opt->beds.begin(); // changing &[1] to &[0]
-			//while (q <= b_end && *q != *p2) {
-			while (q < b_end && *q != *p2) { // changing <= to <
+			const StreamType* q = opt->beds.begin();
+
+			while (q < b_end && *q != *p2)
 				q++;
-			}
-			//if (q > b_end) {
-			if (q >= b_end) { // changing > to >=
+
+			if (q >= b_end)
 				*k++ = *p2;
-			}
 		}
-		//opt->keyStreams[0] = k - &opt->keyStreams[1];
 		opt->keyStreams.shrink(k - opt->keyStreams.begin());
 
 		// Handle project clause, if present
