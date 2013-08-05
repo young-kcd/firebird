@@ -959,6 +959,7 @@ procedure UpdateFirebirdConf;
 // Update firebird conf. 
 // If user has deselected the guardian we should update firebird.conf accordingly. 
 // We also test if user has asked for classic or super server
+// If EnableLegacyClientAuth has ben selected we update the file.......
 // Otherwise we leave the file unchanged.
 var
   fbconf: TArrayOfString;
@@ -1056,6 +1057,10 @@ begin
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\databases.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security3.fdb', false);
+
+      //Fix up conf file
+      UpdateFirebirdConf;
+      RemoveSavedConfIfNoDiff;
       end;
 
     ssDone: begin
@@ -1066,10 +1071,6 @@ begin
         AppStr := StartApp('')+StartAppParams('');
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
-
-      //Fix up conf file
-      RemoveSavedConfIfNoDiff;
-      UpdateFirebirdConf;
 
       //Reset shared library count if necessary
       CheckSharedLibCountAtEnd;
