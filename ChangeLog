@@ -1,3 +1,38 @@
+ 2013-08-04 19:39  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-4156 - RDB$GET_CONTEXT/RDB$SET_CONTEXT parameters incorrectly described as CHAR NOT NULL instead of VARCHAR NULLABLE.
+
+ 2013-08-04 15:19  dimitr 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/ini.epp
+   M src/jrd/trig.h
+   M src/jrd/vio.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-4164: Owner name is missing for generators/exceptions restored from a backup.
+Also propagated the sysflag/owner/secclass assignment and validation to all object types and wiped out the duplicating system triggers.
+Warning: testing is required!
+
+ 2013-08-04 09:35  dimitr 
+   M src/common/classes/alloc.cpp
+Fixed the negative/too-big numbers in the memory stats (CORE-4159).
+
+ 2013-08-04 07:31  dimitr 
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+Fixed the page cache stats not being reported (CORE-4159).
+
+ 2013-08-04 01:20  asfernandes 
+   M src/jrd/opt.cpp
+Fixed CORE-4158 - LIKE with escape doesn't work.
+
  2013-08-02 15:35  asfernandes 
    M src/dsql/parse.y
 Fixed CORE-4155 - External routines in packages wrong removed the necessity of termination with a semi-colon.
