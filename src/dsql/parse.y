@@ -4665,15 +4665,27 @@ select_expr_body
 		{ $$ = $1; }
 	| select_expr_body UNION distinct_noise query_term
 		{
-			UnionSourceNode* node = newNode<UnionSourceNode>();
-			node->dsqlClauses = newNode<RecSourceListNode>($1)->add($4);
+			UnionSourceNode* node = $1->as<UnionSourceNode>();
+			if (node && !node->recursive && !node->dsqlAll)
+				node->dsqlClauses->add($4);
+			else
+			{
+				node = newNode<UnionSourceNode>();
+				node->dsqlClauses = newNode<RecSourceListNode>($1)->add($4);
+			}
 			$$ = node;
 		}
 	| select_expr_body UNION ALL query_term
 		{
-			UnionSourceNode* node = newNode<UnionSourceNode>();
-			node->dsqlAll = true;
-			node->dsqlClauses = newNode<RecSourceListNode>($1)->add($4);
+			UnionSourceNode* node = $1->as<UnionSourceNode>();
+			if (node && !node->recursive && node->dsqlAll)
+				node->dsqlClauses->add($4);
+			else
+			{
+				node = newNode<UnionSourceNode>();
+				node->dsqlAll = true;
+				node->dsqlClauses = newNode<RecSourceListNode>($1)->add($4);
+			}
 			$$ = node;
 		}
 	;
