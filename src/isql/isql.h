@@ -42,7 +42,8 @@
    hope this will last a year or so :-)
    FSG 17.Nov.2000
 */
-const int PRINT_BUFFER_LENGTH	= 2048;
+const int PRINT_BUFFER_LENGTH	= 1024;
+const int PLAN_BUFFER_LENGTH	= 1024 * 16;
 const int MAXTERM_SIZE			= 32;	// SQL termination character
 const int USER_LENGTH 			= 128;
 const int PASSWORD_LENGTH		= 128;

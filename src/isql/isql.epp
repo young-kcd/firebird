@@ -8053,7 +8053,7 @@ static void process_plan()
 
 	SCHAR plan_info[1];
 	plan_info[0] = ExplainPlan ? isc_info_sql_explain_plan : isc_info_sql_get_plan;
-	TEXT plan_buffer[PRINT_BUFFER_LENGTH];
+	TEXT plan_buffer[PLAN_BUFFER_LENGTH];
 	memset(plan_buffer, 0, sizeof(plan_buffer));
 	char* planPtr = plan_buffer;
 	size_t planSize = sizeof(plan_buffer);
