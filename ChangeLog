@@ -1,3 +1,24 @@
+ 2013-08-05 16:11  dimitr 
+   M src/jrd/recsrc/SortedStream.cpp
+A bit more information for the plan.
+
+ 2013-08-05 15:58  dimitr 
+   M src/jrd/opt.cpp
+Cleanup.
+
+ 2013-08-05 14:48  dimitr 
+   M src/dsql/parse.y
+Simplest solution for CORE-4165: Replace the hierarchical union execution with the plain one.
+
+ 2013-08-05 13:08  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Fix CORE-4153 - write out changes to firebird.conf before starting the server
+
+ 2013-08-05 11:59  dimitr 
+   M src/isql/isql.epp
+   M src/isql/isql.h
+Increased the plan buffer size in ISQL to accomodate the detailed plan output.
+
  2013-08-04 19:39  asfernandes 
    M src/jrd/SysFunction.cpp
 Fixed CORE-4156 - RDB$GET_CONTEXT/RDB$SET_CONTEXT parameters incorrectly described as CHAR NOT NULL instead of VARCHAR NULLABLE.
