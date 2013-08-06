@@ -169,38 +169,47 @@ double EXT_cardinality(thread_db* tdbb, jrd_rel* relation)
 	ExternalFile* const file = relation->rel_file;
 	fb_assert(file);
 
-	bool must_close = false;
-	if (!file->ext_ifi)
+	try
 	{
-		ext_fopen(tdbb->getDatabase(), file);
-		must_close = true;
-	}
+		bool must_close = false;
+		if (!file->ext_ifi)
+		{
+			ext_fopen(tdbb->getDatabase(), file);
+			must_close = true;
+		}
 
-	FB_UINT64 file_size = 0;
+		FB_UINT64 file_size = 0;
 
 #ifdef WIN_NT
-	struct __stat64 statistics;
-	if (!_fstat64(_fileno(file->ext_ifi), &statistics))
+		struct __stat64 statistics;
+		if (!_fstat64(_fileno(file->ext_ifi), &statistics))
 #else
-	struct stat statistics;
-	if (!fstat(fileno(file->ext_ifi), &statistics))
+		struct stat statistics;
+		if (!fstat(fileno(file->ext_ifi), &statistics))
 #endif
+		{
+			file_size = statistics.st_size;
+		}
+
+		if (must_close)
+		{
+			fclose(file->ext_ifi);
+			file->ext_ifi = NULL;
+		}
+
+		const Format* const format = MET_current(tdbb, relation);
+		fb_assert(format && format->fmt_length);
+		const USHORT offset = (USHORT)(IPTR) format->fmt_desc[0].dsc_address;
+		const ULONG record_length = format->fmt_length - offset;
+
+		return (double) file_size / record_length;
+	}
+	catch (const Exception&)
 	{
-		file_size = statistics.st_size;
+		fb_utils::init_status(tdbb->tdbb_status_vector);
 	}
 
-	if (must_close)
-	{
-		fclose(file->ext_ifi);
-		file->ext_ifi = NULL;
-	}
-
-	const Format* const format = MET_current(tdbb, relation);
-	fb_assert(format && format->fmt_length);
-	const USHORT offset = (USHORT)(IPTR) format->fmt_desc[0].dsc_address;
-	const ULONG record_length = format->fmt_length - offset;
-
-	return (double) file_size / record_length;
+	return 10000; // just a wild guess
 }
 
 
