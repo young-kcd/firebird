@@ -909,7 +909,7 @@ begin
       mutex_found := CheckForMutexes(mutexes);
 
       if mutex_found then
-        RunningServerVerString := 'Firebird v2.1 or v2.5'
+        RunningServerVerString := 'Firebird v2.1 or later'
   end;
 
   if RunningServerVerString <> '' then
