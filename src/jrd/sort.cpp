@@ -81,10 +81,12 @@ void SortOwner::unlinkAll()
 // hardware memory page size to account for memory allocator
 // overhead. On most platorms, this saves 4KB to 8KB per sort
 // buffer from being allocated but not used.
+//
+// dimitr:	this comment is outdated since FB 1.5, where max buffer size
+//			of (128KB - overhead) has been replaced with exact 128KB.
 
-const ULONG SORT_BUFFER_CHUNK_SIZE	= 4096;
-const ULONG MIN_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 4;
-const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
+const ULONG MIN_SORT_BUFFER_SIZE = 1024 * 16;	// 16KB
+const ULONG MAX_SORT_BUFFER_SIZE = 1024 * 128;	// 128KB
 
 // the size of sr_bckptr (everything before sort_record) in bytes
 #define SIZEOF_SR_BCKPTR OFFSET(sr*, sr_sort_record)
@@ -157,7 +159,7 @@ namespace
 } // namespace
 
 
-Sort::Sort(Jrd::Attachment* attachment,
+Sort::Sort(Database* dbb,
 		   SortOwner* owner,
 		   USHORT record_length,
 		   size_t keys,
@@ -166,7 +168,7 @@ Sort::Sort(Jrd::Attachment* attachment,
 		   FPTR_REJECT_DUP_CALLBACK call_back,
 		   void* user_arg,
 		   FB_UINT64 max_records)
-	: m_last_record(NULL), m_next_pointer(NULL), m_records(0),
+	: m_dbb(dbb), m_last_record(NULL), m_next_pointer(NULL), m_records(0),
 	  m_runs(NULL), m_merge(NULL), m_free_runs(NULL),
 	  m_flags(0), m_merge_pool(NULL),
 	  m_description(owner->getPool(), keys)
@@ -186,7 +188,7 @@ Sort::Sort(Jrd::Attachment* attachment,
  *		  includes index key (which must be unique) and record numbers.
  *
  **************************************/
-	fb_assert(attachment && owner);
+	fb_assert(owner);
 	fb_assert(unique_keys <= keys);
 
 	try
@@ -197,7 +199,6 @@ Sort::Sort(Jrd::Attachment* attachment,
 
 		MemoryPool& pool = owner->getPool();
 
-		m_attachment = attachment;
 		m_longs = ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT) >> SHIFTLONG;
 		m_dup_callback = call_back;
 		m_dup_callback_arg = user_arg;
@@ -217,43 +218,27 @@ Sort::Sort(Jrd::Attachment* attachment,
 			p--;
 			unique_keys++;
 		}
+
 		m_unique_length = ROUNDUP(p->skd_offset + p->skd_length, sizeof(SLONG)) >> SHIFTLONG;
 
 		// Next, try to allocate a "big block". How big? Big enough!
-#ifdef DEBUG_MERGE
-		// To debug the merge algorithm, force the in-memory pool to be VERY small
-		m_size_memory = 2000;
-		m_memory = FB_NEW(pool) UCHAR[m_size_memory];
-#else
-		// Try to get a big chunk of memory, if we can't try smaller and
-		// smaller chunks until we can get the memory. If we get down to
-		// too small a chunk - punt and report not enough memory.
 
-		for (m_size_memory = MAX_SORT_BUFFER_SIZE;
-			m_size_memory >= MIN_SORT_BUFFER_SIZE;
-			m_size_memory -= SORT_BUFFER_CHUNK_SIZE)
-		{
-			try
-			{
-				m_memory = FB_NEW(pool) UCHAR[m_size_memory];
-				break;
-			}
-			catch (const BadAlloc&)
-			{} // not enough memory, let's allocate smaller buffer
-		}
-
-		if (m_size_memory < MIN_SORT_BUFFER_SIZE)
-		{
-			BadAlloc::raise();
-		}
-#endif // DEBUG_MERGE
-
+		allocateBuffer(pool);
+		
 		m_end_memory = m_memory + m_size_memory;
 		m_first_pointer = (sort_record**) m_memory;
 
 		// Set up the temp space
 
-		m_space = FB_NEW(pool) TempSpace(pool, SCRATCH, false);
+		try
+		{
+			m_space = FB_NEW(pool) TempSpace(pool, SCRATCH, false);
+		}
+		catch (const Exception&)
+		{
+			releaseBuffer();
+			throw;
+		}
 
 		// Set up to receive the first record
 
@@ -288,7 +273,7 @@ Sort::~Sort()
 	// If runs are allocated and not in the big block, release them.
 	// Then release the big block.
 
-	delete[] m_memory;
+	releaseBuffer();
 
 	// Clean up the runs that were used
 
@@ -645,6 +630,79 @@ void Sort::sort(thread_db* tdbb)
 		status.append(Firebird::Arg::StatusVector(ex.value()));
 		status.raise();
 	}
+}
+
+
+void Sort::allocateBuffer(MemoryPool& pool)
+{
+#ifdef DEBUG_MERGE
+	// To debug the merge algorithm, force the in-memory pool to be VERY small
+	m_size_memory = 2000;
+	m_memory = FB_NEW(pool) UCHAR[m_size_memory];
+	return;
+#endif
+
+	SyncLockGuard guard(&m_dbb->dbb_sortbuf_sync, SYNC_EXCLUSIVE, "Sort::allocateBuffer");
+
+	if (m_dbb->dbb_sort_buffers.hasData())
+	{
+		// The sort buffer cache has at least one big block, let's use it
+		m_size_memory = MAX_SORT_BUFFER_SIZE;
+		m_memory = m_dbb->dbb_sort_buffers.pop();
+	}
+	else
+	{
+		// Try to get a big chunk of memory, if we can't try smaller and
+		// smaller chunks until we can get the memory. If we get down to
+		// too small a chunk - punt and report not enough memory.
+		//
+		// At the first attempt, allocate from the permanent pool in order
+		// to have the big block being cached for later reuse. If unsuccessful,
+		// switch to the sort owner pool.
+
+		try
+		{
+			m_size_memory = MAX_SORT_BUFFER_SIZE;
+			m_memory = FB_NEW(*m_dbb->dbb_permanent) UCHAR[m_size_memory];
+		}
+		catch (const BadAlloc&)
+		{
+			// not enough memory, retry with a smaller buffer	
+
+			while (true)
+			{
+				try
+				{
+					m_size_memory /= 2;
+					m_memory = FB_NEW(pool) UCHAR[m_size_memory];
+					break;
+				}
+				catch (const BadAlloc&)
+				{
+					if (m_size_memory <= MIN_SORT_BUFFER_SIZE)
+						throw;
+				}
+			}
+		}
+	}
+}
+
+
+void Sort::releaseBuffer()
+{
+	// Here we cache blocks to be reused later, but only the biggest ones
+
+	const size_t MAX_CACHED_SORT_BUFFERS = 8; // 1MB
+
+	SyncLockGuard guard(&m_dbb->dbb_sortbuf_sync, SYNC_EXCLUSIVE, "Sort::releaseBuffer");
+	
+	if (m_size_memory == MAX_SORT_BUFFER_SIZE && 
+		m_dbb->dbb_sort_buffers.getCount() < MAX_CACHED_SORT_BUFFERS)
+	{
+		m_dbb->dbb_sort_buffers.push(m_memory);
+	}
+	else
+		delete[] m_memory;
 }
 
 
@@ -1219,10 +1277,10 @@ void Sort::init()
 		{
 			UCHAR* const mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
 
-			delete[] m_memory;
+			releaseBuffer();
 
-			m_memory = mem;
 			m_size_memory = mem_size;
+			m_memory = mem;
 
 			m_end_memory = m_memory + m_size_memory;
 			m_first_pointer = (sort_record**) m_memory;

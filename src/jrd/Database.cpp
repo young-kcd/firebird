@@ -77,7 +77,14 @@ namespace Jrd
 
 	Database::~Database()
 	{
-		{
+		{ // scope
+			SyncLockGuard guard(&dbb_sortbuf_sync, SYNC_EXCLUSIVE, "Database::~Database");
+
+			while (dbb_sort_buffers.hasData())
+				delete[] dbb_sort_buffers.pop();
+		}
+
+		{ // scope
 			SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::~Database");
 
 			fb_assert(dbb_pools[0] == dbb_permanent);

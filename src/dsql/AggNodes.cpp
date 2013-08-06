@@ -299,7 +299,7 @@ void AggNode::aggPostRse(thread_db* /*tdbb*/, CompilerScratch* csb)
 	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 }
 
-void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
+void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->vlux_count = 0;
@@ -315,7 +315,7 @@ void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
 		asbImpure->iasb_sort = NULL;
 
 		asbImpure->iasb_sort = FB_NEW(request->req_sorts.getPool()) Sort(
-			request->req_attachment, &request->req_sorts, asb->length,
+			tdbb->getDatabase(), &request->req_sorts, asb->length,
 			asb->keyItems.getCount(), 1, asb->keyItems.begin(),
 			RecordSource::rejectDuplicate, 0);
 	}

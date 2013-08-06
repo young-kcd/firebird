@@ -394,8 +394,11 @@ public:
 	Firebird::SyncObject			dbb_pools_sync;
 	Firebird::Array<MemoryPool*>	dbb_pools;		// pools
 
-	Firebird::SyncObject				dbb_threads_sync;
-	thread_db*							dbb_active_threads;
+	Firebird::SyncObject			dbb_sortbuf_sync;
+	Firebird::Array<UCHAR*>			dbb_sort_buffers;	// sort buffers ready for reuse
+
+	Firebird::SyncObject			dbb_threads_sync;
+	thread_db*						dbb_active_threads;
 
 	TraNumber dbb_oldest_active;		// Cached "oldest active" transaction
 	TraNumber dbb_oldest_transaction;	// Cached "oldest interesting" transaction
@@ -466,6 +469,7 @@ private:
 		dbb_filename(*p),
 		dbb_database_name(*p),
 		dbb_pools(*p, 4),
+		dbb_sort_buffers(*p),
 		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_tip_cache(NULL),

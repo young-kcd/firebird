@@ -162,7 +162,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 	// establish a callback routine to reject duplicate records.
 
 	AutoPtr<Sort> scb(FB_NEW(request->req_sorts.getPool())
-		Sort(tdbb->getAttachment(), &request->req_sorts,
+		Sort(tdbb->getDatabase(), &request->req_sorts,
 			 m_map->length, m_map->keyItems.getCount(), m_map->keyItems.getCount(),
 			 m_map->keyItems.begin(),
 			 ((m_map->flags & FLAG_PROJECT) ? rejectDuplicate : NULL), 0));

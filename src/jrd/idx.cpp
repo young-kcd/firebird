@@ -322,7 +322,7 @@ void IDX_create_index(thread_db* tdbb,
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
 	AutoPtr<Sort> scb(FB_NEW(transaction->tra_sorts.getPool())
-		Sort(attachment, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
+		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
 				  2, 1, key_desc, callback, callback_arg));
 
 	jrd_rel* partner_relation = NULL;

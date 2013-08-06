@@ -211,7 +211,7 @@ typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 class Sort
 {
 public:
-	Sort(Jrd::Attachment*, SortOwner*,
+	Sort(Database*, SortOwner*,
 		 USHORT, size_t, size_t, const sort_key_def*,
 		 FPTR_REJECT_DUP_CALLBACK, void*, FB_UINT64 = 0);
 	~Sort();
@@ -235,6 +235,9 @@ public:
 	}
 
 private:
+	void allocateBuffer(MemoryPool&);
+	void releaseBuffer();
+
 	void diddleKey(UCHAR*, bool);
 	sort_record* getMerge(merge_control*);
 	ULONG allocate(ULONG, ULONG, bool);
@@ -252,7 +255,7 @@ private:
 
 	static void quick(SLONG, SORTP**, ULONG);
 
-	Attachment* m_attachment;					// Attachment
+	Database* m_dbb;							// Database
 	SortOwner* m_owner;							// Sort owner
 	UCHAR* m_memory;							// ALLOC: Memory for sort
 	UCHAR* m_end_memory;						// End of memory
