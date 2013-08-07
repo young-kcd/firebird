@@ -1,3 +1,21 @@
+ 2013-08-06 18:49  dimitr 
+   M src/jrd/ext.cpp
+Fixed CORE-4168: Backup containing procedures or triggers that select from external tables cannot be restored with ExternalFileAccess=None.
+
+ 2013-08-06 09:37  dimitr 
+   M src/dsql/AggNodes.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/idx.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/sort.cpp
+   M src/jrd/sort.h
+Front ported CORE-3989: Bad performance / slow response when many concurrent sorts are executed.
+
+ 2013-08-06 08:49  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+Be less specific about version when detecting if a version of firebird is running at installation time.
+
  2013-08-05 16:11  dimitr 
    M src/jrd/recsrc/SortedStream.cpp
 A bit more information for the plan.
