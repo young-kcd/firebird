@@ -247,11 +247,11 @@ public:
 	Firebird::AtomicCounter	bdb_ast_flags;		// flags manipulated at AST level
 	Firebird::AtomicCounter	bdb_flags;
 	Firebird::AtomicCounter	bdb_use_count;		// Number of active users
-	SSHORT		bdb_writers;			// Number of recursively taken exclusive locks
-	SSHORT		bdb_io_locks;			// Number of recursively taken IO locks
-	SSHORT		bdb_scan_count;			// concurrent sequential scans
-	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
-	ULONG		bdb_prec_walk_mark;		// mark value used in precedence graph walk
+	SSHORT		bdb_writers;					// Number of recursively taken exclusive locks
+	SSHORT		bdb_io_locks;					// Number of recursively taken IO locks
+	Firebird::AtomicCounter	bdb_scan_count;		// concurrent sequential scans
+	ULONG       bdb_difference_page;			// Number of page in difference file, NBAK
+	ULONG		bdb_prec_walk_mark;				// mark value used in precedence graph walk
 };
 
 // bdb_flags

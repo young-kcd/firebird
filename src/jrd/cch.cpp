@@ -115,7 +115,7 @@ enum LatchState
 	lsPageChanged
 };
 
-
+static void adjust_scan_count(WIN* window, bool mustRead);
 static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
 static Lock* alloc_page_lock(Jrd::thread_db*, BufferDesc*);
 static int blocking_ast_bdb(void*);
@@ -657,38 +657,7 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, int lock_type, SCHAR page_type, int
 		return NULL;			// latch or lock timeout
 	}
 
-	// If a page was read or prefetched on behalf of a large scan
-	// then load the window scan count into the buffer descriptor.
-	// This buffer scan count is decremented by releasing a buffer
-	// with CCH_RELEASE_TAIL.
-
-	// Otherwise zero the buffer scan count to prevent the buffer
-	// from being queued to the LRU tail.
-
-	if (window->win_flags & WIN_large_scan)
-	{
-		if (lockState == lsLocked || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
-			bdb->bdb_scan_count = window->win_scans;
-	}
-	else if (window->win_flags & WIN_garbage_collector)
-	{
-		if (lockState == lsLocked)
-			bdb->bdb_scan_count = -1;
-
-		if (bdb->bdb_flags & BDB_garbage_collect)
-			window->win_flags |= WIN_garbage_collect;
-	}
-	else if (window->win_flags & WIN_secondary)
-	{
-		if (lockState == lsLocked)
-			bdb->bdb_scan_count = -1;
-	}
-	else
-	{
-		bdb->bdb_scan_count = 0;
-		if (bdb->bdb_flags & BDB_garbage_collect)
-			bdb->bdb_flags &= ~BDB_garbage_collect;
-	}
+	adjust_scan_count(window, lockState == lsLocked);
 
 	// Validate the fetched page matches the expected type
 
@@ -1448,38 +1417,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 			bdb->downgrade(SYNC_SHARED);
 	}
 
-	// If a page was read or prefetched on behalf of a large scan
-	// then load the window scan count into the buffer descriptor.
-	// This buffer scan count is decremented by releasing a buffer
-	// with CCH_RELEASE_TAIL.
-
-	// Otherwise zero the buffer scan count to prevent the buffer
-	// from being queued to the LRU tail.
-
-	if (window->win_flags & WIN_large_scan)
-	{
-		if (must_read == lsLocked || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
-			bdb->bdb_scan_count = window->win_scans;
-	}
-	else if (window->win_flags & WIN_garbage_collector)
-	{
-		if (must_read == lsLocked)
-			bdb->bdb_scan_count = -1;
-
-		if (bdb->bdb_flags & BDB_garbage_collect)
-			window->win_flags |= WIN_garbage_collect;
-	}
-	else if (window->win_flags & WIN_secondary)
-	{
-		if (must_read == lsLocked)
-			bdb->bdb_scan_count = -1;
-	}
-	else
-	{
-		bdb->bdb_scan_count = 0;
-		if (bdb->bdb_flags & BDB_garbage_collect)
-			bdb->bdb_flags &= ~BDB_garbage_collect;
-	}
+	adjust_scan_count(window, must_read == lsLocked);
 
 	// Validate the fetched page matches the expected type
 
@@ -2048,17 +1986,23 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 					bdb->bdb_flags &= ~BDB_garbage_collect;
 				}
 
-				// hvlad: we want to make it least recently used, not most recently used
-				//recentlyUsed(bdb);
+				{ // bcb_syncLRU scope
+					Sync lruSync(&bcb->bcb_syncLRU, "CCH_release");
+					lruSync.lock(SYNC_EXCLUSIVE);
+
+					if (bdb->bdb_flags & BDB_lru_chained)
+					{
+						requeueRecentlyUsed(bcb);
+					}
+
+					QUE_DELETE(bdb->bdb_in_use);
+					QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
+				}
 
 				if ((bcb->bcb_flags & BCB_cache_writer) &&
 					(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) )
 				{
-					//if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty)
-					//{
-					//	QUE_DELETE(bdb->bdb_dirty);
-					//	QUE_APPEND(bcb->bcb_dirty, bdb->bdb_dirty);
-					//}
+					insertDirty(bcb, bdb);
 
 					bcb->bcb_flags |= BCB_free_pending;
 					if (!(bcb->bcb_flags & BCB_writer_active))
@@ -2451,6 +2395,50 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 	}
 
 	return result;
+}
+
+
+static void adjust_scan_count(WIN* window, bool mustRead)
+{
+/**************************************
+ *
+ *	a d j u s t _ s c a n _ c o u n t
+ *
+ **************************************/
+	BufferDesc* bdb = window->win_bdb;
+
+	// If a page was read or prefetched on behalf of a large scan
+	// then load the window scan count into the buffer descriptor.
+	// This buffer scan count is decremented by releasing a buffer
+	// with CCH_RELEASE_TAIL.
+
+	// Otherwise zero the buffer scan count to prevent the buffer
+	// from being queued to the LRU tail.
+
+	if (window->win_flags & WIN_large_scan)
+	{
+		if (mustRead || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
+			bdb->bdb_scan_count = window->win_scans;
+	}
+	else if (window->win_flags & WIN_garbage_collector)
+	{
+		if (mustRead)
+			bdb->bdb_scan_count = -1;
+
+		if (bdb->bdb_flags & BDB_garbage_collect)
+			window->win_flags |= WIN_garbage_collect;
+	}
+	else if (window->win_flags & WIN_secondary)
+	{
+		if (mustRead)
+			bdb->bdb_scan_count = -1;
+	}
+	else
+	{
+		bdb->bdb_scan_count = 0;
+		if (bdb->bdb_flags & BDB_garbage_collect)
+			bdb->bdb_flags &= ~BDB_garbage_collect;
+	}
 }
 
 
