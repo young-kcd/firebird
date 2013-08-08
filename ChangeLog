@@ -1,3 +1,7 @@
+ 2013-08-07 09:58  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+Improve installed product detection to support changes in Fb3.
+
  2013-08-06 18:49  dimitr 
    M src/jrd/ext.cpp
 Fixed CORE-4168: Backup containing procedures or triggers that select from external tables cannot be restored with ExternalFileAccess=None.
