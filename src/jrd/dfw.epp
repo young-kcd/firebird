@@ -630,7 +630,7 @@ void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_nu
  *	be called only if there is a previous level.
  *
  **************************************/
-
+	
 	// If there is no deferred work, just return
 
 	DeferredJob *job = transaction->tra_deferred_job;
@@ -972,6 +972,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 	switch (type)
 	{
 	case dfw_user_management:
+	case dfw_set_generator:
 		transaction->tra_flags |= TRA_deferred_meta;
 		// fall down ...
 	case dfw_post_event:
@@ -3136,8 +3137,10 @@ static bool set_generator(thread_db* tdbb,
 				fb_assert(id == work->dfw_id);
 				SINT64 value = 0;
 				if (transaction->getGenIdCache()->get(id, value))
+				{
 					transaction->getGenIdCache()->remove(id);
-				DPM_gen_id(tdbb, id, true, value);
+					DPM_gen_id(tdbb, id, true, value);
+				}
 			}
 		}
 		break;
