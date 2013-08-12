@@ -1,3 +1,11 @@
+ 2013-08-09 15:51  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+Fixed CORE-4176: Monitoring tables return incomplete information in SC/CS configurations.
+
+ 2013-08-09 05:04  dimitr 
+   M src/jrd/dfw.epp
+Fixed CORE-4173: Setting generator value twice in single transaction will set it to zero.
+
  2013-08-08 08:41  hvlad 
    M src/jrd/cch.cpp
    M src/jrd/cch.h
