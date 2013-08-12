@@ -567,7 +567,7 @@ using namespace Firebird;
 %left	OR
 %left	AND
 %left	NOT
-%left	'=' '<' '>' LIKE CONTAINING STARTING SIMILAR KW_IN NEQ GEQ LEQ NOT_GTR NOT_LSS
+%left	'=' '<' '>' IS BETWEEN LIKE CONTAINING STARTING SIMILAR KW_IN NEQ GEQ LEQ NOT_GTR NOT_LSS
 %left	'+' '-'
 %left	'*' '/'
 %left	UMINUS UPLUS
@@ -5560,6 +5560,14 @@ boolean_value_expression
 		{ $$ = newNode<NotBoolNode>($2); }
 	| '(' boolean_value_expression ')'
 		{ $$ = $2; }
+	| search_condition IS boolean_literal
+		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, newNode<BoolAsValueNode>($1), $3); }
+	| search_condition IS NOT boolean_literal
+		{
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv,
+				newNode<BoolAsValueNode>($1), $4);
+			$$ = newNode<NotBoolNode>(node);
+		}
 	;
 
 %type <boolExprNode> predicate
@@ -5574,13 +5582,6 @@ predicate
 	| quantified_predicate
 	| exists_predicate
 	| singular_predicate
-	| common_value IS boolean_literal
-		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, $1, $3); }
-	| common_value IS NOT boolean_literal
-		{
-			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv, $1, $4);
-			$$ = newNode<NotBoolNode>(node);
-		}
 	;
 
 
@@ -5588,7 +5589,7 @@ predicate
 
 %type <boolExprNode> comparison_predicate
 comparison_predicate
-	: common_value comparison_operator common_value
+	: value_primary comparison_operator value_primary
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
 	;
 
@@ -5607,7 +5608,7 @@ comparison_operator
 
 %type <boolExprNode> quantified_predicate
 quantified_predicate
-	: common_value comparison_operator quantified_flag '(' column_select ')'
+	: value_primary comparison_operator quantified_flag '(' column_select ')'
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1);
 			node->dsqlFlag = $3;
@@ -5628,20 +5629,20 @@ quantified_flag
 
 %type <boolExprNode> distinct_predicate
 distinct_predicate
-	: common_value IS DISTINCT FROM common_value
+	: value_primary IS DISTINCT FROM value_primary
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv, $1, $5);
 			$$ = newNode<NotBoolNode>(node);
 		}
-	| common_value IS NOT DISTINCT FROM common_value
+	| value_primary IS NOT DISTINCT FROM value_primary
 		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, $1, $6); }
 	;
 
 %type <boolExprNode> between_predicate
 between_predicate
-	: common_value BETWEEN common_value AND common_value
+	: value_primary BETWEEN value_primary AND value_primary
 		{ $$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5); }
-	| common_value NOT BETWEEN common_value AND common_value
+	| value_primary NOT BETWEEN value_primary AND value_primary
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_between, $1, $4, $6);
 			$$ = newNode<NotBoolNode>(node);
@@ -5650,9 +5651,9 @@ between_predicate
 
 %type <boolExprNode> binary_pattern_predicate
 binary_pattern_predicate
-	: common_value binary_pattern_operator common_value
+	: value_primary binary_pattern_operator value_primary
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
-	| common_value NOT binary_pattern_operator common_value
+	| value_primary NOT binary_pattern_operator value_primary
 		{
 			ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>($3, $1, $4);
 			$$ = newNode<NotBoolNode>(cmpNode);
@@ -5668,9 +5669,9 @@ binary_pattern_operator
 
 %type <boolExprNode> ternary_pattern_predicate
 ternary_pattern_predicate
-	: common_value ternary_pattern_operator common_value escape_opt
+	: value_primary ternary_pattern_operator value_primary escape_opt
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3, $4); }
-	| common_value NOT ternary_pattern_operator common_value escape_opt
+	| value_primary NOT ternary_pattern_operator value_primary escape_opt
 		{
 			ComparativeBoolNode* likeNode = newNode<ComparativeBoolNode>($3, $1, $4, $5);
 			$$ = newNode<NotBoolNode>(likeNode);
@@ -5686,19 +5687,19 @@ ternary_pattern_operator
 %type <valueExprNode> escape_opt
 escape_opt
 	: /* nothing */			{ $$ = NULL; }
-	| ESCAPE common_value	{ $$ = $2; }
+	| ESCAPE value_primary	{ $$ = $2; }
 	;
 
 %type <boolExprNode> in_predicate
 in_predicate
-	: common_value KW_IN in_predicate_value
+	: value_primary KW_IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
 			node->dsqlSpecialArg = $3;
 			$$ = node;
 		}
-	| common_value NOT KW_IN in_predicate_value
+	| value_primary NOT KW_IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
@@ -5721,13 +5722,13 @@ singular_predicate
 
 %type <boolExprNode> null_predicate
 null_predicate
-	: common_value IS KW_NULL
+	: value_primary IS KW_NULL
 		{ $$ = newNode<MissingBoolNode>($1); }
-	| common_value IS UNKNOWN
+	| value_primary IS UNKNOWN
 		{ $$ = newNode<MissingBoolNode>($1, true); }
-	| common_value IS NOT KW_NULL
+	| value_primary IS NOT KW_NULL
 		{ $$ = newNode<NotBoolNode>(newNode<MissingBoolNode>($1)); }
-	| common_value IS NOT UNKNOWN
+	| value_primary IS NOT UNKNOWN
 		{ $$ = newNode<NotBoolNode>(newNode<MissingBoolNode>($1, true)); }
 	;
 
@@ -5836,13 +5837,19 @@ revoke_admin
 
 %type <valueExprNode> value
 value
-	: common_value
+	: value_primary
 	| boolean_value_expression
 		{ $$ = newNode<BoolAsValueNode>($1); }
 	;
 
-%type <valueExprNode> common_value
-common_value
+%type <valueExprNode> value_primary
+value_primary
+	: nonparenthesized_value
+	| '(' value_primary ')'	{ $$ = $2; }
+	;
+
+%type <valueExprNode> nonparenthesized_value
+nonparenthesized_value
 	: column_name
 		{ $$ = $1; }
 	| array_element
@@ -5858,24 +5865,22 @@ common_value
 		{ $$ = $1; }
 	| udf
 		{ $$ = $1; }
-	| '-' common_value %prec UMINUS
+	| '-' value_primary %prec UMINUS
 		{ $$ = newNode<NegateNode>($2); }
-	| '+' common_value %prec UPLUS
+	| '+' value_primary %prec UPLUS
 		{ $$ = $2; }
-	| common_value '+' common_value
+	| value_primary '+' value_primary
 		{ $$ = newNode<ArithmeticNode>(blr_add, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| common_value CONCATENATE common_value
+	| value_primary CONCATENATE value_primary
 		{ $$ = newNode<ConcatenateNode>($1, $3); }
-	| common_value COLLATE symbol_collation_name
+	| value_primary COLLATE symbol_collation_name
 		{ $$ = newNode<CollateNode>($1, *$3); }
-	| common_value '-' common_value
+	| value_primary '-' value_primary
 		{ $$ = newNode<ArithmeticNode>(blr_subtract, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| common_value '*' common_value
+	| value_primary '*' value_primary
 		{ $$ = newNode<ArithmeticNode>(blr_multiply, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| common_value '/' common_value
+	| value_primary '/' value_primary
 		{ $$ = newNode<ArithmeticNode>(blr_divide, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| '(' common_value ')'
-		{ $$ = $2; }
 	| '(' column_singleton ')'
 		{ $$ = $2; }
 	| current_user
@@ -5966,16 +5971,16 @@ array_element
 		}
 	;
 
-%type <valueListNode> common_value_list_opt
-common_value_list_opt
+%type <valueListNode> value_primary_list_opt
+value_primary_list_opt
 	: /* nothing */			{ $$ = newNode<ValueListNode>(0); }
-	| common_value_list
+	| value_primary_list
 	;
 
-%type <valueListNode> common_value_list
-common_value_list
-	: common_value							{ $$ = newNode<ValueListNode>($1); }
-	| common_value_list ',' common_value	{ $$ = $1->add($3); }
+%type <valueListNode> value_primary_list
+value_primary_list
+	: value_primary							{ $$ = newNode<ValueListNode>($1); }
+	| value_primary_list ',' value_primary	{ $$ = $1->add($3); }
 	;
 
 %type <valueListNode> value_list_opt
@@ -6420,12 +6425,12 @@ system_function_special_syntax
 				newNode<ValueListNode>($3)->add($5)->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| POSITION '(' common_value KW_IN common_value ')'
+	| POSITION '(' value_primary KW_IN value_primary ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>($3)->add($5));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| POSITION '(' common_value_list_opt  ')'
+	| POSITION '(' value_primary_list_opt  ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, $3); }
 	;
 
@@ -6451,7 +6456,7 @@ substring_function
 
 			$$ = newNode<SubstringNode>($3, subtractNode, $6);
 		}
-	| SUBSTRING '(' common_value SIMILAR common_value ESCAPE common_value ')'
+	| SUBSTRING '(' value_primary SIMILAR value_primary ESCAPE value_primary ')'
 		{ $$ = newNode<SubstringSimilarNode>($3, $5, $7); }
 	;
 
