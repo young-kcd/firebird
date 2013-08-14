@@ -335,7 +335,6 @@ void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position) const
 		fb_assert(!(impure->irsb_flags & irsb_mustread));
 	}
 
-	fb_assert(position < getCount(request));
 	impure->irsb_position = position;
 }
 
