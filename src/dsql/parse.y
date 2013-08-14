@@ -5534,38 +5534,26 @@ update_column_name
 
 %type <boolExprNode> search_condition
 search_condition
-	: value
-		{
-			BoolAsValueNode* node = ExprNode::as<BoolAsValueNode>($1);
-			if (node)
-				$$ = node->boolean;
-			else
-			{
-				ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>(
-					blr_eql, $1, MAKE_constant("1", CONSTANT_BOOLEAN));
-				cmpNode->dsqlWasValue = true;
-				$$ = cmpNode;
-			}
-		}
+	: value		{ $$ = valueToBool($1); }
 	;
 
 %type <boolExprNode> boolean_value_expression
 boolean_value_expression
 	: predicate
-	| search_condition OR search_condition
-		{ $$ = newNode<BinaryBoolNode>(blr_or, $1, $3); }
-	| search_condition AND search_condition
-		{ $$ = newNode<BinaryBoolNode>(blr_and, $1, $3); }
-	| NOT search_condition
-		{ $$ = newNode<NotBoolNode>($2); }
+	| value OR value
+		{ $$ = newNode<BinaryBoolNode>(blr_or, valueToBool($1), valueToBool($3)); }
+	| value AND value
+		{ $$ = newNode<BinaryBoolNode>(blr_and, valueToBool($1), valueToBool($3)); }
+	| NOT value
+		{ $$ = newNode<NotBoolNode>(valueToBool($2)); }
 	| '(' boolean_value_expression ')'
 		{ $$ = $2; }
-	| search_condition IS boolean_literal
-		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, newNode<BoolAsValueNode>($1), $3); }
-	| search_condition IS NOT boolean_literal
+	| value IS boolean_literal
+		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, newNode<BoolAsValueNode>(valueToBool($1)), $3); }
+	| value IS NOT boolean_literal
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv,
-				newNode<BoolAsValueNode>($1), $4);
+				newNode<BoolAsValueNode>(valueToBool($1)), $4);
 			$$ = newNode<NotBoolNode>(node);
 		}
 	;
@@ -5589,7 +5577,7 @@ predicate
 
 %type <boolExprNode> comparison_predicate
 comparison_predicate
-	: value_primary comparison_operator value_primary
+	: value comparison_operator value %prec '='
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
 	;
 
@@ -5608,7 +5596,7 @@ comparison_operator
 
 %type <boolExprNode> quantified_predicate
 quantified_predicate
-	: value_primary comparison_operator quantified_flag '(' column_select ')'
+	: value comparison_operator quantified_flag '(' column_select ')'
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1);
 			node->dsqlFlag = $3;
@@ -5629,31 +5617,38 @@ quantified_flag
 
 %type <boolExprNode> distinct_predicate
 distinct_predicate
-	: value_primary IS DISTINCT FROM value_primary
+	: value IS DISTINCT FROM value %prec IS
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv, $1, $5);
 			$$ = newNode<NotBoolNode>(node);
 		}
-	| value_primary IS NOT DISTINCT FROM value_primary
+	| value IS NOT DISTINCT FROM value %prec IS
 		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, $1, $6); }
 	;
 
 %type <boolExprNode> between_predicate
 between_predicate
-	: value_primary BETWEEN value_primary AND value_primary
+	: value BETWEEN value_predicand AND value %prec BETWEEN
 		{ $$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5); }
-	| value_primary NOT BETWEEN value_primary AND value_primary
+	| value NOT BETWEEN value_predicand AND value %prec BETWEEN
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_between, $1, $4, $6);
 			$$ = newNode<NotBoolNode>(node);
 		}
 	;
 
+// ASF: It's not clear for me why the direct usage of value in between_predicate introduces
+// reduce/reduce conflicts.
+%type <valueExprNode> value_predicand
+value_predicand
+	: value
+	;
+
 %type <boolExprNode> binary_pattern_predicate
 binary_pattern_predicate
-	: value_primary binary_pattern_operator value_primary
+	: value binary_pattern_operator value %prec CONTAINING
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
-	| value_primary NOT binary_pattern_operator value_primary
+	| value NOT binary_pattern_operator value %prec CONTAINING
 		{
 			ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>($3, $1, $4);
 			$$ = newNode<NotBoolNode>(cmpNode);
@@ -5669,37 +5664,46 @@ binary_pattern_operator
 
 %type <boolExprNode> ternary_pattern_predicate
 ternary_pattern_predicate
-	: value_primary ternary_pattern_operator value_primary escape_opt
-		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3, $4); }
-	| value_primary NOT ternary_pattern_operator value_primary escape_opt
+	: value LIKE value %prec LIKE
+		{ $$ = newNode<ComparativeBoolNode>(blr_like, $1, $3); }
+	| value LIKE value ESCAPE value %prec LIKE
+		{ $$ = newNode<ComparativeBoolNode>(blr_like, $1, $3, $5); }
+	| value NOT LIKE value %prec LIKE
 		{
-			ComparativeBoolNode* likeNode = newNode<ComparativeBoolNode>($3, $1, $4, $5);
-			$$ = newNode<NotBoolNode>(likeNode);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_like, $1, $4);
+			$$ = newNode<NotBoolNode>(node);
 		}
-	;
-
-%type <blrOp> ternary_pattern_operator
-ternary_pattern_operator
-	: LIKE			{ $$ = blr_like; }
-	| SIMILAR TO	{ $$ = blr_similar; }
-	;
-
-%type <valueExprNode> escape_opt
-escape_opt
-	: /* nothing */			{ $$ = NULL; }
-	| ESCAPE value_primary	{ $$ = $2; }
+	| value NOT LIKE value ESCAPE value %prec LIKE
+		{
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_like, $1, $4, $6);
+			$$ = newNode<NotBoolNode>(node);
+		}
+	| value SIMILAR TO value %prec SIMILAR
+		{ $$ = newNode<ComparativeBoolNode>(blr_similar, $1, $4); }
+	| value SIMILAR TO value ESCAPE value %prec SIMILAR
+		{ $$ = newNode<ComparativeBoolNode>(blr_similar, $1, $4, $6); }
+	| value NOT SIMILAR TO value %prec SIMILAR
+		{
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_similar, $1, $5);
+			$$ = newNode<NotBoolNode>(node);
+		}
+	| value NOT SIMILAR TO value ESCAPE value %prec SIMILAR
+		{
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_similar, $1, $5, $7);
+			$$ = newNode<NotBoolNode>(node);
+		}
 	;
 
 %type <boolExprNode> in_predicate
 in_predicate
-	: value_primary KW_IN in_predicate_value
+	: value KW_IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
 			node->dsqlSpecialArg = $3;
 			$$ = node;
 		}
-	| value_primary NOT KW_IN in_predicate_value
+	| value NOT KW_IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
@@ -5722,13 +5726,13 @@ singular_predicate
 
 %type <boolExprNode> null_predicate
 null_predicate
-	: value_primary IS KW_NULL
+	: value IS KW_NULL
 		{ $$ = newNode<MissingBoolNode>($1); }
-	| value_primary IS UNKNOWN
+	| value IS UNKNOWN
 		{ $$ = newNode<MissingBoolNode>($1, true); }
-	| value_primary IS NOT KW_NULL
+	| value IS NOT KW_NULL
 		{ $$ = newNode<NotBoolNode>(newNode<MissingBoolNode>($1)); }
-	| value_primary IS NOT UNKNOWN
+	| value IS NOT UNKNOWN
 		{ $$ = newNode<NotBoolNode>(newNode<MissingBoolNode>($1, true)); }
 	;
 
@@ -5969,18 +5973,6 @@ array_element
 			node->field->dsqlIndices = $3;
 			$$ = node;
 		}
-	;
-
-%type <valueListNode> value_primary_list_opt
-value_primary_list_opt
-	: /* nothing */			{ $$ = newNode<ValueListNode>(0); }
-	| value_primary_list
-	;
-
-%type <valueListNode> value_primary_list
-value_primary_list
-	: value_primary							{ $$ = newNode<ValueListNode>($1); }
-	| value_primary_list ',' value_primary	{ $$ = $1->add($3); }
 	;
 
 %type <valueListNode> value_list_opt
@@ -6425,12 +6417,12 @@ system_function_special_syntax
 				newNode<ValueListNode>($3)->add($5)->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| POSITION '(' value_primary KW_IN value_primary ')'
+	| POSITION '(' value KW_IN value ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>($3)->add($5));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| POSITION '(' value_primary_list_opt  ')'
+	| POSITION '(' value_list_opt  ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, $3); }
 	;
 
@@ -6456,7 +6448,7 @@ substring_function
 
 			$$ = newNode<SubstringNode>($3, subtractNode, $6);
 		}
-	| SUBSTRING '(' value_primary SIMILAR value_primary ESCAPE value_primary ')'
+	| SUBSTRING '(' value SIMILAR value ESCAPE value ')'
 		{ $$ = newNode<SubstringSimilarNode>($3, $5, $7); }
 	;
 
