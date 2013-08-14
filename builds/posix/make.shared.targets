@@ -41,12 +41,14 @@
 
 # This rule creates parse.cpp from parse.y
 
-$(OBJ)/dsql/parse.cpp $(SRC_ROOT)/include/gen/parse.h: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/btyacc_fb.ske
+$(SRC_ROOT)/include/gen/parse.h: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/btyacc_fb.ske
 	sed -n '/%type .*/p' < $< > $(GEN_ROOT)/types.y
 	sed 's/%type .*//' < $< > $(GEN_ROOT)/y.y
 	$(BTYACC) -l -d -S $(SRC_ROOT)/dsql/btyacc_fb.ske $(GEN_ROOT)/y.y
 	$(MV) $(GEN_ROOT)/y_tab.c $(OBJ)/dsql/parse.cpp
 	$(MV) $(GEN_ROOT)/y_tab.h $(SRC_ROOT)/include/gen/parse.h
+
+$(OBJ)/dsql/parse.cpp: $(SRC_ROOT)/include/gen/parse.h
 
 
 # gpre_meta needs a special boot build since there is no database.
