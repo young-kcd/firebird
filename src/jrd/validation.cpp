@@ -606,8 +606,8 @@ public:
 	USHORT vdr_errors;
 private:
 	TraNumber vdr_max_transaction;
-	ULONG vdr_rel_backversion_counter;	// Counts slots w/rhd_chain
-	ULONG vdr_rel_chain_counter;		// Counts chains w/rdr_chain
+	FB_UINT64 vdr_rel_backversion_counter;	// Counts slots w/rhd_chain
+	FB_UINT64 vdr_rel_chain_counter;		// Counts chains w/rdr_chain
 	RecordBitmap* vdr_rel_records;		// 1 bit per valid record
 	RecordBitmap* vdr_idx_records;		// 1 bit per index item
 public:
@@ -655,35 +655,35 @@ Vdr::Vdr()
 
 static const TEXT msg_table[VAL_MAX_ERROR][80] =
 {
-	"Page %ld wrong type (expected %s encountered %s)",	// 0
-	"Checksum error on page %ld",
-	"Page %ld doubly allocated",
-	"Page %ld is used but marked free",
-	"Page %ld is an orphan",
-	"Warning: blob %"QUADFORMAT"d appears inconsistent",	// 5
-	"Blob %"QUADFORMAT"d is corrupt",
-	"Blob %"QUADFORMAT"d is truncated",
-	"Chain for record %"QUADFORMAT"d is broken",
-	"Data page %ld (sequence %ld) is confused",
-	"Data page %ld (sequence %ld), line %ld is bad",	// 10
-	"Index %d is corrupt on page %ld level %d at offset %d. File: %s, line: %d\n\t",
-	"Pointer page (sequence %ld) lost",
-	"Pointer page (sequence %ld) inconsistent",
-	"Record %"QUADFORMAT"d is marked as damaged",
-	"Record %"QUADFORMAT"d has bad transaction %lu",	// 15
-	"Fragmented record %"QUADFORMAT"d is corrupt",
-	"Record %"QUADFORMAT"d is wrong length",
+	"Page %"ULONGFORMAT" wrong type (expected %s encountered %s)",	// 0
+	"Checksum error on page %"ULONGFORMAT,
+	"Page "ULONGFORMAT" doubly allocated",
+	"Page "ULONGFORMAT" is used but marked free",
+	"Page "ULONGFORMAT" is an orphan",
+	"Warning: blob %"SQUADFORMAT" appears inconsistent",	// 5
+	"Blob %"SQUADFORMAT" is corrupt",
+	"Blob %"SQUADFORMAT" is truncated",
+	"Chain for record %"SQUADFORMAT" is broken",
+	"Data page %"ULONGFORMAT" (sequence %"ULONGFORMAT") is confused",
+	"Data page %"ULONGFORMAT" (sequence %"ULONGFORMAT"), line %"ULONGFORMAT" is bad",	// 10
+	"Index %d is corrupt on page %"ULONGFORMAT" level %d at offset %"ULONGFORMAT". File: %s, line: %d\n\t",
+	"Pointer page (sequence %"ULONGFORMAT") lost",
+	"Pointer page (sequence %"ULONGFORMAT") inconsistent",
+	"Record %"SQUADFORMAT" is marked as damaged",
+	"Record %"SQUADFORMAT" has bad transaction %"ULONGFORMAT,	// 15
+	"Fragmented record %"SQUADFORMAT" is corrupt",
+	"Record %"SQUADFORMAT" is wrong length",
 	"Missing index root page",
 	"Transaction inventory pages lost",
-	"Transaction inventory page lost, sequence %ld",	// 20
-	"Transaction inventory pages confused, sequence %ld",
-	"Relation has %ld orphan backversions (%ld in use)",
+	"Transaction inventory page lost, sequence %"ULONGFORMAT,	// 20
+	"Transaction inventory pages confused, sequence %"ULONGFORMAT,
+	"Relation has %"UQUADFORMAT" orphan backversions (%"UQUADFORMAT" in use)",
 	"Index %d is corrupt (missing entries)",
-	"Index %d has orphan child page at page %ld",
-	"Index %d has a circular reference at page %ld",	// 25
-	"SCN's page %ld (sequence %ld) inconsistent",
-	"Page %d has SCN %d while at SCN's page is %d",
-	"Blob %"QUADFORMAT"d has unknown level %ld instead of (0, 1, 2)"
+	"Index %d has orphan child page at page %"ULONGFORMAT,
+	"Index %d has a circular reference at page %"ULONGFORMAT,	// 25
+	"SCN's page %"ULONGFORMAT" (sequence %"ULONGFORMAT") inconsistent",
+	"Page %"ULONGFORMAT" has SCN %"ULONGFORMAT" while at SCN's page it is "ULONGFORMAT,
+	"Blob %"SQUADFORMAT" has unknown level %d instead of (0, 1, 2)"
 };
 
 
@@ -1081,7 +1081,7 @@ RTN Vdr::walk_blob(thread_db* tdbb,
 	case 2:
 		break;
 	default:
-		corrupt(tdbb, validate, VAL_BLOB_UNKNOWN_LEVEL, relation, number.getValue(), ULONG(header->blh_level));
+		corrupt(tdbb, validate, VAL_BLOB_UNKNOWN_LEVEL, relation, number.getValue(), header->blh_level);
 	}
 
 	// Level 1 blobs are a little more complicated
@@ -1519,7 +1519,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 		if (BTR_SIZE + page->btr_jump_size > page->btr_length)
 		{
 			corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-					id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
+					id + 1, next, page->btr_level, (ULONG) (pointer - (UCHAR*) page),
+					__FILE__, __LINE__);
 		}
 
 		UCHAR n = page->btr_jump_count;
@@ -1535,7 +1536,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				(jumpNode.offset > page->btr_length))
 			{
 				corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
+						id + 1, next, page->btr_level, (ULONG) (pointer - (UCHAR*) page),
+						__FILE__, __LINE__);
 			}
 			else
 			{
@@ -1543,7 +1545,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				checknode.readNode((UCHAR*) page + jumpNode.offset, leafPage);
 				if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, (ULONG) jumpNode.offset,
+							__FILE__, __LINE__);
 				}
 
 			}
@@ -1579,7 +1582,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				{
 					duplicateNode = false;
 					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, q - (UCHAR*) page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, (ULONG) (q - (UCHAR*) page),
+							__FILE__, __LINE__);
 				}
 				else if (*p < *q)
 				{
@@ -1600,7 +1604,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 			{
 				duplicateNode = false;
 				corrupt(tdbb, true, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page,
+						id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
 						__FILE__, __LINE__);
 			}
 
@@ -1624,7 +1628,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				{
 					duplicateNode = false;
 					corrupt(tdbb, true, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
 							__FILE__, __LINE__);
 				}
 			}
@@ -1645,7 +1649,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 						(node.recordNumber < lastNode.recordNumber))
 					{
 						corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
 							__FILE__, __LINE__);
 					}
 				}
@@ -1703,7 +1707,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 					if (*p < *q)
 					{
 						corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+								id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
 								__FILE__, __LINE__);
 					}
 					else if (*p > *q)
@@ -1724,7 +1728,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 						(downNode.recordNumber < down_record_number))
 					{
 						corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+								id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
 								__FILE__, __LINE__);
 					}
 				}
@@ -1733,7 +1737,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				if (previous_number != down_page->btr_left_sibling)
 				{
 					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
 							__FILE__, __LINE__);
 				}
 
@@ -1744,7 +1748,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 					(next_number != down_page->btr_sibling))
 				{
 					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page,
+							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
 							__FILE__, __LINE__);
 				}
 
@@ -1760,7 +1764,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 		if (pointer != endPointer || page->btr_length > dbb->dbb_page_size)
 		{
 			corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
-					next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
+					next, page->btr_level, (ULONG) (pointer - (UCHAR*) page), __FILE__, __LINE__);
 		}
 
 		if (next == down)
