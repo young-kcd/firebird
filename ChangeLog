@@ -1,3 +1,7 @@
+ 2013-08-12 02:20  asfernandes 
+   M src/dsql/parse.y
+Fixed CORE-4177 (only the simple test case reported in fb-devel) - Problem with some boolean expressions not being allowed.
+
  2013-08-09 15:51  dimitr 
    M src/jrd/DatabaseSnapshot.cpp
 Fixed CORE-4176: Monitoring tables return incomplete information in SC/CS configurations.
