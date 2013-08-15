@@ -3645,7 +3645,6 @@ static LatchState latch_buffer(thread_db* tdbb, Sync &bcbSync, BufferDesc *bdb,
 		if (bdb->bdb_page == page)
 		{
 			//bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
-			tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 			return lsOk;
 		}
 		bdb->release(tdbb, false);
@@ -3693,11 +3692,12 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 	if (page != FREE_PAGE)
 	{
 		bcbSync.lock(SYNC_SHARED);
-		BufferDesc *bdb = find_buffer(bcb, page, true);
+		BufferDesc* bdb = find_buffer(bcb, page, true);
 		while (bdb)
 		{
 			const LatchState ret = latch_buffer(tdbb, bcbSync, bdb, page, syncType, wait);
 			if (ret == lsOk) {
+				tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 				return bdb;
 			}
 			if (ret == lsTimeout) {
@@ -3719,11 +3719,12 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 		if (page != FREE_PAGE)
 		{
 			// Check to see if buffer has already been assigned to page
-			BufferDesc *bdb = find_buffer(bcb, page, true);
+			BufferDesc* bdb = find_buffer(bcb, page, true);
 			while (bdb)
 			{
 				const LatchState ret = latch_buffer(tdbb, bcbSync, bdb, page, syncType, wait);
 				if (ret == lsOk) {
+					tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 					return bdb;
 				}
 				if (ret == lsTimeout) {
@@ -3755,6 +3756,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				}
 				if (bdb->bdb_flags & BDB_db_dirty)
 				{
+					//tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES); shouldn't it be here?
 					return bdb;
 				}
 				if (!--walk)
@@ -3988,6 +3990,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			else
 				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 
+			tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 			return bdb;
 		}
 
