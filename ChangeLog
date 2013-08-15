@@ -1,3 +1,20 @@
+ 2013-08-14 15:41  asfernandes 
+   M builds/posix/make.shared.targets
+Fixed the problem with make -j when only parse.y is changed.
+
+ 2013-08-14 09:27  dimitr 
+   M src/jrd/validation.cpp
+Attempted to fix unexpectedly big (> 2^32) page numbers in the validation output + some related adjustments.
+
+ 2013-08-14 02:20  asfernandes 
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+Fixed CORE-4177 (last part) - Problem with some boolean expressions not being allowed.
+
+ 2013-08-14 02:20  asfernandes 
+   M src/jrd/recsrc/BufferedStream.cpp
+Fix assertion.
+
  2013-08-12 02:20  asfernandes 
    M src/dsql/parse.y
 Fixed CORE-4177 (only the simple test case reported in fb-devel) - Problem with some boolean expressions not being allowed.
