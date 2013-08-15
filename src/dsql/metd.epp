@@ -267,7 +267,8 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const MetaName& name, USH
 	// Start by seeing if symbol is already defined
 
 	dsql_intlsym* symbol;
-	if (dbb->dbb_collations.get(name, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped))
+	if (dbb->dbb_collations.get(name, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped) &&
+		symbol->intlsym_charset_id == charset_id)
 	{
 		if (MET_dsql_cache_use(tdbb, SYM_intlsym_collation, name))
 			symbol->intlsym_flags |= INTLSYM_dropped;
