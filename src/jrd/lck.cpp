@@ -333,7 +333,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	Database* dbb = lock->lck_dbb;
 
 	Jrd::Attachment* const old_attachment = lock->getLockAttachment();
-	lock->setLockAttachment(tdbb->getAttachment());
+	lock->setLockAttachment(tdbb, tdbb->getAttachment());
 
 	WaitCancelGuard guard(tdbb, lock, wait);
 	Arg::StatusVector statusVector;
@@ -342,7 +342,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 	if (!result)
 	{
-	    lock->setLockAttachment(old_attachment);
+	    lock->setLockAttachment(tdbb, old_attachment);
 
 		switch (statusVector.value()[1])
 		{
@@ -448,7 +448,7 @@ void LCK_downgrade(thread_db* tdbb, Lock* lock)
 	if (lock->lck_physical == LCK_none)
 	{
 		lock->lck_id = lock->lck_data = 0;
-	    lock->setLockAttachment(NULL);
+	    lock->setLockAttachment(tdbb, NULL);
 	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
@@ -627,7 +627,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 #endif
 
 	Database* dbb = lock->lck_dbb;
-    lock->setLockAttachment(tdbb->getAttachment());
+    lock->setLockAttachment(tdbb, tdbb->getAttachment());
 
 	WaitCancelGuard guard(tdbb, lock, wait);
 	Arg::StatusVector statusVector;
@@ -637,7 +637,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 	if (!lock->lck_id)
 	{
-    	lock->setLockAttachment(NULL);
+    	lock->setLockAttachment(tdbb, NULL);
 		if (!wait)
 		{
 			statusVector.copyTo(tdbb->tdbb_status_vector);
@@ -778,7 +778,7 @@ void LCK_release(thread_db* tdbb, Lock* lock)
 
 	lock->lck_physical = lock->lck_logical = LCK_none;
 	lock->lck_id = lock->lck_data = 0;
-	lock->setLockAttachment(NULL);
+	lock->setLockAttachment(tdbb, NULL);
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
@@ -1482,19 +1482,20 @@ Lock::Lock(thread_db* tdbb, USHORT length, lck_t type, void* object, lock_ast_t 
 	lck_tail[0] = 0;
 }
 
-void Lock::setLockAttachment(Jrd::Attachment* attachment)
+void Lock::setLockAttachment(thread_db* tdbb, Jrd::Attachment* attachment)
 {
-	Attachment* att = lck_attachment ? lck_attachment->getHandle() : NULL;
-	if (att == attachment)
-		return;
-
-	Database* dbb = attachment ? attachment->att_database : att ? att->att_database : NULL;
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 	if (!dbb)
 		return;
 
 	Sync lckSync(&dbb->dbb_lck_sync, "setLockAttachment");
 	lckSync.lock(SYNC_EXCLUSIVE);
+
+	Attachment* att = lck_attachment ? lck_attachment->getHandle() : NULL;
+	if (att == attachment)
+		return;
 
 	// If lock has an attachment it must not be a part of linked list
 	fb_assert(!lck_attachment ? !lck_prior && !lck_next : true);

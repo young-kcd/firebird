@@ -95,7 +95,7 @@ public:
 		return lck_attachment ? lck_attachment->getHandle() : NULL;
 	}
 
-	void setLockAttachment(Attachment* att);
+	void setLockAttachment(thread_db* tdbb, Attachment* att);
 
 #ifdef DEBUG_LCK
 	Firebird::SyncObject	lck_sync;
