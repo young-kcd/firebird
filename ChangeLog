@@ -1,3 +1,11 @@
+ 2013-08-15 15:42  asfernandes 
+   M src/dsql/metd.epp
+Fixed CORE-4180 - CREATE COLLATION does not verify base collation charset.
+
+ 2013-08-15 11:54  dimitr 
+   M src/jrd/cch.cpp
+Fixed incorrect accounting re. number of fetches.
+
  2013-08-14 15:41  asfernandes 
    M builds/posix/make.shared.targets
 Fixed the problem with make -j when only parse.y is changed.
