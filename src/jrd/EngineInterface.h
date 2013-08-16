@@ -70,7 +70,7 @@ public:
 		return jAtt;
 	}
 
-	blb* getHandle()
+	blb* getHandle() throw()
 	{
 		return blob;
 	}
@@ -107,7 +107,7 @@ public:
 	{
 	}
 
-	jrd_tra* getHandle()
+	jrd_tra* getHandle() throw()
 	{
 		return transaction;
 	}
@@ -170,7 +170,7 @@ public:
 	JAttachment* getAttachment();
 
 	// Change after adding separate handle for cursor in dsql
-	dsql_req* getHandle();
+	dsql_req* getHandle() throw();
 
 private:
 	Firebird::RefPtr<JStatement> statement;
@@ -210,7 +210,7 @@ public:
 		return jAtt;
 	}
 
-	dsql_req* getHandle()
+	dsql_req* getHandle() throw()
 	{
 		return statement;
 	}
@@ -229,7 +229,7 @@ inline JAttachment* JResultSet::getAttachment()
 }
 
 // Change after adding separate handle for cursor in dsql
-inline dsql_req* JResultSet::getHandle()
+inline dsql_req* JResultSet::getHandle() throw()
 {
 	return statement->getHandle();
 }
@@ -263,7 +263,7 @@ public:
 		return jAtt;
 	}
 
-	JrdStatement* getHandle()
+	JrdStatement* getHandle() throw()
 	{
 		return rq;
 	}
@@ -288,7 +288,7 @@ public:
 	{
 	}
 
-	JEvents* getHandle()
+	JEvents* getHandle() throw()
 	{
 		return this;
 	}
@@ -355,7 +355,7 @@ public:
 public:
 	explicit JAttachment(Attachment* handle);
 
-	Attachment* getHandle()
+	Attachment* getHandle() throw()
 	{
 		return att;
 	}
@@ -365,9 +365,9 @@ public:
 		return this;
 	}
 
-	Firebird::Mutex* getMutex(bool useAsync = false)
+	Firebird::Mutex* getMutex(bool useAsync = false, bool forceAsync = false)
 	{
-		if (useAsync)
+		if (useAsync && (!forceAsync))
 		{
 			fb_assert(!mainMutex.locked());
 		}
@@ -376,8 +376,8 @@ public:
 
 	void cancel()
 	{
-		asyncMutex.assertLocked();
-		mainMutex.assertLocked();
+		fb_assert(asyncMutex.locked());
+		fb_assert(mainMutex.locked());
 
 		att = NULL;
 	}
@@ -387,9 +387,12 @@ public:
 
 	void manualLock(ULONG& flags);
 	void manualUnlock(ULONG& flags);
+	void manualAsyncUnlock(ULONG& flags);
 
 private:
 	Attachment* att;
+	// This mutexes guarantee attachment existence. After releasing both of them with possibly
+	// zero att_use_count one should check does attachment still exists calling getHandle().
 	Firebird::Mutex mainMutex, asyncMutex;
 
 	void freeEngineData(Firebird::IStatus* status);

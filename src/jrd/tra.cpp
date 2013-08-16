@@ -1155,6 +1155,11 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	// Release the transaction and its pool
 
 	tdbb->setTransaction(NULL);
+	JTransaction* jTra = transaction->getInterface();
+	if (jTra)
+	{
+		jTra->setHandle(NULL);
+	}
 	jrd_tra::destroy(attachment, transaction);
 }
 

@@ -526,7 +526,7 @@ TimerDelay curTime()
 
 TimerEntry* getTimer(ITimer* timer)
 {
-	timerAccess->assertLocked();
+	fb_assert(timerAccess->locked());
 
 	for (unsigned int i = 0; i < timerQueue->getCount(); ++i)
 	{

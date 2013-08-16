@@ -145,11 +145,11 @@ public:
 	{
 		// first of all try to enter the mutex
 		// this will help to make sure it's not locked by other thread
-		if (!tryEnter("assertLocked()"))
+		if (!tryEnter(FB_FUNCTION))
 		{
 			return false;
 		}
-		// make sure mutex was already locked prior assertLocked
+		// make sure mutex was already locked
 		bool rc = lockCount > 1;
 		// leave to release lock, done by us in tryEnter
 		leave();
@@ -157,13 +157,6 @@ public:
 		return rc;
 	}
 #endif
-
-	void assertLocked()
-	{
-#ifdef DEV_BUILD
-		fb_assert(locked());
-#endif
-	}
 
 public:
 	static void initMutexes() { }
@@ -273,11 +266,11 @@ public:
 	{
 		// first of all try to enter the mutex
 		// this will help to make sure it's not locked by other thread
-		if (!tryEnter("assertLocked()"))
+		if (!tryEnter(FB_FUNCTION))
 		{
 			return false;
 		}
-		// make sure mutex was already locked prior assertLocked
+		// make sure mutex was already locked
 		bool rc = lockCount > 1;
 		// leave to release lock, done by us in tryEnter
 		leave();
@@ -285,13 +278,6 @@ public:
 		return rc;
 	}
 #endif
-
-	void assertLocked()
-	{
-#ifdef DEV_BUILD
-		fb_assert(locked());
-#endif
-	}
 
 public:
 	static void initMutexes();

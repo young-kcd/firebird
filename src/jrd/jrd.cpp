@@ -250,7 +250,7 @@ void JAttachment::manualLock(ULONG& flags)
 	fb_assert(!(flags & ATT_manual_lock));
 	asyncMutex.enter(FB_FUNCTION);
 	mainMutex.enter(FB_FUNCTION);
-	flags |= ATT_manual_lock;
+	flags |= (ATT_manual_lock | ATT_async_manual_lock);
 }
 
 void JAttachment::manualUnlock(ULONG& flags)
@@ -259,6 +259,15 @@ void JAttachment::manualUnlock(ULONG& flags)
 	{
 		flags &= ~ATT_manual_lock;
 		mainMutex.leave();
+	}
+	manualAsyncUnlock(flags);
+}
+
+void JAttachment::manualAsyncUnlock(ULONG& flags)
+{
+	if (flags & ATT_async_manual_lock)
+	{
+		flags &= ~ATT_async_manual_lock;
 		asyncMutex.leave();
 	}
 }
@@ -371,15 +380,21 @@ namespace
 {
 	using Jrd::Attachment;
 
+	// Flag engineShutdown guarantees that no new attachment is created after setting it
+	// and helps avoid more than 1 shutdown threads running simultaneously.
+	bool engineShutdown = false;
+	// This flag is protected with 2 mutexes. shutdownMutex is taken by each shutdown thread
+	// (for a relatively long time). newAttachmentMutex is taken (for a short time) when
+	// shutdown thread is starting shutdown and also when new attachment is created.
+	GlobalPtr<Mutex> shutdownMutex, newAttachmentMutex;
+
 	// This mutex is set when new Database block is created. It's global first of all to satisfy
 	// SS requirement - avoid 2 Database blocks for same database (file). Also guarantees no
 	// half-done Database block in databases linked list. Always taken before databases_mutex.
-	GlobalPtr<Mutex> db_init_mutex;
+	GlobalPtr<Mutex> dbInitMutex;
 
 	Database* databases = NULL;
-	bool engineShuttingDown = false;
-	// This mutex protects both linked list of databases and flag engineShuttingDown.
-	// Flag engineShuttingDown guarantees that no new attachment is created after setting it.
+	// This mutex protects linked list of databases
 	GlobalPtr<Mutex> databases_mutex;
 
 	// Holder for per-database init/fini mutex
@@ -451,7 +466,7 @@ namespace
 	// attachments) is accessed. No other mutex from above mentioned here can be taken after
 	// dbb_sync with an exception of attachment mutex for new attachment.
 	// So finally the order of taking mutexes is:
-	//	1. db_init_mutex (in attach/create database) or attachment mutex in other entries
+	//	1. dbInitMutex (in attach/create database) or attachment mutex in other entries
 	//	2. databases_mutex (when / if needed)
 	//	3. dbb_sync (when / if needed)
 	//	4. only for new attachments: attachment mutex when that attachment is created
@@ -571,19 +586,20 @@ namespace
 		static const unsigned ATT_LOCK_ASYNC = 1;
 
 		AttachmentHolder(thread_db* tdbb, JAttachment* ja, unsigned lockAsync, const char* from)
-			: mutex(ja->getMutex(lockAsync & ATT_LOCK_ASYNC)),
-			  attachment(NULL),
-			  async(lockAsync)
+			: jAtt(ja),
+			  async(lockAsync & ATT_LOCK_ASYNC)
 		{
-			mutex->enter(from);
+			jAtt->getMutex(async)->enter(from);
+			Jrd::Attachment* attachment = jAtt->getHandle();	// Must be done after entering mutex
 
 			try
 			{
-				attachment = ja->getHandle();	// Must be done after entering mutex
-				if (!attachment || engineShuttingDown)
+				if (!attachment || engineShutdown)
 				{
-					// this shutdown check is an optimization
-					// threads can enter engine with the flag set
+					// This shutdown check is an optimization, threads can still enter engine
+					// with the flag set cause shutdownMutex mutex is not locked here.
+					// That's not a danger cause check of att_use_count
+					// in shutdown code makes it anyway safe.
 					status_exception::raise(Arg::Gds(isc_att_shutdown));
 				}
 
@@ -596,23 +612,23 @@ namespace
 			}
 			catch (const Firebird::Exception&)
 			{
-				mutex->leave();
+				jAtt->getMutex(async)->leave();
 				throw;
 			}
 		}
 
 		~AttachmentHolder()
 		{
-			if (!async)
+			Jrd::Attachment* attachment = jAtt->getHandle();
+			if (attachment && !async)
 			{
 				attachment->att_use_count--;
 			}
-			mutex->leave();
+			jAtt->getMutex(async)->leave();
 		}
 
 	private:
-		Firebird::Mutex* mutex;
-		Jrd::Attachment* attachment;
+		RefPtr<JAttachment> jAtt;
 		bool async;
 
 	private:
@@ -929,7 +945,7 @@ static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static bool		shutdown_database(Database*, const bool);
 static void		strip_quotes(string&);
-static void		purge_attachment(thread_db*, Jrd::Attachment*, const bool);
+static void		purge_attachment(thread_db*, JAttachment*, const bool);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const RefPtr<Config>*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
@@ -1215,7 +1231,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		bool invalid_client_SQL_dialect = false;
 		PathName org_filename, expanded_name;
 		bool is_alias = false;
-		MutexEnsureUnlock guardDbInit(db_init_mutex, FB_FUNCTION);
+		MutexEnsureUnlock guardDbInit(dbInitMutex, FB_FUNCTION);
 
 #ifdef WIN_NT
 		guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -1311,7 +1327,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			if (!(dbb->dbb_flags & DBB_new))
 			{
 				// That's already initialized DBB
-				// No need keeping db_init_mutex any more
+				// No need keeping dbInitMutex any more
 				guardDbInit.leave();
 			}
 
@@ -1363,6 +1379,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 				// Initialize locks
 				init_database_locks(tdbb);
+				jAtt->manualAsyncUnlock(attachment->att_flags);
 
 				INI_init(tdbb);
 				SHUT_init(tdbb);
@@ -1400,7 +1417,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
 				CCH_init2(tdbb);
 
-				// Init complete - we can release db_init_mutex
+				// Init complete - we can release dbInitMutex
 				dbb->dbb_flags &= ~DBB_new;
 				guardDbInit.leave();
 			}
@@ -1415,6 +1432,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				fb_assert(dbb->dbb_lock_mgr);
 
 				LCK_init(tdbb, LCK_OWNER_attachment);
+				jAtt->manualAsyncUnlock(attachment->att_flags);
 
 				INI_init(tdbb);
 				INI_init2(tdbb);
@@ -2287,7 +2305,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
-		MutexEnsureUnlock guardDbInit(db_init_mutex, FB_FUNCTION);
+		MutexEnsureUnlock guardDbInit(dbInitMutex, FB_FUNCTION);
 
 		UserId userId;
 		DatabaseOptions options;
@@ -2512,6 +2530,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			// Initialize locks
 			init_database_locks(tdbb);
+			jAtt->manualAsyncUnlock(attachment->att_flags);
 
 			INI_init(tdbb);
 			PAG_init(tdbb);
@@ -2605,7 +2624,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			dbb->dbb_backup_manager->dbCreating = false;
 
-			// Init complete - we can release db_init_mutex
+			// Init complete - we can release dbInitMutex
 			dbb->dbb_flags &= ~DBB_new;
 			guardDbInit.leave();
 
@@ -2727,7 +2746,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
  **************************************/
 	try
 	{
-		EngineContextHolder tdbb(user_status, this, FB_FUNCTION, AttachmentHolder::ATT_LOCK_ASYNC);
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
 		try
 		{
@@ -2736,7 +2755,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
 			attachment->signalShutdown(tdbb);
-			purge_attachment(tdbb, attachment, false);
+			purge_attachment(tdbb, this, false);
 
 			att = NULL;
 		}
@@ -2782,7 +2801,12 @@ void JAttachment::dropDatabase(IStatus* user_status)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 			}
 
-			{	// scope
+			// Prepare to set ODS to 0
+   			WIN window(HEADER_PAGE_NUMBER);
+			Ods::header_page* header = NULL;
+
+			try
+			{
 				Sync sync(&dbb->dbb_sync, "JAttachment::dropDatabase()");
 
 				if (attachment->att_in_use || attachment->att_use_count)
@@ -2815,6 +2839,9 @@ void JAttachment::dropDatabase(IStatus* user_status)
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 				}
 
+				// Lock header page before taking database lock
+				header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+
 				// Check if same process has more attachments
 				sync.lock(SYNC_EXCLUSIVE);
 				if (dbb->dbb_attachments && dbb->dbb_attachments->att_next)
@@ -2835,11 +2862,9 @@ void JAttachment::dropDatabase(IStatus* user_status)
 				// Just mark the header page with an 0 ods version so that no other
 				// process can attach to this database once we release our exclusive
 				// lock and start dropping files.
-
-	   			WIN window(HEADER_PAGE_NUMBER);
-				Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 				CCH_MARK_MUST_WRITE(tdbb, &window);
 				header->hdr_ods_version = 0;
+				header = NULL;		// In case of exception in CCH_RELEASE() do not repeat it in catch
 				CCH_RELEASE(tdbb, &window);
 
 				// Notify Trace API manager about successful drop of database
@@ -2849,10 +2874,20 @@ void JAttachment::dropDatabase(IStatus* user_status)
 					attachment->att_trace_manager->event_detach(&conn, true);
 				}
 			}
+			catch (const Exception&)
+			{
+				if (header)
+				{
+					CCH_RELEASE(tdbb, &window);
+				}
+				CCH_release_exclusive(tdbb);
+				throw;
+			}
 
 			// Unlink attachment from database
 			release_attachment(tdbb, attachment);
 			att = NULL;
+			attachment = NULL;
 			guard.leave();
 
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
@@ -3883,33 +3918,6 @@ void JRequest::start(IStatus* user_status, ITransaction* tra, int level)
 }
 
 
-class CounterGuard
-{
-public:
-	explicit CounterGuard(AtomicCounter& pc)
-		: counter(&pc)
-	{
-		for(;;)
-		{
-			if (counter->exchangeAdd(1) == 0)
-			{
-				break;
-			}
-			counter->exchangeAdd(-1);
-			THD_sleep(1);
-		}
-	}
-
-	~CounterGuard()
-	{
-		counter->exchangeAdd(-1);
-	}
-
-private:
-	AtomicCounter* counter;
-};
-
-
 void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason)
 {
 /**************************************
@@ -3924,18 +3932,18 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
  *	database.
  *
  **************************************/
-	static AtomicCounter shutCounter;
-	static bool shutdownComplete = false;
-
 	try
 	{
-		CounterGuard guard(shutCounter);
+		MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
 
-		if (shutdownComplete)
+		if (engineShutdown)
 		{
 			return;
 		}
-		shutdownComplete = true;
+		{ // scope
+			MutexLockGuard guard(newAttachmentMutex, FB_FUNCTION);
+			engineShutdown = true;
+		}
 
 		ThreadContextHolder tdbb;
 
@@ -5841,11 +5849,17 @@ static JAttachment* init(thread_db* tdbb,
  *
  * Functional description
  *	Initialize for database access.  First call from both CREATE and ATTACH.
- *	Upon entry mutex db_init_mutex must be locked.
+ *	Upon entry mutex dbInitMutex must be locked.
  *
  **************************************/
 	SET_TDBB(tdbb);
-	db_init_mutex->assertLocked();
+	fb_assert(dbInitMutex->locked());
+
+	// make sure that no new attachments arrive after shutdown started
+	if (engineShutdown)
+	{
+		Arg::Gds(isc_att_shutdown).raise();
+	}
 
 	// Initialize standard random generator.
 	// MSVC (at least since version 7) have per-thread random seed.
@@ -5867,12 +5881,6 @@ static JAttachment* init(thread_db* tdbb,
 	{	// scope
 		MutexLockGuard listGuard(databases_mutex, FB_FUNCTION);
 
-		// make sure that no new attachments arrive after shutdown started
-		if (engineShuttingDown)
-		{
-			Arg::Gds(isc_att_shutdown).raise();
-		}
-
 		if (config->getSharedCache())
 		{
 			if (config->getSharedDatabase())
@@ -5893,6 +5901,7 @@ static JAttachment* init(thread_db* tdbb,
 
 						{   // scope
 							MutexUnlockGuard listUnlock(databases_mutex, FB_FUNCTION);
+							fb_assert(!databases_mutex->locked());
 
 							// after unlocking databases_mutex we lose control over dbb
 							// as long as dbb_init_fini is not locked and its activity is not checked
@@ -6010,6 +6019,14 @@ static JAttachment* create_attachment(const PathName& alias_name,
  **************************************/
 	fb_assert(dbb->locked());
 
+	{ // scope
+		MutexLockGuard guard(newAttachmentMutex, FB_FUNCTION);
+		if (engineShutdown)
+		{
+			status_exception::raise(Arg::Gds(isc_att_shutdown));
+		}
+	}
+
 	Jrd::Attachment* attachment = Jrd::Attachment::create(dbb);
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
@@ -6026,7 +6043,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
 
 	JAttachment* jAtt = new JAttachment(attachment);
-	jAtt->addRef();		// See also release() in unwindAttachment()
+	jAtt->addRef();		// See also REF_NO_INCR RefPtr in unwindAttach()
 	attachment->att_interface = jAtt;
 	jAtt->manualLock(attachment->att_flags);
 
@@ -6649,7 +6666,7 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 }
 
 
-static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const bool force_flag)
+static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool force_flag)
 {
 /**************************************
  *
@@ -6664,19 +6681,58 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
  **************************************/
 	SET_TDBB(tdbb);
 
-	Mutex* attMutex = attachment->att_interface->getMutex();
-	fb_assert(!attMutex->locked());
+	Mutex* attMutex = jAtt->getMutex();
+	fb_assert(attMutex->locked());
 
-	MutexEnsureUnlock guard(*attMutex, FB_FUNCTION);
-	guard.enter();
+	Jrd::Attachment* attachment = NULL;
 
-	while (attachment->att_use_count)
+	while ((attachment = jAtt->getHandle()) && attachment->att_flags & ATT_purge_started)
 	{
-		MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
-		// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when att_use_count == 0)
-		THD_yield();
-		THD_sleep(1);
+		attachment->att_use_count--;
+		{
+			MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
+			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when ATT_purge_started / jAtt->getHandle() changes)
+
+			fb_assert(!attMutex->locked());
+			THD_yield();
+			THD_sleep(1);
+		}
+		attachment = jAtt->getHandle();
+		if (attachment)
+		{
+	  		attachment->att_use_count++;
+		}
 	}
+	if (!attachment)
+	{
+		return;
+	}
+
+	attachment->att_flags |= ATT_purge_started;
+
+	fb_assert(attachment->att_use_count > 0);
+	attachment = jAtt->getHandle();
+	while (attachment && attachment->att_use_count > 1)
+	{
+		attachment->att_use_count--;
+		{
+			MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
+			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when --att_use_count)
+
+			fb_assert(!attMutex->locked());
+			THD_yield();
+			THD_sleep(1);
+		}
+		attachment = jAtt->getHandle();
+		if (attachment)
+		{
+	  		attachment->att_use_count++;
+		}
+	}
+
+	fb_assert(attMutex->locked());
+	if (!attachment)
+		return;
 
 	Database* const dbb = attachment->att_database;
 
@@ -6734,6 +6790,7 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 			if (!force_flag)
 			{
 				attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
+				attachment->att_flags &= ~ATT_purge_started;
 				throw;
 			}
 		}
@@ -6762,6 +6819,7 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 		if (!force_flag)
 		{
 			attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
+			attachment->att_flags &= ~ATT_purge_started;
 			throw;
 		}
 	}
@@ -6773,10 +6831,26 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 		attachment->att_trace_manager->event_detach(&conn, false);
 	}
 
+	fb_assert(attMutex->locked());
+	Mutex* asyncMutex = jAtt->getMutex(true, true);
+	MutexEnsureUnlock asyncGuard(*asyncMutex, FB_FUNCTION);
+
+	{ // scope - ensure correct order of taking both async and main mutexes
+		MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
+		// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when att_use_count == 0)
+
+		fb_assert(!attMutex->locked());
+		asyncGuard.enter();
+	}
+
+	if (!jAtt->getHandle())
+		return;
+
 	// Unlink attachment from database
 	release_attachment(tdbb, attachment);
 
-	guard.leave();
+	asyncGuard.leave();
+	MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
 
 	// If there are still attachments, do a partial shutdown
 	shutdown_database(dbb, true);
@@ -7012,43 +7086,41 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStat
 {
 	transliterateException(tdbb, ex, userStatus, NULL);
 
-	if (dbb)
+	try
 	{
-		fb_assert(!dbb->locked());
-		{	// scope
-			MutexLockGuard guard(databases_mutex, FB_FUNCTION);
-			if (engineShuttingDown)
-			{
-				if (attachment && attachment->att_interface)
-				{
-					attachment->att_interface->manualUnlock(attachment->att_flags);
-				}
-
-				// this attachment will be released as part of engine shutdown process
-				// see also shutdown_thread
-				return;
-			}
-		}
-
-		try
+		if (dbb)
 		{
-			// A number of holders to make Attachment::destroy() happy
-			// See also addRef() in create_attachment()
-			RefPtr<JAttachment> jAtt(REF_NO_INCR, attachment->att_interface);
-
+			fb_assert(!dbb->locked());
 			ThreadStatusGuard temp_status(tdbb);
 
 			if (attachment)
 			{
-				release_attachment(tdbb, attachment);
+				// A number of holders to make Attachment::destroy() happy
+				// See also addRef() in create_attachment()
+				RefPtr<JAttachment> jAtt(REF_NO_INCR, attachment->att_interface);
+
+				// This unlocking/locking order guarantees stable release of attachment
+				jAtt->manualUnlock(attachment->att_flags);
+
+				ULONG flags = 0;	// att_flags may already not exist here!
+				jAtt->manualLock(flags);
+				if (jAtt->getHandle())
+				{
+					attachment->att_flags |= flags;
+					release_attachment(tdbb, attachment);
+				}
+				else
+				{
+					jAtt->manualUnlock(flags);
+				}
 			}
 
 			shutdown_database(dbb, true);
 		}
-		catch (const Exception&)
-		{
-			// no-op
-		}
+	}
+	catch (const Exception&)
+	{
+		// no-op
 	}
 
 	return;
@@ -7105,7 +7177,7 @@ namespace
 		{
 			JAttachment* jAtt = attachments[i];
 
-			MutexLockGuard guard(*(jAtt->getMutex(true)), FB_FUNCTION);
+			MutexLockGuard guard(*(jAtt->getMutex()), FB_FUNCTION);
 			Attachment* attachment = jAtt->getHandle();
 
 			if (attachment)
@@ -7117,12 +7189,18 @@ namespace
 				try
 				{
 					// purge attachment, rollback any open transactions
-					purge_attachment(tdbb, attachment, true);
+					attachment->att_use_count++;
+					purge_attachment(tdbb, jAtt, true);
 				}
 				catch (const Exception& ex)
 				{
 					iscLogException("error while shutting down attachment", ex);
 					success = false;
+				}
+				attachment = jAtt->getHandle();
+				if (attachment)
+				{
+					attachment->att_use_count--;
 				}
 			}
 		}
@@ -7134,6 +7212,13 @@ namespace
 	{
 		try
 		{
+			MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
+			if (engineShutdown)
+			{
+				// Shutdown was done, all attachmnets are gone
+				return 0;
+			}
+
 			shutdownAttachments(static_cast<AttQueue*>(arg));
 		}
 		catch(const Exception& ex)
@@ -7173,9 +7258,6 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 		{ // scope
 			MutexLockGuard guard(databases_mutex, FB_FUNCTION);
-
-			// First of all set flag to disable new attachments
-			engineShuttingDown = true;
 
 			for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 			{
