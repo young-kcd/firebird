@@ -1,3 +1,17 @@
+ 2013-08-16 12:44  alexpeshkoff 
+   M src/common/classes/locks.h
+   M src/jrd/Attachment.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+   M src/yvalve/MasterImplementation.cpp
+Postfix for CORE-3935 & CORE-3944: helps avoid segfaults/deadlocks when shutting down firebird
+
+ 2013-08-16 12:41  alexpeshkoff 
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+Always lock dbb_sync before accessing something in setLockAttachment()
+
  2013-08-15 15:42  asfernandes 
    M src/dsql/metd.epp
 Fixed CORE-4180 - CREATE COLLATION does not verify base collation charset.
