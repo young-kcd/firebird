@@ -106,8 +106,6 @@ namespace Jrd
 		River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, const StreamList& streams)
 			: m_rsb(rsb), m_node(node), m_streams(csb->csb_pool)
 		{
-			//m_streams.resize(count);
-			//memcpy(m_streams.begin(), streams, count);
 			m_streams.assign(streams);
 		}
 
@@ -123,8 +121,6 @@ namespace Jrd
 				if (count + delta >= MAX_STREAMS)
 					ERR_post(Arg::Gds(isc_too_many_contexts));
 
-				//m_streams.grow(count + delta);
-				//memcpy(m_streams.begin() + count, sub_river->m_streams.begin(), delta);
 				m_streams.join(sub_river->m_streams);
 			}
 		}
@@ -218,21 +214,30 @@ namespace Jrd
 		CrossJoin(CompilerScratch* csb, RiverList& rivers)
 			: River(csb, NULL, rivers)
 		{
-			const size_t count = rivers.getCount();
+			// Save states of the underlying streams
 
-			if (count == 1)
+			const size_t streamCount = m_streams.getCount();
+			HalfStaticArray<USHORT, OPT_STATIC_ITEMS> streamFlags(streamCount);
+
+			for (StreamList::iterator iter = m_streams.begin(); iter != m_streams.end(); iter++)
+				streamFlags.add(csb->csb_rpt[*iter].csb_flags);
+
+			// Generate record source objects
+
+			const size_t riverCount = rivers.getCount();
+
+			if (riverCount == 1)
 			{
 				River* const sub_river = rivers.front();
 				m_rsb = sub_river->getRecordSource();
-				sub_river->activate(csb);
 			}
 			else
 			{
-				HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs(count);
+				HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs(riverCount);
 
 				// Reorder input rivers according to their possible inter-dependencies
 
-				while (rsbs.getCount() < count)
+				while (rsbs.getCount() < riverCount)
 				{
 					bool added = false;
 
@@ -253,7 +258,7 @@ namespace Jrd
 						break;
 				}
 
-				if (rsbs.getCount() < count)
+				if (rsbs.getCount() < riverCount)
 				{
 					// Ideally, we should never get here. Now it's possible only if some booleans
 					// were faked to be non-computable (FLAG_DEOPTIMIZE and FLAG_RESIDUAL).
@@ -264,17 +269,24 @@ namespace Jrd
 						RecordSource* const sub_rsb = sub_river->getRecordSource();
 
 						if (!rsbs.exist(sub_rsb))
-						{
 							rsbs.add(sub_rsb);
-							sub_river->activate(csb);
-						}
 					}
 				}
 
-				fb_assert(rsbs.getCount() == count);
+				fb_assert(rsbs.getCount() == riverCount);
 
-				m_rsb = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, count, rsbs.begin());
+				m_rsb = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, riverCount, rsbs.begin());
 			}
+
+			// Restore states of the underlying streams
+
+			for (StreamList::iterator iter = m_streams.begin(); iter != m_streams.end(); iter++)
+			{
+				const size_t pos = iter - m_streams.begin();
+				csb->csb_rpt[*iter].csb_flags = streamFlags[pos];
+			}
+
+			// Clear the input rivers list
 
 			rivers.clear();
 		}
@@ -523,7 +535,8 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 					rsb->findUsedStreams(opt->outerStreams);
 			}
 
-			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, opt->localStreams);
+			River* const river =
+				FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, opt->localStreams);
 			river->deactivate(csb);
 			rivers.add(river);
 		}
@@ -727,6 +740,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 				// all currently available rivers
 
 				River* const river = FB_NEW(*tdbb->getDefaultPool()) CrossJoin(csb, rivers);
+				river->activate(csb);
 				rivers.add(river);
 			}
 			else
@@ -1671,8 +1685,6 @@ static void find_index_relationship_streams(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	CompilerScratch* const csb = opt->opt_csb;
-	//const UCHAR* end_stream = streams + 1 + streams[0];
-	//for (const UCHAR* stream = streams + 1; stream < end_stream; stream++)
 	const StreamType* end_stream = streams.end();
 	for (const StreamType* stream = streams.begin(); stream < end_stream; stream++)
 	{
@@ -1737,9 +1749,7 @@ static void form_rivers(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
 
-	//stream_array_t temp;
 	StreamList temp;
-	//temp[0] = 0;
 
 	// this must be a join or a merge node, so go through
 	// the substreams and place them into the temp vector
@@ -1776,8 +1786,6 @@ static void form_rivers(thread_db*		tdbb,
 		{
 			if (*ptr_stream++ == stream)
 			{
-				//temp[0]++;
-				//temp[temp[0]] = stream;
 				temp.add(stream);
 				break;
 			}
@@ -1841,9 +1849,7 @@ static bool form_river(thread_db*		tdbb,
 	StreamType* stream = streams.begin();
 
 	if (count != stream_count)
-	{
 		sort_clause = NULL;
-	}
 
 	const OptimizerBlk::opt_stream* const opt_end = opt->opt_streams.begin() + count;
 	for (OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
@@ -1862,18 +1868,13 @@ static bool form_river(thread_db*		tdbb,
 	river->deactivate(csb);
 	river_list.push(river);
 
-	//stream = temp + 1;
 	stream = temp.begin();
-	//const UCHAR* const end_stream = stream + temp[0];
 	const StreamType* const end_stream = temp.end();
 
 	fb_assert(temp.getCount() >= count);
-	//if (!(temp[0] -= count))
 	temp.shrink(temp.getCount() - count);
 	if (!temp.getCount())
-	{
 		return false;
-	}
 
 	// Reform "temp" from streams not consumed
 	for (const StreamType* t2 = stream; t2 < end_stream; t2++)
@@ -1890,9 +1891,7 @@ static bool form_river(thread_db*		tdbb,
 		}
 
 		if (!used)
-		{
 			*stream++ = *t2;
-		}
 	}
 
 	return true;
@@ -2435,19 +2434,15 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	 * be used to detect update conflict in read committed
 	 * transactions. */
 
-	//const StreamType* ptr;
 	dsc descriptor;
 
 	ULONG items = sort->expressions.getCount() +
-		//(streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
 		3 * streams.getCount() + 2 * (dbkey_streams ? dbkey_streams->getCount() : 0);
-	//const UCHAR* const end_ptr = streams + streams[0];
 	const StreamType* const end_ptr = streams.end();
 	const NestConst<ValueExprNode>* const end_node = sort->expressions.end();
 	HalfStaticArray<ULONG, OPT_STATIC_ITEMS> id_list;
 	StreamList stream_list;
 
-	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++)
 	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++)
 	{
 		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
@@ -2636,7 +2631,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	// Make fields for record numbers record for all streams
 
 	map_length = ROUNDUP(map_length, sizeof(SINT64));
-	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
 	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
 	{
 		map_item->clear();
@@ -2651,7 +2645,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 	// Make fields for transaction id of record for all streams
 
-	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
 	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
 	{
 		map_item->clear();
@@ -2669,7 +2662,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		const StreamType* const end_ptrL = dbkey_streams->end();
 
 		map_length = ROUNDUP(map_length, sizeof(SINT64));
-		//for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
 		for (const StreamType* ptr = dbkey_streams->begin(); ptr < end_ptrL; ptr++, map_item++)
 		{
 			map_item->clear();
@@ -2682,7 +2674,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 			map_length += desc->dsc_length;
 		}
 
-		//for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
 		for (const StreamType* ptr = dbkey_streams->begin(); ptr < end_ptrL; ptr++, map_item++)
 		{
 			map_item->clear();
@@ -2711,8 +2702,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		map_length += desc->dsc_length;
 	}
 
-	fb_assert(map_item - map->items.begin() == map->items.getCount());
-	fb_assert(sort_key - map->keyItems.begin() == map->keyItems.getCount());
+	fb_assert(map_item == map->items.end());
+	fb_assert(sort_key == map->keyItems.end());
 
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 
@@ -2996,13 +2987,8 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 				key->expressions.add((*selected_class)[number]);
 			}
 
-			//const size_t stream_count = river->getStreamCount();
-			//fb_assert(stream_count <= MAX_STREAMS);
 			fb_assert(river->getStreams().getCount() <= MAX_STREAMS);
-			//stream_array_t streams;
 			StreamList streams;
-			//streams[0] = stream_count;
-			//memcpy(streams + 1, river->getStreams(), stream_count);
 			streams.assign(river->getStreams());
 			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, rsb, key, false);
 		}
