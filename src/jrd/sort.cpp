@@ -224,7 +224,7 @@ Sort::Sort(Database* dbb,
 		// Next, try to allocate a "big block". How big? Big enough!
 
 		allocateBuffer(pool);
-		
+
 		m_end_memory = m_memory + m_size_memory;
 		m_first_pointer = (sort_record**) m_memory;
 
@@ -667,7 +667,7 @@ void Sort::allocateBuffer(MemoryPool& pool)
 		}
 		catch (const BadAlloc&)
 		{
-			// not enough memory, retry with a smaller buffer	
+			// not enough memory, retry with a smaller buffer
 
 			while (true)
 			{
@@ -695,8 +695,8 @@ void Sort::releaseBuffer()
 	const size_t MAX_CACHED_SORT_BUFFERS = 8; // 1MB
 
 	SyncLockGuard guard(&m_dbb->dbb_sortbuf_sync, SYNC_EXCLUSIVE, "Sort::releaseBuffer");
-	
-	if (m_size_memory == MAX_SORT_BUFFER_SIZE && 
+
+	if (m_size_memory == MAX_SORT_BUFFER_SIZE &&
 		m_dbb->dbb_sort_buffers.getCount() < MAX_CACHED_SORT_BUFFERS)
 	{
 		m_dbb->dbb_sort_buffers.push(m_memory);

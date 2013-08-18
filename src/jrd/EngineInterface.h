@@ -367,7 +367,7 @@ public:
 
 	Firebird::Mutex* getMutex(bool useAsync = false, bool forceAsync = false)
 	{
-		if (useAsync && (!forceAsync))
+		if (useAsync && !forceAsync)
 		{
 			fb_assert(!mainMutex.locked());
 		}

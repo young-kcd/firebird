@@ -3696,13 +3696,13 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 		while (bdb)
 		{
 			const LatchState ret = latch_buffer(tdbb, bcbSync, bdb, page, syncType, wait);
-			if (ret == lsOk) {
+			if (ret == lsOk)
+			{
 				tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 				return bdb;
 			}
-			if (ret == lsTimeout) {
+			if (ret == lsTimeout)
 				return NULL;
-			}
 
 			bcbSync.lock(SYNC_SHARED);
 			bdb = find_buffer(bcb, page, true);
@@ -3723,13 +3723,13 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			while (bdb)
 			{
 				const LatchState ret = latch_buffer(tdbb, bcbSync, bdb, page, syncType, wait);
-				if (ret == lsOk) {
+				if (ret == lsOk)
+				{
 					tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 					return bdb;
 				}
-				if (ret == lsTimeout) {
+				if (ret == lsTimeout)
 					return NULL;
-				}
 
 				bcbSync.lock(SYNC_EXCLUSIVE);
 				bdb = find_buffer(bcb, page, true);
@@ -3751,9 +3751,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
 
 				if (bdb->bdb_use_count || (bdb->bdb_flags & BDB_free_pending))
-				{
 					continue;
-				}
 				if (bdb->bdb_flags & BDB_db_dirty)
 				{
 					//tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES); shouldn't it be here?

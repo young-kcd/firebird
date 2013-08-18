@@ -630,7 +630,7 @@ void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_nu
  *	be called only if there is a previous level.
  *
  **************************************/
-	
+
 	// If there is no deferred work, just return
 
 	DeferredJob *job = transaction->tra_deferred_job;
