@@ -1,3 +1,15 @@
+ 2013-08-18 18:53  asfernandes 
+   M src/jrd/EngineInterface.h
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/sort.cpp
+   M src/msgs/facilities2.sql
+Misc.
+
+ 2013-08-18 15:32  dimitr 
+   M src/jrd/opt.cpp
+Fixed the optimizer regression causing different from FB2 plans being generated + some cleanup.
+
  2013-08-16 12:44  alexpeshkoff 
    M src/common/classes/locks.h
    M src/jrd/Attachment.h
