@@ -152,9 +152,8 @@ void Manager::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
 
 int Manager::shutdown()
 {
-	thread_db* tdbb = JRD_get_thread_data();
 	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
-		prv->cancelConnections(tdbb);
+		prv->cancelConnections();
 	}
 	return 0;
 }
@@ -261,17 +260,15 @@ void Provider::clearConnections(thread_db* tdbb)
 	m_connections.clear();
 }
 
-void Provider::cancelConnections(thread_db* tdbb)
+void Provider::cancelConnections()
 {
-	fb_assert(!tdbb || !tdbb->getDatabase());
-
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 	Connection** ptr = m_connections.begin();
 	Connection** end = m_connections.end();
 
 	for (; ptr < end; ptr++) {
-		(*ptr)->cancelExecution(tdbb);
+		(*ptr)->cancelExecution();
 	}
 }
 

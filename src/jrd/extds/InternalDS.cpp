@@ -209,7 +209,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 	fb_assert(!m_attachment);
 }
 
-bool InternalConnection::cancelExecution(thread_db* /*tdbb*/)
+bool InternalConnection::cancelExecution()
 {
 	if (m_isCurrent)
 		return true;

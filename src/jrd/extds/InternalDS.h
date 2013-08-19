@@ -67,7 +67,7 @@ public:
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role);
 
-	virtual bool cancelExecution(Jrd::thread_db* tdbb);
+	virtual bool cancelExecution();
 
 	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const;
 

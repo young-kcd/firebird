@@ -333,8 +333,8 @@ public:
 	void storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
 		const Firebird::ByteChunk& chunk);
 
-	void signalCancel(thread_db* tdbb);
-	void signalShutdown(thread_db* tdbb);
+	void signalCancel();
+	void signalShutdown();
 
 	void detachLocksFromAttachment();
 

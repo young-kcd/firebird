@@ -517,11 +517,14 @@ static void shutdown(thread_db* tdbb, SSHORT flag, bool force)
 		for (Jrd::Attachment* attachment = dbb->dbb_attachments;
 			attachment; attachment = attachment->att_next)
 		{
+			JAttachment* const jAtt = attachment->att_interface;
+			MutexLockGuard guard(*(jAtt->getMutex(true)), FB_FUNCTION);
+
 			if (!(attachment->att_flags & ATT_shutdown_manager))
 			{
 				if (!(attachment->att_flags & ATT_shutdown))
 				{
-					attachment->signalShutdown(tdbb);
+					attachment->signalShutdown();
 					found = true;
 				}
 			}

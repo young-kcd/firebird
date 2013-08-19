@@ -192,7 +192,7 @@ void IscConnection::doDetach(thread_db* tdbb)
 		raise(status, tdbb, "detach");
 }
 
-bool IscConnection::cancelExecution(thread_db* /*tdbb*/)
+bool IscConnection::cancelExecution()
 {
 	ISC_STATUS_ARRAY status = {0, 0, 0};
 

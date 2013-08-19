@@ -102,7 +102,7 @@ public:
 	virtual void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att) = 0;
 
 	// cancel execution of every connection
-	void cancelConnections(Jrd::thread_db* tdbb);
+	void cancelConnections();
 
 	const Firebird::string& getName() const { return m_name; }
 
@@ -160,7 +160,7 @@ public:
 		const Firebird::string& role) = 0;
 	virtual void detach(Jrd::thread_db* tdbb);
 
-	virtual bool cancelExecution(Jrd::thread_db* tdbb) = 0;
+	virtual bool cancelExecution() = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 

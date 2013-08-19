@@ -2754,7 +2754,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 			if (attachment->att_in_use)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
-			attachment->signalShutdown(tdbb);
+			attachment->signalShutdown();
 			purge_attachment(tdbb, this, false);
 
 			att = NULL;
@@ -7164,13 +7164,7 @@ namespace
 			Attachment* attachment = jAtt->getHandle();
 
 			if (attachment)
-			{
-				ThreadContextHolder tdbb;
-				tdbb->setAttachment(attachment);
-				tdbb->setDatabase(attachment->att_database);
-
-				attachment->signalShutdown(tdbb);
-			}
+				attachment->signalShutdown();
 		}
 
 		// Purge all attachments
@@ -7850,7 +7844,7 @@ void JRD_shutdown_attachments(Database* dbb)
 }
 
 
-void JRD_cancel_operation(thread_db* tdbb, Jrd::Attachment* attachment, int option)
+void JRD_cancel_operation(thread_db* /*tdbb*/, Jrd::Attachment* attachment, int option)
 {
 /**************************************
  *
@@ -7880,7 +7874,7 @@ void JRD_cancel_operation(thread_db* tdbb, Jrd::Attachment* attachment, int opti
 
 	case fb_cancel_raise:
 		if (!(attachment->att_flags & ATT_cancel_disable))
-			attachment->signalCancel(tdbb);
+			attachment->signalCancel();
 		break;
 
 	default:

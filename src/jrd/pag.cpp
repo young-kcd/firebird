@@ -1713,7 +1713,7 @@ static int blocking_ast_shutdown_attachment(void* ast_object)
 
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_id_lock);
 
-		attachment->signalShutdown(tdbb);
+		attachment->signalShutdown();
 
 		JRD_shutdown_attachments(dbb);
 
@@ -1736,7 +1736,7 @@ static int blocking_ast_cancel_attachment(void* ast_object)
 
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_cancel_lock);
 
-		attachment->signalCancel(tdbb);
+		attachment->signalCancel();
 
 		LCK_release(tdbb, attachment->att_cancel_lock);
 	}
