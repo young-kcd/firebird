@@ -4216,7 +4216,11 @@ void ExceptionNode::setError(thread_db* tdbb) const
 					if (!value || (request->req_flags & req_null))
 						paramsStr.push(NULL_STRING_MARK);
 					else
-						paramsStr.push(MOV_make_string2(tdbb, value, ttype_metadata));
+					{
+						// Usage of NONE here should be reviewed when exceptions are stored using
+						// the metadata character set.
+						paramsStr.push(MOV_make_string2(tdbb, value, ttype_none));
+					}
 				}
 
 				// And add the values to the args and status vector only after they are all created
