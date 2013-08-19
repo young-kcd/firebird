@@ -657,8 +657,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		}
 
 		LOCK_header = (lhb*)(UCHAR*) buffer;
-		read(fd, LOCK_header, file_stat.st_size);
+		const size_t bytes_read = read(fd, LOCK_header, file_stat.st_size);
 		close(fd);
+
+		if (bytes_read != file_stat.st_size)
+		{
+			FPRINTF(outfile, "Unable to read lock file.\n");
+			exit(FINI_OK);
+		}
 
 #ifdef USE_SHMEM_EXT
 		ULONG extentSize = file_stat.st_size;
