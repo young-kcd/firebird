@@ -6019,17 +6019,18 @@ static JAttachment* create_attachment(const PathName& alias_name,
  **************************************/
 	fb_assert(dbb->locked());
 
+	Jrd::Attachment* attachment = NULL;
 	{ // scope
 		MutexLockGuard guard(newAttachmentMutex, FB_FUNCTION);
 		if (engineShutdown)
 		{
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
 		}
-	}
 
-	Jrd::Attachment* attachment = Jrd::Attachment::create(dbb);
-	attachment->att_next = dbb->dbb_attachments;
-	dbb->dbb_attachments = attachment;
+		attachment = Jrd::Attachment::create(dbb);
+		attachment->att_next = dbb->dbb_attachments;
+		dbb->dbb_attachments = attachment;
+	}
 
 	attachment->att_filename = alias_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
