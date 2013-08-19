@@ -50,7 +50,6 @@ enum lck_t {
 	LCK_attachment,				// Attachment lock
 	LCK_shadow,					// Lock to synchronize addition of shadows
 	LCK_sweep,					// Sweep lock for single sweeper
-	LCK_retaining,				// Youngest commit retaining transaction
 	LCK_expression,				// Expression index caching mechanism
 	LCK_prc_exist,				// Procedure existence lock
 	LCK_update_shadow,			// shadow update sync lock
