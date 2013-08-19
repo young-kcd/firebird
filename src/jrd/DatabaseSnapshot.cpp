@@ -525,9 +525,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			if (rid == rel_mon_database)
 			{
 				if (fid == f_mon_db_name)
-				{
 					dbb_allowed = !databaseName.compare(source, length);
-				}
 
 				if (record && dbb_allowed && !dbb_processed)
 				{
@@ -541,9 +539,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			else if (rid == rel_mon_attachments)
 			{
 				if (fid == f_mon_att_user)
-				{
 					att_allowed = locksmith || !userName.compare(source, length);
-				}
 
 				if (record && dbb_allowed && att_allowed)
 				{
@@ -573,9 +569,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 DatabaseSnapshot::~DatabaseSnapshot()
 {
 	for (size_t i = 0; i < snapshot.getCount(); i++)
-	{
 		delete snapshot[i].data;
-	}
 }
 
 
@@ -621,9 +615,7 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 	dsc to_desc;
 
 	if (field.id < format->fmt_count)
-	{
 		to_desc = format->fmt_desc[field.id];
-	}
 
 	if (to_desc.isUnknown())
 		return;
@@ -729,9 +721,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	fb_assert(dbb);
 
 	if (!dbb->dbb_monitoring_data)
-	{
 		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) MonitoringData(dbb);
-	}
 
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup();
@@ -744,21 +734,17 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	// Attachment information
 
-	Attachment* const old_attachment = tdbb->getAttachment();
+	Attachment* const self_attachment = tdbb->getAttachment();
+	dumpAttachment(tdbb, self_attachment, writer);
+
 	try
 	{
-		Attachment::Checkout attCout(old_attachment, FB_FUNCTION, true);
+		Attachment::Checkout attCout(self_attachment, FB_FUNCTION, true);
 
-		for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
+		for (Attachment* attachment = dbb->dbb_attachments; attachment;
+			attachment = attachment->att_next)
 		{
-			Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
-			tdbb->setAttachment(attachment);
-			dumpAttachment(tdbb, attachment, writer);
-		}
-
-		{ // scope
-			SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_SHARED, "DatabaseSnapshot::dumpData");
-			for (Attachment* attachment = dbb->dbb_sys_attachments; attachment; attachment = attachment->att_next)
+			if (attachment != self_attachment)
 			{
 				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
 				tdbb->setAttachment(attachment);
@@ -766,11 +752,23 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			}
 		}
 
-		tdbb->setAttachment(old_attachment);
+		{ // scope
+			SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_SHARED, FB_FUNCTION);
+
+			for (Attachment* attachment = dbb->dbb_sys_attachments; attachment;
+				attachment = attachment->att_next)
+			{
+				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
+				tdbb->setAttachment(attachment);
+				dumpAttachment(tdbb, attachment, writer);
+			}
+		}
+
+		tdbb->setAttachment(self_attachment);
 	}
 	catch(const Exception&)
 	{
-		tdbb->setAttachment(old_attachment);
+		tdbb->setAttachment(self_attachment);
 		throw;
 	}
 }
@@ -787,7 +785,8 @@ void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachm
 
 	// Transaction information
 
-	for (transaction = attachment->att_transactions; transaction; transaction = transaction->tra_next)
+	for (transaction = attachment->att_transactions; transaction;
+		transaction = transaction->tra_next)
 	{
 		putTransaction(transaction, writer, fb_utils::genUniqueId());
 		putContextVars(transaction->tra_context_vars, writer, transaction->tra_number, false);
@@ -795,7 +794,8 @@ void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachm
 
 	// Call stack information
 
-	for (transaction = attachment->att_transactions; transaction; transaction = transaction->tra_next)
+	for (transaction = attachment->att_transactions; transaction;
+		transaction = transaction->tra_next)
 	{
 		for (request = transaction->tra_requests;
 			 request && (request->req_flags & req_active);
@@ -954,9 +954,7 @@ bool DatabaseSnapshot::putAttachment(thread_db* /*tdbb*/, const Jrd::Attachment*
 	fb_assert(attachment);
 
 	if (!attachment->att_user)
-	{
 		return false;
-	}
 
 	DumpRecord record(rel_mon_attachments);
 
