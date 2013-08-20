@@ -735,7 +735,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	// Attachment information
 
 	Attachment* const self_attachment = tdbb->getAttachment();
-	dumpAttachment(tdbb, self_attachment, writer);
+	dumpAttachment(self_attachment, writer);
 
 	try
 	{
@@ -747,8 +747,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			if (attachment != self_attachment)
 			{
 				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
-				tdbb->setAttachment(attachment);
-				dumpAttachment(tdbb, attachment, writer);
+				dumpAttachment(attachment, writer);
 			}
 		}
 
@@ -759,8 +758,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 				attachment = attachment->att_next)
 			{
 				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
-				tdbb->setAttachment(attachment);
-				dumpAttachment(tdbb, attachment, writer);
+				dumpAttachment(attachment, writer);
 			}
 		}
 
@@ -773,9 +771,9 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	}
 }
 
-void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachment, Writer& writer)
+void DatabaseSnapshot::dumpAttachment(const Attachment* attachment, Writer& writer)
 {
-	if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
+	if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
 		return;
 
 	putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
@@ -948,7 +946,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 }
 
 
-bool DatabaseSnapshot::putAttachment(thread_db* /*tdbb*/, const Jrd::Attachment* attachment,
+bool DatabaseSnapshot::putAttachment(const Jrd::Attachment* attachment,
 									 Writer& writer, int stat_id)
 {
 	fb_assert(attachment);

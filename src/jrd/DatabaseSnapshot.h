@@ -360,12 +360,12 @@ private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 
 	static void dumpData(thread_db*);
-	static void dumpAttachment(thread_db*, const Attachment*, Writer&);
+	static void dumpAttachment(const Attachment*, Writer&);
 
 	static SINT64 getGlobalId(int);
 
 	static void putDatabase(const Database*, Writer&, int);
-	static bool putAttachment(thread_db*, const Attachment*, Writer&, int);
+	static bool putAttachment(const Attachment*, Writer&, int);
 	static void putTransaction(const jrd_tra*, Writer&, int);
 	static void putRequest(const jrd_req*, Writer&, int);
 	static void putCall(const jrd_req*, Writer&, int);
