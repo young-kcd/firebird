@@ -1,3 +1,38 @@
+ 2013-08-19 18:51  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+Minor optimization.
+
+ 2013-08-19 18:50  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/jrd/jrd.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/shut.cpp
+Code simplification and some corrections.
+
+ 2013-08-19 17:29  dimitr 
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+Cleanup.
+
+ 2013-08-19 15:46  dimitr 
+   M src/lock/print.cpp
+Warnings.
+
+ 2013-08-19 15:31  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Fixed (as possible) CORE-4160 - The parameterized exception does not accept not ASCII characters as parameter.
+
+ 2013-08-19 08:17  alexpeshkoff 
+   M src/jrd/jrd.cpp
+CORE-3944 - fixed a bug in my previous commit, noticed by Adriano
+
  2013-08-18 18:53  asfernandes 
    M src/jrd/EngineInterface.h
    M src/jrd/cch.cpp
