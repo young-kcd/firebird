@@ -50,7 +50,7 @@ protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 private:
-	USHORT tempImpure;
+	ULONG tempImpure;
 };
 
 class ListAggNode : public AggNode
