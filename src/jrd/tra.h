@@ -322,7 +322,7 @@ public:
 		return tra_undo_space;
 	}
 
-	Record* getUndoRecord(USHORT length)
+	Record* getUndoRecord(ULONG length)
 	{
 		if (!tra_undo_record || tra_undo_record->rec_length < length)
 		{
@@ -549,9 +549,7 @@ public:
 		record->rec_format = format;
 
 		if (length)
-		{
 			transaction->getUndoSpace()->read(offset, record->rec_data, length);
-		}
 
 		return record;
 	}
@@ -571,7 +569,7 @@ public:
 		return flags;
 	}
 
-	bool getLength() const
+	ULONG getLength() const
 	{
 		return length;
 	}
@@ -579,7 +577,7 @@ public:
 private:
 	SINT64 number;
 	UCHAR flags;
-	USHORT length;
+	ULONG length;
 	offset_t offset;
 	const Format* format;
 };

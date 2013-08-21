@@ -147,7 +147,7 @@ static void invalidate_cursor_records(jrd_tra*, record_param*);
 static void list_staying(thread_db*, record_param*, RecordStack&);
 static void notify_garbage_collector(thread_db* tdbb, record_param* rpb,
 	TraNumber tranid = MAX_TRA_NUMBER);
-static Record* realloc_record(Record*& record, USHORT fmt_length);
+static Record* realloc_record(Record*& record, ULONG fmt_length);
 
 const int PREPARE_OK		= 0;
 const int PREPARE_CONFLICT	= 1;
@@ -159,7 +159,7 @@ static int prepare_update(thread_db*, jrd_tra*, TraNumber commit_tid_read, recor
 
 static void protect_system_table(thread_db*, const jrd_rel*, const char*, bool = false);
 static void purge(thread_db*, record_param*);
-static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
+static Record* replace_gc_record(jrd_rel*, Record**, ULONG);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
 static SSHORT set_metadata_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
 static void set_owner_name(thread_db*, Record*, USHORT);
@@ -1155,12 +1155,10 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 		{
 			if (record->rec_length < prior->rec_length)
 			{
-				if (record->rec_flags & REC_gc_active) {
+				if (record->rec_flags & REC_gc_active)
 					record = replace_gc_record(rpb->rpb_relation, &rpb->rpb_record, prior->rec_length);
-				}
-				else {
+				else
 					record = realloc_record(rpb->rpb_record, prior->rec_length);
-				}
 			}
 			memcpy(record->rec_data, prior->rec_data, prior->rec_format->fmt_length);
 		}
@@ -1198,11 +1196,11 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
 	// If this is a delta version, apply changes
-	USHORT length;
+	ULONG length;
 	if (prior)
 	{
-		length = (USHORT) Compressor::applyDiff(tail - differences, differences,
-												record->rec_length, record->rec_data);
+		length = (ULONG) Compressor::applyDiff(tail - differences, differences,
+											   record->rec_length, record->rec_data);
 	}
 	else
 	{
@@ -4591,8 +4589,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 				VIO_record(tdbb, rpb, record->rec_format, pool);
 
 			memcpy(&rpb->rpb_record->rec_format, &record->rec_format,
-				sizeof(Record) - ((UCHAR*) &rpb->rpb_record->rec_format - (UCHAR*) rpb->rpb_record) +
-					record->rec_length);
+				sizeof(Record) - OFFSET(Record*, rec_format) + record->rec_length);
 
 			rpb->rpb_flags &= ~rpb_deleted;
 			return udExists;
@@ -4854,7 +4851,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, TraNumb
 }
 
 
-static Record* realloc_record(Record*& record, USHORT fmt_length)
+static Record* realloc_record(Record*& record, ULONG fmt_length)
 {
 /**************************************
  *
@@ -4871,7 +4868,7 @@ static Record* realloc_record(Record*& record, USHORT fmt_length)
 	new_record->rec_precedence.takeOwnership(record->rec_precedence);
 	// start copying at rec_format, to not mangle source->rec_precedence
 	memcpy(&new_record->rec_format, &record->rec_format,
-		sizeof(Record) - ((UCHAR*)&new_record->rec_format - (UCHAR*)new_record) + record->rec_length);
+		sizeof(Record) - OFFSET(Record*, rec_format) + record->rec_length);
 
 	delete record;
 	record = new_record;
@@ -4965,7 +4962,7 @@ static int prepare_update(	thread_db*		tdbb,
 		{
 			fb_assert(new_rpb->rpb_length == temp->rpb_length);
 			temp->rpb_address = differences;
-			temp->rpb_length = (USHORT) Compressor::makeNoDiff(temp->rpb_length, differences);
+			temp->rpb_length = (ULONG) Compressor::makeNoDiff(temp->rpb_length, differences);
 			new_rpb->rpb_flags |= rpb_delta;
 		}
 		else
@@ -4977,7 +4974,7 @@ static int prepare_update(	thread_db*		tdbb,
 			if ((l < sizeof(differences)) && (l < temp->rpb_length))
 			{
 				temp->rpb_address = differences;
-				temp->rpb_length = (USHORT) l;
+				temp->rpb_length = (ULONG) l;
 				new_rpb->rpb_flags |= rpb_delta;
 			}
 		}
@@ -5370,7 +5367,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 }
 
 
-static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT length)
+static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, ULONG length)
 {
 /**************************************
  *
@@ -5635,7 +5632,7 @@ static void update_in_place(thread_db* tdbb,
 	}
 
 	UCHAR* const save_address = org_rpb->rpb_address;
-	const USHORT length = org_rpb->rpb_length;
+	const ULONG length = org_rpb->rpb_length;
 	const USHORT format_number = org_rpb->rpb_format_number;
 	org_rpb->rpb_address = new_rpb->rpb_address;
 	org_rpb->rpb_length = new_rpb->rpb_length;

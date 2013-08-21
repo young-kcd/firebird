@@ -2013,7 +2013,7 @@ RTN Vdr::walk_record(thread_db* tdbb,
 		end = p + length - OFFSETA(rhd*, rhd_data);
 	}
 
-	USHORT record_length = 0;
+	ULONG record_length = 0;
 
 	while (p < end)
 	{

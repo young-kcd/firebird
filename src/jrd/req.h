@@ -91,7 +91,7 @@ struct record_param
 	USHORT rpb_b_line;				// back line
 
 	UCHAR* rpb_address;				// address of record sans header
-	USHORT rpb_length;				// length of record
+	ULONG rpb_length;				// length of record
 	USHORT rpb_flags;				// record ODS flags replica
 	USHORT rpb_stream_flags;		// stream flags
 	SSHORT rpb_org_scans;			// relation scan count at stream open
@@ -150,7 +150,7 @@ public:
 	MemoryPool& rec_pool;		// pool where record to be expanded
 	PageStack rec_precedence;	// stack of higher precedence pages/transactions
 	const Format* rec_format;	// what the data looks like
-	USHORT rec_length;			// how much there is
+	ULONG rec_length;			// how much there is
 	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			// misc record flags
 	RecordNumber rec_number;	// original record_param number - used for undoing multiple updates
