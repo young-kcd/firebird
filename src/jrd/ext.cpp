@@ -332,7 +332,7 @@ bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 	Record* const record = rpb->rpb_record;
 	const Format* const format = record->rec_format;
 
-	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
+	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	UCHAR* p = record->rec_data + offset;
 	const ULONG l = record->rec_length - offset;
 
