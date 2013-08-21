@@ -63,27 +63,27 @@ public:
 	class DumpRecord
 	{
 	public:
-		DumpRecord() : offset(0), sizeLimit(0)
+		explicit DumpRecord(MemoryPool& pool)
+			: buffer(pool), offset(0)
 		{}
 
-		explicit DumpRecord(int rel_id)
+		DumpRecord(MemoryPool& pool, int rel_id)
+			: buffer(pool), offset(1)
 		{
-			reset(rel_id);
+			buffer.add(rel_id);
 		}
 
 		void reset(int rel_id)
 		{
-			offset = 0;
-			sizeLimit = sizeof(buffer);
-			fb_assert(rel_id > 0 && rel_id <= int(MAX_UCHAR));
-			buffer[offset++] = (UCHAR) rel_id;
+			offset = 1;
+			buffer.clear();
+			buffer.add(rel_id);
 		}
 
-		void assign(USHORT length, const UCHAR* ptr)
+		void assign(ULONG length, const UCHAR* ptr)
 		{
 			offset = 0;
-			sizeLimit = length;
-			memcpy(buffer, ptr, length);
+			buffer.assign(ptr, length);
 		}
 
 		ULONG getLength() const
@@ -93,7 +93,7 @@ public:
 
 		const UCHAR* getData() const
 		{
-			return buffer;
+			return buffer.begin();
 		}
 
 		void storeGlobalId(int field_id, SINT64 value)
@@ -109,33 +109,25 @@ public:
 		void storeTimestamp(int field_id, const Firebird::TimeStamp& value)
 		{
 			if (!value.isEmpty())
-			{
 				storeField(field_id, VALUE_TIMESTAMP, sizeof(ISC_TIMESTAMP), &value.value());
-			}
 		}
 
 		void storeString(int field_id, const Firebird::string& value)
 		{
 			if (value.length())
-			{
 				storeField(field_id, VALUE_STRING, value.length(), value.c_str());
-			}
 		}
 
 		void storeString(int field_id, const Firebird::PathName& value)
 		{
 			if (value.length())
-			{
 				storeField(field_id, VALUE_STRING, value.length(), value.c_str());
-			}
 		}
 
 		void storeString(int field_id, const Firebird::MetaName& value)
 		{
 			if (value.length())
-			{
 				storeField(field_id, VALUE_STRING, value.length(), value.c_str());
-			}
 		}
 
 		int getRelationId()
@@ -148,14 +140,14 @@ public:
 		{
 			fb_assert(offset);
 
-			if (offset < sizeLimit)
+			if (offset < buffer.getCount())
 			{
 				field.id = (USHORT) buffer[offset++];
 				field.type = (ValueType) buffer[offset++];
 				fb_assert(field.type >= VALUE_GLOBAL_ID && field.type <= VALUE_STRING);
-				memcpy(&field.length, buffer + offset, sizeof(USHORT));
+				memcpy(&field.length, &buffer[offset], sizeof(USHORT));
 				offset += sizeof(USHORT);
-				field.data = buffer + offset;
+				field.data = &buffer[offset];
 				offset += field.length;
 				return true;
 			}
@@ -167,14 +159,9 @@ public:
 		void storeField(int field_id, ValueType type, size_t length, const void* value)
 		{
 			const size_t delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
+			buffer.resize(offset + delta);
 
-			if (offset + delta > sizeLimit)
-			{
-				fb_assert(false);
-				return;
-			}
-
-			UCHAR* ptr = buffer + offset;
+			UCHAR* ptr = buffer.begin() + offset;
 			fb_assert(field_id <= int(MAX_UCHAR));
 			*ptr++ = (UCHAR) field_id;
 			*ptr++ = (UCHAR) type;
@@ -185,9 +172,8 @@ public:
 			offset += (ULONG) delta;
 		}
 
-		UCHAR buffer[MAX_RECORD_SIZE];
+		Firebird::HalfStaticArray<UCHAR, 1024> buffer;
 		ULONG offset;
-		ULONG sizeLimit;
 	};
 
 	void putField(thread_db*, Record*, const DumpField&, int);
@@ -306,8 +292,8 @@ private:
 
 		void putRecord(const DumpRecord& record)
 		{
-			const USHORT length = (USHORT) record.getLength();
-			dump->write(offset, sizeof(USHORT), &length);
+			const ULONG length = record.getLength();
+			dump->write(offset, sizeof(ULONG), &length);
 			dump->write(offset, length, record.getData());
 		}
 
@@ -327,9 +313,9 @@ private:
 		{
 			if (offset < sizeLimit)
 			{
-				USHORT length;
-				memcpy(&length, buffer + offset, sizeof(USHORT));
-				offset += sizeof(USHORT);
+				ULONG length;
+				memcpy(&length, buffer + offset, sizeof(ULONG));
+				offset += sizeof(ULONG);
 				record.assign(length, buffer + offset);
 				offset += length;
 				return true;
@@ -360,18 +346,18 @@ private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 
 	static void dumpData(thread_db*);
-	static void dumpAttachment(const Attachment*, Writer&);
+	static void dumpAttachment(DumpRecord&, const Attachment*, Writer&);
 
 	static SINT64 getGlobalId(int);
 
-	static void putDatabase(const Database*, Writer&, int);
-	static bool putAttachment(const Attachment*, Writer&, int);
-	static void putTransaction(const jrd_tra*, Writer&, int);
-	static void putRequest(const jrd_req*, Writer&, int);
-	static void putCall(const jrd_req*, Writer&, int);
-	static void putStatistics(const RuntimeStatistics&, Writer&, int, int);
-	static void putContextVars(const Firebird::StringMap&, Writer&, int, bool);
-	static void putMemoryUsage(const Firebird::MemoryStats&, Writer&, int, int);
+	static void putDatabase(DumpRecord&, const Database*, Writer&, int);
+	static bool putAttachment(DumpRecord&, const Attachment*, Writer&, int);
+	static void putTransaction(DumpRecord&, const jrd_tra*, Writer&, int);
+	static void putRequest(DumpRecord&, const jrd_req*, Writer&, int);
+	static void putCall(DumpRecord&, const jrd_req*, Writer&, int);
+	static void putStatistics(DumpRecord&, const RuntimeStatistics&, Writer&, int, int);
+	static void putContextVars(DumpRecord&, const Firebird::StringMap&, Writer&, int, bool);
+	static void putMemoryUsage(DumpRecord&, const Firebird::MemoryStats&, Writer&, int, int);
 
 	Firebird::Array<RelationData> snapshot;
 };

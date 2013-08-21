@@ -462,7 +462,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	bool dbb_processed = false, fields_processed = false;
 	bool dbb_allowed = false, att_allowed = false;
 
-	DumpRecord dumpRecord;
+	DumpRecord dumpRecord(*tdbb->getDefaultPool());
 	while (reader.getRecord(dumpRecord))
 	{
 		const int rid = dumpRecord.getRelationId();
@@ -720,22 +720,25 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	MemoryPool& pool = *dbb->dbb_permanent;
+
 	if (!dbb->dbb_monitoring_data)
-		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) MonitoringData(dbb);
+		dbb->dbb_monitoring_data = FB_NEW(pool) MonitoringData(dbb);
 
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup();
 
 	Writer writer(dbb->dbb_monitoring_data);
+	DumpRecord record(pool);
 
 	// Database information
 
-	putDatabase(dbb, writer, fb_utils::genUniqueId());
+	putDatabase(record, dbb, writer, fb_utils::genUniqueId());
 
 	// Attachment information
 
 	Attachment* const self_attachment = tdbb->getAttachment();
-	dumpAttachment(self_attachment, writer);
+	dumpAttachment(record, self_attachment, writer);
 
 	try
 	{
@@ -747,7 +750,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			if (attachment != self_attachment)
 			{
 				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
-				dumpAttachment(attachment, writer);
+				dumpAttachment(record, attachment, writer);
 			}
 		}
 
@@ -758,7 +761,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 				attachment = attachment->att_next)
 			{
 				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
-				dumpAttachment(attachment, writer);
+				dumpAttachment(record, attachment, writer);
 			}
 		}
 
@@ -771,12 +774,11 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	}
 }
 
-void DatabaseSnapshot::dumpAttachment(const Attachment* attachment, Writer& writer)
+void DatabaseSnapshot::dumpAttachment(DumpRecord& record, const Attachment* attachment,
+									  Writer& writer)
 {
-	if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
+	if (!putAttachment(record, attachment, writer, fb_utils::genUniqueId()))
 		return;
-
-	putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
 
 	jrd_tra* transaction = NULL;
 	jrd_req* request = NULL;
@@ -786,8 +788,7 @@ void DatabaseSnapshot::dumpAttachment(const Attachment* attachment, Writer& writ
 	for (transaction = attachment->att_transactions; transaction;
 		transaction = transaction->tra_next)
 	{
-		putTransaction(transaction, writer, fb_utils::genUniqueId());
-		putContextVars(transaction->tra_context_vars, writer, transaction->tra_number, false);
+		putTransaction(record, transaction, writer, fb_utils::genUniqueId());
 	}
 
 	// Call stack information
@@ -805,7 +806,7 @@ void DatabaseSnapshot::dumpAttachment(const Attachment* attachment, Writer& writ
 					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
 				request->req_caller)
 			{
-				putCall(request, writer, fb_utils::genUniqueId());
+				putCall(record, request, writer, fb_utils::genUniqueId());
 			}
 		}
 	}
@@ -821,7 +822,7 @@ void DatabaseSnapshot::dumpAttachment(const Attachment* attachment, Writer& writ
 		if (!(request->getStatement()->flags &
 				(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
 		{
-			putRequest(request, writer, fb_utils::genUniqueId());
+			putRequest(record, request, writer, fb_utils::genUniqueId());
 		}
 	}
 }
@@ -833,13 +834,14 @@ SINT64 DatabaseSnapshot::getGlobalId(int value)
 }
 
 
-void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int stat_id)
+void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
+								   Writer& writer, int stat_id)
 {
 	fb_assert(database);
 
-	DumpRecord record(rel_mon_database);
+	record.reset(rel_mon_database);
 
-	PathName databaseName(*getDefaultMemoryPool(), database->dbb_database_name);
+	PathName databaseName(database->dbb_database_name);
 	ISC_systemToUtf8(databaseName);
 
 	// database name or alias (MUST BE ALWAYS THE FIRST ITEM PASSED!)
@@ -923,9 +925,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 
 	// crypt thread status
 	if (database->dbb_crypto_manager)
-	{
 		record.storeInteger(f_mon_db_crypt_page, database->dbb_crypto_manager->getCurrentPage());
-	}
 
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
@@ -933,20 +933,20 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 
 	if (Config::getSharedCache())
 	{
-		putStatistics(database->dbb_stats, writer, stat_id, stat_database);
-		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
+		putStatistics(record, database->dbb_stats, writer, stat_id, stat_database);
+		putMemoryUsage(record, database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
 	else
 	{
 		RuntimeStatistics zero_rt_stats;
 		MemoryStats zero_mem_stats;
-		putStatistics(zero_rt_stats, writer, stat_id, stat_database);
-		putMemoryUsage(zero_mem_stats, writer, stat_id, stat_database);
+		putStatistics(record, zero_rt_stats, writer, stat_id, stat_database);
+		putMemoryUsage(record, zero_mem_stats, writer, stat_id, stat_database);
 	}
 }
 
 
-bool DatabaseSnapshot::putAttachment(const Jrd::Attachment* attachment,
+bool DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* attachment,
 									 Writer& writer, int stat_id)
 {
 	fb_assert(attachment);
@@ -954,7 +954,7 @@ bool DatabaseSnapshot::putAttachment(const Jrd::Attachment* attachment,
 	if (!attachment->att_user)
 		return false;
 
-	DumpRecord record(rel_mon_attachments);
+	record.reset(rel_mon_attachments);
 
 	int temp = mon_state_idle;
 
@@ -968,7 +968,7 @@ bool DatabaseSnapshot::putAttachment(const Jrd::Attachment* attachment,
 		}
 	}
 
-	PathName attName(*getDefaultMemoryPool(), attachment->att_filename);
+	PathName attName(attachment->att_filename);
 	ISC_systemToUtf8(attName);
 
 	// user (MUST BE ALWAYS THE FIRST ITEM PASSED!)
@@ -1016,24 +1016,28 @@ bool DatabaseSnapshot::putAttachment(const Jrd::Attachment* attachment,
 
 	if (Config::getSharedCache())
 	{
-		putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
-		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
+		putStatistics(record, attachment->att_stats, writer, stat_id, stat_attachment);
+		putMemoryUsage(record, attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}
 	else
 	{
-		putStatistics(attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
-		putMemoryUsage(attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
+		putStatistics(record, attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
+		putMemoryUsage(record, attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
 	}
+
+	// context vars
+	putContextVars(record, attachment->att_context_vars, writer, attachment->att_attachment_id, true);
 
 	return true;
 }
 
 
-void DatabaseSnapshot::putTransaction(const jrd_tra* transaction, Writer& writer, int stat_id)
+void DatabaseSnapshot::putTransaction(DumpRecord& record, const jrd_tra* transaction,
+									  Writer& writer, int stat_id)
 {
 	fb_assert(transaction);
 
-	DumpRecord record(rel_mon_transactions);
+	record.reset(rel_mon_transactions);
 
 	int temp;
 
@@ -1082,16 +1086,20 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction, Writer& writer
 	// statistics
 	record.storeGlobalId(f_mon_tra_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(transaction->tra_stats, writer, stat_id, stat_transaction);
-	putMemoryUsage(transaction->tra_memory_stats, writer, stat_id, stat_transaction);
+	putStatistics(record, transaction->tra_stats, writer, stat_id, stat_transaction);
+	putMemoryUsage(record, transaction->tra_memory_stats, writer, stat_id, stat_transaction);
+
+	// context vars
+	putContextVars(record, transaction->tra_context_vars, writer, transaction->tra_number, false);
 }
 
 
-void DatabaseSnapshot::putRequest(const jrd_req* request, Writer& writer, int stat_id)
+void DatabaseSnapshot::putRequest(DumpRecord& record, const jrd_req* request,
+								  Writer& writer, int stat_id)
 {
 	fb_assert(request);
 
-	DumpRecord record(rel_mon_statements);
+	record.reset(rel_mon_statements);
 
 	// request id
 	record.storeInteger(f_mon_stmt_id, request->req_id);
@@ -1124,12 +1132,13 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, Writer& writer, int st
 	// statistics
 	record.storeGlobalId(f_mon_stmt_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(request->req_stats, writer, stat_id, stat_statement);
-	putMemoryUsage(request->req_memory_stats, writer, stat_id, stat_statement);
+	putStatistics(record, request->req_stats, writer, stat_id, stat_statement);
+	putMemoryUsage(record, request->req_memory_stats, writer, stat_id, stat_statement);
 }
 
 
-void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_id)
+void DatabaseSnapshot::putCall(DumpRecord& record, const jrd_req* request,
+							   Writer& writer, int stat_id)
 {
 	fb_assert(request);
 
@@ -1140,7 +1149,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 	}
 	fb_assert(initialRequest);
 
-	DumpRecord record(rel_mon_calls);
+	record.reset(rel_mon_calls);
 
 	// call id
 	record.storeInteger(f_mon_call_id, request->req_id);
@@ -1187,19 +1196,18 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 	// statistics
 	record.storeGlobalId(f_mon_call_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(request->req_stats, writer, stat_id, stat_call);
-	putMemoryUsage(request->req_memory_stats, writer, stat_id, stat_call);
+	putStatistics(record, request->req_stats, writer, stat_id, stat_call);
+	putMemoryUsage(record, request->req_memory_stats, writer, stat_id, stat_call);
 }
 
-void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
-									 Writer& writer,
-									 int stat_id, int stat_group)
+void DatabaseSnapshot::putStatistics(DumpRecord& record, const RuntimeStatistics& statistics,
+									 Writer& writer, int stat_id, int stat_group)
 {
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
 
 	// physical I/O statistics
-	DumpRecord record(rel_mon_io_stats);
+	record.reset(rel_mon_io_stats);
 	record.storeGlobalId(f_mon_io_stat_id, id);
 	record.storeInteger(f_mon_io_stat_group, stat_group);
 	record.storeInteger(f_mon_io_page_reads, statistics.getValue(RuntimeStatistics::PAGE_READS));
@@ -1223,15 +1231,14 @@ void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
 	writer.putRecord(record);
 }
 
-void DatabaseSnapshot::putContextVars(const StringMap& variables,
-									  Writer& writer,
-									  int object_id, bool is_attachment)
+void DatabaseSnapshot::putContextVars(DumpRecord& record, const StringMap& variables,
+									  Writer& writer, int object_id, bool is_attachment)
 {
 	StringMap::ConstAccessor accessor(&variables);
 
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		DumpRecord record(rel_mon_ctx_vars);
+		record.reset(rel_mon_ctx_vars);
 
 		if (is_attachment)
 			record.storeInteger(f_mon_ctx_var_att_id, object_id);
@@ -1245,16 +1252,14 @@ void DatabaseSnapshot::putContextVars(const StringMap& variables,
 	}
 }
 
-void DatabaseSnapshot::putMemoryUsage(const MemoryStats& stats,
-									  Writer& writer,
-									  int stat_id,
-									  int stat_group)
+void DatabaseSnapshot::putMemoryUsage(DumpRecord& record, const MemoryStats& stats,
+									  Writer& writer, int stat_id, int stat_group)
 {
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
 
 	// memory usage
-	DumpRecord record(rel_mon_mem_usage);
+	record.reset(rel_mon_mem_usage);
 	record.storeGlobalId(f_mon_mem_stat_id, id);
 	record.storeInteger(f_mon_mem_stat_group, stat_group);
 	record.storeInteger(f_mon_mem_cur_used, stats.getCurrentUsage());
