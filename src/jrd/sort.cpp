@@ -72,9 +72,7 @@ using namespace Firebird;
 void SortOwner::unlinkAll()
 {
 	while (sorts.getCount())
-	{
 		delete sorts.pop();
-	}
 }
 
 // The sort buffer size should be just under a multiple of the
@@ -161,7 +159,7 @@ namespace
 
 Sort::Sort(Database* dbb,
 		   SortOwner* owner,
-		   USHORT record_length,
+		   ULONG record_length,
 		   size_t keys,
 		   size_t unique_keys,
 		   const sort_key_def* key_description,
@@ -585,13 +583,13 @@ void Sort::sort(thread_db* tdbb)
 
 		if (allocated < run_count)
 		{
-			const USHORT rec_size = m_longs << SHIFTLONG;
+			const ULONG rec_size = m_longs << SHIFTLONG;
 			allocSize = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
 			for (run = m_runs; run; run = run->run_next)
 			{
 				if (!run->run_buffer)
 				{
-					int mem_size = MIN(allocSize / rec_size, run->run_records) * rec_size;
+					size_t mem_size = MIN(allocSize / rec_size, run->run_records) * rec_size;
 					UCHAR* mem = NULL;
 					try
 					{
@@ -882,16 +880,12 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			if (key->skd_dtype == SKD_double)
 			{
 				if (*(double*) p == 0)
-				{
 					*(double*) p = 0;
-				}
 			}
 			else if (key->skd_dtype == SKD_float)
 			{
 				if (*(float*) p == 0)
-				{
 					*(float*) p = 0;
-				}
 			}
 		}
 
@@ -1331,7 +1325,7 @@ ULONG Sort::allocate(ULONG n, ULONG chunkSize, bool useFreeSpace)
  * Allocate memory for first n runs
  *
  **************************************/
-	const USHORT rec_size = m_longs << SHIFTLONG;
+	const ULONG rec_size = m_longs << SHIFTLONG;
 	ULONG allocated = 0, count;
 	run_control* run;
 
@@ -1411,7 +1405,7 @@ void Sort::mergeRuns(USHORT n)
 	// Make a pass thru the runs allocating buffer space, computing work file
 	// space requirements, and filling in a vector of streams with run pointers
 
-	const USHORT rec_size = m_longs << SHIFTLONG;
+	const ULONG rec_size = m_longs << SHIFTLONG;
 	UCHAR* buffer = (UCHAR*) m_first_pointer;
 	run_control temp_run;
 	memset(&temp_run, 0, sizeof(run_control));
@@ -1435,9 +1429,10 @@ void Sort::mergeRuns(USHORT n)
 	const USHORT buffers = m_size_memory / rec_size;
 	USHORT count;
 	ULONG size = 0;
-	if (n > allocated) {
+
+	if (n > allocated)
 		size = rec_size * (buffers / (USHORT) (2 * (n - allocated)));
-	}
+
 	for (run = m_runs, count = 0; count < n; run = run->run_next, count++)
 	{
 		*m1++ = (run_merge_hdr*) run;
@@ -1528,10 +1523,10 @@ void Sort::mergeRuns(USHORT n)
 			seek = writeBlock(m_space, seek, temp_run.run_buffer, size);
 			q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
 		}
-		count = m_longs;
+		ULONG longs_count = m_longs;
 		do {
 			*q++ = *p++;
-		} while (--count);
+		} while (--longs_count);
 		++temp_run.run_records;
 	}
 
@@ -1756,7 +1751,7 @@ ULONG Sort::order()
 	SORTP* buffer = record_buffer.getBuffer(m_longs);
 
 	// Length of the key part of the record
-	const SSHORT length = m_longs - SIZEOF_SR_BCKPTR_IN_LONGS;
+	const ULONG length = m_longs - SIZEOF_SR_BCKPTR_IN_LONGS;
 
 	// m_next_pointer points to the end of pointer memory or the beginning of
 	// records

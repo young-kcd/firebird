@@ -108,7 +108,7 @@ public:
 	}
 
 	dsc desc;
-	USHORT length;
+	ULONG length;
 	bool intl;
 	ULONG impure;
 	Firebird::HalfStaticArray<sort_key_def, 2> keyItems;

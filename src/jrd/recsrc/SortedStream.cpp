@@ -232,9 +232,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 				}
 
 				if (!EVL_field(rpb->rpb_relation, rpb->rpb_record, item->fieldId, from))
-				{
 					flag = true;
-				}
 			}
 
 			*(data + item->flagOffset) = flag ? TRUE : FALSE;
@@ -245,7 +243,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 				// then want to sort by language dependent order.
 
 				if (IS_INTL_DATA(&item->desc) &&
-					(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength)
+					(ULONG)(IPTR) item->desc.dsc_address < m_map->keyLength)
 				{
 					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->desc), from, &to,
 						(m_map->flags & FLAG_UNIQUE ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
@@ -325,7 +323,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		// list that contains the data to send back
 
 		if (IS_INTL_DATA(&item->desc) &&
-			(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength)
+			(ULONG)(IPTR) item->desc.dsc_address < m_map->keyLength)
 		{
 			continue;
 		}

@@ -500,7 +500,7 @@ namespace Jrd
 
 				StreamType stream;			// stream for field id
 				dsc desc;					// relative descriptor
-				USHORT flagOffset;			// offset of missing flag
+				ULONG flagOffset;			// offset of missing flag
 				SSHORT fieldId;				// id for field (or ID constants)
 				NestConst<ValueExprNode> node;	// expression node
 			};
@@ -515,8 +515,8 @@ namespace Jrd
 			{
 			}
 
-			USHORT length;			// sort record length
-			USHORT keyLength;		// key length
+			ULONG length;			// sort record length
+			ULONG keyLength;		// key length
 			USHORT flags;			// misc sort flags
 			Firebird::Array<sort_key_def> keyItems;	// address of key descriptors
 			Firebird::Array<Item> items;

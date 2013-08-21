@@ -93,7 +93,7 @@ struct sort_record
 
 };
 
-const ULONG MAX_SORT_RECORD		= 65535;	// bytes
+const ULONG MAX_SORT_RECORD = 1024 * 1024;	// 1MB
 
 // the record struct actually contains the keyids etc, and the back_pointer
 // which points to the sort_record structure.
@@ -131,8 +131,8 @@ struct sort_key_def
 	UCHAR	skd_dtype;			// Data type
 	UCHAR	skd_flags;			// Flags
 	USHORT	skd_length;			// Length if string
-	USHORT	skd_offset;			// Offset from beginning
-	USHORT	skd_vary_offset;	// Offset to varying/cstring length
+	ULONG	skd_offset;			// Offset from beginning
+	ULONG	skd_vary_offset;	// Offset to varying/cstring length
 };
 
 
@@ -212,7 +212,7 @@ class Sort
 {
 public:
 	Sort(Database*, SortOwner*,
-		 USHORT, size_t, size_t, const sort_key_def*,
+		 ULONG, size_t, size_t, const sort_key_def*,
 		 FPTR_REJECT_DUP_CALLBACK, void*, FB_UINT64 = 0);
 	~Sort();
 
@@ -263,7 +263,7 @@ private:
 	SR* m_last_record;							// Address of last record
 	sort_record** m_first_pointer;				// Memory for sort
 	sort_record** m_next_pointer;				// Address for next pointer
-	USHORT m_longs;								// Length of record in longwords
+	ULONG m_longs;								// Length of record in longwords
 	ULONG m_key_length;							// Key length
 	ULONG m_unique_length;						// Unique key length, used when duplicates eliminated
 	FB_UINT64 m_records;						// Number of records

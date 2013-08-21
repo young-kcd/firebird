@@ -1947,10 +1947,9 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, MapNode*
 
 			fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 			sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
+
 			if (!sort_key->skd_dtype)
-			{
 				ERR_post(Arg::Gds(isc_invalid_sort_datatype) << Arg::Str(DSC_dtype_tostring(desc->dsc_dtype)));
-			}
 
 			sort_key->skd_length = desc->dsc_length;
 
@@ -2545,7 +2544,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 #ifndef WORDS_BIGENDIAN
 		map_length = ROUNDUP(map_length, sizeof(SLONG));
 #endif
-		const USHORT flag_offset = (USHORT) map_length++;
+		const ULONG flag_offset = map_length++;
 		sort_key->skd_offset = flag_offset;
 		sort_key->skd_dtype = SKD_text;
 		sort_key->skd_length = 1;
@@ -2566,7 +2565,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 			map_length = FB_ALIGN(map_length, type_alignments[desc->dsc_dtype]);
 #endif
 
-		sort_key->skd_offset = (USHORT) map_length;
+		sort_key->skd_offset = map_length;
 		sort_key->skd_flags = SKD_ascending;
 		if (*descending)
 			sort_key->skd_flags |= SKD_descending;
@@ -2601,8 +2600,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	}
 
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
-	map->keyLength = (USHORT) map_length;
-	USHORT flag_offset = (USHORT) map_length;
+	map->keyLength = map_length;
+	ULONG flag_offset = map_length;
 	map_length += items - sort->expressions.getCount();
 
 	// Now go back and process all to fields involved with the sort.  If the
@@ -2715,7 +2714,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		fb_assert(sort_key->skd_dtype != 0);
 		if (sort_key->skd_dtype == SKD_varying || sort_key->skd_dtype == SKD_cstring)
 		{
-			sort_key->skd_vary_offset = (USHORT) map_length;
+			sort_key->skd_vary_offset = map_length;
 			map_length += sizeof(USHORT);
 		}
 	}
@@ -2726,7 +2725,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		// Msg438: sort record size of %ld bytes is too big
 	}
 
-	map->length = (USHORT) map_length;
+	map->length = map_length;
 
 	// That was most unpleasant.  Never the less, it's done (except for the debugging).
 	// All that remains is to build the record source block for the sort.
