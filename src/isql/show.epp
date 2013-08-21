@@ -1854,7 +1854,84 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 					END_ERROR;
 				}
 				if (!key)
-					key = NO_REL_OR_PROC_OR_ROLE;
+				{
+					FOR FIRST 1 F IN RDB$FUNCTIONS
+						WITH F.RDB$FUNCTION_NAME EQ SQL_id_for_grant
+
+						key = NO_GRANT_ON_FUN;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
+					END_ERROR;
+				}
+				if (!key)
+				{
+					FOR FIRST 1 G IN RDB$GENERATORS
+						WITH G.RDB$GENERATOR_NAME EQ SQL_id_for_grant
+
+						key = NO_GRANT_ON_GEN;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
+					END_ERROR;
+				}
+				if (!key)
+				{
+					FOR FIRST 1 E IN RDB$EXCEPTIONS
+						WITH E.RDB$EXCEPTION_NAME EQ SQL_id_for_grant
+
+						key = NO_GRANT_ON_XCP;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
+					END_ERROR;
+				}
+				if (!key)
+				{
+					FOR FIRST 1 F IN RDB$FIELDS
+						WITH F.RDB$FIELD_NAME EQ SQL_id_for_grant
+
+						key = NO_GRANT_ON_FLD;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
+					END_ERROR;
+				}
+				if (!key)
+				{
+					FOR FIRST 1 CS IN RDB$CHARACTER_SETS
+						WITH CS.RDB$CHARACTER_SET_NAME EQ SQL_id_for_grant
+
+						key = NO_GRANT_ON_CS;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
+					END_ERROR;
+				}
+				if (!key)
+				{
+					FOR FIRST 1 C IN RDB$COLLATIONS
+						WITH C.RDB$COLLATION_NAME EQ SQL_id_for_grant
+
+						key = NO_GRANT_ON_COLL;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
+					END_ERROR;
+				}
+				if (!key && isqlGlob.major_ods >= ODS_VERSION12)
+				{
+					FOR FIRST 1 P IN RDB$PACKAGES
+						WITH P.RDB$PACKAGE_NAME EQ SQL_id_for_grant
+
+						key = NO_GRANT_ON_PKG;
+					END_FOR
+					ON_ERROR
+						// Ignore any error
+					END_ERROR;
+				}
+				if (!key)
+					key = NO_OBJECT;
 			}
 			else {
 				key = NO_GRANT_ON_ANY;

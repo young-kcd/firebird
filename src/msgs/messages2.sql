@@ -2835,7 +2835,7 @@ Writes !w
 Fetches = !f', NULL, NULL);
 ('BUFFER_OVERFLOW', 'get_statement', 'isql.e', NULL, 17, 94, NULL, 'Single isql command exceeded maximum buffer size', NULL, NULL);
 ('NO_ROLES', 'SHOW_metadata', 'show.e', NULL, 17, 95, NULL, 'There are no roles in this database', NULL, NULL);
-('NO_REL_OR_PROC_OR_ROLE', 'SHOW_metadata', 'show.e', NULL, 17, 96, NULL, 'There is no table, stored procedure, or role @1 in this database', NULL, NULL);
+('NO_OBJECT', 'SHOW_metadata', 'show.e', NULL, 17, 96, NULL, 'There is no metadata object @1 in this database', NULL, NULL);
 ('NO_GRANT_ON_ROL', 'SHOW_metadata', 'show.e', NULL, 17, 97, NULL, 'There is no membership privilege granted on @1 in this database', NULL, NULL);
 ('UNEXPECTED_EOF', 'do_isql', 'isql.e', NULL, 17, 98, NULL, 'Expected end of statement, encountered EOF', NULL, NULL);
 ('TIME_ERR', 'add_row()', 'isql.e', NULL, 17, 101, NULL, 'Bad TIME: @1', NULL, NULL);
@@ -2913,6 +2913,13 @@ Fetches = !f', NULL, NULL);
 ('MAXROWS_OUTOF_RANGE', 'newRowCount', 'isql.epp', NULL, 17, 171, NULL, 'Value @1 for MAXROWS is out of range. Max value is @2', NULL, NULL)
 ('MAXROWS_NEGATIVE', 'newRowCount', 'isql.epp', NULL, 17, 172, NULL, 'The value (@1) for MAXROWS must be zero or greater', NULL, NULL)
 ('HLP_SETEXPLAIN', 'help', 'isql.epp', NULL, 17, 173, NULL, '    SET EXPLAIN            -- toggle display of query access plan in the explained form', NULL, NULL)
+('NO_GRANT_ON_GEN', 'SHOW_metadata', 'show.e', NULL, 17, 174, NULL, 'There is no privilege granted on generator @1 in this database', NULL, NULL);
+('NO_GRANT_ON_XCP', 'SHOW_metadata', 'show.e', NULL, 17, 175, NULL, 'There is no privilege granted on exception @1 in this database', NULL, NULL);
+('NO_GRANT_ON_FLD', 'SHOW_metadata', 'show.e', NULL, 17, 176, NULL, 'There is no privilege granted on domain @1 in this database', NULL, NULL);
+('NO_GRANT_ON_CS', 'SHOW_metadata', 'show.e', NULL, 17, 177, NULL, 'There is no privilege granted on character set @1 in this database', NULL, NULL);
+('NO_GRANT_ON_COLL', 'SHOW_metadata', 'show.e', NULL, 17, 178, NULL, 'There is no privilege granted on collation @1 in this database', NULL, NULL);
+('NO_GRANT_ON_PKG', 'SHOW_metadata', 'show.e', NULL, 17, 179, NULL, 'There is no privilege granted on package @1 in this database', NULL, NULL);
+('NO_GRANT_ON_FUN', 'SHOW_metadata', 'show.e', NULL, 17, 180, NULL, 'There is no privilege granted on function @1 in this database', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);

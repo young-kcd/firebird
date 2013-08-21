@@ -207,8 +207,7 @@ const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table @
 const int NO_COMMENTS				= 115;		// There are no comments for objects in this database.
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size
 const int NO_ROLES					= 95;		// There are no roles in this database
-const int NO_REL_OR_PROC_OR_ROLE	= 96;		// There is no table, stored procedure, or
-												// role @1 in this database
+const int NO_OBJECT					= 96;		// There is no metadata object @1 in this database
 const int NO_GRANT_ON_ROL			= 97;		// There is no membership privilege granted
 												// on @1 in this database
 const int UNEXPECTED_EOF			= 98;		// Expected end of statement, encountered EOF
@@ -259,6 +258,13 @@ const int MAXROWS_INVALID			= 170;		// Unable to convert @1 to a number for MAXW
 const int MAXROWS_OUTOF_RANGE		= 171;		// Value @1 for MAXROWS is out of range. Max value is @2
 const int MAXROWS_NEGATIVE			= 172;		// The value (@1) for MAXROWS must be zero or greater
 const int HLP_SETEXPLAIN			= 173;		// Toggle display of query access plan in the explained form
+const int NO_GRANT_ON_GEN			= 174;		// There is no privilege granted on generator @1 in this database
+const int NO_GRANT_ON_XCP			= 175;		// There is no privilege granted on exception @1 in this database
+const int NO_GRANT_ON_FLD			= 176;		// There is no privilege granted on domain @1 in this database
+const int NO_GRANT_ON_CS			= 177;		// There is no privilege granted on character set @1 in this database
+const int NO_GRANT_ON_COLL			= 178;		// There is no privilege granted on collation @1 in this database
+const int NO_GRANT_ON_PKG			= 179;		// There is no privilege granted on package @1 in this database
+const int NO_GRANT_ON_FUN			= 180;		// There is no privilege granted on function @1 in this database
 
 
 // Initialize types
