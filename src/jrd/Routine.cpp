@@ -179,9 +179,6 @@ void Routine::parseMessages(thread_db* tdbb, CompilerScratch* csb, BlrReader blr
 				offset = FB_ALIGN(offset, maxAlignment);
 		}
 
-		if (offset > MAX_MESSAGE_SIZE)
-			status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-
 		format->fmt_length = offset;
 
 		switch (msgNumber)

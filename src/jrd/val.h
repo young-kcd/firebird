@@ -51,7 +51,6 @@ public:
 
 const UCHAR DEFAULT_DOUBLE  = dtype_double;
 const ULONG MAX_RECORD_SIZE	= 65535;
-const ULONG MAX_MESSAGE_SIZE = 10 * 1024 * 1024; // 10MB (just for safety sake)
 
 namespace Jrd {
 

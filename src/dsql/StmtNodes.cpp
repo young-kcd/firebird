@@ -1583,9 +1583,6 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 			format->fmt_length += fmtDesc.dsc_length;
 		}
 
-		if (format->fmt_length > MAX_MESSAGE_SIZE)
-			ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-
 		DbgInfo* subDbgInfo = NULL;
 		if (csb->csb_dbg_info->subProcs.get(name, subDbgInfo))
 		{
@@ -5217,9 +5214,6 @@ void MessageNode::setup(thread_db* tdbb, CompilerScratch* csb, USHORT message, U
 				itemInfo);
 		}
 	}
-
-	if (offset > MAX_MESSAGE_SIZE)
-		PAR_error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	format->fmt_length = offset;
 }
