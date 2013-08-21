@@ -114,9 +114,7 @@ void ConditionalStream::print(thread_db* tdbb, string& plan, bool detailed, unsi
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		m_first->print(tdbb, plan, false, level + 1);
 
@@ -125,9 +123,7 @@ void ConditionalStream::print(thread_db* tdbb, string& plan, bool detailed, unsi
 		m_second->print(tdbb, plan, false, level + 1);
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }
 

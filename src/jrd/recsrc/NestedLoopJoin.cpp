@@ -43,9 +43,7 @@ NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource*
 	m_args.resize(count);
 
 	for (size_t i = 0; i < count; i++)
-	{
 		m_args[i] = args[i];
-	}
 }
 
 NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
@@ -82,9 +80,7 @@ void NestedLoopJoin::close(thread_db* tdbb) const
 		impure->irsb_flags &= ~irsb_open;
 
 		for (size_t i = 0; i < m_args.getCount(); i++)
-		{
 			m_args[i]->close(tdbb);
-		}
 	}
 }
 
@@ -134,24 +130,16 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 			if (m_semiJoin)
 			{
 				if (inner->getRecord(tdbb))
-				{
 					impure->irsb_flags &= ~irsb_joined;
-				}
 				else
-				{
 					impure->irsb_flags |= irsb_joined;
-				}
 			}
 			else if (m_antiJoin)
 			{
 				if (inner->getRecord(tdbb))
-				{
 					impure->irsb_flags |= irsb_joined;
-				}
 				else
-				{
 					impure->irsb_flags &= ~irsb_joined;
-				}
 			}
 			else
 			{
@@ -183,9 +171,7 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 				m_args[i]->open(tdbb);
 
 				if (!fetchRecord(tdbb, i))
-				{
 					return false;
-				}
 			}
 
 			impure->irsb_flags &= ~irsb_first;
@@ -194,13 +180,9 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 		// in recursive CTE (it is done in dsql\pass1.cpp). If there are no other
 		// members in such SELECT then rsb_count will be zero. Handle it.
 		else if (m_args.isEmpty())
-		{
 			return false;
-		}
 		else if (!fetchRecord(tdbb, m_args.getCount() - 1))
-		{
 			return false;
-		}
 	}
 
 	return true;
@@ -224,9 +206,7 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		plan += printIndent(++level) + " Nested Loop Join ";
 		plan += m_semiJoin ? "(semi)" : m_antiJoin ? "(anti)" : m_outerJoin ? "(outer)" : "(inner)";
 		for (size_t i = 0; i < m_args.getCount(); i++)
-		{
 			m_args[i]->print(tdbb, plan, true, level);
-		}
 	}
 	else
 	{
@@ -235,9 +215,8 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
-			{
 				plan += ", ";
-			}
+
 			m_args[i]->print(tdbb, plan, false, level);
 		}
 		plan += ")";
@@ -247,33 +226,25 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 void NestedLoopJoin::markRecursive()
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->markRecursive();
-	}
 }
 
 void NestedLoopJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->findUsedStreams(streams, expandAll);
-	}
 }
 
 void NestedLoopJoin::invalidateRecords(jrd_req* request) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->invalidateRecords(request);
-	}
 }
 
 void NestedLoopJoin::nullRecords(thread_db* tdbb) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->nullRecords(tdbb);
-	}
 }
 
 bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n) const
@@ -281,9 +252,7 @@ bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n) const
 	const RecordSource* const arg = m_args[n];
 
 	if (arg->getRecord(tdbb))
-	{
 		return true;
-	}
 
 	// We have exhausted this stream, so close it; if there is
 	// another candidate record from the n-1 streams to the left,
@@ -294,15 +263,11 @@ bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n) const
 		arg->close(tdbb);
 
 		if (n == 0 || !fetchRecord(tdbb, n - 1))
-		{
 			return false;
-		}
 
 		arg->open(tdbb);
 
 		if (arg->getRecord(tdbb))
-		{
 			return true;
-		}
 	}
 }

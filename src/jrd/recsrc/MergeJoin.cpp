@@ -169,11 +169,11 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 			tail->irsb_mrg_last_fetched = -1;
 			const UCHAR* const last_data = getData(tdbb, mfb, record);
 			mfb->mfb_current_block = 0;
+
 			UCHAR* const first_data = getData(tdbb, mfb, 0);
 			if (first_data != last_data)
-			{
 				memcpy(first_data, last_data, sort_rsb->getLength());
-			}
+
 			mfb->mfb_equal_records = 1;
 			record = 0;
 		}
@@ -182,9 +182,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 			mfb->mfb_current_block = 0;
 			mfb->mfb_equal_records = 0;
 			if ((record = getRecord(tdbb, i)) < 0)
-			{
 				return false;
-			}
 		}
 
 		// map data into target records and do comparison
@@ -353,10 +351,9 @@ void MergeJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned lev
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Merge Join (inner)";
+
 		for (size_t i = 0; i < m_args.getCount(); i++)
-		{
 			m_args[i]->print(tdbb, plan, true, level);
-		}
 	}
 	else
 	{
@@ -365,9 +362,8 @@ void MergeJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned lev
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
-			{
 				plan += ", ";
-			}
+
 			m_args[i]->print(tdbb, plan, false, level);
 		}
 		plan += ")";
@@ -377,33 +373,25 @@ void MergeJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned lev
 void MergeJoin::markRecursive()
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->markRecursive();
-	}
 }
 
 void MergeJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->findUsedStreams(streams, expandAll);
-	}
 }
 
 void MergeJoin::invalidateRecords(jrd_req* request) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->invalidateRecords(request);
-	}
 }
 
 void MergeJoin::nullRecords(thread_db* tdbb) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->nullRecords(tdbb);
-	}
 }
 
 int MergeJoin::compare(thread_db* tdbb, const NestValueArray* node1,
@@ -423,23 +411,17 @@ int MergeJoin::compare(thread_db* tdbb, const NestValueArray* node1,
 		const bool null2 = (request->req_flags & req_null);
 
 		if (null1 && !null2)
-		{
 			return -1;
-		}
 
 		if (null2 && !null1)
-		{
 			return 1;
-		}
 
 		if (!null1 && !null2)
 		{
 			const int result = MOV_compare(desc1, desc2);
 
 			if (result != 0)
-			{
 				return result;
-			}
 		}
 	}
 
@@ -472,9 +454,7 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index) const
 
 	UCHAR* sort_data = sort_rsb->getData(tdbb);
 	if (!sort_data)
-	{
 		return -1;
-	}
 
 	MergeFile* const mfb = &tail->irsb_mrg_file;
 	const SLONG record = mfb->mfb_equal_records;
@@ -518,9 +498,8 @@ bool MergeJoin::fetchRecord(thread_db* tdbb, size_t index) const
 	if (record > tail->irsb_mrg_equal_end)
 	{
 		if (index == 0 || !fetchRecord(tdbb, index - 1))
-		{
 			return false;
-		}
+
 		record = tail->irsb_mrg_equal;
 	}
 

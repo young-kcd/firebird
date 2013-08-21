@@ -118,8 +118,10 @@ void SortedStream::print(thread_db* tdbb, string& plan,
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Sort";
+
 		if (m_map->flags & FLAG_PROJECT)
 			plan += " (unique)";
+
 		m_next->print(tdbb, plan, true, level);
 	}
 	else

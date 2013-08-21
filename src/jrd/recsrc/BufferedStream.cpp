@@ -173,9 +173,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 
 			dsc to;
 			if (!EVL_field(NULL, buffer_record, (USHORT) i, &to))
-			{
 				fb_assert(false);
-			}
 
 			switch (map.map_type)
 			{
@@ -185,13 +183,9 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 
 					dsc from;
 					if (EVL_field(NULL, record, map.map_id, &from))
-					{
 						MOV_move(tdbb, &from, &to);
-					}
 					else
-					{
 						buffer_record->setNull(i);
-					}
 				}
 				break;
 
@@ -252,9 +246,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 
 					dsc to;
 					if (!EVL_field(NULL, record, map.map_id, &to))
-					{
 						fb_assert(false);
-					}
 
 					MOV_move(tdbb, &from, &to);
 				}
@@ -295,9 +287,7 @@ bool BufferedStream::lockRecord(thread_db* tdbb) const
 void BufferedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
-	{
 		plan += printIndent(++level) + "Record Buffer";
-	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }

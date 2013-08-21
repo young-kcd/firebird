@@ -565,9 +565,7 @@ bool WindowedStream::lockRecord(thread_db* /*tdbb*/) const
 void WindowedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
-	{
 		plan += printIndent(++level) + "Window";
-	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }

@@ -68,13 +68,9 @@ void FullOuterJoin::close(thread_db* tdbb) const
 		impure->irsb_flags &= ~irsb_open;
 
 		if (impure->irsb_flags & irsb_first)
-		{
 			m_arg1->close(tdbb);
-		}
 		else
-		{
 			m_arg2->close(tdbb);
-		}
 	}
 }
 

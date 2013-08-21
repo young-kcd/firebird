@@ -106,9 +106,7 @@ bool LockedStream::lockRecord(thread_db* tdbb) const
 void LockedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
-	{
 		plan += printIndent(++level) + "Write Lock";
-	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }

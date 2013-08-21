@@ -106,9 +106,7 @@ bool FilteredStream::lockRecord(thread_db* tdbb) const
 void FilteredStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
-	{
 		plan += printIndent(++level) + "Filter";
-	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }
@@ -352,15 +350,11 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 		}
 
 		if (request->req_flags & req_null)
-		{
 			nullFlag = true;
-		}
 	}
 
 	if (nullFlag)
-	{
 		request->req_flags |= req_null;
-	}
 
 	return result;
 }

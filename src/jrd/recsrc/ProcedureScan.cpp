@@ -115,9 +115,7 @@ void ProcedureScan::open(thread_db* tdbb) const
 		EXE_start(tdbb, proc_request, request->req_transaction);
 
 		if (iml)
-		{
 			EXE_send(tdbb, proc_request, 0, iml, im);
-		}
 
 		trace.finish(true, res_successful);
 	}
@@ -254,16 +252,12 @@ void ProcedureScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		plan += printName(tdbb, m_name) + " NATURAL";
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }
 
@@ -319,9 +313,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 
 		default:
 			if (l)
-			{
 				memset(p, 0, l);
-			}
 			break;
 		}
 	}

@@ -147,9 +147,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 		{
 			// Stop infinite recursion of bad queries
 			if (impure->irsb_level > MAX_RECURSE_LEVEL)
-			{
 				status_exception::raise(Arg::Gds(isc_req_max_clones_exceeded));
-			}
 
 			// Save where we are
 			UCHAR* const tmp = FB_NEW(*tdbb->getDefaultPool()) UCHAR[m_saveSize + rpbsSize];
@@ -257,9 +255,7 @@ void RecursiveStream::print(thread_db* tdbb, string& plan, bool detailed, unsign
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		m_root->print(tdbb, plan, false, level + 1);
 
@@ -268,9 +264,7 @@ void RecursiveStream::print(thread_db* tdbb, string& plan, bool detailed, unsign
 		m_inner->print(tdbb, plan, false, level + 1);
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }
 

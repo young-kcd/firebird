@@ -131,9 +131,7 @@ void BitmapTableScan::print(thread_db* tdbb, string& plan,
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		plan += printName(tdbb, m_name) + " INDEX (";
 		string indices;
@@ -141,8 +139,6 @@ void BitmapTableScan::print(thread_db* tdbb, string& plan,
 		plan += indices + ")";
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }

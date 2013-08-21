@@ -55,9 +55,7 @@ void FirstRowsStream::open(thread_db* tdbb) const
 	const SINT64 value = (desc && !(request->req_flags & req_null)) ? MOV_get_int64(desc, 0) : 0;
 
     if (value < 0)
-	{
 		status_exception::raise(Arg::Gds(isc_bad_limit_param));
-	}
 
 	if (value)
 	{
@@ -118,9 +116,7 @@ bool FirstRowsStream::lockRecord(thread_db* tdbb) const
 void FirstRowsStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
-	{
 		plan += printIndent(++level) + "First N Records";
-	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }

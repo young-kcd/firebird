@@ -46,23 +46,17 @@ Union::Union(CompilerScratch* csb, StreamType stream,
 	m_args.resize(argCount);
 
 	for (size_t i = 0; i < argCount; i++)
-	{
 		m_args[i] = args[i];
-	}
 
 	m_maps.resize(argCount);
 
 	for (size_t i = 0; i < argCount; i++)
-	{
 		m_maps[i] = maps[i];
-	}
 
 	m_streams.resize(streamCount);
 
 	for (size_t i = 0; i < streamCount; i++)
-	{
 		m_streams[i] = streams[i];
-	}
 }
 
 void Union::open(thread_db* tdbb) const
@@ -99,9 +93,7 @@ void Union::close(thread_db* tdbb) const
 		impure->irsb_flags &= ~irsb_open;
 
 		if (impure->irsb_count < m_args.getCount())
-		{
 			m_args[impure->irsb_count]->close(tdbb);
-		}
 	}
 }
 
@@ -157,9 +149,7 @@ bool Union::refetchRecord(thread_db* tdbb) const
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_count >= m_args.getCount())
-	{
 		return false;
-	}
 
 	return m_args[impure->irsb_count]->refetchRecord(tdbb);
 }
@@ -170,9 +160,7 @@ bool Union::lockRecord(thread_db* tdbb) const
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_count >= m_args.getCount())
-	{
 		return false;
-	}
 
 	return m_args[impure->irsb_count]->lockRecord(tdbb);
 }
@@ -184,48 +172,36 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 		plan += printIndent(++level) + "Union";
 
 		for (size_t i = 0; i < m_args.getCount(); i++)
-		{
 			m_args[i]->print(tdbb, plan, true, level);
-		}
 	}
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
-			{
 				plan += ", ";
-			}
 
 			m_args[i]->print(tdbb, plan, false, level + 1);
 		}
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }
 
 void Union::markRecursive()
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->markRecursive();
-	}
 }
 
 void Union::invalidateRecords(jrd_req* request) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->invalidateRecords(request);
-	}
 }
 
 void Union::findUsedStreams(StreamList& streams, bool expandAll) const

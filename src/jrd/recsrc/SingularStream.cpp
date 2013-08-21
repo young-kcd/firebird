@@ -96,7 +96,7 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 
 			if (orgRecord)
 			{
-				const USHORT recordSize = orgRecord->rec_length;
+				const ULONG recordSize = orgRecord->rec_length;
 				Record* const newRecord = FB_NEW_RPT(pool, recordSize) Record(pool);
 				memcpy(&newRecord->rec_format, &orgRecord->rec_format,
 					   sizeof(Record) - OFFSET(Record*, rec_format) + recordSize);
@@ -121,7 +121,7 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 
 				rpb.rpb_record = orgRecord;
 
-				const USHORT recordSize = newRecord->rec_length;
+				const ULONG recordSize = newRecord->rec_length;
 				if (recordSize > orgRecord->rec_length)
 				{
 					// hvlad: saved copy of record has longer format, reallocate
@@ -154,9 +154,7 @@ bool SingularStream::lockRecord(thread_db* tdbb) const
 void SingularStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
-	{
 		plan += printIndent(++level) + "Singularity Check";
-	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }

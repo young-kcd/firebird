@@ -68,9 +68,7 @@ void VirtualTableScan::close(thread_db* tdbb) const
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
-	{
 		impure->irsb_flags &= ~irsb_open;
-	}
 }
 
 bool VirtualTableScan::getRecord(thread_db* tdbb) const
@@ -120,15 +118,11 @@ void VirtualTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsig
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		plan += printName(tdbb, m_name) + " NATURAL";
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }

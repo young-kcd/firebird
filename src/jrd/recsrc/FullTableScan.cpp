@@ -138,15 +138,11 @@ void FullTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		plan += printName(tdbb, m_name) + " NATURAL";
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }

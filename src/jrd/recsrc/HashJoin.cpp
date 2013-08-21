@@ -224,9 +224,7 @@ void HashJoin::close(thread_db* tdbb) const
 		impure->irsb_hash_table = NULL;
 
 		for (size_t i = 0; i < m_args.getCount(); i++)
-		{
 			m_args[i]->close(tdbb);
-		}
 
 		m_leader->close(tdbb);
 	}
@@ -312,11 +310,11 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Hash Join (inner)";
+
 		m_leader->print(tdbb, plan, true, level);
+
 		for (size_t i = 0; i < m_args.getCount(); i++)
-		{
 			m_args[i]->print(tdbb, plan, true, level);
-		}
 	}
 	else
 	{
@@ -327,9 +325,8 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
-			{
 				plan += ", ";
-			}
+
 			m_args[i]->print(tdbb, plan, false, level);
 		}
 		plan += ")";
@@ -339,37 +336,33 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 void HashJoin::markRecursive()
 {
 	m_leader->markRecursive();
+
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->markRecursive();
-	}
 }
 
 void HashJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	m_leader->findUsedStreams(streams, expandAll);
+
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->findUsedStreams(streams, expandAll);
-	}
 }
 
 void HashJoin::invalidateRecords(jrd_req* request) const
 {
 	m_leader->invalidateRecords(request);
+
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->invalidateRecords(request);
-	}
 }
 
 void HashJoin::nullRecords(thread_db* tdbb) const
 {
 	m_leader->nullRecords(tdbb);
+
 	for (size_t i = 0; i < m_args.getCount(); i++)
-	{
 		m_args[i]->nullRecords(tdbb);
-	}
 }
 
 size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
@@ -423,15 +416,12 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 
 					CHARSET_ID charset = desc->getCharSet();
 					if (charset == ttype_dynamic)
-					{
 						charset = tdbb->getCharSet();
-					}
+
 					const UCHAR space = (charset == ttype_binary) ? '\0' : ' ';
 					const UCHAR* ptr = address + length;
 					while (length && *--ptr == space)
-					{
 						length--;
-					}
 				}
 			}
 
@@ -475,17 +465,13 @@ bool HashJoin::fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) con
 		arg->locate(tdbb, position);
 
 		if (arg->getRecord(tdbb))
-		{
 			return true;
-		}
 	}
 
 	while (true)
 	{
 		if (stream == 0 || !fetchRecord(tdbb, table, stream - 1))
-		{
 			return false;
-		}
 
 		table->reset(stream);
 
@@ -494,9 +480,7 @@ bool HashJoin::fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) con
 			arg->locate(tdbb, position);
 
 			if (arg->getRecord(tdbb))
-			{
 				return true;
-			}
 		}
 	}
 }

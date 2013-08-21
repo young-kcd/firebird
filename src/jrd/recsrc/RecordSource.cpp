@@ -78,17 +78,13 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 								  string& plan, bool detailed, unsigned level, bool navigation)
 {
 	if (detailed)
-	{
 		plan += printIndent(++level);
-	}
 
 	switch (inversion->type)
 	{
 	case InversionNode::TYPE_AND:
 		if (detailed)
-		{
 			plan += "Bitmap And";
-		}
 		printInversion(tdbb, inversion->node1, plan, detailed, level);
 		printInversion(tdbb, inversion->node2, plan, detailed, level);
 		break;
@@ -96,18 +92,14 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 	case InversionNode::TYPE_OR:
 	case InversionNode::TYPE_IN:
 		if (detailed)
-		{
 			plan += "Bitmap Or";
-		}
 		printInversion(tdbb, inversion->node1, plan, detailed, level);
 		printInversion(tdbb, inversion->node2, plan, detailed, level);
 		break;
 
 	case InversionNode::TYPE_DBKEY:
 		if (detailed)
-		{
 			plan += "DBKEY";
-		}
 		break;
 
 	case InversionNode::TYPE_INDEX:
@@ -119,9 +111,8 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 			if (detailed)
 			{
 				if (!navigation)
-				{
 					plan += "Bitmap" + printIndent(++level);
-				}
+
 				plan += "Index \"" + printName(tdbb, indexName.c_str()) + "\" Scan";
 			}
 			else
@@ -218,14 +209,10 @@ void RecordStream::nullRecords(thread_db* tdbb) const
 	Record* record = rpb->rpb_record;
 
 	if (!record)
-	{
 		record = VIO_record(tdbb, rpb, m_format, tdbb->getDefaultPool());
-	}
 
 	if (record->rec_format)
-	{
 		record->rec_fmt_bk = record->rec_format;
-	}
 
 	record->rec_format = NULL;
 }

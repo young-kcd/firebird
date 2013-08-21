@@ -247,18 +247,16 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Access By ID";
+
 		printInversion(tdbb, m_index, plan, true, level, true);
+
 		if (m_inversion)
-		{
 			printInversion(tdbb, m_inversion, plan, true, ++level);
-		}
 	}
 	else
 	{
 		if (!level)
-		{
 			plan += "(";
-		}
 
 		plan += printName(tdbb, m_name) + " ORDER ";
 		string index;
@@ -274,9 +272,7 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		}
 
 		if (!level)
-		{
 			plan += ")";
-		}
 	}
 }
 
@@ -304,9 +300,7 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 
 	// if the keys are identical, return 0
 	if (length1 == length2)
-	{
 		return 0;
-	}
 
 	// do a partial key search; if the index is a compound key,
 	// check to see if the segments are matching--for character
@@ -349,16 +343,12 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 				if (flags & irb_descending)
 				{
 					if (*segment != 255)
-					{
 						return 0;
-					}
 				}
 				else
 				{
 					if (*segment != 0)
-					{
 						return 0;
-					}
 				}
 			}
 
@@ -375,14 +365,11 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 				for (remainder = Ods::STUFF_COUNT + 1 - remainder; remainder; remainder--)
 				{
 					if (*string1++)
-					{
 						break;
-					}
 				}
+
 				if (!remainder)
-				{
 					return 0;
-				}
 			}
 		}
 	}
@@ -483,9 +470,7 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
 	// stored position in the page, go back to it if possible.
 	CCH_RELEASE(tdbb, window);
 	if (!impure->irsb_nav_page)
-	{
 		return openStream(tdbb, impure, window);
-	}
 
 	const bool found = findSavedNode(tdbb, impure, window, &pointer);
 	page = (Ods::btree_page*) window->win_buffer;
@@ -504,9 +489,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) 
 {
 	// initialize for a retrieval
 	if (!setupBitmaps(tdbb, impure))
-	{
 		return NULL;
-	}
 
 	setPage(tdbb, impure, NULL);
 	impure->irsb_nav_length = 0;
@@ -527,9 +510,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) 
 	}
 
 	if (retrieval->irb_lower_count)
-	{
 		limit_ptr = &lower;
-	}
 
 	// If there is a starting descriptor, search down index to starting position.
 	// This may involve sibling buckets if splits are in progress.  If there
@@ -563,9 +544,7 @@ void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window) const
 	if (impure->irsb_nav_page != newPage)
 	{
 		if (impure->irsb_nav_page)
-		{
 			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
-		}
 
 		if (newPage)
 		{
