@@ -147,15 +147,21 @@ int debug;
 
 namespace
 {
-	// This mutex is set when new Database block is created. It's global first of all to satisfy
-	// SS requirement - avoid 2 Database blocks for same database (file). Also guarantees no
-	// half-done Database block in databases linked list. Always taken before databases_mutex.
-	GlobalPtr<Mutex> db_init_mutex;
+	// Flag engineShutdown guarantees that no new attachment is created after setting it
+	// and helps avoid more than 1 shutdown threads running simultaneously.
+	bool engineShutdown = false;
+	// This flag is protected with 2 mutexes. shutdownMutex is taken by each shutdown thread
+	// (for a relatively long time). engineEntranceMutex is taken (for a short time) when
+	// shutdown thread is starting shutdown and also when new attachment is created.
+	GlobalPtr<Mutex> shutdownMutex, engineEntranceMutex;
+
+ 	// This mutex is set when new Database block is created. It's global first of all to satisfy
+ 	// SS requirement - avoid 2 Database blocks for same database (file). Also guarantees no
+ 	// half-done Database block in databases linked list. Always taken before databases_mutex.
+	GlobalPtr<Mutex> dbInitMutex;
 
 	Database* databases = NULL;
-	bool engineShuttingDown = false;
-	// This mutex protects both linked list of databases and flag engineShuttingDown.
-	// Flag engineShuttingDown guarantees that no new attachment is created after setting it.
+	// This mutex protects linked list of databases.
 	GlobalPtr<Mutex> databases_mutex;
 
 	// Holder for per-database init/fini mutex
@@ -221,13 +227,13 @@ namespace
 	// Attachment is using reference counted mutex in PublicHandle, also making it possible
 	// to check does object still exist after locking a mutex. This makes great use when
 	// checking for correctness of attachment handle in jrd8* entrypoints. Attachment mutex
-	// is always taken before databases_mutex (but after db_init_mutex when new attachment
+	// is always taken before databases_mutex (but after dbInitMutex when new attachment
 	// is created). Attachment mutex is never released inside engine. Database mutex (dbb_sync)
 	// is taken when engine starts to work with some database and released when there is no
 	// active job (when waiting for something) or when rescheduling. No other mutex from above
 	// mentioned here can be taken after dbb_sync with an exception of attachment mutex for new
 	// attachment. So finally the order of taking mutexes is:
-	//	1. db_init_mutex (in attach/create database) or attachment mutex in other calls
+	//	1. dbInitMutex (in attach/create database) or attachment mutex in other calls
 	//	2. databases_mutex (when / if needed)
 	//	3. dbb_sync
 	//	4. only for new attachments: attachment mutex
@@ -302,8 +308,9 @@ namespace
 
 			if (attachment)
 			{
-				if (engineShuttingDown)		// this is optimization check, engineShuttingDown
-				{							// does not guarantee threads not to enter engine
+				MutexLockGuard guard(engineEntranceMutex);
+				if (engineShutdown)
+				{
 					status_exception::raise(Arg::Gds(isc_att_shutdown));
 				}
 			}
@@ -902,7 +909,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	bool invalid_client_SQL_dialect = false;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
-	MutexEnsureUnlock guardDbInit(db_init_mutex);
+	MutexEnsureUnlock guardDbInit(dbInitMutex);
 
 #ifdef WIN_NT
 	guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -1014,7 +1021,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	if (!(dbb->dbb_flags & DBB_new))
 	{
 		// That's already initialized DBB
-		// No need keeping db_init_mutex locked any more
+		// No need keeping dbInitMutex locked any more
 		guardDbInit.leave();
 	}
 
@@ -1127,7 +1134,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// Turn monitoring on
 		init_monitoring_lock(tdbb);
 
-		// Init complete - we can release db_init_mutex
+		// Init complete - we can release dbInitMutex
 		dbb->dbb_flags &= ~DBB_new;
 		guardDbInit.leave();
 	}
@@ -1959,7 +1966,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  *
  **************************************/
 	ThreadContextHolder tdbb(user_status);
-	MutexEnsureUnlock guardDbInit(db_init_mutex);
+	MutexEnsureUnlock guardDbInit(dbInitMutex);
 
 	if (*handle)
 	{
@@ -2287,7 +2294,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	dbb->dbb_backup_manager->dbCreating = false;
 
-	// Init complete - we can release db_init_mutex
+	// Init complete - we can release dbInitMutex
 	dbb->dbb_flags &= ~DBB_new;
 	guardDbInit.leave();
 
@@ -2567,6 +2574,10 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		}
 		catch (const Exception& ex)
 		{
+			if (*handle)
+			{
+				CCH_release_exclusive(tdbb);
+			}
 			return trace_error(tdbb, ex, user_status, ENTRYPOINT_NAME(GDS_DROP_DATABASE));
 		}
 	}
@@ -5107,11 +5118,17 @@ static void init(thread_db* tdbb,
  * Functional description
  *	Initialize for database access.  First call from both CREATE and
  *	OPEN.
- *	Upon entry mutex db_init_mutex must be locked.
+ *	Upon entry mutex dbInitMutex must be locked.
  *
  **************************************/
 	SET_TDBB(tdbb);
-	// miss in 2.5 :-( fb_assert(db_init_mutex.locked());
+	// miss in 2.5 :-( fb_assert(dbInitMutex.locked());
+
+	// This is optimizaion check - real guarantee of no new attachments is in create_attachment()
+	if (engineShutdown)
+	{
+		Arg::Gds(isc_att_shutdown).raise();
+	}
 
 	// Initialize standard random generator.
 	// MSVC (at least since version 7) have per-thread random seed.
@@ -5121,21 +5138,13 @@ static void init(thread_db* tdbb,
 
 	if (first_rand || (rand() == first_rand_value))
 		srand(time(NULL));
-
 	first_rand = false;
 
 	engineStartup.init();
 
 	Database* dbb = NULL;
-
 	{	// scope
 		MutexLockGuard listGuard(databases_mutex);
-
-		// make sure that no new attachments arrive after shutdown started
-		if (engineShuttingDown)
-		{
-			Arg::Gds(isc_att_shutdown).raise();
-		}
 
 		// Check to see if the database is already attached
 #ifdef SUPERSERVER
@@ -5272,7 +5281,18 @@ static Attachment* create_attachment(const PathName& alias_name,
 
 	Database::SyncGuard dbbGuard(dbb);
 
-	Attachment* attachment = Attachment::create(dbb);
+	Attachment* attachment = NULL;
+	{ // scope
+		MutexLockGuard guard(engineEntranceMutex);
+		if (engineShutdown)
+		{
+			status_exception::raise(Arg::Gds(isc_att_shutdown));
+		}
+
+		attachment = Attachment::create(dbb);
+		attachment->att_next = dbb->dbb_attachments;
+		dbb->dbb_attachments = attachment;
+	}
 
 	attachment->att_filename = alias_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
@@ -5280,9 +5300,6 @@ static Attachment* create_attachment(const PathName& alias_name,
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
-
-	attachment->att_next = dbb->dbb_attachments;
-	dbb->dbb_attachments = attachment;
 
 	return attachment;
 }
@@ -6604,31 +6621,12 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 {
 	ex.stuff_exception(userStatus);
 
-	if (dbb)
+	try
 	{
-		if (attachment)
+		if (dbb)
 		{
-			if (attachment->att_flags & ATT_manual_lock)
-			{
-				// Locked manually in ctor
-				attachment->att_flags &= ~ATT_manual_lock;
-				attachment->mutex()->leave();
-			}
-		}
+			fb_assert(!dbb->locked());
 
-		fb_assert(!dbb->locked());
-		{	// scope
-			MutexLockGuard guard(databases_mutex);
-			if (engineShuttingDown)
-			{
-				// this attachment will be released as part of engine shutdown process
-				// see also shutdown_thread
-				return userStatus[1];
-			}
-		}
-
-		try
-		{
 			ThreadStatusGuard temp_status(tdbb);
 
 			if (attachment)
@@ -6637,17 +6635,30 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 				// we need to care about lock ordering in unwind too 
 				// cause we may have locks and therefore AST calls
 				DisableAst astGuard(attachment);
-				Database::SyncGuard syncGuard(dbb);
 
-				release_attachment(tdbb, attachment);
+				// now get in sync with shutdown thread - take normal mutex
+				// in addition to ast one
+				PublicHandleHolder guard;
+				if (guard.hold(attachment, "jrd.cpp: unwindAttach"))
+				{
+					if (attachment->att_flags & ATT_manual_lock)
+					{
+						// Locked manually in ctor
+						attachment->mutex()->leave();
+						attachment->att_flags &= ~ATT_manual_lock;
+					}
+
+					Database::SyncGuard syncGuard(dbb);
+					release_attachment(tdbb, attachment);
+				}
 			}
 
 			shutdown_database(dbb, true);
 		}
-		catch (const Exception&)
-		{
-			// no-op
-		}
+	}
+	catch (const Exception&)
+	{
+		// no-op
 	}
 
 	return userStatus[1];
@@ -6671,13 +6682,22 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 	try
 	{
+		MutexLockGuard shutdownGuard(shutdownMutex);
+		if (engineShutdown)
+		{
+			return 0;
+		}
+
+		// First of all set flag to disable new activities in engine
+		{ // scope
+			MutexLockGuard guard(engineEntranceMutex);
+			engineShutdown = true;
+		}
+
 		HalfStaticArray<Attachment*, 128> attachments;
 
 		{ // scope
 			MutexLockGuard guard(databases_mutex);
-
-			// First of all set flag to disable new attachments
-			engineShuttingDown = true;
 
 			for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 			{
@@ -7356,6 +7376,14 @@ namespace
 
 	THREAD_ENTRY_DECLARE attachmentShutdownThread(THREAD_ENTRY_PARAM arg)
 	{
+		MutexLockGuard guard(shutdownMutex);
+		if (engineShutdown)
+		{
+			// this attachment to be released as part of engine shutdown process
+			// see also shutdown_thread
+			return 0;
+		}
+
 		AutoPtr<PingQueue> queue(static_cast<PingQueue*>(arg));
 
 		while (!queue->isEmpty())
