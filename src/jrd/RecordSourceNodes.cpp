@@ -3475,9 +3475,6 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 		offset += desc3->dsc_length;
 	}
 
-	if (offset > MAX_RECORD_SIZE)
-		ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-
 	format->fmt_length = offset;
 	format->fmt_count = format->fmt_desc.getCount();
 }
