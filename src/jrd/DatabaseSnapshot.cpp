@@ -738,7 +738,10 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	// Attachment information
 
 	Attachment* const self_attachment = tdbb->getAttachment();
-	dumpAttachment(record, self_attachment, writer);
+	if (self_attachment)
+	{
+		dumpAttachment(record, self_attachment, writer);
+	}
 
 	try
 	{
