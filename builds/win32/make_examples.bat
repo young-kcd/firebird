@@ -86,26 +86,32 @@ if defined FB2_INTLEMP (
 @rmdir /q /s %FB_OUTPUT_DIR%\examples 2>nul
 @mkdir %FB_OUTPUT_DIR%\examples
 @mkdir %FB_OUTPUT_DIR%\examples\api
+@mkdir %FB_OUTPUT_DIR%\examples\dbcrypt
 @mkdir %FB_OUTPUT_DIR%\examples\build_unix
 @mkdir %FB_OUTPUT_DIR%\examples\build_win32
-@mkdir %FB_OUTPUT_DIR%\examples\dyn
 @mkdir %FB_OUTPUT_DIR%\examples\empbuild
 @mkdir %FB_OUTPUT_DIR%\examples\include
+@mkdir %FB_OUTPUT_DIR%\examples\interfaces
+@mkdir %FB_OUTPUT_DIR%\examples\package
 @mkdir %FB_OUTPUT_DIR%\examples\stat
 @mkdir %FB_OUTPUT_DIR%\examples\udf
+@mkdir %FB_OUTPUT_DIR%\examples\udr
 
 @echo Moving files to output directory
 @copy %FB_ROOT_PATH%\examples\* %FB_OUTPUT_DIR%\examples > nul
 @ren %FB_OUTPUT_DIR%\examples\readme readme.txt > nul
 @copy %FB_ROOT_PATH%\examples\api\* %FB_OUTPUT_DIR%\examples\api > nul
+@copy %FB_ROOT_PATH%\examples\dbcrypt\* %FB_OUTPUT_DIR%\examples\dbcrypt > nul
 @copy %FB_ROOT_PATH%\examples\build_unix\* %FB_OUTPUT_DIR%\examples\build_unix > nul
 @copy %FB_ROOT_PATH%\examples\build_win32\* %FB_OUTPUT_DIR%\examples\build_win32 > nul
-@copy %FB_ROOT_PATH%\examples\dyn\* %FB_OUTPUT_DIR%\examples\dyn > nul
 :: @copy %FB_ROOT_PATH%\examples\empbuild\* %FB_OUTPUT_DIR%\examples\empbuild > nul
 @copy %FB_ROOT_PATH%\examples\empbuild\employe2.sql %FB_OUTPUT_DIR%\examples\empbuild > nul
 @copy %FB_ROOT_PATH%\examples\include\* %FB_OUTPUT_DIR%\examples\include > nul
+@copy %FB_ROOT_PATH%\examples\interfaces\* %FB_OUTPUT_DIR%\examples\interfaces > nul
+@copy %FB_ROOT_PATH%\examples\package\* %FB_OUTPUT_DIR%\examples\package > nul
 @copy %FB_ROOT_PATH%\examples\stat\* %FB_OUTPUT_DIR%\examples\stat > nul
 @copy %FB_ROOT_PATH%\examples\udf\* %FB_OUTPUT_DIR%\examples\udf > nul
+@copy %FB_ROOT_PATH%\examples\udr\* %FB_OUTPUT_DIR%\examples\udr > nul
 @copy %FB_ROOT_PATH%\src\extlib\ib_udf* %FB_OUTPUT_DIR%\examples\udf > nul
 @copy %FB_ROOT_PATH%\src\extlib\fbudf\* %FB_OUTPUT_DIR%\examples\udf > nul
 
