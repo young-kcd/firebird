@@ -42,6 +42,7 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR%\udf 2>nul
 @mkdir %FB_OUTPUT_DIR%\help 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc 2>nul
+@mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
 @mkdir %FB_OUTPUT_DIR%\include 2>nul
 @mkdir %FB_OUTPUT_DIR%\lib 2>nul
 @mkdir %FB_OUTPUT_DIR%\system32 2>nul
@@ -79,6 +80,11 @@ findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >
 :: DOCS
 @copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
 @copy %FB_ROOT_PATH%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt >nul
+
+:: READMES
+@copy %FB_ROOT_PATH%\doc\README.* %FB_OUTPUT_DIR%\doc >nul
+@copy %FB_ROOT_PATH%\doc\sql.extensions\README.* %FB_OUTPUT_DIR%\doc\sql.extensions >nul
+
 
 :: HEADERS
 :: Don't use this ibase.h unless you have to - we build it better in BuildExecutableInstall.bat
