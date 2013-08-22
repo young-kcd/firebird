@@ -40,7 +40,8 @@ if "%VS_VER%"=="msvc6" (
 @echo.
 @echo Building empbuild.fdb
 @copy /y %FB_OUTPUT_DIR%\bin\isql.exe %FB_GEN_DIR%\examples\ > nul
-@copy /y %FB_OUTPUT_DIR%\bin\fbclient.dll %FB_GEN_DIR%\examples\ > nul
+@copy /y %FB_OUTPUT_DIR%\bin\fbembed.dll %FB_GEN_DIR%\examples\fbclient.dll > nul
+@copy /y %FB_OUTPUT_DIR%\bin\icu*.dll %FB_GEN_DIR%\examples\ > nul
 @copy /y %FB_ROOT_PATH%\examples\empbuild\*.sql   %FB_GEN_DIR%\examples\ > nul
 @copy /y %FB_ROOT_PATH%\examples\empbuild\*.inp   %FB_GEN_DIR%\examples\ > nul
 
