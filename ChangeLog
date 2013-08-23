@@ -1,3 +1,93 @@
+ 2013-08-22 13:52  dimitr 
+   M builds/win32/make_examples.bat
+Updated the distributed examples.
+
+ 2013-08-22 09:24  dimitr 
+   M builds/win32/make_all.bat
+Added plugins.conf to the distribution.
+
+ 2013-08-22 06:23  dimitr 
+   M builds/win32/make_all.bat
+Added READMEs and new API headers to Windows snapshots.
+
+ 2013-08-21 13:51  dimitr 
+   M src/isql/isql.h
+   M src/isql/show.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Improved the ISQL output for the SHOW GRANT command.
+
+ 2013-08-21 11:56  alexpeshkoff 
+   M src/jrd/DatabaseSnapshot.cpp
+Fixed assertion in classic mode
+
+ 2013-08-21 09:17  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/gen.cpp
+   M src/jrd/Routine.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/val.h
+On second thought, I'm removing the artifical message size limit.
+
+ 2013-08-21 09:14  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Removed the record size limit for aggregates/unions.
+
+ 2013-08-21 09:11  dimitr 
+   M src/jrd/exe.h
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/sort.cpp
+   M src/jrd/sort.h
+Increased the sort record size limit to 1MB. I've kept this limit due to the possible performance implications, but it can be extended/removed any time.
+
+ 2013-08-21 07:41  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+Minor refactoring and support for records longer than 64KB (not really actual, but just in case).
+
+ 2013-08-21 07:40  dimitr 
+   M src/jrd/RecordBuffer.cpp
+   M src/jrd/req.h
+   M src/jrd/tra.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+Core support for records longer than 64KB. Not exposed to the external world yet.
+
+ 2013-08-21 07:19  dimitr 
+   M src/jrd/ext.cpp
+Misc.
+
+ 2013-08-21 07:18  dimitr 
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/ConditionalStream.cpp
+   M src/jrd/recsrc/ExternalTableScan.cpp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/FirstRowsStream.cpp
+   M src/jrd/recsrc/FullOuterJoin.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/LockedStream.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/SingularStream.cpp
+   M src/jrd/recsrc/SkipRowsStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/VirtualTableScan.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+Misc.
+
+ 2013-08-21 07:16  dimitr 
+   M src/dsql/AggNodes.h
+Impure offsets must be 32-bit.
+
  2013-08-20 06:11  dimitr 
    M src/jrd/DatabaseSnapshot.cpp
    M src/jrd/DatabaseSnapshot.h
