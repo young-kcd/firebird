@@ -15,10 +15,6 @@
 ::Uncomment this to build intlemp
 ::set FB2_INTLEMP=1
 
-:: This allows us to use the new engine in embedded mode to build 
-:: the employee database.
-set FIREBIRD=%FB_BIN_DIR%
-
 ::===========
 :MAIN
 @echo BUILD_EMPBUILD
@@ -135,6 +131,9 @@ if defined FB2_INTLEMP (
 :: and empbuild.exe uses isql
 @set FB_SAVE_PATH=%PATH%
 @set PATH=%FB_BIN_DIR%;%PATH%
+:: This allows us to use the new engine in embedded mode to build
+:: the employee database.
+@set FIREBIRD=%FB_BIN_DIR%
 
 @cd %FB_GEN_DIR%\examples
 @del %FB_GEN_DIR%\examples\employee.fdb 2>nul
@@ -147,6 +146,7 @@ if defined FB2_INTLEMP (
   @echo s;intlemp.fdb;%SERVER_NAME%:%FB_GEN_DIR%\examples\intlemp.fdb;g > isql.tmp
   @%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\intlbuild\intlbuild.exe %FB_GEN_DB_DIR%/examples/intlemp.fdb
 )
+@set FIREBIRD=
 @set PATH=%FB_SAVE_PATH%
 @cd %FB_ROOT_PATH%\builds\win32
 
