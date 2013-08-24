@@ -1,3 +1,89 @@
+ 2013-08-23 15:37  asfernandes 
+   M builds/posix/make.shared.targets
+Hope this fixes the POSIX build.
+
+ 2013-08-23 10:44  alexpeshkoff 
+   D extern/editline/CHANGELOG
+   R extern/editline/COPYING
+   A extern/editline/ChangeLog
+   R extern/editline/INSTALL
+   R extern/editline/Makefile.am
+   R extern/editline/Makefile.in
+   R extern/editline/THANKS
+   R extern/editline/acinclude.m4
+   R extern/editline/aclocal.m4
+   A extern/editline/compile
+   R extern/editline/config.guess
+   R extern/editline/config.h.in
+   R extern/editline/config.sub
+   R extern/editline/configure
+   R extern/editline/configure.ac
+   R extern/editline/depcomp
+   R extern/editline/install-sh
+   A extern/editline/libedit.pc.in
+   R extern/editline/ltmain.sh
+   A extern/editline/m4
+   A extern/editline/m4/libtool.m4
+   A extern/editline/m4/ltoptions.m4
+   A extern/editline/m4/ltsugar.m4
+   A extern/editline/m4/ltversion.m4
+   A extern/editline/m4/lt~obsolete.m4
+   R extern/editline/missing
+   R extern/editline/src
+   A extern/editline/src/Makefile.am
+   A extern/editline/src/Makefile.in
+   A extern/editline/src/chared.c
+   A extern/editline/src/chared.h
+   A extern/editline/src/chartype.c
+   A extern/editline/src/chartype.h
+   A extern/editline/src/common.c
+   A extern/editline/src/editline
+   A extern/editline/src/editline/readline.h
+   A extern/editline/src/el.c
+   A extern/editline/src/el.h
+   A extern/editline/src/eln.c
+   A extern/editline/src/emacs.c
+   A extern/editline/src/fgetln.c
+   A extern/editline/src/filecomplete.c
+   A extern/editline/src/filecomplete.h
+   A extern/editline/src/hist.c
+   A extern/editline/src/hist.h
+   A extern/editline/src/histedit.h
+   A extern/editline/src/history.c
+   A extern/editline/src/keymacro.c
+   A extern/editline/src/keymacro.h
+   A extern/editline/src/makelist
+   A extern/editline/src/map.c
+   A extern/editline/src/map.h
+   A extern/editline/src/parse.c
+   A extern/editline/src/parse.h
+   A extern/editline/src/prompt.c
+   A extern/editline/src/prompt.h
+   A extern/editline/src/read.c
+   A extern/editline/src/read.h
+   A extern/editline/src/readline.c
+   A extern/editline/src/refresh.c
+   A extern/editline/src/refresh.h
+   A extern/editline/src/search.c
+   A extern/editline/src/search.h
+   A extern/editline/src/shlib_version
+   A extern/editline/src/sig.c
+   A extern/editline/src/sig.h
+   A extern/editline/src/strlcat.c
+   A extern/editline/src/strlcpy.c
+   A extern/editline/src/sys.h
+   A extern/editline/src/terminal.c
+   A extern/editline/src/terminal.h
+   A extern/editline/src/tokenizer.c
+   A extern/editline/src/tty.c
+   A extern/editline/src/tty.h
+   A extern/editline/src/unvis.c
+   A extern/editline/src/vi.c
+   A extern/editline/src/vis.c
+   A extern/editline/src/vis.h
+   A extern/editline/src/wcsdup.c
+Replaced editline with new version, recommended by Frank
+
  2013-08-22 13:52  dimitr 
    M builds/win32/make_examples.bat
 Updated the distributed examples.
