@@ -1,3 +1,7 @@
+ 2013-08-24 08:43  dimitr 
+   M builds/win32/make_examples.bat
+Fixed snapshot builds.
+
  2013-08-23 15:37  asfernandes 
    M builds/posix/make.shared.targets
 Hope this fixes the POSIX build.
