@@ -7323,7 +7323,7 @@ const StmtNode* SuspendNode::execute(thread_db* tdbb, jrd_req* request, ExeState
 			// the procedure didn't return any rows. See CORE-2204.
 			// But we should run the last assignment, as it's the one who make the procedure stop.
 
-			if (!request->getStatement()->procedure || !(request->req_flags & req_proc_fetch))
+			if (!(request->req_flags & req_proc_fetch))
 				return statement;
 
 			const CompoundStmtNode* list = parentStmt->as<CompoundStmtNode>();

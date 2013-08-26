@@ -157,8 +157,7 @@ void DSQL_execute(thread_db* tdbb,
 	}
 
 	// A select with a non zero output length is a singleton select
-	const bool singleton =
-		((statement->getType() == DsqlCompiledStatement::TYPE_SELECT) && out_msg);
+	const bool singleton = reqTypeWithCursor(statement->getType()) && out_msg;
 
 	// If the request is a SELECT or blob statement then this is an open.
 	// Make sure the cursor is not already open.
@@ -617,8 +616,7 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 		Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 		// A select with a non zero output length is a singleton select
-		const bool singleton =
-			((statement->getType() == DsqlCompiledStatement::TYPE_SELECT) && out_msg);
+		const bool singleton = reqTypeWithCursor(statement->getType()) && out_msg;
 
 		request->req_transaction = *tra_handle;
 
