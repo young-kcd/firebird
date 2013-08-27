@@ -83,6 +83,7 @@
 // This is a local file included in our distribution - but not always
 // compiled into the system
 #include "editline.h"
+#include <locale.h> 
 #endif
 
 enum literal_string_type
@@ -532,6 +533,9 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	isqlGlob.major_ods = 0;
 	isqlGlob.minor_ods = 0;
 
+#ifdef HAVE_EDITLINE_H
+	setlocale(LC_CTYPE, "");
+#endif
 	int rc = ISQL_main(argc, argv);
 	return rc;
 }
