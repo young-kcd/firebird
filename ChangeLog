@@ -1,3 +1,9 @@
+ 2013-08-27 17:04  fsg 
+   M builds/posix/Makefile.in.extern.editline
+   M extern/editline/src/eln.c
+   M src/isql/isql.epp
+enable UTF8 support for the new editline version and isql
+
  2013-08-26 16:06  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/dsql.cpp
