@@ -81,6 +81,23 @@ LiteralNode* MAKE_const_slong(SLONG value)
 }
 
 
+LiteralNode* MAKE_const_sint64(SINT64 value, SCHAR scale)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	SINT64* valuePtr = FB_NEW(*tdbb->getDefaultPool()) SINT64(value);
+
+	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	literal->litDesc.dsc_dtype = dtype_int64;
+	literal->litDesc.dsc_length = sizeof(SINT64);
+	literal->litDesc.dsc_scale = scale;
+	literal->litDesc.dsc_sub_type = 0;
+	literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(valuePtr);
+
+	return literal;
+}
+
+
 /**
 
  	MAKE_constant
@@ -114,98 +131,6 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
 		literal->litDesc.dsc_length = sizeof(double);
 		literal->litDesc.dsc_address = (UCHAR*) str;
 		literal->litDesc.dsc_ttype() = ttype_ascii;
-		break;
-
-	case CONSTANT_SINT64:
-		{
-			// We convert the string to an int64.
-
-			literal->litDesc.dsc_dtype = dtype_int64;
-			literal->litDesc.dsc_length = sizeof(SINT64);
-			literal->litDesc.dsc_scale = 0;
-			literal->litDesc.dsc_sub_type = 0;
-			literal->litDesc.dsc_address = (UCHAR*) FB_NEW(*tdbb->getDefaultPool()) SINT64;
-
-			// Now convert the string to an int64.  We can omit testing for
-			// overflow, because we would never have gotten here if yylex
-			// hadn't recognized the string as a valid 64-bit integer value.
-			// We *might* have "9223372936854775808", which works an an int64
-			// only if preceded by a '-', but that issue is handled in GEN_expr,
-			// and need not be addressed here.
-
-			// Recent change to support hex numeric constants means the input
-			// string now can be X8000000000000000, for example.
-			// Hex constants coming through this code are guaranteed to be
-			// valid - they start with X and contains only 0-9, A-F.
-			// And, they will fit in a SINT64 without overflow.
-
-			SINT64 value = 0;
-			const UCHAR* p = reinterpret_cast<const UCHAR*>(str);
-
-			if (*p == 'X')
-			{
-				// oh no, a hex string!
-				++p; // skip the 'X' part.
-				UCHAR byte = 0;
-				bool nibble = ((strlen(str) - 1) & 1);
-				SSHORT c;
-
-				// hex string is already upper-cased
-				while (isdigit(*p) || ((*p >= 'A') && (*p <= 'F')))
-				{
-					// Now convert the character to a nibble
-					if (*p >= 'A')
-						c = (*p - 'A') + 10;
-					else
-						c = (*p - '0');
-
-					if (nibble)
-					{
-						byte = (byte << 4) + (UCHAR) c;
-						nibble = false;
-						value = (value << 8) + byte;
-					}
-					else
-					{
-						byte = c;
-						nibble = true;
-					}
-
-					++p;
-				}
-
-				// if value is negative, then GEN_constant (from dsql/gen.cpp)
-				// is going to want 2 nodes: NegateNode (to hold the minus)
-				// and LiteralNode as a child to hold the value.
-				if (value < 0)
-				{
-					value = -value;
-					*(SINT64*) literal->litDesc.dsc_address = value;
-					return FB_NEW(*tdbb->getDefaultPool()) NegateNode(*tdbb->getDefaultPool(), literal);
-				}
-				else
-					*(SINT64*) literal->litDesc.dsc_address = value;
-			} // hex constant
-			else
-			{
-				// Good old-fashioned base-10 number from the lexer.
-				// We convert the string to an int64.
-
-				while (isdigit(*p))
-					value = 10 * value + (*(p++) - '0');
-
-				if (*p++ == '.')
-				{
-					while (isdigit(*p))
-					{
-						value = 10 * value + (*p++ - '0');
-						literal->litDesc.dsc_scale--;
-					}
-				}
-
-				*(FB_UINT64*) (literal->litDesc.dsc_address) = value;
-			}
-		}
 		break;
 
 	case CONSTANT_DATE:

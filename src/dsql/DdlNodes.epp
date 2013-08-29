@@ -4889,14 +4889,14 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 {
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
 
-	const SINT64 value = valueNode ? getValue() : 0;
+	const SINT64 val = value.specified ? value.value : 0;
 
-	const SSHORT id = store(tdbb, transaction, name, fb_sysflag_user, value);
+	const SSHORT id = store(tdbb, transaction, name, fb_sysflag_user, val);
 	fb_assert(id > 0);
 
 	// the store() call above has caused the DFW item to be posted,
 	// so we just adjust the cached generator value
-	transaction->getGenIdCache()->put(id, value);
+	transaction->getGenIdCache()->put(id, val);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
 }
@@ -4918,9 +4918,9 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
-		const SINT64 value = valueNode ? getValue() : 0;
+		const SINT64 val = value.specified ? value.value : 0;
 
-		transaction->getGenIdCache()->put(id, value);
+		transaction->getGenIdCache()->put(id, val);
 		dsc desc;
 		desc.makeText((USHORT) name.length(), ttype_metadata, (UCHAR*) name.c_str());
 		DFW_post_work(transaction, dfw_set_generator, &desc, id);
@@ -4941,9 +4941,10 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
 		const SLONG id = X.RDB$GENERATOR_ID;
-		const SINT64 value = valueNode ? getValue() : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
+		const SINT64 val = value.specified ?
+			value.value : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
 
-		transaction->getGenIdCache()->put(id, value);
+		transaction->getGenIdCache()->put(id, val);
 		dsc desc;
 		desc.makeText((USHORT) name.length(), ttype_metadata, (UCHAR*) name.c_str());
 		DFW_post_work(transaction, dfw_set_generator, &desc, id);
@@ -4958,7 +4959,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 }
 
 SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const MetaName& name,
-	fb_sysflag sysFlag, SINT64 value)
+	fb_sysflag sysFlag, SINT64 val)
 {
 	Attachment* const attachment = transaction->tra_attachment;
 	const string& userName = attachment->att_user->usr_user_name;
@@ -4990,7 +4991,7 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 				strcpy(X.RDB$OWNER_NAME, userName.c_str());
 
 				X.RDB$INITIAL_VALUE.NULL = FALSE;
-				X.RDB$INITIAL_VALUE = value;
+				X.RDB$INITIAL_VALUE = val;
 			}
 			END_STORE
 
@@ -5014,47 +5015,9 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 	return storedId;
 }
 
-SINT64 CreateAlterSequenceNode::getValue() const
-{
-	if (!valueNode)
-	{
-		fb_assert(false);
-		return 0;
-	}
-
-	const ValueExprNode* val = valueNode;
-
-	bool negate = false;
-	const NegateNode* negation = val->as<NegateNode>();
-	while (negation)
-	{
-		negate = !negate;
-		val = negation->arg;
-		negation = ExprNode::as<NegateNode>(val);
-	}
-
-	const LiteralNode* const lit = val->as<LiteralNode>();
-	fb_assert(lit);
-
-	SINT64 value = 0;
-
-	if (lit->litDesc.dsc_dtype == dtype_int64)
-		value = *(SINT64*) lit->litDesc.dsc_address;
-	else if (lit->litDesc.dsc_dtype == dtype_long)
-		value = *(SLONG*) lit->litDesc.dsc_address;
-	else
-		fb_assert(false);
-
-	if (negate)
-		value = -value;
-	else if (value == MIN_SINT64)
-		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-
-	return value;
-}
-
 
 //----------------------
+
 
 void DropSequenceNode::print(string& text) const
 {

@@ -45,17 +45,17 @@ namespace Jrd {
 
 // Parameters to MAKE_constant
 	enum dsql_constant_type {
-		CONSTANT_DOUBLE		= 1, // stored as a string
-		CONSTANT_DATE		= 2, // stored as a SLONG
-		CONSTANT_TIME		= 3, // stored as a ULONG
-		CONSTANT_TIMESTAMP	= 4, // stored as a QUAD
-		CONSTANT_SINT64		= 5, // stored as a SINT64
-		CONSTANT_BOOLEAN	= 6, // stored as a UCHAR
+		CONSTANT_DOUBLE = 1,	// stored as a string
+		CONSTANT_DATE,			// stored as a SLONG
+		CONSTANT_TIME,			// stored as a ULONG
+		CONSTANT_TIMESTAMP,		// stored as a QUAD
+		CONSTANT_BOOLEAN,		// stored as a UCHAR
 	};
 }
 
 
 Jrd::LiteralNode* MAKE_const_slong(SLONG);
+Jrd::LiteralNode* MAKE_const_sint64(SINT64 value, SCHAR scale);
 Jrd::ValueExprNode* MAKE_constant(const char*, Jrd::dsql_constant_type);
 Jrd::LiteralNode* MAKE_str_constant(const Jrd::IntlString*, SSHORT);
 void MAKE_desc(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueExprNode*);

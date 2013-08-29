@@ -366,7 +366,7 @@ using namespace Firebird;
 
 // special aggregate token types returned by lex in v6.0
 
-%token <stringPtr> NUMBER64BIT SCALEDINT
+%token <scaledNumber> NUMBER64BIT SCALEDINT
 
 // CVC: Special Firebird additions.
 
@@ -595,8 +595,11 @@ using namespace Firebird;
 	int intVal;
 	unsigned uintVal;
 	SLONG int32Val;
+	SINT64 int64Val;
 	FB_UINT64 uint64Val;
+	BaseNullable<SINT64> nullableInt64Val;
 	BaseNullable<FB_UINT64> nullableUint64Val;
+	Jrd::ScaledNumber scaledNumber;
 	UCHAR blrOp;
 	Jrd::OrderNode::NullsPlacement nullsPlacement;
 	Jrd::ComparativeBoolNode::DsqlFlag cmpBoolFlag;
@@ -1461,12 +1464,10 @@ generator_clause
 		{ $$ = newNode<CreateAlterSequenceNode>(*$1, $2); }
 	;
 
-%type <valueExprNode> start_with_opt
+%type <nullableInt64Val> start_with_opt
 start_with_opt
-	: // nothing
-		{ $$ = NULL; }
-	| START WITH sequence_value
-		{ $$ = $3; }
+	: /* nothing */					{ $$ = Nullable<SINT64>::empty(); }
+	| START WITH sequence_value		{ $$ = Nullable<SINT64>::val($3); }
 	;
 
 %type <createAlterSequenceNode> replace_sequence_clause
@@ -1479,12 +1480,10 @@ replace_sequence_clause
 		}
 	;
 	
-%type <valueExprNode> replace_sequence_options
+%type <nullableInt64Val> replace_sequence_options
 replace_sequence_options
-	: RESTART
-		{ $$ = NULL; }
-	| START WITH sequence_value
-		{ $$ = $3; }
+	: RESTART						{ $$ = Nullable<SINT64>::empty(); }
+	| START WITH sequence_value		{ $$ = Nullable<SINT64>::val($3); }
 	;
 
 %type <createAlterSequenceNode> alter_sequence_clause
@@ -1498,19 +1497,18 @@ alter_sequence_clause
 		}
 	;
 
-%type <valueExprNode> restart_value_opt
+%type <nullableInt64Val> restart_value_opt
 restart_value_opt
-	: // nothing
-		{ $$ = NULL; }
-	| WITH sequence_value
-		{ $$ = $2; }
+	: /* nothing */			{ $$ = Nullable<SINT64>::empty(); }
+	| WITH sequence_value	{ $$ = Nullable<SINT64>::val($2); }
 	;
 
 %type <createAlterSequenceNode> set_generator_clause
 set_generator_clause
 	: SET GENERATOR symbol_generator_name TO sequence_value
 		{
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$3, $5);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$3,
+				Nullable<SINT64>::val($5));
 			node->create = false;
 			node->alter = true;
 			node->legacy = true;
@@ -1518,14 +1516,11 @@ set_generator_clause
 		}
 	;
 
-%type <valueExprNode> sequence_value
+%type <int64Val> sequence_value
 sequence_value
-	: signed_long_integer
-		{ $$ = MAKE_const_slong($1); }
-	| NUMBER64BIT
-		{ $$ = MAKE_constant($1->c_str(), CONSTANT_SINT64); }
-	| '-' NUMBER64BIT
-		{ $$ = newNode<NegateNode>(MAKE_constant($2->c_str(), CONSTANT_SINT64)); }
+	: signed_long_integer	{ $$ = $1; }
+	| NUMBER64BIT			{ $$ = $1.number; }
+	| '-' NUMBER64BIT		{ $$ = -$2.number; }
 	;
 
 
@@ -5996,10 +5991,19 @@ constant
 
 %type <valueExprNode> u_numeric_constant
 u_numeric_constant
-	: NUMBER			{ $$ = MAKE_const_slong($1); }
-	| FLOAT_NUMBER		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DOUBLE); }
-	| NUMBER64BIT		{ $$ = MAKE_constant($1->c_str(), CONSTANT_SINT64); }
-	| SCALEDINT			{ $$ = MAKE_constant($1->c_str(), CONSTANT_SINT64); }
+	: NUMBER
+		{ $$ = MAKE_const_slong($1); }
+	| FLOAT_NUMBER
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DOUBLE); }
+	| NUMBER64BIT
+		{
+			if ($1.number >= 0)
+				$$ = MAKE_const_sint64($1.number, $1.scale);
+			else
+				$$ = newNode<NegateNode>(MAKE_const_sint64(-$1.number, $1.scale));
+		}
+	| SCALEDINT
+		{ $$ = MAKE_const_sint64($1.number, $1.scale); }
 	;
 
 %type <valueExprNode> u_constant

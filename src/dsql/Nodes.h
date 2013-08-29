@@ -1470,6 +1470,13 @@ private:
 };
 
 
+struct ScaledNumber
+{
+	SINT64 number;
+	SCHAR scale;
+};
+
+
 class RowsClause : public Firebird::PermanentStorage
 {
 public:

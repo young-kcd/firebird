@@ -750,15 +750,41 @@ int Parser::yylexAux()
 				cbuff[charlen + 1] = '\0';
 
 				char* p = &cbuff[1];
+				UCHAR byte = 0;
+				bool nibble = strlen(p) & 1;
 
-				while (*p != '\0')
+				yylval.scaledNumber.number = 0;
+				yylval.scaledNumber.scale = 0;
+
+				while (*p)
 				{
 					if ((*p >= 'a') && (*p <= 'f'))
 						*p = UPPER(*p);
-					p++;
+
+					// Now convert the character to a nibble
+					SSHORT c;
+
+					if (*p >= 'A')
+						c = (*p - 'A') + 10;
+					else
+						c = (*p - '0');
+
+					if (nibble)
+					{
+						byte = (byte << 4) + (UCHAR) c;
+						nibble = false;
+						yylval.scaledNumber.number = (yylval.scaledNumber.number << 8) + byte;
+					}
+					else
+					{
+						byte = c;
+						nibble = true;
+					}
+
+					++p;
 				}
 
-				yylval.stringPtr = newString(cbuff);
+				// The return value can be a negative number.
 				return NUMBER64BIT;
 			}
 			else
@@ -825,14 +851,15 @@ int Parser::yylexAux()
 	{
 		// The following variables are used to recognize kinds of numbers.
 
-		bool have_error	 = false;	// syntax error or value too large
-		bool have_digit	 = false;	// we've seen a digit
-		bool have_decimal   = false;	// we've seen a '.'
-		bool have_exp	   = false;	// digit ... [eE]
-		bool have_exp_sign  = false; // digit ... [eE] {+-]
+		bool have_error = false;	// syntax error or value too large
+		bool have_digit = false;	// we've seen a digit
+		bool have_decimal = false;	// we've seen a '.'
+		bool have_exp = false;	// digit ... [eE]
+		bool have_exp_sign = false; // digit ... [eE] {+-]
 		bool have_exp_digit = false; // digit ... [eE] ... digit
-		FB_UINT64 number		= 0;
-		FB_UINT64 limit_by_10	= MAX_SINT64 / 10;
+		FB_UINT64 number = 0;
+		FB_UINT64 limit_by_10 = MAX_SINT64 / 10;
+		SCHAR scale = 0;
 
 		for (--lex.ptr; lex.ptr < lex.end; lex.ptr++)
 		{
@@ -888,7 +915,11 @@ int Parser::yylexAux()
 						break;
 					}
 				}
+
 				number = number * 10 + (c - '0');
+
+				if (have_decimal)
+					--scale;
 			}
 			else if ( (('E' == c) || ('e' == c)) && have_digit )
 				have_exp = true;
@@ -948,14 +979,19 @@ int Parser::yylexAux()
 						ERRD_post_warning(Arg::Warning(isc_dsql_warning_number_ambiguous1));
 					}
 
-					yylval.stringPtr = newString(Firebird::string(lex.last_token, lex.ptr - lex.last_token));
-
 					lex.last_token_bk = lex.last_token;
 					lex.line_start_bk = lex.line_start;
 					lex.lines_bk = lex.lines;
 
 					if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+					{
+						yylval.stringPtr = newString(
+							Firebird::string(lex.last_token, lex.ptr - lex.last_token));
 						return FLOAT_NUMBER;
+					}
+
+					yylval.scaledNumber.number = number;
+					yylval.scaledNumber.scale = scale;
 
 					if (have_decimal)
 						return SCALEDINT;

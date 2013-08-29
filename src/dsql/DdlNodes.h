@@ -906,13 +906,14 @@ typedef RecreateNode<CreateAlterExceptionNode, DropExceptionNode, isc_dsql_recre
 class CreateAlterSequenceNode : public DdlNode
 {
 public:
-	CreateAlterSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName, const ValueExprNode* value)
+	CreateAlterSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName,
+				BaseNullable<SINT64> aValue)
 		: DdlNode(pool),
 		  create(true),
 		  alter(false),
 		  legacy(false),
 		  name(pool, aName),
-		  valueNode(value)
+		  value(aValue)
 	{}
 
 	static SSHORT store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
@@ -939,14 +940,12 @@ private:
 	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
-	SINT64 getValue() const;
-
 public:
 	bool create;
 	bool alter;
 	bool legacy;
 	const Firebird::MetaName name;
-	const ValueExprNode* const valueNode;
+	BaseNullable<SINT64> value;
 };
 
 
