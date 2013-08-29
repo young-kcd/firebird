@@ -5942,7 +5942,7 @@ int Parser::yylexAux()
 
 		for (;;)
 		{
-			if (lex.ptr >= lex.end)			// Unexpected EOS
+			if (charlen == 0 && lex.ptr >= lex.end)			// Unexpected EOS
 			{
 				hexerror = true;
 				break;
