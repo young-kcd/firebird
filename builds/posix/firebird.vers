@@ -251,6 +251,7 @@ global:
 	isc_print_sqlerror;
 	isc_print_status;
 	isc_sqlcode;
+	isc_sqlcode_s;
 	isc_sql_interprete;
 	fb_sqlstate;
 
