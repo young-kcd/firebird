@@ -1,3 +1,7 @@
+ 2013-08-29 16:01  asfernandes 
+   M src/dsql/parse.y
+Backported fix for CORE-4198 - Incorrect "token unknown" error when the SQL string ends with a hex number literal.
+
  2013-08-22 06:57  dimitr 
    M builds/win32/make_examples.bat
 Allow examples to be built without the running server.
