@@ -1,3 +1,17 @@
+ 2013-08-29 16:05  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/Parser.cpp
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/parse.y
+Simplificate representation of 64-bit numbers and sequences in the parser.
+
+ 2013-08-29 15:51  asfernandes 
+   M src/dsql/Parser.cpp
+Fixed CORE-4198 - Incorrect "token unknown" error when the SQL string ends with a hex number literal.
+
  2013-08-27 17:04  fsg 
    M builds/posix/Makefile.in.extern.editline
    M extern/editline/src/eln.c
