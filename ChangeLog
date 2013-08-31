@@ -1,3 +1,7 @@
+ 2013-08-30 08:16  paulbeach 
+   M builds/posix/firebird.vers
+Enable support for the Cobol pre-compiler in libfbclient and libfbembed should anyone want to compile it and use it.
+
  2013-08-29 16:01  asfernandes 
    M src/dsql/parse.y
 Backported fix for CORE-4198 - Incorrect "token unknown" error when the SQL string ends with a hex number literal.
