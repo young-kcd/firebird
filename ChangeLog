@@ -1,3 +1,7 @@
+ 2013-09-02 13:21  alexpeshkoff 
+   M src/jrd/lck.cpp
+Rollback bad fix for CORE-4185
+
  2013-08-30 08:42  paulbeach 
    M builds/posix/firebird.vers
 Enable support for the Cobol pre-compiler in libfbclient and libfbembed should anyone want to compile it and use it.
