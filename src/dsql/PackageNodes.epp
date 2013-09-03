@@ -407,6 +407,7 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				dsqlScratch->getTransaction(), itemStatement);
 
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
+		itemScratch->flags |= DsqlCompilerScratch::FLAG_DDL;
 		itemScratch->package = name;
 
 		switch ((*items)[i].type)
