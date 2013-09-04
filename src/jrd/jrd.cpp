@@ -924,7 +924,7 @@ static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
 static void			init_database_locks(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
-static unsigned int purge_transactions(thread_db*, Jrd::Attachment*, const bool, const ULONG);
+static void		purge_transactions(thread_db*, Jrd::Attachment*, const bool);
 
 static void 		handle_error(Firebird::IStatus*, ISC_STATUS);
 
@@ -2724,6 +2724,7 @@ void JAttachment::detach(IStatus* user_status)
  *
  **************************************/
 	freeEngineData(user_status);
+
 	if (user_status->isSuccess())
 	{
 		RefDeb(DEB_RLS_JATT, "JAttachment::detach");
@@ -2736,7 +2737,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 {
 /**************************************
  *
- *	g d s _ $ d e t a c h
+ *	f r e e E n g i n e D a t a
  *
  **************************************
  *
@@ -2747,15 +2748,20 @@ void JAttachment::freeEngineData(IStatus* user_status)
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		Jrd::Attachment* const attachment = getHandle();
+		Database* const dbb = tdbb->getDatabase();
 
 		try
 		{
-			Jrd::Attachment* attachment = getHandle();
 			if (attachment->att_in_use)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
+			const bool force = engineShutdown ||
+				(dbb->dbb_ast_flags & DBB_shutdown) ||
+				(attachment->att_flags & ATT_shutdown);
+
 			attachment->signalShutdown();
-			purge_attachment(tdbb, this, false);
+			purge_attachment(tdbb, this, force);
 
 			att = NULL;
 		}
@@ -2854,7 +2860,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 				// To be reviewed by Adriano - it will be anyway called in release_attachment
 
 				// Forced release of all transactions
-				purge_transactions(tdbb, attachment, true, attachment->att_flags);
+				purge_transactions(tdbb, attachment, true);
 
 				tdbb->tdbb_flags |= TDBB_detaching;
 
@@ -6602,10 +6608,7 @@ void JTransaction::freeEngineData(IStatus* user_status)
 }
 
 
-static unsigned int purge_transactions(thread_db*	tdbb,
-									   Jrd::Attachment*	attachment,
-									   const bool	force_flag,
-									   const ULONG	att_flags)
+static void purge_transactions(thread_db* tdbb, Jrd::Attachment* attachment, const bool force_flag)
 {
 /**************************************
  *
@@ -6618,8 +6621,8 @@ static unsigned int purge_transactions(thread_db*	tdbb,
  *	from an attachment
  *
  **************************************/
-	Database* dbb = attachment->att_database;
-	jrd_tra* trans_dbk = attachment->att_dbkey_trans;
+	Database* const dbb = attachment->att_database;
+	jrd_tra* const trans_dbk = attachment->att_dbkey_trans;
 
 	unsigned int count = 0;
 	jrd_tra* next;
@@ -6629,8 +6632,7 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 		next = transaction->tra_next;
 		if (transaction != trans_dbk)
 		{
-			if ((transaction->tra_flags & TRA_prepared) || (dbb->dbb_ast_flags & DBB_shutdown) ||
-				(att_flags & ATT_shutdown))
+			if (transaction->tra_flags & TRA_prepared)
 			{
 				TraceTransactionEnd trace(transaction, false, false); // need ability to indicate prepared (in limbo) transaction
 				EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, false, true);
@@ -6645,25 +6647,15 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 
 	if (count)
 	{
-		return count;
+		ERR_post(Arg::Gds(isc_open_trans) << Arg::Num(count));
 	}
 
 	// If there's a side transaction for db-key scope, get rid of it
 	if (trans_dbk)
 	{
 		attachment->att_dbkey_trans = NULL;
-		if ((dbb->dbb_ast_flags & DBB_shutdown) || (att_flags & ATT_shutdown))
-		{
-			TraceTransactionEnd trace(trans_dbk, false, false);
-			TRA_release_transaction(tdbb, trans_dbk, &trace);
-		}
-		else
-		{
-			TRA_commit(tdbb, trans_dbk, false);
-		}
+		TRA_commit(tdbb, trans_dbk, false);
 	}
-
-	return 0;
 }
 
 
@@ -6690,7 +6682,8 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 	while ((attachment = jAtt->getHandle()) && attachment->att_flags & ATT_purge_started)
 	{
 		attachment->att_use_count--;
-		{
+
+		{ // scope
 			MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
 			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when ATT_purge_started / jAtt->getHandle() changes)
 
@@ -6698,16 +6691,15 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 			THD_yield();
 			THD_sleep(1);
 		}
+
 		attachment = jAtt->getHandle();
+
 		if (attachment)
-		{
 	  		attachment->att_use_count++;
-		}
 	}
+
 	if (!attachment)
-	{
 		return;
-	}
 
 	attachment->att_flags |= ATT_purge_started;
 
@@ -6716,7 +6708,8 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 	while (attachment && attachment->att_use_count > 1)
 	{
 		attachment->att_use_count--;
-		{
+
+		{ // scope
 			MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
 			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when --att_use_count)
 
@@ -6724,14 +6717,15 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 			THD_yield();
 			THD_sleep(1);
 		}
+
 		attachment = jAtt->getHandle();
+
 		if (attachment)
-		{
 	  		attachment->att_use_count++;
-		}
 	}
 
 	fb_assert(attMutex->locked());
+
 	if (!attachment)
 		return;
 
@@ -6770,6 +6764,7 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 				catch (const Exception&)
 				{
 					attachment->att_flags = save_flags;
+
 					if (dbb->dbb_flags & DBB_bugcheck)
 						throw;
 
@@ -6790,7 +6785,7 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 		{
 			if (!force_flag)
 			{
-				attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
+				attachment->att_flags |= ATT_shutdown;
 				attachment->att_flags &= ~ATT_purge_started;
 				throw;
 			}
@@ -6808,18 +6803,14 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 		if (!(dbb->dbb_flags & DBB_bugcheck))
 		{
 			// Check for any pending transactions
-			unsigned int count = purge_transactions(tdbb, attachment, force_flag, att_flags);
-			if (count)
-			{
-				ERR_post(Arg::Gds(isc_open_trans) << Arg::Num(count));
-			}
+			purge_transactions(tdbb, attachment, force_flag);
 		}
 	}
 	catch (const Exception&)
 	{
 		if (!force_flag)
 		{
-			attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
+			attachment->att_flags |= ATT_shutdown;
 			attachment->att_flags &= ~ATT_purge_started;
 			throw;
 		}
@@ -7192,11 +7183,11 @@ namespace
 					iscLogException("error while shutting down attachment", ex);
 					success = false;
 				}
+
 				attachment = jAtt->getHandle();
+
 				if (attachment)
-				{
 					attachment->att_use_count--;
-				}
 			}
 		}
 

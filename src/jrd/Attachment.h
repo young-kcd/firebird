@@ -353,22 +353,21 @@ private:
 
 const ULONG ATT_no_cleanup			= 0x00001L;	// Don't expunge, purge, or garbage collect
 const ULONG ATT_shutdown			= 0x00002L;	// attachment has been shutdown
-const ULONG ATT_purge_error			= 0x00004L;	// trouble happened in purge attachment, att_mutex remains locked
-const ULONG ATT_shutdown_manager	= 0x00008L;	// attachment requesting shutdown
-const ULONG ATT_exclusive			= 0x00010L;	// attachment wants exclusive database access
-const ULONG ATT_attach_pending		= 0x00020L;	// Indicate attachment is only pending
-const ULONG ATT_exclusive_pending	= 0x00040L;	// Indicate exclusive attachment pending
-const ULONG ATT_gbak_attachment		= 0x00080L;	// Indicate GBAK attachment
-const ULONG ATT_notify_gc			= 0x00100L;	// Notify garbage collector to expunge, purge ..
-const ULONG ATT_garbage_collector	= 0x00200L;	// I'm a garbage collector
-const ULONG ATT_cancel_raise		= 0x00400L;	// Cancel currently running operation
-const ULONG ATT_cancel_disable		= 0x00800L;	// Disable cancel operations
-const ULONG ATT_gfix_attachment		= 0x01000L;	// Indicate a GFIX attachment
-const ULONG ATT_gstat_attachment	= 0x02000L;	// Indicate a GSTAT attachment
-const ULONG ATT_no_db_triggers		= 0x04000L;	// Don't execute database triggers
-const ULONG ATT_manual_lock			= 0x08000L;	// Was locked manually
-const ULONG ATT_async_manual_lock	= 0x10000L;	// Async mutex was locked manually
-const ULONG ATT_purge_started		= 0x20000L; // Purge already started - avoid 2 purges at once
+const ULONG ATT_shutdown_manager	= 0x00004L;	// attachment requesting shutdown
+const ULONG ATT_exclusive			= 0x00008L;	// attachment wants exclusive database access
+const ULONG ATT_attach_pending		= 0x00010L;	// Indicate attachment is only pending
+const ULONG ATT_exclusive_pending	= 0x00020L;	// Indicate exclusive attachment pending
+const ULONG ATT_gbak_attachment		= 0x00040L;	// Indicate GBAK attachment
+const ULONG ATT_notify_gc			= 0x00080L;	// Notify garbage collector to expunge, purge ..
+const ULONG ATT_garbage_collector	= 0x00100L;	// I'm a garbage collector
+const ULONG ATT_cancel_raise		= 0x00200L;	// Cancel currently running operation
+const ULONG ATT_cancel_disable		= 0x00400L;	// Disable cancel operations
+const ULONG ATT_gfix_attachment		= 0x00800L;	// Indicate a GFIX attachment
+const ULONG ATT_gstat_attachment	= 0x01000L;	// Indicate a GSTAT attachment
+const ULONG ATT_no_db_triggers		= 0x02000L;	// Don't execute database triggers
+const ULONG ATT_manual_lock			= 0x04000L;	// Was locked manually
+const ULONG ATT_async_manual_lock	= 0x08000L;	// Async mutex was locked manually
+const ULONG ATT_purge_started		= 0x10000L; // Purge already started - avoid 2 purges at once
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
