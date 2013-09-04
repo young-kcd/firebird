@@ -5132,7 +5132,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const att = tdbb->getAttachment();
 
-	///if (dbb->dbb_sync->hasContention())
+	if (!tdbb->checkCancelState(false))
 	{
 		Jrd::Attachment::Checkout cout(att, FB_FUNCTION);
 		THREAD_YIELD();
