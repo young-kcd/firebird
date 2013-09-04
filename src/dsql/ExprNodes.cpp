@@ -8330,8 +8330,19 @@ DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	node->stmt = PAR_parse_stmt(tdbb, csb);
 	node->expr = PAR_parse_value(tdbb, csb);
 
-	// Avoid blr_stmt_expr in a BLR expression header.
-	if (!node->stmt->is<AssignmentNode>())
+	// Avoid blr_stmt_expr in a BLR expression header
+	CompoundStmtNode* const stmt = node->stmt->as<CompoundStmtNode>();
+
+	if (stmt)
+	{
+		if (stmt->statements.getCount() != 2 ||
+			!stmt->statements[0]->is<DeclareVariableNode>() ||
+			!stmt->statements[1]->is<AssignmentNode>())
+		{
+			return node->expr;
+		}
+	}
+	else if (!node->stmt->is<AssignmentNode>())
 		return node->expr;
 
 	return node;
