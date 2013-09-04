@@ -655,7 +655,7 @@ static void			init_monitoring_lock(thread_db*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void			verify_request_synchronization(jrd_req*& request, SSHORT level);
-static unsigned int purge_transactions(thread_db*, Attachment*, const bool, const ULONG);
+static void			purge_transactions(thread_db*, Attachment*, const bool);
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK, VDN_SECURITY};
 }
@@ -2442,8 +2442,13 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 		AttachmentHolder attHolder(tdbb, attachment, "GDS_DETACH");
 
 		DatabaseContextHolder dbbHolder(tdbb);
+		Database* const dbb = tdbb->getDatabase();
 
-		purge_attachment(tdbb, attachment, false);
+		const bool force = engineShutdown ||
+			(dbb->dbb_ast_flags & DBB_shutdown) ||
+			(attachment->att_flags & ATT_shutdown);
+
+		purge_attachment(tdbb, attachment, force);
 		*handle = NULL;
 	}
 	catch (const Exception& ex)
@@ -2518,7 +2523,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 				}
 
 				// Forced release of all transactions
-				purge_transactions(tdbb, attachment, true, attachment->att_flags);
+				purge_transactions(tdbb, attachment, true);
 
 				tdbb->tdbb_flags |= TDBB_detaching;
 
@@ -6204,10 +6209,7 @@ static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 #endif
 
 
-static unsigned int purge_transactions(thread_db*	tdbb,
-									   Attachment*	attachment,
-									   const bool	force_flag,
-									   const ULONG	att_flags)
+static void purge_transactions(thread_db* tdbb, Attachment* attachment, const bool force_flag)
 {
 /**************************************
  *
@@ -6220,8 +6222,8 @@ static unsigned int purge_transactions(thread_db*	tdbb,
  *	from an attachment
  *
  **************************************/
-	Database* dbb = attachment->att_database;
-	jrd_tra* trans_dbk = attachment->att_dbkey_trans;
+	Database* const dbb = attachment->att_database;
+	jrd_tra* const trans_dbk = attachment->att_dbkey_trans;
 
 	unsigned int count = 0;
 	jrd_tra* next;
@@ -6231,8 +6233,7 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 		next = transaction->tra_next;
 		if (transaction != trans_dbk)
 		{
-			if ((transaction->tra_flags & TRA_prepared) || (dbb->dbb_ast_flags & DBB_shutdown) ||
-				(att_flags & ATT_shutdown))
+			if (transaction->tra_flags & TRA_prepared)
 			{
 				TraceTransactionEnd trace(transaction, false, false);
 				EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, false, true);
@@ -6247,25 +6248,15 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 
 	if (count)
 	{
-		return count;
+		ERR_post(Arg::Gds(isc_open_trans) << Arg::Num(count));
 	}
 
 	// If there's a side transaction for db-key scope, get rid of it
 	if (trans_dbk)
 	{
 		attachment->att_dbkey_trans = NULL;
-		if ((dbb->dbb_ast_flags & DBB_shutdown) || (att_flags & ATT_shutdown))
-		{
-			TraceTransactionEnd trace(trans_dbk, false, false);
-			TRA_release_transaction(tdbb, trans_dbk, &trace);
-		}
-		else
-		{
-			TRA_commit(tdbb, trans_dbk, false);
-		}
+		TRA_commit(tdbb, trans_dbk, false);
 	}
-
-	return 0;
 }
 
 
@@ -6345,7 +6336,7 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 		{
 			if (!force_flag)
 			{
-				attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
+				attachment->att_flags |= ATT_shutdown;
 				throw;
 			}
 		}
@@ -6362,18 +6353,14 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 		if (!(dbb->dbb_flags & DBB_bugcheck))
 		{
 			// Check for any pending transactions
-			unsigned int count = purge_transactions(tdbb, attachment, force_flag, att_flags);
-			if (count)
-			{
-				ERR_post(Arg::Gds(isc_open_trans) << Arg::Num(count));
-			}
+			purge_transactions(tdbb, attachment, force_flag);
 		}
 	}
 	catch (const Exception&)
 	{
 		if (!force_flag)
 		{
-			attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
+			attachment->att_flags |= ATT_shutdown;
 			throw;
 		}
 	}

@@ -353,7 +353,7 @@ private:
 
 const ULONG ATT_no_cleanup			= 0x1;		// Don't expunge, purge, or garbage collect
 const ULONG ATT_shutdown			= 0x2;		// attachment has been shutdown
-const ULONG ATT_purge_error			= 0x4;		// trouble happened in purge attachment
+//const ULONG ATT_purge_error			= 0x4;		// trouble happened in purge attachment
 const ULONG ATT_shutdown_manager	= 0x8;		// attachment requesting shutdown
 const ULONG ATT_lck_init_done		= 0x10;		// LCK_init() called for the attachment
 const ULONG ATT_exclusive			= 0x20;		// attachment wants exclusive database access
