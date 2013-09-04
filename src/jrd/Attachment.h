@@ -228,7 +228,7 @@ public:
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
-	TraNumber	att_oldest_snapshot;		// GTT's record versions older than this can be gargage-collected
+	TraNumber	att_oldest_snapshot;		// GTT's record versions older than this can be garbage-collected
 
 private:
 	jrd_tra*	att_sys_transaction;		// system transaction
@@ -258,7 +258,7 @@ public:
 	Firebird::StringMap att_context_vars;	// Context variables for the connection
 	Firebird::Stack<DdlTriggerContext> ddlTriggersContext;	// Context variables for DDL trigger event
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
-	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
+	Firebird::string att_remote_address;	// Protocol-specific address of remote client
 	SLONG att_remote_pid;					// Process id of remote client
 	Firebird::PathName att_remote_process;	// Process name of remote client
 	Firebird::string att_client_version;	// Version of the client library
@@ -271,7 +271,7 @@ public:
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	bool att_in_use;						// attachment in use (can't be detached or dropped)
-	int att_use_count;						// number of API calls running except of asyncronous ones
+	int att_use_count;						// number of API calls running except of asynchronous ones
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
