@@ -760,6 +760,7 @@ static const struct {
 	{"include_depth", 335545056},
 	{"include_miss", 335545057},
 	{"protect_ownership", 335545058},
+	{"badvarnum", 335545059},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

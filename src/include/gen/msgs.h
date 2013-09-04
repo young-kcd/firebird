@@ -129,7 +129,7 @@ static const struct {
 	{335544426, "context not defined (BLR error)"},		/* ctxnotdef */
 	{335544427, "data operation not supported"},		/* datnotsup */
 	{335544428, "undefined message number"},		/* badmsgnum */
-	{335544429, "bad parameter number"},		/* badparnum */
+	{335544429, "undefined parameter number"},		/* badparnum */
 	{335544430, "unable to allocate memory from operating system"},		/* virmemexh */
 	{335544431, "blocking signal has been received"},		/* blocking_signal */
 	{335544432, "lock manager error"},		/* lockmanerr */
@@ -763,6 +763,7 @@ Data source : @4"},		/* eds_statement */
 	{335545056, "Include depth too big"},		/* include_depth */
 	{335545057, "File to include not found"},		/* include_miss */
 	{335545058, "Only the owner can change the ownership"},		/* protect_ownership */
+	{335545059, "undefined variable number"},		/* badvarnum */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

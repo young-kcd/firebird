@@ -11109,7 +11109,7 @@ DmlNode* VariableNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScra
 	vec<DeclareVariableNode*>* vector = csb->csb_variables;
 
 	if (!vector || n >= vector->count())
-		PAR_syntax_error(csb, "variable identifier");
+		PAR_error(csb, Arg::Gds(isc_badvarnum));
 
 	VariableNode* node = FB_NEW(pool) VariableNode(pool);
 	node->varId = n;
@@ -11208,7 +11208,7 @@ ValueExprNode* VariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	vec<DeclareVariableNode*>* vector = csb->csb_variables;
 
 	if (!vector || varId >= vector->count() || !(varDecl = (*vector)[varId]))
-		PAR_syntax_error(csb, "variable identifier");
+		PAR_error(csb, Arg::Gds(isc_badvarnum));
 
 	return this;
 }

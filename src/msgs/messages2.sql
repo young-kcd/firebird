@@ -197,7 +197,7 @@ on the computer you are using.');
 ('ctxnotdef', NULL, NULL, NULL, 0, 106, NULL, 'context not defined (BLR error)', NULL, NULL);
 ('datnotsup', NULL, NULL, NULL, 0, 107, NULL, 'data operation not supported', NULL, NULL);
 ('badmsgnum', NULL, NULL, NULL, 0, 108, NULL, 'undefined message number', NULL, NULL);
-('badparnum', NULL, NULL, NULL, 0, 109, NULL, 'bad parameter number', NULL, NULL);
+('badparnum', NULL, NULL, NULL, 0, 109, NULL, 'undefined parameter number', NULL, NULL);
 ('virmemexh', NULL, NULL, NULL, 0, 110, NULL, 'unable to allocate memory from operating system', NULL, NULL);
 ('blocking_signal', NULL, NULL, NULL, 0, 111, NULL, 'blocking signal has been received', NULL, NULL);
 ('lockmanerr', NULL, NULL, NULL, 0, 112, NULL, 'lock manager error', NULL, NULL);
@@ -846,6 +846,7 @@ Data source : @4', NULL, NULL)
 ('include_depth', NULL, 'config_file.cpp', NULL, 0, 736, NULL, 'Include depth too big', NULL, NULL);
 ('include_miss', NULL, 'config_file.cpp', NULL, 0, 737, NULL, 'File to include not found', NULL, NULL);
 ('protect_ownership', 'check_owner', 'vio.cpp', NULL, 0, 738, NULL, 'Only the owner can change the ownership', NULL, NULL);
+('badvarnum', NULL, NULL, NULL, 0, 739, NULL, 'undefined variable number', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
