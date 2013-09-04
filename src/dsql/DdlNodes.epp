@@ -4890,13 +4890,7 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
 
 	const SINT64 val = value.specified ? value.value : 0;
-
-	const SSHORT id = store(tdbb, transaction, name, fb_sysflag_user, val);
-	fb_assert(id > 0);
-
-	// the store() call above has caused the DFW item to be posted,
-	// so we just adjust the cached generator value
-	transaction->getGenIdCache()->put(id, val);
+	store(tdbb, transaction, name, fb_sysflag_user, val);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
 }
@@ -5011,6 +5005,10 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 	}
 
 	storePrivileges(tdbb, transaction, name, obj_generator, USAGE_PRIVILEGES);
+
+	// The STORE above has caused the DFW item to be posted, so we just adjust the cached
+	// generator value.
+	transaction->getGenIdCache()->put(storedId, val);
 
 	return storedId;
 }
@@ -5546,7 +5544,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
 
 			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
-				fb_sysflag_identity_generator, 0);
+				fb_sysflag_identity_generator, clause->identityStart);
 		}
 
 		BlrDebugWriter::BlrData defaultValue;

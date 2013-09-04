@@ -1168,7 +1168,8 @@ public:
 			  constraints(p),
 			  collate(p),
 			  computed(NULL),
-			  identity(false)
+			  identity(false),
+			  identityStart(0)
 		{
 		}
 
@@ -1178,6 +1179,7 @@ public:
 		Firebird::MetaName collate;
 		NestConst<ValueSourceClause> computed;
 		bool identity;
+		SINT64 identityStart;
 	};
 
 	struct AlterColNameClause : public Clause
