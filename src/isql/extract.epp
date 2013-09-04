@@ -3264,31 +3264,69 @@ static void list_generators()
 
 	bool first = true;
 
-	FOR GEN IN RDB$GENERATORS WITH
-		GEN.RDB$GENERATOR_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *" AND
-		GEN.RDB$GENERATOR_NAME NOT MATCHING "SQL$+" USING "+=[0-9][0-9]* *" AND
-		(GEN.RDB$SYSTEM_FLAG MISSING OR GEN.RDB$SYSTEM_FLAG NE 1)
-		SORTED BY GEN.RDB$GENERATOR_NAME
-
-		if (first)
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+	{
+		FOR GEN IN RDB$GENERATORS
+			WITH GEN.RDB$GENERATOR_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *" AND
+				 GEN.RDB$GENERATOR_NAME NOT MATCHING "SQL$+" USING "+=[0-9][0-9]* *" AND
+				 (GEN.RDB$SYSTEM_FLAG MISSING OR GEN.RDB$SYSTEM_FLAG NE 1)
+			SORTED BY GEN.RDB$GENERATOR_NAME
 		{
-			isqlGlob.printf("%s/*  Generators or sequences */%s", NEWLINE, NEWLINE);
-			first = false;
+			if (first)
+			{
+				isqlGlob.printf("%s/*  Generators or sequences */%s", NEWLINE, NEWLINE);
+				first = false;
+			}
+
+			fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
+
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				IUTILS_copy_SQL_id(GEN.RDB$GENERATOR_NAME, SQL_identifier, DBL_QUOTE);
+			else
+				strcpy(SQL_identifier, GEN.RDB$GENERATOR_NAME);
+
+			isqlGlob.printf("CREATE GENERATOR %s", SQL_identifier);
+
+			if (!GEN.RDB$INITIAL_VALUE.NULL && GEN.RDB$INITIAL_VALUE != 0)
+				isqlGlob.printf(" START WITH %" SQUADFORMAT, GEN.RDB$INITIAL_VALUE);
+
+			isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 		}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return;
+		END_ERROR;
+	}
+	else
+	{
+		FOR GEN IN RDB$GENERATORS
+			WITH GEN.RDB$GENERATOR_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *" AND
+				 GEN.RDB$GENERATOR_NAME NOT MATCHING "SQL$+" USING "+=[0-9][0-9]* *" AND
+				 (GEN.RDB$SYSTEM_FLAG MISSING OR GEN.RDB$SYSTEM_FLAG NE 1)
+			SORTED BY GEN.RDB$GENERATOR_NAME
+		{
+			if (first)
+			{
+				isqlGlob.printf("%s/*  Generators or sequences */%s", NEWLINE, NEWLINE);
+				first = false;
+			}
 
-		fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
+			fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
 
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			IUTILS_copy_SQL_id (GEN.RDB$GENERATOR_NAME, SQL_identifier, DBL_QUOTE);
-		else
-			strcpy (SQL_identifier, GEN.RDB$GENERATOR_NAME);
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				IUTILS_copy_SQL_id(GEN.RDB$GENERATOR_NAME, SQL_identifier, DBL_QUOTE);
+			else
+				strcpy(SQL_identifier, GEN.RDB$GENERATOR_NAME);
 
-		isqlGlob.printf("CREATE GENERATOR %s%s%s", SQL_identifier, isqlGlob.global_Term, NEWLINE);
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(gds_status);
-		return;
-	END_ERROR;
+			isqlGlob.printf("CREATE GENERATOR %s%s%s", SQL_identifier, isqlGlob.global_Term, NEWLINE);
+		}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return;
+		END_ERROR;
+	}
 
 	isqlGlob.printf(NEWLINE);
 }
