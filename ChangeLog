@@ -1,3 +1,7 @@
+ 2013-09-03 15:46  asfernandes 
+   M src/dsql/PackageNodes.epp
+Fixed CORE-4203 - Cannot create packaged routines with [VAR]CHAR parameters.
+
  2013-09-02 13:21  alexpeshkoff 
    M src/jrd/lck.cpp
 Rollback bad fix for CORE-4185
