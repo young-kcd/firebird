@@ -4912,6 +4912,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
+		fb_assert(value.specified);
 		const SINT64 val = value.specified ? value.value : 0;
 
 		transaction->getGenIdCache()->put(id, val);
@@ -7014,6 +7015,37 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 						RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
 					}
 				END_MODIFY
+			}
+			else if (clause->identityRestart)
+			{
+				bool found = false;
+				AutoRequest request2;
+
+				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+					GEN IN RDB$GENERATORS
+					WITH GEN.RDB$GENERATOR_NAME EQ RFR.RDB$GENERATOR_NAME
+				{
+					const SLONG id = GEN.RDB$GENERATOR_ID;
+					const MetaName genName(RFR.RDB$GENERATOR_NAME);
+					const SINT64 val = clause->identityRestartValue.specified ?
+						clause->identityRestartValue.value :
+						(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
+
+					transaction->getGenIdCache()->put(id, val);
+					dsc desc;
+					desc.makeText((USHORT) genName.length(), ttype_metadata,
+						(UCHAR*) genName.c_str());
+					DFW_post_work(transaction, dfw_set_generator, &desc, id);
+
+					found = true;
+				}
+				END_FOR
+
+				if (!found)
+				{
+					// msg 285: "Column @1 is not an identity column"
+					status_exception::raise(Arg::PrivateDyn(285) << field->fld_name);
+				}
 			}
 			else
 			{

@@ -1228,6 +1228,7 @@ public:
 			  field(NULL),
 			  defaultValue(NULL),
 			  dropDefault(false),
+			  identityRestart(false),
 			  computed(NULL)
 		{
 		}
@@ -1235,6 +1236,8 @@ public:
 		dsql_fld* field;
 		NestConst<ValueSourceClause> defaultValue;
 		bool dropDefault;
+		bool identityRestart;
+		Nullable<SINT64> identityRestartValue;
 		NestConst<ValueSourceClause> computed;
 	};
 

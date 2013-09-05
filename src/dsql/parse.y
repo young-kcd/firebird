@@ -3507,6 +3507,15 @@ alter_op($relationNode)
 			clause->dropDefault = true;
 			$relationNode->clauses.add(clause);
 		}
+	| col_opt symbol_column_name RESTART restart_value_opt
+		{
+			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+			clause->field = newNode<dsql_fld>();
+			clause->field->fld_name = *$2;
+			clause->identityRestart = true;
+			clause->identityRestartValue = $4;
+			$relationNode->clauses.add(clause);
+		}
 	;
 
 %type <metaNamePtr> alter_column_name
