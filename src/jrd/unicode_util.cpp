@@ -75,12 +75,22 @@ public:
 	{
 		string symbol;
 
+		symbol.printf("%s_%d", name, majorVersion);
+		module->findSymbol(symbol, ptr);
+		if (ptr)
+			return;
+
 		symbol.printf("%s_%d_%d", name, majorVersion, minorVersion);
 		module->findSymbol(symbol, ptr);
 		if (ptr)
 			return;
 
 		symbol.printf("%s_%d%d", name, majorVersion, minorVersion);
+		module->findSymbol(symbol, ptr);
+		if (ptr)
+			return;
+
+		symbol.printf("%s", name);
 		module->findSymbol(symbol, ptr);
 	}
 
