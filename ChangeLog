@@ -1,3 +1,8 @@
+ 2013-09-04 17:44  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+Cleanup and use the explicit rollback via TIP for all kinds of forced disconnections.
+
  2013-08-30 08:16  paulbeach 
    M builds/posix/firebird.vers
 Enable support for the Cobol pre-compiler in libfbclient and libfbembed should anyone want to compile it and use it.
