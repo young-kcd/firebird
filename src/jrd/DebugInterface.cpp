@@ -47,10 +47,17 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 	const UCHAR* const end = data + length;
 	bool bad_format = false;
 
-	if ((*data++ != fb_dbg_version) || (end[-1] != fb_dbg_end) ||
-		(*data++ != CURRENT_DBG_INFO_VERSION))
-	{
+	if ((*data++ != fb_dbg_version) || (end[-1] != fb_dbg_end))
 		bad_format = true;
+
+	UCHAR version = UCHAR(0);
+
+	if (!bad_format)
+	{
+		version = *data++;
+
+		if (!version || version > CURRENT_DBG_INFO_VERSION)
+			bad_format = true;
 	}
 
 	while (!bad_format && (data < end))
@@ -61,27 +68,43 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 		{
 		case fb_dbg_map_src2blr:
 			{
-				if (data + 6 > end)
+				const unsigned length =
+					(version == DBG_INFO_VERSION_1) ? 6 : 12;
+
+				if (data + length > end)
 				{
 					bad_format = true;
 					break;
 				}
 
 				MapBlrToSrcItem i;
+
 				i.mbs_src_line = *data++;
 				i.mbs_src_line |= *data++ << 8;
-				i.mbs_src_line |= *data++ << 16;
-				i.mbs_src_line |= *data++ << 24;
+
+				if (version > DBG_INFO_VERSION_1)
+				{
+					i.mbs_src_line |= *data++ << 16;
+					i.mbs_src_line |= *data++ << 24;
+				}
 
 				i.mbs_src_col = *data++;
 				i.mbs_src_col |= *data++ << 8;
-				i.mbs_src_col |= *data++ << 16;
-				i.mbs_src_col |= *data++ << 24;
+
+				if (version > DBG_INFO_VERSION_1)
+				{
+					i.mbs_src_col |= *data++ << 16;
+					i.mbs_src_col |= *data++ << 24;
+				}
 
 				i.mbs_offset = *data++;
 				i.mbs_offset |= *data++ << 8;
-				i.mbs_offset |= *data++ << 16;
-				i.mbs_offset |= *data++ << 24;
+
+				if (version > DBG_INFO_VERSION_1)
+				{
+					i.mbs_offset |= *data++ << 16;
+					i.mbs_offset |= *data++ << 24;
+				}
 
 				dbgInfo.blrToSrc.add(i);
 			}
@@ -151,7 +174,7 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 		case fb_dbg_subproc:
 		case fb_dbg_subfunc:
 			{
-				if (data >= end)
+				if (version == DBG_INFO_VERSION_1 || data >= end)
 				{
 					bad_format = true;
 					break;
@@ -169,7 +192,7 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 				MetaName name((const TEXT*) data, length);
 				data += length;
 
-				if (data + 2 >= end)
+				if (data + 4 >= end)
 				{
 					bad_format = true;
 					break;

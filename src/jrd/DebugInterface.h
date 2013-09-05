@@ -31,7 +31,9 @@
 // Version 2 of the debug information replaces 16-bit values
 // inside the fb_dbg_map_src2blr tag with 32-bit ones.
 // Also, it introduces some new tags.
-const UCHAR CURRENT_DBG_INFO_VERSION = UCHAR(2);
+const UCHAR DBG_INFO_VERSION_1 = UCHAR(1);
+const UCHAR DBG_INFO_VERSION_2 = UCHAR(2);
+const UCHAR CURRENT_DBG_INFO_VERSION = DBG_INFO_VERSION_2;
 
 namespace Firebird {
 
