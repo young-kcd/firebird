@@ -1,3 +1,47 @@
+ 2013-09-04 17:52  dimitr 
+   M src/jrd/jrd.cpp
+Avoid rescheduling if we're kindly asked to stop immediately.
+
+ 2013-09-04 17:46  dimitr 
+   M src/jrd/Attachment.h
+   M src/jrd/jrd.cpp
+Cleanup and use the explicit rollback via TIP for all kinds of forced disconnections.
+
+ 2013-09-04 15:54  asfernandes 
+   M doc/sql.extensions/README.identity_columns.txt
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/isql/extract.epp
+Improvement CORE-4199 - Add optional START WITH clause to identity columns.
+
+ 2013-09-04 15:39  asfernandes 
+   M src/isql/extract.epp
+Fixed CORE-4205 - ISQL -x does not output the START WITH clause of generators/sequences.
+
+ 2013-09-04 15:05  dimitr 
+   M src/jrd/Attachment.h
+Totally misc.
+
+ 2013-09-04 07:20  dimitr 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Improved the error reporting.
+
+ 2013-09-04 06:01  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-4202: Backup/Restore from old version to v3.0 fails with BLR error.
+
  2013-09-03 15:46  asfernandes 
    M src/dsql/PackageNodes.epp
 Fixed CORE-4203 - Cannot create packaged routines with [VAR]CHAR parameters.
