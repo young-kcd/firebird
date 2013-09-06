@@ -302,6 +302,8 @@ namespace Jrd {
 
 	void CryptoManager::startCryptThread(thread_db* tdbb)
 	{
+		MutexLockGuard guard(cryptThreadMtx, FB_FUNCTION);
+
 		// Take exclusive threadLock
 		// If can't take that lock - nothing to do, cryptThread already runs somewhere
 		if (LCK_lock(tdbb, threadLock, LCK_EX, LCK_NO_WAIT))
@@ -343,6 +345,8 @@ namespace Jrd {
 
 		try
 		{
+			MutexLockGuard guard(cryptThreadMtx, FB_FUNCTION);
+
 			// establish context
 			UserId user;
 			user.usr_user_name = "(Crypt thread)";
@@ -359,6 +363,7 @@ namespace Jrd {
 			ULONG lastPage = getLastPage(tdbb);
 			ULONG runpage = 1;
 			Stack<ULONG> pages;
+			bool lckRelease = false;
 
 			try
 			{
@@ -423,17 +428,21 @@ namespace Jrd {
 				}
 
 				// Release exclusive lock on StartCryptThread
+				lckRelease = true;
 				LCK_release(tdbb, threadLock);
 			}
 			catch (const Exception&)
 			{
 				try
 				{
-					// try to save current state of crypt thread
-					writeDbHeader(tdbb, runpage, pages);
+					if (!lckRelease)
+					{
+						// try to save current state of crypt thread
+						writeDbHeader(tdbb, runpage, pages);
 
-					// Release exclusive lock on StartCryptThread
-					LCK_release(tdbb, threadLock);
+						// Release exclusive lock on StartCryptThread
+						LCK_release(tdbb, threadLock);
+					}
 				}
 				catch (const Exception&)
 				{ }

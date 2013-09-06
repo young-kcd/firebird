@@ -144,7 +144,7 @@ private:
 	void writeDbHeader(thread_db* tdbb, ULONG runpage, Firebird::Stack<ULONG>& pages);
 
 	Firebird::AtomicCounter currentPage;
-	Firebird::Mutex pluginLoadMtx;
+	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
 	Thread::Handle cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
