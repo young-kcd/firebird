@@ -1845,7 +1845,7 @@ int ISC_event_wait(event_t* event,
 	}
 
 	int ret = FB_SUCCESS;
-	pthread_mutex_lock(event->event_mutex);
+	LOG_PTHREAD_ERROR(pthread_mutex_lock(event->event_mutex));
 	for (;;)
 	{
 		if (!event_blocked(event, value))
@@ -1882,7 +1882,7 @@ int ISC_event_wait(event_t* event,
 		else
 			ret = pthread_cond_wait(event->event_cond, event->event_mutex);
 	}
-	pthread_mutex_unlock(event->event_mutex);
+	LOG_PTHREAD_ERROR(pthread_mutex_unlock(event->event_mutex));
 	return ret;
 }
 
