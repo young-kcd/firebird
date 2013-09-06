@@ -39,7 +39,8 @@ UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 
 	string collAttributes("ICU-VERSION=");
 	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
-	IntlUtil::setupIcuAttributes(cs, collAttributes, "", collAttributes);
+	if (!IntlUtil::setupIcuAttributes(cs, collAttributes, "", collAttributes))
+		fatal_exception::raiseFmt("cannot convert ICU-VERSION to COLL-VERSION");
 
 	UCharBuffer collAttributesBuffer;
 	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
