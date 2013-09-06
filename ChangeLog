@@ -1,3 +1,7 @@
+ 2013-09-05 14:22  alexpeshkoff 
+   M src/jrd/unicode_util.cpp
+Backported fix in ICU loader
+
  2013-08-22 07:46  dimitr 
    M builds/win32/make_all.bat
 Added READMEs to Windows snapshots.
