@@ -1,3 +1,20 @@
+ 2013-09-05 16:09  asfernandes 
+   M doc/sql.extensions/README.identity_columns.txt
+Improvement CORE-4206 - Add RESTART [WITH] clause for alter identity columns - documentation.
+
+ 2013-09-05 15:58  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Improvement CORE-4206 - Add RESTART [WITH] clause for alter identity columns.
+
+ 2013-09-05 07:38  dimitr 
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/DebugInterface.h
+Provided support for both old and new debug info formats. It eliminates the annoying "bad debug info format" warning during restore as well as allows the migrated debug info to be useful without recreation of the PSQL objects.
+
  2013-09-04 17:52  dimitr 
    M src/jrd/jrd.cpp
 Avoid rescheduling if we're kindly asked to stop immediately.
