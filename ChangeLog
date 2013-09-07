@@ -1,3 +1,15 @@
+ 2013-09-06 15:58  asfernandes 
+   M src/dsql/ddl.cpp
+Fixed CORE-4210 - Preserve comments for output parameters after altering procedures.
+
+ 2013-09-06 12:09  alexpeshkoff 
+   M src/utilities/ntrace/TraceUnicodeUtils.cpp
+Slightly enhanced diagnostics
+
+ 2013-09-06 08:50  alexpeshkoff 
+   M src/jrd/isc_sync.cpp
+Slightly enhance diagnostic
+
  2013-09-05 13:59  alexpeshkoff 
    M src/jrd/unicode_util.cpp
 Fixed ICU loader to make it match one more symbols naming convention in fresh ICU
