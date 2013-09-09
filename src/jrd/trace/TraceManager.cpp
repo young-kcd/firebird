@@ -70,7 +70,7 @@ namespace
 
 namespace Jrd {
 
-StorageInstance TraceManager::storageInstance;
+GlobalPtr<StorageInstance, InstanceControl::PRIORITY_DELETE_FIRST> TraceManager::storageInstance;
 TraceManager::Factories* TraceManager::factories = NULL;
 GlobalPtr<Mutex> TraceManager::init_factories_mtx;
 volatile bool TraceManager::init_factories;

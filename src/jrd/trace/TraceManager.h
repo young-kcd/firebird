@@ -58,7 +58,7 @@ public:
 	~TraceManager();
 
 	static ConfigStorage* getStorage()
-	{ return storageInstance.getStorage(); }
+	{ return storageInstance->getStorage(); }
 
 	static size_t pluginsCount()
 	{ return factories->getCount(); }
@@ -223,7 +223,7 @@ private:
 		TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
 
-	static StorageInstance storageInstance;
+	static Firebird::GlobalPtr<StorageInstance, Firebird::InstanceControl::PRIORITY_DELETE_FIRST> storageInstance;
 
 	ULONG changeNumber;
 };
