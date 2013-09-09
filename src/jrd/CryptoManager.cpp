@@ -45,6 +45,7 @@
 #include "../jrd/pag_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/classes/GetPlugins.h"
+#include "../common/classes/RefMutex.h"
 
 using namespace Firebird;
 
@@ -302,11 +303,26 @@ namespace Jrd {
 
 	void CryptoManager::startCryptThread(thread_db* tdbb)
 	{
-		MutexLockGuard guard(cryptThreadMtx, FB_FUNCTION);
+		// Try to take crypt mutex
+		// If can't take that mutex - nothing to do, cryptThread already runs in our process
+		MutexEnsureUnlock guard(cryptThreadMtx, FB_FUNCTION);
+		if (!guard.tryEnter())
+		{
+			return;
+		}
 
 		// Take exclusive threadLock
 		// If can't take that lock - nothing to do, cryptThread already runs somewhere
-		if (LCK_lock(tdbb, threadLock, LCK_EX, LCK_NO_WAIT))
+		if (!LCK_lock(tdbb, threadLock, LCK_EX, LCK_NO_WAIT))
+		{
+			// Cleanup lock manager error
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+
+			return;
+		}
+
+		bool releasingLock = false;
+		try
 		{
 			// Cleanup resources
 			terminateCryptThread(tdbb);
@@ -317,6 +333,7 @@ namespace Jrd {
 			process = hdr->hdr_flags & Ods::hdr_crypt_process ? true : false;
 			if (!process)
 			{
+				releasingLock = true;
 				LCK_release(tdbb, threadLock);
 				return;
 			}
@@ -325,13 +342,27 @@ namespace Jrd {
 			// Refresh encryption flag
 			crypt = hdr->hdr_flags & Ods::hdr_encrypted ? true : false;
 
-			// If we are going to start crypt thread, we really need plugin to be loaded
+			// If we are going to start crypt thread, we need plugin to be loaded
 			loadPlugin(hdr->hdr_crypt_plugin);
 
 			// ready to go
+			guard.leave();		// release in advance to avoid races with cryptThread()
 			Thread::start(cryptThreadStatic, (THREAD_ENTRY_PARAM) this, 0, &cryptThreadId);
 		}
-		fb_utils::init_status(tdbb->tdbb_status_vector);
+		catch (const Firebird::Exception&)
+		{
+			if (!releasingLock)		// avoid secondary exception in catch
+			{
+				try
+				{
+					LCK_release(tdbb, threadLock);
+				}
+				catch (const Firebird::Exception&)
+				{ }
+			}
+
+			throw;
+		}
 	}
 
 	void CryptoManager::attach(thread_db* tdbb, Attachment* att)
@@ -345,7 +376,13 @@ namespace Jrd {
 
 		try
 		{
-			MutexLockGuard guard(cryptThreadMtx, FB_FUNCTION);
+			// Try to take crypt mutex
+			// If can't take that mutex - nothing to do, cryptThread already runs in our process
+			MutexEnsureUnlock guard(cryptThreadMtx, FB_FUNCTION);
+			if (!guard.tryEnter())
+			{
+				return;
+			}
 
 			// establish context
 			UserId user;
@@ -363,6 +400,14 @@ namespace Jrd {
 			ULONG lastPage = getLastPage(tdbb);
 			ULONG runpage = 1;
 			Stack<ULONG> pages;
+
+			// Take exclusive threadLock
+			// If can't take that lock - nothing to do, cryptThread already runs somewhere
+			if (!LCK_lock(tdbb, threadLock, LCK_EX, LCK_NO_WAIT))
+			{
+				return;
+			}
+
 			bool lckRelease = false;
 
 			try
@@ -419,6 +464,12 @@ namespace Jrd {
 					// At this moment of time all pages with number < lastpage
 					// are guaranteed to change crypt state. Check for added pages.
 					lastPage = getLastPage(tdbb);
+
+					// forced terminate
+					if (down)
+					{
+						break;
+					}
 				} while (runpage < lastPage);
 
 				// Finalize crypt
@@ -438,7 +489,10 @@ namespace Jrd {
 					if (!lckRelease)
 					{
 						// try to save current state of crypt thread
-						writeDbHeader(tdbb, runpage, pages);
+						if (!down)
+						{
+							writeDbHeader(tdbb, runpage, pages);
+						}
 
 						// Release exclusive lock on StartCryptThread
 						LCK_release(tdbb, threadLock);
