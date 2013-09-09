@@ -122,13 +122,13 @@ public:
 		if (a == ENC)
 		{
 			att->execute(status, tra, 0,
-				"ALTER DATABASE ENCRYPT WITH \"DbCrypt_example\"", 3, 0, NULL, NULL);
+				"ALTER DATABASE ENCRYPT WITH \"DbCrypt_example\"", 3, NULL, NULL, NULL, NULL);
 			if (!status->isSuccess())
 				throw "execute";
 		}
 		if (a == DEC)
 		{
-			att->execute(status, tra, 0, "ALTER DATABASE DECRYPT", 3, 0, NULL, NULL);
+			att->execute(status, tra, 0, "ALTER DATABASE DECRYPT", 3, NULL, NULL, NULL, NULL);
 			if (!status->isSuccess())
 				throw "execute";
 		}
