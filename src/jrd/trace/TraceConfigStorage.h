@@ -139,36 +139,20 @@ private:
 };
 
 
-class StorageInstance : private Firebird::InstanceControl
+class StorageInstance
 {
 private:
 	Firebird::Mutex initMtx;
 	ConfigStorage* storage;
 
 public:
-	void dtor()
-	{
-		delete storage;
-		storage = 0;
-	}
-
-	StorageInstance() :
+	StorageInstance(Firebird::MemoryPool&) :
 		storage(NULL)
 	{}
 
-	ConfigStorage* getStorage()
-	{
-		if (!storage)
-		{
-			Firebird::MutexLockGuard guard(initMtx);
-			if (!storage)
-			{
-				storage = new ConfigStorage;
-				new Firebird::InstanceControl::InstanceLink<StorageInstance>(this);
-			}
-		}
-		return storage;
-	}
+	~StorageInstance();
+
+	ConfigStorage* getStorage();
 };
 
 

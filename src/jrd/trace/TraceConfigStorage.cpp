@@ -661,4 +661,22 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 	return true;
 }
 
+ConfigStorage* StorageInstance::getStorage()
+{
+	if (!storage)
+	{
+		MutexLockGuard guard(initMtx);
+		if (!storage)
+		{
+			storage = new ConfigStorage;
+		}
+	}
+	return storage;
+}
+
+StorageInstance::~StorageInstance()
+{
+	delete storage;
+}
+
 } // namespace Jrd

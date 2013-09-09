@@ -47,6 +47,8 @@ class InstanceControl
 public:
 	enum DtorPriority
 	{
+		STARTING_PRIORITY,
+		PRIORITY_DELETE_FIRST,
 		PRIORITY_REGULAR,
 		PRIORITY_TLS_KEY
 	};
@@ -107,7 +109,7 @@ public:
 
 // GlobalPtr - template to help declaring global varables
 
-template <typename T>
+template <typename T, InstanceControl::DtorPriority P = InstanceControl::PRIORITY_REGULAR>
 class GlobalPtr : private InstanceControl
 {
 private:
@@ -127,7 +129,7 @@ public:
 		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 		// Put ourself into linked list for cleanup.
 		// Allocated pointer is saved by InstanceList::constructor.
-		new InstanceControl::InstanceLink<GlobalPtr>(this);
+		new InstanceControl::InstanceLink<GlobalPtr, P>(this);
 	}
 
 	T* operator->() throw()

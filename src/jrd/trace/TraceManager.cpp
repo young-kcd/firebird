@@ -51,7 +51,7 @@ GlobalPtr<Array<TraceManager::ModuleInfo> > TraceManager::modules;
 GlobalPtr<Mutex> TraceManager::init_modules_mtx;
 volatile bool TraceManager::init_modules = false;
 
-StorageInstance TraceManager::storageInstance;
+GlobalPtr<StorageInstance, InstanceControl::PRIORITY_DELETE_FIRST> TraceManager::storageInstance;
 
 bool TraceManager::check_result(const TracePlugin* plugin, const char* module, const char* function,
 	bool result)
