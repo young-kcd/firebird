@@ -1,3 +1,18 @@
+ 2013-09-09 11:03  alexpeshkoff 
+   M src/common/classes/init.h
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+Fixed CORE-4211: Embedded engine hangs for 5 seconds when closing
+
+ 2013-09-09 10:32  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Fixed CORE-4185: related issues with crypt thread start/stop
+
+ 2013-09-09 09:14  alexpeshkoff 
+   M examples/dbcrypt/CryptApplication.cpp
+fixed interface usage
+
  2013-09-06 13:09  alexpeshkoff 
    M src/jrd/CryptoManager.cpp
    M src/jrd/CryptoManager.h
