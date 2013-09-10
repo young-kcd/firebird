@@ -916,7 +916,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				{
 					const DsqlContextStack::iterator base(*statement->req_context);
 					node = MAKE_node(input->nod_type, 2);
-					node->nod_arg[0] = pass1_node_psql(statement, input->nod_arg[0], false);
+					node->nod_arg[0] = PASS1_node(statement, input->nod_arg[0]);
 					dsql_nod* temp = MAKE_node(nod_via, e_via_count);
 					node->nod_arg[1] = temp;
 					dsql_nod* rse = PASS1_rse(statement, sub2, NULL);
