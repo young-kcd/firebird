@@ -165,6 +165,7 @@ static void checkForeignKeyTempScope(thread_db* tdbb, jrd_tra* transaction,
 		{
 			makeRelationScopeName(masterIndexName, masterType, master);
 			makeRelationScopeName(childRelName, childType, child);
+			break;
 		}
 	}
 	END_FOR
@@ -215,6 +216,7 @@ static void checkRelationTempScope(thread_db* tdbb, jrd_tra* transaction,
 		{
 			makeRelationScopeName(REL_M.RDB$RELATION_NAME, masterType, master);
 			makeRelationScopeName(childRelName, childType, child);
+			break;
 		}
 	}
 	END_FOR
