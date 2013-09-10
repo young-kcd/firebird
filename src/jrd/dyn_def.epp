@@ -4864,6 +4864,9 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
 
 			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
 			make_relation_scope_name(REL_C.RDB$RELATION_NAME, child_type, sChild);
+
+			EXE_unwind(tdbb, request);
+			break;
 		}
 	END_FOR;
 
@@ -4934,6 +4937,9 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 
 			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
 			make_relation_scope_name(child_rel_name, child_type, sChild);
+
+			EXE_unwind(tdbb, request);
+			break;
 		}
 	END_FOR;
 
