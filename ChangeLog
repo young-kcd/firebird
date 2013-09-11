@@ -1,3 +1,7 @@
+ 2013-09-10 14:36  hvlad 
+   M src/jrd/dyn_def.epp
+Fixed bug CORE-4214 : GTT should not reference permanent relation
+
  2013-09-05 14:22  alexpeshkoff 
    M src/jrd/unicode_util.cpp
 Backported fix in ICU loader
