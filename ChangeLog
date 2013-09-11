@@ -1,3 +1,11 @@
+ 2013-09-10 14:37  hvlad 
+   M src/dsql/DdlNodes.epp
+Fixed bug CORE-4214 : GTT should not reference permanent relation
+
+ 2013-09-10 14:30  hvlad 
+   M src/jrd/vio.cpp
+Fixed bug CORE-4212 : Dropping FK on GTT crashes server
+
  2013-09-09 11:03  alexpeshkoff 
    M src/common/classes/init.h
    M src/jrd/trace/TraceConfigStorage.h
