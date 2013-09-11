@@ -2223,6 +2223,12 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 		pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		while (true)
 		{
+			if (node.isEndBucket || (nodes % 100 == 0))
+			{
+				if (--tdbb->tdbb_quantum < 0)
+					JRD_reschedule(tdbb, 0, true);
+			}
+
 			if (node.isEndBucket || node.isEndLevel) {
 				break;
 			}
