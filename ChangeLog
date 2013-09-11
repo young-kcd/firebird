@@ -1,3 +1,24 @@
+ 2013-09-10 14:52  asfernandes 
+   M src/dsql/pass1.cpp
+Fixed CORE-4204 - Error when compiling the procedure containing the statement if (x = (select ...)).
+
+ 2013-09-10 14:35  hvlad 
+   M src/jrd/dyn_def.epp
+Fixed bug CORE-4214 : GTT should not reference permanent relation
+
+ 2013-09-10 11:39  hvlad 
+   M src/jrd/vio.cpp
+Fixed bug CORE-4212 : Dropping FK on GTT crashes server
+
+ 2013-09-09 11:05  alexpeshkoff 
+   M src/common/classes/init.cpp
+   M src/common/classes/init.h
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+Backported fix for CORE-4211: Embedded engine hangs for 5 seconds when closing
+
  2013-09-06 15:58  asfernandes 
    M src/dsql/ddl.cpp
 Fixed CORE-4210 - Preserve comments for output parameters after altering procedures.
