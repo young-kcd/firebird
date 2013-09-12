@@ -7115,6 +7115,8 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 	jrd_tra* prior = NULL;
 	jrd_tra* transaction = NULL;
 
+	Database* currentDatabase = tdbb->getDatabase();
+
 	try
 	{
 		if (*tra_handle)
@@ -7132,13 +7134,14 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 
 		for (TEB* v = vector; v < vector + count; v++)
 		{
-			tdbb->setDatabase(NULL);
-			tdbb->setAttachment(NULL);
+			AttachmentHolder attHolder(tdbb, *v->teb_database, "JRD_start_multiple");
 
-			Attachment* attachment = *v->teb_database;
-			AttachmentHolder attHolder(tdbb, attachment, "JRD_start_multiple");
-			DatabaseContextHolder dbbHolder(tdbb);
-			check_database(tdbb);
+			AutoPtr<DatabaseContextHolder> dbbHolder;
+			if (tdbb->getDatabase() != currentDatabase)
+			{
+				dbbHolder = new DatabaseContextHolder(tdbb);
+				check_database(tdbb);
+			}
 
 			try
 			{
@@ -7171,14 +7174,17 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 		if (prior)
 		{
 			ThreadStatusGuard temp_status(tdbb);
-			tdbb->setDatabase(NULL);
-			tdbb->setAttachment(NULL);
 
 			try
 			{
 				AttachmentHolder attHolder(tdbb, prior->tra_attachment, "JRD_start_multiple - 2");
-				DatabaseContextHolder dbbHolder(tdbb);
-				check_database(tdbb);
+
+				AutoPtr<DatabaseContextHolder> dbbHolder;
+				if (tdbb->getDatabase() != currentDatabase)
+				{
+					dbbHolder = new DatabaseContextHolder(tdbb);
+					check_database(tdbb);
+				}
 
 				rollback(tdbb, prior, false);
 			}
