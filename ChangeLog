@@ -1,3 +1,7 @@
+ 2013-09-11 15:40  hvlad 
+   M src/jrd/btr.cpp
+Improvement CORE-4215 : Execution of SET STATISTICS INDEX statement could block or slow execution of concurrent attachments
+
  2013-09-10 14:52  asfernandes 
    M src/dsql/pass1.cpp
 Fixed CORE-4204 - Error when compiling the procedure containing the statement if (x = (select ...)).
