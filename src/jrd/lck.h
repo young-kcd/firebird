@@ -55,7 +55,8 @@ enum lck_t {
 	LCK_tt_exist,				// TextType existence lock
 	LCK_cancel,					// Cancellation lock
 	LCK_btr_dont_gc,			// Prevent removal of b-tree page from index
-	LCK_shared_counter			// Database-wide shared counter
+	LCK_shared_counter,			// Database-wide shared counter
+	LCK_tra_pc					// Precommitted transaction lock
 };
 
 // Lock owner types

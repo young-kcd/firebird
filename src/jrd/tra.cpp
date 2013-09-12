@@ -890,6 +890,44 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 }
 
 
+bool TRA_pc_active(thread_db* tdbb, SLONG number)
+{
+/**************************************
+ *
+ *	T R A _ p c _ a c t i v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns whether a given precommitted transaction
+ *  owned by some other guy active or not.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+	CHECK_DBB(dbb);
+
+	Lock temp_lock;
+	temp_lock.lck_dbb = dbb;
+	temp_lock.lck_type = LCK_tra_pc;
+	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_parent = dbb->dbb_lock;
+	temp_lock.lck_length = sizeof(SLONG);
+	temp_lock.lck_key.lck_long = number;
+
+	// If we can't get a lock on the transaction, it must be active
+
+	if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT))
+	{
+		fb_utils::init_status(tdbb->tdbb_status_vector);
+		return true;
+	}
+
+	LCK_release(tdbb, &temp_lock);
+	return false;
+}
+
+
 bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 {
 /**************************************
@@ -3437,9 +3475,17 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	if (trans->tra_flags & TRA_readonly && trans->tra_flags & TRA_read_committed)
 	{
 		TRA_set_state(tdbb, trans, trans->tra_number, tra_committed);
-		LCK_release(tdbb, trans->tra_lock);
-		delete trans->tra_lock;
-		trans->tra_lock = NULL;
+		LCK_release(tdbb, lock);
+
+		lock->lck_type = LCK_tra_pc;
+		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+		lock->lck_data = 0;
+		if (!LCK_lock(tdbb, lock, LCK_write, LCK_WAIT))
+		{
+			jrd_tra::destroy(dbb, trans);
+			ERR_post(Arg::Gds(isc_lock_conflict));
+		}
+		
 		trans->tra_flags |= TRA_precommitted;
 	}
 

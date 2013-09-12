@@ -504,6 +504,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_page_space:
 	case LCK_relation:
 	case LCK_tra:
+	case LCK_tra_pc:
 	case LCK_update_shadow:
 	case LCK_dsql_cache:
 	case LCK_backup_end:
