@@ -334,9 +334,6 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	Record* old_data = NULL;
 	Record* gc_rec2 = NULL;
 
-	bool samePage;
-	bool deleted;
-
 	if ((temp.rpb_flags & rpb_deleted) && (!(temp.rpb_flags & rpb_delta)))
 		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 	else
@@ -437,7 +434,19 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			going.pop();
 
 			if (!DPM_get(tdbb, rpb, LCK_write))
-				BUGCHECK(186);	// msg 186 record disappeared
+				goto gc_cleanup;
+
+			if (rpb->rpb_transaction_nr != transaction->tra_number)
+			{
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+				goto gc_cleanup;
+			}
+
+			temp2 = *rpb;
+			rpb->rpb_undo = old_data;
+
+			if (rpb->rpb_flags & rpb_delta)
+				rpb->rpb_prior = data;
 		}
 
 		delete_record(tdbb, rpb, 0, 0);
@@ -446,8 +455,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	// If both record versions are on the same page, things are a little simpler
 
-	samePage = (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior);
-	deleted = (temp2.rpb_flags & rpb_deleted);
+	const bool samePage = (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior);
+	const bool deleted = (temp2.rpb_flags & rpb_deleted);
+
 	if (!deleted)
 	{
 		DPM_backout_mark(tdbb, rpb, transaction);
@@ -463,7 +473,19 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		clearRecordStack(staying);
 
 		if (!DPM_get(tdbb, rpb, LCK_write))
-			BUGCHECK(186);	// msg 186 record disappeared
+			goto gc_cleanup;
+
+		if (rpb->rpb_transaction_nr != transaction->tra_number)
+		{
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			goto gc_cleanup;
+		}
+
+		temp2 = *rpb;
+		rpb->rpb_undo = old_data;
+
+		if (rpb->rpb_flags & rpb_delta)
+			rpb->rpb_prior = data;
 	}
 
 	if (samePage)
@@ -576,7 +598,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		}
 
 		if (state == tra_committed) {
-			state = tra_dead;
+			state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
 		}
 
 		if (state == tra_dead) {
@@ -1037,7 +1059,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 
 			if (state == tra_committed) {
-				state = tra_dead;
+				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
 			}
 
 			if (state == tra_dead) {
@@ -1767,19 +1789,12 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			switch (state)
-			{
-			case tra_committed:
-				state = tra_dead;
-				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
+			if (state == tra_committed) {
+				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
+			}
 
-			case tra_dead:
+			if (state == tra_dead) {
 				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
-
-			default:
-				break;
 			}
 		}
 
@@ -2034,19 +2049,12 @@ bool VIO_get_current(thread_db* tdbb,
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			switch (state)
-			{
-			case tra_committed:
-				state = tra_dead;
-				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
+			if (state == tra_committed) {
+				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
+			}
 
-			case tra_dead:
+			if (state == tra_dead) {
 				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
-
-			default:
-				break;
 			}
 		}
 
@@ -5034,19 +5042,12 @@ static int prepare_update(	thread_db*		tdbb,
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			switch (state)
-			{
-			case tra_committed:
-				state = tra_dead;
-				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
+			if (state == tra_committed) {
+				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
+			}
 
-			case tra_dead:
+			if (state == tra_dead) {
 				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
-
-			default:
-				break;
 			}
 		}
 
