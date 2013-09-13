@@ -26,3 +26,8 @@
 removeInstalledFiles  # Remove installed files 
 removeUninstallFiles  # Remove the 'uninstall' utility files
 removeEmptyDirs       # Remove empty directories
+
+if [ "$OS_Has_Specific_Classic_Startup" ]
+then
+	osRemoveStartupFiles
+fi

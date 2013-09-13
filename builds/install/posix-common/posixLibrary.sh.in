@@ -110,7 +110,8 @@ AskYNQuestion() {
 
 runSilent() {
 	MakeTemp
-	$1 >$TmpFile 2>&1
+	rm -f $TmpFile
+	$1 >>$TmpFile 2>>$TmpFile
 	if [ $? -ne 0 ]
 	then
 		cat $TmpFile
@@ -150,6 +151,11 @@ checkInstallUser() {
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
+	if [ "$OS_Has_Specific_Classic_Startup" ]
+	then
+		return
+	fi
+
 	pid=`grepProcess "inetd|xinetd" | awk '{print $2}'`
     if [ "$pid" ]
     then
@@ -159,14 +165,33 @@ resetInetdServer() {
 
 
 #------------------------------------------------------------------------
+# check does directory have files
+
+hasFiles() {
+	dir=$1
+	for i in $dir/*
+	do
+		if [ -f "$i" ]
+		then
+			return 0
+		fi
+	done
+	return 1
+}
+
+
+#------------------------------------------------------------------------
 # remove the xinetd config file(s)
 # take into account possible pre-firebird xinetd services
 
 removeXinetdEntry() {
-	for i in `grep -l "service @FB_SERVICE_NAME@" /etc/xinetd.d/*`
-	do
-        rm -f $i
-    done
+	if hasFiles /etc/xinetd.d
+	then
+		for i in `grep -l "service @FB_SERVICE_NAME@" /etc/xinetd.d/*`
+		do
+			rm -f $i
+		done
+	fi
 }
 
 
@@ -186,7 +211,14 @@ removeInetdEntry() {
 #  Install differs for each of them.
 
 removeInetdServiceEntry() {
-    if [ -d /etc/xinetd.d ] 
+	if [ "$OS_Has_Specific_Classic_Startup" ]
+	then
+		osStopClassicServer
+		osUnregisterClassicServer
+		return
+	fi
+
+    if [ -d /etc/xinetd.d ]
     then
         removeXinetdEntry
     elif [ -f /etc/inetd.conf ]
@@ -312,35 +344,6 @@ getNewDBAPasswordFromUser()
 
 
 #------------------------------------------------------------------------
-#  Modify DBA password to value, asked from user. 
-#  $1 may be set to original DBA password
-#  !! This routine is interactive !!
-
-askUserForNewDBAPassword() {
-
-	if [ -z $1 ]
-	then
-		askForOrigDBAPassword
-	else
-		OrigPasswd=$1
-	fi
-
-    NewPasswd=""
-    while [ -z "$NewPasswd" ]
-    do
-        getNewDBAPasswordFromUser
-        if [ ! -z "$NewPasswd" ]
-        then
-            if ! runSilent "@FB_BINDIR@/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
-            then
-				NewPasswd=""
-			fi
-		fi
-	done
-}
-
-
-#------------------------------------------------------------------------
 # add a line in the (usually) /etc/services or /etc/inetd.conf file
 # Here there are three cases, not found         => add
 #                             found & different => replace
@@ -403,39 +406,24 @@ removeLineFromFile() {
 writeNewPassword() {
     NewPasswd=$1
 	DBAPasswordFile=@FB_CONFDIR@/SYSDBA.password
+	FB_HOST=`hostname`
+	FB_TIME=`date`
 
 	cat <<EOT >$DBAPasswordFile
+#
 # Firebird generated password for user SYSDBA is:
-
+#
 ISC_USER=sysdba
 ISC_PASSWD=$NewPasswd
-
-EOT
-
-    if [ $NewPasswd = "masterkey" ]
-    then
-        echo "# for install on `hostname` at time `date`" >> $DBAPasswordFile
-        echo "# You should change this password at the earliest oportunity" >> $DBAPasswordFile
-    else 
-        echo "# generated on `hostname` at time `date`" >> $DBAPasswordFile
-    fi
-
-	cat <<EOT >>$DBAPasswordFile
-
+#
+# generated on $FB_HOST at time $FB_TIME
+#
 # Your password can be changed to a more suitable one using the
 # @FB_BINDIR@/gsec utility.
+#
 EOT
 
     chmod u=r,go= $DBAPasswordFile
-
-
-    # Only if we have changed the password from the default do we need
-    # to update the entry in the database
-
-    if [ $NewPasswd != "masterkey" ]
-    then
-        runSilent "@FB_BINDIR@/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
-    fi
 }
 
 
@@ -443,21 +431,45 @@ EOT
 #  Set sysdba password.
 
 setDBAPassword() {
-    if [ -z "$InteractiveInstall" ]
-	then
-        passwd=`createNewPassword`
-    else
-    	NewPasswd=""
-        getNewDBAPasswordFromUser
-        passwd=$NewPasswd
-    fi
+	writePassword=
 
-    if [ -z "$passwd" ]
-      then
-        passwd=masterkey
-    fi
+	if [ -z "$InteractiveInstall" ]
+	then
+		passwd=`createNewPassword`
+		writePassword=yes
+	else
+		NewPasswd=""
+		getNewDBAPasswordFromUser
+		passwd=$NewPasswd
+
+		if [ -z "$passwd" ]
+		then
+			echo " "
+			echo "Press enter once more if you need random password"
+			echo "or enter non-empty password."
+			echo " "
+			getNewDBAPasswordFromUser
+			passwd=$NewPasswd
+
+			if [ -z "$passwd" ]
+			then
+				passwd=`createNewPassword`
+				writePassword=yes
+			fi
+		fi
+	fi
+
+	if [ -z "$passwd" ]
+	then
+		passwd=masterkey
+	fi
 
     runSilent "@FB_BINDIR@/gsec -add sysdba -pw $passwd"
+
+	if [ "$writePassword" ]
+	then
+		writeNewPassword $passwd
+	fi
 }
 
 
@@ -764,9 +776,9 @@ removeEmptyDirs() {
 					   @FB_HELPDIR@ @FB_INTLDIR@ @FB_MISCDIR@ @FB_SECDBDIR@ @FB_MSGDIR@ @FB_LOGDIR@ @FB_GUARDDIR@ @FB_PLUGDIR@ \
 					   @FB_CONFDIR@; do
 
-			if [ -d $rootDir ]; then	
+			if [ -d $rootDir ]; then
 		        for i in `find $rootDir -type d -print`; do
-		            ls $i/* >/dev/null 2>&1
+		            ls $i/* >/dev/null 2>/dev/null
 	    	        if [ $? -ne 0 ]; then
 	        	        rmdir $i && dirContentChanged=$i
 	    	        fi
@@ -878,6 +890,13 @@ updateXinetdEntry() {
 updateInetdServiceEntry() {
 	if ! standaloneServerInstalled
 	then
+		if [ "$OS_Has_Specific_Classic_Startup" ]
+		then
+			osRegisterClassicServer
+			osStartClassicServer
+			return
+		fi
+
 	    if [ -d /etc/xinetd.d ]
     	then
         	updateXinetdEntry

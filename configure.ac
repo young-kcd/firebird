@@ -1126,21 +1126,18 @@ AC_CONFIG_FILES([gen/make.crossPlatform:builds/posix/make.$CROSS])
 fi
 
 AC_CONFIG_FILES([
-gen/Release/firebird/bin/fb_config:builds/install/misc/fb_config.in
-gen/Release/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
-gen/Release/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
-gen/Release/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in
-gen/Release/firebird/bin/tarMainInstall.sh:builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
-gen/Release/firebird/bin/tarinstall.sh:builds/install/arch-specific/linux/misc/tarinstall.sh.in
-gen/Release/firebird/bin/preinstall.sh:builds/install/arch-specific/linux/misc/preinstall.sh.in
-gen/Release/firebird/bin/postinstall.sh:builds/install/arch-specific/linux/misc/postinstall.sh.in
-gen/Release/firebird/bin/preuninstall.sh:builds/install/arch-specific/linux/misc/preuninstall.sh.in
-gen/Release/firebird/bin/postuninstall.sh:builds/install/arch-specific/linux/misc/postuninstall.sh.in
-gen/Release/firebird/bin/taruninstall.sh:builds/install/arch-specific/linux/misc/taruninstall.sh.in
-gen/Release/firebird/bin/tarMainUninstall.sh:builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
-gen/Release/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
-gen/Release/firebird/bin/changeServerMode.sh:builds/install/misc/changeServerMode.sh.in
-gen/Release/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
+gen/Release/firebird/bin/fb_config:builds/install/posix-common/fb_config.in
+gen/Release/firebird/bin/posixLibrary.sh:builds/install/posix-common/posixLibrary.sh.in
+gen/Release/firebird/bin/tarMainInstall.sh:builds/install/posix-common/tarMainInstall.sh.in
+gen/Release/firebird/bin/tarinstall.sh:builds/install/posix-common/tarinstall.sh.in
+gen/Release/firebird/bin/preinstall.sh:builds/install/posix-common/preinstall.sh.in
+gen/Release/firebird/bin/postinstall.sh:builds/install/posix-common/postinstall.sh.in
+gen/Release/firebird/bin/preuninstall.sh:builds/install/posix-common/preuninstall.sh.in
+gen/Release/firebird/bin/postuninstall.sh:builds/install/posix-common/postuninstall.sh.in
+gen/Release/firebird/bin/taruninstall.sh:builds/install/posix-common/taruninstall.sh.in
+gen/Release/firebird/bin/tarMainUninstall.sh:builds/install/posix-common/tarMainUninstall.sh.in
+gen/Release/firebird/bin/changeServerMode.sh:builds/install/posix-common/changeServerMode.sh.in
+gen/Release/firebird/bin/registerDatabase.sh:builds/install/posix-common/registerDatabase.sh.in
 gen/vers.sh:builds/posix/vers.sh.in
 ])
 
@@ -1154,16 +1151,19 @@ case "$PLATFORM" in
 
     INSTALL_SRC_DIR=builds/install/arch-specific/linux
     AC_CONFIG_FILES([
-        gen/install/makeInstallImage.sh:builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
-        gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
-        gen/install/misc/firebird.init.d.generic:builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
-        gen/install/misc/firebird.init.d.mandrake:builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
-        gen/install/misc/firebird.init.d.suse:builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
-        gen/install/misc/firebird.init.d.debian:builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
-        gen/install/misc/firebird.init.d.gentoo:builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
-        gen/install/misc/firebird.init.d.slackware:builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
-        gen/install/misc/rc.config.firebird:builds/install/arch-specific/linux/misc/rc.config.firebird.in
-        gen/Release/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+        gen/install/makeInstallImage.sh:builds/install/arch-specific/linux/makeInstallImage.sh.in
+        gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/firebird.xinetd.in
+        gen/install/misc/firebird.init.d.generic:builds/install/arch-specific/linux/firebird.init.d.generic.in
+        gen/install/misc/firebird.init.d.mandrake:builds/install/arch-specific/linux/firebird.init.d.mandrake.in
+        gen/install/misc/firebird.init.d.suse:builds/install/arch-specific/linux/firebird.init.d.suse.in
+        gen/install/misc/firebird.init.d.debian:builds/install/arch-specific/linux/firebird.init.d.debian.in
+        gen/install/misc/firebird.init.d.gentoo:builds/install/arch-specific/linux/firebird.init.d.gentoo.in
+        gen/install/misc/firebird.init.d.slackware:builds/install/arch-specific/linux/firebird.init.d.slackware.in
+        gen/install/misc/rc.config.firebird:builds/install/arch-specific/linux/rc.config.firebird.in
+        gen/Release/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/linuxLibrary.sh.in
+        gen/install/misc/firebird-classic@.service:builds/install/arch-specific/linux/firebird-classic.service.in
+        gen/install/misc/firebird-classic.socket:builds/install/arch-specific/linux/firebird-classic.socket.in
+        gen/install/misc/firebird-superserver.service:builds/install/arch-specific/linux/firebird-superserver.service.in
     ],
 	[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;

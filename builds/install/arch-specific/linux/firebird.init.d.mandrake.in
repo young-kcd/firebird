@@ -52,7 +52,7 @@ makeFbDir $lockDir 0770
 
 pidfile="$runDir/$INSTANCE.pid"
 FULLNAME="Firebird server [$INSTANCE]"
-LD_LIBRARY_PATH=$FIREBIRD/lib
+LD_LIBRARY_PATH=$FIREBIRD/lib:$LD_LIBRARY_PATH
 
 export FIREBIRD LD_LIBRARY_PATH
 

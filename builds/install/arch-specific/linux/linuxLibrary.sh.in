@@ -29,6 +29,9 @@ export RunGroup
 PidDir=/var/run/firebird
 export PidDir
 
+# Additional OS settings
+OS_Has_Specific_Classic_Startup=yes
+
 #------------------------------------------------------------------------
 # Get correct options & misc.
 
@@ -73,18 +76,18 @@ TryAddUser() {
 
 addFirebirdUser() {
 
-	TryAddGroup "-g 84 -r" >/dev/null 2>&1
-	TryAddGroup "-g 84" >/dev/null 2>&1
-	TryAddGroup "-r" >/dev/null 2>&1
+	TryAddGroup "-g 84 -r" >/dev/null 2>/dev/null
+	TryAddGroup "-g 84" >/dev/null 2>/dev/null
+	TryAddGroup "-r" >/dev/null 2>/dev/null
 	TryAddGroup " "
-	
-	TryAddUser "-u 84 -r -M" >/dev/null 2>&1
-	TryAddUser "-u 84 -M" >/dev/null 2>&1
-	TryAddUser "-r -M" >/dev/null 2>&1
-	TryAddUser "-M" >/dev/null 2>&1
-	TryAddUser "-u 84 -r" >/dev/null 2>&1
-	TryAddUser "-u 84" >/dev/null 2>&1
-	TryAddUser "-r" >/dev/null 2>&1
+
+	TryAddUser "-u 84 -r -M" >/dev/null 2>/dev/null
+	TryAddUser "-u 84 -M" >/dev/null 2>/dev/null
+	TryAddUser "-r -M" >/dev/null 2>/dev/null
+	TryAddUser "-M" >/dev/null 2>/dev/null
+	TryAddUser "-u 84 -r" >/dev/null 2>/dev/null
+	TryAddUser "-u 84" >/dev/null 2>/dev/null
+	TryAddUser "-r" >/dev/null 2>/dev/null
 	TryAddUser " "
 
 }
@@ -150,6 +153,120 @@ getInitScriptLocation() {
 
 
 #------------------------------------------------------------------------
+#  register/start/stop server using systemd
+
+SYSTEMCTL=systemctl
+CLASSIC_CTRL=firebird-classic.socket
+SUPER_CTRL=firebird-superserver.service
+SYSTEMD_DIR=/usr/lib/systemd/system
+TMPFILE_CONF=/usr/lib/tmpfiles.d/firebird.conf
+
+systemdPresent() {
+	proc1=`ps -p 1 -o comm=`
+
+	[ "${proc1}" = systemd ] && return 0
+	return 1
+}
+
+systemdError() {
+	echo Fatal systemctl error - exiting
+	exit 1
+}
+
+installSystemdCtrlFiles() {
+	if systemdPresent
+	then
+		cp @FB_MISCDIR@/*.service @FB_MISCDIR@/*.socket ${SYSTEMD_DIR}
+		tempdir=/var/run/firebird
+		mkdir -p ${tempdir}
+		chown firebird:firebird ${tempdir}
+		chmod 0775 ${tempdir}
+		echo "d ${tempdir} 0775 firebird firebird -" >${TMPFILE_CONF}
+	fi
+}
+
+osRemoveStartupFiles() {
+	rm -f ${SYSTEMD_DIR}/firebird-*
+	rm -f ${TMPFILE_CONF}
+}
+
+systemdSrv() {
+	op=${1}
+	ctrl=${2}
+
+	if [ "${op}" = "stop" -o "${op}" = "disable" ]
+	then
+		if [ ! -f ${SYSTEMD_DIR}/${ctrl} ]
+		then
+			return 0
+		fi
+	fi
+
+	if systemdPresent
+	then
+		${SYSTEMCTL} --quiet ${op} ${ctrl} || systemdError
+		return 0
+	fi
+	return 1
+}
+
+classicSrv() {
+	op=${1}
+
+	systemdSrv ${op} ${CLASSIC_CTRL}
+}
+
+superSrv() {
+	op=${1}
+
+	systemdSrv ${op} ${SUPER_CTRL}
+}
+
+osRegisterClassicServer() {
+	installSystemdCtrlFiles
+	classicSrv enable
+}
+
+osUnregisterClassicServer() {
+	classicSrv disable
+}
+
+osStartClassicServer() {
+	classicSrv start
+}
+
+osStopClassicServer() {
+	classicSrv stop
+}
+
+registerSuperServer() {
+	installSystemdCtrlFiles
+	superSrv enable && return 0
+}
+
+unregisterSuperServer() {
+	superSrv disable && return 0
+}
+
+startSuperServer() {
+	superSrv start && return 0
+}
+
+stopSuperServer() {
+	superSrv stop && return 0
+
+	init_d=`getInitScriptLocation`
+	if [ -x "$init_d" ]
+	then
+		$init_d stop
+		return 0
+	fi
+
+	return 1
+}
+
+
+#------------------------------------------------------------------------
 #  stop super server if it is running
 
 stopSuperServerIfRunning() {
@@ -157,23 +274,18 @@ stopSuperServerIfRunning() {
 
     if [ ! -z "$checkString" ]
     then
-		init_d=`getInitScriptLocation`
-
-        if [ -x "$init_d" ]
-		then
-			i=1
-			while [ $i -le 20 ]
-			do
-       	    	$init_d stop
-				sleep 1
-				checkString=`grepProcess "fbserver|fbguard|fb_smp_server|firebird"`
-				if [ -z "$checkString" ]
-				then
-					return
-				fi
-				i=$((i+1))
-			done
-		fi
+		i=1
+		while [ $i -le 20 ]
+		do
+   	    	stopSuperServer || return	# silently giveup
+			sleep 1
+			checkString=`grepProcess "fbserver|fbguard|fb_smp_server|firebird"`
+			if [ -z "$checkString" ]
+			then
+				return
+			fi
+			i=$((i+1))
+		done
     fi
 }
 
@@ -183,7 +295,7 @@ stopSuperServerIfRunning() {
 
 createNewPassword() {
     # openssl generates random data.
-	openssl </dev/null >/dev/null 2&>/dev/null
+	openssl </dev/null >/dev/null 2>/dev/null
     if [ $? -eq 0 ]
     then
         # We generate 40 random chars, strip any '/''s and get the first 20
@@ -207,30 +319,6 @@ createNewPassword() {
 }
 
 #------------------------------------------------------------------------
-#  Generate new sysdba password - this routine is used only in
-#  silent mode of the install script.
-
-generateNewDBAPassword() {
-	NewPasswd=`createNewPassword`
-    writeNewPassword $NewPasswd
-}
-
-#------------------------------------------------------------------------
-#  change init.d RunUser
-
-changeInitRunUser() {
-    NewUser=$1
-
-    InitFile=`getInitScriptLocation`
-    if [ -f "$InitFile" ]
-    then
-        editFile "$InitFile" FBRunUser "FBRunUser=$NewUser"
-	    chmod u=rwx,g=rx,o= "$InitFile"
-    fi
-}
-
-
-#------------------------------------------------------------------------
 # installInitdScript
 # Everbody stores this one in a seperate location, so there is a bit of
 # running around to actually get it for each packager.
@@ -238,6 +326,9 @@ changeInitRunUser() {
 # initd script for SuSE >= 7.2 is a part of RPM package
 
 installInitdScript() {
+	# systemd case
+	registerSuperServer && return 0		# systemd's service file takes care about PidDir
+
 	srcScript=""
 	initScript=
 
@@ -359,6 +450,9 @@ EOF
 #  start init.d service
 
 startService() {
+	# systemd case
+	startSuperServer && return 0
+
     InitFile=`getInitScriptLocation`
     if [ -f "$InitFile" ]; then
 		"$InitFile" start
@@ -385,7 +479,10 @@ startService() {
 # If we have right systems remove the service autostart stuff.
 
 removeServiceAutostart() {
-	if standaloneServerInstalled; then
+	if standaloneServerInstalled
+	then
+		# systemd case
+		unregisterSuperServer && return 0
 
 		# Unregister using OS command
 		if [ -x /sbin/insserv ]; then
@@ -416,6 +513,11 @@ removeServiceAutostart() {
 # Returns TRUE if SA server is installed
 
 standaloneServerInstalled() {
+	if systemdPresent; then
+		${SYSTEMCTL} --quiet is-enabled ${SUPER_CTRL} && return 0
+		return 1
+	fi
+
 	InitFile=`getInitScriptLocation`
 	if [ -f "$InitFile" ]; then
 		return 0

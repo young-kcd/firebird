@@ -22,39 +22,17 @@
 #		Alex Peshkoff
 #
 
-# A routine to change the user that runs Firebird
-
-RunUser=root
-RunGroup=root
-
-checkInstallUser
-checkIfServerRunning
+# The post uninstall routine for Firebird Server.
 
 
-# Get confirmation
-echo ""
-echo "Change Firebird install for @FB_CONFDIR@ to uid=$RunUser gid=$RunGroup"
-echo "(User or group options can be changed by editing this script)"
-echo ""
-AskQuestion "Press return to continue - or ^C to abort"
-
-
-# Add user and group, if missing
-if [ $RunUser != "root" ]
+if [ "$1"=0 ]
 then
-    addFirebirdUser
+    removeLinksForBackCompatibility
+	removeServiceAutostart
+	removeInetdServiceEntry
 fi
 
-# Update the /etc/inetd.conf or xinetd entry or /etc/init.d/firebird
-echo "Updating /etc file(s)"
-updateInetdServiceEntry
-changeInitRunUser $RunUser
-
-# Update ownership and SUID bits for programs
-echo "Updating permissions"
-fixFilePermissions
-
-# Start server again
-startFirebird
-
-echo "Completed."
+if [ -d $PidDir ]
+then
+    rm -rf $PidDir
+fi

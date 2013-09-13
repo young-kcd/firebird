@@ -27,8 +27,6 @@ cat <<EOF
 Firebird server may run in 2 different modes - super and classic.
 Super server provides better performance, classic - better availability.
 
-*** Warning: runuser will be reset to firebird.
-
 EOF
 
 AskQuestion "Which option would you like to choose: (super|classic) [super] " "super"

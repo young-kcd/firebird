@@ -1,12 +1,16 @@
 #!/bin/sh
-
-# description: Start/Stop firebird database server
+#
+# /etc/rc.d/rc.firebirdss
+#
+# Start/stop/restart the firebird super server.
+#
 
 # To run more instances of firebird:
 #   Copy @prefix@ somewhere
 #   Copy this script under a new name
 #   Change INSTANCE and FIREBIRD below (all instance names should be unique)
 #   Edit the copied firebird.conf to change at least RemoteServicePort
+#   Optionally run rc-update to autostart the new service
 INSTANCE=default
 FIREBIRD=@FB_CONFDIR@
 
@@ -32,7 +36,7 @@ makeFbDir $lockDir 0770
 
 pidfile="$runDir/$INSTANCE.pid"
 FULLNAME="Firebird server [$INSTANCE]"
-LD_LIBRARY_PATH=$FIREBIRD/lib
+LD_LIBRARY_PATH=$FIREBIRD/lib:$LD_LIBRARY_PATH
 
 export FIREBIRD LD_LIBRARY_PATH
 
@@ -45,48 +49,11 @@ if [ ! -x $GUARDIAN ]; then
 	GUARDIAN=@FB_SBINDIR@/fbguard
 fi
 
-# See how we were called.
 case "$1" in
-  start)
-	echo -n "Starting $FULLNAME: "
-	echo "$GUARDIAN -pidfile $pidfile -daemon -forever" | su $FBRunUser
-	RETVAL=$?
-	;;
-  stop)
-	echo -n "Stopping $FULLNAME: "
-	if [ -f $pidfile ]
-	then
-		kill `cat $pidfile`
-	fi
-	echo "stopped."
-	RETVAL=$?
-	;;
-  status)
-	if [ -f $pidfile ]
-	then
-		pid=`cat $pidfile`
-    	ps -p $pid >/dev/null 2>&1
-		RETVAL=$?
-	else
-		RETVAL=1
-	fi
-	if [ $RETVAL -eq 0 ]
-	then
-		echo "$FULLNAME is running, pid $pid"
-	else
-		echo "$FULLNAME is stopped."
-	fi
-	;;
-  restart|reload)
-	$0 stop
-	sleep 1
-	$0 start
-	RETVAL=$?
-	;;
-  *)
-	echo "Usage: firebird {start|stop|status|restart|reload}"
-	exit 1
+	'start')	echo -n "Starting $FULLNAME: "
+			echo $GUARDIAN -pidfile $pidfile -daemon -forever | su $FBRunUser ;;
+	'stop')		echo -n "Stopping $FULLNAME: "
+			if [ -f $pidfile ]; then kill `cat $pidfile`; echo "done."; else echo "error: no PID file."; fi ;;
+	'restart')	$0 stop ; sleep 1; $0 start ;;
+	*)		echo "usage $0 start|stop|restart" ;;
 esac
-
-exit $RETVAL
-

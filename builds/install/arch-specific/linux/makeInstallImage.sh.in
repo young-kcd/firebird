@@ -167,11 +167,8 @@ copyFiles() {
 	cp -f $BuiltFBDir/bin/fbguard ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fb_lock_print ${TargetDir}@FB_SBINDIR@
 
-    addLibs $BuiltFBDir/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuiltFBDir/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuiltFBDir/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
     addLibs $BuiltFBDir/bin changeServerMode.sh ${TargetDir}@FB_SBINDIR@
-    cp $BuiltFBDir/bin/createAliasDB.sh ${TargetDir}@FB_SBINDIR@
+    cp $BuiltFBDir/bin/registerDatabase.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/fb_config ${TargetDir}@FB_SBINDIR@
 
 	chown root:root ${TargetDir}@FB_SBINDIR@/*
@@ -300,6 +297,7 @@ copyFiles() {
     cp $BuildRootDir/gen/install/misc/firebird.xinetd			${TargetDir}@FB_MISCDIR@
 	cp $BuildRootDir/gen/install/misc/firebird.init.d.*			${TargetDir}@FB_MISCDIR@
 	cp $BuildRootDir/gen/install/misc/rc.config.firebird		${TargetDir}@FB_MISCDIR@
+    cp $BuildRootDir/gen/install/misc/firebird-*				${TargetDir}@FB_MISCDIR@
 
 	chown -R root:root ${TargetDir}@FB_MISCDIR@
 	chmod -R go-rwx ${TargetDir}@FB_MISCDIR@

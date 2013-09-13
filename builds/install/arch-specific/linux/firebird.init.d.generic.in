@@ -1,20 +1,16 @@
-#!/sbin/runscript
-#Gentoo Linux RC script
+#!/bin/sh
+
 # description: Start/Stop firebird database server
-#
-# This file belongs in /etc/init.d where it will be run
-# on system startup and shutdown to start the background
-# Firebird database server daemon
 
 # To run more instances of firebird:
 #   Copy @prefix@ somewhere
 #   Copy this script under a new name
 #   Change INSTANCE and FIREBIRD below (all instance names should be unique)
 #   Edit the copied firebird.conf to change at least RemoteServicePort
-#   Optionally run rc-update to autostart the new service
 INSTANCE=default
 FIREBIRD=@FB_CONFDIR@
 
+# No changes needed below for multiple instances
 FBRunUser=firebird
 
 makeFbDir() {
@@ -35,9 +31,8 @@ lockDir=/tmp/firebird
 makeFbDir $lockDir 0770
 
 pidfile="$runDir/$INSTANCE.pid"
-FULLNAME="firebird server [$INSTANCE]"
-LD_LIBRARY_PATH=$FIREBIRD/lib
-FB_OPTS="-pidfile $pidfile -daemon -forever"
+FULLNAME="Firebird server [$INSTANCE]"
+LD_LIBRARY_PATH=$FIREBIRD/lib:$LD_LIBRARY_PATH
 
 export FIREBIRD LD_LIBRARY_PATH
 
@@ -50,20 +45,48 @@ if [ ! -x $GUARDIAN ]; then
 	GUARDIAN=@FB_SBINDIR@/fbguard
 fi
 
-start(){
-	ebegin "Starting $FULLNAME"
-	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $GUARDIAN -- $FB_OPTS
-	eend $?
-}
-
-stop(){
-	ebegin "Stopping $FULLNAME"
-	start-stop-daemon --stop --pidfile $pidfile --oknodo
-	eend $?
-}
-
-restart(){
-	svc_stop
+# See how we were called.
+case "$1" in
+  start)
+	echo -n "Starting $FULLNAME: "
+	echo "$GUARDIAN -pidfile $pidfile -daemon -forever" | su $FBRunUser
+	RETVAL=$?
+	;;
+  stop)
+	echo -n "Stopping $FULLNAME: "
+	if [ -f $pidfile ]
+	then
+		kill `cat $pidfile`
+	fi
+	echo "stopped."
+	RETVAL=$?
+	;;
+  status)
+	if [ -f $pidfile ]
+	then
+		pid=`cat $pidfile`
+    	ps -p $pid >/dev/null 2>&1
+		RETVAL=$?
+	else
+		RETVAL=1
+	fi
+	if [ $RETVAL -eq 0 ]
+	then
+		echo "$FULLNAME is running, pid $pid"
+	else
+		echo "$FULLNAME is stopped."
+	fi
+	;;
+  restart|reload)
+	$0 stop
 	sleep 1
-	svc_start
-}
+	$0 start
+	RETVAL=$?
+	;;
+  *)
+	echo "Usage: firebird {start|stop|status|restart|reload}"
+	exit 1
+esac
+
+exit $RETVAL
+

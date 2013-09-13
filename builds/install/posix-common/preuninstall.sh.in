@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 #
 #  The contents of this file are subject to the Initial
 #  Developer's Public License Version 1.0 (the "License");
@@ -22,17 +22,19 @@
 #		Alex Peshkoff
 #
 
-# The post uninstall routine for Firebird Server.
+# The pre uninstall routines for Firebird Server
 
+checkIfServerRunning
 
-if [ "$1"=0 ] 
-then 
-    removeLinksForBackCompatibility
-	removeServiceAutostart
-	removeInetdServiceEntry
-fi        
-
-if [ -d $PidDir ]
-then
-    rm -rf $PidDir
+if [ -f @FB_SECDBDIR@/$SecurityDatabase ]; then
+	cp @FB_SECDBDIR@/$SecurityDatabase /tmp
+	echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp"
+	chown root:root /tmp/$SecurityDatabase
+	chmod 0600 /tmp/$SecurityDatabase
 fi
+
+for i in @FB_GUARDDIR@/fb_guard @FB_LOGDIR@/firebird.log @FB_CONFDIR@/SYSDBA.password; do
+	if [ -f $i ]; then
+		rm -f $i
+	fi
+done

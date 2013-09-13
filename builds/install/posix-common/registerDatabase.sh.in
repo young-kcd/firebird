@@ -29,29 +29,29 @@
 #   Created by:  Mark O'Donohue <mark.odonohue@firebirdsql.org>
 # 
 #   Contributor(s):
-#  
+#   Alex Peshkoff
 # 
 
 
 
 #------------------------------------------------------------------------------
-# appendAliasEntry
+# appendDatabaseEntry
 # check to see if an entry already exists in the databases.conf file
 # if it doesn't append it to the end of the file
 
-appendAliasEntry() {
+appendDatabaseEntry() {
     aliasName=$1
     newDB=$2
 
     # check if aliasName already exists
-    oldLine=`grep "^$aliasName" $AliasFile`
+    oldLine=`grep "^$aliasName" $DatabaseFile`
     if [ -z "$oldLine" ]
       then
         # Create the alias file entry
-        echo "$aliasName = $newDB" >> $AliasFile
+        echo "$aliasName = $newDB" >> $DatabaseFile
       else
         cat <<EOF
-The alias name $aliasName already exists in $AliasFile with value:
+The alias name $aliasName already exists in $DatabaseFile with value:
 $oldLine
 
 A new entry will not be created and the existing one will be used.
@@ -114,27 +114,26 @@ checkAccessToFile() {
 
     if [ $# -ne 2 ]
       then
-        echo "Usage is createAliasDB.sh <name> <newDB>"
+        echo "Usage is registerDatabase.sh <alias> <database>"
         exit
     fi
 
     aliasName=$1
     newDB=$2
 
-    AliasFile=@FB_CONFDIR@/databases.conf
+    DatabaseFile=@FB_CONFDIR@/databases.conf
 
     checkNameStartsWithSlash $newDB
-    appendAliasEntry $aliasName $newDB
+    appendDatabaseEntry $aliasName $newDB
 
 #    checkAccessToFile $newDB
 
     if [ ! -f $newDB ]
       then
-        #source @FB_CONFDIR@/SYSDBA.password
         @FB_BINDIR@/isql <<EOF
-create database 'localhost:$aliasName';
+create database '$aliasName';
 quit;
 EOF
     fi
 
-
+	chown firebird:firebird $newDB
