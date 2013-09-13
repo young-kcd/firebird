@@ -334,6 +334,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	Record* old_data = NULL;
 	Record* gc_rec2 = NULL;
 
+	bool samePage;
+	bool deleted;
+
 	if ((temp.rpb_flags & rpb_deleted) && (!(temp.rpb_flags & rpb_delta)))
 		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 	else
@@ -455,8 +458,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	// If both record versions are on the same page, things are a little simpler
 
-	const bool samePage = (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior);
-	const bool deleted = (temp2.rpb_flags & rpb_deleted);
+	samePage = (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior);
+	deleted = (temp2.rpb_flags & rpb_deleted);
 
 	if (!deleted)
 	{
