@@ -239,8 +239,7 @@ public:
 	TraNumber tra_oldest_active;		// record versions older than this can be
 										// gargage-collected by this tx
 	TraNumber tra_att_oldest_active;	// oldest active transaction in the same attachment
-	jrd_tra*	tra_next;				// next transaction in database
-	jrd_tra*	tra_sibling;			// next transaction in group
+	jrd_tra*	tra_next;				// next transaction in attachment
 	MemoryPool* const tra_pool;			// pool for transaction
 	Firebird::MemoryStats	tra_memory_stats;
 	BlobIndexTree tra_blobs_tree;		// list of active blobs

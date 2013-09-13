@@ -920,7 +920,7 @@ static void			check_database(thread_db* tdbb, bool async = false);
 static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Jrd::Attachment*, const DatabaseOptions*);
-static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
+static jrd_tra*		find_transaction(thread_db*);
 static void			init_database_locks(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
@@ -2265,7 +2265,7 @@ JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb);
 			blob = blb::create2(tdbb, transaction, reinterpret_cast<bid*>(blob_id), bpb_length, bpb);
 		}
 		catch (const Exception& ex)
@@ -3010,7 +3010,7 @@ int JAttachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arr
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb);
 
 			if (!array_id->gds_quad_low && !array_id->gds_quad_high)
 				MOVE_CLEAR(slice, slice_length);
@@ -3063,7 +3063,7 @@ JBlob* JAttachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* 
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb);
 			blob = blb::open2(tdbb, transaction, reinterpret_cast<bid*>(blob_id),
 				bpb_length, bpb, true);
 		}
@@ -3187,7 +3187,7 @@ void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* ar
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb);
 			blb::put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
 				sdl, paramLength, param, sliceLength, slice);
 		}
@@ -3829,7 +3829,7 @@ void JRequest::startAndSend(IStatus* user_status, ITransaction* tra, int level,
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb);
 
 			TraceBlrExecute trace(tdbb, request);
 			try
@@ -3891,7 +3891,7 @@ void JRequest::start(IStatus* user_status, ITransaction* tra, int level)
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb);
 
 			TraceBlrExecute trace(tdbb, request);
 			try
@@ -4075,7 +4075,7 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
+			jrd_tra* const transaction = find_transaction(tdbb);
 			Jrd::Attachment* const att = transaction->tra_attachment;
 
 			const MessageNode* inMessage = NULL;
@@ -5307,9 +5307,7 @@ static void commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_f
  *
  **************************************/
 
-	if (transaction->tra_sibling && !(transaction->tra_flags & TRA_prepared))
-		prepare_tra(tdbb, transaction, 0, NULL);
-	else if (transaction->tra_in_use)
+	if (transaction->tra_in_use)
 		status_exception::raise(Arg::Gds(isc_transaction_in_use));
 
 	const Jrd::Attachment* const attachment = tdbb->getAttachment();
@@ -5320,16 +5318,9 @@ static void commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_f
 		run_commit_triggers(tdbb, transaction);
 	}
 
-	jrd_tra* next = transaction;
-
-	while ( (transaction = next) )
-	{
-		next = transaction->tra_sibling;
-		validateHandle(tdbb, transaction->tra_attachment);
-		tdbb->setTransaction(transaction);
-		check_database(tdbb);
-		TRA_commit(tdbb, transaction, retaining_flag);
-	}
+	validateHandle(tdbb, transaction->tra_attachment);
+	tdbb->setTransaction(transaction);
+	TRA_commit(tdbb, transaction, retaining_flag);
 }
 
 
@@ -5366,7 +5357,7 @@ static bool drop_files(const jrd_file* file)
 }
 
 
-static jrd_tra* find_transaction(thread_db* tdbb, ISC_STATUS error_code)
+static jrd_tra* find_transaction(thread_db* tdbb)
 {
 /**************************************
  *
@@ -5382,18 +5373,10 @@ static jrd_tra* find_transaction(thread_db* tdbb, ISC_STATUS error_code)
 	SET_TDBB(tdbb);
 
 	const Jrd::Attachment* const attachment = tdbb->getAttachment();
+	jrd_tra* const transaction = tdbb->getTransaction();
+	fb_assert(transaction->tra_attachment == attachment);
 
-	for (jrd_tra* transaction = tdbb->getTransaction(); transaction;
-		transaction = transaction->tra_sibling)
-	{
-		if (transaction->tra_attachment == attachment)
-		{
-			return transaction;
-		}
-	}
-
-	status_exception::raise(Arg::Gds(error_code));
-	return NULL;	// Added to remove compiler warnings
+	return transaction;
 }
 
 
@@ -6142,13 +6125,9 @@ static void prepare_tra(thread_db* tdbb, jrd_tra* transaction, USHORT length, co
 		run_commit_triggers(tdbb, transaction);
 	}
 
-	for (; transaction; transaction = transaction->tra_sibling)
-	{
-		validateHandle(tdbb, transaction->tra_attachment);
-		tdbb->setTransaction(transaction);
-		check_database(tdbb);
-		TRA_prepare(tdbb, transaction, length, msg);
-	}
+	validateHandle(tdbb, transaction->tra_attachment);
+	tdbb->setTransaction(transaction);
+	TRA_prepare(tdbb, transaction, length, msg);
 }
 
 
@@ -6285,46 +6264,36 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
 
 	try
 	{
-		jrd_tra* next = transaction;
-
-		while ( (transaction = next) )
+		try
 		{
-			next = transaction->tra_sibling;
+			const Database* const dbb = tdbb->getDatabase();
+			const Jrd::Attachment* const attachment = tdbb->getAttachment();
 
-			try
+			if (!(attachment->att_flags & ATT_no_db_triggers))
 			{
-				validateHandle(tdbb, transaction->tra_attachment);
-				check_database(tdbb);
-
-				const Database* const dbb = tdbb->getDatabase();
-				const Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-				if (!(attachment->att_flags & ATT_no_db_triggers))
+				try
 				{
-					try
-					{
-						ISC_STATUS_ARRAY temp_status = {0};
-						tdbb->tdbb_status_vector = temp_status;
+					ISC_STATUS_ARRAY temp_status = {0};
+					tdbb->tdbb_status_vector = temp_status;
 
-						// run ON TRANSACTION ROLLBACK triggers
-						EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
-					}
-					catch (const Exception&)
-					{
-						if (dbb->dbb_flags & DBB_bugcheck)
-							throw;
-					}
+					// run ON TRANSACTION ROLLBACK triggers
+					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
 				}
+				catch (const Exception&)
+				{
+					if (dbb->dbb_flags & DBB_bugcheck)
+						throw;
+				}
+			}
 
-				tdbb->tdbb_status_vector = user_status;
-				tdbb->setTransaction(transaction);
-				TRA_rollback(tdbb, transaction, retaining_flag, false);
-			}
-			catch (const Exception& ex)
-			{
-				ex.stuff_exception(user_status);
-				tdbb->tdbb_status_vector = local_status;
-			}
+			tdbb->tdbb_status_vector = user_status;
+			tdbb->setTransaction(transaction);
+			TRA_rollback(tdbb, transaction, retaining_flag, false);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuff_exception(user_status);
+			tdbb->tdbb_status_vector = local_status;
 		}
 	}
 	catch (const Exception& ex)
@@ -7648,7 +7617,6 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 
 			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
 
-			transaction->tra_sibling = NULL;
 			*tra_handle = transaction;
 
 			// run ON TRANSACTION START triggers
