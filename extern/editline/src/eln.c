@@ -75,7 +75,7 @@ public const char *
 el_gets(EditLine *el, int *nread)
 {
 	const wchar_t *tmp;
-//we don't want to ignore extended chars with UTF8 charsets /FSG 20011
+//we don't want to ignore extended chars with UTF8 charsets /FSG 2011
 	if (!(el->el_flags & CHARSET_IS_UTF8))
 		el->el_flags |= IGNORE_EXTCHARS;
 	tmp = el_wgets(el, nread);
