@@ -1,3 +1,7 @@
+ 2013-09-13 08:12  hvlad 
+   M src/jrd/vio.cpp
+Fix to please GCC
+
  2013-09-12 14:21  hvlad 
    M src/jrd/lck.cpp
    M src/jrd/lck.h
