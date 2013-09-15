@@ -1,3 +1,66 @@
+ 2013-09-14 15:22  fsg 
+   M extern/editline/src/eln.c
+   M src/isql/isql.epp
+No need to include locale.h twice and don't try to call setlocale if it isn't available.
+
+ 2013-09-13 12:27  alexpeshkoff 
+   M builds/install/arch-specific/linux/Makefile.in
+   A builds/install/arch-specific/linux/README (from /firebird/trunk/builds/install/arch-specific/linux/misc/README:58589)
+   A builds/install/arch-specific/linux/firebird-classic.service.in
+   A builds/install/arch-specific/linux/firebird-classic.socket.in
+   A builds/install/arch-specific/linux/firebird-superserver.service.in
+   A builds/install/arch-specific/linux/firebird.init.d.debian.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/firebird.init.d.debian.in:58589)
+   A builds/install/arch-specific/linux/firebird.init.d.generic.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/firebird.init.d.generic.in:58589)
+   A builds/install/arch-specific/linux/firebird.init.d.gentoo.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in:58589)
+   A builds/install/arch-specific/linux/firebird.init.d.mandrake.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in:58589)
+   A builds/install/arch-specific/linux/firebird.init.d.slackware.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in:58589)
+   A builds/install/arch-specific/linux/firebird.init.d.suse.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/firebird.init.d.suse.in:58589)
+   A builds/install/arch-specific/linux/firebird.xinetd.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/firebird.xinetd.in:58589)
+   A builds/install/arch-specific/linux/linuxLibrary.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/linuxLibrary.sh.in:58589)
+   A builds/install/arch-specific/linux/makeInstallImage.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/makeInstallImage.sh.in:58589)
+   D builds/install/arch-specific/linux/misc
+   A builds/install/arch-specific/linux/rc.config.firebird.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/rc.config.firebird.in:58589)
+   M builds/install/misc/IDPLicense.txt
+   M builds/install/misc/IPLicense.txt
+   D builds/install/misc/changeDBAPassword.sh.in
+   D builds/install/misc/changeRunUser.sh.in
+   D builds/install/misc/changeServerMode.sh.in
+   D builds/install/misc/createAliasDB.sh.in
+   D builds/install/misc/fb_config.in
+   M builds/install/misc/fbintl.conf
+   M builds/install/misc/firebird.conf.in
+   M builds/install/misc/firebird.init.d.Solaris.in
+   D builds/install/misc/posixLibrary.sh.in
+   D builds/install/misc/restoreRootRunUser.sh.in
+   A builds/install/posix-common
+   A builds/install/posix-common/changeServerMode.sh.in (from /firebird/trunk/builds/install/misc/changeServerMode.sh.in:58589)
+   A builds/install/posix-common/fb_config.in (from /firebird/trunk/builds/install/misc/fb_config.in:58589)
+   A builds/install/posix-common/posixLibrary.sh.in (from /firebird/trunk/builds/install/misc/posixLibrary.sh.in:58589)
+   A builds/install/posix-common/postinstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/postinstall.sh.in:58589)
+   A builds/install/posix-common/postuninstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/postuninstall.sh.in:58589)
+   A builds/install/posix-common/preinstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/preinstall.sh.in:58589)
+   A builds/install/posix-common/preuninstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/preuninstall.sh.in:58589)
+   A builds/install/posix-common/registerDatabase.sh.in (from /firebird/trunk/builds/install/misc/createAliasDB.sh.in:58589)
+   A builds/install/posix-common/tarMainInstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/tarMainInstall.sh.in:58589)
+   A builds/install/posix-common/tarMainUninstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in:58589)
+   A builds/install/posix-common/tarinstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/tarinstall.sh.in:58589)
+   A builds/install/posix-common/taruninstall.sh.in (from /firebird/trunk/builds/install/arch-specific/linux/misc/taruninstall.sh.in:58589)
+   M configure.ac
+Added support for systemd
+Removed scripts to change firebird runuser to root and back to firebird
+Removed script changing SYSDBA password (nothing except gsec call left in it)
+Reorganize posix/linux install files minimizing OS-specific part of .tgz install scripts
+Related cleanup and bugfixing in posix install
+
+ 2013-09-13 12:21  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.h
+Cleanup - removed unused (always NULL) field tra_sibling from transaction class in engine
+
+ 2013-09-13 08:15  hvlad 
+   M src/jrd/vio.cpp
+Fix to please GCC
+
  2013-09-12 19:08  hvlad 
    M src/jrd/lck.cpp
    M src/jrd/lck.h
