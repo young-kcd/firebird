@@ -45,21 +45,6 @@ bool hasWildCards(const PathName& s)
 	return s.find_first_of("?*") != PathName::npos;
 }
 
-void strip2slashes(ConfigFile::String& to)
-{
-	// strip double slashes
-	char sep2[3];
-	sep2[0] = PathUtils::dir_sep;
-	sep2[1] = sep2[0];
-	sep2[2] = 0;
-
-	size_t pos = 0;
-	while((pos = to.find(sep2, pos)) != PathName::npos)
-	{
-		to.erase(pos, 1);
-	}
-}
-
 class MainStream : public ConfigFile::Stream
 {
 public:
@@ -411,7 +396,22 @@ bool ConfigFile::macroParse(String& value, const char* fileName) const
 			{
 				return false;
 			}
-			value.replace(subFrom, subTo + 1 - subFrom, macro);
+			++subTo;
+
+			// Avoid double slashes in pathnames
+			if (subFrom > 0 && value[subFrom - 1] == PathUtils::dir_sep &&
+				macro.length() > 0 && macro[0] == PathUtils::dir_sep)
+			{
+				--subFrom;
+			}
+			if (subTo < value.length() && value[subTo] == PathUtils::dir_sep &&
+				macro.length() > 0 && macro[macro.length() - 1] == PathUtils::dir_sep)
+			{
+				++subTo;
+			}
+
+			// Now perform operation
+			value.replace(subFrom, subTo - subFrom, macro);
 		}
 		else
 		{
@@ -419,7 +419,6 @@ bool ConfigFile::macroParse(String& value, const char* fileName) const
 		}
 	}
 
-	strip2slashes(value);
 	return true;
 }
 
