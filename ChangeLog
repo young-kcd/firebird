@@ -1,3 +1,11 @@
+ 2013-09-16 13:55  alexpeshkoff 
+   M src/common/config/config_file.cpp
+Fixed CORE-4219: Regular expressions with double-slash fail in trace
+
+ 2013-09-16 09:17  hvlad 
+   M src/jrd/exe.cpp
+Fixed bug CORE-4216 : Memory leak with TRIGGER ON TRANSACTION COMMIT
+
  2013-09-14 15:22  fsg 
    M extern/editline/src/eln.c
    M src/isql/isql.epp
