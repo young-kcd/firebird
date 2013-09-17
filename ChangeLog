@@ -1,3 +1,7 @@
+ 2013-09-16 07:36  hvlad 
+   M src/jrd/exe.cpp
+Fixed bug CORE-4216 : Memory leak with TRIGGER ON TRANSACTION COMMIT
+
  2013-09-13 08:12  hvlad 
    M src/jrd/vio.cpp
 Fix to please GCC
