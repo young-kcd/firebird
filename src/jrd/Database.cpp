@@ -196,7 +196,7 @@ namespace Jrd
 		while (true)
 		{
 			AtomicCounter::counter_type old = dbb_flags;
-			if ((old & DBB_sweep_in_progress) || (dbb_ast_flags & DBB_shutdown))
+			if (old & DBB_sweep_in_progress)
 				return false;
 
 			if (dbb_flags.compareExchange(old, old | DBB_sweep_in_progress))
