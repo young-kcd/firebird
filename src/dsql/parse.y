@@ -5645,20 +5645,20 @@ distinct_predicate
 
 %type <boolExprNode> between_predicate
 between_predicate
-	: value BETWEEN value_predicand AND value %prec BETWEEN
+	: value BETWEEN value_between AND value_between %prec BETWEEN
 		{ $$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5); }
-	| value NOT BETWEEN value_predicand AND value %prec BETWEEN
+	| value NOT BETWEEN value_between AND value_between %prec BETWEEN
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_between, $1, $4, $6);
 			$$ = newNode<NotBoolNode>(node);
 		}
 	;
 
-// ASF: It's not clear for me why the direct usage of value in between_predicate introduces
-// reduce/reduce conflicts.
-%type <valueExprNode> value_predicand
-value_predicand
-	: value
+// Special value for BETWEEN, to avoid conflicts with boolean expressions.
+%type <valueExprNode> value_between
+value_between
+	: value_primary
+	| '(' boolean_value_expression ')'		{ $$ = newNode<BoolAsValueNode>($2); }
 	;
 
 %type <boolExprNode> binary_pattern_predicate
