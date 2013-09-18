@@ -71,7 +71,7 @@ public:
 	MetaName& assign(const char* s, size_t l);
 	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
 	MetaName& operator=(const char* s) { return assign(s); }
-	MetaName& operator=(const string& s) { return assign(s.c_str(), s.length()); }
+	MetaName& operator=(const AbstractString& s) { return assign(s.c_str(), s.length()); }
 	MetaName& operator=(const MetaName& m) { return set(m); }
 	char* getBuffer(const size_t l);
 
@@ -86,10 +86,13 @@ public:
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
+	int compare(const AbstractString& s) const { return compare(s.c_str(), s.length()); }
 	int compare(const MetaName& m) const { return memcmp(data, m.data, MAX_SQL_IDENTIFIER_SIZE); }
 
 	bool operator==(const char* s) const { return compare(s) == 0; }
 	bool operator!=(const char* s) const { return compare(s) != 0; }
+	bool operator==(const AbstractString& s) const { return compare(s.c_str()) == 0; }
+	bool operator!=(const AbstractString& s) const { return compare(s.c_str()) != 0; }
 	bool operator==(const MetaName& m) const { return compare(m) == 0; }
 	bool operator!=(const MetaName& m) const { return compare(m) != 0; }
 	bool operator<=(const MetaName& m) const { return compare(m) <= 0; }
