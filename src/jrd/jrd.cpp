@@ -714,7 +714,9 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 }
 
 
-static ISC_STATUS successful_completion(ISC_STATUS* status, ISC_STATUS return_code = FB_SUCCESS)
+static ISC_STATUS successful_completion(ISC_STATUS* status,
+	ISC_STATUS return_code = FB_SUCCESS,
+	bool forceUseCode = false)
 {
 	fb_assert(status);
 
@@ -727,7 +729,7 @@ static ISC_STATUS successful_completion(ISC_STATUS* status, ISC_STATUS return_co
 		fb_utils::init_status(status);
 	}
 
-	return return_code;
+	return forceUseCode ? return_code : status[1];
 }
 
 
@@ -4143,7 +4145,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		return ex.stuff_exception(user_status);
 	}
 
-	return successful_completion(user_status, return_code);
+	return successful_completion(user_status, return_code, true);
 }
 
 
