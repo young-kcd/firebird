@@ -141,7 +141,7 @@ namespace Jrd
 		if (attachment->att_flags & ATT_no_cleanup)
 			return false;
 
-		if ((dbb_flags & (DBB_sweep_in_progress)) || (dbb_ast_flags & DBB_shutdown))
+		if (dbb_flags & DBB_sweep_in_progress)
 			return false;
 
 		dbb_flags |= DBB_sweep_in_progress;
