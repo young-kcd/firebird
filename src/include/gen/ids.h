@@ -481,6 +481,7 @@
 	const USHORT  f_mon_db_stat_id = 17;
 	const USHORT  f_mon_db_backup_state = 18;
 	const USHORT  f_mon_db_crypt_page = 19;
+	const USHORT  f_mon_db_owner = 20;
 
 
 // Relation 34 (MON$ATTACHMENTS)
@@ -503,6 +504,7 @@
 	const USHORT  f_mon_att_remote_version = 15;
 	const USHORT  f_mon_att_remote_host = 16;
 	const USHORT  f_mon_att_remote_os_user = 17;
+	const USHORT  f_mon_att_auth_method = 18;
 
 
 // Relation 35 (MON$TRANSACTIONS)
