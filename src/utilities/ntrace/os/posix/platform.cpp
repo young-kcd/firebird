@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	SQL Trace plugin
  *	MODULE:		platform.cpp
- *	DESCRIPTION:	Platform specifics (Win32)
+ *	DESCRIPTION:	Platform specifics (posix)
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
