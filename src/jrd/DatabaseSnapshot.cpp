@@ -929,6 +929,9 @@ void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
 	if (database->dbb_crypto_manager)
 		record.storeInteger(f_mon_db_crypt_page, database->dbb_crypto_manager->getCurrentPage());
 
+	// database owner
+	record.storeString(f_mon_db_owner, database->dbb_owner);
+
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
@@ -1011,6 +1014,8 @@ bool DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* 
 	record.storeString(f_mon_att_remote_host, attachment->att_remote_host);
 	// OS user name
 	record.storeString(f_mon_att_remote_os_user, attachment->att_remote_os_user);
+	// authentication method
+	record.storeString(f_mon_att_auth_method, attachment->att_user->usr_auth_method);
 
 	// statistics
 	record.storeGlobalId(f_mon_att_stat_id, getGlobalId(stat_id));

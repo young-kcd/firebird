@@ -813,6 +813,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
@@ -914,20 +915,20 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		}
 		END_FOR
 
-		FOR(REQUEST_HANDLE handle1)
-			FIRST 1 REL IN RDB$RELATIONS
-			WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
+		if (dbb->dbb_owner.isEmpty())
 		{
-            if (!REL.RDB$OWNER_NAME.NULL && user->usr_user_name.hasData())
+			FOR(REQUEST_HANDLE handle1)
+				FIRST 1 REL IN RDB$RELATIONS
+				WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
 			{
-				char name[129];
-				*name = user->usr_user_name.length();
-				user->usr_user_name.copyTo(name + 1, sizeof(name) - 1);
-				if (!check_string(reinterpret_cast<const UCHAR*>(name), REL.RDB$OWNER_NAME))
-					user->usr_flags |= USR_owner;
+	            if (!REL.RDB$OWNER_NAME.NULL)
+					dbb->dbb_owner = REL.RDB$OWNER_NAME;
 			}
+			END_FOR
 		}
-		END_FOR
+
+		if (dbb->dbb_owner == user->usr_user_name)
+			user->usr_flags |= USR_owner;
 
 		FOR(REQUEST_HANDLE handle2) R IN RDB$ROLES
 			WITH R.RDB$ROLE_NAME EQ role_name.c_str()
@@ -938,7 +939,10 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		END_FOR
 	}
 	else
+	{
+		dbb->dbb_owner = user->usr_user_name;
 		user->usr_flags |= USR_owner;
+	}
 }
 
 

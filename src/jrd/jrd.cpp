@@ -6942,7 +6942,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 {
 	bool wheel = false;
 	int id = -1, group = -1;	// CVC: This var contained trash
-	string name, trusted_role;
+	string name, trusted_role, auth_method;
 
 	if (fb_utils::bootBuild())
 	{
@@ -6963,7 +6963,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 			// stub instead mapUser(....);
 			AuthReader auth(options.dpb_auth_block);
 			PathName secureDb;
-			if (auth.getInfo(&name, NULL, &secureDb))
+			if (auth.getInfo(&name, &auth_method, &secureDb))
 			{
 				ISC_systemToUtf8(name);
 
@@ -7022,6 +7022,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 	user.usr_user_name = name;
 	user.usr_project_name = "";
 	user.usr_org_name = "";
+	user.usr_auth_method = auth_method;
 	user.usr_user_id = id;
 	user.usr_group_id = group;
 	user.usr_auth_block.assign(options.dpb_auth_block);

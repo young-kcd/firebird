@@ -337,8 +337,8 @@ public:
 	}
 
 	Firebird::SyncObject	dbb_sync;
-	Firebird::SyncObject	dbb_sys_attach;		// syncronize operations with dbb_sys_attachments
-	Firebird::SyncObject	dbb_lck_sync;		// syncronize operations with att_long_locks at different attachments
+	Firebird::SyncObject	dbb_sys_attach;		// synchronize operations with dbb_sys_attachments
+	Firebird::SyncObject	dbb_lck_sync;		// synchronize operations with att_long_locks at different attachments
 
 	MemoryPool* dbb_permanent;
 
@@ -350,7 +350,7 @@ public:
 	Attachment* dbb_sys_attachments;	// System attachments
 	BufferControl*	dbb_bcb;			// Buffer control block
 	int			dbb_monitoring_id;		// dbb monitoring identifier
-	Lock* 		dbb_lock;				// granddaddy lock
+	Lock* 		dbb_lock;				// database lock
 	Lock* 		dbb_sweep_lock;			// sweep lock
 
 	Firebird::SyncObject	dbb_sh_counter_sync;
@@ -366,7 +366,7 @@ public:
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
 
-	Firebird::SyncObject	dbb_mon_sync;			// syncronize operations with dbb_monitor_lock
+	Firebird::SyncObject	dbb_mon_sync;			// synchronize operations with dbb_monitor_lock
 	MonitoringData*			dbb_monitoring_data;	// monitoring data
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
@@ -390,6 +390,8 @@ public:
 
 	Firebird::PathName dbb_filename;	// filename string
 	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
+
+	Firebird::MetaName dbb_owner;		// database owner
 
 	Firebird::SyncObject			dbb_pools_sync;
 	Firebird::Array<MemoryPool*>	dbb_pools;		// pools

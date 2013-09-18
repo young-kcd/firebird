@@ -90,6 +90,7 @@ public:
 	Firebird::string	usr_sql_role_name;	// Role name
 	Firebird::string	usr_project_name;	// Project name
 	Firebird::string	usr_org_name;		// Organization name
+	Firebird::string	usr_auth_method;	// Authentication method
 	Auth::UserData::AuthenticationBlock usr_auth_block;	// Authentication block like it was passed to engine
 	USHORT				usr_user_id;		// User id
 	USHORT				usr_group_id;		// Group id
@@ -109,6 +110,7 @@ public:
 		  usr_sql_role_name(p, ui.usr_sql_role_name),
 		  usr_project_name(p, ui.usr_project_name),
 		  usr_org_name(p, ui.usr_org_name),
+		  usr_auth_method(p, ui.usr_auth_method),
 		  usr_auth_block(p),
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
@@ -122,6 +124,7 @@ public:
 		  usr_sql_role_name(ui.usr_sql_role_name),
 		  usr_project_name(ui.usr_project_name),
 		  usr_org_name(ui.usr_org_name),
+		  usr_auth_method(ui.usr_auth_method),
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_flags(ui.usr_flags)
@@ -135,6 +138,7 @@ public:
 		usr_sql_role_name = ui.usr_sql_role_name;
 		usr_project_name = ui.usr_project_name;
 		usr_org_name = ui.usr_org_name;
+		usr_auth_method = ui.usr_auth_method;
 		usr_user_id = ui.usr_user_id;
 		usr_group_id = ui.usr_group_id;
 		usr_flags = ui.usr_flags;
