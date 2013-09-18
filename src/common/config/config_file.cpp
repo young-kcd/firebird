@@ -525,6 +525,7 @@ bool ConfigFile::substituteStandardDir(const String& from, String& to) const
 
 const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name) const
 {
+	fb_assert(!(flags & NATIVE_ORDER));
 	size_t pos;
 	return parameters.find(name, pos) ? &parameters[pos] : NULL;
 }
@@ -536,6 +537,7 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name) cons
 
 const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name, const String& value) const
 {
+	fb_assert(!(flags & NATIVE_ORDER));
 	size_t pos;
 	if (!parameters.find(name, pos))
 	{
@@ -575,6 +577,8 @@ void ConfigFile::parse(Stream* stream)
 	Parameter* previous = NULL;
 	unsigned int line;
 	const char* streamName = stream->getFileName();
+
+	parameters.setSortMode(FB_ARRAY_SORT_MANUAL);
 
 	while (stream->getLine(inputLine, line))
 	{
@@ -632,6 +636,9 @@ void ConfigFile::parse(Stream* stream)
 			break;
 		}
 	}
+
+	if (!(flags & NATIVE_ORDER))
+		parameters.sort();
 }
 
 //#define DEBUG_INCLUDES

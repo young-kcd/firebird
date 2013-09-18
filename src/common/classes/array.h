@@ -459,6 +459,10 @@ protected:
 	}
 };
 
+const static int FB_ARRAY_SORT_MANUAL = 0;
+const static int FB_ARRAY_SORT_WHEN_ADD = 1;
+// const static int FB_ARRAY_SORT_ON_FIND
+
 // Dynamic sorted array of simple objects
 template <typename Value,
 	typename Storage = EmptyStorage<Value>,
@@ -468,15 +472,28 @@ template <typename Value,
 class SortedArray : public Array<Value, Storage>
 {
 public:
-	SortedArray(MemoryPool& p, size_t s) : Array<Value, Storage>(p, s) {}
-	explicit SortedArray(MemoryPool& p) : Array<Value, Storage>(p) {}
-	explicit SortedArray(size_t s) : Array<Value, Storage>(s) {}
-	SortedArray() : Array<Value, Storage>() {}
+	SortedArray(MemoryPool& p, size_t s)
+		: Array<Value, Storage>(p, s), sortMode(FB_ARRAY_SORT_WHEN_ADD), sorted(true)
+	{ }
+
+	explicit SortedArray(MemoryPool& p)
+		: Array<Value, Storage>(p), sortMode(FB_ARRAY_SORT_WHEN_ADD), sorted(true)
+	{ }
+
+	explicit SortedArray(size_t s)
+		: Array<Value, Storage>(s), sortMode(FB_ARRAY_SORT_WHEN_ADD), sorted(true)
+	{ }
+
+	SortedArray()
+		: Array<Value, Storage>(), sortMode(FB_ARRAY_SORT_WHEN_ADD), sorted(true)
+	{ }
 
 	// When item is not found, set pos to the position where the element should be
 	// stored if/when added.
 	bool find(const Key& item, size_t& pos) const
 	{
+		fb_assert(sorted);
+
 		size_t highBound = this->count, lowBound = 0;
 		while (highBound > lowBound)
 		{
@@ -500,9 +517,57 @@ public:
 	size_t add(const Value& item)
 	{
 		size_t pos;
-		find(KeyOfValue::generate(this, item), pos);
+		if (sortMode == FB_ARRAY_SORT_WHEN_ADD)
+			find(KeyOfValue::generate(this, item), pos);
+		else
+		{
+			sorted = false;
+			pos = this->getCount();
+		}
 		this->insert(pos, item);
 		return pos;
+	}
+
+	void setSortMode(int sm)
+	{
+		if (sortMode != FB_ARRAY_SORT_WHEN_ADD && sm == FB_ARRAY_SORT_WHEN_ADD && !sorted)
+		{
+			sort();
+		}
+		sortMode = sm;
+	}
+
+	void sort()
+	{
+		if (sorted)
+			return;
+
+		qsort(this->begin(), this->getCount(), sizeof(Value), compar);
+		sorted = true;
+	}
+
+private:
+	int sortMode;
+	bool sorted;
+
+	static int compar(const void* a, const void* b)
+	{
+		// Calling generate() with NULL argument looks dangerous and wrong.
+		// Correct solution is to use qsort_s/qsort_r functions instead qsort.
+		// But in our sources the only place using 'sender' in generate() is BPlusTree
+		// and not with SortedArray but with SortedVector. Using qsort_r/s is overhead for us.
+		// As an additional disaster there are 2 incompatible (BSD/glibc) clones of qsort_r.
+		// It's also possible to change SortedArray API without loosing functionality.
+		// I suppose we can do a choice a bit later. AP-2013.
+		const Key& first(KeyOfValue::generate(NULL, *reinterpret_cast<const Value*>(a)));
+		const Key& second(KeyOfValue::generate(NULL, *reinterpret_cast<const Value*>(b)));
+
+		if (Cmp::greaterThan(first, second))
+			return 1;
+		else if (Cmp::greaterThan(second, first))
+			return -1;
+		else
+			return 0;
 	}
 };
 

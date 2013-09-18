@@ -54,6 +54,7 @@ public:
 	// flags for config file
 	static const USHORT HAS_SUB_CONF	= 0x01;
 	static const USHORT ERROR_WHEN_MISS	= 0x02;
+	static const USHORT NATIVE_ORDER	= 0x04;
 
 	// enum to distinguish ctors
 	enum UseText {USE_TEXT};

@@ -415,6 +415,16 @@ namespace Firebird
 			return inherited::add(item);
 		}
 
+		void setSortMode(int sm)
+		{
+			inherited::setSortMode(sm);
+		}
+
+		void sort()
+		{
+			inherited::sort();
+		}
+
 	private:
 		ObjectValue& add();	// Unusable when sorted
 	};
