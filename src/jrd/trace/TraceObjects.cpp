@@ -451,6 +451,9 @@ const char* TraceTriggerImpl::getTriggerName()
 
 const char* TraceTriggerImpl::getRelationName()
 {
+	if (m_which == trg_all)
+		return NULL;
+
 	const jrd_rel* rel = m_trig->req_rpb->rpb_relation;
 	return rel ? rel->rel_name.c_str() : NULL;
 }

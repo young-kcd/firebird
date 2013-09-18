@@ -1898,7 +1898,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 	if (trgname.empty())
 		trgname = "<unknown>";
 
-	if (trigger->getRelationName())
+	if ((trigger->getWhich() != trg_all) && trigger->getRelationName())
 	{
 		string relation;
 		relation.printf(" FOR %s", trigger->getRelationName());
