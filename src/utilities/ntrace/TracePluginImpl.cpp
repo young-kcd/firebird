@@ -1869,7 +1869,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 	if (trgname.empty())
 		trgname = "<unknown>";
 
-	if (trigger->getRelationName())
+	if ((trigger->getWhich() != trg_all) && trigger->getRelationName())
 	{
 		string relation;
 		relation.printf(" FOR %s", trigger->getRelationName());
@@ -1918,6 +1918,9 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 			break;
 		case jrd_req::req_trigger_trans_rollback:
 			action.append("TRANSACTION_ROLLBACK");
+			break;
+		case jrd_req::req_trigger_ddl:
+			action.append("DDL");
 			break;
 		default:
 			action.append("Unknown trigger action");
