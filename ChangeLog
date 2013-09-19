@@ -1,3 +1,18 @@
+ 2013-09-18 18:36  hvlad 
+   M src/jrd/Database.cpp
+Correction for fix for bug CORE-4134 : Race condition when auto-sweep is started
+The patch wrongly disabled manual sweep to run when database is shutdown.
+Auto sweep is still disabled to run on such database.
+
+ 2013-09-18 13:54  hvlad 
+   M src/jrd/trace/TraceObjects.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Backport fix bug CORE-4225 : Server crashes when attempting to trace activity on database having a db-level trigger
+
+ 2013-09-18 11:58  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Fixed CORE-4224: Database replace through services API fails
+
  2013-09-16 07:36  hvlad 
    M src/jrd/exe.cpp
 Fixed bug CORE-4216 : Memory leak with TRIGGER ON TRANSACTION COMMIT
