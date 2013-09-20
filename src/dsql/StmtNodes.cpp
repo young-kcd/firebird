@@ -6721,6 +6721,10 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 	rpb->rpb_length = format->fmt_length;
 	rpb->rpb_format_number = format->fmt_version;
 
+	// dimitr:	fake an invalid record number so that it could be evaluated to NULL
+	// 			even if the valid stream marker is present for OLD/NEW trigger contexts
+	rpb->rpb_number.setValue(BOF_NUMBER);
+
 	// CVC: This small block added by Ann Harrison to
 	// start with a clean empty buffer and so avoid getting
 	// new record buffer with misleading information. Fixes

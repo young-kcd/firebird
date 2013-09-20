@@ -1101,7 +1101,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 				{
 					trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec.get();
 
-					if (old_rec && trigger_action != jrd_req::req_trigger_insert)
+					if (old_rec)
 					{
 						trigger->req_rpb[0].rpb_number = old_rpb->rpb_number;
 						trigger->req_rpb[0].rpb_number.setValid(true);
@@ -1110,26 +1110,24 @@ void EXE_execute_triggers(thread_db* tdbb,
 						trigger->req_rpb[0].rpb_number.setValid(false);
 				}
 
+				if (which_trig == StmtNode::PRE_TRIG &&
+					trigger_action == jrd_req::req_trigger_update)
+				{
+					new_rpb->rpb_number = old_rpb->rpb_number;
+				}
+
 				if (trigger->req_rpb.getCount() > 1)
+				{
 					trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec.get();
 
-				if (new_rec && !(which_trig == StmtNode::PRE_TRIG &&
-					trigger_action == jrd_req::req_trigger_insert))
-				{
-					if (which_trig == StmtNode::PRE_TRIG &&
-						trigger_action == jrd_req::req_trigger_update)
-					{
-						new_rpb->rpb_number = old_rpb->rpb_number;
-					}
-
-					if (trigger->req_rpb.getCount() > 1)
+					if (new_rec)
 					{
 						trigger->req_rpb[1].rpb_number = new_rpb->rpb_number;
 						trigger->req_rpb[1].rpb_number.setValid(true);
 					}
+					else
+						trigger->req_rpb[1].rpb_number.setValid(false);
 				}
-				else if (trigger->req_rpb.getCount() > 1)
-					trigger->req_rpb[1].rpb_number.setValid(false);
 			}
 
 			trigger->req_timestamp = timestamp;

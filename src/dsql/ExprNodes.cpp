@@ -8110,7 +8110,7 @@ dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 		const jrd_rel* relation = rpb->rpb_relation;
 
 		// If it doesn't point to a valid record, return NULL
-		if (!rpb->rpb_number.isValid() || !relation)
+		if (!rpb->rpb_number.isValid() || rpb->rpb_number.isBof() || !relation)
 		{
 			request->req_flags |= req_null;
 			return NULL;
