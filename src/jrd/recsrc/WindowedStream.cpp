@@ -72,9 +72,9 @@ namespace
 			impure->irsb_position = position;
 		}
 
-		FB_UINT64 getCount(jrd_req* request) const
+		FB_UINT64 getCount(thread_db* tdbb) const
 		{
-			return m_next->getCount(request);
+			return m_next->getCount(tdbb);
 		}
 
 		FB_UINT64 getPosition(jrd_req* request) const

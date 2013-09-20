@@ -671,7 +671,7 @@ namespace Jrd
 	{
 	public:
 		virtual void locate(thread_db* tdbb, FB_UINT64 position) const = 0;
-		virtual FB_UINT64 getCount(jrd_req* request) const = 0;
+		virtual FB_UINT64 getCount(thread_db* tdbb) const = 0;
 		virtual FB_UINT64 getPosition(jrd_req* request) const = 0;
 	};
 
@@ -722,7 +722,7 @@ namespace Jrd
 		void nullRecords(thread_db* tdbb) const;
 
 		void locate(thread_db* tdbb, FB_UINT64 position) const;
-		FB_UINT64 getCount(jrd_req* request) const;
+		FB_UINT64 getCount(thread_db* tdbb) const;
 
 		FB_UINT64 getPosition(jrd_req* request) const
 		{

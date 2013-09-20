@@ -161,7 +161,7 @@ bool Cursor::fetchPrior(thread_db* tdbb) const
 	}
 	else if (impure->irsb_state == EOS)
 	{
-		impure->irsb_position = buffer->getCount(request) - 1;
+		impure->irsb_position = buffer->getCount(tdbb) - 1;
 	}
 	else
 	{
@@ -232,7 +232,7 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset) const
 	}
 
 	const BufferedStream* const buffer = static_cast<const BufferedStream*>(m_top);
-	impure->irsb_position = (offset > 0) ? offset - 1 : buffer->getCount(request) + offset;
+	impure->irsb_position = (offset > 0) ? offset - 1 : buffer->getCount(tdbb) + offset;
 	buffer->locate(tdbb, impure->irsb_position);
 
 	if (!buffer->getRecord(tdbb))

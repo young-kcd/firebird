@@ -325,8 +325,18 @@ void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position) const
 	impure->irsb_position = position;
 }
 
-FB_UINT64 BufferedStream::getCount(jrd_req* request) const
+FB_UINT64 BufferedStream::getCount(thread_db* tdbb) const
 {
+	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
+
+	// If we haven't fetched and cached the underlying stream completely, do it now
+	if (impure->irsb_flags & irsb_mustread)
+	{
+		while (this->getRecord(tdbb))
+			; // no-op
+		fb_assert(!(impure->irsb_flags & irsb_mustread));
+	}
+
 	return impure->irsb_buffer ? impure->irsb_buffer->getCount() : 0;
 }
