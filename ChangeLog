@@ -1,3 +1,49 @@
+ 2013-09-18 18:38  hvlad 
+   M src/jrd/Database.cpp
+Correction for fix for bug CORE-4134 : Race condition when auto-sweep is started
+The patch wrongly disabled manual sweep to run when database is shutdown.
+Auto sweep is still disabled to run on such database.
+
+ 2013-09-18 16:33  asfernandes 
+   M src/dsql/parse.y
+Fixed CORE-4227 - Wrong evaluation of BETWEEN and boolean expressions due to parser conflict.
+
+ 2013-09-18 16:03  alexpeshkoff 
+   M src/common/classes/array.h
+   M src/common/classes/objects_array.h
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/utilities/ntrace/TraceConfiguration.cpp
+Fixed CORE-4163: Configuration fbtrace.conf contains syntax errors (make trace use native order of config file keys)
+
+ 2013-09-18 16:01  alexpeshkoff 
+   M src/utilities/ntrace/os/posix/platform.cpp
+Comment
+
+ 2013-09-18 13:48  hvlad 
+   M src/jrd/trace/TraceObjects.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Fixed bug CORE-4225 : Server crashes when attempting to trace activity on database having a db-level trigger
+
+ 2013-09-18 09:37  dimitr 
+   M src/include/gen/ids.h
+Implemented CORE-4218 (database owner in MON$DATABASE) and CORE-4222 (auth method in MON$ATTACHMENTS).
+
+ 2013-09-18 09:37  dimitr 
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/fields.h
+   M src/jrd/jrd.cpp
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/jrd/scl.epp
+   M src/jrd/scl.h
+Implemented CORE-4218 (database owner in MON$DATABASE) and CORE-4222 (auth method in MON$ATTACHMENTS).
+
+ 2013-09-18 09:35  dimitr 
+   M src/common/classes/MetaName.h
+Added comparison operations against string types.
+
  2013-09-16 13:55  alexpeshkoff 
    M src/common/config/config_file.cpp
 Fixed CORE-4219: Regular expressions with double-slash fail in trace
