@@ -1697,12 +1697,13 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 		{
 			ptr->compile(tdbb);
 			trigger = EXE_find_request(tdbb, ptr->request, false);
+
 			if (!is_db_trigger)
 			{
 				trigger->req_rpb[0].rpb_record = old_rec ? old_rec : (Record*) null_rec;
 				trigger->req_rpb[1].rpb_record = new_rec ? new_rec : (Record*) null_rec;
 
-				if (old_rec && trigger_action != jrd_req::req_trigger_insert)
+				if (old_rec)
 				{
 					trigger->req_rpb[0].rpb_number = old_rpb->rpb_number;
 					trigger->req_rpb[0].rpb_number.setValid(true);
@@ -1710,11 +1711,11 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 				else
 					trigger->req_rpb[0].rpb_number.setValid(false);
 
-				if (new_rec && !(which_trig == PRE_TRIG && trigger_action == jrd_req::req_trigger_insert))
-				{
-					if (which_trig == PRE_TRIG && trigger_action == jrd_req::req_trigger_update)
-						new_rpb->rpb_number = old_rpb->rpb_number;
+				if (which_trig == PRE_TRIG && trigger_action == jrd_req::req_trigger_update)
+					new_rpb->rpb_number = old_rpb->rpb_number;
 
+				if (new_rec)
+				{
 					trigger->req_rpb[1].rpb_number = new_rpb->rpb_number;
 					trigger->req_rpb[1].rpb_number.setValid(true);
 				}
@@ -3888,6 +3889,10 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	rpb->rpb_address = record->rec_data;
 	rpb->rpb_length = format->fmt_length;
 	rpb->rpb_format_number = format->fmt_version;
+
+	// dimitr:	fake an invalid record number so that it could be evaluated to NULL
+	// 			even if the valid stream marker is present for OLD/NEW trigger contexts
+	rpb->rpb_number.setValue(BOF_NUMBER);
 
 	/* CVC: This small block added by Ann Harrison to
 			start with a clean empty buffer and so avoid getting
