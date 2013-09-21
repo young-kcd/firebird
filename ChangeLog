@@ -1,3 +1,9 @@
+ 2013-09-20 08:27  dimitr 
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+Somewhat hackery fix for CORE-4201: Computed field returns null value inside BI trigger.
+A better solution requires major changes and will be investigated in trunk later.
+
  2013-09-18 18:36  hvlad 
    M src/jrd/Database.cpp
 Correction for fix for bug CORE-4134 : Race condition when auto-sweep is started
