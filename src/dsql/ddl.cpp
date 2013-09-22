@@ -6318,8 +6318,14 @@ static void put_local_variables(CompiledStatement* statement, dsql_nod* paramete
 			}
 			else if (parameter->nod_type == nod_cursor)
 			{
+				fb_assert(locals == statement->req_hidden_vars_number);
+				fb_assert(statement->req_hidden_vars.isEmpty());
+
 				PASS1_statement(statement, parameter);
+				GEN_hidden_variables(statement, false);
 				GEN_statement(statement, parameter);
+
+				locals = statement->req_hidden_vars_number;
 			}
 		}
 	}
