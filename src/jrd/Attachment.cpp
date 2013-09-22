@@ -581,3 +581,8 @@ void Jrd::Attachment::SyncGuard::init(const char* f, bool optional)
 		}
 	}
 }
+
+void AttachmentsRefHolder::debugHelper(const char* from)
+{
+	RefDeb(DEB_RLS_JATT, from);
+}

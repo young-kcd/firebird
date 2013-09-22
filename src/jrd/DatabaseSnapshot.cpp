@@ -355,7 +355,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 		{
-			SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "DatabaseSnapshot::blockingAst");
+			SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
 
 			if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 			{
@@ -364,7 +364,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 				// Write the data to the shared memory
 				try
 				{
-					dumpData(tdbb);
+					dumpData(dbb, backup_state_unknown);
 				}
 				catch (const Exception& ex)
 				{
@@ -394,6 +394,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	Attachment* const attachment = tdbb->getAttachment();
+	fb_assert(attachment);
+
 	// Initialize record buffers
 	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
 	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
@@ -405,21 +408,38 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
 	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
 
-	{
-		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "DatabaseSnapshot::DatabaseSnapshot");
+	// Determine the backup state
+	int backup_state = backup_state_unknown;
 
-		// Release our own lock.
+	BackupManager* const bm = dbb->dbb_backup_manager;
+	if (bm && !bm->isShutDown())
+	{
+		BackupManager::StateReadGuard holder(tdbb);
+
+		switch (bm->getState())
+		{
+		case nbak_state_normal:
+			backup_state = backup_state_normal;
+			break;
+		case nbak_state_stalled:
+			backup_state = backup_state_stalled;
+			break;
+		case nbak_state_merge:
+			backup_state = backup_state_merge;
+			break;
+		}
+	}
+
+	{ // scope
+		Attachment::Checkout cout(attachment, FB_FUNCTION);
+		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
+
+		// Release our own lock
 		LCK_release(tdbb, dbb->dbb_monitor_lock);
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 
-		{ // scope for the RAII object
-
-			// Ensure we'll be dealing with a valid backup state inside the call below.
-			BackupManager::StateReadGuard holder(tdbb);
-
-			// Dump our own data
-			dumpData(tdbb);
-		}
+		// Dump our own data
+		dumpData(dbb, backup_state);
 	}
 
 	// Signal other processes to dump their data
@@ -445,9 +465,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dataPtr);
 
 	Reader reader(dataSize, data);
-
-	const Attachment* const attachment = tdbb->getAttachment();
-	fb_assert(attachment);
 
 	string databaseName(dbb->dbb_database_name.c_str());
 	ISC_systemToUtf8(databaseName);
@@ -713,13 +730,8 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 }
 
 
-void DatabaseSnapshot::dumpData(thread_db* tdbb)
+void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 {
-	fb_assert(tdbb);
-
-	Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
 	MemoryPool& pool = *dbb->dbb_permanent;
 
 	if (!dbb->dbb_monitoring_data)
@@ -733,54 +745,47 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	// Database information
 
-	putDatabase(record, dbb, writer, fb_utils::genUniqueId());
+	putDatabase(record, dbb, writer, fb_utils::genUniqueId(), backup_state);
 
 	// Attachment information
 
-	Attachment* const self_attachment = tdbb->getAttachment();
+	AttachmentsRefHolder attachments(pool);
 
-	if (self_attachment)
-		dumpAttachment(record, self_attachment, writer);
-
-	try
-	{
-		Attachment::Checkout attCout(self_attachment, FB_FUNCTION, true);
+	{ // scope
+		SyncLockGuard attGuard(&dbb->dbb_sync, SYNC_SHARED, FB_FUNCTION);
 
 		for (Attachment* attachment = dbb->dbb_attachments; attachment;
 			attachment = attachment->att_next)
 		{
-			if (attachment != self_attachment)
-			{
-				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
-				dumpAttachment(record, attachment, writer);
-			}
+			attachments.add(attachment->att_interface);
 		}
-
-		{ // scope
-			SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_SHARED, FB_FUNCTION);
-
-			for (Attachment* attachment = dbb->dbb_sys_attachments; attachment;
-				attachment = attachment->att_next)
-			{
-				Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
-				dumpAttachment(record, attachment, writer);
-			}
-		}
-
-		tdbb->setAttachment(self_attachment);
 	}
-	catch(const Exception&)
+
+	{ // scope
+		SyncLockGuard sysAttGuard(&dbb->dbb_sys_attach, SYNC_SHARED, FB_FUNCTION);
+
+		for (Attachment* attachment = dbb->dbb_sys_attachments; attachment;
+			attachment = attachment->att_next)
+		{
+			attachments.add(attachment->att_interface);
+		}
+	}
+
+	for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
 	{
-		tdbb->setAttachment(self_attachment);
-		throw;
+		JAttachment* const jAtt = *iter;
+		Attachment::SyncGuard attGuard(jAtt, FB_FUNCTION);
+		Attachment* const attachment = jAtt->getHandle();
+
+		if (attachment && attachment->att_user)
+			dumpAttachment(record, attachment, writer);
 	}
 }
 
 void DatabaseSnapshot::dumpAttachment(DumpRecord& record, const Attachment* attachment,
 									  Writer& writer)
 {
-	if (!putAttachment(record, attachment, writer, fb_utils::genUniqueId()))
-		return;
+	putAttachment(record, attachment, writer, fb_utils::genUniqueId());
 
 	jrd_tra* transaction = NULL;
 	jrd_req* request = NULL;
@@ -837,7 +842,7 @@ SINT64 DatabaseSnapshot::getGlobalId(int value)
 
 
 void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
-								   Writer& writer, int stat_id)
+								   Writer& writer, int stat_id, int backup_state)
 {
 	fb_assert(database);
 
@@ -873,21 +878,13 @@ void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
 
 	// shutdown mode
 	if (database->dbb_ast_flags & DBB_shutdown_full)
-	{
 		temp = shut_mode_full;
-	}
 	else if (database->dbb_ast_flags & DBB_shutdown_single)
-	{
 		temp = shut_mode_single;
-	}
 	else if (database->dbb_ast_flags & DBB_shutdown)
-	{
 		temp = shut_mode_multi;
-	}
 	else
-	{
 		temp = shut_mode_online;
-	}
 	record.storeInteger(f_mon_db_shut_mode, temp);
 
 	// sweep interval
@@ -905,25 +902,8 @@ void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
 	record.storeTimestamp(f_mon_db_created, database->dbb_creation_date);
 	// database size
 	record.storeInteger(f_mon_db_pages, PageSpace::actAlloc(database));
-
-	// database state
-	temp = backup_state_unknown;
-	if (database->dbb_backup_manager)
-	{
-		switch (database->dbb_backup_manager->getState())
-		{
-		case nbak_state_normal:
-			temp = backup_state_normal;
-			break;
-		case nbak_state_stalled:
-			temp = backup_state_stalled;
-			break;
-		case nbak_state_merge:
-			temp = backup_state_merge;
-			break;
-		}
-	}
-	record.storeInteger(f_mon_db_backup_state, temp);
+	// database backup state
+	record.storeInteger(f_mon_db_backup_state, backup_state);
 
 	// crypt thread status
 	if (database->dbb_crypto_manager)
@@ -951,13 +931,10 @@ void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
 }
 
 
-bool DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* attachment,
+void DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* attachment,
 									 Writer& writer, int stat_id)
 {
-	fb_assert(attachment);
-
-	if (!attachment->att_user)
-		return false;
+	fb_assert(attachment && attachment->att_user);
 
 	record.reset(rel_mon_attachments);
 
@@ -1034,8 +1011,6 @@ bool DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* 
 
 	// context vars
 	putContextVars(record, attachment->att_context_vars, writer, attachment->att_attachment_id, true);
-
-	return true;
 }
 
 

@@ -35,6 +35,8 @@
 
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/classes/SyncObject.h"
+#include "../common/classes/array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
@@ -216,6 +218,27 @@ public:
 		Firebird::Mutex& m_mutex;
 	};
 
+	class CheckoutSyncGuard
+	{
+	public:
+		CheckoutSyncGuard(Attachment* att, Firebird::SyncObject& sync, Firebird::SyncType type, const char* f)
+			: m_sync(&sync, f)
+		{
+			if (!m_sync.lockConditional(type, f))
+			{
+				Checkout attCout(att, f);
+				m_sync.lock(type);
+			}
+		}
+
+	private:
+		// copying is prohibited
+		CheckoutSyncGuard(const CheckoutSyncGuard&);
+		CheckoutSyncGuard& operator=(const CheckoutSyncGuard&);
+
+		Firebird::Sync m_sync;
+	};
+
 public:
 	static Attachment* create(Database* dbb);
 	static void destroy(Attachment* const attachment);
@@ -386,6 +409,97 @@ inline void Attachment::setSysTransaction(jrd_tra* trans)
 {
 	att_sys_transaction = trans;
 }
+
+// This class holds references to all attachments it contains
+
+class AttachmentsRefHolder
+{
+	friend class Iterator;
+
+public:
+	class Iterator
+	{
+	public:
+		explicit Iterator(AttachmentsRefHolder& list)
+			: m_list(list), m_index(0)
+		{}
+
+		JAttachment* operator*()
+		{
+			if (m_index < m_list.m_attachments.getCount())
+				return m_list.m_attachments[m_index];
+
+			return NULL;
+		}
+
+		void operator++()
+		{
+			m_index++;
+		}
+
+		void remove()
+		{
+			if (m_index < m_list.m_attachments.getCount())
+			{
+				AttachmentsRefHolder::debugHelper(FB_FUNCTION);
+				m_list.m_attachments[m_index]->release();
+				m_list.m_attachments.remove(m_index);
+			}
+		}
+
+	private:
+		// copying is prohibited
+		Iterator(const Iterator&);
+		Iterator& operator=(const Iterator&);
+
+		AttachmentsRefHolder& m_list;
+		size_t m_index;
+	};
+
+	explicit AttachmentsRefHolder(MemoryPool& p)
+		: m_attachments(p)
+	{}
+
+	AttachmentsRefHolder& operator=(const AttachmentsRefHolder& other)
+	{
+		this->~AttachmentsRefHolder();
+
+		for (size_t i = 0; i < other.m_attachments.getCount(); i++)
+			add(other.m_attachments[i]);
+
+		return *this;
+	}
+
+	~AttachmentsRefHolder()
+	{
+		while (m_attachments.hasData())
+		{
+			debugHelper(FB_FUNCTION);
+			m_attachments.pop()->release();
+		}
+	}
+
+	void add(JAttachment* jAtt)
+	{
+		if (jAtt)
+		{
+			jAtt->addRef();
+			m_attachments.add(jAtt);
+		}
+	}
+
+	void remove(Iterator& iter)
+	{
+		iter.remove();
+	}
+
+private:
+	AttachmentsRefHolder(const AttachmentsRefHolder&);
+
+	static void debugHelper(const char* from);
+
+	Firebird::HalfStaticArray<JAttachment*, 128> m_attachments;
+};
 
 } // namespace Jrd
 

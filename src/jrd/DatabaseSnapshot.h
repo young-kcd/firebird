@@ -345,13 +345,13 @@ protected:
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 
-	static void dumpData(thread_db*);
+	static void dumpData(Database*, int);
 	static void dumpAttachment(DumpRecord&, const Attachment*, Writer&);
 
 	static SINT64 getGlobalId(int);
 
-	static void putDatabase(DumpRecord&, const Database*, Writer&, int);
-	static bool putAttachment(DumpRecord&, const Attachment*, Writer&, int);
+	static void putDatabase(DumpRecord&, const Database*, Writer&, int, int);
+	static void putAttachment(DumpRecord&, const Attachment*, Writer&, int);
 	static void putTransaction(DumpRecord&, const jrd_tra*, Writer&, int);
 	static void putRequest(DumpRecord&, const jrd_req*, Writer&, int);
 	static void putCall(DumpRecord&, const jrd_req*, Writer&, int);

@@ -5130,11 +5130,11 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	if (!tdbb->checkCancelState(false))
 	{
-		Jrd::Attachment::Checkout cout(att, FB_FUNCTION);
+		Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION);
 		THREAD_YIELD();
 	}
 
@@ -5163,7 +5163,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	// Enable signal handler for the monitoring stuff
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
-		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "JRD_reschedule");
+		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
+											   SYNC_EXCLUSIVE, FB_FUNCTION);
+
 		if (dbb->dbb_ast_flags & DBB_monitor_off)
 		{
 			dbb->dbb_ast_flags &= ~DBB_monitor_off;
@@ -5280,7 +5282,8 @@ static void check_database(thread_db* tdbb, bool async)
 
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
-		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "check_database");
+		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
+											   SYNC_EXCLUSIVE, FB_FUNCTION);
 
 		if (dbb->dbb_ast_flags & DBB_monitor_off)
 		{
@@ -7091,35 +7094,16 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStat
 
 namespace
 {
-	class AttQueue : public HalfStaticArray<JAttachment*, 128>
+	bool shutdownAttachments(AttachmentsRefHolder* arg)
 	{
-	public:
-		explicit AttQueue(MemoryPool& p)
-			: HalfStaticArray<JAttachment*, 128>(p)
-		{ }
-
-		~AttQueue()
-		{
-			RefDeb(DEB_RLS_JATT, FB_FUNCTION);
-			// Release interfaces
-			while (hasData())
-			{
-				pop()->release();
-			}
-		}
-	};
-
-	bool shutdownAttachments(AttQueue* arg)
-	{
-		AutoPtr<AttQueue> queue(arg);
-		AttQueue& attachments = *arg;
+		AutoPtr<AttachmentsRefHolder> queue(arg);
+		AttachmentsRefHolder& attachments = *arg;
 		bool success = true;
 
 		// Set terminate flag for all attachments
-		unsigned i;
-		for (i = 0; i < attachments.getCount(); ++i)
+		for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
 		{
-			JAttachment* jAtt = attachments[i];
+			JAttachment* const jAtt = *iter;
 
 			MutexLockGuard guard(*(jAtt->getMutex(true)), FB_FUNCTION);
 			Attachment* attachment = jAtt->getHandle();
@@ -7129,9 +7113,9 @@ namespace
 		}
 
 		// Purge all attachments
-		for (i = 0; i < attachments.getCount(); ++i)
+		for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
 		{
-			JAttachment* jAtt = attachments[i];
+			JAttachment* const jAtt = *iter;
 
 			MutexLockGuard guard(*(jAtt->getMutex()), FB_FUNCTION);
 			Attachment* attachment = jAtt->getHandle();
@@ -7175,7 +7159,7 @@ namespace
 				return 0;
 			}
 
-			shutdownAttachments(static_cast<AttQueue*>(arg));
+			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg));
 		}
 		catch(const Exception& ex)
 		{
@@ -7205,7 +7189,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 	bool success = true;
 	MemoryPool& pool = *getDefaultMemoryPool();
-	AttQueue* attachments = FB_NEW(pool) AttQueue(pool);
+	AttachmentsRefHolder* const attachments = FB_NEW(pool) AttachmentsRefHolder(pool);
 
 	try
 	{
@@ -7222,14 +7206,8 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 					Sync dbbGuard(&dbb->dbb_sync, FB_FUNCTION);
 					dbbGuard.lock(SYNC_EXCLUSIVE);
 
-					for (Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
-					{
-						if (att->att_interface)
-						{
-							att->att_interface->addRef();
-							attachments->push(att->att_interface);
-						}
-					}
+					for (const Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
+						attachments->add(att->att_interface);
 				}
 			}
 			// No need in databases_mutex any more
@@ -7778,7 +7756,7 @@ void JRD_shutdown_attachments(Database* dbb)
 	try
 	{
 		MemoryPool& pool = *getDefaultMemoryPool();
-		AttQueue* queue = FB_NEW(pool) AttQueue(pool);
+		AttachmentsRefHolder* queue = FB_NEW(pool) AttachmentsRefHolder(pool);
 
 		{	// scope
 			Sync guard(&dbb->dbb_sync, "JRD_shutdown_attachments");
