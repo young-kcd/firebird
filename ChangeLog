@@ -1,3 +1,18 @@
+ 2013-09-20 08:28  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+Somewhat hackery fix for CORE-4201: Computed field returns null value inside BI trigger.
+A better solution requires major changes and will be investigated in trunk later.
+
+ 2013-09-20 07:06  dimitr 
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/Cursor.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/WindowedStream.cpp
+Fixed CORE-4229: Bi-directional cursor is not positioned by the first call of FETCH LAST.
+
  2013-09-18 18:38  hvlad 
    M src/jrd/Database.cpp
 Correction for fix for bug CORE-4134 : Race condition when auto-sweep is started
