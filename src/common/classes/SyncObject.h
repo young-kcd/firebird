@@ -167,6 +167,26 @@ public:
 		lock(type);
 	}
 
+	bool lockConditional(SyncType type)
+	{
+		request = type;
+
+		if (!syncObject->lockConditional(type, where))
+		{
+			request = SYNC_NONE;
+			return false;
+		}
+
+		state = type;
+		return true;
+	}
+
+	bool lockConditional(SyncType type, const char* fromWhere)
+	{
+		where = fromWhere;
+		return lockConditional(type);
+	}
+
 	void unlock()
 	{
 		fb_assert(state != SYNC_NONE);
