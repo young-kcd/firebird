@@ -91,8 +91,8 @@ public:
 
 	bool operator==(const char* s) const { return compare(s) == 0; }
 	bool operator!=(const char* s) const { return compare(s) != 0; }
-	bool operator==(const AbstractString& s) const { return compare(s.c_str()) == 0; }
-	bool operator!=(const AbstractString& s) const { return compare(s.c_str()) != 0; }
+	bool operator==(const AbstractString& s) const { return compare(s) == 0; }
+	bool operator!=(const AbstractString& s) const { return compare(s) != 0; }
 	bool operator==(const MetaName& m) const { return compare(m) == 0; }
 	bool operator!=(const MetaName& m) const { return compare(m) != 0; }
 	bool operator<=(const MetaName& m) const { return compare(m) <= 0; }
