@@ -1406,6 +1406,16 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	dsqlFunction->udf_flags = UDF_subfunc;
 	dsqlFunction->udf_name.identifier = name;
 
+	fb_assert(dsqlBlock->returns.getCount() == 1);
+	const TypeClause* returnType = dsqlBlock->returns[0]->type;
+	dsqlFunction->udf_dtype = returnType->dtype;
+	dsqlFunction->udf_scale = returnType->scale;
+	dsqlFunction->udf_sub_type = returnType->subType;
+	dsqlFunction->udf_length = returnType->length;
+	dsqlFunction->udf_character_set_id = returnType->charSetId;
+
+	// ASF: It seems not required to set dsqlFunction->udf_arguments for now.
+
 	const Array<NestConst<ParameterClause> >& paramArray = dsqlBlock->parameters;
 	bool defaultFound = false;
 
