@@ -1,3 +1,7 @@
+ 2013-09-22 11:59  hvlad 
+   M src/dsql/ddl.cpp
+Fixed bug CORE-4233 : In PSQL modules with declared cursors engine could assign value to the wrong variable
+
  2013-09-20 08:27  dimitr 
    M src/jrd/evl.cpp
    M src/jrd/exe.cpp
