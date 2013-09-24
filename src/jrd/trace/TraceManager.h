@@ -184,7 +184,7 @@ private:
 		TracePlugin* plugin;
 		ULONG ses_id;
 
-		static ULONG generate(const void*, const SessionInfo& item)
+		static ULONG generate(const SessionInfo& item)
 		{ return item.ses_id; }
 	};
 	class Sessions : public Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, ULONG, SessionInfo>

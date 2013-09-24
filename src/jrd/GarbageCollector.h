@@ -77,7 +77,7 @@ private:
 			return m_relID;
 		}
 
-		static inline const USHORT generate(void const*, const RelationData* item)
+		static inline const USHORT generate(const RelationData* item)
 		{
 			return item->m_relID;
 		}

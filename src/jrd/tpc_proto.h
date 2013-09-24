@@ -56,7 +56,7 @@ private:
 		TraNumber tpc_base;			// id of first transaction in this block
 		UCHAR tpc_transactions[1];	// two bits per transaction
 
-		static const TraNumber generate(const void*, const TxPage* item)
+		static const TraNumber generate(const TxPage* item)
 		{
 			return item->tpc_base;
 		}

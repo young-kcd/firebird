@@ -149,6 +149,10 @@ template <typename P>
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
+		static const Pair_first_type& generate(const P& item)
+		{
+			return item.first;
+		}
 		static const Pair_first_type& generate(const void* /*sender*/, const P& item)
 		{
 			return item.first;
@@ -160,6 +164,10 @@ template <typename P>
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
+		static const Pair_first_type* generate(const P* item)
+		{
+			return &item->first;
+		}
 		static const Pair_first_type* generate(const void* /*sender*/, const P* item)
 		{
 			return &item->first;
@@ -171,6 +179,10 @@ template <typename P>
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
+		static const Pair_first_type& generate(const P* item)
+		{
+			return item->first;
+		}
 		static const Pair_first_type& generate(const void* /*sender*/, const P* item)
 		{
 			return item->first;

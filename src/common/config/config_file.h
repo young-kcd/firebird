@@ -90,7 +90,7 @@ public:
 		Firebird::RefPtr<ConfigFile> sub;
 		unsigned int line;
 
-		static const KeyType* generate(const void* /*sender*/, const Parameter* item)
+		static const KeyType* generate(const Parameter* item)
 		{
 			return &item->name;
 		}

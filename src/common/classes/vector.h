@@ -140,6 +140,7 @@ class DefaultKeyValue
 {
 public:
 	static const T& generate(const void* /*sender*/, const T& item) { return item; }
+	static const T& generate(const T& item) { return item; }
 };
 
 // Fast sorted array of simple objects

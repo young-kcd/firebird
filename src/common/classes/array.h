@@ -498,14 +498,14 @@ public:
 		while (highBound > lowBound)
 		{
 			const size_t temp = (highBound + lowBound) >> 1;
-			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
+			if (Cmp::greaterThan(item, KeyOfValue::generate(this->data[temp])))
 				lowBound = temp + 1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
 		return highBound != this->count &&
-			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
+			!Cmp::greaterThan(KeyOfValue::generate(this->data[lowBound]), item);
 	}
 
 	bool exist(const Key& item) const
@@ -518,7 +518,7 @@ public:
 	{
 		size_t pos;
 		if (sortMode == FB_ARRAY_SORT_WHEN_ADD)
-			find(KeyOfValue::generate(this, item), pos);
+			find(KeyOfValue::generate(item), pos);
 		else
 		{
 			sorted = false;
@@ -542,7 +542,7 @@ public:
 		if (sorted)
 			return;
 
-		qsort(this->begin(), this->getCount(), sizeof(Value), compar);
+		qsort(this->begin(), this->getCount(), sizeof(Value), compare);
 		sorted = true;
 	}
 
@@ -550,17 +550,10 @@ private:
 	int sortMode;
 	bool sorted;
 
-	static int compar(const void* a, const void* b)
+	static int compare(const void* a, const void* b)
 	{
-		// Calling generate() with NULL argument looks dangerous and wrong.
-		// Correct solution is to use qsort_s/qsort_r functions instead qsort.
-		// But in our sources the only place using 'sender' in generate() is BPlusTree
-		// and not with SortedArray but with SortedVector. Using qsort_r/s is overhead for us.
-		// As an additional disaster there are 2 incompatible (BSD/glibc) clones of qsort_r.
-		// It's also possible to change SortedArray API without loosing functionality.
-		// I suppose we can do a choice a bit later. AP-2013.
-		const Key& first(KeyOfValue::generate(NULL, *reinterpret_cast<const Value*>(a)));
-		const Key& second(KeyOfValue::generate(NULL, *reinterpret_cast<const Value*>(b)));
+		const Key& first(KeyOfValue::generate(*reinterpret_cast<const Value*>(a)));
+		const Key& second(KeyOfValue::generate(*reinterpret_cast<const Value*>(b)));
 
 		if (Cmp::greaterThan(first, second))
 			return 1;

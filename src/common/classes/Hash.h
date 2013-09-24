@@ -201,7 +201,7 @@ namespace Firebird
 	public:
 		bool add(C* value)
 		{
-			Entry** e = locate(KeyOfValue::generate(this, *value));
+			Entry** e = locate(KeyOfValue::generate(*value));
 			if (*e)
 			{
 				return false;	// sorry, duplicate

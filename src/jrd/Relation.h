@@ -49,7 +49,7 @@ public:
 	{
 	}
 
-	static USHORT generate(const void*, const ViewContext* vc)
+	static USHORT generate(const ViewContext* vc)
 	{
 		return vc->vcx_context;
 	}
@@ -97,7 +97,7 @@ public:
 
 	void free(RelationPages*& nextFree);
 
-	static inline ULONG generate(const void*, const RelationPages* item)
+	static inline ULONG generate(const RelationPages* item)
 	{
 		return item->rel_instance_id;
 	}

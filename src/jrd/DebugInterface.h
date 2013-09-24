@@ -44,7 +44,7 @@ public:
 	ULONG mbs_src_line;
 	ULONG mbs_src_col;
 
-	static ULONG generate(const void*, const MapBlrToSrcItem& Item)
+	static ULONG generate(const MapBlrToSrcItem& Item)
 	{ return Item.mbs_offset; }
 };
 

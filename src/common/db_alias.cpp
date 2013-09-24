@@ -72,7 +72,7 @@ namespace
 	template <typename T>
 	struct PathHash
 	{
-		static const PathName& generate(const void* /*sender*/, const T& item)
+		static const PathName& generate(const T& item)
 		{
 			return item.name;
 		}

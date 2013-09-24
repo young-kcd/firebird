@@ -479,7 +479,7 @@ struct TimerEntry
 	TimerDelay fireTime;
 	ITimer* timer;
 
-	static const TimerDelay generate(const void* /*sender*/, const TimerEntry& item) { return item.fireTime; }
+	static const TimerDelay generate(const TimerEntry& item) { return item.fireTime; }
 	static THREAD_ENTRY_DECLARE timeThread(THREAD_ENTRY_PARAM);
 
 	static void init()

@@ -97,7 +97,7 @@ public:
 		return (pageSpaceID >= TEMP_PAGE_SPACE);
 	}
 
-	static inline SLONG generate(const void* , const PageSpace* Item)
+	static inline SLONG generate(const PageSpace* Item)
 	{
 		return Item->pageSpaceID;
 	}

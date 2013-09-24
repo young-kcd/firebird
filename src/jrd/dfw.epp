@@ -333,7 +333,7 @@ public:
 
 	DfwSavePoint* get() { return this; }
 
-	static SLONG generate(const void* /*sender*/, const DfwSavePoint& item)
+	static SLONG generate(const DfwSavePoint& item)
 	{
 		return item.dfw_sav_number;
 	}

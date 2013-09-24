@@ -124,7 +124,7 @@ public:
 		: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt)
 	{}
 
-	static const string* generate(const void*, const FailedLogin* f)
+	static const string* generate(const FailedLogin* f)
 	{
 		return &f->login;
 	}

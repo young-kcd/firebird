@@ -138,7 +138,7 @@ namespace
 		explicit RunSort(run_control* irun) : run(irun) {}
 		RunSort() : run(NULL) {}
 
-		static FB_UINT64 generate(const void*, const RunSort& item)
+		static FB_UINT64 generate(const RunSort& item)
 		{
 			return item.run->run_seek;
 		}

@@ -360,7 +360,7 @@ namespace Firebird
 	class ObjectKeyValue
 	{
 	public:
-		static const T& generate(const void* /*sender*/, const T* item) { return item; }
+		static const T& generate(const T* item) { return item; }
 	};
 
 	// Template for default value comparator
