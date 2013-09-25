@@ -1,3 +1,9 @@
+ 2013-09-24 12:24  hvlad 
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/pag.cpp
+Additional fix for bug CORE-2648 : Nbackup's delta file ignored Forced Writes database setting
+
  2013-09-22 11:59  hvlad 
    M src/dsql/ddl.cpp
 Fixed bug CORE-4233 : In PSQL modules with declared cursors engine could assign value to the wrong variable
