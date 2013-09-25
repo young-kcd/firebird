@@ -3,12 +3,12 @@ ifeq ($(NDK),)
 $(error Must export NDK location before building for Android)
 endif
 NDK_ROOT:=$(NDK)
-#NDK_LOG:=1
-
+NDK_LOG:=1
 include $(NDK)/build/core/init.mk
+NDK_TOOLCHAIN_VERSION:= 4.6
 
 CROSS_PLATFORM:=$(NDK)/platforms/android-9/arch-arm
-CROSS_PREFIX:=$(NDK)/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/arm-linux-androideabi-
+CROSS_PREFIX:=$(NDK)/toolchains/arm-linux-androideabi-$(NDK_TOOLCHAIN_VERSION)/prebuilt/$(HOST_TAG64)/bin/arm-linux-androideabi-
 
 CXX:=$(CROSS_PREFIX)g++
 CC:=$(CROSS_PREFIX)gcc
@@ -33,7 +33,7 @@ DEV_FLAGS=$(COMMON_FLAGS) $(WARN_FLAGS)
 
 CROSS_CONFIG=android.arme
 
-LDFLAGS += --sysroot=$(CROSS_PLATFORM) -L$(NDK)/sources/cxx-stl/gnu-libstdc++/4.6/libs/armeabi
+LDFLAGS += --sysroot=$(CROSS_PLATFORM) -L$(NDK)/sources/cxx-stl/gnu-libstdc++/$(NDK_TOOLCHAIN_VERSION)/libs/armeabi
 DroidLibs := -lm -ldl -lsupc++
 
 LINK_LIBS = $(DroidLibs)
