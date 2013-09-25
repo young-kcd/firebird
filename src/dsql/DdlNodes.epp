@@ -5536,7 +5536,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (clause->identity)
 		{
 			dsc desc;
-			MET_get_domain(tdbb, fieldDefinition.fieldSource, &desc, NULL);
+			MET_get_domain(tdbb, *tdbb->getDefaultPool(), fieldDefinition.fieldSource, &desc, NULL);
 
 			if (!desc.isExact() || desc.dsc_scale != 0)
 			{

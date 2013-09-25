@@ -480,7 +480,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 
 			FieldInfo fieldInfo;
 			bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
-			MET_get_domain(tdbb, *name, desc, (exist ? NULL : &fieldInfo));
+			MET_get_domain(tdbb, csb->csb_pool, *name, desc, (exist ? NULL : &fieldInfo));
 
 			if (!exist)
 				csb->csb_map_field_info.put(namePair, fieldInfo);
@@ -541,7 +541,8 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 
 			FieldInfo fieldInfo;
 			bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
-			MET_get_relation_field(tdbb, *relationName, *fieldName, desc, (exist ? NULL : &fieldInfo));
+			MET_get_relation_field(tdbb, csb->csb_pool, *relationName, *fieldName, desc,
+				(exist ? NULL : &fieldInfo));
 
 			if (!exist)
 				csb->csb_map_field_info.put(namePair, fieldInfo);

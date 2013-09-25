@@ -4576,7 +4576,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		}
 
 		DomainValidationNode* domNode = FB_NEW(pool) DomainValidationNode(pool);
-		MET_get_domain(tdbb, csb->csb_domain_validation, &domNode->domDesc, NULL);
+		MET_get_domain(tdbb, csb->csb_pool, csb->csb_domain_validation, &domNode->domDesc, NULL);
 
 		// Cast to the target type - see CORE-3545.
 		CastNode* castNode = FB_NEW(pool) CastNode(pool);

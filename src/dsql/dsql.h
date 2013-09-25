@@ -211,7 +211,7 @@ public:
 		  typeOfName(pool),
 		  collate(pool, aCollate),
 		  charSet(pool),
-		  subTypeName(NULL),
+		  subTypeName(pool, NULL),
 		  flags(0),
 		  elementDtype(0),
 		  elementLength(0),

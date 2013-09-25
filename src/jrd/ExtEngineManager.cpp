@@ -91,7 +91,8 @@ namespace
 
 					FieldInfo fieldInfo;
 					bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
-					MET_get_domain(tdbb, param->prm_field_source, desc, (exist ? NULL : &fieldInfo));
+					MET_get_domain(tdbb, csb->csb_pool, param->prm_field_source, desc,
+						(exist ? NULL : &fieldInfo));
 
 					if (!exist)
 						csb->csb_map_field_info.put(namePair, fieldInfo);
