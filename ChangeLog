@@ -1,3 +1,53 @@
+ 2013-09-24 08:46  alexpeshkoff 
+   M src/common/classes/Hash.h
+   M src/common/classes/array.h
+   M src/common/classes/fb_pair.h
+   M src/common/classes/objects_array.h
+   M src/common/classes/vector.h
+   M src/common/config/config_file.h
+   M src/common/db_alias.cpp
+   M src/jrd/DebugInterface.h
+   M src/jrd/GarbageCollector.h
+   M src/jrd/Relation.h
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/dfw.epp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/os/win32/win9x_nt.h
+   M src/jrd/pag.h
+   M src/jrd/rpb_chain.h
+   M src/jrd/sort.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/trace/TraceManager.h
+   M src/remote/server/server.cpp
+   M src/yvalve/MasterImplementation.cpp
+Cleanup - avoid unneeded generate's argument in SortedArray and Hash
+
+ 2013-09-23 18:50  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Fixed CORE-4234 - Error with IF (subfunc()) when subfunc returns a boolean.
+
+ 2013-09-23 12:27  dimitr 
+   M src/common/classes/MetaName.h
+Misc.
+
+ 2013-09-22 16:10  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/jrd.cpp
+Attempted to fix CORE-4235: Deadlock is possible while accessing the monitoring tables under concurrent load.
+Refactored the list of reference counted attachments to be useful in other cases.
+Some minor adjustments in the monitoring code.
+
+ 2013-09-22 15:36  dimitr 
+   M src/common/classes/SyncObject.h
+Added conditional locking option to Firebird::Sync.
+
+ 2013-09-22 15:35  dimitr 
+   M src/jrd/cch.cpp
+Unconditionally flush the page cache to disk if FLUSH_ALL / FLUSH_FINI modes are used and FW=OFF. This puts a little bit more consistency and favors explicit flushes over implicit ones (e.g. when database is detached and its file is closed).
+
  2013-09-20 08:28  dimitr 
    M src/dsql/ExprNodes.cpp
    M src/dsql/StmtNodes.cpp
