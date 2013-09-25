@@ -8,7 +8,7 @@ NDK_ROOT:=$(NDK)
 include $(NDK)/build/core/init.mk
 
 CROSS_PLATFORM:=$(NDK)/platforms/android-9/arch-arm
-CROSS_PREFIX:=$(NDK)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-
+CROSS_PREFIX:=$(NDK)/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/arm-linux-androideabi-
 
 CXX:=$(CROSS_PREFIX)g++
 CC:=$(CROSS_PREFIX)gcc
@@ -33,7 +33,7 @@ DEV_FLAGS=$(COMMON_FLAGS) $(WARN_FLAGS)
 
 CROSS_CONFIG=android.arme
 
-LDFLAGS += --sysroot=$(CROSS_PLATFORM) -L$(NDK)/sources/cxx-stl/gnu-libstdc++/libs/armeabi
+LDFLAGS += --sysroot=$(CROSS_PLATFORM) -L$(NDK)/sources/cxx-stl/gnu-libstdc++/4.6/libs/armeabi
 DroidLibs := -lm -ldl -lsupc++
 
 LINK_LIBS = $(DroidLibs)
