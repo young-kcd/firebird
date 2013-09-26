@@ -309,7 +309,7 @@
 #define HAVE_PTHREAD_KEY_CREATE 1
 
 /* Define to 1 if you have the `pthread_mutexattr_setprotocol' function. */
-#define HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL 1
+/* undef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL */
 
 /* Define to 1 if you have the `pthread_mutexattr_setrobust_np' function. */
 /* #undef HAVE_PTHREAD_MUTEXATTR_SETROBUST_NP */
