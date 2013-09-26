@@ -1,3 +1,21 @@
+ 2013-09-25 15:49  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/dsql.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+Fixed CORE-4145 - Memory leak when preparing Execute Block which uses domains.
+
+ 2013-09-25 15:01  mapopa 
+   M builds/posix/make.android.arme
+make the paths a little more portable between versions 
+
+ 2013-09-25 12:57  mapopa 
+   M builds/posix/make.android.arme
+make it compilable with android ndk-r9
+
  2013-09-24 08:46  alexpeshkoff 
    M src/common/classes/Hash.h
    M src/common/classes/array.h
