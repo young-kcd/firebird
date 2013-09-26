@@ -377,7 +377,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 
 			FieldInfo fieldInfo;
 			bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
-			MET_get_domain(tdbb, *name, desc, (exist ? NULL : &fieldInfo));
+			MET_get_domain(tdbb, csb->csb_pool, *name, desc, (exist ? NULL : &fieldInfo));
 
 			if (!exist)
 				csb->csb_map_field_info.put(namePair, fieldInfo);
@@ -440,7 +440,8 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 
 			FieldInfo fieldInfo;
 			bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
-			MET_get_relation_field(tdbb, *relationName, *fieldName, desc, (exist ? NULL : &fieldInfo));
+			MET_get_relation_field(tdbb, csb->csb_pool, *relationName, *fieldName, desc,
+				(exist ? NULL : &fieldInfo));
 
 			if (!exist)
 				csb->csb_map_field_info.put(namePair, fieldInfo);
@@ -1289,7 +1290,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		node->nod_count = 0;
 
 		dsc* desc = (dsc*) (node->nod_arg + e_domval_desc);
-		MET_get_domain(tdbb, csb->csb_domain_validation, desc, NULL);
+		MET_get_domain(tdbb, csb->csb_pool, csb->csb_domain_validation, desc, NULL);
 
 		return node;
 	}

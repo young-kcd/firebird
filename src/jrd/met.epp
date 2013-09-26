@@ -178,7 +178,8 @@ static void post_used_procedures(trig_vec* vector)
 }
 
 
-void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, FieldInfo* fieldInfo)
+void MET_get_domain(thread_db* tdbb, MemoryPool& csbPool, const Firebird::MetaName& name, dsc* desc,
+	FieldInfo* fieldInfo)
 {
 /**************************************
  *
@@ -216,25 +217,17 @@ void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, 
 			{
 				fieldInfo->nullable = FLD.RDB$NULL_FLAG.NULL || FLD.RDB$NULL_FLAG == 0;
 
-				MemoryPool* csb_pool = dbb->createPool();
-				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-				try
-				{
-					if (FLD.RDB$DEFAULT_VALUE.NULL)
-						fieldInfo->defaultValue = NULL;
-					else
-						fieldInfo->defaultValue = parse_field_blr(tdbb, &FLD.RDB$DEFAULT_VALUE);
+				Jrd::ContextPoolHolder context(tdbb, &csbPool);
 
-					if (FLD.RDB$VALIDATION_BLR.NULL)
-						fieldInfo->validation = NULL;
-					else
-						fieldInfo->validation = parse_field_blr(tdbb, &FLD.RDB$VALIDATION_BLR, name);
-				}
-				catch (const Firebird::Exception&)
-				{
-					dbb->deletePool(csb_pool);
-					throw;
-				}
+				if (FLD.RDB$DEFAULT_VALUE.NULL)
+					fieldInfo->defaultValue = NULL;
+				else
+					fieldInfo->defaultValue = parse_field_blr(tdbb, &FLD.RDB$DEFAULT_VALUE);
+
+				if (FLD.RDB$VALIDATION_BLR.NULL)
+					fieldInfo->validation = NULL;
+				else
+					fieldInfo->validation = parse_field_blr(tdbb, &FLD.RDB$VALIDATION_BLR, name);
 			}
 		}
 
@@ -250,11 +243,9 @@ void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, 
 }
 
 
-Firebird::MetaName MET_get_relation_field(thread_db* tdbb,
-										  const Firebird::MetaName& relationName,
-										  const Firebird::MetaName& fieldName,
-										  dsc* desc,
-										  FieldInfo* fieldInfo)
+Firebird::MetaName MET_get_relation_field(thread_db* tdbb, MemoryPool& csbPool,
+	const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName, dsc* desc,
+	FieldInfo* fieldInfo)
 {
 /**************************************
  *
@@ -300,32 +291,23 @@ Firebird::MetaName MET_get_relation_field(thread_db* tdbb,
 				fieldInfo->nullable = RFL.RDB$NULL_FLAG.NULL ?
 					(FLD.RDB$NULL_FLAG.NULL || FLD.RDB$NULL_FLAG == 0) : RFL.RDB$NULL_FLAG == 0;
 
-				MemoryPool* csb_pool = dbb->createPool();
-				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-				try
-				{
-					bid* defaultId = NULL;
+				Jrd::ContextPoolHolder context(tdbb, &csbPool);
+				bid* defaultId = NULL;
 
-					if (!RFL.RDB$DEFAULT_VALUE.NULL)
-						defaultId = &RFL.RDB$DEFAULT_VALUE;
-					else if (!FLD.RDB$DEFAULT_VALUE.NULL)
-						defaultId = &FLD.RDB$DEFAULT_VALUE;
+				if (!RFL.RDB$DEFAULT_VALUE.NULL)
+					defaultId = &RFL.RDB$DEFAULT_VALUE;
+				else if (!FLD.RDB$DEFAULT_VALUE.NULL)
+					defaultId = &FLD.RDB$DEFAULT_VALUE;
 
-					if (defaultId)
-						fieldInfo->defaultValue = parse_field_blr(tdbb, defaultId);
-					else
-						fieldInfo->defaultValue = NULL;
+				if (defaultId)
+					fieldInfo->defaultValue = parse_field_blr(tdbb, defaultId);
+				else
+					fieldInfo->defaultValue = NULL;
 
-					if (!FLD.RDB$VALIDATION_BLR.NULL)
-						fieldInfo->validation = parse_field_blr(tdbb, &FLD.RDB$VALIDATION_BLR, RFL.RDB$FIELD_SOURCE);
-					else
-						fieldInfo->validation = NULL;
-				}
-				catch (const Firebird::Exception&)
-				{
-					dbb->deletePool(csb_pool);
-					throw;
-				}
+				if (!FLD.RDB$VALIDATION_BLR.NULL)
+					fieldInfo->validation = parse_field_blr(tdbb, &FLD.RDB$VALIDATION_BLR, RFL.RDB$FIELD_SOURCE);
+				else
+					fieldInfo->validation = NULL;
 			}
 		}
 
