@@ -1,3 +1,7 @@
+ 2013-09-26 07:42  alexpeshkoff 
+   M src/include/cross/android.arme
+This should help cross-compile for Android
+
  2013-09-25 15:49  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/ExprNodes.cpp
