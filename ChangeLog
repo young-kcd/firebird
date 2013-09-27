@@ -1,3 +1,9 @@
+ 2013-09-26 15:37  asfernandes 
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+Backport fix for CORE-4145 - Memory leak when preparing Execute Block which uses domains.
+
  2013-09-24 12:24  hvlad 
    M src/jrd/nbak.cpp
    M src/jrd/nbak.h
