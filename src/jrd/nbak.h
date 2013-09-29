@@ -261,6 +261,7 @@ public:
 	bool write_difference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
 	bool read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
 	void flush_difference();
+	void setForcedWrites(const bool forceWrite, const bool notUseFSCache);
 
 	void openDelta();
 	void closeDelta();

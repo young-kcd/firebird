@@ -241,9 +241,8 @@ void BackupManager::openDelta()
 
     if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
     {
-        PIO_force_write(diff_file,
-            database->dbb_flags & DBB_force_write,
-            database->dbb_flags & DBB_no_fs_cache);
+        setForcedWrites(database->dbb_flags & DBB_force_write,
+						database->dbb_flags & DBB_no_fs_cache);
     }
 }
 
@@ -292,9 +291,8 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		diff_file = PIO_create(database, diff_name, true, false, false);
 		if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 		{
-			PIO_force_write(diff_file, 
-				database->dbb_flags & DBB_force_write, 
-				database->dbb_flags & DBB_no_fs_cache);
+			setForcedWrites(database->dbb_flags & DBB_force_write, 
+							database->dbb_flags & DBB_no_fs_cache);
 		}
 #ifdef UNIX 
 		// adjust difference file access rights to make it match main DB ones
@@ -746,6 +744,12 @@ void BackupManager::flush_difference()
 {
 	if (diff_file)
 		PIO_flush(diff_file);
+}
+
+void BackupManager::setForcedWrites(const bool forceWrite, const bool notUseFSCache)
+{
+	if (diff_file)
+		PIO_force_write(diff_file, forceWrite, notUseFSCache);
 }
 
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
