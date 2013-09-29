@@ -1082,12 +1082,19 @@ void PAG_header(thread_db* tdbb, bool info)
 			(header->hdr_flags & hdr_force_write ? DBB_force_write : 0) |
 			(useFSCache ? 0 : DBB_no_fs_cache);
 
+		const bool forceWrite = dbb->dbb_flags & DBB_force_write;
+		const bool notUseFSCache = dbb->dbb_flags & DBB_no_fs_cache;
+
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		for (jrd_file* file = pageSpace->file; file; file = file->fil_next)
 		{
 			PIO_force_write(file,
-				(dbb->dbb_flags & DBB_force_write) && !(header->hdr_flags & hdr_read_only),
-				dbb->dbb_flags & DBB_no_fs_cache);
+				forceWrite && !(header->hdr_flags & hdr_read_only),
+				notUseFSCache);
+		}
+
+		if (dbb->dbb_backup_manager->getState() != nbak_state_normal) {
+			dbb->dbb_backup_manager->setForcedWrites(forceWrite, notUseFSCache);
 		}
 	}
 

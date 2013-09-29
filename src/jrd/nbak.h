@@ -397,6 +397,7 @@ public:
 	bool writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
 	bool readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
 	void flushDifference();
+	void setForcedWrites(const bool forceWrite, const bool notUseFSCache);
 
 	void shutdown(thread_db* tdbb);
 
