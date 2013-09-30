@@ -1,3 +1,9 @@
+ 2013-09-29 09:21  hvlad 
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/pag.cpp
+Backport additional fix for bug CORE-2648 : Nbackup's delta file ignored Forced Writes database setting
+
  2013-09-10 14:36  hvlad 
    M src/jrd/dyn_def.epp
 Fixed bug CORE-4214 : GTT should not reference permanent relation
