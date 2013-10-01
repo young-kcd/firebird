@@ -59,7 +59,6 @@
 #undef MEM_DEBUG
 #ifdef DEBUG_GDS_ALLOC
 #define MEM_DEBUG
-#define USE_VALGRIND
 #endif
 
 #ifdef USE_VALGRIND
