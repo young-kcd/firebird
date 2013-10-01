@@ -1,3 +1,9 @@
+ 2013-09-29 09:09  hvlad 
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/pag.cpp
+Additional fix for bug CORE-2648 : Nbackup's delta file ignored Forced Writes database setting
+
  2013-09-26 07:42  alexpeshkoff 
    M src/include/cross/android.arme
 This should help cross-compile for Android
