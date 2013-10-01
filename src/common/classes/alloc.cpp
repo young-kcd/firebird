@@ -197,7 +197,7 @@ void MemoryPool::cleanup()
 	}
 
 	while (extents_cache.getCount())
-		releaseRaw(extents_cache.pop(), DEFAULT_ALLOCATION, false);
+		releaseRaw(true, extents_cache.pop(), DEFAULT_ALLOCATION, false);
 
 	if (cache_mutex)
 	{
@@ -284,20 +284,20 @@ MemoryPool::~MemoryPool(void)
 	}
 	else
 	{
-		releaseRaw(freeObjects, ((threshold + roundingSize) / roundingSize) * sizeof(void*));
+		releaseRaw(pool_destroying, freeObjects, ((threshold + roundingSize) / roundingSize) * sizeof(void*));
 	}
 	freeObjects = NULL;
 
 	for (MemSmallHunk* hunk; hunk = smallHunks;)
 	{
 		smallHunks = hunk->nextHunk;
-		releaseRaw(hunk, minAllocation);
+		releaseRaw(pool_destroying, hunk, minAllocation);
 	}
 
 	for (MemBigHunk* hunk; hunk = bigHunks;)
 	{
 		bigHunks = hunk->nextHunk;
-		releaseRaw(hunk, hunk->length);
+		releaseRaw(pool_destroying, hunk, hunk->length);
 	}
 }
 
@@ -529,6 +529,8 @@ void* MemoryPool::allocate(size_t size
 #ifdef DEBUG_GDS_ALLOC
 	memory->fileName = fileName;
 	memory->lineNumber = line;
+#endif
+#ifdef MEM_DEBUG
 	memset(&memory->body, INIT_BYTE, size);
 	memset(&memory->body + size, GUARD_BYTE, memory->length - size - OFFSET(MemBlock*,body));
 #endif
@@ -692,7 +694,7 @@ void MemoryPool::releaseBlock(MemBlock* block) throw ()
 			{
 				*ptr = hunk->nextHunk;
 				decrement_mapping(hunk->length);
-				releaseRaw(hunk, hunk->length);
+				releaseRaw(pool_destroying, hunk, hunk->length);
 				return;
 			}
 		}
@@ -891,7 +893,7 @@ void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 	}
 }
 
-void MemoryPool::releaseRaw(void* block, size_t size, bool use_cache) throw ()
+void MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cache) throw ()
 {
 #ifndef USE_VALGRIND
 	if (use_cache && (size == DEFAULT_ALLOCATION))
@@ -914,7 +916,7 @@ void MemoryPool::releaseRaw(void* block, size_t size, bool use_cache) throw ()
 
 	// Employ extents delayed free logic only when pool is destroying.
 	// In normal case all blocks pass through queue of sufficent length by themselves
-	if (pool_destroying)
+	if (destroying)
 	{
 		// Synchronize delayed free queue using extents mutex
 		MutexLockGuard guard(*cache_mutex, "MemoryPool::releaseRaw");

@@ -59,6 +59,7 @@
 #undef MEM_DEBUG
 #ifdef DEBUG_GDS_ALLOC
 #define MEM_DEBUG
+#define USE_VALGRIND
 #endif
 
 #ifdef USE_VALGRIND
@@ -302,7 +303,7 @@ private:
 	void validateFreeList(void) throw ();
 	void validateBigBlock(MemBigObject* block) throw ();
 	static void release(void* block) throw ();
-	static void releaseRaw(void *block, size_t size, bool use_cache = true) throw ();
+	static void releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
 
 #ifdef USE_VALGRIND
 	// Circular FIFO buffer of read/write protected blocks pending free operation
