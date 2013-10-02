@@ -657,9 +657,9 @@ static const TEXT msg_table[VAL_MAX_ERROR][80] =
 {
 	"Page %"ULONGFORMAT" wrong type (expected %s encountered %s)",	// 0
 	"Checksum error on page %"ULONGFORMAT,
-	"Page "ULONGFORMAT" doubly allocated",
-	"Page "ULONGFORMAT" is used but marked free",
-	"Page "ULONGFORMAT" is an orphan",
+	"Page %"ULONGFORMAT" doubly allocated",
+	"Page %"ULONGFORMAT" is used but marked free",
+	"Page %"ULONGFORMAT" is an orphan",
 	"Warning: blob %"SQUADFORMAT" appears inconsistent",	// 5
 	"Blob %"SQUADFORMAT" is corrupt",
 	"Blob %"SQUADFORMAT" is truncated",
