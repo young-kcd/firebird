@@ -774,7 +774,8 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 	for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
 	{
 		JAttachment* const jAtt = *iter;
-		Attachment::SyncGuard attGuard(jAtt, FB_FUNCTION);
+		MutexLockGuard guard(*jAtt->getMutex(), FB_FUNCTION);
+
 		Attachment* const attachment = jAtt->getHandle();
 
 		if (attachment && attachment->att_user)
