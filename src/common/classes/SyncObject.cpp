@@ -224,11 +224,11 @@ void SyncObject::unlock(Sync* /*sync*/, SyncType type)
 		return;
 	}
 
+	exclusiveThread = NULL;
 	while (true)
 	{
 		const AtomicCounter::counter_type oldState = lockState;
 		const AtomicCounter::counter_type newState = (type == SYNC_SHARED) ? oldState - 1 : 0;
-		exclusiveThread = NULL;
 
 		FlushCache();
 
@@ -250,6 +250,7 @@ void SyncObject::downgrade(SyncType type)
 	fb_assert(exclusiveThread);
 	fb_assert(exclusiveThread == ThreadSync::findThread());
 
+	exclusiveThread = NULL;
 	FlushCache();
 
 	while (true)
