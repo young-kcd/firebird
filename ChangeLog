@@ -1,3 +1,12 @@
+ 2013-10-01 09:30  alexpeshkoff 
+   M src/common/classes/alloc.h
+Misc
+
+ 2013-10-01 08:08  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+Fixed build with valgrind
+
  2013-09-29 09:09  hvlad 
    M src/jrd/nbak.cpp
    M src/jrd/nbak.h
