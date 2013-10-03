@@ -1487,6 +1487,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 	Attachment* const attachment = transaction->getAttachment();
 
 	bool modified = false;
+	unsigned returnPos = 0;
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_funcs2, DYN_REQUESTS);
 
@@ -1553,8 +1554,8 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 						if (field->dtype == dtype_blob)
 						{
-							const size_t blobPosition = parameters.getCount() + 1;
-							if (blobPosition > MAX_UDF_ARGUMENTS)
+							returnPos = unsigned(parameters.getCount()) + 1;
+							if (returnPos > MAX_UDF_ARGUMENTS)
 							{
 								// External functions can not have more than 10 parameters
 								// Or 9 if the function returns a BLOB.
@@ -1564,7 +1565,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 									Arg::Gds(isc_extern_func_err));
 							}
 
-							FUN.RDB$RETURN_ARGUMENT = (SSHORT) blobPosition;
+							FUN.RDB$RETURN_ARGUMENT = (SSHORT) returnPos;
 						}
 						else
 							FUN.RDB$RETURN_ARGUMENT = 0;
@@ -1665,7 +1666,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		// and insert the new ones
 
 		if (returnType && returnType->type)
-			storeArgument(tdbb, dsqlScratch, transaction, 0, returnType, NULL);
+			storeArgument(tdbb, dsqlScratch, transaction, returnPos, returnType, NULL);
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{

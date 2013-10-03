@@ -1096,6 +1096,7 @@ udf_data_type
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_blob;
+			$$->length = sizeof(bid);
 		}
 	| CSTRING '(' pos_short_integer ')' charset_clause
 		{
