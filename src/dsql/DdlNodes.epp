@@ -1666,7 +1666,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		// and insert the new ones
 
 		if (returnType && returnType->type)
-			storeArgument(tdbb, dsqlScratch, transaction, returnPos, returnType, NULL);
+			storeArgument(tdbb, dsqlScratch, transaction, returnPos, true, returnType, NULL);
 
 		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
@@ -1677,7 +1677,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 			if (!comments.get(parameter->name, comment))
 				comment.clear();
 
-			storeArgument(tdbb, dsqlScratch, transaction, i + 1, parameter, &comment);
+			storeArgument(tdbb, dsqlScratch, transaction, i + 1, false, parameter, &comment);
 		}
 	}
 
@@ -1685,7 +1685,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 }
 
 void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, unsigned pos, ParameterClause* parameter,
+	jrd_tra* transaction, unsigned pos, bool returnArg, ParameterClause* parameter,
 	const bid* comment)
 {
 	Attachment* const attachment = transaction->getAttachment();
@@ -1828,8 +1828,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		{
 			ARG.RDB$MECHANISM.NULL = FALSE;
 
-			if (pos == 0 &&	// CVC: This is case of "returns <type> [by value|reference]"
-				type->dtype == dtype_blob)
+			if (returnArg &&	// CVC: This is case of "returns <type> [by value|reference]"
+				udfReturnPos == 0 && type->dtype == dtype_blob)
 			{
 				// CVC: I need to test returning blobs by descriptor before allowing the
 				// change there. For now, I ignore the return type specification.

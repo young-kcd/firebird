@@ -298,7 +298,7 @@ private:
 		bool secondPass, bool runTriggers);
 
 	void storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		unsigned pos, ParameterClause* parameter, const bid* comment);
+		unsigned pos, bool returnArg, ParameterClause* parameter, const bid* comment);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
 
