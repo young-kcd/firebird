@@ -1,3 +1,20 @@
+ 2013-10-03 15:38  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/parse.y
+Fixed CORE-4237 - FB3 vs FB2.5. Different metadata for UDF return argument.
+
+ 2013-10-02 12:41  hvlad 
+   M src/common/classes/SyncObject.cpp
+Fixed bug in downgrade()
+
+ 2013-10-02 12:39  hvlad 
+   M src/jrd/DatabaseSnapshot.cpp
+Lets not return isc_att_shutdown error when some of the attachments in monitoring snapshot are gone while dump was creating
+
+ 2013-10-02 08:19  hvlad 
+   M src/jrd/validation.cpp
+Fixed typo's in few validation messages
+
  2013-10-01 09:30  alexpeshkoff 
    M src/common/classes/alloc.h
 Misc
