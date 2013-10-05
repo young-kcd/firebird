@@ -1,3 +1,9 @@
+ 2013-10-04 15:58  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Fixed CORE-4237 - FB3 vs FB2.5. Different metadata for UDF return argument.
+The is a case showing a difference between 2.5 and 3.0 in the first comment. The second comment does not show difference between versions.
+
  2013-10-03 15:38  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/parse.y
