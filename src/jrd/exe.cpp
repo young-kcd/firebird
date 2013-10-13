@@ -1071,7 +1071,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 	AutoPtr<Record> null_rec;
 
 	const bool is_db_trigger = (!old_rec && !new_rec);
-	
+
 	if (!is_db_trigger && (!old_rec || !new_rec))
 	{
 		const Record* record = old_rec ? old_rec : new_rec;

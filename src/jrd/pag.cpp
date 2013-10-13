@@ -1093,9 +1093,8 @@ void PAG_header(thread_db* tdbb, bool info)
 				notUseFSCache);
 		}
 
-		if (dbb->dbb_backup_manager->getState() != nbak_state_normal) {
+		if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
 			dbb->dbb_backup_manager->setForcedWrites(forceWrite, notUseFSCache);
-		}
 	}
 
 	if (header->hdr_flags & hdr_no_reserve)

@@ -1792,13 +1792,11 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			if (state == tra_committed) {
+			if (state == tra_committed)
 				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-			}
 
-			if (state == tra_dead) {
+			if (state == tra_dead)
 				rpb->rpb_flags &= ~rpb_gc_active;
-			}
 		}
 
 		if (state == tra_precommitted)
@@ -2052,13 +2050,11 @@ bool VIO_get_current(thread_db* tdbb,
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			if (state == tra_committed) {
+			if (state == tra_committed)
 				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-			}
 
-			if (state == tra_dead) {
+			if (state == tra_dead)
 				rpb->rpb_flags &= ~rpb_gc_active;
-			}
 		}
 
 		if (state == tra_precommitted)
@@ -5045,13 +5041,11 @@ static int prepare_update(	thread_db*		tdbb,
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			if (state == tra_committed) {
+			if (state == tra_committed)
 				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-			}
 
-			if (state == tra_dead) {
+			if (state == tra_dead)
 				rpb->rpb_flags &= ~rpb_gc_active;
-			}
 		}
 
 		if (state == tra_precommitted)

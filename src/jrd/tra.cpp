@@ -832,7 +832,7 @@ bool TRA_pc_active(thread_db* tdbb, TraNumber number)
  *
  * Functional description
  *	Returns whether a given precommitted transaction
- *  owned by some other guy active or not.
+ *  owned by some other guy is active or not.
  *
  **************************************/
 	SET_TDBB(tdbb);

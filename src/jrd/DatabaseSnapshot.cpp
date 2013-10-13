@@ -755,7 +755,7 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 		SyncLockGuard attGuard(&dbb->dbb_sync, SYNC_SHARED, FB_FUNCTION);
 
 		for (Attachment* attachment = dbb->dbb_attachments; attachment;
-			attachment = attachment->att_next)
+			 attachment = attachment->att_next)
 		{
 			attachments.add(attachment->att_interface);
 		}
@@ -765,7 +765,7 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 		SyncLockGuard sysAttGuard(&dbb->dbb_sys_attach, SYNC_SHARED, FB_FUNCTION);
 
 		for (Attachment* attachment = dbb->dbb_sys_attachments; attachment;
-			attachment = attachment->att_next)
+			 attachment = attachment->att_next)
 		{
 			attachments.add(attachment->att_interface);
 		}
@@ -794,7 +794,7 @@ void DatabaseSnapshot::dumpAttachment(DumpRecord& record, const Attachment* atta
 	// Transaction information
 
 	for (transaction = attachment->att_transactions; transaction;
-		transaction = transaction->tra_next)
+		 transaction = transaction->tra_next)
 	{
 		putTransaction(record, transaction, writer, fb_utils::genUniqueId());
 	}
@@ -802,7 +802,7 @@ void DatabaseSnapshot::dumpAttachment(DumpRecord& record, const Attachment* atta
 	// Call stack information
 
 	for (transaction = attachment->att_transactions; transaction;
-		transaction = transaction->tra_next)
+		 transaction = transaction->tra_next)
 	{
 		for (request = transaction->tra_requests;
 			 request && (request->req_flags & req_active);

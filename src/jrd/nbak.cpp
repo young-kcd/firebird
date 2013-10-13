@@ -709,9 +709,8 @@ void BackupManager::flushDifference()
 
 void BackupManager::setForcedWrites(const bool forceWrite, const bool notUseFSCache)
 {
-	if (diff_file) {
+	if (diff_file)
 		PIO_force_write(diff_file, forceWrite, notUseFSCache);
-	}
 }
 
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
