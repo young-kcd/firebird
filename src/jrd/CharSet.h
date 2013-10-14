@@ -55,10 +55,27 @@ protected:
 		: id(_id),
 		  cs(_cs)
 	{
-		sqlMatchAnyLength = getConvFromUnicode().convert(
-			sizeof(SQL_MATCH_ANY_CHARS), &SQL_MATCH_ANY_CHARS, sizeof(sqlMatchAny), sqlMatchAny);
-		sqlMatchOneLength = getConvFromUnicode().convert(
-			sizeof(SQL_MATCH_1_CHAR), &SQL_MATCH_1_CHAR, sizeof(sqlMatchOne), sqlMatchOne);
+		try
+		{
+			sqlMatchAnyLength = getConvFromUnicode().convert(sizeof(SQL_MATCH_ANY_CHARS),
+				&SQL_MATCH_ANY_CHARS, sizeof(sqlMatchAny), sqlMatchAny);
+		}
+		catch (const Firebird::Exception&)
+		{
+			memset(sqlMatchAny, 0, sizeof(sqlMatchAny));
+			sqlMatchAnyLength = 0;
+		}
+
+		try
+		{
+			sqlMatchOneLength = getConvFromUnicode().convert(
+				sizeof(SQL_MATCH_1_CHAR), &SQL_MATCH_1_CHAR, sizeof(sqlMatchOne), sqlMatchOne);
+		}
+		catch (const Firebird::Exception&)
+		{
+			memset(sqlMatchOne, 0, sizeof(sqlMatchOne));
+			sqlMatchOneLength = 0;
+		}
 	}
 
 private:

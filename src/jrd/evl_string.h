@@ -317,7 +317,9 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			{
 				c = pattern_str[pattern_pos++];
 				/* Note: SQL II says <escape_char><escape_char> is error condition */
-				if (c == escape_char ||	c == sql_match_any || c == sql_match_one)
+				if (c == escape_char ||
+					(sql_match_any && c == sql_match_any) ||
+					(sql_match_one && c == sql_match_one))
 				{
 					switch (item->type)
 					{
@@ -344,7 +346,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			Firebird::Arg::Gds(isc_escape_invalid).raise();
 		}
 		// percent sign
-		if (c == sql_match_any)
+		if (sql_match_any && c == sql_match_any)
 		{
 			switch (item->type)
 			{
@@ -361,7 +363,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			continue;
 		}
 		// underscore
-		if (c == sql_match_one)
+		if (sql_match_one && c == sql_match_one)
 		{
 			switch (item->type)
 			{
