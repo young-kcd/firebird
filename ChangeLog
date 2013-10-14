@@ -1,3 +1,15 @@
+ 2013-10-13 23:44  asfernandes 
+   M src/isql/extract.epp
+   M src/isql/isql.epp
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+Misc.
+
  2013-10-04 15:58  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DdlNodes.h
