@@ -3344,11 +3344,15 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 
 	const BYTE canWidth = matchTextType->getCanonicalWidth();
 
+	const UCHAR* matchOneChar = matchCharset->getSqlMatchOneLength() != 0 ?
+		matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ONE) : NULL;
+	const UCHAR* matchAnyChar = matchCharset->getSqlMatchAnyLength() != 0 ?
+		matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ANY) : NULL;
+
 	// If the first character is a wildcard char, forget it.
-	if ((!escape_node ||
-			(memcmp(first_canonic, escape_canonic, canWidth) != 0)) &&
-		(memcmp(first_canonic, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ONE), canWidth) == 0 ||
-		 memcmp(first_canonic, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ANY), canWidth) == 0))
+	if ((!escape_node || memcmp(first_canonic, escape_canonic, canWidth) != 0) &&
+		((matchOneChar && memcmp(first_canonic, matchOneChar, canWidth) == 0) ||
+		 (matchAnyChar && memcmp(first_canonic, matchAnyChar, canWidth) == 0)))
 	{
 		return NULL;
 	}
@@ -3386,8 +3390,8 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 			patternPtrStart = patternPtr;
 			patternPtr += canWidth;
 		}
-		else if (memcmp(patternPtrStart, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ONE), canWidth) == 0 ||
-				 memcmp(patternPtrStart, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ANY), canWidth) == 0)
+		else if ((matchOneChar && memcmp(patternPtrStart, matchOneChar, canWidth) == 0) ||
+				 (matchAnyChar && memcmp(patternPtrStart, matchAnyChar, canWidth) == 0))
 		{
 			break;
 		}

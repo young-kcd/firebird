@@ -104,10 +104,21 @@ namespace Jrd {
 TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 	: tt(_tt), cs(_cs), type(_type)
 {
-	canonical(cs->getSqlMatchAnyLength(), cs->getSqlMatchAny(),
-		sizeof(ULONG), reinterpret_cast<UCHAR*>(&canonicalChars[CHAR_SQL_MATCH_ANY]));
-	canonical(cs->getSqlMatchOneLength(), cs->getSqlMatchOne(),
-		sizeof(ULONG), reinterpret_cast<UCHAR*>(&canonicalChars[CHAR_SQL_MATCH_ONE]));
+	if (cs->getSqlMatchAnyLength() != 0)
+	{
+		canonical(cs->getSqlMatchAnyLength(), cs->getSqlMatchAny(),
+			sizeof(ULONG), reinterpret_cast<UCHAR*>(&canonicalChars[CHAR_SQL_MATCH_ANY]));
+	}
+	else
+		memset(&canonicalChars[CHAR_SQL_MATCH_ANY], 0, sizeof(ULONG));
+
+	if (cs->getSqlMatchOneLength() != 0)
+	{
+		canonical(cs->getSqlMatchOneLength(), cs->getSqlMatchOne(),
+			sizeof(ULONG), reinterpret_cast<UCHAR*>(&canonicalChars[CHAR_SQL_MATCH_ONE]));
+	}
+	else
+		memset(&canonicalChars[CHAR_SQL_MATCH_ONE], 0, sizeof(ULONG));
 
 	struct Conversion
 	{
@@ -144,12 +155,19 @@ TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 
 	for (int i = 0; i < FB_NELEM(conversions); i++)
 	{
-		UCHAR temp[sizeof(ULONG)];
+		try
+		{
+			UCHAR temp[sizeof(ULONG)];
 
-		ULONG length = getCharSet()->getConvFromUnicode().convert(
-			sizeof(USHORT), &conversions[i].code, sizeof(temp), temp);
-		canonical(length, temp, sizeof(ULONG),
-			reinterpret_cast<UCHAR*>(&canonicalChars[conversions[i].ch]));
+			ULONG length = getCharSet()->getConvFromUnicode().convert(
+				sizeof(USHORT), &conversions[i].code, sizeof(temp), temp);
+			canonical(length, temp, sizeof(ULONG),
+				reinterpret_cast<UCHAR*>(&canonicalChars[conversions[i].ch]));
+		}
+		catch (const Firebird::Exception&)
+		{
+			memset(&canonicalChars[conversions[i].ch], 0, sizeof(ULONG));
+		}
 	}
 
 	struct Conversion2
