@@ -1,3 +1,10 @@
+ 2013-10-14 16:15  asfernandes 
+   M src/jrd/CharSet.h
+   M src/jrd/TextType.cpp
+   M src/jrd/evl_string.h
+   M src/jrd/opt.cpp
+Fixed CORE-4244 - Problem with creation procedure which contain adding text in DOS864 charset.
+
  2013-09-26 15:37  asfernandes 
    M src/jrd/met.epp
    M src/jrd/met_proto.h
