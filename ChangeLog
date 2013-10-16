@@ -1,3 +1,10 @@
+ 2013-10-15 15:26  asfernandes 
+   M src/common/CharSet.h
+   M src/common/TextType.cpp
+   M src/jrd/evl_string.h
+   M src/jrd/opt.cpp
+Frontport fix for CORE-4244 - Problem with creation procedure which contain adding text in DOS864 charset.
+
  2013-10-13 23:44  asfernandes 
    M src/isql/extract.epp
    M src/isql/isql.epp
