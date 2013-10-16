@@ -213,6 +213,14 @@ void dumpIt(const char* name, const Firebird::string& str)
 	fprintf(stderr, "%s: '%s'\n", name, str.c_str());
 }
 
+void dumpBin(const char* name, const Firebird::string& str)
+{
+	fprintf(stderr, "%s (%ld)\n", name, str.length());
+	for (size_t x=0; x<str.length(); ++x)
+		fprintf(stderr, "%02x ", str[x]);
+	fprintf(stderr, "\n");
+}
+
 void dumpIt(const char* name, const BigInteger& bi)
 {
 	string x;

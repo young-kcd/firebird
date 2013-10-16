@@ -140,8 +140,15 @@ protected:
 	}
 
 public:
-	typedef T* iterator;
-	typedef const T* const_iterator;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T* pointer;
+	typedef const T* const_pointer;
+	typedef T& reference;
+	typedef const T& const_reference;
+	typedef T value_type;
+	typedef pointer iterator;
+	typedef const_pointer const_iterator;
 
 	Array<T, Storage>& operator =(const Array<T, Storage>& source)
 	{

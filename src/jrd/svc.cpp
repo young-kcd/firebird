@@ -756,6 +756,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 		// Process the service parameter block.
 		ClumpletReader spb(ClumpletReader::spbList, spb_data, spb_length, spbVersionError);
+		dumpAuthBlock("Jrd::Service() ctor", &spb, isc_spb_auth_block);
 		getOptions(spb);
 
 		// Perhaps checkout the user in the security database.

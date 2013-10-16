@@ -312,6 +312,7 @@ const SvcSwitches attSwitch[] =
 	{"password", putStringArgument, 0, isc_spb_password, 0},
 	{"fetch_password", putFileArgument, 0, isc_spb_password, 0},
 	{"trusted_auth", putSingleTag, 0, isc_spb_trusted_auth, 0},
+	{"expected_db", putStringArgument, 0, isc_spb_expected_db, 0},
 	{0, 0, 0, 0, 0}
 };
 

@@ -106,7 +106,7 @@ static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
 							  const Firebird::ClumpletWriter&);
-static int api_gbak(Firebird::UtilSvc*, const Switches& switches);
+static int svc_api_gbak(Firebird::UtilSvc*, const Switches& switches);
 static void burp_output(bool err, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
 static void burp_usage(const Switches& switches);
 static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::string& sw);
@@ -149,11 +149,11 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 }
 
 
-static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
+static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 {
 /**********************************************
  *
- *	a p i _ g b a k
+ *	s v c _ a p i _ g b a k
  *
  **********************************************
  *
@@ -172,12 +172,18 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = uSvc->argv.getCount();
+	Firebird::string files[2];
+	unsigned fileIndex = 0;
 
 	for (int itr = 1; itr < argc; ++itr)
 	{
 		const Switches::in_sw_tab_t* inSw = switches.findSwitch(argv[itr]);
 		if (! inSw)
 		{
+			if (argv[itr][0] && fileIndex < 2)
+			{
+				files[fileIndex++] = argv[itr];
+			}
 			continue;
 		}
 
@@ -249,6 +255,8 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 		}
 	}
 
+	Firebird::string* dbName = flag_restore ? &files[1] : &files[0];
+
 	ISC_STATUS_ARRAY status;
 	FB_API_HANDLE svc_handle = 0;
 
@@ -268,6 +276,10 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 		if (pswd.hasData())
 		{
 			spb.insertString(isc_spb_password, pswd);
+		}
+		if (dbName->hasData())
+		{
+			spb.insertString(isc_spb_expected_db, *dbName);
 		}
 #ifdef TRUSTED_AUTH
 		if (flag_trusted)
@@ -450,7 +462,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 	// test for "-service" switch
 	if (switches.exists(IN_SW_BURP_SE, argv.begin(), 1, argc))
-		return api_gbak(uSvc, switches);
+		return svc_api_gbak(uSvc, switches);
 
 	uSvc->started();
 

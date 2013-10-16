@@ -32,7 +32,8 @@
 #define rem_port void
 #endif
 
-rem_port* XNET_analyze(ClntAuthBlock*, const Firebird::PathName&, bool, Firebird::RefPtr<Config>*);
+rem_port* XNET_analyze(ClntAuthBlock*, const Firebird::PathName&, bool, Firebird::RefPtr<Config>*,
+	const Firebird::PathName*);
 rem_port* XNET_connect(struct packet*, USHORT, Firebird::RefPtr<Config>*);
 rem_port* XNET_reconnect(ULONG);
 

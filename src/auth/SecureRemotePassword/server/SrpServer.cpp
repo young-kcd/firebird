@@ -99,6 +99,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			unsigned int length;
 			const unsigned char* val = sb->getData(&length);
 			clientPubKey.assign(val, length);
+			dumpBin("Srv: clientPubKey", clientPubKey);
 
 			if (!clientPubKey.hasData())
 			{
@@ -116,7 +117,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			secDbName = config->asString(secDbKey);
 			if (!(secDbName && secDbName[0]))
 			{
-				(Arg::Gds(isc_random) << "Error getting security database name").raise();
+				Arg::Gds(isc_secdb_name).raise();
 			}
 
 			ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
@@ -221,14 +222,13 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			data += char(serverPubKey.length() >> 8);
 			data.append(serverPubKey);
 			dumpIt("Srv: serverPubKey", serverPubKey);
-			dumpIt("Srv: data", data);
+			dumpBin("Srv: data", data);
 			sb->putData(status, data.length(), data.c_str());
 			if (!status->isSuccess())
 			{
 				return AUTH_FAILED;
 			}
 
-			dumpIt("Srv: clientPubKey", clientPubKey);
 			server->serverSessionKey(sessionKey, clientPubKey.c_str(), verifier);
 			dumpIt("Srv: sessionKey", sessionKey);
 

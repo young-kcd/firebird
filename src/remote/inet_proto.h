@@ -34,7 +34,7 @@ namespace Firebird
 }
 
 rem_port*	INET_analyze(ClntAuthBlock*, const Firebird::PathName&, const TEXT*,
-						 bool, Firebird::ClumpletReader&, Firebird::RefPtr<Config>*);
+						 bool, Firebird::ClumpletReader&, Firebird::RefPtr<Config>*, const Firebird::PathName*);
 rem_port*	INET_connect(const TEXT*, struct packet*, USHORT, Firebird::ClumpletReader*,
 						 Firebird::RefPtr<Config>*);
 rem_port*	INET_reconnect(SOCKET);

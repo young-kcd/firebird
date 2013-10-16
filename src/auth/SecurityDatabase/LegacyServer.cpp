@@ -267,6 +267,10 @@ void SecurityDatabase::prepare()
 	// Attach as SYSDBA
 	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
 
+	// Do not use other providers except current engine
+	const char* providers = "Providers=" CURRENT_ENGINE;
+	dpb.insertString(isc_dpb_config, providers, strlen(providers));
+
 	isc_db_handle tempHandle = 0;
 	isc_attach_database(status, 0, secureDbName, &tempHandle,
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
@@ -307,7 +311,9 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 		return AUTH_CONTINUE;
 	}
 
-	string login(sBlock->getLogin());
+	const char* user = sBlock->getLogin();
+	string login(user ? user : "");
+
 	unsigned length;
 	const unsigned char* data = sBlock->getData(&length);
 	string passwordEnc;
@@ -468,7 +474,7 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 			const char* tmp = config->asString(secDbKey);
 			if (!tmp)
 			{
-				(Arg::Gds(isc_random) << "Error getting security database name").raise();
+				Arg::Gds(isc_secdb_name).raise();
 			}
 
 			secDbName = tmp;

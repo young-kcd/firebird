@@ -847,6 +847,17 @@ Data source : @4', NULL, NULL)
 ('include_miss', NULL, 'config_file.cpp', NULL, 0, 737, NULL, 'File to include not found', NULL, NULL);
 ('protect_ownership', 'check_owner', 'vio.cpp', NULL, 0, 738, NULL, 'Only the owner can change the ownership', NULL, NULL);
 ('badvarnum', NULL, NULL, NULL, 0, 739, NULL, 'undefined variable number', NULL, NULL);
+('sec_context', 'getUserInfo', 'jrd.cpp', NULL, 0, 740, NULL, 'Missing security context for database @1', NULL, NULL);
+('multi_segment', 'getMultiPartConnectParameter', 'server.cpp', NULL, 0, 741, NULL, 'Missing segment @1 in multisegment connect block parameter', NULL, NULL);
+('login_changed', 'ServerAuth::ServerAuth', 'server.cpp', NULL, 0, 742, NULL, 'Different logins in connect and attach packets - client library error', NULL, NULL);
+('auth_handshake_limit', 'ServerAuth::authenticate', 'server.cpp', NULL, 0, 743, NULL, 'Exceeded exchange limit during authentication handshake', NULL, NULL);
+('wirecrypt_incompatible', 'requiredEncryption', 'server.cpp', NULL, 0, 744, NULL, 'Incompatible wire encryption levels requested on client and server', NULL, NULL);
+('miss_wirecrypt', NULL, 'server.cpp', NULL, 0, 745, NULL, 'Client attempted to attach unencrypted but wire encryption is required', NULL, NULL);
+('wirecrypt_key', 'start_crypt', 'server.cpp', NULL, 0, 746, NULL, 'Client attempted to start wire encryption using unknown key @1', NULL, NULL);
+('wirecrypt_plugin', 'start_crypt', 'server.cpp', NULL, 0, 747, NULL, 'Client attempted to start wire encryption using unsupported plugin @1', NULL, NULL);
+('secdb_name', NULL, NULL, NULL, 0, 748, NULL, 'Error getting security database name from configuration file', NULL, NULL);
+('auth_data', NULL, NULL, NULL, 0, 749, NULL, 'Client authentication plugin is missing required data from server', NULL, NULL);
+('auth_datalength', NULL, NULL, NULL, 0, 750, NULL, 'Client authentication plugin expected @2 bytes of @3 from server, got @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

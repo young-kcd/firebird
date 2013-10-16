@@ -279,6 +279,8 @@ enum P_OP
 
 	op_crypt				= 96,
 	op_crypt_key_callback	= 97,
+	op_cond_accept			= 98,	// Server accepts connection, returns some data to client
+									// and asks client to continue authentication before attach call
 
 	op_max
 };
@@ -375,6 +377,7 @@ const UCHAR CNCT_specific_data		= 7;	// Some data, needed for user verification 
 const UCHAR CNCT_plugin_name		= 8;	// Name of plugin, which generated that data
 const UCHAR CNCT_login				= 9;	// Same data as isc_dpb_user_name
 const UCHAR CNCT_plugin_list		= 10;	// List of plugins, available on client
+const UCHAR CNCT_client_crypt		= 11;	// Client encyption level (DISABLED/ENABLED/REQUIRED)
 
 // Accept Block (Server response to connect block)
 

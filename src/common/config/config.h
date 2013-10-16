@@ -75,9 +75,9 @@ extern const char*	AmMixed;
 
 enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
 
-extern const char* WIRE_CRYPT_DISABLED;
-extern const char* WIRE_CRYPT_ENABLED;
-extern const char* WIRE_CRYPT_REQUIRED;
+const int WIRE_CRYPT_DISABLED = 0;
+const int WIRE_CRYPT_ENABLED = 1;
+const int WIRE_CRYPT_REQUIRED = 2;
 
 enum WireCryptMode {WC_CLIENT, WC_SERVER};		// Have different defaults
 
@@ -335,7 +335,7 @@ public:
 
 	const char* getSecurityDatabase() const;
 
-	const char* getWireCrypt(WireCryptMode wcMode) const;
+	int getWireCrypt(WireCryptMode wcMode) const;
 };
 
 // Implementation of interface to access master configuration file

@@ -120,10 +120,12 @@ public:
 void dumpIt(const char* name, const Firebird::BigInteger& bi);
 void dumpIt(const char* name, const Firebird::UCharBuffer& data);
 void dumpIt(const char* name, const Firebird::string& str);
+void dumpBin(const char* name, const Firebird::string& str);
 #else
 void static inline dumpIt(const char* /*name*/, const Firebird::BigInteger& /*bi*/) { }
 void static inline dumpIt(const char* /*name*/, const Firebird::UCharBuffer& /*data*/) { }
 void static inline dumpIt(const char* /*name*/, const Firebird::string& /*str*/) { }
+void static inline dumpBin(const char* /*name*/, const Firebird::string& /*str*/) { }
 #endif
 
 

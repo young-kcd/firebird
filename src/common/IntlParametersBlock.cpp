@@ -186,6 +186,7 @@ IntlParametersBlock::TagType IntlSpb::checkTag(UCHAR tag)
 	case isc_spb_trusted_auth:
 	case isc_spb_trusted_role:
 	case isc_spb_process_name:
+	case isc_spb_expected_db:
 		return TAG_STRING;
 
 	case isc_spb_command_line:

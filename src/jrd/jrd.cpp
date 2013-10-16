@@ -946,7 +946,7 @@ static void		rollback(thread_db*, jrd_tra*, const bool);
 static bool		shutdown_database(Database*, const bool);
 static void		strip_quotes(string&);
 static void		purge_attachment(thread_db*, JAttachment*, const bool);
-static void		getUserInfo(UserId&, const DatabaseOptions&, const RefPtr<Config>*);
+static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const RefPtr<Config>*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -955,7 +955,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 	m_filename(filename),
 	m_options(options)
 {
-	getUserInfo(m_id, *m_options, NULL);
+	getUserInfo(m_id, *m_options, m_filename, NULL);
 }
 
 
@@ -1276,7 +1276,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, &config);
+			getUserInfo(userId, options, org_filename.c_str(), &config);
 		}
 		catch (const Exception& ex)
 		{
@@ -2363,7 +2363,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, &config);
+			getUserInfo(userId, options, org_filename.c_str(), &config);
 		}
 		catch (const Exception& ex)
 		{
@@ -5462,6 +5462,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	}
 
 	ClumpletReader rdr(ClumpletReader::dpbList, dpb, dpb_length, dpbErrorRaise);
+	dumpAuthBlock("DatabaseOptions::get()", &rdr, isc_dpb_auth_block);
 
 	dpb_utf8_filename = rdr.find(isc_dpb_utf8_filename);
 
@@ -6941,7 +6942,8 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
     @param
 
  **/
-static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefPtr<Config>* config)
+static void getUserInfo(UserId& user, const DatabaseOptions& options,
+	const char* dbName, const RefPtr<Config>* config)
 {
 	bool wheel = false;
 	int id = -1, group = -1;	// CVC: This var contained trash
@@ -6974,7 +6976,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const RefP
 				{
 					if (config && (secureDb != (*config)->getSecurityDatabase()))
 					{
-						(Arg::Gds(isc_login) << Arg::Gds(isc_random) << "No SecDb match").raise();
+						(Arg::Gds(isc_sec_context) << dbName).raise();
 					}
 				}
 				else

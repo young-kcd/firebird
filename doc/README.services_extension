@@ -191,3 +191,35 @@ value from isc_service_query().
 
 A sample of how services API should be used for remote backup and restore can be
 found in source code of fbsvcmgr.
+
+
+5) Services API extension - using services with non-default security database.
+(Alex Peshkov, peshkoff@mail.ru, 2013)
+
+If one wants to use services API to access database which is configured to use
+non-default security database new SPB item isc_spb_expected_db should be used
+when attaching to services manager. Value of this item is a database which is
+expected to be accessed.
+
+Formally this does not raise backward incompatibility - as long as one does not
+use new FB3 feature (multiple security databases) he has no problems with old
+programs using services API. In a case when one has really big need to use old
+program for a database with non-default configuration there is a workaround:
+setting environment variable FB_EXPECTED_DB which will be added to SPB
+automatically.
+
+Example. Imagine we have the following lines in databases.conf:
+employee = $(dir_sampledb)/employee.fdb
+{
+  SecurityDatabase = employee
+}
+i.e. employee database is configured as security database for itself.
+
+To access it using fbsvcmgr one should use the following command line:
+fbsvcmgr host:service_mgr user sysdba password xxx expected_db employee action_db_stats dbname employee sts_data_pages
+
+or in advance set FB_EXPECTED_DB:
+export FB_EXPECTED_DB=employee
+fbsvcmgr host:service_mgr user sysdba password xxx action_db_stats dbname employee sts_data_pages
+
+Certainly any other database action can be used here.

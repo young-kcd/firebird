@@ -201,6 +201,13 @@ public:
 	bool getInfo(string* name, string* method, PathName* secDb);
 };
 
+//#define AUTH_BLOCK_DEBUG
+#ifdef AUTH_BLOCK_DEBUG
+void dumpAuthBlock(const char* text, ClumpletReader* pb, unsigned char param);
+#else
+static inline void dumpAuthBlock(const char*, ClumpletReader*, unsigned char) { }
+#endif
+
 } // namespace Firebird
 
 #endif // CLUMPLETREADER_H

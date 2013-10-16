@@ -782,13 +782,13 @@ namespace Why
 	}
 
 	template <>
-	YEntry<YService>::YEntry(IStatus* aStatus, YService* aService, int mode)
+	YEntry<YService>::YEntry(IStatus* aStatus, YService* aService, int checkService)
 		: ref(aService), nextRef(NULL)
 	{
 		aStatus->init();
-		init(aService->getNextService(mode, aStatus));
+		init(aService->next);
 
-		if ((mode != YService::SERV_DETACH) && !(nextRef.hasData()))
+		if (checkService && !(nextRef.hasData()))
 		{
 			fini();
 			Arg::Gds(YService::ERROR_CODE).raise();
@@ -5007,118 +5007,14 @@ void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTra
 //-------------------------------------
 
 
-static IService* getServiceManagerByName(IProvider** provider, IStatus* status,
-	const char* serviceName, unsigned int spbLength, const unsigned char* spb,
-	Firebird::ICryptKeyCallback* cryptCallback)
-{
-	RefPtr<Config> config(Config::getDefaultConfig());
-
-	ClumpletReader readSpb(ClumpletReader::spbList, spb, spbLength);
-	if (readSpb.find(isc_spb_config))
-	{
-		string spb_config;
-		readSpb.getString(spb_config);
-		Config::merge(config, &spb_config);
-	}
-
-	for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-			FB_PROVIDER_VERSION, upInfo, config);
-		 providerIterator.hasData();
-		 providerIterator.next())
-	{
-		IProvider* p = providerIterator.plugin();
-
-		if (cryptCallback)
-		{
-			p->setDbCryptCallback(status, cryptCallback);
-			if (!status->isSuccess())
-				continue;
-		}
-
-		IService* service = p->attachServiceManager(status, serviceName, spbLength, spb);
-		if (status->isSuccess())
-		{
-			if (provider)
-			{
-				p->addRef();
-				*provider = p;
-			}
-
-			return service;
-		}
-
-	}
-
-	if (status->isSuccess())
-	{
-		(Arg::Gds(isc_service_att_err) <<
-		 Arg::Gds(isc_no_providers)).copyTo(status);
-	}
-
-	return NULL;
-}
-
-YService::ServiceType::~ServiceType()
-{
-	if (provider)
-	{
-		PluginManagerInterfacePtr()->releasePlugin(provider);
-		provider = NULL;
-	}
-}
-
-void YService::ServiceType::shutdown()
-{
-	if (provider)
-	{
-		next = NULL;
-		PluginManagerInterfacePtr()->releasePlugin(provider);
-		provider = NULL;
-	}
-}
-
-void YService::ServiceType::detach(IStatus* status)
-{
-	if (next.hasData())
-	{
-		next->detach(status);
-		if (!status->isSuccess())
-		{
-			status_exception::raise(status->get());
-		}
-	}
-}
-
 YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
-	: regular(aNext, aProvider),
-	  attachName(getPool()),
-	  checkSpbLen(0),
-	  checkSpbPresent(NULL),
-	  authBlock(getPool()),
+	: YHelper<YService, Firebird::IService, FB_SERVICE_VERSION>(aNext),
+	  provider(aProvider),
 	  cryptCallback(NULL),
 	  utf8Connection(utf8)
 {
-	this->addRef();		// from YHelper
+	provider->addRef();
 	makeHandle(&services, this, handle);
-}
-
-YService::YService(const char* svcName, unsigned int spbLength, const unsigned char* spb,
-				   ICryptKeyCallback* callback, bool utf8)
-	: attachName(getPool()),
-	  attachSpb(FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList,
-												 MAX_DPB_SIZE, spb, spbLength)),
-	  checkSpbLen(0),
-	  checkSpbPresent(NULL),
-	  authBlock(getPool()),
-	  cryptCallback(callback),
-	  utf8Connection(utf8)
-{
-	attachName.assign(svcName);
-	this->addRef();		// from YHelper
-	makeHandle(&services, this, handle);
-
-	if (attachSpb->find(isc_spb_auth_block))
-		authBlock.add(attachSpb->getBytes(), attachSpb->getClumpLength());
 }
 
 FB_API_HANDLE& YService::getHandle()
@@ -5127,75 +5023,38 @@ FB_API_HANDLE& YService::getHandle()
 	return handle;
 }
 
-IService* YService::getNextService(int mode, IStatus* status)
-{
-	if (regular.next)
-		return regular.next;
-
-	switch (mode)
-	{
-		case SERV_START:
-			if (started.provider)
-				started.shutdown();
-
-			started.next = getServiceManagerByName(&started.provider, status, attachName.c_str(),
-				(attachSpb ? attachSpb->getBufferLength() : 0),
-				(attachSpb ? attachSpb->getBuffer() : NULL), cryptCallback);
-
-			if (!status->isSuccess())
-				status_exception::raise(status->get());
-
-			return started.next;
-
-		case SERV_QUERY:
-			if (fb_utils::isRunningCheck(checkSpbPresent, checkSpbLen))
-				return started.next;
-
-			if (queryCache.next)
-				return queryCache.next;
-
-			queryCache.next = getServiceManagerByName(&queryCache.provider, status, attachName.c_str(),
-				(attachSpb ? attachSpb->getBufferLength() : 0),
-				(attachSpb ? attachSpb->getBuffer() : NULL), cryptCallback);
-
-			if (!status->isSuccess())
-				status_exception::raise(status->get());
-
-			return queryCache.next;
-
-		case SERV_DETACH:
-			break;
-
-		default:
-			fb_assert(false);
-	}
-
-	return NULL;
-}
-
 YService::~YService()
 {
+	if (provider)
+		PluginManagerInterfacePtr()->releasePlugin(provider);
 }
 
 void YService::destroy()
 {
 	removeHandle(&services, handle);
 
-	regular.next = NULL;
-	started.next = NULL;
-	queryCache.next = NULL;
+	next = NULL;
 	release();
+}
+
+void YService::shutdown()
+{
+	if (provider)
+	{
+		destroy();
+		PluginManagerInterfacePtr()->releasePlugin(provider);
+		provider = NULL;
+	}
 }
 
 void YService::detach(IStatus* status)
 {
 	try
 	{
-		YEntry<YService> entry(status, this, SERV_DETACH);
+		YEntry<YService> entry(status, this, 1);
 
-		regular.detach(status);
-		started.detach(status);
-		queryCache.detach(status);
+		if (entry.next())
+			entry.next()->detach(status);
 
 		destroy();
 	}
@@ -5205,44 +5064,18 @@ void YService::detach(IStatus* status)
 	}
 }
 
-void YService::populateSpb(ClumpletWriter& spb, UCHAR tag)
-{
-	if (attachSpb)
-		attachSpb->deleteWithTag(isc_spb_auth_block);
-	else
-		attachSpb = FB_NEW(getPool()) ClumpletWriter(getPool(), ClumpletReader::spbList, MAX_DPB_SIZE);
-
-	if (spb.find(tag))
-	{
-		attachSpb->insertBytes(isc_spb_auth_block, spb.getBytes(), spb.getClumpLength());
-		spb.deleteClumplet();
-	}
-	else
-		attachSpb->insertTag(isc_spb_auth_block);
-}
-
 void YService::query(IStatus* status, unsigned int sendLength, const unsigned char* sendItems,
 	unsigned int receiveLength, const unsigned char* receiveItems,
 	unsigned int bufferLength, unsigned char* buffer)
 {
 	try
 	{
-		ClumpletWriter spb(ClumpletReader::SpbSendItems, MAX_DPB_SIZE, sendItems, sendLength);
-		if (!regular.next)
-			populateSpb(spb, isc_info_svc_auth_block);
-
-		checkSpbLen = receiveLength;
-		checkSpbPresent = receiveItems;
-		YEntry<YService> entry(status, this, SERV_QUERY);
-		entry.next()->query(status, spb.getBufferLength(), spb.getBuffer(),
+		YEntry<YService> entry(status, this);
+		entry.next()->query(status, sendLength, sendItems,
 			receiveLength, receiveItems, bufferLength, buffer);
-		checkSpbLen = 0;
-		checkSpbPresent = NULL;
 	}
 	catch (const Exception& e)
 	{
-		checkSpbLen = 0;
-		checkSpbPresent = NULL;
 		e.stuffException(status);
 	}
 }
@@ -5252,41 +5085,18 @@ void YService::start(IStatus* status, unsigned int spbLength, const unsigned cha
 	try
 	{
 		ClumpletWriter spb(ClumpletReader::SpbStart, MAX_DPB_SIZE, spbItems, spbLength);
-		if (!regular.next)
-		{
-			populateSpb(spb, isc_spb_auth_block);
-		}
 		if (!utf8Connection)
 		{
 			IntlSpbStart().toUtf8(spb, 0);
 		}
 
-		YEntry<YService> entry(status, this, SERV_START);
+		YEntry<YService> entry(status, this);
 		entry.next()->start(status, spb.getBufferLength(), spb.getBuffer());
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
-}
-
-int YService::release()
-{
-	if (--this->refCounter == 0)
-	{
-		if (regular.next || started.next || queryCache.next)
-		{
-			++this->refCounter; // to be decremented in destroy()
-			++this->refCounter; // to avoid recursion
-			this->destroy(); // destroy() must call release()
-			--this->refCounter;
-		}
-
-		delete this; // call correct destructor !
-		return 0;
-	}
-
-	return 1;
 }
 
 
@@ -5424,7 +5234,6 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 	unsigned int spbLength, const unsigned char* spb)
 {
 	IService* service = NULL;
-
 	try
 	{
 		DispatcherEntry entry(status);
@@ -5448,20 +5257,41 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 			IntlSpb().toUtf8(spbWriter, isc_spb_utf8_filename);
 		}
 
-		if ((spbWriter.find(isc_spb_auth_block) && spbWriter.getClumpLength() > 0) ||
-			ISC_check_if_remote(svcName, false))
+		// Build correct config
+		RefPtr<Config> config(Config::getDefaultConfig());
+		if (spbWriter.find(isc_spb_config))
 		{
-			IProvider* provider = NULL;
-			service = getServiceManagerByName(&provider, status, svcName.c_str(),
-				spbWriter.getBufferLength(), spbWriter.getBuffer(), cryptCallback);
-
-			if (service)
-				return new YService(provider, service, utfData);
+			string spb_config;
+			spbWriter.getString(spb_config);
+			Config::merge(config, &spb_config);
 		}
-		else
+
+		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
+				FB_PROVIDER_VERSION, upInfo, config);
+			 providerIterator.hasData();
+			 providerIterator.next())
 		{
-			return new YService(svcName.c_str(), spbWriter.getBufferLength(),
-				spbWriter.getBuffer(), cryptCallback, utfData);
+			IProvider* p = providerIterator.plugin();
+
+			if (cryptCallback)
+			{
+				p->setDbCryptCallback(status, cryptCallback);
+				if (!status->isSuccess())
+					continue;
+			}
+
+			service = p->attachServiceManager(status, svcName.c_str(),
+				spbWriter.getBufferLength(), spbWriter.getBuffer());
+			if (status->isSuccess())
+			{
+				return new YService(p, service, utfData);
+			}
+		}
+
+		if (status->isSuccess())
+		{
+			(Arg::Gds(isc_service_att_err) <<
+			 Arg::Gds(isc_no_providers)).copyTo(status);
 		}
 	}
 	catch (const Exception& e)

@@ -121,9 +121,6 @@ const char*	AmNative	= "native";
 const char*	AmTrusted	= "trusted";
 const char*	AmMixed		= "mixed";
 
-const char* WIRE_CRYPT_DISABLED	= "DISABLED";
-const char* WIRE_CRYPT_ENABLED	= "ENABLED";
-const char* WIRE_CRYPT_REQUIRED	= "REQUIRED";
 
 const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
@@ -677,7 +674,7 @@ const char* Config::getPlugins(unsigned int type) const
 			return (const char*) values[KEY_PLUG_KEY_HOLDER];
 	}
 
-	(Firebird::Arg::Gds(isc_random) << "Internal error in Config::getPlugins()").raise();
+	(Firebird::Arg::Gds(isc_random) << "Internal error in Config::getPlugins(): unknown plugin type requested").raise();
 	return NULL;		// compiler warning silencer
 }
 
@@ -717,8 +714,19 @@ const char* Config::getSecurityDatabase() const
 	return get<const char*>(KEY_SECURITY_DATABASE);
 }
 
-const char* Config::getWireCrypt(WireCryptMode wcMode) const
+int Config::getWireCrypt(WireCryptMode wcMode) const
 {
-	const char* rc = get<const char*>(KEY_WIRE_CRYPT);
-	return rc ? rc : wcMode == WC_CLIENT ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
+	const char* wc = get<const char*>(KEY_WIRE_CRYPT);
+	if (!wc)
+	{
+		return wcMode == WC_CLIENT ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
+	}
+
+	Firebird::NoCaseString wireCrypt(wc);
+	if (wireCrypt == "DISABLED")
+		return WIRE_CRYPT_DISABLED;
+	else if (wireCrypt == "ENABLED")
+		return WIRE_CRYPT_ENABLED;
+	else	// the safest choice
+		return WIRE_CRYPT_REQUIRED;
 }

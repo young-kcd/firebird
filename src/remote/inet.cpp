@@ -448,7 +448,8 @@ static rem_port*		inet_try_connect(	PACKET*,
 									const PathName&,
 									const TEXT*,
 									ClumpletReader&,
-									RefPtr<Config>*);
+									RefPtr<Config>*,
+									const PathName*);
 static bool_t	inet_write(XDR*); //, int);
 
 #ifdef DEBUG
@@ -523,7 +524,8 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 					   const TEXT* node_name,
 					   bool uv_flag,
 					   ClumpletReader &dpb,
-					   RefPtr<Config>* config)
+					   RefPtr<Config>* config,
+					   const PathName* ref_db_name)
 {
 /**************************************
  *
@@ -608,12 +610,13 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	// Try connection using first set of protocols
 
-	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config);
+	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config, ref_db_name);
 
 	P_ACPT* accept = NULL;
 	switch (packet->p_operation)
 	{
 	case op_accept_data:
+	case op_cond_accept:
 		accept = &packet->p_acpd;
 		if (cBlock)
 		{
@@ -2680,7 +2683,8 @@ static rem_port* inet_try_connect(PACKET* packet,
 								  const PathName& file_name,
 								  const TEXT* node_name,
 								  ClumpletReader& dpb,
-								  RefPtr<Config>* config)
+								  RefPtr<Config>* config,
+								  const PathName* ref_db_name)
 {
 /**************************************
  *
@@ -2701,8 +2705,10 @@ static rem_port* inet_try_connect(PACKET* packet,
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION3;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = (ULONG) file_name.length();
-	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
+
+	const PathName& cnct_file(ref_db_name ? (*ref_db_name) : file_name);
+	cnct->p_cnct_file.cstr_length = (ULONG) cnct_file.length();
+	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(cnct_file.c_str());
 
 	// If we can't talk to a server, punt.  Let somebody else generate
 	// an error.  status_vector will have the network error info.

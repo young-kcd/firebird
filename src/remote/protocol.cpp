@@ -339,6 +339,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		return P_TRUE(xdrs, p);
 
 	case op_accept_data:
+	case op_cond_accept:
 		accept_with_data = &p->p_acpd;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(accept_with_data->p_acpt_version));
 		MAP(xdr_enum, reinterpret_cast<xdr_op&>(accept_with_data->p_acpt_architecture));

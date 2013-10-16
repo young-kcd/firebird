@@ -764,6 +764,17 @@ Data source : @4"},		/* eds_statement */
 	{335545057, "File to include not found"},		/* include_miss */
 	{335545058, "Only the owner can change the ownership"},		/* protect_ownership */
 	{335545059, "undefined variable number"},		/* badvarnum */
+	{335545060, "Missing security context for database @1"},		/* sec_context */
+	{335545061, "Missing segment @1 in multisegment connect block parameter"},		/* multi_segment */
+	{335545062, "Different logins in connect and attach packets - client library error"},		/* login_changed */
+	{335545063, "Exceeded exchange limit during authentication handshake"},		/* auth_handshake_limit */
+	{335545064, "Incompatible wire encryption levels requested on client and server"},		/* wirecrypt_incompatible */
+	{335545065, "Client attempted to attach unencrypted but wire encryption is required"},		/* miss_wirecrypt */
+	{335545066, "Client attempted to start wire encryption using unknown key @1"},		/* wirecrypt_key */
+	{335545067, "Client attempted to start wire encryption using unsupported plugin @1"},		/* wirecrypt_plugin */
+	{335545068, "Error getting security database name from configuration file"},		/* secdb_name */
+	{335545069, "Client authentication plugin is missing required data from server"},		/* auth_data */
+	{335545070, "Client authentication plugin expected @2 bytes of @3 from server, got @1"},		/* auth_datalength */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

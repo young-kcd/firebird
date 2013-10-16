@@ -79,17 +79,18 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 		}
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: SRP phase2\n"));
-		unsigned int length;
+		unsigned length;
 		const unsigned char* saltAndKey = cb->getData(&length);
 		if (!saltAndKey || length == 0)
 		{
-			(Arg::Gds(isc_random) << "Missing data from server").raise();
+			Arg::Gds(isc_auth_data).raise();
 		}
-		if (length > (RemotePassword::SRP_SALT_SIZE + RemotePassword::SRP_KEY_SIZE + 2) * 2)
+		const unsigned expectedLength =
+			(RemotePassword::SRP_SALT_SIZE + RemotePassword::SRP_KEY_SIZE + 2) * 2;
+		if (length > expectedLength)
 		{
-			string msg;
-			msg.printf("Wrong length (%d) of data from server", length);
-			(Arg::Gds(isc_random) << msg).raise();
+			(Arg::Gds(isc_auth_datalength) << Arg::Num(length) <<
+				Arg::Num(expectedLength) << "data").raise();
 		}
 
 		string salt, key;
@@ -97,9 +98,8 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 		charSize += ((unsigned) *saltAndKey++) << 8;
 		if (charSize > RemotePassword::SRP_SALT_SIZE * 2)
 		{
-			string msg;
-			msg.printf("Wrong length (%d) of salt from server", charSize);
-			(Arg::Gds(isc_random) << msg).raise();
+			(Arg::Gds(isc_auth_datalength) << Arg::Num(charSize) <<
+				Arg::Num(RemotePassword::SRP_SALT_SIZE * 2) << "salt").raise();
 		}
 		salt.assign(saltAndKey, charSize);
 		dumpIt("Clnt: salt", salt);
@@ -108,11 +108,10 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 
 		charSize = *saltAndKey++;
 		charSize += ((unsigned) *saltAndKey++) << 8;
-		if (charSize + 2 != length)
+		if (charSize != length - 2)
 		{
-			string msg;
-			msg.printf("Wrong length (%d) of key from server", charSize);
-			(Arg::Gds(isc_random) << msg).raise();
+			(Arg::Gds(isc_auth_datalength) << Arg::Num(charSize) <<
+				Arg::Num(length - 2) << "key").raise();
 		}
 		key.assign(saltAndKey, charSize);
 		dumpIt("Clnt: key(srvPub)", key);

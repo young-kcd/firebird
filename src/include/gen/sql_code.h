@@ -760,6 +760,17 @@ static const struct {
 	{335545057, -902}, /* 737 include_miss */
 	{335545058, -552}, /* 738 protect_ownership */
 	{335545059, -901}, /* 739 badvarnum */
+	{335545060, -902}, /* 740 sec_context */
+	{335545061, -902}, /* 741 multi_segment */
+	{335545062, -902}, /* 742 login_changed */
+	{335545063, -902}, /* 743 auth_handshake_limit */
+	{335545064, -902}, /* 744 wirecrypt_incompatible */
+	{335545065, -902}, /* 745 miss_wirecrypt */
+	{335545066, -902}, /* 746 wirecrypt_key */
+	{335545067, -902}, /* 747 wirecrypt_plugin */
+	{335545068, -902}, /* 748 secdb_name */
+	{335545069, -902}, /* 749 auth_data */
+	{335545070, -902}, /* 750 auth_datalength */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

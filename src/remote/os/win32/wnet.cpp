@@ -105,7 +105,8 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 					   const PathName& file_name,
 					   const TEXT* node_name,
 					   bool uv_flag,
-					   RefPtr<Config>* config)
+					   RefPtr<Config>* config,
+					   const Firebird::PathName* ref_db_name)
 {
 /**************************************
  *
@@ -157,8 +158,10 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION3;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = (ULONG) file_name.length();
-	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
+
+	const PathName& cnct_file(ref_db_name ? (*ref_db_name) : file_name);
+	cnct->p_cnct_file.cstr_length = (ULONG) cnct_file.length();
+	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(cnct_file.c_str());
 
 	// If we want user verification, we can't speak anything less than version 7
 
@@ -202,6 +205,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	switch (packet->p_operation)
 	{
 	case op_accept_data:
+	case op_cond_accept:
 		accept = &packet->p_acpd;
 		if (cBlock)
 		{

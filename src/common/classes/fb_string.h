@@ -228,6 +228,10 @@ namespace Firebird
 		{
 			return stringLength;
 		}
+		size_type getCount() const
+		{
+			return stringLength;
+		}
 		// Almost same as c_str(), but return 0, not "",
 		// when string has no data. Useful when interacting
 		// with old code, which does check for NULL.
@@ -245,6 +249,10 @@ namespace Firebird
 
 		void reserve(size_type n = 0);
 		void resize(const size_type n, char_type c = ' ');
+		void grow(const size_type n)
+		{
+			resize(n);
+		}
 
 		pointer getBuffer(size_t l)
 		{

@@ -772,6 +772,17 @@ const
 	gds_include_miss                     = 335545057;
 	gds_protect_ownership                = 335545058;
 	gds_badvarnum                        = 335545059;
+	gds_sec_context                      = 335545060;
+	gds_multi_segment                    = 335545061;
+	gds_login_changed                    = 335545062;
+	gds_auth_handshake_limit             = 335545063;
+	gds_wirecrypt_incompatible           = 335545064;
+	gds_miss_wirecrypt                   = 335545065;
+	gds_wirecrypt_key                    = 335545066;
+	gds_wirecrypt_plugin                 = 335545067;
+	gds_secdb_name                       = 335545068;
+	gds_auth_data                        = 335545069;
+	gds_auth_datalength                  = 335545070;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

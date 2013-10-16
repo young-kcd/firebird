@@ -116,22 +116,14 @@ struct ParametersSet
 		  host_name, os_user, config_text;
 };
 
-extern const ParametersSet dpbParam, spbParam, spbStartParam, spbInfoParam;
+extern const ParametersSet dpbParam, spbParam, connectParam;
 
 
 struct Svc : public Firebird::GlobalStorage
 {
 	ServService					svc_iface;		// service interface
-	Firebird::ClumpletWriter*	svc_cached_spb;	// Saved auth tags from attachService() call
-	Firebird::Array<UCHAR>		svc_wide_auth;	// Server-wide (default) authentication block
-	enum {
-		SVCAUTH_NONE,							// Service is not authenticated
-		SVCAUTH_TEMP,							// Service is authenticated for single task
-		SVCAUTH_PERM							// Service is authenticated permanently
-	}							svc_auth;		// Authentication state of service
 	Svc() :
-		svc_iface(NULL), svc_cached_spb(NULL),
-		svc_wide_auth(getPool()), svc_auth(SVCAUTH_NONE)
+		svc_iface(NULL)
 	{ }
 };
 
@@ -580,8 +572,14 @@ typedef Firebird::Array<rem_que_packet> PacketQueue;
 class ServerAuthBase
 {
 public:
+	enum AuthenticateFlags {
+		NO_FLAGS =			0x0,
+		CONT_AUTH =			0x1,
+		USE_COND_ACCEPT =	0x2
+	};
+
 	virtual ~ServerAuthBase();
-	virtual bool authenticate(PACKET* send, bool cont = false) = 0;
+	virtual bool authenticate(PACKET* send, AuthenticateFlags flags = NO_FLAGS) = 0;
 };
 
 class ServerCallbackBase
@@ -668,8 +666,6 @@ public:
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);
 	void resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr = NULL);
 	bool checkPluginName(Firebird::PathName& nameToCheck);
-	void saveServiceDataTo(rem_port*);
-	void loadServiceDataFrom(rem_port*);
 	Firebird::PathName getPluginName();
 	void tryNewKeys(rem_port*);
 	void releaseKeys(unsigned from);
@@ -696,7 +692,6 @@ private:
 	Firebird::PathName pluginName, pluginList;
 	// These two may be legacy encrypted password, trusted auth data and so on
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
-	Firebird::PathName dbPath;
 	Firebird::ClumpletWriter lastExtractedKeys;
 	Firebird::ObjectsArray<Firebird::PathName> newKeys;
 	bool flComplete, firstTime;
@@ -709,7 +704,6 @@ public:
 		: port(p_port),
 		  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
 		  dataForPlugin(getPool()), dataFromPlugin(getPool()),
-		  dbPath(getPool()),
 		  lastExtractedKeys(getPool(), Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE),
 		  newKeys(getPool()),
 		  flComplete(false), firstTime(true),
@@ -723,10 +717,9 @@ public:
 
 	void extractDataFromPluginTo(cstring* to);
 	void extractDataFromPluginTo(P_AUTH_CONT* to);
+	void extractDataFromPluginTo(P_ACPD* to);
 	bool authCompleted(bool flag = false);
-	void setPath(const Firebird::PathName* dbPath);
 	void setLogin(const Firebird::string& user);
-	const char* getPath();
 	void load(Firebird::ClumpletReader& userId);
 	const char* getPluginName();
 	void setPluginList(const Firebird::string& name);
@@ -864,7 +857,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	rem_str*		port_host;				// Our name
 	rem_str*		port_connection;		// Name of connection
 	Firebird::string port_login;
-	Firebird::string port_password;
+	Firebird::PathName port_security_db;
 	Firebird::string port_user_name;
 	Firebird::string port_peer_name;
 	Firebird::string port_protocol_id;		// String containing protocol name for this port
@@ -888,6 +881,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 											// requires wire crypt active before attachDatabase()
 	bool			port_crypt_complete;	// wire crypt init is complete one way or another,
 											// up to being turned off in firebird.conf
+	bool			port_required_encryption;	// encryption is required on port
 	Firebird::ObjectsArray<KnownServerKey>	port_known_server_keys;	// Server sends to client
 											// keys known by it, they are stored here
 	Firebird::IWireCryptPlugin* port_crypt_plugin;		// plugin used by port, when not NULL - crypts wire data
@@ -916,7 +910,7 @@ public:
 		port_packet_vector(0),
 #endif
 		port_objects(getPool()), port_version(0), port_host(0),
-		port_connection(0), port_login(getPool()), port_password(getPool()),
+		port_connection(0), port_login(getPool()), port_security_db(getPool()),
 		port_user_name(getPool()), port_peer_name(getPool()),
 		port_protocol_id(getPool()), port_address(getPool()),
 		port_rpr(0), port_statement(0), port_receive_rmtque(0),
@@ -924,6 +918,7 @@ public:
 		port_queue(getPool()), port_qoffset(0),
 		port_srv_auth(NULL), port_srv_auth_block(NULL),
 		port_crypt_keys(getPool()), port_need_disk_crypt(false), port_crypt_complete(false),
+		port_required_encryption(true),		// safe default
 		port_known_server_keys(getPool()), port_crypt_plugin(NULL),
 		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL),
 		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
@@ -1101,7 +1096,7 @@ public:
 	{
 		return send_response(p, obj, length, status->get(), defer_flag);
 	}
-	ISC_STATUS	service_attach(const char*, Firebird::ClumpletWriter*, PACKET*, bool);
+	ISC_STATUS	service_attach(const char*, Firebird::ClumpletWriter*, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	void		service_start(P_INFO*, PACKET*);
 	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);

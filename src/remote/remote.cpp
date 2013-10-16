@@ -91,47 +91,25 @@ const ParametersSet spbParam =
 	isc_spb_config
 };
 
-const ParametersSet spbStartParam =
+const ParametersSet connectParam =
 {
 	0,
-	0,
-	isc_spb_auth_block,
-	0,
-	0,
-	isc_spb_trusted_auth,
-	isc_spb_auth_plugin_name,
-	isc_spb_auth_plugin_list,
-	isc_spb_specific_auth_data,
-	0,
-	0,
-	0,
-	0,	// Need new parameter here
+	CNCT_login,
 	0,
 	0,
 	0,
 	0,
-	0
-};
-
-const ParametersSet spbInfoParam =
-{
-	0,
-	0,
-	isc_info_svc_auth_block,
+	CNCT_plugin_name,
+	CNCT_plugin_list,
+	CNCT_specific_data,
 	0,
 	0,
 	0,
 	0,
 	0,
 	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
+	CNCT_host,
+	CNCT_user,
 	0
 };
 
@@ -1016,6 +994,32 @@ Firebird::PathName ClntAuthBlock::getPluginName()
 	return plugins.hasData() ? plugins.name() : "";
 }
 
+template <typename T>
+static void addMutliPartConnectParameter(const T& dataToAdd,
+	Firebird::ClumpletWriter& user_id, UCHAR param)
+{
+	size_t remaining = dataToAdd.getCount();
+	fb_assert(remaining <= 254u * 256u); // paranoid check => 65024
+	UCHAR part = 0;
+	UCHAR buffer[255];
+	typename T::const_pointer ptr = dataToAdd.begin();
+	while (remaining > 0)
+	{
+		size_t step = remaining;
+		if (step > 254)
+			step = 254;
+		remaining -= step;
+		buffer[0] = part++;
+		fb_assert(part || remaining == 0);
+		memcpy(&buffer[1], ptr, step);
+		ptr += step;
+
+		user_id.insertBytes(param, buffer, step + 1);
+		if (!part) // we completed 256 loops, almost impossible but check anyway.
+			break;
+	}
+}
+
 void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 {
 	// Add user login name
@@ -1043,26 +1047,10 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	// and we have no ways to override this limit cause it can be sent to any version server.
 	// Therefore divide data into 254-byte parts, leaving first byte for the number of that part.
 	// This appears more reliable than put them in strict order.
-	size_t remaining = dataFromPlugin.getCount();
-	fb_assert(remaining <= 254u * 256u); // paranoid check => 65024
-	UCHAR part = 0;
-	UCHAR buffer[255];
-	const UCHAR* ptr = dataFromPlugin.begin();
-	while (remaining > 0)
-	{
-		size_t step = remaining;
-		if (step > 254)
-			step = 254;
-		remaining -= step;
-		buffer[0] = part++;
-		fb_assert(part || remaining == 0);
-		memcpy(&buffer[1], ptr, step);
-		ptr += step;
+	addMutliPartConnectParameter(dataFromPlugin, user_id, CNCT_specific_data);
 
-		user_id.insertBytes(CNCT_specific_data, buffer, step + 1);
-		if (!part) // we completed 256 loops, almost impossible but check anyway.
-			break;
-	}
+	// Client's wirecrypt requested level
+	user_id.insertInt(CNCT_client_crypt, config->getWireCrypt(WC_CLIENT));
 }
 
 void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr)
@@ -1086,8 +1074,8 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 
 	dataForPlugin.clear();
 	dataFromPlugin.clear();
-	authComplete = false;
 	firstTime = true;
+
 	config = REMOTE_get_config(fileName, &dpbConfig);
 	pluginList = config->getPlugins(Firebird::PluginType::AuthClient);
 
@@ -1144,17 +1132,21 @@ void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char*
 Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
 	const Firebird::string* dpb_config)
 {
-	Firebird::RefPtr<Config> rc = Config::getDefaultConfig();
+	Firebird::RefPtr<Config> config;
 
-	if (dbName)
+	if (dbName && dbName->hasData())
 	{
 		Firebird::PathName dummy;
-		expandDatabaseName(*dbName, dummy, &rc);
+		expandDatabaseName(*dbName, dummy, &config);
+	}
+	else
+	{
+		config = Config::getDefaultConfig();
 	}
 
-	Config::merge(rc, dpb_config);
+	Config::merge(config, dpb_config);
 
-	return rc;
+	return config;
 }
 
 void REMOTE_parseList(Remote::ParsedList& parsed, Firebird::PathName list)
@@ -1402,3 +1394,10 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 
 	return false;
 }
+
+signed char wcCompatible[3][3] = {
+/*				DISABLED	ENABLED		REQUIRED */
+/* DISABLED */	{0,			0,			-1},
+/* ENABLED  */	{0,			1,			1},
+/* REQUIRED */	{-1,		1,			1}
+};

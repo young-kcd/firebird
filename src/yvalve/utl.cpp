@@ -2145,10 +2145,10 @@ static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 
 
 // new utl
-static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag,
-	Firebird::string& value, bool utf8)
+static void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const char* env, bool utf8)
 {
-	if (! dpb.find(tag))
+	Firebird::string value;
+	if (fb_utils::readenv(env, value) && (!dpb.find(tag)))
 	{
 		if (utf8)
 		{
@@ -2169,16 +2169,15 @@ void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag)
 	if (!(dpb.find(trusted_auth) || dpb.find(address_path) || dpb.find(auth_block)))
 	{
 		bool utf8 = dpb.find(utf8Tag);
-		Firebird::string username;
-		if (fb_utils::readenv(ISC_USER, username))
-		{
-			setTag(dpb, isc_dpb_user_name, username, utf8);
-		}
 
-		Firebird::string password;
-		if (fb_utils::readenv(ISC_PASSWORD, password) && !dpb.find(isc_dpb_password))
+		setTag(dpb, isc_dpb_user_name, ISC_USER, utf8);
+		if (!dpb.find(isc_dpb_password_enc))
 		{
-			setTag(dpb, isc_dpb_password, password, utf8);
+			setTag(dpb, isc_dpb_password, ISC_PASSWORD, utf8);
+		}
+		if (spbFlag)
+		{
+			setTag(dpb, isc_spb_expected_db, "FB_EXPECTED_DB", utf8);
 		}
 	}
 }

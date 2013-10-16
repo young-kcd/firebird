@@ -1530,6 +1530,28 @@ C --
       PARAMETER (GDS__protect_ownership                = 335545058)
       INTEGER*4 GDS__badvarnum                       
       PARAMETER (GDS__badvarnum                        = 335545059)
+      INTEGER*4 GDS__sec_context                     
+      PARAMETER (GDS__sec_context                      = 335545060)
+      INTEGER*4 GDS__multi_segment                   
+      PARAMETER (GDS__multi_segment                    = 335545061)
+      INTEGER*4 GDS__login_changed                   
+      PARAMETER (GDS__login_changed                    = 335545062)
+      INTEGER*4 GDS__auth_handshake_limit            
+      PARAMETER (GDS__auth_handshake_limit             = 335545063)
+      INTEGER*4 GDS__wirecrypt_incompatible          
+      PARAMETER (GDS__wirecrypt_incompatible           = 335545064)
+      INTEGER*4 GDS__miss_wirecrypt                  
+      PARAMETER (GDS__miss_wirecrypt                   = 335545065)
+      INTEGER*4 GDS__wirecrypt_key                   
+      PARAMETER (GDS__wirecrypt_key                    = 335545066)
+      INTEGER*4 GDS__wirecrypt_plugin                
+      PARAMETER (GDS__wirecrypt_plugin                 = 335545067)
+      INTEGER*4 GDS__secdb_name                      
+      PARAMETER (GDS__secdb_name                       = 335545068)
+      INTEGER*4 GDS__auth_data                       
+      PARAMETER (GDS__auth_data                        = 335545069)
+      INTEGER*4 GDS__auth_datalength                 
+      PARAMETER (GDS__auth_datalength                  = 335545070)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

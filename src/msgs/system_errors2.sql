@@ -746,6 +746,17 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-902, 'XX', '000', 0, 737, 'include_miss', NULL, NULL)
 (-552, '28', '000', 0, 738, 'protect_ownership', NULL, NULL)
 (-901, 'HY', '000', 0, 739, 'badvarnum', NULL, NULL)
+(-902, '28', '000', 0, 740, 'sec_context', NULL, NULL);
+(-902, '28', '000', 0, 741, 'multi_segment', NULL, NULL);
+(-902, '28', '000', 0, 742, 'login_changed', NULL, NULL);
+(-902, '28', '000', 0, 743, 'auth_handshake_limit', NULL, NULL);
+(-902, '28', '000', 0, 744, 'wirecrypt_incompatible', NULL, NULL);
+(-902, '28', '000', 0, 745, 'miss_wirecrypt', NULL, NULL);
+(-902, '28', '000', 0, 746, 'wirecrypt_key', NULL, NULL);
+(-902, '28', '000', 0, 747, 'wirecrypt_plugin', NULL, NULL);
+(-902, '28', '000', 0, 748, 'secdb_name', NULL, NULL);
+(-902, '28', '000', 0, 749, 'auth_data', NULL, NULL);
+(-902, '28', '000', 0, 750, 'auth_datalength', NULL, NULL);
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
