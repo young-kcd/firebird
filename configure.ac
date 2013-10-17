@@ -1,7 +1,8 @@
 dnl ############################# INITIALISATION ###############################
 
-AC_PREREQ(2.56)
-AC_INIT(src)
+AC_PREREQ([2.69])
+AC_INIT
+AC_CONFIG_SRCDIR([src])
 
 AC_CONFIG_AUX_DIR(builds/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
@@ -23,7 +24,7 @@ define([XE_PREPEND],[[$2]="[$1] $[$2]"])
 dnl XE_CONF_DIR(param, help, variable, default)
 define([XE_CONF_DIR],[
 AC_ARG_WITH([$1], 
-	[AC_HELP_STRING([--with-$1], [$2])], 
+	[AS_HELP_STRING([--with-$1],[$2])], 
 	[[$3]="$withval"
 	 AC_DEFINE_UNQUOTED([$3], "$[$3]", [$2])], 
 	[[$3]="[`if test ""x$prefix"" = ""xNONE"" ; then echo ""$ac_default_prefix""; else echo ""$prefix""; fi`][$4]"
@@ -34,7 +35,7 @@ AC_SUBST([$3])
 
 define([XE_CONF_FILE],[
 AC_ARG_WITH([$1],
-	[AC_HELP_STRING([--with-$1], [$2])],
+	[AS_HELP_STRING([--with-$1],[$2])],
 	[[$3]="$withval"
 	 AC_DEFINE_UNQUOTED([$3], "$[$3]", [$2])],
 	[[$3]="$4"
@@ -60,8 +61,8 @@ sinclude(binreloc.m4)
 
 dnl ############################# ADD TESTS BELOW ##############################
 
-AC_CANONICAL_SYSTEM
-CPU_TYPE=$target_cpu
+AC_CANONICAL_BUILD
+CPU_TYPE=$build_cpu
 AC_SUBST(CPU_TYPE)
 
 
@@ -82,7 +83,7 @@ STD_EDITLINE=false
 dnl Test for special ar options?
 AR_OPT_CHECK=false
 
-case "$target" in
+case "$build" in
   x*64-*-darwin*)
     MAKEFILE_PREFIX=darwin_x86_64
     MAKEFILE_POSTFIX=darwin
@@ -144,7 +145,7 @@ dnl CPU_TYPE=ppc64
 
   amd64-*-freebsd* | x86_64*-*-freebsd* | x86_64*-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=freebsd_amd64
-    case "$target" in
+    case "$build" in
         x86_64*-*-k*bsd-gnu)      # Debian/kFreeBSD
             PLATFORM=GENTOOFREEBSD
             INSTALL_PREFIX=linux
@@ -170,7 +171,7 @@ dnl CPU_TYPE=ppc64
 
   *-*-freebsd* | *-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=freebsd
-    case "$target" in
+    case "$build" in
         *-*-k*bsd-gnu)      # Debian/kFreeBSD
             PLATFORM=GENTOOFREEBSD
             INSTALL_PREFIX=linux
@@ -403,7 +404,7 @@ dnl CPU_TYPE=ppc64
            dnl inline assembly for atomic operations on Solaris 9 w SSPRO
            PTHREAD_CFLAGS=-mt
            PTHREAD_LIBS=-lpthread
-           if test "${target#*solaris}" = "2.9"; then
+           if test "${build#*solaris}" = "2.9"; then
              ATOMIC_OPTIONS=`pwd`"/src/common/classes/fb_atomic.il";
            fi
            ;;
@@ -428,7 +429,7 @@ dnl CPU_TYPE=ppc64
     ;;
 
   *)
-    AC_MSG_ERROR(unsupported platform ${target})
+    AC_MSG_ERROR(unsupported platform ${build})
     ;;
 esac
 
@@ -620,10 +621,8 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_LIBTOOL_DLOPEN
-AC_LIBTOOL_WIN32_DLL
 AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
+LT_INIT([dlopen win32-dll])
 
 dnl Check for system header files
 AC_HEADER_DIRENT
@@ -745,12 +744,9 @@ dnl Check for functions
 AC_CHECK_FUNCS(gettimeofday)
 if test "$ac_cv_func_gettimeofday" = "yes"; then
     AC_MSG_CHECKING(if gettimeofday accepts second (timezone) argument)
-    AC_TRY_COMPILE([#include <sys/time.h>],
-    [struct timeval tp; gettimeofday(&tp, (struct timezone *)0);],
-    [AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE, 1,
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/time.h>]], [[struct timeval tp; gettimeofday(&tp, (struct timezone *)0);]])],[AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE, 1,
        [Define this if gettimeofday accepts second (timezone) argument])
-     AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)])
+     AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
   AH_BOTTOM([#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
 #define GETTIMEOFDAY(x) gettimeofday((x), (struct timezone *)0)
 #else
@@ -783,13 +779,10 @@ AC_CHECK_FUNCS(getcwd getwd)
 AC_CHECK_FUNCS(setmntent getmntent)
 if test "$ac_cv_func_getmntent" = "yes"; then
   AC_MSG_CHECKING(if getmntent needs second argument)
-  AC_TRY_COMPILE([#include <stdio.h>
-#include <sys/mnttab.h>],
-  [FILE *f; struct mntent *m; getmntent(f, m);],
-  [AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS, 1,
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>
+#include <sys/mnttab.h>]], [[FILE *f; struct mntent *m; getmntent(f, m);]])],[AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS, 1,
     [Define this if getmntent needs second argument])
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 fi
 AC_CHECK_FUNCS(setrlimit getrlimit)
 AC_CHECK_FUNCS(tcgetattr strdup)
@@ -835,16 +828,14 @@ AC_CHECK_FUNCS(sem_timedwait)
 AC_CHECK_FUNCS(sem_init)
 if test "$ac_cv_func_sem_init" = "yes"; then
 AC_MSG_CHECKING(for working sem_init())
-AC_TRY_RUN([#include <semaphore.h>
+AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <semaphore.h>
 	main () {
 		sem_t s;
 		exit(sem_init(&s,0,0));
 		}
-	],
-[AC_DEFINE(WORKING_SEM_INIT,1,[Define this if sem_init() works on the platform])
-AC_MSG_RESULT(yes)],
-[AC_MSG_RESULT(no)
-AC_SEARCH_LIBS(sem_open, rt)])
+	]])],[AC_DEFINE(WORKING_SEM_INIT,1,[Define this if sem_init() works on the platform])
+AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+AC_SEARCH_LIBS(sem_open, rt)],[])
 fi
 fi
 
@@ -863,20 +854,17 @@ AC_LANG_POP(C++)
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
 AC_C_VOLATILE
-AC_TYPE_SIGNAL
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 AC_SYS_LARGEFILE
 if test "$ac_cv_sys_file_offset_bits" = "no"; then
   AC_MSG_CHECKING(for native large file support)
-  AC_TRY_RUN([#include <unistd.h>
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <unistd.h>
     main () {
     exit(!(sizeof(off_t) == 8));
-  }],
-  [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
+  }]])],[ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64)
+   AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)],[])
 fi
 
 AC_CHECK_SIZEOF(void *)
@@ -892,12 +880,9 @@ typedef int socklen_t;
 AC_CHECK_TYPES([semun])
 if test "$ac_cv_type_semun" = "no"; then
   AC_MSG_CHECKING(if sem.h defines semun)
-  AC_TRY_COMPILE([#include <sys/types.h>
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
       #include <sys/ipc.h>
-      #include <sys/sem.h>],
-  [union semun s;],
-  [ac_cv_type_semun=yes; AC_DEFINE(HAVE_SEMUN) AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
+      #include <sys/sem.h>]], [[union semun s;]])],[ac_cv_type_semun=yes; AC_DEFINE(HAVE_SEMUN) AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
 fi
 
 AC_CHECK_TYPES([struct XDR::xdr_ops],,,[#include <rpc/rpc.h>
@@ -913,24 +898,24 @@ AC_CHECK_MEMBER([struct dirent.d_type],
 dnl EKU: try to determine the alignment of long and double
 dnl      replaces FB_ALIGNMENT and FB_DOUBLE_ALIGN in src/jrd/common.h
 AC_MSG_CHECKING(alignment of long)
-AC_TRY_RUN([main () {
+AC_RUN_IFELSE([AC_LANG_SOURCE([[main () {
   struct s {
     char a;
     long long b;
   };
   exit((int)&((struct s*)0)->b);
-}], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)
+}]])],[ac_cv_c_alignment=$ac_status],[ac_cv_c_alignment=$ac_status],[])
 AC_MSG_RESULT($ac_cv_c_alignment)
 AC_DEFINE_UNQUOTED(FB_ALIGNMENT, $ac_cv_c_alignment, [Alignment of long])
 
 AC_MSG_CHECKING(alignment of double)
-AC_TRY_RUN([main () {
+AC_RUN_IFELSE([AC_LANG_SOURCE([[main () {
   struct s {
     char a;
     double b;
   };
   exit((int)&((struct s*)0)->b);
-}], ac_cv_c_double_align=$ac_status, ac_cv_c_double_align=$ac_status)
+}]])],[ac_cv_c_double_align=$ac_status],[ac_cv_c_double_align=$ac_status],[])
 AC_MSG_RESULT($ac_cv_c_double_align)
 AC_DEFINE_UNQUOTED(FB_DOUBLE_ALIGN, $ac_cv_c_double_align, [Alignment of double])
 
@@ -959,11 +944,8 @@ case "$PLATFORM" in
     dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
     dnl so test for socklen_t with sys/socket.h included
     AC_MSG_CHECKING(if sys/socket.h defines socklen_t)
-    AC_TRY_COMPILE([#include <sys/types.h>
-       #include <sys/socket.h>],
-    [socklen_t s;],
-    [AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+       #include <sys/socket.h>]], [[socklen_t s;]])],[AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
     ;;
 
   SOLARIS|solx86)
@@ -974,8 +956,7 @@ case "$PLATFORM" in
     AC_CHECK_TYPES([caddr_t])
 
     AC_ARG_WITH(sfio,
-      AC_HELP_STRING([--with-sfio=PATH],
-        [use sfio (replacement stdio on Solaris) (default=no)]),
+      AS_HELP_STRING([--with-sfio=PATH],[use sfio (replacement stdio on Solaris) (default=no)]),
 		[ac_cv_use_sfio=$withval],[ac_cv_use_sfio=no])
 
     if test "$ac_cv_use_sfio" = "no"; then
