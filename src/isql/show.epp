@@ -852,7 +852,9 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	// No relation called "object" was found, try procedure "object"
 	if (obj_type == obj_procedure || obj_type == 255)
 	{
-		FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ object
+		FOR FIRST 1 P IN RDB$PROCEDURES WITH
+			P.RDB$PROCEDURE_NAME EQ object AND
+			P.RDB$PACKAGE_NAME MISSING
 
 			// Part two is for stored procedures only
 
@@ -862,7 +864,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				PRV.RDB$RELATION_NAME EQ object AND
 				PRC.RDB$PROCEDURE_NAME EQ object AND
 				PRV.RDB$PRIVILEGE EQ 'X' AND
-				PRC.RDB$OWNER_NAME NE PRV.RDB$USER
+				PRC.RDB$OWNER_NAME NE PRV.RDB$USER AND
+				PRC.RDB$PACKAGE_NAME MISSING
 				SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
 
 				if (first && optional_msg)
@@ -1059,13 +1062,16 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	{
 		if (isqlGlob.major_ods >= ODS_VERSION12)
 		{
-			FOR FIRST 1 F IN RDB$FUNCTIONS WITH F.RDB$FUNCTION_NAME EQ object
+			FOR FIRST 1 F IN RDB$FUNCTIONS
+			WITH F.RDB$FUNCTION_NAME EQ object AND
+				 F.RDB$PACKAGE_NAME MISSING
 
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					FUN IN RDB$FUNCTIONS WITH
 					PRV.RDB$OBJECT_TYPE = obj_udf AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					FUN.RDB$FUNCTION_NAME EQ object AND
+					FUN.RDB$PACKAGE_NAME MISSING AND
 					PRV.RDB$PRIVILEGE EQ 'X' AND
 					FUN.RDB$OWNER_NAME NE PRV.RDB$USER
 					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
@@ -1834,7 +1840,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 				if (!key)
 				{
 					FOR FIRST 1 P IN RDB$PROCEDURES
-						WITH P.RDB$PROCEDURE_NAME EQ SQL_id_for_grant;
+						WITH P.RDB$PROCEDURE_NAME EQ SQL_id_for_grant AND
+							 P.RDB$PACKAGE_NAME MISSING
 
 						key = NO_GRANT_ON_PROC;
 					END_FOR
@@ -1856,7 +1863,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 				if (!key)
 				{
 					FOR FIRST 1 F IN RDB$FUNCTIONS
-						WITH F.RDB$FUNCTION_NAME EQ SQL_id_for_grant
+						WITH F.RDB$FUNCTION_NAME EQ SQL_id_for_grant AND
+							 F.RDB$PACKAGE_NAME MISSING
 
 						key = NO_GRANT_ON_FUN;
 					END_FOR
@@ -2639,75 +2647,38 @@ static processing_state show_comments(const commentMode showextract, const char*
 		return ps_ERR;
 	END_ERROR
 
-	if (isqlGlob.major_ods >= ODS_VERSION12)
-	{
-		FOR PR IN RDB$PROCEDURES
-			WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
-			AND PR.RDB$PACKAGE_NAME MISSING
-			SORTED BY PR.RDB$PROCEDURE_NAME
+	FOR PR IN RDB$PROCEDURES
+		WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
+		AND PR.RDB$PACKAGE_NAME MISSING
+		SORTED BY PR.RDB$PROCEDURE_NAME
 
-			if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
-			{
-				show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
-					showextract, first ? banner : 0);
-				first = false;
-			}
+		if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
+		{
+			show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
+				showextract, first ? banner : 0);
+			first = false;
+		}
 
-			FOR PA IN RDB$PROCEDURE_PARAMETERS
-				WITH PA.RDB$PROCEDURE_NAME = PR.RDB$PROCEDURE_NAME
-				AND PA.RDB$PACKAGE_NAME MISSING
-				AND PA.RDB$DESCRIPTION NOT MISSING
-				SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
+		FOR PA IN RDB$PROCEDURE_PARAMETERS
+			WITH PA.RDB$PROCEDURE_NAME = PR.RDB$PROCEDURE_NAME
+			AND PA.RDB$PACKAGE_NAME MISSING
+			AND PA.RDB$DESCRIPTION NOT MISSING
+			SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
 
-				show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
-					&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
-				first = false;
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(isc_status);
-				return ps_ERR;
-			END_ERROR
-
+			show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
+				&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
+			first = false;
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
 			return ps_ERR;
 		END_ERROR
-	}
-	else
-	{
-		FOR PR IN RDB$PROCEDURES
-			WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
-			SORTED BY PR.RDB$PROCEDURE_NAME
 
-			if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
-			{
-				show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
-					showextract, first ? banner : 0);
-				first = false;
-			}
-
-			FOR PA IN RDB$PROCEDURE_PARAMETERS
-				WITH PA.RDB$PROCEDURE_NAME = PR.RDB$PROCEDURE_NAME
-				AND PA.RDB$DESCRIPTION NOT MISSING
-				SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
-
-				show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
-					&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
-				first = false;
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(isc_status);
-				return ps_ERR;
-			END_ERROR
-
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		END_ERROR
-	}
-
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	END_ERROR
 
 	FOR TR IN RDB$TRIGGERS
 		WITH TR.RDB$DESCRIPTION NOT MISSING
@@ -2723,49 +2694,25 @@ static processing_state show_comments(const commentMode showextract, const char*
 		return ps_ERR;
 	END_ERROR
 
-	if (isqlGlob.major_ods >= ODS_VERSION12)
-	{
-		FOR UD IN RDB$FUNCTIONS
-			WITH UD.RDB$DESCRIPTION NOT MISSING
-			AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
-			AND UD.RDB$PACKAGE_NAME MISSING
-			SORTED BY UD.RDB$FUNCTION_NAME
+	FOR UD IN RDB$FUNCTIONS
+		WITH UD.RDB$DESCRIPTION NOT MISSING
+		AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
+		AND UD.RDB$PACKAGE_NAME MISSING
+		SORTED BY UD.RDB$FUNCTION_NAME
 
-			// Avoid syntax error when extracting scripts due to an historical bug in gbak.
-			// See CORE-1174.
-			if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
-				continue;
+		// Avoid syntax error when extracting scripts due to an historical bug in gbak.
+		// See CORE-1174.
+		if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
+			continue;
 
-			show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
-				&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
-			first = false;
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		END_ERROR
-	}
-	else
-	{
-		FOR UD IN RDB$FUNCTIONS
-			WITH UD.RDB$DESCRIPTION NOT MISSING
-			AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
-			SORTED BY UD.RDB$FUNCTION_NAME
-
-			// Avoid syntax error when extracting scripts due to an historical bug in gbak.
-			// See CORE-1174.
-			if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
-				continue;
-
-			show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
-				&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
-			first = false;
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		END_ERROR
-	}
+		show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
+			&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
+		first = false;
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	END_ERROR
 
 	FOR BF IN RDB$FILTERS
 		WITH BF.RDB$DESCRIPTION NOT MISSING
@@ -3570,7 +3517,8 @@ static processing_state show_sys_functions(const SCHAR* msg)
 	bool odd = true;
 
 	FOR FUN IN RDB$FUNCTIONS
-		WITH FUN.RDB$SYSTEM_FLAG EQ 1
+		WITH FUN.RDB$SYSTEM_FLAG EQ 1 AND
+			 FUN.RDB$PACKAGE_NAME MISSING
 		SORTED BY FUN.RDB$FUNCTION_NAME
 
 		if (first)
@@ -3618,7 +3566,7 @@ static processing_state show_functions(const SCHAR* funcname)
 			first = true;
 
 			FOR FUN IN RDB$FUNCTIONS
-				SORTED BY FUN.RDB$FUNCTION_NAME
+				SORTED BY FUN.RDB$PACKAGE_NAME, FUN.RDB$FUNCTION_NAME
 
 				if (first)
 				{
@@ -3634,22 +3582,11 @@ static processing_state show_functions(const SCHAR* funcname)
 					first = false;
 				}
 
+				bool private_flag = !FUN.RDB$PACKAGE_NAME.NULL;
 				const char* invalid = "        ";
 
-				bool private_flag = false;
-
-				if (isqlGlob.major_ods >= ODS_VERSION12)
-				{
-					FOR FUN2 IN RDB$FUNCTIONS
-						WITH FUN2.RDB$FUNCTION_NAME EQ FUN.RDB$FUNCTION_NAME
-						AND FUN2.RDB$FUNCTION_ID EQ FUN.RDB$FUNCTION_ID
-
-						private_flag = !FUN2.RDB$PACKAGE_NAME.NULL;
-						if (!(FUN2.RDB$VALID_BLR.NULL || FUN2.RDB$VALID_BLR))
-							invalid = "   *    ";
-					END_FOR
-
-				}
+				if (!(FUN.RDB$VALID_BLR.NULL || FUN.RDB$VALID_BLR))
+					invalid = "   *    ";
 
 				if ((i == 0 && private_flag) || (i == 1 && !private_flag))
 					continue;
@@ -3659,25 +3596,29 @@ static processing_state show_functions(const SCHAR* funcname)
 				fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
 				isqlGlob.printf("%-34s%s", FUN.RDB$FUNCTION_NAME, invalid);
 
-				bool first_dep = true;
-				FOR DEP IN RDB$DEPENDENCIES WITH
-					FUN.RDB$FUNCTION_NAME EQ DEP.RDB$DEPENDENT_NAME
-					REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-					SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+				if (FUN.RDB$PACKAGE_NAME.NULL)
+				{
+					bool first_dep = true;
+					FOR DEP IN RDB$DEPENDENCIES WITH
+						FUN.RDB$FUNCTION_NAME EQ DEP.RDB$DEPENDENT_NAME
+						REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+						SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
 
-					fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-					// Get column type name to print
-					if (!first_dep) {
-						isqlGlob.printf("%s%42s", NEWLINE, "");
-					}
-					first_dep = false;
-					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
-						Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
-				END_FOR
-				ON_ERROR
-					ISQL_errmsg (isc_status);
-					return ps_ERR;
-				END_ERROR;
+						fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
+						// Get column type name to print
+						if (!first_dep) {
+							isqlGlob.printf("%s%42s", NEWLINE, "");
+						}
+						first_dep = false;
+						isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+							Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+					END_FOR
+					ON_ERROR
+						ISQL_errmsg (isc_status);
+						return ps_ERR;
+					END_ERROR;
+				}
+
 				isqlGlob.printf(NEWLINE);
 
 			END_FOR
@@ -3695,7 +3636,8 @@ static processing_state show_functions(const SCHAR* funcname)
 	processing_state return_state = OBJECT_NOT_FOUND;
 
 	FOR FUN IN RDB$FUNCTIONS
-		WITH FUN.RDB$FUNCTION_NAME EQ funcname
+		WITH FUN.RDB$FUNCTION_NAME EQ funcname AND
+			 FUN.RDB$PACKAGE_NAME MISSING
 
 		if (!FUN.RDB$MODULE_NAME.NULL)
 			return_state = show_func_legacy(funcname);
@@ -3725,7 +3667,8 @@ static processing_state show_func(const SCHAR* funcname)
 	bool first = true;
 
 	FOR FUN IN RDB$FUNCTIONS
-		WITH FUN.RDB$FUNCTION_NAME EQ funcname
+		WITH FUN.RDB$FUNCTION_NAME EQ funcname AND
+			 FUN.RDB$PACKAGE_NAME MISSING
 
 		first = false;
 
@@ -3741,6 +3684,7 @@ static processing_state show_func(const SCHAR* funcname)
 		FOR ARG IN RDB$FUNCTION_ARGUMENTS CROSS
 			FLD IN RDB$FIELDS WITH
 			FUN.RDB$FUNCTION_NAME EQ ARG.RDB$FUNCTION_NAME AND
+			ARG.RDB$PACKAGE_NAME MISSING AND
 			ARG.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
 			SORTED BY ARG.RDB$ARGUMENT_POSITION
 
@@ -3761,7 +3705,7 @@ static processing_state show_func(const SCHAR* funcname)
 			if (!ARG.RDB$ARGUMENT_MECHANISM.NULL)
 				mechanism = (prm_mech_t) ARG.RDB$ARGUMENT_MECHANISM;
 
-			if (ARG.RDB$ARGUMENT_POSITION != FUN.RDB$RETURN_ARGUMENT) // input, try to show default and make Vlad happy.
+			if (ARG.RDB$ARGUMENT_POSITION != FUN.RDB$RETURN_ARGUMENT)
 			{
 				prm_default_source_null = ARG.RDB$DEFAULT_SOURCE.NULL;
 				prm_default_source = ARG.RDB$DEFAULT_SOURCE;
@@ -3901,6 +3845,7 @@ static processing_state show_func_legacy(const SCHAR* object)
 	FOR FUN IN RDB$FUNCTIONS CROSS
 		FNA IN RDB$FUNCTION_ARGUMENTS WITH
 		FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+		FUN.RDB$PACKAGE_NAME MISSING AND
 		FUN.RDB$FUNCTION_NAME EQ object AND
 		FUN.RDB$MODULE_NAME NOT MISSING
 		SORTED BY FNA.RDB$ARGUMENT_POSITION
@@ -3943,47 +3888,30 @@ static processing_state show_func_legacy(const SCHAR* object)
 						(FNA.RDB$FIELD_TYPE == INTEGER) ||
 						(FNA.RDB$FIELD_TYPE == BIGINT)) )
 				{
-					FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
-						FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
-						FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION
-						AND FNA1.RDB$FIELD_PRECISION NOT MISSING
-
-						// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-						if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
-							FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-						{
-							isqlGlob.printf("%s(%d, %d)",
-										Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
-										FNA1.RDB$FIELD_PRECISION,
-										-FNA1.RDB$FIELD_SCALE);
-							precision_known = true;
-						}
-					END_FOR
-					ON_ERROR
-						ISQL_errmsg (isc_status);
-						return ps_ERR;
-					END_ERROR;
+					// We are Dialect >=3 since FIELD_PRECISION is non-NULL
+					if (!FNA.RDB$FIELD_PRECISION.NULL &&
+						FNA.RDB$FIELD_SUB_TYPE > 0 &&
+						FNA.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+					{
+						isqlGlob.printf("%s(%d, %d)",
+									Integral_subtypes[FNA.RDB$FIELD_SUB_TYPE],
+									FNA.RDB$FIELD_PRECISION,
+									-FNA.RDB$FIELD_SCALE);
+						precision_known = true;
+					}
 				}
 
 				if (!precision_known)
 				{
 					// Take a stab at numerics and decimals
 					if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
-					{
 						isqlGlob.printf("NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
-					}
 					else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
-					{
 						isqlGlob.printf("NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
-					}
 					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FNA.RDB$FIELD_SCALE < 0))
-					{
 						isqlGlob.printf("NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
-					}
 					else
-					{
 						isqlGlob.printf("%s", Column_types[i].type_name);
-					}
 				}
 				break;
 			}
@@ -3996,6 +3924,7 @@ static processing_state show_func_legacy(const SCHAR* object)
 			FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
 				CHARSET IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 				WITH V4FNA.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
+				V4FNA.RDB$PACKAGE_NAME MISSING AND
 				V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
 
 				fb_utils::exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
@@ -4358,7 +4287,7 @@ static processing_state show_proc(const SCHAR* procname)
 			first_proc = true;
 
 			FOR PRC IN RDB$PROCEDURES
-				SORTED BY PRC.RDB$PROCEDURE_NAME
+				SORTED BY PRC.RDB$PACKAGE_NAME, PRC.RDB$PROCEDURE_NAME
 
 				if (first_proc)
 				{
@@ -4374,31 +4303,11 @@ static processing_state show_proc(const SCHAR* procname)
 					first_proc = false;
 				}
 
+				bool private_flag = !PRC.RDB$PACKAGE_NAME.NULL;
 				const char* invalid = "        ";
 
-				bool private_flag = false;
-
-				if (isqlGlob.major_ods >= ODS_VERSION12)
-				{
-					FOR PRC2 IN RDB$PROCEDURES
-						WITH PRC2.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME
-						AND PRC2.RDB$PROCEDURE_ID EQ PRC.RDB$PROCEDURE_ID
-
-						private_flag = !PRC2.RDB$PACKAGE_NAME.NULL;
-						if (!(PRC2.RDB$VALID_BLR.NULL || PRC2.RDB$VALID_BLR))
-							invalid = "   *    ";
-					END_FOR
-
-				}
-				else if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
-				{
-					FOR PRC2 IN RDB$PROCEDURES
-						WITH PRC2.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME
-
-						if (!(PRC2.RDB$VALID_BLR.NULL || PRC2.RDB$VALID_BLR))
-							invalid = "   *    ";
-					END_FOR
-				}
+				if (!(PRC.RDB$VALID_BLR.NULL || PRC.RDB$VALID_BLR))
+					invalid = "   *    ";
 
 				if (i == 0 && private_flag || i == 1 && !private_flag)
 					continue;
@@ -4408,25 +4317,29 @@ static processing_state show_proc(const SCHAR* procname)
 				fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 				isqlGlob.printf("%-34s%s", PRC.RDB$PROCEDURE_NAME, invalid);
 
-				bool first_dep = true;
-				FOR DEP IN RDB$DEPENDENCIES WITH
-					PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
-					REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-					SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+				if (PRC.RDB$PACKAGE_NAME.NULL)
+				{
+					bool first_dep = true;
+					FOR DEP IN RDB$DEPENDENCIES WITH
+						PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
+						REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+						SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
 
-					fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-					// Get column type name to print
-					if (!first_dep) {
-						isqlGlob.printf("%s%42s", NEWLINE, "");
-					}
-					first_dep = false;
-					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
-							 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
-				END_FOR
-				ON_ERROR
-					ISQL_errmsg (isc_status);
-					return ps_ERR;
-				END_ERROR;
+						fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
+						// Get column type name to print
+						if (!first_dep)
+							isqlGlob.printf("%s%42s", NEWLINE, "");
+
+						first_dep = false;
+						isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+								 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+					END_FOR
+					ON_ERROR
+						ISQL_errmsg (isc_status);
+						return ps_ERR;
+					END_ERROR;
+				}
+
 				isqlGlob.printf(NEWLINE);
 
 			END_FOR
@@ -4446,7 +4359,8 @@ static processing_state show_proc(const SCHAR* procname)
 	bool first = true;
 
 	FOR PRC IN RDB$PROCEDURES WITH
-		PRC.RDB$PROCEDURE_NAME EQ procname
+		PRC.RDB$PROCEDURE_NAME EQ procname AND
+		PRC.RDB$PACKAGE_NAME MISSING
 		first = false;
 
 		isqlGlob.printf("Procedure text:%s", NEWLINE);
@@ -4461,6 +4375,7 @@ static processing_state show_proc(const SCHAR* procname)
 		FOR PRM IN RDB$PROCEDURE_PARAMETERS CROSS
 			FLD IN RDB$FIELDS WITH
 			PRC.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
+			PRM.RDB$PACKAGE_NAME MISSING AND
 			PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
 			SORTED BY PRM.RDB$PARAMETER_TYPE, PRM.RDB$PARAMETER_NUMBER
 
@@ -4481,64 +4396,44 @@ static processing_state show_proc(const SCHAR* procname)
 			SSHORT collation = 0;
 			bool prm_collation_null = true;
 
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+			if (!PRM.RDB$PARAMETER_MECHANISM.NULL)
+				mechanism = (prm_mech_t) PRM.RDB$PARAMETER_MECHANISM;
+
+			if (PRM.RDB$PARAMETER_TYPE == 0)
 			{
-				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
-
-					if (!PRM2.RDB$PARAMETER_MECHANISM.NULL)
-						mechanism = (prm_mech_t) PRM2.RDB$PARAMETER_MECHANISM;
-
-					if (PRM.RDB$PARAMETER_TYPE == 0) // input, try to show default and make Vlad happy.
-					{
-						prm_default_source_null = PRM2.RDB$DEFAULT_SOURCE.NULL;
-						prm_default_source = PRM2.RDB$DEFAULT_SOURCE;
-					}
-
-					prm_collation_null = PRM2.RDB$COLLATION_ID.NULL;
-					if (!prm_collation_null)
-						collation = PRM2.RDB$COLLATION_ID;
-				END_FOR
+				prm_default_source_null = PRM.RDB$DEFAULT_SOURCE.NULL;
+				prm_default_source = PRM.RDB$DEFAULT_SOURCE;
 			}
+
+			prm_collation_null = PRM.RDB$COLLATION_ID.NULL;
+			if (!prm_collation_null)
+				collation = PRM.RDB$COLLATION_ID;
 
 			char relationName[BUFFER_LENGTH128] = "";
 			char relationField[BUFFER_LENGTH128] = "";
 
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+			if (!PRM.RDB$RELATION_NAME.NULL)
 			{
-				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
+				strcpy(relationName, PRM.RDB$RELATION_NAME);
+				fb_utils::exact_name(relationName);
+			}
 
-					if (!PRM2.RDB$RELATION_NAME.NULL)
-					{
-						strcpy(relationName, PRM2.RDB$RELATION_NAME);
-						fb_utils::exact_name(relationName);
-					}
+			if (!PRM.RDB$FIELD_NAME.NULL)
+			{
+				strcpy(relationField, PRM.RDB$FIELD_NAME);
+				fb_utils::exact_name(relationField);
+			}
 
-					if (!PRM2.RDB$FIELD_NAME.NULL)
-					{
-						strcpy(relationField, PRM2.RDB$FIELD_NAME);
-						fb_utils::exact_name(relationField);
-					}
+			if (prm_collation_null)
+			{
+				FOR RFL IN RDB$RELATION_FIELDS
+					WITH RFL.RDB$RELATION_NAME = PRM.RDB$RELATION_NAME AND
+						 RFL.RDB$FIELD_NAME = PRM.RDB$FIELD_NAME
 
+					prm_collation_null = RFL.RDB$COLLATION_ID.NULL;
+					if (!prm_collation_null)
+						collation = RFL.RDB$COLLATION_ID;
 				END_FOR
-
-				if (prm_collation_null)
-				{
-					FOR PRM3 IN RDB$PROCEDURE_PARAMETERS CROSS
-						RFL IN RDB$RELATION_FIELDS
-						WITH PRM3.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-								PRM3.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME AND
-								RFL.RDB$RELATION_NAME = PRM3.RDB$RELATION_NAME AND
-								RFL.RDB$FIELD_NAME = PRM3.RDB$FIELD_NAME
-
-						prm_collation_null = RFL.RDB$COLLATION_ID.NULL;
-						if (!prm_collation_null)
-							collation = RFL.RDB$COLLATION_ID;
-					END_FOR
-				}
 			}
 
 			if (prm_collation_null && !FLD.RDB$COLLATION_ID.NULL)
@@ -4647,19 +4542,9 @@ static processing_state show_role(const SCHAR* object)
 			X.RDB$ROLE_NAME NOT MISSING
 			SORTED BY X.RDB$ROLE_NAME
 
-			bool system_flag = false;
-			if (isqlGlob.major_ods >= ODS_VERSION11)
-			{
-				FOR SF IN RDB$ROLES
-					WITH SF.RDB$ROLE_NAME = X.RDB$ROLE_NAME
-					 AND SF.RDB$SYSTEM_FLAG > 0
+			bool system_flag = !X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG > 0;
 
-					system_flag = true;
-
-				END_FOR
-			}
-
-			if (! system_flag)
+			if (!system_flag)
 			{
 				first = false;
 				isqlGlob.printf("%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
@@ -4844,7 +4729,8 @@ static processing_state show_secclass(const char* object, const char* opt)
 	FOR PR IN RDB$PROCEDURES
 	CROSS SC IN RDB$SECURITY_CLASSES
 	OVER RDB$SECURITY_CLASS
-	WITH PR.RDB$PROCEDURE_NAME EQ object
+	WITH PR.RDB$PROCEDURE_NAME EQ object AND
+		 PR.RDB$PACKAGE_NAME MISSING
 		++count;
 		isqlGlob.printf("Procedure's sec class %s%s",
 			fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
@@ -4864,7 +4750,8 @@ static processing_state show_secclass(const char* object, const char* opt)
 		FOR FUN IN RDB$FUNCTIONS
 		CROSS SC IN RDB$SECURITY_CLASSES
 		OVER RDB$SECURITY_CLASS
-		WITH FUN.RDB$FUNCTION_NAME EQ object
+		WITH FUN.RDB$FUNCTION_NAME EQ object AND
+			 FUN.RDB$PACKAGE_NAME MISSING
 			++count;
 			isqlGlob.printf("Function's sec class %s%s",
 				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
@@ -5079,21 +4966,8 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 			isqlGlob.printf(" Nullable ");
 		}
 
-		if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_12_0)
-		{
-			FOR RFR2 IN RDB$RELATION_FIELDS
-				WITH RFR2.RDB$RELATION_NAME = RFR.RDB$RELATION_NAME AND
-					 RFR2.RDB$FIELD_NAME = RFR.RDB$FIELD_NAME
-			{
-				if (!RFR2.RDB$GENERATOR_NAME.NULL)
-					isqlGlob.printf("Identity (by default)");
-			}
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(isc_status);
-				return ps_ERR;
-			END_ERROR
-		}
+		if (!RFR.RDB$GENERATOR_NAME.NULL)
+			isqlGlob.printf("Identity (by default)");
 
 		// Handle defaults for columns
 
@@ -5348,14 +5222,8 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 
 			const char* invalid = "        ";
 
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
-			{
-				FOR TRG2 IN RDB$TRIGGERS
-					WITH TRG2.RDB$TRIGGER_NAME EQ TRG.RDB$TRIGGER_NAME
-					if (!(TRG2.RDB$VALID_BLR.NULL || TRG2.RDB$VALID_BLR))
-						invalid = "    *   ";
-				END_FOR
-			}
+			if (!(TRG.RDB$VALID_BLR.NULL || TRG.RDB$VALID_BLR))
+				invalid = "    *   ";
 
 			fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
 			fb_utils::exact_name(TRG.RDB$RELATION_NAME);
