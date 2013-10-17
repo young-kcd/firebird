@@ -209,9 +209,6 @@ int main()
 	return rc;
 }
 
-	const char* name;
-	unsigned type, length, offset, null;
-
 template <typename T>
 T as(unsigned char* ptr)
 {
