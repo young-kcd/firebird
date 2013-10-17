@@ -1,3 +1,56 @@
+ 2013-10-16 12:53  alexpeshkoff 
+   M doc/README.services_extension
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecureRemotePassword/srp.cpp
+   M src/auth/SecureRemotePassword/srp.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/burp/burp.cpp
+   M src/common/IntlParametersBlock.cpp
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ClumpletReader.h
+   M src/common/classes/array.h
+   M src/common/classes/fb_string.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/include/consts_pub.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/inet_proto.h
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/wnet_proto.h
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet_proto.h
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Fix found by Jim Starkey man-in-themiddle attack on ATTACH packet. 
+That packet may contain database name, command line for service and/or some other important and critical information.
+To avoid such attack wire encryption is started before attaching database or service manager, right after connect.
+Also should fix a number of issues found in Alpha1 regarding services attach.
+
  2013-10-15 15:26  asfernandes 
    M src/common/CharSet.h
    M src/common/TextType.cpp
