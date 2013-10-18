@@ -416,7 +416,7 @@ void FB_CARG SecurityDatabase::handler()
 		ex.stuff_exception(status);
 		if (status[0] == 1 && status[1] != isc_att_shutdown)
 		{
-			iscLogStatus("Legacy security database shutdown", status);
+			iscLogStatus("Legacy security database timer handler", status);
 		}
 	}
 }
