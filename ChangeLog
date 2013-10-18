@@ -1,3 +1,26 @@
+ 2013-10-17 16:08  alexpeshkoff 
+   M autogen.sh
+   M configure.ac
+Avoid deprecated macros in configure.ac. Use autoconf 2.69 as basic for FB3.
+
+ 2013-10-17 15:56  alexpeshkoff 
+   D extern/editline/Makefile.am
+   M extern/editline/Makefile.in
+   M extern/editline/configure
+   D extern/editline/src/Makefile.am
+   M extern/editline/src/Makefile.in
+Avoid automake dependency which caused people a lot of problems
+
+ 2013-10-17 15:42  asfernandes 
+   M src/isql/extract.epp
+   M src/isql/show.epp
+1) Fixed some bugs with show/extract related to packages.
+2) Cleanup related to multiple ODS, now using possible non-existent fields in older ODS which will return NULL.
+
+ 2013-10-17 13:22  alexpeshkoff 
+   M examples/interfaces/04.print_table.cpp
+Very strange that it compiled and worked as expected with 2 unused and unneded lines of code
+
  2013-10-16 12:53  alexpeshkoff 
    M doc/README.services_extension
    M lang_helpers/gds_codes.ftn
