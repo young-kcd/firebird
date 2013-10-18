@@ -27,7 +27,7 @@ case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
  2\.[1-5][0-9] | 2\.[1-5][0-9][a-z]* | 2\.6[0-8] | 2\.6[0-8][a-z]* )
   echo
-  echo "**Error**: You must have autoconf 2.63 or later installed."
+  echo "**Error**: You must have autoconf 2.69 or later installed."
   echo "Download the appropriate package for your distribution/OS,"
   echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
   DIE=1
