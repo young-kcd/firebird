@@ -1,3 +1,19 @@
+ 2013-10-18 15:30  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+Misc diag
+
+ 2013-10-18 12:36  alexpeshkoff 
+   M configure.ac
+Enable use of older version of autoconf
+
+ 2013-10-18 12:35  alexpeshkoff 
+   M autogen.sh
+Avoid duplicated version check
+
+ 2013-10-18 07:10  alexpeshkoff 
+   M autogen.sh
+Fixed diagnostics
+
  2013-10-17 16:08  alexpeshkoff 
    M autogen.sh
    M configure.ac
