@@ -448,8 +448,12 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	if (LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
 		LCK_release(tdbb, lock);
 
-	// Mark dbb as requesting a new lock
-	dbb->dbb_ast_flags |= DBB_monitor_off;
+	{ // scope
+		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
+											   SYNC_EXCLUSIVE, FB_FUNCTION);
+		// Mark dbb as requesting a new lock
+		dbb->dbb_ast_flags |= DBB_monitor_off;
+	}
 
 	// Read the shared memory
 	ULONG dataSize = 0;
@@ -771,15 +775,18 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 		}
 	}
 
-	for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
+	for (AttachmentsRefHolder::Iterator iter(attachments); *iter; )
 	{
-		JAttachment* const jAtt = *iter;
-		MutexLockGuard guard(*jAtt->getMutex(), FB_FUNCTION);
+		{ // scope
+			JAttachment* const jAtt = *iter;
+			MutexLockGuard guard(*jAtt->getMutex(), FB_FUNCTION);
 
-		Attachment* const attachment = jAtt->getHandle();
+			Attachment* const attachment = jAtt->getHandle();
 
-		if (attachment && attachment->att_user)
-			dumpAttachment(record, attachment, writer);
+			if (attachment && attachment->att_user)
+				dumpAttachment(record, attachment, writer);
+		}
+		iter.remove();
 	}
 }
 

@@ -583,13 +583,16 @@ namespace
 	class AttachmentHolder
 	{
 	public:
-		static const unsigned ATT_LOCK_ASYNC = 1;
+		static const unsigned ATT_LOCK_ASYNC	= 1;
+		static const unsigned ATT_DONT_LOCK		= 2;
 
-		AttachmentHolder(thread_db* tdbb, JAttachment* ja, unsigned lockAsync, const char* from)
+		AttachmentHolder(thread_db* tdbb, JAttachment* ja, unsigned lockFlags, const char* from)
 			: jAtt(ja),
-			  async(lockAsync & ATT_LOCK_ASYNC)
+			  async(lockFlags & ATT_LOCK_ASYNC),
+			  nolock(lockFlags & ATT_DONT_LOCK)
 		{
-			jAtt->getMutex(async)->enter(from);
+			if (!nolock)
+				jAtt->getMutex(async)->enter(from);
 			Jrd::Attachment* attachment = jAtt->getHandle();	// Must be done after entering mutex
 
 			try
@@ -612,7 +615,8 @@ namespace
 			}
 			catch (const Firebird::Exception&)
 			{
-				jAtt->getMutex(async)->leave();
+				if (!nolock)
+					jAtt->getMutex(async)->leave();
 				throw;
 			}
 		}
@@ -624,12 +628,14 @@ namespace
 			{
 				attachment->att_use_count--;
 			}
-			jAtt->getMutex(async)->leave();
+			if (!nolock)
+				jAtt->getMutex(async)->leave();
 		}
 
 	private:
 		RefPtr<JAttachment> jAtt;
 		bool async;
+		bool nolock; // if locked manually, no need to take lock recursively
 
 	private:
 		// copying is prohibited
@@ -643,9 +649,9 @@ namespace
 	public:
 		template <typename I>
 		EngineContextHolder(IStatus* status, I* interfacePtr, const char* from,
-							unsigned lockAsync = 0)
+							unsigned lockFlags = 0)
 			: ThreadContextHolder(status),
-			  AttachmentHolder(*this, interfacePtr->getAttachment(), lockAsync, from),
+			  AttachmentHolder(*this, interfacePtr->getAttachment(), lockFlags, from),
 			  DatabaseContextHolder(operator thread_db*())
 		{
 			validateHandle(*this, interfacePtr->getHandle());
@@ -919,6 +925,7 @@ private:
 static void			check_database(thread_db* tdbb, bool async = false);
 static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
+static void			enable_monitoring(thread_db* tdbb);
 static void			find_intl_charset(thread_db*, Jrd::Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*);
 static void			init_database_locks(thread_db*);
@@ -1331,7 +1338,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				guardDbInit.leave();
 			}
 
-			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION);
+			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION, AttachmentHolder::ATT_DONT_LOCK);
 
 			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
 			attachment->att_client_charset = attachment->att_charset = options.dpb_interp;
@@ -2414,7 +2421,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			Sync dbbGuard(&dbb->dbb_sync, "createDatabase");
 			dbbGuard.lock(SYNC_EXCLUSIVE);
 
-			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION);
+			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION, AttachmentHolder::ATT_DONT_LOCK);
 
 			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
 
@@ -5160,26 +5167,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		}
 	}
 
-	// Enable signal handler for the monitoring stuff
-	if (dbb->dbb_ast_flags & DBB_monitor_off)
-	{
-		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
-											   SYNC_EXCLUSIVE, FB_FUNCTION);
-
-		if (dbb->dbb_ast_flags & DBB_monitor_off)
-		{
-			dbb->dbb_ast_flags &= ~DBB_monitor_off;
-			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-
-			// While waiting for return from LCK_lock call above, the blocking AST (see
-			// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag
-			// again. But it do not released lock as lck_id was unknown at that moment.
-			// Do it now to not block another process waiting for a monitoring lock.
-
-			if (dbb->dbb_ast_flags & DBB_monitor_off)
-				LCK_release(tdbb, dbb->dbb_monitor_lock);
-		}
-	}
+	enable_monitoring(tdbb);
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
 		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
@@ -5277,23 +5265,7 @@ static void check_database(thread_db* tdbb, bool async)
 		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
-	// Enable signal handler for the monitoring stuff.
-	// See also comments in JRD_reshedule.
-
-	if (dbb->dbb_ast_flags & DBB_monitor_off)
-	{
-		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
-											   SYNC_EXCLUSIVE, FB_FUNCTION);
-
-		if (dbb->dbb_ast_flags & DBB_monitor_off)
-		{
-			dbb->dbb_ast_flags &= ~DBB_monitor_off;
-			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-
-			if (dbb->dbb_ast_flags & DBB_monitor_off)
-				LCK_release(tdbb, dbb->dbb_monitor_lock);
-		}
-	}
+	enable_monitoring(tdbb);
 }
 
 
@@ -5357,6 +5329,36 @@ static bool drop_files(const jrd_file* file)
 	}
 
 	return status[1] ? true : false;
+}
+
+
+static void enable_monitoring(thread_db* tdbb)
+{
+	Database* const dbb = tdbb->getDatabase();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	// Enable signal handler for the monitoring stuff
+	if (dbb->dbb_ast_flags & DBB_monitor_off)
+	{
+		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
+											   SYNC_EXCLUSIVE, FB_FUNCTION);
+
+		if (dbb->dbb_ast_flags & DBB_monitor_off)
+		{
+			dbb->dbb_ast_flags &= ~DBB_monitor_off;
+			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+			fb_assert(!(dbb->dbb_ast_flags & DBB_monitor_off));
+
+			// While waiting for return from LCK_lock call above, the blocking AST (see
+			// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag
+			// again. But it do not released lock as lck_id was unknown at that moment.
+			// Do it now to not block another process waiting for a monitoring lock.
+
+			if (dbb->dbb_ast_flags & DBB_monitor_off)
+				LCK_release(tdbb, dbb->dbb_monitor_lock);
+		}
+	}
 }
 
 
