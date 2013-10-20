@@ -1,3 +1,8 @@
+ 2013-10-19 08:09  hvlad 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/jrd.cpp
+Fixed two more reasons for CORE-4235 : Deadlock is possible while accessing the monitoring tables under concurrent load.
+
  2013-10-18 15:30  alexpeshkoff 
    M src/auth/SecurityDatabase/LegacyServer.cpp
 Misc diag
