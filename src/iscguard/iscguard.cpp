@@ -91,7 +91,7 @@ static Firebird::GlobalPtr<Firebird::string> remote_name;
 static Firebird::GlobalPtr<Firebird::string> mutex_name;
 // unsigned short shutdown_flag = FALSE;
 static log_info* log_entry;
-
+static ThreadHandle watcher_thd = 0;
 
 int WINAPI WinMain(HINSTANCE hInstance,
 				   HINSTANCE /*hPrevInstance*/, LPSTR lpszCmdLine, int /*nCmdShow*/)
@@ -143,6 +143,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		{
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
+		}
+
+		if (watcher_thd)
+		{
+			WaitForSingleObject(watcher_thd, 5000);
+			CloseHandle(watcher_thd);
 		}
 	}
 	else {
@@ -248,14 +254,10 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
  *
  **************************************/
 
-	unsigned long thread_id = 0;
-
 	// If we're a service, don't create a window
 	if (service_flag)
 	{
-		gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &thread_id);
-
-		if (thread_id == (DWORD) -1)
+		if (gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &watcher_thd))
 		{
 			// error starting server thread
 			char szMsgString[256];
@@ -312,9 +314,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	hWndGbl = hWnd;
 
 	// begin a new thread for calling the start_and_watch_server
-	gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &thread_id);
-
-	if (thread_id == (DWORD) -1)
+	if (gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, NULL))
 	{
 		// error starting server thread
 		char szMsgString[256];
@@ -371,7 +371,6 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	static BOOL bInTaskBar = FALSE;
 	static bool bStartup = false;
 	static HINSTANCE hInstance = NULL;
-	static unsigned long thread_id;
 
 	hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 	switch (message)
@@ -450,7 +449,7 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 	case WM_SWITCHICONS:
 		nRestarts++;
-		gds__thread_start(swap_icons, hWnd, THREAD_medium, 0, &thread_id);
+		gds__thread_start(swap_icons, hWnd, THREAD_medium, 0, NULL);
 		break;
 
 	case ON_NOTIFYICON:
@@ -1058,7 +1057,8 @@ void write_log(int log_action, const char* buff)
  *                property sheet structure (log_entry) or to the Windows NT
  *                Event Log
  *****************************************************************************/
-	char tmp_buff[128];
+	const size_t BUFF_SIZE = 512;
+	char tmp_buff[BUFF_SIZE];
 
 	// Move to the end of the log_entry list
 	log_info* log_temp = log_entry;
@@ -1101,8 +1101,10 @@ void write_log(int log_action, const char* buff)
 			gds__log("Error opening Windows NT Event Log");
 		else
 		{
-			char* act_buff[1]; // CVC: Where is this deallocated?
-			act_buff[0] = (char*) malloc(sizeof(tmp_buff));
+			char buffer[BUFF_SIZE];
+			char* act_buff[1];
+			act_buff[0] = buffer;
+
 			LoadString(hInstance_gbl, log_action + 1, tmp_buff, sizeof(tmp_buff));
 			sprintf(act_buff[0], "%s", buff);
 
@@ -1112,7 +1114,10 @@ void write_log(int log_action, const char* buff)
 						  FORMAT_MESSAGE_FROM_STRING,
 						  tmp_buff, 0, 0, (LPTSTR) &lpMsgBuf, 0,
 						  reinterpret_cast<va_list*>(act_buff));
-			strncpy(act_buff[0], lpMsgBuf, strlen(lpMsgBuf) - 1);
+			
+			const int len = MIN(BUFF_SIZE-1, strlen(lpMsgBuf) - 1);
+			strncpy(act_buff[0], lpMsgBuf, len);
+			act_buff[0][len] = 0;
 			LocalFree(lpMsgBuf);
 			WORD wLogType;
 
@@ -1139,7 +1144,6 @@ void write_log(int log_action, const char* buff)
 				gds__log("Unable to update NT Event Log.\n\tOS Message: %s", lpMsgBuf);
 				LocalFree(lpMsgBuf);
 			}
-			// CVC: free(act_buff[0]); ???
 			DeregisterEventSource(hLog);
 		}
 	}
