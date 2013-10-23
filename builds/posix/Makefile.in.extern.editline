@@ -64,7 +64,7 @@ libeditline : $(LIB)/libedit.a
 $(LIB)/libedit.a:
 	cd $(ROOT)/extern/editline; chmod +x configure; ./configure --enable-static --disable-shared --enable-widec
 	$(MAKE) -C $(ROOT)/extern/editline
-	cp $(ROOT)/extern/editline/src/.libs/libedit.a $(LIB)
+	cp $(ROOT)/extern/editline/src/libedit.a $(LIB)
 
 
 include $(ROOT)/gen/make.shared.targets
