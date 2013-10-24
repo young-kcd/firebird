@@ -1,3 +1,10 @@
+ 2013-10-23 11:06  hvlad 
+   M src/iscguard/iscguard.cpp
+Fixed minor bugs
+CORE-4250 : AV in guardian at process shutdown
+CORE-4251 : Guardian service could write garbage after the end of message in the Event Log
+and clean up a bit
+
  2013-10-14 16:15  asfernandes 
    M src/jrd/CharSet.h
    M src/jrd/TextType.cpp
