@@ -2667,6 +2667,7 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
  *	the raw sort record to civilized record blocks.
  *
  **************************************/
+	SSHORT stream = -1;
 	DSC from, to;
 
 	const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
@@ -2715,18 +2716,38 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
+
+		if (item->smb_stream != stream)
+		{
+			stream = item->smb_stream;
+
+			// For the sake of prudence, set all record parameter blocks to contain
+			// the most recent format. This will guarantee that all fields mapped
+			// back to records by get_sort() have homes in the target record.
+
+			record_param* rpb = &request->req_rpb[stream];
+
+			// dimitr:	I've added the check for !isValid to ensure that we don't overwrite
+			//			the format for an active rpb (i.e. the one having some record fetched).
+			//			See CORE-3806 for example.
+			if (rpb->rpb_relation && !rpb->rpb_number.isValid())
+				VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation), tdbb->getDefaultPool());
+		}
+
 		Record* record = rpb->rpb_record;
 
-		if (record && !flag && !record->rec_format) {
+		if (record && !flag && !record->rec_format)
+		{
 			fb_assert(record->rec_fmt_bk);
 			record->rec_format = record->rec_fmt_bk; // restore the format
 		}
 
-		EVL_field(0, record, id, &to);
-
 		if (flag)
 			SET_NULL(record, id);
-		else {
+		else
+		{
+			EVL_field(0, record, id, &to);
+
 			MOV_move(tdbb, &from, &to);
 			CLEAR_NULL(record, id);
 		}
@@ -2980,31 +3001,6 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 		SORT_fini(impure->irsb_sort_handle);
 		impure->irsb_sort_handle = NULL;
 		ERR_punt();
-	}
-
-	// For the sake of prudence, set all record parameter blocks to contain
-	// the most recent format. This will guarantee that all fields mapped
-	// back to records by get_sort() have homes in the target record.
-
-	if (!records)
-		return;
-
-	SSHORT stream = -1;
-
-	const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
-	for (smb_repeat* item = map->smb_rpt; item < end_item; item++)
-	{
-		if (item->smb_node && item->smb_node->nod_type != nod_field)
-			continue;
-		if (item->smb_stream == stream)
-			continue;
-		stream = item->smb_stream;
-		record_param* rpb = &request->req_rpb[stream];
-		// dimitr:	I've added the check for !isValid to ensure that we don't overwrite
-		//			the format for an active rpb (i.e. the one having some record fetched).
-		//			See CORE-3806 for example.
-		if (rpb->rpb_relation && !rpb->rpb_number.isValid())
-			VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation), tdbb->getDefaultPool());
 	}
 }
 
