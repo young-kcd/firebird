@@ -137,7 +137,6 @@ public:
 	{
 	}
 
-private:
 	// ITimer implementation
 	void FB_CARG handler();
 
@@ -152,6 +151,7 @@ private:
 		return 1;
 	}
 
+private:
 	Firebird::Mutex mutex;
 
 	ISC_STATUS_ARRAY status;
@@ -405,10 +405,10 @@ void FB_CARG SecurityDatabase::handler()
 			if (curInstances[i] == this)
 			{
 				curInstances.remove(i);
+				release();
 				break;
 			}
 		}
-		release();
 	}
 	catch (Exception &ex)
 	{
@@ -480,7 +480,7 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 			secDbName = tmp;
 		}
 
-		SecurityDatabase* instance = NULL;
+		RefPtr<SecurityDatabase> instance;
 
 		{ // guard scope
 			MutexLockGuard g(instancesMutex, FB_FUNCTION);
@@ -502,8 +502,6 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 				curInstances.add(instance);
 			}
 		}
-
-		fb_assert(instance);
 
 		int rc = instance->verify(writerInterface, sBlock);
 		TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
