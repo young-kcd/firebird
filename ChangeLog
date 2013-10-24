@@ -1,3 +1,16 @@
+ 2013-10-23 16:02  hvlad 
+   M src/iscguard/iscguard.cpp
+Fixed minor bugs
+CORE-4250 : AV in guardian at process shutdown
+CORE-4251 : Guardian service could write garbage after the end of message in the Event Log
+and clean up a bit
+
+ 2013-10-23 11:49  alexpeshkoff 
+   M builds/posix/Makefile.in.extern.editline
+   M extern/editline/Makefile.in
+   M extern/editline/src/Makefile.in
+Avoid dependency from aclocal-1.12 in editline
+
  2013-10-19 08:09  hvlad 
    M src/jrd/DatabaseSnapshot.cpp
    M src/jrd/jrd.cpp
