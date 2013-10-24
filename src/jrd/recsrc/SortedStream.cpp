@@ -258,34 +258,6 @@ Sort* SortedStream::init(thread_db* tdbb) const
 
 	scb->sort(tdbb);
 
-	// For the sake of prudence, set all record parameter blocks to contain
-	// the most recent format. This will guarantee that all fields mapped
-	// back to records by get_sort() have homes in the target record.
-
-	if (records)
-	{
-		StreamType stream = INVALID_STREAM;
-
-		const SortMap::Item* const end_item = m_map->items.end();
-		for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
-		{
-			if (item->node && !item->node->is<FieldNode>())
-				continue;
-
-			if (item->stream == stream)
-				continue;
-
-			stream = item->stream;
-			record_param* const rpb = &request->req_rpb[stream];
-
-			// dimitr:	I've added the check for !isValid to ensure that we don't overwrite
-			//			the format for an active rpb (i.e. the one having some record fetched).
-			//			See CORE-3806 for example.
-			if (rpb->rpb_relation && !rpb->rpb_number.isValid())
-				VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation), tdbb->getDefaultPool());
-		}
-	}
-
 	return scb.release();
 }
 
@@ -302,6 +274,7 @@ UCHAR* SortedStream::getData(thread_db* tdbb) const
 
 void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 {
+	StreamType stream = INVALID_STREAM;
 	dsc from, to;
 
 	const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
@@ -353,6 +326,21 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 			continue;
 		}
 
+		if (item->stream != stream)
+		{
+			stream = item->stream;
+
+			// For the sake of prudence, set all record parameter blocks to contain
+			// the most recent format. This will guarantee that all fields mapped
+			// back to records by get_sort() have homes in the target record.
+
+			// dimitr:	I've added the check for !isValid to ensure that we don't overwrite
+			//			the format for an active rpb (i.e. the one having some record fetched).
+			//			See CORE-3806 for example.
+			if (rpb->rpb_relation && !rpb->rpb_number.isValid())
+				VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation), tdbb->getDefaultPool());
+		}
+
 		Record* const record = rpb->rpb_record;
 
 		if (record && !flag && !record->rec_format)
@@ -361,14 +349,12 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 			record->rec_format = record->rec_fmt_bk;
 		}
 
-		EVL_field(NULL, record, id, &to);
-
 		if (flag)
-		{
 			record->setNull(id);
-		}
 		else
 		{
+			EVL_field(rpb->rpb_relation, record, id, &to);
+
 			MOV_move(tdbb, &from, &to);
 			record->clearNull(id);
 		}
