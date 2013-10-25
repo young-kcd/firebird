@@ -159,7 +159,8 @@ private:
 	isc_db_handle lookup_db;
 	isc_req_handle lookup_req;
 
-	void fini();
+	~SecurityDatabase();
+
 	bool lookup_user(const char*, char*);
 	void prepare();
 	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
@@ -170,27 +171,18 @@ private:
  *	Private interface
  */
 
-void SecurityDatabase::fini()
+SecurityDatabase::~SecurityDatabase()
 {
-	isc_db_handle tmp = 0;
-
-	{ // scope
-		MutexLockGuard guard(mutex, FB_FUNCTION);
-
-		if (lookup_req)
-		{
-			isc_release_request(status, &lookup_req);
-			checkStatus("isc_release_request");
-		}
-
-		tmp = lookup_db;
-		lookup_db = 0;
+	if (lookup_req)
+	{
+		isc_release_request(status, &lookup_req);
+		checkStatus("isc_release_request", 0);
 	}
 
-	if (tmp)
+	if (lookup_db)
 	{
-		isc_detach_database(status, &tmp);
-		checkStatus("isc_detach_database");
+		isc_detach_database(status, &lookup_db);
+		checkStatus("isc_detach_database", 0);
 	}
 }
 
@@ -369,23 +361,28 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 
 void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 {
+	// showing real problems with security database to users is not good idea
+	// from security POV - therefore some generic message is used
+	// also suppress throwing errors from destructor which passes userError == 0
+
 	if (status[1] == 0)
 	{
 		return;
 	}
 
-#ifdef DEV_BUILD
-	// throw original status error
-	status_exception::raise(status);
-#else
 	string message;
-	message.printf("Error in %s() API call when working with security database", callName);
+	message.printf("Error in %s() API call when working with legacy security database", callName);
 	iscLogStatus(message.c_str(), status);
 
-	// showing real problems with security database to users is not good idea
-	// from security POV - therefore some generic message is used
-	Arg::Gds(userError).raise();
+	if (userError)
+	{
+#ifdef DEV_BUILD
+	// throw original status error
+		status_exception::raise(status);
+#else
+		Arg::Gds(userError).raise();
 #endif
+	}
 }
 
 typedef HalfStaticArray<SecurityDatabase*, 4> InstancesArray;
@@ -398,7 +395,6 @@ void FB_CARG SecurityDatabase::handler()
 	{
 		MutexLockGuard g(instancesMutex, FB_FUNCTION);
 
-		fini();
 		InstancesArray& curInstances(instances);
 		for (unsigned int i = 0; i < curInstances.getCount(); ++i)
 		{
@@ -431,7 +427,6 @@ int SecurityDatabase::shutdown(const int, const int, void*)
 		{
 			if (curInstances[i])
 			{
-				curInstances[i]->fini();
 				curInstances[i]->release();
 				curInstances[i] = NULL;
 			}
