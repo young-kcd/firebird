@@ -1,3 +1,15 @@
+ 2013-10-25 09:56  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+cleanup
+
+ 2013-10-24 14:47  asfernandes 
+   M src/jrd/recsrc/SortedStream.cpp
+Fixed CORE-4247 - Delete "where current of" cursor fails for tables with newly added fields.
+
+ 2013-10-24 13:12  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+Fixed races in legacy auth plugin
+
  2013-10-23 16:02  hvlad 
    M src/iscguard/iscguard.cpp
 Fixed minor bugs
