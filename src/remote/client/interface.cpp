@@ -5385,10 +5385,8 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
  *
  **************************************/
 
-  rem_port* port = NULL;
+	rem_port* port = NULL;
 
-  try
-  {
 	cBlock.loadClnt(pb, &parSet);
 	authenticateStep0(cBlock);
 
@@ -5501,21 +5499,8 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	}
 
 	secureAuthentication(cBlock, port);
-  }
-  catch (const status_exception& ex)
-  {
-	const ISC_STATUS* s = ex.value();
-	if (s[1] != isc_unavailable)
-	{
-		(Arg::Gds(isc_unavailable) << Arg::StatusVector(s)).raise();
-	}
-	else
-	{
-		throw;
-	}
-  }
 
-  return port;
+	return port;
 }
 
 
