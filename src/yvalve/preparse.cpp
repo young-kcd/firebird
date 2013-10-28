@@ -256,34 +256,6 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 
 		} while (matched);
 
-		// This code is because 3.3 server does not recognize isc_dpb_overwrite.
-		FB_API_HANDLE temp_db_handle = 0;
-		if (!isc_attach_database(user_status, 0, file_name.c_str(), &temp_db_handle,
-				dpb.getBufferLength(), reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer())) ||
-			(user_status[1] != isc_io_error && user_status[1] != isc_conf_access_denied && user_status[1] != isc_unavailable))
-		{
-			if (!user_status[1])
-			{
-				// Swallow status from detach.
-				ISC_STATUS_ARRAY temp_status;
-				isc_detach_database(temp_status, &temp_db_handle);
-			}
-			if (!user_status[1] || user_status[1] == isc_bad_db_format)
-			{
-				user_status[0] = isc_arg_gds;
-				user_status[1] = isc_io_error;
-				user_status[2] = isc_arg_string;
-				user_status[3] = (ISC_STATUS) "open";
-				user_status[4] = isc_arg_string;
-				user_status[5] = (ISC_STATUS) file_name.c_str();
-				user_status[6] = isc_arg_gds;
-				user_status[7] = isc_db_or_file_exists;
-				user_status[8] = isc_arg_end;
-				Firebird::makePermanentVector(user_status);
-			}
-			return true;
-		}
-
 		isc_create_database(user_status, 0, file_name.c_str(), db_handle,
 							dpb.getBufferLength(), reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()),
 							0);
