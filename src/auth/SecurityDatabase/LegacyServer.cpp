@@ -44,6 +44,10 @@
 #include "../common/classes/ImplementHelper.h"
 #include "firebird/Timer.h"
 
+#ifndef WIN_NT
+#define PLUG_MODULE 1
+#endif
+
 using namespace Firebird;
 
 namespace {
@@ -128,7 +132,17 @@ class SecurityDatabase : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER
 public:
 	int verify(IWriter* authBlock, IServerBlock* sBlock);
 
-	static int shutdown(const int, const int, void*);
+	// This 2 are needed to satisfy temporarily different calling requirements
+	static int shutdown(const int, const int, void*)
+	{
+		return shutdown();
+	}
+	static void cleanup()
+	{
+		shutdown();
+	}
+
+	static int shutdown();
 
 	char secureDbName[MAXPATHLEN];
 
@@ -246,7 +260,9 @@ void SecurityDatabase::prepare()
 		return;
 	}
 
+#ifndef PLUG_MODULE
 	fb_shutdown_callback(status, shutdown, fb_shut_preproviders, 0);
+#endif
 
 	lookup_db = lookup_req = 0;
 
@@ -417,7 +433,7 @@ void FB_CARG SecurityDatabase::handler()
 	}
 }
 
-int SecurityDatabase::shutdown(const int, const int, void*)
+int SecurityDatabase::shutdown()
 {
 	try
 	{
@@ -427,6 +443,7 @@ int SecurityDatabase::shutdown(const int, const int, void*)
 		{
 			if (curInstances[i])
 			{
+				TimerInterfacePtr()->stop(curInstances[i]);
 				curInstances[i]->release();
 				curInstances[i] = NULL;
 			}
@@ -530,3 +547,17 @@ void registerLegacyServer(Firebird::IPluginManager* iPlugin)
 }
 
 } // namespace Auth
+
+
+#ifdef PLUG_MODULE
+
+extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* master)
+{
+	CachedMasterInterface::set(master);
+
+	myModule->setCleanup(Auth::SecurityDatabase::cleanup);
+	Auth::registerLegacyServer(PluginManagerInterfacePtr());
+	myModule->registerMe();
+}
+
+#endif // PLUG_MODULE

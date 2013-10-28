@@ -353,6 +353,9 @@ namespace
 
 			if (cleanup)
 			{
+				// Pause timer thread for cleanup period
+				MutexLockGuard timerPause(Why::pauseTimer(), FB_FUNCTION);
+
 				cleanup->doClean();
 				Why::releaseUpgradeTabs(cleanup);
 			}

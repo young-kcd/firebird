@@ -53,9 +53,7 @@ AllObjects += $(YValve_Objects)
 
 # Remote
 Remote_Common:= $(call dirObjects,remote) $(call dirObjects,auth/SecureRemotePassword)
-Remote_Server:= $(call dirObjects,remote/server) $(call dirObjects,auth/SecureRemotePassword/server) \
-				$(call makeObjects,auth/SecurityDatabase,LegacyServer.cpp)
-				# legacy security database LegacyServer.cpp should become plugin soon
+Remote_Server:= $(call dirObjects,remote/server) $(call dirObjects,auth/SecureRemotePassword/server)
 Remote_Client:= $(call dirObjects,remote/client) $(call dirObjects,auth/SecureRemotePassword/client) \
 				$(call makeObjects,auth/SecurityDatabase,LegacyClient.cpp) \
 				$(call dirObjects,plugins/crypt/arc4)
@@ -169,6 +167,12 @@ AllObjects += $(QLI_Objects)
 LEGACY_USERS_MANAGE_Objects:= $(call makeObjects,auth/SecurityDatabase,LegacyManagement.epp)
 
 AllObjects += $(LEGACY_USERS_MANAGE_Objects)
+
+
+# Legacy authentication on server
+LEGACY_AUTH_SERVER_Objects:= $(call makeObjects,auth/SecurityDatabase,LegacyServer.cpp)
+
+AllObjects += $(LEGACY_AUTH_SERVER_Objects)
 
 
 # SRP-based users management in security database

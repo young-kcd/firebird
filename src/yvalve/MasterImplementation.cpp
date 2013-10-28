@@ -457,7 +457,7 @@ const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t le
 	return allStrings->alloc(s, len, (ThreadId) thr);
 }
 
-} // namespace Firebird
+} // namespace Why
 
 
 //
@@ -468,7 +468,12 @@ namespace Why {
 
 namespace {
 
+// Protects timerQueue array
 GlobalPtr<Mutex> timerAccess;
+// Protects from races during module unload process
+// Should be taken before timerAccess
+GlobalPtr<Mutex> timerPause;
+
 GlobalPtr<Semaphore> timerWakeup;
 // Should use atomic flag for thread stop to provide correct membar
 AtomicCounter stopTimerThread(0);
@@ -547,6 +552,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 		TimerDelay microSeconds = 0;
 
 		{
+			MutexLockGuard pauseGuard(timerPause, FB_FUNCTION);
 			MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
 			const TimerDelay cur = curTime();
@@ -651,6 +657,11 @@ ITimerControl* FB_CARG MasterImplementation::getTimerControl()
 void shutdownTimers()
 {
 	timerHolder.cleanup();
+}
+
+Mutex& pauseTimer()
+{
+	return timerPause;
 }
 
 } // namespace Why

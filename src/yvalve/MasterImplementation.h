@@ -34,6 +34,11 @@
 #include "../yvalve/YObjects.h"
 #include "../common/classes/ImplementHelper.h"
 
+namespace Firebird
+{
+	class Mutex;
+}
+
 namespace Why
 {
 	class Dtc : public Firebird::AutoIface<Firebird::IDtc, FB_DTC_VERSION>
@@ -73,6 +78,8 @@ namespace Why
 
 	void shutdownTimers();
 	void releaseUpgradeTabs(Firebird::IPluginModule* module);
+
+	Firebird::Mutex& pauseTimer();
 } // namespace Why
 
 #endif // YVALVE_MASTER_IMPLEMENTATION_H
