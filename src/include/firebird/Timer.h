@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird interface.
  *	MODULE:			firebird/Timer.h
- *	DESCRIPTION:	Timer interface defnition.
+ *	DESCRIPTION:	Timer interface definition.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
