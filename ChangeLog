@@ -1,3 +1,21 @@
+ 2013-10-28 11:51  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Rollback some of my wrong changes
+
+ 2013-10-28 11:50  alexpeshkoff 
+   M src/yvalve/preparse.cpp
+Cleanup - we anyway do not support protocol to talk to ancient servers
+
+ 2013-10-28 10:27  alexpeshkoff 
+   M builds/posix/Makefile.in
+   M builds/posix/make.shared.variables
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+Convert legacy auth server to non-builtin plugin on posix
+
  2013-10-25 09:56  alexpeshkoff 
    M src/auth/SecurityDatabase/LegacyServer.cpp
 cleanup
