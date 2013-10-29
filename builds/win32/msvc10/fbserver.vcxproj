@@ -207,7 +207,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.cpp" />
-    <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyServer.cpp" />
     <ClCompile Include="..\..\..\src\remote\server\os\win32\chop.cpp" />
     <ClCompile Include="..\..\..\src\remote\server\os\win32\cntl.cpp" />
     <ClCompile Include="..\..\..\src\remote\server\os\win32\property.cpp" />

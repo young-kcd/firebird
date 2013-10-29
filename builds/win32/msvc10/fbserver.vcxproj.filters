@@ -31,9 +31,6 @@
     <ClCompile Include="..\..\..\src\remote\server\os\win32\srvr_w32.cpp">
       <Filter>Remote server</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyServer.cpp">
-      <Filter>AUTH files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.cpp">
       <Filter>AUTH files</Filter>
     </ClCompile>

@@ -79,6 +79,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "legacy_usermanager", "legac
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srp", "srp.vcxproj", "{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "legacy_auth", "legacy_auth.vcxproj", "{062BD3C7-2D01-44F6-8D79-070F688C559F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -357,6 +359,14 @@ Global
 		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Release|Win32.Build.0 = Release|Win32
 		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Release|x64.ActiveCfg = Release|x64
 		{BD00D28E-6667-414E-A4B1-6BEFC07ADB42}.Release|x64.Build.0 = Release|x64
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Debug|Win32.Build.0 = Debug|Win32
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Debug|x64.ActiveCfg = Debug|x64
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Debug|x64.Build.0 = Debug|x64
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Release|Win32.ActiveCfg = Release|Win32
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Release|Win32.Build.0 = Release|Win32
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Release|x64.ActiveCfg = Release|x64
+		{062BD3C7-2D01-44F6-8D79-070F688C559F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

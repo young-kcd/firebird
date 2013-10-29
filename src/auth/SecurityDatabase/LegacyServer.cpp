@@ -44,9 +44,7 @@
 #include "../common/classes/ImplementHelper.h"
 #include "firebird/Timer.h"
 
-#ifndef WIN_NT
 #define PLUG_MODULE 1
-#endif
 
 using namespace Firebird;
 
