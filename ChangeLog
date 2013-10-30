@@ -1,3 +1,17 @@
+ 2013-10-29 08:46  hvlad 
+   M builds/win32/msvc10/Firebird3.sln
+   M builds/win32/msvc10/fbserver.vcxproj
+   M builds/win32/msvc10/fbserver.vcxproj.filters
+   A builds/win32/msvc10/legacy_auth.vcxproj
+   A builds/win32/msvc10/legacy_auth.vcxproj.filters
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+Convert legacy auth server to non-builtin plugin on windows (MSVC10 build).
+
+ 2013-10-29 06:17  alexpeshkoff 
+   M src/include/firebird/Timer.h
+Misc
+
  2013-10-28 11:51  alexpeshkoff 
    M src/remote/client/interface.cpp
 Rollback some of my wrong changes
