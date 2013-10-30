@@ -117,10 +117,6 @@ const char*	GCPolicyCooperative	= "cooperative";
 const char*	GCPolicyBackground	= "background";
 const char*	GCPolicyCombined	= "combined";
 
-const char*	AmNative	= "native";
-const char*	AmTrusted	= "trusted";
-const char*	AmMixed		= "mixed";
-
 
 const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
@@ -167,7 +163,6 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) NULL},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
-	{TYPE_STRING,		"Authentication",			(ConfigValue) AmNative},	// use native, trusted or mixed
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
 	{TYPE_INTEGER,		"FileSystemCacheThreshold",	(ConfigValue) 65536},	// page buffers
 	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false},	// if true relax strict alias checking rules in DSQL a bit
@@ -606,11 +601,6 @@ const char *Config::getGCPolicy() const
 bool Config::getRedirection()
 {
 	return (bool) getDefaultConfig()->values[KEY_REDIRECTION];
-}
-
-const char *Config::getAuthMethod()
-{
-	return (const char*) getDefaultConfig()->values[KEY_AUTH_METHOD];
 }
 
 int Config::getDatabaseGrowthIncrement() const

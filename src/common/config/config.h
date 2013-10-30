@@ -123,7 +123,6 @@ public:
 		KEY_LEGACY_HASH,
 		KEY_GC_POLICY,
 		KEY_REDIRECTION,
-		KEY_AUTH_METHOD,
 		KEY_DATABASE_GROWTH_INCREMENT,
 		KEY_FILESYSTEM_CACHE_THRESHOLD,
 		KEY_RELAXED_ALIAS_CHECKING,
@@ -311,9 +310,6 @@ public:
 
 	// Redirection
 	static bool getRedirection();
-
-	// Use native, trusted or mixed authentication
-	static const char* getAuthMethod();
 
 	int getDatabaseGrowthIncrement() const;
 

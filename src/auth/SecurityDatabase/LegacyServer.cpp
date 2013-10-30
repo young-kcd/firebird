@@ -302,21 +302,6 @@ void SecurityDatabase::prepare()
 
 int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 {
-	static AmCache useNative = AM_UNKNOWN;
-
-	if (useNative == AM_UNKNOWN)
-	{
-		// We use PathName for string comparison using platform filename comparison
-		// rules (case-sensitive or case-insensitive).
-		const PathName authMethod(Config::getAuthMethod());
-		useNative = (authMethod == AmNative || authMethod == AmMixed) ? AM_ENABLED : AM_DISABLED;
-	}
-
-	if (useNative == AM_DISABLED)
-	{
-		return AUTH_CONTINUE;
-	}
-
 	const char* user = sBlock->getLogin();
 	string login(user ? user : "");
 
