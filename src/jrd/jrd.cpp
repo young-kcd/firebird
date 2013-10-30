@@ -855,6 +855,8 @@ public:
 	string	dpb_config;
 
 public:
+	static const ULONG DPB_FLAGS_MASK = DBB_damaged | DBB_security_db;
+
 	DatabaseOptions()
 	{
 		memset(this, 0,
@@ -1430,10 +1432,15 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 			else
 			{
-				if ((dbb->dbb_flags & options.dpb_flags) != options.dpb_flags)
+				if ((dbb->dbb_flags & DatabaseOptions::DPB_FLAGS_MASK) != options.dpb_flags)
 				{
 					// looks like someone tries to attach incompatibly
-					status_exception::raise(Arg::Gds(isc_bad_dpb_content));
+					Arg::Gds err(isc_bad_dpb_content);
+					if ((dbb->dbb_flags & DBB_damaged) != (options.dpb_flags & DBB_damaged))
+						err << Arg::Gds(isc_random) << "incompatible damaged database mode";
+					if ((dbb->dbb_flags & DBB_security_db) != (options.dpb_flags & DBB_security_db))
+						err << Arg::Gds(isc_random) << "incompatible security database mode";
+					err.raise();
 				}
 
 				fb_assert(dbb->dbb_lock_mgr);
@@ -5667,8 +5674,11 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_sec_attach:
 			dpb_sec_attach = rdr.getInt() != 0;
-			dpb_buffers = 50;
-			dpb_flags |= DBB_security_db;
+			if (dpb_sec_attach)
+			{
+				dpb_buffers = 50;
+				dpb_flags |= DBB_security_db;
+			}
 			break;
 
 		case isc_dpb_gbak_attach:
