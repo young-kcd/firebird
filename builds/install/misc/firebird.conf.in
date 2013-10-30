@@ -377,7 +377,7 @@
 #
 # Per-database configurable.
 #
-#AuthServer = Srp, Win_Sspi
+#AuthServer = Srp
 #
 # Per-connection and per-database configurable.
 #
