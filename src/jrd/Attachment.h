@@ -301,7 +301,6 @@ public:
 	TraceManager* att_trace_manager;		// Trace API manager
 
 	JAttachment* att_interface;
-	Firebird::IAttachment* att_public_interface;
 
 	/// former Database members - start
 

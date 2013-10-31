@@ -933,7 +933,7 @@ static jrd_tra*		find_transaction(thread_db*);
 static void			init_database_locks(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
-static void		purge_transactions(thread_db*, Jrd::Attachment*, const bool);
+static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
 
 static void 		handle_error(Firebird::IStatus*, ISC_STATUS);
 
@@ -6814,8 +6814,6 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 
 	{ // scope - ensure correct order of taking both async and main mutexes
 		MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
-		// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when att_use_count == 0)
-
 		fb_assert(!attMutex->locked());
 		asyncGuard.enter();
 	}
