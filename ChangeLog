@@ -1,3 +1,21 @@
+ 2013-10-30 12:46  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+   M src/common/config/config.cpp
+Fixed CORE-4241: Empty password will pass login
+
+ 2013-10-30 12:23  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+Cleanup - "Authentication" parameter from firebird.conf is overriden by "AuthServer"
+
+ 2013-10-30 12:11  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/jrd/jrd.cpp
+Fixed CORE-4200: An uncommitted select of the pseudo table sec$users blocks new database connections
+
  2013-10-29 08:46  hvlad 
    M builds/win32/msvc10/Firebird3.sln
    M builds/win32/msvc10/fbserver.vcxproj
