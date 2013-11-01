@@ -425,7 +425,7 @@ namespace
 			}
 		}
 
-		void operator=(Database::ExistenceRefMutex* to)
+		void linkWith(Database::ExistenceRefMutex* to)
 		{
 			if (ref == to)
 			{
@@ -434,6 +434,11 @@ namespace
 
 			leave();
 			ref = to;
+		}
+
+		void unlinkFromMutex()
+		{
+			linkWith(NULL);
 		}
 
 		Database::ExistenceRefMutex* operator->()
@@ -5902,7 +5907,7 @@ static JAttachment* init(thread_db* tdbb,
 				{
 					if (attach_flag)
 					{
-						initGuard = dbb->dbb_init_fini;
+						initGuard.linkWith(dbb->dbb_init_fini);
 
 						{   // scope
 							MutexUnlockGuard listUnlock(databases_mutex, FB_FUNCTION);
@@ -5934,7 +5939,7 @@ static JAttachment* init(thread_db* tdbb,
 
 						// If we reached this point this means that found dbb was removed
 						// Forget about it and repeat search
-						initGuard = NULL;
+						initGuard.unlinkFromMutex();
 						dbb = databases;
 						continue;
 					}
@@ -5954,7 +5959,7 @@ static JAttachment* init(thread_db* tdbb,
 		dbb->dbb_filename = expanded_name;
 
 		// safely take init lock on just created database
-		initGuard = dbb->dbb_init_fini;
+		initGuard.linkWith(dbb->dbb_init_fini);
 		initGuard.enter();
 
 		dbb->dbb_next = databases;
@@ -6348,7 +6353,7 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 		{
 			if (*d_ptr == dbb)
 			{
-				finiGuard = dbb->dbb_init_fini;
+				finiGuard.linkWith(dbb->dbb_init_fini);
 
 				{	// scope
 					MutexUnlockGuard listUnlock(databases_mutex, FB_FUNCTION);
