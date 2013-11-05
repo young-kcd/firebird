@@ -1540,6 +1540,12 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 bool wireEncryption(rem_port* port, ClumpletReader& id)
 {
+	if (port->port_type == rem_port::XNET)		// local connection
+	{
+		port->port_required_encryption = false;
+		return false;
+	}
+
 	int clientCrypt = id.find(CNCT_client_crypt) ? id.getInt() : WIRE_CRYPT_ENABLED;
 	int serverCrypt = port->getPortConfig()->getWireCrypt(WC_SERVER);
 	if (wcCompatible[clientCrypt][serverCrypt] < 0)
