@@ -1538,7 +1538,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 }
 
 
-bool requiredEncryption(rem_port* port, ClumpletReader& id)
+bool wireEncryption(rem_port* port, ClumpletReader& id)
 {
 	int clientCrypt = id.find(CNCT_client_crypt) ? id.getInt() : WIRE_CRYPT_ENABLED;
 	int serverCrypt = port->getPortConfig()->getWireCrypt(WC_SERVER);
@@ -1547,8 +1547,8 @@ bool requiredEncryption(rem_port* port, ClumpletReader& id)
 		Arg::Gds(isc_wirecrypt_incompatible).raise();
 	}
 
-	port->port_required_encryption = wcCompatible[clientCrypt][serverCrypt] > 0;
-	return port->port_required_encryption;
+	port->port_required_encryption = wcCompatible[clientCrypt][serverCrypt] == 2;
+	return wcCompatible[clientCrypt][serverCrypt] > 0;
 }
 
 
@@ -1682,7 +1682,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		send->p_acpd.p_acpt_authenticated = 0;
 	}
 
-	if (accepted && requiredEncryption(port, id))
+	if (accepted && wireEncryption(port, id))
 	{
 		if (version >= PROTOCOL_VERSION13)
 		{
@@ -1698,7 +1698,10 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			return true;
 		}
 
-		accepted = false;
+		if (port->port_required_encryption)
+		{
+			accepted = false;
+		}
 	}
 
 	// We are going to try authentication handshake

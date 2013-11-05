@@ -1398,6 +1398,6 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 signed char wcCompatible[3][3] = {
 /*				DISABLED	ENABLED		REQUIRED */
 /* DISABLED */	{0,			0,			-1},
-/* ENABLED  */	{0,			1,			1},
-/* REQUIRED */	{-1,		1,			1}
+/* ENABLED  */	{0,			1,			2},
+/* REQUIRED */	{-1,		2,			2}
 };
