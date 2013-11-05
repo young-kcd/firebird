@@ -122,11 +122,11 @@ public:
 	void closeCursor(Why::StatusVector* status);
 	void closeStatement(Why::StatusVector* status);
 
-	void checkPrepared() const
+	void checkPrepared(ISC_STATUS code = isc_unprepared_stmt) const
 	{
 		if (!statement)
 		{
-			Arg::Gds(isc_unprepared_stmt).raise();
+			Arg::Gds(code).raise();
 		}
 	}
 
@@ -1849,7 +1849,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	{
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 
-		statement->checkPrepared();
+		statement->checkPrepared(isc_info_unprepared_stmt);
 
 		RefPtr<IMessageMetadata> columns(REF_NO_INCR, statement->statement->next->getOutputMetadata(&status));
 		status.check();
@@ -1875,7 +1875,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* userStatus, FB_API_HAN
 	{
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 
-		statement->checkPrepared();
+		statement->checkPrepared(isc_info_unprepared_stmt);
 
 		RefPtr<IMessageMetadata> parameters(REF_NO_INCR, statement->statement->next->getInputMetadata(&status));
 		status.check();
@@ -2255,8 +2255,6 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 
-		statement->checkPrepared();
-
 		Array<UCHAR> outBlr, outMessage;
 		sqldaParse(sqlda, outBlr, outMessage, dialect);
 
@@ -2521,7 +2519,7 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	try
 	{
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
-		statement->checkPrepared();
+		statement->checkPrepared(isc_info_unprepared_stmt);
 
 		statement->statement->getInfo(&status, USHORT(itemLength), reinterpret_cast<const UCHAR*>(items),
 			USHORT(bufferLength), reinterpret_cast<UCHAR*>(buffer));

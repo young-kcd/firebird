@@ -772,6 +772,7 @@ static const struct {
 	{"secdb_name", 335545068},
 	{"auth_data", 335545069},
 	{"auth_datalength", 335545070},
+	{"info_unprepared_stmt", 335545071},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

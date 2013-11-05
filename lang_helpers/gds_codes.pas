@@ -783,6 +783,7 @@ const
 	gds_secdb_name                       = 335545068;
 	gds_auth_data                        = 335545069;
 	gds_auth_datalength                  = 335545070;
+	gds_info_unprepared_stmt             = 335545071;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

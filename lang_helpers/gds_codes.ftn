@@ -1552,6 +1552,8 @@ C --
       PARAMETER (GDS__auth_data                        = 335545069)
       INTEGER*4 GDS__auth_datalength                 
       PARAMETER (GDS__auth_datalength                  = 335545070)
+      INTEGER*4 GDS__info_unprepared_stmt            
+      PARAMETER (GDS__info_unprepared_stmt             = 335545071)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

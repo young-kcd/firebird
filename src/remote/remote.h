@@ -462,7 +462,7 @@ public:
 	void releaseException();
 
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
-	void checkIface();
+	void checkIface(ISC_STATUS code = isc_unprepared_stmt);
 	void checkCursor();
 };
 

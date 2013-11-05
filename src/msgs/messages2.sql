@@ -858,6 +858,7 @@ Data source : @4', NULL, NULL)
 ('secdb_name', NULL, NULL, NULL, 0, 748, NULL, 'Error getting security database name from configuration file', NULL, NULL);
 ('auth_data', NULL, NULL, NULL, 0, 749, NULL, 'Client authentication plugin is missing required data from server', NULL, NULL);
 ('auth_datalength', NULL, NULL, NULL, 0, 750, NULL, 'Client authentication plugin expected @2 bytes of @3 from server, got @1', NULL, NULL);
+('info_unprepared_stmt', NULL, NULL, NULL, 0, 751, NULL, 'Attempt to get information about an unprepared dynamic SQL statement.', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

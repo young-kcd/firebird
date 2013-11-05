@@ -1845,10 +1845,10 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 }
 
 
-void Rsr::checkIface()
+void Rsr::checkIface(ISC_STATUS code)
 {
 	if (!rsr_iface)
-		Arg::Gds(isc_unprepared_stmt).raise();
+		Arg::Gds(code).raise();
 }
 
 
@@ -2376,7 +2376,8 @@ static USHORT check_statement_type( Rsr* statement)
 	USHORT ret = 0;
 	bool done = false;
 
-	statement->checkIface();
+	fb_assert(statement->rsr_iface);
+	statement->checkIface();		// this should not happen but...
 
 	statement->rsr_iface->getInfo(&local_status, sizeof(sql_info), sql_info, sizeof(buffer), buffer);
 
@@ -3741,7 +3742,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	case op_info_sql:
 		getHandle(statement, stuff->p_info_object);
-		statement->checkIface();
+		statement->checkIface(isc_info_unprepared_stmt);
 
 		statement->rsr_iface->getInfo(&status_vector, info_len, info_buffer,
 			stuff->p_info_buffer_length, buffer);
