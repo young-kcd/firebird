@@ -1,3 +1,32 @@
+ 2013-11-05 11:54  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Enhanced diags for unprepared statement
+
+ 2013-11-05 08:53  alexpeshkoff 
+   M src/remote/server/server.cpp
+Do not encrypt xnet connections
+
+ 2013-11-05 07:59  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+Inline docs
+
+ 2013-11-05 06:52  alexpeshkoff 
+   M src/remote/remote.cpp
+   M src/remote/server/server.cpp
+Fixed "Enabled" state of wire encyption
+
  2013-11-01 14:18  alexpeshkoff 
    M src/jrd/jrd.cpp
 Make code (hopefully) better readable
