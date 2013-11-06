@@ -3,10 +3,11 @@
 <HEAD>
 	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
 	<TITLE></TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.4.1  (Unix)">
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.0.1  (Unix)">
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
-	<META NAME="CHANGED" CONTENT="20130603;12343400">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
+	<META NAME="CHANGED" CONTENT="20131106;14262300">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { size: 8.5in 11in; margin: 0.79in }
@@ -50,7 +51,7 @@ reason they had decided to follow that rule too exactly &ndash; and
 each fetch of data from server now required sending BLR for it, i.e.
 formatting BLR was sent not only at SQL compile time. The reason for
 such strange at the first glance solution was presence of one more
-layer on top of that messages based API -  familiar to you SQLDA
+layer on top of that messages based API - familiar to you SQLDA
 (XSQLDA). Rather obvious that manually accompanying each SQL
 statement with BLR is not efficient programming style, therefore
 SQLDA was invented. But it encapsulates in same object both location
@@ -79,13 +80,13 @@ how interfaces help to use messages API easily and comfortably.</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>When making any change in
 software it's always desired to avoid loose of performance. And it
 was performance issues that caused the choice of interfaces not
-compatible with COM.  To describe them I need to say a few words
-about providers architecture of Firebird. The central part of it is
-YValve, which is aimed on dispatching API call to correct provider,
-including old providers that potentially have older interfaces than
-current one. That means that to make sure that provider really has
-some new API method we must (when using COM) call IUnknown method for
-each fetch call. Taken together with the fact that new API calls are
+compatible with COM. To describe them I need to say a few words about
+providers architecture of Firebird. The central part of it is YValve,
+which is aimed on dispatching API call to correct provider, including
+old providers that potentially have older interfaces than current
+one. That means that to make sure that provider really has some new
+API method we must (when using COM) call IUnknown method for each
+fetch call. Taken together with the fact that new API calls are
 sometimes added to optimize performance COM-based solution looks bad
 for future Firebird versions.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -99,7 +100,7 @@ certainly that's impossible. But after upgrade virtual table is
 expanded with function defined by the caller of interface upgrade,
 and that function can perform minimum reasonable action &ndash; for
 example in a case of providers return an error. This may seem a very
-poor kind of upgrade, but at first  - this is exactly what will be
+poor kind of upgrade, but at first - this is exactly what will be
 done without upgrade after working with IUnknown and next &ndash;
 after checking error code one can try to use other methods to do what
 he wants. Certainly, not only error return may be done. Imagine that
@@ -118,6 +119,18 @@ rest of Firebird API), others &ndash; API strictly defined by
 lifetime of parent interface, and for not multi-threaded things like
 IStatus it's better to have simpler way to destroy it, i.e. dispose()
 function.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT COLOR="#ff0000"><FONT SIZE=4>Careful!</FONT></FONT><FONT SIZE=4>
+An ability to upgrade interface version places one important limit on
+implementation of interfaces: it should not contain virtual functions
+(including virtual destructor) except those defined in interface
+definition. This is because interface upgrade process modifies table
+of virtual functions, and for successful upgrade number of functions
+in interface implementation should exactly match one in it's
+definition. Pointer to functions, missing in interface definition but
+added in it's implementation, may be </FONT><FONT COLOR="#ff0000"><FONT SIZE=4>overwritten</FONT></FONT><FONT SIZE=4>
+with a pointer to function used to upgrade interface.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Discussing in details all
@@ -139,22 +152,22 @@ database attachment, transaction and SQL statement.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Each plugin has one and
-only one main interface IPlugin which<SPAN LANG="en"> is responsible
+only one main interface IPlugin which <SPAN LANG="en">is responsible
 for basic plugin's functionality (a lot of plugins have only that
 interface, but this is not a requirement). </SPAN></FONT>
 </P>
-<P LANG="en" STYLE="margin-bottom: 0in"><BR>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P LANG="en" STYLE="margin-bottom: 0in"><FONT SIZE=4>To finish with
 general interfaces hierarchy is IProvider, a kind of 'main' plugin in
-Firebird API.  IProvider is derived from IPlugin and implemented by
+Firebird API. IProvider is derived from IPlugin and implemented by
 any provider (i.e. if you want to write your own provider you must
 implement IProvider) and also implemented by YValve. It's
 implementation from YValve which is returned to the user when
 getDispatcher() function from master interface is called. IProvider
 contains functions making it possible to create an attachment to
 database (attach and create) or attach to services manager.</FONT></P>
-<P LANG="en" STYLE="margin-bottom: 0in"><BR>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Questions and answers.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -164,7 +177,7 @@ API using IMaster. But how to get access to IMaster itself?</FONT></P>
 <P LANG="en" STYLE="margin-bottom: 0in"><FONT SIZE=4>A. This is done
 using the only one new API function fb_get_master_interface(). It's
 exported by fbclient library.</FONT></P>
-<P LANG="en" STYLE="margin-bottom: 0in"><BR>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P LANG="en" STYLE="margin-bottom: 0in"><FONT SIZE=4>Q. It's said in
 this document that COM-based interfaces are not used in order not to
@@ -181,7 +194,7 @@ each time we are going to call an interface with unknown version (or
 that version should be stored separately and later checked). For once
 upgraded Firebird interface there is absolutely no waste of time when
 performing calls to it during all it's lifetime.</FONT></P>
-<P LANG="en" STYLE="margin-bottom: 0in"><BR>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 </BODY>
 </HTML>
