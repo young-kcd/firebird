@@ -2641,6 +2641,9 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			CCH_flush(tdbb, FLUSH_FINI, 0);
 
+			if (!options.dpb_set_force_write)
+				PAG_set_force_write(tdbb, true);
+
 			dbb->dbb_backup_manager->dbCreating = false;
 
 			// Init complete - we can release dbInitMutex

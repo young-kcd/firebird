@@ -860,7 +860,6 @@ void PAG_format_header(thread_db* tdbb)
 	header->hdr_oldest_transaction = 1;
 	header->hdr_end = HDR_SIZE;
 	header->hdr_data[0] = HDR_end;
-	header->hdr_flags |= hdr_force_write;
 
 	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
 		header->hdr_flags |= hdr_SQL_dialect_3;
