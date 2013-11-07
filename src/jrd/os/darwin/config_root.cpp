@@ -41,6 +41,7 @@
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 #include <mach-o/dyld.h>
+#include <stdlib.h>
 
 typedef Firebird::PathName string;
 
@@ -79,7 +80,10 @@ static string getExecutablePath()
 	char file_buff[MAXPATHLEN];
 	uint32_t bufsize = sizeof(file_buff);
 	_NSGetExecutablePath(file_buff, &bufsize);
-	string bin_dir = file_buff;
+	char canonic[PATH_MAX];
+	if (!realpath(file_buff, canonic))
+	Firebird::system_call_failed::raise("realpath");
+	string bin_dir = canonic;
 	// get rid of the filename
 	int index = bin_dir.rfind(PathUtils::dir_sep);
 	bin_dir = bin_dir.substr(0, index);
