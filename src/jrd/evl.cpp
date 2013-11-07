@@ -258,19 +258,34 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, request, node->value);
 
-			if (!(tdbb->getRequest()->req_flags & req_null) &&
-				desc->dsc_length == sizeof(RecordNumber::Packed))
+			if (!(tdbb->getRequest()->req_flags & req_null))
 			{
-				const USHORT id = node->id;
-				Aligner<RecordNumber::Packed> alignedNumbers(desc->dsc_address, desc->dsc_length);
-				const RecordNumber::Packed* numbers = alignedNumbers;
-				RecordNumber rel_dbkey;
-				rel_dbkey.bid_decode(&numbers[id]);
-				// Decrement the value in order to switch back to the zero based numbering
-				// (from the user point of view the DB_KEY numbering starts from one)
-				rel_dbkey.decrement();
-				if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
-					RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+				UCHAR* ptr = NULL;
+				USHORT length = 0;
+
+				if (desc->dsc_dtype == dtype_dbkey)
+				{
+					ptr = desc->dsc_address;
+					length = desc->dsc_length;
+				}
+				else if (desc->isText())
+				{
+					length = MOV_get_string(desc, &ptr, NULL, 0);
+				}
+
+				if (length == sizeof(RecordNumber::Packed))
+				{
+					const USHORT id = node->id;
+					Aligner<RecordNumber::Packed> alignedNumbers(ptr, length);
+					const RecordNumber::Packed* numbers = alignedNumbers;
+					RecordNumber rel_dbkey;
+					rel_dbkey.bid_decode(&numbers[id]);
+					// Decrement the value in order to switch back to the zero based numbering
+					// (from the user point of view the DB_KEY numbering starts from one)
+					rel_dbkey.decrement();
+					if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
+						RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+				}
 			}
 
 			return &impure->inv_bitmap;
