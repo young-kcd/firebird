@@ -2427,6 +2427,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
 			fb_assert(dbb->dbb_flags & DBB_new);
+			fb_assert(dbb->dbb_flags & DBB_creating);
 			attachment = tdbb->getAttachment();
 			fb_assert(attachment);
 
@@ -2647,7 +2648,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			dbb->dbb_backup_manager->dbCreating = false;
 
 			// Init complete - we can release dbInitMutex
-			dbb->dbb_flags &= ~DBB_new;
+			dbb->dbb_flags &= ~(DBB_new | DBB_creating);
 			guardDbInit.leave();
 
 			// Report that we created attachment to Trace API
@@ -5969,6 +5970,8 @@ static JAttachment* init(thread_db* tdbb,
 		databases = dbb;
 
 		dbb->dbb_flags |= (DBB_exclusive | DBB_new | options.dpb_flags);
+		if (!attach_flag)
+			dbb->dbb_flags |= DBB_creating;
 		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
 		Sync dbbGuard(&dbb->dbb_sync, FB_FUNCTION);

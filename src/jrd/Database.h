@@ -214,6 +214,7 @@ const ULONG DBB_gc_cooperative			= 0x10000L;		// cooperative garbage collection
 const ULONG DBB_gc_background			= 0x20000L;		// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache				= 0x40000L;		// Not using file system cache
 const ULONG DBB_sweep_starting			= 0x80000L;		// Auto-sweep is starting
+const ULONG DBB_creating				= 0x100000L;	// Database creation is in progress
 
 //
 // dbb_ast_flags

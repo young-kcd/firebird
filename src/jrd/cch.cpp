@@ -1148,7 +1148,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 			dbb->last_flushed_write = now;
 		}
 
-		const bool forceFlush = (flush_flag & FLUSH_ALL);
+		const bool forceFlush = (flush_flag & FLUSH_ALL) && !(dbb->dbb_flags & DBB_creating);
 
 		// test max_num condition and max_time condition
 		max_num = max_num && (dbb->unflushed_writes == max_unflushed_writes);
