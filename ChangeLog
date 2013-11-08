@@ -1,3 +1,7 @@
+ 2013-11-07 11:10  paulbeach 
+   M src/jrd/os/darwin/config_root.cpp
+Fix embedded on MacOS issue with symbolic links and relative paths
+
  2013-10-24 14:53  asfernandes 
    M src/jrd/rse.cpp
 Backported fix for CORE-4247 - Delete "where current of" cursor fails for tables with newly added fields.
