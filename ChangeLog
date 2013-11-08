@@ -1,3 +1,23 @@
+ 2013-11-07 18:41  dimitr 
+   M src/jrd/evl.cpp
+Fixed the underlying issue that made CORE-4255 possible.
+
+ 2013-11-07 11:17  paulbeach 
+   M src/common/config/os/darwin/config_root.cpp
+Fix embedded on MacOS issue with symbolic links and relative paths
+
+ 2013-11-07 10:32  hvlad 
+   M src/jrd/Database.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Don't force flush for database which creation is not complete.
+
+ 2013-11-07 10:06  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/pag.cpp
+Avoid hack in create_database when we have FW=ON at header page disk image and FW=OFF in memory structures and in fact database file is created in FW=OFF mode.
+Instead of setting flag on header page when it is formatted for the first usage, explicitly set FW=ON after database creation is complete, if there was no isc_dpb_force_write in DPB.
+
  2013-11-06 10:29  alexpeshkoff 
    M doc/README.interfaces.html
 Enhance docs
