@@ -2596,6 +2596,10 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			INI_format(attachment->att_user->usr_user_name.c_str(), options.dpb_set_db_charset.c_str());
 
+			// If we have not allocated first TIP page, do it now.
+			if (!dbb->dbb_t_pages || !dbb->dbb_t_pages->count())
+				TRA_extend_tip(tdbb, 0);
+
 			// There is no point to move database online at database creation since it is online by default.
 			// We do not allow to create database that is fully shut down.
 			if (options.dpb_online || (options.dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_full)

@@ -100,6 +100,7 @@ static void link_transaction(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*);
 static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
+static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number);
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 static void transaction_start(thread_db* tdbb, jrd_tra* temp);
 
@@ -339,12 +340,17 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, true, retaining_flag, false);
 
+	jrd_tra* sysTran = tdbb->getAttachment()->getSysTransaction();
+
 	// If this is a commit retaining, and no updates have been performed,
 	// and no events have been posted (via stored procedures etc)
 	// no-op the operation.
 
 	if (retaining_flag && !(transaction->tra_flags & TRA_write || transaction->tra_deferred_job))
 	{
+		if (sysTran->tra_flags & TRA_write)
+			transaction_flush(tdbb, FLUSH_SYSTEM, 0);
+
 		transaction->tra_flags &= ~TRA_prepared;
 		// Get rid of all user savepoints
 		while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user)
@@ -375,14 +381,14 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	// Flush pages if transaction logically modified data
 
 	if (transaction->tra_flags & TRA_write)
-		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
-	else if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
+		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
+	else if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected) || (sysTran->tra_flags & TRA_write))
 	{
 		// If the transaction only read data but is a member of a
 		// multi-database transaction with a transaction description
 		// message then flush RDB$TRANSACTIONS.
 
-		CCH_flush(tdbb, FLUSH_SYSTEM, 0);
+		transaction_flush(tdbb, FLUSH_SYSTEM, 0);
 	}
 
 	if (retaining_flag)
@@ -954,16 +960,17 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 	DFW_perform_work(tdbb, transaction);
 
 	// Flush pages if transaction logically modified data
+	jrd_tra* sysTran = tdbb->getAttachment()->getSysTransaction();
 
 	if (transaction->tra_flags & TRA_write)
-		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
-	else if (transaction->tra_flags & TRA_prepare2)
+		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
+	else if (transaction->tra_flags & TRA_prepare2 || (sysTran->tra_flags & TRA_write))
 	{
 		// If the transaction only read data but is a member of a
 		// multi-database transaction with a transaction description
 		// message then flush RDB$TRANSACTIONS.
 
-		CCH_flush(tdbb, FLUSH_SYSTEM, 0);
+		transaction_flush(tdbb, FLUSH_SYSTEM, 0);
 	}
 
 	// Set the state on the inventory page to be limbo
@@ -1311,10 +1318,10 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 			if (transaction->tra_flags & TRA_write)
 			{
-				CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
+				transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 				++transaction->tra_save_point->sav_verb_count;	// cause undo
 				VIO_verb_cleanup(tdbb, transaction);
-				CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
+				transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 			}
 			else
 				VIO_verb_cleanup(tdbb, transaction);
@@ -1336,6 +1343,10 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		// as committed
 		state = tra_committed;
 	}
+
+	jrd_tra* sysTran = tdbb->getAttachment()->getSysTransaction();
+	if (sysTran->tra_flags & TRA_write)
+		transaction_flush(tdbb, FLUSH_SYSTEM, 0);
 
 	// If this is a rollback retain abort this transaction and start a new one.
 
@@ -1869,8 +1880,10 @@ static TraNumber bump_transaction_id(thread_db* tdbb, WIN* window)
 		return number;
 
 	// If this is the first transaction on a TIP, allocate the TIP now.
+	// Note, first TIP page is created with the database itself, 
+	// see JProvider::createDatabase.
 
-	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
+	const bool new_tip = ((number % dbb->dbb_page_manager.transPerTIP) == 0);
 
 	if (new_tip)
 		TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
@@ -1919,8 +1932,10 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 	const TraNumber number = header->hdr_next_transaction + 1;
 
 	// If this is the first transaction on a TIP, allocate the TIP now.
+	// Note, first TIP page is created with the database itself, 
+	// see JProvider::createDatabase.
 
-	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
+	const bool new_tip = ((number % dbb->dbb_page_manager.transPerTIP) == 0);
 
 	if (new_tip)
 		TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
@@ -2498,6 +2513,29 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 
 	gds__free(database);
 	return 0;
+}
+
+
+static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
+{
+/**************************************
+ *
+ *	t r a n s a c t i o n _ f l u s h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Flush pages modified by user and\or system transaction.
+ *  Note, flush of user transaction also flushed pages, 
+ *  changed by system transaction.
+ *
+ **************************************/
+	fb_assert(flush_flag == FLUSH_TRAN || flush_flag == FLUSH_SYSTEM);
+
+	CCH_flush(tdbb, flush_flag, tra_number);
+
+	jrd_tra* sysTran = tdbb->getAttachment()->getSysTransaction();
+	sysTran->tra_flags &= ~TRA_write;
 }
 
 
