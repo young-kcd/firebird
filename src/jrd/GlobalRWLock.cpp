@@ -148,12 +148,15 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 		++pendingLock;
 	}
 
-
 	COS_TRACE(("(%p)->lockWrite LCK_lock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d), pendingLock(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical, pendingLock));
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_write, wait))
 	{
+		ISC_STATUS* const status = tdbb->tdbb_status_vector;
+		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
+			fb_utils::init_status(status);
+
 		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
 
 		--pendingLock;
@@ -266,6 +269,10 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_read, wait))
 	{
+		ISC_STATUS* const status = tdbb->tdbb_status_vector;
+		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
+			fb_utils::init_status(status);
+
 		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
 		--pendingLock;
 		return false;

@@ -265,7 +265,12 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	// if we can't get the lock, no big deal: just give up on caching the index info
 
 	if (!LCK_lock(tdbb, index_block->idb_lock, LCK_SR, LCK_NO_WAIT))
+	{
+		// clear lock error from status vector
+		fb_utils::init_status(tdbb->tdbb_status_vector);
+
 		return;
+	}
 
 	// whether the index block already existed or was just created,
 	// fill in the cached information about the index
