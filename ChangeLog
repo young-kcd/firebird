@@ -1,3 +1,8 @@
+ 2013-11-11 14:44  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+Fixed bug CORE-4260 : Bugcheck 165 (cannot find tip page) happens if engine crashed right after CREATE DATABASE
+
  2013-11-07 18:41  dimitr 
    M src/jrd/evl.cpp
 Fixed the underlying issue that made CORE-4255 possible.
