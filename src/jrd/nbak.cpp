@@ -145,7 +145,7 @@ BackupManager::StateWriteGuard::StateWriteGuard(thread_db* tdbb, Jrd::WIN* windo
 	dbb->dbb_backup_manager->beginFlush();
 	CCH_flush(tdbb, FLUSH_ALL, 0); // Flush local cache to release all dirty pages
 
-	if (!att->backupStateWriteLock(tdbb, true))
+	if (!att->backupStateWriteLock(tdbb, LCK_WAIT))
 		ERR_bugcheck_msg("Can't lock state for write");
 
 	dbb->dbb_backup_manager->endFlush();
