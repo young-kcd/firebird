@@ -340,7 +340,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, true, retaining_flag, false);
 
-	jrd_tra* sysTran = tdbb->getAttachment()->getSysTransaction();
+	jrd_tra* const sysTran = tdbb->getAttachment()->getSysTransaction();
 
 	// If this is a commit retaining, and no updates have been performed,
 	// and no events have been posted (via stored procedures etc)
@@ -382,7 +382,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (transaction->tra_flags & TRA_write)
 		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
-	else if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected) || (sysTran->tra_flags & TRA_write))
+	else if ((transaction->tra_flags & (TRA_prepare2 | TRA_reconnected)) ||
+		(sysTran->tra_flags & TRA_write))
 	{
 		// If the transaction only read data but is a member of a
 		// multi-database transaction with a transaction description
@@ -964,7 +965,7 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 
 	if (transaction->tra_flags & TRA_write)
 		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
-	else if (transaction->tra_flags & TRA_prepare2 || (sysTran->tra_flags & TRA_write))
+	else if ((transaction->tra_flags & TRA_prepare2) || (sysTran->tra_flags & TRA_write))
 	{
 		// If the transaction only read data but is a member of a
 		// multi-database transaction with a transaction description
@@ -1344,7 +1345,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		state = tra_committed;
 	}
 
-	jrd_tra* sysTran = tdbb->getAttachment()->getSysTransaction();
+	jrd_tra* const sysTran = tdbb->getAttachment()->getSysTransaction();
 	if (sysTran->tra_flags & TRA_write)
 		transaction_flush(tdbb, FLUSH_SYSTEM, 0);
 
@@ -2534,7 +2535,7 @@ static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_
 
 	CCH_flush(tdbb, flush_flag, tra_number);
 
-	jrd_tra* sysTran = tdbb->getAttachment()->getSysTransaction();
+	jrd_tra* const sysTran = tdbb->getAttachment()->getSysTransaction();
 	sysTran->tra_flags &= ~TRA_write;
 }
 
