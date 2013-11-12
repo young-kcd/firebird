@@ -241,13 +241,11 @@ bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 
 	ThreadStatusGuard temp_status(tdbb);
 
-	const bool res = LCK_lock(tdbb, &lock, LCK_write, LCK_NO_WAIT);
+	if (!LCK_lock(tdbb, &lock, LCK_write, LCK_NO_WAIT))
+		return false;
 
-	if (res) {
-		LCK_release(tdbb, &lock);
-	}
-
-	return res;
+	LCK_release(tdbb, &lock);
+	return true;
 }
 
 
