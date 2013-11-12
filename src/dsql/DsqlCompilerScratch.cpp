@@ -361,9 +361,9 @@ dsql_var* DsqlCompilerScratch::makeVariable(dsql_fld* field, const char* name,
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = getPool();
 
-	dsql_var* dsqlVar = FB_NEW(*tdbb->getDefaultPool()) dsql_var(*tdbb->getDefaultPool());
+	dsql_var* dsqlVar = FB_NEW(pool) dsql_var(pool);
 	dsqlVar->type = type;
 	dsqlVar->msgNumber = msgNumber;
 	dsqlVar->msgItem = itemNumber;
@@ -566,14 +566,14 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 // Process derived table which can be recursive CTE.
 // If it is non-recursive return input node unchanged.
 // If it is recursive return new derived table which is an union of union of anchor (non-recursive)
-// queries and union of recursive queries. Check recursive queries to satisfy various criterias.
+// queries and union of recursive queries. Check recursive queries to satisfy various criteria.
 // Note that our parser is right-to-left therefore nested list linked as first node in parent list
 // and second node is always query spec.
-// For example, if we have 4 CTE's where first two is non-recursive and last two is recursive:
+// For example, if we have 4 CTE's where first two are non-recursive and last two are recursive:
 //
 //				list							  union
 //			  [0]	[1]						   [0]		[1]
-//			list	cte3		===>		anchor		recursive
+//			list	cte4		===>		anchor		recursive
 //		  [0]	[1]						 [0]	[1]		[0]		[1]
 //		list	cte3					cte1	cte2	cte3	cte4
 //	  [0]	[1]
@@ -583,47 +583,61 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 // needed. Therefore recursive part is built using newly allocated list nodes.
 SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	MemoryPool& pool = *tdbb->getDefaultPool();
-
-	RecordSourceNode* query = input->querySpec;
+	RecordSourceNode* const query = input->querySpec;
 	UnionSourceNode* unionQuery = query->as<UnionSourceNode>();
 
-	if (!unionQuery && pass1RseIsRecursive(query->as<RseNode>()))
+	if (!unionQuery)
 	{
+		if (!pass1RseIsRecursive(query->as<RseNode>()))
+			return input;
+
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Recursive CTE (%s) must be an UNION
 				  Arg::Gds(isc_dsql_cte_not_a_union) << input->alias);
 	}
 
-	// split queries list on two parts: anchor and recursive
+	// Split queries list on two parts: anchor and recursive.
+	// In turn, the anchor part consists of:
+	//   - a number of rightmost nodes combined by UNION ALL
+	//   - the leftmost node representing a union of all other nodes
+
+	MemoryPool& pool = getPool();
+
+	unsigned anchors = 0;
 	RecordSourceNode* anchorRse = NULL;
-	RecordSourceNode* recursiveRse = NULL;
-	RecordSourceNode* qry = query;
+	Stack<RseNode*> anchorStack(pool);
+	Stack<RseNode*> recursiveStack(pool);
 
-	UnionSourceNode* newQry = FB_NEW(pool) UnionSourceNode(pool);
-	newQry->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 2);
+	NestConst<RecordSourceNode>* iter = unionQuery->dsqlClauses->items.end();
+	bool dsqlAll = unionQuery->dsqlAll;
 
-	if (unionQuery)
+	while (unionQuery)
 	{
-		newQry->dsqlAll = unionQuery->dsqlAll;
-		newQry->recursive = unionQuery->recursive;
-	}
+		RecordSourceNode* clause = *--iter;
 
-	while (true)
-	{
-		RecordSourceNode* rse = NULL;
+		if (iter == unionQuery->dsqlClauses->items.begin())
+		{
+			unionQuery = clause->as<UnionSourceNode>();
 
-		if (unionQuery)
-			rse = unionQuery->dsqlClauses->items[1];
-		else
-			rse = qry;
+			if (unionQuery)
+			{
+				iter = unionQuery->dsqlClauses->items.end();
+				dsqlAll = unionQuery->dsqlAll;
 
-		RseNode* newRse = pass1RseIsRecursive(rse->as<RseNode>());
+				clause = *--iter;
+
+				if (!anchorRse && !dsqlAll)
+					anchorRse = unionQuery;
+			}
+		}
+
+		RseNode* const rse = clause->as<RseNode>();
+		fb_assert(rse);
+		RseNode* const newRse = pass1RseIsRecursive(rse);
 
 		if (newRse) // rse is recursive
 		{
-			if (anchorRse)
+			if (anchors)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// CTE '%s' defined non-recursive member after recursive
@@ -656,82 +670,66 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 			// hvlad: we need also forbid any aggregate function here
 			// but for now i have no idea how to do it simple
 
-			if (!newQry->dsqlAll)
+			if (!dsqlAll)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive members of CTE (%s) must be linked with another members via UNION ALL
 					Arg::Gds(isc_dsql_cte_union_all) << input->alias);
 			}
 
-			if (!recursiveRse)
-				recursiveRse = newQry;
-
-			newRse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
-
-			if (unionQuery)
-				newQry->dsqlClauses->items[1] = newRse;
-			else
-				newQry->dsqlClauses->items[0] = newRse;
+			recursiveStack.push(newRse);
 		}
 		else
 		{
-			if (unionQuery)
-				newQry->dsqlClauses->items[1] = rse;
-			else
-				newQry->dsqlClauses->items[0] = rse;
+			anchors++;
 
-			if (!anchorRse)
-			{
-				if (unionQuery)
-					anchorRse = newQry;
-				else
-					anchorRse = rse;
-			}
-		}
-
-		if (!unionQuery)
-			break;
-
-		qry = unionQuery->dsqlClauses->items[0];
-		unionQuery = qry->as<UnionSourceNode>();
-
-		if (unionQuery)
-		{
-			UnionSourceNode* newUnion = FB_NEW(pool) UnionSourceNode(pool);
-			newUnion->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 2);
-			newUnion->dsqlAll = unionQuery->dsqlAll;
-			newUnion->recursive = unionQuery->recursive;
-
-			newQry->dsqlClauses->items[0] = newUnion;
-			newQry = newUnion;
+			if (!anchorRse && dsqlAll)
+				anchorStack.push(rse);
 		}
 	}
 
-	if (!recursiveRse)
+	// If there's no recursive part, then return the input node as is
+
+	if (!recursiveStack.hasData())
 		return input;
 
-	if (!anchorRse)
+	// Merge two anchor parts into a single UNION ALL node
+
+	if (anchorStack.hasData())
+	{
+		RecordSourceNode* const firstNode = anchorRse ? anchorRse : anchorStack.pop();
+		UnionSourceNode* const rse = FB_NEW(pool) UnionSourceNode(pool);
+		rse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, firstNode);
+		rse->dsqlAll = true;
+		rse->recursive = false;
+
+		while (anchorStack.hasData())
+			rse->dsqlClauses->add(anchorStack.pop());
+
+		anchorRse = rse;
+	}
+	else if (!anchorRse)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			// Non-recursive member is missing in CTE '%s'
 			Arg::Gds(isc_dsql_cte_miss_nonrecursive) << input->alias);
 	}
 
-	UnionSourceNode* qry2 = recursiveRse->as<UnionSourceNode>();
-	UnionSourceNode* list = NULL;
+	// Create the recursive UNION ALL node
 
-	while (qry2->dsqlClauses->items[0] != anchorRse)
+	UnionSourceNode* const recursiveRse = FB_NEW(pool) UnionSourceNode(pool);
+	recursiveRse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, recursiveStack.pop());
+	recursiveRse->dsqlAll = true;
+	recursiveRse->recursive = false;
+
+	while (recursiveStack.hasData())
 	{
-		list = qry2;
-		qry2 = qry2->dsqlClauses->items[0]->as<UnionSourceNode>();
+		RseNode* const rse = recursiveStack.pop();
+		rse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
+		recursiveRse->dsqlClauses->add(rse);
 	}
 
-	qry2->dsqlClauses->items[0] = NULL;
-
-	if (list)
-		list->dsqlClauses->items[0] = qry2->dsqlClauses->items[1];
-	else
-		recursiveRse = qry2->dsqlClauses->items[1];
+	// Create and return the final node
 
 	UnionSourceNode* unionNode = FB_NEW(pool) UnionSourceNode(pool);
 	unionNode->dsqlAll = true;
@@ -754,8 +752,7 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 // to the WHERE clause. Punt if more than one recursive reference is found.
 RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	MemoryPool& pool = *tdbb->getDefaultPool();
+	MemoryPool& pool = getPool();
 
 	RseNode* result = FB_NEW(getPool()) RseNode(getPool());
 	result->dsqlFirst = input->dsqlFirst;

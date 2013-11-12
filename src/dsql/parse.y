@@ -4684,7 +4684,7 @@ select_expr_body
 	| select_expr_body UNION distinct_noise query_term
 		{
 			UnionSourceNode* node = $1->as<UnionSourceNode>();
-			if (node && !node->recursive && !node->dsqlAll)
+			if (node && !node->dsqlAll)
 				node->dsqlClauses->add($4);
 			else
 			{
@@ -4696,7 +4696,7 @@ select_expr_body
 	| select_expr_body UNION ALL query_term
 		{
 			UnionSourceNode* node = $1->as<UnionSourceNode>();
-			if (node && !node->recursive && node->dsqlAll)
+			if (node && node->dsqlAll)
 				node->dsqlClauses->add($4);
 			else
 			{
