@@ -1,3 +1,26 @@
+ 2013-11-12 16:56  dimitr 
+   M src/jrd/nbak.cpp
+We're quite lucky this implicit conversion worked correctly. Fixed.
+
+ 2013-11-12 16:53  dimitr 
+   M src/jrd/btr.cpp
+Misc.
+
+ 2013-11-12 16:52  dimitr 
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/pcmet.epp
+Fixed the status vector being left dirty after the non-critical lock manager error.
+This resolves CORE-4265: Unexpected lock conflict error may be raised while connecting to a heavily loaded database.
+
+ 2013-11-12 14:24  dimitr 
+   M src/jrd/tra.cpp
+Misc.
+
+ 2013-11-12 14:04  dimitr 
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/parse.y
+Fixed CORE-4240:  Recursive query in SQL query returns incorrect results if more than one branch bypass. The new code should work equally good with both binary and wide union trees.
+
  2013-11-11 14:44  hvlad 
    M src/jrd/jrd.cpp
    M src/jrd/tra.cpp
