@@ -590,9 +590,6 @@ void INF_database_info(thread_db* tdbb,
 
 				for (const Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 				{
-					if (att->att_flags & ATT_shutdown)
-						continue;
-
 					const UserId* user = att->att_user;
 
 					if (user)
