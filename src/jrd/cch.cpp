@@ -566,9 +566,6 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 			for (Attachment* other_attachment = attachment->att_next; other_attachment;
 				other_attachment = other_attachment->att_next)
 			{
-				if (other_attachment->att_flags & ATT_shutdown)
-					continue;
-
 				if (level == LCK_none)
 				{
 					// Wait for other attachments requesting exclusive access

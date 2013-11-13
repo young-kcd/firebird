@@ -2428,47 +2428,43 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 
 	// release existence locks on references
 
-	Attachment* attachment = request->req_attachment;
-	if (!attachment || !(attachment->att_flags & ATT_shutdown))
+	for (Resource* resource = request->req_resources.begin();
+		 resource < request->req_resources.end(); resource++)
 	{
-		for (Resource* resource = request->req_resources.begin();
-			 resource < request->req_resources.end(); resource++)
+		switch (resource->rsc_type)
 		{
-			switch (resource->rsc_type)
+		case Resource::rsc_relation:
 			{
-			case Resource::rsc_relation:
-				{
-					jrd_rel* relation = resource->rsc_rel;
-					MET_release_existence(tdbb, relation);
-					break;
-				}
-			case Resource::rsc_index:
-				{
-					jrd_rel* relation = resource->rsc_rel;
-					IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
-					if (index && index->idl_count)
-					{
-						--index->idl_count;
-						if (!index->idl_count)
-							LCK_release(tdbb, index->idl_lock);
-					}
-					break;
-				}
-			case Resource::rsc_procedure:
-				{
-					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
-					break;
-				}
-			case Resource::rsc_collation:
-				{
-					Collation* coll = resource->rsc_coll;
-					coll->decUseCount(tdbb);
-					break;
-				}
-			default:
-				BUGCHECK(220);	// msg 220 release of unknown resource
+				jrd_rel* relation = resource->rsc_rel;
+				MET_release_existence(tdbb, relation);
 				break;
 			}
+		case Resource::rsc_index:
+			{
+				jrd_rel* relation = resource->rsc_rel;
+				IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
+				if (index && index->idl_count)
+				{
+					--index->idl_count;
+					if (!index->idl_count)
+						LCK_release(tdbb, index->idl_lock);
+				}
+				break;
+			}
+		case Resource::rsc_procedure:
+			{
+				CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
+				break;
+			}
+		case Resource::rsc_collation:
+			{
+				Collation* coll = resource->rsc_coll;
+				coll->decUseCount(tdbb);
+				break;
+			}
+		default:
+			BUGCHECK(220);	// msg 220 release of unknown resource
+			break;
 		}
 	}
 
