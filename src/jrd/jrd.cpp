@@ -6579,16 +6579,14 @@ void JTransaction::freeEngineData(IStatus* user_status)
 
 		try
 		{
-			if (transaction->tra_flags & TRA_prepared ||
-				tdbb->getDatabase()->dbb_ast_flags & DBB_shutdown ||
-				tdbb->getAttachment()->att_flags & ATT_shutdown)
+			if (transaction->tra_flags & TRA_prepared)
 			{
 				TraceTransactionEnd trace(transaction, false, false);
 				EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, false, false);
 				TRA_release_transaction(tdbb, transaction, &trace);
 			}
 			else
-				TRA_rollback(tdbb, transaction, false, false);
+				TRA_rollback(tdbb, transaction, false, true);
 
 			transaction = NULL;
 		}
