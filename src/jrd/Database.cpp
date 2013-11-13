@@ -145,10 +145,10 @@ namespace Jrd
 	{
 		if (!dbb_sweep_lock)
 		{
-			dbb_sweep_lock = FB_NEW_RPT(*dbb_permanent, 0) Lock(tdbb, 0, LCK_sweep);
-			dbb_sweep_lock->lck_ast = blocking_ast_sweep;
-			dbb_sweep_lock->lck_object = this;
+			dbb_sweep_lock = FB_NEW_RPT(*dbb_permanent, 0)
+				Lock(tdbb, 0, LCK_sweep, this, blocking_ast_sweep);
 		}
+
 		return dbb_sweep_lock;
 	}
 
