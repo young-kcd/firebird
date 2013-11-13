@@ -69,7 +69,7 @@ public:
 	bool lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump = false);
 	void unlockRead(thread_db* tdbb);
 	bool tryReleaseLock(thread_db* tdbb);
-	void shutdownLock();
+	void shutdownLock(thread_db* tdbb);
 
 protected:
 	// Flag to indicate that somebody is waiting via lock manager.

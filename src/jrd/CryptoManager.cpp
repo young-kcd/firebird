@@ -141,6 +141,8 @@ namespace Jrd {
 
 	CryptoManager::~CryptoManager()
 	{
+		delete stateLock;
+		delete threadLock;
 	}
 
 	void CryptoManager::terminateCryptThread(thread_db*)
@@ -163,11 +165,7 @@ namespace Jrd {
 			cryptPlugin = NULL;
 		}
 
-		if (stateLock)
-		{
-			LCK_release(tdbb, stateLock);
-			stateLock = NULL;
-		}
+		LCK_release(tdbb, stateLock);
 	}
 
 	void CryptoManager::takeStateLock(thread_db* tdbb)

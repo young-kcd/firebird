@@ -861,11 +861,11 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	return true;
 }
 
-void BackupManager::shutdown(thread_db* /*tdbb*/)
+void BackupManager::shutdown(thread_db* tdbb)
 {
 	shutDown = true;
 
 	closeDelta();
-	stateLock->shutdownLock();
-	allocLock->shutdownLock();
+	stateLock->shutdownLock(tdbb);
+	allocLock->shutdownLock(tdbb);
 }
