@@ -755,6 +755,7 @@ int Parser::yylexAux()
 
 				yylval.scaledNumber.number = 0;
 				yylval.scaledNumber.scale = 0;
+				yylval.scaledNumber.hex = true;
 
 				while (*p)
 				{
@@ -992,6 +993,7 @@ int Parser::yylexAux()
 
 					yylval.scaledNumber.number = number;
 					yylval.scaledNumber.scale = scale;
+					yylval.scaledNumber.hex = false;
 
 					if (have_decimal)
 						return SCALEDINT;

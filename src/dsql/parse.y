@@ -1525,8 +1525,29 @@ set_generator_clause
 %type <int64Val> sequence_value
 sequence_value
 	: signed_long_integer	{ $$ = $1; }
-	| NUMBER64BIT			{ $$ = $1.number; }
-	| '-' NUMBER64BIT		{ $$ = -$2.number; }
+	| NUMBER64BIT
+		{
+			SINT64 signedNumber = (SINT64) $1.number;
+
+			if (!$1.hex && $1.number > MAX_SINT64)
+			{
+				ERRD_post(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					Arg::Gds(isc_arith_except) <<
+					Arg::Gds(isc_numeric_out_of_range));
+			}
+
+			$$ = signedNumber;
+		}
+	| '-' NUMBER64BIT
+		{
+			SINT64 signedNumber = (SINT64) $2.number;
+
+			if ($2.hex && signedNumber == MIN_SINT64)
+				ERRD_post(Arg::Gds(isc_exception_integer_overflow));
+
+			$$ = -signedNumber;
+		}
 	;
 
 
@@ -6020,13 +6041,15 @@ u_numeric_constant
 		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DOUBLE); }
 	| NUMBER64BIT
 		{
-			if ($1.number >= 0)
-				$$ = MAKE_const_sint64($1.number, $1.scale);
+			SINT64 signedNumber = (SINT64) $1.number;
+
+			if ($1.hex && signedNumber < 0)
+				$$ = newNode<NegateNode>(MAKE_const_sint64(-signedNumber, $1.scale));
 			else
-				$$ = newNode<NegateNode>(MAKE_const_sint64(-$1.number, $1.scale));
+				$$ = MAKE_const_sint64(signedNumber, $1.scale);
 		}
 	| SCALEDINT
-		{ $$ = MAKE_const_sint64($1.number, $1.scale); }
+		{ $$ = MAKE_const_sint64((SINT64) $1.number, $1.scale); }
 	;
 
 %type <valueExprNode> u_constant

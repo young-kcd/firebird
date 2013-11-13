@@ -1472,8 +1472,9 @@ private:
 
 struct ScaledNumber
 {
-	SINT64 number;
+	FB_UINT64 number;
 	SCHAR scale;
+	bool hex;
 };
 
 
