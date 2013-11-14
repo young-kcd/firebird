@@ -1690,6 +1690,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	if (accepted && wireEncryption(port, id))
 	{
+		HANDSHAKE_DEBUG(fprintf(stderr, "accepted && wireEncryption\n"));
 		if (version >= PROTOCOL_VERSION13)
 		{
 			ConnectAuth* cnctAuth = new ConnectAuth(port, id);
@@ -1706,6 +1707,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 		if (port->port_required_encryption)
 		{
+			HANDSHAKE_DEBUG(fprintf(stderr, "port_required_encryption, reset accepted\n"));
 			accepted = false;
 		}
 	}
@@ -1798,6 +1800,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	// Send off out gracious acceptance or flag rejection
 	if (!accepted)
 	{
+		HANDSHAKE_DEBUG(fprintf(stderr, "!accepted, sending reject\n"));
 		if (!status.isSuccess())
 			port->send_response(send, 0, 0, status.get(), false);
 		else
