@@ -182,6 +182,11 @@ public:
 		return visitor.ignoreSubSelects ? false : BoolExprNode::dsqlAggregateFinder(visitor);
 	}
 
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
+	{
+		return true;
+	}
+
 	virtual bool jrdPossibleUnknownFinder()
 	{
 		return true;
