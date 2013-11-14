@@ -243,6 +243,7 @@ static const TOK tokens[] =
 	{LEVEL, "LEVEL", 1, false},
 	{LIKE, "LIKE", 1, false},
 	{LIMBO, "LIMBO", 2, true},
+	{LINGER, "LINGER", 2, true},
 	{LIST, "LIST", 2, false},
 	{LN, "LN", 2, false},
 	{LOCK, "LOCK", 2, true},

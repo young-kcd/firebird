@@ -5009,3 +5009,33 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const MetaName& trig_name)
 
 	return false;
 }
+
+int MET_get_linger(Jrd::thread_db* tdbb)
+{
+/**************************************
+ *
+ *	M E T _ g e t _ l i n g e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Return linger value for current database
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	int rc = 0;
+
+	AutoCacheRequest request(tdbb, irq_linger, IRQ_REQUESTS);
+	FOR(REQUEST_HANDLE request)
+		DAT IN RDB$DATABASE
+	{
+		if (!DAT.RDB$LINGER.NULL)
+		{
+			rc = DAT.RDB$LINGER;
+		}
+	}
+	END_FOR
+
+	return rc;
+}

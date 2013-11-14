@@ -165,6 +165,8 @@ enum irq_type_t
 	irq_grant15,			// process grant option (generators)
 	irq_grant16,			// process grant option (domains)
 
+	irq_linger,				// get database linger value
+
 	irq_MAX
 };
 

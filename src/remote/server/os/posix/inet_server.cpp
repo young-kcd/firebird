@@ -400,7 +400,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 			const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
 			const char* path = defConf->getSecurityDatabase();
-			const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1, isc_dpb_address_path, 0};
+			const char dpb[] = {isc_dpb_version1, isc_dpb_sec_attach, 1, 1, isc_dpb_address_path, 0};
 
 			isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
 			if (status[0] == 1 && status[1] > 0)

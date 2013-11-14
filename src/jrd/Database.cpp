@@ -77,6 +77,11 @@ namespace Jrd
 
 	Database::~Database()
 	{
+		if (dbb_linger_timer)
+		{
+			dbb_linger_timer->destroy();
+		}
+
 		{ // scope
 			SyncLockGuard guard(&dbb_sortbuf_sync, SYNC_EXCLUSIVE, "Database::~Database");
 
@@ -313,4 +318,45 @@ namespace Jrd
 
 		return 0;
 	}
+
+	void Database::Linger::handler()
+	{
+		JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);
+	}
+
+	int Database::Linger::release()
+	{
+		if (--refCounter == 0)
+		{
+			delete this;
+			return 0;
+		}
+
+		return 1;
+	}
+
+	void Database::Linger::reset()
+	{
+		if (active)
+		{
+			TimerInterfacePtr()->stop(this);
+			active = false;
+		}
+	}
+
+	void Database::Linger::set(unsigned seconds)
+	{
+		if (dbb)
+		{
+			TimerInterfacePtr()->start(this, seconds * 1000 * 1000);
+			active = true;
+		}
+	}
+
+	void Database::Linger::destroy()
+	{
+		dbb = NULL;
+		reset();
+	}
+
 } // namespace

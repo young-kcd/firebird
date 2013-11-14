@@ -453,8 +453,8 @@ private:
 class JProvider : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
 {
 public:
-	explicit JProvider(Firebird::IPluginConfig*)
-		: cryptCallback(NULL)
+	explicit JProvider(Firebird::IPluginConfig* pConf)
+		: cryptCallback(NULL), pluginConfig(pConf)
 	{
 	}
 
@@ -479,6 +479,7 @@ public:
 
 private:
 	Firebird::ICryptKeyCallback* cryptCallback;
+	Firebird::IPluginConfig* pluginConfig;
 };
 
 inline JStatement::JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta)

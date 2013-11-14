@@ -561,6 +561,7 @@ using namespace Firebird;
 %token <metaNamePtr> UNKNOWN
 %token <metaNamePtr> USAGE
 %token <metaNamePtr> RDB_RECORD_VERSION
+%token <metaNamePtr> LINGER
 
 // precedence declarations for expression evaluation
 
@@ -3697,6 +3698,10 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->cryptPlugin = *$3; }
 	| DECRYPT
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DECRYPT; }
+	| SET LINGER TO long_integer
+		{ $alterDatabaseNode->linger = $4; }
+	| DROP LINGER
+		{ $alterDatabaseNode->linger = 0; }
 	;
 
 
@@ -7111,6 +7116,7 @@ non_reserved_word
 	| RANK
 	| ROW_NUMBER
 	| USAGE
+	| LINGER
 	;
 
 %%

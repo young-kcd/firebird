@@ -223,3 +223,16 @@ export FB_EXPECTED_DB=employee
 fbsvcmgr host:service_mgr user sysdba password xxx action_db_stats dbname employee sts_data_pages
 
 Certainly any other database action can be used here.
+
+
+6) Services API extension - using services to temporary turn off linger for database.
+(Alex Peshkov, peshkoff@mail.ru, 2013)
+
+Linger is used to optimize performance in some cases (see also sql.extensions/README.linger).
+If you want to turn off linger temporary (for next database close) you may use gfix utility or
+services. New tag isc_spb_prp_nolinger is added for it (option). Setting isc_spb_prp_nolinger
+option turns off linger for the next database close operation and may be used to force closing
+database in linger state.
+
+Example:
+fbsvcmgr host:service_mgr user sysdba password xxx action_properties dbname employee prp_nolinger

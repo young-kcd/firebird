@@ -406,7 +406,8 @@ namespace
 						 RefPtr<ConfigFile> pconfig, const PathName& pconfName,
 						 const PathName& pplugName)
 			: module(pmodule), regPlugin(preg), defaultConfig(pconfig),
-			  confName(getPool(), pconfName), plugName(getPool(), pplugName)
+			  confName(getPool(), pconfName), plugName(getPool(), pplugName),
+			  delay(DEFAULT_DELAY)
 		{
 			if (defaultConfig.hasData())
 			{
@@ -461,6 +462,19 @@ namespace
 			return plugName.c_str();
 		}
 
+		void setReleaseDelay(ISC_UINT64 microSeconds)
+		{
+#ifdef DEBUG_PLUGINS
+			fprintf(stderr, "Set delay for ConfiguredPlugin %s:%p\n", plugName.c_str(), this);
+#endif
+			delay = microSeconds > DEFAULT_DELAY ? microSeconds : DEFAULT_DELAY;
+		}
+
+		ISC_UINT64 getReleaseDelay()
+		{
+			return delay;
+		}
+
 		// ITimer implementation
 		void FB_CARG handler()
 		{ }
@@ -473,6 +487,9 @@ namespace
 		RefPtr<ConfigFile> defaultConfig;
 		PathName confName;
 		PathName plugName;
+
+		static const FB_UINT64 DEFAULT_DELAY = 1000000;		// 1 sec
+		FB_UINT64 delay;
 	};
 
 	// Provides per-database configuration from databases.conf.
@@ -506,6 +523,11 @@ namespace
 			return firebirdConf;
 		}
 
+		void FB_CARG setReleaseDelay(ISC_UINT64 microSeconds)
+		{
+			configuredPlugin->setReleaseDelay(microSeconds);
+		}
+
 		int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -521,9 +543,10 @@ namespace
 		~FactoryParameter()
 		{
 #ifdef DEBUG_PLUGINS
-			fprintf(stderr, "~FactoryParameter places configuredPlugin %s in unload query\n", configuredPlugin->getPlugName());
+			fprintf(stderr, "~FactoryParameter places configuredPlugin %s in unload query for %d seconds\n", 
+				configuredPlugin->getPlugName(), configuredPlugin->getReleaseDelay() / 1000000);
 #endif
-			TimerInterfacePtr()->start(configuredPlugin, 1000000);		// 1 sec
+			TimerInterfacePtr()->start(configuredPlugin, configuredPlugin->getReleaseDelay());
 		}
 
 		RefPtr<ConfiguredPlugin> configuredPlugin;
@@ -532,12 +555,16 @@ namespace
 
 	IPluginBase* ConfiguredPlugin::factory(IFirebirdConf* firebirdConf)
 	{
-		RefPtr<FactoryParameter> par(new FactoryParameter(this, firebirdConf));
+		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
+		par->addRef();
 		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
 		if (plugin)
 		{
-			par->addRef();
 			plugin->setOwner(par);
+		}
+		else
+		{
+			par->release();
 		}
 		return plugin;
 	}

@@ -403,6 +403,7 @@ static bool drop_package_header(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool db_crypt(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool set_linger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 // ----------------------------------------------------------------
 
@@ -493,6 +494,7 @@ static const deferred_task task_table[] =
 	{ dfw_check_not_null, check_not_null },
 	{ dfw_store_view_context_type, store_view_context_type },
 	{ dfw_db_crypt, db_crypt },
+	{ dfw_set_linger, set_linger },
 	{ dfw_null, NULL }
 };
 
@@ -1520,6 +1522,36 @@ static bool db_crypt(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 
 	case 3:
 		dbb->dbb_crypto_manager->changeCryptState(tdbb, work->dfw_name);
+		break;
+	}
+
+	return false;
+}
+
+static bool set_linger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
+{
+/**************************************
+ *
+ *	s e t _ l i n g e r
+ *
+ **************************************
+ *
+ * Set linger interval in Database block.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
+	switch (phase)
+	{
+	case 1:
+	case 2:
+	case 3:
+		return true;
+
+	case 4:
+		dbb->dbb_linger_seconds = atoi(work->dfw_name.c_str());		// number stored as string
 		break;
 	}
 

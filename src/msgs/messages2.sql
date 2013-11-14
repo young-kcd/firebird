@@ -1591,6 +1591,7 @@ COMMIT WORK;
 (NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 118, NULL, 'empty password file @1', NULL, NULL);
 (NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 119, NULL, '   -fe(tch_password)    fetch password from file', NULL, NULL);
 (NULL, 'alice', 'alice.cpp', NULL, 3, 120, NULL, 'usage: gfix [options] <database>', NULL, NULL);
+('gfix_opt_nolinger', 'ALICE_gfix', 'alice.c', NULL, 3, 121, NULL, '   -nol(inger)          close database ignoring linger setting for it', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);

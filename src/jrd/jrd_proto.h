@@ -76,4 +76,10 @@ void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req
 bool JRD_verify_database_access(const Firebird::PathName&);
 void JRD_shutdown_attachments(Jrd::Database* dbb);
 void JRD_cancel_operation(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, int option);
+
+bool JRD_shutdown_database(Jrd::Database* dbb, const unsigned flags = 0);
+// JRD_shutdown_database() flags
+static const unsigned SHUT_DBB_RELEASE_POOLS =	0x01;
+static const unsigned SHUT_DBB_LINGER =			0x02;
+
 #endif /* JRD_JRD_PROTO_H */

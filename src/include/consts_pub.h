@@ -120,6 +120,7 @@
 #define isc_dpb_auth_plugin_list		  85
 #define isc_dpb_auth_plugin_name		  86
 #define isc_dpb_config					  87
+#define isc_dpb_nolinger				  88
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -403,6 +404,7 @@
 #define isc_spb_prp_set_sql_dialect		14
 #define isc_spb_prp_activate			0x0100
 #define isc_spb_prp_db_online			0x0200
+#define isc_spb_prp_nolinger			0x0400
 #define isc_spb_prp_force_shutdown			41
 #define isc_spb_prp_attachments_shutdown	42
 #define isc_spb_prp_transactions_shutdown	43

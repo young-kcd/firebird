@@ -335,7 +335,6 @@ int JProvider::release()
 	return 1;
 }
 
-
 static void shutdownBeforeUnload()
 {
 	LocalStatus status;
@@ -837,6 +836,7 @@ public:
 	bool	dpb_utf8_filename;
 	ULONG	dpb_ext_call_depth;
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
+	bool	dpb_nolinger;
 
 	// here begin compound objects
 	// for constructor to work properly dpb_user_name
@@ -950,20 +950,22 @@ static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 static void			unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb);
 static JAttachment*	init(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
-	const DatabaseOptions&, RefMutexUnlock&);
+	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*);
 static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
 static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
-static bool		shutdown_database(Database*, const bool);
 static void		strip_quotes(string&);
-static void		purge_attachment(thread_db*, JAttachment*, const bool);
+static void		purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const RefPtr<Config>*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
+// purge_attachment() flags
+static const unsigned PURGE_FORCE =				0x01;
+static const unsigned PURGE_LINGER =			0x02;
 
 TraceFailedConnection::TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
 	m_filename(filename),
@@ -1331,7 +1333,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			// Unless we're already attached, do some initialization
 			RefMutexUnlock initGuard;
 			JAttachment* jAtt = init(tdbb, expanded_name, is_alias ? org_filename : expanded_name,
-				config, true, options, initGuard);
+				config, true, options, initGuard, pluginConfig);
 
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
@@ -1431,6 +1433,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
 				CCH_init2(tdbb);
 
+				// linger
+				dbb->dbb_linger_seconds = MET_get_linger(tdbb);
+
 				// Init complete - we can release dbInitMutex
 				dbb->dbb_flags &= ~DBB_new;
 				guardDbInit.leave();
@@ -1462,6 +1467,11 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			// Attachments to a ReadOnly database need NOT do garbage collection
 			if (dbb->readOnly()) {
 				attachment->att_flags |= ATT_no_cleanup;
+			}
+
+			if (options.dpb_nolinger)
+			{
+				dbb->dbb_linger_seconds = 0;
 			}
 
 			if (options.dpb_disable_wal)
@@ -2422,7 +2432,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			// Unless we're already attached, do some initialization
 			RefMutexUnlock initGuard;
 			JAttachment* jAtt = init(tdbb, expanded_name, (is_alias ? org_filename : expanded_name),
-				config, false, options, initGuard);
+				config, false, options, initGuard, pluginConfig);
 
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
@@ -2783,12 +2793,16 @@ void JAttachment::freeEngineData(IStatus* user_status)
 			if (attachment->att_in_use)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
-			const bool force = engineShutdown ||
+			unsigned flags = PURGE_LINGER;
+			if (engineShutdown ||
 				(dbb->dbb_ast_flags & DBB_shutdown) ||
-				(attachment->att_flags & ATT_shutdown);
+				(attachment->att_flags & ATT_shutdown))
+			{
+				flags |= PURGE_FORCE;
+			}
 
 			attachment->signalShutdown();
-			purge_attachment(tdbb, this, force);
+			purge_attachment(tdbb, this, flags);
 
 			att = NULL;
 		}
@@ -2927,7 +2941,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 			const jrd_file* file = pageSpace->file;
 			const Shadow* shadow = dbb->dbb_shadow;
 
-			if (shutdown_database(dbb, false))
+			if (JRD_shutdown_database(dbb))
 			{
 				// This point on database is useless
 
@@ -5685,6 +5699,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_overwrite = rdr.getInt() != 0;
 			break;
 
+		case isc_dpb_nolinger:
+			dpb_nolinger = true;
+			break;
+
 		case isc_dpb_sec_attach:
 			dpb_sec_attach = rdr.getInt() != 0;
 			if (dpb_sec_attach)
@@ -5857,7 +5875,8 @@ static JAttachment* init(thread_db* tdbb,
 						 RefPtr<Config> config,
 						 bool attach_flag,		// only for shared cache
 						 const DatabaseOptions& options,
-						 RefMutexUnlock& initGuard)
+						 RefMutexUnlock& initGuard,
+						 IPluginConfig* pConf)
 {
 /**************************************
  *
@@ -5933,6 +5952,11 @@ static JAttachment* init(thread_db* tdbb,
 
 								tdbb->setDatabase(dbb);
 								jAtt = create_attachment(alias_name, dbb, options);
+								if (dbb->dbb_linger_timer)
+								{
+									dbb->dbb_linger_timer->reset();
+								}
+
 								tdbb->setAttachment(jAtt->getHandle());
 
 								if (options.dpb_config.hasData())
@@ -5962,7 +5986,7 @@ static JAttachment* init(thread_db* tdbb,
 
 		Config::merge(config, &options.dpb_config);
 
-		dbb = Database::create();
+		dbb = Database::create(pConf);
 		dbb->dbb_config = config;
 		dbb->dbb_filename = expanded_name;
 
@@ -6339,19 +6363,39 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
 }
 
 
-static bool shutdown_database(Database* dbb, const bool release_pools)
+static void setEngineReleaseDelay(Database* dbb)
 {
-/**************************************
+	unsigned maxLinger = 0;
+	{ // scope
+		MutexLockGuard listGuardForLinger(databases_mutex, FB_FUNCTION);
+		for (Database* d = databases; d; d = d->dbb_next)
+		{
+			if ((!d->dbb_attachments) && (d->dbb_linger_end > maxLinger))
+			{
+				maxLinger = d->dbb_linger_end;
+			}
+		}
+	}
+
+	++maxLinger;	// avoid rounding errors
+	time_t t = time(NULL);
+	dbb->dbb_plugin_config->setReleaseDelay(maxLinger > t ? (maxLinger - t) * 1000 * 1000 : 0);
+}
+
+
+bool JRD_shutdown_database(Database* dbb, const unsigned flags)
+{
+/*************************************************
  *
- *	s h u t d o w n _ d a t a b a s e
+ *	J R D _ s h u t d o w n _ d a t a b a s e
  *
- **************************************
+ *************************************************
  *
  * Functional description
  *	Shutdown physical database environment.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	ThreadContextHolder tdbb(dbb, NULL);
 
 	RefMutexUnlock finiGuard;
 
@@ -6388,6 +6432,29 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 
 	if (dbb->dbb_attachments)
 		return false;
+
+	// Database linger
+	if ((flags & SHUT_DBB_LINGER) &&
+		(!(engineShutdown || (dbb->dbb_ast_flags & DBB_shutdown))) &&
+		(dbb->dbb_linger_seconds > 0) &&
+		dbb->dbb_config->getSharedCache())
+	{
+		if (!dbb->dbb_linger_timer)
+		{
+			dbb->dbb_linger_timer = new Database::Linger(dbb);
+		}
+
+		dbb->dbb_linger_end = time(NULL) + dbb->dbb_linger_seconds;
+		dbb->dbb_linger_timer->set(dbb->dbb_linger_seconds);
+
+		setEngineReleaseDelay(dbb);
+
+		return false;
+	}
+
+	// Reset provider unload delay if needed
+	dbb->dbb_linger_end = 0;
+	setEngineReleaseDelay(dbb);
 
 	// Deactivate dbb_init_fini lock
 	// Since that moment dbb becomes not reusable
@@ -6457,7 +6524,7 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 		}
 	}
 
-	if (release_pools)
+	if (flags & SHUT_DBB_RELEASE_POOLS)
 	{
 		tdbb->setDatabase(NULL);
 		Database::destroy(dbb);
@@ -6657,7 +6724,7 @@ static void purge_transactions(thread_db* tdbb, Jrd::Attachment* attachment, con
 }
 
 
-static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool force_flag)
+static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
 {
 /**************************************
  *
@@ -6781,7 +6848,7 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 		}
 		catch (const Exception&)
 		{
-			if (!force_flag)
+			if (!(flags & PURGE_FORCE))
 			{
 				attachment->att_flags |= ATT_shutdown;
 				attachment->att_flags &= ~ATT_purge_started;
@@ -6801,12 +6868,12 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 		if (!(dbb->dbb_flags & DBB_bugcheck))
 		{
 			// Check for any pending transactions
-			purge_transactions(tdbb, attachment, force_flag);
+			purge_transactions(tdbb, attachment, flags & PURGE_FORCE);
 		}
 	}
 	catch (const Exception&)
 	{
-		if (!force_flag)
+		if (!(flags & PURGE_FORCE))
 		{
 			attachment->att_flags |= ATT_shutdown;
 			attachment->att_flags &= ~ATT_purge_started;
@@ -6840,8 +6907,8 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, const bool forc
 	asyncGuard.leave();
 	MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
 
-	// If there are still attachments, do a partial shutdown
-	shutdown_database(dbb, true);
+	// Try to close database if there are no attachments
+	JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS | (flags & PURGE_LINGER ? SHUT_DBB_LINGER : 0));
 }
 
 
@@ -7105,7 +7172,7 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStat
 				}
 			}
 
-			shutdown_database(dbb, true);
+			JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);
 		}
 	}
 	catch (const Exception&)
@@ -7155,7 +7222,7 @@ namespace
 				{
 					// purge attachment, rollback any open transactions
 					attachment->att_use_count++;
-					purge_attachment(tdbb, jAtt, true);
+					purge_attachment(tdbb, jAtt, PURGE_FORCE);
 				}
 				catch (const Exception& ex)
 				{
@@ -7241,6 +7308,20 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		// Shutdown existing attachments
 		success = success && shutdownAttachments(attachments);
 
+		{ // scope
+			MutexLockGuard guard(databases_mutex, FB_FUNCTION);
+
+			for (Database** ptrDbb = &databases; *ptrDbb;)
+			{
+				Database* dbb = *ptrDbb;
+				JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);
+				if (dbb == *ptrDbb)
+				{
+					ptrDbb = &(dbb->dbb_next);
+				}
+			}
+			// No need in databases_mutex any more
+		}
 		// Extra shutdown operations
 		Service::shutdownServices();
 	}

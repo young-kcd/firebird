@@ -1945,6 +1945,7 @@ public:
 		: DdlNode(p),
 		  create(false),
 		  createLength(0),
+		  linger(-1),
 		  clauses(0),
 		  differenceFile(p),
 		  setDefaultCharSet(p),
@@ -1977,7 +1978,7 @@ private:
 
 public:
 	bool create;	// Is the node created with a CREATE DATABASE command?
-	SLONG createLength;
+	SLONG createLength, linger;
 	unsigned clauses;
 	Firebird::string differenceFile;
 	Firebird::MetaName setDefaultCharSet;

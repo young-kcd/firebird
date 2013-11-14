@@ -301,11 +301,31 @@ public:
 		bool exist;
 	};
 
-	static Database* create()
+	class Linger : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
+	{
+	public:
+		Linger(Database* a_dbb)
+			: dbb(a_dbb), active(false)
+		{ }
+
+		void set(unsigned seconds);
+		void reset();
+		void destroy();
+
+		// ITimer implementation
+		void FB_CARG handler();
+		int FB_CARG release();
+
+	private:
+		Database* dbb;
+		bool active;
+	};
+
+	static Database* create(Firebird::IPluginConfig* pConf)
 	{
 		Firebird::MemoryStats temp_stats;
 		MemoryPool* const pool = MemoryPool::createPool(NULL, temp_stats);
-		Database* const dbb = FB_NEW(*pool) Database(pool);
+		Database* const dbb = FB_NEW(*pool) Database(pool, pConf);
 		pool->setStatsGroup(dbb->dbb_memory_stats);
 		return dbb;
 	}
@@ -437,6 +457,10 @@ public:
 	SharedCounter dbb_shared_counter;
 	CryptoManager* dbb_crypto_manager;
 	Firebird::RefPtr<ExistenceRefMutex> dbb_init_fini;
+	Firebird::RefPtr<Linger> dbb_linger_timer;
+	unsigned dbb_linger_seconds;
+	time_t dbb_linger_end;
+	Firebird::RefPtr<Firebird::IPluginConfig> dbb_plugin_config;
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -464,7 +488,7 @@ public:
 	void deletePool(MemoryPool* pool);
 
 private:
-	explicit Database(MemoryPool* p)
+	Database(MemoryPool* p, Firebird::IPluginConfig* pConf)
 	:	dbb_permanent(p),
 		dbb_page_manager(this, *p),
 		dbb_modules(*p),
@@ -478,7 +502,10 @@ private:
 		dbb_tip_cache(NULL),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
 		dbb_external_file_directory_list(NULL),
-		dbb_init_fini(FB_NEW(*getDefaultMemoryPool()) ExistenceRefMutex())
+		dbb_init_fini(FB_NEW(*getDefaultMemoryPool()) ExistenceRefMutex()),
+		dbb_linger_seconds(0),
+		dbb_linger_end(0),
+		dbb_plugin_config(pConf)
 	{
 		dbb_pools.add(p);
 	}

@@ -2362,6 +2362,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		{
 		case rel_database:
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_dat_class);
+			EVL_field(0, org_rpb->rpb_record, f_dat_linger, &desc1);
+			EVL_field(0, new_rpb->rpb_record, f_dat_linger, &desc2);
+			if (MOV_compare(&desc1, &desc2))
+			{
+				DFW_post_work(transaction, dfw_set_linger, &desc2, 0);
+			}
 			break;
 
 		case rel_relations:

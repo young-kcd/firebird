@@ -146,8 +146,9 @@ public:
 	virtual const char* FB_CARG getConfigFileName() = 0;
 	virtual IConfig* FB_CARG getDefaultConfig() = 0;
 	virtual IFirebirdConf* FB_CARG getFirebirdConf() = 0;
+	virtual void FB_CARG setReleaseDelay(ISC_UINT64 microSeconds) = 0;
 };
-#define FB_PLUGIN_CONFIG_VERSION (FB_REFCOUNTED_VERSION + 3)
+#define FB_PLUGIN_CONFIG_VERSION (FB_REFCOUNTED_VERSION + 4)
 
 // Required to creat instances of given plugin
 class IPluginFactory : public IVersioned

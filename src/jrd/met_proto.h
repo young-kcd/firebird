@@ -129,5 +129,5 @@ void		MET_get_domain(Jrd::thread_db*, MemoryPool& csbPool, const Firebird::MetaN
 Firebird::MetaName MET_get_relation_field(Jrd::thread_db*, MemoryPool& csbPool,
 	const Firebird::MetaName&, const Firebird::MetaName&, dsc*, Jrd::FieldInfo*);
 void		MET_update_partners(Jrd::thread_db*);
-
+int			MET_get_linger(Jrd::thread_db*);
 #endif // JRD_MET_PROTO_H

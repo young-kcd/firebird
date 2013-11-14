@@ -10056,6 +10056,12 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 				alterCharSetNode.execute(tdbb, dsqlScratch, transaction);
 			}
 
+			if (linger >= 0)
+			{
+				DBB.RDB$LINGER.NULL = FALSE;
+				DBB.RDB$LINGER = linger;
+			}
+
 			if (clauses & CLAUSE_BEGIN_BACKUP)
 				changeBackupMode(tdbb, transaction, CLAUSE_BEGIN_BACKUP);
 

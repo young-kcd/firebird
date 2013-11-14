@@ -248,6 +248,7 @@ NAME("RDB$PARAMETER_MECHANISM", nam_prm_mechanism)
 NAME("RDB$SOURCE_INFO", nam_src_info)
 
 NAME("RDB$ENGINE_NAME", nam_engine_name)
+NAME("RDB$LINGER", nam_linger)
 
 NAME("RDB$PACKAGES", nam_packages)
 NAME("RDB$PACKAGE_NAME", nam_pkg_name)

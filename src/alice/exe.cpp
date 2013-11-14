@@ -323,6 +323,9 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 		dpb.insertInt(isc_dpb_set_db_sql_dialect, tdgbl->ALICE_data.ua_db_SQL_dialect);
 	}
 
+	if (switches & sw_nolinger)
+		dpb.insertTag(isc_dpb_nolinger);
+
 	const unsigned char* authBlock;
 	unsigned int authBlockSize = tdgbl->uSvc->getAuthBlock(&authBlock);
 

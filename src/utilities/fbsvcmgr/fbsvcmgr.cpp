@@ -390,6 +390,7 @@ const SvcSwitches propertiesOptions[] =
 	{"prp_transactions_shutdown", putNumericArgument, 0, isc_spb_prp_transactions_shutdown, 0},
 	{"prp_shutdown_mode", putShutdownMode, 0, isc_spb_prp_shutdown_mode, 0},
 	{"prp_online_mode", putShutdownMode, 0, isc_spb_prp_online_mode, 0},
+	{"prp_nolinger", putOption, 0, isc_spb_prp_nolinger, 0},
 	{0, 0, 0, 0, 0}
 };
 
