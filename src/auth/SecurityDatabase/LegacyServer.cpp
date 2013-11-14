@@ -499,7 +499,12 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 		}
 
 		int rc = instance->verify(writerInterface, sBlock);
+#define USE_ATT_RQ_CACHE
+#ifdef USE_ATT_RQ_CACHE
 		TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
+#else
+		instance->handler();
+#endif
 		return rc;
 	}
 	catch (const Firebird::Exception& ex)
