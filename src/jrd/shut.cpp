@@ -459,6 +459,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* gu
  *
  **************************************/
 	Database* const dbb = tdbb->getDatabase();
+	JAttachment* const jAtt = tdbb->getAttachment()->att_interface;
 
 	shutdown_data data;
 	data.data_items.flag = flag;
@@ -466,9 +467,13 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* gu
 
 	LCK_write_data(tdbb, dbb->dbb_lock, data.data_long);
 
-	// Notify local attachments
+	{ // scope
+		// Checkout before calling AST function
+		MutexUnlockGuard uguard(*(jAtt->getMutex()), FB_FUNCTION);
 
-	SHUT_blocking_ast(tdbb, true);
+		// Notify local attachments
+		SHUT_blocking_ast(tdbb, true);
+	}
 
 	// Send blocking ASTs to other database users
 
