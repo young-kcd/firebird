@@ -1,3 +1,9 @@
+ 2013-11-13 18:36  dimitr 
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/inf.cpp
+Attachments marked as shutdown may still be running (before they reach the rescheduling point), so they should not be accounted as already gone. This should also fix CORE-4236: Database shutdown is reported as successfully completed before all active connections are in fact interrupted.
+
  2013-11-07 11:10  paulbeach 
    M src/jrd/os/darwin/config_root.cpp
 Fix embedded on MacOS issue with symbolic links and relative paths
