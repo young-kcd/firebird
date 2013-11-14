@@ -1,3 +1,29 @@
+ 2013-11-13 16:08  dimitr 
+   M src/jrd/Database.cpp
+Misc.
+
+ 2013-11-13 15:46  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/Parser.cpp
+   M src/dsql/parse.y
+Fixed CORE-4258 - Wrong boundary for minimum value for BIGINT/DECIMAL(18).
+
+ 2013-11-13 15:42  dimitr 
+   M src/jrd/cch.cpp
+   M src/jrd/inf.cpp
+Attachments marked as shutdown may still be running (before they reach the rescheduling point), so they should not be accounted as already gone. This should also fix CORE-4236: Database shutdown is reported as successfully completed before all active connections are in fact interrupted.
+
+ 2013-11-13 15:39  dimitr 
+   M src/jrd/jrd.cpp
+Complementary patch for one of my prior commits (forced rollbacks should go through the TIP).
+
+ 2013-11-13 07:44  dimitr 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/GlobalRWLock.h
+   M src/jrd/nbak.cpp
+Separated shutdown (mostly for locks) from destruction.
+
  2013-11-12 16:56  dimitr 
    M src/jrd/nbak.cpp
 We're quite lucky this implicit conversion worked correctly. Fixed.
