@@ -97,6 +97,13 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 		return 0;
 	}
 
+#ifdef DEBUG_THREAD_IN_UNLOADED_LIBRARY
+	Firebird::string command;
+	command.printf("echo +++ %s +++ >>/tmp/fbmaps;date >> /tmp/fbmaps;cat /proc/%d/maps >>/tmp/fbmaps",
+		modPath.c_str(), getpid());
+	system(command.c_str());
+#endif
+
 	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
 }
 
