@@ -1241,46 +1241,43 @@ static bool link_request(rem_port* port, server_req_t* request)
 	const P_OP operation = request->req_receive.p_operation;
 	server_req_t* queue;
 
-	{	// request_que_mutex scope
-		MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
+	MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 
-		bool active = true;
-		queue = active_requests;
+	bool active = true;
+	queue = active_requests;
 
-		while (true)
+	while (true)
+	{
+		for (; queue; queue = queue->req_next)
 		{
-			for (; queue; queue = queue->req_next)
+			if (queue->req_port == port)
 			{
-				if (queue->req_port == port)
+				// Don't queue a dummy keepalive packet if there is a request on this port
+				if (operation == op_dummy)
 				{
-					// Don't queue a dummy keepalive packet if there is a request on this port
-					if (operation == op_dummy)
-					{
-						free_request(request);
-						return true;
-					}
-
-					append_request_chain(request, &queue->req_chain);
-#ifdef DEBUG_REMOTE_MEMORY
-					printf("link_request %s request_queued %d\n",
-						active ? "ACTIVE" : "PENDING", port->port_requests_queued.value());
-					fflush(stdout);
-#endif
-					break;
+					free_request(request);
+					return true;
 				}
-			}
 
-			if (queue || !active)
+				append_request_chain(request, &queue->req_chain);
+#ifdef DEBUG_REMOTE_MEMORY
+				printf("link_request %s request_queued %d\n",
+					active ? "ACTIVE" : "PENDING", port->port_requests_queued.value());
+				fflush(stdout);
+#endif
 				break;
-
-			queue = request_que;
-			active = false;
+			}
 		}
 
-		if (!queue) {
-			append_request_next(request, &request_que);
-		}
-	} // request_que_mutex scope
+		if (queue || !active)
+			break;
+
+		queue = request_que;
+		active = false;
+	}
+
+	if (!queue)
+		append_request_next(request, &request_que);
 
 	++port->port_requests_queued;
 
