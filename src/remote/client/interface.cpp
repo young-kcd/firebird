@@ -711,7 +711,7 @@ static AtomicCounter remote_event_id;
 
 static const unsigned ANALYZE_UV =			0x01;
 static const unsigned ANALYZE_LOOPBACK =	0x02;
-static const unsigned ANALYZE_MOUNTS =		0x03;
+static const unsigned ANALYZE_MOUNTS =		0x04;
 
 inline static void reset(IStatus* status) throw()
 {
