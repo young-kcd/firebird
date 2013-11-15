@@ -154,6 +154,7 @@ enum irq_type_t
 	irq_default_cs,			// DSQL/METD: lookup the default charset
 	irq_rel_ids,			// DSQL/METD: check relation/field ids
 	irq_comp_circ_dpd,		// check computed circular dependencies
+	irq_l_curr_format,		// lookup table's current format
 
 	irq_MAX
 };

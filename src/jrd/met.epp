@@ -956,8 +956,29 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 		return relation->rel_current_format;
 
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
-	return relation->rel_current_format = MET_format(tdbb, relation, relation->rel_current_fmt);
+	if (!(relation->rel_flags & REL_scanned))
+	{
+		jrd_req* request = CMP_find_request(tdbb, irq_l_curr_format, IRQ_REQUESTS);
+	
+		FOR(REQUEST_HANDLE request)
+			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
+		{
+			if (!REQUEST(irq_l_curr_format))
+				REQUEST(irq_l_curr_format) = request;
+
+			relation->rel_current_fmt = REL.RDB$FORMAT;
+		}
+		END_FOR
+
+		if (!REQUEST(irq_l_curr_format))
+			REQUEST(irq_l_curr_format) = request;
+	}
+
+	relation->rel_current_format = MET_format(tdbb, relation, relation->rel_current_fmt);
+
+	return relation->rel_current_format;
 }
 
 
