@@ -1,3 +1,57 @@
+ 2013-11-14 17:10  dimitr 
+   M src/dsql/BoolNodes.h
+Fixed CORE-4262: Context parsing error with derived tables and CASE functions.
+
+ 2013-11-14 16:16  alexpeshkoff 
+   M doc/README.services_extension
+   A doc/sql.extensions/README.linger
+   M src/alice/aliceswi.h
+   M src/alice/exe.cpp
+   M src/dbs/security.sql
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/include/consts_pub.h
+   M src/include/firebird/Plugin.h
+   M src/include/gen/ids.h
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/dfw.epp
+   M src/jrd/fields.h
+   M src/jrd/irq.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/keywords.cpp
+Implemented CORE-4263: Database linger
+
+ 2013-11-14 15:36  alexpeshkoff 
+   M src/common/os/posix/mod_loader.cpp
+misc
+
+ 2013-11-14 15:36  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+misc
+
+ 2013-11-14 13:52  alexpeshkoff 
+   M src/remote/server/server.cpp
+misc.debug
+
+ 2013-11-14 10:26  alexpeshkoff 
+   M src/jrd/shut.cpp
+Fixed assertion (and possible deadlock)
+
  2013-11-13 16:08  dimitr 
    M src/jrd/Database.cpp
 Misc.
