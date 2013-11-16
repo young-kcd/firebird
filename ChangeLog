@@ -1,3 +1,16 @@
+ 2013-11-15 15:40  dimitr 
+   M src/jrd/irq.h
+   M src/jrd/met.epp
+Fixed CORE-4267: Server crashes while sweeping the database.
+
+ 2013-11-15 09:52  dimitr 
+   M src/remote/server/server.cpp
+Prevent races by allowing the worker thread to process op_exit / op_disconnect packets only after the listener had synchronously called cancel_operation(). This fixes CORE-4268: Server may crash while disconnecting from a database.
+
+ 2013-11-15 08:30  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Fixed bug, reported privately by Dmitry
+
  2013-11-14 17:10  dimitr 
    M src/dsql/BoolNodes.h
 Fixed CORE-4262: Context parsing error with derived tables and CASE functions.
