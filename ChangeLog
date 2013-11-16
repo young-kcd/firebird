@@ -1,3 +1,8 @@
+ 2013-11-15 15:12  dimitr 
+   M src/jrd/irq.h
+   M src/jrd/met.epp
+Fixed CORE-4267: Server crashes while sweeping the database.
+
  2013-11-13 18:36  dimitr 
    M src/jrd/cch.cpp
    M src/jrd/cmp.cpp
