@@ -532,7 +532,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	isqlGlob.major_ods = 0;
 	isqlGlob.minor_ods = 0;
 
-#if defined(HAVE_EDITLINE_H) || defined(HAVE_LOCALE_H)
+#if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
 	setlocale(LC_CTYPE, "");
 #endif
 	int rc = ISQL_main(argc, argv);
