@@ -337,6 +337,9 @@ public:
 
 	static DatabaseSnapshot* create(thread_db*);
 	static int blockingAst(void*);
+	static void initialize(thread_db*);
+	static void shutdown(thread_db*);
+	static void activate(thread_db*);
 	static bool getRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record);
 
 protected:

@@ -932,10 +932,9 @@ private:
 static void			check_database(thread_db* tdbb, bool async = false);
 static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
-static void			enable_monitoring(thread_db* tdbb);
 static void			find_intl_charset(thread_db*, Jrd::Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*);
-static void			init_database_locks(thread_db*);
+static void			init_database_lock(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
 static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
@@ -1390,11 +1389,11 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				// Initialize the lock manager
 				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
 
+				// Initialize locks
 				LCK_init(tdbb, LCK_OWNER_database);
 				LCK_init(tdbb, LCK_OWNER_attachment);
+				init_database_lock(tdbb);
 
-				// Initialize locks
-				init_database_locks(tdbb);
 				jAtt->manualAsyncUnlock(attachment->att_flags);
 
 				INI_init(tdbb);
@@ -1427,6 +1426,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 				dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
 				dbb->dbb_crypto_manager->attach(tdbb, attachment);
+
+				// initialize monitoring
+				DatabaseSnapshot::initialize(tdbb);
 
 				// initialize shadowing as soon as the database is ready for it
 				// but before any real work is done
@@ -2555,11 +2557,11 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			// Initialize the lock manager
 			dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
 
+			// Initialize locks
 			LCK_init(tdbb, LCK_OWNER_database);
 			LCK_init(tdbb, LCK_OWNER_attachment);
+			init_database_lock(tdbb);
 
-			// Initialize locks
-			init_database_locks(tdbb);
 			jAtt->manualAsyncUnlock(attachment->att_flags);
 
 			INI_init(tdbb);
@@ -2597,6 +2599,9 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			PAG_format_pip(tdbb, *pageSpace);
 
 			dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
+
+			// initialize monitoring
+			DatabaseSnapshot::initialize(tdbb);
 
 			if (options.dpb_set_page_buffers)
 				PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
@@ -2637,7 +2642,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			if (options.dpb_set_db_readonly)
 			{
-				if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD, &dbbGuard))
+				if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, &dbbGuard))
 				{
 					ERR_post(Arg::Gds(isc_lock_timeout) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
@@ -5201,7 +5206,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		}
 	}
 
-	enable_monitoring(tdbb);
+	DatabaseSnapshot::activate(tdbb);
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
 		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
@@ -5299,7 +5304,7 @@ static void check_database(thread_db* tdbb, bool async)
 		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
-	enable_monitoring(tdbb);
+	DatabaseSnapshot::activate(tdbb);
 }
 
 
@@ -5363,36 +5368,6 @@ static bool drop_files(const jrd_file* file)
 	}
 
 	return status[1] ? true : false;
-}
-
-
-static void enable_monitoring(thread_db* tdbb)
-{
-	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	// Enable signal handler for the monitoring stuff
-	if (dbb->dbb_ast_flags & DBB_monitor_off)
-	{
-		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
-											   SYNC_EXCLUSIVE, FB_FUNCTION);
-
-		if (dbb->dbb_ast_flags & DBB_monitor_off)
-		{
-			dbb->dbb_ast_flags &= ~DBB_monitor_off;
-			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-
-			fb_assert(!(dbb->dbb_ast_flags & DBB_monitor_off));
-
-			// While waiting for return from LCK_lock call above, the blocking AST (see
-			// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag
-			// again. But it do not released lock as lck_id was unknown at that moment.
-			// Do it now to not block another process waiting for a monitoring lock.
-
-			if (dbb->dbb_ast_flags & DBB_monitor_off)
-				LCK_release(tdbb, dbb->dbb_monitor_lock);
-		}
-	}
 }
 
 
@@ -6096,16 +6071,16 @@ static JAttachment* create_attachment(const PathName& alias_name,
 }
 
 
-static void init_database_locks(thread_db* tdbb)
+static void init_database_lock(thread_db* tdbb)
 {
 /**************************************
  *
- *	i n i t _ d a t a b a s e _ l o c k s
+ *	i n i t _ d a t a b a s e _ l o c k
  *
  **************************************
  *
  * Functional description
- *	Initialize database locks.
+ *	Initialize the main database lock.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -6146,14 +6121,6 @@ static void init_database_locks(thread_db* tdbb)
 			}
 		}
 	}
-
-	// Lock shared by all dbb owners, used to signal other processes
-	// to dump their monitoring data and synchronize operations
-
-	lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
-		Lock(tdbb, 0, LCK_monitor, dbb, DatabaseSnapshot::blockingAst);
-	dbb->dbb_monitor_lock = lock;
-	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
 
@@ -6475,6 +6442,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
 #endif
 
+	DatabaseSnapshot::shutdown(tdbb);
+
 	VIO_fini(tdbb);
 
 	if (dbb->dbb_crypto_manager)
@@ -6487,9 +6456,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	if (dbb->dbb_crypto_manager)
 		dbb->dbb_crypto_manager->shutdown(tdbb);
-
-	if (dbb->dbb_monitor_lock)
-		LCK_release(tdbb, dbb->dbb_monitor_lock);
 
 	if (dbb->dbb_shadow_lock)
 		LCK_release(tdbb, dbb->dbb_shadow_lock);

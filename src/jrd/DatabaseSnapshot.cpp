@@ -384,6 +384,66 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 }
 
 
+void DatabaseSnapshot::initialize(thread_db* tdbb)
+{
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+
+	if (!dbb->dbb_monitor_lock)
+	{
+		dbb->dbb_monitor_lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
+				Lock(tdbb, 0, LCK_monitor, dbb, DatabaseSnapshot::blockingAst);
+		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+	}
+}
+
+
+void DatabaseSnapshot::shutdown(thread_db* tdbb)
+{
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+
+	if (dbb->dbb_monitor_lock)
+		LCK_release(tdbb, dbb->dbb_monitor_lock);
+}
+
+
+void DatabaseSnapshot::activate(thread_db* tdbb)
+{
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	fb_assert(attachment);
+
+	if (dbb->dbb_ast_flags & DBB_monitor_off)
+	{
+		// Enable signal handler for the monitoring stuff
+
+		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
+											   SYNC_EXCLUSIVE, FB_FUNCTION);
+
+		if (dbb->dbb_ast_flags & DBB_monitor_off)
+		{
+			dbb->dbb_ast_flags &= ~DBB_monitor_off;
+			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+			fb_assert(!(dbb->dbb_ast_flags & DBB_monitor_off));
+
+			// While waiting for return from LCK_lock call above, the blocking AST (see
+			// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag
+			// again. But it do not released lock as lck_id was unknown at that moment.
+			// Do it now to not block another process waiting for a monitoring lock.
+
+			if (dbb->dbb_ast_flags & DBB_monitor_off)
+				LCK_release(tdbb, dbb->dbb_monitor_lock);
+		}
+	}
+}
+
+
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: DataDump(pool), snapshot(pool)
 {
