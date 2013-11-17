@@ -1,3 +1,7 @@
+ 2013-11-16 11:48  fsg 
+   M src/isql/isql.epp
+Don't call setlocale if it is not needed for editline, fxes CORE-4259
+
  2013-11-15 15:40  dimitr 
    M src/jrd/irq.h
    M src/jrd/met.epp
