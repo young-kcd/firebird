@@ -268,8 +268,10 @@ namespace Jrd
 						River* const sub_river = *iter;
 						RecordSource* const sub_rsb = sub_river->getRecordSource();
 
+						const size_t pos = iter - rivers.begin();
+
 						if (!rsbs.exist(sub_rsb))
-							rsbs.add(sub_rsb);
+							rsbs.insert(pos, sub_rsb);
 					}
 				}
 
