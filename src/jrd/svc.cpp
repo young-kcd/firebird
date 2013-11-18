@@ -1049,7 +1049,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 
 	UCHAR item;
 	UCHAR buffer[MAXPATHLEN];
-	USHORT l, length, version, get_flags;
+	USHORT l, length, get_flags;
 	UCHAR* stdin_request_notification = NULL;
 
 	ThreadIdHolder holdId(svc_thread_strings);
@@ -1092,7 +1092,6 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 						timeout = (USHORT) gds__vax_integer(items, l);
 						break;
 					case isc_info_svc_version:
-						version = (USHORT) gds__vax_integer(items, l);
 						break;
 					}
 				}
@@ -1575,7 +1574,7 @@ void Service::query(USHORT			send_item_length,
 
 	UCHAR item, *p;
 	UCHAR buffer[256];
-	USHORT l, length, version, get_flags;
+	USHORT l, length, get_flags;
 
 	try
 	{
@@ -1609,7 +1608,6 @@ void Service::query(USHORT			send_item_length,
 						timeout = (USHORT) gds__vax_integer(items, l);
 						break;
 					case isc_info_svc_version:
-						version = (USHORT) gds__vax_integer(items, l);
 						break;
 					}
 				}

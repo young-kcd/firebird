@@ -3545,10 +3545,6 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								const bool new_ver = (record->rec_flags & REC_new_version) != 0;
 								if (record->rec_length != 0)
 								{
-									record_param new_rpb = rpb;
-									new_rpb.rpb_record = record;
-									new_rpb.rpb_address = record->rec_data;
-									new_rpb.rpb_length = record->rec_length;
 									verb_post(tdbb, transaction, &rpb, record, same_tx, new_ver);
 								}
 								else if (same_tx) {

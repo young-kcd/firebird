@@ -2399,7 +2399,6 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 
 	// See if we need a blob filter (do we have a subtype to subtype clause?)
 
-	bool filter_is_defined = false;
 	for (;;)
 	{
 		if (MSC_match(KW_FILTER))
@@ -2409,7 +2408,6 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 			if (!MSC_match(KW_TO))
 				CPR_s_error("TO");
 			blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
-			filter_is_defined = true;
 		}
 		else if (MSC_match(KW_STREAM))
 			blob->blb_type = isc_bpb_type_stream;

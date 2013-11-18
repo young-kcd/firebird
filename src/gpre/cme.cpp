@@ -2185,7 +2185,7 @@ static void get_dtype_of_list(const gpre_nod* node, gpre_fld* f)
 	bool all_numeric = true, any_numeric = false, any_approx = false, any_float = false;
 	bool all_text = true, any_text = false, any_varying = false;
 	bool all_date = true, all_time = true, all_timestamp = true, any_datetime = false;
-	bool all_blob = true, any_blob = false, any_text_blob = false;
+	bool all_blob = true, any_text_blob = false;
 	//bool nullable = false;
 	//bool err = false;
 	gpre_fld field_aux;
@@ -2329,7 +2329,6 @@ static void get_dtype_of_list(const gpre_nod* node, gpre_fld* f)
 				return;
 			}
 
-			any_blob = true;
 			if (field.fld_sub_type == 1)
 			{
 				// Text sub type

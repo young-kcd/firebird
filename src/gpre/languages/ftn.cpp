@@ -158,7 +158,7 @@ static bool global_first_flag = false;
 static adl* array_decl_list;
 
 #if (defined AIX || defined AIX_PPC)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  \'%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "%VAL(";
@@ -175,7 +175,7 @@ const char* const COMMENT			= "C     ";
 const char* const INLINE_COMMENT	= "!";
 const char* const COMMA				= ",";
 #elif defined(__sun)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  \'%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -192,7 +192,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(LINUX)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  \'%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -226,7 +226,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif (defined FREEBSD || defined NETBSD)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  \'%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -838,7 +838,7 @@ static void gen_based(const act* action)
 		break;
 
 	case dtype_text:
-		fprintf(gpreGlob.out_file, "%sCHARACTER*%ld%s", COLUMN,
+		fprintf(gpreGlob.out_file, "%sCHARACTER*%"SLONGFORMAT"%s", COLUMN,
 				(based_on->bas_flags & BAS_segment) ? length : ((field->fld_array_info) ?
 					field->fld_array->fld_length : field->fld_length),
 				COLUMN);
@@ -1202,14 +1202,14 @@ static void gen_create_database(const act* action)
 
 	if (request->req_length || request->req_flags & REQ_extend_dpb)
 		sprintf(output_buffer,
-				"%sCALL ISC_CREATE_DATABASE (%s, %s%d%s, %s'%s'%s, %s, %s%s%s, %s, 0)\n",
+				"%sCALL ISC_CREATE_DATABASE (%s, %s%"SIZEFORMAT"%s, %s'%s'%s, %s, %s%s%s, %s, 0)\n",
 				COLUMN,
 				status_vector(),
 				I2CONST_1, strlen(db->dbb_filename), I2CONST_2,
 				REF_1, db->dbb_filename, REF_2,
 				db->dbb_name->sym_string, I2CONST_1, s1, I2CONST_2, s2);
 	else
-		sprintf(output_buffer, "%sCALL ISC_CREATE_DATABASE (%s, %s%d%s, %s'%s'%s, %s, %s0%s, 0, 0)\n",
+		sprintf(output_buffer, "%sCALL ISC_CREATE_DATABASE (%s, %s%"SIZEFORMAT"%s, %s'%s'%s, %s, %s0%s, 0, 0)\n",
 				COLUMN,
 				status_vector(),
 				I2CONST_1, strlen(db->dbb_filename), I2CONST_2,
@@ -1599,7 +1599,7 @@ static void gen_drop_database(const act* action)
 {
 	const gpre_dbb* db = (gpre_dbb*) action->act_object;
 
-	sprintf(output_buffer, "%s CALL ISC_DROP_DATABASE (%s, %s%d%s, %s\'%s\'%s, RDB_K_DB_TYPE_GDS)\n",
+	sprintf(output_buffer, "%s CALL ISC_DROP_DATABASE (%s, %s%"SIZEFORMAT"%s, %s\'%s\'%s, RDB_K_DB_TYPE_GDS)\n",
 			COLUMN,
 			status_vector(),
 			I2_1, strlen(db->dbb_filename), I2_2,

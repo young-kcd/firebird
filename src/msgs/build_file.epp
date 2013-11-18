@@ -285,8 +285,9 @@ static void ascii_str_to_upper( TEXT* s)
 
 	while (*s)
 	{
-		*s >= 'a' && *s <= 'z' ? *s &= 0xDF : *s;
-		*s++;
+		if (*s >= 'a' && *s <= 'z')
+			*s &= 0xDF;
+		s++;
 	}
 }
 

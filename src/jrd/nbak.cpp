@@ -387,10 +387,12 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 	WIN window(HEADER_PAGE_NUMBER);
 	Ods::header_page* header;
 
+#ifdef NBAK_DEBUG
 	ULONG adjusted_scn; // We use this value to prevent race conditions.
 						// They are possible because we release state lock
 						// for some instants and anything is possible at
 						// that times.
+#endif
 
 	try
 	{
@@ -422,7 +424,10 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 
 		// Set state in database header
 		backup_state = nbak_state_merge;
-		adjusted_scn = ++current_scn;
+#ifdef NBAK_DEBUG
+		adjusted_scn =
+#endif
+					   ++current_scn;
 		NBAK_TRACE(("New state is getting to become %d", backup_state));
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		// Generate new SCN
