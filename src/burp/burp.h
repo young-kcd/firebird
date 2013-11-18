@@ -747,6 +747,14 @@ enum gfld_flags_vals {
 	GFLD_computed_source2	= 32
 };
 
+
+struct burp_meta_obj
+{
+	burp_meta_obj*	obj_next;
+	USHORT			obj_type;
+	GDS_NAME		obj_name;
+};
+
 // CVC: Could use MAXPATHLEN, but what about restoring in a different system?
 // I need to review if we tolerate different lengths for different OS's here.
 const unsigned int MAX_FILE_NAME_SIZE		= 256;
@@ -930,6 +938,7 @@ public:
 	burp_rel*	relations;
 	burp_pkg*	packages;
 	burp_prc*	procedures;
+	burp_meta_obj*	miss_privs;
 	// ODS of the target server (not necessarily the same version as gbak)
 	int			runtimeODS;
 	// Format of the backup being read on restore; gbak always creates it using the latest version

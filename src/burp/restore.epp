@@ -157,6 +157,7 @@ void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SI
 	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername, fb_sysflag sysFlag);
 void	update_global_field(BurpGlobals* tdgbl);
 void	update_view_dbkey_lengths(BurpGlobals* tdgbl);
+void	fix_missing_privileges(BurpGlobals* tdgbl);
 void	fix_system_generators(BurpGlobals* tdgbl);
 void	general_on_error();
 #ifdef DEBUG
@@ -232,6 +233,15 @@ const int USER_PRIV_FIELD_NAME		= 32;
 const int USER_PRIV_USER_TYPE		= 64;
 const int USER_PRIV_OBJECT_TYPE		= 128;
 
+static inline void collect_missing_privs(BurpGlobals* tdgbl, USHORT type, const GDS_NAME name)
+{
+	burp_meta_obj* object = (burp_meta_obj*) BURP_alloc_zero(sizeof(burp_meta_obj));
+	object->obj_next = tdgbl->miss_privs;
+	object->obj_type = type;
+	strcpy(object->obj_name, name);
+	tdgbl->miss_privs = object;
+}
+
 } // namespace
 
 
@@ -259,6 +269,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	tdgbl->relations = NULL;
 	tdgbl->packages = NULL;
 	tdgbl->procedures = NULL;
+	tdgbl->miss_privs = NULL;
 	tdgbl->RESTORE_format = 0;
 	tdgbl->runtimeODS = 0;
 	tdgbl->global_trans = 0;
@@ -612,6 +623,9 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 
 		MISC_release_request_silent(req_handle1);
 	}
+
+	// Add missing privileges
+	fix_missing_privileges(tdgbl);
 
 	// Fix values of system generators.
 	fix_system_generators(tdgbl);
@@ -2192,6 +2206,9 @@ bool get_character_set(BurpGlobals* tdgbl)
 	{
 		if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 		{
+			GDS_NAME charset_name;
+			bool securityClass = false;
+
 			STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
 				X IN RDB$CHARACTER_SETS
 				X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
@@ -2263,6 +2280,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 						{
 							GET_TEXT(X.RDB$SECURITY_CLASS);
 							X.RDB$SECURITY_CLASS.NULL = FALSE;
+							securityClass = true;
 						}
 						else
 							bad_attribute(scan_next_attr, attribute, msgErr_restore_charset);
@@ -2294,10 +2312,15 @@ bool get_character_set(BurpGlobals* tdgbl)
 					throw AbortException();	// prevent the STORE
 				}
 
+				strcpy(charset_name, X.RDB$CHARACTER_SET_NAME);
+
 			END_STORE;
 			ON_ERROR
 				general_on_error ();
 			END_ERROR;
+
+			if (!securityClass)
+				collect_missing_privs(tdgbl, obj_charset, charset_name);
 		}
 		else
 		{
@@ -2468,6 +2491,9 @@ bool get_collation(BurpGlobals* tdgbl)
 
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
+		GDS_NAME coll_name;
+		bool securityClass = false;
+
 		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
 			X IN RDB$COLLATIONS
 			X.RDB$COLLATION_NAME.NULL = TRUE;
@@ -2555,6 +2581,7 @@ bool get_collation(BurpGlobals* tdgbl)
 					{
 						GET_TEXT(X.RDB$SECURITY_CLASS);
 						X.RDB$SECURITY_CLASS.NULL = FALSE;
+						securityClass = true;
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
@@ -2576,10 +2603,16 @@ bool get_collation(BurpGlobals* tdgbl)
 					break;
 				}
 			}
+
+			strcpy(coll_name, X.RDB$COLLATION_NAME);
+
 		END_STORE;
 		ON_ERROR
 			general_on_error ();
 		END_ERROR;
+
+		if (!securityClass)
+			collect_missing_privs(tdgbl, obj_collation, coll_name);
 	}
 	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11)
 	{
@@ -3300,6 +3333,9 @@ bool get_exception(BurpGlobals* tdgbl)
 
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
+		GDS_NAME exception_name;
+		bool securityClass = false;
+
 		STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
 			X IN RDB$EXCEPTIONS
 			X.RDB$EXCEPTION_NAME.NULL = TRUE;
@@ -3399,6 +3435,7 @@ bool get_exception(BurpGlobals* tdgbl)
 						{
 							GET_TEXT(X.RDB$SECURITY_CLASS);
 							X.RDB$SECURITY_CLASS.NULL = FALSE;
+							securityClass = true;
 						}
 						else
 						{
@@ -3436,10 +3473,16 @@ bool get_exception(BurpGlobals* tdgbl)
 					break;
 				}
 			}
+
+			strcpy(exception_name, X.RDB$EXCEPTION_NAME);
+
 		END_STORE;
 		ON_ERROR
 			general_on_error ();
 		END_ERROR;
+
+		if (!securityClass)
+			collect_missing_privs(tdgbl, obj_exception, exception_name);
 	}
 	else
 	{
@@ -4232,7 +4275,6 @@ bool get_function(BurpGlobals* tdgbl)
  *
  **************************************/
 	att_type	attribute;
-	///GDS_NAME	function_name;
 	TEXT		temp[GDS_NAME_LEN * 2];
 	SSHORT		l;
 	scan_attr_t	scan_next_attr;
@@ -4241,6 +4283,9 @@ bool get_function(BurpGlobals* tdgbl)
 
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
+		GDS_NAME function_name;
+		bool securityClass = false;
+
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 			X IN RDB$FUNCTIONS
 			X.RDB$DESCRIPTION.NULL = TRUE;
@@ -4392,6 +4437,7 @@ bool get_function(BurpGlobals* tdgbl)
 					{
 						GET_TEXT(X.RDB$SECURITY_CLASS);
 						X.RDB$SECURITY_CLASS.NULL = FALSE;
+						securityClass = true;
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 89);
@@ -4434,7 +4480,7 @@ bool get_function(BurpGlobals* tdgbl)
 				}
 			}
 
-			///strcpy (function_name, X.RDB$FUNCTION_NAME);
+			strcpy(function_name, X.RDB$FUNCTION_NAME);
 		END_STORE;
 		ON_ERROR
 			if (gds_status[1] != isc_no_dup)
@@ -4442,6 +4488,9 @@ bool get_function(BurpGlobals* tdgbl)
 			else
 				existFlag = true;
 		END_ERROR;
+
+		if (!securityClass)
+			collect_missing_privs(tdgbl, obj_udf, function_name);
 	}
 	else
 	{
@@ -4553,7 +4602,6 @@ bool get_function(BurpGlobals* tdgbl)
 				}
 			}
 
-			///strcpy (function_name, X.RDB$FUNCTION_NAME);
 		END_STORE;
 		ON_ERROR
 			if (gds_status[1] != isc_no_dup)
@@ -5244,6 +5292,9 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
+		GDS_NAME field_name;
+		bool securityClass = false;
+
 		// with rdb$field_precision, rdb$security_class and rdb$owner_name.
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
 			X IN RDB$FIELDS
@@ -5556,6 +5607,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					{
 						GET_TEXT(X.RDB$SECURITY_CLASS);
 						X.RDB$SECURITY_CLASS.NULL = FALSE;
+						securityClass = true;
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 92);
@@ -5585,8 +5637,10 @@ bool get_global_field(BurpGlobals* tdgbl)
 					X.RDB$FIELD_LENGTH = l;
 			}
 
+			strcpy(field_name, X.RDB$FIELD_NAME);
+
 			if (gfield)
-				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
+				strcpy(gfield->gfld_name, field_name);
 
 			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
 				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
@@ -5606,6 +5660,8 @@ bool get_global_field(BurpGlobals* tdgbl)
 			general_on_error ();
 		END_ERROR;
 
+		if (!securityClass)
+			collect_missing_privs(tdgbl, obj_field, field_name);
 	}
 	else if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
@@ -10132,6 +10188,9 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SI
 		ON_ERROR
 			general_on_error ();
 		END_ERROR;
+
+		if (!secclass)
+			collect_missing_privs(tdgbl, obj_generator, gen_name);
 	}
 	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11)
 	{
@@ -10384,6 +10443,66 @@ void update_view_dbkey_lengths(BurpGlobals* tdgbl)
 	MISC_release_request_silent(req_handle2);
 }
 
+void fix_missing_privileges(BurpGlobals* tdgbl)
+{
+	GDS_NAME owner_name;
+	isc_req_handle req_handle1 = 0, req_handle2 = 0;
+
+	FOR (REQUEST_HANDLE req_handle1)
+		REL IN RDB$RELATIONS
+		WITH REL.RDB$RELATION_ID = 1
+
+		strcpy(owner_name, REL.RDB$OWNER_NAME);
+
+	END_FOR;
+	ON_ERROR
+		MISC_release_request_silent(req_handle1);
+		general_on_error();
+	END_ERROR;
+
+	MISC_release_request_silent(req_handle1);
+
+	for (burp_meta_obj* object = tdgbl->miss_privs; object; object = object->obj_next)
+	{
+		const char* const privilege = (object->obj_type == obj_udf) ? "X" : "G";
+
+		for (int i = 1; i >= 0; i--)
+		{
+			STORE (REQUEST_HANDLE req_handle2)
+				X IN RDB$USER_PRIVILEGES
+
+				X.RDB$FIELD_NAME.NULL = TRUE;
+				X.RDB$GRANTOR.NULL = TRUE;
+
+				X.RDB$PRIVILEGE.NULL = FALSE;
+				strcpy(X.RDB$PRIVILEGE, privilege);
+
+				X.RDB$USER.NULL = FALSE;
+				strcpy(X.RDB$USER, (i == 0) ? "PUBLIC" : owner_name);
+
+				X.RDB$RELATION_NAME.NULL = FALSE;
+				strcpy(X.RDB$RELATION_NAME, object->obj_name);
+
+				X.RDB$USER_TYPE.NULL = FALSE;
+				X.RDB$USER_TYPE = obj_user;
+
+				X.RDB$OBJECT_TYPE.NULL = FALSE;
+				X.RDB$OBJECT_TYPE = object->obj_type;
+
+				X.RDB$GRANT_OPTION.NULL = FALSE;
+				X.RDB$GRANT_OPTION = i;
+
+			END_STORE;
+			ON_ERROR
+				MISC_release_request_silent(req_handle2);
+				general_on_error();
+			END_ERROR;
+		}
+	}
+
+	MISC_release_request_silent(req_handle2);
+}
+
 struct FixGenerator
 {
 	const char* name;
@@ -10439,6 +10558,8 @@ static const FixGenerator genToFix[] =
 	{ "RDB$TRIGGER_NAME",		"RDB$TRIGGERS",				"RDB$TRIGGER_NAME",		"CHECK_" },
 	///"RDB$BACKUP_HISTORY"	// unused ???
 	{ "RDB$GENERATOR_NAME",		"RDB$GENERATORS",			"RDB$GENERATOR_NAME",	"RDB$" },
+	{ "RDB$SECURITY_CLASS",		"RDB$SECURITY_CLASSES",		"RDB$SECURITY_CLASS",	"SQL$" },
+	{ "SQL$DEFAULT",			"RDB$SECURITY_CLASSES",		"RDB$SECURITY_CLASS",	"SQL$DEFAULT" },
 	{ NULL, NULL, NULL, NULL }
 };
 
