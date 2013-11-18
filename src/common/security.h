@@ -211,8 +211,25 @@ public:
 	AuthenticationBlock authenticationBlock;
 };
 
-class StackUserData : public Firebird::AutoIface<UserData, FB_AUTH_USER_VERSION>
+class StackUserData FB_FINAL : public Firebird::AutoIface<UserData, FB_AUTH_USER_VERSION>
 {
+};
+
+class DynamicUserData FB_FINAL : public Firebird::VersionedIface<UserData, FB_AUTH_USER_VERSION>
+{
+public:
+
+#ifdef DEBUG_GDS_ALLOC
+	void* operator new(size_t size, Firebird::MemoryPool& pool, const char* fileName, int line)
+	{
+		return pool.allocate(size, fileName, line);
+	}
+#else	// DEBUG_GDS_ALLOC
+	void* operator new(size_t size, Firebird::MemoryPool& pool)
+	{
+		return pool.allocate(size);
+	}
+#endif	// DEBUG_GDS_ALLOC
 };
 
 class Get : public Firebird::GetPlugins<Auth::IManagement>

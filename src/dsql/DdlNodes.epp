@@ -60,26 +60,6 @@
 #include "../common/dsc_proto.h"
 #include "../common/StatusArg.h"
 
-namespace
-{
-	class DynamicUserData : public Firebird::VersionedIface<Auth::UserData, FB_AUTH_USER_VERSION>
-	{
-	public:
-
-#ifdef DEBUG_GDS_ALLOC
-		void* operator new(size_t size, Firebird::MemoryPool& pool, const char* fileName, int line)
-		{
-			return pool.allocate(size, fileName, line);
-		}
-#else	// DEBUG_GDS_ALLOC
-		void* operator new(size_t size, Firebird::MemoryPool& pool)
-		{
-			return pool.allocate(size);
-		}
-#endif	// DEBUG_GDS_ALLOC
-	};
-}	// namespace
-
 namespace Jrd {
 
 using namespace Firebird;
@@ -9202,7 +9182,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	DynamicUserData* userData = FB_NEW(*transaction->tra_pool) DynamicUserData;
+	Auth::DynamicUserData* userData = FB_NEW(*transaction->tra_pool) Auth::DynamicUserData;
 
 	string text = name.c_str();
 	text.upper();
@@ -9300,7 +9280,7 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	DynamicUserData* userData = FB_NEW(*transaction->tra_pool) DynamicUserData;
+	Auth::DynamicUserData* userData = FB_NEW(*transaction->tra_pool) Auth::DynamicUserData;
 
 	string text = name.c_str();
 	text.upper();

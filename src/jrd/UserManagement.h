@@ -72,7 +72,7 @@ public:
 	~UserManagement();
 
 	// store userData for DFW-time processing
-	USHORT put(Auth::UserData* userData);
+	USHORT put(Auth::DynamicUserData* userData);
 	// execute command with ID
 	void execute(USHORT id);
 	// commit transaction in security database
@@ -85,7 +85,7 @@ public:
 private:
 	RecordBuffer* buffer;
 	thread_db* threadDbb;
-	Firebird::HalfStaticArray<Auth::UserData*, 8> commands;
+	Firebird::HalfStaticArray<Auth::DynamicUserData*, 8> commands;
 	Display display;
 	Auth::IManagement* manager;
 

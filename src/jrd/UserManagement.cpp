@@ -167,7 +167,7 @@ void UserManagement::commit()
 	}
 }
 
-USHORT UserManagement::put(Auth::UserData* userData)
+USHORT UserManagement::put(Auth::DynamicUserData* userData)
 {
 	const size_t ret = commands.getCount();
 	if (ret > MAX_USHORT)
