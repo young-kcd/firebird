@@ -2084,7 +2084,7 @@ static SSHORT gen_event_block(const act* action)
 	gpre_nod* init = (gpre_nod*) action->act_object;
 
 	int ident = CMP_next_ident();
-	init->nod_arg[2] = (gpre_nod*) ident;
+	init->nod_arg[2] = (gpre_nod*)(IPTR) ident;
 
 	printa(COLUMN, "INTEGER*4      isc_%dA", ident);
 	printa(COLUMN, "INTEGER*4      isc_%dB", ident);

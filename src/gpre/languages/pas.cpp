@@ -1766,7 +1766,7 @@ static SSHORT gen_event_block( const act* action)
 	gpre_nod* init = (gpre_nod*) action->act_object;
 
 	int ident = CMP_next_ident();
-	init->nod_arg[2] = (gpre_nod*) ident;
+	init->nod_arg[2] = (gpre_nod*)(IPTR) ident;
 
 	printa(INDENT, "gds__%da\t\t: ^char;\t\t(* event parameter block *)", ident);
 	printa(INDENT, "gds__%db\t\t: ^char;\t\t(* result parameter block *)", ident);

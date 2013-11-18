@@ -1706,7 +1706,7 @@ static SSHORT gen_event_block( const act* action)
 	//gpre_sym* event_name = (gpre_sym*) init->nod_arg[0];
 
 	const int ident = CMP_next_ident();
-	init->nod_arg[2] = (gpre_nod*) ident;
+	init->nod_arg[2] = (gpre_nod*)(IPTR) ident;
 	const gpre_nod* list = init->nod_arg[1];
 
 	printa(0, "isc_%da\t\t: system.address;\t\t-- event parameter block --\n", ident);
