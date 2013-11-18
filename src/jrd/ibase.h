@@ -243,7 +243,7 @@ typedef struct paramvary {
 #define FB_NAMESPACE_FORWARD(n, x) namespace n { class x; }
 #define FB_NAMESPACE_USE(n, x) n::x
 #else
-#define FB_NAMESPACE_FORWARD(n, x)
+#define FB_NAMESPACE_FORWARD(n, x) struct x;
 #define FB_NAMESPACE_USE(n, x) struct x
 #endif
 
