@@ -54,7 +54,7 @@ namespace Why {
 // getStatus()
 //
 
-class UserStatus : public Firebird::DisposeIface<Firebird::BaseStatus, FB_STATUS_VERSION>
+class UserStatus FB_FINAL : public Firebird::DisposeIface<Firebird::BaseStatus, FB_STATUS_VERSION>
 {
 private:
 	// IStatus implementation

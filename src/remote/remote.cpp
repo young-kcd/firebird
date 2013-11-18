@@ -883,6 +883,7 @@ rem_port::~rem_port()
 	}
 
 	delete port_srv_auth;
+	delete port_srv_auth_block;
 	delete port_version;
 	delete port_connection;
 	delete port_host;
@@ -1394,6 +1395,59 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 
 	return false;
 }
+
+const char* SrvAuthBlock::getLogin()
+{
+	return userName.nullStr();
+}
+
+const unsigned char* SrvAuthBlock::getData(unsigned int* length)
+{
+	*length = (ULONG) dataForPlugin.getCount();
+	if (*length && pluginName != plugins->name())
+	{
+		*length = 0;
+	}
+	return *length ? dataForPlugin.begin() : NULL;
+}
+
+void SrvAuthBlock::putData(Firebird::IStatus* status, unsigned int length, const void* data)
+{
+	status->init();
+	try
+	{
+		memcpy(dataFromPlugin.getBuffer(length), data, length);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+void SrvAuthBlock::putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey)
+{
+	status->init();
+	try
+	{
+		const char* t = cryptKey->type;
+		if (!t)
+		{
+			fb_assert(pluginName.hasData());
+			t = pluginName.c_str();
+		}
+
+		InternalCryptKey* k = FB_NEW(*getDefaultMemoryPool())
+			InternalCryptKey(t, cryptKey->encryptKey, cryptKey->encryptLength,
+							 cryptKey->decryptKey, cryptKey->decryptLength);
+		port->port_crypt_keys.push(k);
+		newKeys.push(k->type);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
 
 signed char wcCompatible[3][3] = {
 /*				DISABLED	ENABLED		REQUIRED */

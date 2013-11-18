@@ -126,7 +126,7 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess : public RefCntIface<IConfigEntry, FB_CONFIG_PARAMETER_VERSION>
+	class ConfigParameterAccess FB_FINAL : public RefCntIface<IConfigEntry, FB_CONFIG_PARAMETER_VERSION>
 	{
 	public:
 		ConfigParameterAccess(IRefCounted* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
@@ -170,7 +170,7 @@ namespace
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess : public RefCntIface<IConfig, FB_CONFIG_VERSION>
+	class ConfigAccess FB_FINAL : public RefCntIface<IConfig, FB_CONFIG_VERSION>
 	{
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
@@ -399,7 +399,7 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in databases.conf
-	class ConfiguredPlugin : public RefCntIface<ITimer, FB_TIMER_VERSION>
+	class ConfiguredPlugin FB_FINAL : public RefCntIface<ITimer, FB_TIMER_VERSION>
 	{
 	public:
 		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
@@ -493,7 +493,7 @@ namespace
 	};
 
 	// Provides per-database configuration from databases.conf.
-	class FactoryParameter : public RefCntIface<IPluginConfig, FB_PLUGIN_CONFIG_VERSION>
+	class FactoryParameter FB_FINAL : public RefCntIface<IPluginConfig, FB_PLUGIN_CONFIG_VERSION>
 	{
 	public:
 		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)
@@ -669,7 +669,7 @@ namespace
 	}
 
 	// Provides access to plugins of given type / name.
-	class PluginSet : public RefCntIface<IPluginSet, FB_PLUGIN_SET_VERSION>
+	class PluginSet FB_FINAL : public RefCntIface<IPluginSet, FB_PLUGIN_SET_VERSION>
 	{
 	public:
 		// IPluginSet implementation

@@ -255,7 +255,7 @@ public:
 // when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.
 // To avoid it this class is added - it detects spontaneous (not by PluginManager)
 // module unload and notifies PluginManager about this said fact.
-class UnloadDetectorHelper : public VersionedIface<IPluginModule, FB_PLUGIN_MODULE_VERSION>
+class UnloadDetectorHelper FB_FINAL : public VersionedIface<IPluginModule, FB_PLUGIN_MODULE_VERSION>
 {
 public:
 	typedef void VoidNoParam();

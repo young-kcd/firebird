@@ -502,6 +502,10 @@ public:
 	void store(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 	bool modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
+	virtual ~TriggerDefinition()
+	{
+	}
+
 protected:
 	virtual void preModify(thread_db* /*tdbb*/, DsqlCompilerScratch* /*dsqlScratch*/,
 		jrd_tra* /*transaction*/)

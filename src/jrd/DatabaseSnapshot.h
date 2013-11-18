@@ -191,7 +191,7 @@ public:
 	ULONG allocated;
 };
 
-class MonitoringData : public Firebird::IpcObject
+class MonitoringData FB_FINAL : public Firebird::IpcObject
 {
 	static const ULONG MONITOR_VERSION = 3;
 	static const ULONG DEFAULT_SIZE = 1048576;

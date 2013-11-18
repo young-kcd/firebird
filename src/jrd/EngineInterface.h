@@ -45,7 +45,7 @@ class JStatement;
 class JAttachment;
 class JProvider;
 
-class JBlob : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
+class JBlob FB_FINAL : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
 {
 public:
 	// IBlob implementation
@@ -82,7 +82,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JTransaction : public Firebird::RefCntIface<Firebird::ITransaction, FB_TRANSACTION_VERSION>
+class JTransaction FB_FINAL : public Firebird::RefCntIface<Firebird::ITransaction, FB_TRANSACTION_VERSION>
 {
 public:
 	// ITransaction implementation
@@ -140,7 +140,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSET_VERSION>
+class JResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSET_VERSION>
 {
 public:
 	// IResultSet implementation
@@ -179,7 +179,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JStatement : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
+class JStatement FB_FINAL : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
 	// IStatement implementation
@@ -234,7 +234,7 @@ inline dsql_req* JResultSet::getHandle() throw()
 	return statement->getHandle();
 }
 
-class JRequest : public Firebird::RefCntIface<Firebird::IRequest, FB_REQUEST_VERSION>
+class JRequest FB_FINAL : public Firebird::RefCntIface<Firebird::IRequest, FB_REQUEST_VERSION>
 {
 public:
 	// IRequest implementation
@@ -275,7 +275,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JEvents : public Firebird::RefCntIface<Firebird::IEvents, FB_EVENTS_VERSION>
+class JEvents FB_FINAL : public Firebird::RefCntIface<Firebird::IEvents, FB_EVENTS_VERSION>
 {
 public:
 	// IEvents implementation
@@ -283,8 +283,8 @@ public:
 	virtual void FB_CARG cancel(Firebird::IStatus* status);
 
 public:
-	JEvents(int aId, JAttachment* ja)
-		: id(aId), jAtt(ja)
+	JEvents(int aId, JAttachment* ja, Firebird::IEventCallback* aCallback)
+		: id(aId), jAtt(ja), callback(aCallback)
 	{
 	}
 
@@ -301,6 +301,7 @@ public:
 private:
 	int id;
 	Firebird::RefPtr<JAttachment> jAtt;
+	Firebird::RefPtr<Firebird::IEventCallback> callback;
 
 	void freeEngineData(Firebird::IStatus* status);
 };
@@ -399,7 +400,7 @@ private:
 };
 
 // internal class used in system background threads
-class SysAttachment : public JAttachment
+class SysAttachment FB_FINAL : public JAttachment
 {
 public:
 	explicit SysAttachment(Attachment* handle)
@@ -428,7 +429,7 @@ private:
 	void destroy(Attachment* attachment);
 };
 
-class JService : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
+class JService FB_FINAL : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
 {
 public:
 	// IService implementation
@@ -450,7 +451,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JProvider : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
+class JProvider FB_FINAL : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
 {
 public:
 	explicit JProvider(Firebird::IPluginConfig* pConf)

@@ -879,6 +879,17 @@ void GDS_breakpoint(int);
 #define FB_CONST64(a) (a##LL)
 #endif
 
+// Check for "final" keyword support
+#ifdef __GNUC__
+#if ((__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (__GNUC__ >= 5))
+#define FB_FINAL __final
+#endif
+#endif
+// Please add support for other compilers here
+#ifndef FB_FINAL
+#define FB_FINAL
+#endif
+
 // 30 Dec 2002. Nickolay Samofatov
 // This needs to be checked for all supported platforms
 // The simpliest way to check it is to issue from correct client:

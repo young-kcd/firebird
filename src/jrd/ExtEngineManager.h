@@ -53,7 +53,7 @@ struct impure_value;
 struct record_param;
 
 
-class ExtEngineManager : public Firebird::PermanentStorage
+class ExtEngineManager FB_FINAL : public Firebird::PermanentStorage
 {
 private:
 	class AttachmentImpl;

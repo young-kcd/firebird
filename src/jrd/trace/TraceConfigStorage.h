@@ -45,7 +45,7 @@ struct TraceCSHeader : public Firebird::MemoryHeader
 	char cfg_file_name[MAXPATHLEN];
 };
 
-class ConfigStorage : public Firebird::GlobalStorage, public Firebird::IpcObject, public Firebird::Reasons
+class ConfigStorage FB_FINAL : public Firebird::GlobalStorage, public Firebird::IpcObject, public Firebird::Reasons
 {
 public:
 	ConfigStorage();
@@ -70,7 +70,7 @@ private:
 	void checkFile();
 	void touchFile();
 
-	class TouchFile : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
+	class TouchFile FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 	{
 	public:
 		void FB_CARG handler();

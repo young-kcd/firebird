@@ -31,7 +31,7 @@
 #include "TraceConfiguration.h"
 #include "TracePluginImpl.h"
 
-class TraceFactoryImpl : public Firebird::StdPlugin<TraceFactory, FB_TRACE_FACTORY_VERSION>
+class TraceFactoryImpl FB_FINAL : public Firebird::StdPlugin<TraceFactory, FB_TRACE_FACTORY_VERSION>
 {
 public:
 	explicit TraceFactoryImpl(Firebird::IPluginConfig*)

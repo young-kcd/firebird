@@ -89,7 +89,7 @@ using namespace Firebird;
 
 namespace
 {
-	class sh_mem : public Firebird::IpcObject
+	class sh_mem FB_FINAL : public Firebird::IpcObject
 	{
 	public:
 		explicit sh_mem(bool p_consistency, const char* filename)

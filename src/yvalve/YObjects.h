@@ -66,6 +66,7 @@ class CleanupCallback
 {
 public:
 	virtual void FB_CARG cleanupCallbackFunction() = 0;
+	virtual ~CleanupCallback() { }
 };
 
 template <typename T>
@@ -159,18 +160,12 @@ public:
 	Firebird::RefPtr<NextInterface> next;
 };
 
-class YEvents : public YHelper<YEvents, Firebird::IEvents, FB_EVENTS_VERSION>
+class YEvents FB_FINAL : public YHelper<YEvents, Firebird::IEvents, FB_EVENTS_VERSION>
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_events_handle;
 
 	YEvents(YAttachment* aAttachment, IEvents* aNext, Firebird::IEventCallback* aCallback);
-
-	~YEvents()
-	{
-		if (deleteCallback)
-			delete callback;
-	}
 
 	void destroy();
 	FB_API_HANDLE& getHandle();
@@ -180,11 +175,10 @@ public:
 
 public:
 	YAttachment* attachment;
-	Firebird::IEventCallback* callback;
-	bool deleteCallback;
+	Firebird::RefPtr<Firebird::IEventCallback> callback;
 };
 
-class YRequest : public YHelper<YRequest, Firebird::IRequest, FB_REQUEST_VERSION>
+class YRequest FB_FINAL : public YHelper<YRequest, Firebird::IRequest, FB_REQUEST_VERSION>
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_req_handle;
@@ -212,7 +206,7 @@ public:
 	FB_API_HANDLE* userHandle;
 };
 
-class YTransaction : public YHelper<YTransaction, Firebird::ITransaction, FB_TRANSACTION_VERSION>
+class YTransaction FB_FINAL : public YHelper<YTransaction, Firebird::ITransaction, FB_TRANSACTION_VERSION>
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_trans_handle;
@@ -260,7 +254,7 @@ private:
 
 typedef Firebird::RefPtr<Firebird::ITransaction> NextTransaction;
 
-class YBlob : public YHelper<YBlob, Firebird::IBlob, FB_BLOB_VERSION>
+class YBlob FB_FINAL : public YHelper<YBlob, Firebird::IBlob, FB_BLOB_VERSION>
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_segstr_handle;
@@ -284,7 +278,7 @@ public:
 	YTransaction* transaction;
 };
 
-class YResultSet : public YHelper<YResultSet, Firebird::IResultSet, FB_RESULTSET_VERSION>
+class YResultSet FB_FINAL : public YHelper<YResultSet, Firebird::IResultSet, FB_RESULTSET_VERSION>
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_result_set;
@@ -326,7 +320,7 @@ private:
 	bool input;
 };
 
-class YStatement : public YHelper<YStatement, Firebird::IStatement, FB_STATEMENT_VERSION>
+class YStatement FB_FINAL : public YHelper<YStatement, Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_stmt_handle;
@@ -380,7 +374,7 @@ public:
 	Firebird::Mutex enterMutex;
 };
 
-class YAttachment : public YHelper<YAttachment, Firebird::IAttachment, FB_ATTACHMENT_VERSION>, public EnterCount
+class YAttachment FB_FINAL : public YHelper<YAttachment, Firebird::IAttachment, FB_ATTACHMENT_VERSION>, public EnterCount
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
@@ -450,7 +444,7 @@ public:
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 };
 
-class YService : public YHelper<YService, Firebird::IService, FB_SERVICE_VERSION>, public EnterCount
+class YService FB_FINAL : public YHelper<YService, Firebird::IService, FB_SERVICE_VERSION>, public EnterCount
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
@@ -481,7 +475,7 @@ private:
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 };
 
-class Dispatcher : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
+class Dispatcher FB_FINAL : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
 {
 public:
 	Dispatcher()

@@ -43,7 +43,7 @@
 
 namespace Auth {
 
-class SecurityDatabaseServer : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
+class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 {
 public:
 	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)

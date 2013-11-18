@@ -135,7 +135,7 @@ namespace Remote {
 class Attachment;
 class Statement;
 
-class Blob : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
+class Blob FB_FINAL : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
 {
 public:
 	// IBlob implementation
@@ -177,7 +177,7 @@ int Blob::release()
 	return 0;
 }
 
-class Transaction : public Firebird::RefCntIface<Firebird::ITransaction, FB_TRANSACTION_VERSION>
+class Transaction FB_FINAL : public Firebird::RefCntIface<Firebird::ITransaction, FB_TRANSACTION_VERSION>
 {
 public:
 	// ITransaction implementation
@@ -240,7 +240,7 @@ int Transaction::release()
 	return 0;
 }
 
-class ResultSet : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSET_VERSION>
+class ResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::IResultSet, FB_RESULTSET_VERSION>
 {
 public:
 	// IResultSet implementation
@@ -286,7 +286,7 @@ int ResultSet::release()
 	return 0;
 }
 
-class Statement : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
+class Statement FB_FINAL : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
 	// IStatement implementation
@@ -357,7 +357,7 @@ int Statement::release()
 	return 0;
 }
 
-class Request : public Firebird::RefCntIface<Firebird::IRequest, FB_REQUEST_VERSION>
+class Request FB_FINAL : public Firebird::RefCntIface<Firebird::IRequest, FB_REQUEST_VERSION>
 {
 public:
 	// IRequest implementation
@@ -402,7 +402,7 @@ int Request::release()
 	return 0;
 }
 
-class Events : public Firebird::RefCntIface<Firebird::IEvents, FB_EVENTS_VERSION>
+class Events FB_FINAL : public Firebird::RefCntIface<Firebird::IEvents, FB_EVENTS_VERSION>
 {
 public:
 	// IEvents implementation
@@ -433,7 +433,7 @@ int Events::release()
 	return 0;
 }
 
-class Attachment : public Firebird::RefCntIface<Firebird::IAttachment, FB_ATTACHMENT_VERSION>
+class Attachment FB_FINAL : public Firebird::RefCntIface<Firebird::IAttachment, FB_ATTACHMENT_VERSION>
 {
 public:
 	// IAttachment implementation
@@ -521,7 +521,7 @@ int Attachment::release()
 	return 0;
 }
 
-class Service : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
+class Service FB_FINAL : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
 {
 public:
 	// IService implementation
@@ -3938,7 +3938,6 @@ Firebird::IEvents* Attachment::queEvents(IStatus* status, Firebird::IEventCallba
 		Rvnt* rem_event = add_event(port);
 
 		rem_event->rvnt_callback = callback;
-		rem_event->rvnt_flags &= ~Rvnt::OWN_CALLBACK;
 		rem_event->rvnt_port = port->port_async;
 		rem_event->rvnt_length = length;
 		rem_event->rvnt_rdb = rdb;

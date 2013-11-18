@@ -660,8 +660,7 @@ private:
 };
 #endif
 
-class Callback : public VersionedIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>,
-				 public GlobalStorage
+class Callback FB_FINAL : public RefCntIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
 {
 public:
 	explicit Callback(Rvnt* aevent)
@@ -702,6 +701,17 @@ public:
 		event->rvnt_iface = NULL;
 
 		port->send(&packet);
+	}
+
+	virtual int FB_CARG release()
+	{
+		if (--refCounter == 0)
+		{
+			delete this;
+			return 0;
+		}
+
+		return 1;
 	}
 
 private:
@@ -4551,7 +4561,6 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
 		event->rvnt_callback = new Callback(event);
-		event->rvnt_flags |= Rvnt::OWN_CALLBACK;
 	}
 
 	event->rvnt_id = stuff->p_event_rid;
@@ -6142,6 +6151,16 @@ static int shut_server(const int, const int, void*)
 	return 0;
 }
 
+SrvAuthBlock::SrvAuthBlock(rem_port* p_port)
+	: port(p_port),
+	  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
+	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
+	  lastExtractedKeys(getPool(), Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE),
+	  newKeys(getPool()),
+	  flComplete(false), firstTime(true),
+	  plugins(NULL)
+{ }
+
 void SrvAuthBlock::extractDataFromPluginTo(cstring* to)
 {
 	to->cstr_allocated = 0;
@@ -6260,67 +6279,6 @@ void SrvAuthBlock::extractPluginName(cstring* to)
 	to->cstr_length = (ULONG) pluginName.length();
 	to->cstr_address = (UCHAR*)(pluginName.c_str());
 	to->cstr_allocated = 0;
-}
-
-int SrvAuthBlock::release()
-{
-	if (--refCounter != 0)
-		return 1;
-
-	delete this;
-	return 0;
-}
-
-const char* SrvAuthBlock::getLogin()
-{
-	return userName.nullStr();
-}
-
-const unsigned char* SrvAuthBlock::getData(unsigned int* length)
-{
-	*length = (ULONG) dataForPlugin.getCount();
-	if (*length && pluginName != plugins->name())
-	{
-		*length = 0;
-	}
-	return *length ? dataForPlugin.begin() : NULL;
-}
-
-void SrvAuthBlock::putData(IStatus* status, unsigned int length, const void* data)
-{
-	status->init();
-	try
-	{
-		memcpy(dataFromPlugin.getBuffer(length), data, length);
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-}
-
-void SrvAuthBlock::putKey(IStatus* status, FbCryptKey* cryptKey)
-{
-	status->init();
-	try
-	{
-		const char* t = cryptKey->type;
-		if (!t)
-		{
-			fb_assert(pluginName.hasData());
-			t = pluginName.c_str();
-		}
-
-		InternalCryptKey* k = FB_NEW(*getDefaultMemoryPool())
-			InternalCryptKey(t, cryptKey->encryptKey, cryptKey->encryptLength,
-								cryptKey->decryptKey, cryptKey->decryptLength);
-		port->port_crypt_keys.push(k);
-		newKeys.push(k->type);
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
 }
 
 void SrvAuthBlock::createPluginsItr()

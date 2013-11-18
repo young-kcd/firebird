@@ -125,7 +125,7 @@ const UCHAR TPB[4] =
 
 namespace Auth {
 
-class SecurityDatabase : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
+class SecurityDatabase FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 {
 public:
 	int verify(IWriter* authBlock, IServerBlock* sBlock);

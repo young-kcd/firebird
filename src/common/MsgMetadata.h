@@ -103,16 +103,7 @@ public:
 		assign(from);
 	}
 
-	virtual int FB_CARG release()
-	{
-		if (--refCounter != 0)
-		{
-			return 1;
-		}
-
-		delete this;
-		return 0;
-	}
+	virtual int FB_CARG release();
 
 	virtual unsigned FB_CARG getCount(IStatus* /*status*/) const
 	{
@@ -261,14 +252,7 @@ public:
 	{ }
 
 	// re-implement here release() present in MsgMetadata to call correct dtor
-	virtual int FB_CARG release()
-	{
-		if (--refCounter != 0)
-			return 1;
-
-		delete this;
-		return 0;
-	}
+	virtual int FB_CARG release();
 
 	RefPtr<IAttachment> attachment;
 };

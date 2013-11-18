@@ -33,7 +33,7 @@ using namespace Firebird;
 
 namespace {
 
-class MetadataBuilder : public RefCntIface<IMetadataBuilder, FB_METADATA_BUILDER_VERSION>
+class MetadataBuilder FB_FINAL : public RefCntIface<IMetadataBuilder, FB_METADATA_BUILDER_VERSION>
 {
 public:
 	MetadataBuilder(const MsgMetadata* from)
@@ -359,5 +359,28 @@ void MsgMetadata::assign(IMessageMetadata* from)
 	makeOffsets();
 }
 
+
+int MsgMetadata::release()
+{
+	if (--refCounter != 0)
+	{
+		return 1;
+	}
+
+	delete this;
+	return 0;
+}
+
+
+int AttMetadata::release()
+{
+	if (--refCounter != 0)
+	{
+		return 1;
+	}
+
+	delete this;
+	return 0;
+}
 
 }	// namespace Firebird

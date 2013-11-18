@@ -33,7 +33,7 @@
 
 namespace Auth {
 
-class SecurityDatabaseManagement : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VERSION>
+class SecurityDatabaseManagement FB_FINAL : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VERSION>
 {
 public:
 	explicit SecurityDatabaseManagement(Firebird::IPluginConfig* par);

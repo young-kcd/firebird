@@ -2541,17 +2541,12 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 }
 
 
-// Que request for event notification.
-ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
-	USHORT length, const UCHAR* eventsData, UCHAR* buffer)
+namespace
 {
-	StatusVector status(userStatus);
-	YEvents* events = NULL;
-
-	class Callback : public AutoIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
+	class WaitCallback FB_FINAL : public RefCntIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
 	{
 	public:
-		explicit Callback(UCHAR* aBuffer)
+		explicit WaitCallback(UCHAR* aBuffer)
 			: buffer(aBuffer)
 		{
 		}
@@ -2563,9 +2558,31 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 			sem.release();
 		}
 
+		int FB_CARG release()
+		{
+			if (--refCounter == 0)
+			{
+				delete this;
+				return 0;
+			}
+
+			return 1;
+		}
+
 		UCHAR* buffer;
 		Semaphore sem;
-	} callback(buffer);
+	};
+
+}
+
+// Que request for event notification.
+ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
+	USHORT length, const UCHAR* eventsData, UCHAR* buffer)
+{
+	StatusVector status(userStatus);
+	YEvents* events = NULL;
+
+	RefPtr<WaitCallback> callback(new WaitCallback(buffer));
 
 	try
 	{
@@ -2573,12 +2590,12 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 		///nullCheck(id, isc_bad_events_handle);
 
-		events = attachment->queEvents(&status, &callback, length, eventsData);
+		events = attachment->queEvents(&status, callback, length, eventsData);
 
 		if (!status.isSuccess())
 			return status[1];
 
-		callback.sem.enter();
+		callback->sem.enter();
 	}
 	catch (const Exception& e)
 	{
@@ -2589,6 +2606,80 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	{
 		StatusVector temp(NULL);
 		events->cancel(&temp);
+	}
+
+	return status[1];
+}
+
+
+namespace
+{
+	class QueCallback FB_FINAL : public RefCntIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
+	{
+	public:
+		QueCallback(FPTR_EVENT_CALLBACK aAst, void* aArg)
+			: ast(aAst),
+			  arg(aArg)
+		{
+		}
+
+		// IEventCallback implementation
+		virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
+		{
+			ast(arg, length, events);
+		}
+
+		int FB_CARG release()
+		{
+			if (--refCounter == 0)
+			{
+				delete this;
+				return 0;
+			}
+
+			return 1;
+		}
+
+		FPTR_EVENT_CALLBACK ast;
+		void* arg;
+	};
+}
+
+// Que request for event notification.
+ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle, SLONG* id,
+	USHORT length, const UCHAR* eventsData, FPTR_EVENT_CALLBACK ast, void* arg)
+{
+	StatusVector status(userStatus);
+	YEvents* events = NULL;
+
+	try
+	{
+		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
+
+		///nullCheck(idFB_FINAL , isc_bad_events_handle);
+
+
+		RefPtr<QueCallback> callback(new QueCallback(ast, arg));
+
+		events = attachment->queEvents(&status, callback, length, eventsData);
+
+		if (!status.isSuccess())
+		{
+			return status[1];
+		}
+
+		*id = FB_API_HANDLE_TO_ULONG(events->getHandle());
+	}
+	catch (const Exception& e)
+	{
+		if (events)
+		{
+			*id = 0;
+			StatusVector temp(NULL);
+			events->cancel(&temp);
+		}
+
+		e.stuffException(&status);
 	}
 
 	return status[1];
@@ -2752,68 +2843,6 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS* userStatus, FB_API_HANDLE* dbHa
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
-	}
-
-	return status[1];
-}
-
-
-// Que request for event notification.
-ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle, SLONG* id,
-	USHORT length, const UCHAR* eventsData, FPTR_EVENT_CALLBACK ast, void* arg)
-{
-	StatusVector status(userStatus);
-	YEvents* events = NULL;
-
-	try
-	{
-		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
-
-		///nullCheck(id, isc_bad_events_handle);
-
-		class Callback : public VersionedIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>,
-						 public GlobalStorage
-		{
-		public:
-			Callback(FPTR_EVENT_CALLBACK aAst, void* aArg)
-				: ast(aAst),
-				  arg(aArg)
-			{
-			}
-
-			// IEventCallback implementation
-			virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
-			{
-				ast(arg, length, events);
-			}
-
-			FPTR_EVENT_CALLBACK ast;
-			void* arg;
-		};
-
-		Callback* callback = new Callback(ast, arg);
-
-		events = attachment->queEvents(&status, callback, length, eventsData);
-
-		if (!status.isSuccess())
-		{
-			delete callback;
-			return status[1];
-		}
-
-		events->deleteCallback = true;
-		*id = FB_API_HANDLE_TO_ULONG(events->getHandle());
-	}
-	catch (const Exception& e)
-	{
-		if (events)
-		{
-			*id = 0;
-			StatusVector temp(NULL);
-			events->cancel(&temp);
-		}
-
 		e.stuffException(&status);
 	}
 
@@ -3496,8 +3525,7 @@ YHelper<Impl, Intf, Vers>::YHelper(Intf* aNext)
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
 	: YHelper<YEvents, IEvents, FB_EVENTS_VERSION>(aNext),
 	  attachment(aAttachment),
-	  callback(aCallback),
-	  deleteCallback(false)
+	  callback(aCallback)
 {
 	attachment->childEvents.add(this);
 }

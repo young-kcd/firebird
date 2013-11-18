@@ -3281,7 +3281,7 @@ JEvents* JAttachment::queEvents(IStatus* user_status, IEventCallback* callback,
 
 			int id = dbb->dbb_event_mgr->queEvents(getHandle()->att_event_session,
 												   length, events, callback);
-			ev = new JEvents(id, this);
+			ev = new JEvents(id, this, callback);
 			ev->addRef();
 		}
 		catch (const Exception& ex)

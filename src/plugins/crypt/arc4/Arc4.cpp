@@ -85,7 +85,7 @@ private:
 
 namespace Crypt {
 
-class Arc4 : public StdPlugin<IWireCryptPlugin, FB_WIRECRYPT_PLUGIN_VERSION>
+class Arc4 FB_FINAL : public StdPlugin<IWireCryptPlugin, FB_WIRECRYPT_PLUGIN_VERSION>
 {
 public:
 	explicit Arc4(IPluginConfig*)

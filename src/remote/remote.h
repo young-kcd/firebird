@@ -221,29 +221,17 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 {
 	Rvnt*		rvnt_next;
 	Rdb*		rvnt_rdb;
-	Firebird::IEventCallback*	rvnt_callback;
+	Firebird::RefPtr<Firebird::IEventCallback> rvnt_callback;
 	ServEvents	rvnt_iface;
 	rem_port*	rvnt_port;	// used to id server from whence async came
 	SLONG		rvnt_id;	// used to store client-side id
 	USHORT		rvnt_length;
-	USHORT		rvnt_flags;
 
 public:
-	// rvnt_flags' bits
-	static const USHORT OWN_CALLBACK = 0x1;
-
 	Rvnt() :
 		rvnt_next(NULL), rvnt_rdb(NULL), rvnt_callback(NULL), rvnt_iface(NULL),
-		rvnt_port(NULL), rvnt_id(0), rvnt_length(0), rvnt_flags(0)
+		rvnt_port(NULL), rvnt_id(0), rvnt_length(0)
 	{ }
-
-	~Rvnt()
-	{
-		if (rvnt_flags & OWN_CALLBACK)
-		{
-			delete rvnt_callback;
-		}
-	}
 };
 
 
@@ -629,7 +617,7 @@ typedef Firebird::GetPlugins<Auth::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
 // Transfered in format, depending upon type of the packet (phase of handshake)
-class ClntAuthBlock : public Firebird::StdPlugin<Auth::IClientBlock, FB_AUTH_CLIENT_BLOCK_VERSION>
+class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Auth::IClientBlock, FB_AUTH_CLIENT_BLOCK_VERSION>
 {
 private:
 	Firebird::PathName pluginList;				// To be passed to server
@@ -684,7 +672,8 @@ public:
 // Transfered from client data in format, suitable for plugins access
 typedef Firebird::GetPlugins<Auth::IServer> AuthServerPlugins;
 
-class SrvAuthBlock : public Firebird::StdPlugin<Auth::IServerBlock, FB_AUTH_SERVER_BLOCK_VERSION>
+class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Auth::IServerBlock, FB_AUTH_SERVER_BLOCK_VERSION>,
+	public Firebird::GlobalStorage
 {
 private:
 	rem_port* port;
@@ -700,15 +689,7 @@ public:
 	AuthServerPlugins* plugins;
 	Auth::WriterImplementation authBlockWriter;
 
-	explicit SrvAuthBlock(rem_port* p_port)
-		: port(p_port),
-		  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
-		  dataForPlugin(getPool()), dataFromPlugin(getPool()),
-		  lastExtractedKeys(getPool(), Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE),
-		  newKeys(getPool()),
-		  flComplete(false), firstTime(true),
-		  plugins(NULL)
-	{ }
+	explicit SrvAuthBlock(rem_port* p_port);
 
 	~SrvAuthBlock()
 	{
@@ -735,7 +716,6 @@ public:
 	bool hasDataForPlugin();
 
 	// Auth::IServerBlock implementation
-	int FB_CARG release();
 	const char* FB_CARG getLogin();
 	const unsigned char* FB_CARG getData(unsigned int* length);
 	void FB_CARG putData(Firebird::IStatus* status, unsigned int length, const void* data);
@@ -875,7 +855,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 
 	// Authentication and crypt stuff
 	ServerAuthBase*							port_srv_auth;
-	Firebird::RefPtr<SrvAuthBlock>			port_srv_auth_block;
+	SrvAuthBlock*							port_srv_auth_block;
 	Firebird::HalfStaticArray<InternalCryptKey*, 2>	port_crypt_keys;	// available wire crypt keys
 	bool			port_need_disk_crypt;	// set when appropriate DPB/SPB item is present
 											// requires wire crypt active before attachDatabase()

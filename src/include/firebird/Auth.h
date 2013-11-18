@@ -51,8 +51,8 @@ public:
 };
 #define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 3)
 
-// Representation of auth-related data, passed to server auth plugin
-class IServerBlock : public Firebird::IRefCounted
+// Representation of auth-related data, passed to/from server auth plugin
+class IServerBlock : public Firebird::IVersioned
 {
 public:
 	virtual const char* FB_CARG getLogin() = 0;
@@ -60,9 +60,9 @@ public:
 	virtual void FB_CARG putData(Firebird::IStatus* status, unsigned int length, const void* data) = 0;
 	virtual void FB_CARG putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey) = 0;
 };
-#define FB_AUTH_SERVER_BLOCK_VERSION (FB_REFCOUNTED_VERSION + 4)
+#define FB_AUTH_SERVER_BLOCK_VERSION (FB_VERSIONED_VERSION + 4)
 
-// Representation of auth-related data, passed to client auth plugin
+// Representation of auth-related data, passed to/from client auth plugin
 class IClientBlock : public Firebird::IRefCounted
 {
 public:

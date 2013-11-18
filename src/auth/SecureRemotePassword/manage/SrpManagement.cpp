@@ -108,7 +108,7 @@ void listField(Auth::ICharUserField* to, Name& from)
 
 namespace Auth {
 
-class SrpManagement : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VERSION>
+class SrpManagement FB_FINAL : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VERSION>
 {
 public:
 	explicit SrpManagement(Firebird::IPluginConfig* par)

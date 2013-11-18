@@ -38,12 +38,12 @@ namespace Firebird {
 class IAttachment;				// Forward
 class ICryptKeyCallback;		// From Crypt.h
 
-class IEventCallback : public IVersioned
+class IEventCallback : public IRefCounted
 {
 public:
 	virtual void FB_CARG eventCallbackFunction(unsigned int length, const unsigned char* events) = 0;
 };
-#define FB_EVENT_CALLBACK_VERSION (FB_VERSIONED_VERSION + 1)
+#define FB_EVENT_CALLBACK_VERSION (FB_REFCOUNTED_VERSION + 1)
 
 /*
 class ShutdownCallback

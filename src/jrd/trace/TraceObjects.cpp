@@ -403,7 +403,7 @@ const char* TraceTriggerImpl::getRelationName()
 
 /// TraceLogWriterImpl
 
-class TraceLogWriterImpl : public RefCntIface<TraceLogWriter, FB_TRACE_LOG_WRITER_VERSION>
+class TraceLogWriterImpl FB_FINAL : public RefCntIface<TraceLogWriter, FB_TRACE_LOG_WRITER_VERSION>
 {
 public:
 	TraceLogWriterImpl(const TraceSession& session) :

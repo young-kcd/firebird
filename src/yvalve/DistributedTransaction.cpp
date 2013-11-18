@@ -43,7 +43,7 @@ using namespace Why;
 
 namespace {
 
-class DTransaction : public RefCntIface<ITransaction, FB_TRANSACTION_VERSION>
+class DTransaction FB_FINAL : public RefCntIface<ITransaction, FB_TRANSACTION_VERSION>
 {
 public:
 	DTransaction()
