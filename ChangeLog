@@ -1,3 +1,9 @@
+ 2013-11-17 14:24  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/jrd.cpp
+Fixed possible server crash + minor refactoring.
+
  2013-11-16 11:48  fsg 
    M src/isql/isql.epp
 Don't call setlocale if it is not needed for editline, fxes CORE-4259
