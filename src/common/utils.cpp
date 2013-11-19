@@ -692,9 +692,9 @@ void getCwd(Firebird::PathName& pn)
 #if defined(WIN_NT)
 	_getcwd(buffer, MAXPATHLEN);
 #elif defined(HAVE_GETCWD)
-	getcwd(buffer, MAXPATHLEN);
+	FB_UNUSED(getcwd(buffer, MAXPATHLEN));
 #else
-	getwd(buffer);
+	FB_UNUSED(getwd(buffer));
 #endif
 	pn.recalculate_length();
 }

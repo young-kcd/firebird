@@ -1196,7 +1196,7 @@ void NBackup::restore_database(const BackupFiles& files)
 						//Enter name of the backup file of level %d (\".\" - do not restore further):\n
 						printMsg(69, SafeArg() << curLevel);
 						char temp[256];
-						scanf("%255s", temp);
+						FB_UNUSED(scanf("%255s", temp));
 						bakname = temp;
 					}
 					if (bakname == ".")

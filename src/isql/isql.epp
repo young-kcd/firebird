@@ -365,18 +365,18 @@ static processing_state parse_arg(int, SCHAR**, SCHAR*); //, FILE**);
 #ifdef DEV_BUILD
 static processing_state passthrough(const char* cmd);
 #endif
-static SSHORT print_item(TEXT**, XSQLVAR*, const int);
+static SSHORT print_item(TEXT**, XSQLVAR*, const unsigned);
 static void print_item_numeric(SINT64, int, int, TEXT*);
-static processing_state print_line(XSQLDA*, const int pad[], TEXT line[]);
+static processing_state print_line(XSQLDA*, const unsigned pad[], TEXT line[]);
 static void print_performance(const perf64* perf_before);
 static processing_state print_sqlda_input(const bool is_selectable);
 static void print_sqlda_output(const XSQLDA& sqlda);
-static void process_header(const XSQLDA* sqlda, const int pad[], TEXT header[], TEXT header2[]);
+static void process_header(const XSQLDA* sqlda, const unsigned pad[], TEXT header[], TEXT header2[]);
 static void process_plan();
 static SLONG process_record_count(const int statement_type);
 static SSHORT process_request_type();
 static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[]);
-static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[]);
+static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned pad[]);
 static int process_statement(const TEXT*, XSQLDA**);
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD);
@@ -7224,7 +7224,7 @@ static bool checkSpecial(TEXT* const p, const int length, const double value)
 }
 
 
-static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
+static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 {
 /**************************************
  *
@@ -7243,9 +7243,6 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 
 	SSHORT dtype = var->sqltype & ~1; // may be modified by print_item_blob()
 	const int dscale = var->sqlscale;
-
-	// The printlength should have in it the right length
-	//const int length = printlength;
 
 	if (List) {
 		isqlGlob.printf("%-31s ", fb_utils::exact_name(var->aliasname));
@@ -7401,11 +7398,11 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 
 				// Don't let numeric/decimal doubles overflow print length
 				// Special handling for 0 -- don't test log for length
-				int rounded = 0;
+				unsigned rounded = 0;
 				if (dscale && (!value ||
-					(rounded = static_cast<int>(ceil(fabs(log10(fabs(value)))))) < length - 10))
+					(rounded = static_cast<unsigned int>(ceil(fabs(log10(fabs(value)))))) < length - 10))
 				{
-					int precision = 0;
+					unsigned precision = 0;
 
 					// CVC: Test values are
 					// select -2.488355210669293e+01 from rdb$database;
@@ -7429,7 +7426,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 						precision = length - rounded - 2;
 
 					// Take into account old database containing negative scales for double
-					if (dscale < 0 && precision > -dscale)
+					if (dscale < 0 && precision > unsigned(-dscale))
 					{
 						precision = -dscale;
 					}
@@ -7473,7 +7470,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 			// See if it is character set OCTETS
 			if (var->sqlsubtype == 1)
 			{
-				const SLONG hex_len = 2 * var->sqllen;
+				const ULONG hex_len = 2 * var->sqllen;
 				TEXT* buff2 = (TEXT*) ISQL_ALLOC(hex_len + 1);
 				// Convert the string to hex digits
 				for (USHORT i = 0; i < var->sqllen; i++) {
@@ -7558,7 +7555,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 				// If CHARACTER SET OCTETS, print two hex digits per octet
 				if (var->sqlsubtype == 1)
 				{
-					const SLONG hex_len = 2 * avary->vary_length;
+					const ULONG hex_len = 2 * avary->vary_length;
 					char* buff2 = static_cast<char*>(ISQL_ALLOC(hex_len + 1));
 					char* bp = buff2;
 
@@ -7576,7 +7573,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 					else
 					{
 						// Truncate if necessary
-						sprintf(p, "%-*.*s ", length, static_cast<int>(MIN(length, hex_len)), buff2);
+						sprintf(p, "%-*.*s ", length, static_cast<unsigned int>(MIN(length, hex_len)), buff2);
 					}
 					ISQL_FREE(buff2);
 				}
@@ -7792,7 +7789,7 @@ static void print_item_numeric(SINT64 value, int length, int scale, TEXT* buf)
 }
 
 
-static processing_state print_line(XSQLDA* sqlda, const int pad[], TEXT line[])
+static processing_state print_line(XSQLDA* sqlda, const unsigned pad[], TEXT line[])
 {
 /**************************************
  *
@@ -8013,7 +8010,7 @@ static void print_sqlda_output(const XSQLDA& sqlda)
 // ***************************
 // Write into buffers the information that will be printed as page header for
 // statements that return data.
-static void process_header(const XSQLDA* sqlda, const int pad[], TEXT header[], TEXT header2[])
+static void process_header(const XSQLDA* sqlda, const unsigned pad[], TEXT header[], TEXT header2[])
 {
 	// Create the column header :  Left justify strings
 
@@ -8265,7 +8262,7 @@ static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[])
 // *****************************************
 // Calculate individual column widths and return total line width.
 // Assign previously allocated buffer in pieces to every XSQLVAR.
-static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[])
+static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned pad[])
 {
 	int linelength = 0;
 	SLONG offset = 0;
@@ -8681,9 +8678,9 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 	SLONG* buffer = process_sqlda_buffer(sqlda, nullind);
 
 	// Pad is an array of lengths to be passed to the print_item
-	int* pad = NULL;
+	unsigned* pad = NULL;
 	if (sqlda->sqld) {
-		pad = (int*) ISQL_ALLOC ((SLONG) (sqlda->sqld * sizeof(int)));
+		pad = (unsigned*) ISQL_ALLOC ((SLONG) (sqlda->sqld * sizeof(int)));
 	}
 
 	// Calculate display width and add a few for line termination, et al

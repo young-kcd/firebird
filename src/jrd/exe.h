@@ -632,7 +632,7 @@ public:
 };
 
 // must correspond to the declared size of RDB$EXCEPTIONS.RDB$MESSAGE
-const int XCP_MESSAGE_LENGTH = 1023;
+const unsigned XCP_MESSAGE_LENGTH = 1023;
 
 } // namespace Jrd
 

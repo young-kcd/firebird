@@ -337,7 +337,7 @@ FILE* EXEC_open_output(qli_nod* node)
 	{
 		close(pair[1]);
 		close(0);
-		dup(pair[0]);
+		FB_UNUSED(dup(pair[0]));
 		close(pair[0]);
 		execvp(argv[0], argv);
 		ERRQ_msg_put(43, filename);	// Msg43 Couldn't run %s

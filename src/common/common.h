@@ -890,6 +890,8 @@ void GDS_breakpoint(int);
 #define FB_FINAL
 #endif
 
+#define FB_UNUSED(value) if (value)
+
 // 30 Dec 2002. Nickolay Samofatov
 // This needs to be checked for all supported platforms
 // The simpliest way to check it is to issue from correct client:

@@ -553,7 +553,7 @@ bool printData(const char*& p)
 	bool rc = getLine(s, p);
 	if (rc)
 	{
-		write(binout, s.c_str(), s.length());
+		FB_UNUSED(write(binout, s.c_str(), s.length()));
 	}
 	return rc;
 }

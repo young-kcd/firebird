@@ -1749,7 +1749,7 @@ static void gen_database( const act* action)
 				const TEXT* s = ready->rdy_filename;
 				if (s && ((*s == '\'') || (*s == '\"')))
 				{
-					int len = strlen(++s);
+					unsigned int len = strlen(++s);
 					if (len >= sizeof(fname))
 						len = sizeof(fname);
 
@@ -3963,7 +3963,7 @@ static void make_array_declaration( ref* reference)
 	while (*p)
 		++p;
 
-	fb_assert(p - string1 < sizeof(string1));
+	fb_assert(p < string1 + sizeof(string1));
 #endif
 
 	printa(space, false, "%s", string1);

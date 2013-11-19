@@ -516,7 +516,7 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
 	TEXT buffer[MAXPATHLEN * 2 + 5];
 	fb_utils::snprintf(buffer, sizeof(buffer), "%s \"%s\"", editor.c_str(), file_name);
 
-	system(buffer);
+	FB_UNUSED(system(buffer));
 
 	struct stat after;
 	stat(file_name, &after);
@@ -1778,7 +1778,7 @@ static int dump(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 			} while (--l);
 		*/
 		if (l)
-			fwrite(buffer, 1, l, file);
+			FB_UNUSED(fwrite(buffer, 1, l, file));
 	}
 
 	// Close the blob

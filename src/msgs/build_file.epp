@@ -449,7 +449,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 	// Re-write header record and finish
 
 	lseek(global_file, LSEEK_OFFSET_CAST 0, 0);
-	write(global_file, &header, sizeof(header));
+	FB_UNUSED(write(global_file, &header, sizeof(header)));
 	close(global_file);
 	global_file = -1;
 

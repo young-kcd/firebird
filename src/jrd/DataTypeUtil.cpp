@@ -303,13 +303,13 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 
 	if (result->isText())
 	{
-		SLONG len = convertLength(value, result);
+		ULONG len = convertLength(value, result);
 
 		if (length->dsc_address)	// constant
 		{
-			SLONG constant = MIN(MAX_COLUMN_SIZE, CVT_get_long(length, 0, ERR_post));
+			SLONG constant = CVT_get_long(length, 0, ERR_post);
 			fb_assert(constant >= 0);
-			len = MIN(len, constant * maxBytesPerChar(result->getCharSet()));
+			len = MIN(len, MIN(MAX_COLUMN_SIZE, ULONG(constant)) * maxBytesPerChar(result->getCharSet()));
 		}
 
 		result->dsc_length = fixLength(result, len) + sizeof(USHORT);

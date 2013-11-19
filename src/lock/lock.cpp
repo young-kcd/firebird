@@ -1614,7 +1614,7 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 		FILE* const fd = fopen(lock_file, "wb");
 		if (fd)
 		{
-			fwrite(m_sharedMemory->getHeader(), 1, m_sharedMemory->getHeader()->lhb_used, fd);
+			FB_UNUSED(fwrite(m_sharedMemory->getHeader(), 1, m_sharedMemory->getHeader()->lhb_used, fd));
 			fclose(fd);
 		}
 

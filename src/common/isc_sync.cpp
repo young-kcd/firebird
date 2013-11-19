@@ -714,7 +714,7 @@ namespace {
 				return;
 			}
 
-			ftruncate(fdSem, sizeof(*this));
+			FB_UNUSED(ftruncate(fdSem, sizeof(*this)));
 
 			for (int i = 0; i < N_SETS; ++i)
 			{
@@ -1929,7 +1929,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	if (mainLock->setlock(statusVector, FileLock::FLM_TRY_EXCLUSIVE))
 	{
 		if (trunc_flag)
-			ftruncate(mainLock->getFd(), length);
+			FB_UNUSED(ftruncate(mainLock->getFd(), length));
 
 		if (callback->initialize(this, true))
 		{
@@ -3042,7 +3042,7 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG new_leng
 	}
 
 	if (flag)
-		ftruncate(mainLock->getFd(), new_length);
+		FB_UNUSED(ftruncate(mainLock->getFd(), new_length));
 
 	MemoryHeader* const address = (MemoryHeader*)
 		mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), 0);

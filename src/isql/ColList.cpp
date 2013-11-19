@@ -27,7 +27,7 @@
 #include "../common/utils_proto.h"
 
 
-ColList::item::item(const char* name, int len)
+ColList::item::item(const char* name, unsigned len)
 	: col_len(len), next(0)
 {
 	fb_utils::copy_terminate(col_name, name, sizeof(col_name));
@@ -50,7 +50,7 @@ void ColList::clear()
 }
 
 // Put an item in the list. If the name already exists, replace the item's length.
-bool ColList::put(const char* name, int len)
+bool ColList::put(const char* name, unsigned len)
 {
 	if (!m_head)
 	{
@@ -119,7 +119,7 @@ const ColList::item* ColList::find(const char* name) const
 
 // Locate the item by name and return true if found; false otherwise.
 // If found, put the item's length in the second (output) argument.
-bool ColList::find(const char* name, int* out_len) const
+bool ColList::find(const char* name, unsigned* out_len) const
 {
 	for (const item* pc = m_head; pc; pc = pc->next)
 	{

@@ -50,8 +50,8 @@ void Syslog::Record(Severity level, const char* msg)
 	}
 	if (isatty(fd))
 	{
-		write(fd, msg, strlen(msg));
-		write(fd, "\n", 1);
+		FB_UNUSED(write(fd, msg, strlen(msg)));
+		FB_UNUSED(write(fd, "\n", 1));
 	}
 }
 } // namespace Firebird

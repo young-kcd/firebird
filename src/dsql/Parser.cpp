@@ -397,7 +397,7 @@ int Parser::yylexAux()
 
 		check_bound(p, string);
 
-		if (p - string > MAX_SQL_IDENTIFIER_LEN)
+		if (p > string + MAX_SQL_IDENTIFIER_LEN)
 			yyabandon(-104, isc_dyn_name_longer);
 
 		*p = 0;

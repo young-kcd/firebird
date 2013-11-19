@@ -657,7 +657,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		}
 
 		LOCK_header = (lhb*)(UCHAR*) buffer;
-		const size_t bytes_read = read(fd, LOCK_header, file_stat.st_size);
+		const int bytes_read = read(fd, LOCK_header, file_stat.st_size);
 		close(fd);
 
 		if (bytes_read != file_stat.st_size)

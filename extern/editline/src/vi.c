@@ -1031,8 +1031,8 @@ vi_histedit(EditLine *el, Int c __attribute__((__unused__)))
 	ct_wcstombs(cp, line, TMP_BUFSIZ - 1);
 	cp[TMP_BUFSIZ - 1] = '\0';
 	len = strlen(cp);
-	write(fd, cp, len);
-	write(fd, "\n", (size_t)1);
+	EL_UNUSED(write(fd, cp, len));
+	EL_UNUSED(write(fd, "\n", (size_t)1));
 	pid = fork();
 	switch (pid) {
 	case -1:

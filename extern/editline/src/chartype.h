@@ -65,9 +65,9 @@ wchar_t *wcsdup(const wchar_t *s);
 #endif
 
 #define ct_mbtowc            mbtowc
-#define ct_mbtowc_reset      mbtowc(0,0,(size_t)0)
+#define ct_mbtowc_reset      EL_UNUSED(mbtowc(0,0,(size_t)0))
 #define ct_wctomb            wctomb
-#define ct_wctomb_reset      wctomb(0,0)
+#define ct_wctomb_reset      EL_UNUSED(wctomb(0,0))
 #define ct_wcstombs          wcstombs
 #define ct_mbstowcs          mbstowcs
 

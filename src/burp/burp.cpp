@@ -2349,7 +2349,7 @@ void close_platf(DESC file)
 		off_t fileSize = lseek(file, 0, SEEK_CUR);
 		if (fileSize != (off_t)(-1))
 		{
-			ftruncate(file, fileSize);
+			FB_UNUSED(ftruncate(file, fileSize));
 		}
 	}
 

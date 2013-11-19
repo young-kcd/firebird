@@ -501,7 +501,7 @@ void ConfigStorage::updateSession(TraceSession& session)
 		{
 			case tagID:
 				fb_assert(len == sizeof(currID));
-				read(m_cfg_file, &currID, len);
+				FB_UNUSED(read(m_cfg_file, &currID, len));
 				continue;
 
 			case tagFlags:

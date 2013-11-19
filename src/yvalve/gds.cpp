@@ -1082,7 +1082,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	if (file == -1)
 		return;
 
-	write(file, text, length);
+	FB_UNUSED(write(file, text, length));
 	close(file);
 #endif
 }

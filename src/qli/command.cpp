@@ -443,7 +443,7 @@ void CMD_shell( qli_syntax* node)
 #endif
 	}
 
-	system(buffer);
+	FB_UNUSED(system(buffer));
 }
 
 

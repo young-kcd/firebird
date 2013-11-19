@@ -508,7 +508,7 @@ void MET_clear_cache(thread_db* tdbb)
 
 	Jrd::Attachment* att = tdbb->getAttachment();
 
-	for (int i = 0; i < DB_TRIGGER_MAX; i++) {
+	for (unsigned i = 0; i < DB_TRIGGER_MAX; i++) {
 		release_cached_triggers(tdbb, att->att_triggers[i]);
 	}
 

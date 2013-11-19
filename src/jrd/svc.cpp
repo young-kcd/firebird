@@ -2167,9 +2167,8 @@ void Service::readFbLog()
 			svc_started = true;
 			TEXT buffer[100];
 			setDataMode(true);
-			while (!feof(file) && !ferror(file))
+			while (fgets(buffer, sizeof(buffer), file))
 			{
-				fgets(buffer, sizeof(buffer), file);
 				outputData(buffer, strlen(buffer));
 			}
 			setDataMode(false);

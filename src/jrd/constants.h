@@ -297,19 +297,19 @@ enum TriggerType {
 	POST_ERASE_TRIGGER = 6
 };
 
-const int TRIGGER_TYPE_SHIFT		= 13;
-const int TRIGGER_TYPE_MASK			= (0x3 << TRIGGER_TYPE_SHIFT);
+const unsigned TRIGGER_TYPE_SHIFT		= 13;
+const unsigned TRIGGER_TYPE_MASK	= (0x3 << TRIGGER_TYPE_SHIFT);
 
-const int TRIGGER_TYPE_DML			= (0 << TRIGGER_TYPE_SHIFT);
-const int TRIGGER_TYPE_DB			= (1 << TRIGGER_TYPE_SHIFT);
-const int TRIGGER_TYPE_DDL			= (2 << TRIGGER_TYPE_SHIFT);
+const unsigned TRIGGER_TYPE_DML		= (0 << TRIGGER_TYPE_SHIFT);
+const unsigned TRIGGER_TYPE_DB		= (1 << TRIGGER_TYPE_SHIFT);
+const unsigned TRIGGER_TYPE_DDL		= (2 << TRIGGER_TYPE_SHIFT);
 
-const int DB_TRIGGER_CONNECT		= 0;
-const int DB_TRIGGER_DISCONNECT		= 1;
-const int DB_TRIGGER_TRANS_START	= 2;
-const int DB_TRIGGER_TRANS_COMMIT	= 3;
-const int DB_TRIGGER_TRANS_ROLLBACK	= 4;
-const int DB_TRIGGER_MAX			= 5;
+const unsigned DB_TRIGGER_CONNECT			= 0;
+const unsigned DB_TRIGGER_DISCONNECT		= 1;
+const unsigned DB_TRIGGER_TRANS_START		= 2;
+const unsigned DB_TRIGGER_TRANS_COMMIT		= 3;
+const unsigned DB_TRIGGER_TRANS_ROLLBACK	= 4;
+const unsigned DB_TRIGGER_MAX				= 5;
 
 static const char* const DDL_TRIGGER_ACTION_NAMES[][2] =
 {

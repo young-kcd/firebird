@@ -1348,7 +1348,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 
 	MatchState state = msIterating;
 
-	SimpleStack<ULONG> repeatStack;
+	SimpleStack<SLONG> repeatStack;
 
 	while (true)
 	{
@@ -1374,7 +1374,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 			case ENCODE_OP_STATE(opRepeatEnd, msIterating):
 			{
 				const Node* repeatNode = scope->i + node->ref;
-				ULONG* repeatCount = repeatStack.back;
+				SLONG* repeatCount = repeatStack.back;
 
 				if (*repeatCount < repeatNode->len2)
 				{
@@ -1389,7 +1389,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 			case ENCODE_OP_STATE(opRepeatEnd, msReturningFalse):
 			{
 				const Node* repeatNode = scope->i + node->ref;
-				ULONG* repeatCount = repeatStack.back;
+				SLONG* repeatCount = repeatStack.back;
 
 				if (--*repeatCount >= repeatNode->len)
 					state = msIterating;

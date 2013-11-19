@@ -1292,7 +1292,9 @@ history_truncate_file (const char *filename, int nlines)
 	}
 	fflush(fp);
 	if((off = ftello(fp)) > 0)
-		(void)ftruncate(fileno(fp), off);
+	{
+		EL_UNUSED(ftruncate(fileno(fp), off));
+	}
 out3:
 	fclose(tp);
 out2:
