@@ -1,3 +1,42 @@
+ 2013-11-19 13:19  alexpeshkoff 
+   M extern/editline/config.h.in
+   M extern/editline/src/chartype.h
+   M extern/editline/src/readline.c
+   M extern/editline/src/vi.c
+   M src/burp/burp.cpp
+   M src/common/common.h
+   M src/common/isc_sync.cpp
+   M src/common/os/posix/fbsyslog.cpp
+   M src/common/utils.cpp
+   M src/dsql/Parser.cpp
+   M src/gpre/languages/rmc.cpp
+   M src/isql/ColList.cpp
+   M src/isql/ColList.h
+   M src/isql/isql.epp
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/SimilarToMatcher.h
+   M src/jrd/constants.h
+   M src/jrd/exe.h
+   M src/jrd/met.epp
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/lock/lock.cpp
+   M src/lock/print.cpp
+   M src/msgs/build_file.epp
+   M src/qli/command.cpp
+   M src/qli/exe.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/gds.cpp
+   M src/yvalve/utl.cpp
+Fixed some gcc warnings
+
+ 2013-11-19 12:36  alexpeshkoff 
+   M builds/posix/prefix.linux
+   M builds/posix/prefix.linux_amd64
+Turn off one more warning - all places where UCHAR array is initated with constants like 12 (i.e. DPB and other clumplets) the warning is issued
+
  2013-11-18 16:28  dimitr 
    M src/jrd/vio.cpp
 Attempted to fix a number of issues with badly working privileges after restore into ODS12.
