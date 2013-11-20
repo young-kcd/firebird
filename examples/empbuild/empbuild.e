@@ -111,13 +111,27 @@ if (system (cmd))
 
 printf ("Turning  off indices and triggers \n");
 sprintf (cmd, "isql %s -i indexoff.sql", Db_name);
-system (cmd);
+if (system (cmd))
+    {
+    printf ("Couldn't turn off indices and triggers \n");
+    exit (FINI_ERROR);
+    }
+
 printf ("Loading  column data\n");
 sprintf (cmd, "isql %s -i empdml.sql", Db_name);
-system (cmd);
+if (system (cmd))
+    {
+    printf ("Couldn't load column data \n");
+    exit (FINI_ERROR);
+    }
+
 printf ("Turning  on indices and triggers \n");
 sprintf (cmd, "isql %s -i indexon.sql", Db_name);
-system (cmd);
+if (system (cmd))
+    {
+    printf ("Couldn't turn on indices and triggers \n");
+    exit (FINI_ERROR);
+    }
 
 EXEC SQL CONNECT DB;
 if (SQLCODE)
