@@ -890,7 +890,7 @@ void GDS_breakpoint(int);
 #define FB_FINAL
 #endif
 
-#define FB_UNUSED(value) if (value)
+#define FB_UNUSED(value) do { if(value); } while (false)
 
 // 30 Dec 2002. Nickolay Samofatov
 // This needs to be checked for all supported platforms

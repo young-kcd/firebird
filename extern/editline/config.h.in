@@ -295,5 +295,4 @@
 #undef LIBC_SCCS
 #define lint
 
-#define EL_UNUSED(a) if (a)
-
+#define EL_UNUSED(a) do { if(a); } while (0)
