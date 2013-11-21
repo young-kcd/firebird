@@ -216,7 +216,7 @@ void dumpIt(const char* name, const Firebird::string& str)
 void dumpBin(const char* name, const Firebird::string& str)
 {
 	fprintf(stderr, "%s (%ld)\n", name, str.length());
-	for (size_t x=0; x<str.length(); ++x)
+	for (size_t x = 0; x < str.length(); ++x)
 		fprintf(stderr, "%02x ", str[x]);
 	fprintf(stderr, "\n");
 }

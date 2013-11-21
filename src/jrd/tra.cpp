@@ -1881,7 +1881,7 @@ static TraNumber bump_transaction_id(thread_db* tdbb, WIN* window)
 		return number;
 
 	// If this is the first transaction on a TIP, allocate the TIP now.
-	// Note, first TIP page is created with the database itself, 
+	// Note, first TIP page is created with the database itself,
 	// see JProvider::createDatabase.
 
 	const bool new_tip = ((number % dbb->dbb_page_manager.transPerTIP) == 0);
@@ -1933,7 +1933,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 	const TraNumber number = header->hdr_next_transaction + 1;
 
 	// If this is the first transaction on a TIP, allocate the TIP now.
-	// Note, first TIP page is created with the database itself, 
+	// Note, first TIP page is created with the database itself,
 	// see JProvider::createDatabase.
 
 	const bool new_tip = ((number % dbb->dbb_page_manager.transPerTIP) == 0);
@@ -2527,7 +2527,7 @@ static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_
  *
  * Functional description
  *	Flush pages modified by user and\or system transaction.
- *  Note, flush of user transaction also flushed pages, 
+ *  Note, flush of user transaction also flushed pages,
  *  changed by system transaction.
  *
  **************************************/

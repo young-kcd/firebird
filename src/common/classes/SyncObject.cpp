@@ -306,7 +306,7 @@ bool SyncObject::wait(SyncType type, ThreadSync* thread, Sync* sync, int timeOut
 		if (thread->lockGranted)
 			return true;
 
-		(void)wakeup;
+		(void) wakeup;
 		//if (!wakeup)
 		//	stalled(thread);
 

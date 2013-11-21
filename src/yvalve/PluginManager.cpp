@@ -543,7 +543,7 @@ namespace
 		~FactoryParameter()
 		{
 #ifdef DEBUG_PLUGINS
-			fprintf(stderr, "~FactoryParameter places configuredPlugin %s in unload query for %d seconds\n", 
+			fprintf(stderr, "~FactoryParameter places configuredPlugin %s in unload query for %d seconds\n",
 				configuredPlugin->getPlugName(), configuredPlugin->getReleaseDelay() / 1000000);
 #endif
 			TimerInterfacePtr()->start(configuredPlugin, configuredPlugin->getReleaseDelay());

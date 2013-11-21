@@ -1011,7 +1011,7 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 	if (!(relation->rel_flags & REL_scanned))
 	{
 		AutoCacheRequest request(tdbb, irq_l_curr_format, IRQ_REQUESTS);
-	
+
 		FOR(REQUEST_HANDLE request)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
 		{
@@ -1024,7 +1024,7 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 	// However, system tables have zero as their initial format and they don't have
 	// any related records in RDB$FORMATS, instead their rel_formats[0] is initialized
 	// directly (see ini.epp). Every other case of zero format number found for an already
-	// scanned table must be catched here and investigated.  
+	// scanned table must be catched here and investigated.
 	fb_assert(relation->rel_current_fmt || relation->isSystem());
 
 	relation->rel_current_format = MET_format(tdbb, relation, relation->rel_current_fmt);

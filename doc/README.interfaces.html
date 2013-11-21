@@ -126,10 +126,10 @@ An ability to upgrade interface version places one important limit on
 implementation of interfaces: it should not contain virtual functions
 (including virtual destructor) except those defined in interface
 definition. This is because interface upgrade process modifies table
-of virtual functions, and for successful upgrade number of functions
-in interface implementation should exactly match one in it's
+of virtual functions, and for successful upgrade, number of functions
+in interface implementation should exactly match one in its
 definition. Pointer to functions, missing in interface definition but
-added in it's implementation, may be </FONT><FONT COLOR="#ff0000"><FONT SIZE=4>overwritten</FONT></FONT><FONT SIZE=4>
+added in its implementation, may be </FONT><FONT COLOR="#ff0000"><FONT SIZE=4>overwritten</FONT></FONT><FONT SIZE=4>
 with a pointer to function used to upgrade interface.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>

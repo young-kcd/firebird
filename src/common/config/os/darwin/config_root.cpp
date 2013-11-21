@@ -82,7 +82,7 @@ static string getExecutablePath()
 	_NSGetExecutablePath(file_buff, &bufsize);
 	char canonic[PATH_MAX];
 	if (!realpath(file_buff, canonic))
-	Firebird::system_call_failed::raise("realpath");
+		Firebird::system_call_failed::raise("realpath");
 	string bin_dir = canonic;
 	// get rid of the filename
 	int index = bin_dir.rfind(PathUtils::dir_sep);
@@ -93,7 +93,7 @@ static string getExecutablePath()
 	return dir;
 }
 
- 
+
 void ConfigRoot::osConfigRoot()
 {
 	// Attempt to locate the Firebird.framework bundle
@@ -110,7 +110,7 @@ void ConfigRoot::osConfigRoot()
 	}
 
 	// As a last resort get it from the default install directory
-	root_dir = FB_PREFIX; 
+	root_dir = FB_PREFIX;
 }
 
 
@@ -130,5 +130,5 @@ void ConfigRoot::osConfigInstallDir()
 	}
 
 	// As a last resort get it from the default install directory
-	install_dir = FB_PREFIX; 
+	install_dir = FB_PREFIX;
 }

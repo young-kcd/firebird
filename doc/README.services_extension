@@ -197,7 +197,7 @@ found in source code of fbsvcmgr.
 (Alex Peshkov, peshkoff@mail.ru, 2013)
 
 If one wants to use services API to access database which is configured to use
-non-default security database new SPB item isc_spb_expected_db should be used
+non-default security database, new SPB item isc_spb_expected_db should be used
 when attaching to services manager. Value of this item is a database which is
 expected to be accessed.
 
