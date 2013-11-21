@@ -6404,6 +6404,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	if ((flags & SHUT_DBB_LINGER) &&
 		(!(engineShutdown || (dbb->dbb_ast_flags & DBB_shutdown))) &&
 		(dbb->dbb_linger_seconds > 0) &&
+		(MasterInterfacePtr()->serverMode(-1) == 1) &&	// multiuser server
 		dbb->dbb_config->getSharedCache())
 	{
 		if (!dbb->dbb_linger_timer)
