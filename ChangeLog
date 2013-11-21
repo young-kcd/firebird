@@ -1,3 +1,12 @@
+ 2013-11-20 12:12  alexpeshkoff 
+   M extern/editline/config.h.in
+   M src/common/common.h
+Use better way to ignore unused return value - thanks to Adriano
+
+ 2013-11-20 12:03  alexpeshkoff 
+   M examples/empbuild/empbuild.e
+It's better to always check isql return code
+
  2013-11-19 13:19  alexpeshkoff 
    M extern/editline/config.h.in
    M extern/editline/src/chartype.h
