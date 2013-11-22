@@ -372,8 +372,12 @@
 
 # AuthServer and AuthClient determine what authentication methods will be used
 # by network server and client redirector. Secure remote passwords plugin
-# is default one. On windows Sspi is also used when no login/password is given.
-# Client can use legacy authentication to talk to old servers.
+# is default one. Except configured by default SRP plugin firebird also has
+# Legacy_Auth plugin which is used to emulate pre-FB3 login protocol making it
+# possible for client to talk to old servers and for server to listen to requests
+# from old clients. Legacy_Auth is VERY unsecure. On windows Win_Sspi plugin may
+# be also used - it implements windows trusted authentication and backward
+# compatible with 2.1 and 2.5 clients and servers running on windows.
 #
 # Per-database configurable.
 #
@@ -389,7 +393,8 @@
 #
 
 # UserManager sets plugin used to work with security database. If more than
-# one plugin is given, first plugin from the list is used.
+# one plugin is given, first plugin from the list is used. If you need to manage
+# legacy logins set it to Legacy_UserManager.
 #
 # Per-database configurable.
 #
