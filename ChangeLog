@@ -1,3 +1,21 @@
+ 2013-11-21 07:31  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Enable linger only in multiuser server mode. This should also fix windows build.
+
+ 2013-11-21 01:17  asfernandes 
+   M doc/README.interfaces.html
+   M doc/README.services_extension
+   M src/auth/SecureRemotePassword/srp.cpp
+   M src/common/classes/SyncObject.cpp
+   M src/common/common.h
+   M src/common/config/os/darwin/config_root.cpp
+   M src/iscguard/iscguard.cpp
+   M src/jrd/met.epp
+   M src/jrd/tra.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/PluginManager.cpp
+Misc.
+
  2013-11-20 12:12  alexpeshkoff 
    M extern/editline/config.h.in
    M src/common/common.h
