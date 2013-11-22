@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		FB interfaces.
- *	MODULE:			InternalMessageBuffer.cpp
- *	DESCRIPTION:	Old=>new message style converter.
+ *	MODULE:			BlrFromMessage.cpp
+ *	DESCRIPTION:	New=>old message style converter.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -107,6 +107,8 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 		checkStatus(&st);
 		unsigned charSet = metadata->getCharSet(&st, i);
 		checkStatus(&st);
+		unsigned subType = metadata->getSubType(&st, i);
+		checkStatus(&st);
 
 		switch (dtype)
 		{
@@ -157,7 +159,7 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 
 			case SQL_BLOB:
 				appendUChar(blr_blob2);
-				appendUShort(metadata->getSubType(&st, i));
+				appendUShort(subType);
 				appendUShort(charSet);
 				dtype = dtype_blob;
 				break;
