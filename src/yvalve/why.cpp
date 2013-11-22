@@ -969,6 +969,21 @@ static void error804(ISC_STATUS err)
 		Arg::Gds(err));
 }
 
+// Set charset info in SQLVAR according to legacy rules
+static void setTextType(XSQLVAR* var, unsigned charSet)
+{
+	switch(var->sqltype & ~1)
+	{
+	case SQL_VARYING:
+	case SQL_TEXT:
+		var->sqlsubtype = charSet;
+		break;
+	case SQL_BLOB:
+		var->sqlscale = charSet;
+		break;
+	}
+}
+
 // Describe parameters metadata in an sqlda.
 static void sqldaDescribeParameters(XSQLDA* sqlda, const IMessageMetadata* parameters)
 {
@@ -1007,6 +1022,10 @@ static void sqldaDescribeParameters(XSQLDA* sqlda, const IMessageMetadata* param
 
 		var->sqlscale = parameters->getScale(&status, i);
 		status.check();
+
+		unsigned charSet = parameters->getCharSet(&status, i);
+		status.check();
+		setTextType(var, charSet);
 
 		s = parameters->getField(&status, i);
 		status.check();

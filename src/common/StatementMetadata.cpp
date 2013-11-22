@@ -370,6 +370,19 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 
 						off = fb_utils::sqlTypeToDsc(off, param->type, param->length,
 							NULL /*dtype*/, NULL /*length*/, &param->offset, &param->nullInd);
+
+						switch(param->type)
+						{
+						case SQL_VARYING:
+						case SQL_TEXT:
+							param->charSet = param->subType;
+							param->subType = 0;
+							break;
+						case SQL_BLOB:
+							param->charSet = param->scale;
+							param->scale = 0;
+							break;
+						}
 					}
 
 					if (parameters->fetched)
