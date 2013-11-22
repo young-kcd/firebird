@@ -81,7 +81,7 @@ public:
 		unsigned type;
 		unsigned subType;
 		unsigned length;
-		unsigned scale;
+		int scale;
 		unsigned charSet;
 		unsigned offset;
 		unsigned nullInd;
@@ -182,7 +182,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getScale(IStatus* status, unsigned index) const
+	virtual int FB_CARG getScale(IStatus* status, unsigned index) const
 	{
 		if (index < items.getCount())
 			return items[index].scale;

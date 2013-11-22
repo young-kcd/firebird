@@ -103,7 +103,7 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 		checkStatus(&st);
 		unsigned len = metadata->getLength(&st, i);
 		checkStatus(&st);
-		unsigned scale = metadata->getScale(&st, i);
+		int scale = metadata->getScale(&st, i);
 		checkStatus(&st);
 		unsigned charSet = metadata->getCharSet(&st, i);
 		checkStatus(&st);

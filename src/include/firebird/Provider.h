@@ -102,7 +102,7 @@ public:
 	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getScale(IStatus* status, unsigned index) const = 0;
+	virtual int FB_CARG getScale(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index) const = 0;
