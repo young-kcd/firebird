@@ -2112,10 +2112,6 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 	{
 		switch (pb->getClumpTag())
 		{
-		// Disable remote gsec attachments
-		case isc_dpb_gsec_attach:
-		case isc_dpb_sec_attach:
-
 		// remove trusted auth & trusted role if present (security measure)
 		case isc_dpb_trusted_role:
 		case isc_dpb_trusted_auth:

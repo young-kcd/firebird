@@ -21,5 +21,14 @@ employee.fdb = $(dir_sampledb)/employee.fdb
 employee = $(dir_sampledb)/employee.fdb
 
 #
+# Master security database specific setup.
+# Do not remove it until you understand well what are you doing!
+#
+security.db = $(root)/security3.fdb
+{
+	RemoteAccess = false
+}
+
+#
 # Live Databases:
 #

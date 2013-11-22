@@ -821,7 +821,6 @@ public:
 	bool	dpb_overwrite;
 	bool	dpb_sec_attach;
 	bool	dpb_disable_wal;
-	bool	dpb_gsec_attach;
 	SLONG	dpb_connect_timeout;
 	SLONG	dpb_dummy_packet_interval;
 	bool	dpb_db_readonly;
@@ -942,7 +941,7 @@ static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
 static void 		handle_error(Firebird::IStatus*, ISC_STATUS);
 
 namespace {
-	enum VdnResult {VDN_FAIL, VDN_OK, VDN_SECURITY};
+	enum VdnResult {VDN_FAIL, VDN_OK/*, VDN_SECURITY*/};
 }
 static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 
@@ -1315,13 +1314,11 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		// Initialize special error handling
 		try
 		{
-			// If database to be opened is security database, then only
-			// gsec or SecurityDatabase may open it. This protects from use
-			// of old gsec to write wrong password hashes into it.
-			if (vdn == VDN_SECURITY && !options.dpb_gsec_attach && !options.dpb_sec_attach)
+			// Check for ability to access requested DB remotely
+			if (options.dpb_remote_address.hasData() && !config->getRemoteAccess())
 			{
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("direct") <<
-												  Arg::Str("security database") <<
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("remote") <<
+												  Arg::Str("database") <<
 												  Arg::Str(org_filename));
 			}
 
@@ -2417,13 +2414,11 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		// Initialize special error handling
 		try
 		{
-			// If database to be opened is security database, then only
-			// gsec or SecurityDatabase can open it. This protects from use
-			// of old gsec to write wrong password hashes into it.
-			if (vdn == VDN_SECURITY && !options.dpb_gsec_attach && !options.dpb_sec_attach)
+			// Check for ability to access requested DB remotely
+			if (options.dpb_remote_address.hasData() && !config->getRemoteAccess())
 			{
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("direct") <<
-												  Arg::Str("security database") <<
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("remote") <<
+												  Arg::Str("database") <<
 												  Arg::Str(org_filename));
 			}
 
@@ -5703,10 +5698,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_gfix_attach = true;
 			break;
 
-		case isc_dpb_gsec_attach:
-			dpb_gsec_attach = rdr.getBoolean();
-			break;
-
 		case isc_dpb_disable_wal:
 			dpb_disable_wal = true;
 			break;
@@ -6957,7 +6948,7 @@ static jrd_req* verify_request_synchronization(JrdStatement* statement, USHORT l
  **/
 static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bool is_alias)
 {
-	// Check for security2.fdb
+	// Check for securityX.fdb
 	static GlobalPtr<PathName> securityNameBuffer, expandedSecurityNameBuffer;
 	static GlobalPtr<Mutex> mutex;
 
@@ -6972,10 +6963,11 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 	}
 
 	if (name == securityNameBuffer || name == expandedSecurityNameBuffer)
-		return VDN_SECURITY;
+		return VDN_OK;
 
 	// Check for .conf
-	if (!JRD_verify_database_access(name)) {
+	if (!JRD_verify_database_access(name))
+	{
 		if (!is_alias) {
 			ERR_build_status(status, Arg::Gds(isc_conf_access_denied) << Arg::Str("database") <<
 																		 Arg::Str(name));

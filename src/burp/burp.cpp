@@ -943,7 +943,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	dpb.insertString(isc_dpb_gbak_attach, FB_VERSION, strlen(FB_VERSION));
-	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
 	uSvc->fillDpb(dpb);
 
 	const UCHAR* authBlock;

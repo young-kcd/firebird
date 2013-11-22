@@ -179,7 +179,8 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false},
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
 	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
-	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""}
+	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
+	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true}
 };
 
 /******************************************************************************
@@ -719,4 +720,9 @@ int Config::getWireCrypt(WireCryptMode wcMode) const
 		return WIRE_CRYPT_ENABLED;
 	else	// the safest choice
 		return WIRE_CRYPT_REQUIRED;
+}
+
+bool Config::getRemoteAccess() const
+{
+	return get<bool>(KEY_REMOTE_ACCESS);
 }

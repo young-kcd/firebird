@@ -2494,8 +2494,6 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
-	// sometimes security database is also to be swept
-	dpb.insertByte(isc_dpb_gsec_attach, 1);
 	// use trusted authentication to attach database
 	const char* szAuthenticator = "sweeper";
 	dpb.insertString(isc_dpb_trusted_auth, szAuthenticator, strlen(szAuthenticator));

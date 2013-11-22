@@ -69,12 +69,6 @@ extern const char*	GCPolicyCooperative;
 extern const char*	GCPolicyBackground;
 extern const char*	GCPolicyCombined;
 
-extern const char*	AmNative;
-extern const char*	AmTrusted;
-extern const char*	AmMixed;
-
-enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
-
 const int WIRE_CRYPT_DISABLED = 0;
 const int WIRE_CRYPT_ENABLED = 1;
 const int WIRE_CRYPT_REQUIRED = 2;
@@ -140,6 +134,7 @@ public:
 		KEY_WIRE_CRYPT,
 		KEY_PLUG_WIRE_CRYPT,
 		KEY_PLUG_KEY_HOLDER,
+		KEY_REMOTE_ACCESS,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -332,6 +327,8 @@ public:
 	const char* getSecurityDatabase() const;
 
 	int getWireCrypt(WireCryptMode wcMode) const;
+
+	bool getRemoteAccess() const;
 };
 
 // Implementation of interface to access master configuration file
