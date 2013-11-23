@@ -1,3 +1,39 @@
+ 2013-11-22 15:23  alexpeshkoff 
+   M src/include/consts_pub.h
+Postfix for CORE-4273: No need breaking old apps using isc_dpb_gsec_attach
+
+ 2013-11-22 15:21  alexpeshkoff 
+   M builds/install/misc/databases.conf.in
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/burp/burp.cpp
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/include/consts_pub.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+   M src/remote/server/server.cpp
+Implemented CORE-4273: Per-database control on access to database from remote stations
+
+ 2013-11-22 08:10  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+Fixed CORE-4154: Firebird.conf should list names of (standard) authentication + usermanager plugins
+
+ 2013-11-22 07:44  alexpeshkoff 
+   M src/common/MsgMetadata.h
+   M src/include/firebird/Provider.h
+   M src/remote/client/BlrFromMessage.cpp
+Scale of variable is signed value
+
+ 2013-11-22 06:42  alexpeshkoff 
+   M src/common/StatementMetadata.cpp
+   M src/yvalve/why.cpp
+Fixed CORE-4178: New API should return proper metadata properties, not the historical artifacts
+
+ 2013-11-22 06:39  alexpeshkoff 
+   M src/remote/client/BlrFromMessage.cpp
+misc
+
  2013-11-21 07:31  alexpeshkoff 
    M src/jrd/jrd.cpp
 Enable linger only in multiuser server mode. This should also fix windows build.
