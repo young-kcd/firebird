@@ -238,6 +238,7 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 		{
 			const UCHAR* specData = id.getBytes();
 			size_t len = id.getClumpLength();
+
 			if (len > 1)
 			{
 				--len;
@@ -257,9 +258,7 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 	for (UCHAR segment = 0; segment < top; ++segment)
 	{
 		if (!checkBytes[segment])
-		{
 			(Arg::Gds(isc_multi_segment) << Arg::Num(segment)).raise();
-		}
 	}
 
 	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: getMultiPartConnectParameter: loaded tag %d length %" SIZEFORMAT "\n",
@@ -306,18 +305,21 @@ public:
 		if (port->port_protocol >= PROTOCOL_VERSION13)
 		{
 			string x;
+
 			if (aPb->find(tags->plugin_name))
 			{
 				aPb->getString(x);
 				authPort->port_srv_auth_block->setPluginName(x);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin name=%s\n", x.c_str()));
 			}
+
 			if (aPb->find(tags->plugin_list))
 			{
 				aPb->getString(x);
 				authPort->port_srv_auth_block->setPluginList(x);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin list=%s\n", x.c_str()));
 			}
+
 			if (tags->specific_data && aPb->find(tags->specific_data))
 			{
 				if (multiPartData)
@@ -328,9 +330,7 @@ public:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin data is %" SIZEFORMAT " len\n", u.getCount()));
 			}
 			else
-			{
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): miss data with tag %d\n", tags->specific_data));
-			}
 		}
 		else if (authPort->port_srv_auth_block->getLogin() &&
 			(aPb->find(tags->password_enc) || aPb->find(tags->password)))

@@ -300,7 +300,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 				manager = getPlugin.plugin();
 				if (!manager)
 				{
-					GSEC_error_redirect((Firebird::Arg::Gds(isc_random) << "Management plugin is missing or failed to load").value(), GsecMsg15);
+					GSEC_error_redirect((Firebird::Arg::Gds(isc_random) <<
+						"Management plugin is missing or failed to load").value(), GsecMsg15);
 				}
 
 				GsecInfo info(user_data->trustedUser.get(), user_data->role.get(),

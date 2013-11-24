@@ -558,14 +558,12 @@ namespace
 		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
 		par->addRef();
 		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
+
 		if (plugin)
-		{
 			plugin->setOwner(par);
-		}
 		else
-		{
 			par->release();
-		}
+
 		return plugin;
 	}
 

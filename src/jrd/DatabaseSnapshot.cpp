@@ -846,6 +846,7 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 			if (attachment && attachment->att_user)
 				dumpAttachment(record, attachment, writer);
 		}
+
 		iter.remove();
 	}
 }

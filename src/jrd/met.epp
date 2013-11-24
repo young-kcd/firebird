@@ -508,9 +508,8 @@ void MET_clear_cache(thread_db* tdbb)
 
 	Jrd::Attachment* att = tdbb->getAttachment();
 
-	for (unsigned i = 0; i < DB_TRIGGER_MAX; i++) {
+	for (unsigned i = 0; i < DB_TRIGGER_MAX; i++)
 		release_cached_triggers(tdbb, att->att_triggers[i]);
-	}
 
 	vec<jrd_rel*>* relations = att->att_relations;
 	if (relations)
@@ -1013,7 +1012,8 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 		AutoCacheRequest request(tdbb, irq_l_curr_format, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
-			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
+			REL IN RDB$RELATIONS
+			WITH REL.RDB$RELATION_ID EQ relation->rel_id
 		{
 			relation->rel_current_fmt = REL.RDB$FORMAT;
 		}
@@ -5049,13 +5049,12 @@ int MET_get_linger(Jrd::thread_db* tdbb)
 	int rc = 0;
 
 	AutoCacheRequest request(tdbb, irq_linger, IRQ_REQUESTS);
+
 	FOR(REQUEST_HANDLE request)
 		DAT IN RDB$DATABASE
 	{
 		if (!DAT.RDB$LINGER.NULL)
-		{
 			rc = DAT.RDB$LINGER;
-		}
 	}
 	END_FOR
 

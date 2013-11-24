@@ -2148,12 +2148,12 @@ static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 static void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const char* env, bool utf8)
 {
 	Firebird::string value;
-	if (fb_utils::readenv(env, value) && (!dpb.find(tag)))
+
+	if (fb_utils::readenv(env, value) && !dpb.find(tag))
 	{
 		if (utf8)
-		{
 			ISC_systemToUtf8(value);
-		}
+
 		dpb.insertString(tag, value);
 	}
 }
@@ -2172,12 +2172,9 @@ void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag)
 
 		setTag(dpb, isc_dpb_user_name, ISC_USER, utf8);
 		if (!dpb.find(isc_dpb_password_enc))
-		{
 			setTag(dpb, isc_dpb_password, ISC_PASSWORD, utf8);
-		}
+
 		if (spbFlag)
-		{
 			setTag(dpb, isc_spb_expected_db, "FB_EXPECTED_DB", utf8);
-		}
 	}
 }

@@ -3198,7 +3198,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 		break;
 
 	case blr_fid:
-		(void)BLR_BYTE;
+		(void) BLR_BYTE;
 		blr += 2;
 		node = make_node(nod_field, 1);
 		name = (qli_name*) ALLOCPV(type_nam, symbol->sym_length);
@@ -3208,7 +3208,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 		break;
 
 	case blr_field:
-		(void)BLR_BYTE;
+		(void) BLR_BYTE;
 		length = BLR_BYTE;
 		node = make_node(nod_field, 1);
 		name = (qli_name*) ALLOCPV(type_nam, length);

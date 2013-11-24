@@ -788,7 +788,7 @@ namespace Why
 		aStatus->init();
 		init(aService->next);
 
-		if (checkService && !(nextRef.hasData()))
+		if (checkService && !nextRef.hasData())
 		{
 			fini();
 			Arg::Gds(YService::ERROR_CODE).raise();
@@ -2677,15 +2677,12 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 
 		///nullCheck(idFB_FINAL , isc_bad_events_handle);
 
-
 		RefPtr<QueCallback> callback(new QueCallback(ast, arg));
 
 		events = attachment->queEvents(&status, callback, length, eventsData);
 
 		if (!status.isSuccess())
-		{
 			return status[1];
-		}
 
 		*id = FB_API_HANDLE_TO_ULONG(events->getHandle());
 	}
@@ -5279,6 +5276,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 	unsigned int spbLength, const unsigned char* spb)
 {
 	IService* service = NULL;
+
 	try
 	{
 		DispatcherEntry entry(status);
@@ -5327,10 +5325,9 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 
 			service = p->attachServiceManager(status, svcName.c_str(),
 				spbWriter.getBufferLength(), spbWriter.getBuffer());
+
 			if (status->isSuccess())
-			{
 				return new YService(p, service, utfData);
-			}
 		}
 
 		if (status->isSuccess())

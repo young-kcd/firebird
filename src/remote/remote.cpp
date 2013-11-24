@@ -1004,11 +1004,13 @@ static void addMutliPartConnectParameter(const T& dataToAdd,
 	UCHAR part = 0;
 	UCHAR buffer[255];
 	typename T::const_pointer ptr = dataToAdd.begin();
+
 	while (remaining > 0)
 	{
 		size_t step = remaining;
 		if (step > 254)
 			step = 254;
+
 		remaining -= step;
 		buffer[0] = part++;
 		fb_assert(part || remaining == 0);
@@ -1141,9 +1143,7 @@ Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
 		expandDatabaseName(*dbName, dummy, &config);
 	}
 	else
-	{
 		config = Config::getDefaultConfig();
-	}
 
 	Config::merge(config, dpb_config);
 
@@ -1404,10 +1404,10 @@ const char* SrvAuthBlock::getLogin()
 const unsigned char* SrvAuthBlock::getData(unsigned int* length)
 {
 	*length = (ULONG) dataForPlugin.getCount();
+
 	if (*length && pluginName != plugins->name())
-	{
 		*length = 0;
-	}
+
 	return *length ? dataForPlugin.begin() : NULL;
 }
 

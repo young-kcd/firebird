@@ -757,8 +757,10 @@ IAttachment* Provider::attach(IStatus* status, const char* filename, unsigned in
 
 		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpb_length);
 		unsigned flags = ANALYZE_MOUNTS;
+
 		if (get_new_dpb(newDpb, dpbParam))
 			flags |= ANALYZE_UV;
+
 		if (loopback)
 			flags |= ANALYZE_LOOPBACK;
 
@@ -1344,8 +1346,10 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
 			reinterpret_cast<const UCHAR*>(dpb), dpb_length);
 		unsigned flags = ANALYZE_MOUNTS;
+
 		if (get_new_dpb(newDpb, dpbParam))
 			flags |= ANALYZE_UV;
+
 		if (loopback)
 			flags |= ANALYZE_LOOPBACK;
 
@@ -4577,16 +4581,16 @@ Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 
 		ClntAuthBlock cBlock(NULL, &newSpb, &spbParam);
 		unsigned flags = 0;
+
 		if (get_new_dpb(newSpb, spbParam))
 			flags |= ANALYZE_UV;
+
 		if (loopback)
 			flags |= ANALYZE_LOOPBACK;
 
 		PathName refDbName;
 		if (newSpb.find(isc_spb_expected_db))
-		{
 			newSpb.getPath(refDbName);
-		}
 
 		rem_port* port = analyze(cBlock, expanded_name, flags, newSpb, spbParam, node_name, &refDbName);
 
@@ -5355,10 +5359,9 @@ static void secureAuthentication(ClntAuthBlock& cBlock, rem_port* port)
 	{
 		LocalStatus st;
 		authReceiveResponse(true, cBlock, port, rdb, &st, packet, true);
+
 		if (!st.isSuccess())
-		{
 			status_exception::raise(st.get());
-		}
 	}
 }
 
@@ -5392,21 +5395,18 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 
 #ifdef WIN_NT
 	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name))
-	{
 		port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV, cBlock.getConfig(), ref_db_name);
-	}
 	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name) ||
 		ISC_analyze_pclan(attach_name, node_name))
 	{
 		if (node_name.isEmpty())
-		{
 			node_name = WNET_LOCALHOST;
-		}
 		else
 		{
 			ISC_unescape(node_name);
 			ISC_utf8ToSystem(node_name);
 		}
+
 		port = WNET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV,
 			cBlock.getConfig(), ref_db_name);
 	}
@@ -5417,14 +5417,13 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		ISC_analyze_tcp(attach_name, node_name))
 	{
 		if (node_name.isEmpty())
-		{
 			node_name = INET_LOCALHOST;
-		}
 		else
 		{
 			ISC_unescape(node_name);
 			ISC_utf8ToSystem(node_name);
 		}
+
 		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
 			cBlock.getConfig(), ref_db_name);
 	}
@@ -5476,7 +5475,8 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 #ifdef WIN_NT
 			if (!port)
 			{
-				port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV, cBlock.getConfig(), ref_db_name);
+				port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV,
+					cBlock.getConfig(), ref_db_name);
 			}
 
 			if (!port)
@@ -5492,10 +5492,9 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			}
 		}
 	}
+
 	if (!port)
-	{
 		Arg::Gds(isc_unavailable).raise();
-	}
 
 	secureAuthentication(cBlock, port);
 
@@ -6117,9 +6116,7 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 	const ParametersSet* tags, rem_port* port)
 {
 	if (cBlock.authComplete)
-	{
 		return;		// Already authenticated
-	}
 
 	LocalStatus s;
 
@@ -6199,13 +6196,10 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 	{
 		// Get response
 		if (!havePacket)
-		{
 			receive_packet(port, packet);
-		}
 		else
-		{
 			fb_assert(packet->p_operation == op_cond_accept);
-		}
+
 		havePacket = false;		// havePacket means first packet is already received
 
 		// Check response
@@ -6685,9 +6679,7 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 
 			Rsr* statement = NULL;
 			if (bCheckResponse || bFreeStmt)
-			{
 				statement = port->port_objects[stmt_id];
-			}
 
 			if (bCheckResponse)
 			{
@@ -6715,9 +6707,7 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 			}
 
 			if (bFreeStmt && p->packet.p_resp.p_resp_object == INVALID_OBJECT)
-			{
 				release_sql_request(statement);
-			}
 
 			// free only part of packet we worked with
 			REMOTE_free_packet(port, &p->packet, true);
@@ -7181,14 +7171,14 @@ static void send_packet(rem_port* port, PACKET* packet)
 	if (port->port_deferred_packets)
 	{
 		for (rem_que_packet* p = port->port_deferred_packets->begin();
-			p < port->port_deferred_packets->end(); p++)
+			 p < port->port_deferred_packets->end();
+			 ++p)
 		{
 			if (!p->sent)
 			{
 				if (!port->send_partial(&p->packet))
-				{
 					Arg::Gds(isc_net_write_err).raise();
-				}
+
 				p->sent = true;
 			}
 		}

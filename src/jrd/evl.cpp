@@ -269,9 +269,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 					length = desc->dsc_length;
 				}
 				else if (desc->isText())
-				{
 					length = MOV_get_string(desc, &ptr, NULL, 0);
-				}
 
 				if (length == sizeof(RecordNumber::Packed))
 				{

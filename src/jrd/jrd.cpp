@@ -427,9 +427,7 @@ namespace
 		void linkWith(Database::ExistenceRefMutex* to)
 		{
 			if (ref == to)
-			{
 				return;
-			}
 
 			leave();
 			ref = to;
@@ -597,6 +595,7 @@ namespace
 		{
 			if (!nolock)
 				jAtt->getMutex(async)->enter(from);
+
 			Jrd::Attachment* attachment = jAtt->getHandle();	// Must be done after entering mutex
 
 			try
@@ -612,10 +611,9 @@ namespace
 
 				tdbb->setAttachment(attachment);
 				tdbb->setDatabase(attachment->att_database);
+
 				if (!async)
-				{
 					attachment->att_use_count++;
-				}
 			}
 			catch (const Firebird::Exception&)
 			{
@@ -628,10 +626,10 @@ namespace
 		~AttachmentHolder()
 		{
 			Jrd::Attachment* attachment = jAtt->getHandle();
+
 			if (attachment && !async)
-			{
 				attachment->att_use_count--;
-			}
+
 			if (!nolock)
 				jAtt->getMutex(async)->leave();
 		}
@@ -962,8 +960,8 @@ static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const Ref
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
 // purge_attachment() flags
-static const unsigned PURGE_FORCE =				0x01;
-static const unsigned PURGE_LINGER =			0x02;
+static const unsigned PURGE_FORCE	= 0x01;
+static const unsigned PURGE_LINGER	= 0x02;
 
 TraceFailedConnection::TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
 	m_filename(filename),
@@ -1469,9 +1467,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			if (options.dpb_nolinger)
-			{
 				dbb->dbb_linger_seconds = 0;
-			}
 
 			if (options.dpb_disable_wal)
 			{
@@ -2794,6 +2790,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
 			unsigned flags = PURGE_LINGER;
+
 			if (engineShutdown ||
 				(dbb->dbb_ast_flags & DBB_shutdown) ||
 				(attachment->att_flags & ATT_shutdown))
@@ -5918,10 +5915,9 @@ static JAttachment* init(thread_db* tdbb,
 
 								tdbb->setDatabase(dbb);
 								jAtt = create_attachment(alias_name, dbb, options);
+
 								if (dbb->dbb_linger_timer)
-								{
 									dbb->dbb_linger_timer->reset();
-								}
 
 								tdbb->setAttachment(jAtt->getHandle());
 
@@ -6324,14 +6320,14 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
 static void setEngineReleaseDelay(Database* dbb)
 {
 	unsigned maxLinger = 0;
+
 	{ // scope
 		MutexLockGuard listGuardForLinger(databases_mutex, FB_FUNCTION);
+
 		for (Database* d = databases; d; d = d->dbb_next)
 		{
-			if ((!d->dbb_attachments) && (d->dbb_linger_end > maxLinger))
-			{
+			if (!d->dbb_attachments && (d->dbb_linger_end > maxLinger))
 				maxLinger = d->dbb_linger_end;
-			}
 		}
 	}
 
@@ -6399,9 +6395,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 		dbb->dbb_config->getSharedCache())
 	{
 		if (!dbb->dbb_linger_timer)
-		{
 			dbb->dbb_linger_timer = new Database::Linger(dbb);
-		}
 
 		dbb->dbb_linger_end = time(NULL) + dbb->dbb_linger_seconds;
 		dbb->dbb_linger_timer->set(dbb->dbb_linger_seconds);
@@ -7024,9 +7018,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 				if (secureDb.hasData())
 				{
 					if (config && (secureDb != (*config)->getSecurityDatabase()))
-					{
 						(Arg::Gds(isc_sec_context) << dbName).raise();
-					}
 				}
 				else
 				{
@@ -7274,13 +7266,14 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 			{
 				Database* dbb = *ptrDbb;
 				JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);
+
 				if (dbb == *ptrDbb)
-				{
 					ptrDbb = &(dbb->dbb_next);
-				}
 			}
+
 			// No need in databases_mutex any more
 		}
+
 		// Extra shutdown operations
 		Service::shutdownServices();
 	}

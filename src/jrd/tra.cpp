@@ -2524,7 +2524,7 @@ static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_
  **************************************
  *
  * Functional description
- *	Flush pages modified by user and\or system transaction.
+ *	Flush pages modified by user and/or system transaction.
  *  Note, flush of user transaction also flushed pages,
  *  changed by system transaction.
  *
