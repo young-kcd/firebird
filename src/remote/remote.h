@@ -689,7 +689,16 @@ public:
 	AuthServerPlugins* plugins;
 	Auth::WriterImplementation authBlockWriter;
 
-	explicit SrvAuthBlock(rem_port* p_port);
+	explicit SrvAuthBlock(rem_port* p_port)
+		: port(p_port),
+		  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
+		  dataForPlugin(getPool()), dataFromPlugin(getPool()),
+		  lastExtractedKeys(getPool(), Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE),
+		  newKeys(getPool()),
+		  flComplete(false), firstTime(true),
+		  plugins(NULL)
+	{
+	}
 
 	~SrvAuthBlock()
 	{

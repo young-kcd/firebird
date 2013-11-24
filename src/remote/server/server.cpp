@@ -6147,16 +6147,6 @@ static int shut_server(const int, const int, void*)
 	return 0;
 }
 
-SrvAuthBlock::SrvAuthBlock(rem_port* p_port)
-	: port(p_port),
-	  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
-	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
-	  lastExtractedKeys(getPool(), Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE),
-	  newKeys(getPool()),
-	  flComplete(false), firstTime(true),
-	  plugins(NULL)
-{ }
-
 void SrvAuthBlock::extractDataFromPluginTo(cstring* to)
 {
 	to->cstr_allocated = 0;
