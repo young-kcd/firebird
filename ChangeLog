@@ -1,3 +1,26 @@
+ 2013-11-24 23:44  asfernandes 
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Fixed clang build, broken since r58800 with linker undefined references.
+
+ 2013-11-24 03:21  asfernandes 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/constants.h
+   M src/jrd/evl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/qli/meta.epp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Misc.
+
  2013-11-22 15:23  alexpeshkoff 
    M src/include/consts_pub.h
 Postfix for CORE-4273: No need breaking old apps using isc_dpb_gsec_attach
