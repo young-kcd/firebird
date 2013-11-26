@@ -655,9 +655,10 @@ public:
 
 	~ThreadContextHolder()
 	{
-		if (externStatus && externStatus->isSuccess())
+		unsigned l = fb_utils::statusLength(context.tdbb_status_vector);
+		if (externStatus && externStatus->isSuccess() && (l > 2 || context.tdbb_status_vector[1]))
 		{
-			externStatus->set(context.tdbb_status_vector);
+			externStatus->set(l, context.tdbb_status_vector);
 		}
 		Firebird::ThreadData::restoreSpecific();
 	}
