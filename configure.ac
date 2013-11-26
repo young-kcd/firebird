@@ -1,6 +1,6 @@
 dnl ############################# INITIALISATION ###############################
 
-AC_PREREQ([2.68])
+AC_PREREQ([2.67])
 AC_INIT
 AC_CONFIG_SRCDIR([src])
 
