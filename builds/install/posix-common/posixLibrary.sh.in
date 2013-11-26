@@ -414,7 +414,7 @@ writeNewPassword() {
 # Firebird generated password for user SYSDBA is:
 #
 ISC_USER=sysdba
-ISC_PASSWD=$NewPasswd
+ISC_PASSWORD=$NewPasswd
 #
 # generated on $FB_HOST at time $FB_TIME
 #
