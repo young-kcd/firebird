@@ -5615,6 +5615,8 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 	case 5:
 		if (work->findArg(dfw_arg_check_blr))
 		{
+			function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
+
 			AutoCacheRequest request(tdbb, irq_fun_validate, IRQ_REQUESTS);
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
