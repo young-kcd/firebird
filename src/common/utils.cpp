@@ -1076,10 +1076,6 @@ unsigned int statusLength(const ISC_STATUS* const status) throw()
 	{
 		if (status[l] == isc_arg_end)
 		{
-/*			if (l == 1 && status[2] == isc_arg_warning)
-			{
-				l += 2;
-			} */
 			return l;
 		}
 		l += (status[l] == isc_arg_cstring ? 3 : 2);
