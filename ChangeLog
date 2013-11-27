@@ -1,3 +1,23 @@
+ 2013-11-26 14:42  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-4281 - TYPE OF arguments of stored functions will hang firebird engine if depending domain or column is changed.
+
+ 2013-11-26 14:35  asfernandes 
+   M configure.ac
+Enable the use of autoconf 2.67 (of Ubuntu 11.04).
+
+ 2013-11-26 13:50  alexpeshkoff 
+   M builds/install/posix-common/posixLibrary.sh.in
+Fixed regression, reported by Philippe privately
+
+ 2013-11-26 10:37  alexpeshkoff 
+   M src/jrd/jrd.h
+Fixed CORE-4162: Warnings are not returned from attachDatabase() call
+
+ 2013-11-26 10:35  alexpeshkoff 
+   M src/common/utils.cpp
+Cleanup - commented code was invalid, w/o it warnigns are processed correctly
+
  2013-11-24 23:44  asfernandes 
    M src/remote/remote.h
    M src/remote/server/server.cpp
