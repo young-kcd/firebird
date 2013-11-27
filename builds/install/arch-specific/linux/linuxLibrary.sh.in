@@ -194,16 +194,16 @@ systemdSrv() {
 	op=${1}
 	ctrl=${2}
 
-	if [ "${op}" = "stop" -o "${op}" = "disable" ]
-	then
-		if [ ! -f ${SYSTEMD_DIR}/${ctrl} ]
-		then
-			return 0
-		fi
-	fi
-
 	if systemdPresent
 	then
+		if [ "${op}" = "stop" -o "${op}" = "disable" ]
+		then
+			if [ ! -f ${SYSTEMD_DIR}/${ctrl} ]
+			then
+				return 0
+			fi
+		fi
+
 		${SYSTEMCTL} --quiet ${op} ${ctrl} || systemdError
 		return 0
 	fi
