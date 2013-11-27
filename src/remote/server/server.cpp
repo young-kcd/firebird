@@ -616,13 +616,18 @@ public:
 	{
 		if (id)
 		{
+			mtx->enter(FB_FUNCTION);
+
 			string firebirdPortMutex;
 			firebirdPortMutex.printf(PORT_FILE, id);
 			TEXT filename[MAXPATHLEN];
 			gds__prefix_lock(filename, firebirdPortMutex.c_str());
-			if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
+			while ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
 			{
-				system_call_failed::raise("open");
+				if (errno != EINTR)
+				{
+					system_call_failed::raise("open");
+				}
 			}
 
 			struct flock lock;
@@ -630,9 +635,12 @@ public:
 			lock.l_whence = 0;
 			lock.l_start = 0;
 			lock.l_len = 0;
-			if (fcntl(fd, F_SETLK, &lock) == -1)
+			while (fcntl(fd, F_SETLKW, &lock) == -1)
 			{
-				system_call_failed::raise("fcntl");
+				if (errno != EINTR)
+				{
+					system_call_failed::raise("fcntl");
+				}
 			}
 		}
 	}
@@ -646,18 +654,26 @@ public:
 			lock.l_whence = 0;
 			lock.l_start = 0;
 			lock.l_len = 0;
-			if (fcntl(fd, F_SETLK, &lock) == -1)
+			while (fcntl(fd, F_SETLK, &lock) == -1)
 			{
-				system_call_failed::raise("fcntl");
+				if (errno != EINTR)
+				{
+					system_call_failed::raise("fcntl");
+				}
 			}
 
 			close(fd);
+
+			mtx->leave();
 		}
 	}
 
 private:
 	int fd;
+	static GlobalPtr<Mutex> mtx;
 };
+
+GlobalPtr<Mutex> GlobalPortLock::mtx;
 #endif
 
 class Callback FB_FINAL : public RefCntIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
