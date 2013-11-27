@@ -161,13 +161,18 @@ namespace {
 		{
 			if (id)
 			{
+				mtx->enter();
+
 				Firebird::string firebirdPortMutex;
 				firebirdPortMutex.printf(PORT_FILE, id);
 				TEXT filename[MAXPATHLEN];
 				gds__prefix_lock(filename, firebirdPortMutex.c_str());
-				if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
+				while ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
 				{
-					Firebird::system_call_failed::raise("open");
+					if (errno != EINTR)
+					{
+						Firebird::system_call_failed::raise("open");
+					}
 				}
 
 				struct flock lock;
@@ -175,9 +180,12 @@ namespace {
 				lock.l_whence = 0;
 				lock.l_start = 0;
 				lock.l_len = 0;
-				if (fcntl(fd, F_SETLK, &lock) == -1)
+				while (fcntl(fd, F_SETLKW, &lock) == -1)
 				{
-					Firebird::system_call_failed::raise("fcntl");
+					if (errno != EINTR)
+					{
+						Firebird::system_call_failed::raise("fcntl");
+					}
 				}
 			}
 		}
@@ -191,18 +199,26 @@ namespace {
 				lock.l_whence = 0;
 				lock.l_start = 0;
 				lock.l_len = 0;
-				if (fcntl(fd, F_SETLK, &lock) == -1)
+				while (fcntl(fd, F_SETLK, &lock) == -1)
 				{
-					Firebird::system_call_failed::raise("fcntl");
+					if (errno != EINTR)
+					{
+						Firebird::system_call_failed::raise("fcntl");
+					}
 				}
 
 				close(fd);
+
+				mtx->leave();
 			}
 		}
 
 	private:
 		int fd;
+		static Firebird::GlobalPtr<Firebird::Mutex> mtx;
 	};
+
+	Firebird::GlobalPtr<Firebird::Mutex> GlobalPortLock::mtx;
 #endif
 
 } // anonymous
