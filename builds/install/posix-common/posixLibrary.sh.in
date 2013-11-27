@@ -378,7 +378,7 @@ editFile() {
     FileName=$1
     Starting=$2
     NewLine=$3
-	
+
 	AwkProgram="(/^$Starting.*/ || \$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
 	MakeTemp
 	awk "$AwkProgram" <$FileName >$TmpFile && mv $TmpFile $FileName || rm -f $TmpFile
@@ -415,6 +415,10 @@ writeNewPassword() {
 #
 ISC_USER=sysdba
 ISC_PASSWORD=$NewPasswd
+#
+# Also set legacy variable though it can't be exported directly
+#
+ISC_PASSWD=$NewPasswd
 #
 # generated on $FB_HOST at time $FB_TIME
 #
