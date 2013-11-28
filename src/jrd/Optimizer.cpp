@@ -674,6 +674,7 @@ void OptimizerRetrieval::analyzeNavigation()
 	{
 		IndexScratch* const indexScratch = &indexScratches[i];
 		const index_desc* const idx = indexScratch->idx;
+		const int equalSegments = MIN(indexScratch->lowerCount, indexScratch->upperCount);
 
 		// if the number of fields in the sort is greater than the number of
 		// fields in the index, the index will not be used to optimize the
@@ -704,6 +705,7 @@ void OptimizerRetrieval::analyzeNavigation()
 
 		bool usableIndex = true;
 		const index_desc::idx_repeat* idx_tail = idx->idx_rpt;
+		const index_desc::idx_repeat* const idx_end = idx_tail + idx->idx_count;
 		NestConst<ValueExprNode>* ptr = sort->expressions.begin();
 		const bool* descending = sort->descending.begin();
 		const int* nullOrder = sort->nullOrder.begin();
@@ -723,12 +725,26 @@ void OptimizerRetrieval::analyzeNavigation()
 					break;
 				}
 			}
-			else if (!(fieldNode = node->as<FieldNode>()) ||
-				fieldNode->fieldStream != stream ||
-				fieldNode->fieldId != idx_tail->idx_field)
+			else if (!(fieldNode = node->as<FieldNode>()) || fieldNode->fieldStream != stream)
 			{
 				usableIndex = false;
 				break;
+			}
+			else
+			{
+				for (; idx_tail < idx_end && fieldNode->fieldId != idx_tail->idx_field; idx_tail++)
+				{
+					const int segmentNumber = idx_tail - idx->idx_rpt;
+
+					if (segmentNumber >= equalSegments)
+						break;
+				}
+
+				if (idx_tail >= idx_end || fieldNode->fieldId != idx_tail->idx_field)
+				{
+					usableIndex = false;
+					break;
+				}
 			}
 
 			if ((*descending && !(idx->idx_flags & idx_descending)) ||
@@ -1273,7 +1289,12 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		for (i = 0; i < navigationCandidate->segments.getCount(); i++)
 		{
 			const IndexScratchSegment* const segment = navigationCandidate->segments[i];
-			matches.join(segment->matches);
+
+			for (size_t j = 0; j < segment->matches.getCount(); j++)
+			{
+				if (!matches.exist(segment->matches[j]))
+					matches.add(segment->matches[j]);
+			}
 		}
 	}
 
@@ -1346,9 +1367,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					// index, add also the other matches from this index.
 					for (size_t j = 0; j < currentInv->matches.getCount(); j++)
 					{
-						if (!matches.exist(currentInv->matches[j])) {
+						if (!matches.exist(currentInv->matches[j]))
 							matches.add(currentInv->matches[j]);
-						}
 					}
 					// Restart loop, because other indexes could also be excluded now.
 					restartLoop = true;
@@ -1538,15 +1558,13 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 					for (size_t j = 0; j < bestCandidate->matches.getCount(); j++)
 					{
-						if (!matches.exist(bestCandidate->matches[j])) {
+						if (!matches.exist(bestCandidate->matches[j]))
 							matches.add(bestCandidate->matches[j]);
-						}
 					}
 					if (bestCandidate->boolean)
 					{
-						if (!matches.exist(bestCandidate->boolean)) {
+						if (!matches.exist(bestCandidate->boolean))
 							matches.add(bestCandidate->boolean);
-						}
 					}
 				}
 				else
@@ -1604,9 +1622,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		}
 	}
 
-	if (invCandidate && matches.getCount()) {
+	if (invCandidate && matches.getCount())
 		invCandidate->matches.join(matches);
-	}
 
 	return invCandidate;
 }
