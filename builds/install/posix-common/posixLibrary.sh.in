@@ -723,27 +723,25 @@ archivePriorInstallSystemFiles() {
 
 #------------------------------------------------------------------------
 # removeInstalledFiles
-# 
+#
 removeInstalledFiles() {
 
-    manifestFile=@FB_MISCDIR@/manifest.txt
-
-    if [ ! -f "$manifestFile" ]
-      then
-        return
-    fi
-
     origDir=`pwd`
-
     cd /
 
-    for i in `cat $manifestFile`
-      do
-        if [ -f $i -o -L $i ]
-          then
-            rm -f $i
-            #echo $i
-        fi
+    for manifestFile in @FB_MISCDIR@/manifest*.txt
+    do
+	    if [ -f "$manifestFile" ]
+    	then
+		    for i in `cat $manifestFile`
+		    do
+		        if [ -f $i -o -L $i ]
+		        then
+        		    rm -f $i
+		            #echo $i
+        		fi
+		    done
+		fi
     done
 
     cd "$origDir"
@@ -753,12 +751,12 @@ removeInstalledFiles() {
 #------------------------------------------------------------------------
 # removeUninstallFiles
 # Under the install directory remove all the empty directories 
-# If some files remain then 
+# If some files remain then
 
 removeUninstallFiles() {
     # remove the uninstall scripts files.
     rm -rf @FB_MISCDIR@/scripts
-    rm -f @FB_MISCDIR@/manifest.txt
+    rm -f @FB_MISCDIR@/manifest*.txt
     rm -f @FB_SBINDIR@/$UninstallScript
 }
 
@@ -766,7 +764,6 @@ removeUninstallFiles() {
 #------------------------------------------------------------------------
 # removeEmptyDirs
 # Under the install directory remove all the empty directories 
-# If some files remain then 
 # This routine loops, since deleting a directory possibly makes
 # the parent empty as well
 
@@ -782,10 +779,7 @@ removeEmptyDirs() {
 
 			if [ -d $rootDir ]; then
 		        for i in `find $rootDir -type d -print`; do
-		            ls $i/* >/dev/null 2>/dev/null
-	    	        if [ $? -ne 0 ]; then
-	        	        rmdir $i && dirContentChanged=$i
-	    	        fi
+	       	        rmdir $i >/dev/null 2>/dev/null && dirContentChanged=$i
 		        done
 			fi
 

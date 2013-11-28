@@ -61,6 +61,8 @@ DebugFile=Firebird-debuginfo-$(Version).$(CpuType).tar.gz
 
 PkgSrcDir=$(InstallRoot)/$(ArchType)
 ScriptDir=$(GEN_ROOT)/install/scripts/
+MiscDir=@FB_MISCDIR@
+DebugManifest=manifest_debug.txt
 
 
 TarInstallDir=$(GEN_ROOT)/install
@@ -81,7 +83,7 @@ $(TarFile) :  buildTarDir
 debugfile:  $(DebugFile)
 
 $(DebugFile) :  buildImageDir
-	(cd $(GEN_ROOT)/$(DebugDir); tar -czf ../$(DebugFile) *)
+	(cd $(GEN_ROOT)/$(DebugDir); tar -czf ../$(DebugFile) .)
 
 # objcopy --add-gnu-debuglink fails with binutils 2.14 or older
 # its failure affects only GDB ability to pick up external debug 
@@ -118,6 +120,8 @@ buildDebugInfo: buildRoot
             objcopy --strip-debug --strip-unneeded $${FIL}; \
         fi; \
     done
+	(cd $(GEN_ROOT)/$(DebugDir); mkdir -p ./$(MiscDir); \
+		find . -type f -name '*.debug' -print >./$(MiscDir)/$(DebugManifest))
 
 # Use this line if you don't want to use separate debug info
 #buildImageDir: buildRoot
