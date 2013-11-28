@@ -1,3 +1,7 @@
+ 2013-11-27 12:48  alexpeshkoff 
+   M src/remote/server.cpp
+Backported fix for CORE-4283: Resource temporarily unavailable errors while simultaneously registering events
+
  2013-11-15 15:12  dimitr 
    M src/jrd/irq.h
    M src/jrd/met.epp
