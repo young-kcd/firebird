@@ -1,3 +1,15 @@
+ 2013-11-27 13:08  alexpeshkoff 
+   M builds/install/arch-specific/linux/linuxLibrary.sh.in
+Fixed regression in unistaller which arrived when adding systemd support
+
+ 2013-11-27 12:46  alexpeshkoff 
+   M src/remote/server/server.cpp
+Fixed CORE-4283: Resource temporarily unavailable errors while simultaneously registering events
+
+ 2013-11-27 11:14  alexpeshkoff 
+   M builds/install/posix-common/posixLibrary.sh.in
+Set both ISC_PASSWD and ISC_PASSWORD to make both environment and old scripts happy
+
  2013-11-26 14:42  asfernandes 
    M src/jrd/dfw.epp
 Fixed CORE-4281 - TYPE OF arguments of stored functions will hang firebird engine if depending domain or column is changed.
