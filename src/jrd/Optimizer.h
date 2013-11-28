@@ -224,7 +224,7 @@ public:
 	bool outerFlag;
 	bool createIndexScanNodes;
 	bool setConjunctionsMatched;
-	int navigationCandidate;
+	IndexScratch* navigationCandidate;
 };
 
 class IndexRelationship

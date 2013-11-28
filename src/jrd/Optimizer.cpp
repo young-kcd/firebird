@@ -379,7 +379,7 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 	this->innerFlag = inner;
 	this->outerFlag = outer;
 	this->sort = sortNode;
-	this->navigationCandidate = -1;
+	this->navigationCandidate = NULL;
 	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[this->stream];
 	relation = csb_tail->csb_relation;
 
@@ -619,7 +619,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 		}
 	}
 
-	invCandidate->navigated = (navigationCandidate >= 0);
+	invCandidate->navigated = (navigationCandidate != NULL);
 
 #ifdef OPT_DEBUG_RETRIEVAL
 	// Debug
@@ -640,21 +640,18 @@ IndexTableScan* OptimizerRetrieval::getNavigation()
  * Functional description
  *
  **************************************/
-	if (navigationCandidate < 0)
+	if (!navigationCandidate)
 		return NULL;
-
-	fb_assert(unsigned(navigationCandidate) < indexScratches.getCount());
-	IndexScratch* const indexScratch = &indexScratches[navigationCandidate];
 
 	// Looks like we can do a navigational walk.  Flag that
 	// we have used this index for navigation, and allocate
 	// a navigational rsb for it.
-	indexScratch->idx->idx_runtime_flags |= idx_navigate;
+	navigationCandidate->idx->idx_runtime_flags |= idx_navigate;
 
 	const USHORT key_length =
-		ROUNDUP(BTR_key_length(tdbb, relation, indexScratch->idx), sizeof(SLONG));
+		ROUNDUP(BTR_key_length(tdbb, relation, navigationCandidate->idx), sizeof(SLONG));
 
-	InversionNode* const index_node = makeIndexScanNode(indexScratch);
+	InversionNode* const index_node = makeIndexScanNode(navigationCandidate);
 
 	return FB_NEW(*tdbb->getDefaultPool())
 		IndexTableScan(csb, getAlias(), stream, index_node, key_length);
@@ -675,7 +672,8 @@ void OptimizerRetrieval::analyzeNavigation()
 
 	for (size_t i = 0; i < indexScratches.getCount(); ++i)
 	{
-		const index_desc* const idx = indexScratches[i].idx;
+		IndexScratch* const indexScratch = &indexScratches[i];
+		const index_desc* const idx = indexScratch->idx;
 
 		// if the number of fields in the sort is greater than the number of
 		// fields in the index, the index will not be used to optimize the
@@ -714,7 +712,7 @@ void OptimizerRetrieval::analyzeNavigation()
 			 ptr != end;
 			 ++ptr, ++descending, ++nullOrder, ++idx_tail)
 		{
-			ValueExprNode* node = *ptr;
+			ValueExprNode* const node = *ptr;
 			FieldNode* fieldNode;
 
 			if (idx->idx_flags & idx_expressn)
@@ -726,7 +724,8 @@ void OptimizerRetrieval::analyzeNavigation()
 				}
 			}
 			else if (!(fieldNode = node->as<FieldNode>()) ||
-				fieldNode->fieldStream != stream || fieldNode->fieldId != idx_tail->idx_field)
+				fieldNode->fieldStream != stream ||
+				fieldNode->fieldId != idx_tail->idx_field)
 			{
 				usableIndex = false;
 				break;
@@ -749,7 +748,7 @@ void OptimizerRetrieval::analyzeNavigation()
 
 			if (DTYPE_IS_TEXT(desc.dsc_dtype) && desc.dsc_ttype() > ttype_last_internal)
 			{
-				TextType* tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
+				const TextType* const tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
 
 				if (idx->idx_flags & idx_unique)
 				{
@@ -773,11 +772,37 @@ void OptimizerRetrieval::analyzeNavigation()
 			}
 		}
 
-		if (usableIndex)
+		if (!usableIndex)
+			continue;
+
+		// Looks like we can do a navigational walk. Remember this candidate
+		// and compare it against other possible candidates.
+
+		if (!navigationCandidate)
+			navigationCandidate = indexScratch;
+		else
 		{
-			// Looks like we can do a navigational walk. Remember that.
-			navigationCandidate = static_cast<int>(i);
-			return;
+			int count1 = MAX(indexScratch->lowerCount, indexScratch->upperCount);
+			int count2 = MAX(navigationCandidate->lowerCount, navigationCandidate->upperCount);
+
+			if (count1 > count2)
+				navigationCandidate = indexScratch;
+			else if (count1 == count2)
+			{
+				count1 = (int) indexScratch->segments.getCount();
+				count2 = (int) navigationCandidate->segments.getCount();
+
+				if (count1 < count2)
+					navigationCandidate = indexScratch;
+				else if (count1 == count2)
+				{
+					count1 = BTR_key_length(tdbb, relation, indexScratch->idx);
+					count2 = BTR_key_length(tdbb, relation, navigationCandidate->idx);
+
+					if (count1 < count2)
+						navigationCandidate = indexScratch;
+				}
+			}
 		}
 	}
 }
@@ -818,7 +843,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 
 			for (int j = 0; j < scratch.idx->idx_count; j++)
 			{
-				IndexScratchSegment* segment = scratch.segments[j];
+				const IndexScratchSegment* const segment = scratch.segments[j];
 
 				if (segment->scope == scope)
 					scratch.scopeCandidate = true;
@@ -836,7 +861,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 							// ASF: Order is more precise than equivalence class.
 							// We can't use the next segments, and we'll need to use
 							// INTL_KEY_PARTIAL to construct the last segment's key.
-							scratch.fuzzy = true;;
+							scratch.fuzzy = true;
 						}
 					}
 				}
@@ -1228,9 +1253,6 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// Force to always choose at least one index
 	bool firstCandidate = true;
 
-	const IndexScratch* const navigationIndexScratch =
-		(navigationCandidate >= 0) ? &indexScratches[navigationCandidate] : NULL;
-
 	size_t i = 0;
 	InversionCandidate* invCandidate = NULL;
 	InversionCandidate** inversion = inversions->begin();
@@ -1239,18 +1261,21 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		inversion[i]->used = false;
 		const IndexScratch* const indexScratch = inversion[i]->scratch;
 
-		if (indexScratch)
-		{
-			if (indexScratch == navigationIndexScratch ||
-			    (indexScratch->idx->idx_runtime_flags & idx_plan_dont_use))
-			{
-				inversion[i]->used = true;
-			}
-		}
+		if (indexScratch && (indexScratch->idx->idx_runtime_flags & idx_plan_dont_use))
+			inversion[i]->used = true;
 	}
 
 	// The matches returned in this inversion are always sorted.
 	SortedArray<BoolExprNode*> matches;
+
+	if (navigationCandidate)
+	{
+		for (i = 0; i < navigationCandidate->segments.getCount(); i++)
+		{
+			const IndexScratchSegment* const segment = navigationCandidate->segments[i];
+			matches.join(segment->matches);
+		}
+	}
 
 	for (i = 0; i < inversions->getCount(); i++)
 	{
