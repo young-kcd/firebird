@@ -1,3 +1,19 @@
+ 2013-11-28 17:26  dimitr 
+   M src/jrd/Optimizer.cpp
+Correction for CORE-1550: Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses.
+Also resolved CORE-1846: Allow index walk (ORDER plan) when there's a composite index {A, B} and the query looks like WHERE A = ? ORDER BY B.
+
+ 2013-11-28 16:37  alexpeshkoff 
+   M builds/install/arch-specific/linux/Makefile.in
+   M builds/install/posix-common/posixLibrary.sh.in
+debuginfo uninstall
+
+ 2013-11-28 09:12  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Another solution for CORE-1550: Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses. It's intended to fix the reported issues.
+Also resolved CORE-4285: Choose the best matching index for navigation.
+
  2013-11-27 13:08  alexpeshkoff 
    M builds/install/arch-specific/linux/linuxLibrary.sh.in
 Fixed regression in unistaller which arrived when adding systemd support
