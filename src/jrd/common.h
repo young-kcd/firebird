@@ -192,6 +192,10 @@
 #define RISC_ALIGNMENT
 #endif /* alpha */
 
+//#ifdef ARM64
+//#define IMPLEMENTATION  isc_info_db_impl_linux_arm64	/* 84  */
+//#endif /* ARM64 */
+
 #endif /* LINUX */
 
 

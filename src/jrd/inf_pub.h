@@ -215,6 +215,7 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_sheb = 81,
 	isc_info_db_impl_linux_hppa = 82,
 	isc_info_db_impl_linux_alpha = 83,
+	isc_info_db_impl_linux_arm64 = 84,
 
 	isc_info_db_impl_last_value   // Leave this LAST!
 };

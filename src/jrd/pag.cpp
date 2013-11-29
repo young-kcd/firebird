@@ -163,9 +163,10 @@ static const int CLASS_LINUX_SH = 38;		// LINUX/SH (little-endian)
 static const int CLASS_LINUX_SHEB = 39;		// LINUX/SH (big-endian)
 static const int CLASS_LINUX_HPPA = 40;		// LINUX/HPPA
 static const int CLASS_LINUX_ALPHA = 41;	// LINUX/ALPHA
+static const int CLASS_LINUX_ARM64 = 42;	// LINUX/ARM64
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_ALPHA;
+static const int CLASS_MAX = CLASS_LINUX_ARM64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -264,7 +265,8 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archLittleEndian, // CLASS_LINUX_SH
 	archBigEndian,    // CLASS_LINUX_SHEB
 	archBigEndian,    // CLASS_LINUX_HPPA
-	archLittleEndian  // CLASS_LINUX_ALPHA
+	archLittleEndian, // CLASS_LINUX_ALPHA
+	archLittleEndian  // CLASS_LINUX_ARM64
 };
 
 #ifdef __sun
@@ -328,6 +330,8 @@ const SSHORT CLASS		= CLASS_LINUX_SHEB;
 const SSHORT CLASS		= CLASS_LINUX_HPPA;
 #elif defined(ALPHA)
 const SSHORT CLASS		= CLASS_LINUX_ALPHA;
+//#elif defined(ARM64)
+//const SSHORT CLASS		= CLASS_LINUX_ARM64;
 #else
 #error no support on other hardware for Linux
 #endif
