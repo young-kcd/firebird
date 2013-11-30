@@ -1,3 +1,11 @@
+ 2013-11-29 11:33  alexpeshkoff 
+   M configure.in
+   M src/jrd/common.h
+   M src/jrd/inf_pub.h
+   M src/jrd/pag.cpp
+   M src/jrd/utl.cpp
+Committed commented ARM64-linux port in order to reserve class ID for it
+
  2013-11-27 12:48  alexpeshkoff 
    M src/remote/server.cpp
 Backported fix for CORE-4283: Resource temporarily unavailable errors while simultaneously registering events
