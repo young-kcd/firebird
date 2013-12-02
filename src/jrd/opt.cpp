@@ -2902,13 +2902,11 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	if (!river_cnt)
 		return false;
 
-	// AB: Inactivate currently all streams from every river, because we
+	// AB: Deactivate currently all streams from every river, because we
 	// need to know which nodes are computable between the rivers used
 	// for the merge.
 
-	//USHORT flag_vector[MAX_STREAMS + 1]; // I think + 1 is not necessary anymore
-	bool flag_vector[MAX_STREAMS + 1];
-	//bool* fv = flag_vector;
+	bool flag_vector[MAX_STREAMS + 1]; // I think + 1 is not necessary anymore
 
 	for (StreamType stream_nr = 0; stream_nr < csb->csb_n_stream; stream_nr++)
 	{
@@ -2972,8 +2970,6 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 		// Collect RSBs and keys to join
 
-		//const size_t selected_count = selected_classes.getCount();
-
 		SortNode* key = FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 
 		if (prefer_merge_over_hash)
@@ -3034,7 +3030,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	else
 	{
 		rsb = FB_NEW(*tdbb->getDefaultPool())
-			HashJoin(csb, rsbs.getCount(), rsbs.begin(), keys.begin());
+			HashJoin(tdbb, csb, rsbs.getCount(), rsbs.begin(), keys.begin());
 	}
 
 	// Activate streams of all the rivers being merged
@@ -3063,10 +3059,8 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 	// Reset all the streams to their original state
 
-	//fv = flag_vector;
 	for (StreamType stream_nr = 0; stream_nr < csb->csb_n_stream; stream_nr++)
 	{
-		//csb->csb_rpt[stream_nr].csb_flags |= *fv++;
 		if (flag_vector[stream_nr])
 			csb->csb_rpt[stream_nr].activate();
 	}
