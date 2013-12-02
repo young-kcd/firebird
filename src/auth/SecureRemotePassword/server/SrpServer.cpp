@@ -78,10 +78,6 @@ private:
 
 int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerInterface)
 {
-	RefPtr<IAttachment> att;
-	RefPtr<ITransaction> tra;
-	RefPtr<IStatement> stmt;
-
 	try
 	{
 		if (!server)
@@ -120,95 +116,108 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 				Arg::Gds(isc_secdb_name).raise();
 			}
 
-			ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
-			dpb.insertByte(isc_dpb_sec_attach, TRUE);
-			dpb.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
-			const char* providers = "Providers=" CURRENT_ENGINE;
-			dpb.insertString(isc_dpb_config, providers, strlen(providers));
-
 			DispatcherPtr p;
+			IAttachment* att = NULL;
+			ITransaction* tra = NULL;
+			IStatement* stmt = NULL;
 
-			att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
-			if (!status->isSuccess())
+			try
 			{
-				status_exception::raise(status->get());
+				ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
+				dpb.insertByte(isc_dpb_sec_attach, TRUE);
+				dpb.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
+				const char* providers = "Providers=" CURRENT_ENGINE;
+				dpb.insertString(isc_dpb_config, providers, strlen(providers));
+				att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
+				if (!status->isSuccess())
+				{
+					status_exception::raise(status->get());
+				}
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP: attached sec db %s\n", secDbName));
+
+				const UCHAR tpb[] =
+				{
+					isc_tpb_version1,
+					isc_tpb_read,
+					isc_tpb_read_committed,
+					isc_tpb_rec_version,
+					isc_tpb_wait
+				};
+				tra = att->startTransaction(status, sizeof(tpb), tpb);
+				if (!status->isSuccess())
+				{
+					status_exception::raise(status->get());
+				}
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: started transaction\n"));
+
+				const char* sql = "SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ?";
+				stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
+				if (!status->isSuccess())
+				{
+					checkStatusVectorForMissingTable(status->get());
+					status_exception::raise(status->get());
+				}
+
+				Meta im(stmt, false);
+				Message par(im);
+				Field<Text> login(par);
+				login = account.c_str();
+
+				Meta om(stmt, true);
+				Message dat(om);
+				if (!status->isSuccess())
+				{
+					status_exception::raise(status->get());
+				}
+				Field<Varying> verify(dat);
+				Field<Varying> slt(dat);
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Ready to run statement with login '%s'\n", account.c_str()));
+
+				stmt->execute(status, tra, par.metadata, par.buffer, dat.metadata, dat.buffer);
+				if (!status->isSuccess())
+				{
+					status_exception::raise(status->get());
+				}
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Executed statement\n"));
+
+				verifier.assign(reinterpret_cast<const UCHAR*>((const char*) verify), RemotePassword::SRP_VERIFIER_SIZE);
+				dumpIt("Srv: verifier", verifier);
+				UCharBuffer s;
+				s.assign(reinterpret_cast<const UCHAR*>((const char*) slt), RemotePassword::SRP_SALT_SIZE);
+				BigInteger(s).getText(salt);
+				dumpIt("Srv: salt", salt);
+
+				stmt->free(status);
+				if (!status->isSuccess())
+				{
+					status_exception::raise(status->get());
+				}
+				stmt = NULL;
+
+				tra->rollback(status);
+				if (!status->isSuccess())
+				{
+					status_exception::raise(status->get());
+				}
+				tra = NULL;
+
+				att->detach(status);
+				if (!status->isSuccess())
+				{
+					status_exception::raise(status->get());
+				}
+				att = NULL;
 			}
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP: attached sec db %s\n", secDbName));
+			catch(const Exception&)
+			{
+				if (stmt) stmt->release();
+				if (tra) tra->release();
+				if (att) att->release();
 
-			const UCHAR tpb[] =
-			{
-				isc_tpb_version1,
-				isc_tpb_read,
-				isc_tpb_read_committed,
-				isc_tpb_rec_version,
-				isc_tpb_wait
-			};
-			tra = att->startTransaction(status, sizeof(tpb), tpb);
-			if (!status->isSuccess())
-			{
-				status_exception::raise(status->get());
+				throw;
 			}
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: started transaction\n"));
-
-			const char* sql = "SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ?";
-			stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
-			if (!status->isSuccess())
-			{
-				checkStatusVectorForMissingTable(status->get());
-				status_exception::raise(status->get());
-			}
-
-			Meta im(stmt, false);
-			Message par(im);
-			Field<Text> login(par);
-			login = account.c_str();
-
-			Meta om(stmt, true);
-			Message dat(om);
-			if (!status->isSuccess())
-			{
-				status_exception::raise(status->get());
-			}
-			Field<Varying> verify(dat);
-			Field<Varying> slt(dat);
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Ready to run statement with login '%s'\n", account.c_str()));
-
-			stmt->execute(status, tra, par.metadata, par.buffer, dat.metadata, dat.buffer);
-			if (!status->isSuccess())
-			{
-				status_exception::raise(status->get());
-			}
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Executed statement\n"));
-
-			stmt->free(status);
-			if (!status->isSuccess())
-			{
-				status_exception::raise(status->get());
-			}
-			stmt = NULL;
-
-			tra->rollback(status);
-			if (!status->isSuccess())
-			{
-				status_exception::raise(status->get());
-			}
-			tra = NULL;
-
-			att->detach(status);
-			if (!status->isSuccess())
-			{
-				status_exception::raise(status->get());
-			}
-			att = NULL;
 
 			server = new RemotePassword;
-
-			verifier.assign(reinterpret_cast<const UCHAR*>((const char*) verify), RemotePassword::SRP_VERIFIER_SIZE);
-			dumpIt("Srv: verifier", verifier);
-			UCharBuffer s;
-			s.assign(reinterpret_cast<const UCHAR*>((const char*) slt), RemotePassword::SRP_SALT_SIZE);
-			BigInteger(s).getText(salt);
-			dumpIt("Srv: salt", salt);
 			server->genServerKey(serverPubKey, verifier);
 
 			// Ready to prepare data for client and calculate session key
@@ -260,19 +269,6 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 	}
 	catch (const Exception& ex)
 	{
-		if (stmt)
-		{
-			stmt->free(status);
-		}
-		if (tra)
-		{
-			tra->rollback(status);
-		}
-		if (att)
-		{
-			att->detach(status);
-		}
-
 		status->init();
 		ex.stuffException(status);
 	}
