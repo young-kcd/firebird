@@ -807,9 +807,11 @@ namespace Jrd
 			HashTable* irsb_hash_table;
 		};
 
+		typedef Firebird::Array<USHORT> KeyLengthArray;
+
 	public:
-		HashJoin(CompilerScratch* csb, size_t count,
-				 RecordSource* const* args, const NestValueArray* const* keys);
+		HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
+				 RecordSource* const* args, NestValueArray* const* keys);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -829,14 +831,16 @@ namespace Jrd
 
 	private:
 		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
-			const NestValueArray* keys) const;
+			const NestValueArray* keys, const KeyLengthArray* lengths) const;
 		bool compareKeys(thread_db* tdbb, jrd_req* request) const;
 		bool fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const;
 
 		NestConst<RecordSource> m_leader;
-		const NestValueArray* m_leaderKeys;
+		NestValueArray* m_leaderKeys;
+		KeyLengthArray* m_leaderIntlLengths;
 		Firebird::Array<NestConst<BufferedStream> > m_args;
-		Firebird::Array<const NestValueArray*> m_keys;
+		Firebird::Array<NestValueArray*> m_keys;
+		Firebird::Array<KeyLengthArray*> m_intlLengths;
 		const bool m_outerJoin;
 		const bool m_semiJoin;
 		const bool m_antiJoin;

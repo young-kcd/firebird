@@ -158,25 +158,62 @@ private:
 };
 
 
-HashJoin::HashJoin(CompilerScratch* csb, size_t count,
-				   RecordSource* const* args, const NestValueArray* const* keys)
-	: m_leader(args[0]), m_leaderKeys(keys[0]), m_args(csb->csb_pool, count - 1),
-	  m_keys(csb->csb_pool, count - 1), m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
+HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
+				   RecordSource* const* args, NestValueArray* const* keys)
+	: m_leader(args[0]), m_leaderKeys(keys[0]),
+	  m_leaderIntlLengths(FB_NEW(csb->csb_pool) KeyLengthArray(csb->csb_pool)),
+	  m_args(csb->csb_pool, count - 1), m_keys(csb->csb_pool, count - 1),
+	  m_intlLengths(csb->csb_pool, count - 1),
+	  m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
 {
 	fb_assert(count >= 2);
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
-	fb_assert(args[0]);
-	fb_assert(keys[0]);
+	fb_assert(m_leader);
+	fb_assert(m_leaderKeys);
+
+	for (size_t j = 0; j < m_leaderKeys->getCount(); j++)
+	{
+		dsc desc;
+		(*m_leaderKeys)[j]->getDesc(tdbb, csb, &desc);
+
+		if (IS_INTL_DATA(&desc))
+		{
+			const USHORT key_length =
+				INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
+
+			m_leaderIntlLengths->add(key_length);
+		}
+	}
 
 	for (size_t i = 1; i < count; i++)
 	{
-		fb_assert(args[i]);
-		m_args.add(FB_NEW(csb->csb_pool) BufferedStream(csb, args[i]));
+		RecordSource* const sub_rsb = args[i];
+		fb_assert(sub_rsb);
+		m_args.add(FB_NEW(csb->csb_pool) BufferedStream(csb, sub_rsb));
 
-		fb_assert(keys[i]);
-		m_keys.add(keys[i]);
+		NestValueArray* const sub_keys = keys[i];
+		fb_assert(sub_keys);
+		m_keys.add(sub_keys);
+
+		KeyLengthArray* const intl_lengths =
+			FB_NEW(csb->csb_pool) KeyLengthArray(csb->csb_pool);
+		m_intlLengths.add(intl_lengths);
+
+		for (size_t j = 0; j < sub_keys->getCount(); j++)
+		{
+			dsc desc;
+			(*sub_keys)[j]->getDesc(tdbb, csb, &desc);
+
+			if (IS_INTL_DATA(&desc))
+			{
+				const USHORT key_length =
+					INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
+
+				intl_lengths->add(key_length);
+			}
+		}
 	}
 }
 
@@ -201,7 +238,8 @@ void HashJoin::open(thread_db* tdbb) const
 		FB_UINT64 position = 0;
 		while (m_args[i]->getRecord(tdbb))
 		{
-			const size_t hash_slot = hashKeys(tdbb, request, impure->irsb_hash_table, m_keys[i]);
+			const size_t hash_slot = hashKeys(tdbb, request, impure->irsb_hash_table,
+											   m_keys[i], m_intlLengths[i]);
 			impure->irsb_hash_table->put(i, hash_slot, position++);
 		}
 	}
@@ -252,7 +290,8 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 
 			// Hash the comparison keys
 
-			const size_t hash_slot = hashKeys(tdbb, request, impure->irsb_hash_table, m_leaderKeys);
+			const size_t hash_slot = hashKeys(tdbb, request, impure->irsb_hash_table,
+											   m_leaderKeys, m_leaderIntlLengths);
 
 			// Ensure the every inner stream having matches for this hash slot.
 			// Setup the hash table for the iteration through collisions.
@@ -366,10 +405,11 @@ void HashJoin::nullRecords(thread_db* tdbb) const
 }
 
 size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
-	const NestValueArray* keys) const
+	const NestValueArray* keys, const KeyLengthArray* lengths) const
 {
 	ULONG hash_value = 0;
 	size_t hash_slot = 0;
+	size_t intl_index = 0;
 
 	for (size_t i = 0; i < keys->getCount(); i++)
 	{
@@ -380,7 +420,7 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 			fb_assert(!desc->isBlob());
 
 			USHORT length = desc->dsc_length;
-			const UCHAR* address = desc->dsc_address;
+			UCHAR* address = desc->dsc_address;
 
 			MoveBuffer buffer;
 
@@ -388,27 +428,20 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 			{
 				// Adjust the data length to the real string length
 
-				if (desc->dsc_dtype == dtype_varying)
-				{
-					const vary* const string = (vary*) address;
-					length = string->vary_length;
-					address = (const UCHAR*) string->vary_string;
-				}
-				else if (desc->dsc_dtype == dtype_cstring)
-				{
-					length = static_cast<USHORT>(strlen((char*) address));
-				}
+				length = MOV_get_string(desc, &address, NULL, 0);
 
 				if (IS_INTL_DATA(desc))
 				{
 					// Convert the INTL string into the binary comparable form
 
-					TextType* const obj = INTL_texttype_lookup(tdbb, desc->getTextType());
-					const USHORT key_length = obj->key_length(length);
-					length = obj->string_to_key(length, address, key_length,
-												buffer.getBuffer(key_length),
-												INTL_KEY_UNIQUE);
-					address = buffer.begin();
+					const USHORT key_length = (*lengths)[intl_index++];
+					address = buffer.getBuffer(key_length);
+
+					dsc temp;
+					temp.makeText(key_length, ttype_sort_key, address);
+
+					length = INTL_string_to_key(tdbb, INTL_INDEX_TYPE(desc),
+												desc, &temp, INTL_KEY_UNIQUE);
 				}
 				else
 				{
