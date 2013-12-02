@@ -222,6 +222,25 @@ public:
 GlobalPtr<FailedLogins> usernameFailedLogins;
 GlobalPtr<FailedLogins> remoteFailedLogins;
 
+void loginFail(const string& login, const string& remId)
+{
+	// do not remove variables - both functions should be called
+	bool f1 = usernameFailedLogins->loginFail(login);
+	bool f2 = remoteFailedLogins->loginFail(remId);
+	if (f1 || f2)
+	{
+		// Ahh, someone is too active today
+		THREAD_SLEEP(FAILURE_DELAY * 1000);
+	}
+}
+
+void loginSuccess(const string& login, const string& remId)
+{
+	usernameFailedLogins->loginSuccess(login);
+	remoteFailedLogins->loginSuccess(remId);
+}
+
+
 MakeUpgradeInfo<> upInfo;
 
 template <typename T>
@@ -421,8 +440,7 @@ public:
 			{
 			case Auth::AUTH_SUCCESS:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: Ahh - success\n"));
-				usernameFailedLogins->loginSuccess(userName);
-				remoteFailedLogins->loginSuccess(authPort->getRemoteId());
+				loginSuccess(userName, authPort->getRemoteId());
 				authServer = NULL;
 				authPort->port_srv_auth_block->authCompleted(true);
 				accept(send, &authPort->port_srv_auth_block->authBlockWriter);
@@ -493,14 +511,7 @@ public:
 		}
 
 		// no success - perform failure processing
-		// do not remove variables - both functions should be called
-		bool f1 = usernameFailedLogins->loginFail(userName);
-		bool f2 = remoteFailedLogins->loginFail(authPort->getRemoteId());
-		if (f1 || f2)
-		{
-			// Ahh, someone is too active today
-			THREAD_SLEEP(FAILURE_DELAY * 1000);
-		}
+		loginFail(userName, authPort->getRemoteId());
 
 		Arg::Gds loginError(isc_login);
 #ifndef DEV_BUILD
@@ -1783,8 +1794,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 						&port->port_srv_auth_block->authBlockWriter))
 					{
 					case Auth::AUTH_SUCCESS:
-						usernameFailedLogins->loginSuccess(port->port_login);
-						remoteFailedLogins->loginSuccess(port->getRemoteId());
+						loginSuccess(port->port_login, port->getRemoteId());
 						port->port_srv_auth_block->authCompleted(true);
 						send->p_acpd.p_acpt_authenticated = 1;
 						returnData = true;
@@ -1798,6 +1808,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 							// failed
 							setErrorStatus(&status);
 							accepted = false;
+							loginFail(port->port_login, port->getRemoteId());
 							break;
 						}
 						port->port_srv_auth_block->setPluginName(plugins->name());
@@ -1813,6 +1824,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 					case Auth::AUTH_FAILED:
 						setErrorStatus(&status);
 						accepted = false;
+						loginFail(port->port_login, port->getRemoteId());
 						break;
 					}
 				}
