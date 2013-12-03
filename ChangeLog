@@ -1,3 +1,20 @@
+ 2013-12-02 17:16  dimitr 
+   M src/jrd/opt.cpp
+Fixed crashes or wrong results (empty result set) for inner joins and INTL columns.
+
+ 2013-12-02 17:14  dimitr 
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+Fixed crashes or wrong results (empty result set) for inner joins and INTL columns.
+
+ 2013-12-02 15:15  alexpeshkoff 
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+Slightly reworked use of OO API in SRP server - avoid unneeded atomic ops. Thanks to Adriano.
+
+ 2013-12-02 14:28  alexpeshkoff 
+   M src/remote/server/server.cpp
+Fixed post-Alpha1 security regression, reported privately by Pavel
+
  2013-11-28 17:26  dimitr 
    M src/jrd/Optimizer.cpp
 Correction for CORE-1550: Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses.
