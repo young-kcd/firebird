@@ -130,7 +130,7 @@ $(TOMLIB):	$(TOM_Objs)
 # main build target for both debug abd release builds
 #
 
-.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes examples
+.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes ids examples
 
 master_process:
 	ln -sf $(SRC_ROOT)/include/gen/autoconfig.auto $(SRC_ROOT)/include/gen/autoconfig.h
@@ -139,6 +139,10 @@ master_process:
 	$(MAKE) extern
 	$(MAKE) boot
 	$(MAKE) yvalve
+ifeq ($(IsDeveloper), Y)
+# In developer mode we must regenerate various files in include/gen
+	$(MAKE) ids
+endif
 	$(MAKE) engine
 	$(MAKE) fbintl
 	$(MAKE) utilities
@@ -169,6 +173,10 @@ cross1:
 	$(MAKE) extern
 	$(MAKE) boot
 	$(MAKE) yvalve
+ifeq ($(IsDeveloper), Y)
+# In developer mode we must regenerate various files in include/gen
+	$(MAKE) ids
+endif
 	$(MAKE) engine
 	$(MAKE) fbintl
 	$(MAKE) gbak isql gfix
@@ -467,7 +475,9 @@ $(SRP_USER_MANAGER):	$(SRP_USERS_MANAGE_Objects) $(COMMON_LIB)
 CODES = $(BIN)/codes$(EXEC_EXT)
 IDS = $(SRC_ROOT)/include/gen/ids.h
 
-codes:	gen_codes $(IDS)
+codes:	gen_codes
+
+ids:	$(IDS)
 
 gen_codes:	$(CODES) msg.timestamp
 	$(CODES) $(SRC_ROOT)/include/gen $(LNG_ROOT)
