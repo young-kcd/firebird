@@ -1,3 +1,7 @@
+ 2013-12-03 10:52  alexpeshkoff 
+   M builds/posix/Makefile.in
+Fixed build - ids.h was regenerated too late
+
  2013-12-02 17:16  dimitr 
    M src/jrd/opt.cpp
 Fixed crashes or wrong results (empty result set) for inner joins and INTL columns.
