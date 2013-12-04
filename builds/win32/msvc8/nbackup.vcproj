@@ -380,6 +380,14 @@
 				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_file.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

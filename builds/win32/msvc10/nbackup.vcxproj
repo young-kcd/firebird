@@ -167,6 +167,8 @@
     <ClCompile Include="..\..\..\src\utilities\nbackup.cpp" />
     <ClCompile Include="..\..\..\src\utilities\nbackup\nbkMain.cpp" />
     <ClCompile Include="..\..\..\src\jrd\os\win32\guid.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\isc_file.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">

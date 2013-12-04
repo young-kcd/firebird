@@ -47,7 +47,7 @@ LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sou
 LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources)))) \
 $(FBCONFIG_Objects)
 
-NBACKUP_Other_Sources = jrd/db_alias.cpp common/UtilSvc.cpp $(OS_SPECIFIC_Sources)
+NBACKUP_Other_Sources = jrd/isc_file.cpp jrd/db_alias.cpp common/UtilSvc.cpp $(OS_SPECIFIC_Sources)
 NBACKUP_Files= nbackup.cpp nbackup/nbkMain.cpp
 NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files)) $(NBACKUP_Other_Sources)
 NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources)))) \
