@@ -201,25 +201,28 @@ bool NestedLoopJoin::lockRecord(thread_db* /*tdbb*/) const
 
 void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	if (detailed)
+	if (m_args.hasData())
 	{
-		plan += printIndent(++level) + " Nested Loop Join ";
-		plan += m_semiJoin ? "(semi)" : m_antiJoin ? "(anti)" : m_outerJoin ? "(outer)" : "(inner)";
-		for (size_t i = 0; i < m_args.getCount(); i++)
-			m_args[i]->print(tdbb, plan, true, level);
-	}
-	else
-	{
-		level++;
-		plan += "JOIN (";
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		if (detailed)
 		{
-			if (i)
-				plan += ", ";
-
-			m_args[i]->print(tdbb, plan, false, level);
+			plan += printIndent(++level) + " Nested Loop Join ";
+			plan += m_semiJoin ? "(semi)" : m_antiJoin ? "(anti)" : m_outerJoin ? "(outer)" : "(inner)";
+			for (size_t i = 0; i < m_args.getCount(); i++)
+				m_args[i]->print(tdbb, plan, true, level);
 		}
-		plan += ")";
+		else
+		{
+			level++;
+			plan += "JOIN (";
+			for (size_t i = 0; i < m_args.getCount(); i++)
+			{
+				if (i)
+					plan += ", ";
+
+				m_args[i]->print(tdbb, plan, false, level);
+			}
+			plan += ")";
+		}
 	}
 }
 

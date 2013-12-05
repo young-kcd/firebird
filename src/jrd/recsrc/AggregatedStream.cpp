@@ -234,7 +234,7 @@ void AggregatedStream::print(thread_db* tdbb, string& plan,
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Aggregate";
+		plan += printIndent(++level) + (m_bufferedStream ? "Window" : "Aggregate");
 	}
 
 	m_next->print(tdbb, plan, detailed, level);
