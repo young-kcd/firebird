@@ -261,6 +261,14 @@ void AggregatedStream::findUsedStreams(StreamList& streams, bool expandAll) cons
 		m_bufferedStream->findUsedStreams(streams, expandAll);
 }
 
+void AggregatedStream::nullRecords(thread_db* tdbb) const
+{
+	RecordStream::nullRecords(tdbb);
+
+	if (m_bufferedStream)
+		m_bufferedStream->nullRecords(tdbb);
+}
+
 void AggregatedStream::init(thread_db* tdbb, CompilerScratch* csb)
 {
 	fb_assert(m_map && m_next);

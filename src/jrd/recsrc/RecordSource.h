@@ -619,6 +619,7 @@ namespace Jrd
 		void invalidateRecords(jrd_req* request) const;
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
+		void nullRecords(thread_db* tdbb) const;
 
 	private:
 		void init(thread_db* tdbb, CompilerScratch* csb);

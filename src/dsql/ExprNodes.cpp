@@ -6762,7 +6762,34 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		if (context->ctx_main_derived_contexts.hasData())
 		{
-			if (context->ctx_main_derived_contexts.getCount() > MAX_UCHAR)
+			HalfStaticArray<USHORT, 4> derivedContexts;
+
+			for (DsqlContextStack::const_iterator stack(context->ctx_main_derived_contexts);
+				 stack.hasData(); ++stack)
+			{
+				const dsql_ctx* const derivedContext = stack.object();
+
+				if (context->ctx_relation || context->ctx_procedure || context->ctx_map)
+				{
+					// bottleneck
+					fb_assert(derivedContext->ctx_context <= MAX_UCHAR);
+					derivedContexts.add(derivedContext->ctx_context);
+				}
+				else
+				{
+					for (const PartitionMap* const* iter = derivedContext->ctx_win_maps.begin();
+						iter != derivedContext->ctx_win_maps.end(); ++iter)
+					{
+						// bottleneck
+						fb_assert((*iter)->context <= MAX_UCHAR);
+						derivedContexts.add((*iter)->context);
+					}
+				}
+			}
+
+			const size_t derivedContextsCount = derivedContexts.getCount();
+
+			if (derivedContextsCount > MAX_UCHAR)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 						  Arg::Gds(isc_imp_exc) <<
@@ -6770,15 +6797,10 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			}
 
 			dsqlScratch->appendUChar(blr_derived_expr);
-			dsqlScratch->appendUChar(context->ctx_main_derived_contexts.getCount());
+			dsqlScratch->appendUChar(derivedContextsCount);
 
-			for (DsqlContextStack::const_iterator stack(context->ctx_main_derived_contexts);
-				 stack.hasData(); ++stack)
-			{
-				// bottleneck
-				fb_assert(stack.object()->ctx_context <= MAX_UCHAR);
-				dsqlScratch->appendUChar(stack.object()->ctx_context);
-			}
+			for (size_t i = 0; i < derivedContextsCount; i++)
+				dsqlScratch->appendUChar(derivedContexts[i]);
 		}
 	}
 

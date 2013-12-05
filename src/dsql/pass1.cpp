@@ -933,7 +933,8 @@ DeclareCursorNode* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const Met
 // Extract relation and procedure context and expand derived child contexts.
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
 {
-	if (context->ctx_relation || context->ctx_procedure || context->ctx_map)
+	if (context->ctx_relation || context->ctx_procedure ||
+		context->ctx_map || context->ctx_win_maps.hasData())
 	{
 		if (context->ctx_parent)
 			context = context->ctx_parent;
@@ -2086,6 +2087,11 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
 		parent_context->ctx_scope_level = dsqlScratch->scopeLevel;
+
+		// When we're in a outer-join part mark context for it.
+		if (dsqlScratch->inOuterJoin)
+			parent_context->ctx_flags |= CTX_outer_join;
+		parent_context->ctx_in_outer_join = dsqlScratch->inOuterJoin;
 
 		AggregateSourceNode* window = FB_NEW(pool) AggregateSourceNode(pool);
 		window->dsqlContext = parent_context;
