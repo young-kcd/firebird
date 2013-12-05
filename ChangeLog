@@ -1,3 +1,26 @@
+ 2013-12-05 09:19  alexpeshkoff 
+   M src/config/Args.cpp
+   M src/dudley/ddl.cpp
+   M src/dudley/lex.cpp
+   M src/gpre/c_cxx.cpp
+   M src/gpre/int_cxx.cpp
+   M src/gpre/pat.cpp
+   M src/gpre/pretty.cpp
+   M src/lock/print.cpp
+   M src/qli/lex.cpp
+Committed reworked patch from Debian
+
+ 2013-12-04 16:24  roman-simakov 
+   M builds/posix/Makefile.in.client.util
+   M builds/posix/Makefile.in.embed.util
+   M builds/win32/msvc10/nbackup.vcxproj
+   M builds/win32/msvc10/nbackup.vcxproj.filters
+   M builds/win32/msvc7/nbackup.vcproj
+   M builds/win32/msvc8/nbackup.vcproj
+   M builds/win32/msvc9/nbackup.vcproj
+   M src/utilities/nbackup.cpp
+Ignoring port for localhost in nbackup. Added check for localhost and error message if non localhost provided.
+
  2013-11-29 11:33  alexpeshkoff 
    M configure.in
    M src/jrd/common.h
