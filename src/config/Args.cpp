@@ -177,7 +177,7 @@ void Args::printHelp(const char* helpText, const Switches* switches)
 	}
 
 	if (helpText)
-		printf (helpText);
+		printf ("%s", helpText);
 
 	printf ("Options are:\n");
 
@@ -201,7 +201,7 @@ bool Args::readPasswords(const char *msg, char *pw1, int length)
 	for (;;)
 	{
 		if (msg)
-			printf (msg);
+			printf ("%s", msg);
 		printf ("New password: ");
 		if (!fgets (pw1, length, stdin))
 			break;
@@ -241,7 +241,7 @@ bool Args::readPassword(const char *msg, char *pw1, int length)
 	for (;;)
 	{
 		if (msg)
-			printf (msg);
+			printf ("%s", msg);
 		if (!fgets (pw1, length, stdin))
 			break;
 		char *p = strchr (pw1, '\n');

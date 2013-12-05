@@ -631,7 +631,7 @@ static void gen_variable( const act* action, int column)
 	char s[MAX_REF_SIZE];
 
 	align(column);
-	fprintf(gpreGlob.out_file, gen_name(s, action->act_object));
+	fprintf(gpreGlob.out_file, "%s", gen_name(s, action->act_object));
 
 }
 

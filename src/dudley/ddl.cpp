@@ -718,7 +718,7 @@ bool DDL_yes_no( USHORT number)
 	}
 
 	for (;;) {
-		printf(prompt);
+		printf("%s", prompt);
 		if (dudleyGlob.DDL_service)
 			putc('\001', stdout);
 		fflush(stdout);

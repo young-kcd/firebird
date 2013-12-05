@@ -294,7 +294,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			switch (c)
 			{
 			case '?':
-				FPRINTF(outfile, usage);
+				FPRINTF(outfile, "%s", usage);
 				exit(FINI_OK);
 				break;
 

@@ -429,7 +429,7 @@ static int nextchar()
 	while (!(c = *DDL_char++)) {
 		DDL_char = DDL_buffer;
 		if (dudleyGlob.DDL_interactive) {
-			printf(dudleyGlob.DDL_prompt);
+			printf("%s", dudleyGlob.DDL_prompt);
 			if (dudleyGlob.DDL_service)
 				putc('\001', stdout);
 			fflush(stdout);

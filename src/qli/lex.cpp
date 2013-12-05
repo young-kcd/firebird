@@ -438,7 +438,7 @@ bool LEX_get_line(const TEXT* prompt, TEXT* buffer, int size)
 	// UNIX flavor
 
 	if (prompt)
-		printf(prompt);
+		printf("%s", prompt);
 
 	errno = 0;
 	TEXT* p = buffer;

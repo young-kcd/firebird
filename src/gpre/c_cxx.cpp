@@ -1145,7 +1145,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 			}
 		}
 		*q1 = 0;
-		printa(indent, line);
+		printa(indent, "%s", line);
 		length = length - (q - p);
 		p = q;
 		if (first_line)
@@ -2726,12 +2726,12 @@ static void gen_raw(const UCHAR* blr, int request_length)
 		if (p < limit)
 			continue;
 		*p = 0;
-		printa(INDENT, buffer);
+		printa(INDENT, "%s", buffer);
 		p = buffer;
 	}
 
 	*p = 0;
-	printa(INDENT, buffer);
+	printa(INDENT, "%s", buffer);
 }
 
 
@@ -3499,7 +3499,7 @@ static void gen_variable( const act* action, int column)
 {
 	TEXT s[MAX_REF_SIZE];
 
-	printa(column, gen_name(s, action->act_object, false));
+	printa(column, "%s", gen_name(s, action->act_object, false));
 }
 
 
