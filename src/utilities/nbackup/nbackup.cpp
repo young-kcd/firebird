@@ -51,6 +51,7 @@
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/Switches.h"
 #include "../utilities/nbackup/nbkswi.h"
+#include "../common/isc_f_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -242,7 +243,7 @@ static void checkCtrlC(UtilSvc* /*uSvc*/)
 #endif
 
 
-const char local_prefix[] = "localhost:";
+const char localhost[] = "localhost";
 
 const char backup_signature[4] = {'N','B','A','K'};
 
@@ -273,10 +274,13 @@ public:
 	{
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
-		// This makes NBACKUP compatible with Windows CS with XNET disabled
-		PathName db(_database);
-		if (strncmp(db.c_str(), local_prefix, sizeof(local_prefix) - 1) == 0)
-			db = db.substr(sizeof(local_prefix) - 1);
+		// RS: Maybe check if host is loopback via OS functions is more correct
+		PathName db(_database), host;
+		if (ISC_extract_host(db, host, false) == ISC_PROTOCOL_TCPIP)
+		{
+			if (strncmp(host.c_str(), localhost, sizeof(localhost) - 1) != 0)
+				pr_error(status, "nbackup needs local access to database file");
+		}
 
 		expandDatabaseName(db, dbname, NULL);
 
