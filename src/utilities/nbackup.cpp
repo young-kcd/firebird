@@ -288,10 +288,12 @@ public:
 		// database using TCP/IP loopback while reading file locally.
 		// This makes NBACKUP compatible with Windows CS with XNET disabled
 		// RS: Maybe check if host is loopback via OS functions is more correct
-		PathName db(_database), host;
-		if (ISC_extract_host(db, host, false) == ISC_PROTOCOL_TCPIP)
+		PathName db(_database), host_port;
+		if (ISC_extract_host(db, host_port, false) == ISC_PROTOCOL_TCPIP)
 		{
-			if (host.substr(0, sizeof(localhost) -1) != localhost)
+			const PathName host = host_port.substr(0, sizeof(localhost) - 1);
+			const char delim = host_port.length() >= sizeof(localhost) ? host_port[sizeof(localhost) - 1] : '/';
+			if ((delim != '/') || !host.equalsNoCase(localhost))
 				pr_error(status, "nbackup needs local access to database file");
 		}
 
