@@ -1,3 +1,25 @@
+ 2013-12-05 16:37  dimitr 
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+Improved the detailed plan output.
+
+ 2013-12-05 13:59  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/pass1.cpp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/RecordSource.h
+Fixed three issues together represented in CORE-4261:
+- non-existent result of the window function (in outer joins) is reported as 0 instead of NULL
+- derived constant is processed wrongly in windowed streams
+- deeper-than-root partitions are not "nullified" in outer joins
+Adriano, please review.
+
+ 2013-12-05 10:15  roman-simakov 
+   M src/utilities/nbackup/nbackup.cpp
+Ignoring port for localhost in nbackup. Added check for localhost and error message if non localhost provided.
+
  2013-12-03 10:52  alexpeshkoff 
    M builds/posix/Makefile.in
 Fixed build - ids.h was regenerated too late
