@@ -6769,7 +6769,9 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			{
 				const dsql_ctx* const derivedContext = stack.object();
 
-				if (context->ctx_relation || context->ctx_procedure || context->ctx_map)
+				if (derivedContext->ctx_relation ||
+					derivedContext->ctx_procedure ||
+					derivedContext->ctx_map)
 				{
 					// bottleneck
 					fb_assert(derivedContext->ctx_context <= MAX_UCHAR);
