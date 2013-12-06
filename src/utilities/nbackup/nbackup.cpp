@@ -278,7 +278,7 @@ public:
 		PathName db(_database), host;
 		if (ISC_extract_host(db, host, false) == ISC_PROTOCOL_TCPIP)
 		{
-			if (strncmp(host.c_str(), localhost, sizeof(localhost) - 1) != 0)
+			if (host.substr(0, sizeof(localhost) -1) != localhost)
 				pr_error(status, "nbackup needs local access to database file");
 		}
 
