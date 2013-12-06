@@ -238,29 +238,6 @@ void UserManagement::list(Auth::IUser* u)
 				 attachment_charset);
 	}
 
-	if (u->groupName()->entered())
-	{
-		putField(threadDbb, record,
-				 DumpField(f_sec_group_name, VALUE_STRING, strlen(u->groupName()->get()), u->groupName()->get()),
-				 attachment_charset);
-	}
-
-	if (u->uid()->entered())
-	{
-		int tmp = u->uid()->get();
-		putField(threadDbb, record,
-				 DumpField(f_sec_uid, VALUE_INTEGER, sizeof(int), &tmp),
-				 attachment_charset);
-	}
-
-	if (u->gid()->entered())
-	{
-		int tmp = u->gid()->get();
-		putField(threadDbb, record,
-				 DumpField(f_sec_gid, VALUE_INTEGER, sizeof(int), &tmp),
-				 attachment_charset);
-	}
-
 	if (u->firstName()->entered())
 	{
 		putField(threadDbb, record,
@@ -279,6 +256,20 @@ void UserManagement::list(Auth::IUser* u)
 	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->lastName()->get()), u->lastName()->get()),
+				 attachment_charset);
+	}
+
+	if (u->attributes()->entered())
+	{
+		putField(threadDbb, record,
+				 DumpField(f_sec_attributes, VALUE_STRING, strlen(u->attributes()->get()), u->attributes()->get()),
+				 attachment_charset);
+	}
+
+	if (u->comment()->entered())
+	{
+		putField(threadDbb, record,
+				 DumpField(f_sec_comment, VALUE_STRING, strlen(u->comment()->get()), u->comment()->get()),
 				 attachment_charset);
 	}
 

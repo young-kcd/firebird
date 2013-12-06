@@ -100,6 +100,52 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
 
+
+static void setAttr(Firebird::string& attr, Auth::ICharUserField* field)
+{
+	attr = field->get();
+}
+
+static void setAttr(Firebird::string& attr, Auth::IIntUserField* field)
+{
+	attr.printf("%d", field->get());
+}
+
+template <typename I>
+static void setAttr(Firebird::string& attr, const char* name, I* field)
+{
+	Firebird::string s;
+	if (field->entered())
+	{
+		setAttr(s, field);
+	}
+	else if (!field->specified())
+	{
+		return;
+	}
+	attr += name;
+	attr += '=';
+	attr += s;
+	attr += '\n';
+}
+
+static bool fieldSet(Auth::IUserField* field)
+{
+	return field->entered() || field->specified();
+}
+
+static void merge(Auth::IIntUserField* to, Auth::IIntUserField* from)
+{
+	if (fieldSet(to))
+		return;
+	if (from->entered())
+	{
+		to->set(from->get());
+		to->setEntered(1);
+	}
+}
+
+
 int gsec(Firebird::UtilSvc* uSvc)
 {
 /**************************************
@@ -342,6 +388,30 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 
+	class Attributes : public ConfigFile
+	{
+	public:
+		Attributes(Auth::IUser* data)
+			: ConfigFile(USE_TEXT, data->attributes()->entered() ? data->attributes()->get() : "")
+		{ }
+
+		int operator[](const char* name)
+		{
+			const Parameter* p = findParameter(name);
+			return p ? int(p->asInteger()) : 0;
+		}
+
+		void set(Auth::IIntUserField* field, const char* name)
+		{
+			const Parameter* p = findParameter(name);
+			if (p)
+			{
+				field->set(p->asInteger());
+				field->setEntered(1);
+			}
+		}
+	};
+
 	class Display : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
 	{
 	public:
@@ -352,14 +422,16 @@ int gsec(Firebird::UtilSvc* uSvc)
 		// IListUsers implementation
 		void FB_CARG list(Auth::IUser* data)
 		{
+			Attributes attr(data);
+
 			if (tdsec->utilSvc->isService())
 			{
 				tdsec->utilSvc->putLine(isc_spb_sec_username, data->userName()->get());
-				tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->firstName()->get());
-				tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middleName()->get());
-				tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->lastName()->get());
-				tdsec->utilSvc->putSLong(isc_spb_sec_userid, data->uid()->get());
-				tdsec->utilSvc->putSLong(isc_spb_sec_groupid, data->gid()->get());
+				tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->firstName()->entered() ? data->firstName()->get() : "");
+				tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middleName()->entered() ? data->middleName()->get() : "");
+				tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->lastName()->entered() ? data->lastName()->get() : "");
+				tdsec->utilSvc->putSLong(isc_spb_sec_userid, attr["uid"]);
+				tdsec->utilSvc->putSLong(isc_spb_sec_groupid, attr["gid"]);
 				if (data->operation() == DIS_OPER)
 				{
 					tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin()->get());
@@ -378,7 +450,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				util_output(false, "%-*.*s %5d %5d %-5.5s     %s %s %s\n",
 							USERNAME_LENGTH, USERNAME_LENGTH, data->userName()->get(),
-							data->uid()->get(), data->gid()->get(), data->admin()->get() ? "admin" : "",
+							attr["uid"], attr["gid"], data->admin()->get() ? "admin" : "",
 							data->firstName()->get(), data->middleName()->get(), data->lastName()->get());
 			}
 		}
@@ -386,6 +458,27 @@ int gsec(Firebird::UtilSvc* uSvc)
 	private:
 		tsec* tdsec;
 		bool first;
+	};
+
+
+	class Callback : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
+	{
+	public:
+		explicit Callback(Auth::StackUserData* pu)
+			: u(pu)
+		{ }
+
+		// IListUsers implementation
+		void FB_CARG list(Auth::IUser* data)
+		{
+			Attributes attr(data);
+
+			attr.set(&u->u, "uid");
+			attr.set(&u->g, "gid");
+		}
+
+	private:
+		Auth::StackUserData* u;
 	};
 
 
@@ -404,6 +497,47 @@ int gsec(Firebird::UtilSvc* uSvc)
 			if (! useServices)
 			{
 				Firebird::LocalStatus st;
+
+				if (user_data->operation() == MOD_OPER && user_data->userName()->entered() &&
+					(fieldSet(&user_data->u) || fieldSet(&user_data->g) || fieldSet(&user_data->group)))
+				{
+					Auth::StackUserData u;
+					u.op = OLD_DIS_OPER;
+					u.user.set(user_data->userName()->get());
+					u.user.setEntered(1);
+
+					Callback cb(&u);
+					ret = manager->execute(&st, &u, &cb);
+
+					if (ret)
+					{
+						ret = setGsecCode(ret, user_data);		// user_data, not u !
+						fb_utils::copyStatus(status, FB_NELEM(status),
+											 st.get(), fb_utils::statusLength(st.get()));
+						GSEC_print(ret, user_data->userName()->get());
+						if (status[1])
+						{
+							GSEC_print_status(status);
+						}
+						get_security_error(status, ret);
+					}
+
+					if (!st.isSuccess())
+					{
+						Firebird::status_exception::raise(st.get());
+					}
+
+					merge(&user_data->u, &u.u);
+					merge(&user_data->g, &u.g);
+				}
+
+				Firebird::string attr;
+				setAttr(attr, "uid", &user_data->u);
+				setAttr(attr, "gid", &user_data->g);
+				setAttr(attr, "groupName", &user_data->group);
+				user_data->attributes()->set(attr.c_str());
+				user_data->attributes()->setEntered(attr.hasData() ? 1 : 0);
+
 				ret = manager->execute(&st, user_data, &disp);
 
 				if (ret)

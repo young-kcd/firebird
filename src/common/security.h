@@ -180,19 +180,14 @@ public:
 		return &middle;
 	}
 
-	ICharUserField* FB_CARG groupName()
+	ICharUserField* FB_CARG comment()
 	{
-		return &group;
+		return &com;
 	}
 
-	IIntUserField* FB_CARG uid()
+	ICharUserField* FB_CARG attributes()
 	{
-		return &u;
-	}
-
-	IIntUserField* FB_CARG gid()
-	{
-		return &g;
+		return &attr;
 	}
 
 	IIntUserField* FB_CARG admin()
@@ -205,10 +200,14 @@ public:
 	typedef Firebird::Array<UCHAR> AuthenticationBlock;
 
 	int op, trustedRole, trustedAuth;
-	CharField user, pass, first, last, middle, group;
-	IntField u, g, adm;
+	CharField user, pass, first, last, middle, com, attr;
+	IntField adm;
 	CharField database, dba, dbaPassword, role, trustedUser;
 	AuthenticationBlock authenticationBlock;
+
+	// deprecated
+	CharField group;
+	IntField u, g;
 };
 
 class StackUserData FB_FINAL : public Firebird::AutoIface<UserData, FB_AUTH_USER_VERSION>

@@ -605,10 +605,9 @@ END_RELATION
 // Relation 43 (SEC$USERS)
 RELATION(nam_sec_users, rel_sec_users, ODS_12_0, rel_virtual)
 	FIELD(f_sec_user_name, nam_user_name, fld_user, 1, ODS_12_0)
-	FIELD(f_sec_group_name, nam_group_name, fld_user, 1, ODS_12_0)
-	FIELD(f_sec_uid, nam_uid, fld_uid, 1, ODS_12_0)
-	FIELD(f_sec_gid, nam_gid, fld_gid, 1, ODS_12_0)
 	FIELD(f_sec_first_name, nam_first_name, fld_name_part, 1, ODS_12_0)
 	FIELD(f_sec_middle_name, nam_middle_name, fld_name_part, 1, ODS_12_0)
 	FIELD(f_sec_last_name, nam_last_name, fld_name_part, 1, ODS_12_0)
+	FIELD(f_sec_attributes, nam_attributes, fld_description, 1, ODS_12_0)
+	FIELD(f_sec_comment, nam_sec_description, fld_description, 1, ODS_12_0)
 END_RELATION

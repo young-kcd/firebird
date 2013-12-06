@@ -606,11 +606,10 @@
 // Relation 43 (SEC$USERS)
 
 	const USHORT  f_sec_user_name = 0;
-	const USHORT  f_sec_group_name = 1;
-	const USHORT  f_sec_uid = 2;
-	const USHORT  f_sec_gid = 3;
-	const USHORT  f_sec_first_name = 4;
-	const USHORT  f_sec_middle_name = 5;
-	const USHORT  f_sec_last_name = 6;
+	const USHORT  f_sec_first_name = 1;
+	const USHORT  f_sec_middle_name = 2;
+	const USHORT  f_sec_last_name = 3;
+	const USHORT  f_sec_attributes = 4;
+	const USHORT  f_sec_comment = 5;
 
 

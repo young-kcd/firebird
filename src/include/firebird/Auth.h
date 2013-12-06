@@ -126,15 +126,15 @@ public:
 	virtual ICharUserField* FB_CARG firstName() = 0;
 	virtual ICharUserField* FB_CARG lastName() = 0;
 	virtual ICharUserField* FB_CARG middleName() = 0;
-	virtual ICharUserField* FB_CARG groupName() = 0;
 
-	virtual IIntUserField* FB_CARG uid() = 0;
-	virtual IIntUserField* FB_CARG gid() = 0;
+	virtual ICharUserField* FB_CARG comment() = 0;
+	virtual ICharUserField* FB_CARG attributes() = 0;
+
 	virtual IIntUserField* FB_CARG admin() = 0;
 
 	virtual void FB_CARG clear() = 0;
 };
-#define FB_AUTH_USER_VERSION (FB_VERSIONED_VERSION + 11)
+#define FB_AUTH_USER_VERSION (FB_VERSIONED_VERSION + 10)
 
 class IListUsers : public Firebird::IVersioned
 {

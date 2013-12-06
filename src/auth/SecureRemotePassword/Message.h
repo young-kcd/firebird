@@ -91,10 +91,17 @@ private:
 	unsigned fieldCount;
 };
 
+
 template <>
 bool Message::checkType<SLONG>(unsigned t, unsigned sz)
 {
 	return t == SQL_LONG && sz == sizeof(SLONG);
+}
+
+template <>
+bool Message::checkType<ISC_QUAD>(unsigned t, unsigned sz)
+{
+	return (t == SQL_BLOB || t == SQL_QUAD) && sz == sizeof(ISC_QUAD);
 }
 
 
@@ -149,6 +156,11 @@ public:
 	operator T()
 	{
 		return *ptr;
+	}
+
+	T* operator&()
+	{
+		return ptr;
 	}
 
 	T operator= (T newVal)

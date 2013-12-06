@@ -317,6 +317,27 @@ static void userInfoToSpb(char*& spb, Auth::UserData& userData)
 }
 
 
+static void setAttr(string& a, const char* nm, Auth::IIntUserField* f)
+{
+	if (f->entered())
+	{
+		string s;
+		s.printf("%s=%d\n", nm, f->get());
+		a += s;
+	}
+}
+
+
+static void setAttr(Auth::UserData* u)
+{
+	string attr;
+	setAttr(attr, "Uid", &u->u);
+	setAttr(attr, "Gid", &u->g);
+	u->attributes()->setEntered(attr.hasData());
+	u->attributes()->set(attr.c_str());
+}
+
+
 /**
 
 	callRemoteServiceManager
@@ -451,6 +472,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 
 		if (uData.user.get()[0] && callback)
 		{
+			setAttr(&uData);
 			callback->list(&uData);
 		}
 	}
@@ -532,12 +554,14 @@ static void parseString2(const char*& p, Auth::CharField& f, size_t& loop)
 
 	p += sizeof(USHORT);
 	f.set(p, len);
+	f.setEntered(1);
 	p += len;
 }
 
 static void parseLong(const char*& p, Auth::IntField& f, size_t& loop)
 {
 	f.set(isc_vax_integer(p, sizeof(ULONG)));
+	f.setEntered(1);
 
 	const size_t len2 = sizeof(ULONG) + 1;
 	if (len2 > loop)
@@ -617,6 +641,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 				{
 					if (callback)
 					{
+						setAttr(&uData);
 						callback->list(&uData);
 					}
 					uData.clear();

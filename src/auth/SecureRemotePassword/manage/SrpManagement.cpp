@@ -46,65 +46,9 @@ const unsigned int SZ_LOGIN = 31;
 const unsigned int SZ_NAME = 31;
 typedef Field<Varying> Varfield;
 typedef Field<Text> Name;
+typedef Field<ISC_QUAD> Blob;
 
-void setField(Name& to, Auth::ICharUserField* from)
-{
-	if (from->entered())
-	{
-		to = from->get();
-	}
-	else
-	{
-		to.null = FB_TRUE;
-	}
-}
-
-
-void allocField(Auth::ICharUserField* value, Firebird::string& update, const char* name)
-{
-	if (value->entered() || value->specified())
-	{
-		update += ' ';
-		update += name;
-		update += "=?,";
-	}
-}
-
-void allocField(Firebird::AutoPtr<Name>& field, Message& up, Auth::ICharUserField* value, const char* name)
-{
-	if (value->entered() || value->specified())
-	{
-		field = new Name(up);
-	}
-}
-
-void assignField(Firebird::AutoPtr<Name>& field, Auth::ICharUserField* name)
-{
-	if (field.hasData())
-	{
-		if (name->entered())
-		{
-			*field = name->get();
-			field->null = FB_FALSE;
-		}
-		else
-		{
-			fb_assert(name->specified());
-			field->null = FB_TRUE;
-		}
-	}
-}
-
-void listField(Auth::ICharUserField* to, Name& from)
-{
-	to->setEntered(from.null ? 0 : 1);
-	if (!from.null)
-	{
-		to->set(from);
-	}
-}
-
-}
+} // anonymous namespace
 
 namespace Auth {
 
@@ -122,17 +66,21 @@ public:
 			"PLG$VERIFIER VARCHAR(128) CHARACTER SET OCTETS NOT NULL, "
 			"PLG$SALT VARCHAR(32) CHARACTER SET OCTETS NOT NULL, "
 			"PLG$COMMENT RDB$DESCRIPTION, PLG$FIRST SEC$NAME_PART, "
-			"PLG$MIDDLE SEC$NAME_PART, PLG$LAST SEC$NAME_PART)"
+			"PLG$MIDDLE SEC$NAME_PART, PLG$LAST SEC$NAME_PART, "
+			"PLG$ATTRIBUTES RDB$DESCRIPTION)"
 			,
 			"CREATE VIEW PLG$SRP_VIEW AS "
-			"SELECT PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$COMMENT, PLG$FIRST, PLG$MIDDLE, PLG$LAST "
-			"FROM PLG$SRP WHERE CURRENT_USER = 'SYSDBA' OR CURRENT_ROLE = 'RDB$ADMIN' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
+			"SELECT PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$COMMENT, "
+			"   PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$ATTRIBUTES "
+			"FROM PLG$SRP WHERE CURRENT_USER = 'SYSDBA' "
+			"   OR CURRENT_ROLE = 'RDB$ADMIN' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
 			,
 			"GRANT ALL ON PLG$SRP to VIEW PLG$SRP_VIEW"
 			,
 			"GRANT SELECT ON PLG$SRP_VIEW to PUBLIC"
 			,
-			"GRANT UPDATE(PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST) ON PLG$SRP_VIEW TO PUBLIC"
+			"GRANT UPDATE(PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST, "
+			"   PLG$COMMENT, PLG$ATTRIBUTES) ON PLG$SRP_VIEW TO PUBLIC"
 			,
 			NULL
 		};
@@ -260,8 +208,8 @@ public:
 			case ADD_OPER:
 				{
 					const char* insert =
-						"INSERT INTO plg$srp_view(PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST) "
-						"VALUES(?, ?, ?, ?, ?, ?)";
+						"INSERT INTO plg$srp_view(PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST, "
+						"PLG$COMMENT, PLG$ATTRIBUTES) VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
 
 					Firebird::IStatement* stmt = NULL;
 					try
@@ -305,11 +253,14 @@ public:
 						Name login(add);
 						Varfield verifier(add), slt(add);
 						Name first(add), middle(add), last(add);
+						Blob comment(add), attr(add);
 
 						setField(login, user->userName());
 						setField(first, user->firstName());
 						setField(middle, user->middleName());
 						setField(last, user->lastName());
+						setField(status, comment, user->comment());
+						setField(status, attr, user->attributes());
 
 #if SRP_DEBUG > 1
 						Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
@@ -359,9 +310,12 @@ public:
 					}
 
 					Firebird::AutoPtr<Name> first, middle, last;
+					Firebird::AutoPtr<Blob> comment, attr;
 					allocField(user->firstName(), update, "PLG$FIRST");
 					allocField(user->middleName(), update, "PLG$MIDDLE");
 					allocField(user->lastName(), update, "PLG$LAST");
+					allocField(user->comment(), update, "PLG$COMMENT");
+					allocField(user->attributes(), update, "PLG$ATTRIBUTES");
 
 					if (update[update.length() - 1] != ',')
 					{
@@ -407,12 +361,16 @@ public:
 						allocField(first, up, user->firstName(), "PLG$FIRST");
 						allocField(middle, up, user->middleName(), "PLG$MIDDLE");
 						allocField(last, up, user->lastName(), "PLG$LAST");
+						allocField(comment, up, user->comment(), "PLG$COMMENT");
+						allocField(attr, up, user->attributes(), "PLG$ATTRIBUTES");
 
 						Name login(up);
 
 						assignField(first, user->firstName());
 						assignField(middle, user->middleName());
 						assignField(last, user->lastName());
+						assignField(status, comment, user->comment());
+						assignField(status, attr, user->attributes());
 						setField(login, user->userName());
 
 						stmt->execute(status, tra, up.metadata, up.buffer, NULL, NULL);
@@ -478,12 +436,7 @@ public:
 			case OLD_DIS_OPER:
 			case DIS_OPER:
 				{
-					user->uid()->setEntered(0);
-					user->gid()->setEntered(0);
-					user->groupName()->setEntered(0);
-					user->password()->setEntered(0);
-
-					Firebird::string disp =	"SELECT PLG$USER_NAME, PLG$FIRST, PLG$MIDDLE, PLG$LAST, "
+					Firebird::string disp =	"SELECT PLG$USER_NAME, PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$COMMENT, PLG$ATTRIBUTES, "
 											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN 0 ELSE 1 END "
 											"FROM PLG$SRP_VIEW LEFT JOIN RDB$USER_PRIVILEGES "
 											"	ON PLG$SRP_VIEW.PLG$USER_NAME = RDB$USER_PRIVILEGES.RDB$USER "
@@ -506,6 +459,7 @@ public:
 						Message di(om);
 						Name login(di);
 						Name first(di), middle(di), last(di);
+						Field<ISC_QUAD> comment(di), attr(di);
 						Field<SLONG> admin(di);
 
 						Firebird::AutoPtr<Message> par;
@@ -529,6 +483,8 @@ public:
 							listField(user->firstName(), first);
 							listField(user->middleName(), middle);
 							listField(user->lastName(), last);
+							listField(status, user->comment(), comment);
+							listField(status, user->attributes(), attr);
 							user->admin()->set(admin);
 
 							callback->list(user);
@@ -645,12 +601,160 @@ private:
 		return newCount == oldCount + 1;
 	}
 
-	void check(Firebird::IStatus* status)
+	static void check(Firebird::IStatus* status)
 	{
 		if (!status->isSuccess())
 		{
 			checkStatusVectorForMissingTable(status->get());
 			Firebird::status_exception::raise(status->get());
+		}
+	}
+
+	static void setField(Name& to, Auth::ICharUserField* from)
+	{
+		if (from->entered())
+		{
+			to = from->get();
+		}
+		else
+		{
+			to.null = FB_TRUE;
+		}
+	}
+
+	void setField(Firebird::IStatus* st, Blob& to, Auth::ICharUserField* from)
+	{
+		if (from->entered())
+		{
+			blobWrite(st, to, from);
+		}
+		else
+		{
+			to.null = FB_TRUE;
+		}
+	}
+
+	static void allocField(Auth::ICharUserField* value, Firebird::string& update, const char* name)
+	{
+		if (value->entered() || value->specified())
+		{
+			update += ' ';
+			update += name;
+			update += "=?,";
+		}
+	}
+
+	template <typename FT>
+	static void allocField(Firebird::AutoPtr<FT>& field, Message& up, Auth::ICharUserField* value, const char* name)
+	{
+		if (value->entered() || value->specified())
+		{
+			field = new FT(up);
+		}
+	}
+
+	static void assignField(Firebird::AutoPtr<Name>& field, Auth::ICharUserField* name)
+	{
+		if (field.hasData())
+		{
+			if (name->entered())
+			{
+				*field = name->get();
+			}
+			else
+			{
+				fb_assert(name->specified());
+				field->null = FB_TRUE;
+			}
+		}
+	}
+
+	void assignField(Firebird::IStatus* st, Firebird::AutoPtr<Blob>& field, Auth::ICharUserField* name)
+	{
+		if (field.hasData())
+		{
+			if (name->entered())
+			{
+				blobWrite(st, *field, name);
+				field->null = FB_FALSE;
+			}
+			else
+			{
+				fb_assert(name->specified());
+				field->null = FB_TRUE;
+			}
+		}
+	}
+
+	static void listField(Auth::ICharUserField* to, Name& from)
+	{
+		to->setEntered(from.null ? 0 : 1);
+		if (!from.null)
+		{
+			to->set(from);
+		}
+	}
+
+	void listField(Firebird::IStatus* st, Auth::ICharUserField* to, Blob& from)
+	{
+		to->setEntered(from.null ? 0 : 1);
+		if (!from.null)
+		{
+			Firebird::string s;
+			Firebird::IBlob* blob = NULL;
+			try
+			{
+				blob = att->openBlob(st, tra, &from);
+				check(st);
+
+				char segbuf[256];
+				unsigned len;
+				while ( (len = blob->getSegment(st, sizeof(segbuf), segbuf)) )
+				{
+					if (st->get()[1] != isc_segment)
+						check(st);
+					s.append(segbuf, len);
+				}
+				if (st->get()[1] != isc_segstr_eof)
+					check(st);
+
+				blob->close(st);
+				check(st);
+
+				to->set(s.c_str());
+			}
+			catch(const Firebird::Exception&)
+			{
+				if (blob)
+					blob->release();
+				throw;
+			}
+		}
+	}
+
+	void blobWrite(Firebird::IStatus* st, Blob& to, Auth::ICharUserField* from)
+	{
+		to.null = FB_FALSE;
+		const char* ptr = from->get();
+		unsigned l = strlen(ptr);
+
+		Firebird::IBlob* blob = NULL;
+		try
+		{
+			blob = att->createBlob(st, tra, &to);
+			check(st);
+
+			blob->putSegment(st, l, ptr);
+			check(st);
+
+			blob->close(st);
+			check(st);
+		}
+		catch(const Firebird::Exception&)
+		{
+			if (blob)
+				blob->release();
+			throw;
 		}
 	}
 };

@@ -55,22 +55,30 @@ Get::Get(Config* firebirdConf)
 void FB_CARG UserData::clear()
 {
 	op = trustedRole = trustedAuth = 0;
+
+	// interface fields
 	user.clear();
 	pass.clear();
 	first.clear();
 	last.clear();
 	middle.clear();
-	group.clear();
-	u.clear();
-	g.clear();
+	com.clear();
+	attr.clear();
 	adm.clear();
 
+	// internally used fields
 	database.clear();
 	dba.clear();
 	dbaPassword.clear();
 	role.clear();
 	trustedUser.clear();
+
 	// never clear this permanent block!	authenticationBlock.clear();
+
+	// internal support for deprecated fields
+	group.clear();
+	u.clear();
+	g.clear();
 }
 
 // This function sets typical gsec return code based on requested operation if it was not set by plugin
