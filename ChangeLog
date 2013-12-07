@@ -1,3 +1,36 @@
+ 2013-12-06 17:10  alexpeshkoff 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/common/call_service.cpp
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/dbs/security.sql
+   M src/include/firebird/Auth.h
+   M src/include/gen/ids.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/fields.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/utilities/gsec/gsec.cpp
+Implemented CORE-4290: Extensible property support which can add properties (name-value pairs) to users
+
+ 2013-12-06 15:58  roman-simakov 
+   M src/utilities/nbackup/nbackup.cpp
+Hope the last fix of nbackup host case insensitive cutting. Sorry.
+
+ 2013-12-06 15:12  roman-simakov 
+   M src/utilities/nbackup/nbackup.cpp
+Sorry. More correct fix for case insensitive mode.
+
+ 2013-12-06 14:58  roman-simakov 
+   M src/utilities/nbackup/nbackup.cpp
+Make comparing of host name case-insensitive
+
+ 2013-12-06 12:57  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed my yesterday's mistake.
+
  2013-12-05 16:37  dimitr 
    M src/jrd/recsrc/AggregatedStream.cpp
    M src/jrd/recsrc/NestedLoopJoin.cpp
