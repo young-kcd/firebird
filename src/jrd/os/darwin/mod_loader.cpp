@@ -102,12 +102,11 @@ DlfcnModule::~DlfcnModule()
 
 void* DlfcnModule::findSymbol(const Firebird::string& symName)
 {
-	void *result =dlsym(module, symName.c_str());
+	void *result = dlsym(module, symName.c_str());
 	if (result == NULL)
 	{
-	Firebird::string newSym ='_' + symName;
-
-	result = dlsym(module, newSym.c_str());
+		Firebird::string newSym = '_' + symName;
+		result = dlsym(module, newSym.c_str());
 	}
 	return result;
 

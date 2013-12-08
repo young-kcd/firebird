@@ -146,7 +146,7 @@ private:
 	ConfigStorage* storage;
 
 public:
-	StorageInstance(Firebird::MemoryPool&) :
+	explicit StorageInstance(Firebird::MemoryPool&) :
 		storage(NULL)
 	{}
 

@@ -82,7 +82,8 @@ static string getExecutablePath()
 	_NSGetExecutablePath(file_buff, &bufsize);
 	char canonic[PATH_MAX];
 	if (!realpath(file_buff, canonic))
-	Firebird::system_call_failed::raise("realpath");
+		Firebird::system_call_failed::raise("realpath");
+		
 	string bin_dir = canonic;
 	// get rid of the filename
 	int index = bin_dir.rfind(PathUtils::dir_sep);

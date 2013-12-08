@@ -402,7 +402,7 @@ private:
 	class DisableAst
 	{
 	public:
-		DisableAst(Attachment* att)
+		explicit DisableAst(Attachment* att)
 			: attExistenceMutex(att->mutex())
 		{
 			MutexLockGuard guard(attExistenceMutex->astMutex);
@@ -411,7 +411,7 @@ private:
 
 		~DisableAst()
 		{
-			// hence astDisabled is atomic, no need to lock something in dtor
+			// since astDisabled is atomic, no need to lock something in dtor
 			--(attExistenceMutex->astDisabled);
 		}
 
