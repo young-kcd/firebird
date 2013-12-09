@@ -1,3 +1,10 @@
+ 2013-12-08 07:49  robocop 
+   M src/jrd/jrd.cpp
+   M src/jrd/os/darwin/config_root.cpp
+   M src/jrd/os/darwin/mod_loader.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+Misc.
+
  2013-12-06 15:52  roman-simakov 
    M src/utilities/nbackup.cpp
 Hope the last fix of nbackup host case insensitive cutting. Sorry.
