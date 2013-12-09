@@ -257,6 +257,7 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 		{
 			const UCHAR* specData = id.getBytes();
 			size_t len = id.getClumpLength();
+			fb_assert(len <= 255);
 
 			if (len > 1)
 			{
@@ -264,6 +265,10 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 				unsigned offset = specData[0];
 				if (offset + 1 > top)
 					top = offset + 1;
+				if (checkBytes[offset])
+				{
+					(Arg::Gds(isc_random) << "Invalid CNCT block: repeated data").raise();	// print offset No here
+				}
 				checkBytes[offset] = 1;
 
 				offset *= 254;
@@ -1581,6 +1586,17 @@ bool wireEncryption(rem_port* port, ClumpletReader& id)
 	}
 
 	int clientCrypt = id.find(CNCT_client_crypt) ? id.getInt() : WIRE_CRYPT_ENABLED;
+	switch(clientCrypt)
+	{
+	case WIRE_CRYPT_REQUIRED:
+	case WIRE_CRYPT_ENABLED:
+	case WIRE_CRYPT_DISABLED:
+		break;
+	default:
+		clientCrypt = WIRE_CRYPT_ENABLED;
+		break;
+	}
+
 	int serverCrypt = port->getPortConfig()->getWireCrypt(WC_SERVER);
 	if (wcCompatible[clientCrypt][serverCrypt] < 0)
 	{
