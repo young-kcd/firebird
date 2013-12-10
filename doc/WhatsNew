@@ -2,8 +2,98 @@
   * v2.5.3
   **************************
 
+    * Bugfix CORE-4283
+        Resource temporarily unavailable errors while simultaneously registering events
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4267
+        Server crashes while sweeping the database
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4251
+        Guardian service could write garbage after the end of message in the Event Log
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4250
+        AV in guardian at process shutdown
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4247
+        Delete "where current of" cursor fails for tables with newly added fields
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4244
+        Problem with creation procedure which contain adding text in DOS864 charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4233
+        In PSQL modules with declared cursors engine could assign value to the wrong variable
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4225
+        Server crashes when attempting to trace activity on database having a db-level trigger
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4224
+        Database replace through services API fails
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4216
+        Memory leak with TRIGGER ON TRANSACTION COMMIT
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4214
+        GTT should not reference permanent relation
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4212
+        Dropping FK on GTT crashes server
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4211
+        Embedded engine hangs for 5 seconds when closing, errors about timeout in shutdown process and invalid mutex placed in firebird.log
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4210
+        Preserve comments for output parameters after altering procedures
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4204
+        Error when compiling the procedure containing the statement if (x = (select ...))
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4198
+        Incorrect "token unknown" error when the SQL string ends with a hex number literal
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4145
+        Memory leak when preparing EXECUTE BLOCK which uses domains
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-4144
         Error "context already in use (BLR error)" when preparing a query with UNION
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4143
+        Leak memory in fbembed.dll
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
@@ -259,6 +349,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-3921
+        "record disappeared (186), file: vio.cpp line: 408" + CPU 100% (when bugcheckabort=1 and sweep starts at gap ~21000)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3916
         False validation error "Index x is corrupt (missing entries) in table ..." for large tables
       Contributor(s):
@@ -306,6 +401,11 @@
         Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2648
+        Nbackup's delta file ignored Forced Writes database setting
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1604
         Error at database creation by user with non-ascii name
