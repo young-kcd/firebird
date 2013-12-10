@@ -445,41 +445,34 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 				MODIFY U USING
 					if (user->attributes()->entered())
 					{
+						U.PLG$UID.NULL = ISC_TRUE;
+						U.PLG$GID.NULL = ISC_TRUE;
+						U.PLG$GROUP_NAME.NULL = ISC_TRUE;
+
 						ConfigFile attr(ConfigFile::USE_TEXT, user->attributes()->get());
 						const ConfigFile::Parameter* p;
 
-						if ((p = attr.findParameter("uid")))
+						if (((p = attr.findParameter("uid"))) && p->value.hasData())
 						{
-							if (p->value.hasData())
-							{
-								U.PLG$UID = p->asInteger();
-								U.PLG$UID.NULL = ISC_FALSE;
-							}
-							else
-								U.PLG$UID.NULL = ISC_TRUE;
+							U.PLG$UID = p->asInteger();
+							U.PLG$UID.NULL = ISC_FALSE;
 						}
-
-						if ((p = attr.findParameter("gid")))
+						if (((p = attr.findParameter("gid"))) && p->value.hasData())
 						{
-							if (p->value.hasData())
-							{
-								U.PLG$GID = p->asInteger();
-								U.PLG$GID.NULL = ISC_FALSE;
-							}
-							else
-								U.PLG$GID.NULL = ISC_TRUE;
+							U.PLG$GID = p->asInteger();
+							U.PLG$GID.NULL = ISC_FALSE;
 						}
-
-						if ((p = attr.findParameter("groupName")))
+						if (((p = attr.findParameter("groupName"))) && p->value.hasData())
 						{
-							if (p->value.hasData())
-							{
-								STR_STORE(U.PLG$GROUP_NAME, p->value.c_str());
-								U.PLG$GROUP_NAME.NULL = ISC_FALSE;
-							}
-							else
-								U.PLG$GROUP_NAME.NULL = ISC_TRUE;
+							STR_STORE(U.PLG$GROUP_NAME, p->value.c_str());
+							U.PLG$GROUP_NAME.NULL = ISC_FALSE;
 						}
+					}
+					else if (user->attributes()->specified())
+					{
+						U.PLG$UID.NULL = ISC_TRUE;
+						U.PLG$GID.NULL = ISC_TRUE;
+						U.PLG$GROUP_NAME.NULL = ISC_TRUE;
 					}
 
 					if (user->password()->entered())
@@ -576,17 +569,19 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 			found = false;
 			if (!user->userName()->entered())
 			{
-				Firebird::string attr, a1, a2, a3;
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
-					if (!U.PLG$UID.NULL)
-						a1.printf("Uid=%d\n", U.PLG$UID);
-					if (!U.PLG$GID.NULL)
-						a2.printf("Gid=%d\n", U.PLG$GID);
-					if (!U.PLG$GROUP_NAME.NULL)
-						a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
-					attr = a1 + a2 + a3;
-					user->attributes()->set(attr.c_str());
-					user->attributes()->setEntered(attr.hasData() ? 1 : 0);
+					{
+						Firebird::string attr, a1, a2, a3;
+						if (!U.PLG$UID.NULL)
+							a1.printf("Uid=%d\n", U.PLG$UID);
+						if (!U.PLG$GID.NULL)
+							a2.printf("Gid=%d\n", U.PLG$GID);
+						if (!U.PLG$GROUP_NAME.NULL)
+							a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
+						attr = a1 + a2 + a3;
+						user->attributes()->set(attr.c_str());
+						user->attributes()->setEntered(attr.hasData() ? 1 : 0);
+					}
 
 					user->userName()->set(U.PLG$USER_NAME);
 					user->userName()->setEntered(U.PLG$USER_NAME.NULL ? 0 : 1);

@@ -9173,7 +9173,8 @@ void CreateAlterUserNode::print(string& text) const
 
 void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
-	if (!isCreating && !password && !firstName && !middleName && !lastName && !adminRole.specified)
+	if (!isCreating && !password && !firstName && !middleName && !lastName &&
+		!adminRole.specified && !properties.hasData())
 	{
 		// 283: ALTER USER requires at least one clause to be specified
 		status_exception::raise(Arg::PrivateDyn(283));
@@ -9249,6 +9250,22 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	{
 		userData->adm.set(adminRole.value);
 		userData->adm.setEntered(1);
+	}
+
+	string attributesBuffer;
+	for (unsigned cnt = 0; cnt < properties.getCount(); ++cnt)
+	{
+		if ((!isCreating) || properties[cnt].value.hasData())
+		{
+			string attribute;
+			attribute.printf("%s=%s\n", properties[cnt].property.c_str(), properties[cnt].value.c_str());
+			attributesBuffer += attribute;
+		}
+	}
+	if (attributesBuffer.hasData())
+	{
+		userData->attr.set(attributesBuffer.c_str());
+		userData->attr.setEntered(1);
 	}
 
 	const int ddlAction = isCreating ? DDL_TRIGGER_CREATE_USER : DDL_TRIGGER_ALTER_USER;

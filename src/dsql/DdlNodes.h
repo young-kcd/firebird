@@ -1803,6 +1803,7 @@ class CreateAlterUserNode : public DdlNode
 public:
 	CreateAlterUserNode(MemoryPool& p, bool creating, const Firebird::MetaName& aName)
 		: DdlNode(p),
+		  properties(p),
 		  isCreating(creating),
 		  name(p, aName),
 		  password(NULL),
@@ -1824,6 +1825,19 @@ protected:
 	}
 
 public:
+	class Property : public PermanentStorage
+	{
+	public:
+		Property(MemoryPool& p)
+			: PermanentStorage(p),
+			  value(p)
+		{ }
+
+		Firebird::MetaName property;
+		Firebird::string value;
+	};
+
+	Firebird::ObjectsArray<Property> properties;
 	const bool isCreating;
 	const Firebird::MetaName name;
 	const Firebird::string* password;
@@ -1831,6 +1845,18 @@ public:
 	const Firebird::string* middleName;
 	const Firebird::string* lastName;
 	Nullable<int> adminRole;
+
+	void addProperty(Firebird::MetaName* pr, Firebird::string* val = NULL)
+	{
+		fb_assert(pr);
+
+		Property& p = properties.add();
+		p.property = *pr;
+		if (val)
+		{
+			p.value = *val;
+		}
+	}
 };
 
 

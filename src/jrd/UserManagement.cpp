@@ -197,6 +197,16 @@ void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status,
 	tmp.raise();
 }
 
+static inline void merge(string& s, ConfigFile::Parameters::const_iterator& p)
+{
+	if (p->value.hasData())
+	{
+		string attr;
+		attr.printf("%s=%s\n", p->name.c_str(), p->value.c_str());
+		s += attr;
+	}
+}
+
 void UserManagement::execute(USHORT id)
 {
 	if (id >= commands.getCount())
@@ -211,6 +221,81 @@ void UserManagement::execute(USHORT id)
 	}
 
 	LocalStatus status;
+	if (commands[id]->attr.entered())
+	{
+		Auth::StackUserData cmd;
+		cmd.op = OLD_DIS_OPER;
+		cmd.user.set(commands[id]->userName()->get());
+		cmd.user.setEntered(1);
+
+		class OldAttributes : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
+		{
+		public:
+			// IListUsers implementation
+			void FB_CARG list(Auth::IUser* data)
+			{
+				value = data->attributes()->entered() ? data->attributes()->get() : "";
+			}
+
+			string value;
+		};
+
+		OldAttributes oldAttributes;
+		int ret = manager->execute(&status, &cmd, &oldAttributes);
+		checkSecurityResult(ret, &status, commands[id]->userName()->get(), commands[id]);
+
+		ConfigFile ocf(ConfigFile::USE_TEXT, oldAttributes.value.c_str());
+		ConfigFile::Parameters::const_iterator old(ocf.getParameters().begin());
+		ConfigFile::Parameters::const_iterator oldEnd(ocf.getParameters().end());
+
+		ConfigFile ccf(ConfigFile::USE_TEXT, commands[id]->attr.get());
+		ConfigFile::Parameters::const_iterator cur(ccf.getParameters().begin());
+		ConfigFile::Parameters::const_iterator curEnd(ccf.getParameters().end());
+
+		string merged;
+		while (old != oldEnd && cur != curEnd)
+		{
+			if (old->name == cur->name)
+			{
+				merge(merged, cur);
+				++old;
+				++cur;
+			}
+			else if (old->name < cur->name)
+			{
+				merge(merged, old);
+				++old;
+			}
+			else
+			{
+				merge(merged, cur);
+				++cur;
+			}
+		}
+
+		while (cur != curEnd)
+		{
+			merge(merged, cur);
+			++cur;
+		}
+		while (old != oldEnd)
+		{
+			merge(merged, old);
+			++old;
+		}
+
+		if (merged.hasData())
+		{
+			commands[id]->attr.set(merged.c_str());
+		}
+		else
+		{
+			commands[id]->attr.setEntered(0);
+			commands[id]->attr.setSpecified(1);
+			commands[id]->attr.set("");
+		}
+	}
+
 	int errcode = manager->execute(&status, commands[id], NULL);
 	checkSecurityResult(errcode, &status, commands[id]->userName()->get(), commands[id]);
 

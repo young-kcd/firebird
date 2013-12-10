@@ -685,6 +685,7 @@ using namespace Firebird;
 	Jrd::DeclareSubProcNode* declareSubProcNode;
 	Jrd::DeclareSubFuncNode* declareSubFuncNode;
 	Jrd::dsql_req* dsqlReq;
+	Jrd::CreateAlterUserNode* createAlterUserNode;
 }
 
 %include types.y
@@ -5796,31 +5797,83 @@ table_subquery
 
 // USER control SQL interface
 
-%type <ddlNode> create_user_clause
+%type <createAlterUserNode> create_user_clause
 create_user_clause
 	: symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
 		{
-			CreateAlterUserNode* node = newNode<CreateAlterUserNode>(true, *$1);
-			node->password = $2;
-			node->firstName = $3;
-			node->middleName = $4;
-			node->lastName = $5;
-			node->adminRole = $6;
-			$$ = node;
+			$$ = newNode<CreateAlterUserNode>(true, *$1);
+			$$->password = $2;
+			$$->firstName = $3;
+			$$->middleName = $4;
+			$$->lastName = $5;
+			$$->adminRole = $6;
+		}
+	user_set_opt(NOTRIAL($7))
+		{
+			$$ = $7;
 		}
 	;
 
-%type <ddlNode> alter_user_clause
+%type user_set_opt(<createAlterUserNode>)
+user_set_opt($node)
+	: // nothing
+	| set_noise user_set_clause($node)
+	;
+
+%type user_set_clause(<createAlterUserNode>)
+user_set_clause($node)
+	: user_set_option($node)
+	| user_set_option($node) ',' user_set_clause($node)
+	;
+
+%type user_set_option(<createAlterUserNode>)
+user_set_option($node)
+	: valid_symbol_name to_noise utf_string
+		{
+			$node->addProperty($1, $3);
+		}
+	;
+
+%type <createAlterUserNode> alter_user_clause
 alter_user_clause
 	: symbol_user_name set_noise passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
 		{
-			CreateAlterUserNode* node = newNode<CreateAlterUserNode>(false, *$1);
-			node->password = $3;
-			node->firstName = $4;
-			node->middleName = $5;
-			node->lastName = $6;
-			node->adminRole = $7;
-			$$ = node;
+			$$ = newNode<CreateAlterUserNode>(false, *$1);
+			$$->password = $3;
+			$$->firstName = $4;
+			$$->middleName = $5;
+			$$->lastName = $6;
+			$$->adminRole = $7;
+		}
+	user_prop_opt(NOTRIAL($8))
+		{
+			$$ = $8;
+		}
+	;
+
+%type user_prop_opt(<createAlterUserNode>)
+user_prop_opt($node)
+	: user_set_opt($node)
+	| user_clean_opt($node)
+	;
+
+%type user_clean_opt(<createAlterUserNode>)
+user_clean_opt($node)
+	: // nothing
+	| DROP user_clean_clause($node)
+	;
+
+%type user_clean_clause(<createAlterUserNode>)
+user_clean_clause($node)
+	: user_clean_option($node)
+	| user_clean_option($node) ',' user_clean_clause($node)
+	;
+
+%type user_clean_option(<createAlterUserNode>)
+user_clean_option($node)
+	: valid_symbol_name
+		{
+			$node->addProperty($1);
 		}
 	;
 
@@ -5838,6 +5891,11 @@ passwd_clause
 set_noise
 	: // nothing
 	| SET
+	;
+
+to_noise
+	: // nothing
+	| TO
 	;
 
 %type <stringPtr> firstname_opt
