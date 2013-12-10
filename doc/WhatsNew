@@ -2,6 +2,11 @@
   * v2.1.6
   ***************************
 
+    * Bugfix CORE-4214
+        GTT should not reference permanent relation
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-4144
         Error "context already in use (BLR error)" when preparing a query with UNION
       Contributor(s):
@@ -527,7 +532,7 @@
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-3034
-        Bugcheñk 300 (can't find shared latch)
+        Bugcheck 300 (can't find shared latch)
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
