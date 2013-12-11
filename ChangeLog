@@ -1,3 +1,12 @@
+ 2013-12-10 13:03  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/common/classes/objects_array.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/jrd/UserManagement.cpp
+Fixed CORE-4290: added SQL support to set/drop unlimited list of user's properties
+
  2013-12-09 08:19  alexpeshkoff 
    M src/remote/server/server.cpp
 Fixed issues noticed by Claudio
