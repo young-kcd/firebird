@@ -718,7 +718,7 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 	// Create the recursive UNION ALL node
 
 	UnionSourceNode* const recursiveRse = FB_NEW(pool) UnionSourceNode(pool);
-	recursiveRse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, recursiveStack.pop());
+	recursiveRse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, (unsigned) 0);
 	recursiveRse->dsqlAll = true;
 	recursiveRse->recursive = false;
 
