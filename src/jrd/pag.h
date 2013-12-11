@@ -92,9 +92,14 @@ public:
 
 	jrd_file*	file;
 
+	static inline bool isTemporary(USHORT aPageSpaceID)
+	{
+		return (aPageSpaceID >= TEMP_PAGE_SPACE);
+	}
+
 	inline bool isTemporary() const
 	{
-		return (pageSpaceID >= TEMP_PAGE_SPACE);
+		return isTemporary(pageSpaceID);
 	}
 
 	static inline SLONG generate(const PageSpace* Item)
@@ -216,7 +221,7 @@ public:
 	inline bool isTemporary() const
 	{
 		fb_assert(pageSpaceID != INVALID_PAGE_SPACE);
-		return (pageSpaceID >= TEMP_PAGE_SPACE);
+		return PageSpace::isTemporary(pageSpaceID);
 	}
 
 	inline static USHORT getLockLen()
