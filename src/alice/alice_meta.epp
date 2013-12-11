@@ -36,6 +36,8 @@
 #include "../yvalve/gds_proto.h"
 #include "fb_exception.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/array.h"
+#include "../common/classes/UserBlob.h"
 #include "../alice/alice_proto.h"
 
 #include <string.h>
@@ -50,11 +52,13 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 #define DB			tdgbl->db_handle
 #define gds_trans	tdgbl->tr_handle
 
+typedef Firebird::HalfStaticArray<TEXT, 1024> TextBuffer;
+
 static alice_str* alloc_string(const TEXT**);
 static USHORT get_capabilities(ISC_STATUS*);
 static tdr* get_description(ISC_QUAD*);
 static void parse_fullpath(tdr*);
-static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
+static bool snarf_blob(ISC_QUAD*, TextBuffer&);
 
 
 // table used to determine capabilities, checking for specific
@@ -299,30 +303,26 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 
 static tdr* get_description(ISC_QUAD* blob_id)
 {
-	TEXT buffer[1024];
-	TEXT* bigger_buffer = 0;
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
+	TextBuffer buffer;
 
-	const TEXT* p = buffer;
-	const USHORT length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer);
-	if (length)
+	if (UserBlob::blobIsNull(*blob_id))
+		return NULL;
+
+	if (!snarf_blob(blob_id, buffer))
 	{
-		p = bigger_buffer = (TEXT *) gds__alloc((SLONG) length);
-		if (!p)
-		{
-			tdgbl->status[0] = isc_arg_gds;
-			tdgbl->status[1] = isc_virmemexh;
-			tdgbl->status[2] = isc_arg_end;
-
-			ALICE_print_status(true, tdgbl->status);
-			return NULL;
-		}
-		snarf_blob(blob_id, length, bigger_buffer);
+		ALICE_print_status(true, gds_status);
+		return NULL;
 	}
+
+	if (buffer.getCount() < 2)
+		return NULL;
 
 	tdr* trans = NULL;
 	alice_str* host_site = NULL;
 	alice_str* database_path = NULL;
+
+	const TEXT* p = buffer.begin();
 
 	// skip version number
 	++p;
@@ -365,15 +365,8 @@ static tdr* get_description(ISC_QUAD* blob_id)
 			ALICE_print(108);
 			// msg 108: Transaction description item unknown.
 
-			if (length) {
-				gds__free(bigger_buffer);
-			}
 			return NULL;
 		}
-	}
-
-	if (length) {
-		gds__free(bigger_buffer);
 	}
 
 	return trans;
@@ -388,11 +381,6 @@ static tdr* get_description(ISC_QUAD* blob_id)
 
 static void parse_fullpath(tdr* trans)
 {
-	if (!trans->tdr_fullpath)
-	{
-		return;
-	}
-
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	// start at the end of the full pathname
@@ -466,65 +454,46 @@ static void parse_fullpath(tdr* trans)
 
 /*____________________________________________________________
  *
- *		Get a blob into a buffer, returning the
- *		size of the blob if the passed buffer
- *		is not big enough.
+ *		Get a blob into a buffer, returning false if error happens
  */
 
-static USHORT snarf_blob(ISC_QUAD* blob_id, USHORT buffer_length, TEXT* buffer)
+static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-	if (buffer_length)
-		buffer[0] = 0;
-	if (buffer_length > 1)
-		buffer[1] = 0;
+	UserBlob blob(gds_status);
+	if (!blob.open(DB, gds_trans, *blob_id))
+		return false;
 
-	FB_API_HANDLE blob = 0;
-	if (isc_open_blob(gds_status, &DB, &gds_trans, &blob, blob_id))
+	SLONG blob_size;
+	if (!getBlobSize(blob, &blob_size, NULL, NULL))
+		return NULL;
+
+	size_t len = blob_size;
+	TEXT* ptr = buffer.getBuffer(blob_size + 1);
+	while (len)
 	{
-		ALICE_print_status(true, gds_status);
-		return 0;
-	}
-
-	// get the blob into the buffer, if it fits
-
-	TEXT* ptr = buffer;
-	const TEXT* const end = buffer + buffer_length;
-	for (;;)
-	{
-		if (ptr >= end)
-			break;
-		if (!(buffer_length = end - ptr))
-			break;
-		USHORT returned_length;
-		ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length, buffer_length, ptr);
-		if (status && status != isc_segment)
-			break;
-		ptr += returned_length;
-	}
-
-	// snarf failed, get length of blob for retry
-
-	if (!buffer_length)
-	{
-		for (;;)
+		size_t real_len;
+		if (len && blob.getSegment(len, ptr, real_len))
 		{
-			USHORT returned_length;
-			ISC_STATUS status =
-				isc_get_segment(gds_status, &blob, &returned_length, buffer_length, buffer);
-			if (status && status != isc_segment)
-				break;
-			buffer_length += returned_length;
+			len -= real_len;
+			ptr += real_len;
 		}
+
+		const ISC_STATUS err = blob.getCode();
+		if (err == 0 || err == isc_segment)
+			continue;
+
+		if (err == isc_segstr_eof)
+			break;
+
+		return false;
 	}
-	else
-		buffer_length = 0;
-
-	isc_close_blob(gds_status, &blob);
-
+	blob.close();
 	*ptr = 0;
 
-	return buffer_length;
+	buffer.resize(ptr - buffer.begin() + 1);
+
+	return true;
 }
 
