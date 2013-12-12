@@ -43,7 +43,7 @@ GFIX_Files = alice_meta.epp \
 			 alice.cpp exe.cpp tdr.cpp aliceMain.cpp
 
 GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp jrd/path_utils.cpp \
-					  common/UtilSvc.cpp
+					  common/UtilSvc.cpp common/classes/UserBlob.cpp
 
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
