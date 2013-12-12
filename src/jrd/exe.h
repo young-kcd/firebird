@@ -146,9 +146,8 @@ struct Resource
 	rsc_s		rsc_type;
 	USHORT		rsc_id;			// Id of the resource
 	jrd_rel*	rsc_rel;		// Relation block
-	jrd_prc*	rsc_prc;		// Procedure block
+	Routine*	rsc_routine;	// Routine block
 	Collation*	rsc_coll;		// Collation block
-	Function*	rsc_fun;		// Function block
 
 	static bool greaterThan(const Resource& i1, const Resource& i2)
 	{
@@ -165,8 +164,8 @@ struct Resource
 		return i1.rsc_id > i2.rsc_id;
 	}
 
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, Collation* coll)
-		: rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll)
+	Resource(rsc_s type, USHORT id, jrd_rel* rel, Routine* routine, Collation* coll)
+		: rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_routine(routine), rsc_coll(coll)
 	{ }
 };
 

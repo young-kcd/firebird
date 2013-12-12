@@ -67,18 +67,18 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 	Function* function = (id < attachment->att_functions.getCount()) ? attachment->att_functions[id] : NULL;
 
 	if (function && function->getId() == id &&
-		!(function->fun_flags & FUN_being_scanned) &&
-		((function->fun_flags & FUN_scanned) || noscan) &&
-		!(function->fun_flags & FUN_being_altered) &&
-		(!(function->fun_flags & FUN_obsolete) || return_deleted))
+		!(function->flags & Routine::FLAG_BEING_SCANNED) &&
+		((function->flags & Routine::FLAG_SCANNED) || noscan) &&
+		!(function->flags & Routine::FLAG_BEING_ALTERED) &&
+		(!(function->flags & Routine::FLAG_OBSOLETE) || return_deleted))
 	{
-		if (!(function->fun_flags & FUN_check_existence))
+		if (!(function->flags & Routine::FLAG_CHECK_EXISTENCE))
 		{
 			return function;
 		}
 
 		check_function = function;
-		LCK_lock(tdbb, check_function->fun_existence_lock, LCK_SR, LCK_WAIT);
+		LCK_lock(tdbb, check_function->existenceLock, LCK_SR, LCK_WAIT);
 	}
 
 	// We need to look up the function in RDB$FUNCTIONS
@@ -96,11 +96,11 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 
 	if (check_function)
 	{
-		check_function->fun_flags &= ~FUN_check_existence;
+		check_function->flags &= ~Routine::FLAG_CHECK_EXISTENCE;
 		if (check_function != function)
 		{
-			LCK_release(tdbb, check_function->fun_existence_lock);
-			check_function->fun_flags |= FUN_obsolete;
+			LCK_release(tdbb, check_function->existenceLock);
+			check_function->flags |= Routine::FLAG_OBSOLETE;
 		}
 	}
 
@@ -119,17 +119,17 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 	{
 		Function* const function = *iter;
 
-		if (function && !(function->fun_flags & FUN_obsolete) &&
-			((function->fun_flags & FUN_scanned) || noscan) &&
-			!(function->fun_flags & FUN_being_scanned) &&
-			!(function->fun_flags & FUN_being_altered))
+		if (function && !(function->flags & Routine::FLAG_OBSOLETE) &&
+			((function->flags & Routine::FLAG_SCANNED) || noscan) &&
+			!(function->flags & Routine::FLAG_BEING_SCANNED) &&
+			!(function->flags & Routine::FLAG_BEING_ALTERED))
 		{
 			if (function->getName() == name)
 			{
-				if (function->fun_flags & FUN_check_existence)
+				if (function->flags & Routine::FLAG_CHECK_EXISTENCE)
 				{
 					check_function = function;
-					LCK_lock(tdbb, check_function->fun_existence_lock, LCK_SR, LCK_WAIT);
+					LCK_lock(tdbb, check_function->existenceLock, LCK_SR, LCK_WAIT);
 					break;
 				}
 
@@ -155,11 +155,11 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 
 	if (check_function)
 	{
-		check_function->fun_flags &= ~FUN_check_existence;
+		check_function->flags &= ~Routine::FLAG_CHECK_EXISTENCE;
 		if (check_function != function)
 		{
-			LCK_release(tdbb, check_function->fun_existence_lock);
-			check_function->fun_flags |= FUN_obsolete;
+			LCK_release(tdbb, check_function->existenceLock);
+			check_function->flags |= Routine::FLAG_OBSOLETE;
 		}
 	}
 
@@ -177,12 +177,14 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 	Function* function = attachment->att_functions[id];
 
-	if (function && !(function->fun_flags & FUN_obsolete))
+	if (function && !(function->flags & Routine::FLAG_OBSOLETE))
 	{
-		// Make sure FUN_being_scanned and FUN_scanned are not set at the same time
-		fb_assert(!(function->fun_flags & FUN_being_scanned) || !(function->fun_flags & FUN_scanned));
+		// Make sure Routine::FLAG_BEING_SCANNED and Routine::FLAG_SCANNED are not set at the same time
+		fb_assert(!(function->flags & Routine::FLAG_BEING_SCANNED) ||
+			!(function->flags & Routine::FLAG_SCANNED));
 
-		if ((function->fun_flags & FUN_being_scanned) || (function->fun_flags & FUN_scanned))
+		if ((function->flags & Routine::FLAG_BEING_SCANNED) ||
+			(function->flags & Routine::FLAG_SCANNED))
 		{
 			return function;
 		}
@@ -193,21 +195,21 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 	try
 	{
-	function->fun_flags |= (FUN_being_scanned | flags);
-	function->fun_flags &= ~FUN_obsolete;
+	function->flags |= (Routine::FLAG_BEING_SCANNED | flags);
+	function->flags &= ~Routine::FLAG_OBSOLETE;
 
 	function->setId(id);
 	attachment->att_functions[id] = function;
 
-	if (!function->fun_existence_lock)
+	if (!function->existenceLock)
 	{
 		Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0)
 			Lock(tdbb, sizeof(SLONG), LCK_fun_exist, function, blockingAst);
-		function->fun_existence_lock = lock;
+		function->existenceLock = lock;
 		lock->lck_key.lck_long = function->getId();
 	}
 
-	LCK_lock(tdbb, function->fun_existence_lock, LCK_SR, LCK_WAIT);
+	LCK_lock(tdbb, function->existenceLock, LCK_SR, LCK_WAIT);
 
 	if (!noscan)
 	{
@@ -457,7 +459,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			if (X.RDB$VALID_BLR.NULL || X.RDB$VALID_BLR == FALSE)
 				valid_blr = false;
 
-			function->fun_flags |= FUN_scanned;
+			function->flags |= Routine::FLAG_SCANNED;
 		}
 		END_FOR
 
@@ -482,20 +484,20 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	}
 
 	// Make sure that it is really being scanned
-	fb_assert(function->fun_flags & FUN_being_scanned);
+	fb_assert(function->flags & Routine::FLAG_BEING_SCANNED);
 
-	function->fun_flags &= ~FUN_being_scanned;
+	function->flags &= ~Routine::FLAG_BEING_SCANNED;
 
 	}	// try
 	catch (const Exception&)
 	{
-		function->fun_flags &= ~(FUN_being_scanned | FUN_scanned);
+		function->flags &= ~(Routine::FLAG_BEING_SCANNED | Routine::FLAG_SCANNED);
 
-		if (function->fun_existence_lock)
+		if (function->existenceLock)
 		{
-			LCK_release(tdbb, function->fun_existence_lock);
-			delete function->fun_existence_lock;
-			function->fun_existence_lock = NULL;
+			LCK_release(tdbb, function->existenceLock);
+			delete function->existenceLock;
+			function->existenceLock = NULL;
 		}
 
 		throw;
@@ -510,12 +512,12 @@ int Function::blockingAst(void* ast_object)
 
 	try
 	{
-		Database* const dbb = function->fun_existence_lock->lck_dbb;
+		Database* const dbb = function->existenceLock->lck_dbb;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, function->fun_existence_lock);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, function->existenceLock);
 
-		LCK_release(tdbb, function->fun_existence_lock);
-		function->fun_flags |= FUN_obsolete;
+		LCK_release(tdbb, function->existenceLock);
+		function->flags |= Routine::FLAG_OBSOLETE;
 	}
 	catch (const Firebird::Exception&)
 	{} // no-op
@@ -523,71 +525,22 @@ int Function::blockingAst(void* ast_object)
 	return 0;
 }
 
-void Function::remove(thread_db* tdbb)
-{
-	if (fun_existence_lock)
-	{
-		LCK_release(tdbb, fun_existence_lock);
-		delete fun_existence_lock;
-		fun_existence_lock = NULL;
-	}
-
-	if (!(fun_flags & FUN_being_altered) && !fun_use_count)
-	{
-		delete this;
-	}
-	else
-	{
-		setName(QualifiedName());
-		setSecurityName("");
-		setId(0);
-		setDefaultCount(0);
-	}
-}
-
-void Function::addRef()
-{
-	fun_use_count++;
-}
-
-void Function::release(thread_db* tdbb)
-{
-	if (fun_use_count)
-	{
-		fun_use_count--;
-
-		Jrd::Attachment* attachment = tdbb->getAttachment();
-		if (fun_use_count == 0 && attachment->att_functions[getId()] != this)
-		{
-			if (getStatement())
-			{
-				getStatement()->release(tdbb);
-				setStatement(NULL);
-			}
-			fun_flags &= ~FUN_being_altered;
-			remove(tdbb);
-		}
-	}
-}
-
 void Function::releaseLocks(thread_db* tdbb)
 {
-	if (fun_existence_lock)
+	if (existenceLock)
 	{
-		LCK_release(tdbb, fun_existence_lock);
-		fun_flags |= FUN_check_existence;
-		fun_use_count = 0;
+		LCK_release(tdbb, existenceLock);
+		flags |= Routine::FLAG_CHECK_EXISTENCE;
+		useCount = 0;
 	}
 }
 
-USHORT Function::incrementAlterCount()
+bool Function::checkCache(thread_db* tdbb) const
 {
-	if (fun_alter_count == Function::MAX_ALTER_COUNT)
-	{
-		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_udf_name) << Arg::Str(getName().toString()) <<
-				 Arg::Gds(isc_version_err));
-	}
+	return tdbb->getAttachment()->att_functions[getId()] == this;
+}
 
-	return ++fun_alter_count;
+void Function::clearCache(thread_db* tdbb)
+{
+	tdbb->getAttachment()->att_functions[getId()] = NULL;
 }

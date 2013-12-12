@@ -34,6 +34,7 @@ namespace Jrd
 	class thread_db;
 	class CompilerScratch;
 	class JrdStatement;
+	class Lock;
 	class Format;
 	class Parameter;
 
@@ -53,7 +54,12 @@ namespace Jrd
 			  inputFormat(NULL),
 			  outputFormat(NULL),
 			  inputFields(p),
-			  outputFields(p)
+			  outputFields(p),
+			  flags(0),
+			  useCount(0),
+			  intUseCount(0),
+			  alterCount(0),
+			  existenceLock(NULL)
 		{
 		}
 
@@ -63,6 +69,18 @@ namespace Jrd
 		}
 
 	public:
+		static const USHORT FLAG_SCANNED			= 1;	// Field expressions scanned
+		static const USHORT FLAG_OBSOLETE			= 2;	// Procedure known gonzo
+		static const USHORT FLAG_BEING_SCANNED		= 4;	// New procedure needs dependencies during scan
+		static const USHORT FLAG_BEING_ALTERED		= 8;	// Procedure is getting altered
+															// This flag is used to make sure that MET_remove_routine
+															// does not delete and remove procedure block from cache
+															// so dfw.epp:modify_procedure() can flip procedure body without
+															// invalidating procedure pointers from other parts of metadata cache
+		static const USHORT FLAG_CHECK_EXISTENCE	= 16;	// Existence lock released
+
+		static const USHORT MAX_ALTER_COUNT = 64;	// Number of times an in-cache routine can be altered
+
 		static Firebird::MsgMetadata* createMetadata(
 			const Firebird::Array<NestConst<Parameter> >& parameters);
 		static Format* createFormat(MemoryPool& pool, Firebird::IMessageMetadata* params, bool addEof);
@@ -112,9 +130,29 @@ namespace Jrd
 		void parseBlr(thread_db* tdbb, CompilerScratch* csb, bid* blob_id);
 		void parseMessages(thread_db* tdbb, CompilerScratch* csb, Firebird::BlrReader blrReader);
 
+		bool isUsed() const
+		{
+			return useCount != 0;
+		}
+
+		void addRef()
+		{
+			++useCount;
+		}
+
+		virtual void releaseFormat()
+		{
+		}
+
+		void release(thread_db* tdbb);
+		void releaseStatement(thread_db* tdbb);
+		void remove(thread_db* tdbb);
+
 	public:
 		virtual int getObjectType() const = 0;
 		virtual SLONG getSclType() const = 0;
+		virtual bool checkCache(thread_db* tdbb) const = 0;
+		virtual void clearCache(thread_db* tdbb) = 0;
 
 	private:
 		USHORT id;							// routine ID
@@ -129,6 +167,16 @@ namespace Jrd
 		const Format* outputFormat;			// output format
 		Firebird::Array<NestConst<Parameter> > inputFields;		// array of field blocks
 		Firebird::Array<NestConst<Parameter> > outputFields;	// array of field blocks
+
+	public:
+		USHORT flags;
+		USHORT useCount;		// requests compiled with routine
+		SSHORT intUseCount;		// number of routines compiled with routine, set and
+								// used internally in the MET_clear_cache routine
+								// no code should rely on value of this field
+								// (it will usually be 0)
+		USHORT alterCount;		// No. of times the routine was altered
+		Lock* existenceLock;	// existence lock, if any
 	};
 }
 

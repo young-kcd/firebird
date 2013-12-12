@@ -5084,21 +5084,6 @@ void JAttachment::ping(IStatus* user_status)
 	successful_completion(user_status);
 }
 
-
-void jrd_prc::releaseStatement(thread_db* tdbb)
-{
-	if (getStatement())
-	{
-		getStatement()->release(tdbb);
-		setStatement(NULL);
-	}
-
-	setInputFormat(NULL);
-	setOutputFormat(NULL);
-
-	prc_flags &= ~PRC_scanned;
-}
-
 } // namespace Jrd
 
 #ifdef DEBUG_PROCS
@@ -5139,9 +5124,10 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 			if (procedure)
 			{
 				fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
-							procedure->prc_name->hasData() ? procedure->prc_name->c_str() : "NULL",
-							procedure->prc_id, procedure->prc_flags, procedure->prc_use_count,
-							0); // procedure->prc_alter_count
+					(procedure->getName().toString().hasData() ?
+						procedure->getName().toString().c_str() : "NULL"),
+					procedure->getId(), procedure->flags, procedure->useCount,
+					0); // procedure->prc_alter_count
 			}
 		}
 	}

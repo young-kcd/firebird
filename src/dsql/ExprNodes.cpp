@@ -4618,9 +4618,9 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		// make sure procedure has been scanned before using it
 
 		if (procedure && !procedure->isSubRoutine() &&
-			(!(procedure->prc_flags & PRC_scanned) ||
-				(procedure->prc_flags & PRC_being_scanned) ||
-				(procedure->prc_flags & PRC_being_altered)))
+			(!(procedure->flags & Routine::FLAG_SCANNED) ||
+				(procedure->flags & Routine::FLAG_BEING_SCANNED) ||
+				(procedure->flags & Routine::FLAG_BEING_ALTERED)))
 		{
 			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->getId(), false, 0);
 

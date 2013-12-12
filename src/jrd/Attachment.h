@@ -305,7 +305,7 @@ public:
 	/// former Database members - start
 
 	vec<jrd_rel*>*					att_relations;			// relation vector
-	vec<jrd_prc*>*					att_procedures;			// scanned procedures
+	Firebird::Array<jrd_prc*>		att_procedures;			// scanned procedures
 	trig_vec*						att_triggers[DB_TRIGGER_MAX];
 	trig_vec*						att_ddl_triggers;
 	Firebird::Array<Function*>		att_functions;			// User defined functions

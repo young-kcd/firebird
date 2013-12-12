@@ -111,18 +111,17 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 				}
 
 				case Resource::rsc_procedure:
+				case Resource::rsc_function:
 				{
-					jrd_prc* procedure = resource->rsc_prc;
-					procedure->prc_use_count++;
+					Routine* routine = resource->rsc_routine;
+					routine->addRef();
 
 #ifdef DEBUG_PROCS
-					{
-						string buffer;
-						buffer.printf(
-							"Called from JrdStatement::makeRequest:\n\t Incrementing use count of %s\n",
-							procedure->getName()->toString().c_str());
-						JRD_print_procedure_info(tdbb, buffer.c_str());
-					}
+					string buffer;
+					buffer.printf(
+						"Called from JrdStatement::makeRequest:\n\t Incrementing use count of %s\n",
+						routine->getName()->toString().c_str());
+					JRD_print_procedure_info(tdbb, buffer.c_str());
 #endif
 
 					break;
@@ -134,10 +133,6 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 					coll->incUseCount(tdbb);
 					break;
 				}
-
-				case Resource::rsc_function:
-					resource->rsc_fun->addRef();
-					break;
 
 				default:
 					BUGCHECK(219);		// msg 219 request of unknown resource
@@ -557,7 +552,8 @@ void JrdStatement::release(thread_db* tdbb)
 			}
 
 			case Resource::rsc_procedure:
-				CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
+			case Resource::rsc_function:
+				resource->rsc_routine->release(tdbb);
 				break;
 
 			case Resource::rsc_collation:
@@ -566,10 +562,6 @@ void JrdStatement::release(thread_db* tdbb)
 				coll->decUseCount(tdbb);
 				break;
 			}
-
-			case Resource::rsc_function:
-				resource->rsc_fun->release(tdbb);
-				break;
 
 			default:
 				BUGCHECK(220);	// msg 220 release of unknown resource

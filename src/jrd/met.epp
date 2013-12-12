@@ -153,14 +153,25 @@ static void inc_int_use_count(JrdStatement* statement)
 	// Increment int_use_count for all procedures in resource list of request
 	ResourceList& list = statement->resources;
 	size_t i;
+
 	for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 		 i < list.getCount(); i++)
 	{
 		Resource& resource = list[i];
 		if (resource.rsc_type != Resource::rsc_procedure)
 			break;
-		fb_assert(resource.rsc_prc->prc_int_use_count >= 0);
-		++resource.rsc_prc->prc_int_use_count;
+		//// FIXME: CORE-4271: fb_assert(resource.rsc_routine->intUseCount >= 0);
+		++resource.rsc_routine->intUseCount;
+	}
+
+	for (list.find(Resource(Resource::rsc_function, 0, NULL, NULL, NULL), i);
+		 i < list.getCount(); i++)
+	{
+		Resource& resource = list[i];
+		if (resource.rsc_type != Resource::rsc_function)
+			break;
+		//// FIXME: CORE-4271: fb_assert(resource.rsc_routine->intUseCount >= 0);
+		++resource.rsc_routine->intUseCount;
 	}
 }
 
@@ -358,30 +369,53 @@ void MET_update_partners(thread_db* tdbb)
 }
 
 
-void adjust_dependencies(jrd_prc* procedure)
+static void adjust_dependencies(Routine* routine)
 {
-	if (procedure->prc_int_use_count == -1)
+	if (routine->intUseCount == -1)
 	{
 		// Already processed
 		return;
 	}
-	procedure->prc_int_use_count = -1; // Mark as undeletable
-	if (procedure->getStatement())
+
+	routine->intUseCount = -1; // Mark as undeletable
+
+	if (routine->getStatement())
 	{
 		// Loop over procedures from resource list of request
-		ResourceList& list = procedure->getStatement()->resources;
+		ResourceList& list = routine->getStatement()->resources;
 		size_t i;
+
 		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 			i < list.getCount(); i++)
 		{
 			Resource& resource = list[i];
+
 			if (resource.rsc_type != Resource::rsc_procedure)
 				break;
-			procedure = resource.rsc_prc;
-			if (procedure->prc_int_use_count == procedure->prc_use_count)
+
+			routine = resource.rsc_routine;
+
+			if (routine->intUseCount == routine->useCount)
 			{
 				// Mark it and all dependent procedures as undeletable
-				adjust_dependencies(procedure);
+				adjust_dependencies(routine);
+			}
+		}
+
+		for (list.find(Resource(Resource::rsc_function, 0, NULL, NULL, NULL), i);
+			i < list.getCount(); i++)
+		{
+			Resource& resource = list[i];
+
+			if (resource.rsc_type != Resource::rsc_function)
+				break;
+
+			routine = resource.rsc_routine;
+
+			if (routine->intUseCount == routine->useCount)
+			{
+				// Mark it and all dependent functions as undeletable
+				adjust_dependencies(routine);
 			}
 		}
 	}
@@ -398,7 +432,7 @@ void MET_verify_cache(thread_db* tdbb)
  **************************************
  *
  * Functional description
- *      Check if all links between procedures are properly counted
+ *      Check if all links between routines are properly counted
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -406,83 +440,216 @@ void MET_verify_cache(thread_db* tdbb)
 	if (!att)
 		return;
 
-	vec<jrd_prc*>* procedures = att->att_procedures;
-	if (procedures)
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
 	{
-		jrd_prc* procedure;
-		vec<jrd_prc*>::iterator	ptr, end;
+		Routine* routine = *iter;
 
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ++ptr)
+		if (routine && routine->getStatement() /*&&
+			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
 		{
-			if ( (procedure = *ptr) && procedure->getStatement() /*&&
-				 !(procedure->prc_flags & PRC_obsolete)*/ )
-			{
-				fb_assert(procedure->prc_int_use_count == 0);
-			}
+			fb_assert(routine->intUseCount == 0);
 		}
+	}
 
-		// Walk procedures and calculate internal dependencies
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine && routine->getStatement() /*&&
+			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
 		{
-			if ( (procedure = *ptr) && procedure->getStatement() /*&&
-				 !(procedure->prc_flags & PRC_obsolete)*/ )
-			{
-				inc_int_use_count(procedure->getStatement());
-			}
+			fb_assert(routine->intUseCount == 0);
 		}
+	}
 
-		// Walk procedures again and check dependencies
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
+	// Walk procedures and calculate internal dependencies
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
+	{
+		jrd_prc* routine = *iter;
+
+		if (routine && routine->getStatement() /*&&
+			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
 		{
-			if ( (procedure = *ptr) && procedure->getStatement() && /*
-				 !(procedure->prc_flags & PRC_obsolete) && */
-				 procedure->prc_use_count < procedure->prc_int_use_count)
-			{
-				char buffer[1024], *buf = buffer;
-				buf += sprintf(buf, "Procedure %d:%s is not properly counted (use count=%d, prc use=%d). Used by: \n",
-					procedure->getId(), procedure->getName().toString().c_str(),
-					procedure->prc_use_count, procedure->prc_int_use_count);
+			inc_int_use_count(routine->getStatement());
+		}
+	}
 
-				vec<jrd_prc*>::const_iterator ptr2 = procedures->begin();
-				for (const vec<jrd_prc*>::const_iterator end2 = procedures->end();
-					ptr2 < end2; ++ptr2)
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine && routine->getStatement() /*&&
+			!(routine->flags & Routine::FLAG_OBSOLETE)*/ )
+		{
+			inc_int_use_count(routine->getStatement());
+		}
+	}
+
+	// Walk procedures again and check dependencies
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine && routine->getStatement() && /*
+			 !(routine->flags & Routine::FLAG_OBSOLETE) && */
+			 routine->useCount < routine->intUseCount)
+		{
+			char buffer[1024], *buf = buffer;
+			buf += sprintf(buf, "Procedure %d:%s is not properly counted (use count=%d, prc use=%d). Used by: \n",
+				routine->getId(), routine->getName().toString().c_str(),
+				routine->useCount, routine->intUseCount);
+
+			for (jrd_prc** iter2 = att->att_procedures.begin(); iter2 != att->att_procedures.end(); ++iter2)
+			{
+				Routine* routine2 = *iter2;
+
+				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
 				{
-					const jrd_prc* prc = *ptr2;
-					if (prc && prc->getStatement() /*&& !(prc->prc_flags & PRC_obsolete)*/ )
-					{
-						// Loop over procedures from resource list of request
-						const ResourceList& list = prc->getStatement()->resources;
-						size_t i;
-						for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
-						     i < list.getCount(); i++)
-						{
-							const Resource& resource = list[i];
-							if (resource.rsc_type != Resource::rsc_procedure)
-								break;
+					// Loop over procedures from resource list of request
+					const ResourceList& list = routine2->getStatement()->resources;
+					size_t i;
 
-							if (resource.rsc_prc == procedure)
-							{
-								// Do not enable this code in production builds unless
-								// the possible B.O. is fixed here.
-								buf += sprintf(buf, "%d:%s\n", prc->getId(),
-									prc->getName().toString().c_str());
-							}
+					for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
+					     i < list.getCount(); i++)
+					{
+						const Resource& resource = list[i];
+						if (resource.rsc_type != Resource::rsc_procedure)
+							break;
+
+						if (resource.rsc_routine == routine)
+						{
+							// Do not enable this code in production builds unless
+							// the possible B.O. is fixed here.
+							buf += sprintf(buf, "%d:%s\n", routine2->getId(),
+								routine2->getName().toString().c_str());
 						}
 					}
 				}
-				gds__log(buffer);
-				fb_assert(false);
 			}
-		}
 
-		// Fix back int_use_count
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
-		{
-			if ( (procedure = *ptr) )
+			for (Function** iter2 = att->att_functions.begin(); iter2 != att->att_functions.end(); ++iter2)
 			{
-				procedure->prc_int_use_count = 0;
+				Routine* routine2 = *iter2;
+
+				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
+				{
+					// Loop over procedures from resource list of request
+					const ResourceList& list = routine2->getStatement()->resources;
+					size_t i;
+
+					for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
+					     i < list.getCount(); i++)
+					{
+						const Resource& resource = list[i];
+						if (resource.rsc_type != Resource::rsc_procedure)
+							break;
+
+						if (resource.rsc_routine == routine)
+						{
+							// Do not enable this code in production builds unless
+							// the possible B.O. is fixed here.
+							buf += sprintf(buf, "%d:%s\n", routine2->getId(),
+								routine2->getName().toString().c_str());
+						}
+					}
+				}
 			}
+
+			gds__log(buffer);
+			fb_assert(false);
 		}
+	}
+
+	// Walk functions again and check dependencies
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine && routine->getStatement() && /*
+			 !(routine->flags & Routine::FLAG_OBSOLETE) && */
+			 routine->useCount < routine->intUseCount)
+		{
+			char buffer[1024], *buf = buffer;
+			buf += sprintf(buf, "Function %d:%s is not properly counted (use count=%d, func use=%d). Used by: \n",
+				routine->getId(), routine->getName().toString().c_str(),
+				routine->useCount, routine->intUseCount);
+
+			for (jrd_prc** iter2 = att->att_procedures.begin(); iter2 != att->att_procedures.end(); ++iter2)
+			{
+				Routine* routine2 = *iter2;
+
+				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
+				{
+					// Loop over procedures from resource list of request
+					const ResourceList& list = routine2->getStatement()->resources;
+					size_t i;
+
+					for (list.find(Resource(Resource::rsc_function, 0, NULL, NULL, NULL), i);
+					     i < list.getCount(); i++)
+					{
+						const Resource& resource = list[i];
+						if (resource.rsc_type != Resource::rsc_function)
+							break;
+
+						if (resource.rsc_routine == routine)
+						{
+							// Do not enable this code in production builds unless
+							// the possible B.O. is fixed here.
+							buf += sprintf(buf, "%d:%s\n", routine2->getId(),
+								routine2->getName().toString().c_str());
+						}
+					}
+				}
+			}
+
+			for (Function** iter2 = att->att_functions.begin(); iter2 != att->att_functions.end(); ++iter2)
+			{
+				Routine* routine2 = *iter2;
+
+				if (routine2 && routine2->getStatement() /*&& !(routine2->flags & Routine::FLAG_OBSOLETE)*/ )
+				{
+					// Loop over procedures from resource list of request
+					const ResourceList& list = routine2->getStatement()->resources;
+					size_t i;
+
+					for (list.find(Resource(Resource::rsc_function, 0, NULL, NULL, NULL), i);
+					     i < list.getCount(); i++)
+					{
+						const Resource& resource = list[i];
+						if (resource.rsc_type != Resource::rsc_function)
+							break;
+
+						if (resource.rsc_routine == routine)
+						{
+							// Do not enable this code in production builds unless
+							// the possible B.O. is fixed here.
+							buf += sprintf(buf, "%d:%s\n", routine2->getId(),
+								routine2->getName().toString().c_str());
+						}
+					}
+				}
+			}
+
+			gds__log(buffer);
+			fb_assert(false);
+		}
+	}
+
+	// Fix back int_use_count
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine)
+			routine->intUseCount = 0;
+	}
+
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine)
+			routine->intUseCount = 0;
 	}
 }
 #endif
@@ -529,92 +696,141 @@ void MET_clear_cache(thread_db* tdbb)
 		}
 	} // scope
 
-	vec<jrd_prc*>* procedures = att->att_procedures;
-	if (procedures)
+	// Walk routines and calculate internal dependencies.
+
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
 	{
-		jrd_prc* procedure;
-		vec<jrd_prc*>::iterator ptr, end;
-		// Walk procedures and calculate internal dependencies
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ++ptr)
+		Routine* routine = *iter;
+
+		if (routine && routine->getStatement() &&
+			!(routine->flags & Routine::FLAG_OBSOLETE) )
 		{
-			if ( (procedure = *ptr) && procedure->getStatement() &&
-				 !(procedure->prc_flags & PRC_obsolete) )
-			{
-				inc_int_use_count(procedure->getStatement());
-			}
-		}
-
-		// Walk procedures again and adjust dependencies for procedures
-		// which will not be removed.
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
-		{
-			if ( (procedure = *ptr) && procedure->getStatement() &&
-				!(procedure->prc_flags & PRC_obsolete) &&
-				procedure->prc_use_count != procedure->prc_int_use_count )
-			{
-				adjust_dependencies(procedure);
-			}
-		}
-
-		// Deallocate all used requests
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
-		{
-			if ( (procedure = *ptr)  )
-			{
-
-				if ( procedure->getStatement() && !(procedure->prc_flags & PRC_obsolete) &&
-					 procedure->prc_int_use_count >= 0 &&
-					 procedure->prc_use_count == procedure->prc_int_use_count )
-				{
-					procedure->releaseStatement(tdbb);
-
-					if (procedure->prc_existence_lock)	//// TODO: verify why this IF is necessary now
-						LCK_release(tdbb, procedure->prc_existence_lock);
-					procedure->prc_existence_lock = NULL;
-					procedure->prc_flags |= PRC_obsolete;
-				}
-				// Leave it in state 0 to avoid extra pass next time to clear it
-				// Note: we need to adjust prc_int_use_count for all procedures
-				// in cache because any of them may have been affected from
-				// dependencies earlier. Even procedures that were not scanned yet !
-				procedure->prc_int_use_count = 0;
-			}
+			inc_int_use_count(routine->getStatement());
 		}
 	}
+
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Function* routine = *iter;
+
+		if (routine && routine->getStatement() &&
+			!(routine->flags & Routine::FLAG_OBSOLETE) )
+		{
+			inc_int_use_count(routine->getStatement());
+		}
+	}
+
+	// Walk routines again and adjust dependencies for routines which will not be removed.
+
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine && routine->getStatement() &&
+			!(routine->flags & Routine::FLAG_OBSOLETE) &&
+			routine->useCount != routine->intUseCount )
+		{
+			adjust_dependencies(routine);
+		}
+	}
+
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Function* routine = *iter;
+
+		if (routine && routine->getStatement() &&
+			!(routine->flags & Routine::FLAG_OBSOLETE) &&
+			routine->useCount != routine->intUseCount )
+		{
+			adjust_dependencies(routine);
+		}
+	}
+
+	// Deallocate all used requests.
+
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
+	{
+		Routine* routine = *iter;
+
+		if (routine)
+		{
+			if (routine->getStatement() && !(routine->flags & Routine::FLAG_OBSOLETE) &&
+				routine->intUseCount >= 0 &&
+				routine->useCount == routine->intUseCount)
+			{
+				routine->releaseStatement(tdbb);
+
+				if (routine->existenceLock)	//// TODO: verify why this IF is necessary now
+					LCK_release(tdbb, routine->existenceLock);
+				routine->existenceLock = NULL;
+				routine->flags |= Routine::FLAG_OBSOLETE;
+			}
+
+			// Leave it in state 0 to avoid extra pass next time to clear it
+			// Note: we need to adjust intUseCount for all routines
+			// in cache because any of them may have been affected from
+			// dependencies earlier. Even routines that were not scanned yet !
+			routine->intUseCount = 0;
+		}
+	}
+
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Function* routine = *iter;
+
+		if (routine)
+		{
+			if (routine->getStatement() && !(routine->flags & Routine::FLAG_OBSOLETE) &&
+				routine->intUseCount >= 0 &&
+				routine->useCount == routine->intUseCount)
+			{
+				routine->releaseStatement(tdbb);
+
+				if (routine->existenceLock)	//// TODO: verify why this IF is necessary now
+					LCK_release(tdbb, routine->existenceLock);
+				routine->existenceLock = NULL;
+				routine->flags |= Routine::FLAG_OBSOLETE;
+			}
+
+			// Leave it in state 0 to avoid extra pass next time to clear it
+			// Note: we need to adjust intUseCount for all routines
+			// in cache because any of them may have been affected from
+			// dependencies earlier. Even routines that were not scanned yet !
+			routine->intUseCount = 0;
+		}
+	}
+
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
 }
 
 
-bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
+bool MET_routine_in_use(thread_db* tdbb, Routine* routine)
 {
 /**************************************
  *
- *      M E T _ p r o c e d u r e _ i n _ u s e
+ *      M E T _ r o u t i n e _ i n _ u s e
  *
  **************************************
  *
  * Functional description
- *      Determine if procedure is used by any user requests or transactions.
- *      Return false if procedure is used only inside cache or not used at all.
+ *      Determine if routine is used by any user requests or transactions.
+ *      Return false if routine is used only inside cache or not used at all.
  *
  **************************************/
 	SET_TDBB(tdbb);
+
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
-	Jrd::Attachment* att = tdbb->getAttachment();
 
-	// This should not really happen
-	vec<jrd_prc*>* procedures = att->att_procedures;
-	if (!procedures) {
-		return false;
-	}
+	Jrd::Attachment* att = tdbb->getAttachment();
 
 	vec<jrd_rel*>* relations = att->att_relations;
 	{ // scope
 	    vec<jrd_rel*>::iterator ptr, end;
+
 		for (ptr = relations->begin(), end = relations->end(); ptr < end; ++ptr)
 		{
 			jrd_rel* relation = *ptr;
@@ -630,37 +846,77 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 		}
 	} // scope
 
-	jrd_prc* procedure;
-	vec<jrd_prc*>::iterator ptr, end;
-	// Walk procedures and calculate internal dependencies
-	for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ++ptr)
+	// Walk routines and calculate internal dependencies
+
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
 	{
-		if ((procedure = *ptr) && procedure->getStatement() && !(procedure->prc_flags & PRC_obsolete))
+		jrd_prc* procedure = *iter;
+
+		if (procedure && procedure->getStatement() &&
+			!(procedure->flags & Routine::FLAG_OBSOLETE))
+		{
 			inc_int_use_count(procedure->getStatement());
+		}
 	}
 
-	// Walk procedures again and adjust dependencies for procedures
-	// which will not be removed.
-	for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
 	{
-		if ( (procedure = *ptr) && procedure->getStatement() &&
-			!(procedure->prc_flags & PRC_obsolete) &&
-			procedure->prc_use_count != procedure->prc_int_use_count && procedure != proc )
+		Function* function = *iter;
+
+		if (function && function->getStatement() &&
+			!(function->flags & Routine::FLAG_OBSOLETE))
+		{
+			inc_int_use_count(function->getStatement());
+		}
+	}
+
+	// Walk routines again and adjust dependencies for routines
+	// which will not be removed.
+
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
+	{
+		jrd_prc* procedure = *iter;
+
+		if (procedure && procedure->getStatement() &&
+			!(procedure->flags & Routine::FLAG_OBSOLETE) &&
+			procedure->useCount != procedure->intUseCount && procedure != routine)
 		{
 			adjust_dependencies(procedure);
 		}
 	}
 
-	const bool result = proc->prc_use_count != proc->prc_int_use_count;
-
-	// Fix back int_use_count
-	for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
 	{
-		if ( (procedure = *ptr) )
+		Function* function = *iter;
+
+		if (function && function->getStatement() &&
+			!(function->flags & Routine::FLAG_OBSOLETE) &&
+			function->useCount != function->intUseCount && function != routine)
 		{
-			procedure->prc_int_use_count = 0;
+			adjust_dependencies(function);
 		}
 	}
+
+	const bool result = routine->useCount != routine->intUseCount;
+
+	// Fix back intUseCount
+
+	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
+	{
+		jrd_prc* procedure = *iter;
+
+		if (procedure)
+			procedure->intUseCount = 0;
+	}
+
+	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
+	{
+		Function* function = *iter;
+
+		if (function)
+			function->intUseCount = 0;
+	}
+
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
@@ -2306,29 +2562,25 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
 	jrd_prc* check_procedure = NULL;
 
 	// See if we already know the procedure by name
-	vec<jrd_prc*>* procedures = attachment->att_procedures;
-	if (procedures)
+	for (jrd_prc** iter = attachment->att_procedures.begin(); iter != attachment->att_procedures.end(); ++iter)
 	{
-		vec<jrd_prc*>::iterator ptr = procedures->begin();
-		for (const vec<jrd_prc*>::const_iterator end = procedures->end(); ptr < end; ++ptr)
-		{
-			jrd_prc* procedure = *ptr;
-			if (procedure && !(procedure->prc_flags & PRC_obsolete) &&
-				((procedure->prc_flags & PRC_scanned) || noscan) &&
-				!(procedure->prc_flags & PRC_being_scanned) &&
-				!(procedure->prc_flags & PRC_being_altered))
-			{
-				if (procedure->getName() == name)
-				{
-					if (procedure->prc_flags & PRC_check_existence)
-					{
-						check_procedure = procedure;
-						LCK_lock(tdbb, check_procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
-						break;
-					}
+		jrd_prc* procedure = *iter;
 
-					return procedure;
+		if (procedure && !(procedure->flags & Routine::FLAG_OBSOLETE) &&
+			((procedure->flags & Routine::FLAG_SCANNED) || noscan) &&
+			!(procedure->flags & Routine::FLAG_BEING_SCANNED) &&
+			!(procedure->flags & Routine::FLAG_BEING_ALTERED))
+		{
+			if (procedure->getName() == name)
+			{
+				if (procedure->flags & Routine::FLAG_CHECK_EXISTENCE)
+				{
+					check_procedure = procedure;
+					LCK_lock(tdbb, check_procedure->existenceLock, LCK_SR, LCK_WAIT);
+					break;
 				}
+
+				return procedure;
 			}
 		}
 	}
@@ -2350,11 +2602,11 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
 
 	if (check_procedure)
 	{
-		check_procedure->prc_flags &= ~PRC_check_existence;
+		check_procedure->flags &= ~Routine::FLAG_CHECK_EXISTENCE;
 		if (check_procedure != procedure)
 		{
-			LCK_release(tdbb, check_procedure->prc_existence_lock);
-			check_procedure->prc_flags |= PRC_obsolete;
+			LCK_release(tdbb, check_procedure->existenceLock);
+			check_procedure->flags |= Routine::FLAG_OBSOLETE;
 		}
 	}
 
@@ -2362,7 +2614,7 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
 }
 
 
-jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
+jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, USHORT id,
 								 bool return_deleted, bool noscan, USHORT flags)
 {
 /**************************************
@@ -2381,18 +2633,17 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
 
 	jrd_prc* procedure;
 
-	vec<jrd_prc*>* procedures = attachment->att_procedures;
-	if (procedures && id < (SSHORT) procedures->count() && (procedure = (*procedures)[id]) &&
+	if (id < (SSHORT) attachment->att_procedures.getCount() && (procedure = attachment->att_procedures[id]) &&
 		procedure->getId() == id &&
-		!(procedure->prc_flags & PRC_being_scanned) &&
-		((procedure->prc_flags & PRC_scanned) || noscan) &&
-		!(procedure->prc_flags & PRC_being_altered) &&
-		(!(procedure->prc_flags & PRC_obsolete) || return_deleted))
+		!(procedure->flags & Routine::FLAG_BEING_SCANNED) &&
+		((procedure->flags & Routine::FLAG_SCANNED) || noscan) &&
+		!(procedure->flags & Routine::FLAG_BEING_ALTERED) &&
+		(!(procedure->flags & Routine::FLAG_OBSOLETE) || return_deleted))
 	{
-		if (procedure->prc_flags & PRC_check_existence)
+		if (procedure->flags & Routine::FLAG_CHECK_EXISTENCE)
 		{
 			check_procedure = procedure;
-			LCK_lock(tdbb, check_procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
+			LCK_lock(tdbb, check_procedure->existenceLock, LCK_SR, LCK_WAIT);
 		}
 		else {
 			return procedure;
@@ -2414,11 +2665,11 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
 
 	if (check_procedure)
 	{
-		check_procedure->prc_flags &= ~PRC_check_existence;
+		check_procedure->flags &= ~Routine::FLAG_CHECK_EXISTENCE;
 		if (check_procedure != procedure)
 		{
-			LCK_release(tdbb, check_procedure->prc_existence_lock);
-			check_procedure->prc_flags |= PRC_obsolete;
+			LCK_release(tdbb, check_procedure->existenceLock);
+			check_procedure->flags |= Routine::FLAG_OBSOLETE;
 		}
 	}
 
@@ -2822,7 +3073,7 @@ void MET_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 }
 
 
-jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
+jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 {
 /**************************************
  *
@@ -2838,32 +3089,29 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
-	vec<jrd_prc*>* vector = attachment->att_procedures;
+	if (id >= attachment->att_procedures.getCount())
+		attachment->att_procedures.resize(id + 10);
 
-	if (!vector)
-		vector = attachment->att_procedures = vec<jrd_prc*>::newVector(*attachment->att_pool, id + 10);
-	else if (id >= (int) vector->count())
-		vector->resize(id + 10);
+	jrd_prc* procedure = attachment->att_procedures[id];
 
-	jrd_prc* procedure = (*vector)[id];
-
-	if (procedure && !(procedure->prc_flags & PRC_obsolete))
+	if (procedure && !(procedure->flags & Routine::FLAG_OBSOLETE))
 	{
 		// Make sure PRC_being_scanned and PRC_scanned are not set at the same time
 
-		fb_assert(!(procedure->prc_flags & PRC_being_scanned) || !(procedure->prc_flags & PRC_scanned));
+		fb_assert(!(procedure->flags & Routine::FLAG_BEING_SCANNED) ||
+			!(procedure->flags & Routine::FLAG_SCANNED));
 
 		/* To avoid scanning recursive procedure's blr recursively let's
-		   make use of PRC_being_scanned bit. Because this bit is set
+		   make use of Routine::FLAG_BEING_SCANNED bit. Because this bit is set
 		   later in the code, it is not set when we are here first time.
 		   If (in case of rec. procedure) we get here second time it is
 		   already set and we return half baked procedure.
 		   In case of superserver this code is under the rec. mutex
 		   protection, thus the only guy (thread) who can get here and see
-		   PRC_being_scanned bit set is the guy which started procedure scan
+		   FLAG_BEING_SCANNED bit set is the guy which started procedure scan
 		   and currently holds the mutex.
 		   In case of classic, there is always only one guy and if it
-		   sees PRC_being_scanned bit set it is safe to assume it is here
+		   sees FLAG_BEING_SCANNED bit set it is safe to assume it is here
 		   second time.
 
 		   If procedure has already been scanned - return. This condition
@@ -2874,7 +3122,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		   it would be just unfair to make it do the work again.
 		 */
 
-		if ((procedure->prc_flags & PRC_being_scanned) || (procedure->prc_flags & PRC_scanned))
+		if ((procedure->flags & Routine::FLAG_BEING_SCANNED) ||
+			(procedure->flags & Routine::FLAG_SCANNED))
 		{
 			return procedure;
 		}
@@ -2887,21 +3136,21 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 	try {
 
-	procedure->prc_flags |= (PRC_being_scanned | flags);
-	procedure->prc_flags &= ~PRC_obsolete;
+	procedure->flags |= (Routine::FLAG_BEING_SCANNED | flags);
+	procedure->flags &= ~Routine::FLAG_OBSOLETE;
 
 	procedure->setId(id);
-	(*vector)[id] = procedure;
+	attachment->att_procedures[id] = procedure;
 
-	if (!procedure->prc_existence_lock)
+	if (!procedure->existenceLock)
 	{
 		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
 			Lock(tdbb, sizeof(SLONG), LCK_prc_exist, procedure, blocking_ast_procedure);
-		procedure->prc_existence_lock = lock;
+		procedure->existenceLock = lock;
 		lock->lck_key.lck_long = procedure->getId();
 	}
 
-	LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
+	LCK_lock(tdbb, procedure->existenceLock, LCK_SR, LCK_WAIT);
 
 	if (!noscan)
 	{
@@ -3117,7 +3366,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		}
 		END_FOR
 
-		procedure->prc_flags |= PRC_scanned;
+		procedure->flags |= Routine::FLAG_SCANNED;
 
 		if (!dbb->readOnly() && !valid_blr)
 		{
@@ -3140,14 +3389,14 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	} // if !noscan
 
 	// Make sure that it is really being scanned
-	fb_assert(procedure->prc_flags & PRC_being_scanned);
+	fb_assert(procedure->flags & Routine::FLAG_BEING_SCANNED);
 
-	procedure->prc_flags &= ~PRC_being_scanned;
+	procedure->flags &= ~Routine::FLAG_BEING_SCANNED;
 
 	}	// try
 	catch (const Exception&)
 	{
-		procedure->prc_flags &= ~(PRC_being_scanned | PRC_scanned);
+		procedure->flags &= ~(Routine::FLAG_BEING_SCANNED | Routine::FLAG_SCANNED);
 
 		if (procedure->getExternal())
 		{
@@ -3155,11 +3404,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			procedure->setExternal(NULL);
 		}
 
-		if (procedure->prc_existence_lock)
+		if (procedure->existenceLock)
 		{
-			LCK_release(tdbb, procedure->prc_existence_lock);
-			delete procedure->prc_existence_lock;
-			procedure->prc_existence_lock = NULL;
+			LCK_release(tdbb, procedure->existenceLock);
+			delete procedure->existenceLock;
+			procedure->existenceLock = NULL;
 		}
 
 		throw;
@@ -3266,99 +3515,6 @@ void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
 			// close external file
 			EXT_fini(relation, true);
 		}
-	}
-}
-
-
-void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
-{
-/**************************************
- *
- *      M E T _ r e m o v e  _ p r o c e d u r e
- *
- **************************************
- *
- * Functional description
- *      Remove a procedure from cache
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Jrd::Attachment* att = tdbb->getAttachment();
-
-	vec<jrd_prc*>* pvector = att->att_procedures;
-	if (!pvector)
-		return;
-
-	if (!procedure)
-	{
-		// If we are in here then dfw.epp/modify_procedure() called us
-		if (!(procedure = (*pvector)[id]))
-			return;
-	}
-
-	// MET_procedure locks it. Lets unlock it now to avoid troubles later
-	if (procedure->prc_existence_lock)
-		LCK_release(tdbb, procedure->prc_existence_lock);
-
-	// Procedure that is being altered may have references
-	// to it by other procedures via pointer to current meta
-	// data structure, so don't loose the structure or the pointer.
-	if ((procedure == (*pvector)[id]) && !(procedure->prc_flags & PRC_being_altered))
-	    (*pvector)[id] = NULL;
-
-	// deallocate all structure which were allocated.  The procedure
-	// blr is originally read into a new pool from which all request
-	// are allocated.  That will not be freed up.
-
-	if (procedure->prc_existence_lock)
-	{
-		delete procedure->prc_existence_lock;
-		procedure->prc_existence_lock = NULL;
-	}
-
-	// deallocate input param structures
-
-	for (Array<NestConst<Parameter> >::iterator i = procedure->getInputFields().begin();
-		 i != procedure->getInputFields().end(); ++i)
-	{
-		if (*i)
-			delete i->getObject();
-	}
-
-	procedure->getInputFields().clear();
-
-	// deallocate output param structures
-
-	for (Array<NestConst<Parameter> >::iterator i = procedure->getOutputFields().begin();
-		 i != procedure->getOutputFields().end(); ++i)
-	{
-		if (*i)
-			delete i->getObject();
-	}
-
-	procedure->getOutputFields().clear();
-
-	if (!procedure->prc_use_count)
-	{
-		if (procedure->prc_record_format)
-		{
-			delete procedure->prc_record_format;
-			procedure->prc_record_format = NULL;
-		}
-	}
-
-	if (!(procedure->prc_flags & PRC_being_altered) && !procedure->prc_use_count)
-	{
-		delete procedure;
-	}
-	else
-	{
-		// Fully clear procedure block. Some pieces of code check for empty
-		// procedure name and ID, this is why we do it.
-		procedure->setName(QualifiedName());
-		procedure->setSecurityName("");
-		procedure->setId(0);
-		procedure->setDefaultCount(0);
 	}
 }
 
@@ -3979,14 +4135,14 @@ static int blocking_ast_procedure(void* ast_object)
 
 	try
 	{
-		Database* const dbb = procedure->prc_existence_lock->lck_dbb;
+		Database* const dbb = procedure->existenceLock->lck_dbb;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, procedure->prc_existence_lock);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, procedure->existenceLock);
 
-		if (procedure->prc_existence_lock)
-			LCK_release(tdbb, procedure->prc_existence_lock);
+		if (procedure->existenceLock)
+			LCK_release(tdbb, procedure->existenceLock);
 
-		procedure->prc_flags |= PRC_obsolete;
+		procedure->flags |= Routine::FLAG_OBSOLETE;
 	}
 	catch (const Exception&)
 	{} // no-op

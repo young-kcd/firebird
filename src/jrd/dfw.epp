@@ -368,9 +368,6 @@ static bool compute_security(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool create_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool delete_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool modify_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool scan_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -382,9 +379,6 @@ static bool delete_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool set_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool create_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool delete_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool modify_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -416,8 +410,6 @@ static void check_filename(const Firebird::string&, bool);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
-static void get_function_dependencies(DeferredWork*, bool, jrd_tra*);
-static void get_procedure_dependencies(DeferredWork*, bool, jrd_tra*);
 static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
@@ -449,6 +441,488 @@ struct deferred_task
 	dfw_task_routine task_routine;
 };
 
+namespace
+{
+	template <typename Self, typename T, int objType,
+		T* (*lookupById)(thread_db*, USHORT, bool, bool, USHORT),
+		T* (*lookupByName)(Jrd::thread_db*, const QualifiedName&, bool),
+		T* (*loadById)(thread_db*, USHORT, bool, USHORT)
+	>
+	class RoutineManager
+	{
+	public:
+		// Create a new routine.
+		static bool createRoutine(thread_db* tdbb, SSHORT phase, DeferredWork* work,
+			jrd_tra* transaction)
+		{
+			SET_TDBB(tdbb);
+
+			switch (phase)
+			{
+				case 1:
+				case 2:
+					return true;
+
+				case 3:
+				{
+					const bool compile = !work->findArg(dfw_arg_check_blr);
+					getDependencies(work, compile, transaction);
+
+					T* routine = lookupByName(tdbb,
+						QualifiedName(work->dfw_name, work->dfw_package), compile);
+
+					if (!routine)
+						return false;
+
+					break;
+				}
+			}
+
+			return false;
+		}
+
+		// Perform required actions when modifying a routine.
+		static bool modifyRoutine(thread_db* tdbb, SSHORT phase, DeferredWork* work,
+			jrd_tra* transaction)
+		{
+			SET_TDBB(tdbb);
+
+			Jrd::Attachment* attachment = tdbb->getAttachment();
+			const QualifiedName name(work->dfw_name, work->dfw_package);
+			Routine* routine;
+
+			switch (phase)
+			{
+				case 0:
+					routine = lookupById(tdbb, work->dfw_id, false, true, 0);
+					if (!routine)
+						return false;
+
+					if (routine->existenceLock)
+						LCK_convert(tdbb, routine->existenceLock, LCK_SR, transaction->getLockWait());
+
+					return false;
+
+				case 1:
+				case 2:
+					return true;
+
+				case 3:
+					routine = lookupById(tdbb, work->dfw_id, false, true, 0);
+					if (!routine)
+						return false;
+
+					if (routine->existenceLock)
+					{
+						// Let routine be deleted if only this transaction is using it
+
+						if (!LCK_convert(tdbb, routine->existenceLock, LCK_EX,
+								transaction->getLockWait()))
+						{
+							ERR_post(Arg::Gds(isc_no_meta_update) <<
+									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+						}
+					}
+
+					// If we are in a multi-client server, someone else may have marked
+					// routine obsolete. Unmark and we will remark it later.
+
+					routine->flags &= ~Routine::FLAG_OBSOLETE;
+					return true;
+
+				case 4:
+				{
+					routine = lookupById(tdbb, work->dfw_id, false, true, 0);
+					if (!routine)
+						return false;
+
+					// Do not allow to modify routine used by user requests
+					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
+					{
+						/*
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+						*/
+						gds__log("Modifying %s %s which is currently in use by active user requests",
+								 Self::getTypeStr(), name.toString().c_str());
+
+						USHORT alterCount = routine->alterCount;
+
+						if (alterCount > Routine::MAX_ALTER_COUNT)
+						{
+							ERR_post(Arg::Gds(isc_no_meta_update) <<
+									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()) <<
+									 Arg::Gds(isc_version_err));
+							// Msg357: too many versions
+						}
+
+						if (routine->existenceLock)
+							LCK_release(tdbb, routine->existenceLock);
+
+						Self::clearId(tdbb->getAttachment(), routine->getId());
+
+						if (!(routine = lookupById(tdbb, work->dfw_id, false,
+								true, Routine::FLAG_BEING_ALTERED)))
+						{
+							return false;
+						}
+
+						routine->alterCount = ++alterCount;
+					}
+
+					routine->flags |= Routine::FLAG_BEING_ALTERED;
+
+					if (routine->getStatement())
+					{
+						if (routine->getStatement()->isActive())
+						{
+							ERR_post(Arg::Gds(isc_no_meta_update) <<
+									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+						}
+
+						// release the request
+
+						routine->releaseStatement(tdbb);
+					}
+
+					// delete dependency lists
+
+					if (work->dfw_package.isEmpty())
+						MET_delete_dependencies(tdbb, work->dfw_name, objType, transaction);
+
+					/* the routine has just been scanned by lookupById
+					   and its Routine::FLAG_SCANNED flag is set. We are going to reread it
+					   from file (create all new dependencies) and do not want this
+					   flag to be set. That is why we do not add Routine::FLAG_OBSOLETE and
+					   Routine::FLAG_BEING_ALTERED flags, we set only these two flags
+					 */
+					routine->flags = (Routine::FLAG_OBSOLETE | Routine::FLAG_BEING_ALTERED);
+
+					if (routine->existenceLock)
+						LCK_release(tdbb, routine->existenceLock);
+
+					// remove routine from cache
+
+					routine->remove(tdbb);
+
+					// Now handle the new definition
+					bool compile = !work->findArg(dfw_arg_check_blr);
+					getDependencies(work, compile, transaction);
+
+					routine->flags &= ~(Routine::FLAG_OBSOLETE | Routine::FLAG_BEING_ALTERED);
+
+					return true;
+				}
+
+				case 5:
+					if (work->findArg(dfw_arg_check_blr))
+					{
+						SSHORT validBlr = FALSE;
+
+						MemoryPool* newPool = attachment->createPool();
+						try
+						{
+							Jrd::ContextPoolHolder context(tdbb, newPool);
+
+							// compile the routine to know if the BLR is still valid
+							if (loadById(tdbb, work->dfw_id, false, 0))
+								validBlr = TRUE;
+						}
+						catch (const Firebird::Exception&)
+						{
+							fb_utils::init_status(tdbb->tdbb_status_vector);
+						}
+
+						attachment->deletePool(newPool);
+
+						Self::validate(tdbb, transaction, work, validBlr);
+					}
+
+					break;
+			}
+
+			return false;
+		}
+
+		// Check if it is allowed to delete a routine, and if so, clean up after it.
+		static bool deleteRoutine(thread_db* tdbb, SSHORT phase, DeferredWork* work,
+			jrd_tra* transaction)
+		{
+			SET_TDBB(tdbb);
+			T* routine = NULL;
+
+			switch (phase)
+			{
+				case 0:
+					routine = lookupById(tdbb, work->dfw_id, false, true, 0);
+					if (!routine)
+						return false;
+
+					if (routine->existenceLock)
+						LCK_convert(tdbb, routine->existenceLock, LCK_SR, transaction->getLockWait());
+
+					return false;
+
+				case 1:
+					check_dependencies(tdbb, work->dfw_name.c_str(), NULL, work->dfw_package.c_str(),
+						objType, transaction);
+					return true;
+
+				case 2:
+					routine = lookupById(tdbb, work->dfw_id, false, true, 0);
+					if (!routine)
+						return false;
+
+					if (routine->existenceLock)
+					{
+						if (!LCK_convert(tdbb, routine->existenceLock, LCK_EX,
+								transaction->getLockWait()))
+						{
+							ERR_post(Arg::Gds(isc_no_meta_update) <<
+									 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+						}
+					}
+
+					// If we are in a multi-client server, someone else may have marked
+					// routine obsolete. Unmark and we will remark it later.
+
+					routine->flags &= ~Routine::FLAG_OBSOLETE;
+					return true;
+
+				case 3:
+					return true;
+
+				case 4:
+				{
+					routine = lookupById(tdbb, work->dfw_id, true, true, 0);
+					if (!routine)
+						return false;
+
+					const QualifiedName name(work->dfw_name, work->dfw_package);
+
+					// Do not allow to drop routine used by user requests
+					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
+					{
+						/*
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+						*/
+						gds__log("Deleting %s %s which is currently in use by active user requests",
+							Self::getTypeStr(), name.toString().c_str());
+
+						if (work->dfw_package.isEmpty())
+							MET_delete_dependencies(tdbb, work->dfw_name, objType, transaction);
+
+						if (routine->existenceLock)
+							LCK_release(tdbb, routine->existenceLock);
+
+						Self::clearId(tdbb->getAttachment(), routine->getId());
+						return false;
+					}
+
+					const USHORT old_flags = routine->flags;
+					routine->flags |= Routine::FLAG_OBSOLETE;
+
+					if (routine->getStatement())
+					{
+						if (routine->getStatement()->isActive())
+						{
+							routine->flags = old_flags;
+							ERR_post(Arg::Gds(isc_no_meta_update) <<
+									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+						}
+
+						routine->releaseStatement(tdbb);
+					}
+
+					// delete dependency lists
+
+					if (work->dfw_package.isEmpty())
+						MET_delete_dependencies(tdbb, work->dfw_name, objType, transaction);
+
+					if (routine->existenceLock)
+						LCK_release(tdbb, routine->existenceLock);
+
+					break;
+				}
+			}	// switch
+
+			return false;
+		}
+
+	private:
+		// Get relations and fields on which this routine depends, either when it's being
+		// created or when it's modified.
+		static void getDependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
+		{
+			thread_db* tdbb = JRD_get_thread_data();
+			Jrd::Attachment* attachment = tdbb->getAttachment();
+
+			if (compile)
+				compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
+
+			bid blobId;
+			blobId.clear();
+			Routine* routine = Self::lookupBlobId(tdbb, work, blobId, compile);
+
+#ifdef DEV_BUILD
+			MET_verify_cache(tdbb);
+#endif
+
+			// get any dependencies now by parsing the blr
+
+			if (routine && !blobId.isEmpty())
+			{
+				JrdStatement* statement = NULL;
+				// Nickolay Samofatov: allocate statement memory pool...
+				MemoryPool* new_pool = attachment->createPool();
+				// block is used to ensure MET_verify_cache
+				// works in not deleted context
+				{
+					Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+					const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
+						work->dfw_name : work->dfw_package);
+					MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blobId,
+						(compile ? &statement : NULL),
+						NULL, depName,
+						(work->dfw_package.isEmpty() ? objType : obj_package_body),
+						0, transaction);
+
+					if (statement)
+						statement->release(tdbb);
+					else
+						attachment->deletePool(new_pool);
+				}
+
+#ifdef DEV_BUILD
+				MET_verify_cache(tdbb);
+#endif
+			}
+		}
+	};
+
+	class FunctionManager : public RoutineManager<FunctionManager, Function, obj_udf,
+		Function::lookup, Function::lookup, Function::loadMetadata>
+	{
+	public:
+		static const char* const getTypeStr()
+		{
+			return "function";
+		}
+
+		static void clearId(Jrd::Attachment* attachment, USHORT id)
+		{
+			attachment->att_functions[id] = NULL;
+		}
+
+		static Routine* lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId, bool compile);
+		static void validate(thread_db* tdbb, jrd_tra* transaction, DeferredWork* work,
+			SSHORT validBlr);
+	};
+
+	class ProcedureManager : public RoutineManager<ProcedureManager, jrd_prc, obj_procedure,
+		MET_lookup_procedure_id, MET_lookup_procedure, MET_procedure>
+	{
+	public:
+		static const char* const getTypeStr()
+		{
+			return "procedure";
+		}
+
+		static void clearId(Jrd::Attachment* attachment, USHORT id)
+		{
+			attachment->att_procedures[id] = NULL;
+		}
+
+		static Routine* lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId, bool compile);
+		static void validate(thread_db* tdbb, jrd_tra* transaction, DeferredWork* work,
+			SSHORT validBlr);
+	};
+
+	// These methods cannot be defined inline, because GPRE generates wrong code.
+
+	Routine* FunctionManager::lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId,
+		bool compile)
+	{
+		Jrd::Attachment* attachment = tdbb->getAttachment();
+		AutoCacheRequest handle(tdbb, irq_c_fun_dpd, IRQ_REQUESTS);
+		Routine* routine = NULL;
+
+		FOR(REQUEST_HANDLE handle)
+			X IN RDB$FUNCTIONS WITH
+				X.RDB$FUNCTION_NAME EQ work->dfw_name.c_str() AND
+				X.RDB$PACKAGE_NAME EQUIV NULLIF(work->dfw_package.c_str(), '')
+		{
+			blobId = X.RDB$FUNCTION_BLR;
+			routine = Function::lookup(tdbb,
+				QualifiedName(work->dfw_name, work->dfw_package), !compile);
+		}
+		END_FOR
+
+		return routine;
+	}
+
+	void FunctionManager::validate(thread_db* tdbb, jrd_tra* transaction, DeferredWork* work,
+		SSHORT validBlr)
+	{
+		Jrd::Attachment* attachment = tdbb->getAttachment();
+		AutoCacheRequest request(tdbb, irq_fun_validate, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			FUN IN RDB$FUNCTIONS
+			WITH FUN.RDB$FUNCTION_ID EQ work->dfw_id AND
+				 FUN.RDB$FUNCTION_BLR NOT MISSING
+		{
+			MODIFY FUN USING
+				FUN.RDB$VALID_BLR = validBlr;
+				FUN.RDB$VALID_BLR.NULL = FALSE;
+			END_MODIFY
+		}
+		END_FOR
+	}
+
+	Routine* ProcedureManager::lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId,
+		bool compile)
+	{
+		Jrd::Attachment* attachment = tdbb->getAttachment();
+		AutoCacheRequest handle(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
+		Routine* routine = NULL;
+
+		FOR(REQUEST_HANDLE handle)
+			X IN RDB$PROCEDURES WITH
+				X.RDB$PROCEDURE_NAME EQ work->dfw_name.c_str() AND
+				X.RDB$PACKAGE_NAME EQUIV NULLIF(work->dfw_package.c_str(), '')
+		{
+			blobId = X.RDB$PROCEDURE_BLR;
+			routine = MET_lookup_procedure(tdbb,
+				QualifiedName(work->dfw_name, work->dfw_package), !compile);
+		}
+		END_FOR
+
+		return routine;
+	}
+
+	void ProcedureManager::validate(thread_db* tdbb, jrd_tra* transaction, DeferredWork* work,
+		SSHORT validBlr)
+	{
+		Jrd::Attachment* attachment = tdbb->getAttachment();
+		AutoCacheRequest request(tdbb, irq_prc_validate, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			PRC IN RDB$PROCEDURES
+			WITH PRC.RDB$PROCEDURE_ID EQ work->dfw_id AND
+				 PRC.RDB$PROCEDURE_BLR NOT MISSING
+		{
+			MODIFY PRC USING
+				PRC.RDB$VALID_BLR = validBlr;
+				PRC.RDB$VALID_BLR.NULL = FALSE;
+			END_MODIFY
+		}
+		END_FOR
+	}
+} // namespace
+
 static const deferred_task task_table[] =
 {
 	{ dfw_add_file, add_file },
@@ -474,18 +948,18 @@ static const deferred_task task_table[] =
 	{ dfw_modify_trigger, modify_trigger },
 	{ dfw_drop_package_header, drop_package_header },	// packages should be before procedures
 	{ dfw_drop_package_body, drop_package_body },		// packages should be before procedures
-	{ dfw_create_procedure, create_procedure },
-	{ dfw_delete_procedure, delete_procedure },
-	{ dfw_modify_procedure, modify_procedure },
+	{ dfw_create_procedure, ProcedureManager::createRoutine },
+	{ dfw_delete_procedure, ProcedureManager::deleteRoutine },
+	{ dfw_modify_procedure, ProcedureManager::modifyRoutine },
 	{ dfw_delete_prm, delete_parameter },
 	{ dfw_create_collation, create_collation },
 	{ dfw_delete_collation, delete_collation },
 	{ dfw_delete_exception, delete_exception },
 	{ dfw_set_generator, set_generator },
 	{ dfw_delete_generator, delete_generator },
-	{ dfw_create_function, create_function },
-	{ dfw_delete_function, delete_function },
-	{ dfw_modify_function, modify_function },
+	{ dfw_create_function, FunctionManager::createRoutine },
+	{ dfw_delete_function, FunctionManager::deleteRoutine },
+	{ dfw_modify_function, FunctionManager::modifyRoutine },
 	{ dfw_add_difference, add_difference },
 	{ dfw_delete_difference, delete_difference },
 	{ dfw_begin_backup, begin_backup },
@@ -2318,44 +2792,6 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 }
 
 
-static bool create_function(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	c r e a t e _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Create a new function.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	switch (phase)
-	{
-	case 1:
-	case 2:
-		return true;
-
-	case 3:
-		{
-			const bool compile = !work->findArg(dfw_arg_check_blr);
-			get_function_dependencies(work, compile, transaction);
-
-			if (!Function::lookup(tdbb, QualifiedName(work->dfw_name, work->dfw_package), compile))
-			{
-				return false;
-			}
-		}
-		break;
-	}
-
-	return false;
-}
-
-
 static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
@@ -2739,44 +3175,6 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			throw;
 		}
 
-		break;
-	}
-
-	return false;
-}
-
-static bool create_procedure(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	c r e a t e _ p r o c e d u r e
- *
- **************************************
- *
- * Functional description
- *	Create a new procedure.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	switch (phase)
-	{
-	case 1:
-	case 2:
-		return true;
-
-	case 3:
-		{
-			const bool compile = !work->findArg(dfw_arg_check_blr);
-			get_procedure_dependencies(work, compile, transaction);
-
-			jrd_prc* procedure = MET_lookup_procedure(tdbb,
-				QualifiedName(work->dfw_name, work->dfw_package), compile);
-			if (!procedure) {
-				return false;
-			}
-		}
 		break;
 	}
 
@@ -3504,136 +3902,6 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
 }
 
 
-static bool delete_function(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	d e l e t e _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Check if it is allowed to delete
- *	a function, and if so, clean up after it.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Function* function = NULL;
-
-	switch (phase)
-	{
-	case 0:
-		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
-		if (!function)
-		{
-			return false;
-		}
-
-		if (function->fun_existence_lock)
-		{
-			LCK_convert(tdbb, function->fun_existence_lock, LCK_SR, transaction->getLockWait());
-		}
-		return false;
-
-	case 1:
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, work->dfw_package.c_str(),
-						   obj_udf, transaction);
-		return true;
-
-	case 2:
-		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
-		if (!function)
-		{
-			return false;
-		}
-
-		if (function->fun_existence_lock)
-		{
-			if (!LCK_convert(tdbb, function->fun_existence_lock, LCK_EX, transaction->getLockWait()))
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-			}
-		}
-
-		// If we are in a multi-client server, someone else may have marked
-		// function obsolete. Unmark and we will remark it later.
-
-		function->fun_flags &= ~FUN_obsolete;
-		return true;
-
-	case 3:
-		return true;
-
-	case 4:
-		{
-			function = Function::lookup(tdbb, work->dfw_id, true, true, 0);
-			if (!function)
-			{
-				return false;
-			}
-
-			const QualifiedName name(work->dfw_name, work->dfw_package);
-
-			// Do not allow to drop function used by user requests
-			if (function->isUsed())
-			{
-				/*
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				*/
-				gds__log("Deleting function %s which is currently in use by active user requests",
-						 name.toString().c_str());
-
-				if (work->dfw_package.isEmpty())
-				{
-					MET_delete_dependencies(tdbb, work->dfw_name, obj_udf, transaction);
-				}
-
-				if (function->fun_existence_lock)
-				{
-					LCK_release(tdbb, function->fun_existence_lock);
-				}
-
-				Jrd::Attachment* attachment = tdbb->getAttachment();
-				attachment->att_functions[function->getId()] = NULL;
-				return false;
-			}
-
-			const USHORT old_flags = function->fun_flags;
-			function->fun_flags |= FUN_obsolete;
-			if (function->getStatement())
-			{
-				if (function->getStatement()->isActive())
-				{
-					function->fun_flags = old_flags;
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				}
-
-				function->getStatement()->release(tdbb);
-				function->setStatement(NULL);
-			}
-
-			// delete dependency lists
-
-			if (work->dfw_package.isEmpty())
-			{
-				MET_delete_dependencies(tdbb, work->dfw_name, obj_udf, transaction);
-			}
-
-			if (function->fun_existence_lock)
-			{
-				LCK_release(tdbb, function->fun_existence_lock);
-			}
-		}
-		break;
-	}	// switch
-
-	return false;
-}
-
-
 static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
@@ -3860,126 +4128,6 @@ static bool delete_parameter(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_t
 		*/
 		break;
 	}
-
-	return false;
-}
-
-
-static bool delete_procedure(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	d e l e t e _ p r o c e d u r e
- *
- **************************************
- *
- * Functional description
- *	Check if it is allowable to delete
- *	a procedure , and if so, clean up after it.
- *
- **************************************/
-	jrd_prc* procedure;
-	USHORT old_flags;
-
-	SET_TDBB(tdbb);
-
-	switch (phase)
-	{
-	case 0:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0);
-		if (!procedure) {
-			return false;
-		}
-
-		if (procedure->prc_existence_lock)
-		{
-			LCK_convert(tdbb, procedure->prc_existence_lock, LCK_SR, transaction->getLockWait());
-		}
-		return false;
-
-	case 1:
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, work->dfw_package.c_str(),
-			obj_procedure, transaction);
-		return true;
-
-	case 2:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0);
-		if (!procedure) {
-			return false;
-		}
-
-		if (procedure->prc_existence_lock)
-		{
-			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX, transaction->getLockWait()))
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-			}
-		}
-
-		// If we are in a multi-client server, someone else may have marked
-		// procedure obsolete. Unmark and we will remark it later.
-
-		procedure->prc_flags &= ~PRC_obsolete;
-		return true;
-
-	case 3:
-		return true;
-
-	case 4:
-		{
-			procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, true, true, 0);
-			if (!procedure) {
-				return false;
-			}
-
-			const QualifiedName name(work->dfw_name, work->dfw_package);
-
-			// Do not allow to drop procedure used by user requests
-			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
-			{
-				/*
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				*/
-				gds__log("Deleting procedure %s which is currently in use by active user requests",
-						 name.toString().c_str());
-
-				if (work->dfw_package.isEmpty())
-					MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
-
-				if (procedure->prc_existence_lock) {
-					LCK_release(tdbb, procedure->prc_existence_lock);
-				}
-				(*tdbb->getAttachment()->att_procedures)[procedure->getId()] = NULL;
-				return false;
-			}
-
-			old_flags = procedure->prc_flags;
-			procedure->prc_flags |= PRC_obsolete;
-			if (procedure->getStatement())
-			{
-				if (procedure->getStatement()->isActive())
-				{
-					procedure->prc_flags = old_flags;
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				}
-
-				procedure->releaseStatement(tdbb);
-			}
-
-			// delete dependency lists
-
-			if (work->dfw_package.isEmpty())
-				MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
-
-			if (procedure->prc_existence_lock) {
-				LCK_release(tdbb, procedure->prc_existence_lock);
-			}
-		}
-		break;
-	}	// switch
 
 	return false;
 }
@@ -4611,144 +4759,6 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name, Ods::Interna
 	desc->iad_length = IAD_LEN(MAX(desc->iad_struct_count, desc->iad_dimensions));
 	desc->iad_element_length = desc->iad_rpt[0].iad_desc.dsc_length;
 	desc->iad_total_length = desc->iad_element_length * desc->iad_count;
-}
-
-
-static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
-{
-/**************************************
- *
- *	g e t _ f u n c t i o n _ d e p e n d e n c i e s
- *
- **************************************
- *
- * Functional description
- *	Get relations and fields on which this
- *	function depends, either when it's being
- *	created or when it's modified.
- *
- **************************************/
-	thread_db* const tdbb = JRD_get_thread_data();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	if (compile)
-	{
-		compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
-	}
-
-	bool found = false;
-	bid blob_id;
-	blob_id.clear();
-
-	AutoCacheRequest handle(tdbb, irq_c_fun_dpd, IRQ_REQUESTS);
-
-	FOR(REQUEST_HANDLE handle)
-		X IN RDB$FUNCTIONS WITH
-			X.RDB$FUNCTION_NAME EQ work->dfw_name.c_str() AND
-			X.RDB$PACKAGE_NAME EQUIV NULLIF(work->dfw_package.c_str(), '')
-	{
-		blob_id = X.RDB$FUNCTION_BLR;
-
-		if (Function::lookup(tdbb, QualifiedName(work->dfw_name, work->dfw_package), !compile))
-			found = true;
-	}
-	END_FOR
-
-	// get any dependencies now by parsing the blr
-
-	if (found && !blob_id.isEmpty())
-	{
-		JrdStatement* statement = NULL;
-
-		MemoryPool* const new_pool = attachment->createPool();
-		Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-		const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
-			work->dfw_name : work->dfw_package);
-
-		MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &statement : NULL,
-							 NULL, depName,
-							 (work->dfw_package.isEmpty() ? obj_udf : obj_package_body),
-							 0, transaction);
-
-		if (statement)
-			statement->release(tdbb);
-		else
-			attachment->deletePool(new_pool);
-	}
-}
-
-
-static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
-{
-/**************************************
- *
- *	g e t _ p r o c e d u r e _ d e p e n d e n c i e s
- *
- **************************************
- *
- * Functional description
- *	Get relations and fields on which this
- *	procedure depends, either when it's being
- *	created or when it's modified.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	if (compile)
-		compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
-
-	jrd_prc* procedure = NULL;
-	bid blob_id;
-	blob_id.clear();
-
-	AutoCacheRequest handle(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
-
-	FOR(REQUEST_HANDLE handle)
-		X IN RDB$PROCEDURES WITH
-			X.RDB$PROCEDURE_NAME EQ work->dfw_name.c_str() AND
-			X.RDB$PACKAGE_NAME EQUIV NULLIF(work->dfw_package.c_str(), '')
-	{
-		blob_id = X.RDB$PROCEDURE_BLR;
-		procedure = MET_lookup_procedure(tdbb, QualifiedName(work->dfw_name, work->dfw_package),
-			!compile);
-	}
-	END_FOR
-
-#ifdef DEV_BUILD
-	MET_verify_cache(tdbb);
-#endif
-
-	// get any dependencies now by parsing the blr
-
-	if (procedure && !blob_id.isEmpty())
-	{
-		JrdStatement* statement = NULL;
-		// Nickolay Samofatov: allocate statement memory pool...
-		MemoryPool* new_pool = attachment->createPool();
-		// block is used to ensure MET_verify_cache
-		// works in not deleted context
-		{
-			Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-			const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
-				work->dfw_name : work->dfw_package);
-			MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &statement : NULL,
-								 NULL, depName,
-								 (work->dfw_package.isEmpty() ? obj_procedure : obj_package_body),
-								 0, transaction);
-
-			if (statement)
-				statement->release(tdbb);
-			else
-				attachment->deletePool(new_pool);
-		}
-
-#ifdef DEV_BUILD
-		MET_verify_cache(tdbb);
-#endif
-	}
 }
 
 
@@ -5454,397 +5464,6 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		LCK_lock(tdbb, relation->rel_rescan_lock, LCK_EX, LCK_WAIT);
 		LCK_release(tdbb, relation->rel_rescan_lock);
 
-		break;
-	}
-
-	return false;
-}
-
-
-static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	m o d i f y _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Perform required actions when modifying function.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	const QualifiedName name(work->dfw_name, work->dfw_package);
-
-	Function* function = NULL;
-
-	switch (phase)
-	{
-	case 0:
-	{
-		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
-		if (!function)
-		{
-			return false;
-		}
-
-		if (function->fun_existence_lock)
-		{
-			LCK_convert(tdbb, function->fun_existence_lock, LCK_SR, transaction->getLockWait());
-		}
-		return false;
-	}
-
-	case 1:
-	case 2:
-		return true;
-
-	case 3:
-		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
-		if (!function)
-		{
-			return false;
-		}
-
-		if (function->fun_existence_lock)
-		{
-			// Let function be modified if only this transaction is using it
-
-			if (!LCK_convert(tdbb, function->fun_existence_lock, LCK_EX, transaction->getLockWait()))
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-			}
-		}
-
-		// If we are in a multi-client server, someone else may have marked
-		// function obsolete. Unmark and we will remark it later.
-
-		function->fun_flags &= ~FUN_obsolete;
-		return true;
-
-	case 4:
-		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
-		if (!function)
-		{
-			return false;
-		}
-
-		{ // guard scope
-
-			// Do not allow to modify function used by user requests
-			if (function->isUsed())
-			{
-				/*
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				*/
-				gds__log("Modifying function %s which is currently in use by active user requests",
-						 name.toString().c_str());
-
-				const USHORT alter_count = function->incrementAlterCount();
-
-				if (function->fun_existence_lock)
-				{
-					LCK_release(tdbb, function->fun_existence_lock);
-				}
-
-				Jrd::Attachment* attachment = tdbb->getAttachment();
-				attachment->att_functions[function->getId()] = NULL;
-
-				if (!(function = Function::lookup(tdbb, work->dfw_id, false,
-												  true, FUN_being_altered)))
-				{
-					return false;
-				}
-
-				function->fun_alter_count = alter_count;
-			}
-
-			function->fun_flags |= FUN_being_altered;
-
-			if (function->getStatement())
-			{
-				if (function->getStatement()->isActive())
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				}
-
-				// release the request
-
-				function->getStatement()->release(tdbb);
-				function->setStatement(NULL);
-			}
-
-			// delete dependency lists
-
-			if (work->dfw_package.isEmpty())
-			{
-				MET_delete_dependencies(tdbb, work->dfw_name, obj_udf, transaction);
-			}
-
-			// The function has just been scanned by Function::lookup()
-			// and its FUN_scanned flag is set. We are going to reread it
-			// from file (create all new dependencies) and do not want this
-			// flag to be set. That is why we do not add FUN_obsolete and
-			// FUN_being_altered flags, we set only these two flags.
-
-			function->fun_flags = (FUN_obsolete | FUN_being_altered);
-
-			if (function->fun_existence_lock)
-			{
-				LCK_release(tdbb, function->fun_existence_lock);
-			}
-
-			// remove function from cache
-
-			function->remove(tdbb);
-
-			// Now handle the new definition
-			const bool compile = !work->findArg(dfw_arg_check_blr);
-			get_function_dependencies(work, compile, transaction);
-
-			function->fun_flags &= ~(FUN_obsolete | FUN_being_altered);
-		}
-		return true;
-
-	case 5:
-		if (work->findArg(dfw_arg_check_blr))
-		{
-			function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
-
-			AutoCacheRequest request(tdbb, irq_fun_validate, IRQ_REQUESTS);
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-				FUN IN RDB$FUNCTIONS WITH
-					FUN.RDB$FUNCTION_ID EQ work->dfw_id AND FUN.RDB$FUNCTION_BLR NOT MISSING
-			{
-				bool valid_blr = false;
-
-				MemoryPool* const csb_pool = attachment->createPool();
-				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-
-				try
-				{
-					AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
-
-					try
-					{
-						function->parseBlr(tdbb, csb, &FUN.RDB$FUNCTION_BLR);
-						valid_blr = true;
-					}
-					catch (const Firebird::Exception&)
-					{
-						fb_utils::init_status(tdbb->tdbb_status_vector);
-					}
-				}
-				catch (const Firebird::Exception&)
-				{
-					attachment->deletePool(csb_pool);
-					throw;
-				}
-
-				attachment->deletePool(csb_pool);
-
-				MODIFY FUN USING
-					FUN.RDB$VALID_BLR = valid_blr ? TRUE : FALSE;
-					FUN.RDB$VALID_BLR.NULL = FALSE;
-				END_MODIFY
-			}
-			END_FOR
-		}
-		break;
-	}
-
-	return false;
-}
-
-
-static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	m o d i f y _ p r o c e d u r e
- *
- **************************************
- *
- * Functional description
- *	Perform required actions when modifying procedure.
- *
- **************************************/
-	jrd_prc* procedure;
-
-	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	const QualifiedName name(work->dfw_name, work->dfw_package);
-
-	switch (phase)
-	{
-	case 0:
-	{
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0);
-		if (!procedure) {
-			return false;
-		}
-
-		if (procedure->prc_existence_lock)
-		{
-			LCK_convert(tdbb, procedure->prc_existence_lock, LCK_SR, transaction->getLockWait());
-		}
-		return false;
-	}
-
-	case 1:
-	case 2:
-		return true;
-
-	case 3:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0);
-		if (!procedure) {
-			return false;
-		}
-
-		if (procedure->prc_existence_lock)
-		{
-			// Let procedure be deleted if only this transaction is using it
-
-			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX, transaction->getLockWait()))
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-			}
-		}
-
-		// If we are in a multi-client server, someone else may have marked
-		// procedure obsolete. Unmark and we will remark it later.
-
-		procedure->prc_flags &= ~PRC_obsolete;
-		return true;
-
-	case 4:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0);
-		if (!procedure) {
-			return false;
-		}
-
-		{ // guard scope
-
-			// Do not allow to modify procedure used by user requests
-			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
-			{
-				/*
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				*/
-				gds__log("Modifying procedure %s which is currently in use by active user requests",
-						 name.toString().c_str());
-
-				USHORT prc_alter_count = procedure->prc_alter_count;
-				if (prc_alter_count > MAX_PROC_ALTER)
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_proc_name) << Arg::Str(name.toString()) <<
-							 Arg::Gds(isc_version_err));
-					// Msg357: too many versions
-				}
-
-				if (procedure->prc_existence_lock) {
-					LCK_release(tdbb, procedure->prc_existence_lock);
-				}
-				(*tdbb->getAttachment()->att_procedures)[procedure->getId()] = NULL;
-
-				if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false,
-														  true, PRC_being_altered)))
-				{
-					return false;
-				}
-				procedure->prc_alter_count = ++prc_alter_count;
-			}
-
-			procedure->prc_flags |= PRC_being_altered;
-			if (procedure->getStatement())
-			{
-				if (procedure->getStatement()->isActive())
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-				}
-
-				// release the request
-
-				procedure->releaseStatement(tdbb);
-			}
-
-			// delete dependency lists
-
-			if (work->dfw_package.isEmpty())
-				MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
-
-			/* the procedure has just been scanned by MET_lookup_procedure_id
-			   and its PRC_scanned flag is set. We are going to reread it
-			   from file (create all new dependencies) and do not want this
-			   flag to be set. That is why we do not add PRC_obsolete and
-			   PRC_being_altered flags, we set only these two flags
-			 */
-			procedure->prc_flags = (PRC_obsolete | PRC_being_altered);
-
-			if (procedure->prc_existence_lock) {
-				LCK_release(tdbb, procedure->prc_existence_lock);
-			}
-
-			// remove procedure from cache
-
-			MET_remove_procedure(tdbb, work->dfw_id, NULL);
-
-			// Now handle the new definition
-			bool compile = !work->findArg(dfw_arg_check_blr);
-			get_procedure_dependencies(work, compile, transaction);
-
-			procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
-		}
-		return true;
-
-	case 5:
-		{ // scope
-			const DeferredWork* arg = work->findArg(dfw_arg_check_blr);
-			if (arg)
-			{
-				SSHORT valid_blr = FALSE;
-
-				MemoryPool* new_pool = attachment->createPool();
-				try
-				{
-					Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-					// compile the procedure to know if the BLR is still valid
-					if (MET_procedure(tdbb, work->dfw_id, false, 0))
-						valid_blr = TRUE;
-				}
-				catch (const Firebird::Exception&)
-				{
-					fb_utils::init_status(tdbb->tdbb_status_vector);
-				}
-
-				attachment->deletePool(new_pool);
-
-				AutoCacheRequest request(tdbb, irq_prc_validate, IRQ_REQUESTS);
-
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-					PRC IN RDB$PROCEDURES WITH
-						PRC.RDB$PROCEDURE_ID EQ work->dfw_id AND PRC.RDB$PROCEDURE_BLR NOT MISSING
-				{
-					MODIFY PRC USING
-						PRC.RDB$VALID_BLR = valid_blr;
-						PRC.RDB$VALID_BLR.NULL = FALSE;
-					END_MODIFY
-				}
-				END_FOR
-			}
-		} // scope
 		break;
 	}
 

@@ -98,7 +98,7 @@ void		MET_lookup_index(Jrd::thread_db*, Firebird::MetaName&, const Firebird::Met
 SLONG		MET_lookup_index_name(Jrd::thread_db*, const Firebird::MetaName&, SLONG*, SSHORT*);
 bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::index_desc*, const TEXT*);
 Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, const Firebird::QualifiedName&, bool);
-Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, SSHORT, bool, bool, USHORT);
+Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, USHORT, bool, bool, USHORT);
 Jrd::jrd_rel*	MET_lookup_relation(Jrd::thread_db*, const Firebird::MetaName&);
 Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
 Jrd::DmlNode*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
@@ -106,7 +106,7 @@ Jrd::DmlNode*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::Com
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
-Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, int, bool, USHORT);
+Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, USHORT, bool, USHORT);
 Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);
 void		MET_release_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_release_trigger(Jrd::thread_db*, Jrd::trig_vec**, const Firebird::MetaName&);
@@ -115,8 +115,7 @@ void		MET_release_triggers(Jrd::thread_db*, Jrd::trig_vec**);
 void		MET_verify_cache(Jrd::thread_db*);
 #endif
 void		MET_clear_cache(Jrd::thread_db*);
-bool		MET_procedure_in_use(Jrd::thread_db*, Jrd::jrd_prc*);
-void		MET_remove_procedure(Jrd::thread_db*, int, Jrd::jrd_prc*);
+bool		MET_routine_in_use(Jrd::thread_db*, Jrd::Routine*);
 void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const Firebird::MetaName&,
 	const Firebird::MetaName&, const Firebird::string&);
 void		MET_scan_partners(Jrd::thread_db*, Jrd::jrd_rel*);

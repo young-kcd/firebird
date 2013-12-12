@@ -220,17 +220,9 @@ const int VAL_MAX_ERROR					= 29;
 class jrd_prc : public Routine
 {
 public:
-	USHORT prc_flags;
 	///const MessageNode* prc_output_msg;
 	const Format*	prc_record_format;
 	prc_t		prc_type;					// procedure type
-	USHORT prc_use_count;					// requests compiled with procedure
-	SSHORT prc_int_use_count;				// number of procedures compiled with procedure, set and
-											// used internally in the MET_clear_cache procedure
-											// no code should rely on value of this field
-											// (it will usually be 0)
-	Lock* prc_existence_lock;				// existence lock, if any
-	USHORT prc_alter_count;					// No. of times the procedure was altered
 
 	const ExtEngineManager::Procedure* getExternal() const { return prc_external; }
 	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
@@ -241,14 +233,9 @@ private:
 public:
 	explicit jrd_prc(MemoryPool& p)
 		: Routine(p),
-		  prc_flags(0),
 		  ///prc_output_msg(NULL),
 		  prc_record_format(NULL),
 		  prc_type(prc_legacy),
-		  prc_use_count(0),
-		  prc_int_use_count(0),
-		  prc_existence_lock(NULL),
-		  prc_alter_count(0),
 		  prc_external(NULL)
 	{
 	}
@@ -264,23 +251,15 @@ public:
 		return SCL_object_procedure;
 	}
 
-	void releaseStatement(thread_db* tdbb);
+	virtual void releaseFormat()
+	{
+		delete prc_record_format;
+		prc_record_format = NULL;
+	}
+
+	virtual bool checkCache(thread_db* tdbb) const;
+	virtual void clearCache(thread_db* tdbb);
 };
-
-// prc_flags
-
-const USHORT PRC_scanned			= 1;	// Field expressions scanned
-const USHORT PRC_obsolete			= 2;	// Procedure known gonzo
-const USHORT PRC_being_scanned		= 4;	// New procedure needs dependencies during scan
-const USHORT PRC_being_altered		= 8;	// Procedure is getting altered
-									// This flag is used to make sure that MET_remove_procedure
-									// does not delete and remove procedure block from cache
-									// so dfw.epp:modify_procedure() can flip procedure body without
-									// invalidating procedure pointers from other parts of metadata cache
-const USHORT PRC_check_existence	= 16;	// Existence lock released
-
-const USHORT MAX_PROC_ALTER			= 64;	// No. of times an in-cache procedure can be altered
-
 
 
 // Parameter block

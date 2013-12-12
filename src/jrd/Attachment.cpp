@@ -195,6 +195,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
 	  att_interface(NULL),
+	  att_procedures(*pool),
 	  att_functions(*pool),
 	  att_internal(*pool),
 	  att_dyn_req(*pool),
@@ -496,24 +497,17 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 
 	// Release all procedure existence locks that might have been taken
 
-	vec<jrd_prc*>* pvector = att_procedures;
-
-	if (pvector)
+	for (jrd_prc** iter = att_procedures.begin(); iter < att_procedures.end(); ++iter)
 	{
-		vec<jrd_prc*>::iterator pptr, pend;
+		jrd_prc* const procedure = *iter;
 
-		for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr)
+		if (procedure)
 		{
-			jrd_prc* procedure = *pptr;
-
-			if (procedure)
+			if (procedure->existenceLock)
 			{
-				if (procedure->prc_existence_lock)
-				{
-					LCK_release(tdbb, procedure->prc_existence_lock);
-					procedure->prc_flags |= PRC_check_existence;
-					procedure->prc_use_count = 0;
-				}
+				LCK_release(tdbb, procedure->existenceLock);
+				procedure->flags |= Routine::FLAG_CHECK_EXISTENCE;
+				procedure->useCount = 0;
 			}
 		}
 	}

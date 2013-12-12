@@ -791,6 +791,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 	{
 		if (rsc->rsc_type == Resource::rsc_relation ||
 			rsc->rsc_type == Resource::rsc_procedure ||
+			rsc->rsc_type == Resource::rsc_function ||
 			rsc->rsc_type == Resource::rsc_collation)
 		{
 			size_t i;
@@ -806,13 +807,14 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 					}
 					break;
 				case Resource::rsc_procedure:
-					rsc->rsc_prc->prc_use_count++;
+				case Resource::rsc_function:
+					rsc->rsc_routine->addRef();
 #ifdef DEBUG_PROCS
 					{
 						char buffer[256];
 						sprintf(buffer,
 								"Called from TRA_post_resources():\n\t Incrementing use count of %s\n",
-								rsc->rsc_prc->prc_name->c_str());
+								rsc->rsc_routine->prc_name->c_str());
 						JRD_print_procedure_info(tdbb, buffer);
 					}
 #endif
@@ -1113,13 +1115,11 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 			}
 			break;
 		case Resource::rsc_procedure:
-			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);
+		case Resource::rsc_function:
+			rsc->rsc_routine->release(tdbb);
 			break;
 		case Resource::rsc_collation:
 			rsc->rsc_coll->decUseCount(tdbb);
-			break;
-		case Resource::rsc_function:
-			rsc->rsc_fun->release(tdbb);
 			break;
 		default:
 			fb_assert(false);

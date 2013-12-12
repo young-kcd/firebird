@@ -418,13 +418,11 @@ void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, 
 		resource.rsc_rel = (jrd_rel*) obj;
 		break;
 	case Resource::rsc_procedure:
-		resource.rsc_prc = (jrd_prc*) obj;
+	case Resource::rsc_function:
+		resource.rsc_routine = (Routine*) obj;
 		break;
 	case Resource::rsc_collation:
 		resource.rsc_coll = (Collation*) obj;
-		break;
-	case Resource::rsc_function:
-		resource.rsc_fun = (Function*) obj;
 		break;
 	default:
 		BUGCHECK(220);			// msg 220 unknown resource
@@ -435,56 +433,6 @@ void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, 
 	size_t pos;
 	if (!rsc_ptr->find(resource, pos))
 		rsc_ptr->insert(pos, resource);
-}
-
-
-void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
-{
-/*********************************************
- *
- *	C M P _ d e c r e m e n t _ p r c _ u s e _ c o u n t
- *
- *********************************************
- *
- * Functional description
- *	decrement the procedure's use count
- *
- *********************************************/
-	// Actually, it's possible for procedures to have intermixed dependencies, so
-	// this routine can be called for the procedure which is being freed itself.
-	// Hence we should just silently ignore such a situation.
-
-	if (!procedure->prc_use_count)
-		return;
-
-	if (procedure->prc_int_use_count > 0)
-		procedure->prc_int_use_count--;
-
-	--procedure->prc_use_count;
-
-#ifdef DEBUG_PROCS
-	{
-		string buffer;
-		buffer.printf(
-			"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
-			procedure->getName()->toString().c_str());
-		JRD_print_procedure_info(tdbb, buffer.c_str());
-	}
-#endif
-
-	// Call recursively if and only if the use count is zero AND the procedure
-	// in dbb_procedures is different than this procedure.
-	// The procedure will be different than in dbb_procedures only if it is a
-	// floating copy, i.e. an old copy or a deleted procedure.
-	if ((procedure->prc_use_count == 0) &&
-		( (*tdbb->getAttachment()->att_procedures)[procedure->getId()] != procedure))
-	{
-		if (procedure->getStatement())
-			procedure->releaseStatement(tdbb);
-
-		procedure->prc_flags &= ~PRC_being_altered;
-		MET_remove_procedure(tdbb, procedure->getId(), procedure);
-	}
 }
 
 
