@@ -1,3 +1,23 @@
+ 2013-12-11 17:11  dimitr 
+   M src/jrd/recsrc/ConditionalStream.cpp
+Protected from unexpected operations with a closed stream.
+
+ 2013-12-11 16:32  hvlad 
+   M src/alice/alice_meta.epp
+Fixed bug CORE-4297 : Gfix crashed when description of limbo transaction have size large than 1KB
+
+ 2013-12-11 11:04  dimitr 
+   M src/dsql/DsqlCompilerScratch.cpp
+Fixed the issue with recursive CTEs reported by Philippe in firebird-devel.
+
+ 2013-12-11 10:20  hvlad 
+   M src/jrd/blb.cpp
+No need to maintain precedence for temporary blobs. Use correct page space for precedence.
+
+ 2013-12-11 10:19  hvlad 
+   M src/jrd/pag.h
+Refactor common code a bit
+
  2013-12-10 13:03  alexpeshkoff 
    M src/auth/SecurityDatabase/LegacyManagement.epp
    M src/common/classes/objects_array.h
