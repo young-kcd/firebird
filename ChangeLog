@@ -1,3 +1,7 @@
+ 2013-12-11 16:33  hvlad 
+   M src/alice/alice_meta.epp
+Fixed bug CORE-4297 : Gfix crashed when description of limbo transaction have size large than 1KB
+
  2013-12-10 08:56  dimitr 
    M doc/WhatsNew
 Updated docs.
