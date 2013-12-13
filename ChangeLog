@@ -1,3 +1,13 @@
+ 2013-12-12 09:14  alexpeshkoff 
+   M builds/posix/Makefile.in.client.gfix
+   M builds/posix/Makefile.in.embed.gfix
+Slightly better fix for gfix posix build problem
+
+ 2013-12-12 08:23  hvlad 
+   M builds/posix/Makefile.in.client.gfix
+   M builds/posix/Makefile.in.embed.gfix
+Trying to fix posix build of gfix
+
  2013-12-11 16:33  hvlad 
    M src/alice/alice_meta.epp
 Fixed bug CORE-4297 : Gfix crashed when description of limbo transaction have size large than 1KB
