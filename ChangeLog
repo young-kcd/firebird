@@ -1,3 +1,23 @@
+ 2013-12-12 14:42  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/Routine.cpp
+   M src/jrd/Routine.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/exe.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/tra.cpp
+Working in progress on the fix for CORE-4271: unify as possible the handling of procedures and functions.
+
  2013-12-11 17:11  dimitr 
    M src/jrd/recsrc/ConditionalStream.cpp
 Protected from unexpected operations with a closed stream.
