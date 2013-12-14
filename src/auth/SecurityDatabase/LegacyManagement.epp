@@ -375,17 +375,19 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 					ConfigFile attr(ConfigFile::USE_TEXT, user->attributes()->get());
 					const ConfigFile::Parameter* p;
 
-					if (((p = attr.findParameter("uid"))) && p->value.hasData())
+					if ((p = attr.findParameter("uid")) && p->value.hasData())
 					{
 						U.PLG$UID = p->asInteger();
 						U.PLG$UID.NULL = ISC_FALSE;
 					}
-					if (((p = attr.findParameter("gid"))) && p->value.hasData())
+
+					if ((p = attr.findParameter("gid")) && p->value.hasData())
 					{
 						U.PLG$GID = p->asInteger();
 						U.PLG$GID.NULL = ISC_FALSE;
 					}
-					if (((p = attr.findParameter("groupName"))) && p->value.hasData())
+
+					if ((p = attr.findParameter("groupName")) && p->value.hasData())
 					{
 						STR_STORE(U.PLG$GROUP_NAME, p->value.c_str());
 						U.PLG$GROUP_NAME.NULL = ISC_FALSE;
@@ -452,17 +454,19 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 						ConfigFile attr(ConfigFile::USE_TEXT, user->attributes()->get());
 						const ConfigFile::Parameter* p;
 
-						if (((p = attr.findParameter("uid"))) && p->value.hasData())
+						if ((p = attr.findParameter("uid")) && p->value.hasData())
 						{
 							U.PLG$UID = p->asInteger();
 							U.PLG$UID.NULL = ISC_FALSE;
 						}
-						if (((p = attr.findParameter("gid"))) && p->value.hasData())
+
+						if ((p = attr.findParameter("gid")) && p->value.hasData())
 						{
 							U.PLG$GID = p->asInteger();
 							U.PLG$GID.NULL = ISC_FALSE;
 						}
-						if (((p = attr.findParameter("groupName"))) && p->value.hasData())
+
+						if ((p = attr.findParameter("groupName")) && p->value.hasData())
 						{
 							STR_STORE(U.PLG$GROUP_NAME, p->value.c_str());
 							U.PLG$GROUP_NAME.NULL = ISC_FALSE;
@@ -572,12 +576,16 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 					{
 						Firebird::string attr, a1, a2, a3;
+
 						if (!U.PLG$UID.NULL)
 							a1.printf("Uid=%d\n", U.PLG$UID);
+
 						if (!U.PLG$GID.NULL)
 							a2.printf("Gid=%d\n", U.PLG$GID);
+
 						if (!U.PLG$GROUP_NAME.NULL)
 							a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
+
 						attr = a1 + a2 + a3;
 						user->attributes()->set(attr.c_str());
 						user->attributes()->setEntered(attr.hasData() ? 1 : 0);
@@ -619,12 +627,16 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 				Firebird::string attr, a1, a2, a3;
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 						WITH U.PLG$USER_NAME EQ user->userName()->get()
+
 					if (!U.PLG$UID.NULL)
 						a1.printf("Uid=%d\n", U.PLG$UID);
+
 					if (!U.PLG$GID.NULL)
 						a2.printf("Gid=%d\n", U.PLG$GID);
+
 					if (!U.PLG$GROUP_NAME.NULL)
 						a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
+
 					attr = a1 + a2 + a3;
 					user->attributes()->set(attr.c_str());
 					user->attributes()->setEntered(attr.hasData() ? 1 : 0);

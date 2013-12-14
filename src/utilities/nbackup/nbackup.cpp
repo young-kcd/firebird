@@ -280,7 +280,7 @@ public:
 		{
 			const PathName host = host_port.substr(0, sizeof(localhost) - 1);
 			const char delim = host_port.length() >= sizeof(localhost) ? host_port[sizeof(localhost) - 1] : '/';
-			if ((delim != '/') || !host.equalsNoCase(localhost))
+			if (delim != '/' || !host.equalsNoCase(localhost))
 				pr_error(status, "nbackup needs local access to database file");
 		}
 

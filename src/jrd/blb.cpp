@@ -2919,7 +2919,7 @@ void blb::storeToPage(USHORT* length, Firebird::Array<UCHAR>& buffer, const UCHA
 		PageStack& stack2 = *static_cast<PageStack*>(stack);
 		*length = blb_pages->count() * sizeof(ULONG);
 		*data = (UCHAR*) blb_pages->begin();
-		
+
 		// Figure out precedence pages, if any
 		// hvlad: no need to maintain precedence for temporary data
 		if (!PageSpace::isTemporary(blb_pg_space_id))

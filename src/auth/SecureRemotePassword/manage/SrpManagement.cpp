@@ -723,7 +723,7 @@ private:
 
 				to->set(s.c_str());
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{
 				if (blob)
 					blob->release();
@@ -750,7 +750,7 @@ private:
 			blob->close(st);
 			check(st);
 		}
-		catch(const Firebird::Exception&)
+		catch (const Firebird::Exception&)
 		{
 			if (blob)
 				blob->release();

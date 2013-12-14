@@ -467,7 +467,7 @@ static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 
 	SLONG blob_size;
 	if (!getBlobSize(blob, &blob_size, NULL, NULL))
-		return NULL;
+		return false;
 
 	size_t len = blob_size;
 	TEXT* ptr = buffer.getBuffer(blob_size + 1);
@@ -489,6 +489,7 @@ static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 
 		return false;
 	}
+
 	blob.close();
 	*ptr = 0;
 
@@ -496,4 +497,3 @@ static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 
 	return true;
 }
-

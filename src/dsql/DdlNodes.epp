@@ -9253,15 +9253,17 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	}
 
 	string attributesBuffer;
+
 	for (unsigned cnt = 0; cnt < properties.getCount(); ++cnt)
 	{
-		if ((!isCreating) || properties[cnt].value.hasData())
+		if (!isCreating || properties[cnt].value.hasData())
 		{
 			string attribute;
 			attribute.printf("%s=%s\n", properties[cnt].property.c_str(), properties[cnt].value.c_str());
 			attributesBuffer += attribute;
 		}
 	}
+
 	if (attributesBuffer.hasData())
 	{
 		userData->attr.set(attributesBuffer.c_str());
