@@ -5817,7 +5817,12 @@ create_user_clause
 %type user_set_opt(<createAlterUserNode>)
 user_set_opt($node)
 	: // nothing
-	| set_noise user_set_clause($node)
+	| user_set
+	;
+
+%type user_set(<createAlterUserNode>)
+user_set($node)
+	: set_noise user_set_clause($node)
 	;
 
 %type user_set_clause(<createAlterUserNode>)
@@ -5853,14 +5858,14 @@ alter_user_clause
 
 %type user_prop_opt(<createAlterUserNode>)
 user_prop_opt($node)
-	: user_set_opt($node)
-	| user_clean_opt($node)
+	: // nothing
+	| user_set($node)
+	| user_clean($node)
 	;
 
-%type user_clean_opt(<createAlterUserNode>)
-user_clean_opt($node)
-	: // nothing
-	| DROP user_clean_clause($node)
+%type user_clean(<createAlterUserNode>)
+user_clean($node)
+	: DROP user_clean_clause($node)
 	;
 
 %type user_clean_clause(<createAlterUserNode>)
