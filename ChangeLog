@@ -1,3 +1,7 @@
+ 2013-12-16 01:32  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-4271 - Engine crashs in case of re-creation of an erratic package body.
+
  2013-12-15 01:19  asfernandes 
    M src/dsql/parse.y
 Remove two introduced reduce/reduce conflict in the parser.
