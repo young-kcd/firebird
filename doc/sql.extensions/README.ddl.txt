@@ -156,6 +156,7 @@ basic_type:
 - ROLE
 - CHARACTER SET
 - COLLATION
+- USER (ability to store comment depends upon user management plugin)
 - SECURITY CLASS (not implemented because Borland hid them).
 
 
