@@ -51,6 +51,8 @@ Setting a list of tags for the user keeps earlier set tags if they are not menti
 Notice - UID/GID, entered by deprecated gsec, are treated as tags in SQL interface.
 
 To access list of users please select from virtual tables SEC$USERS and SEC$USER_ATTRIBUTES.
+This feature highly depends upon user management plugin. Take into an account that some options
+are ignored when using legacy user management plugin.
 
 
 Samples:
