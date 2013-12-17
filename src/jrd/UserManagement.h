@@ -54,20 +54,6 @@ protected:
 class UserManagement : public DataDump
 {
 public:
-	class Display : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
-	{
-	public:
-		explicit Display(UserManagement* um)
-			: userManagement(um)
-		{ }
-
-		// IListUsers implementation
-		void FB_CARG list(Auth::IUser* user);
-
-	private:
-		UserManagement* userManagement;
-	};
-
 	explicit UserManagement(jrd_tra* tra);
 	~UserManagement();
 
@@ -83,10 +69,8 @@ public:
 	void list(Auth::IUser* u);
 
 private:
-	RecordBuffer* buffer;
 	thread_db* threadDbb;
 	Firebird::HalfStaticArray<Auth::DynamicUserData*, 8> commands;
-	Display display;
 	Auth::IManagement* manager;
 
 	static void checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Auth::IUser* user);

@@ -1330,6 +1330,10 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest&
 			}
 			break;
 
+		case dtype_boolean:
+			X.RDB$FIELD_TYPE = (int) blr_boolean;
+			break;
+
 		default:
 			fb_assert(FALSE);
 			break;

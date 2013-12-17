@@ -166,8 +166,11 @@
 	FIELD(fld_arg_mechanism	, nam_arg_mechanism	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 
 	FIELD(fld_identity_type	, nam_identity_type	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
+	FIELD(fld_bool			, nam_bool			, dtype_boolean	, 1							, 0							, NULL		, true)
 
 	FIELD(fld_user_name		, nam_user_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
+	FIELD(fld_attr_key		, nam_sec_attr_key	, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
+	FIELD(fld_attr_value	, nam_sec_attr_value, dtype_varying	, 255						, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_name_part		, nam_name_part		, dtype_text	, 32						, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_client_ver	, nam_client_ver	, dtype_varying	, 255						, dsc_text_type_ascii		, NULL		, true)
 	FIELD(fld_remote_ver	, nam_remote_ver	, dtype_varying	, 255						, dsc_text_type_ascii		, NULL		, true)

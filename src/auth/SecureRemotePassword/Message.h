@@ -104,6 +104,12 @@ bool Message::checkType<ISC_QUAD>(unsigned t, unsigned sz)
 	return (t == SQL_BLOB || t == SQL_QUAD) && sz == sizeof(ISC_QUAD);
 }
 
+template <>
+bool Message::checkType<bool>(unsigned t, unsigned sz)
+{
+	return t == SQL_BOOLEAN && sz == sizeof(bool);
+}
+
 
 // With template magic, we make the fields strongly-typed.
 template <typename T>

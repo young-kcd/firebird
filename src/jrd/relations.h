@@ -604,10 +604,17 @@ END_RELATION
 
 // Relation 43 (SEC$USERS)
 RELATION(nam_sec_users, rel_sec_users, ODS_12_0, rel_virtual)
-	FIELD(f_sec_user_name, nam_user_name, fld_user, 1, ODS_12_0)
-	FIELD(f_sec_first_name, nam_first_name, fld_name_part, 1, ODS_12_0)
-	FIELD(f_sec_middle_name, nam_middle_name, fld_name_part, 1, ODS_12_0)
-	FIELD(f_sec_last_name, nam_last_name, fld_name_part, 1, ODS_12_0)
-	FIELD(f_sec_attributes, nam_attributes, fld_description, 1, ODS_12_0)
-	FIELD(f_sec_comment, nam_sec_description, fld_description, 1, ODS_12_0)
+	FIELD(f_sec_user_name, nam_user_name, fld_user, 0, ODS_12_0)
+	FIELD(f_sec_first_name, nam_first_name, fld_name_part, 0, ODS_12_0)
+	FIELD(f_sec_middle_name, nam_middle_name, fld_name_part, 0, ODS_12_0)
+	FIELD(f_sec_last_name, nam_last_name, fld_name_part, 0, ODS_12_0)
+	FIELD(f_sec_active, nam_sec_active, fld_bool, 0, ODS_12_0)
+	FIELD(f_sec_comment, nam_sec_description, fld_description, 0, ODS_12_0)
+END_RELATION
+
+// Relation 44 (SEC$USER_ATTRIBUTES)
+RELATION(nam_sec_user_attributes, rel_sec_user_attributes, ODS_12_0, rel_virtual)
+	FIELD(f_sec_attr_user, nam_user_name, fld_user, 0, ODS_12_0)
+	FIELD(f_sec_attr_key, nam_sec_attr_key, fld_attr_key, 0, ODS_12_0)
+	FIELD(f_sec_attr_value, nam_sec_attr_value, fld_attr_value, 0, ODS_12_0)
 END_RELATION

@@ -857,7 +857,7 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
  *
  **************************************/
 	Auth::StackUserData userInfo;
-	userInfo.op = ADD_OPER;
+	userInfo.op = Auth::ADD_OPER;
 	Firebird::string work;
 
 	if (input_user_data->user_name)
@@ -926,7 +926,7 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *
  **************************************/
 	Auth::StackUserData userInfo;
-	userInfo.op = DEL_OPER;
+	userInfo.op = Auth::DEL_OPER;
 	Firebird::string work;
 
 	if (input_user_data->user_name)
@@ -968,7 +968,7 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *
  **************************************/
 	Auth::StackUserData userInfo;
-	userInfo.op = MOD_OPER;
+	userInfo.op = Auth::MOD_OPER;
 	Firebird::string work;
 
 	if (input_user_data->user_name)

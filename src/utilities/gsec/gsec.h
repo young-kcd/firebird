@@ -31,6 +31,11 @@ const USHORT GSEC_MSG_FAC	= 18;
 const int MSG_LENGTH		= 128;
 //#define QUERY_LENGTH	256
 
+namespace Auth
+{
+
+class UserData;
+
 /* structure to hold information from the command line, including the
    operation to perform and any parameters entered (sizes are determined
    by the size of the fields in the USERS relation in USERINFO.GDB) */
@@ -41,7 +46,7 @@ const int DIS_OPER		= 3;
 const int MOD_OPER		= 4;
 const int QUIT_OPER		= 5;
 const int HELP_OPER		= 6;
-//const int VERSION_OPER	= 7;
+const int ADDMOD_OPER	= 7;		// This oper never goes to plugins
 const int MAP_SET_OPER	= 8;
 const int MAP_DROP_OPER	= 9;
 const int OLD_DIS_OPER	= 10;
@@ -52,14 +57,11 @@ const int NAME_LEN		= 33;
 const int _SERVER_LEN	= 128;
 const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
 
+} // namespace Auth
+
 namespace Firebird
 {
 	class UtilSvc;
-}
-
-namespace Auth
-{
-	class UserData;
 }
 
 class tsec : public Firebird::ThreadData

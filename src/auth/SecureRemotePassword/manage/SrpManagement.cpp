@@ -47,6 +47,7 @@ const unsigned int SZ_NAME = 31;
 typedef Field<Varying> Varfield;
 typedef Field<Text> Name;
 typedef Field<ISC_QUAD> Blob;
+typedef Field<bool> Boolean;
 
 } // anonymous namespace
 
@@ -67,11 +68,12 @@ public:
 			"PLG$SALT VARCHAR(32) CHARACTER SET OCTETS NOT NULL, "
 			"PLG$COMMENT RDB$DESCRIPTION, PLG$FIRST SEC$NAME_PART, "
 			"PLG$MIDDLE SEC$NAME_PART, PLG$LAST SEC$NAME_PART, "
-			"PLG$ATTRIBUTES RDB$DESCRIPTION)"
+			"PLG$ATTRIBUTES RDB$DESCRIPTION, "
+			"PLG$ACTIVE BOOLEAN)"
 			,
 			"CREATE VIEW PLG$SRP_VIEW AS "
 			"SELECT PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$COMMENT, "
-			"   PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$ATTRIBUTES "
+			"   PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$ATTRIBUTES, PLG$ACTIVE "
 			"FROM PLG$SRP WHERE CURRENT_USER = 'SYSDBA' "
 			"   OR CURRENT_ROLE = 'RDB$ADMIN' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
 			,
@@ -86,7 +88,7 @@ public:
 		};
 
 		Firebird::LocalStatus s;
-		Firebird::RefPtr<Firebird::ITransaction> ddlTran(att->startTransaction(&s, 0, NULL));
+		Firebird::ITransaction* ddlTran(att->startTransaction(&s, 0, NULL));
 
 		try
 		{
@@ -208,8 +210,8 @@ public:
 			case ADD_OPER:
 				{
 					const char* insert =
-						"INSERT INTO plg$srp_view(PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST, "
-						"PLG$COMMENT, PLG$ATTRIBUTES) VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+						"INSERT INTO plg$srp_view(PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST,"
+						"PLG$COMMENT, PLG$ATTRIBUTES, PLG$ACTIVE) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 					Firebird::IStatement* stmt = NULL;
 					try
@@ -254,6 +256,7 @@ public:
 						Varfield verifier(add), slt(add);
 						Name first(add), middle(add), last(add);
 						Blob comment(add), attr(add);
+						Boolean active(add);
 
 						setField(login, user->userName());
 						setField(first, user->firstName());
@@ -261,6 +264,7 @@ public:
 						setField(last, user->lastName());
 						setField(status, comment, user->comment());
 						setField(status, attr, user->attributes());
+						setField(active, user->active());
 
 #if SRP_DEBUG > 1
 						Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
@@ -311,11 +315,13 @@ public:
 
 					Firebird::AutoPtr<Name> first, middle, last;
 					Firebird::AutoPtr<Blob> comment, attr;
+					Firebird::AutoPtr<Boolean> active;
 					allocField(user->firstName(), update, "PLG$FIRST");
 					allocField(user->middleName(), update, "PLG$MIDDLE");
 					allocField(user->lastName(), update, "PLG$LAST");
 					allocField(user->comment(), update, "PLG$COMMENT");
 					allocField(user->attributes(), update, "PLG$ATTRIBUTES");
+					allocField(user->active(), update, "PLG$ACTIVE");
 
 					if (update[update.length() - 1] != ',')
 					{
@@ -358,11 +364,12 @@ public:
 							verifier->set(s.getCount(), s.begin());
 						}
 
-						allocField(first, up, user->firstName(), "PLG$FIRST");
-						allocField(middle, up, user->middleName(), "PLG$MIDDLE");
-						allocField(last, up, user->lastName(), "PLG$LAST");
-						allocField(comment, up, user->comment(), "PLG$COMMENT");
-						allocField(attr, up, user->attributes(), "PLG$ATTRIBUTES");
+						allocField(first, up, user->firstName());
+						allocField(middle, up, user->middleName());
+						allocField(last, up, user->lastName());
+						allocField(comment, up, user->comment());
+						allocField(attr, up, user->attributes());
+						allocField(active, up, user->active());
 
 						Name login(up);
 
@@ -371,6 +378,7 @@ public:
 						assignField(last, user->lastName());
 						assignField(status, comment, user->comment());
 						assignField(status, attr, user->attributes());
+						assignField(active, user->active());
 						setField(login, user->userName());
 
 						stmt->execute(status, tra, up.metadata, up.buffer, NULL, NULL);
@@ -437,7 +445,7 @@ public:
 			case DIS_OPER:
 				{
 					Firebird::string disp =	"SELECT PLG$USER_NAME, PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$COMMENT, PLG$ATTRIBUTES, "
-											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN 0 ELSE 1 END "
+											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN 0 ELSE 1 END, PLG$ACTIVE "
 											"FROM PLG$SRP_VIEW LEFT JOIN RDB$USER_PRIVILEGES "
 											"	ON PLG$SRP_VIEW.PLG$USER_NAME = RDB$USER_PRIVILEGES.RDB$USER "
 											"		AND RDB$RELATION_NAME = 'RDB$ADMIN' "
@@ -459,8 +467,9 @@ public:
 						Message di(om);
 						Name login(di);
 						Name first(di), middle(di), last(di);
-						Field<ISC_QUAD> comment(di), attr(di);
+						Blob comment(di), attr(di);
 						Field<SLONG> admin(di);
+						Boolean active(di);
 
 						Firebird::AutoPtr<Message> par;
 						if (user->userName()->entered())
@@ -485,6 +494,7 @@ public:
 							listField(user->lastName(), last);
 							listField(status, user->comment(), comment);
 							listField(status, user->attributes(), attr);
+							listField(user->active(), active);
 							user->admin()->set(admin);
 
 							callback->list(user);
@@ -622,6 +632,18 @@ private:
 		}
 	}
 
+	static void setField(Boolean& to, Auth::IIntUserField* from)
+	{
+		if (from->entered())
+		{
+			to = from->get() ? FB_TRUE : FB_FALSE;
+		}
+		else
+		{
+			to.null = FB_TRUE;
+		}
+	}
+
 	void setField(Firebird::IStatus* st, Blob& to, Auth::ICharUserField* from)
 	{
 		if (from->entered())
@@ -634,7 +656,7 @@ private:
 		}
 	}
 
-	static void allocField(Auth::ICharUserField* value, Firebird::string& update, const char* name)
+	static void allocField(Auth::IUserField* value, Firebird::string& update, const char* name)
 	{
 		if (value->entered() || value->specified())
 		{
@@ -645,7 +667,7 @@ private:
 	}
 
 	template <typename FT>
-	static void allocField(Firebird::AutoPtr<FT>& field, Message& up, Auth::ICharUserField* value, const char* name)
+	static void allocField(Firebird::AutoPtr<FT>& field, Message& up, Auth::IUserField* value)
 	{
 		if (value->entered() || value->specified())
 		{
@@ -660,6 +682,22 @@ private:
 			if (name->entered())
 			{
 				*field = name->get();
+			}
+			else
+			{
+				fb_assert(name->specified());
+				field->null = FB_TRUE;
+			}
+		}
+	}
+
+	static void assignField(Firebird::AutoPtr<Boolean>& field, Auth::IIntUserField* name)
+	{
+		if (field.hasData())
+		{
+			if (name->entered())
+			{
+				*field = name->get() ? FB_TRUE : FB_FALSE;
 			}
 			else
 			{
@@ -687,6 +725,15 @@ private:
 	}
 
 	static void listField(Auth::ICharUserField* to, Name& from)
+	{
+		to->setEntered(from.null ? 0 : 1);
+		if (!from.null)
+		{
+			to->set(from);
+		}
+	}
+
+	static void listField(Auth::IIntUserField* to, Boolean& from)
 	{
 		to->setEntered(from.null ? 0 : 1);
 		if (!from.null)

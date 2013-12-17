@@ -361,10 +361,10 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
 	const int op = userData.op;
-	if (op != DIS_OPER &&
-		op != OLD_DIS_OPER &&
-		op != MAP_SET_OPER &&
-		op != MAP_DROP_OPER &&
+	if (op != Auth::DIS_OPER &&
+		op != Auth::OLD_DIS_OPER &&
+		op != Auth::MAP_SET_OPER &&
+		op != Auth::MAP_DROP_OPER &&
 		!userData.user.entered())
 	{
 	    status[0] = isc_arg_gds;
@@ -375,17 +375,17 @@ void callRemoteServiceManager(ISC_STATUS* status,
 
 	switch (op)
 	{
-	case ADD_OPER:
+	case Auth::ADD_OPER:
 		stuffSpbByte(spb, isc_action_svc_add_user);
 		userInfoToSpb(spb, userData);
 		break;
 
-	case MOD_OPER:
+	case Auth::MOD_OPER:
 		stuffSpbByte(spb, isc_action_svc_modify_user);
 		userInfoToSpb(spb, userData);
 		break;
 
-	case DEL_OPER:
+	case Auth::DEL_OPER:
 		stuffSpbByte(spb, isc_action_svc_delete_user);
 		stuffSpb2(spb, isc_spb_sec_username, userData.user.get());
 		if (userData.role.entered())
@@ -394,8 +394,8 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		}
 		break;
 
-	case DIS_OPER:
-	case OLD_DIS_OPER:
+	case Auth::DIS_OPER:
+	case Auth::OLD_DIS_OPER:
 		{
 			char usersDisplayTag = 0;
 			checkServerUsersVersion(handle, usersDisplayTag);
@@ -411,11 +411,11 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		}
 		break;
 
-	case MAP_SET_OPER:
+	case Auth::MAP_SET_OPER:
 		stuffSpbByte(spb, isc_action_svc_set_mapping);
 		break;
 
-	case MAP_DROP_OPER:
+	case Auth::MAP_DROP_OPER:
 		stuffSpbByte(spb, isc_action_svc_drop_mapping);
 		break;
 
@@ -448,7 +448,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	ISC_STATUS* local_status = status[1] ? temp_status : status;
 	fb_utils::init_status(local_status);
 
-	if (op == DIS_OPER || op == OLD_DIS_OPER)
+	if (op == Auth::DIS_OPER || op == Auth::OLD_DIS_OPER)
 	{
 		const char request[] = {isc_info_svc_get_users};
 		int startQuery = 0;

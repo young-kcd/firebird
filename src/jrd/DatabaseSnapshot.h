@@ -42,10 +42,21 @@ class RuntimeStatistics;
 class DataDump
 {
 public:
-	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING};
+	struct RelationData
+	{
+		int rel_id;
+		RecordBuffer* data;
+	};
+	typedef Firebird::Array<RelationData> Snapshot;
+
+	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING, VALUE_BOOLEAN};
 
 	explicit DataDump(MemoryPool& pool)
-		: idMap(pool), idCounter(0) { }
+		: idMap(pool), snapshot(pool), idCounter(0) { }
+	~DataDump()
+	{
+		clearSnapshot();
+	}
 
 	struct DumpField
 	{
@@ -178,8 +189,14 @@ public:
 
 	void putField(thread_db*, Record*, const DumpField&, int);
 
+	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
+	RecordBuffer* getData(const jrd_rel*) const;
+	RecordBuffer* getData(int) const;
+	void clearSnapshot();
+
 private:
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
+	Snapshot snapshot;
 	int idCounter;
 };
 
@@ -272,12 +289,6 @@ protected:
 
 class DatabaseSnapshot : public DataDump
 {
-	struct RelationData
-	{
-		int rel_id;
-		RecordBuffer* data;
-	};
-
 private:
 	class Writer
 	{
@@ -331,10 +342,6 @@ private:
 	};
 
 public:
-	~DatabaseSnapshot();
-
-	RecordBuffer* getData(const jrd_rel*) const;
-
 	static DatabaseSnapshot* create(thread_db*);
 	static int blockingAst(void*);
 	static void initialize(thread_db*);
@@ -346,8 +353,6 @@ protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&);
 
 private:
-	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
-
 	static void dumpData(Database*, int);
 	static void dumpAttachment(DumpRecord&, const Attachment*, Writer&);
 
@@ -361,8 +366,6 @@ private:
 	static void putStatistics(DumpRecord&, const RuntimeStatistics&, Writer&, int, int);
 	static void putContextVars(DumpRecord&, const Firebird::StringMap&, Writer&, int, bool);
 	static void putMemoryUsage(DumpRecord&, const Firebird::MemoryStats&, Writer&, int, int);
-
-	Firebird::Array<RelationData> snapshot;
 };
 
 } // namespace

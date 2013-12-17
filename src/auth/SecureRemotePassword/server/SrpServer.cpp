@@ -150,7 +150,8 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 				}
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: started transaction\n"));
 
-				const char* sql = "SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ?";
+				const char* sql =
+					"SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ? AND PLG$ACTIVE";
 				stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
 				if (!status->isSuccess())
 				{
@@ -210,9 +211,11 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			}
 			catch(const Exception&)
 			{
-				if (stmt) stmt->release();
-				if (tra) tra->release();
-				if (att) att->release();
+				LocalStatus s;
+
+				if (stmt) stmt->free(&s);
+				if (tra) tra->rollback(&s);
+				if (att) att->detach(&s);
 
 				throw;
 			}

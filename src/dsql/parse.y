@@ -562,6 +562,7 @@ using namespace Firebird;
 %token <metaNamePtr> USAGE
 %token <metaNamePtr> RDB_RECORD_VERSION
 %token <metaNamePtr> LINGER
+%token <metaNamePtr> TAGS
 
 // precedence declarations for expression evaluation
 
@@ -1279,6 +1280,7 @@ replace_clause
 	| EXCEPTION replace_exception_clause	{ $$ = $2; }
 	| GENERATOR replace_sequence_clause		{ $$ = $2; }
 	| SEQUENCE replace_sequence_clause		{ $$ = $2; }
+	| USER replace_user_clause				{ $$ = $2; }
 	;
 
 
@@ -4545,6 +4547,11 @@ comment
 		{ $$ = newNode<CommentOnNode>($3, *$4, "", *$6); }
 	| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
 		{ $$ = newNode<CommentOnNode>($3, *$4, *$5, *$7); }
+	| COMMENT ON USER symbol_user_name IS ddl_desc
+		{ CreateAlterUserNode* node =
+			newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$4);
+		  node->comment = $6;
+		  $$ = node; }
 	;
 
 %type <intVal> ddl_type0
@@ -5799,86 +5806,43 @@ table_subquery
 
 %type <createAlterUserNode> create_user_clause
 create_user_clause
-	: symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
-		{
-			$$ = newNode<CreateAlterUserNode>(true, *$1);
+	: symbol_user_name passwd_clause
+ 		{
+			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_ADD, *$1);
 			$$->password = $2;
-			$$->firstName = $3;
-			$$->middleName = $4;
-			$$->lastName = $5;
-			$$->adminRole = $6;
 		}
-	user_set_opt(NOTRIAL($7))
+	user_fixed_opts(NOTRIAL($3))
+	user_var_opts(NOTRIAL($3))
 		{
-			$$ = $7;
-		}
-	;
-
-%type user_set_opt(<createAlterUserNode>)
-user_set_opt($node)
-	: // nothing
-	| user_set
-	;
-
-%type user_set(<createAlterUserNode>)
-user_set($node)
-	: set_noise user_set_clause($node)
-	;
-
-%type user_set_clause(<createAlterUserNode>)
-user_set_clause($node)
-	: user_set_option($node)
-	| user_set_option($node) ',' user_set_clause($node)
-	;
-
-%type user_set_option(<createAlterUserNode>)
-user_set_option($node)
-	: valid_symbol_name to_noise utf_string
-		{
-			$node->addProperty($1, $3);
+			$$ = $3;
 		}
 	;
 
 %type <createAlterUserNode> alter_user_clause
 alter_user_clause
-	: symbol_user_name set_noise passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
+	: symbol_user_name SET passwd_opt
 		{
-			$$ = newNode<CreateAlterUserNode>(false, *$1);
+			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$1);
 			$$->password = $3;
-			$$->firstName = $4;
-			$$->middleName = $5;
-			$$->lastName = $6;
-			$$->adminRole = $7;
 		}
-	user_prop_opt(NOTRIAL($8))
+	user_fixed_opts(NOTRIAL($4))
+	user_var_opts(NOTRIAL($4))
 		{
-			$$ = $8;
+			$$ = $4;
 		}
 	;
 
-%type user_prop_opt(<createAlterUserNode>)
-user_prop_opt($node)
-	: // nothing
-	| user_set($node)
-	| user_clean($node)
-	;
-
-%type user_clean(<createAlterUserNode>)
-user_clean($node)
-	: DROP user_clean_clause($node)
-	;
-
-%type user_clean_clause(<createAlterUserNode>)
-user_clean_clause($node)
-	: user_clean_option($node)
-	| user_clean_option($node) ',' user_clean_clause($node)
-	;
-
-%type user_clean_option(<createAlterUserNode>)
-user_clean_option($node)
-	: valid_symbol_name
+%type <createAlterUserNode> replace_user_clause
+replace_user_clause
+	: symbol_user_name SET passwd_opt
 		{
-			$node->addProperty($1);
+			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_RPL, *$1);
+			$$->password = $3;
+		}
+	user_fixed_opts(NOTRIAL($4))
+	user_var_opts(NOTRIAL($4))
+		{
+			$$ = $4;
 		}
 	;
 
@@ -5893,55 +5857,51 @@ passwd_clause
 	: PASSWORD utf_string	{ $$ = $2; }
 	;
 
-set_noise
+%type user_fixed_opts(<createAlterUserNode>)
+user_fixed_opts($node)
 	: // nothing
-	| SET
+	| user_fixed_list($node)
 	;
 
-to_noise
+%type user_fixed_list(<createAlterUserNode>)
+user_fixed_list($node)
+	: user_fixed_opt($node)
+	| user_fixed_list user_fixed_opt($node)
+	;
+
+%type user_fixed_opt(<createAlterUserNode>)
+user_fixed_opt($node)
+	: FIRSTNAME utf_string	{ $node->firstName = $2; }
+	| MIDDLENAME utf_string	{ $node->middleName = $2; }
+	| LASTNAME utf_string	{ $node->lastName = $2; }
+	| GRANT ADMIN ROLE		{ $node->adminRole = Nullable<int>::val(1); }
+	| REVOKE ADMIN ROLE		{ $node->adminRole = Nullable<int>::val(0); }
+	| ACTIVE				{ $node->active = Nullable<int>::val(1); }
+	| INACTIVE				{ $node->active = Nullable<int>::val(0); }
+	;
+
+%type user_var_opts(<createAlterUserNode>)
+user_var_opts($node)
 	: // nothing
-	| TO
+	| TAGS '(' user_var_list($node) ')'
 	;
 
-%type <stringPtr> firstname_opt
-firstname_opt
-	: /* nothing */			{ $$ = NULL; }
-	| FIRSTNAME utf_string	{ $$ = $2; }
+%type user_var_list(<createAlterUserNode>)
+user_var_list($node)
+	: user_var_option($node)
+	| user_var_list ',' user_var_option($node)
 	;
 
-%type <stringPtr> middlename_opt
-middlename_opt
-	: /* nothing */			{ $$ = NULL; }
-	| MIDDLENAME utf_string	{ $$ = $2; }
-	;
-
-%type <stringPtr> lastname_opt
-lastname_opt
-	: /* nothing */			{ $$ = NULL; }
-	| LASTNAME utf_string	{ $$ = $2; }
-	;
-
-%type <nullableIntVal> admin_opt
-admin_opt
-	: /* nothing */			{ $$ = Nullable<int>::empty(); }
-	| revoke_admin
-	| grant_admin
-	;
-
-%type <nullableIntVal> grant_admin_opt
-grant_admin_opt
-	: /* nothing */			{ $$ = Nullable<int>::empty(); }
-	| grant_admin
-	;
-
-%type <nullableIntVal> grant_admin
-grant_admin
-	: GRANT ADMIN ROLE		{ $$ = Nullable<int>::val(1); }
-	;
-
-%type <nullableIntVal> revoke_admin
-revoke_admin
-	: REVOKE ADMIN ROLE		{ $$ = Nullable<int>::val(0); }
+%type user_var_option(<createAlterUserNode>)
+user_var_option($node)
+	: valid_symbol_name '=' utf_string
+		{
+			$node->addProperty($1, $3);
+		}
+	| DROP valid_symbol_name
+		{
+			$node->addProperty($2);
+		}
 	;
 
 // value types
@@ -7180,6 +7140,7 @@ non_reserved_word
 	| ROW_NUMBER
 	| USAGE
 	| LINGER
+	| TAGS
 	;
 
 %%

@@ -195,13 +195,18 @@ public:
 		return &adm;
 	}
 
+	IIntUserField* FB_CARG active()
+	{
+		return &act;
+	}
+
 	void FB_CARG clear();
 
 	typedef Firebird::Array<UCHAR> AuthenticationBlock;
 
 	int op, trustedRole, trustedAuth;
 	CharField user, pass, first, last, middle, com, attr;
-	IntField adm;
+	IntField adm, act;
 	CharField database, dba, dbaPassword, role, trustedUser;
 	AuthenticationBlock authenticationBlock;
 

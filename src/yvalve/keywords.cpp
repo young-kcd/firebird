@@ -389,6 +389,7 @@ static const TOK tokens[] =
 	{SUM, "SUM", 1, false},
 	{SUSPEND, "SUSPEND", 1, false},
 	{TABLE, "TABLE", 1, false},
+	{TAGS, "TAGS", 2, true},
 	{TAN, "TAN", 2, false},
 	{TANH, "TANH", 2, false},
 	{TEMPORARY, "TEMPORARY", 2, true},

@@ -54,9 +54,8 @@ bool UsersTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 
 UserManagement::UserManagement(jrd_tra* tra)
 	: DataDump(*tra->tra_pool),
-	  buffer(0),
-	  threadDbb(NULL), commands(*tra->tra_pool),
-	  display(this),
+	  threadDbb(NULL),
+	  commands(*tra->tra_pool),
 	  manager(NULL)
 {
 	Attachment* att = tra->tra_attachment;
@@ -133,8 +132,6 @@ UserManagement::~UserManagement()
 		delete commands[i];
 	}
 	commands.clear();
-
-	delete buffer;
 
 	if (manager)
 	{
@@ -221,96 +218,115 @@ void UserManagement::execute(USHORT id)
 	}
 
 	LocalStatus status;
-	if (commands[id]->attr.entered())
+	Auth::UserData* command = commands[id];
+	if (command->attr.entered() || command->op == Auth::ADDMOD_OPER)
 	{
 		Auth::StackUserData cmd;
-		cmd.op = OLD_DIS_OPER;
-		cmd.user.set(commands[id]->userName()->get());
+		cmd.op = Auth::DIS_OPER;
+		cmd.user.set(command->userName()->get());
 		cmd.user.setEntered(1);
 
 		class OldAttributes : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
 		{
 		public:
+			OldAttributes()
+				: present(false)
+			{ }
+
 			// IListUsers implementation
 			void FB_CARG list(Auth::IUser* data)
 			{
 				value = data->attributes()->entered() ? data->attributes()->get() : "";
+				present = true;
 			}
 
 			string value;
+			bool present;
 		};
 
 		OldAttributes oldAttributes;
 		int ret = manager->execute(&status, &cmd, &oldAttributes);
-		checkSecurityResult(ret, &status, commands[id]->userName()->get(), commands[id]);
+		checkSecurityResult(ret, &status, command->userName()->get(), command);
 
-		ConfigFile ocf(ConfigFile::USE_TEXT, oldAttributes.value.c_str());
-		ConfigFile::Parameters::const_iterator old(ocf.getParameters().begin());
-		ConfigFile::Parameters::const_iterator oldEnd(ocf.getParameters().end());
-
-		ConfigFile ccf(ConfigFile::USE_TEXT, commands[id]->attr.get());
-		ConfigFile::Parameters::const_iterator cur(ccf.getParameters().begin());
-		ConfigFile::Parameters::const_iterator curEnd(ccf.getParameters().end());
-
-		string merged;
-		while (old != oldEnd && cur != curEnd)
+		if (command->op == Auth::ADDMOD_OPER)
 		{
-			if (old->name == cur->name)
+			command->op = oldAttributes.present ? Auth::MOD_OPER : Auth::ADD_OPER;
+		}
+
+		if (command->attr.entered())
+		{
+			ConfigFile ocf(ConfigFile::USE_TEXT, oldAttributes.value.c_str());
+			ConfigFile::Parameters::const_iterator old(ocf.getParameters().begin());
+			ConfigFile::Parameters::const_iterator oldEnd(ocf.getParameters().end());
+
+			ConfigFile ccf(ConfigFile::USE_TEXT, command->attr.get());
+			ConfigFile::Parameters::const_iterator cur(ccf.getParameters().begin());
+			ConfigFile::Parameters::const_iterator curEnd(ccf.getParameters().end());
+
+			string merged;
+			while (old != oldEnd && cur != curEnd)
+			{
+				if (old->name == cur->name)
+				{
+					merge(merged, cur);
+					++old;
+					++cur;
+				}
+				else if (old->name < cur->name)
+				{
+					merge(merged, old);
+					++old;
+				}
+				else
+				{
+					merge(merged, cur);
+					++cur;
+				}
+			}
+
+			while (cur != curEnd)
 			{
 				merge(merged, cur);
-				++old;
 				++cur;
 			}
-			else if (old->name < cur->name)
+			while (old != oldEnd)
 			{
 				merge(merged, old);
 				++old;
 			}
+
+			if (merged.hasData())
+			{
+				command->attr.set(merged.c_str());
+			}
 			else
 			{
-				merge(merged, cur);
-				++cur;
+				command->attr.setEntered(0);
+				command->attr.setSpecified(1);
+				command->attr.set("");
 			}
-		}
-
-		while (cur != curEnd)
-		{
-			merge(merged, cur);
-			++cur;
-		}
-		while (old != oldEnd)
-		{
-			merge(merged, old);
-			++old;
-		}
-
-		if (merged.hasData())
-		{
-			commands[id]->attr.set(merged.c_str());
-		}
-		else
-		{
-			commands[id]->attr.setEntered(0);
-			commands[id]->attr.setSpecified(1);
-			commands[id]->attr.set("");
 		}
 	}
 
-	int errcode = manager->execute(&status, commands[id], NULL);
-	checkSecurityResult(errcode, &status, commands[id]->userName()->get(), commands[id]);
+	if (command->op == Auth::ADD_OPER)
+	{
+		if (!command->act.entered())
+		{
+			command->act.set(1);
+			command->act.setEntered(1);
+		}
+	}
+
+	int errcode = manager->execute(&status, command, NULL);
+	checkSecurityResult(errcode, &status, command->userName()->get(), command);
 
 	delete commands[id];
 	commands[id] = NULL;
 }
 
-void UserManagement::Display::list(Auth::IUser* u)
-{
-	MasterInterfacePtr()->upgradeInterface(u, FB_AUTH_USER_VERSION, upInfo);
-	userManagement->list(u);
-}
-
 void UserManagement::list(Auth::IUser* u)
 {
+	RecordBuffer* buffer = getData(rel_sec_users);
 	Record* record = buffer->getTempRecord();
 	record->nullify();
 
@@ -344,10 +360,11 @@ void UserManagement::list(Auth::IUser* u)
 				 attachment_charset);
 	}
 
-	if (u->attributes()->entered())
+	if (u->active()->entered())
 	{
+		UCHAR v = u->active()->get() ? '\1' : '\0';
 		putField(threadDbb, record,
-				 DumpField(f_sec_attributes, VALUE_STRING, strlen(u->attributes()->get()), u->attributes()->get()),
+				 DumpField(f_sec_active, VALUE_BOOLEAN, sizeof(v), &v),
 				 attachment_charset);
 	}
 
@@ -359,42 +376,83 @@ void UserManagement::list(Auth::IUser* u)
 	}
 
 	buffer->store(record);
+
+	if (u->userName()->entered() && u->attributes()->entered())
+	{
+		buffer = getData(rel_sec_user_attributes);
+
+		ConfigFile cf(ConfigFile::USE_TEXT, u->attributes()->get());
+		ConfigFile::Parameters::const_iterator e(cf.getParameters().end());
+		for (ConfigFile::Parameters::const_iterator b(cf.getParameters().begin()); b != e; ++b)
+		{
+			record = buffer->getTempRecord();
+			record->nullify();
+
+			putField(threadDbb, record,
+					 DumpField(f_sec_attr_user, VALUE_STRING, strlen(u->userName()->get()), u->userName()->get()),
+					 attachment_charset);
+
+			putField(threadDbb, record,
+					 DumpField(f_sec_attr_key, VALUE_STRING, b->name.length(), b->name.c_str()),
+					 attachment_charset);
+
+			putField(threadDbb, record,
+					 DumpField(f_sec_attr_value, VALUE_STRING, b->value.length(), b->value.c_str()),
+					 attachment_charset);
+
+			buffer->store(record);
+		}
+	}
 }
 
 RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 {
-	if (!buffer)
+	fb_assert(relation);
+	fb_assert(relation->rel_id == rel_sec_user_attributes || relation->rel_id == rel_sec_users);
+
+	RecordBuffer* recordBuffer = getData(relation);
+	if (recordBuffer)
 	{
-		try
-		{
-			threadDbb = tdbb;
-
-			fb_assert(relation && relation->rel_id == rel_sec_users);
-
-			MET_scan_relation(threadDbb, relation);
-
-			Format* const format = MET_current(threadDbb, relation);
-			fb_assert(format);
-
-			MemoryPool* const pool = threadDbb->getTransaction()->tra_pool;
-			fb_assert(pool);
-
-			buffer = FB_NEW(*pool) RecordBuffer(*pool, format);
-			fb_assert(buffer);
-
-			LocalStatus status;
-			Auth::StackUserData u;
-			u.op = DIS_OPER;
-			int errcode = manager->execute(&status, &u, &display);
-			checkSecurityResult(errcode, &status, "Unknown", &u);
-		}
-		catch (const Exception&)
-		{
-			delete buffer;
-			buffer = NULL;
-			throw;
-		}
+		return recordBuffer;
 	}
 
-	return buffer;
+	try
+	{
+		threadDbb = tdbb;
+		MemoryPool* const pool = threadDbb->getTransaction()->tra_pool;
+		allocBuffer(threadDbb, *pool, rel_sec_users);
+		allocBuffer(threadDbb, *pool, rel_sec_user_attributes);
+
+		class FillSnapshot : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
+		{
+		public:
+			explicit FillSnapshot(UserManagement* um)
+				: userManagement(um)
+			{ }
+
+			// IListUsers implementation
+			void FB_CARG list(Auth::IUser* user)
+			{
+				MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
+				userManagement->list(user);
+			}
+
+		private:
+			UserManagement* userManagement;
+		};
+		FillSnapshot fillSnapshot(this);
+
+		LocalStatus status;
+		Auth::StackUserData u;
+		u.op = Auth::DIS_OPER;
+		int errcode = manager->execute(&status, &u, &fillSnapshot);
+		checkSecurityResult(errcode, &status, "Unknown", &u);
+	}
+	catch (const Exception&)
+	{
+		clearSnapshot();
+		throw;
+	}
+
+	return getData(relation);
 }

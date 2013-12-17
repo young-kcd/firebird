@@ -65,6 +65,7 @@ void FB_CARG UserData::clear()
 	com.clear();
 	attr.clear();
 	adm.clear();
+	act.clear();
 
 	// internally used fields
 	database.clear();

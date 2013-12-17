@@ -1801,17 +1801,19 @@ public:
 class CreateAlterUserNode : public DdlNode
 {
 public:
-	CreateAlterUserNode(MemoryPool& p, bool creating, const Firebird::MetaName& aName)
+	enum Mode {USER_ADD, USER_MOD, USER_RPL};
+
+	CreateAlterUserNode(MemoryPool& p, Mode md, const Firebird::MetaName& aName)
 		: DdlNode(p),
 		  properties(p),
-		  isCreating(creating),
 		  name(p, aName),
 		  password(NULL),
 		  firstName(NULL),
 		  middleName(NULL),
-		  lastName(NULL)
-	{
-	}
+		  lastName(NULL),
+		  comment(NULL),
+		  mode(md)
+	{ }
 
 public:
 	virtual void print(Firebird::string& text) const;
@@ -1820,7 +1822,7 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isCreating ?
+		statusVector << Firebird::Arg::Gds(mode == USER_ADD ?
 			isc_dsql_create_user_failed : isc_dsql_alter_user_failed) << name;
 	}
 
@@ -1838,13 +1840,15 @@ public:
 	};
 
 	Firebird::ObjectsArray<Property> properties;
-	const bool isCreating;
 	const Firebird::MetaName name;
 	const Firebird::string* password;
 	const Firebird::string* firstName;
 	const Firebird::string* middleName;
 	const Firebird::string* lastName;
+	const Firebird::string* comment;
 	Nullable<int> adminRole;
+	Nullable<int> active;
+	Mode mode;
 
 	void addProperty(Firebird::MetaName* pr, Firebird::string* val = NULL)
 	{

@@ -609,7 +609,14 @@
 	const USHORT  f_sec_first_name = 1;
 	const USHORT  f_sec_middle_name = 2;
 	const USHORT  f_sec_last_name = 3;
-	const USHORT  f_sec_attributes = 4;
+	const USHORT  f_sec_active = 4;
 	const USHORT  f_sec_comment = 5;
+
+
+// Relation 44 (SEC$USER_ATTRIBUTES)
+
+	const USHORT  f_sec_attr_user = 0;
+	const USHORT  f_sec_attr_key = 1;
+	const USHORT  f_sec_attr_value = 2;
 
 

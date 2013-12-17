@@ -9173,8 +9173,8 @@ void CreateAlterUserNode::print(string& text) const
 
 void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
-	if (!isCreating && !password && !firstName && !middleName && !lastName &&
-		!adminRole.specified && !properties.hasData())
+	if (mode != USER_ADD && !password && !firstName && !middleName && !lastName &&
+		!adminRole.specified && !active.specified && !comment && !properties.hasData())
 	{
 		// 283: ALTER USER requires at least one clause to be specified
 		status_exception::raise(Arg::PrivateDyn(283));
@@ -9188,7 +9188,8 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	string text = name.c_str();
 	text.upper();
 
-	userData->op = isCreating ? ADD_OPER : MOD_OPER;
+	userData->op = mode == USER_ADD ? Auth::ADD_OPER : mode == USER_MOD ?
+		Auth::MOD_OPER : Auth::ADDMOD_OPER;
 	userData->user.set(text.c_str());
 	userData->user.setEntered(1);
 
@@ -9246,17 +9247,37 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		}
 	}
 
+	if (comment)
+	{
+		if (comment->hasData())
+		{
+			userData->com.set(comment->c_str());
+			userData->com.setEntered(1);
+		}
+		else
+		{
+			userData->com.setEntered(0);
+			userData->com.setSpecified(1);
+		}
+	}
+
 	if (adminRole.specified)
 	{
 		userData->adm.set(adminRole.value);
 		userData->adm.setEntered(1);
 	}
 
+	if (active.specified)
+	{
+		userData->act.set(active.value);
+		userData->act.setEntered(1);
+	}
+
 	string attributesBuffer;
 
 	for (unsigned cnt = 0; cnt < properties.getCount(); ++cnt)
 	{
-		if (!isCreating || properties[cnt].value.hasData())
+		if (mode != USER_ADD || properties[cnt].value.hasData())
 		{
 			string attribute;
 			attribute.printf("%s=%s\n", properties[cnt].property.c_str(), properties[cnt].value.c_str());
@@ -9270,7 +9291,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		userData->attr.setEntered(1);
 	}
 
-	const int ddlAction = isCreating ? DDL_TRIGGER_CREATE_USER : DDL_TRIGGER_ALTER_USER;
+	const int ddlAction = mode == USER_ADD ? DDL_TRIGGER_CREATE_USER : DDL_TRIGGER_ALTER_USER;
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlAction, userData->user.get());
 
@@ -9304,7 +9325,7 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	string text = name.c_str();
 	text.upper();
 
-	userData->op = DEL_OPER;
+	userData->op = Auth::DEL_OPER;
 	userData->user.set(text.c_str());
 	userData->user.setEntered(1);
 

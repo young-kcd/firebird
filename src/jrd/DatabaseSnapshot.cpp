@@ -445,7 +445,7 @@ void DatabaseSnapshot::activate(thread_db* tdbb)
 
 
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
-	: DataDump(pool), snapshot(pool)
+	: DataDump(pool)
 {
 	SET_TDBB(tdbb);
 
@@ -647,20 +647,27 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 }
 
 
-DatabaseSnapshot::~DatabaseSnapshot()
+void DataDump::clearSnapshot()
 {
 	for (size_t i = 0; i < snapshot.getCount(); i++)
 		delete snapshot[i].data;
+	snapshot.clear();
 }
 
 
-RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
+RecordBuffer* DataDump::getData(const jrd_rel* relation) const
 {
 	fb_assert(relation);
 
+	return getData(relation->rel_id);
+}
+
+
+RecordBuffer* DataDump::getData(int id) const
+{
 	for (size_t i = 0; i < snapshot.getCount(); i++)
 	{
-		if (snapshot[i].rel_id == relation->rel_id)
+		if (snapshot[i].rel_id == id)
 			return snapshot[i].data;
 	}
 
@@ -668,7 +675,7 @@ RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
 }
 
 
-RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, int rel_id)
+RecordBuffer* DataDump::allocBuffer(thread_db* tdbb, MemoryPool& pool, int rel_id)
 {
 	jrd_rel* const relation = MET_lookup_relation_id(tdbb, rel_id, false);
 	fb_assert(relation);
@@ -759,6 +766,15 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 		else
 			from_desc.makeText(field.length, charset, (UCHAR*) field.data);
 
+		MOV_move(tdbb, &from_desc, &to_desc);
+	}
+	else if (field.type == VALUE_BOOLEAN)
+	{
+		fb_assert(field.length == sizeof(UCHAR));
+		UCHAR value;
+		memcpy(&value, field.data, field.length);
+		dsc from_desc;
+		from_desc.makeBoolean(&value);
 		MOV_move(tdbb, &from_desc, &to_desc);
 	}
 	else
