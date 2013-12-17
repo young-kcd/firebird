@@ -3394,6 +3394,7 @@ alter_clause
 	| FUNCTION alter_function_clause		{ $$ = $2; }
 	| ROLE alter_role_clause				{ $$ = $2; }
 	| USER alter_user_clause				{ $$ = $2; }
+	| CURRENT USER alter_cur_user_clause	{ $$ = $3; }
 	| CHARACTER SET alter_charset_clause	{ $$ = $3; }
 	| GENERATOR alter_sequence_clause		{ $$ = $2; }
 	| SEQUENCE alter_sequence_clause		{ $$ = $2; }
@@ -5829,6 +5830,20 @@ alter_user_clause
 	user_var_opts(NOTRIAL($4))
 		{
 			$$ = $4;
+		}
+	;
+
+%type <createAlterUserNode> alter_cur_user_clause
+alter_cur_user_clause
+	: SET passwd_opt
+		{
+			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
+			$$->password = $2;
+		}
+	user_fixed_opts(NOTRIAL($3))
+	user_var_opts(NOTRIAL($3))
+		{
+			$$ = $3;
 		}
 	;
 

@@ -9186,6 +9186,17 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	Auth::DynamicUserData* userData = FB_NEW(*transaction->tra_pool) Auth::DynamicUserData;
 
 	string text = name.c_str();
+	if (text.isEmpty() && mode == USER_MOD)
+	{
+		// alter current user
+		UserId* usr = tdbb->getAttachment()->att_user;
+		fb_assert(usr);
+		if (!usr)
+		{
+			(Arg::Gds(isc_random) << "Missing user name for ALTER CURRENT USER").raise();
+		}
+		text = usr->usr_user_name;
+	}
 	text.upper();
 
 	userData->op = mode == USER_ADD ? Auth::ADD_OPER : mode == USER_MOD ?

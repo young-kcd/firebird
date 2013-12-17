@@ -11,6 +11,7 @@ Syntax is:
 
    CREATE USER name {PASSWORD 'password'} [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
    ALTER USER name SET [PASSWORD 'password'] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
+   ALTER CURRENT USER SET [PASSWORD 'password'] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
    CREATE OR ALTER USER name SET [PASSWORD 'password'] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
    DROP USER name;
 
@@ -22,10 +23,10 @@ where OPTIONS is a (probably empty) list of following options:
 - INACTIVE
 
 and each TAG may have one of two forms:
-NAME = 'VALUE'
+ name = 'string value'
   or:
-DROP NAME
-  where NAME is any valid SQL identifier.
+ DROP name
+where NAME is any valid SQL identifier.
 
 
 Description:
@@ -37,7 +38,8 @@ do not support it and use of them to manage users is deprecated.
 
 CREATE and DROP clauses are available only for SYSDBA (or other user, granted RDB$ADMIN role in
 security database). Ordinary user can ALTER his own password, wide names and tags. Attempt to modify
-another user will fail.
+another user will fail. Also will fail an attempt to make yourself inactive or active. In order to
+avoid typing your name each time simplified form ALTER CURRENT USER is present.
 
 At least one of PASSWORD, FIRSTNAME, MIDDLENAME, LASTNAME, ACTIVE, INACTIVE or TAGS must be present
 in ALTER USER statement. Also notice that PASSWORD clause is required when creating new user.
@@ -62,6 +64,7 @@ Samples:
    ALTER USER alex SET FIRSTNAME 'Alex' LASTNAME 'Peshkoff';
    CREATE OR ALTER USER alex SET PASSWORD 'IdQfA';
    DROP USER alex;
+   ALTER CURRENT USER SET PASSWORD 'SomethingLongEnough';
 
  Working with tags:
    ALTER USER alex SET TAGS (a='a', b='b');
