@@ -1,3 +1,49 @@
+ 2013-12-17 16:24  alexpeshkoff 
+   M doc/sql.extensions/README.user_management
+   M src/dsql/DdlNodes.epp
+   M src/dsql/parse.y
+Implemented CORE-3365: Extend syntax for ALTER CURRENT USER
+
+ 2013-12-17 15:52  alexpeshkoff 
+   M doc/sql.extensions/README.user_management
+Misc
+
+ 2013-12-17 15:49  alexpeshkoff 
+   M doc/sql.extensions/README.ddl.txt
+   M doc/sql.extensions/README.user_management
+Documented changes in SQL user management
+
+ 2013-12-17 14:20  alexpeshkoff 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/common/call_service.cpp
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/include/firebird/Auth.h
+   M src/include/gen/ids.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/fields.h
+   M src/jrd/ini.epp
+   M src/jrd/names.h
+   M src/jrd/opt.cpp
+   M src/jrd/relations.h
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsec.h
+   M src/yvalve/alt.cpp
+   M src/yvalve/keywords.cpp
+Changed syntax of user definition operators according to discussion in devel
+Added virtual table sec$user_attributes with parsed user's attributes
+Implemented CORE-2004: Ability to alter user inactive/active
+Implemented CORE-2063: Added CREATE OR ALTER USER operator
+Implemented CORE-3931: Ability to set comment for the user
+
  2013-12-16 01:32  asfernandes 
    M src/jrd/dfw.epp
 Fixed CORE-4271 - Engine crashs in case of re-creation of an erratic package body.
