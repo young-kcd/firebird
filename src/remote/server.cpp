@@ -2877,10 +2877,12 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
+	const USHORT buffer_length = stuff->p_info_buffer_length;
+
 	// Make sure there is a suitable temporary blob buffer
 	Firebird::Array<UCHAR> buf;
-	UCHAR* const buffer = buf.getBuffer(stuff->p_info_buffer_length);
-	memset(buffer, 0, stuff->p_info_buffer_length);
+	UCHAR* const buffer = buffer_length ? buf.getBuffer(buffer_length) : NULL;
+	memset(buffer, 0, buffer_length);
 
 	Firebird::HalfStaticArray<SCHAR, 1024> info;
 	SCHAR* info_buffer = 0;
@@ -2891,7 +2893,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	{
 		info_len = 0;
 		info_buffer = 0;
-		temp_buffer = temp.getBuffer(stuff->p_info_buffer_length);
+		temp_buffer = buffer_length ? temp.getBuffer(buffer_length) : NULL;
 	}
 	else
 	{
@@ -2918,21 +2920,21 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		getHandle(blob, stuff->p_info_object);
 		isc_blob_info(status_vector, &blob->rbl_handle,
 					  info_len, info_buffer,
-					  stuff->p_info_buffer_length, reinterpret_cast<char*>(buffer));
+					  buffer_length, reinterpret_cast<char*>(buffer));
 		break;
 
 	case op_info_database:
 		isc_database_info(status_vector, &rdb->rdb_handle,
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
-						  stuff->p_info_buffer_length, //sizeof(temp)
+						  buffer_length, //sizeof(temp)
 						  reinterpret_cast<char*>(temp_buffer)); //temp
 		if (!status_vector[1])
 		{
 			Firebird::string version;
 			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
 			info_db_len = MERGE_database_info(temp_buffer, //temp
-								buffer, stuff->p_info_buffer_length,
+								buffer, buffer_length,
 								IMPLEMENTATION, 4, 1,
 								reinterpret_cast<const UCHAR*>(version.c_str()),
 								reinterpret_cast<const UCHAR*>(this->port_host->str_data));
@@ -2946,7 +2948,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 			isc_request_info(status_vector, &requestL->rrq_handle,
 							 stuff->p_info_incarnation,
 							 info_len, info_buffer,
-							 stuff->p_info_buffer_length, reinterpret_cast<char*>(buffer));
+							 buffer_length, reinterpret_cast<char*>(buffer));
 		}
 		break;
 
@@ -2954,7 +2956,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		getHandle(transaction, stuff->p_info_object);
 		isc_transaction_info(status_vector, &transaction->rtr_handle,
 							 info_len, info_buffer,
-							 stuff->p_info_buffer_length, reinterpret_cast<char*>(buffer));
+							 buffer_length, reinterpret_cast<char*>(buffer));
 		break;
 
 	case op_service_info:
@@ -2964,7 +2966,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
 						  info_len, info_buffer,
-						  stuff->p_info_buffer_length, reinterpret_cast<char*>(buffer));
+						  buffer_length, reinterpret_cast<char*>(buffer));
 		break;
 
 	case op_info_sql:
@@ -2973,16 +2975,16 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		GDS_DSQL_SQL_INFO(status_vector,
 						  &statement->rsr_handle,
 						  info_len, info_buffer,
-						  stuff->p_info_buffer_length, reinterpret_cast<char*>(buffer));
+						  buffer_length, reinterpret_cast<char*>(buffer));
 		break;
 	}
 
 	// Send a response that includes the segment.
 
-	USHORT response_len = info_db_len ? info_db_len : stuff->p_info_buffer_length;
+	USHORT response_len = info_db_len ? info_db_len : buffer_length;
 
 	SSHORT skip_len = 0;
-	if (*buffer == isc_info_length)
+	if (buffer && *buffer == isc_info_length)
 	{
 		skip_len = gds__vax_integer(buffer + 1, 2);
 		const SLONG val = gds__vax_integer(buffer + 3, skip_len);
