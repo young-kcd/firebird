@@ -326,6 +326,7 @@ const SvcSwitches infSwitch[] =
 	{"info_get_env_msg", putSingleTag, 0, isc_info_svc_get_env_msg, 0},
 	{"info_svr_db_info", putSingleTag, 0, isc_info_svc_svr_db_info, 0},
 	{"info_version", putSingleTag, 0, isc_info_svc_version, 0},
+	{"info_capabilities", putSingleTag, 0, isc_info_svc_capabilities, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -414,6 +415,9 @@ const SvcSwitches repairOptions[] =
 const SvcSwitches statisticsOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"sts_record_versions", putOption, 0, isc_spb_sts_record_versions, 0},
+	{"sts_nocreation", putOption, 0, isc_spb_sts_nocreation, 0},
+	{"sts_table", putStringArgument, 0, isc_spb_sts_table, 0},
 	{"sts_data_pages", putOption, 0, isc_spb_sts_data_pages, 0},
 	{"sts_hdr_pages", putOption, 0, isc_spb_sts_hdr_pages, 0},
 	{"sts_idx_pages", putOption, 0, isc_spb_sts_idx_pages, 0},
@@ -491,6 +495,7 @@ const SvcSwitches actionSwitch[] =
 	{"action_properties", putSingleTag, propertiesOptions, isc_action_svc_properties, 0},
 	{"action_repair", putSingleTag, repairOptions, isc_action_svc_repair, 0},
 	{"action_db_stats", putSingleTag, statisticsOptions, isc_action_svc_db_stats, isc_info_svc_line},
+	{"action_get_fb_log", putSingleTag, 0, isc_action_svc_get_fb_log, isc_info_svc_to_eof},
 	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_to_eof},
 	{"action_display_user", putSingleTag, dispdelOptions, isc_action_svc_display_user, isc_info_svc_get_users},
 	{"action_display_user_adm", putSingleTag, dispdelOptions, isc_action_svc_display_user_adm, isc_info_svc_get_users},
@@ -585,6 +590,40 @@ void printMessage(USHORT number, const SafeArg& arg, bool newLine = true)
 void printNumeric(const char*& p, int num)
 {
 	printf ("%s: %d\n", getMessage(num).c_str(), getNumeric(p));
+}
+
+const char* capArray[] = {
+	"WAL_SUPPORT",
+	"MULTI_CLIENT_SUPPORT",
+	"REMOTE_HOP_SUPPORT",
+	"NO_SVR_STATS_SUPPORT",
+	"NO_DB_STATS_SUPPORT",
+	"LOCAL_ENGINE_SUPPORT",
+	"NO_FORCED_WRITE_SUPPORT",
+	"NO_SHUTDOWN_SUPPORT",
+	"NO_SERVER_SHUTDOWN_SUPPORT",
+	"SERVER_CONFIG_SUPPORT",
+	"QUOTED_FILENAME_SUPPORT",
+	NULL};
+
+void printCapabilities(const char*& p)
+{
+	printMessage(57);
+	int caps = getNumeric(p);
+	bool print = false;
+	for (unsigned i = 0; capArray[i]; ++i)
+	{
+		if (caps & (1 << i))
+		{
+			print = true;
+			printf("  %s\n", capArray[i]);
+		}
+	}
+
+	if (!print)
+	{
+		printf("  <None>\n");
+	}
 }
 
 class UserPrint
@@ -813,6 +852,10 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 			{
 				ret = true;
 			}
+			break;
+
+		case isc_info_svc_capabilities:
+			printCapabilities(p);
 			break;
 
 		default:

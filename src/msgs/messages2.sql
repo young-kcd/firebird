@@ -3162,6 +3162,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'fbsvcmgr.cpp', NULL, 22, 54, NULL, 'Attaching to services manager:', NULL, NULL);
 (NULL, 'usage', 'fbsvcmgr.cpp', NULL, 22, 55, NULL, 'Information requests:', NULL, NULL);
 (NULL, 'usage', 'fbsvcmgr.cpp', NULL, 22, 56, NULL, 'Actions:', NULL, NULL);
+(NULL, 'printCapabilities', 'fbsvcmgr.cpp', NULL, 22, 57, NULL, 'Server capabilities:', NULL, NULL);
 -- UTL (messages common for many utilities)
 -- All messages use the new format.
 ('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_user and trusted_role are not supported from command line', NULL, NULL);

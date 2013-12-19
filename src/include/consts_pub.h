@@ -510,13 +510,15 @@
  * Parameters for isc_info_svc_db_stats  *
  *****************************************/
 
+#define isc_spb_sts_table			64
+
 #define isc_spb_sts_data_pages		0x01
 #define isc_spb_sts_db_log			0x02
 #define isc_spb_sts_hdr_pages		0x04
 #define isc_spb_sts_idx_pages		0x08
 #define isc_spb_sts_sys_relations	0x10
 #define isc_spb_sts_record_versions	0x20
-#define isc_spb_sts_table			0x40
+//#define isc_spb_sts_table			0x40
 #define isc_spb_sts_nocreation		0x80
 #define isc_spb_sts_encryption	   0x100
 

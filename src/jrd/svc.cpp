@@ -2760,6 +2760,12 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		case isc_action_svc_db_stats:
 			switch (spb.getClumpTag())
 			{
+			case isc_spb_sts_table:
+				if (!get_action_svc_parameter(spb.getClumpTag(), dba_in_sw_table, switches))
+				{
+					return false;
+				}
+				// fall through ....
 			case isc_spb_dbname:
 				get_action_svc_string(spb, switches);
 				break;
