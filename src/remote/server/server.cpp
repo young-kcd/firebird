@@ -3705,10 +3705,12 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		return;
 	}
 
+	const ULONG buffer_length = stuff->p_info_buffer_length;
+
 	// Make sure there is a suitable temporary blob buffer
 	Array<UCHAR> buf;
-	UCHAR* const buffer = buf.getBuffer(stuff->p_info_buffer_length);
-	memset(buffer, 0, stuff->p_info_buffer_length);
+	UCHAR* const buffer = buffer_length ? buf.getBuffer(buffer_length) : NULL;
+	memset(buffer, 0, buffer_length);
 
 	HalfStaticArray<UCHAR, 1024> info;
 	UCHAR* info_buffer = NULL;
@@ -3718,7 +3720,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	if (op == op_info_database)
 	{
-		temp_buffer = temp.getBuffer(stuff->p_info_buffer_length);
+		temp_buffer = buffer_length ? temp.getBuffer(buffer_length) : NULL;
 	}
 	else
 	{
@@ -3746,13 +3748,13 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	case op_info_blob:
 		getHandle(blob, stuff->p_info_object);
 		blob->rbl_iface->getInfo(&status_vector, info_len, info_buffer,
-			stuff->p_info_buffer_length, buffer);
+			buffer_length, buffer);
 		break;
 
 	case op_info_database:
 		rdb->rdb_iface->getInfo(&status_vector,
 			stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
-			stuff->p_info_buffer_length, //sizeof(temp)
+			buffer_length, //sizeof(temp)
 			temp_buffer); //temp
 
 		if (status_vector.isSuccess())
@@ -3761,7 +3763,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 			version.printf("%s/%s%s", FB_VERSION, this->port_version->str_data,
 				this->port_crypt_complete ? ":C" : "");
 			info_db_len = MERGE_database_info(temp_buffer, //temp
-				buffer, stuff->p_info_buffer_length,
+				buffer, buffer_length,
 				DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
 				reinterpret_cast<const UCHAR*>(version.c_str()),
 				reinterpret_cast<const UCHAR*>(this->port_host->str_data));
@@ -3773,21 +3775,21 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 			Rrq* requestL;
 			getHandle(requestL, stuff->p_info_object);
 			requestL->rrq_iface->getInfo(&status_vector, stuff->p_info_incarnation,
-				info_len, info_buffer, stuff->p_info_buffer_length, buffer);
+				info_len, info_buffer, buffer_length, buffer);
 		}
 		break;
 
 	case op_info_transaction:
 		getHandle(transaction, stuff->p_info_object);
 		transaction->rtr_iface->getInfo(&status_vector, info_len, info_buffer,
-			stuff->p_info_buffer_length, buffer);
+			buffer_length, buffer);
 		break;
 
 	case op_service_info:
 		service = rdb->rdb_svc;
 		service->svc_iface->query(&status_vector,
 			stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
-			info_len, info_buffer, stuff->p_info_buffer_length, buffer);
+			info_len, info_buffer, buffer_length, buffer);
 		break;
 
 	case op_info_sql:
@@ -3795,13 +3797,13 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		statement->checkIface(isc_info_unprepared_stmt);
 
 		statement->rsr_iface->getInfo(&status_vector, info_len, info_buffer,
-			stuff->p_info_buffer_length, buffer);
+			buffer_length, buffer);
 		break;
 	}
 
 	// Send a response that includes the segment.
 
-	ULONG response_len = info_db_len ? info_db_len : stuff->p_info_buffer_length;
+	ULONG response_len = info_db_len ? info_db_len : buffer_length;
 
 	SLONG skip_len = 0;
 	if (buffer && *buffer == isc_info_length)
