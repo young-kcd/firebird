@@ -405,6 +405,8 @@ const SvcSwitches repairOptions[] =
 const SvcSwitches statisticsOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"sts_record_versions", putOption, 0, isc_spb_sts_record_versions, 0},
+	{"sts_nocreation", putOption, 0, isc_spb_sts_nocreation, 0},
 	{"sts_data_pages", putOption, 0, isc_spb_sts_data_pages, 0},
 	{"sts_hdr_pages", putOption, 0, isc_spb_sts_hdr_pages, 0},
 	{"sts_idx_pages", putOption, 0, isc_spb_sts_idx_pages, 0},
