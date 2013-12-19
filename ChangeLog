@@ -1,3 +1,7 @@
+ 2013-12-18 08:23  dimitr 
+   M src/remote/server.cpp
+Fixed CORE-4300: Server terminates abnormally when iscDatabaseInfo() is called with buffer size = 0.
+
  2013-12-12 09:14  alexpeshkoff 
    M builds/posix/Makefile.in.client.gfix
    M builds/posix/Makefile.in.embed.gfix
