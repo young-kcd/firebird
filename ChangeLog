@@ -1,3 +1,16 @@
+ 2013-12-19 13:48  alexpeshkoff 
+   M src/common/classes/ClumpletReader.cpp
+   M src/include/consts_pub.h
+   M src/jrd/svc.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Fixed CORE-4298: fbsvcmgr doesn't recognise sts_record_versions and other sts switches
+
+ 2013-12-19 11:41  dimitr 
+   M src/remote/server/server.cpp
+I prefer to explicitly initialize suspicious pointers. Related to CORE-4300 (although there's no crash here).
+
  2013-12-17 16:24  alexpeshkoff 
    M doc/sql.extensions/README.user_management
    M src/dsql/DdlNodes.epp
