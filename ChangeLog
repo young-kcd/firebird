@@ -1,3 +1,7 @@
+ 2013-12-19 13:50  alexpeshkoff 
+   M src/utilities/fbsvcmgr.cpp
+Backported minimum fix for CORE-4298: fbsvcmgr doesn't recognise sts_record_versions and other sts switches
+
  2013-12-18 08:23  dimitr 
    M src/remote/server.cpp
 Fixed CORE-4300: Server terminates abnormally when iscDatabaseInfo() is called with buffer size = 0.
