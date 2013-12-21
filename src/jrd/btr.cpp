@@ -4734,7 +4734,11 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 								return BTreeNode::findPageInDuplicates(bucket, 
 									node.nodePointer, previousNumber, find_record_number);
 							}
-							else {
+							else 
+							{
+								if (q < nodeEnd && !retrieval)
+									break;
+
 								return previousNumber;
 							}
 						}

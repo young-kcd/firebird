@@ -1089,8 +1089,9 @@ static UCHAR* nav_open(
 	if (limit_ptr) {
 		
 		// If END_BUCKET is reached BTR_find_leaf will return NULL
-		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
-									  0, (idx->idx_flags & idx_descending) != 0, true)))
+		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data, NULL,
+							(idx->idx_flags & idx_descending) != 0, 
+							(retrieval->irb_generic & (irb_starting | irb_partial)) )))
 		{
 			  page = (Ods::btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 				  LCK_read, pag_index);
