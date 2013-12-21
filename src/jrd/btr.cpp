@@ -4843,6 +4843,9 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 									node.nodePointer, previousNumber, find_record_number);
 							}
 
+							if (q < nodeEnd && !retrieval)
+								break;
+
 							return previousNumber;
 						}
 
