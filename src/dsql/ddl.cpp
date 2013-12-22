@@ -188,7 +188,7 @@ static void put_local_variables(CompiledStatement*, dsql_nod*, SSHORT);
 static void put_msg_field(CompiledStatement*, const dsql_fld*);
 static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool, const char*);
 static void reset_context_stack(CompiledStatement*);
-static void save_field(CompiledStatement*, const SCHAR*);
+static void save_field(CompiledStatement*, const SCHAR*, const dsql_fld*);
 static void save_relation(CompiledStatement*, const dsql_str*);
 static void set_statistics(CompiledStatement*);
 static void stuff_default_blr(CompiledStatement*, const UCHAR*, USHORT);
@@ -3998,7 +3998,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		}
 
 		if (field_string)
-			save_field(statement, field_string);
+			save_field(statement, field_string, field);
 
 		statement->append_number(isc_dyn_fld_position, position);
 		statement->append_uchar(isc_dyn_end);
@@ -6420,7 +6420,6 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 						(*ptr)->nod_arg[e_fln_name] = (*replace)->nod_arg[e_fln_name];
 					}
 					(*ptr)->nod_arg[e_fln_context] = (dsql_nod*) MAKE_cstring(context_name);
-
 				}
 				if (null_them && replace_fields && !strcmp(field_name->str_data, replace_name->str_data))
 				{
@@ -6467,7 +6466,7 @@ static void reset_context_stack(CompiledStatement* statement)
 }
 
 
-static void save_field(CompiledStatement* statement, const TEXT* field_name)
+static void save_field(CompiledStatement* statement, const TEXT* field_name, const dsql_fld* fld)
 {
 /**************************************
  *
@@ -6495,6 +6494,17 @@ static void save_field(CompiledStatement* statement, const TEXT* field_name)
 	field->fld_name = field_name;
 	field->fld_next = relation->rel_fields;
 	relation->rel_fields = field;
+
+	if (fld)
+	{
+		field->fld_dtype = fld->fld_dtype;
+		field->fld_scale = fld->fld_scale;
+		field->fld_sub_type = fld->fld_sub_type;
+		field->fld_length = fld->fld_length;
+		field->fld_flags = fld->fld_flags;
+		field->fld_character_set_id = fld->fld_character_set_id;
+		field->fld_collation_id = fld->fld_collation_id;
+	}
 }
 
 
