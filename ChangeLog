@@ -1,3 +1,8 @@
+ 2013-12-21 19:13  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/nav.cpp
+Backport fix for bug CORE-4302 : Descending index could be very inefficient for some keys
+
  2013-12-19 13:50  alexpeshkoff 
    M src/utilities/fbsvcmgr.cpp
 Backported minimum fix for CORE-4298: fbsvcmgr doesn't recognise sts_record_versions and other sts switches
