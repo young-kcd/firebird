@@ -3229,7 +3229,6 @@ void ResultSet::freeClientData(IStatus* status, bool force)
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		fb_assert(statement->haveException() == 0);
 		statement->clearException();
 
 		if (statement->rsr_flags.test(Rsr::LAZY))
