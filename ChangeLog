@@ -1,3 +1,7 @@
+ 2013-12-22 14:55  asfernandes 
+   M src/dsql/ddl.cpp
+Fixed CORE-4299 - "Inappropriate self-reference of column" when using "with check option" with extract(...).
+
  2013-12-21 18:50  hvlad 
    M src/jrd/btr.cpp
    M src/jrd/nav.cpp
