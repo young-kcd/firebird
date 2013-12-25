@@ -289,6 +289,7 @@ void UserManagement::execute(USHORT id)
 				merge(merged, cur);
 				++cur;
 			}
+
 			while (old != oldEnd)
 			{
 				merge(merged, old);
@@ -440,6 +441,7 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 		private:
 			UserManagement* userManagement;
 		};
+
 		FillSnapshot fillSnapshot(this);
 
 		LocalStatus status;

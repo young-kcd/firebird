@@ -9191,10 +9191,10 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		// alter current user
 		UserId* usr = tdbb->getAttachment()->att_user;
 		fb_assert(usr);
+
 		if (!usr)
-		{
 			(Arg::Gds(isc_random) << "Missing user name for ALTER CURRENT USER").raise();
-		}
+
 		text = usr->usr_user_name;
 	}
 	text.upper();

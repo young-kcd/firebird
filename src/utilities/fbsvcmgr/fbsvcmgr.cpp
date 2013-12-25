@@ -609,8 +609,10 @@ const char* capArray[] = {
 void printCapabilities(const char*& p)
 {
 	printMessage(57);
+
 	int caps = getNumeric(p);
 	bool print = false;
+
 	for (unsigned i = 0; capArray[i]; ++i)
 	{
 		if (caps & (1 << i))

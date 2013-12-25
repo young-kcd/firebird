@@ -520,9 +520,9 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) 
 	{
 		UCHAR* pointer = NULL;
 		// If END_BUCKET is reached BTR_find_leaf will return NULL
-		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data, NULL, 
-							(idx->idx_flags & idx_descending), 
-							(retrieval->irb_generic & (irb_starting | irb_partial)) )))
+		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data, NULL,
+							(idx->idx_flags & idx_descending),
+							(retrieval->irb_generic & (irb_starting | irb_partial)))))
 		{
 			page = (Ods::btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 				  LCK_read, pag_index);
