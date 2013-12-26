@@ -5886,13 +5886,13 @@ user_fixed_list($node)
 
 %type user_fixed_opt(<createAlterUserNode>)
 user_fixed_opt($node)
-	: FIRSTNAME utf_string	{ $node->firstName = $2; }
-	| MIDDLENAME utf_string	{ $node->middleName = $2; }
-	| LASTNAME utf_string	{ $node->lastName = $2; }
-	| GRANT ADMIN ROLE		{ $node->adminRole = Nullable<int>::val(1); }
-	| REVOKE ADMIN ROLE		{ $node->adminRole = Nullable<int>::val(0); }
-	| ACTIVE				{ $node->active = Nullable<int>::val(1); }
-	| INACTIVE				{ $node->active = Nullable<int>::val(0); }
+	: FIRSTNAME utf_string	{ setClause($node->firstName, "FIRSTNAME", $2); }
+	| MIDDLENAME utf_string	{ setClause($node->middleName, "MIDDLENAME", $2); }
+	| LASTNAME utf_string	{ setClause($node->lastName, "LASTNAME", $2); }
+	| GRANT ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<int>(1)); }
+	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<int>(0)); }
+	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<int>(1)); }
+	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<int>(0)); }
 	;
 
 %type user_var_opts(<createAlterUserNode>)

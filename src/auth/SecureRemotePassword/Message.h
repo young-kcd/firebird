@@ -105,9 +105,9 @@ bool Message::checkType<ISC_QUAD>(unsigned t, unsigned sz)
 }
 
 template <>
-bool Message::checkType<bool>(unsigned t, unsigned sz)
+bool Message::checkType<FB_BOOLEAN>(unsigned t, unsigned sz)
 {
-	return t == SQL_BOOLEAN && sz == sizeof(bool);
+	return t == SQL_BOOLEAN && sz == sizeof(FB_BOOLEAN);
 }
 
 

@@ -47,7 +47,7 @@ const unsigned int SZ_NAME = 31;
 typedef Field<Varying> Varfield;
 typedef Field<Text> Name;
 typedef Field<ISC_QUAD> Blob;
-typedef Field<bool> Boolean;
+typedef Field<FB_BOOLEAN> Boolean;
 
 } // anonymous namespace
 

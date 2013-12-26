@@ -1841,11 +1841,11 @@ public:
 
 	Firebird::ObjectsArray<Property> properties;
 	const Firebird::MetaName name;
-	const Firebird::string* password;
-	const Firebird::string* firstName;
-	const Firebird::string* middleName;
-	const Firebird::string* lastName;
-	const Firebird::string* comment;
+	Firebird::string* password;
+	Firebird::string* firstName;
+	Firebird::string* middleName;
+	Firebird::string* lastName;
+	Firebird::string* comment;
 	Nullable<int> adminRole;
 	Nullable<int> active;
 	Mode mode;
