@@ -1,3 +1,19 @@
+ 2013-12-25 23:36  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Misc.
+
+ 2013-12-25 10:59  hvlad 
+   M src/jrd/btr.cpp
+Fixed bug CORE-2165 : Unnecessary 1 index read may occur when using strict inequality condition
+
+ 2013-12-25 10:57  hvlad 
+   M src/jrd/btr.cpp
+Additional fix for bug CORE-4302 : Lookup (or scan) in descending index could be very inefficient for some keys
+
  2013-12-23 11:57  dimitr 
    M doc/WhatsNew
 Updated docs.
