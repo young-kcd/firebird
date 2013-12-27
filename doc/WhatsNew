@@ -326,6 +326,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sf.net>
 
+    * Bugfix CORE-2165
+        Unnecessary 1 index read may occur when using strict inequality condition
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * Bugfix CORE-362
         Impossible to enter certain characters in ISQL
       Contributor(s):
