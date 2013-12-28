@@ -1,3 +1,11 @@
+ 2013-12-27 11:27  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
+ 2013-12-27 07:52  dimitr 
+   M src/misc/writeBuildNum.sh
+Bump the version suffix.
+
  2013-12-26 10:59  alexpeshkoff 
    M src/auth/SecureRemotePassword/Message.h
    M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
