@@ -15,4 +15,4 @@
 #define FB_REV_NO "0"
 #define FB_BUILD_NO "30809"
 #define FB_BUILD_TYPE "T"
-#define FB_BUILD_SUFFIX "Firebird 3.0 Alpha 1"
+#define FB_BUILD_SUFFIX "Firebird 3.0 Alpha 2"
