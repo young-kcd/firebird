@@ -96,7 +96,7 @@ public:
 	{
 	}
 
-	MsgMetadata(IMessageMetadata* from)
+	explicit MsgMetadata(IMessageMetadata* from)
 		: items(getPool()),
 		  length(0)
 	{
@@ -246,7 +246,7 @@ public:
 class AttMetadata : public MsgMetadata
 {
 public:
-	AttMetadata(IAttachment* att)
+	explicit AttMetadata(IAttachment* att)
 		: MsgMetadata(),
 		  attachment(att)
 	{ }

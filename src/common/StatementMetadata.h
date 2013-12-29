@@ -43,7 +43,7 @@ public:
 	class Parameters : public AttMetadata
 	{
 	public:
-		Parameters(IAttachment* att)
+		explicit Parameters(IAttachment* att)
 			: AttMetadata(att),
 			  fetched(false)
 		{

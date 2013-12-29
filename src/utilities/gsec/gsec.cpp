@@ -392,7 +392,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	class Attributes : public ConfigFile
 	{
 	public:
-		Attributes(IUser* data)
+		explicit Attributes(IUser* data)
 			: ConfigFile(USE_TEXT, data->attributes()->entered() ? data->attributes()->get() : "")
 		{ }
 

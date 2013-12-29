@@ -2416,7 +2416,7 @@ static void adjust_scan_count(WIN* window, bool mustRead)
 
 	if (window->win_flags & WIN_large_scan)
 	{
-		if (mustRead || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
+		if (mustRead || (bdb->bdb_flags & BDB_prefetch) || bdb->bdb_scan_count < 0)
 			bdb->bdb_scan_count = window->win_scans;
 	}
 	else if (window->win_flags & WIN_garbage_collector)
@@ -2758,7 +2758,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 					}
 				}
 
-				// release lock before loosing control over bdb, it prevents
+				// release lock before losing control over bdb, it prevents
 				// concurrent operations on released lock
 				if (release_flag)
 				{

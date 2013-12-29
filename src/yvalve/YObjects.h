@@ -308,7 +308,7 @@ public:
 class YMetadata
 {
 public:
-	YMetadata(bool in)
+	explicit YMetadata(bool in)
 		: flag(false), input(in)
 	{ }
 

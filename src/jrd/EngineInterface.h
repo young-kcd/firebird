@@ -392,7 +392,7 @@ public:
 
 private:
 	Attachment* att;
-	// This mutexes guarantee attachment existence. After releasing both of them with possibly
+	// These mutexes guarantee attachment existence. After releasing both of them with possibly
 	// zero att_use_count one should check does attachment still exists calling getHandle().
 	Firebird::Mutex mainMutex, asyncMutex;
 

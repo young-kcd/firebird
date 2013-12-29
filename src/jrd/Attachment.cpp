@@ -560,7 +560,11 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 	}
 }
 
-void Jrd::Attachment::SyncGuard::init(const char* f, bool optional)
+void Jrd::Attachment::SyncGuard::init(const char* f, bool
+#ifdef DEV_BUILD
+	optional
+#endif
+	)
 {
 	fb_assert(optional || jAtt);
 

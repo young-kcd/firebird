@@ -716,10 +716,11 @@ int Config::getWireCrypt(WireCryptMode wcMode) const
 	Firebird::NoCaseString wireCrypt(wc);
 	if (wireCrypt == "DISABLED")
 		return WIRE_CRYPT_DISABLED;
-	else if (wireCrypt == "ENABLED")
+	if (wireCrypt == "ENABLED")
 		return WIRE_CRYPT_ENABLED;
-	else	// the safest choice
-		return WIRE_CRYPT_REQUIRED;
+	
+	// the safest choice
+	return WIRE_CRYPT_REQUIRED;
 }
 
 bool Config::getRemoteAccess() const

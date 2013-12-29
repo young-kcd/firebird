@@ -1668,7 +1668,8 @@ void UnionSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	DsqlMapNode* mapNode = mapItem->as<DsqlMapNode>();
 	fb_assert(mapNode);
 
-	if (!mapNode) {
+	if (!mapNode)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_internal_err) <<
 				  Arg::Gds(isc_random) << Arg::Str("UnionSourceNode::genBlr: expected DsqlMapNode") );

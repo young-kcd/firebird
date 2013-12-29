@@ -304,7 +304,7 @@ public:
 	class Linger FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 	{
 	public:
-		Linger(Database* a_dbb)
+		explicit Linger(Database* a_dbb)
 			: dbb(a_dbb), active(false)
 		{ }
 

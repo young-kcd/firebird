@@ -1830,7 +1830,7 @@ public:
 	class Property : public PermanentStorage
 	{
 	public:
-		Property(MemoryPool& p)
+		explicit Property(MemoryPool& p)
 			: PermanentStorage(p),
 			  value(p)
 		{ }

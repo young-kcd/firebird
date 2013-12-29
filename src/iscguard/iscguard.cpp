@@ -1152,7 +1152,7 @@ static void write_log(int log_action, const char* buff)
 						  tmp_buff, 0, 0, (LPTSTR) &lpMsgBuf, 0,
 						  reinterpret_cast<va_list*>(act_buff));
 
-			const int len = MIN(BUFF_SIZE-1, strlen(lpMsgBuf) - 1);
+			const int len = MIN(BUFF_SIZE - 1, strlen(lpMsgBuf) - 1);
 			strncpy(act_buff[0], lpMsgBuf, len);
 			act_buff[0][len] = 0;
 			LocalFree(lpMsgBuf);

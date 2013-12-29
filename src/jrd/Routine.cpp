@@ -264,7 +264,7 @@ void Routine::remove(thread_db* tdbb)
 
 	// Routine that is being altered may have references
 	// to it by other routines via pointer to current meta
-	// data structure, so don't loose the structure or the pointer.
+	// data structure, so don't lose the structure or the pointer.
 	if (checkCache(tdbb) && !(flags & Routine::FLAG_BEING_ALTERED))
 		clearCache(tdbb);
 

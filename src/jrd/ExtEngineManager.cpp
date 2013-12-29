@@ -80,7 +80,7 @@ namespace
 		{
 			*desc = format->fmt_desc[index];
 
-			if (index % 2 == 0 && index / 2 < parameters.getCount())
+			if (index % 2 == 0 && index / 2u < parameters.getCount())
 			{
 				const Parameter* param = parameters[index / 2];
 
@@ -234,7 +234,7 @@ namespace
 			: CompoundStmtNode(pool)
 		{
 			// Iterate over the format items, except the EOF item.
-			for (USHORT i = 0; i < message->format->fmt_count / 2 * 2; i += 2)
+			for (USHORT i = 0; i < (message->format->fmt_count / 2) * 2; i += 2)
 			{
 				ExtInitParameterNode* init = FB_NEW(pool) ExtInitParameterNode(
 					tdbb, pool, csb, message, i);
@@ -251,7 +251,7 @@ namespace
 			: CompoundStmtNode(pool)
 		{
 			// Iterate over the format items, except the EOF item.
-			for (USHORT i = 0; i < message->format->fmt_count / 2 * 2; i += 2)
+			for (USHORT i = 0; i < (message->format->fmt_count / 2) * 2; i += 2)
 			{
 				if (!message->isSpecial[i / 2])
 					continue;
@@ -908,7 +908,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 		Record* record = newRpb->rpb_record;
 		UCHAR* p = newMsg.begin();
 
-		for (unsigned i = 0; i < format->fmt_count / 2; ++i)
+		for (unsigned i = 0; i < format->fmt_count / 2u; ++i)
 		{
 			USHORT fieldPos = fieldsPos[i];
 
@@ -944,7 +944,7 @@ void ExtEngineManager::Trigger::setValues(thread_db* tdbb, Array<UCHAR>& msgBuff
 	UCHAR* p = msgBuffer.getBuffer(format->fmt_length);
 	memset(p, 0, format->fmt_length);
 
-	for (unsigned i = 0; i < format->fmt_count / 2; ++i)
+	for (unsigned i = 0; i < format->fmt_count / 2u; ++i)
 	{
 		USHORT fieldPos = fieldsPos[i];
 

@@ -76,7 +76,7 @@ int main()
 	try
 	{
 		// status vector and main dispatcher are returned by calls to IMaster functions
-		// no error return may happen - this functions always succeed
+		// no error return may happen - these functions always succeed
 		st = master->getStatus();
 		prov = master->getDispatcher();
 

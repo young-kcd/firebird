@@ -559,15 +559,15 @@ private:
 
 	static int compare(const void* a, const void* b)
 	{
-		const Key& first(KeyOfValue::generate(*reinterpret_cast<const Value*>(a)));
-		const Key& second(KeyOfValue::generate(*reinterpret_cast<const Value*>(b)));
+		const Key& first(KeyOfValue::generate(*static_cast<const Value*>(a)));
+		const Key& second(KeyOfValue::generate(*static_cast<const Value*>(b)));
 
 		if (Cmp::greaterThan(first, second))
 			return 1;
-		else if (Cmp::greaterThan(second, first))
+		if (Cmp::greaterThan(second, first))
 			return -1;
-		else
-			return 0;
+
+		return 0;
 	}
 };
 

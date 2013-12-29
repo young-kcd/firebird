@@ -255,7 +255,7 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 		}
 	}
 
-	Firebird::string* dbName = flag_restore ? &files[1] : &files[0];
+	const Firebird::string* dbName = flag_restore ? &files[1] : &files[0];
 
 	ISC_STATUS_ARRAY status;
 	FB_API_HANDLE svc_handle = 0;

@@ -210,13 +210,11 @@ private:
 		BoolAsValueNode* node = value->as<BoolAsValueNode>();
 		if (node)
 			return node->boolean;
-		else
-		{
-			ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>(
-				blr_eql, value, MAKE_constant("1", CONSTANT_BOOLEAN));
-			cmpNode->dsqlWasValue = true;
-			return cmpNode;
-		}
+
+		ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>(
+			blr_eql, value, MAKE_constant("1", CONSTANT_BOOLEAN));
+		cmpNode->dsqlWasValue = true;
+		return cmpNode;
 	}
 
 	void yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* termVals,

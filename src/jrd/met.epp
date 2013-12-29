@@ -2633,7 +2633,7 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, USHORT id,
 
 	jrd_prc* procedure;
 
-	if (id < (SSHORT) attachment->att_procedures.getCount() && (procedure = attachment->att_procedures[id]) &&
+	if (id < (USHORT) attachment->att_procedures.getCount() && (procedure = attachment->att_procedures[id]) &&
 		procedure->getId() == id &&
 		!(procedure->flags & Routine::FLAG_BEING_SCANNED) &&
 		((procedure->flags & Routine::FLAG_SCANNED) || noscan) &&
