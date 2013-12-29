@@ -682,7 +682,7 @@ static const TEXT msg_table[VAL_MAX_ERROR][80] =
 	"Index %d has orphan child page at page %"ULONGFORMAT,
 	"Index %d has a circular reference at page %"ULONGFORMAT,	// 25
 	"SCN's page %"ULONGFORMAT" (sequence %"ULONGFORMAT") inconsistent",
-	"Page %"ULONGFORMAT" has SCN %"ULONGFORMAT" while at SCN's page it is "ULONGFORMAT,
+	"Page %"ULONGFORMAT" has SCN %"ULONGFORMAT" while at SCN's page it is %"ULONGFORMAT,
 	"Blob %"SQUADFORMAT" has unknown level %d instead of (0, 1, 2)"
 };
 
