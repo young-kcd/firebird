@@ -115,7 +115,7 @@ public:
 	explicit IscStatement(YAttachment* aAttachment)
 		: parameters(getPool()), cursorName(getPool()),
 		  attachment(aAttachment), statement(NULL),
-		  cursor(NULL), userHandle(NULL)
+		  userHandle(NULL)
 	{ }
 
 	FB_API_HANDLE& getHandle();
@@ -125,16 +125,20 @@ public:
 	void checkPrepared(ISC_STATUS code = isc_unprepared_stmt) const
 	{
 		if (!statement)
-		{
 			Arg::Gds(code).raise();
-		}
 	}
 
-	void checkCursor() const
+	void checkCursor(bool mustBeOpen) const
 	{
-		if (!cursor)
+		if (mustBeOpen)
 		{
-			Arg::Gds(isc_dsql_cursor_not_open).raise();
+			if (!statement || !statement->cursor)
+				Arg::Gds(isc_dsql_cursor_not_open).raise();
+		}
+		else
+		{
+			if (statement && statement->cursor)
+				Arg::Gds(isc_dsql_cursor_open_err).raise();
 		}
 	}
 
@@ -144,7 +148,6 @@ public:
 	string cursorName;
 	YAttachment* attachment;
 	YStatement* statement;
-	IResultSet* cursor;
 	FB_API_HANDLE* userHandle;
 };
 
@@ -837,14 +840,14 @@ namespace Why
 namespace {
 	void IscStatement::closeCursor(Why::StatusVector* status)
 	{
-		if (cursor)
+		if (statement && statement->cursor)
 		{
-			cursor->close(status);
+			statement->cursor->close(status);
 			if (!status->isSuccess())
 			{
 				Arg::StatusVector(status->get()).raise();
 			}
-			cursor = NULL;
+			statement->cursor = NULL;
 		}
 	}
 
@@ -1995,11 +1998,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
 										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
-		if (statement->cursor)
-		{
-			(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
-			 Arg::Gds(isc_dsql_cursor_open_err)).raise();
-		}
+		statement->checkCursor(false);
 
 		unsigned flags = statement->statement->getFlags(&status);
 		if (!status.isSuccess())
@@ -2011,8 +2010,9 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		{
 			if (outBlrLength)
 			{
-				statement->cursor = statement->statement->openCursor(&status, transaction,
+				statement->statement->openCursor(&status, transaction,
 					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
+				fb_assert(statement->statement->cursor);
 			}
 			else	// delay execution till first fetch (with output format)
 			{
@@ -2272,8 +2272,6 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 		if (!sqlda)
 			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
 
-		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
-
 		Array<UCHAR> outBlr, outMessage;
 		sqldaParse(sqlda, outBlr, outMessage, dialect);
 
@@ -2307,15 +2305,11 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 
 		if (!statement->parMetadata)
 		{
-			statement->checkCursor();
+			statement->checkCursor(true);
 		}
 		else
 		{
-			if (statement->cursor)
-			{
-				(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
-				 Arg::Gds(isc_dsql_cursor_open_err)).raise();
-			}
+			statement->checkCursor(false);
 
 			InternalMessageBuffer msgBuffer(blrLength, reinterpret_cast<UCHAR*>(blr),
 				msgLength, reinterpret_cast<UCHAR*>(msg));
@@ -2326,8 +2320,9 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 				 Arg::Gds(isc_dsql_cursor_open_err)).raise();
 			}
 
-			statement->cursor = statement->statement->openCursor(&status, statement->transaction,
+			statement->statement->openCursor(&status, statement->transaction,
 				statement->parMetadata, statement->parameters.begin(), msgBuffer.metadata);
+			fb_assert(statement->statement->cursor);
 
 			if (!status.isSuccess())
 			{
@@ -2339,7 +2334,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 			statement->transaction = NULL;
 		}
 
-		if (!statement->cursor->fetchNext(&status, reinterpret_cast<UCHAR*>(msg)))
+		if (!statement->statement->cursor->fetchNext(&status, reinterpret_cast<UCHAR*>(msg)))
 		{
 			return status.isSuccess() ? 100 : status[1];
 		}
@@ -3845,7 +3840,7 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
 	: YHelper<YStatement, IStatement, FB_STATEMENT_VERSION>(aNext),
-	  attachment(aAttachment), openedCursor(NULL), input(true), output(false)
+	  attachment(aAttachment), cursor(NULL), input(true), output(false)
 {
 	attachment->childStatements.add(this);
 }
@@ -3854,10 +3849,10 @@ void YStatement::destroy()
 {
 	{	// scope
 		MutexLockGuard guard(statementMutex, FB_FUNCTION);
-		if (openedCursor)
+		if (cursor)
 		{
-			openedCursor->destroy();
-			openedCursor = NULL;
+			cursor->destroy();
+			cursor = NULL;
 		}
 	}
 
@@ -4056,7 +4051,9 @@ IResultSet* YStatement::openCursor(Firebird::IStatus* status, ITransaction* tran
 		}
 		fb_assert(rs);
 
-		return new YResultSet(attachment, this, rs);
+		YTransaction* const yTra = attachment->getTransaction(status, transaction);
+
+		return new YResultSet(attachment, yTra, this, rs);
 	}
 	catch (const Exception& e)
 	{
@@ -4090,27 +4087,31 @@ void YStatement::free(IStatus* status)
 //-------------------------------------
 
 
-YResultSet::YResultSet(YAttachment* aAttachment, IResultSet* aNext)
+YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, IResultSet* aNext)
 	: YHelper<YResultSet, IResultSet, FB_RESULTSET_VERSION>(aNext),
-	  attachment(aAttachment),
+	  attachment(anAttachment),
+	  transaction(aTransaction),
 	  statement(NULL)
 {
-	fb_assert(aNext);
-	attachment->childCursors.add(this);
+	fb_assert(aTransaction && aNext);
+	transaction->childCursors.add(this);
 }
 
-YResultSet::YResultSet(YAttachment* aAttachment, YStatement* aStatement, IResultSet* aNext)
+YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, YStatement* aStatement, IResultSet* aNext)
 	: YHelper<YResultSet, IResultSet, FB_RESULTSET_VERSION>(aNext),
-	  attachment(aAttachment),
+	  attachment(anAttachment),
+	  transaction(aTransaction),
 	  statement(aStatement)
 {
-	fb_assert(aNext);
+	fb_assert(aTransaction && aNext);
+	transaction->childCursors.add(this);
+
 	MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
-	if (statement->openedCursor)
-	{
+
+	if (statement->cursor)
 		Arg::Gds(isc_cursor_already_open).raise();
-	}
-	statement->openedCursor = this;
+
+	statement->cursor = this;
 }
 
 void YResultSet::destroy()
@@ -4118,14 +4119,12 @@ void YResultSet::destroy()
 	if (statement)
 	{
 		MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
-		fb_assert(statement->openedCursor == this);
-		statement->openedCursor = NULL;
+		fb_assert(statement->cursor == this);
+		statement->cursor = NULL;
 	}
 
-	if (attachment)
-	{
-		attachment->childCursors.remove(this);
-	}
+	fb_assert(transaction);
+	transaction->childCursors.remove(this);
 
 	destroy2();
 }
@@ -4313,6 +4312,7 @@ YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
 	: YHelper<YTransaction, ITransaction, FB_TRANSACTION_VERSION>(aNext),
 	  attachment(aAttachment),
 	  childBlobs(getPool()),
+	  childCursors(getPool()),
 	  cleanupHandlers(getPool())
 {
 	if (attachment)
@@ -4338,6 +4338,7 @@ void YTransaction::destroy()
 	cleanupHandlers.clear();
 
 	childBlobs.destroy();
+	childCursors.destroy();
 
 	if (attachment)
 		attachment->childTransactions.remove(this);
@@ -4570,7 +4571,6 @@ YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathNam
 	  childRequests(getPool()),
 	  childStatements(getPool()),
 	  childTransactions(getPool()),
-	  childCursors(getPool()),
 	  cleanupHandlers(getPool())
 {
 	provider->addRef();
@@ -4605,7 +4605,6 @@ void YAttachment::destroy()
 	childBlobs.destroy();
 	childEvents.destroy();
 	childTransactions.destroy();
-	childCursors.destroy();
 
 	removeHandle(&attachments, handle);
 
@@ -4859,7 +4858,9 @@ IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 		rs = entry.next()->openCursor(status, trans, length, string, dialect,
 			inMetadata, inBuffer, outMetadata);
 
-		return new YResultSet(this, rs);
+		YTransaction* const yTra = getTransaction(status, transaction);
+
+		return new YResultSet(this, yTra, rs);
 	}
 	catch (const Exception& e)
 	{

@@ -2898,6 +2898,11 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 				return this->send_response(sendL, 0, 0, &status_vector, true);
 			}
 			statement->rsr_cursor = NULL;
+			fb_assert(statement->rsr_rtr);
+			size_t pos;
+			if (!statement->rsr_rtr->rtr_cursors.find(statement, pos))
+				fb_assert(false);
+			statement->rsr_rtr->rtr_cursors.remove(pos);
 		}
 	}
 
@@ -3213,14 +3218,20 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	{
 		if (out_blr_length)
 		{
-			statement->rsr_cursor = statement->rsr_iface->openCursor(&status_vector, tra,
-				iMsgBuffer.metadata, iMsgBuffer.buffer, oMsgBuffer.metadata);
+			fb_assert(transaction);
+
+			statement->rsr_cursor =
+				statement->rsr_iface->openCursor(&status_vector, tra,
+												 iMsgBuffer.metadata,
+												 iMsgBuffer.buffer,
+												 oMsgBuffer.metadata);
+			transaction->rtr_cursors.add(statement);
 		}
 		else	// delay execution till first fetch (with output format)
 		{
 			statement->rsr_par_metadata = iMsgBuffer.metadata;
 			statement->rsr_parameters.assign(static_cast<UCHAR*>(iMsgBuffer.buffer), in_msg_length);
-			statement->rsr_transaction = tra;
+			statement->rsr_rtr = transaction;
 			return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
 				0, &status_vector, defer);
 		}
@@ -3326,8 +3337,15 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			Arg::Gds(isc_dsql_cursor_open_err).raise();
 		}
 
-		statement->rsr_cursor = statement->rsr_iface->openCursor(&status_vector, statement->rsr_transaction,
-			statement->rsr_par_metadata, statement->rsr_parameters.begin(), msgBuffer.metadata);
+		fb_assert(statement->rsr_rtr);
+
+		statement->rsr_cursor =
+			statement->rsr_iface->openCursor(&status_vector,
+											 statement->rsr_rtr->rtr_iface,
+											 statement->rsr_par_metadata,
+											 statement->rsr_parameters.begin(),
+											 msgBuffer.metadata);
+		statement->rsr_rtr->rtr_cursors.add(statement);
 
 		if (!status_vector.isSuccess())
 		{
@@ -3336,7 +3354,6 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		statement->rsr_par_metadata = NULL;
 		statement->rsr_parameters.clear();
-		statement->rsr_transaction = NULL;
 	}
 
 
@@ -4980,6 +4997,13 @@ static void release_transaction( Rtr* transaction)
 
 	while (transaction->rtr_blobs)
 		release_blob(transaction->rtr_blobs);
+
+	while (transaction->rtr_cursors.hasData())
+	{
+		Rsr* const statement = transaction->rtr_cursors.pop();
+		fb_assert(statement->rsr_cursor);
+		statement->rsr_cursor = NULL;
+	}
 
 	for (Rtr** p = &rdb->rdb_transactions; *p; p = &(*p)->rtr_next)
 	{

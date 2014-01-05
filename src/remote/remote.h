@@ -167,10 +167,13 @@ struct Rtr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rtr>
 	USHORT			rtr_id;
 	bool			rtr_limbo;
 
+	Firebird::Array<Rsr*> rtr_cursors;
+
 public:
 	Rtr() :
 		rtr_rdb(0), rtr_next(0), rtr_blobs(0),
-		rtr_iface(NULL), rtr_id(0), rtr_limbo(0)
+		rtr_iface(NULL), rtr_id(0), rtr_limbo(0),
+		rtr_cursors(getPool())
 	{ }
 
 	static ISC_STATUS badHandle() { return isc_bad_trans_handle; }
@@ -416,7 +419,6 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 
 	Firebird::RefPtr<Firebird::IMessageMetadata> rsr_par_metadata;
 	Firebird::UCharBuffer rsr_parameters;
-	Firebird::RefPtr<Firebird::ITransaction> rsr_transaction;
 	Firebird::string rsr_cursor_name;
 
 public:

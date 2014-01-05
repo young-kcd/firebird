@@ -46,6 +46,7 @@ namespace Why
 class YAttachment;
 class YBlob;
 class YRequest;
+class YResultSet;
 class YService;
 class YStatement;
 class YTransaction;
@@ -236,6 +237,7 @@ public:
 public:
 	YAttachment* attachment;
 	HandleArray<YBlob> childBlobs;
+	HandleArray<YResultSet> childCursors;
 	Firebird::Array<CleanupCallback*> cleanupHandlers;
 
 private:
@@ -243,10 +245,13 @@ private:
 		: YHelper<YTransaction, Firebird::ITransaction, FB_TRANSACTION_VERSION>(from->next),
 		  attachment(from->attachment),
 		  childBlobs(getPool()),
+		  childCursors(getPool()),
 		  cleanupHandlers(getPool())
 	{
 		childBlobs.assign(from->childBlobs);
 		from->childBlobs.clear();
+		childCursors.assign(from->childCursors);
+		from->childCursors.clear();
 		cleanupHandlers.assign(from->cleanupHandlers);
 		from->cleanupHandlers.clear();
 	}
@@ -283,8 +288,8 @@ class YResultSet FB_FINAL : public YHelper<YResultSet, Firebird::IResultSet, FB_
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_result_set;
 
-	YResultSet(YAttachment* aAttachment, Firebird::IResultSet* aNext);
-	YResultSet(YAttachment* aAttachment, YStatement* aStatement, Firebird::IResultSet* aNext);
+	YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, Firebird::IResultSet* aNext);
+	YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, YStatement* aStatement, Firebird::IResultSet* aNext);
 
 	void destroy();
 
@@ -302,6 +307,7 @@ public:
 
 public:
 	YAttachment* attachment;
+	YTransaction* transaction;
 	YStatement* statement;
 };
 
@@ -350,7 +356,7 @@ public:
 public:
 	Firebird::Mutex statementMutex;
 	YAttachment* attachment;
-	YResultSet* openedCursor;
+	YResultSet* cursor;
 
 	Firebird::IMessageMetadata* getMetadata(bool in, Firebird::IStatement* next);
 
@@ -439,7 +445,6 @@ public:
 	HandleArray<YRequest> childRequests;
 	HandleArray<YStatement> childStatements;
 	HandleArray<YTransaction> childTransactions;
-	HandleArray<YResultSet> childCursors;
 	Firebird::Array<CleanupCallback*> cleanupHandlers;
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 };
