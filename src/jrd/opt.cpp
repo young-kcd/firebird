@@ -470,9 +470,10 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	// memory will then be in csb->csb_rpt[stream].csb_idx_allocation, which
 	// gets cleaned up before this function exits.
 
-	AutoPtr<OptimizerBlk> opt(FB_NEW(*tdbb->getDefaultPool()) OptimizerBlk(tdbb->getDefaultPool(),
-		rse, parent_stack));
+	AutoPtr<OptimizerBlk> opt(FB_NEW(*tdbb->getDefaultPool())
+		OptimizerBlk(tdbb->getDefaultPool(), rse, parent_stack));
 	opt->opt_streams.grow(csb->csb_n_stream);
+	opt->optimizeFirstRows = (rse->flags & RseNode::FLAG_OPT_FIRST_ROWS) != 0;
 	RecordSource* rsb = NULL;
 
 	try {
@@ -1805,7 +1806,8 @@ static void form_rivers(thread_db*		tdbb,
 
 	if (temp.getCount() != 0)
 	{
-		OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, temp, sort_clause, plan_clause);
+		OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, temp,
+									 sort_clause ? *sort_clause : NULL, plan_clause);
 
 		StreamType count;
 		do {
@@ -2008,11 +2010,10 @@ static void gen_join(thread_db*		tdbb,
 		return;
 	}
 
-	OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, streams, sort_clause, plan_clause);
+	OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, streams,
+								 sort_clause ? *sort_clause : NULL, plan_clause);
 
-	//stream_array_t temp;
 	StreamList temp;
-	//memcpy(temp, streams, streams[0] + 1);
 	temp.assign(streams);
 
 	StreamType count;
@@ -2289,7 +2290,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		// Persistent table
 		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream,
 											  outer_flag, inner_flag,
-											  (sort_ptr ? *sort_ptr : NULL));
+											  sort_ptr ? *sort_ptr : NULL);
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion());
 
 		if (candidate)

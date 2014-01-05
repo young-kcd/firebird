@@ -251,6 +251,7 @@ public:
 	double baseCost;
 	int baseIndexes;
 	int baseConjunctionMatches;
+	bool baseNavigated;
 	bool used;
 
 	IndexedRelationships indexedRelationships;
@@ -263,7 +264,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const StreamList& streams,
-					   SortNode** sort_clause, PlanNode* plan_clause);
+					   SortNode* sort_clause, PlanNode* plan_clause);
 	~OptimizerInnerJoin();
 
 	StreamType findJoinOrder();
@@ -273,7 +274,7 @@ protected:
 	void calculateStreamInfo();
 	bool cheaperRelationship(IndexRelationship* checkRelationship,
 		IndexRelationship* withRelationship) const;
-	void estimateCost(StreamType stream, double* cost, double* resulting_cardinality) const;
+	void estimateCost(StreamType stream, double* cost, double* resulting_cardinality, bool start) const;
 	void findBestOrder(StreamType position, InnerJoinStreamInfo* stream,
 		IndexedRelationships* processList, double cost, double cardinality);
 	void getIndexedRelationship(InnerJoinStreamInfo* baseStream, InnerJoinStreamInfo* testStream);
@@ -289,7 +290,7 @@ protected:
 private:
 	MemoryPool& pool;
 	thread_db* tdbb;
-	SortNode** sort;
+	SortNode* sort;
 	PlanNode* plan;
 	CompilerScratch* csb;
 	Database* database;

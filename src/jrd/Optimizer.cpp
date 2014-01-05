@@ -367,11 +367,12 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
  * Functional description
  *
  **************************************/
-	tdbb = NULL;
 	createIndexScanNodes = false;
 	setConjunctionsMatched = false;
 
+	tdbb = NULL;
 	SET_TDBB(tdbb);
+
 	this->database = tdbb->getDatabase();
 	this->stream = streamNumber;
 	this->optimizer = opt;
@@ -386,11 +387,8 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 	// Allocate needed indexScratches
 
 	index_desc* idx = csb_tail->csb_idx->items;
-	for (int i = 0; i < csb_tail->csb_indices; ++i, ++idx) {
-		indexScratches.add( IndexScratch(p, tdbb, idx, csb_tail) );
-	}
-
-	inversionCandidates.shrink(0);
+	for (int i = 0; i < csb_tail->csb_indices; ++i, ++idx)
+		indexScratches.add(IndexScratch(p, tdbb, idx, csb_tail));
 }
 
 OptimizerRetrieval::~OptimizerRetrieval()
@@ -405,9 +403,8 @@ OptimizerRetrieval::~OptimizerRetrieval()
  *
  **************************************/
 
-	for (size_t i = 0; i < inversionCandidates.getCount(); ++i) {
+	for (size_t i = 0; i < inversionCandidates.getCount(); ++i)
 		delete inversionCandidates[i];
-	}
 }
 
 InversionNode* OptimizerRetrieval::composeInversion(InversionNode* node1, InversionNode* node2,
@@ -618,8 +615,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 			}
 		}
 	}
-
-	invCandidate->navigated = (navigationCandidate != NULL);
 
 #ifdef OPT_DEBUG_RETRIEVAL
 	// Debug
@@ -1240,9 +1235,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
  *
  **************************************/
 
-	if (inversions->isEmpty()) {
+	if (inversions->isEmpty() && !navigationCandidate)
 		return NULL;
-	}
 
 	const double streamCardinality =
 		MAX(csb->csb_rpt[stream].csb_cardinality, MINIMUM_CARDINALITY);
@@ -1474,9 +1468,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			}
 		}
 
-		if (restartLoop) {
+		if (restartLoop)
 			continue;
-		}
 
 		// If we have a candidate which is interesting build the inversion
 		// else we're done.
@@ -1620,6 +1613,20 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		else {
 			break;
 		}
+	}
+
+	// If we have no index used for filtering, but there's a navigational walk,
+	// set up the inversion candidate appropriately.
+	if (navigationCandidate)
+	{
+		if (!invCandidate)
+			invCandidate = FB_NEW(pool) InversionCandidate(pool);
+
+		invCandidate->selectivity *= navigationCandidate->selectivity;
+		invCandidate->cost += DEFAULT_INDEX_COST - 1 +
+			navigationCandidate->cardinality * navigationCandidate->selectivity;
+		invCandidate->indexes += 1;
+		invCandidate->navigated = true;
 	}
 
 	if (invCandidate && matches.getCount())
@@ -2261,21 +2268,18 @@ void OptimizerRetrieval::printCandidate(const InversionCandidate* candidate) con
 	fprintf(opt_debug_file, "     cost(%1.2f), selectivity(%1.10f), indexes(%d), matched(%d, %d)",
 		candidate->cost, candidate->selectivity, candidate->indexes, candidate->matchedSegments,
 		candidate->nonFullMatchedSegments);
-	if (candidate->unique) {
+	if (candidate->unique)
 		fprintf(opt_debug_file, ", unique");
-	}
 	int depFromCount = candidate->dependentFromStreams.getCount();
 	if (depFromCount >= 1)
 	{
 		fprintf(opt_debug_file, ", dependent from ");
 		for (int i = 0; i < depFromCount; i++)
 		{
-			if (i == 0) {
+			if (i == 0)
 				fprintf(opt_debug_file, "%d", candidate->dependentFromStreams[i]);
-			}
-			else {
+			else
 				fprintf(opt_debug_file, ", %d", candidate->dependentFromStreams[i]);
-			}
 		}
 	}
 	fprintf(opt_debug_file, "\n");
@@ -2456,6 +2460,7 @@ InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
 	baseCost = 0;
 	baseIndexes = 0;
 	baseConjunctionMatches = 0;
+	baseNavigated = false;
 	used = false;
 	previousExpectedStreams = 0;
 }
@@ -2479,7 +2484,7 @@ bool InnerJoinStreamInfo::independent() const
 
 
 OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const StreamList& streams,
-									   SortNode** sort_clause, PlanNode* plan_clause)
+									   SortNode* sort_clause, PlanNode* plan_clause)
 	: pool(p), innerStreams(p)
 {
 /**************************************
@@ -2505,7 +2510,6 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const S
 	for (size_t i = 0; i < innerStreams.getCount(); i++)
 	{
 		innerStream[i] = FB_NEW(p) InnerJoinStreamInfo(p);
-		//innerStream[i]->stream = streams[i + 1];
 		innerStream[i]->stream = streams[i];
 	}
 
@@ -2528,9 +2532,7 @@ OptimizerInnerJoin::~OptimizerInnerJoin()
 	for (size_t i = 0; i < innerStreams.getCount(); i++)
 	{
 		for (size_t j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++)
-		{
 			delete innerStreams[i]->indexedRelationships[j];
-		}
 
 		delete innerStreams[i];
 	}
@@ -2584,13 +2586,14 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		csb_tail->activate();
 
 		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStreams[i]->stream,
-											  false, false, NULL);
+											  false, false, sort);
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
 
 		innerStreams[i]->baseCost = candidate->cost;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
 		innerStreams[i]->baseConjunctionMatches = (int) candidate->matches.getCount();
+		innerStreams[i]->baseNavigated = candidate->navigated;
 
 		csb_tail->deactivate();
 	}
@@ -2604,9 +2607,8 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		// stream and add the information.
 		for (size_t j = 0; j < innerStreams.getCount(); j++)
 		{
-			if (innerStreams[j]->stream != innerStreams[i]->stream) {
+			if (innerStreams[j]->stream != innerStreams[i]->stream)
 				getIndexedRelationship(innerStreams[i], innerStreams[j]);
-			}
 		}
 
 		csb_tail->deactivate();
@@ -2625,21 +2627,21 @@ void OptimizerInnerJoin::calculateStreamInfo()
 			{
 				// First those streams which can't be used by other streams
 				// or can't depend on a stream.
-				if (innerStreams[i]->independent() && !tempStreams[index]->independent()) {
+				if (innerStreams[i]->independent() && !tempStreams[index]->independent())
 					break;
-				}
+
 				// Next those with the lowest previous expected streams
 				const int compare = innerStreams[i]->previousExpectedStreams -
 					tempStreams[index]->previousExpectedStreams;
-				if (compare < 0) {
+
+				if (compare < 0)
 					break;
-				}
+
 				if (compare == 0)
 				{
 					// Next those with the cheapest base cost
-					if (innerStreams[i]->baseCost < tempStreams[index]->baseCost) {
+					if (innerStreams[i]->baseCost < tempStreams[index]->baseCost)
 						break;
-					}
 				}
 			}
 			tempStreams.insert(index, innerStreams[i]);
@@ -2664,30 +2666,27 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
  *	is cheaper as withRelationship.
  *
  **************************************/
-	if (checkRelationship->cost == 0) {
+	if (checkRelationship->cost == 0)
 		return true;
-	}
-	if (withRelationship->cost == 0) {
+
+	if (withRelationship->cost == 0)
 		return false;
-	}
 
 	const double compareValue = checkRelationship->cost / withRelationship->cost;
 	if (compareValue >= 0.98 && compareValue <= 1.02)
 	{
 		// cost is nearly the same, now check on cardinality
-		if (checkRelationship->cardinality < withRelationship->cardinality) {
+		if (checkRelationship->cardinality < withRelationship->cardinality)
 			return true;
-		}
 	}
-	else if (checkRelationship->cost < withRelationship->cost) {
+	else if (checkRelationship->cost < withRelationship->cost)
 		return true;
-	}
 
 	return false;
 }
 
 void OptimizerInnerJoin::estimateCost(StreamType stream, double* cost,
-	double* resulting_cardinality) const
+	double* resulting_cardinality, bool start) const
 {
 /**************************************
  *
@@ -2700,7 +2699,8 @@ void OptimizerInnerJoin::estimateCost(StreamType stream, double* cost,
  **************************************/
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated selectivity will be returned
-	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false, NULL);
+	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false,
+										  start ? sort : NULL);
 	AutoPtr<const InversionCandidate> candidate(optimizerRetrieval.getCost());
 
 	*cost = candidate->cost;
@@ -2736,13 +2736,20 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 	printStartOrder();
 #endif
 
+	unsigned navigations = 0;
+
 	size_t i = 0;
 	remainingStreams = 0;
+
 	for (i = 0; i < innerStreams.getCount(); i++)
 	{
 		if (!innerStreams[i]->used)
 		{
 			remainingStreams++;
+
+			if (innerStreams[i]->baseNavigated)
+				navigations++;
+
 			if (innerStreams[i]->independent())
 			{
 				if (!optimizer->opt_best_count || innerStreams[i]->baseCost < optimizer->opt_best_cost)
@@ -2763,13 +2770,19 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 		{
 			if (!innerStreams[i]->used)
 			{
-				indexedRelationships.clear();
-				findBestOrder(0, innerStreams[i], &indexedRelationships, 0.0, 1.0);
+				// If optimization for first rows has been requested and index navigations are possible,
+				// then consider only join orders starting with a navigational stream
 
-				if (plan)
+				if (!optimizer->optimizeFirstRows || !navigations || innerStreams[i]->baseNavigated)
 				{
-					// If a explicit PLAN was specified we should be ready;
-					break;
+					indexedRelationships.clear();
+					findBestOrder(0, innerStreams[i], &indexedRelationships, 0.0, 1.0);
+
+					if (plan)
+					{
+						// If a explicit PLAN was specified we should be ready;
+						break;
+					}
 				}
 #ifdef OPT_DEBUG
 				// Debug
@@ -2814,6 +2827,8 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 
 	fb_assert(processList);
 
+	const bool start = (position == 0);
+
 	// do some initializations.
 	csb->csb_rpt[stream->stream].activate();
 	optimizer->opt_streams[position].opt_stream_number = stream->stream;
@@ -2824,16 +2839,15 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 	// state after each test.
 	HalfStaticArray<bool, OPT_STATIC_ITEMS> streamFlags(pool);
 	streamFlags.grow(innerStreams.getCount());
-	for (size_t i = 0; i < streamFlags.getCount(); i++) {
+	for (size_t i = 0; i < streamFlags.getCount(); i++)
 		streamFlags[i] = innerStreams[i]->used;
-	}
 
 	// Compute delta and total estimate cost to fetch this stream.
 	double position_cost, position_cardinality, new_cost = 0, new_cardinality = 0;
 
 	if (!plan)
 	{
-		estimateCost(stream->stream, &position_cost, &position_cardinality);
+		estimateCost(stream->stream, &position_cost, &position_cardinality, start);
 		new_cost = cost + cardinality * position_cost;
 		new_cardinality = position_cardinality * cardinality;
 	}
@@ -2845,9 +2859,8 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 	{
 		optimizer->opt_best_count = position;
 		optimizer->opt_best_cost = new_cost;
-		for (OptimizerBlk::opt_stream* tail = optimizer->opt_streams.begin(); tail < order_end; tail++) {
+		for (OptimizerBlk::opt_stream* tail = optimizer->opt_streams.begin(); tail < order_end; tail++)
 			tail->opt_best_stream = tail->opt_stream_number;
-		}
 	}
 
 #ifdef OPT_DEBUG
@@ -2861,15 +2874,13 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 	bool done = false;
 
 	// if we've used up all the streams there's no reason to go any further.
-	if (position == remainingStreams) {
+	if (position == remainingStreams)
 		done = true;
-	}
+
 	// If we know a combination with all streams used and the
 	// current cost is higher as the one from the best we're done.
 	if ((optimizer->opt_best_count == remainingStreams) && (optimizer->opt_best_cost < new_cost))
-	{
 		done = true;
-	}
 
 	if (!done && !plan)
 	{
@@ -2905,9 +2916,8 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 					IndexRelationship** relationships = processList->begin();
 					for (index = 0; index < processList->getCount(); index++)
 					{
-						if (cheaperRelationship(relationship, relationships[index])) {
+						if (cheaperRelationship(relationship, relationships[index]))
 							break;
-						}
 					}
 					processList->insert(index, relationship);
 				}
@@ -2944,9 +2954,8 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 
 	// Clean up from any changes made for compute the cost for this stream
 	csb->csb_rpt[stream->stream].deactivate();
-	for (size_t i = 0; i < streamFlags.getCount(); i++) {
+	for (size_t i = 0; i < streamFlags.getCount(); i++)
 		innerStreams[i]->used = streamFlags[i];
-	}
 }
 
 void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
@@ -2990,9 +2999,8 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		size_t index = 0;
 		for (; index < baseStream->indexedRelationships.getCount(); index++)
 		{
-			if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index])) {
+			if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index]))
 				break;
-			}
 		}
 		baseStream->indexedRelationships.insert(index, indexRelationship);
 		testStream->previousExpectedStreams++;
@@ -3016,9 +3024,8 @@ InnerJoinStreamInfo* OptimizerInnerJoin::getStreamInfo(StreamType stream)
 
 	for (size_t i = 0; i < innerStreams.getCount(); i++)
 	{
-		if (innerStreams[i]->stream == stream) {
+		if (innerStreams[i]->stream == stream)
 			return innerStreams[i];
-		}
 	}
 
 	// We should never come here
@@ -3043,12 +3050,10 @@ void OptimizerInnerJoin::printBestOrder() const
 	fprintf(opt_debug_file, " best order, streams: ");
 	for (StreamType i = 0; i < optimizer->opt_best_count; i++)
 	{
-		if (i == 0) {
+		if (i == 0)
 			fprintf(opt_debug_file, "%d", optimizer->opt_streams[i].opt_best_stream);
-		}
-		else {
+		else
 			fprintf(opt_debug_file, ", %d", optimizer->opt_streams[i].opt_best_stream);
-		}
 	}
 	fprintf(opt_debug_file, "\n");
 	fclose(opt_debug_file);
@@ -3077,12 +3082,10 @@ void OptimizerInnerJoin::printFoundOrder(StreamType position, double positionCos
 	const OptimizerBlk::opt_stream* const order_end = tail + position;
 	for (; tail < order_end; tail++)
 	{
-		if (tail == optimizer->opt_streams.begin()) {
+		if (tail == optimizer->opt_streams.begin())
 			fprintf(opt_debug_file, "%d", tail->opt_stream_number);
-		}
-		else {
+		else
 			fprintf(opt_debug_file, ", %d", tail->opt_stream_number);
-		}
 	}
 	fprintf(opt_debug_file, "\n");
 	fclose(opt_debug_file);
@@ -3104,9 +3107,8 @@ void OptimizerInnerJoin::printProcessList(const IndexedRelationships* processLis
 	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "   basestream %d, relationships: stream(cost)", stream);
 	const IndexRelationship* const* relationships = processList->begin();
-	for (int i = 0; i < processList->getCount(); i++) {
+	for (int i = 0; i < processList->getCount(); i++)
 		fprintf(opt_debug_file, ", %d (%1.2f)", relationships[i]->stream, relationships[i]->cost);
-	}
 	fprintf(opt_debug_file, "\n");
 	fclose(opt_debug_file);
 }
@@ -3128,9 +3130,8 @@ void OptimizerInnerJoin::printStartOrder() const
 	bool firstStream = true;
 	for (int i = 0; i < innerStreams.getCount(); i++)
 	{
-		if (!innerStreams[i]->used) {
+		if (!innerStreams[i]->used)
 			fprintf(opt_debug_file, ", %d (%1.2f)", innerStreams[i]->stream, innerStreams[i]->baseCost);
-		}
 	}
 	fprintf(opt_debug_file, "\n");
 	fclose(opt_debug_file);

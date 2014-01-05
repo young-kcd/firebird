@@ -1340,7 +1340,7 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 {
 	SET_TDBB(tdbb);
 
-	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
+	int count = (unsigned int) csb->csb_blr_reader.getByte();
 	RseNode* rse = FB_NEW(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
 
 	while (--count >= 0)
@@ -1360,6 +1360,7 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			if (rse_op == blr_rs_stream)
 				PAR_syntax_error(csb, "RecordSelExpr stream clause");
 			rse->rse_first = PAR_parse_value(tdbb, csb);
+			rse->flags |= RseNode::FLAG_OPT_FIRST_ROWS;
 			break;
 
 		case blr_skip:

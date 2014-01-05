@@ -1650,6 +1650,9 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	RseBoolNode* node = FB_NEW(pool) RseBoolNode(pool, blrOp);
 	node->rse = PAR_rse(tdbb, csb);
 
+	if (blrOp == blr_any || blrOp == blr_exists) // maybe for blr_unique as well?
+		node->rse->flags |= RseNode::FLAG_OPT_FIRST_ROWS;
+
 	if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
 		node->parentForNode = csb->csb_currentForNode;
 

@@ -67,9 +67,7 @@ public:
 		  beds(*pool),
 		  localStreams(*pool),
 		  keyStreams(*pool)
-	{
-		//compileStreams[0] = beds[0] = localStreams[0] = keyStreams[0] = 0;
-	}
+	{}
 
 	CompilerScratch* opt_csb;				// compiler scratch block
 	double opt_best_cost;					// cost of best join order
@@ -100,8 +98,8 @@ public:
 	StreamList outerStreams, subStreams;
 	BoolExprNodeStack conjunctStack;
 	SLONG conjunctCount;
-	//stream_array_t compileStreams, beds, localStreams, keyStreams;
 	StreamList compileStreams, beds, localStreams, keyStreams;
+	bool optimizeFirstRows;
 };
 
 // values for opt_conjunct_flags
