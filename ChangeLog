@@ -1,3 +1,21 @@
+ 2014-01-05 19:40  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/rse.h
+Resolved CORE-1482: Make optimizer to consider ORDER BY optimization when making decision about join order.
+Also, improved (hopefully) cost calculation for navigational retrievals.
+
+ 2014-01-05 16:25  dimitr 
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed CORE-4313: Error "Attempt to reopen an open cursor" may be raised if the query handle is reused in a different transaction.
+
  2013-12-29 15:55  hvlad 
    M src/jrd/validation.cpp
 One more typo in validation messages
