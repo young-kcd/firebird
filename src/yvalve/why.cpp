@@ -119,7 +119,7 @@ public:
 	{ }
 
 	FB_API_HANDLE& getHandle();
-	void closeCursor(Why::StatusVector* status);
+	void closeCursor(Why::StatusVector* status, bool raise);
 	void closeStatement(Why::StatusVector* status);
 
 	void checkPrepared(ISC_STATUS code = isc_unprepared_stmt) const
@@ -838,7 +838,7 @@ namespace Why
 }	// namespace Why
 
 namespace {
-	void IscStatement::closeCursor(Why::StatusVector* status)
+	void IscStatement::closeCursor(Why::StatusVector* status, bool raise)
 	{
 		if (statement && statement->cursor)
 		{
@@ -848,6 +848,10 @@ namespace {
 				Arg::StatusVector(status->get()).raise();
 			}
 			statement->cursor = NULL;
+		}
+		else if (raise)
+		{
+			Arg::Gds(isc_dsql_cursor_close_err).raise();
 		}
 	}
 
@@ -2357,7 +2361,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 		if (option & DSQL_drop)
 		{
 			// Release everything
-			statement->closeCursor(&status);
+			statement->closeCursor(&status, false);
 			statement->closeStatement(&status);
 			statement->release();
  			*stmtHandle = 0;
@@ -2365,13 +2369,13 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 		else if (option & DSQL_unprepare)
 		{
 			// Release everything but the request itself
-			statement->closeCursor(&status);
+			statement->closeCursor(&status, false);
 			statement->closeStatement(&status);
 		}
 		else if (option & DSQL_close)
 		{
 			// Only close the cursor
-			statement->closeCursor(&status);
+			statement->closeCursor(&status, true);
 		}
 	}
 	catch (const Exception& e)

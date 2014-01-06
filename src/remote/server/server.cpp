@@ -2904,6 +2904,11 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 				fb_assert(false);
 			statement->rsr_rtr->rtr_cursors.remove(pos);
 		}
+		else if (!(free_stmt->p_sqlfree_option & (DSQL_drop | DSQL_unprepare)))
+		{
+			Arg::Gds(isc_dsql_cursor_close_err).copyTo(&status_vector);
+			return this->send_response(sendL, 0, 0, &status_vector, true);
+		}
 	}
 
 	if (free_stmt->p_sqlfree_option & (DSQL_drop | DSQL_unprepare))
