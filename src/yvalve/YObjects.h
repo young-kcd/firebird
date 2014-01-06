@@ -289,7 +289,8 @@ public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_result_set;
 
 	YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, Firebird::IResultSet* aNext);
-	YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, YStatement* aStatement, Firebird::IResultSet* aNext);
+	YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, YStatement* aStatement,
+		Firebird::IResultSet* aNext);
 
 	void destroy();
 

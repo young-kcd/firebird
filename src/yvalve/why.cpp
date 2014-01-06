@@ -2304,9 +2304,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 
 		if (!statement->parMetadata)
-		{
 			statement->checkCursor(true);
-		}
 		else
 		{
 			statement->checkCursor(false);
@@ -2325,9 +2323,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 			fb_assert(statement->statement->cursor);
 
 			if (!status.isSuccess())
-			{
 				return status[1];
-			}
 
 			statement->parMetadata = NULL;
 			statement->parameters.clear();
@@ -4097,7 +4093,8 @@ YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, IR
 	transaction->childCursors.add(this);
 }
 
-YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, YStatement* aStatement, IResultSet* aNext)
+YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction,
+			YStatement* aStatement, IResultSet* aNext)
 	: YHelper<YResultSet, IResultSet, FB_RESULTSET_VERSION>(aNext),
 	  attachment(anAttachment),
 	  transaction(aTransaction),

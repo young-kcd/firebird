@@ -1807,7 +1807,7 @@ static void form_rivers(thread_db*		tdbb,
 	if (temp.getCount() != 0)
 	{
 		OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, temp,
-									 sort_clause ? *sort_clause : NULL, plan_clause);
+									 (sort_clause ? *sort_clause : NULL), plan_clause);
 
 		StreamType count;
 		do {
@@ -2011,7 +2011,7 @@ static void gen_join(thread_db*		tdbb,
 	}
 
 	OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, streams,
-								 sort_clause ? *sort_clause : NULL, plan_clause);
+								 (sort_clause ? *sort_clause : NULL), plan_clause);
 
 	StreamList temp;
 	temp.assign(streams);
@@ -2290,7 +2290,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		// Persistent table
 		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream,
 											  outer_flag, inner_flag,
-											  sort_ptr ? *sort_ptr : NULL);
+											  (sort_ptr ? *sort_ptr : NULL));
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion());
 
 		if (candidate)

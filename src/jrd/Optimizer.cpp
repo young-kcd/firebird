@@ -1625,7 +1625,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		invCandidate->selectivity *= navigationCandidate->selectivity;
 		invCandidate->cost += DEFAULT_INDEX_COST - 1 +
 			navigationCandidate->cardinality * navigationCandidate->selectivity;
-		invCandidate->indexes += 1;
+		++invCandidate->indexes;
 		invCandidate->navigated = true;
 	}
 
@@ -2700,7 +2700,7 @@ void OptimizerInnerJoin::estimateCost(StreamType stream, double* cost,
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated selectivity will be returned
 	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false,
-										  start ? sort : NULL);
+										  (start ? sort : NULL));
 	AutoPtr<const InversionCandidate> candidate(optimizerRetrieval.getCost());
 
 	*cost = candidate->cost;

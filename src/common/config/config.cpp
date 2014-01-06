@@ -718,7 +718,7 @@ int Config::getWireCrypt(WireCryptMode wcMode) const
 		return WIRE_CRYPT_DISABLED;
 	if (wireCrypt == "ENABLED")
 		return WIRE_CRYPT_ENABLED;
-	
+
 	// the safest choice
 	return WIRE_CRYPT_REQUIRED;
 }
