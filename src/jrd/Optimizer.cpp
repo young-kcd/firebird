@@ -64,8 +64,18 @@ bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType
 {
 	fb_assert(idx);
 
-	if (idx->idx_expression && idx->idx_expression->sameAs(node, true))
+	if (idx->idx_expression)
 	{
+		// The desired expression can be hidden inside a derived expression node,
+		// so try to recover it (see CORE-4118).
+		while (!idx->idx_expression->sameAs(node, true))
+		{
+			DerivedExprNode* const derivedExpr = node->as<DerivedExprNode>();
+			if (!derivedExpr)
+				return false;
+			node = derivedExpr->arg;
+		}
+
 		SortedStreamList exprStreams, nodeStreams;
 		idx->idx_expression->jrdStreamsCollector(exprStreams);
 		node->jrdStreamsCollector(nodeStreams);
