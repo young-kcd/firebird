@@ -5889,10 +5889,10 @@ user_fixed_opt($node)
 	: FIRSTNAME utf_string	{ setClause($node->firstName, "FIRSTNAME", $2); }
 	| MIDDLENAME utf_string	{ setClause($node->middleName, "MIDDLENAME", $2); }
 	| LASTNAME utf_string	{ setClause($node->lastName, "LASTNAME", $2); }
-	| GRANT ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<int>(1)); }
-	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<int>(0)); }
-	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<int>(1)); }
-	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<int>(0)); }
+	| GRANT ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<bool>(true)); }
+	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<bool>(false)); }
+	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<bool>(true)); }
+	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<bool>(false)); }
 	;
 
 %type user_var_opts(<createAlterUserNode>)

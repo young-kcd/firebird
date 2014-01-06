@@ -9280,7 +9280,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	if (active.specified)
 	{
-		userData->act.set(active.value);
+		userData->act.set((int) active.value);
 		userData->act.setEntered(1);
 	}
 

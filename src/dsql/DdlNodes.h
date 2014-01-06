@@ -1846,8 +1846,8 @@ public:
 	Firebird::string* middleName;
 	Firebird::string* lastName;
 	Firebird::string* comment;
-	Nullable<int> adminRole;
-	Nullable<int> active;
+	Nullable<bool> adminRole;
+	Nullable<bool> active;
 	Mode mode;
 
 	void addProperty(Firebird::MetaName* pr, Firebird::string* val = NULL)
