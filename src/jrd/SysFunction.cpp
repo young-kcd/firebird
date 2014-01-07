@@ -101,7 +101,7 @@ enum TrigonFunction
 const int oneDay = 86400;
 
 // auxiliary functions
-void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier);
+void add10msec(ISC_TIMESTAMP* v, SINT64 msec, SINT64 multiplier);
 double fbcot(double value) throw();
 
 // generic setParams functions
@@ -238,7 +238,7 @@ static const char
 	TRUE_VALUE[] = "TRUE";
 
 
-void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
+void add10msec(ISC_TIMESTAMP* v, SINT64 msec, SINT64 multiplier)
 {
 	const SINT64 full = msec * multiplier;
 	const int days = full / (oneDay * ISC_TIME_SECONDS_PRECISION);
@@ -348,7 +348,7 @@ void setParamsCharToUuid(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 void setParamsDateAdd(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
-		args[0]->makeLong(0);
+		args[0]->makeInt64(0);
 
 	if (argsCount >= 3 && args[2]->isUnknown())
 		args[2]->makeTimestamp();
@@ -1645,7 +1645,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 	}
 
-	const SLONG quantity = MOV_get_long(quantityDsc, 0);
+	const SINT64 quantity = MOV_get_int64(quantityDsc, 0);
 
 	switch (part)
 	{
