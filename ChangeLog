@@ -1,3 +1,27 @@
+ 2014-01-06 09:24  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-4118: Expression index may be not used for derived fields or view fields.
+
+ 2014-01-06 08:03  dimitr 
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Restored the error reporting for the already closed cursor.
+
+ 2014-01-06 00:57  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+Change type of user flags from int to bool.
+
+ 2014-01-06 00:51  asfernandes 
+   M src/common/config/config.cpp
+   M src/isql/extract.epp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/opt.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Misc.
+
  2014-01-05 19:40  dimitr 
    M src/dsql/BoolNodes.cpp
    M src/jrd/Optimizer.cpp
