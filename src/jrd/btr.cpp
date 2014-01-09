@@ -637,8 +637,12 @@ static void checkForLowerKeySkip(
 	else
 	{
 		// Check if we have a duplicate node (for the same page)
-		if (node.prefix < lower.key_length) {
-			skipLowerKey = false;
+		if (node.prefix < lower.key_length)
+		{
+			if (node.prefix + node.length == lower.key_length)
+				skipLowerKey = (memcmp(node.data, lower.key_data + node.prefix, node.length) == 0);
+			else
+				skipLowerKey = false;
 		}
 		else if ((node.prefix == lower.key_length) && node.length) 
 		{
