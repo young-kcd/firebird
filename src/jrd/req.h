@@ -129,6 +129,7 @@ const USHORT RPB_s_update		= 0x02;	// input stream fetched for update
 const USHORT RPB_s_no_data		= 0x04;	// nobody is going to access the data
 const USHORT RPB_s_undo_data	= 0x08;	// data got from undo log
 const USHORT RPB_s_sweeper		= 0x10;	// garbage collector - skip swept pages
+const USHORT RPB_s_refetch_no_undo	= 0x20;	// re-fetch required due to modify\erase, don't use undo data
 
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records

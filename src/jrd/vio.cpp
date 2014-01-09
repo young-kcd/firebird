@@ -127,6 +127,8 @@ void VIO_trace(int level, const char* format, ...)
 	buffer.vprintf(format, params);
 	va_end(params);
 
+	buffer.rtrim("\n");
+
 	gds__trace(buffer.c_str());
 }
 
@@ -1236,7 +1238,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	{
 #ifdef VIO_DEBUG
 		VIO_trace(DEBUG_WRITES,
-			"VIO_erase (record_param %"QUADFORMAT"d, length %d expected %d)\n",
+			"VIO_data (record_param %"QUADFORMAT"d, length %d expected %d)\n",
 			rpb->rpb_number.getValue(), length, format->fmt_length);
 
 		VIO_trace(DEBUG_WRITES_INFO,
@@ -1293,8 +1295,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch)
 	{
+		rpb->rpb_stream_flags |= RPB_s_refetch_no_undo;
 		VIO_refetch_record(tdbb, rpb, transaction);
-		rpb->rpb_stream_flags &= ~RPB_s_refetch;
+		rpb->rpb_stream_flags &= ~(RPB_s_refetch | RPB_s_refetch_no_undo);
 	}
 
 	bool same_tx = false;
@@ -2335,8 +2338,9 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch)
 	{
+		org_rpb->rpb_stream_flags |= RPB_s_refetch_no_undo;
 		VIO_refetch_record(tdbb, org_rpb, transaction);
-		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+		org_rpb->rpb_stream_flags &= ~(RPB_s_refetch | RPB_s_refetch_no_undo);
 	}
 
 	// If we're the system transaction, modify stuff in place.  This saves
@@ -2833,6 +2837,12 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
  *  whether information about it is still valid.
  *
  **************************************/
+#ifdef VIO_DEBUG
+	VIO_trace(DEBUG_READS,
+		"VIO_refetch_record (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT")\n",
+		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+#endif
+
 	const TraNumber tid_fetch = rpb->rpb_transaction_nr;
 
 	if (!DPM_get(tdbb, rpb, LCK_read) ||
@@ -4580,7 +4590,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 	if (!transaction->tra_save_point)
 		return udNone;
 
-	if (rpb->rpb_stream_flags & RPB_s_refetch)
+	if (rpb->rpb_stream_flags & RPB_s_refetch_no_undo)
 		return udNone;
 
 	VerbAction* action = transaction->tra_save_point->sav_verb_actions;
