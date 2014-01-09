@@ -115,7 +115,7 @@ public:
 	explicit IscStatement(YAttachment* aAttachment)
 		: parameters(getPool()), cursorName(getPool()),
 		  attachment(aAttachment), statement(NULL),
-		  userHandle(NULL)
+		  userHandle(NULL), pseudoOpened(false)
 	{ }
 
 	FB_API_HANDLE& getHandle();
@@ -149,6 +149,7 @@ public:
 	YAttachment* attachment;
 	YStatement* statement;
 	FB_API_HANDLE* userHandle;
+	bool pseudoOpened;
 };
 
 GlobalPtr<RWLock> handleMappingLock;
@@ -842,12 +843,18 @@ namespace {
 	{
 		if (statement && statement->cursor)
 		{
+			fb_assert(!pseudoOpened);
+
 			statement->cursor->close(status);
 			if (!status->isSuccess())
 			{
 				Arg::StatusVector(status->get()).raise();
 			}
 			statement->cursor = NULL;
+		}
+		else if (pseudoOpened)
+		{
+			pseudoOpened = false;
 		}
 		else if (raise)
 		{
@@ -1982,18 +1989,19 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 {
 	StatusVector status(userStatus);
 
-	if (((SSHORT) inMsgType) == -1)	// dirty hack to support old esql code
-	{
-		return status[1];
-	}
-
 	try
 	{
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
-		RefPtr<YTransaction> transaction;
+
+		if (((SSHORT) inMsgType) == -1)	// dirty hack to support old esql code
+		{
+			statement->pseudoOpened = true;
+			return status[1];
+		}
 
 		statement->checkPrepared();
 
+		RefPtr<YTransaction> transaction;
 		if (traHandle && *traHandle)
 			transaction = translateHandle(transactions, traHandle);
 
