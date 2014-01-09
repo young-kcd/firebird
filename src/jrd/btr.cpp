@@ -6932,6 +6932,8 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 						return false;
 					}
 				}
+				else if (descending && (l == 0))
+					return false;
 			}
 
 			if (node.isEndBucket)
