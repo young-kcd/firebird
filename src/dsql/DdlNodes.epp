@@ -8035,7 +8035,8 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_distinct_err));
 		}
 
-		createCheckTrigger(tdbb, dsqlScratch, items);
+		createCheckTrigger(tdbb, dsqlScratch, items, PRE_MODIFY_TRIGGER);
+		createCheckTrigger(tdbb, dsqlScratch, items, PRE_STORE_TRIGGER);
 	}
 
 	dsqlScratch->resetContextStack();
@@ -8051,16 +8052,13 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 // Generate a trigger to implement the WITH CHECK OPTION clause for a VIEW.
 void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	ValueListNode* items)
+	ValueListNode* items, TriggerType triggerType)
 {
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	// Specify that the trigger should abort if the condition is not met.
 	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
 	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
-
-	// Create the trigger - PRE_MODIFY_TRIGGER | PRE_STORE_TRIGGER. See parse.y/trigger_type_suffix.
-	TriggerType triggerType = TriggerType(((1 << 1) | (2 << 3)) - 1);
 
 	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
 
@@ -8076,24 +8074,127 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	dsqlScratch->resetContextStack();
 
-	++dsqlScratch->contextNumber;	// OLD context
-
 	RseNode* querySpec = selectExpr->querySpec->as<RseNode>();
 	fb_assert(querySpec);
 
+	ProcedureSourceNode* sourceNode = querySpec->dsqlFrom->items[0]->as<ProcedureSourceNode>();
+
+	if (triggerType == PRE_MODIFY_TRIGGER)
+	{
+		dsqlScratch->contextNumber = 2;
+
+		RelationSourceNode* baseRelation = FB_NEW(pool) RelationSourceNode(pool,
+			sourceNode->dsqlName.identifier);
+
+		dsqlScratch->appendUChar(blr_for);
+
+		RseNode* rse = FB_NEW(pool) RseNode(pool);
+		rse->dsqlStreams = FB_NEW(pool) RecSourceListNode(pool, 1);
+
+		rse->dsqlStreams->items[0] = baseRelation;
+		rse->dsqlStreams->items[0] = doDsqlPass(dsqlScratch, rse->dsqlStreams->items[0]);
+
+		rse->dsqlWhere = querySpec->dsqlWhere;
+		rse->dsqlWhere = doDsqlPass(dsqlScratch, rse->dsqlWhere);
+
+		dsqlScratch->contextNumber = 0;	// OLD context
+
+		dsql_ctx* oldContext;
+
+		{	/// scope
+			AutoSetRestore<string> autoAlias(&relationNode->alias, sourceNode->alias);
+			relationNode->alias = OLD_CONTEXT;
+
+			oldContext = PASS1_make_context(dsqlScratch, relationNode);
+			oldContext->ctx_flags |= CTX_system;
+		}
+
+		// Get the list of values and fields to compare to -- if there is no list of fields, get all
+		// fields in the base relation that are not computed.
+
+		ValueListNode* valuesNode = viewFields;
+		ValueListNode* fieldsNode = querySpec->dsqlSelectList;
+
+		if (!fieldsNode)
+		{
+			const dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(),
+				dsqlScratch, name);
+			fieldsNode = FB_NEW(pool) ValueListNode(pool, 0u);
+
+			for (const dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
+			{
+				if (!(field->flags & FLD_computed))
+					fieldsNode->add(MAKE_field_name(field->fld_name.c_str()));
+			}
+		}
+
+		if (!valuesNode)
+			valuesNode = fieldsNode;
+
+		// Generate the list of assignments to fields in the base relation.
+
+		NestConst<ValueExprNode>* ptr = fieldsNode->items.begin();
+		const NestConst<ValueExprNode>* const end = fieldsNode->items.end();
+		NestConst<ValueExprNode>* ptr2 = valuesNode->items.begin();
+		const NestConst<ValueExprNode>* const end2 = valuesNode->items.end();
+		int andArg = 0;
+
+		BinaryBoolNode* andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and);
+
+		for (; ptr != end && ptr2 != end2; ++ptr, ++ptr2)
+		{
+			NestConst<ValueExprNode> fieldNod = *ptr;
+			NestConst<ValueExprNode> valueNod = *ptr2;
+			DsqlAliasNode* aliasNode;
+
+			if ((aliasNode = fieldNod->as<DsqlAliasNode>()))
+				fieldNod = aliasNode->value;
+
+			if ((aliasNode = valueNod->as<DsqlAliasNode>()))
+				valueNod = aliasNode->value;
+
+			FieldNode* fieldNode = fieldNod->as<FieldNode>();
+			FieldNode* valueNode = valueNod->as<FieldNode>();
+
+			// Generate the actual comparisons.
+
+			if (fieldNode && valueNode)
+			{
+				FieldNode* oldValueNode = FB_NEW(pool) FieldNode(pool);
+				oldValueNode->dsqlName = (aliasNode ? aliasNode->name : valueNode->dsqlName);
+				oldValueNode->dsqlQualifier = OLD_CONTEXT;
+
+				valueNod = oldValueNode->dsqlPass(dsqlScratch);
+				fieldNod = fieldNode->dsqlPass(dsqlScratch);
+
+				BoolExprNode* equivNode = FB_NEW(pool) ComparativeBoolNode(pool, blr_equiv,
+					valueNod, fieldNod);
+
+				rse->dsqlWhere = PASS1_compose(rse->dsqlWhere, equivNode, blr_and);
+			}
+		}
+
+		GEN_expr(dsqlScratch, rse);
+	}
+
 	// ASF: We'll now map the view's base table into the trigger's NEW context.
+
+	++dsqlScratch->scopeLevel;
+	dsqlScratch->contextNumber = 1;	// NEW context
 
 	dsql_ctx* newContext;
 
 	{	/// scope
-		ProcedureSourceNode* sourceNode = querySpec->dsqlFrom->items[0]->as<ProcedureSourceNode>();
 		AutoSetRestore<string> autoAlias(&relationNode->alias, sourceNode->alias);
 
 		if (relationNode->alias.isEmpty())
 			relationNode->alias = sourceNode->dsqlName.identifier.c_str();
 
 		newContext = PASS1_make_context(dsqlScratch, relationNode);
-		newContext->ctx_flags |= CTX_system | CTX_view_with_check;
+		newContext->ctx_flags |= CTX_system;
+
+		if (triggerType == PRE_STORE_TRIGGER)
+			newContext->ctx_flags |= CTX_view_with_check;
 	}
 
 	// Replace the view's field names by the base table field names. Save the original names

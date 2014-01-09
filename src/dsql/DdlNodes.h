@@ -1428,7 +1428,8 @@ protected:
 	}
 
 private:
-	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, ValueListNode* items);
+	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, ValueListNode* items,
+		TriggerType triggerType);
 
 public:
 	bool create;
