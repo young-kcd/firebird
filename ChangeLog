@@ -1,3 +1,11 @@
+ 2014-01-09 10:51  hvlad 
+   M src/jrd/btr.cpp
+Backport fix for bug CORE-2165 : Unnecessary 1 index read may occur when using strict inequality condition
+
+ 2014-01-09 10:48  hvlad 
+   M src/jrd/btr.cpp
+Backport additional fix for bug CORE-4302 : Lookup (or scan) in descending index could be very inefficient for some keys
+
  2013-12-26 11:58  alexpeshkoff 
    M autogen.sh
 No use overwriting install-sh when it already exists
