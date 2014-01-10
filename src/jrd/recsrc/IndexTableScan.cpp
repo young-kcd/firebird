@@ -27,7 +27,6 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
-#include "../jrd/idx_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/rlck_proto.h"

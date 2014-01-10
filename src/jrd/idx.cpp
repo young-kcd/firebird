@@ -500,6 +500,7 @@ void IDX_create_index(thread_db* tdbb,
 	{
 		AutoPtr<Record> error_record;
 		primary.rpb_record = NULL;
+		fb_assert(ifl_data.ifl_dup_recno >= 0);
 		primary.rpb_number.setValue(ifl_data.ifl_dup_recno);
 
 		if (DPM_get(tdbb, &primary, LCK_read))
