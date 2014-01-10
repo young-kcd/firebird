@@ -859,6 +859,7 @@ Data source : @4', NULL, NULL)
 ('auth_data', NULL, NULL, NULL, 0, 749, NULL, 'Client authentication plugin is missing required data from server', NULL, NULL);
 ('auth_datalength', NULL, NULL, NULL, 0, 750, NULL, 'Client authentication plugin expected @2 bytes of @3 from server, got @1', NULL, NULL);
 ('info_unprepared_stmt', NULL, NULL, NULL, 0, 751, NULL, 'Attempt to get information about an unprepared dynamic SQL statement.', NULL, NULL);
+('idx_key_value', NULL, NULL, NULL, 0, 752, NULL, 'Problematic key value is @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

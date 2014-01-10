@@ -27,6 +27,7 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/idx_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/rlck_proto.h"
@@ -214,7 +215,10 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 				BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, idx, &value, false);
 
 			if (result != idx_e_ok)
-				ERR_duplicate_error(result, rpb->rpb_relation, idx->idx_id);
+			{
+				IndexErrorContext context(rpb->rpb_relation, idx);
+				context.raise(tdbb, result, rpb->rpb_record);
+			}
 
 			if (!compareKeys(idx, key.key_data, key.key_length, &value, 0))
 			{

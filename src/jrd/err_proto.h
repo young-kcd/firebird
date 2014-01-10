@@ -43,8 +43,6 @@ enum idx_e {
 	idx_e_foreign_references_present
 };
 
-class jrd_rel;
-
 } //namespace Jrd
 
 bool	ERR_post_warning(const Firebird::Arg::StatusVector& v);
@@ -52,7 +50,6 @@ void	ERR_assert(const TEXT*, int);
 void	ERR_bugcheck(int, const TEXT* = NULL, int = 0);
 void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
-void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT, const TEXT* = NULL);
 void	ERR_error(int);
 void	ERR_post(const Firebird::Arg::StatusVector& v);
 void	ERR_post_nothrow(const Firebird::Arg::StatusVector& v);

@@ -2264,15 +2264,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	// post_erase triggers.
 
 	if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
-	{
-		jrd_rel* badRelation = NULL;
-		USHORT badIndex;
-
-		const idx_e errorCode = IDX_erase(tdbb, rpb, transaction, &badRelation, &badIndex);
-
-		if (errorCode)
-			ERR_duplicate_error(errorCode, badRelation, badIndex);
-	}
+		IDX_erase(tdbb, rpb, transaction);
 
 	// CVC: Increment the counter only if we called VIO/EXT_erase() and we were successful.
 	if (!(request->req_view_flags & req_first_erase_return))
@@ -5831,15 +5823,8 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 					VirtualTable::modify(tdbb, orgRpb, newRpb);
 				else if (!relation->rel_view_rse)
 				{
-					USHORT badIndex;
-					jrd_rel* badRelation = NULL;
-
 					VIO_modify(tdbb, orgRpb, newRpb, transaction);
-					const idx_e errorCode = IDX_modify(tdbb, orgRpb, newRpb, transaction,
-						&badRelation, &badIndex);
-
-					if (errorCode)
-						ERR_duplicate_error(errorCode, badRelation, badIndex);
+					IDX_modify(tdbb, orgRpb, newRpb, transaction);
 				}
 
 				newRpb->rpb_number = orgRpb->rpb_number;
@@ -5856,16 +5841,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				// which can be implemented as post_erase triggers.
 
 				if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
-				{
-					USHORT badIndex;
-					jrd_rel* badRelation = NULL;
-
-					const idx_e errorCode = IDX_modify_check_constraints(tdbb, orgRpb, newRpb,
-						transaction, &badRelation, &badIndex);
-
-					if (errorCode)
-						ERR_duplicate_error(errorCode, badRelation, badIndex);
-				}
+					IDX_modify_check_constraints(tdbb, orgRpb, newRpb, transaction);
 
 				if (transaction != attachment->getSysTransaction())
 					--transaction->tra_save_point->sav_verb_count;
@@ -6665,14 +6641,8 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 				VirtualTable::store(tdbb, rpb);
 			else if (!relation->rel_view_rse)
 			{
-				USHORT badIndex;
-				jrd_rel* badRelation = NULL;
-
 				VIO_store(tdbb, rpb, transaction);
-				const idx_e errorCode = IDX_store(tdbb, rpb, transaction, &badRelation, &badIndex);
-
-				if (errorCode)
-					ERR_duplicate_error(errorCode, badRelation, badIndex);
+				IDX_store(tdbb, rpb, transaction);
 			}
 
 			rpb->rpb_number.setValid(true);

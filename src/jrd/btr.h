@@ -220,6 +220,38 @@ public:
 };
 
 
+// Class used to report any index related errors
+
+class IndexErrorContext
+{
+	struct Location
+	{
+		jrd_rel* relation;
+		USHORT indexId;
+	};
+
+public:
+	IndexErrorContext(jrd_rel* relation, index_desc* index, const char* indexName = NULL)
+		: m_relation(relation), m_index(index), m_indexName(indexName), isLocationDefined(false)
+	{}
+
+	void setErrorLocation(jrd_rel* relation, USHORT indexId)
+	{
+		isLocationDefined = true;
+		m_location.relation = relation;
+		m_location.indexId = indexId;
+	}
+
+	void raise(thread_db*, idx_e, Record*);
+
+private:
+	jrd_rel* const m_relation;
+	index_desc* const m_index;
+	const char* const m_indexName;
+	Location m_location;
+	bool isLocationDefined;
+};
+
 
 } //namespace Jrd
 

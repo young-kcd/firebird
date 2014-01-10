@@ -772,6 +772,7 @@ static const struct {
 	{335545069, -902}, /* 749 auth_data */
 	{335545070, -902}, /* 750 auth_datalength */
 	{335545071, -901}, /* 751 info_unprepared_stmt */
+	{335545072, -901}, /* 752 idx_key_value */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

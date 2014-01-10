@@ -773,6 +773,7 @@ static const struct {
 	{"auth_data", 335545069},
 	{"auth_datalength", 335545070},
 	{"info_unprepared_stmt", 335545071},
+	{"idx_key_value", 335545072},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
