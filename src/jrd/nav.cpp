@@ -912,7 +912,10 @@ static bool get_record(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure,
 				&value, 0, false);
 
 	if (result != idx_e_ok)
-		ERR_duplicate_error(result, rpb->rpb_relation, idx->idx_id);
+	{
+		IndexErrorContext context(rpb->rpb_relation, idx);
+		context.raise(tdbb, result, rpb->rpb_record);
+	}
 
 	if (compare_keys(idx, key->key_data, key->key_length, &value, 0))
 		return false;

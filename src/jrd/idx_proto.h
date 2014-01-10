@@ -33,11 +33,8 @@ namespace Jrd {
 	class jrd_tra;
 	struct record_param;
 	class IndexBlock;
-	enum idx_e;
 	struct index_desc;
 	class CompilerScratch;
-	class jrd_fld;
-	class Record;
 }
 
 void IDX_check_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::jrd_rel*);
@@ -47,14 +44,12 @@ void IDX_create_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, const TE
 Jrd::IndexBlock* IDX_create_index_block(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 void IDX_delete_index(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 void IDX_delete_indices(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::RelationPages*);
-Jrd::idx_e IDX_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT*);
+void IDX_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void IDX_garbage_collect(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordStack&, Jrd::RecordStack&);
-Jrd::idx_e IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
-							 Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT *);
-Jrd::idx_e IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
-											  Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT*);
+void IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
+void IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 void IDX_statistics(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
-Jrd::idx_e IDX_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT*);
+void IDX_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void IDX_modify_flag_uk_modified(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 
 

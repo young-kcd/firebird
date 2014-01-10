@@ -1313,16 +1313,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    can be implemented as post_erase triggers */
 
 	if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
-	{
-		jrd_rel* bad_relation = 0;
-		USHORT bad_index;
-
-		const idx_e error_code = IDX_erase(tdbb, rpb, transaction, &bad_relation, &bad_index);
-
-		if (error_code) {
-			ERR_duplicate_error(error_code, bad_relation, bad_index);
-		}
-	}
+		IDX_erase(tdbb, rpb, transaction);
 
 	/* CVC: Increment the counter only if we called VIO/EXT_erase() and
 			we were successful. */
@@ -3031,16 +3022,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			}
 			else if (!relation->rel_view_rse)
 			{
-				USHORT bad_index;
-				jrd_rel* bad_relation = 0;
-
 				VIO_modify(tdbb, org_rpb, new_rpb, transaction);
-				const idx_e error_code =
-					IDX_modify(tdbb, org_rpb, new_rpb, transaction, &bad_relation, &bad_index);
-
-				if (error_code) {
-					ERR_duplicate_error(error_code, bad_relation, bad_index);
-				}
+				IDX_modify(tdbb, org_rpb, new_rpb, transaction);
 			}
 
 			new_rpb->rpb_number = org_rpb->rpb_number;
@@ -3059,18 +3042,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			which can be implemented as post_erase triggers */
 
 			if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
-			{
-				USHORT bad_index;
-				jrd_rel* bad_relation = 0;
-
-				const idx_e error_code =
-					IDX_modify_check_constraints(tdbb, org_rpb, new_rpb, transaction,
-												 &bad_relation, &bad_index);
-
-				if (error_code) {
-					ERR_duplicate_error(error_code, bad_relation, bad_index);
-				}
-			}
+				IDX_modify_check_constraints(tdbb, org_rpb, new_rpb, transaction);
 
 			if (transaction != dbb->dbb_sys_trans) {
 				--transaction->tra_save_point->sav_verb_count;
@@ -3825,15 +3797,8 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		}
 		else if (!relation->rel_view_rse)
 		{
-			USHORT bad_index;
-			jrd_rel* bad_relation = 0;
-
 			VIO_store(tdbb, rpb, transaction);
-			const idx_e error_code = IDX_store(tdbb, rpb, transaction, &bad_relation, &bad_index);
-
-			if (error_code) {
-				ERR_duplicate_error(error_code, bad_relation, bad_index);
-			}
+			IDX_store(tdbb, rpb, transaction);
 		}
 
 		rpb->rpb_number.setValid(true);

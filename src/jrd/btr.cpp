@@ -201,6 +201,7 @@ static INT64_KEY make_int64_key(SINT64, SSHORT);
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
+static string print_key(thread_db*, jrd_rel*, index_desc*, Record*);
 static contents remove_node(thread_db*, index_insertion*, WIN*);
 static contents remove_leaf_node(thread_db*, index_insertion*, WIN*);
 static bool scan(thread_db*, UCHAR*, RecordBitmap**, RecordBitmap*, index_desc*,
@@ -210,6 +211,8 @@ static void update_selectivity(index_root_page*, USHORT, const SelectivityList&)
 static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temporary_key&,
 								 const index_desc&, const IndexRetrieval*);
 
+
+// BtrPageLock class
 
 BtrPageGCLock::BtrPageGCLock(thread_db* tdbb)
 {
@@ -257,6 +260,81 @@ bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 	}
 
 	return res;
+}
+
+
+// IndexErrorContext class
+
+void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
+{
+	fb_assert(result != idx_e_ok);
+
+	if (result == idx_e_conversion)
+		ERR_punt();
+
+	const MetaName& relationName = isLocationDefined ? m_location.relation->rel_name : m_relation->rel_name;
+	const USHORT indexId = isLocationDefined ? m_location.indexId : m_index->idx_id;
+
+	MetaName indexName(m_indexName), constraintName;
+
+	if (indexName.isEmpty())
+		MET_lookup_index(tdbb, indexName, relationName, indexId + 1);
+
+	if (indexName.hasData())
+		MET_lookup_cnstrt_for_index(tdbb, constraintName, indexName);
+	else
+		indexName = "***unknown***";
+
+	const bool haveConstraint = constraintName.hasData();
+
+	if (!haveConstraint)
+		constraintName = "***unknown***";
+
+	switch (result)
+	{
+	case idx_e_keytoobig:
+		ERR_post_nothrow(Arg::Gds(isc_imp_exc) <<
+						 Arg::Gds(isc_keytoobig) << Arg::Str(indexName));
+		break;
+
+	case idx_e_foreign_target_doesnt_exist:
+		ERR_post_nothrow(Arg::Gds(isc_foreign_key) <<
+						 Arg::Str(constraintName) << Arg::Str(relationName) <<
+						 Arg::Gds(isc_foreign_key_target_doesnt_exist));
+		break;
+
+	case idx_e_foreign_references_present:
+		ERR_post_nothrow(Arg::Gds(isc_foreign_key) <<
+						 Arg::Str(constraintName) << Arg::Str(relationName) <<
+						 Arg::Gds(isc_foreign_key_references_present));
+		break;
+
+	case idx_e_duplicate:
+		if (haveConstraint)
+		{
+			ERR_post_nothrow(Arg::Gds(isc_unique_key_violation) <<
+							 Arg::Str(constraintName) << Arg::Str(relationName));
+		}
+		else
+			ERR_post_nothrow(Arg::Gds(isc_no_dup) << Arg::Str(indexName));
+		break;
+
+	default:
+		fb_assert(false);
+	}
+
+	if (record)
+	{
+		const string keyString = print_key(tdbb, m_relation, m_index, record);
+		if (keyString.hasData())
+		{
+			string errorMsg;
+			errorMsg.printf("Problematic key value is %s", keyString.c_str());
+			ERR_post_nothrow(Arg::Gds(isc_random) << Arg::Str(errorMsg));
+		}
+	}
+
+	ERR_punt();
 }
 
 
@@ -881,8 +959,11 @@ btree_page* BTR_find_page(thread_db* tdbb,
 			}
 		}
 
-		if (errorCode != idx_e_ok) {
-			ERR_duplicate_error(errorCode, retrieval->irb_relation, retrieval->irb_index);
+		if (errorCode != idx_e_ok)
+		{
+			index_desc temp_idx = retrieval->irb_desc; // to avoid constness issues
+			IndexErrorContext context(retrieval->irb_relation, &temp_idx);
+			context.raise(tdbb, errorCode, NULL);
 		}
 	}
 
@@ -6566,6 +6647,128 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 	return;
 }
 #endif // DEBUG_INDEXKEY
+
+
+string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* record)
+{
+/**************************************
+ *
+ *	p r i n t _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert index key into textual representation.
+ *
+ **************************************/
+	fb_assert(relation && idx && record);
+
+	if (!(relation->rel_flags & REL_scanned) ||
+		(relation->rel_flags & REL_being_scanned))
+	{
+		MET_scan_relation(tdbb, relation);
+	}
+
+	class Printer
+	{
+	public:
+		explicit Printer(const dsc* desc)
+		{
+			const int MAX_KEY_STRING_LEN = 250;
+			const char* const NULL_KEY_STRING = "NULL";
+
+			if (!desc)
+			{
+				value = NULL_KEY_STRING;
+				return;
+			}
+
+			fb_assert(!desc->isBlob());
+
+			char temp[BUFFER_TINY];
+			const char* str = NULL;
+			const int len = MOV_make_string(desc, ttype_dynamic, &str,
+											(vary*) temp, sizeof(temp));
+
+			value.assign(str, len);
+
+			if (DTYPE_IS_TEXT(desc->dsc_dtype) || DTYPE_IS_DATE(desc->dsc_dtype))
+			{
+				if (DTYPE_IS_TEXT(desc->dsc_dtype) && desc->dsc_sub_type == ttype_binary)
+				{
+					string hex;
+					char* s = hex.getBuffer(2 * len);
+					for (int i = 0; i < len; i++)
+					{
+						sprintf(s, "%02X", (int) (unsigned char) str[i]);
+						s += 2;
+					}
+					value = "x'" + hex + "'";
+				}
+				else
+				{
+					value = "'" + value + "'";
+				}
+			}
+
+			if (value.length() > MAX_KEY_STRING_LEN)
+			{
+				value.resize(MAX_KEY_STRING_LEN);
+				value += "...";
+			}
+		}
+
+		const string& get() const
+		{
+			return value;
+		}
+
+	private:
+		string value;
+	};
+
+	string key, value;
+
+	try
+	{
+		if (idx->idx_flags & idx_expressn)
+		{
+			bool notNull = false;
+			const dsc* const desc = BTR_eval_expression(tdbb, idx, record, notNull);
+			value = Printer(notNull ? desc : NULL).get();
+			key += "<expression> = " + value;
+		}
+		else
+		{
+			for (USHORT i = 0; i < idx->idx_count; i++)
+			{
+				const USHORT field_id = idx->idx_rpt[i].idx_field;
+				const jrd_fld* const field = MET_get_field(relation, field_id);
+
+				if (field)
+					value.printf("\"%s\"", field->fld_name.c_str());
+				else
+					value.printf("<field #%d>", field_id);
+
+				key += value;
+
+				dsc desc;
+				const bool notNull = EVL_field(relation, record, field_id, &desc);
+				value = Printer(notNull ? &desc : NULL).get();
+				key += " = " + value;
+
+				if (i < idx->idx_count - 1)
+					key += ", ";
+			}
+		}
+	}
+	catch (const Exception&)
+	{
+		return "";
+	}
+
+	return "(" + key + ")";
+}
 
 
 static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* window)
