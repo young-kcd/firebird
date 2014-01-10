@@ -1,3 +1,23 @@
+ 2014-01-09 15:56  alexpeshkoff 
+   M src/yvalve/why.cpp
+Avoid incorrect error reporting when legacy BLOB cursor is closed
+
+ 2014-01-09 15:52  alexpeshkoff 
+   M src/jrd/ini.epp
+Use correct blr code for boolean field
+
+ 2014-01-09 15:42  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Fixed CORE-4307 - Fields present only in WHERE clause of views WITH CHECK OPTION causes invalid CHECK CONSTRAINT violation.
+
+ 2014-01-09 10:29  hvlad 
+   M src/jrd/req.h
+   M src/jrd/vio.cpp
+Better (i hope) fix for the bugcheck appeared in test bugs.core_195.
+The original fix broke cursor stability when there are sub-queries, see also CORE-3362.
+Misc fixes for better debugging. 
+
  2014-01-07 01:15  asfernandes 
    M src/jrd/SysFunction.cpp
 Improvement CORE-4310 - DateAdd(): change input <amount> argument from INT to BIGINT.
