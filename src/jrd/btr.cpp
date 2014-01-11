@@ -6694,6 +6694,12 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 			if (DTYPE_IS_TEXT(desc->dsc_dtype) || DTYPE_IS_DATE(desc->dsc_dtype))
 			{
+				if (desc->dsc_dtype == dtype_text)
+				{
+					const char* const pad = (desc->dsc_sub_type == ttype_binary) ? "\0": " ";
+					value.rtrim(pad);
+				}
+
 				if (DTYPE_IS_TEXT(desc->dsc_dtype) && desc->dsc_sub_type == ttype_binary)
 				{
 					string hex;
