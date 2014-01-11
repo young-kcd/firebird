@@ -1,3 +1,14 @@
+ 2014-01-10 09:53  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/err.cpp
+   M src/jrd/err_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/idx.cpp
+   M src/jrd/idx_proto.h
+   M src/jrd/nav.cpp
+Backported CORE-3881: Extend the error reported for index/constraint violations to include the problematic key value.
+
  2014-01-09 10:51  hvlad 
    M src/jrd/btr.cpp
 Backport fix for bug CORE-2165 : Unnecessary 1 index read may occur when using strict inequality condition
