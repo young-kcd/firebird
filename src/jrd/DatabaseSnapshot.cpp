@@ -1078,9 +1078,12 @@ void DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* 
 	record.storeString(f_mon_att_remote_os_user, attachment->att_remote_os_user);
 	// authentication method
 	record.storeString(f_mon_att_auth_method, attachment->att_user->usr_auth_method);
-
 	// statistics
 	record.storeGlobalId(f_mon_att_stat_id, getGlobalId(stat_id));
+	// system flag
+	temp = (attachment->att_flags & ATT_system) ? 1 : 0;
+	record.storeInteger(f_mon_att_sys_flag, temp);
+
 	writer.putRecord(record);
 
 	if (Config::getSharedCache())

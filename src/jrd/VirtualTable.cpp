@@ -66,6 +66,15 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 		// Get attachment id
 		if (!EVL_field(relation, rpb->rpb_record, f_mon_att_id, &desc))
 			return;
+
+		// Ignore attempt to stop system attachment
+		dsc sysFlag;
+		if (EVL_field(relation, rpb->rpb_record, f_mon_att_sys_flag, &sysFlag) && 
+			MOV_get_long(&sysFlag, 0) != 0)
+		{
+			return;
+		}
+
 		lock_type = LCK_attachment;
 	}
 	else if (relation->rel_id == rel_mon_statements)

@@ -4291,6 +4291,7 @@ void SysAttachment::initDone()
 	Database* dbb = attachment->att_database;
 	SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysAttachment::initDone");
 
+	attachment->att_flags |= ATT_system;
 	attachment->att_next = dbb->dbb_sys_attachments;
 	dbb->dbb_sys_attachments = attachment;
 }

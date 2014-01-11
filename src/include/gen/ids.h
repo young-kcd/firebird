@@ -506,6 +506,7 @@
 	const USHORT  f_mon_att_remote_host = 16;
 	const USHORT  f_mon_att_remote_os_user = 17;
 	const USHORT  f_mon_att_auth_method = 18;
+	const USHORT  f_mon_att_sys_flag = 19;
 
 
 // Relation 35 (MON$TRANSACTIONS)

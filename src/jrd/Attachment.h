@@ -390,6 +390,7 @@ const ULONG ATT_no_db_triggers		= 0x02000L;	// Don't execute database triggers
 const ULONG ATT_manual_lock			= 0x04000L;	// Was locked manually
 const ULONG ATT_async_manual_lock	= 0x08000L;	// Async mutex was locked manually
 const ULONG ATT_purge_started		= 0x10000L; // Purge already started - avoid 2 purges at once
+const ULONG ATT_system				= 0x20000L; // Special system attachment
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 

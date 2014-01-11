@@ -505,6 +505,7 @@ RELATION(nam_mon_attachments, rel_mon_attachments, ODS_11_1, rel_virtual)
 	FIELD(f_mon_att_remote_host, nam_mon_remote_host, fld_host_name, 0, ODS_12_0)
 	FIELD(f_mon_att_remote_os_user, nam_mon_remote_os_user, fld_os_user, 0, ODS_12_0)
 	FIELD(f_mon_att_auth_method, nam_mon_auth_method, fld_auth_method, 0, ODS_12_0)
+	FIELD(f_mon_att_sys_flag, nam_mon_sys_flag, fld_flag, 0, ODS_12_0)
 END_RELATION
 
 // Relation 35 (MON$TRANSACTIONS)
