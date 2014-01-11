@@ -1,3 +1,28 @@
+ 2014-01-10 08:03  dimitr 
+   M src/jrd/idx.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+Misc.
+
+ 2014-01-10 07:49  dimitr 
+   M src/common/dsc.h
+   M src/dsql/StmtNodes.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/err.cpp
+   M src/jrd/err_proto.h
+   M src/jrd/idx.cpp
+   M src/jrd/idx_proto.h
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Improvement CORE-3881: Extend the error reported for index/constraint violations to include the problematic key value.
+
  2014-01-09 15:56  alexpeshkoff 
    M src/yvalve/why.cpp
 Avoid incorrect error reporting when legacy BLOB cursor is closed
