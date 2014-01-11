@@ -66,6 +66,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 
+using namespace Firebird;
 using namespace Jrd;
 using namespace Ods;
 
@@ -1884,6 +1885,134 @@ bool BTR_next_index(thread_db* tdbb,
 	CCH_RELEASE(tdbb, window);
 
 	return false;
+}
+
+
+string BTR_print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* record)
+{
+/**************************************
+ *
+ *	B T R _ p r i n t _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert index key into textual representation.
+ *
+ **************************************/
+	fb_assert(relation && idx && record);
+
+	if (!(relation->rel_flags & REL_scanned) ||
+		(relation->rel_flags & REL_being_scanned))
+	{
+		MET_scan_relation(tdbb, relation);
+	}
+
+	class Printer
+	{
+	public:
+		explicit Printer(const dsc* desc)
+		{
+			const int MAX_KEY_STRING_LEN = 250;
+			const char* const NULL_KEY_STRING = "NULL";
+
+			if (!desc)
+			{
+				value = NULL_KEY_STRING;
+				return;
+			}
+
+			fb_assert(!desc->isBlob());
+
+			char temp[BUFFER_TINY];
+			const char* str = NULL;
+			const int len = MOV_make_string(desc, ttype_dynamic, &str,
+									  	    (vary*) temp, sizeof(temp));
+
+			value.assign(str, len);
+
+			if (DTYPE_IS_TEXT(desc->dsc_dtype) || DTYPE_IS_DATE(desc->dsc_dtype))
+			{
+				if (desc->dsc_dtype == dtype_text)
+				{
+					const char* const pad = (desc->dsc_sub_type == ttype_binary) ? "\0": " ";
+					value.rtrim(pad);
+				}
+
+				if (DTYPE_IS_TEXT(desc->dsc_dtype) && desc->dsc_sub_type == ttype_binary)
+				{
+					string hex;
+					char* s = hex.getBuffer(2 * len);
+					for (int i = 0; i < len; i++)
+					{
+						sprintf(s, "%02X", (int) (unsigned char) str[i]);
+						s += 2;
+					}
+					value = "x'" + hex + "'";
+				}
+				else
+				{
+					value = "'" + value + "'";
+				}
+			}
+
+			if (value.length() > MAX_KEY_STRING_LEN)
+			{
+				value.resize(MAX_KEY_STRING_LEN);
+				value += "...";
+			}
+		}
+
+		const string& get() const
+		{
+			return value;
+		}
+
+	private:
+		string value;
+	};
+
+	string key, value;
+
+	try
+	{
+		if (idx->idx_flags & idx_expressn)
+		{
+			bool notNull = false;
+			const dsc* const desc = BTR_eval_expression(tdbb, idx, record, notNull);
+			value = Printer(notNull ? desc : NULL).get();
+			key += "<expression> = " + value;
+		}
+		else
+		{
+			for (USHORT i = 0; i < idx->idx_count; i++)
+			{
+				const USHORT field_id = idx->idx_rpt[i].idx_field;
+				const jrd_fld* const field = MET_get_field(relation, field_id);
+
+				if (field)
+					value.printf("\"%s\"", field->fld_name.c_str());
+				else
+					value.printf("<field #%d>", field_id);
+
+				key += value;
+
+				dsc desc;
+				const bool notNull = EVL_field(relation, record, field_id, &desc);
+				value = Printer(notNull ? &desc : NULL).get();
+				key += " = " + value;
+
+				if (i < idx->idx_count - 1)
+					key += ", ";
+			}
+		}
+	}
+	catch (const Exception&)
+	{
+		return "";
+	}
+
+	return "(" + key + ")";
 }
 
 

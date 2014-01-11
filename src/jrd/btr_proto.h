@@ -53,6 +53,7 @@ USHORT	BTR_lookup(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::index_desc*, Jrd:
 Jrd::idx_e	BTR_make_key(Jrd::thread_db*, USHORT, Jrd::jrd_nod**, Jrd::index_desc*, Jrd::temporary_key*, bool);
 void	BTR_make_null_key(Jrd::thread_db*, Jrd::index_desc*, Jrd::temporary_key*);
 bool	BTR_next_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::index_desc*, Jrd::win*);
+Firebird::string BTR_print_key(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, Jrd::Record*);
 void	BTR_remove(Jrd::thread_db*, Jrd::win*, Jrd::index_insertion*);
 void	BTR_reserve_slot(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::index_desc*);
 void	BTR_selectivity(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);

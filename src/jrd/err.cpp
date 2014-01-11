@@ -54,6 +54,7 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 
+using namespace Firebird;
 using namespace Jrd;
 
 //#define JRD_FAILURE_SPACE	2048
@@ -156,6 +157,7 @@ const TEXT* ERR_cstring(const TEXT* in_string)
 void ERR_duplicate_error(IDX_E	code,
 						const jrd_rel*		relation,
 						USHORT index_number,
+						const Firebird::string& key_str,
 						const TEXT* idx_name)
 {
 /**************************************
@@ -168,6 +170,9 @@ void ERR_duplicate_error(IDX_E	code,
  *	Duplicate error during index update.
  *
  **************************************/
+	if (code == idx_e_conversion)
+		ERR_punt();
+
 	Firebird::MetaName index, constraint;
 	const TEXT* index_name;
 	const TEXT* constraint_name;
@@ -199,38 +204,43 @@ void ERR_duplicate_error(IDX_E	code,
 
 	switch (code) {
 	case idx_e_keytoobig:
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_keytoobig,
-				 isc_arg_string, index_name, isc_arg_end);
-		break;
-
-	case idx_e_conversion:
-		ERR_punt();
+		ERR_post_nothrow(isc_imp_exc, isc_arg_gds, isc_keytoobig,
+				 	 	 isc_arg_string, index_name, isc_arg_end);
 		break;
 
 	case idx_e_foreign_target_doesnt_exist:
-		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, ERR_cstring(relation->rel_name), 
-			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, isc_arg_end);
+		ERR_post_nothrow(isc_foreign_key, isc_arg_string, constraint_name,
+			 	 	 	 isc_arg_string, ERR_cstring(relation->rel_name),
+			 	 	 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, isc_arg_end);
 		break;
 
 	case idx_e_foreign_references_present:
-		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, ERR_cstring(relation->rel_name),
-			 	 isc_arg_gds, isc_foreign_key_references_present, isc_arg_end);
+		ERR_post_nothrow(isc_foreign_key, isc_arg_string, constraint_name,
+			 	 	 	 isc_arg_string, ERR_cstring(relation->rel_name),
+			 	 	 	 isc_arg_gds, isc_foreign_key_references_present, isc_arg_end);
 		break;
 
 	case idx_e_duplicate:
 		if (constraint.length() > 0)
-			ERR_post(isc_unique_key_violation,
-					 isc_arg_string, constraint_name,
-					 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
+			ERR_post_nothrow(isc_unique_key_violation,
+					 	 	 isc_arg_string, constraint_name,
+					 	 	 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
 		else
-			ERR_post(isc_no_dup, isc_arg_string, index_name, isc_arg_end);
+			ERR_post_nothrow(isc_no_dup, isc_arg_string, index_name, isc_arg_end);
 		break;
 
 	default:
 		fb_assert(false);
 	}
+
+	if (key_str.hasData())
+	{
+		string errorMsg;
+		errorMsg.printf("Problematic key value is %s", key_str.c_str());
+		ERR_post_nothrow(isc_random, isc_arg_string, ERR_cstring(errorMsg), isc_arg_end);
+	}
+
+	ERR_punt();
 }
 #endif
 
