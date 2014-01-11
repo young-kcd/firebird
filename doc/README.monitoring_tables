@@ -99,6 +99,9 @@ Monitoring tables
       - MON$REMOTE_VERSION (version of the remote protocol)
       - MON$REMOTE_HOST (remote host name)
       - MON$REMOTE_OS_USER (remote OS user name)
+      - MON$SYSTEM_FLAG  (system flag)
+          0: user attachment
+          1: system attachment
 
     MON$TRANSACTIONS (started transactions)
       - MON$TRANSACTION_ID (transaction ID)
@@ -310,6 +313,9 @@ Modifications of the monitoring tables
        is immediately cancelled and they're rolled back. Once terminated, the client session
        receives the isc_att_shutdown error code. Subsequent attempts to use this connection
        handle will cause network read/write errors.
+
+    3) System attachment can not be cancelled, so engine silently skip system attachments 
+       affected by DELETE FROM MON$ATTACHMENTS statements
 
   Example(s):
     1) Cancel current activity of connection #32:
