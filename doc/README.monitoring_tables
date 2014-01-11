@@ -48,7 +48,6 @@ Monitoring tables
   Scope:
     DSQL and PSQL
 
-  ODS 11.1 metadata:
     MON$DATABASE (connected database)
       - MON$DATABASE_NAME (database pathname or alias)
       - MON$PAGE_SIZE (page size)
@@ -180,7 +179,6 @@ Monitoring tables
       - MON$RECORD_PURGES (number of purged records)
       - MON$RECORD_EXPUNGES (number of expunged records)
 
-  ODS 11.2 metadata:
     MON$MEMORY_USAGE (current memory usage)
       - MON$STAT_ID (statistics ID)
       - MON$STAT_GROUP (statistics group)
