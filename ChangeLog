@@ -1,3 +1,24 @@
+ 2014-01-11 09:34  hvlad 
+   M doc/README.monitoring_tables
+Removed mention of ODS 11.x
+
+ 2014-01-11 09:25  hvlad 
+   M doc/README.monitoring_tables
+Document new field MON$ATTACHMENTS.MON$SYSTEM_FLAG
+
+ 2014-01-11 09:10  hvlad 
+   M src/include/gen/ids.h
+   M src/jrd/Attachment.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/relations.h
+Fixed bug CORE-4309 : 'Cache Writer' record in MON$ATTACHMENTS dissapear when delete other connection that running some 'heavy update' on big table via delete from MON$ATTACHMENTS
+
+ 2014-01-11 08:54  dimitr 
+   M src/jrd/btr.cpp
+Better output for CHARs.
+
  2014-01-10 08:03  dimitr 
    M src/jrd/idx.cpp
    M src/jrd/recsrc/IndexTableScan.cpp
