@@ -69,7 +69,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 
 		// Ignore attempt to stop system attachment
 		dsc sysFlag;
-		if (EVL_field(relation, rpb->rpb_record, f_mon_att_sys_flag, &sysFlag) && 
+		if (EVL_field(relation, rpb->rpb_record, f_mon_att_sys_flag, &sysFlag) &&
 			MOV_get_long(&sysFlag, 0) != 0)
 		{
 			return;

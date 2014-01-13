@@ -830,15 +830,15 @@ void IDX_modify(thread_db* tdbb,
 		IndexErrorContext context(new_rpb->rpb_relation, &idx);
 		idx_e error_code;
 
-		if ( (error_code =
-			BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, false)) )
+		if ((error_code = BTR_key(tdbb, new_rpb->rpb_relation,
+				new_rpb->rpb_record, &idx, &key1, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, new_rpb->rpb_record);
 		}
 
-		if ( (error_code =
-			BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, false)) )
+		if ((error_code = BTR_key(tdbb, org_rpb->rpb_relation,
+				org_rpb->rpb_record, &idx, &key2, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, org_rpb->rpb_record);
@@ -846,8 +846,8 @@ void IDX_modify(thread_db* tdbb,
 
 		if (!key_equal(&key1, &key2))
 		{
-			if ( (error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
-										  transaction, &window, &insertion, context)) )
+			if ((error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
+										 transaction, &window, &insertion, context)))
 			{
 				context.raise(tdbb, error_code, new_rpb->rpb_record);
 			}
@@ -904,15 +904,15 @@ void IDX_modify_check_constraints(thread_db* tdbb,
 		IndexErrorContext context(new_rpb->rpb_relation, &idx);
 		idx_e error_code;
 
-		if ( (error_code =
-			BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, false)) )
+		if ((error_code = BTR_key(tdbb, new_rpb->rpb_relation,
+				new_rpb->rpb_record, &idx, &key1, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, new_rpb->rpb_record);
 		}
 
-		if ( (error_code =
-			BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, false)) )
+		if ((error_code = BTR_key(tdbb, org_rpb->rpb_relation,
+				org_rpb->rpb_record, &idx, &key2, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			context.raise(tdbb, error_code, org_rpb->rpb_record);
@@ -920,8 +920,8 @@ void IDX_modify_check_constraints(thread_db* tdbb,
 
 		if (!key_equal(&key1, &key2))
 		{
-			if ( (error_code = check_foreign_key(tdbb, org_rpb->rpb_record, org_rpb->rpb_relation,
-										   	     transaction, &idx, context)) )
+			if ((error_code = check_foreign_key(tdbb, org_rpb->rpb_record, org_rpb->rpb_relation,
+										   	    transaction, &idx, context)))
 			{
 				CCH_RELEASE(tdbb, &window);
 				context.raise(tdbb, error_code, org_rpb->rpb_record);
