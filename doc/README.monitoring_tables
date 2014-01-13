@@ -76,6 +76,7 @@ Monitoring tables
           1: stalled
           2: merge
       - MON$CRYPT_PAGE (number of page being encrypted)
+      - MON$OWNER (database owner name)
 
     MON$ATTACHMENTS (connected attachments)
       - MON$ATTACHMENT_ID (attachment ID)
