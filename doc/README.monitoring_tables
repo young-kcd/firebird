@@ -99,6 +99,7 @@ Monitoring tables
       - MON$REMOTE_VERSION (version of the remote protocol)
       - MON$REMOTE_HOST (remote host name)
       - MON$REMOTE_OS_USER (remote OS user name)
+      - MON$AUTH_METHOD (authentication method used for connection)
       - MON$SYSTEM_FLAG  (system flag)
           0: user attachment
           1: system attachment
