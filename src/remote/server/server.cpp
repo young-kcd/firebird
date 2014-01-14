@@ -4946,11 +4946,13 @@ static void release_statement( Rsr** statement)
  *	Release a GDML or SQL statement?
  *
  **************************************/
-	(*statement)->rsr_cursor = NULL;
-
-	Rtr* const transaction = (*statement)->rsr_rtr;
-	if (transaction)
+	if ((*statement)->rsr_cursor)
 	{
+		(*statement)->rsr_cursor = NULL;
+
+		Rtr* const transaction = (*statement)->rsr_rtr;
+		fb_assert(transaction);
+
 		size_t pos;
 		if (!transaction->rtr_cursors.find(*statement, pos))
 			fb_assert(false);
