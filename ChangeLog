@@ -1,3 +1,21 @@
+ 2014-01-13 09:07  dimitr 
+   M doc/README.monitoring_tables
+Updated the README.
+
+ 2014-01-13 07:58  dimitr 
+   M doc/README.monitoring_tables
+Updated the README.
+
+ 2014-01-13 02:03  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+Commit missing generated files.
+
+ 2014-01-13 02:02  asfernandes 
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/idx.cpp
+Misc.
+
  2014-01-11 09:34  hvlad 
    M doc/README.monitoring_tables
 Removed mention of ODS 11.x
