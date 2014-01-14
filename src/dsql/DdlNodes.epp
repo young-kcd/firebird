@@ -8085,6 +8085,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 		RelationSourceNode* baseRelation = FB_NEW(pool) RelationSourceNode(pool,
 			sourceNode->dsqlName.identifier);
+		baseRelation->alias = sourceNode->alias;
 
 		dsqlScratch->appendUChar(blr_for);
 
@@ -8194,7 +8195,9 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 		newContext->ctx_flags |= CTX_system;
 
 		if (triggerType == PRE_STORE_TRIGGER)
-			newContext->ctx_flags |= CTX_view_with_check;
+			newContext->ctx_flags |= CTX_view_with_check_store;
+		else
+			newContext->ctx_flags |= CTX_view_with_check_modify;
 	}
 
 	// Replace the view's field names by the base table field names. Save the original names

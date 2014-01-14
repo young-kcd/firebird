@@ -4893,7 +4893,7 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 						}
 					}
 
-					if ((context->ctx_flags & CTX_view_with_check) && !field)
+					if ((context->ctx_flags & CTX_view_with_check_store) && !field)
 					{
 						node = FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 						node->line = line;
@@ -4901,11 +4901,14 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 					}
 					else if (dsqlQualifier.hasData() && !field)
 					{
-						// If a qualifier was present and we didn't find
-						// a matching field then we should stop searching.
-						// Column unknown error will be raised at bottom of function.
-						done = true;
-						break;
+						if (!(context->ctx_flags & CTX_view_with_check_modify))
+						{
+							// If a qualifier was present and we didn't find
+							// a matching field then we should stop searching.
+							// Column unknown error will be raised at bottom of function.
+							done = true;
+							break;
+						}
 					}
 					else if (field || usingField)
 					{
