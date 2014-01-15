@@ -2936,6 +2936,17 @@ Fetches = !f', NULL, NULL);
 ('NO_GRANT_ON_COLL', 'SHOW_metadata', 'show.e', NULL, 17, 178, NULL, 'There is no privilege granted on collation @1 in this database', NULL, NULL);
 ('NO_GRANT_ON_PKG', 'SHOW_metadata', 'show.e', NULL, 17, 179, NULL, 'There is no privilege granted on package @1 in this database', NULL, NULL);
 ('NO_GRANT_ON_FUN', 'SHOW_metadata', 'show.e', NULL, 17, 180, NULL, 'There is no privilege granted on function @1 in this database', NULL, NULL);
+('REPORT_NEW1', 'print_performance', 'isql.epp', 'Each of these 4 items is followed by a newline (''\n'').', 17, 181, NULL, 'Current memory = !
+Delta memory = !
+Max memory = !
+Elapsed time= ~ sec
+', NULL, NULL);
+('REPORT_NEW2', 'print_performance', 'isql.epp', 'Each of these 5 items is followed by a newline (''\n'').', 17, 182, NULL, 'Cpu = ~ sec
+', NULL, NULL);
+('REPORT_NEW3', 'print_performance', 'isql.epp', 'Each of these 5 items is followed by a newline (''\n'').', 17, 183, NULL, 'Buffers = !
+Reads = !
+Writes = !
+Fetches = !', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);

@@ -62,7 +62,7 @@ WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(RTTI_FLAG) $(CXXFLAGS) $(GLOB_OPTIONS)
 
 GPRE_FLAGS= -m -z -n
 JRD_GPRE_FLAGS = -n -z -gds_cxx -ids
-DSQL_GPRE_FLAGS = -m -z -n
+ISQL_GPRE_FLAGS = -m -z -n -ocxx
 
 
 .SUFFIXES: .c .e .epp .cpp
@@ -74,11 +74,8 @@ DSQL_GPRE_FLAGS = -m -z -n
 $(OBJ)/jrd/%.cpp: $(SRC_ROOT)/jrd/%.epp
 	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $(firstword $<) $@
 
-$(OBJ)/dsql/%.cpp: $(SRC_ROOT)/dsql/%.epp
-	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
-
-$(OBJ)/yvalve/%.cpp: $(SRC_ROOT)/yvalve/%.epp
-	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
+$(OBJ)/isql/%.cpp: $(SRC_ROOT)/isql/%.epp
+	$(GPRE_CURRENT) $(ISQL_GPRE_FLAGS) $< $@
 
 $(OBJ)/%.cpp: $(SRC_ROOT)/%.epp
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $(firstword $<) $@

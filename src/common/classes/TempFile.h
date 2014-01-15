@@ -29,6 +29,8 @@
 
 namespace Firebird {
 
+class IStatus;
+
 class TempFile : public File
 {
 public:
@@ -66,6 +68,7 @@ public:
 
 	static PathName getTempPath();
 	static PathName create(const PathName& prefix, const PathName& directory = "");
+	static PathName create(IStatus* status, const PathName& prefix, const PathName& directory = "");
 
 private:
 	void init(const PathName&, const PathName&);

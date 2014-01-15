@@ -161,6 +161,9 @@ const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
 
+const char* ISQL_COUNTERS_SET = "CurrentMemory, MaxMemory, RealTime, UserTime, Buffers, Reads, Writes, Fetches";
+#define ISQL_COUNTERS 8
+
 
 namespace IcuUtil
 {
@@ -193,9 +196,9 @@ namespace IcuUtil
 	};
 
 	// Return the number of characters of a string.
-	static unsigned charLength(SSHORT sqlsubtype, unsigned len, const char* str)
+	static unsigned charLength(SSHORT charset, unsigned len, const char* str)
 	{
-		if (sqlsubtype != CS_UNICODE_FSS && sqlsubtype != CS_UTF8)
+		if (charset != CS_UNICODE_FSS && charset != CS_UTF8)
 			return len;
 
 		unsigned charLen = 0;
@@ -212,10 +215,10 @@ namespace IcuUtil
 	}
 
 	// Pads a string to a specified column width.
-	static void pad(char* buffer, SSHORT sqlsubtype, unsigned len, const char* str, unsigned width,
+	static void pad(char* buffer, SSHORT charset, unsigned len, const char* str, unsigned width,
 		bool right)
 	{
-		if (sqlsubtype != CS_UNICODE_FSS && sqlsubtype != CS_UTF8)
+		if (charset != CS_UNICODE_FSS && charset != CS_UTF8)
 		{
 			// Truncate if necessary.
 			if (len > width)
@@ -266,13 +269,21 @@ namespace IcuUtil
 }
 
 
-static inline bool commit_trans(isc_tr_handle* x)
+static inline bool commit_trans(Firebird::ITransaction** x)
 {
-	if (isc_commit_transaction (isc_status, x)) {
-		ISQL_errmsg (isc_status);
-		isc_rollback_transaction (isc_status, x);
+	(*x)->commit(fbStatus);
+	if (ISQL_errmsg (fbStatus))
+	{
+		(*x)->rollback(fbStatus);
+		if (fbStatus->isSuccess())
+		{
+			*x = NULL;
+		}
+
 		return false;
 	}
+
+	*x = NULL;
 	return true;
 }
 
@@ -322,13 +333,13 @@ struct ri_actions
 
 static processing_state add_row(TEXT*);
 static processing_state blobedit(const TEXT*, const TEXT* const*);
-static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap);
+static processing_state bulk_insert_hack(const char* command);
 static bool bulk_insert_retriever(const char* prompt);
 static bool check_date(const tm& times);
 static bool check_time(const tm& times);
 static bool check_timestamp(const tm& times, const int msec);
 static size_t chop_at(char target[], const size_t size);
-static void col_check(const TEXT*, SSHORT*);
+static void col_check(const TEXT*, unsigned*);
 static void copy_str(TEXT**, const TEXT**, bool*, const TEXT* const,
 	const TEXT* const, literal_string_type);
 static processing_state copy_table(TEXT*, TEXT*, TEXT*);
@@ -365,19 +376,17 @@ static processing_state parse_arg(int, SCHAR**, SCHAR*); //, FILE**);
 #ifdef DEV_BUILD
 static processing_state passthrough(const char* cmd);
 #endif
-static SSHORT print_item(TEXT**, XSQLVAR*, const unsigned);
+static unsigned print_item(TEXT**, const IsqlVar*, const unsigned);
 static void print_item_numeric(SINT64, int, int, TEXT*);
-static processing_state print_line(XSQLDA*, const unsigned pad[], TEXT line[]);
-static void print_performance(const perf64* perf_before);
-static processing_state print_sqlda_input(const bool is_selectable);
-static void print_sqlda_output(const XSQLDA& sqlda);
-static void process_header(const XSQLDA* sqlda, const unsigned pad[], TEXT header[], TEXT header2[]);
+static processing_state print_line(Firebird::IMessageMetadata*, UCHAR*, const unsigned pad[], TEXT line[]);
+static processing_state print_performance(const SINT64* perf_before);
+static void print_message(Firebird::IMessageMetadata* msg, const char* dir);
+static void process_header(Firebird::IMessageMetadata*, const unsigned pad[], TEXT header[], TEXT header2[]);
 static void process_plan();
 static SLONG process_record_count(const int statement_type);
 static SSHORT process_request_type();
-static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[]);
-static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned pad[]);
-static int process_statement(const TEXT*, XSQLDA**);
+static unsigned process_message_display(Firebird::IMessageMetadata* msg, unsigned pad[]);
+static processing_state process_statement(const TEXT*);
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD);
 #else
@@ -385,12 +394,8 @@ static int query_abort(const int, const int, void*);
 #endif
 static bool stdin_redirected();
 static void strip_quotes(const TEXT*, TEXT*);
-//#ifdef DEV_BUILD
-static const char* sqltype_to_string(USHORT);
-//#endif
+static const char* sqltype_to_string(unsigned);
 
-XSQLDA* global_sqlda;
-XSQLDA** global_sqldap;
 // The dialect spoken by the database, should be 0 when no database is connected.
 USHORT global_dialect_spoken = 0;
 USHORT requested_SQL_dialect = SQL_DIALECT_V6;
@@ -402,17 +407,16 @@ bool Trusted_auth = false;
 bool Version_info = false;
 
 // Utility transaction handle
-static isc_tr_handle D__trans;
-static isc_tr_handle M__trans;
+static Firebird::ITransaction* D__trans = NULL;
+static Firebird::ITransaction* M__trans = NULL;
 static int global_numbufs;	// # of cache buffers on connect
-static isc_stmt_handle global_Stmt;
-//static FILE* Ofp;
-//static FILE* Ifp;
+static Firebird::IStatement* global_Stmt = NULL;
 static SCHAR Password[128];
 static SCHAR Charset[128];
 static bool Merge_stderr;
 
 static ColList global_Cols;
+static Firebird::GlobalPtr<Firebird::UCharBuffer> global_Buffer;
 static int global_Col_default = 0; // Need to write code for it in the future.
 static Firebird::GlobalPtr<InputDevices> Filelist;
 //static TEXT Tmpfile[MAXPATHLEN];
@@ -421,7 +425,7 @@ static bool Interrupt_flag = false;
 static bool Echo = false;
 static bool Time_display = false;
 static bool Sqlda_display = false;
-static int Exit_value;
+static int Exit_value = 0;
 static bool Interactive = true;
 static bool Input_file = false;
 static int Pagelength = 20;
@@ -513,6 +517,35 @@ static const ri_actions ri_actions_all[] =
 };
 
 
+static bool startTransaction(Firebird::ITransaction** t, unsigned len = 0, const UCHAR* tpb = NULL)
+{
+	if (DB && !*t)
+	{
+		*t = DB->startTransaction(fbStatus, len, tpb);
+		if (ISQL_errmsg(fbStatus))
+			return false;
+	}
+
+	return true;
+}
+
+static bool M_Transaction()
+{
+	return startTransaction(&M__trans);
+}
+
+static bool D_Transaction()
+{
+	return startTransaction(&D__trans, 5, default_tpb);
+}
+
+// Transaction for all frontend commands
+static bool frontendTransaction()
+{
+	return startTransaction(&fbTrans, 5, default_tpb);
+}
+
+
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
 /**************************************
@@ -599,7 +632,6 @@ int ISQL_main(int argc, char* argv[])
 				LegacyTables flag = ret == EXTRACT ? SQL_objects : ALL_objects;
 				Exit_value = EXTRACT_ddl(flag, tabname);
 				ISQL_disconnect_database(true);
-				// isc_detach_database(isc_status, &DB);
 			}
 			else
 				Exit_value = FINI_ERROR;
@@ -661,13 +693,8 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 
 	isqlGlob.printf("[");
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return;
-		}
+	if (!frontendTransaction())
+		return;
 
 	FOR FDIM IN RDB$FIELD_DIMENSIONS WITH
 	   FDIM.RDB$FIELD_NAME EQ fieldname
@@ -687,7 +714,7 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -876,7 +903,7 @@ int getNextInputChar()
 }
 
 
-void ISQL_errmsg(const ISC_STATUS* status)
+bool ISQL_errmsg(Firebird::IStatus* st)
 {
 /**************************************
  *
@@ -888,9 +915,10 @@ void ISQL_errmsg(const ISC_STATUS* status)
  *	Report error conditions
  *	Simulate isc_print_status exactly, to control stderr
  **************************************/
+	const ISC_STATUS* status = st->get();
 	TEXT errbuf[MSG_LENGTH];
 
-	if (Quiet)
+	if (Quiet && !st->isSuccess())
 		Exit_value = FINI_ERROR;
 	//else
 	{
@@ -899,7 +927,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] != isc_arg_warning) ||
 			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] == isc_arg_warning && !Warnings))
 		{
-			return;
+			return false;
 		}
 		FB_SQLSTATE_STRING sqlstate;
 		fb_sqlstate(sqlstate, status);
@@ -973,10 +1001,12 @@ void ISQL_errmsg(const ISC_STATUS* status)
 			STDERROUT(errbuf);
 		}
 	}
+
+	return !st->isSuccess();
 }
 
 
-void ISQL_warning(ISC_STATUS* status)
+void ISQL_warning(Firebird::IStatus* st)
 {
 /**************************************
  *
@@ -989,7 +1019,7 @@ void ISQL_warning(ISC_STATUS* status)
  *	Simulate isc_print_status exactly, to control stderr
  **************************************/
 
-	const ISC_STATUS* vec = status;
+	const ISC_STATUS* vec = st->get();
 	fb_assert(vec[1] == 0);		// shouldn't be any errors
 
 	//if (!Quiet)
@@ -1013,7 +1043,7 @@ void ISQL_warning(ISC_STATUS* status)
 		}
 	}
 
-	status[2] = isc_arg_end;
+	st->init();
 }
 
 
@@ -1073,15 +1103,8 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
  *
  **************************************/
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return 0;
-		}
-	}
+	if (!frontendTransaction())
+		return 0;
 
 	SSHORT l = 0;
 	FOR FLD IN RDB$FIELDS WITH
@@ -1093,7 +1116,7 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
 			l = FLD.RDB$CHARACTER_LENGTH;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return 0;
 	END_ERROR;
 
@@ -1120,15 +1143,8 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 	const char* notNullStr = not_null ? " NOT NULL" : "";
 	string[0] = 0;
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return;
-		}
-	}
+	if (!frontendTransaction())
+		return;
 
 	//if (collation) {
 	if (collation || collate_only)
@@ -1160,7 +1176,7 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 						 CST.RDB$CHARACTER_SET_NAME, notNullStr, COL.RDB$COLLATION_NAME);
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return;
 		END_ERROR;
 #ifdef DEV_BUILD
@@ -1188,7 +1204,7 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 			sprintf (string, " CHARACTER SET %s%s", CST.RDB$CHARACTER_SET_NAME, notNullStr);
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return;
 		END_ERROR;
 #ifdef DEV_BUILD
@@ -1201,6 +1217,29 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 		}
 #endif
 	}
+}
+
+
+processing_state ISQL_fill_var(IsqlVar* var,
+							   Firebird::IMessageMetadata* msg,
+							   unsigned index,
+							   UCHAR* buf)
+{
+	var->field = msg->getField(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
+	var->relation = msg->getRelation(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
+	var->owner = msg->getOwner(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
+	var->alias = msg->getAlias(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
+	var->subType = msg->getSubType(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
+	var->scale = msg->getScale(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
+	var->type = msg->getType(fbStatus, index);			if (!fbStatus->isSuccess()) return ps_ERR;
+	var->length = msg->getLength(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
+	var->charSet = msg->getCharSet(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
+	var->nullable = msg->isNullable(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
+
+	var->nullInd = (short*)&buf[msg->getNullOffset(fbStatus, index)];	if (!fbStatus->isSuccess()) return ps_ERR;
+	var->value.setPtr = &buf[msg->getOffset(fbStatus, index)];			if (!fbStatus->isSuccess()) return ps_ERR;
+
+	return CONT;
 }
 
 
@@ -1223,17 +1262,10 @@ void ISQL_get_default_source(const TEXT* rel_name,
 
 	fb_utils::exact_name(field_name);
 
-	*blob_id = isc_blob_null;
+	*blob_id = fbBlobNull;
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return;
-		}
-	}
+	if (!frontendTransaction())
+		return;
 
 	if (rel_name)
 	{
@@ -1251,7 +1283,7 @@ void ISQL_get_default_source(const TEXT* rel_name,
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return;
 		END_ERROR;
 	}
@@ -1266,7 +1298,7 @@ void ISQL_get_default_source(const TEXT* rel_name,
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return;
 		END_ERROR;
 	}
@@ -1292,15 +1324,8 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 
 	*segs = '\0';
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return 0;
-		}
-	}
+	if (!frontendTransaction())
+		return 0;
 
 	TEXT* const segs_end = segs + buf_size - 1;
 	// Query to get column names
@@ -1350,7 +1375,7 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		ROLLBACK;
 		return 0;
 	END_ERROR;
@@ -1382,15 +1407,8 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 	SSHORT save_view_context = view_context;
 
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return false;
-		}
-	}
+	if (!frontendTransaction())
+		return false;
 
 	/*
 	Using view_name and view_context get the relation name from
@@ -1511,15 +1529,8 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 
 	bool null_flag = true;
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return false;
-		}
-	}
+	if (!frontendTransaction())
+		return false;
 
 	if (rel_name)
 	{
@@ -1553,7 +1564,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return null_flag;
 		END_ERROR;
 	}
@@ -1568,7 +1579,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return null_flag;
 		END_ERROR;
 	}
@@ -1587,7 +1598,7 @@ void ISQL_disconnect_database(bool nQuietMode)
  *
  * Functional description
  *	Disconnect from the current database.  First commit work and then
- *	call isc_detach_database to detach from the database and then zero
+ *	call detach to detach from the database and then zero
  *	out the DB handle.
  *
  * Change from miroslavp on 2005.05.06
@@ -1605,17 +1616,27 @@ void ISQL_disconnect_database(bool nQuietMode)
 	// Commit transaction that was started on behalf of the request
 	// Don't worry about the error if one occurs it will be network
 	// related and caught later.
-	if (DB && gds_trans)
-		isc_rollback_transaction(isc_status, &gds_trans);
+	if (DB && fbTrans)
+	{
+		fbTrans->rollback(fbStatus);
+		if (fbStatus->isSuccess())
+			fbTrans = NULL;
+	}
 
 	// If there is  current user statement, free it
-	// I think option 2 is the right one (DSQL_drop), but who knows
 	if (global_Stmt)
-		isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
+	{
+		global_Stmt->free(fbStatus);
+		if (fbStatus->isSuccess())
+			global_Stmt = NULL;
+	}
 
 	// Detach from old database
-	if (DB) {
-		isc_detach_database(isc_status, &DB);
+	if (DB)
+	{
+		DB->detach(fbStatus);
+		if (fbStatus->isSuccess())
+			DB = NULL;
 	}
 
 	// Restore original value of the flag
@@ -1627,7 +1648,7 @@ void ISQL_disconnect_database(bool nQuietMode)
 	isqlGlob.global_Db_name[0] = '\0';
 	D__trans = 0;
 	M__trans = 0;
-	gds_trans = 0;
+	fbTrans = 0;
 
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
@@ -1652,15 +1673,8 @@ bool ISQL_is_domain(const TEXT* field_name)
  **************************************/
 	bool is_domain = false;
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return false;
-		}
-	}
+	if (!frontendTransaction())
+		return false;
 
 	FOR FLD IN RDB$FIELDS WITH
 		FLD.RDB$FIELD_NAME EQ field_name
@@ -1672,7 +1686,7 @@ bool ISQL_is_domain(const TEXT* field_name)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return is_domain;
 	END_ERROR;
 
@@ -1719,7 +1733,7 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg (isc_status);
+			ISQL_errmsg (fbStatus);
 			return false;
 		END_ERROR;
 	}
@@ -1761,7 +1775,7 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 void ISQL_print_validation(FILE* fp,
 						   ISC_QUAD* blobid,
 						   bool isComputedField,
-						   FB_API_HANDLE trans)
+						   Firebird::ITransaction* trans)
 {
 /**************************************
  *
@@ -1783,19 +1797,16 @@ void ISQL_print_validation(FILE* fp,
 	if (blobid->gds_quad_high == 0)
 		return;
 
-	UserBlob blob(isc_status);
-	if (!blob.open(DB, trans, *blobid))
-	{
-		ISQL_errmsg(isc_status);
+	Firebird::IBlob* blob = DB->openBlob(fbStatus, trans, blobid);
+	if (ISQL_errmsg(fbStatus))
 		return;
-	}
 
 	bool issql = false;
 	bool firsttime = true;
 	TEXT buffer[BUFFER_LENGTH512];
 
 	size_t length;
-	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
+	while ( (length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer)) )
 	{
 		buffer[length] = 0;
 		const TEXT* p = buffer;
@@ -1831,8 +1842,10 @@ void ISQL_print_validation(FILE* fp,
 		IUTILS_printf2(fp, "%s", (isComputedField ? " */" : ")"));
 	}
 
-	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
-		ISQL_errmsg(isc_status);
+	if ((!fbStatus->isSuccess()) && (fbStatus->get()[1] != isc_segstr_eof))
+		ISQL_errmsg(fbStatus);
+
+	blob->close(fbStatus);
 }
 
 
@@ -1866,107 +1879,67 @@ static processing_state add_row(TEXT* tabname)
 
 	// There may have been a commit transaction before we got here
 
-	if (!M__trans)
+	if (!M_Transaction())
 	{
-		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return FAIL;
-		}
+		return FAIL;
 	}
 
 	// Start default transaction for prepare
-	if (!D__trans)
+	if (!D_Transaction())
 	{
-		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return FAIL;
-		}
+		return FAIL;
 	}
 
 	chop_at(tabname, QUOTEDLENGTH);
 	if (tabname[0] != DBL_QUOTE)
 		IUTILS_make_upper(tabname);
-	/*
-	chop_at(tablename, WORDLENGTH);
-	const bool delimited_yes = tablename[0] == DBL_QUOTE;
-	TEXT tabname[QUOTEDLENGTH];
-	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
-		IUTILS_copy_SQL_id(tablename, tabname, DBL_QUOTE);
-	}
-	else
-	{
-		strcpy(tabname, tablename);
-		IUTILS_make_upper(tabname);
-	}
-	*/
 
 	// Query to obtain relation information
-	SCHAR string[BUFFER_LENGTH120];
-	sprintf(string, "SELECT * FROM %s", tabname);
+	Firebird::string str2;
+	str2.printf("SELECT * FROM %s", tabname);
 
-	XSQLDA* sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(20)));
-	memset(sqlda, 0, XSQLDA_LENGTH(20));
-	sqlda->version = SQLDA_VERSION1;
-	sqlda->sqln = 20;
-	if (isc_dsql_prepare(isc_status, &D__trans, &global_Stmt, 0, string,
-						 isqlGlob.SQL_dialect, sqlda))
-	{
-		ISQL_errmsg(isc_status);
-		if (sqlda)
-			ISQL_FREE(sqlda);
+	global_Stmt = DB->prepare(fbStatus, D__trans, 0, str2.c_str(), isqlGlob.SQL_dialect,
+		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+	if (ISQL_errmsg(fbStatus))
 		return (SKIP);
-	}
 
-	const SSHORT n_cols = sqlda->sqld;
+	Firebird::RefPtr<Firebird::IMessageMetadata> msg(Firebird::REF_NO_INCR, global_Stmt->getOutputMetadata(fbStatus));
+	if (ISQL_errmsg(fbStatus))
+		return (SKIP);
 
-	// Reallocate to the proper size if necessary
+	const unsigned n_cols = msg->getCount(fbStatus);
+	if (ISQL_errmsg(fbStatus))
+		return (SKIP);
 
-	if (sqlda->sqld > sqlda->sqln)
-	{
-		ISQL_FREE(sqlda);
-		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
-		memset(sqlda, 0, XSQLDA_LENGTH(n_cols));
-		sqlda->version = SQLDA_VERSION1;
-		sqlda->sqld = sqlda->sqln = n_cols;
-
-		//  We must re-describe the sqlda, no need to re-prepare
-
-		if (isc_dsql_describe(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda))
-		{
-			ISQL_errmsg(isc_status);
-			isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
-			if (sqlda)
-				ISQL_FREE(sqlda);
-			return (FAIL);
-		}
-	}
-	isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
+	global_Stmt->free(fbStatus);
+	if (ISQL_errmsg(fbStatus))
+		return (SKIP);
 
 	// Array for storing select/insert column mapping, colcheck sets it up
-	SSHORT* colnumber = (SSHORT*) ISQL_ALLOC((SLONG) (n_cols * sizeof(SSHORT)));
+	Firebird::Array<unsigned> coln;
+	unsigned* colnumber = coln.getBuffer(n_cols);
 	col_check(tabname, colnumber);
 
 	// Create the new INSERT statement from the sqlda info
 
-	SCHAR* insertstring = (SCHAR*) ISQL_ALLOC((SLONG) (40 + (QUOTEDLENGTH + 4) * n_cols));
+	Firebird::string insertstring;
 
 	// There is a question mark for each column that's known to be updatable.
 
-	sprintf(insertstring, "INSERT INTO %s (", tabname);
+	insertstring.printf("INSERT INTO %s (", tabname);
 
-	SSHORT i_cols = 0;
+	unsigned i_cols = 0;
 	{ // scope
-		char fldname[WORDLENGTH];
 		char fldfixed[QUOTEDLENGTH];
 		int i = 0;
-		for (const XSQLVAR* var = sqlda->sqlvar; i < n_cols; var++, i++)
+		for (unsigned i = 0; i < n_cols; ++i)
 		{
 			// Skip columns that are computed
-			if (colnumber[i] != -1)
+			if (colnumber[i] != ~0u)
 			{
-				fb_utils::copy_terminate(fldname, var->sqlname, var->sqlname_length + 1);
+				const char* fldname = msg->getField(fbStatus, i);
+				if (ISQL_errmsg(fbStatus))
+					return (SKIP);
 				const bool delimited_yes = fldname[0] == DBL_QUOTE;
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes)
 				{
@@ -1978,37 +1951,51 @@ static processing_state add_row(TEXT* tabname)
 					IUTILS_make_upper(fldfixed);
 				}
 
-				sprintf(insertstring + strlen(insertstring), "%s,", fldfixed);
-				i_cols++;
+				// Set i_cols to the number of insert columns
+				if (i_cols++)
+					insertstring += ',';
+				insertstring += fldfixed;
 			}
 		}
 	} // scope
 
-	// Set i_cols to the number of insert columns
-	insertstring[strlen(insertstring) - 1] = ')';
-	strcat(insertstring, " VALUES (");
+	insertstring += ") VALUES (";
 
-	for (int i = 0; i < n_cols; i++)
+	for (unsigned i = 0; i < i_cols; i++)
 	{
-		if (colnumber[i] != -1)
-			strcat(insertstring, " ?,");
+		if (i)
+			insertstring += ',';
+		insertstring += '?';
 	}
-	// Patch the last character in the string
-	insertstring[strlen(insertstring) - 1] = ')';
+	insertstring += ')';
 
+	// Build metadata for insert message
+	if (i_cols != n_cols)
+	{
+		Firebird::RefPtr<Firebird::IMetadataBuilder> bldr(Firebird::REF_NO_INCR, msg->getBuilder(fbStatus));
+		if (ISQL_errmsg(fbStatus))
+			return (SKIP);
 
-	// Allocate INSERT sqlda and null indicators
+		unsigned i = n_cols;
+		while (--i >= 0)
+		{
+			if (colnumber[i] == ~0u)
+			{
+				bldr->remove(fbStatus, i);
+				if (ISQL_errmsg(fbStatus))
+					return (SKIP);
+			}
+		}
+		msg.assignRefNoIncr(bldr->getMetadata(fbStatus));
+		if (ISQL_errmsg(fbStatus))
+			return (SKIP);
+	}
 
-	XSQLDA* isqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(i_cols)));
-
-	// ISQL_ALLOC doesn't initialize the structure, so init everything
-	// to avoid lots of problems.
-
-	memset(isqlda, 0, XSQLDA_LENGTH(i_cols));
-	isqlda->version = SQLDA_VERSION1;
-	isqlda->sqln = isqlda->sqld = i_cols;
-
-	SSHORT* nullind = (SSHORT*) ISQL_ALLOC((SLONG) (i_cols * sizeof(SSHORT)));
+	// Allocate INSERT buffer
+	unsigned bSize = msg->getMessageLength(fbStatus);
+	if (ISQL_errmsg(fbStatus))
+		return (SKIP);
+	UCHAR* msgBuf = global_Buffer->getBuffer(bSize);
 
 	// For each column, get the type, and length then prompt for a value
 	// and scanf the resulting string into a buffer of the right type.
@@ -2017,61 +2004,59 @@ static processing_state add_row(TEXT* tabname)
 	IUTILS_msg_get(ADD_PROMPT, sizeof(infobuf), infobuf);
 	STDERROUT(infobuf);
 
-	TEXT msg[MSG_LENGTH];
-	SCHAR name[WORDLENGTH];
+	TEXT txt[MSG_LENGTH];
+	const char* name;
 	bool done = false;
 	while (!done)
 	{
-		SSHORT* nullp = nullind;
-		int i = 0;
-		for (const XSQLVAR* var = sqlda->sqlvar; i < n_cols && !done; var++, i++)
+		for (unsigned i = 0; i < i_cols && !done; ++i)
 		{
-			if (colnumber[i] == -1)
-				continue;
+			short* nullp = (short*)&msgBuf[msg->getNullOffset(fbStatus, i)];
+			if (ISQL_errmsg(fbStatus))
+				return (SKIP);
+			UCHAR* datap = &msgBuf[msg->getOffset(fbStatus, i)];
+			if (ISQL_errmsg(fbStatus))
+				return (SKIP);
 
-			// SQLDA for INSERT statement might have fewer columns
-			const SSHORT j = colnumber[i];
-			XSQLVAR* ivar = &isqlda->sqlvar[j];
-			*ivar = *var;
-			*nullp = 0;
-			ivar->sqlind = nullp++;
-			ivar->sqldata = NULL;
-			{ // scope
-				const SSHORT length = var->sqlname_length;
-				fb_utils::copy_terminate(name, var->sqlname, length + 1);
-			} // scope
-			const SSHORT type = var->sqltype & ~1;
-			const SSHORT nullable = var->sqltype & 1;
+			const char* name = msg->getField(fbStatus, i);
+			if (ISQL_errmsg(fbStatus))
+				return (SKIP);
+			unsigned type = msg->getType(fbStatus, i);
+			if (ISQL_errmsg(fbStatus))
+				return (SKIP);
+			const bool nullable = msg->isNullable(fbStatus, i);
+			if (ISQL_errmsg(fbStatus))
+				return (SKIP);
+			unsigned varLength, scale;
 
 			// Prompt with the name and read the line
-
 			switch (type)
 			{
 			case SQL_BLOB:
-				IUTILS_msg_get(BLOB_PROMPT, msg, SafeArg() << name);
+				IUTILS_msg_get(BLOB_PROMPT, txt, SafeArg() << name);
 				// Blob: %s, type 'edit' or filename to load>
 				break;
 			case SQL_TYPE_DATE:
-				IUTILS_msg_get(DATE_PROMPT, msg, SafeArg() << name);
+				IUTILS_msg_get(DATE_PROMPT, txt, SafeArg() << name);
 				// Enter %s as Y/M/D>
 				break;
 			case SQL_TYPE_TIME:
-				IUTILS_msg_get(TIME_PROMPT, msg, SafeArg() << name);
+				IUTILS_msg_get(TIME_PROMPT, txt, SafeArg() << name);
 				// Enter %s as H:M:S>
 				break;
 			case SQL_TIMESTAMP:
-				IUTILS_msg_get(TIMESTAMP_PROMPT, msg, SafeArg() << name);
+				IUTILS_msg_get(TIMESTAMP_PROMPT, txt, SafeArg() << name);
 				// Enter %s as Y/MON/D H:MIN:S[.MSEC]>
 				break;
 			default:
-				IUTILS_msg_get(NAME_PROMPT, msg, SafeArg() << name);
+				IUTILS_msg_get(NAME_PROMPT, txt, SafeArg() << name);
 				// Enter %s>
 				break;
 			}
 
 			// On blank line or EOF, break the two loops without doing an insert.
 
-			readNextInputLine(msg);
+			readNextInputLine(txt);
 			getColumn = -1; // We are bypassing getNextInputChar().
 			if (lastInputLine == NULL || strlen(lastInputLine) == 0)
 			{
@@ -2079,11 +2064,11 @@ static processing_state add_row(TEXT* tabname)
 				break;
 			}
 
-			const size_t length = strlen(lastInputLine);
+			unsigned length = strlen(lastInputLine);
 			if (length > MAX_SQL_LENGTH)
 			{
-				IUTILS_msg_get(BUFFER_OVERFLOW, msg);
-				STDERROUT(msg);
+				IUTILS_msg_get(BUFFER_OVERFLOW, txt);
+				STDERROUT(txt);
 				done = true;
 				break;
 			}
@@ -2098,11 +2083,12 @@ static processing_state add_row(TEXT* tabname)
 			// If the user writes NULL, put a null in the column
 
 			if (!strcmp(cmd, "NULL"))
-				*ivar->sqlind = -1;
+				*nullp = -1;
 			else
 			{
-				*ivar->sqlind = 0;
+				*nullp = 0;
 				SLONG res;
+
 				// Data types
 				SSHORT* smallint;
 				SLONG* integer;
@@ -2111,18 +2097,20 @@ static processing_state add_row(TEXT* tabname)
 				float* fvalue;
 				double* dvalue;
 				UCHAR* boolean;
+				ISC_QUAD* blobid;
+				vary* avary;
+				char* achar;
 				tm times;
 				// Initialize the time structure
 				memset(&times, 0, sizeof(times));
 				char msec_str[5] = "";
 				int msec = 0;
-				ISC_QUAD* blobid;
 
 				switch (type)
 				{
 				case SQL_BLOB:
 
-					blobid = (ISC_QUAD*) ISQL_ALLOC((SLONG) sizeof(ISC_QUAD));
+					blobid = (ISC_QUAD*) datap;
 
 					if (!strcmp(cmd, "EDIT")) // If edit, we edit a temp file.
 					{
@@ -2132,8 +2120,10 @@ static processing_state add_row(TEXT* tabname)
 						else
 						{
 							gds__edit(ftmp.c_str(), 0);
-							res = BLOB_text_load(blobid, DB, M__trans, ftmp.c_str());
+							Firebird::UtlInterfacePtr()->loadBlob(fbStatus, blobid, DB, M__trans,
+								ftmp.c_str(), FB_TRUE);
 							unlink(ftmp.c_str());
+							res = fbStatus->isSuccess();
 						}
 					}
 					else	// Otherwise just load the named file
@@ -2142,7 +2132,9 @@ static processing_state add_row(TEXT* tabname)
 						// being loaded.  As we aren't sure, we'll
 						// do binary operation - this is NEW data in
 						// the database, not updating existing info
-						res = BLOB_load(blobid, DB, M__trans, lastInputLine);
+						Firebird::UtlInterfacePtr()->loadBlob(fbStatus, blobid, DB, M__trans,
+							lastInputLine, FB_FALSE);
+						res = fbStatus->isSuccess();
 					}
 
 					if (!res)
@@ -2150,28 +2142,24 @@ static processing_state add_row(TEXT* tabname)
 						STDERROUT("Unable to load file");
 						done = true;
 					}
-
-					ivar->sqldata = (SCHAR*) blobid;
 					break;
 
 				case SQL_FLOAT:
-					fvalue = (float*) ISQL_ALLOC(sizeof(float));
+					fvalue = (float*) datap;
 					if (sscanf(lastInputLine, "%g", fvalue) != 1)
 					{
 						STDERROUT("Input parsing problem");
 						done = true;
 					}
-					ivar->sqldata = (SCHAR*) fvalue;
 					break;
 
 				case SQL_DOUBLE:
-					dvalue = (double*) ISQL_ALLOC(sizeof(double));
+					dvalue = (double*) datap;
 					if (sscanf(lastInputLine, "%lg", dvalue) != 1)
 					{
 						STDERROUT("Input parsing problem");
 						done = true;
 					}
-					ivar->sqldata = (SCHAR*) dvalue;
 					break;
 
 				case SQL_TYPE_DATE:
@@ -2179,17 +2167,16 @@ static processing_state add_row(TEXT* tabname)
 									&times.tm_mon, &times.tm_mday) ||
 						!check_date(times))
 					{
-						IUTILS_msg_get(DATE_ERR, msg, SafeArg() << lastInputLine);
-						STDERROUT(msg);	// Bad date %s\n
+						IUTILS_msg_get(DATE_ERR, txt, SafeArg() << lastInputLine);
+						STDERROUT(txt);	// Bad date %s\n
 						done = true;
 					}
 					else
 					{
 						--times.tm_mon;
 						times.tm_year -= 1900; // tm_year is 1900-based.
-						ISC_DATE* date = (ISC_DATE*) ISQL_ALLOC((SLONG) ivar->sqllen);
+						ISC_DATE* date = (ISC_DATE*) datap;
 						isc_encode_sql_date(&times, date);
-						ivar->sqldata = (char*) date;
 					}
 					break;
 
@@ -2198,15 +2185,14 @@ static processing_state add_row(TEXT* tabname)
 									&times.tm_min, &times.tm_sec) ||
 						!check_time(times))
 					{
-						IUTILS_msg_get(TIME_ERR, msg, SafeArg() << lastInputLine);
-						STDERROUT(msg);	// Bad time %s\n
+						IUTILS_msg_get(TIME_ERR, txt, SafeArg() << lastInputLine);
+						STDERROUT(txt);	// Bad time %s\n
 						done = true;
 					}
 					else
 					{
-						ISC_TIME* vtime = (ISC_TIME*) ISQL_ALLOC((SLONG) ivar->sqllen);
+						ISC_TIME* vtime = (ISC_TIME*) datap;
 						isc_encode_sql_time(&times, vtime);
-						ivar->sqldata = (char*) vtime;
 					}
 					break;
 
@@ -2237,59 +2223,56 @@ static processing_state add_row(TEXT* tabname)
 						done = true;
 					if (done)
 					{
-						IUTILS_msg_get(TIMESTAMP_ERR, msg, SafeArg() << lastInputLine);
-						STDERROUT(msg);	// Bad timestamp %s\n
+						IUTILS_msg_get(TIMESTAMP_ERR, txt, SafeArg() << lastInputLine);
+						STDERROUT(txt);	// Bad timestamp %s\n
 					}
 					else
 					{
 						--times.tm_mon;
 						times.tm_year -= 1900;
-						ISC_TIMESTAMP* datetime =
-							(ISC_TIMESTAMP*) ISQL_ALLOC((SLONG) ivar->sqllen);
+						ISC_TIMESTAMP* datetime = (ISC_TIMESTAMP*) datap;
 						isc_encode_timestamp(&times, datetime);
 						datetime->timestamp_time += msec;
-						ivar->sqldata = (char*) datetime;
 					}
 					break;
 
 				case SQL_TEXT:
-					// Force all text to varying
-					ivar->sqltype = SQL_VARYING + nullable;
-					// Fall into:
-
 				case SQL_VARYING:
+					varLength = msg->getLength(fbStatus, i);
+					if (ISQL_errmsg(fbStatus))
+						return (SKIP);
+					if (length > varLength)
 					{
-						vary* avary =
-							(vary*) ISQL_ALLOC((SLONG) (length + sizeof(USHORT)));
-						avary->vary_length = length;
-						strncpy(avary->vary_string, lastInputLine, length);
-						ivar->sqldata = (SCHAR*) avary;
-						ivar->sqllen = length;
-						break;
+						STDERROUT("String too long");		// msg!
+						length = varLength;
 					}
+
+					if (type == SQL_VARYING)
+					{
+						avary = (vary*) datap;
+						avary->vary_length = length;
+						memcpy(avary->vary_string, lastInputLine, length);
+					}
+					else
+					{
+						achar = (char*) datap;
+						memcpy(achar, lastInputLine, length);
+						memset(&achar[length], ' ', varLength - length);
+					}
+					break;
 
 				case SQL_SHORT:
 				case SQL_LONG:
-					if (type == SQL_SHORT)
-					{
-						smallint = (SSHORT*) ISQL_ALLOC(sizeof(SSHORT));
-						ivar->sqldata = (SCHAR*) smallint;
-					}
-					else if (type == SQL_LONG)
-					{
-						integer = (SLONG*) ISQL_ALLOC(sizeof(SLONG));
-						ivar->sqldata = (SCHAR*) integer;
-					}
-					// Fall into:
-
-					// Fall through from SQL_SHORT and SQL_LONG ...
 				case SQL_INT64:
-					if (type == SQL_INT64)
-					{
-						pi64 = (SINT64*) ISQL_ALLOC(sizeof(SINT64));
-						ivar->sqldata = (SCHAR*) pi64;
-					}
-					if (ivar->sqlscale < 0)
+					smallint = (SSHORT*) datap;
+					integer = (SLONG*) datap;
+					pi64 = (SINT64*) datap;
+
+					scale = msg->getScale(fbStatus, i);
+					if (ISQL_errmsg(fbStatus))
+						return (SKIP);
+
+					if (scale < 0)
 					{
 						SSHORT lscale = 0;
 						if (!get_numeric((UCHAR*) lastInputLine, length, &lscale, &n))
@@ -2299,13 +2282,13 @@ static processing_state add_row(TEXT* tabname)
 						}
 						else
 						{
-							int dscale = ivar->sqlscale - lscale;
+							int dscale = scale - lscale;
 							if (dscale > 0)
 							{
 								TEXT err_buf[256];
 								sprintf(err_buf,
 										"input error: input scale %d exceeds the field's scale %d",
-										-lscale, -ivar->sqlscale);
+										-lscale, -scale);
 								STDERROUT(err_buf);
 								done = true;
 							}
@@ -2346,8 +2329,7 @@ static processing_state add_row(TEXT* tabname)
 					break;
 
 				case SQL_BOOLEAN:
-					boolean = (UCHAR*) ISQL_ALLOC(sizeof(UCHAR));
-					ivar->sqldata = (SCHAR*) boolean;
+					boolean = (FB_BOOLEAN*) datap;
 
 					if (fb_utils::stricmp(lastInputLine, "TRUE") == 0)
 						*boolean = 1;
@@ -2369,42 +2351,16 @@ static processing_state add_row(TEXT* tabname)
 		}
 		if (!done)
 		{
-			// having completed all columns, try the insert statement with the isqlda
+			// having completed all columns, try the insert statement with the msg
 
-			if (isc_dsql_exec_immed2(isc_status, &DB, &M__trans, 0,
-									 insertstring, isqlGlob.SQL_dialect, isqlda, NULL))
+			DB->execute(fbStatus, M__trans, insertstring.length(), insertstring.c_str(),
+				isqlGlob.SQL_dialect, msg, msgBuf, NULL, NULL);
+			if (ISQL_errmsg(fbStatus))
 			{
-				ISQL_errmsg(isc_status);
 				break;
 			}
-
-			// Release each of the variables for next time
-			XSQLVAR* ivar = isqlda->sqlvar;
-			for (int i = 0; i < i_cols; i++, ivar++)
-			{
-				if (ivar->sqldata)
-					ISQL_FREE(ivar->sqldata);
-			}
 		}
 	}
-
-	ISQL_FREE(insertstring);
-	ISQL_FREE(sqlda);
-	if (isqlda)
-	{
-		XSQLVAR* ivar = isqlda->sqlvar;
-		for (int i = 0; i < i_cols; i++, ivar++)
-		{
-			if (ivar->sqldata)
-				ISQL_FREE(ivar->sqldata);
-		}
-
-		ISQL_FREE(isqlda);
-	}
-	if (colnumber)
-		ISQL_FREE(colnumber);
-	if (nullind)
-		ISQL_FREE(nullind);
 
 	return (SKIP);
 }
@@ -2441,7 +2397,7 @@ static processing_state blobedit(const TEXT* action, const TEXT* const* cmd)
 
 	processing_state rc = SKIP;
 	if (!strcmp(action, "BLOBVIEW"))
-		BLOB_edit(&blobid, DB, M__trans, "blob");
+		Firebird::UtlInterfacePtr()->editBlob(fbStatus, &blobid, DB, M__trans, "blob");
 	else if ((!strcmp(action, "BLOBDUMP")) && (*cmd[2]))
 	{
 		// If this is a blobdump, make sure there is a file name
@@ -2449,16 +2405,15 @@ static processing_state blobedit(const TEXT* action, const TEXT* const* cmd)
 		// as we're not sure, we'll dump it in BINARY mode.
 		TEXT path[MAXPATHLEN];
 		strip_quotes(cmd[2], path);
-		if (!BLOB_dump(&blobid, DB, M__trans, path))
-		{
-			TEXT errbuf[MSG_LENGTH];
-			IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << path);
-			STDERROUT(errbuf);
-			rc = ps_ERR;
-		}
+		Firebird::UtlInterfacePtr()->dumpBlob(fbStatus, &blobid, DB, M__trans, path, FB_FALSE);
 	}
 	else
 		rc = ps_ERR;
+
+	if (rc == SKIP && ISQL_errmsg(fbStatus))
+	{
+		rc = ps_ERR;
+	}
 
 	return rc;
 }
@@ -2492,7 +2447,7 @@ static processing_state blobedit(const TEXT* action, const TEXT* const* cmd)
 // like #, $, %, etc., and anything can follow them, including random text.
 // It's invalid to put +++ (signaling row continuation) after a tuple is complete.
 // If you came here looking for robust parsing code, you're at the wrong place.
-static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
+static processing_state bulk_insert_hack(const char* command)
 {
 	// Skip "SET BULK_INSERT" part.
 	for (int j = 0; j < 2; ++j)
@@ -2507,45 +2462,38 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 
 	processing_state ret = SKIP;
 
-	// We received the address of the sqlda in case we realloc it
-	XSQLDA* sqlda = *sqldap;
-
 	// If somebody did a commit or rollback, we are out of a transaction
 
-	if (!M__trans)
-	{
-		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
-			ISQL_errmsg(isc_status);
-	}
+	M_Transaction();
 
 	// No need to start a default transaction unless there is no current one
 
-	if (Autocommit && !D__trans)
+	if (Autocommit)
 	{
-		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
-		{
-			ISQL_errmsg(isc_status);
-		}
+		D_Transaction();
 	}
 
 	// If statistics are requested, then reserve them here
 
-	perf64 perf_before;
+	SINT64 perf_before[ISQL_COUNTERS];
 	if (Stats)
-		perf64_get_info(&DB, &perf_before);
+	{
+		Firebird::UtlInterfacePtr()->getPerfCounters(fbStatus,
+			DB, ISQL_COUNTERS_SET, perf_before);
+		if (ISQL_errmsg(fbStatus))
+		{
+			return ps_ERR;
+		}
+	}
 
 	// Prepare the dynamic query stored in string.
 	// But put this on the DDL transaction to get maximum visibility of
 	// metadata.
 
-	FB_API_HANDLE prepare_trans;
-	if (Autocommit)
-		prepare_trans = D__trans;
-	else
-		prepare_trans = M__trans;
-
-	if (isc_dsql_prepare(isc_status, &prepare_trans, &global_Stmt, 0, command,
-						 isqlGlob.SQL_dialect, sqlda))
+	global_Stmt = DB->prepare(fbStatus, Autocommit ? D__trans : M__trans,  0, command,
+		isqlGlob.SQL_dialect, Firebird::IStatement::PREPARE_PREFETCH_METADATA |
+		(Plan ? Firebird::IStatement::PREPARE_PREFETCH_DETAILED_PLAN : 0));
+	if (!fbStatus->isSuccess())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
 		{
@@ -2557,13 +2505,13 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 							command,
 							NEWLINE);
 		}
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	}
 
 	// check for warnings
-	if (isc_status[2] == isc_arg_warning)
-		ISQL_warning(isc_status);
+	if (fbStatus->get()[2] == isc_arg_warning)
+		ISQL_warning(fbStatus);
 
 	// Find out what kind of statement this is
 	const int statement_type = process_request_type();
@@ -2576,69 +2524,26 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		return ps_ERR;
 	}
 
-//#ifdef DEV_BUILD
-	if (Sqlda_display)
+	Firebird::RefPtr<Firebird::IMessageMetadata> message(global_Stmt->getInputMetadata(fbStatus));
+	if (ISQL_errmsg(fbStatus))
 	{
-		const bool can_have_input_parameters =
-			statement_type == isc_info_sql_stmt_select ||
-			statement_type == isc_info_sql_stmt_insert ||
-			statement_type == isc_info_sql_stmt_update ||
-			statement_type == isc_info_sql_stmt_delete ||
-			statement_type == isc_info_sql_stmt_exec_procedure ||
-			statement_type == isc_info_sql_stmt_select_for_upd;
-
-		if (print_sqlda_input(can_have_input_parameters) == ps_ERR)
-			return ps_ERR;
-	}
-//#endif // DEV_BUILD
-
-	if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda))
-	{
-		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	}
 
-	// check for warnings
-	if (isc_status[2] == isc_arg_warning)
-		ISQL_warning(isc_status);
+	if (Sqlda_display)
+	{
+		print_message(message, "IN");
+	}
 
-	if (!sqlda->sqld) // No input parameters, doesn't make sense for bulk insertions.
+	const unsigned n_cols = message->getCount(fbStatus);
+	if (ISQL_errmsg(fbStatus))
+	{
+		return ps_ERR;
+	}
+	if (!n_cols) // No input parameters, doesn't make sense for bulk insertions.
 	{
 		isqlGlob.printf("There must be at least one parameter in the statement.%s", NEWLINE);
 		return ps_ERR;
-	}
-
-	if (sqlda->sqld > sqlda->sqln)
-	{
-		const USHORT n_columns = sqlda->sqld;
-		ISQL_FREE(sqlda);
-		*sqldap = sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
-		memset(sqlda, 0, XSQLDA_LENGTH(n_columns));
-		sqlda->version = SQLDA_VERSION1;
-		sqlda->sqld = sqlda->sqln = n_columns;
-		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
-								   sqlda))
-		{
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		}
-		else if (isc_status[2] == isc_arg_warning)
-			ISQL_warning(isc_status);
-	}
-	else
-	{
-		// Our dear process_statement doesn't clean the global sqlda after using it,
-		// although it deallocates the sqldata in a single continuous memory section.
-		const int n_cols = sqlda->sqln;
-		XSQLVAR* ivar = sqlda->sqlvar;
-		for (int i = 0; i < n_cols; ++i, ++ivar)
-		{
-			if (ivar->sqldata)
-			{
-				//ISQL_FREE(ivar->sqldata); Assume everything was deallocated.
-				ivar->sqldata = 0;
-			}
-		}
 	}
 
 	// If PLAN is set, print out the plan now.
@@ -2650,25 +2555,10 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 			return ret;	// Do not execute.
 	}
 
-	const int n_cols = sqlda->sqld;
-	SSHORT* nullind = new SSHORT[n_cols];
-	PtrSentry<SSHORT> nullindSentry(nullind, true);
-
-	int textFieldCounter = 0;
-	for (int i = 0; i < n_cols; ++i)
-	{
-		switch (sqlda->sqlvar[i].sqltype & ~1)
-		{
-			case SQL_TEXT:
-			case SQL_VARYING:
-			    ++textFieldCounter;
-			    break;
-		}
-	}
-
-	// Used to optimize allocations to text fields.
-	Extender* const stringBuffers = textFieldCounter ? new Extender[textFieldCounter] : 0;
-	PtrSentry<Extender> stringbufSentry(stringBuffers, true);
+	unsigned msgSize = message->getMessageLength(fbStatus);
+	if (ISQL_errmsg(fbStatus))
+		return ps_ERR;
+	UCHAR* msgBuf = global_Buffer->getBuffer(msgSize);
 
 	char bulk_prompt[BUFFER_LENGTH180] = "";
 	IUTILS_msg_get(BULK_PROMPT, sizeof(bulk_prompt), bulk_prompt);
@@ -2702,24 +2592,36 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 			if (fb_utils::strnicmp(lastInputLine, "COMMIT", 6) == 0 ||
 				fb_utils::strnicmp(lastInputLine, "COMMIT WORK", 11) == 0)
 			{
-				if (isc_commit_transaction(isc_status, &M__trans) ||
-					isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
+				done = true;
+
+				if (!commit_trans(&M__trans))
 				{
-					ISQL_errmsg(isc_status);
-					done = true;
-					commit_failureM = M__trans ? true : false;
+					commit_failureM = true;
 					break; // We failed to commit, quit the bulk insertion.
 				}
 
-				// CVC: Commit may fail with AUTO-DDL off and DDL changes rejected by DFW.
-				if (D__trans && commit_trans(&D__trans) &&
-					isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
+				if (!M_Transaction())
 				{
-					ISQL_errmsg(isc_status);
-					done = true;
-					commit_failureD = D__trans ? true : false;
-					break; // We failed to commit, quit the bulk insertion.
+					commit_failureM = false;
+					break; // We failed to start transaction, quit the bulk insertion.
 				}
+
+				// CVC: Commit may fail with AUTO-DDL off and DDL changes rejected by DFW.
+				if (D__trans)
+				{
+					if (!commit_trans(&D__trans))
+					{
+						commit_failureD = true;
+						break; // We failed to commit, quit the bulk insertion.
+					}
+
+					if (!D_Transaction())
+					{
+						commit_failureD = false;
+						break; // We failed to commit, quit the bulk insertion.
+					}
+				}
+				done = false;
 				continue; // Go to read another line.
 			}
 			break; // For example, STOP or blank line not inside quoted string.
@@ -2736,16 +2638,24 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		const char* lastPos = insert;
 		Extender extender; // Used only for multi-line tuples.
 
-		SSHORT* nullp = nullind;
-		for (int i = 0, textFieldIter = 0; i < n_cols && !done; ++i)
+		for (unsigned i = 0, textFieldIter = 0; i < n_cols && !done; ++i)
 		{
-			XSQLVAR* const ivar = &sqlda->sqlvar[i];
-			*nullp = 0;
-			ivar->sqlind = nullp++;
-			//ivar->sqldata = NULL; Not here because we are reusing fixed size elements.
+			unsigned offset = message->getNullOffset(fbStatus, i);
+			if (ISQL_errmsg(fbStatus))
+				return ps_ERR;
+			short* nullp = (short*) &msgBuf[offset];
 
-			const SSHORT type = ivar->sqltype & ~1;
-			const SSHORT nullable = ivar->sqltype & 1;
+			offset = message->getOffset(fbStatus, i);
+			if (ISQL_errmsg(fbStatus))
+				return ps_ERR;
+			void* datap = &msgBuf[offset];
+
+			unsigned type = message->getType(fbStatus, i);
+			if (ISQL_errmsg(fbStatus))
+				return (SKIP);
+			const bool nullable = message->isNullable(fbStatus, i);
+			if (ISQL_errmsg(fbStatus))
+				return (SKIP);
 
 			const char* finder = 0;
 			int subtract = 0;
@@ -2857,7 +2767,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 			}
 
 			SCHAR cmd[5] = "";
-			const USHORT length = insert - lastPos - subtract;
+			unsigned length = insert - lastPos - subtract;
 			if (!length && !quote)
 			{
 				// Go ahead with an aux var and see if we hit end of string.
@@ -2899,10 +2809,10 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 			// If the user writes NULL, put a null in the column.
 
 			if (!strcmp(cmd, "NULL"))
-				*ivar->sqlind = -1;
+				*nullp = -1;
 			else
 			{
-				*ivar->sqlind = 0;
+				*nullp = 0;
 				// Data types
 				SSHORT* smallint;
 				SLONG* integer;
@@ -2911,76 +2821,65 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 				float* fvalue;
 				double* dvalue;
 				UCHAR* boolean;
+				vary* avary;
+				char* achar;
 				tm times;
 				// Initialize the time structure.
 				memset(&times, 0, sizeof(times));
 				char msec_str[5] = "";
 				int msec = 0;
 				ISC_QUAD* blobid;
+				unsigned varLength, scale;
 
 				switch (type)
 				{
 				case SQL_BLOB:
-
-					if (ivar->sqldata)
-						blobid = (ISC_QUAD*) ivar->sqldata;
-					else
-						blobid = (ISC_QUAD*) ISQL_ALLOC(sizeof(ISC_QUAD));
+					blobid = (ISC_QUAD*) datap;
 
 					{ // scope
-						UserBlob bs(isc_status);
-						if (!bs.create(DB, M__trans, *blobid))
+						Firebird::IBlob* bs = DB->createBlob(fbStatus, M__trans, blobid);
+						if (!fbStatus->isSuccess())
 						{
 							STDERROUT("Unable to create blob");
-							ISQL_errmsg(isc_status);
+							ISQL_errmsg(fbStatus);
 							done = true;
 							break; // Quit the switch()
 						}
 
-						size_t real_len;
-						if (!bs.putData(length, lastPos, real_len) || real_len != length)
+						bs->putSegment(fbStatus, length, lastPos);
+						if (!fbStatus->isSuccess())
 						{
 							STDERROUT("Unable to write to blob");
-							ISQL_errmsg(isc_status);
+							ISQL_errmsg(fbStatus);
 							done = true;
 						}
-						if (!bs.close())
+						bs->close(fbStatus);
+						if (!fbStatus->isSuccess())
 						{
 							STDERROUT("Unable to close blob");
-							ISQL_errmsg(isc_status);
+							ISQL_errmsg(fbStatus);
 							done = true;
 						}
 					} // scope
 
-					ivar->sqldata = (SCHAR*) blobid;
 					break;
 
 				case SQL_FLOAT:
-					if (ivar->sqldata)
-						fvalue = (float*) ivar->sqldata;
-					else
-						fvalue = (float*) ISQL_ALLOC(sizeof(float));
-
+					fvalue = (float*) datap;
 					if (sscanf(lastPos, "%g", fvalue) != 1)
 					{
 						STDERROUT("Input parsing problem in 'float' value");
 						done = true;
 					}
-					ivar->sqldata = (SCHAR*) fvalue;
 					break;
 
 				case SQL_DOUBLE:
-					if (ivar->sqldata)
-						dvalue = (double*) ivar->sqldata;
-					else
-						dvalue = (double*) ISQL_ALLOC(sizeof(double));
-
+					dvalue = (double*) datap;
 					if (sscanf(lastPos, "%lg", dvalue) != 1)
 					{
 						STDERROUT("Input parsing problem in 'double' value");
 						done = true;
 					}
-					ivar->sqldata = (SCHAR*) dvalue;
 					break;
 
 				case SQL_TYPE_DATE:
@@ -2996,13 +2895,8 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					{
 						--times.tm_mon;
 						times.tm_year -= 1900; // tm_year is 1900-based.
-						ISC_DATE* date = (ISC_DATE*) ivar->sqldata;
-						fb_assert(ivar->sqllen == sizeof(ISC_DATE));
-						if (!date)
-							date = (ISC_DATE*) ISQL_ALLOC((SLONG) ivar->sqllen);
-
+						ISC_DATE* date = (ISC_DATE*) datap;
 						isc_encode_sql_date(&times, date);
-						ivar->sqldata = (char*) date;
 					}
 					break;
 
@@ -3017,13 +2911,8 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					}
 					else
 					{
-						ISC_TIME* vtime =  (ISC_TIME*) ivar->sqldata;
-						fb_assert(ivar->sqllen == sizeof(ISC_TIME));
-						if (!vtime)
-							vtime = (ISC_TIME*) ISQL_ALLOC((SLONG) ivar->sqllen);
-
+						ISC_TIME* vtime = (ISC_TIME*) datap;
 						isc_encode_sql_time(&times, vtime);
-						ivar->sqldata = (char*) vtime;
 					}
 					break;
 
@@ -3062,69 +2951,49 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					{
 						--times.tm_mon;
 						times.tm_year -= 1900;
-						ISC_TIMESTAMP* datetime = (ISC_TIMESTAMP*) ivar->sqldata;
-						fb_assert(ivar->sqllen == sizeof(ISC_TIMESTAMP));
-						if (!datetime)
-							datetime = (ISC_TIMESTAMP*) ISQL_ALLOC((SLONG) ivar->sqllen);
-
+						ISC_TIMESTAMP* datetime = (ISC_TIMESTAMP*) datap;
 						isc_encode_timestamp(&times, datetime);
 						datetime->timestamp_time += msec;
-						ivar->sqldata = (char*) datetime;
 					}
 					break;
 
 				case SQL_TEXT:
-					// Force all text to varying
-					ivar->sqltype = SQL_VARYING + nullable;
-					// Fall into:
-
 				case SQL_VARYING:
+					varLength = message->getLength(fbStatus, i);
+					if (ISQL_errmsg(fbStatus))
+						return (SKIP);
+					if (length > varLength)
 					{
-						fb_assert(textFieldIter < textFieldCounter);
-						Extender& field = stringBuffers[textFieldIter++];
-						field.alloc(length + sizeof(USHORT));
-						vary* avary = reinterpret_cast<vary*>(field.getBuffer());
-						avary->vary_length = length;
-						strncpy(avary->vary_string, lastPos, length);
-						ivar->sqldata = (SCHAR*) avary;
-						ivar->sqllen = length;
-						break;
+						STDERROUT("String too long");		// msg!
+						length = varLength;
 					}
+
+					if (type == SQL_VARYING)
+					{
+						avary = (vary*) datap;
+						avary->vary_length = length;
+						memcpy(avary->vary_string, lastPos, length);
+					}
+					else
+					{
+						achar = (char*) datap;
+						memcpy(achar, lastPos, length);
+						memset(&achar[length], ' ', varLength - length);
+					}
+					break;
 
 				case SQL_SHORT:
 				case SQL_LONG:
-					if (type == SQL_SHORT)
-					{
-						if (ivar->sqldata)
-							smallint = (SSHORT*) ivar->sqldata;
-						else
-							smallint = (SSHORT*) ISQL_ALLOC(sizeof(SSHORT));
-
-						ivar->sqldata = (SCHAR*) smallint;
-					}
-					else if (type == SQL_LONG)
-					{
-						if (ivar->sqldata)
-							integer = (SLONG*) ivar->sqldata;
-						else
-							integer = (SLONG*) ISQL_ALLOC(sizeof(SLONG));
-
-						ivar->sqldata = (SCHAR*) integer;
-					}
-					// Fall into:
-
-					// Fall through from SQL_SHORT and SQL_LONG ...
 				case SQL_INT64:
-					if (type == SQL_INT64)
-					{
-						if (ivar->sqldata)
-							pi64 = (SINT64*) ivar->sqldata;
-						else
-							pi64 = (SINT64*) ISQL_ALLOC(sizeof(SINT64));
+					smallint = (SSHORT*) datap;
+					integer = (SLONG*) datap;
+					pi64 = (SINT64*) datap;
 
-						ivar->sqldata = (SCHAR*) pi64;
-					}
-					if (ivar->sqlscale < 0)
+					scale = message->getScale(fbStatus, i);
+					if (ISQL_errmsg(fbStatus))
+						return (SKIP);
+
+					if (scale < 0)
 					{
 						SSHORT lscale = 0;
 						if (!get_numeric((UCHAR*) lastPos, length, &lscale, &n))
@@ -3134,13 +3003,13 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 						}
 						else
 						{
-							int dscale = ivar->sqlscale - lscale;
+							int dscale = scale - lscale;
 							if (dscale > 0)
 							{
 								TEXT err_buf[256];
 								sprintf(err_buf,
 										"Input error: input scale %d exceeds the field's scale %d",
-										-lscale, -ivar->sqlscale);
+										-lscale, -scale);
 								STDERROUT(err_buf);
 								done = true;
 							}
@@ -3181,13 +3050,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					break;
 
 				case SQL_BOOLEAN:
-					if (ivar->sqldata)
-						boolean = (UCHAR*) ivar->sqldata;
-					else
-						boolean = (UCHAR*) ISQL_ALLOC(sizeof(UCHAR));
-
-					ivar->sqldata = (SCHAR*) boolean;
-
+					boolean = (FB_BOOLEAN*) datap;
 					if (fb_utils::stricmp(lastInputLine, "TRUE") == 0)
 						*boolean = 1;
 					else if (fb_utils::stricmp(lastInputLine, "FALSE") == 0)
@@ -3289,21 +3152,16 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 			// Having completed all columns, try the insert statement with the sqlda.
 			// This is a non-select DML statement or trans.
 
-			if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, sqlda))
+			global_Stmt->execute(fbStatus, M__trans, message, msgBuf, NULL, NULL);
+			if (ISQL_errmsg(fbStatus))
 			{
-				ISQL_errmsg(isc_status);
-				done = true;
+				break;
 			}
 
 			// Check for warnings.
-			if (isc_status[2] == isc_arg_warning)
-				ISQL_warning(isc_status);
+			if (fbStatus->get()[2] == isc_arg_warning)
+				ISQL_warning(fbStatus);
 		}
-
-		// No need to release each of the variables for next time.
-		// Text is handled by an array of Extender and the others are fixed size
-		// and therefore allocated only once.
-
 	} // while (!done)
 
 	if (done)
@@ -3312,7 +3170,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		if (M__trans)
 		{
 			if (commit_failureM)
-				isc_rollback_transaction(isc_status, &M__trans);
+				M__trans->rollback(fbStatus);
 			else
 				commit_trans(&M__trans);
 		}
@@ -3320,7 +3178,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		if (D__trans)
 		{
 			if (commit_failureD)
-				isc_rollback_transaction(isc_status, &D__trans);
+				D__trans->rollback(fbStatus);
 			else
 				commit_trans(&D__trans);
 		}
@@ -3337,29 +3195,12 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		ret = ps_ERR;
 	}
 
-	// Release each of the variables for next usage.
-	// The text variables are deallocated separately.
-	XSQLVAR* ivar = sqlda->sqlvar;
-	for (int i = 0; i < n_cols; ++i, ++ivar)
-	{
-		if ((ivar->sqltype & ~1) != SQL_VARYING && ivar->sqldata)
-		{
-			ISQL_FREE(ivar->sqldata);
-			ivar->sqldata = 0;
-		}
-	}
-
-	// Explicit just to test.
-	stringbufSentry.clean();
-	nullindSentry.clean();
-
 	// Get rid of the statement handle.
-	isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
+	global_Stmt->free(fbStatus);
 
 	// Statistics printed here upon request
-
-	if (Stats)
-		print_performance(&perf_before);
+	if (Stats && (print_performance(perf_before) == ps_ERR))
+		ret = ps_ERR;
 
 	return ret;
 }
@@ -3465,7 +3306,7 @@ static size_t chop_at(char target[], const size_t size)
 }
 
 
-static void col_check(const TEXT* tabname, SSHORT* colnumber)
+static void col_check(const TEXT* tabname, unsigned* colnumber)
 {
 /**************************************
  *
@@ -3478,14 +3319,8 @@ static void col_check(const TEXT* tabname, SSHORT* colnumber)
  *	columns which do not have an equivalent for array or computed cols.
  **************************************/
 
-	// Transaction for all frontend commands
-	if (DB && !gds_trans)
-	{
-		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL)) {
-			ISQL_errmsg(isc_status);
-			return;
-		}
-	}
+	if (!frontendTransaction())
+		return;
 
 	// Query to get array info and computed source not available in the sqlda
 	int i = 0, j = 0;
@@ -3496,13 +3331,13 @@ static void col_check(const TEXT* tabname, SSHORT* colnumber)
 		SORTED BY R.RDB$FIELD_POSITION, R.RDB$FIELD_NAME
 
 		if ((!F.RDB$DIMENSIONS.NULL && F.RDB$DIMENSIONS) || (!F.RDB$COMPUTED_BLR.NULL))
-			colnumber[i] = -1;
+			colnumber[i] = ~0u;
 		else
 			colnumber[i] = j++;
 		++i;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 	END_ERROR;
 }
 
@@ -3935,26 +3770,13 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	// execute the create statement
 	// If the isqlGlob.SQL_dialect is not set or set to 2, create the database
 	// as a dialect 3 database.
-	if (isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION)
+	unsigned dialect =
+		(isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION) ?
+			requested_SQL_dialect : isqlGlob.SQL_dialect;
+	DB = Firebird::UtlInterfacePtr()->executeCreateDatabase(fbStatus, 0, local_statement, dialect);
+	if (ISQL_errmsg(fbStatus))
 	{
-		if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
-									   local_statement, requested_SQL_dialect,
-									   NULL))
-		{
-			ISQL_errmsg(isc_status);
-			if (!DB)
-				ret = FAIL;
-		}
-	}
-	else
-	{
-		if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
-									   local_statement, isqlGlob.SQL_dialect, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			if (!DB)
-				ret = FAIL;
-		}
+		ret = FAIL;
 	}
 
 	if (DB)
@@ -3963,7 +3785,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		SHOW_read_owner();
 
 		// No use in cancel when running non-end-user operators
-		fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
+		DB->cancelOperation(fbStatus, fb_cancel_disable);
 
 		// Load isqlGlob.global_Db_name with some value to show a successful attach
 
@@ -4080,21 +3902,13 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 
 		if (!M__trans)
 		{
-			if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
-				ISQL_errmsg(isc_status);
+			M_Transaction();
 			if (D__trans)
 				commit_trans(&D__trans);
-			if (Autocommit && isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
-				ISQL_errmsg(isc_status);
+			if (Autocommit)
+				D_Transaction();
 		}
 
-		// Allocate a new user statement for the database
-
-		if (isc_dsql_allocate_statement(isc_status, &DB, &global_Stmt))
-		{
-			ISQL_errmsg(isc_status);
-			ret = ps_ERR;
-		}
 	}
 
 	if (local_statement)
@@ -4144,19 +3958,6 @@ static void do_isql()
 
 	ISQL_dbcheck();
 
-	// Set up SQLDA for SELECTs, allow up to 20 fields to be selected.
-	//  If we subsequently encounter a query with more columns, we
-	//  will realloc the sqlda as needed
-
-	global_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(20)));
-	memset(global_sqlda, 0, XSQLDA_LENGTH(20));
-	global_sqlda->version = SQLDA_VERSION1;
-	global_sqlda->sqln = 20;
-
-	// The sqldap is the handle containing the current sqlda pointer
-
-	global_sqldap = &global_sqlda;
-
 	// Read statements and process them from Ifp until the ret
 	// code tells us we are done
 
@@ -4172,17 +3973,41 @@ static void do_isql()
 		if (Abort_flag)
 		{
 			if (D__trans)
-				isc_rollback_transaction(isc_status, &D__trans);
+			{
+				D__trans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					D__trans = NULL;
+			}
+
 			if (M__trans)
-				isc_rollback_transaction(isc_status, &M__trans);
-			if (gds_trans)
-				isc_rollback_transaction(isc_status, &gds_trans);
+			{
+				M__trans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					M__trans = NULL;
+			}
+
+			if (fbTrans)
+			{
+				fbTrans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					fbTrans = NULL;
+			}
 
 			// If there is current user statement, free it
 			if (global_Stmt)
-				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
+			{
+				global_Stmt->free(fbStatus);
+				if (fbStatus->isSuccess())
+					global_Stmt = NULL;
+			}
+
 			if (DB)
-				isc_detach_database(isc_status, &DB);
+			{
+				DB->detach(fbStatus);
+				if (fbStatus->isSuccess())
+					DB = NULL;
+			}
+
 			break;
 		}
 
@@ -4226,7 +4051,7 @@ static void do_isql()
 		switch (ret)
 		{
 		case CONT:
-			if (process_statement(statement, global_sqldap) == ps_ERR)
+			if (process_statement(statement) == ps_ERR)
 			{
 				Exit_value = FINI_ERROR;
 				if (!Interactive && BailOnError)
@@ -4240,11 +4065,25 @@ static void do_isql()
 			if (Abort_flag)
 			{
 				if (D__trans)
-					isc_rollback_transaction(isc_status, &D__trans);
+				{
+					D__trans->rollback(fbStatus);
+					if (fbStatus->isSuccess())
+						D__trans = NULL;
+				}
+
 				if (M__trans)
-					isc_rollback_transaction(isc_status, &M__trans);
-				if (gds_trans)
-					isc_rollback_transaction(isc_status, &gds_trans);
+				{
+					M__trans->rollback(fbStatus);
+					if (fbStatus->isSuccess())
+						M__trans = NULL;
+				}
+
+				if (fbTrans)
+				{
+					fbTrans->rollback(fbStatus);
+					if (fbStatus->isSuccess())
+						fbTrans = NULL;
+				}
 			}
 			else
 			{
@@ -4252,35 +4091,66 @@ static void do_isql()
 					commit_trans(&D__trans);
 				if (M__trans)
 					commit_trans(&M__trans);
-				if (gds_trans)
-					commit_trans(&gds_trans);
+				if (fbTrans)
+					commit_trans(&fbTrans);
 			}
 
-			// If there is  current user statement, free it
+			// If there is current user statement, free it
 			// I think DSQL_drop is the right one, but who knows
 			if (global_Stmt)
-				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
-			if (DB) {
-				isc_detach_database(isc_status, &DB);
+			{
+				global_Stmt->free(fbStatus);
+				if (fbStatus->isSuccess())
+					global_Stmt = NULL;
 			}
+
+			if (DB)
+			{
+				DB->detach(fbStatus);
+				if (fbStatus->isSuccess())
+					DB = NULL;
+			}
+
 			done = true;
 			break;
 
 		case BACKOUT:
 			if (D__trans)
-				isc_rollback_transaction(isc_status, &D__trans);
-			if (M__trans)
-				isc_rollback_transaction(isc_status, &M__trans);
-			if (gds_trans)
-				isc_rollback_transaction(isc_status, &gds_trans);
-
-			// If there is  current user statement, free it
-			// I think DSQL_drop is the right one, but who knows
-			if (global_Stmt)
-				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
-			if (DB) {
-				isc_detach_database(isc_status, &DB);
+			{
+				D__trans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					D__trans = NULL;
 			}
+
+			if (M__trans)
+			{
+				M__trans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					M__trans = NULL;
+			}
+
+			if (fbTrans)
+			{
+				fbTrans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					fbTrans = NULL;
+			}
+
+			// If there is current user statement, free it
+			if (global_Stmt)
+			{
+				global_Stmt->free(fbStatus);
+				if (fbStatus->isSuccess())
+					global_Stmt = NULL;
+			}
+
+			if (DB)
+			{
+				DB->detach(fbStatus);
+				if (fbStatus->isSuccess())
+					DB = NULL;
+			}
+
 			done = true;
 			break;
 
@@ -4309,15 +4179,13 @@ static void do_isql()
 	isqlGlob.global_Db_name[0] = '\0';
 	D__trans = 0;
 	M__trans = 0;
-	gds_trans = 0;
+	fbTrans = 0;
 
 	InputDevices::indev& Ofp = Filelist->Ofp();
 	// Does it have a valid Temp file pointer?
 	if (Ofp.indev_fpointer)
 		Ofp.drop();
 
-	if (global_sqlda)
-		ISQL_FREE(global_sqlda);
 	// CVC: If we were halt by an error and Bail, we have pending cleanup.
 	Filelist->clear();
 	if (lastInputLine)
@@ -4341,23 +4209,18 @@ static processing_state drop_db()
  **************************************/
 	if (isqlGlob.global_Db_name[0])
 	{
-		if (isc_drop_database(isc_status, &DB))
+		DB->dropDatabase(fbStatus);
+		if (ISQL_errmsg(fbStatus))
 		{
-			ISQL_errmsg(isc_status);
 			return (FAIL);
 		}
-
-		// If error occurred and drop database got aborted
-		if (DB)
-			return (FAIL);
 	}
 	else
 		return (FAIL);
 
 	// The database got dropped with or without errors
-
 	M__trans = 0;
-	gds_trans = 0;
+	fbTrans = 0;
 	global_Stmt = 0;
 	D__trans = 0;
 
@@ -4502,12 +4365,13 @@ static processing_state end_trans()
 				STDERROUT(infobuf);
 				if (DB && M__trans)
 				{
-					if (isc_commit_transaction(isc_status, &M__trans))
+					M__trans->commit(fbStatus);
+					if (ISQL_errmsg(fbStatus))
 					{
 						// Commit failed, so roll back anyway
-						ISQL_errmsg(isc_status);
 						ret = FAIL;
 					}
+					M__trans = NULL;
 				}
 			}
 			else
@@ -4516,11 +4380,12 @@ static processing_state end_trans()
 				STDERROUT(infobuf);
 				if (DB && M__trans)
 				{
-					if (isc_rollback_transaction(isc_status, &M__trans))
+					M__trans->rollback(fbStatus);
+					if (ISQL_errmsg(fbStatus))
 					{
-						ISQL_errmsg(isc_status);
 						ret = FAIL;
 					}
+					M__trans = NULL;
 				}
 			}
 		}
@@ -4537,11 +4402,12 @@ static processing_state end_trans()
 				// ever doing anything that would cause changes to the dictionary.
 				IUTILS_msg_get(ROLLBACK_MSG, sizeof(infobuf), infobuf);
 				STDERROUT(infobuf);
-				if (isc_rollback_transaction(isc_status, &M__trans))
+				M__trans->rollback(fbStatus);
+				if (ISQL_errmsg(fbStatus))
 				{
-					ISQL_errmsg(isc_status);
 					ret = FAIL;
 				}
+				M__trans = NULL;
 			}
 		}
 	}
@@ -4550,11 +4416,12 @@ static processing_state end_trans()
 
 	if (DB && D__trans)
 	{
-		if (isc_commit_transaction(isc_status, &D__trans))
+		D__trans->commit(fbStatus);
+		if (ISQL_errmsg(fbStatus))
 		{
-			ISQL_errmsg(isc_status);
 			ret = FAIL;
 		}
+		D__trans = NULL;
 	}
 	return ret;
 }
@@ -4701,8 +4568,8 @@ static processing_state frontend(const TEXT* statement)
 	if (!*cmd)
 	{
 		// In case any default transaction was started - commit it here
-		if (gds_trans)
-			commit_trans(&gds_trans);
+		if (fbTrans)
+			commit_trans(&fbTrans);
 
 		return SKIP;
 	}
@@ -4719,55 +4586,42 @@ static processing_state frontend(const TEXT* statement)
 	switch (frontoptions.getCommand(parms[0]))
 	{
 	case FrontOptions::show:
-		// Transaction for all frontend commands
-		if (DB && !gds_trans)
+		if (!frontendTransaction())
 		{
-			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-			{
-				ISQL_errmsg(isc_status);
-				// Free the frontend command
-				frontend_free_parms(parms, lparms, parm_defaults);
-				return FAIL;
-			}
+			// Free the frontend command
+			frontend_free_parms(parms, lparms, parm_defaults);
+			return FAIL;
 		}
 
 		ret = SHOW_metadata(parms, lparms);
-		if (gds_trans)
-			commit_trans(&gds_trans);
+		if (fbTrans)
+			commit_trans(&fbTrans);
 		break;
 
 	case FrontOptions::add:
-		if (DB && !gds_trans)
+		if (!frontendTransaction())
 		{
-			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-			{
-				ISQL_errmsg(isc_status);
-				// Free the frontend command
-				frontend_free_parms(parms, lparms, parm_defaults);
-				return FAIL;
-			}
+			// Free the frontend command
+			frontend_free_parms(parms, lparms, parm_defaults);
+			return FAIL;
 		}
 
 		ret = add_row(lparms[1]);
-		if (gds_trans)
-			commit_trans(&gds_trans);
+		if (fbTrans)
+			commit_trans(&fbTrans);
 		break;
 
 	case FrontOptions::copy:
-		if (DB && !gds_trans)
+		if (!frontendTransaction())
 		{
-			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
-			{
-				ISQL_errmsg(isc_status);
-				// Free the frontend command
-				frontend_free_parms(parms, lparms, parm_defaults);
-				return FAIL;
-			}
+			// Free the frontend command
+			frontend_free_parms(parms, lparms, parm_defaults);
+			return FAIL;
 		}
 
 		ret = copy_table(lparms[1], lparms[2], lparms[3]);
-		if (gds_trans)
-			commit_trans(&gds_trans);
+		if (fbTrans)
+			commit_trans(&fbTrans);
 		break;
 
 	case FrontOptions::blobview:
@@ -4898,8 +4752,8 @@ static processing_state frontend(const TEXT* statement)
 	}
 
 	// In case any default transaction was started - commit it here
-	if (gds_trans)
-		commit_trans(&gds_trans);
+	if (fbTrans)
+		commit_trans(&fbTrans);
 
 	// Free the frontend command
 	frontend_free_parms(parms, lparms, parm_defaults);
@@ -5201,7 +5055,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 
 	case SetOptions::bulk_insert:
 		if (*parms[2])
-			ret = bulk_insert_hack(cmd, global_sqldap);
+			ret = bulk_insert_hack(cmd);
 		else
 			ret = ps_ERR;
 		break;
@@ -5801,11 +5655,10 @@ void ISQL_get_version(bool call_by_create_db)
 
 	global_dialect_spoken = 0;
 
-	if (isc_database_info(isc_status, &DB, sizeof(db_version_info),
-						  reinterpret_cast<const char*>(db_version_info),
-						  sizeof(buffer), (SCHAR*) buffer))
+	DB->getInfo(fbStatus, sizeof(db_version_info), db_version_info,
+						  sizeof(buffer), buffer);
+	if(ISQL_errmsg(fbStatus))
 	{
-		ISQL_errmsg(isc_status);
 		return;
 	}
 
@@ -6011,7 +5864,7 @@ void ISQL_ri_action_print(const TEXT* ri_action_str,
 }
 
 
-static bool get_numeric(const UCHAR* string,
+static bool get_numeric(const UCHAR* str2,
 						USHORT length,
 						SSHORT* scale,
 						SINT64* ptr)
@@ -6023,7 +5876,7 @@ static bool get_numeric(const UCHAR* string,
  **************************************
  *
  * Functional description
- *	  Convert a numeric literal (string) to its binary value.
+ *	  Convert a numeric literal (str2) to its binary value.
  *
  *	  The binary value (int64) is stored at the
  *	  address given by ptr.
@@ -6034,8 +5887,8 @@ static bool get_numeric(const UCHAR* string,
 	SSHORT local_scale = 0, sign = 0;
 	bool digit_seen = false, fraction = false;
 
-	const UCHAR* const end = string + length;
-	for (const UCHAR* p = string; p < end; p++)
+	const UCHAR* const end = str2 + length;
+	for (const UCHAR* p = str2; p < end; p++)
 	{
 		if (DIGIT(*p))
 		{
@@ -6375,7 +6228,7 @@ static processing_state newdb(TEXT* dbname,
 		dpb.insertString(isc_dpb_lc_ctype, ISQL_charset, strlen(ISQL_charset));
 	}
 
-    SSHORT l;
+    unsigned l;
 	if (l = strlen(local_usr)) {
 		dpb.insertString(isc_dpb_user_name, local_usr, l);
 	}
@@ -6406,10 +6259,9 @@ static processing_state newdb(TEXT* dbname,
 	{ // scope
 		const TEXT* local_name = isqlGlob.global_Db_name;
 
-		if (isc_attach_database(isc_status, 0, local_name, &DB, dpb.getBufferLength(),
-									reinterpret_cast<const char*>(dpb.getBuffer())))
+		DB = fbProvider->attachDatabase(fbStatus, local_name, dpb.getBufferLength(), dpb.getBuffer());
+		if (ISQL_errmsg(fbStatus))
 		{
-			ISQL_errmsg(isc_status);
 			isqlGlob.global_Db_name[0] = '\0';
 			return FAIL;
 		}
@@ -6418,7 +6270,7 @@ static processing_state newdb(TEXT* dbname,
 		SHOW_read_owner();
 
 		// No use in cancel when running non-end-user operators
-		fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
+		DB->cancelOperation(fbStatus, fb_cancel_disable);
 	} // scope
 
 	ISQL_get_version(false);
@@ -6480,41 +6332,19 @@ static processing_state newdb(TEXT* dbname,
 
 	if (start_user_trans)
 	{
-
 		// Start the user transaction and default transaction
 
 		if (!M__trans)
 		{
-			if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
-				ISQL_errmsg(isc_status);
+			M_Transaction();
 			if (D__trans)
 				commit_trans(&D__trans);
-			if (Autocommit && isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
-				ISQL_errmsg(isc_status);
-		}
-
-
-		// Allocate a new user statement for this database
-
-		global_Stmt = 0;
-		if (isc_dsql_allocate_statement(isc_status, &DB, &global_Stmt))
-		{
-			ISQL_errmsg(isc_status);
-			if (M__trans)
-				end_trans();
-			if (D__trans)
-				commit_trans(&D__trans);
-			isc_detach_database(isc_status, &DB);
-			DB = 0;
-			isqlGlob.global_Db_name[0] = '\0';
-			M__trans = 0;
-			D__trans = 0;
-			return FAIL;
+			if (Autocommit)
+				D_Transaction();
 		}
 	}
-	else {
-		global_Stmt = 0;
-	}
+
+	global_Stmt = 0;
 
 	return SKIP;
 }
@@ -6750,7 +6580,7 @@ static processing_state newtrans(const TEXT* statement)
  * Functional description
  *	Intercept and handle a set transaction statement by zeroing M__trans
  *
- *	Leave the default transaction, gds_trans, alone
+ *	Leave the default transaction, fbTrans, alone
  *	Parameters:  The statement in its entirety
  *
  **************************************/
@@ -6765,10 +6595,10 @@ static processing_state newtrans(const TEXT* statement)
 
 	// M__trans = 0 after the commit or rollback. Ready for a new transaction
 
-	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0, statement,
-								   isqlGlob.SQL_dialect, NULL))
+	M__trans = DB->execute(fbStatus, NULL, 0, statement, isqlGlob.SQL_dialect,
+		NULL, NULL, NULL, NULL);
+	if (ISQL_errmsg(fbStatus))
 	{
-		ISQL_errmsg(isc_status);
 		return FAIL;
 	}
 
@@ -7182,9 +7012,9 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 static processing_state passthrough(const char* cmd)
 {
 	processing_state ret = SKIP;
-	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0, cmd, isqlGlob.SQL_dialect, NULL))
+	M__trans = DB->execute(fbStatus, M__trans, 0, cmd, isqlGlob.SQL_dialect, NULL, NULL, NULL, NULL);
+	if (ISQL_errmsg(fbStatus))
 	{
-		ISQL_errmsg(isc_status);
 		if (!DB)
 			ret = FAIL;
 		else
@@ -7224,7 +7054,7 @@ static bool checkSpecial(TEXT* const p, const int length, const double value)
 }
 
 
-static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
+static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 {
 /**************************************
  *
@@ -7241,14 +7071,14 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 	TEXT* p = *s;
 	*p = '\0';
 
-	SSHORT dtype = var->sqltype & ~1; // may be modified by print_item_blob()
-	const int dscale = var->sqlscale;
+	unsigned dtype = var->type;		// may be modified by print_item_blob()
+	const int dscale = var->scale;
 
 	if (List) {
-		isqlGlob.printf("%-31s ", fb_utils::exact_name(var->aliasname));
+		isqlGlob.printf("%-31s ", var->alias);
 	}
 
-	if ((var->sqltype & 1) && (*var->sqlind < 0))
+	if (var->nullable && (*var->nullInd < 0))
 	{
 		// If field was missing print <null>
 
@@ -7257,17 +7087,17 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 		}
 
 		if (dtype == SQL_TEXT || dtype == SQL_VARYING || dtype == SQL_BOOLEAN)
-			sprintf(p, "%-*s ", length, "<null>");
+			sprintf(p, "%-*.*s ", length, length, "<null>");
 		else
-			sprintf(p, "%*s ", length, "<null>");
+			sprintf(p, "%*.*s ", length, length, "<null>");
 	}
-	else if (!strncmp(var->sqlname, "DB_KEY", 6))
+	else if (!strncmp(var->field, "DB_KEY", 6))
 	{
 		// Special handling for db_keys printed in hex
 
 		// Keep a temp buf, d for building the binary string
 
-		for (const TEXT* t = var->sqldata; t < var->sqldata + var->sqllen; t++)
+		for (const TEXT* t = var->value.asChar; t < var->value.asChar + var->length; t++)
 		{
 			if (List) {
 				isqlGlob.printf("%02X", (unsigned int) (UCHAR) *t);
@@ -7287,7 +7117,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 	{
 		const ISC_QUAD* blobid;
 		TEXT blobbuf[30];
-		TEXT* string;
+		TEXT* str2;
 		tm times;
 
 		switch (dtype)
@@ -7296,7 +7126,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 
 			// Print blob-ids only here
 
-			blobid = (ISC_QUAD*) var->sqldata;
+			blobid = var->value.blobid;
 			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid->gds_quad_high,
 					blobid->gds_quad_low);
 			sprintf(p, "%17s ", blobbuf);
@@ -7306,7 +7136,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 
 			// Print blob-ids only here
 
-			blobid = (ISC_QUAD*) var->sqldata;
+			blobid = var->value.blobid;
 			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid->gds_quad_high,
 					blobid->gds_quad_low);
 			sprintf(p, "%17s ", blobbuf);
@@ -7327,13 +7157,13 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 				switch (dtype)
 				{
 				case SQL_SHORT:
-					value = (SINT64) (*(SSHORT*) var->sqldata);
+					value = *var->value.asSmallint;
 					break;
 				case SQL_LONG:
-					value = (SINT64) (*(SLONG*) var->sqldata);
+					value = *var->value.asInteger;
 					break;
 				case SQL_INT64:
-					value = *(SINT64*) var->sqldata;
+					value = *var->value.asBigint;
 					break;
 				}
 
@@ -7356,7 +7186,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 				// one digit more than the specified precision when the value is 0
 				// The bug appears in TCS DSQL_DOMAIN_12 and 13
 				//
-				const double value = (double) *(float*) var->sqldata;
+				const double value = *var->value.asFloat;
 
 				if (checkSpecial(p, length, value))
 				{
@@ -7389,7 +7219,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 
 		case SQL_DOUBLE:
 			{
-				const double value = *(double*) var->sqldata;
+				const double value = *var->value.asDouble;
 
 				if (checkSpecial(p, length, value))
 				{
@@ -7465,101 +7295,45 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 			break;
 
 		case SQL_TEXT:
-			string = var->sqldata;
-			string[var->sqllen] = '\0';
+			str2 = var->value.asChar;
 			// See if it is character set OCTETS
-			if (var->sqlsubtype == 1)
+			if (var->charSet == 1)
 			{
-				const ULONG hex_len = 2 * var->sqllen;
+				const ULONG hex_len = 2 * var->length;
 				TEXT* buff2 = (TEXT*) ISQL_ALLOC(hex_len + 1);
 				// Convert the string to hex digits
-				for (USHORT i = 0; i < var->sqllen; i++) {
-					sprintf(&buff2[i * 2], "%02X", (UCHAR)string[i]);
+				for (unsigned i = 0; i < var->length; i++) {
+					sprintf(&buff2[i * 2], "%02X", (UCHAR)str2[i]);
 				}
 				buff2[hex_len] = 0;
 				if (List) {
-					isqlGlob.printf("%s%s", buff2, NEWLINE);
+					isqlGlob.printf("%-*s%s", var->length, buff2, NEWLINE);
 				}
 				else
 					sprintf(p, "%-*s ", length, buff2);
 				ISQL_FREE(buff2);
 			}
 			else if (List)
-				isqlGlob.printf("%s%s", string, NEWLINE);
+				isqlGlob.printf("%-*.*s%s", var->length, var->length, str2, NEWLINE);
 			else
 			{
-				IcuUtil::pad(p, var->sqlsubtype, strlen(var->sqldata), var->sqldata, length, false);
+				IcuUtil::pad(p, var->charSet, strnlen(var->value.asChar, var->length), var->value.asChar, length, false);
 				strcat(p, " ");
-			}
-			break;
-
-		case SQL_TIMESTAMP:
-			isc_decode_timestamp((ISC_TIMESTAMP*) var->sqldata, &times);
-
-			if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
-			{
-				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
-						times.tm_year + 1900, (times.tm_mon + 1),
-						times.tm_mday, times.tm_hour, times.tm_min,
-						times.tm_sec,
-						((ULONG*) var->sqldata)[1] % ISC_TIME_SECONDS_PRECISION);
-			}
-			else
-			{
-				if (Time_display)
-					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
-							times.tm_mday, alpha_months[times.tm_mon],
-							times.tm_year + 1900, times.tm_hour, times.tm_min,
-							times.tm_sec,
-							((ULONG*) var->sqldata)[1] % ISC_TIME_SECONDS_PRECISION);
-				else
-					sprintf(d, "%2d-%s-%4d", times.tm_mday,
-							alpha_months[times.tm_mon], times.tm_year + 1900);
-			}
-
-			sprintf(p, "%-*s ", length, d);
-			if (List) {
-				isqlGlob.printf("%s%s", d, NEWLINE);
-			}
-			break;
-
-		case SQL_TYPE_TIME:
-			isc_decode_sql_time((ISC_TIME*) var->sqldata, &times);
-			sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
-					times.tm_hour, times.tm_min, times.tm_sec,
-					(*(ISC_TIME*) var->sqldata) % ISC_TIME_SECONDS_PRECISION);
-			sprintf(p, "%-*s ", length, d);
-			if (List) {
-				isqlGlob.printf("%s%s", d, NEWLINE);
-			}
-			break;
-
-		case SQL_TYPE_DATE:
-			isc_decode_sql_date((ISC_DATE*) var->sqldata, &times);
-			sprintf(d, "%4.4d-%2.2d-%2.2d", times.tm_year + 1900,
-					(times.tm_mon + 1), times.tm_mday);
-
-			sprintf(p, "%-*s ", length, d);
-			if (List) {
-				isqlGlob.printf("%s%s", d, NEWLINE);
 			}
 			break;
 
 		case SQL_VARYING:
 			{
-				vary* avary = (vary*) var->sqldata;
-
-				// Note: we allocated the dataspace 1 byte larger already
-				avary->vary_string[avary->vary_length] = 0;
+				vary* avary = var->value.asVary;
 
 				// If CHARACTER SET OCTETS, print two hex digits per octet
-				if (var->sqlsubtype == 1)
+				if (var->charSet == 1)
 				{
 					const ULONG hex_len = 2 * avary->vary_length;
 					char* buff2 = static_cast<char*>(ISQL_ALLOC(hex_len + 1));
 					char* bp = buff2;
 
-					for (USHORT i = 0; i < avary->vary_length; i++, bp += 2)
+					for (unsigned i = 0; i < avary->vary_length; i++, bp += 2)
 					{
 						sprintf(bp, "%02X",
 						static_cast<UCHAR>(avary->vary_string[i]));
@@ -7578,18 +7352,70 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 					ISQL_FREE(buff2);
 				}
 				else if (List)
-					isqlGlob.printf("%s%s", avary->vary_string, NEWLINE);
+					isqlGlob.printf("%-*.*s%s", avary->vary_length, avary->vary_length, avary->vary_string, NEWLINE);
 				else
 				{
-					IcuUtil::pad(p, var->sqlsubtype, avary->vary_length, avary->vary_string, length, false);
+					IcuUtil::pad(p, var->charSet, avary->vary_length, avary->vary_string, length, false);
 					strcat(p, " ");
 				}
 				break;
 			}
 
+		case SQL_TIMESTAMP:
+			isc_decode_timestamp(var->value.asDateTime, &times);
+
+			if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
+			{
+				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
+						times.tm_year + 1900, (times.tm_mon + 1),
+						times.tm_mday, times.tm_hour, times.tm_min,
+						times.tm_sec,
+						((ULONG*) var->value.asChar)[1] % ISC_TIME_SECONDS_PRECISION);
+			}
+			else
+			{
+				if (Time_display)
+					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
+							times.tm_mday, alpha_months[times.tm_mon],
+							times.tm_year + 1900, times.tm_hour, times.tm_min,
+							times.tm_sec,
+							((ULONG*) var->value.asChar)[1] % ISC_TIME_SECONDS_PRECISION);
+				else
+					sprintf(d, "%2d-%s-%4d", times.tm_mday,
+							alpha_months[times.tm_mon], times.tm_year + 1900);
+			}
+
+			sprintf(p, "%-*.*s ", length, length, d);
+			if (List) {
+				isqlGlob.printf("%s%s", d, NEWLINE);
+			}
+			break;
+
+		case SQL_TYPE_TIME:
+			isc_decode_sql_time(var->value.asTime, &times);
+			sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
+					times.tm_hour, times.tm_min, times.tm_sec,
+					(*var->value.asTime) % ISC_TIME_SECONDS_PRECISION);
+			sprintf(p, "%-*.*s ", length, length, d);
+			if (List) {
+				isqlGlob.printf("%s%s", d, NEWLINE);
+			}
+			break;
+
+		case SQL_TYPE_DATE:
+			isc_decode_sql_date(var->value.asDate, &times);
+			sprintf(d, "%4.4d-%2.2d-%2.2d", times.tm_year + 1900,
+					(times.tm_mon + 1), times.tm_mday);
+
+			sprintf(p, "%-*.*s ", length, length, d);
+			if (List) {
+				isqlGlob.printf("%s%s", d, NEWLINE);
+			}
+			break;
+
 		case SQL_BOOLEAN:
-			strcpy(d, (var->sqldata[0] ? "<true>" : "<false>"));
-			sprintf(p, "%-*s ", length, d);
+			strcpy(d, (*var->value.asBoolean ? "<true>" : "<false>"));
+			sprintf(p, "%-*.*s ", length, length, d);
 			if (List)
 				isqlGlob.printf("%s%s", d, NEWLINE);
 			break;
@@ -7613,7 +7439,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const unsigned length)
 }
 
 
-processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDLE trans, int subtype)
+processing_state ISQL_print_item_blob(FILE* fp, const IsqlVar* var, Firebird::ITransaction* trans, int subtype)
 {
 /******************************************
  *
@@ -7628,16 +7454,16 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
  **************************************/
 	TEXT msg[MSG_LENGTH];
 
-	ISC_QUAD* blobid = (ISC_QUAD*) var->sqldata;
+	ISC_QUAD* blobid = var->value.blobid;
 
 	// Don't bother with null blobs
 
 	if (UserBlob::blobIsNull(*blobid))
 		return CONT;
 
-	if ((var->sqlsubtype != subtype) && (subtype != ALL_BLOBS))
+	if ((var->subType != subtype) && (subtype != ALL_BLOBS))
 	{
-		IUTILS_msg_get(BLOB_SUBTYPE, msg, SafeArg() << subtype << var->sqlsubtype);
+		IUTILS_msg_get(BLOB_SUBTYPE, msg, SafeArg() << subtype << var->subType);
 		// Blob display set to subtype %d. This blob: subtype = %d\n
 		IUTILS_printf(fp, msg);
 		return CONT;
@@ -7648,7 +7474,7 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
 	UCHAR bpb_buffer[64];
 	ISC_BLOB_DESC from_desc;
 
-	const int blob_subtype = var->sqlsubtype;
+	const int blob_subtype = var->subType;
 	if (blob_subtype == isc_blob_text)
 	{
 		// ASF: Since ODS11.1, BLOBs are automatically transliterated to the client charset.
@@ -7663,23 +7489,16 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
 			// Fix a bug that occur when a BLOB column is added after the start
 			// of the DML transaction.
 			// ASF: But use M__trans if D__trans is not started;
-			if (!var->relname[0] ||
-				isc_blob_lookup_desc(isc_status, &DB, (D__trans ? &D__trans : &M__trans),
-					(const UCHAR*) var->relname, (const UCHAR*) var->sqlname, &from_desc, NULL) == 0)
-			{
-				if (!var->relname[0])
-				{
-					from_desc.blob_desc_subtype = var->sqlsubtype;
-					from_desc.blob_desc_charset = var->sqlscale;
-				}
+			from_desc.blob_desc_subtype = var->subType;
+			from_desc.blob_desc_charset = var->charSet;
 
-				ISC_BLOB_DESC to_desc;
-				isc_blob_default_desc(&to_desc, (const UCHAR*) var->relname, (const UCHAR*) var->sqlname);
-				if (!isc_blob_gen_bpb(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
-									  bpb_buffer, &bpb_length))
-				{
-					bpb = bpb_buffer;
-				}
+			ISC_BLOB_DESC to_desc;
+			ISC_STATUS_ARRAY oldStat;
+			isc_blob_default_desc(&to_desc, (const UCHAR*) var->relation, (const UCHAR*) var->field);
+			if (!isc_blob_gen_bpb(oldStat, &to_desc, &from_desc, sizeof(bpb_buffer),
+								  bpb_buffer, &bpb_length))
+			{
+				bpb = bpb_buffer;
 			}
 		}
 	}
@@ -7690,16 +7509,15 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
 		set_bpb_for_translation(blob_subtype);
 	}
 
-	UserBlob blob(isc_status);
-	if (!blob.open(DB, trans, *blobid, bpb_length, bpb))
+	Firebird::IBlob* blob = DB->openBlob(fbStatus, trans, blobid, bpb_length, bpb);
+	if (ISQL_errmsg(fbStatus))
 	{
-		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	}
 
 	TEXT buffer[BUFFER_LENGTH512];
 	size_t length;
-	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
+	while ( (length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer)) )
 	{
 		// Special displays for blr or acl subtypes
 
@@ -7722,11 +7540,14 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
 		}
 	}
 
-	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
+	if ((!fbStatus->isSuccess()) && (fbStatus->get()[1] != isc_segstr_eof))
 	{
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
+		blob->close(fbStatus);
 		return ps_ERR;
 	}
+
+	blob->close(fbStatus);
 	return CONT;
 }
 
@@ -7760,8 +7581,8 @@ static void print_item_numeric(SINT64 value, int length, int scale, TEXT* buf)
 	sprintf(buf, "%*" SQUADFORMAT, length, value);
 
 	// start from LSByte towards MSByte
-	SSHORT from = length - 1;
-	SSHORT to = length;
+	int from = length - 1;
+	int to = length;
 
 	// make space for decimal '.' point in buffer
 	buf[to + 1] = '\0';
@@ -7789,7 +7610,7 @@ static void print_item_numeric(SINT64 value, int length, int scale, TEXT* buf)
 }
 
 
-static processing_state print_line(XSQLDA* sqlda, const unsigned pad[], TEXT line[])
+static processing_state print_line(Firebird::IMessageMetadata* message, UCHAR* buf, const unsigned pad[], TEXT line[])
 {
 /**************************************
  *
@@ -7805,22 +7626,28 @@ static processing_state print_line(XSQLDA* sqlda, const unsigned pad[], TEXT lin
  *		line = pointer to the line buffer.
  *
  **************************************/
-	const int maxblob = 20;
-	XSQLVAR* varlist[maxblob]; // No more than 20 blobs per line
+	const unsigned maxblob = 20;
+	IsqlVar varlist[maxblob]; // No more than 20 blobs per line
+	unsigned varnum = 0;
 
-	int varnum = 0;
 	{ // scope
 		TEXT* p = line;
-		int i = 0;
-		XSQLVAR* var = sqlda->sqlvar;
-		for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
-			 var++, i++)
+		unsigned n = message->getCount(fbStatus);
+		if (ISQL_errmsg(fbStatus))
 		{
+			return ps_ERR;
+		}
+		for (unsigned i = 0; i < n; ++i)
+		{
+			IsqlVar var;
+			if (ISQL_fill_var(&var, message, i, buf) == ps_ERR)
+				return ps_ERR;
+
 			if (!Interrupt_flag && !Abort_flag)
 			{
 				// Save all the blob vars and print them at the end
 				// CVC: If varnum reaches 20, we must print an error instead of crashing.
-				const int rc = print_item(&p, var, pad[i]);
+				const int rc = print_item(&p, &var, pad[i]);
 				if (rc == SQL_BLOB && varnum < maxblob)
 					varlist[varnum++] = var;
 			}
@@ -7849,17 +7676,17 @@ static processing_state print_line(XSQLDA* sqlda, const unsigned pad[], TEXT lin
 
 	// If there were Blobs to print, print them passing the blobid
 
-	for (int i = 0; i < varnum; i++)
+	for (unsigned i = 0; i < varnum; i++)
 	{
-		const XSQLVAR* var = varlist[i];
-		if (!(var->sqltype & 1) || *var->sqlind == 0)
+		const IsqlVar* var = &varlist[i];
+		if (!(var->nullable) || *var->nullInd == 0)
 		{
 			// Print blob title
 
 			isqlGlob.printf(
 					"==============================================================================%s",
 					NEWLINE);
-			isqlGlob.printf("%s:  %s", var->aliasname, NEWLINE);
+			isqlGlob.printf("%s:  %s", var->alias, NEWLINE);
 			if (ISQL_print_item_blob(isqlGlob.Out, var, M__trans, Doblob) != CONT)
 				return (ps_ERR);
 			isqlGlob.printf(
@@ -7875,132 +7702,105 @@ static processing_state print_line(XSQLDA* sqlda, const unsigned pad[], TEXT lin
 // p r i n t _ p e r f o r m a n c e
 // *********************************
 // As the name implies, show performance as extracted from the API routines.
-static void print_performance(const perf64* perf_before)
+static processing_state print_performance(const SINT64* perf_before)
 {
 	// Translation of report strings. Do not remove "static" modifier.
 	static bool have_report = false;
-	static TEXT report_1[MSG_LENGTH + MSG_LENGTH];
+	static Firebird::GlobalPtr<Firebird::string> diag;
 
-	perf64 perf_after;
-	perf64_get_info(&DB, &perf_after);
-	if (!have_report)
+	SINT64 perf_after[ISQL_COUNTERS];
+	Firebird::UtlInterfacePtr()->getPerfCounters(fbStatus, DB, ISQL_COUNTERS_SET, perf_after);
+	if (ISQL_errmsg(fbStatus))
 	{
-		IUTILS_msg_get(REPORT1, report_1);
-		// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n
-		IUTILS_msg_get(REPORT2, &report_1[strlen(report_1)]);
-		// For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
-		//   = !f\n
-		// Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
-		//   es = !f\n
-		have_report = true;
-	}
-	SCHAR statistics[256];
-	perf64_format(perf_before, &perf_after, report_1, statistics, NULL);
-	IUTILS_printf2(Diag, "%s%s", statistics, NEWLINE);
-}
-
-
-// *********************************
-// p r i n t _ s q l d a _ i n p u t
-// *********************************
-// Show the contents of the input sqlda, used typically for parameters.
-static processing_state print_sqlda_input(const bool can_have_input_parameters)
-{
-	// Describe the input
-	XSQLDA* input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
-	memset(input_sqlda, 0, XSQLDA_LENGTH(10));
-	input_sqlda->version = SQLDA_VERSION1;
-	input_sqlda->sqld = input_sqlda->sqln = 10;
-
-	if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda))
-	{
-		ISQL_FREE(input_sqlda);
-		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	}
-	else if (isc_status[2] == isc_arg_warning)
-		ISQL_warning(isc_status);
 
-	// Reallocate if there's LOTS of input
-	if (input_sqlda->sqld > input_sqlda->sqln)
+	if (!have_report)
 	{
-		USHORT n_columns = input_sqlda->sqld;
-		ISQL_FREE(input_sqlda);
-		input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
-		memset(input_sqlda, 0, XSQLDA_LENGTH(n_columns));
-		input_sqlda->version = SQLDA_VERSION1;
-		input_sqlda->sqld = input_sqlda->sqln = n_columns;
-		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda))
-		{
-			ISQL_FREE(input_sqlda);
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		}
-		else if (isc_status[2] == isc_arg_warning)
-			ISQL_warning(isc_status);
+		TEXT report_1[MSG_LENGTH];
+		IUTILS_msg_get(REPORT_NEW1, report_1);
+		// Current memory = !\nDelta memory = !\nMax memory = !\nElapsed time= ~ sec\n
+		diag->assign(report_1);
+
+#ifndef WIN_NT
+		IUTILS_msg_get(REPORT_NEW2, report_1);
+		// Cpu = !u sec\n
+		diag->append(report_1);
+#endif
+
+		IUTILS_msg_get(REPORT_NEW3, report_1);
+		// Buffers = !b\nReads = !r\nWrites = !w\nFetches = !f\n
+		diag->append(report_1);
+
+		Firebird::string::size_type p;
+		while ((p = diag->find('!')) != Firebird::string::npos)
+			diag->replace(p, 1, "%"SQUADFORMAT);
+		while ((p = diag->find('~')) != Firebird::string::npos)
+			diag->replace(p, 1, "%"SQUADFORMAT".%.2"SQUADFORMAT);
+
+		have_report = true;
 	}
 
-	if (can_have_input_parameters)
+	struct IsqlStatist
 	{
-		isqlGlob.printf(
-				//"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-				"\nINPUT  SQLDA version: %d sqln: %d sqld: %d\n",
-				//input_sqlda->version, input_sqlda->sqldaid,
-				//input_sqlda->sqldabc, input_sqlda->sqln,
-				input_sqlda->version, input_sqlda->sqln,
-				input_sqlda->sqld);
-		int i = 0;
-		const XSQLVAR* var = input_sqlda->sqlvar;
-		for (const XSQLVAR* const end = var + input_sqlda->sqld; var < end; var++, i++)
-		{
-			isqlGlob.printf("%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
-					i + 1, var->sqltype, sqltype_to_string(var->sqltype),
-					(var->sqltype & 1) ? "Nullable" : "		",
-					var->sqlscale, var->sqlsubtype, var->sqllen);
-			isqlGlob.printf("  :  name: (%d)%*s  alias: (%d)%*s\n",
-					var->sqlname_length, var->sqlname_length,
-					var->sqlname, var->aliasname_length,
-					var->aliasname_length, var->aliasname);
-			isqlGlob.printf("  : table: (%d)%*s  owner: (%d)%*s\n",
-					var->relname_length, var->relname_length,
-					var->relname, var->ownname_length,
-					var->ownname_length, var->ownname);
-		}
-	}
+		SINT64 curMem, deltaMem, maxMem;
+		SINT64 realTime, cpu;
+		SINT64 buffers, reads, writes, fetches;
 
-	ISQL_FREE(input_sqlda);
+		// ISQL_COUNTERS_SET = "CurrentMemory, MaxMemory, RealTime, UserTime, Buffers, Reads, Writes, Fetches"
+		//						0			   1		  2			3		  4		   5	  6		  7
+		IsqlStatist(const SINT64* b, const SINT64* a)
+		{
+			curMem = a[0];
+			deltaMem = a[0] - b[0];
+			maxMem = a[1];
+			realTime = a[2] - b[2];
+			cpu = a[3] - b[3];
+			buffers = a[4];
+			reads = a[5] - b[5];
+			writes = a[6] - b[6];
+			fetches = a[7] - b[7];
+		}
+	};
+
+	IsqlStatist iStat(perf_before, perf_after);
+	const int TICK =
+#ifndef WIN_NT
+		sysconf(_SC_CLK_TCK);
+#else
+		100;
+#endif
+	// "%"SQUADFORMAT
+	// "%"SQUADFORMAT".%.2"SQUADFORMAT
+	IUTILS_printf2(Diag, diag->c_str(), iStat.curMem, iStat.deltaMem, iStat.maxMem,
+		iStat.realTime / TICK, (iStat.realTime % TICK) * 100 / TICK,
+		iStat.cpu / TICK, (iStat.cpu % TICK) * 100 / TICK,
+		iStat.buffers, iStat.reads, iStat.writes, iStat.fetches);
+	IUTILS_printf2(Diag, "%s", NEWLINE);
+
 	return CONT;
 }
 
 
-// ***********************************
-// p r i n t _ s q l d a _ o u t p u t
-// ***********************************
-// Show the contents of the output sqlda, that's the result of SELECT from
-// both tables and procedures and execution of procedures that return output.
-static void print_sqlda_output(const XSQLDA& sqlda)
+// *********************************
+// p r i n t _ m e s s a g e
+// *********************************
+// Show the contents of the input msg, used typically for parameters.
+static void print_message(Firebird::IMessageMetadata* msg, const char* dir)
 {
+	unsigned n = msg->getCount(fbStatus);
 	isqlGlob.printf(
-			//"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-			"\nOUTPUT SQLDA version: %d sqln: %d sqld: %d\n",
-			//sqlda.version, sqlda.sqldaid, sqlda.sqldabc, sqlda.sqln,
-			sqlda.version, sqlda.sqln,
-			sqlda.sqld);
-	int i = 0;
-	const XSQLVAR* var = sqlda.sqlvar;
-	for (const XSQLVAR* const end = var + sqlda.sqld; var < end; var++, i++)
+			"\n%sPUT message field count: %d\n", dir, n);
+	for (unsigned i = 0; i < n; ++i)
 	{
-		isqlGlob.printf("%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
-				i + 1, var->sqltype, sqltype_to_string(var->sqltype),
-				(var->sqltype & 1) ? "Nullable" : "		",
-				var->sqlscale, var->sqlsubtype, var->sqllen);
-		isqlGlob.printf("  :  name: (%d)%*s  alias: (%d)%*s\n",
-				var->sqlname_length, var->sqlname_length, var->sqlname,
-				var->aliasname_length, var->aliasname_length,
-				var->aliasname);
-		isqlGlob.printf("  : table: (%d)%*s  owner: (%d)%*s\n",
-				var->relname_length, var->relname_length, var->relname,
-				var->ownname_length, var->ownname_length, var->ownname);
+		unsigned type = msg->getType(fbStatus, i);
+		isqlGlob.printf("%02d: sqltype: %d %s %s scale: %d subtype: %d len: %d\n",
+				i + 1, type, sqltype_to_string(type), msg->isNullable(fbStatus, i) ? "Nullable" : "		",
+				msg->getScale(fbStatus, i), msg->getSubType(fbStatus, i), msg->getLength(fbStatus, i));
+		isqlGlob.printf("  :  name: %s  alias: %s\n",
+				msg->getField(fbStatus, i), msg->getAlias(fbStatus, i));
+		isqlGlob.printf("  : table: %s  owner: %s\n",
+				msg->getRelation(fbStatus, i), msg->getOwner(fbStatus, i));
 	}
 }
 
@@ -8010,26 +7810,34 @@ static void print_sqlda_output(const XSQLDA& sqlda)
 // ***************************
 // Write into buffers the information that will be printed as page header for
 // statements that return data.
-static void process_header(const XSQLDA* sqlda, const unsigned pad[], TEXT header[], TEXT header2[])
+static void process_header(Firebird::IMessageMetadata* msg, const unsigned pad[], TEXT header[], TEXT header2[])
 {
 	// Create the column header :  Left justify strings
 
 	TEXT* p = header;
 	TEXT* p2 = header2;
-	int i = 0;
-	const XSQLVAR* var = sqlda->sqlvar;
-	for (const XSQLVAR* const end = var + sqlda->sqld; var < end; var++, i++)
+	unsigned n_cols = msg->getCount(fbStatus);
+	if (ISQL_errmsg(fbStatus))
 	{
-		const SSHORT type = var->sqltype & ~1;
+		return;
+	}
 
-		IcuUtil::pad(p, isqlGlob.att_charset, var->aliasname_length, var->aliasname, pad[i],
+	for (unsigned i = 0; i < n_cols; ++i)
+	{
+		IsqlVar var;
+		if (ISQL_fill_var(&var, msg, i, NULL) == ps_ERR)
+			return;
+
+		const unsigned type = var.type;
+
+		IcuUtil::pad(p, isqlGlob.att_charset, strlen(var.alias), var.alias, pad[i],
 			(type != SQL_TEXT && type != SQL_VARYING));
 		strcat(p, " ");
 
 		p += strlen(p);
 
 		// Separators need not go on forever no more than a line
-		unsigned limit = IcuUtil::charLength(isqlGlob.att_charset, var->aliasname_length, var->aliasname);
+		unsigned limit = IcuUtil::charLength(isqlGlob.att_charset, strlen(var.alias), var.alias);
 		limit = MAX(limit, pad[i]) + 1;
 
 		for (unsigned j = 1; j < limit && j < 80; j++)
@@ -8048,23 +7856,25 @@ static void process_header(const XSQLDA* sqlda, const unsigned pad[], TEXT heade
 // any result to the caller.
 static void process_plan()
 {
+	if (!global_Stmt)
+		return;
+
 	// Bug 7565: A plan larger than plan_buffer will not be displayed
 	// Bug 7565: Note also that the plan must fit into Print_Buffer
 
-	SCHAR plan_info[1];
+	UCHAR plan_info[1];
 	plan_info[0] = ExplainPlan ? isc_info_sql_explain_plan : isc_info_sql_get_plan;
-	TEXT plan_buffer[PLAN_BUFFER_LENGTH];
+	UCHAR plan_buffer[PLAN_BUFFER_LENGTH];
 	memset(plan_buffer, 0, sizeof(plan_buffer));
-	char* planPtr = plan_buffer;
+	UCHAR* planPtr = plan_buffer;
 	size_t planSize = sizeof(plan_buffer);
-	PtrSentry<char> planSentry;
+	PtrSentry<UCHAR> planSentry;
 
 	for (int i = 0; i < 3; ++i)
 	{
-		if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(plan_info), plan_info,
-							  planSize, planPtr))
+		global_Stmt->getInfo(fbStatus, sizeof(plan_info), plan_info, planSize, planPtr);
+		if (ISQL_errmsg(fbStatus))
 		{
-			ISQL_errmsg(isc_status);
 			return;
 		}
 
@@ -8083,7 +7893,7 @@ static void process_plan()
 			switch (i)
 			{
 			case 0:
-				planSentry.exchange((planPtr = new char[planSize = MAX_SSHORT]), true);
+				planSentry.exchange((planPtr = new UCHAR[planSize = MAX_SSHORT]), true);
 				break;
 			case 1:
 				// Probably FB 2.1 and before will crash with MAX_USHORT.
@@ -8091,7 +7901,7 @@ static void process_plan()
 					isqlGlob.major_ods > 11)
 				{
 					planSentry.clean();
-					planSentry.exchange((planPtr = new char[planSize = MAX_USHORT]), true);
+					planSentry.exchange((planPtr = new UCHAR[planSize = MAX_USHORT]), true);
 					break;
 				}
 				// else fall into
@@ -8122,6 +7932,8 @@ static void process_plan()
 // retrieving the information from the server.
 static SLONG process_record_count(const int statement_type)
 {
+	if (!global_Stmt)
+		return -1;
 	UCHAR count_type = 0;
 
 	// Skip selects, better to count records incoming later
@@ -8140,12 +7952,12 @@ static SLONG process_record_count(const int statement_type)
 
 	if (count_type)
 	{
-		const SCHAR count_info[] = { isc_info_sql_records };
-		SCHAR count_buffer[33];
-		if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(count_info), count_info,
-							  sizeof(count_buffer), count_buffer))
+		const UCHAR count_info[] = { isc_info_sql_records };
+		UCHAR count_buffer[33];
+		global_Stmt->getInfo(fbStatus, sizeof(count_info), count_info,
+			sizeof(count_buffer), count_buffer);
+		if (ISQL_errmsg(fbStatus))
 		{
-			ISQL_errmsg(isc_status);
 			return -1;
 		}
 
@@ -8175,14 +7987,12 @@ static SLONG process_record_count(const int statement_type)
 // A failure is indicated by returning zero.
 static SSHORT process_request_type()
 {
-	const SCHAR sqlda_info[] = { isc_info_sql_stmt_type };
-	SCHAR info_buffer[16];
-	if (isc_dsql_sql_info (isc_status, &global_Stmt, sizeof (sqlda_info), sqlda_info,
-						   sizeof (info_buffer), info_buffer))
-	{
-		ISQL_errmsg (isc_status);
-	}
-	else
+	if (!global_Stmt)
+		return 0;
+	const UCHAR sqlda_info[] = { isc_info_sql_stmt_type };
+	UCHAR info_buffer[16];
+	global_Stmt->getInfo(fbStatus, sizeof(sqlda_info), sqlda_info, sizeof(info_buffer), info_buffer);
+	if (!ISQL_errmsg(fbStatus))
 	{
 		if (info_buffer[0] == isc_info_sql_stmt_type)
 		{
@@ -8198,84 +8008,30 @@ static SSHORT process_request_type()
 }
 
 
-// ***************************************
-// p r o c e s s _ s q l d a _ b u f f e r
-// ***************************************
-// Generate the buffer for sqlda output and assign the null indicators already created.
-// The caller should deallocate the returned buffer after using it.
-static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[])
-{
-	SLONG bufsize = 0;
-	SSHORT* nullp = nullind;
-	XSQLVAR* var = sqlda->sqlvar;
-	for (const XSQLVAR* const end = var + sqlda->sqld; var < end; var++)
-	{
-		// Allocate enough space for all the sqldata and null pointers
-
-		const SSHORT type = var->sqltype & ~1;
-		USHORT alignment, data_length;
-		alignment = data_length = var->sqllen;
-
-		// special case db_key alignment which arrives as an SQL_TEXT
-		// Bug 8562:  since DB_KEY arrives as SQL_TEXT, we need to account
-		// for the null character at the end of the string
-		if (!strncmp(var->sqlname, "DB_KEY", 6))
-		{
-			alignment = 8;
-			// Room for null string terminator
-			data_length++;
-		}
-		else
-		{
-			// Special alignment cases
-			if (type == SQL_TEXT)
-			{
-				alignment = 1;
-				// Room for null string terminator
-				data_length++;
-			}
-			else if (type == SQL_VARYING)
-			{
-				alignment = sizeof(SSHORT);
-				// Room for a null string terminator for display
-				data_length += sizeof(SSHORT) + 1;
-			}
-		}
-
-		bufsize = FB_ALIGN(bufsize, alignment) + data_length;
-		var->sqlind = nullp++;
-	}
-
-	// Buffer for reading data from the fetch
-	if (bufsize)
-	{
-		SLONG* buffer = (SLONG*) ISQL_ALLOC ((SLONG) bufsize);
-		memset(buffer, 0, (size_t) bufsize);
-		return buffer;
-	}
-	return 0;
-}
-
-
-// *****************************************
-// p r o c e s s _ s q l d a _ d i s p l a y
-// *****************************************
+// *********************************************
+// p r o c e s s _ m e s s a g e _ d i s p l a y
+// *********************************************
 // Calculate individual column widths and return total line width.
-// Assign previously allocated buffer in pieces to every XSQLVAR.
-static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned pad[])
+static unsigned process_message_display(Firebird::IMessageMetadata* message, unsigned pad[])
 {
-	int linelength = 0;
-	SLONG offset = 0;
-	int i = 0;
-	XSQLVAR* var = sqlda->sqlvar;
-	for (const XSQLVAR* const end = var + sqlda->sqld; var < end; ++var, ++i)
+	unsigned linelength = 0;
+	unsigned ncols = message->getCount(fbStatus);
+	if (ISQL_errmsg(fbStatus))
 	{
+		return 0;
+	}
+	for (unsigned i = 0; i < ncols; ++i)
+	{
+		IsqlVar var;
+		if (ISQL_fill_var(&var, message, i, NULL) == ps_ERR)
+			return 0;
+
 		// Record the length of name and var, then convert to print
 		// length, later to be stored in pad array
 
-		USHORT data_length, disp_length, alignment;
-		data_length = disp_length = alignment = var->sqllen;
-		SSHORT namelength = IcuUtil::charLength(isqlGlob.att_charset, var->aliasname_length, var->aliasname);
+		unsigned data_length, disp_length, alignment;
+		data_length = disp_length = alignment = var.length;
+		unsigned namelength = IcuUtil::charLength(isqlGlob.att_charset, strlen(var.alias), var.alias);
 
 		// Minimum display length should not be less than that needed
 		// for displaying null
@@ -8283,7 +8039,7 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned
 		if (namelength < NULL_DISP_LEN)
 			namelength = NULL_DISP_LEN;
 
-		const SSHORT type = var->sqltype & ~1;
+		const unsigned type = var.type;
 
 		switch (type)
 		{
@@ -8315,18 +8071,18 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned
 			alignment = 1;
 			data_length++;
 			// OCTETS data is displayed in hex
-			if (var->sqlsubtype == 1)
-				disp_length = 2 * var->sqllen;
-			else if (var->sqlsubtype == 4)
+			if (var.charSet == 1)
+				disp_length = 2 * var.length;
+			else if (var.charSet == 4)
 				disp_length /= 4;
 			break;
 		case SQL_VARYING:
 			data_length += sizeof(USHORT) + 1;
 			alignment = sizeof(USHORT);
 			// OCTETS data is displayed in hex
-			if (var->sqlsubtype == 1)
-				disp_length = 2 * var->sqllen;
-			else if (var->sqlsubtype == 4)
+			if (var.charSet == 1)
+				disp_length = 2 * var.length;
+			else if (var.charSet == 4)
 				disp_length /= 4;
 			break;
 		case SQL_SHORT:
@@ -8348,10 +8104,10 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned
 
 		// special case db_key alignment which arrives as an SQL_TEXT
 
-		if (!strncmp(var->sqlname, "DB_KEY", 6))
+		if (!strncmp(var.field, "DB_KEY", 6))
 		{
 			alignment = 8;
-			disp_length = 2 * var->sqllen;
+			disp_length = 2 * var.length;
 		}
 
 		// This is the print width of each column
@@ -8364,29 +8120,23 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], unsigned
 		// Is there a collist entry, then use that width, but only for text
 		if (type == SQL_TEXT || type == SQL_VARYING)
 		{
-			if (!global_Cols.find(var->aliasname, &pad[i]) && global_Col_default)
+			if (!global_Cols.find(var.alias, &pad[i]) && global_Col_default)
 				pad[i] = global_Col_default;
 			disp_length = pad[i];
 		}
 
-		if ((type == SQL_TEXT || type == SQL_VARYING) && var->sqlsubtype == 4)
+		if ((type == SQL_TEXT || type == SQL_VARYING) && var.charSet == 4)
 			disp_length *= 4;
 
 		// The total line length
 		linelength += disp_length + 1;
-
-		// Allocate space in buffer for data
-
-		offset = FB_ALIGN(offset, alignment);
-		var->sqldata = (SCHAR*) buffer + offset;
-		offset += data_length;
 	}
 
 	return linelength;
 }
 
 
-static int process_statement(const TEXT* string, XSQLDA** sqldap)
+static processing_state process_statement(const TEXT* str2)
 {
 /**************************************
  *
@@ -8399,7 +8149,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
  *	This function uses the isc_dsql user functions rather
  *	than embedded dynamic statements.  The user request
  *	is placed on transaction M__trans, while all
- *	background work is on the default gds_trans.
+ *	background work is on the default fbTrans.
  *	This function now returns CONT (success) or ps_ERR.
  **************************************/
 
@@ -8411,11 +8161,11 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 	public:
 		CancelHolder()
 		{
-			fb_cancel_operation(isc_status, &DB, fb_cancel_enable);
+			DB->cancelOperation(fbStatus, fb_cancel_enable);
 		}
 		~CancelHolder()
 		{
-			fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
+			DB->cancelOperation(fbStatus, fb_cancel_disable);
 		}
 	};
 
@@ -8424,45 +8174,36 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 	// enable CANCEL during statement processing
 	CancelHolder cHolder;
 
-	// We received the address of the sqlda in case we realloc it
-	XSQLDA* sqlda = *sqldap;
-
 	// If somebody did a commit or rollback, we are out of a transaction
 
-	if (!M__trans)
-	{
-		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
-			ISQL_errmsg(isc_status);
-	}
+	M_Transaction();
 
 	// No need to start a default transaction unless there is no current one
 
-	if (Autocommit && !D__trans)
-	{
-		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
-		{
-			ISQL_errmsg(isc_status);
-		}
-	}
+	if (Autocommit)
+		D_Transaction();
 
 	// If statistics are requested, then reserve them here
 
-	perf64 perf_before;
+	SINT64 perf_before[ISQL_COUNTERS];
 	if (Stats)
-		perf64_get_info(&DB, &perf_before);
+	{
+		Firebird::UtlInterfacePtr()->getPerfCounters(fbStatus,
+			DB, ISQL_COUNTERS_SET, perf_before);
+		if (ISQL_errmsg(fbStatus))
+		{
+			return ps_ERR;
+		}
+	}
 
 	// Prepare the dynamic query stored in string.
 	// But put this on the DDL transaction to get maximum visibility of
 	// metadata.
 
-	FB_API_HANDLE prepare_trans;
-	if (Autocommit)
-		prepare_trans = D__trans;
-	else
-		prepare_trans = M__trans;
-
-	if (isc_dsql_prepare(isc_status, &prepare_trans, &global_Stmt, 0, string,
-						 isqlGlob.SQL_dialect, sqlda))
+	Firebird::ITransaction* prepare_trans = Autocommit ? D__trans : M__trans;
+	global_Stmt = DB->prepare(fbStatus, prepare_trans, 0, str2, isqlGlob.SQL_dialect,
+		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+	if (!fbStatus->isSuccess())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
 		{
@@ -8471,23 +8212,22 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 							"**** Error preparing statement:",
 							NEWLINE,
 							NEWLINE,
-							string,
+							str2,
 							NEWLINE);
 		}
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	}
 
 	// check for warnings
-	if (isc_status[2] == isc_arg_warning)
-		ISQL_warning(isc_status);
+	if (fbStatus->get()[2] == isc_arg_warning)
+		ISQL_warning(fbStatus);
 
 	// Find out what kind of statement this is
 	const int statement_type = process_request_type();
 	if (!statement_type)
 		return ps_ERR;
 
-//#ifdef DEV_BUILD
 	if (Sqlda_display)
 	{
 		const bool can_have_input_parameters =
@@ -8499,15 +8239,23 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			statement_type == isc_info_sql_stmt_select_for_upd ||
 			statement_type == isc_info_sql_stmt_get_segment;
 
-		if (print_sqlda_input(can_have_input_parameters) == ps_ERR)
-			return ps_ERR;
+		if (can_have_input_parameters)
+		{
+			Firebird::RefPtr<Firebird::IMessageMetadata>
+				input(Firebird::REF_NO_INCR, global_Stmt->getInputMetadata(fbStatus));
+			if (ISQL_errmsg(fbStatus))
+			{
+				return ps_ERR;
+			}
+
+			// check for warnings
+			if (fbStatus->get()[2] == isc_arg_warning)
+				ISQL_warning(fbStatus);
+
+			print_message(input, "IN");
+		}
 	}
-//#endif // DEV_BUILD
 
-
-	// check for warnings
-	if (isc_status[2] == isc_arg_warning)
-		ISQL_warning(isc_status);
 
 	const bool is_selectable =
 		statement_type == isc_info_sql_stmt_select ||
@@ -8535,30 +8283,29 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 
 		if (Autocommit && (statement_type == isc_info_sql_stmt_ddl))
 		{
-			if (isc_dsql_execute_immediate(isc_status, &DB, &D__trans, 0,
-										   string, isqlGlob.SQL_dialect, NULL))
+			DB->execute(fbStatus, D__trans, 0, str2, isqlGlob.SQL_dialect, NULL, NULL, NULL, NULL);
+			if (ISQL_errmsg(fbStatus))
 			{
-				ISQL_errmsg(isc_status);
 				ret = ps_ERR;
 			}
-			else if (isc_status[2] == isc_arg_warning)
+			else if (fbStatus->get()[2] == isc_arg_warning)
 			{
 				// check for warnings
-				ISQL_warning(isc_status);
+				ISQL_warning(fbStatus);
 			}
 
 			// CVC: DDL statements that aren't syntax errors are caught by DFW
 			// only at commit time, so we need to check here.
-			// AP: isc_status will be cleaned in commit_trans()
+			// AP: fbStatus will be cleaned in commit_trans()
 			if (!commit_trans(&D__trans))
 				ret = ps_ERR;
 
 			// check for warnings from COMMIT
-			if (isc_status[2] == isc_arg_warning)
-				ISQL_warning(isc_status);
+			if (fbStatus->get()[2] == isc_arg_warning)
+				ISQL_warning(fbStatus);
 
-			if (Stats)
-				print_performance(&perf_before);
+			if (Stats && (print_performance(perf_before) == ps_ERR))
+				ret = ps_ERR;
 			return ret;
 		}
 
@@ -8569,27 +8316,27 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			// CVC: Starting a txn can fail, too. Let's check it, although I
 			// suspect isql will catch it in frontend_set() through get_statement(),
 			// so this place has little chance to be reached.
-			if (newtrans(string) == FAIL)
+			if (newtrans(str2) == FAIL)
 				return ps_ERR;
 
-			if (Stats)
-				print_performance(&perf_before);
+			if (Stats && (print_performance(perf_before) == ps_ERR))
+				ret = ps_ERR;
 			return ret;
 		}
 
 		//  This is a non-select DML statement or trans
 
-		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, NULL))
+		M__trans = global_Stmt->execute(fbStatus, M__trans, NULL, NULL, NULL, NULL);
+		if (ISQL_errmsg(fbStatus))
 		{
-			ISQL_errmsg(isc_status);
 			// CVC: Make this conditional if it causes problems. For example
 			// if (BailOnError)
 			ret = ps_ERR;
 		}
 
 		// check for warnings
-		if (isc_status[2] == isc_arg_warning)
-			ISQL_warning(isc_status);
+		if (fbStatus->get()[2] == isc_arg_warning)
+			ISQL_warning(fbStatus);
 
 		// We are executing a commit or rollback, commit default trans
 
@@ -8615,76 +8362,53 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			}
 		}
 
-		if (Stats)
-			print_performance(&perf_before);
+		if (Stats && (print_performance(perf_before) == ps_ERR))
+			ret = ps_ERR;
 		return ret;
 	}
 
-	const SSHORT n_cols = sqlda->sqld;
-
-	// The query is bigger than the curent sqlda, so make more room
-
-	if (n_cols > sqlda->sqln)
+	Firebird::RefPtr<Firebird::IMessageMetadata>
+		message(Firebird::REF_NO_INCR, global_Stmt->getOutputMetadata(fbStatus));
+	if (ISQL_errmsg(fbStatus))
 	{
-		ISQL_FREE(sqlda);
-		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
-		memset(sqlda, 0, XSQLDA_LENGTH(n_cols));
-		*sqldap = sqlda;
-		sqlda->version = SQLDA_VERSION1;
-		sqlda->sqld = sqlda->sqln = n_cols;
-
-		//  We must re-describe the sqlda, no need to re-prepare
-
-		if (isc_dsql_describe(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda))
-		{
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		}
+		return ps_ERR;
 	}
 
-//#ifdef DEV_BUILD
+	// check for warnings
+	if (fbStatus->get()[2] == isc_arg_warning)
+		ISQL_warning(fbStatus);
+
+	const unsigned n_cols = message->getCount(fbStatus);
+	if (ISQL_errmsg(fbStatus))
+	{
+		return ps_ERR;
+	}
 
 	// To facilitate debugging, the option
 	// SET SQLDA_DISPLAY ON
 	// will activate code to display the SQLDA after each statement.
 
 	if (Sqlda_display)
-		print_sqlda_output(*sqlda);
-//#endif // DEV_BUILD
+		print_message(message, "OUT");
+
 	if (Planonly)
 		return ret;
 
-	if (statement_type != isc_info_sql_stmt_exec_procedure)
+	unsigned bufLen = message->getMessageLength(fbStatus);
+	if (ISQL_errmsg(fbStatus))
 	{
-		// Otherwise, open the cursor to start things up
-
-		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, NULL))
-		{
-			ISQL_errmsg(isc_status);
-			return (ps_ERR);
-		}
-
-		// check for warnings
-		if (isc_status[2] == isc_arg_warning)
-			ISQL_warning(isc_status);
-
+		return ps_ERR;
 	}
-
-	SSHORT* nullind = NULL;
-	if (n_cols) {
-		nullind = (SSHORT*) ISQL_ALLOC((SLONG) (n_cols * sizeof(SSHORT)));
-	}
-
-	SLONG* buffer = process_sqlda_buffer(sqlda, nullind);
+	UCHAR* buffer = global_Buffer->getBuffer(bufLen);
 
 	// Pad is an array of lengths to be passed to the print_item
 	unsigned* pad = NULL;
-	if (sqlda->sqld) {
-		pad = (unsigned*) ISQL_ALLOC ((SLONG) (sqlda->sqld * sizeof(int)));
+	if (n_cols) {
+		pad = (unsigned*) ISQL_ALLOC ((SLONG) (n_cols * sizeof(int)));
 	}
 
 	// Calculate display width and add a few for line termination, et al
-    const SLONG linelength = process_sqlda_display(sqlda, buffer, pad) + 10;
+    const SLONG linelength = process_message_display(message, pad) + 10;
 
 	// Allocate the print line, the header line and the separator
 
@@ -8699,22 +8423,21 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		*header = '\0';
 		*header2 = '\0';
 
-		process_header(sqlda, pad, header, header2);
+		process_header(message, pad, header, header2);
 	}
 
 	// If this is an exec procedure, execute into the sqlda with one fetch only
 
 	if (statement_type == isc_info_sql_stmt_exec_procedure)
 	{
-		if (isc_dsql_execute2(isc_status, &M__trans, &global_Stmt,
-							  isqlGlob.SQL_dialect, NULL, sqlda))
+		global_Stmt->execute(fbStatus, M__trans, NULL, NULL, message, buffer);
+		if (ISQL_errmsg(fbStatus))
 		{
-			ISQL_errmsg(isc_status);
 			ret = ps_ERR;
 		}
 		else
 		{
-			if (sqlda->sqld)
+			if (n_cols)
 			{
 				// do not output unnecessary white text
 				isqlGlob.printf(NEWLINE);
@@ -8726,14 +8449,27 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 									header2,
 									NEWLINE);
 				}
-				print_line(sqlda, pad, line);
+				print_line(message, buffer, pad, line);
 				isqlGlob.printf(NEWLINE);
 			}
 		}
 	}
 	else
 	{
-		// Otherwise fetch and print records until EOF
+		// Otherwise, open the cursor to start things up
+
+		Firebird::IResultSet* curs = global_Stmt->openCursor(fbStatus, M__trans,
+			NULL, NULL, message);
+		if (ISQL_errmsg(fbStatus))
+		{
+			return ps_ERR;
+		}
+
+		// check for warnings
+		if (fbStatus->get()[2] == isc_arg_warning)
+			ISQL_warning(fbStatus);
+
+		// Now fetch and print records until EOF
 
 #ifdef HAVE_TERMIOS_H
 		int out_fd = fileno(isqlGlob.Out);
@@ -8759,12 +8495,16 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 
 			// Fetch the current cursor
 
-			if (isc_dsql_fetch(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda) == 100)
-				break;
+			if (!curs->fetchNext(fbStatus, buffer))
+			{
+				if (fbStatus->isSuccess())
+				{
+					break;
+				}
+			}
 
 			// Print the header every Pagelength number of lines for
-			// command-line ISQL only.  For WISQL, print the column
-			// headings only once.
+			// command-line ISQL only.
 
 			if (printHead &&
 				(Pagelength && (lines % Pagelength == 0) ||
@@ -8778,40 +8518,16 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 								NEWLINE);
 			}
 
-			if (isc_status[1])
-			{
-				// CVC: Add a \n so the error message is not at the right of
-				// header but in its own line, if no row was output yet.
-				if (!lines && !printHead)
-					isqlGlob.printf(NEWLINE);
-
-				ISQL_errmsg(isc_status);
-
-				// Avoid cancel during cleanup
-				fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
-
-				// CVC: It appears we can have an implicit cursor opened anyways.
-				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
-				if (nullind)
-					ISQL_FREE(nullind);
-				if (pad)
-					ISQL_FREE(pad);
-				if (buffer)
-					ISQL_FREE(buffer);
-				if (header)
-					ISQL_FREE(header);
-				if (header2)
-					ISQL_FREE(header2);
-				if (line)
-					ISQL_FREE(line);
-
-				return (ps_ERR);
-			}
-
 			if (!lines && !printHead)
 				isqlGlob.printf(NEWLINE);
 
-			ret = print_line(sqlda, pad, line);
+			if (ISQL_errmsg(fbStatus))
+			{
+				ret = ps_ERR;
+				break;
+			}
+
+			ret = print_line(message, buffer, pad, line);
 		}
 
 		if (lines)
@@ -8826,33 +8542,26 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			// Records affected: @1
 			isqlGlob.printf("%s%s", rec_count_msg, NEWLINE);
 		}
+
+		curs->close(fbStatus);
 	}
 
 	// Avoid cancel during cleanup
-	fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
-
-	// CVC: It appears we can have an implicit cursor opened anyways.
-	if (statement_type != isc_info_sql_stmt_exec_procedure) {
-		isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
-	}
+	DB->cancelOperation(fbStatus, fb_cancel_disable);
 
 	// Statistics printed here upon request
 
-	if (Stats)
-		print_performance(&perf_before);
+	if (Stats && (print_performance(perf_before) == ps_ERR))
+		ret = ps_ERR;
 
 	if (pad)
 		ISQL_FREE(pad);
-	if (buffer)
-		ISQL_FREE(buffer);
 	if (line)
 		ISQL_FREE(line);
 	if (header)
 		ISQL_FREE(header);
 	if (header2)
 		ISQL_FREE(header2);
-	if (nullind)
-		ISQL_FREE(nullind);
 
 	return (ret);
 }
@@ -8890,8 +8599,9 @@ static int query_abort(const int reason, const int, void*)
 
 	if (DB)
 	{
-		ISC_STATUS_ARRAY status;
-		flag = (fb_cancel_operation(status, &DB, fb_cancel_raise) == FB_SUCCESS);
+		Firebird::LocalStatus status;
+		DB->cancelOperation(&status, fb_cancel_raise);
+		flag = status.isSuccess();
 	}
 
 	if (flag)
@@ -8961,8 +8671,7 @@ static void strip_quotes(const TEXT* in, TEXT* out)
 }
 
 
-//#ifdef DEV_BUILD
-static const char* sqltype_to_string(USHORT sqltype)
+static const char* sqltype_to_string(unsigned sqltype)
 {
 /**************************************
  *
@@ -8974,7 +8683,7 @@ static const char* sqltype_to_string(USHORT sqltype)
  *	Return a more readable version of SQLDA.sqltype
  *
  **************************************/
-	switch (sqltype & ~1)
+	switch (sqltype)
 	{
 	case SQL_TEXT:
 		return "TEXT	 ";
@@ -9012,4 +8721,3 @@ static const char* sqltype_to_string(USHORT sqltype)
 		return "unknown  ";
 	}
 }
-//#endif

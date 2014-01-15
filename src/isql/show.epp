@@ -55,7 +55,10 @@
 #include "../jrd/constants.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
+#include "../common/classes/ImplementHelper.h"
 #include "../isql/OptionsBase.h"
+
+#include <firebird/Utl.h>
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -74,7 +77,6 @@ DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 enum commentMode {cmmShow, cmmExtract};
 
 
-static void local_fprintf(void*, const char*);
 static void remove_delimited_double_quotes(TEXT*);
 static void make_priv_string(USHORT, char*);
 static processing_state show_all_tables(SSHORT);
@@ -110,6 +112,31 @@ const char* const spaces = "                                ";
 static TEXT Print_buffer[512];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
 static bool reReadDbOwner = true;
+
+
+namespace {
+
+// Used to make sure that local calls to print stuff go to isqlGlob.Out
+// and not to stdout if IUtl::version gets called
+
+class VersionCallback : public Firebird::AutoIface<Firebird::IVersionCallback, FB_VERSION_CALLBACK_VERSION>
+{
+public:
+	// IVersionCallback implementation
+	void FB_CARG callback(const char* text)
+	{
+		isqlGlob.printf("%s%s", text, NEWLINE);
+	}
+};
+
+} // anonymous namespace
+
+
+static int ISQL_vax_integer(const UCHAR* bytes, USHORT length)
+{
+	return isc_vax_integer((const char*)bytes, length);
+}
+
 
 // Initialize types
 
@@ -202,7 +229,7 @@ static const SCHAR db_dialect_info[] =
 // Added support to display FORCED WRITES status. - PR 27-NOV-2001
 // Added support to display transaction info when next_transaction id is fixed.
 // Added support to display ODS version. CVC 26-Aug-2004.
-static const SCHAR db_items[] =
+static const UCHAR db_items[] =
 {
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
@@ -328,10 +355,10 @@ void SHOW_comments(bool force)
 }
 
 
-bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
+bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 						 SCHAR* info_buf,
-						 const SCHAR* db_itemsL,
-						 USHORT item_length,
+						 const UCHAR* db_itemsL,
+						 unsigned item_length,
 						 bool translate,
 						 const char* separator)
 {
@@ -350,24 +377,22 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
  *	    db_itemsL -- list of db_info items to process
  *
  **************************************/
-	SCHAR buffer[BUFFER_LENGTH400];
+	UCHAR buffer[BUFFER_LENGTH400];
 	TEXT msg[MSG_LENGTH];
 
-	ISC_STATUS_ARRAY status_vector;
-	if (isc_database_info(status_vector, &db_handle, item_length,
-						  db_itemsL, sizeof(buffer), buffer))
-	{
-		ISQL_errmsg(status_vector);
+	Firebird::AutoPtr<Firebird::IStatus, Firebird::SimpleDispose<Firebird::IStatus> >
+		status_vector(fbMaster->getStatus());
+	db_handle->getInfo(status_vector, item_length, db_itemsL, sizeof(buffer), buffer);
+	if (ISQL_errmsg(status_vector))
 		return false;
-	}
 
 	*info_buf = '\0';
 	SCHAR* info = info_buf;
-	for (const SCHAR* d = buffer; *d != isc_info_end;)
+	for (const UCHAR* d = buffer; *d != isc_info_end;)
 	{
 		SLONG value_out = 0;
-		const SCHAR item = *d++;
-		const int length = isc_vax_integer(d, 2);
+		const UCHAR item = *d++;
+		const int length = ISQL_vax_integer(d, 2);
 		d += 2;
 		/*
 		 * This is not the best solution but it fixes the lack of <LF> characters
@@ -381,12 +406,12 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			break;
 
 		case isc_info_page_size:
-			value_out = isc_vax_integer(d, length);
+			value_out = ISQL_vax_integer(d, length);
 			sprintf(info, "PAGE_SIZE %"SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_db_size_in_pages:
-			value_out = isc_vax_integer(d, length);
+			value_out = ISQL_vax_integer(d, length);
 			if (translate)
 			{
 				IUTILS_msg_get(NUMBER_PAGES, msg, SafeArg() << value_out);
@@ -397,7 +422,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			break;
 
 		case isc_info_sweep_interval:
-			value_out = isc_vax_integer(d, length);
+			value_out = ISQL_vax_integer(d, length);
 			if (translate)
 			{
 				IUTILS_msg_get(SWEEP_INTERV, msg, SafeArg() << value_out);
@@ -408,32 +433,32 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			break;
 
 		case isc_info_forced_writes:
-			value_out = isc_vax_integer (d, length);
+			value_out = ISQL_vax_integer (d, length);
 			sprintf (info, "Forced Writes are %s%s", (value_out == 1 ? "ON" : "OFF"), separator);
 			break;
 
 		case isc_info_oldest_transaction :
-			value_out = isc_vax_integer (d, length);
+			value_out = ISQL_vax_integer (d, length);
 			sprintf(info, "Transaction - oldest = %"SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_oldest_active :
-			value_out = isc_vax_integer (d, length);
+			value_out = ISQL_vax_integer (d, length);
 			sprintf(info, "Transaction - oldest active = %"SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_oldest_snapshot :
-			value_out = isc_vax_integer (d, length);
+			value_out = ISQL_vax_integer (d, length);
 			sprintf(info, "Transaction - oldest snapshot = %"SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_next_transaction :
-			value_out = isc_vax_integer (d, length);
+			value_out = ISQL_vax_integer (d, length);
 			sprintf (info, "Transaction - Next = %"SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_base_level:
-			value_out = isc_vax_integer(d, length);
+			value_out = ISQL_vax_integer(d, length);
 			if (translate)
 			{
 				IUTILS_msg_get(BASE_LEVEL, msg, SafeArg() << value_out);
@@ -444,7 +469,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			break;
 
 		case isc_info_limbo:
-			value_out = isc_vax_integer(d, length);
+			value_out = ISQL_vax_integer(d, length);
 			if (translate)
 			{
 				IUTILS_msg_get(LIMBO, msg, SafeArg() << value_out);
@@ -455,10 +480,10 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			break;
 
 		case isc_info_ods_version:
-			isqlGlob.major_ods = isc_vax_integer(d, length);
+			isqlGlob.major_ods = ISQL_vax_integer(d, length);
 			break;
 		case isc_info_ods_minor_version:
-			value_out = isc_vax_integer(d, length);
+			value_out = ISQL_vax_integer(d, length);
 			sprintf(info, "ODS = %"SLONGFORMAT".%"SLONGFORMAT"%s",
 					(SLONG) isqlGlob.major_ods, value_out, separator);
 			break;
@@ -468,7 +493,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			{
 				// Will print with garbage for now.
 				//It's sprintf(info, "DB/Host = %.*s", length, d);
-				const UCHAR* s = reinterpret_cast<const UCHAR*>(d);
+				const UCHAR* s = d;
 				const UCHAR* end = s + length;
 				++s; // Skip useless indicator.
 				int len = *s++;
@@ -554,7 +579,7 @@ static const char* granted_by(char* buffer, const char* grantor)
 				strcpy(owner, REL.RDB$OWNER_NAME);
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			buffer[0] = '\0';
 			return "";
 		END_ERROR;
@@ -815,7 +840,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg (fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
@@ -841,7 +866,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 
@@ -912,12 +937,12 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 
@@ -972,13 +997,13 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 
@@ -1044,12 +1069,12 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				END_FOR
 				ON_ERROR
-					ISQL_errmsg(isc_status);
+					ISQL_errmsg(fbStatus);
 					return ps_ERR;
 				END_ERROR
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
@@ -1120,12 +1145,12 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				END_FOR
 				ON_ERROR
-					ISQL_errmsg(isc_status);
+					ISQL_errmsg(fbStatus);
 					return ps_ERR;
 				END_ERROR
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
@@ -1192,12 +1217,12 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				END_FOR
 				ON_ERROR
-					ISQL_errmsg(isc_status);
+					ISQL_errmsg(fbStatus);
 					return ps_ERR;
 				END_ERROR
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
@@ -1264,12 +1289,12 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				END_FOR
 				ON_ERROR
-					ISQL_errmsg(isc_status);
+					ISQL_errmsg(fbStatus);
 					return ps_ERR;
 				END_ERROR
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
@@ -1354,7 +1379,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 	END_ERROR;
 
 }
@@ -1378,18 +1403,16 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	if (UserBlob::blobIsNull(*blobid))
 		return;
 
-	UserBlob blob(isc_status);
-	if (!blob.open(DB, gds_trans, *blobid, sizeof(metadata_text_bpb), metadata_text_bpb))
-	{
-		ISQL_errmsg(isc_status);
+	Firebird::IBlob* blob = DB->openBlob(fbStatus, fbTrans, blobid,
+		sizeof(metadata_text_bpb), metadata_text_bpb);
+	if (ISQL_errmsg(fbStatus))
 		return;
-	}
 
 	SCHAR buffer[BUFFER_LENGTH512];
 	bool endedWithCr = false;
 
-	size_t length = 0;
-	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
+	unsigned length;
+	while ((length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer)))
 	{
 		// ASF: In Windows, \n characters are printed as \r\n in text mode.
 		// If the original string has \r\n, they're printed as \r\r\n, resulting
@@ -1431,8 +1454,8 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	if (endedWithCr)
 	    fputc('\r', fp);
 
-	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
-		ISQL_errmsg(isc_status);
+	if ((!fbStatus->isSuccess()) && fbStatus->get()[1] != isc_segstr_eof)
+		ISQL_errmsg(fbStatus);
 }
 
 
@@ -1542,7 +1565,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		IUTILS_msg_get(VERSION, msg_string, SafeArg() << FB_VERSION);
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isqlGlob.printf("Server version:%s", NEWLINE);
-		if (isc_version(&DB, local_fprintf, NULL))
+		VersionCallback callback;
+		Firebird::UtlInterfacePtr()->version(fbStatus, DB, &callback);
+		if (!fbStatus->isSuccess())
 		{
 			IUTILS_msg_get(CANNOT_GET_SRV_VER, msg_string);
 			STDERROUT(msg_string);
@@ -2129,24 +2154,6 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 }
 
 
-static void local_fprintf(void* /*format_ignored*/, const char* string)
-{
-/**************************************
- *
- *	l o c a l _ p r i n t f
- *
- **************************************
- *
- * Functional description
- *	Used to make sure that local calls to print stuff go to isqlGlob.Out
- *	and not to stdout if isc_version gets called.
- *
- **************************************/
-
-	isqlGlob.printf("%s%s", string, NEWLINE);
-}
-
-
 static void remove_delimited_double_quotes(TEXT* string)
 {
 /**************************************
@@ -2220,7 +2227,7 @@ static processing_state show_all_tables(SSHORT sys_flag)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 	}
@@ -2240,7 +2247,7 @@ static processing_state show_all_tables(SSHORT sys_flag)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 	}
@@ -2379,7 +2386,7 @@ static processing_state show_check(const SCHAR* object)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 	if (first)
@@ -2469,7 +2476,7 @@ static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, co
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -2564,7 +2571,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2579,7 +2586,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2605,13 +2612,13 @@ static processing_state show_comments(const commentMode showextract, const char*
 			first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2637,13 +2644,13 @@ static processing_state show_comments(const commentMode showextract, const char*
 			first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2670,13 +2677,13 @@ static processing_state show_comments(const commentMode showextract, const char*
 			first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2690,7 +2697,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2710,7 +2717,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2724,7 +2731,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2738,7 +2745,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2754,7 +2761,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 	}
@@ -2769,7 +2776,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2785,7 +2792,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 	}
@@ -2802,7 +2809,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 	}
@@ -2817,7 +2824,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2831,7 +2838,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		first = false;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -2864,7 +2871,7 @@ static void show_db()
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2930,7 +2937,7 @@ static void show_db()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2962,7 +2969,7 @@ static void show_db()
 		isqlGlob.printf("%s", NEWLINE);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -3025,7 +3032,7 @@ static processing_state show_dependencies(const char* object, int obj_type)
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -3068,7 +3075,7 @@ static processing_state show_dependencies(const char* object, int obj_type)
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -3081,7 +3088,7 @@ static processing_state show_dependencies(const char* object, int obj_type)
 		is_table = true;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -3123,7 +3130,7 @@ static processing_state show_dependencies(const char* object, int obj_type)
 				Object_types[obj_computed], DEP3.RDB$DEPENDED_ON_NAME, type_name);
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 	}
@@ -3165,7 +3172,7 @@ static processing_state show_dependencies(const char* object, int obj_type)
 				Object_types[obj_computed], DEP3.RDB$DEPENDED_ON_NAME, type_name);
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 	}
@@ -3241,7 +3248,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			odd = !odd;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 		if (!first)
@@ -3330,7 +3337,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 	}
@@ -3408,7 +3415,7 @@ static processing_state show_exceptions(const SCHAR* object)
 				isqlGlob.printf("%s, %s%s", DEP.RDB$DEPENDENT_NAME, type, NEWLINE);
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg (fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
@@ -3422,7 +3429,7 @@ static processing_state show_exceptions(const SCHAR* object)
 			isqlGlob.printf(NEWLINE);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 	if (first)
@@ -3458,7 +3465,7 @@ static processing_state show_filters(const SCHAR* object)
 			odd = !odd;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 		if (!first)
@@ -3490,7 +3497,7 @@ static processing_state show_filters(const SCHAR* object)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -3531,7 +3538,7 @@ static processing_state show_sys_functions(const SCHAR* msg)
 		odd = !odd;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -3614,7 +3621,7 @@ static processing_state show_functions(const SCHAR* funcname)
 							Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
 					END_FOR
 					ON_ERROR
-						ISQL_errmsg (isc_status);
+						ISQL_errmsg (fbStatus);
 						return ps_ERR;
 					END_ERROR;
 				}
@@ -3623,7 +3630,7 @@ static processing_state show_functions(const SCHAR* funcname)
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 		}
@@ -3813,13 +3820,13 @@ static processing_state show_func(const SCHAR* funcname)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg (isc_status);
+			ISQL_errmsg (fbStatus);
 			return ps_ERR;
 		END_ERROR;
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 	if (first)
@@ -3934,7 +3941,7 @@ static processing_state show_func_legacy(const SCHAR* object)
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg (fbStatus);
 				return ps_ERR;
 			END_ERROR;
 		}
@@ -3943,7 +3950,7 @@ static processing_state show_func_legacy(const SCHAR* object)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 	if (first)
@@ -3969,10 +3976,32 @@ static processing_state show_generators(const SCHAR* object)
 	SSHORT indicator;
 	bool found = false;
 	XSQLDA sqlda;
-	SINT64 genid64 = 0;
-	SLONG genid = 0;
 	const char genIdStr[] = "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE";
 	TEXT query[sizeof(genIdStr) + QUOTEDLENGTH], gen_name[QUOTEDLENGTH];
+
+	Firebird::RefPtr<Firebird::IMetadataBuilder>
+		mb(Firebird::REF_NO_INCR, fbMaster->getMetadataBuilder(fbStatus, 1));
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	// If the user has set his client dialect to 1, we take that to
+	// mean that he wants to see just the lower 32 bits of the
+	// generator, as in V5.  Otherwise, we show him the whole 64-bit value.
+	bool use64 = isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION;
+	mb->setType(fbStatus, 0, use64 ? SQL_INT64 : SQL_LONG);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	Firebird::RefPtr<Firebird::IMessageMetadata>
+		outMetadata(Firebird::REF_NO_INCR, mb->getMetadata(fbStatus));
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	unsigned char outBuffer[20];
+	fb_assert(outMetadata->getMessageLength(fbStatus) <= sizeof(outBuffer));
+	unsigned off = outMetadata->getOffset(fbStatus, 0);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
 
 	// Show all generators or named generator
 	FOR GEN IN RDB$GENERATORS
@@ -3995,56 +4024,30 @@ static processing_state show_generators(const SCHAR* object)
 
 			sprintf (query, genIdStr, gen_name);
 
-			isc_stmt_handle stmt = 0;
-			isc_dsql_allocate_statement (isc_status, &DB, &stmt);
-			sqlda.sqln = 1;
-			sqlda.version = SQLDA_VERSION1;
-
-			// If the user has set his client dialect to 1, we take that to
-			// mean that he wants to see just the lower 32 bits of the
-			// generator, as in V5.  Otherwise, we show him the whole 64-bit value.
-
-			if (isc_dsql_prepare (isc_status, &gds_trans, &stmt, 0, query,
-								  isqlGlob.SQL_dialect, &sqlda))
-			{
-				ISQL_errmsg (isc_status);
+			DB->execute(fbStatus, fbTrans, 0, query, isqlGlob.SQL_dialect,
+				NULL, NULL, outMetadata, outBuffer);
+			if (ISQL_errmsg (fbStatus))
 				continue;
-			}
-			if (isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
-				sqlda.sqlvar[0].sqldata = (SCHAR*) &genid64;
-			else
-				sqlda.sqlvar[0].sqldata = (SCHAR*) &genid;
-			sqlda.sqlvar[0].sqlind = &indicator;
 
-			// Singleton select needs no fetch
-			if (isc_dsql_execute2 (isc_status, &gds_trans, &stmt, isqlGlob.SQL_dialect, NULL, &sqlda))
+			found = true;
+			if (isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_errmsg (isc_status);
+				isqlGlob.printf("Generator %s, current value is %" QUADFORMAT "d%s",
+						 GEN.RDB$GENERATOR_NAME,
+						 *((ISC_INT64*)&outBuffer[off]),
+						 NEWLINE);
 			}
 			else
 			{
-				found = true;
-				if (isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
-				{
-					isqlGlob.printf("Generator %s, current value is %" QUADFORMAT "d%s",
-							 GEN.RDB$GENERATOR_NAME,
-							 genid64,
-							 NEWLINE);
-				}
-				else
-				{
-					isqlGlob.printf("Generator %s, current value is %ld%s",
-							 GEN.RDB$GENERATOR_NAME,
-							 genid,
-							 NEWLINE);
-				}
+				isqlGlob.printf("Generator %s, current value is %ld%s",
+						 GEN.RDB$GENERATOR_NAME,
+						 *((SLONG*)&outBuffer[off]),
+						 NEWLINE);
 			}
-			if (isc_dsql_free_statement (isc_status, &stmt, DSQL_drop))
-				ISQL_errmsg (isc_status);
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 	if (!found)
@@ -4137,7 +4140,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 
 			first = false;
 		END_FOR
-			ON_ERROR ISQL_errmsg(isc_status);
+			ON_ERROR ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 		if (first)
@@ -4168,7 +4171,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 		if (first)
@@ -4207,7 +4210,7 @@ static processing_state show_packages(const SCHAR* package_name)
 			odd = !odd;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 		if (!first)
@@ -4245,7 +4248,7 @@ static processing_state show_packages(const SCHAR* package_name)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 	}
@@ -4335,7 +4338,7 @@ static processing_state show_proc(const SCHAR* procname)
 								 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
 					END_FOR
 					ON_ERROR
-						ISQL_errmsg (isc_status);
+						ISQL_errmsg (fbStatus);
 						return ps_ERR;
 					END_ERROR;
 				}
@@ -4344,7 +4347,7 @@ static processing_state show_proc(const SCHAR* procname)
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 		}
@@ -4506,13 +4509,13 @@ static processing_state show_proc(const SCHAR* procname)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg (isc_status);
+			ISQL_errmsg (fbStatus);
 			return ps_ERR;
 		END_ERROR;
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 	if (first)
@@ -4553,7 +4556,7 @@ static processing_state show_role(const SCHAR* object)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 
@@ -4597,7 +4600,7 @@ static processing_state show_role(const SCHAR* object)
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg (isc_status);
+			ISQL_errmsg (fbStatus);
 			return ps_ERR;
 		END_ERROR
 
@@ -4616,7 +4619,7 @@ static processing_state show_role(const SCHAR* object)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -4641,9 +4644,9 @@ static processing_state show_secclass(const char* object, const char* opt)
 	const bool detail = opt &&
 		(fb_utils::stricmp(opt, "DETAIL") == 0 ||
 		 fb_utils::stricmp(opt, "DET") == 0);
-	XSQLVAR var; // To trick ISQL_print_item_blob()
+	IsqlVar var;
 	memset(&var, 0, sizeof(var));
-	var.sqlsubtype = isc_blob_acl;
+	var.subType = isc_blob_acl;
 
 	int count = 0;
 
@@ -4657,12 +4660,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 			if (detail)
 			{
-				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+				var.value.setPtr = &SC.RDB$ACL;
+				ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 
@@ -4679,12 +4682,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 			fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 		if (detail)
 		{
-			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -4698,12 +4701,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 			fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 		if (detail)
 		{
-			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -4717,12 +4720,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 			SC.RDB$SECURITY_CLASS, NEWLINE);
 		if (detail)
 		{
-			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -4736,12 +4739,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 			fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 		if (detail)
 		{
-			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -4757,12 +4760,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 			if (detail)
 			{
-				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+				var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 
@@ -4775,12 +4778,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 			if (detail)
 			{
-				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+				var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 
@@ -4793,12 +4796,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 			if (detail)
 			{
-				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+				var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 
@@ -4811,12 +4814,12 @@ static processing_state show_secclass(const char* object, const char* opt)
 				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
 			if (detail)
 			{
-				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
-				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+				var.value.asChar = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, fbTrans, isc_blob_acl);
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR
 	}
@@ -4861,7 +4864,7 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 			first = true;
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -4994,7 +4997,7 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -5012,7 +5015,7 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 			isqlGlob.printf(NEWLINE);
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 	}
@@ -5076,7 +5079,7 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg (fbStatus);
 				return ps_ERR;
 			END_ERROR;
 		}
@@ -5102,14 +5105,14 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 				isqlGlob.prints(NEWLINE);
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg (fbStatus);
 				return ps_ERR;
 			END_ERROR
 		}
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR
 
@@ -5128,7 +5131,7 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 
@@ -5195,7 +5198,7 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 						 NEWLINE);
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR;
 		}
@@ -5235,7 +5238,7 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 					 NEWLINE);
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(isc_status);
+			ISQL_errmsg(fbStatus);
 			return ps_ERR;
 		END_ERROR;
 
@@ -5275,7 +5278,7 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 		//	skip = true;
 		//END_FOR
 		//ON_ERROR
-		//	ISQL_errmsg (isc_status);
+		//	ISQL_errmsg (fbStatus);
 		//	return ps_ERR;
 		//END_ERROR;
 
@@ -5313,7 +5316,7 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(isc_status);
+		ISQL_errmsg(fbStatus);
 		return ps_ERR;
 	END_ERROR;
 	if (first)
@@ -5335,7 +5338,7 @@ static processing_state show_users()
  *
  **************************************/
 
-	const SCHAR user_items[] =
+	const UCHAR user_items[] =
 	{
 		isc_info_user_names,
 		isc_info_end
@@ -5343,51 +5346,41 @@ static processing_state show_users()
 
 	TEXT msg[MSG_LENGTH]; // When messages can be translated.
 
-	Firebird::VaryStr<MAX_SQL_IDENTIFIER_SIZE * 4> my_user;
-	XSQLDA osqlda; // XSQLDA comes with one XSQLVAR inside.
-	memset(&osqlda, 0, XSQLDA_LENGTH(1));
-	osqlda.version = SQLDA_VERSION1;
-	osqlda.sqln = 1;
-	osqlda.sqld = 1;
-	XSQLVAR& ovar = osqlda.sqlvar[0];
-	ovar.sqlind = 0;
-	ovar.sqldata = reinterpret_cast<char*>(&my_user);
-	ovar.sqltype = SQL_VARYING;
-	ovar.sqllen = sizeof(my_user) - 3;
+	Firebird::RefPtr<Firebird::IMetadataBuilder>
+		mb(Firebird::REF_NO_INCR, fbMaster->getMetadataBuilder(fbStatus, 1));
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+	mb->setType(fbStatus, 0, SQL_VARYING);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+	mb->setLength(fbStatus, 0, MAX_SQL_IDENTIFIER_SIZE * 4);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	Firebird::RefPtr<Firebird::IMessageMetadata>
+		outMetadata(Firebird::REF_NO_INCR, mb->getMetadata(fbStatus));
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	unsigned char outBuffer[MAX_SQL_IDENTIFIER_SIZE * 4 + 32];
+	fb_assert(outMetadata->getMessageLength(fbStatus) <= sizeof(outBuffer));
+	unsigned off = outMetadata->getOffset(fbStatus, 0);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+	vary* my_user = (vary*)&outBuffer[off];
+
 	const char* getuser = isqlGlob.major_ods < ODS_VERSION10 ?
 	    "select user from rdb$database" : "select current_user from rdb$database";
-
-/*
-#ifdef TRUSTED_AUTH
-	//if (Trusted_auth)
-	{
-		if (isqlGlob.major_ods > ODS_VERSION11 ||
-			isqlGlob.major_ods == ODS_VERSION11 && isqlGlob.minor_ods > 1)
-		{
-			getuser = "select system_user from rdb$database";
-		}
-	}
-#endif
-*/
-
-	if (isc_dsql_exec_immed2(isc_status, &DB, &gds_trans, 0,
-							 getuser,
-							 isqlGlob.SQL_dialect, NULL, &osqlda))
-	{
-		ISQL_errmsg(isc_status);
+	DB->execute(fbStatus, fbTrans, 0, getuser, isqlGlob.SQL_dialect,
+		NULL, NULL, outMetadata, outBuffer);
+	if (ISQL_errmsg (fbStatus))
 		return OBJECT_NOT_FOUND;
-	}
-	my_user.vary_string[my_user.vary_length] = 0; // Just for the debugger.
+	my_user->vary_string[my_user->vary_length] = 0; // Just for the debugger.
 
 	UCHAR buffer[BUFFER_LENGTH512];
-	ISC_STATUS_ARRAY status_vector;
-	if (isc_database_info(status_vector, &DB,
-							sizeof(user_items), user_items,
-							sizeof(buffer), reinterpret_cast<SCHAR*>(buffer)))
-	{
-		ISQL_errmsg(status_vector);
+	DB->getInfo(fbStatus, sizeof(user_items), user_items, sizeof(buffer), buffer);
+	if (ISQL_errmsg(fbStatus))
 		return ps_ERR;
-	}
 
 	bool newline = false;
 	processing_state rc = OBJECT_NOT_FOUND;
@@ -5416,10 +5409,8 @@ static processing_state show_users()
 				fb_assert(len == length - 1);
 				const UCHAR* uname = data + 1;
 				// Let's mark all attachments with our same user with a # prefix.
-				if (len == my_user.vary_length && !memcmp(my_user.vary_string, uname, len))
-					isqlGlob.printf("# %-37.*s", len, uname);
-				else
-					isqlGlob.printf("  %-37.*s", len, uname);
+				bool same(len == my_user->vary_length && !memcmp(my_user->vary_string, uname, len));
+				isqlGlob.printf("%c %-37.*s", same ? '#' : ' ', len, uname);
 
 				if (newline)
 					isqlGlob.printf("\n");

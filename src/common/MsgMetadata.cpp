@@ -81,7 +81,7 @@ public:
 		}
 	}
 
-	virtual void FB_CARG setSubType(IStatus* status, unsigned index, unsigned subType)
+	virtual void FB_CARG setSubType(IStatus* status, unsigned index, int subType)
 	{
 		try
 		{
@@ -155,6 +155,22 @@ public:
 				indexError(count - 1, "truncate");
 
 			msgMetadata->items.shrink(count);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	virtual void FB_CARG remove(IStatus* status, unsigned index)
+	{
+		try
+		{
+			MutexLockGuard g(mtx, FB_FUNCTION);
+
+			indexError(index, "remove");
+
+			msgMetadata->items.remove(index);
 		}
 		catch (const Exception& ex)
 		{

@@ -46,7 +46,6 @@
 #include <string.h>
 #include "../jrd/license.h"
 #include <stdarg.h>
-//#include "../common/classes/timestamp.h"
 #include "../common/gdsassert.h"
 
 #include "../jrd/ibase.h"
@@ -54,6 +53,8 @@
 #include "../jrd/event.h"
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/utl_proto.h"
+#include "../yvalve/why_proto.h"
+#include "../yvalve/prepa_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
@@ -62,6 +63,8 @@
 #include "../common/classes/DbImplementation.h"
 #include "../common/ThreadStart.h"
 #include "../common/isc_f_proto.h"
+#include "../common/StatusHolder.h"
+#include "../common/classes/ImplementHelper.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -78,6 +81,9 @@
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
+
+
+using namespace Firebird;
 
 // Bug 7119 - BLOB_load will open external file for read in BINARY mode.
 
@@ -102,11 +108,8 @@ const int BSTR_input	= 0;
 const int BSTR_output	= 1;
 const int BSTR_alloc	= 2;
 
-static int dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
-static int edit(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, SSHORT, const SCHAR*);
-static int get_ods_version(FB_API_HANDLE*, USHORT*, USHORT*);
+static void get_ods_version(IStatus*, IAttachment*, USHORT*, USHORT*);
 static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
-static int load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 
 
 // Blob info stuff
@@ -120,10 +123,10 @@ static const char blob_items[] =
 
 // gds__version stuff
 
-static const char info[] =
+static const unsigned char info[] =
 	{ isc_info_firebird_version, isc_info_implementation, fb_info_implementation, isc_info_end };
 
-static const char ods_info[] =
+static const unsigned char ods_info[] =
 	{ isc_info_ods_version, isc_info_ods_minor_version, isc_info_end };
 
 static const TEXT* const impl_class[] =
@@ -143,6 +146,491 @@ static const TEXT* const impl_class[] =
 	"classic server",			// 12
 	"super server"				// 13
 };
+
+
+namespace {
+
+class VersionCallback : public AutoIface<IVersionCallback, FB_VERSION_CALLBACK_VERSION>
+{
+public:
+	VersionCallback(FPTR_VERSION_CALLBACK routine, void* user)
+		: func(routine), arg(user)
+	{ }
+
+	// IVersionCallback implementation
+	void FB_CARG callback(const char* text)
+	{
+		func(arg, text);
+	}
+
+private:
+	FPTR_VERSION_CALLBACK func;
+	void* arg;
+};
+
+void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, FILE* file)
+{
+/**************************************
+ *
+ *     l o a d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Load a blob from a file.
+ *
+ **************************************/
+	LocalStatus temp;
+
+	// Open the blob.  If it failed, what the hell -- just return failure
+	IBlob *blob = att->createBlob(status, tra, blobId);
+	if (!status->isSuccess())
+	{
+		return;
+	}
+
+	// Copy data from file to blob.  Make up boundaries at end of line.
+	TEXT buffer[512];
+	TEXT* p = buffer;
+	const TEXT* const buffer_end = buffer + sizeof(buffer);
+
+	for (;;)
+	{
+		const SSHORT c = fgetc(file);
+		if (feof(file))
+			break;
+		*p++ = static_cast<TEXT>(c);
+		if ((c != '\n') && p < buffer_end)
+			continue;
+		const SSHORT l = p - buffer;
+		blob->putSegment(status, l, buffer);
+		if (!status->isSuccess())
+		{
+			blob->close(&temp);
+			return;
+		}
+		p = buffer;
+	}
+
+	const SSHORT l = p - buffer;
+	if (l != 0)
+	{
+		blob->putSegment(status, l, buffer);
+	}
+
+	blob->close(&temp);
+	return;
+}
+
+void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, FILE* file)
+{
+/**************************************
+ *
+ *	d u m p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Dump a blob into a file.
+ *
+ **************************************/
+	// Open the blob.  If it failed, what the hell -- just return failure
+
+	IBlob *blob = att->openBlob(status, tra, blobId);
+	if (!status->isSuccess())
+	{
+		return;
+	}
+
+	// Copy data from blob to scratch file
+
+	SCHAR buffer[256];
+	const SSHORT short_length = sizeof(buffer);
+
+	for (;;)
+	{
+		USHORT l = 0;
+		l = blob->getSegment(status, short_length, buffer);
+		if (!status->isSuccess() && status->get()[1] != isc_segment)
+		{
+			if (status->get()[1] == isc_segstr_eof)
+				status->init();
+			break;
+		}
+
+		if (l)
+			FB_UNUSED(fwrite(buffer, 1, l, file));
+	}
+
+	// Close the blob
+
+	LocalStatus temp;
+	blob->close(&temp);
+}
+
+
+FB_BOOLEAN edit(IStatus* status, ISC_QUAD* blob_id, IAttachment* att, ITransaction* tra,
+	int type, const char* field_name)
+{
+/**************************************
+ *
+ *	e d i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open a blob, dump it to a file, allow the user to edit the
+ *	window, and dump the data back into a blob.  If the user
+ *	bails out, return FALSE, otherwise return TRUE.
+ *
+ *	If the field name coming in is too big, truncate it.
+ *
+ **************************************/
+#if (defined WIN_NT)
+	TEXT buffer[9];
+#else
+	TEXT buffer[25];
+#endif
+
+	const TEXT* q = field_name;
+	if (!q)
+		q = "gds_edit";
+
+	TEXT* p;
+	for (p = buffer; *q && p < buffer + sizeof(buffer) - 1; q++)
+	{
+		if (*q == '$')
+			*p++ = '_';
+		else
+			*p++ = LOWER7(*q);
+	}
+	*p = 0;
+
+	// Moved this out of #ifndef mpexl to get mktemp/mkstemp to work for Linux
+	// This has been done in the inprise tree some days ago.
+	// Would have saved me a lot of time, if I had seen this earlier :-(
+	// FSG 15.Oct.2000
+	PathName tmpf = TempFile::create(status, buffer);
+	if (!status->isSuccess())
+		return FB_FALSE;
+
+	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
+	if (!file)
+	{
+		unlink(tmpf.c_str());
+		system_error::raise("fopen");
+	}
+
+	dump(status, blob_id, att, tra, file);
+
+	if (!status->isSuccess() && status->get()[1] != isc_segstr_eof)
+	{
+		isc_print_status(status->get());
+		fclose(file);
+		unlink(tmpf.c_str());
+		return FB_FALSE;
+	}
+
+	fclose(file);
+
+	if (gds__edit(tmpf.c_str(), type))
+	{
+
+		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT)))
+		{
+			unlink(tmpf.c_str());
+			system_error::raise("fopen");
+		}
+
+		load(status, blob_id, att, tra, file);
+
+		fclose(file);
+		return status->isSuccess();
+	}
+
+	unlink(tmpf.c_str());
+	return FB_FALSE;
+}
+
+} // anonymous namespace
+
+
+namespace Why {
+
+UtlInterface utlInterface;
+
+FB_BOOLEAN FB_CARG UtlInterface::editBlob(Firebird::IStatus* status, ISC_QUAD* blobId,
+		Firebird::IAttachment* att, Firebird::ITransaction* tra, const char* tempFile)
+{
+	FB_BOOLEAN rc = FB_FALSE;
+
+	try
+	{
+		rc = edit(status, blobId, att, tra, TRUE, tempFile);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	if (!status->isSuccess() && status->get()[1] != isc_segstr_eof)
+	{
+		isc_print_status(status->get());
+	}
+
+	return rc;
+}
+
+void FB_CARG UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
+	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
+{
+	FILE* file = fopen(file_name, txt ? FOPEN_WRITE_TYPE_TEXT : FOPEN_WRITE_TYPE);
+	try
+	{
+		if (!file)
+			system_error::raise("fopen");
+
+		dump(status, blobId, att, tra, file);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	fclose(file);
+}
+
+void FB_CARG UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
+	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
+{
+/**************************************
+ *
+ *	l o a d B l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Load a blob with the contents of a file.
+ *
+ **************************************/
+	FILE* file = fopen(file_name, txt ? FOPEN_READ_TYPE_TEXT : FOPEN_READ_TYPE);
+	try
+	{
+		if (!file)
+			system_error::raise("fopen");
+
+		load(status, blobId, att, tra, file);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	fclose(file);
+}
+
+void UtlInterface::version(IStatus* status, IAttachment* att,
+	IVersionCallback* callback)
+{
+/**************************************
+ *
+ *	g d s _ $ v e r s i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Obtain and print information about a database.
+ *
+ **************************************/
+	try
+	{
+		UCharBuffer buffer;
+		USHORT buf_len = 256;
+		UCHAR* buf = buffer.getBuffer(buf_len);
+
+		const TEXT* versions = 0;
+		const TEXT* implementations = 0;
+		const UCHAR* dbis = NULL;
+		bool redo;
+		do {
+			att->getInfo(status, sizeof(info), info, buf_len, buf);
+			if (!status->isSuccess())
+			{
+				return;
+			}
+
+			const UCHAR* p = buf;
+			redo = false;
+
+			while (!redo && *p != isc_info_end && p < buf + buf_len)
+			{
+				const UCHAR item = *p++;
+				const USHORT len = static_cast<USHORT>(gds__vax_integer(p, 2));
+				p += 2;
+				switch (item)
+				{
+				case isc_info_firebird_version:
+					versions = (TEXT*) p;
+					break;
+
+				case isc_info_implementation:
+					implementations = (TEXT*) p;
+					break;
+
+				case fb_info_implementation:
+					dbis = p;
+					if (dbis[0] * 6 + 1 > len)
+					{
+						// fb_info_implementation value appears incorrect
+						dbis = NULL;
+					}
+					break;
+
+				case isc_info_error:
+					// old server does not understand fb_info_implementation
+					break;
+
+				case isc_info_truncated:
+					redo = true;
+					break;
+
+				default:
+					(Arg::Gds(isc_random) << "Invalid info item").raise();
+				}
+				p += len;
+			}
+
+			// Our buffer wasn't large enough to hold all the information,
+			// make a larger one and try again.
+			if (redo)
+			{
+				buf_len += 1024;
+				buf = buffer.getBuffer(buf_len);
+			}
+		} while (redo);
+
+		UCHAR count = MIN(*versions, *implementations);
+		++versions;
+		++implementations;
+
+		UCHAR diCount = 0;
+		if (dbis)
+		{
+			diCount = *dbis++;
+		}
+
+		string s;
+
+		UCHAR diCurrent = 0;
+		for (UCHAR level = 0; level < count; ++level)
+		{
+			const USHORT implementation_nr = *implementations++;
+			const USHORT impl_class_nr = *implementations++;
+			const int l = *versions++; // it was UCHAR
+			const TEXT* implementation_string;
+			string dbi_string;
+			if (dbis && dbis[diCurrent * 6 + 5] == level)
+			{
+				dbi_string = DbImplementation::pick(&dbis[diCurrent * 6]).implementation();
+				implementation_string = dbi_string.c_str();
+				if (++diCurrent >= diCount)
+				{
+					dbis = NULL;
+				}
+			}
+			else
+			{
+				dbi_string = DbImplementation::fromBackwardCompatibleByte(implementation_nr).implementation();
+				implementation_string = dbi_string.nullStr();
+				if (!implementation_string)
+				{
+					implementation_string = "**unknown**";
+				}
+			}
+			const TEXT* class_string;
+			if (impl_class_nr >= FB_NELEM(impl_class) || !(class_string = impl_class[impl_class_nr]))
+			{
+				class_string = "**unknown**";
+			}
+			s.printf("%s (%s), version \"%.*s\"", implementation_string, class_string, l, versions);
+
+			callback->callback(s.c_str());
+			versions += l;
+		}
+
+		USHORT ods_version, ods_minor_version;
+		get_ods_version(status, att, &ods_version, &ods_minor_version);
+		if (!status->isSuccess())
+			return;
+
+		s.printf("on disk structure version %d.%d", ods_version, ods_minor_version);
+		callback->callback(s.c_str());
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+YAttachment* FB_CARG UtlInterface::executeCreateDatabase(
+	Firebird::IStatus* status, unsigned stmtLength, const char* creatDBstatement,
+	unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
+{
+	try
+	{
+		bool stmtEaten;
+		YAttachment* att = NULL;
+
+		if (stmtIsCreateDb)
+			*stmtIsCreateDb = FB_FALSE;
+
+		if (!PREPARSE_execute(status, &att, stmtLength, creatDBstatement, &stmtEaten, dialect))
+			return NULL;
+
+		if (stmtIsCreateDb)
+			*stmtIsCreateDb = FB_TRUE;
+
+		if (!status->isSuccess())
+			return NULL;
+
+		LocalStatus tempStatus;
+		ITransaction* crdbTrans = att->startTransaction(status, 0, NULL);
+
+		if (!status->isSuccess())
+		{
+			att->dropDatabase(&tempStatus);
+			return NULL;
+		}
+
+		bool v3Error = false;
+
+		if (!stmtEaten)
+		{
+			att->execute(status, crdbTrans, stmtLength, creatDBstatement, dialect, NULL, NULL, NULL, NULL);
+			if (!status->isSuccess())
+			{
+				crdbTrans->rollback(&tempStatus);
+				att->dropDatabase(&tempStatus);
+				return NULL;
+			}
+		}
+
+		crdbTrans->commit(status);
+		if (!status->isSuccess())
+		{
+			crdbTrans->rollback(&tempStatus);
+			att->dropDatabase(&tempStatus);
+			return NULL;
+		}
+
+		return att;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+} // namespace Why
+
 
 #if (defined SOLARIS ) || (defined __cplusplus)
 extern "C" {
@@ -499,7 +987,7 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
  *	Edit a file.
  *
  **************************************/
-	Firebird::string editor;
+	string editor;
 
 #ifndef WIN_NT
 	if (!fb_utils::readenv("VISUAL", editor) && !fb_utils::readenv("EDITOR", editor))
@@ -868,7 +1356,7 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 
 	// look for the environment variables
 
-	Firebird::string username, password;
+	string username, password;
 	if (!fb_utils::readenv(ISC_USER, username) && !fb_utils::readenv(ISC_PASSWORD, password))
 		return;
 
@@ -962,11 +1450,11 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb, SSHORT* dpb_size, const 
 
 }
 
+
 static void print_version(void*, const char* version)
 {
 	printf("\t%s\n", version);
 }
-
 
 int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine, void* user_arg)
 {
@@ -983,142 +1471,15 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	if (!routine)
 		routine = print_version;
 
-	UCHAR buffer[256];
-	UCHAR* buf = buffer;
-	USHORT buf_len = sizeof(buffer);
-
-	ISC_STATUS_ARRAY status_vector;
-	const TEXT* versions = 0;
-	const TEXT* implementations = 0;
-	const UCHAR* dbis = NULL;
-	bool redo;
-	do {
-		if (isc_database_info(status_vector, handle, sizeof(info), info,
-							  buf_len, reinterpret_cast<char*>(buf)))
-		{
-			if (buf != buffer)
-				gds__free(buf);
-			return FB_FAILURE;
-		}
-
-		const UCHAR* p = buf;
-		redo = false;
-
-		while (!redo && *p != isc_info_end && p < buf + buf_len)
-		{
-			const UCHAR item = *p++;
-			const USHORT len = static_cast<USHORT>(gds__vax_integer(p, 2));
-			p += 2;
-			switch (item)
-			{
-			case isc_info_firebird_version:
-				versions = (TEXT*) p;
-				break;
-
-			case isc_info_implementation:
-				implementations = (TEXT*) p;
-				break;
-
-			case fb_info_implementation:
-				dbis = p;
-				if (dbis[0] * 6 + 1 > len)
-				{
-					// fb_info_implementation value appears incorrect
-					dbis = NULL;
-				}
-				break;
-
-			case isc_info_error:
-				// old server does not understand fb_info_implementation
-				break;
-
-			case isc_info_truncated:
-				redo = true;
-				break;
-
-			default:
-				if (buf != buffer)
-					gds__free(buf);
-				return FB_FAILURE;
-			}
-			p += len;
-		}
-
-		// Our buffer wasn't large enough to hold all the information,
-		// make a larger one and try again.
-		if (redo)
-		{
-			if (buf != buffer)
-				gds__free(buf);
-			buf_len += 1024;
-			buf = (UCHAR*) gds__alloc((SLONG) (sizeof(UCHAR) * buf_len));
-			// FREE: freed within this module
-			if (!buf)			// NOMEM:
-				return FB_FAILURE;
-		}
-	} while (redo);
-
-	UCHAR count = MIN(*versions, *implementations);
-	++versions;
-	++implementations;
-
-	UCHAR diCount = 0;
-	if (dbis)
-	{
-		diCount = *dbis++;
-	}
-
-	TEXT s[128];
-
-	UCHAR diCurrent = 0;
-	for (UCHAR level = 0; level < count; ++level)
-	{
-		const USHORT implementation_nr = *implementations++;
-		const USHORT impl_class_nr = *implementations++;
-		const int l = *versions++; // it was UCHAR
-		const TEXT* implementation_string;
-		Firebird::string dbi_string;
-		if (dbis && dbis[diCurrent * 6 + 5] == level)
-		{
-			dbi_string = Firebird::DbImplementation::pick(&dbis[diCurrent * 6]).implementation();
-			implementation_string = dbi_string.c_str();
-			if (++diCurrent >= diCount)
-			{
-				dbis = NULL;
-			}
-		}
-		else
-		{
-			dbi_string = Firebird::DbImplementation::fromBackwardCompatibleByte(implementation_nr).implementation();
-			implementation_string = dbi_string.nullStr();
-			if (!implementation_string)
-			{
-				implementation_string = "**unknown**";
-			}
-		}
-		const TEXT* class_string;
-		if (impl_class_nr >= FB_NELEM(impl_class) || !(class_string = impl_class[impl_class_nr]))
-		{
-			class_string = "**unknown**";
-		}
-		fb_utils::snprintf(s, sizeof(s), "%s (%s), version \"%.*s\"",
-				implementation_string, class_string, l, versions);
-
-		(*routine)(user_arg, s);
-		versions += l;
-	}
-
-	if (buf != buffer)
-		gds__free(buf);
-
-	USHORT ods_version, ods_minor_version;
-	if (get_ods_version(handle, &ods_version, &ods_minor_version) == FB_FAILURE)
+	LocalStatus st;
+	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, handle));
+	if (!st.isSuccess())
 		return FB_FAILURE;
 
-	sprintf(s, "on disk structure version %d.%d", ods_version, ods_minor_version);
-	(*routine)(user_arg, s);
+	VersionCallback callback(routine, user_arg);
+	UtlInterfacePtr()->version(&st, att, &callback);
 
-	return FB_SUCCESS;
+	return st.isSuccess() ? FB_SUCCESS : FB_FAILURE;
 }
 
 
@@ -1140,8 +1501,8 @@ void API_ROUTINE isc_format_implementation(USHORT impl_nr,
  **************************************/
 	if (ibuflen > 0)
 	{
-		Firebird::string imp =
-			Firebird::DbImplementation::fromBackwardCompatibleByte(impl_nr).implementation();
+		string imp =
+			DbImplementation::fromBackwardCompatibleByte(impl_nr).implementation();
 		imp.copyTo(ibuf, ibuflen);
 	}
 
@@ -1252,7 +1613,7 @@ int API_ROUTINE blob__display(SLONG blob_id[2],
  *	PASCAL callable version of EDIT_blob.
  *
  **************************************/
-	const Firebird::MetaName temp(field_name, *name_length);
+	const MetaName temp(field_name, *name_length);
 
 	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp.c_str());
 }
@@ -1270,12 +1631,32 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
  **************************************
  *
  * Functional description
- *	Open a blob, dump it to a file, allow the user to read the
- *	window.
+ *	Open a blob, dump it to stdout
  *
  **************************************/
+	LocalStatus st;
+	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
+	if (!st.isSuccess())
+		return FB_FAILURE;
+	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
+	if (!st.isSuccess())
+		return FB_FAILURE;
 
-	return dump(blob_id, database, transaction, stdout);
+	try
+	{
+		dump(&st, blob_id, att, tra, stdout);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(&st);
+	}
+
+	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
+	{
+		isc_print_status(st.get());
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
 }
 
 
@@ -1311,6 +1692,41 @@ int API_ROUTINE blob__dump(SLONG blob_id[2],
 }
 
 
+static int any_text_dump(ISC_QUAD* blob_id,
+						 FB_API_HANDLE database,
+						 FB_API_HANDLE transaction,
+						 const SCHAR* file_name,
+						 FB_BOOLEAN txt)
+{
+/**************************************
+ *
+ *	a n y _ t e x t _ d u m p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Dump a blob into a file.
+ *
+ **************************************/
+	LocalStatus st;
+	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
+	if (!st.isSuccess())
+		return FB_FAILURE;
+	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
+	if (!st.isSuccess())
+		return FB_FAILURE;
+
+	UtlInterfacePtr()->dumpBlob(&st, blob_id, att, tra, file_name, txt);
+
+	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
+	{
+		isc_print_status(st.get());
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
+
+
 int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
 							   FB_API_HANDLE database,
 							   FB_API_HANDLE transaction,
@@ -1327,18 +1743,7 @@ int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
  *      This call does CR/LF translation on NT.
  *
  **************************************/
-	FILE* file = fopen(file_name, FOPEN_WRITE_TYPE_TEXT);
-	if (!file)
-		return FALSE;
-
-	if (!dump(blob_id, database, transaction, file))
-	{
-		fclose(file);
-		unlink(file_name);
-		return FALSE;
-	}
-	fclose(file);
-	return TRUE;
+	return any_text_dump(blob_id, database, transaction, file_name, FB_TRUE);
 }
 
 
@@ -1357,18 +1762,7 @@ int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
  *	Dump a blob into a file.
  *
  **************************************/
-	FILE* file = fopen(file_name, FOPEN_WRITE_TYPE);
-	if (!file)
-		return FALSE;
-
-	if (!dump(blob_id, database, transaction, file))
-	{
-		fclose(file);
-		unlink(file_name);
-		return FALSE;
-	}
-	fclose(file);
-	return TRUE;
+	return any_text_dump(blob_id, database, transaction, file_name, FB_FALSE);
 }
 
 
@@ -1388,7 +1782,7 @@ int API_ROUTINE blob__edit(SLONG blob_id[2],
  *	into an internal edit call.
  *
  **************************************/
-	const Firebird::MetaName temp(field_name, *name_length);
+	const MetaName temp(field_name, *name_length);
 
 	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp.c_str());
 }
@@ -1412,7 +1806,21 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
  *
  **************************************/
 
-	return edit(blob_id, database, transaction, TRUE, field_name);
+	LocalStatus st;
+	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
+	if (!st.isSuccess())
+		return FB_FAILURE;
+	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
+	if (!st.isSuccess())
+		return FB_FAILURE;
+
+	int rc = UtlInterfacePtr()->editBlob(&st, blob_id, att, tra, field_name);
+	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
+	{
+		isc_print_status(st.get());
+	}
+
+	return rc;
 }
 
 
@@ -1488,6 +1896,42 @@ int API_ROUTINE blob__load(SLONG blob_id[2],
 }
 
 
+static int any_text_load(ISC_QUAD* blob_id,
+						  FB_API_HANDLE database,
+						  FB_API_HANDLE transaction,
+						  const TEXT* file_name,
+						  FB_BOOLEAN flag)
+{
+/**************************************
+ *
+ *	a n y _ t e x t _ l o a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Load a  blob with the contents of a file.
+ *      Return TRUE is successful.
+ *
+ **************************************/
+	LocalStatus st;
+	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
+	if (!st.isSuccess())
+		return FB_FAILURE;
+	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
+	if (!st.isSuccess())
+		return FB_FAILURE;
+
+	UtlInterfacePtr()->loadBlob(&st, blob_id, att, tra, file_name, flag);
+
+	if (!st.isSuccess())
+	{
+		isc_print_status(st.get());
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
+
+
 int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
 							   FB_API_HANDLE database,
 							   FB_API_HANDLE transaction,
@@ -1505,15 +1949,7 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
  *      Return TRUE is successful.
  *
  **************************************/
-	FILE* file = fopen(file_name, FOPEN_READ_TYPE_TEXT);
-	if (!file)
-		return FALSE;
-
-	const int ret = load(blob_id, database, transaction, file);
-
-	fclose(file);
-
-	return ret;
+ 	return any_text_load(blob_id, database, transaction, file_name, FB_TRUE);
 }
 
 
@@ -1532,15 +1968,7 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
  *	Load a blob with the contents of a file.  Return TRUE is successful.
  *
  **************************************/
-	FILE* file = fopen(file_name, FOPEN_READ_TYPE);
-	if (!file)
-		return FALSE;
-
-	const int ret = load(blob_id, database, transaction, file);
-
-	fclose(file);
-
-	return ret;
+ 	return any_text_load(blob_id, database, transaction, file_name, FB_FALSE);
 }
 
 
@@ -1717,7 +2145,7 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR* entrypoint,
 	{
 		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (Thread::Handle*) thd_id);
 	}
-	catch (const Firebird::status_exception& status)
+	catch (const status_exception& status)
 	{
 		rc = status.value()[1];
 	}
@@ -1729,153 +2157,8 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR* entrypoint,
 #endif
 
 
-static int dump(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction, FILE* file)
-{
-/**************************************
- *
- *	d u m p
- *
- **************************************
- *
- * Functional description
- *	Dump a blob into a file.
- *
- **************************************/
-	// bpb is irrelevant, not used.
-	const USHORT bpb_length = 0;
-	const UCHAR* bpb = NULL;
-
-	// Open the blob.  If it failed, what the hell -- just return failure
-
-	FB_API_HANDLE blob = 0;
-	ISC_STATUS_ARRAY status_vector;
-	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id, bpb_length, bpb))
-	{
-		isc_print_status(status_vector);
-		return FALSE;
-	}
-
-	// Copy data from blob to scratch file
-
-	SCHAR buffer[256];
-	const SSHORT short_length = sizeof(buffer);
-
-	for (;;)
-	{
-		USHORT l = 0;
-		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
-		if (status_vector[1] && status_vector[1] != isc_segment)
-		{
-			if (status_vector[1] != isc_segstr_eof)
-				isc_print_status(status_vector);
-			break;
-		}
-		/*
-		const TEXT* p = buffer;
-		if (l)
-			do {
-				fputc(*p++, file);
-			} while (--l);
-		*/
-		if (l)
-			FB_UNUSED(fwrite(buffer, 1, l, file));
-	}
-
-	// Close the blob
-
-	isc_close_blob(status_vector, &blob);
-
-	return TRUE;
-}
-
-
-static int edit(ISC_QUAD* blob_id,
-				FB_API_HANDLE database,
-				FB_API_HANDLE transaction,
-				SSHORT type,
-				const SCHAR* field_name)
-{
-/**************************************
- *
- *	e d i t
- *
- **************************************
- *
- * Functional description
- *	Open a blob, dump it to a file, allow the user to edit the
- *	window, and dump the data back into a blob.  If the user
- *	bails out, return FALSE, otherwise return TRUE.
- *
- *	If the field name coming in is too big, truncate it.
- *
- **************************************/
-#if (defined WIN_NT)
-	TEXT buffer[9];
-#else
-	TEXT buffer[25];
-#endif
-
-	const TEXT* q = field_name;
-	if (!q)
-		q = "gds_edit";
-
-	TEXT* p;
-	for (p = buffer; *q && p < buffer + sizeof(buffer) - 1; q++)
-	{
-		if (*q == '$')
-			*p++ = '_';
-		else
-			*p++ = LOWER7(*q);
-	}
-	*p = 0;
-
-	// Moved this out of #ifndef mpexl to get mktemp/mkstemp to work for Linux
-	// This has been done in the inprise tree some days ago.
-	// Would have saved me a lot of time, if I had seen this earlier :-(
-	// FSG 15.Oct.2000
-	Firebird::PathName tmpf = Firebird::TempFile::create(buffer);
-	if (tmpf.empty()) {
-		return FALSE;
-	}
-
-	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
-	if (!file)
-	{
-		unlink(tmpf.c_str());
-		return FALSE;
-	}
-
-	if (!dump(blob_id, database, transaction, file))
-	{
-		fclose(file);
-		unlink(tmpf.c_str());
-		return FALSE;
-	}
-
-	fclose(file);
-
-	if (type = gds__edit(tmpf.c_str(), type))
-	{
-
-		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT)))
-		{
-			unlink(tmpf.c_str());
-			return FALSE;
-		}
-
-		load(blob_id, database, transaction, file);
-
-		fclose(file);
-
-	}
-
-	unlink(tmpf.c_str());
-
-	return type;
-}
-
-
-static int get_ods_version(FB_API_HANDLE* handle, USHORT* ods_version, USHORT* ods_minor_version)
+static void get_ods_version(IStatus* status, IAttachment* att,
+	USHORT* ods_version, USHORT* ods_minor_version)
 {
 /**************************************
  *
@@ -1888,14 +2171,12 @@ static int get_ods_version(FB_API_HANDLE* handle, USHORT* ods_version, USHORT* o
  *	of the database.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
 	UCHAR buffer[16];
 
-	isc_database_info(status_vector, handle, sizeof(ods_info), ods_info,
-					  sizeof(buffer), reinterpret_cast<char*>(buffer));
+	att->getInfo(status, sizeof(ods_info), ods_info, sizeof(buffer), buffer);
 
-	if (status_vector[1])
-		return FB_FAILURE;
+	if (!status->isSuccess())
+		return;
 
 	const UCHAR* p = buffer;
 	UCHAR item;
@@ -1917,11 +2198,9 @@ static int get_ods_version(FB_API_HANDLE* handle, USHORT* ods_version, USHORT* o
 			break;
 
 		default:
-			return FB_FAILURE;
+			(Arg::Gds(isc_random) << "Invalid info item").raise();
 		}
 	}
-
-	return FB_SUCCESS;
 }
 
 
@@ -2081,73 +2360,10 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 }
 
 
-static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction, FILE* file)
-{
-/**************************************
- *
- *     l o a d
- *
- **************************************
- *
- * Functional description
- *      Load a blob from a file.
- *
- **************************************/
-	ISC_STATUS_ARRAY status_vector;
-
-	// Open the blob.  If it failed, what the hell -- just return failure
-
-	FB_API_HANDLE blob = 0;
-	if (isc_create_blob(status_vector, &database, &transaction, &blob, blob_id))
-	{
-		isc_print_status(status_vector);
-		return FALSE;
-	}
-
-	// Copy data from file to blob.  Make up boundaries at end of of line.
-	TEXT buffer[512];
-	TEXT* p = buffer;
-	const TEXT* const buffer_end = buffer + sizeof(buffer);
-
-	for (;;)
-	{
-		const SSHORT c = fgetc(file);
-		if (feof(file))
-			break;
-		*p++ = static_cast<TEXT>(c);
-		if ((c != '\n') && p < buffer_end)
-			continue;
-		const SSHORT l = p - buffer;
-		if (isc_put_segment(status_vector, &blob, l, buffer))
-		{
-			isc_print_status(status_vector);
-			isc_close_blob(status_vector, &blob);
-			return FALSE;
-		}
-		p = buffer;
-	}
-
-	const SSHORT l = p - buffer;
-	if (l != 0)
-	{
-		if (isc_put_segment(status_vector, &blob, l, buffer))
-		{
-			isc_print_status(status_vector);
-			isc_close_blob(status_vector, &blob);
-			return FALSE;
-		}
-	}
-
-	isc_close_blob(status_vector, &blob);
-
-	return TRUE;
-}
-
-
 // new utl
-static void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const char* env, bool utf8)
+static void setTag(ClumpletWriter& dpb, UCHAR tag, const char* env, bool utf8)
 {
-	Firebird::string value;
+	string value;
 
 	if (fb_utils::readenv(env, value) && !dpb.find(tag))
 	{
@@ -2158,7 +2374,7 @@ static void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const char* env, bo
 	}
 }
 
-void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag)
+void setLogin(ClumpletWriter& dpb, bool spbFlag)
 {
 	const UCHAR address_path = spbFlag ? isc_spb_address_path : isc_dpb_address_path;
 	const UCHAR trusted_auth = spbFlag ? isc_spb_trusted_auth : isc_dpb_trusted_auth;

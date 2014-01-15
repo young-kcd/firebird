@@ -94,12 +94,12 @@ enum LegacyTables
 	ALL_objects
 };
 
-const size_t WORDLENGTH			= 32;
+const size_t WORDLENGTH				= 32;
 // The worst case of a quoted identifier is 31 * 2 => 62 + 2 DQUOTES + TERM => 65.
-const size_t QUOTEDLENGTH       = 65;
+const size_t QUOTEDLENGTH			= 65;
 static const char* const DEFTERM	= ";";
 static const char* const DEFCHARSET	= "NONE";
-const int NULL_DISP_LEN				= 6;
+const unsigned NULL_DISP_LEN		= 6;
 
 // Error codes
 
@@ -265,6 +265,9 @@ const int NO_GRANT_ON_CS			= 177;		// There is no privilege granted on character
 const int NO_GRANT_ON_COLL			= 178;		// There is no privilege granted on collation @1 in this database
 const int NO_GRANT_ON_PKG			= 179;		// There is no privilege granted on package @1 in this database
 const int NO_GRANT_ON_FUN			= 180;		// There is no privilege granted on function @1 in this database
+const int REPORT_NEW1				= 181;		// Current memory = !\nDelta memory = !\nMax memory = !\nElapsed time= ~ sec\n
+const int REPORT_NEW2				= 182;		// Cpu = ~ sec\n (skipped on windows)
+const int REPORT_NEW3				= 183;		// Buffers = !\nReads = !\nWrites = !\nFetches = !\n
 
 
 // Initialize types
@@ -406,5 +409,34 @@ static const char* const TAB_AS_SPACES	= "        ";
 const char BLANK		= '\040';
 const char DBL_QUOTE	= '\042';
 const char SINGLE_QUOTE	= '\'';
+
+struct IsqlVar
+{
+	const char* field;
+	const char* relation;
+	const char* owner;
+	const char* alias;
+	int subType, scale;
+	unsigned type, length, charSet;
+	bool nullable;
+	short* nullInd;
+	union TypeMix
+	{
+		ISC_TIMESTAMP* asDateTime;
+		ISC_TIME* asTime;
+		ISC_DATE* asDate;
+		SSHORT* asSmallint;
+		SLONG* asInteger;
+		SINT64* asBigint;
+		float* asFloat;
+		double* asDouble;
+		FB_BOOLEAN* asBoolean;
+		ISC_QUAD* blobid;
+		vary* asVary;
+		char* asChar;
+		void* setPtr;
+	};
+	TypeMix value;
+};
 
 #endif // ISQL_ISQL_H

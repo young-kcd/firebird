@@ -107,7 +107,7 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 		checkStatus(&st);
 		unsigned charSet = metadata->getCharSet(&st, i);
 		checkStatus(&st);
-		unsigned subType = metadata->getSubType(&st, i);
+		int subType = metadata->getSubType(&st, i);
 		checkStatus(&st);
 
 		switch (dtype)

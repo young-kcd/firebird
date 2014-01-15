@@ -38,6 +38,7 @@ void	FTN_fini();
 void	FTN_print_buffer(TEXT*);
 void	INT_action(const act*, int);
 void	INT_CXX_action(const act*, int);
+void	OBJ_CXX_action(const act*, int);
 void	PAS_action(const act*, int);
 //int		PLI_action(ACT, int);
 void	RMC_action(const act*, int);

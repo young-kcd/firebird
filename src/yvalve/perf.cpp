@@ -34,7 +34,9 @@
 #include "../yvalve/perf.h"
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/perf_proto.h"
+#include "../yvalve/utl_proto.h"
 #include "../common/gdsassert.h"
+#include "../common/classes/fb_string.h"
 
 #if defined(TIME_WITH_SYS_TIME)
 #include <sys/time.h>
@@ -49,8 +51,29 @@
 #include <sys/timeb.h>
 #endif
 
+template <typename T>
+static SINT64 get_parameter(const T** ptr)
+{
+/**************************************
+ *
+ *	g e t _ p a r a m e t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get a parameter (length is encoded), convert to internal form,
+ *	and return.
+ *
+ **************************************/
+	SSHORT l = *(*ptr)++;
+	l += (*(*ptr)++) << 8;
+	const SINT64 parameter = isc_portable_integer(reinterpret_cast<const ISC_UCHAR*>(*ptr), l);
+	*ptr += l;
 
-static SINT64 get_parameter(const SCHAR**);
+	return parameter;
+}
+
+
 #ifndef HAVE_TIMES
 static void times(struct tms*);
 #endif
@@ -334,28 +357,6 @@ static void perf_report(const P* before, const P* after, SCHAR* buffer, SSHORT* 
 }
 
 
-static SINT64 get_parameter(const SCHAR** ptr)
-{
-/**************************************
- *
- *	g e t _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Get a parameter (length is encoded), convert to internal form,
- *	and return.
- *
- **************************************/
-	SSHORT l = *(*ptr)++;
-	l += (*(*ptr)++) << 8;
-	const SINT64 parameter = isc_portable_integer(reinterpret_cast<const ISC_UCHAR*>(*ptr), l);
-	*ptr += l;
-
-	return parameter;
-}
-
-
 #ifndef HAVE_TIMES
 static void times(struct tms* buffer)
 {
@@ -407,4 +408,176 @@ void API_ROUTINE perf_report(const PERF* before, const PERF* after, SCHAR* buffe
 void API_ROUTINE perf64_report(const PERF64* before, const PERF64* after, SCHAR* buffer, SSHORT* buf_len)
 {
 	perf_report<PERF64>(before, after, buffer, buf_len);
+}
+
+namespace {
+
+static const unsigned CNT_DB_INFO = 1;
+static const unsigned CNT_TIMER = 2;
+enum CntTimer {CNT_TIME_REAL, CNT_TIME_USER, CNT_TIME_SYSTEM};
+
+struct KnownCounters
+{
+	const char* name;
+	unsigned type;
+	unsigned code;
+};
+
+#define TOTAL_COUNTERS 11
+
+// we use case-insensitive names, here they are written with capital letters for human readability
+KnownCounters knownCounters[TOTAL_COUNTERS] = {
+	{"RealTime", CNT_TIMER, CNT_TIME_REAL},
+	{"UserTime", CNT_TIMER, CNT_TIME_USER},
+	{"SystemTime", CNT_TIMER, CNT_TIME_SYSTEM},
+	{"Fetches", CNT_DB_INFO, isc_info_fetches},
+	{"Marks", CNT_DB_INFO, isc_info_marks},
+	{"Reads", CNT_DB_INFO, isc_info_reads},
+	{"Writes", CNT_DB_INFO, isc_info_writes},
+	{"CurrentMemory", CNT_DB_INFO, isc_info_current_memory},
+	{"MaxMemory", CNT_DB_INFO, isc_info_max_memory},
+	{"Buffers", CNT_DB_INFO, isc_info_num_buffers},
+	{"PageSize", CNT_DB_INFO, isc_info_page_size}
+};
+
+} // anonymous namespace
+
+void FB_CARG Why::UtlInterface::getPerfCounters(Firebird::IStatus* status, Firebird::IAttachment* att,
+		const char* countersSet, ISC_INT64* counters)
+{
+	try
+	{
+		// Parse countersSet
+		unsigned cntLink[TOTAL_COUNTERS];
+		memset(cntLink, 0xFF, sizeof cntLink);
+		Firebird::string dupSet(countersSet);
+		char* set = dupSet.begin();
+		char* save = NULL;
+		const char* delim = " \t,;";
+		unsigned typeMask = 0;
+		unsigned n = 0;
+		UCHAR info[TOTAL_COUNTERS];		// will never use all, but do not care about few bytes
+		UCHAR* pinfo = info;
+
+		for (char* nm = strtok_r(set, delim, &save); nm; nm = strtok_r(NULL, delim, &save))
+		{
+			Firebird::NoCaseString name(nm);
+			for (unsigned i = 0; i < TOTAL_COUNTERS; ++i)
+			{
+				if (name == knownCounters[i].name)
+				{
+					if (cntLink[i] != ~0u)
+					{
+						(Firebird::Arg::Gds(isc_random) << "Duplicated name").raise();	//report name & position
+					}
+					cntLink[i] = n++;
+					typeMask |= knownCounters[i].type;
+					if (knownCounters[i].type == CNT_DB_INFO)
+					{
+						*pinfo++ = knownCounters[i].code;
+					}
+					goto found;
+				}
+			}
+			(Firebird::Arg::Gds(isc_random) << "Unknown name").raise();	//report name & position
+found:		;
+		}
+
+		// Force reset counters
+		memset(counters, 0, n * sizeof(ISC_INT64));
+
+		// Fill time counters
+		if (typeMask & CNT_TIMER)
+		{
+			struct tms tus;
+			clock_t tr = times(&tus);
+			for (unsigned i = 0; i < TOTAL_COUNTERS; ++i)
+			{
+				if (cntLink[i] == ~0u)
+					continue;
+				if (knownCounters[i].type == CNT_TIMER)
+				{
+					clock_t v = 0;
+					switch(knownCounters[i].code)
+					{
+					case CNT_TIME_REAL:
+						v = tr;
+						break;
+					case CNT_TIME_USER:
+						v = tus.tms_utime;
+						break;
+					case CNT_TIME_SYSTEM:
+						v = tus.tms_stime;
+						break;
+					default:
+						fb_assert(false);
+						break;
+					}
+					counters[cntLink[i]] = v;
+				}
+			}
+		}
+
+		// Fill DB counters
+		if (typeMask & CNT_DB_INFO)
+		{
+			UCHAR buffer[BUFFER_LARGE];
+			att->getInfo(status, pinfo - info, info, sizeof(buffer), buffer);
+			if (!status->isSuccess())
+			{
+				return;
+			}
+
+			const UCHAR* p = buffer;
+			while (true)
+			{
+				SINT64 v = 0;
+				UCHAR ipb = *p++;
+				switch (ipb)
+				{
+				case isc_info_reads:
+				case isc_info_writes:
+				case isc_info_marks:
+				case isc_info_fetches:
+				case isc_info_num_buffers:
+				case isc_info_page_size:
+				case isc_info_current_memory:
+				case isc_info_max_memory:
+					v = get_parameter(&p);
+					break;
+
+				case isc_info_end:
+					goto parsed;
+
+				case isc_info_error:
+				{
+					const SINT64 temp = isc_portable_integer(p, 2);
+					fb_assert(temp <= MAX_SSHORT);
+					p += temp + 2;
+					continue;
+				}
+
+				default:
+					(Firebird::Arg::Gds(isc_random) << "Unknown info code").raise();   //report char code
+				}
+
+				for (unsigned i = 0; i < TOTAL_COUNTERS; ++i)
+				{
+					if (knownCounters[i].type == CNT_DB_INFO && knownCounters[i].code == ipb)
+					{
+						if (cntLink[i] != ~0u)
+						{
+							counters[cntLink[i]] = v;
+						}
+						break;
+					}
+				}
+			}
+parsed:		;
+		}
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+	}
 }

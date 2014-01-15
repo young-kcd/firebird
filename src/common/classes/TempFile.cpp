@@ -70,7 +70,7 @@ static const size_t MAX_TRIES = 256;
 
 // we need a class here only to return memory on shutdown and avoid
 // false memory leak reports
-static Firebird::InitInstance<ZeroBuffer> zeros;
+static InitInstance<ZeroBuffer> zeros;
 
 //
 // TempFile::getTempPath
@@ -122,6 +122,32 @@ PathName TempFile::create(const PathName& prefix, const PathName& directory)
 	}
 	catch (const Exception&)
 	{} // do nothing
+
+	return filename;
+}
+
+//
+// TempFile::create
+//
+// Creates a temporary file and returns its name
+// In error case store exception in status arg
+//
+
+PathName TempFile::create(IStatus* status, const PathName& prefix, const PathName& directory)
+{
+	PathName filename;
+
+	try {
+		TempFile file(*getDefaultMemoryPool(), prefix, directory, false);
+		filename = file.getName();
+	}
+	catch (const Exception& ex)
+	{
+		if (status)
+		{
+			ex.stuffException(status);
+		}
+	}
 
 	return filename;
 }

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:		Firebird basic API
- *	MODULE:			YValvefirebird/Interface.h
+ *	MODULE:			firebird/Provider.h
  *	DESCRIPTION:	Interfaces, used by yValve
  *
  *  The contents of this file are subject to the Initial
@@ -100,7 +100,7 @@ public:
 	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getType(IStatus* status, unsigned index) const = 0;
 	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const = 0;
+	virtual int FB_CARG getSubType(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const = 0;
 	virtual int FB_CARG getScale(IStatus* status, unsigned index) const = 0;
 	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index) const = 0;
@@ -116,17 +116,18 @@ class IMetadataBuilder : public IRefCounted
 {
 public:
 	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type) = 0;
-	virtual void FB_CARG setSubType(IStatus* status, unsigned index, unsigned subType) = 0;
+	virtual void FB_CARG setSubType(IStatus* status, unsigned index, int subType) = 0;
 	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length) = 0;
 	virtual void FB_CARG setCharSet(IStatus* status, unsigned index, unsigned charSet) = 0;
 	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale) = 0;
 
 	virtual void FB_CARG truncate(IStatus* status, unsigned count) = 0;
 	virtual void FB_CARG moveNameToIndex(IStatus* status, const char* name, unsigned index) = 0;
+	virtual void FB_CARG remove(IStatus* status, unsigned index) = 0;
 
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 };
-#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 8)
+#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 9)
 
 class IResultSet : public IRefCounted
 {

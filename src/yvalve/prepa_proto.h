@@ -24,7 +24,15 @@
 #ifndef DSQL_PREPA_PROTO_H
 #define DSQL_PREPA_PROTO_H
 
-bool PREPARSE_execute(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT, const SCHAR*,
-	bool*, USHORT);
+namespace Firebird {
+	class IStatus;
+}
+
+namespace Why {
+	class YAttachment;
+}
+
+bool PREPARSE_execute(Firebird::IStatus*, Why::YAttachment**,
+	USHORT, const SCHAR*, bool*, USHORT);
 
 #endif //  DSQL_PREPA_PROTO_H

@@ -24,6 +24,10 @@
 #ifndef ISQL_ISQL_PROTO_H
 #define ISQL_ISQL_PROTO_H
 
+#include <firebird/Provider.h>
+
+struct IsqlVar;
+
 void	ISQL_array_dimensions(const TEXT*);
 //void	ISQL_build_table_list(void**, FILE*, FILE*, FILE*);
 //void	ISQL_build_view_list(void**, FILE*, FILE*, FILE*);
@@ -35,7 +39,7 @@ void	ISQL_array_dimensions(const TEXT*);
 //								SCHAR*, FILE*, FILE*, FILE*);
 bool	ISQL_dbcheck();
 void	ISQL_disconnect_database(bool);
-void	ISQL_errmsg(const ISC_STATUS*);
+bool	ISQL_errmsg(Firebird::IStatus*);
 void	ISQL_warning(ISC_STATUS*);
 void	ISQL_exit_db();
 // CVC: Not found.
@@ -55,12 +59,13 @@ bool	ISQL_is_domain(const TEXT*);
 #endif
 int		ISQL_main(int, char**);
 bool	ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldScale);
-void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, FB_API_HANDLE);
+void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, Firebird::ITransaction*);
 //void	ISQL_query_database(SSHORT*, FILE*, FILE*, FILE*);
 //void	ISQL_reset_settings();
 void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
 //int	ISQL_sql_statement(TEXT*, FILE*, FILE*, FILE*);
 //void	ISQL_win_err(const char*);
-processing_state ISQL_print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE, int subtype);
+processing_state ISQL_print_item_blob(FILE*, const IsqlVar*, Firebird::ITransaction*, int subtype);
+processing_state ISQL_fill_var(IsqlVar*, Firebird::IMessageMetadata*, unsigned, UCHAR*);
 
 #endif // ISQL_ISQL_PROTO_H

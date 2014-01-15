@@ -24,7 +24,11 @@
 #ifndef JRD_UTL_PROTO_H
 #define JRD_UTL_PROTO_H
 
+#include <firebird/Utl.h>
+
 #include "fb_types.h"
+#include "../yvalve/YObjects.h"
+#include "../common/classes/ImplementHelper.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +81,30 @@ namespace Firebird
 	class ClumpletWriter;
 }
 void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag);
+
+namespace Why
+{
+
+class UtlInterface : public Firebird::AutoIface<Firebird::IUtl, FB_UTL_VERSION>
+{
+	// IUtl implementation
+public:
+	void FB_CARG version(Firebird::IStatus* status, Firebird::IAttachment* att,
+		Firebird::IVersionCallback* callback);
+	void FB_CARG loadBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
+		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
+	void FB_CARG dumpBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
+		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
+	FB_BOOLEAN FB_CARG editBlob(Firebird::IStatus* status, ISC_QUAD* blobId,
+		Firebird::IAttachment* att, Firebird::ITransaction* tra, const char* tempFile = NULL);
+	void FB_CARG getPerfCounters(Firebird::IStatus* status, Firebird::IAttachment* att,
+		const char* countersSet, ISC_INT64* counters);			// in perf.cpp
+	virtual YAttachment* FB_CARG executeCreateDatabase(Firebird::IStatus* status,
+		unsigned stmtLength, const char* creatDBstatement, unsigned dialect,
+		FB_BOOLEAN* stmtIsCreateDb = NULL);
+};
+
+}
 
 #endif // JRD_UTL_PROTO_H
 

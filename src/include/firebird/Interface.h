@@ -87,6 +87,7 @@ public:
 #define FB_STATUS_VERSION (FB_DISPOSABLE_VERSION + 5)
 
 class IProvider;
+class IUtl;
 class IPluginManager;
 class ITimerControl;
 class IAttachment;
@@ -122,8 +123,9 @@ public:
 	virtual IMetadataBuilder* FB_CARG getMetadataBuilder(IStatus* status, unsigned fieldCount) = 0;
 	virtual Firebird::IDebug* FB_CARG getDebug() = 0;
 	virtual int FB_CARG serverMode(int mode) = 0;
+	virtual IUtl* FB_CARG getUtlInterface() = 0;
 };
-#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 13)
+#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 14)
 
 } // namespace Firebird
 

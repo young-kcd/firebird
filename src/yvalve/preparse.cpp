@@ -25,13 +25,17 @@
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/ibase.h"
+//#include "../jrd/ibase.h"
 #include "../dsql/chars.h"
-#include "../dsql/sqlda.h"
+//#include "../dsql/sqlda.h"
 #include "../yvalve/prepa_proto.h"
 #include "../yvalve/gds_proto.h"
+#include "../yvalve/YObjects.h"
 #include "../common/classes/ClumpletWriter.h"
+//#include "../common/classes/ImplementHelper.h"
 #include "../common/StatusArg.h"
+
+#include <firebird/Provider.h>
 
 enum pp_vals {
 	PP_CREATE = 0,
@@ -50,9 +54,9 @@ enum pp_vals {
 
 
 const size_t MAX_TOKEN_SIZE = 1024;
-static void generate_error(ISC_STATUS*, const Firebird::string&, SSHORT, SSHORT);
+static void generate_error(Firebird::IStatus*, const Firebird::string&, SSHORT, SSHORT);
 static SSHORT get_next_token(const SCHAR**, const SCHAR*, Firebird::string&);
-static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**, const SCHAR* const,
+static SSHORT get_token(Firebird::IStatus*, SSHORT, bool, const SCHAR**, const SCHAR* const,
 	Firebird::string&);
 
 struct pp_table
@@ -102,17 +106,15 @@ using namespace Firebird;
 
     @brief
 
-    @param user_status
-    @param db_handle
-    @param trans_handle
+    @param status
+    @param ptrAtt
     @param stmt_length
     @param stmt
     @param stmt_eaten
     @param dialect
 
  **/
-bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
-					  FB_API_HANDLE*, // trans_handle,
+bool PREPARSE_execute(IStatus* status, Why::YAttachment** ptrAtt,
 					  USHORT stmt_length, const SCHAR* stmt, bool* stmt_eaten, USHORT dialect)
 {
 	// no use creating separate pool for a couple of strings
@@ -130,13 +132,13 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 		const char* const stmt_end = stmt + stmt_length;
 		string token;
 
-		if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
+		if (get_token(status, SYMBOL, false, &stmt, stmt_end, token) ||
 			token.length() != pp_symbols[PP_CREATE].length || token != pp_symbols[PP_CREATE].symbol)
 		{
 			return false;
 		}
 
-		if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
+		if (get_token(status, SYMBOL, false, &stmt, stmt_end, token) ||
 			(token.length() != pp_symbols[PP_DATABASE].length &&
 				token.length() != pp_symbols[PP_SCHEMA].length) ||
 			(token != pp_symbols[PP_DATABASE].symbol && token != pp_symbols[PP_SCHEMA].symbol))
@@ -144,7 +146,7 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 			return false;
 		}
 
-		if (get_token(user_status, STRING, false, &stmt, stmt_end, token))
+		if (get_token(status, STRING, false, &stmt, stmt_end, token))
 		{
 			return true;
 		}
@@ -182,8 +184,8 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 					{
 					case PP_PAGE_SIZE:
 					case PP_PAGESIZE:
-						if (get_token(user_status, '=', true, &stmt, stmt_end, token) ||
-							get_token(user_status, NUMERIC, false, &stmt, stmt_end, token))
+						if (get_token(status, '=', true, &stmt, stmt_end, token) ||
+							get_token(status, NUMERIC, false, &stmt, stmt_end, token))
 						{
 							get_out = true;
 							break;
@@ -194,7 +196,7 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 						break;
 
 					case PP_USER:
-						if (get_token(user_status, STRING, false, &stmt, stmt_end, token))
+						if (get_token(status, STRING, false, &stmt, stmt_end, token))
 						{
 							get_out = true;
 							break;
@@ -205,7 +207,7 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 						break;
 
 					case PP_PASSWORD:
-						if (get_token(user_status, STRING, false, &stmt, stmt_end, token))
+						if (get_token(status, STRING, false, &stmt, stmt_end, token))
 						{
 							get_out = true;
 							break;
@@ -216,10 +218,10 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 						break;
 
 					case PP_SET:
-						if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
+						if (get_token(status, SYMBOL, false, &stmt, stmt_end, token) ||
 							token.length() != pp_symbols[PP_NAMES].length ||
 							token != pp_symbols[PP_NAMES].symbol ||
-							get_token(user_status, STRING, false, &stmt, stmt_end, token))
+							get_token(status, STRING, false, &stmt, stmt_end, token))
 						{
 							get_out = true;
 							break;
@@ -232,8 +234,8 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 					case PP_LENGTH:
 						// Skip a token for value
 
-						if (get_token(user_status, '=', true, &stmt, stmt_end, token) ||
-							get_token(user_status, NUMERIC, false, &stmt, stmt_end, token))
+						if (get_token(status, '=', true, &stmt, stmt_end, token) ||
+							get_token(status, NUMERIC, false, &stmt, stmt_end, token))
 						{
 							get_out = true;
 							break;
@@ -256,13 +258,13 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 
 		} while (matched);
 
-		isc_create_database(user_status, 0, file_name.c_str(), db_handle,
-							dpb.getBufferLength(), reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()),
-							0);
+		RefPtr<Why::Dispatcher> dispatcher(new Why::Dispatcher);
+		*ptrAtt = dispatcher->createDatabase(status, file_name.c_str(),
+			dpb.getBufferLength(), dpb.getBuffer());
 	}
 	catch (const Exception& ex)
 	{
-		ex.stuff_exception(user_status);
+		ex.stuffException(status);
 		return true;
 	}
 
@@ -276,27 +278,28 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 
     @brief
 
-    @param user_status
+    @param status
     @param token
     @param error
     @param result
 
  **/
-static void generate_error(ISC_STATUS* user_status, const string& token, SSHORT error, SSHORT result)
+static void generate_error(IStatus* status, const string& token, SSHORT error, SSHORT result)
 {
 	string err_string;
 
-	user_status[0] = isc_arg_gds;
-	user_status[1] = isc_sqlerr;
-	user_status[2] = isc_arg_number;
-	user_status[3] = -104;
-	user_status[4] = isc_arg_gds;
+	ISC_STATUS_ARRAY temp_status;
+	temp_status[0] = isc_arg_gds;
+	temp_status[1] = isc_sqlerr;
+	temp_status[2] = isc_arg_number;
+	temp_status[3] = -104;
+	temp_status[4] = isc_arg_gds;
 
 	switch (error)
 	{
 	case UNEXPECTED_END_OF_COMMAND:
-		user_status[5] = isc_command_end_err;
-		user_status[6] = isc_arg_end;
+		temp_status[5] = isc_command_end_err;
+		temp_status[6] = isc_arg_end;
 		break;
 
 	case UNEXPECTED_TOKEN:
@@ -309,15 +312,17 @@ static void generate_error(ISC_STATUS* user_status, const string& token, SSHORT 
 		}
 		else
 			err_string = token;
-		user_status[5] = isc_token_err;
-		user_status[6] = isc_arg_gds;
-		user_status[7] = isc_random;
-		user_status[8] = isc_arg_string;
-		user_status[9] = (ISC_STATUS)(err_string.c_str());
-		user_status[10] = isc_arg_end;
-		Firebird::makePermanentVector(user_status);
+		temp_status[5] = isc_token_err;
+		temp_status[6] = isc_arg_gds;
+		temp_status[7] = isc_random;
+		temp_status[8] = isc_arg_string;
+		temp_status[9] = (ISC_STATUS)(err_string.c_str());
+		temp_status[10] = isc_arg_end;
+		Firebird::makePermanentVector(temp_status);
 		break;
 	}
+
+	status->set(temp_status);
 }
 
 
@@ -470,7 +475,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
     @param token
 
  **/
-static SSHORT get_token(ISC_STATUS* status,
+static SSHORT get_token(IStatus* status,
 						SSHORT token_type,
 						bool optional,
 						const SCHAR** stmt,

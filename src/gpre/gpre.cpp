@@ -468,6 +468,18 @@ int main(int argc, char* argv[])
 			gpreGlob.database_name	= "gds_database";
 			break;
 
+		case IN_SW_GPRE_OCXX:
+			gen_routine = OBJ_CXX_action;
+			gpreGlob.sw_language	= lang_cxx;
+			gpreGlob.ident_pattern	= "fb_%d";
+			gpreGlob.long_ident_pattern	= "fb_%ld";
+			gpreGlob.utility_name	= "fbUtility";
+			gpreGlob.count_name		= "fbCount";
+			gpreGlob.slack_name		= "fbSlack";
+			gpreGlob.transaction_name = "fbTrans";
+			gpreGlob.database_name	= "fbDatabase";
+			break;
+
 		case IN_SW_GPRE_D:
 			// allocate database block and link to db chain
 

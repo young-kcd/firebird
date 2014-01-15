@@ -765,6 +765,12 @@ public:
 	{
 		return -1;
 	}
+
+	virtual IUtl* FB_CARG getUtlInterface()
+	{
+		fb_assert(false);
+		return NULL;
+	}
 };
 
 

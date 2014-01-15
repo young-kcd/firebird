@@ -59,6 +59,7 @@
 #include "../jrd/ods.h"
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
+//#include "../common/classes/ImplementHelper.h"
 
 using MsgFormat::SafeArg;
 
@@ -123,11 +124,9 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 
 	if (!DB)
 	{
-		if (isc_attach_database(gds_status, 0, isqlGlob.global_Db_name, &DB, 0, NULL))
-		{
-			ISQL_errmsg(gds_status);
+		DB = fbProvider->attachDatabase(fbStatus, isqlGlob.global_Db_name, 0, NULL);
+		if (ISQL_errmsg(fbStatus))
 			return FINI_ERROR;
-		}
 		did_attach = true;
 
 		// Make it read owner name to display grantor correctly
@@ -153,13 +152,11 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 	isqlGlob.printf(NEWLINE);
 
 	bool did_start = false;
-	if (!gds_trans)
+	if (!fbTrans)
 	{
-		if (isc_start_transaction(gds_status, &gds_trans, 1, &DB, 0, NULL))
-		{
-			ISQL_errmsg(gds_status);
+		fbTrans = DB->startTransaction(fbStatus, 0, NULL);
+		if (ISQL_errmsg(fbStatus))
 			return FINI_ERROR;
-		}
 		did_start = true;
 	}
 
@@ -201,20 +198,19 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		SHOW_comments(false); // Let's make this an option later.
 	}
 
-	if (gds_trans && did_start)
-		if (isc_commit_transaction(gds_status, &gds_trans))
-		{
-			ISQL_errmsg(gds_status);
+	if (fbTrans && did_start)
+	{
+		fbTrans->commit(fbStatus);
+		if (ISQL_errmsg(fbStatus))
 			return FINI_ERROR;
-		}
+		fbTrans = NULL;
+	}
 
 	if (DB && did_attach)
 	{
-		if (isc_detach_database(gds_status, &DB))
-		{
-			ISQL_errmsg(gds_status);
+		DB->detach(fbStatus);
+		if (ISQL_errmsg(fbStatus))
 			return FINI_ERROR;
-		}
 		DB = 0;
 	}
 
@@ -383,7 +379,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		{
 			isqlGlob.printf("COMPUTED BY ");
 			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
-				ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, gds_trans);
+				ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, fbTrans);
 		}
 		else if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 		{
@@ -488,7 +484,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			}
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg(isc_status);
+				ISQL_errmsg(fbStatus);
 				return ps_ERR;
 			END_ERROR
 		}
@@ -521,7 +517,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				}
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (gds_status);
+				ISQL_errmsg (fbStatus);
 				return FINI_ERROR;
 			END_ERROR;
 
@@ -539,7 +535,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return FINI_ERROR;
 	END_ERROR;
 
@@ -631,7 +627,7 @@ static bool extract_rel_constraints(const char* relation_name)
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return false;
 	END_ERROR;
 
@@ -839,7 +835,7 @@ static void get_procedure_args(const char* proc_name)
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(gds_status);
+			ISQL_errmsg(fbStatus);
 			return;
 		END_ERROR;
 
@@ -1058,7 +1054,7 @@ static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 			}
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(gds_status);
+			ISQL_errmsg(fbStatus);
 			return;
 		END_ERROR;
 
@@ -1159,7 +1155,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(gds_status);
+			ISQL_errmsg(fbStatus);
 		    return OBJECT_NOT_FOUND;
 		END_ERROR;
 	}
@@ -1190,7 +1186,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return OBJECT_NOT_FOUND;
 	END_ERROR;
 
@@ -1216,7 +1212,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return OBJECT_NOT_FOUND;
 	END_ERROR;
 
@@ -1235,7 +1231,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 				first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(gds_status);
+			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
 
@@ -1253,7 +1249,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 				first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(gds_status);
+			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
 
@@ -1270,7 +1266,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 				first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(gds_status);
+			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
 
@@ -1287,7 +1283,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 				first = false;
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg(gds_status);
+			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
 	}
@@ -1400,7 +1396,7 @@ static void list_all_procs()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -1433,9 +1429,9 @@ static void list_all_procs()
 
 	END_FOR
 	ON_ERROR
-		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(gds_status));
+		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(fbStatus->get()));
 		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -1480,7 +1476,7 @@ static void list_all_tables(LegacyTables flag, SSHORT default_char_set_id)
 			EXTRACT_list_table (REL.RDB$RELATION_NAME, NULL,  false, default_char_set_id);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		ROLLBACK;
 		return;
 	END_ERROR;
@@ -1549,7 +1545,7 @@ static void list_all_triggers()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -1609,7 +1605,7 @@ static void list_all_triggers()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -1676,7 +1672,7 @@ static void list_check()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -1726,7 +1722,7 @@ static void list_charsets()
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -1810,7 +1806,7 @@ static void list_collations()
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -1862,7 +1858,7 @@ static void list_create_db()
  *	the page size in a comment with the extracted db name
  *
  **************************************/
-	static const SCHAR page_items[] =
+	static const UCHAR page_items[] =
 	{
 		isc_info_page_size,
 		isc_info_end
@@ -1896,7 +1892,7 @@ static void list_create_db()
 			fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME));
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2000,7 +1996,7 @@ static void list_create_db()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2104,7 +2100,7 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 		if (!FLD.RDB$VALIDATION_SOURCE.NULL)
 		{
 			isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
-			ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
+			ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, fbTrans);
 		}
 		if (FLD.RDB$NULL_FLAG == 1)
 			isqlGlob.printf(" NOT NULL");
@@ -2128,7 +2124,7 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -2243,7 +2239,7 @@ static void list_domains(SSHORT default_char_set_id)
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -2275,12 +2271,12 @@ static void listDomainConstraints()
 			isqlGlob.printf("ALTER DOMAIN %s ADD CONSTRAINT", FLD.RDB$FIELD_NAME);
 
 		isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
-		ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
+		ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, fbTrans);
 
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -2325,7 +2321,7 @@ static void list_exceptions()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -2379,7 +2375,7 @@ static void list_filters()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2474,7 +2470,7 @@ static void list_foreign()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -2578,7 +2574,7 @@ static void list_functions_legacy()
 
 				END_FOR
 				ON_ERROR
-					ISQL_errmsg (gds_status);
+					ISQL_errmsg (fbStatus);
 					return;
 				END_ERROR;
 
@@ -2664,7 +2660,7 @@ static void list_functions_legacy()
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg (gds_status);
+			ISQL_errmsg (fbStatus);
 			return;
 		END_ERROR;
 
@@ -2684,7 +2680,7 @@ static void list_functions_legacy()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -2729,7 +2725,7 @@ static void list_functions_ods12()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2763,9 +2759,9 @@ static void list_functions_ods12()
 
 	END_FOR
 	ON_ERROR
-		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(gds_status));
+		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(fbStatus->get()));
 		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2818,7 +2814,7 @@ static void list_generators()
 	}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -2895,7 +2891,7 @@ static void list_indexes()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }
@@ -2954,7 +2950,7 @@ static void list_package_bodies()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -3017,7 +3013,7 @@ static void list_package_headers()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
@@ -3084,7 +3080,7 @@ static void list_views()
 
 		END_FOR
 		ON_ERROR
-			ISQL_errmsg (gds_status);
+			ISQL_errmsg (fbStatus);
 			return;
 		END_ERROR;
 
@@ -3097,7 +3093,7 @@ static void list_views()
 
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(gds_status);
+		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 }

@@ -74,6 +74,7 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_D_FLOAT, // use blr_d_float for doubles
 	IN_SW_GPRE_CXX, 	// source is C++
 	IN_SW_GPRE_SCXX, 	// source is C++ with Saber extension
+	IN_SW_GPRE_OCXX,	// c++ with object API
 	IN_SW_GPRE_SQLDA, 	// use old or new SQLDA
 	IN_SW_GPRE_USER, 	// default username to use when attaching database
 	IN_SW_GPRE_PASSWORD, // default password to use in attaching database
@@ -167,6 +168,7 @@ const static Switches::in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, false, 0, 0, "\t\tdo not automatically ATTACH to a database"},
 	{IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, false, 0, 0, "\tdo not generate C debug lines"},
 	{IN_SW_GPRE_O		, 0, "OUTPUT"		, 0, 0, 0, false, 0, 0, "\t\tsend output to standard out"},
+	{IN_SW_GPRE_OCXX	, 0, "OCXX"			, 0, 0, 0, false, 0, 0, "\t\textended C++ program with objects API"},
 #ifdef GPRE_PASCAL
 	{IN_SW_GPRE_P		, 0, "PASCAL"		, 0, 0, 0, false, 0, 0, "\t\textended PASCAL program"},
 #endif

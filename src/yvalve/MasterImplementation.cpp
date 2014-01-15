@@ -45,6 +45,7 @@
 #include "../common/ThreadStart.h"
 #include "../common/utils_proto.h"
 #include "../jrd/ibase.h"
+#include "../yvalve/utl_proto.h"
 
 using namespace Firebird;
 
@@ -663,6 +664,21 @@ Mutex& pauseTimer()
 {
 	return timerPause;
 }
+
+} // namespace Why
+
+
+//
+// Utl (misc calls)
+//
+
+namespace Why {
+
+	Firebird::IUtl* FB_CARG MasterImplementation::getUtlInterface()
+	{
+		extern UtlInterface utlInterface;		// Implemented in utl.cpp
+		return &utlInterface;
+	}
 
 } // namespace Why
 

@@ -62,7 +62,7 @@
 #include "../common/classes/GetPlugins.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/InternalMessageBuffer.h"
-#include "../yvalve/prepa_proto.h"
+//#include "../yvalve/prepa_proto.h"
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../yvalve/MasterImplementation.h"
@@ -85,7 +85,7 @@ using namespace Why;
 static void badHandle(ISC_STATUS code);
 static bool isNetworkError(const IStatus* status);
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
-static void saveErrorString(ISC_STATUS* status);
+//static void saveErrorString(ISC_STATUS* status);
 static void error804(ISC_STATUS err);
 static void sqldaDescribeParameters(XSQLDA* sqlda, const IMessageMetadata* parameters);
 static void sqldaMove(const XSQLDA* sqlda, Array<UCHAR>& message, bool binding);
@@ -103,6 +103,7 @@ static const USHORT DESCRIBE_BUFFER_SIZE = 1024;	// size of buffer used in isc_d
 
 namespace Why {
 	class StatusVector;
+	extern UtlInterface utlInterface;
 };
 
 namespace {
@@ -909,6 +910,7 @@ static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 // This is need because there are cases where the memory allocated for strings in the status vector
 // is freed prior to surfacing them to the user. This is an attempt to save off 1 string to surface
 // to the user. Any other strings will be set to a standard <Unknown> string.
+/*
 static void saveErrorString(ISC_STATUS* status)
 {
 	const int MAXERRORSTRINGLENGTH = 250;
@@ -974,7 +976,7 @@ static void saveErrorString(ISC_STATUS* status)
 		}
 	}
 }
-
+ */
 // Raises a DSQL -804 error message.
 static void error804(ISC_STATUS err)
 {
@@ -1351,6 +1353,43 @@ ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, ICrypt
 	}
 
 	return status[1];
+}
+
+
+//-------------------------------------
+
+
+Firebird::IAttachment* handleToIAttachment(Firebird::IStatus* status, FB_API_HANDLE* handle)
+{
+	try
+	{
+		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
+		attachment->addRef();
+		return attachment;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+Firebird::ITransaction* handleToITransaction(Firebird::IStatus* status, FB_API_HANDLE* handle)
+{
+	try
+	{
+		RefPtr<YTransaction> transaction(translateHandle(transactions, handle));
+		transaction->addRef();
+		return transaction;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return NULL;
 }
 
 
@@ -2151,69 +2190,13 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* userStatus, FB_API_HAN
 {
 	StatusVector status(userStatus);
 
-	bool stmtEaten;
+	FB_BOOLEAN stmtIsCrDb = FB_FALSE;
+	YAttachment* att = utlInterface.executeCreateDatabase(&status, stmtLength, sqlStmt, dialect, &stmtIsCrDb);
 
-	if (PREPARSE_execute(status, dbHandle, traHandle, stmtLength, sqlStmt, &stmtEaten, dialect))
+	if (stmtIsCrDb)
 	{
-		if (status[1])
-			return status[1];
-
-		ISC_STATUS_ARRAY tempStatus;
-		FB_API_HANDLE crdbTransHandle = 0;
-
-		if (isc_start_transaction(status, &crdbTransHandle, 1, dbHandle, 0, 0))
-		{
-			saveErrorString(status);
-			isc_drop_database(tempStatus, dbHandle);
-			*dbHandle = 0;
-			return status[1];
-		}
-
-		bool v3Error = false;
-
-		if (!stmtEaten)
-		{
-			// Check if against < 4.0 database.
-
-			const SCHAR ch = isc_info_base_level;
-			SCHAR buffer[16];
-			if (!isc_database_info(status, dbHandle, 1, &ch, sizeof(buffer), buffer))
-			{
-				if (buffer[0] != isc_info_base_level || buffer[4] > 3)
-				{
-					isc_dsql_exec_immed3_m(status, dbHandle, &crdbTransHandle,
-						stmtLength, sqlStmt, dialect,
-						inBlrLength, inBlr, inMsgType, inMsgLength, inMsg,
-						outBlrLength, outBlr, outMsgType, outMsgLength, outMsg);
-				}
-				else
-					v3Error = true;
-			}
-		}
-
-		if (status[1])
-		{
-			isc_rollback_transaction(tempStatus, &crdbTransHandle);
-			saveErrorString(status);
-			isc_drop_database(tempStatus, dbHandle);
-			*dbHandle = 0;
-			return status[1];
-		}
-
-		if (isc_commit_transaction(status, &crdbTransHandle))
-		{
-			isc_rollback_transaction(tempStatus, &crdbTransHandle);
-			saveErrorString(status);
-			isc_drop_database(tempStatus, dbHandle);
-			*dbHandle = 0;
-			return status[1];
-		}
-
-		if (v3Error)
-		{
-			Arg::Gds(isc_srvr_version_too_old).copyTo(status);
-			return status[1];
-		}
+		if (status.isSuccess())
+			*dbHandle = att->getHandle();
 
 		return status[1];
 	}

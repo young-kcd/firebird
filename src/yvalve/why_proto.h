@@ -27,6 +27,9 @@
 namespace Firebird
 {
 	class ICryptKeyCallback;
+	class IStatus;
+	class IAttachment;
+	class ITransaction;
 }
 
 extern "C" {
@@ -262,5 +265,8 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
 
 } /* extern "C"*/
+
+Firebird::IAttachment* handleToIAttachment(Firebird::IStatus*, FB_API_HANDLE*);
+Firebird::ITransaction* handleToITransaction(Firebird::IStatus*, FB_API_HANDLE*);
 
 #endif // JRD_WHY_PROTO_H

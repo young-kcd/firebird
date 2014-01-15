@@ -92,6 +92,7 @@ private:
 };
 
 
+// With template magic, we make the fields strongly-typed.
 template <>
 bool Message::checkType<SLONG>(unsigned t, unsigned sz)
 {
@@ -105,13 +106,18 @@ bool Message::checkType<ISC_QUAD>(unsigned t, unsigned sz)
 }
 
 template <>
+bool Message::checkType<ISC_INT64>(unsigned t, unsigned sz)
+{
+	return t == SQL_INT64 && sz == sizeof(ISC_INT64);
+}
+
+template <>
 bool Message::checkType<FB_BOOLEAN>(unsigned t, unsigned sz)
 {
 	return t == SQL_BOOLEAN && sz == sizeof(FB_BOOLEAN);
 }
 
 
-// With template magic, we make the fields strongly-typed.
 template <typename T>
 class Field
 {

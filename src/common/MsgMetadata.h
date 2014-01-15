@@ -79,7 +79,7 @@ public:
 		string owner;
 		string alias;
 		unsigned type;
-		unsigned subType;
+		int subType;
 		unsigned length;
 		int scale;
 		unsigned charSet;
@@ -164,7 +164,7 @@ public:
 		return false;
 	}
 
-	virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const
+	virtual int FB_CARG getSubType(IStatus* status, unsigned index) const
 	{
 		if (index < items.getCount())
 			return items[index].subType;
