@@ -1,3 +1,44 @@
+ 2014-01-15 13:02  alexpeshkoff 
+   M builds/posix/make.rules
+   M builds/posix/prefix.linux_amd64
+   M src/auth/SecureRemotePassword/Message.h
+   M src/common/MsgMetadata.cpp
+   M src/common/MsgMetadata.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/TempFile.cpp
+   M src/common/classes/TempFile.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/gpre/gpre.cpp
+   M src/gpre/gpreswi.h
+   M src/gpre/lang_proto.h
+   A src/gpre/obj_cxx.cpp
+   M src/include/firebird/Interface.h
+   M src/include/firebird/Provider.h
+   A src/include/firebird/Utl.h
+   M src/isql/extract.epp
+   M src/isql/isql.epp
+   M src/isql/isql.h
+   M src/isql/isql_proto.h
+   M src/isql/show.epp
+   M src/isql/show_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/remote/client/BlrFromMessage.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/perf.cpp
+   M src/yvalve/prepa_proto.h
+   M src/yvalve/preparse.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/utl_proto.h
+   M src/yvalve/why.cpp
+   M src/yvalve/why_proto.h
+Implemented CORE-4317: Make ISQL use new object API with 32-bit length for object sizes (messages, SQL statements, etc.)
+Implementation also includes changes in GPRE, but this utility is not complete - only commands, used in ISQL,
+are working in code generator for new API.
+New interface IUtl is added - it performs tasks, related with database objects (attachment, transaction, etc.),
+but not requiring routing in YValve, i.e. client only tasks.
+
  2014-01-14 15:03  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/ExprNodes.cpp
