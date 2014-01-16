@@ -2027,7 +2027,8 @@ static processing_state add_row(TEXT* tabname)
 			const bool nullable = msg->isNullable(fbStatus, i);
 			if (ISQL_errmsg(fbStatus))
 				return (SKIP);
-			unsigned varLength, scale;
+			unsigned varLength;
+			int scale;
 
 			// Prompt with the name and read the line
 			switch (type)
@@ -2829,7 +2830,8 @@ static processing_state bulk_insert_hack(const char* command)
 				char msec_str[5] = "";
 				int msec = 0;
 				ISC_QUAD* blobid;
-				unsigned varLength, scale;
+				unsigned varLength;
+				int scale;
 
 				switch (type)
 				{
@@ -7764,14 +7766,10 @@ static processing_state print_performance(const SINT64* perf_before)
 	};
 
 	IsqlStatist iStat(perf_before, perf_after);
-	const int TICK =
-#ifndef WIN_NT
-		sysconf(_SC_CLK_TCK);
-#else
-		100;
-#endif
-	// "%"SQUADFORMAT
-	// "%"SQUADFORMAT".%.2"SQUADFORMAT
+	const int TICK = 1000;
+
+	// counters: "%"SQUADFORMAT
+	// time: "%"SQUADFORMAT".%.2"SQUADFORMAT
 	IUTILS_printf2(Diag, diag->c_str(), iStat.curMem, iStat.deltaMem, iStat.maxMem,
 		iStat.realTime / TICK, (iStat.realTime % TICK) * 100 / TICK,
 		iStat.cpu / TICK, (iStat.cpu % TICK) * 100 / TICK,

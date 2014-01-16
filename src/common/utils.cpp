@@ -53,15 +53,23 @@
 #include <direct.h>
 #include <io.h> // isatty()
 #endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
 #endif
+
+#ifdef HAVE_TIMES
+#include <sys/times.h>
+#endif
+
 
 namespace fb_utils
 {
@@ -869,7 +877,16 @@ void get_process_times(SINT64 &userTime, SINT64 &sysTime)
 		sysTime = userTime = 0;
 	}
 #else
-	implement me !!!
+	::tms tus;
+	if (times(&tus) == (clock_t)(-1))
+	{
+		sysTime = userTime = 0;
+		return;
+	}
+
+	const int TICK = sysconf(_SC_CLK_TCK);
+	sysTime = SINT64(tus.tms_stime) * 1000 / TICK;
+	userTime = SINT64(tus.tms_utime) * 1000 / TICK;
 #endif
 }
 

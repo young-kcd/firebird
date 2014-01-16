@@ -488,7 +488,7 @@ found:		;
 		}
 
 #ifdef WIN_NT
-#undef strtok_r 
+#undef strtok_r
 #endif
 
 		// Force reset counters
