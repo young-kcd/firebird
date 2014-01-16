@@ -3789,7 +3789,7 @@ static void make_ready(const gpre_dbb* db,
 	// generate the attach database itself
 
 	const TEXT* dpb_size_ptr = "0";
-	const TEXT* dpb_ptr = "(char*) 0";
+	const TEXT* dpb_ptr = "NULL";
 
 	align(column);
 	if (filename)

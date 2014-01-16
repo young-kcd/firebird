@@ -202,6 +202,7 @@
     <ClCompile Include="..\..\..\src\gpre\languages\rmc.cpp" />
     <ClCompile Include="..\..\..\src\gpre\movg.cpp" />
     <ClCompile Include="..\..\..\src\gpre\msc.cpp" />
+    <ClCompile Include="..\..\..\src\gpre\obj_cxx.cpp" />
     <ClCompile Include="..\..\..\src\gpre\par.cpp" />
     <ClCompile Include="..\..\..\src\gpre\pat.cpp" />
     <ClCompile Include="..\..\..\src\gpre\sqe.cpp" />

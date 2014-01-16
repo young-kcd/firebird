@@ -674,9 +674,10 @@ Mutex& pauseTimer()
 
 namespace Why {
 
+	extern UtlInterface utlInterface;		// Implemented in utl.cpp
+
 	Firebird::IUtl* FB_CARG MasterImplementation::getUtlInterface()
 	{
-		extern UtlInterface utlInterface;		// Implemented in utl.cpp
 		return &utlInterface;
 	}
 

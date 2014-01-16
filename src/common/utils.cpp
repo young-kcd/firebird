@@ -846,6 +846,34 @@ SINT64 query_performance_frequency()
 #endif
 }
 
+
+// returns system and user time in milliseconds that process runs 
+void get_process_times(SINT64 &userTime, SINT64 &sysTime)
+{
+#if defined(WIN_NT)
+	FILETIME utime, stime;
+	if (GetProcessTimes(GetCurrentProcess(), NULL, NULL, &stime, &utime))
+	{
+		LARGE_INTEGER lint;
+
+		lint.HighPart = stime.dwHighDateTime;
+		lint.LowPart = stime.dwLowDateTime;
+		sysTime = lint.QuadPart / 10000;
+
+		lint.HighPart = utime.dwHighDateTime;
+		lint.LowPart = utime.dwLowDateTime;
+		userTime = lint.QuadPart / 10000;
+	}
+	else
+	{
+		sysTime = userTime = 0;
+	}
+#else
+	implement me !!!
+#endif
+}
+
+
 void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append)
 {
 	if (value == 0)

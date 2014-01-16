@@ -459,6 +459,10 @@ void FB_CARG Why::UtlInterface::getPerfCounters(Firebird::IStatus* status, Fireb
 		UCHAR info[TOTAL_COUNTERS];		// will never use all, but do not care about few bytes
 		UCHAR* pinfo = info;
 
+#ifdef WIN_NT
+#define strtok_r strtok_s
+#endif
+
 		for (char* nm = strtok_r(set, delim, &save); nm; nm = strtok_r(NULL, delim, &save))
 		{
 			Firebird::NoCaseString name(nm);
@@ -483,14 +487,20 @@ void FB_CARG Why::UtlInterface::getPerfCounters(Firebird::IStatus* status, Fireb
 found:		;
 		}
 
+#ifdef WIN_NT
+#undef strtok_r 
+#endif
+
 		// Force reset counters
 		memset(counters, 0, n * sizeof(ISC_INT64));
 
 		// Fill time counters
 		if (typeMask & CNT_TIMER)
 		{
-			struct tms tus;
-			clock_t tr = times(&tus);
+			SINT64 tr = fb_utils::query_performance_counter() * 1000 / fb_utils::query_performance_frequency();
+			SINT64 uTime, sTime;
+			fb_utils::get_process_times(uTime, sTime);
+
 			for (unsigned i = 0; i < TOTAL_COUNTERS; ++i)
 			{
 				if (cntLink[i] == ~0u)
@@ -504,10 +514,10 @@ found:		;
 						v = tr;
 						break;
 					case CNT_TIME_USER:
-						v = tus.tms_utime;
+						v = uTime;
 						break;
 					case CNT_TIME_SYSTEM:
-						v = tus.tms_stime;
+						v = sTime;
 						break;
 					default:
 						fb_assert(false);

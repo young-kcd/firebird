@@ -75,6 +75,9 @@
     <ClCompile Include="..\..\..\src\gpre\languages\rmc.cpp">
       <Filter>languages</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\gpre\obj_cxx.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\gpre\words.h">

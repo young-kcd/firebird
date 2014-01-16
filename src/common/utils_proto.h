@@ -138,6 +138,8 @@ namespace fb_utils
 	// Returns frequency of performance counter in Hz
 	SINT64 query_performance_frequency();
 
+	void get_process_times(SINT64 &userTime, SINT64 &sysTime);
+
 	void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
 
 	enum FB_DIR {
