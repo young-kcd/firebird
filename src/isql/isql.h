@@ -420,6 +420,7 @@ struct IsqlVar
 	unsigned type, length, charSet;
 	bool nullable;
 	short* nullInd;
+
 	union TypeMix
 	{
 		ISC_TIMESTAMP* asDateTime;

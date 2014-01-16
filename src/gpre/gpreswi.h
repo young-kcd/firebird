@@ -74,7 +74,7 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_D_FLOAT, // use blr_d_float for doubles
 	IN_SW_GPRE_CXX, 	// source is C++
 	IN_SW_GPRE_SCXX, 	// source is C++ with Saber extension
-	IN_SW_GPRE_OCXX,	// c++ with object API
+	IN_SW_GPRE_OCXX,	// C++ with object API
 	IN_SW_GPRE_SQLDA, 	// use old or new SQLDA
 	IN_SW_GPRE_USER, 	// default username to use when attaching database
 	IN_SW_GPRE_PASSWORD, // default password to use in attaching database

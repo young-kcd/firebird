@@ -211,7 +211,7 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		DB->detach(fbStatus);
 		if (ISQL_errmsg(fbStatus))
 			return FINI_ERROR;
-		DB = 0;
+		DB = NULL;
 	}
 
 	return ret_code;

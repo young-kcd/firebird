@@ -536,13 +536,13 @@ static bool M_Transaction()
 
 static bool D_Transaction()
 {
-	return startTransaction(&D__trans, 5, default_tpb);
+	return startTransaction(&D__trans, sizeof(default_tpb), default_tpb);
 }
 
 // Transaction for all frontend commands
 static bool frontendTransaction()
 {
-	return startTransaction(&fbTrans, 5, default_tpb);
+	return startTransaction(&fbTrans, sizeof(default_tpb), default_tpb);
 }
 
 
@@ -1236,7 +1236,7 @@ processing_state ISQL_fill_var(IsqlVar* var,
 	var->charSet = msg->getCharSet(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
 	var->nullable = msg->isNullable(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
 
-	var->nullInd = (short*)&buf[msg->getNullOffset(fbStatus, index)];	if (!fbStatus->isSuccess()) return ps_ERR;
+	var->nullInd = (short*) &buf[msg->getNullOffset(fbStatus, index)];	if (!fbStatus->isSuccess()) return ps_ERR;
 	var->value.setPtr = &buf[msg->getOffset(fbStatus, index)];			if (!fbStatus->isSuccess()) return ps_ERR;
 
 	return CONT;
@@ -1643,12 +1643,12 @@ void ISQL_disconnect_database(bool nQuietMode)
 	Quiet = OriginalQuiet;
 
 	// Zero database handle and transaction handles
-	global_Stmt = 0;
-	DB = 0;
+	global_Stmt = NULL;
+	DB = NULL;
 	isqlGlob.global_Db_name[0] = '\0';
-	D__trans = 0;
-	M__trans = 0;
-	fbTrans = 0;
+	D__trans = NULL;
+	M__trans = NULL;
+	fbTrans = NULL;
 
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
@@ -1967,6 +1967,7 @@ static processing_state add_row(TEXT* tabname)
 			insertstring += ',';
 		insertstring += '?';
 	}
+
 	insertstring += ')';
 
 	// Build metadata for insert message
@@ -2622,6 +2623,7 @@ static processing_state bulk_insert_hack(const char* command)
 						break; // We failed to commit, quit the bulk insertion.
 					}
 				}
+
 				done = false;
 				continue; // Go to read another line.
 			}
@@ -4176,12 +4178,12 @@ static void do_isql()
 		}
 	}
 
-	global_Stmt = 0;
-	DB = 0;
+	global_Stmt = NULL;
+	DB = NULL;
 	isqlGlob.global_Db_name[0] = '\0';
-	D__trans = 0;
-	M__trans = 0;
-	fbTrans = 0;
+	D__trans = NULL;
+	M__trans = NULL;
+	fbTrans = NULL;
 
 	InputDevices::indev& Ofp = Filelist->Ofp();
 	// Does it have a valid Temp file pointer?
@@ -4221,10 +4223,10 @@ static processing_state drop_db()
 		return (FAIL);
 
 	// The database got dropped with or without errors
-	M__trans = 0;
-	fbTrans = 0;
-	global_Stmt = 0;
-	D__trans = 0;
+	M__trans = NULL;
+	fbTrans = NULL;
+	global_Stmt = NULL;
+	D__trans = NULL;
 
 	// CVC: If we aren't connected to a db anymore, then the db's dialect is reset.
 	// This should fix SF Bug #910430.
@@ -4235,7 +4237,7 @@ static processing_state drop_db()
 	// Zero database name
 
 	isqlGlob.global_Db_name[0] = '\0';
-	DB = 0;
+	DB = NULL;
 
 	return (SKIP);
 }
@@ -6346,7 +6348,7 @@ static processing_state newdb(TEXT* dbname,
 		}
 	}
 
-	global_Stmt = 0;
+	global_Stmt = NULL;
 
 	return SKIP;
 }
@@ -7681,7 +7683,7 @@ static processing_state print_line(Firebird::IMessageMetadata* message, UCHAR* b
 	for (unsigned i = 0; i < varnum; i++)
 	{
 		const IsqlVar* var = &varlist[i];
-		if (!(var->nullable) || *var->nullInd == 0)
+		if (!var->nullable || *var->nullInd == 0)
 		{
 			// Print blob title
 

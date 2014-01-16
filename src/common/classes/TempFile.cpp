@@ -129,15 +129,16 @@ PathName TempFile::create(const PathName& prefix, const PathName& directory)
 //
 // TempFile::create
 //
-// Creates a temporary file and returns its name
-// In error case store exception in status arg
+// Creates a temporary file and returns its name.
+// In error case store exception in status arg.
 //
 
 PathName TempFile::create(IStatus* status, const PathName& prefix, const PathName& directory)
 {
 	PathName filename;
 
-	try {
+	try
+	{
 		TempFile file(*getDefaultMemoryPool(), prefix, directory, false);
 		filename = file.getName();
 	}
