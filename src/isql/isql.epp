@@ -7738,7 +7738,7 @@ static processing_state print_performance(const SINT64* perf_before)
 		while ((p = diag->find('!')) != Firebird::string::npos)
 			diag->replace(p, 1, "%"SQUADFORMAT);
 		while ((p = diag->find('~')) != Firebird::string::npos)
-			diag->replace(p, 1, "%"SQUADFORMAT".%.2"SQUADFORMAT);
+			diag->replace(p, 1, "%"SQUADFORMAT".%.3"SQUADFORMAT);
 
 		have_report = true;
 	}
@@ -7766,13 +7766,14 @@ static processing_state print_performance(const SINT64* perf_before)
 	};
 
 	IsqlStatist iStat(perf_before, perf_after);
-	const int TICK = 1000;
 
 	// counters: "%"SQUADFORMAT
-	// time: "%"SQUADFORMAT".%.2"SQUADFORMAT
+	// time: "%"SQUADFORMAT".%.3"SQUADFORMAT
 	IUTILS_printf2(Diag, diag->c_str(), iStat.curMem, iStat.deltaMem, iStat.maxMem,
-		iStat.realTime / TICK, (iStat.realTime % TICK) * 100 / TICK,
-		iStat.cpu / TICK, (iStat.cpu % TICK) * 100 / TICK,
+		iStat.realTime / 1000, iStat.realTime % 1000,
+#ifndef WIN_NT
+		iStat.cpu / 1000, iStat.cpu % 1000,
+#endif
 		iStat.buffers, iStat.reads, iStat.writes, iStat.fetches);
 	IUTILS_printf2(Diag, "%s", NEWLINE);
 
