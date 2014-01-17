@@ -2353,15 +2353,24 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			node->computable(csb, INVALID_STREAM, false))
 		{
-			// If no index is used then leave other nodes alone, because they
-			// could be used for building a SORT/MERGE.
-			if ((inversion && node->jrdStreamFinder(stream)) ||
-				(!inversion && node->computable(csb, stream, true)))
+			// Use conjuncts that have just been matched to indices and
+			// also others, but only if they're local to the current stream.
+			// This leaves the rest being candidates for a merge/hash join.
+
+			if (tail->opt_conjunct_flags & opt_conjunct_matched)
+			{
+				if (node->jrdStreamFinder(stream))
+				{
+					compose(tdbb, &boolean, node);
+					tail->opt_conjunct_flags |= opt_conjunct_used;
+				}
+			}
+			else if (node->computable(csb, stream, true))
 			{
 				compose(tdbb, &boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 
-				if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched))
+				if (!outer_flag)
 					csb_tail->csb_flags |= csb_unmatched;
 			}
 		}
