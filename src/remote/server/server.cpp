@@ -3370,7 +3370,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		statement->rsr_rtr->rtr_cursors.add(statement);
 
-		if (status_vector.isSuccess() && statement->rsr_cursor_name.hasData())
+		if (statement->rsr_cursor_name.hasData())
 		{
 			statement->rsr_cursor->setCursorName(&status_vector, statement->rsr_cursor_name.c_str());
 			if (status_vector.isSuccess())
