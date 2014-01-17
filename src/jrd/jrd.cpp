@@ -5001,7 +5001,7 @@ ISC_UINT64 JStatement::getAffectedRecords(IStatus* userStatus)
 }
 
 
-void JStatement::setCursorName(IStatus* user_status, const char* cursor)
+void JResultSet::setCursorName(IStatus* user_status, const char* cursor)
 {
 	try
 	{
@@ -5010,7 +5010,9 @@ void JStatement::setCursorName(IStatus* user_status, const char* cursor)
 
 		try
 		{
-			getHandle()->setCursor(tdbb, cursor);
+			dsql_req* req = getStatement()->getHandle();
+			fb_assert(req);
+			req->setCursor(tdbb, cursor);
 		}
 		catch (const Exception& ex)
 		{

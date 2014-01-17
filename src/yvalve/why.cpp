@@ -873,6 +873,7 @@ namespace {
 				Arg::StatusVector(status->get()).raise();
 			}
 			statement = NULL;
+			cursorName = "";
 		}
 	}
 
@@ -2063,7 +2064,21 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			{
 				statement->statement->openCursor(&status, transaction,
 					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
+				if (!status.isSuccess())
+				{
+					return status[1];
+				}
+
 				fb_assert(statement->statement->cursor);
+
+				if (statement->cursorName.hasData())
+				{
+					statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
+					if (status.isSuccess())
+					{
+						statement->cursorName = "";
+					}
+				}
 			}
 			else	// delay execution till first fetch (with output format)
 			{
@@ -2315,14 +2330,22 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 
 			statement->statement->openCursor(&status, statement->transaction,
 				statement->parMetadata, statement->parameters.begin(), msgBuffer.metadata);
-			fb_assert(statement->statement->cursor);
-
 			if (!status.isSuccess())
 				return status[1];
 
+			fb_assert(statement->statement->cursor);
 			statement->parMetadata = NULL;
 			statement->parameters.clear();
 			statement->transaction = NULL;
+
+			if (statement->cursorName.hasData())
+			{
+				statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
+				if (status.isSuccess())
+				{
+					statement->cursorName = "";
+				}
+			}
 		}
 
 		if (!statement->statement->cursor->fetchNext(&status, reinterpret_cast<UCHAR*>(msg)))
@@ -2366,7 +2389,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 		else if (option & DSQL_close)
 		{
 			// Only close the cursor
-			statement->closeCursor(&status, true);
+			statement->closeCursor(&status, !statement->parMetadata);
 		}
 	}
 	catch (const Exception& e)
@@ -2417,17 +2440,13 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 				return status[1];
 			}
 		}
+		statement->cursorName = "";
 
 		if (traHandle && *traHandle)
 			transaction = translateHandle(transactions, traHandle);
 
 		statement->statement = statement->attachment->prepare(&status, transaction, stmtLength,
 			sqlStmt, dialect, IStatement::PREPARE_PREFETCH_METADATA);
-
-		if (status.isSuccess() && statement->cursorName.hasData())
-		{
-			statement->statement->setCursorName(&status, statement->cursorName.c_str());
-		}
 
 		if (status.isSuccess())
 		{
@@ -2461,6 +2480,16 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 		RefPtr<YTransaction> transaction;
 
+		if (statement->statement)
+		{
+			statement->closeStatement(&status);
+			if (!status.isSuccess())
+			{
+				return status[1];
+			}
+		}
+		statement->cursorName = "";
+
 		if (traHandle && *traHandle)
 			transaction = translateHandle(transactions, traHandle);
 
@@ -2469,11 +2498,6 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 		statement->statement = statement->attachment->prepare(&status, transaction, stmtLength,
 			sqlStmt, dialect, flags);
-
-		if (status.isSuccess() && statement->cursorName.hasData())
-		{
-			statement->statement->setCursorName(&status, statement->cursorName.c_str());
-		}
 
 		if (status.isSuccess())
 		{
@@ -2502,9 +2526,17 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 	{
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 
-		statement->cursorName = cursorName;
-		if (statement->statement)
-			statement->statement->setCursorName(&status, cursorName);
+		if (statement->statement && statement->statement->cursor)
+			statement->statement->cursor->setCursorName(&status, cursorName);
+		else
+		{
+			if (statement->cursorName.hasData() && statement->cursorName != cursorName)
+			{
+				(Arg::Gds(isc_dsql_decl_err) <<
+				 Arg::Gds(isc_dsql_cursor_redefined) << statement->cursorName).raise();
+			}
+			statement->cursorName = cursorName;
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -4121,11 +4153,11 @@ void YResultSet::destroy()
 	destroy2();
 }
 
-void YStatement::setCursorName(IStatus* status, const char* name)
+void YResultSet::setCursorName(IStatus* status, const char* name)
 {
 	try
 	{
-		YEntry<YStatement> entry(status, this);
+		YEntry<YResultSet> entry(status, this);
 
 		entry.next()->setCursorName(status, name);
 	}

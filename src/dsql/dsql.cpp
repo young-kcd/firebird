@@ -411,7 +411,7 @@ void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 	const size_t MAX_CURSOR_LENGTH = 132 - 1;
 	string cursor = name;
 
-	if (cursor[0] == '\"')
+	if (cursor.hasData() && cursor[0] == '\"')
 	{
 		// Quoted cursor names eh? Strip'em.
 		// Note that "" will be replaced with ".
@@ -469,7 +469,6 @@ void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 	}
 	else
 	{
-		fb_assert(this != *symbol);
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
 				  Arg::Gds(isc_dsql_cursor_redefined) << req_cursor);

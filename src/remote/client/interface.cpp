@@ -254,6 +254,7 @@ public:
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status);
 	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status);
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual void FB_CARG close(IStatus* status);
 
 	ResultSet(Statement* s, IMessageMetadata* outFmt)
@@ -304,7 +305,6 @@ public:
 		IMessageMetadata* outMetadata, void* outBuffer);
 	virtual ResultSet* FB_CARG openCursor(IStatus* status, ITransaction* tra,
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat);
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual void FB_CARG free(IStatus* status);
 	virtual unsigned FB_CARG getFlags(IStatus* status);
 
@@ -3065,7 +3065,7 @@ FB_BOOLEAN ResultSet::fetchRelative(IStatus* user_status, int offset, void* buff
 }
 
 
-void Statement::setCursorName(IStatus* status, const char* cursor)
+void ResultSet::setCursorName(IStatus* status, const char* cursor)
 {
 /*****************************************
  *
@@ -3096,9 +3096,16 @@ void Statement::setCursorName(IStatus* status, const char* cursor)
 
 		// Check and validate handles, etc.
 
-		Rsr* statement = getStatement();
+		if (!stmt)
+		{
+			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
+		}
+		Rsr* statement = stmt->getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
+
 		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 

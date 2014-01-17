@@ -141,9 +141,10 @@ public:
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status) = 0;
 	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status) = 0;
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG close(IStatus* status) = 0;
 };
-#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 10)
+#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 11)
 
 class IStatement : public IRefCounted
 {
@@ -180,11 +181,10 @@ public:
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
 	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG free(IStatus* status) = 0;
 	virtual unsigned FB_CARG getFlags(IStatus* status) = 0;
 };
-#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 11)
+#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 10)
 
 class IRequest : public IRefCounted
 {
