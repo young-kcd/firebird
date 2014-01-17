@@ -1,3 +1,32 @@
+ 2014-01-16 14:52  asfernandes 
+   M src/common/classes/TempFile.cpp
+   M src/gpre/gpreswi.h
+   M src/isql/extract.epp
+   M src/isql/isql.epp
+   M src/isql/isql.h
+Misc.
+
+ 2014-01-16 13:44  alexpeshkoff 
+   M src/isql/isql.epp
+Print 3 digits in times + fix for windows
+
+ 2014-01-16 13:07  alexpeshkoff 
+   M src/common/utils.cpp
+   M src/isql/isql.epp
+   M src/yvalve/perf.cpp
+Fixed posix build
+
+ 2014-01-16 11:41  hvlad 
+   M builds/win32/msvc10/gpre_common.vcxproj
+   M builds/win32/msvc10/gpre_common.vcxproj.filters
+   M builds/win32/preprocess.bat
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/gpre/obj_cxx.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/perf.cpp
+Adjusted MSVC10 build. 
+
  2014-01-15 13:02  alexpeshkoff 
    M builds/posix/make.rules
    M builds/posix/prefix.linux_amd64
